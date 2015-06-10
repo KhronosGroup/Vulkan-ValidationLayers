@@ -26,26 +26,27 @@
  *   Courtney Goeltzenleuchter <courtney@lunarg.com>
  */
 
-#include "vk_wsi_lunarg.h"
+#include "loader_platform.h"
+#include "loader.h"
+#include "vk_debug_report_lunarg.h"
 
-VkResult loader_GetDisplayInfoWSI(
-        VkDisplayWSI                            display,
-        VkDisplayInfoTypeWSI                    infoType,
-        size_t*                                 pDataSize,
-        void*                                   pData);
+void debug_report_add_instance_extensions(
+        struct loader_extension_list *ext_list);
 
-void wsi_lunarg_create_instance(
+void debug_report_create_instance(
         struct loader_instance *ptr_instance);
 
-void *wsi_lunarg_GetInstanceProcAddr(
-        VkInstance                              instance,
-        const char*                             pName);
+void *debug_report_instance_gpa(
+        struct loader_instance *ptr_instance,
+        const char* name);
 
-void *wsi_lunarg_GetDeviceProcAddr(
-        VkDevice                                device,
-        const char*                             pName);
+VkResult loader_DbgCreateMsgCallback(
+    VkInstance                          instance,
+    VkFlags                             msgFlags,
+    const PFN_vkDbgMsgCallback          pfnMsgCallback,
+    const void*                         pUserData,
+    VkDbgMsgCallback*                   pMsgCallback);
 
-VkResult wsi_lunarg_CreateSwapChainWSI(
-        VkDevice                                device,
-        const VkSwapChainCreateInfoWSI*         pCreateInfo,
-        VkSwapChainWSI*                         pSwapChain);
+VkResult loader_DbgDestroyMsgCallback(
+    VkInstance                          instance,
+    VkDbgMsgCallback                    msgCallback);
