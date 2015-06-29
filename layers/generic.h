@@ -1,7 +1,7 @@
 /*
  * Vulkan
  *
- * Copyright (C) 2015 LunarG, Inc.
+ * Copyright (C) 2014 LunarG, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -22,32 +22,37 @@
  * DEALINGS IN THE SOFTWARE.
  *
  * Authors:
- *   Jon Ashburn <jon@lunarg.com>
  *   Courtney Goeltzenleuchter <courtney@lunarg.com>
  */
 
-#include "vk_loader_platform.h"
-#include "loader.h"
-#include "vk_debug_report_lunarg.h"
+#ifndef GENERIC_H
+#define GENERIC_H
+#include "vkLayer.h"
 
-void debug_report_add_instance_extensions(
-        struct loader_extension_list *ext_list);
+/*
+ * This file contains static functions for the generated layer Generic
+ */
 
-void debug_report_create_instance(
-        struct loader_instance *ptr_instance,
-        const VkInstanceCreateInfo *pCreateInfo);
+#define LAYER_PROPS_ARRAY_SIZE 1
+static const VkLayerProperties layerProps[LAYER_PROPS_ARRAY_SIZE] = {
+    {
+        "Generic",
+        VK_API_VERSION,                 // specVersion
+        VK_MAKE_VERSION(0, 1, 0),       // implVersion
+        "layer: Generic",
+    }
+};
 
-void *debug_report_instance_gpa(
-        struct loader_instance *ptr_instance,
-        const char* name);
+#define LAYER_DEV_PROPS_ARRAY_SIZE 1
+static const VkLayerProperties layerDevProps[LAYER_DEV_PROPS_ARRAY_SIZE] = {
+    {
+        "Generic",
+        VK_API_VERSION,                 // specVersion
+        VK_MAKE_VERSION(0, 1, 0),       // implVersion
+        "layer: Generic",
+    }
+};
 
-VkResult loader_DbgCreateMsgCallback(
-    VkInstance                          instance,
-    VkFlags                             msgFlags,
-    const PFN_vkDbgMsgCallback          pfnMsgCallback,
-    const void*                         pUserData,
-    VkDbgMsgCallback*                   pMsgCallback);
 
-VkResult loader_DbgDestroyMsgCallback(
-    VkInstance                          instance,
-    VkDbgMsgCallback                    msgCallback);
+#endif // GENERIC_H
+

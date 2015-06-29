@@ -1,7 +1,7 @@
 /*
  * Vulkan
  *
- * Copyright (C) 2015 LunarG, Inc.
+ * Copyright (C) 2014 LunarG, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -22,32 +22,31 @@
  * DEALINGS IN THE SOFTWARE.
  *
  * Authors:
- *   Jon Ashburn <jon@lunarg.com>
  *   Courtney Goeltzenleuchter <courtney@lunarg.com>
  */
 
-#include "vk_loader_platform.h"
-#include "loader.h"
-#include "vk_debug_report_lunarg.h"
+#include "vk_layer.h"
 
-void debug_report_add_instance_extensions(
-        struct loader_extension_list *ext_list);
+#ifndef LAYER_EXTENSION_UTILS_H
+#define LAYER_EXTENSION_UTILS_H
 
-void debug_report_create_instance(
-        struct loader_instance *ptr_instance,
-        const VkInstanceCreateInfo *pCreateInfo);
+/*
+ * This file contains static functions for the generated layers
+ */
+extern "C" {
 
-void *debug_report_instance_gpa(
-        struct loader_instance *ptr_instance,
-        const char* name);
+VkResult util_GetExtensionProperties(
+        const uint32_t count,
+        const VkExtensionProperties *layer_extensions,
+        uint32_t* pCount,
+        VkExtensionProperties* pProperties);
 
-VkResult loader_DbgCreateMsgCallback(
-    VkInstance                          instance,
-    VkFlags                             msgFlags,
-    const PFN_vkDbgMsgCallback          pfnMsgCallback,
-    const void*                         pUserData,
-    VkDbgMsgCallback*                   pMsgCallback);
+VkResult util_GetLayerProperties(
+        const uint32_t count,
+        const VkLayerProperties *layer_properties,
+        uint32_t* pCount,
+        VkLayerProperties* pProperties);
 
-VkResult loader_DbgDestroyMsgCallback(
-    VkInstance                          instance,
-    VkDbgMsgCallback                    msgCallback);
+} // extern "C"
+#endif // LAYER_EXTENSION_UTILS_H
+
