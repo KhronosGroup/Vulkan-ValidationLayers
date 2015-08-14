@@ -1,7 +1,7 @@
-# Powershell script for running the glave trace/replay auto test
+# Powershell script for running the vktrace trace/replay auto test
 # To run this test:
 #    cd <this-dir>
-#    powershell C:\src\LoaderAndTools\vkglavetracerepaly.ps1 [-Debug]
+#    powershell C:\src\LoaderAndTools\vktracereplay.ps1 [-Debug]
 
 if ($args[0] -eq "-Debug") {
     $dPath = "Debug"
@@ -10,9 +10,9 @@ if ($args[0] -eq "-Debug") {
 }
 
 write-host -background black -foreground green "[  RUN     ] " -nonewline
-write-host "vkglavetracereplay.ps1: Glave trace/replay"
+write-host "vktracereplay.ps1: Vktrace trace/replay"
 
-$gdir = "..\..\..\Glave\_out64"
+$gdir = "..\..\..\Vktrace"
 
 # Create a temp directory to run the test in
 rm -recurse -force vktracereplay_tmp  > $null 2> $null
@@ -21,13 +21,13 @@ new-item vktracereplay_tmp -itemtype directory > $null 2> $null
 # Copy everything we need into the temp directory, so we
 # can make sure we are using the correct dll and exe files
 cd vktracereplay_tmp
-cp ..\$gdir\$dPath\glvreplay.exe .
-cp ..\$gdir\$dPath\glvtrace.exe .
-cp ..\$gdir\src\glv_extensions\$dPath\glvreplay_vk.dll .
-cp ..\$gdir\src\glv_extensions\$dPath\glvtrace_vk.dll .
+cp ..\$gdir\$dPath\vkreplay.exe .
+cp ..\$gdir\$dPath\vktrace.exe .
+cp ..\$gdir\$dPath\vkreplay.dll .
+cp ..\$gdir\$dPath\vktrace.dll .
 cp ..\..\demos\$dPath\cube.exe .
 cp ..\..\demos\*.png .
-cp ..\..\loader\$dPath\vulkan.dll .
+cp ..\..\loader\$dPath\vulkan.0.dll .
 cp ..\..\layers\$dPath\VKLayerScreenShot.dll .
 
 # Change PATH to the temp directory
@@ -36,9 +36,9 @@ $Env:PATH = $pwd
 $Env:VK_LAYER_PATH = $pwd
 
 # Do a trace and replay
-& glvtrace -o c01.glv -s 1 -p cube -a "--c 10" -l0 glvtrace_vk.dll > trace.sout 2> trace.serr
+& vktrace -o c01.trace -s 1 -p cube -a "--c 10" -l0 vktrace.dll > trace.sout 2> trace.serr
 rename-item -path 1.ppm -newname 1-trace.ppm
-& glvreplay  -s 1 -t  c01.glv  > replay.sout 2> replay.serr
+& vkreplay  -s 1 -t  c01.trace  > replay.sout 2> replay.serr
 rename-item -path 1.ppm -newname 1-replay.ppm
 
 # Force a failure - for testing this script
@@ -65,7 +65,7 @@ if (!(Test-Path 1-trace.ppm) -or !(Test-Path 1-replay.ppm)) {
         $exitstatus = 0
     }
 }
-write-host "vkglavetracereplay.ps1: Glave trace/replay"
+write-host "vktracereplay.ps1: Vktrace trace/replay"
 write-host
 if ($exitstatus) {
     echo '1 FAILED TEST'
