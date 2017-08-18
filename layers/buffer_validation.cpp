@@ -572,10 +572,8 @@ bool ValidateBarriersToImages(layer_data *device_data, GLOBAL_CB_NODE const *cb_
     return skip;
 }
 
-void TransitionImageLayouts(layer_data *device_data, VkCommandBuffer cmdBuffer, uint32_t memBarrierCount,
+void TransitionImageLayouts(layer_data *device_data, GLOBAL_CB_NODE *cb_state, uint32_t memBarrierCount,
                             const VkImageMemoryBarrier *pImgMemBarriers) {
-    GLOBAL_CB_NODE *pCB = GetCBNode(device_data, cmdBuffer);
-
     for (uint32_t i = 0; i < memBarrierCount; ++i) {
         auto mem_barrier = &pImgMemBarriers[i];
         if (!mem_barrier) continue;
@@ -596,14 +594,14 @@ void TransitionImageLayouts(layer_data *device_data, VkCommandBuffer cmdBuffer, 
             uint32_t level = mem_barrier->subresourceRange.baseMipLevel + j;
             for (uint32_t k = 0; k < layer_count; k++) {
                 uint32_t layer = mem_barrier->subresourceRange.baseArrayLayer + k;
-                TransitionImageAspectLayout(device_data, pCB, mem_barrier, level, layer, VK_IMAGE_ASPECT_COLOR_BIT);
-                TransitionImageAspectLayout(device_data, pCB, mem_barrier, level, layer, VK_IMAGE_ASPECT_DEPTH_BIT);
-                TransitionImageAspectLayout(device_data, pCB, mem_barrier, level, layer, VK_IMAGE_ASPECT_STENCIL_BIT);
-                TransitionImageAspectLayout(device_data, pCB, mem_barrier, level, layer, VK_IMAGE_ASPECT_METADATA_BIT);
+                TransitionImageAspectLayout(device_data, cb_state, mem_barrier, level, layer, VK_IMAGE_ASPECT_COLOR_BIT);
+                TransitionImageAspectLayout(device_data, cb_state, mem_barrier, level, layer, VK_IMAGE_ASPECT_DEPTH_BIT);
+                TransitionImageAspectLayout(device_data, cb_state, mem_barrier, level, layer, VK_IMAGE_ASPECT_STENCIL_BIT);
+                TransitionImageAspectLayout(device_data, cb_state, mem_barrier, level, layer, VK_IMAGE_ASPECT_METADATA_BIT);
                 if (GetDeviceExtensions(device_data)->vk_khr_sampler_ycbcr_conversion) {
-                    TransitionImageAspectLayout(device_data, pCB, mem_barrier, level, layer, VK_IMAGE_ASPECT_PLANE_0_BIT_KHR);
-                    TransitionImageAspectLayout(device_data, pCB, mem_barrier, level, layer, VK_IMAGE_ASPECT_PLANE_1_BIT_KHR);
-                    TransitionImageAspectLayout(device_data, pCB, mem_barrier, level, layer, VK_IMAGE_ASPECT_PLANE_2_BIT_KHR);
+                    TransitionImageAspectLayout(device_data, cb_state, mem_barrier, level, layer, VK_IMAGE_ASPECT_PLANE_0_BIT_KHR);
+                    TransitionImageAspectLayout(device_data, cb_state, mem_barrier, level, layer, VK_IMAGE_ASPECT_PLANE_1_BIT_KHR);
+                    TransitionImageAspectLayout(device_data, cb_state, mem_barrier, level, layer, VK_IMAGE_ASPECT_PLANE_2_BIT_KHR);
                 }
             }
         }
