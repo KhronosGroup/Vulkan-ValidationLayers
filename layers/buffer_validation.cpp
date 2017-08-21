@@ -572,11 +572,30 @@ bool ValidateBarriersToImages(layer_data *device_data, GLOBAL_CB_NODE const *cb_
     return skip;
 }
 
+static bool IsReleaseOp(layer_data *device_data, GLOBAL_CB_NODE *cb_state, VkImageMemoryBarrier const *barrier) {
+    if (barrier->srcQueueFamilyIndex == barrier->dstQueueFamilyIndex)
+        return false;
+
+    auto pool = GetCommandPoolNode(device_data, cb_state->createInfo.commandPool);
+    return pool->queueFamilyIndex == barrier->srcQueueFamilyIndex;
+}
+
 void TransitionImageLayouts(layer_data *device_data, GLOBAL_CB_NODE *cb_state, uint32_t memBarrierCount,
                             const VkImageMemoryBarrier *pImgMemBarriers) {
     for (uint32_t i = 0; i < memBarrierCount; ++i) {
         auto mem_barrier = &pImgMemBarriers[i];
         if (!mem_barrier) continue;
+
+        // For ownership transfers, the barrier is specified twice; as a release
+        // operation on the yielding queue family, and as an acquire operation
+        // on the acquiring queue family. This barrier may also include a layout
+        // transition, which occurs 'between' the two operations. For validation
+        // purposes it doesn't seem important which side performs the layout
+        // transition, but it must not be performed twice. We'll arbitrarily
+        // choose to perform it as part of the acquire operation.
+        if (IsReleaseOp(device_data, cb_state, mem_barrier)) {
+            continue;
+        }
 
         VkImageCreateInfo *image_create_info = &(GetImageState(device_data, mem_barrier->image)->createInfo);
         uint32_t level_count = ResolveRemainingLevels(&mem_barrier->subresourceRange, image_create_info->mipLevels);
