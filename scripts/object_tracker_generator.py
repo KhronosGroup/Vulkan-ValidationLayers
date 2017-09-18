@@ -421,7 +421,7 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
         OutputGenerator.beginFeature(self, interface, emit)
         self.headerVersion = None
 
-        if self.featureName != 'VK_VERSION_1_0':
+        if self.featureName != 'VK_VERSION_1_0' and self.featureName != 'VK_VERSION_1_1':
             white_list_entry = []
             if (self.featureExtraProtect != None):
                 white_list_entry += [ '#ifdef %s' % self.featureExtraProtect ]

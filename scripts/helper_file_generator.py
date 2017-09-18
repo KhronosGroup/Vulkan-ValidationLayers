@@ -159,7 +159,7 @@ class HelperFileOutputGenerator(OutputGenerator):
     def beginFeature(self, interface, emit):
         # Start processing in superclass
         OutputGenerator.beginFeature(self, interface, emit)
-        if self.featureName == 'VK_VERSION_1_0':
+        if self.featureName == 'VK_VERSION_1_0' or self.featureName == 'VK_VERSION_1_1':
             return
         nameElem = interface[0][1]
         name = nameElem.get('name')

@@ -356,7 +356,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
 
         # Get base list of extension dependencies for all items in this extension
         base_required_extensions = []
-        if self.featureName != "VK_VERSION_1_0":
+        if "VK_VERSION_1" not in self.featureName:
             # Save Name Define to get correct enable name later
             nameElem = interface[0][1]
             name = nameElem.get('name')
