@@ -25,13 +25,13 @@
 // These functions, for whatever reason, require more complex changes than
 // can easily be automatically generated.
 
-VKAPI_ATTR VkResult VKAPI_CALL EnumeratePhysicalDeviceGroupsKHX(
+VKAPI_ATTR VkResult VKAPI_CALL EnumeratePhysicalDeviceGroupsKHR(
     VkInstance instance, uint32_t *pPhysicalDeviceGroupCount,
-    VkPhysicalDeviceGroupPropertiesKHX *pPhysicalDeviceGroupProperties);
+    VkPhysicalDeviceGroupPropertiesKHR *pPhysicalDeviceGroupProperties);
 
-VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumeratePhysicalDeviceGroupsKHX(
+VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumeratePhysicalDeviceGroupsKHR(
     VkInstance instance, uint32_t *pPhysicalDeviceGroupCount,
-    VkPhysicalDeviceGroupPropertiesKHX *pPhysicalDeviceGroupProperties);
+    VkPhysicalDeviceGroupPropertiesKHR *pPhysicalDeviceGroupProperties);
 
 VKAPI_ATTR VkResult VKAPI_CALL
 GetPhysicalDeviceExternalImageFormatPropertiesNV(

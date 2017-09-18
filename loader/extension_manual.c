@@ -37,11 +37,11 @@
 VkResult setupLoaderTrampPhysDevGroups(VkInstance instance);
 VkResult setupLoaderTermPhysDevGroups(struct loader_instance *inst);
 
-// ---- VK_KHX_device_group extension trampoline/terminators
+// ---- VK_KHR_device_group extension trampoline/terminators
 
-VKAPI_ATTR VkResult VKAPI_CALL EnumeratePhysicalDeviceGroupsKHX(
+VKAPI_ATTR VkResult VKAPI_CALL EnumeratePhysicalDeviceGroupsKHR(
     VkInstance instance, uint32_t *pPhysicalDeviceGroupCount,
-    VkPhysicalDeviceGroupPropertiesKHX *pPhysicalDeviceGroupProperties) {
+    VkPhysicalDeviceGroupPropertiesKHR *pPhysicalDeviceGroupProperties) {
     VkResult res = VK_SUCCESS;
     uint32_t count;
     uint32_t i;
@@ -57,7 +57,7 @@ VKAPI_ATTR VkResult VKAPI_CALL EnumeratePhysicalDeviceGroupsKHX(
 
     if (NULL == pPhysicalDeviceGroupCount) {
         loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
-                   "vkEnumeratePhysicalDeviceGroupsKHX: Received NULL pointer for physical "
+                   "vkEnumeratePhysicalDeviceGroupsKHR: Received NULL pointer for physical "
                    "device group count return value.");
         res = VK_ERROR_INITIALIZATION_FAILED;
         goto out;
@@ -75,7 +75,7 @@ VKAPI_ATTR VkResult VKAPI_CALL EnumeratePhysicalDeviceGroupsKHX(
     if (NULL != pPhysicalDeviceGroupProperties) {
         if (inst->phys_dev_group_count_tramp > *pPhysicalDeviceGroupCount) {
             loader_log(inst, VK_DEBUG_REPORT_INFORMATION_BIT_EXT, 0,
-                       "vkEnumeratePhysicalDeviceGroupsKHX: Trimming device group count down"
+                       "vkEnumeratePhysicalDeviceGroupsKHR: Trimming device group count down"
                        " by application request from %d to %d physical device groups",
                        inst->phys_dev_group_count_tramp, *pPhysicalDeviceGroupCount);
             count = *pPhysicalDeviceGroupCount;
@@ -83,7 +83,7 @@ VKAPI_ATTR VkResult VKAPI_CALL EnumeratePhysicalDeviceGroupsKHX(
         }
         for (i = 0; i < count; i++) {
             memcpy(&pPhysicalDeviceGroupProperties[i], inst->phys_dev_groups_tramp[i],
-                   sizeof(VkPhysicalDeviceGroupPropertiesKHX));
+                   sizeof(VkPhysicalDeviceGroupPropertiesKHR));
         }
     }
 
@@ -95,9 +95,9 @@ out:
     return res;
 }
 
-VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumeratePhysicalDeviceGroupsKHX(
+VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumeratePhysicalDeviceGroupsKHR(
     VkInstance instance, uint32_t *pPhysicalDeviceGroupCount,
-    VkPhysicalDeviceGroupPropertiesKHX *pPhysicalDeviceGroupProperties) {
+    VkPhysicalDeviceGroupPropertiesKHR *pPhysicalDeviceGroupProperties) {
     struct loader_instance *inst = (struct loader_instance *)instance;
     VkResult res = VK_SUCCESS;
 
@@ -117,7 +117,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumeratePhysicalDeviceGroupsKHX(
 
         for (uint32_t i = 0; i < copy_count; i++) {
             memcpy(&pPhysicalDeviceGroupProperties[i], inst->phys_dev_groups_term[i],
-                   sizeof(VkPhysicalDeviceGroupPropertiesKHX));
+                   sizeof(VkPhysicalDeviceGroupPropertiesKHR));
         }
     }
 
@@ -207,10 +207,10 @@ VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceFeatures2KHR(VkPhysicalDe
         void *pNext = pFeatures->pNext;
         while (pNext != NULL) {
             switch (*(VkStructureType *)pNext) {
-                case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_FEATURES_KHX: {
-                    // Skip the check if VK_KHX_multiview is enabled because it's a device extension
-                    // Write to the VkPhysicalDeviceMultiviewFeaturesKHX struct
-                    VkPhysicalDeviceMultiviewFeaturesKHX *multiview_features = pNext;
+                case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_FEATURES_KHR: {
+                    // Skip the check if VK_KHR_multiview is enabled because it's a device extension
+                    // Write to the VkPhysicalDeviceMultiviewFeaturesKHR struct
+                    VkPhysicalDeviceMultiviewFeaturesKHR *multiview_features = pNext;
                     multiview_features->multiview = VK_FALSE;
                     multiview_features->multiviewGeometryShader = VK_FALSE;
                     multiview_features->multiviewTessellationShader = VK_FALSE;
@@ -937,8 +937,8 @@ VkResult setupLoaderTrampPhysDevGroups(VkInstance instance) {
     VkResult res = VK_SUCCESS;
     struct loader_instance *inst;
     uint32_t total_count = 0;
-    VkPhysicalDeviceGroupPropertiesKHX **new_phys_dev_groups = NULL;
-    VkPhysicalDeviceGroupPropertiesKHX *local_phys_dev_groups = NULL;
+    VkPhysicalDeviceGroupPropertiesKHR **new_phys_dev_groups = NULL;
+    VkPhysicalDeviceGroupPropertiesKHR *local_phys_dev_groups = NULL;
 
     inst = loader_get_instance(instance);
     if (NULL == inst) {
@@ -956,19 +956,19 @@ VkResult setupLoaderTrampPhysDevGroups(VkInstance instance) {
     }
 
     // Query how many physical device groups there
-    res = inst->disp->layer_inst_disp.EnumeratePhysicalDeviceGroupsKHX(instance, &total_count, NULL);
+    res = inst->disp->layer_inst_disp.EnumeratePhysicalDeviceGroupsKHR(instance, &total_count, NULL);
     if (res != VK_SUCCESS) {
         loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
                    "setupLoaderTrampPhysDevGroups:  Failed during dispatch call of "
-                   "\'EnumeratePhysicalDeviceGroupsKHX\' to lower layers or "
+                   "\'EnumeratePhysicalDeviceGroupsKHR\' to lower layers or "
                    "loader to get count.");
         goto out;
     }
 
     // Create an array for the new physical device groups, which will be stored
     // in the instance for the trampoline code.
-    new_phys_dev_groups = (VkPhysicalDeviceGroupPropertiesKHX **)loader_instance_heap_alloc(
-        inst, total_count * sizeof(VkPhysicalDeviceGroupPropertiesKHX *), VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+    new_phys_dev_groups = (VkPhysicalDeviceGroupPropertiesKHR **)loader_instance_heap_alloc(
+        inst, total_count * sizeof(VkPhysicalDeviceGroupPropertiesKHR *), VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
     if (NULL == new_phys_dev_groups) {
         loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
                    "setupLoaderTrampPhysDevGroups:  Failed to allocate new physical device"
@@ -977,11 +977,11 @@ VkResult setupLoaderTrampPhysDevGroups(VkInstance instance) {
         res = VK_ERROR_OUT_OF_HOST_MEMORY;
         goto out;
     }
-    memset(new_phys_dev_groups, 0, total_count * sizeof(VkPhysicalDeviceGroupPropertiesKHX *));
+    memset(new_phys_dev_groups, 0, total_count * sizeof(VkPhysicalDeviceGroupPropertiesKHR *));
 
     // Create a temporary array (on the stack) to keep track of the
     // returned VkPhysicalDevice values.
-    local_phys_dev_groups = loader_stack_alloc(sizeof(VkPhysicalDeviceGroupPropertiesKHX) * total_count);
+    local_phys_dev_groups = loader_stack_alloc(sizeof(VkPhysicalDeviceGroupPropertiesKHR) * total_count);
     if (NULL == local_phys_dev_groups) {
         loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
                    "setupLoaderTrampPhysDevGroups:  Failed to allocate local "
@@ -991,19 +991,19 @@ VkResult setupLoaderTrampPhysDevGroups(VkInstance instance) {
         goto out;
     }
     // Initialize the memory to something valid
-    memset(local_phys_dev_groups, 0, sizeof(VkPhysicalDeviceGroupPropertiesKHX) * total_count);
+    memset(local_phys_dev_groups, 0, sizeof(VkPhysicalDeviceGroupPropertiesKHR) * total_count);
     for (uint32_t group = 0; group < total_count; group++) {
-        local_phys_dev_groups[group].sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES_KHX;
+        local_phys_dev_groups[group].sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES_KHR;
         local_phys_dev_groups[group].pNext = NULL;
         local_phys_dev_groups[group].subsetAllocation = false;
     }
 
     // Call down and get the content
-    res = inst->disp->layer_inst_disp.EnumeratePhysicalDeviceGroupsKHX(instance, &total_count, local_phys_dev_groups);
+    res = inst->disp->layer_inst_disp.EnumeratePhysicalDeviceGroupsKHR(instance, &total_count, local_phys_dev_groups);
     if (VK_SUCCESS != res) {
         loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
                    "setupLoaderTrampPhysDevGroups:  Failed during dispatch call of "
-                   "\'EnumeratePhysicalDeviceGroupsKHX\' to lower layers or "
+                   "\'EnumeratePhysicalDeviceGroupsKHR\' to lower layers or "
                    "loader to get content.");
         goto out;
     }
@@ -1022,7 +1022,7 @@ VkResult setupLoaderTrampPhysDevGroups(VkInstance instance) {
             if (!found) {
                 loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
                            "setupLoaderTrampPhysDevGroups:  Failed to find GPU %d in group %d"
-                           " returned by \'EnumeratePhysicalDeviceGroupsKHX\' in list returned"
+                           " returned by \'EnumeratePhysicalDeviceGroupsKHR\' in list returned"
                            " by \'EnumeratePhysicalDevices\'", group_gpu, group);
                 res = VK_ERROR_INITIALIZATION_FAILED;
                 goto out;
@@ -1061,8 +1061,8 @@ VkResult setupLoaderTrampPhysDevGroups(VkInstance instance) {
 
         // If this physical device group isn't in the old buffer, create it
         if (NULL == new_phys_dev_groups[new_idx]) {
-            new_phys_dev_groups[new_idx] = (VkPhysicalDeviceGroupPropertiesKHX *)loader_instance_heap_alloc(
-                inst, sizeof(VkPhysicalDeviceGroupPropertiesKHX), VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+            new_phys_dev_groups[new_idx] = (VkPhysicalDeviceGroupPropertiesKHR *)loader_instance_heap_alloc(
+                inst, sizeof(VkPhysicalDeviceGroupPropertiesKHR), VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
             if (NULL == new_phys_dev_groups[new_idx]) {
                 loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
                            "setupLoaderTrampPhysDevGroups:  Failed to allocate "
@@ -1073,7 +1073,7 @@ VkResult setupLoaderTrampPhysDevGroups(VkInstance instance) {
                 goto out;
             }
             memcpy(new_phys_dev_groups[new_idx], &local_phys_dev_groups[new_idx],
-                   sizeof(VkPhysicalDeviceGroupPropertiesKHX));
+                   sizeof(VkPhysicalDeviceGroupPropertiesKHR));
         }
     }
 
@@ -1119,13 +1119,13 @@ VkResult setupLoaderTermPhysDevGroups(struct loader_instance *inst) {
     struct loader_icd_term *icd_term;
     uint32_t total_count = 0;
     uint32_t cur_icd_group_count = 0;
-    VkPhysicalDeviceGroupPropertiesKHX **new_phys_dev_groups = NULL;
-    VkPhysicalDeviceGroupPropertiesKHX *local_phys_dev_groups = NULL;
+    VkPhysicalDeviceGroupPropertiesKHR **new_phys_dev_groups = NULL;
+    VkPhysicalDeviceGroupPropertiesKHR *local_phys_dev_groups = NULL;
 
     if (0 == inst->phys_dev_count_term) {
         loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
                    "setupLoaderTermPhysDevGroups:  Loader failed to setup physical "
-                   "device terminator info before calling \'EnumeratePhysicalDeviceGroupsKHX\'.");
+                   "device terminator info before calling \'EnumeratePhysicalDeviceGroupsKHR\'.");
         assert(false);
         res = VK_ERROR_INITIALIZATION_FAILED;
         goto out;
@@ -1136,7 +1136,7 @@ VkResult setupLoaderTermPhysDevGroups(struct loader_instance *inst) {
     icd_term = inst->icd_terms;
     for (uint32_t icd_idx = 0; NULL != icd_term; icd_term = icd_term->next, icd_idx++) {
         cur_icd_group_count = 0;
-        if (NULL == icd_term->dispatch.EnumeratePhysicalDeviceGroupsKHX) {
+        if (NULL == icd_term->dispatch.EnumeratePhysicalDeviceGroupsKHR) {
             // Treat each ICD's GPU as it's own group if the extension isn't supported
             res = icd_term->dispatch.EnumeratePhysicalDevices(icd_term->instance, &cur_icd_group_count, NULL);
             if (res != VK_SUCCESS) {
@@ -1148,11 +1148,11 @@ VkResult setupLoaderTermPhysDevGroups(struct loader_instance *inst) {
             }
         } else {
             // Query the actual group info
-            res = icd_term->dispatch.EnumeratePhysicalDeviceGroupsKHX(icd_term->instance, &cur_icd_group_count, NULL);
+            res = icd_term->dispatch.EnumeratePhysicalDeviceGroupsKHR(icd_term->instance, &cur_icd_group_count, NULL);
             if (res != VK_SUCCESS) {
                 loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
                            "setupLoaderTermPhysDevGroups:  Failed during dispatch call of "
-                           "\'EnumeratePhysicalDeviceGroupsKHX\' to ICD %d to get count.",
+                           "\'EnumeratePhysicalDeviceGroupsKHR\' to ICD %d to get count.",
                            icd_idx);
                 goto out;
             }
@@ -1162,8 +1162,8 @@ VkResult setupLoaderTermPhysDevGroups(struct loader_instance *inst) {
 
     // Create an array for the new physical device groups, which will be stored
     // in the instance for the Terminator code.
-    new_phys_dev_groups = (VkPhysicalDeviceGroupPropertiesKHX **)loader_instance_heap_alloc(
-        inst, total_count * sizeof(VkPhysicalDeviceGroupPropertiesKHX *), VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+    new_phys_dev_groups = (VkPhysicalDeviceGroupPropertiesKHR **)loader_instance_heap_alloc(
+        inst, total_count * sizeof(VkPhysicalDeviceGroupPropertiesKHR *), VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
     if (NULL == new_phys_dev_groups) {
         loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
                    "setupLoaderTermPhysDevGroups:  Failed to allocate new physical device"
@@ -1172,11 +1172,11 @@ VkResult setupLoaderTermPhysDevGroups(struct loader_instance *inst) {
         res = VK_ERROR_OUT_OF_HOST_MEMORY;
         goto out;
     }
-    memset(new_phys_dev_groups, 0, total_count * sizeof(VkPhysicalDeviceGroupPropertiesKHX *));
+    memset(new_phys_dev_groups, 0, total_count * sizeof(VkPhysicalDeviceGroupPropertiesKHR *));
 
     // Create a temporary array (on the stack) to keep track of the
     // returned VkPhysicalDevice values.
-    local_phys_dev_groups = loader_stack_alloc(sizeof(VkPhysicalDeviceGroupPropertiesKHX) * total_count);
+    local_phys_dev_groups = loader_stack_alloc(sizeof(VkPhysicalDeviceGroupPropertiesKHR) * total_count);
     if (NULL == local_phys_dev_groups) {
         loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
                    "setupLoaderTermPhysDevGroups:  Failed to allocate local "
@@ -1186,9 +1186,9 @@ VkResult setupLoaderTermPhysDevGroups(struct loader_instance *inst) {
         goto out;
     }
     // Initialize the memory to something valid
-    memset(local_phys_dev_groups, 0, sizeof(VkPhysicalDeviceGroupPropertiesKHX) * total_count);
+    memset(local_phys_dev_groups, 0, sizeof(VkPhysicalDeviceGroupPropertiesKHR) * total_count);
     for (uint32_t group = 0; group < total_count; group++) {
-        local_phys_dev_groups[group].sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES_KHX;
+        local_phys_dev_groups[group].sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES_KHR;
         local_phys_dev_groups[group].pNext = NULL;
         local_phys_dev_groups[group].subsetAllocation = false;
     }
@@ -1198,7 +1198,7 @@ VkResult setupLoaderTermPhysDevGroups(struct loader_instance *inst) {
     for (uint32_t icd_idx = 0; NULL != icd_term; icd_term = icd_term->next, icd_idx++) {
         uint32_t count_this_time = total_count - cur_icd_group_count;
 
-        if (NULL == icd_term->dispatch.EnumeratePhysicalDeviceGroupsKHX) {
+        if (NULL == icd_term->dispatch.EnumeratePhysicalDeviceGroupsKHR) {
             VkPhysicalDevice* phys_dev_array = loader_stack_alloc(sizeof(VkPhysicalDevice) * count_this_time);
             if (NULL == phys_dev_array) {
                 loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
@@ -1225,11 +1225,11 @@ VkResult setupLoaderTermPhysDevGroups(struct loader_instance *inst) {
             }
 
         } else {
-            res = icd_term->dispatch.EnumeratePhysicalDeviceGroupsKHX(icd_term->instance, &count_this_time, &local_phys_dev_groups[cur_icd_group_count]);
+            res = icd_term->dispatch.EnumeratePhysicalDeviceGroupsKHR(icd_term->instance, &count_this_time, &local_phys_dev_groups[cur_icd_group_count]);
             if (VK_SUCCESS != res) {
                 loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
                            "setupLoaderTermPhysDevGroups:  Failed during dispatch call of "
-                           "\'EnumeratePhysicalDeviceGroupsKHX\' to ICD %d to get content.",
+                           "\'EnumeratePhysicalDeviceGroupsKHR\' to ICD %d to get content.",
                            icd_idx);
                 goto out;
             }
@@ -1252,7 +1252,7 @@ VkResult setupLoaderTermPhysDevGroups(struct loader_instance *inst) {
             if (!found) {
                 loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
                            "setupLoaderTermPhysDevGroups:  Failed to find GPU %d in group %d"
-                           " returned by \'EnumeratePhysicalDeviceGroupsKHX\' in list returned"
+                           " returned by \'EnumeratePhysicalDeviceGroupsKHR\' in list returned"
                            " by \'EnumeratePhysicalDevices\'", group_gpu, group);
                 res = VK_ERROR_INITIALIZATION_FAILED;
                 goto out;
@@ -1291,8 +1291,8 @@ VkResult setupLoaderTermPhysDevGroups(struct loader_instance *inst) {
 
         // If this physical device group isn't in the old buffer, create it
         if (NULL == new_phys_dev_groups[new_idx]) {
-            new_phys_dev_groups[new_idx] = (VkPhysicalDeviceGroupPropertiesKHX *)loader_instance_heap_alloc(
-                inst, sizeof(VkPhysicalDeviceGroupPropertiesKHX), VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+            new_phys_dev_groups[new_idx] = (VkPhysicalDeviceGroupPropertiesKHR *)loader_instance_heap_alloc(
+                inst, sizeof(VkPhysicalDeviceGroupPropertiesKHR), VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
             if (NULL == new_phys_dev_groups[new_idx]) {
                 loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
                            "setupLoaderTermPhysDevGroups:  Failed to allocate "
@@ -1303,7 +1303,7 @@ VkResult setupLoaderTermPhysDevGroups(struct loader_instance *inst) {
                 goto out;
             }
             memcpy(new_phys_dev_groups[new_idx], &local_phys_dev_groups[new_idx],
-                   sizeof(VkPhysicalDeviceGroupPropertiesKHX));
+                   sizeof(VkPhysicalDeviceGroupPropertiesKHR));
         }
     }
 

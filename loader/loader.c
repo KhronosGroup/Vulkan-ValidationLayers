@@ -4701,23 +4701,23 @@ VkResult loader_create_device_chain(const struct loader_physical_device_tramp *p
 
     memcpy(&loader_create_info, pCreateInfo, sizeof(VkDeviceCreateInfo));
 
-    // Before we continue, we need to find out if the KHX_device_group extension is in the enabled list.  If it is, we then
-    // need to look for the corresponding VkDeviceGroupDeviceCreateInfoKHX struct in the device list.  This is because we
+    // Before we continue, we need to find out if the KHT_device_group extension is in the enabled list.  If it is, we then
+    // need to look for the corresponding VkPhysicalDeviceGroupPropertiesKHR struct in the device list.  This is because we
     // need to replace all the incoming physical device values (which are really loader trampoline physical device values)
     // with the layer/ICD version.
-    if (inst->enabled_known_extensions.khx_device_group_creation == 1) {
+    if (inst->enabled_known_extensions.khr_device_group_creation == 1) {
         struct VkStructureHeader *pNext = (struct VkStructureHeader *)loader_create_info.pNext;
         struct VkStructureHeader *pPrev = (struct VkStructureHeader *)&loader_create_info;
         while (NULL != pNext) {
-            if (VK_STRUCTURE_TYPE_DEVICE_GROUP_DEVICE_CREATE_INFO_KHX == pNext->sType) {
-                VkDeviceGroupDeviceCreateInfoKHX *cur_struct = (VkDeviceGroupDeviceCreateInfoKHX *)pNext;
+            if (VK_STRUCTURE_TYPE_DEVICE_GROUP_DEVICE_CREATE_INFO_KHR == pNext->sType) {
+                VkPhysicalDeviceGroupPropertiesKHR *cur_struct = (VkPhysicalDeviceGroupPropertiesKHR *)pNext;
                 if (0 < cur_struct->physicalDeviceCount && NULL != cur_struct->pPhysicalDevices) {
-                    VkDeviceGroupDeviceCreateInfoKHX *temp_struct = loader_stack_alloc(sizeof(VkDeviceGroupDeviceCreateInfoKHX));
+                    VkPhysicalDeviceGroupPropertiesKHR *temp_struct = loader_stack_alloc(sizeof(VkPhysicalDeviceGroupPropertiesKHR));
                     VkPhysicalDevice *phys_dev_array = NULL;
                     if (NULL == temp_struct) {
                         return VK_ERROR_OUT_OF_HOST_MEMORY;
                     }
-                    memcpy(temp_struct, cur_struct, sizeof(VkDeviceGroupDeviceCreateInfoKHX));
+                    memcpy(temp_struct, cur_struct, sizeof(VkPhysicalDeviceGroupPropertiesKHR));
                     phys_dev_array = loader_stack_alloc(sizeof(VkPhysicalDevice) * cur_struct->physicalDeviceCount);
                     if (NULL == phys_dev_array) {
                         return VK_ERROR_OUT_OF_HOST_MEMORY;
@@ -5322,21 +5322,21 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateDevice(VkPhysicalDevice physical
     }
 
     // Before we continue, If KHX_device_group is the list of enabled and viable extensions, then we then need to look for the
-    // corresponding VkDeviceGroupDeviceCreateInfoKHX struct in the device list and replace all the physical device values (which
+    // corresponding VkPhysicalDeviceGroupPropertiesKHR struct in the device list and replace all the physical device values (which
     // are really loader physical device terminator values) with the ICD versions.
-    if (icd_term->this_instance->enabled_known_extensions.khx_device_group_creation == 1) {
+    if (icd_term->this_instance->enabled_known_extensions.khr_device_group_creation == 1) {
         struct VkStructureHeader *pNext = (struct VkStructureHeader *)localCreateInfo.pNext;
         struct VkStructureHeader *pPrev = (struct VkStructureHeader *)&localCreateInfo;
         while (NULL != pNext) {
-            if (VK_STRUCTURE_TYPE_DEVICE_GROUP_DEVICE_CREATE_INFO_KHX == pNext->sType) {
-                VkDeviceGroupDeviceCreateInfoKHX *cur_struct = (VkDeviceGroupDeviceCreateInfoKHX *)pNext;
+            if (VK_STRUCTURE_TYPE_DEVICE_GROUP_DEVICE_CREATE_INFO_KHR == pNext->sType) {
+                VkPhysicalDeviceGroupPropertiesKHR *cur_struct = (VkPhysicalDeviceGroupPropertiesKHR *)pNext;
                 if (0 < cur_struct->physicalDeviceCount && NULL != cur_struct->pPhysicalDevices) {
-                    VkDeviceGroupDeviceCreateInfoKHX *temp_struct = loader_stack_alloc(sizeof(VkDeviceGroupDeviceCreateInfoKHX));
+                    VkPhysicalDeviceGroupPropertiesKHR *temp_struct = loader_stack_alloc(sizeof(VkPhysicalDeviceGroupPropertiesKHR));
                     VkPhysicalDevice *phys_dev_array = NULL;
                     if (NULL == temp_struct) {
                         return VK_ERROR_OUT_OF_HOST_MEMORY;
                     }
-                    memcpy(temp_struct, cur_struct, sizeof(VkDeviceGroupDeviceCreateInfoKHX));
+                    memcpy(temp_struct, cur_struct, sizeof(VkPhysicalDeviceGroupPropertiesKHR));
                     phys_dev_array = loader_stack_alloc(sizeof(VkPhysicalDevice) * cur_struct->physicalDeviceCount);
                     if (NULL == phys_dev_array) {
                         return VK_ERROR_OUT_OF_HOST_MEMORY;
@@ -5393,12 +5393,12 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateDevice(VkPhysicalDevice physical
                     break;
                 }
 
-                case VK_STRUCTURE_TYPE_DEVICE_GROUP_DEVICE_CREATE_INFO_KHX: {
+                case VK_STRUCTURE_TYPE_DEVICE_GROUP_DEVICE_CREATE_INFO_KHR: {
                     loader_log(
                         icd_term->this_instance, VK_DEBUG_REPORT_INFORMATION_BIT_EXT, 0,
-                        "vkCreateDevice: Emulating handling of VkDeviceGroupDeviceCreateInfoKHX in pNext chain for ICD \"%s\"",
+                        "vkCreateDevice: Emulating handling of VkPhysicalDeviceGroupPropertiesKHR in pNext chain for ICD \"%s\"",
                         icd_term->scanned_icd->lib_name);
-                    const VkDeviceGroupDeviceCreateInfoKHX *group_info = pNext;
+                    const VkPhysicalDeviceGroupPropertiesKHR *group_info = pNext;
 
                     // The group must contain only this one device, since physical device groups aren't actually supported
                     if (group_info->physicalDeviceCount != 1 || group_info->pPhysicalDevices[0] != physicalDevice) {

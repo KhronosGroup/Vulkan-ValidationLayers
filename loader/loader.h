@@ -241,9 +241,9 @@ struct loader_instance {
     // loader specific structures since we have that content in the physical
     // device stored internal to the public structures.
     uint32_t phys_dev_group_count_term;
-    struct VkPhysicalDeviceGroupPropertiesKHX **phys_dev_groups_term;
+    struct VkPhysicalDeviceGroupPropertiesKHR **phys_dev_groups_term;
     uint32_t phys_dev_group_count_tramp;
-    struct VkPhysicalDeviceGroupPropertiesKHX **phys_dev_groups_tramp;
+    struct VkPhysicalDeviceGroupPropertiesKHR **phys_dev_groups_tramp;
 
     struct loader_instance *next;
 
