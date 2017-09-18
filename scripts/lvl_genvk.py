@@ -50,20 +50,32 @@ def makeREstring(list):
 # by specified short names. The generator options incorporate the following
 # parameters:
 #
-# extensions - list of extension names to include.
+# features - list of <feature> names to include; defaults to all features
+# extensions - list of <extension> names to include.
 # protect - True if re-inclusion protection should be added to headers
 # directory - path to directory in which to generate the target(s)
-def makeGenOpts(extensions = [], removeExtensions = [], protect = True, directory = '.'):
+def makeGenOpts(features = [],
+                extensions = [],
+                removeExtensions = [],
+                protect = True,
+                directory = '.'):
     global genOpts
     genOpts = {}
 
     # Descriptive names for various regexp patterns used to select
     # versions and extensions
-    allVersions     = allExtensions = '.*'
+    allFeatures     = allExtensions = '.*'
     noVersions      = noExtensions = None
 
     addExtensions     = makeREstring(extensions)
     removeExtensions  = makeREstring(removeExtensions)
+
+    if len(features) > 0:
+        features = makeREstring(features)
+    else:
+        features = allFeatures
+
+    # write('* Selecting features: ', features, file=sys.stderr)
 
     # Copyright text prefixing all headers (list of strings).
     prefixStrings = [
@@ -110,8 +122,8 @@ def makeGenOpts(extensions = [], removeExtensions = [], protect = True, director
             directory         = directory,
             apiname           = 'vulkan',
             profile           = None,
-            versions          = allVersions,
-            emitversions      = allVersions,
+            versions          = features,
+            emitversions      = features,
             defaultExtensions = 'vulkan',
             addExtensions     = addExtensions,
             removeExtensions  = removeExtensions,
@@ -131,8 +143,8 @@ def makeGenOpts(extensions = [], removeExtensions = [], protect = True, director
             directory         = directory,
             apiname           = 'vulkan',
             profile           = None,
-            versions          = allVersions,
-            emitversions      = allVersions,
+            versions          = features,
+            emitversions      = features,
             defaultExtensions = 'vulkan',
             addExtensions     = addExtensions,
             removeExtensions  = removeExtensions,
@@ -152,8 +164,8 @@ def makeGenOpts(extensions = [], removeExtensions = [], protect = True, director
             directory         = directory,
             apiname           = 'vulkan',
             profile           = None,
-            versions          = allVersions,
-            emitversions      = allVersions,
+            versions          = features,
+            emitversions      = features,
             defaultExtensions = 'vulkan',
             addExtensions     = addExtensions,
             removeExtensions  = removeExtensions,
@@ -173,8 +185,8 @@ def makeGenOpts(extensions = [], removeExtensions = [], protect = True, director
             directory         = directory,
             apiname           = 'vulkan',
             profile           = None,
-            versions          = allVersions,
-            emitversions      = allVersions,
+            versions          = features,
+            emitversions      = features,
             defaultExtensions = 'vulkan',
             addExtensions     = addExtensions,
             removeExtensions  = removeExtensions,
@@ -194,8 +206,8 @@ def makeGenOpts(extensions = [], removeExtensions = [], protect = True, director
             directory         = directory,
             apiname           = 'vulkan',
             profile           = None,
-            versions          = allVersions,
-            emitversions      = allVersions,
+            versions          = features,
+            emitversions      = features,
             defaultExtensions = 'vulkan',
             addExtensions     = addExtensions,
             removeExtensions  = removeExtensions,
@@ -215,8 +227,8 @@ def makeGenOpts(extensions = [], removeExtensions = [], protect = True, director
             directory         = directory,
             apiname           = 'vulkan',
             profile           = None,
-            versions          = allVersions,
-            emitversions      = allVersions,
+            versions          = features,
+            emitversions      = features,
             defaultExtensions = 'vulkan',
             addExtensions     = addExtensions,
             removeExtensions  = removeExtensions,
@@ -236,8 +248,8 @@ def makeGenOpts(extensions = [], removeExtensions = [], protect = True, director
             directory         = directory,
             apiname           = 'vulkan',
             profile           = None,
-            versions          = allVersions,
-            emitversions      = allVersions,
+            versions          = features,
+            emitversions      = features,
             defaultExtensions = 'vulkan',
             addExtensions     = addExtensions,
             removeExtensions  = removeExtensions,
@@ -257,8 +269,8 @@ def makeGenOpts(extensions = [], removeExtensions = [], protect = True, director
             directory         = directory,
             apiname           = 'vulkan',
             profile           = None,
-            versions          = allVersions,
-            emitversions      = allVersions,
+            versions          = features,
+            emitversions      = features,
             defaultExtensions = 'vulkan',
             addExtensions     = addExtensions,
             removeExtensions  = removeExtensions,
@@ -278,8 +290,8 @@ def makeGenOpts(extensions = [], removeExtensions = [], protect = True, director
             directory         = directory,
             apiname           = 'vulkan',
             profile           = None,
-            versions          = allVersions,
-            emitversions      = allVersions,
+            versions          = features,
+            emitversions      = features,
             defaultExtensions = 'vulkan',
             addExtensions     = addExtensions,
             removeExtensions  = removeExtensions,
@@ -300,8 +312,8 @@ def makeGenOpts(extensions = [], removeExtensions = [], protect = True, director
             directory         = directory,
             apiname           = 'vulkan',
             profile           = None,
-            versions          = allVersions,
-            emitversions      = allVersions,
+            versions          = features,
+            emitversions      = features,
             defaultExtensions = 'vulkan',
             addExtensions     = addExtensions,
             removeExtensions  = removeExtensions,
@@ -322,8 +334,8 @@ def makeGenOpts(extensions = [], removeExtensions = [], protect = True, director
             directory         = directory,
             apiname           = 'vulkan',
             profile           = None,
-            versions          = allVersions,
-            emitversions      = allVersions,
+            versions          = features,
+            emitversions      = features,
             defaultExtensions = 'vulkan',
             addExtensions     = addExtensions,
             removeExtensions  = removeExtensions,
@@ -344,8 +356,8 @@ def makeGenOpts(extensions = [], removeExtensions = [], protect = True, director
             directory         = directory,
             apiname           = 'vulkan',
             profile           = None,
-            versions          = allVersions,
-            emitversions      = allVersions,
+            versions          = features,
+            emitversions      = features,
             defaultExtensions = 'vulkan',
             addExtensions     = addExtensions,
             removeExtensions  = removeExtensions,
@@ -366,8 +378,8 @@ def makeGenOpts(extensions = [], removeExtensions = [], protect = True, director
             directory         = directory,
             apiname           = 'vulkan',
             profile           = None,
-            versions          = allVersions,
-            emitversions      = allVersions,
+            versions          = features,
+            emitversions      = features,
             defaultExtensions = 'vulkan',
             addExtensions     = addExtensions,
             removeExtensions  = removeExtensions,
@@ -388,8 +400,8 @@ def makeGenOpts(extensions = [], removeExtensions = [], protect = True, director
             directory         = directory,
             apiname           = 'vulkan',
             profile           = None,
-            versions          = allVersions,
-            emitversions      = allVersions,
+            versions          = features,
+            emitversions      = features,
             defaultExtensions = 'vulkan',
             addExtensions     = addExtensions,
             removeExtensions  = removeExtensions,
@@ -410,8 +422,8 @@ def makeGenOpts(extensions = [], removeExtensions = [], protect = True, director
             directory         = directory,
             apiname           = 'vulkan',
             profile           = None,
-            versions          = allVersions,
-            emitversions      = allVersions,
+            versions          = features,
+            emitversions      = features,
             defaultExtensions = 'vulkan',
             addExtensions     = addExtensions,
             removeExtensions  = removeExtensions,
@@ -432,17 +444,19 @@ def makeGenOpts(extensions = [], removeExtensions = [], protect = True, director
             directory         = directory,
             apiname           = 'vulkan',
             profile           = None,
-            versions          = allVersions,
-            emitversions      = allVersions,
+            versions          = featuresPat,
+            emitversions      = featuresPat,
             defaultExtensions = 'vulkan',
-            addExtensions     = addExtensions,
-            removeExtensions  = removeExtensions,
+            addExtensions     = addExtensionsPat,
+            removeExtensions  = removeExtensionsPat,
+            emitExtensions    = emitExtensionsPat,
             prefixText        = prefixStrings + vkPrefixStrings,
             protectFeature    = False,
             apicall           = 'VKAPI_ATTR ',
             apientry          = 'VKAPI_CALL ',
             apientryp         = 'VKAPI_PTR *',
             alignFuncParam    = 48,
+            expandEnumerants  = False,
             helper_file_type  = 'typemap_helper_header')
         ]
 
@@ -503,7 +517,8 @@ def genTarget(args):
     global genOpts
 
     # Create generator options with specified parameters
-    makeGenOpts(extensions = args.extension,
+    makeGenOpts(features = args.feature,
+                extensions = args.extension,
                 removeExtensions = args.removeExtension,
                 protect = args.protect,
                 directory = args.directory)
@@ -529,7 +544,9 @@ def genTarget(args):
         write('No generator options for unknown target:',
               args.target, file=sys.stderr)
 
-# -extension name - may be a single extension name, a a space-separated list
+# -feature name
+# -extension name
+# For both, "name" may be a single name, or a space-separated list
 # of names, or a regular expression.
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -537,6 +554,9 @@ if __name__ == '__main__':
     parser.add_argument('-extension', action='append',
                         default=[],
                         help='Specify an extension or extensions to add to targets')
+    parser.add_argument('-feature', action='append',
+                        default=[],
+                        help='Specify a core API feature name or names to add to targets')
     parser.add_argument('-removeExtension', action='append',
                         default=[],
                         help='Specify an extension or extensions to remove from targets')
@@ -572,6 +592,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # This splits arguments which are space-separated lists
+    args.feature = [name for arg in args.feature for name in arg.split()]
     args.extension = [name for arg in args.extension for name in arg.split()]
 
     # Load & parse registry
