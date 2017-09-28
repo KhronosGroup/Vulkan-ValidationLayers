@@ -185,7 +185,9 @@ class HelperFileOutputGenerator(OutputGenerator):
             for elem in groupElem.findall('enum'):
                 if elem.get('supported') != 'disabled':
                     item_name = elem.get('name')
-                    value_list.append(item_name)
+                    # Avoid duplicates
+                    if item_name not in value_list:
+                        value_list.append(item_name)
             if value_list is not None:
                 self.enum_output += self.GenerateEnumStringConversion(groupName, value_list)
         elif self.helper_file_type == 'object_types_header':
