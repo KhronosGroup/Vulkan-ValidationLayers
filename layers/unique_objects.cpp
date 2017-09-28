@@ -564,11 +564,11 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDescriptorUpdateTemplateKHR(VkDevice device
                                                                  const VkAllocationCallbacks *pAllocator,
                                                                  VkDescriptorUpdateTemplateKHR *pDescriptorUpdateTemplate) {
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    safe_VkDescriptorUpdateTemplateCreateInfoKHR *local_create_info = NULL;
+    safe_VkDescriptorUpdateTemplateCreateInfo *local_create_info = NULL;
     {
         std::lock_guard<std::mutex> lock(global_lock);
         if (pCreateInfo) {
-            local_create_info = new safe_VkDescriptorUpdateTemplateCreateInfoKHR(pCreateInfo);
+            local_create_info = new safe_VkDescriptorUpdateTemplateCreateInfo(pCreateInfo);
             if (pCreateInfo->descriptorSetLayout) {
                 local_create_info->descriptorSetLayout = Unwrap(pCreateInfo->descriptorSetLayout);
             }

@@ -11812,8 +11812,8 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDescriptorUpdateTemplateKHR(VkDevice device
     if (VK_SUCCESS == result) {
         lock_guard_t lock(global_lock);
         // Shadow template createInfo for later updates
-        safe_VkDescriptorUpdateTemplateCreateInfoKHR *local_create_info =
-            new safe_VkDescriptorUpdateTemplateCreateInfoKHR(pCreateInfo);
+        safe_VkDescriptorUpdateTemplateCreateInfo *local_create_info =
+            new safe_VkDescriptorUpdateTemplateCreateInfo(pCreateInfo);
         std::unique_ptr<TEMPLATE_STATE> template_state(new TEMPLATE_STATE(*pDescriptorUpdateTemplate, local_create_info));
         dev_data->desc_template_map[*pDescriptorUpdateTemplate] = std::move(template_state);
     }
