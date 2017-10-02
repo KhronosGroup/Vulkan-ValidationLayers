@@ -604,6 +604,7 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
             else:
                 commands = self.ext_commands
 
+            required = False
             for cur_cmd in commands:
                 is_inst_handle_type = cur_cmd.ext_type == 'instance' or cur_cmd.handle_type == 'VkInstance' or cur_cmd.handle_type == 'VkPhysicalDevice'
                 if ((is_inst_handle_type or cur_cmd.name in DEVICE_CMDS_NEED_TERM) and (cur_cmd.name not in skip_gipa_commands)):
@@ -611,8 +612,10 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
                     if cur_cmd.ext_name != cur_extension_name:
                         if 'VK_VERSION_' in cur_cmd.ext_name:
                             table += '\n    // ---- Core %s\n' % cur_cmd.ext_name[11:]
+                            required = cur_cmd.ext_name == 'VK_VERSION_1_0'
                         else:
                             table += '\n    // ---- %s extension commands\n' % cur_cmd.ext_name
+                            required = False
                         cur_extension_name = cur_cmd.ext_name
 
                     # Remove 'vk' from proto name
@@ -623,10 +626,7 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
 
                     # The Core Vulkan code will be wrapped in a feature called VK_VERSION_#_#
                     # For example: VK_VERSION_1_0 wraps the core 1.0 Vulkan functionality
-                    if x == 0:
-                        table += '    LOOKUP_GIPA(%s, true);\n' % (base_name)
-                    else:
-                        table += '    LOOKUP_GIPA(%s, false);\n' % (base_name)
+                    table += '    LOOKUP_GIPA(%s, %s);\n' % (base_name, 'true' if required else 'false')
 
                     if cur_cmd.protect is not None:
                         table += '#endif // %s\n' % cur_cmd.protect
