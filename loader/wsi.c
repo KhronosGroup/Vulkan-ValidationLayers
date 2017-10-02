@@ -1525,11 +1525,22 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateSharedSwapchainsKHR(VkDevice dev
     return VK_SUCCESS;
 }
 
-// TODO: The following functions need to be added tp GPA:
-//     - vkGetPhysicalDevicePresentRectanglesKHR
-//     - vkGetPhysicalDeviceSurfaceCapabilities2KHR
+LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkGetDeviceGroupPresentCapabilitiesKHR(
+    VkDevice                                    device,
+    VkDeviceGroupPresentCapabilitiesKHR*        pDeviceGroupPresentCapabilities) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    return disp->GetDeviceGroupPresentCapabilitiesKHR(device, pDeviceGroupPresentCapabilities);
+}
 
-VKAPI_ATTR VkResult VKAPI_CALL vkGetPhysicalDevicePresentRectanglesKHR(
+LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkGetDeviceGroupSurfacePresentModesKHR(
+    VkDevice                                    device,
+    VkSurfaceKHR                                surface,
+    VkDeviceGroupPresentModeFlagsKHR*           pModes) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    return disp->GetDeviceGroupSurfacePresentModesKHR(device, surface, pModes);
+}
+
+LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkGetPhysicalDevicePresentRectanglesKHR(
     VkPhysicalDevice                            physicalDevice,
     VkSurfaceKHR                                surface,
     uint32_t*                                   pRectCount,
@@ -1559,6 +1570,14 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDevicePresentRectanglesKHR(
     return icd_term->dispatch.GetPhysicalDevicePresentRectanglesKHR(phys_dev_term->phys_dev, surface, pRectCount, pRects);
 }
 
+LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkAcquireNextImage2KHR(
+    VkDevice                                    device,
+    const VkAcquireNextImageInfoKHR*            pAcquireInfo,
+    uint32_t*                                   pImageIndex) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    return disp->AcquireNextImage2KHR(device, pAcquireInfo, pImageIndex);
+}
+
 bool wsi_swapchain_instance_gpa(struct loader_instance *ptr_instance, const char *name, void **addr) {
     *addr = NULL;
 
@@ -1581,6 +1600,21 @@ bool wsi_swapchain_instance_gpa(struct loader_instance *ptr_instance, const char
     }
     if (!strcmp("vkGetPhysicalDeviceSurfacePresentModesKHR", name)) {
         *addr = ptr_instance->wsi_surface_enabled ? (void *)vkGetPhysicalDeviceSurfacePresentModesKHR : NULL;
+        return true;
+    }
+
+    if (!strcmp("vkGetDeviceGroupPresentCapabilitiesKHR", name)) {
+        *addr = ptr_instance->wsi_surface_enabled ? (void *)vkGetDeviceGroupPresentCapabilitiesKHR : NULL;
+        return true;
+    }
+
+    if (!strcmp("vkGetDeviceGroupSurfacePresentModesKHR", name)) {
+        *addr = ptr_instance->wsi_surface_enabled ? (void *)vkGetDeviceGroupSurfacePresentModesKHR : NULL;
+        return true;
+    }
+
+    if (!strcmp("vkGetPhysicalDevicePresentRectanglesKHR", name)) {
+        *addr = ptr_instance->wsi_surface_enabled ? (void *)vkGetPhysicalDevicePresentRectanglesKHR : NULL;
         return true;
     }
 
@@ -1608,6 +1642,10 @@ bool wsi_swapchain_instance_gpa(struct loader_instance *ptr_instance, const char
     }
     if (!strcmp("vkQueuePresentKHR", name)) {
         *addr = (void *)vkQueuePresentKHR;
+        return true;
+    }
+    if (!strcmp("vkAcquireNextImage2KHR", name)) {
+        *addr = (void *)vkAcquireNextImage2KHR;
         return true;
     }
 
