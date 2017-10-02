@@ -1509,7 +1509,7 @@ TEST(Allocation, CreateInstanceDeviceIntentionalAllocFail) {
 // enumerate call
 TEST(EnumeratePhysicalDeviceGroupsKHR, OneCall) {
     VkInstance instance = VK_NULL_HANDLE;
-    char const *const names[] = {VK_KHR_device_group_CREATION_EXTENSION_NAME};
+    char const *const names[] = {VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME};
     auto const info = VK::InstanceCreateInfo().enabledExtensionCount(1).ppEnabledExtensionNames(names);
     uint32_t group;
     uint32_t dev;
@@ -1521,7 +1521,7 @@ TEST(EnumeratePhysicalDeviceGroupsKHR, OneCall) {
         // Extension isn't present, just skip this test
         ASSERT_EQ(result, VK_ERROR_EXTENSION_NOT_PRESENT);
         std::cout << "Skipping EnumeratePhysicalDeviceGroupsKHR : OneCall due to Instance lacking support"
-                  << " for " << VK_KHR_device_group_CREATION_EXTENSION_NAME << " extension\n";
+                  << " for " << VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME << " extension\n";
         return;
     }
 
@@ -1588,7 +1588,7 @@ TEST(EnumeratePhysicalDeviceGroupsKHR, OneCall) {
 // to get count, and then again with data).
 TEST(EnumeratePhysicalDeviceGroupsKHR, TwoCall) {
     VkInstance instance = VK_NULL_HANDLE;
-    char const *const names[] = {VK_KHR_device_group_CREATION_EXTENSION_NAME};
+    char const *const names[] = {VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME};
     auto const info = VK::InstanceCreateInfo().enabledExtensionCount(1).ppEnabledExtensionNames(names);
     uint32_t group;
     uint32_t group_count;
@@ -1601,7 +1601,7 @@ TEST(EnumeratePhysicalDeviceGroupsKHR, TwoCall) {
         // Extension isn't present, just skip this test
         ASSERT_EQ(result, VK_ERROR_EXTENSION_NOT_PRESENT);
         std::cout << "Skipping EnumeratePhysicalDeviceGroupsKHR : TwoCall due to Instance lacking support"
-                  << " for " << VK_KHR_device_group_CREATION_EXTENSION_NAME << " extension\n";
+                  << " for " << VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME << " extension\n";
         return;
     }
 
@@ -1674,7 +1674,7 @@ TEST(EnumeratePhysicalDeviceGroupsKHR, TwoCall) {
 // call if not enough numbers are provided for the final list.
 TEST(EnumeratePhysicalDeviceGroupsKHR, TwoCallIncomplete) {
     VkInstance instance = VK_NULL_HANDLE;
-    char const *const names[] = {VK_KHR_device_group_CREATION_EXTENSION_NAME};
+    char const *const names[] = {VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME};
     auto const info = VK::InstanceCreateInfo().enabledExtensionCount(1).ppEnabledExtensionNames(names);
     uint32_t group;
     uint32_t group_count;
@@ -1684,7 +1684,7 @@ TEST(EnumeratePhysicalDeviceGroupsKHR, TwoCallIncomplete) {
         // Extension isn't present, just skip this test
         ASSERT_EQ(result, VK_ERROR_EXTENSION_NOT_PRESENT);
         std::cout << "Skipping EnumeratePhysicalDeviceGroupsKHR : TwoCallIncomplete due to Instance lacking support"
-                  << " for " << VK_KHR_device_group_CREATION_EXTENSION_NAME << " extension\n";
+                  << " for " << VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME << " extension\n";
         return;
     }
 
