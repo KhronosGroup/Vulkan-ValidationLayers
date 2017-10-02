@@ -2329,3 +2329,112 @@ VKAPI_ATTR void VKAPI_CALL vkGetPhysicalDeviceExternalFenceProperties(
     disp = loader_get_instance_layer_dispatch(physicalDevice);
     disp->GetPhysicalDeviceExternalFenceProperties(unwrapped_phys_dev, pExternalFenceInfo, pExternalFenceProperties);
 }
+
+VKAPI_ATTR VkResult VKAPI_CALL vkBindBufferMemory2(
+    VkDevice                                    device,
+    uint32_t                                    bindInfoCount,
+    const VkBindBufferMemoryInfo*               pBindInfos) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    return disp->BindBufferMemory2(device, bindInfoCount, pBindInfos);
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL vkBindImageMemory2(
+    VkDevice                                    device,
+    uint32_t                                    bindInfoCount,
+    const VkBindImageMemoryInfo*                pBindInfos) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    return disp->BindImageMemory2(device, bindInfoCount, pBindInfos);
+}
+
+VKAPI_ATTR void VKAPI_CALL vkGetDeviceGroupPeerMemoryFeatures(
+    VkDevice                                    device,
+    uint32_t                                    heapIndex,
+    uint32_t                                    localDeviceIndex,
+    uint32_t                                    remoteDeviceIndex,
+    VkPeerMemoryFeatureFlags*                   pPeerMemoryFeatures) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    disp->GetDeviceGroupPeerMemoryFeatures(device, heapIndex, localDeviceIndex, remoteDeviceIndex, pPeerMemoryFeatures);
+}
+
+VKAPI_ATTR void VKAPI_CALL vkCmdSetDeviceMask(
+    VkCommandBuffer                             commandBuffer,
+    uint32_t                                    deviceMask) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    disp->CmdSetDeviceMask(commandBuffer, deviceMask);
+}
+
+VKAPI_ATTR void VKAPI_CALL vkCmdDispatchBase(
+    VkCommandBuffer                             commandBuffer,
+    uint32_t                                    baseGroupX,
+    uint32_t                                    baseGroupY,
+    uint32_t                                    baseGroupZ,
+    uint32_t                                    groupCountX,
+    uint32_t                                    groupCountY,
+    uint32_t                                    groupCountZ) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    disp->CmdDispatchBase(commandBuffer, baseGroupX, baseGroupY, baseGroupZ, groupCountX, groupCountY, groupCountZ);
+}
+
+VKAPI_ATTR void VKAPI_CALL vkGetImageMemoryRequirements2(
+    VkDevice                                    device,
+    const VkImageMemoryRequirementsInfo2*       pInfo,
+    VkMemoryRequirements2*                      pMemoryRequirements) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    disp->GetImageMemoryRequirements2(device, pInfo, pMemoryRequirements);
+}
+
+VKAPI_ATTR void VKAPI_CALL vkGetBufferMemoryRequirements2(
+    VkDevice                                    device,
+    const VkBufferMemoryRequirementsInfo2*      pInfo,
+    VkMemoryRequirements2*                      pMemoryRequirements) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    disp->GetBufferMemoryRequirements2(device, pInfo, pMemoryRequirements);
+}
+
+VKAPI_ATTR void VKAPI_CALL vkGetImageSparseMemoryRequirements2(
+    VkDevice                                    device,
+    const VkImageSparseMemoryRequirementsInfo2* pInfo,
+    uint32_t*                                   pSparseMemoryRequirementCount,
+    VkSparseImageMemoryRequirements2*           pSparseMemoryRequirements) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    disp->GetImageSparseMemoryRequirements2(device, pInfo, pSparseMemoryRequirementCount, pSparseMemoryRequirements);
+}
+
+VKAPI_ATTR void VKAPI_CALL vkTrimCommandPool(
+    VkDevice                                    device,
+    VkCommandPool                               commandPool,
+    VkCommandPoolTrimFlags                      flags) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    disp->TrimCommandPool(device, commandPool, flags);
+}
+
+VKAPI_ATTR void VKAPI_CALL vkGetDeviceQueue2(VkDevice device, const VkDeviceQueueInfo2 *pQueueInfo, VkQueue *pQueue) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    disp->GetDeviceQueue2(device, pQueueInfo, pQueue);
+    loader_set_dispatch(*pQueue, disp);
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL vkCreateSamplerYcbcrConversion(
+    VkDevice                                    device,
+    const VkSamplerYcbcrConversionCreateInfo*   pCreateInfo,
+    const VkAllocationCallbacks*                pAllocator,
+    VkSamplerYcbcrConversion*                   pYcbcrConversion) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    return disp->CreateSamplerYcbcrConversion(device, pCreateInfo, pAllocator, pYcbcrConversion);
+}
+
+VKAPI_ATTR void VKAPI_CALL vkDestroySamplerYcbcrConversion(
+    VkDevice                                    device,
+    VkSamplerYcbcrConversion                    ycbcrConversion,
+    const VkAllocationCallbacks*                pAllocator) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    disp->DestroySamplerYcbcrConversion(device, ycbcrConversion, pAllocator);
+}
+
+VKAPI_ATTR void VKAPI_CALL vkGetDescriptorSetLayoutSupport(
+    VkDevice                                    device,
+    const VkDescriptorSetLayoutCreateInfo*      pCreateInfo,
+    VkDescriptorSetLayoutSupport*               pSupport) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    disp->GetDescriptorSetLayoutSupport(device, pCreateInfo, pSupport);
+}
