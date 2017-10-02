@@ -153,4 +153,9 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateSharedSwapchainsKHR(VkDevice dev
                                                                     const VkAllocationCallbacks *pAllocator,
                                                                     VkSwapchainKHR *pSwapchains);
 
-#endif  // WSI_H
+VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDevicePresentRectanglesKHR(VkPhysicalDevice physicalDevice,
+                                                                                VkSurfaceKHR surface,
+                                                                                uint32_t* pRectCount,
+                                                                                VkRect2D* pRects);
+
+#endif // WSI_H

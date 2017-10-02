@@ -48,6 +48,20 @@ DEVICE_CMDS_NEED_TERM = ['vkGetDeviceProcAddr',
                          'vkGetDeviceGroupSurfacePresentModesKHX',
                          'vkDebugMarkerSetObjectTagEXT',
                          'vkDebugMarkerSetObjectNameEXT']
+                         
+ALIASED_CMDS = {
+    'vkEnumeratePhysicalDeviceGroupsKHR':                   'vkEnumeratePhysicalDeviceGroups',
+    'vkGetPhysicalDeviceFeatures2KHR':                      'vkGetPhysicalDeviceFeatures2',
+    'vkGetPhysicalDeviceProperties2KHR':                    'vkGetPhysicalDeviceProperties2',
+    'vkGetPhysicalDeviceFormatProperties2KHR':              'vkGetPhysicalDeviceFormatProperties2',
+    'vkGetPhysicalDeviceImageFormatProperties2KHR':         'vkGetPhysicalDeviceImageFormatProperties2',
+    'vkGetPhysicalDeviceQueueFamilyProperties2KHR':         'vkGetPhysicalDeviceQueueFamilyProperties2',
+    'vkGetPhysicalDeviceMemoryProperties2KHR':              'vkGetPhysicalDeviceMemoryProperties2',
+    'vkGetPhysicalDeviceSparseImageFormatProperties2KHR':   'vkGetPhysicalDeviceSparseImageFormatProperties2',
+    'vkGetPhysicalDeviceExternalBufferPropertiesKHR':       'vkGetPhysicalDeviceExternalBufferProperties',
+    'vkGetPhysicalDeviceExternalSemaphorePropertiesKHR':    'vkGetPhysicalDeviceExternalSemaphoreProperties',
+    'vkGetPhysicalDeviceExternalFencePropertiesKHR':        'vkGetPhysicalDeviceExternalFenceProperties',
+}
 
 PRE_INSTANCE_FUNCTIONS = ['vkEnumerateInstanceExtensionProperties',
                           'vkEnumerateInstanceLayerProperties']
@@ -722,7 +736,7 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
                 tables += '                                                                        VkInstance inst) {\n'
 
             for cur_cmd in commands:
-                is_inst_handle_type = cur_cmd.ext_type == 'instance' or cur_cmd.handle_type == 'VkInstance' or cur_cmd.handle_type == 'VkPhysicalDevice'
+                is_inst_handle_type = cur_cmd.handle_type == 'VkInstance' or cur_cmd.handle_type == 'VkPhysicalDevice'
                 if ((cur_type == 'instance' and is_inst_handle_type) or (cur_type == 'device' and not is_inst_handle_type)):
                     if cur_cmd.ext_name != cur_extension_name:
                         if 'VK_VERSION_' in cur_cmd.ext_name:
@@ -797,7 +811,7 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
                     commands = self.ext_commands
 
                 for cur_cmd in commands:
-                    is_inst_handle_type = cur_cmd.ext_type == 'instance' or cur_cmd.handle_type == 'VkInstance' or cur_cmd.handle_type == 'VkPhysicalDevice'
+                    is_inst_handle_type = cur_cmd.handle_type == 'VkInstance' or cur_cmd.handle_type == 'VkPhysicalDevice'
                     if ((cur_type == 'instance' and is_inst_handle_type) or (cur_type == 'device' and not is_inst_handle_type)):
 
                         if cur_cmd.ext_name != cur_extension_name:
@@ -839,7 +853,7 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
 
         # Some extensions have to be manually added.  Skip those in the automatic
         # generation.  They will be manually added later.
-        manual_ext_commands = ['vkEnumeratePhysicalDeviceGroupsKHX',
+        manual_ext_commands = ['vkEnumeratePhysicalDeviceGroupsKHR',
                                'vkGetPhysicalDeviceExternalImageFormatPropertiesNV',
                                'vkGetPhysicalDeviceFeatures2KHR',
                                'vkGetPhysicalDeviceProperties2KHR',
@@ -1195,7 +1209,8 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
             if cur_cmd.protect is not None:
                 gpa_func += '#ifdef %s\n' % cur_cmd.protect
 
-            base_name = cur_cmd.name[2:]
+            #base_name = cur_cmd.name[2:]
+            base_name = ALIASED_CMDS[cur_cmd.name] if cur_cmd.name in ALIASED_CMDS else cur_cmd.name[2:]
 
             if (cur_cmd.ext_type == 'instance'):
                 gpa_func += '    if (!strcmp("%s", name)) {\n' % (cur_cmd.name)
@@ -1329,7 +1344,10 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
                 commands = self.ext_commands
 
             for cur_cmd in commands:
-                if cur_cmd.ext_type == 'instance' or (cur_cmd.ext_type == 'device' and cur_cmd.handle_type == 'VkPhysicalDevice'):
+                if cur_cmd.name in ALIASED_CMDS:
+                    continue
+                
+                if cur_cmd.handle_type == 'VkInstance' or cur_cmd.handle_type == 'VkPhysicalDevice':
                     if cur_cmd.ext_name != cur_extension_name:
                         if 'VK_VERSION_' in cur_cmd.ext_name:
                             table += '\n    // ---- Core %s commands\n' % cur_cmd.ext_name[11:]

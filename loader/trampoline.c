@@ -1992,3 +1992,159 @@ LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkCmdExecuteCommands(VkCommandBuffer co
 
     disp->CmdExecuteCommands(commandBuffer, commandBuffersCount, pCommandBuffers);
 }
+
+// ---- Vulkan core 1.1 trampolines
+
+// TODO: The following functions need to be added tp GPA:
+//     - vkEnumeratePhysicalDeviceGroups
+//     - vkGetPhysicalDeviceFeatures2
+//     - vkGetPhysicalDeviceProperties2
+//     - vkGetPhysicalDeviceFormatProperties2
+//     - vkGetPhysicalDeviceImageFormatProperties2
+//     - vkGetPhysicalDeviceQueueFamilyProperties2
+//     - vkGetPhysicalDeviceMemoryProperties2
+//     - vkGetPhysicalDeviceSparseImageFormatProperties2
+//     - vkGetPhysicalDeviceExternalBufferProperties
+//     - vkGetPhysicalDeviceExternalSemaphoreProperties
+//     - vkGetPhysicalDeviceExternalFenceProperties
+
+VKAPI_ATTR VkResult VKAPI_CALL vkEnumeratePhysicalDeviceGroups(
+    VkInstance instance, uint32_t *pPhysicalDeviceGroupCount,
+    VkPhysicalDeviceGroupProperties *pPhysicalDeviceGroupProperties) {
+    VkResult res = VK_SUCCESS;
+    uint32_t count;
+    uint32_t i;
+    struct loader_instance *inst = NULL;
+
+    loader_platform_thread_lock_mutex(&loader_lock);
+
+    inst = loader_get_instance(instance);
+    if (NULL == inst) {
+        res = VK_ERROR_INITIALIZATION_FAILED;
+        goto out;
+    }
+
+    if (NULL == pPhysicalDeviceGroupCount) {
+        loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                   "vkEnumeratePhysicalDeviceGroupsKHR: Received NULL pointer for physical "
+                   "device group count return value.");
+        res = VK_ERROR_INITIALIZATION_FAILED;
+        goto out;
+    }
+
+    VkResult setup_res = setupLoaderTrampPhysDevGroups(instance);
+    if (VK_SUCCESS != setup_res) {
+        res = setup_res;
+        goto out;
+    }
+
+    count = inst->phys_dev_group_count_tramp;
+
+    // Wrap the PhysDev object for loader usage, return wrapped objects
+    if (NULL != pPhysicalDeviceGroupProperties) {
+        if (inst->phys_dev_group_count_tramp > *pPhysicalDeviceGroupCount) {
+            loader_log(inst, VK_DEBUG_REPORT_INFORMATION_BIT_EXT, 0,
+                       "vkEnumeratePhysicalDeviceGroupsKHR: Trimming device group count down"
+                       " by application request from %d to %d physical device groups",
+                       inst->phys_dev_group_count_tramp, *pPhysicalDeviceGroupCount);
+            count = *pPhysicalDeviceGroupCount;
+            res = VK_INCOMPLETE;
+        }
+        for (i = 0; i < count; i++) {
+            memcpy(&pPhysicalDeviceGroupProperties[i], inst->phys_dev_groups_tramp[i],
+                   sizeof(VkPhysicalDeviceGroupPropertiesKHR));
+        }
+    }
+
+    *pPhysicalDeviceGroupCount = count;
+
+out:
+
+    loader_platform_thread_unlock_mutex(&loader_lock);
+    return res;
+}
+
+VKAPI_ATTR void VKAPI_CALL vkGetPhysicalDeviceFeatures2(VkPhysicalDevice physicalDevice, VkPhysicalDeviceFeatures2 *pFeatures) {
+    const VkLayerInstanceDispatchTable *disp;
+    VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(physicalDevice);
+    disp = loader_get_instance_layer_dispatch(physicalDevice);
+    disp->GetPhysicalDeviceFeatures2(unwrapped_phys_dev, pFeatures);
+}
+
+VKAPI_ATTR void VKAPI_CALL vkGetPhysicalDeviceProperties2(VkPhysicalDevice physicalDevice,
+                                                           VkPhysicalDeviceProperties2 *pProperties) {
+    const VkLayerInstanceDispatchTable *disp;
+    VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(physicalDevice);
+    disp = loader_get_instance_layer_dispatch(physicalDevice);
+    disp->GetPhysicalDeviceProperties2(unwrapped_phys_dev, pProperties);
+}
+
+VKAPI_ATTR void VKAPI_CALL vkGetPhysicalDeviceFormatProperties2(VkPhysicalDevice physicalDevice, VkFormat format,
+                                                                 VkFormatProperties2 *pFormatProperties) {
+    const VkLayerInstanceDispatchTable *disp;
+    VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(physicalDevice);
+    disp = loader_get_instance_layer_dispatch(physicalDevice);
+    disp->GetPhysicalDeviceFormatProperties2(unwrapped_phys_dev, format, pFormatProperties);
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL vkGetPhysicalDeviceImageFormatProperties2(
+    VkPhysicalDevice physicalDevice, const VkPhysicalDeviceImageFormatInfo2 *pImageFormatInfo,
+    VkImageFormatProperties2 *pImageFormatProperties) {
+    const VkLayerInstanceDispatchTable *disp;
+    VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(physicalDevice);
+    disp = loader_get_instance_layer_dispatch(physicalDevice);
+    return disp->GetPhysicalDeviceImageFormatProperties2(unwrapped_phys_dev, pImageFormatInfo, pImageFormatProperties);
+}
+
+VKAPI_ATTR void VKAPI_CALL vkGetPhysicalDeviceQueueFamilyProperties2(VkPhysicalDevice physicalDevice,
+                                                                      uint32_t *pQueueFamilyPropertyCount,
+                                                                      VkQueueFamilyProperties2 *pQueueFamilyProperties) {
+    const VkLayerInstanceDispatchTable *disp;
+    VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(physicalDevice);
+    disp = loader_get_instance_layer_dispatch(physicalDevice);
+    disp->GetPhysicalDeviceQueueFamilyProperties2(unwrapped_phys_dev, pQueueFamilyPropertyCount, pQueueFamilyProperties);
+}
+
+VKAPI_ATTR void VKAPI_CALL vkGetPhysicalDeviceMemoryProperties2(VkPhysicalDevice physicalDevice,
+                                                                 VkPhysicalDeviceMemoryProperties2 *pMemoryProperties) {
+    const VkLayerInstanceDispatchTable *disp;
+    VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(physicalDevice);
+    disp = loader_get_instance_layer_dispatch(physicalDevice);
+    disp->GetPhysicalDeviceMemoryProperties2(unwrapped_phys_dev, pMemoryProperties);
+}
+
+VKAPI_ATTR void VKAPI_CALL vkGetPhysicalDeviceSparseImageFormatProperties2(
+    VkPhysicalDevice physicalDevice, const VkPhysicalDeviceSparseImageFormatInfo2 *pFormatInfo, uint32_t *pPropertyCount,
+    VkSparseImageFormatProperties2 *pProperties) {
+    const VkLayerInstanceDispatchTable *disp;
+    VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(physicalDevice);
+    disp = loader_get_instance_layer_dispatch(physicalDevice);
+    disp->GetPhysicalDeviceSparseImageFormatProperties2(unwrapped_phys_dev, pFormatInfo, pPropertyCount, pProperties);
+}
+
+VKAPI_ATTR void VKAPI_CALL vkGetPhysicalDeviceExternalBufferProperties(
+    VkPhysicalDevice physicalDevice, const VkPhysicalDeviceExternalBufferInfo *pExternalBufferInfo,
+    VkExternalBufferProperties *pExternalBufferProperties) {
+    const VkLayerInstanceDispatchTable *disp;
+    VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(physicalDevice);
+    disp = loader_get_instance_layer_dispatch(physicalDevice);
+    disp->GetPhysicalDeviceExternalBufferProperties(unwrapped_phys_dev, pExternalBufferInfo, pExternalBufferProperties);
+}
+
+VKAPI_ATTR void VKAPI_CALL vkGetPhysicalDeviceExternalSemaphoreProperties(
+    VkPhysicalDevice physicalDevice, const VkPhysicalDeviceExternalSemaphoreInfoKHR *pExternalSemaphoreInfo,
+    VkExternalSemaphoreProperties *pExternalSemaphoreProperties) {
+    const VkLayerInstanceDispatchTable *disp;
+    VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(physicalDevice);
+    disp = loader_get_instance_layer_dispatch(physicalDevice);
+    disp->GetPhysicalDeviceExternalSemaphoreProperties(unwrapped_phys_dev, pExternalSemaphoreInfo, pExternalSemaphoreProperties);
+}
+
+VKAPI_ATTR void VKAPI_CALL vkGetPhysicalDeviceExternalFenceProperties(
+    VkPhysicalDevice physicalDevice, const VkPhysicalDeviceExternalFenceInfo *pExternalFenceInfo,
+    VkExternalFenceProperties *pExternalFenceProperties) {
+    const VkLayerInstanceDispatchTable *disp;
+    VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(physicalDevice);
+    disp = loader_get_instance_layer_dispatch(physicalDevice);
+    disp->GetPhysicalDeviceExternalFenceProperties(unwrapped_phys_dev, pExternalFenceInfo, pExternalFenceProperties);
+}
