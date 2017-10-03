@@ -33,6 +33,10 @@
 #include "vk_loader_extensions.h"
 #include "gpa_helper.h"
 
+// This loader only supports Vulkan API version 1.0
+uint32_t loader_major_version = 1;
+uint32_t loader_minor_version = 1;
+
 // Trampoline entrypoints are in this file for core Vulkan commands
 
 // Get an instance level or global level entry point address.

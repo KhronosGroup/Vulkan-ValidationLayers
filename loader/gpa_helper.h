@@ -164,7 +164,6 @@ static inline void *trampolineGetProcAddr(struct loader_instance *inst, const ch
     if (!strcmp(funcName, "vkCmdExecuteCommands")) return (PFN_vkVoidFunction)vkCmdExecuteCommands;
 
     // Core 1.1 functions
-    if (!strcmp(funcName, "vkEnumerateInstanceVersion")) return (PFN_vkVoidFunction)vkEnumerateInstanceVersion;
     if (!strcmp(funcName, "vkEnumeratePhysicalDeviceGroups")) return (PFN_vkVoidFunction)vkEnumeratePhysicalDeviceGroups;
     if (!strcmp(funcName, "vkGetPhysicalDeviceFeatures2")) return (PFN_vkVoidFunction)vkGetPhysicalDeviceFeatures2;
     if (!strcmp(funcName, "vkGetPhysicalDeviceProperties2")) return (PFN_vkVoidFunction)vkGetPhysicalDeviceProperties2;
@@ -211,6 +210,7 @@ static inline void *globalGetProcAddr(const char *name) {
     if (!strcmp(name, "CreateInstance")) return (void *)vkCreateInstance;
     if (!strcmp(name, "EnumerateInstanceExtensionProperties")) return (void *)vkEnumerateInstanceExtensionProperties;
     if (!strcmp(name, "EnumerateInstanceLayerProperties")) return (void *)vkEnumerateInstanceLayerProperties;
+    if (!strcmp(name, "EnumerateInstanceVersion")) return (void *)vkEnumerateInstanceVersion;
 
     return NULL;
 }
