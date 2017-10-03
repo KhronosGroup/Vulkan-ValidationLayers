@@ -23,6 +23,7 @@
 
 LIBRARY vulkan-1.dll
 EXPORTS
+   vkEnumerateInstanceVersion
    vkCreateInstance
    vkDestroyInstance
    vkEnumeratePhysicalDevices
