@@ -45,7 +45,7 @@ AVOID_EXT_NAMES = ['VK_EXT_debug_report']
 DEVICE_CMDS_NEED_TERM = ['vkGetDeviceProcAddr',
                          'vkCreateSwapchainKHR',
                          'vkCreateSharedSwapchainsKHR',
-                         'vkGetDeviceGroupSurfacePresentModesKHX',
+                         'vkGetDeviceGroupSurfacePresentModesKHR',
                          'vkDebugMarkerSetObjectTagEXT',
                          'vkDebugMarkerSetObjectNameEXT']
                          
@@ -596,6 +596,7 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
                               'vkCreateInstance',
                               'vkEnumerateInstanceExtensionProperties',
                               'vkEnumerateInstanceLayerProperties',
+                              'vkEnumerateInstanceVersion',
                              ]
 
         for x in range(0, 2):
@@ -751,7 +752,8 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
                     # Names to skip
                     if (base_name == 'CreateInstance' or base_name == 'CreateDevice' or
                         base_name == 'EnumerateInstanceExtensionProperties' or
-                        base_name == 'EnumerateInstanceLayerProperties'):
+                        base_name == 'EnumerateInstanceLayerProperties' or
+                        base_name == 'EnumerateInstanceVersion'):
                         continue
 
                     if cur_cmd.protect is not None:
@@ -826,7 +828,8 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
 
                         if (base_name == 'CreateInstance' or base_name == 'CreateDevice' or
                             base_name == 'EnumerateInstanceExtensionProperties' or
-                            base_name == 'EnumerateInstanceLayerProperties'):
+                            base_name == 'EnumerateInstanceLayerProperties' or
+                            base_name == 'EnumerateInstanceVersion'):
                             continue
 
                         if cur_cmd.protect is not None:
@@ -1344,8 +1347,6 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
                 commands = self.ext_commands
 
             for cur_cmd in commands:
-                if cur_cmd.name in ALIASED_CMDS:
-                    continue
                 
                 if cur_cmd.handle_type == 'VkInstance' or cur_cmd.handle_type == 'VkPhysicalDevice':
                     if cur_cmd.ext_name != cur_extension_name:
@@ -1357,10 +1358,12 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
 
                     # Remove 'vk' from proto name
                     base_name = cur_cmd.name[2:]
+                    aliased_name = ALIASED_CMDS[cur_cmd.name][2:] if cur_cmd.name in ALIASED_CMDS else base_name
 
                     if (base_name == 'CreateInstance' or base_name == 'CreateDevice' or
                         base_name == 'EnumerateInstanceExtensionProperties' or
-                        base_name == 'EnumerateInstanceLayerProperties'):
+                        base_name == 'EnumerateInstanceLayerProperties' or
+                        base_name == 'EnumerateInstanceVersion'):
                         continue
 
                     if cur_cmd.protect is not None:
@@ -1369,7 +1372,7 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
                     if base_name == 'GetInstanceProcAddr':
                         table += '    .%s = %s,\n' % (base_name, cur_cmd.name)
                     else:
-                        table += '    .%s = terminator_%s,\n' % (base_name, base_name)
+                        table += '    .%s = terminator_%s,\n' % (base_name, aliased_name)
 
                     if cur_cmd.protect is not None:
                         table += '#endif // %s\n' % cur_cmd.protect
