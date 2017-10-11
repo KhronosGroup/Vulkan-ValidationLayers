@@ -1540,6 +1540,23 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkGetDeviceGroupSurfacePresentModes
     return disp->GetDeviceGroupSurfacePresentModesKHR(device, surface, pModes);
 }
 
+VKAPI_ATTR VkResult VKAPI_CALL terminator_GetDeviceGroupSurfacePresentModesKHR(
+    VkDevice                                    device,
+    VkSurfaceKHR                                surface,
+    VkDeviceGroupPresentModeFlagsKHR*           pModes) {
+    uint32_t icd_index = 0;
+    struct loader_device *dev;
+    struct loader_icd_term *icd_term = loader_get_icd_and_device(device, &dev, &icd_index);
+    if (NULL != icd_term && NULL != icd_term->dispatch.GetDeviceGroupSurfacePresentModesKHR) {
+        VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)surface;
+        if (NULL != icd_surface->real_icd_surfaces && (VkSurfaceKHR)NULL != icd_surface->real_icd_surfaces[icd_index]) {
+            return icd_term->dispatch.GetDeviceGroupSurfacePresentModesKHR(device, icd_surface->real_icd_surfaces[icd_index], pModes);
+        }
+        return icd_term->dispatch.GetDeviceGroupSurfacePresentModesKHR(device, surface, pModes);
+    }
+    return VK_SUCCESS;
+}
+
 LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkGetPhysicalDevicePresentRectanglesKHR(
     VkPhysicalDevice                            physicalDevice,
     VkSurfaceKHR                                surface,
