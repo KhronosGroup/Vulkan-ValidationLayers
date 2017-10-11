@@ -5137,9 +5137,9 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateInstance(const VkInstanceCreateI
         loader_destroy_generic_list(ptr_instance, (struct loader_generic_list *)&icd_exts);
 
         // Create an instance, substituting the version to 1.0 if necessary
+        VkApplicationInfo icd_app_info;
         uint32_t requested_version = pCreateInfo == NULL || pCreateInfo->pApplicationInfo == NULL ? VK_API_VERSION_1_0 : pCreateInfo->pApplicationInfo->apiVersion;
         if (requested_version > icd_term->scanned_icd->api_version) {
-            VkApplicationInfo icd_app_info;
             if (icd_create_info.pApplicationInfo == NULL) {
                 memset(&icd_app_info, 0, sizeof(icd_app_info));
             } else {
