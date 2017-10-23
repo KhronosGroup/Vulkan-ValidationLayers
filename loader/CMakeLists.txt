@@ -11,8 +11,8 @@ CHECK_FUNCTION_EXISTS(secure_getenv HAVE_SECURE_GETENV)
 CHECK_FUNCTION_EXISTS(__secure_getenv HAVE___SECURE_GETENV)
 CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/loader_cmake_config.h.in ${CMAKE_CURRENT_BINARY_DIR}/loader_cmake_config.h)
 
-# Fetch header version from vulkan.h
-file(STRINGS "../include/vulkan/vulkan.h" lines REGEX "^#define VK_HEADER_VERSION [0-9]+")
+# Fetch header version from vulkan_core.h
+file(STRINGS "../include/vulkan/vulkan_core.h" lines REGEX "^#define VK_HEADER_VERSION [0-9]+")
 list(LENGTH lines len)
 if(${len} EQUAL 1)
     string(REGEX MATCHALL "[0-9]+" vk_header_version ${lines})
