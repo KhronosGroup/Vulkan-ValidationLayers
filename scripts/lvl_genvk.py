@@ -43,39 +43,52 @@ def endTimer(timeit, msg):
         startTime = None
 
 # Turn a list of strings into a regexp string matching exactly those strings
-def makeREstring(list):
-    return '^(' + '|'.join(list) + ')$'
+def makeREstring(list, default = None):
+    if len(list) > 0 or default == None:
+        return '^(' + '|'.join(list) + ')$'
+    else:
+        return default
 
 # Returns a directory of [ generator function, generator options ] indexed
 # by specified short names. The generator options incorporate the following
 # parameters:
 #
-# features - list of <feature> names to include; defaults to all features
-# extensions - list of <extension> names to include.
-# protect - True if re-inclusion protection should be added to headers
-# directory - path to directory in which to generate the target(s)
-def makeGenOpts(features = [],
-                extensions = [],
-                removeExtensions = [],
-                protect = True,
-                directory = '.'):
+# args is an parsed argument object; see below for the fields that are used.
+def makeGenOpts(args):
     global genOpts
     genOpts = {}
+
+    # Default class of extensions to include, or None
+    defaultExtensions = args.defaultExtensions
+
+    # Additional extensions to include (list of extensions)
+    extensions = args.extension
+
+    # Extensions to remove (list of extensions)
+    removeExtensions = args.removeExtensions
+
+    # Extensions to emit (list of extensions)
+    emitExtensions = args.emitExtensions
+
+    # Features to include (list of features)
+    features = args.feature
+
+    # Whether to disable inclusion protect in headers
+    protect = args.protect
+
+    # Output target directory
+    directory = args.directory
 
     # Descriptive names for various regexp patterns used to select
     # versions and extensions
     allFeatures     = allExtensions = '.*'
-    noVersions      = noExtensions = None
+    noFeatures      = noExtensions = None
 
-    addExtensions     = makeREstring(extensions)
-    removeExtensions  = makeREstring(removeExtensions)
-
-    if len(features) > 0:
-        features = makeREstring(features)
-    else:
-        features = allFeatures
-
-    # write('* Selecting features: ', features, file=sys.stderr)
+    # Turn lists of names/patterns into matching regular expressions
+    addExtensionsPat     = makeREstring(extensions, None)
+    removeExtensionsPat  = makeREstring(removeExtensions, None)
+    emitExtensionsPat    = makeREstring(emitExtensions, allExtensions)
+    featuresPat          = makeREstring(features, allFeatures)
 
     # Copyright text prefixing all headers (list of strings).
     prefixStrings = [
@@ -107,12 +120,8 @@ def makeGenOpts(features = [],
     ]
 
     # Defaults for generating re-inclusion protection wrappers (or not)
-    protectFile = protect
     protectFeature = protect
-    protectProto = protect
 
-
-        #
     # LoaderAndValidationLayer Generators
     # Options for threading layer
     genOpts['thread_check.h'] = [
@@ -122,17 +131,19 @@ def makeGenOpts(features = [],
             directory         = directory,
             apiname           = 'vulkan',
             profile           = None,
-            versions          = features,
-            emitversions      = features,
+            versions          = featuresPat,
+            emitversions      = featuresPat,
             defaultExtensions = 'vulkan',
-            addExtensions     = addExtensions,
-            removeExtensions  = removeExtensions,
+            addExtensions     = addExtensionsPat,
+            removeExtensions  = removeExtensionsPat,
+            emitExtensions    = emitExtensionsPat,
             prefixText        = prefixStrings + vkPrefixStrings,
             protectFeature    = False,
             apicall           = 'VKAPI_ATTR ',
             apientry          = 'VKAPI_CALL ',
             apientryp         = 'VKAPI_PTR *',
-            alignFuncParam    = 48)
+            alignFuncParam    = 48,
+            expandEnumerants = False)
         ]
 
     # Options for parameter validation layer
@@ -143,18 +154,19 @@ def makeGenOpts(features = [],
             directory         = directory,
             apiname           = 'vulkan',
             profile           = None,
-            versions          = features,
-            emitversions      = features,
+            versions          = featuresPat,
+            emitversions      = featuresPat,
             defaultExtensions = 'vulkan',
-            addExtensions     = addExtensions,
-            removeExtensions  = removeExtensions,
+            addExtensions     = addExtensionsPat,
+            removeExtensions  = removeExtensionsPat,
+            emitExtensions    = emitExtensionsPat,
             prefixText        = prefixStrings + vkPrefixStrings,
-            protectFeature    = False,
             apicall           = 'VKAPI_ATTR ',
             apientry          = 'VKAPI_CALL ',
             apientryp         = 'VKAPI_PTR *',
-            alignFuncParam    = 48)
-        ]
+            alignFuncParam    = 48,
+            expandEnumerants  = False)
+          ]
 
     # Options for unique objects layer
     genOpts['unique_objects_wrappers.h'] = [
@@ -164,17 +176,19 @@ def makeGenOpts(features = [],
             directory         = directory,
             apiname           = 'vulkan',
             profile           = None,
-            versions          = features,
-            emitversions      = features,
+            versions          = featuresPat,
+            emitversions      = featuresPat,
             defaultExtensions = 'vulkan',
-            addExtensions     = addExtensions,
-            removeExtensions  = removeExtensions,
+            addExtensions     = addExtensionsPat,
+            removeExtensions  = removeExtensionsPat,
+            emitExtensions    = emitExtensionsPat,
             prefixText        = prefixStrings + vkPrefixStrings,
             protectFeature    = False,
             apicall           = 'VKAPI_ATTR ',
             apientry          = 'VKAPI_CALL ',
             apientryp         = 'VKAPI_PTR *',
-            alignFuncParam    = 48)
+            alignFuncParam    = 48,
+            expandEnumerants = False)
         ]
 
     # Options for object_tracker layer
@@ -185,17 +199,19 @@ def makeGenOpts(features = [],
             directory         = directory,
             apiname           = 'vulkan',
             profile           = None,
-            versions          = features,
-            emitversions      = features,
+            versions          = featuresPat,
+            emitversions      = featuresPat,
             defaultExtensions = 'vulkan',
-            addExtensions     = addExtensions,
-            removeExtensions  = removeExtensions,
+            addExtensions     = addExtensionsPat,
+            removeExtensions  = removeExtensionsPat,
+            emitExtensions    = emitExtensionsPat,
             prefixText        = prefixStrings + vkPrefixStrings,
             protectFeature    = False,
             apicall           = 'VKAPI_ATTR ',
             apientry          = 'VKAPI_CALL ',
             apientryp         = 'VKAPI_PTR *',
-            alignFuncParam    = 48)
+            alignFuncParam    = 48,
+            expandEnumerants = False)
         ]
 
     # Options for dispatch table helper generator
@@ -206,17 +222,18 @@ def makeGenOpts(features = [],
             directory         = directory,
             apiname           = 'vulkan',
             profile           = None,
-            versions          = features,
-            emitversions      = features,
+            versions          = featuresPat,
+            emitversions      = featuresPat,
             defaultExtensions = 'vulkan',
-            addExtensions     = addExtensions,
-            removeExtensions  = removeExtensions,
+            addExtensions     = addExtensionsPat,
+            removeExtensions  = removeExtensionsPat,
+            emitExtensions    = emitExtensionsPat,
             prefixText        = prefixStrings + vkPrefixStrings,
-            protectFeature    = False,
             apicall           = 'VKAPI_ATTR ',
             apientry          = 'VKAPI_CALL ',
             apientryp         = 'VKAPI_PTR *',
-            alignFuncParam    = 48)
+            alignFuncParam    = 48,
+            expandEnumerants = False)
         ]
 
     # Options for Layer dispatch table generator
@@ -227,17 +244,18 @@ def makeGenOpts(features = [],
             directory         = directory,
             apiname           = 'vulkan',
             profile           = None,
-            versions          = features,
-            emitversions      = features,
+            versions          = featuresPat,
+            emitversions      = featuresPat,
             defaultExtensions = 'vulkan',
-            addExtensions     = addExtensions,
-            removeExtensions  = removeExtensions,
+            addExtensions     = addExtensionsPat,
+            removeExtensions  = removeExtensionsPat,
+            emitExtensions    = emitExtensionsPat,
             prefixText        = prefixStrings + vkPrefixStrings,
-            protectFeature    = False,
             apicall           = 'VKAPI_ATTR ',
             apientry          = 'VKAPI_CALL ',
             apientryp         = 'VKAPI_PTR *',
-            alignFuncParam    = 48)
+            alignFuncParam    = 48,
+            expandEnumerants = False)
         ]
 
     # Options for loader extension source generator
@@ -248,17 +266,18 @@ def makeGenOpts(features = [],
             directory         = directory,
             apiname           = 'vulkan',
             profile           = None,
-            versions          = features,
-            emitversions      = features,
+            versions          = featuresPat,
+            emitversions      = featuresPat,
             defaultExtensions = 'vulkan',
-            addExtensions     = addExtensions,
-            removeExtensions  = removeExtensions,
+            addExtensions     = addExtensionsPat,
+            removeExtensions  = removeExtensionsPat,
+            emitExtensions    = emitExtensionsPat,
             prefixText        = prefixStrings + vkPrefixStrings,
-            protectFeature    = False,
             apicall           = 'VKAPI_ATTR ',
             apientry          = 'VKAPI_CALL ',
             apientryp         = 'VKAPI_PTR *',
-            alignFuncParam    = 48)
+            alignFuncParam    = 48,
+            expandEnumerants = False)
         ]
 
     # Options for loader extension source generator
@@ -269,17 +288,18 @@ def makeGenOpts(features = [],
             directory         = directory,
             apiname           = 'vulkan',
             profile           = None,
-            versions          = features,
-            emitversions      = features,
+            versions          = featuresPat,
+            emitversions      = featuresPat,
             defaultExtensions = 'vulkan',
-            addExtensions     = addExtensions,
-            removeExtensions  = removeExtensions,
+            addExtensions     = addExtensionsPat,
+            removeExtensions  = removeExtensionsPat,
+            emitExtensions    = emitExtensionsPat,
             prefixText        = prefixStrings + vkPrefixStrings,
-            protectFeature    = False,
             apicall           = 'VKAPI_ATTR ',
             apientry          = 'VKAPI_CALL ',
             apientryp         = 'VKAPI_PTR *',
-            alignFuncParam    = 48)
+            alignFuncParam    = 48,
+            expandEnumerants = False)
         ]
 
     # Helper file generator options for vk_enum_string_helper.h
@@ -290,17 +310,18 @@ def makeGenOpts(features = [],
             directory         = directory,
             apiname           = 'vulkan',
             profile           = None,
-            versions          = features,
-            emitversions      = features,
+            versions          = featuresPat,
+            emitversions      = featuresPat,
             defaultExtensions = 'vulkan',
-            addExtensions     = addExtensions,
-            removeExtensions  = removeExtensions,
+            addExtensions     = addExtensionsPat,
+            removeExtensions  = removeExtensionsPat,
+            emitExtensions    = emitExtensionsPat,
             prefixText        = prefixStrings + vkPrefixStrings,
-            protectFeature    = False,
             apicall           = 'VKAPI_ATTR ',
             apientry          = 'VKAPI_CALL ',
             apientryp         = 'VKAPI_PTR *',
             alignFuncParam    = 48,
+            expandEnumerants  = False,
             helper_file_type  = 'enum_string_header')
         ]
 
@@ -312,17 +333,18 @@ def makeGenOpts(features = [],
             directory         = directory,
             apiname           = 'vulkan',
             profile           = None,
-            versions          = features,
-            emitversions      = features,
+            versions          = featuresPat,
+            emitversions      = featuresPat,
             defaultExtensions = 'vulkan',
-            addExtensions     = addExtensions,
-            removeExtensions  = removeExtensions,
+            addExtensions     = addExtensionsPat,
+            removeExtensions  = removeExtensionsPat,
+            emitExtensions    = emitExtensionsPat,
             prefixText        = prefixStrings + vkPrefixStrings,
-            protectFeature    = False,
             apicall           = 'VKAPI_ATTR ',
             apientry          = 'VKAPI_CALL ',
             apientryp         = 'VKAPI_PTR *',
             alignFuncParam    = 48,
+            expandEnumerants  = False,
             helper_file_type  = 'struct_size_header')
         ]
 
@@ -334,17 +356,18 @@ def makeGenOpts(features = [],
             directory         = directory,
             apiname           = 'vulkan',
             profile           = None,
-            versions          = features,
-            emitversions      = features,
+            versions          = featuresPat,
+            emitversions      = featuresPat,
             defaultExtensions = 'vulkan',
-            addExtensions     = addExtensions,
-            removeExtensions  = removeExtensions,
+            addExtensions     = addExtensionsPat,
+            removeExtensions  = removeExtensionsPat,
+            emitExtensions    = emitExtensionsPat,
             prefixText        = prefixStrings + vkPrefixStrings,
-            protectFeature    = False,
             apicall           = 'VKAPI_ATTR ',
             apientry          = 'VKAPI_CALL ',
             apientryp         = 'VKAPI_PTR *',
             alignFuncParam    = 48,
+            expandEnumerants  = False,
             helper_file_type  = 'struct_size_source')
         ]
 
@@ -356,17 +379,18 @@ def makeGenOpts(features = [],
             directory         = directory,
             apiname           = 'vulkan',
             profile           = None,
-            versions          = features,
-            emitversions      = features,
+            versions          = featuresPat,
+            emitversions      = featuresPat,
             defaultExtensions = 'vulkan',
-            addExtensions     = addExtensions,
-            removeExtensions  = removeExtensions,
+            addExtensions     = addExtensionsPat,
+            removeExtensions  = removeExtensionsPat,
+            emitExtensions    = emitExtensionsPat,
             prefixText        = prefixStrings + vkPrefixStrings,
-            protectFeature    = False,
             apicall           = 'VKAPI_ATTR ',
             apientry          = 'VKAPI_CALL ',
             apientryp         = 'VKAPI_PTR *',
             alignFuncParam    = 48,
+            expandEnumerants  = False,
             helper_file_type  = 'safe_struct_header')
         ]
 
@@ -378,17 +402,18 @@ def makeGenOpts(features = [],
             directory         = directory,
             apiname           = 'vulkan',
             profile           = None,
-            versions          = features,
-            emitversions      = features,
+            versions          = featuresPat,
+            emitversions      = featuresPat,
             defaultExtensions = 'vulkan',
-            addExtensions     = addExtensions,
-            removeExtensions  = removeExtensions,
+            addExtensions     = addExtensionsPat,
+            removeExtensions  = removeExtensionsPat,
+            emitExtensions    = emitExtensionsPat,
             prefixText        = prefixStrings + vkPrefixStrings,
-            protectFeature    = False,
             apicall           = 'VKAPI_ATTR ',
             apientry          = 'VKAPI_CALL ',
             apientryp         = 'VKAPI_PTR *',
             alignFuncParam    = 48,
+            expandEnumerants  = False,
             helper_file_type  = 'safe_struct_source')
         ]
 
@@ -400,17 +425,18 @@ def makeGenOpts(features = [],
             directory         = directory,
             apiname           = 'vulkan',
             profile           = None,
-            versions          = features,
-            emitversions      = features,
+            versions          = featuresPat,
+            emitversions      = featuresPat,
             defaultExtensions = 'vulkan',
-            addExtensions     = addExtensions,
-            removeExtensions  = removeExtensions,
+            addExtensions     = addExtensionsPat,
+            removeExtensions  = removeExtensionsPat,
+            emitExtensions    = emitExtensionsPat,
             prefixText        = prefixStrings + vkPrefixStrings,
-            protectFeature    = False,
             apicall           = 'VKAPI_ATTR ',
             apientry          = 'VKAPI_CALL ',
             apientryp         = 'VKAPI_PTR *',
             alignFuncParam    = 48,
+            expandEnumerants  = False,
             helper_file_type  = 'object_types_header')
         ]
 
@@ -422,17 +448,18 @@ def makeGenOpts(features = [],
             directory         = directory,
             apiname           = 'vulkan',
             profile           = None,
-            versions          = features,
-            emitversions      = features,
+            versions          = featuresPat,
+            emitversions      = featuresPat,
             defaultExtensions = 'vulkan',
-            addExtensions     = addExtensions,
-            removeExtensions  = removeExtensions,
+            addExtensions     = addExtensionsPat,
+            removeExtensions  = removeExtensionsPat,
+            emitExtensions    = emitExtensionsPat,
             prefixText        = prefixStrings + vkPrefixStrings,
-            protectFeature    = False,
             apicall           = 'VKAPI_ATTR ',
             apientry          = 'VKAPI_CALL ',
             apientryp         = 'VKAPI_PTR *',
             alignFuncParam    = 48,
+            expandEnumerants  = False,
             helper_file_type  = 'extension_helper_header')
         ]
 
@@ -468,17 +495,19 @@ def makeGenOpts(features = [],
             directory         = directory,
             apiname           = 'vulkan',
             profile           = None,
-            versions          = allVersions,
-            emitversions      = allVersions,
+            versions          = featuresPat,
+            emitversions      = featuresPat,
             defaultExtensions = 'vulkan',
-            addExtensions     = addExtensions,
-            removeExtensions  = removeExtensions,
+            addExtensions     = addExtensionsPat,
+            removeExtensions  = removeExtensionsPat,
+            emitExtensions    = emitExtensionsPat,
             prefixText        = prefixStrings + vkPrefixStrings,
             protectFeature    = False,
             apicall           = 'VKAPI_ATTR ',
             apientry          = 'VKAPI_CALL ',
             apientryp         = 'VKAPI_PTR *',
             alignFuncParam    = 48,
+            expandEnumerants  = False,
             helper_file_type  = 'mock_icd_header')
         ]
 
@@ -490,17 +519,19 @@ def makeGenOpts(features = [],
             directory         = directory,
             apiname           = 'vulkan',
             profile           = None,
-            versions          = allVersions,
-            emitversions      = allVersions,
+            versions          = featuresPat,
+            emitversions      = featuresPat,
             defaultExtensions = 'vulkan',
-            addExtensions     = addExtensions,
-            removeExtensions  = removeExtensions,
+            addExtensions     = addExtensionsPat,
+            removeExtensions  = removeExtensionsPat,
+            emitExtensions    = emitExtensionsPat,
             prefixText        = prefixStrings + vkPrefixStrings,
             protectFeature    = False,
             apicall           = 'VKAPI_ATTR ',
             apientry          = 'VKAPI_CALL ',
             apientryp         = 'VKAPI_PTR *',
             alignFuncParam    = 48,
+            expandEnumerants  = False,
             helper_file_type  = 'mock_icd_source')
         ]
 
@@ -517,11 +548,7 @@ def genTarget(args):
     global genOpts
 
     # Create generator options with specified parameters
-    makeGenOpts(features = args.feature,
-                extensions = args.extension,
-                removeExtensions = args.removeExtension,
-                protect = args.protect,
-                directory = args.directory)
+    makeGenOpts(args)
 
     if (args.target in genOpts.keys()):
         createGenerator = genOpts[args.target][0]
@@ -529,6 +556,12 @@ def genTarget(args):
 
         if not args.quiet:
             write('* Building', options.filename, file=sys.stderr)
+            write('* options.versions          =', options.versions, file=sys.stderr)
+            write('* options.emitversions      =', options.emitversions, file=sys.stderr)
+            write('* options.defaultExtensions =', options.defaultExtensions, file=sys.stderr)
+            write('* options.addExtensions     =', options.addExtensions, file=sys.stderr)
+            write('* options.removeExtensions  =', options.removeExtensions, file=sys.stderr)
+            write('* options.emitExtensions    =', options.emitExtensions, file=sys.stderr)
 
         startTimer(args.time)
         gen = createGenerator(errFile=errWarn,
@@ -551,15 +584,21 @@ def genTarget(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
+    parser.add_argument('-defaultExtensions', action='store',
+                        default='vulkan',
+                        help='Specify a single class of extensions to add to targets')
     parser.add_argument('-extension', action='append',
                         default=[],
                         help='Specify an extension or extensions to add to targets')
+    parser.add_argument('-removeExtensions', action='append',
+                        default=[],
+                        help='Specify an extension or extensions to remove from targets')
+    parser.add_argument('-emitExtensions', action='append',
+                        default=[],
+                        help='Specify an extension or extensions to emit in targets')
     parser.add_argument('-feature', action='append',
                         default=[],
                         help='Specify a core API feature name or names to add to targets')
-    parser.add_argument('-removeExtension', action='append',
-                        default=[],
-                        help='Specify an extension or extensions to remove from targets')
     parser.add_argument('-debug', action='store_true',
                         help='Enable debugging')
     parser.add_argument('-dump', action='store_true',

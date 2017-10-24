@@ -25,6 +25,7 @@ import xml.etree.ElementTree as etree
 from generator import *
 from collections import namedtuple
 from vuid_mapping import *
+from common_codegen import *
 
 # This is a workaround to use a Python 2.7 and 3.x compatible syntax.
 from io import open
@@ -72,34 +73,27 @@ class ParameterValidationGeneratorOptions(GeneratorOptions):
                  defaultExtensions = None,
                  addExtensions = None,
                  removeExtensions = None,
+                 emitExtensions = None,
                  sortProcedure = regSortFeatures,
                  prefixText = "",
-                 genFuncPointers = True,
-                 protectFile = True,
-                 protectFeature = True,
-                 protectProto = None,
-                 protectProtoStr = None,
                  apicall = '',
                  apientry = '',
                  apientryp = '',
                  indentFuncProto = True,
                  indentFuncPointer = False,
-                 alignFuncParam = 0):
+                 alignFuncParam = 0,
+                 expandEnumerants = True):
         GeneratorOptions.__init__(self, filename, directory, apiname, profile,
                                   versions, emitversions, defaultExtensions,
-                                  addExtensions, removeExtensions, sortProcedure)
+                                  addExtensions, removeExtensions, emitExtensions, sortProcedure)
         self.prefixText      = prefixText
-        self.genFuncPointers = genFuncPointers
-        self.protectFile     = protectFile
-        self.protectFeature  = protectFeature
-        self.protectProto    = protectProto
-        self.protectProtoStr = protectProtoStr
         self.apicall         = apicall
         self.apientry        = apientry
         self.apientryp       = apientryp
         self.indentFuncProto = indentFuncProto
         self.indentFuncPointer = indentFuncPointer
         self.alignFuncParam  = alignFuncParam
+        self.expandEnumerants = expandEnumerants
 
 # ParameterValidationOutputGenerator - subclass of OutputGenerator.
 # Generates param checker layer code.
@@ -353,7 +347,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
         self.commands = []
         self.structMembers = []
         self.newFlags = set()
-
+        self.featureExtraProtect = GetFeatureProtect(interface)
         # Get base list of extension dependencies for all items in this extension
         base_required_extensions = []
         if "VK_VERSION_1" not in self.featureName:
