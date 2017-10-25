@@ -343,7 +343,6 @@ class ParameterValidationOutputGenerator(OutputGenerator):
         self.headerVersion = None
         self.structNames = []
         self.stypes = []
-        self.structTypes = dict()
         self.commands = []
         self.structMembers = []
         self.newFlags = set()
@@ -361,7 +360,6 @@ class ParameterValidationOutputGenerator(OutputGenerator):
         requires = interface.get('requires')
         if requires is not None:
             base_required_extensions.extend(requires.split(','))
-
         # Build dictionary of extension dependencies for each item in this extension
         self.required_extensions = dict()
         for require_element in interface.findall('require'):
