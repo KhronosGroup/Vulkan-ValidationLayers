@@ -140,6 +140,7 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
             'vkDestroySwapchainKHR',
             'vkDestroyDescriptorPool',
             'vkDestroyCommandPool',
+            'vkGetPhysicalDeviceQueueFamilyProperties2',
             'vkGetPhysicalDeviceQueueFamilyProperties2KHR',
             'vkResetDescriptorPool',
             'vkBeginCommandBuffer',
