@@ -272,6 +272,13 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceLayerProperties(
     return res;
 }
 
+LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceVersion(uint32_t* pApiVersion) {
+    // NOTE: The Vulkan WG doesn't want us checking pApiVersion for NULL, but instead
+    // prefers us crashing.
+    *pApiVersion = VK_MAKE_VERSION(loader_major_version, loader_minor_version, 0);
+    return VK_SUCCESS;
+}
+
 LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateInstance(const VkInstanceCreateInfo *pCreateInfo,
                                                               const VkAllocationCallbacks *pAllocator, VkInstance *pInstance) {
     struct loader_instance *ptr_instance = NULL;
@@ -305,6 +312,16 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateInstance(const VkInstanceCr
     memset(ptr_instance, 0, sizeof(struct loader_instance));
     if (pAllocator) {
         ptr_instance->alloc_callbacks = *pAllocator;
+    }
+
+    // Save the application version
+    if (NULL == pCreateInfo || NULL == pCreateInfo->pApplicationInfo || 0 == pCreateInfo->pApplicationInfo->apiVersion)
+{
+        ptr_instance->app_api_major_version = 1;
+        ptr_instance->app_api_minor_version = 0;
+    } else {
+        ptr_instance->app_api_major_version = VK_VERSION_MAJOR(pCreateInfo->pApplicationInfo->apiVersion);
+        ptr_instance->app_api_minor_version = VK_VERSION_MINOR(pCreateInfo->pApplicationInfo->apiVersion);
     }
 
     // Look for one or more debug report create info structures

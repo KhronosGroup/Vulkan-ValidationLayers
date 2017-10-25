@@ -1355,6 +1355,8 @@ void loader_destroy_layer_list(const struct loader_instance *inst, struct loader
 VkResult loader_add_to_layer_list(const struct loader_instance *inst, struct loader_layer_list *list, uint32_t prop_list_count,
                                   const struct loader_layer_properties *props) {
     uint32_t i;
+    uint16_t layer_api_major_version;
+    uint16_t layer_api_minor_version;
     struct loader_layer_properties *layer;
 
     if (list->list == NULL || list->capacity == 0) {
@@ -1385,6 +1387,18 @@ VkResult loader_add_to_layer_list(const struct loader_instance *inst, struct loa
             list->capacity = new_capacity;
         }
 
+        // Verify that the layer api version is at least that of the application's request, if not, throw a warning since
+        // undefined behavior could occur.
+        layer_api_major_version = VK_VERSION_MAJOR(props[i].info.specVersion);
+        layer_api_minor_version = VK_VERSION_MINOR(props[i].info.specVersion);
+        if (inst->app_api_major_version > layer_api_major_version ||
+            (inst->app_api_major_version == layer_api_major_version && inst->app_api_minor_version > layer_api_minor_version)) {
+            loader_log(
+                inst, VK_DEBUG_REPORT_WARNING_BIT_EXT, 0,
+                "loader_add_to_layer_list: Explicit layer %s is using an old API version %d.%d versus application requested %d.%d",
+                props[i].info.layerName, layer_api_major_version, layer_api_minor_version, inst->app_api_major_version,-                inst->app_api_minor_version);
+        }
+
         memcpy(&list->list[list->count], layer, sizeof(struct loader_layer_properties));
         list->count++;
     }
@@ -1398,6 +1412,23 @@ static void loader_add_implicit_layer(const struct loader_instance *inst, const 
                                       struct loader_layer_list *target_list, struct loader_layer_list *expanded_target_list,
                                       const struct loader_layer_list *source_list) {
     bool enable = loader_is_implicit_layer_enabled(inst, prop);
+
+    // If the implicit layer is supposed to be enable, make sure the layer supports at least the same API version
+    // that the application is asking (i.e. layer's API >= app's API).  If it's not, disable this layer.
+    if (enable) {
+        uint16_t layer_api_major_version = VK_VERSION_MAJOR(prop->info.specVersion);
+        uint16_t layer_api_minor_version = VK_VERSION_MINOR(prop->info.specVersion);
+        if (inst->app_api_major_version > layer_api_major_version ||
+            (inst->app_api_major_version == layer_api_major_version && inst->app_api_minor_version > layer_api_minor_version)) {
+            loader_log(inst, VK_DEBUG_REPORT_INFORMATION_BIT_EXT, 0,
+                       "loader_add_implicit_layer: Disabling implicit layer %s for using an old API version %d.%d versus "
+                       "application requested %d.%d",
+                       prop->info.layerName, layer_api_major_version, layer_api_minor_version, inst->app_api_major_version,
+                       inst->app_api_minor_version);
+            enable = false;
+        }
+    }
+
     if (enable) {
         if (0 == (prop->type_flags & VK_LAYER_TYPE_FLAG_META_LAYER)) {
             if (NULL != target_list && !has_vk_layer_property(&prop->info, target_list)) {

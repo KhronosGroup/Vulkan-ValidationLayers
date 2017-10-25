@@ -228,6 +228,10 @@ struct loader_instance_dispatch_table {
 struct loader_instance {
     struct loader_instance_dispatch_table *disp;  // must be first entry in structure
 
+    // Vulkan API version the app is intending to use.
+    uint16_t app_api_major_version;
+    uint16_t app_api_minor_version;
+
     // We need to manually track physical devices over time.  If the user
     // re-queries the information, we don't want to delete old data or
     // create new data unless necessary.
