@@ -559,6 +559,39 @@ VKAPI_ATTR VkResult VKAPI_CALL QueuePresentKHR(VkQueue queue, const VkPresentInf
     return result;
 }
 
+// This is the core version of this routine.  The extension version is below.
+VKAPI_ATTR VkResult VKAPI_CALL CreateDescriptorUpdateTemplate(VkDevice device,
+                                                              const VkDescriptorUpdateTemplateCreateInfoKHR *pCreateInfo,
+                                                              const VkAllocationCallbacks *pAllocator,
+                                                              VkDescriptorUpdateTemplateKHR *pDescriptorUpdateTemplate) {
+    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    safe_VkDescriptorUpdateTemplateCreateInfo *local_create_info = NULL;
+    {
+        std::lock_guard<std::mutex> lock(global_lock);
+        if (pCreateInfo) {
+            local_create_info = new safe_VkDescriptorUpdateTemplateCreateInfo(pCreateInfo);
+            if (pCreateInfo->descriptorSetLayout) {
+                local_create_info->descriptorSetLayout = Unwrap(dev_data, pCreateInfo->descriptorSetLayout);
+            }
+            if (pCreateInfo->pipelineLayout) {
+                local_create_info->pipelineLayout = Unwrap(dev_data, pCreateInfo->pipelineLayout);
+            }
+        }
+    }
+    VkResult result = dev_data->dispatch_table.CreateDescriptorUpdateTemplate(device, local_create_info->ptr(), pAllocator,
+                                                                              pDescriptorUpdateTemplate);
+    if (VK_SUCCESS == result) {
+        std::lock_guard<std::mutex> lock(global_lock);
+        *pDescriptorUpdateTemplate = WrapNew(dev_data, *pDescriptorUpdateTemplate);
+
+        // Shadow template createInfo for later updates
+        std::unique_ptr<TEMPLATE_STATE> template_state(new TEMPLATE_STATE(*pDescriptorUpdateTemplate, local_create_info));
+        dev_data->desc_template_map[(uint64_t)*pDescriptorUpdateTemplate] = std::move(template_state);
+    }
+    return result;
+}
+
+// This is the extension version of this routine.  The core version is above.
 VKAPI_ATTR VkResult VKAPI_CALL CreateDescriptorUpdateTemplateKHR(VkDevice device,
                                                                  const VkDescriptorUpdateTemplateCreateInfoKHR *pCreateInfo,
                                                                  const VkAllocationCallbacks *pAllocator,
@@ -590,6 +623,20 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDescriptorUpdateTemplateKHR(VkDevice device
     return result;
 }
 
+// This is the core version of this routine.  The extension version is below.
+VKAPI_ATTR void VKAPI_CALL DestroyDescriptorUpdateTemplate(VkDevice device, VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate,
+                                                           const VkAllocationCallbacks *pAllocator) {
+    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    std::unique_lock<std::mutex> lock(global_lock);
+    uint64_t descriptor_update_template_id = reinterpret_cast<uint64_t &>(descriptorUpdateTemplate);
+    dev_data->desc_template_map.erase(descriptor_update_template_id);
+    descriptorUpdateTemplate = (VkDescriptorUpdateTemplate)dev_data->unique_id_mapping[descriptor_update_template_id];
+    dev_data->unique_id_mapping.erase(descriptor_update_template_id);
+    lock.unlock();
+    dev_data->dispatch_table.DestroyDescriptorUpdateTemplate(device, descriptorUpdateTemplate, pAllocator);
+}
+
+// This is the extension version of this routine.  The core version is above.
 VKAPI_ATTR void VKAPI_CALL DestroyDescriptorUpdateTemplateKHR(VkDevice device,
                                                               VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate,
                                                               const VkAllocationCallbacks *pAllocator) {
@@ -597,7 +644,7 @@ VKAPI_ATTR void VKAPI_CALL DestroyDescriptorUpdateTemplateKHR(VkDevice device,
     std::unique_lock<std::mutex> lock(global_lock);
     uint64_t descriptor_update_template_id = reinterpret_cast<uint64_t &>(descriptorUpdateTemplate);
     dev_data->desc_template_map.erase(descriptor_update_template_id);
-    descriptorUpdateTemplate = (VkDescriptorUpdateTemplateKHR)unique_id_mapping[descriptor_update_template_id];
+    descriptorUpdateTemplate = (VkDescriptorUpdateTemplate)unique_id_mapping[descriptor_update_template_id];
     unique_id_mapping.erase(descriptor_update_template_id);
     lock.unlock();
     dev_data->dispatch_table.DestroyDescriptorUpdateTemplateKHR(device, descriptorUpdateTemplate, pAllocator);
@@ -685,6 +732,23 @@ void *BuildUnwrappedUpdateTemplateBuffer(layer_data *dev_data, uint64_t descript
     return (void *)unwrapped_data;
 }
 
+// This is the core version of this routine.  The extension version is below.
+VKAPI_ATTR void VKAPI_CALL UpdateDescriptorSetWithTemplate(VkDevice device, VkDescriptorSet descriptorSet,
+                                                           VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate,
+                                                           const void *pData) {
+    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    uint64_t template_handle = reinterpret_cast<uint64_t &>(descriptorUpdateTemplate);
+    {
+        std::lock_guard<std::mutex> lock(global_lock);
+        descriptorSet = Unwrap(dev_data, descriptorSet);
+        descriptorUpdateTemplate = (VkDescriptorUpdateTemplate)dev_data->unique_id_mapping[template_handle];
+    }
+    void *unwrapped_buffer = BuildUnwrappedUpdateTemplateBuffer(dev_data, template_handle, pData);
+    dev_data->dispatch_table.UpdateDescriptorSetWithTemplate(device, descriptorSet, descriptorUpdateTemplate, unwrapped_buffer);
+    free(unwrapped_buffer);
+}
+
+// This is the extension version of this routine.  The core version is above.
 VKAPI_ATTR void VKAPI_CALL UpdateDescriptorSetWithTemplateKHR(VkDevice device, VkDescriptorSet descriptorSet,
                                                               VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate,
                                                               const void *pData) {
@@ -694,7 +758,7 @@ VKAPI_ATTR void VKAPI_CALL UpdateDescriptorSetWithTemplateKHR(VkDevice device, V
     {
         std::lock_guard<std::mutex> lock(global_lock);
         descriptorSet = Unwrap(descriptorSet);
-        descriptorUpdateTemplate = (VkDescriptorUpdateTemplateKHR)unique_id_mapping[template_handle];
+        descriptorUpdateTemplate = (VkDescriptorUpdateTemplate)unique_id_mapping[template_handle];
         unwrapped_buffer = BuildUnwrappedUpdateTemplateBuffer(dev_data, template_handle, pData);
     }
     dev_data->dispatch_table.UpdateDescriptorSetWithTemplateKHR(device, descriptorSet, descriptorUpdateTemplate, unwrapped_buffer);
