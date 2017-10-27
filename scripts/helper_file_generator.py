@@ -608,6 +608,33 @@ class HelperFileOutputGenerator(OutputGenerator):
     #
     # Generate extension helper header file
     def GenerateExtensionHelperHeader(self):
+
+        V_1_0_instance_extensions_promoted_to_core = [
+            'vk_khr_device_group_creation',
+            'vk_khr_external_memory_capabilities',
+            'vk_khr_external_fence_capabilities',
+            'vk_khr_external_semaphore_capabilities',
+            'vk_khr_get_physical_device_properties_2',
+            ]
+
+        V_1_0_device_extensions_promoted_to_core = [
+            'vk_khr_bind_memory_2',
+            'vk_khr_device_group',
+            'vk_khr_descriptor_update_template',
+            'vk_khr_sampler_ycbcr_conversion',
+            'vk_khr_get_memory_requirements_2',
+            'vk_khr_maintenance3',
+            'vk_khr_maintenance1',
+            'vk_khr_multiview',
+            'vk_khr_external_memory',
+            'vk_khr_external_semaphore',
+            'vk_khr_16bit_storage',
+            'vk_khr_external_fence',
+            'vk_khr_maintenance2',
+            'vk_khr_variable_pointers',
+            'vk_khr_dedicated_allocation',
+            ]
+
         extension_helper_header = '\n'
         extension_helper_header += '#ifndef VK_EXTENSION_HELPER_H_\n'
         extension_helper_header += '#define VK_EXTENSION_HELPER_H_\n'
@@ -616,13 +643,17 @@ class HelperFileOutputGenerator(OutputGenerator):
         extension_helper_header += '#include <string.h>\n'
         extension_helper_header += '#include <utility>\n'
         extension_helper_header += '\n'
+        extension_helper_header += '\n'
         extension_dict = dict()
+        promoted_ext_list = []
         for type in ['Instance', 'Device']:
             if type == 'Instance':
                 extension_dict = self.instance_extension_info
+                promoted_ext_list = V_1_0_instance_extensions_promoted_to_core
                 struct += 'struct InstanceExtensions { \n'
             else:
                 extension_dict = self.device_extension_info
+                promoted_ext_list = V_1_0_device_extensions_promoted_to_core
                 struct += 'struct DeviceExtensions : public InstanceExtensions { \n'
             for ext_name, ifdef in extension_dict.items():
                 bool_name = ext_name.lower()
@@ -630,9 +661,24 @@ class HelperFileOutputGenerator(OutputGenerator):
                 struct += '    bool %s{false};\n' % bool_name
             struct += '\n'
             if type == 'Instance':
-                struct += '    void InitFromInstanceCreateInfo(const VkInstanceCreateInfo *pCreateInfo) {\n'
+                struct += '    uint32_t NormalizeApiVersion(uint32_t specified_version) {\n'
+                struct += '        uint32_t api_version = specified_version & ~VK_VERSION_PATCH(~0);\n'
+                struct += '        if (!(api_version == VK_API_VERSION_1_0) && !(api_version == VK_API_VERSION_1_1)) {\n'
+                struct += '            api_version = VK_API_VERSION_1_1;\n'
+                struct += '        }\n'
+                struct += '        return api_version;\n'
+                struct += '    }\n'
+                struct += '\n'
+
+                struct += '    uint32_t InitFromInstanceCreateInfo(uint32_t requested_api_version, const VkInstanceCreateInfo *pCreateInfo) {\n'
             else:
-                struct += '    void InitFromDeviceCreateInfo(const InstanceExtensions *instance_extensions, const VkDeviceCreateInfo *pCreateInfo) {\n'
+                struct += '    uint32_t InitFromDeviceCreateInfo(const InstanceExtensions *instance_extensions, uint32_t requested_api_version, const VkDeviceCreateInfo *pCreateInfo) {\n'
+            struct += '\n'
+
+            struct += '        static const std::vector<const char *> V_1_0_promoted_%s_extensions = {\n' % type.lower()
+            for ext_name in promoted_ext_list:
+                struct += '            %s_EXTENSION_NAME,\n' % ext_name.upper()
+            struct += '        };\n'
             struct += '\n'
             struct += '        static const std::pair<char const *, bool %sExtensions::*> known_extensions[]{\n' % type
             for ext_name, ifdef in extension_dict.items():
@@ -646,6 +692,7 @@ class HelperFileOutputGenerator(OutputGenerator):
             struct += '        };\n'
             struct += '\n'
             struct += '        // Initialize struct data\n'
+
             for ext_name, ifdef in self.instance_extension_info.items():
                 bool_name = ext_name.lower()
                 bool_name = re.sub('_extension_name', '', bool_name)
@@ -660,6 +707,18 @@ class HelperFileOutputGenerator(OutputGenerator):
             struct += '                }\n'
             struct += '            }\n'
             struct += '        }\n'
+            struct += '        uint32_t api_version = NormalizeApiVersion(requested_api_version);\n'
+            struct += '        if (api_version >= VK_API_VERSION_1_1) {\n'
+            struct += '            for (auto promoted_ext : V_1_0_promoted_%s_extensions) {\n' % type.lower()
+            struct += '                for (auto ext : known_extensions) {\n'
+            struct += '                    if (!strcmp(ext.first, promoted_ext)) {\n'
+            struct += '                        this->*(ext.second) = true;\n'
+            struct += '                        break;\n'
+            struct += '                    }\n'
+            struct += '                }\n'
+            struct += '            }\n'
+            struct += '        }\n'
+            struct += '        return api_version;\n'
             struct += '    }\n'
             struct += '};\n'
             struct += '\n'

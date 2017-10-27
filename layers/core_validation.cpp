@@ -157,6 +157,7 @@ struct instance_layer_data {
     unordered_map<VkSurfaceKHR, SURFACE_STATE> surface_map;
 
     InstanceExtensions extensions;
+    uint32_t api_version;
 };
 
 struct layer_data {
@@ -209,6 +210,7 @@ struct layer_data {
     };
     DeviceExtensionProperties phys_dev_ext_props = {};
     bool external_sync_warning = false;
+    uint32_t api_version = 0;
 };
 
 // TODO : Do we need to guard access to layer_data_map w/ lock?
@@ -2070,7 +2072,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
     layer_init_instance_dispatch_table(*pInstance, &instance_data->dispatch_table, fpGetInstanceProcAddr);
     instance_data->report_data = debug_report_create_instance(
         &instance_data->dispatch_table, *pInstance, pCreateInfo->enabledExtensionCount, pCreateInfo->ppEnabledExtensionNames);
-    instance_data->extensions.InitFromInstanceCreateInfo(pCreateInfo);
+
+    instance_data->api_version = instance_data->extensions.InitFromInstanceCreateInfo(
+        (pCreateInfo->pApplicationInfo ? pCreateInfo->pApplicationInfo->apiVersion : VK_API_VERSION_1_0), pCreateInfo);
     init_core_validation(instance_data, pAllocator);
 
     ValidateLayerOrdering(*pCreateInfo);
@@ -2274,10 +2278,13 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
     device_data->physical_device = gpu;
 
     device_data->report_data = layer_debug_report_create_device(instance_data->report_data, *pDevice);
-    device_data->extensions.InitFromDeviceCreateInfo(&instance_data->extensions, pCreateInfo);
 
     // Get physical device limits for this device
     instance_data->dispatch_table.GetPhysicalDeviceProperties(gpu, &(device_data->phys_dev_properties.properties));
+
+    device_data->api_version = device_data->extensions.InitFromDeviceCreateInfo(
+        &instance_data->extensions, device_data->phys_dev_properties.properties.apiVersion, pCreateInfo);
+
     uint32_t count;
     instance_data->dispatch_table.GetPhysicalDeviceQueueFamilyProperties(gpu, &count, nullptr);
     device_data->phys_dev_properties.queue_family_properties.resize(count);

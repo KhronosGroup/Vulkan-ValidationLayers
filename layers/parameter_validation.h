@@ -69,6 +69,7 @@ struct instance_layer_data {
     VkDebugReportCallbackEXT *tmp_callbacks = nullptr;
     InstanceExtensions extensions = {};
     VkLayerInstanceDispatchTable dispatch_table = {};
+    uint32_t api_version;
 };
 
 struct layer_data {
@@ -80,6 +81,7 @@ struct layer_data {
     VkPhysicalDevice physical_device = VK_NULL_HANDLE;
     VkDevice device = VK_NULL_HANDLE;
     DeviceExtensions extensions;
+    uint32_t api_version;
 
     struct SubpassesUsageStates {
         std::unordered_set<uint32_t> subpasses_using_color_attachment;

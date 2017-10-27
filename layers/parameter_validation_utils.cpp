@@ -50,6 +50,17 @@
 #include "parameter_name.h"
 #include "parameter_validation.h"
 
+#if defined __ANDROID__
+#include <android/log.h>
+#define LOGCONSOLE(...) ((void)__android_log_print(ANDROID_LOG_INFO, "DS", __VA_ARGS__))
+#else
+#define LOGCONSOLE(...)      \
+    {                        \
+        printf(__VA_ARGS__); \
+        printf("\n");        \
+    }
+#endif
+
 namespace parameter_validation {
 
 extern std::unordered_map<std::string, void *> custom_functions;
@@ -179,7 +190,7 @@ static bool ValidateQueueFamilies(layer_data *device_data, uint32_t queue_family
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL vkCreateInstance(const VkInstanceCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator,
-                                                VkInstance *pInstance) {
+    VkInstance *pInstance) {
     VkResult result = VK_ERROR_VALIDATION_FAILED_EXT;
 
     VkLayerInstanceCreateInfo *chain_info = get_chain_info(pCreateInfo, VK_LAYER_LINK_INFO);
@@ -206,16 +217,16 @@ VKAPI_ATTR VkResult VKAPI_CALL vkCreateInstance(const VkInstanceCreateInfo *pCre
         my_instance_data->instance = *pInstance;
         my_instance_data->report_data =
             debug_report_create_instance(&my_instance_data->dispatch_table, *pInstance, pCreateInfo->enabledExtensionCount,
-                                         pCreateInfo->ppEnabledExtensionNames);
+                pCreateInfo->ppEnabledExtensionNames);
 
         // Look for one or more debug report create info structures
         // and setup a callback(s) for each one found.
         if (!layer_copy_tmp_callbacks(pCreateInfo->pNext, &my_instance_data->num_tmp_callbacks,
-                                      &my_instance_data->tmp_dbg_create_infos, &my_instance_data->tmp_callbacks)) {
+            &my_instance_data->tmp_dbg_create_infos, &my_instance_data->tmp_callbacks)) {
             if (my_instance_data->num_tmp_callbacks > 0) {
                 // Setup the temporary callback(s) here to catch early issues:
                 if (layer_enable_tmp_callbacks(my_instance_data->report_data, my_instance_data->num_tmp_callbacks,
-                                               my_instance_data->tmp_dbg_create_infos, my_instance_data->tmp_callbacks)) {
+                    my_instance_data->tmp_dbg_create_infos, my_instance_data->tmp_callbacks)) {
                     // Failure of setting up one or more of the callback.
                     // Therefore, clean up and don't use those callbacks:
                     layer_free_tmp_callbacks(my_instance_data->tmp_dbg_create_infos, my_instance_data->tmp_callbacks);
@@ -225,7 +236,20 @@ VKAPI_ATTR VkResult VKAPI_CALL vkCreateInstance(const VkInstanceCreateInfo *pCre
         }
 
         init_parameter_validation(my_instance_data, pAllocator);
-        my_instance_data->extensions.InitFromInstanceCreateInfo(pCreateInfo);
+
+        uint32_t api_version = my_instance_data->extensions.InitFromInstanceCreateInfo(
+            (pCreateInfo->pApplicationInfo ? pCreateInfo->pApplicationInfo->apiVersion : VK_API_VERSION_1_0), pCreateInfo);
+
+        if (pCreateInfo->pApplicationInfo) {
+            uint32_t specified_api_version = pCreateInfo->pApplicationInfo->apiVersion & ~VK_VERSION_PATCH(~0);
+            if (!(specified_api_version == VK_API_VERSION_1_0) && !(specified_api_version == VK_API_VERSION_1_1)) {
+                LOGCONSOLE(
+                    "Warning: Unrecognized CreateInstance->pCreateInfo->pApplicationInfo.apiVersion number -- (0x%08x) assuming "
+                    "%s.\n",
+                    pCreateInfo->pApplicationInfo->apiVersion,
+                    (api_version == VK_API_VERSION_1_0) ? "VK_API_VERSION_1_0" : "VK_API_VERSION_1_1");
+            }
+        }
 
         // Ordinarily we'd check these before calling down the chain, but none of the layer support is in place until now, if we
         // survive we can report the issue now.
@@ -451,7 +475,21 @@ VKAPI_ATTR VkResult VKAPI_CALL vkCreateDevice(VkPhysicalDevice physicalDevice, c
             my_device_data->report_data = layer_debug_report_create_device(my_instance_data->report_data, *pDevice);
             layer_init_device_dispatch_table(*pDevice, &my_device_data->dispatch_table, fpGetDeviceProcAddr);
 
-            my_device_data->extensions.InitFromDeviceCreateInfo(&my_instance_data->extensions, pCreateInfo);
+            // Query and save physical device limits for this device
+            VkPhysicalDeviceProperties device_properties = {};
+            my_instance_data->dispatch_table.GetPhysicalDeviceProperties(physicalDevice, &device_properties);
+
+            my_device_data->api_version = my_device_data->extensions.InitFromDeviceCreateInfo(
+                &my_instance_data->extensions, device_properties.apiVersion, pCreateInfo);
+
+            uint32_t specified_api_version = device_properties.apiVersion & ~VK_VERSION_PATCH(~0);
+            if (!(specified_api_version == VK_API_VERSION_1_0) && !(specified_api_version == VK_API_VERSION_1_1)) {
+                LOGCONSOLE(
+                    "Warning: Unrecognized CreateInstance->pCreateInfo->pApplicationInfo.apiVersion number -- (0x%8x) assuming "
+                    "%s.\n",
+                    device_properties.apiVersion,
+                    (my_device_data->api_version == VK_API_VERSION_1_0) ? "VK_API_VERSION_1_0" : "VK_API_VERSION_1_1");
+            }
 
             // Store createdevice data
             if ((pCreateInfo != nullptr) && (pCreateInfo->pQueueCreateInfos != nullptr)) {
@@ -461,9 +499,6 @@ VKAPI_ATTR VkResult VKAPI_CALL vkCreateDevice(VkPhysicalDevice physicalDevice, c
                 }
             }
 
-            // Query and save physical device limits for this device
-            VkPhysicalDeviceProperties device_properties = {};
-            my_instance_data->dispatch_table.GetPhysicalDeviceProperties(physicalDevice, &device_properties);
             memcpy(&my_device_data->device_limits, &device_properties.limits, sizeof(VkPhysicalDeviceLimits));
             my_device_data->physical_device = physicalDevice;
             my_device_data->device = *pDevice;
