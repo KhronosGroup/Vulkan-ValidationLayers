@@ -5693,6 +5693,12 @@ TEST_F(VkLayerTest, AllocDescriptorFromEmptyPool) {
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
+    // This test is valid for Vulkan 1.0 only -- skip if device has an API version greater than 1.0.
+    if (m_device->props.apiVersion >= VK_API_VERSION_1_1) {
+        printf("             Device has apiVersion greater than 1.0 -- skipping Descriptor Set checks.\n");
+        return;
+    }
+
     // Create Pool w/ 1 Sampler descriptor, but try to alloc Uniform Buffer
     // descriptor from it
     VkDescriptorPoolSize ds_type_count = {};
@@ -18291,49 +18297,52 @@ TEST_F(VkLayerTest, CreateImageViewInvalidSubresourceRange) {
         m_errorMonitor->VerifyFound();
     }
 
-    // Try baseArrayLayer >= image.arrayLayers with VK_REMAINING_ARRAY_LAYERS
-    {
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_0ac00b90);
-        const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 1, VK_REMAINING_ARRAY_LAYERS};
-        VkImageViewCreateInfo img_view_info = img_view_info_template;
-        img_view_info.subresourceRange = range;
-        vkCreateImageView(m_device->handle(), &img_view_info, nullptr, &img_view);
-        m_errorMonitor->VerifyFound();
-    }
+    // These tests rely on having the Maintenance1 extension not being enabled, and are invalid on all but version 1.0
+    if (m_device->props.apiVersion < VK_API_VERSION_1_1) {
+        // Try baseArrayLayer >= image.arrayLayers with VK_REMAINING_ARRAY_LAYERS
+        {
+            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_0ac00b90);
+            const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 1, VK_REMAINING_ARRAY_LAYERS};
+            VkImageViewCreateInfo img_view_info = img_view_info_template;
+            img_view_info.subresourceRange = range;
+            vkCreateImageView(m_device->handle(), &img_view_info, nullptr, &img_view);
+            m_errorMonitor->VerifyFound();
+        }
 
-    // Try baseArrayLayer >= image.arrayLayers without VK_REMAINING_ARRAY_LAYERS
-    {
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_0ac00b90);
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_0ac00b92);
-        const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 1, 1};
-        VkImageViewCreateInfo img_view_info = img_view_info_template;
-        img_view_info.subresourceRange = range;
-        vkCreateImageView(m_device->handle(), &img_view_info, nullptr, &img_view);
-        m_errorMonitor->VerifyFound();
-    }
+        // Try baseArrayLayer >= image.arrayLayers without VK_REMAINING_ARRAY_LAYERS
+        {
+            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_0ac00b90);
+            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_0ac00b92);
+            const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 1, 1};
+            VkImageViewCreateInfo img_view_info = img_view_info_template;
+            img_view_info.subresourceRange = range;
+            vkCreateImageView(m_device->handle(), &img_view_info, nullptr, &img_view);
+            m_errorMonitor->VerifyFound();
+        }
 
-    // Try layerCount = 0
-    {
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                             "vkCreateImageView: if pCreateInfo->viewType is VK_IMAGE_TYPE_2D_ARRAY, "
-                                             "pCreateInfo->subresourceRange.layerCount must be >= 1");
-        // TODO: The test environment aborts the Vulkan call in parameter_validation layer before VALIDATION_ERROR_0ac00b92 test
-        // m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_0ac00b92);
-        const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 0};
-        VkImageViewCreateInfo img_view_info = img_view_info_template;
-        img_view_info.subresourceRange = range;
-        vkCreateImageView(m_device->handle(), &img_view_info, nullptr, &img_view);
-        m_errorMonitor->VerifyFound();
-    }
+        // Try layerCount = 0
+        {
+            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                                 "vkCreateImageView: if pCreateInfo->viewType is VK_IMAGE_TYPE_2D_ARRAY, "
+                                                 "pCreateInfo->subresourceRange.layerCount must be >= 1");
+            // TODO: The test environment aborts the Vulkan call in parameter_validation layer before VALIDATION_ERROR_0ac00b92 test
+            // m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_0ac00b92);
+            const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 0};
+            VkImageViewCreateInfo img_view_info = img_view_info_template;
+            img_view_info.subresourceRange = range;
+            vkCreateImageView(m_device->handle(), &img_view_info, nullptr, &img_view);
+            m_errorMonitor->VerifyFound();
+        }
 
-    // Try baseArrayLayer + layerCount > image.arrayLayers
-    {
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_0ac00b92);
-        const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 2};
-        VkImageViewCreateInfo img_view_info = img_view_info_template;
-        img_view_info.subresourceRange = range;
-        vkCreateImageView(m_device->handle(), &img_view_info, nullptr, &img_view);
-        m_errorMonitor->VerifyFound();
+        // Try baseArrayLayer + layerCount > image.arrayLayers
+        {
+            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_0ac00b92);
+            const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 2};
+            VkImageViewCreateInfo img_view_info = img_view_info_template;
+            img_view_info.subresourceRange = range;
+            vkCreateImageView(m_device->handle(), &img_view_info, nullptr, &img_view);
+            m_errorMonitor->VerifyFound();
+        }
     }
 }
 
@@ -20764,6 +20773,13 @@ TEST_F(VkLayerTest, ExtensionNotEnabled) {
 
     // Do NOT enable VK_KHR_maintenance1
     ASSERT_NO_FATAL_FAILURE(Init());
+
+    // TODO: Main1 is ALWAYS enabled in 1.1.  Re-write test with an extension present in both 1.0 and 1.1
+    if (m_device->props.apiVersion >= VK_API_VERSION_1_1) {
+        printf("             Device has apiVersion greater than 1.0 -- skipping extension enabled check.\n");
+        return;
+    }
+
     // Find address of extension API
     PFN_vkTrimCommandPoolKHR vkTrimCommandPoolKHR =
         (PFN_vkTrimCommandPoolKHR)vkGetDeviceProcAddr(m_device->handle(), "vkTrimCommandPoolKHR");
