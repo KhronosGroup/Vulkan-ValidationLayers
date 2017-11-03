@@ -6498,7 +6498,7 @@ VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceFeatures2(VkPhysicalDevic
         fpGetPhysicalDeviceFeatures2 = icd_term->dispatch.GetPhysicalDeviceFeatures2;
     }
 
-    if (fpGetPhysicalDeviceFeatures2 != NULL) {
+    if (fpGetPhysicalDeviceFeatures2 != NULL || !inst->enabled_known_extensions.khr_get_physical_device_properties2) {
         // Pass the call to the driver
         fpGetPhysicalDeviceFeatures2(phys_dev_term->phys_dev, pFeatures);
     } else {
@@ -6552,7 +6552,7 @@ VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceProperties2(VkPhysicalDev
         fpGetPhysicalDeviceProperties2 = icd_term->dispatch.GetPhysicalDeviceProperties2;
     }
 
-    if (fpGetPhysicalDeviceProperties2 != NULL) {
+    if (fpGetPhysicalDeviceProperties2 != NULL || !inst->enabled_known_extensions.khr_get_physical_device_properties2) {
         // Pass the call to the driver
         fpGetPhysicalDeviceProperties2(phys_dev_term->phys_dev, pProperties);
     } else {
@@ -6613,7 +6613,7 @@ VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceFormatProperties2(VkPhysi
         fpGetPhysicalDeviceFormatProperties2 = icd_term->dispatch.GetPhysicalDeviceFormatProperties2;
     }
 
-    if (fpGetPhysicalDeviceFormatProperties2 != NULL) {
+    if (fpGetPhysicalDeviceFormatProperties2 != NULL || !inst->enabled_known_extensions.khr_get_physical_device_properties2) {
         // Pass the call to the driver
         fpGetPhysicalDeviceFormatProperties2(phys_dev_term->phys_dev, format, pFormatProperties);
     } else {
@@ -6649,7 +6649,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceImageFormatProperties
         fpGetPhysicalDeviceImageFormatProperties2 = icd_term->dispatch.GetPhysicalDeviceImageFormatProperties2;
     }
 
-    if (fpGetPhysicalDeviceImageFormatProperties2 != NULL) {
+    if (fpGetPhysicalDeviceImageFormatProperties2 != NULL || !inst->enabled_known_extensions.khr_get_physical_device_properties2) {
         // Pass the call to the driver
         return fpGetPhysicalDeviceImageFormatProperties2(phys_dev_term->phys_dev, pImageFormatInfo, pImageFormatProperties);
     } else {
@@ -6685,7 +6685,7 @@ VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceQueueFamilyProperties2(
         fpGetPhysicalDeviceQueueFamilyProperties2 = icd_term->dispatch.GetPhysicalDeviceQueueFamilyProperties2;
     }
 
-    if (fpGetPhysicalDeviceQueueFamilyProperties2 != NULL) {
+    if (fpGetPhysicalDeviceQueueFamilyProperties2 != NULL || !inst->enabled_known_extensions.khr_get_physical_device_properties2) {
         // Pass the call to the driver
         fpGetPhysicalDeviceQueueFamilyProperties2(phys_dev_term->phys_dev, pQueueFamilyPropertyCount, pQueueFamilyProperties);
     } else {
@@ -6740,7 +6740,7 @@ VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceMemoryProperties2(
         fpGetPhysicalDeviceMemoryProperties2 = icd_term->dispatch.GetPhysicalDeviceMemoryProperties2;
     }
 
-    if (fpGetPhysicalDeviceMemoryProperties2 != NULL) {
+    if (fpGetPhysicalDeviceMemoryProperties2 != NULL || !inst->enabled_known_extensions.khr_get_physical_device_properties2) {
         // Pass the call to the driver
         fpGetPhysicalDeviceMemoryProperties2(phys_dev_term->phys_dev, pMemoryProperties);
     } else {
@@ -6776,7 +6776,7 @@ VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceSparseImageFormatProperti
         fpGetPhysicalDeviceSparseImageFormatProperties2 = icd_term->dispatch.GetPhysicalDeviceSparseImageFormatProperties2;
     }
 
-    if (fpGetPhysicalDeviceSparseImageFormatProperties2 != NULL) {
+    if (fpGetPhysicalDeviceSparseImageFormatProperties2 != NULL || !inst->enabled_known_extensions.khr_get_physical_device_properties2) {
         // Pass the call to the driver
         fpGetPhysicalDeviceSparseImageFormatProperties2(phys_dev_term->phys_dev, pFormatInfo, pPropertyCount, pProperties);
     } else {
@@ -6842,7 +6842,7 @@ VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceExternalBufferProperties(
         fpGetPhysicalDeviceExternalBufferProperties = icd_term->dispatch.GetPhysicalDeviceExternalBufferProperties;
     }
 
-    if (fpGetPhysicalDeviceExternalBufferProperties) {
+    if (fpGetPhysicalDeviceExternalBufferProperties || !inst->enabled_known_extensions.khr_external_memory_capabilities) {
         // Pass the call to the driver
         fpGetPhysicalDeviceExternalBufferProperties(phys_dev_term->phys_dev, pExternalBufferInfo, pExternalBufferProperties);
     } else {
@@ -6882,7 +6882,7 @@ VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceExternalSemaphoreProperti
         fpGetPhysicalDeviceExternalSemaphoreProperties = icd_term->dispatch.GetPhysicalDeviceExternalSemaphoreProperties;
     }
 
-    if (fpGetPhysicalDeviceExternalSemaphoreProperties != NULL) {
+    if (fpGetPhysicalDeviceExternalSemaphoreProperties != NULL || !inst->enabled_known_extensions.khr_external_semaphore_capabilities) {
         // Pass the call to the driver
         fpGetPhysicalDeviceExternalSemaphoreProperties(phys_dev_term->phys_dev, pExternalSemaphoreInfo, pExternalSemaphoreProperties);
     } else {
@@ -6925,7 +6925,7 @@ VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceExternalFenceProperties(
         fpGetPhysicalDeviceExternalFenceProperties = icd_term->dispatch.GetPhysicalDeviceExternalFenceProperties;
     }
 
-    if (fpGetPhysicalDeviceExternalFenceProperties != NULL) {
+    if (fpGetPhysicalDeviceExternalFenceProperties != NULL || !inst->enabled_known_extensions.khr_external_fence_capabilities) {
         // Pass the call to the driver
         fpGetPhysicalDeviceExternalFenceProperties(phys_dev_term->phys_dev, pExternalFenceInfo, pExternalFenceProperties);
     } else {
