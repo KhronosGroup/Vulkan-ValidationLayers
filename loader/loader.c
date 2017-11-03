@@ -5167,10 +5167,25 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateInstance(const VkInstanceCreateI
 
         loader_destroy_generic_list(ptr_instance, (struct loader_generic_list *)&icd_exts);
 
+        // Get the driver version from vkEnumerateInstanceVersion
+        uint32_t icd_version = VK_API_VERSION_1_0;
+        PFN_vkEnumerateInstanceVersion icd_enumerate_instance_version = (PFN_vkEnumerateInstanceVersion)
+            loader_platform_get_proc_address(icd_term->scanned_icd->handle, "vkEnumerateInstanceVersion");
+        VkResult icd_result = VK_SUCCESS;
+        if (icd_enumerate_instance_version != NULL) {
+            icd_result = icd_enumerate_instance_version(&icd_version);
+            if (icd_result != VK_SUCCESS) {
+                icd_version = VK_API_VERSION_1_0;
+                loader_log(ptr_instance, VK_DEBUG_REPORT_DEBUG_BIT_EXT, 0, "terminator_CreateInstance: ICD \"%s\" "
+                    "vkEnumerateInstanceVersion returned error. The ICD will be treated as a 1.0 ICD",
+                    icd_term->scanned_icd->lib_name);
+            }
+        }
+
         // Create an instance, substituting the version to 1.0 if necessary
         VkApplicationInfo icd_app_info;
         uint32_t requested_version = pCreateInfo == NULL || pCreateInfo->pApplicationInfo == NULL ? VK_API_VERSION_1_0 : pCreateInfo->pApplicationInfo->apiVersion;
-        if (requested_version > icd_term->scanned_icd->api_version) {
+        if (requested_version > icd_version) {
             if (icd_create_info.pApplicationInfo == NULL) {
                 memset(&icd_app_info, 0, sizeof(icd_app_info));
             } else {
@@ -5179,8 +5194,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateInstance(const VkInstanceCreateI
             icd_app_info.apiVersion = icd_term->scanned_icd->api_version;
             icd_create_info.pApplicationInfo = &icd_app_info;
         }
-        VkResult icd_result =
-            ptr_instance->icd_tramp_list.scanned_list[i].CreateInstance(&icd_create_info, pAllocator, &(icd_term->instance));
+        icd_result = ptr_instance->icd_tramp_list.scanned_list[i].CreateInstance(&icd_create_info, pAllocator, &(icd_term->instance));
         if (VK_ERROR_OUT_OF_HOST_MEMORY == icd_result) {
             // If out of memory, bail immediately.
             res = VK_ERROR_OUT_OF_HOST_MEMORY;
