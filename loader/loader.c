@@ -5170,7 +5170,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateInstance(const VkInstanceCreateI
         // Get the driver version from vkEnumerateInstanceVersion
         uint32_t icd_version = VK_API_VERSION_1_0;
         PFN_vkEnumerateInstanceVersion icd_enumerate_instance_version = (PFN_vkEnumerateInstanceVersion)
-            loader_platform_get_proc_address(icd_term->scanned_icd->handle, "vkEnumerateInstanceVersion");
+            icd_term->scanned_icd->GetInstanceProcAddr(NULL, "vkEnumerateInstanceVersion");
         VkResult icd_result = VK_SUCCESS;
         if (icd_enumerate_instance_version != NULL) {
             icd_result = icd_enumerate_instance_version(&icd_version);
