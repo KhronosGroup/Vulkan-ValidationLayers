@@ -59,7 +59,9 @@ namespace unique_objects {
 static uint32_t loader_layer_if_version = CURRENT_LOADER_LAYER_INTERFACE_VERSION;
 
 static void initUniqueObjects(instance_layer_data *instance_data, const VkAllocationCallbacks *pAllocator) {
-    layer_debug_actions(instance_data->report_data, instance_data->logging_callback, pAllocator, "google_unique_objects");
+    layer_debug_report_actions(instance_data->report_data, instance_data->logging_callback, pAllocator, "google_unique_objects");
+    layer_debug_messenger_actions(instance_data->report_data, instance_data->logging_messenger, pAllocator,
+                                  "google_unique_objects");
 }
 
 // Check enabled instance extensions against supported instance extension whitelist
@@ -118,17 +120,27 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
     layer_init_instance_dispatch_table(*pInstance, &instance_data->dispatch_table, fpGetInstanceProcAddr);
 
     instance_data->instance = *pInstance;
-    instance_data->report_data = debug_report_create_instance(
+    instance_data->report_data = debug_utils_create_instance(
         &instance_data->dispatch_table, *pInstance, pCreateInfo->enabledExtensionCount, pCreateInfo->ppEnabledExtensionNames);
 
     // Set up temporary debug callbacks to output messages at CreateInstance-time
-    if (!layer_copy_tmp_callbacks(pCreateInfo->pNext, &instance_data->num_tmp_callbacks, &instance_data->tmp_dbg_create_infos,
-                                  &instance_data->tmp_callbacks)) {
-        if (instance_data->num_tmp_callbacks > 0) {
-            if (layer_enable_tmp_callbacks(instance_data->report_data, instance_data->num_tmp_callbacks,
-                                           instance_data->tmp_dbg_create_infos, instance_data->tmp_callbacks)) {
-                layer_free_tmp_callbacks(instance_data->tmp_dbg_create_infos, instance_data->tmp_callbacks);
-                instance_data->num_tmp_callbacks = 0;
+    if (!layer_copy_tmp_debug_messengers(pCreateInfo->pNext, &instance_data->num_tmp_debug_messengers,
+                                         &instance_data->tmp_messenger_create_infos, &instance_data->tmp_debug_messengers)) {
+        if (instance_data->num_tmp_debug_messengers > 0) {
+            if (layer_enable_tmp_debug_messengers(instance_data->report_data, instance_data->num_tmp_debug_messengers,
+                                                  instance_data->tmp_messenger_create_infos, instance_data->tmp_debug_messengers)) {
+                layer_free_tmp_debug_messengers(instance_data->tmp_messenger_create_infos, instance_data->tmp_debug_messengers);
+                instance_data->num_tmp_debug_messengers = 0;
+            }
+        }
+    }
+    if (!layer_copy_tmp_report_callbacks(pCreateInfo->pNext, &instance_data->num_tmp_report_callbacks,
+                                         &instance_data->tmp_report_create_infos, &instance_data->tmp_report_callbacks)) {
+        if (instance_data->num_tmp_report_callbacks > 0) {
+            if (layer_enable_tmp_report_callbacks(instance_data->report_data, instance_data->num_tmp_report_callbacks,
+                                                  instance_data->tmp_report_create_infos, instance_data->tmp_report_callbacks)) {
+                layer_free_tmp_report_callbacks(instance_data->tmp_report_create_infos, instance_data->tmp_report_callbacks);
+                instance_data->num_tmp_report_callbacks = 0;
             }
         }
     }
@@ -137,10 +149,17 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
     InstanceExtensionWhitelist(pCreateInfo, *pInstance);
 
     // Disable and free tmp callbacks, no longer necessary
-    if (instance_data->num_tmp_callbacks > 0) {
-        layer_disable_tmp_callbacks(instance_data->report_data, instance_data->num_tmp_callbacks, instance_data->tmp_callbacks);
-        layer_free_tmp_callbacks(instance_data->tmp_dbg_create_infos, instance_data->tmp_callbacks);
-        instance_data->num_tmp_callbacks = 0;
+    if (instance_data->num_tmp_debug_messengers > 0) {
+        layer_disable_tmp_debug_messengers(instance_data->report_data, instance_data->num_tmp_debug_messengers,
+                                           instance_data->tmp_debug_messengers);
+        layer_free_tmp_debug_messengers(instance_data->tmp_messenger_create_infos, instance_data->tmp_debug_messengers);
+        instance_data->num_tmp_debug_messengers = 0;
+    }
+    if (instance_data->num_tmp_report_callbacks > 0) {
+        layer_disable_tmp_report_callbacks(instance_data->report_data, instance_data->num_tmp_report_callbacks,
+                                           instance_data->tmp_report_callbacks);
+        layer_free_tmp_report_callbacks(instance_data->tmp_report_create_infos, instance_data->tmp_report_callbacks);
+        instance_data->num_tmp_report_callbacks = 0;
     }
 
     return result;
@@ -153,13 +172,18 @@ VKAPI_ATTR void VKAPI_CALL DestroyInstance(VkInstance instance, const VkAllocati
     disp_table->DestroyInstance(instance, pAllocator);
 
     // Clean up logging callback, if any
+    while (instance_data->logging_messenger.size() > 0) {
+        VkDebugUtilsMessengerEXT messenger = instance_data->logging_messenger.back();
+        layer_destroy_messenger_callback(instance_data->report_data, messenger, pAllocator);
+        instance_data->logging_messenger.pop_back();
+    }
     while (instance_data->logging_callback.size() > 0) {
         VkDebugReportCallbackEXT callback = instance_data->logging_callback.back();
-        layer_destroy_msg_callback(instance_data->report_data, callback, pAllocator);
+        layer_destroy_report_callback(instance_data->report_data, callback, pAllocator);
         instance_data->logging_callback.pop_back();
     }
 
-    layer_debug_report_destroy_instance(instance_data->report_data);
+    layer_debug_utils_destroy_instance(instance_data->report_data);
     FreeLayerDataPtr(key, instance_layer_data_map);
 }
 
@@ -185,7 +209,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
     }
 
     layer_data *my_device_data = GetLayerDataPtr(get_dispatch_key(*pDevice), layer_data_map);
-    my_device_data->report_data = layer_debug_report_create_device(my_instance_data->report_data, *pDevice);
+    my_device_data->report_data = layer_debug_utils_create_device(my_instance_data->report_data, *pDevice);
 
     // Setup layer's device dispatch table
     layer_init_device_dispatch_table(*pDevice, &my_device_data->dispatch_table, fpGetDeviceProcAddr);
@@ -202,7 +226,7 @@ VKAPI_ATTR void VKAPI_CALL DestroyDevice(VkDevice device, const VkAllocationCall
     dispatch_key key = get_dispatch_key(device);
     layer_data *dev_data = GetLayerDataPtr(key, layer_data_map);
 
-    layer_debug_report_destroy_device(device);
+    layer_debug_utils_destroy_device(device);
     dev_data->dispatch_table.DestroyDevice(device, pAllocator);
 
     FreeLayerDataPtr(key, layer_data_map);
@@ -874,6 +898,37 @@ VKAPI_ATTR VkResult VKAPI_CALL DebugMarkerSetObjectNameEXT(VkDevice device, cons
     }
     VkResult result = device_data->dispatch_table.DebugMarkerSetObjectNameEXT(
         device, reinterpret_cast<VkDebugMarkerObjectNameInfoEXT *>(local_name_info));
+    return result;
+}
+
+// VK_EXT_debug_utils
+VKAPI_ATTR VkResult VKAPI_CALL SetDebugUtilsObjectTagEXT(VkDevice device, const VkDebugUtilsObjectTagInfoEXT *pTagInfo) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    auto local_tag_info = new safe_VkDebugUtilsObjectTagInfoEXT(pTagInfo);
+    {
+        std::lock_guard<std::mutex> lock(global_lock);
+        auto it = device_data->unique_id_mapping.find(reinterpret_cast<uint64_t &>(local_tag_info->objectHandle));
+        if (it != device_data->unique_id_mapping.end()) {
+            local_tag_info->objectHandle = it->second;
+        }
+    }
+    VkResult result = device_data->dispatch_table.SetDebugUtilsObjectTagEXT(
+        device, reinterpret_cast<const VkDebugUtilsObjectTagInfoEXT *>(local_tag_info));
+    return result;
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL SetDebugUtilsObjectNameEXT(VkDevice device, const VkDebugUtilsObjectNameInfoEXT *pNameInfo) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    auto local_name_info = new safe_VkDebugUtilsObjectNameInfoEXT(pNameInfo);
+    {
+        std::lock_guard<std::mutex> lock(global_lock);
+        auto it = device_data->unique_id_mapping.find(reinterpret_cast<uint64_t &>(local_name_info->objectHandle));
+        if (it != device_data->unique_id_mapping.end()) {
+            local_name_info->objectHandle = it->second;
+        }
+    }
+    VkResult result = device_data->dispatch_table.SetDebugUtilsObjectNameEXT(
+        device, reinterpret_cast<const VkDebugUtilsObjectNameInfoEXT *>(local_name_info));
     return result;
 }
 

@@ -45,7 +45,7 @@
 #include "vk_loader_platform.h"
 #include "loader.h"
 #include "gpa_helper.h"
-#include "debug_report.h"
+#include "debug_utils.h"
 #include "wsi.h"
 #include "vulkan/vk_icd.h"
 #include "cJSON.h"
@@ -322,8 +322,46 @@ void loader_log(const struct loader_instance *inst, VkFlags msg_type, int32_t ms
     va_end(ap);
 
     if (inst) {
-        util_DebugReportMessage(inst, msg_type, VK_DEBUG_REPORT_OBJECT_TYPE_INSTANCE_EXT, (uint64_t)(uintptr_t)inst, 0, msg_code,
-                                "loader", msg);
+        VkDebugUtilsMessageSeverityFlagBitsEXT severity;
+        VkDebugUtilsMessageTypeFlagsEXT type;
+        VkDebugUtilsMessengerCallbackDataEXT callback_data;
+        VkDebugUtilsObjectNameInfoEXT object_name;
+
+        if ((msg_type & LOADER_INFO_BIT) != 0) {
+            severity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT;
+        } else if ((msg_type & LOADER_WARN_BIT) != 0) {
+            severity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT;
+        } else if ((msg_type & LOADER_ERROR_BIT) != 0) {
+            severity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+        } else if ((msg_type & LOADER_DEBUG_BIT) != 0) {
+            severity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT;
+        }
+
+        if ((msg_type & LOADER_PERF_BIT) != 0) {
+            type = VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+        } else {
+            type = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT;
+        }
+
+        callback_data.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CALLBACK_DATA_EXT;
+        callback_data.pNext = NULL;
+        callback_data.flags = 0;
+        callback_data.pMessageIdName = "Loader Message";
+        callback_data.messageIdNumber = 0;
+        callback_data.pMessage = msg;
+        callback_data.queueLabelCount = 0;
+        callback_data.pQueueLabels = NULL;
+        callback_data.cmdBufLabelCount = 0;
+        callback_data.pCmdBufLabels = NULL;
+        callback_data.objectCount = 1;
+        callback_data.pObjects = &object_name;
+        object_name.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
+        object_name.pNext = NULL;
+        object_name.objectType = VK_OBJECT_TYPE_INSTANCE;
+        object_name.objectHandle = (uint64_t)(uintptr_t)inst;
+        object_name.pObjectName = NULL;
+
+        util_SubmitDebugUtilsMessageEXT(inst, severity, type, &callback_data);
     }
 
     if (!(msg_type & g_loader_log_msgs)) {
@@ -1608,7 +1646,7 @@ VkResult loader_get_icd_loader_instance_extensions(const struct loader_instance 
     };
 
     // Traverse loader's extensions, adding non-duplicate extensions to the list
-    debug_report_add_instance_extensions(inst, inst_exts);
+    debug_utils_AddInstanceExtensions(inst, inst_exts);
 
 out:
     return res;

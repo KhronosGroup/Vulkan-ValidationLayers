@@ -747,7 +747,8 @@ class HelperFileOutputGenerator(OutputGenerator):
     #
     # Object types header: create object enum type header file
     def GenerateObjectTypesHeader(self):
-        object_types_header = '// Object Type enum for validation layer internal object handling\n'
+        object_types_header = ''
+        object_types_header += '// Object Type enum for validation layer internal object handling\n'
         object_types_header += 'typedef enum VulkanObjectType {\n'
         object_types_header += '    kVulkanObjectTypeUnknown = 0,\n'
         enum_num = 1
@@ -777,7 +778,7 @@ class HelperFileOutputGenerator(OutputGenerator):
         object_types_header += '\n'
         object_types_header += '// Helper array to get Vulkan VK_EXT_debug_report object type enum from the internal layers version\n'
         object_types_header += 'const VkDebugReportObjectTypeEXT get_debug_report_enum[] = {\n'
-        object_types_header += '    VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, // No Match\n'
+        object_types_header += '    VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, // kVulkanObjectTypeUnknown\n'
         for object_type in type_list:
             search_type = object_type.replace("kVulkanObjectType", "").lower()
             for vk_object_type in self.debug_report_object_types:
@@ -793,7 +794,7 @@ class HelperFileOutputGenerator(OutputGenerator):
         object_types_header += '\n'
         object_types_header += '// Helper array to get Official Vulkan VkObjectType enum from the internal layers version\n'
         object_types_header += 'const VkObjectType get_object_type_enum[] = {\n'
-        object_types_header += '    VK_OBJECT_TYPE_UNKNOWN, // No Match\n'
+        object_types_header += '    VK_OBJECT_TYPE_UNKNOWN, // kVulkanObjectTypeUnknown\n'
         for object_type in type_list:
             search_type = object_type.replace("kVulkanObjectType", "").lower()
             for vk_object_type in self.core_object_types:
@@ -804,6 +805,47 @@ class HelperFileOutputGenerator(OutputGenerator):
                     break
         object_types_header += '};\n'
 
+        # Create a function to convert from VkDebugReportObjectTypeEXT to VkObjectType
+        object_types_header += '\n'
+        object_types_header += '// Helper function to convert from VkDebugReportObjectTypeEXT to VkObjectType\n'
+        object_types_header += 'static VkObjectType convertDebugReportObjectToCoreObject(VkDebugReportObjectTypeEXT debug_report_obj){\n'
+        object_types_header += '    if (debug_report_obj == VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT) {\n'
+        object_types_header += '        return VK_OBJECT_TYPE_UNKNOWN;\n'
+        for core_object_type in self.core_object_types:
+            core_target_type = core_object_type.replace("VK_OBJECT_TYPE_", "").lower()
+            core_target_type = core_target_type.replace("_", "")
+            for dr_object_type in self.debug_report_object_types:
+                dr_target_type = dr_object_type.replace("VK_DEBUG_REPORT_OBJECT_TYPE_", "").lower()
+                dr_target_type = dr_target_type[:-4]
+                dr_target_type = dr_target_type.replace("_", "")
+                if core_target_type == dr_target_type:
+                    object_types_header += '    } else if (debug_report_obj == %s) {\n' % dr_object_type
+                    object_types_header += '        return %s;\n' % core_object_type
+                    break
+        object_types_header += '    }\n'
+        object_types_header += '    return VK_OBJECT_TYPE_UNKNOWN;\n'
+        object_types_header += '}\n'
+
+        # Create a function to convert from VkObjectType to VkDebugReportObjectTypeEXT
+        object_types_header += '\n'
+        object_types_header += '// Helper function to convert from VkDebugReportObjectTypeEXT to VkObjectType\n'
+        object_types_header += 'static VkDebugReportObjectTypeEXT convertCoreObjectToDebugReportObject(VkObjectType core_report_obj){\n'
+        object_types_header += '    if (core_report_obj == VK_OBJECT_TYPE_UNKNOWN) {\n'
+        object_types_header += '        return VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT;\n'
+        for core_object_type in self.core_object_types:
+            core_target_type = core_object_type.replace("VK_OBJECT_TYPE_", "").lower()
+            core_target_type = core_target_type.replace("_", "")
+            for dr_object_type in self.debug_report_object_types:
+                dr_target_type = dr_object_type.replace("VK_DEBUG_REPORT_OBJECT_TYPE_", "").lower()
+                dr_target_type = dr_target_type[:-4]
+                dr_target_type = dr_target_type.replace("_", "")
+                if core_target_type == dr_target_type:
+                    object_types_header += '    } else if (core_report_obj == %s) {\n' % core_object_type
+                    object_types_header += '        return %s;\n' % dr_object_type
+                    break
+        object_types_header += '    }\n'
+        object_types_header += '    return VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT;\n'
+        object_types_header += '}\n'
         return object_types_header
     #
     # Determine if a structure needs a safe_struct helper function

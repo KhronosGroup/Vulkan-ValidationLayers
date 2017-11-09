@@ -75,8 +75,8 @@ set(NORMAL_LOADER_SRCS
     trampoline.c
     wsi.c
     wsi.h
-    debug_report.c
-    debug_report.h
+    debug_utils.c
+    debug_utils.h
     gpa_helper.h
     cJSON.c
     cJSON.h

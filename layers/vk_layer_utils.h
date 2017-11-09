@@ -37,10 +37,6 @@ extern "C" {
 
 #define VK_LAYER_API_VERSION VK_MAKE_VERSION(1, 0, VK_HEADER_VERSION)
 
-
-
-
-
 typedef enum VkStringErrorFlagBits {
     VK_STRING_ERROR_NONE = 0x00000000,
     VK_STRING_ERROR_LENGTH = 0x00000001,
@@ -48,8 +44,13 @@ typedef enum VkStringErrorFlagBits {
 } VkStringErrorFlagBits;
 typedef VkFlags VkStringErrorFlags;
 
-VK_LAYER_EXPORT void layer_debug_actions(debug_report_data *report_data, std::vector<VkDebugReportCallbackEXT> &logging_callback,
-                                         const VkAllocationCallbacks *pAllocator, const char *layer_identifier);
+VK_LAYER_EXPORT void layer_debug_report_actions(debug_report_data *report_data,
+                                                std::vector<VkDebugReportCallbackEXT> &logging_callback,
+                                                const VkAllocationCallbacks *pAllocator, const char *layer_identifier);
+
+VK_LAYER_EXPORT void layer_debug_messenger_actions(debug_report_data *report_data,
+                                                   std::vector<VkDebugUtilsMessengerEXT> &logging_messenger,
+                                                   const VkAllocationCallbacks *pAllocator, const char *layer_identifier);
 
 VK_LAYER_EXPORT VkStringErrorFlags vk_string_validate(const int max_length, const char *char_array);
 VK_LAYER_EXPORT bool white_list(const char *item, const char *whitelist);

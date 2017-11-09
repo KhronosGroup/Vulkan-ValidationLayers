@@ -28,7 +28,7 @@
 
 #include "vk_loader_platform.h"
 #include "loader.h"
-#include "debug_report.h"
+#include "debug_utils.h"
 #include "wsi.h"
 #include "vk_loader_extensions.h"
 #include "gpa_helper.h"
@@ -324,23 +324,42 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateInstance(const VkInstanceCr
         ptr_instance->app_api_minor_version = VK_VERSION_MINOR(pCreateInfo->pApplicationInfo->apiVersion);
     }
 
-    // Look for one or more debug report create info structures
+    // Look for one or more VK_EXT_debug_report or VK_EXT_debug_utils create info structures
     // and setup a callback(s) for each one found.
-    ptr_instance->num_tmp_callbacks = 0;
-    ptr_instance->tmp_dbg_create_infos = NULL;
-    ptr_instance->tmp_callbacks = NULL;
-    if (util_CopyDebugReportCreateInfos(pCreateInfo->pNext, pAllocator, &ptr_instance->num_tmp_callbacks,
-                                        &ptr_instance->tmp_dbg_create_infos, &ptr_instance->tmp_callbacks)) {
-        // One or more were found, but allocation failed.  Therefore, clean up
-        // and fail this function:
+    ptr_instance->num_tmp_report_callbacks = 0;
+    ptr_instance->tmp_report_create_infos = NULL;
+    ptr_instance->tmp_report_callbacks = NULL;
+    ptr_instance->num_tmp_messengers = 0;
+    ptr_instance->tmp_messenger_create_infos = NULL;
+    ptr_instance->tmp_messengers = NULL;
+
+    // Handle cases of VK_EXT_debug_utils
+    if (util_CopyDebugUtilsMessengerCreateInfos(pCreateInfo->pNext, pAllocator, &ptr_instance->num_tmp_messengers,
+                                                &ptr_instance->tmp_messenger_create_infos, &ptr_instance->tmp_messengers)) {
+        // One or more were found, but allocation failed.  Therefore, clean up and fail this function:
         res = VK_ERROR_OUT_OF_HOST_MEMORY;
         goto out;
-    } else if (ptr_instance->num_tmp_callbacks > 0) {
+    } else if (ptr_instance->num_tmp_messengers > 0) {
+        // Setup the temporary messenger(s) here to catch early issues:
+        if (util_CreateDebugUtilsMessengers(ptr_instance, pAllocator, ptr_instance->num_tmp_messengers,
+                                            ptr_instance->tmp_messenger_create_infos, ptr_instance->tmp_messengers)) {
+            // Failure of setting up one or more of the messenger.  Therefore, clean up and fail this function:
+            res = VK_ERROR_OUT_OF_HOST_MEMORY;
+            goto out;
+        }
+    }
+
+    // Handle cases of VK_EXT_debug_report
+    if (util_CopyDebugReportCreateInfos(pCreateInfo->pNext, pAllocator, &ptr_instance->num_tmp_report_callbacks,
+                                        &ptr_instance->tmp_report_create_infos, &ptr_instance->tmp_report_callbacks)) {
+        // One or more were found, but allocation failed.  Therefore, clean up and fail this function:
+        res = VK_ERROR_OUT_OF_HOST_MEMORY;
+        goto out;
+    } else if (ptr_instance->num_tmp_report_callbacks > 0) {
         // Setup the temporary callback(s) here to catch early issues:
-        if (util_CreateDebugReportCallbacks(ptr_instance, pAllocator, ptr_instance->num_tmp_callbacks,
-                                            ptr_instance->tmp_dbg_create_infos, ptr_instance->tmp_callbacks)) {
-            // Failure of setting up one or more of the callback.  Therefore,
-            // clean up and fail this function:
+        if (util_CreateDebugReportCallbacks(ptr_instance, pAllocator, ptr_instance->num_tmp_report_callbacks,
+                                            ptr_instance->tmp_report_create_infos, ptr_instance->tmp_report_callbacks)) {
+            // Failure of setting up one or more of the callback.  Therefore, clean up and fail this function:
             res = VK_ERROR_OUT_OF_HOST_MEMORY;
             goto out;
         }
@@ -404,7 +423,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateInstance(const VkInstanceCr
         memset(ptr_instance->enabled_known_extensions.padding, 0, sizeof(uint64_t) * 4);
 
         wsi_create_instance(ptr_instance, &ici);
-        debug_report_create_instance(ptr_instance, &ici);
+        debug_utils_CreateInstance(ptr_instance, &ici);
         extensions_create_instance(ptr_instance, &ici);
 
         *pInstance = created_instance;
@@ -426,10 +445,19 @@ out:
             if (NULL != ptr_instance->disp) {
                 loader_instance_heap_free(ptr_instance, ptr_instance->disp);
             }
-            if (ptr_instance->num_tmp_callbacks > 0) {
-                util_DestroyDebugReportCallbacks(ptr_instance, pAllocator, ptr_instance->num_tmp_callbacks,
-                                                 ptr_instance->tmp_callbacks);
-                util_FreeDebugReportCreateInfos(pAllocator, ptr_instance->tmp_dbg_create_infos, ptr_instance->tmp_callbacks);
+            if (ptr_instance->num_tmp_report_callbacks > 0) {
+                // Remove temporary VK_EXT_debug_report items
+                util_DestroyDebugReportCallbacks(ptr_instance, pAllocator, ptr_instance->num_tmp_report_callbacks,
+                                                 ptr_instance->tmp_report_callbacks);
+                util_FreeDebugReportCreateInfos(pAllocator, ptr_instance->tmp_report_create_infos,
+                                                ptr_instance->tmp_report_callbacks);
+            }
+            if (ptr_instance->num_tmp_messengers > 0) {
+                // Remove temporary VK_EXT_debug_utils items
+                util_DestroyDebugUtilsMessengers(ptr_instance, pAllocator, ptr_instance->num_tmp_messengers,
+                                                 ptr_instance->tmp_messengers);
+                util_FreeDebugUtilsMessengerCreateInfos(pAllocator, ptr_instance->tmp_messenger_create_infos,
+                                                        ptr_instance->tmp_messengers);
             }
 
             if (NULL != ptr_instance->expanded_activated_layer_list.list) {
@@ -445,9 +473,11 @@ out:
 
             loader_instance_heap_free(ptr_instance, ptr_instance);
         } else {
-            // Remove temporary debug_report callback
-            util_DestroyDebugReportCallbacks(ptr_instance, pAllocator, ptr_instance->num_tmp_callbacks,
-                                             ptr_instance->tmp_callbacks);
+            // Remove temporary VK_EXT_debug_report or VK_EXT_debug_utils items
+            util_DestroyDebugUtilsMessengers(ptr_instance, pAllocator, ptr_instance->num_tmp_messengers,
+                                             ptr_instance->tmp_messengers);
+            util_DestroyDebugReportCallbacks(ptr_instance, pAllocator, ptr_instance->num_tmp_report_callbacks,
+                                             ptr_instance->tmp_report_callbacks);
         }
 
         if (loaderLocked) {
@@ -462,6 +492,7 @@ LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkDestroyInstance(VkInstance instance, 
     const VkLayerInstanceDispatchTable *disp;
     struct loader_instance *ptr_instance = NULL;
     bool callback_setup = false;
+    bool messenger_setup = false;
 
     if (instance == VK_NULL_HANDLE) {
         return;
@@ -477,10 +508,18 @@ LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkDestroyInstance(VkInstance instance, 
         ptr_instance->alloc_callbacks = *pAllocator;
     }
 
-    if (ptr_instance->num_tmp_callbacks > 0) {
-        // Setup the temporary callback(s) here to catch cleanup issues:
-        if (!util_CreateDebugReportCallbacks(ptr_instance, pAllocator, ptr_instance->num_tmp_callbacks,
-                                             ptr_instance->tmp_dbg_create_infos, ptr_instance->tmp_callbacks)) {
+    if (ptr_instance->num_tmp_messengers > 0) {
+        // Setup the temporary VK_EXT_debug_utils messenger(s) here to catch cleanup issues:
+        if (!util_CreateDebugUtilsMessengers(ptr_instance, pAllocator, ptr_instance->num_tmp_messengers,
+                                             ptr_instance->tmp_messenger_create_infos, ptr_instance->tmp_messengers)) {
+            messenger_setup = true;
+        }
+    }
+
+    if (ptr_instance->num_tmp_report_callbacks > 0) {
+        // Setup the temporary VK_EXT_debug_report callback(s) here to catch cleanup issues:
+        if (!util_CreateDebugReportCallbacks(ptr_instance, pAllocator, ptr_instance->num_tmp_report_callbacks,
+                                             ptr_instance->tmp_report_create_infos, ptr_instance->tmp_report_callbacks)) {
             callback_setup = true;
         }
     }
@@ -508,9 +547,15 @@ LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkDestroyInstance(VkInstance instance, 
         loader_instance_heap_free(ptr_instance, ptr_instance->phys_dev_groups_tramp);
     }
 
+    if (messenger_setup) {
+        util_DestroyDebugUtilsMessengers(ptr_instance, pAllocator, ptr_instance->num_tmp_messengers, ptr_instance->tmp_messengers);
+        util_FreeDebugUtilsMessengerCreateInfos(pAllocator, ptr_instance->tmp_messenger_create_infos, ptr_instance->tmp_messengers);
+    }
+
     if (callback_setup) {
-        util_DestroyDebugReportCallbacks(ptr_instance, pAllocator, ptr_instance->num_tmp_callbacks, ptr_instance->tmp_callbacks);
-        util_FreeDebugReportCreateInfos(pAllocator, ptr_instance->tmp_dbg_create_infos, ptr_instance->tmp_callbacks);
+        util_DestroyDebugReportCallbacks(ptr_instance, pAllocator, ptr_instance->num_tmp_report_callbacks,
+                                         ptr_instance->tmp_report_callbacks);
+        util_FreeDebugReportCreateInfos(pAllocator, ptr_instance->tmp_report_create_infos, ptr_instance->tmp_report_callbacks);
     }
     loader_instance_heap_free(ptr_instance, ptr_instance->disp);
     loader_instance_heap_free(ptr_instance, ptr_instance);

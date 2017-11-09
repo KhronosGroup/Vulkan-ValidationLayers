@@ -384,6 +384,8 @@ class ThreadOutputGenerator(OutputGenerator):
             'vkEnumerateInstanceExtensionProperties',
             'vkEnumerateDeviceLayerProperties',
             'vkEnumerateDeviceExtensionProperties',
+            'vkCreateDebugUtilsMessengerEXT',
+            'vkDestroyDebugUtilsMessengerEXT',
         ]
         if name in special_functions:
             decls = self.makeCDecls(cmdinfo.elem)
@@ -392,7 +394,7 @@ class ThreadOutputGenerator(OutputGenerator):
             self.appendSection('command', decls[0])
             self.intercepts += [ '    {"%s", (void*)%s},' % (name,name[2:]) ]
             return
-        if "QueuePresentKHR" in name or ("DebugMarker" in name and "EXT" in name):
+        if "QueuePresentKHR" in name or (("DebugMarker" in name or "DebugUtilsObject" in name) and "EXT" in name):
             self.appendSection('command', '// TODO - not wrapping EXT function ' + name)
             return
         # Determine first if this function needs to be intercepted

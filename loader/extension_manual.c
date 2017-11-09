@@ -28,7 +28,7 @@
 #include "vk_loader_extensions.h"
 #include <vulkan/vk_icd.h>
 #include "wsi.h"
-#include "debug_report.h"
+#include "debug_utils.h"
 
 // ---- Manually added trampoline/terminator functions
 

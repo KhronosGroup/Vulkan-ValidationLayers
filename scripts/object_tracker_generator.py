@@ -172,6 +172,17 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
             'vkGetDeviceQueue',
             'vkGetSwapchainImagesKHR',
             'vkCreateDescriptorSetLayout',
+            'vkCreateDebugUtilsMessengerEXT',
+            'vkDestroyDebugUtilsMessengerEXT',
+            'vkSubmitDebugUtilsMessageEXT',
+            'vkSetDebugUtilsObjectNameEXT',
+            'vkSetDebugUtilsObjectTagEXT',
+            'vkQueueBeginDebugUtilsLabelEXT',
+            'vkQueueEndDebugUtilsLabelEXT',
+            'vkQueueInsertDebugUtilsLabelEXT',
+            'vkCmdBeginDebugUtilsLabelEXT',
+            'vkCmdEndDebugUtilsLabelEXT',
+            'vkCmdInsertDebugUtilsLabelEXT',
             ]
         # These VUIDS are not implicit, but are best handled in this layer. Codegen for vkDestroy calls will generate a key
         # which is translated here into a good VU.  Saves ~40 checks.

@@ -276,9 +276,12 @@ struct loader_instance {
     union loader_instance_extension_enables enabled_known_extensions;
 
     VkLayerDbgFunctionNode *DbgFunctionHead;
-    uint32_t num_tmp_callbacks;
-    VkDebugReportCallbackCreateInfoEXT *tmp_dbg_create_infos;
-    VkDebugReportCallbackEXT *tmp_callbacks;
+    uint32_t num_tmp_report_callbacks;
+    VkDebugReportCallbackCreateInfoEXT *tmp_report_create_infos;
+    VkDebugReportCallbackEXT *tmp_report_callbacks;
+    uint32_t num_tmp_messengers;
+    VkDebugUtilsMessengerCreateInfoEXT *tmp_messenger_create_infos;
+    VkDebugUtilsMessengerEXT *tmp_messengers;
 
     VkAllocationCallbacks alloc_callbacks;
 

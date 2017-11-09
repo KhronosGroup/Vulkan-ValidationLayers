@@ -1104,7 +1104,7 @@ uniqueid_set = set() # store uniqueid to make sure we don't have duplicates
 # Convert a string VUID into numerical value
 #  See "VUID Mapping Details" comment above for more info
 def convertVUID(vuid_string):
-    """Convert a string-based VUID into a numberical value"""
+    """Convert a string-based VUID into a numerical value"""
     #func_struct_update = False
     #imp_param_update = False
     if vuid_string in ['', None]:

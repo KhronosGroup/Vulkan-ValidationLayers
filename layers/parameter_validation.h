@@ -61,12 +61,17 @@ struct instance_layer_data {
 
     debug_report_data *report_data = nullptr;
     std::vector<VkDebugReportCallbackEXT> logging_callback;
+    std::vector<VkDebugUtilsMessengerEXT> logging_messenger;
 
     // The following are for keeping track of the temporary callbacks that can
     // be used in vkCreateInstance and vkDestroyInstance:
-    uint32_t num_tmp_callbacks = 0;
-    VkDebugReportCallbackCreateInfoEXT *tmp_dbg_create_infos = nullptr;
-    VkDebugReportCallbackEXT *tmp_callbacks = nullptr;
+    uint32_t num_tmp_report_callbacks = 0;
+    VkDebugReportCallbackCreateInfoEXT *tmp_report_create_infos = nullptr;
+    VkDebugReportCallbackEXT *tmp_report_callbacks = nullptr;
+    uint32_t num_tmp_debug_messengers = 0;
+    VkDebugUtilsMessengerCreateInfoEXT *tmp_messenger_create_infos = nullptr;
+    VkDebugUtilsMessengerEXT *tmp_debug_messengers = nullptr;
+
     InstanceExtensions extensions = {};
     VkLayerInstanceDispatchTable dispatch_table = {};
     uint32_t api_version;
