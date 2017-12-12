@@ -53,7 +53,32 @@ function build_glslang () {
    make install
 }
 
+function create_moltenvk () {
+   rm -rf "${BASEDIR}"/MoltenVK
+   echo "Creating local MoltenVK repository (${BASEDIR}/MoltenVK)."
+   mkdir -p "${BASEDIR}"/MoltenVK
+   cd "${BASEDIR}"/MoltenVK
+   git clone --recurse-submodules https://github.com/KhronosGroup/MoltenVK.git "${BASEDIR}"/MoltenVK
+}
+
+function update_moltenvk () {
+   echo "Updating ${BASEDIR}/MoltenVK"
+   cd "${BASEDIR}"/MoltenVK
+   git pull
+}
+
+function build_moltenvk () {
+   echo "Building ${BASEDIR}/MoltenVK"
+   cd "${BASEDIR}"/MoltenVK/External
+   ./makeAll
+   cd "${BASEDIR}"/MoltenVK
+   xcodebuild -project MoltenVKPackaging.xcodeproj \
+    GCC_PREPROCESSOR_DEFINITIONS='$GCC_PREPROCESSOR_DEFINITIONS MVK_LOGGING_ENABLED=0' \
+    -scheme "MoltenVK (Release)" build
+}
+
 INCLUDE_GLSLANG=false
+INCLUDE_MOLTENVK=false
 NO_SYNC=false
 NO_BUILD=false
 USE_IMPLICIT_COMPONENT_LIST=true
@@ -69,6 +94,14 @@ do
       INCLUDE_GLSLANG=true
       USE_IMPLICIT_COMPONENT_LIST=false
       echo "Building glslang ($option)"
+      ;;
+      # options to specify build of moltenvk components
+      -m|--moltenvk)
+      if [[ $(uname) == "Darwin" ]]; then
+        INCLUDE_MOLTENVK=true
+        USE_IMPLICIT_COMPONENT_LIST=false
+        echo "Building MoltenVK ($option)"
+      fi
       ;;
       # options to specify build of spirv-tools components
       -s|--spirv-tools)
@@ -89,6 +122,9 @@ do
       echo "Usage: update_external_sources.sh [options]"
       echo "  Available options:"
       echo "    -g | --glslang      # enable glslang component"
+      if [[ $(uname) == "Darwin" ]]; then
+        echo "    -m | --moltenvk     # enable moltenvk component"
+      fi
       echo "    --no-sync           # skip sync from git"
       echo "    --no-build          # skip build"
       echo "  If any component enables are provided, only those components are enabled."
@@ -104,6 +140,10 @@ done
 if [ ${USE_IMPLICIT_COMPONENT_LIST} == "true" ]; then
   echo "Building glslang"
   INCLUDE_GLSLANG=true
+  if [[ $(uname) == "Darwin" ]]; then
+    echo "Building MoltenVK"
+    INCLUDE_MOLTENVK=true
+  fi
 fi
 
 if [ ${INCLUDE_GLSLANG} == "true" ]; then
@@ -117,3 +157,17 @@ if [ ${INCLUDE_GLSLANG} == "true" ]; then
     build_glslang
   fi
 fi
+
+if [ ${INCLUDE_MOLTENVK} == "true" ]; then
+  if [ ${NO_SYNC} == "false" ]; then
+    if [ ! -d "${BASEDIR}/MoltenVK" -o ! -d "${BASEDIR}/MoltenVK/.git" ]; then
+      create_moltenvk
+    fi
+    update_moltenvk
+  fi
+  if [ ${NO_BUILD} == "false" ]; then
+    echo "Building moltenvk"
+    build_moltenvk
+  fi
+fi
+

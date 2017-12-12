@@ -26,6 +26,16 @@ if (WIN32)
             set_target_properties(${config_file}-json PROPERTIES FOLDER ${LVL_TARGET_FOLDER})
         endforeach(config_file)
     endif()
+elseif(APPLE)
+    # extra setup for out-of-tree builds
+    if (NOT (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_CURRENT_BINARY_DIR))
+        foreach (config_file ${LAYER_JSON_FILES})
+            add_custom_target(${config_file}-json ALL
+                COMMAND ln -sf ${CMAKE_CURRENT_SOURCE_DIR}/macos/${config_file}.json
+                VERBATIM
+                )
+        endforeach(config_file)
+    endif()
 else()
     # extra setup for out-of-tree builds
     if (NOT (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_CURRENT_BINARY_DIR))
@@ -48,6 +58,12 @@ if (WIN32)
     set_target_properties(copy-${target}-def-file PROPERTIES FOLDER ${LVL_TARGET_FOLDER})
     add_library(VkLayer_${target} SHARED ${ARGN} VkLayer_${target}.def)
     add_dependencies(VkLayer_${target} generate_helper_files VkLayer_utils)
+    endmacro()
+elseif(APPLE)
+    macro(add_vk_layer target)
+    add_library(VkLayer_${target} SHARED ${ARGN})
+    add_dependencies(VkLayer_${target} generate_helper_files VkLayer_utils)
+    set_target_properties(VkLayer_${target} PROPERTIES LINK_FLAGS "-Wl")
     endmacro()
 else()
     macro(add_vk_layer target)
@@ -107,6 +123,20 @@ if (WIN32)
     add_custom_command(TARGET VkLayer_device_profile_api POST_BUILD
         COMMAND xcopy /Y /I ${SRC_LAYER} ${DST_LAYER}
         COMMAND xcopy /Y /I ${SRC_JSON} ${DST_LAYER})
+elseif(APPLE)
+    if (CMAKE_GENERATOR MATCHES "^Xcode.*")
+        add_custom_command(TARGET VkLayer_device_profile_api POST_BUILD
+            COMMAND ln -sf ${CMAKE_CURRENT_BINARY_DIR}/VkLayer_device_profile_api.json ${CMAKE_BINARY_DIR}/layers/$<CONFIG>
+            COMMAND ln -sf ${CMAKE_CURRENT_BINARY_DIR}/libVkLayer_device_profile_api.dylib ${CMAKE_BINARY_DIR}/layers/$<CONFIG>
+            VERBATIM
+            )
+    else()
+        add_custom_command(TARGET VkLayer_device_profile_api POST_BUILD
+            COMMAND ln -sf ${CMAKE_CURRENT_BINARY_DIR}/VkLayer_device_profile_api.json ${CMAKE_BINARY_DIR}/layers
+            COMMAND ln -sf ${CMAKE_CURRENT_BINARY_DIR}/libVkLayer_device_profile_api.dylib ${CMAKE_BINARY_DIR}/layers
+            VERBATIM
+            )
+    endif()
 else()
     add_custom_command(TARGET VkLayer_device_profile_api POST_BUILD
         COMMAND ln -sf ${CMAKE_CURRENT_BINARY_DIR}/VkLayer_device_profile_api.json ${PROJECT_BINARY_DIR}/layers

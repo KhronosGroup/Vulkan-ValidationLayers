@@ -21,6 +21,11 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
         add_definitions(-DVK_USE_PLATFORM_MIR_KHR -DVK_USE_PLATFORM_MIR_KHX)
         include_directories(${MIR_INCLUDE_DIR})
     endif()
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    add_definitions(-DVK_USE_PLATFORM_MACOS_MVK)
+    if(CMAKE_GENERATOR MATCHES "^Xcode.*")
+        add_custom_target(mk_layer_config_dir ALL COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>)
+    endif()
 else()
     message(FATAL_ERROR "Unsupported Platform!")
 endif()
@@ -70,7 +75,7 @@ if (WIN32)
             )
         set_target_properties(vk_validation_error_messages PROPERTIES FOLDER ${LVL_TARGET_FOLDER})
     endif()
-else()
+elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
     # extra setup for out-of-tree builds
     if (NOT (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_CURRENT_BINARY_DIR))
         foreach (config_file ${LAYER_JSON_FILES})
@@ -79,6 +84,31 @@ else()
                 VERBATIM
                 )
         endforeach(config_file)
+        # Add link to vk_validation_error_messages.h in build dir for scripts to pick up
+        add_custom_target(vk_validation_error_messages ALL
+            COMMAND ln -sf ${CMAKE_CURRENT_SOURCE_DIR}/vk_validation_error_messages.h
+            VERBATIM
+            )
+    endif()
+elseif(APPLE)
+    # extra setup for out-of-tree builds
+    if (NOT (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_CURRENT_BINARY_DIR))
+        if (CMAKE_GENERATOR MATCHES "^Xcode.*")
+            foreach (config_file ${LAYER_JSON_FILES})
+                add_custom_target(${config_file}-json ALL
+                    DEPENDS mk_layer_config_dir
+                    COMMAND ln -sf ${CMAKE_CURRENT_SOURCE_DIR}/macos/${config_file}.json $<CONFIG>
+                    VERBATIM
+                    )
+            endforeach(config_file)
+        else()
+            foreach (config_file ${LAYER_JSON_FILES})
+                add_custom_target(${config_file}-json ALL
+                    COMMAND ln -sf ${CMAKE_CURRENT_SOURCE_DIR}/macos/${config_file}.json
+                    VERBATIM
+                    )
+            endforeach(config_file)
+        endif()
         # Add link to vk_validation_error_messages.h in build dir for scripts to pick up
         add_custom_target(vk_validation_error_messages ALL
             COMMAND ln -sf ${CMAKE_CURRENT_SOURCE_DIR}/vk_validation_error_messages.h
@@ -126,6 +156,17 @@ if (WIN32)
     add_dependencies(VkLayer_${target} generate_helper_files)
     target_link_Libraries(VkLayer_${target} VkLayer_utils)
     add_dependencies(VkLayer_${target} generate_helper_files VkLayer_utils)
+    endmacro()
+elseif(APPLE)
+    macro(add_vk_layer target)
+    add_library(VkLayer_${target} SHARED ${ARGN})
+    target_link_Libraries(VkLayer_${target} VkLayer_utils)
+    add_dependencies(VkLayer_${target} generate_helper_files VkLayer_utils)
+    set_target_properties(VkLayer_${target} PROPERTIES 
+        LINK_FLAGS "-Wl"
+        INSTALL_RPATH "@loader_path/"
+    ) 
+    install(TARGETS VkLayer_${target} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
     endmacro()
 else()
     macro(add_vk_layer target)

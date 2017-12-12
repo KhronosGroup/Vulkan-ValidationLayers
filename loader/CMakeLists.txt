@@ -49,6 +49,8 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
         add_definitions(-DVK_USE_PLATFORM_MIR_KHR)
         include_directories(${MIR_INCLUDE_DIR})
     endif()
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    add_definitions(-DVK_USE_PLATFORM_MACOS_MVK)
 else()
     message(FATAL_ERROR "Unsupported Platform!")
 endif()
@@ -110,6 +112,11 @@ if (WIN32)
         set(OPT_LOADER_SRCS ${OPT_LOADER_SRCS} unknown_ext_chain.c)
         add_custom_target(loader_asm_gen_files)
     endif()
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    # For MacOS, use the C code and force the compiler's tail-call optimization instead of using assembly code.
+    set(OPT_LOADER_SRCS ${OPT_LOADER_SRCS} unknown_ext_chain.c)
+    set_source_files_properties(${OPT_LOADER_SRCS} PROPERTIES COMPILE_FLAGS -O)
+    add_custom_target(loader_asm_gen_files) # This causes no assembly files to be generated.
 else()
     enable_language(ASM-ATT)
     set(CMAKE_ASM-ATT_COMPILE_FLAGS "${CMAKE_ASM-ATT_COMPILE_FLAGS} $ENV{ASFLAGS}")
@@ -211,6 +218,7 @@ if (WIN32)
       COMMAND xcopy /Y /I ${COPY_SRC_PATH} ${COPY_DST_TEST_PATH})
 
 else()
+    # Linux and MacOS
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wpointer-arith")
 
     # Clang (and not gcc) warns about redefining a typedef with the same types, so disable that warning.
@@ -219,27 +227,70 @@ else()
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-typedef-redefinition")
     endif()
 
-    add_library(${API_LOWERCASE} SHARED ${NORMAL_LOADER_SRCS} ${OPT_LOADER_SRCS})
+    add_library(${API_LOWERCASE} SHARED ${NORMAL_LOADER_SRCS} ${OPT_LOADER_SRCS} ${FRAMEWORK_HEADERS})
     add_dependencies(${API_LOWERCASE} generate_helper_files loader_gen_files loader_asm_gen_files)
     target_compile_definitions(${API_LOWERCASE} PUBLIC -DLOADER_DYNAMIC_LIB)
     set_target_properties(${API_LOWERCASE} PROPERTIES SOVERSION "1" VERSION "1.0.${vk_header_version}")
     target_link_libraries(${API_LOWERCASE} -ldl -lpthread -lm)
 
+    if(APPLE)
+        find_library(COREFOUNDATION_LIBRARY NAMES CoreFoundation)
+        target_link_libraries(${API_LOWERCASE} "-framework CoreFoundation")
+
+        # Build vulkan.framework
+        set(FRAMEWORK_HEADERS
+            ${PROJECT_SOURCE_DIR}/include/vulkan/vk_icd.h
+            ${PROJECT_SOURCE_DIR}/include/vulkan/vk_layer.h
+            ${PROJECT_SOURCE_DIR}/include/vulkan/vk_platform.h
+            ${PROJECT_SOURCE_DIR}/include/vulkan/vk_sdk_platform.h
+            ${PROJECT_SOURCE_DIR}/include/vulkan/vulkan.h
+            ${PROJECT_SOURCE_DIR}/include/vulkan/vulkan.hpp
+        )
+        add_library(vulkan-framework SHARED ${NORMAL_LOADER_SRCS} ${OPT_LOADER_SRCS} ${FRAMEWORK_HEADERS})
+        add_dependencies(vulkan-framework generate_helper_files loader_gen_files loader_asm_gen_files)
+        target_compile_definitions(vulkan-framework PUBLIC -DLOADER_DYNAMIC_LIB)
+        target_link_libraries(vulkan-framework -ldl -lpthread -lm "-framework CoreFoundation")
+
+        # The FRAMEWORK_VERSION needs to be "A" here so that Xcode code-signing works when
+        # a user adds their framework to an Xcode project and does "Sign on Copy".
+        # It would have been nicer to use "1" to denote Vulkan 1.
+        # Although Apple docs say that a framework version does not have to be "A",
+        # this part of the Apple toolchain expects it.
+        # https://forums.developer.apple.com/thread/65963
+        set_target_properties(vulkan-framework PROPERTIES
+            OUTPUT_NAME vulkan
+            FRAMEWORK TRUE
+            FRAMEWORK_VERSION A
+            VERSION "1.0.${vk_header_version}"       # "current version"
+            SOVERSION "1.0.0"                        # "compatibility version"
+            MACOSX_FRAMEWORK_IDENTIFIER com.lunarg.vulkanFramework
+            PUBLIC_HEADER "${FRAMEWORK_HEADERS}"
+        )
+        install(TARGETS vulkan-framework
+            PUBLIC_HEADER DESTINATION vulkan
+            FRAMEWORK DESTINATION loader
+        )
+    endif(APPLE)
+
     if(INSTALL_LVL_FILES)
         install(TARGETS ${API_LOWERCASE} LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
     endif()
 
-    # Generate pkg-config file.
-    include(FindPkgConfig QUIET)
-    if(PKG_CONFIG_FOUND)
-        set(VK_API_VERSION "1.0.${vk_header_version}")
-        foreach(LIB ${CMAKE_CXX_IMPLICIT_LINK_LIBRARIES} ${PLATFORM_LIBS})
-            set(PRIVATE_LIBS "${PRIVATE_LIBS} -l${LIB}")
-        endforeach()
-        configure_file("vulkan.pc.in" "vulkan.pc" @ONLY)
-        if(INSTALL_LVL_FILES)
-            install(FILES       "${CMAKE_CURRENT_BINARY_DIR}/vulkan.pc"
-                    DESTINATION "${CMAKE_INSTALL_LIBDIR}/pkgconfig")
+    if(NOT APPLE)
+        # Generate pkg-config file.
+        include(FindPkgConfig QUIET)
+        if(PKG_CONFIG_FOUND)
+            set(VK_API_VERSION "1.0.${vk_header_version}")
+            foreach(LIB ${CMAKE_CXX_IMPLICIT_LINK_LIBRARIES} ${PLATFORM_LIBS})
+                set(PRIVATE_LIBS "${PRIVATE_LIBS} -l${LIB}")
+            endforeach()
+            configure_file("vulkan.pc.in" "vulkan.pc" @ONLY)
+            if(INSTALL_LVL_FILES)
+                install(FILES       "${CMAKE_CURRENT_BINARY_DIR}/vulkan.pc"
+                        DESTINATION "${CMAKE_INSTALL_LIBDIR}/pkgconfig")
+            endif()
         endif()
     endif()
 endif()
+
+

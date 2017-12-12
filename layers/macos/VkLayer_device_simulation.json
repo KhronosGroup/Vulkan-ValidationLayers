@@ -1,0 +1,11 @@
+{
+    "file_format_version" : "1.1.0",
+    "layer" : {
+        "name": "VK_LAYER_LUNARG_device_simulation",
+        "type": "GLOBAL",
+        "library_path": "./libVkLayer_device_simulation.dylib",
+        "api_version": "1.0.69",
+        "implementation_version": "1.2.0",
+        "description": "LunarG device simulation layer"
+    }
+}

@@ -24,16 +24,26 @@ if (USE_CCACHE)
     endif(CCACHE_FOUND)
 endif()
 
+if(APPLE)
+    # CMake versions 3 or later need CMAKE_MACOSX_RPATH defined.
+    # This avoids the CMP0042 policy message.
+    set(CMAKE_MACOSX_RPATH 1)
+    # The "install" target for MacOS fixes up bundles in place.
+    set(CMAKE_INSTALL_PREFIX ${CMAKE_BINARY_DIR})
+endif()
+
 # Enable cmake folders
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set(LVL_TARGET_FOLDER lvl_cmake_targets)
 
-if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux" OR CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     set(FALLBACK_CONFIG_DIRS "/etc/xdg" CACHE STRING
         "Search path to use when XDG_CONFIG_DIRS is unset or empty or the current process is SUID/SGID. Default is freedesktop compliant.")
     set(FALLBACK_DATA_DIRS "/usr/local/share:/usr/share" CACHE STRING
         "Search path to use when XDG_DATA_DIRS is unset or empty or the current process is SUID/SGID. Default is freedesktop compliant.")
+endif()
 
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     include(FindPkgConfig)
     option(BUILD_WSI_XCB_SUPPORT "Build XCB WSI support" ON)
     option(BUILD_WSI_XLIB_SUPPORT "Build Xlib WSI support" ON)
@@ -80,7 +90,11 @@ if (CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID MATCHES "Clang")
         set(COMMON_COMPILE_FLAGS "${COMMON_COMPILE_FLAGS} -Wimplicit-fallthrough=0")
     endif()
 
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 ${COMMON_COMPILE_FLAGS}")
+    if (APPLE)
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${COMMON_COMPILE_FLAGS}")
+    else()
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 ${COMMON_COMPILE_FLAGS}")
+    endif()
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COMMON_COMPILE_FLAGS} -std=c++11 -fno-rtti")
     if (UNIX)
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fvisibility=hidden")
@@ -136,7 +150,11 @@ option(BUILD_LOADER "Build loader" ON)
 option(BUILD_TESTS "Build tests" ON)
 option(BUILD_LAYERS "Build layers" ON)
 option(BUILD_DEMOS "Build demos" ON)
-option(BUILD_VKJSON "Build vkjson" ON)
+if (APPLE)
+    option(BUILD_VKJSON "Build vkjson" OFF)
+else()
+    option(BUILD_VKJSON "Build vkjson" ON)
+endif()
 option(BUILD_ICD "Build icd" ON)
 option(CUSTOM_GLSLANG_BIN_ROOT "Use the user defined GLSLANG_BINARY_ROOT" OFF)
 option(CUSTOM_SPIRV_TOOLS_BIN_ROOT "Use the user defined SPIRV_TOOLS*BINARY_ROOT paths" OFF)

@@ -96,8 +96,9 @@ class counter {
                 if (use_data->thread != tid) {
                     skipCall |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, objectType, (uint64_t)(object), 0,
                                         THREADING_CHECKER_MULTIPLE_THREADS, "THREADING",
-                                        "THREADING ERROR : object of type %s is simultaneously used in thread %ld and thread %ld",
-                                        typeName, use_data->thread, tid);
+                                        "THREADING ERROR : object of type %s is simultaneously used in "
+                                        "thread 0x%" PRIx64 " and thread 0x%" PRIx64,
+                                        typeName, (uint64_t)use_data->thread, (uint64_t)tid);
                     if (skipCall) {
                         // Wait for thread-safe access to object instead of skipping call.
                         while (uses.find(object) != uses.end()) {
@@ -123,8 +124,9 @@ class counter {
                 if (use_data->thread != tid) {
                     skipCall |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, objectType, (uint64_t)(object), 0,
                                         THREADING_CHECKER_MULTIPLE_THREADS, "THREADING",
-                                        "THREADING ERROR : object of type %s is simultaneously used in thread %ld and thread %ld",
-                                        typeName, use_data->thread, tid);
+                                        "THREADING ERROR : object of type %s is simultaneously used in "
+                                        "thread 0x%" PRIx64 " and thread 0x%" PRIx64,
+                                        typeName, (uint64_t)use_data->thread, (uint64_t)tid);
                     if (skipCall) {
                         // Wait for thread-safe access to object instead of skipping call.
                         while (uses.find(object) != uses.end()) {
@@ -181,8 +183,9 @@ class counter {
             // There is a writer of the object.
             skipCall |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, objectType, (uint64_t)(object), 0,
                                 THREADING_CHECKER_MULTIPLE_THREADS, "THREADING",
-                                "THREADING ERROR : object of type %s is simultaneously used in thread %ld and thread %ld", typeName,
-                                uses[object].thread, tid);
+                                "THREADING ERROR : object of type %s is simultaneously used in "
+                                "thread 0x%" PRIx64 " and thread 0x%" PRIx64,
+                                typeName, (uint64_t)uses[object].thread, (uint64_t)tid);
             if (skipCall) {
                 // Wait for thread-safe access to object instead of skipping call.
                 while (uses.find(object) != uses.end()) {

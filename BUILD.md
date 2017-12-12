@@ -1,6 +1,6 @@
 # Build Instructions
 
-Instructions for building this repository on Linux, Windows, and Android.
+Instructions for building this repository on Linux, Windows, Android, and MacOS.
 
 ## Index
 
@@ -9,6 +9,7 @@ Instructions for building this repository on Linux, Windows, and Android.
 3. [Windows Build](#windows-build)
 4. [Linux Build](#linux-build)
 5. [Android Build](#android-build)
+6. [MacOS build](#macos-build)
 
 [](#contributing)
 
@@ -177,14 +178,11 @@ See **Loader and Validation Layer Dependencies** for more information and other 
 2. Execute `./update_external_sources.sh` -- this will download and build external components
 3. Create a `build` directory, change into that directory, and run cmake:
 
-    ```script
         mkdir build
         cd build
         cmake -DCMAKE_BUILD_TYPE=Debug ..
-    ```
 
-4. Change into the newly-created build directory
-5. Run `make -j8` to begin the build
+4. Run `make -j8` to begin the build
 
 If your build system supports ccache, you can enable that via CMake option `-DUSE_CCACHE=On`
 
@@ -502,12 +500,155 @@ To build, install, and run the Smoke demo for Android, run the following, and an
     ./build-and-install
     adb shell am start -a android.intent.action.MAIN -c android-intent.category.LAUNCH -n com.example.Smoke/android.app.NativeActivity --es args "--validate"
 
+[](#macos-build)
+
+## Building on MacOS
+
+### MacOS Build Requirements
+
+Tested on OSX version 10.12.6
+
+Setup Homebrew and components
+
+- Follow instructions on [brew.sh](http://brew.sh) to get Homebrew installed.
+
+      /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+
+- Ensure Homebrew is at the beginning of your PATH:
+
+      export PATH=/usr/local/bin:$PATH
+
+- Add packages with the following (may need refinement)
+
+      brew install cmake python python3 git
+
+### Clone the Repository
+
+Clone the Vulkan-LoaderAndValidationLayers repository:
+
+    git clone https://github.com/KhronosGroup/Vulkan-LoaderAndValidationLayers.git
+
+### Get the External Libraries
+
+Change to the cloned directory (`cd Vulkan-LoaderAndValidationLayers`) and run the script:
+
+    ./update_external_sources.sh
+
+This script downloads and builds the `glslang` and `MoltenVK` repositories.
+
+### MacOS build
+
+#### CMake Generators
+
+This repository uses CMake to generate build or project files that are
+then used to build the repository.
+The CMake generators explicitly supported in this repository are:
+
+- Unix Makefiles
+- Xcode
+
+#### Building with the Unix Makefiles Generator
+
+This generator is the default generator, so all that is needed for a debug
+build is:
+
+        mkdir build
+        cd build
+        cmake -DCMAKE_BUILD_TYPE=Debug ..
+        make
+
+To speed up the build on a multi-core machine, use the `-j` option for `make`
+to specify the number of cores to use for the build.
+For example:
+
+    make -j4
+
+You can now run the demo applications from the command line:
+
+    open demos/cube.app
+    open demos/cubepp.app
+    open demos/smoketest.app
+    open demos/vulkaninfo.app
+
+Or you can locate them from `Finder` and launch them from there.
+
+##### The Install Target and RPATH
+
+The applications you just built are "bundled applications", but the executables
+are using the `RPATH` mechanism to locate runtime dependencies that are still
+in your build tree.
+
+To see this, run this command from your `build` directory:
+
+    otool -l demos/cube.app/Contents/MacOS/cube
+
+and note that the `cube` executable contains loader commands:
+
+- `LC_LOAD_DYLIB` to load `libvulkan.1.dylib` via an `@rpath`
+- `LC_RPATH` that contains an absolute path to the build location of the Vulkan loader
+
+This makes the bundled application "non-transportable", meaning that it won't run
+unless the Vulkan loader is on that specific absolute path.
+This is useful for debugging the loader or other components built in this repository,
+but not if you want to move the application to another machine or remove your build tree.
+
+To address this problem, run:
+
+    make install
+
+This step "cleans up" the `RPATH` to remove any external references
+and performs other bundle fix-ups.
+After running `make install`, re-run the `otool` command again and note:
+
+- `LC_LOAD_DYLIB` is now `@executable_path/../MacOS/libvulkan.1.dylib`
+- `LC_RPATH` is no longer present
+
+The "bundle fix-up" operation also puts a copy of the Vulkan loader into the bundle,
+making the bundle completely self-contained and self-referencing.
+
+Note that the "install" target has a very different meaning compared to the Linux
+"make install" target.
+The Linux "install" copies the targets to system directories.
+In MacOS, "install" means fixing up application bundles.
+In both cases, the "install" target operations clean up the `RPATH`.
+
+##### The Non-bundled vulkaninfo Application
+
+There is also a non-bundled version of the `vulkaninfo` application that you can
+run from the command line:
+
+    demos/vulkaninfo
+
+If you run this before you run "make install", vulkaninfo's RPATH is already set
+to point to the Vulkan loader in the build tree, so it has no trouble finding it.
+But the loader will not find the MoltenVK driver and you'll see a message about an
+incompatible driver.  To remedy this:
+
+    VK_ICD_FILENAMES=../external/MoltenVK/Package/Latest/MoltenVK/macOS/MoltenVK_icd.json demos/vulkaninfo
+
+If you run `vulkaninfo` after doing a "make install", the `RPATH` in the `vulkaninfo` application
+got removed and the OS needs extra help to locate the Vulkan loader:
+
+    DYLD_LIBRARY_PATH=loader VK_ICD_FILENAMES=../external/MoltenVK/Package/Latest/MoltenVK/macOS/MoltenVK_icd.json demos/vulkaninfo
+
+#### Building with the Xcode Generator
+
+To create and open an Xcode project:
+
+        mkdir build-xcode
+        cd build-xcode
+        cmake -GXcode ..
+        open VULKAN.xcodeproj
+
+Within Xcode, you can select Debug or Release builds in the project's Build Settings.
+You can also select individual schemes for working with specific applications like `cube`.
+
 ## Ninja Builds - All Platforms
 
 The [Qt Creator IDE](https://qt.io/download-open-source/#section-2) can open a root CMakeList.txt
 as a project directly, and it provides tools within Creator to configure and generate Vulkan SDK
 build files for one to many targets concurrently.
-Alternatively, when invoking CMake, use the `-G Codeblocks` Ninja option to generate Ninja build
+Alternatively, when invoking CMake, use the `-G "Codeblocks - Ninja"` option to generate Ninja build
 files to be used as project files for QtCreator
 
 - Follow the steps defined elsewhere for the OS using the update\_external\_sources script or as
@@ -518,7 +659,8 @@ files to be used as project files for QtCreator
 - In order to debug with QtCreator, a
   [Microsoft WDK: eg WDK 10](http://go.microsoft.com/fwlink/p/?LinkId=526733) is required.
 
-Note that installing the WDK breaks the MSVC vcvarsall.bat build scripts provided by MSVC, requiring that the LIB, INCLUDE, and PATHenv variables be set to the WDK paths by some other means
+Note that installing the WDK breaks the MSVC vcvarsall.bat build scripts provided by MSVC,
+requiring that the LIB, INCLUDE, and PATHenv variables be set to the WDK paths by some other means
 
 [](#update-external-sources)
 
@@ -577,7 +719,8 @@ glslang\_revision file at the root of the Vulkan-LoaderAndValidationLayers tree
 
 3) Configure the glslang source tree with CMake and build it with your IDE of choice
 
-4) Enable the `CUSTOM_GLSLANG_BIN_PATH` and `CUSTOM_SPIRV_TOOLS_BIN_PATH` options in the Vulkan-LoaderAndValidationLayers CMake configuration and point the `GLSLANG_BINARY_PATH`  and `SPIRV_TOOLS_BINARY_PATH` variables to the correct location
+4) Enable the `CUSTOM_GLSLANG_BIN_PATH` and `CUSTOM_SPIRV_TOOLS_BIN_PATH` options in the Vulkan-LoaderAndValidationLayers
+   CMake configuration and point the `GLSLANG_BINARY_PATH`  and `SPIRV_TOOLS_BINARY_PATH` variables to the correct location
 
 5) If building on Windows with MSVC, set `DISABLE_BUILDTGT_DIR_DECORATION` to _On_.
  If building on Windows, but without MSVC set `DISABLE_BUILD_PATH_DECORATION` to _On_

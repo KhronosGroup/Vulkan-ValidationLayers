@@ -32,7 +32,10 @@
 #include <stdbool.h>
 #include <string.h>
 #include <stddef.h>
-
+#if defined(__APPLE__)
+#include <CoreFoundation/CoreFoundation.h>
+#include <sys/param.h>
+#endif
 #include <sys/types.h>
 #if defined(_WIN32)
 #include "dirent_on_windows.h"
@@ -205,7 +208,7 @@ void *loader_device_heap_realloc(const struct loader_device *device, void *pMemo
 }
 
 // Environment variables
-#if defined(__linux__)
+#if defined(__linux__) || defined(__APPLE__)
 
 static inline char *loader_getenv(const char *name, const struct loader_instance *inst) {
     // No allocation of memory necessary for Linux, but we should at least touch
@@ -215,19 +218,29 @@ static inline char *loader_getenv(const char *name, const struct loader_instance
 }
 
 static inline char *loader_secure_getenv(const char *name, const struct loader_instance *inst) {
-    // No allocation of memory necessary for Linux, but we should at least touch
-    // the inst pointer to get rid of compiler warnings.
-    (void)inst;
-
+#if defined(__APPLE__)
+    // Apple does not appear to have a secure getenv implementation.
+    // The main difference between secure getenv and getenv is that secure getenv
+    // returns NULL if the process is being run with elevated privileges by a normal user.
+    // The idea is to prevent the reading of malicious environment variables by a process
+    // that can do damage.
+    // This algorithm is derived from glibc code that sets an internal
+    // variable (__libc_enable_secure) if the process is running under setuid or setgid.
+    return geteuid() != getuid() || getegid() != getgid() ? NULL : loader_getenv(name, inst);
+#else
+// Linux
 #ifdef HAVE_SECURE_GETENV
+    (void)inst;
     return secure_getenv(name);
 #elif defined(HAVE___SECURE_GETENV)
+    (void)inst;
     return __secure_getenv(name);
 #else
 #pragma message(                                                                       \
     "Warning:  Falling back to non-secure getenv for environmental lookups!  Consider" \
     " updating to a different libc.")
     return loader_getenv(name, inst);
+#endif
 #endif
 }
 
@@ -2976,7 +2989,6 @@ static VkResult loader_get_manifest_files(const struct loader_instance *inst, co
             override = override_getenv = loader_secure_getenv(env_override, inst);
         }
     }
-
 #if !defined(_WIN32)
     if (relative_location == NULL) {
 #else
@@ -3016,6 +3028,10 @@ static VkResult loader_get_manifest_files(const struct loader_instance *inst, co
 #if defined(EXTRASYSCONFDIR)
         loc_size += strlen(EXTRASYSCONFDIR) + rel_size + 1;
 #endif
+#if defined(__APPLE__)
+        // For bundle path
+        loc_size += MAXPATHLEN;
+#endif
 #else
         loc_size += strlen(location) + 1;
 #endif
@@ -3033,6 +3049,23 @@ static VkResult loader_get_manifest_files(const struct loader_instance *inst, co
         const char *loc_read;
         size_t start, stop;
 
+#if defined(__APPLE__)
+        // Add the bundle's Resources dir to the beginning of the search path.
+        // Looks for manifests in the bundle first, before any system directories.
+        CFBundleRef main_bundle = CFBundleGetMainBundle();
+        if (NULL != main_bundle) {
+            CFURLRef ref = CFBundleCopyResourcesDirectoryURL(main_bundle);
+            if (NULL != ref) {
+                if (CFURLGetFileSystemRepresentation(ref, TRUE, (UInt8 *)loc_write, loc_size)) {
+                    loc_write += strlen(loc_write);
+                    memcpy(loc_write, relative_location, rel_size);
+                    loc_write += rel_size;
+                    *loc_write++ = PATH_SEPARATOR;
+                }
+                CFRelease(ref);
+            }
+        }
+#endif
         loc_read = &xdgconfdirs[0];
         start = 0;
         while (loc_read[start] != '\0') {

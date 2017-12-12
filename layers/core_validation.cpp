@@ -11076,6 +11076,20 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateAndroidSurfaceKHR(VkInstance instance, cons
 }
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
 
+#ifdef VK_USE_PLATFORM_IOS_MVK
+VKAPI_ATTR VkResult VKAPI_CALL CreateIOSSurfaceMVK(VkInstance instance, const VkIOSSurfaceCreateInfoMVK *pCreateInfo,
+                                                   const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface) {
+    return CreateSurface(instance, pCreateInfo, pAllocator, pSurface, &VkLayerInstanceDispatchTable::CreateIOSSurfaceMVK);
+}
+#endif  // VK_USE_PLATFORM_IOS_MVK
+
+#ifdef VK_USE_PLATFORM_MACOS_MVK
+VKAPI_ATTR VkResult VKAPI_CALL CreateMacOSSurfaceMVK(VkInstance instance, const VkMacOSSurfaceCreateInfoMVK *pCreateInfo,
+                                                     const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface) {
+    return CreateSurface(instance, pCreateInfo, pAllocator, pSurface, &VkLayerInstanceDispatchTable::CreateMacOSSurfaceMVK);
+}
+#endif  // VK_USE_PLATFORM_MACOS_MVK
+
 #ifdef VK_USE_PLATFORM_MIR_KHR
 VKAPI_ATTR VkResult VKAPI_CALL CreateMirSurfaceKHR(VkInstance instance, const VkMirSurfaceCreateInfoKHR *pCreateInfo,
                                                    const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface) {
@@ -12030,6 +12044,12 @@ static const std::unordered_map<std::string, void *> name_to_funcptr_map = {
 #ifdef VK_USE_PLATFORM_XLIB_KHR
     {"vkCreateXlibSurfaceKHR", (void *)CreateXlibSurfaceKHR},
     {"vkGetPhysicalDeviceXlibPresentationSupportKHR", (void *)GetPhysicalDeviceXlibPresentationSupportKHR},
+#endif
+#ifdef VK_USE_PLATFORM_IOS_MVK
+    {"vkCreateIOSSurfaceMVK", (void *)CreateIOSSurfaceMVK},
+#endif
+#ifdef VK_USE_PLATFORM_MACOS_MVK
+    {"vkCreateMacOSSurfaceMVK", (void *)CreateMacOSSurfaceMVK},
 #endif
     {"vkCreateDisplayPlaneSurfaceKHR", (void *)CreateDisplayPlaneSurfaceKHR},
     {"vkDestroySurfaceKHR", (void *)DestroySurfaceKHR},

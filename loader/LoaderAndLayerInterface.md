@@ -54,7 +54,7 @@ Vulkan is a layered architecture, made up of the following elements:
 ![High Level View of Loader](./images/high_level_loader.png)
 
 The general concepts in this document are applicable to the loaders available
-for Windows, Linux and Android based systems.
+for Windows, Linux, Android and MacOS based systems.
 
 
 #### Who Should Read This Document
@@ -292,7 +292,7 @@ loader.
 
 
 ##### Vulkan Direct Exports
-The loader library on Windows, Linux and Android will export all core Vulkan
+The loader library on Windows, Linux, Android and MacOS will export all core Vulkan
 and all appropriate Window System Interface (WSI) extensions. This is done to
 make it simpler to get started with Vulkan development. When an application
 links directly to the loader library in this way, the Vulkan calls are simple
@@ -304,7 +304,8 @@ object they are given.
 
 ###### Dynamic Linking
 The loader is ordinarily distributed as a dynamic library (.dll on Windows or
-.so on Linux) which gets installed to the system path for dynamic libraries.
+.so on Linux or .dylib on MacOS) which gets installed to the system path
+for dynamic libraries.
 Linking to the dynamic library is generally the preferred method of linking to
 the loader, as doing so allows the loader to be updated for bug fixes and
 improvements. Furthermore, the dynamic library is generally installed to Windows
@@ -363,8 +364,8 @@ view of an Instance call chain with 3 enabled layers:
 ![Instance Call Chain](./images/loader_instance_chain.png)
 
 This is also how a Vulkan Device function call chain looks if you query it
-using `vkGetInstanceProcAddr`.  On the otherhand, a Device
-function doesn't need to worry about the broadcast becuase it knows specifically
+using `vkGetInstanceProcAddr`.  On the other hand, a Device
+function doesn't need to worry about the broadcast because it knows specifically
 which associated ICD and which associated Physical Device the call should
 terminate at.  Because of this, the loader doesn't need to get involved between
 any enabled layers and the ICD.  Thus, if you used a loader-exported Vulkan
@@ -415,11 +416,12 @@ in the windows/system32 directory (on 64-bit Windows installs, the 32-bit
 version of the loader with the same name can be found in the windows/sysWOW64
 directory).
 
-For Linux, shared libraries are versioned based on a suffix. Thus, the ABI
+For Linux and MacOS, shared libraries are versioned based on a suffix. Thus, the ABI
 number is not encoded in the base of the library filename as on Windows. On
 Linux an application wanting to link to the latest Vulkan ABI version would
 just link to the name vulkan (libvulkan.so).  A specific Vulkan ABI version can
 also be linked to by applications (e.g. libvulkan.so.1).
+On MacOS, the libraries are libvulkan.dylib abd libvulkan.1.dylib.
 
 
 #### Application Layer Usage
@@ -519,8 +521,8 @@ Implicit layers have an additional requirement over explicit layers in that they
 require being able to be disabled by an environmental variable.  This is due
 to the fact that they are not visible to the application and could cause issues.
 A good principle to keep in mind would be to define both an enable and disable
-environment variable so the users can deterministicly enable the functionality.
-On Desktop platforms (Windows and Linux), these enable/disable settings are
+environment variable so the users can deterministically enable the functionality.
+On Desktop platforms (Windows, Linux, and MacOS), these enable/disable settings are
 defined in the layer's JSON file.
 
 Discovery of system-installed implicit and explicit layers is described later in
@@ -533,6 +535,7 @@ system, as shown in the table below.
 | Windows  | Implicit Layers are located in a different Windows registry location than Explicit Layers. |
 | Linux | Implicit Layers are located in a different directory location than Explicit Layers. |
 | Android | There is **No Support For Implicit Layers** on Android. |
+| MacOS | Implicit Layers are located in a different directory location than Explicit Layers. |
 
 
 ##### Forcing Layer Source Folders
@@ -541,10 +544,10 @@ Developers may need to use special, pre-production layers, without modifying the
 system-installed layers. You can direct the loader to look for layers in a
 specific folder by defining the "VK\_LAYER\_PATH" environment variable.  This
 will override the mechanism used for finding system-installed layers. Because
-layers of interest may exist in several disinct folders on a system, this
-environment variable can containis several paths seperated by the operating
+layers of interest may exist in several distinct folders on a system, this
+environment variable can contains several paths separated by the operating
 specific path separator.  On Windows, each separate folder should be separated
-in the list using a semi-colon.  On Linux, each folder name should be separated
+in the list using a semi-colon.  On Linux and MacOS, each folder name should be separated
 using a colon.
 
 If "VK\_LAYER\_PATH" exists, **only** the folders listed in it will be scanned
@@ -552,13 +555,13 @@ for layers.  Each directory listed should be the full pathname of a folder
 containing layer manifest files.
 
 
-##### Forcing Layers to be Enabled on Windows and Linux
+##### Forcing Layers to be Enabled on Windows, Linux and MacOS
 
 Developers may want to enable layers that are not enabled by the given
-application they are using. On Linux and Windows, the environment variable
+application they are using. On desktop systems, the environment variable
 "VK\_INSTANCE\_LAYERS" can be used to enable additional layers which are
 not specified (enabled) by the application at `vkCreateInstance`.
-"VK\_INSTANCE\_LAYERS" is a colon (Linux)/semi-colon (Windows) separated
+"VK\_INSTANCE\_LAYERS" is a colon (Linux and MacOS)/semi-colon (Windows) separated
 list of layer names to enable. Order is relevant with the first layer in the
 list being the top-most layer (closest to the application) and the last
 layer in the list being the bottom-most layer (closest to the driver).
@@ -571,7 +574,7 @@ layers. Layers specified via environment variable are top-most (closest to the
 application) while layers specified by the application are bottommost.
 
 An example of using these environment variables to activate the validation
-layer `VK_LAYER_LUNARG_parameter_validation` on Windows or Linux is as follows:
+layer `VK_LAYER_LUNARG_parameter_validation` on Windows, Linux or MacOS is as follows:
 
 ```
 > $ export VK_INSTANCE_LAYERS=VK_LAYER_LUNARG_parameter_validation
@@ -666,7 +669,7 @@ Khronos approved WSI extensions are available and provide Windows System
 Integration support for various execution environments. It is important to
 understand that some WSI extensions are valid for all targets, but others are
 particular to a given execution environment (and loader). This desktop loader
-(currently targeting Windows and Linux) only enables and directly exports those
+(currently targeting Windows, Linux, and MacOS) only enables and directly exports those
 WSI extensions that are appropriate to the current environment. For the most
 part, the selection is done in the loader using compile-time preprocessor flags.
 All versions of the desktop loader currently expose at least the following WSI
@@ -684,6 +687,7 @@ specific extensions:
 | Linux (Default) |  VK_KHR_xcb_surface and VK_KHR_xlib_surface |
 | Linux (Wayland) | VK_KHR_wayland_surface |
 | Linux (Mir)  | VK_KHR_mir_surface |
+| MacOS (MoltenVK) | VK_MVK_macos_surface |
 
 **NOTE:** Wayland and Mir targets are not fully supported at this time.  Wayland
 support is present, but should be considered Beta quality.  Mir support is not
@@ -708,7 +712,7 @@ With the ability to expand Vulkan so easily, extensions will be created that the
 loader knows nothing about.  If the extension is a device extension, the loader
 will pass the unknown entry-point down the device call chain ending with the
 appropriate ICD entry-points.  The same thing will happen, if the extension is
-an instance extension which takes a physical device paramater as it's first
+an instance extension which takes a physical device parameter as it's first
 component.  However, for all other instance extensions the loader will fail to
 load it.
 
@@ -743,7 +747,7 @@ For the above reasons, the loader will filter out the names of these unknown ins
 extensions when an application calls `vkEnumerateInstanceExtensionProperties`.
 Additionally, this behavior will cause the loader to throw an error during
 `vkCreateInstance` if you still attempt to use one of these extensions.  The intent is
-to protect applications so that they don't inadvertantly use functionality
+to protect applications so that they don't inadvertently use functionality
 which could lead to a crash.  
 
 On the other-hand, if you know you can safely use the extension, you may disable
@@ -762,6 +766,7 @@ In this section we'll discuss how the loader interacts with layers, including:
     * [Android Layer Discovery](#android-layer-discovery)
     * [Windows Layer Discovery](#windows-layer-discovery)
     * [Linux Layer Discovery](#linux-layer-discovery)
+    * [MacOS Layer Discovery](#macos-layer-discovery)
   * [Layer Version Negotiation](#layer-version-negotiation)
   * [Layer Call Chains and Distributed Dispatch](#layer-call-chains-and-distributed-dispatch)
   * [Layer Unknown Physical Device Extensions](#layer-unknown-physical-device-extensions)
@@ -796,7 +801,7 @@ layers can be categorized into two categories:
  * Explicit Layers
 
 The main difference between the two is that Implicit Layers are automatically
-enabled, unless overriden, and Explicit Layers must be enabled.  Remember,
+enabled, unless overridden, and Explicit Layers must be enabled.  Remember,
 Implicit Layers are not present on all Operating Systems (like Android).
 
 On any system, the loader looks in specific areas for information on the
@@ -815,7 +820,7 @@ follow, especially with regards to interacting with the loader and other layers.
 
 ##### Layer Manifest File Usage
 
-On Windows and Linux systems, JSON formatted manifest files are used to store
+On Windows, Linux, and MacOS systems, JSON formatted manifest files are used to store
 layer information.  In order to find system-installed layers, the Vulkan loader
 will read the JSON files to identify the names and attributes of layers and
 their extensions. The use of manifest files allows the loader to avoid loading
@@ -890,7 +895,7 @@ which case the value will be interpreted as a list of paths to JSON manifest fil
 
 In general, applications should install layers into the `SOFTWARE\Khrosos\Vulkan`
 paths. The PnP registry locations are intended specifically for layers that are
-distrubuted as part of a driver installation. An application installer should not
+distributed as part of a driver installation. An application installer should not
 modify the device-specific registries, while a device driver should not modify
 the system wide registries.
 
@@ -919,7 +924,7 @@ directories:
     $HOME/.local/share/vulkan/explicit_layer.d
     $HOME/.local/share/vulkan/implicit_layer.d
 
-Of course, ther are some things you have to know about the above folders:
+Of course, there are some things you have to know about the above folders:
  1. The "/usr/local/*" directories can be configured to be other directories at
 build time.
  2. $HOME is the current home directory of the application's user id; this path
@@ -937,6 +942,33 @@ environment variables are only used for non-suid programs.  See
 [Forcing Layer Source Folders](#forcing-layer-source-folders) for more
 information on this.
 
+##### MacOS Layer Discovery
+
+On MacOS, the Vulkan loader will scan the files in the following directories:
+
+    <bundle>/Contents/Resources/vulkan/explicit_layer.d
+    <bundle>/Contents/Resources/vulkan/implicit_layer.d
+    /etc/vulkan/explicit_layer.d
+    /etc/vulkan/implicit_layer.d
+    /usr/local/share/vulkan/explicit_layer.d
+    /usr/local/share/vulkan/implicit_layer.d
+    /usr/share/vulkan/explicit_layer.d
+    /usr/share/vulkan/implicit_layer.d
+    $HOME/.local/share/vulkan/explicit_layer.d
+    $HOME/.local/share/vulkan/implicit_layer.d
+
+1. &lt;bundle&gt; is the directory containing a bundled application.  It is scanned first.
+1. The "/usr/local/*" directories can be configured to be other directories at
+build time.
+1. $HOME is the current home directory of the application's user id; this path
+will be ignored for suid programs.
+
+As on Windows, if VK\_LAYER\_PATH is defined, then the
+loader will instead look at the paths defined by that variable instead of using
+the information provided by these default paths.  However, these
+environment variables are only used for non-suid programs.  See
+[Forcing Layer Source Folders](#forcing-layer-source-folders) for more
+information on this.
 
 #### Layer Version Negotiation
 
@@ -969,11 +1001,11 @@ provided for this interface in include/vulkan/vk_layer.h:
 You'll notice the `VkNegotiateLayerInterface` structure is similar to other
 Vulkan structures.  The "sType" field, in this case takes a new enum defined
 just for internal loader/layer interfacing use.  The valid values for "sType"
-could grow in the future, but right only havs the one value
+could grow in the future, but right now only has the one value
 "LAYER_NEGOTIATE_INTERFACE_STRUCT".
 
 This function (`vkNegotiateLoaderLayerInterfaceVersion`) should be exported by
-the layer so that using "GetProcAddress" on Windows or "dlsym" on Linux, should
+the layer so that using "GetProcAddress" on Windows or "dlsym" on Linux or MacOS, should
 return a valid function pointer to it.  Once the loader has grabbed a valid
 address to the layers function, the loader will create a variable of type
 `VkNegotiateLayerInterface` and initialize it in the following ways:
@@ -1015,7 +1047,7 @@ If the layer supports the new interface and reports version 2 or greater, then
 the loader will use the “fpGetInstanceProcAddr” and “fpGetDeviceProcAddr”
 functions from the “VkNegotiateLayerInterface” structure.  Prior to these
 changes, the loader would query each of those functions using "GetProcAddress"
-on Windows or "dlsym" on Linux.
+on Windows or "dlsym" on Linux or MacOS.
 
 
 #### Layer Call Chains and Distributed Dispatch
@@ -1423,7 +1455,7 @@ a meta-layer's component layers, and report them as the meta-layer's properties
 to the application when queried.
  
 Restrictions to defining and using a meta-layer are:
- 1. A Meta-layer Manifest file **must** be a properly formated that contains one
+ 1. A Meta-layer Manifest file **must** be a properly formatted that contains one
 or more component layers.
  3. All component layers **must be** present on a system for the meta-layer to
 be used.
@@ -1676,7 +1708,7 @@ dispatch pointer from the `VkDevice` object, which is the parent of the
 
 #### Layer Manifest File Format
 
-On Windows and Linux (desktop), the loader uses manifest files to discover
+On Windows, Linux and MacOS (desktop), the loader uses manifest files to discover
 layer libraries and layers.  The desktop loader doesn't directly query the
 layer library except during chaining.  This is to reduce the likelihood of
 loading a malicious layer into memory.  Instead, details are read from the
@@ -1779,7 +1811,7 @@ Here's an example of a meta-layer manifest file:
 | "name" | The string used to uniquely identify this layer to applications. | vkEnumerateInstanceLayerProperties |
 | "type" | This field indicates the type of layer.  The values can be: GLOBAL, or INSTANCE | vkEnumerate*LayerProperties |
 |  | **NOTES:** Prior to deprecation, the "type" node was used to indicate which layer chain(s) to activate the layer upon: instance, device, or both. Distinct instance and device layers are deprecated; there are now just layers. Allowable values for type (both before and after deprecation) are "INSTANCE", "GLOBAL" and, "DEVICE." "DEVICE" layers are skipped over by the loader as if they were not found. |  |
-| "library\_path" | The "library\_path" specifies either a filename, a relative pathname, or a full pathname to a layer shared library file.  If "library\_path" specifies a relative pathname, it is relative to the path of the JSON manifest file (e.g. for cases when an application provides a layer that is in the same folder hierarchy as the rest of the application files).  If "library\_path" specifies a filename, the library must live in the system's shared object search path. There are no rules about the name of the layer shared library files other than it should end with the appropriate suffix (".DLL" on Windows, and ".so" on Linux).  **This field must not be present if "component_layers" is defined**  | N/A |
+| "library\_path" | The "library\_path" specifies either a filename, a relative pathname, or a full pathname to a layer shared library file.  If "library\_path" specifies a relative pathname, it is relative to the path of the JSON manifest file (e.g. for cases when an application provides a layer that is in the same folder hierarchy as the rest of the application files).  If "library\_path" specifies a filename, the library must live in the system's shared object search path. There are no rules about the name of the layer shared library files other than it should end with the appropriate suffix (".DLL" on Windows, ".so" on Linux, and ".dylib" on MacOS).  **This field must not be present if "component_layers" is defined**  | N/A |
 | "api\_version" | The major.minor.patch version number of the Vulkan API that the shared library file for the library was built against. For example: 1.0.33. | vkEnumerateInstanceLayerProperties |
 | "implementation_version" | The version of the layer implemented.  If the layer itself has any major changes, this number should change so the loader and/or application can identify it properly. | vkEnumerateInstanceLayerProperties |
 | "description" | A high-level description of the layer and it's intended use. | vkEnumerateInstanceLayerProperties |
@@ -1868,7 +1900,7 @@ the concept of
 [Layer Unknown Physical Device Extensions](#layer-unknown-physical-device-
 extensions)
 and the associated `vk_layerGetPhysicalDeviceProcAddr` function.  Finally, it
-changed the manifest file defition to 1.1.0.
+changed the manifest file definition to 1.1.0.
 
 ##### Layer Library API Version 1
 
@@ -1939,7 +1971,8 @@ ICD to properly hand-shake.
     * [ICD Manifest File Usage](#icd-manifest-file-usage)
     * [ICD Discovery on Windows](#icd-discovery-on-windows)
     * [ICD Discovery on Linux](#icd-discovery-on-linux)
-    * [Using Pre-Production ICDs on Windows and Linux](#using-pre-production-icds-on-windows-and-linux)
+    * [ICD Discovery on MacOS](#icd-discovery-on-macos)
+    * [Using Pre-Production ICDs on Windows, Linux and MacOS](#using-pre-production-icds-on-windows-and-linux)
     * [ICD Discovery on Android](#icd-discovery-on-android)
   * [ICD Manifest File Format](#icd-manifest-file-format)
     * [ICD Manifest File Versions](#icd-manifest-file-versions)
@@ -1949,7 +1982,7 @@ ICD to properly hand-shake.
   * [ICD Dispatchable Object Creation](#icd-dispatchable-object-creation)
   * [Handling KHR Surface Objects in WSI Extensions](#handling-khr-surface-objects-in-wsi-extensions)
   * [Loader and ICD Interface Negotiation](#loader-and-icd-interface-negotiation)
-    * [Windows and Linux ICD Negotiation](#windows-and-linux-icd-negotiation)
+    * [Windows, Linux, and MacOS ICD Negotiation](#windows-and-linux-icd-negotiation)
       * [Version Negotiation Between Loader and ICDs](#version-negotiation-between-loader-and-icds)
         * [Interfacing With Legacy ICDs or Loader](#interfacing-with-legacy-icds-or-loader)
       * [Loader Version 5 Interface Requirements](#loader-version-5-interface-requirements)
@@ -1968,7 +2001,7 @@ responsible for discovering available Vulkan ICDs on the system. Given a list
 of available ICDs, the loader can enumerate all the physical devices available
 for an application and return this information to the application. The process
 in which the loader discovers the available Installable Client Drivers (ICDs)
-on a system is platform dependent. Windows, Linux and Android ICD discovery
+on a system is platform dependent. Windows, Linux, Android, and MacOS ICD discovery
 details are listed below.
 
 #### Overriding the Default ICD Usage
@@ -2001,10 +2034,18 @@ export VK_ICD_FILENAMES=/home/user/dev/mesa/share/vulkan/icd.d/intel_icd.x86_64.
 This is an example which is using the `VK_ICD_FILENAMES` override on Linux to point
 to the Intel Mesa driver's ICD Manifest file.
 
+##### On MacOS
+
+```
+export VK_ICD_FILENAMES=/home/user/MoltenVK/Package/Latest/MoltenVK/macOS/MoltenVK_icd.json
+```
+
+This is an example which is using the `VK_ICD_FILENAMES` override on MacOS to point
+to an installation and build of the MoltenVK GitHub repository that contains the MoltenVK ICD.
 
 #### ICD Manifest File Usage
 
-As with layers, on Windows and Linux systems, JSON formatted manifest files are
+As with layers, on Windows, Linux and MacOS systems, JSON formatted manifest files are
 used to store ICD information.  In order to find system-installed drivers, the
 Vulkan loader will read the JSON files to identify the names and attributes of
 each driver.  One thing you will notice is that ICD Manifest files are much
@@ -2122,6 +2163,38 @@ pathname of an ICD shared library (".so") file.
 See the [ICD Manifest File Format](#icd-manifest-file-format) section for more
 details.
 
+#### ICD Discovery on MacOS
+
+In order to find installed ICDs, the Vulkan loader will scan the files
+in the following directories:
+
+```
+    <bundle>/Contents/Resources/vulkan/icd.d
+    /etc/vulkan/icd.d
+    /usr/local/share/vulkan/icd.d
+    /usr/share/vulkan/icd.d
+    $HOME/.local/share/vulkan/icd.d
+```
+
+The "/usr/local/*" directories can be configured to be other directories at
+build time.
+
+The typical usage of the directories is indicated in the table below.
+
+| Location  |  Details |
+|-------------------|------------------------|
+| &lt;bundle&gt;/Contents/Resources/vulkan/icd.d | Directory for ICDs that are bundled with the application (searched first) |
+| "/etc/vulkan/icd.d" | Location of ICDs installed manually |
+| "/usr/local/share/vulkan/icd.d" | Directory for locally built ICDs |
+| "/usr/share/vulkan/icd.d" | Location of ICDs installed from packages |
+| $HOME/.local/share/vulkan/icd.d | $HOME is the current home directory of the application's user id; this path will be ignored for suid programs |
+
+The Vulkan loader will open each manifest file found to obtain the name or
+pathname of an ICD shared library (".dylib") file.
+
+See the [ICD Manifest File Format](#icd-manifest-file-format) section for more
+details.
+
 ##### Additional Settings For ICD Debugging
 
 If you are seeing issues which may be related to the ICD.  A possible option to debug is to enable the
@@ -2130,7 +2203,7 @@ there is a problem with an ICD missing symbols on your system, this will expose 
 to fail on loading the ICD.  It is recommended that you enable `LD_BIND_NOW` along with `VK_LOADER_DEBUG=warn`
 to expose any issues.
 
-#### Using Pre-Production ICDs on Windows and Linux
+#### Using Pre-Production ICDs on Windows, Linux and MacOS
 
 Independent Hardware Vendor (IHV) pre-production ICDs. In some cases, a
 pre-production ICD may be in an installable package. In other cases, a
@@ -2144,13 +2217,13 @@ other words, only the ICDs listed in "VK\_ICD\_FILENAMES" will be used.
 
 The "VK\_ICD\_FILENAMES" environment variable is a list of ICD
 manifest files, containing the full path to the ICD JSON Manifest file.  This
-list is colon-separated on Linux, and semi-colon separated on Windows.
+list is colon-separated on Linux and MacOS, and semi-colon separated on Windows.
 
 Typically, "VK\_ICD\_FILENAMES" will only contain a full pathname to one info
 file for a developer-built ICD. A separator (colon or semi-colon) is only used
 if more than one ICD is listed.
 
-**NOTE:** On Linux, this environment variable will be ignored for suid programs.
+**NOTE:** On Linux and MacOS, this environment variable will be ignored for suid programs.
 
 
 #### ICD Discovery on Android
@@ -2183,7 +2256,7 @@ Here is an example ICD JSON Manifest file:
 |----------------|--------------------|
 | "file\_format\_version" | The JSON format major.minor.patch version number of this file.  Currently supported version is 1.0.0. |
 | "ICD" | The identifier used to group all ICD information together. |
-| "library_path" | The "library\_path" specifies either a filename, a relative pathname, or a full pathname to a layer shared library file.  If "library\_path" specifies a relative pathname, it is relative to the path of the JSON manifest file.  If "library\_path" specifies a filename, the library must live in the system's shared object search path. There are no rules about the name of the ICD shared library files other than it should end with the appropriate suffix (".DLL" on Windows, and ".so" on Linux). | N/A |
+| "library_path" | The "library\_path" specifies either a filename, a relative pathname, or a full pathname to a layer shared library file.  If "library\_path" specifies a relative pathname, it is relative to the path of the JSON manifest file.  If "library\_path" specifies a filename, the library must live in the system's shared object search path. There are no rules about the name of the ICD shared library files other than it should end with the appropriate suffix (".DLL" on Windows, ".so" on Linux and "*.dylib" on MacOS). | N/A |
 | "api_version" | The major.minor.patch version number of the Vulkan API that the shared library files for the ICD was built against. For example: 1.0.33. |
 
 **NOTE:** If the same ICD shared library supports multiple, incompatible
@@ -2373,9 +2446,10 @@ vkObj alloc_icd_obj()
 ### Handling KHR Surface Objects in WSI Extensions
 
 Normally, ICDs handle object creation and destruction for various Vulkan
-objects. The WSI surface extensions for Linux and Windows
+objects. The WSI surface extensions for Linux, Windows, and MacOS
 ("VK\_KHR\_win32\_surface", "VK\_KHR\_xcb\_surface", "VK\_KHR\_xlib\_surface",
-"VK\_KHR\_mir\_surface", "VK\_KHR\_wayland\_surface", and "VK\_KHR\_surface")
+"VK\_KHR\_mir\_surface", "VK\_KHR\_wayland\_surface", "VK\_MVK\_macos\_surface"
+and "VK\_KHR\_surface")
 are handled differently.  For these extensions, the `VkSurfaceKHR` object
 creation and destruction may be handled by either the loader, or an ICD.
 
@@ -2390,6 +2464,7 @@ If the loader handles the management of the `VkSurfaceKHR` objects:
       * Xlib
       * Windows
       * Android
+      * MacOS (`vkCreateMacOSSurfaceMVK`)
  2. The loader creates a `VkIcdSurfaceXXX` object for the corresponding
 `vkCreateXXXSurfaceKHR` call.
     * The `VkIcdSurfaceXXX` structures are defined in `include/vulkan/vk_icd.h`.
@@ -2418,7 +2493,7 @@ associated with multiple ICDs.  Therefore, when the loader receives the
 object.  This object acts as a container for each ICD's version of the
 `VkSurfaceKHR` object.  If an ICD does not support the creation of its own
 `VkSurfaceKHR` object, the loader's container stores a NULL for that ICD.  On
-the otherhand, if the ICD does support `VkSurfaceKHR` creation, the loader will
+the other hand, if the ICD does support `VkSurfaceKHR` creation, the loader will
 make the appropriate `vkCreateXXXSurfaceKHR` call to the ICD, and store the
 returned pointer in it's container object.  The loader then returns the
 `VkSurfaceIcdXXX` as a `VkSurfaceKHR` object back up the call chain.  Finally,
@@ -2434,10 +2509,10 @@ viewed as a pass through. That is, the loader generally doesn't modify the
 functions or their parameters, but simply calls the ICDs entry-point for that
 function. There are specific additional interface requirements an ICD needs to
 comply with that are not part of any requirements from the Vulkan specification.
-These addtional requirements are versioned to allow flexibility in the future.
+These additional requirements are versioned to allow flexibility in the future.
 
 
-#### Windows and Linux ICD Negotiation
+#### Windows, Linux and MacOS ICD Negotiation
 
 
 ##### Version Negotiation Between Loader and ICDs
@@ -2604,7 +2679,7 @@ The Android loader uses the same protocol for initializing the dispatch
 table as described above. The only difference is that the Android
 loader queries layer and extension information directly from the
 respective libraries and does not use the json manifest files used
-by the Windows and Linux loaders.
+by the Windows, Linux and MacOS loaders.
 
 ## Table of Debug Environment Variables
 
@@ -2617,7 +2692,7 @@ of discovery.
 | VK_ICD_FILENAMES                  | Force the loader to use the specific ICD JSON files.  The value should contain a list of delimited full path listings to ICD JSON Manifest files.  **NOTE:** If you fail to use the global path to a JSON file, you may encounter issues.  |  `export VK_ICD_FILENAMES=<folder_a>\intel.json:<folder_b>\amd.json`<br/><br/>`set VK_ICD_FILENAMES=<folder_a>\nvidia.json;<folder_b>\mesa.json` |
 | VK_INSTANCE_LAYERS                | Force the loader to add the given layers to the list of Enabled layers normally passed into `vkCreateInstance`.  These layers are added first, and the loader will remove any duplicate layers that appear in both this list as well as that passed into `ppEnabledLayerNames`. | `export VK_INSTANCE_LAYERS=<layer_a>:<layer_b>`<br/><br/>`set VK_INSTANCE_LAYERS=<layer_a>;<layer_b>` |
 | VK_LAYER_PATH                     | Override the loader's standard Layer library search folders and use the provided delimited folders to search for layer Manifest files. | `export VK_LAYER_PATH=<path_a>:<path_b>`<br/><br/>`set VK_LAYER_PATH=<path_a>;<pathb>` |
-| VK_LOADER_DISABLE_INST_EXT_FILTER | Disable the filtering out of instance extensions that the loader doesn't know about.  This will allow applications to enable instance extensions exposed by ICDs but that the loader has no support for.  **NOTE:** This may cause the loader or applciation to crash. |  `export VK_LOADER_DISABLE_INST_EXT_FILTER=1`<br/><br/>`set VK_LOADER_DISABLE_INST_EXT_FILTER=1` |
+| VK_LOADER_DISABLE_INST_EXT_FILTER | Disable the filtering out of instance extensions that the loader doesn't know about.  This will allow applications to enable instance extensions exposed by ICDs but that the loader has no support for.  **NOTE:** This may cause the loader or application to crash. |  `export VK_LOADER_DISABLE_INST_EXT_FILTER=1`<br/><br/>`set VK_LOADER_DISABLE_INST_EXT_FILTER=1` |
 | VK_LOADER_DEBUG                   | Enable loader debug messages.  Options are:<br/>- error (only errors)<br/>- warn (warnings and errors)<br/>- info (info, warning, and errors)<br/> - debug (debug + all before) <br/> -all (report out all messages) | `export VK_LOADER_DEBUG=all`<br/><br/>`set VK_LOADER_DEBUG=warn` |
  
 ## Glossary of Terms
@@ -2625,11 +2700,11 @@ of discovery.
 | Field Name | Field Value |
 |:---:|--------------------|
 | Android Loader | The loader designed to work primarily for the Android OS.  This is generated from a different code-base than the desktop loader.  But, in all important aspects, should be functionally equivalent. |
-| Desktop Loader | The loader designed to work on both Windows and Linux.  This is generated from a different [code-base](#https://github.com/KhronosGroup/Vulkan-LoaderAndValidationLayers) than the Android loader.  But in all important aspects, should be functionally equivalent. |
+| Desktop Loader | The loader designed to work on Windows, Linux and MacOS.  This is generated from a different [code-base](#https://github.com/KhronosGroup/Vulkan-LoaderAndValidationLayers) than the Android loader.  But in all important aspects, should be functionally equivalent. |
 | Core Function | A function that is already part of the Vulkan core specification and not an extension.  For example, vkCreateDevice(). |
 | Device Call Chain | The call chain of functions followed for device functions.  This call chain for a device function is usually as follows: first the application calls into a loader trampoline, then the loader trampoline calls enabled layers, the final layer calls into the ICD specific to the device.  See the [Dispatch Tables and Call Chains](#dispatch-tables-and-call-chains) section for more information |
 | Device Function | A Device function is any Vulkan function which takes a `VkDevice`, `VkQueue`, `VkCommandBuffer`, or any child of these, as its first parameter.  Some Vulkan Device functions are: `vkQueueSubmit`, `vkBeginCommandBuffer`, `vkCreateEvent`.  See the [Instance Versus Device](#instance-versus-device) section for more information. |
-| Discovery | The process of the loader searching for ICD and Layer files to setup the internal list of Vulkan objects available.  On Windows/Linux, the discovery process typically focuses on searching for Manifest files.  While on Android, the process focuses on searching for library files. |
+| Discovery | The process of the loader searching for ICD and Layer files to setup the internal list of Vulkan objects available.  On Windows/Linux/MacOS, the discovery process typically focuses on searching for Manifest files.  While on Android, the process focuses on searching for library files. |
 | Dispatch Table | An array of function pointers (including core and possibly extension functions) used to step to the next entity in a call chain.  The entity could be the loader, a layer or an ICD.  See [Dispatch Tables and Call Chains](#dispatch-tables-and-call-chains) for more information.  |
 | Extension | A concept of Vulkan used to expand the core Vulkan functionality.  Extensions may be IHV-specific, platform-specific, or more broadly available.  You should always query if an extension exists, and enable it during `vkCreateInstance` (if it is an instance extension) or during `vkCreateDevice` (if it is a device extension). |
 | ICD | Acronym for Installable Client Driver.  These are drivers that are provided by IHVs to interact with the hardware they provide.  See [Installable Client Drivers](#installable-client-drivers) section for more information.

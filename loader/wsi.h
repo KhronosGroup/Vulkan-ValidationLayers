@@ -42,6 +42,9 @@ typedef struct {
 #ifdef VK_USE_PLATFORM_XLIB_KHR
         VkIcdSurfaceXlib xlib_surf;
 #endif  // VK_USE_PLATFORM_XLIB_KHR
+#ifdef VK_USE_PLATFORM_MACOS_MVK
+        VkIcdSurfaceMacOS macos_surf;
+#endif  // VK_USE_PLATFORM_MACOS_MVK
         VkIcdSurfaceDisplay display_surf;
     };
     uint32_t base_size;            // Size of VkIcdSurfaceBase
@@ -115,6 +118,14 @@ VKAPI_ATTR VkBool32 VKAPI_CALL terminator_GetPhysicalDeviceXlibPresentationSuppo
                                                                                       uint32_t queueFamilyIndex, Display *dpy,
                                                                                       VisualID visualID);
 #endif
+#ifdef VK_USE_PLATFORM_MACOS_MVK
+VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateMacOSSurfaceMVK(VkInstance instance, const VkMacOSSurfaceCreateInfoMVK *pCreateInfo,
+                                                                const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface);
+#endif
+#ifdef VK_USE_PLATFORM_IOS_MVK
+VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateIOSSurfaceMVK(VkInstance instance, const VkIOSSurfaceCreateInfoMVK *pCreateInfo,
+                                                              const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface);
+#endif
 VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceDisplayPropertiesKHR(VkPhysicalDevice physicalDevice,
                                                                                 uint32_t *pPropertyCount,
                                                                                 VkDisplayPropertiesKHR *pProperties);
@@ -142,4 +153,4 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateSharedSwapchainsKHR(VkDevice dev
                                                                     const VkAllocationCallbacks *pAllocator,
                                                                     VkSwapchainKHR *pSwapchains);
 
-#endif // WSI_H
+#endif  // WSI_H

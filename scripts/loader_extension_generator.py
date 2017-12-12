@@ -32,6 +32,8 @@ WSI_EXT_NAMES = ['VK_KHR_surface',
                  'VK_KHR_mir_surface',
                  'VK_KHR_win32_surface',
                  'VK_KHR_android_surface',
+                 'VK_MVK_macos_surface',
+                 'VK_MVK_ios_surface',
                  'VK_KHR_swapchain',
                  'VK_KHR_display_swapchain']
 
