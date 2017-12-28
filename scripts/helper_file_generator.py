@@ -177,19 +177,22 @@ class HelperFileOutputGenerator(OutputGenerator):
         OutputGenerator.endFeature(self)
     #
     # Grab group (e.g. C "enum" type) info to output for enum-string conversion helper
-    def genGroup(self, groupinfo, groupName):
-        OutputGenerator.genGroup(self, groupinfo, groupName)
+    def genGroup(self, groupinfo, groupName, alias):
+        OutputGenerator.genGroup(self, groupinfo, groupName, alias)
         groupElem = groupinfo.elem
         # For enum_string_header
         if self.helper_file_type == 'enum_string_header':
             value_list = []
             for elem in groupElem.findall('enum'):
-                if elem.get('supported') != 'disabled':
+                if elem.get('supported') != 'disabled' and elem.get('alias') == None:
                     item_name = elem.get('name')
                     # Avoid duplicates
                     if item_name not in value_list:
                         value_list.append(item_name)
             if value_list is not None:
+                #if alias:
+                #    self.enum_output += self.GenerateEnumStringConversion(alias, value_list)
+                #else:
                 self.enum_output += self.GenerateEnumStringConversion(groupName, value_list)
         elif self.helper_file_type == 'object_types_header':
             if groupName == 'VkDebugReportObjectTypeEXT':
@@ -205,8 +208,8 @@ class HelperFileOutputGenerator(OutputGenerator):
 
     #
     # Called for each type -- if the type is a struct/union, grab the metadata
-    def genType(self, typeinfo, name):
-        OutputGenerator.genType(self, typeinfo, name)
+    def genType(self, typeinfo, name, alias):
+        OutputGenerator.genType(self, typeinfo, name, alias)
         typeElem = typeinfo.elem
         # If the type is a struct type, traverse the imbedded <member> tags generating a structure.
         # Otherwise, emit the tag text.
@@ -215,7 +218,7 @@ class HelperFileOutputGenerator(OutputGenerator):
             self.object_types.append(name)
         elif (category == 'struct' or category == 'union'):
             self.structNames.append(name)
-            self.genStruct(typeinfo, name)
+            self.genStruct(typeinfo, name, alias)
     #
     # Generate a VkStructureType based on a structure typename
     def genVkStructureType(self, typename):
@@ -319,8 +322,8 @@ class HelperFileOutputGenerator(OutputGenerator):
         return False
     #
     # Generate local ready-access data describing Vulkan structures and unions from the XML metadata
-    def genStruct(self, typeinfo, typeName):
-        OutputGenerator.genStruct(self, typeinfo, typeName)
+    def genStruct(self, typeinfo, typeName, alias):
+        OutputGenerator.genStruct(self, typeinfo, typeName, alias)
         members = typeinfo.elem.findall('.//member')
         # Iterate over members once to get length parameters for arrays
         lens = set()

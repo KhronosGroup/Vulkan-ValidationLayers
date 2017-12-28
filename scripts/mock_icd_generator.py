@@ -934,7 +934,7 @@ class MockICDOutputGenerator(OutputGenerator):
         self.sections[section].append(text)
     #
     # Type generation
-    def genType(self, typeinfo, name):
+    def genType(self, typeinfo, name, alias):
         pass
     #
     # Struct (e.g. C "struct" type) generation.
@@ -944,8 +944,8 @@ class MockICDOutputGenerator(OutputGenerator):
     # tags - they are a declaration of a struct or union member.
     # Only simple member declarations are supported (no nested
     # structs etc.)
-    def genStruct(self, typeinfo, typeName):
-        OutputGenerator.genStruct(self, typeinfo, typeName)
+    def genStruct(self, typeinfo, typeName, alias):
+        OutputGenerator.genStruct(self, typeinfo, typeName, alias)
         body = 'typedef ' + typeinfo.elem.get('category') + ' ' + typeName + ' {\n'
         # paramdecl = self.makeCParamDecl(typeinfo.elem, self.genOpts.alignFuncParam)
         for member in typeinfo.elem.findall('.//member'):
@@ -956,16 +956,16 @@ class MockICDOutputGenerator(OutputGenerator):
     #
     # Group (e.g. C "enum" type) generation.
     # These are concatenated together with other types.
-    def genGroup(self, groupinfo, groupName):
+    def genGroup(self, groupinfo, groupName, alias):
         pass
     # Enumerant generation
     # <enum> tags may specify their values in several ways, but are usually
     # just integers.
-    def genEnum(self, enuminfo, name):
+    def genEnum(self, enuminfo, name, alias):
         pass
     #
     # Command generation
-    def genCmd(self, cmdinfo, name):
+    def genCmd(self, cmdinfo, name, alias):
         decls = self.makeCDecls(cmdinfo.elem)
         if self.header: # In the header declare all intercepts
             self.appendSection('command', '')
@@ -1010,7 +1010,7 @@ class MockICDOutputGenerator(OutputGenerator):
         if (self.featureExtraProtect != None):
             self.intercepts += [ '#endif' ]
 
-        OutputGenerator.genCmd(self, cmdinfo, name)
+        OutputGenerator.genCmd(self, cmdinfo, name, alias)
         #
         self.appendSection('command', '')
         self.appendSection('command', 'static %s' % (decls[0][:-1]))

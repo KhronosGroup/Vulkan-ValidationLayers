@@ -20789,7 +20789,7 @@ TEST_F(VkLayerTest, ExtensionNotEnabled) {
     }
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
                                          "but its required extension VK_KHR_maintenance1 has not been enabled");
-    vkTrimCommandPoolKHR(m_device->handle(), m_commandPool->handle(), (VkCommandPoolTrimFlagsKHR)0);
+    vkTrimCommandPoolKHR(m_device->handle(), m_commandPool->handle(), (VkCommandPoolTrimFlags)0);
     m_errorMonitor->VerifyFound();
 }
 

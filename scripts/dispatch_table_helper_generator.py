@@ -135,8 +135,8 @@ class DispatchTableHelperOutputGenerator(OutputGenerator):
 
     #
     # Process commands, adding to appropriate dispatch tables
-    def genCmd(self, cmdinfo, name):
-        OutputGenerator.genCmd(self, cmdinfo, name)
+    def genCmd(self, cmdinfo, name, alias):
+        OutputGenerator.genCmd(self, cmdinfo, name, alias)
 
         avoid_entries = ['vkCreateInstance',
                          'vkCreateDevice']

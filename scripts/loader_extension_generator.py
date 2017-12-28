@@ -251,8 +251,8 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
 
     #
     # Process commands, adding to appropriate dispatch tables
-    def genCmd(self, cmdinfo, name):
-        OutputGenerator.genCmd(self, cmdinfo, name)
+    def genCmd(self, cmdinfo, name, alias):
+        OutputGenerator.genCmd(self, cmdinfo, name, alias)
 
         # Get first param type
         params = cmdinfo.elem.findall('param')
