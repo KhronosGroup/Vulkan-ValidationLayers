@@ -2221,27 +2221,30 @@ bool pv_vkCmdSetViewport(VkCommandBuffer commandBuffer, uint32_t firstViewport, 
     bool skip = false;
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
 
-    if (viewportCount > 0 && pViewports != nullptr) {
-        const VkPhysicalDeviceLimits &limits = device_data->device_limits;
-        for (uint32_t viewportIndex = 0; viewportIndex < viewportCount; ++viewportIndex) {
-            const VkViewport &viewport = pViewports[viewportIndex];
-
-            if (device_data->physical_device_features.multiViewport == false) {
-                if (viewportCount != 1) {
-                    skip |= log_msg(
-                        device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,
-                        VALIDATION_ERROR_1e000992, __LINE__, DEVICE_FEATURE, LayerName,
-                        "vkCmdSetViewport(): The multiViewport feature is not enabled, so viewportCount must be 1 but is %d. %s",
-                        viewportCount, validation_error_map[VALIDATION_ERROR_1e000992]);
-                }
-                if (firstViewport != 0) {
-                    skip |= log_msg(
-                        device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,
-                        VALIDATION_ERROR_1e000990, __LINE__, DEVICE_FEATURE, LayerName,
-                        "vkCmdSetViewport(): The multiViewport feature is not enabled, so firstViewport must be 0 but is %d. %s",
+    if (!device_data->physical_device_features.multiViewport) {
+        if (firstViewport != 0) {
+            skip |=
+                log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                        HandleToUint64(commandBuffer), __LINE__, VALIDATION_ERROR_1e000990, LayerName,
+                        "vkCmdSetViewport: The multiViewport feature is disabled, but firstViewport (=%" PRIu32 ") is not 0. %s",
                         firstViewport, validation_error_map[VALIDATION_ERROR_1e000990]);
-                }
-            }
+        }
+        if (viewportCount > 1) {
+            skip |=
+                log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                        HandleToUint64(commandBuffer), __LINE__, VALIDATION_ERROR_1e000992, LayerName,
+                        "vkCmdSetViewport: The multiViewport feature is disabled, but viewportCount (=%" PRIu32 ") is not 1. %s",
+                        viewportCount, validation_error_map[VALIDATION_ERROR_1e000992]);
+        }
+    } else {  // multiViewport enabled
+        const uint64_t sum = (uint64_t)firstViewport + viewportCount;
+        if (sum > device_data->device_limits.maxViewports) {
+            skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                            HandleToUint64(commandBuffer), __LINE__, VALIDATION_ERROR_1e00098e, LayerName,
+                            "vkCmdSetViewport: firstViewport + viewportCount (=%" PRIu32 " + %" PRIu32 " = %" PRIu64
+                            ") is greater than VkPhysicalDeviceLimits::maxViewports (=%" PRIu32 "). %s",
+                            firstViewport, viewportCount, sum, device_data->device_limits.maxViewports,
+                            validation_error_map[VALIDATION_ERROR_1e00098e]);
         }
     }
 
