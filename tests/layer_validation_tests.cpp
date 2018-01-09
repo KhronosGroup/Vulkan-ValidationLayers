@@ -20876,6 +20876,44 @@ TEST_F(VkLayerTest, InvalidCreateBufferSize) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(VkLayerTest, SetDynViewportParamTests) {
+    TEST_DESCRIPTION("Test parameters of vkCmdSetViewport");
+
+    VkPhysicalDeviceFeatures features{};
+    ASSERT_NO_FATAL_FAILURE(Init(&features));
+
+    const VkViewport vp = {0.0, 0.0, 64.0, 64.0, 0.0, 1.0};
+    const VkViewport viewports[] = {vp, vp};
+
+    m_commandBuffer->begin();
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_1e000990);
+    vkCmdSetViewport(m_commandBuffer->handle(), 1, 1, viewports);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_1e030a1b);
+    vkCmdSetViewport(m_commandBuffer->handle(), 0, 0, nullptr);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_1e000992);
+    vkCmdSetViewport(m_commandBuffer->handle(), 0, 2, viewports);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_1e000990);
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_1e030a1b);
+    vkCmdSetViewport(m_commandBuffer->handle(), 1, 0, viewports);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_1e000990);
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_1e000992);
+    vkCmdSetViewport(m_commandBuffer->handle(), 1, 2, viewports);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_1e03fa01);
+    vkCmdSetViewport(m_commandBuffer->handle(), 0, 1, nullptr);
+    m_errorMonitor->VerifyFound();
+}
+
 //
 // POSITIVE VALIDATION TESTS
 //
