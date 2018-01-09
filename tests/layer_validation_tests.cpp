@@ -20877,7 +20877,7 @@ TEST_F(VkLayerTest, InvalidCreateBufferSize) {
 }
 
 TEST_F(VkLayerTest, SetDynViewportParamTests) {
-    TEST_DESCRIPTION("Test parameters of vkCmdSetViewport");
+    TEST_DESCRIPTION("Test parameters of vkCmdSetViewport without multiViewport feature");
 
     VkPhysicalDeviceFeatures features{};
     ASSERT_NO_FATAL_FAILURE(Init(&features));
@@ -20911,6 +20911,57 @@ TEST_F(VkLayerTest, SetDynViewportParamTests) {
 
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_1e03fa01);
     vkCmdSetViewport(m_commandBuffer->handle(), 0, 1, nullptr);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkLayerTest, SetDynViewportParamMultiviewportTests) {
+    TEST_DESCRIPTION("Test parameters of vkCmdSetViewport with multiViewport feature enabled");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    if (!m_device->phy().features().multiViewport) {
+        printf("             VkPhysicalDeviceFeatures::multiViewport is not supported -- skipping test.\n");
+        return;
+    }
+
+    const auto max_viewports = m_device->props.limits.maxViewports;
+    const uint32_t too_many_viewports = 65536 + 1;  // let's say this is too much to allocate pViewports for
+
+    m_commandBuffer->begin();
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_1e030a1b);
+    vkCmdSetViewport(m_commandBuffer->handle(), 0, 0, nullptr);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_1e03fa01);
+    vkCmdSetViewport(m_commandBuffer->handle(), 0, max_viewports, nullptr);
+    m_errorMonitor->VerifyFound();
+
+    if (max_viewports >= too_many_viewports) {
+        printf(
+            "             VkPhysicalDeviceLimits::maxViewports is too large to practically test against -- skipping part of "
+            "test.\n");
+        return;
+    }
+
+    const VkViewport vp = {0.0, 0.0, 64.0, 64.0, 0.0, 1.0};
+    const std::vector<VkViewport> viewports(max_viewports + 1, vp);
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_1e00098e);
+    vkCmdSetViewport(m_commandBuffer->handle(), 0, max_viewports + 1, viewports.data());
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_1e00098e);
+    vkCmdSetViewport(m_commandBuffer->handle(), max_viewports, 1, viewports.data());
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_1e00098e);
+    vkCmdSetViewport(m_commandBuffer->handle(), 1, max_viewports, viewports.data());
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_1e030a1b);
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_1e00098e);
+    vkCmdSetViewport(m_commandBuffer->handle(), max_viewports + 1, 0, viewports.data());
     m_errorMonitor->VerifyFound();
 }
 
