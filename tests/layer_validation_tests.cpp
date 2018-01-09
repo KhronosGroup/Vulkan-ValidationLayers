@@ -1249,8 +1249,8 @@ TEST_F(VkLayerTest, RequiredParameter) {
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_1e030a1b);
     // Specify 0 for a required array count
     // Expected to trigger an error with parameter_validation::validate_array
-    VkViewport view_port = {};
-    m_commandBuffer->SetViewport(0, 0, &view_port);
+    VkViewport viewport = {0.0f, 0.0f, 64.0f, 64.0f, 0.0f, 1.0f};
+    m_commandBuffer->SetViewport(0, 0, &viewport);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_1e03fa01);
@@ -4208,8 +4208,8 @@ TEST_F(VkLayerTest, RenderPassPipelineSubpassMismatch) {
     pipe.AddDefaultColorAttachment();
     pipe.AddShader(&vs);
     pipe.AddShader(&fs);
-    VkViewport view_port = {};
-    m_viewports.push_back(view_port);
+    VkViewport viewport = {0.0f, 0.0f, 64.0f, 64.0f, 0.0f, 1.0f};
+    m_viewports.push_back(viewport);
     pipe.SetViewport(m_viewports);
     VkRect2D rect = {};
     m_scissors.push_back(rect);
@@ -7469,10 +7469,10 @@ TEST_F(VkPositiveLayerTest, DestroyPipelineRenderPass) {
     pipe.AddDefaultColorAttachment();
     pipe.AddShader(&vs);
     pipe.AddShader(&fs);
-    VkViewport view_port = {};
-    m_viewports.push_back(view_port);
+    VkViewport viewport = {0.0f, 0.0f, 64.0f, 64.0f, 0.0f, 1.0f};
+    m_viewports.push_back(viewport);
     pipe.SetViewport(m_viewports);
-    VkRect2D rect = {};
+    VkRect2D rect = {{0, 0}, {64, 64}};
     m_scissors.push_back(rect);
     pipe.SetScissor(m_scissors);
 
@@ -13089,10 +13089,10 @@ TEST_F(VkLayerTest, RenderPassIncompatible) {
     pipe.AddShader(&vs);
     pipe.AddShader(&fs);
     pipe.AddDefaultColorAttachment();
-    VkViewport view_port = {};
-    m_viewports.push_back(view_port);
+    VkViewport viewport = {0.0f, 0.0f, 64.0f, 64.0f, 0.0f, 1.0f};
+    m_viewports.push_back(viewport);
     pipe.SetViewport(m_viewports);
-    VkRect2D rect = {};
+    VkRect2D rect = {{0, 0}, {64, 64}};
     m_scissors.push_back(rect);
     pipe.SetScissor(m_scissors);
     pipe.CreateVKPipeline(pipeline_layout.handle(), rp);
