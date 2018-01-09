@@ -48,6 +48,7 @@
 
 #include <algorithm>
 #include <functional>
+#include <limits>
 #include <memory>
 #include <unordered_set>
 
@@ -92,6 +93,18 @@ static const char bindStateFragShaderText[] =
 template <class ElementT, size_t array_size>
 size_t size(ElementT (&)[array_size]) {
     return array_size;
+}
+
+template <typename F>
+F PositiveDir() {
+    using Lim = std::numeric_limits<F>;
+    return Lim::has_infinity ? Lim::infinity() : Lim::max();
+}
+
+template <typename F>
+F NegativeDir() {
+    using Lim = std::numeric_limits<F>;
+    return Lim::has_infinity ? -Lim::infinity() : Lim::lowest();
 }
 
 // Format search helper
@@ -20887,6 +20900,7 @@ TEST_F(VkLayerTest, SetDynViewportParamTests) {
 
     m_commandBuffer->begin();
 
+    // array tests
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_1e000990);
     vkCmdSetViewport(m_commandBuffer->handle(), 1, 1, viewports);
     m_errorMonitor->VerifyFound();
@@ -20912,6 +20926,127 @@ TEST_F(VkLayerTest, SetDynViewportParamTests) {
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_1e03fa01);
     vkCmdSetViewport(m_commandBuffer->handle(), 0, 1, nullptr);
     m_errorMonitor->VerifyFound();
+
+    // core viewport tests
+    using std::vector;
+    struct TestCase {
+        VkViewport vp;
+        vector<UNIQUE_VALIDATION_ERROR_CODE> vuids;
+    };
+
+    const auto one_past_max_w =
+        nextafterf(static_cast<float>(m_device->props.limits.maxViewportDimensions[0]), PositiveDir<float>());
+    const auto one_past_max_h =
+        nextafterf(static_cast<float>(m_device->props.limits.maxViewportDimensions[1]), PositiveDir<float>());
+
+    const auto min_bound = m_device->props.limits.viewportBoundsRange[0];
+    const auto max_bound = m_device->props.limits.viewportBoundsRange[1];
+    const auto one_before_min_bounds = nextafterf(min_bound, NegativeDir<float>());
+    const auto one_past_max_bounds = nextafterf(max_bound, PositiveDir<float>());
+
+    const auto below_zero = nextafterf(0.0, -1.0);
+    const auto past_one = nextafterf(1.0, 2.0);
+
+    const vector<TestCase> test_cases = {
+        {{0.0, 0.0, 0.0, 64.0, 0.0, 1.0}, {VALIDATION_ERROR_15000dd4}},
+        {{0.0, 0.0, one_past_max_w, 64.0, 0.0, 1.0}, {VALIDATION_ERROR_15000dd6}},
+        {{0.0, 0.0, NAN, 64.0, 0.0, 1.0}, {VALIDATION_ERROR_15000dd4}},
+        {{0.0, 0.0, 64.0, 0.0, 0.0, 1.0}, {VALIDATION_ERROR_15000dd8}},
+        {{0.0, 0.0, 64.0, one_past_max_h, 0.0, 1.0}, {VALIDATION_ERROR_15000dda}},
+        {{0.0, 0.0, 64.0, NAN, 0.0, 1.0}, {VALIDATION_ERROR_15000dd8}},
+        {{one_before_min_bounds, 0.0, 64.0, 64.0, 0.0, 1.0}, {VALIDATION_ERROR_15000ddc}},
+        {{one_past_max_bounds, 0.0, 64.0, 64.0, 0.0, 1.0}, {VALIDATION_ERROR_150009a0}},
+        {{NAN, 0.0, 64.0, 64.0, 0.0, 1.0}, {VALIDATION_ERROR_15000ddc}},
+        {{0.0, one_before_min_bounds, 64.0, 64.0, 0.0, 1.0}, {VALIDATION_ERROR_15000dde}},
+        {{0.0, one_past_max_bounds, 64.0, 64.0, 0.0, 1.0}, {VALIDATION_ERROR_150009a2}},
+        {{0.0, NAN, 64.0, 64.0, 0.0, 1.0}, {VALIDATION_ERROR_15000dde}},
+        {{max_bound, 0.0, 1.0, 64.0, 0.0, 1.0}, {VALIDATION_ERROR_150009a0}},
+        {{0.0, max_bound, 64.0, 1.0, 0.0, 1.0}, {VALIDATION_ERROR_150009a2}},
+        {{0.0, 0.0, 64.0, 64.0, below_zero, 1.0}, {VALIDATION_ERROR_150009a4}},
+        {{0.0, 0.0, 64.0, 64.0, past_one, 1.0}, {VALIDATION_ERROR_150009a4}},
+        {{0.0, 0.0, 64.0, 64.0, NAN, 1.0}, {VALIDATION_ERROR_150009a4}},
+        {{0.0, 0.0, 64.0, 64.0, 0.0, below_zero}, {VALIDATION_ERROR_150009a6}},
+        {{0.0, 0.0, 64.0, 64.0, 0.0, past_one}, {VALIDATION_ERROR_150009a6}},
+        {{0.0, 0.0, 64.0, 64.0, 0.0, NAN}, {VALIDATION_ERROR_150009a6}},
+    };
+
+    for (const auto &test_case : test_cases) {
+        for (const auto vuid : test_case.vuids) m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, vuid);
+        vkCmdSetViewport(m_commandBuffer->handle(), 0, 1, &test_case.vp);
+        m_errorMonitor->VerifyFound();
+    }
+}
+
+void NegHeightViewportTests(VkDeviceObj *m_device, VkCommandBufferObj *m_commandBuffer, ErrorMonitor *m_errorMonitor) {
+    const auto &limits = m_device->props.limits;
+
+    m_commandBuffer->begin();
+
+    using std::vector;
+    struct TestCase {
+        VkViewport vp;
+        vector<UNIQUE_VALIDATION_ERROR_CODE> vuids;
+    };
+
+    const auto one_before_min_h = nextafterf(-static_cast<float>(limits.maxViewportDimensions[1]), NegativeDir<float>());
+    const auto one_past_max_h = nextafterf(static_cast<float>(limits.maxViewportDimensions[1]), PositiveDir<float>());
+
+    const auto min_bound = limits.viewportBoundsRange[0];
+    const auto max_bound = limits.viewportBoundsRange[1];
+    const auto one_before_min_bound = nextafterf(min_bound, NegativeDir<float>());
+    const auto one_past_max_bound = nextafterf(max_bound, PositiveDir<float>());
+
+    const vector<TestCase> test_cases = {{{0.0, 0.0, 64.0, one_before_min_h, 0.0, 1.0}, {VALIDATION_ERROR_15000dda}},
+                                         {{0.0, 0.0, 64.0, one_past_max_h, 0.0, 1.0}, {VALIDATION_ERROR_15000dda}},
+                                         {{0.0, 0.0, 64.0, NAN, 0.0, 1.0}, {VALIDATION_ERROR_15000dda}},
+                                         {{0.0, one_before_min_bound, 64.0, 1.0, 0.0, 1.0}, {VALIDATION_ERROR_15000dde}},
+                                         {{0.0, one_past_max_bound, 64.0, -1.0, 0.0, 1.0}, {VALIDATION_ERROR_15000de0}},
+                                         {{0.0, min_bound, 64.0, -1.0, 0.0, 1.0}, {VALIDATION_ERROR_15000de2}},
+                                         {{0.0, max_bound, 64.0, 1.0, 0.0, 1.0}, {VALIDATION_ERROR_150009a2}}};
+
+    for (const auto &test_case : test_cases) {
+        for (const auto vuid : test_case.vuids) {
+            if (vuid == VALIDATION_ERROR_UNDEFINED)
+                m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                                     "is less than VkPhysicalDeviceLimits::viewportBoundsRange[0]");
+            else
+                m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, vuid);
+        }
+        vkCmdSetViewport(m_commandBuffer->handle(), 0, 1, &test_case.vp);
+        m_errorMonitor->VerifyFound();
+    }
+}
+
+TEST_F(VkLayerTest, SetDynViewportParamMaintenance1Tests) {
+    TEST_DESCRIPTION("Verify errors are detected on misuse of SetViewport with a negative viewport extension enabled.");
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE1_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+    } else {
+        printf("             VK_KHR_maintenance1 extension not supported -- skipping test\n");
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    NegHeightViewportTests(m_device, m_commandBuffer, m_errorMonitor);
+}
+
+TEST_F(VkLayerTest, SetDynViewportParamAmdNegHeightTests) {
+    TEST_DESCRIPTION("Verify errors are detected on misuse of SetViewport with AMD negative viewport extension enabled.");
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_AMD_NEGATIVE_VIEWPORT_HEIGHT_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_AMD_NEGATIVE_VIEWPORT_HEIGHT_EXTENSION_NAME);
+    } else {
+        printf("             VK_AMD_negative_viewport_height extension not supported -- skipping test\n");
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    NegHeightViewportTests(m_device, m_commandBuffer, m_errorMonitor);
 }
 
 TEST_F(VkLayerTest, SetDynViewportParamMultiviewportTests) {
@@ -21762,80 +21897,12 @@ TEST_F(VkLayerTest, PushDescriptorSetCmdPushBadArgs) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, ViewportBoundsCheckingWithNVHExtensionEnabled) {
-    TEST_DESCRIPTION("Verify errors are detected on misuse of SetViewport with a negative viewport extension enabled.");
-
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
-
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE1_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
-    } else {
-        printf("             Maintenance1 Extension not supported, skipping tests\n");
-        return;
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState());
-    const VkPhysicalDeviceLimits &limits = m_device->props.limits;
-
-    m_commandBuffer->begin();
-    {
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_1500099a);
-        VkViewport viewport = {0, 0, 16, -(static_cast<float>(limits.maxViewportDimensions[1] + 1)), 0, 1};
-        vkCmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
-        m_errorMonitor->VerifyFound();
-    }
-    m_commandBuffer->end();
-}
-
-TEST_F(VkLayerTest, ViewportAndScissorBoundsChecking) {
-    TEST_DESCRIPTION("Verify errors are detected on misuse of SetViewport and SetScissor.");
+TEST_F(VkLayerTest, ScissorBoundsChecking) {
+    TEST_DESCRIPTION("Verify errors are detected on misuse of SetScissor.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
     m_commandBuffer->begin();
-
-    const VkPhysicalDeviceLimits &limits = m_device->props.limits;
-
-    {
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_15000996);
-        VkViewport viewport = {0, 0, static_cast<float>(limits.maxViewportDimensions[0] + 1), 16, 0, 1};
-        vkCmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
-        m_errorMonitor->VerifyFound();
-    }
-
-    {
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_15000998);
-        VkViewport viewport = {0, 0, 16, static_cast<float>(limits.maxViewportDimensions[1] + 1), 0, 1};
-        vkCmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
-        m_errorMonitor->VerifyFound();
-    }
-
-    {
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_1500099e);
-        VkViewport viewport = {limits.viewportBoundsRange[0] - 1, 0, 16, 16, 0, 1};
-        vkCmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
-        m_errorMonitor->VerifyFound();
-    }
-
-    {
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_1500099e);
-        VkViewport viewport = {0, limits.viewportBoundsRange[0] - 1, 16, 16, 0, 1};
-        vkCmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
-        m_errorMonitor->VerifyFound();
-    }
-
-    {
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_150009a0);
-        VkViewport viewport = {limits.viewportBoundsRange[1], 0, 16, 16, 0, 1};
-        vkCmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
-        m_errorMonitor->VerifyFound();
-    }
-
-    {
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_150009a2);
-        VkViewport viewport = {0, limits.viewportBoundsRange[1], 16, 16, 0, 1};
-        vkCmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
-        m_errorMonitor->VerifyFound();
-    }
 
     {
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_1d8004a6);
