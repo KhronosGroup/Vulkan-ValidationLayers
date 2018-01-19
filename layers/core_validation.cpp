@@ -10118,6 +10118,15 @@ static bool PreCallValidateCreateSwapchainKHR(layer_data *dev_data, const char *
                     "%s: pCreateInfo->oldSwapchain's surface is not pCreateInfo->surface", func_name))
             return true;
     }
+
+    if ((pCreateInfo->imageExtent.width == 0) || (pCreateInfo->imageExtent.height == 0)) {
+        if (log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
+                    HandleToUint64(dev_data->device), __LINE__, VALIDATION_ERROR_14600d32, "DS",
+                    "%s: pCreateInfo->imageExtent = (%d, %d) which is illegal. %s", func_name, pCreateInfo->imageExtent.width,
+                    pCreateInfo->imageExtent.height, validation_error_map[VALIDATION_ERROR_14600d32]))
+            return true;
+    }
+
     auto physical_device_state = GetPhysicalDeviceState(dev_data->instance_data, dev_data->physical_device);
     if (physical_device_state->vkGetPhysicalDeviceSurfaceCapabilitiesKHRState == UNCALLED) {
         if (log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT,
