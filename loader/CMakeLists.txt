@@ -180,10 +180,9 @@ if (WIN32)
     # Suppress conflicting libs warning for debug builds.
     set_target_properties(${API_LOWERCASE}-${MAJOR} PROPERTIES LINK_FLAGS_DEBUG /ignore:4098)
     set_target_properties(VKstatic.${MAJOR} PROPERTIES OUTPUT_NAME VKstatic.${MAJOR})
-    target_link_libraries(${API_LOWERCASE}-${MAJOR} shlwapi Cfgmgr32)
+    target_link_libraries(${API_LOWERCASE}-${MAJOR} Cfgmgr32)
     add_dependencies(${API_LOWERCASE}-${MAJOR} generate_helper_files loader_gen_files loader_asm_gen_files)
 
-    target_link_libraries(VKstatic.${MAJOR} shlwapi)
     if (CMAKE_GENERATOR MATCHES "^Visual Studio.*")
         file(TO_NATIVE_PATH ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIGURATION>/${API_LOWERCASE}-${MAJOR}.dll COPY_SRC_PATH)
         file(TO_NATIVE_PATH ${CMAKE_CURRENT_BINARY_DIR}/../demos/$<CONFIGURATION>/ COPY_DST_PATH)
