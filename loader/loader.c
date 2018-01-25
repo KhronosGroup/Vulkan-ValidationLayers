@@ -543,15 +543,15 @@ out:
 // *reg_data contains a string list of filenames as pointer.
 // When done using the returned string list, the caller should free the pointer.
 VkResult loaderGetDeviceRegistryFiles(const struct loader_instance *inst, char **reg_data, PDWORD reg_data_size, LPCTSTR value_name) {
-    static const char* softwareComponentGUID = "{5c4c3332-344d-483c-8739-259e934c9cc8}";
-    static const char* displayGUID = "{4d36e968-e325-11ce-bfc1-08002be10318}";
+    static const wchar_t* softwareComponentGUID = L"{5c4c3332-344d-483c-8739-259e934c9cc8}";
+    static const wchar_t* displayGUID = L"{4d36e968-e325-11ce-bfc1-08002be10318}";
     const ULONG flags = CM_GETIDLIST_FILTER_CLASS | CM_GETIDLIST_FILTER_PRESENT;
    
-    char childGuid[MAX_GUID_STRING_LEN + 2]; // +2 for brackets {}
+    wchar_t childGuid[MAX_GUID_STRING_LEN + 2]; // +2 for brackets {}
     ULONG childGuidSize = sizeof(childGuid);
 
     DEVINST devID = 0, childID = 0;
-    char *pDeviceNames = NULL;
+    wchar_t *pDeviceNames = NULL;
     ULONG deviceNamesSize = 0;
     VkResult result = VK_SUCCESS;
     bool found = false;
@@ -563,25 +563,25 @@ VkResult loaderGetDeviceRegistryFiles(const struct loader_instance *inst, char *
 
     // if after obtaining the DeviceNameSize, new device is added start over
     do {
-        CM_Get_Device_ID_List_Size(&deviceNamesSize, displayGUID, flags);
+        CM_Get_Device_ID_List_SizeW(&deviceNamesSize, displayGUID, flags);
 
         if (pDeviceNames != NULL) {
             loader_instance_heap_free(inst, pDeviceNames);
         }
 
-        pDeviceNames = loader_instance_heap_alloc(inst, deviceNamesSize, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+        pDeviceNames = loader_instance_heap_alloc(inst, deviceNamesSize * sizeof(wchar_t), VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
         if (pDeviceNames == NULL) {
             loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
                 "loaderGetDeviceRegistryFiles: Failed to allocate space for display device names.");
             result = VK_ERROR_OUT_OF_HOST_MEMORY;
             return result;
         }
-    } while (CM_Get_Device_ID_List(displayGUID, pDeviceNames, deviceNamesSize, flags) == CR_BUFFER_SMALL); 
-    
+    } while (CM_Get_Device_ID_ListW(displayGUID, pDeviceNames, deviceNamesSize, flags) == CR_BUFFER_SMALL);
+
     if (pDeviceNames) {
 
-        for (char *deviceName = pDeviceNames; *deviceName; deviceName += strlen(deviceName) + 1) {
-            CONFIGRET status = CM_Locate_DevNode(&devID, deviceName, CM_LOCATE_DEVNODE_NORMAL);
+        for (wchar_t *deviceName = pDeviceNames; *deviceName; deviceName += wcslen(deviceName) + 1) {
+            CONFIGRET status = CM_Locate_DevNodeW(&devID, deviceName, CM_LOCATE_DEVNODE_NORMAL);
             if (CR_SUCCESS != status) {
                 loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
                     "loaderGetRegistryFiles: failed to open DevNode %s", deviceName);
@@ -622,13 +622,13 @@ VkResult loaderGetDeviceRegistryFiles(const struct loader_instance *inst, char *
             }
 
             do {
-                char buffer[MAX_DEVICE_ID_LEN];
-                CM_Get_Device_ID(childID, buffer, MAX_DEVICE_ID_LEN, 0);
+                wchar_t buffer[MAX_DEVICE_ID_LEN];
+                CM_Get_Device_IDW(childID, buffer, MAX_DEVICE_ID_LEN, 0);
 
                 loader_log(inst, VK_DEBUG_REPORT_INFORMATION_BIT_EXT, 0,
                     "loaderGetRegistryFiles: Opening child device %d - %s", childID, buffer);
 
-                status = CM_Get_DevNode_Registry_Property(childID, CM_DRP_CLASSGUID, NULL, &childGuid, &childGuidSize, 0);
+                status = CM_Get_DevNode_Registry_PropertyW(childID, CM_DRP_CLASSGUID, NULL, &childGuid, &childGuidSize, 0);
                 if (status != CR_SUCCESS) {
                     loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
                         "loaderGetRegistryFiles: unable to obtain GUID for:%d error:%d", childID, status);
@@ -637,7 +637,7 @@ VkResult loaderGetDeviceRegistryFiles(const struct loader_instance *inst, char *
                     continue;
                 }
 
-                if (strcmp(childGuid, softwareComponentGUID) != 0) {
+                if (wcscmp(childGuid, softwareComponentGUID) != 0) {
                     loader_log(inst, VK_DEBUG_REPORT_DEBUG_BIT_EXT, 0,
                         "loaderGetRegistryFiles: GUID for %d is not SoftwareComponent skipping", childID);
                     continue;
