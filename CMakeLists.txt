@@ -112,6 +112,7 @@ else()
     # is WIN32
     option(DISABLE_BUILD_PATH_DECORATION "Disable the decoration of the gslang and SPIRV-Tools build path with MSVC build type info" OFF)
     option(DISABLE_BUILDTGT_DIR_DECORATION "Disable the decoration of the gslang and SPIRV-Tools build path with target info" OFF)
+    option(ENABLE_WIN10_ONECORE "Link the loader with OneCore umbrella libraries" OFF)
 
     # For Windows, since 32-bit and 64-bit items can co-exist, we build each in its own build directory.
     # 32-bit target data goes in build32, and 64-bit target data goes into build.  So, include/link the

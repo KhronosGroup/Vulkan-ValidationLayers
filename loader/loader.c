@@ -543,11 +543,11 @@ out:
 // *reg_data contains a string list of filenames as pointer.
 // When done using the returned string list, the caller should free the pointer.
 VkResult loaderGetDeviceRegistryFiles(const struct loader_instance *inst, char **reg_data, PDWORD reg_data_size, LPCTSTR value_name) {
-    static const wchar_t* softwareComponentGUID = L"{5c4c3332-344d-483c-8739-259e934c9cc8}";
-    static const wchar_t* displayGUID = L"{4d36e968-e325-11ce-bfc1-08002be10318}";
+    static const wchar_t *softwareComponentGUID = L"{5c4c3332-344d-483c-8739-259e934c9cc8}";
+    static const wchar_t *displayGUID = L"{4d36e968-e325-11ce-bfc1-08002be10318}";
     const ULONG flags = CM_GETIDLIST_FILTER_CLASS | CM_GETIDLIST_FILTER_PRESENT;
-   
-    wchar_t childGuid[MAX_GUID_STRING_LEN + 2]; // +2 for brackets {}
+
+    wchar_t childGuid[MAX_GUID_STRING_LEN + 2];  // +2 for brackets {}
     ULONG childGuidSize = sizeof(childGuid);
 
     DEVINST devID = 0, childID = 0;
@@ -579,7 +579,6 @@ VkResult loaderGetDeviceRegistryFiles(const struct loader_instance *inst, char *
     } while (CM_Get_Device_ID_ListW(displayGUID, pDeviceNames, deviceNamesSize, flags) == CR_BUFFER_SMALL);
 
     if (pDeviceNames) {
-
         for (wchar_t *deviceName = pDeviceNames; *deviceName; deviceName += wcslen(deviceName) + 1) {
             CONFIGRET status = CM_Locate_DevNodeW(&devID, deviceName, CM_LOCATE_DEVNODE_NORMAL);
             if (CR_SUCCESS != status) {
