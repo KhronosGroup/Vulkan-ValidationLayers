@@ -2064,9 +2064,6 @@ bool pv_vkCmdSetViewport(VkCommandBuffer commandBuffer, uint32_t firstViewport, 
     bool skip = false;
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
 
-    skip |= validate_array(device_data->report_data, "vkCmdSetViewport", "viewportCount", "pViewports", viewportCount, pViewports,
-                           true, true, VALIDATION_ERROR_UNDEFINED, VALIDATION_ERROR_UNDEFINED);
-
     if (viewportCount > 0 && pViewports != nullptr) {
         const VkPhysicalDeviceLimits &limits = device_data->device_limits;
         for (uint32_t viewportIndex = 0; viewportIndex < viewportCount; ++viewportIndex) {
@@ -2075,17 +2072,17 @@ bool pv_vkCmdSetViewport(VkCommandBuffer commandBuffer, uint32_t firstViewport, 
             if (device_data->physical_device_features.multiViewport == false) {
                 if (viewportCount != 1) {
                     skip |= log_msg(
-                        device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                        __LINE__, DEVICE_FEATURE, LayerName,
-                        "vkCmdSetViewport(): The multiViewport feature is not enabled, so viewportCount must be 1 but is %d.",
-                        viewportCount);
+                        device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,
+                        VALIDATION_ERROR_1e000992, __LINE__, DEVICE_FEATURE, LayerName,
+                        "vkCmdSetViewport(): The multiViewport feature is not enabled, so viewportCount must be 1 but is %d. %s",
+                        viewportCount, validation_error_map[VALIDATION_ERROR_1e000992]);
                 }
                 if (firstViewport != 0) {
                     skip |= log_msg(
-                        device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                        __LINE__, DEVICE_FEATURE, LayerName,
-                        "vkCmdSetViewport(): The multiViewport feature is not enabled, so firstViewport must be 0 but is %d.",
-                        firstViewport);
+                        device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,
+                        VALIDATION_ERROR_1e000990, __LINE__, DEVICE_FEATURE, LayerName,
+                        "vkCmdSetViewport(): The multiViewport feature is not enabled, so firstViewport must be 0 but is %d. %s",
+                        firstViewport, validation_error_map[VALIDATION_ERROR_1e000990]);
                 }
             }
 

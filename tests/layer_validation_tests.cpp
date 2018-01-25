@@ -1249,14 +1249,14 @@ TEST_F(VkLayerTest, RequiredParameter) {
     vkGetPhysicalDeviceQueueFamilyProperties(gpu(), NULL, NULL);
     m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "parameter viewportCount must be greater than 0");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_1e030a1b);
     // Specify 0 for a required array count
     // Expected to trigger an error with parameter_validation::validate_array
     VkViewport view_port = {};
     m_commandBuffer->SetViewport(0, 0, &view_port);
     m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "required parameter pViewports specified as NULL");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_1e03fa01);
     // Specify NULL for a required array
     // Expected to trigger an error with parameter_validation::validate_array
     m_commandBuffer->SetViewport(0, 1, NULL);
@@ -7243,6 +7243,8 @@ TEST_F(VkLayerTest, RenderPassInUseDestroyedSignaled) {
 
     // Wait for queue to complete so we can safely destroy rp
     vkQueueWaitIdle(m_device->m_queue);
+    m_errorMonitor->SetUnexpectedError("If renderPass is not VK_NULL_HANDLE, renderPass must be a valid VkRenderPass handle");
+    m_errorMonitor->SetUnexpectedError("Was it created? Has it already been destroyed?");
     vkDestroyRenderPass(m_device->device(), rp, nullptr);
 }
 
