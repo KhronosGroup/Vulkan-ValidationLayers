@@ -1228,8 +1228,13 @@ static bool RangesIntersect(int32_t start, uint32_t start_offset, int32_t end, u
 }
 
 // Returns true if two VkImageCopy structures overlap
-static bool RegionIntersects(const VkImageCopy *src, const VkImageCopy *dst, VkImageType type) {
+static bool RegionIntersects(const VkImageCopy *src, const VkImageCopy *dst, VkImageType type, bool is_multiplane) {
     bool result = false;
+
+    if (is_multiplane && (src->srcSubresource.aspectMask != dst->dstSubresource.aspectMask)) {
+        return result;
+    }
+
     if ((src->srcSubresource.mipLevel == dst->dstSubresource.mipLevel) &&
         (RangesIntersect(src->srcSubresource.baseArrayLayer, src->srcSubresource.layerCount, dst->dstSubresource.baseArrayLayer,
                          dst->dstSubresource.layerCount))) {
@@ -1830,12 +1835,14 @@ bool PreCallValidateCmdCopyImage(layer_data *device_data, GLOBAL_CB_NODE *cb_nod
             }
         }
 
-        // For each region, the aspectMask member of srcSubresource and dstSubresource must match
-        if (region.srcSubresource.aspectMask != region.dstSubresource.aspectMask) {
-            char const str[] = "vkCmdCopyImage: Src and dest aspectMasks for each region must match";
-            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                            HandleToUint64(command_buffer), __LINE__, VALIDATION_ERROR_09c00112, "IMAGE", "%s. %s", str,
-                            validation_error_map[VALIDATION_ERROR_09c00112]);
+        if (!GetDeviceExtensions(device_data)->vk_khr_sampler_ycbcr_conversion) {
+            // not multi-plane, the aspectMask member of srcSubresource and dstSubresource must match
+            if (region.srcSubresource.aspectMask != region.dstSubresource.aspectMask) {
+                char const str[] = "vkCmdCopyImage: Src and dest aspectMasks for each region must match";
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                                HandleToUint64(command_buffer), __LINE__, VALIDATION_ERROR_09c00112, "IMAGE", "%s. %s", str,
+                                validation_error_map[VALIDATION_ERROR_09c00112]);
+            }
         }
 
         // For each region, the aspectMask member of srcSubresource must be present in the source image
@@ -2007,7 +2014,8 @@ bool PreCallValidateCmdCopyImage(layer_data *device_data, GLOBAL_CB_NODE *cb_nod
         // must not overlap in memory
         if (src_image_state->image == dst_image_state->image) {
             for (uint32_t j = 0; j < region_count; j++) {
-                if (RegionIntersects(&region, &regions[j], src_image_state->createInfo.imageType)) {
+                if (RegionIntersects(&region, &regions[j], src_image_state->createInfo.imageType,
+                                     FormatIsMultiplane(src_image_state->createInfo.format))) {
                     std::stringstream ss;
                     ss << "vkCmdCopyImage: pRegions[" << i << "] src overlaps with pRegions[" << j << "].";
                     skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
