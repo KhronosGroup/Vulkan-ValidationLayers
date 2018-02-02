@@ -13230,6 +13230,50 @@ TEST_F(VkLayerTest, MissingClearAttachment) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(VkPositiveLayerTest, ConfirmNoVLErrorWhenVkCmdClearAttachmentsCalledInSecondaryCB) {
+    TEST_DESCRIPTION(
+        "This test is to verify that when vkCmdClearAttachments is called by a secondary commandbuffer, the validation layers do "
+        "not throw an error if the primary commandbuffer begins a renderpass before executing the secondary commandbuffer.");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkCommandBufferObj secondary(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+
+    VkCommandBufferBeginInfo info = {};
+    VkCommandBufferInheritanceInfo hinfo = {};
+    info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT | VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+    info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    info.pInheritanceInfo = &hinfo;
+    hinfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO;
+    hinfo.pNext = NULL;
+    hinfo.renderPass = renderPass();
+    hinfo.subpass = 0;
+    hinfo.framebuffer = m_framebuffer;
+    hinfo.occlusionQueryEnable = VK_FALSE;
+    hinfo.queryFlags = 0;
+    hinfo.pipelineStatistics = 0;
+
+    secondary.begin(&info);
+    VkClearAttachment color_attachment;
+    color_attachment.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    color_attachment.clearValue.color.float32[0] = 0.0;
+    color_attachment.clearValue.color.float32[1] = 0.0;
+    color_attachment.clearValue.color.float32[2] = 0.0;
+    color_attachment.clearValue.color.float32[3] = 0.0;
+    color_attachment.colorAttachment = 0;
+    VkClearRect clear_rect = {{{0, 0}, {(uint32_t)m_width, (uint32_t)m_height}}, 0, 1};
+    vkCmdClearAttachments(secondary.handle(), 1, &color_attachment, 1, &clear_rect);
+    m_errorMonitor->VerifyNotFound();
+    secondary.end();
+
+    m_commandBuffer->begin();
+    vkCmdBeginRenderPass(m_commandBuffer->handle(), &m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
+    vkCmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary.handle());
+    vkCmdEndRenderPass(m_commandBuffer->handle());
+    m_commandBuffer->end();
+}
+
 TEST_F(VkLayerTest, CmdClearAttachmentTests) {
     TEST_DESCRIPTION("Various tests for validating usage of vkCmdClearAttachments");
 
