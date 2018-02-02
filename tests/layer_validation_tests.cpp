@@ -27372,6 +27372,151 @@ TEST_F(VkPositiveLayerTest, BindMemory2) {
     m_errorMonitor->VerifyNotFound();
 }
 
+TEST_F(VkPositiveLayerTest, MultiplaneImageTests) {
+    TEST_DESCRIPTION("Postive test of multiplane image operations");
+
+    // Enable KHR multiplane req'd extensions
+    bool mp_extensions = InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,
+                                                    VK_KHR_GET_MEMORY_REQUIREMENTS_2_SPEC_VERSION);
+    if (mp_extensions) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    }
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
+    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
+    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+    if (mp_extensions) {
+        m_device_extension_names.push_back(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+    } else {
+        printf("             test requires KHR multiplane extensions, not available.  Skipping.\n");
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    // Query format support
+    PFN_vkGetPhysicalDeviceImageFormatProperties2KHR GetPDIFP2KHR =
+        (PFN_vkGetPhysicalDeviceImageFormatProperties2KHR)vkGetInstanceProcAddr(instance(),
+                                                                                "vkGetPhysicalDeviceImageFormatProperties2KHR");
+    VkPhysicalDeviceImageFormatInfo2KHR fmt_info = {};
+    fmt_info.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_FORMAT_INFO_2_KHR;
+    fmt_info.pNext = nullptr;
+    fmt_info.format = VK_FORMAT_G8_B8_R8_3PLANE_422_UNORM_KHR;
+    fmt_info.type = VK_IMAGE_TYPE_2D;
+    fmt_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    fmt_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    fmt_info.flags = 0;
+
+    VkImageFormatProperties2KHR fmt_props = {};
+    fmt_props.sType = VK_STRUCTURE_TYPE_IMAGE_FORMAT_PROPERTIES_2_KHR;
+    VkResult err = GetPDIFP2KHR(gpu(), &fmt_info, &fmt_props);
+    if (VK_SUCCESS != err) {
+        printf("             Multiplane image format not supported.  Skipping test.\n");
+        return;
+    }
+
+    VkImageCreateInfo ci = {};
+    ci.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    ci.pNext = NULL;
+    ci.flags = fmt_info.flags;
+    ci.imageType = fmt_info.type;
+    ci.format = fmt_info.format;
+    ci.tiling = fmt_info.tiling;
+    ci.usage = fmt_info.usage;
+    ci.extent = {128, 128, 1};
+    ci.mipLevels = 1;
+    ci.arrayLayers = 1;
+    ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    VkImage image;
+    ASSERT_VK_SUCCESS(vkCreateImage(device(), &ci, NULL, &image));
+
+    // Allocate & bind memory
+    VkPhysicalDeviceMemoryProperties phys_mem_props;
+    vkGetPhysicalDeviceMemoryProperties(gpu(), &phys_mem_props);
+    VkMemoryRequirements mem_reqs;
+    vkGetImageMemoryRequirements(device(), image, &mem_reqs);
+    VkDeviceMemory mem_obj = VK_NULL_HANDLE;
+    VkMemoryPropertyFlagBits mem_props = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+    for (uint32_t type = 0; type < phys_mem_props.memoryTypeCount; type++) {
+        if ((mem_reqs.memoryTypeBits & (1 << type)) &&
+            ((phys_mem_props.memoryTypes[type].propertyFlags & mem_props) == mem_props)) {
+            VkMemoryAllocateInfo alloc_info = {};
+            alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+            alloc_info.allocationSize = mem_reqs.size;
+            alloc_info.memoryTypeIndex = type;
+            ASSERT_VK_SUCCESS(vkAllocateMemory(device(), &alloc_info, NULL, &mem_obj));
+            break;
+        }
+    }
+
+    if (VK_NULL_HANDLE == mem_obj) {
+        printf("             Unable to allocate image memory. Skipping test.\n");
+        vkDestroyImage(device(), image, NULL);
+        return;
+    }
+    ASSERT_VK_SUCCESS(vkBindImageMemory(device(), image, mem_obj, 0));
+
+    // Copy plane 0 to plane 2
+    VkImageCopy copyRegion = {};
+    copyRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_PLANE_0_BIT_KHR;
+    copyRegion.srcSubresource.mipLevel = 0;
+    copyRegion.srcSubresource.baseArrayLayer = 0;
+    copyRegion.srcSubresource.layerCount = 1;
+    copyRegion.srcOffset = {0, 0, 0};
+    copyRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_PLANE_2_BIT_KHR;
+    copyRegion.dstSubresource.mipLevel = 0;
+    copyRegion.dstSubresource.baseArrayLayer = 0;
+    copyRegion.dstSubresource.layerCount = 1;
+    copyRegion.dstOffset = {0, 0, 0};
+    copyRegion.extent.width = 128;
+    copyRegion.extent.height = 128;
+    copyRegion.extent.depth = 1;
+
+    m_errorMonitor->ExpectSuccess();
+    m_commandBuffer->begin();
+    m_commandBuffer->CopyImage(image, VK_IMAGE_LAYOUT_GENERAL, image, VK_IMAGE_LAYOUT_GENERAL, 1, &copyRegion);
+    m_commandBuffer->end();
+    m_errorMonitor->VerifyNotFound();
+
+#if 0  
+    // Copy to/from buffer
+    VkBufferCreateInfo bci = {};
+    bci.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    bci.pNext = NULL;
+    bci.size = 128 * 128 * 3;
+    bci.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    bci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    VkBuffer buffer;
+    ASSERT_VK_SUCCESS(vkCreateBuffer(device(), &bci, NULL, &buffer));
+
+    VkBufferImageCopy copy_region = {};
+    copy_region.bufferRowLength = 128;
+    copy_region.bufferImageHeight = 128;
+    copy_region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_PLANE_1_BIT_KHR;
+    copy_region.imageSubresource.layerCount = 1;
+    copy_region.imageExtent.height = 64;
+    copy_region.imageExtent.width = 64;
+    copy_region.imageExtent.depth = 1;
+
+    m_errorMonitor->ExpectSuccess();
+    vkCmdCopyImageToBuffer(m_commandBuffer->handle(), image,VK_IMAGE_LAYOUT_GENERAL, buffer, 1, &copy_region);
+    m_errorMonitor->VerifyNotFound();
+
+    m_errorMonitor->ExpectSuccess();
+    copy_region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_PLANE_2_BIT_KHR;
+    vkCmdCopyBufferToImage(m_commandBuffer->handle(), buffer, image, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
+    m_errorMonitor->VerifyNotFound();
+#endif
+
+    vkFreeMemory(device(), mem_obj, NULL);
+    vkDestroyImage(device(), image, NULL);
+}
+
 #if defined(ANDROID) && defined(VALIDATION_APK)
 const char *appTag = "VulkanLayerValidationTests";
 static bool initialized = false;
