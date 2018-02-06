@@ -5351,7 +5351,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateDevice(VkPhysicalDevice physical
     struct loader_extension_list icd_exts;
 
     struct VkStructureHeader *caller_dgci_container = NULL;
-    VkDeviceGroupDeviceCreateInfoKHX *caller_dgci = NULL;
+    VkDeviceGroupDeviceCreateInfoKHR *caller_dgci = NULL;
 
     dev->phys_dev_term = phys_dev_term;
 

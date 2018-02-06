@@ -8350,13 +8350,13 @@ TEST_F(VkLayerTest, CmdDispatchExceedLimits) {
     TEST_DESCRIPTION("Compute dispatch with dimensions that exceed device limits");
 
     // Enable KHX device group extensions, if available
-    if (InstanceExtensionSupported(VK_KHX_DEVICE_GROUP_CREATION_EXTENSION_NAME)) {
-        m_instance_extension_names.push_back(VK_KHX_DEVICE_GROUP_CREATION_EXTENSION_NAME);
+    if (InstanceExtensionSupported(VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME);
     }
     ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
     bool khx_dg_ext_available = false;
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHX_DEVICE_GROUP_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHX_DEVICE_GROUP_EXTENSION_NAME);
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_DEVICE_GROUP_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
         khx_dg_ext_available = true;
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
@@ -8382,7 +8382,7 @@ TEST_F(VkLayerTest, CmdDispatchExceedLimits) {
     VkComputePipelineCreateInfo pipeline_info = {};
     pipeline_info.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
     pipeline_info.pNext = nullptr;
-    pipeline_info.flags = khx_dg_ext_available ? VK_PIPELINE_CREATE_DISPATCH_BASE_KHX : 0;
+    pipeline_info.flags = khx_dg_ext_available ? VK_PIPELINE_CREATE_DISPATCH_BASE_KHR : 0;
     pipeline_info.layout = pipe_layout;
     pipeline_info.basePipelineHandle = VK_NULL_HANDLE;
     pipeline_info.basePipelineIndex = -1;
@@ -8414,20 +8414,20 @@ TEST_F(VkLayerTest, CmdDispatchExceedLimits) {
     m_errorMonitor->VerifyFound();
 
     if (khx_dg_ext_available) {
-        PFN_vkCmdDispatchBaseKHX fp_vkCmdDispatchBaseKHX =
-            (PFN_vkCmdDispatchBaseKHX)vkGetInstanceProcAddr(instance(), "vkCmdDispatchBaseKHX");
+        PFN_vkCmdDispatchBaseKHR fp_vkCmdDispatchBaseKHR =
+            (PFN_vkCmdDispatchBaseKHR)vkGetInstanceProcAddr(instance(), "vkCmdDispatchBaseKHR");
 
         // Base equals or exceeds limit
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_19e0034a);
-        fp_vkCmdDispatchBaseKHX(m_commandBuffer->handle(), x_limit, y_limit - 1, z_limit - 1, 0, 0, 0);
+        fp_vkCmdDispatchBaseKHR(m_commandBuffer->handle(), x_limit, y_limit - 1, z_limit - 1, 0, 0, 0);
         m_errorMonitor->VerifyFound();
 
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_19e0034c);
-        fp_vkCmdDispatchBaseKHX(m_commandBuffer->handle(), x_limit - 1, y_limit, z_limit - 1, 0, 0, 0);
+        fp_vkCmdDispatchBaseKHR(m_commandBuffer->handle(), x_limit - 1, y_limit, z_limit - 1, 0, 0, 0);
         m_errorMonitor->VerifyFound();
 
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_19e0034e);
-        fp_vkCmdDispatchBaseKHX(m_commandBuffer->handle(), x_limit - 1, y_limit - 1, z_limit, 0, 0, 0);
+        fp_vkCmdDispatchBaseKHR(m_commandBuffer->handle(), x_limit - 1, y_limit - 1, z_limit, 0, 0, 0);
         m_errorMonitor->VerifyFound();
 
         // (Base + count) exceeds limit
@@ -8439,15 +8439,15 @@ TEST_F(VkLayerTest, CmdDispatchExceedLimits) {
         z_limit -= z_base;
 
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_19e00350);
-        fp_vkCmdDispatchBaseKHX(m_commandBuffer->handle(), x_base, y_base, z_base, x_limit + 1, y_limit, z_limit);
+        fp_vkCmdDispatchBaseKHR(m_commandBuffer->handle(), x_base, y_base, z_base, x_limit + 1, y_limit, z_limit);
         m_errorMonitor->VerifyFound();
 
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_19e00352);
-        fp_vkCmdDispatchBaseKHX(m_commandBuffer->handle(), x_base, y_base, z_base, x_limit, y_limit + 1, z_limit);
+        fp_vkCmdDispatchBaseKHR(m_commandBuffer->handle(), x_base, y_base, z_base, x_limit, y_limit + 1, z_limit);
         m_errorMonitor->VerifyFound();
 
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_19e00354);
-        fp_vkCmdDispatchBaseKHX(m_commandBuffer->handle(), x_base, y_base, z_base, x_limit, y_limit, z_limit + 1);
+        fp_vkCmdDispatchBaseKHR(m_commandBuffer->handle(), x_base, y_base, z_base, x_limit, y_limit, z_limit + 1);
         m_errorMonitor->VerifyFound();
     } else {
         printf("             KHX_DEVICE_GROUP_* extensions not supported, skipping CmdDispatchBaseKHX() tests.\n");
