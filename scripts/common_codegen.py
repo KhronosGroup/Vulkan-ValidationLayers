@@ -58,7 +58,7 @@ platform_dict = {
     'win32' : 'VK_USE_PLATFORM_WIN32_KHR',
     'xcb' : 'VK_USE_PLATFORM_XCB_KHR',
     'xlib' : 'VK_USE_PLATFORM_XLIB_KHR',
-    'xlib_randr' : 'VK_USE_PLATFORM_XLIB_RANDR_EXT',
+    'xlib_xrandr' : 'VK_USE_PLATFORM_XLIB_XRANDR_EXT',
 }
 
 #
