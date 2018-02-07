@@ -23,8 +23,11 @@ git clone https://github.com/KhronosGroup/Vulkan-LoaderAndValidationLayers
 The build process uses CMake to generate makefiles for this project.
 The build generates the loader, layers, and tests.
 
-This repo has been built and tested on the two most recent Ubuntu LTS versions.
-It should be straightforward to use it on other Linux distros.
+This repo has been built and tested on the two most recent Ubuntu LTS versions. Currently, the oldest supported
+version is Ubuntu 14.04, meaning that the minimum supported compiler versions are GCC 4.8.2 and Clang 3.4, although
+earlier versions may work.
+It should be straightforward to adapt this repository to other Linux distributions.
+
 
 These packages are needed to build this repository:
 ```
