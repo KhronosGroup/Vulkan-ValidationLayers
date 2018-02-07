@@ -218,7 +218,8 @@ std::vector<VkLayerProperties> PhysicalDevice::layers() const {
     return layer_props;
 }
 
-QueueCreateInfoArray::QueueCreateInfoArray(const std::vector<VkQueueFamilyProperties> &queue_props) : queue_info_(), queue_priorities_() {
+QueueCreateInfoArray::QueueCreateInfoArray(const std::vector<VkQueueFamilyProperties> &queue_props)
+    : queue_info_(), queue_priorities_() {
     queue_info_.reserve(queue_props.size());
 
     for (uint32_t i = 0; i < (uint32_t)queue_props.size(); ++i) {

@@ -51,5 +51,5 @@ class Environment : public ::testing::Environment {
 
     std::vector<Device *> devs_;
 };
-}
+}  // namespace vk_testing
 #endif  // TEST_ENVIRONMENT_H

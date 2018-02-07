@@ -247,7 +247,7 @@ struct DeviceCreateInfo {
 
     VkDeviceCreateInfo info;
 };
-}
+}  // namespace VK
 
 struct CommandLine : public ::testing::Test {
     static void Initialize(int argc, char **argv) { arguments.assign(argv, argv + argc); };

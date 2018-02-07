@@ -171,17 +171,14 @@ void VkTestFramework::InitArgs(int *argc, char *argv[]) {
                 "\t\tDisplay test images in viewer after tests complete.\n");
             printf(
                 "\t--save-images\n"
-                "\t\tSave tests images as ppm files in current working "
-                "directory.\n"
+                "\t\tSave tests images as ppm files in current working directory.\n"
                 "\t\tUsed to generate golden images for compare-images.\n");
             printf(
                 "\t--compare-images\n"
                 "\t\tCompare test images to 'golden' image in golden folder.\n"
                 "\t\tAlso saves the generated test image in current working\n"
-                "\t\t\tdirectory but only if the image is different from the "
-                "golden\n"
-                "\t\tSetting RENDERTEST_GOLDEN_DIR environment variable can "
-                "specify\n"
+                "\t\t\tdirectory but only if the image is different from the golden\n"
+                "\t\tSetting RENDERTEST_GOLDEN_DIR environment variable can specify\n"
                 "\t\t\tdifferent directory for golden images\n"
                 "\t\tSignal test failure if different.\n");
             printf(
@@ -189,8 +186,7 @@ void VkTestFramework::InitArgs(int *argc, char *argv[]) {
                 "\t\tUse built-in GLSL compiler rather than SPV code path.\n");
             printf(
                 "\t--strip-SPV\n"
-                "\t\tStrip SPIR-V debug information (line numbers, names, "
-                "etc).\n");
+                "\t\tStrip SPIR-V debug information (line numbers, names, etc).\n");
             printf(
                 "\t--canonicalize-SPV\n"
                 "\t\tRemap SPIR-V ids before submission to aid compression.\n");
@@ -224,9 +220,7 @@ VkFormat VkTestFramework::GetFormat(VkInstance instance, vk_testing::Device *dev
         format_props.optimalTilingFeatures & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT) {
         return VK_FORMAT_R8G8B8A8_UNORM;
     }
-    printf(
-        "Error - device does not support VK_FORMAT_B8G8R8A8_UNORM nor "
-        "VK_FORMAT_R8G8B8A8_UNORM - exiting\n");
+    printf("Error - device does not support VK_FORMAT_B8G8R8A8_UNORM nor VK_FORMAT_R8G8B8A8_UNORM - exiting\n");
     exit(1);
 }
 
@@ -357,9 +351,7 @@ void VkTestFramework::ProcessConfigFile() {
         if (configStrings)
             config = *configStrings;
         else {
-            printf(
-                "Error opening configuration file; will instead use the "
-                "default configuration\n");
+            printf("Error opening configuration file; will instead use the default configuration\n");
         }
     }
 
@@ -373,10 +365,7 @@ void VkTestFramework::ProcessConfigFile() {
     while (token) {
         const char *valueStr = strtok(0, delims);
         if (valueStr == 0 || !(valueStr[0] == '-' || (valueStr[0] >= '0' && valueStr[0] <= '9'))) {
-            printf(
-                "Error: '%s' bad .conf file.  Each name must be followed by "
-                "one number.\n",
-                valueStr ? valueStr : "");
+            printf("Error: '%s' bad .conf file.  Each name must be followed by one number.\n", valueStr ? valueStr : "");
             return;
         }
         int value = atoi(valueStr);

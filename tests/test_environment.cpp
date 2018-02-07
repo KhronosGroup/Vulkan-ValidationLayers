@@ -154,4 +154,4 @@ void Environment::TearDown() {
 
     if (inst) vkDestroyInstance(inst, NULL);
 }
-}  // vk_testing namespace
+}  // namespace vk_testing

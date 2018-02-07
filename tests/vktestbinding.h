@@ -213,7 +213,7 @@ class Device : public internal::Handle<VkDevice> {
     const std::vector<Queue *> &graphics_queues() const { return queues_[GRAPHICS]; }
     const std::vector<Queue *> &compute_queues() { return queues_[COMPUTE]; }
     const std::vector<Queue *> &dma_queues() { return queues_[DMA]; }
-    uint32_t queue_family_without_capabilities( VkQueueFlags capabilities );
+    uint32_t queue_family_without_capabilities(VkQueueFlags capabilities);
     uint32_t graphics_queue_node_index_;
 
     struct Format {

@@ -91,7 +91,7 @@ static inline void test_error_callback(const char *expr, const char *file, unsig
 }
 
 #if defined(__linux__)
-/* Linux-specific common code: */
+    /* Linux-specific common code: */
 
 #include <pthread.h>
 
@@ -159,12 +159,12 @@ static void test_platform_thread_cond_broadcast(test_platform_thread_cond *pCond
 
 #error The "test_common.h" file must be modified for this OS.
 
-// NOTE: In order to support another OS, an #elif needs to be added (above the
-// "#else // defined(_WIN32)") for that OS, and OS-specific versions of the
-// contents of this file must be created.
+    // NOTE: In order to support another OS, an #elif needs to be added (above the
+    // "#else // defined(_WIN32)") for that OS, and OS-specific versions of the
+    // contents of this file must be created.
 
-// NOTE: Other OS-specific changes are also needed for this OS.  Search for
-// files with "WIN32" in it, as a quick way to find files that must be changed.
+    // NOTE: Other OS-specific changes are also needed for this OS.  Search for
+    // files with "WIN32" in it, as a quick way to find files that must be changed.
 
 #endif  // defined(_WIN32)
 

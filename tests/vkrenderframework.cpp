@@ -218,8 +218,7 @@ void VkRenderFramework::InitFramework(PFN_vkDebugReportCallbackEXT dbgFunction, 
             m_DestroyDebugReportCallback =
                 (PFN_vkDestroyDebugReportCallbackEXT)vkGetInstanceProcAddr(this->inst, "vkDestroyDebugReportCallbackEXT");
             ASSERT_NE(m_DestroyDebugReportCallback, (PFN_vkDestroyDebugReportCallbackEXT)NULL)
-                << "Did not get function pointer for "
-                   "DestroyDebugReportCallback";
+                << "Did not get function pointer for DestroyDebugReportCallback";
             m_DebugReportMessage = (PFN_vkDebugReportMessageEXT)vkGetInstanceProcAddr(this->inst, "vkDebugReportMessageEXT");
             ASSERT_NE(m_DebugReportMessage, (PFN_vkDebugReportMessageEXT)NULL)
                 << "Did not get function pointer for DebugReportMessage";
@@ -715,7 +714,7 @@ void VkImageObj::ImageMemoryBarrier(VkCommandBufferObj *cmd_buf, VkImageAspectFl
                                     VkImageLayout image_layout) {
     // TODO: Mali device crashing with VK_REMAINING_MIP_LEVELS
     const VkImageSubresourceRange subresourceRange =
-        subresource_range(aspect, 0, /*VK_REMAINING_MIP_LEVELS*/ 1, 0, 1/*VK_REMAINING_ARRAY_LAYERS*/);
+        subresource_range(aspect, 0, /*VK_REMAINING_MIP_LEVELS*/ 1, 0, 1 /*VK_REMAINING_ARRAY_LAYERS*/);
     VkImageMemoryBarrier barrier;
     barrier = image_memory_barrier(output_mask, input_mask, Layout(), image_layout, subresourceRange);
 
@@ -1392,7 +1391,7 @@ void VkCommandBufferObj::ClearAllBuffers(const vector<VkImageObj *> &color_objs,
     subrange.levelCount = 1;  // VK_REMAINING_MIP_LEVELS;
     subrange.baseArrayLayer = 0;
     // TODO: Mesa crashing with VK_REMAINING_ARRAY_LAYERS
-    subrange.layerCount = 1; // VK_REMAINING_ARRAY_LAYERS;
+    subrange.layerCount = 1;  // VK_REMAINING_ARRAY_LAYERS;
 
     const VkImageLayout clear_layout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
 

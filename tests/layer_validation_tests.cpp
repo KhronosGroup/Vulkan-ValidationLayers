@@ -422,6 +422,7 @@ class VkLayerTest : public VkRenderFramework {
         InitFramework(myDbgFunc, m_errorMonitor);
         InitState(features, flags);
     }
+
    protected:
     ErrorMonitor *m_errorMonitor;
 
@@ -937,11 +938,9 @@ struct OneOffDescriptorSet {
         for (const auto &b : bindings) sizes.push_back({b.descriptorType, std::max(1u, b.descriptorCount)});
 
         VkDescriptorPoolCreateInfo dspci = {
-            VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO, nullptr,
-            0, 1, uint32_t(sizes.size()), sizes.data() };
+            VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO, nullptr, 0, 1, uint32_t(sizes.size()), sizes.data()};
         err = vkCreateDescriptorPool(device_->handle(), &dspci, nullptr, &pool_);
-        if (err != VK_SUCCESS)
-            return;
+        if (err != VK_SUCCESS) return;
 
         VkDescriptorSetAllocateInfo alloc_info = {VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO, nullptr, pool_, 1,
                                                   &layout_.handle()};
@@ -1229,9 +1228,7 @@ class ExtensionChain {
 // ********************************************************************************************************************
 // ********************************************************************************************************************
 TEST_F(VkLayerTest, RequiredParameter) {
-    TEST_DESCRIPTION(
-        "Specify VK_NULL_HANDLE, NULL, and 0 for required handle, "
-        "pointer, array, and array count parameters");
+    TEST_DESCRIPTION("Specify VK_NULL_HANDLE, NULL, and 0 for required handle, pointer, array, and array count parameters");
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
@@ -1368,9 +1365,7 @@ TEST_F(VkLayerTest, DebugMarkerNameTest) {
 }
 
 TEST_F(VkLayerTest, InvalidStructSType) {
-    TEST_DESCRIPTION(
-        "Specify an invalid VkStructureType for a Vulkan "
-        "structure's sType field");
+    TEST_DESCRIPTION("Specify an invalid VkStructureType for a Vulkan structure's sType field");
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
@@ -1430,9 +1425,7 @@ TEST_F(VkLayerTest, UnrecognizedValueOutOfRange) {
     ASSERT_NO_FATAL_FAILURE(Init());
 
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                         "does not fall within the begin..end "
-                                         "range of the core VkFormat "
-                                         "enumeration tokens");
+                                         "does not fall within the begin..end range of the core VkFormat enumeration tokens");
     // Specify an invalid VkFormat value
     // Expected to trigger an error with
     // parameter_validation::validate_ranged_enum
@@ -1679,9 +1672,7 @@ TEST_F(VkLayerTest, FillBufferAlignment) {
 }
 
 TEST_F(VkLayerTest, PSOPolygonModeInvalid) {
-    TEST_DESCRIPTION(
-        "Attempt to use a non-solid polygon fill mode in a "
-        "pipeline when this feature is not enabled.");
+    TEST_DESCRIPTION("Attempt to use a non-solid polygon fill mode in a pipeline when this feature is not enabled.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -1940,8 +1931,7 @@ TEST_F(VkLayerTest, SparseResidencyImageCreateUnsupportedSamples) {
 
 TEST_F(VkLayerTest, InvalidMemoryAliasing) {
     TEST_DESCRIPTION(
-        "Create a buffer and image, allocate memory, and bind the "
-        "buffer and image to memory such that they will alias.");
+        "Create a buffer and image, allocate memory, and bind the buffer and image to memory such that they will alias.");
     VkResult err;
     bool pass;
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -2304,8 +2294,7 @@ TEST_F(VkLayerTest, SubmitSignaledFence) {
     vk_testing::Fence testFence;
 
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                         "submitted in SIGNALED state.  Fences "
-                                         "must be reset before being submitted");
+                                         "submitted in SIGNALED state.  Fences must be reset before being submitted");
 
     VkFenceCreateInfo fenceInfo = {};
     fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
@@ -2341,9 +2330,8 @@ TEST_F(VkLayerTest, SubmitSignaledFence) {
 
 TEST_F(VkLayerTest, InvalidUsageBits) {
     TEST_DESCRIPTION(
-        "Specify wrong usage for image then create conflicting view of image "
-        "Initialize buffer with wrong usage then perform copy expecting errors "
-        "from both the image and the buffer (2 calls)");
+        "Specify wrong usage for image then create conflicting view of image Initialize buffer with wrong usage then perform copy "
+        "expecting errors from both the image and the buffer (2 calls)");
 
     ASSERT_NO_FATAL_FAILURE(Init());
     auto format = FindSupportedDepthStencilFormat(gpu());
@@ -2441,9 +2429,7 @@ TEST_F(VkLayerTest, LeakAnObject) {
 }
 
 TEST_F(VkLayerTest, InvalidCommandPoolConsistency) {
-    TEST_DESCRIPTION(
-        "Allocate command buffers from one command pool and "
-        "attempt to delete them from another.");
+    TEST_DESCRIPTION("Allocate command buffers from one command pool and attempt to delete them from another.");
 
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "FreeCommandBuffers is attempting to free Command Buffer");
 
@@ -2479,9 +2465,7 @@ TEST_F(VkLayerTest, InvalidCommandPoolConsistency) {
 TEST_F(VkLayerTest, InvalidDescriptorPoolConsistency) {
     VkResult err;
 
-    TEST_DESCRIPTION(
-        "Allocate descriptor sets from one DS pool and "
-        "attempt to delete them from another.");
+    TEST_DESCRIPTION("Allocate descriptor sets from one DS pool and attempt to delete them from another.");
 
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "FreeDescriptorSets is attempting to free descriptorSet");
 
@@ -2534,8 +2518,8 @@ TEST_F(VkLayerTest, CreateUnknownObject) {
 
 TEST_F(VkLayerTest, UseObjectWithWrongDevice) {
     TEST_DESCRIPTION(
-        "Try to destroy a render pass object using a device other than the one it was created on. "
-        "This should generate a distinct error from the invalid handle error.");
+        "Try to destroy a render pass object using a device other than the one it was created on. This should generate a distinct "
+        "error from the invalid handle error.");
     // Create first device and renderpass
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -2590,9 +2574,7 @@ TEST_F(VkLayerTest, PipelineNotBound) {
 TEST_F(VkLayerTest, BindImageInvalidMemoryType) {
     VkResult err;
 
-    TEST_DESCRIPTION(
-        "Test validation check for an invalid memory type index "
-        "during bind[Buffer|Image]Memory time");
+    TEST_DESCRIPTION("Test validation check for an invalid memory type index during bind[Buffer|Image]Memory time");
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
@@ -3507,8 +3489,8 @@ TEST_F(VkLayerTest, BlitImageFilters) {
         m_errorMonitor->VerifyFound();
     }
 
-    if (cubic_support &&
-        !ImageFormatAndFeaturesSupported(gpu(), fmt, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_CUBIC_BIT_IMG)) {
+    if (cubic_support && !ImageFormatAndFeaturesSupported(gpu(), fmt, VK_IMAGE_TILING_OPTIMAL,
+                                                          VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_CUBIC_BIT_IMG)) {
         // Invalid filter CUBIC_IMG
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_184001d8);
         vkCmdBlitImage(m_commandBuffer->handle(), src3D.image(), src3D.Layout(), dst2D.image(), dst2D.Layout(), 1, &blitRegion,
@@ -3693,7 +3675,7 @@ TEST_F(VkLayerTest, BlitImageOffsets) {
 
     VkFormat fmt = VK_FORMAT_R8G8B8A8_UNORM;
     if (!ImageFormatAndFeaturesSupported(gpu(), fmt, VK_IMAGE_TILING_OPTIMAL,
-                                 VK_FORMAT_FEATURE_BLIT_SRC_BIT | VK_FORMAT_FEATURE_BLIT_DST_BIT)) {
+                                         VK_FORMAT_FEATURE_BLIT_SRC_BIT | VK_FORMAT_FEATURE_BLIT_DST_BIT)) {
         printf("             No blit feature bits - BlitImageOffsets skipped.\n");
         return;
     }
@@ -3839,7 +3821,7 @@ TEST_F(VkLayerTest, MiscBlitImageTests) {
     VkFormat f_depth = VK_FORMAT_D32_SFLOAT;  // Need feature ..BLIT_SRC_BIT but not ..BLIT_DST_BIT
 
     if (!ImageFormatAndFeaturesSupported(gpu(), f_color, VK_IMAGE_TILING_OPTIMAL,
-                                 VK_FORMAT_FEATURE_BLIT_SRC_BIT | VK_FORMAT_FEATURE_BLIT_DST_BIT) ||
+                                         VK_FORMAT_FEATURE_BLIT_SRC_BIT | VK_FORMAT_FEATURE_BLIT_DST_BIT) ||
         !ImageFormatAndFeaturesSupported(gpu(), f_depth, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_BLIT_SRC_BIT) ||
         ImageFormatAndFeaturesSupported(gpu(), f_depth, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_BLIT_DST_BIT)) {
         printf("             Requested format features unavailable - MiscBlitImageTests skipped.\n");
@@ -4119,9 +4101,8 @@ TEST_F(VkLayerTest, DSImageTransferGranularityTests) {
 
 TEST_F(VkLayerTest, MismatchedQueueFamiliesOnSubmit) {
     TEST_DESCRIPTION(
-        "Submit command buffer created using one queue family and "
-        "attempt to submit them on a queue created in a different "
-        "queue family.");
+        "Submit command buffer created using one queue family and attempt to submit them on a queue created in a different queue "
+        "family.");
 
     ASSERT_NO_FATAL_FAILURE(Init());  // assumes it initializes all queue families on vkCreateDevice
 
@@ -4244,7 +4225,8 @@ TEST_F(VkLayerTest, RenderPassPipelineSubpassMismatch) {
                                   rp,
                                   fb,
                                   {{
-                                       0, 0,
+                                       0,
+                                       0,
                                    },
                                    {32, 32}},
                                   0,
@@ -5003,15 +4985,12 @@ TEST_F(VkPositiveLayerTest, SecondaryCommandBufferBarrier) {
 }
 
 TEST_F(VkLayerTest, RenderPassInvalidRenderArea) {
-    TEST_DESCRIPTION(
-        "Generate INVALID_RENDER_AREA error by beginning renderpass"
-        "with extent outside of framebuffer");
+    TEST_DESCRIPTION("Generate INVALID_RENDER_AREA error by beginning renderpass with extent outside of framebuffer");
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                         "Cannot execute a render pass with renderArea "
-                                         "not within the bound of the framebuffer.");
+                                         "Cannot execute a render pass with renderArea not within the bound of the framebuffer.");
 
     // Framebuffer for render target is 256x256, exceed that for INVALID_RENDER_AREA
     m_renderPassBeginInfo.renderArea.extent.width = 257;
@@ -5023,16 +5002,15 @@ TEST_F(VkLayerTest, RenderPassInvalidRenderArea) {
 
 TEST_F(VkLayerTest, DisabledIndependentBlend) {
     TEST_DESCRIPTION(
-        "Generate INDEPENDENT_BLEND by disabling independent "
-        "blend and then specifying different blend states for two "
+        "Generate INDEPENDENT_BLEND by disabling independent blend and then specifying different blend states for two "
         "attachements");
     VkPhysicalDeviceFeatures features = {};
     features.independentBlend = VK_FALSE;
     ASSERT_NO_FATAL_FAILURE(Init(&features));
 
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                         "Invalid Pipeline CreateInfo: If independent blend feature not "
-                                         "enabled, all elements of pAttachments must be identical");
+    m_errorMonitor->SetDesiredFailureMsg(
+        VK_DEBUG_REPORT_ERROR_BIT_EXT,
+        "Invalid Pipeline CreateInfo: If independent blend feature not enabled, all elements of pAttachments must be identical");
 
     VkDescriptorSetObj descriptorSet(m_device);
     descriptorSet.AppendDummy();
@@ -5087,8 +5065,7 @@ TEST_F(VkLayerTest, DisabledIndependentBlend) {
 // Is the Pipeline compatible with the expectations of the Renderpass/subpasses?
 TEST_F(VkLayerTest, PipelineRenderpassCompatibility) {
     TEST_DESCRIPTION(
-        "Create a graphics pipeline that is incompatible with the requirements "
-        "of its contained Renderpass/subpasses.");
+        "Create a graphics pipeline that is incompatible with the requirements of its contained Renderpass/subpasses.");
     ASSERT_NO_FATAL_FAILURE(Init());
 
     VkDescriptorSetObj ds_obj(m_device);
@@ -5120,8 +5097,8 @@ TEST_F(VkLayerTest, PipelineRenderpassCompatibility) {
 
 TEST_F(VkLayerTest, CreateRenderPassAttachments) {
     TEST_DESCRIPTION(
-        "Ensure that CreateRenderPass produces the expected validation errors "
-        "when a subpass's attachments violate the valid usage conditions.");
+        "Ensure that CreateRenderPass produces the expected validation errors when a subpass's attachments violate the valid usage "
+        "conditions.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
@@ -5154,11 +5131,13 @@ TEST_F(VkLayerTest, CreateRenderPassAttachments) {
         {0, VK_IMAGE_LAYOUT_GENERAL},
     };
     std::vector<VkAttachmentReference> color = {
-        {1, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL}, {2, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL},
+        {1, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL},
+        {2, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL},
     };
     VkAttachmentReference depth = {3, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL};
     std::vector<VkAttachmentReference> resolve = {
-        {4, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL}, {VK_ATTACHMENT_UNUSED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL},
+        {4, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL},
+        {VK_ATTACHMENT_UNUSED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL},
     };
     std::vector<uint32_t> preserve = {5};
 
@@ -5574,8 +5553,7 @@ TEST_F(VkLayerTest, FramebufferCreateErrors) {
 
 TEST_F(VkLayerTest, DynamicDepthBiasNotBound) {
     TEST_DESCRIPTION(
-        "Run a simple draw calls to validate failure when Depth Bias dynamic "
-        "state is required but not correctly bound.");
+        "Run a simple draw calls to validate failure when Depth Bias dynamic state is required but not correctly bound.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
     // Dynamic depth bias
@@ -5586,8 +5564,7 @@ TEST_F(VkLayerTest, DynamicDepthBiasNotBound) {
 
 TEST_F(VkLayerTest, DynamicLineWidthNotBound) {
     TEST_DESCRIPTION(
-        "Run a simple draw calls to validate failure when Line Width dynamic "
-        "state is required but not correctly bound.");
+        "Run a simple draw calls to validate failure when Line Width dynamic state is required but not correctly bound.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
     // Dynamic line width
@@ -5598,8 +5575,7 @@ TEST_F(VkLayerTest, DynamicLineWidthNotBound) {
 
 TEST_F(VkLayerTest, DynamicViewportNotBound) {
     TEST_DESCRIPTION(
-        "Run a simple draw calls to validate failure when Viewport dynamic "
-        "state is required but not correctly bound.");
+        "Run a simple draw calls to validate failure when Viewport dynamic state is required but not correctly bound.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
     // Dynamic viewport state
@@ -5610,9 +5586,7 @@ TEST_F(VkLayerTest, DynamicViewportNotBound) {
 }
 
 TEST_F(VkLayerTest, DynamicScissorNotBound) {
-    TEST_DESCRIPTION(
-        "Run a simple draw calls to validate failure when Scissor dynamic "
-        "state is required but not correctly bound.");
+    TEST_DESCRIPTION("Run a simple draw calls to validate failure when Scissor dynamic state is required but not correctly bound.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
     // Dynamic scissor state
@@ -5624,8 +5598,7 @@ TEST_F(VkLayerTest, DynamicScissorNotBound) {
 
 TEST_F(VkLayerTest, DynamicBlendConstantsNotBound) {
     TEST_DESCRIPTION(
-        "Run a simple draw calls to validate failure when Blend Constants "
-        "dynamic state is required but not correctly bound.");
+        "Run a simple draw calls to validate failure when Blend Constants dynamic state is required but not correctly bound.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
     // Dynamic blend constant state
@@ -5637,8 +5610,7 @@ TEST_F(VkLayerTest, DynamicBlendConstantsNotBound) {
 
 TEST_F(VkLayerTest, DynamicDepthBoundsNotBound) {
     TEST_DESCRIPTION(
-        "Run a simple draw calls to validate failure when Depth Bounds dynamic "
-        "state is required but not correctly bound.");
+        "Run a simple draw calls to validate failure when Depth Bounds dynamic state is required but not correctly bound.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
     if (!m_device->phy().features().depthBounds) {
@@ -5654,8 +5626,7 @@ TEST_F(VkLayerTest, DynamicDepthBoundsNotBound) {
 
 TEST_F(VkLayerTest, DynamicStencilReadNotBound) {
     TEST_DESCRIPTION(
-        "Run a simple draw calls to validate failure when Stencil Read dynamic "
-        "state is required but not correctly bound.");
+        "Run a simple draw calls to validate failure when Stencil Read dynamic state is required but not correctly bound.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
     // Dynamic stencil read mask
@@ -5667,8 +5638,7 @@ TEST_F(VkLayerTest, DynamicStencilReadNotBound) {
 
 TEST_F(VkLayerTest, DynamicStencilWriteNotBound) {
     TEST_DESCRIPTION(
-        "Run a simple draw calls to validate failure when Stencil Write dynamic"
-        " state is required but not correctly bound.");
+        "Run a simple draw calls to validate failure when Stencil Write dynamic state is required but not correctly bound.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
     // Dynamic stencil write mask
@@ -5680,8 +5650,7 @@ TEST_F(VkLayerTest, DynamicStencilWriteNotBound) {
 
 TEST_F(VkLayerTest, DynamicStencilRefNotBound) {
     TEST_DESCRIPTION(
-        "Run a simple draw calls to validate failure when Stencil Ref dynamic "
-        "state is required but not correctly bound.");
+        "Run a simple draw calls to validate failure when Stencil Ref dynamic state is required but not correctly bound.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
     // Dynamic stencil reference
@@ -5703,8 +5672,7 @@ TEST_F(VkLayerTest, IndexBufferNotBound) {
 
 TEST_F(VkLayerTest, CommandBufferTwoSubmits) {
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                         "was begun w/ VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT set, but has "
-                                         "been submitted");
+                                         "was begun w/ VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT set, but has been submitted");
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitViewport());
@@ -5923,9 +5891,9 @@ TEST_F(VkLayerTest, InvalidDescriptorSetLayout) {
 TEST_F(VkLayerTest, WriteDescriptorSetIntegrityCheck) {
     TEST_DESCRIPTION(
         "This test verifies some requirements of chapter 13.2.3 of the Vulkan Spec "
-        "1) A uniform buffer update must have a valid buffer index."
-        "2) When using an array of descriptors in a single WriteDescriptor,"
-        "     the descriptor types and stageflags must all be the same."
+        "1) A uniform buffer update must have a valid buffer index. "
+        "2) When using an array of descriptors in a single WriteDescriptor, the descriptor types and stageflags "
+        "must all be the same. "
         "3) Immutable Sampler state must match across descriptors");
 
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_15c00288);
@@ -6064,8 +6032,8 @@ TEST_F(VkLayerTest, WriteDescriptorSetIntegrityCheck) {
 
 TEST_F(VkLayerTest, WriteDescriptorSetConsecutiveUpdates) {
     TEST_DESCRIPTION(
-        "Verifies that updates rolling over to next descriptor work correctly by destroying buffer"
-        "from consecutive update known to be used in descriptor set and verifying that error is flagged.");
+        "Verifies that updates rolling over to next descriptor work correctly by destroying buffer from consecutive update known "
+        "to be used in descriptor set and verifying that error is flagged.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitViewport());
@@ -6702,9 +6670,7 @@ TEST_F(VkLayerTest, CreatePipelineLayoutExcessDescriptorsOverall) {
 }
 
 TEST_F(VkLayerTest, InvalidCmdBufferBufferDestroyed) {
-    TEST_DESCRIPTION(
-        "Attempt to draw with a command buffer that is invalid "
-        "due to a buffer dependency being destroyed.");
+    TEST_DESCRIPTION("Attempt to draw with a command buffer that is invalid due to a buffer dependency being destroyed.");
     ASSERT_NO_FATAL_FAILURE(Init());
 
     VkBuffer buffer;
@@ -6901,9 +6867,7 @@ TEST_F(VkLayerTest, InvalidCmdBufferBufferViewDestroyed) {
 }
 
 TEST_F(VkLayerTest, InvalidCmdBufferImageDestroyed) {
-    TEST_DESCRIPTION(
-        "Attempt to draw with a command buffer that is invalid "
-        "due to an image dependency being destroyed.");
+    TEST_DESCRIPTION("Attempt to draw with a command buffer that is invalid due to an image dependency being destroyed.");
     ASSERT_NO_FATAL_FAILURE(Init());
 
     VkImage image;
@@ -6972,8 +6936,7 @@ TEST_F(VkLayerTest, InvalidCmdBufferImageDestroyed) {
 
 TEST_F(VkLayerTest, InvalidCmdBufferFramebufferImageDestroyed) {
     TEST_DESCRIPTION(
-        "Attempt to draw with a command buffer that is invalid "
-        "due to a framebuffer image dependency being destroyed.");
+        "Attempt to draw with a command buffer that is invalid due to a framebuffer image dependency being destroyed.");
     ASSERT_NO_FATAL_FAILURE(Init());
     VkFormatProperties format_properties;
     VkResult err = VK_SUCCESS;
@@ -7367,9 +7330,7 @@ TEST_F(VkLayerTest, BufferMemoryNotBound) {
 }
 
 TEST_F(VkLayerTest, InvalidCmdBufferEventDestroyed) {
-    TEST_DESCRIPTION(
-        "Attempt to draw with a command buffer that is invalid "
-        "due to an event dependency being destroyed.");
+    TEST_DESCRIPTION("Attempt to draw with a command buffer that is invalid due to an event dependency being destroyed.");
     ASSERT_NO_FATAL_FAILURE(Init());
 
     VkEvent event;
@@ -7396,9 +7357,7 @@ TEST_F(VkLayerTest, InvalidCmdBufferEventDestroyed) {
 }
 
 TEST_F(VkLayerTest, InvalidCmdBufferQueryPoolDestroyed) {
-    TEST_DESCRIPTION(
-        "Attempt to draw with a command buffer that is invalid "
-        "due to a query pool dependency being destroyed.");
+    TEST_DESCRIPTION("Attempt to draw with a command buffer that is invalid due to a query pool dependency being destroyed.");
     ASSERT_NO_FATAL_FAILURE(Init());
 
     VkQueryPool query_pool;
@@ -7427,9 +7386,7 @@ TEST_F(VkLayerTest, InvalidCmdBufferQueryPoolDestroyed) {
 }
 
 TEST_F(VkLayerTest, InvalidCmdBufferPipelineDestroyed) {
-    TEST_DESCRIPTION(
-        "Attempt to draw with a command buffer that is invalid "
-        "due to a pipeline dependency being destroyed.");
+    TEST_DESCRIPTION("Attempt to draw with a command buffer that is invalid due to a pipeline dependency being destroyed.");
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
@@ -7544,9 +7501,8 @@ TEST_F(VkPositiveLayerTest, DestroyPipelineRenderPass) {
 
 TEST_F(VkLayerTest, InvalidCmdBufferDescriptorSetBufferDestroyed) {
     TEST_DESCRIPTION(
-        "Attempt to draw with a command buffer that is invalid "
-        "due to a bound descriptor set with a buffer dependency "
-        "being destroyed.");
+        "Attempt to draw with a command buffer that is invalid due to a bound descriptor set with a buffer dependency being "
+        "destroyed.");
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -7688,12 +7644,9 @@ TEST_F(VkLayerTest, InvalidCmdBufferDescriptorSetBufferDestroyed) {
 
 TEST_F(VkLayerTest, InvalidCmdBufferDescriptorSetImageSamplerDestroyed) {
     TEST_DESCRIPTION(
-        "Attempt to draw with a command buffer that is invalid "
-        "due to a bound descriptor sets with a combined image "
-        "sampler having their image, sampler, and descriptor set "
-        "each respectively destroyed and then attempting to "
-        "submit associated cmd buffers. Attempt to destroy a "
-        "DescriptorSet that is in use.");
+        "Attempt to draw with a command buffer that is invalid due to a bound descriptor sets with a combined image sampler having "
+        "their image, sampler, and descriptor set each respectively destroyed and then attempting to submit associated cmd "
+        "buffers. Attempt to destroy a DescriptorSet that is in use.");
     ASSERT_NO_FATAL_FAILURE(Init(nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
     ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -8914,9 +8867,7 @@ TEST_F(VkLayerTest, InvalidDynamicOffsetCases) {
     // 3. Dynamic offset oversteps buffer being updated
     VkResult err;
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                         " requires 1 dynamicOffsets, but only "
-                                         "0 dynamicOffsets are left in "
-                                         "pDynamicOffsets ");
+                                         " requires 1 dynamicOffsets, but only 0 dynamicOffsets are left in pDynamicOffsets ");
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitViewport());
@@ -9018,10 +8969,9 @@ TEST_F(VkLayerTest, InvalidDynamicOffsetCases) {
                             &descriptorSet, 2, pDynOff);
     m_errorMonitor->VerifyFound();
     // Finally cause error due to dynamicOffset being too big
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                         " dynamic offset 512 combined with "
-                                         "offset 0 and range 1024 that "
-                                         "oversteps the buffer size of 1024");
+    m_errorMonitor->SetDesiredFailureMsg(
+        VK_DEBUG_REPORT_ERROR_BIT_EXT,
+        " dynamic offset 512 combined with offset 0 and range 1024 that oversteps the buffer size of 1024");
     // Create PSO to be used for draw-time errors below
     char const *vsSource =
         "#version 450\n"
@@ -9065,9 +9015,7 @@ TEST_F(VkLayerTest, InvalidDynamicOffsetCases) {
 }
 
 TEST_F(VkLayerTest, DescriptorBufferUpdateNoMemoryBound) {
-    TEST_DESCRIPTION(
-        "Attempt to update a descriptor with a non-sparse buffer "
-        "that doesn't have memory bound");
+    TEST_DESCRIPTION("Attempt to update a descriptor with a non-sparse buffer that doesn't have memory bound");
     VkResult err;
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
                                          " used with no memory bound. Memory should be bound by calling vkBindBufferMemory().");
@@ -9168,36 +9116,18 @@ TEST_F(VkLayerTest, InvalidPushConstants) {
 
     const uint32_t too_big = m_device->props.limits.maxPushConstantsSize + 0x4;
     const std::array<PipelineLayoutTestCase, 10> range_tests = {{
-        {{VK_SHADER_STAGE_VERTEX_BIT, 0, 0},
-         "vkCreatePipelineLayout() call has push constants index 0 with "
-         "size 0."},
-        {{VK_SHADER_STAGE_VERTEX_BIT, 0, 1},
-         "vkCreatePipelineLayout() call has push constants index 0 with "
-         "size 1."},
-        {{VK_SHADER_STAGE_VERTEX_BIT, 4, 1},
-         "vkCreatePipelineLayout() call has push constants index 0 with "
-         "size 1."},
-        {{VK_SHADER_STAGE_VERTEX_BIT, 4, 0},
-         "vkCreatePipelineLayout() call has push constants index 0 with "
-         "size 0."},
-        {{VK_SHADER_STAGE_VERTEX_BIT, 1, 4},
-         "vkCreatePipelineLayout() call has push constants index 0 with "
-         "offset 1. Offset must"},
-        {{VK_SHADER_STAGE_VERTEX_BIT, 0, too_big},
-         "vkCreatePipelineLayout() call has push constants index 0 "
-         "with offset "},
-        {{VK_SHADER_STAGE_VERTEX_BIT, too_big, too_big},
-         "vkCreatePipelineLayout() call has push constants "
-         "index 0 with offset "},
-        {{VK_SHADER_STAGE_VERTEX_BIT, too_big, 4},
-         "vkCreatePipelineLayout() call has push constants index 0 "
-         "with offset "},
+        {{VK_SHADER_STAGE_VERTEX_BIT, 0, 0}, "vkCreatePipelineLayout() call has push constants index 0 with size 0."},
+        {{VK_SHADER_STAGE_VERTEX_BIT, 0, 1}, "vkCreatePipelineLayout() call has push constants index 0 with size 1."},
+        {{VK_SHADER_STAGE_VERTEX_BIT, 4, 1}, "vkCreatePipelineLayout() call has push constants index 0 with size 1."},
+        {{VK_SHADER_STAGE_VERTEX_BIT, 4, 0}, "vkCreatePipelineLayout() call has push constants index 0 with size 0."},
+        {{VK_SHADER_STAGE_VERTEX_BIT, 1, 4}, "vkCreatePipelineLayout() call has push constants index 0 with offset 1. Offset must"},
+        {{VK_SHADER_STAGE_VERTEX_BIT, 0, too_big}, "vkCreatePipelineLayout() call has push constants index 0 with offset "},
+        {{VK_SHADER_STAGE_VERTEX_BIT, too_big, too_big}, "vkCreatePipelineLayout() call has push constants index 0 with offset "},
+        {{VK_SHADER_STAGE_VERTEX_BIT, too_big, 4}, "vkCreatePipelineLayout() call has push constants index 0 with offset "},
         {{VK_SHADER_STAGE_VERTEX_BIT, 0xFFFFFFF0, 0x00000020},
-         "vkCreatePipelineLayout() call has push "
-         "constants index 0 with offset "},
+         "vkCreatePipelineLayout() call has push constants index 0 with offset "},
         {{VK_SHADER_STAGE_VERTEX_BIT, 0x00000020, 0xFFFFFFF0},
-         "vkCreatePipelineLayout() call has push "
-         "constants index 0 with offset "},
+         "vkCreatePipelineLayout() call has push constants index 0 with offset "},
     }};
 
     // Check for invalid offset and size
@@ -9682,7 +9612,7 @@ TEST_F(VkLayerTest, InvalidPipelineCreateState) {
     VkResult err;
 
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-        "Invalid Pipeline CreateInfo State: Vertex Shader required");
+                                         "Invalid Pipeline CreateInfo State: Vertex Shader required");
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -9783,7 +9713,7 @@ TEST_F(VkLayerTest, InvalidPipelineCreateState) {
 }
 
 TEST_F(VkLayerTest, InvalidPipelineSampleRateFeatureDisable) {
-    //Enable sample shading in pipeline when the feature is disabled.
+    // Enable sample shading in pipeline when the feature is disabled.
     ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
 
     // Disable sampleRateShading here
@@ -9800,7 +9730,7 @@ TEST_F(VkLayerTest, InvalidPipelineSampleRateFeatureDisable) {
 }
 
 TEST_F(VkLayerTest, InvalidPipelineSampleRateFeatureEnable) {
-    //Enable sample shading in pipeline when the feature is disabled.
+    // Enable sample shading in pipeline when the feature is disabled.
     ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
 
     // Require sampleRateShading here
@@ -10294,7 +10224,6 @@ TEST_F(VkLayerTest, DynViewportAndScissorUndefinedDrawState) {
                     &m_scissors[0]);  // Forgetting to set needed 0th scissor (PSO scissorCount == 1)
     m_commandBuffer->Draw(1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
-
 }
 
 TEST_F(VkLayerTest, PSOLineWidthInvalid) {
@@ -10343,7 +10272,7 @@ TEST_F(VkLayerTest, PSOLineWidthInvalid) {
 
     VkGraphicsPipelineCreateInfo gp_ci = {};
     gp_ci.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-    gp_ci.stageCount = sizeof(shader_state_cis)/sizeof(VkPipelineShaderStageCreateInfo);
+    gp_ci.stageCount = sizeof(shader_state_cis) / sizeof(VkPipelineShaderStageCreateInfo);
     gp_ci.pStages = shader_state_cis;
     gp_ci.pVertexInputState = &vi_state_ci;
     gp_ci.pInputAssemblyState = &ia_state_ci;
@@ -10883,9 +10812,8 @@ TEST_F(VkLayerTest, RenderPassWithinRenderPass) {
 
 TEST_F(VkLayerTest, RenderPassClearOpMismatch) {
     TEST_DESCRIPTION(
-        "Begin a renderPass where clearValueCount is less than"
-        "the number of renderPass attachments that use loadOp"
-        "VK_ATTACHMENT_LOAD_OP_CLEAR.");
+        "Begin a renderPass where clearValueCount is less than the number of renderPass attachments that use "
+        "loadOpVK_ATTACHMENT_LOAD_OP_CLEAR.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -11250,7 +11178,8 @@ TEST_F(VkLayerTest, ClearDepthStencilImageErrors) {
 
     m_commandBuffer->begin();
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_18a00012);
-    vkCmdClearDepthStencilImage(m_commandBuffer->handle(), dst_image_bad_usage.handle(), VK_IMAGE_LAYOUT_GENERAL, &clear_value, 1, &range);
+    vkCmdClearDepthStencilImage(m_commandBuffer->handle(), dst_image_bad_usage.handle(), VK_IMAGE_LAYOUT_GENERAL, &clear_value, 1,
+                                &range);
     m_errorMonitor->VerifyFound();
 
     // Fix usage for next test case
@@ -11269,9 +11198,7 @@ TEST_F(VkLayerTest, ClearColorAttachmentsOutsideRenderPass) {
     // Call CmdClearAttachmentss outside of an active RenderPass
 
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                         "vkCmdClearAttachments(): This call "
-                                         "must be issued inside an active "
-                                         "render pass");
+                                         "vkCmdClearAttachments(): This call must be issued inside an active render pass");
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -11293,13 +11220,10 @@ TEST_F(VkLayerTest, ClearColorAttachmentsOutsideRenderPass) {
 }
 
 TEST_F(VkLayerTest, RenderPassExcessiveNextSubpass) {
-    TEST_DESCRIPTION(
-        "Test that an error is produced when CmdNextSubpass is "
-        "called too many times in a renderpass instance");
+    TEST_DESCRIPTION("Test that an error is produced when CmdNextSubpass is called too many times in a renderpass instance");
 
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                         "vkCmdNextSubpass(): Attempted to advance "
-                                         "beyond final subpass");
+                                         "vkCmdNextSubpass(): Attempted to advance beyond final subpass");
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -11316,13 +11240,10 @@ TEST_F(VkLayerTest, RenderPassExcessiveNextSubpass) {
 }
 
 TEST_F(VkLayerTest, RenderPassEndedBeforeFinalSubpass) {
-    TEST_DESCRIPTION(
-        "Test that an error is produced when CmdEndRenderPass is "
-        "called before the final subpass has been reached");
+    TEST_DESCRIPTION("Test that an error is produced when CmdEndRenderPass is called before the final subpass has been reached");
 
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                         "vkCmdEndRenderPass(): Called before reaching "
-                                         "final subpass");
+                                         "vkCmdEndRenderPass(): Called before reaching final subpass");
 
     ASSERT_NO_FATAL_FAILURE(Init());
     VkSubpassDescription sd[2] = {{0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 0, nullptr, nullptr, nullptr, 0, nullptr},
@@ -11928,6 +11849,9 @@ TEST_F(VkLayerTest, ImageBarrierWithBadRange) {
 
     m_commandBuffer->begin();
 
+    // Nested scope here confuses clang-format, somehow
+    // clang-format off
+
     // try for vkCmdPipelineBarrier
     {
         // Try baseMipLevel >= image.mipLevels with VK_REMAINING_MIP_LEVELS
@@ -12120,6 +12044,7 @@ TEST_F(VkLayerTest, ImageBarrierWithBadRange) {
 
         vkDestroyEvent(m_device->handle(), event, nullptr);
     }
+// clang-format on
 }
 
 TEST_F(VkLayerTest, ValidationCacheTestBadMerge) {
@@ -12313,9 +12238,7 @@ TEST_F(VkLayerTest, InvalidQueueFamilyIndex) {
 }
 
 TEST_F(VkLayerTest, ExecuteCommandsPrimaryCB) {
-    TEST_DESCRIPTION(
-        "Attempt vkCmdExecuteCommands with a primary command buffer"
-        " (should only be secondary)");
+    TEST_DESCRIPTION("Attempt vkCmdExecuteCommands with a primary command buffer (should only be secondary)");
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -12337,9 +12260,7 @@ TEST_F(VkLayerTest, ExecuteCommandsPrimaryCB) {
 }
 
 TEST_F(VkLayerTest, DSUsageBitsErrors) {
-    TEST_DESCRIPTION(
-        "Attempt to update descriptor sets for images and buffers "
-        "that do not have correct usage bits sets.");
+    TEST_DESCRIPTION("Attempt to update descriptor sets for images and buffers that do not have correct usage bits sets.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
     std::array<VkDescriptorPoolSize, VK_DESCRIPTOR_TYPE_RANGE_SIZE> ds_type_count;
@@ -12442,8 +12363,7 @@ TEST_F(VkLayerTest, DSUsageBitsErrors) {
 
 TEST_F(VkLayerTest, DSBufferInfoErrors) {
     TEST_DESCRIPTION(
-        "Attempt to update buffer descriptor set that has incorrect "
-        "parameters in VkDescriptorBufferInfo struct. This includes:\n"
+        "Attempt to update buffer descriptor set that has incorrect parameters in VkDescriptorBufferInfo struct. This includes:\n"
         "1. offset value greater than or equal to buffer size\n"
         "2. range value of 0\n"
         "3. range value greater than buffer (size - offset)");
@@ -12632,9 +12552,7 @@ TEST_F(VkLayerTest, DSBufferLimitErrors) {
 TEST_F(VkLayerTest, DSAspectBitsErrors) {
     // TODO : Initially only catching case where DEPTH & STENCIL aspect bits
     //  are set, but could expand this test to hit more cases.
-    TEST_DESCRIPTION(
-        "Attempt to update descriptor sets for images "
-        "that do not have correct aspect bits sets.");
+    TEST_DESCRIPTION("Attempt to update descriptor sets for images that do not have correct aspect bits sets.");
     VkResult err;
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -12710,9 +12628,7 @@ TEST_F(VkLayerTest, DSAspectBitsErrors) {
     descriptor_write.pImageInfo = &img_info;
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
     descriptor_write.dstSet = ds.set_;
-    const char *error_msg =
-        " please only set either VK_IMAGE_ASPECT_DEPTH_BIT "
-        "or VK_IMAGE_ASPECT_STENCIL_BIT ";
+    const char *error_msg = " please only set either VK_IMAGE_ASPECT_DEPTH_BIT or VK_IMAGE_ASPECT_STENCIL_BIT ";
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, error_msg);
 
     vkUpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
@@ -12727,9 +12643,9 @@ TEST_F(VkLayerTest, DSTypeMismatch) {
     // Create DS w/ layout of one type and attempt Update w/ mis-matched type
     VkResult err;
 
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                         " binding #0 with type VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER but update "
-                                         "type is VK_DESCRIPTOR_TYPE_SAMPLER");
+    m_errorMonitor->SetDesiredFailureMsg(
+        VK_DEBUG_REPORT_ERROR_BIT_EXT,
+        " binding #0 with type VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER but update type is VK_DESCRIPTOR_TYPE_SAMPLER");
 
     ASSERT_NO_FATAL_FAILURE(Init());
     OneOffDescriptorSet ds(m_device, {
@@ -12979,9 +12895,7 @@ TEST_F(VkLayerTest, CopyDescriptorUpdateErrors) {
     VkResult err;
 
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                         " binding #1 with type "
-                                         "VK_DESCRIPTOR_TYPE_SAMPLER. Types do "
-                                         "not match.");
+                                         " binding #1 with type VK_DESCRIPTOR_TYPE_SAMPLER. Types do not match.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
     OneOffDescriptorSet ds(m_device, {
@@ -13034,10 +12948,8 @@ TEST_F(VkLayerTest, CopyDescriptorUpdateErrors) {
 
     // Now perform a copy update that fails due to binding out of bounds
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                         " binding#1 with offset index of 1 plus "
-                                         "update array offset of 0 and update of "
-                                         "5 descriptors oversteps total number "
-                                         "of descriptors in set: 2.");
+                                         " binding#1 with offset index of 1 plus update array offset of 0 and update of 5 "
+                                         "descriptors oversteps total number of descriptors in set: 2.");
 
     memset(&copy_ds_update, 0, sizeof(VkCopyDescriptorSet));
     copy_ds_update.sType = VK_STRUCTURE_TYPE_COPY_DESCRIPTOR_SET;
@@ -13139,9 +13051,8 @@ TEST_F(VkLayerTest, NumSamplesMismatch) {
 
 TEST_F(VkLayerTest, RenderPassIncompatible) {
     TEST_DESCRIPTION(
-        "Hit RenderPass incompatible cases. "
-        "Initial case is drawing with an active renderpass that's "
-        "not compatible with the bound pipeline state object's creation renderpass");
+        "Hit RenderPass incompatible cases. Initial case is drawing with an active renderpass that's not compatible with the bound "
+        "pipeline state object's creation renderpass");
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -13246,8 +13157,7 @@ TEST_F(VkLayerTest, NumBlendAttachMismatch) {
 
 TEST_F(VkLayerTest, Maint1BindingSliceOf3DImage) {
     TEST_DESCRIPTION(
-        "Attempt to bind a slice of a 3D texture in a descriptor set. "
-        "This is explicitly disallowed by KHR_maintenance1 to keep "
+        "Attempt to bind a slice of a 3D texture in a descriptor set. This is explicitly disallowed by KHR_maintenance1 to keep "
         "things simple for drivers.");
     ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
     if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE1_EXTENSION_NAME)) {
@@ -13264,27 +13174,35 @@ TEST_F(VkLayerTest, Maint1BindingSliceOf3DImage) {
                                           {0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
                                       });
 
-    VkImageCreateInfo ici = { VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO, nullptr,
-        VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT_KHR,
-        VK_IMAGE_TYPE_3D, VK_FORMAT_R8G8B8A8_UNORM,
-        { 32, 32, 32 }, 1, 1,
-        VK_SAMPLE_COUNT_1_BIT,
-        VK_IMAGE_TILING_OPTIMAL,
-        VK_IMAGE_USAGE_SAMPLED_BIT,
-        VK_SHARING_MODE_EXCLUSIVE, 0, nullptr, VK_IMAGE_LAYOUT_UNDEFINED };
+    VkImageCreateInfo ici = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+                             nullptr,
+                             VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT_KHR,
+                             VK_IMAGE_TYPE_3D,
+                             VK_FORMAT_R8G8B8A8_UNORM,
+                             {32, 32, 32},
+                             1,
+                             1,
+                             VK_SAMPLE_COUNT_1_BIT,
+                             VK_IMAGE_TILING_OPTIMAL,
+                             VK_IMAGE_USAGE_SAMPLED_BIT,
+                             VK_SHARING_MODE_EXCLUSIVE,
+                             0,
+                             nullptr,
+                             VK_IMAGE_LAYOUT_UNDEFINED};
     VkImageObj image(m_device);
     image.init(&ici);
     ASSERT_TRUE(image.initialized());
 
-    VkImageViewCreateInfo ivci = { VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO, nullptr,
-        0, image.handle(), VK_IMAGE_VIEW_TYPE_2D,
+    VkImageViewCreateInfo ivci = {
+        VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+        nullptr,
+        0,
+        image.handle(),
+        VK_IMAGE_VIEW_TYPE_2D,
         VK_FORMAT_R8G8B8A8_UNORM,
-        { VK_COMPONENT_SWIZZLE_IDENTITY,
-          VK_COMPONENT_SWIZZLE_IDENTITY,
-          VK_COMPONENT_SWIZZLE_IDENTITY,
-          VK_COMPONENT_SWIZZLE_IDENTITY
-        },
-        { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 },
+        {VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY,
+         VK_COMPONENT_SWIZZLE_IDENTITY},
+        {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1},
     };
     VkImageView view;
     err = vkCreateImageView(m_device->device(), &ivci, nullptr, &view);
@@ -13293,9 +13211,9 @@ TEST_F(VkLayerTest, Maint1BindingSliceOf3DImage) {
     // Meat of the test.
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_046002ae);
 
-    VkDescriptorImageInfo dii = { VK_NULL_HANDLE, view, VK_IMAGE_LAYOUT_GENERAL };
-    VkWriteDescriptorSet write = { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, nullptr,
-        set.set_, 0, 0, 1, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, &dii, nullptr, nullptr };
+    VkDescriptorImageInfo dii = {VK_NULL_HANDLE, view, VK_IMAGE_LAYOUT_GENERAL};
+    VkWriteDescriptorSet write = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, nullptr, set.set_, 0,      0, 1,
+                                  VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,       &dii,    nullptr,  nullptr};
     vkUpdateDescriptorSets(m_device->device(), 1, &write, 0, nullptr);
 
     m_errorMonitor->VerifyFound();
@@ -13304,9 +13222,7 @@ TEST_F(VkLayerTest, Maint1BindingSliceOf3DImage) {
 }
 
 TEST_F(VkLayerTest, MissingClearAttachment) {
-    TEST_DESCRIPTION(
-        "Points to a wrong colorAttachment index in a VkClearAttachment "
-        "structure passed to vkCmdClearAttachments");
+    TEST_DESCRIPTION("Points to a wrong colorAttachment index in a VkClearAttachment structure passed to vkCmdClearAttachments");
     ASSERT_NO_FATAL_FAILURE(Init());
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_1860001e);
 
@@ -13437,9 +13353,7 @@ TEST_F(VkLayerTest, VtxBufferBadIndex) {
 }
 
 TEST_F(VkLayerTest, MismatchCountQueueCreateRequestedFeature) {
-    TEST_DESCRIPTION(
-        "Use an invalid count in a vkEnumeratePhysicalDevices call."
-        "Use invalid Queue Family Index in vkCreateDevice");
+    TEST_DESCRIPTION("Use an invalid count in a vkEnumeratePhysicalDevices call.Use invalid Queue Family Index in vkCreateDevice");
     ASSERT_NO_FATAL_FAILURE(Init());
 
     // The following test fails with recent NVidia drivers.
@@ -13535,11 +13449,9 @@ TEST_F(VkLayerTest, InvalidQueryPoolCreate) {
 }
 
 TEST_F(VkLayerTest, UnclosedQuery) {
-    TEST_DESCRIPTION(
-        "End a command buffer with a query still in progress.");
+    TEST_DESCRIPTION("End a command buffer with a query still in progress.");
 
     const char *invalid_query = "Ending command buffer with in progress query: queryPool 0x";
-
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
@@ -13573,28 +13485,14 @@ TEST_F(VkLayerTest, UnclosedQuery) {
 
 TEST_F(VkLayerTest, VertexBufferInvalid) {
     TEST_DESCRIPTION(
-        "Submit a command buffer using deleted vertex buffer, "
-        "delete a buffer twice, use an invalid offset for each "
-        "buffer type, and attempt to bind a null buffer");
+        "Submit a command buffer using deleted vertex buffer, delete a buffer twice, use an invalid offset for each buffer type, "
+        "and attempt to bind a null buffer");
 
-    const char *deleted_buffer_in_command_buffer =
-        "Cannot submit cmd buffer "
-        "using deleted buffer ";
-    const char *invalid_offset_message =
-        "vkBindBufferMemory(): "
-        "memoryOffset is 0x";
-    const char *invalid_storage_buffer_offset_message =
-        "vkBindBufferMemory(): "
-        "storage memoryOffset "
-        "is 0x";
-    const char *invalid_texel_buffer_offset_message =
-        "vkBindBufferMemory(): "
-        "texel memoryOffset "
-        "is 0x";
-    const char *invalid_uniform_buffer_offset_message =
-        "vkBindBufferMemory(): "
-        "uniform memoryOffset "
-        "is 0x";
+    const char *deleted_buffer_in_command_buffer = "Cannot submit cmd buffer using deleted buffer ";
+    const char *invalid_offset_message = "vkBindBufferMemory(): memoryOffset is 0x";
+    const char *invalid_storage_buffer_offset_message = "vkBindBufferMemory(): storage memoryOffset is 0x";
+    const char *invalid_texel_buffer_offset_message = "vkBindBufferMemory(): texel memoryOffset is 0x";
+    const char *invalid_uniform_buffer_offset_message = "vkBindBufferMemory(): uniform memoryOffset is 0x";
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitViewport());
@@ -13744,9 +13642,8 @@ TEST_F(VkLayerTest, BadVertexBufferOffset) {
 // INVALID_IMAGE_LAYOUT tests (one other case is hit by MapMemWithoutHostVisibleBit and not here)
 TEST_F(VkLayerTest, InvalidImageLayout) {
     TEST_DESCRIPTION(
-        "Hit all possible validation checks associated with the "
-        "DRAWSTATE_INVALID_IMAGE_LAYOUT enum. Generally these involve having"
-        "images in the wrong layout when they're copied or transitioned.");
+        "Hit all possible validation checks associated with the DRAWSTATE_INVALID_IMAGE_LAYOUT enum. Generally these involve "
+        "havingimages in the wrong layout when they're copied or transitioned.");
     // 3 in ValidateCmdBufImageLayouts
     // *  -1 Attempt to submit cmd buf w/ deleted image
     // *  -2 Cmd buf submit of image w/ layout not matching first use w/ subresource
@@ -13862,16 +13759,16 @@ TEST_F(VkLayerTest, InvalidImageLayout) {
     m_errorMonitor->SetUnexpectedError("layout should be VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL instead of GENERAL.");
     m_commandBuffer->CopyImage(src_image, VK_IMAGE_LAYOUT_GENERAL, dst_image, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
     // Now cause error due to src image layout changing
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                         "with specific layout VK_IMAGE_LAYOUT_UNDEFINED that "
-                                         "doesn't match the actual current layout VK_IMAGE_LAYOUT_GENERAL.");
+    m_errorMonitor->SetDesiredFailureMsg(
+        VK_DEBUG_REPORT_ERROR_BIT_EXT,
+        "with specific layout VK_IMAGE_LAYOUT_UNDEFINED that doesn't match the actual current layout VK_IMAGE_LAYOUT_GENERAL.");
     m_errorMonitor->SetUnexpectedError("is VK_IMAGE_LAYOUT_UNDEFINED but can only be VK_IMAGE_LAYOUT");
     m_commandBuffer->CopyImage(src_image, VK_IMAGE_LAYOUT_UNDEFINED, dst_image, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
     m_errorMonitor->VerifyFound();
     // Final src error is due to bad layout type
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                         "is VK_IMAGE_LAYOUT_UNDEFINED but can only be "
-                                         "VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL or VK_IMAGE_LAYOUT_GENERAL.");
+    m_errorMonitor->SetDesiredFailureMsg(
+        VK_DEBUG_REPORT_ERROR_BIT_EXT,
+        "is VK_IMAGE_LAYOUT_UNDEFINED but can only be VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL or VK_IMAGE_LAYOUT_GENERAL.");
     m_errorMonitor->SetUnexpectedError(
         "with specific layout VK_IMAGE_LAYOUT_UNDEFINED that doesn't match the actual current layout VK_IMAGE_LAYOUT_GENERAL.");
     m_commandBuffer->CopyImage(src_image, VK_IMAGE_LAYOUT_UNDEFINED, dst_image, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
@@ -13883,16 +13780,16 @@ TEST_F(VkLayerTest, InvalidImageLayout) {
     m_commandBuffer->CopyImage(src_image, VK_IMAGE_LAYOUT_GENERAL, dst_image, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
     m_errorMonitor->VerifyFound();
     // Now cause error due to src image layout changing
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                         "with specific layout VK_IMAGE_LAYOUT_UNDEFINED that doesn't match "
-                                         "the actual current layout VK_IMAGE_LAYOUT_GENERAL.");
+    m_errorMonitor->SetDesiredFailureMsg(
+        VK_DEBUG_REPORT_ERROR_BIT_EXT,
+        "with specific layout VK_IMAGE_LAYOUT_UNDEFINED that doesn't match the actual current layout VK_IMAGE_LAYOUT_GENERAL.");
     m_errorMonitor->SetUnexpectedError(
         "is VK_IMAGE_LAYOUT_UNDEFINED but can only be VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL or VK_IMAGE_LAYOUT_GENERAL.");
     m_commandBuffer->CopyImage(src_image, VK_IMAGE_LAYOUT_GENERAL, dst_image, VK_IMAGE_LAYOUT_UNDEFINED, 1, &copy_region);
     m_errorMonitor->VerifyFound();
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                         "is VK_IMAGE_LAYOUT_UNDEFINED but can only be VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL "
-                                         "or VK_IMAGE_LAYOUT_GENERAL.");
+    m_errorMonitor->SetDesiredFailureMsg(
+        VK_DEBUG_REPORT_ERROR_BIT_EXT,
+        "is VK_IMAGE_LAYOUT_UNDEFINED but can only be VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL or VK_IMAGE_LAYOUT_GENERAL.");
     m_errorMonitor->SetUnexpectedError(
         "with specific layout VK_IMAGE_LAYOUT_UNDEFINED that doesn't match the actual current layout VK_IMAGE_LAYOUT_GENERAL.");
     m_commandBuffer->CopyImage(src_image, VK_IMAGE_LAYOUT_GENERAL, dst_image, VK_IMAGE_LAYOUT_UNDEFINED, 1, &copy_region);
@@ -14104,8 +14001,7 @@ TEST_F(VkLayerTest, InvalidStorageImageLayout) {
 TEST_F(VkLayerTest, NonSimultaneousSecondaryMarksPrimary) {
     ASSERT_NO_FATAL_FAILURE(Init());
     const char *simultaneous_use_message =
-        "does not have VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT set and "
-        "will cause primary command buffer";
+        "does not have VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT set and will cause primary command buffer";
 
     VkCommandBufferObj secondary(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
@@ -14113,7 +14009,10 @@ TEST_F(VkLayerTest, NonSimultaneousSecondaryMarksPrimary) {
     secondary.end();
 
     VkCommandBufferBeginInfo cbbi = {
-        VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, nullptr, VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT, nullptr,
+        VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+        nullptr,
+        VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT,
+        nullptr,
     };
 
     m_commandBuffer->begin(&cbbi);
@@ -14131,7 +14030,8 @@ TEST_F(VkLayerTest, SimultaneousUseSecondaryTwoExecutes) {
     VkCommandBufferObj secondary(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
     VkCommandBufferInheritanceInfo inh = {
-        VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO, nullptr,
+        VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO,
+        nullptr,
     };
     VkCommandBufferBeginInfo cbbi = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, nullptr, 0, &inh};
 
@@ -14157,7 +14057,8 @@ TEST_F(VkLayerTest, SimultaneousUseSecondarySingleExecute) {
     VkCommandBufferObj secondary(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
     VkCommandBufferInheritanceInfo inh = {
-        VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO, nullptr,
+        VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO,
+        nullptr,
     };
     VkCommandBufferBeginInfo cbbi = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, nullptr, 0, &inh};
 
@@ -14173,9 +14074,7 @@ TEST_F(VkLayerTest, SimultaneousUseSecondarySingleExecute) {
 }
 
 TEST_F(VkLayerTest, SimultaneousUseOneShot) {
-    TEST_DESCRIPTION(
-        "Submit the same command buffer twice in one submit looking for simultaneous use and one time submit"
-        "errors");
+    TEST_DESCRIPTION("Submit the same command buffer twice in one submit looking for simultaneous use and one time submit errors");
     const char *simultaneous_use_message = "is already in use and is not marked for simultaneous use";
     const char *one_shot_message = "VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT set, but has been submitted";
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -14223,8 +14122,8 @@ TEST_F(VkLayerTest, SimultaneousUseOneShot) {
 
 TEST_F(VkLayerTest, StageMaskGsTsEnabled) {
     TEST_DESCRIPTION(
-        "Attempt to use a stageMask w/ geometry shader and tesselation shader bits enabled when those features are "
-        "disabled on the device.");
+        "Attempt to use a stageMask w/ geometry shader and tesselation shader bits enabled when those features are disabled on the "
+        "device.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -14302,10 +14201,8 @@ TEST_F(VkLayerTest, EventInUseDestroyedSignaled) {
 
 TEST_F(VkLayerTest, InUseDestroyedSignaled) {
     TEST_DESCRIPTION(
-        "Use vkCmdExecuteCommands with invalid state "
-        "in primary and secondary command buffers. "
-        "Delete objects that are inuse. Call VkQueueSubmit "
-        "with an event that has been deleted.");
+        "Use vkCmdExecuteCommands with invalid state in primary and secondary command buffers. Delete objects that are inuse. Call "
+        "VkQueueSubmit with an event that has been deleted.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -14726,7 +14623,10 @@ TEST_F(VkLayerTest, CreateImageViewFormatFeatureMismatch) {
                                   VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT};
     // List of errors that will be thrown in order of tests run
     UNIQUE_VALIDATION_ERROR_CODE optimal_error_codes[] = {
-        VALIDATION_ERROR_0ac007ea, VALIDATION_ERROR_0ac007ec, VALIDATION_ERROR_0ac007ee, VALIDATION_ERROR_0ac007f0,
+        VALIDATION_ERROR_0ac007ea,
+        VALIDATION_ERROR_0ac007ec,
+        VALIDATION_ERROR_0ac007ee,
+        VALIDATION_ERROR_0ac007f0,
     };
 
     VkFormatProperties formatProps;
@@ -15281,17 +15181,14 @@ TEST_F(VkLayerTest, UpdateDestroyDescriptorSetLayout) {
 
 TEST_F(VkLayerTest, QueueForwardProgressFenceWait) {
     TEST_DESCRIPTION(
-        "Call VkQueueSubmit with a semaphore that is already "
-        "signaled but not waited on by the queue. Wait on a "
-        "fence that has not yet been submitted to a queue.");
+        "Call VkQueueSubmit with a semaphore that is already signaled but not waited on by the queue. Wait on a fence that has not "
+        "yet been submitted to a queue.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     const char *queue_forward_progress_message = " that has already been signaled but not waited on by queue 0x";
-    const char *invalid_fence_wait_message =
-        " which has not been submitted on a Queue or during "
-        "acquire next image.";
+    const char *invalid_fence_wait_message = " which has not been submitted on a Queue or during acquire next image.";
 
     VkCommandBufferObj cb1(m_device, m_commandPool);
     cb1.begin();
@@ -15332,9 +15229,7 @@ TEST_F(VkLayerTest, QueueForwardProgressFenceWait) {
 
 TEST_F(VkLayerTest, FramebufferIncompatible) {
     TEST_DESCRIPTION(
-        "Bind a secondary command buffer with with a framebuffer "
-        "that does not match the framebuffer for the active "
-        "renderpass.");
+        "Bind a secondary command buffer with with a framebuffer that does not match the framebuffer for the active renderpass.");
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
@@ -15579,9 +15474,7 @@ TEST_F(VkLayerTest, InvalidSPIRVCodeSize) {
 }
 
 TEST_F(VkLayerTest, InvalidSPIRVMagic) {
-    TEST_DESCRIPTION(
-        "Test that an error is produced for a spirv module "
-        "with a bad magic number");
+    TEST_DESCRIPTION("Test that an error is produced for a spirv module with a bad magic number");
 
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "Invalid SPIR-V magic number");
 
@@ -15607,9 +15500,7 @@ TEST_F(VkLayerTest, InvalidSPIRVMagic) {
 }
 
 TEST_F(VkLayerTest, CreatePipelineVertexOutputNotConsumed) {
-    TEST_DESCRIPTION(
-        "Test that a warning is produced for a vertex output that "
-        "is not consumed by the fragment stage");
+    TEST_DESCRIPTION("Test that a warning is produced for a vertex output that is not consumed by the fragment stage");
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT, "not consumed by fragment shader");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -15665,7 +15556,7 @@ TEST_F(VkPositiveLayerTest, CreatePipelineComplexTypes) {
         "void main() {}";
     char const *tcsSource =
         "#version 450\n"
-        "layout(vertices=3) out;"
+        "layout(vertices=3) out;\n"
         "struct S { int x; };\n"
         "layout(location=2) patch out B { S s; } b;\n"
         "void main() {\n"
@@ -15812,7 +15703,10 @@ TEST_F(VkLayerTest, CreatePipelineCheckShaderBadSpecialization) {
 
     // Set up the info describing spec map and data
     const VkSpecializationInfo specialization_info = {
-        1, &entry, 1 * sizeof(float), &data,
+        1,
+        &entry,
+        1 * sizeof(float),
+        &data,
     };
     shader_stage_create_info[0].pSpecializationInfo = &specialization_info;
 
@@ -15917,8 +15811,8 @@ TEST_F(VkLayerTest, CreatePipelineCheckShaderDescriptorNotAccessible) {
 
 TEST_F(VkLayerTest, CreatePipelineCheckShaderPushConstantNotAccessible) {
     TEST_DESCRIPTION(
-        "Create a graphics pipleine in which a push constant range containing a push constant block member is not "
-        "accessible from the current shader stage.");
+        "Create a graphics pipleine in which a push constant range containing a push constant block member is not accessible from "
+        "the current shader stage.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -16023,13 +15917,12 @@ TEST_F(VkLayerTest, CreateShaderModuleCheckBadCapability) {
     char const *vsSource =
         "#version 450\n"
         "\n"
-        "layout(xfb_buffer = 1) out;"
+        "layout(xfb_buffer = 1) out;\n"
         "void main(){\n"
         "   gl_Position = vec4(1);\n"
         "}\n";
 
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                         "Capability TransformFeedback is not allowed by Vulkan");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "Capability TransformFeedback is not allowed by Vulkan");
 
     std::vector<unsigned int> spv;
     VkShaderModuleCreateInfo module_create_info;
@@ -16131,8 +16024,7 @@ TEST_F(VkPositiveLayerTest, CreatePipelineCheckShaderCapabilityExtension2of2) {
 
 TEST_F(VkLayerTest, CreatePipelineFragmentInputNotProvided) {
     TEST_DESCRIPTION(
-        "Test that an error is produced for a fragment shader input "
-        "which is not present in the outputs of the previous stage");
+        "Test that an error is produced for a fragment shader input which is not present in the outputs of the previous stage");
 
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "not written by vertex shader");
 
@@ -16173,8 +16065,7 @@ TEST_F(VkLayerTest, CreatePipelineFragmentInputNotProvided) {
 
 TEST_F(VkLayerTest, CreatePipelineFragmentInputNotProvidedInBlock) {
     TEST_DESCRIPTION(
-        "Test that an error is produced for a fragment shader input "
-        "within an interace block, which is not present in the outputs "
+        "Test that an error is produced for a fragment shader input within an interace block, which is not present in the outputs "
         "of the previous stage.");
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "not written by vertex shader");
 
@@ -16214,13 +16105,10 @@ TEST_F(VkLayerTest, CreatePipelineFragmentInputNotProvidedInBlock) {
 }
 
 TEST_F(VkLayerTest, CreatePipelineVsFsTypeMismatchArraySize) {
-    TEST_DESCRIPTION(
-        "Test that an error is produced for mismatched array sizes "
-        "across the vertex->fragment shader interface");
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                         "Type mismatch on location 0.0: 'ptr to "
-                                         "output arr[2] of float32' vs 'ptr to "
-                                         "input arr[1] of float32'");
+    TEST_DESCRIPTION("Test that an error is produced for mismatched array sizes across the vertex->fragment shader interface");
+    m_errorMonitor->SetDesiredFailureMsg(
+        VK_DEBUG_REPORT_ERROR_BIT_EXT,
+        "Type mismatch on location 0.0: 'ptr to output arr[2] of float32' vs 'ptr to input arr[1] of float32'");
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -16260,9 +16148,7 @@ TEST_F(VkLayerTest, CreatePipelineVsFsTypeMismatchArraySize) {
 }
 
 TEST_F(VkLayerTest, CreatePipelineVsFsTypeMismatch) {
-    TEST_DESCRIPTION(
-        "Test that an error is produced for mismatched types across "
-        "the vertex->fragment shader interface");
+    TEST_DESCRIPTION("Test that an error is produced for mismatched types across the vertex->fragment shader interface");
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "Type mismatch on location 0");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -16304,9 +16190,8 @@ TEST_F(VkLayerTest, CreatePipelineVsFsTypeMismatch) {
 
 TEST_F(VkLayerTest, CreatePipelineVsFsTypeMismatchInBlock) {
     TEST_DESCRIPTION(
-        "Test that an error is produced for mismatched types across "
-        "the vertex->fragment shader interface, when the variable is contained within "
-        "an interface block");
+        "Test that an error is produced for mismatched types across the vertex->fragment shader interface, when the variable is "
+        "contained within an interface block");
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "Type mismatch on location 0");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -16348,9 +16233,8 @@ TEST_F(VkLayerTest, CreatePipelineVsFsTypeMismatchInBlock) {
 
 TEST_F(VkLayerTest, CreatePipelineVsFsMismatchByLocation) {
     TEST_DESCRIPTION(
-        "Test that an error is produced for location mismatches across "
-        "the vertex->fragment shader interface; This should manifest as a not-written/not-consumed "
-        "pair, but flushes out broken walking of the interfaces");
+        "Test that an error is produced for location mismatches across the vertex->fragment shader interface; This should manifest "
+        "as a not-written/not-consumed pair, but flushes out broken walking of the interfaces");
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "location 0.0 which is not written by vertex shader");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -16392,9 +16276,8 @@ TEST_F(VkLayerTest, CreatePipelineVsFsMismatchByLocation) {
 
 TEST_F(VkLayerTest, CreatePipelineVsFsMismatchByComponent) {
     TEST_DESCRIPTION(
-        "Test that an error is produced for component mismatches across the "
-        "vertex->fragment shader interface. It's not enough to have the same set of locations in "
-        "use; matching is defined in terms of spirv variables.");
+        "Test that an error is produced for component mismatches across the vertex->fragment shader interface. It's not enough to "
+        "have the same set of locations in use; matching is defined in terms of spirv variables.");
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "location 0.1 which is not written by vertex shader");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -16505,9 +16388,7 @@ TEST_F(VkLayerTest, CreatePipelineVsFsMismatchByPrecisionBlock) {
 }
 
 TEST_F(VkLayerTest, CreatePipelineAttribNotConsumed) {
-    TEST_DESCRIPTION(
-        "Test that a warning is produced for a vertex attribute which is "
-        "not consumed by the vertex shader");
+    TEST_DESCRIPTION("Test that a warning is produced for a vertex attribute which is not consumed by the vertex shader");
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT, "location 0 not consumed by vertex shader");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -16556,8 +16437,8 @@ TEST_F(VkLayerTest, CreatePipelineAttribNotConsumed) {
 
 TEST_F(VkLayerTest, CreatePipelineAttribLocationMismatch) {
     TEST_DESCRIPTION(
-        "Test that a warning is produced for a location mismatch on "
-        "vertex attributes. This flushes out bad behavior in the interface walker");
+        "Test that a warning is produced for a location mismatch on vertex attributes. This flushes out bad behavior in the "
+        "interface walker");
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT, "location 0 not consumed by vertex shader");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -16607,9 +16488,7 @@ TEST_F(VkLayerTest, CreatePipelineAttribLocationMismatch) {
 }
 
 TEST_F(VkLayerTest, CreatePipelineAttribNotProvided) {
-    TEST_DESCRIPTION(
-        "Test that an error is produced for a vertex shader input which is not "
-        "provided by a vertex attribute");
+    TEST_DESCRIPTION("Test that an error is produced for a vertex shader input which is not provided by a vertex attribute");
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
                                          "Vertex shader consumes input at location 0 but not provided");
 
@@ -16650,8 +16529,7 @@ TEST_F(VkLayerTest, CreatePipelineAttribNotProvided) {
 
 TEST_F(VkLayerTest, CreatePipelineAttribTypeMismatch) {
     TEST_DESCRIPTION(
-        "Test that an error is produced for a mismatch between the "
-        "fundamental type (float/int/uint) of an attribute and the "
+        "Test that an error is produced for a mismatch between the fundamental type (float/int/uint) of an attribute and the "
         "vertex shader input that consumes it");
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "location 0 does not match vertex shader input type");
 
@@ -16701,9 +16579,7 @@ TEST_F(VkLayerTest, CreatePipelineAttribTypeMismatch) {
 }
 
 TEST_F(VkLayerTest, CreatePipelineDuplicateStage) {
-    TEST_DESCRIPTION(
-        "Test that an error is produced for a pipeline containing multiple "
-        "shaders for the same stage");
+    TEST_DESCRIPTION("Test that an error is produced for a pipeline containing multiple shaders for the same stage");
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
                                          "Multiple shaders provided for stage VK_SHADER_STAGE_VERTEX_BIT");
 
@@ -16779,9 +16655,9 @@ TEST_F(VkLayerTest, CreatePipelineMissingEntrypoint) {
 }
 
 TEST_F(VkLayerTest, CreatePipelineDepthStencilRequired) {
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                         "pDepthStencilState is NULL when rasterization is enabled and subpass "
-                                         "uses a depth/stencil attachment");
+    m_errorMonitor->SetDesiredFailureMsg(
+        VK_DEBUG_REPORT_ERROR_BIT_EXT,
+        "pDepthStencilState is NULL when rasterization is enabled and subpass uses a depth/stencil attachment");
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -16811,18 +16687,31 @@ TEST_F(VkLayerTest, CreatePipelineDepthStencilRequired) {
 
     VkAttachmentDescription attachments[] = {
         {
-            0, VK_FORMAT_B8G8R8A8_UNORM, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE,
-            VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_IMAGE_LAYOUT_UNDEFINED,
+            0,
+            VK_FORMAT_B8G8R8A8_UNORM,
+            VK_SAMPLE_COUNT_1_BIT,
+            VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+            VK_ATTACHMENT_STORE_OP_DONT_CARE,
+            VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+            VK_ATTACHMENT_STORE_OP_DONT_CARE,
+            VK_IMAGE_LAYOUT_UNDEFINED,
             VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
         },
         {
-            0, VK_FORMAT_D16_UNORM, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE,
-            VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_IMAGE_LAYOUT_UNDEFINED,
+            0,
+            VK_FORMAT_D16_UNORM,
+            VK_SAMPLE_COUNT_1_BIT,
+            VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+            VK_ATTACHMENT_STORE_OP_DONT_CARE,
+            VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+            VK_ATTACHMENT_STORE_OP_DONT_CARE,
+            VK_IMAGE_LAYOUT_UNDEFINED,
             VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
         },
     };
     VkAttachmentReference refs[] = {
-        {0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL}, {1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL},
+        {0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL},
+        {1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL},
     };
     VkSubpassDescription subpass = {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 1, &refs[0], nullptr, &refs[1], 0, nullptr};
     VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 2, attachments, 1, &subpass, 0, nullptr};
@@ -16839,12 +16728,11 @@ TEST_F(VkLayerTest, CreatePipelineDepthStencilRequired) {
 
 TEST_F(VkLayerTest, CreatePipelineTessPatchDecorationMismatch) {
     TEST_DESCRIPTION(
-        "Test that an error is produced for a variable output from "
-        "the TCS without the patch decoration, but consumed in the TES "
+        "Test that an error is produced for a variable output from the TCS without the patch decoration, but consumed in the TES "
         "with the decoration.");
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                         "is per-vertex in tessellation control shader stage "
-                                         "but per-patch in tessellation evaluation shader stage");
+    m_errorMonitor->SetDesiredFailureMsg(
+        VK_DEBUG_REPORT_ERROR_BIT_EXT,
+        "is per-vertex in tessellation control shader stage but per-patch in tessellation evaluation shader stage");
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -17044,8 +16932,7 @@ TEST_F(VkLayerTest, CreatePipelineTessErrors) {
 
 TEST_F(VkLayerTest, CreatePipelineAttribBindingConflict) {
     TEST_DESCRIPTION(
-        "Test that an error is produced for a vertex attribute setup where multiple "
-        "bindings provide the same location");
+        "Test that an error is produced for a vertex attribute setup where multiple bindings provide the same location");
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
                                          "Duplicate vertex input binding descriptions for binding 0");
 
@@ -17097,8 +16984,8 @@ TEST_F(VkLayerTest, CreatePipelineAttribBindingConflict) {
 
 TEST_F(VkLayerTest, CreatePipelineFragmentOutputNotWritten) {
     TEST_DESCRIPTION(
-        "Test that an error is produced for a fragment shader which does not "
-        "provide an output for one of the pipeline's color attachments");
+        "Test that an error is produced for a fragment shader which does not provide an output for one of the pipeline's color "
+        "attachments");
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "Attachment 0 not written by fragment shader");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -17137,23 +17024,23 @@ TEST_F(VkLayerTest, CreatePipelineFragmentOutputNotWritten) {
 
 TEST_F(VkPositiveLayerTest, CreatePipelineFragmentOutputNotWrittenButMasked) {
     TEST_DESCRIPTION(
-        "Test that no error is produced when the fragment shader fails to declare an output,"
-        " but the corresponding attachment's write mask is 0.");
+        "Test that no error is produced when the fragment shader fails to declare an output, but the corresponding attachment's "
+        "write mask is 0.");
     m_errorMonitor->ExpectSuccess();
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
     char const *vsSource =
         "#version 450\n"
-            "\n"
-            "void main(){\n"
-            "   gl_Position = vec4(1);\n"
-            "}\n";
+        "\n"
+        "void main(){\n"
+        "   gl_Position = vec4(1);\n"
+        "}\n";
     char const *fsSource =
         "#version 450\n"
-            "\n"
-            "void main(){\n"
-            "}\n";
+        "\n"
+        "void main(){\n"
+        "}\n";
 
     VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
     VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
@@ -17177,8 +17064,7 @@ TEST_F(VkPositiveLayerTest, CreatePipelineFragmentOutputNotWrittenButMasked) {
 
 TEST_F(VkLayerTest, CreatePipelineFragmentOutputNotConsumed) {
     TEST_DESCRIPTION(
-        "Test that a warning is produced for a fragment shader which provides a spurious "
-        "output with no matching attachment");
+        "Test that a warning is produced for a fragment shader which provides a spurious output with no matching attachment");
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_WARNING_BIT_EXT,
                                          "fragment shader writes to output location 1 with no matching attachment");
 
@@ -17223,8 +17109,8 @@ TEST_F(VkLayerTest, CreatePipelineFragmentOutputNotConsumed) {
 
 TEST_F(VkLayerTest, CreatePipelineFragmentOutputTypeMismatch) {
     TEST_DESCRIPTION(
-        "Test that an error is produced for a mismatch between the fundamental "
-        "type of an fragment shader output variable, and the format of the corresponding attachment");
+        "Test that an error is produced for a mismatch between the fundamental type of an fragment shader output variable, and the "
+        "format of the corresponding attachment");
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "does not match fragment shader output type");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -17265,8 +17151,8 @@ TEST_F(VkLayerTest, CreatePipelineFragmentOutputTypeMismatch) {
 
 TEST_F(VkLayerTest, CreatePipelineUniformBlockNotProvided) {
     TEST_DESCRIPTION(
-        "Test that an error is produced for a shader consuming a uniform "
-        "block which has no corresponding binding in the pipeline layout");
+        "Test that an error is produced for a shader consuming a uniform block which has no corresponding binding in the pipeline "
+        "layout");
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "not declared in pipeline layout");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -17307,8 +17193,7 @@ TEST_F(VkLayerTest, CreatePipelineUniformBlockNotProvided) {
 
 TEST_F(VkLayerTest, CreatePipelinePushConstantsNotInLayout) {
     TEST_DESCRIPTION(
-        "Test that an error is produced for a shader consuming push constants "
-        "which are not provided in the pipeline layout");
+        "Test that an error is produced for a shader consuming push constants which are not provided in the pipeline layout");
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "not declared in layout");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -17350,8 +17235,8 @@ TEST_F(VkLayerTest, CreatePipelinePushConstantsNotInLayout) {
 
 TEST_F(VkLayerTest, CreatePipelineInputAttachmentMissing) {
     TEST_DESCRIPTION(
-        "Test that an error is produced for a shader consuming an input attachment "
-        "which is not included in the subpass description");
+        "Test that an error is produced for a shader consuming an input attachment which is not included in the subpass "
+        "description");
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
                                          "consumes input attachment index 0 but not provided in subpass");
 
@@ -17394,8 +17279,8 @@ TEST_F(VkLayerTest, CreatePipelineInputAttachmentMissing) {
 
 TEST_F(VkLayerTest, CreatePipelineInputAttachmentTypeMismatch) {
     TEST_DESCRIPTION(
-        "Test that an error is produced for a shader consuming an input attachment "
-        "with a format having a different fundamental type");
+        "Test that an error is produced for a shader consuming an input attachment with a format having a different fundamental "
+        "type");
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
                                          "input attachment 0 format of VK_FORMAT_R8G8B8A8_UINT does not match");
 
@@ -17438,10 +17323,12 @@ TEST_F(VkLayerTest, CreatePipelineInputAttachmentTypeMismatch) {
          VK_ATTACHMENT_LOAD_OP_LOAD, VK_ATTACHMENT_STORE_OP_STORE, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_GENERAL},
     };
     VkAttachmentReference color = {
-        0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+        0,
+        VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
     };
     VkAttachmentReference input = {
-        1, VK_IMAGE_LAYOUT_GENERAL,
+        1,
+        VK_IMAGE_LAYOUT_GENERAL,
     };
 
     VkSubpassDescription sd = {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 1, &input, 1, &color, nullptr, nullptr, 0, nullptr};
@@ -17461,8 +17348,8 @@ TEST_F(VkLayerTest, CreatePipelineInputAttachmentTypeMismatch) {
 
 TEST_F(VkLayerTest, CreatePipelineInputAttachmentMissingArray) {
     TEST_DESCRIPTION(
-        "Test that an error is produced for a shader consuming an input attachment "
-        "which is not included in the subpass description -- array case");
+        "Test that an error is produced for a shader consuming an input attachment which is not included in the subpass "
+        "description -- array case");
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
                                          "consumes input attachment index 0 but not provided in subpass");
 
@@ -17505,8 +17392,8 @@ TEST_F(VkLayerTest, CreatePipelineInputAttachmentMissingArray) {
 
 TEST_F(VkLayerTest, CreateComputePipelineMissingDescriptor) {
     TEST_DESCRIPTION(
-        "Test that an error is produced for a compute pipeline consuming a "
-        "descriptor which is not provided in the pipeline layout");
+        "Test that an error is produced for a compute pipeline consuming a descriptor which is not provided in the pipeline "
+        "layout");
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "Shader uses descriptor slot 0.0");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -17545,9 +17432,7 @@ TEST_F(VkLayerTest, CreateComputePipelineMissingDescriptor) {
 }
 
 TEST_F(VkLayerTest, CreateComputePipelineDescriptorTypeMismatch) {
-    TEST_DESCRIPTION(
-        "Test that an error is produced for a pipeline consuming a "
-        "descriptor-backed resource of a mismatched type");
+    TEST_DESCRIPTION("Test that an error is produced for a pipeline consuming a descriptor-backed resource of a mismatched type");
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
                                          "but descriptor of type VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER");
 
@@ -17589,8 +17474,7 @@ TEST_F(VkLayerTest, CreateComputePipelineDescriptorTypeMismatch) {
 
 TEST_F(VkLayerTest, DrawTimeImageViewTypeMismatchWithPipeline) {
     TEST_DESCRIPTION(
-        "Test that an error is produced when an image view type "
-        "does not match the dimensionality declared in the shader");
+        "Test that an error is produced when an image view type does not match the dimensionality declared in the shader");
 
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "requires an image view of type VK_IMAGE_VIEW_TYPE_3D");
 
@@ -17649,8 +17533,8 @@ TEST_F(VkLayerTest, DrawTimeImageViewTypeMismatchWithPipeline) {
 
 TEST_F(VkLayerTest, DrawTimeImageMultisampleMismatchWithPipeline) {
     TEST_DESCRIPTION(
-        "Test that an error is produced when a multisampled images "
-        "are consumed via singlesample images types in the shader, or vice versa.");
+        "Test that an error is produced when a multisampled images are consumed via singlesample images types in the shader, or "
+        "vice versa.");
 
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "requires bound image to have multiple samples");
 
@@ -17677,7 +17561,7 @@ TEST_F(VkLayerTest, DrawTimeImageMultisampleMismatchWithPipeline) {
     pipe.AddShader(&fs);
     pipe.AddDefaultColorAttachment();
 
-    VkTextureObj texture(m_device, nullptr); // THIS LINE CAUSES CRASH ON MALI
+    VkTextureObj texture(m_device, nullptr);  // THIS LINE CAUSES CRASH ON MALI
     VkSamplerObj sampler(m_device);
 
     VkDescriptorSetObj descriptorSet(m_device);
@@ -17778,9 +17662,7 @@ TEST_F(VkLayerTest, CreateImageMinLimitsViolation) {
 }
 
 TEST_F(VkLayerTest, AttachmentDescriptionUndefinedFormat) {
-    TEST_DESCRIPTION(
-        "Create a render pass with an attachment description "
-        "format set to VK_FORMAT_UNDEFINED");
+    TEST_DESCRIPTION("Create a render pass with an attachment description format set to VK_FORMAT_UNDEFINED");
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -18388,7 +18270,7 @@ TEST_F(VkLayerTest, CreateImageViewInvalidSubresourceRange) {
                                              "vkCreateImageView: if pCreateInfo->viewType is VK_IMAGE_TYPE_2D_ARRAY, "
                                              "pCreateInfo->subresourceRange.layerCount must be >= 1");
         // TODO: The test environment aborts the Vulkan call in parameter_validation layer before VALIDATION_ERROR_0ac00b92 test
-        //m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_0ac00b92);
+        // m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_0ac00b92);
         const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 0};
         VkImageViewCreateInfo img_view_info = img_view_info_template;
         img_view_info.subresourceRange = range;
@@ -20706,9 +20588,7 @@ TEST_F(VkLayerTest, DepthStencilImageViewWithColorAspectBitError) {
 }
 
 TEST_F(VkLayerTest, ClearImageErrors) {
-    TEST_DESCRIPTION(
-        "Call ClearColorImage w/ a depth|stencil image and "
-        "ClearDepthStencilImage with a color image.");
+    TEST_DESCRIPTION("Call ClearColorImage w/ a depth|stencil image and ClearDepthStencilImage with a color image.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -20768,9 +20648,7 @@ TEST_F(VkLayerTest, ClearImageErrors) {
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                         "vkCmdClearColorImage called with "
-                                         "image created without "
-                                         "VK_IMAGE_USAGE_TRANSFER_DST_BIT");
+                                         "vkCmdClearColorImage called with image created without VK_IMAGE_USAGE_TRANSFER_DST_BIT");
 
     vkCmdClearColorImage(m_commandBuffer->handle(), color_image_no_transfer.handle(), VK_IMAGE_LAYOUT_GENERAL, &clear_color, 1,
                          &color_range);
@@ -20789,8 +20667,7 @@ TEST_F(VkLayerTest, ClearImageErrors) {
 
 TEST_F(VkLayerTest, CommandQueueFlags) {
     TEST_DESCRIPTION(
-        "Allocate a command buffer on a queue that does not support graphics and try to issue a "
-        "graphics-only command");
+        "Allocate a command buffer on a queue that does not support graphics and try to issue a graphics-only command");
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
@@ -20865,7 +20742,7 @@ TEST_F(VkLayerTest, Maintenance1AndNegativeViewport) {
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
     if (!((DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE1_EXTENSION_NAME)) &&
-        (DeviceExtensionSupported(gpu(), nullptr, VK_AMD_NEGATIVE_VIEWPORT_HEIGHT_EXTENSION_NAME)))) {
+          (DeviceExtensionSupported(gpu(), nullptr, VK_AMD_NEGATIVE_VIEWPORT_HEIGHT_EXTENSION_NAME)))) {
         printf("             Maintenance1 and AMD_negative viewport height extensions not supported, skipping test\n");
         return;
     }
@@ -21156,9 +21033,7 @@ TEST_F(VkPositiveLayerTest, SecondaryCommandBufferClearColorAttachments) {
 }
 
 TEST_F(VkPositiveLayerTest, SecondaryCommandBufferImageLayoutTransitions) {
-    TEST_DESCRIPTION(
-        "Perform an image layout transition in a secondary command buffer followed "
-        "by a transition in the primary.");
+    TEST_DESCRIPTION("Perform an image layout transition in a secondary command buffer followed by a transition in the primary.");
     VkResult err;
     m_errorMonitor->ExpectSuccess();
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -21249,12 +21124,9 @@ TEST_F(VkPositiveLayerTest, SecondaryCommandBufferImageLayoutTransitions) {
 // This is a positive test. No failures are expected.
 TEST_F(VkPositiveLayerTest, IgnoreUnrelatedDescriptor) {
     TEST_DESCRIPTION(
-        "Ensure that the vkUpdateDescriptorSets validation code "
-        "is ignoring VkWriteDescriptorSet members that are not "
-        "related to the descriptor type specified by "
-        "VkWriteDescriptorSet::descriptorType.  Correct "
-        "validation behavior will result in the test running to "
-        "completion without validation errors.");
+        "Ensure that the vkUpdateDescriptorSets validation code is ignoring VkWriteDescriptorSet members that are not related to "
+        "the descriptor type specified by VkWriteDescriptorSet::descriptorType.  Correct validation behavior will result in the "
+        "test running to completion without validation errors.");
 
     const uintptr_t invalid_ptr = 0xcdcdcdcd;
 
@@ -21446,9 +21318,7 @@ TEST_F(VkPositiveLayerTest, IgnoreUnrelatedDescriptor) {
 }
 
 TEST_F(VkPositiveLayerTest, ImmutableSamplerOnlyDescriptor) {
-    TEST_DESCRIPTION(
-        "Bind a DescriptorSet with only an immutable sampler"
-        "and make sure that we don't warn for no update.");
+    TEST_DESCRIPTION("Bind a DescriptorSet with only an immutable samplerand make sure that we don't warn for no update.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -22182,9 +22052,7 @@ TEST_F(VkPositiveLayerTest, TestAliasedMemoryTracking) {
     bool pass;
 
     TEST_DESCRIPTION(
-        "Create a buffer, allocate memory, bind memory, destroy "
-        "the buffer, create an image, and bind the same memory to "
-        "it");
+        "Create a buffer, allocate memory, bind memory, destroy the buffer, create an image, and bind the same memory to it");
 
     m_errorMonitor->ExpectSuccess();
 
@@ -22308,9 +22176,7 @@ TEST_F(VkPositiveLayerTest, TestAliasedMemoryTracking) {
 TEST_F(VkPositiveLayerTest, TestDestroyFreeNullHandles) {
     VkResult err;
 
-    TEST_DESCRIPTION(
-        "Call all applicable destroy and free routines with NULL"
-        "handles, expecting no validation errors");
+    TEST_DESCRIPTION("Call all applicable destroy and free routines with NULL handles, expecting no validation errors");
 
     m_errorMonitor->ExpectSuccess();
 
@@ -22638,8 +22504,7 @@ TEST_F(VkPositiveLayerTest, DynamicOffsetWithInactiveBinding) {
 
 TEST_F(VkPositiveLayerTest, NonCoherentMemoryMapping) {
     TEST_DESCRIPTION(
-        "Ensure that validations handling of non-coherent memory "
-        "mapping while using VK_WHOLE_SIZE does not cause access "
+        "Ensure that validations handling of non-coherent memory mapping while using VK_WHOLE_SIZE does not cause access "
         "violations");
     VkResult err;
     uint8_t *pData;
@@ -22889,9 +22754,7 @@ TEST_F(VkPositiveLayerTest, CreateImageViewFollowsParameterCompatibilityRequirem
 }
 
 TEST_F(VkPositiveLayerTest, ValidUsage) {
-    TEST_DESCRIPTION(
-        "Verify that creating an image view from an image with valid usage "
-        "doesn't generate validation errors");
+    TEST_DESCRIPTION("Verify that creating an image view from an image with valid usage doesn't generate validation errors");
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
@@ -22918,9 +22781,7 @@ TEST_F(VkPositiveLayerTest, ValidUsage) {
 
 // This is a positive test. No failures are expected.
 TEST_F(VkPositiveLayerTest, BindSparse) {
-    TEST_DESCRIPTION(
-        "Bind 2 memory ranges to one image using vkQueueBindSparse, destroy the image"
-        "and then free the memory");
+    TEST_DESCRIPTION("Bind 2 memory ranges to one image using vkQueueBindSparse, destroy the image and then free the memory");
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
@@ -23011,10 +22872,8 @@ TEST_F(VkPositiveLayerTest, BindSparse) {
 
 TEST_F(VkPositiveLayerTest, RenderPassInitialLayoutUndefined) {
     TEST_DESCRIPTION(
-        "Ensure that CmdBeginRenderPass with an attachment's "
-        "initialLayout of VK_IMAGE_LAYOUT_UNDEFINED works when "
-        "the command buffer has prior knowledge of that "
-        "attachment's layout.");
+        "Ensure that CmdBeginRenderPass with an attachment's initialLayout of VK_IMAGE_LAYOUT_UNDEFINED works when the command "
+        "buffer has prior knowledge of that attachment's layout.");
 
     m_errorMonitor->ExpectSuccess();
 
@@ -23087,10 +22946,8 @@ TEST_F(VkPositiveLayerTest, RenderPassInitialLayoutUndefined) {
 
 TEST_F(VkPositiveLayerTest, FramebufferBindingDestroyCommandPool) {
     TEST_DESCRIPTION(
-        "This test should pass. Create a Framebuffer and "
-        "command buffer, bind them together, then destroy "
-        "command pool and framebuffer and verify there are no "
-        "errors.");
+        "This test should pass. Create a Framebuffer and command buffer, bind them together, then destroy command pool and "
+        "framebuffer and verify there are no errors.");
 
     m_errorMonitor->ExpectSuccess();
 
@@ -23163,9 +23020,7 @@ TEST_F(VkPositiveLayerTest, FramebufferBindingDestroyCommandPool) {
 }
 
 TEST_F(VkPositiveLayerTest, RenderPassSubpassZeroTransitionsApplied) {
-    TEST_DESCRIPTION(
-        "Ensure that CmdBeginRenderPass applies the layout "
-        "transitions for the first subpass");
+    TEST_DESCRIPTION("Ensure that CmdBeginRenderPass applies the layout transitions for the first subpass");
 
     m_errorMonitor->ExpectSuccess();
 
@@ -23245,10 +23100,8 @@ TEST_F(VkPositiveLayerTest, RenderPassSubpassZeroTransitionsApplied) {
 
 TEST_F(VkPositiveLayerTest, DepthStencilLayoutTransitionForDepthOnlyImageview) {
     TEST_DESCRIPTION(
-        "Validate that when an imageView of a depth/stencil image "
-        "is used as a depth/stencil framebuffer attachment, the "
-        "aspectMask is ignored and both depth and stencil image "
-        "subresources are used.");
+        "Validate that when an imageView of a depth/stencil image is used as a depth/stencil framebuffer attachment, the "
+        "aspectMask is ignored and both depth and stencil image subresources are used.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
     VkFormatProperties format_properties;
@@ -23346,9 +23199,7 @@ TEST_F(VkPositiveLayerTest, DepthStencilLayoutTransitionForDepthOnlyImageview) {
 
 TEST_F(VkPositiveLayerTest, RenderPassTransitionsAttachmentUnused) {
     TEST_DESCRIPTION(
-        "Ensure that layout transitions work correctly without "
-        "errors, when an attachment reference is "
-        "VK_ATTACHMENT_UNUSED");
+        "Ensure that layout transitions work correctly without errors, when an attachment reference is VK_ATTACHMENT_UNUSED");
 
     m_errorMonitor->ExpectSuccess();
 
@@ -23386,9 +23237,7 @@ TEST_F(VkPositiveLayerTest, RenderPassTransitionsAttachmentUnused) {
 
 // This is a positive test. No errors are expected.
 TEST_F(VkPositiveLayerTest, StencilLoadOp) {
-    TEST_DESCRIPTION(
-        "Create a stencil-only attachment with a LOAD_OP set to "
-        "CLEAR. stencil[Load|Store]Op used to be ignored.");
+    TEST_DESCRIPTION("Create a stencil-only attachment with a LOAD_OP set to CLEAR. stencil[Load|Store]Op used to be ignored.");
     VkResult result = VK_SUCCESS;
     ASSERT_NO_FATAL_FAILURE(Init());
     auto depth_format = FindSupportedDepthStencilFormat(gpu());
@@ -23955,9 +23804,7 @@ TEST_F(VkLayerTest, ResetEventThenSet) {
         vkQueueSubmit(queue, 1, &submit_info, VK_NULL_HANDLE);
     }
     {
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                             "that is already in use by a "
-                                             "command buffer.");
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "that is already in use by a command buffer.");
         vkSetEvent(m_device->device(), event);
         m_errorMonitor->VerifyFound();
     }
@@ -23972,10 +23819,8 @@ TEST_F(VkLayerTest, ResetEventThenSet) {
 // This is a positive test.  No errors should be generated.
 TEST_F(VkPositiveLayerTest, TwoFencesThreeFrames) {
     TEST_DESCRIPTION(
-        "Two command buffers with two separate fences are each "
-        "run through a Submit & WaitForFences cycle 3 times. This "
-        "previously revealed a bug so running this positive test "
-        "to prevent a regression.");
+        "Two command buffers with two separate fences are each run through a Submit & WaitForFences cycle 3 times. This previously "
+        "revealed a bug so running this positive test to prevent a regression.");
     m_errorMonitor->ExpectSuccess();
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -24046,8 +23891,7 @@ TEST_F(VkPositiveLayerTest, TwoFencesThreeFrames) {
 // This is a positive test.  No errors should be generated.
 TEST_F(VkPositiveLayerTest, TwoQueueSubmitsSeparateQueuesWithSemaphoreAndOneFenceQWI) {
     TEST_DESCRIPTION(
-        "Two command buffers, each in a separate QueueSubmit call "
-        "submitted on separate queues followed by a QueueWaitIdle.");
+        "Two command buffers, each in a separate QueueSubmit call submitted on separate queues followed by a QueueWaitIdle.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
     if ((m_device->queue_props.empty()) || (m_device->queue_props[0].queueCount < 2)) return;
@@ -24143,9 +23987,8 @@ TEST_F(VkPositiveLayerTest, TwoQueueSubmitsSeparateQueuesWithSemaphoreAndOneFenc
 // This is a positive test.  No errors should be generated.
 TEST_F(VkPositiveLayerTest, TwoQueueSubmitsSeparateQueuesWithSemaphoreAndOneFenceQWIFence) {
     TEST_DESCRIPTION(
-        "Two command buffers, each in a separate QueueSubmit call "
-        "submitted on separate queues, the second having a fence"
-        "followed by a QueueWaitIdle.");
+        "Two command buffers, each in a separate QueueSubmit call submitted on separate queues, the second having a fencefollowed "
+        "by a QueueWaitIdle.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
     if ((m_device->queue_props.empty()) || (m_device->queue_props[0].queueCount < 2)) return;
@@ -24247,9 +24090,8 @@ TEST_F(VkPositiveLayerTest, TwoQueueSubmitsSeparateQueuesWithSemaphoreAndOneFenc
 // This is a positive test.  No errors should be generated.
 TEST_F(VkPositiveLayerTest, TwoQueueSubmitsSeparateQueuesWithSemaphoreAndOneFenceTwoWFF) {
     TEST_DESCRIPTION(
-        "Two command buffers, each in a separate QueueSubmit call "
-        "submitted on separate queues, the second having a fence"
-        "followed by two consecutive WaitForFences calls on the same fence.");
+        "Two command buffers, each in a separate QueueSubmit call submitted on separate queues, the second having a fencefollowed "
+        "by two consecutive WaitForFences calls on the same fence.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
     if ((m_device->queue_props.empty()) || (m_device->queue_props[0].queueCount < 2)) return;
@@ -24419,8 +24261,7 @@ TEST_F(VkPositiveLayerTest, TwoQueuesEnsureCorrectRetirementWithWorkStolen) {
 // This is a positive test.  No errors should be generated.
 TEST_F(VkPositiveLayerTest, TwoQueueSubmitsSeparateQueuesWithSemaphoreAndOneFence) {
     TEST_DESCRIPTION(
-        "Two command buffers, each in a separate QueueSubmit call "
-        "submitted on separate queues, the second having a fence, "
+        "Two command buffers, each in a separate QueueSubmit call submitted on separate queues, the second having a fence, "
         "followed by a WaitForFences call.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -24523,10 +24364,8 @@ TEST_F(VkPositiveLayerTest, TwoQueueSubmitsSeparateQueuesWithSemaphoreAndOneFenc
 // This is a positive test.  No errors should be generated.
 TEST_F(VkPositiveLayerTest, TwoQueueSubmitsOneQueueWithSemaphoreAndOneFence) {
     TEST_DESCRIPTION(
-        "Two command buffers, each in a separate QueueSubmit call "
-        "on the same queue, sharing a signal/wait semaphore, the "
-        "second having a fence, "
-        "followed by a WaitForFences call.");
+        "Two command buffers, each in a separate QueueSubmit call on the same queue, sharing a signal/wait semaphore, the second "
+        "having a fence, followed by a WaitForFences call.");
 
     m_errorMonitor->ExpectSuccess();
 
@@ -24623,9 +24462,8 @@ TEST_F(VkPositiveLayerTest, TwoQueueSubmitsOneQueueWithSemaphoreAndOneFence) {
 // This is a positive test.  No errors should be generated.
 TEST_F(VkPositiveLayerTest, TwoQueueSubmitsOneQueueNullQueueSubmitWithFence) {
     TEST_DESCRIPTION(
-        "Two command buffers, each in a separate QueueSubmit call "
-        "on the same queue, no fences, followed by a third QueueSubmit with NO "
-        "SubmitInfos but with a fence, followed by a WaitForFences call.");
+        "Two command buffers, each in a separate QueueSubmit call on the same queue, no fences, followed by a third QueueSubmit "
+        "with NO SubmitInfos but with a fence, followed by a WaitForFences call.");
 
     m_errorMonitor->ExpectSuccess();
 
@@ -24719,9 +24557,8 @@ TEST_F(VkPositiveLayerTest, TwoQueueSubmitsOneQueueNullQueueSubmitWithFence) {
 // This is a positive test.  No errors should be generated.
 TEST_F(VkPositiveLayerTest, TwoQueueSubmitsOneQueueOneFence) {
     TEST_DESCRIPTION(
-        "Two command buffers, each in a separate QueueSubmit call "
-        "on the same queue, the second having a fence, followed "
-        "by a WaitForFences call.");
+        "Two command buffers, each in a separate QueueSubmit call on the same queue, the second having a fence, followed by a "
+        "WaitForFences call.");
 
     m_errorMonitor->ExpectSuccess();
 
@@ -24812,8 +24649,7 @@ TEST_F(VkPositiveLayerTest, TwoQueueSubmitsOneQueueOneFence) {
 // This is a positive test.  No errors should be generated.
 TEST_F(VkPositiveLayerTest, TwoSubmitInfosWithSemaphoreOneQueueSubmitsOneFence) {
     TEST_DESCRIPTION(
-        "Two command buffers each in a separate SubmitInfo sent in a single "
-        "QueueSubmit call followed by a WaitForFences call.");
+        "Two command buffers each in a separate SubmitInfo sent in a single QueueSubmit call followed by a WaitForFences call.");
     ASSERT_NO_FATAL_FAILURE(Init());
 
     m_errorMonitor->ExpectSuccess();
@@ -24934,10 +24770,8 @@ TEST_F(VkPositiveLayerTest, RenderPassSecondaryCommandBuffersMultipleTimes) {
 
 TEST_F(VkPositiveLayerTest, ValidRenderPassAttachmentLayoutWithLoadOp) {
     TEST_DESCRIPTION(
-        "Positive test where we create a renderpass with an "
-        "attachment that uses LOAD_OP_CLEAR, the first subpass "
-        "has a valid layout, and a second subpass then uses a "
-        "valid *READ_ONLY* layout.");
+        "Positive test where we create a renderpass with an attachment that uses LOAD_OP_CLEAR, the first subpass has a valid "
+        "layout, and a second subpass then uses a valid *READ_ONLY* layout.");
     m_errorMonitor->ExpectSuccess();
     ASSERT_NO_FATAL_FAILURE(Init());
     auto depth_format = FindSupportedDepthStencilFormat(gpu());
@@ -24983,9 +24817,8 @@ TEST_F(VkPositiveLayerTest, ValidRenderPassAttachmentLayoutWithLoadOp) {
 
 TEST_F(VkPositiveLayerTest, RenderPassDepthStencilLayoutTransition) {
     TEST_DESCRIPTION(
-        "Create a render pass with depth-stencil attachment where layout transition "
-        "from UNDEFINED TO DS_READ_ONLY_OPTIMAL is set by render pass and verify that "
-        "transition has correctly occurred at queue submit time with no validation errors.");
+        "Create a render pass with depth-stencil attachment where layout transition from UNDEFINED TO DS_READ_ONLY_OPTIMAL is set "
+        "by render pass and verify that transition has correctly occurred at queue submit time with no validation errors.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
     auto depth_format = FindSupportedDepthStencilFormat(gpu());
@@ -25064,9 +24897,7 @@ TEST_F(VkPositiveLayerTest, RenderPassDepthStencilLayoutTransition) {
 }
 
 TEST_F(VkPositiveLayerTest, CreatePipelineAttribMatrixType) {
-    TEST_DESCRIPTION(
-        "Test that pipeline validation accepts matrices passed "
-        "as vertex attributes");
+    TEST_DESCRIPTION("Test that pipeline validation accepts matrices passed as vertex attributes");
     m_errorMonitor->ExpectSuccess();
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -25173,9 +25004,8 @@ TEST_F(VkPositiveLayerTest, CreatePipelineAttribArrayType) {
 
 TEST_F(VkPositiveLayerTest, CreatePipelineAttribComponents) {
     TEST_DESCRIPTION(
-        "Test that pipeline validation accepts consuming a vertex attribute "
-        "through multiple vertex shader inputs, each consuming a different "
-        "subset of the components.");
+        "Test that pipeline validation accepts consuming a vertex attribute through multiple vertex shader inputs, each consuming "
+        "a different subset of the components.");
     m_errorMonitor->ExpectSuccess();
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -25268,9 +25098,8 @@ TEST_F(VkPositiveLayerTest, CreatePipelineSimplePositive) {
 
 TEST_F(VkPositiveLayerTest, CreatePipelineRelaxedTypeMatch) {
     TEST_DESCRIPTION(
-        "Test that pipeline validation accepts the relaxed type matching rules "
-        "set out in 14.1.3: fundamental type must match, and producer side must "
-        "have at least as many components");
+        "Test that pipeline validation accepts the relaxed type matching rules set out in 14.1.3: fundamental type must match, and "
+        "producer side must have at least as many components");
     m_errorMonitor->ExpectSuccess();
 
     // VK 1.0.8 Specification, 14.1.3 "Additionally,..." block
@@ -25318,9 +25147,7 @@ TEST_F(VkPositiveLayerTest, CreatePipelineRelaxedTypeMatch) {
 }
 
 TEST_F(VkPositiveLayerTest, CreatePipelineTessPerVertex) {
-    TEST_DESCRIPTION(
-        "Test that pipeline validation accepts per-vertex variables "
-        "passed between the TCS and TES stages");
+    TEST_DESCRIPTION("Test that pipeline validation accepts per-vertex variables passed between the TCS and TES stages");
     m_errorMonitor->ExpectSuccess();
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -25388,10 +25215,8 @@ TEST_F(VkPositiveLayerTest, CreatePipelineTessPerVertex) {
 
 TEST_F(VkPositiveLayerTest, CreatePipelineGeometryInputBlockPositive) {
     TEST_DESCRIPTION(
-        "Test that pipeline validation accepts a user-defined "
-        "interface block passed into the geometry shader. This "
-        "is interesting because the 'extra' array level is not "
-        "present on the member type, but on the block instance.");
+        "Test that pipeline validation accepts a user-defined interface block passed into the geometry shader. This is interesting "
+        "because the 'extra' array level is not present on the member type, but on the block instance.");
     m_errorMonitor->ExpectSuccess();
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -25445,9 +25270,8 @@ TEST_F(VkPositiveLayerTest, CreatePipelineGeometryInputBlockPositive) {
 
 TEST_F(VkPositiveLayerTest, CreatePipeline64BitAttributesPositive) {
     TEST_DESCRIPTION(
-        "Test that pipeline validation accepts basic use of 64bit vertex "
-        "attributes. This is interesting because they consume multiple "
-        "locations.");
+        "Test that pipeline validation accepts basic use of 64bit vertex attributes. This is interesting because they consume "
+        "multiple locations.");
     m_errorMonitor->ExpectSuccess();
 
     if (!EnableDeviceProfileLayer()) return;
@@ -25568,10 +25392,12 @@ TEST_F(VkPositiveLayerTest, CreatePipelineInputAttachmentPositive) {
          VK_ATTACHMENT_LOAD_OP_LOAD, VK_ATTACHMENT_STORE_OP_STORE, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_GENERAL},
     };
     VkAttachmentReference color = {
-        0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+        0,
+        VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
     };
     VkAttachmentReference input = {
-        1, VK_IMAGE_LAYOUT_GENERAL,
+        1,
+        VK_IMAGE_LAYOUT_GENERAL,
     };
 
     VkSubpassDescription sd = {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 1, &input, 1, &color, nullptr, nullptr, 0, nullptr};
@@ -25591,10 +25417,9 @@ TEST_F(VkPositiveLayerTest, CreatePipelineInputAttachmentPositive) {
 
 TEST_F(VkPositiveLayerTest, CreateComputePipelineMissingDescriptorUnusedPositive) {
     TEST_DESCRIPTION(
-        "Test that pipeline validation accepts a compute pipeline which declares a "
-        "descriptor-backed resource which is not provided, but the shader does not "
-        "statically use it. This is interesting because it requires compute pipelines "
-        "to have a proper descriptor use walk, which they didn't for some time.");
+        "Test that pipeline validation accepts a compute pipeline which declares a descriptor-backed resource which is not "
+        "provided, but the shader does not statically use it. This is interesting because it requires compute pipelines to have a "
+        "proper descriptor use walk, which they didn't for some time.");
     m_errorMonitor->ExpectSuccess();
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -25634,8 +25459,7 @@ TEST_F(VkPositiveLayerTest, CreateComputePipelineMissingDescriptorUnusedPositive
 
 TEST_F(VkPositiveLayerTest, CreateComputePipelineCombinedImageSamplerConsumedAsSampler) {
     TEST_DESCRIPTION(
-        "Test that pipeline validation accepts a shader consuming only the "
-        "sampler portion of a combined image + sampler");
+        "Test that pipeline validation accepts a shader consuming only the sampler portion of a combined image + sampler");
     m_errorMonitor->ExpectSuccess();
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -25682,8 +25506,7 @@ TEST_F(VkPositiveLayerTest, CreateComputePipelineCombinedImageSamplerConsumedAsS
 
 TEST_F(VkPositiveLayerTest, CreateComputePipelineCombinedImageSamplerConsumedAsImage) {
     TEST_DESCRIPTION(
-        "Test that pipeline validation accepts a shader consuming only the "
-        "image portion of a combined image + sampler");
+        "Test that pipeline validation accepts a shader consuming only the image portion of a combined image + sampler");
     m_errorMonitor->ExpectSuccess();
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -25730,9 +25553,8 @@ TEST_F(VkPositiveLayerTest, CreateComputePipelineCombinedImageSamplerConsumedAsI
 
 TEST_F(VkPositiveLayerTest, CreateComputePipelineCombinedImageSamplerConsumedAsBoth) {
     TEST_DESCRIPTION(
-        "Test that pipeline validation accepts a shader consuming "
-        "both the sampler and the image of a combined image+sampler "
-        "but via separate variables");
+        "Test that pipeline validation accepts a shader consuming both the sampler and the image of a combined image+sampler but "
+        "via separate variables");
     m_errorMonitor->ExpectSuccess();
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -26850,9 +26672,7 @@ TEST_F(VkPositiveLayerTest, ExternalMemory) {
 }
 
 TEST_F(VkLayerTest, AMDMixedAttachmentSamplesValidateRenderPass) {
-    TEST_DESCRIPTION(
-        "Verify error messages for supported and unsupported "
-        "sample counts in render pass attachments.");
+    TEST_DESCRIPTION("Verify error messages for supported and unsupported sample counts in render pass attachments.");
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
     if (DeviceExtensionSupported(gpu(), nullptr, VK_AMD_MIXED_ATTACHMENT_SAMPLES_EXTENSION_NAME)) {
@@ -26931,9 +26751,7 @@ TEST_F(VkLayerTest, AMDMixedAttachmentSamplesValidateRenderPass) {
 }
 
 TEST_F(VkLayerTest, AMDMixedAttachmentSamplesValidateGraphicsPipeline) {
-    TEST_DESCRIPTION(
-        "Verify an error message for an incorrect graphics pipeline "
-        "rasterization sample count.");
+    TEST_DESCRIPTION("Verify an error message for an incorrect graphics pipeline rasterization sample count.");
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
     if (DeviceExtensionSupported(gpu(), nullptr, VK_AMD_MIXED_ATTACHMENT_SAMPLES_EXTENSION_NAME)) {
