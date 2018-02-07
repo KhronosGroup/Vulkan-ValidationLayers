@@ -36,7 +36,6 @@
 #include <unordered_map>
 #include <vector>
 
-
 typedef struct _debug_report_data {
     VkLayerDbgFunctionNode *debug_callback_list;
     VkLayerDbgFunctionNode *default_debug_callback_list;
@@ -236,8 +235,8 @@ static inline PFN_vkVoidFunction debug_report_get_instance_proc_addr(debug_repor
 // then allocates an array that can hold that many structs, as well as that
 // many VkDebugReportCallbackEXT handles.  It then copies each
 // VkDebugReportCallbackCreateInfoEXT, and initializes each handle.
-static VkResult layer_copy_tmp_callbacks(const void *pChain, uint32_t *num_callbacks, VkDebugReportCallbackCreateInfoEXT **infos,
-                                         VkDebugReportCallbackEXT **callbacks) {
+static inline VkResult layer_copy_tmp_callbacks(const void *pChain, uint32_t *num_callbacks,
+                                                VkDebugReportCallbackCreateInfoEXT **infos, VkDebugReportCallbackEXT **callbacks) {
     uint32_t n = *num_callbacks = 0;
 
     const void *pNext = pChain;
@@ -281,15 +280,15 @@ static VkResult layer_copy_tmp_callbacks(const void *pChain, uint32_t *num_callb
 }
 
 // This utility frees the arrays allocated by layer_copy_tmp_callbacks()
-static void layer_free_tmp_callbacks(VkDebugReportCallbackCreateInfoEXT *infos, VkDebugReportCallbackEXT *callbacks) {
+static inline void layer_free_tmp_callbacks(VkDebugReportCallbackCreateInfoEXT *infos, VkDebugReportCallbackEXT *callbacks) {
     free(infos);
     free(callbacks);
 }
 
 // This utility enables all of the VkDebugReportCallbackCreateInfoEXT structs
 // that were copied by layer_copy_tmp_callbacks()
-static VkResult layer_enable_tmp_callbacks(debug_report_data *debug_data, uint32_t num_callbacks,
-                                           VkDebugReportCallbackCreateInfoEXT *infos, VkDebugReportCallbackEXT *callbacks) {
+static inline VkResult layer_enable_tmp_callbacks(debug_report_data *debug_data, uint32_t num_callbacks,
+                                                  VkDebugReportCallbackCreateInfoEXT *infos, VkDebugReportCallbackEXT *callbacks) {
     VkResult rtn = VK_SUCCESS;
     for (uint32_t i = 0; i < num_callbacks; i++) {
         rtn = layer_create_msg_callback(debug_data, false, &infos[i], NULL, &callbacks[i]);
@@ -305,8 +304,8 @@ static VkResult layer_enable_tmp_callbacks(debug_report_data *debug_data, uint32
 
 // This utility disables all of the VkDebugReportCallbackCreateInfoEXT structs
 // that were copied by layer_copy_tmp_callbacks()
-static void layer_disable_tmp_callbacks(debug_report_data *debug_data, uint32_t num_callbacks,
-                                        VkDebugReportCallbackEXT *callbacks) {
+static inline void layer_disable_tmp_callbacks(debug_report_data *debug_data, uint32_t num_callbacks,
+                                               VkDebugReportCallbackEXT *callbacks) {
     for (uint32_t i = 0; i < num_callbacks; i++) {
         layer_destroy_msg_callback(debug_data, callbacks[i], NULL);
     }
@@ -324,9 +323,9 @@ static inline bool will_log_msg(debug_report_data *debug_data, VkFlags msgFlags)
     return true;
 }
 #ifndef WIN32
-static int string_sprintf(std::string *output, const char *fmt, ...) __attribute__((format(printf, 2, 3)));
+static inline int string_sprintf(std::string *output, const char *fmt, ...) __attribute__((format(printf, 2, 3)));
 #endif
-static int string_sprintf(std::string *output, const char *fmt, ...) {
+static inline int string_sprintf(std::string *output, const char *fmt, ...) {
     std::string &formatted = *output;
     va_list argptr;
     va_start(argptr, fmt);
