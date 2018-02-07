@@ -210,31 +210,29 @@ bool ValidateDescriptorSet(VkDevice device, VkDescriptorPool descriptor_pool, Vk
     return skip;
 }
 
-template<typename DispObj>
+template <typename DispObj>
 static bool ValidateDescriptorWrite(DispObj disp, VkWriteDescriptorSet const *desc, bool isPush) {
     bool skip = false;
 
     if (!isPush && desc->dstSet) {
-        skip |= ValidateObject(disp, desc->dstSet, kVulkanObjectTypeDescriptorSet, false,
-                               VALIDATION_ERROR_15c00280, VALIDATION_ERROR_15c00009);
+        skip |= ValidateObject(disp, desc->dstSet, kVulkanObjectTypeDescriptorSet, false, VALIDATION_ERROR_15c00280,
+                               VALIDATION_ERROR_15c00009);
     }
 
     if ((desc->descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER) ||
         (desc->descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER)) {
         for (uint32_t idx2 = 0; idx2 < desc->descriptorCount; ++idx2) {
-            skip |= ValidateObject(disp, desc->pTexelBufferView[idx2], kVulkanObjectTypeBufferView,
-                                   false, VALIDATION_ERROR_15c00286, VALIDATION_ERROR_15c00009);
+            skip |= ValidateObject(disp, desc->pTexelBufferView[idx2], kVulkanObjectTypeBufferView, false,
+                                   VALIDATION_ERROR_15c00286, VALIDATION_ERROR_15c00009);
         }
     }
 
     if ((desc->descriptorType == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER) ||
-        (desc->descriptorType == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE) ||
-        (desc->descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE) ||
+        (desc->descriptorType == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE) || (desc->descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE) ||
         (desc->descriptorType == VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT)) {
         for (uint32_t idx3 = 0; idx3 < desc->descriptorCount; ++idx3) {
-            skip |=
-                    ValidateObject(disp, desc->pImageInfo[idx3].imageView, kVulkanObjectTypeImageView,
-                                   false, VALIDATION_ERROR_15c0028c, VALIDATION_ERROR_04600009);
+            skip |= ValidateObject(disp, desc->pImageInfo[idx3].imageView, kVulkanObjectTypeImageView, false,
+                                   VALIDATION_ERROR_15c0028c, VALIDATION_ERROR_04600009);
         }
     }
 
@@ -244,9 +242,8 @@ static bool ValidateDescriptorWrite(DispObj disp, VkWriteDescriptorSet const *de
         (desc->descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC)) {
         for (uint32_t idx4 = 0; idx4 < desc->descriptorCount; ++idx4) {
             if (desc->pBufferInfo[idx4].buffer) {
-                skip |=
-                        ValidateObject(disp, desc->pBufferInfo[idx4].buffer, kVulkanObjectTypeBuffer,
-                                       false, VALIDATION_ERROR_04401a01, VALIDATION_ERROR_UNDEFINED);
+                skip |= ValidateObject(disp, desc->pBufferInfo[idx4].buffer, kVulkanObjectTypeBuffer, false,
+                                       VALIDATION_ERROR_04401a01, VALIDATION_ERROR_UNDEFINED);
             }
         }
     }
@@ -372,7 +369,6 @@ VKAPI_ATTR void VKAPI_CALL DestroyInstance(VkInstance instance, const VkAllocati
         iit = instance_data->object_map[kVulkanObjectTypeDevice].begin();
     }
 
-
     instance_data->object_map[kVulkanObjectTypeDevice].clear();
 
     VkLayerInstanceDispatchTable *pInstanceTable = get_dispatch_table(ot_instance_table_map, instance);
@@ -406,7 +402,8 @@ VKAPI_ATTR void VKAPI_CALL DestroyDevice(VkDevice device, const VkAllocationCall
     std::unique_lock<std::mutex> lock(global_lock);
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     ValidateObject(device, device, kVulkanObjectTypeDevice, true, VALIDATION_ERROR_24a05601, VALIDATION_ERROR_UNDEFINED);
-    DestroyObject(device_data->instance, device, kVulkanObjectTypeDevice, pAllocator, VALIDATION_ERROR_24a002f6, VALIDATION_ERROR_24a002f8);
+    DestroyObject(device_data->instance, device, kVulkanObjectTypeDevice, pAllocator, VALIDATION_ERROR_24a002f6,
+                  VALIDATION_ERROR_24a002f8);
 
     // Report any remaining objects associated with this VkDevice object in LL
     ReportUndestroyedObjects(device, VALIDATION_ERROR_24a002f4);

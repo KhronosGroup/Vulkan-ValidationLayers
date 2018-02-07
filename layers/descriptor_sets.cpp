@@ -333,8 +333,9 @@ bool cvdescriptorset::DescriptorSetLayout::VerifyUpdateConsistency(uint32_t curr
         if (!IsNextBindingConsistent(current_binding++)) {
             std::stringstream error_str;
             error_str << "Attempting " << type << " descriptor set " << set << " binding #" << orig_binding << " with #"
-                      << update_count << " descriptors being updated but this update oversteps the bounds of this binding and the "
-                                         "next binding is not consistent with current binding so this update is invalid.";
+                      << update_count
+                      << " descriptors being updated but this update oversteps the bounds of this binding and the next binding is "
+                         "not consistent with current binding so this update is invalid.";
             *error_msg = error_str.str();
             return false;
         }
@@ -564,8 +565,8 @@ bool cvdescriptorset::DescriptorSet::ValidateDrawState(const std::map<uint32_t, 
                                           caller, VALIDATION_ERROR_046002b0, &hit_error);
                         if (hit_error) {
                             *error =
-                                "Image layout specified at vkUpdateDescriptorSets() time doesn't match actual image layout at "
-                                "time descriptor is used. See previous error callback for specific details.";
+                                "Image layout specified at vkUpdateDescriptorSets() time doesn't match actual image layout at time "
+                                "descriptor is used. See previous error callback for specific details.";
                             return false;
                         }
                     }
@@ -942,8 +943,9 @@ bool cvdescriptorset::ValidateImageUpdate(VkImageView image_view, VkImageLayout 
             // Only Color bit must be set
             if ((aspect_mask & VK_IMAGE_ASPECT_COLOR_BIT) != VK_IMAGE_ASPECT_COLOR_BIT) {
                 std::stringstream error_str;
-                error_str << "ImageView (" << image_view << ") uses layout VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL but does "
-                                                            "not have VK_IMAGE_ASPECT_COLOR_BIT set.";
+                error_str
+                    << "ImageView (" << image_view
+                    << ") uses layout VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL but does not have VK_IMAGE_ASPECT_COLOR_BIT set.";
                 *error_msg = error_str.str();
                 return false;
             }
@@ -1028,23 +1030,22 @@ bool cvdescriptorset::ValidateImageUpdate(VkImageView image_view, VkImageLayout 
                 // TODO : Need to create custom enum error codes for these cases
                 if (image_node->shared_presentable) {
                     if (VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR != image_layout) {
-                        error_str
-                            << "ImageView (" << image_view
-                            << ") of VK_DESCRIPTOR_TYPE_STORAGE_IMAGE type with a front-buffered image is being updated with "
-                               "layout "
-                            << string_VkImageLayout(image_layout)
-                            << " but according to spec section 13.1 Descriptor Types, 'Front-buffered images that report support "
-                               "for "
-                               "VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT must be in the VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR layout.'";
+                        error_str << "ImageView (" << image_view
+                                  << ") of VK_DESCRIPTOR_TYPE_STORAGE_IMAGE type with a front-buffered image is being updated with "
+                                     "layout "
+                                  << string_VkImageLayout(image_layout)
+                                  << " but according to spec section 13.1 Descriptor Types, 'Front-buffered images that report "
+                                     "support for VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT must be in the "
+                                     "VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR layout.'";
                         *error_msg = error_str.str();
                         return false;
                     }
                 } else if (VK_IMAGE_LAYOUT_GENERAL != image_layout) {
-                    error_str
-                        << "ImageView (" << image_view << ") of VK_DESCRIPTOR_TYPE_STORAGE_IMAGE type is being updated with layout "
-                        << string_VkImageLayout(image_layout)
-                        << " but according to spec section 13.1 Descriptor Types, 'Load and store operations on storage images can "
-                           "only be done on images in VK_IMAGE_LAYOUT_GENERAL layout.'";
+                    error_str << "ImageView (" << image_view
+                              << ") of VK_DESCRIPTOR_TYPE_STORAGE_IMAGE type is being updated with layout "
+                              << string_VkImageLayout(image_layout)
+                              << " but according to spec section 13.1 Descriptor Types, 'Load and store operations on storage "
+                                 "images can only be done on images in VK_IMAGE_LAYOUT_GENERAL layout.'";
                     *error_msg = error_str.str();
                     return false;
                 }

@@ -36,13 +36,12 @@
 #include "vk_validation_error_messages.h"
 #include "vk_extension_helper.h"
 
-
 #include "parameter_name.h"
 
 namespace parameter_validation {
 
 extern const uint32_t GeneratedHeaderVersion;
-extern const std::unordered_map<std::string, void*> name_to_funcptr_map;
+extern const std::unordered_map<std::string, void *> name_to_funcptr_map;
 
 extern const VkQueryPipelineStatisticFlags AllVkQueryPipelineStatisticFlagBits;
 extern const VkColorComponentFlags AllVkColorComponentFlagBits;
@@ -153,17 +152,17 @@ struct LogMiscParams {
 };
 
 /**
-* Validate a minimum value.
-*
-* Verify that the specified value is greater than the specified lower bound.
-*
-* @param report_data debug_report_data object for routing validation messages.
-* @param api_name Name of API call being validated.
-* @param parameter_name Name of parameter being validated.
-* @param value Value to validate.
-* @param lower_bound Lower bound value to use for validation.
-* @return Boolean value indicating that the call should be skipped.
-*/
+ * Validate a minimum value.
+ *
+ * Verify that the specified value is greater than the specified lower bound.
+ *
+ * @param report_data debug_report_data object for routing validation messages.
+ * @param api_name Name of API call being validated.
+ * @param parameter_name Name of parameter being validated.
+ * @param value Value to validate.
+ * @param lower_bound Lower bound value to use for validation.
+ * @return Boolean value indicating that the call should be skipped.
+ */
 template <typename T>
 bool ValidateGreaterThan(const T value, const T lower_bound, const ParameterName &parameter_name,
                          const UNIQUE_VALIDATION_ERROR_CODE vuid, const LogMiscParams &misc) {
@@ -201,8 +200,8 @@ static bool validate_required_pointer(debug_report_data *report_data, const char
     bool skip_call = false;
 
     if (value == NULL) {
-        skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, __LINE__,
-                             vuid, LayerName, "%s: required parameter %s specified as NULL. %s", apiName,
+        skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, __LINE__, vuid,
+                             LayerName, "%s: required parameter %s specified as NULL. %s", apiName,
                              parameterName.get_name().c_str(), validation_error_map[vuid]);
     }
 
@@ -235,14 +234,14 @@ bool validate_array(debug_report_data *report_data, const char *apiName, const P
     // Count parameters not tagged as optional cannot be 0
     if (countRequired && (count == 0)) {
         skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, __LINE__,
-            count_required_vuid, LayerName, "%s: parameter %s must be greater than 0. %s", apiName,
+                             count_required_vuid, LayerName, "%s: parameter %s must be greater than 0. %s", apiName,
                              countName.get_name().c_str(), validation_error_map[count_required_vuid]);
     }
 
     // Array parameters not tagged as optional cannot be NULL, unless the count is 0
     if ((array == NULL) && arrayRequired && (count != 0)) {
         skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, __LINE__,
-            array_required_vuid, LayerName, "%s: required parameter %s specified as NULL. %s", apiName,
+                             array_required_vuid, LayerName, "%s: required parameter %s specified as NULL. %s", apiName,
                              arrayName.get_name().c_str(), validation_error_map[array_required_vuid]);
     }
 
@@ -250,25 +249,25 @@ bool validate_array(debug_report_data *report_data, const char *apiName, const P
 }
 
 /**
-* Validate pointer to array count and pointer to array.
-*
-* Verify that required count and array parameters are not NULL.  If count
-* is not NULL and its value is not optional, verify that it is not 0.  If the
-* array parameter is NULL, and it is not optional, verify that count is 0.
-* The array parameter will typically be optional for this case (where count is
-* a pointer), allowing the caller to retrieve the available count.
-*
-* @param report_data debug_report_data object for routing validation messages.
-* @param apiName Name of API call being validated.
-* @param countName Name of count parameter.
-* @param arrayName Name of array parameter.
-* @param count Pointer to the number of elements in the array.
-* @param array Array to validate.
-* @param countPtrRequired The 'count' parameter may not be NULL when true.
-* @param countValueRequired The '*count' value may not be 0 when true.
-* @param arrayRequired The 'array' parameter may not be NULL when true.
-* @return Boolean value indicating that the call should be skipped.
-*/
+ * Validate pointer to array count and pointer to array.
+ *
+ * Verify that required count and array parameters are not NULL.  If count
+ * is not NULL and its value is not optional, verify that it is not 0.  If the
+ * array parameter is NULL, and it is not optional, verify that count is 0.
+ * The array parameter will typically be optional for this case (where count is
+ * a pointer), allowing the caller to retrieve the available count.
+ *
+ * @param report_data debug_report_data object for routing validation messages.
+ * @param apiName Name of API call being validated.
+ * @param countName Name of count parameter.
+ * @param arrayName Name of array parameter.
+ * @param count Pointer to the number of elements in the array.
+ * @param array Array to validate.
+ * @param countPtrRequired The 'count' parameter may not be NULL when true.
+ * @param countValueRequired The '*count' value may not be 0 when true.
+ * @param arrayRequired The 'array' parameter may not be NULL when true.
+ * @return Boolean value indicating that the call should be skipped.
+ */
 template <typename T>
 bool validate_array(debug_report_data *report_data, const char *apiName, const ParameterName &countName,
                     const ParameterName &arrayName, const T *count, const void *array, bool countPtrRequired,
@@ -412,16 +411,16 @@ bool validate_struct_type_array(debug_report_data *report_data, const char *apiN
 }
 
 /**
-* Validate a Vulkan handle.
-*
-* Verify that the specified handle is not VK_NULL_HANDLE.
-*
-* @param report_data debug_report_data object for routing validation messages.
-* @param api_name Name of API call being validated.
-* @param parameter_name Name of struct parameter being validated.
-* @param value Handle to validate.
-* @return Boolean value indicating that the call should be skipped.
-*/
+ * Validate a Vulkan handle.
+ *
+ * Verify that the specified handle is not VK_NULL_HANDLE.
+ *
+ * @param report_data debug_report_data object for routing validation messages.
+ * @param api_name Name of API call being validated.
+ * @param parameter_name Name of struct parameter being validated.
+ * @param value Handle to validate.
+ * @return Boolean value indicating that the call should be skipped.
+ */
 template <typename T>
 bool validate_required_handle(debug_report_data *report_data, const char *api_name, const ParameterName &parameter_name, T value) {
     bool skip_call = false;
@@ -436,27 +435,27 @@ bool validate_required_handle(debug_report_data *report_data, const char *api_na
 }
 
 /**
-* Validate an array of Vulkan handles.
-*
-* Verify that required count and array parameters are not NULL.  If count
-* is not NULL and its value is not optional, verify that it is not 0.
-* If the array contains 1 or more handles, verify that no handle is set to
-* VK_NULL_HANDLE.
-*
-* @note This function is only intended to validate arrays of handles when none
-*       of the handles are allowed to be VK_NULL_HANDLE.  For arrays of handles
-*       that are allowed to contain VK_NULL_HANDLE, use validate_array() instead.
-*
-* @param report_data debug_report_data object for routing validation messages.
-* @param api_name Name of API call being validated.
-* @param count_name Name of count parameter.
-* @param array_name Name of array parameter.
-* @param count Number of elements in the array.
-* @param array Array to validate.
-* @param count_required The 'count' parameter may not be 0 when true.
-* @param array_required The 'array' parameter may not be NULL when true.
-* @return Boolean value indicating that the call should be skipped.
-*/
+ * Validate an array of Vulkan handles.
+ *
+ * Verify that required count and array parameters are not NULL.  If count
+ * is not NULL and its value is not optional, verify that it is not 0.
+ * If the array contains 1 or more handles, verify that no handle is set to
+ * VK_NULL_HANDLE.
+ *
+ * @note This function is only intended to validate arrays of handles when none
+ *       of the handles are allowed to be VK_NULL_HANDLE.  For arrays of handles
+ *       that are allowed to contain VK_NULL_HANDLE, use validate_array() instead.
+ *
+ * @param report_data debug_report_data object for routing validation messages.
+ * @param api_name Name of API call being validated.
+ * @param count_name Name of count parameter.
+ * @param array_name Name of array parameter.
+ * @param count Number of elements in the array.
+ * @param array Array to validate.
+ * @param count_required The 'count' parameter may not be 0 when true.
+ * @param array_required The 'array' parameter may not be NULL when true.
+ * @return Boolean value indicating that the call should be skipped.
+ */
 template <typename T>
 bool validate_handle_array(debug_report_data *report_data, const char *api_name, const ParameterName &count_name,
                            const ParameterName &array_name, uint32_t count, const T *array, bool count_required,
@@ -548,10 +547,9 @@ static bool validate_struct_pnext(debug_report_data *report_data, const char *ap
     std::unordered_set<VkStructureType, std::hash<int>> unique_stype_check;
 
     const char disclaimer[] =
-        "This warning is based on the Valid Usage documentation for version %d of the Vulkan header.  It "
-        "is possible that you are using a struct from a private extension or an extension that was added "
-        "to a later version of the Vulkan header, in which case your use of %s is perfectly valid but "
-        "is not guaranteed to work correctly with validation enabled";
+        "This warning is based on the Valid Usage documentation for version %d of the Vulkan header.  It is possible that you are "
+        "using a struct from a private extension or an extension that was added to a later version of the Vulkan header, in which "
+        "case your use of %s is perfectly valid but is not guaranteed to work correctly with validation enabled";
 
     // TODO: The valid pNext structure types are not recursive. Each structure has its own list of valid sTypes for pNext.
     // Codegen a map of vectors containing the allowable pNext types for each struct and use that here -- also simplifies parms.
@@ -619,16 +617,16 @@ static bool validate_struct_pnext(debug_report_data *report_data, const char *ap
 }
 
 /**
-* Validate a VkBool32 value.
-*
-* Generate a warning if a VkBool32 value is neither VK_TRUE nor VK_FALSE.
-*
-* @param report_data debug_report_data object for routing validation messages.
-* @param apiName Name of API call being validated.
-* @param parameterName Name of parameter being validated.
-* @param value Boolean value to validate.
-* @return Boolean value indicating that the call should be skipped.
-*/
+ * Validate a VkBool32 value.
+ *
+ * Generate a warning if a VkBool32 value is neither VK_TRUE nor VK_FALSE.
+ *
+ * @param report_data debug_report_data object for routing validation messages.
+ * @param apiName Name of API call being validated.
+ * @param parameterName Name of parameter being validated.
+ * @param value Boolean value to validate.
+ * @return Boolean value indicating that the call should be skipped.
+ */
 static bool validate_bool32(debug_report_data *report_data, const char *apiName, const ParameterName &parameterName,
                             VkBool32 value) {
     bool skip_call = false;
@@ -643,23 +641,23 @@ static bool validate_bool32(debug_report_data *report_data, const char *apiName,
 }
 
 /**
-* Validate a Vulkan enumeration value.
-*
-* Generate a warning if an enumeration token value does not fall within the core enumeration
-* begin and end token values, and was not added to the enumeration by an extension.  Extension
-* provided enumerations use the equation specified in Appendix C.10 of the Vulkan specification,
-* with 1,000,000,000 as the base token value.
-*
-* @note This function does not expect to process enumerations defining bitmask flag bits.
-*
-* @param report_data debug_report_data object for routing validation messages.
-* @param apiName Name of API call being validated.
-* @param parameterName Name of parameter being validated.
-* @param enumName Name of the enumeration being validated.
-* @param valid_values The list of valid values for the enumeration.
-* @param value Enumeration value to validate.
-* @return Boolean value indicating that the call should be skipped.
-*/
+ * Validate a Vulkan enumeration value.
+ *
+ * Generate a warning if an enumeration token value does not fall within the core enumeration
+ * begin and end token values, and was not added to the enumeration by an extension.  Extension
+ * provided enumerations use the equation specified in Appendix C.10 of the Vulkan specification,
+ * with 1,000,000,000 as the base token value.
+ *
+ * @note This function does not expect to process enumerations defining bitmask flag bits.
+ *
+ * @param report_data debug_report_data object for routing validation messages.
+ * @param apiName Name of API call being validated.
+ * @param parameterName Name of parameter being validated.
+ * @param enumName Name of the enumeration being validated.
+ * @param valid_values The list of valid values for the enumeration.
+ * @param value Enumeration value to validate.
+ * @return Boolean value indicating that the call should be skipped.
+ */
 template <typename T>
 bool validate_ranged_enum(debug_report_data *report_data, const char *apiName, const ParameterName &parameterName,
                           const char *enumName, const std::vector<T> &valid_values, T value, UNIQUE_VALIDATION_ERROR_CODE vuid) {
@@ -668,8 +666,8 @@ bool validate_ranged_enum(debug_report_data *report_data, const char *apiName, c
     if (std::find(valid_values.begin(), valid_values.end(), value) == valid_values.end()) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, __LINE__, vuid,
                         LayerName,
-                        "%s: value of %s (%d) does not fall within the begin..end range of the core %s "
-                        "enumeration tokens and is not an extension added token. %s",
+                        "%s: value of %s (%d) does not fall within the begin..end range of the core %s enumeration tokens and is "
+                        "not an extension added token. %s",
                         apiName, parameterName.get_name().c_str(), value, enumName, validation_error_map[vuid]);
     }
 
@@ -677,27 +675,27 @@ bool validate_ranged_enum(debug_report_data *report_data, const char *apiName, c
 }
 
 /**
-* Validate an array of Vulkan enumeration value.
-*
-* Process all enumeration token values in the specified array and generate a warning if a value
-* does not fall within the core enumeration begin and end token values, and was not added to
-* the enumeration by an extension.  Extension provided enumerations use the equation specified
-* in Appendix C.10 of the Vulkan specification, with 1,000,000,000 as the base token value.
-*
-* @note This function does not expect to process enumerations defining bitmask flag bits.
-*
-* @param report_data debug_report_data object for routing validation messages.
-* @param apiName Name of API call being validated.
-* @param countName Name of count parameter.
-* @param arrayName Name of array parameter.
-* @param enumName Name of the enumeration being validated.
-* @param valid_values The list of valid values for the enumeration.
-* @param count Number of enumeration values in the array.
-* @param array Array of enumeration values to validate.
-* @param countRequired The 'count' parameter may not be 0 when true.
-* @param arrayRequired The 'array' parameter may not be NULL when true.
-* @return Boolean value indicating that the call should be skipped.
-*/
+ * Validate an array of Vulkan enumeration value.
+ *
+ * Process all enumeration token values in the specified array and generate a warning if a value
+ * does not fall within the core enumeration begin and end token values, and was not added to
+ * the enumeration by an extension.  Extension provided enumerations use the equation specified
+ * in Appendix C.10 of the Vulkan specification, with 1,000,000,000 as the base token value.
+ *
+ * @note This function does not expect to process enumerations defining bitmask flag bits.
+ *
+ * @param report_data debug_report_data object for routing validation messages.
+ * @param apiName Name of API call being validated.
+ * @param countName Name of count parameter.
+ * @param arrayName Name of array parameter.
+ * @param enumName Name of the enumeration being validated.
+ * @param valid_values The list of valid values for the enumeration.
+ * @param count Number of enumeration values in the array.
+ * @param array Array of enumeration values to validate.
+ * @param countRequired The 'count' parameter may not be 0 when true.
+ * @param arrayRequired The 'array' parameter may not be NULL when true.
+ * @return Boolean value indicating that the call should be skipped.
+ */
 template <typename T>
 static bool validate_ranged_enum_array(debug_report_data *report_data, const char *apiName, const ParameterName &countName,
                                        const ParameterName &arrayName, const char *enumName, const std::vector<T> &valid_values,
@@ -723,47 +721,46 @@ static bool validate_ranged_enum_array(debug_report_data *report_data, const cha
 }
 
 /**
-* Verify that a reserved VkFlags value is zero.
-*
-* Verify that the specified value is zero, to check VkFlags values that are reserved for
-* future use.
-*
-* @param report_data debug_report_data object for routing validation messages.
-* @param api_name Name of API call being validated.
-* @param parameter_name Name of parameter being validated.
-* @param value Value to validate.
-* @return Boolean value indicating that the call should be skipped.
-*/
+ * Verify that a reserved VkFlags value is zero.
+ *
+ * Verify that the specified value is zero, to check VkFlags values that are reserved for
+ * future use.
+ *
+ * @param report_data debug_report_data object for routing validation messages.
+ * @param api_name Name of API call being validated.
+ * @param parameter_name Name of parameter being validated.
+ * @param value Value to validate.
+ * @return Boolean value indicating that the call should be skipped.
+ */
 static bool validate_reserved_flags(debug_report_data *report_data, const char *api_name, const ParameterName &parameter_name,
                                     VkFlags value, UNIQUE_VALIDATION_ERROR_CODE vuid) {
     bool skip_call = false;
 
     if (value != 0) {
-        skip_call |=
-            log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, __LINE__,
-                    vuid, LayerName, "%s: parameter %s must be 0. %s", api_name, parameter_name.get_name().c_str(),
-                    validation_error_map[vuid]);
+        skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, __LINE__, vuid,
+                             LayerName, "%s: parameter %s must be 0. %s", api_name, parameter_name.get_name().c_str(),
+                             validation_error_map[vuid]);
     }
 
     return skip_call;
 }
 
 /**
-* Validate a Vulkan bitmask value.
-*
-* Generate a warning if a value with a VkFlags derived type does not contain valid flag bits
-* for that type.
-*
-* @param report_data debug_report_data object for routing validation messages.
-* @param api_name Name of API call being validated.
-* @param parameter_name Name of parameter being validated.
-* @param flag_bits_name Name of the VkFlags type being validated.
-* @param all_flags A bit mask combining all valid flag bits for the VkFlags type being validated.
-* @param value VkFlags value to validate.
-* @param flags_required The 'value' parameter may not be 0 when true.
-* @param singleFlag The 'value' parameter may not contain more than one bit from all_flags.
-* @return Boolean value indicating that the call should be skipped.
-*/
+ * Validate a Vulkan bitmask value.
+ *
+ * Generate a warning if a value with a VkFlags derived type does not contain valid flag bits
+ * for that type.
+ *
+ * @param report_data debug_report_data object for routing validation messages.
+ * @param api_name Name of API call being validated.
+ * @param parameter_name Name of parameter being validated.
+ * @param flag_bits_name Name of the VkFlags type being validated.
+ * @param all_flags A bit mask combining all valid flag bits for the VkFlags type being validated.
+ * @param value VkFlags value to validate.
+ * @param flags_required The 'value' parameter may not be 0 when true.
+ * @param singleFlag The 'value' parameter may not contain more than one bit from all_flags.
+ * @return Boolean value indicating that the call should be skipped.
+ */
 static bool validate_flags(debug_report_data *report_data, const char *api_name, const ParameterName &parameter_name,
                            const char *flag_bits_name, VkFlags all_flags, VkFlags value, bool flags_required, bool singleFlag,
                            UNIQUE_VALIDATION_ERROR_CODE vuid) {
@@ -772,8 +769,8 @@ static bool validate_flags(debug_report_data *report_data, const char *api_name,
     if (value == 0) {
         if (flags_required) {
             skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, __LINE__,
-                                 vuid, LayerName, "%s: value of %s must not be 0. %s", api_name,
-                                 parameter_name.get_name().c_str(), validation_error_map[vuid]);
+                                 vuid, LayerName, "%s: value of %s must not be 0. %s", api_name, parameter_name.get_name().c_str(),
+                                 validation_error_map[vuid]);
         }
     } else if ((value & (~all_flags)) != 0) {
         skip_call |=
@@ -791,23 +788,23 @@ static bool validate_flags(debug_report_data *report_data, const char *api_name,
 }
 
 /**
-* Validate an array of Vulkan bitmask values.
-*
-* Generate a warning if a value with a VkFlags derived type does not contain valid flag bits
-* for that type.
-*
-* @param report_data debug_report_data object for routing validation messages.
-* @param api_name Name of API call being validated.
-* @param count_name Name of parameter being validated.
-* @param array_name Name of parameter being validated.
-* @param flag_bits_name Name of the VkFlags type being validated.
-* @param all_flags A bitmask combining all valid flag bits for the VkFlags type being validated.
-* @param count Number of VkFlags values in the array.
-* @param array Array of VkFlags value to validate.
-* @param count_required The 'count' parameter may not be 0 when true.
-* @param array_required The 'array' parameter may not be NULL when true.
-* @return Boolean value indicating that the call should be skipped.
-*/
+ * Validate an array of Vulkan bitmask values.
+ *
+ * Generate a warning if a value with a VkFlags derived type does not contain valid flag bits
+ * for that type.
+ *
+ * @param report_data debug_report_data object for routing validation messages.
+ * @param api_name Name of API call being validated.
+ * @param count_name Name of parameter being validated.
+ * @param array_name Name of parameter being validated.
+ * @param flag_bits_name Name of the VkFlags type being validated.
+ * @param all_flags A bitmask combining all valid flag bits for the VkFlags type being validated.
+ * @param count Number of VkFlags values in the array.
+ * @param array Array of VkFlags value to validate.
+ * @param count_required The 'count' parameter may not be 0 when true.
+ * @param array_required The 'array' parameter may not be NULL when true.
+ * @return Boolean value indicating that the call should be skipped.
+ */
 static bool validate_flags_array(debug_report_data *report_data, const char *api_name, const ParameterName &count_name,
                                  const ParameterName &array_name, const char *flag_bits_name, VkFlags all_flags, uint32_t count,
                                  const VkFlags *array, bool count_required, bool array_required) {
@@ -840,14 +837,14 @@ static bool validate_flags_array(debug_report_data *report_data, const char *api
 }
 
 /**
-* Get VkResult code description.
-*
-* Returns a string describing the specified VkResult code.  The description is based on the language in the Vulkan API
-* specification.
-*
-* @param value VkResult code to process.
-* @return String describing the specified VkResult code.
-*/
+ * Get VkResult code description.
+ *
+ * Returns a string describing the specified VkResult code.  The description is based on the language in the Vulkan API
+ * specification.
+ *
+ * @param value VkResult code to process.
+ * @return String describing the specified VkResult code.
+ */
 static std::string get_result_description(VkResult result) {
     // clang-format off
     switch (result) {
@@ -887,15 +884,15 @@ static std::string get_result_description(VkResult result) {
 }
 
 /**
-* Validate return code.
-*
-* Print a message describing the reason for failure when an error code is returned.
-*
-* @param report_data debug_report_data object for routing validation messages.
-* @param apiName Name of API call being validated.
-* @param ignore vector of VkResult return codes to be ignored
-* @param value VkResult value to validate.
-*/
+ * Validate return code.
+ *
+ * Print a message describing the reason for failure when an error code is returned.
+ *
+ * @param report_data debug_report_data object for routing validation messages.
+ * @param apiName Name of API call being validated.
+ * @param ignore vector of VkResult return codes to be ignored
+ * @param value VkResult value to validate.
+ */
 static void validate_result(debug_report_data *report_data, const char *apiName, std::vector<VkResult> const &ignore,
                             VkResult result) {
     if (result < 0 && result != VK_ERROR_VALIDATION_FAILED_EXT) {

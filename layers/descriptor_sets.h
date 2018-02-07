@@ -461,5 +461,5 @@ class PrefilterBindRequestMap {
     PrefilterBindRequestMap(DescriptorSet &ds, const BindingReqMap &in_map, GLOBAL_CB_NODE *cb_state, PIPELINE_STATE *);
     const BindingReqMap &Map() const { return (filtered_map_) ? *filtered_map_ : orig_map_; }
 };
-}
+}  // namespace cvdescriptorset
 #endif  // CORE_VALIDATION_DESCRIPTOR_SETS_H_

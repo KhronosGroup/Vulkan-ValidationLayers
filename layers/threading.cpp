@@ -200,7 +200,8 @@ static const VkExtensionProperties threading_extensions[] = {
 static const VkLayerProperties layerProps = {
     "VK_LAYER_GOOGLE_threading",
     VK_LAYER_API_VERSION,  // specVersion
-    1, "Google Validation Layer",
+    1,
+    "Google Validation Layer",
 };
 
 VKAPI_ATTR VkResult VKAPI_CALL EnumerateInstanceLayerProperties(uint32_t *pCount, VkLayerProperties *pProperties) {

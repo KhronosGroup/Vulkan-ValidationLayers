@@ -314,27 +314,27 @@ static bool types_match(shader_module const *a, shader_module const *b, unsigned
         case spv::OpTypeMatrix:
             // Match on element type, count.
             return types_match(a, b, a_insn.word(2), b_insn.word(2), a_arrayed, b_arrayed, false) &&
-                a_insn.word(3) == b_insn.word(3);
+                   a_insn.word(3) == b_insn.word(3);
         case spv::OpTypeArray:
             // Match on element type, count. these all have the same layout. we don't get here if b_arrayed. This differs from
             // vector & matrix types in that the array size is the id of a constant instruction, * not a literal within OpTypeArray
             return types_match(a, b, a_insn.word(2), b_insn.word(2), a_arrayed, b_arrayed, false) &&
-                get_constant_value(a, a_insn.word(3)) == get_constant_value(b, b_insn.word(3));
+                   get_constant_value(a, a_insn.word(3)) == get_constant_value(b, b_insn.word(3));
         case spv::OpTypeStruct:
             // Match on all element types
-        {
-            if (a_insn.len() != b_insn.len()) {
-                return false;  // Structs cannot match if member counts differ
-            }
-
-            for (unsigned i = 2; i < a_insn.len(); i++) {
-                if (!types_match(a, b, a_insn.word(i), b_insn.word(i), a_arrayed, b_arrayed, false)) {
-                    return false;
+            {
+                if (a_insn.len() != b_insn.len()) {
+                    return false;  // Structs cannot match if member counts differ
                 }
-            }
 
-            return true;
-        }
+                for (unsigned i = 2; i < a_insn.len(); i++) {
+                    if (!types_match(a, b, a_insn.word(i), b_insn.word(i), a_arrayed, b_arrayed, false)) {
+                        return false;
+                    }
+                }
+
+                return true;
+            }
         default:
             // Remaining types are CLisms, or may not appear in the interfaces we are interested in. Just claim no match.
             return false;
@@ -398,14 +398,10 @@ static unsigned get_locations_consumed_by_format(VkFormat format) {
 }
 
 static unsigned get_format_type(VkFormat fmt) {
-    if (FormatIsSInt(fmt))
-        return FORMAT_TYPE_SINT;
-    if (FormatIsUInt(fmt))
-        return FORMAT_TYPE_UINT;
-    if (FormatIsDepthAndStencil(fmt))
-        return FORMAT_TYPE_FLOAT | FORMAT_TYPE_UINT;
-    if (fmt == VK_FORMAT_UNDEFINED)
-        return 0;
+    if (FormatIsSInt(fmt)) return FORMAT_TYPE_SINT;
+    if (FormatIsUInt(fmt)) return FORMAT_TYPE_UINT;
+    if (FormatIsDepthAndStencil(fmt)) return FORMAT_TYPE_FLOAT | FORMAT_TYPE_UINT;
+    if (fmt == VK_FORMAT_UNDEFINED) return 0;
     // everything else -- UNORM/SNORM/FLOAT/USCALED/SSCALED is all float in the shader.
     return FORMAT_TYPE_FLOAT;
 }
@@ -504,7 +500,7 @@ static bool collect_interface_block_members(shader_module const *src, std::map<l
                 auto component_it = member_components.find(member_index);
                 unsigned component = component_it == member_components.end() ? 0 : component_it->second;
                 bool is_relaxed_precision = member_relaxed_precision.find(member_index) != member_relaxed_precision.end();
-                bool member_is_patch = is_patch || member_patch.count(member_index)>0;
+                bool member_is_patch = is_patch || member_patch.count(member_index) > 0;
 
                 for (unsigned int offset = 0; offset < num_locations; offset++) {
                     interface_var v = {};
@@ -591,7 +587,8 @@ static std::map<location_t, interface_var> collect_interface_by_location(shader_
             bool is_patch = var_patch.find(id) != var_patch.end();
             bool is_relaxed_precision = var_relaxed_precision.find(id) != var_relaxed_precision.end();
 
-            if (builtin != -1) continue;
+            if (builtin != -1)
+                continue;
             else if (!collect_interface_block_members(src, &out, blocks, is_array_of_verts, id, type, is_patch, location)) {
                 // A user-defined interface variable, with a location. Where a variable occupied multiple locations, emit
                 // one result for each.
@@ -683,8 +680,6 @@ static std::vector<std::pair<descriptor_slot_t, interface_var>> collect_interfac
 
     return out;
 }
-
-
 
 static bool validate_vi_consistency(debug_report_data const *report_data, VkPipelineVertexInputStateCreateInfo const *vi) {
     // Walk the binding descriptions, which describe the step rate and stride of each vertex buffer.  Each binding should
@@ -975,11 +970,11 @@ static bool validate_push_constant_block_against_pipeline(debug_report_data cons
                         found_range = true;
 
                         if ((range.stageFlags & stage) == 0) {
-                            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                            __LINE__, SHADER_CHECKER_PUSH_CONSTANT_NOT_ACCESSIBLE_FROM_STAGE, "SC",
-                                            "Push constant range covering variable starting at "
-                                                "offset %u not accessible from stage %s",
-                                            offset, string_VkShaderStageFlagBits(stage));
+                            skip |=
+                                log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                        __LINE__, SHADER_CHECKER_PUSH_CONSTANT_NOT_ACCESSIBLE_FROM_STAGE, "SC",
+                                        "Push constant range covering variable starting at offset %u not accessible from stage %s",
+                                        offset, string_VkShaderStageFlagBits(stage));
                         }
 
                         break;
@@ -989,9 +984,7 @@ static bool validate_push_constant_block_against_pipeline(debug_report_data cons
                 if (!found_range) {
                     skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                                     __LINE__, SHADER_CHECKER_PUSH_CONSTANT_OUT_OF_RANGE, "SC",
-                                    "Push constant range covering variable starting at "
-                                        "offset %u not declared in layout",
-                                    offset);
+                                    "Push constant range covering variable starting at offset %u not declared in layout", offset);
                 }
             }
         }
@@ -1028,12 +1021,11 @@ static bool validate_specialization_offsets(debug_report_data const *report_data
             if (spec->pMapEntries[i].offset + spec->pMapEntries[i].size > spec->dataSize) {
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, 0, __LINE__,
                                 VALIDATION_ERROR_1360060c, "SC",
-                                "Specialization entry %u (for constant id %u) references memory outside provided "
-                                    "specialization data (bytes %u.." PRINTF_SIZE_T_SPECIFIER "; " PRINTF_SIZE_T_SPECIFIER
-                " bytes provided). %s.",
-                    i, spec->pMapEntries[i].constantID, spec->pMapEntries[i].offset,
-                    spec->pMapEntries[i].offset + spec->pMapEntries[i].size - 1, spec->dataSize,
-                    validation_error_map[VALIDATION_ERROR_1360060c]);
+                                "Specialization entry %u (for constant id %u) references memory outside provided specialization "
+                                "data (bytes %u.." PRINTF_SIZE_T_SPECIFIER "; " PRINTF_SIZE_T_SPECIFIER " bytes provided). %s.",
+                                i, spec->pMapEntries[i].constantID, spec->pMapEntries[i].offset,
+                                spec->pMapEntries[i].offset + spec->pMapEntries[i].size - 1, spec->dataSize,
+                                validation_error_map[VALIDATION_ERROR_1360060c]);
             }
         }
     }
@@ -1063,10 +1055,10 @@ static bool descriptor_type_match(shader_module const *module, uint32_t type_id,
                 if (insn.opcode() == spv::OpDecorate && insn.word(1) == type.word(1)) {
                     if (insn.word(2) == spv::DecorationBlock) {
                         return descriptor_type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER ||
-                            descriptor_type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+                               descriptor_type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
                     } else if (insn.word(2) == spv::DecorationBufferBlock) {
                         return descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER ||
-                            descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC;
+                               descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC;
                     }
                 }
             }
@@ -1105,7 +1097,7 @@ static bool descriptor_type_match(shader_module const *module, uint32_t type_id,
                 }
             } else if (sampled == 1) {
                 return descriptor_type == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE ||
-                    descriptor_type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+                       descriptor_type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
             } else {
                 return descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
             }
@@ -1121,9 +1113,7 @@ static bool require_feature(debug_report_data const *report_data, VkBool32 featu
     if (!feature) {
         if (log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, __LINE__,
                     SHADER_CHECKER_FEATURE_NOT_ENABLED, "SC",
-                    "Shader requires VkPhysicalDeviceFeatures::%s but is not "
-                        "enabled on the device",
-                    feature_name)) {
+                    "Shader requires VkPhysicalDeviceFeatures::%s but is not enabled on the device", feature_name)) {
             return true;
         }
     }
@@ -1134,9 +1124,7 @@ static bool require_feature(debug_report_data const *report_data, VkBool32 featu
 static bool require_extension(debug_report_data const *report_data, bool extension, char const *extension_name) {
     if (!extension) {
         if (log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, __LINE__,
-                    SHADER_CHECKER_FEATURE_NOT_ENABLED, "SC",
-                    "Shader requires extension %s but is not "
-                        "enabled on the device",
+                    SHADER_CHECKER_FEATURE_NOT_ENABLED, "SC", "Shader requires extension %s but is not enabled on the device",
                     extension_name)) {
             return true;
         }
@@ -1149,8 +1137,8 @@ static bool validate_shader_capabilities(layer_data *dev_data, shader_module con
     bool skip = false;
 
     auto report_data = GetReportData(dev_data);
-    auto const & enabledFeatures = GetEnabledFeatures(dev_data);
-    auto const & extensions = GetEnabledExtensions(dev_data);
+    auto const &enabledFeatures = GetEnabledFeatures(dev_data);
+    auto const &extensions = GetEnabledExtensions(dev_data);
 
     struct CapabilityInfo {
         char const *name;
@@ -1284,7 +1272,7 @@ static uint32_t descriptor_type_to_reqs(shader_module const *module, uint32_t ty
                         return arrayed ? DESCRIPTOR_REQ_VIEW_TYPE_1D_ARRAY : DESCRIPTOR_REQ_VIEW_TYPE_1D;
                     case spv::Dim2D:
                         return (msaa ? DESCRIPTOR_REQ_MULTI_SAMPLE : DESCRIPTOR_REQ_SINGLE_SAMPLE) |
-                            (arrayed ? DESCRIPTOR_REQ_VIEW_TYPE_2D_ARRAY : DESCRIPTOR_REQ_VIEW_TYPE_2D);
+                               (arrayed ? DESCRIPTOR_REQ_VIEW_TYPE_2D_ARRAY : DESCRIPTOR_REQ_VIEW_TYPE_2D);
                     case spv::Dim3D:
                         return DESCRIPTOR_REQ_VIEW_TYPE_3D;
                     case spv::DimCube:
@@ -1312,10 +1300,9 @@ static VkDescriptorSetLayoutBinding const *get_descriptor_binding(PIPELINE_LAYOU
     return pipelineLayout->set_layouts[slot.first]->GetDescriptorSetLayoutBindingPtrFromBinding(slot.second);
 }
 
-
-static bool validate_pipeline_shader_stage(
-    layer_data *dev_data, VkPipelineShaderStageCreateInfo const *pStage, PIPELINE_STATE *pipeline,
-    shader_module const **out_module, spirv_inst_iter *out_entrypoint) {
+static bool validate_pipeline_shader_stage(layer_data *dev_data, VkPipelineShaderStageCreateInfo const *pStage,
+                                           PIPELINE_STATE *pipeline, shader_module const **out_module,
+                                           spirv_inst_iter *out_entrypoint) {
     bool skip = false;
     auto module = *out_module = GetShaderModuleState(dev_data, pStage->module);
     auto report_data = GetReportData(dev_data);
@@ -1342,7 +1329,8 @@ static bool validate_pipeline_shader_stage(
     auto descriptor_uses = collect_interface_by_descriptor_slot(report_data, module, accessible_ids);
 
     skip |= validate_specialization_offsets(report_data, pStage);
-    skip |= validate_push_constant_usage(report_data, &pipeline->pipeline_layout.push_constant_ranges, module, accessible_ids, pStage->stage);
+    skip |= validate_push_constant_usage(report_data, &pipeline->pipeline_layout.push_constant_ranges, module, accessible_ids,
+                                         pStage->stage);
 
     // Validate descriptor use
     for (auto use : descriptor_uses) {
@@ -1362,18 +1350,14 @@ static bool validate_pipeline_shader_stage(
         } else if (~binding->stageFlags & pStage->stage) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, 0, __LINE__,
                             SHADER_CHECKER_DESCRIPTOR_NOT_ACCESSIBLE_FROM_STAGE, "SC",
-                            "Shader uses descriptor slot %u.%u (used "
-                                "as type `%s`) but descriptor not "
-                                "accessible from stage %s",
+                            "Shader uses descriptor slot %u.%u (used as type `%s`) but descriptor not accessible from stage %s",
                             use.first.first, use.first.second, describe_type(module, use.second.type_id).c_str(),
                             string_VkShaderStageFlagBits(pStage->stage));
         } else if (!descriptor_type_match(module, use.second.type_id, binding->descriptorType, required_descriptor_count)) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, __LINE__,
                             SHADER_CHECKER_DESCRIPTOR_TYPE_MISMATCH, "SC",
-                            "Type mismatch on descriptor slot "
-                                "%u.%u (used as type `%s`) but "
-                                "descriptor of type %s",
-                            use.first.first, use.first.second, describe_type(module, use.second.type_id).c_str(),
+                            "Type mismatch on descriptor slot %u.%u (used as type `%s`) but descriptor of type %s", use.first.first,
+                            use.first.second, describe_type(module, use.second.type_id).c_str(),
                             string_VkDescriptorType(binding->descriptorType));
         } else if (binding->descriptorCount < required_descriptor_count) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, __LINE__,
@@ -1394,8 +1378,8 @@ static bool validate_pipeline_shader_stage(
         for (auto use : input_attachment_uses) {
             auto input_attachments = rpci->pSubpasses[subpass].pInputAttachments;
             auto index = (input_attachments && use.first < rpci->pSubpasses[subpass].inputAttachmentCount)
-                         ? input_attachments[use.first].attachment
-                         : VK_ATTACHMENT_UNUSED;
+                             ? input_attachments[use.first].attachment
+                             : VK_ATTACHMENT_UNUSED;
 
             if (index == VK_ATTACHMENT_UNUSED) {
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, __LINE__,
@@ -1462,8 +1446,7 @@ static bool validate_interface_between_stages(debug_report_data const *report_da
             if (a_it->second.is_patch != b_it->second.is_patch) {
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, 0, __LINE__,
                                 SHADER_CHECKER_INTERFACE_TYPE_MISMATCH, "SC",
-                                "Decoration mismatch on location %u.%u: is per-%s in %s stage but "
-                                    "per-%s in %s stage",
+                                "Decoration mismatch on location %u.%u: is per-%s in %s stage but per-%s in %s stage",
                                 a_first.first, a_first.second, a_it->second.is_patch ? "patch" : "vertex", producer_stage->name,
                                 b_it->second.is_patch ? "patch" : "vertex", consumer_stage->name);
             }
@@ -1534,8 +1517,8 @@ bool validate_and_capture_pipeline_shader_state(layer_data *dev_data, PIPELINE_S
     }
 
     if (shaders[fragment_stage] && shaders[fragment_stage]->has_valid_spirv) {
-        skip |= validate_fs_outputs_against_render_pass(report_data, shaders[fragment_stage], entrypoints[fragment_stage],
-                                                        pipeline, pCreateInfo->subpass);
+        skip |= validate_fs_outputs_against_render_pass(report_data, shaders[fragment_stage], entrypoints[fragment_stage], pipeline,
+                                                        pCreateInfo->subpass);
     }
 
     return skip;
@@ -1550,12 +1533,9 @@ bool validate_compute_pipeline(layer_data *dev_data, PIPELINE_STATE *pipeline) {
     return validate_pipeline_shader_stage(dev_data, &pCreateInfo->stage, pipeline, &module, &entrypoint);
 }
 
-uint32_t ValidationCache::MakeShaderHash(VkShaderModuleCreateInfo const *smci) {
-        return XXH32(smci->pCode, smci->codeSize, 0);
-}
+uint32_t ValidationCache::MakeShaderHash(VkShaderModuleCreateInfo const *smci) { return XXH32(smci->pCode, smci->codeSize, 0); }
 
-static ValidationCache *GetValidationCacheInfo(
-    VkShaderModuleCreateInfo const *pCreateInfo) {
+static ValidationCache *GetValidationCacheInfo(VkShaderModuleCreateInfo const *pCreateInfo) {
     while ((pCreateInfo = (VkShaderModuleCreateInfo const *)pCreateInfo->pNext) != nullptr) {
         if (pCreateInfo->sType == VK_STRUCTURE_TYPE_SHADER_MODULE_VALIDATION_CACHE_CREATE_INFO_EXT)
             return (ValidationCache *)((VkShaderModuleValidationCacheCreateInfoEXT const *)pCreateInfo)->validationCache;
@@ -1576,8 +1556,8 @@ bool PreCallValidateCreateShaderModule(layer_data *dev_data, VkShaderModuleCreat
     auto have_glsl_shader = GetEnabledExtensions(dev_data)->vk_nv_glsl_shader;
 
     if (!have_glsl_shader && (pCreateInfo->codeSize % 4)) {
-        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                        __LINE__, VALIDATION_ERROR_12a00ac0, "SC",
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, __LINE__,
+                        VALIDATION_ERROR_12a00ac0, "SC",
                         "SPIR-V module not valid: Codesize must be a multiple of 4 but is " PRINTF_SIZE_T_SPECIFIER ". %s",
                         pCreateInfo->codeSize, validation_error_map[VALIDATION_ERROR_12a00ac0]);
     } else {
@@ -1585,22 +1565,21 @@ bool PreCallValidateCreateShaderModule(layer_data *dev_data, VkShaderModuleCreat
         uint32_t hash = 0;
         if (cache) {
             hash = ValidationCache::MakeShaderHash(pCreateInfo);
-            if (cache->Contains(hash))
-                return false;
+            if (cache->Contains(hash)) return false;
         }
 
         // Use SPIRV-Tools validator to try and catch any issues with the module itself
         spv_context ctx = spvContextCreate(SPV_ENV_VULKAN_1_0);
-        spv_const_binary_t binary{ pCreateInfo->pCode, pCreateInfo->codeSize / sizeof(uint32_t) };
+        spv_const_binary_t binary{pCreateInfo->pCode, pCreateInfo->codeSize / sizeof(uint32_t)};
         spv_diagnostic diag = nullptr;
 
         spv_valid = spvValidate(ctx, &binary, &diag);
         if (spv_valid != SPV_SUCCESS) {
             if (!have_glsl_shader || (pCreateInfo->pCode[0] == spv::MagicNumber)) {
-                skip |= log_msg(report_data,
-                                spv_valid == SPV_WARNING ? VK_DEBUG_REPORT_WARNING_BIT_EXT : VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, __LINE__, SHADER_CHECKER_INCONSISTENT_SPIRV, "SC",
-                                "SPIR-V module not valid: %s", diag && diag->error ? diag->error : "(no error text)");
+                skip |=
+                    log_msg(report_data, spv_valid == SPV_WARNING ? VK_DEBUG_REPORT_WARNING_BIT_EXT : VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                            VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, __LINE__, SHADER_CHECKER_INCONSISTENT_SPIRV, "SC",
+                            "SPIR-V module not valid: %s", diag && diag->error ? diag->error : "(no error text)");
             }
         } else {
             if (cache) {

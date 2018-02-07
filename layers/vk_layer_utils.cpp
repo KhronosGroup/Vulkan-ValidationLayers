@@ -146,5 +146,4 @@ VK_LAYER_EXPORT void layer_debug_actions(debug_report_data *report_data, std::ve
         layer_create_msg_callback(report_data, default_layer_callback, &dbgCreateInfo, pAllocator, &callback);
         logging_callback.push_back(callback);
     }
-
 }

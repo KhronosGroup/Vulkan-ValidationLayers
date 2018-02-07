@@ -110,7 +110,7 @@ class ValidationCache {
     std::unordered_set<uint32_t> good_shader_hashes;
     ValidationCache() {}
 
-public:
+   public:
     static VkValidationCacheEXT Create(VkValidationCacheCreateInfoEXT const *pCreateInfo) {
         auto cache = new ValidationCache();
         cache->Load(pCreateInfo);
@@ -120,29 +120,24 @@ public:
     void Load(VkValidationCacheCreateInfoEXT const *pCreateInfo) {
         const auto headerSize = 2 * sizeof(uint32_t) + VK_UUID_SIZE;
         auto size = headerSize;
-        if (!pCreateInfo->pInitialData || pCreateInfo->initialDataSize < size)
-            return;
+        if (!pCreateInfo->pInitialData || pCreateInfo->initialDataSize < size) return;
 
         uint32_t const *data = (uint32_t const *)pCreateInfo->pInitialData;
-        if (data[0] != size)
-            return;
-        if (data[1] != VK_VALIDATION_CACHE_HEADER_VERSION_ONE_EXT)
-            return;
+        if (data[0] != size) return;
+        if (data[1] != VK_VALIDATION_CACHE_HEADER_VERSION_ONE_EXT) return;
         uint8_t expected_uuid[VK_UUID_SIZE];
         Sha1ToVkUuid(SPIRV_TOOLS_COMMIT_ID, expected_uuid);
-        if (memcmp(&data[2], expected_uuid, VK_UUID_SIZE) != 0)
-            return;  // different version
+        if (memcmp(&data[2], expected_uuid, VK_UUID_SIZE) != 0) return;  // different version
 
-        data = (uint32_t const*)(reinterpret_cast<uint8_t const *>(data) + headerSize);
+        data = (uint32_t const *)(reinterpret_cast<uint8_t const *>(data) + headerSize);
 
-        for (;size < pCreateInfo->initialDataSize;
-             data++, size += sizeof(uint32_t)) {
+        for (; size < pCreateInfo->initialDataSize; data++, size += sizeof(uint32_t)) {
             good_shader_hashes.insert(*data);
         }
     }
 
     void Write(size_t *pDataSize, void *pData) {
-        const auto headerSize = 2*sizeof(uint32_t) + VK_UUID_SIZE; // 4 bytes for header size + 4 bytes for version number + UUID
+        const auto headerSize = 2 * sizeof(uint32_t) + VK_UUID_SIZE;  // 4 bytes for header size + 4 bytes for version number + UUID
         if (!pData) {
             *pDataSize = headerSize + good_shader_hashes.size() * sizeof(uint32_t);
             return;
@@ -150,7 +145,7 @@ public:
 
         if (*pDataSize < headerSize) {
             *pDataSize = 0;
-            return;   // Too small for even the header!
+            return;  // Too small for even the header!
         }
 
         uint32_t *out = (uint32_t *)pData;
@@ -159,11 +154,10 @@ public:
         // Write the header
         *out++ = headerSize;
         *out++ = VK_VALIDATION_CACHE_HEADER_VERSION_ONE_EXT;
-        Sha1ToVkUuid(SPIRV_TOOLS_COMMIT_ID, reinterpret_cast<uint8_t*>(out));
-        out = (uint32_t*)(reinterpret_cast<uint8_t*>(out) + VK_UUID_SIZE);
+        Sha1ToVkUuid(SPIRV_TOOLS_COMMIT_ID, reinterpret_cast<uint8_t *>(out));
+        out = (uint32_t *)(reinterpret_cast<uint8_t *>(out) + VK_UUID_SIZE);
 
-        for (auto it = good_shader_hashes.begin();
-             it != good_shader_hashes.end() && actualSize < *pDataSize;
+        for (auto it = good_shader_hashes.begin(); it != good_shader_hashes.end() && actualSize < *pDataSize;
              it++, out++, actualSize += sizeof(uint32_t)) {
             *out = *it;
         }
@@ -173,32 +167,28 @@ public:
 
     void Merge(ValidationCache const *other) {
         good_shader_hashes.reserve(good_shader_hashes.size() + other->good_shader_hashes.size());
-        for (auto h : other->good_shader_hashes)
-            good_shader_hashes.insert(h);
+        for (auto h : other->good_shader_hashes) good_shader_hashes.insert(h);
     }
 
     static uint32_t MakeShaderHash(VkShaderModuleCreateInfo const *smci);
 
-    bool Contains(uint32_t hash) {
-        return good_shader_hashes.count(hash) != 0;
-    }
+    bool Contains(uint32_t hash) { return good_shader_hashes.count(hash) != 0; }
 
-    void Insert(uint32_t hash) {
-        good_shader_hashes.insert(hash);
-    }
-private:
-    void Sha1ToVkUuid(const char* sha1_str, uint8_t uuid[VK_UUID_SIZE]) {
-      // Convert sha1_str from a hex string to binary. We only need VK_UUID_BYTES of
-      // output, so pad with zeroes if the input string is shorter than that, and truncate
-      // if it's longer.
-      char padded_sha1_str[2 * VK_UUID_SIZE + 1] = {};
-      strncpy(padded_sha1_str, sha1_str, 2 * VK_UUID_SIZE + 1);
-      char byte_str[3] = {};
-      for (uint32_t i = 0; i < VK_UUID_SIZE; ++i) {
-        byte_str[0] = padded_sha1_str[2 * i + 0];
-        byte_str[1] = padded_sha1_str[2 * i + 1];
-        uuid[i] = static_cast<uint8_t>(strtol(byte_str, NULL, 16));
-      }
+    void Insert(uint32_t hash) { good_shader_hashes.insert(hash); }
+
+   private:
+    void Sha1ToVkUuid(const char *sha1_str, uint8_t uuid[VK_UUID_SIZE]) {
+        // Convert sha1_str from a hex string to binary. We only need VK_UUID_BYTES of
+        // output, so pad with zeroes if the input string is shorter than that, and truncate
+        // if it's longer.
+        char padded_sha1_str[2 * VK_UUID_SIZE + 1] = {};
+        strncpy(padded_sha1_str, sha1_str, 2 * VK_UUID_SIZE + 1);
+        char byte_str[3] = {};
+        for (uint32_t i = 0; i < VK_UUID_SIZE; ++i) {
+            byte_str[0] = padded_sha1_str[2 * i + 0];
+            byte_str[1] = padded_sha1_str[2 * i + 1];
+            uuid[i] = static_cast<uint8_t>(strtol(byte_str, NULL, 16));
+        }
     }
 };
 
@@ -207,4 +197,4 @@ bool validate_compute_pipeline(layer_data *dev_data, PIPELINE_STATE *pPipeline);
 typedef std::pair<unsigned, unsigned> descriptor_slot_t;
 bool PreCallValidateCreateShaderModule(layer_data *dev_data, VkShaderModuleCreateInfo const *pCreateInfo, bool *spirv_valid);
 
-#endif //VULKAN_SHADER_VALIDATION_H
+#endif  // VULKAN_SHADER_VALIDATION_H

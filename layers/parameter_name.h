@@ -61,43 +61,43 @@ class ParameterName {
     ParameterName(const char *source) : source_(source) { assert(IsValid()); }
 
     /**
-    * Construct a ParameterName object from a std::string object, without formatting.
-    *
-    * @param source Paramater name string without format specifiers.
-    *
-    * @pre The source string must not contain the %i format specifier.
-    */
+     * Construct a ParameterName object from a std::string object, without formatting.
+     *
+     * @param source Paramater name string without format specifiers.
+     *
+     * @pre The source string must not contain the %i format specifier.
+     */
     ParameterName(const std::string &source) : source_(source) { assert(IsValid()); }
 
     /**
-    * Construct a ParameterName object from a std::string object, without formatting.
-    *
-    * @param source Paramater name string without format specifiers.
-    *
-    * @pre The source string must not contain the %i format specifier.
-    */
+     * Construct a ParameterName object from a std::string object, without formatting.
+     *
+     * @param source Paramater name string without format specifiers.
+     *
+     * @pre The source string must not contain the %i format specifier.
+     */
     ParameterName(const std::string &&source) : source_(std::move(source)) { assert(IsValid()); }
 
     /**
-    * Construct a ParameterName object from a std::string object, with formatting.
-    *
-    * @param source Paramater name string with format specifiers.
-    * @param args Array index values to be used for formatting.
-    *
-    * @pre The number of %i format specifiers contained by the source string must match the number of elements contained
-    *      by the index vector.
-    */
+     * Construct a ParameterName object from a std::string object, with formatting.
+     *
+     * @param source Paramater name string with format specifiers.
+     * @param args Array index values to be used for formatting.
+     *
+     * @pre The number of %i format specifiers contained by the source string must match the number of elements contained
+     *      by the index vector.
+     */
     ParameterName(const std::string &source, const IndexVector &args) : source_(source), args_(args) { assert(IsValid()); }
 
     /**
-    * Construct a ParameterName object from a std::string object, with formatting.
-    *
-    * @param source Paramater name string with format specifiers.
-    * @param args Array index values to be used for formatting.
-    *
-    * @pre The number of %i format specifiers contained by the source string must match the number of elements contained
-    *      by the index vector.
-    */
+     * Construct a ParameterName object from a std::string object, with formatting.
+     *
+     * @param source Paramater name string with format specifiers.
+     * @param args Array index values to be used for formatting.
+     *
+     * @pre The number of %i format specifiers contained by the source string must match the number of elements contained
+     *      by the index vector.
+     */
     ParameterName(const std::string &&source, const IndexVector &&args) : source_(std::move(source)), args_(std::move(args)) {
         assert(IsValid());
     }

@@ -351,9 +351,7 @@ VK_LAYER_EXPORT bool FormatIsCompressed_PVRTC(VkFormat format) {
 
 // Return true if format is compressed
 VK_LAYER_EXPORT bool FormatIsCompressed(VkFormat format) {
-    return (FormatIsCompressed_ASTC_LDR(format) || 
-            FormatIsCompressed_BC(format) || 
-            FormatIsCompressed_ETC2_EAC(format) ||
+    return (FormatIsCompressed_ASTC_LDR(format) || FormatIsCompressed_BC(format) || FormatIsCompressed_ETC2_EAC(format) ||
             FormatIsCompressed_PVRTC(format));
 }
 

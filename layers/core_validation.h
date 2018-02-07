@@ -68,8 +68,6 @@
 // TODO : Is there a way to track when Cmd Buffer finishes & remove mem references at that point?
 // TODO : Could potentially store a list of freed mem allocs to flag when they're incorrectly used
 
-
-
 struct GENERIC_HEADER {
     VkStructureType sType;
     const void *pNext;
@@ -161,7 +159,7 @@ struct hash<GpuQueue> {
         return hash<uint64_t>()((uint64_t)(gq.gpu)) ^ hash<uint32_t>()(gq.queue_family_index);
     }
 };
-}
+}  // namespace std
 
 struct SURFACE_STATE {
     VkSurfaceKHR surface = VK_NULL_HANDLE;
