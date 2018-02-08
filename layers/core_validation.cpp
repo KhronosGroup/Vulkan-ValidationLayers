@@ -9744,6 +9744,33 @@ static bool PreCallValidateQueueBindSparse(layer_data *dev_data, VkQueue queue, 
                 }
             }
         }
+        // Store sparse binding image_state and after binding is complete make sure that any requiring metadata have it bound
+        std::unordered_set<IMAGE_STATE *> sparse_images;
+        // If we're binding sparse image memory make sure reqs were queried and note if metadata is required and bound
+        for (uint32_t i = 0; i < bindInfo.imageBindCount; ++i) {
+            const auto &opaque_bind = bindInfo.pImageOpaqueBinds[i];
+            auto image_state = GetImageState(dev_data, opaque_bind.image);
+            sparse_images.insert(image_state);
+            if (!image_state->get_sparse_reqs_called || image_state->sparse_requirements.empty()) {
+                // For now just warning if sparse image binding occurs without calling to get reqs first
+                return log_msg(dev_data->report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
+                               HandleToUint64(image_state->image), __LINE__, MEMTRACK_INVALID_STATE, "CV",
+                               "vkQueueBindSparse(): Binding sparse memory to image 0x%" PRIx64
+                               " without first calling vkGetImageSparseMemoryRequirements[2KHR]() to retrieve requirements.",
+                               HandleToUint64(image_state->image));
+            }
+        }
+        for (uint32_t i = 0; i < bindInfo.imageOpaqueBindCount; ++i) {
+            auto image_state = GetImageState(dev_data, bindInfo.pImageOpaqueBinds[i].image);
+            if (!image_state->get_sparse_reqs_called || image_state->sparse_requirements.empty()) {
+                // For now just warning if sparse image binding occurs without calling to get reqs first
+                return log_msg(dev_data->report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
+                               HandleToUint64(image_state->image), __LINE__, MEMTRACK_INVALID_STATE, "CV",
+                               "vkQueueBindSparse(): Binding opaque sparse memory to image 0x%" PRIx64
+                               " without first calling vkGetImageSparseMemoryRequirements[2KHR]() to retrieve requirements.",
+                               HandleToUint64(image_state->image));
+            }
+        }
     }
 
     return skip;
