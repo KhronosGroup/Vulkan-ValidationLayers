@@ -4027,12 +4027,35 @@ VKAPI_ATTR void VKAPI_CALL GetImageMemoryRequirements2KHR(VkDevice device, const
     PostCallRecordGetImageMemoryRequirements(dev_data, pInfo->image, &pMemoryRequirements->memoryRequirements);
 }
 
+static void PostCallRecordGetImageSparseMemoryRequirements(IMAGE_STATE *image_state, uint32_t req_count,
+                                                           VkSparseImageMemoryRequirements *reqs) {
+    image_state->get_sparse_reqs_called = true;
+    image_state->sparse_requirements.resize(req_count);
+    if (reqs) {
+        std::copy(reqs, reqs + req_count, image_state->sparse_requirements.begin());
+    }
+}
+
 VKAPI_ATTR void VKAPI_CALL GetImageSparseMemoryRequirements(VkDevice device, VkImage image, uint32_t *pSparseMemoryRequirementCount,
                                                             VkSparseImageMemoryRequirements *pSparseMemoryRequirements) {
     // TODO : Implement tracking here, just passthrough initially
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     dev_data->dispatch_table.GetImageSparseMemoryRequirements(device, image, pSparseMemoryRequirementCount,
                                                               pSparseMemoryRequirements);
+    unique_lock_t lock(global_lock);
+    auto image_state = GetImageState(dev_data, image);
+    PostCallRecordGetImageSparseMemoryRequirements(image_state, *pSparseMemoryRequirementCount, pSparseMemoryRequirements);
+}
+
+static void PostCallRecordGetImageSparseMemoryRequirements2KHR(IMAGE_STATE *image_state, uint32_t req_count,
+                                                               VkSparseImageMemoryRequirements2KHR *reqs) {
+    std::vector<VkSparseImageMemoryRequirements> sparse_reqs(req_count);
+    // Migrate to old struct type for common handling with GetImageSparseMemoryRequirements()
+    for (uint32_t i = 0; i < req_count; ++i) {
+        assert(!reqs[i].pNext);  // TODO: If an extension is ever added here we need to handle it
+        sparse_reqs[i] = reqs[i].memoryRequirements;
+    }
+    PostCallRecordGetImageSparseMemoryRequirements(image_state, req_count, sparse_reqs.data());
 }
 
 VKAPI_ATTR void VKAPI_CALL GetImageSparseMemoryRequirements2KHR(VkDevice device,
@@ -4043,6 +4066,9 @@ VKAPI_ATTR void VKAPI_CALL GetImageSparseMemoryRequirements2KHR(VkDevice device,
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     dev_data->dispatch_table.GetImageSparseMemoryRequirements2KHR(device, pInfo, pSparseMemoryRequirementCount,
                                                                   pSparseMemoryRequirements);
+    unique_lock_t lock(global_lock);
+    auto image_state = GetImageState(dev_data, pInfo->image);
+    PostCallRecordGetImageSparseMemoryRequirements2KHR(image_state, *pSparseMemoryRequirementCount, pSparseMemoryRequirements);
 }
 
 VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceSparseImageFormatProperties(VkPhysicalDevice physicalDevice, VkFormat format,

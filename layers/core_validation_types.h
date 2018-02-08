@@ -248,8 +248,19 @@ class IMAGE_STATE : public BINDABLE {
     bool acquired;  // If this is a swapchain image, has it been acquired by the app.
     bool shared_presentable;  // True for a front-buffered swapchain image
     bool layout_locked;       // A front-buffered image that has been presented can never have layout transitioned
+    bool get_sparse_reqs_called;    // Track if GetImageSparseMemoryRequirements() has been called for this image
+    bool sparse_metadata_required;  // Track if sparse metadata aspect is required for this image
+    bool sparse_metadata_bound;     // Track if sparse metadata aspect is bound to this image
+    std::vector<VkSparseImageMemoryRequirements> sparse_requirements;
     IMAGE_STATE(VkImage img, const VkImageCreateInfo *pCreateInfo)
-        : image(img), createInfo(*pCreateInfo), valid(false), acquired(false), shared_presentable(false), layout_locked(false) {
+        : image(img),
+          createInfo(*pCreateInfo),
+          valid(false),
+          acquired(false),
+          shared_presentable(false),
+          layout_locked(false),
+          get_sparse_reqs_called(false),
+          sparse_requirements{} {
         if ((createInfo.sharingMode == VK_SHARING_MODE_CONCURRENT) && (createInfo.queueFamilyIndexCount > 0)) {
             uint32_t *pQueueFamilyIndices = new uint32_t[createInfo.queueFamilyIndexCount];
             for (uint32_t i = 0; i < createInfo.queueFamilyIndexCount; i++) {
