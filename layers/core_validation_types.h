@@ -260,6 +260,8 @@ class IMAGE_STATE : public BINDABLE {
           shared_presentable(false),
           layout_locked(false),
           get_sparse_reqs_called(false),
+          sparse_metadata_required(false),
+          sparse_metadata_bound(false),
           sparse_requirements{} {
         if ((createInfo.sharingMode == VK_SHARING_MODE_CONCURRENT) && (createInfo.queueFamilyIndexCount > 0)) {
             uint32_t *pQueueFamilyIndices = new uint32_t[createInfo.queueFamilyIndexCount];

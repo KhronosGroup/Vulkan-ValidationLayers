@@ -4034,6 +4034,11 @@ static void PostCallRecordGetImageSparseMemoryRequirements(IMAGE_STATE *image_st
     if (reqs) {
         std::copy(reqs, reqs + req_count, image_state->sparse_requirements.begin());
     }
+    for (const auto &req : image_state->sparse_requirements) {
+        if (req.formatProperties.aspectMask & VK_IMAGE_ASPECT_METADATA_BIT) {
+            image_state->sparse_metadata_required = true;
+        }
+    }
 }
 
 VKAPI_ATTR void VKAPI_CALL GetImageSparseMemoryRequirements(VkDevice device, VkImage image, uint32_t *pSparseMemoryRequirementCount,
@@ -9759,9 +9764,15 @@ static bool PreCallValidateQueueBindSparse(layer_data *dev_data, VkQueue queue, 
                                " without first calling vkGetImageSparseMemoryRequirements[2KHR]() to retrieve requirements.",
                                HandleToUint64(image_state->image));
             }
+            for (uint32_t j = 0; j < opaque_bind.bindCount; ++j) {
+                if (opaque_bind.pBinds[j].flags & VK_IMAGE_ASPECT_METADATA_BIT) {
+                    image_state->sparse_metadata_bound = true;
+                }
+            }
         }
         for (uint32_t i = 0; i < bindInfo.imageOpaqueBindCount; ++i) {
             auto image_state = GetImageState(dev_data, bindInfo.pImageOpaqueBinds[i].image);
+            sparse_images.insert(image_state);
             if (!image_state->get_sparse_reqs_called || image_state->sparse_requirements.empty()) {
                 // For now just warning if sparse image binding occurs without calling to get reqs first
                 return log_msg(dev_data->report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
@@ -9769,6 +9780,16 @@ static bool PreCallValidateQueueBindSparse(layer_data *dev_data, VkQueue queue, 
                                "vkQueueBindSparse(): Binding opaque sparse memory to image 0x%" PRIx64
                                " without first calling vkGetImageSparseMemoryRequirements[2KHR]() to retrieve requirements.",
                                HandleToUint64(image_state->image));
+            }
+        }
+        for (const auto &sparse_image_state : sparse_images) {
+            if (sparse_image_state->sparse_metadata_required && !sparse_image_state->sparse_metadata_bound) {
+                // Warn if sparse image binding metadata required for image with sparse binding, but metadata not bound
+                return log_msg(dev_data->report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
+                               HandleToUint64(sparse_image_state->image), __LINE__, MEMTRACK_INVALID_STATE, "CV",
+                               "vkQueueBindSparse(): Binding sparse memory to image 0x%" PRIx64
+                               " which requires a metadata aspect but no binding with VK_IMAGE_ASPECT_METADATA_BIT set was made.",
+                               HandleToUint64(sparse_image_state->image));
             }
         }
     }
