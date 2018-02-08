@@ -4027,6 +4027,44 @@ VKAPI_ATTR void VKAPI_CALL GetImageMemoryRequirements2KHR(VkDevice device, const
     PostCallRecordGetImageMemoryRequirements(dev_data, pInfo->image, &pMemoryRequirements->memoryRequirements);
 }
 
+VKAPI_ATTR void VKAPI_CALL GetImageSparseMemoryRequirements(VkDevice device, VkImage image, uint32_t *pSparseMemoryRequirementCount,
+                                                            VkSparseImageMemoryRequirements *pSparseMemoryRequirements) {
+    // TODO : Implement tracking here, just passthrough initially
+    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    dev_data->dispatch_table.GetImageSparseMemoryRequirements(device, image, pSparseMemoryRequirementCount,
+                                                              pSparseMemoryRequirements);
+}
+
+VKAPI_ATTR void VKAPI_CALL GetImageSparseMemoryRequirements2KHR(VkDevice device,
+                                                                const VkImageSparseMemoryRequirementsInfo2KHR *pInfo,
+                                                                uint32_t *pSparseMemoryRequirementCount,
+                                                                VkSparseImageMemoryRequirements2KHR *pSparseMemoryRequirements) {
+    // TODO : Implement tracking here, just passthrough initially
+    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    dev_data->dispatch_table.GetImageSparseMemoryRequirements2KHR(device, pInfo, pSparseMemoryRequirementCount,
+                                                                  pSparseMemoryRequirements);
+}
+
+VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceSparseImageFormatProperties(VkPhysicalDevice physicalDevice, VkFormat format,
+                                                                        VkImageType type, VkSampleCountFlagBits samples,
+                                                                        VkImageUsageFlags usage, VkImageTiling tiling,
+                                                                        uint32_t *pPropertyCount,
+                                                                        VkSparseImageFormatProperties *pProperties) {
+    // TODO : Implement this intercept, track sparse image format properties and make sure they are obeyed.
+    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), instance_layer_data_map);
+    instance_data->dispatch_table.GetPhysicalDeviceSparseImageFormatProperties(physicalDevice, format, type, samples, usage, tiling,
+                                                                               pPropertyCount, pProperties);
+}
+
+VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceSparseImageFormatProperties2KHR(
+    VkPhysicalDevice physicalDevice, const VkPhysicalDeviceSparseImageFormatInfo2KHR *pFormatInfo, uint32_t *pPropertyCount,
+    VkSparseImageFormatProperties2KHR *pProperties) {
+    // TODO : Implement this intercept, track sparse image format properties and make sure they are obeyed.
+    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), instance_layer_data_map);
+    instance_data->dispatch_table.GetPhysicalDeviceSparseImageFormatProperties2KHR(physicalDevice, pFormatInfo, pPropertyCount,
+                                                                                   pProperties);
+}
+
 VKAPI_ATTR void VKAPI_CALL DestroyImageView(VkDevice device, VkImageView imageView, const VkAllocationCallbacks *pAllocator) {
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     // Common data objects used pre & post call
@@ -11944,6 +11982,10 @@ static const std::unordered_map<std::string, void *> name_to_funcptr_map = {
     {"vkGetBufferMemoryRequirements2KHR", (void *)GetBufferMemoryRequirements2KHR},
     {"vkGetImageMemoryRequirements", (void *)GetImageMemoryRequirements},
     {"vkGetImageMemoryRequirements2KHR", (void *)GetImageMemoryRequirements2KHR},
+    {"vkGetImageSparseMemoryRequirements", (void *)GetImageSparseMemoryRequirements},
+    {"vkGetImageSparseMemoryRequirements2KHR", (void *)GetImageSparseMemoryRequirements2KHR},
+    {"vkGetPhysicalDeviceSparseImageFormatProperties", (void *)GetPhysicalDeviceSparseImageFormatProperties},
+    {"vkGetPhysicalDeviceSparseImageFormatProperties2KHR", (void *)GetPhysicalDeviceSparseImageFormatProperties2KHR},
     {"vkGetQueryPoolResults", (void *)GetQueryPoolResults},
     {"vkBindImageMemory", (void *)BindImageMemory},
     {"vkBindImageMemory2KHR", (void *)BindImageMemory2KHR},
