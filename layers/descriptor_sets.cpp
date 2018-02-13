@@ -668,7 +668,6 @@ bool cvdescriptorset::DescriptorSet::ValidateCopyUpdate(const debug_report_data 
                                                         std::string *error_msg) {
     // Verify dst layout still valid
     if (p_layout_->IsDestroyed()) {
-        // TODO: Update to "cannot copy to dst descriptor set with destroyed descriptor set layout" VUID when present
         *error_code = VALIDATION_ERROR_03207601;
         string_sprintf(error_msg,
                        "Cannot call vkUpdateDescriptorSets() to perform copy update on descriptor set dstSet 0x%" PRIxLEAST64
@@ -679,7 +678,6 @@ bool cvdescriptorset::DescriptorSet::ValidateCopyUpdate(const debug_report_data 
 
     // Verify src layout still valid
     if (src_set->p_layout_->IsDestroyed()) {
-        // TODO: Update to "cannot copy from src descriptor set with destroyed descriptor set layout" VUID when present
         *error_code = VALIDATION_ERROR_0322d201;
         string_sprintf(
             error_msg,
@@ -1377,7 +1375,6 @@ bool cvdescriptorset::DescriptorSet::ValidateWriteUpdate(const debug_report_data
                                                          UNIQUE_VALIDATION_ERROR_CODE *error_code, std::string *error_msg) {
     // Verify dst layout still valid
     if (p_layout_->IsDestroyed()) {
-        // TODO: Update to "cannot write descriptor set with destroyed descriptor set layout" VUID when present
         *error_code = VALIDATION_ERROR_15c00280;
         string_sprintf(error_msg,
                        "Cannot call vkUpdateDescriptorSets() to perform write update on descriptor set 0x%" PRIxLEAST64
