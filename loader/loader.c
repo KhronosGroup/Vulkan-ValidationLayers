@@ -408,6 +408,57 @@ VKAPI_ATTR VkResult VKAPI_CALL vkSetDeviceDispatch(VkDevice device, void *object
 }
 
 #if defined(_WIN32)
+
+// Append the JSON path data to the list and allocate/grow the list if it's not large enough.
+// Function returns true if filename was appended to reg_data list.
+// Caller should free reg_data.
+static bool loaderAddJsonEntry(const struct loader_instance *inst,
+                               char **reg_data,    // list of JSON files
+                               PDWORD total_size,  // size of reg_data
+                               LPCTSTR key_name,   // key name - used for debug prints - i.e. VulkanDriverName
+                               DWORD key_type,     // key data type
+                               LPSTR json_path,    // JSON string to add to the list reg_data
+                               DWORD json_size,    // size in bytes of json_path
+                               VkResult *result) {
+    if (NULL == *reg_data) {
+        *reg_data = loader_instance_heap_alloc(inst, *total_size, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+        if (NULL == *reg_data) {
+            loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                       "loaderAddJsonEntry: Failed to allocate space for registry data for key %s", json_path);
+            *result = VK_ERROR_OUT_OF_HOST_MEMORY;
+            return false;
+        }
+        *reg_data[0] = '\0';
+    } else if (strlen(*reg_data) + json_size + 1 > *total_size) {
+        void *new_ptr =
+            loader_instance_heap_realloc(inst, *reg_data, *total_size, *total_size * 2, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+        if (NULL == new_ptr) {
+            loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
+                       "loaderAddJsonEntry: Failed to reallocate space for registry value of size %d for key %s", *total_size * 2,
+                       json_path);
+            *result = VK_ERROR_OUT_OF_HOST_MEMORY;
+            return false;
+        }
+        *reg_data = new_ptr;
+        *total_size *= 2;
+    }
+
+    for (char *curr_filename = json_path; curr_filename[0] != '\0'; curr_filename += strlen(curr_filename) + 1) {
+        if (strlen(*reg_data) == 0) {
+            (void)snprintf(*reg_data, json_size + 1, "%s", curr_filename);
+        } else {
+            (void)snprintf(*reg_data + strlen(*reg_data), json_size + 2, "%c%s", PATH_SEPARATOR, curr_filename);
+        }
+        loader_log(inst, VK_DEBUG_REPORT_INFORMATION_BIT_EXT, 0, "%s: Located json file \"%s\" from PnP registry: %s", __FUNCTION__,
+                   curr_filename, key_name);
+
+        if (key_type == REG_SZ) {
+            break;
+        }
+    }
+    return true;
+}
+
 // Find the list of registry files (names VulkanDriverName/VulkanDriverNameWow) in hkr.
 //
 // This function looks for filename in given device handle, filename is then added to return list
@@ -485,43 +536,7 @@ bool loaderGetDeviceRegistryEntry(const struct loader_instance *inst, char **reg
         goto out;
     }
 
-    if (NULL == *reg_data) {
-        *reg_data = loader_instance_heap_alloc(inst, *total_size, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
-        if (NULL == *reg_data) {
-            loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
-                "loaderGetDeviceRegistryEntry: Failed to allocate space for registry data for key %s", manifest_path);
-            *result = VK_ERROR_OUT_OF_HOST_MEMORY;
-            goto out;
-        }
-        *reg_data[0] = '\0';
-    } else if (strlen(*reg_data) + requiredSize + 1 > *total_size) {
-        void *new_ptr = loader_instance_heap_realloc(inst, *reg_data, *total_size, *total_size * 2,
-            VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
-        if (NULL == new_ptr) {
-            loader_log(
-                inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
-                "loaderGetDeviceRegistryEntry: Failed to reallocate space for registry value of size %d for key %s",
-                *total_size * 2, manifest_path);
-            *result = VK_ERROR_OUT_OF_HOST_MEMORY;
-            goto out;
-        }
-        *reg_data = new_ptr;
-        *total_size *= 2;
-    }
-
-    for (char *curr_filename = manifest_path; curr_filename[0] != '\0'; curr_filename += strlen(curr_filename) + 1) {
-        if (strlen(*reg_data) == 0) {
-            (void)snprintf(*reg_data, requiredSize + 1, "%s", curr_filename);
-        } else {
-            (void)snprintf(*reg_data + strlen(*reg_data), requiredSize + 2, "%c%s", PATH_SEPARATOR, curr_filename);
-        }
-        loader_log(inst, VK_DEBUG_REPORT_INFORMATION_BIT_EXT, 0, "%s: Located json file \"%s\" from PnP registry: %s", __FUNCTION__, curr_filename, value_name);
-
-        if (data_type == REG_SZ) {
-            break;
-        }
-    }
-    found = true;
+    found = loaderAddJsonEntry(inst, reg_data, total_size, value_name, data_type, manifest_path, requiredSize, result);
 
 out:
     if (manifest_path != NULL) {
@@ -582,8 +597,8 @@ VkResult loaderGetDeviceRegistryFiles(const struct loader_instance *inst, char *
         for (wchar_t *deviceName = pDeviceNames; *deviceName; deviceName += wcslen(deviceName) + 1) {
             CONFIGRET status = CM_Locate_DevNodeW(&devID, deviceName, CM_LOCATE_DEVNODE_NORMAL);
             if (CR_SUCCESS != status) {
-                loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
-                    "loaderGetRegistryFiles: failed to open DevNode %s", deviceName);
+                loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0, "loaderGetDeviceRegistryFiles: failed to open DevNode %s",
+                           deviceName);
                 continue;
             }
             ULONG ulStatus, ulProblem;
@@ -591,19 +606,18 @@ VkResult loaderGetDeviceRegistryFiles(const struct loader_instance *inst, char *
 
             if (CR_SUCCESS != status)
             {
-                loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
-                    "loaderGetRegistryFiles: failed to probe device status %s", deviceName);
+                loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0, "loaderGetDeviceRegistryFiles: failed to probe device status %s",
+                           deviceName);
                 continue;
             }
             if ((ulStatus & DN_HAS_PROBLEM) && (ulProblem == CM_PROB_NEED_RESTART || ulProblem == DN_NEED_RESTART))
             {
                 loader_log(inst, VK_DEBUG_REPORT_INFORMATION_BIT_EXT, 0,
-                    "loaderGetRegistryFiles: device %s is pending reboot, skipping ...", deviceName);
+                           "loaderGetDeviceRegistryFiles: device %s is pending reboot, skipping ...", deviceName);
                 continue;
             }
 
-            loader_log(inst, VK_DEBUG_REPORT_INFORMATION_BIT_EXT, 0,
-                "loaderGetRegistryFiles: opening device %s", deviceName);
+            loader_log(inst, VK_DEBUG_REPORT_INFORMATION_BIT_EXT, 0, "loaderGetDeviceRegistryFiles: opening device %s", deviceName);
 
             if (loaderGetDeviceRegistryEntry(inst, reg_data, reg_data_size, devID, value_name, &result)) {
                 found = true;
@@ -616,7 +630,7 @@ VkResult loaderGetDeviceRegistryFiles(const struct loader_instance *inst, char *
             status = CM_Get_Child(&childID, devID, 0);
             if (status != CR_SUCCESS) {
                 loader_log(inst, VK_DEBUG_REPORT_INFORMATION_BIT_EXT, 0,
-                    "loaderGetRegistryFiles: unable to open child-device error:%d", status);
+                           "loaderGetDeviceRegistryFiles: unable to open child-device error:%d", status);
                 continue;
             }
 
@@ -625,12 +639,12 @@ VkResult loaderGetDeviceRegistryFiles(const struct loader_instance *inst, char *
                 CM_Get_Device_IDW(childID, buffer, MAX_DEVICE_ID_LEN, 0);
 
                 loader_log(inst, VK_DEBUG_REPORT_INFORMATION_BIT_EXT, 0,
-                    "loaderGetRegistryFiles: Opening child device %d - %s", childID, buffer);
+                           "loaderGetDeviceRegistryFiles: Opening child device %d - %s", childID, buffer);
 
                 status = CM_Get_DevNode_Registry_PropertyW(childID, CM_DRP_CLASSGUID, NULL, &childGuid, &childGuidSize, 0);
                 if (status != CR_SUCCESS) {
                     loader_log(inst, VK_DEBUG_REPORT_ERROR_BIT_EXT, 0,
-                        "loaderGetRegistryFiles: unable to obtain GUID for:%d error:%d", childID, status);
+                               "loaderGetDeviceRegistryFiles: unable to obtain GUID for:%d error:%d", childID, status);
 
                     result = VK_ERROR_INITIALIZATION_FAILED;
                     continue;
@@ -638,7 +652,7 @@ VkResult loaderGetDeviceRegistryFiles(const struct loader_instance *inst, char *
 
                 if (wcscmp(childGuid, softwareComponentGUID) != 0) {
                     loader_log(inst, VK_DEBUG_REPORT_DEBUG_BIT_EXT, 0,
-                        "loaderGetRegistryFiles: GUID for %d is not SoftwareComponent skipping", childID);
+                               "loaderGetDeviceRegistryFiles: GUID for %d is not SoftwareComponent skipping", childID);
                     continue;
                 }
 
@@ -732,11 +746,37 @@ VkResult loaderGetRegistryFiles(const struct loader_instance *inst, char *locati
                         inst, VK_DEBUG_REPORT_INFORMATION_BIT_EXT, 0, "Located json file \"%s\" from registry \"%s\\%s\"", name,
                         hive == DEFAULT_VK_REGISTRY_HIVE ? DEFAULT_VK_REGISTRY_HIVE_STR : SECONDARY_VK_REGISTRY_HIVE_STR, location);
                     if (strlen(*reg_data) == 0) {
+                        // The list is emtpy. Add the first entry.
                         (void)snprintf(*reg_data, name_size + 1, "%s", name);
+                        found = true;
                     } else {
-                        (void)snprintf(*reg_data + strlen(*reg_data), name_size + 2, "%c%s", PATH_SEPARATOR, name);
+                        // At this point the reg_data variable contains other JSON paths, likely from the PNP/device section
+                        // of the registry that we want to have precendence over this non-device specific section of the registry.
+                        // To make sure we avoid enumerating old JSON files/drivers that might be present in the non-device specific
+                        // area of the registry when a newer device specific JSON file is present, do a check before adding.
+                        // Find the file name, without path, of the JSON file found in the non-device specific registry location.
+                        // If the same JSON file name is already found in the list, don't add it again.
+                        bool foundDuplicate = false;
+                        char *pLastSlashName = strrchr(name, '\\');
+                        if (pLastSlashName != NULL) {
+                            char *foundMatch = strstr(*reg_data, pLastSlashName + 1);
+                            if (foundMatch != NULL) {
+                                foundDuplicate = true;
+                            }
+                        }
+
+                        if (foundDuplicate == false) {
+                            // Add the new entry to the list.
+                            (void)snprintf(*reg_data + strlen(*reg_data), name_size + 2, "%c%s", PATH_SEPARATOR, name);
+                            found = true;
+                        } else {
+                            loader_log(
+                                inst, VK_DEBUG_REPORT_INFORMATION_BIT_EXT, 0,
+                                "Skipping adding of json file \"%s\" from registry \"%s\\%s\" to the list due to duplication", name,
+                                hive == DEFAULT_VK_REGISTRY_HIVE ? DEFAULT_VK_REGISTRY_HIVE_STR : SECONDARY_VK_REGISTRY_HIVE_STR,
+                                location);
+                        }
                     }
-                    found = true;
                 }
                 name_size = 2048;
             }
@@ -3062,6 +3102,7 @@ static VkResult loader_get_manifest_files(const struct loader_instance *inst, co
 
         DWORD reg_size = 4096;
 
+        // These calls look at the PNP/Device section of the registry.
         if (!strncmp(loc, DEFAULT_VK_DRIVERS_INFO, sizeof(DEFAULT_VK_DRIVERS_INFO))) {
             regHKR_result = loaderGetDeviceRegistryFiles(inst, &reg, &reg_size, LoaderPnpDriverRegistry());
         } else if (!strncmp(loc, DEFAULT_VK_ELAYERS_INFO, sizeof(DEFAULT_VK_ELAYERS_INFO))) {
@@ -3070,6 +3111,7 @@ static VkResult loader_get_manifest_files(const struct loader_instance *inst, co
             regHKR_result = loaderGetDeviceRegistryFiles(inst, &reg, &reg_size, LoaderPnpILayerRegistry());
         }
 
+        // This call looks into the Khronos non-device specific section of the registry.
         VkResult reg_result = loaderGetRegistryFiles(inst, loc, is_layer, &reg, &reg_size);
 
         if ((VK_SUCCESS != reg_result && VK_SUCCESS != regHKR_result) || NULL == reg) {
