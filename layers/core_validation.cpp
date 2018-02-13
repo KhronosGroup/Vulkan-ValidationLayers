@@ -1671,7 +1671,7 @@ static bool ReportInvalidCommandBuffer(layer_data *dev_data, const GLOBAL_CB_NOD
 }
 
 // 'commandBuffer must be in the recording state' valid usage error code for each command
-// Note: grepping for ^^^^^^^^^ in vk_validation_databate is easily massaged into the following list
+// Note: grepping for ^^^^^^^^^ in vk_validation_database is easily massaged into the following list
 // Note: C++11 doesn't automatically devolve enum types to the underlying type for hash traits purposes (fixed in C++14)
 using CmdTypeHashType = std::underlying_type<CMD_TYPE>::type;
 static const std::unordered_map<CmdTypeHashType, UNIQUE_VALIDATION_ERROR_CODE> must_be_recording_map = {
