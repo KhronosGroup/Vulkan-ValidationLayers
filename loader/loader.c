@@ -98,6 +98,10 @@ loader_platform_thread_mutex loader_json_lock;
 
 LOADER_PLATFORM_THREAD_ONCE_DECLARATION(once_init);
 
+// This loader supports Vulkan API version 1.1
+uint32_t loader_major_version = 1;
+uint32_t loader_minor_version = 1;
+
 void *loader_instance_heap_alloc(const struct loader_instance *instance, size_t size, VkSystemAllocationScope alloc_scope) {
     void *pMemory = NULL;
 #if (DEBUG_DISABLE_APP_ALLOCATORS == 1)
@@ -2863,6 +2867,15 @@ static VkResult loader_read_json_layer(const struct loader_instance *inst, struc
                 strncpy(props->pre_instance_functions.enumerate_instance_layer_properties, inst_layer_name + 1, len);
                 props->pre_instance_functions.enumerate_instance_layer_properties[len] = '\0';
                 cJSON_Free(inst_layer_name);
+            }
+
+            cJSON *inst_version_json = cJSON_GetObjectItem(pre_instance, "vkEnumerateInstanceVersion");
+            if (inst_version_json) {
+                char *inst_version_name = cJSON_Print(inst_version_json);
+                size_t len = strlen(inst_version_name) >= MAX_STRING_SIZE ? MAX_STRING_SIZE - 3 : strlen(inst_version_name) - 2;
+                strncpy(props->pre_instance_functions.enumerate_instance_version, inst_version_name + 1, len);
+                props->pre_instance_functions.enumerate_instance_version[len] = '\0';
+                cJSON_Free(inst_version_name);
             }
         }
     }
@@ -6092,6 +6105,14 @@ VkStringErrorFlags vk_string_validate(const int max_length, const char *utf8) {
         }
     }
     return result;
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL
+terminator_EnumerateInstanceVersion(const VkEnumerateInstanceVersionChain *chain, uint32_t* pApiVersion) {
+    // NOTE: The Vulkan WG doesn't want us checking pApiVersion for NULL, but instead
+    // prefers us crashing.
+    *pApiVersion = VK_MAKE_VERSION(loader_major_version, loader_minor_version, 0);
+    return VK_SUCCESS;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL

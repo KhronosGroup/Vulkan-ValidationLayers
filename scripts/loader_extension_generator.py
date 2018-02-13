@@ -75,7 +75,8 @@ ALIASED_CMDS = {
 }
 
 PRE_INSTANCE_FUNCTIONS = ['vkEnumerateInstanceExtensionProperties',
-                          'vkEnumerateInstanceLayerProperties']
+                          'vkEnumerateInstanceLayerProperties',
+                          'vkEnumerateInstanceVersion']
 
 #
 # LoaderExtensionGeneratorOptions - subclass of GeneratorOptions.

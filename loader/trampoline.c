@@ -33,9 +33,6 @@
 #include "vk_loader_extensions.h"
 #include "gpa_helper.h"
 
-// This loader only supports Vulkan API version 1.0
-uint32_t loader_major_version = 1;
-uint32_t loader_minor_version = 1;
 
 // Trampoline entrypoints are in this file for core Vulkan commands
 
@@ -273,10 +270,91 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceLayerProperties(
 }
 
 LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceVersion(uint32_t* pApiVersion) {
-    // NOTE: The Vulkan WG doesn't want us checking pApiVersion for NULL, but instead
-    // prefers us crashing.
-    *pApiVersion = VK_MAKE_VERSION(loader_major_version, loader_minor_version, 0);
-    return VK_SUCCESS;
+
+    tls_instance = NULL;
+    LOADER_PLATFORM_THREAD_ONCE(&once_init, loader_initialize);
+
+    // We know we need to call at least the terminator
+    VkResult res = VK_SUCCESS;
+    VkEnumerateInstanceVersionChain chain_tail = {
+        .header =
+            {
+                .type = VK_CHAIN_TYPE_ENUMERATE_INSTANCE_VERSION,
+                .version = VK_CURRENT_CHAIN_VERSION,
+                .size = sizeof(chain_tail),
+            },
+        .pfnNextLayer = &terminator_EnumerateInstanceVersion,
+        .pNextLink = NULL,
+    };
+    VkEnumerateInstanceVersionChain *chain_head = &chain_tail;
+
+    // Get the implicit layers
+    struct loader_layer_list layers;
+    memset(&layers, 0, sizeof(layers));
+    loader_implicit_layer_scan(NULL, &layers);
+
+    // We'll need to save the dl handles so we can close them later
+    loader_platform_dl_handle *libs = malloc(sizeof(loader_platform_dl_handle) * layers.count);
+    if (libs == NULL) {
+        return VK_ERROR_OUT_OF_HOST_MEMORY;
+    }
+    size_t lib_count = 0;
+
+    // Prepend layers onto the chain if they implment this entry point
+    for (uint32_t i = 0; i < layers.count; ++i) {
+        if (!loader_is_implicit_layer_enabled(NULL, layers.list + i) ||
+            layers.list[i].pre_instance_functions.enumerate_instance_version[0] == '\0') {
+            continue;
+        }
+
+        loader_platform_dl_handle layer_lib = loader_platform_open_library(layers.list[i].lib_name);
+        libs[lib_count++] = layer_lib;
+        void *pfn = loader_platform_get_proc_address(layer_lib,
+                                                     layers.list[i].pre_instance_functions.enumerate_instance_version);
+        if (pfn == NULL) {
+            loader_log(NULL, VK_DEBUG_REPORT_WARNING_BIT_EXT, 0,
+                       "%s: Unable to resolve symbol \"%s\" in implicit layer library \"%s\"", __FUNCTION__,
+                       layers.list[i].pre_instance_functions.enumerate_instance_version, layers.list[i].lib_name);
+            continue;
+        }
+
+        VkEnumerateInstanceVersionChain *chain_link = malloc(sizeof(VkEnumerateInstanceVersionChain));
+        if (chain_link == NULL) {
+            res = VK_ERROR_OUT_OF_HOST_MEMORY;
+            break;
+        }
+
+        chain_link->header.type = VK_CHAIN_TYPE_ENUMERATE_INSTANCE_VERSION;
+        chain_link->header.version = VK_CURRENT_CHAIN_VERSION;
+        chain_link->header.size = sizeof(*chain_link);
+        chain_link->pfnNextLayer = pfn;
+        chain_link->pNextLink = chain_head;
+
+        chain_head = chain_link;
+    }
+
+    // Call down the chain
+    if (res == VK_SUCCESS) {
+        res = chain_head->pfnNextLayer(chain_head->pNextLink, pApiVersion);
+    }
+
+    // Free up the layers
+    loader_delete_layer_properties(NULL, &layers);
+
+    // Tear down the chain
+    while (chain_head != &chain_tail) {
+        VkEnumerateInstanceVersionChain *holder = chain_head;
+        chain_head = (VkEnumerateInstanceVersionChain *)chain_head->pNextLink;
+        free(holder);
+    }
+
+    // Close the dl handles
+    for (size_t i = 0; i < lib_count; ++i) {
+        loader_platform_close_library(libs[i]);
+    }
+    free(libs);
+
+    return res;
 }
 
 LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateInstance(const VkInstanceCreateInfo *pCreateInfo,

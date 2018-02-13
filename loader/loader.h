@@ -140,6 +140,7 @@ struct loader_layer_properties {
     struct {
         char enumerate_instance_extension_properties[MAX_STRING_SIZE];
         char enumerate_instance_layer_properties[MAX_STRING_SIZE];
+        char enumerate_instance_version[MAX_STRING_SIZE];
     } pre_instance_functions;
 };
 
