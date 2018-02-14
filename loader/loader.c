@@ -326,7 +326,7 @@ void loader_log(const struct loader_instance *inst, VkFlags msg_type, int32_t ms
     va_end(ap);
 
     if (inst) {
-        VkDebugUtilsMessageSeverityFlagBitsEXT severity;
+        VkDebugUtilsMessageSeverityFlagBitsEXT severity = 0;
         VkDebugUtilsMessageTypeFlagsEXT type;
         VkDebugUtilsMessengerCallbackDataEXT callback_data;
         VkDebugUtilsObjectNameInfoEXT object_name;
