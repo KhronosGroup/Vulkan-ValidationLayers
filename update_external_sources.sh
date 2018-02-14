@@ -15,8 +15,9 @@ echo CORE_COUNT=$CORE_COUNT
 
 REVISION_DIR="$CURRENT_DIR/external_revisions"
 
-GLSLANG_GITURL=$(cat "${REVISION_DIR}/glslang_giturl")
-GLSLANG_REVISION=$(cat "${REVISION_DIR}/glslang_revision")
+# Use tr -d to remove line endings
+GLSLANG_GITURL=$(cat "${REVISION_DIR}/glslang_giturl" | tr -d "\n\r")
+GLSLANG_REVISION=$(cat "${REVISION_DIR}/glslang_revision" | tr -d "\n\r")
 
 echo "GLSLANG_GITURL=${GLSLANG_GITURL}"
 echo "GLSLANG_REVISION=${GLSLANG_REVISION}"
