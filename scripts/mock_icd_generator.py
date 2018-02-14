@@ -477,6 +477,10 @@ CUSTOM_C_INTERCEPTS = {
     // TODO: If emulating specific device caps, will need to add intelligence here
     return;
 ''',
+'vkGetDeviceQueue2': '''
+    GetDeviceQueue(device, pQueueInfo->queueFamilyIndex, pQueueInfo->queueIndex, pQueue);
+    // TODO: Add further support for GetDeviceQueue2 features
+''',
 'vkEnumerateInstanceLayerProperties': '''
     return VK_SUCCESS;
 ''',

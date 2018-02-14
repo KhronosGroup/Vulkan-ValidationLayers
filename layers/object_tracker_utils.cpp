@@ -446,6 +446,20 @@ VKAPI_ATTR void VKAPI_CALL GetDeviceQueue(VkDevice device, uint32_t queueFamilyI
     AddQueueInfo(device, queueFamilyIndex, *pQueue);
 }
 
+VKAPI_ATTR void VKAPI_CALL GetDeviceQueue2(VkDevice device, const VkDeviceQueueInfo2 *pQueueInfo, VkQueue *pQueue) {
+    std::unique_lock<std::mutex> lock(global_lock);
+    ValidateObject(device, device, kVulkanObjectTypeDevice, false, VALIDATION_ERROR_29605601, VALIDATION_ERROR_UNDEFINED);
+    lock.unlock();
+
+    get_dispatch_table(ot_device_table_map, device)->GetDeviceQueue2(device, pQueueInfo, pQueue);
+
+    lock.lock();
+    if (*pQueue != VK_NULL_HANDLE) {
+        CreateQueue(device, *pQueue);
+        AddQueueInfo(device, pQueueInfo->queueFamilyIndex, *pQueue);
+    }
+}
+
 VKAPI_ATTR void VKAPI_CALL UpdateDescriptorSets(VkDevice device, uint32_t descriptorWriteCount,
                                                 const VkWriteDescriptorSet *pDescriptorWrites, uint32_t descriptorCopyCount,
                                                 const VkCopyDescriptorSet *pDescriptorCopies) {

@@ -170,6 +170,7 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
             'vkNegotiateLoaderLayerInterfaceVersion',
             'vkCreateComputePipelines',
             'vkGetDeviceQueue',
+            'vkGetDeviceQueue2',
             'vkGetSwapchainImagesKHR',
             'vkCreateDescriptorSetLayout',
             'vkCreateDebugUtilsMessengerEXT',

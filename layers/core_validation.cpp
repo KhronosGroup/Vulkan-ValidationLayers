@@ -3318,6 +3318,16 @@ VKAPI_ATTR void VKAPI_CALL GetDeviceQueue(VkDevice device, uint32_t queueFamilyI
     PostCallRecordGetDeviceQueue(dev_data, queueFamilyIndex, *pQueue);
 }
 
+VKAPI_ATTR void VKAPI_CALL GetDeviceQueue2(VkDevice device, VkDeviceQueueInfo2 *pQueueInfo, VkQueue *pQueue) {
+    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    dev_data->dispatch_table.GetDeviceQueue2(device, pQueueInfo, pQueue);
+    lock_guard_t lock(global_lock);
+
+    if (*pQueue != VK_NULL_HANDLE) {
+        PostCallRecordGetDeviceQueue(dev_data, pQueueInfo->queueFamilyIndex, *pQueue);
+    }
+}
+
 static bool PreCallValidateQueueWaitIdle(layer_data *dev_data, VkQueue queue, QUEUE_STATE **queue_state) {
     *queue_state = GetQueueState(dev_data, queue);
     if (dev_data->instance_data->disabled.queue_wait_idle) return false;
@@ -12313,6 +12323,7 @@ static const std::unordered_map<std::string, void *> name_to_funcptr_map = {
     {"vkQueueWaitIdle", (void *)QueueWaitIdle},
     {"vkDeviceWaitIdle", (void *)DeviceWaitIdle},
     {"vkGetDeviceQueue", (void *)GetDeviceQueue},
+    {"vkGetDeviceQueue2", (void *)GetDeviceQueue2},
     {"vkDestroyDevice", (void *)DestroyDevice},
     {"vkDestroyFence", (void *)DestroyFence},
     {"vkResetFences", (void *)ResetFences},
