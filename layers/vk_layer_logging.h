@@ -906,8 +906,8 @@ static inline VKAPI_ATTR VkBool32 VKAPI_CALL messenger_win32_debug_output_msg(
     PrintMessageSeverity(message_severity, msg_severity);
     PrintMessageType(message_type, msg_type);
 
-    _snprintf(buf, sizeof(buf) - 1, "%s (%s / %s): object: 0x%" PRIxPTR " type: %d  msgNum: %d - %s\n",
-              callback_data->pMessageIdName, msg_severity, msg_type, callback_data->pObjects[0].objectHandle,
+    _snprintf(buf, sizeof(buf) - 1, "%s (%s / %s): object: 0x%" PRIx64 " type: %d  msgNum: %d - %s\n",
+              callback_data->pMessageIdName, msg_severity, msg_type, HandleToUint64(callback_data->pObjects[0].objectHandle),
               callback_data->pObjects[0].objectType, callback_data->messageIdNumber, callback_data->pMessage);
 
     OutputDebugString(buf);
