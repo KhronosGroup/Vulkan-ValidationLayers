@@ -79,6 +79,10 @@ struct layer_data {
     // uses unwrapped handles
     std::unordered_map<VkRenderPass, SubpassesUsageStates> renderpasses_states;
 
+    // Map of wrapped swapchain handles to arrays of wrapped swapchain image IDs
+    // Each swapchain has an immutable list of wrapped swapchain image IDs -- always return these IDs if they exist
+    std::unordered_map<VkSwapchainKHR, std::vector<VkImage>> swapchain_wrapped_image_handle_map;
+
     layer_data() : wsi_enabled(false), gpu(VK_NULL_HANDLE){};
 };
 

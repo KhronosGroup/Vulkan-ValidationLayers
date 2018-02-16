@@ -489,18 +489,22 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateSharedSwapchainsKHR(VkDevice device, uint32
 VKAPI_ATTR VkResult VKAPI_CALL GetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain, uint32_t *pSwapchainImageCount,
                                                      VkImage *pSwapchainImages) {
     layer_data *my_device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    VkSwapchainKHR wrapped_swapchain_handle = swapchain;
     if (VK_NULL_HANDLE != swapchain) {
         std::lock_guard<std::mutex> lock(global_lock);
         swapchain = Unwrap(my_device_data, swapchain);
     }
     VkResult result =
         my_device_data->dispatch_table.GetSwapchainImagesKHR(device, swapchain, pSwapchainImageCount, pSwapchainImages);
-    // TODO : Need to add corresponding code to delete these images
-    if (VK_SUCCESS == result) {
+    if ((VK_SUCCESS == result) || (VK_INCOMPLETE == result)) {
         if ((*pSwapchainImageCount > 0) && pSwapchainImages) {
             std::lock_guard<std::mutex> lock(global_lock);
-            for (uint32_t i = 0; i < *pSwapchainImageCount; ++i) {
-                pSwapchainImages[i] = WrapNew(my_device_data, pSwapchainImages[i]);
+            auto &wrapped_swapchain_image_handles = my_device_data->swapchain_wrapped_image_handle_map[wrapped_swapchain_handle];
+            for (uint32_t i = static_cast<uint32_t>(wrapped_swapchain_image_handles.size()); i < *pSwapchainImageCount; i++) {
+                wrapped_swapchain_image_handles.emplace_back(WrapNew(my_device_data, pSwapchainImages[i]));
+            }
+            for (uint32_t i = 0; i < *pSwapchainImageCount; i++) {
+                pSwapchainImages[i] = wrapped_swapchain_image_handles[i];
             }
         }
     }
@@ -510,7 +514,14 @@ VKAPI_ATTR VkResult VKAPI_CALL GetSwapchainImagesKHR(VkDevice device, VkSwapchai
 VKAPI_ATTR void VKAPI_CALL DestroySwapchainKHR(VkDevice device, VkSwapchainKHR swapchain, const VkAllocationCallbacks *pAllocator) {
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     std::unique_lock<std::mutex> lock(global_lock);
-    uint64_t swapchain_id = reinterpret_cast<uint64_t &>(swapchain);
+
+    auto &image_array = dev_data->swapchain_wrapped_image_handle_map[swapchain];
+    for (auto &image_handle : image_array) {
+        dev_data->unique_id_mapping.erase(HandleToUint64(image_handle));
+    }
+    dev_data->swapchain_wrapped_image_handle_map.erase(swapchain);
+
+    uint64_t swapchain_id = HandleToUint64(swapchain);
     swapchain = (VkSwapchainKHR)dev_data->unique_id_mapping[swapchain_id];
     dev_data->unique_id_mapping.erase(swapchain_id);
     lock.unlock();
