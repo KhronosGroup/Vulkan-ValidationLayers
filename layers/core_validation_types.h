@@ -686,17 +686,18 @@ class PIPELINE_STATE : public BASE_NODE {
 // Track last states that are bound per pipeline bind point (Gfx & Compute)
 struct LAST_BOUND_STATE {
     PIPELINE_STATE *pipeline_state;
-    PIPELINE_LAYOUT_NODE pipeline_layout;
+    VkPipelineLayout pipeline_layout;
     // Track each set that has been bound
     // Ordered bound set tracking where index is set# that given set is bound to
     std::vector<cvdescriptorset::DescriptorSet *> boundDescriptorSets;
     std::unique_ptr<cvdescriptorset::DescriptorSet> push_descriptor_set;
     // one dynamic offset per dynamic descriptor bound to this CB
     std::vector<std::vector<uint32_t>> dynamicOffsets;
+    std::vector<PipelineLayoutCompatId> compat_id_for_set;
 
     void reset() {
         pipeline_state = nullptr;
-        pipeline_layout.reset();
+        pipeline_layout = VK_NULL_HANDLE;
         boundDescriptorSets.clear();
         push_descriptor_set = nullptr;
         dynamicOffsets.clear();

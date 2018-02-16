@@ -1196,7 +1196,7 @@ static bool ValidateDrawState(layer_data *dev_data, GLOBAL_CB_NODE *cb_node, CMD
         result = validate_draw_state_flags(dev_data, cb_node, pPipe, indexed, msg_code);
 
     // Now complete other state checks
-    if (VK_NULL_HANDLE != state.pipeline_layout.layout) {
+    if (VK_NULL_HANDLE != state.pipeline_layout) {
         string errorString;
         auto pipeline_layout = pPipe->pipeline_layout;
 
@@ -1256,7 +1256,7 @@ static bool ValidateDrawState(layer_data *dev_data, GLOBAL_CB_NODE *cb_node, CMD
 static void UpdateDrawState(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, const VkPipelineBindPoint bind_point) {
     auto const &state = cb_state->lastBound[bind_point];
     PIPELINE_STATE *pPipe = state.pipeline_state;
-    if (VK_NULL_HANDLE != state.pipeline_layout.layout) {
+    if (VK_NULL_HANDLE != state.pipeline_layout) {
         for (const auto &set_binding_pair : pPipe->active_slots) {
             uint32_t setIndex = set_binding_pair.first;
             // Pull the set node
@@ -6138,60 +6138,125 @@ VKAPI_ATTR void VKAPI_CALL CmdSetStencilReference(VkCommandBuffer commandBuffer,
     if (!skip) dev_data->dispatch_table.CmdSetStencilReference(commandBuffer, faceMask, reference);
 }
 
+// Update pipeline_layout bind points applying the "Pipeline Layout Compatibility" rules
+static void UpdateLastBoundDescriptorSets(layer_data *device_data, GLOBAL_CB_NODE *cb_state,
+                                          VkPipelineBindPoint pipeline_bind_point, const PIPELINE_LAYOUT_NODE *pipeline_layout,
+                                          uint32_t first_set, uint32_t set_count,
+                                          const std::vector<cvdescriptorset::DescriptorSet *> descriptor_sets,
+                                          uint32_t dynamic_offset_count, const uint32_t *p_dynamic_offsets) {
+    // Defensive
+    assert(set_count);
+    if (0 == set_count) return;
+    assert(pipeline_layout);
+    if (!pipeline_layout) return;
+
+    uint32_t required_size = first_set + set_count;
+    const uint32_t last_binding_index = required_size - 1;
+    assert(last_binding_index < pipeline_layout->compat_for_set.size());
+
+    // Some useful shorthand
+    auto &last_bound = cb_state->lastBound[pipeline_bind_point];
+
+    auto &bound_sets = last_bound.boundDescriptorSets;
+    auto &dynamic_offsets = last_bound.dynamicOffsets;
+    auto &bound_compat_ids = last_bound.compat_id_for_set;
+    auto &pipe_compat_ids = pipeline_layout->compat_for_set;
+
+    const uint32_t current_size = static_cast<uint32_t>(bound_sets.size());
+    assert(current_size == dynamic_offsets.size());
+    assert(current_size == bound_compat_ids.size());
+
+    // We need this three times in this function, but nowhere else
+    auto push_descriptor_cleanup = [&last_bound](const cvdescriptorset::DescriptorSet *ds) -> bool {
+        if (ds && ds->IsPushDescriptor()) {
+            assert(ds == last_bound.push_descriptor_set.get());
+            last_bound.push_descriptor_set = nullptr;
+            return true;
+        }
+        return false;
+    };
+
+    // Clean up the "disturbed" before and after the range to be set
+    if (required_size < current_size) {
+        if (bound_compat_ids[last_binding_index] != pipe_compat_ids[last_binding_index]) {
+            // We're disturbing those after last, we'll shrink below, but first need to check for and cleanup the push_descriptor
+            for (auto set_idx = required_size; set_idx < current_size; ++set_idx) {
+                if (push_descriptor_cleanup(bound_sets[set_idx])) break;
+            }
+        } else {
+            // We're not disturbing past last, so leave the upper binding data alone.
+            required_size = current_size;
+        }
+    }
+
+    // We resize if we need more set entries or if those past "last" are disturbed
+    if (required_size != current_size) {
+        // TODO: put these size tied things in a struct (touches many lines)
+        bound_sets.resize(required_size);
+        dynamic_offsets.resize(required_size);
+        bound_compat_ids.resize(required_size);
+    }
+
+    // For any previously bound sets, need to set them to "invalid" if they were disturbed by this update
+    for (uint32_t set_idx = 0; set_idx < first_set; ++set_idx) {
+        if (bound_compat_ids[set_idx] != pipe_compat_ids[set_idx]) {
+            push_descriptor_cleanup(bound_sets[set_idx]);
+            bound_sets[set_idx] = nullptr;
+            dynamic_offsets[set_idx].clear();
+            bound_compat_ids[set_idx] = pipe_compat_ids[set_idx];
+        }
+    }
+
+    // Now update the bound sets with the input sets
+    const uint32_t *input_dynamic_offsets = p_dynamic_offsets;  // "read" pointer for dynamic offset data
+    for (uint32_t input_idx = 0; input_idx < set_count; input_idx++) {
+        auto set_idx = input_idx + first_set;  // set_idx is index within layout, input_idx is index within input descriptor sets
+        cvdescriptorset::DescriptorSet *descriptor_set = descriptor_sets[input_idx];
+
+        // Record binding (or push)
+        push_descriptor_cleanup(bound_sets[set_idx]);
+        bound_sets[set_idx] = descriptor_set;
+        bound_compat_ids[set_idx] = pipe_compat_ids[set_idx];  // compat ids are canonical *per* set index
+
+        if (descriptor_set) {
+            auto set_dynamic_descriptor_count = descriptor_set->GetDynamicDescriptorCount();
+            // TODO: Add logic for tracking push_descriptor offsets (here or in caller)
+            if (set_dynamic_descriptor_count && input_dynamic_offsets) {
+                const uint32_t *end_offset = input_dynamic_offsets + set_dynamic_descriptor_count;
+                dynamic_offsets[set_idx] = std::vector<uint32_t>(input_dynamic_offsets, end_offset);
+                input_dynamic_offsets = end_offset;
+                assert(input_dynamic_offsets <= (p_dynamic_offsets + dynamic_offset_count));
+            } else {
+                dynamic_offsets[set_idx].clear();
+            }
+            if (!descriptor_set->IsPushDescriptor()) {
+                // Can't cache validation of push_descriptors
+                cb_state->validated_descriptor_sets.insert(descriptor_set);
+            }
+        }
+    }
+}
+
+// Update the bound state for the bind point, including the effects of incompatible pipeline layouts
 static void PreCallRecordCmdBindDescriptorSets(layer_data *device_data, GLOBAL_CB_NODE *cb_state,
                                                VkPipelineBindPoint pipelineBindPoint, VkPipelineLayout layout, uint32_t firstSet,
                                                uint32_t setCount, const VkDescriptorSet *pDescriptorSets,
                                                uint32_t dynamicOffsetCount, const uint32_t *pDynamicOffsets) {
-    uint32_t total_dynamic_descriptors = 0;
-    string error_string = "";
-    uint32_t last_set_index = firstSet + setCount - 1;
-    auto last_bound = &cb_state->lastBound[pipelineBindPoint];
-
-    if (last_set_index >= last_bound->boundDescriptorSets.size()) {
-        last_bound->boundDescriptorSets.resize(last_set_index + 1);
-        last_bound->dynamicOffsets.resize(last_set_index + 1);
-    }
-    auto old_final_bound_set = last_bound->boundDescriptorSets[last_set_index];
     auto pipeline_layout = getPipelineLayout(device_data, layout);
-    for (uint32_t set_idx = 0; set_idx < setCount; set_idx++) {
-        cvdescriptorset::DescriptorSet *descriptor_set = GetSetNode(device_data, pDescriptorSets[set_idx]);
-        if (descriptor_set) {
-            last_bound->pipeline_layout = *pipeline_layout;
+    std::vector<cvdescriptorset::DescriptorSet *> descriptor_sets;
+    descriptor_sets.reserve(setCount);
 
-            if ((last_bound->boundDescriptorSets[set_idx + firstSet] != nullptr) &&
-                last_bound->boundDescriptorSets[set_idx + firstSet]->IsPushDescriptor()) {
-                last_bound->push_descriptor_set = nullptr;
-                last_bound->boundDescriptorSets[set_idx + firstSet] = nullptr;
-            }
-
-            last_bound->boundDescriptorSets[set_idx + firstSet] = descriptor_set;
-
-            auto set_dynamic_descriptor_count = descriptor_set->GetDynamicDescriptorCount();
-            last_bound->dynamicOffsets[firstSet + set_idx].clear();
-            if (set_dynamic_descriptor_count) {
-                last_bound->dynamicOffsets[firstSet + set_idx] =
-                    std::vector<uint32_t>(pDynamicOffsets + total_dynamic_descriptors,
-                                          pDynamicOffsets + total_dynamic_descriptors + set_dynamic_descriptor_count);
-                total_dynamic_descriptors += set_dynamic_descriptor_count;
-            }
-            cb_state->validated_descriptor_sets.insert(descriptor_set);
-        }
-        // For any previously bound sets, need to set them to "invalid" if they were disturbed by this update
-        if (firstSet > 0) {
-            for (uint32_t i = 0; i < firstSet; ++i) {
-                if (last_bound->boundDescriptorSets[i] &&
-                    !verify_set_layout_compatibility(last_bound->boundDescriptorSets[i], pipeline_layout, i, error_string)) {
-                    last_bound->boundDescriptorSets[i] = VK_NULL_HANDLE;
-                }
-            }
-        }
-        // Check if newly last bound set invalidates any remaining bound sets
-        if ((last_bound->boundDescriptorSets.size() - 1) > (last_set_index)) {
-            if (old_final_bound_set &&
-                !verify_set_layout_compatibility(old_final_bound_set, pipeline_layout, last_set_index, error_string)) {
-                last_bound->boundDescriptorSets.resize(last_set_index + 1);
-            }
-        }
+    // Construct a list of the descriptors
+    bool found_non_null = false;
+    for (uint32_t i = 0; i < setCount; i++) {
+        cvdescriptorset::DescriptorSet *descriptor_set = GetSetNode(device_data, pDescriptorSets[i]);
+        descriptor_sets.emplace_back(descriptor_set);
+        found_non_null |= descriptor_set != nullptr;
+    }
+    if (found_non_null) {  // which implies setCount > 0
+        UpdateLastBoundDescriptorSets(device_data, cb_state, pipelineBindPoint, pipeline_layout, firstSet, setCount,
+                                      descriptor_sets, dynamicOffsetCount, pDynamicOffsets);
+        cb_state->lastBound[pipelineBindPoint].pipeline_layout = layout;
     }
 }
 
@@ -6211,6 +6276,7 @@ static bool PreCallValidateCmdBindDescriptorSets(layer_data *device_data, GLOBAL
     if (last_set_index >= cb_state->lastBound[pipelineBindPoint].boundDescriptorSets.size()) {
         cb_state->lastBound[pipelineBindPoint].boundDescriptorSets.resize(last_set_index + 1);
         cb_state->lastBound[pipelineBindPoint].dynamicOffsets.resize(last_set_index + 1);
+        cb_state->lastBound[pipelineBindPoint].compat_id_for_set.resize(last_set_index + 1);
     }
     auto pipeline_layout = getPipelineLayout(device_data, layout);
     for (uint32_t set_idx = 0; set_idx < setCount; set_idx++) {
@@ -6391,15 +6457,15 @@ static bool PreCallValidateCmdPushDescriptorSetKHR(layer_data *device_data, GLOB
 static void PreCallRecordCmdPushDescriptorSetKHR(layer_data *device_data, GLOBAL_CB_NODE *cb_state,
                                                  VkPipelineBindPoint pipelineBindPoint, VkPipelineLayout layout, uint32_t set,
                                                  uint32_t descriptorWriteCount, const VkWriteDescriptorSet *pDescriptorWrites) {
-    if (set >= cb_state->lastBound[pipelineBindPoint].boundDescriptorSets.size()) {
-        cb_state->lastBound[pipelineBindPoint].boundDescriptorSets.resize(set + 1);
-        cb_state->lastBound[pipelineBindPoint].dynamicOffsets.resize(set + 1);
-    }
-    const auto &layout_state = getPipelineLayout(device_data, layout);
+    const auto &pipeline_layout = getPipelineLayout(device_data, layout);
+    if (!pipeline_layout) return;
     std::unique_ptr<cvdescriptorset::DescriptorSet> new_desc{
-        new cvdescriptorset::DescriptorSet(0, 0, layout_state->set_layouts[set], device_data)};
-    cb_state->lastBound[pipelineBindPoint].boundDescriptorSets[set] = new_desc.get();
+        new cvdescriptorset::DescriptorSet(0, 0, pipeline_layout->set_layouts[set], device_data)};
+
+    std::vector<cvdescriptorset::DescriptorSet *> descriptor_sets = {new_desc.get()};
+    UpdateLastBoundDescriptorSets(device_data, cb_state, pipelineBindPoint, pipeline_layout, set, 1, descriptor_sets, 0, nullptr);
     cb_state->lastBound[pipelineBindPoint].push_descriptor_set = std::move(new_desc);
+    cb_state->lastBound[pipelineBindPoint].pipeline_layout = layout;
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdPushDescriptorSetKHR(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
