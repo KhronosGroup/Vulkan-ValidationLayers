@@ -81,16 +81,12 @@ typedef std::map<uint32_t, descriptor_req> BindingReqMap;
  *  10, then the GlobalStartIndex of the 2nd lowest binding# will be 10 where 0-9 are the
  *  global indices for the lowest binding#.
  */
-class DescriptorSetLayout {
+class DescriptorSetLayoutDef {
    public:
     // Constructors and destructor
-    DescriptorSetLayout(const VkDescriptorSetLayoutCreateInfo *p_create_info, const VkDescriptorSetLayout layout);
-    // Validate create info - should be called prior to creation
-    static bool ValidateCreateInfo(const debug_report_data *, const VkDescriptorSetLayoutCreateInfo *, const bool, const uint32_t);
-    // Straightforward Get functions
-    VkDescriptorSetLayout GetDescriptorSetLayout() const { return layout_; };
-    bool IsDestroyed() const { return layout_destroyed_; }
-    void MarkDestroyed() { layout_destroyed_ = true; }
+    DescriptorSetLayoutDef(const VkDescriptorSetLayoutCreateInfo *p_create_info);
+    size_t hash() const;
+
     uint32_t GetTotalDescriptorCount() const { return descriptor_count_; };
     uint32_t GetDynamicDescriptorCount() const { return dynamic_descriptor_count_; };
     VkDescriptorSetLayoutCreateFlags GetCreateFlags() const { return flags_; }
@@ -102,7 +98,7 @@ class DescriptorSetLayout {
     bool HasBinding(const uint32_t binding) const { return binding_to_index_map_.count(binding) > 0; };
     // Return true if this layout is compatible with passed in layout from a pipelineLayout,
     //   else return false and update error_msg with description of incompatibility
-    bool IsCompatible(DescriptorSetLayout const *const, std::string *) const;
+    bool IsCompatible(VkDescriptorSetLayout, VkDescriptorSetLayout, DescriptorSetLayoutDef const *const, std::string *) const;
     // Return true if binding 1 beyond given exists and has same type, stageFlags & immutable sampler use
     bool IsNextBindingConsistent(const uint32_t) const;
     uint32_t GetIndexFromBinding(uint32_t binding) const;
@@ -113,6 +109,7 @@ class DescriptorSetLayout {
     VkDescriptorSetLayoutBinding const *GetDescriptorSetLayoutBindingPtrFromBinding(uint32_t binding) const {
         return GetDescriptorSetLayoutBindingPtrFromIndex(GetIndexFromBinding(binding));
     }
+    const std::vector<safe_VkDescriptorSetLayoutBinding> &GetBindings() const { return bindings_; }
     uint32_t GetDescriptorCountFromIndex(const uint32_t) const;
     uint32_t GetDescriptorCountFromBinding(const uint32_t binding) const {
         return GetDescriptorCountFromIndex(GetIndexFromBinding(binding));
@@ -157,8 +154,11 @@ class DescriptorSetLayout {
     const BindingTypeStats &GetBindingTypeStats() const { return binding_type_stats_; }
 
    private:
-    VkDescriptorSetLayout layout_;
-    bool layout_destroyed_;
+    // Only the first two are needed for hash and equality checks, the other fields are derivative them uniquely
+    VkDescriptorSetLayoutCreateFlags flags_;
+    std::vector<safe_VkDescriptorSetLayoutBinding> bindings_;
+
+    // Convenience data structures for rapid lookup of various descriptor set layout properties
     std::set<uint32_t> non_empty_bindings_;  // Containing non-emtpy bindings in numerical order
     std::unordered_map<uint32_t, uint32_t> binding_to_index_map_;
     // The following map allows an non-iterative lookup of a binding from a global index...
@@ -166,12 +166,94 @@ class DescriptorSetLayout {
     std::unordered_map<uint32_t, IndexRange> binding_to_global_index_range_map_;  // range is exclusive of .end
     // For a given binding map to associated index in the dynamic offset array
     std::unordered_map<uint32_t, uint32_t> binding_to_dynamic_array_idx_map_;
-    VkDescriptorSetLayoutCreateFlags flags_;
+
     uint32_t binding_count_;  // # of bindings in this layout
-    std::vector<safe_VkDescriptorSetLayoutBinding> bindings_;
     uint32_t descriptor_count_;  // total # descriptors in this layout
     uint32_t dynamic_descriptor_count_;
     BindingTypeStats binding_type_stats_;
+};
+
+using DescriptorSetLayoutId = std::shared_ptr<DescriptorSetLayoutDef>;
+
+class DescriptorSetLayout {
+   public:
+    // Constructors and destructor
+    DescriptorSetLayout(const VkDescriptorSetLayoutCreateInfo *p_create_info, const VkDescriptorSetLayout layout);
+    // Validate create info - should be called prior to creation
+    static bool ValidateCreateInfo(const debug_report_data *, const VkDescriptorSetLayoutCreateInfo *, const bool, const uint32_t);
+    bool HasBinding(const uint32_t binding) const { return layout_id_->HasBinding(binding); }
+    // Return true if this layout is compatible with passed in layout from a pipelineLayout,
+    //   else return false and update error_msg with description of incompatibility
+    bool IsCompatible(DescriptorSetLayout const *const, std::string *) const;
+    // Straightforward Get functions
+    VkDescriptorSetLayout GetDescriptorSetLayout() const { return layout_; };
+    bool IsDestroyed() const { return layout_destroyed_; }
+    void MarkDestroyed() { layout_destroyed_ = true; }
+    const DescriptorSetLayoutDef *get_layout_def() const { return layout_id_.get(); }
+    uint32_t GetTotalDescriptorCount() const { return layout_id_->GetTotalDescriptorCount(); };
+    uint32_t GetDynamicDescriptorCount() const { return layout_id_->GetDynamicDescriptorCount(); };
+    uint32_t GetBindingCount() const { return layout_id_->GetBindingCount(); };
+    VkDescriptorSetLayoutCreateFlags GetCreateFlags() const { return layout_id_->GetCreateFlags(); }
+    bool IsNextBindingConsistent(const uint32_t) const;
+    uint32_t GetIndexFromBinding(uint32_t binding) const { return layout_id_->GetIndexFromBinding(binding); }
+    // Various Get functions that can either be passed a binding#, which will
+    //  be automatically translated into the appropriate index, or the index# can be passed in directly
+    uint32_t GetMaxBinding() const { return layout_id_->GetMaxBinding(); }
+    VkDescriptorSetLayoutBinding const *GetDescriptorSetLayoutBindingPtrFromIndex(const uint32_t index) const {
+        return layout_id_->GetDescriptorSetLayoutBindingPtrFromIndex(index);
+    }
+    VkDescriptorSetLayoutBinding const *GetDescriptorSetLayoutBindingPtrFromBinding(uint32_t binding) const {
+        return layout_id_->GetDescriptorSetLayoutBindingPtrFromBinding(binding);
+    }
+    const std::vector<safe_VkDescriptorSetLayoutBinding> &GetBindings() const { return layout_id_->GetBindings(); }
+    uint32_t GetDescriptorCountFromIndex(const uint32_t index) const { return layout_id_->GetDescriptorCountFromIndex(index); }
+    uint32_t GetDescriptorCountFromBinding(const uint32_t binding) const {
+        return layout_id_->GetDescriptorCountFromBinding(binding);
+    }
+    VkDescriptorType GetTypeFromIndex(const uint32_t index) const { return layout_id_->GetTypeFromIndex(index); }
+    VkDescriptorType GetTypeFromBinding(const uint32_t binding) const { return layout_id_->GetTypeFromBinding(binding); }
+    VkShaderStageFlags GetStageFlagsFromIndex(const uint32_t index) const { return layout_id_->GetStageFlagsFromIndex(index); }
+    VkShaderStageFlags GetStageFlagsFromBinding(const uint32_t binding) const {
+        return layout_id_->GetStageFlagsFromBinding(binding);
+    }
+    uint32_t GetIndexFromGlobalIndex(const uint32_t global_index) const {
+        return layout_id_->GetIndexFromGlobalIndex(global_index);
+    }
+    VkDescriptorType GetTypeFromGlobalIndex(const uint32_t global_index) const {
+        return GetTypeFromIndex(GetIndexFromGlobalIndex(global_index));
+    }
+    VkSampler const *GetImmutableSamplerPtrFromBinding(const uint32_t binding) const {
+        return layout_id_->GetImmutableSamplerPtrFromBinding(binding);
+    }
+    VkSampler const *GetImmutableSamplerPtrFromIndex(const uint32_t index) const {
+        return layout_id_->GetImmutableSamplerPtrFromIndex(index);
+    }
+    // For a given binding and array index, return the corresponding index into the dynamic offset array
+    int32_t GetDynamicOffsetIndexFromBinding(uint32_t binding) const {
+        return layout_id_->GetDynamicOffsetIndexFromBinding(binding);
+    }
+    // For a particular binding, get the global index range
+    //  This call should be guarded by a call to "HasBinding(binding)" to verify that the given binding exists
+    const IndexRange &GetGlobalIndexRangeFromBinding(const uint32_t binding) const {
+        return layout_id_->GetGlobalIndexRangeFromBinding(binding);
+    }
+    // Helper function to get the next valid binding for a descriptor
+    uint32_t GetNextValidBinding(const uint32_t binding) const { return layout_id_->GetNextValidBinding(binding); }
+    // For a particular binding starting at offset and having update_count descriptors
+    //  updated, verify that for any binding boundaries crossed, the update is consistent
+    bool VerifyUpdateConsistency(uint32_t current_binding, uint32_t offset, uint32_t update_count, const char *type,
+                                 const VkDescriptorSet set, std::string *error_msg) const {
+        return layout_id_->VerifyUpdateConsistency(current_binding, offset, update_count, type, set, error_msg);
+    }
+    bool IsPushDescriptor() const { return layout_id_->IsPushDescriptor(); }
+
+    using BindingTypeStats = DescriptorSetLayoutDef::BindingTypeStats;
+    const BindingTypeStats &GetBindingTypeStats() const { return layout_id_->GetBindingTypeStats(); }
+
+   private:
+    VkDescriptorSetLayout layout_;
+    bool layout_destroyed_;
+    DescriptorSetLayoutId layout_id_;
 };
 
 /*
@@ -379,7 +461,7 @@ class DescriptorSet : public BASE_NODE {
     // Perform a CopyUpdate whose contents were just validated using ValidateCopyUpdate
     void PerformCopyUpdate(const VkCopyDescriptorSet *, const DescriptorSet *);
 
-    std::shared_ptr<DescriptorSetLayout const> const GetLayout() const { return p_layout_; };
+    const std::shared_ptr<DescriptorSetLayout const> GetLayout() const { return p_layout_; };
     VkDescriptorSet GetSet() const { return set_; };
     // Return unordered_set of all command buffers that this set is bound to
     std::unordered_set<GLOBAL_CB_NODE *> GetBoundCmdBuffers() const { return cb_bindings; }
