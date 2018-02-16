@@ -53,11 +53,17 @@ struct IndexRange {
 typedef std::map<uint32_t, descriptor_req> BindingReqMap;
 
 /*
- * DescriptorSetLayout class
+ * DescriptorSetLayoutDef/DescriptorSetLayout classes
  *
- * Overview - This class encapsulates the Vulkan VkDescriptorSetLayout data (layout).
+ * Overview - These two classes encapsulate the Vulkan VkDescriptorSetLayout data (layout).
  *   A layout consists of some number of bindings, each of which has a binding#, a
  *   type, descriptor count, stage flags, and pImmutableSamplers.
+
+ *   The DescriptorSetLayoutDef represents a canonicalization of the input data and contains
+ *   neither per handle or per device state.  It is possible for different handles on
+ *   different devices to share a common def.  This is used and useful for quick compatibiltiy
+ *   validation.  The DescriptorSetLayout refers to a DescriptorSetLayoutDef and contains
+ *   all per handle state.
  *
  * Index vs Binding - A layout is created with an array of VkDescriptorSetLayoutBinding
  *  where each array index will have a corresponding binding# that is defined in that struct.
@@ -178,7 +184,9 @@ static bool operator==(const DescriptorSetLayoutDef &lhs, const DescriptorSetLay
     return (lhs.GetCreateFlags() == rhs.GetCreateFlags()) && (lhs.GetBindings() == rhs.GetBindings());
 }
 
-using DescriptorSetLayoutId = std::shared_ptr<DescriptorSetLayoutDef>;
+// Canonical dictionary of DSL definitions -- independent of device or handle
+using DescriptorSetLayoutDict = hash_util::Dictionary<DescriptorSetLayoutDef, hash_util::HasHashMember<DescriptorSetLayoutDef>>;
+using DescriptorSetLayoutId = DescriptorSetLayoutDict::Id;
 
 class DescriptorSetLayout {
    public:
@@ -195,6 +203,7 @@ class DescriptorSetLayout {
     bool IsDestroyed() const { return layout_destroyed_; }
     void MarkDestroyed() { layout_destroyed_ = true; }
     const DescriptorSetLayoutDef *get_layout_def() const { return layout_id_.get(); }
+    DescriptorSetLayoutId get_layout_id() const { return layout_id_; }
     uint32_t GetTotalDescriptorCount() const { return layout_id_->GetTotalDescriptorCount(); };
     uint32_t GetDynamicDescriptorCount() const { return layout_id_->GetDynamicDescriptorCount(); };
     uint32_t GetBindingCount() const { return layout_id_->GetBindingCount(); };

@@ -24,7 +24,10 @@
 #include <cstdint>
 #include <functional>
 #include <limits>
+#include <memory>
+#include <mutex>
 #include <type_traits>
+#include <unordered_set>
 #include <vector>
 
 // Hash and equality utilities for supporting hashing containers (e.g. unordered_set, unordered_map)
@@ -109,6 +112,53 @@ struct IsOrderedContainer {
     size_t operator()(const T &value) const { return HashCombiner().Combine(value.cbegin(), value.cend()).Value(); }
 };
 
+// The dictionary provides a way of referencing canonical/reference
+// data by id, such that the id's are invariant with dictionary
+// resize/insert and that no entries point to identical data.  This
+// approach uses the address of the unique data and as the unique
+//  ID  for a give value of T.
+//
+// Note: This ID is unique for a given application execution, neither
+//       globally unique, invariant, nor repeatable from execution to
+//       execution.
+//
+// The entries of the dictionary are shared_pointers (the contents of
+// which are invariant with resize/insert), with the hash and equality
+// template arguments wrapped in a shared pointer dereferencing
+// function object
+template <typename T, typename Hasher = std::hash<T>, typename KeyEqual = std::equal_to<T>>
+class Dictionary {
+   public:
+    using Def = T;
+    using Id = std::shared_ptr<const Def>;
+
+    // Find the unique entry match the provided value, adding if needed
+    // TODO: segregate lookup from insert, using reader/write locks to reduce contention -- if needed
+    template <typename U = T>
+    Id look_up(U &&value) {
+        // We create an Id from the value, which will either be retained by dict (if new) or deleted on return (if extant)
+        Id from_input = std::make_shared<T>(std::forward<U>(value));
+
+        // Insert takes care of the "unique" id part by rejecting the insert if a key matching by_value exists, but returning us
+        // the Id of the extant shared_pointer(id->def) instead.
+        // return the value of the Iterator from the <Iterator, bool> pair returned by insert
+        Guard g(lock);  // Dict isn't thread safe, and use is presumed to be multi-threaded
+        return *dict.insert(from_input).first;
+    }
+
+   private:
+    struct HashKeyValue {
+        size_t operator()(const Id &value) const { return Hasher()(*value); }
+    };
+    struct KeyValueEqual {
+        bool operator()(const Id &lhs, const Id &rhs) const { return KeyEqual()(*lhs, *rhs); }
+    };
+    using Dict = std::unordered_set<Id, HashKeyValue, KeyValueEqual>;
+    using Lock = std::mutex;
+    using Guard = std::lock_guard<Lock>;
+    Lock lock;
+    Dict dict;
+};
 }  // namespace hash_util
 
 #endif  // HASH_UTILS_H_

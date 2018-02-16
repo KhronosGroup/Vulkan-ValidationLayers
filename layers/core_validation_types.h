@@ -40,8 +40,9 @@
 #include <memory>
 #include <list>
 
-// Fwd declarations
+// Fwd declarations -- including descriptor_set.h creates an ugly include loop
 namespace cvdescriptorset {
+class DescriptorSetLayoutDef;
 class DescriptorSetLayout;
 class DescriptorSet;
 }  // namespace cvdescriptorset
@@ -543,21 +544,51 @@ struct hash<ImageSubresourcePair> {
 };
 }  // namespace std
 
-// The id defines a unique ID based on the contents of a PushConstantRanges set;
-using PushConstantRangesId = std::shared_ptr<PushConstantRanges>;
+// Canonical dictionary for PushConstantRanges
+using PushConstantRangesDict = hash_util::Dictionary<PushConstantRanges>;
+using PushConstantRangesId = PushConstantRangesDict::Id;
+
+// Canonical dictionary for the pipeline layout's layout of descriptorsetlayouts
+using DescriptorSetLayoutDef = cvdescriptorset::DescriptorSetLayoutDef;
+using DescriptorSetLayoutId = std::shared_ptr<const DescriptorSetLayoutDef>;
+using DescriptorSetLayoutLayoutDef = std::vector<DescriptorSetLayoutId>;
+using DescriptorSetLayoutLayoutDict =
+    hash_util::Dictionary<DescriptorSetLayoutLayoutDef, hash_util::IsOrderedContainer<DescriptorSetLayoutLayoutDef>>;
+using DescriptorSetLayoutLayoutId = DescriptorSetLayoutLayoutDict::Id;
+
+// Defines/stores a compatibility defintion for set N
+// The "layout layout" must store at least set+1 entries, but only the first set+1 are considered for hash and equality testing
+// Note: the "cannonical" data are referenced by Id, not including handle or device specific state
+// Note: hash and equality only consider layout_id entries [0, set] for determining uniqueness
+struct PipelineLayoutCompatDef {
+    uint32_t set;
+    PushConstantRangesId push_constant_ranges;
+    using LayoutLayout = DescriptorSetLayoutLayoutId;
+    LayoutLayout layout_id;
+    PipelineLayoutCompatDef(const uint32_t set_index, const PushConstantRangesId pcr_id, const LayoutLayout ll_id)
+        : set(set_index), push_constant_ranges(pcr_id), layout_id(ll_id) {}
+    size_t hash() const;
+    bool operator==(const PipelineLayoutCompatDef &other) const;
+};
+
+// Canonical dictionary for PipelineLayoutCompat records
+using PipelineLayoutCompatDict = hash_util::Dictionary<PipelineLayoutCompatDef, hash_util::HasHashMember<PipelineLayoutCompatDef>>;
+using PipelineLayoutCompatId = PipelineLayoutCompatDict::Id;
 
 // Store layouts and pushconstants for PipelineLayout
 struct PIPELINE_LAYOUT_NODE {
     VkPipelineLayout layout;
     std::vector<std::shared_ptr<cvdescriptorset::DescriptorSetLayout const>> set_layouts;
     PushConstantRangesId push_constant_ranges;
+    std::vector<PipelineLayoutCompatId> compat_for_set;
 
-    PIPELINE_LAYOUT_NODE() : layout(VK_NULL_HANDLE), set_layouts{}, push_constant_ranges{} {}
+    PIPELINE_LAYOUT_NODE() : layout(VK_NULL_HANDLE), set_layouts{}, push_constant_ranges{}, compat_for_set{} {}
 
     void reset() {
         layout = VK_NULL_HANDLE;
         set_layouts.clear();
         push_constant_ranges.reset();
+        compat_for_set.clear();
     }
 };
 

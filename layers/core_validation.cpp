@@ -89,6 +89,36 @@ using mutex_t = std::mutex;
 using lock_guard_t = std::lock_guard<mutex_t>;
 using unique_lock_t = std::unique_lock<mutex_t>;
 
+// These functions are defined *outside* the core_validation namespace as their type
+// is also defined outside that namespace
+size_t PipelineLayoutCompatDef::hash() const {
+    hash_util::HashCombiner hc;
+    // The set number is integral to the CompatDef's distinctiveness
+    hc << set << push_constant_ranges.get();
+    const auto &layout_layout = *layout_id.get();
+    for (uint32_t i = 0; i <= set; i++) {
+        hc << layout_layout[i].get();
+    }
+    return hc.Value();
+}
+
+bool PipelineLayoutCompatDef::operator==(const PipelineLayoutCompatDef &other) const {
+    if ((set != other.set) || (push_constant_ranges != other.push_constant_ranges)) {
+        return false;
+    }
+
+    const auto &layout_layout = *layout_id.get();
+    assert(set < layout_layout.size());
+    const auto &other_ll = *other.layout_id.get();
+    assert(set < other_ll.size());
+    for (uint32_t i = 0; i <= set; i++) {
+        if (layout_layout[i] != other_ll[i]) {
+            return false;
+        }
+    }
+    return true;
+}
+
 namespace core_validation {
 
 using std::max;
@@ -5379,10 +5409,6 @@ static bool PreCallValiateCreatePipelineLayout(const layer_data *dev_data, const
     return skip;
 }
 
-// Note: std::equal_to is looking for operator == to be defined in the innermost namespace enclosing DescriptorSetLayoutDef
-//       (i.e. cvdescriptorset) or in the class, base, or containing classes, and does *not* look in :: for it.
-static std::unordered_map<PushConstantRanges, PushConstantRangesId, std::hash<PushConstantRanges>> push_constant_ranges_dict;
-
 // For repeatable sorting, not very useful for "memory in range" search
 struct PushConstantRangeCompare {
     bool operator()(const VkPushConstantRange *lhs, const VkPushConstantRange *rhs) const {
@@ -5397,12 +5423,13 @@ struct PushConstantRangeCompare {
         return lhs->offset < rhs->offset;
     }
 };
-PushConstantRangesId get_definition_id(const VkPipelineLayoutCreateInfo *info) {
+
+static PushConstantRangesDict push_constant_ranges_dict;
+
+PushConstantRangesId get_canonical_id(const VkPipelineLayoutCreateInfo *info) {
     if (!info->pPushConstantRanges) {
-        // Hand back the empty entry (creating as needed)... see below for syntax notes
-        PushConstantRangesId empty = std::make_shared<PushConstantRanges>();
-        auto insert_pair = push_constant_ranges_dict.insert({*empty, empty});
-        return insert_pair.first->second;
+        // Hand back the empty entry (creating as needed)...
+        return push_constant_ranges_dict.look_up(PushConstantRanges());
     }
 
     // Sort the input ranges to ensure equivalent ranges map to the same id
@@ -5410,19 +5437,23 @@ PushConstantRangesId get_definition_id(const VkPipelineLayoutCreateInfo *info) {
     for (uint32_t i = 0; i < info->pushConstantRangeCount; i++) {
         sorted.insert(info->pPushConstantRanges + i);
     }
+
     PushConstantRanges ranges(sorted.size());
     for (const auto range : sorted) {
         ranges.emplace_back(*range);
     }
-    PushConstantRangesId from_input = std::make_shared<PushConstantRanges>(std::move(ranges));
+    return push_constant_ranges_dict.look_up(std::move(ranges));
+}
 
-    // Insert takes care of the "unique" id part by rejecting the insert if a key matching ranges exists, but returning us
-    // the entry with the extant shared_pointer(id->def) instead.
-    auto insert_pair = push_constant_ranges_dict.insert({*from_input, from_input});
+// Dictionary of canoncial form of the pipeline set layout of descriptor set layouts
+static DescriptorSetLayoutLayoutDict layout_layout_dict;
 
-    // Return the value by dereferencing the Iterator from the <It, bool> pair returned by insert, and taking the value from the
-    // <key, value> pair of the Iterator
-    return insert_pair.first->second;
+// Dictionary of canonical form of the "compatible for set" records
+static PipelineLayoutCompatDict pipeline_layout_compat_dict;
+
+static PipelineLayoutCompatId get_canonical_id(const uint32_t set_index, const PushConstantRangesId pcr_id,
+                                               const DescriptorSetLayoutLayoutId ll_id) {
+    return pipeline_layout_compat_dict.look_up(PipelineLayoutCompatDef(set_index, pcr_id, ll_id));
 }
 
 static void PostCallRecordCreatePipelineLayout(layer_data *dev_data, const VkPipelineLayoutCreateInfo *pCreateInfo,
@@ -5432,10 +5463,22 @@ static void PostCallRecordCreatePipelineLayout(layer_data *dev_data, const VkPip
     PIPELINE_LAYOUT_NODE &plNode = dev_data->pipelineLayoutMap[*pPipelineLayout];
     plNode.layout = *pPipelineLayout;
     plNode.set_layouts.resize(pCreateInfo->setLayoutCount);
+    DescriptorSetLayoutLayoutDef layout_layout(pCreateInfo->setLayoutCount);
     for (uint32_t i = 0; i < pCreateInfo->setLayoutCount; ++i) {
         plNode.set_layouts[i] = GetDescriptorSetLayout(dev_data, pCreateInfo->pSetLayouts[i]);
+        layout_layout[i] = plNode.set_layouts[i]->get_layout_id();
     }
-    plNode.push_constant_ranges = get_definition_id(pCreateInfo);
+
+    // Get canonical form IDs for the "compatible for set" contents
+    plNode.push_constant_ranges = get_canonical_id(pCreateInfo);
+    auto ll_id = layout_layout_dict.look_up(layout_layout);
+    plNode.compat_for_set.reserve(pCreateInfo->setLayoutCount);
+
+    // Create table of "compatible for set N" cannonical forms for trivial accept validation
+    for (uint32_t i = 0; i < pCreateInfo->setLayoutCount; ++i) {
+        plNode.compat_for_set.emplace_back(get_canonical_id(i, plNode.push_constant_ranges, ll_id));
+    }
+
     // Implicit unlock
 };
 
