@@ -23,6 +23,7 @@
 #ifndef CORE_VALIDATION_TYPES_H_
 #define CORE_VALIDATION_TYPES_H_
 
+#include "hash_vk_types.h"
 #include "vk_safe_struct.h"
 #include "vulkan/vulkan.h"
 #include "vk_validation_error_messages.h"
@@ -542,18 +543,21 @@ struct hash<ImageSubresourcePair> {
 };
 }  // namespace std
 
+// The id defines a unique ID based on the contents of a PushConstantRanges set;
+using PushConstantRangesId = std::shared_ptr<PushConstantRanges>;
+
 // Store layouts and pushconstants for PipelineLayout
 struct PIPELINE_LAYOUT_NODE {
     VkPipelineLayout layout;
     std::vector<std::shared_ptr<cvdescriptorset::DescriptorSetLayout const>> set_layouts;
-    std::vector<VkPushConstantRange> push_constant_ranges;
+    PushConstantRangesId push_constant_ranges;
 
     PIPELINE_LAYOUT_NODE() : layout(VK_NULL_HANDLE), set_layouts{}, push_constant_ranges{} {}
 
     void reset() {
         layout = VK_NULL_HANDLE;
         set_layouts.clear();
-        push_constant_ranges.clear();
+        push_constant_ranges.reset();
     }
 };
 

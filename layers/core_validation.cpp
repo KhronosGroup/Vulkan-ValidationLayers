@@ -5379,6 +5379,52 @@ static bool PreCallValiateCreatePipelineLayout(const layer_data *dev_data, const
     return skip;
 }
 
+// Note: std::equal_to is looking for operator == to be defined in the innermost namespace enclosing DescriptorSetLayoutDef
+//       (i.e. cvdescriptorset) or in the class, base, or containing classes, and does *not* look in :: for it.
+static std::unordered_map<PushConstantRanges, PushConstantRangesId, std::hash<PushConstantRanges>> push_constant_ranges_dict;
+
+// For repeatable sorting, not very useful for "memory in range" search
+struct PushConstantRangeCompare {
+    bool operator()(const VkPushConstantRange *lhs, const VkPushConstantRange *rhs) const {
+        if (lhs->offset == rhs->offset) {
+            if (lhs->size == rhs->size) {
+                // The comparison is arbitrary, but avoids false aliasing by comparing all fields.
+                return lhs->stageFlags < rhs->stageFlags;
+            }
+            // If the offsets are the same then sorting by the end of range is useful for validation
+            return lhs->size < rhs->size;
+        }
+        return lhs->offset < rhs->offset;
+    }
+};
+PushConstantRangesId get_definition_id(const VkPipelineLayoutCreateInfo *info) {
+    if (!info->pPushConstantRanges) {
+        // Hand back the empty entry (creating as needed)... see below for syntax notes
+        PushConstantRangesId empty = std::make_shared<PushConstantRanges>();
+        auto insert_pair = push_constant_ranges_dict.insert({*empty, empty});
+        return insert_pair.first->second;
+    }
+
+    // Sort the input ranges to ensure equivalent ranges map to the same id
+    std::set<const VkPushConstantRange *, PushConstantRangeCompare> sorted;
+    for (uint32_t i = 0; i < info->pushConstantRangeCount; i++) {
+        sorted.insert(info->pPushConstantRanges + i);
+    }
+    PushConstantRanges ranges(sorted.size());
+    for (const auto range : sorted) {
+        ranges.emplace_back(*range);
+    }
+    PushConstantRangesId from_input = std::make_shared<PushConstantRanges>(std::move(ranges));
+
+    // Insert takes care of the "unique" id part by rejecting the insert if a key matching ranges exists, but returning us
+    // the entry with the extant shared_pointer(id->def) instead.
+    auto insert_pair = push_constant_ranges_dict.insert({*from_input, from_input});
+
+    // Return the value by dereferencing the Iterator from the <It, bool> pair returned by insert, and taking the value from the
+    // <key, value> pair of the Iterator
+    return insert_pair.first->second;
+}
+
 static void PostCallRecordCreatePipelineLayout(layer_data *dev_data, const VkPipelineLayoutCreateInfo *pCreateInfo,
                                                const VkPipelineLayout *pPipelineLayout) {
     unique_lock_t lock(global_lock);  // Lock while accessing state
@@ -5389,10 +5435,7 @@ static void PostCallRecordCreatePipelineLayout(layer_data *dev_data, const VkPip
     for (uint32_t i = 0; i < pCreateInfo->setLayoutCount; ++i) {
         plNode.set_layouts[i] = GetDescriptorSetLayout(dev_data, pCreateInfo->pSetLayouts[i]);
     }
-    plNode.push_constant_ranges.resize(pCreateInfo->pushConstantRangeCount);
-    for (uint32_t i = 0; i < pCreateInfo->pushConstantRangeCount; ++i) {
-        plNode.push_constant_ranges[i] = pCreateInfo->pPushConstantRanges[i];
-    }
+    plNode.push_constant_ranges = get_definition_id(pCreateInfo);
     // Implicit unlock
 };
 
@@ -8081,7 +8124,7 @@ VKAPI_ATTR void VKAPI_CALL CmdPushConstants(VkCommandBuffer commandBuffer, VkPip
     // same offset and size, but different stageFlags.  So we can't just check the
     // stageFlags in the first range with matching offset and size.
     if (!skip) {
-        const auto &ranges = getPipelineLayout(dev_data, layout)->push_constant_ranges;
+        const auto &ranges = *getPipelineLayout(dev_data, layout)->push_constant_ranges;
         bool found_matching_range = false;
         for (const auto &range : ranges) {
             if ((stageFlags == range.stageFlags) && (offset >= range.offset) && (offset + size <= range.offset + range.size)) {

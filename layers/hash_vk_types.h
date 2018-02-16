@@ -24,6 +24,7 @@
 
 #include <vulkan/vulkan.h>
 #include "vk_safe_struct.h"
+#include <vector>
 
 // Hash and equality and/or compare functions for selected Vk types (and useful collections thereof)
 
@@ -58,6 +59,28 @@ struct hash<safe_VkDescriptorSetLayoutBinding> {
         return hc.Value();
     }
 };
+}  // namespace std
+
+// VkPushConstantRange
+static bool operator==(const VkPushConstantRange &lhs, const VkPushConstantRange &rhs) {
+    return (lhs.stageFlags == rhs.stageFlags) && (lhs.offset == rhs.offset) && (lhs.size == rhs.size);
+}
+
+namespace std {
+template <>
+struct hash<VkPushConstantRange> {
+    size_t operator()(const VkPushConstantRange &value) const {
+        hash_util::HashCombiner hc;
+        return (hc << value.stageFlags << value.offset << value.size).Value();
+    }
+};
+}  // namespace std
+
+using PushConstantRanges = std::vector<VkPushConstantRange>;
+
+namespace std {
+template <>
+struct hash<PushConstantRanges> : public hash_util::IsOrderedContainer<PushConstantRanges> {};
 }  // namespace std
 
 #endif  // HASH_VK_TYPES_H_

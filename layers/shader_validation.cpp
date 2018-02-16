@@ -1329,7 +1329,7 @@ static bool validate_pipeline_shader_stage(layer_data *dev_data, VkPipelineShade
     auto descriptor_uses = collect_interface_by_descriptor_slot(report_data, module, accessible_ids);
 
     skip |= validate_specialization_offsets(report_data, pStage);
-    skip |= validate_push_constant_usage(report_data, &pipeline->pipeline_layout.push_constant_ranges, module, accessible_ids,
+    skip |= validate_push_constant_usage(report_data, pipeline->pipeline_layout.push_constant_ranges.get(), module, accessible_ids,
                                          pStage->stage);
 
     // Validate descriptor use
