@@ -137,6 +137,7 @@ class UniqueObjectsOutputGenerator(OutputGenerator):
             'vkCreateSwapchainKHR',
             'vkCreateSharedSwapchainsKHR',
             'vkGetSwapchainImagesKHR',
+            'vkDestroySwapchainKHR',
             'vkQueuePresentKHR',
             'vkEnumerateInstanceLayerProperties',
             'vkEnumerateDeviceLayerProperties',

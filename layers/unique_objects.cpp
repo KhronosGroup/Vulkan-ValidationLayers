@@ -507,6 +507,16 @@ VKAPI_ATTR VkResult VKAPI_CALL GetSwapchainImagesKHR(VkDevice device, VkSwapchai
     return result;
 }
 
+VKAPI_ATTR void VKAPI_CALL DestroySwapchainKHR(VkDevice device, VkSwapchainKHR swapchain, const VkAllocationCallbacks *pAllocator) {
+    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    std::unique_lock<std::mutex> lock(global_lock);
+    uint64_t swapchain_id = reinterpret_cast<uint64_t &>(swapchain);
+    swapchain = (VkSwapchainKHR)dev_data->unique_id_mapping[swapchain_id];
+    dev_data->unique_id_mapping.erase(swapchain_id);
+    lock.unlock();
+    dev_data->dispatch_table.DestroySwapchainKHR(device, swapchain, pAllocator);
+}
+
 VKAPI_ATTR VkResult VKAPI_CALL QueuePresentKHR(VkQueue queue, const VkPresentInfoKHR *pPresentInfo) {
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(queue), layer_data_map);
     safe_VkPresentInfoKHR *local_pPresentInfo = NULL;
