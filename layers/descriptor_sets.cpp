@@ -23,6 +23,7 @@
 #define NOMINMAX
 
 #include "descriptor_sets.h"
+#include "hash_vk_types.h"
 #include "vk_enum_string_helper.h"
 #include "vk_safe_struct.h"
 #include "buffer_validation.h"
@@ -36,6 +37,31 @@ struct BindingNumCmp {
     }
 };
 
+using DescriptorSetLayoutDef = cvdescriptorset::DescriptorSetLayoutDef;
+using DescriptorSetLayoutId = cvdescriptorset::DescriptorSetLayoutId;
+
+namespace std {
+template <>
+struct hash<DescriptorSetLayoutDef> : public hash_util::HasHashMember<DescriptorSetLayoutDef> {};
+}  // namespace std
+
+// Note: std::equal_to is looking for operator == to be defined in the innermost namespace enclosing DescriptorSetLayoutDef
+//       (i.e. cvdescriptorset) or in the class, base, or containing classes, and does *not* look in :: for it.
+static std::unordered_map<DescriptorSetLayoutDef, DescriptorSetLayoutId, std::hash<DescriptorSetLayoutDef>,
+                          std::equal_to<DescriptorSetLayoutDef>>
+    descriptor_set_layout_dict;
+
+DescriptorSetLayoutId get_definition_id(const VkDescriptorSetLayoutCreateInfo *p_create_info) {
+    DescriptorSetLayoutId from_input = std::make_shared<DescriptorSetLayoutDef>(p_create_info);
+
+    // Insert takes care of the "unique" id part by rejecting the insert if a key matching the DSL def exists, but returning us
+    // the entry with the extant shared_pointer(id->def) instead.
+    auto insert_pair = descriptor_set_layout_dict.insert({*from_input, from_input});
+
+    // This *awful* syntax takes the Iterator from the <It, bool> pair returned by insert, and extracts the value from the
+    // <key, value> pair of the Iterator
+    return insert_pair.first->second;
+}
 // Construct DescriptorSetLayout instance from given create info
 // Proactively reserve and resize as possible, as the reallocation was visible in profiling
 cvdescriptorset::DescriptorSetLayoutDef::DescriptorSetLayoutDef(const VkDescriptorSetLayoutCreateInfo *p_create_info)
@@ -100,6 +126,14 @@ cvdescriptorset::DescriptorSetLayoutDef::DescriptorSetLayoutDef(const VkDescript
         dyn_array_idx += bc_pair.second;
     }
 }
+
+size_t cvdescriptorset::DescriptorSetLayoutDef::hash() const {
+    hash_util::HashCombiner hc;
+    hc << flags_;
+    hc.Combine(bindings_);
+    return hc.Value();
+}
+//
 
 // Return valid index or "end" i.e. binding_count_;
 // The asserts in "Get" are reduced to the set where no valid answer(like null or 0) could be given
@@ -190,8 +224,12 @@ bool cvdescriptorset::DescriptorSetLayout::IsCompatible(DescriptorSetLayout cons
                                                         std::string *error_msg) const {
     // Trivial case
     if (layout_ == rh_ds_layout->GetDescriptorSetLayout()) return true;
-    return get_layout_def()->IsCompatible(layout_, rh_ds_layout->GetDescriptorSetLayout(), rh_ds_layout->get_layout_def(),
-                                          error_msg);
+    if (get_layout_def() == rh_ds_layout->get_layout_def()) return true;
+    bool detailed_compat_check =
+        get_layout_def()->IsCompatible(layout_, rh_ds_layout->GetDescriptorSetLayout(), rh_ds_layout->get_layout_def(), error_msg);
+    // The detailed check should never tell us mismatching DSL are compatible
+    assert(!detailed_compat_check);
+    return detailed_compat_check;
 }
 
 bool cvdescriptorset::DescriptorSetLayoutDef::IsCompatible(VkDescriptorSetLayout ds_layout, VkDescriptorSetLayout rh_ds_layout,
@@ -205,6 +243,7 @@ bool cvdescriptorset::DescriptorSetLayoutDef::IsCompatible(VkDescriptorSetLayout
         *error_msg = error_str.str();
         return false;  // trivial fail case
     }
+
     // Descriptor counts match so need to go through bindings one-by-one
     //  and verify that type and stageFlags match
     for (auto binding : bindings_) {
@@ -299,7 +338,7 @@ bool cvdescriptorset::DescriptorSetLayoutDef::VerifyUpdateConsistency(uint32_t c
 // handle invariant portion
 cvdescriptorset::DescriptorSetLayout::DescriptorSetLayout(const VkDescriptorSetLayoutCreateInfo *p_create_info,
                                                           const VkDescriptorSetLayout layout)
-    : layout_(layout), layout_destroyed_(false), layout_id_(std::make_shared<DescriptorSetLayoutDef>(p_create_info)) {}
+    : layout_(layout), layout_destroyed_(false), layout_id_(get_definition_id(p_create_info)) {}
 
 // Validate descriptor set layout create info
 bool cvdescriptorset::DescriptorSetLayout::ValidateCreateInfo(const debug_report_data *report_data,

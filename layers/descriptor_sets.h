@@ -24,6 +24,7 @@
 #include "core_validation_error_enums.h"
 #include "vk_validation_error_messages.h"
 #include "core_validation_types.h"
+#include "hash_vk_types.h"
 #include "vk_layer_logging.h"
 #include "vk_layer_utils.h"
 #include "vk_safe_struct.h"
@@ -172,6 +173,10 @@ class DescriptorSetLayoutDef {
     uint32_t dynamic_descriptor_count_;
     BindingTypeStats binding_type_stats_;
 };
+
+static bool operator==(const DescriptorSetLayoutDef &lhs, const DescriptorSetLayoutDef &rhs) {
+    return (lhs.GetCreateFlags() == rhs.GetCreateFlags()) && (lhs.GetBindings() == rhs.GetBindings());
+}
 
 using DescriptorSetLayoutId = std::shared_ptr<DescriptorSetLayoutDef>;
 
