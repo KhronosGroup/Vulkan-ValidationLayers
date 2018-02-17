@@ -1507,10 +1507,12 @@ bool validate_and_capture_pipeline_shader_state(layer_data *dev_data, PIPELINE_S
 
     for (; producer != fragment_stage && consumer <= fragment_stage; consumer++) {
         assert(shaders[producer]);
-        if (shaders[consumer] && shaders[consumer]->has_valid_spirv && shaders[producer]->has_valid_spirv) {
-            skip |= validate_interface_between_stages(report_data, shaders[producer], entrypoints[producer],
-                                                      &shader_stage_attribs[producer], shaders[consumer], entrypoints[consumer],
-                                                      &shader_stage_attribs[consumer]);
+        if (shaders[consumer]) {
+            if (shaders[consumer]->has_valid_spirv && shaders[producer]->has_valid_spirv) {
+                skip |= validate_interface_between_stages(report_data, shaders[producer], entrypoints[producer],
+                                                          &shader_stage_attribs[producer], shaders[consumer], entrypoints[consumer],
+                                                          &shader_stage_attribs[consumer]);
+            }
 
             producer = consumer;
         }
