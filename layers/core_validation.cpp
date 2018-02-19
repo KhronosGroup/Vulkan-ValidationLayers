@@ -7599,6 +7599,12 @@ static bool ValidateBarriers(layer_data *device_data, const char *funcName, GLOB
         }
 
         if (image_data) {
+            // There is no VUID for this, but there is blanket text:
+            //     "Non-sparse resources must be bound completely and contiguously to a single VkDeviceMemory object before
+            //     recording commands in a command buffer."
+            // TODO: Update this when VUID is defined
+            skip |= ValidateMemoryIsBoundToImage(device_data, image_data, funcName, VALIDATION_ERROR_UNDEFINED);
+
             auto aspect_mask = mem_barrier->subresourceRange.aspectMask;
             skip |= ValidateImageAspectMask(device_data, image_data->image, image_data->createInfo.format, aspect_mask, funcName);
 
@@ -7629,6 +7635,12 @@ static bool ValidateBarriers(layer_data *device_data, const char *funcName, GLOB
         skip |= ValidateBarrierQueueFamilies(device_data, funcName, cb_state, mem_barrier, buffer_state);
 
         if (buffer_state) {
+            // There is no VUID for this, but there is blanket text:
+            //     "Non-sparse resources must be bound completely and contiguously to a single VkDeviceMemory object before
+            //     recording commands in a command buffer"
+            // TODO: Update this when VUID is defined
+            skip |= ValidateMemoryIsBoundToBuffer(device_data, buffer_state, funcName, VALIDATION_ERROR_UNDEFINED);
+
             auto buffer_size = buffer_state->requirements.size;
             if (mem_barrier->offset >= buffer_size) {
                 skip |= log_msg(
