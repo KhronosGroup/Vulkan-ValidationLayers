@@ -1021,7 +1021,7 @@ bool pv_VkViewport(const layer_data *device_data, const VkViewport &viewport, co
     //       - VkPhysicalDeviceLimits::maxViewportDimensions is uint32_t, not float -> careful.
 
     const auto f_lte_u32_exact = [](const float v1_f, const uint32_t v2_u32) {
-        if (isnan(v1_f)) return false;
+        if (std::isnan(v1_f)) return false;
         if (v1_f <= 0.0f) return true;
 
         float intpart;
