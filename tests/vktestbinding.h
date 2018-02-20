@@ -406,6 +406,7 @@ class Buffer : public internal::NonDispHandle<VkBuffer> {
     // vkBindObjectMemory()
     void bind_memory(const DeviceMemory &mem, VkDeviceSize mem_offset);
 
+    const VkBufferCreateInfo &create_info() const { return create_info_; }
     static VkBufferCreateInfo create_info(VkDeviceSize size, VkFlags usage, const std::vector<uint32_t> *queue_families = nullptr);
 
     VkBufferMemoryBarrier buffer_memory_barrier(VkFlags output_mask, VkFlags input_mask, VkDeviceSize offset,

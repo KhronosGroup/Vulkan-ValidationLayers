@@ -11345,9 +11345,6 @@ TEST_F(VkLayerTest, InvalidBarriers) {
     // Use buffer unbound to memory in barrier
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
                                          " used with no memory bound. Memory should be bound by calling vkBindBufferMemory()");
-    // TODO: Validation is testing against an intercepted "requirements" value (and we aren't calling requirements), remove
-    //       this "Desired" by correcting the validation to look at create info, not requirements
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, " which is not less than total size ");
     vk_testing::Buffer unbound_buffer;
     auto unbound_buffer_info = vk_testing::Buffer::create_info(16, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
     unbound_buffer.init_no_mem(*m_device, unbound_buffer_info);
@@ -11408,9 +11405,9 @@ TEST_F(VkLayerTest, InvalidBarriers) {
     buf_barrier.offset = 0;
     buf_barrier.size = VK_WHOLE_SIZE;
 
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "which is not less than total size");
-    // Exceed the internal memory size
-    buf_barrier.offset = buffer.memory_requirements().size + 1;
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_01800946);
+    // Exceed the buffer size
+    buf_barrier.offset = buffer.create_info().size + 1;
     // Offset greater than total size
     vkCmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
                          VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, VK_DEPENDENCY_BY_REGION_BIT, 0, nullptr, 1, &buf_barrier, 0,
@@ -11419,7 +11416,7 @@ TEST_F(VkLayerTest, InvalidBarriers) {
     buf_barrier.offset = 0;
 
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "whose sum is greater than total size");
-    buf_barrier.size = buffer.memory_requirements().size + 1;
+    buf_barrier.size = buffer.create_info().size + 1;
     // Size greater than total size
     vkCmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
                          VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, VK_DEPENDENCY_BY_REGION_BIT, 0, nullptr, 1, &buf_barrier, 0,

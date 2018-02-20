@@ -7641,14 +7641,14 @@ static bool ValidateBarriers(layer_data *device_data, const char *funcName, GLOB
             // TODO: Update this when VUID is defined
             skip |= ValidateMemoryIsBoundToBuffer(device_data, buffer_state, funcName, VALIDATION_ERROR_UNDEFINED);
 
-            auto buffer_size = buffer_state->requirements.size;
+            auto buffer_size = buffer_state->createInfo.size;
             if (mem_barrier->offset >= buffer_size) {
                 skip |= log_msg(
                     device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                    HandleToUint64(cb_state->commandBuffer), __LINE__, DRAWSTATE_INVALID_BARRIER, "DS",
-                    "%s: Buffer Barrier 0x%" PRIx64 " has offset 0x%" PRIx64 " which is not less than total size 0x%" PRIx64 ".",
-                    funcName, HandleToUint64(mem_barrier->buffer), HandleToUint64(mem_barrier->offset),
-                    HandleToUint64(buffer_size));
+                    HandleToUint64(cb_state->commandBuffer), __LINE__, VALIDATION_ERROR_01800946, "DS",
+                    "%s: Buffer Barrier 0x%" PRIx64 " has offset 0x%" PRIx64 " which is not less than total size 0x%" PRIx64 ". %s",
+                    funcName, HandleToUint64(mem_barrier->buffer), HandleToUint64(mem_barrier->offset), HandleToUint64(buffer_size),
+                    validation_error_map[VALIDATION_ERROR_01800946]);
             } else if (mem_barrier->size != VK_WHOLE_SIZE && (mem_barrier->offset + mem_barrier->size > buffer_size)) {
                 skip |=
                     log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
