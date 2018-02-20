@@ -11353,8 +11353,7 @@ TEST_F(VkLayerTest, InvalidBarriers) {
                          nullptr, 1, &unbound_buffer_barrier, 0, nullptr);
     m_errorMonitor->VerifyFound();
 
-
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "Image Layout cannot be transitioned to UNDEFINED");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_0a00095c);
     VkImageObj image(m_device);
     image.Init(128, 128, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
     ASSERT_TRUE(image.initialized());
@@ -11415,7 +11414,7 @@ TEST_F(VkLayerTest, InvalidBarriers) {
     m_errorMonitor->VerifyFound();
     buf_barrier.offset = 0;
 
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "whose sum is greater than total size");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_0180094a);
     buf_barrier.size = buffer.create_info().size + 1;
     // Size greater than total size
     vkCmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,

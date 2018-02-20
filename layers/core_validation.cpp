@@ -7594,8 +7594,9 @@ static bool ValidateBarriers(layer_data *device_data, const char *funcName, GLOB
 
         if (mem_barrier->newLayout == VK_IMAGE_LAYOUT_UNDEFINED || mem_barrier->newLayout == VK_IMAGE_LAYOUT_PREINITIALIZED) {
             skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                            HandleToUint64(cb_state->commandBuffer), __LINE__, DRAWSTATE_INVALID_BARRIER, "DS",
-                            "%s: Image Layout cannot be transitioned to UNDEFINED or PREINITIALIZED.", funcName);
+                            HandleToUint64(cb_state->commandBuffer), __LINE__, VALIDATION_ERROR_0a00095c, "DS",
+                            "%s: Image Layout cannot be transitioned to UNDEFINED or PREINITIALIZED. %s", funcName,
+                            validation_error_map[VALIDATION_ERROR_0a00095c]);
         }
 
         if (image_data) {
@@ -7652,11 +7653,12 @@ static bool ValidateBarriers(layer_data *device_data, const char *funcName, GLOB
             } else if (mem_barrier->size != VK_WHOLE_SIZE && (mem_barrier->offset + mem_barrier->size > buffer_size)) {
                 skip |=
                     log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                            HandleToUint64(cb_state->commandBuffer), __LINE__, DRAWSTATE_INVALID_BARRIER, "DS",
+                            HandleToUint64(cb_state->commandBuffer), __LINE__, VALIDATION_ERROR_0180094a, "DS",
                             "%s: Buffer Barrier 0x%" PRIx64 " has offset 0x%" PRIx64 " and size 0x%" PRIx64
-                            " whose sum is greater than total size 0x%" PRIx64 ".",
+                            " whose sum is greater than total size 0x%" PRIx64 ". %s",
                             funcName, HandleToUint64(mem_barrier->buffer), HandleToUint64(mem_barrier->offset),
-                            HandleToUint64(mem_barrier->size), HandleToUint64(buffer_size));
+                            HandleToUint64(mem_barrier->size), HandleToUint64(buffer_size),
+                            validation_error_map[VALIDATION_ERROR_0180094a]);
             }
         }
     }
