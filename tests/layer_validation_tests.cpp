@@ -11325,6 +11325,38 @@ TEST_F(VkLayerTest, InvalidBarriers) {
     m_addRenderPassSelfDependency = true;
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
+    m_commandBuffer->begin();
+
+    // Use image unbound to memory in barrier
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                         " used with no memory bound. Memory should be bound by calling vkBindImageMemory()");
+    vk_testing::Image unbound_image;
+    auto unbound_image_info = vk_testing::Image::create_info();
+    unbound_image_info.format = VK_FORMAT_B8G8R8A8_UNORM;
+    unbound_image_info.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
+    unbound_image.init_no_mem(*m_device, unbound_image_info);
+    auto unbound_subresource = vk_testing::Image::subresource_range(unbound_image_info, VK_IMAGE_ASPECT_COLOR_BIT);
+    auto unbound_image_barrier = unbound_image.image_memory_barrier(0, VK_ACCESS_TRANSFER_WRITE_BIT, VK_IMAGE_LAYOUT_UNDEFINED,
+                                                                    VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, unbound_subresource);
+    vkCmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0,
+                         nullptr, 0, nullptr, 1, &unbound_image_barrier);
+    m_errorMonitor->VerifyFound();
+
+    // Use buffer unbound to memory in barrier
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                         " used with no memory bound. Memory should be bound by calling vkBindBufferMemory()");
+    // TODO: Validation is testing against an intercepted "requirements" value (and we aren't calling requirements), remove
+    //       this "Desired" by correcting the validation to look at create info, not requirements
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, " which is not less than total size ");
+    vk_testing::Buffer unbound_buffer;
+    auto unbound_buffer_info = vk_testing::Buffer::create_info(16, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    unbound_buffer.init_no_mem(*m_device, unbound_buffer_info);
+    auto unbound_buffer_barrier = unbound_buffer.buffer_memory_barrier(0, VK_ACCESS_TRANSFER_WRITE_BIT, 0, 16);
+    vkCmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0,
+                         nullptr, 1, &unbound_buffer_barrier, 0, nullptr);
+    m_errorMonitor->VerifyFound();
+
+
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "Image Layout cannot be transitioned to UNDEFINED");
     VkImageObj image(m_device);
     image.Init(128, 128, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
@@ -11345,7 +11377,6 @@ TEST_F(VkLayerTest, InvalidBarriers) {
     img_barrier.subresourceRange.baseMipLevel = 0;
     img_barrier.subresourceRange.layerCount = 1;
     img_barrier.subresourceRange.levelCount = 1;
-    m_commandBuffer->begin();
     vkCmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
                          VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, VK_DEPENDENCY_BY_REGION_BIT, 0, nullptr, 0, nullptr, 1,
                          &img_barrier);
