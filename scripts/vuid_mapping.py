@@ -580,6 +580,7 @@ func_struct_id_map = {
 'vkGetMemoryHostPointerPropertiesEXT' : 524,
 'VkPhysicalDeviceConservativeRasterizationPropertiesEXT' : 525,
 'VkPipelineRasterizationConservativeStateCreateInfoEXT' : 526,
+'vkCmdWriteBufferMarkerAMD' : 527,
 ### ADD New func/struct mappings above this line
 }
 # Mapping of params to unique IDs
