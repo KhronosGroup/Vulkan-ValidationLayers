@@ -389,7 +389,7 @@ Follow the setup steps for Linux or OSX above, then from your terminal:
 cd build-android
 ./update_external_sources_android.sh --no-build
 ./android-generate.sh
-ndk-build -j $(sysctl -n hw.ncpu)
+ndk-build -j4
 ```
 #### Windows
 Follow the setup steps for Windows above, then from Developer Command Prompt for VS2013:
