@@ -388,7 +388,7 @@ class HelperFileOutputGenerator(OutputGenerator):
                 pdev_members = members
                 break
         deindex = '\n'
-        deindex += 'static const char * GetPhysDevFeatureString(uint32_t index) {\n'
+        deindex += 'static inline const char * GetPhysDevFeatureString(uint32_t index) {\n'
         deindex += '    const char * IndexToPhysDevFeatureString[] = {\n'
         for feature in pdev_members:
             deindex += '        "%s",\n' % feature.name
