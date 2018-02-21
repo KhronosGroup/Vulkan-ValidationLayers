@@ -103,7 +103,7 @@ static inline void DebugReportFlagsToAnnotFlags(VkDebugReportFlagsEXT dr_flags, 
 // Forward Declarations
 static inline bool debug_log_msg(const debug_report_data *debug_data, VkFlags msg_flags, VkDebugReportObjectTypeEXT object_type,
                                  uint64_t src_object, size_t location, int32_t msg_code, const char *layer_prefix,
-                                 const char *message);
+                                 const char *message, const char *text_vuid = NULL);
 
 // Add a debug message callback node structure to the specified callback linked list
 static inline void AddDebugCallbackNode(debug_report_data *debug_data, VkLayerDbgFunctionNode **list_head,
@@ -205,10 +205,10 @@ static inline void RemoveAllMessageCallbacks(debug_report_data *debug_data, VkLa
     *list_head = NULL;
 }
 
-// Utility function to handle reporting
+// Note that text_vuid is a default parameter, and is optional.  See the above forward declaration
 static inline bool debug_log_msg(const debug_report_data *debug_data, VkFlags msg_flags, VkDebugReportObjectTypeEXT object_type,
                                  uint64_t src_object, size_t location, int32_t msg_code, const char *layer_prefix,
-                                 const char *message) {
+                                 const char *message, const char *text_vuid) {
     bool bail = false;
     VkLayerDbgFunctionNode *layer_dbg_node = NULL;
 
@@ -234,7 +234,7 @@ static inline bool debug_log_msg(const debug_report_data *debug_data, VkFlags ms
     callback_data.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CALLBACK_DATA_EXT;
     callback_data.pNext = NULL;
     callback_data.flags = 0;
-    callback_data.pMessageIdName = layer_prefix;
+    callback_data.pMessageIdName = text_vuid;
     callback_data.messageIdNumber = msg_code;
     callback_data.pMessage = message;
     callback_data.queueLabelCount = 0;
@@ -324,16 +324,25 @@ static inline bool debug_log_msg(const debug_report_data *debug_data, VkFlags ms
 
     while (layer_dbg_node) {
         // If the app uses the VK_EXT_debug_report extension, call all of those registered callbacks.
-        if (!layer_dbg_node->is_messenger && (layer_dbg_node->report.msgFlags & msg_flags) &&
-            layer_dbg_node->report.pfnMsgCallback(msg_flags, object_type, src_object, location, msg_code, layer_prefix,
-                                                  new_debug_report_message.c_str(), layer_dbg_node->pUserData)) {
-            bail = true;
+        if (!layer_dbg_node->is_messenger && (layer_dbg_node->report.msgFlags & msg_flags)) {
+            if (text_vuid != nullptr) {
+                // If a text vuid is supplied for the old debug report extension, prepend it to the message string
+                new_debug_report_message.insert(0, " ] ");
+                new_debug_report_message.insert(0, text_vuid);
+                new_debug_report_message.insert(0, " [ ");
+            }
+
+            if (layer_dbg_node->report.pfnMsgCallback(msg_flags, object_type, src_object, location, msg_code, layer_prefix,
+                                                      new_debug_report_message.c_str(), layer_dbg_node->pUserData)) {
+                bail = true;
+            }
             // If the app uses the VK_EXT_debug_utils extension, call all of those registered callbacks.
         } else if (layer_dbg_node->is_messenger && (layer_dbg_node->messenger.messageSeverity & severity) &&
-                   (layer_dbg_node->messenger.messageType & types) &&
-                   layer_dbg_node->messenger.pfnUserCallback(static_cast<VkDebugUtilsMessageSeverityFlagBitsEXT>(severity), types,
-                                                             &callback_data, layer_dbg_node->pUserData)) {
-            bail = true;
+                   (layer_dbg_node->messenger.messageType & types)) {
+            if (layer_dbg_node->messenger.pfnUserCallback(static_cast<VkDebugUtilsMessageSeverityFlagBitsEXT>(severity), types,
+                                                          &callback_data, layer_dbg_node->pUserData)) {
+                bail = true;
+            }
         }
         layer_dbg_node = layer_dbg_node->pNext;
     }
@@ -810,12 +819,14 @@ static inline int vasprintf(char **strp, char const *fmt, va_list ap) {
 }
 #endif
 
-// Output log message via DEBUG_REPORT
-// Takes format and variable arg list so that output string
-// is only computed if a message needs to be logged
+// Output log message via DEBUG_REPORT. Takes format and variable arg list so that output string is only computed if a message
+// needs to be logged
 #ifndef WIN32
 static inline bool log_msg(const debug_report_data *debug_data, VkFlags msg_flags, VkDebugReportObjectTypeEXT object_type,
                            uint64_t src_object, int32_t msg_code, const char *format, ...) __attribute__((format(printf, 6, 7)));
+static inline bool log_msg(const debug_report_data *debug_data, VkFlags msg_flags, VkDebugReportObjectTypeEXT object_type,
+                           uint64_t src_object, std::string vuid_text, const char *format, ...)
+    __attribute__((format(printf, 6, 7)));
 #endif
 static inline bool log_msg(const debug_report_data *debug_data, VkFlags msg_flags, VkDebugReportObjectTypeEXT object_type,
                            uint64_t src_object, int32_t msg_code, const char *format, ...) {
@@ -846,6 +857,43 @@ static inline bool log_msg(const debug_report_data *debug_data, VkFlags msg_flag
 
     bool result = debug_log_msg(debug_data, msg_flags, object_type, src_object, 0, msg_code, "Validation",
                                 str_plus_spec_text.c_str() ? str_plus_spec_text.c_str() : "Allocation failure");
+    free(str);
+    return result;
+}
+
+// Overload of log_msg that takes a VUID string in place of a numerical VUID abstraction
+static inline bool log_msg(const debug_report_data *debug_data, VkFlags msg_flags, VkDebugReportObjectTypeEXT object_type,
+                           uint64_t src_object, std::string vuid_text, const char *format, ...) {
+    VkFlags local_severity = 0;
+    VkFlags local_type = 0;
+    DebugReportFlagsToAnnotFlags(msg_flags, true, &local_severity, &local_type);
+    if (!debug_data || !(debug_data->active_severities & local_severity) || !(debug_data->active_types & local_type)) {
+        // Message is not wanted
+        return false;
+    }
+
+    va_list argptr;
+    va_start(argptr, format);
+    char *str;
+    if (-1 == vasprintf(&str, format, argptr)) {
+        // On failure, glibc vasprintf leaves str undefined
+        str = nullptr;
+    }
+    va_end(argptr);
+
+    std::string str_plus_spec_text(str);
+
+    // If the msg_code is in the error map, get ID, look up spec text, and tack it onto error message.
+    if (validation_error_text_map.find(vuid_text.c_str()) != validation_error_text_map.end()) {
+        str_plus_spec_text += " ";
+        str_plus_spec_text += validation_error_map[validation_error_text_map[vuid_text.c_str()]];
+    }
+
+    // Append layer prefix with VUID string, pass in UNDEFINED for numerical VUID
+    static const int UNDEFINED_VUID = -1;
+    bool result = debug_log_msg(debug_data, msg_flags, object_type, src_object, 0, UNDEFINED_VUID, "Validation",
+                                str_plus_spec_text.c_str() ? str_plus_spec_text.c_str() : "Allocation failure", vuid_text.c_str());
+
     free(str);
     return result;
 }
