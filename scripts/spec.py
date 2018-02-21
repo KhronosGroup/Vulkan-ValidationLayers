@@ -8,6 +8,7 @@ except ImportError:
 from bs4 import BeautifulSoup
 import json
 import vuid_mapping
+import re
 
 #############################
 # spec.py script
@@ -127,6 +128,8 @@ class Specification:
                             print ("Looking at dict for api:ext entry %s:%s" % (api, ext))
                             vuid = vu_txt_dict['vuid']
                             vutxt = vu_txt_dict['text']
+                            # strip asciidoc xref from vu text
+                            vutxt = re.sub('&amp;amp;lt;&amp;amp;lt;([^&]*,\\s*|)(.*?)&amp;amp;gt;&amp;amp;gt;', '\\2', vutxt)
                             #print ("%s:%s:%s:%s" % (api, ext, vuid, vutxt))
                             #print ("VUTXT orig:%s" % (vutxt))
                             just_txt = BeautifulSoup(vutxt, 'html.parser')
