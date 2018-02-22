@@ -151,57 +151,34 @@ class Specification:
 
     def compareJSON(self):
         """Compare parsed json file with existing data read in from DB file"""
-        json_db_set = set()
-        for vuid in self.json_db: # pull entries out and see which fields we're missing from error_db
-            json_db_set.add(vuid)
-        for enum in self.error_db_dict:
-            vuid_string = self.error_db_dict[enum]['vuid_string']
-            if vuid_string not in self.json_db:
-                #print ("Full string for %s is:%s" % (enum, full_error_string))
-                print ("WARN: Couldn't find vuid_string in json db:%s" % (vuid_string))
-                self.json_missing = self.json_missing + 1
-                self.error_db_dict[enum]['ext'] = 'core'
-                # TODO: Currently GL843 tracks 2 VUs that are missing from json incorrectly
-                #  Fix will land in 1.0.51 spec. After that we should take some alternative
-                #  action here to indicate that VUs have gone away.
-                #  Can have a removed_enums set that we add to and report to user
-                #sys.exit()
+        # update database for all json vuids
+        for vuid, vuid_json_data in self.json_db.items():
+            # convert vuid to error enum
+            error_enum = "%s%s" % (validation_error_enum_name, get8digithex(vuid_json_data['number_vuid']))
+            # create database entry if one doesn't exist
+            if error_enum not in self.error_db_dict:
+                self.error_db_dict[error_enum] = {'check_implemented': 'N',
+                                                  'testname': 'None',
+                                                  'note': ''}
+            # update database entry with data from json file
+            vuid_db_data = self.error_db_dict[error_enum]
+            if 'core' == vuid_json_data['ext'] or '!' in vuid_json_data['ext']:
+                spec_link = "%s#%s" % (core_url, vuid)
             else:
-                json_db_set.remove(vuid_string)
-                self.error_db_dict[enum]['ext'] = self.json_db[vuid_string]['ext']
-                if 'core' == self.json_db[vuid_string]['ext'] or '!' in self.json_db[vuid_string]['ext']:
-                    spec_link = "%s#%s" % (core_url, vuid_string)
-                else:
-                    spec_link = "%s#%s" % (ext_url, vuid_string)
-                self.error_db_dict[enum]['error_msg'] = "%s'%s' (%s)" % (error_msg_prefix, self.json_db[vuid_string]['vu_txt'], spec_link)
-                print ("Updated error_db error_msg:%s" % (self.error_db_dict[enum]['error_msg']))
-        #sys.exit()
-        print ("These json DB entries are not in error DB:")
-        for extra_vuid in json_db_set:
-            print ("\t%s" % (extra_vuid))
-            # Add these missing entries into the error_db
-            # Create link into core or ext spec as needed
-            if 'core' == self.json_db[extra_vuid]['ext'] or '!' in self.json_db[extra_vuid]['ext']:
-                spec_link = "%s#%s" % (core_url, extra_vuid)
-            else:
-                spec_link = "%s#%s" % (ext_url, extra_vuid)
-            error_enum = "%s%s" % (validation_error_enum_name, get8digithex(self.json_db[extra_vuid]['number_vuid']))
-            self.error_db_dict[error_enum] = {}
-            self.error_db_dict[error_enum]['check_implemented'] = 'N'
-            self.error_db_dict[error_enum]['testname'] = 'None'
-            self.error_db_dict[error_enum]['api'] = self.json_db[extra_vuid]['struct_func']
-            self.error_db_dict[error_enum]['vuid_string'] = extra_vuid
-            self.error_db_dict[error_enum]['error_msg'] = "%s'%s' (%s)" % (error_msg_prefix, self.json_db[extra_vuid]['vu_txt'], spec_link)
-            self.error_db_dict[error_enum]['note'] = ''
-            self.error_db_dict[error_enum]['ext'] = self.json_db[extra_vuid]['ext']
-            implicit = False
-            last_segment = extra_vuid.split("-")[-1]
-            if last_segment in vuid_mapping.implicit_type_map:
-                implicit = True
-            elif not last_segment.isdigit(): # Explicit ids should only have digits in last segment
-                print ("ERROR: Found last segment of val error ID that isn't in implicit map and doesn't have numbers in last segment: %s" % (last_segment))
-                sys.exit()
-            self.error_db_dict[error_enum]['implicit'] = implicit
+                spec_link = "%s#%s" % (ext_url, vuid)
+            vuid_db_data['api'] = vuid_json_data['struct_func']
+            vuid_db_data['vuid_string'] = vuid
+            vuid_db_data['error_msg'] = "%s'%s' (%s)" % (error_msg_prefix, vuid_json_data['vu_txt'], spec_link)
+            vuid_db_data['ext'] = vuid_json_data['ext']
+            last_segment = vuid.split("-")[-1]
+            vuid_db_data['implicit'] = not last_segment.isdigit()
+
+        # remove missing vuids from database
+        for enum in list(self.error_db_dict):
+            vuid = self.error_db_dict[enum]['vuid_string']
+            if vuid not in self.json_db:
+                print ("WARN: Couldn't find vuid_string in json db:%s" % (vuid))
+                del self.error_db_dict[enum]
 
     def genHeader(self, header_file):
         """Generate a header file based on the contents of a parsed spec"""
@@ -221,16 +198,8 @@ class Specification:
         enum_value = 0
         max_enum_val = 0
         for enum in sorted(self.error_db_dict):
-            #print ("Header enum is %s" % (enum))
-            # TMP: Use updated value
-            vuid_str = self.error_db_dict[enum]['vuid_string']
-            if vuid_str in self.json_db:
-                enum_value = self.json_db[vuid_str]['number_vuid']
-            else:
-                enum_value = vuid_mapping.convertVUID(vuid_str)
-            new_enum = "%s%s" % (validation_error_enum_name, get8digithex(enum_value))
-            enum_decl.append('    %s = 0x%s,' % (new_enum, get8digithex(enum_value)))
-            error_string_map.append('    {%s, "%s"},' % (new_enum, self.error_db_dict[enum]['error_msg'].replace('"', '\\"')))
+            enum_decl.append('    %s = 0x%s,' % (enum, enum[-8:]))
+            error_string_map.append('    {%s, "%s"},' % (enum, self.error_db_dict[enum]['error_msg'].replace('"', '\\"')))
             max_enum_val = max(max_enum_val, enum_value)
         enum_decl.append('    %sMAX_ENUM = %d,' % (validation_error_enum_name, max_enum_val + 1))
         enum_decl.append('};')

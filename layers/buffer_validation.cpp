@@ -1553,10 +1553,10 @@ bool ValidateImageCopyData(const layer_data *device_data, const debug_report_dat
         if ((src_state->createInfo.imageType == VK_IMAGE_TYPE_1D) || (src_state->createInfo.imageType == VK_IMAGE_TYPE_2D)) {
             if ((0 != region.srcOffset.z) || (1 != src_copy_extent.depth)) {
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
-                                HandleToUint64(src_state->image), __LINE__, VALIDATION_ERROR_09c00128, "IMAGE",
+                                HandleToUint64(src_state->image), __LINE__, VALIDATION_ERROR_09c00df2, "IMAGE",
                                 "vkCmdCopyImage(): pRegion[%d] srcOffset.z is %d and extent.depth is %d. For 1D and 2D images "
                                 "these must be 0 and 1, respectively. %s",
-                                i, region.srcOffset.z, src_copy_extent.depth, validation_error_map[VALIDATION_ERROR_09c00128]);
+                                i, region.srcOffset.z, src_copy_extent.depth, validation_error_map[VALIDATION_ERROR_09c00df2]);
             }
         }
 
@@ -1655,10 +1655,10 @@ bool ValidateImageCopyData(const layer_data *device_data, const debug_report_dat
         if ((dst_state->createInfo.imageType == VK_IMAGE_TYPE_1D) || (dst_state->createInfo.imageType == VK_IMAGE_TYPE_2D)) {
             if ((0 != region.dstOffset.z) || (1 != dst_copy_extent.depth)) {
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
-                                HandleToUint64(dst_state->image), __LINE__, VALIDATION_ERROR_09c00134, "IMAGE",
+                                HandleToUint64(dst_state->image), __LINE__, VALIDATION_ERROR_09c00df4, "IMAGE",
                                 "vkCmdCopyImage(): pRegion[%d] dstOffset.z is %d and dst_copy_extent.depth is %d. For 1D and 2D "
                                 "images these must be 0 and 1, respectively. %s",
-                                i, region.dstOffset.z, dst_copy_extent.depth, validation_error_map[VALIDATION_ERROR_09c00134]);
+                                i, region.dstOffset.z, dst_copy_extent.depth, validation_error_map[VALIDATION_ERROR_09c00df4]);
             }
         }
 
@@ -1890,16 +1890,16 @@ bool PreCallValidateCmdCopyImage(layer_data *device_data, GLOBAL_CB_NODE *cb_nod
             ss << "vkCmdCopyImage: pRegions[" << i
                << "] specifies a src mipLevel greater than the number specified when the srcImage was created.";
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                            HandleToUint64(command_buffer), __LINE__, VALIDATION_ERROR_0a600152, "IMAGE", "%s. %s",
-                            ss.str().c_str(), validation_error_map[VALIDATION_ERROR_0a600152]);
+                            HandleToUint64(command_buffer), __LINE__, VALIDATION_ERROR_19000d40, "IMAGE", "%s. %s",
+                            ss.str().c_str(), validation_error_map[VALIDATION_ERROR_19000d40]);
         }
         if (region.dstSubresource.mipLevel >= dst_image_state->createInfo.mipLevels) {
             std::stringstream ss;
             ss << "vkCmdCopyImage: pRegions[" << i
                << "] specifies a dst mipLevel greater than the number specified when the dstImage was created.";
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                            HandleToUint64(command_buffer), __LINE__, VALIDATION_ERROR_0a600152, "IMAGE", "%s. %s",
-                            ss.str().c_str(), validation_error_map[VALIDATION_ERROR_0a600152]);
+                            HandleToUint64(command_buffer), __LINE__, VALIDATION_ERROR_19000d42, "IMAGE", "%s. %s",
+                            ss.str().c_str(), validation_error_map[VALIDATION_ERROR_19000d42]);
         }
 
         // (baseArrayLayer + layerCount) must be less than or equal to the arrayLayers specified in VkImageCreateInfo when the
@@ -1909,16 +1909,16 @@ bool PreCallValidateCmdCopyImage(layer_data *device_data, GLOBAL_CB_NODE *cb_nod
             ss << "vkCmdCopyImage: srcImage arrayLayers was " << src_image_state->createInfo.arrayLayers << " but subRegion[" << i
                << "] baseArrayLayer + layerCount is " << (region.srcSubresource.baseArrayLayer + region.srcSubresource.layerCount);
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                            HandleToUint64(command_buffer), __LINE__, VALIDATION_ERROR_0a600154, "IMAGE", "%s. %s",
-                            ss.str().c_str(), validation_error_map[VALIDATION_ERROR_0a600154]);
+                            HandleToUint64(command_buffer), __LINE__, VALIDATION_ERROR_19000d44, "IMAGE", "%s. %s",
+                            ss.str().c_str(), validation_error_map[VALIDATION_ERROR_19000d44]);
         }
         if ((region.dstSubresource.baseArrayLayer + region.dstSubresource.layerCount) > dst_image_state->createInfo.arrayLayers) {
             std::stringstream ss;
             ss << "vkCmdCopyImage: dstImage arrayLayers was " << dst_image_state->createInfo.arrayLayers << " but subRegion[" << i
                << "] baseArrayLayer + layerCount is " << (region.dstSubresource.baseArrayLayer + region.dstSubresource.layerCount);
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                            HandleToUint64(command_buffer), __LINE__, VALIDATION_ERROR_0a600154, "IMAGE", "%s. %s",
-                            ss.str().c_str(), validation_error_map[VALIDATION_ERROR_0a600154]);
+                            HandleToUint64(command_buffer), __LINE__, VALIDATION_ERROR_19000d46, "IMAGE", "%s. %s",
+                            ss.str().c_str(), validation_error_map[VALIDATION_ERROR_19000d46]);
         }
 
         // Check region extents for 1D-1D, 2D-2D, and 3D-3D copies
@@ -3296,11 +3296,11 @@ bool ValidateCreateImageViewSubresourceRange(const layer_data *device_data, cons
 
     SubresourceRangeErrorCodes subresourceRangeErrorCodes = {};
     subresourceRangeErrorCodes.base_mip_err = VALIDATION_ERROR_0ac00b8c;
-    subresourceRangeErrorCodes.mip_count_err = VALIDATION_ERROR_0ac00b8e;
+    subresourceRangeErrorCodes.mip_count_err = VALIDATION_ERROR_0ac00d6c;
     subresourceRangeErrorCodes.base_layer_err =
         is_khr_maintenance1 ? (is_3D_to_2D_map ? VALIDATION_ERROR_0ac00b98 : VALIDATION_ERROR_0ac00b94) : VALIDATION_ERROR_0ac00b90;
     subresourceRangeErrorCodes.layer_count_err =
-        is_khr_maintenance1 ? (is_3D_to_2D_map ? VALIDATION_ERROR_0ac00b9a : VALIDATION_ERROR_0ac00b96) : VALIDATION_ERROR_0ac00b92;
+        is_khr_maintenance1 ? (is_3D_to_2D_map ? VALIDATION_ERROR_0ac00b9a : VALIDATION_ERROR_0ac00b96) : VALIDATION_ERROR_0ac00d6e;
 
     return ValidateImageSubresourceRange(device_data, image_state->createInfo.mipLevels, image_layer_count, subresourceRange,
                                          "vkCreateImageView", "pCreateInfo->subresourceRange", image_layer_count_var_name,
@@ -3311,9 +3311,9 @@ bool ValidateCmdClearColorSubresourceRange(const layer_data *device_data, const 
                                            const VkImageSubresourceRange &subresourceRange, const char *param_name) {
     SubresourceRangeErrorCodes subresourceRangeErrorCodes = {};
     subresourceRangeErrorCodes.base_mip_err = VALIDATION_ERROR_18800b7c;
-    subresourceRangeErrorCodes.mip_count_err = VALIDATION_ERROR_18800b7e;
+    subresourceRangeErrorCodes.mip_count_err = VALIDATION_ERROR_18800d38;
     subresourceRangeErrorCodes.base_layer_err = VALIDATION_ERROR_18800b80;
-    subresourceRangeErrorCodes.layer_count_err = VALIDATION_ERROR_18800b82;
+    subresourceRangeErrorCodes.layer_count_err = VALIDATION_ERROR_18800d3a;
 
     return ValidateImageSubresourceRange(device_data, image_state->createInfo.mipLevels, image_state->createInfo.arrayLayers,
                                          subresourceRange, "vkCmdClearColorImage", param_name, "arrayLayers",
@@ -3324,9 +3324,9 @@ bool ValidateCmdClearDepthSubresourceRange(const layer_data *device_data, const 
                                            const VkImageSubresourceRange &subresourceRange, const char *param_name) {
     SubresourceRangeErrorCodes subresourceRangeErrorCodes = {};
     subresourceRangeErrorCodes.base_mip_err = VALIDATION_ERROR_18a00b84;
-    subresourceRangeErrorCodes.mip_count_err = VALIDATION_ERROR_18a00b86;
+    subresourceRangeErrorCodes.mip_count_err = VALIDATION_ERROR_18a00d3c;
     subresourceRangeErrorCodes.base_layer_err = VALIDATION_ERROR_18a00b88;
-    subresourceRangeErrorCodes.layer_count_err = VALIDATION_ERROR_18a00b8a;
+    subresourceRangeErrorCodes.layer_count_err = VALIDATION_ERROR_18a00d3e;
 
     return ValidateImageSubresourceRange(device_data, image_state->createInfo.mipLevels, image_state->createInfo.arrayLayers,
                                          subresourceRange, "vkCmdClearDepthStencilImage", param_name, "arrayLayers",
@@ -3338,9 +3338,9 @@ bool ValidateImageBarrierSubresourceRange(const layer_data *device_data, const I
                                           const char *param_name) {
     SubresourceRangeErrorCodes subresourceRangeErrorCodes = {};
     subresourceRangeErrorCodes.base_mip_err = VALIDATION_ERROR_0a000b9c;
-    subresourceRangeErrorCodes.mip_count_err = VALIDATION_ERROR_0a000b9e;
+    subresourceRangeErrorCodes.mip_count_err = VALIDATION_ERROR_0a000d78;
     subresourceRangeErrorCodes.base_layer_err = VALIDATION_ERROR_0a000ba0;
-    subresourceRangeErrorCodes.layer_count_err = VALIDATION_ERROR_0a000ba2;
+    subresourceRangeErrorCodes.layer_count_err = VALIDATION_ERROR_0a000d7a;
 
     return ValidateImageSubresourceRange(device_data, image_state->createInfo.mipLevels, image_state->createInfo.arrayLayers,
                                          subresourceRange, cmd_name, param_name, "arrayLayers", HandleToUint64(image_state->image),
@@ -4151,18 +4151,18 @@ bool PreCallValidateGetImageSubresourceLayout(layer_data *device_data, VkImage i
     // mipLevel must be less than the mipLevels specified in VkImageCreateInfo when the image was created
     if (pSubresource->mipLevel >= image_entry->createInfo.mipLevels) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, HandleToUint64(image),
-                        __LINE__, VALIDATION_ERROR_0a4007cc, "IMAGE",
+                        __LINE__, VALIDATION_ERROR_2a600d68, "IMAGE",
                         "vkGetImageSubresourceLayout(): pSubresource.mipLevel (%d) must be less than %d. %s",
-                        pSubresource->mipLevel, image_entry->createInfo.mipLevels, validation_error_map[VALIDATION_ERROR_0a4007cc]);
+                        pSubresource->mipLevel, image_entry->createInfo.mipLevels, validation_error_map[VALIDATION_ERROR_2a600d68]);
     }
 
     // arrayLayer must be less than the arrayLayers specified in VkImageCreateInfo when the image was created
     if (pSubresource->arrayLayer >= image_entry->createInfo.arrayLayers) {
         skip |=
             log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, HandleToUint64(image),
-                    __LINE__, VALIDATION_ERROR_0a4007ce, "IMAGE",
+                    __LINE__, VALIDATION_ERROR_2a600d6a, "IMAGE",
                     "vkGetImageSubresourceLayout(): pSubresource.arrayLayer (%d) must be less than %d. %s",
-                    pSubresource->arrayLayer, image_entry->createInfo.arrayLayers, validation_error_map[VALIDATION_ERROR_0a4007ce]);
+                    pSubresource->arrayLayer, image_entry->createInfo.arrayLayers, validation_error_map[VALIDATION_ERROR_2a600d6a]);
     }
 
     // subresource's aspect must be compatible with image's format.

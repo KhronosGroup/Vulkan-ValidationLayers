@@ -2989,10 +2989,9 @@ static bool PreCallValidateAllocateMemory(layer_data *dev_data) {
     bool skip = false;
     if (dev_data->memObjMap.size() >= dev_data->phys_dev_properties.properties.limits.maxMemoryAllocationCount) {
         skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
-                        HandleToUint64(dev_data->device), __LINE__, VALIDATION_ERROR_16c004f8, "MEM",
-                        "Number of currently valid memory objects is not less than the maximum allowed (%u). %s",
-                        dev_data->phys_dev_properties.properties.limits.maxMemoryAllocationCount,
-                        validation_error_map[VALIDATION_ERROR_16c004f8]);
+                        HandleToUint64(dev_data->device), __LINE__, VALIDATION_ERROR_UNDEFINED, "MEM",
+                        "Number of currently valid memory objects is not less than the maximum allowed (%u).",
+                        dev_data->phys_dev_properties.properties.limits.maxMemoryAllocationCount);
     }
     return skip;
 }
@@ -8276,11 +8275,11 @@ VKAPI_ATTR void VKAPI_CALL CmdPushConstants(VkCommandBuffer commandBuffer, VkPip
         if (!found_matching_range) {
             skip |= log_msg(
                 dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                HandleToUint64(commandBuffer), __LINE__, VALIDATION_ERROR_1bc002de, "DS",
+                HandleToUint64(commandBuffer), __LINE__, VALIDATION_ERROR_1bc00e08, "DS",
                 "vkCmdPushConstants() stageFlags = 0x%" PRIx32
                 " do not match the stageFlags in any of the ranges with offset = %d and size = %d in pipeline layout 0x%" PRIx64
                 ". %s",
-                (uint32_t)stageFlags, offset, size, HandleToUint64(layout), validation_error_map[VALIDATION_ERROR_1bc002de]);
+                (uint32_t)stageFlags, offset, size, HandleToUint64(layout), validation_error_map[VALIDATION_ERROR_1bc00e08]);
         }
     }
     lock.unlock();
@@ -9616,10 +9615,10 @@ static bool ValidateMappedMemoryRangeDeviceLimits(layer_data *dev_data, const ch
         }
         if ((mem_ranges[i].size != VK_WHOLE_SIZE) && (SafeModulo(mem_ranges[i].size, atom_size) != 0)) {
             skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_MEMORY_EXT,
-                            HandleToUint64(mem_ranges->memory), __LINE__, VALIDATION_ERROR_0c200560, "MEM",
+                            HandleToUint64(mem_ranges->memory), __LINE__, VALIDATION_ERROR_0c200adc, "MEM",
                             "%s: Size in pMemRanges[%d] is 0x%" PRIxLEAST64
                             ", which is not a multiple of VkPhysicalDeviceLimits::nonCoherentAtomSize (0x%" PRIxLEAST64 "). %s",
-                            func_name, i, mem_ranges[i].size, atom_size, validation_error_map[VALIDATION_ERROR_0c200560]);
+                            func_name, i, mem_ranges[i].size, atom_size, validation_error_map[VALIDATION_ERROR_0c200adc]);
         }
     }
     return skip;
