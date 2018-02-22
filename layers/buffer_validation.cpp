@@ -34,8 +34,9 @@
 #include "buffer_validation.h"
 
 void SetLayout(layer_data *device_data, GLOBAL_CB_NODE *pCB, ImageSubresourcePair imgpair, const VkImageLayout &layout) {
-    if (pCB->imageLayoutMap.find(imgpair) != pCB->imageLayoutMap.end()) {
-        pCB->imageLayoutMap[imgpair].layout = layout;
+    auto it = pCB->imageLayoutMap.find(imgpair);
+    if (it != pCB->imageLayoutMap.end()) {
+        it->second.layout = layout;
     } else {
         assert(imgpair.hasSubresource);
         IMAGE_CMD_BUF_LAYOUT_NODE node;
@@ -52,6 +53,11 @@ void SetLayout(layer_data *device_data, OBJECT *pObject, VkImage image, VkImageS
     SetLayout(device_data, pObject, imgpair, layout, VK_IMAGE_ASPECT_DEPTH_BIT);
     SetLayout(device_data, pObject, imgpair, layout, VK_IMAGE_ASPECT_STENCIL_BIT);
     SetLayout(device_data, pObject, imgpair, layout, VK_IMAGE_ASPECT_METADATA_BIT);
+    if (GetDeviceExtensions(device_data)->vk_khr_sampler_ycbcr_conversion) {
+        SetLayout(device_data, pObject, imgpair, layout, VK_IMAGE_ASPECT_PLANE_0_BIT_KHR);
+        SetLayout(device_data, pObject, imgpair, layout, VK_IMAGE_ASPECT_PLANE_1_BIT_KHR);
+        SetLayout(device_data, pObject, imgpair, layout, VK_IMAGE_ASPECT_PLANE_2_BIT_KHR);
+    }
 }
 
 template <class OBJECT, class LAYOUT>
@@ -66,7 +72,12 @@ void SetLayout(layer_data *device_data, OBJECT *pObject, ImageSubresourcePair im
 // Set the layout in supplied map
 void SetLayout(std::unordered_map<ImageSubresourcePair, IMAGE_LAYOUT_NODE> &imageLayoutMap, ImageSubresourcePair imgpair,
                VkImageLayout layout) {
-    imageLayoutMap[imgpair].layout = layout;
+    auto it = imageLayoutMap.find(imgpair);
+    if (it != imageLayoutMap.end()) {
+        it->second.layout = layout;  // Update
+    } else {
+        imageLayoutMap[imgpair].layout = layout;  // Insert
+    }
 }
 
 bool FindLayoutVerifyNode(layer_data const *device_data, GLOBAL_CB_NODE const *pCB, ImageSubresourcePair imgpair,
@@ -133,6 +144,11 @@ bool FindCmdBufLayout(layer_data const *device_data, GLOBAL_CB_NODE const *pCB, 
     FindLayoutVerifyNode(device_data, pCB, imgpair, node, VK_IMAGE_ASPECT_DEPTH_BIT);
     FindLayoutVerifyNode(device_data, pCB, imgpair, node, VK_IMAGE_ASPECT_STENCIL_BIT);
     FindLayoutVerifyNode(device_data, pCB, imgpair, node, VK_IMAGE_ASPECT_METADATA_BIT);
+    if (GetDeviceExtensions(device_data)->vk_khr_sampler_ycbcr_conversion) {
+        FindLayoutVerifyNode(device_data, pCB, imgpair, node, VK_IMAGE_ASPECT_PLANE_0_BIT_KHR);
+        FindLayoutVerifyNode(device_data, pCB, imgpair, node, VK_IMAGE_ASPECT_PLANE_1_BIT_KHR);
+        FindLayoutVerifyNode(device_data, pCB, imgpair, node, VK_IMAGE_ASPECT_PLANE_2_BIT_KHR);
+    }
     if (node.layout == VK_IMAGE_LAYOUT_MAX_ENUM) {
         imgpair = {image, false, VkImageSubresource()};
         auto imgsubIt = pCB->imageLayoutMap.find(imgpair);
@@ -150,6 +166,11 @@ bool FindGlobalLayout(layer_data *device_data, ImageSubresourcePair imgpair, VkI
     FindLayoutVerifyLayout(device_data, imgpair, layout, VK_IMAGE_ASPECT_DEPTH_BIT);
     FindLayoutVerifyLayout(device_data, imgpair, layout, VK_IMAGE_ASPECT_STENCIL_BIT);
     FindLayoutVerifyLayout(device_data, imgpair, layout, VK_IMAGE_ASPECT_METADATA_BIT);
+    if (GetDeviceExtensions(device_data)->vk_khr_sampler_ycbcr_conversion) {
+        FindLayoutVerifyLayout(device_data, imgpair, layout, VK_IMAGE_ASPECT_PLANE_0_BIT_KHR);
+        FindLayoutVerifyLayout(device_data, imgpair, layout, VK_IMAGE_ASPECT_PLANE_1_BIT_KHR);
+        FindLayoutVerifyLayout(device_data, imgpair, layout, VK_IMAGE_ASPECT_PLANE_2_BIT_KHR);
+    }
     if (layout == VK_IMAGE_LAYOUT_MAX_ENUM) {
         imgpair = {imgpair.image, false, VkImageSubresource()};
         auto imgsubIt = (*core_validation::GetImageLayoutMap(device_data)).find(imgpair);
@@ -193,13 +214,19 @@ bool FindLayout(const std::unordered_map<ImageSubresourcePair, IMAGE_LAYOUT_NODE
 }
 
 // find layout in supplied map
-bool FindLayout(const std::unordered_map<ImageSubresourcePair, IMAGE_LAYOUT_NODE> &imageLayoutMap, ImageSubresourcePair imgpair,
-                VkImageLayout &layout) {
+bool FindLayout(layer_data *device_data, const std::unordered_map<ImageSubresourcePair, IMAGE_LAYOUT_NODE> &imageLayoutMap,
+                ImageSubresourcePair imgpair, VkImageLayout &layout) {
     layout = VK_IMAGE_LAYOUT_MAX_ENUM;
     FindLayout(imageLayoutMap, imgpair, layout, VK_IMAGE_ASPECT_COLOR_BIT);
     FindLayout(imageLayoutMap, imgpair, layout, VK_IMAGE_ASPECT_DEPTH_BIT);
     FindLayout(imageLayoutMap, imgpair, layout, VK_IMAGE_ASPECT_STENCIL_BIT);
     FindLayout(imageLayoutMap, imgpair, layout, VK_IMAGE_ASPECT_METADATA_BIT);
+    if (GetDeviceExtensions(device_data)->vk_khr_sampler_ycbcr_conversion) {
+        FindLayout(imageLayoutMap, imgpair, layout, VK_IMAGE_ASPECT_PLANE_0_BIT_KHR);
+        FindLayout(imageLayoutMap, imgpair, layout, VK_IMAGE_ASPECT_PLANE_1_BIT_KHR);
+        FindLayout(imageLayoutMap, imgpair, layout, VK_IMAGE_ASPECT_PLANE_2_BIT_KHR);
+    }
+    // Image+subresource not found, look for image handle w/o subresource
     if (layout == VK_IMAGE_LAYOUT_MAX_ENUM) {
         imgpair = {imgpair.image, false, VkImageSubresource()};
         auto imgsubIt = imageLayoutMap.find(imgpair);
@@ -212,7 +239,13 @@ bool FindLayout(const std::unordered_map<ImageSubresourcePair, IMAGE_LAYOUT_NODE
 // Set the layout on the global level
 void SetGlobalLayout(layer_data *device_data, ImageSubresourcePair imgpair, const VkImageLayout &layout) {
     VkImage &image = imgpair.image;
-    (*core_validation::GetImageLayoutMap(device_data))[imgpair].layout = layout;
+    auto &lmap = (*core_validation::GetImageLayoutMap(device_data));
+    auto data = lmap.find(imgpair);
+    if (data != lmap.end()) {
+        data->second.layout = layout;  // Update
+    } else {
+        lmap[imgpair].layout = layout;  // Insert
+    }
     auto &image_subresources = (*core_validation::GetImageSubresourceMap(device_data))[image];
     auto subresource = std::find(image_subresources.begin(), image_subresources.end(), imgpair);
     if (subresource == image_subresources.end()) {
@@ -222,7 +255,12 @@ void SetGlobalLayout(layer_data *device_data, ImageSubresourcePair imgpair, cons
 
 // Set the layout on the cmdbuf level
 void SetLayout(layer_data *device_data, GLOBAL_CB_NODE *pCB, ImageSubresourcePair imgpair, const IMAGE_CMD_BUF_LAYOUT_NODE &node) {
-    pCB->imageLayoutMap[imgpair] = node;
+    auto it = pCB->imageLayoutMap.find(imgpair);
+    if (it != pCB->imageLayoutMap.end()) {
+        it->second = node;  // Update
+    } else {
+        pCB->imageLayoutMap[imgpair] = node;  // Insert
+    }
 }
 // Set image layout for given VkImageSubresourceRange struct
 void SetImageLayout(layer_data *device_data, GLOBAL_CB_NODE *cb_node, const IMAGE_STATE *image_state,
@@ -404,6 +442,10 @@ bool VerifyAspectsPresent(VkImageAspectFlags aspect_mask, VkFormat format) {
     if ((aspect_mask & VK_IMAGE_ASPECT_STENCIL_BIT) != 0) {
         if (!FormatHasStencil(format)) return false;
     }
+    if (0 !=
+        (aspect_mask & (VK_IMAGE_ASPECT_PLANE_0_BIT_KHR | VK_IMAGE_ASPECT_PLANE_1_BIT_KHR | VK_IMAGE_ASPECT_PLANE_2_BIT_KHR))) {
+        if (FormatPlaneCount(format) == 1) return false;
+    }
     return true;
 }
 
@@ -517,6 +559,14 @@ bool ValidateBarriersToImages(layer_data *device_data, GLOBAL_CB_NODE const *cb_
                 skip |= ValidateImageAspectLayout(device_data, cb_state, img_barrier, level, layer, VK_IMAGE_ASPECT_DEPTH_BIT);
                 skip |= ValidateImageAspectLayout(device_data, cb_state, img_barrier, level, layer, VK_IMAGE_ASPECT_STENCIL_BIT);
                 skip |= ValidateImageAspectLayout(device_data, cb_state, img_barrier, level, layer, VK_IMAGE_ASPECT_METADATA_BIT);
+                if (GetDeviceExtensions(device_data)->vk_khr_sampler_ycbcr_conversion) {
+                    skip |= ValidateImageAspectLayout(device_data, cb_state, img_barrier, level, layer,
+                                                      VK_IMAGE_ASPECT_PLANE_0_BIT_KHR);
+                    skip |= ValidateImageAspectLayout(device_data, cb_state, img_barrier, level, layer,
+                                                      VK_IMAGE_ASPECT_PLANE_1_BIT_KHR);
+                    skip |= ValidateImageAspectLayout(device_data, cb_state, img_barrier, level, layer,
+                                                      VK_IMAGE_ASPECT_PLANE_2_BIT_KHR);
+                }
             }
         }
     }
@@ -535,6 +585,14 @@ void TransitionImageLayouts(layer_data *device_data, VkCommandBuffer cmdBuffer, 
         uint32_t level_count = ResolveRemainingLevels(&mem_barrier->subresourceRange, image_create_info->mipLevels);
         uint32_t layer_count = ResolveRemainingLayers(&mem_barrier->subresourceRange, image_create_info->arrayLayers);
 
+        // Special case for 3D images with VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT_KHR flag bit, where <extent.depth> and
+        // <arrayLayers> can potentially alias. When recording layout for the entire image, pre-emptively record layouts
+        // for all (potential) layer sub_resources.
+        if ((0 != (image_create_info->flags & VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT_KHR)) &&
+            (mem_barrier->subresourceRange.baseArrayLayer == 0) && (layer_count == 1)) {
+            layer_count = image_create_info->extent.depth;  // Treat each depth slice as a layer subresource
+        }
+
         for (uint32_t j = 0; j < level_count; j++) {
             uint32_t level = mem_barrier->subresourceRange.baseMipLevel + j;
             for (uint32_t k = 0; k < layer_count; k++) {
@@ -543,6 +601,11 @@ void TransitionImageLayouts(layer_data *device_data, VkCommandBuffer cmdBuffer, 
                 TransitionImageAspectLayout(device_data, pCB, mem_barrier, level, layer, VK_IMAGE_ASPECT_DEPTH_BIT);
                 TransitionImageAspectLayout(device_data, pCB, mem_barrier, level, layer, VK_IMAGE_ASPECT_STENCIL_BIT);
                 TransitionImageAspectLayout(device_data, pCB, mem_barrier, level, layer, VK_IMAGE_ASPECT_METADATA_BIT);
+                if (GetDeviceExtensions(device_data)->vk_khr_sampler_ycbcr_conversion) {
+                    TransitionImageAspectLayout(device_data, pCB, mem_barrier, level, layer, VK_IMAGE_ASPECT_PLANE_0_BIT_KHR);
+                    TransitionImageAspectLayout(device_data, pCB, mem_barrier, level, layer, VK_IMAGE_ASPECT_PLANE_1_BIT_KHR);
+                    TransitionImageAspectLayout(device_data, pCB, mem_barrier, level, layer, VK_IMAGE_ASPECT_PLANE_2_BIT_KHR);
+                }
             }
         }
     }
@@ -2711,8 +2774,8 @@ bool ValidateCmdBufImageLayouts(layer_data *device_data, GLOBAL_CB_NODE *pCB,
     for (auto cb_image_data : pCB->imageLayoutMap) {
         VkImageLayout imageLayout;
 
-        if (FindLayout(overlayLayoutMap, cb_image_data.first, imageLayout) ||
-            FindLayout(globalImageLayoutMap, cb_image_data.first, imageLayout)) {
+        if (FindLayout(device_data, overlayLayoutMap, cb_image_data.first, imageLayout) ||
+            FindLayout(device_data, globalImageLayoutMap, cb_image_data.first, imageLayout)) {
             if (cb_image_data.second.initialLayout == VK_IMAGE_LAYOUT_UNDEFINED) {
                 // TODO: Set memory invalid which is in mem_tracker currently
             } else if (imageLayout != cb_image_data.second.initialLayout) {

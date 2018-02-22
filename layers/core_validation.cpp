@@ -2815,6 +2815,7 @@ static void PostCallRecordQueueSubmit(layer_data *dev_data, VkQueue queue, uint3
                 cbs.push_back(submit->pCommandBuffers[i]);
                 for (auto secondaryCmdBuffer : cb_node->linkedCommandBuffers) {
                     cbs.push_back(secondaryCmdBuffer->commandBuffer);
+                    UpdateCmdBufImageLayouts(dev_data, secondaryCmdBuffer);
                 }
                 UpdateCmdBufImageLayouts(dev_data, cb_node);
                 incrementResources(dev_data, cb_node);
