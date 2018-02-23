@@ -63,8 +63,6 @@ void wsi_create_instance(struct loader_instance *ptr_instance, const VkInstanceC
 #endif  // VK_USE_PLATFORM_IOS_MVK
 
     ptr_instance->wsi_display_enabled = false;
-    ptr_instance->wsi_swapchain_enabled = false;
-    ptr_instance->wsi_display_swapchain_enabled = false;
 
     for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
         if (strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_KHR_SURFACE_EXTENSION_NAME) == 0) {
@@ -121,14 +119,6 @@ void wsi_create_instance(struct loader_instance *ptr_instance, const VkInstanceC
 #endif  // VK_USE_PLATFORM_IOS_MVK
         if (strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_KHR_DISPLAY_EXTENSION_NAME) == 0) {
             ptr_instance->wsi_display_enabled = true;
-            continue;
-        }
-        if (strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_KHR_SWAPCHAIN_EXTENSION_NAME) == 0) {
-            ptr_instance->wsi_swapchain_enabled = true;
-            continue;
-        }
-        if (strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_KHR_DISPLAY_SWAPCHAIN_EXTENSION_NAME) == 0) {
-            ptr_instance->wsi_display_swapchain_enabled = true;
             continue;
         }
     }
@@ -1652,27 +1642,27 @@ bool wsi_swapchain_instance_gpa(struct loader_instance *ptr_instance, const char
     // function will return the trampoline function for such device-extension
     // functions, regardless of whether the extension has been enabled.
     if (!strcmp("vkCreateSwapchainKHR", name)) {
-        *addr = ptr_instance->wsi_swapchain_enabled ? (void *)vkCreateSwapchainKHR : NULL;
+        *addr = (void *)vkCreateSwapchainKHR;
         return true;
     }
     if (!strcmp("vkDestroySwapchainKHR", name)) {
-        *addr = ptr_instance->wsi_swapchain_enabled ? (void *)vkDestroySwapchainKHR : NULL;
+        *addr = (void *)vkDestroySwapchainKHR;
         return true;
     }
     if (!strcmp("vkGetSwapchainImagesKHR", name)) {
-        *addr = ptr_instance->wsi_swapchain_enabled ? (void *)vkGetSwapchainImagesKHR : NULL;
+        *addr = (void *)vkGetSwapchainImagesKHR;
         return true;
     }
     if (!strcmp("vkAcquireNextImageKHR", name)) {
-        *addr = ptr_instance->wsi_swapchain_enabled ? (void *)vkAcquireNextImageKHR : NULL;
+        *addr = (void *)vkAcquireNextImageKHR;
         return true;
     }
     if (!strcmp("vkQueuePresentKHR", name)) {
-        *addr = ptr_instance->wsi_swapchain_enabled ? (void *)vkQueuePresentKHR : NULL;
+        *addr = (void *)vkQueuePresentKHR;
         return true;
     }
     if (!strcmp("vkAcquireNextImage2KHR", name)) {
-        *addr = ptr_instance->wsi_swapchain_enabled ? (void *)vkAcquireNextImage2KHR : NULL;
+        *addr = (void *)vkAcquireNextImage2KHR;
         return true;
     }
 
@@ -1793,7 +1783,7 @@ bool wsi_swapchain_instance_gpa(struct loader_instance *ptr_instance, const char
 
     // Functions for KHR_display_swapchain extension:
     if (!strcmp("vkCreateSharedSwapchainsKHR", name)) {
-        *addr = ptr_instance->wsi_display_swapchain_enabled ? (void *)vkCreateSharedSwapchainsKHR : NULL;
+        *addr = (void *)vkCreateSharedSwapchainsKHR;
         return true;
     }
 
