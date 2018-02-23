@@ -4008,8 +4008,8 @@ VKAPI_ATTR VkResult VKAPI_CALL BindBufferMemory(VkDevice device, VkBuffer buffer
     return result;
 }
 
-static bool PreCallValidateBindBufferMemory2KHR(layer_data *dev_data, std::vector<BUFFER_STATE *> *buffer_state,
-                                                uint32_t bindInfoCount, const VkBindBufferMemoryInfoKHR *pBindInfos) {
+static bool PreCallValidateBindBufferMemory2(layer_data *dev_data, std::vector<BUFFER_STATE *> *buffer_state,
+                                             uint32_t bindInfoCount, const VkBindBufferMemoryInfoKHR *pBindInfos) {
     {
         unique_lock_t lock(global_lock);
         for (uint32_t i = 0; i < bindInfoCount; i++) {
@@ -4019,19 +4019,33 @@ static bool PreCallValidateBindBufferMemory2KHR(layer_data *dev_data, std::vecto
     bool skip = false;
     char api_name[64];
     for (uint32_t i = 0; i < bindInfoCount; i++) {
-        sprintf(api_name, "vkBindBufferMemory2KHR() pBindInfos[%u]", i);
+        sprintf(api_name, "vkBindBufferMemory2() pBindInfos[%u]", i);
         skip |= PreCallValidateBindBufferMemory(dev_data, pBindInfos[i].buffer, (*buffer_state)[i], pBindInfos[i].memory,
                                                 pBindInfos[i].memoryOffset, api_name);
     }
     return skip;
 }
 
-static void PostCallRecordBindBufferMemory2KHR(layer_data *dev_data, const std::vector<BUFFER_STATE *> &buffer_state,
-                                               uint32_t bindInfoCount, const VkBindBufferMemoryInfoKHR *pBindInfos) {
+static void PostCallRecordBindBufferMemory2(layer_data *dev_data, const std::vector<BUFFER_STATE *> &buffer_state,
+                                            uint32_t bindInfoCount, const VkBindBufferMemoryInfoKHR *pBindInfos) {
     for (uint32_t i = 0; i < bindInfoCount; i++) {
         PostCallRecordBindBufferMemory(dev_data, pBindInfos[i].buffer, buffer_state[i], pBindInfos[i].memory,
-                                       pBindInfos[i].memoryOffset, "vkBindBufferMemory2KHR()");
+                                       pBindInfos[i].memoryOffset, "vkBindBufferMemory2()");
     }
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL BindBufferMemory2(VkDevice device, uint32_t bindInfoCount,
+                                                 const VkBindBufferMemoryInfoKHR *pBindInfos) {
+    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    VkResult result = VK_ERROR_VALIDATION_FAILED_EXT;
+    std::vector<BUFFER_STATE *> buffer_state(bindInfoCount);
+    if (!PreCallValidateBindBufferMemory2(dev_data, &buffer_state, bindInfoCount, pBindInfos)) {
+        result = dev_data->dispatch_table.BindBufferMemory2(device, bindInfoCount, pBindInfos);
+        if (result == VK_SUCCESS) {
+            PostCallRecordBindBufferMemory2(dev_data, buffer_state, bindInfoCount, pBindInfos);
+        }
+    }
+    return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL BindBufferMemory2KHR(VkDevice device, uint32_t bindInfoCount,
@@ -4039,10 +4053,10 @@ VKAPI_ATTR VkResult VKAPI_CALL BindBufferMemory2KHR(VkDevice device, uint32_t bi
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     VkResult result = VK_ERROR_VALIDATION_FAILED_EXT;
     std::vector<BUFFER_STATE *> buffer_state(bindInfoCount);
-    if (!PreCallValidateBindBufferMemory2KHR(dev_data, &buffer_state, bindInfoCount, pBindInfos)) {
+    if (!PreCallValidateBindBufferMemory2(dev_data, &buffer_state, bindInfoCount, pBindInfos)) {
         result = dev_data->dispatch_table.BindBufferMemory2KHR(device, bindInfoCount, pBindInfos);
         if (result == VK_SUCCESS) {
-            PostCallRecordBindBufferMemory2KHR(dev_data, buffer_state, bindInfoCount, pBindInfos);
+            PostCallRecordBindBufferMemory2(dev_data, buffer_state, bindInfoCount, pBindInfos);
         }
     }
     return result;
@@ -4066,6 +4080,13 @@ VKAPI_ATTR void VKAPI_CALL GetBufferMemoryRequirements(VkDevice device, VkBuffer
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     dev_data->dispatch_table.GetBufferMemoryRequirements(device, buffer, pMemoryRequirements);
     PostCallRecordGetBufferMemoryRequirements(dev_data, buffer, pMemoryRequirements);
+}
+
+VKAPI_ATTR void VKAPI_CALL GetBufferMemoryRequirements2(VkDevice device, const VkBufferMemoryRequirementsInfo2KHR *pInfo,
+                                                        VkMemoryRequirements2KHR *pMemoryRequirements) {
+    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    dev_data->dispatch_table.GetBufferMemoryRequirements2KHR(device, pInfo, pMemoryRequirements);
+    PostCallRecordGetBufferMemoryRequirements(dev_data, pInfo->buffer, &pMemoryRequirements->memoryRequirements);
 }
 
 VKAPI_ATTR void VKAPI_CALL GetBufferMemoryRequirements2KHR(VkDevice device, const VkBufferMemoryRequirementsInfo2KHR *pInfo,
@@ -4092,6 +4113,13 @@ VKAPI_ATTR void VKAPI_CALL GetImageMemoryRequirements(VkDevice device, VkImage i
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     dev_data->dispatch_table.GetImageMemoryRequirements(device, image, pMemoryRequirements);
     PostCallRecordGetImageMemoryRequirements(dev_data, image, pMemoryRequirements);
+}
+
+VKAPI_ATTR void VKAPI_CALL GetImageMemoryRequirements2(VkDevice device, const VkImageMemoryRequirementsInfo2KHR *pInfo,
+                                                       VkMemoryRequirements2KHR *pMemoryRequirements) {
+    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    dev_data->dispatch_table.GetImageMemoryRequirements2(device, pInfo, pMemoryRequirements);
+    PostCallRecordGetImageMemoryRequirements(dev_data, pInfo->image, &pMemoryRequirements->memoryRequirements);
 }
 
 VKAPI_ATTR void VKAPI_CALL GetImageMemoryRequirements2KHR(VkDevice device, const VkImageMemoryRequirementsInfo2KHR *pInfo,
@@ -4126,8 +4154,8 @@ VKAPI_ATTR void VKAPI_CALL GetImageSparseMemoryRequirements(VkDevice device, VkI
     PostCallRecordGetImageSparseMemoryRequirements(image_state, *pSparseMemoryRequirementCount, pSparseMemoryRequirements);
 }
 
-static void PostCallRecordGetImageSparseMemoryRequirements2KHR(IMAGE_STATE *image_state, uint32_t req_count,
-                                                               VkSparseImageMemoryRequirements2KHR *reqs) {
+static void PostCallRecordGetImageSparseMemoryRequirements2(IMAGE_STATE *image_state, uint32_t req_count,
+                                                            VkSparseImageMemoryRequirements2KHR *reqs) {
     std::vector<VkSparseImageMemoryRequirements> sparse_reqs(req_count);
     // Migrate to old struct type for common handling with GetImageSparseMemoryRequirements()
     for (uint32_t i = 0; i < req_count; ++i) {
@@ -4135,6 +4163,18 @@ static void PostCallRecordGetImageSparseMemoryRequirements2KHR(IMAGE_STATE *imag
         sparse_reqs[i] = reqs[i].memoryRequirements;
     }
     PostCallRecordGetImageSparseMemoryRequirements(image_state, req_count, sparse_reqs.data());
+}
+
+VKAPI_ATTR void VKAPI_CALL GetImageSparseMemoryRequirements2(VkDevice device, const VkImageSparseMemoryRequirementsInfo2KHR *pInfo,
+                                                             uint32_t *pSparseMemoryRequirementCount,
+                                                             VkSparseImageMemoryRequirements2KHR *pSparseMemoryRequirements) {
+    // TODO : Implement tracking here, just passthrough initially
+    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    dev_data->dispatch_table.GetImageSparseMemoryRequirements2(device, pInfo, pSparseMemoryRequirementCount,
+                                                               pSparseMemoryRequirements);
+    unique_lock_t lock(global_lock);
+    auto image_state = GetImageState(dev_data, pInfo->image);
+    PostCallRecordGetImageSparseMemoryRequirements2(image_state, *pSparseMemoryRequirementCount, pSparseMemoryRequirements);
 }
 
 VKAPI_ATTR void VKAPI_CALL GetImageSparseMemoryRequirements2KHR(VkDevice device,
@@ -4147,7 +4187,7 @@ VKAPI_ATTR void VKAPI_CALL GetImageSparseMemoryRequirements2KHR(VkDevice device,
                                                                   pSparseMemoryRequirements);
     unique_lock_t lock(global_lock);
     auto image_state = GetImageState(dev_data, pInfo->image);
-    PostCallRecordGetImageSparseMemoryRequirements2KHR(image_state, *pSparseMemoryRequirementCount, pSparseMemoryRequirements);
+    PostCallRecordGetImageSparseMemoryRequirements2(image_state, *pSparseMemoryRequirementCount, pSparseMemoryRequirements);
 }
 
 VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceSparseImageFormatProperties(VkPhysicalDevice physicalDevice, VkFormat format,
@@ -4159,6 +4199,15 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceSparseImageFormatProperties(VkPhysic
     instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), instance_layer_data_map);
     instance_data->dispatch_table.GetPhysicalDeviceSparseImageFormatProperties(physicalDevice, format, type, samples, usage, tiling,
                                                                                pPropertyCount, pProperties);
+}
+
+VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceSparseImageFormatProperties2(
+    VkPhysicalDevice physicalDevice, const VkPhysicalDeviceSparseImageFormatInfo2KHR *pFormatInfo, uint32_t *pPropertyCount,
+    VkSparseImageFormatProperties2KHR *pProperties) {
+    // TODO : Implement this intercept, track sparse image format properties and make sure they are obeyed.
+    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), instance_layer_data_map);
+    instance_data->dispatch_table.GetPhysicalDeviceSparseImageFormatProperties2(physicalDevice, pFormatInfo, pPropertyCount,
+                                                                                pProperties);
 }
 
 VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceSparseImageFormatProperties2KHR(
@@ -9785,8 +9834,8 @@ VKAPI_ATTR VkResult VKAPI_CALL BindImageMemory(VkDevice device, VkImage image, V
     return result;
 }
 
-static bool PreCallValidateBindImageMemory2KHR(layer_data *dev_data, std::vector<IMAGE_STATE *> *image_state,
-                                               uint32_t bindInfoCount, const VkBindImageMemoryInfoKHR *pBindInfos) {
+static bool PreCallValidateBindImageMemory2(layer_data *dev_data, std::vector<IMAGE_STATE *> *image_state, uint32_t bindInfoCount,
+                                            const VkBindImageMemoryInfoKHR *pBindInfos) {
     {
         unique_lock_t lock(global_lock);
         for (uint32_t i = 0; i < bindInfoCount; i++) {
@@ -9796,19 +9845,33 @@ static bool PreCallValidateBindImageMemory2KHR(layer_data *dev_data, std::vector
     bool skip = false;
     char api_name[128];
     for (uint32_t i = 0; i < bindInfoCount; i++) {
-        sprintf(api_name, "vkBindImageMemory2KHR() pBindInfos[%u]", i);
+        sprintf(api_name, "vkBindImageMemory2() pBindInfos[%u]", i);
         skip |= PreCallValidateBindImageMemory(dev_data, pBindInfos[i].image, (*image_state)[i], pBindInfos[i].memory,
                                                pBindInfos[i].memoryOffset, api_name);
     }
     return skip;
 }
 
-static void PostCallRecordBindImageMemory2KHR(layer_data *dev_data, const std::vector<IMAGE_STATE *> &image_state,
-                                              uint32_t bindInfoCount, const VkBindImageMemoryInfoKHR *pBindInfos) {
+static void PostCallRecordBindImageMemory2(layer_data *dev_data, const std::vector<IMAGE_STATE *> &image_state,
+                                           uint32_t bindInfoCount, const VkBindImageMemoryInfoKHR *pBindInfos) {
     for (uint32_t i = 0; i < bindInfoCount; i++) {
         PostCallRecordBindImageMemory(dev_data, pBindInfos[i].image, image_state[i], pBindInfos[i].memory,
-                                      pBindInfos[i].memoryOffset, "vkBindImageMemory2KHR()");
+                                      pBindInfos[i].memoryOffset, "vkBindImageMemory2()");
     }
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL BindImageMemory2(VkDevice device, uint32_t bindInfoCount,
+                                                const VkBindImageMemoryInfoKHR *pBindInfos) {
+    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    VkResult result = VK_ERROR_VALIDATION_FAILED_EXT;
+    std::vector<IMAGE_STATE *> image_state(bindInfoCount);
+    if (!PreCallValidateBindImageMemory2(dev_data, &image_state, bindInfoCount, pBindInfos)) {
+        result = dev_data->dispatch_table.BindImageMemory2(device, bindInfoCount, pBindInfos);
+        if (result == VK_SUCCESS) {
+            PostCallRecordBindImageMemory2(dev_data, image_state, bindInfoCount, pBindInfos);
+        }
+    }
+    return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL BindImageMemory2KHR(VkDevice device, uint32_t bindInfoCount,
@@ -9816,10 +9879,10 @@ VKAPI_ATTR VkResult VKAPI_CALL BindImageMemory2KHR(VkDevice device, uint32_t bin
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     VkResult result = VK_ERROR_VALIDATION_FAILED_EXT;
     std::vector<IMAGE_STATE *> image_state(bindInfoCount);
-    if (!PreCallValidateBindImageMemory2KHR(dev_data, &image_state, bindInfoCount, pBindInfos)) {
+    if (!PreCallValidateBindImageMemory2(dev_data, &image_state, bindInfoCount, pBindInfos)) {
         result = dev_data->dispatch_table.BindImageMemory2KHR(device, bindInfoCount, pBindInfos);
         if (result == VK_SUCCESS) {
-            PostCallRecordBindImageMemory2KHR(dev_data, image_state, bindInfoCount, pBindInfos);
+            PostCallRecordBindImageMemory2(dev_data, image_state, bindInfoCount, pBindInfos);
         }
     }
     return result;
@@ -12430,17 +12493,23 @@ static const std::unordered_map<std::string, void *> name_to_funcptr_map = {
     {"vkAllocateMemory", (void *)AllocateMemory},
     {"vkFreeMemory", (void *)FreeMemory},
     {"vkBindBufferMemory", (void *)BindBufferMemory},
+    {"vkBindBufferMemory2", (void *)BindBufferMemory2},
     {"vkBindBufferMemory2KHR", (void *)BindBufferMemory2KHR},
     {"vkGetBufferMemoryRequirements", (void *)GetBufferMemoryRequirements},
+    {"vkGetBufferMemoryRequirements2", (void *)GetBufferMemoryRequirements2},
     {"vkGetBufferMemoryRequirements2KHR", (void *)GetBufferMemoryRequirements2KHR},
     {"vkGetImageMemoryRequirements", (void *)GetImageMemoryRequirements},
+    {"vkGetImageMemoryRequirements2", (void *)GetImageMemoryRequirements2},
     {"vkGetImageMemoryRequirements2KHR", (void *)GetImageMemoryRequirements2KHR},
     {"vkGetImageSparseMemoryRequirements", (void *)GetImageSparseMemoryRequirements},
+    {"vkGetImageSparseMemoryRequirements2", (void *)GetImageSparseMemoryRequirements2},
     {"vkGetImageSparseMemoryRequirements2KHR", (void *)GetImageSparseMemoryRequirements2KHR},
     {"vkGetPhysicalDeviceSparseImageFormatProperties", (void *)GetPhysicalDeviceSparseImageFormatProperties},
+    {"vkGetPhysicalDeviceSparseImageFormatProperties2", (void *)GetPhysicalDeviceSparseImageFormatProperties2},
     {"vkGetPhysicalDeviceSparseImageFormatProperties2KHR", (void *)GetPhysicalDeviceSparseImageFormatProperties2KHR},
     {"vkGetQueryPoolResults", (void *)GetQueryPoolResults},
     {"vkBindImageMemory", (void *)BindImageMemory},
+    {"vkBindImageMemory2", (void *)BindImageMemory2},
     {"vkBindImageMemory2KHR", (void *)BindImageMemory2KHR},
     {"vkQueueBindSparse", (void *)QueueBindSparse},
     {"vkCreateSemaphore", (void *)CreateSemaphore},
