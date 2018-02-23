@@ -96,13 +96,11 @@ script:
       export VK_LAYER_PATH=external/VulkanTools/build/layersvt:dbuild/layers
       export VK_ICD_FILENAMES=dbuild/icd/VkICD_mock_icd.json
       dbuild/tests/vk_layer_validation_tests
-      VK_DEVSIM_FILENAME=tests/device_profiles/adreno_540.json dbuild/tests/vk_layer_validation_tests --devsim
-      VK_DEVSIM_FILENAME=tests/device_profiles/amd_radv_polaris10.json dbuild/tests/vk_layer_validation_tests --devsim
-      VK_DEVSIM_FILENAME=tests/device_profiles/geforce_940m.json dbuild/tests/vk_layer_validation_tests --devsim
-      VK_DEVSIM_FILENAME=tests/device_profiles/intel_hd_graphics_520_skylake_gt2.json dbuild/tests/vk_layer_validation_tests --devsim
-      VK_DEVSIM_FILENAME=tests/device_profiles/mali-t760.json dbuild/tests/vk_layer_validation_tests --devsim
-      VK_DEVSIM_FILENAME=tests/device_profiles/nvidia_tegra_x1.json dbuild/tests/vk_layer_validation_tests --devsim
-      VK_DEVSIM_FILENAME=tests/device_profiles/powervr_rogue_ge8300.json dbuild/tests/vk_layer_validation_tests --devsim
+      for profile in tests/device_profiles/*.json
+      do
+        echo Testing with profile $profile
+        VK_DEVSIM_FILENAME=$profile dbuild/tests/vk_layer_validation_tests --devsim
+      done
     fi
   - |
     if [[ "$VULKAN_BUILD_TARGET" == "ANDROID" ]]; then
