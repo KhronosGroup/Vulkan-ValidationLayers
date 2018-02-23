@@ -103,14 +103,14 @@ if (WIN32)
     # For Windows, copy necessary gtest DLLs to the right spot for the vk_layer_tests...
     FILE(TO_NATIVE_PATH ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIGURATION>/*device_profile_api.* SRC_LAYER)
     FILE(TO_NATIVE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/windows/VkLayer_device_profile_api.json SRC_JSON)
-    FILE(TO_NATIVE_PATH ${CMAKE_BINARY_DIR}/layers/$<CONFIGURATION> DST_LAYER)
+    FILE(TO_NATIVE_PATH ${PROJECT_BINARY_DIR}/layers/$<CONFIGURATION> DST_LAYER)
     add_custom_command(TARGET VkLayer_device_profile_api POST_BUILD
         COMMAND xcopy /Y /I ${SRC_LAYER} ${DST_LAYER}
         COMMAND xcopy /Y /I ${SRC_JSON} ${DST_LAYER})
 else()
     add_custom_command(TARGET VkLayer_device_profile_api POST_BUILD
-        COMMAND ln -sf ${CMAKE_CURRENT_BINARY_DIR}/VkLayer_device_profile_api.json ${CMAKE_BINARY_DIR}/layers
-        COMMAND ln -sf ${CMAKE_CURRENT_BINARY_DIR}/libVkLayer_device_profile_api.so ${CMAKE_BINARY_DIR}/layers
+        COMMAND ln -sf ${CMAKE_CURRENT_BINARY_DIR}/VkLayer_device_profile_api.json ${PROJECT_BINARY_DIR}/layers
+        COMMAND ln -sf ${CMAKE_CURRENT_BINARY_DIR}/libVkLayer_device_profile_api.so ${PROJECT_BINARY_DIR}/layers
         VERBATIM
         )
 endif()
