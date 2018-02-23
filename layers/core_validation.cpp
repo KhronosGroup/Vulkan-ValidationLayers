@@ -5122,31 +5122,16 @@ std::valarray<uint32_t> GetDescriptorCountMaxPerStage(
     return max_sum;
 }
 
-// Used by PreCallValiateCreatePipelineLayout.
-// Returns an array of size VK_DESCRIPTOR_TYPE_RANGE_SIZE of the summed descriptors by type across all pipeline stages
-std::valarray<uint32_t> GetDescriptorSumAcrossStages(
-    const layer_data *dev_data, const std::vector<std::shared_ptr<cvdescriptorset::DescriptorSetLayout const>> set_layouts) {
-    // Identify active pipeline stages
-    std::vector<VkShaderStageFlags> stage_flags = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT,
-                                                   VK_SHADER_STAGE_COMPUTE_BIT};
-    if (dev_data->enabled_features.geometryShader) {
-        stage_flags.push_back(VK_SHADER_STAGE_GEOMETRY_BIT);
-    }
-    if (dev_data->enabled_features.tessellationShader) {
-        stage_flags.push_back(VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
-        stage_flags.push_back(VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
-    }
-
-    // Sum by descriptor type across all enabled stages
+// Used by PreCallValidateCreatePipelineLayout.
+// Returns an array of size VK_DESCRIPTOR_TYPE_RANGE_SIZE of the summed descriptors by type.
+// Note: descriptors only count against the limit once even if used by multiple stages.
+std::valarray<uint32_t> GetDescriptorSum(
+    const layer_data *dev_data, const std::vector<std::shared_ptr<cvdescriptorset::DescriptorSetLayout const>> &set_layouts) {
     std::valarray<uint32_t> sum_by_type(0U, VK_DESCRIPTOR_TYPE_RANGE_SIZE);
-    for (auto stage : stage_flags) {
-        for (auto dsl : set_layouts) {
-            for (uint32_t binding_idx = 0; binding_idx < dsl->GetBindingCount(); binding_idx++) {
-                const VkDescriptorSetLayoutBinding *binding = dsl->GetDescriptorSetLayoutBindingPtrFromIndex(binding_idx);
-                if (0 != (stage & binding->stageFlags)) {
-                    sum_by_type[binding->descriptorType] += binding->descriptorCount;
-                }
-            }
+    for (auto dsl : set_layouts) {
+        for (uint32_t binding_idx = 0; binding_idx < dsl->GetBindingCount(); binding_idx++) {
+            const VkDescriptorSetLayoutBinding *binding = dsl->GetDescriptorSetLayoutBindingPtrFromIndex(binding_idx);
+            sum_by_type[binding->descriptorType] += binding->descriptorCount;
         }
     }
     return sum_by_type;
@@ -5276,9 +5261,9 @@ static bool PreCallValiateCreatePipelineLayout(const layer_data *dev_data, const
                         validation_error_map[VALIDATION_ERROR_0fe00d18]);
     }
 
-    // Total descriptors by type, summed across all pipeline stages
+    // Total descriptors by type
     //
-    std::valarray<uint32_t> sum_all_stages = GetDescriptorSumAcrossStages(dev_data, set_layouts);
+    std::valarray<uint32_t> sum_all_stages = GetDescriptorSum(dev_data, set_layouts);
     // Samplers
     if ((sum_all_stages[VK_DESCRIPTOR_TYPE_SAMPLER] + sum_all_stages[VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER]) >
         dev_data->phys_dev_props.limits.maxDescriptorSetSamplers) {

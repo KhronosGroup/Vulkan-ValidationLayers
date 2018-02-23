@@ -6209,10 +6209,6 @@ TEST_F(VkLayerTest, CreatePipelineLayoutExcessPerStageDescriptors) {
     uint32_t sum_samplers = m_device->phy().properties().limits.maxDescriptorSetSamplers;
     uint32_t sum_input_attachments = m_device->phy().properties().limits.maxDescriptorSetInputAttachments;
 
-    uint32_t gfx_stages = 2;  // vtx, frag
-    gfx_stages += (m_device->phy().features().geometryShader ? 1 : 0);
-    gfx_stages += (m_device->phy().features().tessellationShader ? 2 : 0);
-
     // Devices that report UINT_MAX for any of these limits can't run this test
     if (UINT_MAX == std::max({max_uniform_buffers, max_storage_buffers, max_sampled_images, max_storage_images, max_samplers})) {
         printf("             Physical device limits report as 2^32-1. Skipping test.\n");
@@ -6252,7 +6248,7 @@ TEST_F(VkLayerTest, CreatePipelineLayoutExcessPerStageDescriptors) {
     ASSERT_VK_SUCCESS(err);
 
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_0fe0023e);
-    if ((max_samplers * gfx_stages + max_combined) > sum_samplers) {
+    if ((max_samplers + max_combined) > sum_samplers) {
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
                                              VALIDATION_ERROR_0fe00d1a);  // expect all-stages sum too
     }
@@ -6270,7 +6266,7 @@ TEST_F(VkLayerTest, CreatePipelineLayoutExcessPerStageDescriptors) {
     dslb_vec.clear();
     dslb.binding = 0;
     dslb.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    dslb.descriptorCount = 1 + (max_uniform_buffers / 2);
+    dslb.descriptorCount = max_uniform_buffers + 1;
     dslb.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
     dslb_vec.push_back(dslb);
     dslb.binding = 1;
@@ -6284,7 +6280,7 @@ TEST_F(VkLayerTest, CreatePipelineLayoutExcessPerStageDescriptors) {
     ASSERT_VK_SUCCESS(err);
 
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_0fe00240);
-    if ((2 * dslb.descriptorCount) > sum_uniform_buffers) {
+    if (dslb.descriptorCount > sum_uniform_buffers) {
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
                                              VALIDATION_ERROR_0fe00d1c);  // expect all-stages sum too
     }
@@ -6302,7 +6298,7 @@ TEST_F(VkLayerTest, CreatePipelineLayoutExcessPerStageDescriptors) {
     dslb_vec.clear();
     dslb.binding = 0;
     dslb.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-    dslb.descriptorCount = 1 + (max_storage_buffers / 3);
+    dslb.descriptorCount = max_storage_buffers + 1;
     dslb.stageFlags = VK_SHADER_STAGE_ALL;
     dslb_vec.push_back(dslb);
     dslb.binding = 1;
@@ -6319,11 +6315,11 @@ TEST_F(VkLayerTest, CreatePipelineLayoutExcessPerStageDescriptors) {
     ASSERT_VK_SUCCESS(err);
 
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_0fe00242);
-    if (((gfx_stages + 1) * dslb.descriptorCount) > sum_dyn_storage_buffers) {
+    if (dslb.descriptorCount > sum_dyn_storage_buffers) {
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
                                              VALIDATION_ERROR_0fe00d22);  // expect all-stages sum too
     }
-    if (((gfx_stages + 2) * dslb.descriptorCount) > sum_storage_buffers) {
+    if (dslb.descriptorCount > sum_storage_buffers) {
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
                                              VALIDATION_ERROR_0fe00d20);  // expect all-stages sum too
     }
@@ -6337,7 +6333,7 @@ TEST_F(VkLayerTest, CreatePipelineLayoutExcessPerStageDescriptors) {
     dslb_vec.clear();
     dslb.binding = 0;
     dslb.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-    dslb.descriptorCount = max_sampled_images / 2;
+    dslb.descriptorCount = max_sampled_images;
     dslb.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
     dslb_vec.push_back(dslb);
     dslb.binding = 1;
@@ -6355,11 +6351,11 @@ TEST_F(VkLayerTest, CreatePipelineLayoutExcessPerStageDescriptors) {
     ASSERT_VK_SUCCESS(err);
 
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_0fe00244);
-    if (max_combined + ((gfx_stages + 2) * (max_sampled_images / 2)) > sum_sampled_images) {
+    if (max_combined + max_sampled_images > sum_sampled_images) {
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
                                              VALIDATION_ERROR_0fe00d24);  // expect all-stages sum too
     }
-    if ((gfx_stages * max_combined) > sum_samplers) {
+    if (max_combined > sum_samplers) {
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
                                              VALIDATION_ERROR_0fe00d1a);  // expect all-stages sum too
     }
@@ -6387,7 +6383,7 @@ TEST_F(VkLayerTest, CreatePipelineLayoutExcessPerStageDescriptors) {
     ASSERT_VK_SUCCESS(err);
 
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_0fe00246);
-    if ((4 * dslb.descriptorCount) > sum_storage_images) {
+    if (2 * dslb.descriptorCount > sum_storage_images) {
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
                                              VALIDATION_ERROR_0fe00d26);  // expect all-stages sum too
     }
@@ -6423,7 +6419,7 @@ TEST_F(VkLayerTest, CreatePipelineLayoutExcessPerStageDescriptors) {
 }
 
 TEST_F(VkLayerTest, CreatePipelineLayoutExcessDescriptorsOverall) {
-    TEST_DESCRIPTION("Attempt to create a pipeline layout where total descriptors summed over all stages exceed limits");
+    TEST_DESCRIPTION("Attempt to create a pipeline layout where total descriptors exceed limits");
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
@@ -6467,12 +6463,13 @@ TEST_F(VkLayerTest, CreatePipelineLayoutExcessDescriptorsOverall) {
     dslb_vec.clear();
     dslb.binding = 0;
     dslb.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
-    dslb.descriptorCount = 1 + (sum_samplers / 2);
+    dslb.descriptorCount = sum_samplers / 2;
     dslb.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
     dslb.pImmutableSamplers = NULL;
     dslb_vec.push_back(dslb);
     dslb.binding = 1;
     dslb.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    dslb.descriptorCount = sum_samplers - dslb.descriptorCount + 1;
     dslb.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
     dslb_vec.push_back(dslb);
 
@@ -6496,7 +6493,7 @@ TEST_F(VkLayerTest, CreatePipelineLayoutExcessDescriptorsOverall) {
     dslb_vec.clear();
     dslb.binding = 0;
     dslb.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    dslb.descriptorCount = 1 + (sum_uniform_buffers / 2);
+    dslb.descriptorCount = sum_uniform_buffers + 1;
     dslb.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
     dslb.pImmutableSamplers = NULL;
     dslb_vec.push_back(dslb);
@@ -6521,7 +6518,7 @@ TEST_F(VkLayerTest, CreatePipelineLayoutExcessDescriptorsOverall) {
     dslb_vec.clear();
     dslb.binding = 0;
     dslb.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
-    dslb.descriptorCount = 1 + (sum_dyn_uniform_buffers / 2);
+    dslb.descriptorCount = sum_dyn_uniform_buffers + 1;
     dslb.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
     dslb.pImmutableSamplers = NULL;
     dslb_vec.push_back(dslb);
@@ -6546,7 +6543,7 @@ TEST_F(VkLayerTest, CreatePipelineLayoutExcessDescriptorsOverall) {
     dslb_vec.clear();
     dslb.binding = 0;
     dslb.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-    dslb.descriptorCount = 1 + (sum_storage_buffers / 2);
+    dslb.descriptorCount = sum_storage_buffers + 1;
     dslb.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
     dslb.pImmutableSamplers = NULL;
     dslb_vec.push_back(dslb);
@@ -6571,7 +6568,7 @@ TEST_F(VkLayerTest, CreatePipelineLayoutExcessDescriptorsOverall) {
     dslb_vec.clear();
     dslb.binding = 0;
     dslb.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC;
-    dslb.descriptorCount = 1 + (sum_dyn_storage_buffers / 2);
+    dslb.descriptorCount = sum_dyn_storage_buffers + 1;
     dslb.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
     dslb.pImmutableSamplers = NULL;
     dslb_vec.push_back(dslb);
@@ -6602,6 +6599,7 @@ TEST_F(VkLayerTest, CreatePipelineLayoutExcessDescriptorsOverall) {
     dslb_vec.push_back(dslb);
     dslb.binding = 1;
     dslb.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+    // revisit: not robust to odd limits.
     uint32_t remaining = (max_samplers > sum_sampled_images ? 0 : (sum_sampled_images - max_samplers) / 2);
     dslb.descriptorCount = 1 + remaining;
     dslb.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
@@ -6618,6 +6616,7 @@ TEST_F(VkLayerTest, CreatePipelineLayoutExcessDescriptorsOverall) {
 
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_0fe00d24);
     if (dslb.descriptorCount > max_sampled_images) {
+        // revisit: not robust to `remaining` being small.
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
                                              VALIDATION_ERROR_0fe00244);  // expect max-per-stage too
     }
@@ -6631,12 +6630,13 @@ TEST_F(VkLayerTest, CreatePipelineLayoutExcessDescriptorsOverall) {
     dslb_vec.clear();
     dslb.binding = 0;
     dslb.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-    dslb.descriptorCount = 1 + (sum_storage_images / 2);
+    dslb.descriptorCount = sum_storage_images / 2;
     dslb.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
     dslb.pImmutableSamplers = NULL;
     dslb_vec.push_back(dslb);
     dslb.binding = 1;
     dslb.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER;
+    dslb.descriptorCount = sum_storage_images - dslb.descriptorCount + 1;
     dslb.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
     dslb_vec.push_back(dslb);
 
@@ -6660,8 +6660,8 @@ TEST_F(VkLayerTest, CreatePipelineLayoutExcessDescriptorsOverall) {
     dslb_vec.clear();
     dslb.binding = 0;
     dslb.descriptorType = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
-    dslb.descriptorCount = 1 + (sum_input_attachments / 2);
-    dslb.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT;
+    dslb.descriptorCount = sum_input_attachments + 1;
+    dslb.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
     dslb.pImmutableSamplers = NULL;
     dslb_vec.push_back(dslb);
 
