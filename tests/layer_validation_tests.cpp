@@ -19462,8 +19462,6 @@ TEST_F(VkLayerTest, CopyImageTypeExtentMismatch) {
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_09c0011a);
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
                                          VALIDATION_ERROR_0a600154);  // also triggers 'too many layers'
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                         VALIDATION_ERROR_09c0012a);  // and 'copy from layer not present'
     m_commandBuffer->CopyImage(image_3D.image(), VK_IMAGE_LAYOUT_GENERAL, image_2D.image(), VK_IMAGE_LAYOUT_GENERAL, 1,
                                &copy_region);
     m_errorMonitor->VerifyFound();
@@ -19541,11 +19539,8 @@ TEST_F(VkLayerTest, CopyImageTypeExtentMismatchMaintenance1) {
     copy_region.srcOffset = {0, 0, 0};
     copy_region.dstOffset = {0, 0, 0};
 
-    // Copy from layer not present - VU 09c0012a
-    // TODO: this VU is redundant with VU 0a600154. Gitlab issue 812 submitted to have it removed.
     copy_region.srcSubresource.baseArrayLayer = 4;
     copy_region.srcSubresource.layerCount = 6;
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_09c0012a);
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_0a600154);
     m_commandBuffer->CopyImage(image_2D_array.image(), VK_IMAGE_LAYOUT_GENERAL, image_3D.image(), VK_IMAGE_LAYOUT_GENERAL, 1,
                                &copy_region);
@@ -19553,11 +19548,8 @@ TEST_F(VkLayerTest, CopyImageTypeExtentMismatchMaintenance1) {
     copy_region.srcSubresource.baseArrayLayer = 0;
     copy_region.srcSubresource.layerCount = 1;
 
-    // Copy to layer not present - VU 09c00136
-    // TODO: this VU is redundant with 0a600154. Gitlab issue 812 submitted to have it removed.
     copy_region.dstSubresource.baseArrayLayer = 1;
     copy_region.dstSubresource.layerCount = 8;
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_09c00136);
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_0a600154);
     m_commandBuffer->CopyImage(image_3D.image(), VK_IMAGE_LAYOUT_GENERAL, image_2D_array.image(), VK_IMAGE_LAYOUT_GENERAL, 1,
                                &copy_region);

@@ -1582,18 +1582,6 @@ bool ValidateImageCopyData(const layer_data *device_data, const debug_report_dat
             }
         }
 
-        // TODO: this VU is redundant with VU01224. Gitlab issue 812 submitted to get it removed from the spec.
-        if ((region.srcSubresource.baseArrayLayer >= src_state->createInfo.arrayLayers) ||
-            (region.srcSubresource.baseArrayLayer + region.srcSubresource.layerCount > src_state->createInfo.arrayLayers)) {
-            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
-                            HandleToUint64(src_state->image), __LINE__, VALIDATION_ERROR_09c0012a, "IMAGE",
-                            "vkCmdCopyImage(): pRegion[%d] srcSubresource.baseArrayLayer (%d) must be less than the source image's "
-                            "arrayLayers (%d), and the sum of baseArrayLayer and srcSubresource.layerCount (%d) must be less than "
-                            "or equal to the source image's arrayLayers. %s",
-                            i, region.srcSubresource.baseArrayLayer, src_state->createInfo.arrayLayers,
-                            region.srcSubresource.layerCount, validation_error_map[VALIDATION_ERROR_09c0012a]);
-        }
-
         // Checks that apply only to compressed images
         if (FormatIsCompressed(src_state->createInfo.format)) {
             const VkExtent3D block_size = FormatCompressedTexelBlockExtent(src_state->createInfo.format);
@@ -1704,18 +1692,6 @@ bool ValidateImageCopyData(const layer_data *device_data, const debug_report_dat
                                     validation_error_map[VALIDATION_ERROR_09c0011a]);
                 }
             }
-        }
-
-        // TODO: this VU is redundant with VU01224. Gitlab issue 812 submitted to get it removed from the spec.
-        if ((region.dstSubresource.baseArrayLayer >= dst_state->createInfo.arrayLayers) ||
-            (region.dstSubresource.baseArrayLayer + region.dstSubresource.layerCount > dst_state->createInfo.arrayLayers)) {
-            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
-                            HandleToUint64(dst_state->image), __LINE__, VALIDATION_ERROR_09c00136, "IMAGE",
-                            "vkCmdCopyImage(): pRegion[%d] dstSubresource.baseArrayLayer (%d) must be less than the dest image's "
-                            "arrayLayers (%d), and the sum of baseArrayLayer and dstSubresource.layerCount (%d) must be less than "
-                            "or equal to the dest image's arrayLayers. %s",
-                            i, region.dstSubresource.baseArrayLayer, dst_state->createInfo.arrayLayers,
-                            region.dstSubresource.layerCount, validation_error_map[VALIDATION_ERROR_09c00136]);
         }
 
         // Checks that apply only to compressed images
