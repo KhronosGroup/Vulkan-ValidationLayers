@@ -1454,7 +1454,7 @@ static inline bool CheckItgExtent(layer_data *device_data, const GLOBAL_CB_NODE 
     return skip;
 }
 
-// Check valid usage Image Tranfer Granularity requirements for elements of a VkBufferImageCopy structure
+// Check valid usage Image Transfer Granularity requirements for elements of a VkBufferImageCopy structure
 bool ValidateCopyBufferImageTransferGranularityRequirements(layer_data *device_data, const GLOBAL_CB_NODE *cb_node,
                                                             const IMAGE_STATE *img, const VkBufferImageCopy *region,
                                                             const uint32_t i, const char *function) {
@@ -1482,7 +1482,7 @@ bool ValidateCopyBufferImageTransferGranularityRequirements(layer_data *device_d
     return skip;
 }
 
-// Check valid usage Image Tranfer Granularity requirements for elements of a VkImageCopy structure
+// Check valid usage Image Transfer Granularity requirements for elements of a VkImageCopy structure
 bool ValidateCopyImageTransferGranularityRequirements(layer_data *device_data, const GLOBAL_CB_NODE *cb_node,
                                                       const IMAGE_STATE *src_img, const IMAGE_STATE *dst_img,
                                                       const VkImageCopy *region, const uint32_t i, const char *function) {
