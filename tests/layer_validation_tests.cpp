@@ -4070,27 +4070,6 @@ TEST_F(VkLayerTest, DSImageTransferGranularityTests) {
     region.imageOffset.y = 0;
     region.imageOffset.z = 0;
 
-    // Introduce failure by setting bufferRowLength to a bad granularity value
-    region.bufferRowLength = 3;
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "queue family image transfer granularity");
-    vkCmdCopyBufferToImage(m_commandBuffer->handle(), buffer.handle(), srcImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
-    m_errorMonitor->VerifyFound();
-    region.bufferRowLength = 128;
-
-    // Introduce failure by setting bufferOffset to a bad granularity value
-    region.bufferOffset = 3;
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "queue family image transfer granularity");
-    vkCmdCopyImageToBuffer(m_commandBuffer->handle(), srcImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, buffer.handle(), 1, &region);
-    m_errorMonitor->VerifyFound();
-    region.bufferOffset = 0;
-
-    // Introduce failure by setting bufferImageHeight to a bad granularity value
-    region.bufferImageHeight = 3;
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "queue family image transfer granularity");
-    vkCmdCopyImageToBuffer(m_commandBuffer->handle(), srcImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, buffer.handle(), 1, &region);
-    m_errorMonitor->VerifyFound();
-    region.bufferImageHeight = 128;
-
     // Introduce failure by setting imageExtent to a bad granularity value
     region.imageExtent.width = 3;
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "queue family image transfer granularity");
