@@ -2266,46 +2266,71 @@ bool pv_vkCmdSetScissor(VkCommandBuffer commandBuffer, uint32_t firstScissor, ui
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     debug_report_data *report_data = device_data->report_data;
 
-    if (device_data->physical_device_features.multiViewport == false) {
-        if (scissorCount != 1) {
-            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, __LINE__,
-                            DEVICE_FEATURE, LayerName,
-                            "vkCmdSetScissor(): The multiViewport feature is not enabled, so scissorCount must be 1 but is %d.",
-                            scissorCount);
-        }
+    if (!device_data->physical_device_features.multiViewport) {
         if (firstScissor != 0) {
-            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, __LINE__,
-                            DEVICE_FEATURE, LayerName,
-                            "vkCmdSetScissor(): The multiViewport feature is not enabled, so firstScissor must be 0 but is %d.",
-                            firstScissor);
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                            HandleToUint64(commandBuffer), __LINE__, VALIDATION_ERROR_1d8004a2, LayerName,
+                            "vkCmdSetScissor: The multiViewport feature is disabled, but firstScissor (=%" PRIu32 ") is not 0. %s",
+                            firstScissor, validation_error_map[VALIDATION_ERROR_1d8004a2]);
+        }
+        if (scissorCount > 1) {
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                            HandleToUint64(commandBuffer), __LINE__, VALIDATION_ERROR_1d8004a4, LayerName,
+                            "vkCmdSetScissor: The multiViewport feature is disabled, but scissorCount (=%" PRIu32 ") is not 1. %s",
+                            scissorCount, validation_error_map[VALIDATION_ERROR_1d8004a4]);
+        }
+    } else {  // multiViewport enabled
+        const uint64_t sum = static_cast<uint64_t>(firstScissor) + static_cast<uint64_t>(scissorCount);
+        if (sum > device_data->device_limits.maxViewports) {
+            skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                            HandleToUint64(commandBuffer), __LINE__, VALIDATION_ERROR_1d8004a0, LayerName,
+                            "vkCmdSetScissor: firstScissor + scissorCount (=%" PRIu32 " + %" PRIu32 " = %" PRIu64
+                            ") is greater than VkPhysicalDeviceLimits::maxViewports (=%" PRIu32 "). %s",
+                            firstScissor, scissorCount, sum, device_data->device_limits.maxViewports,
+                            validation_error_map[VALIDATION_ERROR_1d8004a0]);
         }
     }
 
-    for (uint32_t scissorIndex = 0; scissorIndex < scissorCount; ++scissorIndex) {
-        const VkRect2D &pScissor = pScissors[scissorIndex];
+    if (pScissors) {
+        for (uint32_t scissor_i = 0; scissor_i < scissorCount; ++scissor_i) {
+            const auto &scissor = pScissors[scissor_i];  // will crash on invalid ptr
 
-        if (pScissor.offset.x < 0) {
-            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, __LINE__,
-                            VALIDATION_ERROR_1d8004a6, LayerName, "vkCmdSetScissor %d: offset.x (%d) must not be negative. %s",
-                            scissorIndex, pScissor.offset.x, validation_error_map[VALIDATION_ERROR_1d8004a6]);
-        } else if (static_cast<int32_t>(pScissor.extent.width) > (INT_MAX - pScissor.offset.x)) {
-            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, __LINE__,
-                            VALIDATION_ERROR_1d8004a8, LayerName,
-                            "vkCmdSetScissor %d: adding offset.x (%d) and extent.width (%u) will overflow. %s", scissorIndex,
-                            pScissor.offset.x, pScissor.extent.width, validation_error_map[VALIDATION_ERROR_1d8004a8]);
-        }
+            if (scissor.offset.x < 0) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                                HandleToUint64(commandBuffer), __LINE__, VALIDATION_ERROR_1d8004a6, LayerName,
+                                "vkCmdSetScissor: pScissors[%" PRIu32 "].offset.x (=%" PRIi32 ") is negative. %s", scissor_i,
+                                scissor.offset.x, validation_error_map[VALIDATION_ERROR_1d8004a6]);
+            }
 
-        if (pScissor.offset.y < 0) {
-            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, __LINE__,
-                            VALIDATION_ERROR_1d8004a6, LayerName, "vkCmdSetScissor %d: offset.y (%d) must not be negative. %s",
-                            scissorIndex, pScissor.offset.y, validation_error_map[VALIDATION_ERROR_1d8004a6]);
-        } else if (static_cast<int32_t>(pScissor.extent.height) > (INT_MAX - pScissor.offset.y)) {
-            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, __LINE__,
-                            VALIDATION_ERROR_1d8004aa, LayerName,
-                            "vkCmdSetScissor %d: adding offset.y (%d) and extent.height (%u) will overflow. %s", scissorIndex,
-                            pScissor.offset.y, pScissor.extent.height, validation_error_map[VALIDATION_ERROR_1d8004aa]);
+            if (scissor.offset.y < 0) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                                HandleToUint64(commandBuffer), __LINE__, VALIDATION_ERROR_1d8004a6, LayerName,
+                                "vkCmdSetScissor: pScissors[%" PRIu32 "].offset.y (=%" PRIi32 ") is negative. %s", scissor_i,
+                                scissor.offset.y, validation_error_map[VALIDATION_ERROR_1d8004a6]);
+            }
+
+            const int64_t x_sum = static_cast<int64_t>(scissor.offset.x) + static_cast<int64_t>(scissor.extent.width);
+            if (x_sum > INT32_MAX) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                                HandleToUint64(commandBuffer), __LINE__, VALIDATION_ERROR_1d8004a8, LayerName,
+                                "vkCmdSetScissor: offset.x + extent.width (=%" PRIi32 " + %" PRIu32 " = %" PRIi64
+                                ") of pScissors[%" PRIu32 "] will overflow int32_t. %s",
+                                scissor.offset.x, scissor.extent.width, x_sum, scissor_i,
+                                validation_error_map[VALIDATION_ERROR_1d8004a8]);
+            }
+
+            const int64_t y_sum = static_cast<int64_t>(scissor.offset.y) + static_cast<int64_t>(scissor.extent.height);
+            if (y_sum > INT32_MAX) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                                HandleToUint64(commandBuffer), __LINE__, VALIDATION_ERROR_1d8004aa, LayerName,
+                                "vkCmdSetScissor: offset.y + extent.height (=%" PRIi32 " + %" PRIu32 " = %" PRIi64
+                                ") of pScissors[%" PRIu32 "] will overflow int32_t. %s",
+                                scissor.offset.y, scissor.extent.height, y_sum, scissor_i,
+                                validation_error_map[VALIDATION_ERROR_1d8004aa]);
+            }
         }
     }
+
     return skip;
 }
 
