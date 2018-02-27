@@ -21880,42 +21880,116 @@ TEST_F(VkLayerTest, PushDescriptorSetCmdPushBadArgs) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, ScissorBoundsChecking) {
-    TEST_DESCRIPTION("Verify errors are detected on misuse of SetScissor.");
+TEST_F(VkLayerTest, SetDynScissorParamTests) {
+    TEST_DESCRIPTION("Test parameters of vkCmdSetScissor without multiViewport feature");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    VkPhysicalDeviceFeatures features{};
+    ASSERT_NO_FATAL_FAILURE(Init(&features));
+
+    const VkRect2D scissor = {{0, 0}, {16, 16}};
+    const VkRect2D scissors[] = {scissor, scissor};
 
     m_commandBuffer->begin();
 
-    {
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_1d8004a6);
-        VkRect2D scissor = {{-1, 0}, {16, 16}};
-        vkCmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissor);
-        m_errorMonitor->VerifyFound();
-    }
+    // array tests
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_1d8004a2);
+    vkCmdSetScissor(m_commandBuffer->handle(), 1, 1, scissors);
+    m_errorMonitor->VerifyFound();
 
-    {
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_1d8004a6);
-        VkRect2D scissor = {{0, -2}, {16, 16}};
-        vkCmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissor);
-        m_errorMonitor->VerifyFound();
-    }
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_1d82b61b);
+    vkCmdSetScissor(m_commandBuffer->handle(), 0, 0, nullptr);
+    m_errorMonitor->VerifyFound();
 
-    {
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_1d8004a8);
-        VkRect2D scissor = {{100, 100}, {INT32_MAX, 16}};
-        vkCmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissor);
-        m_errorMonitor->VerifyFound();
-    }
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_1d8004a4);
+    vkCmdSetScissor(m_commandBuffer->handle(), 0, 2, scissors);
+    m_errorMonitor->VerifyFound();
 
-    {
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_1d8004aa);
-        VkRect2D scissor = {{100, 100}, {16, INT32_MAX}};
-        vkCmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissor);
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_1d8004a2);
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_1d82b61b);
+    vkCmdSetScissor(m_commandBuffer->handle(), 1, 0, scissors);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_1d8004a2);
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_1d8004a4);
+    vkCmdSetScissor(m_commandBuffer->handle(), 1, 2, scissors);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_1d822601);
+    vkCmdSetScissor(m_commandBuffer->handle(), 0, 1, nullptr);
+    m_errorMonitor->VerifyFound();
+
+    struct TestCase {
+        VkRect2D scissor;
+        UNIQUE_VALIDATION_ERROR_CODE vuid;
+    };
+
+    std::vector<TestCase> test_cases = {{{{-1, 0}, {16, 16}}, VALIDATION_ERROR_1d8004a6},
+                                        {{{0, -1}, {16, 16}}, VALIDATION_ERROR_1d8004a6},
+                                        {{{1, 0}, {INT32_MAX, 16}}, VALIDATION_ERROR_1d8004a8},
+                                        {{{INT32_MAX, 0}, {1, 16}}, VALIDATION_ERROR_1d8004a8},
+                                        {{{0, 0}, {uint32_t{INT32_MAX} + 1, 16}}, VALIDATION_ERROR_1d8004a8},
+                                        {{{0, 1}, {16, INT32_MAX}}, VALIDATION_ERROR_1d8004aa},
+                                        {{{0, INT32_MAX}, {16, 1}}, VALIDATION_ERROR_1d8004aa},
+                                        {{{0, 0}, {16, uint32_t{INT32_MAX} + 1}}, VALIDATION_ERROR_1d8004aa}};
+
+    for (const auto &test_case : test_cases) {
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, test_case.vuid);
+        vkCmdSetScissor(m_commandBuffer->handle(), 0, 1, &test_case.scissor);
         m_errorMonitor->VerifyFound();
     }
 
     m_commandBuffer->end();
+}
+
+TEST_F(VkLayerTest, SetDynScissorParamMultiviewportTests) {
+    TEST_DESCRIPTION("Test parameters of vkCmdSetScissor with multiViewport feature enabled");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    if (!m_device->phy().features().multiViewport) {
+        printf("             VkPhysicalDeviceFeatures::multiViewport is not supported -- skipping test.\n");
+        return;
+    }
+
+    const auto max_scissors = m_device->props.limits.maxViewports;
+    const uint32_t too_many_scissors = 65536 + 1;  // let's say this is too much to allocate pScissors for
+
+    m_commandBuffer->begin();
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_1d82b61b);
+    vkCmdSetScissor(m_commandBuffer->handle(), 0, 0, nullptr);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_1d822601);
+    vkCmdSetScissor(m_commandBuffer->handle(), 0, max_scissors, nullptr);
+    m_errorMonitor->VerifyFound();
+
+    if (max_scissors >= too_many_scissors) {
+        printf(
+            "             VkPhysicalDeviceLimits::maxViewports is too large to practically test against -- skipping part of "
+            "test.\n");
+        return;
+    }
+
+    const VkRect2D scissor = {{0, 0}, {16, 16}};
+    const std::vector<VkRect2D> scissors(max_scissors + 1, scissor);
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_1d8004a0);
+    vkCmdSetScissor(m_commandBuffer->handle(), 0, max_scissors + 1, scissors.data());
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_1d8004a0);
+    vkCmdSetScissor(m_commandBuffer->handle(), max_scissors, 1, scissors.data());
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_1d8004a0);
+    vkCmdSetScissor(m_commandBuffer->handle(), 1, max_scissors, scissors.data());
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_1d82b61b);
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_1d8004a0);
+    vkCmdSetScissor(m_commandBuffer->handle(), max_scissors + 1, 0, scissors.data());
+    m_errorMonitor->VerifyFound();
 }
 
 // This is a positive test. No failures are expected.
