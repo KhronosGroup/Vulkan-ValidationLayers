@@ -45,6 +45,7 @@
 #include "vk_typemap_helper.h"
 
 #include <limits.h>
+#include <math.h>
 
 #include <algorithm>
 #include <functional>
