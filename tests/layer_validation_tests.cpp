@@ -44,10 +44,8 @@
 #include "vkrenderframework.h"
 #include "vk_typemap_helper.h"
 
-#include <limits.h>
-#include <math.h>
-
 #include <algorithm>
+#include <cmath>
 #include <functional>
 #include <limits>
 #include <memory>
@@ -94,18 +92,6 @@ static const char bindStateFragShaderText[] =
 template <class ElementT, size_t array_size>
 size_t size(ElementT (&)[array_size]) {
     return array_size;
-}
-
-template <typename F>
-F PositiveDir() {
-    using Lim = std::numeric_limits<F>;
-    return Lim::has_infinity ? Lim::infinity() : Lim::max();
-}
-
-template <typename F>
-F NegativeDir() {
-    using Lim = std::numeric_limits<F>;
-    return Lim::has_infinity ? -Lim::infinity() : Lim::lowest();
 }
 
 // Format search helper
@@ -177,23 +163,21 @@ static VkSamplerCreateInfo SafeSaneSamplerCreateInfo() {
 template <typename T>
 struct AlwaysFalse : std::false_type {};
 
-// Template wrapper of cmath.h versions to avoid portability issues with std::nextafter
+// Helpers to get nearest greater or smaller value (of float) -- useful for testing the boundary cases of Vulkan limits
 template <typename T>
-T NextAfter(T from, T to) {
-    static_assert(AlwaysFalse<T>::value, "must specialize for each supported type");
+T NearestGreater(const T from) {
+    using Lim = std::numeric_limits<T>;
+    const auto positive_direction = Lim::has_infinity ? Lim::infinity() : Lim::max();
+
+    return std::nextafter(from, positive_direction);
 }
-template <>
-float NextAfter(float from, float to) {
-    return nextafterf(from, to);
-}
-// lowest <= value <= max non intuitive, thus the named wrapper
+
 template <typename T>
-T NextAfterGreater(const T from) {
-    return NextAfter<T>(from, std::numeric_limits<T>::max());
-}
-template <typename T>
-T NextAfterLess(const T from) {
-    return NextAfter<T>(from, std::numeric_limits<T>::lowest());
+T NearestSmaller(const T from) {
+    using Lim = std::numeric_limits<T>;
+    const auto negative_direction = Lim::has_infinity ? -Lim::infinity() : Lim::lowest();
+
+    return std::nextafter(from, negative_direction);
 }
 
 // ErrorMonitor Usage:
@@ -1582,12 +1566,12 @@ TEST_F(VkLayerTest, AnisotropyFeatureEnabled) {
     };
 
     // maxAnisotropy out-of-bounds low.
-    sampler_info.maxAnisotropy = NextAfterLess(1.0F);
+    sampler_info.maxAnisotropy = NearestSmaller(1.0F);
     do_test(VALIDATION_ERROR_1260085e, &sampler_info);
     sampler_info.maxAnisotropy = sampler_info_ref.maxAnisotropy;
 
     // maxAnisotropy out-of-bounds high.
-    sampler_info.maxAnisotropy = NextAfterGreater(m_device->phy().properties().limits.maxSamplerAnisotropy);
+    sampler_info.maxAnisotropy = NearestGreater(m_device->phy().properties().limits.maxSamplerAnisotropy);
     do_test(VALIDATION_ERROR_1260085e, &sampler_info);
     sampler_info.maxAnisotropy = sampler_info_ref.maxAnisotropy;
 
@@ -6189,8 +6173,8 @@ TEST_F(VkLayerTest, CreatePipelineLayoutExcessPerStageDescriptors) {
     uint32_t sum_samplers = m_device->phy().properties().limits.maxDescriptorSetSamplers;
     uint32_t sum_input_attachments = m_device->phy().properties().limits.maxDescriptorSetInputAttachments;
 
-    // Devices that report UINT_MAX for any of these limits can't run this test
-    if (UINT_MAX == std::max({max_uniform_buffers, max_storage_buffers, max_sampled_images, max_storage_images, max_samplers})) {
+    // Devices that report UINT32_MAX for any of these limits can't run this test
+    if (UINT32_MAX == std::max({max_uniform_buffers, max_storage_buffers, max_sampled_images, max_storage_images, max_samplers})) {
         printf("             Physical device limits report as 2^32-1. Skipping test.\n");
         return;
     }
@@ -6419,9 +6403,9 @@ TEST_F(VkLayerTest, CreatePipelineLayoutExcessDescriptorsOverall) {
     uint32_t sum_samplers = m_device->phy().properties().limits.maxDescriptorSetSamplers;
     uint32_t sum_input_attachments = m_device->phy().properties().limits.maxDescriptorSetInputAttachments;
 
-    // Devices that report UINT_MAX for any of these limits can't run this test
-    if (UINT_MAX == std::max({sum_dyn_uniform_buffers, sum_uniform_buffers, sum_dyn_storage_buffers, sum_storage_buffers,
-                              sum_sampled_images, sum_storage_images, sum_samplers, sum_input_attachments})) {
+    // Devices that report UINT32_MAX for any of these limits can't run this test
+    if (UINT32_MAX == std::max({sum_dyn_uniform_buffers, sum_uniform_buffers, sum_dyn_storage_buffers, sum_storage_buffers,
+                                sum_sampled_images, sum_storage_images, sum_samplers, sum_input_attachments})) {
         printf("             Physical device limits report as 2^32-1. Skipping test.\n");
         return;
     }
@@ -9746,10 +9730,10 @@ TEST_F(VkLayerTest, InvalidPipelineSampleRateFeatureEnable) {
                                           positive_test);
     };
 
-    range_test(NextAfterLess(0.0F), false);
-    range_test(NextAfterGreater(1.0F), false);
-    range_test(0.0, /* positive_test= */ true);
-    range_test(1.0, /* positive_test= */ true);
+    range_test(NearestSmaller(0.0F), false);
+    range_test(NearestGreater(1.0F), false);
+    range_test(0.0F, /* positive_test= */ true);
+    range_test(1.0F, /* positive_test= */ true);
 }
 
 TEST_F(VkLayerTest, InvalidPipelineSamplePNext) {
@@ -10277,7 +10261,7 @@ TEST_F(VkLayerTest, PSOLineWidthInvalid) {
     gp_ci.renderPass = renderPass();
     gp_ci.subpass = 0;
 
-    const std::vector<float> test_cases = {-1.0f, 0.0f, nextafterf(1.0f, 0.0f), nextafterf(1.0f, 2.0f), NAN};
+    const std::vector<float> test_cases = {-1.0f, 0.0f, NearestSmaller(1.0f), NearestGreater(1.0f), NAN};
 
     // test VkPipelineRasterizationStateCreateInfo::lineWidth
     for (const auto test_case : test_cases) {
@@ -19080,7 +19064,7 @@ TEST_F(VkLayerTest, ImageFormatLimits) {
 
     uint32_t maxDim = std::max({image_create_info.extent.width, image_create_info.extent.height, image_create_info.extent.depth});
     // If max mip levels exceeds image extents, skip the max mip levels test
-    if ((imgFmtProps.maxMipLevels + 1) <= (floor(log2(maxDim)) + 1)) {
+    if ((imgFmtProps.maxMipLevels + 1) <= (std::floor(std::log2(maxDim)) + 1)) {
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_09e0077e);
         image_create_info.mipLevels = imgFmtProps.maxMipLevels + 1;
         // Expect INVALID_FORMAT_LIMITS_VIOLATION
@@ -20933,18 +20917,17 @@ TEST_F(VkLayerTest, SetDynViewportParamTests) {
         vector<UNIQUE_VALIDATION_ERROR_CODE> vuids;
     };
 
-    const auto one_past_max_w =
-        nextafterf(static_cast<float>(m_device->props.limits.maxViewportDimensions[0]), PositiveDir<float>());
-    const auto one_past_max_h =
-        nextafterf(static_cast<float>(m_device->props.limits.maxViewportDimensions[1]), PositiveDir<float>());
+    // not necessarily boundary values (unspecified cast rounding), but guaranteed to be over limit
+    const auto one_past_max_w = NearestGreater(static_cast<float>(m_device->props.limits.maxViewportDimensions[0]));
+    const auto one_past_max_h = NearestGreater(static_cast<float>(m_device->props.limits.maxViewportDimensions[1]));
 
     const auto min_bound = m_device->props.limits.viewportBoundsRange[0];
     const auto max_bound = m_device->props.limits.viewportBoundsRange[1];
-    const auto one_before_min_bounds = nextafterf(min_bound, NegativeDir<float>());
-    const auto one_past_max_bounds = nextafterf(max_bound, PositiveDir<float>());
+    const auto one_before_min_bounds = NearestSmaller(min_bound);
+    const auto one_past_max_bounds = NearestGreater(max_bound);
 
-    const auto below_zero = nextafterf(0.0, -1.0);
-    const auto past_one = nextafterf(1.0, 2.0);
+    const auto below_zero = NearestSmaller(0.0f);
+    const auto past_one = NearestGreater(1.0f);
 
     const vector<TestCase> test_cases = {
         {{0.0, 0.0, 0.0, 64.0, 0.0, 1.0}, {VALIDATION_ERROR_15000dd4}},
@@ -20987,13 +20970,14 @@ void NegHeightViewportTests(VkDeviceObj *m_device, VkCommandBufferObj *m_command
         vector<UNIQUE_VALIDATION_ERROR_CODE> vuids;
     };
 
-    const auto one_before_min_h = nextafterf(-static_cast<float>(limits.maxViewportDimensions[1]), NegativeDir<float>());
-    const auto one_past_max_h = nextafterf(static_cast<float>(limits.maxViewportDimensions[1]), PositiveDir<float>());
+    // not necessarily boundary values (unspecified cast rounding), but guaranteed to be over limit
+    const auto one_before_min_h = NearestSmaller(-static_cast<float>(limits.maxViewportDimensions[1]));
+    const auto one_past_max_h = NearestGreater(static_cast<float>(limits.maxViewportDimensions[1]));
 
     const auto min_bound = limits.viewportBoundsRange[0];
     const auto max_bound = limits.viewportBoundsRange[1];
-    const auto one_before_min_bound = nextafterf(min_bound, NegativeDir<float>());
-    const auto one_past_max_bound = nextafterf(max_bound, PositiveDir<float>());
+    const auto one_before_min_bound = NearestSmaller(min_bound);
+    const auto one_past_max_bound = NearestGreater(max_bound);
 
     const vector<TestCase> test_cases = {{{0.0, 0.0, 64.0, one_before_min_h, 0.0, 1.0}, {VALIDATION_ERROR_15000dda}},
                                          {{0.0, 0.0, 64.0, one_past_max_h, 0.0, 1.0}, {VALIDATION_ERROR_15000dda}},
@@ -21919,14 +21903,14 @@ TEST_F(VkLayerTest, ScissorBoundsChecking) {
 
     {
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_1d8004a8);
-        VkRect2D scissor = {{100, 100}, {INT_MAX, 16}};
+        VkRect2D scissor = {{100, 100}, {INT32_MAX, 16}};
         vkCmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissor);
         m_errorMonitor->VerifyFound();
     }
 
     {
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_1d8004aa);
-        VkRect2D scissor = {{100, 100}, {16, INT_MAX}};
+        VkRect2D scissor = {{100, 100}, {16, INT32_MAX}};
         vkCmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissor);
         m_errorMonitor->VerifyFound();
     }
