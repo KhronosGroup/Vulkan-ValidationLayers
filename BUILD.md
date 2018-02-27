@@ -1,37 +1,41 @@
 # Build Instructions
+
 Instructions for building this repository on Linux, Windows, and Android.
 
-# Index
+## Index
+
 1. [Contributing](#contributing)
 2. [Repository Set-Up](#repo-set-up)
 3. [Windows Build](#windows-build)
 4. [Linux Build](#linux-build)
 5. [Android Build](#android-build)
 
-
-<a name="contributing"/>
+[](#contributing)
 
 ## Contributing to the Repository
 
-If you intend to contribute, the preferred work flow is for you to develop your contribution in a fork of this repository in your GitHub account and then submit a pull request.
+If you intend to contribute, the preferred work flow is for you to develop
+your contribution in a fork of this repository in your GitHub account and
+then submit a pull request.
 Please see the [CONTRIBUTING.md](CONTRIBUTING.md) file in this repository for more details.
 
-<a name="repo-set-up"/>
+[](#repo-set-up)
 
 ## Repository Set-Up
 
 ### Display Drivers
 
-This repository does not contain a Vulkan-capable driver. Before proceeding, it is strongly recommended that you obtain a Vulkan driver from your graphics hardware vendor and install it properly.
+This repository does not contain a Vulkan-capable driver.
+Before proceeding, it is strongly recommended that you obtain a Vulkan driver from your
+graphics hardware vendor and install it properly.
 
 ### Download the Repository
 
 To create your local git repository:
-```
-git clone https://github.com/KhronosGroup/Vulkan-LoaderAndValidationLayers
-```
 
-<a name="windows-build"/>
+    git clone https://github.com/KhronosGroup/Vulkan-LoaderAndValidationLayers
+
+[](#windows-build)
 
 ## Building On Windows
 
@@ -43,21 +47,23 @@ Windows 7+ with the following software packages:
 - [CMake](http://www.cmake.org/download/)
   - Tell the installer to "Add CMake to the system PATH" environment variable.
 - [Python 3](https://www.python.org/downloads)
-  - Select to install the optional sub-package to add Python to the system PATH environment variable.
+  - Select to install the optional sub-package to add Python to the system PATH
+    environment variable.
   - Ensure the `pip` module is installed (it should be by default)
-  - Python3.3 or later is necessary for the Windows py.exe launcher that is used to select python3 rather than python2 if both are
-installed
+  - Python3.3 or later is necessary for the Windows py.exe launcher that is used to select python3
+  rather than python2 if both are installed
 - [Git](http://git-scm.com/download/win)
   - Tell the installer to allow it to be used for "Developer Prompt" as well as "Git Bash".
   - Tell the installer to treat line endings "as is" (i.e. both DOS and Unix-style line endings).
-  - Install both the 32-bit and 64-bit versions, as the 64-bit installer does not install the 32-bit libraries and tools.
+  - Install both the 32-bit and 64-bit versions, as the 64-bit installer does not install the
+    32-bit libraries and tools.
 - Notes for using [Cygwin](https://www.cygwin.com)
   - First, in a Cygwin shell:
-     - ./update_external_sources.sh --no-build
+    - `./update_external_sources.sh --no-build`
   - Then, in a Visual Studio Developer Command Prompt:
-     - Ensure python3.x and CMake in are in the path
-     - Run update_external_sources.bat --no-sync
-     - Run build_windows_targets.bat cmake
+    - Ensure python3.x and CMake in are in the path
+    - Run `update_external_sources.bat --no-sync`
+    - Run build_windows_targets.bat cmake
 
 ### Windows Build - Microsoft Visual Studio
 
@@ -67,55 +73,66 @@ installed
 4. Create a `build` directory, change into that directory, and run cmake
 
 For example, for VS2017 (generators for other versions are [specified here](#win-cmake-generators)):
-```
-  cmake -G "Visual Studio 15 2017 Win64" ..
-```
-   This will create a Windows solution file named `VULKAN.sln` in the build directory.
+
+    cmake -G "Visual Studio 15 2017 Win64" ..
+
+This will create a Windows solution file named `VULKAN.sln` in the build directory.
 
 Launch Visual Studio and open the "VULKAN.sln" solution file in the build folder.
 You may select "Debug" or "Release" from the Solution Configurations drop-down list.
 Start a build by selecting the Build->Build Solution menu item.
-This solution copies the loader it built to each program's build directory to ensure that the program uses the loader built from this solution.
+This solution copies the loader it built to each program's build directory
+to ensure that the program uses the loader built from this solution.
 
-**The Update External Sources Batch File**
+#### The Update External Sources Batch File
 
-Employing [optional parameters to **update_external_sources.bat**](#update-external-sources) can streamline repository set-up.
+Employing [optional parameters to **update_external_sources.bat**](#update-external-sources)
+can streamline repository set-up.
 
 ### Windows Tests and Demos
 
-After making any changes to the repository, you should perform some quick sanity tests, including the run_all_tests Powershell script and the cube demo with validation enabled.
+After making any changes to the repository, you should perform some quick sanity tests,
+including the run_all_tests Powershell script and the cube demo with validation enabled.
 
-To run the validation test script, open a Powershell Console, change to the build/tests directory, and run:
+To run the validation test script, open a Powershell Console,
+change to the build/tests directory, and run:
 
 For Release builds:
-```
-        .\run_all_tests.ps1
-```
+
+    .\run_all_tests.ps1
+
 For Debug builds:
-```
-        .\run_all_tests.ps1 -Debug
-```
+
+    .\run_all_tests.ps1 -Debug
 
 This script will run the following tests:
-- `vk_loader_validation_tests`:  Vulkan loader handle wrapping, allocation callback, and loader/layer interface tests
-- `vk_layer_validation_tests`:  Test Vulkan validation layers
-- `vkvalidatelayerdoc`:  Tests that validation database is up-to-date and is synchronized with the validation source code
+
+- `vk_loader_validation_tests`:
+  Vulkan loader handle wrapping, allocation callback, and loader/layer interface tests
+- `vk_layer_validation_tests`:
+  Test Vulkan validation layers
+- `vkvalidatelayerdoc`:
+  Tests that validation database is up-to-date and is synchronized with the validation source code
 
 To run the Cube demo with validation in a Debug build configuration:
-- In the MSVC solution explorer, right-click on the `cube` project and select `Set As Startup Project`
-- Right click on cube again, select properties->Debugging->Command Arguments, change to `--validate`, and save
-- From the main menu, select Debug->Start Debugging, or from the toolbar click `Local Windows Debugger`
+
+- In the MSVC solution explorer, right-click on the `cube` project and select
+ `Set As Startup Project`
+- Right click on cube again, select properties->Debugging->Command Arguments, change to
+ `--validate`, and save
+- From the main menu, select Debug->Start Debugging, or from the toolbar click
+ `Local Windows Debugger`
 
 Other demos that can be found in the build/demos directory are:
+
 - `vulkaninfo`: Report GPU properties
 - `smoketest`: A "smoke" test using more complex Vulkan rendering
 
-
 ### Windows Notes
 
-<a name="win-cmake-generators"/>
+[](#win-cmake-generators)
 
-**Cmake Visual Studio Generators**
+#### CMake Visual Studio Generators
 
 The above example used Visual Studio 2017, and specified its generator as "Visual Studio 15 2017 Win64".
 The chosen generator should match your Visual Studio version. Appropriate Visual Studio generators include:
@@ -126,8 +143,7 @@ The chosen generator should match your Visual Studio version. Appropriate Visual
 | Microsoft Visual Studio 2015 | "Visual Studio 14 2015 Win64" | "Visual Studio 14 2015" |
 | Microsoft Visual Studio 2017 | "Visual Studio 15 2017 Win64" | "Visual Studio 15 2017" |
 
-
-**The Vulkan Loader Library**
+#### The Vulkan Loader Library
 
 Vulkan programs must be able to find and use the vulkan-1.dll library.
 While several of the test and demo projects in the Windows solution set this up automatically, doing so manually may be necessary for custom projects or solutions.
@@ -137,7 +153,7 @@ To run Vulkan programs you must tell the Vulkan Loader where to find the librari
 This is described in a `LoaderAndLayerInterface` document in the `loader` folder in this repository.
 This describes both how ICDs and layers should be properly packaged, and how developers can point to ICDs and layers within their builds.
 
-<a name="linux-build"/>
+[](#linux-build)
 
 ## Building On Linux
 
@@ -148,39 +164,44 @@ Currently, the oldest supported version is Ubuntu 14.04, meaning that the minimu
 It should be straightforward to adapt this repository to other Linux distributions.
 
 **Required Package List:**
-```
-sudo apt-get install git cmake build-essential libx11-xcb-dev libxkbcommon-dev libmirclient-dev libwayland-dev libxrandr-dev
-```
+
+    sudo apt-get install git cmake build-essential libx11-xcb-dev libxkbcommon-dev libmirclient-dev libwayland-dev libxrandr-dev
 
 ### Linux Build
 
 Example debug build (Note that the update\_external\_sources script used below builds external tools into predefined locations.
 See **Loader and Validation Layer Dependencies** for more information and other options):
 
-1. In a Linux terminal, `cd Vulkan-LoaderAndValidationLayers` -- the root of the cloned git repository
+1. In a Linux terminal, `cd Vulkan-LoaderAndValidationLayers` -- the root of the
+ cloned git repository
 2. Execute `./update_external_sources.sh` -- this will download and build external components
 3. Create a `build` directory, change into that directory, and run cmake:
-```
-mkdir build
-cd build
-cmake -DCMAKE_BUILD_TYPE=Debug ..
-```
+
+    ```script
+        mkdir build
+        cd build
+        cmake -DCMAKE_BUILD_TYPE=Debug ..
+    ```
+
 4. Change into the newly-created build directory
 5. Run `make -j8` to begin the build
 
-If your build system supports ccache, you can enable that via cmake option `-DUSE_CCACHE=On`
+If your build system supports ccache, you can enable that via CMake option `-DUSE_CCACHE=On`
 
-**The Update External Sources script**
+#### The Update External Sources script
+
 Employing [optional parameters to **update_external_sources.sh**](#update-external-sources) can streamline repository set-up.
 
-**Using the new loader and layers:**
-```
-export LD_LIBRARY_PATH=<path to your repository root>/build/loader
-export VK_LAYER_PATH=<path to your repository root>/build/layers
-```
+#### Using the new loader and layers
+
+    export LD_LIBRARY_PATH=<path to your repository root>/build/loader
+    export VK_LAYER_PATH=<path to your repository root>/build/layers
+
 You can run the `vulkaninfo` application to see which driver, loader and layers are being used.
 
-The `LoaderAndLayerInterface` document in the `loader` folder in this repository is a specification that describes both how ICDs and layers should be properly packaged, and how developers can point to ICDs and layers within their builds.
+The `LoaderAndLayerInterface` document in the `loader` folder in this repository
+is a specification that describes both how ICDs and layers should be properly packaged,
+and how developers can point to ICDs and layers within their builds.
 
 ### WSI Support Build Options
 
@@ -197,86 +218,97 @@ If you are certain that you would like to install your binaries to system direct
 
 Assuming that you've built the code as described above and the current directory is still `build`, you can execute:
 
-```
-sudo make install
-```
+    sudo make install
+
 This command installs files to:
 
-* `/usr/local/include/vulkan`:  Vulkan include files
-* `/usr/local/lib`:  Vulkan loader and layers shared objects
-* `/usr/local/bin`:  vulkaninfo application
-* `/usr/local/etc/vulkan/explicit_layer.d`:  Layer JSON files
+- `/usr/local/include/vulkan`:  Vulkan include files
+- `/usr/local/lib`:  Vulkan loader and layers shared objects
+- `/usr/local/bin`:  vulkaninfo application
+- `/usr/local/etc/vulkan/explicit_layer.d`:  Layer JSON files
 
 You may need to run `ldconfig` in order to refresh the system loader search cache on some Linux systems.
 
 You can further customize the installation location by setting additional CMake variables to override their defaults.
 For example, if you would like to install to `/tmp/build` instead of `/usr/local`, on your CMake command line specify:
 
-```
--DCMAKE_INSTALL_PREFIX=/tmp/build
--DDEST_DIR=/tmp/build
-```
+    -DCMAKE_INSTALL_PREFIX=/tmp/build
+    -DDEST_DIR=/tmp/build
 
 Then run `make install` as before. The install step places the files in `/tmp/build`.
 
-Using the `CMAKE_INSTALL_PREFIX` to customize the install location also modifies the loader search paths to include searching for layers in the specified install location.
-In this example, setting `CMAKE_INSTALL_PREFIX` to `/tmp/build` causes the loader to search `/tmp/build/etc/vulkan/explicit_layer.d` and `/tmp/build/share/vulkan/explicit_layer.d` for the layer JSON files.
-The loader also searches the "standard" system locations of `/etc/vulkan/explicit_layer.d` and `/usr/share/vulkan/explicit_layer.d` after searching the two locations under `/tmp/build`.
+Using the `CMAKE_INSTALL_PREFIX` to customize the install location also modifies
+the loader search paths to include searching for layers in the specified install location.
+In this example, setting `CMAKE_INSTALL_PREFIX` to `/tmp/build` causes the loader to search
+`/tmp/build/etc/vulkan/explicit_layer.d` and `/tmp/build/share/vulkan/explicit_layer.d`
+for the layer JSON files.
+The loader also searches the "standard" system locations of `/etc/vulkan/explicit_layer.d` and
+`/usr/share/vulkan/explicit_layer.d` after searching the two locations under `/tmp/build`.
 
-You can further customize the installation directories by using the CMake variables `CMAKE_INSTALL_SYSCONFDIR` to rename the `etc` directory and `CMAKE_INSTALL_DATADIR` to rename the `share` directory.
+You can further customize the installation directories by using the CMake variables
+`CMAKE_INSTALL_SYSCONFDIR` to rename the `etc` directory and `CMAKE_INSTALL_DATADIR`
+to rename the `share` directory.
 
-See the CMake documentation for more details on using these variables to further customize your installation.
+See the CMake documentation for more details on using these variables
+to further customize your installation.
 
-Also see the `LoaderAndLayerInterface` document in the `loader` folder in this repository for more information about loader operation.
+Also see the `LoaderAndLayerInterface` document in the `loader` folder in this
+repository for more information about loader operation.
 
-Note that some executables in this repository (e.g., `cube`) use the "rpath" linker directive to load the Vulkan loader from the build directory, `build` in this example.
-This means that even after installing the loader to the system directories, these executables still use the loader from the build directory.
+Note that some executables in this repository (e.g., `cube`) use the "rpath" linker directive to
+load the Vulkan loader from the build directory, `build` in this example.
+This means that even after installing the loader to the system directories, these executables still
+use the loader from the build directory.
 
 ### Linux Uninstall
 
 To uninstall the files from the system directories, you can execute:
 
-```
-sudo make uninstall
-```
+    sudo make uninstall
 
 ### Linux Tests and Demos
 
-After making any changes to the repository, you should perform some quick sanity tests, including the run_all_tests shell script and the cube demo with validation enabled.
+After making any changes to the repository, you should perform some quick sanity tests, including
+the run_all_tests shell script and the cube demo with validation enabled.
 
 To run the **validation test script**, in a terminal change to the build/tests directory and run:
-```
+
     VK_LAYER_PATH=../layers ./run_all_tests.sh
-```
 
 This script will run the following tests:
+
 - `vk_loader_validation_tests`: Tests Vulkan Loader handle wrapping
 - `vk_layer_validation_tests`: Test Vulkan validation layers
-- `vkvalidatelayerdoc`: Tests that validation database is in up-to-date and in synchronization with the validation source code
+- `vkvalidatelayerdoc`: Tests that validation database is in up-to-date and in synchronization with
+  the validation source code
 
-To run the **Cube demo** with validation, in a terminal change to the `build/demos` directory and run:
-```
+To run the **Cube demo** with validation, in a terminal change to the `build/demos`
+directory and run:
+
     VK_LAYER_PATH=../layers ./cube --validate
-```
+
 Other demos that can be found in the `build/demos` directory are:
+
 - `vulkaninfo`: report GPU properties
 - `smoketest`: A "smoke" test using more complex Vulkan rendering
 
-
-You can select which WSI subsystem is used to build the demos using a cmake option called DEMOS_WSI_SELECTION.
+You can select which WSI subsystem is used to build the demos using a CMake option
+called DEMOS_WSI_SELECTION.
 Supported options are XCB (default), XLIB, WAYLAND, and MIR.
-Note that you must build using the corresponding BUILD_WSI_*_SUPPORT enabled at the base repository level (all SUPPORT options are ON by default).
-For instance, creating a build that will use Xlib to build the demos, your cmake command line might look like:
-```
-cmake -H. -Bbuild -DCMAKE_BUILD_TYPE=Debug -DDEMOS_WSI_SELECTION=XLIB
-```
+Note that you must build using the corresponding BUILD_WSI_*_SUPPORT enabled at the
+base repository level (all SUPPORT options are ON by default).
+For instance, creating a build that will use Xlib to build the demos,
+your CMake command line might look like:
+
+    cmake -H. -Bbuild -DCMAKE_BUILD_TYPE=Debug -DDEMOS_WSI_SELECTION=XLIB
 
 ### Linux Notes
 
 #### Linux 32-bit support
 
 Usage of this repository's contents in 32-bit Linux environments is not officially supported.
-However, since this repository is supported on 32-bit Windows, these modules should generally work on 32-bit Linux.
+However, since this repository is supported on 32-bit Windows,
+these modules should generally work on 32-bit Linux.
 
 Here are some notes for building 32-bit targets on a 64-bit Ubuntu "reference" platform:
 
@@ -288,29 +320,32 @@ This list may vary depending on your distribution and which windowing systems yo
 
 Set up your environment for building 32-bit targets:
 
-```
-export ASFLAGS=--32
-export CFLAGS=-m32
-export CXXFLAGS=-m32
-export PKG_CONFIG_LIBDIR=/usr/lib/i386-linux-gnu
-```
+    export ASFLAGS=--32
+    export CFLAGS=-m32
+    export CXXFLAGS=-m32
+    export PKG_CONFIG_LIBDIR=/usr/lib/i386-linux-gnu
 
 Again, your PKG_CONFIG configuration may be different, depending on your distribution.
 
-If the libraries in the `external` directory have already been built for 64-bit targets, delete or "clean" this directory and rebuild it with the above settings using the `update_external_sources` shell script.
-This is required because the libraries in `external` must be built for 32-bit in order to be usable by the rest of the components in the repository.
+If the libraries in the `external` directory have already been built for 64-bit targets,
+delete or "clean" this directory and rebuild it with the above settings using the
+`update_external_sources` shell script.
+This is required because the libraries in `external` must be built for 32-bit in order
+to be usable by the rest of the components in the repository.
 
 Finally, rebuild the repository using `cmake` and `make`, as explained above.
 
-<a name="android-build"/>
+[](#android-build)
 
 ## Building On Android
+
 Install the required tools for Linux and Windows covered above, then add the following.
 
 ### Android Build Requirements
 
 - Install [Android Studio 2.3](https://developer.android.com/studio/index.html) or later.
-- From the "Welcome to Android Studio" splash screen, add the following components using Configure > SDK Manager:
+- From the "Welcome to Android Studio" splash screen, add the following components using
+  Configure > SDK Manager:
   - SDK Platforms > Android 6.0 and newer
   - SDK Tools > Android SDK Build-Tools
   - SDK Tools > Android SDK Platform-Tools
@@ -322,162 +357,180 @@ Install the required tools for Linux and Windows covered above, then add the fol
 For each of the below, you may need to specify a different build-tools version, as Android Studio will roll it forward fairly regularly.
 
 On Linux:
-```
-export ANDROID_SDK_HOME=$HOME/Android/sdk
-export ANDROID_NDK_HOME=$HOME/Android/sdk/ndk-bundle
-export PATH=$ANDROID_SDK_HOME:$PATH
-export PATH=$ANDROID_NDK_HOME:$PATH
-export PATH=$ANDROID_SDK_HOME/build-tools/23.0.3:$PATH
-```
+
+    export ANDROID_SDK_HOME=$HOME/Android/sdk
+    export ANDROID_NDK_HOME=$HOME/Android/sdk/ndk-bundle
+    export PATH=$ANDROID_SDK_HOME:$PATH
+    export PATH=$ANDROID_NDK_HOME:$PATH
+    export PATH=$ANDROID_SDK_HOME/build-tools/23.0.3:$PATH
+
 On Windows:
-```
-set ANDROID_SDK_HOME=%LOCALAPPDATA%\Android\sdk
-set ANDROID_NDK_HOME=%LOCALAPPDATA%\Android\sdk\ndk-bundle
-set PATH=%LOCALAPPDATA%\Android\sdk\ndk-bundle;%PATH%
-```
+
+    set ANDROID_SDK_HOME=%LOCALAPPDATA%\Android\sdk
+    set ANDROID_NDK_HOME=%LOCALAPPDATA%\Android\sdk\ndk-bundle
+    set PATH=%LOCALAPPDATA%\Android\sdk\ndk-bundle;%PATH%
+
 On OSX:
-```
-export ANDROID_SDK_HOME=$HOME/Library/Android/sdk
-export ANDROID_NDK_HOME=$HOME/Library/Android/sdk/ndk-bundle
-export PATH=$ANDROID_NDK_PATH:$PATH
-export PATH=$ANDROID_SDK_HOME/build-tools/23.0.3:$PATH
-```
-Note: If `jarsigner` is missing from your platform, you can find it in the Android Studio install or in your Java installation.
+
+    export ANDROID_SDK_HOME=$HOME/Library/Android/sdk
+    export ANDROID_NDK_HOME=$HOME/Library/Android/sdk/ndk-bundle
+    export PATH=$ANDROID_NDK_PATH:$PATH
+    export PATH=$ANDROID_SDK_HOME/build-tools/23.0.3:$PATH
+
+Note: If `jarsigner` is missing from your platform, you can find it in the
+Android Studio install or in your Java installation.
 If you do not have Java, you can get it with something like the following:
-```
-sudo apt-get install openjdk-8-jdk
-```
+
+  sudo apt-get install openjdk-8-jdk
 
 #### Additional OSX System Requirements
+
 Tested on OSX version 10.12.4
 
- Setup Homebrew and components
+Setup Homebrew and components
+
 - Follow instructions on [brew.sh](http://brew.sh) to get Homebrew installed.
-```
-/usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
-```
+
+      /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+
 - Ensure Homebrew is at the beginning of your PATH:
-```
-export PATH=/usr/local/bin:$PATH
-```
+
+      export PATH=/usr/local/bin:$PATH
+
 - Add packages with the following (may need refinement)
-```
-brew install cmake python python3 git
-```
+
+      brew install cmake python python3 git
+
 ### Android Build
 
 There are two options for building the Android layers.
 Either using the SPIRV tools provided as part of the Android NDK, or using upstream sources.
-To build with SPIRV tools from the NDK, remove the build-android/third_party directory created by running update_external_sources_android.sh, (or avoid running update_external_sources_android.sh).
-Use the following script to build everything in the repository for Android, including validation layers, tests, demos, and APK packaging: This script does retrieve and use the upstream SPRIV tools.
+To build with SPIRV tools from the NDK, remove the build-android/third_party directory created by
+running update_external_sources_android.sh, (or avoid running update_external_sources_android.sh).
+Use the following script to build everything in the repository for Android, including validation
+layers, tests, demos, and APK packaging: This script does retrieve and use the upstream SPRIV tools.
 
-```
-cd build-android
-./build_all.sh
-```
+    cd build-android
+    ./build_all.sh
+
 Resulting validation layer binaries will be in build-android/libs.
 Test and demo APKs can be installed on production devices with:
-```
-./install_all.sh [-s <serial number>]
-```
+
+    ./install_all.sh [-s <serial number>]
+
 Note that there are no equivalent scripts on Windows yet, that work needs to be completed.
 The following per platform commands can be used for layer only builds:
 
 #### Linux and OSX
+
 Follow the setup steps for Linux or OSX above, then from your terminal:
-```
-cd build-android
-./update_external_sources_android.sh --no-build
-./android-generate.sh
-ndk-build -j4
-```
+
+    cd build-android
+    ./update_external_sources_android.sh --no-build
+    ./android-generate.sh
+    ndk-build -j4
+
 #### Windows
+
 Follow the setup steps for Windows above, then from Developer Command Prompt for VS2013:
-```
-cd build-android
-update_external_sources_android.bat
-android-generate.bat
-ndk-build
-```
+
+    cd build-android
+    update_external_sources_android.bat
+    android-generate.bat
+    ndk-build
+
 ### Android Tests and Demos
 
-After making any changes to the repository you should perform some quick sanity tests, including the layer validation tests and the cube and smoke demos with validation enabled.
+After making any changes to the repository you should perform some quick sanity tests,
+including the layer validation tests and the cube and smoke demos with validation enabled.
 
 #### Run Layer Validation Tests
 
 Use the following steps to build, install, and run the layer validation tests for Android:
 
-```
-cd build-android
-./build_all.sh
-adb install -r bin/VulkanLayerValidationTests.apk
-adb shell am start com.example.VulkanLayerValidationTests/android.app.NativeActivity
-```
+    cd build-android
+    ./build_all.sh
+    adb install -r bin/VulkanLayerValidationTests.apk
+    adb shell am start com.example.VulkanLayerValidationTests/android.app.NativeActivity
+
 Alternatively, you can use the test_APK script to install and run the layer validation tests:
-```
-test_APK.sh -s <serial number> -p <plaform name> -f <gtest_filter>
-```
+
+    test_APK.sh -s <serial number> -p <plaform name> -f <gtest_filter>
 
 #### Run Cube and Smoke with Validation
- 
+
 Use the following steps to build, install, and run Cube and Smoke for Android:
-```
-cd build-android
-./build_all.sh
-adb install -r ../demos/android/cube/bin/cube.apk
-adb shell am start com.example.Cube/android.app.NativeActivity
-```
-To build, install, and run Cube with validation layers, first build layers using steps above, then run:
-```
-cd build-android
-./build_all.sh
-adb install -r ../demos/android/cube-with-layers/bin/cube-with-layers.apk
-# Run without validation enabled:
-adb shell am start com.example.CubeWithLayers/android.app.NativeActivity
-# Run with validation enabled:
-adb shell am start -a android.intent.action.MAIN -c android-intent.category.LAUNCH -n com.example.CubeWithLayers/android.app.NativeActivity --es args "--validate"
-```
+
+    cd build-android
+    ./build_all.sh
+    adb install -r ../demos/android/cube/bin/cube.apk
+    adb shell am start com.example.Cube/android.app.NativeActivity
+
+To build, install, and run Cube with validation layers,
+first build layers using steps above, then run:
+
+    cd build-android
+    ./build_all.sh
+    adb install -r ../demos/android/cube-with-layers/bin/cube-with-layers.apk
+
+##### Run without validation enabled
+
+    adb shell am start com.example.CubeWithLayers/android.app.NativeActivity
+
+##### Run with validation enabled
+
+    adb shell am start -a android.intent.action.MAIN -c android-intent.category.LAUNCH -n com.example.CubeWithLayers/android.app.NativeActivity --es args "--validate"
+
 vkjson_info for Android is built as an executable for devices with root access.
 
 To use, simply push it to the device and run it:
-```
-./build_all.sh
-adb push obj/local/<abi>/vkjson_info /data/tmp/
-adb shell /data/tmp/vkjson_info
-```
+
+    ./build_all.sh
+    adb push obj/local/<abi>/vkjson_info /data/tmp/
+    adb shell /data/tmp/vkjson_info
+
 The resulting json file will be found in:
-```
-/sdcard/Android/<device_name>.json
-```
+
+    /sdcard/Android/<device_name>.json
 
 To build, install, and run the Smoke demo for Android, run the following, and any prompts that come back from the script:
-```
-./update_external_sources.sh --glslang
-cd demos/smoke/android
-export ANDROID_SDK_HOME=<path to Android/Sdk>
-export ANDROID_NDK_HOME=<path to Android/Sdk/ndk-bundle>
-./build-and-install
-adb shell am start -a android.intent.action.MAIN -c android-intent.category.LAUNCH -n com.example.Smoke/android.app.NativeActivity --es args "--validate"
-```
+
+    ./update_external_sources.sh --glslang
+    cd demos/smoke/android
+    export ANDROID_SDK_HOME=<path to Android/Sdk>
+    export ANDROID_NDK_HOME=<path to Android/Sdk/ndk-bundle>
+    ./build-and-install
+    adb shell am start -a android.intent.action.MAIN -c android-intent.category.LAUNCH -n com.example.Smoke/android.app.NativeActivity --es args "--validate"
 
 ## Ninja Builds - All Platforms
-The [Qt Creator IDE](https://qt.io/download-open-source/#section-2) can open a root CMakeList.txt as a project directly, and it provides tools within Creator to configure and generate Vulkan SDK build files for one to many targets concurrently.
-Alternatively, when invoking CMake, use the `-G Codeblocks` Ninja option to generate Ninja build files to be used as project files for QtCreator
-- Follow the steps defined elsewhere for the OS using the update\_external\_sources script or as shown in **Loader and Validation Layer Dependencies** below
-- Open, configure, and build the glslang CMakeList.txt files. Note that building the glslang project will provide access to spirv-tools and spirv-headers
+
+The [Qt Creator IDE](https://qt.io/download-open-source/#section-2) can open a root CMakeList.txt
+as a project directly, and it provides tools within Creator to configure and generate Vulkan SDK
+build files for one to many targets concurrently.
+Alternatively, when invoking CMake, use the `-G Codeblocks` Ninja option to generate Ninja build
+files to be used as project files for QtCreator
+
+- Follow the steps defined elsewhere for the OS using the update\_external\_sources script or as
+  shown in **Loader and Validation Layer Dependencies** below
+- Open, configure, and build the glslang CMakeList.txt files. Note that building the glslang
+  project will provide access to spirv-tools and spirv-headers
 - Then do the same with the Vulkan-LoaderAndValidationLayers CMakeList.txt file
-- In order to debug with QtCreator, a [Microsoft WDK: eg WDK 10](http://go.microsoft.com/fwlink/p/?LinkId=526733) is required.
+- In order to debug with QtCreator, a
+  [Microsoft WDK: eg WDK 10](http://go.microsoft.com/fwlink/p/?LinkId=526733) is required.
+
 Note that installing the WDK breaks the MSVC vcvarsall.bat build scripts provided by MSVC, requiring that the LIB, INCLUDE, and PATHenv variables be set to the WDK paths by some other means
 
-<a name="update-external-sources"/>
+[](#update-external-sources)
 
 ## Update External Sources Optional Parameters
 
-This script will default to building 64-bit _and_ 32-bit versions of debug _and_ release configurations, which can take a substantial amount of time.
-However, it supports the following options to select a particular build configuration which can reduce the time needed for repository set-up:
+This script will default to building 64-bit _and_ 32-bit versions of debug _and_ release
+configurations, which can take a substantial amount of time.
+However, it supports the following options to select a particular build configuration which can
+reduce the time needed for repository set-up:
 
 | Command Line Option  |  Function                                    |
-|---------------------------------------------------------------------|
+|----------------------|----------------------------------------------|
 |   --32               | Build 32-bit targets only                    |
 |   --64               | Build 64-bit targets only                    |
 |   --release          | Perform release builds only                  |
@@ -493,38 +546,47 @@ Similarly, invoking the same configuration for Linux would be:
 
 `update_external_sources.sh --64 --debug`
 
-
-
 ## Loader and Validation Layer Dependencies
+
 The glslang repository is required to build and run Loader and Validation Layer components.
-It is not a git sub-module of Vulkan-LoaderAndValidationLayers but Vulkan-LoaderAndValidationLayers is linked to a specific revision of glslang.
-This can be automatically cloned and built to predefined locations with the `update_external_sources` scripts.
+It is not a git sub-module of Vulkan-LoaderAndValidationLayers but Vulkan-LoaderAndValidationLayers
+is linked to a specific revision of glslang.
+This can be automatically cloned and built to predefined locations with the
+`update_external_sources` scripts.
 If a custom configuration is required, do the following steps:
 
 1) clone the repository:
 
     `git clone https://github.com/KhronosGroup/glslang.git`
 
-2) checkout the correct version of the tree based on the contents of the glslang\_revision file at the root of the Vulkan-LoaderAndValidationLayers tree (do the same anytime that Vulkan-LoaderAndValidationLayers is updated from remote)
+2) checkout the correct version of the tree based on the contents of the
+glslang\_revision file at the root of the Vulkan-LoaderAndValidationLayers tree
+(do the same anytime that Vulkan-LoaderAndValidationLayers is updated from remote)
 
-_on windows_
+    - On Windows
 
-    git checkout < [path to Vulkan-LoaderAndValidationLayers]\glslang_revision [in glslang repo]
+    ```script
+        git checkout < [path to Vulkan-LoaderAndValidationLayers]\glslang_revision [in glslang repo]
+    ```
 
-*non windows*
+    - Non Windows
 
-    git checkout `cat [path to Vulkan-LoaderAndValidationLayers]\glslang_revision` [in glslang repo]
+    ```script
+        git checkout `cat [path to Vulkan-LoaderAndValidationLayers]\glslang_revision` [in glslang repo]
+    ```
 
-3) Configure the glslang source tree with cmake and build it with your IDE of choice
+3) Configure the glslang source tree with CMake and build it with your IDE of choice
 
-4) Enable the `CUSTOM_GLSLANG_BIN_PATH` and `CUSTOM_SPIRV_TOOLS_BIN_PATH` options in the Vulkan-LoaderAndValidationLayers cmake configuration and point the `GLSLANG_BINARY_PATH`  and `SPIRV_TOOLS_BINARY_PATH` variables to the correct location
+4) Enable the `CUSTOM_GLSLANG_BIN_PATH` and `CUSTOM_SPIRV_TOOLS_BIN_PATH` options in the Vulkan-LoaderAndValidationLayers CMake configuration and point the `GLSLANG_BINARY_PATH`  and `SPIRV_TOOLS_BINARY_PATH` variables to the correct location
 
-5) If building on Windows with MSVC, set `DISABLE_BUILDTGT_DIR_DECORATION` to _On_. If building on Windows, but without MSVC set `DISABLE_BUILD_PATH_DECORATION` to _On_
+5) If building on Windows with MSVC, set `DISABLE_BUILDTGT_DIR_DECORATION` to _On_.
+ If building on Windows, but without MSVC set `DISABLE_BUILD_PATH_DECORATION` to _On_
 
-## Optional software packages:
+## Optional software packages
 
 - [Cygwin for windows](https://www.cygwin.com/)
-  - Cygwin provides some Linux-like tools, which can be valuable for working with the repository, such as the BASH shell and git packages
+  - Cygwin provides some Linux-like tools, which can be valuable for working with the repository,
+    such as the BASH shell and git packages
   - With appropriate adjustments, it is possible to use other shells and environments as well
 
 - [Ninja on all platforms](https://github.com/ninja-build/ninja/releases)
