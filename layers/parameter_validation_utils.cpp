@@ -2237,7 +2237,7 @@ bool pv_vkCmdSetViewport(VkCommandBuffer commandBuffer, uint32_t firstViewport, 
                         viewportCount, validation_error_map[VALIDATION_ERROR_1e000992]);
         }
     } else {  // multiViewport enabled
-        const uint64_t sum = (uint64_t)firstViewport + viewportCount;
+        const uint64_t sum = static_cast<uint64_t>(firstViewport) + static_cast<uint64_t>(viewportCount);
         if (sum > device_data->device_limits.maxViewports) {
             skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                             HandleToUint64(commandBuffer), __LINE__, VALIDATION_ERROR_1e00098e, LayerName,
