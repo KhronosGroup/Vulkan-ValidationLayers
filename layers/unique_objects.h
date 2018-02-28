@@ -46,6 +46,7 @@ struct TEMPLATE_STATE {
 };
 
 struct instance_layer_data {
+
     VkInstance instance;
 
     debug_report_data *report_data;
