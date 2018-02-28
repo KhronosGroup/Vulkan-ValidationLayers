@@ -595,10 +595,10 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDescriptorUpdateTemplate(VkDevice device,
         if (pCreateInfo) {
             local_create_info = new safe_VkDescriptorUpdateTemplateCreateInfo(pCreateInfo);
             if (pCreateInfo->descriptorSetLayout) {
-                local_create_info->descriptorSetLayout = Unwrap(dev_data, pCreateInfo->descriptorSetLayout);
+                local_create_info->descriptorSetLayout = Unwrap(pCreateInfo->descriptorSetLayout);
             }
             if (pCreateInfo->pipelineLayout) {
-                local_create_info->pipelineLayout = Unwrap(dev_data, pCreateInfo->pipelineLayout);
+                local_create_info->pipelineLayout = Unwrap(pCreateInfo->pipelineLayout);
             }
         }
     }
@@ -606,7 +606,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDescriptorUpdateTemplate(VkDevice device,
                                                                               pDescriptorUpdateTemplate);
     if (VK_SUCCESS == result) {
         std::lock_guard<std::mutex> lock(global_lock);
-        *pDescriptorUpdateTemplate = WrapNew(dev_data, *pDescriptorUpdateTemplate);
+        *pDescriptorUpdateTemplate = WrapNew(*pDescriptorUpdateTemplate);
 
         // Shadow template createInfo for later updates
         std::unique_ptr<TEMPLATE_STATE> template_state(new TEMPLATE_STATE(*pDescriptorUpdateTemplate, local_create_info));
@@ -654,8 +654,8 @@ VKAPI_ATTR void VKAPI_CALL DestroyDescriptorUpdateTemplate(VkDevice device, VkDe
     std::unique_lock<std::mutex> lock(global_lock);
     uint64_t descriptor_update_template_id = reinterpret_cast<uint64_t &>(descriptorUpdateTemplate);
     dev_data->desc_template_map.erase(descriptor_update_template_id);
-    descriptorUpdateTemplate = (VkDescriptorUpdateTemplate)dev_data->unique_id_mapping[descriptor_update_template_id];
-    dev_data->unique_id_mapping.erase(descriptor_update_template_id);
+    descriptorUpdateTemplate = (VkDescriptorUpdateTemplate)unique_id_mapping[descriptor_update_template_id];
+    unique_id_mapping.erase(descriptor_update_template_id);
     lock.unlock();
     dev_data->dispatch_table.DestroyDescriptorUpdateTemplate(device, descriptorUpdateTemplate, pAllocator);
 }
@@ -764,8 +764,8 @@ VKAPI_ATTR void VKAPI_CALL UpdateDescriptorSetWithTemplate(VkDevice device, VkDe
     uint64_t template_handle = reinterpret_cast<uint64_t &>(descriptorUpdateTemplate);
     {
         std::lock_guard<std::mutex> lock(global_lock);
-        descriptorSet = Unwrap(dev_data, descriptorSet);
-        descriptorUpdateTemplate = (VkDescriptorUpdateTemplate)dev_data->unique_id_mapping[template_handle];
+        descriptorSet = Unwrap(descriptorSet);
+        descriptorUpdateTemplate = (VkDescriptorUpdateTemplate)unique_id_mapping[template_handle];
     }
     void *unwrapped_buffer = BuildUnwrappedUpdateTemplateBuffer(dev_data, template_handle, pData);
     dev_data->dispatch_table.UpdateDescriptorSetWithTemplate(device, descriptorSet, descriptorUpdateTemplate, unwrapped_buffer);
@@ -907,8 +907,8 @@ VKAPI_ATTR VkResult VKAPI_CALL SetDebugUtilsObjectTagEXT(VkDevice device, const 
     auto local_tag_info = new safe_VkDebugUtilsObjectTagInfoEXT(pTagInfo);
     {
         std::lock_guard<std::mutex> lock(global_lock);
-        auto it = device_data->unique_id_mapping.find(reinterpret_cast<uint64_t &>(local_tag_info->objectHandle));
-        if (it != device_data->unique_id_mapping.end()) {
+        auto it = unique_id_mapping.find(reinterpret_cast<uint64_t &>(local_tag_info->objectHandle));
+        if (it != unique_id_mapping.end()) {
             local_tag_info->objectHandle = it->second;
         }
     }
@@ -922,8 +922,8 @@ VKAPI_ATTR VkResult VKAPI_CALL SetDebugUtilsObjectNameEXT(VkDevice device, const
     auto local_name_info = new safe_VkDebugUtilsObjectNameInfoEXT(pNameInfo);
     {
         std::lock_guard<std::mutex> lock(global_lock);
-        auto it = device_data->unique_id_mapping.find(reinterpret_cast<uint64_t &>(local_name_info->objectHandle));
-        if (it != device_data->unique_id_mapping.end()) {
+        auto it = unique_id_mapping.find(reinterpret_cast<uint64_t &>(local_name_info->objectHandle));
+        if (it != unique_id_mapping.end()) {
             local_name_info->objectHandle = it->second;
         }
     }
