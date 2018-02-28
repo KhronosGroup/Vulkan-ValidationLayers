@@ -530,10 +530,10 @@ class HelperFileOutputGenerator(OutputGenerator):
                             if member.len is not None:
                                 struct_size_funcs, counter_declared = self.DeclareCounter(struct_size_funcs, counter_declared)
                                 struct_size_funcs += '        for (i = 0; i < struct_ptr->%s; i++) {\n' % member.len
-                                struct_size_funcs += '            struct_size += (sizeof(char*) + (sizeof(char) * (1 + strlen(struct_ptr->%s[i]))));\n' % (member.name)
+                                struct_size_funcs += '            struct_size += (sizeof(char*) + ROUNDUP_TO_4((sizeof(char) * (1 + strlen(struct_ptr->%s[i])))));\n' % (member.name)
                                 struct_size_funcs += '        }\n'
                             else:
-                                struct_size_funcs += '        struct_size += (struct_ptr->%s != NULL) ? sizeof(char)*(1+strlen(struct_ptr->%s)) : 0;\n' % (member.name, member.name)
+                                struct_size_funcs += '        struct_size += (struct_ptr->%s != NULL) ? ROUNDUP_TO_4(sizeof(char)*(1+strlen(struct_ptr->%s))) : 0;\n' % (member.name, member.name)
                         else:
                             if member.len is not None:
                                 # Avoid using 'sizeof(void)', which generates compile-time warnings/errors
@@ -560,6 +560,7 @@ class HelperFileOutputGenerator(OutputGenerator):
         struct_size_helper_source += '#include <string.h>\n'
         struct_size_helper_source += '#include <assert.h>\n'
         struct_size_helper_source += '\n'
+        struct_size_helper_source += '#define ROUNDUP_TO_4(_len) ((((_len) + 3) >> 2) << 2)\n\n'
         struct_size_helper_source += '// Function Definitions\n'
         struct_size_helper_source += self.GenerateStructSizeSource()
         return struct_size_helper_source
