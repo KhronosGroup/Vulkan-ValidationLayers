@@ -472,7 +472,7 @@ class UniqueObjectsOutputGenerator(OutputGenerator):
     def build_extension_processing_func(self):
         # Construct helper functions to build and free pNext extension chains
         pnext_proc = ''
-        pnext_proc += 'void *CreateUnwrappedExtensionStructs(layer_data *dev_data, const void *pNext) {\n'
+        pnext_proc += 'void *CreateUnwrappedExtensionStructs(const void *pNext) {\n'
         pnext_proc += '    void *cur_pnext = const_cast<void *>(pNext);\n'
         pnext_proc += '    void *head_pnext = NULL;\n'
         pnext_proc += '    void *prev_ext_struct = NULL;\n'
@@ -542,7 +542,7 @@ class UniqueObjectsOutputGenerator(OutputGenerator):
                 create_ndo_code += '%sfor (uint32_t index0 = 0; index0 < %s; index0++) {\n' % (indent, cmd_info[-1].len)
                 indent = self.incIndent(indent)
                 ndo_dest = '%s[index0]' % cmd_info[-1].name
-            create_ndo_code += '%s%s = WrapNew(dev_data, %s);\n' % (indent, ndo_dest, ndo_dest)
+            create_ndo_code += '%s%s = WrapNew(%s);\n' % (indent, ndo_dest, ndo_dest)
             if ndo_array == True:
                 indent = self.decIndent(indent)
                 create_ndo_code += '%s}\n' % indent
@@ -571,7 +571,7 @@ class UniqueObjectsOutputGenerator(OutputGenerator):
                     indent = self.incIndent(indent)
                     destroy_ndo_code += '%s%s handle = %s[index0];\n' % (indent, cmd_info[param].type, cmd_info[param].name)
                     destroy_ndo_code += '%suint64_t unique_id = reinterpret_cast<uint64_t &>(handle);\n' % (indent)
-                    destroy_ndo_code += '%sdev_data->unique_id_mapping.erase(unique_id);\n' % (indent)
+                    destroy_ndo_code += '%sunique_id_mapping.erase(unique_id);\n' % (indent)
                     indent = self.decIndent(indent);
                     destroy_ndo_code += '%s}\n' % indent
                     indent = self.decIndent(indent);
@@ -580,8 +580,8 @@ class UniqueObjectsOutputGenerator(OutputGenerator):
                     # Remove a single handle from the map
                     destroy_ndo_code += '%sstd::unique_lock<std::mutex> lock(global_lock);\n' % (indent)
                     destroy_ndo_code += '%suint64_t %s_id = reinterpret_cast<uint64_t &>(%s);\n' % (indent, cmd_info[param].name, cmd_info[param].name)
-                    destroy_ndo_code += '%s%s = (%s)dev_data->unique_id_mapping[%s_id];\n' % (indent, cmd_info[param].name, cmd_info[param].type, cmd_info[param].name)
-                    destroy_ndo_code += '%sdev_data->unique_id_mapping.erase(%s_id);\n' % (indent, cmd_info[param].name)
+                    destroy_ndo_code += '%s%s = (%s)unique_id_mapping[%s_id];\n' % (indent, cmd_info[param].name, cmd_info[param].type, cmd_info[param].name)
+                    destroy_ndo_code += '%sunique_id_mapping.erase(%s_id);\n' % (indent, cmd_info[param].name)
                     destroy_ndo_code += '%slock.unlock();\n' % (indent)
         return ndo_array, destroy_ndo_code
 
@@ -616,11 +616,11 @@ class UniqueObjectsOutputGenerator(OutputGenerator):
                 pre_call_code += '%s    local_%s%s = new %s[%s];\n' % (indent, prefix, ndo_name, ndo_type, ndo_count)
                 pre_call_code += '%s    for (uint32_t %s = 0; %s < %s; ++%s) {\n' % (indent, index, index, ndo_count, index)
                 indent = self.incIndent(indent)
-                pre_call_code += '%s    local_%s%s[%s] = Unwrap(dev_data, %s[%s]);\n' % (indent, prefix, ndo_name, index, ndo_name, index)
+                pre_call_code += '%s    local_%s%s[%s] = Unwrap(%s[%s]);\n' % (indent, prefix, ndo_name, index, ndo_name, index)
             else:
                 pre_call_code += '%s    for (uint32_t %s = 0; %s < %s; ++%s) {\n' % (indent, index, index, ndo_count, index)
                 indent = self.incIndent(indent)
-                pre_call_code += '%s    %s%s[%s] = Unwrap(dev_data, %s%s[%s]);\n' % (indent, prefix, ndo_name, index, prefix, ndo_name, index)
+                pre_call_code += '%s    %s%s[%s] = Unwrap(%s%s[%s]);\n' % (indent, prefix, ndo_name, index, prefix, ndo_name, index)
             indent = self.decIndent(indent)
             pre_call_code += '%s    }\n' % indent
             indent = self.decIndent(indent)
@@ -632,14 +632,14 @@ class UniqueObjectsOutputGenerator(OutputGenerator):
         else:
             if top_level == True:
                 if (destroy_func == False) or (destroy_array == True):
-                    pre_call_code += '%s    %s = Unwrap(dev_data, %s);\n' % (indent, ndo_name, ndo_name)
+                    pre_call_code += '%s    %s = Unwrap(%s);\n' % (indent, ndo_name, ndo_name)
             else:
                 # Make temp copy of this var with the 'local' removed. It may be better to not pass in 'local_'
                 # as part of the string and explicitly print it
                 fix = str(prefix).strip('local_');
                 pre_call_code += '%s    if (%s%s) {\n' % (indent, fix, ndo_name)
                 indent = self.incIndent(indent)
-                pre_call_code += '%s    %s%s = Unwrap(dev_data, %s%s);\n' % (indent, prefix, ndo_name, fix, ndo_name)
+                pre_call_code += '%s    %s%s = Unwrap(%s%s);\n' % (indent, prefix, ndo_name, fix, ndo_name)
                 indent = self.decIndent(indent)
                 pre_call_code += '%s    }\n' % indent
         return decl_code, pre_call_code, post_call_code
@@ -692,7 +692,7 @@ class UniqueObjectsOutputGenerator(OutputGenerator):
                         if first_level_param == True:
                             pre_code += '%s    %s[%s].initialize(&%s[%s]);\n' % (indent, new_prefix, index, member.name, index)
                             if process_pnext:
-                                pre_code += '%s    %s[%s].pNext = CreateUnwrappedExtensionStructs(dev_data, %s[%s].pNext);\n' % (indent, new_prefix, index, new_prefix, index)
+                                pre_code += '%s    %s[%s].pNext = CreateUnwrappedExtensionStructs(%s[%s].pNext);\n' % (indent, new_prefix, index, new_prefix, index)
                         local_prefix = '%s[%s].' % (new_prefix, index)
                         # Process sub-structs in this struct
                         (tmp_decl, tmp_pre, tmp_post) = self.uniquify_members(struct_info, indent, local_prefix, array_index, create_func, destroy_func, destroy_array, False)
@@ -724,7 +724,7 @@ class UniqueObjectsOutputGenerator(OutputGenerator):
                         pre_code += tmp_pre
                         post_code += tmp_post
                         if process_pnext:
-                            pre_code += '%s    local_%s%s->pNext = CreateUnwrappedExtensionStructs(dev_data, local_%s%s->pNext);\n' % (indent, prefix, member.name, prefix, member.name)
+                            pre_code += '%s    local_%s%s->pNext = CreateUnwrappedExtensionStructs(local_%s%s->pNext);\n' % (indent, prefix, member.name, prefix, member.name)
                         indent = self.decIndent(indent)
                         pre_code += '%s    }\n' % indent
                         if first_level_param == True:
