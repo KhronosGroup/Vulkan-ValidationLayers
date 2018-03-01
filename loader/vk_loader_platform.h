@@ -296,7 +296,7 @@ static void loader_platform_close_library(loader_platform_dl_handle library) { F
 static void *loader_platform_get_proc_address(loader_platform_dl_handle library, const char *name) {
     assert(library);
     assert(name);
-    return GetProcAddress(library, name);
+    return (void *)GetProcAddress(library, name);
 }
 static char *loader_platform_get_proc_address_error(const char *name) {
     static char errorMsg[120];
@@ -327,7 +327,7 @@ static BOOL CALLBACK InitFuncWrapper(PINIT_ONCE InitOnce, PVOID Parameter, PVOID
 static void loader_platform_thread_once_fn(void *ctl, void (*func)(void)) {
     assert(func != NULL);
     assert(ctl != NULL);
-    InitOnceExecuteOnce((PINIT_ONCE)ctl, InitFuncWrapper, func, NULL);
+    InitOnceExecuteOnce((PINIT_ONCE)ctl, InitFuncWrapper, (void *)func, NULL);
 }
 #endif
 
