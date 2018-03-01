@@ -28,11 +28,9 @@ import re
 
 out_filename = "../layers/vk_validation_error_messages.h" # can override w/ '-out <filename>' option
 db_filename = "../layers/vk_validation_error_database.txt" # can override w/ '-gendb <filename>' option
-json_filename = None # con pass in w/ '-json <filename> option
+json_filename = "../scripts/validusage.json" # can override w/ '-json-file <filename> option
 gen_db = False # set to True when '-gendb <filename>' option provided
 json_compare = False # compare existing DB to json file input
-json_url = "https://www.khronos.org/registry/vulkan/specs/1.0-extensions/validation/validusage.json"
-read_json = False
 # This is the root spec link that is used in error messages to point users to spec sections
 #old_spec_url = "https://www.khronos.org/registry/vulkan/specs/1.0/xhtml/vkspec.html"
 spec_url = "https://www.khronos.org/registry/vulkan/specs/1.0-extensions/html/vkspec.html"
@@ -44,7 +42,7 @@ error_msg_prefix = "The spec valid usage text states "
 validation_error_enum_name = "VALIDATION_ERROR_"
 
 def printHelp():
-    print ("Usage: python spec.py [-out <headerfile.h>] [-gendb <databasefile.txt>] [-update] [-json <json_file>] [-help]")
+    print ("Usage: python spec.py [-out <headerfile.h>] [-gendb <databasefile.txt>] [-update] [-json-file <json_file>] [-help]")
     print ("\n Default script behavior is to parse the specfile and generate a header of unique error enums and corresponding error messages based on the specfile.\n")
     print ("  Default specfile is from online at %s" % (spec_url))
     print ("  Default headerfile is %s" % (out_filename))
@@ -53,8 +51,7 @@ def printHelp():
     print ("  the list of enums and their error messages.")
     print ("\nIf '-update' option is specified this triggers the master flow to automate updating header and database files using default db file as baseline")
     print ("  and online spec file as the latest. The default header and database files will be updated in-place for review and commit to the git repo.")
-    print ("\nIf '-json' option is used trigger the script to load in data from a json file.")
-    print ("\nIf '-json-file' option is it will point to a local json file, else '%s' is used from the web." % (json_url))
+    print ("\nIf '-json-file' option is specified, it will override the default json file location")
 
 def get8digithex(dec_num):
     """Convert a decimal # into an 8-digit hex"""
@@ -324,8 +321,6 @@ if __name__ == "__main__":
         if (arg == '-json-file'):
             json_filename = sys.argv[i]
             i = i + 1
-        elif (arg == '-json'):
-            read_json = True
         elif (arg == '-json-compare'):
             json_compare = True
         elif (arg == '-out'):
@@ -338,17 +333,14 @@ if __name__ == "__main__":
                 db_filename = sys.argv[i]
                 i = i + 1
         elif (arg == '-update'):
-            read_json = True
             json_compare = True
             gen_db = True
         elif (arg in ['-help', '-h']):
             printHelp()
             sys.exit()
     spec = Specification()
-    if read_json:
-        spec.readJSON()
-        spec.parseJSON()
-        #sys.exit()
+    spec.readJSON()
+    spec.parseJSON()
     if (json_compare):
         # Read in current spec info from db file
         (orig_err_msg_dict) = spec.readDB(db_filename)
