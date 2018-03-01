@@ -11722,33 +11722,42 @@ TEST_F(VkLayerTest, InvalidBarrierQueueFamily) {
     const uint32_t other_family = submit_family != 0 ? 0 : 1;
     const bool only_one_family = invalid == 1;
 
-    if (only_one_family) {
-        printf("             Single queue family found -- VK_SHARING_MODE_CONCURRENT testcases skipped.\n");
+    if (m_device->props.apiVersion >= VK_API_VERSION_1_1) {
+        printf(
+            "             Device has apiVersion greater than 1.0 -- skipping test cases that require external memory to be "
+            "disabled.\n");
     } else {
-        std::vector<uint32_t> families = {submit_family, other_family};
-        BarrierQueueFamilyTestHelper conc_test(*this);
-        conc_test.Init(&families);
-        // core_validation::barrier_queue_families::kSrcAndDestMustBeIgnore
-        conc_test(VALIDATION_ERROR_0a00095e, VALIDATION_ERROR_0180094c, VK_QUEUE_FAMILY_IGNORED, submit_family);
-        conc_test(VALIDATION_ERROR_0a00095e, VALIDATION_ERROR_0180094c, submit_family, VK_QUEUE_FAMILY_IGNORED);
-        conc_test(VALIDATION_ERROR_0a00095e, VALIDATION_ERROR_0180094c, submit_family, submit_family);
+        if (only_one_family) {
+            printf("             Single queue family found -- VK_SHARING_MODE_CONCURRENT testcases skipped.\n");
+        } else {
+            std::vector<uint32_t> families = {submit_family, other_family};
+            BarrierQueueFamilyTestHelper conc_test(*this);
+            conc_test.Init(&families);
+            // core_validation::barrier_queue_families::kSrcAndDestMustBeIgnore
+            conc_test(VALIDATION_ERROR_0a00095e, VALIDATION_ERROR_0180094c, VK_QUEUE_FAMILY_IGNORED, submit_family);
+            conc_test(VALIDATION_ERROR_0a00095e, VALIDATION_ERROR_0180094c, submit_family, VK_QUEUE_FAMILY_IGNORED);
+            conc_test(VALIDATION_ERROR_0a00095e, VALIDATION_ERROR_0180094c, submit_family, submit_family);
+            // true -> positive test
+            conc_test(VALIDATION_ERROR_0a00095e, VALIDATION_ERROR_0180094c, VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED, true);
+        }
+
+        BarrierQueueFamilyTestHelper excl_test(*this);
+        excl_test.Init(nullptr);  // no queue families means *exclusive* sharing mode.
+
+        // core_validation::barrier_queue_families::kBothIgnoreOrBothValid
+        excl_test(VALIDATION_ERROR_0a000960, VALIDATION_ERROR_01800950, VK_QUEUE_FAMILY_IGNORED, submit_family);
+        excl_test(VALIDATION_ERROR_0a000960, VALIDATION_ERROR_01800950, submit_family, VK_QUEUE_FAMILY_IGNORED);
         // true -> positive test
-        conc_test(VALIDATION_ERROR_0a00095e, VALIDATION_ERROR_0180094c, VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED, true);
+        excl_test(VALIDATION_ERROR_0a000960, VALIDATION_ERROR_01800950, submit_family, submit_family, true);
+        excl_test(VALIDATION_ERROR_0a000960, VALIDATION_ERROR_01800950, VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED, true);
     }
-
-    BarrierQueueFamilyTestHelper excl_test(*this);
-    excl_test.Init(nullptr);  // no queue families means *exclusive* sharing mode.
-
-    // core_validation::barrier_queue_families::kBothIgnoreOrBothValid
-    excl_test(VALIDATION_ERROR_0a000960, VALIDATION_ERROR_01800950, VK_QUEUE_FAMILY_IGNORED, submit_family);
-    excl_test(VALIDATION_ERROR_0a000960, VALIDATION_ERROR_01800950, submit_family, VK_QUEUE_FAMILY_IGNORED);
-    // true -> positive test
-    excl_test(VALIDATION_ERROR_0a000960, VALIDATION_ERROR_01800950, submit_family, submit_family, true);
-    excl_test(VALIDATION_ERROR_0a000960, VALIDATION_ERROR_01800950, VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED, true);
 
     if (only_one_family) {
         printf("             Single queue family found -- VK_SHARING_MODE_EXCLUSIVE submit testcases skipped.\n");
     } else {
+        BarrierQueueFamilyTestHelper excl_test(*this);
+        excl_test.Init(nullptr);
+
         // core_validation::barrier_queue_families::kSubmitQueueMustMatchSrcOrDst
         excl_test(VALIDATION_ERROR_0a00096a, VALIDATION_ERROR_01800958, other_family, other_family, false, m_device->m_queue);
         // true -> positive test
