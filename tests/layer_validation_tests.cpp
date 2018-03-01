@@ -20940,6 +20940,7 @@ TEST_F(VkLayerTest, SetDynViewportParamTests) {
     // core viewport tests
     using std::vector;
     struct TestCase {
+        uint32_t minIncompatableApi;
         VkViewport vp;
         vector<UNIQUE_VALIDATION_ERROR_CODE> vuids;
     };
@@ -20957,32 +20958,33 @@ TEST_F(VkLayerTest, SetDynViewportParamTests) {
     const auto past_one = NearestGreater(1.0f);
 
     const vector<TestCase> test_cases = {
-        {{0.0, 0.0, 0.0, 64.0, 0.0, 1.0}, {VALIDATION_ERROR_15000dd4}},
-        {{0.0, 0.0, one_past_max_w, 64.0, 0.0, 1.0}, {VALIDATION_ERROR_15000dd6}},
-        {{0.0, 0.0, NAN, 64.0, 0.0, 1.0}, {VALIDATION_ERROR_15000dd4}},
-        {{0.0, 0.0, 64.0, 0.0, 0.0, 1.0}, {VALIDATION_ERROR_15000dd8}},
-        {{0.0, 0.0, 64.0, one_past_max_h, 0.0, 1.0}, {VALIDATION_ERROR_15000dda}},
-        {{0.0, 0.0, 64.0, NAN, 0.0, 1.0}, {VALIDATION_ERROR_15000dd8}},
-        {{one_before_min_bounds, 0.0, 64.0, 64.0, 0.0, 1.0}, {VALIDATION_ERROR_15000ddc}},
-        {{one_past_max_bounds, 0.0, 64.0, 64.0, 0.0, 1.0}, {VALIDATION_ERROR_150009a0}},
-        {{NAN, 0.0, 64.0, 64.0, 0.0, 1.0}, {VALIDATION_ERROR_15000ddc}},
-        {{0.0, one_before_min_bounds, 64.0, 64.0, 0.0, 1.0}, {VALIDATION_ERROR_15000dde}},
-        {{0.0, one_past_max_bounds, 64.0, 64.0, 0.0, 1.0}, {VALIDATION_ERROR_150009a2}},
-        {{0.0, NAN, 64.0, 64.0, 0.0, 1.0}, {VALIDATION_ERROR_15000dde}},
-        {{max_bound, 0.0, 1.0, 64.0, 0.0, 1.0}, {VALIDATION_ERROR_150009a0}},
-        {{0.0, max_bound, 64.0, 1.0, 0.0, 1.0}, {VALIDATION_ERROR_150009a2}},
-        {{0.0, 0.0, 64.0, 64.0, below_zero, 1.0}, {VALIDATION_ERROR_150009a4}},
-        {{0.0, 0.0, 64.0, 64.0, past_one, 1.0}, {VALIDATION_ERROR_150009a4}},
-        {{0.0, 0.0, 64.0, 64.0, NAN, 1.0}, {VALIDATION_ERROR_150009a4}},
-        {{0.0, 0.0, 64.0, 64.0, 0.0, below_zero}, {VALIDATION_ERROR_150009a6}},
-        {{0.0, 0.0, 64.0, 64.0, 0.0, past_one}, {VALIDATION_ERROR_150009a6}},
-        {{0.0, 0.0, 64.0, 64.0, 0.0, NAN}, {VALIDATION_ERROR_150009a6}},
+        {UINT32_MAX,         {0.0, 0.0, 0.0, 64.0, 0.0, 1.0}, {VALIDATION_ERROR_15000dd4}},
+        {UINT32_MAX,         {0.0, 0.0, one_past_max_w, 64.0, 0.0, 1.0}, {VALIDATION_ERROR_15000dd6}},
+        {UINT32_MAX,         {0.0, 0.0, NAN, 64.0, 0.0, 1.0}, {VALIDATION_ERROR_15000dd4}},
+        {VK_API_VERSION_1_1, {0.0, 0.0, 64.0, 0.0, 0.0, 1.0}, {VALIDATION_ERROR_15000dd8}},
+        {UINT32_MAX,         {0.0, 0.0, 64.0, one_past_max_h, 0.0, 1.0}, {VALIDATION_ERROR_15000dda}},
+        {VK_API_VERSION_1_1, {0.0, 0.0, 64.0, NAN, 0.0, 1.0}, {VALIDATION_ERROR_15000dd8}},
+        {UINT32_MAX,         {one_before_min_bounds, 0.0, 64.0, 64.0, 0.0, 1.0}, {VALIDATION_ERROR_15000ddc}},
+        {UINT32_MAX,         {one_past_max_bounds, 0.0, 64.0, 64.0, 0.0, 1.0}, {VALIDATION_ERROR_150009a0}},
+        {UINT32_MAX,         {NAN, 0.0, 64.0, 64.0, 0.0, 1.0}, {VALIDATION_ERROR_15000ddc}},
+        {UINT32_MAX,         {0.0, one_before_min_bounds, 64.0, 64.0, 0.0, 1.0}, {VALIDATION_ERROR_15000dde}},
+        {UINT32_MAX,         {0.0, NAN, 64.0, 64.0, 0.0, 1.0}, {VALIDATION_ERROR_15000dde}},
+        {UINT32_MAX,         {max_bound, 0.0, 1.0, 64.0, 0.0, 1.0}, {VALIDATION_ERROR_150009a0}},
+        {UINT32_MAX,         {0.0, max_bound, 64.0, 1.0, 0.0, 1.0}, {VALIDATION_ERROR_150009a2}},
+        {UINT32_MAX,         {0.0, 0.0, 64.0, 64.0, below_zero, 1.0}, {VALIDATION_ERROR_150009a4}},
+        {UINT32_MAX,         {0.0, 0.0, 64.0, 64.0, past_one, 1.0}, {VALIDATION_ERROR_150009a4}},
+        {UINT32_MAX,         {0.0, 0.0, 64.0, 64.0, NAN, 1.0}, {VALIDATION_ERROR_150009a4}},
+        {UINT32_MAX,         {0.0, 0.0, 64.0, 64.0, 0.0, below_zero}, {VALIDATION_ERROR_150009a6}},
+        {UINT32_MAX,         {0.0, 0.0, 64.0, 64.0, 0.0, past_one}, {VALIDATION_ERROR_150009a6}},
+        {UINT32_MAX,         {0.0, 0.0, 64.0, 64.0, 0.0, NAN}, {VALIDATION_ERROR_150009a6}},
     };
 
     for (const auto &test_case : test_cases) {
-        for (const auto vuid : test_case.vuids) m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, vuid);
-        vkCmdSetViewport(m_commandBuffer->handle(), 0, 1, &test_case.vp);
-        m_errorMonitor->VerifyFound();
+        if (m_device->props.apiVersion < test_case.minIncompatableApi ) {
+            for (const auto vuid : test_case.vuids) m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, vuid);
+            vkCmdSetViewport(m_commandBuffer->handle(), 0, 1, &test_case.vp);
+            m_errorMonitor->VerifyFound();
+        }
     }
 }
 
