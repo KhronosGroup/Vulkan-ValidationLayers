@@ -10590,32 +10590,34 @@ VKAPI_ATTR VkResult VKAPI_CALL QueuePresentKHR(VkQueue queue, const VkPresentInf
                 VkPresentRegionKHR region = present_regions->pRegions[i];
                 for (uint32_t j = 0; j < region.rectangleCount; ++j) {
                     VkRectLayerKHR rect = region.pRectangles[j];
-                    // TODO: Need to update these errors to their unique error ids when available
                     if ((rect.offset.x + rect.extent.width) > swapchain_data->createInfo.imageExtent.width) {
                         skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT,
                                         VK_DEBUG_REPORT_OBJECT_TYPE_SWAPCHAIN_KHR_EXT, HandleToUint64(pPresentInfo->pSwapchains[i]),
-                                        __LINE__, DRAWSTATE_SWAPCHAIN_INVALID_IMAGE, "DS",
+                                        __LINE__, VALIDATION_ERROR_11e009da, "DS",
                                         "vkQueuePresentKHR(): For VkPresentRegionKHR down pNext chain, "
                                         "pRegion[%i].pRectangles[%i], the sum of offset.x (%i) and extent.width (%i) is greater "
-                                        "than the corresponding swapchain's imageExtent.width (%i).",
-                                        i, j, rect.offset.x, rect.extent.width, swapchain_data->createInfo.imageExtent.width);
+                                        "than the corresponding swapchain's imageExtent.width (%i). %s",
+                                        i, j, rect.offset.x, rect.extent.width, swapchain_data->createInfo.imageExtent.width,
+                                        validation_error_map[VALIDATION_ERROR_11e009da]);
                     }
                     if ((rect.offset.y + rect.extent.height) > swapchain_data->createInfo.imageExtent.height) {
                         skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT,
                                         VK_DEBUG_REPORT_OBJECT_TYPE_SWAPCHAIN_KHR_EXT, HandleToUint64(pPresentInfo->pSwapchains[i]),
-                                        __LINE__, DRAWSTATE_SWAPCHAIN_INVALID_IMAGE, "DS",
+                                        __LINE__, VALIDATION_ERROR_11e009da, "DS",
                                         "vkQueuePresentKHR(): For VkPresentRegionKHR down pNext chain, "
                                         "pRegion[%i].pRectangles[%i], the sum of offset.y (%i) and extent.height (%i) is greater "
-                                        "than the corresponding swapchain's imageExtent.height (%i).",
-                                        i, j, rect.offset.y, rect.extent.height, swapchain_data->createInfo.imageExtent.height);
+                                        "than the corresponding swapchain's imageExtent.height (%i). %s",
+                                        i, j, rect.offset.y, rect.extent.height, swapchain_data->createInfo.imageExtent.height,
+                                        validation_error_map[VALIDATION_ERROR_11e009da]);
                     }
                     if (rect.layer > swapchain_data->createInfo.imageArrayLayers) {
                         skip |= log_msg(
                             dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SWAPCHAIN_KHR_EXT,
-                            HandleToUint64(pPresentInfo->pSwapchains[i]), __LINE__, DRAWSTATE_SWAPCHAIN_INVALID_IMAGE, "DS",
+                            HandleToUint64(pPresentInfo->pSwapchains[i]), __LINE__, VALIDATION_ERROR_11e009dc, "DS",
                             "vkQueuePresentKHR(): For VkPresentRegionKHR down pNext chain, pRegion[%i].pRectangles[%i], the layer "
-                            "(%i) is greater than the corresponding swapchain's imageArrayLayers (%i).",
-                            i, j, rect.layer, swapchain_data->createInfo.imageArrayLayers);
+                            "(%i) is greater than the corresponding swapchain's imageArrayLayers (%i). %s",
+                            i, j, rect.layer, swapchain_data->createInfo.imageArrayLayers,
+                            validation_error_map[VALIDATION_ERROR_11e009dc]);
                     }
                 }
             }
