@@ -353,18 +353,20 @@ static void add_mem_obj_info(layer_data *dev_data, void *object, const VkDeviceM
                              const VkMemoryAllocateInfo *pAllocateInfo) {
     assert(object != NULL);
 
-    dev_data->memObjMap[mem] = unique_ptr<DEVICE_MEM_INFO>(new DEVICE_MEM_INFO(object, mem, pAllocateInfo));
+    auto *mem_info = new DEVICE_MEM_INFO(object, mem, pAllocateInfo);
+    dev_data->memObjMap[mem] = unique_ptr<DEVICE_MEM_INFO>(mem_info);
 
-    if (pAllocateInfo->pNext) {
-        auto struct_header = reinterpret_cast<const GENERIC_HEADER *>(pAllocateInfo->pNext);
-        while (struct_header) {
-            if (VK_STRUCTURE_TYPE_IMPORT_MEMORY_FD_INFO_KHR == struct_header->sType ||
-                VK_STRUCTURE_TYPE_IMPORT_MEMORY_WIN32_HANDLE_INFO_KHR == struct_header->sType) {
-                dev_data->memObjMap[mem]->global_valid = true;
-                break;
-            }
-            struct_header = reinterpret_cast<const GENERIC_HEADER *>(struct_header->pNext);
-        }
+    // TODO: If the number of things we search for goes much higher, need a map...
+    mem_info->global_valid = nullptr != lvl_find_in_chain<VkImportMemoryFdInfoKHR>(pAllocateInfo->pNext);
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+    mem_info->global_valid |= nullptr != lvl_find_in_chain<VkImportMemoryWin32HandleInfoKHR>(pAllocateInfo->pNext);
+#endif
+
+    auto dedicated = lvl_find_in_chain<VkMemoryDedicatedAllocateInfoKHR>(pAllocateInfo->pNext);
+    if (dedicated) {
+        mem_info->is_dedicated = true;
+        mem_info->dedicated_buffer = dedicated->buffer;
+        mem_info->dedicated_image = dedicated->image;
     }
 }
 
@@ -3825,7 +3827,7 @@ static bool PreCallValidateBindBufferMemory(layer_data *dev_data, VkBuffer buffe
         }
 
         // Validate bound memory range information
-        auto mem_info = GetMemObjInfo(dev_data, mem);
+        const auto mem_info = GetMemObjInfo(dev_data, mem);
         if (mem_info) {
             skip |= ValidateInsertBufferMemoryRange(dev_data, buffer, mem_info, memoryOffset, buffer_state->requirements, api_name);
             skip |= ValidateMemoryTypes(dev_data, mem_info, buffer_state->requirements.memoryTypeBits, api_name,
@@ -3843,8 +3845,8 @@ static bool PreCallValidateBindBufferMemory(layer_data *dev_data, VkBuffer buffe
                             validation_error_map[VALIDATION_ERROR_17000818]);
         }
 
-        // Validate memory requirements size
         if (mem_info) {
+            // Validate memory requirements size
             if (buffer_state->requirements.size > (mem_info->alloc_info.allocationSize - memoryOffset)) {
                 skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT,
                                 buffer_handle, __LINE__, VALIDATION_ERROR_1700081a, "DS",
@@ -3853,6 +3855,24 @@ static bool PreCallValidateBindBufferMemory(layer_data *dev_data, VkBuffer buffe
                                 ", returned from a call to vkGetBufferMemoryRequirements with buffer. %s",
                                 api_name, mem_info->alloc_info.allocationSize - memoryOffset, buffer_state->requirements.size,
                                 validation_error_map[VALIDATION_ERROR_1700081a]);
+            }
+
+            // Validate dedicated allocation
+            if (mem_info->is_dedicated && ((mem_info->dedicated_buffer != buffer) || (memoryOffset != 0))) {
+                // TODO: Add vkBindBufferMemory2KHR error message when added to spec.
+                auto validation_error = VALIDATION_ERROR_UNDEFINED;
+                const char *validation_error_msg = "";
+                if (strcmp(api_name, "vkBindBufferMemory()") == 0) {
+                    validation_error = VALIDATION_ERROR_17000bc8;
+                    validation_error_msg = validation_error_map[validation_error];
+                }
+                skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT,
+                                buffer_handle, __LINE__, validation_error, "DS",
+                                "%s: for dedicated memory allocation 0x%" PRIxLEAST64
+                                ", VkMemoryDedicatedAllocateInfoKHR::buffer 0x%" PRIXLEAST64
+                                " must be equal to buffer 0x%" PRIxLEAST64 " and memoryOffset 0x%" PRIxLEAST64 " must be zero. %s",
+                                api_name, HandleToUint64(mem), HandleToUint64(mem_info->dedicated_buffer), buffer_handle,
+                                memoryOffset, validation_error_msg);
             }
         }
 
@@ -9513,8 +9533,8 @@ static bool PreCallValidateBindImageMemory(layer_data *dev_data, VkImage image, 
                             validation_error_map[VALIDATION_ERROR_17400830]);
         }
 
-        // Validate memory requirements size
         if (mem_info) {
+            // Validate memory requirements size
             if (image_state->requirements.size > mem_info->alloc_info.allocationSize - memoryOffset) {
                 skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
                                 image_handle, __LINE__, VALIDATION_ERROR_17400832, "DS",
@@ -9523,6 +9543,24 @@ static bool PreCallValidateBindImageMemory(layer_data *dev_data, VkImage image, 
                                 ", returned from a call to vkGetImageMemoryRequirements with image. %s",
                                 api_name, mem_info->alloc_info.allocationSize - memoryOffset, image_state->requirements.size,
                                 validation_error_map[VALIDATION_ERROR_17400832]);
+            }
+
+            // Validate dedicated allocation
+            if (mem_info->is_dedicated && ((mem_info->dedicated_image != image) || (memoryOffset != 0))) {
+                // TODO: Add vkBindImageMemory2KHR error message when added to spec.
+                auto validation_error = VALIDATION_ERROR_UNDEFINED;
+                const char *validation_error_msg = "";
+                if (strcmp(api_name, "vkBindImageMemory()") == 0) {
+                    validation_error = VALIDATION_ERROR_17400bca;
+                    validation_error_msg = validation_error_map[validation_error];
+                }
+                skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT,
+                                image_handle, __LINE__, validation_error, "DS",
+                                "%s: for dedicated memory allocation 0x%" PRIxLEAST64
+                                ", VkMemoryDedicatedAllocateInfoKHR::image 0x%" PRIXLEAST64
+                                " must be equal to image 0x%" PRIxLEAST64 " and memoryOffset 0x%" PRIxLEAST64 " must be zero. %s",
+                                api_name, HandleToUint64(mem), HandleToUint64(mem_info->dedicated_image), image_handle,
+                                memoryOffset, validation_error_msg);
             }
         }
     }

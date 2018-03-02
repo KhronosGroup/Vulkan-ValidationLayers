@@ -68,11 +68,6 @@
 // TODO : Is there a way to track when Cmd Buffer finishes & remove mem references at that point?
 // TODO : Could potentially store a list of freed mem allocs to flag when they're incorrectly used
 
-struct GENERIC_HEADER {
-    VkStructureType sType;
-    const void *pNext;
-};
-
 enum SyncScope {
     kSyncScopeInternal,
     kSyncScopeExternalTemporary,
