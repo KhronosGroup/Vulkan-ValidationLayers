@@ -25994,6 +25994,84 @@ TEST_F(VkLayerTest, DuplicateValidPNextStructures) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(VkLayerTest, DedicatedAllocation) {
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
+    } else {
+        printf("             Dedicated allocation extension not supported, skipping test\n");
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    VkMemoryPropertyFlags mem_flags = 0;
+    const VkDeviceSize resource_size = 1024;
+    auto buffer_info = vk_testing::Buffer::create_info(resource_size, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    vk_testing::Buffer buffer;
+    buffer.init_no_mem(*m_device, buffer_info);
+    auto buffer_alloc_info = vk_testing::DeviceMemory::get_resource_alloc_info(*m_device, buffer.memory_requirements(), mem_flags);
+    auto buffer_dedicated_info = lvl_init_struct<VkMemoryDedicatedAllocateInfoKHR>();
+    buffer_dedicated_info.buffer = buffer.handle();
+    buffer_alloc_info.pNext = &buffer_dedicated_info;
+    vk_testing::DeviceMemory dedicated_buffer_memory;
+    dedicated_buffer_memory.init(*m_device, buffer_alloc_info);
+
+    vk_testing::Buffer wrong_buffer;
+    wrong_buffer.init_no_mem(*m_device, buffer_info);
+
+    // Bind with wrong buffer
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_17000bc8);
+    vkBindBufferMemory(m_device->handle(), wrong_buffer.handle(), dedicated_buffer_memory.handle(), 0);
+    m_errorMonitor->VerifyFound();
+
+    // Bind with non-zero offset (same VUID)
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_17000bc8);  // offset must be zero
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_1700081a);  // offset pushes us past size
+    auto offset = buffer.memory_requirements().alignment;
+    vkBindBufferMemory(m_device->handle(), buffer.handle(), dedicated_buffer_memory.handle(), offset);
+    m_errorMonitor->VerifyFound();
+
+    // Bind correctly (depends on the "skip" above)
+    m_errorMonitor->ExpectSuccess();
+    vkBindBufferMemory(m_device->handle(), buffer.handle(), dedicated_buffer_memory.handle(), 0);
+    m_errorMonitor->VerifyNotFound();
+
+    // And for images...
+    vk_testing::Image image;
+    vk_testing::Image wrong_image;
+    auto image_info = vk_testing::Image::create_info();
+    image_info.extent.width = resource_size;
+    image_info.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    image_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image.init_no_mem(*m_device, image_info);
+    wrong_image.init_no_mem(*m_device, image_info);
+
+    auto image_dedicated_info = lvl_init_struct<VkMemoryDedicatedAllocateInfoKHR>();
+    image_dedicated_info.image = image.handle();
+    auto image_alloc_info = vk_testing::DeviceMemory::get_resource_alloc_info(*m_device, image.memory_requirements(), mem_flags);
+    image_alloc_info.pNext = &image_dedicated_info;
+    vk_testing::DeviceMemory dedicated_image_memory;
+    dedicated_image_memory.init(*m_device, image_alloc_info);
+
+    // Bind with wrong image
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_17400bca);
+    vkBindImageMemory(m_device->handle(), wrong_image.handle(), dedicated_image_memory.handle(), 0);
+    m_errorMonitor->VerifyFound();
+
+    // Bind with non-zero offset (same VUID)
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_17400bca);  // offset must be zero
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_17400832);  // offset pushes us past size
+    auto image_offset = image.memory_requirements().alignment;
+    vkBindImageMemory(m_device->handle(), image.handle(), dedicated_image_memory.handle(), image_offset);
+    m_errorMonitor->VerifyFound();
+
+    // Bind correctly (depends on the "skip" above)
+    m_errorMonitor->ExpectSuccess();
+    vkBindImageMemory(m_device->handle(), image.handle(), dedicated_image_memory.handle(), 0);
+    m_errorMonitor->VerifyNotFound();
+}
+
 TEST_F(VkPositiveLayerTest, ValidStructPNext) {
     TEST_DESCRIPTION("Verify that a valid pNext value is handled correctly");
 
