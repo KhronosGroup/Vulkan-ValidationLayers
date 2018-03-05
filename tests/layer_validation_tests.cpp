@@ -9288,9 +9288,9 @@ TEST_F(VkLayerTest, InvalidPushConstants) {
     // CmdPushConstants tests
     //
 
-    // Setup a pipeline layout with ranges: [0,16) [64,80)
-    const std::vector<VkPushConstantRange> pc_range2 = {{VK_SHADER_STAGE_VERTEX_BIT, 64, 16},
-                                                        {VK_SHADER_STAGE_FRAGMENT_BIT, 0, 16}};
+    // Setup a pipeline layout with ranges: [0,32) [16,80)
+    const std::vector<VkPushConstantRange> pc_range2 = {{VK_SHADER_STAGE_VERTEX_BIT, 16, 64},
+                                                        {VK_SHADER_STAGE_FRAGMENT_BIT, 0, 32}};
     const VkPipelineLayoutObj pipeline_layout_obj(m_device, {}, pc_range2);
 
     const uint8_t dummy_values[100] = {};
@@ -9304,26 +9304,41 @@ TEST_F(VkLayerTest, InvalidPushConstants) {
     vkCmdPushConstants(m_commandBuffer->handle(), pipeline_layout_obj.handle(), 0, 0, 16, dummy_values);
     m_errorMonitor->VerifyFound();
 
+    // Positive tests for the overlapping ranges
     m_errorMonitor->ExpectSuccess();
     vkCmdPushConstants(m_commandBuffer->handle(), pipeline_layout_obj.handle(), VK_SHADER_STAGE_FRAGMENT_BIT, 0, 16, dummy_values);
     m_errorMonitor->VerifyNotFound();
     m_errorMonitor->ExpectSuccess();
-    vkCmdPushConstants(m_commandBuffer->handle(), pipeline_layout_obj.handle(), VK_SHADER_STAGE_VERTEX_BIT, 64, 16, dummy_values);
+    vkCmdPushConstants(m_commandBuffer->handle(), pipeline_layout_obj.handle(), VK_SHADER_STAGE_VERTEX_BIT, 32, 48, dummy_values);
     m_errorMonitor->VerifyNotFound();
-    const std::array<VkPushConstantRange, 6> cmd_range_tests = {{
-        {VK_SHADER_STAGE_FRAGMENT_BIT, 64, 16},
-        {VK_SHADER_STAGE_VERTEX_BIT, 0, 16},
-        {VK_SHADER_STAGE_GEOMETRY_BIT, 0, 16},
-        {VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, 16},
-        {VK_SHADER_STAGE_VERTEX_BIT, 24, 16},
-        {VK_SHADER_STAGE_VERTEX_BIT, 8, 4},
-    }};
-    for (const auto &iter : cmd_range_tests) {
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_1bc00e08);
-        vkCmdPushConstants(m_commandBuffer->handle(), pipeline_layout_obj.handle(), iter.stageFlags, iter.offset, iter.size,
-                           dummy_values);
-        m_errorMonitor->VerifyFound();
-    }
+    m_errorMonitor->ExpectSuccess();
+    vkCmdPushConstants(m_commandBuffer->handle(), pipeline_layout_obj.handle(),
+                       VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 16, 16, dummy_values);
+    m_errorMonitor->VerifyNotFound();
+
+    // Wrong cmd stages for extant range
+    // No range for all cmd stages -- VALIDATION_ERROR_1bc00e06 VUID-vkCmdPushConstants-offset-01795
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_1bc00e06);
+    // Missing cmd stages for found overlapping range -- VALIDATION_ERROR_1bc00e08 VUID-vkCmdPushConstants-offset-01796
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_1bc00e08);
+    vkCmdPushConstants(m_commandBuffer->handle(), pipeline_layout_obj.handle(), VK_SHADER_STAGE_GEOMETRY_BIT, 0, 16, dummy_values);
+    m_errorMonitor->VerifyFound();
+
+    // Wrong no extant range
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_1bc00e06);
+    vkCmdPushConstants(m_commandBuffer->handle(), pipeline_layout_obj.handle(), VK_SHADER_STAGE_FRAGMENT_BIT, 80, 4, dummy_values);
+    m_errorMonitor->VerifyFound();
+
+    // Wrong overlapping extent
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_1bc00e06);
+    vkCmdPushConstants(m_commandBuffer->handle(), pipeline_layout_obj.handle(),
+                       VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, 20, dummy_values);
+    m_errorMonitor->VerifyFound();
+
+    // Wrong stage flags for valid overlapping range
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_1bc00e08);
+    vkCmdPushConstants(m_commandBuffer->handle(), pipeline_layout_obj.handle(), VK_SHADER_STAGE_VERTEX_BIT, 16, 16, dummy_values);
+    m_errorMonitor->VerifyFound();
 
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();

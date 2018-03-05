@@ -8308,27 +8308,40 @@ VKAPI_ATTR void VKAPI_CALL CmdPushConstants(VkCommandBuffer commandBuffer, VkPip
                         "vkCmdPushConstants() call has no stageFlags set. %s", validation_error_map[VALIDATION_ERROR_1bc2dc03]);
     }
 
-    // Check if specified push constant range falls within a pipeline-defined range which has matching stageFlags.
-    // The spec doesn't seem to disallow having multiple push constant ranges with the
-    // same offset and size, but different stageFlags.  So we can't just check the
-    // stageFlags in the first range with matching offset and size.
+    // Check if pipeline_layout VkPushConstantRange(s) overlapping offset, size have stageFlags set for each stage in the command
+    // stageFlags argument, *and* that the command stageFlags argument has bits set for the stageFlags in each overlapping range.
     if (!skip) {
         const auto &ranges = *getPipelineLayout(dev_data, layout)->push_constant_ranges;
-        bool found_matching_range = false;
+        VkShaderStageFlags found_stages = 0;
         for (const auto &range : ranges) {
-            if ((stageFlags == range.stageFlags) && (offset >= range.offset) && (offset + size <= range.offset + range.size)) {
-                found_matching_range = true;
-                break;
+            if ((offset >= range.offset) && (offset + size <= range.offset + range.size)) {
+                VkShaderStageFlags matching_stages = range.stageFlags & stageFlags;
+                if (matching_stages != range.stageFlags) {
+                    // VALIDATION_ERROR_1bc00e08 VUID-vkCmdPushConstants-offset-01796
+                    skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                    VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT, HandleToUint64(commandBuffer), __LINE__,
+                                    VALIDATION_ERROR_1bc00e08, "DS",
+                                    "vkCmdPushConstants(): stageFlags (0x%" PRIx32 ", offset (%" PRIu32 "), and size (%" PRIu32
+                                    "),  "
+                                    "must contain all stages in overlapping VkPushConstantRange stageFlags (0x%" PRIx32
+                                    "), offset (%" PRIu32 "), and size (%" PRIu32 ") in pipeline layout 0x%" PRIx64 ". %s",
+                                    (uint32_t)stageFlags, offset, size, (uint32_t)range.stageFlags, range.offset, range.size,
+                                    HandleToUint64(layout), validation_error_map[VALIDATION_ERROR_1bc00e08]);
+                }
+
+                // Accumulate all stages we've found
+                found_stages = matching_stages | found_stages;
             }
         }
-        if (!found_matching_range) {
-            skip |= log_msg(
-                dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                HandleToUint64(commandBuffer), __LINE__, VALIDATION_ERROR_1bc00e08, "DS",
-                "vkCmdPushConstants() stageFlags = 0x%" PRIx32
-                " do not match the stageFlags in any of the ranges with offset = %d and size = %d in pipeline layout 0x%" PRIx64
-                ". %s",
-                (uint32_t)stageFlags, offset, size, HandleToUint64(layout), validation_error_map[VALIDATION_ERROR_1bc00e08]);
+        if (found_stages != stageFlags) {
+            // VALIDATION_ERROR_1bc00e06 VUID-vkCmdPushConstants-offset-01795
+            uint32_t missing_stages = ~found_stages & stageFlags;
+            skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                            HandleToUint64(commandBuffer), __LINE__, VALIDATION_ERROR_1bc00e06, "DS",
+                            "vkCmdPushConstants(): stageFlags = 0x%" PRIx32 ", VkPushConstantRange in pipeline layout 0x%" PRIx64
+                            " overlapping offset = %d and size = %d, do not contain stageFlags 0x%" PRIx32 ". %s",
+                            (uint32_t)stageFlags, HandleToUint64(layout), offset, size, missing_stages,
+                            validation_error_map[VALIDATION_ERROR_1bc00e06]);
         }
     }
     lock.unlock();
