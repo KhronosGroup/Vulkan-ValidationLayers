@@ -217,6 +217,8 @@ bool cvdescriptorset::DescriptorSetLayout::IsCompatible(DescriptorSetLayout cons
     return detailed_compat_check;
 }
 
+// Do a detailed compatibility check of this def (referenced by ds_layout), vs. the rhs (layout and def)
+// Should only be called if trivial accept has failed, and in that context should return false.
 bool cvdescriptorset::DescriptorSetLayoutDef::IsCompatible(VkDescriptorSetLayout ds_layout, VkDescriptorSetLayout rh_ds_layout,
                                                            DescriptorSetLayoutDef const *const rh_ds_layout_def,
                                                            std::string *error_msg) const {

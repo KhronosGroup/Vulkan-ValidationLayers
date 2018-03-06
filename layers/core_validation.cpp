@@ -95,9 +95,9 @@ size_t PipelineLayoutCompatDef::hash() const {
     hash_util::HashCombiner hc;
     // The set number is integral to the CompatDef's distinctiveness
     hc << set << push_constant_ranges.get();
-    const auto &layout_layout = *layout_id.get();
+    const auto &descriptor_set_layouts = *set_layouts_id.get();
     for (uint32_t i = 0; i <= set; i++) {
-        hc << layout_layout[i].get();
+        hc << descriptor_set_layouts[i].get();
     }
     return hc.Value();
 }
@@ -107,12 +107,18 @@ bool PipelineLayoutCompatDef::operator==(const PipelineLayoutCompatDef &other) c
         return false;
     }
 
-    const auto &layout_layout = *layout_id.get();
-    assert(set < layout_layout.size());
-    const auto &other_ll = *other.layout_id.get();
-    assert(set < other_ll.size());
+    if (set_layouts_id == other.set_layouts_id) {
+        // if it's the same set_layouts_id, then *any* subset will match
+        return true;
+    }
+
+    // They aren't exactly the same PipelineLayoutSetLayouts, so we need to check if the required subsets match
+    const auto &descriptor_set_layouts = *set_layouts_id.get();
+    assert(set < descriptor_set_layouts.size());
+    const auto &other_ds_layouts = *other.set_layouts_id.get();
+    assert(set < other_ds_layouts.size());
     for (uint32_t i = 0; i <= set; i++) {
-        if (layout_layout[i] != other_ll[i]) {
+        if (descriptor_set_layouts[i] != other_ds_layouts[i]) {
             return false;
         }
     }
@@ -5446,14 +5452,14 @@ PushConstantRangesId get_canonical_id(const VkPipelineLayoutCreateInfo *info) {
 }
 
 // Dictionary of canoncial form of the pipeline set layout of descriptor set layouts
-static DescriptorSetLayoutLayoutDict layout_layout_dict;
+static PipelineLayoutSetLayoutsDict pipeline_layout_set_layouts_dict;
 
 // Dictionary of canonical form of the "compatible for set" records
 static PipelineLayoutCompatDict pipeline_layout_compat_dict;
 
 static PipelineLayoutCompatId get_canonical_id(const uint32_t set_index, const PushConstantRangesId pcr_id,
-                                               const DescriptorSetLayoutLayoutId ll_id) {
-    return pipeline_layout_compat_dict.look_up(PipelineLayoutCompatDef(set_index, pcr_id, ll_id));
+                                               const PipelineLayoutSetLayoutsId set_layouts_id) {
+    return pipeline_layout_compat_dict.look_up(PipelineLayoutCompatDef(set_index, pcr_id, set_layouts_id));
 }
 
 static void PostCallRecordCreatePipelineLayout(layer_data *dev_data, const VkPipelineLayoutCreateInfo *pCreateInfo,
@@ -5463,20 +5469,20 @@ static void PostCallRecordCreatePipelineLayout(layer_data *dev_data, const VkPip
     PIPELINE_LAYOUT_NODE &plNode = dev_data->pipelineLayoutMap[*pPipelineLayout];
     plNode.layout = *pPipelineLayout;
     plNode.set_layouts.resize(pCreateInfo->setLayoutCount);
-    DescriptorSetLayoutLayoutDef layout_layout(pCreateInfo->setLayoutCount);
+    PipelineLayoutSetLayoutsDef set_layouts(pCreateInfo->setLayoutCount);
     for (uint32_t i = 0; i < pCreateInfo->setLayoutCount; ++i) {
         plNode.set_layouts[i] = GetDescriptorSetLayout(dev_data, pCreateInfo->pSetLayouts[i]);
-        layout_layout[i] = plNode.set_layouts[i]->get_layout_id();
+        set_layouts[i] = plNode.set_layouts[i]->get_layout_id();
     }
 
     // Get canonical form IDs for the "compatible for set" contents
     plNode.push_constant_ranges = get_canonical_id(pCreateInfo);
-    auto ll_id = layout_layout_dict.look_up(layout_layout);
+    auto set_layouts_id = pipeline_layout_set_layouts_dict.look_up(set_layouts);
     plNode.compat_for_set.reserve(pCreateInfo->setLayoutCount);
 
     // Create table of "compatible for set N" cannonical forms for trivial accept validation
     for (uint32_t i = 0; i < pCreateInfo->setLayoutCount; ++i) {
-        plNode.compat_for_set.emplace_back(get_canonical_id(i, plNode.push_constant_ranges, ll_id));
+        plNode.compat_for_set.emplace_back(get_canonical_id(i, plNode.push_constant_ranges, set_layouts_id));
     }
 
     // Implicit unlock

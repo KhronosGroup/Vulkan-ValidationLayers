@@ -551,10 +551,10 @@ using PushConstantRangesId = PushConstantRangesDict::Id;
 // Canonical dictionary for the pipeline layout's layout of descriptorsetlayouts
 using DescriptorSetLayoutDef = cvdescriptorset::DescriptorSetLayoutDef;
 using DescriptorSetLayoutId = std::shared_ptr<const DescriptorSetLayoutDef>;
-using DescriptorSetLayoutLayoutDef = std::vector<DescriptorSetLayoutId>;
-using DescriptorSetLayoutLayoutDict =
-    hash_util::Dictionary<DescriptorSetLayoutLayoutDef, hash_util::IsOrderedContainer<DescriptorSetLayoutLayoutDef>>;
-using DescriptorSetLayoutLayoutId = DescriptorSetLayoutLayoutDict::Id;
+using PipelineLayoutSetLayoutsDef = std::vector<DescriptorSetLayoutId>;
+using PipelineLayoutSetLayoutsDict =
+    hash_util::Dictionary<PipelineLayoutSetLayoutsDef, hash_util::IsOrderedContainer<PipelineLayoutSetLayoutsDef>>;
+using PipelineLayoutSetLayoutsId = PipelineLayoutSetLayoutsDict::Id;
 
 // Defines/stores a compatibility defintion for set N
 // The "layout layout" must store at least set+1 entries, but only the first set+1 are considered for hash and equality testing
@@ -563,10 +563,9 @@ using DescriptorSetLayoutLayoutId = DescriptorSetLayoutLayoutDict::Id;
 struct PipelineLayoutCompatDef {
     uint32_t set;
     PushConstantRangesId push_constant_ranges;
-    using LayoutLayout = DescriptorSetLayoutLayoutId;
-    LayoutLayout layout_id;
-    PipelineLayoutCompatDef(const uint32_t set_index, const PushConstantRangesId pcr_id, const LayoutLayout ll_id)
-        : set(set_index), push_constant_ranges(pcr_id), layout_id(ll_id) {}
+    PipelineLayoutSetLayoutsId set_layouts_id;
+    PipelineLayoutCompatDef(const uint32_t set_index, const PushConstantRangesId pcr_id, const PipelineLayoutSetLayoutsId sl_id)
+        : set(set_index), push_constant_ranges(pcr_id), set_layouts_id(sl_id) {}
     size_t hash() const;
     bool operator==(const PipelineLayoutCompatDef &other) const;
 };

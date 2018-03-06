@@ -103,8 +103,8 @@ class DescriptorSetLayoutDef {
     const std::set<uint32_t> &GetSortedBindingSet() const { return non_empty_bindings_; }
     // Return true if given binding is present in this layout
     bool HasBinding(const uint32_t binding) const { return binding_to_index_map_.count(binding) > 0; };
-    // Return true if this layout is compatible with passed in layout from a pipelineLayout,
-    //   else return false and update error_msg with description of incompatibility
+    // Return true if this DSL Def (referenced by the 1st layout) is compatible with another DSL Def (ref'd from the 2nd layout)
+    // else return false and update error_msg with description of incompatibility
     bool IsCompatible(VkDescriptorSetLayout, VkDescriptorSetLayout, DescriptorSetLayoutDef const *const, std::string *) const;
     // Return true if binding 1 beyond given exists and has same type, stageFlags & immutable sampler use
     bool IsNextBindingConsistent(const uint32_t) const;
@@ -161,7 +161,8 @@ class DescriptorSetLayoutDef {
     const BindingTypeStats &GetBindingTypeStats() const { return binding_type_stats_; }
 
    private:
-    // Only the first two are needed for hash and equality checks, the other fields are derivative them uniquely
+    // Only the first two data members are used for hash and equality checks, the other members are derived from them, and are used
+    // to speed up the various lookups/queries/validations
     VkDescriptorSetLayoutCreateFlags flags_;
     std::vector<safe_VkDescriptorSetLayoutBinding> bindings_;
 
