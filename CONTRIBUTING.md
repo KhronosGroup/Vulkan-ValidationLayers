@@ -124,6 +124,9 @@ There are many existing validation tests in this directory that can be used as a
 contains checks that require some amount of application state to carry out. In contrast, the parameter validation layer contains
 checks that require (mostly) no state at all. Please inquire if you are unsure of the location for your contribution. The other
 layers (threading, object_tracker, unique_objects) are more special-purpose and are mostly code-generated from the specification.
+* **Validation Error/Warning Messages**  Strive to give specific information describing the particulars of the failure, including
+output all of the applicable Vulkan Objects and related values. Also, ensure that when messages can give suggestions about _how_ to
+fix the problem, they should do so to better assist the user.
 
 ### **Contributor License Agreement (CLA)**
 
