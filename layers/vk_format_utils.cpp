@@ -229,7 +229,40 @@ const std::map<VkFormat, VULKAN_FORMAT_INFO> vk_format_table = {
     {VK_FORMAT_PVRTC1_2BPP_SRGB_BLOCK_IMG,  {8, 4, VK_FORMAT_COMPATIBILITY_CLASS_PVRTC1_2BPP_BIT}},
     {VK_FORMAT_PVRTC1_4BPP_SRGB_BLOCK_IMG,  {8, 4, VK_FORMAT_COMPATIBILITY_CLASS_PVRTC1_4BPP_BIT}},
     {VK_FORMAT_PVRTC2_2BPP_SRGB_BLOCK_IMG,  {8, 4, VK_FORMAT_COMPATIBILITY_CLASS_PVRTC2_2BPP_BIT}},
-    {VK_FORMAT_PVRTC2_4BPP_SRGB_BLOCK_IMG,  {8, 4, VK_FORMAT_COMPATIBILITY_CLASS_PVRTC2_4BPP_BIT}}
+    {VK_FORMAT_PVRTC2_4BPP_SRGB_BLOCK_IMG,  {8, 4, VK_FORMAT_COMPATIBILITY_CLASS_PVRTC2_4BPP_BIT}},
+    /* KHR_sampler_YCbCr_conversion */
+    {VK_FORMAT_G8B8G8R8_422_UNORM_KHR,                          {4, 4, VK_FORMAT_COMPATIBILITY_CLASS_32BIT_G8B8G8R8}},
+    {VK_FORMAT_B8G8R8G8_422_UNORM_KHR,                          {4, 4, VK_FORMAT_COMPATIBILITY_CLASS_32BIT_B8G8R8G8}},
+    {VK_FORMAT_R10X6G10X6B10X6A10X6_UNORM_4PACK16_KHR,          {8, 4, VK_FORMAT_COMPATIBILITY_CLASS_64BIT_R10G10B10A10}},
+    {VK_FORMAT_G10X6B10X6G10X6R10X6_422_UNORM_4PACK16_KHR,      {8, 4, VK_FORMAT_COMPATIBILITY_CLASS_64BIT_G10B10G10R10}},
+    {VK_FORMAT_B10X6G10X6R10X6G10X6_422_UNORM_4PACK16_KHR,      {8, 4, VK_FORMAT_COMPATIBILITY_CLASS_64BIT_B10G10R10G10}},
+    {VK_FORMAT_R12X4G12X4B12X4A12X4_UNORM_4PACK16_KHR,          {8, 4, VK_FORMAT_COMPATIBILITY_CLASS_64BIT_R12G12B12A12}},
+    {VK_FORMAT_G12X4B12X4G12X4R12X4_422_UNORM_4PACK16_KHR,      {8, 4, VK_FORMAT_COMPATIBILITY_CLASS_64BIT_G12B12G12R12}},
+    {VK_FORMAT_B12X4G12X4R12X4G12X4_422_UNORM_4PACK16_KHR,      {8, 4, VK_FORMAT_COMPATIBILITY_CLASS_64BIT_B12G12R12G12}},
+    {VK_FORMAT_G16B16G16R16_422_UNORM_KHR,                      {8, 4, VK_FORMAT_COMPATIBILITY_CLASS_64BIT_G16B16G16R16}},
+    {VK_FORMAT_B16G16R16G16_422_UNORM_KHR,                      {8, 4, VK_FORMAT_COMPATIBILITY_CLASS_64BIT_B16G16R16G16}},
+#if 0   // TBD - Figure out what size means for multi-planar formats
+    {VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM_KHR,                   {0, 3, VK_FORMAT_COMPATIBILITY_CLASS_8BIT_3PLANE_420}},
+    {VK_FORMAT_G8_B8R8_2PLANE_420_UNORM_KHR,                    {0, 3, VK_FORMAT_COMPATIBILITY_CLASS_8BIT_2PLANE_420}},
+    {VK_FORMAT_G8_B8_R8_3PLANE_422_UNORM_KHR,                   {0, 3, VK_FORMAT_COMPATIBILITY_CLASS_8BIT_3PLANE_422}},
+    {VK_FORMAT_G8_B8R8_2PLANE_422_UNORM_KHR,                    {0, 3, VK_FORMAT_COMPATIBILITY_CLASS_8BIT_2PLANE_422}},
+    {VK_FORMAT_G8_B8_R8_3PLANE_444_UNORM_KHR,                   {0, 3, VK_FORMAT_COMPATIBILITY_CLASS_8BIT_3PLANE_444}},
+    {VK_FORMAT_G10X6_B10X6_R10X6_3PLANE_420_UNORM_3PACK16_KHR,  {0, 3, VK_FORMAT_COMPATIBILITY_CLASS_10BIT_3PLANE_420}},
+    {VK_FORMAT_G10X6_B10X6R10X6_2PLANE_420_UNORM_3PACK16_KHR,   {0, 3, VK_FORMAT_COMPATIBILITY_CLASS_10BIT_2PLANE_420}},
+    {VK_FORMAT_G10X6_B10X6_R10X6_3PLANE_422_UNORM_3PACK16_KHR,  {0, 3, VK_FORMAT_COMPATIBILITY_CLASS_10BIT_3PLANE_422}},
+    {VK_FORMAT_G10X6_B10X6R10X6_2PLANE_422_UNORM_3PACK16_KHR,   {0, 3, VK_FORMAT_COMPATIBILITY_CLASS_10BIT_2PLANE_422}},
+    {VK_FORMAT_G10X6_B10X6_R10X6_3PLANE_444_UNORM_3PACK16_KHR,  {0, 3, VK_FORMAT_COMPATIBILITY_CLASS_10BIT_3PLANE_444}},
+    {VK_FORMAT_G12X4_B12X4_R12X4_3PLANE_420_UNORM_3PACK16_KHR,  {0, 3, VK_FORMAT_COMPATIBILITY_CLASS_12BIT_3PLANE_420}},
+    {VK_FORMAT_G12X4_B12X4R12X4_2PLANE_420_UNORM_3PACK16_KHR,   {0, 3, VK_FORMAT_COMPATIBILITY_CLASS_12BIT_2PLANE_420}},
+    {VK_FORMAT_G12X4_B12X4_R12X4_3PLANE_422_UNORM_3PACK16_KHR,  {0, 3, VK_FORMAT_COMPATIBILITY_CLASS_12BIT_3PLANE_422}},
+    {VK_FORMAT_G12X4_B12X4R12X4_2PLANE_422_UNORM_3PACK16_KHR,   {0, 3, VK_FORMAT_COMPATIBILITY_CLASS_12BIT_2PLANE_422}},
+    {VK_FORMAT_G12X4_B12X4_R12X4_3PLANE_444_UNORM_3PACK16_KHR,  {0, 3, VK_FORMAT_COMPATIBILITY_CLASS_12BIT_3PLANE_444}},
+    {VK_FORMAT_G16_B16_R16_3PLANE_420_UNORM_KHR,                {0, 3, VK_FORMAT_COMPATIBILITY_CLASS_16BIT_3PLANE_420}},
+    {VK_FORMAT_G16_B16R16_2PLANE_420_UNORM_KHR,                 {0, 3, VK_FORMAT_COMPATIBILITY_CLASS_16BIT_2PLANE_420}},
+    {VK_FORMAT_G16_B16_R16_3PLANE_422_UNORM_KHR,                {0, 3, VK_FORMAT_COMPATIBILITY_CLASS_16BIT_3PLANE_422}},
+    {VK_FORMAT_G16_B16R16_2PLANE_422_UNORM_KHR,                 {0, 3, VK_FORMAT_COMPATIBILITY_CLASS_16BIT_2PLANE_422}},
+    {VK_FORMAT_G16_B16_R16_3PLANE_444_UNORM_KHR,                {0, 3, VK_FORMAT_COMPATIBILITY_CLASS_16BIT_3PLANE_444}}
+#endif
 };
 
 // Renable formatting
@@ -341,6 +374,27 @@ VK_LAYER_EXPORT bool FormatIsCompressed_PVRTC(VkFormat format) {
         case VK_FORMAT_PVRTC1_4BPP_SRGB_BLOCK_IMG:
         case VK_FORMAT_PVRTC2_2BPP_SRGB_BLOCK_IMG:
         case VK_FORMAT_PVRTC2_4BPP_SRGB_BLOCK_IMG:
+            found = true;
+            break;
+        default:
+            break;
+    }
+    return found;
+}
+
+// Single-plane "_422" formats are treated as 2x1 compressed (for copies)
+VK_LAYER_EXPORT bool FormatIsSinglePlane_422(VkFormat format) {
+    bool found = false;
+
+    switch (format) {
+        case VK_FORMAT_G8B8G8R8_422_UNORM_KHR:
+        case VK_FORMAT_B8G8R8G8_422_UNORM_KHR:
+        case VK_FORMAT_G10X6B10X6G10X6R10X6_422_UNORM_4PACK16_KHR:
+        case VK_FORMAT_B10X6G10X6R10X6G10X6_422_UNORM_4PACK16_KHR:
+        case VK_FORMAT_G12X4B12X4G12X4R12X4_422_UNORM_4PACK16_KHR:
+        case VK_FORMAT_B12X4G12X4R12X4G12X4_422_UNORM_4PACK16_KHR:
+        case VK_FORMAT_G16B16G16R16_422_UNORM_KHR:
+        case VK_FORMAT_B16G16R16G16_422_UNORM_KHR:
             found = true;
             break;
         default:
@@ -858,6 +912,18 @@ VK_LAYER_EXPORT VkExtent3D FormatCompressedTexelBlockExtent(VkFormat format) {
         case VK_FORMAT_PVRTC2_4BPP_SRGB_BLOCK_IMG:
             block_size = {4, 4, 1};
             break;
+        // With KHR_sampler_ycbcr_conversion, these formats are treated as 2x1 compressed (for copies)
+        case VK_FORMAT_G8B8G8R8_422_UNORM_KHR:
+        case VK_FORMAT_B8G8R8G8_422_UNORM_KHR:
+        case VK_FORMAT_G10X6B10X6G10X6R10X6_422_UNORM_4PACK16_KHR:
+        case VK_FORMAT_B10X6G10X6R10X6G10X6_422_UNORM_4PACK16_KHR:
+        case VK_FORMAT_G12X4B12X4G12X4R12X4_422_UNORM_4PACK16_KHR:
+        case VK_FORMAT_B12X4G12X4R12X4G12X4_422_UNORM_4PACK16_KHR:
+        case VK_FORMAT_G16B16G16R16_422_UNORM_KHR:
+        case VK_FORMAT_B16G16R16G16_422_UNORM_KHR:
+            block_size = {2, 1, 1};
+            break;
+
         default:
             break;
     }
@@ -878,7 +944,7 @@ VK_LAYER_EXPORT uint32_t FormatPlaneCount(VkFormat format) {
         case VK_FORMAT_G16_B16_R16_3PLANE_420_UNORM_KHR:
         case VK_FORMAT_G16_B16_R16_3PLANE_422_UNORM_KHR:
         case VK_FORMAT_G16_B16_R16_3PLANE_444_UNORM_KHR:
-            return 3u;
+            return 3;
             break;
         case VK_FORMAT_G8_B8R8_2PLANE_420_UNORM_KHR:
         case VK_FORMAT_G8_B8R8_2PLANE_422_UNORM_KHR:
@@ -888,10 +954,10 @@ VK_LAYER_EXPORT uint32_t FormatPlaneCount(VkFormat format) {
         case VK_FORMAT_G12X4_B12X4R12X4_2PLANE_422_UNORM_3PACK16_KHR:
         case VK_FORMAT_G16_B16R16_2PLANE_420_UNORM_KHR:
         case VK_FORMAT_G16_B16R16_2PLANE_422_UNORM_KHR:
-            return 2u;
+            return 2;
             break;
         default:
-            return 1u;
+            return 1;
             break;
     }
 }
@@ -930,4 +996,89 @@ VK_LAYER_EXPORT VkDeviceSize SafeModulo(VkDeviceSize dividend, VkDeviceSize divi
         result = dividend % divisor;
     }
     return result;
+}
+
+struct VULKAN_PER_PLANE_COMPATIBILITY {
+    uint32_t width_divisor;
+    uint32_t height_divisor;
+    VkFormat compatible_format;
+};
+
+struct VULKAN_MULTIPLANE_COMPATIBILITY {
+    VULKAN_PER_PLANE_COMPATIBILITY per_plane[VK_MULTIPLANE_FORMAT_MAX_PLANES];
+};
+
+// Source: Vulkan spec Table 45. Plane Format Compatibility Table
+// clang-format off
+const std::map<VkFormat, VULKAN_MULTIPLANE_COMPATIBILITY> vk_multiplane_compatibility_map {
+    { VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM_KHR,                  { { { 1, 1, VK_FORMAT_R8_UNORM },
+                                                                    { 2, 2, VK_FORMAT_R8_UNORM },
+                                                                    { 2, 2, VK_FORMAT_R8_UNORM } } } },
+    { VK_FORMAT_G8_B8R8_2PLANE_420_UNORM_KHR,                   { { { 1, 1, VK_FORMAT_R8_UNORM },
+                                                                    { 2, 2, VK_FORMAT_R8G8_UNORM },
+                                                                    { 1, 1, VK_FORMAT_UNDEFINED } } } },
+    { VK_FORMAT_G8_B8_R8_3PLANE_422_UNORM_KHR,                  { { { 1, 1, VK_FORMAT_R8_UNORM },
+                                                                    { 2, 1, VK_FORMAT_R8_UNORM },
+                                                                    { 2, 1, VK_FORMAT_R8_UNORM } } } },
+    { VK_FORMAT_G8_B8R8_2PLANE_422_UNORM_KHR,                   { { { 1, 1, VK_FORMAT_R8_UNORM },
+                                                                    { 2, 1, VK_FORMAT_R8G8_UNORM },
+                                                                    { 1, 1, VK_FORMAT_UNDEFINED } } } },
+    { VK_FORMAT_G8_B8_R8_3PLANE_444_UNORM_KHR,                  { { { 1, 1, VK_FORMAT_R8_UNORM },
+                                                                    { 1, 1, VK_FORMAT_R8_UNORM },
+                                                                    { 1, 1, VK_FORMAT_R8_UNORM } } } },
+    { VK_FORMAT_G10X6_B10X6_R10X6_3PLANE_420_UNORM_3PACK16_KHR, { { { 1, 1, VK_FORMAT_R10X6_UNORM_PACK16_KHR },
+                                                                    { 2, 2, VK_FORMAT_R10X6_UNORM_PACK16_KHR },
+                                                                    { 2, 2, VK_FORMAT_R10X6_UNORM_PACK16_KHR } } } },
+    { VK_FORMAT_G10X6_B10X6R10X6_2PLANE_420_UNORM_3PACK16_KHR,  { { { 1, 1, VK_FORMAT_R10X6_UNORM_PACK16_KHR },
+                                                                    { 2, 2, VK_FORMAT_R10X6G10X6_UNORM_2PACK16_KHR },
+                                                                    { 1, 1, VK_FORMAT_UNDEFINED } } } },
+    { VK_FORMAT_G10X6_B10X6_R10X6_3PLANE_422_UNORM_3PACK16_KHR, { { { 1, 1, VK_FORMAT_R10X6_UNORM_PACK16_KHR },
+                                                                    { 2, 1, VK_FORMAT_R10X6_UNORM_PACK16_KHR },
+                                                                    { 2, 1, VK_FORMAT_R10X6_UNORM_PACK16_KHR } } } },
+    { VK_FORMAT_G10X6_B10X6R10X6_2PLANE_422_UNORM_3PACK16_KHR,  { { { 1, 1, VK_FORMAT_R10X6_UNORM_PACK16_KHR },
+                                                                    { 2, 1, VK_FORMAT_R10X6G10X6_UNORM_2PACK16_KHR },
+                                                                    { 1, 1, VK_FORMAT_UNDEFINED } } } },
+    { VK_FORMAT_G10X6_B10X6_R10X6_3PLANE_444_UNORM_3PACK16_KHR, { { { 1, 1, VK_FORMAT_R10X6_UNORM_PACK16_KHR },
+                                                                    { 1, 1, VK_FORMAT_R10X6_UNORM_PACK16_KHR },
+                                                                    { 1, 1, VK_FORMAT_R10X6_UNORM_PACK16_KHR } } } },
+    { VK_FORMAT_G12X4_B12X4_R12X4_3PLANE_420_UNORM_3PACK16_KHR, { { { 1, 1, VK_FORMAT_R12X4_UNORM_PACK16_KHR },
+                                                                    { 2, 2, VK_FORMAT_R12X4_UNORM_PACK16_KHR },
+                                                                    { 2, 2, VK_FORMAT_R12X4_UNORM_PACK16_KHR } } } },
+    { VK_FORMAT_G12X4_B12X4R12X4_2PLANE_420_UNORM_3PACK16_KHR,  { { { 1, 1, VK_FORMAT_R12X4_UNORM_PACK16_KHR },
+                                                                    { 2, 2, VK_FORMAT_R12X4G12X4_UNORM_2PACK16_KHR },
+                                                                    { 1, 1, VK_FORMAT_UNDEFINED } } } },
+    { VK_FORMAT_G12X4_B12X4_R12X4_3PLANE_422_UNORM_3PACK16_KHR, { { { 1, 1, VK_FORMAT_R12X4_UNORM_PACK16_KHR },
+                                                                    { 2, 1, VK_FORMAT_R12X4_UNORM_PACK16_KHR },
+                                                                    { 2, 1, VK_FORMAT_R12X4_UNORM_PACK16_KHR } } } },
+    { VK_FORMAT_G12X4_B12X4R12X4_2PLANE_422_UNORM_3PACK16_KHR,  { { { 1, 1, VK_FORMAT_R12X4_UNORM_PACK16_KHR },
+                                                                    { 2, 1, VK_FORMAT_R12X4G12X4_UNORM_2PACK16_KHR },
+                                                                    { 1, 1, VK_FORMAT_UNDEFINED } } } },
+    { VK_FORMAT_G12X4_B12X4_R12X4_3PLANE_444_UNORM_3PACK16_KHR, { { { 1, 1, VK_FORMAT_R12X4_UNORM_PACK16_KHR },
+                                                                    { 1, 1, VK_FORMAT_R12X4_UNORM_PACK16_KHR },
+                                                                    { 1, 1, VK_FORMAT_R12X4_UNORM_PACK16_KHR } } } },
+    { VK_FORMAT_G16_B16_R16_3PLANE_420_UNORM_KHR,               { { { 1, 1, VK_FORMAT_R16_UNORM },
+                                                                    { 2, 2, VK_FORMAT_R16_UNORM },
+                                                                    { 2, 2, VK_FORMAT_R16_UNORM } } } },
+    { VK_FORMAT_G16_B16R16_2PLANE_420_UNORM_KHR,                { { { 1, 1, VK_FORMAT_R16_UNORM },
+                                                                    { 2, 2, VK_FORMAT_R16G16_UNORM },
+                                                                    { 1, 1, VK_FORMAT_UNDEFINED } } } },
+    { VK_FORMAT_G16_B16_R16_3PLANE_422_UNORM_KHR,               { { { 1, 1, VK_FORMAT_R16_UNORM },
+                                                                    { 2, 1, VK_FORMAT_R16_UNORM },
+                                                                    { 2, 1, VK_FORMAT_R16_UNORM } } } },
+    { VK_FORMAT_G16_B16R16_2PLANE_422_UNORM_KHR,                { { { 1, 1, VK_FORMAT_R16_UNORM },
+                                                                    { 2, 1, VK_FORMAT_R16G16_UNORM },
+                                                                    { 1, 1, VK_FORMAT_UNDEFINED } } } },
+    { VK_FORMAT_G16_B16_R16_3PLANE_444_UNORM_KHR,               { { { 1, 1, VK_FORMAT_R16_UNORM },
+                                                                    { 1, 1, VK_FORMAT_R16_UNORM },
+                                                                    { 1, 1, VK_FORMAT_R16_UNORM } } } }
+};
+// clang-format on
+
+VK_LAYER_EXPORT VkFormat FindMultiplaneCompatibleFormat(VkFormat mp_fmt, uint32_t plane) {
+    auto it = vk_multiplane_compatibility_map.find(mp_fmt);
+    if ((it == vk_multiplane_compatibility_map.end()) || (plane >= VK_MULTIPLANE_FORMAT_MAX_PLANES)) {
+        return VK_FORMAT_UNDEFINED;
+    }
+
+    return it->second.per_plane[plane].compatible_format;
 }

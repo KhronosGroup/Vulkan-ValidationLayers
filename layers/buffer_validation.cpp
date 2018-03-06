@@ -1213,27 +1213,29 @@ static bool RangesIntersect(int32_t start, uint32_t start_offset, int32_t end, u
     return result;
 }
 
-// Returns true if two VkImageCopy structures overlap
-static bool RegionIntersects(const VkImageCopy *src, const VkImageCopy *dst, VkImageType type, bool is_multiplane) {
+// Returns true if source area of first copy region intersects dest area of second region
+// It is assumed that these are copy regions within a single image (otherwise no possibility of collision)
+static bool RegionIntersects(const VkImageCopy *rgn0, const VkImageCopy *rgn1, VkImageType type, bool is_multiplane) {
     bool result = false;
 
-    if (is_multiplane && (src->srcSubresource.aspectMask != dst->dstSubresource.aspectMask)) {
+    // Separate planes within a multiplane image cannot intersect
+    if (is_multiplane && (rgn0->srcSubresource.aspectMask != rgn1->dstSubresource.aspectMask)) {
         return result;
     }
 
-    if ((src->srcSubresource.mipLevel == dst->dstSubresource.mipLevel) &&
-        (RangesIntersect(src->srcSubresource.baseArrayLayer, src->srcSubresource.layerCount, dst->dstSubresource.baseArrayLayer,
-                         dst->dstSubresource.layerCount))) {
+    if ((rgn0->srcSubresource.mipLevel == rgn1->dstSubresource.mipLevel) &&
+        (RangesIntersect(rgn0->srcSubresource.baseArrayLayer, rgn0->srcSubresource.layerCount, rgn1->dstSubresource.baseArrayLayer,
+                         rgn1->dstSubresource.layerCount))) {
         result = true;
         switch (type) {
             case VK_IMAGE_TYPE_3D:
-                result &= RangesIntersect(src->srcOffset.z, src->extent.depth, dst->dstOffset.z, dst->extent.depth);
+                result &= RangesIntersect(rgn0->srcOffset.z, rgn0->extent.depth, rgn1->dstOffset.z, rgn1->extent.depth);
             // Intentionally fall through to 2D case
             case VK_IMAGE_TYPE_2D:
-                result &= RangesIntersect(src->srcOffset.y, src->extent.height, dst->dstOffset.y, dst->extent.height);
+                result &= RangesIntersect(rgn0->srcOffset.y, rgn0->extent.height, rgn1->dstOffset.y, rgn1->extent.height);
             // Intentionally fall through to 1D case
             case VK_IMAGE_TYPE_1D:
-                result &= RangesIntersect(src->srcOffset.x, src->extent.width, dst->dstOffset.x, dst->extent.width);
+                result &= RangesIntersect(rgn0->srcOffset.x, rgn0->extent.width, rgn1->dstOffset.x, rgn1->extent.width);
                 break;
             default:
                 // Unrecognized or new IMAGE_TYPE enums will be caught in parameter_validation
@@ -1577,51 +1579,56 @@ bool ValidateImageCopyData(const layer_data *device_data, const debug_report_dat
             }
         }
 
-        // Checks that apply only to compressed images
-        if (FormatIsCompressed(src_state->createInfo.format)) {
+        // Source checks that apply only to compressed images (or to _422 images if ycbcr enabled)
+        bool ext_ycbcr = GetDeviceExtensions(device_data)->vk_khr_sampler_ycbcr_conversion;
+        if (FormatIsCompressed(src_state->createInfo.format) ||
+            (ext_ycbcr && FormatIsSinglePlane_422(src_state->createInfo.format))) {
             const VkExtent3D block_size = FormatCompressedTexelBlockExtent(src_state->createInfo.format);
-
             //  image offsets must be multiples of block dimensions
             if ((SafeModulo(region.srcOffset.x, block_size.width) != 0) ||
                 (SafeModulo(region.srcOffset.y, block_size.height) != 0) ||
                 (SafeModulo(region.srcOffset.z, block_size.depth) != 0)) {
+                UNIQUE_VALIDATION_ERROR_CODE vuid = ext_ycbcr ? VALIDATION_ERROR_09c00d7e : VALIDATION_ERROR_09c0013a;
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
-                                HandleToUint64(src_state->image), VALIDATION_ERROR_09c0013a,
+                                HandleToUint64(src_state->image), vuid,
                                 "vkCmdCopyImage(): pRegion[%d] srcOffset (%d, %d) must be multiples of the compressed image's "
-                                "texel width & height (%d, %d)..",
+                                "texel width & height (%d, %d).",
                                 i, region.srcOffset.x, region.srcOffset.y, block_size.width, block_size.height);
             }
 
             const VkExtent3D mip_extent = GetImageSubresourceExtent(src_state, &(region.srcSubresource));
             if ((SafeModulo(src_copy_extent.width, block_size.width) != 0) &&
                 (src_copy_extent.width + region.srcOffset.x != mip_extent.width)) {
+                UNIQUE_VALIDATION_ERROR_CODE vuid = ext_ycbcr ? VALIDATION_ERROR_09c00d80 : VALIDATION_ERROR_09c0013c;
                 skip |=
                     log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
-                            HandleToUint64(src_state->image), VALIDATION_ERROR_09c0013c,
+                            HandleToUint64(src_state->image), vuid,
                             "vkCmdCopyImage(): pRegion[%d] extent width (%d) must be a multiple of the compressed texture block "
-                            "width (%d), or when added to srcOffset.x (%d) must equal the image subresource width (%d)..",
+                            "width (%d), or when added to srcOffset.x (%d) must equal the image subresource width (%d).",
                             i, src_copy_extent.width, block_size.width, region.srcOffset.x, mip_extent.width);
             }
 
             // Extent height must be a multiple of block height, or extent+offset height must equal subresource height
             if ((SafeModulo(src_copy_extent.height, block_size.height) != 0) &&
                 (src_copy_extent.height + region.srcOffset.y != mip_extent.height)) {
+                UNIQUE_VALIDATION_ERROR_CODE vuid = ext_ycbcr ? VALIDATION_ERROR_09c00d82 : VALIDATION_ERROR_09c0013e;
                 skip |=
                     log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
-                            HandleToUint64(src_state->image), VALIDATION_ERROR_09c0013e,
+                            HandleToUint64(src_state->image), vuid,
                             "vkCmdCopyImage(): pRegion[%d] extent height (%d) must be a multiple of the compressed texture block "
-                            "height (%d), or when added to srcOffset.y (%d) must equal the image subresource height (%d)..",
+                            "height (%d), or when added to srcOffset.y (%d) must equal the image subresource height (%d).",
                             i, src_copy_extent.height, block_size.height, region.srcOffset.y, mip_extent.height);
             }
 
             // Extent depth must be a multiple of block depth, or extent+offset depth must equal subresource depth
             uint32_t copy_depth = (slice_override ? depth_slices : src_copy_extent.depth);
             if ((SafeModulo(copy_depth, block_size.depth) != 0) && (copy_depth + region.srcOffset.z != mip_extent.depth)) {
+                UNIQUE_VALIDATION_ERROR_CODE vuid = ext_ycbcr ? VALIDATION_ERROR_09c00d84 : VALIDATION_ERROR_09c00140;
                 skip |=
                     log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
-                            HandleToUint64(src_state->image), VALIDATION_ERROR_09c00140,
+                            HandleToUint64(src_state->image), vuid,
                             "vkCmdCopyImage(): pRegion[%d] extent width (%d) must be a multiple of the compressed texture block "
-                            "depth (%d), or when added to srcOffset.z (%d) must equal the image subresource depth (%d)..",
+                            "depth (%d), or when added to srcOffset.z (%d) must equal the image subresource depth (%d).",
                             i, src_copy_extent.depth, block_size.depth, region.srcOffset.z, mip_extent.depth);
             }
         }  // Compressed
@@ -1689,55 +1696,131 @@ bool ValidateImageCopyData(const layer_data *device_data, const debug_report_dat
             }
         }
 
-        // Checks that apply only to compressed images
-        if (FormatIsCompressed(dst_state->createInfo.format)) {
+        // Dest checks that apply only to compressed images (or to _422 images if ycbcr enabled)
+        if (FormatIsCompressed(dst_state->createInfo.format) ||
+            (ext_ycbcr && FormatIsSinglePlane_422(dst_state->createInfo.format))) {
             const VkExtent3D block_size = FormatCompressedTexelBlockExtent(dst_state->createInfo.format);
 
             //  image offsets must be multiples of block dimensions
             if ((SafeModulo(region.dstOffset.x, block_size.width) != 0) ||
                 (SafeModulo(region.dstOffset.y, block_size.height) != 0) ||
                 (SafeModulo(region.dstOffset.z, block_size.depth) != 0)) {
+                UNIQUE_VALIDATION_ERROR_CODE vuid = ext_ycbcr ? VALIDATION_ERROR_09c00d86 : VALIDATION_ERROR_09c00144;
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
-                                HandleToUint64(dst_state->image), VALIDATION_ERROR_09c00144,
+                                HandleToUint64(dst_state->image), vuid,
                                 "vkCmdCopyImage(): pRegion[%d] dstOffset (%d, %d) must be multiples of the compressed image's "
-                                "texel width & height (%d, %d)..",
+                                "texel width & height (%d, %d).",
                                 i, region.dstOffset.x, region.dstOffset.y, block_size.width, block_size.height);
             }
 
             const VkExtent3D mip_extent = GetImageSubresourceExtent(dst_state, &(region.dstSubresource));
             if ((SafeModulo(dst_copy_extent.width, block_size.width) != 0) &&
                 (dst_copy_extent.width + region.dstOffset.x != mip_extent.width)) {
+                UNIQUE_VALIDATION_ERROR_CODE vuid = ext_ycbcr ? VALIDATION_ERROR_09c00d88 : VALIDATION_ERROR_09c00146;
                 skip |=
                     log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
-                            HandleToUint64(dst_state->image), VALIDATION_ERROR_09c00146,
+                            HandleToUint64(dst_state->image), vuid,
                             "vkCmdCopyImage(): pRegion[%d] dst_copy_extent width (%d) must be a multiple of the compressed texture "
-                            "block width (%d), or when added to dstOffset.x (%d) must equal the image subresource width (%d)..",
+                            "block width (%d), or when added to dstOffset.x (%d) must equal the image subresource width (%d).",
                             i, dst_copy_extent.width, block_size.width, region.dstOffset.x, mip_extent.width);
             }
 
             // Extent height must be a multiple of block height, or dst_copy_extent+offset height must equal subresource height
             if ((SafeModulo(dst_copy_extent.height, block_size.height) != 0) &&
                 (dst_copy_extent.height + region.dstOffset.y != mip_extent.height)) {
+                UNIQUE_VALIDATION_ERROR_CODE vuid = ext_ycbcr ? VALIDATION_ERROR_09c00d8a : VALIDATION_ERROR_09c00148;
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
-                                HandleToUint64(dst_state->image), VALIDATION_ERROR_09c00148,
+                                HandleToUint64(dst_state->image), vuid,
                                 "vkCmdCopyImage(): pRegion[%d] dst_copy_extent height (%d) must be a multiple of the compressed "
                                 "texture block height (%d), or when added to dstOffset.y (%d) must equal the image subresource "
-                                "height (%d)..",
+                                "height (%d).",
                                 i, dst_copy_extent.height, block_size.height, region.dstOffset.y, mip_extent.height);
             }
 
             // Extent depth must be a multiple of block depth, or dst_copy_extent+offset depth must equal subresource depth
             uint32_t copy_depth = (slice_override ? depth_slices : dst_copy_extent.depth);
             if ((SafeModulo(copy_depth, block_size.depth) != 0) && (copy_depth + region.dstOffset.z != mip_extent.depth)) {
+                UNIQUE_VALIDATION_ERROR_CODE vuid = ext_ycbcr ? VALIDATION_ERROR_09c00d8c : VALIDATION_ERROR_09c0014a;
                 skip |=
                     log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
-                            HandleToUint64(dst_state->image), VALIDATION_ERROR_09c0014a,
+                            HandleToUint64(dst_state->image), vuid,
                             "vkCmdCopyImage(): pRegion[%d] dst_copy_extent width (%d) must be a multiple of the compressed texture "
-                            "block depth (%d), or when added to dstOffset.z (%d) must equal the image subresource depth (%d)..",
+                            "block depth (%d), or when added to dstOffset.z (%d) must equal the image subresource depth (%d).",
                             i, dst_copy_extent.depth, block_size.depth, region.dstOffset.z, mip_extent.depth);
             }
         }  // Compressed
     }
+    return skip;
+}
+
+// vkCmdCopyImage checks that only apply if the multiplane extension is enabled
+bool CopyImageMultiplaneValidation(const layer_data *dev_data, VkCommandBuffer command_buffer, const IMAGE_STATE *src_image_state,
+                                   const IMAGE_STATE *dst_image_state, const VkImageCopy region) {
+    bool skip = false;
+    const debug_report_data *report_data = core_validation::GetReportData(dev_data);
+
+    // Neither image is multiplane
+    if ((!FormatIsMultiplane(src_image_state->createInfo.format)) && (!FormatIsMultiplane(dst_image_state->createInfo.format))) {
+        // If neither image is multi-plane the aspectMask member of src and dst must match
+        if (region.srcSubresource.aspectMask != region.dstSubresource.aspectMask) {
+            std::stringstream ss;
+            ss << "vkCmdCopyImage: Copy between non-multiplane images with differing aspectMasks ( 0x" << std::hex
+               << region.srcSubresource.aspectMask << " and 0x" << region.dstSubresource.aspectMask << " )";
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                            HandleToUint64(command_buffer), VALIDATION_ERROR_09c00c1e, "%s.", ss.str().c_str());
+        }
+    } else {
+        // Source image multiplane checks
+        uint32_t planes = FormatPlaneCount(src_image_state->createInfo.format);
+        VkImageAspectFlags aspect = region.srcSubresource.aspectMask;
+        if ((2 == planes) && (aspect != VK_IMAGE_ASPECT_PLANE_0_BIT_KHR) && (aspect != VK_IMAGE_ASPECT_PLANE_1_BIT_KHR)) {
+            std::stringstream ss;
+            ss << "vkCmdCopyImage: Source image aspect mask (0x" << std::hex << aspect << ") is invalid for 2-plane format";
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                            HandleToUint64(command_buffer), VALIDATION_ERROR_09c00c20, "%s.", ss.str().c_str());
+        }
+        if ((3 == planes) && (aspect != VK_IMAGE_ASPECT_PLANE_0_BIT_KHR) && (aspect != VK_IMAGE_ASPECT_PLANE_1_BIT_KHR) &&
+            (aspect != VK_IMAGE_ASPECT_PLANE_2_BIT_KHR)) {
+            std::stringstream ss;
+            ss << "vkCmdCopyImage: Source image aspect mask (0x" << std::hex << aspect << ") is invalid for 3-plane format";
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                            HandleToUint64(command_buffer), VALIDATION_ERROR_09c00c22, "%s.", ss.str().c_str());
+        }
+        // Single-plane to multi-plane
+        if ((!FormatIsMultiplane(src_image_state->createInfo.format)) && (FormatIsMultiplane(dst_image_state->createInfo.format)) &&
+            (VK_IMAGE_ASPECT_COLOR_BIT != aspect)) {
+            std::stringstream ss;
+            ss << "vkCmdCopyImage: Source image aspect mask (0x" << std::hex << aspect << ") is not VK_IMAGE_ASPECT_COLOR_BIT";
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                            HandleToUint64(command_buffer), VALIDATION_ERROR_09c00c2a, "%s.", ss.str().c_str());
+        }
+
+        // Dest image multiplane checks
+        planes = FormatPlaneCount(dst_image_state->createInfo.format);
+        aspect = region.dstSubresource.aspectMask;
+        if ((2 == planes) && (aspect != VK_IMAGE_ASPECT_PLANE_0_BIT_KHR) && (aspect != VK_IMAGE_ASPECT_PLANE_1_BIT_KHR)) {
+            std::stringstream ss;
+            ss << "vkCmdCopyImage: Dest image aspect mask (0x" << std::hex << aspect << ") is invalid for 2-plane format";
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                            HandleToUint64(command_buffer), VALIDATION_ERROR_09c00c24, "%s.", ss.str().c_str());
+        }
+        if ((3 == planes) && (aspect != VK_IMAGE_ASPECT_PLANE_0_BIT_KHR) && (aspect != VK_IMAGE_ASPECT_PLANE_1_BIT_KHR) &&
+            (aspect != VK_IMAGE_ASPECT_PLANE_2_BIT_KHR)) {
+            std::stringstream ss;
+            ss << "vkCmdCopyImage: Dest image aspect mask (0x" << std::hex << aspect << ") is invalid for 3-plane format";
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                            HandleToUint64(command_buffer), VALIDATION_ERROR_09c00c26, "%s.", ss.str().c_str());
+        }
+        // Multi-plane to single-plane
+        if ((FormatIsMultiplane(src_image_state->createInfo.format)) && (!FormatIsMultiplane(dst_image_state->createInfo.format)) &&
+            (VK_IMAGE_ASPECT_COLOR_BIT != aspect)) {
+            std::stringstream ss;
+            ss << "vkCmdCopyImage: Dest image aspect mask (0x" << std::hex << aspect << ") is not VK_IMAGE_ASPECT_COLOR_BIT";
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                            HandleToUint64(command_buffer), VALIDATION_ERROR_09c00c28, "%s.", ss.str().c_str());
+        }
+    }
+
     return skip;
 }
 
@@ -1815,6 +1898,11 @@ bool PreCallValidateCmdCopyImage(layer_data *device_data, GLOBAL_CB_NODE *cb_nod
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                                 HandleToUint64(command_buffer), VALIDATION_ERROR_09c00118, "%s.", ss.str().c_str());
             }
+        }
+
+        // Do multiplane-specific checks, if extension enabled
+        if (GetDeviceExtensions(device_data)->vk_khr_sampler_ycbcr_conversion) {
+            skip |= CopyImageMultiplaneValidation(device_data, command_buffer, src_image_state, dst_image_state, region);
         }
 
         if (!GetDeviceExtensions(device_data)->vk_khr_sampler_ycbcr_conversion) {
