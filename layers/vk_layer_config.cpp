@@ -32,7 +32,7 @@
 #include <vulkan/vk_layer.h>
 
 #if defined(_WIN32)
-#include <Windows.h>
+#include <windows.h>
 #endif
 
 #define MAX_CHARS_PER_LINE 4096
