@@ -383,7 +383,7 @@ If you do not have Java, you can get it with something like the following:
 
 #### Additional OSX System Requirements
 
-Tested on OSX version 10.12.4
+Tested on OSX version 10.13.3
 
 Setup Homebrew and components
 
@@ -395,9 +395,9 @@ Setup Homebrew and components
 
       export PATH=/usr/local/bin:$PATH
 
-- Add packages with the following (may need refinement)
+- Add packages with the following:
 
-      brew install cmake python python3 git
+      brew install cmake python
 
 ### Android Build
 
