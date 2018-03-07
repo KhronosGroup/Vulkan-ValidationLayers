@@ -599,6 +599,8 @@ func_struct_id_map = {
 'VkDebugUtilsMessengerCreateInfoEXT' : 543,
 'vkCreateDebugUtilsMessengerEXT' : 544,
 'vkSubmitDebugUtilsMessageEXT' : 545,
+'VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT' : 546,
+'VkPipelineVertexInputDivisorStateCreateInfoEXT' : 547,
 ### ADD New func/struct mappings above this line
 }
 # Mapping of params to unique IDs
@@ -1125,6 +1127,8 @@ implicit_param_map = {
 'pfnUserCallback' : 519,
 'pMessenger' : 520,
 'messageTypes' : 521,
+'vertexBindingDivisorCount' : 522,
+'pVertexBindingDivisors' : 523,
 ### ADD New implicit param mappings above this line
 }
 

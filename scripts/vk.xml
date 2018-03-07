@@ -136,7 +136,7 @@ private version is maintained in the 1.0 branch of the member gitlab server.
         <type category="define">// Vulkan 1.1 version number
 #define <name>VK_API_VERSION_1_1</name> <type>VK_MAKE_VERSION</type>(1, 1, 0)// Patch version should always be set to 0</type>
         <type category="define">// Version of this file
-#define <name>VK_HEADER_VERSION</name> 69</type>
+#define <name>VK_HEADER_VERSION</name> 70</type>
 
         <type category="define">
 #define <name>VK_DEFINE_HANDLE</name>(object) typedef struct object##_T* object;</type>
@@ -2893,7 +2893,7 @@ private version is maintained in the 1.0 branch of the member gitlab server.
             <member><type>void</type>* <name>pNext</name></member>
             <member><type>VkDeviceSize</type> <name>minImportedHostPointerAlignment</name></member>
         </type>
-        <type category="struct" name="VkPhysicalDeviceConservativeRasterizationPropertiesEXT" structextends="VkPhysicalDeviceProperties2KHR">
+        <type category="struct" name="VkPhysicalDeviceConservativeRasterizationPropertiesEXT" structextends="VkPhysicalDeviceProperties2">
             <member values="VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CONSERVATIVE_RASTERIZATION_PROPERTIES_EXT"><type>VkStructureType</type> <name>sType</name></member>
             <member><type>void</type>*                  <name>pNext</name><comment>Pointer to next structure</comment></member>
             <member><type>float</type>                  <name>primitiveOverestimationSize</name><comment>The size in pixels the primitive is enlarged at each edge during conservative rasterization</comment></member>
@@ -2913,6 +2913,21 @@ private version is maintained in the 1.0 branch of the member gitlab server.
             <member optional="true"><type>VkPipelineRasterizationConservativeStateCreateFlagsEXT</type>           <name>flags</name></member>                 <!-- Reserved -->
             <member><type>VkConservativeRasterizationModeEXT</type>                                               <name>conservativeRasterizationMode</name></member>      <!-- Conservative rasterization mode -->
             <member><type>float</type>                                                                            <name>extraPrimitiveOverestimationSize</name></member>   <!-- Extra overestimation to add to the primitive -->
+        </type>
+        <type category="struct" name="VkVertexInputBindingDivisorDescriptionEXT">
+            <member><type>uint32_t</type>          <name>binding</name></member>
+            <member><type>uint32_t</type>          <name>divisor</name></member>
+        </type>
+        <type category="struct" name="VkPipelineVertexInputDivisorStateCreateInfoEXT" structextends="VkPipelineVertexInputStateCreateInfo">
+            <member values="VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_DIVISOR_STATE_CREATE_INFO_EXT"><type>VkStructureType</type> <name>sType</name></member>
+            <member noautovalidity="true">const <type>void</type>*   <name>pNext</name></member>
+            <member><type>uint32_t</type>                            <name>vertexBindingDivisorCount</name></member>
+            <member len="vertexBindingDivisorCount">const <type>VkVertexInputBindingDivisorDescriptionEXT</type>*      <name>pVertexBindingDivisors</name></member>
+        </type>
+        <type category="struct" name="VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT" structextends="VkPhysicalDeviceProperties2">
+            <member values="VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_ATTRIBUTE_DIVISOR_PROPERTIES_EXT"><type>VkStructureType</type> <name>sType</name></member>
+            <member><type>void</type>*                  <name>pNext</name></member>
+            <member><type>uint32_t</type>               <name>maxVertexAttribDivisor</name><comment>max value of vertex attribute divisor</comment></member>
         </type>
     </types>
 
@@ -6073,13 +6088,15 @@ private version is maintained in the 1.0 branch of the member gitlab server.
             <type name="VkObjectType"/>
         </require>
     </feature>
-    <feature api="vulkan" name="VK_VERSION_1_1" number="1.1" comment="Vulkan 1.1 core API interface definitions">
+    <feature api="vulkan" name="VK_VERSION_1_1" number="1.1" comment="Vulkan 1.1 core API interface definitions.">
         <require>
             <type name="VK_API_VERSION_1_1"/>
         </require>
         <require comment="Device Initialization">
             <command name="vkEnumerateInstanceVersion"/>
         </require>
+        <require comment="Promoted from VK_KHR_relaxed_block_layout, which has no API"/>
+        <require comment="Promoted from VK_KHR_storage_buffer_storage_class, which has no API"/>
         <require comment="Originally based on VK_KHR_subgroup (extension 94), but the actual enum block used was, incorrectly, that of extension 95">
             <enum extends="VkStructureType" extnumber="95"  offset="0"          name="VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBGROUP_PROPERTIES"/>
             <type                                       name="VkPhysicalDeviceSubgroupProperties"/>
@@ -6099,7 +6116,7 @@ private version is maintained in the 1.0 branch of the member gitlab server.
             <enum extends="VkStructureType" extnumber="84"  offset="0"          name="VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_16BIT_STORAGE_FEATURES"/>
             <type name="VkPhysicalDevice16BitStorageFeatures"/>
         </require>
-        <require comment="Promoted from VK_KHR_dedicate_allocation">
+        <require comment="Promoted from VK_KHR_dedicated_allocation">
             <enum extends="VkStructureType" extnumber="128" offset="0"          name="VK_STRUCTURE_TYPE_MEMORY_DEDICATED_REQUIREMENTS"/>
             <enum extends="VkStructureType" extnumber="128" offset="1"          name="VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO"/>
             <type name="VkMemoryDedicatedRequirements"/>
@@ -6392,7 +6409,7 @@ private version is maintained in the 1.0 branch of the member gitlab server.
             <type name="VkDescriptorSetLayoutSupport"/>
             <command name="vkGetDescriptorSetLayoutSupport"/>
         </require>
-        <require comment="Originally based on VK_KHR_shader_draw_parameters (extension 64), which was never published; thus the mystifying large value= numbers below">
+        <require comment="Promoted from VK_KHR_shader_draw_parameters, with a feature support query added">
             <enum extends="VkStructureType" extnumber="64"  offset="0"          name="VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DRAW_PARAMETER_FEATURES"/>
             <type name="VkPhysicalDeviceShaderDrawParameterFeatures"/>
         </require>
@@ -8391,10 +8408,15 @@ private version is maintained in the 1.0 branch of the member gitlab server.
                 <enum value="&quot;VK_AMD_extension_190&quot;"              name="VK_KHR_EXTENSION_190_EXTENSION_NAME"/>
             </require>
         </extension>
-        <extension name="VK_NV_extension_191" number="191" author="NV" contact="Vikram Kushwaha @vkushwaha" supported="disabled">
+        <extension name="VK_EXT_vertex_attribute_divisor" number="191" type="device" requires="VK_KHR_get_physical_device_properties2" author="NV" contact="Vikram Kushwaha @vkushwaha" supported="vulkan">
             <require>
-                <enum value="0"                                             name="VK_NV_EXTENSION_191_SPEC_VERSION"/>
-                <enum value="&quot;VK_NV_extension_191&quot;"               name="VK_NV_EXTENSION_191_EXTENSION_NAME"/>
+                <enum value="1"                                         name="VK_EXT_VERTEX_ATTRIBUTE_DIVISOR_SPEC_VERSION"/>
+                <enum value="&quot;VK_EXT_vertex_attribute_divisor&quot;"   name="VK_EXT_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME"/>
+                <enum offset="0" extends="VkStructureType"              name="VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_ATTRIBUTE_DIVISOR_PROPERTIES_EXT"/>
+                <enum offset="1" extends="VkStructureType"              name="VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_DIVISOR_STATE_CREATE_INFO_EXT"/>
+                <type name="VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT"/>
+                <type name="VkVertexInputBindingDivisorDescriptionEXT"/>
+                <type name="VkPipelineVertexInputDivisorStateCreateInfoEXT"/>
             </require>
         </extension>
         <extension name="VK_GOOGLE_extension_192" number="192" author="GOOGLE" contact="Jean-Francois Roy @jfroy" supported="disabled">
