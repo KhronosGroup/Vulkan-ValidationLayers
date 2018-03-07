@@ -171,6 +171,8 @@ static char const *storage_class_name(unsigned sc) {
             return "image";
         case spv::StorageClassPushConstant:
             return "push constant";
+        case spv::StorageClassStorageBuffer:
+            return "storage buffer";
         default:
             return "unknown";
     }
@@ -705,7 +707,8 @@ static std::vector<std::pair<descriptor_slot_t, interface_var>> collect_interfac
         assert(insn != src->end());
 
         if (insn.opcode() == spv::OpVariable &&
-            (insn.word(3) == spv::StorageClassUniform || insn.word(3) == spv::StorageClassUniformConstant)) {
+            (insn.word(3) == spv::StorageClassUniform || insn.word(3) == spv::StorageClassUniformConstant ||
+             insn.word(3) == spv::StorageClassStorageBuffer)) {
             unsigned set = value_or_default(var_sets, insn.word(2), 0);
             unsigned binding = value_or_default(var_bindings, insn.word(2), 0);
 
@@ -1078,7 +1081,7 @@ static bool validate_specialization_offsets(debug_report_data const *report_data
 static bool descriptor_type_match(shader_module const *module, uint32_t type_id, VkDescriptorType descriptor_type,
                                   unsigned &descriptor_count) {
     auto type = module->get_def(type_id);
-
+    bool is_storage_buffer = false;
     descriptor_count = 1;
 
     // Strip off any array or ptrs. Where we remove array levels, adjust the  descriptor count for each dimension.
@@ -1087,6 +1090,9 @@ static bool descriptor_type_match(shader_module const *module, uint32_t type_id,
             descriptor_count *= get_constant_value(module, type.word(3));
             type = module->get_def(type.word(2));
         } else {
+            if (type.word(2) == spv::StorageClassStorageBuffer) {
+                is_storage_buffer = true;
+            }
             type = module->get_def(type.word(3));
         }
     }
@@ -1096,8 +1102,13 @@ static bool descriptor_type_match(shader_module const *module, uint32_t type_id,
             for (auto insn : *module) {
                 if (insn.opcode() == spv::OpDecorate && insn.word(1) == type.word(1)) {
                     if (insn.word(2) == spv::DecorationBlock) {
-                        return descriptor_type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER ||
-                               descriptor_type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+                        if (is_storage_buffer) {
+                            return descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER ||
+                                   descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC;
+                        } else {
+                            return descriptor_type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER ||
+                                   descriptor_type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+                        }
                     } else if (insn.word(2) == spv::DecorationBufferBlock) {
                         return descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER ||
                                descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC;
