@@ -641,10 +641,44 @@ static std::vector<std::pair<uint32_t, interface_var>> collect_interface_by_inpu
     return out;
 }
 
+static bool is_writable_descriptor_type(shader_module const *module, uint32_t type_id) {
+    auto type = module->get_def(type_id);
+
+    // Strip off any array or ptrs. Where we remove array levels, adjust the  descriptor count for each dimension.
+    while (type.opcode() == spv::OpTypeArray || type.opcode() == spv::OpTypePointer) {
+        if (type.opcode() == spv::OpTypeArray) {
+            type = module->get_def(type.word(2));
+        } else {
+            type = module->get_def(type.word(3));
+        }
+    }
+
+    switch (type.opcode()) {
+        case spv::OpTypeImage: {
+            auto dim = type.word(3);
+            auto sampled = type.word(7);
+            return sampled == 2 && dim != spv::DimSubpassData;
+        }
+
+        case spv::OpTypeStruct:
+            for (auto insn : *module) {
+                if (insn.opcode() == spv::OpDecorate && insn.word(1) == type.word(1)) {
+                    if (insn.word(2) == spv::DecorationBufferBlock) {
+                        return true;
+                    }
+                }
+            }
+    }
+
+    return false;
+}
+
 static std::vector<std::pair<descriptor_slot_t, interface_var>> collect_interface_by_descriptor_slot(
-    debug_report_data const *report_data, shader_module const *src, std::unordered_set<uint32_t> const &accessible_ids) {
+    debug_report_data const *report_data, shader_module const *src, std::unordered_set<uint32_t> const &accessible_ids,
+    bool *has_writable_descriptor) {
     std::unordered_map<unsigned, unsigned> var_sets;
     std::unordered_map<unsigned, unsigned> var_bindings;
+    std::unordered_map<unsigned, unsigned> var_nonwritable;
 
     for (auto insn : *src) {
         // All variables in the Uniform or UniformConstant storage classes are required to be decorated with both
@@ -656,6 +690,10 @@ static std::vector<std::pair<descriptor_slot_t, interface_var>> collect_interfac
 
             if (insn.word(2) == spv::DecorationBinding) {
                 var_bindings[insn.word(1)] = insn.word(3);
+            }
+
+            if (insn.word(2) == spv::DecorationNonWritable) {
+                var_nonwritable[insn.word(1)] = 1;
             }
         }
     }
@@ -675,6 +713,10 @@ static std::vector<std::pair<descriptor_slot_t, interface_var>> collect_interfac
             v.id = insn.word(2);
             v.type_id = insn.word(1);
             out.emplace_back(std::make_pair(set, binding), v);
+
+            if (var_nonwritable.find(id) == var_nonwritable.end() && is_writable_descriptor_type(src, insn.word(1))) {
+                *has_writable_descriptor = true;
+            }
         }
     }
 
@@ -1326,7 +1368,8 @@ static bool validate_pipeline_shader_stage(layer_data *dev_data, VkPipelineShade
     auto accessible_ids = mark_accessible_ids(module, entrypoint);
 
     // Validate descriptor set layout against what the entrypoint actually uses
-    auto descriptor_uses = collect_interface_by_descriptor_slot(report_data, module, accessible_ids);
+    bool has_writable_descriptor = false;
+    auto descriptor_uses = collect_interface_by_descriptor_slot(report_data, module, accessible_ids, &has_writable_descriptor);
 
     skip |= validate_specialization_offsets(report_data, pStage);
     skip |= validate_push_constant_usage(report_data, pipeline->pipeline_layout.push_constant_ranges.get(), module, accessible_ids,
