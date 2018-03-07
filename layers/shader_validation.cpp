@@ -1175,7 +1175,8 @@ static bool require_extension(debug_report_data const *report_data, bool extensi
     return false;
 }
 
-static bool validate_shader_capabilities(layer_data *dev_data, shader_module const *src) {
+static bool validate_shader_capabilities(layer_data *dev_data, shader_module const *src, VkShaderStageFlagBits stage,
+                                         bool has_writable_descriptor) {
     bool skip = false;
 
     auto report_data = GetReportData(dev_data);
@@ -1289,6 +1290,22 @@ static bool validate_shader_capabilities(layer_data *dev_data, shader_module con
         }
     }
 
+    if (has_writable_descriptor) {
+        switch (stage) {
+            case VK_SHADER_STAGE_COMPUTE_BIT:
+                /* No feature requirements for writes and atomics from compute
+                 * stage */
+                break;
+            case VK_SHADER_STAGE_FRAGMENT_BIT:
+                skip |= require_feature(report_data, enabledFeatures->fragmentStoresAndAtomics, "fragmentStoresAndAtomics");
+                break;
+            default:
+                skip |=
+                    require_feature(report_data, enabledFeatures->vertexPipelineStoresAndAtomics, "vertexPipelineStoresAndAtomics");
+                break;
+        }
+    }
+
     return skip;
 }
 
@@ -1361,15 +1378,15 @@ static bool validate_pipeline_shader_stage(layer_data *dev_data, VkPipelineShade
         }
     }
 
-    // Validate shader capabilities against enabled device features
-    skip |= validate_shader_capabilities(dev_data, module);
-
     // Mark accessible ids
     auto accessible_ids = mark_accessible_ids(module, entrypoint);
 
     // Validate descriptor set layout against what the entrypoint actually uses
     bool has_writable_descriptor = false;
     auto descriptor_uses = collect_interface_by_descriptor_slot(report_data, module, accessible_ids, &has_writable_descriptor);
+
+    // Validate shader capabilities against enabled device features
+    skip |= validate_shader_capabilities(dev_data, module, pStage->stage, has_writable_descriptor);
 
     skip |= validate_specialization_offsets(report_data, pStage);
     skip |= validate_push_constant_usage(report_data, pipeline->pipeline_layout.push_constant_ranges.get(), module, accessible_ids,
