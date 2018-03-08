@@ -129,6 +129,52 @@ bool ImageFormatAndFeaturesSupported(VkPhysicalDevice phy, VkFormat format, VkIm
     return (features == (phy_features & features));
 }
 
+// Returns true if format and *all* requested features are available.
+bool ImageFormatAndFeaturesSupported(const VkInstance inst, const VkPhysicalDevice phy, const VkImageCreateInfo info,
+                                     const VkFormatFeatureFlags features) {
+    // Verify physical device support of format features
+    if (!ImageFormatAndFeaturesSupported(phy, info.format, info.tiling, features)) {
+        return false;
+    }
+
+    // Verify that PhysDevImageFormatProp() also claims support for the specific usage
+    VkImageFormatProperties props;
+    VkResult err =
+        vkGetPhysicalDeviceImageFormatProperties(phy, info.format, info.imageType, info.tiling, info.usage, info.flags, &props);
+    if (VK_SUCCESS != err) {
+        return false;
+    }
+
+#if 0  // Convinced this chunk doesn't currently add any additional info, but leaving in place because it may be
+       // necessary with future extensions
+
+    // Verify again using version 2, if supported, which *can* return more property data than the original...
+    // (It's not clear that this is any more definitive than using the original version - but no harm)
+    PFN_vkGetPhysicalDeviceImageFormatProperties2KHR p_GetPDIFP2KHR =
+        (PFN_vkGetPhysicalDeviceImageFormatProperties2KHR)vkGetInstanceProcAddr(inst,
+                                                                                "vkGetPhysicalDeviceImageFormatProperties2KHR");
+    if (NULL != p_GetPDIFP2KHR) {
+        VkPhysicalDeviceImageFormatInfo2KHR fmt_info{};
+        fmt_info.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_FORMAT_INFO_2_KHR;
+        fmt_info.pNext = nullptr;
+        fmt_info.format = info.format;
+        fmt_info.type = info.imageType;
+        fmt_info.tiling = info.tiling;
+        fmt_info.usage = info.usage;
+        fmt_info.flags = info.flags;
+
+        VkImageFormatProperties2KHR fmt_props = {};
+        fmt_props.sType = VK_STRUCTURE_TYPE_IMAGE_FORMAT_PROPERTIES_2_KHR;
+        err = p_GetPDIFP2KHR(phy, &fmt_info, &fmt_props);
+        if (VK_SUCCESS != err) {
+            return false;
+        }
+    }
+#endif
+
+    return true;
+}
+
 // Validation report callback prototype
 static VKAPI_ATTR VkBool32 VKAPI_CALL myDbgFunc(VkFlags msgFlags, VkDebugReportObjectTypeEXT objType, uint64_t srcObject,
                                                 size_t location, int32_t msgCode, const char *pLayerPrefix, const char *pMsg,
@@ -8619,51 +8665,36 @@ TEST_F(VkLayerTest, MultiplaneImageLayoutBadAspectFlags) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    // Query format support
-    PFN_vkGetPhysicalDeviceImageFormatProperties2KHR GetPDIFP2KHR =
-        (PFN_vkGetPhysicalDeviceImageFormatProperties2KHR)vkGetInstanceProcAddr(instance(),
-                                                                                "vkGetPhysicalDeviceImageFormatProperties2KHR");
-    VkPhysicalDeviceImageFormatInfo2KHR fmt_info = {};
-    fmt_info.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_FORMAT_INFO_2_KHR;
-    fmt_info.pNext = nullptr;
-    fmt_info.format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM_KHR;
-    fmt_info.type = VK_IMAGE_TYPE_2D;
-    fmt_info.tiling = VK_IMAGE_TILING_LINEAR;
-    fmt_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-    fmt_info.flags = 0;
-
-    VkImageFormatProperties2KHR fmt_props = {};
-    fmt_props.sType = VK_STRUCTURE_TYPE_IMAGE_FORMAT_PROPERTIES_2_KHR;
-    VkResult err_2 = GetPDIFP2KHR(gpu(), &fmt_info, &fmt_props);
-
-    fmt_info.format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM_KHR;
-    VkResult err_3 = GetPDIFP2KHR(gpu(), &fmt_info, &fmt_props);
-
-    if ((VK_SUCCESS != err_2) || (VK_SUCCESS != err_3)) {
-        printf("             Multiplane image format not supported.  Skipping test.\n");
-        return;  // Assume there's low ROI on searching for different mp formats
-    }
-
     VkImageCreateInfo ci = {};
     ci.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
     ci.pNext = NULL;
-    ci.flags = fmt_info.flags;
-    ci.imageType = fmt_info.type;
+    ci.flags = 0;
+    ci.imageType = VK_IMAGE_TYPE_2D;
     ci.format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM_KHR;
     ci.extent = {128, 128, 1};
     ci.mipLevels = 1;
     ci.arrayLayers = 1;
     ci.samples = VK_SAMPLE_COUNT_1_BIT;
-    ci.tiling = fmt_info.tiling;
-    ci.usage = fmt_info.usage;
+    ci.tiling = VK_IMAGE_TILING_LINEAR;
+    ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
     ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    VkImage image_2plane;
+
+    // Verify formats
+    bool supported = ImageFormatAndFeaturesSupported(instance(), gpu(), ci, VK_FORMAT_FEATURE_TRANSFER_SRC_BIT);
+    ci.format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM_KHR;
+    supported = supported && ImageFormatAndFeaturesSupported(instance(), gpu(), ci, VK_FORMAT_FEATURE_TRANSFER_SRC_BIT);
+    if (!supported) {
+        printf("             Multiplane image format not supported.  Skipping test.\n");
+        return;  // Assume there's low ROI on searching for different mp formats
+    }
+
+    VkImage image_2plane, image_3plane;
+    ci.format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM_KHR;
     VkResult err = vkCreateImage(device(), &ci, NULL, &image_2plane);
     ASSERT_VK_SUCCESS(err);
 
     ci.format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM_KHR;
-    VkImage image_3plane;
     err = vkCreateImage(device(), &ci, NULL, &image_3plane);
     ASSERT_VK_SUCCESS(err);
 
@@ -8714,45 +8745,30 @@ TEST_F(VkPositiveLayerTest, MultiplaneGetImageSubresourceLayout) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    // Query format support
-    PFN_vkGetPhysicalDeviceImageFormatProperties2KHR GetPDIFP2KHR =
-        (PFN_vkGetPhysicalDeviceImageFormatProperties2KHR)vkGetInstanceProcAddr(instance(),
-                                                                                "vkGetPhysicalDeviceImageFormatProperties2KHR");
-    VkPhysicalDeviceImageFormatInfo2KHR fmt_info = {};
-    fmt_info.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_FORMAT_INFO_2_KHR;
-    fmt_info.pNext = nullptr;
-    fmt_info.format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM_KHR;
-    fmt_info.type = VK_IMAGE_TYPE_2D;
-    fmt_info.tiling = VK_IMAGE_TILING_LINEAR;
-    fmt_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-    fmt_info.flags = 0;
-
-    m_errorMonitor->ExpectSuccess();
-    VkImageFormatProperties2KHR fmt_props = {};
-    fmt_props.sType = VK_STRUCTURE_TYPE_IMAGE_FORMAT_PROPERTIES_2_KHR;
-    VkResult err = GetPDIFP2KHR(gpu(), &fmt_info, &fmt_props);
-    m_errorMonitor->VerifyNotFound();
-    if (VK_SUCCESS != err) {
-        printf("             Multiplane image format not supported.  Skipping test.\n");
-        return;  // Assume there's low ROI on searching for a different mp format
-    }
-
     VkImageCreateInfo ci = {};
     ci.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
     ci.pNext = NULL;
-    ci.flags = fmt_info.flags;
-    ci.imageType = fmt_info.type;
-    ci.format = fmt_info.format;
+    ci.flags = 0;
+    ci.imageType = VK_IMAGE_TYPE_2D;
+    ci.format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM_KHR;
     ci.extent = {128, 128, 1};
     ci.mipLevels = 1;
     ci.arrayLayers = 1;
     ci.samples = VK_SAMPLE_COUNT_1_BIT;
-    ci.tiling = fmt_info.tiling;
-    ci.usage = fmt_info.usage;
+    ci.tiling = VK_IMAGE_TILING_LINEAR;
+    ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
     ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+    // Verify format
+    bool supported = ImageFormatAndFeaturesSupported(instance(), gpu(), ci, VK_FORMAT_FEATURE_TRANSFER_SRC_BIT);
+    if (!supported) {
+        printf("             Multiplane image format not supported.  Skipping test.\n");
+        return;  // Assume there's low ROI on searching for different mp formats
+    }
+
     VkImage image;
-    err = vkCreateImage(device(), &ci, NULL, &image);
+    VkResult err = vkCreateImage(device(), &ci, NULL, &image);
     ASSERT_VK_SUCCESS(err);
 
     // Query layout of 3rd plane
@@ -20290,56 +20306,306 @@ TEST_F(VkLayerTest, CopyImageCompressedBlockAlignment) {
     m_commandBuffer->CopyImage(image_1.image(), VK_IMAGE_LAYOUT_GENERAL, image_2.image(), VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
     m_errorMonitor->VerifyNotFound();
 
+    UNIQUE_VALIDATION_ERROR_CODE vuid;
+    bool ycbcr = (DeviceExtensionEnabled(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME) ||
+                  (m_device->props.apiVersion >= VK_API_VERSION_1_1));
+
     // Src, Dest offsets must be multiples of compressed block sizes {4, 4, 1}
     // Image transfer granularity gets set to compressed block size, so an ITG error is also (unavoidably) triggered.
+    vuid = ycbcr ? VALIDATION_ERROR_09c00d7e : VALIDATION_ERROR_09c0013a;
     copy_region.srcOffset = {2, 4, 0};  // source width
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_09c0013a);
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, vuid);
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "queue family image transfer granularity");
     m_commandBuffer->CopyImage(image_1.image(), VK_IMAGE_LAYOUT_GENERAL, image_2.image(), VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
     m_errorMonitor->VerifyFound();
     copy_region.srcOffset = {12, 1, 0};  // source height
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_09c0013a);
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, vuid);
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "queue family image transfer granularity");
     m_commandBuffer->CopyImage(image_1.image(), VK_IMAGE_LAYOUT_GENERAL, image_2.image(), VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
     m_errorMonitor->VerifyFound();
     copy_region.srcOffset = {0, 0, 0};
+
+    vuid = ycbcr ? VALIDATION_ERROR_09c00d86 : VALIDATION_ERROR_09c00144;
     copy_region.dstOffset = {1, 0, 0};  // dest width
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_09c00144);
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, vuid);
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "queue family image transfer granularity");
     m_commandBuffer->CopyImage(image_1.image(), VK_IMAGE_LAYOUT_GENERAL, image_2.image(), VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
     m_errorMonitor->VerifyFound();
     copy_region.dstOffset = {4, 1, 0};  // dest height
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_09c00144);
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, vuid);
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "queue family image transfer granularity");
     m_commandBuffer->CopyImage(image_1.image(), VK_IMAGE_LAYOUT_GENERAL, image_2.image(), VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
     m_errorMonitor->VerifyFound();
     copy_region.dstOffset = {0, 0, 0};
 
     // Copy extent must be multiples of compressed block sizes {4, 4, 1} if not full width/height
+    vuid = ycbcr ? VALIDATION_ERROR_09c00d80 : VALIDATION_ERROR_09c0013c;
     copy_region.extent = {62, 60, 1};  // source width
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_09c0013c);
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, vuid);
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "queue family image transfer granularity");
     m_commandBuffer->CopyImage(image_1.image(), VK_IMAGE_LAYOUT_GENERAL, image_2.image(), VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
     m_errorMonitor->VerifyFound();
+    vuid = ycbcr ? VALIDATION_ERROR_09c00d82 : VALIDATION_ERROR_09c0013e;
     copy_region.extent = {60, 62, 1};  // source height
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_09c0013e);
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, vuid);
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "queue family image transfer granularity");
     m_commandBuffer->CopyImage(image_1.image(), VK_IMAGE_LAYOUT_GENERAL, image_2.image(), VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
     m_errorMonitor->VerifyFound();
+
+    vuid = ycbcr ? VALIDATION_ERROR_09c00d88 : VALIDATION_ERROR_09c00146;
     copy_region.extent = {62, 60, 1};  // dest width
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_09c00146);
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, vuid);
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "queue family image transfer granularity");
     m_commandBuffer->CopyImage(image_2.image(), VK_IMAGE_LAYOUT_GENERAL, image_1.image(), VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
     m_errorMonitor->VerifyFound();
+    vuid = ycbcr ? VALIDATION_ERROR_09c00d8a : VALIDATION_ERROR_09c00148;
     copy_region.extent = {60, 62, 1};  // dest height
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_09c00148);
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, vuid);
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "queue family image transfer granularity");
     m_commandBuffer->CopyImage(image_2.image(), VK_IMAGE_LAYOUT_GENERAL, image_1.image(), VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
     m_errorMonitor->VerifyFound();
 
-    // Note: VALIDATION_ERROR_09c00140 and VALIDATION_ERROR_09c0014a
-    //       VUs 01212 and 01217 should be tested here, if possible.  There are currently no supported compressed formats with
-    //       a block depth other than 1, so impossible to create a 'not a multiple' condiditon for depth.
+    // Note: VALIDATION_ERROR_09c00140, VALIDATION_ERROR_09c0014a, VALIDATION_ERROR_09c00d84, VALIDATION_ERROR_09c00d8c
+    //       There are currently no supported compressed formats with a block depth other than 1,
+    //       so impossible to create a 'not a multiple' condiditon for depth.
+    m_commandBuffer->end();
+}
+
+TEST_F(VkLayerTest, CopyImageSinglePlane422Alignment) {
+    // Image copy tests on single-plane _422 formats with block alignment errors
+
+    // Enable KHR multiplane req'd extensions
+    bool mp_extensions = InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,
+                                                    VK_KHR_GET_MEMORY_REQUIREMENTS_2_SPEC_VERSION);
+    if (mp_extensions) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    }
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
+    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
+    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+    if (mp_extensions) {
+        m_device_extension_names.push_back(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+    } else {
+        printf("             test requires KHR multiplane extensions, not available.  Skipping.\n");
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    // Select a _422 format and verify support
+    VkImageCreateInfo ci = {};
+    ci.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    ci.pNext = NULL;
+    ci.flags = 0;
+    ci.imageType = VK_IMAGE_TYPE_2D;
+    ci.format = VK_FORMAT_G8B8G8R8_422_UNORM_KHR;
+    ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    ci.mipLevels = 1;
+    ci.arrayLayers = 1;
+    ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    ci.queueFamilyIndexCount = 0;
+    ci.pQueueFamilyIndices = NULL;
+    ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+    // Verify formats
+    VkFormatFeatureFlags features = VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT;
+    bool supported = ImageFormatAndFeaturesSupported(instance(), gpu(), ci, features);
+    if (!supported) {
+        printf("             Single-plane _422 image format not supported.  Skipping test.\n");
+        return;  // Assume there's low ROI on searching for different mp formats
+    }
+
+    // Create images
+    ci.extent = {64, 64, 1};
+    VkImageObj image_422(m_device);
+    image_422.init(&ci);
+    ASSERT_TRUE(image_422.initialized());
+
+    ci.extent = {64, 64, 1};
+    ci.format = VK_FORMAT_R8G8B8A8_UNORM;
+    VkImageObj image_ucmp(m_device);
+    image_ucmp.init(&ci);
+    ASSERT_TRUE(image_ucmp.initialized());
+
+    m_commandBuffer->begin();
+
+    VkImageCopy copy_region;
+    copy_region.extent = {48, 48, 1};
+    copy_region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    copy_region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    copy_region.srcSubresource.mipLevel = 0;
+    copy_region.dstSubresource.mipLevel = 0;
+    copy_region.srcSubresource.baseArrayLayer = 0;
+    copy_region.dstSubresource.baseArrayLayer = 0;
+    copy_region.srcSubresource.layerCount = 1;
+    copy_region.dstSubresource.layerCount = 1;
+    copy_region.srcOffset = {0, 0, 0};
+    copy_region.dstOffset = {0, 0, 0};
+
+    // Src offsets must be multiples of compressed block sizes
+    copy_region.srcOffset = {3, 4, 0};  // source offset x
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_09c00d7e);
+    m_commandBuffer->CopyImage(image_422.image(), VK_IMAGE_LAYOUT_GENERAL, image_ucmp.image(), VK_IMAGE_LAYOUT_GENERAL, 1,
+                               &copy_region);
+    m_errorMonitor->VerifyFound();
+    copy_region.srcOffset = {0, 0, 0};
+
+    // Dst offsets must be multiples of compressed block sizes
+    copy_region.dstOffset = {1, 0, 0};
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_09c00d86);
+    m_commandBuffer->CopyImage(image_ucmp.image(), VK_IMAGE_LAYOUT_GENERAL, image_422.image(), VK_IMAGE_LAYOUT_GENERAL, 1,
+                               &copy_region);
+    m_errorMonitor->VerifyFound();
+    copy_region.dstOffset = {0, 0, 0};
+
+    // Copy extent must be multiples of compressed block sizes if not full width/height
+    copy_region.extent = {31, 60, 1};  // 422 source, extent.x
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_09c00d80);
+    m_commandBuffer->CopyImage(image_422.image(), VK_IMAGE_LAYOUT_GENERAL, image_ucmp.image(), VK_IMAGE_LAYOUT_GENERAL, 1,
+                               &copy_region);
+    m_errorMonitor->VerifyFound();
+
+    // 422 dest, extent.x
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_09c00d88);
+    m_commandBuffer->CopyImage(image_ucmp.image(), VK_IMAGE_LAYOUT_GENERAL, image_422.image(), VK_IMAGE_LAYOUT_GENERAL, 1,
+                               &copy_region);
+    m_errorMonitor->VerifyFound();
+    copy_region.dstOffset = {0, 0, 0};
+
+    m_commandBuffer->end();
+}
+
+TEST_F(VkLayerTest, CopyImageMultiplaneAspectBits) {
+    // Image copy tests on multiplane images with aspect errors
+
+    // Enable KHR multiplane req'd extensions
+    bool mp_extensions = InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,
+                                                    VK_KHR_GET_MEMORY_REQUIREMENTS_2_SPEC_VERSION);
+    if (mp_extensions) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    }
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
+    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
+    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+    if (mp_extensions) {
+        m_device_extension_names.push_back(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+    } else {
+        printf("             test requires KHR multiplane extensions, not available.  Skipping.\n");
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    // Select multi-plane formats and verify support
+    VkFormat mp3_format = VK_FORMAT_G8_B8_R8_3PLANE_422_UNORM_KHR;
+    VkFormat mp2_format = VK_FORMAT_G8_B8R8_2PLANE_422_UNORM_KHR;
+
+    VkImageCreateInfo ci = {};
+    ci.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    ci.pNext = NULL;
+    ci.flags = 0;
+    ci.imageType = VK_IMAGE_TYPE_2D;
+    ci.format = mp2_format;
+    ci.extent = {256, 256, 1};
+    ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    ci.mipLevels = 1;
+    ci.arrayLayers = 1;
+    ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    ci.queueFamilyIndexCount = 0;
+    ci.pQueueFamilyIndices = NULL;
+    ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+    // Verify formats
+    VkFormatFeatureFlags features = VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT;
+    bool supported = ImageFormatAndFeaturesSupported(instance(), gpu(), ci, features);
+    ci.format = mp3_format;
+    supported = supported && ImageFormatAndFeaturesSupported(instance(), gpu(), ci, features);
+    if (!supported) {
+        printf("             Multiplane image formats not supported.  Skipping test.\n");
+        return;  // Assume there's low ROI on searching for different mp formats
+    }
+
+    // Create images
+    VkImageObj mp3_image(m_device);
+    mp3_image.init(&ci);
+    ASSERT_TRUE(mp3_image.initialized());
+
+    ci.format = mp2_format;
+    VkImageObj mp2_image(m_device);
+    mp2_image.init(&ci);
+    ASSERT_TRUE(mp2_image.initialized());
+
+    ci.format = VK_FORMAT_D24_UNORM_S8_UINT;
+    VkImageObj sp_image(m_device);
+    sp_image.init(&ci);
+    ASSERT_TRUE(sp_image.initialized());
+
+    m_commandBuffer->begin();
+
+    VkImageCopy copy_region;
+    copy_region.extent = {128, 128, 1};
+    copy_region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_PLANE_2_BIT_KHR;
+    copy_region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_PLANE_2_BIT_KHR;
+    copy_region.srcSubresource.mipLevel = 0;
+    copy_region.dstSubresource.mipLevel = 0;
+    copy_region.srcSubresource.baseArrayLayer = 0;
+    copy_region.dstSubresource.baseArrayLayer = 0;
+    copy_region.srcSubresource.layerCount = 1;
+    copy_region.dstSubresource.layerCount = 1;
+    copy_region.srcOffset = {0, 0, 0};
+    copy_region.dstOffset = {0, 0, 0};
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_09c00c20);
+    m_commandBuffer->CopyImage(mp2_image.image(), VK_IMAGE_LAYOUT_GENERAL, mp3_image.image(), VK_IMAGE_LAYOUT_GENERAL, 1,
+                               &copy_region);
+    m_errorMonitor->VerifyFound();
+
+    copy_region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    copy_region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_PLANE_0_BIT_KHR;
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_09c00c22);
+    m_commandBuffer->CopyImage(mp3_image.image(), VK_IMAGE_LAYOUT_GENERAL, mp2_image.image(), VK_IMAGE_LAYOUT_GENERAL, 1,
+                               &copy_region);
+    m_errorMonitor->VerifyFound();
+
+    copy_region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_PLANE_1_BIT_KHR;
+    copy_region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_PLANE_2_BIT_KHR;
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_09c00c24);
+    m_commandBuffer->CopyImage(mp3_image.image(), VK_IMAGE_LAYOUT_GENERAL, mp2_image.image(), VK_IMAGE_LAYOUT_GENERAL, 1,
+                               &copy_region);
+    m_errorMonitor->VerifyFound();
+
+    copy_region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_09c00c26);
+    m_commandBuffer->CopyImage(mp2_image.image(), VK_IMAGE_LAYOUT_GENERAL, mp3_image.image(), VK_IMAGE_LAYOUT_GENERAL, 1,
+                               &copy_region);
+    m_errorMonitor->VerifyFound();
+
+    copy_region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_09c00c28);
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "dest image depth/stencil formats");  // also
+    m_commandBuffer->CopyImage(mp2_image.image(), VK_IMAGE_LAYOUT_GENERAL, sp_image.image(), VK_IMAGE_LAYOUT_GENERAL, 1,
+                               &copy_region);
+    m_errorMonitor->VerifyFound();
+
+    copy_region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+    copy_region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_PLANE_2_BIT_KHR;
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_09c00c2a);
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "dest image depth/stencil formats");  // also
+    m_commandBuffer->CopyImage(sp_image.image(), VK_IMAGE_LAYOUT_GENERAL, mp3_image.image(), VK_IMAGE_LAYOUT_GENERAL, 1,
+                               &copy_region);
+    m_errorMonitor->VerifyFound();
 
     m_commandBuffer->end();
 }
@@ -20803,7 +21069,10 @@ TEST_F(VkLayerTest, CopyImageAspectMismatch) {
 
     // Src and dest aspect masks don't match
     copyRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_09c00112);
+    bool ycbcr = (DeviceExtensionEnabled(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME) ||
+                  (m_device->props.apiVersion >= VK_API_VERSION_1_1));
+    UNIQUE_VALIDATION_ERROR_CODE vuid = (ycbcr ? VALIDATION_ERROR_09c00c1e : VALIDATION_ERROR_09c00112);
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, vuid);
     vkCmdCopyImage(m_commandBuffer->handle(), ds_image.handle(), VK_IMAGE_LAYOUT_GENERAL, ds_image.handle(),
                    VK_IMAGE_LAYOUT_GENERAL, 1, &copyRegion);
     m_errorMonitor->VerifyFound();
@@ -28134,41 +28403,29 @@ TEST_F(VkPositiveLayerTest, MultiplaneImageTests) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    // Query format support
-    PFN_vkGetPhysicalDeviceImageFormatProperties2KHR GetPDIFP2KHR =
-        (PFN_vkGetPhysicalDeviceImageFormatProperties2KHR)vkGetInstanceProcAddr(instance(),
-                                                                                "vkGetPhysicalDeviceImageFormatProperties2KHR");
-    VkPhysicalDeviceImageFormatInfo2KHR fmt_info = {};
-    fmt_info.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_FORMAT_INFO_2_KHR;
-    fmt_info.pNext = nullptr;
-    fmt_info.format = VK_FORMAT_G8_B8_R8_3PLANE_422_UNORM_KHR;
-    fmt_info.type = VK_IMAGE_TYPE_2D;
-    fmt_info.tiling = VK_IMAGE_TILING_OPTIMAL;
-    fmt_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-    fmt_info.flags = 0;
-
-    VkImageFormatProperties2KHR fmt_props = {};
-    fmt_props.sType = VK_STRUCTURE_TYPE_IMAGE_FORMAT_PROPERTIES_2_KHR;
-    VkResult err = GetPDIFP2KHR(gpu(), &fmt_info, &fmt_props);
-    if (VK_SUCCESS != err) {
-        printf("             Multiplane image format not supported.  Skipping test.\n");
-        return;
-    }
-
     VkImageCreateInfo ci = {};
     ci.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
     ci.pNext = NULL;
-    ci.flags = fmt_info.flags;
-    ci.imageType = fmt_info.type;
-    ci.format = fmt_info.format;
-    ci.tiling = fmt_info.tiling;
-    ci.usage = fmt_info.usage;
+    ci.flags = 0;
+    ci.imageType = VK_IMAGE_TYPE_2D;
+    ci.format = VK_FORMAT_G8_B8_R8_3PLANE_422_UNORM_KHR;
+    ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     ci.extent = {128, 128, 1};
     ci.mipLevels = 1;
     ci.arrayLayers = 1;
     ci.samples = VK_SAMPLE_COUNT_1_BIT;
     ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+    // Verify format
+    VkFormatFeatureFlags features = VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT;
+    bool supported = ImageFormatAndFeaturesSupported(instance(), gpu(), ci, features);
+    if (!supported) {
+        printf("             Multiplane image format not supported.  Skipping test.\n");
+        return;  // Assume there's low ROI on searching for different mp formats
+    }
+
     VkImage image;
     ASSERT_VK_SUCCESS(vkCreateImage(device(), &ci, NULL, &image));
 

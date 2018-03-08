@@ -126,6 +126,20 @@ bool VkRenderFramework::InstanceExtensionSupported(const char *ext_name, uint32_
     return false;
 }
 
+// Return true if instance exists and extension name is in the list
+bool VkRenderFramework::InstanceExtensionEnabled(const char *ext_name) {
+    if (!inst) return false;
+
+    bool ext_found = false;
+    for (auto ext : m_instance_extension_names) {
+        if (!strcmp(ext, ext_name)) {
+            ext_found = true;
+            break;
+        }
+    }
+    return ext_found;
+}
+
 // Return true if extension name is found and spec value is >= requested spec value
 bool VkRenderFramework::DeviceExtensionSupported(VkPhysicalDevice dev, const char *layer, const char *ext_name, uint32_t spec) {
     if (!inst) {
@@ -148,6 +162,20 @@ bool VkRenderFramework::DeviceExtensionSupported(VkPhysicalDevice dev, const cha
         }
     }
     return false;
+}
+
+// Return true if device is created and extension name is found in the list
+bool VkRenderFramework::DeviceExtensionEnabled(const char *ext_name) {
+    if (NULL == m_device) return false;
+
+    bool ext_found = false;
+    for (auto ext : m_device_extension_names) {
+        if (!strcmp(ext, ext_name)) {
+            ext_found = true;
+            break;
+        }
+    }
+    return ext_found;
 }
 
 void VkRenderFramework::InitFramework(PFN_vkDebugReportCallbackEXT dbgFunction, void *userData) {
@@ -702,23 +730,25 @@ VkImageObj::VkImageObj(VkDeviceObj *dev) {
     m_descriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
 }
 
-void VkImageObj::ImageMemoryBarrier(VkCommandBufferObj *cmd_buf, VkImageAspectFlags aspect, VkFlags output_mask /*=
-            VK_ACCESS_HOST_WRITE_BIT |
-            VK_ACCESS_SHADER_WRITE_BIT |
-            VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
-            VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT |
-            VK_MEMORY_OUTPUT_COPY_BIT*/,
+// clang-format off
+void VkImageObj::ImageMemoryBarrier(VkCommandBufferObj *cmd_buf, VkImageAspectFlags aspect,
+                                    VkFlags output_mask /*=
+                                    VK_ACCESS_HOST_WRITE_BIT |
+                                    VK_ACCESS_SHADER_WRITE_BIT |
+                                    VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
+                                    VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT |
+                                    VK_MEMORY_OUTPUT_COPY_BIT*/, 
                                     VkFlags input_mask /*=
-            VK_ACCESS_HOST_READ_BIT |
-            VK_ACCESS_INDIRECT_COMMAND_READ_BIT |
-            VK_ACCESS_INDEX_READ_BIT |
-            VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT |
-            VK_ACCESS_UNIFORM_READ_BIT |
-            VK_ACCESS_SHADER_READ_BIT |
-            VK_ACCESS_COLOR_ATTACHMENT_READ_BIT |
-            VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
-            VK_MEMORY_INPUT_COPY_BIT*/,
-                                    VkImageLayout image_layout) {
+                                    VK_ACCESS_HOST_READ_BIT |
+                                    VK_ACCESS_INDIRECT_COMMAND_READ_BIT |
+                                    VK_ACCESS_INDEX_READ_BIT |
+                                    VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT |
+                                    VK_ACCESS_UNIFORM_READ_BIT |
+                                    VK_ACCESS_SHADER_READ_BIT |
+                                    VK_ACCESS_COLOR_ATTACHMENT_READ_BIT |
+                                    VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
+                                    VK_MEMORY_INPUT_COPY_BIT*/, VkImageLayout image_layout) {
+    // clang-format on
     // TODO: Mali device crashing with VK_REMAINING_MIP_LEVELS
     const VkImageSubresourceRange subresourceRange =
         subresource_range(aspect, 0, /*VK_REMAINING_MIP_LEVELS*/ 1, 0, 1 /*VK_REMAINING_ARRAY_LAYERS*/);
