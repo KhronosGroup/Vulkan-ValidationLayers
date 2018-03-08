@@ -325,52 +325,6 @@ def makeGenOpts(args):
             helper_file_type  = 'enum_string_header')
         ]
 
-    # Helper file generator options for vk_struct_size_helper.h
-    genOpts['vk_struct_size_helper.h'] = [
-          HelperFileOutputGenerator,
-          HelperFileOutputGeneratorOptions(
-            filename          = 'vk_struct_size_helper.h',
-            directory         = directory,
-            apiname           = 'vulkan',
-            profile           = None,
-            versions          = featuresPat,
-            emitversions      = featuresPat,
-            defaultExtensions = 'vulkan',
-            addExtensions     = addExtensionsPat,
-            removeExtensions  = removeExtensionsPat,
-            emitExtensions    = emitExtensionsPat,
-            prefixText        = prefixStrings + vkPrefixStrings,
-            apicall           = 'VKAPI_ATTR ',
-            apientry          = 'VKAPI_CALL ',
-            apientryp         = 'VKAPI_PTR *',
-            alignFuncParam    = 48,
-            expandEnumerants  = False,
-            helper_file_type  = 'struct_size_header')
-        ]
-
-    # Helper file generator options for vk_struct_size_helper.c
-    genOpts['vk_struct_size_helper.c'] = [
-          HelperFileOutputGenerator,
-          HelperFileOutputGeneratorOptions(
-            filename          = 'vk_struct_size_helper.c',
-            directory         = directory,
-            apiname           = 'vulkan',
-            profile           = None,
-            versions          = featuresPat,
-            emitversions      = featuresPat,
-            defaultExtensions = 'vulkan',
-            addExtensions     = addExtensionsPat,
-            removeExtensions  = removeExtensionsPat,
-            emitExtensions    = emitExtensionsPat,
-            prefixText        = prefixStrings + vkPrefixStrings,
-            apicall           = 'VKAPI_ATTR ',
-            apientry          = 'VKAPI_CALL ',
-            apientryp         = 'VKAPI_PTR *',
-            alignFuncParam    = 48,
-            expandEnumerants  = False,
-            helper_file_type  = 'struct_size_source')
-        ]
-
     # Helper file generator options for vk_safe_struct.h
     genOpts['vk_safe_struct.h'] = [
           HelperFileOutputGenerator,
