@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 #
-# Copyright (c) 2013-2017 The Khronos Group Inc.
+# Copyright (c) 2013-2018 The Khronos Group Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -93,7 +93,7 @@ def makeGenOpts(args):
     # Copyright text prefixing all headers (list of strings).
     prefixStrings = [
         '/*',
-        '** Copyright (c) 2015-2017 The Khronos Group Inc.',
+        '** Copyright (c) 2015-2018 The Khronos Group Inc.',
         '**',
         '** Licensed under the Apache License, Version 2.0 (the "License");',
         '** you may not use this file except in compliance with the License.',
@@ -625,8 +625,10 @@ if __name__ == '__main__':
                         help='Create target and related files in specified directory')
     parser.add_argument('target', metavar='target', nargs='?',
                         help='Specify target')
-    parser.add_argument('-quiet', action='store_true', default=False,
+    parser.add_argument('-quiet', action='store_true', default=True,
                         help='Suppress script output during normal execution.')
+    parser.add_argument('-verbose', action='store_false', dest='quiet', default=True,
+                        help='Enable script output during normal execution.')
 
     args = parser.parse_args()
 
@@ -641,9 +643,12 @@ if __name__ == '__main__':
     tree = etree.parse(args.registry)
     endTimer(args.time, '* Time to make ElementTree =')
 
-    startTimer(args.time)
-    reg.loadElementTree(tree)
-    endTimer(args.time, '* Time to parse ElementTree =')
+    if args.debug:
+        pdb.run('reg.loadElementTree(tree)')
+    else:
+        startTimer(args.time)
+        reg.loadElementTree(tree)
+        endTimer(args.time, '* Time to parse ElementTree =')
 
     if (args.validate):
         reg.validateGroups()
