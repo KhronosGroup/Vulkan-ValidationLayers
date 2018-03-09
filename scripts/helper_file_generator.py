@@ -182,18 +182,11 @@ class HelperFileOutputGenerator(OutputGenerator):
         groupElem = groupinfo.elem
         # For enum_string_header
         if self.helper_file_type == 'enum_string_header':
-            value_list = []
+            value_set = set()
             for elem in groupElem.findall('enum'):
                 if elem.get('supported') != 'disabled' and elem.get('alias') == None:
-                    item_name = elem.get('name')
-                    # Avoid duplicates
-                    if item_name not in value_list:
-                        value_list.append(item_name)
-            if value_list is not None:
-                #if alias:
-                #    self.enum_output += self.GenerateEnumStringConversion(alias, value_list)
-                #else:
-                self.enum_output += self.GenerateEnumStringConversion(groupName, value_list)
+                    value_set.add(elem.get('name'))
+            self.enum_output += self.GenerateEnumStringConversion(groupName, value_set)
         elif self.helper_file_type == 'object_types_header':
             if groupName == 'VkDebugReportObjectTypeEXT':
                 for elem in groupElem.findall('enum'):
