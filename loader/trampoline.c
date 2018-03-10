@@ -2614,3 +2614,24 @@ LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkGetDescriptorSetLayoutSupport(
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
     disp->GetDescriptorSetLayoutSupport(device, pCreateInfo, pSupport);
 }
+
+LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL
+vkCreateDescriptorUpdateTemplate(VkDevice device, const VkDescriptorUpdateTemplateCreateInfo *pCreateInfo,
+                                 const VkAllocationCallbacks *pAllocator, VkDescriptorUpdateTemplate *pDescriptorUpdateTemplate) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    return disp->CreateDescriptorUpdateTemplate(device, pCreateInfo, pAllocator, pDescriptorUpdateTemplate);
+}
+
+LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkDestroyDescriptorUpdateTemplate(VkDevice device,
+                                                                           VkDescriptorUpdateTemplate descriptorUpdateTemplate,
+                                                                           const VkAllocationCallbacks *pAllocator) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    disp->DestroyDescriptorUpdateTemplate(device, descriptorUpdateTemplate, pAllocator);
+}
+
+LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkUpdateDescriptorSetWithTemplate(VkDevice device, VkDescriptorSet descriptorSet,
+                                                                           VkDescriptorUpdateTemplate descriptorUpdateTemplate,
+                                                                           const void *pData) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    disp->UpdateDescriptorSetWithTemplate(device, descriptorSet, descriptorUpdateTemplate, pData);
+}
