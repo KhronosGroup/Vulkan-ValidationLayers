@@ -1186,8 +1186,9 @@ bool pv_VkViewport(const layer_data *device_data, const VkViewport &viewport, co
 
     // height
     bool height_healthy = true;
-    const bool negative_height_enabled =
-        device_data->extensions.vk_khr_maintenance1 || device_data->extensions.vk_amd_negative_viewport_height;
+    const bool negative_height_enabled = device_data->api_version >= VK_API_VERSION_1_1 ||
+                                         device_data->extensions.vk_khr_maintenance1 ||
+                                         device_data->extensions.vk_amd_negative_viewport_height;
     const auto max_h = device_data->device_limits.maxViewportDimensions[1];
 
     if (!negative_height_enabled && !(viewport.height > 0.0f)) {
