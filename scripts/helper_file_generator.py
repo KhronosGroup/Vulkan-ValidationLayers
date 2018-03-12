@@ -622,40 +622,36 @@ class HelperFileOutputGenerator(OutputGenerator):
             object_types_header += '    "%s",\n' % fixup_name
         object_types_header += '};\n'
 
+        # Key creation helper for map comprehensions that convert between k<Name> and VK<Name> symbols
+        def to_key(regex, raw_key): return re.search(regex, raw_key).group(1).lower().replace("_","")
+
         # Output a conversion routine from the layer object definitions to the debug report definitions
+        # As the VK_DEBUG_REPORT types are not being updated, specify UNKNOWN for unmatched types
         object_types_header += '\n'
         object_types_header += '// Helper array to get Vulkan VK_EXT_debug_report object type enum from the internal layers version\n'
         object_types_header += 'const VkDebugReportObjectTypeEXT get_debug_report_enum[] = {\n'
         object_types_header += '    VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, // kVulkanObjectTypeUnknown\n'
-        for object_type in type_list:
-            search_type = object_type.replace("kVulkanObjectType", "").lower()
-            found = False
-            for vk_object_type in self.debug_report_object_types:
-                target_type = vk_object_type.replace("VK_DEBUG_REPORT_OBJECT_TYPE_", "").lower()
-                target_type = target_type[:-4]
-                target_type = target_type.replace("_", "")
-                if search_type == target_type:
-                    object_types_header += '    %s,   // %s\n' % (vk_object_type, object_type)
-                    found = True
-                    break
-            if not found:
-                object_types_header += '    %s,   // %s\n' % ("VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT", object_type)
 
+        dbg_re = '^VK_DEBUG_REPORT_OBJECT_TYPE_(.*)_EXT$'
+        dbg_map = {to_key(dbg_re, dbg) : dbg for dbg in self.debug_report_object_types}
+        dbg_default = 'VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT'
+        for object_type in type_list:
+            vk_object_type = dbg_map.get(object_type.replace("kVulkanObjectType", "").lower(), dbg_default)
+            object_types_header += '    %s,   // %s\n' % (vk_object_type, object_type)
         object_types_header += '};\n'
 
         # Output a conversion routine from the layer object definitions to the core object type definitions
+        # This will intentionally *fail* for unmatched types as the VK_OBJECT_TYPE list should match the kVulkanObjectType list
         object_types_header += '\n'
         object_types_header += '// Helper array to get Official Vulkan VkObjectType enum from the internal layers version\n'
         object_types_header += 'const VkObjectType get_object_type_enum[] = {\n'
         object_types_header += '    VK_OBJECT_TYPE_UNKNOWN, // kVulkanObjectTypeUnknown\n'
+
+        vko_re = '^VK_OBJECT_TYPE_(.*)'
+        vko_map = {to_key(vko_re, vko) : vko for vko in self.core_object_types}
         for object_type in type_list:
-            search_type = object_type.replace("kVulkanObjectType", "").lower()
-            for vk_object_type in self.core_object_types:
-                target_type = vk_object_type.replace("VK_OBJECT_TYPE_", "").lower()
-                target_type = target_type.replace("_", "")
-                if search_type == target_type:
-                    object_types_header += '    %s,   // %s\n' % (vk_object_type, object_type)
-                    break
+            vk_object_type = vko_map[object_type.replace("kVulkanObjectType", "").lower()]
+            object_types_header += '    %s,   // %s\n' % (vk_object_type, object_type)
         object_types_header += '};\n'
 
         # Create a function to convert from VkDebugReportObjectTypeEXT to VkObjectType
