@@ -2170,7 +2170,7 @@ bool PreCallValidateCmdClearAttachments(layer_data *device_data, VkCommandBuffer
                 if ((clear_desc->aspectMask & VK_IMAGE_ASPECT_DEPTH_BIT) ||
                     (clear_desc->aspectMask & VK_IMAGE_ASPECT_STENCIL_BIT)) {
                     char const str[] =
-                        "vkCmdClearAttachments aspectMask [%d] must set only VK_IMAGE_ASPECT_COLOR_BIT of a color attachment. %s";
+                        "vkCmdClearAttachments() aspectMask [%d] must set only VK_IMAGE_ASPECT_COLOR_BIT of a color attachment. %s";
                     skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                                     HandleToUint64(commandBuffer), __LINE__, VALIDATION_ERROR_01c00026, "IMAGE", str, i,
                                     validation_error_map[VALIDATION_ERROR_01c00026]);
@@ -2178,7 +2178,7 @@ bool PreCallValidateCmdClearAttachments(layer_data *device_data, VkCommandBuffer
             } else {  // Must be depth and/or stencil
                 if (((clear_desc->aspectMask & VK_IMAGE_ASPECT_DEPTH_BIT) != VK_IMAGE_ASPECT_DEPTH_BIT) &&
                     ((clear_desc->aspectMask & VK_IMAGE_ASPECT_STENCIL_BIT) != VK_IMAGE_ASPECT_STENCIL_BIT)) {
-                    char const str[] = "vkCmdClearAttachments aspectMask [%d] is not a valid combination of bits. %s";
+                    char const str[] = "vkCmdClearAttachments() aspectMask [%d] is not a valid combination of bits. %s";
                     skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                                     HandleToUint64(commandBuffer), __LINE__, VALIDATION_ERROR_01c00c01, "IMAGE", str, i,
                                     validation_error_map[VALIDATION_ERROR_01c00c01]);
