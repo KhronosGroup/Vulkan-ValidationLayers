@@ -21278,8 +21278,53 @@ TEST_F(VkPositiveLayerTest, CommandPoolDeleteWithReferences) {
     ASSERT_VK_SUCCESS(res);
 }
 
+TEST_F(VkLayerTest, SecondaryCommandBufferClearColorAttachmentsRenderArea) {
+    TEST_DESCRIPTION(
+        "Create a secondary command buffer with CmdClearAttachments call that has a rect outside of renderPass renderArea");
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkCommandBufferAllocateInfo command_buffer_allocate_info = {};
+    command_buffer_allocate_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    command_buffer_allocate_info.commandPool = m_commandPool->handle();
+    command_buffer_allocate_info.level = VK_COMMAND_BUFFER_LEVEL_SECONDARY;
+    command_buffer_allocate_info.commandBufferCount = 1;
+
+    VkCommandBuffer secondary_command_buffer;
+    ASSERT_VK_SUCCESS(vkAllocateCommandBuffers(m_device->device(), &command_buffer_allocate_info, &secondary_command_buffer));
+    VkCommandBufferBeginInfo command_buffer_begin_info = {};
+    VkCommandBufferInheritanceInfo command_buffer_inheritance_info = {};
+    command_buffer_inheritance_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO;
+    command_buffer_inheritance_info.renderPass = m_renderPass;
+    command_buffer_inheritance_info.framebuffer = m_framebuffer;
+
+    command_buffer_begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    command_buffer_begin_info.flags =
+        VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT | VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+    command_buffer_begin_info.pInheritanceInfo = &command_buffer_inheritance_info;
+
+    vkBeginCommandBuffer(secondary_command_buffer, &command_buffer_begin_info);
+    VkClearAttachment color_attachment;
+    color_attachment.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    color_attachment.clearValue.color.float32[0] = 0;
+    color_attachment.clearValue.color.float32[1] = 0;
+    color_attachment.clearValue.color.float32[2] = 0;
+    color_attachment.clearValue.color.float32[3] = 0;
+    color_attachment.colorAttachment = 0;
+    // x extent of 257 exceeds render area of 256
+    VkClearRect clear_rect = {{{0, 0}, {257, 32}}};
+    vkCmdClearAttachments(secondary_command_buffer, 1, &color_attachment, 1, &clear_rect);
+    vkEndCommandBuffer(secondary_command_buffer);
+    m_commandBuffer->begin();
+    vkCmdBeginRenderPass(m_commandBuffer->handle(), &m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_18600020);
+    vkCmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(VkPositiveLayerTest, SecondaryCommandBufferClearColorAttachments) {
     TEST_DESCRIPTION("Create a secondary command buffer and record a CmdClearAttachments call into it");
+    m_errorMonitor->ExpectSuccess();
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
@@ -21312,6 +21357,13 @@ TEST_F(VkPositiveLayerTest, SecondaryCommandBufferClearColorAttachments) {
     color_attachment.colorAttachment = 0;
     VkClearRect clear_rect = {{{0, 0}, {32, 32}}};
     vkCmdClearAttachments(secondary_command_buffer, 1, &color_attachment, 1, &clear_rect);
+    vkEndCommandBuffer(secondary_command_buffer);
+    m_commandBuffer->begin();
+    vkCmdBeginRenderPass(m_commandBuffer->handle(), &m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
+    vkCmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary_command_buffer);
+    vkCmdEndRenderPass(m_commandBuffer->handle());
+    m_commandBuffer->end();
+    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, SecondaryCommandBufferImageLayoutTransitions) {
