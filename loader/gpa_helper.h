@@ -186,6 +186,9 @@ static inline void *trampolineGetProcAddr(struct loader_instance *inst, const ch
     if (!strcmp(funcName, "vkCreateSamplerYcbcrConversion")) return (PFN_vkVoidFunction)vkCreateSamplerYcbcrConversion;
     if (!strcmp(funcName, "vkDestroySamplerYcbcrConversion")) return (PFN_vkVoidFunction)vkDestroySamplerYcbcrConversion;
     if (!strcmp(funcName, "vkGetDescriptorSetLayoutSupport")) return (PFN_vkVoidFunction)vkGetDescriptorSetLayoutSupport;
+    if (!strcmp(funcName, "vkCreateDescriptorUpdateTemplate")) return (PFN_vkCreateDescriptorUpdateTemplate)vkCreateDescriptorUpdateTemplate;
+    if (!strcmp(funcName, "vkDestroyDescriptorUpdateTemplate")) return (PFN_vkDestroyDescriptorUpdateTemplate)vkDestroyDescriptorUpdateTemplate;
+    if (!strcmp(funcName, "vkUpdateDescriptorSetWithTemplate")) return (PFN_vkUpdateDescriptorSetWithTemplate)vkUpdateDescriptorSetWithTemplate;
 
     // Instance extensions
     void *addr;

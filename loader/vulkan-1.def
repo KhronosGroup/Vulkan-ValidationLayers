@@ -208,3 +208,6 @@ EXPORTS
    vkGetDeviceGroupSurfacePresentModesKHR
    vkGetPhysicalDevicePresentRectanglesKHR
    vkAcquireNextImage2KHR
+   vkCreateDescriptorUpdateTemplate
+   vkDestroyDescriptorUpdateTemplate
+   vkUpdateDescriptorSetWithTemplate
