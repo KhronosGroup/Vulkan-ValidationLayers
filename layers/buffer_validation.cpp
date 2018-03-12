@@ -2198,14 +2198,27 @@ bool PreCallValidateCmdClearAttachments(layer_data *device_data, VkCommandBuffer
                 for (uint32_t j = 0; j < rectCount; j++) {
                     // The rectangular region specified by a given element of pRects must be contained within the render area of
                     // the current render pass instance
-                    // TODO: This check should be moved to CmdExecuteCommands or QueueSubmit to cover secondary CB cases
-                    if ((cb_node->createInfo.level == VK_COMMAND_BUFFER_LEVEL_PRIMARY) &&
-                        (false == ContainsRect(cb_node->activeRenderPassBeginInfo.renderArea, pRects[j].rect))) {
-                        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                    if (cb_node->createInfo.level == VK_COMMAND_BUFFER_LEVEL_PRIMARY) {
+                        if (false == ContainsRect(cb_node->activeRenderPassBeginInfo.renderArea, pRects[j].rect)) {
+                            skip |=
+                                log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                                         HandleToUint64(commandBuffer), __LINE__, VALIDATION_ERROR_18600020, "DS",
                                         "vkCmdClearAttachments(): The area defined by pRects[%d] is not contained in the area of "
                                         "the current render pass instance. %s",
                                         j, validation_error_map[VALIDATION_ERROR_18600020]);
+                        }
+                    } else {
+                        cb_node->cmd_execute_commands_functions.emplace_back([=](GLOBAL_CB_NODE *prim_cb, VkFramebuffer fb) {
+                            if (false == ContainsRect(prim_cb->activeRenderPassBeginInfo.renderArea, pRects[j].rect)) {
+                                return log_msg(
+                                    report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                                    HandleToUint64(commandBuffer), __LINE__, VALIDATION_ERROR_18600020, "DS",
+                                    "vkCmdClearAttachments(): The area defined by pRects[%d] is not contained in the area of "
+                                    "the current render pass instance. %s",
+                                    j, validation_error_map[VALIDATION_ERROR_18600020]);
+                            }
+                            return false;
+                        });
                     }
                     // The layers specified by a given element of pRects must be contained within every attachment that
                     // pAttachments refers to
