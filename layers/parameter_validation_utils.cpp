@@ -906,16 +906,23 @@ bool pv_vkCreateImage(VkDevice device, const VkImageCreateInfo *pCreateInfo, con
         }
 
         if (pCreateInfo->imageType == VK_IMAGE_TYPE_2D) {
-            // If imageType is VK_IMAGE_TYPE_2D and flags contains VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT, extent.width and
-            // extent.height must be equal
-            if ((pCreateInfo->flags & VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT) &&
-                (pCreateInfo->extent.width != pCreateInfo->extent.height)) {
-                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, __LINE__,
-                                VALIDATION_ERROR_09e00774, LayerName,
-                                "vkCreateImage(): if pCreateInfo->imageType is VK_IMAGE_TYPE_2D and pCreateInfo->flags contains "
-                                "VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT, pCreateInfo->extent.width and pCreateInfo->extent.height "
-                                "must be equal. %s",
-                                validation_error_map[VALIDATION_ERROR_09e00774]);
+            if (pCreateInfo->flags & VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT) {
+                if (pCreateInfo->extent.width != pCreateInfo->extent.height) {
+                    skip |= log_msg(
+                        report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, VK_NULL_HANDLE, __LINE__,
+                        VALIDATION_ERROR_09e00774, LayerName,
+                        "vkCreateImage(): pCreateInfo->flags contains VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT, but "
+                        "pCreateInfo->extent.width (=%" PRIu32 ") and pCreateInfo->extent.height (=%" PRIu32 ") are not equal. %s",
+                        pCreateInfo->extent.width, pCreateInfo->extent.height, validation_error_map[VALIDATION_ERROR_09e00774]);
+                }
+
+                if (pCreateInfo->arrayLayers < 6) {
+                    skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
+                                    VK_NULL_HANDLE, __LINE__, VALIDATION_ERROR_09e00774, LayerName,
+                                    "vkCreateImage(): pCreateInfo->flags contains VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT, but "
+                                    "pCreateInfo->arrayLayers (=%" PRIu32 ") is not greater than or equal to 6. %s",
+                                    pCreateInfo->arrayLayers, validation_error_map[VALIDATION_ERROR_09e00774]);
+                }
             }
 
             if (pCreateInfo->extent.depth != 1) {
