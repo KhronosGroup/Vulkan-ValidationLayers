@@ -984,6 +984,14 @@ bool pv_vkCreateImage(VkDevice device, const VkImageCreateInfo *pCreateInfo, con
                         validation_error_map[VALIDATION_ERROR_09e0077c]);
         }
 
+        if ((pCreateInfo->flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT) && (!device_data->physical_device_features.sparseBinding)) {
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, VK_NULL_HANDLE,
+                            __LINE__, VALIDATION_ERROR_09e00792, LayerName,
+                            "vkCreateImage(): pCreateInfo->flags contains VK_IMAGE_CREATE_SPARSE_BINDING_BIT, but the "
+                            "VkPhysicalDeviceFeatures::sparseBinding feature is disabled. %s",
+                            validation_error_map[VALIDATION_ERROR_09e00792]);
+        }
+
         // If flags contains VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT or VK_IMAGE_CREATE_SPARSE_ALIASED_BIT, it must also contain
         // VK_IMAGE_CREATE_SPARSE_BINDING_BIT
         if (((pCreateInfo->flags & (VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT | VK_IMAGE_CREATE_SPARSE_ALIASED_BIT)) != 0) &&
