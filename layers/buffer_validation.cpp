@@ -864,7 +864,7 @@ bool PreCallValidateCreateImage(layer_data *device_data, const VkImageCreateInfo
     total_size = (total_size + ig_mask) & ~ig_mask;
 
     if (total_size > format_limits.maxResourceSize) {
-        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, 0, __LINE__,
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, 0, __LINE__,
                         IMAGE_INVALID_FORMAT_LIMITS_VIOLATION, "Image",
                         "CreateImage resource size exceeds allowable maximum Image resource size = 0x%" PRIxLEAST64
                         ", maximum resource size = 0x%" PRIxLEAST64 " ",
