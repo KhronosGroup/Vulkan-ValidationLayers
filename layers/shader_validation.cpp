@@ -651,6 +651,9 @@ static bool is_writable_descriptor_type(shader_module const *module, uint32_t ty
         if (type.opcode() == spv::OpTypeArray) {
             type = module->get_def(type.word(2));
         } else {
+            if (type.word(2) == spv::StorageClassStorageBuffer) {
+                return true;
+            }
             type = module->get_def(type.word(3));
         }
     }
