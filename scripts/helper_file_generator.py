@@ -19,6 +19,7 @@
 #
 # Author: Mark Lobodzinski <mark@lunarg.com>
 # Author: Tobin Ehlis <tobine@google.com>
+# Author: John Zulauf <jzulauf@lunarg.com>
 
 import os,re,sys
 import xml.etree.ElementTree as etree
@@ -81,6 +82,7 @@ class HelperFileOutputGenerator(OutputGenerator):
         self.structTypes = dict()                         # Map of Vulkan struct typename to required VkStructureType
         self.structMembers = []                           # List of StructMemberData records for all Vulkan structs
         self.object_types = []                            # List of all handle types
+        self.object_type_aliases = []                     # Aliases to handles types (for handles that were extensions)
         self.debug_report_object_types = []               # Handy copy of debug_report_object_type enum data
         self.core_object_types = []                       # Handy copy of core_object_type enum data
         self.device_extension_info = dict()               # Dict of device extension name defines and ifdef values
@@ -206,7 +208,10 @@ class HelperFileOutputGenerator(OutputGenerator):
         # Otherwise, emit the tag text.
         category = typeElem.get('category')
         if category == 'handle':
-            self.object_types.append(name)
+            if alias:
+                self.object_type_aliases.append((name,alias))
+            else:
+                self.object_types.append(name)
         elif (category == 'struct' or category == 'union'):
             self.structNames.append(name)
             self.genStruct(typeinfo, name, alias)
@@ -601,16 +606,22 @@ class HelperFileOutputGenerator(OutputGenerator):
         object_types_header += '    kVulkanObjectTypeUnknown = 0,\n'
         enum_num = 1
         type_list = [];
+        enum_entry_map = {}
 
         # Output enum definition as each handle is processed, saving the names to use for the conversion routine
         for item in self.object_types:
             fixup_name = item[2:]
             enum_entry = 'kVulkanObjectType%s' % fixup_name
+            enum_entry_map[item] = enum_entry
             object_types_header += '    ' + enum_entry
             object_types_header += ' = %d,\n' % enum_num
             enum_num += 1
             type_list.append(enum_entry)
         object_types_header += '    kVulkanObjectTypeMax = %d,\n' % enum_num
+        object_types_header += '    // Aliases for backwards compatibilty of "promoted" types\n'
+        for (name, alias) in self.object_type_aliases:
+            fixup_name = name[2:]
+            object_types_header += '    kVulkanObjectType{} = {},\n'.format(fixup_name, enum_entry_map[alias])
         object_types_header += '} VulkanObjectType;\n\n'
 
         # Output name string helper
