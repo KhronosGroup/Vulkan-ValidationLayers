@@ -620,6 +620,22 @@ bool cvdescriptorset::DescriptorSet::ValidateDrawState(const std::map<uint32_t, 
                         return false;
                     }
                 }
+                if (descriptor_class == ImageSampler || descriptor_class == PlainSampler) {
+                    // Verify Sampler still valid
+                    VkSampler sampler;
+                    if (descriptor_class == ImageSampler) {
+                        sampler = static_cast<ImageSamplerDescriptor *>(descriptors_[i].get())->GetSampler();
+                    } else {
+                        sampler = static_cast<SamplerDescriptor *>(descriptors_[i].get())->GetSampler();
+                    }
+                    if (!ValidateSampler(sampler, device_data_)) {
+                        std::stringstream error_str;
+                        error_str << "Descriptor in binding #" << binding << " at global descriptor index " << i
+                                  << " is using sampler " << sampler << " that has been destroyed.";
+                        *error = error_str.str();
+                        return false;
+                    }
+                }
             }
         }
     }
