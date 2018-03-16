@@ -8342,8 +8342,9 @@ VKAPI_ATTR void VKAPI_CALL CmdWriteTimestamp(VkCommandBuffer commandBuffer, VkPi
     unique_lock_t lock(global_lock);
     GLOBAL_CB_NODE *cb_state = GetCBNode(dev_data, commandBuffer);
     if (cb_state) {
-        skip |= ValidateCmdQueueFlags(dev_data, cb_state, "vkCmdWriteTimestamp()", VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
-                                      VALIDATION_ERROR_1e802415);
+        skip |=
+            ValidateCmdQueueFlags(dev_data, cb_state, "vkCmdWriteTimestamp()",
+                                  VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT, VALIDATION_ERROR_1e802415);
         skip |= ValidateCmd(dev_data, cb_state, CMD_WRITETIMESTAMP, "vkCmdWriteTimestamp()");
     }
     lock.unlock();
