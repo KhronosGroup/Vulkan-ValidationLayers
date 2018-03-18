@@ -238,12 +238,7 @@ void VkRenderFramework::ShutdownFramework() {
     if (m_globalMsgCallback) m_DestroyDebugReportCallback(this->inst, m_globalMsgCallback, NULL);
     if (m_devMsgCallback) m_DestroyDebugReportCallback(this->inst, m_devMsgCallback, NULL);
 
-    while (!m_renderTargets.empty()) {
-        vkDestroyImageView(device(), m_renderTargets.back()->targetView(m_render_target_fmt), NULL);
-        vkDestroyImage(device(), m_renderTargets.back()->image(), NULL);
-        vkFreeMemory(device(), m_renderTargets.back()->memory(), NULL);
-        m_renderTargets.pop_back();
-    }
+    m_renderTargets.clear();
 
     delete m_depthStencil;
 
@@ -376,7 +371,7 @@ void VkRenderFramework::InitRenderTarget(uint32_t targets, VkImageView *dsBindin
 
         m_renderPassClearValues.push_back(clear);
 
-        VkImageObj *img = new VkImageObj(m_device);
+        std::unique_ptr<VkImageObj> img(new VkImageObj(m_device));
 
         VkFormatProperties props;
 
@@ -394,8 +389,8 @@ void VkRenderFramework::InitRenderTarget(uint32_t targets, VkImageView *dsBindin
             FAIL() << "Neither Linear nor Optimal allowed for render target";
         }
 
-        m_renderTargets.push_back(img);
         bindings.push_back(img->targetView(m_render_target_fmt));
+        m_renderTargets.push_back(std::move(img));
     }
 
     VkSubpassDescription subpass = {};
@@ -1380,7 +1375,7 @@ void VkCommandBufferObj::PipelineBarrier(VkPipelineStageFlags src_stages, VkPipe
                          bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
 }
 
-void VkCommandBufferObj::ClearAllBuffers(const vector<VkImageObj *> &color_objs, VkClearColorValue clear_color,
+void VkCommandBufferObj::ClearAllBuffers(const vector<std::unique_ptr<VkImageObj>> &color_objs, VkClearColorValue clear_color,
                                          VkDepthStencilObj *depth_stencil_obj, float depth_clear_value,
                                          uint32_t stencil_clear_value) {
     // whatever we want to do, we do it to the whole buffer
@@ -1443,7 +1438,8 @@ void VkCommandBufferObj::ClearDepthStencilImage(VkImage image, VkImageLayout ima
     vkCmdClearDepthStencilImage(handle(), image, imageLayout, pColor, rangeCount, pRanges);
 }
 
-void VkCommandBufferObj::PrepareAttachments(const vector<VkImageObj *> &color_atts, VkDepthStencilObj *depth_stencil_att) {
+void VkCommandBufferObj::PrepareAttachments(const vector<std::unique_ptr<VkImageObj>> &color_atts,
+                                            VkDepthStencilObj *depth_stencil_att) {
     for (const auto &color_att : color_atts) {
         color_att->SetLayout(this, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
     }

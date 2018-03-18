@@ -32,6 +32,7 @@ class VkImageObj;
 #include <algorithm>
 #include <array>
 #include <map>
+#include <memory>
 #include <vector>
 
 using namespace std;
@@ -129,7 +130,7 @@ class VkRenderFramework : public VkTestFramework {
     bool m_addRenderPassSelfDependency;
     std::vector<VkClearValue> m_renderPassClearValues;
     VkRenderPassBeginInfo m_renderPassBeginInfo;
-    vector<VkImageObj *> m_renderTargets;
+    vector<std::unique_ptr<VkImageObj>> m_renderTargets;
     float m_width, m_height;
     VkFormat m_render_target_fmt;
     VkFormat m_depth_stencil_fmt;
@@ -184,9 +185,9 @@ class VkCommandBufferObj : public vk_testing::CommandBuffer {
                          uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers, uint32_t bufferMemoryBarrierCount,
                          const VkBufferMemoryBarrier *pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount,
                          const VkImageMemoryBarrier *pImageMemoryBarriers);
-    void ClearAllBuffers(const vector<VkImageObj *> &color_objs, VkClearColorValue clear_color,
+    void ClearAllBuffers(const vector<std::unique_ptr<VkImageObj>> &color_objs, VkClearColorValue clear_color,
                          VkDepthStencilObj *depth_stencil_obj, float depth_clear_value, uint32_t stencil_clear_value);
-    void PrepareAttachments(const vector<VkImageObj *> &color_atts, VkDepthStencilObj *depth_stencil_att);
+    void PrepareAttachments(const vector<std::unique_ptr<VkImageObj>> &color_atts, VkDepthStencilObj *depth_stencil_att);
     void BindDescriptorSet(VkDescriptorSetObj &descriptorSet);
     void BindVertexBuffer(VkConstantBufferObj *vertexBuffer, VkDeviceSize offset, uint32_t binding);
     void BeginRenderPass(const VkRenderPassBeginInfo &info);
