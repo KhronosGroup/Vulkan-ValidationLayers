@@ -629,13 +629,18 @@ class HelperFileOutputGenerator(OutputGenerator):
         object_types_header += '    VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, // kVulkanObjectTypeUnknown\n'
         for object_type in type_list:
             search_type = object_type.replace("kVulkanObjectType", "").lower()
+            found = False
             for vk_object_type in self.debug_report_object_types:
                 target_type = vk_object_type.replace("VK_DEBUG_REPORT_OBJECT_TYPE_", "").lower()
                 target_type = target_type[:-4]
                 target_type = target_type.replace("_", "")
                 if search_type == target_type:
                     object_types_header += '    %s,   // %s\n' % (vk_object_type, object_type)
+                    found = True
                     break
+            if not found:
+                object_types_header += '    %s,   // %s\n' % ("VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT", object_type)
+
         object_types_header += '};\n'
 
         # Output a conversion routine from the layer object definitions to the core object type definitions
