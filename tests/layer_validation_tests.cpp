@@ -12928,7 +12928,7 @@ TEST_F(VkLayerTest, InvalidDSUpdateStruct) {
 
     VkWriteDescriptorSet descriptor_write;
     memset(&descriptor_write, 0, sizeof(descriptor_write));
-    descriptor_write.sType = (VkStructureType)0x99999999; /* Intentionally broken struct type */
+    descriptor_write.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO; /* Intentionally broken struct type */
     descriptor_write.dstSet = ds.set_;
     descriptor_write.descriptorCount = 1;
     // This is the wrong type, but out of bounds will be flagged first
