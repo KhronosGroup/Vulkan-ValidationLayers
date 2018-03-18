@@ -517,12 +517,24 @@ class UniqueObjectsOutputGenerator(OutputGenerator):
         pnext_proc += '}\n\n'
         pnext_proc += '// Free a pNext extension chain\n'
         pnext_proc += 'void FreeUnwrappedExtensionStructs(void *head) {\n'
-        pnext_proc += '    void * curr_ptr = head;\n'
+        pnext_proc += '    GenericHeader *curr_ptr = reinterpret_cast<GenericHeader *>(head);\n'
         pnext_proc += '    while (curr_ptr) {\n'
-        pnext_proc += '        GenericHeader *header = reinterpret_cast<GenericHeader *>(curr_ptr);\n'
-        pnext_proc += '        void *temp = curr_ptr;\n'
-        pnext_proc += '        curr_ptr = header->pNext;\n'
-        pnext_proc += '        free(temp);\n'
+        pnext_proc += '        GenericHeader *header = curr_ptr;\n'
+        pnext_proc += '        curr_ptr = reinterpret_cast<GenericHeader *>(header->pNext);\n\n'
+        pnext_proc += '        switch (header->sType) {\n';
+        for item in self.extension_structs:
+            struct_info = self.struct_member_dict[item]
+            if struct_info[0].feature_protect is not None:
+                pnext_proc += '#ifdef %s \n' % struct_info[0].feature_protect
+            pnext_proc += '            case %s:\n' % self.structTypes[item].value
+            pnext_proc += '                delete reinterpret_cast<safe_%s *>(header);\n' % item
+            pnext_proc += '                break;\n'
+            if struct_info[0].feature_protect is not None:
+                pnext_proc += '#endif // %s \n' % struct_info[0].feature_protect
+            pnext_proc += '\n'
+        pnext_proc += '            default:\n'
+        pnext_proc += '                assert(0);\n'
+        pnext_proc += '        }\n'
         pnext_proc += '    }\n'
         pnext_proc += '}\n'
         return pnext_proc
