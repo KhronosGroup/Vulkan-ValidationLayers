@@ -21420,9 +21420,13 @@ TEST_F(VkLayerTest, SecondaryCommandBufferClearColorAttachmentsRenderArea) {
     vkEndCommandBuffer(secondary_command_buffer);
     m_commandBuffer->begin();
     vkCmdBeginRenderPass(m_commandBuffer->handle(), &m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
+
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_18600020);
     vkCmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary_command_buffer);
     m_errorMonitor->VerifyFound();
+
+    vkCmdEndRenderPass(m_commandBuffer->handle());
+    m_commandBuffer->end();
 }
 
 TEST_F(VkPositiveLayerTest, SecondaryCommandBufferClearColorAttachments) {
