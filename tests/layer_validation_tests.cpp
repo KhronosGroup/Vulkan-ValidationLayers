@@ -12376,6 +12376,9 @@ TEST_F(VkLayerTest, ExecuteCommandsPrimaryCB) {
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetUnexpectedError("All elements of pCommandBuffers must not be in the pending state");
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
 }
 
 TEST_F(VkLayerTest, DSUsageBitsErrors) {
