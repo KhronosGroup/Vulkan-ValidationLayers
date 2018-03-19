@@ -10962,6 +10962,11 @@ TEST_F(VkLayerTest, EndCommandBufferWithinRenderPass) {
 
     m_errorMonitor->VerifyFound();
 
+    // End command buffer properly to avoid driver issues. This is safe -- the
+    // previous vkEndCommandBuffer should not have reached the driver.
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+
     // TODO: Add test for VK_COMMAND_BUFFER_LEVEL_SECONDARY
     // TODO: Add test for VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT
 }
