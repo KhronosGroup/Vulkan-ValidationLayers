@@ -22,7 +22,6 @@
 // Allow use of STL min and max functions in Windows
 #define NOMINMAX
 
-#include <inttypes.h>
 #include <sstream>
 #include <string>
 

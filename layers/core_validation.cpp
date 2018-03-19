@@ -51,7 +51,6 @@
 #include <string.h>
 #include <string>
 #include <valarray>
-#include <inttypes.h>
 
 #include "vk_loader_platform.h"
 #include "vk_dispatch_table_helper.h"
