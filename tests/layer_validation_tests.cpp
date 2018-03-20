@@ -8099,6 +8099,9 @@ TEST_F(VkLayerTest, InvalidDescriptorSetSamplerDestroyed) {
     m_commandBuffer->Draw(1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
 
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+
     vkDestroyImageView(m_device->device(), view, NULL);
 }
 
