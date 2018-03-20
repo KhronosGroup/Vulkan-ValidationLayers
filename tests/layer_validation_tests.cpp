@@ -11104,6 +11104,9 @@ TEST_F(VkLayerTest, UpdateBufferWithinRenderPass) {
     vkCmdUpdateBuffer(m_commandBuffer->handle(), dstBuffer.handle(), dstOffset, dataSize, &Data);
 
     m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
 }
 
 TEST_F(VkLayerTest, ClearColorImageWithBadRange) {
