@@ -11300,6 +11300,9 @@ TEST_F(VkLayerTest, ClearColorImageWithinRenderPass) {
     vkCmdClearColorImage(m_commandBuffer->handle(), dstImage.handle(), VK_IMAGE_LAYOUT_GENERAL, &clear_color, 1, &range);
 
     m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
 }
 
 TEST_F(VkLayerTest, ClearDepthStencilImageErrors) {
