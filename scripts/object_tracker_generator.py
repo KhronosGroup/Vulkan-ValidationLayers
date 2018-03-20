@@ -331,6 +331,7 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
     # Check if the parameter passed in is a pointer to an array
     def paramIsArray(self, param):
         return param.attrib.get('len') is not None
+
     #
     # Generate the object tracker undestroyed object validation function
     def GenReportFunc(self):
@@ -342,6 +343,19 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
                 output_func += '    DeviceReportUndestroyedObjects(device, %s, error_code);\n' % (self.GetVulkanObjType(handle))
         output_func += '}\n'
         return output_func
+
+    #
+    # Generate the object tracker undestroyed object destruction function
+    def GenDestroyFunc(self):
+        output_func = ''
+        output_func += 'void DestroyUndestroyedObjects(VkDevice device) {\n'
+        output_func += '    DeviceDestroyUndestroyedObjects(device, kVulkanObjectTypeCommandBuffer);\n'
+        for handle in self.object_types:
+            if self.isHandleTypeNonDispatchable(handle):
+                output_func += '    DeviceDestroyUndestroyedObjects(device, %s);\n' % (self.GetVulkanObjType(handle))
+        output_func += '}\n'
+        return output_func
+
     #
     # Called at beginning of processing as file is opened
     def beginFile(self, genOpts):
@@ -401,8 +415,12 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
         # Build undestroyed objects reporting function
         report_func = self.GenReportFunc()
         self.newline()
+        # Build undestroyed objects destruction function
+        destroy_func = self.GenDestroyFunc()
+        self.newline()
         write('// ObjectTracker undestroyed objects validation function', file=self.outFile)
         write('%s' % report_func, file=self.outFile)
+        write('%s' % destroy_func, file=self.outFile)
         # Actually write the interface to the output file.
         if (self.emit):
             self.newline()

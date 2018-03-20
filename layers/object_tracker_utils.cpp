@@ -303,12 +303,21 @@ void CreateSwapchainImageObject(VkDevice dispatchable_object, VkImage swapchain_
 
 void DeviceReportUndestroyedObjects(VkDevice device, VulkanObjectType object_type, enum UNIQUE_VALIDATION_ERROR_CODE error_code) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    for (auto item = device_data->object_map[object_type].begin(); item != device_data->object_map[object_type].end();) {
-        ObjTrackState *object_info = item->second;
+    for (const auto &item : device_data->object_map[object_type]) {
+        const ObjTrackState *object_info = item.second;
         log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, get_debug_report_enum[object_type], object_info->handle,
                 error_code, "OBJ ERROR : For device 0x%" PRIxLEAST64 ", %s object 0x%" PRIxLEAST64 " has not been destroyed.",
                 HandleToUint64(device), object_string[object_type], object_info->handle);
-        item = device_data->object_map[object_type].erase(item);
+    }
+}
+
+void DeviceDestroyUndestroyedObjects(VkDevice device, VulkanObjectType object_type) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    while (!device_data->object_map[object_type].empty()) {
+        auto item = device_data->object_map[object_type].begin();
+
+        ObjTrackState *object_info = item->second;
+        DestroyObjectSilently(device, object_info->handle, object_type);
     }
 }
 
@@ -356,6 +365,7 @@ VKAPI_ATTR void VKAPI_CALL DestroyInstance(VkInstance instance, const VkAllocati
 
         // Report any remaining objects in LL
         ReportUndestroyedObjects(device, VALIDATION_ERROR_258004ea);
+        DestroyUndestroyedObjects(device);
 
         DestroyObject(instance, device, kVulkanObjectTypeDevice, pAllocator, VALIDATION_ERROR_258004ec, VALIDATION_ERROR_258004ee);
         iit = instance_data->object_map[kVulkanObjectTypeDevice].begin();
@@ -411,6 +421,7 @@ VKAPI_ATTR void VKAPI_CALL DestroyDevice(VkDevice device, const VkAllocationCall
 
     // Report any remaining objects associated with this VkDevice object in LL
     ReportUndestroyedObjects(device, VALIDATION_ERROR_24a002f4);
+    DestroyUndestroyedObjects(device);
 
     // Clean up Queue's MemRef Linked Lists
     DestroyQueueDataStructures(device);
