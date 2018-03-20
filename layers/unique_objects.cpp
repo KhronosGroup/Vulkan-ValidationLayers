@@ -465,9 +465,8 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateSwapchainKHR(VkDevice device, const VkSwapc
     }
 
     VkResult result = my_map_data->dispatch_table.CreateSwapchainKHR(device, local_pCreateInfo->ptr(), pAllocator, pSwapchain);
-    if (local_pCreateInfo) {
-        delete local_pCreateInfo;
-    }
+    delete local_pCreateInfo;
+
     if (VK_SUCCESS == result) {
         std::lock_guard<std::mutex> lock(global_lock);
         *pSwapchain = WrapNew(*pSwapchain);
@@ -498,7 +497,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateSharedSwapchainsKHR(VkDevice device, uint32
     }
     VkResult result = dev_data->dispatch_table.CreateSharedSwapchainsKHR(device, swapchainCount, local_pCreateInfos->ptr(),
                                                                          pAllocator, pSwapchains);
-    if (local_pCreateInfos) delete[] local_pCreateInfos;
+    delete[] local_pCreateInfos;
     if (VK_SUCCESS == result) {
         std::lock_guard<std::mutex> lock(global_lock);
         for (uint32_t i = 0; i < swapchainCount; i++) {
@@ -579,7 +578,7 @@ VKAPI_ATTR VkResult VKAPI_CALL QueuePresentKHR(VkQueue queue, const VkPresentInf
         }
     }
 
-    if (local_pPresentInfo) delete local_pPresentInfo;
+    delete local_pPresentInfo;
     return result;
 }
 
@@ -873,62 +872,62 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDisplayPlaneCapabilitiesKHR(VkPhysicalDevice p
 
 VKAPI_ATTR VkResult VKAPI_CALL DebugMarkerSetObjectTagEXT(VkDevice device, const VkDebugMarkerObjectTagInfoEXT *pTagInfo) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    auto local_tag_info = new safe_VkDebugMarkerObjectTagInfoEXT(pTagInfo);
+    safe_VkDebugMarkerObjectTagInfoEXT local_tag_info(pTagInfo);
     {
         std::lock_guard<std::mutex> lock(global_lock);
-        auto it = unique_id_mapping.find(reinterpret_cast<uint64_t &>(local_tag_info->object));
+        auto it = unique_id_mapping.find(reinterpret_cast<uint64_t &>(local_tag_info.object));
         if (it != unique_id_mapping.end()) {
-            local_tag_info->object = it->second;
+            local_tag_info.object = it->second;
         }
     }
     VkResult result = device_data->dispatch_table.DebugMarkerSetObjectTagEXT(
-        device, reinterpret_cast<VkDebugMarkerObjectTagInfoEXT *>(local_tag_info));
+        device, reinterpret_cast<VkDebugMarkerObjectTagInfoEXT *>(&local_tag_info));
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL DebugMarkerSetObjectNameEXT(VkDevice device, const VkDebugMarkerObjectNameInfoEXT *pNameInfo) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    auto local_name_info = new safe_VkDebugMarkerObjectNameInfoEXT(pNameInfo);
+    safe_VkDebugMarkerObjectNameInfoEXT local_name_info(pNameInfo);
     {
         std::lock_guard<std::mutex> lock(global_lock);
-        auto it = unique_id_mapping.find(reinterpret_cast<uint64_t &>(local_name_info->object));
+        auto it = unique_id_mapping.find(reinterpret_cast<uint64_t &>(local_name_info.object));
         if (it != unique_id_mapping.end()) {
-            local_name_info->object = it->second;
+            local_name_info.object = it->second;
         }
     }
     VkResult result = device_data->dispatch_table.DebugMarkerSetObjectNameEXT(
-        device, reinterpret_cast<VkDebugMarkerObjectNameInfoEXT *>(local_name_info));
+        device, reinterpret_cast<VkDebugMarkerObjectNameInfoEXT *>(&local_name_info));
     return result;
 }
 
 // VK_EXT_debug_utils
 VKAPI_ATTR VkResult VKAPI_CALL SetDebugUtilsObjectTagEXT(VkDevice device, const VkDebugUtilsObjectTagInfoEXT *pTagInfo) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    auto local_tag_info = new safe_VkDebugUtilsObjectTagInfoEXT(pTagInfo);
+    safe_VkDebugUtilsObjectTagInfoEXT local_tag_info(pTagInfo);
     {
         std::lock_guard<std::mutex> lock(global_lock);
-        auto it = unique_id_mapping.find(reinterpret_cast<uint64_t &>(local_tag_info->objectHandle));
+        auto it = unique_id_mapping.find(reinterpret_cast<uint64_t &>(local_tag_info.objectHandle));
         if (it != unique_id_mapping.end()) {
-            local_tag_info->objectHandle = it->second;
+            local_tag_info.objectHandle = it->second;
         }
     }
     VkResult result = device_data->dispatch_table.SetDebugUtilsObjectTagEXT(
-        device, reinterpret_cast<const VkDebugUtilsObjectTagInfoEXT *>(local_tag_info));
+        device, reinterpret_cast<const VkDebugUtilsObjectTagInfoEXT *>(&local_tag_info));
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL SetDebugUtilsObjectNameEXT(VkDevice device, const VkDebugUtilsObjectNameInfoEXT *pNameInfo) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    auto local_name_info = new safe_VkDebugUtilsObjectNameInfoEXT(pNameInfo);
+    safe_VkDebugUtilsObjectNameInfoEXT local_name_info(pNameInfo);
     {
         std::lock_guard<std::mutex> lock(global_lock);
-        auto it = unique_id_mapping.find(reinterpret_cast<uint64_t &>(local_name_info->objectHandle));
+        auto it = unique_id_mapping.find(reinterpret_cast<uint64_t &>(local_name_info.objectHandle));
         if (it != unique_id_mapping.end()) {
-            local_name_info->objectHandle = it->second;
+            local_name_info.objectHandle = it->second;
         }
     }
     VkResult result = device_data->dispatch_table.SetDebugUtilsObjectNameEXT(
-        device, reinterpret_cast<const VkDebugUtilsObjectNameInfoEXT *>(local_name_info));
+        device, reinterpret_cast<const VkDebugUtilsObjectNameInfoEXT *>(&local_name_info));
     return result;
 }
 
