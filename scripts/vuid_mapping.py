@@ -601,6 +601,23 @@ func_struct_id_map = {
 'vkSubmitDebugUtilsMessageEXT' : 545,
 'VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT' : 546,
 'VkPipelineVertexInputDivisorStateCreateInfoEXT' : 547,
+'VkExternalFormatANDROID' : 548,
+'VkImportAndroidHardwareBufferInfoANDROID' : 549,
+'VkMemoryGetAndroidHardwareBufferInfoANDROID' : 550,
+'vkCmdEndDebugUtilsLabelEXT' : 551,
+'vkDestroyDebugUtilsMessengerEXT' : 552,
+'vkGetAndroidHardwareBufferPropertiesANDROID' : 553,
+'vkQueueEndDebugUtilsLabelEXT' : 554,
+'VkAndroidHardwareBufferUsageANDROID' : 555,
+'VkAndroidHardwareBufferPropertiesANDROID' : 556,
+'vkGetMemoryAndroidHardwareBufferANDROID' : 557,
+'VkAndroidHardwareBufferFormatPropertiesANDROID' : 558,
+'vkCmdBeginDebugUtilsLabelEXT' : 559,
+'vkCmdInsertDebugUtilsLabelEXT' : 560,
+'vkQueueBeginDebugUtilsLabelEXT' : 561,
+'vkQueueInsertDebugUtilsLabelEXT' : 562,
+'vkSetDebugUtilsObjectNameEXT' : 563,
+'vkSetDebugUtilsObjectTagEXT' : 564,
 ### ADD New func/struct mappings above this line
 }
 # Mapping of params to unique IDs
@@ -1129,6 +1146,15 @@ implicit_param_map = {
 'messageTypes' : 521,
 'vertexBindingDivisorCount' : 522,
 'pVertexBindingDivisors' : 523,
+'formatFeatures' : 524,
+'suggestedYcbcrModel' : 525,
+'suggestedYcbcrRange' : 526,
+'suggestedXChromaOffset' : 527,
+'suggestedYChromaOffset' : 528,
+'pMessageIdName' : 529,
+'pLabelInfo' : 530,
+'messenger' : 531,
+'pCallbackData' : 532,
 ### ADD New implicit param mappings above this line
 }
 
