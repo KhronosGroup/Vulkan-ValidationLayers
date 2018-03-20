@@ -7905,7 +7905,8 @@ TEST_F(VkLayerTest, InvalidCmdBufferDescriptorSetImageSamplerDestroyed) {
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, " that has been destroyed.");
     m_commandBuffer->Draw(1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
-    m_commandBuffer->reset(0);
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
 
     // Re-update descriptor with new view
     img_info.imageView = view;
