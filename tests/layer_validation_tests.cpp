@@ -10377,6 +10377,9 @@ TEST_F(VkLayerTest, DynViewportAndScissorUndefinedDrawState) {
                     &m_scissors[0]);  // Forgetting to set needed 0th scissor (PSO scissorCount == 1)
     m_commandBuffer->Draw(1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
 }
 
 TEST_F(VkLayerTest, PSOLineWidthInvalid) {
