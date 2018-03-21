@@ -247,9 +247,9 @@ static inline bool debug_log_msg(const debug_report_data *debug_data, VkFlags ms
     VkDebugUtilsLabelEXT *cmd_buf_labels = nullptr;
     std::string new_debug_report_message = "";
     std::ostringstream oss;
-    oss << "Object: 0x" << std::hex << src_object;
 
     if (0 != src_object) {
+        oss << "Object: 0x" << std::hex << src_object;
         // If this is a queue, add any queue labels to the callback data.
         if (VK_OBJECT_TYPE_QUEUE == object_name_info.objectType) {
             auto label_iter = debug_data->debugUtilsQueueLabels->find(reinterpret_cast<VkQueue>(src_object));
@@ -309,18 +309,25 @@ static inline bool debug_log_msg(const debug_report_data *debug_data, VkFlags ms
             }
         }
         if (NULL != callback_data.pObjects[0].pObjectName) {
-            oss << " (Name = " << callback_data.pObjects[0].pObjectName << ")";
+            oss << " (Name = " << callback_data.pObjects[0].pObjectName << " : Type = ";
+        } else {
+            oss << " (Type = ";
         }
+        oss << std::to_string(object_type) << ")";
+    } else {
+        oss << "Object: VK_NULL_HANDLE (Type = " << std::to_string(object_type) << ")";
     }
     new_debug_report_message += oss.str();
     new_debug_report_message += " | ";
     new_debug_report_message += message;
 
     while (layer_dbg_node) {
+        // If the app uses the VK_EXT_debug_report extension, call all of those registered callbacks.
         if (!layer_dbg_node->is_messenger && (layer_dbg_node->report.msgFlags & msg_flags) &&
             layer_dbg_node->report.pfnMsgCallback(msg_flags, object_type, src_object, location, msg_code, layer_prefix,
                                                   new_debug_report_message.c_str(), layer_dbg_node->pUserData)) {
             bail = true;
+            // If the app uses the VK_EXT_debug_utils extension, call all of those registered callbacks.
         } else if (layer_dbg_node->is_messenger && (layer_dbg_node->messenger.messageSeverity & severity) &&
                    (layer_dbg_node->messenger.messageType & types) &&
                    layer_dbg_node->messenger.pfnUserCallback(static_cast<VkDebugUtilsMessageSeverityFlagBitsEXT>(severity), types,
@@ -676,8 +683,9 @@ static inline void layer_disable_tmp_report_callbacks(debug_report_data *debug_d
 // then allocates an array that can hold that many structs, as well as that
 // many VkDebugUtilsMessengerEXT handles.  It then copies each
 // VkDebugUtilsMessengerCreateInfoEXT, and initializes each handle.
-static VkResult layer_copy_tmp_debug_messengers(const void *pChain, uint32_t *num_messengers,
-                                                VkDebugUtilsMessengerCreateInfoEXT **infos, VkDebugUtilsMessengerEXT **messengers) {
+static inline VkResult layer_copy_tmp_debug_messengers(const void *pChain, uint32_t *num_messengers,
+                                                       VkDebugUtilsMessengerCreateInfoEXT **infos,
+                                                       VkDebugUtilsMessengerEXT **messengers) {
     uint32_t n = *num_messengers = 0;
 
     const void *pNext = pChain;
@@ -722,15 +730,17 @@ static VkResult layer_copy_tmp_debug_messengers(const void *pChain, uint32_t *nu
 }
 
 // This utility frees the arrays allocated by layer_copy_tmp_debug_messengers()
-static void layer_free_tmp_debug_messengers(VkDebugUtilsMessengerCreateInfoEXT *infos, VkDebugUtilsMessengerEXT *messengers) {
+static inline void layer_free_tmp_debug_messengers(VkDebugUtilsMessengerCreateInfoEXT *infos,
+                                                   VkDebugUtilsMessengerEXT *messengers) {
     free(infos);
     free(messengers);
 }
 
 // This utility enables all of the VkDebugUtilsMessengerCreateInfoEXT structs
 // that were copied by layer_copy_tmp_debug_messengers()
-static VkResult layer_enable_tmp_debug_messengers(debug_report_data *debug_data, uint32_t num_messengers,
-                                                  VkDebugUtilsMessengerCreateInfoEXT *infos, VkDebugUtilsMessengerEXT *messengers) {
+static inline VkResult layer_enable_tmp_debug_messengers(debug_report_data *debug_data, uint32_t num_messengers,
+                                                         VkDebugUtilsMessengerCreateInfoEXT *infos,
+                                                         VkDebugUtilsMessengerEXT *messengers) {
     VkResult rtn = VK_SUCCESS;
     for (uint32_t i = 0; i < num_messengers; i++) {
         rtn = layer_create_messenger_callback(debug_data, false, &infos[i], NULL, &messengers[i]);
@@ -746,8 +756,8 @@ static VkResult layer_enable_tmp_debug_messengers(debug_report_data *debug_data,
 
 // This utility disables all of the VkDebugUtilsMessengerCreateInfoEXT structs
 // that were copied by layer_copy_tmp_debug_messengers()
-static void layer_disable_tmp_debug_messengers(debug_report_data *debug_data, uint32_t num_messengers,
-                                               VkDebugUtilsMessengerEXT *messengers) {
+static inline void layer_disable_tmp_debug_messengers(debug_report_data *debug_data, uint32_t num_messengers,
+                                                      VkDebugUtilsMessengerEXT *messengers) {
     for (uint32_t i = 0; i < num_messengers; i++) {
         layer_destroy_messenger_callback(debug_data, messengers[i], NULL);
     }
@@ -839,8 +849,8 @@ static inline VKAPI_ATTR VkBool32 VKAPI_CALL report_log_callback(VkFlags msg_fla
 
     PrintMessageFlags(msg_flags, msg_flag_string);
 
-    fprintf((FILE *)user_data, "%s(%s): object: 0x%" PRIx64 " type: %d location: %lu msg_code: %d: %s\n", layer_prefix,
-            msg_flag_string, src_object, obj_type, (unsigned long)location, msg_code, message);
+    fprintf((FILE *)user_data, "%s(%s): location: %lu msg_code: %d: %s\n", layer_prefix, msg_flag_string, (unsigned long)location,
+            msg_code, message);
     fflush((FILE *)user_data);
 
     return false;
@@ -855,9 +865,8 @@ static inline VKAPI_ATTR VkBool32 VKAPI_CALL report_win32_debug_output_msg(VkFla
     char buf[2048];
 
     PrintMessageFlags(msg_flags, msg_flag_string);
-    _snprintf(buf, sizeof(buf) - 1,
-              "%s (%s): object: 0x%" PRIxPTR " type: %d location: " PRINTF_SIZE_T_SPECIFIER " msg_code: %d: %s\n", layer_prefix,
-              msg_flag_string, (size_t)src_object, obj_type, location, msg_code, message);
+    _snprintf(buf, sizeof(buf) - 1, "%s (%s): location: " PRINTF_SIZE_T_SPECIFIER " msg_code: %d: %s\n", layer_prefix,
+              msg_flag_string, location, msg_code, message);
 
     OutputDebugString(buf);
 #endif
@@ -887,9 +896,14 @@ static inline VKAPI_ATTR VkBool32 VKAPI_CALL messenger_log_callback(VkDebugUtils
     PrintMessageSeverity(message_severity, msg_severity);
     PrintMessageType(message_type, msg_type);
 
-    fprintf((FILE *)user_data, "%s(%s / %s): object: 0x%" PRIx64 " type: %d msgNum: %d - %s\n", callback_data->pMessageIdName,
-            msg_severity, msg_type, callback_data->pObjects[0].objectHandle, callback_data->pObjects[0].objectType,
+    fprintf((FILE *)user_data, "%s(%s / %s): msgNum: %d - %s\n", callback_data->pMessageIdName, msg_severity, msg_type,
             callback_data->messageIdNumber, callback_data->pMessage);
+    fprintf((FILE *)user_data, "    Objects: %d\n", callback_data->objectCount);
+    for (uint32_t obj = 0; obj < callback_data->objectCount; ++obj) {
+        fprintf((FILE *)user_data, "       [%d] 0x%" PRIx64 ", type: %d, name: %s\n", obj,
+                callback_data->pObjects[obj].objectHandle, callback_data->pObjects[obj].objectType,
+                callback_data->pObjects[obj].pObjectName);
+    }
     fflush((FILE *)user_data);
 
     return false;
@@ -906,10 +920,20 @@ static inline VKAPI_ATTR VkBool32 VKAPI_CALL messenger_win32_debug_output_msg(
     PrintMessageSeverity(message_severity, msg_severity);
     PrintMessageType(message_type, msg_type);
 
-    _snprintf(buf, sizeof(buf) - 1, "%s (%s / %s): object: 0x%" PRIx64 " type: %d  msgNum: %d - %s\n",
-              callback_data->pMessageIdName, msg_severity, msg_type, HandleToUint64(callback_data->pObjects[0].objectHandle),
-              callback_data->pObjects[0].objectType, callback_data->messageIdNumber, callback_data->pMessage);
-
+    size_t buffer_space = sizeof(buf) - 1;
+    size_t remaining_space = buffer_space;
+    _snprintf(buf, sizeof(buf) - 1, "%s(%s / %s): msgNum: %d - %s\n", callback_data->pMessageIdName, msg_severity, msg_type,
+              callback_data->messageIdNumber, callback_data->pMessage);
+    remaining_space = buffer_space - strlen(buf);
+    _snprintf(buf, remaining_space, "    Objects: %d\n", callback_data->objectCount);
+    for (uint32_t obj = 0; obj < callback_data->objectCount; ++obj) {
+        remaining_space = buffer_space - strlen(buf);
+        if (remaining_space > 0) {
+            _snprintf(buf, remaining_space, "       [%d] 0x%" PRIx64 ", type: %d, name: %s\n", obj,
+                      callback_data->pObjects[obj].objectHandle, callback_data->pObjects[obj].objectType,
+                      callback_data->pObjects[obj].pObjectName);
+        }
+    }
     OutputDebugString(buf);
 #endif
 
@@ -928,7 +952,8 @@ static inline void InsertLabelIntoLog(const VkDebugUtilsLabelEXT *utils_label, s
     log_vector.push_back(log_label_data);
 }
 
-static void BeginQueueDebugUtilsLabel(debug_report_data *report_data, VkQueue queue, const VkDebugUtilsLabelEXT *label_info) {
+static inline void BeginQueueDebugUtilsLabel(debug_report_data *report_data, VkQueue queue,
+                                             const VkDebugUtilsLabelEXT *label_info) {
     if (nullptr != label_info && nullptr != label_info->pLabelName) {
         auto label_iter = report_data->debugUtilsQueueLabels->find(queue);
         if (label_iter == report_data->debugUtilsQueueLabels->end()) {
@@ -949,7 +974,7 @@ static void BeginQueueDebugUtilsLabel(debug_report_data *report_data, VkQueue qu
     }
 }
 
-static void EndQueueDebugUtilsLabel(debug_report_data *report_data, VkQueue queue) {
+static inline void EndQueueDebugUtilsLabel(debug_report_data *report_data, VkQueue queue) {
     auto label_iter = report_data->debugUtilsQueueLabels->find(queue);
     if (label_iter != report_data->debugUtilsQueueLabels->end()) {
         // If the last thing was a label insert, we need to pop it off of the label vector before any
@@ -965,7 +990,8 @@ static void EndQueueDebugUtilsLabel(debug_report_data *report_data, VkQueue queu
     }
 }
 
-static void InsertQueueDebugUtilsLabel(debug_report_data *report_data, VkQueue queue, const VkDebugUtilsLabelEXT *label_info) {
+static inline void InsertQueueDebugUtilsLabel(debug_report_data *report_data, VkQueue queue,
+                                              const VkDebugUtilsLabelEXT *label_info) {
     if (nullptr != label_info && nullptr != label_info->pLabelName) {
         auto label_iter = report_data->debugUtilsQueueLabels->find(queue);
         if (label_iter == report_data->debugUtilsQueueLabels->end()) {
@@ -988,8 +1014,8 @@ static void InsertQueueDebugUtilsLabel(debug_report_data *report_data, VkQueue q
     }
 }
 
-static void BeginCmdDebugUtilsLabel(debug_report_data *report_data, VkCommandBuffer command_buffer,
-                                    const VkDebugUtilsLabelEXT *label_info) {
+static inline void BeginCmdDebugUtilsLabel(debug_report_data *report_data, VkCommandBuffer command_buffer,
+                                           const VkDebugUtilsLabelEXT *label_info) {
     if (nullptr != label_info && nullptr != label_info->pLabelName) {
         auto label_iter = report_data->debugUtilsCmdBufLabels->find(command_buffer);
         if (label_iter == report_data->debugUtilsCmdBufLabels->end()) {
@@ -1010,7 +1036,7 @@ static void BeginCmdDebugUtilsLabel(debug_report_data *report_data, VkCommandBuf
     }
 }
 
-static void EndCmdDebugUtilsLabel(debug_report_data *report_data, VkCommandBuffer command_buffer) {
+static inline void EndCmdDebugUtilsLabel(debug_report_data *report_data, VkCommandBuffer command_buffer) {
     auto label_iter = report_data->debugUtilsCmdBufLabels->find(command_buffer);
     if (label_iter != report_data->debugUtilsCmdBufLabels->end()) {
         // If the last thing was a label insert, we need to pop it off of the label vector before any
@@ -1026,8 +1052,8 @@ static void EndCmdDebugUtilsLabel(debug_report_data *report_data, VkCommandBuffe
     }
 }
 
-static void InsertCmdDebugUtilsLabel(debug_report_data *report_data, VkCommandBuffer command_buffer,
-                                     const VkDebugUtilsLabelEXT *label_info) {
+static inline void InsertCmdDebugUtilsLabel(debug_report_data *report_data, VkCommandBuffer command_buffer,
+                                            const VkDebugUtilsLabelEXT *label_info) {
     if (nullptr != label_info && nullptr != label_info->pLabelName) {
         auto label_iter = report_data->debugUtilsCmdBufLabels->find(command_buffer);
         if (label_iter == report_data->debugUtilsCmdBufLabels->end()) {

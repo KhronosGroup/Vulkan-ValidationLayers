@@ -668,7 +668,7 @@ class HelperFileOutputGenerator(OutputGenerator):
         # Create a function to convert from VkDebugReportObjectTypeEXT to VkObjectType
         object_types_header += '\n'
         object_types_header += '// Helper function to convert from VkDebugReportObjectTypeEXT to VkObjectType\n'
-        object_types_header += 'static VkObjectType convertDebugReportObjectToCoreObject(VkDebugReportObjectTypeEXT debug_report_obj){\n'
+        object_types_header += 'static inline VkObjectType convertDebugReportObjectToCoreObject(VkDebugReportObjectTypeEXT debug_report_obj){\n'
         object_types_header += '    if (debug_report_obj == VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT) {\n'
         object_types_header += '        return VK_OBJECT_TYPE_UNKNOWN;\n'
         for core_object_type in self.core_object_types:
@@ -689,7 +689,7 @@ class HelperFileOutputGenerator(OutputGenerator):
         # Create a function to convert from VkObjectType to VkDebugReportObjectTypeEXT
         object_types_header += '\n'
         object_types_header += '// Helper function to convert from VkDebugReportObjectTypeEXT to VkObjectType\n'
-        object_types_header += 'static VkDebugReportObjectTypeEXT convertCoreObjectToDebugReportObject(VkObjectType core_report_obj){\n'
+        object_types_header += 'static inline VkDebugReportObjectTypeEXT convertCoreObjectToDebugReportObject(VkObjectType core_report_obj){\n'
         object_types_header += '    if (core_report_obj == VK_OBJECT_TYPE_UNKNOWN) {\n'
         object_types_header += '        return VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT;\n'
         for core_object_type in self.core_object_types:
