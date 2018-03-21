@@ -873,14 +873,14 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                 # If count and array parameters are optional, there will be no validation
                 if valueRequired == 'true' or lenPtrRequired == 'true' or lenValueRequired == 'true':
                     # When the length parameter is a pointer, there is an extra Boolean parameter in the function call to indicate if it is required
-                    checkExpr.append('skip |= validate_array(local_data->report_data, "{}", {ppp}"{ldn}"{pps}, {ppp}"{dn}"{pps}, {pf}{ln}, {pf}{vn}, {}, {}, {}, {}, {});\n'.format(
+                    checkExpr.append('skip |= validate_array(local_data->report_data, "{}", {ppp}"{ldn}"{pps}, {ppp}"{dn}"{pps}, {pf}{ln}, &{pf}{vn}, {}, {}, {}, {}, {});\n'.format(
                         funcPrintName, lenPtrRequired, lenValueRequired, valueRequired, count_required_vuid, array_required_vuid, ln=lenValue.name, ldn=lenPrintName, dn=valuePrintName, vn=value.name, pf=prefix, **postProcSpec))
             # This is an array with an integer count value
             else:
                 # If count and array parameters are optional, there will be no validation
                 if valueRequired == 'true' or lenValueRequired == 'true':
                     if value.type != 'char':
-                        checkExpr.append('skip |= validate_array(local_data->report_data, "{}", {ppp}"{ldn}"{pps}, {ppp}"{dn}"{pps}, {pf}{ln}, {pf}{vn}, {}, {}, {}, {});\n'.format(
+                        checkExpr.append('skip |= validate_array(local_data->report_data, "{}", {ppp}"{ldn}"{pps}, {ppp}"{dn}"{pps}, {pf}{ln}, &{pf}{vn}, {}, {}, {}, {});\n'.format(
                             funcPrintName, lenValueRequired, valueRequired, count_required_vuid, array_required_vuid, ln=lenValue.name, ldn=lenPrintName, dn=valuePrintName, vn=value.name, pf=prefix, **postProcSpec))
                     else:
                         # Arrays of strings receive special processing

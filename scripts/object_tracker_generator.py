@@ -744,13 +744,9 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
             commonparent_vuid_string = 'VUID-%s-commonparent' % parent_name
             parent_vuid = self.GetVuid(commonparent_vuid_string)
         if obj_count is not None:
-            pre_call_code += '%s    if (%s%s) {\n' % (indent, prefix, obj_name)
-            indent = self.incIndent(indent)
             pre_call_code += '%s    for (uint32_t %s = 0; %s < %s; ++%s) {\n' % (indent, index, index, obj_count, index)
             indent = self.incIndent(indent)
             pre_call_code += '%s    skip |= ValidateObject(%s, %s%s[%s], %s, %s, %s, %s);\n' % (indent, disp_name, prefix, obj_name, index, self.GetVulkanObjType(obj_type), null_allowed, param_vuid, parent_vuid)
-            indent = self.decIndent(indent)
-            pre_call_code += '%s    }\n' % indent
             indent = self.decIndent(indent)
             pre_call_code += '%s    }\n' % indent
         else:

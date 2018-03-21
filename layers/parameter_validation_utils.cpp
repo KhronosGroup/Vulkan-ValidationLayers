@@ -1599,7 +1599,7 @@ bool pv_vkCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache
                         report_data, "vkCreateGraphicsPipelines",
                         ParameterName("pCreateInfos[%i].pMultisampleState->rasterizationSamples", ParameterName::IndexVector{i}),
                         ParameterName("pCreateInfos[%i].pMultisampleState->pSampleMask", ParameterName::IndexVector{i}),
-                        pCreateInfos[i].pMultisampleState->rasterizationSamples, pCreateInfos[i].pMultisampleState->pSampleMask,
+                        pCreateInfos[i].pMultisampleState->rasterizationSamples, &pCreateInfos[i].pMultisampleState->pSampleMask,
                         true, false, VALIDATION_ERROR_UNDEFINED, VALIDATION_ERROR_UNDEFINED);
 
                     skip |= validate_bool32(
@@ -1765,7 +1765,7 @@ bool pv_vkCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache
                         report_data, "vkCreateGraphicsPipelines",
                         ParameterName("pCreateInfos[%i].pColorBlendState->attachmentCount", ParameterName::IndexVector{i}),
                         ParameterName("pCreateInfos[%i].pColorBlendState->pAttachments", ParameterName::IndexVector{i}),
-                        pCreateInfos[i].pColorBlendState->attachmentCount, pCreateInfos[i].pColorBlendState->pAttachments, false,
+                        pCreateInfos[i].pColorBlendState->attachmentCount, &pCreateInfos[i].pColorBlendState->pAttachments, false,
                         true, VALIDATION_ERROR_UNDEFINED, VALIDATION_ERROR_UNDEFINED);
 
                     if (pCreateInfos[i].pColorBlendState->pAttachments != NULL) {
@@ -2054,7 +2054,7 @@ bool pv_vkFreeDescriptorSets(VkDevice device, VkDescriptorPool descriptorPool, u
     // This is an array of handles, where the elements are allowed to be VK_NULL_HANDLE, and does not require any validation beyond
     // validate_array()
     skip |= validate_array(report_data, "vkFreeDescriptorSets", "descriptorSetCount", "pDescriptorSets", descriptorSetCount,
-                           pDescriptorSets, true, true, VALIDATION_ERROR_UNDEFINED, VALIDATION_ERROR_UNDEFINED);
+                           &pDescriptorSets, true, true, VALIDATION_ERROR_UNDEFINED, VALIDATION_ERROR_UNDEFINED);
     return skip;
 }
 
@@ -2238,7 +2238,7 @@ bool pv_vkFreeCommandBuffers(VkDevice device, VkCommandPool commandPool, uint32_
     // This is an array of handles, where the elements are allowed to be VK_NULL_HANDLE, and does not require any validation beyond
     // validate_array()
     skip |= validate_array(report_data, "vkFreeCommandBuffers", "commandBufferCount", "pCommandBuffers", commandBufferCount,
-                           pCommandBuffers, true, true, VALIDATION_ERROR_UNDEFINED, VALIDATION_ERROR_UNDEFINED);
+                           &pCommandBuffers, true, true, VALIDATION_ERROR_UNDEFINED, VALIDATION_ERROR_UNDEFINED);
     return skip;
 }
 
@@ -2639,7 +2639,7 @@ VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateDeviceExtensionProperties(VkPhysicalDe
     instance_layer_data *local_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), instance_layer_data_map);
     bool skip =
         validate_array(local_data->report_data, "vkEnumerateDeviceExtensionProperties", "pPropertyCount", "pProperties",
-                       pPropertyCount, pProperties, true, false, false, VALIDATION_ERROR_UNDEFINED, VALIDATION_ERROR_2761f401);
+                       pPropertyCount, &pProperties, true, false, false, VALIDATION_ERROR_UNDEFINED, VALIDATION_ERROR_2761f401);
     if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
 
     return local_data->dispatch_table.EnumerateDeviceExtensionProperties(physicalDevice, NULL, pPropertyCount, pProperties);
@@ -2742,12 +2742,12 @@ bool pv_vkQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR *pPresentInfo) {
             skip |= validate_struct_pnext(device_data->report_data, "QueuePresentKHR", "pCreateInfo->pNext->pNext", NULL,
                                           present_regions->pNext, 0, NULL, GeneratedHeaderVersion, VALIDATION_ERROR_1121c40d);
             skip |= validate_array(device_data->report_data, "QueuePresentKHR", "pCreateInfo->pNext->swapchainCount",
-                                   "pCreateInfo->pNext->pRegions", present_regions->swapchainCount, present_regions->pRegions, true,
-                                   false, VALIDATION_ERROR_UNDEFINED, VALIDATION_ERROR_UNDEFINED);
+                                   "pCreateInfo->pNext->pRegions", present_regions->swapchainCount, &present_regions->pRegions,
+                                   true, false, VALIDATION_ERROR_UNDEFINED, VALIDATION_ERROR_UNDEFINED);
             for (uint32_t i = 0; i < present_regions->swapchainCount; ++i) {
                 skip |= validate_array(device_data->report_data, "QueuePresentKHR", "pCreateInfo->pNext->pRegions[].rectangleCount",
                                        "pCreateInfo->pNext->pRegions[].pRectangles", present_regions->pRegions[i].rectangleCount,
-                                       present_regions->pRegions[i].pRectangles, true, false, VALIDATION_ERROR_UNDEFINED,
+                                       &present_regions->pRegions[i].pRectangles, true, false, VALIDATION_ERROR_UNDEFINED,
                                        VALIDATION_ERROR_UNDEFINED);
             }
         }
