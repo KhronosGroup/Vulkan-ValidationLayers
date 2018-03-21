@@ -22630,6 +22630,9 @@ TEST_F(VkPositiveLayerTest, ImmutableSamplerOnlyDescriptor) {
     m_errorMonitor->VerifyNotFound();
 
     vkDestroySampler(m_device->device(), sampler, NULL);
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
 }
 
 TEST_F(VkLayerTest, DuplicateDescriptorBinding) {
