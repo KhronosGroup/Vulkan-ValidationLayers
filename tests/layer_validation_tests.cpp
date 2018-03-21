@@ -13721,6 +13721,9 @@ TEST_F(VkLayerTest, VtxBufferBadIndex) {
     m_commandBuffer->Draw(1, 0, 0, 0);
 
     m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
 }
 
 TEST_F(VkLayerTest, MismatchCountQueueCreateRequestedFeature) {
