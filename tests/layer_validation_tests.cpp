@@ -15669,6 +15669,10 @@ TEST_F(VkLayerTest, FramebufferIncompatible) {
     vkCmdExecuteCommands(m_commandBuffer->handle(), 1, &sec_cb);
     m_errorMonitor->VerifyFound();
     // Cleanup
+
+    vkCmdEndRenderPass(m_commandBuffer->handle());
+    vkEndCommandBuffer(m_commandBuffer->handle());
+
     vkDestroyImageView(m_device->device(), view, NULL);
     vkDestroyRenderPass(m_device->device(), rp, NULL);
     vkDestroyFramebuffer(m_device->device(), fb, NULL);
