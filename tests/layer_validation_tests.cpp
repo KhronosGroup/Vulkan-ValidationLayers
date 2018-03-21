@@ -11067,6 +11067,9 @@ TEST_F(VkLayerTest, FillBufferWithinRenderPass) {
     m_commandBuffer->FillBuffer(dstBuffer.handle(), 0, 4, 0x11111111);
 
     m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
 }
 
 TEST_F(VkLayerTest, UpdateBufferWithinRenderPass) {
