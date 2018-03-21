@@ -23779,6 +23779,9 @@ TEST_F(VkPositiveLayerTest, DynamicOffsetWithInactiveBinding) {
     m_commandBuffer->Draw(1, 0, 0, 0);
     m_errorMonitor->VerifyNotFound();
 
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+
     vkDestroyBuffer(m_device->device(), dyub1, NULL);
     vkDestroyBuffer(m_device->device(), dyub2, NULL);
     vkFreeMemory(m_device->device(), mem1, NULL);
