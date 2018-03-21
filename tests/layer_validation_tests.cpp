@@ -23347,6 +23347,10 @@ TEST_F(VkPositiveLayerTest, PushDescriptorUnboundSetTest) {
     vkCmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
 
     m_errorMonitor->VerifyNotFound();
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+
     vkDestroyDescriptorPool(m_device->device(), ds_pool, NULL);
 }
 
