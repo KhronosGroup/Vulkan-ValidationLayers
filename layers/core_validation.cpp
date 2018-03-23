@@ -815,9 +815,8 @@ static bool isDynamic(const PIPELINE_STATE *pPipeline, const VkDynamicState stat
 static bool validate_draw_state_flags(layer_data *dev_data, GLOBAL_CB_NODE *pCB, const PIPELINE_STATE *pPipe, bool indexed,
                                       UNIQUE_VALIDATION_ERROR_CODE const msg_code) {
     bool result = false;
-    if (pPipe->graphicsPipelineCI.pInputAssemblyState &&
-        ((pPipe->graphicsPipelineCI.pInputAssemblyState->topology == VK_PRIMITIVE_TOPOLOGY_LINE_LIST) ||
-         (pPipe->graphicsPipelineCI.pInputAssemblyState->topology == VK_PRIMITIVE_TOPOLOGY_LINE_STRIP))) {
+    if (pPipe->topology_at_rasterizer == VK_PRIMITIVE_TOPOLOGY_LINE_LIST ||
+        pPipe->topology_at_rasterizer == VK_PRIMITIVE_TOPOLOGY_LINE_STRIP) {
         result |= validate_status(dev_data, pCB, CBSTATUS_LINE_WIDTH_SET, VK_DEBUG_REPORT_ERROR_BIT_EXT,
                                   "Dynamic line width state not set for this command buffer", msg_code);
     }

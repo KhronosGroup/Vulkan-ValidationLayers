@@ -608,6 +608,7 @@ class PIPELINE_STATE : public BASE_NODE {
     std::vector<VkPipelineColorBlendAttachmentState> attachments;
     bool blendConstantsEnabled;  // Blend constants enabled for any attachments
     PIPELINE_LAYOUT_NODE pipeline_layout;
+    VkPrimitiveTopology topology_at_rasterizer;
 
     // Default constructor
     PIPELINE_STATE()
@@ -621,7 +622,8 @@ class PIPELINE_STATE : public BASE_NODE {
           vertexBindingDescriptions(),
           attachments(),
           blendConstantsEnabled(false),
-          pipeline_layout() {}
+          pipeline_layout(),
+          topology_at_rasterizer{} {}
 
     void initGraphicsPipeline(const VkGraphicsPipelineCreateInfo *pCreateInfo, std::shared_ptr<RENDER_PASS_STATE> &&rpstate) {
         bool uses_color_attachment = false;
@@ -662,6 +664,9 @@ class PIPELINE_STATE : public BASE_NODE {
                 this->attachments = std::vector<VkPipelineColorBlendAttachmentState>(pCBCI->pAttachments,
                                                                                      pCBCI->pAttachments + pCBCI->attachmentCount);
             }
+        }
+        if (graphicsPipelineCI.pInputAssemblyState) {
+            topology_at_rasterizer = graphicsPipelineCI.pInputAssemblyState->topology;
         }
         rp_state = rpstate;
     }

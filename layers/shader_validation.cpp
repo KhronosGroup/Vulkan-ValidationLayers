@@ -1373,6 +1373,39 @@ static VkDescriptorSetLayoutBinding const *get_descriptor_binding(PIPELINE_LAYOU
     return pipelineLayout->set_layouts[slot.first]->GetDescriptorSetLayoutBindingPtrFromBinding(slot.second);
 }
 
+static void process_execution_modes(shader_module const *src, spirv_inst_iter entrypoint, PIPELINE_STATE *pipeline) {
+    auto entrypoint_id = entrypoint.word(1);
+    bool is_point_mode = false;
+
+    for (auto insn : *src) {
+        if (insn.opcode() == spv::OpExecutionMode && insn.word(1) == entrypoint_id) {
+            switch (insn.word(2)) {
+                case spv::ExecutionModePointMode:
+                    // In tessellation shaders, PointMode is separate and trumps the tessellation topology.
+                    is_point_mode = true;
+                    break;
+
+                case spv::ExecutionModeOutputPoints:
+                    pipeline->topology_at_rasterizer = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+                    break;
+
+                case spv::ExecutionModeIsolines:
+                case spv::ExecutionModeOutputLineStrip:
+                    pipeline->topology_at_rasterizer = VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;
+                    break;
+
+                case spv::ExecutionModeTriangles:
+                case spv::ExecutionModeQuads:
+                case spv::ExecutionModeOutputTriangleStrip:
+                    pipeline->topology_at_rasterizer = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
+                    break;
+            }
+        }
+    }
+
+    if (is_point_mode) pipeline->topology_at_rasterizer = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+}
+
 static bool validate_pipeline_shader_stage(layer_data *dev_data, VkPipelineShaderStageCreateInfo const *pStage,
                                            PIPELINE_STATE *pipeline, shader_module const **out_module,
                                            spirv_inst_iter *out_entrypoint) {
@@ -1394,6 +1427,7 @@ static bool validate_pipeline_shader_stage(layer_data *dev_data, VkPipelineShade
 
     // Mark accessible ids
     auto accessible_ids = mark_accessible_ids(module, entrypoint);
+    process_execution_modes(module, entrypoint, pipeline);
 
     // Validate descriptor set layout against what the entrypoint actually uses
     bool has_writable_descriptor = false;
