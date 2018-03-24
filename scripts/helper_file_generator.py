@@ -723,6 +723,12 @@ class HelperFileOutputGenerator(OutputGenerator):
         safe_struct_helper_source = '\n'
         safe_struct_helper_source += '#include "vk_safe_struct.h"\n'
         safe_struct_helper_source += '#include <string.h>\n'
+        safe_struct_helper_source += '#ifdef VK_USE_PLATFORM_ANDROID_KHR\n'
+        safe_struct_helper_source += '#if __ANDROID_API__ < __ANDROID_API_O__\n'
+        safe_struct_helper_source += 'struct AHardwareBuffer {};\n'
+        safe_struct_helper_source += '#endif\n'
+        safe_struct_helper_source += '#endif\n'
+
         safe_struct_helper_source += '\n'
         safe_struct_helper_source += self.GenerateSafeStructSource()
         return safe_struct_helper_source
