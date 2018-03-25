@@ -11806,6 +11806,107 @@ TEST_F(VkLayerTest, InvalidBarriers) {
     bad_command_buffer.end();
 }
 
+// Helpers for the tests below
+static void ValidOwnershipTransferOp(ErrorMonitor *monitor, VkCommandBufferObj *cb, VkPipelineStageFlags src_stages,
+                                     VkPipelineStageFlags dst_stages, const VkBufferMemoryBarrier *buf_barrier,
+                                     const VkImageMemoryBarrier *img_barrier) {
+    monitor->ExpectSuccess();
+    cb->begin();
+    uint32_t num_buf_barrier = (buf_barrier) ? 1 : 0;
+    uint32_t num_img_barrier = (img_barrier) ? 1 : 0;
+    cb->PipelineBarrier(src_stages, dst_stages, 0, 0, nullptr, num_buf_barrier, buf_barrier, num_img_barrier, img_barrier);
+    cb->end();
+    cb->QueueCommandBuffer();  // Implicitly waits
+    monitor->VerifyNotFound();
+}
+static void ValidOwnershipTransfer(ErrorMonitor *monitor, VkCommandBufferObj *cb_from, VkCommandBufferObj *cb_to,
+                                   VkPipelineStageFlags src_stages, VkPipelineStageFlags dst_stages,
+                                   const VkBufferMemoryBarrier *buf_barrier, const VkImageMemoryBarrier *img_barrier) {
+    ValidOwnershipTransferOp(monitor, cb_from, src_stages, dst_stages, buf_barrier, img_barrier);
+    ValidOwnershipTransferOp(monitor, cb_to, src_stages, dst_stages, buf_barrier, img_barrier);
+}
+
+TEST_F(VkPositiveLayerTest, OwnershipTranfersImage) {
+    TEST_DESCRIPTION("Valid image ownership transfers that shouldn't create errors");
+    ASSERT_NO_FATAL_FAILURE(Init(nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+
+    uint32_t no_gfx = m_device->QueueFamilyWithoutCapabilities(VK_QUEUE_GRAPHICS_BIT);
+    if (no_gfx == UINT32_MAX) {
+        printf("             Required queue families not present (non-graphics capable required).\n");
+        return;
+    }
+    VkQueueObj *no_gfx_queue = m_device->queue_family_queues(no_gfx)[0].get();
+
+    VkCommandPoolObj no_gfx_pool(m_device, no_gfx, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+    VkCommandBufferObj no_gfx_cb(m_device, &no_gfx_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, no_gfx_queue);
+
+    // Create an "exclusive" image owned by the graphics queue.
+    VkImageObj image(m_device);
+    VkFlags image_use = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+    image.Init(32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, image_use, VK_IMAGE_TILING_OPTIMAL, 0);
+    ASSERT_TRUE(image.initialized());
+    auto image_subres = image.subresource_range(VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1);
+    auto image_barrier = image.image_memory_barrier(0, 0, image.Layout(), image.Layout(), image_subres);
+    image_barrier.srcQueueFamilyIndex = m_device->graphics_queue_node_index_;
+    image_barrier.dstQueueFamilyIndex = no_gfx;
+
+    ValidOwnershipTransfer(m_errorMonitor, m_commandBuffer, &no_gfx_cb, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT,
+                           VK_PIPELINE_STAGE_TRANSFER_BIT, nullptr, &image_barrier);
+
+    // Change layouts while changing ownership
+    image_barrier.srcQueueFamilyIndex = no_gfx;
+    image_barrier.dstQueueFamilyIndex = m_device->graphics_queue_node_index_;
+    image_barrier.oldLayout = image.Layout();
+    // Make sure the new layout is different from the old
+    if (image_barrier.oldLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) {
+        image_barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    } else {
+        image_barrier.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    }
+
+    ValidOwnershipTransfer(m_errorMonitor, &no_gfx_cb, m_commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                           VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, nullptr, &image_barrier);
+}
+
+TEST_F(VkPositiveLayerTest, OwnershipTranfersBuffer) {
+    TEST_DESCRIPTION("Valid buffer ownership transfers that shouldn't create errors");
+    ASSERT_NO_FATAL_FAILURE(Init(nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+
+    uint32_t no_gfx = m_device->QueueFamilyWithoutCapabilities(VK_QUEUE_GRAPHICS_BIT);
+    if (no_gfx == UINT32_MAX) {
+        printf("             Required queue families not present (non-graphics capable required).\n");
+        return;
+    }
+    VkQueueObj *no_gfx_queue = m_device->queue_family_queues(no_gfx)[0].get();
+
+    VkCommandPoolObj no_gfx_pool(m_device, no_gfx, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+    VkCommandBufferObj no_gfx_cb(m_device, &no_gfx_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, no_gfx_queue);
+
+    // Create a buffer
+    const VkDeviceSize buffer_size = 256;
+    uint8_t data[buffer_size] = {0xFF};
+    VkConstantBufferObj buffer(m_device, buffer_size, data, VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT);
+    ASSERT_TRUE(buffer.initialized());
+    auto buffer_barrier = buffer.buffer_memory_barrier(0, 0, 0, VK_WHOLE_SIZE);
+
+    // Let gfx own it.
+    buffer_barrier.srcQueueFamilyIndex = m_device->graphics_queue_node_index_;
+    buffer_barrier.dstQueueFamilyIndex = m_device->graphics_queue_node_index_;
+    ValidOwnershipTransferOp(m_errorMonitor, m_commandBuffer, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                             &buffer_barrier, nullptr);
+
+    // Transfer it to non-gfx
+    buffer_barrier.dstQueueFamilyIndex = no_gfx;
+    ValidOwnershipTransfer(m_errorMonitor, m_commandBuffer, &no_gfx_cb, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT,
+                           VK_PIPELINE_STAGE_TRANSFER_BIT, &buffer_barrier, nullptr);
+
+    // Transfer it to gfx
+    buffer_barrier.srcQueueFamilyIndex = no_gfx;
+    buffer_barrier.dstQueueFamilyIndex = m_device->graphics_queue_node_index_;
+    ValidOwnershipTransfer(m_errorMonitor, &no_gfx_cb, m_commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                           VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, &buffer_barrier, nullptr);
+}
+
 class BarrierQueueFamilyTestHelper {
    public:
     BarrierQueueFamilyTestHelper(VkLayerTest &test) : layer_test_(test), image_(test.DeviceObj()) {}
