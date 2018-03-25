@@ -573,11 +573,10 @@ bool ValidateBarriersToImages(layer_data *device_data, GLOBAL_CB_NODE const *cb_
 }
 
 static bool IsReleaseOp(layer_data *device_data, GLOBAL_CB_NODE *cb_state, VkImageMemoryBarrier const *barrier) {
-    if (barrier->srcQueueFamilyIndex == barrier->dstQueueFamilyIndex)
-        return false;
+    if (!IsTransferOp(barrier)) return false;
 
     auto pool = GetCommandPoolNode(device_data, cb_state->createInfo.commandPool);
-    return pool->queueFamilyIndex == barrier->srcQueueFamilyIndex;
+    return pool && IsReleaseOp<VkImageMemoryBarrier, true>(pool, barrier);
 }
 
 void TransitionImageLayouts(layer_data *device_data, GLOBAL_CB_NODE *cb_state, uint32_t memBarrierCount,

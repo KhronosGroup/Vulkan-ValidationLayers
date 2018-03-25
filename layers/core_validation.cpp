@@ -7984,9 +7984,49 @@ bool CheckStageMaskQueueCompatibility(layer_data *dev_data, VkCommandBuffer comm
     return skip;
 }
 
+// Check if all barriers are of a given operation type.
+template <typename Barrier, typename OpCheck>
+static bool AllTransferOp(const COMMAND_POOL_NODE *pool, OpCheck &op_check, uint32_t count, const Barrier *barriers) {
+    if (!pool) return false;
+
+    for (uint32_t b = 0; b < count; b++) {
+        if (!op_check(pool, barriers + b)) return false;
+    }
+    return true;
+}
+
+enum BarrierOperationsType {
+    kAllAcquire,  // All Barrier operations are "ownership acquire" operations
+    kAllRelease,  // All Barrier operations are "ownership release" operations
+    kGeneral,     // Either no ownership operations or a mix of ownership operation types and/or non-ownership operations
+};
+
+// Look at the barriers to see if we they are all release or all acquire, the result impacts queue properties validation
+BarrierOperationsType ComputeBarrierOperationsType(layer_data *device_data, GLOBAL_CB_NODE *cb_state, uint32_t buffer_barrier_count,
+                                                   const VkBufferMemoryBarrier *buffer_barriers, uint32_t image_barrier_count,
+                                                   const VkImageMemoryBarrier *image_barriers) {
+    auto pool = GetCommandPoolNode(device_data, cb_state->createInfo.commandPool);
+    BarrierOperationsType op_type = kGeneral;
+
+    // Look at the barrier details only if they exist
+    // Note: AllTransferOp returns true for count == 0
+    if ((buffer_barrier_count + image_barrier_count) != 0) {
+        if (AllTransferOp(pool, IsReleaseOp<VkBufferMemoryBarrier>, buffer_barrier_count, buffer_barriers) &&
+            AllTransferOp(pool, IsReleaseOp<VkImageMemoryBarrier>, image_barrier_count, image_barriers)) {
+            op_type = kAllRelease;
+        } else if (AllTransferOp(pool, IsAcquireOp<VkBufferMemoryBarrier>, buffer_barrier_count, buffer_barriers) &&
+                   AllTransferOp(pool, IsAcquireOp<VkImageMemoryBarrier>, image_barrier_count, image_barriers)) {
+            op_type = kAllAcquire;
+        }
+    }
+
+    return op_type;
+}
+
 bool ValidateStageMasksAgainstQueueCapabilities(layer_data *dev_data, GLOBAL_CB_NODE const *cb_state,
                                                 VkPipelineStageFlags source_stage_mask, VkPipelineStageFlags dest_stage_mask,
-                                                const char *function, UNIQUE_VALIDATION_ERROR_CODE error_code) {
+                                                BarrierOperationsType barrier_op_type, const char *function,
+                                                UNIQUE_VALIDATION_ERROR_CODE error_code) {
     bool skip = false;
     uint32_t queue_family_index = dev_data->commandPoolMap[cb_state->createInfo.commandPool].queueFamilyIndex;
     instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(dev_data->physical_device), instance_layer_data_map);
@@ -7999,11 +8039,13 @@ bool ValidateStageMasksAgainstQueueCapabilities(layer_data *dev_data, GLOBAL_CB_
     if (queue_family_index < physical_device_state->queue_family_properties.size()) {
         VkQueueFlags specified_queue_flags = physical_device_state->queue_family_properties[queue_family_index].queueFlags;
 
-        if ((source_stage_mask & VK_PIPELINE_STAGE_ALL_COMMANDS_BIT) == 0) {
+        // Only check the source stage mask if any barriers aren't "acquire ownership"
+        if ((barrier_op_type != kAllAcquire) && (source_stage_mask & VK_PIPELINE_STAGE_ALL_COMMANDS_BIT) == 0) {
             skip |= CheckStageMaskQueueCompatibility(dev_data, cb_state->commandBuffer, source_stage_mask, specified_queue_flags,
                                                      function, "srcStageMask", error_code);
         }
-        if ((dest_stage_mask & VK_PIPELINE_STAGE_ALL_COMMANDS_BIT) == 0) {
+        // Only check the dest stage mask if any barriers aren't "release ownership"
+        if ((barrier_op_type != kAllRelease) && (dest_stage_mask & VK_PIPELINE_STAGE_ALL_COMMANDS_BIT) == 0) {
             skip |= CheckStageMaskQueueCompatibility(dev_data, cb_state->commandBuffer, dest_stage_mask, specified_queue_flags,
                                                      function, "dstStageMask", error_code);
         }
@@ -8021,8 +8063,10 @@ VKAPI_ATTR void VKAPI_CALL CmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t
     unique_lock_t lock(global_lock);
     GLOBAL_CB_NODE *cb_state = GetCBNode(dev_data, commandBuffer);
     if (cb_state) {
-        skip |= ValidateStageMasksAgainstQueueCapabilities(dev_data, cb_state, sourceStageMask, dstStageMask, "vkCmdWaitEvents",
-                                                           VALIDATION_ERROR_1e600918);
+        auto barrier_op_type = ComputeBarrierOperationsType(dev_data, cb_state, bufferMemoryBarrierCount, pBufferMemoryBarriers,
+                                                            imageMemoryBarrierCount, pImageMemoryBarriers);
+        skip |= ValidateStageMasksAgainstQueueCapabilities(dev_data, cb_state, sourceStageMask, dstStageMask, barrier_op_type,
+                                                           "vkCmdWaitEvents", VALIDATION_ERROR_1e600918);
         skip |= ValidateStageMaskGsTsEnables(dev_data, sourceStageMask, "vkCmdWaitEvents()", VALIDATION_ERROR_1e60090e,
                                              VALIDATION_ERROR_1e600912);
         skip |= ValidateStageMaskGsTsEnables(dev_data, dstStageMask, "vkCmdWaitEvents()", VALIDATION_ERROR_1e600910,
@@ -8064,8 +8108,10 @@ static bool PreCallValidateCmdPipelineBarrier(layer_data *device_data, GLOBAL_CB
                                               uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier *pBufferMemoryBarriers,
                                               uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier *pImageMemoryBarriers) {
     bool skip = false;
-    skip |= ValidateStageMasksAgainstQueueCapabilities(device_data, cb_state, srcStageMask, dstStageMask, "vkCmdPipelineBarrier",
-                                                       VALIDATION_ERROR_1b80093e);
+    auto barrier_op_type = ComputeBarrierOperationsType(device_data, cb_state, bufferMemoryBarrierCount, pBufferMemoryBarriers,
+                                                        imageMemoryBarrierCount, pImageMemoryBarriers);
+    skip |= ValidateStageMasksAgainstQueueCapabilities(device_data, cb_state, srcStageMask, dstStageMask, barrier_op_type,
+                                                       "vkCmdPipelineBarrier", VALIDATION_ERROR_1b80093e);
     skip |= ValidateCmdQueueFlags(device_data, cb_state, "vkCmdPipelineBarrier()",
                                   VK_QUEUE_TRANSFER_BIT | VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT, VALIDATION_ERROR_1b802415);
     skip |= ValidateCmd(device_data, cb_state, CMD_PIPELINEBARRIER, "vkCmdPipelineBarrier()");

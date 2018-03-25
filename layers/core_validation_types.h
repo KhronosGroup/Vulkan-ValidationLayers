@@ -76,6 +76,22 @@ struct COMMAND_POOL_NODE : public BASE_NODE {
     std::unordered_set<VkCommandBuffer> commandBuffers;
 };
 
+// Utilities for barriers and the commmand pool
+template <typename Barrier>
+static bool IsTransferOp(const Barrier *barrier) {
+    return barrier->srcQueueFamilyIndex != barrier->dstQueueFamilyIndex;
+}
+
+template <typename Barrier, bool assume_transfer = false>
+static bool IsReleaseOp(const COMMAND_POOL_NODE *pool, const Barrier *barrier) {
+    return (assume_transfer || IsTransferOp(barrier)) && (pool->queueFamilyIndex == barrier->srcQueueFamilyIndex);
+}
+
+template <typename Barrier, bool assume_transfer = false>
+static bool IsAcquireOp(const COMMAND_POOL_NODE *pool, const Barrier *barrier) {
+    return (assume_transfer || IsTransferOp(barrier)) && (pool->queueFamilyIndex == barrier->dstQueueFamilyIndex);
+}
+
 // Generic wrapper for vulkan objects
 struct VK_OBJECT {
     uint64_t handle;
