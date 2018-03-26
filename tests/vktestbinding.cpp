@@ -382,7 +382,7 @@ void Device::update_descriptor_sets(const std::vector<VkWriteDescriptorSet> &wri
     vkUpdateDescriptorSets(handle(), writes.size(), writes.data(), copies.size(), copies.data());
 }
 
-void Queue::submit(const std::vector<const CommandBuffer *> &cmds, Fence &fence) {
+VkResult Queue::submit(const std::vector<const CommandBuffer *> &cmds, const Fence &fence, bool expect_success) {
     const std::vector<VkCommandBuffer> cmd_handles = MakeVkHandles<VkCommandBuffer>(cmds);
     VkSubmitInfo submit_info;
     submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -395,17 +395,25 @@ void Queue::submit(const std::vector<const CommandBuffer *> &cmds, Fence &fence)
     submit_info.signalSemaphoreCount = 0;
     submit_info.pSignalSemaphores = NULL;
 
-    EXPECT(vkQueueSubmit(handle(), 1, &submit_info, fence.handle()) == VK_SUCCESS);
+    VkResult result = vkQueueSubmit(handle(), 1, &submit_info, fence.handle());
+    if (expect_success) EXPECT(result == VK_SUCCESS);
+    return result;
 }
 
-void Queue::submit(const CommandBuffer &cmd, Fence &fence) { submit(std::vector<const CommandBuffer *>(1, &cmd), fence); }
+VkResult Queue::submit(const CommandBuffer &cmd, const Fence &fence, bool expect_success) {
+    return submit(std::vector<const CommandBuffer *>(1, &cmd), fence, expect_success);
+}
 
-void Queue::submit(const CommandBuffer &cmd) {
+VkResult Queue::submit(const CommandBuffer &cmd, bool expect_success) {
     Fence fence;
-    submit(cmd, fence);
+    return submit(cmd, fence);
 }
 
-void Queue::wait() { EXPECT(vkQueueWaitIdle(handle()) == VK_SUCCESS); }
+VkResult Queue::wait() {
+    VkResult result = vkQueueWaitIdle(handle());
+    EXPECT(result == VK_SUCCESS);
+    return result;
+}
 
 DeviceMemory::~DeviceMemory() {
     if (initialized()) vkFreeMemory(device(), handle(), NULL);
@@ -449,6 +457,11 @@ VkMemoryAllocateInfo DeviceMemory::get_resource_alloc_info(const Device &dev, co
 NON_DISPATCHABLE_HANDLE_DTOR(Fence, vkDestroyFence)
 
 void Fence::init(const Device &dev, const VkFenceCreateInfo &info) { NON_DISPATCHABLE_HANDLE_INIT(vkCreateFence, dev, &info); }
+
+VkResult Fence::wait(VkBool32 wait_all, uint64_t timeout) const {
+    VkFence fence = handle();
+    return vkWaitForFences(device(), 1, &fence, wait_all, timeout);
+}
 
 NON_DISPATCHABLE_HANDLE_DTOR(Semaphore, vkDestroySemaphore)
 

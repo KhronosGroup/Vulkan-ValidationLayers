@@ -281,12 +281,12 @@ class Queue : public internal::Handle<VkQueue> {
     explicit Queue(VkQueue queue, int index) : Handle(queue) { family_index_ = index; }
 
     // vkQueueSubmit()
-    void submit(const std::vector<const CommandBuffer *> &cmds, Fence &fence);
-    void submit(const CommandBuffer &cmd, Fence &fence);
-    void submit(const CommandBuffer &cmd);
+    VkResult submit(const std::vector<const CommandBuffer *> &cmds, const Fence &fence, bool expect_success = true);
+    VkResult submit(const CommandBuffer &cmd, const Fence &fence, bool expect_success = true);
+    VkResult submit(const CommandBuffer &cmd, bool expect_success = true);
 
     // vkQueueWaitIdle()
-    void wait();
+    VkResult wait();
 
     int get_family_index() { return family_index_; }
 
@@ -324,6 +324,7 @@ class Fence : public internal::NonDispHandle<VkFence> {
 
     // vkGetFenceStatus()
     VkResult status() const { return vkGetFenceStatus(device(), handle()); }
+    VkResult wait(VkBool32 wait_all, uint64_t timeout) const;
 
     static VkFenceCreateInfo create_info(VkFenceCreateFlags flags);
     static VkFenceCreateInfo create_info();

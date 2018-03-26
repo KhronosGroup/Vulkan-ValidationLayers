@@ -24219,13 +24219,9 @@ TEST_F(VkPositiveLayerTest, StencilLoadOp) {
     rpbinfo.renderArea.offset.y = 0;
     rpbinfo.framebuffer = fb;
 
-    VkFence fence = {};
-    VkFenceCreateInfo fence_ci = {};
-    fence_ci.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-    fence_ci.pNext = nullptr;
-    fence_ci.flags = 0;
-    result = vkCreateFence(m_device->device(), &fence_ci, nullptr, &fence);
-    ASSERT_VK_SUCCESS(result);
+    VkFenceObj fence;
+    fence.init(*m_device, VkFenceObj::create_info());
+    ASSERT_TRUE(fence.initialized());
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(rpbinfo);
@@ -24250,7 +24246,7 @@ TEST_F(VkPositiveLayerTest, StencilLoadOp) {
     range.baseArrayLayer = 0;
     range.layerCount = 1;
     barrier.subresourceRange = range;
-    vkWaitForFences(m_device->device(), 1, &fence, VK_TRUE, UINT64_MAX);
+    fence.wait(VK_TRUE, UINT64_MAX);
     VkCommandBufferObj cmdbuf(m_device, m_commandPool);
     cmdbuf.begin();
     cmdbuf.PipelineBarrier(VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 0, nullptr, 1,
@@ -24300,7 +24296,6 @@ TEST_F(VkPositiveLayerTest, StencilLoadOp) {
     m_errorMonitor->VerifyNotFound();
 
     vkQueueWaitIdle(m_device->m_queue);
-    vkDestroyFence(m_device->device(), fence, nullptr);
     vkDestroyRenderPass(m_device->device(), rp, nullptr);
     vkDestroyFramebuffer(m_device->device(), fb, nullptr);
 }

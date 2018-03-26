@@ -281,7 +281,7 @@ void VkRenderFramework::InitState(VkPhysicalDeviceFeatures *features, const VkCo
     }
 
     m_device = new VkDeviceObj(0, objs[0], m_device_extension_names, features);
-    m_device->get_device_queue();
+    m_device->SetDeviceQueue();
 
     m_depthStencil = new VkDepthStencilObj(m_device);
 
@@ -514,11 +514,15 @@ uint32_t VkDeviceObj::QueueFamilyMatching(VkQueueFlags with, VkQueueFlags withou
     return UINT32_MAX;
 }
 
-void VkDeviceObj::get_device_queue() {
+void VkDeviceObj::SetDeviceQueue() {
     ASSERT_NE(true, graphics_queues().empty());
     m_queue = graphics_queues()[0]->handle();
 }
 
+VkQueueObj *VkDeviceObj::GetDefaultQueue() {
+    if (graphics_queues().empty()) return nullptr;
+    return graphics_queues()[0];
+}
 VkDescriptorSetLayoutObj::VkDescriptorSetLayoutObj(const VkDeviceObj *device,
                                                    const std::vector<VkDescriptorSetLayoutBinding> &descriptor_set_bindings,
                                                    VkDescriptorSetLayoutCreateFlags flags) {
@@ -1359,8 +1363,15 @@ VkResult VkPipelineObj::CreateVKPipeline(VkPipelineLayout layout, VkRenderPass r
     return init_try(*m_device, *gp_ci);
 }
 
-VkCommandBufferObj::VkCommandBufferObj(VkDeviceObj *device, VkCommandPoolObj *pool, VkCommandBufferLevel level) {
+VkCommandBufferObj::VkCommandBufferObj(VkDeviceObj *device, VkCommandPoolObj *pool, VkCommandBufferLevel level, VkQueueObj *queue) {
     m_device = device;
+    if (queue) {
+        m_queue = queue;
+    } else {
+        m_queue = m_device->GetDefaultQueue();
+    }
+    assert(m_queue);
+
     auto create_info = vk_testing::CommandBuffer::create_info(pool->handle());
     create_info.level = level;
     init(*device, create_info);
@@ -1477,35 +1488,24 @@ void VkCommandBufferObj::Draw(uint32_t vertexCount, uint32_t instanceCount, uint
 }
 
 void VkCommandBufferObj::QueueCommandBuffer(bool checkSuccess) {
-    VkFence nullFence = {VK_NULL_HANDLE};
+    VkFenceObj nullFence;
     QueueCommandBuffer(nullFence, checkSuccess);
 }
 
-void VkCommandBufferObj::QueueCommandBuffer(VkFence fence, bool checkSuccess) {
+void VkCommandBufferObj::QueueCommandBuffer(const VkFenceObj &fence, bool checkSuccess) {
     VkResult err = VK_SUCCESS;
 
-    // submit the command buffer to the universal queue
-    VkSubmitInfo submit_info;
-    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    submit_info.pNext = NULL;
-    submit_info.waitSemaphoreCount = 0;
-    submit_info.pWaitSemaphores = NULL;
-    submit_info.pWaitDstStageMask = NULL;
-    submit_info.commandBufferCount = 1;
-    submit_info.pCommandBuffers = &handle();
-    submit_info.signalSemaphoreCount = 0;
-    submit_info.pSignalSemaphores = NULL;
-
-    err = vkQueueSubmit(m_device->m_queue, 1, &submit_info, fence);
+    err = m_queue->submit(*this, fence, checkSuccess);
     if (checkSuccess) {
         ASSERT_VK_SUCCESS(err);
     }
 
-    err = vkQueueWaitIdle(m_device->m_queue);
+    err = m_queue->wait();
     if (checkSuccess) {
         ASSERT_VK_SUCCESS(err);
     }
 
+    // TODO: Determine if we really want this serialization here
     // Wait for work to finish before cleaning up.
     vkDeviceWaitIdle(m_device->device());
 }

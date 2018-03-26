@@ -47,6 +47,7 @@ std::vector<Dst *> MakeTestbindingHandles(const std::vector<Src *> &v) {
     return handles;
 }
 
+typedef vk_testing::Queue VkQueueObj;
 class VkDeviceObj : public vk_testing::Device {
    public:
     VkDeviceObj(uint32_t id, VkPhysicalDevice obj);
@@ -60,7 +61,8 @@ class VkDeviceObj : public vk_testing::Device {
     }
 
     VkDevice device() { return handle(); }
-    void get_device_queue();
+    void SetDeviceQueue();
+    VkQueueObj *GetDefaultQueue();
 
     uint32_t id;
     VkPhysicalDeviceProperties props;
@@ -172,6 +174,7 @@ class VkDescriptorSetObj;
 class VkConstantBufferObj;
 class VkPipelineObj;
 class VkDescriptorSetObj;
+typedef vk_testing::Fence VkFenceObj;
 
 class VkCommandPoolObj : public vk_testing::CommandPool {
    public:
@@ -180,7 +183,8 @@ class VkCommandPoolObj : public vk_testing::CommandPool {
 
 class VkCommandBufferObj : public vk_testing::CommandBuffer {
    public:
-    VkCommandBufferObj(VkDeviceObj *device, VkCommandPoolObj *pool, VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+    VkCommandBufferObj(VkDeviceObj *device, VkCommandPoolObj *pool, VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+                       VkQueueObj *queue = nullptr);
     void PipelineBarrier(VkPipelineStageFlags src_stages, VkPipelineStageFlags dest_stages, VkDependencyFlags dependencyFlags,
                          uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers, uint32_t bufferMemoryBarrierCount,
                          const VkBufferMemoryBarrier *pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount,
@@ -197,7 +201,7 @@ class VkCommandBufferObj : public vk_testing::CommandBuffer {
     void DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset,
                      uint32_t firstInstance);
     void QueueCommandBuffer(bool checkSuccess = true);
-    void QueueCommandBuffer(VkFence fence, bool checkSuccess = true);
+    void QueueCommandBuffer(const VkFenceObj &fence, bool checkSuccess = true);
     void SetViewport(uint32_t firstViewport, uint32_t viewportCount, const VkViewport *pViewports);
     void SetStencilReference(VkStencilFaceFlags faceMask, uint32_t reference);
     void UpdateBuffer(VkBuffer buffer, VkDeviceSize dstOffset, VkDeviceSize dataSize, const void *pData);
@@ -212,6 +216,7 @@ class VkCommandBufferObj : public vk_testing::CommandBuffer {
 
    protected:
     VkDeviceObj *m_device;
+    VkQueueObj *m_queue;
 };
 
 class VkConstantBufferObj : public vk_testing::Buffer {
