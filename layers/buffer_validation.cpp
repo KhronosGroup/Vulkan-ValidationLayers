@@ -1541,17 +1541,23 @@ bool ValidateImageCopyData(const layer_data *device_data, const debug_report_dat
             }
         }
 
-        if ((src_state->createInfo.imageType == VK_IMAGE_TYPE_1D) || (src_state->createInfo.imageType == VK_IMAGE_TYPE_2D)) {
-            if ((0 != region.srcOffset.z) || (1 != src_copy_extent.depth)) {
-                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
-                                HandleToUint64(src_state->image), __LINE__, VALIDATION_ERROR_09c00df2, "IMAGE",
-                                "vkCmdCopyImage(): pRegion[%d] srcOffset.z is %d and extent.depth is %d. For 1D and 2D images "
-                                "these must be 0 and 1, respectively. %s",
-                                i, region.srcOffset.z, src_copy_extent.depth, validation_error_map[VALIDATION_ERROR_09c00df2]);
-            }
+        // VUID-VkImageCopy-srcImage-01785
+        if ((src_state->createInfo.imageType == VK_IMAGE_TYPE_1D) && ((0 != region.srcOffset.z) || (1 != src_copy_extent.depth))) {
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
+                            HandleToUint64(src_state->image), __LINE__, VALIDATION_ERROR_09c00df2, "IMAGE",
+                            "vkCmdCopyImage(): pRegion[%d] srcOffset.z is %d and extent.depth is %d. For 1D images "
+                            "these must be 0 and 1, respectively. %s",
+                            i, region.srcOffset.z, src_copy_extent.depth, validation_error_map[VALIDATION_ERROR_09c00df2]);
         }
 
-        // VU01199 changed with mnt1
+        // VUID-VkImageCopy-srcImage-01787
+        if ((src_state->createInfo.imageType == VK_IMAGE_TYPE_2D) && (0 != region.srcOffset.z)) {
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
+                            HandleToUint64(src_state->image), __LINE__, VALIDATION_ERROR_09c00df6, "IMAGE",
+                            "vkCmdCopyImage(): pRegion[%d] srcOffset.z is %d. For 2D images the z-offset must be 0. %s", i,
+                            region.srcOffset.z, validation_error_map[VALIDATION_ERROR_09c00df6]);
+        }
+
         if (GetDeviceExtensions(device_data)->vk_khr_maintenance1) {
             if (src_state->createInfo.imageType == VK_IMAGE_TYPE_3D) {
                 if ((0 != region.srcSubresource.baseArrayLayer) || (1 != region.srcSubresource.layerCount)) {
@@ -1643,14 +1649,21 @@ bool ValidateImageCopyData(const layer_data *device_data, const debug_report_dat
             }
         }
 
-        if ((dst_state->createInfo.imageType == VK_IMAGE_TYPE_1D) || (dst_state->createInfo.imageType == VK_IMAGE_TYPE_2D)) {
-            if ((0 != region.dstOffset.z) || (1 != dst_copy_extent.depth)) {
-                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
-                                HandleToUint64(dst_state->image), __LINE__, VALIDATION_ERROR_09c00df4, "IMAGE",
-                                "vkCmdCopyImage(): pRegion[%d] dstOffset.z is %d and dst_copy_extent.depth is %d. For 1D and 2D "
-                                "images these must be 0 and 1, respectively. %s",
-                                i, region.dstOffset.z, dst_copy_extent.depth, validation_error_map[VALIDATION_ERROR_09c00df4]);
-            }
+        // VUID-VkImageCopy-dstImage-01786
+        if ((dst_state->createInfo.imageType == VK_IMAGE_TYPE_1D) && ((0 != region.dstOffset.z) || (1 != dst_copy_extent.depth))) {
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
+                            HandleToUint64(dst_state->image), __LINE__, VALIDATION_ERROR_09c00df4, "IMAGE",
+                            "vkCmdCopyImage(): pRegion[%d] dstOffset.z is %d and extent.depth is %d. For 1D images these must be 0 "
+                            "and 1, respectively. %s",
+                            i, region.dstOffset.z, dst_copy_extent.depth, validation_error_map[VALIDATION_ERROR_09c00df4]);
+        }
+
+        // VUID-VkImageCopy-dstImage-01788
+        if ((dst_state->createInfo.imageType == VK_IMAGE_TYPE_2D) && (0 != region.dstOffset.z)) {
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
+                            HandleToUint64(dst_state->image), __LINE__, VALIDATION_ERROR_09c00df8, "IMAGE",
+                            "vkCmdCopyImage(): pRegion[%d] dstOffset.z is %d. For 2D images the z-offset must be 0. %s", i,
+                            region.dstOffset.z, validation_error_map[VALIDATION_ERROR_09c00df8]);
         }
 
         if (dst_state->createInfo.imageType == VK_IMAGE_TYPE_3D) {
