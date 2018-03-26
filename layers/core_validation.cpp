@@ -4618,7 +4618,7 @@ static bool PreCallValidateDestroyFramebuffer(layer_data *dev_data, VkFramebuffe
     bool skip = false;
     if (*framebuffer_state) {
         skip |=
-            ValidateObjectNotInUse(dev_data, *framebuffer_state, *obj_struct, "vkDestroyFrameBuffer", VALIDATION_ERROR_250006f8);
+            ValidateObjectNotInUse(dev_data, *framebuffer_state, *obj_struct, "vkDestroyFramebuffer", VALIDATION_ERROR_250006f8);
     }
     return skip;
 }
