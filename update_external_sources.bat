@@ -21,6 +21,8 @@ set do_64=0
 set do_debug=0
 set do_release=0
 
+git submodule update --init --recursive
+
 REM // ======== Parameter parsing ======== //
 
    set arg-use-implicit-component-list=1

@@ -15,6 +15,8 @@ echo CORE_COUNT=$CORE_COUNT
 
 REVISION_DIR="$CURRENT_DIR/external_revisions"
 
+git submodule update --init --recursive
+
 # Use tr -d to remove line endings
 GLSLANG_GITURL=$(cat "${REVISION_DIR}/glslang_giturl" | tr -d "\n\r")
 GLSLANG_REVISION=$(cat "${REVISION_DIR}/glslang_revision" | tr -d "\n\r")
