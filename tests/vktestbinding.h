@@ -26,6 +26,7 @@
 #include <algorithm>
 #include <assert.h>
 #include <iterator>
+#include <memory>
 #include <vector>
 
 #include "vulkan/vulkan.h"
@@ -213,7 +214,11 @@ class Device : public internal::Handle<VkDevice> {
     const std::vector<Queue *> &graphics_queues() const { return queues_[GRAPHICS]; }
     const std::vector<Queue *> &compute_queues() { return queues_[COMPUTE]; }
     const std::vector<Queue *> &dma_queues() { return queues_[DMA]; }
-    uint32_t queue_family_without_capabilities(VkQueueFlags capabilities);
+
+    typedef std::vector<std::unique_ptr<Queue>> QueueFamilyQueues;
+    typedef std::vector<QueueFamilyQueues> QueueFamilies;
+    const QueueFamilyQueues &queue_family_queues(uint32_t queue_family) const;
+
     uint32_t graphics_queue_node_index_;
 
     struct Format {
@@ -272,6 +277,7 @@ class Device : public internal::Handle<VkDevice> {
 
     std::vector<const char *> enabled_extensions_;
 
+    QueueFamilies queue_families_;
     std::vector<Queue *> queues_[QUEUE_COUNT];
     std::vector<Format> formats_;
 };

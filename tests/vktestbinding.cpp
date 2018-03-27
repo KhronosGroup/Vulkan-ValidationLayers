@@ -239,11 +239,6 @@ QueueCreateInfoArray::QueueCreateInfoArray(const std::vector<VkQueueFamilyProper
 Device::~Device() {
     if (!initialized()) return;
 
-    for (int i = 0; i < QUEUE_COUNT; i++) {
-        for (std::vector<Queue *>::iterator it = queues_[i].begin(); it != queues_[i].end(); it++) delete *it;
-        queues_[i].clear();
-    }
-
     vkDestroyDevice(handle(), NULL);
 }
 
@@ -309,24 +304,30 @@ void Device::init_queues() {
 
     vkGetPhysicalDeviceQueueFamilyProperties(phy_.handle(), &queue_node_count, queue_props);
 
+    queue_families_.resize(queue_node_count);
     for (uint32_t i = 0; i < queue_node_count; i++) {
         VkQueue queue;
 
+        QueueFamilyQueues &queue_storage = queue_families_[i];
+        queue_storage.reserve(queue_props[i].queueCount);
         for (uint32_t j = 0; j < queue_props[i].queueCount; j++) {
             // TODO: Need to add support for separate MEMMGR and work queues,
             // including synchronization
             vkGetDeviceQueue(handle(), i, j, &queue);
 
+            // Store single copy of the queue object that will self destruct
+            queue_storage.emplace_back(new Queue(queue, i));
+
             if (queue_props[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
-                queues_[GRAPHICS].push_back(new Queue(queue, i));
+                queues_[GRAPHICS].push_back(queue_storage.back().get());
             }
 
             if (queue_props[i].queueFlags & VK_QUEUE_COMPUTE_BIT) {
-                queues_[COMPUTE].push_back(new Queue(queue, i));
+                queues_[COMPUTE].push_back(queue_storage.back().get());
             }
 
             if (queue_props[i].queueFlags & VK_QUEUE_TRANSFER_BIT) {
-                queues_[DMA].push_back(new Queue(queue, i));
+                queues_[DMA].push_back(queue_storage.back().get());
             }
         }
     }
@@ -334,6 +335,10 @@ void Device::init_queues() {
     delete[] queue_props;
 
     EXPECT(!queues_[GRAPHICS].empty() || !queues_[COMPUTE].empty());
+}
+const Device::QueueFamilyQueues &Device::queue_family_queues(uint32_t queue_family) const {
+    assert(queue_family < queue_families_.size());
+    return queue_families_[queue_family];
 }
 
 void Device::init_formats() {
