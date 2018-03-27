@@ -4500,7 +4500,7 @@ static bool PreCallValidateDestroyCommandPool(layer_data *dev_data, VkCommandPoo
     return skip;
 }
 
-static void PostCallRecordDestroyCommandPool(layer_data *dev_data, VkCommandPool pool) {
+static void PreCallRecordDestroyCommandPool(layer_data *dev_data, VkCommandPool pool) {
     COMMAND_POOL_NODE *cp_state = GetCommandPoolNode(dev_data, pool);
     // Remove cmdpool from cmdpoolmap, after freeing layer data for the command buffers
     // "When a pool is destroyed, all command buffers allocated from the pool are freed."
@@ -4518,12 +4518,11 @@ VKAPI_ATTR void VKAPI_CALL DestroyCommandPool(VkDevice device, VkCommandPool com
     unique_lock_t lock(global_lock);
     bool skip = PreCallValidateDestroyCommandPool(dev_data, commandPool);
     if (!skip) {
+        if (commandPool != VK_NULL_HANDLE) {
+            PreCallRecordDestroyCommandPool(dev_data, commandPool);
+        }
         lock.unlock();
         dev_data->dispatch_table.DestroyCommandPool(device, commandPool, pAllocator);
-        lock.lock();
-        if (commandPool != VK_NULL_HANDLE) {
-            PostCallRecordDestroyCommandPool(dev_data, commandPool);
-        }
     }
 }
 
