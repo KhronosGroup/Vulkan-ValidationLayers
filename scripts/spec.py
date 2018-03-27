@@ -188,27 +188,32 @@ class Specification:
         file_contents.append('\n#pragma once')
         file_contents.append('\n// Disable auto-formatting for generated file')
         file_contents.append('// clang-format off')
-        file_contents.append('\n#include <unordered_map>')
+        file_contents.append('\n#include <string>')
+        file_contents.append('#include <unordered_map>')
         file_contents.append('\n// enum values for unique validation error codes')
         file_contents.append('//  Corresponding validation error message for each enum is given in the mapping table below')
         file_contents.append('//  When a given error occurs, these enum values should be passed to the as the messageCode')
         file_contents.append('//  parameter to the PFN_vkDebugReportCallbackEXT function')
         enum_decl = ['enum UNIQUE_VALIDATION_ERROR_CODE {\n    VALIDATION_ERROR_UNDEFINED = -1,']
-        error_string_map = ['static std::unordered_map<int, char const *const> validation_error_map{']
+        vuid_int_to_error_map = ['static std::unordered_map<int, char const *const> validation_error_map{']
+        vuid_string_to_error_map = ['static std::unordered_map<std::string, int> validation_error_text_map{']
         enum_value = 0
         max_enum_val = 0
         for enum in sorted(self.error_db_dict):
             enum_decl.append('    %s = 0x%s,' % (enum, enum[-8:]))
-            error_string_map.append('    {%s, "%s"},' % (enum, self.error_db_dict[enum]['error_msg'].replace('"', '\\"')))
+            vuid_int_to_error_map.append('    {%s, "%s"},' % (enum, self.error_db_dict[enum]['error_msg'].replace('"', '\\"')))
+            vuid_str = self.error_db_dict[enum]['vuid_string']
+            vuid_string_to_error_map.append('    {"%s", %s},' % (vuid_str, enum))
             max_enum_val = max(max_enum_val, enum_value)
         enum_decl.append('    %sMAX_ENUM = %d,' % (validation_error_enum_name, max_enum_val + 1))
         enum_decl.append('};')
-        error_string_map.append('};\n')
+        vuid_int_to_error_map.append('};\n')
+        vuid_string_to_error_map.append('};\n')
         file_contents.extend(enum_decl)
-        file_contents.append('\n// Mapping from unique validation error enum to the corresponding error message')
-        file_contents.append('// The error message should be appended to the end of a custom error message that is passed')
-        file_contents.append('// as the pMessage parameter to the PFN_vkDebugReportCallbackEXT function')
-        file_contents.extend(error_string_map)
+        file_contents.append('\n// Mapping from unique validation error enum to the corresponding spec text')
+        file_contents.extend(vuid_int_to_error_map)
+        file_contents.append('\n// Mapping from spec validation error text string to unique validation error enum')
+        file_contents.extend(vuid_string_to_error_map)
         #print ("File contents: %s" % (file_contents))
         with open(header_file, "w") as outfile:
             outfile.write("\n".join(file_contents))
