@@ -68,7 +68,7 @@ set(COMMON_CPP
 
 include_directories(
     ${PROJECT_SOURCE_DIR}/tests
-    ${PROJECT_SOURCE_DIR}/tests/gtest-1.7.0/include
+    ${PROJECT_SOURCE_DIR}/submodules/googletest/googletest/include
     ${PROJECT_SOURCE_DIR}/icd/common
     ${PROJECT_SOURCE_DIR}/layers
     ${GLSLANG_SPIRV_INCLUDE_DIR}
@@ -137,7 +137,7 @@ add_dependencies(vk_layer_validation_tests
 
 if (WIN32)
     # For Windows, copy necessary gtest DLLs to the right spot for the vk_layer_tests...
-    FILE(TO_NATIVE_PATH ${CMAKE_CURRENT_BINARY_DIR}/gtest-1.7.0/$<CONFIGURATION>/*.dll SRC_GTEST_DLLS)
+    FILE(TO_NATIVE_PATH ${CMAKE_CURRENT_BINARY_DIR}/../submodules/googletest/googletest/$<CONFIGURATION>/*.dll SRC_GTEST_DLLS)
     FILE(TO_NATIVE_PATH ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIGURATION> DST_GTEST_DLLS)
     add_custom_command(TARGET vk_layer_validation_tests POST_BUILD
         COMMAND xcopy /Y /I ${SRC_GTEST_DLLS} ${DST_GTEST_DLLS})
@@ -155,5 +155,11 @@ endif()
 
 target_link_libraries(vk_loader_validation_tests ${LIBVK} gtest gtest_main VkLayer_utils ${GLSLANG_LIBRARIES})
 
-add_subdirectory(gtest-1.7.0)
+set (GTEST_RELATIVE_LOCATION ../submodules/googletest)
+SET(BUILD_GTEST ON CACHE BOOL "Builds the googletest subproject")
+SET(BUILD_GMOCK OFF CACHE BOOL "Builds the googlemock subproject")
+SET(gtest_force_shared_crt ON CACHE BOOL "Link gtest runtimes dynamically")
+SET(BUILD_SHARED_LIBS ON CACHE BOOL "Build shared libraries")
+add_subdirectory(${GTEST_RELATIVE_LOCATION} ${CMAKE_CURRENT_BINARY_DIR}/../submodules/googletest)
+
 add_subdirectory(layers)
