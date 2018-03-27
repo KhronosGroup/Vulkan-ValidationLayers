@@ -54,11 +54,26 @@
 #pragma warning(disable : 4275)
 #endif
 
+// GTest and Xlib collide due to redefinitions of "None" and "Bool"
+#ifdef VK_USE_PLATFORM_XLIB_KHR
+#pragma push_macro("None")
+#pragma push_macro("Bool")
+#undef None
+#undef Bool
+#endif
+
 // Use the NDK's header on Android
 #ifndef __ANDROID__
-#include "gtest-1.7.0/include/gtest/gtest.h"
-#endif
+#include "../submodules/googletest/googletest/include/gtest/gtest.h"
+#else
 #include "gtest/gtest.h"
+#endif
+
+// Redefine Xlib definitions
+#ifdef VK_USE_PLATFORM_XLIB_KHR
+#pragma pop_macro("Bool")
+#pragma pop_macro("None")
+#endif
 
 #ifdef _WIN32
 #pragma warning(pop)
