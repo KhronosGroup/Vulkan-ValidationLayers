@@ -115,6 +115,9 @@ set_target_properties(vk_layer_validation_tests
    PROPERTIES
    COMPILE_DEFINITIONS "GTEST_LINKED_AS_SHARED_LIBRARY=1")
 if(NOT WIN32)
+    set_target_properties(vk_layer_validation_tests
+        PROPERTIES
+        COMPILE_FLAGS "-Wno-sign-compare")
     if (BUILD_WSI_XCB_SUPPORT OR BUILD_WSI_XLIB_SUPPORT)
         target_link_libraries(vk_layer_validation_tests ${LIBVK} ${XCB_LIBRARIES} ${X11_LIBRARIES} gtest gtest_main VkLayer_utils ${GLSLANG_LIBRARIES})
     else()
@@ -144,6 +147,12 @@ add_executable(vk_loader_validation_tests loader_validation_tests.cpp ${COMMON_C
 set_target_properties(vk_loader_validation_tests
    PROPERTIES
    COMPILE_DEFINITIONS "GTEST_LINKED_AS_SHARED_LIBRARY=1")
+if(NOT WIN32)
+    set_target_properties(vk_loader_validation_tests
+        PROPERTIES
+        COMPILE_FLAGS "-Wno-sign-compare")
+endif()
+
 target_link_libraries(vk_loader_validation_tests ${LIBVK} gtest gtest_main VkLayer_utils ${GLSLANG_LIBRARIES})
 
 add_subdirectory(gtest-1.7.0)
