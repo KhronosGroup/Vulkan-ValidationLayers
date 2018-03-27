@@ -53,8 +53,13 @@
 #pragma warning(disable : 4251)
 #pragma warning(disable : 4275)
 #endif
+
+// Use the NDK's header on Android
+#ifndef __ANDROID__
 #include "gtest-1.7.0/include/gtest/gtest.h"
+#endif
 #include "gtest/gtest.h"
+
 #ifdef _WIN32
 #pragma warning(pop)
 #endif
