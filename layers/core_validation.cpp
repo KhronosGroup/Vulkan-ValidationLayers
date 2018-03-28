@@ -4518,9 +4518,7 @@ VKAPI_ATTR void VKAPI_CALL DestroyCommandPool(VkDevice device, VkCommandPool com
     unique_lock_t lock(global_lock);
     bool skip = PreCallValidateDestroyCommandPool(dev_data, commandPool);
     if (!skip) {
-        if (commandPool != VK_NULL_HANDLE) {
-            PreCallRecordDestroyCommandPool(dev_data, commandPool);
-        }
+        PreCallRecordDestroyCommandPool(dev_data, commandPool);
         lock.unlock();
         dev_data->dispatch_table.DestroyCommandPool(device, commandPool, pAllocator);
     }
