@@ -4354,16 +4354,18 @@ static bool PreCallValidateDestroyDescriptorPool(layer_data *dev_data, VkDescrip
     return skip;
 }
 
-static void PostCallRecordDestroyDescriptorPool(layer_data *dev_data, VkDescriptorPool descriptorPool,
-                                                DESCRIPTOR_POOL_STATE *desc_pool_state, VK_OBJECT obj_struct) {
-    // Any bound cmd buffers are now invalid
-    invalidateCommandBuffers(dev_data, desc_pool_state->cb_bindings, obj_struct);
-    // Free sets that were in this pool
-    for (auto ds : desc_pool_state->sets) {
-        freeDescriptorSet(dev_data, ds);
+static void PreCallRecordDestroyDescriptorPool(layer_data *dev_data, VkDescriptorPool descriptorPool,
+                                               DESCRIPTOR_POOL_STATE *desc_pool_state, VK_OBJECT obj_struct) {
+    if (desc_pool_state) {
+        // Any bound cmd buffers are now invalid
+        invalidateCommandBuffers(dev_data, desc_pool_state->cb_bindings, obj_struct);
+        // Free sets that were in this pool
+        for (auto ds : desc_pool_state->sets) {
+            freeDescriptorSet(dev_data, ds);
+        }
+        dev_data->descriptorPoolMap.erase(descriptorPool);
+        delete desc_pool_state;
     }
-    dev_data->descriptorPoolMap.erase(descriptorPool);
-    delete desc_pool_state;
 }
 
 VKAPI_ATTR void VKAPI_CALL DestroyDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool,
@@ -4374,14 +4376,12 @@ VKAPI_ATTR void VKAPI_CALL DestroyDescriptorPool(VkDevice device, VkDescriptorPo
     unique_lock_t lock(global_lock);
     bool skip = PreCallValidateDestroyDescriptorPool(dev_data, descriptorPool, &desc_pool_state, &obj_struct);
     if (!skip) {
+        PreCallRecordDestroyDescriptorPool(dev_data, descriptorPool, desc_pool_state, obj_struct);
         lock.unlock();
         dev_data->dispatch_table.DestroyDescriptorPool(device, descriptorPool, pAllocator);
-        lock.lock();
-        if (descriptorPool != VK_NULL_HANDLE) {
-            PostCallRecordDestroyDescriptorPool(dev_data, descriptorPool, desc_pool_state, obj_struct);
-        }
     }
 }
+
 // Verify cmdBuffer in given cb_node is not in global in-flight set, and return skip result
 //  If this is a secondary command buffer, then make sure its primary is also in-flight
 //  If primary is not in-flight, then remove secondary from global in-flight set
