@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2017 The Khronos Group Inc.
- * Copyright (c) 2017 Valve Corporation
- * Copyright (c) 2017 LunarG, Inc.
+ * Copyright (c) 2017-2018 The Khronos Group Inc.
+ * Copyright (c) 2017-2018 Valve Corporation
+ * Copyright (c) 2017-2018 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,29 +49,6 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    struct loader_instance instance;
-    size_t hash_offset = ((size_t) &instance.phys_dev_ext_disp_hash) - ((size_t) &instance);
-
-    struct loader_instance_dispatch_table disp;
-    size_t phys_dev_offset_dispatch = ((size_t) &disp.phys_dev_ext) - ((size_t) &disp);
-
-    struct loader_physical_device_tramp phys_dev_tramp;
-    size_t phys_dev_offset_tramp = ((size_t) &phys_dev_tramp.phys_dev) - ((size_t) &phys_dev_tramp);
-
-    struct loader_physical_device_term phys_dev_term;
-    size_t icd_term_offset = ((size_t) &phys_dev_term.this_icd_term) - ((size_t) &phys_dev_term);
-    size_t phys_dev_offset_term = ((size_t) &phys_dev_term.phys_dev) - ((size_t) &phys_dev_term);
-
-    struct loader_icd_term icd_term;
-    size_t instance_offset = ((size_t) &icd_term.this_instance) - ((size_t) &icd_term);
-    size_t dispatch_offset = ((size_t) &icd_term.phys_dev_ext) - ((size_t) &icd_term);
-
-    struct loader_dispatch_hash_entry hash;
-    size_t func_name_offset = ((size_t) &hash.func_name) - ((size_t) &hash);
-
-    struct loader_dev_dispatch_table dev_disp;
-    size_t dev_disp_offset = ((size_t) &dev_disp.ext_dispatch) - ((size_t) &dev_disp);
-
     struct ValueInfo values[] = {
         { .name = "VK_DEBUG_REPORT_ERROR_BIT_EXT", .value = (size_t) VK_DEBUG_REPORT_ERROR_BIT_EXT,
             .comment = "The numerical value of the enum value 'VK_DEBUG_REPORT_ERROR_BIT_EXT'" },
@@ -79,23 +56,23 @@ int main(int argc, char **argv) {
             .comment = "The size of a pointer" },
         { .name = "HASH_SIZE", .value = sizeof(struct loader_dispatch_hash_entry),
             .comment = "The size of a 'loader_dispatch_hash_entry' struct" },
-        { .name = "HASH_OFFSET_INSTANCE", .value = hash_offset,
+        { .name = "HASH_OFFSET_INSTANCE", .value = offsetof(struct loader_instance, phys_dev_ext_disp_hash),
             .comment = "The offset of 'phys_dev_ext_disp_hash' within a 'loader_instance' struct" },
-        { .name = "PHYS_DEV_OFFSET_INST_DISPATCH", .value = phys_dev_offset_dispatch,
+        { .name = "PHYS_DEV_OFFSET_INST_DISPATCH", .value = offsetof(struct loader_instance_dispatch_table, phys_dev_ext),
             .comment = "The offset of 'phys_dev_ext' within in 'loader_instance_dispatch_table' struct" },
-        { .name = "PHYS_DEV_OFFSET_PHYS_DEV_TRAMP", .value = phys_dev_offset_tramp,
+        { .name = "PHYS_DEV_OFFSET_PHYS_DEV_TRAMP", .value = offsetof(struct loader_physical_device_tramp, phys_dev),
             .comment = "The offset of 'phys_dev' within a 'loader_physical_device_tramp' struct" },
-        { .name = "ICD_TERM_OFFSET_PHYS_DEV_TERM", .value = icd_term_offset,
+        { .name = "ICD_TERM_OFFSET_PHYS_DEV_TERM", .value = offsetof(struct loader_physical_device_term, this_icd_term),
             .comment = "The offset of 'this_icd_term' within a 'loader_physical_device_term' struct" },
-        { .name = "PHYS_DEV_OFFSET_PHYS_DEV_TERM", .value = phys_dev_offset_term,
+        { .name = "PHYS_DEV_OFFSET_PHYS_DEV_TERM", .value = offsetof(struct loader_physical_device_term, phys_dev),
             .comment = "The offset of 'phys_dev' within a 'loader_physical_device_term' struct" },
-        { .name = "INSTANCE_OFFSET_ICD_TERM", .value = instance_offset,
+        { .name = "INSTANCE_OFFSET_ICD_TERM", .value = offsetof(struct loader_icd_term, this_instance),
             .comment = "The offset of 'this_instance' within a 'loader_icd_term' struct" },
-        { .name = "DISPATCH_OFFSET_ICD_TERM", .value = dispatch_offset,
+        { .name = "DISPATCH_OFFSET_ICD_TERM", .value = offsetof(struct loader_icd_term, phys_dev_ext),
             .comment = "The offset of 'phys_dev_ext' within a 'loader_icd_term' struct" },
-        { .name = "FUNC_NAME_OFFSET_HASH", .value = func_name_offset,
+        { .name = "FUNC_NAME_OFFSET_HASH", .value = offsetof(struct loader_dispatch_hash_entry, func_name),
             .comment = "The offset of 'func_name' within a 'loader_dispatch_hash_entry' struct" },
-        { .name = "EXT_OFFSET_DEVICE_DISPATCH", .value = dev_disp_offset,
+        { .name = "EXT_OFFSET_DEVICE_DISPATCH", .value = offsetof(struct loader_dev_dispatch_table, ext_dispatch),
             .comment = "The offset of 'ext_dispatch' within a 'loader_dev_dispatch_table' struct" },
     };
 
