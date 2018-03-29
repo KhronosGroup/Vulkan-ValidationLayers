@@ -383,6 +383,7 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
         protos = ''
         protos += '// Structures defined externally, but used here\n'
         protos += 'struct loader_instance;\n'
+        protos += 'struct loader_device;\n'
         protos += 'struct loader_icd_term;\n'
         protos += 'struct loader_dev_dispatch_table;\n'
         protos += '\n'
@@ -401,7 +402,7 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
         protos += '// Extension interception for vkGetDeviceProcAddr function, so we can return\n'
         protos += '// an appropriate terminator if this is one of those few device commands requiring\n'
         protos += '// a terminator.\n'
-        protos += 'PFN_vkVoidFunction get_extension_device_proc_terminator(const char *pName);\n'
+        protos += 'PFN_vkVoidFunction get_extension_device_proc_terminator(struct loader_device *dev, const char *pName);\n'
         protos += '\n'
         protos += '// Dispatch table properly filled in with appropriate terminators for the\n'
         protos += '// supported extensions.\n'
@@ -1365,28 +1366,38 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
         term_func += '// Some device commands still need a terminator because the loader needs to unwrap something about them.\n'
         term_func += '// In many cases, the item needing unwrapping is a VkPhysicalDevice or VkSurfaceKHR object.  But there may be other items\n'
         term_func += '// in the future.\n'
-        term_func += 'PFN_vkVoidFunction get_extension_device_proc_terminator(const char *pName) {\n'
+        term_func += 'PFN_vkVoidFunction get_extension_device_proc_terminator(struct loader_device *dev, const char *pName) {\n'
         term_func += '    PFN_vkVoidFunction addr = NULL;\n'
 
         count = 0
+        is_extension = False
         for ext_cmd in self.ext_commands:
             if ext_cmd.name in DEVICE_CMDS_NEED_TERM:
                 if ext_cmd.ext_name != cur_extension_name:
+                    if count > 0:
+                        count = 0;
+                        term_func += '        }\n'
+                    if is_extension:
+                        term_func += '    }\n'
+                        is_extension = False
+
                     if 'VK_VERSION_' in ext_cmd.ext_name:
                         term_func += '\n    // ---- Core %s commands\n' % ext_cmd.ext_name[11:]
                     else:
                         term_func += '\n    // ---- %s extension commands\n' % ext_cmd.ext_name
+                        term_func += '    if (dev->extensions.%s_enabled) {\n' % ext_cmd.ext_name[3:].lower()
+                        is_extension = True
                     cur_extension_name = ext_cmd.ext_name
 
                 if ext_cmd.protect is not None:
                     term_func += '#ifdef %s\n' % ext_cmd.protect
 
                 if count == 0:
-                    term_func += '    if'
+                    term_func += '        if'
                 else:
-                    term_func += '    } else if'
+                    term_func += '        } else if'
                 term_func += '(!strcmp(pName, "%s")) {\n' % (ext_cmd.name)
-                term_func += '        addr = (PFN_vkVoidFunction)terminator_%s;\n' % (ext_cmd.name[2:])
+                term_func += '            addr = (PFN_vkVoidFunction)terminator_%s;\n' % (ext_cmd.name[2:])
 
                 if ext_cmd.protect is not None:
                     term_func += '#endif // %s\n' % ext_cmd.protect
@@ -1394,6 +1405,8 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
                 count += 1
 
         if count > 0:
+            term_func += '        }\n'
+        if is_extension:
             term_func += '    }\n'
 
         term_func += '    return addr;\n'

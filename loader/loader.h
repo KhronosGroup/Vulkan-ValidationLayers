@@ -192,6 +192,14 @@ struct loader_device {
 
     VkAllocationCallbacks alloc_callbacks;
 
+    // List of activated device extensions that have terminators implemented in the loader
+    struct {
+        bool khr_swapchain_enabled;
+        bool khr_display_swapchain_enabled;
+        bool ext_debug_marker_enabled;
+        bool ext_debug_utils_enabled;
+    } extensions;
+
     struct loader_device *next;
 };
 

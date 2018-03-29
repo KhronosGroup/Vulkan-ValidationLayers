@@ -4005,7 +4005,7 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL loader_gpa_device_internal(VkDevice dev
     // object before passing the appropriate info along to the ICD.
     // This is why we also have to override the direct ICD call to
     // vkGetDeviceProcAddr to intercept those calls.
-    PFN_vkVoidFunction addr = get_extension_device_proc_terminator(pName);
+    PFN_vkVoidFunction addr = get_extension_device_proc_terminator(dev, pName);
     if (NULL != addr) {
         return addr;
     }
@@ -5540,6 +5540,19 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateDevice(VkPhysicalDevice physical
                 }
             }
         }
+    }
+
+    // Every extension that has a loader-defined terminator needs to be marked as enabled or disabled so that we know whether or
+    // not to return that terminator when vkGetDeviceProcAddr is called
+    for (uint32_t i = 0; i < localCreateInfo.enabledExtensionCount; ++i) {
+        if (!strcmp(localCreateInfo.ppEnabledExtensionNames[i], VK_KHR_SWAPCHAIN_EXTENSION_NAME)) {
+            dev->extensions.khr_swapchain_enabled = true;
+        } else if (!strcmp(localCreateInfo.ppEnabledExtensionNames[i], VK_KHR_DISPLAY_SWAPCHAIN_EXTENSION_NAME)) {
+            dev->extensions.khr_display_swapchain_enabled = true;
+        } else if (!strcmp(localCreateInfo.ppEnabledExtensionNames[i], VK_EXT_DEBUG_MARKER_EXTENSION_NAME)) {
+            dev->extensions.ext_debug_marker_enabled = true;
+        }
+        dev->extensions.ext_debug_utils_enabled = icd_term->this_instance->enabled_known_extensions.ext_debug_utils;
     }
 
     res = fpCreateDevice(phys_dev_term->phys_dev, &localCreateInfo, pAllocator, &dev->icd_device);
