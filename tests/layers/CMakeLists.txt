@@ -29,12 +29,23 @@ if (WIN32)
 elseif(APPLE)
     # extra setup for out-of-tree builds
     if (NOT (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_CURRENT_BINARY_DIR))
-        foreach (config_file ${LAYER_JSON_FILES})
-            add_custom_target(${config_file}-json ALL
-                COMMAND ln -sf ${CMAKE_CURRENT_SOURCE_DIR}/macos/${config_file}.json
-                VERBATIM
-                )
-        endforeach(config_file)
+        if (CMAKE_GENERATOR MATCHES "^Xcode.*")
+            add_custom_target(mk_test_layer_config_dir ALL COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>)
+            foreach (config_file ${LAYER_JSON_FILES})
+                add_custom_target(${config_file}-json ALL
+                    DEPENDS mk_test_layer_config_dir
+                    COMMAND ln -sf ${CMAKE_CURRENT_SOURCE_DIR}/macos/${config_file}.json $<CONFIG>
+                    VERBATIM
+                    )
+            endforeach(config_file)
+        else()
+            foreach (config_file ${LAYER_JSON_FILES})
+                add_custom_target(${config_file}-json ALL
+                    COMMAND ln -sf ${CMAKE_CURRENT_SOURCE_DIR}/macos/${config_file}.json
+                    VERBATIM
+                    )
+            endforeach(config_file)
+        endif()
     endif()
 else()
     # extra setup for out-of-tree builds
