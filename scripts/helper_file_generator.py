@@ -515,10 +515,7 @@ class HelperFileOutputGenerator(OutputGenerator):
             struct += '\n'
             if type == 'Instance':
                 struct += '    uint32_t NormalizeApiVersion(uint32_t specified_version) {\n'
-                struct += '        uint32_t api_version = specified_version & ~VK_VERSION_PATCH(~0);\n'
-                struct += '        if (!(api_version == VK_API_VERSION_1_0) && !(api_version == VK_API_VERSION_1_1)) {\n'
-                struct += '            api_version = VK_API_VERSION_1_1;\n'
-                struct += '        }\n'
+                struct += '        uint32_t api_version = (specified_version < VK_API_VERSION_1_1) ? VK_API_VERSION_1_0 : VK_API_VERSION_1_1;\n'
                 struct += '        return api_version;\n'
                 struct += '    }\n'
                 struct += '\n'

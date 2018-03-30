@@ -256,18 +256,29 @@ VKAPI_ATTR VkResult VKAPI_CALL vkCreateInstance(const VkInstanceCreateInfo *pCre
         }
 
         init_parameter_validation(my_instance_data, pAllocator);
+        // Note: From the spec--
+        //  Providing a NULL VkInstanceCreateInfo::pApplicationInfo or providing an apiVersion of 0 is equivalent to providing
+        //  an apiVersion of VK_MAKE_VERSION(1, 0, 0).  (a.k.a. VK_API_VERSION_1_0)
+        uint32_t api_version = (pCreateInfo->pApplicationInfo && pCreateInfo->pApplicationInfo->apiVersion)
+                                   ? pCreateInfo->pApplicationInfo->apiVersion
+                                   : VK_API_VERSION_1_0;
 
-        uint32_t api_version = my_instance_data->extensions.InitFromInstanceCreateInfo(
-            (pCreateInfo->pApplicationInfo ? pCreateInfo->pApplicationInfo->apiVersion : VK_API_VERSION_1_0), pCreateInfo);
+        uint32_t effective_api_version = my_instance_data->extensions.InitFromInstanceCreateInfo(api_version, pCreateInfo);
 
-        if (pCreateInfo->pApplicationInfo) {
-            uint32_t specified_api_version = pCreateInfo->pApplicationInfo->apiVersion & ~VK_VERSION_PATCH(~0);
-            if (!(specified_api_version == VK_API_VERSION_1_0) && !(specified_api_version == VK_API_VERSION_1_1)) {
-                LOGCONSOLE(
-                    "Warning: Unrecognized CreateInstance->pCreateInfo->pApplicationInfo.apiVersion number -- (0x%08x) assuming "
-                    "%s.\n",
-                    pCreateInfo->pApplicationInfo->apiVersion,
-                    (api_version == VK_API_VERSION_1_0) ? "VK_API_VERSION_1_0" : "VK_API_VERSION_1_1");
+        uint32_t api_version_nopatch = VK_MAKE_VERSION(VK_VERSION_MAJOR(api_version), VK_VERSION_MINOR(api_version), 0);
+        if (api_version_nopatch != effective_api_version) {
+            const char *effective_api_string =
+                (effective_api_version == VK_API_VERSION_1_0) ? "VK_API_VERSION_1_0" : "VK_API_VERSION_1_1";
+            if (api_version_nopatch < VK_API_VERSION_1_0) {
+                log_msg(my_instance_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                        VALIDATION_ERROR_UNDEFINED,
+                        "Invalid CreateInstance->pCreateInfo->pApplicationInfo.apiVersion number (0x%08x). Using %s.\n",
+                        api_version, effective_api_string);
+            } else {
+                log_msg(my_instance_data->report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                        VALIDATION_ERROR_UNDEFINED,
+                        "Unrecognized CreateInstance->pCreateInfo->pApplicationInfo.apiVersion number (0x%08x). Assuming %s.\n",
+                        api_version, effective_api_string);
             }
         }
 
