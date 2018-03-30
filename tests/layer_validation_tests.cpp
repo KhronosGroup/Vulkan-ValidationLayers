@@ -28254,6 +28254,49 @@ TEST_F(VkPositiveLayerTest, MultiplaneImageTests) {
     vkDestroyImage(device(), image, NULL);
 }
 
+TEST_F(VkPositiveLayerTest, ApiVersionZero) {
+    TEST_DESCRIPTION("Check that apiVersion = 0 is valid.");
+    m_errorMonitor->ExpectSuccess();
+    app_info.apiVersion = 0U;
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    m_errorMonitor->VerifyNotFound();
+}
+
+#if 0
+// The tests rely on desktop 1.1 Loader behavior that prevent illegal apiVersion settings from reaching a 1.0.x driver
+// but appear to also be sensitive to other configure/component details... disabling and deleting them
+TEST_F(VkLayerTest, ApiVersionWarning) {
+    TEST_DESCRIPTION("Check that apiVersion > known versions is warned.");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_WARNING_BIT_EXT,
+                                         "Unrecognized CreateInstance->pCreateInfo->pApplicationInfo.apiVersion number");
+    // A side effect of the intended warning is these other warnings
+    std::vector<const char *> expected = {
+        {"loader_add_to_layer_list: Explicit layer VK_LAYER_GOOGLE_threading is using an old API version",
+         "loader_add_to_layer_list: Explicit layer VK_LAYER_GOOGLE_unique_objects is using an old API version",
+         "loader_add_to_layer_list: Explicit layer VK_LAYER_LUNARG_core_validation is using an old API version",
+         "loader_add_to_layer_list: Explicit layer VK_LAYER_LUNARG_device_profile_api is using an old API version",
+         "loader_add_to_layer_list: Explicit layer VK_LAYER_LUNARG_object_tracker is using an old API version",
+         "loader_add_to_layer_list: Explicit layer VK_LAYER_LUNARG_parameter_validation is using an old API version"}};
+    for (auto warning : expected) {
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_WARNING_BIT_EXT, warning);
+    }
+
+    app_info.apiVersion = VK_MAKE_VERSION(999U, 999U, 999U);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkLayerTest, ApiVersionError) {
+    TEST_DESCRIPTION("Check that apiVersion < known versions is errored.");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                         "Invalid CreateInstance->pCreateInfo->pApplicationInfo.apiVersion number");
+
+    app_info.apiVersion = VK_MAKE_VERSION(0U, 1U, 0U);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    m_errorMonitor->VerifyFound();
+}
+#endif  // 0
+
 #if defined(ANDROID) && defined(VALIDATION_APK)
 const char *appTag = "VulkanLayerValidationTests";
 static bool initialized = false;
