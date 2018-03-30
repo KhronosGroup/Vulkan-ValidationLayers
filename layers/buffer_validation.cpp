@@ -3147,6 +3147,18 @@ bool ValidateImageAspectMask(layer_data *device_data, VkImage image, VkFormat fo
                             HandleToUint64(image), VALIDATION_ERROR_0a400c01,
                             "%s: Stencil-only image formats can have only the VK_IMAGE_ASPECT_STENCIL_BIT set.", func_name);
         }
+    } else if (FormatIsMultiplane(format)) {
+        VkImageAspectFlags valid_flags = VK_IMAGE_ASPECT_COLOR_BIT | VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT;
+        if (3 == FormatPlaneCount(format)) {
+            valid_flags = valid_flags | VK_IMAGE_ASPECT_PLANE_2_BIT;
+        }
+        if ((aspect_mask & valid_flags) != aspect_mask) {
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
+                            HandleToUint64(image), VALIDATION_ERROR_0a400c01,
+                            "%s: Multi-plane image formats may have only VK_IMAGE_ASPECT_COLOR_BIT or VK_IMAGE_ASPECT_PLANE_n_BITs "
+                            "set, where n = [0, 1, 2].",
+                            func_name);
+        }
     }
     return skip;
 }

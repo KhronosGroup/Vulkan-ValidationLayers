@@ -119,10 +119,12 @@ VK_LAYER_EXPORT VkFormatCompatibilityClass FormatCompatibilityClass(VkFormat for
 VK_LAYER_EXPORT VkDeviceSize SafeModulo(VkDeviceSize dividend, VkDeviceSize divisor);
 
 static inline bool FormatIsUndef(VkFormat format) { return (format == VK_FORMAT_UNDEFINED); }
-static inline bool FormatIsColor(VkFormat format) { return !(FormatIsUndef(format) || FormatIsDepthOrStencil(format)); }
 static inline bool FormatHasDepth(VkFormat format) { return (FormatIsDepthOnly(format) || FormatIsDepthAndStencil(format)); }
 static inline bool FormatHasStencil(VkFormat format) { return (FormatIsStencilOnly(format) || FormatIsDepthAndStencil(format)); }
 static inline bool FormatIsMultiplane(VkFormat format) { return ((FormatPlaneCount(format)) > 1u); }
+static inline bool FormatIsColor(VkFormat format) {
+    return !(FormatIsUndef(format) || FormatIsDepthOrStencil(format) || FormatIsMultiplane(format));
+}
 
 #ifdef __cplusplus
 }
