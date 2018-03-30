@@ -177,8 +177,7 @@ bool ValidateGreaterThan(const T value, const T lower_bound, const ParameterName
 
     if (value <= lower_bound) {
         std::ostringstream ss;
-        ss << misc.api_name << ": parameter " << parameter_name.get_name() << " (= " << value << ") is greater than " << lower_bound
-           << ". " << validation_error_map[vuid];
+        ss << misc.api_name << ": parameter " << parameter_name.get_name() << " (= " << value << ") is greater than " << lower_bound;
         skip_call |= log_msg(misc.debug_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, misc.objectType, misc.srcObject, __LINE__, vuid,
                              misc.pLayerPrefix, "%s", ss.str().c_str());
     }
@@ -208,8 +207,7 @@ static bool validate_required_pointer(debug_report_data *report_data, const char
 
     if (value == NULL) {
         skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, __LINE__, vuid,
-                             LayerName, "%s: required parameter %s specified as NULL. %s", apiName,
-                             parameterName.get_name().c_str(), validation_error_map[vuid]);
+                             LayerName, "%s: required parameter %s specified as NULL.", apiName, parameterName.get_name().c_str());
     }
 
     return skip_call;
@@ -241,15 +239,15 @@ bool validate_array(debug_report_data *report_data, const char *apiName, const P
     // Count parameters not tagged as optional cannot be 0
     if (countRequired && (count == 0)) {
         skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, __LINE__,
-                             count_required_vuid, LayerName, "%s: parameter %s must be greater than 0. %s", apiName,
-                             countName.get_name().c_str(), validation_error_map[count_required_vuid]);
+                             count_required_vuid, LayerName, "%s: parameter %s must be greater than 0.", apiName,
+                             countName.get_name().c_str());
     }
 
     // Array parameters not tagged as optional cannot be NULL, unless the count is 0
     if ((array == NULL) && arrayRequired && (count != 0)) {
         skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, __LINE__,
-                             array_required_vuid, LayerName, "%s: required parameter %s specified as NULL. %s", apiName,
-                             arrayName.get_name().c_str(), validation_error_map[array_required_vuid]);
+                             array_required_vuid, LayerName, "%s: required parameter %s specified as NULL.", apiName,
+                             arrayName.get_name().c_str());
     }
 
     return skip_call;
@@ -325,9 +323,9 @@ bool validate_struct_type(debug_report_data *report_data, const char *apiName, c
                                  parameterName.get_name().c_str());
         }
     } else if (value->sType != sType) {
-        skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, __LINE__, vuid,
-                             LayerName, "%s: parameter %s->sType must be %s. %s", apiName, parameterName.get_name().c_str(),
-                             sTypeName, validation_error_map[vuid]);
+        skip_call |=
+            log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, __LINE__, vuid,
+                    LayerName, "%s: parameter %s->sType must be %s.", apiName, parameterName.get_name().c_str(), sTypeName);
     }
 
     return skip_call;
@@ -541,7 +539,7 @@ static bool validate_string_array(debug_report_data *report_data, const char *ap
  * @param allowed_struct_names Names of allowed structs.
  * @param next Pointer to validate.
  * @param allowed_type_count Total number of allowed structure types.
- * @param allowed_types Array of strcuture types allowed for pNext.
+ * @param allowed_types Array of structure types allowed for pNext.
  * @param header_version Version of header defining the pNext validation rules.
  * @return Boolean value indicating that the call should be skipped.
  */
@@ -562,11 +560,11 @@ static bool validate_struct_pnext(debug_report_data *report_data, const char *ap
     // Codegen a map of vectors containing the allowable pNext types for each struct and use that here -- also simplifies parms.
     if (next != NULL) {
         if (allowed_type_count == 0) {
-            std::string message = "%s: value of %s must be NULL. %s ";
+            std::string message = "%s: value of %s must be NULL. ";
             message += disclaimer;
             skip_call |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, __LINE__,
-                                 vuid, LayerName, message.c_str(), api_name, parameter_name.get_name().c_str(),
-                                 validation_error_map[vuid], header_version, parameter_name.get_name().c_str());
+                                 vuid, LayerName, message.c_str(), api_name, parameter_name.get_name().c_str(), header_version,
+                                 parameter_name.get_name().c_str());
         } else {
             const VkStructureType *start = allowed_types;
             const VkStructureType *end = allowed_types + allowed_type_count;
@@ -598,21 +596,20 @@ static bool validate_struct_pnext(debug_report_data *report_data, const char *ap
                 if (std::find(start, end, current->sType) == end) {
                     if (type_name == UnsupportedStructureTypeString) {
                         std::string message =
-                            "%s: %s chain includes a structure with unknown VkStructureType (%d); Allowed structures are [%s]. %s ";
+                            "%s: %s chain includes a structure with unknown VkStructureType (%d); Allowed structures are [%s]. ";
                         message += disclaimer;
-                        skip_call |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,
-                                             0, __LINE__, vuid, LayerName, message.c_str(), api_name,
-                                             parameter_name.get_name().c_str(), current->sType, allowed_struct_names,
-                                             validation_error_map[vuid], header_version, parameter_name.get_name().c_str());
+                        skip_call |=
+                            log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                    __LINE__, vuid, LayerName, message.c_str(), api_name, parameter_name.get_name().c_str(),
+                                    current->sType, allowed_struct_names, header_version, parameter_name.get_name().c_str());
                     } else {
                         std::string message =
-                            "%s: %s chain includes a structure with unexpected VkStructureType %s; Allowed structures are [%s]. "
-                            "%s ";
+                            "%s: %s chain includes a structure with unexpected VkStructureType %s; Allowed structures are [%s]. ";
                         message += disclaimer;
-                        skip_call |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,
-                                             0, __LINE__, vuid, LayerName, message.c_str(), api_name,
-                                             parameter_name.get_name().c_str(), type_name.c_str(), allowed_struct_names,
-                                             validation_error_map[vuid], header_version, parameter_name.get_name().c_str());
+                        skip_call |=
+                            log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                    __LINE__, vuid, LayerName, message.c_str(), api_name, parameter_name.get_name().c_str(),
+                                    type_name.c_str(), allowed_struct_names, header_version, parameter_name.get_name().c_str());
                     }
                 }
                 current = reinterpret_cast<const GenericHeader *>(current->pNext);
@@ -674,8 +671,8 @@ bool validate_ranged_enum(debug_report_data *report_data, const char *apiName, c
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, __LINE__, vuid,
                         LayerName,
                         "%s: value of %s (%d) does not fall within the begin..end range of the core %s enumeration tokens and is "
-                        "not an extension added token. %s",
-                        apiName, parameterName.get_name().c_str(), value, enumName, validation_error_map[vuid]);
+                        "not an extension added token.",
+                        apiName, parameterName.get_name().c_str(), value, enumName);
     }
 
     return skip;
@@ -745,8 +742,7 @@ static bool validate_reserved_flags(debug_report_data *report_data, const char *
 
     if (value != 0) {
         skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, __LINE__, vuid,
-                             LayerName, "%s: parameter %s must be 0. %s", api_name, parameter_name.get_name().c_str(),
-                             validation_error_map[vuid]);
+                             LayerName, "%s: parameter %s must be 0.", api_name, parameter_name.get_name().c_str());
     }
 
     return skip_call;
@@ -776,8 +772,7 @@ static bool validate_flags(debug_report_data *report_data, const char *api_name,
     if (value == 0) {
         if (flags_required) {
             skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, __LINE__,
-                                 vuid, LayerName, "%s: value of %s must not be 0. %s", api_name, parameter_name.get_name().c_str(),
-                                 validation_error_map[vuid]);
+                                 vuid, LayerName, "%s: value of %s must not be 0.", api_name, parameter_name.get_name().c_str());
         }
     } else if ((value & (~all_flags)) != 0) {
         skip_call |=

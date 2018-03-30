@@ -30,6 +30,7 @@
 #include "vk_loader_platform.h"
 #include "vulkan/vk_layer.h"
 #include "vk_object_types.h"
+#include "vk_validation_error_messages.h"
 #include <signal.h>
 #include <cinttypes>
 #include <stdarg.h>
@@ -836,8 +837,17 @@ static inline bool log_msg(const debug_report_data *debug_data, VkFlags msg_flag
         str = nullptr;
     }
     va_end(argptr);
+
+    std::string str_plus_spec_text(str);
+
+    // If the msg_code is in the error map, tack on spec text to error message.
+    if (validation_error_map.find(msg_code) != validation_error_map.end()) {
+        str_plus_spec_text += " ";
+        str_plus_spec_text += validation_error_map[msg_code];
+    }
+
     bool result = debug_log_msg(debug_data, msg_flags, object_type, src_object, location, msg_code, layer_prefix,
-                                str ? str : "Allocation failure");
+                                str_plus_spec_text.c_str() ? str_plus_spec_text.c_str() : "Allocation failure");
     free(str);
     return result;
 }

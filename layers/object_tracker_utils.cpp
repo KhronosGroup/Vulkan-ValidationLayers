@@ -93,8 +93,7 @@ void ValidateQueueFlags(VkQueue queue, const char *function) {
                 0) {
                 log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_QUEUE_EXT,
                         HandleToUint64(queue), __LINE__, VALIDATION_ERROR_31600011, LayerName,
-                        "Attempting %s on a non-memory-management capable queue -- VK_QUEUE_SPARSE_BINDING_BIT not set. %s",
-                        function, validation_error_map[VALIDATION_ERROR_31600011]);
+                        "Attempting %s on a non-memory-management capable queue -- VK_QUEUE_SPARSE_BINDING_BIT not set.", function);
             }
         }
     }
@@ -116,8 +115,7 @@ bool ValidateDeviceObject(uint64_t device_handle, enum UNIQUE_VALIDATION_ERROR_C
 
     layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(last_instance), layer_data_map);
     return log_msg(instance_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, device_handle,
-                   __LINE__, invalid_handle_code, LayerName, "Invalid Device Object 0x%" PRIxLEAST64 ". %s", device_handle,
-                   validation_error_map[invalid_handle_code]);
+                   __LINE__, invalid_handle_code, LayerName, "Invalid Device Object 0x%" PRIxLEAST64 ".", device_handle);
 }
 
 void AllocateCommandBuffer(VkDevice device, const VkCommandPool command_pool, const VkCommandBuffer command_buffer,
@@ -155,15 +153,13 @@ bool ValidateCommandBuffer(VkDevice device, VkCommandPool command_pool, VkComman
             skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                             object_handle, __LINE__, VALIDATION_ERROR_28411407, LayerName,
                             "FreeCommandBuffers is attempting to free Command Buffer 0x%" PRIxLEAST64
-                            " belonging to Command Pool 0x%" PRIxLEAST64 " from pool 0x%" PRIxLEAST64 "). %s",
-                            HandleToUint64(command_buffer), pNode->parent_object, HandleToUint64(command_pool),
-                            validation_error_map[VALIDATION_ERROR_28411407]);
+                            " belonging to Command Pool 0x%" PRIxLEAST64 " from pool 0x%" PRIxLEAST64 ").",
+                            HandleToUint64(command_buffer), pNode->parent_object, HandleToUint64(command_pool));
         }
     } else {
-        skip |=
-            log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                    object_handle, __LINE__, VALIDATION_ERROR_28400060, LayerName, "Invalid %s Object 0x%" PRIxLEAST64 ". %s",
-                    object_string[kVulkanObjectTypeCommandBuffer], object_handle, validation_error_map[VALIDATION_ERROR_28400060]);
+        skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                        object_handle, __LINE__, VALIDATION_ERROR_28400060, LayerName, "Invalid %s Object 0x%" PRIxLEAST64 ".",
+                        object_string[kVulkanObjectTypeCommandBuffer], object_handle);
     }
     return skip;
 }
@@ -198,15 +194,13 @@ bool ValidateDescriptorSet(VkDevice device, VkDescriptorPool descriptor_pool, Vk
             skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_EXT,
                             object_handle, __LINE__, VALIDATION_ERROR_28613007, LayerName,
                             "FreeDescriptorSets is attempting to free descriptorSet 0x%" PRIxLEAST64
-                            " belonging to Descriptor Pool 0x%" PRIxLEAST64 " from pool 0x%" PRIxLEAST64 "). %s",
-                            HandleToUint64(descriptor_set), pNode->parent_object, HandleToUint64(descriptor_pool),
-                            validation_error_map[VALIDATION_ERROR_28613007]);
+                            " belonging to Descriptor Pool 0x%" PRIxLEAST64 " from pool 0x%" PRIxLEAST64 ").",
+                            HandleToUint64(descriptor_set), pNode->parent_object, HandleToUint64(descriptor_pool));
         }
     } else {
-        skip |=
-            log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_EXT,
-                    object_handle, __LINE__, VALIDATION_ERROR_2860026c, LayerName, "Invalid %s Object 0x%" PRIxLEAST64 ". %s",
-                    object_string[kVulkanObjectTypeDescriptorSet], object_handle, validation_error_map[VALIDATION_ERROR_2860026c]);
+        skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_EXT,
+                        object_handle, __LINE__, VALIDATION_ERROR_2860026c, LayerName, "Invalid %s Object 0x%" PRIxLEAST64 ".",
+                        object_string[kVulkanObjectTypeDescriptorSet], object_handle);
     }
     return skip;
 }
@@ -316,8 +310,8 @@ void DeviceReportUndestroyedObjects(VkDevice device, VulkanObjectType object_typ
         ObjTrackState *object_info = item->second;
         log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, get_debug_report_enum[object_type], object_info->handle,
                 __LINE__, error_code, LayerName,
-                "OBJ ERROR : For device 0x%" PRIxLEAST64 ", %s object 0x%" PRIxLEAST64 " has not been destroyed. %s",
-                HandleToUint64(device), object_string[object_type], object_info->handle, validation_error_map[error_code]);
+                "OBJ ERROR : For device 0x%" PRIxLEAST64 ", %s object 0x%" PRIxLEAST64 " has not been destroyed.",
+                HandleToUint64(device), object_string[object_type], object_info->handle);
         item = device_data->object_map[object_type].erase(item);
     }
 }

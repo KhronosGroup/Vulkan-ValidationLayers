@@ -186,8 +186,8 @@ bool ValidateObject(T1 dispatchable_object, T2 object, VulkanObjectType object_t
                             return log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, debug_object_type,
                                            object_handle, __LINE__, wrong_device_code, LayerName,
                                            "Object 0x%" PRIxLEAST64
-                                           " was not created, allocated or retrieved from the correct device. %s",
-                                           object_handle, validation_error_map[wrong_device_code]);
+                                           " was not created, allocated or retrieved from the correct device.",
+                                           object_handle);
                         } else {
                             return false;
                         }
@@ -196,8 +196,8 @@ bool ValidateObject(T1 dispatchable_object, T2 object, VulkanObjectType object_t
             }
             // Report an error if object was not found anywhere
             return log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, debug_object_type, object_handle, __LINE__,
-                           invalid_handle_code, LayerName, "Invalid %s Object 0x%" PRIxLEAST64 ". %s", object_string[object_type],
-                           object_handle, validation_error_map[invalid_handle_code]);
+                           invalid_handle_code, LayerName, "Invalid %s Object 0x%" PRIxLEAST64 ".", object_string[object_type],
+                           object_handle);
         }
     }
     return false;
@@ -258,14 +258,14 @@ void DestroyObject(T1 dispatchable_object, T2 object, VulkanObjectType object_ty
                 // it cannot verify that these allocation callbacks are compatible with each other.
                 log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, debug_object_type, object_handle, __LINE__,
                         expected_custom_allocator_code, LayerName,
-                        "Custom allocator not specified while destroying %s obj 0x%" PRIxLEAST64 " but specified at creation. %s",
-                        object_string[object_type], object_handle, validation_error_map[expected_custom_allocator_code]);
+                        "Custom allocator not specified while destroying %s obj 0x%" PRIxLEAST64 " but specified at creation.",
+                        object_string[object_type], object_handle);
             } else if (!allocated_with_custom && custom_allocator &&
                        expected_default_allocator_code != VALIDATION_ERROR_UNDEFINED) {
                 log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, debug_object_type, object_handle, __LINE__,
                         expected_default_allocator_code, LayerName,
-                        "Custom allocator specified while destroying %s obj 0x%" PRIxLEAST64 " but not specified at creation. %s",
-                        object_string[object_type], object_handle, validation_error_map[expected_default_allocator_code]);
+                        "Custom allocator specified while destroying %s obj 0x%" PRIxLEAST64 " but not specified at creation.",
+                        object_string[object_type], object_handle);
             }
 
             delete pNode;

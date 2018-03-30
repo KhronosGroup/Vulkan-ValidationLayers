@@ -1070,10 +1070,9 @@ static bool validate_specialization_offsets(debug_report_data const *report_data
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, 0, __LINE__,
                                 VALIDATION_ERROR_1360060c, "SC",
                                 "Specialization entry %u (for constant id %u) references memory outside provided specialization "
-                                "data (bytes %u.." PRINTF_SIZE_T_SPECIFIER "; " PRINTF_SIZE_T_SPECIFIER " bytes provided). %s.",
+                                "data (bytes %u.." PRINTF_SIZE_T_SPECIFIER "; " PRINTF_SIZE_T_SPECIFIER " bytes provided)..",
                                 i, spec->pMapEntries[i].constantID, spec->pMapEntries[i].offset,
-                                spec->pMapEntries[i].offset + spec->pMapEntries[i].size - 1, spec->dataSize,
-                                validation_error_map[VALIDATION_ERROR_1360060c]);
+                                spec->pMapEntries[i].offset + spec->pMapEntries[i].size - 1, spec->dataSize);
             }
         }
     }
@@ -1419,8 +1418,8 @@ static bool validate_pipeline_shader_stage(layer_data *dev_data, VkPipelineShade
     auto entrypoint = *out_entrypoint = find_entrypoint(module, pStage->pName, pStage->stage);
     if (entrypoint == module->end()) {
         if (log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, __LINE__,
-                    VALIDATION_ERROR_10600586, "SC", "No entrypoint found named `%s` for stage %s. %s.", pStage->pName,
-                    string_VkShaderStageFlagBits(pStage->stage), validation_error_map[VALIDATION_ERROR_10600586])) {
+                    VALIDATION_ERROR_10600586, "SC", "No entrypoint found named `%s` for stage %s..", pStage->pName,
+                    string_VkShaderStageFlagBits(pStage->stage))) {
             return true;  // no point continuing beyond here, any analysis is just going to be garbage.
         }
     }
@@ -1668,8 +1667,8 @@ bool PreCallValidateCreateShaderModule(layer_data *dev_data, VkShaderModuleCreat
     if (!have_glsl_shader && (pCreateInfo->codeSize % 4)) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, __LINE__,
                         VALIDATION_ERROR_12a00ac0, "SC",
-                        "SPIR-V module not valid: Codesize must be a multiple of 4 but is " PRINTF_SIZE_T_SPECIFIER ". %s",
-                        pCreateInfo->codeSize, validation_error_map[VALIDATION_ERROR_12a00ac0]);
+                        "SPIR-V module not valid: Codesize must be a multiple of 4 but is " PRINTF_SIZE_T_SPECIFIER ".",
+                        pCreateInfo->codeSize);
     } else {
         auto cache = GetValidationCacheInfo(pCreateInfo);
         uint32_t hash = 0;
