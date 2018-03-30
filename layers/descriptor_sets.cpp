@@ -337,7 +337,7 @@ bool cvdescriptorset::DescriptorSetLayout::ValidateCreateInfo(const debug_report
 
     const bool push_descriptor_set = create_info->flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR;
     if (push_descriptor_set && !push_descriptor_ext) {
-        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, __LINE__,
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                         DRAWSTATE_EXTENSION_NOT_ENABLED, "DS",
                         "Attemped to use %s in %s but its required extension %s has not been enabled.\n",
                         "VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR", "VkDescriptorSetLayoutCreateInfo::flags",
@@ -352,11 +352,11 @@ bool cvdescriptorset::DescriptorSetLayout::ValidateCreateInfo(const debug_report
     for (uint32_t i = 0; i < create_info->bindingCount; ++i) {
         const auto &binding_info = create_info->pBindings[i];
         if (!bindings.insert(binding_info.binding).second) {
-            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, __LINE__,
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                             VALIDATION_ERROR_0500022e, "DS", "duplicated binding number in VkDescriptorSetLayoutBinding.");
         }
         if (!valid_type(binding_info.descriptorType)) {
-            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, __LINE__,
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                             VALIDATION_ERROR_05000230, "DS",
                             "invalid type %s ,for push descriptors in VkDescriptorSetLayoutBinding entry %" PRIu32 ".",
                             string_VkDescriptorType(binding_info.descriptorType), i);
@@ -366,12 +366,11 @@ bool cvdescriptorset::DescriptorSetLayout::ValidateCreateInfo(const debug_report
 
     if ((push_descriptor_set) && (total_descriptors > max_push_descriptors)) {
         const char *undefined = push_descriptor_ext ? "" : " -- undefined";
-        skip |=
-            log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, __LINE__,
-                    VALIDATION_ERROR_05000232, "DS",
-                    "for push descriptor, total descriptor count in layout (%" PRIu64
-                    ") must not be greater than VkPhysicalDevicePushDescriptorPropertiesKHR::maxPushDescriptors (%" PRIu32 "%s).",
-                    total_descriptors, max_push_descriptors, undefined);
+        skip |= log_msg(
+            report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, VALIDATION_ERROR_05000232, "DS",
+            "for push descriptor, total descriptor count in layout (%" PRIu64
+            ") must not be greater than VkPhysicalDevicePushDescriptorPropertiesKHR::maxPushDescriptors (%" PRIu32 "%s).",
+            total_descriptors, max_push_descriptors, undefined);
     }
 
     return skip;
@@ -1285,7 +1284,7 @@ bool cvdescriptorset::ValidateUpdateDescriptorSets(const debug_report_data *repo
         if (!set_node) {
             skip |=
                 log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_EXT,
-                        HandleToUint64(dest_set), __LINE__, DRAWSTATE_INVALID_DESCRIPTOR_SET, "DS",
+                        HandleToUint64(dest_set), DRAWSTATE_INVALID_DESCRIPTOR_SET, "DS",
                         "Cannot call vkUpdateDescriptorSets() on descriptor set 0x%" PRIxLEAST64 " that has not been allocated.",
                         HandleToUint64(dest_set));
         } else {
@@ -1293,7 +1292,7 @@ bool cvdescriptorset::ValidateUpdateDescriptorSets(const debug_report_data *repo
             std::string error_str;
             if (!set_node->ValidateWriteUpdate(report_data, &p_wds[i], &error_code, &error_str)) {
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_EXT,
-                                HandleToUint64(dest_set), __LINE__, error_code, "DS",
+                                HandleToUint64(dest_set), error_code, "DS",
                                 "vkUpdateDescriptorSets() failed write update validation for Descriptor Set 0x%" PRIx64
                                 " with error: %s.",
                                 HandleToUint64(dest_set), error_str.c_str());
@@ -1313,7 +1312,7 @@ bool cvdescriptorset::ValidateUpdateDescriptorSets(const debug_report_data *repo
         std::string error_str;
         if (!dst_node->ValidateCopyUpdate(report_data, &p_cds[i], src_node, &error_code, &error_str)) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_EXT,
-                            HandleToUint64(dst_set), __LINE__, error_code, "DS",
+                            HandleToUint64(dst_set), error_code, "DS",
                             "vkUpdateDescriptorSets() failed copy update from Descriptor Set 0x%" PRIx64
                             " to Descriptor Set 0x%" PRIx64 " with error: %s.",
                             HandleToUint64(src_set), HandleToUint64(dst_set), error_str.c_str());
@@ -1872,7 +1871,7 @@ bool cvdescriptorset::ValidateAllocateDescriptorSets(const core_validation::laye
         if (layout) {  // nullptr layout indicates no valid layout handle for this device, validated/logged in object_tracker
             if (layout->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR) {
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT_EXT,
-                                HandleToUint64(p_alloc_info->pSetLayouts[i]), __LINE__, VALIDATION_ERROR_04c00268, "DS",
+                                HandleToUint64(p_alloc_info->pSetLayouts[i]), VALIDATION_ERROR_04c00268, "DS",
                                 "Layout 0x%" PRIxLEAST64 " specified at pSetLayouts[%" PRIu32
                                 "] in vkAllocateDescriptorSets() was created with invalid flag %s set.",
                                 HandleToUint64(p_alloc_info->pSetLayouts[i]), i,
@@ -1885,7 +1884,7 @@ bool cvdescriptorset::ValidateAllocateDescriptorSets(const core_validation::laye
         // Track number of descriptorSets allowable in this pool
         if (pool_state->availableSets < p_alloc_info->descriptorSetCount) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_POOL_EXT,
-                            HandleToUint64(pool_state->pool), __LINE__, VALIDATION_ERROR_04c00264, "DS",
+                            HandleToUint64(pool_state->pool), VALIDATION_ERROR_04c00264, "DS",
                             "Unable to allocate %u descriptorSets from pool 0x%" PRIxLEAST64
                             ". This pool only has %d descriptorSets remaining.",
                             p_alloc_info->descriptorSetCount, HandleToUint64(pool_state->pool), pool_state->availableSets);
@@ -1894,7 +1893,7 @@ bool cvdescriptorset::ValidateAllocateDescriptorSets(const core_validation::laye
         for (uint32_t i = 0; i < VK_DESCRIPTOR_TYPE_RANGE_SIZE; i++) {
             if (ds_data->required_descriptors_by_type[i] > pool_state->availableDescriptorTypeCount[i]) {
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_POOL_EXT,
-                                HandleToUint64(pool_state->pool), __LINE__, VALIDATION_ERROR_04c00266, "DS",
+                                HandleToUint64(pool_state->pool), VALIDATION_ERROR_04c00266, "DS",
                                 "Unable to allocate %u descriptors of type %s from pool 0x%" PRIxLEAST64
                                 ". This pool only has %d descriptors of this type remaining.",
                                 ds_data->required_descriptors_by_type[i], string_VkDescriptorType(VkDescriptorType(i)),

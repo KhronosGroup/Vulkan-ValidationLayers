@@ -184,7 +184,7 @@ bool ValidateObject(T1 dispatchable_object, T2 object, VulkanObjectType object_t
                         // Object found on other device, report an error if object has a device parent error code
                         if ((wrong_device_code != VALIDATION_ERROR_UNDEFINED) && (object_type != kVulkanObjectTypeSurfaceKHR)) {
                             return log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, debug_object_type,
-                                           object_handle, __LINE__, wrong_device_code, LayerName,
+                                           object_handle, wrong_device_code, LayerName,
                                            "Object 0x%" PRIxLEAST64
                                            " was not created, allocated or retrieved from the correct device.",
                                            object_handle);
@@ -195,7 +195,7 @@ bool ValidateObject(T1 dispatchable_object, T2 object, VulkanObjectType object_t
                 }
             }
             // Report an error if object was not found anywhere
-            return log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, debug_object_type, object_handle, __LINE__,
+            return log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, debug_object_type, object_handle,
                            invalid_handle_code, LayerName, "Invalid %s Object 0x%" PRIxLEAST64 ".", object_string[object_type],
                            object_handle);
         }
@@ -212,8 +212,8 @@ void CreateObject(T1 dispatchable_object, T2 object, VulkanObjectType object_typ
 
     if (!instance_data->object_map[object_type].count(object_handle)) {
         VkDebugReportObjectTypeEXT debug_object_type = get_debug_report_enum[object_type];
-        log_msg(instance_data->report_data, VK_DEBUG_REPORT_INFORMATION_BIT_EXT, debug_object_type, object_handle, __LINE__,
-                OBJTRACK_NONE, LayerName, "OBJ[0x%" PRIxLEAST64 "] : CREATE %s object 0x%" PRIxLEAST64, object_track_index++,
+        log_msg(instance_data->report_data, VK_DEBUG_REPORT_INFORMATION_BIT_EXT, debug_object_type, object_handle, OBJTRACK_NONE,
+                LayerName, "OBJ[0x%" PRIxLEAST64 "] : CREATE %s object 0x%" PRIxLEAST64, object_track_index++,
                 object_string[object_type], object_handle);
 
         ObjTrackState *pNewObjNode = new ObjTrackState;
@@ -246,9 +246,8 @@ void DestroyObject(T1 dispatchable_object, T2 object, VulkanObjectType object_ty
             assert(device_data->num_objects[pNode->object_type] > 0);
             device_data->num_objects[pNode->object_type]--;
 
-            log_msg(device_data->report_data, VK_DEBUG_REPORT_INFORMATION_BIT_EXT, debug_object_type, object_handle, __LINE__,
-                    OBJTRACK_NONE, LayerName,
-                    "OBJ_STAT Destroy %s obj 0x%" PRIxLEAST64 " (%" PRIu64 " total objs remain & %" PRIu64 " %s objs).",
+            log_msg(device_data->report_data, VK_DEBUG_REPORT_INFORMATION_BIT_EXT, debug_object_type, object_handle, OBJTRACK_NONE,
+                    LayerName, "OBJ_STAT Destroy %s obj 0x%" PRIxLEAST64 " (%" PRIu64 " total objs remain & %" PRIu64 " %s objs).",
                     object_string[object_type], HandleToUint64(object), device_data->num_total_objects,
                     device_data->num_objects[pNode->object_type], object_string[object_type]);
 
@@ -256,13 +255,13 @@ void DestroyObject(T1 dispatchable_object, T2 object, VulkanObjectType object_ty
             if (allocated_with_custom && !custom_allocator && expected_custom_allocator_code != VALIDATION_ERROR_UNDEFINED) {
                 // This check only verifies that custom allocation callbacks were provided to both Create and Destroy calls,
                 // it cannot verify that these allocation callbacks are compatible with each other.
-                log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, debug_object_type, object_handle, __LINE__,
+                log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, debug_object_type, object_handle,
                         expected_custom_allocator_code, LayerName,
                         "Custom allocator not specified while destroying %s obj 0x%" PRIxLEAST64 " but specified at creation.",
                         object_string[object_type], object_handle);
             } else if (!allocated_with_custom && custom_allocator &&
                        expected_default_allocator_code != VALIDATION_ERROR_UNDEFINED) {
-                log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, debug_object_type, object_handle, __LINE__,
+                log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, debug_object_type, object_handle,
                         expected_default_allocator_code, LayerName,
                         "Custom allocator specified while destroying %s obj 0x%" PRIxLEAST64 " but not specified at creation.",
                         object_string[object_type], object_handle);
@@ -272,7 +271,7 @@ void DestroyObject(T1 dispatchable_object, T2 object, VulkanObjectType object_ty
             device_data->object_map[object_type].erase(item);
         } else {
             log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, object_handle,
-                    __LINE__, OBJTRACK_UNKNOWN_OBJECT, LayerName,
+                    OBJTRACK_UNKNOWN_OBJECT, LayerName,
                     "Unable to remove %s obj 0x%" PRIxLEAST64 ". Was it created? Has it already been destroyed?",
                     object_string[object_type], object_handle);
         }

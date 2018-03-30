@@ -815,12 +815,11 @@ static inline int vasprintf(char **strp, char const *fmt, va_list ap) {
 // is only computed if a message needs to be logged
 #ifndef WIN32
 static inline bool log_msg(const debug_report_data *debug_data, VkFlags msg_flags, VkDebugReportObjectTypeEXT object_type,
-                           uint64_t src_object, size_t location, int32_t msg_code, const char *layer_prefix, const char *format,
-                           ...) __attribute__((format(printf, 8, 9)));
+                           uint64_t src_object, int32_t msg_code, const char *layer_prefix, const char *format, ...)
+    __attribute__((format(printf, 7, 8)));
 #endif
 static inline bool log_msg(const debug_report_data *debug_data, VkFlags msg_flags, VkDebugReportObjectTypeEXT object_type,
-                           uint64_t src_object, size_t location, int32_t msg_code, const char *layer_prefix, const char *format,
-                           ...) {
+                           uint64_t src_object, int32_t msg_code, const char *layer_prefix, const char *format, ...) {
     VkFlags local_severity = 0;
     VkFlags local_type = 0;
     DebugReportFlagsToAnnotFlags(msg_flags, true, &local_severity, &local_type);
@@ -846,7 +845,7 @@ static inline bool log_msg(const debug_report_data *debug_data, VkFlags msg_flag
         str_plus_spec_text += validation_error_map[msg_code];
     }
 
-    bool result = debug_log_msg(debug_data, msg_flags, object_type, src_object, location, msg_code, layer_prefix,
+    bool result = debug_log_msg(debug_data, msg_flags, object_type, src_object, 0, msg_code, layer_prefix,
                                 str_plus_spec_text.c_str() ? str_plus_spec_text.c_str() : "Allocation failure");
     free(str);
     return result;
@@ -859,8 +858,7 @@ static inline VKAPI_ATTR VkBool32 VKAPI_CALL report_log_callback(VkFlags msg_fla
 
     PrintMessageFlags(msg_flags, msg_flag_string);
 
-    fprintf((FILE *)user_data, "%s(%s): location: %lu msg_code: %d: %s\n", layer_prefix, msg_flag_string, (unsigned long)location,
-            msg_code, message);
+    fprintf((FILE *)user_data, "%s(%s): msg_code: %d: %s\n", layer_prefix, msg_flag_string, msg_code, message);
     fflush((FILE *)user_data);
 
     return false;
@@ -875,8 +873,7 @@ static inline VKAPI_ATTR VkBool32 VKAPI_CALL report_win32_debug_output_msg(VkFla
     char buf[2048];
 
     PrintMessageFlags(msg_flags, msg_flag_string);
-    _snprintf(buf, sizeof(buf) - 1, "%s (%s): location: " PRINTF_SIZE_T_SPECIFIER " msg_code: %d: %s\n", layer_prefix,
-              msg_flag_string, location, msg_code, message);
+    _snprintf(buf, sizeof(buf) - 1, "%s (%s): msg_code: %d: %s\n", layer_prefix, msg_flag_string, msg_code, message);
 
     OutputDebugString(buf);
 #endif

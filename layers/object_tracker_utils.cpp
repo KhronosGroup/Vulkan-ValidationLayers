@@ -49,7 +49,7 @@ void AddQueueInfo(VkDevice device, uint32_t queue_node_index, VkQueue queue) {
             device_data->queue_info_map[queue] = p_queue_info;
         } else {
             log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_QUEUE_EXT,
-                    HandleToUint64(queue), __LINE__, OBJTRACK_INTERNAL_ERROR, LayerName,
+                    HandleToUint64(queue), OBJTRACK_INTERNAL_ERROR, LayerName,
                     "ERROR:  VK_ERROR_OUT_OF_HOST_MEMORY -- could not allocate memory for Queue Information");
         }
     }
@@ -73,7 +73,7 @@ void DestroyQueueDataStructures(VkDevice device) {
         assert(device_data->num_objects[obj_index] > 0);
         device_data->num_objects[obj_index]--;
         log_msg(device_data->report_data, VK_DEBUG_REPORT_INFORMATION_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_QUEUE_EXT,
-                queue->second->handle, __LINE__, OBJTRACK_NONE, LayerName,
+                queue->second->handle, OBJTRACK_NONE, LayerName,
                 "OBJ_STAT Destroy Queue obj 0x%" PRIxLEAST64 " (%" PRIu64 " total objs remain & %" PRIu64 " Queue objs).",
                 queue->second->handle, device_data->num_total_objects, device_data->num_objects[obj_index]);
         delete queue->second;
@@ -92,7 +92,7 @@ void ValidateQueueFlags(VkQueue queue, const char *function) {
             if ((instance_data->queue_family_properties[pQueueInfo->queue_node_index].queueFlags & VK_QUEUE_SPARSE_BINDING_BIT) ==
                 0) {
                 log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_QUEUE_EXT,
-                        HandleToUint64(queue), __LINE__, VALIDATION_ERROR_31600011, LayerName,
+                        HandleToUint64(queue), VALIDATION_ERROR_31600011, LayerName,
                         "Attempting %s on a non-memory-management capable queue -- VK_QUEUE_SPARSE_BINDING_BIT not set.", function);
             }
         }
@@ -115,7 +115,7 @@ bool ValidateDeviceObject(uint64_t device_handle, enum UNIQUE_VALIDATION_ERROR_C
 
     layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(last_instance), layer_data_map);
     return log_msg(instance_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, device_handle,
-                   __LINE__, invalid_handle_code, LayerName, "Invalid Device Object 0x%" PRIxLEAST64 ".", device_handle);
+                   invalid_handle_code, LayerName, "Invalid Device Object 0x%" PRIxLEAST64 ".", device_handle);
 }
 
 void AllocateCommandBuffer(VkDevice device, const VkCommandPool command_pool, const VkCommandBuffer command_buffer,
@@ -123,9 +123,8 @@ void AllocateCommandBuffer(VkDevice device, const VkCommandPool command_pool, co
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
 
     log_msg(device_data->report_data, VK_DEBUG_REPORT_INFORMATION_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-            HandleToUint64(command_buffer), __LINE__, OBJTRACK_NONE, LayerName,
-            "OBJ[0x%" PRIxLEAST64 "] : CREATE %s object 0x%" PRIxLEAST64, object_track_index++,
-            "VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT", HandleToUint64(command_buffer));
+            HandleToUint64(command_buffer), OBJTRACK_NONE, LayerName, "OBJ[0x%" PRIxLEAST64 "] : CREATE %s object 0x%" PRIxLEAST64,
+            object_track_index++, "VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT", HandleToUint64(command_buffer));
 
     ObjTrackState *pNewObjNode = new ObjTrackState;
     pNewObjNode->object_type = kVulkanObjectTypeCommandBuffer;
@@ -151,14 +150,14 @@ bool ValidateCommandBuffer(VkDevice device, VkCommandPool command_pool, VkComman
 
         if (pNode->parent_object != HandleToUint64(command_pool)) {
             skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                            object_handle, __LINE__, VALIDATION_ERROR_28411407, LayerName,
+                            object_handle, VALIDATION_ERROR_28411407, LayerName,
                             "FreeCommandBuffers is attempting to free Command Buffer 0x%" PRIxLEAST64
                             " belonging to Command Pool 0x%" PRIxLEAST64 " from pool 0x%" PRIxLEAST64 ").",
                             HandleToUint64(command_buffer), pNode->parent_object, HandleToUint64(command_pool));
         }
     } else {
         skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                        object_handle, __LINE__, VALIDATION_ERROR_28400060, LayerName, "Invalid %s Object 0x%" PRIxLEAST64 ".",
+                        object_handle, VALIDATION_ERROR_28400060, LayerName, "Invalid %s Object 0x%" PRIxLEAST64 ".",
                         object_string[kVulkanObjectTypeCommandBuffer], object_handle);
     }
     return skip;
@@ -168,9 +167,8 @@ void AllocateDescriptorSet(VkDevice device, VkDescriptorPool descriptor_pool, Vk
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
 
     log_msg(device_data->report_data, VK_DEBUG_REPORT_INFORMATION_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_EXT,
-            HandleToUint64(descriptor_set), __LINE__, OBJTRACK_NONE, LayerName,
-            "OBJ[0x%" PRIxLEAST64 "] : CREATE %s object 0x%" PRIxLEAST64, object_track_index++,
-            "VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_EXT", HandleToUint64(descriptor_set));
+            HandleToUint64(descriptor_set), OBJTRACK_NONE, LayerName, "OBJ[0x%" PRIxLEAST64 "] : CREATE %s object 0x%" PRIxLEAST64,
+            object_track_index++, "VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_EXT", HandleToUint64(descriptor_set));
 
     ObjTrackState *pNewObjNode = new ObjTrackState;
     pNewObjNode->object_type = kVulkanObjectTypeDescriptorSet;
@@ -192,14 +190,14 @@ bool ValidateDescriptorSet(VkDevice device, VkDescriptorPool descriptor_pool, Vk
 
         if (pNode->parent_object != HandleToUint64(descriptor_pool)) {
             skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_EXT,
-                            object_handle, __LINE__, VALIDATION_ERROR_28613007, LayerName,
+                            object_handle, VALIDATION_ERROR_28613007, LayerName,
                             "FreeDescriptorSets is attempting to free descriptorSet 0x%" PRIxLEAST64
                             " belonging to Descriptor Pool 0x%" PRIxLEAST64 " from pool 0x%" PRIxLEAST64 ").",
                             HandleToUint64(descriptor_set), pNode->parent_object, HandleToUint64(descriptor_pool));
         }
     } else {
         skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_EXT,
-                        object_handle, __LINE__, VALIDATION_ERROR_2860026c, LayerName, "Invalid %s Object 0x%" PRIxLEAST64 ".",
+                        object_handle, VALIDATION_ERROR_2860026c, LayerName, "Invalid %s Object 0x%" PRIxLEAST64 ".",
                         object_string[kVulkanObjectTypeDescriptorSet], object_handle);
     }
     return skip;
@@ -271,7 +269,7 @@ void CreateQueue(VkDevice device, VkQueue vkObj) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
 
     log_msg(device_data->report_data, VK_DEBUG_REPORT_INFORMATION_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_QUEUE_EXT,
-            HandleToUint64(vkObj), __LINE__, OBJTRACK_NONE, LayerName, "OBJ[0x%" PRIxLEAST64 "] : CREATE %s object 0x%" PRIxLEAST64,
+            HandleToUint64(vkObj), OBJTRACK_NONE, LayerName, "OBJ[0x%" PRIxLEAST64 "] : CREATE %s object 0x%" PRIxLEAST64,
             object_track_index++, "VK_DEBUG_REPORT_OBJECT_TYPE_QUEUE_EXT", HandleToUint64(vkObj));
 
     ObjTrackState *p_obj_node = NULL;
@@ -292,9 +290,8 @@ void CreateQueue(VkDevice device, VkQueue vkObj) {
 void CreateSwapchainImageObject(VkDevice dispatchable_object, VkImage swapchain_image, VkSwapchainKHR swapchain) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(dispatchable_object), layer_data_map);
     log_msg(device_data->report_data, VK_DEBUG_REPORT_INFORMATION_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
-            HandleToUint64(swapchain_image), __LINE__, OBJTRACK_NONE, LayerName,
-            "OBJ[0x%" PRIxLEAST64 "] : CREATE %s object 0x%" PRIxLEAST64, object_track_index++, "SwapchainImage",
-            HandleToUint64(swapchain_image));
+            HandleToUint64(swapchain_image), OBJTRACK_NONE, LayerName, "OBJ[0x%" PRIxLEAST64 "] : CREATE %s object 0x%" PRIxLEAST64,
+            object_track_index++, "SwapchainImage", HandleToUint64(swapchain_image));
 
     ObjTrackState *pNewObjNode = new ObjTrackState;
     pNewObjNode->object_type = kVulkanObjectTypeImage;
@@ -309,7 +306,7 @@ void DeviceReportUndestroyedObjects(VkDevice device, VulkanObjectType object_typ
     for (auto item = device_data->object_map[object_type].begin(); item != device_data->object_map[object_type].end();) {
         ObjTrackState *object_info = item->second;
         log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, get_debug_report_enum[object_type], object_info->handle,
-                __LINE__, error_code, LayerName,
+                error_code, LayerName,
                 "OBJ ERROR : For device 0x%" PRIxLEAST64 ", %s object 0x%" PRIxLEAST64 " has not been destroyed.",
                 HandleToUint64(device), object_string[object_type], object_info->handle);
         item = device_data->object_map[object_type].erase(item);
@@ -354,8 +351,8 @@ VKAPI_ATTR void VKAPI_CALL DestroyInstance(VkInstance instance, const VkAllocati
         VkDevice device = reinterpret_cast<VkDevice>(pNode->handle);
         VkDebugReportObjectTypeEXT debug_object_type = get_debug_report_enum[pNode->object_type];
 
-        log_msg(instance_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, debug_object_type, pNode->handle, __LINE__,
-                OBJTRACK_OBJECT_LEAK, LayerName, "OBJ ERROR : %s object 0x%" PRIxLEAST64 " has not been destroyed.",
+        log_msg(instance_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, debug_object_type, pNode->handle, OBJTRACK_OBJECT_LEAK,
+                LayerName, "OBJ ERROR : %s object 0x%" PRIxLEAST64 " has not been destroyed.",
                 string_VkDebugReportObjectTypeEXT(debug_object_type), pNode->handle);
 
         // Report any remaining objects in LL
