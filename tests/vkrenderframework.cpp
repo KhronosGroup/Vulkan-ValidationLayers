@@ -189,6 +189,21 @@ void VkRenderFramework::InitFramework(PFN_vkDebugReportCallbackEXT dbgFunction, 
     instInfo.ppEnabledLayerNames = m_instance_layer_names.data();
     instInfo.enabledExtensionCount = m_instance_extension_names.size();
     instInfo.ppEnabledExtensionNames = m_instance_extension_names.data();
+
+    VkDebugReportCallbackCreateInfoEXT dbgCreateInfo;
+    if (dbgFunction) {
+        // Enable create time debug messages
+        memset(&dbgCreateInfo, 0, sizeof(dbgCreateInfo));
+        dbgCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CREATE_INFO_EXT;
+        dbgCreateInfo.flags =
+            VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT | VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT;
+        dbgCreateInfo.pfnCallback = dbgFunction;
+        dbgCreateInfo.pUserData = userData;
+
+        dbgCreateInfo.pNext = instInfo.pNext;
+        instInfo.pNext = &dbgCreateInfo;
+    }
+
     err = vkCreateInstance(&instInfo, NULL, &this->inst);
     ASSERT_VK_SUCCESS(err);
 
@@ -204,14 +219,7 @@ void VkRenderFramework::InitFramework(PFN_vkDebugReportCallbackEXT dbgFunction, 
         ASSERT_NE(m_CreateDebugReportCallback, (PFN_vkCreateDebugReportCallbackEXT)NULL)
             << "Did not get function pointer for CreateDebugReportCallback";
         if (m_CreateDebugReportCallback) {
-            VkDebugReportCallbackCreateInfoEXT dbgCreateInfo;
-            memset(&dbgCreateInfo, 0, sizeof(dbgCreateInfo));
-            dbgCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CREATE_INFO_EXT;
-            dbgCreateInfo.flags =
-                VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT | VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT;
-            dbgCreateInfo.pfnCallback = dbgFunction;
-            dbgCreateInfo.pUserData = userData;
-
+            dbgCreateInfo.pNext = nullptr;  // clean up from usage in CreateInstance above
             err = m_CreateDebugReportCallback(this->inst, &dbgCreateInfo, NULL, &m_globalMsgCallback);
             ASSERT_VK_SUCCESS(err);
 
