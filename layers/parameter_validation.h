@@ -132,9 +132,6 @@ struct GenericHeader {
     const void *pNext;
 };
 
-// Layer name string to be logged with validation messages.
-const char LayerName[] = "ParameterValidation";
-
 // String returned by string_VkStructureType for an unrecognized type.
 const std::string UnsupportedStructureTypeString = "Unhandled VkStructureType";
 
@@ -154,7 +151,6 @@ struct LogMiscParams {
     const debug_report_data *debug_data;
     VkDebugReportObjectTypeEXT objectType;
     uint64_t srcObject;
-    const char *pLayerPrefix;
     const char *api_name;
 };
 
@@ -177,9 +173,10 @@ bool ValidateGreaterThan(const T value, const T lower_bound, const ParameterName
 
     if (value <= lower_bound) {
         std::ostringstream ss;
-        ss << misc.api_name << ": parameter " << parameter_name.get_name() << " (= " << value << ") is greater than " << lower_bound;
-        skip_call |= log_msg(misc.debug_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, misc.objectType, misc.srcObject, vuid,
-                             misc.pLayerPrefix, "%s", ss.str().c_str());
+        ss << misc.api_name << ": parameter " << parameter_name.get_name() << " (= " << value << ") is greater than "
+           << lower_bound;
+        skip_call |=
+            log_msg(misc.debug_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, misc.objectType, misc.srcObject, vuid, "%s", ss.str().c_str());
     }
 
     return skip_call;
@@ -207,7 +204,7 @@ static bool validate_required_pointer(debug_report_data *report_data, const char
 
     if (value == NULL) {
         skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, vuid,
-                             LayerName, "%s: required parameter %s specified as NULL.", apiName, parameterName.get_name().c_str());
+                             "%s: required parameter %s specified as NULL.", apiName, parameterName.get_name().c_str());
     }
 
     return skip_call;
@@ -238,16 +235,16 @@ bool validate_array(debug_report_data *report_data, const char *apiName, const P
 
     // Count parameters not tagged as optional cannot be 0
     if (countRequired && (count == 0)) {
-        skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                             count_required_vuid, LayerName, "%s: parameter %s must be greater than 0.", apiName,
-                             countName.get_name().c_str());
+        skip_call |=
+            log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, count_required_vuid,
+                    "%s: parameter %s must be greater than 0.", apiName, countName.get_name().c_str());
     }
 
     // Array parameters not tagged as optional cannot be NULL, unless the count is 0
     if ((array == NULL) && arrayRequired && (count != 0)) {
-        skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                             array_required_vuid, LayerName, "%s: required parameter %s specified as NULL.", apiName,
-                             arrayName.get_name().c_str());
+        skip_call |=
+            log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, array_required_vuid,
+                    "%s: required parameter %s specified as NULL.", apiName, arrayName.get_name().c_str());
     }
 
     return skip_call;
@@ -282,9 +279,9 @@ bool validate_array(debug_report_data *report_data, const char *apiName, const P
 
     if (count == NULL) {
         if (countPtrRequired) {
-            skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                 REQUIRED_PARAMETER, LayerName, "%s: required parameter %s specified as NULL", apiName,
-                                 countName.get_name().c_str());
+            skip_call |=
+                log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, REQUIRED_PARAMETER,
+                        "%s: required parameter %s specified as NULL", apiName, countName.get_name().c_str());
         }
     } else {
         skip_call |= validate_array(report_data, apiName, countName, arrayName, array ? (*count) : 0, array, countValueRequired,
@@ -318,14 +315,13 @@ bool validate_struct_type(debug_report_data *report_data, const char *apiName, c
 
     if (value == NULL) {
         if (required) {
-            skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                 REQUIRED_PARAMETER, LayerName, "%s: required parameter %s specified as NULL", apiName,
-                                 parameterName.get_name().c_str());
+            skip_call |=
+                log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, REQUIRED_PARAMETER,
+                        "%s: required parameter %s specified as NULL", apiName, parameterName.get_name().c_str());
         }
     } else if (value->sType != sType) {
-        skip_call |=
-            log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, vuid,
-                    LayerName, "%s: parameter %s->sType must be %s.", apiName, parameterName.get_name().c_str(), sTypeName);
+        skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, vuid,
+                             "%s: parameter %s->sType must be %s.", apiName, parameterName.get_name().c_str(), sTypeName);
     }
 
     return skip_call;
@@ -364,7 +360,7 @@ bool validate_struct_type_array(debug_report_data *report_data, const char *apiN
         for (uint32_t i = 0; i < count; ++i) {
             if (array[i].sType != sType) {
                 skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                     INVALID_STRUCT_STYPE, LayerName, "%s: parameter %s[%d].sType must be %s", apiName,
+                                     INVALID_STRUCT_STYPE, "%s: parameter %s[%d].sType must be %s", apiName,
                                      arrayName.get_name().c_str(), i, sTypeName);
             }
         }
@@ -403,9 +399,9 @@ bool validate_struct_type_array(debug_report_data *report_data, const char *apiN
 
     if (count == NULL) {
         if (countPtrRequired) {
-            skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                 REQUIRED_PARAMETER, LayerName, "%s: required parameter %s specified as NULL", apiName,
-                                 countName.get_name().c_str());
+            skip_call |=
+                log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, REQUIRED_PARAMETER,
+                        "%s: required parameter %s specified as NULL", apiName, countName.get_name().c_str());
         }
     } else {
         skip_call |= validate_struct_type_array(report_data, apiName, countName, arrayName, sTypeName, (*count), array, sType,
@@ -431,9 +427,9 @@ bool validate_required_handle(debug_report_data *report_data, const char *api_na
     bool skip_call = false;
 
     if (value == VK_NULL_HANDLE) {
-        skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                             REQUIRED_PARAMETER, LayerName, "%s: required parameter %s specified as VK_NULL_HANDLE", api_name,
-                             parameter_name.get_name().c_str());
+        skip_call |=
+            log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, REQUIRED_PARAMETER,
+                    "%s: required parameter %s specified as VK_NULL_HANDLE", api_name, parameter_name.get_name().c_str());
     }
 
     return skip_call;
@@ -474,10 +470,9 @@ bool validate_handle_array(debug_report_data *report_data, const char *api_name,
         // Verify that no handles in the array are VK_NULL_HANDLE
         for (uint32_t i = 0; i < count; ++i) {
             if (array[i] == VK_NULL_HANDLE) {
-                skip_call |=
-                    log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                            REQUIRED_PARAMETER, LayerName, "%s: required parameter %s[%d] specified as VK_NULL_HANDLE", api_name,
-                            array_name.get_name().c_str(), i);
+                skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                     REQUIRED_PARAMETER, "%s: required parameter %s[%d] specified as VK_NULL_HANDLE", api_name,
+                                     array_name.get_name().c_str(), i);
             }
         }
     }
@@ -517,8 +512,8 @@ static bool validate_string_array(debug_report_data *report_data, const char *ap
         for (uint32_t i = 0; i < count; ++i) {
             if (array[i] == NULL) {
                 skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                     REQUIRED_PARAMETER, LayerName, "%s: required parameter %s[%d] specified as NULL",
-                                     apiName, arrayName.get_name().c_str(), i);
+                                     REQUIRED_PARAMETER, "%s: required parameter %s[%d] specified as NULL", apiName,
+                                     arrayName.get_name().c_str(), i);
             }
         }
     }
@@ -562,8 +557,8 @@ static bool validate_struct_pnext(debug_report_data *report_data, const char *ap
         if (allowed_type_count == 0) {
             std::string message = "%s: value of %s must be NULL. ";
             message += disclaimer;
-            skip_call |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                 vuid, LayerName, message.c_str(), api_name, parameter_name.get_name().c_str(), header_version,
+            skip_call |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, vuid,
+                                 message.c_str(), api_name, parameter_name.get_name().c_str(), header_version,
                                  parameter_name.get_name().c_str());
         } else {
             const VkStructureType *start = allowed_types;
@@ -576,8 +571,8 @@ static bool validate_struct_pnext(debug_report_data *report_data, const char *ap
                 if (cycle_check.find(current->pNext) != cycle_check.end()) {
                     std::string message = "%s: %s chain contains a cycle -- pNext pointer " PRIx64 " is repeated.";
                     skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                         INVALID_STRUCT_PNEXT, LayerName, message.c_str(), api_name,
-                                         parameter_name.get_name().c_str(), reinterpret_cast<uint64_t>(next));
+                                         INVALID_STRUCT_PNEXT, message.c_str(), api_name, parameter_name.get_name().c_str(),
+                                         reinterpret_cast<uint64_t>(next));
                     break;
                 } else {
                     cycle_check.insert(current->pNext);
@@ -587,8 +582,8 @@ static bool validate_struct_pnext(debug_report_data *report_data, const char *ap
                 if (unique_stype_check.find(current->sType) != unique_stype_check.end()) {
                     std::string message = "%s: %s chain contains duplicate structure types: %s appears multiple times.";
                     skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                         INVALID_STRUCT_PNEXT, LayerName, message.c_str(), api_name,
-                                         parameter_name.get_name().c_str(), type_name.c_str());
+                                         INVALID_STRUCT_PNEXT, message.c_str(), api_name, parameter_name.get_name().c_str(),
+                                         type_name.c_str());
                 } else {
                     unique_stype_check.insert(current->sType);
                 }
@@ -598,18 +593,17 @@ static bool validate_struct_pnext(debug_report_data *report_data, const char *ap
                         std::string message =
                             "%s: %s chain includes a structure with unknown VkStructureType (%d); Allowed structures are [%s]. ";
                         message += disclaimer;
-                        skip_call |=
-                            log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                    vuid, LayerName, message.c_str(), api_name, parameter_name.get_name().c_str(),
-                                    current->sType, allowed_struct_names, header_version, parameter_name.get_name().c_str());
+                        skip_call |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,
+                                             0, vuid, message.c_str(), api_name, parameter_name.get_name().c_str(), current->sType,
+                                             allowed_struct_names, header_version, parameter_name.get_name().c_str());
                     } else {
                         std::string message =
                             "%s: %s chain includes a structure with unexpected VkStructureType %s; Allowed structures are [%s]. ";
                         message += disclaimer;
                         skip_call |=
-                            log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                    vuid, LayerName, message.c_str(), api_name, parameter_name.get_name().c_str(),
-                                    type_name.c_str(), allowed_struct_names, header_version, parameter_name.get_name().c_str());
+                            log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, vuid,
+                                    message.c_str(), api_name, parameter_name.get_name().c_str(), type_name.c_str(),
+                                    allowed_struct_names, header_version, parameter_name.get_name().c_str());
                     }
                 }
                 current = reinterpret_cast<const GenericHeader *>(current->pNext);
@@ -636,9 +630,9 @@ static bool validate_bool32(debug_report_data *report_data, const char *apiName,
     bool skip_call = false;
 
     if ((value != VK_TRUE) && (value != VK_FALSE)) {
-        skip_call |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                             UNRECOGNIZED_VALUE, LayerName, "%s: value of %s (%d) is neither VK_TRUE nor VK_FALSE", apiName,
-                             parameterName.get_name().c_str(), value);
+        skip_call |=
+            log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, UNRECOGNIZED_VALUE,
+                    "%s: value of %s (%d) is neither VK_TRUE nor VK_FALSE", apiName, parameterName.get_name().c_str(), value);
     }
 
     return skip_call;
@@ -669,7 +663,6 @@ bool validate_ranged_enum(debug_report_data *report_data, const char *apiName, c
 
     if (std::find(valid_values.begin(), valid_values.end(), value) == valid_values.end()) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, vuid,
-                        LayerName,
                         "%s: value of %s (%d) does not fall within the begin..end range of the core %s enumeration tokens and is "
                         "not an extension added token.",
                         apiName, parameterName.get_name().c_str(), value, enumName);
@@ -713,7 +706,7 @@ static bool validate_ranged_enum_array(debug_report_data *report_data, const cha
         for (uint32_t i = 0; i < count; ++i) {
             if (std::find(valid_values.begin(), valid_values.end(), array[i]) == valid_values.end()) {
                 skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                     UNRECOGNIZED_VALUE, LayerName,
+                                     UNRECOGNIZED_VALUE,
                                      "%s: value of %s[%d] (%d) does not fall within the begin..end range of the core %s "
                                      "enumeration tokens and is not an extension added token",
                                      apiName, arrayName.get_name().c_str(), i, array[i], enumName);
@@ -742,7 +735,7 @@ static bool validate_reserved_flags(debug_report_data *report_data, const char *
 
     if (value != 0) {
         skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, vuid,
-                             LayerName, "%s: parameter %s must be 0.", api_name, parameter_name.get_name().c_str());
+                             "%s: parameter %s must be 0.", api_name, parameter_name.get_name().c_str());
     }
 
     return skip_call;
@@ -771,19 +764,18 @@ static bool validate_flags(debug_report_data *report_data, const char *api_name,
 
     if (value == 0) {
         if (flags_required) {
-            skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                 vuid, LayerName, "%s: value of %s must not be 0.", api_name, parameter_name.get_name().c_str());
+            skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, vuid,
+                                 "%s: value of %s must not be 0.", api_name, parameter_name.get_name().c_str());
         }
     } else if ((value & (~all_flags)) != 0) {
-        skip_call |=
-            log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                    UNRECOGNIZED_VALUE, LayerName, "%s: value of %s contains flag bits that are not recognized members of %s",
-                    api_name, parameter_name.get_name().c_str(), flag_bits_name);
-    } else if (singleFlag && (std::bitset<sizeof(VkFlags) * 8>(value).count() > 1)) {
         skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                             UNRECOGNIZED_VALUE, LayerName,
-                             "%s: value of %s contains multiple members of %s when only a single value is allowed", api_name,
-                             parameter_name.get_name().c_str(), flag_bits_name);
+                             UNRECOGNIZED_VALUE, "%s: value of %s contains flag bits that are not recognized members of %s",
+                             api_name, parameter_name.get_name().c_str(), flag_bits_name);
+    } else if (singleFlag && (std::bitset<sizeof(VkFlags) * 8>(value).count() > 1)) {
+        skip_call |=
+            log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, UNRECOGNIZED_VALUE,
+                    "%s: value of %s contains multiple members of %s when only a single value is allowed", api_name,
+                    parameter_name.get_name().c_str(), flag_bits_name);
     }
 
     return skip_call;
@@ -823,14 +815,14 @@ static bool validate_flags_array(debug_report_data *report_data, const char *api
                 // elements in the array are allowed be 0
                 if (array_required) {
                     skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                         REQUIRED_PARAMETER, LayerName, "%s: value of %s[%d] must not be 0", api_name,
+                                         REQUIRED_PARAMETER, "%s: value of %s[%d] must not be 0", api_name,
                                          array_name.get_name().c_str(), i);
                 }
             } else if ((array[i] & (~all_flags)) != 0) {
-                skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                     UNRECOGNIZED_VALUE, LayerName,
-                                     "%s: value of %s[%d] contains flag bits that are not recognized members of %s", api_name,
-                                     array_name.get_name().c_str(), i, flag_bits_name);
+                skip_call |=
+                    log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                            UNRECOGNIZED_VALUE, "%s: value of %s[%d] contains flag bits that are not recognized members of %s",
+                            api_name, array_name.get_name().c_str(), i, flag_bits_name);
             }
         }
     }
@@ -904,13 +896,12 @@ static void validate_result(debug_report_data *report_data, const char *apiName,
         std::string resultName = string_VkResult(result);
         if (resultName == UnsupportedResultString) {
             // Unrecognized result code
-            log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                    FAILURE_RETURN_CODE, LayerName, "%s: returned a result code indicating that an error has occurred", apiName);
+            log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, FAILURE_RETURN_CODE,
+                    "%s: returned a result code indicating that an error has occurred", apiName);
         } else {
             std::string resultDesc = get_result_description(result);
-            log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                    FAILURE_RETURN_CODE, LayerName, "%s: returned %s, indicating that %s", apiName, resultName.c_str(),
-                    resultDesc.c_str());
+            log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, FAILURE_RETURN_CODE,
+                    "%s: returned %s, indicating that %s", apiName, resultName.c_str(), resultDesc.c_str());
         }
     }
 }

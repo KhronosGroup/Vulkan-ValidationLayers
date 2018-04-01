@@ -309,7 +309,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
         ext_template  = 'template <typename T>\n'
         ext_template += 'bool OutputExtensionError(const T *layer_data, const std::string &api_name, const std::string &extension_name) {\n'
         ext_template += '    return log_msg(layer_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,\n'
-        ext_template += '                   EXTENSION_NOT_ENABLED, LayerName, "Attemped to call %s() but its required extension %s has not been enabled\\n",\n'
+        ext_template += '                   EXTENSION_NOT_ENABLED, "Attemped to call %s() but its required extension %s has not been enabled\\n",\n'
         ext_template += '                   api_name.c_str(), extension_name.c_str());\n'
         ext_template += '}\n'
         write(ext_template, file=self.outFile)

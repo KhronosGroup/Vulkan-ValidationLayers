@@ -815,11 +815,10 @@ static inline int vasprintf(char **strp, char const *fmt, va_list ap) {
 // is only computed if a message needs to be logged
 #ifndef WIN32
 static inline bool log_msg(const debug_report_data *debug_data, VkFlags msg_flags, VkDebugReportObjectTypeEXT object_type,
-                           uint64_t src_object, int32_t msg_code, const char *layer_prefix, const char *format, ...)
-    __attribute__((format(printf, 7, 8)));
+                           uint64_t src_object, int32_t msg_code, const char *format, ...) __attribute__((format(printf, 6, 7)));
 #endif
 static inline bool log_msg(const debug_report_data *debug_data, VkFlags msg_flags, VkDebugReportObjectTypeEXT object_type,
-                           uint64_t src_object, int32_t msg_code, const char *layer_prefix, const char *format, ...) {
+                           uint64_t src_object, int32_t msg_code, const char *format, ...) {
     VkFlags local_severity = 0;
     VkFlags local_type = 0;
     DebugReportFlagsToAnnotFlags(msg_flags, true, &local_severity, &local_type);
@@ -845,7 +844,7 @@ static inline bool log_msg(const debug_report_data *debug_data, VkFlags msg_flag
         str_plus_spec_text += validation_error_map[msg_code];
     }
 
-    bool result = debug_log_msg(debug_data, msg_flags, object_type, src_object, 0, msg_code, layer_prefix,
+    bool result = debug_log_msg(debug_data, msg_flags, object_type, src_object, 0, msg_code, "Validation",
                                 str_plus_spec_text.c_str() ? str_plus_spec_text.c_str() : "Allocation failure");
     free(str);
     return result;
