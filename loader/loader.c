@@ -26,6 +26,7 @@
  */
 
 #define _GNU_SOURCE
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -1397,8 +1398,6 @@ void loader_destroy_layer_list(const struct loader_instance *inst, struct loader
 VkResult loader_add_to_layer_list(const struct loader_instance *inst, struct loader_layer_list *list, uint32_t prop_list_count,
                                   const struct loader_layer_properties *props) {
     uint32_t i;
-    uint16_t layer_api_major_version;
-    uint16_t layer_api_minor_version;
     struct loader_layer_properties *layer;
 
     if (list->list == NULL || list->capacity == 0) {
@@ -1427,18 +1426,6 @@ VkResult loader_add_to_layer_list(const struct loader_instance *inst, struct loa
             }
             list->list = new_ptr;
             list->capacity = new_capacity;
-        }
-
-        // Verify that the layer api version is at least that of the application's request, if not, throw a warning since
-        // undefined behavior could occur.
-        layer_api_major_version = VK_VERSION_MAJOR(props[i].info.specVersion);
-        layer_api_minor_version = VK_VERSION_MINOR(props[i].info.specVersion);
-        if (inst->app_api_major_version > layer_api_major_version ||
-            (inst->app_api_major_version == layer_api_major_version && inst->app_api_minor_version > layer_api_minor_version)) {
-            loader_log(
-                inst, VK_DEBUG_REPORT_WARNING_BIT_EXT, 0,
-                "loader_add_to_layer_list: Explicit layer %s is using an old API version %d.%d versus application requested %d.%d",
-                props[i].info.layerName, layer_api_major_version, layer_api_minor_version, inst->app_api_major_version,-                inst->app_api_minor_version);
         }
 
         memcpy(&list->list[list->count], layer, sizeof(struct loader_layer_properties));
@@ -4538,6 +4525,10 @@ out:
 VkResult loader_enable_instance_layers(struct loader_instance *inst, const VkInstanceCreateInfo *pCreateInfo,
                                        const struct loader_layer_list *instance_layers) {
     VkResult err;
+    uint16_t layer_api_major_version;
+    uint16_t layer_api_minor_version;
+    uint32_t i;
+    struct loader_layer_properties *prop;
 
     assert(inst && "Cannot have null instance");
 
@@ -4565,6 +4556,22 @@ VkResult loader_enable_instance_layers(struct loader_instance *inst, const VkIns
     // Add layers specified by the application
     err = loader_add_layer_names_to_list(inst, &inst->app_activated_layer_list, &inst->expanded_activated_layer_list,
                                          pCreateInfo->enabledLayerCount, pCreateInfo->ppEnabledLayerNames, instance_layers);
+
+    for (i = 0; i < inst->expanded_activated_layer_list.count; i++) {
+        // Verify that the layer api version is at least that of the application's request, if not, throw a warning since
+        // undefined behavior could occur.
+        prop = inst->expanded_activated_layer_list.list + i;
+        layer_api_major_version = VK_VERSION_MAJOR(prop->info.specVersion);
+        layer_api_minor_version = VK_VERSION_MINOR(prop->info.specVersion);
+        if (inst->app_api_major_version > layer_api_major_version ||
+            (inst->app_api_major_version == layer_api_major_version && inst->app_api_minor_version > layer_api_minor_version)) {
+            loader_log(inst, VK_DEBUG_REPORT_WARNING_BIT_EXT, 0,
+                       "loader_add_to_layer_list: Explicit layer %s is using an old API version %" PRIu16 ".%" PRIu16
+                       " versus application requested %" PRIu16 ".%" PRIu16,
+                       prop->info.layerName, layer_api_major_version, layer_api_minor_version, inst->app_api_major_version,
+                       inst->app_api_minor_version);
+        }
+    }
 
     return err;
 }
