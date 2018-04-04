@@ -23169,6 +23169,92 @@ TEST_F(VkLayerTest, MultiplePushDescriptorSets) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(VkLayerTest, CreateDescriptorUpdateTemplate) {
+    TEST_DESCRIPTION("Verify error messages for invalid vkCreateDescriptorUpdateTemplate calls.");
+
+    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    } else {
+        printf("             Did not find VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME; skipped.\n");
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME) &&
+        DeviceExtensionSupported(gpu(), nullptr, VK_KHR_DESCRIPTOR_UPDATE_TEMPLATE_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_DESCRIPTOR_UPDATE_TEMPLATE_EXTENSION_NAME);
+    } else {
+        printf("             Push Descriptors and Descriptor Update Template Extensions not supported, skipping tests\n");
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    VkDescriptorSetLayoutBinding dsl_binding = {};
+    dsl_binding.binding = 0;
+    dsl_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    dsl_binding.descriptorCount = 1;
+    dsl_binding.stageFlags = VK_SHADER_STAGE_ALL;
+    dsl_binding.pImmutableSamplers = NULL;
+
+    const VkDescriptorSetLayoutObj ds_layout_ub(m_device, {dsl_binding});
+    const VkDescriptorSetLayoutObj ds_layout_ub1(m_device, {dsl_binding});
+    const VkDescriptorSetLayoutObj ds_layout_ub_push(m_device, {dsl_binding},
+                                                     VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR);
+    const VkPipelineLayoutObj pipeline_layout(m_device, {{&ds_layout_ub, &ds_layout_ub1, &ds_layout_ub_push}});
+    PFN_vkCreateDescriptorUpdateTemplateKHR vkCreateDescriptorUpdateTemplateKHR =
+        (PFN_vkCreateDescriptorUpdateTemplateKHR)vkGetDeviceProcAddr(m_device->device(), "vkCreateDescriptorUpdateTemplateKHR");
+    ASSERT_NE(vkCreateDescriptorUpdateTemplateKHR, nullptr);
+    PFN_vkDestroyDescriptorUpdateTemplateKHR vkDestroyDescriptorUpdateTemplateKHR =
+        (PFN_vkDestroyDescriptorUpdateTemplateKHR)vkGetDeviceProcAddr(m_device->device(), "vkDestroyDescriptorUpdateTemplateKHR");
+    ASSERT_NE(vkDestroyDescriptorUpdateTemplateKHR, nullptr);
+
+    VkDescriptorUpdateTemplateEntry entries = {0, 0, 1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0, sizeof(VkBuffer)};
+    VkDescriptorUpdateTemplateCreateInfo create_info = {};
+    create_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_UPDATE_TEMPLATE_CREATE_INFO;
+    create_info.pNext = nullptr;
+    create_info.flags = 0;
+    create_info.descriptorUpdateEntryCount = 1;
+    create_info.pDescriptorUpdateEntries = &entries;
+
+    auto do_test = [&](UNIQUE_VALIDATION_ERROR_CODE err) {
+        VkDescriptorUpdateTemplateKHR dut = VK_NULL_HANDLE;
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, err);
+        if (VK_SUCCESS == vkCreateDescriptorUpdateTemplateKHR(m_device->handle(), &create_info, nullptr, &dut)) {
+            vkDestroyDescriptorUpdateTemplateKHR(m_device->handle(), dut, nullptr);
+        }
+        m_errorMonitor->VerifyFound();
+    };
+
+    // Descriptor set type template
+    create_info.templateType = VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET;
+    // descriptorSetLayout is NULL
+    do_test(VALIDATION_ERROR_052002bc);
+
+    // Push descriptor type template
+    create_info.templateType = VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS_KHR;
+    create_info.pipelineBindPoint = VK_PIPELINE_BIND_POINT_COMPUTE;
+    create_info.pipelineLayout = pipeline_layout.handle();
+    create_info.set = 2;
+
+    // Bad bindpoint -- force fuzz the bind point
+    memset(&create_info.pipelineBindPoint, 0xFE, sizeof(create_info.pipelineBindPoint));
+    do_test(VALIDATION_ERROR_052002be);
+    create_info.pipelineBindPoint = VK_PIPELINE_BIND_POINT_COMPUTE;
+
+    // Bad pipeline layout
+    create_info.pipelineLayout = VK_NULL_HANDLE;
+    do_test(VALIDATION_ERROR_052002c0);
+    create_info.pipelineLayout = pipeline_layout.handle();
+
+    // Wrong set #
+    create_info.set = 0;
+    do_test(VALIDATION_ERROR_052002c2);
+
+    // Invalid set #
+    create_info.set = 42;
+    do_test(VALIDATION_ERROR_052002c2);
+}
+
 // This is a positive test. No failures are expected.
 TEST_F(VkPositiveLayerTest, PushDescriptorNullDstSetTest) {
     TEST_DESCRIPTION("Use null dstSet in CmdPushDescriptorSetKHR");
