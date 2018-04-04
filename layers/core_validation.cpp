@@ -11962,6 +11962,48 @@ VKAPI_ATTR VkResult VKAPI_CALL EnumeratePhysicalDeviceGroupsKHR(
     return result;
 }
 
+static bool PreCallValidateCreateDescriptorUpdateTemplate(const char *func_name, layer_data *device_data,
+                                                          const VkDescriptorUpdateTemplateCreateInfoKHR *pCreateInfo,
+                                                          const VkAllocationCallbacks *pAllocator,
+                                                          VkDescriptorUpdateTemplateKHR *pDescriptorUpdateTemplate) {
+    bool skip = false;
+    const auto layout = GetDescriptorSetLayout(device_data, pCreateInfo->descriptorSetLayout);
+    if (VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET == pCreateInfo->templateType && !layout) {
+        auto ds_uint = HandleToUint64(pCreateInfo->descriptorSetLayout);
+        skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_POOL_EXT,
+                        ds_uint, VALIDATION_ERROR_052002bc, "%s: Invalid pCreateInfo->descriptorSetLayout (%" PRIx64 ")", func_name,
+                        ds_uint);
+    } else if (VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS_KHR == pCreateInfo->templateType) {
+        auto bind_point = pCreateInfo->pipelineBindPoint;
+        bool valid_bp = (bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS) || (bind_point == VK_PIPELINE_BIND_POINT_COMPUTE);
+        if (!valid_bp) {
+            skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                            VALIDATION_ERROR_052002be, "%s: Invalid pCreateInfo->pipelineBindPoint (%" PRIu32 ").", func_name,
+                            static_cast<uint32_t>(bind_point));
+        }
+        const auto pipeline_layout = getPipelineLayout(device_data, pCreateInfo->pipelineLayout);
+        if (!pipeline_layout) {
+            uint64_t pl_uint = HandleToUint64(pCreateInfo->pipelineLayout);
+            skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                            VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_LAYOUT_EXT, pl_uint, VALIDATION_ERROR_052002c0,
+                            "%s: Invalid pCreateInfo->pipelineLayout (%" PRIx64 ")", func_name, pl_uint);
+        } else {
+            const uint32_t pd_set = pCreateInfo->set;
+            if ((pd_set >= pipeline_layout->set_layouts.size()) || !pipeline_layout->set_layouts[pd_set] ||
+                !pipeline_layout->set_layouts[pd_set]->IsPushDescriptor()) {
+                uint64_t pl_uint = HandleToUint64(pCreateInfo->pipelineLayout);
+                skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_LAYOUT_EXT, pl_uint, VALIDATION_ERROR_052002c2,
+                                "%s: pCreateInfo->set (%" PRIu32
+                                ") does not refer to the push descriptor set layout for "
+                                "pCreateInfo->pipelineLayout (%" PRIx64 ").",
+                                func_name, pd_set, pl_uint);
+            }
+        }
+    }
+    return skip;
+}
+
 static void PostCallRecordCreateDescriptorUpdateTemplate(layer_data *device_data,
                                                          const VkDescriptorUpdateTemplateCreateInfoKHR *pCreateInfo,
                                                          VkDescriptorUpdateTemplateKHR *pDescriptorUpdateTemplate) {
@@ -11976,11 +12018,19 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDescriptorUpdateTemplate(VkDevice device,
                                                               const VkAllocationCallbacks *pAllocator,
                                                               VkDescriptorUpdateTemplateKHR *pDescriptorUpdateTemplate) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    VkResult result =
-        device_data->dispatch_table.CreateDescriptorUpdateTemplate(device, pCreateInfo, pAllocator, pDescriptorUpdateTemplate);
-    if (VK_SUCCESS == result) {
-        lock_guard_t lock(global_lock);
-        PostCallRecordCreateDescriptorUpdateTemplate(device_data, pCreateInfo, pDescriptorUpdateTemplate);
+    unique_lock_t lock(global_lock);
+    bool skip = PreCallValidateCreateDescriptorUpdateTemplate("vkCreateDescriptorUpdateTemplate()", device_data, pCreateInfo,
+                                                              pAllocator, pDescriptorUpdateTemplate);
+
+    VkResult result = VK_ERROR_VALIDATION_FAILED_EXT;
+    if (!skip) {
+        lock.unlock();
+        result =
+            device_data->dispatch_table.CreateDescriptorUpdateTemplate(device, pCreateInfo, pAllocator, pDescriptorUpdateTemplate);
+        if (VK_SUCCESS == result) {
+            lock.lock();
+            PostCallRecordCreateDescriptorUpdateTemplate(device_data, pCreateInfo, pDescriptorUpdateTemplate);
+        }
     }
     return result;
 }
@@ -11990,11 +12040,19 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDescriptorUpdateTemplateKHR(VkDevice device
                                                                  const VkAllocationCallbacks *pAllocator,
                                                                  VkDescriptorUpdateTemplateKHR *pDescriptorUpdateTemplate) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    VkResult result =
-        device_data->dispatch_table.CreateDescriptorUpdateTemplateKHR(device, pCreateInfo, pAllocator, pDescriptorUpdateTemplate);
-    if (VK_SUCCESS == result) {
-        lock_guard_t lock(global_lock);
-        PostCallRecordCreateDescriptorUpdateTemplate(device_data, pCreateInfo, pDescriptorUpdateTemplate);
+    unique_lock_t lock(global_lock);
+    bool skip = PreCallValidateCreateDescriptorUpdateTemplate("vkCreateDescriptorUpdateTemplateKHR()", device_data, pCreateInfo,
+                                                              pAllocator, pDescriptorUpdateTemplate);
+
+    VkResult result = VK_ERROR_VALIDATION_FAILED_EXT;
+    if (!skip) {
+        lock.unlock();
+        result = device_data->dispatch_table.CreateDescriptorUpdateTemplateKHR(device, pCreateInfo, pAllocator,
+                                                                               pDescriptorUpdateTemplate);
+        if (VK_SUCCESS == result) {
+            lock.lock();
+            PostCallRecordCreateDescriptorUpdateTemplate(device_data, pCreateInfo, pDescriptorUpdateTemplate);
+        }
     }
     return result;
 }

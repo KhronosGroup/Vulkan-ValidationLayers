@@ -290,6 +290,11 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
                     else:
                         print('Unrecognized len attribute value',val)
                 isoptional = opts
+        if not isoptional:
+            # Matching logic in parameter validation and ValidityOutputGenerator.isHandleOptional
+            optString = param.attrib.get('noautovalidity')
+            if optString and optString == 'true':
+                isoptional = True;
         return isoptional
     #
     # Convert decimal number to 8 digit hexadecimal lower-case representation
