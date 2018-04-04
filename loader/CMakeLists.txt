@@ -243,6 +243,17 @@ else()
             ${PROJECT_SOURCE_DIR}/include/vulkan/vk_layer.h
             ${PROJECT_SOURCE_DIR}/include/vulkan/vk_platform.h
             ${PROJECT_SOURCE_DIR}/include/vulkan/vk_sdk_platform.h
+            ${PROJECT_SOURCE_DIR}/include/vulkan/vulkan_android.h
+            ${PROJECT_SOURCE_DIR}/include/vulkan/vulkan_core.h
+            ${PROJECT_SOURCE_DIR}/include/vulkan/vulkan_ios.h
+            ${PROJECT_SOURCE_DIR}/include/vulkan/vulkan_macos.h
+            ${PROJECT_SOURCE_DIR}/include/vulkan/vulkan_mir.h
+            ${PROJECT_SOURCE_DIR}/include/vulkan/vulkan_vi.h
+            ${PROJECT_SOURCE_DIR}/include/vulkan/vulkan_wayland.h
+            ${PROJECT_SOURCE_DIR}/include/vulkan/vulkan_win32.h
+            ${PROJECT_SOURCE_DIR}/include/vulkan/vulkan_xcb.h
+            ${PROJECT_SOURCE_DIR}/include/vulkan/vulkan_xlib.h
+            ${PROJECT_SOURCE_DIR}/include/vulkan/vulkan_xlib_xrandr.h
             ${PROJECT_SOURCE_DIR}/include/vulkan/vulkan.h
             ${PROJECT_SOURCE_DIR}/include/vulkan/vulkan.hpp
         )
