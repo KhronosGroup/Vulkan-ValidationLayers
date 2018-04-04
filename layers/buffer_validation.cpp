@@ -4018,7 +4018,7 @@ bool PreCallValidateCmdCopyImageToBuffer(layer_data *device_data, VkImageLayout 
                         "Cannot call vkCmdCopyImageToBuffer() on a command buffer allocated from a pool without graphics, compute, "
                         "or transfer capabilities..");
     }
-    skip |= ValidateImageBounds(report_data, src_image_state, regionCount, pRegions, "vkCmdCopyBufferToImage()",
+    skip |= ValidateImageBounds(report_data, src_image_state, regionCount, pRegions, "vkCmdCopyImageToBuffer()",
                                 VALIDATION_ERROR_1920016c);
     skip |= ValidateBufferBounds(report_data, src_image_state, dst_buffer_state, regionCount, pRegions, "vkCmdCopyImageToBuffer()",
                                  VALIDATION_ERROR_1920016e);
