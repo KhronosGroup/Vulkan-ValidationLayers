@@ -227,7 +227,7 @@ else()
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-typedef-redefinition")
     endif()
 
-    add_library(${API_LOWERCASE} SHARED ${NORMAL_LOADER_SRCS} ${OPT_LOADER_SRCS} ${FRAMEWORK_HEADERS})
+    add_library(${API_LOWERCASE} SHARED ${NORMAL_LOADER_SRCS} ${OPT_LOADER_SRCS})
     add_dependencies(${API_LOWERCASE} generate_helper_files loader_gen_files loader_asm_gen_files)
     target_compile_definitions(${API_LOWERCASE} PUBLIC -DLOADER_DYNAMIC_LIB)
     set_target_properties(${API_LOWERCASE} PROPERTIES SOVERSION "1" VERSION "1.1.${vk_header_version}")
@@ -272,7 +272,7 @@ else()
             OUTPUT_NAME vulkan
             FRAMEWORK TRUE
             FRAMEWORK_VERSION A
-            VERSION "1.0.${vk_header_version}"       # "current version"
+            VERSION "1.1.${vk_header_version}"       # "current version"
             SOVERSION "1.0.0"                        # "compatibility version"
             MACOSX_FRAMEWORK_IDENTIFIER com.lunarg.vulkanFramework
             PUBLIC_HEADER "${FRAMEWORK_HEADERS}"
