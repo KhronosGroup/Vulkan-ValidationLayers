@@ -4,14 +4,12 @@ Instructions for building this repository on Linux, Windows, Android, and MacOS.
 
 ## Index
 
-1. [Contributing](#contributing)
-2. [Repository Set-Up](#repo-set-up)
-3. [Windows Build](#windows-build)
-4. [Linux Build](#linux-build)
-5. [Android Build](#android-build)
-6. [MacOS build](#macos-build)
-
-[](#contributing)
+1. [Contributing](#contributing-to-the-repository)
+2. [Repository Set-Up](#repository-set-up)
+3. [Windows Build](#building-on-windows)
+4. [Linux Build](#building-on-linux)
+5. [Android Build](#building-on-android)
+6. [MacOS build](#building-on-macos)
 
 ## Contributing to the Repository
 
@@ -19,8 +17,6 @@ If you intend to contribute, the preferred work flow is for you to develop
 your contribution in a fork of this repository in your GitHub account and
 then submit a pull request.
 Please see the [CONTRIBUTING.md](CONTRIBUTING.md) file in this repository for more details.
-
-[](#repo-set-up)
 
 ## Repository Set-Up
 
@@ -35,8 +31,6 @@ graphics hardware vendor and install it properly.
 To create your local git repository:
 
     git clone https://github.com/KhronosGroup/Vulkan-LoaderAndValidationLayers
-
-[](#windows-build)
 
 ## Building On Windows
 
@@ -73,7 +67,7 @@ Windows 7+ with the following software packages:
 3. Run `update_external_sources.bat` -- this will download and build external components
 4. Create a `build` directory, change into that directory, and run cmake
 
-For example, for VS2017 (generators for other versions are [specified here](#win-cmake-generators)):
+For example, for VS2017 (generators for other versions are [specified here](#cmake-visual-studio-generators)):
 
     cmake -G "Visual Studio 15 2017 Win64" ..
 
@@ -87,8 +81,8 @@ to ensure that the program uses the loader built from this solution.
 
 #### The Update External Sources Batch File
 
-Employing [optional parameters to **update_external_sources.bat**](#update-external-sources)
-can streamline repository set-up.
+Employing [optional parameters](#update-external-sources-optional-parameters)
+to the **update_external_sources.bat** script can streamline repository set-up.
 
 ### Windows Tests and Demos
 
@@ -131,8 +125,6 @@ Other demos that can be found in the build/demos directory are:
 
 ### Windows Notes
 
-[](#win-cmake-generators)
-
 #### CMake Visual Studio Generators
 
 The above example used Visual Studio 2017, and specified its generator as "Visual Studio 15 2017 Win64".
@@ -153,8 +145,6 @@ Make sure the library is either installed in the C:\Windows\System32 folder, or 
 To run Vulkan programs you must tell the Vulkan Loader where to find the libraries.
 This is described in a `LoaderAndLayerInterface` document in the `loader` folder in this repository.
 This describes both how ICDs and layers should be properly packaged, and how developers can point to ICDs and layers within their builds.
-
-[](#linux-build)
 
 ## Building On Linux
 
@@ -188,7 +178,8 @@ If your build system supports ccache, you can enable that via CMake option `-DUS
 
 #### The Update External Sources script
 
-Employing [optional parameters to **update_external_sources.sh**](#update-external-sources) can streamline repository set-up.
+Employing [optional parameters](#update-external-sources-optional-parameters)
+to the **update_external_sources.sh** script can streamline repository set-up.
 
 #### Using the new loader and layers
 
@@ -332,8 +323,6 @@ This is required because the libraries in `external` must be built for 32-bit in
 to be usable by the rest of the components in the repository.
 
 Finally, rebuild the repository using `cmake` and `make`, as explained above.
-
-[](#android-build)
 
 ## Building On Android
 
@@ -487,8 +476,6 @@ To build, install, and run the Smoke demo for Android, run the following, and an
     export ANDROID_NDK_HOME=<path to Android/Sdk/ndk-bundle>
     ./build-and-install
     adb shell am start -a android.intent.action.MAIN -c android-intent.category.LAUNCH -n com.example.Smoke/android.app.NativeActivity --es args "--validate"
-
-[](#macos-build)
 
 ## Building on MacOS
 
@@ -649,8 +636,6 @@ files to be used as project files for QtCreator
 
 Note that installing the WDK breaks the MSVC vcvarsall.bat build scripts provided by MSVC,
 requiring that the LIB, INCLUDE, and PATHenv variables be set to the WDK paths by some other means
-
-[](#update-external-sources)
 
 ## Update External Sources Optional Parameters
 
