@@ -71,9 +71,8 @@ function update_moltenvk () {
 
 function build_moltenvk () {
    echo "Building ${BASEDIR}/MoltenVK"
-   cd "${BASEDIR}"/MoltenVK/External
-   ./makeAll
    cd "${BASEDIR}"/MoltenVK
+   ./fetchDependencies --v-lvl-root "${BUILDDIR}" --glslang-root "${BASEDIR}/glslang"
    xcodebuild -project MoltenVKPackaging.xcodeproj \
     GCC_PREPROCESSOR_DEFINITIONS='$GCC_PREPROCESSOR_DEFINITIONS MVK_LOGGING_ENABLED=0' \
     -scheme "MoltenVK (Release)" build
