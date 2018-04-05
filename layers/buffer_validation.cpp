@@ -433,7 +433,7 @@ void TransitionImageAspectLayout(layer_data *device_data, GLOBAL_CB_NODE *pCB, c
 
 bool VerifyAspectsPresent(VkImageAspectFlags aspect_mask, VkFormat format) {
     if ((aspect_mask & VK_IMAGE_ASPECT_COLOR_BIT) != 0) {
-        if (!FormatIsColor(format)) return false;
+        if (!(FormatIsColor(format) || FormatIsMultiplane(format))) return false;
     }
     if ((aspect_mask & VK_IMAGE_ASPECT_DEPTH_BIT) != 0) {
         if (!FormatHasDepth(format)) return false;
