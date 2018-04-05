@@ -618,6 +618,13 @@ func_struct_id_map = {
 'vkQueueInsertDebugUtilsLabelEXT' : 562,
 'vkSetDebugUtilsObjectNameEXT' : 563,
 'vkSetDebugUtilsObjectTagEXT' : 564,
+'VkDescriptorSetLayoutBindingFlagsCreateInfoEXT' : 565,
+'VkDescriptorSetVariableDescriptorCountAllocateInfoEXT' : 566,
+'VkDescriptorSetVariableDescriptorCountLayoutSupportEXT' : 567,
+'VkPhysicalDeviceDescriptorIndexingFeaturesEXT' : 568,
+'VkPhysicalDeviceDescriptorIndexingPropertiesEXT' : 569,
+'VkPhysicalDeviceShaderCorePropertiesAMD' : 570,
+'VkVertexInputBindingDivisorDescriptionEXT' : 571,
 ### ADD New func/struct mappings above this line
 }
 # Mapping of params to unique IDs
@@ -1155,6 +1162,8 @@ implicit_param_map = {
 'pLabelInfo' : 530,
 'messenger' : 531,
 'pCallbackData' : 532,
+'pBindingFlags' : 533,
+'pDescriptorCounts' : 534,
 ### ADD New implicit param mappings above this line
 }
 
