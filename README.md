@@ -29,7 +29,7 @@ The following components are available in this repository:
 - [*Tests*](tests/)
 
 ## Contact Information
-* [Tobine Ehlis](mailto:tobine@google.com)
+* [Tobin Ehlis](mailto:tobine@google.com)
 * [Mark Lobodzinski](mailto:mark@lunarg.com)
 
 ## Information for Developing or Contributing:
