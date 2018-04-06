@@ -160,8 +160,15 @@ class Specification:
                 self.error_db_dict[error_enum] = {'check_implemented': 'N',
                                                   'testname': 'None',
                                                   'note': ''}
-            # update database entry with data from json file
             vuid_db_data = self.error_db_dict[error_enum]
+            # check if vuid is implemented but changed extension scope
+            if vuid_db_data['check_implemented'] == 'Y' and \
+               vuid_db_data['ext'] != vuid_json_data['ext']:
+                # should not occur often, currently a hard error to force corrective action
+                print('ERROR: {}/{} is currently implemented and changed extension scope from "{}" to "{}"'.format(
+                          vuid, error_enum, vuid_db_data['ext'], vuid_json_data['ext']))
+                exit(1)
+            # update database entry with data from json file
             if 'core' == vuid_json_data['ext'] or '!' in vuid_json_data['ext']:
                 spec_link = "%s#%s" % (core_url, vuid)
             else:
