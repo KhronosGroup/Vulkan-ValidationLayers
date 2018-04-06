@@ -1584,6 +1584,32 @@ static bool validateIdleDescriptorSet(const layer_data *dev_data, VkDescriptorSe
     return skip;
 }
 
+// Validate that given pool does not store any descriptor sets used by an in-flight CmdBuffer
+// pool stores the descriptor sets to be validated
+// Return false if no errors occur
+// Return true if validation error occurs and callback returns true (to skip upcoming API call down the chain)
+static bool validateIdleDescriptorSetForPoolReset(const layer_data *dev_data, const VkDescriptorPool pool) {
+    if (dev_data->instance_data->disabled.idle_descriptor_set) return false;
+    bool skip = false;
+    DESCRIPTOR_POOL_STATE *pPool = GetDescriptorPoolState(dev_data, pool);
+    for (auto ds : pPool->sets) {
+        if (ds != VK_NULL_HANDLE) {
+            auto set_node = dev_data->setMap.find(ds->GetSet());
+            if (set_node != dev_data->setMap.end()) {
+                if (set_node->second->in_use.load()) {
+                    skip |=
+                        log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_POOL_EXT, HandleToUint64(pool), VALIDATION_ERROR_32a00272,
+                                "It is invalid to call vkResetDescriptorPool() with descriptor sets in use by a command buffer. %s",
+                                validation_error_map[VALIDATION_ERROR_32a00272]);
+                    if (skip) break;
+                }
+            }
+        }
+    }
+    return skip;
+}
+
 // Remove set from setMap and delete the set
 static void freeDescriptorSet(layer_data *dev_data, cvdescriptorset::DescriptorSet *descriptor_set) {
     dev_data->setMap.erase(descriptor_set->GetSet());
@@ -5733,11 +5759,15 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDescriptorPool(VkDevice device, const VkDes
 
 VKAPI_ATTR VkResult VKAPI_CALL ResetDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool,
                                                    VkDescriptorPoolResetFlags flags) {
-    // TODO : Add checks for VALIDATION_ERROR_32a00272
+    lock_guard_t lock(global_lock);
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+
+    // Make sure sets being destroyed are not currently in-use
+    bool skip = validateIdleDescriptorSetForPoolReset(dev_data, descriptorPool);
+    if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+
     VkResult result = dev_data->dispatch_table.ResetDescriptorPool(device, descriptorPool, flags);
     if (VK_SUCCESS == result) {
-        lock_guard_t lock(global_lock);
         clearDescriptorPool(dev_data, device, descriptorPool, flags);
     }
     return result;
