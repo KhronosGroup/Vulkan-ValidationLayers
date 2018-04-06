@@ -1199,51 +1199,47 @@ static bool ValidateDrawState(layer_data *dev_data, GLOBAL_CB_NODE *cb_node, CMD
         result = validate_draw_state_flags(dev_data, cb_node, pPipe, indexed, msg_code);
 
     // Now complete other state checks
-    if (VK_NULL_HANDLE != state.pipeline_layout) {
-        string errorString;
-        auto pipeline_layout = pPipe->pipeline_layout;
+    string errorString;
+    auto const &pipeline_layout = pPipe->pipeline_layout;
 
-        for (const auto &set_binding_pair : pPipe->active_slots) {
-            uint32_t setIndex = set_binding_pair.first;
-            // If valid set is not bound throw an error
-            if ((state.boundDescriptorSets.size() <= setIndex) || (!state.boundDescriptorSets[setIndex])) {
-                result |= log_msg(
-                    dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                    HandleToUint64(cb_node->commandBuffer), DRAWSTATE_DESCRIPTOR_SET_NOT_BOUND,
-                    "VkPipeline 0x%" PRIx64 " uses set #%u but that set is not bound.", HandleToUint64(pPipe->pipeline), setIndex);
-            } else if (!verify_set_layout_compatibility(state.boundDescriptorSets[setIndex], &pipeline_layout, setIndex,
-                                                        errorString)) {
-                // Set is bound but not compatible w/ overlapping pipeline_layout from PSO
-                VkDescriptorSet setHandle = state.boundDescriptorSets[setIndex]->GetSet();
-                result |=
-                    log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_EXT,
-                            HandleToUint64(setHandle), DRAWSTATE_PIPELINE_LAYOUTS_INCOMPATIBLE,
-                            "VkDescriptorSet (0x%" PRIx64
-                            ") bound as set #%u is not compatible with overlapping VkPipelineLayout 0x%" PRIx64 " due to: %s",
-                            HandleToUint64(setHandle), setIndex, HandleToUint64(pipeline_layout.layout), errorString.c_str());
-            } else {  // Valid set is bound and layout compatible, validate that it's updated
-                // Pull the set node
-                cvdescriptorset::DescriptorSet *descriptor_set = state.boundDescriptorSets[setIndex];
-                // Validate the draw-time state for this descriptor set
-                std::string err_str;
-                if (!descriptor_set->IsPushDescriptor()) {
-                    // For the "bindless" style resource usage with many descriptors, need to optimize command <-> descriptor
-                    // binding validation. Take the requested binding set and prefilter it to eliminate redundant validation checks.
-                    // Here, the currently bound pipeline determines whether an image validation check is redundant...
-                    // for images are the "req" portion of the binding_req is indirectly (but tightly) coupled to the pipeline.
-                    const cvdescriptorset::PrefilterBindRequestMap reduced_map(*descriptor_set, set_binding_pair.second, cb_node,
-                                                                               pPipe);
-                    const auto &binding_req_map = reduced_map.Map();
+    for (const auto &set_binding_pair : pPipe->active_slots) {
+        uint32_t setIndex = set_binding_pair.first;
+        // If valid set is not bound throw an error
+        if ((state.boundDescriptorSets.size() <= setIndex) || (!state.boundDescriptorSets[setIndex])) {
+            result |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                              HandleToUint64(cb_node->commandBuffer), DRAWSTATE_DESCRIPTOR_SET_NOT_BOUND,
+                              "VkPipeline 0x%" PRIx64 " uses set #%u but that set is not bound.", HandleToUint64(pPipe->pipeline),
+                              setIndex);
+        } else if (!verify_set_layout_compatibility(state.boundDescriptorSets[setIndex], &pipeline_layout, setIndex, errorString)) {
+            // Set is bound but not compatible w/ overlapping pipeline_layout from PSO
+            VkDescriptorSet setHandle = state.boundDescriptorSets[setIndex]->GetSet();
+            result |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_EXT,
+                              HandleToUint64(setHandle), DRAWSTATE_PIPELINE_LAYOUTS_INCOMPATIBLE,
+                              "VkDescriptorSet (0x%" PRIx64
+                              ") bound as set #%u is not compatible with overlapping VkPipelineLayout 0x%" PRIx64 " due to: %s",
+                              HandleToUint64(setHandle), setIndex, HandleToUint64(pipeline_layout.layout), errorString.c_str());
+        } else {  // Valid set is bound and layout compatible, validate that it's updated
+            // Pull the set node
+            cvdescriptorset::DescriptorSet *descriptor_set = state.boundDescriptorSets[setIndex];
+            // Validate the draw-time state for this descriptor set
+            std::string err_str;
+            if (!descriptor_set->IsPushDescriptor()) {
+                // For the "bindless" style resource usage with many descriptors, need to optimize command <-> descriptor
+                // binding validation. Take the requested binding set and prefilter it to eliminate redundant validation checks.
+                // Here, the currently bound pipeline determines whether an image validation check is redundant...
+                // for images are the "req" portion of the binding_req is indirectly (but tightly) coupled to the pipeline.
+                const cvdescriptorset::PrefilterBindRequestMap reduced_map(*descriptor_set, set_binding_pair.second, cb_node,
+                                                                           pPipe);
+                const auto &binding_req_map = reduced_map.Map();
 
-                    if (!descriptor_set->ValidateDrawState(binding_req_map, state.dynamicOffsets[setIndex], cb_node, function,
-                                                           &err_str)) {
-                        auto set = descriptor_set->GetSet();
-                        result |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                          VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_EXT, HandleToUint64(set),
-                                          DRAWSTATE_DESCRIPTOR_SET_NOT_UPDATED,
-                                          "Descriptor set 0x%" PRIx64 " encountered the following validation error at %s time: %s",
-                                          HandleToUint64(set), function, err_str.c_str());
-                    }
+                if (!descriptor_set->ValidateDrawState(binding_req_map, state.dynamicOffsets[setIndex], cb_node, function,
+                                                       &err_str)) {
+                    auto set = descriptor_set->GetSet();
+                    result |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                      VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_EXT, HandleToUint64(set),
+                                      DRAWSTATE_DESCRIPTOR_SET_NOT_UPDATED,
+                                      "Descriptor set 0x%" PRIx64 " encountered the following validation error at %s time: %s",
+                                      HandleToUint64(set), function, err_str.c_str());
                 }
             }
         }
