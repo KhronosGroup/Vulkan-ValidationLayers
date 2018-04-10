@@ -1113,6 +1113,24 @@ bool pv_vkCreateImageView(VkDevice device, const VkImageViewCreateInfo *pCreateI
                                 "pCreateInfo->subresourceRange.layerCount must be 1");
             }
         }
+
+        // Validate chained VkImageViewUsageCreateInfo struct, if present
+        if (nullptr != pCreateInfo->pNext) {
+            auto chained_ivuci_struct = lvl_find_in_chain<VkImageViewUsageCreateInfoKHR>(pCreateInfo->pNext);
+            if (chained_ivuci_struct) {
+                if (0 == chained_ivuci_struct->usage) {
+                    skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                    VALIDATION_ERROR_3f230603,
+                                    "vkCreateImageView: Chained VkImageViewUsageCreateInfo usage field must not be 0");
+                } else if (chained_ivuci_struct->usage & ~AllVkImageUsageFlagBits) {
+                    std::stringstream ss;
+                    ss << "vkCreateImageView: Chained VkImageViewUsageCreateInfo usage field (0x" << std::hex
+                       << chained_ivuci_struct->usage << ") contains invalid flag bits.";
+                    skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                    VALIDATION_ERROR_3f230601, "%s", ss.str().c_str());
+                }
+            }
+        }
     }
     return skip;
 }

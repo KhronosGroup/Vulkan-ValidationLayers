@@ -15132,6 +15132,124 @@ TEST_F(VkLayerTest, CreateImageViewFormatFeatureMismatch) {
     }
 }
 
+TEST_F(VkLayerTest, InvalidImageViewUsageCreateInfo) {
+    TEST_DESCRIPTION("Usage modification via a chained VkImageViewUsageCreateInfo struct");
+
+    if (!EnableDeviceProfileLayer()) {
+        printf("             Test requires DeviceProfileLayer, unavailable - skipped.\n");
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    if (!DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE2_EXTENSION_NAME)) {
+        printf("             Test requires API >= 1.1 or KHR_MAINTENANCE2 extension, unavailable - skipped.\n");
+        return;
+    }
+    m_device_extension_names.push_back(VK_KHR_MAINTENANCE2_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    PFN_vkSetPhysicalDeviceFormatPropertiesEXT fpvkSetPhysicalDeviceFormatPropertiesEXT = nullptr;
+    PFN_vkGetOriginalPhysicalDeviceFormatPropertiesEXT fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT = nullptr;
+
+    // Load required functions
+    if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceFormatPropertiesEXT, fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT)) {
+        return;
+    }
+
+    VkFormatProperties formatProps;
+
+    // Ensure image format claims support for sampled and storage, excludes color attachment
+    memset(&formatProps, 0, sizeof(formatProps));
+    fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT(gpu(), VK_FORMAT_R32G32B32A32_UINT, &formatProps);
+    formatProps.optimalTilingFeatures |= (VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT | VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT);
+    formatProps.optimalTilingFeatures = formatProps.optimalTilingFeatures & ~VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT;
+    fpvkSetPhysicalDeviceFormatPropertiesEXT(gpu(), VK_FORMAT_R32G32B32A32_UINT, formatProps);
+
+    // Create image with sampled and storage usages
+    VkImageCreateInfo imgInfo = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+                                 nullptr,
+                                 VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT,
+                                 VK_IMAGE_TYPE_2D,
+                                 VK_FORMAT_R32G32B32A32_UINT,
+                                 {1, 1, 1},
+                                 1,
+                                 1,
+                                 VK_SAMPLE_COUNT_1_BIT,
+                                 VK_IMAGE_TILING_OPTIMAL,
+                                 VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT,
+                                 VK_SHARING_MODE_EXCLUSIVE,
+                                 0,
+                                 nullptr,
+                                 VK_IMAGE_LAYOUT_UNDEFINED};
+    VkImageObj image(m_device);
+    image.init(&imgInfo);
+    ASSERT_TRUE(image.initialized());
+
+    // Force the imageview format to exclude storage feature, include color attachment
+    memset(&formatProps, 0, sizeof(formatProps));
+    fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT(gpu(), VK_FORMAT_R32G32B32A32_SINT, &formatProps);
+    formatProps.optimalTilingFeatures |= VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT;
+    formatProps.optimalTilingFeatures = (formatProps.optimalTilingFeatures & ~VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT);
+    fpvkSetPhysicalDeviceFormatPropertiesEXT(gpu(), VK_FORMAT_R32G32B32A32_SINT, formatProps);
+
+    VkImageViewCreateInfo ivci = {};
+    ivci.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    ivci.image = image.handle();
+    ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    ivci.format = VK_FORMAT_R32G32B32A32_SINT;
+    ivci.subresourceRange.layerCount = 1;
+    ivci.subresourceRange.baseMipLevel = 0;
+    ivci.subresourceRange.levelCount = 1;
+    ivci.subresourceRange.baseArrayLayer = 0;
+    ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+
+    // ImageView creation should fail because view format doesn't support all the underlying image's usages
+    VkImageView imageView;
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_0ac007ec);
+    VkResult res = vkCreateImageView(m_device->device(), &ivci, NULL, &imageView);
+    m_errorMonitor->VerifyFound();
+
+    // Add a chained VkImageViewUsageCreateInfo to override original image usage bits, removing storage
+    VkImageViewUsageCreateInfo usage_ci = {VK_STRUCTURE_TYPE_IMAGE_VIEW_USAGE_CREATE_INFO, nullptr, VK_IMAGE_USAGE_SAMPLED_BIT};
+    // Link the VkImageViewUsageCreateInfo struct into the view's create info pNext chain
+    ivci.pNext = &usage_ci;
+
+    // ImageView should now succeed without error
+    m_errorMonitor->ExpectSuccess();
+    res = vkCreateImageView(m_device->device(), &ivci, NULL, &imageView);
+    m_errorMonitor->VerifyNotFound();
+    if (VK_SUCCESS == res) {
+        vkDestroyImageView(m_device->device(), imageView, nullptr);
+    }
+
+    // Try a zero usage field
+    usage_ci.usage = 0;
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_3f230603);
+    res = vkCreateImageView(m_device->device(), &ivci, NULL, &imageView);
+    m_errorMonitor->VerifyFound();
+    if (VK_SUCCESS == res) {
+        vkDestroyImageView(m_device->device(), imageView, nullptr);
+    }
+
+    // Try a usage field with a bit not supported by underlying image
+    usage_ci.usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_3f200c66);
+    res = vkCreateImageView(m_device->device(), &ivci, NULL, &imageView);
+    m_errorMonitor->VerifyFound();
+    if (VK_SUCCESS == res) {
+        vkDestroyImageView(m_device->device(), imageView, nullptr);
+    }
+
+    // Try an illegal bit in usage field
+    usage_ci.usage = 0x10000000 | VK_IMAGE_USAGE_SAMPLED_BIT;
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_3f230601);
+    res = vkCreateImageView(m_device->device(), &ivci, NULL, &imageView);
+    m_errorMonitor->VerifyFound();
+    if (VK_SUCCESS == res) {
+        vkDestroyImageView(m_device->device(), imageView, nullptr);
+    }
+}
+
 TEST_F(VkLayerTest, ImageViewInUseDestroyedSignaled) {
     TEST_DESCRIPTION("Delete in-use imageView.");
 

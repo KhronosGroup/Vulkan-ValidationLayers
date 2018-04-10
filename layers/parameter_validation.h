@@ -47,6 +47,7 @@ extern const VkQueryPipelineStatisticFlags AllVkQueryPipelineStatisticFlagBits;
 extern const VkColorComponentFlags AllVkColorComponentFlagBits;
 extern const VkShaderStageFlags AllVkShaderStageFlagBits;
 extern const VkQueryControlFlags AllVkQueryControlFlagBits;
+extern const VkImageUsageFlags AllVkImageUsageFlagBits;
 
 extern const std::vector<VkCompareOp> AllVkCompareOpEnums;
 extern const std::vector<VkStencilOp> AllVkStencilOpEnums;

@@ -29,6 +29,7 @@
 #include "vk_layer_data.h"
 #include "vk_layer_utils.h"
 #include "vk_layer_logging.h"
+#include "vk_typemap_helper.h"
 
 #include "buffer_validation.h"
 
@@ -721,27 +722,29 @@ bool PreCallValidateCreateImage(layer_data *device_data, const VkImageCreateInfo
         return skip;
     }
 
-    if ((pCreateInfo->usage & VK_IMAGE_USAGE_SAMPLED_BIT) && !(features & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT)) {
-        std::stringstream ss;
-        UNIQUE_VALIDATION_ERROR_CODE vuid = (optimal_tiling ? VALIDATION_ERROR_09e007ae : VALIDATION_ERROR_09e007a4);
-        ss << "vkCreateImage: usage bit VK_IMAGE_USAGE_SAMPLED_BIT is not supported for format " << format_string << " with tiling "
-           << tiling_string;
-        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, vuid, "%s.",
-                        ss.str().c_str());
-    }
-
-    if ((pCreateInfo->usage & VK_IMAGE_USAGE_STORAGE_BIT) && !(features & VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT)) {
-        std::stringstream ss;
-        UNIQUE_VALIDATION_ERROR_CODE vuid = (optimal_tiling ? VALIDATION_ERROR_09e007b0 : VALIDATION_ERROR_09e007a6);
-        ss << "vkCreateImage: usage bit VK_IMAGE_USAGE_STORAGE_BIT is not supported for format " << format_string << " with tiling "
-           << tiling_string;
-        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, vuid, "%s.",
-                        ss.str().c_str());
-    }
-
     // TODO: Add checks for EXTENDED_USAGE images to validate images are compatible
-    // For EXTENDED_USAGE images, format can match any image COMPATIBLE with original image
+    // For EXTENDED_USAGE images, any usage bit set for any format compatible with image format becomes legal
+    // For now we'll just avoid the usage bit checks for EXTENDED_USAGE images, pending an implementation of
+    // an exhaustive search of compatible formats
     if (!GetDeviceExtensions(device_data)->vk_khr_maintenance2 || !(pCreateInfo->flags & VK_IMAGE_CREATE_EXTENDED_USAGE_BIT_KHR)) {
+        if ((pCreateInfo->usage & VK_IMAGE_USAGE_SAMPLED_BIT) && !(features & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT)) {
+            std::stringstream ss;
+            UNIQUE_VALIDATION_ERROR_CODE vuid = (optimal_tiling ? VALIDATION_ERROR_09e007ae : VALIDATION_ERROR_09e007a4);
+            ss << "vkCreateImage: usage bit VK_IMAGE_USAGE_SAMPLED_BIT is not supported for format " << format_string
+               << " with tiling " << tiling_string;
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, vuid, "%s.",
+                            ss.str().c_str());
+        }
+
+        if ((pCreateInfo->usage & VK_IMAGE_USAGE_STORAGE_BIT) && !(features & VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT)) {
+            std::stringstream ss;
+            UNIQUE_VALIDATION_ERROR_CODE vuid = (optimal_tiling ? VALIDATION_ERROR_09e007b0 : VALIDATION_ERROR_09e007a6);
+            ss << "vkCreateImage: usage bit VK_IMAGE_USAGE_STORAGE_BIT is not supported for format " << format_string
+               << " with tiling " << tiling_string;
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, vuid, "%s.",
+                            ss.str().c_str());
+        }
+
         // Validate that format supports usage as color attachment
         if ((pCreateInfo->usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) &&
             (0 == (features & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT))) {
@@ -3411,6 +3414,21 @@ bool PreCallValidateCreateImageView(layer_data *device_data, const VkImageViewCr
         VkImageAspectFlags aspect_mask = create_info->subresourceRange.aspectMask;
         VkImageType image_type = image_state->createInfo.imageType;
         VkImageViewType view_type = create_info->viewType;
+
+        // If there's a chained VkImageViewUsageCreateInfo struct, modify image_usage to match
+        auto chained_ivuci_struct = lvl_find_in_chain<VkImageViewUsageCreateInfoKHR>(create_info->pNext);
+        if (chained_ivuci_struct) {
+            if (chained_ivuci_struct->usage & ~image_usage) {
+                std::stringstream ss;
+                ss << "vkCreateImageView(): Chained VkImageViewUsageCreateInfo usage field (0x" << std::hex
+                   << chained_ivuci_struct->usage << "must not include flags not present in underlying image's usage (0x"
+                   << image_usage << ").";
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                VALIDATION_ERROR_3f200c66, "%s", ss.str().c_str());
+            }
+
+            image_usage = chained_ivuci_struct->usage;
+        }
 
         // Validate VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT state
         if (image_flags & VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT) {
