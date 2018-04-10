@@ -497,18 +497,18 @@ class HelperFileOutputGenerator(OutputGenerator):
         extension_helper_header += '#include <utility>\n'
         extension_helper_header += '\n'
         extension_helper_header += '\n'
-        extension_dict = dict()
-        promoted_ext_list = []
+
         for type in ['Instance', 'Device']:
             if type == 'Instance':
-                extension_dict = self.instance_extension_info
+                extension_items = sorted(self.instance_extension_info.items())
+                instance_extension_items = extension_items
                 promoted_ext_list = V_1_0_instance_extensions_promoted_to_core
                 struct += 'struct InstanceExtensions { \n'
             else:
-                extension_dict = self.device_extension_info
+                extension_items = sorted(self.device_extension_info.items())
                 promoted_ext_list = V_1_0_device_extensions_promoted_to_core
                 struct += 'struct DeviceExtensions : public InstanceExtensions { \n'
-            for ext_name, ifdef in extension_dict.items():
+            for ext_name, ifdef in extension_items:
                 bool_name = ext_name.lower()
                 bool_name = re.sub('_extension_name', '', bool_name)
                 struct += '    bool %s{false};\n' % bool_name
@@ -531,7 +531,7 @@ class HelperFileOutputGenerator(OutputGenerator):
             struct += '        };\n'
             struct += '\n'
             struct += '        static const std::pair<char const *, bool %sExtensions::*> known_extensions[]{\n' % type
-            for ext_name, ifdef in extension_dict.items():
+            for ext_name, ifdef in extension_items:
                 if ifdef is not None:
                     struct += '#ifdef %s\n' % ifdef
                 bool_name = ext_name.lower()
@@ -543,7 +543,7 @@ class HelperFileOutputGenerator(OutputGenerator):
             struct += '\n'
             struct += '        // Initialize struct data\n'
 
-            for ext_name, ifdef in self.instance_extension_info.items():
+            for ext_name, ifdef in instance_extension_items:
                 bool_name = ext_name.lower()
                 bool_name = re.sub('_extension_name', '', bool_name)
                 if type == 'Device':
@@ -574,7 +574,7 @@ class HelperFileOutputGenerator(OutputGenerator):
             struct += '\n'
             # Output reference lists of instance/device extension names
             struct += 'static const char * const k%sExtensionNames = \n' % type
-            for ext_name, ifdef in extension_dict.items():
+            for ext_name, ifdef in extension_items:
                 if ifdef is not None:
                     struct += '#ifdef %s\n' % ifdef
                 struct += '    %s\n' % ext_name
