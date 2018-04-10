@@ -387,13 +387,13 @@ bool ValidateImageAspectLayout(layer_data *device_data, GLOBAL_CB_NODE const *pC
     if (mem_barrier->oldLayout == VK_IMAGE_LAYOUT_UNDEFINED) {
         // TODO: Set memory invalid which is in mem_tracker currently
     } else if (node.layout != mem_barrier->oldLayout) {
-        skip |= log_msg(core_validation::GetReportData(device_data), VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                        VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT, HandleToUint64(pCB->commandBuffer),
-                        DRAWSTATE_INVALID_IMAGE_LAYOUT,
-                        "For image 0x%" PRIx64
-                        " you cannot transition the layout of aspect=%d level=%d layer=%d from %s when current layout is %s.",
-                        HandleToUint64(mem_barrier->image), aspect, level, layer, string_VkImageLayout(mem_barrier->oldLayout),
-                        string_VkImageLayout(node.layout));
+        skip =
+            log_msg(core_validation::GetReportData(device_data), VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                    VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT, HandleToUint64(pCB->commandBuffer), VALIDATION_ERROR_0a00095a,
+                    "For image 0x%" PRIx64
+                    " you cannot transition the layout of aspect=%d level=%d layer=%d from %s when current layout is %s.",
+                    HandleToUint64(mem_barrier->image), aspect, level, layer, string_VkImageLayout(mem_barrier->oldLayout),
+                    string_VkImageLayout(node.layout));
     }
     return skip;
 }
