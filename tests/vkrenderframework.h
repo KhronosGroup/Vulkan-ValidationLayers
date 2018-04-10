@@ -52,7 +52,7 @@ class VkDeviceObj : public vk_testing::Device {
    public:
     VkDeviceObj(uint32_t id, VkPhysicalDevice obj);
     VkDeviceObj(uint32_t id, VkPhysicalDevice obj, std::vector<const char *> &extension_names,
-                VkPhysicalDeviceFeatures *features = nullptr);
+                VkPhysicalDeviceFeatures *features = nullptr, VkPhysicalDeviceFeatures2KHR *features2 = nullptr);
 
     uint32_t QueueFamilyMatching(VkQueueFlags with, VkQueueFlags without, bool all_bits = true);
     uint32_t QueueFamilyWithoutCapabilities(VkQueueFlags capabilities) {
@@ -97,7 +97,8 @@ class VkRenderFramework : public VkTestFramework {
 
     void ShutdownFramework();
     void GetPhysicalDeviceFeatures(VkPhysicalDeviceFeatures *features);
-    void InitState(VkPhysicalDeviceFeatures *features = nullptr, const VkCommandPoolCreateFlags flags = 0);
+    void InitState(VkPhysicalDeviceFeatures *features = nullptr, VkPhysicalDeviceFeatures2 *features2 = nullptr,
+                   const VkCommandPoolCreateFlags flags = 0);
 
     const VkRenderPassBeginInfo &renderPassBeginInfo() const { return m_renderPassBeginInfo; }
 

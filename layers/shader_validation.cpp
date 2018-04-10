@@ -1086,8 +1086,11 @@ static bool descriptor_type_match(shader_module const *module, uint32_t type_id,
     descriptor_count = 1;
 
     // Strip off any array or ptrs. Where we remove array levels, adjust the  descriptor count for each dimension.
-    while (type.opcode() == spv::OpTypeArray || type.opcode() == spv::OpTypePointer) {
-        if (type.opcode() == spv::OpTypeArray) {
+    while (type.opcode() == spv::OpTypeArray || type.opcode() == spv::OpTypePointer || type.opcode() == spv::OpTypeRuntimeArray) {
+        if (type.opcode() == spv::OpTypeRuntimeArray) {
+            descriptor_count = 0;
+            type = module->get_def(type.word(2));
+        } else if (type.opcode() == spv::OpTypeArray) {
             descriptor_count *= get_constant_value(module, type.word(3));
             type = module->get_def(type.word(2));
         } else {
@@ -1166,8 +1169,7 @@ static bool descriptor_type_match(shader_module const *module, uint32_t type_id,
 static bool require_feature(debug_report_data const *report_data, VkBool32 feature, char const *feature_name) {
     if (!feature) {
         if (log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                    SHADER_CHECKER_FEATURE_NOT_ENABLED,
-                    "Shader requires VkPhysicalDeviceFeatures::%s but is not enabled on the device", feature_name)) {
+                    SHADER_CHECKER_FEATURE_NOT_ENABLED, "Shader requires %s but is not enabled on the device", feature_name)) {
             return true;
         }
     }
@@ -1194,15 +1196,13 @@ static bool validate_shader_capabilities(layer_data *dev_data, shader_module con
     auto report_data = GetReportData(dev_data);
     auto const &enabledFeatures = GetEnabledFeatures(dev_data);
     auto const &extensions = GetEnabledExtensions(dev_data);
+    auto const &descriptorIndexingFeatures = GetEnabledDescriptorIndexingFeatures(dev_data);
 
     struct CapabilityInfo {
         char const *name;
-        VkBool32 const VkPhysicalDeviceFeatures::*feature;
-        bool const DeviceExtensions::*extension;
+        VkBool32 const *feature;
+        bool const *extension;
     };
-
-    using F = VkPhysicalDeviceFeatures;
-    using E = DeviceExtensions;
 
     // clang-format off
     static const std::unordered_multimap<uint32_t, CapabilityInfo> capabilities = {
@@ -1219,41 +1219,67 @@ static bool validate_shader_capabilities(layer_data *dev_data, shader_module con
 
         // Capabilities that are optionally supported, but require a feature to
         // be enabled on the device
-        {spv::CapabilityGeometry, {"geometryShader", &F::geometryShader}},
-        {spv::CapabilityTessellation, {"tessellationShader", &F::tessellationShader}},
-        {spv::CapabilityFloat64, {"shaderFloat64", &F::shaderFloat64}},
-        {spv::CapabilityInt64, {"shaderInt64", &F::shaderInt64}},
-        {spv::CapabilityTessellationPointSize, {"shaderTessellationAndGeometryPointSize", &F::shaderTessellationAndGeometryPointSize}},
-        {spv::CapabilityGeometryPointSize, {"shaderTessellationAndGeometryPointSize", &F::shaderTessellationAndGeometryPointSize}},
-        {spv::CapabilityImageGatherExtended, {"shaderImageGatherExtended", &F::shaderImageGatherExtended}},
-        {spv::CapabilityStorageImageMultisample, {"shaderStorageImageMultisample", &F::shaderStorageImageMultisample}},
-        {spv::CapabilityUniformBufferArrayDynamicIndexing, {"shaderUniformBufferArrayDynamicIndexing", &F::shaderUniformBufferArrayDynamicIndexing}},
-        {spv::CapabilitySampledImageArrayDynamicIndexing, {"shaderSampledImageArrayDynamicIndexing", &F::shaderSampledImageArrayDynamicIndexing}},
-        {spv::CapabilityStorageBufferArrayDynamicIndexing, {"shaderStorageBufferArrayDynamicIndexing", &F::shaderStorageBufferArrayDynamicIndexing}},
-        {spv::CapabilityStorageImageArrayDynamicIndexing, {"shaderStorageImageArrayDynamicIndexing", &F::shaderStorageBufferArrayDynamicIndexing}},
-        {spv::CapabilityClipDistance, {"shaderClipDistance", &F::shaderClipDistance}},
-        {spv::CapabilityCullDistance, {"shaderCullDistance", &F::shaderCullDistance}},
-        {spv::CapabilityImageCubeArray, {"imageCubeArray", &F::imageCubeArray}},
-        {spv::CapabilitySampleRateShading, {"sampleRateShading", &F::sampleRateShading}},
-        {spv::CapabilitySparseResidency, {"shaderResourceResidency", &F::shaderResourceResidency}},
-        {spv::CapabilityMinLod, {"shaderResourceMinLod", &F::shaderResourceMinLod}},
-        {spv::CapabilitySampledCubeArray, {"imageCubeArray", &F::imageCubeArray}},
-        {spv::CapabilityImageMSArray, {"shaderStorageImageMultisample", &F::shaderStorageImageMultisample}},
-        {spv::CapabilityStorageImageExtendedFormats, {"shaderStorageImageExtendedFormats", &F::shaderStorageImageExtendedFormats}},
-        {spv::CapabilityInterpolationFunction, {"sampleRateShading", &F::sampleRateShading}},
-        {spv::CapabilityStorageImageReadWithoutFormat, {"shaderStorageImageReadWithoutFormat", &F::shaderStorageImageReadWithoutFormat}},
-        {spv::CapabilityStorageImageWriteWithoutFormat, {"shaderStorageImageWriteWithoutFormat", &F::shaderStorageImageWriteWithoutFormat}},
-        {spv::CapabilityMultiViewport, {"multiViewport", &F::multiViewport}},
+        {spv::CapabilityGeometry, {"VkPhysicalDeviceFeatures::geometryShader", &enabledFeatures->geometryShader}},
+        {spv::CapabilityTessellation, {"VkPhysicalDeviceFeatures::tessellationShader", &enabledFeatures->tessellationShader}},
+        {spv::CapabilityFloat64, {"VkPhysicalDeviceFeatures::shaderFloat64", &enabledFeatures->shaderFloat64}},
+        {spv::CapabilityInt64, {"VkPhysicalDeviceFeatures::shaderInt64", &enabledFeatures->shaderInt64}},
+        {spv::CapabilityTessellationPointSize, {"VkPhysicalDeviceFeatures::shaderTessellationAndGeometryPointSize", &enabledFeatures->shaderTessellationAndGeometryPointSize}},
+        {spv::CapabilityGeometryPointSize, {"VkPhysicalDeviceFeatures::shaderTessellationAndGeometryPointSize", &enabledFeatures->shaderTessellationAndGeometryPointSize}},
+        {spv::CapabilityImageGatherExtended, {"VkPhysicalDeviceFeatures::shaderImageGatherExtended", &enabledFeatures->shaderImageGatherExtended}},
+        {spv::CapabilityStorageImageMultisample, {"VkPhysicalDeviceFeatures::shaderStorageImageMultisample", &enabledFeatures->shaderStorageImageMultisample}},
+        {spv::CapabilityUniformBufferArrayDynamicIndexing, {"VkPhysicalDeviceFeatures::shaderUniformBufferArrayDynamicIndexing", &enabledFeatures->shaderUniformBufferArrayDynamicIndexing}},
+        {spv::CapabilitySampledImageArrayDynamicIndexing, {"VkPhysicalDeviceFeatures::shaderSampledImageArrayDynamicIndexing", &enabledFeatures->shaderSampledImageArrayDynamicIndexing}},
+        {spv::CapabilityStorageBufferArrayDynamicIndexing, {"VkPhysicalDeviceFeatures::shaderStorageBufferArrayDynamicIndexing", &enabledFeatures->shaderStorageBufferArrayDynamicIndexing}},
+        {spv::CapabilityStorageImageArrayDynamicIndexing, {"VkPhysicalDeviceFeatures::shaderStorageImageArrayDynamicIndexing", &enabledFeatures->shaderStorageBufferArrayDynamicIndexing}},
+        {spv::CapabilityClipDistance, {"VkPhysicalDeviceFeatures::shaderClipDistance", &enabledFeatures->shaderClipDistance}},
+        {spv::CapabilityCullDistance, {"VkPhysicalDeviceFeatures::shaderCullDistance", &enabledFeatures->shaderCullDistance}},
+        {spv::CapabilityImageCubeArray, {"VkPhysicalDeviceFeatures::imageCubeArray", &enabledFeatures->imageCubeArray}},
+        {spv::CapabilitySampleRateShading, {"VkPhysicalDeviceFeatures::sampleRateShading", &enabledFeatures->sampleRateShading}},
+        {spv::CapabilitySparseResidency, {"VkPhysicalDeviceFeatures::shaderResourceResidency", &enabledFeatures->shaderResourceResidency}},
+        {spv::CapabilityMinLod, {"VkPhysicalDeviceFeatures::shaderResourceMinLod", &enabledFeatures->shaderResourceMinLod}},
+        {spv::CapabilitySampledCubeArray, {"VkPhysicalDeviceFeatures::imageCubeArray", &enabledFeatures->imageCubeArray}},
+        {spv::CapabilityImageMSArray, {"VkPhysicalDeviceFeatures::shaderStorageImageMultisample", &enabledFeatures->shaderStorageImageMultisample}},
+        {spv::CapabilityStorageImageExtendedFormats, {"VkPhysicalDeviceFeatures::shaderStorageImageExtendedFormats", &enabledFeatures->shaderStorageImageExtendedFormats}},
+        {spv::CapabilityInterpolationFunction, {"VkPhysicalDeviceFeatures::sampleRateShading", &enabledFeatures->sampleRateShading}},
+        {spv::CapabilityStorageImageReadWithoutFormat, {"VkPhysicalDeviceFeatures::shaderStorageImageReadWithoutFormat", &enabledFeatures->shaderStorageImageReadWithoutFormat}},
+        {spv::CapabilityStorageImageWriteWithoutFormat, {"VkPhysicalDeviceFeatures::shaderStorageImageWriteWithoutFormat", &enabledFeatures->shaderStorageImageWriteWithoutFormat}},
+        {spv::CapabilityMultiViewport, {"VkPhysicalDeviceFeatures::multiViewport", &enabledFeatures->multiViewport}},
+
+        // XXX TODO: Descriptor indexing capability enums are not yet available in the spirv-tools we fetch.
+#define CapabilityShaderNonUniformEXT 5301
+#define CapabilityRuntimeDescriptorArrayEXT 5302
+#define CapabilityInputAttachmentArrayDynamicIndexingEXT 5303
+#define CapabilityUniformTexelBufferArrayDynamicIndexingEXT 5304
+#define CapabilityStorageTexelBufferArrayDynamicIndexingEXT 5305
+#define CapabilityUniformBufferArrayNonUniformIndexingEXT 5306
+#define CapabilitySampledImageArrayNonUniformIndexingEXT 5307
+#define CapabilityStorageBufferArrayNonUniformIndexingEXT 5308
+#define CapabilityStorageImageArrayNonUniformIndexingEXT 5309
+#define CapabilityInputAttachmentArrayNonUniformIndexingEXT 5310
+#define CapabilityUniformTexelBufferArrayNonUniformIndexingEXT 5311
+#define CapabilityStorageTexelBufferArrayNonUniformIndexingEXT 5312
+        {CapabilityShaderNonUniformEXT, {VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME, nullptr, &extensions->vk_ext_descriptor_indexing}},
+        {CapabilityRuntimeDescriptorArrayEXT, {"VkPhysicalDeviceDescriptorIndexingFeaturesEXT::runtimeDescriptorArray", &descriptorIndexingFeatures->runtimeDescriptorArray}},
+        {CapabilityInputAttachmentArrayDynamicIndexingEXT, {"VkPhysicalDeviceDescriptorIndexingFeaturesEXT::shaderInputAttachmentArrayDynamicIndexing", &descriptorIndexingFeatures->shaderInputAttachmentArrayDynamicIndexing}},
+        {CapabilityUniformTexelBufferArrayDynamicIndexingEXT, {"VkPhysicalDeviceDescriptorIndexingFeaturesEXT::shaderUniformTexelBufferArrayDynamicIndexing", &descriptorIndexingFeatures->shaderUniformTexelBufferArrayDynamicIndexing}},
+        {CapabilityStorageTexelBufferArrayDynamicIndexingEXT, {"VkPhysicalDeviceDescriptorIndexingFeaturesEXT::shaderStorageTexelBufferArrayDynamicIndexing", &descriptorIndexingFeatures->shaderStorageTexelBufferArrayDynamicIndexing}},
+        {CapabilityUniformBufferArrayNonUniformIndexingEXT, {"VkPhysicalDeviceDescriptorIndexingFeaturesEXT::shaderUniformBufferArrayNonUniformIndexing", &descriptorIndexingFeatures->shaderUniformBufferArrayNonUniformIndexing}},
+        {CapabilitySampledImageArrayNonUniformIndexingEXT, {"VkPhysicalDeviceDescriptorIndexingFeaturesEXT::shaderSampledImageArrayNonUniformIndexing", &descriptorIndexingFeatures->shaderSampledImageArrayNonUniformIndexing}},
+        {CapabilityStorageBufferArrayNonUniformIndexingEXT, {"VkPhysicalDeviceDescriptorIndexingFeaturesEXT::shaderStorageBufferArrayNonUniformIndexing", &descriptorIndexingFeatures->shaderStorageBufferArrayNonUniformIndexing}},
+        {CapabilityStorageImageArrayNonUniformIndexingEXT, {"VkPhysicalDeviceDescriptorIndexingFeaturesEXT::shaderStorageImageArrayNonUniformIndexing", &descriptorIndexingFeatures->shaderStorageImageArrayNonUniformIndexing}},
+        {CapabilityInputAttachmentArrayNonUniformIndexingEXT, {"VkPhysicalDeviceDescriptorIndexingFeaturesEXT::shaderInputAttachmentArrayNonUniformIndexing", &descriptorIndexingFeatures->shaderInputAttachmentArrayNonUniformIndexing}},
+        {CapabilityUniformTexelBufferArrayNonUniformIndexingEXT, {"VkPhysicalDeviceDescriptorIndexingFeaturesEXT::shaderUniformTexelBufferArrayNonUniformIndexing", &descriptorIndexingFeatures->shaderUniformTexelBufferArrayNonUniformIndexing}},
+        {CapabilityStorageTexelBufferArrayNonUniformIndexingEXT , {"VkPhysicalDeviceDescriptorIndexingFeaturesEXT::shaderStorageTexelBufferArrayNonUniformIndexing", &descriptorIndexingFeatures->shaderStorageTexelBufferArrayNonUniformIndexing}},
 
         // Capabilities that require an extension
-        {spv::CapabilityDrawParameters, {VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME, nullptr, &E::vk_khr_shader_draw_parameters}},
-        {spv::CapabilityGeometryShaderPassthroughNV, {VK_NV_GEOMETRY_SHADER_PASSTHROUGH_EXTENSION_NAME, nullptr, &E::vk_nv_geometry_shader_passthrough}},
-        {spv::CapabilitySampleMaskOverrideCoverageNV, {VK_NV_SAMPLE_MASK_OVERRIDE_COVERAGE_EXTENSION_NAME, nullptr, &E::vk_nv_sample_mask_override_coverage}},
-        {spv::CapabilityShaderViewportIndexLayerEXT, {VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME, nullptr, &E::vk_ext_shader_viewport_index_layer}},
-        {spv::CapabilityShaderViewportIndexLayerNV, {VK_NV_VIEWPORT_ARRAY2_EXTENSION_NAME, nullptr, &E::vk_nv_viewport_array2}},
-        {spv::CapabilityShaderViewportMaskNV, {VK_NV_VIEWPORT_ARRAY2_EXTENSION_NAME, nullptr, &E::vk_nv_viewport_array2}},
-        {spv::CapabilitySubgroupBallotKHR, {VK_EXT_SHADER_SUBGROUP_BALLOT_EXTENSION_NAME, nullptr, &E::vk_ext_shader_subgroup_ballot }},
-        {spv::CapabilitySubgroupVoteKHR, {VK_EXT_SHADER_SUBGROUP_VOTE_EXTENSION_NAME, nullptr, &E::vk_ext_shader_subgroup_vote }},
+        {spv::CapabilityDrawParameters, {VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME, nullptr, &extensions->vk_khr_shader_draw_parameters}},
+        {spv::CapabilityGeometryShaderPassthroughNV, {VK_NV_GEOMETRY_SHADER_PASSTHROUGH_EXTENSION_NAME, nullptr, &extensions->vk_nv_geometry_shader_passthrough}},
+        {spv::CapabilitySampleMaskOverrideCoverageNV, {VK_NV_SAMPLE_MASK_OVERRIDE_COVERAGE_EXTENSION_NAME, nullptr, &extensions->vk_nv_sample_mask_override_coverage}},
+        {spv::CapabilityShaderViewportIndexLayerEXT, {VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME, nullptr, &extensions->vk_ext_shader_viewport_index_layer}},
+        {spv::CapabilityShaderViewportIndexLayerNV, {VK_NV_VIEWPORT_ARRAY2_EXTENSION_NAME, nullptr, &extensions->vk_nv_viewport_array2}},
+        {spv::CapabilityShaderViewportMaskNV, {VK_NV_VIEWPORT_ARRAY2_EXTENSION_NAME, nullptr, &extensions->vk_nv_viewport_array2}},
+        {spv::CapabilitySubgroupBallotKHR, {VK_EXT_SHADER_SUBGROUP_BALLOT_EXTENSION_NAME, nullptr, &extensions->vk_ext_shader_subgroup_ballot }},
+        {spv::CapabilitySubgroupVoteKHR, {VK_EXT_SHADER_SUBGROUP_VOTE_EXTENSION_NAME, nullptr, &extensions->vk_ext_shader_subgroup_vote }},
     };
     // clang-format on
 
@@ -1264,10 +1290,10 @@ static bool validate_shader_capabilities(layer_data *dev_data, shader_module con
                 auto it = capabilities.find(insn.word(1));
                 if (it != capabilities.end()) {
                     if (it->second.feature) {
-                        skip |= require_feature(report_data, enabledFeatures->*(it->second.feature), it->second.name);
+                        skip |= require_feature(report_data, *(it->second.feature), it->second.name);
                     }
                     if (it->second.extension) {
-                        skip |= require_extension(report_data, extensions->*(it->second.extension), it->second.name);
+                        skip |= require_extension(report_data, *(it->second.extension), it->second.name);
                     }
                 }
             } else if (1 < n) {  // key occurs multiple times, at least one must be enabled
@@ -1279,13 +1305,13 @@ static bool validate_shader_capabilities(layer_data *dev_data, shader_module con
                 for (auto it = caps.first; it != caps.second; ++it) {
                     if (it->second.feature) {
                         needs_feature = true;
-                        has_feature = has_feature || enabledFeatures->*(it->second.feature);
+                        has_feature = has_feature || *(it->second.feature);
                         feature_names += it->second.name;
                         feature_names += " ";
                     }
                     if (it->second.extension) {
                         needs_ext = true;
-                        has_ext = has_ext || extensions->*(it->second.extension);
+                        has_ext = has_ext || *(it->second.extension);
                         extension_names += it->second.name;
                         extension_names += " ";
                     }

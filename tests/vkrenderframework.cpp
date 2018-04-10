@@ -294,7 +294,8 @@ void VkRenderFramework::GetPhysicalDeviceFeatures(VkPhysicalDeviceFeatures *feat
     }
 }
 
-void VkRenderFramework::InitState(VkPhysicalDeviceFeatures *features, const VkCommandPoolCreateFlags flags) {
+void VkRenderFramework::InitState(VkPhysicalDeviceFeatures *features, VkPhysicalDeviceFeatures2 *features2,
+                                  const VkCommandPoolCreateFlags flags) {
     // Remove any unsupported device extension names from list
     for (auto ext = m_device_extension_names.begin(); ext != m_device_extension_names.end();) {
         if (!DeviceExtensionSupported(objs[0], nullptr, *ext)) {
@@ -316,7 +317,7 @@ void VkRenderFramework::InitState(VkPhysicalDeviceFeatures *features, const VkCo
         }
     }
 
-    m_device = new VkDeviceObj(0, objs[0], m_device_extension_names, features);
+    m_device = new VkDeviceObj(0, objs[0], m_device_extension_names, features, features2);
     m_device->SetDeviceQueue();
 
     m_depthStencil = new VkDepthStencilObj(m_device);
@@ -530,9 +531,9 @@ VkDeviceObj::VkDeviceObj(uint32_t id, VkPhysicalDevice obj) : vk_testing::Device
 }
 
 VkDeviceObj::VkDeviceObj(uint32_t id, VkPhysicalDevice obj, std::vector<const char *> &extension_names,
-                         VkPhysicalDeviceFeatures *features)
+                         VkPhysicalDeviceFeatures *features, VkPhysicalDeviceFeatures2 *features2)
     : vk_testing::Device(obj), id(id) {
-    init(extension_names, features);
+    init(extension_names, features, features2);
 
     props = phy().properties();
     queue_props = phy().queue_properties();

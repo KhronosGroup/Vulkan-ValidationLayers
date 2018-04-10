@@ -242,7 +242,7 @@ Device::~Device() {
     vkDestroyDevice(handle(), NULL);
 }
 
-void Device::init(std::vector<const char *> &extensions, VkPhysicalDeviceFeatures *features) {
+void Device::init(std::vector<const char *> &extensions, VkPhysicalDeviceFeatures *features, VkPhysicalDeviceFeatures2 *features2) {
     // request all queues
     const std::vector<VkQueueFamilyProperties> queue_props = phy_.queue_properties();
     QueueCreateInfoArray queue_info(phy_.queue_properties());
@@ -273,7 +273,11 @@ void Device::init(std::vector<const char *> &extensions, VkPhysicalDeviceFeature
     dev_info.ppEnabledExtensionNames = extensions.data();
 
     VkPhysicalDeviceFeatures all_features;
-    if (features) {
+    // Let VkPhysicalDeviceFeatures2 take priority over VkPhysicalDeviceFeatures,
+    // since it supports extensions
+    if (features2) {
+        dev_info.pNext = features2;
+    } else if (features) {
         dev_info.pEnabledFeatures = features;
     } else {
         // request all supportable features enabled

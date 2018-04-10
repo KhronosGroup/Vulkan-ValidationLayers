@@ -127,6 +127,10 @@ class DescriptorSetLayoutDef {
     VkShaderStageFlags GetStageFlagsFromBinding(const uint32_t binding) const {
         return GetStageFlagsFromIndex(GetIndexFromBinding(binding));
     }
+    VkDescriptorBindingFlagsEXT GetDescriptorBindingFlagsFromIndex(const uint32_t) const;
+    VkDescriptorBindingFlagsEXT GetDescriptorBindingFlagsFromBinding(const uint32_t binding) const {
+        return GetDescriptorBindingFlagsFromIndex(GetIndexFromBinding(binding));
+    }
     uint32_t GetIndexFromGlobalIndex(const uint32_t global_index) const;
     VkDescriptorType GetTypeFromGlobalIndex(const uint32_t global_index) const {
         return GetTypeFromIndex(GetIndexFromGlobalIndex(global_index));
@@ -165,6 +169,7 @@ class DescriptorSetLayoutDef {
     // to speed up the various lookups/queries/validations
     VkDescriptorSetLayoutCreateFlags flags_;
     std::vector<safe_VkDescriptorSetLayoutBinding> bindings_;
+    std::vector<VkDescriptorBindingFlagsEXT> binding_flags_;
 
     // Convenience data structures for rapid lookup of various descriptor set layout properties
     std::set<uint32_t> non_empty_bindings_;  // Containing non-emtpy bindings in numerical order
@@ -175,7 +180,7 @@ class DescriptorSetLayoutDef {
     // For a given binding map to associated index in the dynamic offset array
     std::unordered_map<uint32_t, uint32_t> binding_to_dynamic_array_idx_map_;
 
-    uint32_t binding_count_;  // # of bindings in this layout
+    uint32_t binding_count_;     // # of bindings in this layout
     uint32_t descriptor_count_;  // total # descriptors in this layout
     uint32_t dynamic_descriptor_count_;
     BindingTypeStats binding_type_stats_;
@@ -194,7 +199,8 @@ class DescriptorSetLayout {
     // Constructors and destructor
     DescriptorSetLayout(const VkDescriptorSetLayoutCreateInfo *p_create_info, const VkDescriptorSetLayout layout);
     // Validate create info - should be called prior to creation
-    static bool ValidateCreateInfo(const debug_report_data *, const VkDescriptorSetLayoutCreateInfo *, const bool, const uint32_t);
+    static bool ValidateCreateInfo(const debug_report_data *, const VkDescriptorSetLayoutCreateInfo *, const bool, const uint32_t,
+                                   const bool, const VkPhysicalDeviceDescriptorIndexingFeaturesEXT *descriptor_indexing_features);
     bool HasBinding(const uint32_t binding) const { return layout_id_->HasBinding(binding); }
     // Return true if this layout is compatible with passed in layout from a pipelineLayout,
     //   else return false and update error_msg with description of incompatibility
@@ -230,6 +236,12 @@ class DescriptorSetLayout {
     VkShaderStageFlags GetStageFlagsFromIndex(const uint32_t index) const { return layout_id_->GetStageFlagsFromIndex(index); }
     VkShaderStageFlags GetStageFlagsFromBinding(const uint32_t binding) const {
         return layout_id_->GetStageFlagsFromBinding(binding);
+    }
+    VkDescriptorBindingFlagsEXT GetDescriptorBindingFlagsFromIndex(const uint32_t index) const {
+        return layout_id_->GetDescriptorBindingFlagsFromIndex(index);
+    }
+    VkDescriptorBindingFlagsEXT GetDescriptorBindingFlagsFromBinding(const uint32_t binding) const {
+        return layout_id_->GetDescriptorBindingFlagsFromBinding(binding);
     }
     uint32_t GetIndexFromGlobalIndex(const uint32_t global_index) const {
         return layout_id_->GetIndexFromGlobalIndex(global_index);
@@ -435,7 +447,7 @@ void PerformAllocateDescriptorSets(const VkDescriptorSetAllocateInfo *, const Vk
 class DescriptorSet : public BASE_NODE {
    public:
     DescriptorSet(const VkDescriptorSet, const VkDescriptorPool, const std::shared_ptr<DescriptorSetLayout const> &,
-                  core_validation::layer_data *);
+                  uint32_t variable_count, core_validation::layer_data *);
     ~DescriptorSet();
     // A number of common Get* functions that return data based on layout from which this set was created
     uint32_t GetTotalDescriptorCount() const { return p_layout_->GetTotalDescriptorCount(); };
@@ -509,6 +521,12 @@ class DescriptorSet : public BASE_NODE {
     // Return true if any part of set has ever been updated
     bool IsUpdated() const { return some_update_; };
     bool IsPushDescriptor() const { return p_layout_->IsPushDescriptor(); };
+    bool IsVariableDescriptorCount(uint32_t binding) const {
+        return !!(p_layout_->GetDescriptorBindingFlagsFromBinding(binding) &
+                  VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT_EXT);
+    }
+    uint32_t GetVariableDescriptorCount() const { return variable_count_; }
+    DESCRIPTOR_POOL_STATE *GetPoolState() const { return pool_state_; }
 
    private:
     bool VerifyWriteUpdateContents(const VkWriteDescriptorSet *, const uint32_t, UNIQUE_VALIDATION_ERROR_CODE *,
@@ -528,6 +546,7 @@ class DescriptorSet : public BASE_NODE {
     // Ptr to device data used for various data look-ups
     core_validation::layer_data *const device_data_;
     const VkPhysicalDeviceLimits limits_;
+    uint32_t variable_count_;
 
     // Cached binding and validation support:
     //
