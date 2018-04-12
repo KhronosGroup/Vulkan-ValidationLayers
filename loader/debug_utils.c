@@ -923,6 +923,7 @@ bool debug_utils_ReportFlagsToAnnotFlags(VkDebugReportFlagsEXT dr_flags, bool de
         return false;
     }
     *da_type = 0;
+    *da_severity = 0;
 
     if ((dr_flags & VK_DEBUG_REPORT_INFORMATION_BIT_EXT) != 0) {
         *da_severity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT;
