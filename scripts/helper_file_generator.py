@@ -167,7 +167,12 @@ class HelperFileOutputGenerator(OutputGenerator):
         name_define = nameElem.get('name')
         if 'EXTENSION_NAME' not in name_define:
             print("Error in vk.xml file -- extension name is not available")
-        info = {'define': name_define, 'ifdef': self.featureExtraProtect}
+        requires = interface.get('requires')
+        if requires is not None:
+            required_extensions = requires.split(',')
+        else:
+            required_extensions = list()
+        info = { 'define': name_define, 'ifdef':self.featureExtraProtect, 'reqs':required_extensions }
         if interface.get('type') == 'instance':
             self.instance_extension_info[name] = info
         else:
@@ -494,10 +499,11 @@ class HelperFileOutputGenerator(OutputGenerator):
             '',
             '#ifndef VK_EXTENSION_HELPER_H_',
             '#define VK_EXTENSION_HELPER_H_',
-            '#include <vulkan/vulkan.h>',
-            '#include <string.h>',
+            '#include <string>',
+            '#include <unordered_map>',
             '#include <utility>',
             '',
+            '#include <vulkan/vulkan.h>',
             '']
 
         def guarded(ifdef, value):
@@ -523,10 +529,62 @@ class HelperFileOutputGenerator(OutputGenerator):
             field_name = { ext_name: re.sub('_extension_name', '', info['define'].lower()) for ext_name, info in extension_items }
             if type == 'Instance':
                 instance_field_name = field_name
+                instance_extension_dict = extension_dict
+            else:
+                # Get complete field name and extension data for both Instance and Device extensions
+                field_name.update(instance_field_name)
+                extension_dict = extension_dict.copy()  # Don't modify the self.<dict> we're pointing to
+                extension_dict.update(instance_extension_dict)
 
+            # Output the data member list
             struct  = [struct_decl]
             struct.extend([ '    bool %s{false};' % field_name[ext_name] for ext_name, info in extension_items])
-            struct.append('')
+
+            # Construct the extension information map -- mapping name to data member (field), and required extensions
+            # The map is contained within a static function member for portability reasons.
+            info_type = '%sInfo' % type
+            info_map_type = '%sMap' % info_type
+            req_type = '%sReq' % type
+            req_vec_type = '%sVec' % req_type
+            struct.extend([
+                '',
+                '    struct %s {' % req_type,
+                '        const bool %s::* enabled;' % struct_type,
+                '        const char *name;',
+                '    };',
+                '    typedef std::vector<%s> %s;' % (req_type, req_vec_type),
+                '    struct %s {' % info_type,
+                '       %s(bool %s::* state_, const %s requires_): state(state_), requires(requires_) {}' % ( info_type, struct_type, req_vec_type),
+                '       bool %s::* state;' % struct_type,
+                '       %s requires;' % req_vec_type,
+                '    };',
+                '',
+                '    typedef std::unordered_map<std::string,%s> %s;' % (info_type, info_map_type),
+                '    static const %s &get_info(const char *name) {' %info_type,
+                '        static const %s info_map = {' % info_map_type ])
+
+            field_format = '&' + struct_type + '::%s'
+            req_format = '{' + field_format+ ', %s}'
+            req_indent = '\n                           '
+            req_join = ',' + req_indent
+            info_format = ('            std::make_pair(%s, ' + info_type + '(' + field_format + ', {%s})),')
+            def format_info(ext_name, info):
+                reqs = req_join.join([req_format % (field_name[req], extension_dict[req]['define']) for req in info['reqs']])
+                return info_format % (info['define'], field_name[ext_name], '{%s}' % (req_indent + reqs) if reqs else '')
+
+            struct.extend([guarded(info['ifdef'], format_info(ext_name, info)) for ext_name, info in extension_items])
+            struct.extend([
+                '        };',
+                '',
+                '        static const %s empty_info {nullptr, %s()};' % (info_type, req_vec_type),
+                '        %s::const_iterator info = info_map.find(name);' % info_map_type,
+                '        if ( info != info_map.cend()) {',
+                '            return info->second;',
+                '        }',
+                '        return empty_info;',
+                '    }',
+                ''])
+
             if type == 'Instance':
                 struct.extend([
                     '    uint32_t NormalizeApiVersion(uint32_t specified_version) {',
@@ -537,8 +595,14 @@ class HelperFileOutputGenerator(OutputGenerator):
                     '    uint32_t InitFromInstanceCreateInfo(uint32_t requested_api_version, const VkInstanceCreateInfo *pCreateInfo) {'])
             else:
                 struct.extend([
-                    '    uint32_t InitFromDeviceCreateInfo(const InstanceExtensions *instance_extensions, uint32_t requested_api_version,',
-                    '                                      const VkDeviceCreateInfo *pCreateInfo) {'])
+                    '    %s() = default;' % struct_type,
+                    '    %s(const %s& instance_ext) : %s(instance_ext) {}' % (struct_type, instance_struct_type, instance_struct_type),
+                    '',
+                    '    uint32_t InitFromDeviceCreateInfo(const %s *instance_extensions, uint32_t requested_api_version,' % instance_struct_type,
+                    '                                      const VkDeviceCreateInfo *pCreateInfo) {',
+                    '        // Initialize: this to defaults,  base class fields to input.',
+                    '        assert(instance_extensions);',
+                    '        *this = %s(*instance_extensions);' % struct_type])
 
             struct.extend([
                 '',
@@ -547,45 +611,28 @@ class HelperFileOutputGenerator(OutputGenerator):
             struct.extend([
                 '        };',
                 '',
-                '        static const std::pair<char const *, bool %sExtensions::*> known_extensions[]{' % type])
-            init_format = '            {%s, &' + type + 'Extensions::%s},'
-            struct.extend([guarded(info['ifdef'], init_format % (info['define'], field_name[ext_name])) for ext_name, info in extension_items])
-            struct.extend([
-                '        };',
-                '',
-                '        // Initialize struct data'])
-
-            if type == 'Device':
-                struct.extend([ '        %s = instance_extensions->%s;' % (name, name) for name in sorted(instance_field_name.values()) ])    
-
-            struct.extend([
-                '',
-                '        for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {',
-                '            for (auto ext : known_extensions) {',
-                '                if (!strcmp(ext.first, pCreateInfo->ppEnabledExtensionNames[i])) {',
-                '                    this->*(ext.second) = true;',
-                '                    break;',
-                '                }',
+                '        // Initialize struct data, robust to invalid pCreateInfo',
+                '        if (pCreateInfo->ppEnabledExtensionNames) {',
+                '            for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {',
+                '                if (!pCreateInfo->ppEnabledExtensionNames[i]) continue;',
+                '                auto info = get_info(pCreateInfo->ppEnabledExtensionNames[i]);',
+                '                if(info.state) this->*(info.state) = true;',
                 '            }',
                 '        }',
                 '        uint32_t api_version = NormalizeApiVersion(requested_api_version);',
                 '        if (api_version >= VK_API_VERSION_1_1) {',
                 '            for (auto promoted_ext : V_1_0_promoted_%s_extensions) {' % type.lower(),
-                '                for (auto ext : known_extensions) {',
-                '                    if (!strcmp(ext.first, promoted_ext)) {',
-                '                        this->*(ext.second) = true;',
-                '                        break;',
-                '                    }',
-                '                }',
+                '                auto info = get_info(promoted_ext);',
+                '                assert(info.state);',
+                '                if (info.state) this->*(info.state) = true;',
                 '            }',
                 '        }',
                 '        return api_version;',
                 '    }',
-                '};',
-                ''])
+                '};'])
 
             # Output reference lists of instance/device extension names
-            struct.append('static const char * const k%sExtensionNames = ' % type)
+            struct.extend(['', 'static const char * const k%sExtensionNames = ' % type])
             struct.extend([guarded(info['ifdef'], '    %s' % info['define']) for ext_name, info in extension_items])
             struct.extend([';', ''])
             output.extend(struct)
