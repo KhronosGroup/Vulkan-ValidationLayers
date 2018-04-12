@@ -162,14 +162,17 @@ class HelperFileOutputGenerator(OutputGenerator):
 
         if self.featureName == 'VK_VERSION_1_0' or self.featureName == 'VK_VERSION_1_1':
             return
+        name = self.featureName
         nameElem = interface[0][1]
-        name = nameElem.get('name')
-        if 'EXTENSION_NAME' not in name:
+        name_define = nameElem.get('name')
+        if 'EXTENSION_NAME' not in name_define:
             print("Error in vk.xml file -- extension name is not available")
+        info = {'define': name_define, 'ifdef': self.featureExtraProtect}
         if interface.get('type') == 'instance':
-            self.instance_extension_info[name] = self.featureExtraProtect
+            self.instance_extension_info[name] = info
         else:
-            self.device_extension_info[name] = self.featureExtraProtect
+            self.device_extension_info[name] = info
+
     #
     # Override parent class to be notified of the end of an extension
     def endFeature(self):
@@ -487,104 +490,108 @@ class HelperFileOutputGenerator(OutputGenerator):
             'vk_khr_variable_pointers',
             'vk_khr_dedicated_allocation',
             ]
+        output = [
+            '',
+            '#ifndef VK_EXTENSION_HELPER_H_',
+            '#define VK_EXTENSION_HELPER_H_',
+            '#include <vulkan/vulkan.h>',
+            '#include <string.h>',
+            '#include <utility>',
+            '',
+            '']
 
-        extension_helper_header = '\n'
-        extension_helper_header += '#ifndef VK_EXTENSION_HELPER_H_\n'
-        extension_helper_header += '#define VK_EXTENSION_HELPER_H_\n'
-        struct  = '\n'
-        extension_helper_header += '#include <vulkan/vulkan.h>\n'
-        extension_helper_header += '#include <string.h>\n'
-        extension_helper_header += '#include <utility>\n'
-        extension_helper_header += '\n'
-        extension_helper_header += '\n'
+        def guarded(ifdef, value):
+            if ifdef is not None:
+                return '\n'.join([ '#ifdef %s' % ifdef, value, '#endif' ])
+            else:
+                return value
 
         for type in ['Instance', 'Device']:
+            struct_type = '%sExtensions' % type
             if type == 'Instance':
-                extension_items = sorted(self.instance_extension_info.items())
-                instance_extension_items = extension_items
+                extension_dict = self.instance_extension_info
                 promoted_ext_list = V_1_0_instance_extensions_promoted_to_core
-                struct += 'struct InstanceExtensions { \n'
+                struct_decl = 'struct %s {' % struct_type
+                instance_struct_type = struct_type
             else:
-                extension_items = sorted(self.device_extension_info.items())
+                extension_dict = self.device_extension_info
                 promoted_ext_list = V_1_0_device_extensions_promoted_to_core
-                struct += 'struct DeviceExtensions : public InstanceExtensions { \n'
-            for ext_name, ifdef in extension_items:
-                bool_name = ext_name.lower()
-                bool_name = re.sub('_extension_name', '', bool_name)
-                struct += '    bool %s{false};\n' % bool_name
-            struct += '\n'
+                struct_decl = 'struct %s : public %s {' % (struct_type, instance_struct_type)
+
+            extension_items = sorted(extension_dict.items())
+
+            field_name = { ext_name: re.sub('_extension_name', '', info['define'].lower()) for ext_name, info in extension_items }
             if type == 'Instance':
-                struct += '    uint32_t NormalizeApiVersion(uint32_t specified_version) {\n'
-                struct += '        uint32_t api_version = (specified_version < VK_API_VERSION_1_1) ? VK_API_VERSION_1_0 : VK_API_VERSION_1_1;\n'
-                struct += '        return api_version;\n'
-                struct += '    }\n'
-                struct += '\n'
+                instance_field_name = field_name
 
-                struct += '    uint32_t InitFromInstanceCreateInfo(uint32_t requested_api_version, const VkInstanceCreateInfo *pCreateInfo) {\n'
+            struct  = [struct_decl]
+            struct.extend([ '    bool %s{false};' % field_name[ext_name] for ext_name, info in extension_items])
+            struct.append('')
+            if type == 'Instance':
+                struct.extend([
+                    '    uint32_t NormalizeApiVersion(uint32_t specified_version) {',
+                    '        uint32_t api_version = (specified_version < VK_API_VERSION_1_1) ? VK_API_VERSION_1_0 : VK_API_VERSION_1_1;',
+                    '        return api_version;',
+                    '    }',
+                    '',
+                    '    uint32_t InitFromInstanceCreateInfo(uint32_t requested_api_version, const VkInstanceCreateInfo *pCreateInfo) {'])
             else:
-                struct += '    uint32_t InitFromDeviceCreateInfo(const InstanceExtensions *instance_extensions, uint32_t requested_api_version, const VkDeviceCreateInfo *pCreateInfo) {\n'
-            struct += '\n'
+                struct.extend([
+                    '    uint32_t InitFromDeviceCreateInfo(const InstanceExtensions *instance_extensions, uint32_t requested_api_version,',
+                    '                                      const VkDeviceCreateInfo *pCreateInfo) {'])
 
-            struct += '        static const std::vector<const char *> V_1_0_promoted_%s_extensions = {\n' % type.lower()
-            for ext_name in promoted_ext_list:
-                struct += '            %s_EXTENSION_NAME,\n' % ext_name.upper()
-            struct += '        };\n'
-            struct += '\n'
-            struct += '        static const std::pair<char const *, bool %sExtensions::*> known_extensions[]{\n' % type
-            for ext_name, ifdef in extension_items:
-                if ifdef is not None:
-                    struct += '#ifdef %s\n' % ifdef
-                bool_name = ext_name.lower()
-                bool_name = re.sub('_extension_name', '', bool_name)
-                struct += '            {%s, &%sExtensions::%s},\n' % (ext_name, type, bool_name)
-                if ifdef is not None:
-                    struct += '#endif\n'
-            struct += '        };\n'
-            struct += '\n'
-            struct += '        // Initialize struct data\n'
+            struct.extend([
+                '',
+                '        static const std::vector<const char *> V_1_0_promoted_%s_extensions = {' % type.lower() ])
+            struct.extend(['            %s_EXTENSION_NAME,' % ext_name.upper() for ext_name in promoted_ext_list])
+            struct.extend([
+                '        };',
+                '',
+                '        static const std::pair<char const *, bool %sExtensions::*> known_extensions[]{' % type])
+            init_format = '            {%s, &' + type + 'Extensions::%s},'
+            struct.extend([guarded(info['ifdef'], init_format % (info['define'], field_name[ext_name])) for ext_name, info in extension_items])
+            struct.extend([
+                '        };',
+                '',
+                '        // Initialize struct data'])
 
-            for ext_name, ifdef in instance_extension_items:
-                bool_name = ext_name.lower()
-                bool_name = re.sub('_extension_name', '', bool_name)
-                if type == 'Device':
-                    struct += '        %s = instance_extensions->%s;\n' % (bool_name, bool_name)
-            struct += '\n'
-            struct += '        for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {\n'
-            struct += '            for (auto ext : known_extensions) {\n'
-            struct += '                if (!strcmp(ext.first, pCreateInfo->ppEnabledExtensionNames[i])) {\n'
-            struct += '                    this->*(ext.second) = true;\n'
-            struct += '                    break;\n'
-            struct += '                }\n'
-            struct += '            }\n'
-            struct += '        }\n'
-            struct += '        uint32_t api_version = NormalizeApiVersion(requested_api_version);\n'
-            struct += '        if (api_version >= VK_API_VERSION_1_1) {\n'
-            struct += '            for (auto promoted_ext : V_1_0_promoted_%s_extensions) {\n' % type.lower()
-            struct += '                for (auto ext : known_extensions) {\n'
-            struct += '                    if (!strcmp(ext.first, promoted_ext)) {\n'
-            struct += '                        this->*(ext.second) = true;\n'
-            struct += '                        break;\n'
-            struct += '                    }\n'
-            struct += '                }\n'
-            struct += '            }\n'
-            struct += '        }\n'
-            struct += '        return api_version;\n'
-            struct += '    }\n'
-            struct += '};\n'
-            struct += '\n'
+            if type == 'Device':
+                struct.extend([ '        %s = instance_extensions->%s;' % (name, name) for name in sorted(instance_field_name.values()) ])    
+
+            struct.extend([
+                '',
+                '        for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {',
+                '            for (auto ext : known_extensions) {',
+                '                if (!strcmp(ext.first, pCreateInfo->ppEnabledExtensionNames[i])) {',
+                '                    this->*(ext.second) = true;',
+                '                    break;',
+                '                }',
+                '            }',
+                '        }',
+                '        uint32_t api_version = NormalizeApiVersion(requested_api_version);',
+                '        if (api_version >= VK_API_VERSION_1_1) {',
+                '            for (auto promoted_ext : V_1_0_promoted_%s_extensions) {' % type.lower(),
+                '                for (auto ext : known_extensions) {',
+                '                    if (!strcmp(ext.first, promoted_ext)) {',
+                '                        this->*(ext.second) = true;',
+                '                        break;',
+                '                    }',
+                '                }',
+                '            }',
+                '        }',
+                '        return api_version;',
+                '    }',
+                '};',
+                ''])
+
             # Output reference lists of instance/device extension names
-            struct += 'static const char * const k%sExtensionNames = \n' % type
-            for ext_name, ifdef in extension_items:
-                if ifdef is not None:
-                    struct += '#ifdef %s\n' % ifdef
-                struct += '    %s\n' % ext_name
-                if ifdef is not None:
-                    struct += '#endif\n'
-            struct += ';\n\n'
-        extension_helper_header += struct
-        extension_helper_header += '\n'
-        extension_helper_header += '#endif // VK_EXTENSION_HELPER_H_\n'
-        return extension_helper_header
+            struct.append('static const char * const k%sExtensionNames = ' % type)
+            struct.extend([guarded(info['ifdef'], '    %s' % info['define']) for ext_name, info in extension_items])
+            struct.extend([';', ''])
+            output.extend(struct)
+
+        output.extend(['', '#endif // VK_EXTENSION_HELPER_H_'])
+        return '\n'.join(output)
     #
     # Combine object types helper header file preamble with body text and return
     def GenerateObjectTypesHelperHeader(self):
