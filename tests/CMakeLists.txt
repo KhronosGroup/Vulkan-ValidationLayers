@@ -30,16 +30,7 @@ else()
     message(FATAL_ERROR "Unsupported Platform!")
 endif()
 
-# On Windows, we must pair Debug and Release appropriately
 if (WIN32)
-   # For Windows, since 32-bit and 64-bit items can co-exist, we build each in its own build directory.
-   # 32-bit target data goes in build32, and 64-bit target data goes into build.  So, include/link the
-   # appropriate data at build time.
-   if (CMAKE_CL_64)
-      set (BUILDTGT_DIR build)
-   else ()
-      set (BUILDTGT_DIR build32)
-   endif()
    file(COPY vk_layer_validation_tests.vcxproj.user DESTINATION ${CMAKE_BINARY_DIR}/tests)
 endif()
 
@@ -103,10 +94,11 @@ else()
     endif()
 endif()
 
+
 if(WIN32)
-   set (LIBVK "${API_LOWERCASE}-${MAJOR}")
+    set (LIBVK "Vulkan::Vulkan")
 elseif(UNIX)
-   set (LIBVK "${API_LOWERCASE}")
+    set (LIBVK "Vulkan::Vulkan")
 else()
 endif()
 
@@ -142,18 +134,6 @@ if (WIN32)
     add_custom_command(TARGET vk_layer_validation_tests POST_BUILD
         COMMAND xcopy /Y /I ${SRC_GTEST_DLLS} ${DST_GTEST_DLLS})
 endif()
-
-add_executable(vk_loader_validation_tests loader_validation_tests.cpp ${COMMON_CPP})
-set_target_properties(vk_loader_validation_tests
-   PROPERTIES
-   COMPILE_DEFINITIONS "GTEST_LINKED_AS_SHARED_LIBRARY=1")
-if(NOT WIN32)
-    set_target_properties(vk_loader_validation_tests
-        PROPERTIES
-        COMPILE_FLAGS "-Wno-sign-compare")
-endif()
-
-target_link_libraries(vk_loader_validation_tests ${LIBVK} gtest gtest_main VkLayer_utils ${GLSLANG_LIBRARIES})
 
 set (GTEST_RELATIVE_LOCATION ../submodules/googletest)
 SET(BUILD_GTEST ON CACHE BOOL "Builds the googletest subproject")
