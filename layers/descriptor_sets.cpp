@@ -1358,7 +1358,9 @@ bool cvdescriptorset::ValidateImageUpdate(VkImageView image_view, VkImageLayout 
 }
 
 void cvdescriptorset::SamplerDescriptor::WriteUpdate(const VkWriteDescriptorSet *update, const uint32_t index) {
-    sampler_ = update->pImageInfo[index].sampler;
+    if (!immutable_) {
+        sampler_ = update->pImageInfo[index].sampler;
+    }
     updated = true;
 }
 
@@ -1390,7 +1392,9 @@ cvdescriptorset::ImageSamplerDescriptor::ImageSamplerDescriptor(const VkSampler 
 void cvdescriptorset::ImageSamplerDescriptor::WriteUpdate(const VkWriteDescriptorSet *update, const uint32_t index) {
     updated = true;
     const auto &image_info = update->pImageInfo[index];
-    sampler_ = image_info.sampler;
+    if (!immutable_) {
+        sampler_ = image_info.sampler;
+    }
     image_view_ = image_info.imageView;
     image_layout_ = image_info.imageLayout;
 }
