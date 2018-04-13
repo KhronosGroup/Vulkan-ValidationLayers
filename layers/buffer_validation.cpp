@@ -3421,7 +3421,7 @@ bool PreCallValidateCreateImageView(layer_data *device_data, const VkImageViewCr
             if (chained_ivuci_struct->usage & ~image_usage) {
                 std::stringstream ss;
                 ss << "vkCreateImageView(): Chained VkImageViewUsageCreateInfo usage field (0x" << std::hex
-                   << chained_ivuci_struct->usage << "must not include flags not present in underlying image's usage (0x"
+                   << chained_ivuci_struct->usage << ") must not include flags not present in underlying image's usage (0x"
                    << image_usage << ").";
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                                 VALIDATION_ERROR_3f200c66, "%s", ss.str().c_str());

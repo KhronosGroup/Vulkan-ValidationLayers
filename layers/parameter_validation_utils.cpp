@@ -1121,7 +1121,7 @@ bool pv_vkCreateImageView(VkDevice device, const VkImageViewCreateInfo *pCreateI
                 if (0 == chained_ivuci_struct->usage) {
                     skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                                     VALIDATION_ERROR_3f230603,
-                                    "vkCreateImageView: Chained VkImageViewUsageCreateInfo usage field must not be 0");
+                                    "vkCreateImageView: Chained VkImageViewUsageCreateInfo usage field must not be 0.");
                 } else if (chained_ivuci_struct->usage & ~AllVkImageUsageFlagBits) {
                     std::stringstream ss;
                     ss << "vkCreateImageView: Chained VkImageViewUsageCreateInfo usage field (0x" << std::hex
