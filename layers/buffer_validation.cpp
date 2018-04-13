@@ -1175,10 +1175,10 @@ static bool RegionIntersects(const VkImageCopy *rgn0, const VkImageCopy *rgn1, V
         switch (type) {
             case VK_IMAGE_TYPE_3D:
                 result &= RangesIntersect(rgn0->srcOffset.z, rgn0->extent.depth, rgn1->dstOffset.z, rgn1->extent.depth);
-            // Intentionally fall through to 2D case
+                // fall through
             case VK_IMAGE_TYPE_2D:
                 result &= RangesIntersect(rgn0->srcOffset.y, rgn0->extent.height, rgn1->dstOffset.y, rgn1->extent.height);
-            // Intentionally fall through to 1D case
+                // fall through
             case VK_IMAGE_TYPE_1D:
                 result &= RangesIntersect(rgn0->srcOffset.x, rgn0->extent.width, rgn1->dstOffset.x, rgn1->extent.width);
                 break;
@@ -1365,11 +1365,11 @@ static inline bool CheckItgExtent(layer_data *device_data, const GLOBAL_CB_NODE 
             case VK_IMAGE_TYPE_3D:
                 z_ok = ((0 == SafeModulo(extent->depth, granularity->depth)) ||
                         (subresource_extent->depth == offset_extent_sum.depth));
-                // Intentionally fall through to 2D case
+                // fall through
             case VK_IMAGE_TYPE_2D:
                 y_ok = ((0 == SafeModulo(extent->height, granularity->height)) ||
                         (subresource_extent->height == offset_extent_sum.height));
-                // Intentionally fall through to 1D case
+                // fall through
             case VK_IMAGE_TYPE_1D:
                 x_ok = ((0 == SafeModulo(extent->width, granularity->width)) ||
                         (subresource_extent->width == offset_extent_sum.width));
@@ -2977,7 +2977,7 @@ bool ValidateLayouts(core_validation::layer_data *device_data, VkDevice device, 
                     } else {
                         // Intentionally fall through to generic error message
                     }
-
+                    // fall through
                 default:
                     // No other layouts are acceptable
                     skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,

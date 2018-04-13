@@ -1884,8 +1884,8 @@ bool cvdescriptorset::DescriptorSet::VerifyWriteUpdateContents(const VkWriteDesc
                     return false;
                 }
             }
-            // Intentional fall-through to validate sampler
         }
+        // fall through
         case VK_DESCRIPTOR_TYPE_SAMPLER: {
             for (uint32_t di = 0; di < update->descriptorCount; ++di) {
                 if (!descriptors_[index + di].get()->IsImmutableSampler()) {
