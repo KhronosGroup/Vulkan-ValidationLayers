@@ -535,6 +535,119 @@ CUSTOM_C_INTERCEPTS = {
     // If requesting extension properties, fill in data struct for number of extensions
     return VK_SUCCESS;
 ''',
+'vkGetPhysicalDeviceSurfacePresentModesKHR': '''
+    // Currently always say that all present modes are supported
+    if (!pPresentModes) {
+        *pPresentModeCount = 6;
+    } else {
+        // Intentionally falling through and just filling however many modes are requested
+        switch(*pPresentModeCount) {
+        case 6:
+            pPresentModes[5] = VK_PRESENT_MODE_SHARED_CONTINUOUS_REFRESH_KHR;
+            // fall through
+        case 5:
+            pPresentModes[4] = VK_PRESENT_MODE_SHARED_DEMAND_REFRESH_KHR;
+            // fall through
+        case 4:
+            pPresentModes[3] = VK_PRESENT_MODE_FIFO_RELAXED_KHR;
+            // fall through
+        case 3:
+            pPresentModes[2] = VK_PRESENT_MODE_FIFO_KHR;
+            // fall through
+        case 2:
+            pPresentModes[1] = VK_PRESENT_MODE_MAILBOX_KHR;
+            // fall through
+        default:
+            pPresentModes[0] = VK_PRESENT_MODE_IMMEDIATE_KHR;
+            break;
+        }
+    }
+    return VK_SUCCESS;
+''',
+'vkGetPhysicalDeviceSurfaceFormatsKHR': '''
+    // Currently always say that RGBA8 & BGRA8 are supported
+    if (!pSurfaceFormats) {
+        *pSurfaceFormatCount = 2;
+    } else {
+        // Intentionally falling through and just filling however many types are requested
+        switch(*pSurfaceFormatCount) {
+        case 2:
+            pSurfaceFormats[1].format = VK_FORMAT_R8G8B8A8_UNORM;
+            pSurfaceFormats[1].colorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
+            // fall through
+        default:
+            pSurfaceFormats[0].format = VK_FORMAT_B8G8R8A8_UNORM;
+            pSurfaceFormats[0].colorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
+            break;
+        }
+    }
+    return VK_SUCCESS;
+''',
+'vkGetPhysicalDeviceSurfaceFormats2KHR': '''
+    // Currently always say that RGBA8 & BGRA8 are supported
+    if (!pSurfaceFormats) {
+        *pSurfaceFormatCount = 2;
+    } else {
+        // Intentionally falling through and just filling however many types are requested
+        switch(*pSurfaceFormatCount) {
+        case 2:
+            pSurfaceFormats[1].pNext = nullptr;
+            pSurfaceFormats[1].surfaceFormat.format = VK_FORMAT_R8G8B8A8_UNORM;
+            pSurfaceFormats[1].surfaceFormat.colorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
+            // fall through
+        default:
+            pSurfaceFormats[1].pNext = nullptr;
+            pSurfaceFormats[0].surfaceFormat.format = VK_FORMAT_B8G8R8A8_UNORM;
+            pSurfaceFormats[0].surfaceFormat.colorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
+            break;
+        }
+    }
+    return VK_SUCCESS;
+''',
+'vkGetPhysicalDeviceSurfaceSupportKHR': '''
+    // Currently say that all surface/queue combos are supported
+    *pSupported = VK_TRUE;
+    return VK_SUCCESS;
+''',
+'vkGetPhysicalDeviceSurfaceCapabilitiesKHR': '''
+    // In general just say max supported is available for requested surface
+    pSurfaceCapabilities->minImageCount = 1;
+    pSurfaceCapabilities->maxImageCount = 0;
+    pSurfaceCapabilities->currentExtent.width = 0xFFFFFFFF;
+    pSurfaceCapabilities->currentExtent.height = 0xFFFFFFFF;
+    pSurfaceCapabilities->minImageExtent.width = 1;
+    pSurfaceCapabilities->minImageExtent.height = 1;
+    pSurfaceCapabilities->maxImageExtent.width = 3840;
+    pSurfaceCapabilities->maxImageExtent.height = 2160;
+    pSurfaceCapabilities->maxImageArrayLayers = 128;
+    pSurfaceCapabilities->supportedTransforms = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR |
+                                                VK_SURFACE_TRANSFORM_ROTATE_90_BIT_KHR |
+                                                VK_SURFACE_TRANSFORM_ROTATE_180_BIT_KHR |
+                                                VK_SURFACE_TRANSFORM_ROTATE_270_BIT_KHR |
+                                                VK_SURFACE_TRANSFORM_HORIZONTAL_MIRROR_BIT_KHR |
+                                                VK_SURFACE_TRANSFORM_HORIZONTAL_MIRROR_ROTATE_90_BIT_KHR |
+                                                VK_SURFACE_TRANSFORM_HORIZONTAL_MIRROR_ROTATE_180_BIT_KHR |
+                                                VK_SURFACE_TRANSFORM_HORIZONTAL_MIRROR_ROTATE_270_BIT_KHR |
+                                                VK_SURFACE_TRANSFORM_INHERIT_BIT_KHR;
+    pSurfaceCapabilities->currentTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+    pSurfaceCapabilities->supportedCompositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR |
+                                                    VK_COMPOSITE_ALPHA_PRE_MULTIPLIED_BIT_KHR |
+                                                    VK_COMPOSITE_ALPHA_POST_MULTIPLIED_BIT_KHR |
+                                                    VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR;
+    pSurfaceCapabilities->supportedUsageFlags = VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
+                                                VK_IMAGE_USAGE_TRANSFER_DST_BIT |
+                                                VK_IMAGE_USAGE_SAMPLED_BIT |
+                                                VK_IMAGE_USAGE_STORAGE_BIT |
+                                                VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
+                                                VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT |
+                                                VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT |
+                                                VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
+    return VK_SUCCESS;
+''',
+'vkGetPhysicalDeviceSurfaceCapabilities2KHR': '''
+    GetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, pSurfaceInfo->surface, &pSurfaceCapabilities->surfaceCapabilities);
+    return VK_SUCCESS;
+''',
 'vkGetInstanceProcAddr': '''
     if (!negotiate_loader_icd_interface_called) {
         loader_interface_version = 0;
@@ -672,6 +785,21 @@ CUSTOM_C_INTERCEPTS = {
 'vkGetImageSubresourceLayout': '''
     // Need safe values. Callers are computing memory offsets from pLayout, with no return code to flag failure. 
     *pLayout = VkSubresourceLayout(); // Default constructor zero values.
+''',
+'vkGetSwapchainImagesKHR': '''
+    if (!pSwapchainImages) {
+        *pSwapchainImageCount = 1;
+    } else if (*pSwapchainImageCount > 0) {
+        pSwapchainImages[0] = (VkImage)global_unique_handle++;
+        if (*pSwapchainImageCount != 1) {
+            return VK_INCOMPLETE;
+        }
+    }
+    return VK_SUCCESS;
+''',
+'vkAcquireNextImagesKHR': '''
+    *pImageIndex = 0;
+    return VK_SUCCESS;
 ''',
 }
 
