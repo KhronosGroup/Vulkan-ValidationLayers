@@ -324,7 +324,7 @@ class ErrorMonitor {
                     message_found_ = true;
                     result = VK_TRUE;
                     // We only want one match for each expected error so remove from set here
-                    // Since we're about the break the loop it's ok to remove from set we're iterating over
+                    // Since we're about the break the loop it's OK to remove from set we're iterating over
                     desired_message_strings_.erase(desired_msg);
                     break;
                 }
@@ -1209,7 +1209,7 @@ struct CreatePipelineHelper {
         return err;
     }
 
-    // Helper function to create a simple test case (postive or negative)
+    // Helper function to create a simple test case (positive or negative)
     //
     // info_override can be any callable that takes a CreatePipelineHeper &
     // flags, error can be any args accepted by "SetDesiredFailure".
@@ -1577,7 +1577,7 @@ TEST_F(VkLayerTest, AnisotropyFeatureDisabled) {
 }
 
 TEST_F(VkLayerTest, AnisotropyFeatureEnabled) {
-    TEST_DESCRIPTION("Validation must check several conditons that apply only when Anisotropy is enabled.");
+    TEST_DESCRIPTION("Validation must check several conditions that apply only when Anisotropy is enabled.");
 
     // Determine if required device features are available
     VkPhysicalDeviceFeatures device_features = {};
@@ -4024,7 +4024,7 @@ TEST_F(VkLayerTest, DSImageTransferGranularityTests) {
     VkResult err;
     bool pass;
 
-    TEST_DESCRIPTION("Tests for validaiton of Queue Family property minImageTransferGranularity.");
+    TEST_DESCRIPTION("Tests for validation of Queue Family property minImageTransferGranularity.");
     ASSERT_NO_FATAL_FAILURE(Init());
 
     // If w/d/h granularity is 1, test is not meaningful
@@ -5068,7 +5068,7 @@ TEST_F(VkLayerTest, RenderPassInvalidRenderArea) {
 TEST_F(VkLayerTest, DisabledIndependentBlend) {
     TEST_DESCRIPTION(
         "Generate INDEPENDENT_BLEND by disabling independent blend and then specifying different blend states for two "
-        "attachements");
+        "attachments");
     VkPhysicalDeviceFeatures features = {};
     features.independentBlend = VK_FALSE;
     ASSERT_NO_FATAL_FAILURE(Init(&features));
@@ -9544,12 +9544,6 @@ TEST_F(VkLayerTest, DescriptorSetCompatibility) {
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
 
     vkCmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
-    // NOTE : I believe LunarG ilo driver has bug (LX#189) that requires binding
-    // of PSO
-    //  here before binding DSs. Otherwise we assert in cmd_copy_dset_data() of
-    //  cmd_pipeline.c
-    //  due to the fact that cmd_alloc_dset_data() has not been called in
-    //  cmd_bind_graphics_pipeline()
     // TODO : Want to cause various binding incompatibility issues here to test
     // DrawState
     //  First cause various verify_layout_compatibility() fails
@@ -10375,7 +10369,7 @@ TEST_F(VkLayerTest, DynViewportAndScissorUndefinedDrawState) {
                                          "Dynamic viewport(s) 0 are used by pipeline state object, ");
     vkCmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_dyn_vp.handle());
     vkCmdSetViewport(m_commandBuffer->handle(), 1, 1,
-                     &m_viewports[0]);  // Forgetting to set needed 0th viweport (PSO viewportCount == 1)
+                     &m_viewports[0]);  // Forgetting to set needed 0th viewport (PSO viewportCount == 1)
     m_commandBuffer->Draw(1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
 
@@ -11957,7 +11951,7 @@ TEST_F(VkPositiveLayerTest, OwnershipTranfersBuffer) {
 class BarrierQueueFamilyTestHelper {
    public:
     BarrierQueueFamilyTestHelper(VkLayerTest &test) : layer_test_(test), image_(test.DeviceObj()) {}
-    // Init with queue familes non-null for CONCURRENT sharing mode (which requires them)
+    // Init with queue families non-null for CONCURRENT sharing mode (which requires them)
     void Init(std::vector<uint32_t> *families) {
         VkDeviceObj *device_obj = layer_test_.DeviceObj();
         image_.Init(32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0, families);
@@ -12065,7 +12059,7 @@ TEST_F(VkLayerTest, InvalidBarrierQueueFamily) {
         // core_validation::barrier_queue_families::kSubmitQueueMustMatchSrcOrDst
         excl_test(VALIDATION_ERROR_0a00096a, VALIDATION_ERROR_01800958, other_family, other_family, false, m_device->m_queue);
         // true -> positive test
-        // Note: when we start tracking resource onwership, we'll need a way to reset the buffers s.t. this doesn't
+        // Note: when we start tracking resource ownership, we'll need a way to reset the buffers s.t. this doesn't
         //       trigger unexpected errors
         excl_test(VALIDATION_ERROR_0a00096a, VALIDATION_ERROR_01800958, submit_family, other_family, true, m_device->m_queue);
         excl_test(VALIDATION_ERROR_0a00096a, VALIDATION_ERROR_01800958, other_family, submit_family, true, m_device->m_queue);
@@ -13292,7 +13286,7 @@ TEST_F(VkLayerTest, CopyDescriptorUpdateErrors) {
 }
 
 TEST_F(VkPositiveLayerTest, CopyNonupdatedDescriptors) {
-    TEST_DESCRIPTION("Copy nonupdated descriptors");
+    TEST_DESCRIPTION("Copy non-updated descriptors");
     unsigned int i;
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -13736,7 +13730,7 @@ TEST_F(VkLayerTest, MismatchCountQueueCreateRequestedFeature) {
     // By the time core_validation is reached, the NVidia
     // driver has sanitized the invalid condition and core_validation
     // is not introduced to the failure condition. This is not the case
-    // with AMD and Mesa drivers. Futher investigation is required
+    // with AMD and Mesa drivers. Further investigation is required
     //    uint32_t count = static_cast<uint32_t>(~0);
     //    VkPhysicalDevice physical_device;
     //    vkEnumeratePhysicalDevices(instance(), &count, &physical_device);
@@ -14022,7 +14016,7 @@ TEST_F(VkLayerTest, BadVertexBufferOffset) {
 TEST_F(VkLayerTest, InvalidImageLayout) {
     TEST_DESCRIPTION(
         "Hit all possible validation checks associated with the DRAWSTATE_INVALID_IMAGE_LAYOUT enum. Generally these involve "
-        "havingimages in the wrong layout when they're copied or transitioned.");
+        "having images in the wrong layout when they're copied or transitioned.");
     // 3 in ValidateCmdBufImageLayouts
     // *  -1 Attempt to submit cmd buf w/ deleted image
     // *  -2 Cmd buf submit of image w/ layout not matching first use w/ subresource
@@ -14577,8 +14571,8 @@ TEST_F(VkLayerTest, EventInUseDestroyedSignaled) {
 
 TEST_F(VkLayerTest, InUseDestroyedSignaled) {
     TEST_DESCRIPTION(
-        "Use vkCmdExecuteCommands with invalid state in primary and secondary command buffers. Delete objects that are inuse. Call "
-        "VkQueueSubmit with an event that has been deleted.");
+        "Use vkCmdExecuteCommands with invalid state in primary and secondary command buffers. Delete objects that are in use. "
+        "Call VkQueueSubmit with an event that has been deleted.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -15639,7 +15633,7 @@ TEST_F(VkLayerTest, UpdateDestroyDescriptorSetLayout) {
     OneOffDescriptorSet good_src(m_device, one_uniform_buffer);
     ASSERT_TRUE(good_src.Initialized());
 
-    // Put valid data in the good and bad sources, simultaneously doing a postive test on write and copy operations
+    // Put valid data in the good and bad sources, simultaneously doing a positive test on write and copy operations
     m_errorMonitor->ExpectSuccess();
     write_descriptor.dstSet = good_src.set_;
     vkUpdateDescriptorSets(m_device->device(), 1, &write_descriptor, 0, NULL);
@@ -15723,7 +15717,7 @@ TEST_F(VkLayerTest, QueueForwardProgressFenceWait) {
 
 TEST_F(VkLayerTest, FramebufferIncompatible) {
     TEST_DESCRIPTION(
-        "Bind a secondary command buffer with with a framebuffer that does not match the framebuffer for the active renderpass.");
+        "Bind a secondary command buffer with a framebuffer that does not match the framebuffer for the active renderpass.");
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
@@ -16309,7 +16303,7 @@ TEST_F(VkLayerTest, CreatePipelineCheckShaderDescriptorNotAccessible) {
 
 TEST_F(VkLayerTest, CreatePipelineCheckShaderPushConstantNotAccessible) {
     TEST_DESCRIPTION(
-        "Create a graphics pipleine in which a push constant range containing a push constant block member is not accessible from "
+        "Create a graphics pipeline in which a push constant range containing a push constant block member is not accessible from "
         "the current shader stage.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -18418,7 +18412,7 @@ TEST_F(VkLayerTest, CopyImageLayerCountMismatch) {
 }
 
 TEST_F(VkLayerTest, ImageLayerUnsupportedFormat) {
-    TEST_DESCRIPTION("Creating images with unsuported formats ");
+    TEST_DESCRIPTION("Creating images with unsupported formats ");
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -18817,7 +18811,7 @@ TEST_F(VkLayerTest, CompressedImageMipCopyTests) {
     vkCmdCopyBufferToImage(m_commandBuffer->handle(), buffer_16.handle(), image.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &region);
     m_errorMonitor->VerifyNotFound();
 
-    // Buffer must accomodate a full compressed block, regardless of texel count
+    // Buffer must accommodate a full compressed block, regardless of texel count
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_1920016e);
     vkCmdCopyImageToBuffer(m_commandBuffer->handle(), image.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer_8.handle(), 1, &region);
     m_errorMonitor->VerifyFound();
@@ -19036,7 +19030,7 @@ TEST_F(VkLayerTest, ImageBufferCopyTests) {
     vkCmdCopyImageToBuffer(m_commandBuffer->handle(), image_16k.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer_64k.handle(), 1, &region);
     m_errorMonitor->VerifyFound();
 
-    // buffer size ok but rowlength causes loose packing
+    // buffer size OK but rowlength causes loose packing
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_1920016e);
     region.imageExtent = {64, 64, 1};
     region.bufferRowLength = 68;
@@ -19404,7 +19398,7 @@ TEST_F(VkLayerTest, CreateImageMiscErrors) {
     VkPhysicalDeviceFeatures features{};
     ASSERT_NO_FATAL_FAILURE(Init(&features));
 
-    VkImage null_image;  // throaway target for all the vkCreateImage
+    VkImage null_image;  // throwaway target for all the vkCreateImage
 
     VkImageCreateInfo tmp_img_ci = {};
     tmp_img_ci.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -19565,7 +19559,7 @@ TEST_F(VkLayerTest, CreateImageMinLimitsViolation) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
-    VkImage null_image;  // throaway target for all the vkCreateImage
+    VkImage null_image;  // throwaway target for all the vkCreateImage
 
     VkImageCreateInfo tmp_img_ci = {};
     tmp_img_ci.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -19694,7 +19688,7 @@ VkFormat FindFormatLinearWithoutMips(VkPhysicalDevice gpu, VkImageCreateInfo ima
     image_ci.tiling = VK_IMAGE_TILING_LINEAR;
 
     const VkFormat first_vk_format = static_cast<VkFormat>(1);
-    const VkFormat last_vk_format = static_cast<VkFormat>(130);  // avoid compressed\feature protected, otherwise 184
+    const VkFormat last_vk_format = static_cast<VkFormat>(130);  // avoid compressed/feature protected, otherwise 184
 
     for (VkFormat format = first_vk_format; format <= last_vk_format; format = static_cast<VkFormat>(format + 1)) {
         image_ci.format = format;
@@ -19716,7 +19710,7 @@ VkFormat FindFormatLinearWithoutMips(VkPhysicalDevice gpu, VkImageCreateInfo ima
 
 bool FindFormatWithoutSamples(VkPhysicalDevice gpu, VkImageCreateInfo &image_ci) {
     const VkFormat first_vk_format = static_cast<VkFormat>(1);
-    const VkFormat last_vk_format = static_cast<VkFormat>(130);  // avoid compressed\feature protected, otherwise 184
+    const VkFormat last_vk_format = static_cast<VkFormat>(130);  // avoid compressed/feature protected, otherwise 184
 
     for (VkFormat format = first_vk_format; format <= last_vk_format; format = static_cast<VkFormat>(format + 1)) {
         image_ci.format = format;
@@ -19745,7 +19739,7 @@ TEST_F(VkLayerTest, CreateImageMaxLimitsViolation) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
-    VkImage null_image;  // throaway target for all the vkCreateImage
+    VkImage null_image;  // throwaway target for all the vkCreateImage
 
     VkImageCreateInfo tmp_img_ci = {};
     tmp_img_ci.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -19983,7 +19977,7 @@ TEST_F(VkLayerTest, CreateImageMaxLimitsViolation) {
 
 bool FindUnsupportedImage(VkPhysicalDevice gpu, VkImageCreateInfo &image_ci) {
     const VkFormat first_vk_format = static_cast<VkFormat>(1);
-    const VkFormat last_vk_format = static_cast<VkFormat>(130);  // avoid compressed\feature protected, otherwise 184
+    const VkFormat last_vk_format = static_cast<VkFormat>(130);  // avoid compressed/feature protected, otherwise 184
 
     const std::vector<VkImageTiling> tilings = {VK_IMAGE_TILING_LINEAR, VK_IMAGE_TILING_OPTIMAL};
     for (const auto tiling : tilings) {
@@ -20021,7 +20015,7 @@ bool FindUnsupportedImage(VkPhysicalDevice gpu, VkImageCreateInfo &image_ci) {
 VkFormat FindFormatWithoutFeatures(VkPhysicalDevice gpu, VkImageTiling tiling,
                                    VkFormatFeatureFlags undesired_features = UINT32_MAX) {
     const VkFormat first_vk_format = static_cast<VkFormat>(1);
-    const VkFormat last_vk_format = static_cast<VkFormat>(130);  // avoid compressed\feature protected, otherwise 184
+    const VkFormat last_vk_format = static_cast<VkFormat>(130);  // avoid compressed/feature protected, otherwise 184
 
     for (VkFormat format = first_vk_format; format <= last_vk_format; format = static_cast<VkFormat>(format + 1)) {
         VkFormatProperties format_props;
@@ -20048,7 +20042,7 @@ TEST_F(VkLayerTest, CreateImageFormatSupportErrors) {
     VkPhysicalDeviceFeatures features{};
     ASSERT_NO_FATAL_FAILURE(Init(&features));
 
-    VkImage null_image;  // throaway target for all the vkCreateImage
+    VkImage null_image;  // throwaway target for all the vkCreateImage
 
     VkImageCreateInfo tmp_img_ci = {};
     tmp_img_ci.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -20526,7 +20520,7 @@ TEST_F(VkLayerTest, CopyImageCompressedBlockAlignment) {
 
     // Note: VALIDATION_ERROR_09c00140, VALIDATION_ERROR_09c0014a, VALIDATION_ERROR_09c00d84, VALIDATION_ERROR_09c00d8c
     //       There are currently no supported compressed formats with a block depth other than 1,
-    //       so impossible to create a 'not a multiple' condiditon for depth.
+    //       so impossible to create a 'not a multiple' condition for depth.
     m_commandBuffer->end();
 }
 
@@ -22739,7 +22733,7 @@ TEST_F(VkPositiveLayerTest, IgnoreUnrelatedDescriptor) {
 }
 
 TEST_F(VkPositiveLayerTest, ImmutableSamplerOnlyDescriptor) {
-    TEST_DESCRIPTION("Bind a DescriptorSet with only an immutable samplerand make sure that we don't warn for no update.");
+    TEST_DESCRIPTION("Bind a DescriptorSet with only an immutable sampler and make sure that we don't warn for no update.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -22861,7 +22855,7 @@ TEST_F(VkLayerTest, InvalidPushDescriptorSetLayout) {
         binding.descriptorCount = push_descriptor_prop.maxPushDescriptors + 1;
         test_create_ds_layout(VALIDATION_ERROR_05000232);
     } else {
-        printf("             maxPushDescriptors is set to maxiumum unit32_t value, skipping 'out of range test'.\n");
+        printf("             maxPushDescriptors is set to maximum unit32_t value, skipping 'out of range test'.\n");
     }
 }
 
@@ -22876,7 +22870,7 @@ TEST_F(VkLayerTest, PushDescriptorSetLayoutWithoutExtension) {
     ds_layout_ci.bindingCount = 1;
     ds_layout_ci.pBindings = &binding;
 
-    std::string error = "Attemped to use VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR in ";
+    std::string error = "Attempted to use VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR in ";
     error = error + "VkDescriptorSetLayoutCreateInfo::flags but its required extension ";
     error = error + VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME;
     error = error + " has not been enabled.";
@@ -23948,7 +23942,7 @@ TEST_F(VkPositiveLayerTest, TestAliasedMemoryTracking) {
 
     // NOW, destroy the buffer. Obviously, the resource no longer occupies this
     // memory. In fact, it was never used by the GPU.
-    // Just be be sure, wait for idle.
+    // Just be sure, wait for idle.
     vkDestroyBuffer(m_device->device(), buffer, NULL);
     vkDeviceWaitIdle(m_device->device());
 
@@ -23981,7 +23975,7 @@ TEST_F(VkPositiveLayerTest, TestAliasedMemoryTracking) {
     image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     image_create_info.flags = 0;
 
-    /* Create a mappable image.  It will be the texture if linear images are ok
+    /* Create a mappable image.  It will be the texture if linear images are OK
      * to be textures or it will be the staging image if they are not.
      */
     err = vkCreateImage(m_device->device(), &image_create_info, NULL, &image);
@@ -25826,7 +25820,7 @@ TEST_F(VkPositiveLayerTest, TwoQueueSubmitsSeparateQueuesWithSemaphoreAndOneFenc
 // This is a positive test.  No errors should be generated.
 TEST_F(VkPositiveLayerTest, TwoQueueSubmitsSeparateQueuesWithSemaphoreAndOneFenceQWIFence) {
     TEST_DESCRIPTION(
-        "Two command buffers, each in a separate QueueSubmit call submitted on separate queues, the second having a fencefollowed "
+        "Two command buffers, each in a separate QueueSubmit call submitted on separate queues, the second having a fence followed "
         "by a QueueWaitIdle.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -25929,7 +25923,7 @@ TEST_F(VkPositiveLayerTest, TwoQueueSubmitsSeparateQueuesWithSemaphoreAndOneFenc
 // This is a positive test.  No errors should be generated.
 TEST_F(VkPositiveLayerTest, TwoQueueSubmitsSeparateQueuesWithSemaphoreAndOneFenceTwoWFF) {
     TEST_DESCRIPTION(
-        "Two command buffers, each in a separate QueueSubmit call submitted on separate queues, the second having a fencefollowed "
+        "Two command buffers, each in a separate QueueSubmit call submitted on separate queues, the second having a fence followed "
         "by two consecutive WaitForFences calls on the same fence.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -27539,7 +27533,7 @@ TEST_F(VkPositiveLayerTest, Maintenance1Tests) {
 }
 
 TEST_F(VkLayerTest, DuplicateValidPNextStructures) {
-    TEST_DESCRIPTION("Create a pNext chain containing valid strutures, but with a duplicate structure type");
+    TEST_DESCRIPTION("Create a pNext chain containing valid structures, but with a duplicate structure type");
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
     if (DeviceExtensionSupported(gpu(), nullptr, VK_NV_DEDICATED_ALLOCATION_EXTENSION_NAME)) {
@@ -28815,7 +28809,7 @@ TEST_F(VkPositiveLayerTest, GetMemoryRequirements2) {
     buffer.init_no_mem(*m_device,
                        vk_testing::Buffer::create_info(1024, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT));
 
-    // Use extension to get buffer memory reqirements
+    // Use extension to get buffer memory requirements
     auto vkGetBufferMemoryRequirements2KHR = reinterpret_cast<PFN_vkGetBufferMemoryRequirements2KHR>(
         vkGetDeviceProcAddr(m_device->device(), "vkGetBufferMemoryRequirements2KHR"));
     ASSERT_TRUE(vkGetBufferMemoryRequirements2KHR != nullptr);
@@ -28955,7 +28949,7 @@ TEST_F(VkPositiveLayerTest, BindMemory2) {
 }
 
 TEST_F(VkPositiveLayerTest, MultiplaneImageTests) {
-    TEST_DESCRIPTION("Postive test of multiplane image operations");
+    TEST_DESCRIPTION("Positive test of multiplane image operations");
 
     // Enable KHR multiplane req'd extensions
     bool mp_extensions = InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,

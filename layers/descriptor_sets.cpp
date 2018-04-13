@@ -370,7 +370,7 @@ bool cvdescriptorset::DescriptorSetLayout::ValidateCreateInfo(
     if (push_descriptor_set && !push_descriptor_ext) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                         DRAWSTATE_EXTENSION_NOT_ENABLED,
-                        "Attemped to use %s in %s but its required extension %s has not been enabled.\n",
+                        "Attempted to use %s in %s but its required extension %s has not been enabled.\n",
                         "VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR", "VkDescriptorSetLayoutCreateInfo::flags",
                         VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
     }
