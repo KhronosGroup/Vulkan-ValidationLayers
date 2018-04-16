@@ -9167,10 +9167,25 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateRenderPass(VkDevice device, const VkRenderP
     //       ValidateLayouts.
     skip |= ValidateRenderpassAttachmentUsage(dev_data, pCreateInfo);
     for (uint32_t i = 0; i < pCreateInfo->dependencyCount; ++i) {
-        skip |= ValidateStageMaskGsTsEnables(dev_data, pCreateInfo->pDependencies[i].srcStageMask, "vkCreateRenderPass()",
-                                             VALIDATION_ERROR_13e006b8, VALIDATION_ERROR_13e006bc);
-        skip |= ValidateStageMaskGsTsEnables(dev_data, pCreateInfo->pDependencies[i].dstStageMask, "vkCreateRenderPass()",
-                                             VALIDATION_ERROR_13e006ba, VALIDATION_ERROR_13e006be);
+        auto const &dependency = pCreateInfo->pDependencies[i];
+        skip |= ValidateStageMaskGsTsEnables(dev_data, dependency.srcStageMask, "vkCreateRenderPass()", VALIDATION_ERROR_13e006b8,
+                                             VALIDATION_ERROR_13e006bc);
+        skip |= ValidateStageMaskGsTsEnables(dev_data, dependency.dstStageMask, "vkCreateRenderPass()", VALIDATION_ERROR_13e006ba,
+                                             VALIDATION_ERROR_13e006be);
+
+        if (!ValidateAccessMaskPipelineStage(dependency.srcAccessMask, dependency.srcStageMask)) {
+            skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                            VALIDATION_ERROR_13e006c8,
+                            "CreateRenderPass: pDependencies[%u].srcAccessMask (0x%X) is not supported by srcStageMask (0x%X).", i,
+                            dependency.srcAccessMask, dependency.srcStageMask);
+        }
+
+        if (!ValidateAccessMaskPipelineStage(dependency.dstAccessMask, dependency.dstStageMask)) {
+            skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                            VALIDATION_ERROR_13e006ca,
+                            "CreateRenderPass: pDependencies[%u].dstAccessMask (0x%X) is not supported by dstStageMask (0x%X).", i,
+                            dependency.dstAccessMask, dependency.dstStageMask);
+        }
     }
     if (!skip) {
         skip |= ValidateLayouts(dev_data, device, pCreateInfo);
