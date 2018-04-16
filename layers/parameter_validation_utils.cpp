@@ -191,6 +191,68 @@ static bool ValidateQueueFamilies(layer_data *device_data, uint32_t queue_family
     return skip;
 }
 
+static bool validate_api_version(const instance_layer_data *instance_data, uint32_t api_version, uint32_t effective_api_version) {
+    bool skip = false;
+    uint32_t api_version_nopatch = VK_MAKE_VERSION(VK_VERSION_MAJOR(api_version), VK_VERSION_MINOR(api_version), 0);
+    if (api_version_nopatch != effective_api_version) {
+        if (api_version_nopatch < VK_API_VERSION_1_0) {
+            skip |= log_msg(instance_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_INSTANCE_EXT,
+                            HandleToUint64(instance_data->instance), VALIDATION_ERROR_UNDEFINED,
+                            "Invalid CreateInstance->pCreateInfo->pApplicationInfo.apiVersion number (0x%08x). "
+                            "Using VK_API_VERSION_%" PRIu32 "_%" PRIu32 ".",
+                            api_version, VK_VERSION_MAJOR(effective_api_version), VK_VERSION_MINOR(effective_api_version));
+        } else {
+            skip |= log_msg(instance_data->report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_INSTANCE_EXT,
+                            HandleToUint64(instance_data->instance), VALIDATION_ERROR_UNDEFINED,
+                            "Unrecognized CreateInstance->pCreateInfo->pApplicationInfo.apiVersion number (0x%08x). "
+                            "Assuming VK_API_VERSION_%" PRIu32 "_%" PRIu32 ".",
+                            api_version, VK_VERSION_MAJOR(effective_api_version), VK_VERSION_MINOR(effective_api_version));
+        }
+    }
+    return skip;
+}
+
+template <typename ExtensionState>
+static bool validate_extension_reqs(const instance_layer_data *instance_data, const ExtensionState &extensions,
+                                    UNIQUE_VALIDATION_ERROR_CODE vuid, const char *extension_type, const char *extension_name) {
+    bool skip = false;
+    if (!extension_name) {
+        return skip;  // Robust to invalid char *
+    }
+    auto info = ExtensionState::get_info(extension_name);
+
+    if (!info.state) {
+        return skip;  // Unknown extensions cannot be checked so report OK
+    }
+
+    // Check agains the reqs list in the info
+    std::vector<const char *> missing;
+    for (const auto &req : info.requires) {
+        if (!(extensions.*(req.enabled))) {
+            missing.push_back(req.name);
+        }
+    }
+
+    // Report any missing requirements
+    if (missing.size()) {
+        std::string missing_joined_list = string_join(", ", missing);
+        skip |= log_msg(instance_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_INSTANCE_EXT,
+                        HandleToUint64(instance_data->instance), vuid, "Missing required extensions for %s extension %s, %s.",
+                        extension_type, extension_name, missing_joined_list.c_str());
+    }
+    return skip;
+}
+
+bool validate_instance_extensions(const instance_layer_data *instance_data, const VkInstanceCreateInfo *pCreateInfo) {
+    bool skip = false;
+    for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
+        skip |= validate_extension_reqs(instance_data, instance_data->extensions, VALIDATION_ERROR_21200ad8, "instance",
+                                        pCreateInfo->ppEnabledExtensionNames[i]);
+    }
+
+    return skip;
+}
+
 VKAPI_ATTR VkResult VKAPI_CALL vkCreateInstance(const VkInstanceCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator,
                                                 VkInstance *pInstance) {
     VkResult result = VK_ERROR_VALIDATION_FAILED_EXT;
@@ -265,25 +327,11 @@ VKAPI_ATTR VkResult VKAPI_CALL vkCreateInstance(const VkInstanceCreateInfo *pCre
 
         uint32_t effective_api_version = my_instance_data->extensions.InitFromInstanceCreateInfo(api_version, pCreateInfo);
 
-        uint32_t api_version_nopatch = VK_MAKE_VERSION(VK_VERSION_MAJOR(api_version), VK_VERSION_MINOR(api_version), 0);
-        if (api_version_nopatch != effective_api_version) {
-            const char *effective_api_string =
-                (effective_api_version == VK_API_VERSION_1_0) ? "VK_API_VERSION_1_0" : "VK_API_VERSION_1_1";
-            if (api_version_nopatch < VK_API_VERSION_1_0) {
-                log_msg(my_instance_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                        VALIDATION_ERROR_UNDEFINED,
-                        "Invalid CreateInstance->pCreateInfo->pApplicationInfo.apiVersion number (0x%08x). Using %s.\n",
-                        api_version, effective_api_string);
-            } else {
-                log_msg(my_instance_data->report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                        VALIDATION_ERROR_UNDEFINED,
-                        "Unrecognized CreateInstance->pCreateInfo->pApplicationInfo.apiVersion number (0x%08x). Assuming %s.\n",
-                        api_version, effective_api_string);
-            }
-        }
-
         // Ordinarily we'd check these before calling down the chain, but none of the layer support is in place until now, if we
         // survive we can report the issue now.
+        validate_api_version(my_instance_data, api_version, effective_api_version);
+        validate_instance_extensions(my_instance_data, pCreateInfo);
+
         parameter_validation_vkCreateInstance(*pInstance, pCreateInfo, pAllocator, pInstance);
 
         if (pCreateInfo->pApplicationInfo) {
@@ -431,9 +479,19 @@ VKAPI_ATTR void VKAPI_CALL vkDestroyDebugUtilsMessengerEXT(VkInstance instance, 
     }
 }
 
+template <typename ExtensionState>
+static bool extension_state_by_name(const ExtensionState &extensions, const char *extension_name) {
+    if (!extension_name) return false;  // null strings specify nothing
+    auto info = ExtensionState::get_info(extension_name);
+    bool state = info.state ? extensions.*(info.state) : false;  // unknown extensions can't be enabled in extension struct
+    return state;
+}
+
 static bool ValidateDeviceCreateInfo(instance_layer_data *instance_data, VkPhysicalDevice physicalDevice,
-                                     const VkDeviceCreateInfo *pCreateInfo) {
+                                     const VkDeviceCreateInfo *pCreateInfo, const DeviceExtensions &extensions) {
     bool skip = false;
+    bool maint1 = false;
+    bool negative_viewport = false;
 
     if ((pCreateInfo->enabledLayerCount > 0) && (pCreateInfo->ppEnabledLayerNames != NULL)) {
         for (size_t i = 0; i < pCreateInfo->enabledLayerCount; i++) {
@@ -442,16 +500,15 @@ static bool ValidateDeviceCreateInfo(instance_layer_data *instance_data, VkPhysi
         }
     }
 
-    bool maint1 = false;
-    bool negative_viewport = false;
-
     if ((pCreateInfo->enabledExtensionCount > 0) && (pCreateInfo->ppEnabledExtensionNames != NULL)) {
+        maint1 = extension_state_by_name(extensions, VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+        negative_viewport = extension_state_by_name(extensions, VK_AMD_NEGATIVE_VIEWPORT_HEIGHT_EXTENSION_NAME);
+
         for (size_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
             skip |= validate_string(instance_data->report_data, "vkCreateDevice", "pCreateInfo->ppEnabledExtensionNames",
                                     pCreateInfo->ppEnabledExtensionNames[i]);
-            if (strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_KHR_MAINTENANCE1_EXTENSION_NAME) == 0) maint1 = true;
-            if (strcmp(pCreateInfo->ppEnabledExtensionNames[i], VK_AMD_NEGATIVE_VIEWPORT_HEIGHT_EXTENSION_NAME) == 0)
-                negative_viewport = true;
+            skip |= validate_extension_reqs(instance_data, extensions, VALIDATION_ERROR_1fc00ad6, "device",
+                                            pCreateInfo->ppEnabledExtensionNames[i]);
         }
     }
 
@@ -526,11 +583,21 @@ VKAPI_ATTR VkResult VKAPI_CALL vkCreateDevice(VkPhysicalDevice physicalDevice, c
     bool skip = false;
     auto my_instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), instance_layer_data_map);
     assert(my_instance_data != nullptr);
+
+    // Query and save physical device limits for this device, needed for validation
+    VkPhysicalDeviceProperties device_properties = {};
+    my_instance_data->dispatch_table.GetPhysicalDeviceProperties(physicalDevice, &device_properties);
+
+    // Set up the extension structure also for validation.
+    DeviceExtensions extensions;
+    uint32_t api_version =
+        extensions.InitFromDeviceCreateInfo(&my_instance_data->extensions, device_properties.apiVersion, pCreateInfo);
+
     std::unique_lock<std::mutex> lock(global_lock);
 
     skip |= parameter_validation_vkCreateDevice(physicalDevice, pCreateInfo, pAllocator, pDevice);
 
-    if (pCreateInfo != NULL) skip |= ValidateDeviceCreateInfo(my_instance_data, physicalDevice, pCreateInfo);
+    if (pCreateInfo != NULL) skip |= ValidateDeviceCreateInfo(my_instance_data, physicalDevice, pCreateInfo, extensions);
 
     if (!skip) {
         VkLayerDeviceCreateInfo *chain_info = get_chain_info(pCreateInfo, VK_LAYER_LINK_INFO);
@@ -560,21 +627,8 @@ VKAPI_ATTR VkResult VKAPI_CALL vkCreateDevice(VkPhysicalDevice physicalDevice, c
             my_device_data->report_data = layer_debug_utils_create_device(my_instance_data->report_data, *pDevice);
             layer_init_device_dispatch_table(*pDevice, &my_device_data->dispatch_table, fpGetDeviceProcAddr);
 
-            // Query and save physical device limits for this device
-            VkPhysicalDeviceProperties device_properties = {};
-            my_instance_data->dispatch_table.GetPhysicalDeviceProperties(physicalDevice, &device_properties);
-
-            my_device_data->api_version = my_device_data->extensions.InitFromDeviceCreateInfo(
-                &my_instance_data->extensions, device_properties.apiVersion, pCreateInfo);
-
-            uint32_t specified_api_version = device_properties.apiVersion & ~VK_VERSION_PATCH(~0);
-            if (!(specified_api_version == VK_API_VERSION_1_0) && !(specified_api_version == VK_API_VERSION_1_1)) {
-                LOGCONSOLE(
-                    "Warning: Unrecognized CreateInstance->pCreateInfo->pApplicationInfo.apiVersion number -- (0x%8x) assuming "
-                    "%s.\n",
-                    device_properties.apiVersion,
-                    (my_device_data->api_version == VK_API_VERSION_1_0) ? "VK_API_VERSION_1_0" : "VK_API_VERSION_1_1");
-            }
+            my_device_data->api_version = api_version;
+            my_device_data->extensions = extensions;
 
             // Store createdevice data
             if ((pCreateInfo != nullptr) && (pCreateInfo->pQueueCreateInfos != nullptr)) {
