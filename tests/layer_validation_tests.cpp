@@ -18438,24 +18438,6 @@ TEST_F(VkLayerTest, ImageLayerUnsupportedFormat) {
     vkCreateImage(m_device->handle(), &image_create_info, NULL, &image);
     m_errorMonitor->VerifyFound();
 
-    // Look for a format that is COMPLETELY unsupported with this hardware
-    VkFormat unsupported = VK_FORMAT_UNDEFINED;
-    for (int f = VK_FORMAT_BEGIN_RANGE; f <= VK_FORMAT_END_RANGE; f++) {
-        VkFormat format = static_cast<VkFormat>(f);
-        VkFormatProperties fProps = m_device->format_properties(format);
-        if (format != VK_FORMAT_UNDEFINED && fProps.linearTilingFeatures == 0 && fProps.optimalTilingFeatures == 0) {
-            unsupported = format;
-            break;
-        }
-    }
-
-    if (unsupported != VK_FORMAT_UNDEFINED) {
-        image_create_info.format = unsupported;
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "is an unsupported format");
-
-        vkCreateImage(m_device->handle(), &image_create_info, NULL, &image);
-        m_errorMonitor->VerifyFound();
-    }
 }
 
 TEST_F(VkLayerTest, CreateImageViewFormatMismatchUnrelated) {
@@ -20068,71 +20050,9 @@ TEST_F(VkLayerTest, CreateImageFormatSupportErrors) {
             m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_09e00758);
             vkCreateImage(m_device->handle(), &image_ci, NULL, &null_image);
             m_errorMonitor->VerifyFound();
+
         } else {
-            printf(
-                "             Failed to find image unsupported by vkGetPhysicalDeviceImageFormatProperties; skipping part of "
-                "test.\n");
-        }
-    }
-
-    // usage unsupported by feature
-    {
-        const VkImageTiling kLinear = VK_IMAGE_TILING_LINEAR, kOptimal = VK_IMAGE_TILING_OPTIMAL;
-
-        VkFormat fmt_wo_linear = FindFormatWithoutFeatures(gpu(), kLinear);
-        VkFormat fmt_wo_linear_sampled = FindFormatWithoutFeatures(gpu(), kLinear, VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT);
-        VkFormat fmt_wo_linear_storage = FindFormatWithoutFeatures(gpu(), kLinear, VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT);
-        VkFormat fmt_wo_linear_color = FindFormatWithoutFeatures(gpu(), kLinear, VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT);
-        VkFormat fmt_wo_linear_depth = FindFormatWithoutFeatures(gpu(), kLinear, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
-        VkFormat fmt_wo_optimal = FindFormatWithoutFeatures(gpu(), kOptimal);
-        VkFormat fmt_wo_optimal_sampled = FindFormatWithoutFeatures(gpu(), kOptimal, VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT);
-        VkFormat fmt_wo_optimal_storage = FindFormatWithoutFeatures(gpu(), kOptimal, VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT);
-        VkFormat fmt_wo_optimal_color = FindFormatWithoutFeatures(gpu(), kOptimal, VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT);
-        VkFormat fmt_wo_optimal_depth = FindFormatWithoutFeatures(gpu(), kOptimal, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
-
-        struct FeaturesTestCase {
-            VkFormat format;
-            VkImageTiling tiling;
-            VkImageUsageFlags usage;
-
-            UNIQUE_VALIDATION_ERROR_CODE veid;
-            bool support_checked;
-        };
-
-        const bool kSupportChecked = true, kSupportCheckSkipped = false;
-        const VkImageUsageFlags kSampled = VK_IMAGE_USAGE_SAMPLED_BIT, kStorage = VK_IMAGE_USAGE_STORAGE_BIT,
-                                kColor = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, kDepth = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-        const std::vector<FeaturesTestCase> test_cases = {
-            {fmt_wo_linear, kLinear, safe_image_ci.usage, VALIDATION_ERROR_09e007a2, kSupportCheckSkipped},
-            {fmt_wo_linear_sampled, kLinear, kSampled, VALIDATION_ERROR_09e007a4, kSupportChecked},
-            {fmt_wo_linear_storage, kLinear, kStorage, VALIDATION_ERROR_09e007a6, kSupportChecked},
-            {fmt_wo_linear_color, kLinear, kColor, VALIDATION_ERROR_09e007a8, kSupportChecked},
-            {fmt_wo_linear_depth, kLinear, kDepth, VALIDATION_ERROR_09e007aa, kSupportChecked},
-            {fmt_wo_optimal, kOptimal, safe_image_ci.usage, VALIDATION_ERROR_09e007ac, kSupportCheckSkipped},
-            {fmt_wo_optimal_sampled, kOptimal, kSampled, VALIDATION_ERROR_09e007ae, kSupportChecked},
-            {fmt_wo_optimal_storage, kOptimal, kStorage, VALIDATION_ERROR_09e007b0, kSupportChecked},
-            {fmt_wo_optimal_color, kOptimal, kColor, VALIDATION_ERROR_09e007b2, kSupportChecked},
-            {fmt_wo_optimal_depth, kOptimal, kDepth, VALIDATION_ERROR_09e007b4, kSupportChecked}};
-
-        for (const FeaturesTestCase &test_case : test_cases) {
-            if (test_case.format) {
-                VkImageCreateInfo image_ci = safe_image_ci;
-                image_ci.tiling = test_case.tiling;
-                image_ci.usage = test_case.usage;
-                image_ci.format = test_case.format;
-
-                VkImageFormatProperties tmp_img_limits;
-                const auto support = GPDIFPHelper(gpu(), &image_ci, &tmp_img_limits);
-                ASSERT_TRUE(support == VK_SUCCESS || support == VK_ERROR_FORMAT_NOT_SUPPORTED);
-
-                m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, test_case.veid);
-                if (test_case.support_checked && support != VK_SUCCESS)
-                    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_09e00758);
-                vkCreateImage(m_device->handle(), &image_ci, NULL, &null_image);
-                m_errorMonitor->VerifyFound();
-            } else {
-                printf("             Could not find suitable format; skipping part of test.\n");
-            }
+            printf("             Failed to find image unsupported by vkGetPhysicalDeviceImageFormatProperties; skipping test.\n");
         }
     }
 }

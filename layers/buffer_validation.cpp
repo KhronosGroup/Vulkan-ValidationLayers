@@ -707,66 +707,7 @@ bool PreCallValidateCreateImage(layer_data *device_data, const VkImageCreateInfo
         return skip;
     }
 
-    bool optimal_tiling = (VK_IMAGE_TILING_OPTIMAL == pCreateInfo->tiling);
-    const char *tiling_string = string_VkImageTiling(pCreateInfo->tiling);
     const char *format_string = string_VkFormat(pCreateInfo->format);
-    VkFormatProperties properties = GetFormatProperties(device_data, pCreateInfo->format);
-    VkFormatFeatureFlags features = (optimal_tiling ? properties.optimalTilingFeatures : properties.linearTilingFeatures);
-
-    if (0 == features) {
-        std::stringstream ss;
-        UNIQUE_VALIDATION_ERROR_CODE vuid = (optimal_tiling ? VALIDATION_ERROR_09e007ac : VALIDATION_ERROR_09e007a2);
-        ss << "vkCreateImage format parameter " << format_string << " is an unsupported format";
-        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, vuid, "%s.",
-                        ss.str().c_str());
-        return skip;
-    }
-
-    // TODO: Add checks for EXTENDED_USAGE images to validate images are compatible
-    // For EXTENDED_USAGE images, any usage bit set for any format compatible with image format becomes legal
-    // For now we'll just avoid the usage bit checks for EXTENDED_USAGE images, pending an implementation of
-    // an exhaustive search of compatible formats
-    if (!GetDeviceExtensions(device_data)->vk_khr_maintenance2 || !(pCreateInfo->flags & VK_IMAGE_CREATE_EXTENDED_USAGE_BIT_KHR)) {
-        if ((pCreateInfo->usage & VK_IMAGE_USAGE_SAMPLED_BIT) && !(features & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT)) {
-            std::stringstream ss;
-            UNIQUE_VALIDATION_ERROR_CODE vuid = (optimal_tiling ? VALIDATION_ERROR_09e007ae : VALIDATION_ERROR_09e007a4);
-            ss << "vkCreateImage: usage bit VK_IMAGE_USAGE_SAMPLED_BIT is not supported for format " << format_string
-               << " with tiling " << tiling_string;
-            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, vuid, "%s.",
-                            ss.str().c_str());
-        }
-
-        if ((pCreateInfo->usage & VK_IMAGE_USAGE_STORAGE_BIT) && !(features & VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT)) {
-            std::stringstream ss;
-            UNIQUE_VALIDATION_ERROR_CODE vuid = (optimal_tiling ? VALIDATION_ERROR_09e007b0 : VALIDATION_ERROR_09e007a6);
-            ss << "vkCreateImage: usage bit VK_IMAGE_USAGE_STORAGE_BIT is not supported for format " << format_string
-               << " with tiling " << tiling_string;
-            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, vuid, "%s.",
-                            ss.str().c_str());
-        }
-
-        // Validate that format supports usage as color attachment
-        if ((pCreateInfo->usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) &&
-            (0 == (features & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT))) {
-            UNIQUE_VALIDATION_ERROR_CODE vuid = (optimal_tiling ? VALIDATION_ERROR_09e007b2 : VALIDATION_ERROR_09e007a8);
-            std::stringstream ss;
-            ss << "vkCreateImage: usage bit VK_IMAGE_USAGE_COLOR_ATTACHMENT is not supported for format " << format_string
-               << " with tiling " << tiling_string;
-            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, vuid, "%s.",
-                            ss.str().c_str());
-        }
-
-        // Validate that format supports usage as depth/stencil attachment
-        if ((pCreateInfo->usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) &&
-            (0 == (features & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT))) {
-            UNIQUE_VALIDATION_ERROR_CODE vuid = (optimal_tiling ? VALIDATION_ERROR_09e007b4 : VALIDATION_ERROR_09e007aa);
-            std::stringstream ss;
-            ss << "vkCreateImage: usage bit VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT is not supported for format " << format_string
-               << " with tiling " << tiling_string;
-            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, vuid, "%s.",
-                            ss.str().c_str());
-        }
-    }
 
     if ((pCreateInfo->flags & VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT) && (VK_IMAGE_TYPE_2D != pCreateInfo->imageType)) {
         std::stringstream ss;
