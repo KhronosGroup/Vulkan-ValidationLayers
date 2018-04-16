@@ -485,12 +485,6 @@ class VkLayerTest : public VkRenderFramework {
 
         // Add default instance extensions to the list
         m_instance_extension_names.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
-#ifdef _WIN32
-        m_instance_extension_names.push_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
-#endif
-#ifdef VK_USE_PLATFORM_XCB_KHR
-        m_instance_extension_names.push_back(VK_KHR_XCB_SURFACE_EXTENSION_NAME);
-#endif
 
         // Use Threading layer first to protect others from
         // ThreadCommandBufferCollision test
@@ -12216,6 +12210,17 @@ TEST_F(VkLayerTest, InvalidBarrierQueueFamily) {
 
 TEST_F(VkLayerTest, InvalidBarrierQueueFamilyWithMemExt) {
     TEST_DESCRIPTION("Create and submit barriers with invalid queue families when memory extension is enabled ");
+    std::vector<const char *> reqd_instance_extensions = {
+        {VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME, VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME}};
+    for (auto extension_name : reqd_instance_extensions) {
+        if (InstanceExtensionSupported(extension_name)) {
+            m_instance_extension_names.push_back(extension_name);
+        } else {
+            printf("             Required instance extension %s not supported, skipping test\n", extension_name);
+            return;
+        }
+    }
+
     ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
     // Check for external memory device extensions
     if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME)) {
@@ -22975,6 +22980,16 @@ TEST_F(VkLayerTest, DescriptorIndexingSetLayoutWithoutExtension) {
 TEST_F(VkLayerTest, DescriptorIndexingSetLayout) {
     TEST_DESCRIPTION("Exercise various create/allocate-time errors related to VK_EXT_descriptor_indexing.");
 
+    std::array<const char *, 2> reqd_instance_extensions = {
+        {VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME, VK_KHR_MAINTENANCE3_EXTENSION_NAME}};
+    for (auto instance_ext : reqd_instance_extensions) {
+        if (InstanceExtensionSupported(instance_ext)) {
+            m_instance_extension_names.push_back(instance_ext);
+        } else {
+            printf("             Did not find required instance extension %s; skipped.\n", instance_ext);
+            return;
+        }
+    }
     ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
     if (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
@@ -28501,21 +28516,25 @@ TEST_F(VkPositiveLayerTest, ExternalMemory) {
     TEST_DESCRIPTION("Perform a copy through a pair of buffers linked by external memory");
 
 #ifdef _WIN32
-    const auto extension_name = VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME;
+    const auto ext_mem_extension_name = VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME;
     const auto handle_type = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT_KHR;
 #else
-    const auto extension_name = VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME;
+    const auto ext_mem_extension_name = VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME;
     const auto handle_type = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT_KHR;
 #endif
 
     // Check for external memory instance extensions
-    if (InstanceExtensionSupported(VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME)) {
-        m_instance_extension_names.push_back(VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME);
-        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    } else {
-        printf("             External memory extension not supported, skipping test\n");
-        return;
+    std::vector<const char *> reqd_instance_extensions = {
+        {VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME, VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME}};
+    for (auto extension_name : reqd_instance_extensions) {
+        if (InstanceExtensionSupported(extension_name)) {
+            m_instance_extension_names.push_back(extension_name);
+        } else {
+            printf("             Required instance extension %s not supported, skipping test\n", extension_name);
+            return;
+        }
     }
+
     ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
 
     // Check for import/export capability
@@ -28547,8 +28566,8 @@ TEST_F(VkPositiveLayerTest, ExternalMemory) {
     }
 
     // Check for external memory device extensions
-    if (DeviceExtensionSupported(gpu(), nullptr, extension_name)) {
-        m_device_extension_names.push_back(extension_name);
+    if (DeviceExtensionSupported(gpu(), nullptr, ext_mem_extension_name)) {
+        m_device_extension_names.push_back(ext_mem_extension_name);
         m_device_extension_names.push_back(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
     } else {
         printf("             External memory extension not supported, skipping test\n");
