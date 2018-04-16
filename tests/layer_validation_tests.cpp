@@ -18592,7 +18592,6 @@ TEST_F(VkLayerTest, ImageLayerUnsupportedFormat) {
     VkImage image;
     vkCreateImage(m_device->handle(), &image_create_info, NULL, &image);
     m_errorMonitor->VerifyFound();
-
 }
 
 TEST_F(VkLayerTest, CreateImageViewFormatMismatchUnrelated) {
@@ -18736,6 +18735,112 @@ TEST_F(VkLayerTest, CreateImageViewDifferentClass) {
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_0ac007f4);
     vkCreateImageView(m_device->handle(), &imgViewInfo, NULL, &imgView);
     m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkLayerTest, MultiplaneIncompatibleViewFormat) {
+    TEST_DESCRIPTION("Postive test of multiplane format compatibility checks");
+
+    // Enable KHR multiplane req'd extensions
+    bool mp_extensions = InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,
+                                                    VK_KHR_GET_MEMORY_REQUIREMENTS_2_SPEC_VERSION);
+    if (mp_extensions) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    }
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
+    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
+    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+    if (mp_extensions) {
+        m_device_extension_names.push_back(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+    } else {
+        printf("             test requires KHR multiplane extensions, not available.  Skipping.\n");
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    VkImageCreateInfo ci = {};
+    ci.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    ci.pNext = NULL;
+    ci.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
+    ci.imageType = VK_IMAGE_TYPE_2D;
+    ci.format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM;
+    ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    ci.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+    ci.extent = {128, 128, 1};
+    ci.mipLevels = 1;
+    ci.arrayLayers = 1;
+    ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+    // Verify format
+    VkFormatFeatureFlags features = VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT;
+    bool supported = ImageFormatAndFeaturesSupported(instance(), gpu(), ci, features);
+    if (!supported) {
+        printf("             Multiplane image format not supported.  Skipping test.\n");
+        return;
+    }
+
+    VkImage image;
+    ASSERT_VK_SUCCESS(vkCreateImage(device(), &ci, NULL, &image));
+
+    // Allocate & bind memory
+    VkPhysicalDeviceMemoryProperties phys_mem_props;
+    vkGetPhysicalDeviceMemoryProperties(gpu(), &phys_mem_props);
+    VkMemoryRequirements mem_reqs;
+    vkGetImageMemoryRequirements(device(), image, &mem_reqs);
+    VkDeviceMemory mem_obj = VK_NULL_HANDLE;
+    VkMemoryPropertyFlagBits mem_props = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+    for (uint32_t type = 0; type < phys_mem_props.memoryTypeCount; type++) {
+        if ((mem_reqs.memoryTypeBits & (1 << type)) &&
+            ((phys_mem_props.memoryTypes[type].propertyFlags & mem_props) == mem_props)) {
+            VkMemoryAllocateInfo alloc_info = {};
+            alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+            alloc_info.allocationSize = mem_reqs.size;
+            alloc_info.memoryTypeIndex = type;
+            ASSERT_VK_SUCCESS(vkAllocateMemory(device(), &alloc_info, NULL, &mem_obj));
+            break;
+        }
+    }
+
+    if (VK_NULL_HANDLE == mem_obj) {
+        printf("             Unable to allocate image memory. Skipping test.\n");
+        vkDestroyImage(device(), image, NULL);
+        return;
+    }
+    ASSERT_VK_SUCCESS(vkBindImageMemory(device(), image, mem_obj, 0));
+
+    VkImageViewCreateInfo ivci = {};
+    ivci.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    ivci.image = image;
+    ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    ivci.format = VK_FORMAT_R8_SNORM;  // Compat is VK_FORMAT_R8_UNORM
+    ivci.subresourceRange.layerCount = 1;
+    ivci.subresourceRange.baseMipLevel = 0;
+    ivci.subresourceRange.levelCount = 1;
+    ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_PLANE_1_BIT;
+
+    // Incompatible format error
+    VkImageView imageView = VK_NULL_HANDLE;
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_0ac00c64);
+    vkCreateImageView(m_device->device(), &ivci, NULL, &imageView);
+    m_errorMonitor->VerifyFound();
+
+    // Correct format succeeds
+    ivci.format = VK_FORMAT_R8_UNORM;
+    m_errorMonitor->ExpectSuccess();
+    vkCreateImageView(m_device->device(), &ivci, NULL, &imageView);
+    m_errorMonitor->VerifyNotFound();
+
+    if (VK_NULL_HANDLE != imageView) {
+        vkDestroyImageView(m_device->device(), imageView, NULL);
+    }
+    vkFreeMemory(device(), mem_obj, NULL);
+    vkDestroyImage(m_device->device(), image, NULL);
 }
 
 TEST_F(VkLayerTest, CreateImageViewInvalidSubresourceRange) {
