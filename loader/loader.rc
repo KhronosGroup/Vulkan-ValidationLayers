@@ -86,7 +86,7 @@ BEGIN
         BEGIN
             VALUE "FileDescription", VER_FILE_DESCRIPTION_STR
             VALUE "FileVersion", VER_FILE_VERSION_STR
-            VALUE "LegalCopyright", "Copyright (C) 2015-2017"
+            VALUE "LegalCopyright", "Copyright (C) 2015-2018"
             VALUE "ProductName", "Vulkan Runtime"
             VALUE "ProductVersion", VER_FILE_VERSION_STR
         END
