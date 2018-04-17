@@ -13584,14 +13584,16 @@ TEST_F(VkPositiveLayerTest, ConfirmNoVLErrorWhenVkCmdClearAttachmentsCalledInSec
     color_attachment.colorAttachment = 0;
     VkClearRect clear_rect = {{{0, 0}, {(uint32_t)m_width, (uint32_t)m_height}}, 0, 1};
     vkCmdClearAttachments(secondary.handle(), 1, &color_attachment, 1, &clear_rect);
-    m_errorMonitor->VerifyNotFound();
     secondary.end();
+    // Modify clear rect here to verify that it doesn't cause validation error
+    clear_rect = {{{0, 0}, {99999999, 99999999}}, 0, 0};
 
     m_commandBuffer->begin();
     vkCmdBeginRenderPass(m_commandBuffer->handle(), &m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
     vkCmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary.handle());
     vkCmdEndRenderPass(m_commandBuffer->handle());
     m_commandBuffer->end();
+    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkLayerTest, CmdClearAttachmentTests) {
