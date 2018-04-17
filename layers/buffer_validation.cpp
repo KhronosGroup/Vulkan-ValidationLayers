@@ -2198,8 +2198,10 @@ bool PreCallValidateCmdClearAttachments(layer_data *device_data, VkCommandBuffer
                                         j);
                         }
                     } else {
+                        const auto local_rect =
+                            pRects[j].rect;  // local copy of rect captured by value below to preserve original contents
                         cb_node->cmd_execute_commands_functions.emplace_back([=](GLOBAL_CB_NODE *prim_cb, VkFramebuffer fb) {
-                            if (false == ContainsRect(prim_cb->activeRenderPassBeginInfo.renderArea, pRects[j].rect)) {
+                            if (false == ContainsRect(prim_cb->activeRenderPassBeginInfo.renderArea, local_rect)) {
                                 return log_msg(
                                     report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                                     HandleToUint64(commandBuffer), VALIDATION_ERROR_18600020,
