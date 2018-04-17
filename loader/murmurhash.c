@@ -74,9 +74,10 @@ uint32_t murmurhash(const char *key, size_t len, uint32_t seed) {
     switch (len & 3) {  // `len % 4'
         case 3:
             k ^= (tail[2] << 16);
+            // fall through
         case 2:
             k ^= (tail[1] << 8);
-
+            // fall through
         case 1:
             k ^= tail[0];
             k *= c1;

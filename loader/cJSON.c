@@ -312,12 +312,15 @@ static const char *parse_string(cJSON *item, const char *str) {
                         case 4:
                             *--ptr2 = ((uc | 0x80) & 0xBF);
                             uc >>= 6;
+                            // fall through
                         case 3:
                             *--ptr2 = ((uc | 0x80) & 0xBF);
                             uc >>= 6;
+                            // fall through
                         case 2:
                             *--ptr2 = ((uc | 0x80) & 0xBF);
                             uc >>= 6;
+                            // fall through
                         case 1:
                             *--ptr2 = ((unsigned char)uc | firstByteMark[len]);
                     }
