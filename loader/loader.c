@@ -2709,12 +2709,10 @@ static VkResult loader_read_json_layer(const struct loader_instance *inst, struc
             strncpy(props->functions.str_gipa, vkGetInstanceProcAddr, sizeof(props->functions.str_gipa));
             if (version.major > 1 || version.minor >= 1) {
                 loader_log(inst, VK_DEBUG_REPORT_WARNING_BIT_EXT, 0,
-                           "Indicating layer-specific vkGetInstanceProcAddr "
-                           "function is deprecated starting with JSON file "
-                           "version 1.1.0.  Instead, use the new "
-                           "vkNegotiateLayerInterfaceVersion function to "
-                           "return the GetInstanceProcAddr function for this"
-                           "layer");
+                           "Layer \"%s\" using deprecated \'vkGetInstanceProcAddr\' tag which was deprecated starting with JSON "
+                           "file version 1.1.0.  Instead, use the new vkNegotiateLayerInterfaceVersion function to return the "
+                           "GetInstanceProcAddr function for this layer.",
+                           name);
             }
         }
         props->functions.str_gipa[sizeof(props->functions.str_gipa) - 1] = '\0';
@@ -2722,12 +2720,10 @@ static VkResult loader_read_json_layer(const struct loader_instance *inst, struc
             strncpy(props->functions.str_gdpa, vkGetDeviceProcAddr, sizeof(props->functions.str_gdpa));
             if (version.major > 1 || version.minor >= 1) {
                 loader_log(inst, VK_DEBUG_REPORT_WARNING_BIT_EXT, 0,
-                           "Indicating layer-specific vkGetDeviceProcAddr "
-                           "function is deprecated starting with JSON file "
-                           "version 1.1.0.  Instead, use the new "
-                           "vkNegotiateLayerInterfaceVersion function to "
-                           "return the GetDeviceProcAddr function for this"
-                           "layer");
+                           "Layer \"%s\" using deprecated \'vkGetDeviceProcAddr\' tag which was deprecated starting with JSON "
+                           "file version 1.1.0.  Instead, use the new vkNegotiateLayerInterfaceVersion function to return the "
+                           "GetDeviceProcAddr function for this layer.",
+                           name);
             }
         }
         props->functions.str_gdpa[sizeof(props->functions.str_gdpa) - 1] = '\0';
