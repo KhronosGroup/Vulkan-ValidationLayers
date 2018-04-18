@@ -2,6 +2,10 @@
 # refer to the root source directory of the project as ${VULKAN_SOURCE_DIR} and
 # to the root binary directory of the project as ${VULKAN_BINARY_DIR}.
 cmake_minimum_required(VERSION 2.8.11)
+
+# This must come before the project command.
+set(CMAKE_OSX_DEPLOYMENT_TARGET "10.12" CACHE STRING "Minimum OS X deployment version")
+
 project (VULKAN)
 # set (CMAKE_VERBOSE_MAKEFILE 1)
 
