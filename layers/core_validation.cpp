@@ -1592,18 +1592,14 @@ static bool validateIdleDescriptorSetForPoolReset(const layer_data *dev_data, co
     if (dev_data->instance_data->disabled.idle_descriptor_set) return false;
     bool skip = false;
     DESCRIPTOR_POOL_STATE *pPool = GetDescriptorPoolState(dev_data, pool);
-    for (auto ds : pPool->sets) {
-        if (ds != VK_NULL_HANDLE) {
-            auto set_node = dev_data->setMap.find(ds->GetSet());
-            if (set_node != dev_data->setMap.end()) {
-                if (set_node->second->in_use.load()) {
-                    skip |=
-                        log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+    if (pPool != nullptr) {
+        for (auto ds : pPool->sets) {
+            if (ds && ds->in_use.load()) {
+                skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT,
                                 VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_POOL_EXT, HandleToUint64(pool), VALIDATION_ERROR_32a00272,
                                 "It is invalid to call vkResetDescriptorPool() with descriptor sets in use by a command buffer. %s",
                                 validation_error_map[VALIDATION_ERROR_32a00272]);
-                    if (skip) break;
-                }
+                if (skip) break;
             }
         }
     }
@@ -5759,16 +5755,20 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDescriptorPool(VkDevice device, const VkDes
 
 VKAPI_ATTR VkResult VKAPI_CALL ResetDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool,
                                                    VkDescriptorPoolResetFlags flags) {
-    lock_guard_t lock(global_lock);
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
 
+    unique_lock_t lock(global_lock);
     // Make sure sets being destroyed are not currently in-use
     bool skip = validateIdleDescriptorSetForPoolReset(dev_data, descriptorPool);
+    lock.unlock();
+
     if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
 
     VkResult result = dev_data->dispatch_table.ResetDescriptorPool(device, descriptorPool, flags);
     if (VK_SUCCESS == result) {
+        lock.lock();
         clearDescriptorPool(dev_data, device, descriptorPool, flags);
+        lock.unlock();
     }
     return result;
 }

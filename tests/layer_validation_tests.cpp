@@ -8412,13 +8412,13 @@ TEST_F(VkLayerTest, DescriptorPoolInUseResetSignaled) {
 
     VkDescriptorPoolCreateInfo ds_pool_ci = {};
     ds_pool_ci.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    ds_pool_ci.pNext = NULL;
+    ds_pool_ci.pNext = nullptr;
     ds_pool_ci.maxSets = 1;
     ds_pool_ci.poolSizeCount = 1;
     ds_pool_ci.pPoolSizes = &ds_type_count;
 
     VkDescriptorPool ds_pool;
-    VkResult err = vkCreateDescriptorPool(m_device->device(), &ds_pool_ci, NULL, &ds_pool);
+    VkResult err = vkCreateDescriptorPool(m_device->device(), &ds_pool_ci, nullptr, &ds_pool);
     ASSERT_VK_SUCCESS(err);
 
     VkDescriptorSetLayoutBinding dsl_binding = {};
@@ -8426,7 +8426,7 @@ TEST_F(VkLayerTest, DescriptorPoolInUseResetSignaled) {
     dsl_binding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     dsl_binding.descriptorCount = 1;
     dsl_binding.stageFlags = VK_SHADER_STAGE_ALL;
-    dsl_binding.pImmutableSamplers = NULL;
+    dsl_binding.pImmutableSamplers = nullptr;
 
     const VkDescriptorSetLayoutObj ds_layout(m_device, {dsl_binding});
 
@@ -8450,7 +8450,7 @@ TEST_F(VkLayerTest, DescriptorPoolInUseResetSignaled) {
     // Create Sampler
     VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
     VkSampler sampler;
-    err = vkCreateSampler(m_device->device(), &sampler_ci, NULL, &sampler);
+    err = vkCreateSampler(m_device->device(), &sampler_ci, nullptr, &sampler);
     ASSERT_VK_SUCCESS(err);
     // Update descriptor with image and sampler
     VkDescriptorImageInfo img_info = {};
@@ -8467,7 +8467,7 @@ TEST_F(VkLayerTest, DescriptorPoolInUseResetSignaled) {
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     descriptor_write.pImageInfo = &img_info;
 
-    vkUpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+    vkUpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, nullptr);
 
     // Create PSO to be used for draw-time errors below
     char const *vsSource =
@@ -8496,7 +8496,7 @@ TEST_F(VkLayerTest, DescriptorPoolInUseResetSignaled) {
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     vkCmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
     vkCmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
-                            &descriptor_set, 0, NULL);
+                            &descriptor_set, 0, nullptr);
 
     VkViewport viewport = {0, 0, 16, 16, 0, 1};
     VkRect2D scissor = {{0, 0}, {16, 16}};
@@ -8518,11 +8518,11 @@ TEST_F(VkLayerTest, DescriptorPoolInUseResetSignaled) {
     m_errorMonitor->VerifyFound();
     vkQueueWaitIdle(m_device->m_queue);
     // Cleanup
-    vkDestroySampler(m_device->device(), sampler, NULL);
+    vkDestroySampler(m_device->device(), sampler, nullptr);
     m_errorMonitor->SetUnexpectedError(
         "If descriptorPool is not VK_NULL_HANDLE, descriptorPool must be a valid VkDescriptorPool handle");
     m_errorMonitor->SetUnexpectedError("Unable to remove DescriptorPool obj");
-    vkDestroyDescriptorPool(m_device->device(), ds_pool, NULL);
+    vkDestroyDescriptorPool(m_device->device(), ds_pool, nullptr);
 }
 
 TEST_F(VkLayerTest, DescriptorImageUpdateNoMemoryBound) {
