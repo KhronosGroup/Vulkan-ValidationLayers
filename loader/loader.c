@@ -5177,6 +5177,8 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateInstance(const VkInstanceCreateI
         // If any error happens after here, we need to remove the ICD from the list,
         // because we've already added it, but haven't validated it
 
+        // Make sure that we reset the pApplicationInfo so we don't get an old pointer
+        icd_create_info.pApplicationInfo = pCreateInfo->pApplicationInfo;
         icd_create_info.enabledExtensionCount = 0;
         struct loader_extension_list icd_exts;
 
