@@ -9803,7 +9803,10 @@ static bool ValidateMappedMemoryRangeDeviceLimits(layer_data *dev_data, const ch
                             ", which is not a multiple of VkPhysicalDeviceLimits::nonCoherentAtomSize (0x%" PRIxLEAST64 ").",
                             func_name, i, mem_ranges[i].offset, atom_size);
         }
-        if ((mem_ranges[i].size != VK_WHOLE_SIZE) && (SafeModulo(mem_ranges[i].size, atom_size) != 0)) {
+        auto mem_info = GetMemObjInfo(dev_data, mem_ranges[i].memory);
+        if ((mem_ranges[i].size != VK_WHOLE_SIZE) &&
+            (mem_ranges[i].size + mem_ranges[i].offset != mem_info->alloc_info.allocationSize) &&
+            (SafeModulo(mem_ranges[i].size, atom_size) != 0)) {
             skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_MEMORY_EXT,
                             HandleToUint64(mem_ranges->memory), VALIDATION_ERROR_0c200adc,
                             "%s: Size in pMemRanges[%d] is 0x%" PRIxLEAST64
@@ -9818,6 +9821,7 @@ static bool PreCallValidateFlushMappedMemoryRanges(layer_data *dev_data, uint32_
                                                    const VkMappedMemoryRange *mem_ranges) {
     bool skip = false;
     lock_guard_t lock(global_lock);
+    skip |= ValidateMappedMemoryRangeDeviceLimits(dev_data, "vkFlushMappedMemoryRanges", mem_range_count, mem_ranges);
     skip |= ValidateAndCopyNoncoherentMemoryToDriver(dev_data, mem_range_count, mem_ranges);
     skip |= validateMemoryIsMapped(dev_data, "vkFlushMappedMemoryRanges", mem_range_count, mem_ranges);
     return skip;
@@ -9838,6 +9842,7 @@ static bool PreCallValidateInvalidateMappedMemoryRanges(layer_data *dev_data, ui
                                                         const VkMappedMemoryRange *mem_ranges) {
     bool skip = false;
     lock_guard_t lock(global_lock);
+    skip |= ValidateMappedMemoryRangeDeviceLimits(dev_data, "vkInvalidateMappedMemoryRanges", mem_range_count, mem_ranges);
     skip |= validateMemoryIsMapped(dev_data, "vkInvalidateMappedMemoryRanges", mem_range_count, mem_ranges);
     return skip;
 }
