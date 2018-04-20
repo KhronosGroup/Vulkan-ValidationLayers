@@ -1,6 +1,8 @@
 cmake_minimum_required (VERSION 2.8.11)
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     add_definitions(-DVK_USE_PLATFORM_WIN32_KHR -DVK_USE_PLATFORM_WIN32_KHX -DWIN32_LEAN_AND_MEAN)
+    add_custom_target(mk_layer_config_dir ALL COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>)
+    set_target_properties(mk_layer_config_dir PROPERTIES FOLDER ${LVL_TARGET_FOLDER})
     set(DisplayServer Win32)
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Android")
     add_definitions(-DVK_USE_PLATFORM_ANDROID_KHR -DVK_USE_PLATFORM_ANDROID_KHX)
@@ -48,8 +50,9 @@ if (WIN32)
         if (CMAKE_GENERATOR MATCHES "^Visual Studio.*")
             foreach (config_file ${LAYER_JSON_FILES})
                 FILE(TO_NATIVE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/windows/${config_file}.json src_json)
-                FILE(TO_NATIVE_PATH ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIGURATION>/${config_file}.json dst_json)
+                FILE(TO_NATIVE_PATH ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/${config_file}.json dst_json)
                 add_custom_target(${config_file}-json ALL
+                    DEPENDS mk_layer_config_dir
                     COMMAND copy ${src_json} ${dst_json}
                     VERBATIM
                     )
