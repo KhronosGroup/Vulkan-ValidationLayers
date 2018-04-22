@@ -131,7 +131,7 @@ if ((Win32) OR (NOT (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_CURRENT_BINARY_DIR)
 endif()
 
 # Add targets for JSON file install on Linux.
-# Need to remove the "./" from the library path before installing to /etc.
+# Need to remove the "./" from the library path before installing to system directories.
 if(UNIX)
     if(INSTALL_LVL_FILES)
         foreach (config_file ${LAYER_JSON_FILES})
@@ -142,7 +142,7 @@ if(UNIX)
                 VERBATIM
                 DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/linux/${config_file}.json
                 )
-            install(FILES ${CMAKE_CURRENT_BINARY_DIR}/staging-json/${config_file}.json DESTINATION ${CMAKE_INSTALL_SYSCONFDIR}/vulkan/explicit_layer.d)
+            install(FILES ${CMAKE_CURRENT_BINARY_DIR}/staging-json/${config_file}.json DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/vulkan/explicit_layer.d)
         endforeach(config_file)
     endif()
 endif()
