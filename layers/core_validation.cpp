@@ -4150,6 +4150,10 @@ VKAPI_ATTR void VKAPI_CALL GetImageSparseMemoryRequirements(VkDevice device, VkI
 
 static void PostCallRecordGetImageSparseMemoryRequirements2(IMAGE_STATE *image_state, uint32_t req_count,
                                                             VkSparseImageMemoryRequirements2KHR *reqs) {
+    // reqs is empty, so there is nothing to loop over and read.
+    if (reqs == nullptr) {
+        return;
+    }
     std::vector<VkSparseImageMemoryRequirements> sparse_reqs(req_count);
     // Migrate to old struct type for common handling with GetImageSparseMemoryRequirements()
     for (uint32_t i = 0; i < req_count; ++i) {
