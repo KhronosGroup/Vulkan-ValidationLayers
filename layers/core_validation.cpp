@@ -10149,8 +10149,8 @@ static bool PreCallValidateQueueBindSparse(layer_data *dev_data, VkQueue queue, 
         std::unordered_set<IMAGE_STATE *> sparse_images;
         // If we're binding sparse image memory make sure reqs were queried and note if metadata is required and bound
         for (uint32_t i = 0; i < bindInfo.imageBindCount; ++i) {
-            const auto &opaque_bind = bindInfo.pImageOpaqueBinds[i];
-            auto image_state = GetImageState(dev_data, opaque_bind.image);
+            const auto &image_bind = bindInfo.pImageBinds[i];
+            auto image_state = GetImageState(dev_data, image_bind.image);
             sparse_images.insert(image_state);
             if (!image_state->get_sparse_reqs_called || image_state->sparse_requirements.empty()) {
                 // For now just warning if sparse image binding occurs without calling to get reqs first
@@ -10160,8 +10160,8 @@ static bool PreCallValidateQueueBindSparse(layer_data *dev_data, VkQueue queue, 
                                " without first calling vkGetImageSparseMemoryRequirements[2KHR]() to retrieve requirements.",
                                HandleToUint64(image_state->image));
             }
-            for (uint32_t j = 0; j < opaque_bind.bindCount; ++j) {
-                if (opaque_bind.pBinds[j].flags & VK_IMAGE_ASPECT_METADATA_BIT) {
+            for (uint32_t j = 0; j < image_bind.bindCount; ++j) {
+                if (image_bind.pBinds[j].flags & VK_IMAGE_ASPECT_METADATA_BIT) {
                     image_state->sparse_metadata_bound = true;
                 }
             }
