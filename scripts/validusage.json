@@ -1,9 +1,9 @@
 {
   "version info": {
     "schema version": 2,
-    "api version": "1.1.73",
-    "comment": "from git branch: master commit: 5300d9f05e03f721812273d5f9f9676c3227f056",
-    "date": "2018-04-16 14:18:46Z"
+    "api version": "1.1.74",
+    "comment": "from git branch: master commit: c51545d33f4fd791dc4109d0d338e79b572f6286",
+    "date": "2018-04-23 18:29:18Z"
   },
   "validation": {
     "vkGetInstanceProcAddr": {
@@ -9997,6 +9997,10 @@
           "text": " The layers specified by each element of <code>pRects</code> <strong class=\"purple\">must</strong> be contained within every attachment that <code>pAttachments</code> refers to"
         },
         {
+          "vuid": "VUID-vkCmdClearAttachments-layerCount-01934",
+          "text": " The <code>layerCount</code> member of each element of <code>pRects</code> <strong class=\"purple\">must</strong> not be <code>0</code>"
+        },
+        {
           "vuid": "VUID-vkCmdClearAttachments-commandBuffer-parameter",
           "text": " <code>commandBuffer</code> <strong class=\"purple\">must</strong> be a valid <code>VkCommandBuffer</code> handle"
         },
@@ -10748,7 +10752,7 @@
       "core": [
         {
           "vuid": "VUID-vkCmdCopyBufferToImage-pRegions-00171",
-          "text": " The buffer region specified by each element of <code>pRegions</code> <strong class=\"purple\">must</strong> be a region that is contained within <code>srcBuffer</code>"
+          "text": " <code>srcBuffer</code> <strong class=\"purple\">must</strong> be large enough to contain all buffer locations that are accessed according to &amp;amp;lt;&amp;amp;lt;copies-buffers-images-addressing,Buffer and Image Addressing&amp;amp;gt;&amp;amp;gt;, for each element of <code>pRegions</code>"
         },
         {
           "vuid": "VUID-vkCmdCopyBufferToImage-pRegions-00172",
@@ -10876,7 +10880,7 @@
         },
         {
           "vuid": "VUID-vkCmdCopyImageToBuffer-pRegions-00183",
-          "text": " The buffer region specified by each element of <code>pRegions</code> <strong class=\"purple\">must</strong> be a region that is contained within <code>dstBuffer</code>"
+          "text": " <code>dstBuffer</code> <strong class=\"purple\">must</strong> be large enough to contain all buffer locations that are accessed according to &amp;amp;lt;&amp;amp;lt;copies-buffers-images-addressing,Buffer and Image Addressing&amp;amp;gt;&amp;amp;gt;, for each element of <code>pRegions</code>"
         },
         {
           "vuid": "VUID-vkCmdCopyImageToBuffer-pRegions-00184",
