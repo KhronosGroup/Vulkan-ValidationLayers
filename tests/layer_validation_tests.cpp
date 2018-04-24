@@ -27803,7 +27803,7 @@ TEST_F(VkPositiveLayerTest, PSOPolygonModeValid) {
     rs_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
     rs_ci.pNext = nullptr;
     rs_ci.lineWidth = 1.0f;
-    rs_ci.rasterizerDiscardEnable = true;
+    rs_ci.rasterizerDiscardEnable = false;
 
     VkShaderObj vs(&test_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
     VkShaderObj fs(&test_device, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this);
