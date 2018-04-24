@@ -2824,6 +2824,21 @@ bool ValidateLayoutVsAttachmentDescription(const debug_report_data *report_data,
                             string_VkImageLayout(first_layout));
         }
     }
+    if (attachment_description.loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR) {
+        if (first_layout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL) {
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                            VALIDATION_ERROR_12200c3c, "Cannot clear attachment %d with invalid first layout %s.", attachment,
+                            string_VkImageLayout(first_layout));
+        }
+    }
+
+    if (attachment_description.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_CLEAR) {
+        if (first_layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL) {
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                            VALIDATION_ERROR_12200c3e, "Cannot clear attachment %d with invalid first layout %s.", attachment,
+                            string_VkImageLayout(first_layout));
+        }
+    }
     return skip;
 }
 
