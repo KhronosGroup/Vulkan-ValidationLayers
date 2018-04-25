@@ -472,28 +472,28 @@ class HelperFileOutputGenerator(OutputGenerator):
 
         V_1_0_instance_extensions_promoted_to_core = [
             'vk_khr_device_group_creation',
-            'vk_khr_external_memory_capabilities',
             'vk_khr_external_fence_capabilities',
+            'vk_khr_external_memory_capabilities',
             'vk_khr_external_semaphore_capabilities',
             'vk_khr_get_physical_device_properties_2',
             ]
 
         V_1_0_device_extensions_promoted_to_core = [
+            'vk_khr_16bit_storage',
             'vk_khr_bind_memory_2',
-            'vk_khr_device_group',
+            'vk_khr_dedicated_allocation',
             'vk_khr_descriptor_update_template',
-            'vk_khr_sampler_ycbcr_conversion',
-            'vk_khr_get_memory_requirements_2',
-            'vk_khr_maintenance3',
-            'vk_khr_maintenance1',
-            'vk_khr_multiview',
+            'vk_khr_device_group',
+            'vk_khr_external_fence',
             'vk_khr_external_memory',
             'vk_khr_external_semaphore',
-            'vk_khr_16bit_storage',
-            'vk_khr_external_fence',
+            'vk_khr_get_memory_requirements_2',
+            'vk_khr_maintenance1',
             'vk_khr_maintenance2',
+            'vk_khr_maintenance3',
+            'vk_khr_multiview',
+            'vk_khr_sampler_ycbcr_conversion',
             'vk_khr_variable_pointers',
-            'vk_khr_dedicated_allocation',
             ]
         output = [
             '',
