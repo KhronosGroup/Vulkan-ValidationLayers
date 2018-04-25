@@ -15990,6 +15990,58 @@ TEST_F(VkLayerTest, ColorBlendUnsupportedLogicOp) {
     CreatePipelineHelper::OneshotTest(*this, set_shading_enable, VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_0f4004bc);
 }
 
+TEST_F(VkLayerTest, ColorBlendUnsupportedDualSourceBlend) {
+    TEST_DESCRIPTION("Attempt to use dual-source blending when dualSrcBlend feature is disabled.");
+
+    VkPhysicalDeviceFeatures features{};
+    ASSERT_NO_FATAL_FAILURE(Init(&features));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    const auto set_dsb_src_color_enable = [](CreatePipelineHelper &helper) {
+        helper.cb_attachments_.blendEnable = VK_TRUE;
+        helper.cb_attachments_.srcColorBlendFactor = VK_BLEND_FACTOR_SRC1_COLOR;  // bad!
+        helper.cb_attachments_.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR;
+        helper.cb_attachments_.colorBlendOp = VK_BLEND_OP_ADD;
+        helper.cb_attachments_.srcAlphaBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+        helper.cb_attachments_.dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+        helper.cb_attachments_.alphaBlendOp = VK_BLEND_OP_ADD;
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_dsb_src_color_enable, VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_0f2004c0);
+
+    const auto set_dsb_dst_color_enable = [](CreatePipelineHelper &helper) {
+        helper.cb_attachments_.blendEnable = VK_TRUE;
+        helper.cb_attachments_.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_COLOR;
+        helper.cb_attachments_.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC1_COLOR;  // bad
+        helper.cb_attachments_.colorBlendOp = VK_BLEND_OP_ADD;
+        helper.cb_attachments_.srcAlphaBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+        helper.cb_attachments_.dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+        helper.cb_attachments_.alphaBlendOp = VK_BLEND_OP_ADD;
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_dsb_dst_color_enable, VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_0f2004c2);
+
+    const auto set_dsb_src_alpha_enable = [](CreatePipelineHelper &helper) {
+        helper.cb_attachments_.blendEnable = VK_TRUE;
+        helper.cb_attachments_.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_COLOR;
+        helper.cb_attachments_.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR;
+        helper.cb_attachments_.colorBlendOp = VK_BLEND_OP_ADD;
+        helper.cb_attachments_.srcAlphaBlendFactor = VK_BLEND_FACTOR_SRC1_ALPHA;  // bad
+        helper.cb_attachments_.dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+        helper.cb_attachments_.alphaBlendOp = VK_BLEND_OP_ADD;
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_dsb_src_alpha_enable, VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_0f2004c4);
+
+    const auto set_dsb_dst_alpha_enable = [](CreatePipelineHelper &helper) {
+        helper.cb_attachments_.blendEnable = VK_TRUE;
+        helper.cb_attachments_.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_COLOR;
+        helper.cb_attachments_.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR;
+        helper.cb_attachments_.colorBlendOp = VK_BLEND_OP_ADD;
+        helper.cb_attachments_.srcAlphaBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+        helper.cb_attachments_.dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC1_ALPHA;  // bad!
+        helper.cb_attachments_.alphaBlendOp = VK_BLEND_OP_ADD;
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_dsb_dst_alpha_enable, VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_0f2004c6);
+}
+
 #if GTEST_IS_THREADSAFE
 struct thread_data_struct {
     VkCommandBuffer commandBuffer;
