@@ -492,9 +492,13 @@ class HelperFileOutputGenerator(OutputGenerator):
             'vk_khr_maintenance2',
             'vk_khr_maintenance3',
             'vk_khr_multiview',
+            'vk_khr_relaxed_block_layout',
             'vk_khr_sampler_ycbcr_conversion',
+            'vk_khr_shader_draw_parameters',
+            'vk_khr_storage_buffer_storage_class',
             'vk_khr_variable_pointers',
             ]
+
         output = [
             '',
             '#ifndef VK_EXTENSION_HELPER_H_',
