@@ -1373,6 +1373,64 @@ static bool ValidatePipelineUnlocked(layer_data *dev_data, std::vector<std::uniq
                         HandleToUint64(pPipeline->pipeline), VALIDATION_ERROR_0f4004bc,
                         "Invalid Pipeline CreateInfo: If logic operations feature not enabled, logicOpEnable must be VK_FALSE.");
         }
+        for (size_t i = 0; i < pPipeline->attachments.size(); i++) {
+            if ((pPipeline->attachments[i].srcColorBlendFactor == VK_BLEND_FACTOR_SRC1_COLOR) ||
+                (pPipeline->attachments[i].srcColorBlendFactor == VK_BLEND_FACTOR_ONE_MINUS_SRC1_COLOR) ||
+                (pPipeline->attachments[i].srcColorBlendFactor == VK_BLEND_FACTOR_SRC1_ALPHA) ||
+                (pPipeline->attachments[i].srcColorBlendFactor == VK_BLEND_FACTOR_ONE_MINUS_SRC1_ALPHA)) {
+                if (!dev_data->enabled_features.dualSrcBlend) {
+                    skip |=
+                        log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
+                                HandleToUint64(pPipeline->pipeline), VALIDATION_ERROR_0f2004c0,
+                                "vkCreateGraphicsPipelines(): pPipelines[%d].pColorBlendState.pAttachments[" PRINTF_SIZE_T_SPECIFIER
+                                "].srcColorBlendFactor uses a dual-source blend factor (%d), but this device feature is not "
+                                "enabled.",
+                                pipelineIndex, i, pPipeline->attachments[i].srcColorBlendFactor);
+                }
+            }
+            if ((pPipeline->attachments[i].dstColorBlendFactor == VK_BLEND_FACTOR_SRC1_COLOR) ||
+                (pPipeline->attachments[i].dstColorBlendFactor == VK_BLEND_FACTOR_ONE_MINUS_SRC1_COLOR) ||
+                (pPipeline->attachments[i].dstColorBlendFactor == VK_BLEND_FACTOR_SRC1_ALPHA) ||
+                (pPipeline->attachments[i].dstColorBlendFactor == VK_BLEND_FACTOR_ONE_MINUS_SRC1_ALPHA)) {
+                if (!dev_data->enabled_features.dualSrcBlend) {
+                    skip |=
+                        log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
+                                HandleToUint64(pPipeline->pipeline), VALIDATION_ERROR_0f2004c2,
+                                "vkCreateGraphicsPipelines(): pPipelines[%d].pColorBlendState.pAttachments[" PRINTF_SIZE_T_SPECIFIER
+                                "].dstColorBlendFactor uses a dual-source blend factor (%d), but this device feature is not "
+                                "enabled.",
+                                pipelineIndex, i, pPipeline->attachments[i].dstColorBlendFactor);
+                }
+            }
+            if ((pPipeline->attachments[i].srcAlphaBlendFactor == VK_BLEND_FACTOR_SRC1_COLOR) ||
+                (pPipeline->attachments[i].srcAlphaBlendFactor == VK_BLEND_FACTOR_ONE_MINUS_SRC1_COLOR) ||
+                (pPipeline->attachments[i].srcAlphaBlendFactor == VK_BLEND_FACTOR_SRC1_ALPHA) ||
+                (pPipeline->attachments[i].srcAlphaBlendFactor == VK_BLEND_FACTOR_ONE_MINUS_SRC1_ALPHA)) {
+                if (!dev_data->enabled_features.dualSrcBlend) {
+                    skip |=
+                        log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
+                                HandleToUint64(pPipeline->pipeline), VALIDATION_ERROR_0f2004c4,
+                                "vkCreateGraphicsPipelines(): pPipelines[%d].pColorBlendState.pAttachments[" PRINTF_SIZE_T_SPECIFIER
+                                "].srcAlphaBlendFactor uses a dual-source blend factor (%d), but this device feature is not "
+                                "enabled.",
+                                pipelineIndex, i, pPipeline->attachments[i].srcAlphaBlendFactor);
+                }
+            }
+            if ((pPipeline->attachments[i].dstAlphaBlendFactor == VK_BLEND_FACTOR_SRC1_COLOR) ||
+                (pPipeline->attachments[i].dstAlphaBlendFactor == VK_BLEND_FACTOR_ONE_MINUS_SRC1_COLOR) ||
+                (pPipeline->attachments[i].dstAlphaBlendFactor == VK_BLEND_FACTOR_SRC1_ALPHA) ||
+                (pPipeline->attachments[i].dstAlphaBlendFactor == VK_BLEND_FACTOR_ONE_MINUS_SRC1_ALPHA)) {
+                if (!dev_data->enabled_features.dualSrcBlend) {
+                    skip |=
+                        log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
+                                HandleToUint64(pPipeline->pipeline), VALIDATION_ERROR_0f2004c6,
+                                "vkCreateGraphicsPipelines(): pPipelines[%d].pColorBlendState.pAttachments[" PRINTF_SIZE_T_SPECIFIER
+                                "].dstAlphaBlendFactor uses a dual-source blend factor (%d), but this device feature is not "
+                                "enabled.",
+                                pipelineIndex, i, pPipeline->attachments[i].dstAlphaBlendFactor);
+                }
+            }
+        }
     }
 
     if (validate_and_capture_pipeline_shader_state(dev_data, pPipeline)) {
@@ -4910,32 +4968,6 @@ void set_pipeline_state(PIPELINE_STATE *pPipe) {
     }
 }
 
-bool validate_dual_src_blend_feature(layer_data *device_data, PIPELINE_STATE *pipe_state) {
-    bool skip = false;
-    if (pipe_state->graphicsPipelineCI.pColorBlendState) {
-        for (size_t i = 0; i < pipe_state->attachments.size(); ++i) {
-            if (!device_data->enabled_features.dualSrcBlend) {
-                if ((pipe_state->attachments[i].dstAlphaBlendFactor == VK_BLEND_FACTOR_SRC1_COLOR) ||
-                    (pipe_state->attachments[i].dstAlphaBlendFactor == VK_BLEND_FACTOR_ONE_MINUS_SRC1_COLOR) ||
-                    (pipe_state->attachments[i].dstAlphaBlendFactor == VK_BLEND_FACTOR_SRC1_ALPHA) ||
-                    (pipe_state->attachments[i].dstAlphaBlendFactor == VK_BLEND_FACTOR_ONE_MINUS_SRC1_ALPHA) ||
-                    (pipe_state->attachments[i].srcAlphaBlendFactor == VK_BLEND_FACTOR_SRC1_COLOR) ||
-                    (pipe_state->attachments[i].srcAlphaBlendFactor == VK_BLEND_FACTOR_ONE_MINUS_SRC1_COLOR) ||
-                    (pipe_state->attachments[i].srcAlphaBlendFactor == VK_BLEND_FACTOR_SRC1_ALPHA) ||
-                    (pipe_state->attachments[i].srcAlphaBlendFactor == VK_BLEND_FACTOR_ONE_MINUS_SRC1_ALPHA)) {
-                    skip |=
-                        log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
-                                HandleToUint64(pipe_state->pipeline), DRAWSTATE_INVALID_FEATURE,
-                                "CmdBindPipeline: vkPipeline (0x%" PRIx64 ") attachment[" PRINTF_SIZE_T_SPECIFIER
-                                "] has a dual-source blend factor but this device feature is not enabled.",
-                                HandleToUint64(pipe_state->pipeline), i);
-                }
-            }
-        }
-    }
-    return skip;
-}
-
 VKAPI_ATTR VkResult VKAPI_CALL CreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                        const VkGraphicsPipelineCreateInfo *pCreateInfos,
                                                        const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines) {
@@ -6158,7 +6190,6 @@ VKAPI_ATTR void VKAPI_CALL CmdBindPipeline(VkCommandBuffer commandBuffer, VkPipe
         }
         cb_state->lastBound[pipelineBindPoint].pipeline_state = pipe_state;
         set_pipeline_state(pipe_state);
-        skip |= validate_dual_src_blend_feature(dev_data, pipe_state);
         addCommandBufferBinding(&pipe_state->cb_bindings, {HandleToUint64(pipeline), kVulkanObjectTypePipeline}, cb_state);
     }
     lock.unlock();
