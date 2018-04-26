@@ -887,7 +887,7 @@ bool PreCallValidateDestroyImage(layer_data *device_data, VkImage image, IMAGE_S
     return skip;
 }
 
-void PostCallRecordDestroyImage(layer_data *device_data, VkImage image, IMAGE_STATE *image_state, VK_OBJECT obj_struct) {
+void PreCallRecordDestroyImage(layer_data *device_data, VkImage image, IMAGE_STATE *image_state, VK_OBJECT obj_struct) {
     core_validation::invalidateCommandBuffers(device_data, image_state->cb_bindings, obj_struct);
     // Clean up memory mapping, bindings and range references for image
     for (auto mem_binding : image_state->GetBoundMemory()) {
@@ -3647,8 +3647,8 @@ bool PreCallValidateDestroyImageView(layer_data *device_data, VkImageView image_
     return skip;
 }
 
-void PostCallRecordDestroyImageView(layer_data *device_data, VkImageView image_view, IMAGE_VIEW_STATE *image_view_state,
-                                    VK_OBJECT obj_struct) {
+void PreCallRecordDestroyImageView(layer_data *device_data, VkImageView image_view, IMAGE_VIEW_STATE *image_view_state,
+                                   VK_OBJECT obj_struct) {
     // Any bound cmd buffers are now invalid
     invalidateCommandBuffers(device_data, image_view_state->cb_bindings, obj_struct);
     (*GetImageViewMap(device_data)).erase(image_view);
@@ -3665,7 +3665,7 @@ bool PreCallValidateDestroyBuffer(layer_data *device_data, VkBuffer buffer, BUFF
     return skip;
 }
 
-void PostCallRecordDestroyBuffer(layer_data *device_data, VkBuffer buffer, BUFFER_STATE *buffer_state, VK_OBJECT obj_struct) {
+void PreCallRecordDestroyBuffer(layer_data *device_data, VkBuffer buffer, BUFFER_STATE *buffer_state, VK_OBJECT obj_struct) {
     invalidateCommandBuffers(device_data, buffer_state->cb_bindings, obj_struct);
     for (auto mem_binding : buffer_state->GetBoundMemory()) {
         auto mem_info = GetMemObjInfo(device_data, mem_binding);
@@ -3690,8 +3690,8 @@ bool PreCallValidateDestroyBufferView(layer_data *device_data, VkBufferView buff
     return skip;
 }
 
-void PostCallRecordDestroyBufferView(layer_data *device_data, VkBufferView buffer_view, BUFFER_VIEW_STATE *buffer_view_state,
-                                     VK_OBJECT obj_struct) {
+void PreCallRecordDestroyBufferView(layer_data *device_data, VkBufferView buffer_view, BUFFER_VIEW_STATE *buffer_view_state,
+                                    VK_OBJECT obj_struct) {
     // Any bound cmd buffers are now invalid
     invalidateCommandBuffers(device_data, buffer_view_state->cb_bindings, obj_struct);
     GetBufferViewMap(device_data)->erase(buffer_view);
