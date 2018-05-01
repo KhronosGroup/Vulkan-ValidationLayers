@@ -410,7 +410,7 @@ static inline bool debug_messenger_log_msg(const debug_report_data *debug_data,
             }
         } else if (!layer_dbg_node->is_messenger && layer_dbg_node->report.msgFlags & object_flags) {
             auto it = debug_data->debugObjectNameMap->find(callback_data->pObjects[0].objectHandle);
-            VkDebugReportObjectTypeEXT object_type = get_debug_report_enum[callback_data->pObjects[0].objectType];
+            VkDebugReportObjectTypeEXT object_type = convertCoreObjectToDebugReportObject(callback_data->pObjects[0].objectType);
             if (it == debug_data->debugObjectNameMap->end()) {
                 if (layer_dbg_node->report.pfnMsgCallback(object_flags, object_type, callback_data->pObjects[0].objectHandle, 0,
                                                           callback_data->messageIdNumber, callback_data->pMessageIdName,
