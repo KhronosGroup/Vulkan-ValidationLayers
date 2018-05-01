@@ -679,13 +679,6 @@ bool cvdescriptorset::DescriptorSet::ValidateDrawState(const std::map<uint32_t, 
                                 return false;
                             }
                         }
-                    } else {
-                        // Enqueue sparse resource validation, as these can only be validated at submit time
-                        auto device_data_copy = device_data_;  // Cannot capture members by value, so make capturable copy.
-                        std::function<bool(void)> function = [device_data_copy, caller, buffer_node]() {
-                            return core_validation::ValidateBufferMemoryIsValid(device_data_copy, buffer_node, caller);
-                        };
-                        cb_node->queue_submit_functions.push_back(function);
                     }
                     if (descriptors_[i]->IsDynamic()) {
                         // Validate that dynamic offsets are within the buffer

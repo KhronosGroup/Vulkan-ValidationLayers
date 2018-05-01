@@ -321,7 +321,6 @@ struct MEMORY_RANGE {
     uint64_t handle;
     bool image;   // True for image, false for buffer
     bool linear;  // True for buffers and linear images
-    bool valid;   // True if this range is know to be valid
     VkDeviceMemory memory;
     VkDeviceSize start;
     VkDeviceSize size;
@@ -333,7 +332,6 @@ struct MEMORY_RANGE {
 // Data struct for tracking memory object
 struct DEVICE_MEM_INFO : public BASE_NODE {
     void *object;       // Dispatchable object used to create this memory (device of swapchain)
-    bool global_valid;  // If allocation is mapped or external, set to "true" to be picked up by subsequently bound ranges
     VkDeviceMemory mem;
     VkMemoryAllocateInfo alloc_info;
     bool is_dedicated;
@@ -354,7 +352,6 @@ struct DEVICE_MEM_INFO : public BASE_NODE {
 
     DEVICE_MEM_INFO(void *disp_object, const VkDeviceMemory in_mem, const VkMemoryAllocateInfo *p_alloc_info)
         : object(disp_object),
-          global_valid(false),
           mem(in_mem),
           alloc_info(*p_alloc_info),
           is_dedicated(false),

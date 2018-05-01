@@ -396,77 +396,12 @@ static void add_mem_obj_info(layer_data *dev_data, void *object, const VkDeviceM
     auto *mem_info = new DEVICE_MEM_INFO(object, mem, pAllocateInfo);
     dev_data->memObjMap[mem] = unique_ptr<DEVICE_MEM_INFO>(mem_info);
 
-    // TODO: If the number of things we search for goes much higher, need a map...
-    mem_info->global_valid = nullptr != lvl_find_in_chain<VkImportMemoryFdInfoKHR>(pAllocateInfo->pNext);
-#ifdef VK_USE_PLATFORM_WIN32_KHR
-    mem_info->global_valid |= nullptr != lvl_find_in_chain<VkImportMemoryWin32HandleInfoKHR>(pAllocateInfo->pNext);
-#endif
-
     auto dedicated = lvl_find_in_chain<VkMemoryDedicatedAllocateInfoKHR>(pAllocateInfo->pNext);
     if (dedicated) {
         mem_info->is_dedicated = true;
         mem_info->dedicated_buffer = dedicated->buffer;
         mem_info->dedicated_image = dedicated->image;
     }
-}
-
-// For given bound_object_handle, bound to given mem allocation, verify that the range for the bound object is valid
-static bool ValidateMemoryIsValid(layer_data *dev_data, VkDeviceMemory mem, uint64_t bound_object_handle, VulkanObjectType type,
-                                  const char *functionName) {
-    DEVICE_MEM_INFO *mem_info = GetMemObjInfo(dev_data, mem);
-    if (mem_info) {
-        if (!mem_info->bound_ranges[bound_object_handle].valid) {
-            return log_msg(dev_data->report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_MEMORY_EXT,
-                           HandleToUint64(mem), MEMTRACK_INVALID_MEM_REGION,
-                           "%s: Cannot read invalid region of memory allocation 0x%" PRIx64 " for bound %s object 0x%" PRIx64
-                           ", please fill the memory before using.",
-                           functionName, HandleToUint64(mem), object_string[type], bound_object_handle);
-        }
-    }
-    return false;
-}
-// For given image_state
-//  If mem is special swapchain key, then verify that image_state valid member is true
-//  Else verify that the image's bound memory range is valid
-bool ValidateImageMemoryIsValid(layer_data *dev_data, IMAGE_STATE *image_state, const char *functionName) {
-    if (image_state->binding.mem == MEMTRACKER_SWAP_CHAIN_IMAGE_KEY) {
-        if (!image_state->valid) {
-            return log_msg(dev_data->report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_MEMORY_EXT,
-                           HandleToUint64(image_state->binding.mem), MEMTRACK_INVALID_MEM_REGION,
-                           "%s: Cannot read invalid swapchain image 0x%" PRIx64 ", please fill the memory before using.",
-                           functionName, HandleToUint64(image_state->image));
-        }
-    } else {
-        return ValidateMemoryIsValid(dev_data, image_state->binding.mem, HandleToUint64(image_state->image), kVulkanObjectTypeImage,
-                                     functionName);
-    }
-    return false;
-}
-// For given buffer_state, verify that the range it's bound to is valid
-bool ValidateBufferMemoryIsValid(layer_data *dev_data, BUFFER_STATE *buffer_state, const char *functionName) {
-    return ValidateMemoryIsValid(dev_data, buffer_state->binding.mem, HandleToUint64(buffer_state->buffer), kVulkanObjectTypeBuffer,
-                                 functionName);
-}
-// For the given memory allocation, set the range bound by the given handle object to the valid param value
-static void SetMemoryValid(layer_data *dev_data, VkDeviceMemory mem, uint64_t handle, bool valid) {
-    DEVICE_MEM_INFO *mem_info = GetMemObjInfo(dev_data, mem);
-    if (mem_info) {
-        mem_info->bound_ranges[handle].valid = valid;
-    }
-}
-// For given image node
-//  If mem is special swapchain key, then set entire image_state to valid param value
-//  Else set the image's bound memory range to valid param value
-void SetImageMemoryValid(layer_data *dev_data, IMAGE_STATE *image_state, bool valid) {
-    if (image_state->binding.mem == MEMTRACKER_SWAP_CHAIN_IMAGE_KEY) {
-        image_state->valid = valid;
-    } else {
-        SetMemoryValid(dev_data, image_state->binding.mem, HandleToUint64(image_state->image), valid);
-    }
-}
-// For given buffer node set the buffer's bound memory range to valid param value
-void SetBufferMemoryValid(layer_data *dev_data, BUFFER_STATE *buffer_state, bool valid) {
-    SetMemoryValid(dev_data, buffer_state->binding.mem, HandleToUint64(buffer_state->buffer), valid);
 }
 
 // Create binding link between given sampler and command buffer node
@@ -3720,21 +3655,6 @@ bool rangesIntersect(layer_data const *dev_data, MEMORY_RANGE const *range1, VkD
     bool tmp_bool;
     return rangesIntersect(dev_data, range1, &range_wrap, &tmp_bool, true);
 }
-// For given mem_info, set all ranges valid that intersect [offset-end] range
-// TODO : For ranges where there is no alias, we may want to create new buffer ranges that are valid
-static void SetMemRangesValid(layer_data const *dev_data, DEVICE_MEM_INFO *mem_info, VkDeviceSize offset, VkDeviceSize end) {
-    bool tmp_bool = false;
-    MEMORY_RANGE map_range = {};
-    map_range.linear = true;
-    map_range.start = offset;
-    map_range.end = end;
-    for (auto &handle_range_pair : mem_info->bound_ranges) {
-        if (rangesIntersect(dev_data, &handle_range_pair.second, &map_range, &tmp_bool, false)) {
-            // TODO : WARN here if tmp_bool true?
-            handle_range_pair.second.valid = true;
-        }
-    }
-}
 
 static bool ValidateInsertMemoryRange(layer_data const *dev_data, uint64_t handle, DEVICE_MEM_INFO *mem_info,
                                       VkDeviceSize memoryOffset, VkMemoryRequirements memRequirements, bool is_image,
@@ -3745,7 +3665,6 @@ static bool ValidateInsertMemoryRange(layer_data const *dev_data, uint64_t handl
     range.image = is_image;
     range.handle = handle;
     range.linear = is_linear;
-    range.valid = mem_info->global_valid;
     range.memory = mem_info->mem;
     range.start = memoryOffset;
     range.size = memRequirements.size;
@@ -3789,7 +3708,6 @@ static void InsertMemoryRange(layer_data const *dev_data, uint64_t handle, DEVIC
     range.image = is_image;
     range.handle = handle;
     range.linear = is_linear;
-    range.valid = mem_info->global_valid;
     range.memory = mem_info->mem;
     range.start = memoryOffset;
     range.size = memRequirements.size;
@@ -6791,10 +6709,6 @@ VKAPI_ATTR void VKAPI_CALL CmdBindIndexBuffer(VkCommandBuffer commandBuffer, VkB
 
     if (skip) return;
 
-    std::function<bool()> function = [=]() {
-        return ValidateBufferMemoryIsValid(dev_data, buffer_state, "vkCmdBindIndexBuffer()");
-    };
-    cb_node->queue_submit_functions.push_back(function);
     cb_node->status |= CBSTATUS_INDEX_BUFFER_BOUND;
 
     lock.unlock();
@@ -6839,44 +6753,10 @@ VKAPI_ATTR void VKAPI_CALL CmdBindVertexBuffers(VkCommandBuffer commandBuffer, u
 
     if (skip) return;
 
-    for (uint32_t i = 0; i < bindingCount; ++i) {
-        auto buffer_state = GetBufferState(dev_data, pBuffers[i]);
-        assert(buffer_state);
-        std::function<bool()> function = [=]() {
-            return ValidateBufferMemoryIsValid(dev_data, buffer_state, "vkCmdBindVertexBuffers()");
-        };
-        cb_node->queue_submit_functions.push_back(function);
-    }
-
     updateResourceTracking(cb_node, firstBinding, bindingCount, pBuffers);
 
     lock.unlock();
     dev_data->dispatch_table.CmdBindVertexBuffers(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets);
-}
-
-// Expects global_lock to be held by caller
-static void MarkStoreImagesAndBuffersAsWritten(layer_data *dev_data, GLOBAL_CB_NODE *pCB) {
-    for (auto imageView : pCB->updateImages) {
-        auto view_state = GetImageViewState(dev_data, imageView);
-        if (!view_state) continue;
-
-        auto image_state = GetImageState(dev_data, view_state->create_info.image);
-        assert(image_state);
-        std::function<bool()> function = [=]() {
-            SetImageMemoryValid(dev_data, image_state, true);
-            return false;
-        };
-        pCB->queue_submit_functions.push_back(function);
-    }
-    for (auto buffer : pCB->updateBuffers) {
-        auto buffer_state = GetBufferState(dev_data, buffer);
-        assert(buffer_state);
-        std::function<bool()> function = [=]() {
-            SetBufferMemoryValid(dev_data, buffer_state, true);
-            return false;
-        };
-        pCB->queue_submit_functions.push_back(function);
-    }
 }
 
 // Generic function to handle validation for all CmdDraw* type functions
@@ -6899,7 +6779,6 @@ static bool ValidateCmdDrawType(layer_data *dev_data, VkCommandBuffer cmd_buffer
 // Generic function to handle state update for all CmdDraw* and CmdDispatch* type functions
 static void UpdateStateCmdDrawDispatchType(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, VkPipelineBindPoint bind_point) {
     UpdateDrawState(dev_data, cb_state, bind_point);
-    MarkStoreImagesAndBuffersAsWritten(dev_data, cb_state);
 }
 
 // Generic function to handle state update for all CmdDraw* type functions
@@ -7241,11 +7120,6 @@ static bool PreCallCmdUpdateBuffer(layer_data *device_data, const GLOBAL_CB_NODE
 static void PostCallRecordCmdUpdateBuffer(layer_data *device_data, GLOBAL_CB_NODE *cb_state, BUFFER_STATE *dst_buffer_state) {
     // Update bindings between buffer and cmd buffer
     AddCommandBufferBindingBuffer(device_data, cb_state, dst_buffer_state);
-    std::function<bool()> function = [=]() {
-        SetBufferMemoryValid(device_data, dst_buffer_state, true);
-        return false;
-    };
-    cb_state->queue_submit_functions.push_back(function);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdUpdateBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,
@@ -8492,10 +8366,6 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyQueryPoolResults(VkCommandBuffer commandBuffer
     lock.lock();
     if (cb_node && dst_buff_state) {
         AddCommandBufferBindingBuffer(dev_data, cb_node, dst_buff_state);
-        cb_node->queue_submit_functions.emplace_back([=]() {
-            SetBufferMemoryValid(dev_data, dst_buff_state, true);
-            return false;
-        });
         cb_node->queryUpdates.emplace_back([=](VkQueue q) { return validateQuery(q, cb_node, queryPool, firstQuery, queryCount); });
         addCommandBufferBinding(&GetQueryPoolNode(dev_data, queryPool)->cb_bindings,
                                 {HandleToUint64(queryPool), kVulkanObjectTypeQueryPool}, cb_node);
@@ -9365,40 +9235,15 @@ VKAPI_ATTR void VKAPI_CALL CmdBeginRenderPass(VkCommandBuffer commandBuffer, con
         if (render_pass_state) {
             uint32_t clear_op_size = 0;  // Make sure pClearValues is at least as large as last LOAD_OP_CLEAR
             cb_node->activeFramebuffer = pRenderPassBegin->framebuffer;
+
             for (uint32_t i = 0; i < render_pass_state->createInfo.attachmentCount; ++i) {
-                MT_FB_ATTACHMENT_INFO &fb_info = framebuffer->attachments[i];
                 auto pAttachment = &render_pass_state->createInfo.pAttachments[i];
                 if (FormatSpecificLoadAndStoreOpSettings(pAttachment->format, pAttachment->loadOp, pAttachment->stencilLoadOp,
                                                          VK_ATTACHMENT_LOAD_OP_CLEAR)) {
                     clear_op_size = static_cast<uint32_t>(i) + 1;
-                    std::function<bool()> function = [=]() {
-                        SetImageMemoryValid(dev_data, GetImageState(dev_data, fb_info.image), true);
-                        return false;
-                    };
-                    cb_node->queue_submit_functions.push_back(function);
-                } else if (FormatSpecificLoadAndStoreOpSettings(pAttachment->format, pAttachment->loadOp,
-                                                                pAttachment->stencilLoadOp, VK_ATTACHMENT_LOAD_OP_DONT_CARE)) {
-                    std::function<bool()> function = [=]() {
-                        SetImageMemoryValid(dev_data, GetImageState(dev_data, fb_info.image), false);
-                        return false;
-                    };
-                    cb_node->queue_submit_functions.push_back(function);
-                } else if (FormatSpecificLoadAndStoreOpSettings(pAttachment->format, pAttachment->loadOp,
-                                                                pAttachment->stencilLoadOp, VK_ATTACHMENT_LOAD_OP_LOAD)) {
-                    std::function<bool()> function = [=]() {
-                        return ValidateImageMemoryIsValid(dev_data, GetImageState(dev_data, fb_info.image),
-                                                          "vkCmdBeginRenderPass()");
-                    };
-                    cb_node->queue_submit_functions.push_back(function);
-                }
-                if (render_pass_state->attachment_first_read[i]) {
-                    std::function<bool()> function = [=]() {
-                        return ValidateImageMemoryIsValid(dev_data, GetImageState(dev_data, fb_info.image),
-                                                          "vkCmdBeginRenderPass()");
-                    };
-                    cb_node->queue_submit_functions.push_back(function);
                 }
             }
+
             if (clear_op_size > pRenderPassBegin->clearValueCount) {
                 skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT,
                                 HandleToUint64(render_pass_state->renderPass), VALIDATION_ERROR_1200070c,
@@ -9493,26 +9338,6 @@ VKAPI_ATTR void VKAPI_CALL CmdEndRenderPass(VkCommandBuffer commandBuffer) {
                 skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT,
                                 VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT, HandleToUint64(commandBuffer),
                                 VALIDATION_ERROR_1b00071c, "vkCmdEndRenderPass(): Called before reaching final subpass.");
-            }
-
-            for (size_t i = 0; i < rp_state->createInfo.attachmentCount; ++i) {
-                MT_FB_ATTACHMENT_INFO &fb_info = framebuffer->attachments[i];
-                auto pAttachment = &rp_state->createInfo.pAttachments[i];
-                if (FormatSpecificLoadAndStoreOpSettings(pAttachment->format, pAttachment->storeOp, pAttachment->stencilStoreOp,
-                                                         VK_ATTACHMENT_STORE_OP_STORE)) {
-                    std::function<bool()> function = [=]() {
-                        SetImageMemoryValid(dev_data, GetImageState(dev_data, fb_info.image), true);
-                        return false;
-                    };
-                    pCB->queue_submit_functions.push_back(function);
-                } else if (FormatSpecificLoadAndStoreOpSettings(pAttachment->format, pAttachment->storeOp,
-                                                                pAttachment->stencilStoreOp, VK_ATTACHMENT_STORE_OP_DONT_CARE)) {
-                    std::function<bool()> function = [=]() {
-                        SetImageMemoryValid(dev_data, GetImageState(dev_data, fb_info.image), false);
-                        return false;
-                    };
-                    pCB->queue_submit_functions.push_back(function);
-                }
             }
         }
         skip |= outsideRenderPass(dev_data, pCB, "vkCmdEndRenderpass()", VALIDATION_ERROR_1b000017);
@@ -9741,12 +9566,8 @@ VKAPI_ATTR VkResult VKAPI_CALL MapMemory(VkDevice device, VkDeviceMemory mem, Vk
     unique_lock_t lock(global_lock);
     DEVICE_MEM_INFO *mem_info = GetMemObjInfo(dev_data, mem);
     if (mem_info) {
-        // TODO : This could me more fine-grained to track just region that is valid
-        mem_info->global_valid = true;
         auto end_offset = (VK_WHOLE_SIZE == size) ? mem_info->alloc_info.allocationSize - 1 : offset + size - 1;
         skip |= ValidateMapImageLayouts(dev_data, device, mem_info, offset, end_offset);
-        // TODO : Do we need to create new "bound_range" for the mapped range?
-        SetMemRangesValid(dev_data, mem_info, offset, end_offset);
         if ((dev_data->phys_dev_mem_props.memoryTypes[mem_info->alloc_info.memoryTypeIndex].propertyFlags &
              VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) == 0) {
             skip = log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_MEMORY_EXT,
@@ -11025,8 +10846,6 @@ VKAPI_ATTR VkResult VKAPI_CALL QueuePresentKHR(VkQueue queue, const VkPresentInf
                 if (image_state->shared_presentable) {
                     image_state->layout_locked = true;
                 }
-
-                skip |= ValidateImageMemoryIsValid(dev_data, image_state, "vkQueuePresentKHR()");
 
                 if (!image_state->acquired) {
                     skip |= log_msg(

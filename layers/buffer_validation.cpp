@@ -1078,11 +1078,6 @@ void PreCallRecordCmdClearImage(layer_data *dev_data, VkCommandBuffer commandBuf
     auto image_state = GetImageState(dev_data, image);
     if (cb_node && image_state) {
         AddCommandBufferBindingImage(dev_data, cb_node, image_state);
-        std::function<bool()> function = [=]() {
-            SetImageMemoryValid(dev_data, image_state, true);
-            return false;
-        };
-        cb_node->queue_submit_functions.push_back(function);
         for (uint32_t i = 0; i < rangeCount; ++i) {
             RecordClearImageLayout(dev_data, cb_node, image, pRanges[i], imageLayout);
         }
@@ -2084,13 +2079,6 @@ void PreCallRecordCmdCopyImage(layer_data *device_data, GLOBAL_CB_NODE *cb_node,
     // Update bindings between images and cmd buffer
     AddCommandBufferBindingImage(device_data, cb_node, src_image_state);
     AddCommandBufferBindingImage(device_data, cb_node, dst_image_state);
-    std::function<bool()> function = [=]() { return ValidateImageMemoryIsValid(device_data, src_image_state, "vkCmdCopyImage()"); };
-    cb_node->queue_submit_functions.push_back(function);
-    function = [=]() {
-        SetImageMemoryValid(device_data, dst_image_state, true);
-        return false;
-    };
-    cb_node->queue_submit_functions.push_back(function);
 }
 
 // Returns true if sub_rect is entirely contained within rect
@@ -2302,16 +2290,6 @@ void PreCallRecordCmdResolveImage(layer_data *device_data, GLOBAL_CB_NODE *cb_no
     // Update bindings between images and cmd buffer
     AddCommandBufferBindingImage(device_data, cb_node, src_image_state);
     AddCommandBufferBindingImage(device_data, cb_node, dst_image_state);
-
-    std::function<bool()> function = [=]() {
-        return ValidateImageMemoryIsValid(device_data, src_image_state, "vkCmdResolveImage()");
-    };
-    cb_node->queue_submit_functions.push_back(function);
-    function = [=]() {
-        SetImageMemoryValid(device_data, dst_image_state, true);
-        return false;
-    };
-    cb_node->queue_submit_functions.push_back(function);
 }
 
 bool PreCallValidateCmdBlitImage(layer_data *device_data, GLOBAL_CB_NODE *cb_node, IMAGE_STATE *src_image_state,
@@ -2689,14 +2667,6 @@ void PreCallRecordCmdBlitImage(layer_data *device_data, GLOBAL_CB_NODE *cb_node,
     // Update bindings between images and cmd buffer
     AddCommandBufferBindingImage(device_data, cb_node, src_image_state);
     AddCommandBufferBindingImage(device_data, cb_node, dst_image_state);
-
-    std::function<bool()> function = [=]() { return ValidateImageMemoryIsValid(device_data, src_image_state, "vkCmdBlitImage()"); };
-    cb_node->queue_submit_functions.push_back(function);
-    function = [=]() {
-        SetImageMemoryValid(device_data, dst_image_state, true);
-        return false;
-    };
-    cb_node->queue_submit_functions.push_back(function);
 }
 
 // This validates that the initial layout specified in the command buffer for
@@ -3604,16 +3574,6 @@ void PreCallRecordCmdCopyBuffer(layer_data *device_data, GLOBAL_CB_NODE *cb_node
     // Update bindings between buffers and cmd buffer
     AddCommandBufferBindingBuffer(device_data, cb_node, src_buffer_state);
     AddCommandBufferBindingBuffer(device_data, cb_node, dst_buffer_state);
-
-    std::function<bool()> function = [=]() {
-        return ValidateBufferMemoryIsValid(device_data, src_buffer_state, "vkCmdCopyBuffer()");
-    };
-    cb_node->queue_submit_functions.push_back(function);
-    function = [=]() {
-        SetBufferMemoryValid(device_data, dst_buffer_state, true);
-        return false;
-    };
-    cb_node->queue_submit_functions.push_back(function);
 }
 
 static bool validateIdleBuffer(layer_data *device_data, VkBuffer buffer) {
@@ -3711,11 +3671,6 @@ bool PreCallValidateCmdFillBuffer(layer_data *device_data, GLOBAL_CB_NODE *cb_no
 }
 
 void PreCallRecordCmdFillBuffer(layer_data *device_data, GLOBAL_CB_NODE *cb_node, BUFFER_STATE *buffer_state) {
-    std::function<bool()> function = [=]() {
-        SetBufferMemoryValid(device_data, buffer_state, true);
-        return false;
-    };
-    cb_node->queue_submit_functions.push_back(function);
     // Update bindings between buffer and cmd buffer
     AddCommandBufferBindingBuffer(device_data, cb_node, buffer_state);
 }
@@ -4060,16 +4015,6 @@ void PreCallRecordCmdCopyImageToBuffer(layer_data *device_data, GLOBAL_CB_NODE *
     // Update bindings between buffer/image and cmd buffer
     AddCommandBufferBindingImage(device_data, cb_node, src_image_state);
     AddCommandBufferBindingBuffer(device_data, cb_node, dst_buffer_state);
-
-    std::function<bool()> function = [=]() {
-        return ValidateImageMemoryIsValid(device_data, src_image_state, "vkCmdCopyImageToBuffer()");
-    };
-    cb_node->queue_submit_functions.push_back(function);
-    function = [=]() {
-        SetBufferMemoryValid(device_data, dst_buffer_state, true);
-        return false;
-    };
-    cb_node->queue_submit_functions.push_back(function);
 }
 
 bool PreCallValidateCmdCopyBufferToImage(layer_data *device_data, VkImageLayout dstImageLayout, GLOBAL_CB_NODE *cb_node,
@@ -4123,13 +4068,6 @@ void PreCallRecordCmdCopyBufferToImage(layer_data *device_data, GLOBAL_CB_NODE *
     }
     AddCommandBufferBindingBuffer(device_data, cb_node, src_buffer_state);
     AddCommandBufferBindingImage(device_data, cb_node, dst_image_state);
-    std::function<bool()> function = [=]() {
-        SetImageMemoryValid(device_data, dst_image_state, true);
-        return false;
-    };
-    cb_node->queue_submit_functions.push_back(function);
-    function = [=]() { return ValidateBufferMemoryIsValid(device_data, src_buffer_state, "vkCmdCopyBufferToImage()"); };
-    cb_node->queue_submit_functions.push_back(function);
 }
 
 bool PreCallValidateGetImageSubresourceLayout(layer_data *device_data, VkImage image, const VkImageSubresource *pSubresource) {
