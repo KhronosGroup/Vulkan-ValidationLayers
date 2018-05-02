@@ -174,6 +174,10 @@ bool ValidateMapImageLayouts(core_validation::layer_data *dev_data, VkDevice dev
 bool ValidateImageUsageFlags(layer_data *dev_data, IMAGE_STATE const *image_state, VkFlags desired, bool strict,
                              int32_t const msgCode, char const *func_name, char const *usage_string);
 
+bool ValidateImageFormatFeatureFlags(layer_data *dev_data, IMAGE_STATE const *image_state, VkFormatFeatureFlags desired,
+                                     char const *func_name, UNIQUE_VALIDATION_ERROR_CODE linear_vuid,
+                                     UNIQUE_VALIDATION_ERROR_CODE optimal_vuid);
+
 bool ValidateBufferUsageFlags(layer_data *dev_data, BUFFER_STATE const *buffer_state, VkFlags desired, bool strict,
                               int32_t const msgCode, char const *func_name, char const *usage_string);
 

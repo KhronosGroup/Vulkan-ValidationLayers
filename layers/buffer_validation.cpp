@@ -1070,6 +1070,10 @@ bool PreCallValidateCmdClearColorImage(layer_data *dev_data, VkCommandBuffer com
         skip |= ValidateCmdQueueFlags(dev_data, cb_node, "vkCmdClearColorImage()", VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
                                       VALIDATION_ERROR_18802415);
         skip |= ValidateCmd(dev_data, cb_node, CMD_CLEARCOLORIMAGE, "vkCmdClearColorImage()");
+        if (GetApiVersion(dev_data) >= VK_API_VERSION_1_1 || GetDeviceExtensions(dev_data)->vk_khr_maintenance1) {
+            skip |= ValidateImageFormatFeatureFlags(dev_data, image_state, VK_FORMAT_FEATURE_TRANSFER_DST_BIT,
+                                                    "vkCmdClearColorImage", VALIDATION_ERROR_18800002, VALIDATION_ERROR_18800002);
+        }
         skip |= insideRenderPass(dev_data, cb_node, "vkCmdClearColorImage()", VALIDATION_ERROR_18800017);
         for (uint32_t i = 0; i < rangeCount; ++i) {
             std::string param_name = "pRanges[" + std::to_string(i) + "]";
@@ -1108,6 +1112,11 @@ bool PreCallValidateCmdClearDepthStencilImage(layer_data *device_data, VkCommand
         skip |= ValidateCmdQueueFlags(device_data, cb_node, "vkCmdClearDepthStencilImage()", VK_QUEUE_GRAPHICS_BIT,
                                       VALIDATION_ERROR_18a02415);
         skip |= ValidateCmd(device_data, cb_node, CMD_CLEARDEPTHSTENCILIMAGE, "vkCmdClearDepthStencilImage()");
+        if (GetApiVersion(device_data) >= VK_API_VERSION_1_1 || GetDeviceExtensions(device_data)->vk_khr_maintenance1) {
+            skip |= ValidateImageFormatFeatureFlags(device_data, image_state, VK_FORMAT_FEATURE_TRANSFER_DST_BIT,
+                                                    "vkCmdClearDepthStencilImage", VALIDATION_ERROR_18a00010,
+                                                    VALIDATION_ERROR_18a00010);
+        }
         skip |= insideRenderPass(device_data, cb_node, "vkCmdClearDepthStencilImage()", VALIDATION_ERROR_18a00017);
         for (uint32_t i = 0; i < rangeCount; ++i) {
             std::string param_name = "pRanges[" + std::to_string(i) + "]";
@@ -1135,17 +1144,6 @@ bool PreCallValidateCmdClearDepthStencilImage(layer_data *device_data, VkCommand
                 "set.";
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
                             HandleToUint64(image), VALIDATION_ERROR_18a00012, "%s.", str);
-        }
-        VkFormatProperties props = GetFormatProperties(device_data, image_state->createInfo.format);
-        VkImageTiling tiling = image_state->createInfo.tiling;
-        VkFormatFeatureFlags flags = (tiling == VK_IMAGE_TILING_LINEAR ? props.linearTilingFeatures : props.optimalTilingFeatures);
-        if ((GetDeviceExtensions(device_data)->vk_khr_maintenance1) &&
-            (VK_FORMAT_FEATURE_TRANSFER_DST_BIT_KHR != (flags & VK_FORMAT_FEATURE_TRANSFER_DST_BIT_KHR))) {
-            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
-                            HandleToUint64(image), VALIDATION_ERROR_18a00010,
-                            "vkCmdClearDepthStencilImage() called with an image of format %s and tiling %s that does not support "
-                            "VK_FORMAT_FEATURE_TRANSFER_DST_BIT_KHR.",
-                            string_VkFormat(image_state->createInfo.format), string_VkImageTiling(image_state->createInfo.tiling));
         }
     }
     return skip;
@@ -2051,6 +2049,12 @@ bool PreCallValidateCmdCopyImage(layer_data *device_data, GLOBAL_CB_NODE *cb_nod
                                     "vkCmdCopyImage()", "VK_IMAGE_USAGE_TRANSFER_SRC_BIT");
     skip |= ValidateImageUsageFlags(device_data, dst_image_state, VK_IMAGE_USAGE_TRANSFER_DST_BIT, true, VALIDATION_ERROR_19000106,
                                     "vkCmdCopyImage()", "VK_IMAGE_USAGE_TRANSFER_DST_BIT");
+    if (GetApiVersion(device_data) >= VK_API_VERSION_1_1 || GetDeviceExtensions(device_data)->vk_khr_maintenance1) {
+        skip |= ValidateImageFormatFeatureFlags(device_data, src_image_state, VK_FORMAT_FEATURE_TRANSFER_SRC_BIT,
+                                                "vkCmdCopyImage()", VALIDATION_ERROR_190000fa, VALIDATION_ERROR_190000fa);
+        skip |= ValidateImageFormatFeatureFlags(device_data, dst_image_state, VK_FORMAT_FEATURE_TRANSFER_DST_BIT,
+                                                "vkCmdCopyImage()", VALIDATION_ERROR_19000104, VALIDATION_ERROR_19000104);
+    }
     skip |= ValidateCmdQueueFlags(device_data, cb_node, "vkCmdCopyImage()",
                                   VK_QUEUE_TRANSFER_BIT | VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT, VALIDATION_ERROR_19002415);
     skip |= ValidateCmd(device_data, cb_node, CMD_COPYIMAGE, "vkCmdCopyImage()");
@@ -2229,6 +2233,8 @@ bool PreCallValidateCmdResolveImage(layer_data *device_data, GLOBAL_CB_NODE *cb_
             ValidateCmdQueueFlags(device_data, cb_node, "vkCmdResolveImage()", VK_QUEUE_GRAPHICS_BIT, VALIDATION_ERROR_1c802415);
         skip |= ValidateCmd(device_data, cb_node, CMD_RESOLVEIMAGE, "vkCmdResolveImage()");
         skip |= insideRenderPass(device_data, cb_node, "vkCmdResolveImage()", VALIDATION_ERROR_1c800017);
+        skip |= ValidateImageFormatFeatureFlags(device_data, dst_image_state, VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT,
+                                                "vkCmdResolveImage()", VALIDATION_ERROR_1c800210, VALIDATION_ERROR_1c800212);
 
         // For each region, the number of layers in the image subresource should not be zero
         // For each region, src and dest image aspect must be color only
@@ -2315,6 +2321,11 @@ bool PreCallValidateCmdBlitImage(layer_data *device_data, GLOBAL_CB_NODE *cb_nod
         skip |= ValidateCmdQueueFlags(device_data, cb_node, "vkCmdBlitImage()", VK_QUEUE_GRAPHICS_BIT, VALIDATION_ERROR_18402415);
         skip |= ValidateCmd(device_data, cb_node, CMD_BLITIMAGE, "vkCmdBlitImage()");
         skip |= insideRenderPass(device_data, cb_node, "vkCmdBlitImage()", VALIDATION_ERROR_18400017);
+        skip |= ValidateImageFormatFeatureFlags(device_data, src_image_state, VK_FORMAT_FEATURE_BLIT_SRC_BIT, "vkCmdBlitImage()",
+                                                VALIDATION_ERROR_184001b4, VALIDATION_ERROR_184001b4);
+        skip |= ValidateImageFormatFeatureFlags(device_data, dst_image_state, VK_FORMAT_FEATURE_BLIT_DST_BIT, "vkCmdBlitImage()",
+                                                VALIDATION_ERROR_184001be, VALIDATION_ERROR_184001be);
+
         // TODO: Need to validate image layouts, which will include layout validation for shared presentable images
 
         VkFormat src_format = src_image_state->createInfo.format;
@@ -2322,46 +2333,19 @@ bool PreCallValidateCmdBlitImage(layer_data *device_data, GLOBAL_CB_NODE *cb_nod
         VkImageType src_type = src_image_state->createInfo.imageType;
         VkImageType dst_type = dst_image_state->createInfo.imageType;
 
-        VkFormatProperties props = GetFormatProperties(device_data, src_format);
-        VkImageTiling tiling = src_image_state->createInfo.tiling;
-        VkFormatFeatureFlags flags = (tiling == VK_IMAGE_TILING_LINEAR ? props.linearTilingFeatures : props.optimalTilingFeatures);
-        if (VK_FORMAT_FEATURE_BLIT_SRC_BIT != (flags & VK_FORMAT_FEATURE_BLIT_SRC_BIT)) {
-            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                            HandleToUint64(cb_node->commandBuffer), VALIDATION_ERROR_184001b4,
-                            "vkCmdBlitImage: source image format %s does not support VK_FORMAT_FEATURE_BLIT_SRC_BIT feature.",
-                            string_VkFormat(src_format));
-        }
-
-        if ((VK_FILTER_LINEAR == filter) &&
-            (VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT != (flags & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT))) {
+        if (VK_FILTER_LINEAR == filter) {
+            skip |= ValidateImageFormatFeatureFlags(device_data, src_image_state, VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT,
+                                                    "vkCmdBlitImage()", VALIDATION_ERROR_184001d6, VALIDATION_ERROR_184001d6);
+        } else if (VK_FILTER_CUBIC_IMG == filter) {
             skip |=
-                log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                        HandleToUint64(cb_node->commandBuffer), VALIDATION_ERROR_184001d6,
-                        "vkCmdBlitImage: source image format %s does not support linear filtering.", string_VkFormat(src_format));
-        }
-
-        if ((VK_FILTER_CUBIC_IMG == filter) && (VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_CUBIC_BIT_IMG !=
-                                                (flags & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_CUBIC_BIT_IMG))) {
-            skip |=
-                log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                        HandleToUint64(cb_node->commandBuffer), VALIDATION_ERROR_184001d8,
-                        "vkCmdBlitImage: source image format %s does not support cubic filtering.", string_VkFormat(src_format));
+                ValidateImageFormatFeatureFlags(device_data, src_image_state, VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_CUBIC_BIT_IMG,
+                                                "vkCmdBlitImage()", VALIDATION_ERROR_184001d8, VALIDATION_ERROR_184001d8);
         }
 
         if ((VK_FILTER_CUBIC_IMG == filter) && (VK_IMAGE_TYPE_3D != src_type)) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                             HandleToUint64(cb_node->commandBuffer), VALIDATION_ERROR_184001da,
                             "vkCmdBlitImage: source image type must be VK_IMAGE_TYPE_3D when cubic filtering is specified.");
-        }
-
-        props = GetFormatProperties(device_data, dst_format);
-        tiling = dst_image_state->createInfo.tiling;
-        flags = (tiling == VK_IMAGE_TILING_LINEAR ? props.linearTilingFeatures : props.optimalTilingFeatures);
-        if (VK_FORMAT_FEATURE_BLIT_DST_BIT != (flags & VK_FORMAT_FEATURE_BLIT_DST_BIT)) {
-            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                            HandleToUint64(cb_node->commandBuffer), VALIDATION_ERROR_184001be,
-                            "vkCmdBlitImage: destination image format %s does not support VK_FORMAT_FEATURE_BLIT_DST_BIT feature.",
-                            string_VkFormat(dst_format));
         }
 
         if ((VK_SAMPLE_COUNT_1_BIT != src_image_state->createInfo.samples) ||
@@ -3038,6 +3022,32 @@ bool ValidateImageUsageFlags(layer_data *device_data, IMAGE_STATE const *image_s
                              int32_t const msgCode, char const *func_name, char const *usage_string) {
     return validate_usage_flags(device_data, image_state->createInfo.usage, desired, strict, HandleToUint64(image_state->image),
                                 kVulkanObjectTypeImage, msgCode, func_name, usage_string);
+}
+
+bool ValidateImageFormatFeatureFlags(layer_data *dev_data, IMAGE_STATE const *image_state, VkFormatFeatureFlags desired,
+                                     char const *func_name, UNIQUE_VALIDATION_ERROR_CODE linear_vuid,
+                                     UNIQUE_VALIDATION_ERROR_CODE optimal_vuid) {
+    VkFormatProperties format_properties = GetFormatProperties(dev_data, image_state->createInfo.format);
+    const debug_report_data *report_data = core_validation::GetReportData(dev_data);
+    bool skip = false;
+    if (image_state->createInfo.tiling == VK_IMAGE_TILING_LINEAR) {
+        if ((format_properties.linearTilingFeatures & desired) != desired) {
+            skip |=
+                log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
+                        HandleToUint64(image_state->image), linear_vuid,
+                        "In %s, invalid linearTilingFeatures (0x%08X) for format %u used by image %" PRIx64 ".", func_name,
+                        format_properties.linearTilingFeatures, image_state->createInfo.format, HandleToUint64(image_state->image));
+        }
+    } else if (image_state->createInfo.tiling == VK_IMAGE_TILING_OPTIMAL) {
+        if ((format_properties.optimalTilingFeatures & desired) != desired) {
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
+                            HandleToUint64(image_state->image), optimal_vuid,
+                            "In %s, invalid optimalTilingFeatures (0x%08X) for format %u used by image %" PRIx64 ".", func_name,
+                            format_properties.optimalTilingFeatures, image_state->createInfo.format,
+                            HandleToUint64(image_state->image));
+        }
+    }
+    return skip;
 }
 
 // Helper function to validate usage flags for buffers. For given buffer_state send actual vs. desired usage off to helper above
@@ -3974,6 +3984,10 @@ bool PreCallValidateCmdCopyImageToBuffer(layer_data *device_data, VkImageLayout 
                                     "vkCmdCopyImageToBuffer()", "VK_IMAGE_USAGE_TRANSFER_SRC_BIT");
     skip |= ValidateBufferUsageFlags(device_data, dst_buffer_state, VK_BUFFER_USAGE_TRANSFER_DST_BIT, true,
                                      VALIDATION_ERROR_1920017e, "vkCmdCopyImageToBuffer()", "VK_BUFFER_USAGE_TRANSFER_DST_BIT");
+    if (GetApiVersion(device_data) >= VK_API_VERSION_1_1 || GetDeviceExtensions(device_data)->vk_khr_maintenance1) {
+        skip |= ValidateImageFormatFeatureFlags(device_data, src_image_state, VK_FORMAT_FEATURE_TRANSFER_SRC_BIT,
+                                                "vkCmdCopyImageToBuffer()", VALIDATION_ERROR_19200172, VALIDATION_ERROR_19200172);
+    }
     skip |= insideRenderPass(device_data, cb_node, "vkCmdCopyImageToBuffer()", VALIDATION_ERROR_19200017);
     bool hit_error = false;
     for (uint32_t i = 0; i < regionCount; ++i) {
@@ -4028,6 +4042,10 @@ bool PreCallValidateCmdCopyBufferToImage(layer_data *device_data, VkImageLayout 
                                      VALIDATION_ERROR_18e0015c, "vkCmdCopyBufferToImage()", "VK_BUFFER_USAGE_TRANSFER_SRC_BIT");
     skip |= ValidateImageUsageFlags(device_data, dst_image_state, VK_IMAGE_USAGE_TRANSFER_DST_BIT, true, VALIDATION_ERROR_18e00162,
                                     "vkCmdCopyBufferToImage()", "VK_IMAGE_USAGE_TRANSFER_DST_BIT");
+    if (GetApiVersion(device_data) >= VK_API_VERSION_1_1 || GetDeviceExtensions(device_data)->vk_khr_maintenance1) {
+        skip |= ValidateImageFormatFeatureFlags(device_data, dst_image_state, VK_FORMAT_FEATURE_TRANSFER_DST_BIT,
+                                                "vkCmdCopyBufferToImage()", VALIDATION_ERROR_18e0015e, VALIDATION_ERROR_18e0015e);
+    }
     skip |= insideRenderPass(device_data, cb_node, "vkCmdCopyBufferToImage()", VALIDATION_ERROR_18e00017);
     bool hit_error = false;
     for (uint32_t i = 0; i < regionCount; ++i) {
