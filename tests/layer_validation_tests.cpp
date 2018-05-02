@@ -2250,73 +2250,33 @@ TEST_F(VkLayerTest, InvalidMemoryMapping) {
 }
 
 TEST_F(VkLayerTest, MapMemWithoutHostVisibleBit) {
+    TEST_DESCRIPTION("Allocate memory that is not mappable and then attempt to map it.");
     VkResult err;
     bool pass;
 
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                         "Mapping Memory without VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT");
-
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_31200554);
     ASSERT_NO_FATAL_FAILURE(Init());
-
-    // Create an image, allocate memory, free it, and then try to bind it
-    VkImage image;
-    VkDeviceMemory mem;
-    VkMemoryRequirements mem_reqs;
-
-    const VkFormat tex_format = VK_FORMAT_B8G8R8A8_UNORM;
-    const int32_t tex_width = 32;
-    const int32_t tex_height = 32;
-
-    VkImageCreateInfo image_create_info = {};
-    image_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-    image_create_info.pNext = NULL;
-    image_create_info.imageType = VK_IMAGE_TYPE_2D;
-    image_create_info.format = tex_format;
-    image_create_info.extent.width = tex_width;
-    image_create_info.extent.height = tex_height;
-    image_create_info.extent.depth = 1;
-    image_create_info.mipLevels = 1;
-    image_create_info.arrayLayers = 1;
-    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
-    image_create_info.tiling = VK_IMAGE_TILING_LINEAR;
-    image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
-    image_create_info.flags = 0;
-    image_create_info.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
 
     VkMemoryAllocateInfo mem_alloc = {};
     mem_alloc.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     mem_alloc.pNext = NULL;
-    mem_alloc.allocationSize = 0;
+    mem_alloc.allocationSize = 1024;
 
-    err = vkCreateImage(m_device->device(), &image_create_info, NULL, &image);
-    ASSERT_VK_SUCCESS(err);
-
-    vkGetImageMemoryRequirements(m_device->device(), image, &mem_reqs);
-
-    mem_alloc.allocationSize = mem_reqs.size;
-
-    pass = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &mem_alloc, 0, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+    pass = m_device->phy().set_memory_type(0xFFFFFFFF, &mem_alloc, 0, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
     if (!pass) {  // If we can't find any unmappable memory this test doesn't
                   // make sense
-        vkDestroyImage(m_device->device(), image, NULL);
+        printf("             No unmappable memory types found, skipping test\n");
         return;
     }
 
-    // allocate memory
+    VkDeviceMemory mem;
     err = vkAllocateMemory(m_device->device(), &mem_alloc, NULL, &mem);
     ASSERT_VK_SUCCESS(err);
 
-    // Try to bind free memory that has been freed
-    err = vkBindImageMemory(m_device->device(), image, mem, 0);
-    ASSERT_VK_SUCCESS(err);
-
-    // Map memory as if to initialize the image
     void *mappedAddress = NULL;
     err = vkMapMemory(m_device->device(), mem, 0, VK_WHOLE_SIZE, 0, &mappedAddress);
-
     m_errorMonitor->VerifyFound();
 
-    vkDestroyImage(m_device->device(), image, NULL);
     vkFreeMemory(m_device->device(), mem, NULL);
 }
 
