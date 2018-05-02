@@ -1243,6 +1243,62 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceQueueFamilyProperties2KHR(VkPhysical
     }
 }
 
+VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceDisplayPropertiesKHR(VkPhysicalDevice physicalDevice, uint32_t *pPropertyCount,
+                                                                     VkDisplayPropertiesKHR *pProperties) {
+    bool skip = false;
+    std::unique_lock<std::mutex> lock(global_lock);
+    skip |= ValidateObject(physicalDevice, physicalDevice, kVulkanObjectTypePhysicalDevice, false, VALIDATION_ERROR_2b827a01,
+                           VALIDATION_ERROR_UNDEFINED);
+    lock.unlock();
+
+    if (skip) {
+        return VK_ERROR_VALIDATION_FAILED_EXT;
+    }
+    VkResult result = get_dispatch_table(ot_instance_table_map, physicalDevice)
+                          ->GetPhysicalDeviceDisplayPropertiesKHR(physicalDevice, pPropertyCount, pProperties);
+
+    lock.lock();
+    if (result == VK_SUCCESS) {
+        if (pProperties) {
+            for (uint32_t i = 0; i < *pPropertyCount; ++i) {
+                CreateObject(physicalDevice, pProperties[i].display, kVulkanObjectTypeDisplayKHR, nullptr);
+            }
+        }
+    }
+    lock.unlock();
+
+    return result;
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL GetDisplayModePropertiesKHR(VkPhysicalDevice physicalDevice, VkDisplayKHR display,
+                                                           uint32_t *pPropertyCount, VkDisplayModePropertiesKHR *pProperties) {
+    bool skip = false;
+    std::unique_lock<std::mutex> lock(global_lock);
+    skip |= ValidateObject(physicalDevice, physicalDevice, kVulkanObjectTypePhysicalDevice, false, VALIDATION_ERROR_29827a01,
+                           VALIDATION_ERROR_UNDEFINED);
+    skip |= ValidateObject(physicalDevice, display, kVulkanObjectTypeDisplayKHR, false, VALIDATION_ERROR_29806001,
+                           VALIDATION_ERROR_UNDEFINED);
+    lock.unlock();
+
+    if (skip) {
+        return VK_ERROR_VALIDATION_FAILED_EXT;
+    }
+    VkResult result = get_dispatch_table(ot_instance_table_map, physicalDevice)
+                          ->GetDisplayModePropertiesKHR(physicalDevice, display, pPropertyCount, pProperties);
+
+    lock.lock();
+    if (result == VK_SUCCESS) {
+        if (pProperties) {
+            for (uint32_t i = 0; i < *pPropertyCount; ++i) {
+                CreateObject(physicalDevice, pProperties[i].displayMode, kVulkanObjectTypeDisplayModeKHR, nullptr);
+            }
+        }
+    }
+    lock.unlock();
+
+    return result;
+}
+
 VKAPI_ATTR VkResult VKAPI_CALL DebugMarkerSetObjectNameEXT(VkDevice device, const VkDebugMarkerObjectNameInfoEXT *pNameInfo) {
     bool skip = VK_FALSE;
     std::unique_lock<std::mutex> lock(global_lock);

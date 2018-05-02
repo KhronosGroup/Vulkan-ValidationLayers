@@ -184,6 +184,8 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
             'vkCmdBeginDebugUtilsLabelEXT',
             'vkCmdEndDebugUtilsLabelEXT',
             'vkCmdInsertDebugUtilsLabelEXT',
+            'vkGetDisplayModePropertiesKHR',
+            'vkGetPhysicalDeviceDisplayPropertiesKHR',
             ]
         # These VUIDS are not implicit, but are best handled in this layer. Codegen for vkDestroy calls will generate a key
         # which is translated here into a good VU.  Saves ~40 checks.
@@ -650,7 +652,7 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
         return object_list
     #
     # Construct list of extension structs containing handles, or extension structs that share a <validextensionstructs>
-    # tag WITH an extension struct containing handles. 
+    # tag WITH an extension struct containing handles.
     def GenerateCommandWrapExtensionList(self):
         for struct in self.structMembers:
             if (len(struct.members) > 1) and struct.members[1].extstructs is not None:
