@@ -523,6 +523,13 @@ void VkRenderFramework::InitRenderTarget(uint32_t targets, VkImageView *dsBindin
     m_renderPassBeginInfo.pClearValues = m_renderPassClearValues.data();
 }
 
+void VkRenderFramework::DestroyRenderTarget() {
+    vkDestroyRenderPass(device(), m_renderPass, nullptr);
+    m_renderPass = VK_NULL_HANDLE;
+    vkDestroyFramebuffer(device(), m_framebuffer, nullptr);
+    m_framebuffer = VK_NULL_HANDLE;
+}
+
 VkDeviceObj::VkDeviceObj(uint32_t id, VkPhysicalDevice obj) : vk_testing::Device(obj), id(id) {
     init();
 
@@ -1557,6 +1564,10 @@ void VkCommandBufferObj::BindDescriptorSet(VkDescriptorSetObj &descriptorSet) {
         vkCmdBindDescriptorSets(handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, descriptorSet.GetPipelineLayout(), 0, 1, &set_obj, 0,
                                 NULL);
     }
+}
+
+void VkCommandBufferObj::BindIndexBuffer(VkBufferObj *indexBuffer, VkDeviceSize offset, VkIndexType indexType) {
+    vkCmdBindIndexBuffer(handle(), indexBuffer->handle(), offset, indexType);
 }
 
 void VkCommandBufferObj::BindVertexBuffer(VkConstantBufferObj *vertexBuffer, VkDeviceSize offset, uint32_t binding) {

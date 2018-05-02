@@ -93,6 +93,7 @@ class VkRenderFramework : public VkTestFramework {
     void InitRenderTarget(uint32_t targets);
     void InitRenderTarget(VkImageView *dsBinding);
     void InitRenderTarget(uint32_t targets, VkImageView *dsBinding);
+    void DestroyRenderTarget();
     void InitFramework(PFN_vkDebugReportCallbackEXT = NULL, void *userData = NULL);
 
     void ShutdownFramework();
@@ -178,6 +179,7 @@ class VkConstantBufferObj;
 class VkPipelineObj;
 class VkDescriptorSetObj;
 typedef vk_testing::Fence VkFenceObj;
+typedef vk_testing::Buffer VkBufferObj;
 
 class VkCommandPoolObj : public vk_testing::CommandPool {
    public:
@@ -196,6 +198,7 @@ class VkCommandBufferObj : public vk_testing::CommandBuffer {
                          VkDepthStencilObj *depth_stencil_obj, float depth_clear_value, uint32_t stencil_clear_value);
     void PrepareAttachments(const vector<std::unique_ptr<VkImageObj>> &color_atts, VkDepthStencilObj *depth_stencil_att);
     void BindDescriptorSet(VkDescriptorSetObj &descriptorSet);
+    void BindIndexBuffer(VkBufferObj *indexBuffer, VkDeviceSize offset, VkIndexType indexType);
     void BindVertexBuffer(VkConstantBufferObj *vertexBuffer, VkDeviceSize offset, uint32_t binding);
     void BeginRenderPass(const VkRenderPassBeginInfo &info);
     void EndRenderPass();
@@ -222,7 +225,7 @@ class VkCommandBufferObj : public vk_testing::CommandBuffer {
     VkQueueObj *m_queue;
 };
 
-class VkConstantBufferObj : public vk_testing::Buffer {
+class VkConstantBufferObj : public VkBufferObj {
    public:
     VkConstantBufferObj(VkDeviceObj *device,
                         VkBufferUsageFlags usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);

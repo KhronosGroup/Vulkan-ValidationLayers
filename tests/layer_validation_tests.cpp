@@ -67,7 +67,11 @@ enum BsoFailSelect {
     BsoFailStencilWriteMask,
     BsoFailStencilReference,
     BsoFailCmdClearAttachments,
-    BsoFailIndexBuffer
+    BsoFailIndexBuffer,
+    BsoFailIndexBufferBadSize,
+    BsoFailIndexBufferBadOffset,
+    BsoFailIndexBufferBadMapSize,
+    BsoFailIndexBufferBadMapOffset
 };
 
 static const char bindStateVertShaderText[] =
@@ -578,6 +582,8 @@ void VkLayerTest::VKTriangleTest(BsoFailSelect failCase) {
 
     bool failcase_needs_depth = false;  // to mark cases that need depth attachment
 
+    VkBufferObj index_buffer;
+
     switch (failCase) {
         case BsoFailLineWidth: {
             pipelineobj.MakeDynamic(VK_DYNAMIC_STATE_LINE_WIDTH);
@@ -635,6 +641,21 @@ void VkLayerTest::VKTriangleTest(BsoFailSelect failCase) {
 
         case BsoFailIndexBuffer:
             break;
+        case BsoFailIndexBufferBadSize:
+        case BsoFailIndexBufferBadOffset:
+        case BsoFailIndexBufferBadMapSize:
+        case BsoFailIndexBufferBadMapOffset: {
+            // Create an index buffer for these tests.
+            // There is no need to populate it because we should bail before trying to draw.
+            uint32_t const indices[] = {0};
+            VkBufferCreateInfo buffer_info = {};
+            buffer_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+            buffer_info.size = 1024;
+            buffer_info.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+            buffer_info.queueFamilyIndexCount = 1;
+            buffer_info.pQueueFamilyIndices = indices;
+            index_buffer.init(*m_device, buffer_info, (VkMemoryPropertyFlags)VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        } break;
         case BsoFailCmdClearAttachments:
             break;
         case BsoFailNone:
@@ -666,6 +687,22 @@ void VkLayerTest::VKTriangleTest(BsoFailSelect failCase) {
     if (failCase == BsoFailIndexBuffer) {
         // Use DrawIndexed w/o an index buffer bound
         m_commandBuffer->DrawIndexed(3, 1, 0, 0, 0);
+    } else if (failCase == BsoFailIndexBufferBadSize) {
+        // Bind the index buffer and draw one too many indices
+        m_commandBuffer->BindIndexBuffer(&index_buffer, 0, VK_INDEX_TYPE_UINT16);
+        m_commandBuffer->DrawIndexed(513, 1, 0, 0, 0);
+    } else if (failCase == BsoFailIndexBufferBadOffset) {
+        // Bind the index buffer and draw one past the end of the buffer using the offset
+        m_commandBuffer->BindIndexBuffer(&index_buffer, 0, VK_INDEX_TYPE_UINT16);
+        m_commandBuffer->DrawIndexed(512, 1, 1, 0, 0);
+    } else if (failCase == BsoFailIndexBufferBadMapSize) {
+        // Bind the index buffer at the middle point and draw one too many indices
+        m_commandBuffer->BindIndexBuffer(&index_buffer, 512, VK_INDEX_TYPE_UINT16);
+        m_commandBuffer->DrawIndexed(257, 1, 0, 0, 0);
+    } else if (failCase == BsoFailIndexBufferBadMapOffset) {
+        // Bind the index buffer at the middle point and draw one past the end of the buffer
+        m_commandBuffer->BindIndexBuffer(&index_buffer, 512, VK_INDEX_TYPE_UINT16);
+        m_commandBuffer->DrawIndexed(256, 1, 1, 0, 0);
     } else {
         m_commandBuffer->Draw(3, 1, 0, 0);
     }
@@ -683,6 +720,7 @@ void VkLayerTest::VKTriangleTest(BsoFailSelect failCase) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
     m_commandBuffer->QueueCommandBuffer(true);
+    DestroyRenderTarget();
 }
 
 void VkLayerTest::GenericDrawPreparation(VkCommandBufferObj *commandBuffer, VkPipelineObj &pipelineobj,
@@ -1652,7 +1690,7 @@ TEST_F(VkLayerTest, UpdateBufferAlignment) {
     ASSERT_NO_FATAL_FAILURE(Init());
 
     VkMemoryPropertyFlags reqs = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
-    vk_testing::Buffer buffer;
+    VkBufferObj buffer;
     buffer.init_as_dst(*m_device, (VkDeviceSize)20, reqs);
 
     m_commandBuffer->begin();
@@ -1687,7 +1725,7 @@ TEST_F(VkLayerTest, FillBufferAlignment) {
     ASSERT_NO_FATAL_FAILURE(Init());
 
     VkMemoryPropertyFlags reqs = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
-    vk_testing::Buffer buffer;
+    VkBufferObj buffer;
     buffer.init_as_dst(*m_device, (VkDeviceSize)20, reqs);
 
     m_commandBuffer->begin();
@@ -2424,7 +2462,7 @@ TEST_F(VkLayerTest, InvalidUsageBits) {
     m_errorMonitor->VerifyFound();
 
     // Initialize buffer with TRANSFER_DST usage
-    vk_testing::Buffer buffer;
+    VkBufferObj buffer;
     VkMemoryPropertyFlags reqs = 0;
     buffer.init_as_dst(*m_device, 128 * 128, reqs);
     VkBufferImageCopy region = {};
@@ -3313,7 +3351,7 @@ TEST_F(VkLayerTest, ImageSampleCounts) {
     // Create src buffer and dst image with sampleCount = 4 and attempt to copy
     // buffer to image
     {
-        vk_testing::Buffer src_buffer;
+        VkBufferObj src_buffer;
         src_buffer.init_as_src(*m_device, 128 * 128 * 4, reqs);
         image_create_info.samples = VK_SAMPLE_COUNT_4_BIT;
         image_create_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
@@ -3333,7 +3371,7 @@ TEST_F(VkLayerTest, ImageSampleCounts) {
     // Create dst buffer and src image with sampleCount = 4 and attempt to copy
     // image to buffer
     {
-        vk_testing::Buffer dst_buffer;
+        VkBufferObj dst_buffer;
         dst_buffer.init_as_dst(*m_device, 128 * 128 * 4, reqs);
         image_create_info.samples = VK_SAMPLE_COUNT_4_BIT;
         image_create_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
@@ -4104,7 +4142,7 @@ TEST_F(VkLayerTest, DSImageTransferGranularityTests) {
     m_errorMonitor->VerifyFound();
 
     // Now do some buffer/image copies
-    vk_testing::Buffer buffer;
+    VkBufferObj buffer;
     VkMemoryPropertyFlags reqs = 0;
     buffer.init_as_dst(*m_device, 128 * 128, reqs);
     VkBufferImageCopy region = {};
@@ -4442,7 +4480,7 @@ TEST_F(VkLayerTest, RenderPassBarrierConflicts) {
     // Send non-zero bufferMemoryBarrierCount
     // Construct a valid BufferMemoryBarrier to avoid any parameter errors
     // First we need a valid buffer to reference
-    vk_testing::Buffer buffer;
+    VkBufferObj buffer;
     VkMemoryPropertyFlags mem_reqs = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
     buffer.init_as_src_and_dst(*m_device, 256, mem_reqs);
     VkBufferMemoryBarrier bmb = {};
@@ -5712,6 +5750,27 @@ TEST_F(VkLayerTest, IndexBufferNotBound) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(VkLayerTest, IndexBufferBadSizeOffset) {
+    TEST_DESCRIPTION("Run indexed draw calls with invalid index ranges.");
+
+    ASSERT_NO_FATAL_FAILURE(Init(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "vkCmdDrawIndexed() index size ");
+    VKTriangleTest(BsoFailIndexBufferBadSize);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "vkCmdDrawIndexed() index size ");
+    VKTriangleTest(BsoFailIndexBufferBadOffset);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "vkCmdDrawIndexed() index size ");
+    VKTriangleTest(BsoFailIndexBufferBadMapSize);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "vkCmdDrawIndexed() index size ");
+    VKTriangleTest(BsoFailIndexBufferBadMapOffset);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(VkLayerTest, CommandBufferTwoSubmits) {
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
                                          "was begun w/ VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT set, but has been submitted");
@@ -6101,11 +6160,11 @@ TEST_F(VkLayerTest, WriteDescriptorSetConsecutiveUpdates) {
     bci.size = 2048;
     bci.queueFamilyIndexCount = 1;
     bci.pQueueFamilyIndices = &qfi;
-    vk_testing::Buffer buffer0;
+    VkBufferObj buffer0;
     buffer0.init(*m_device, bci);
     VkPipelineObj pipe(m_device);
     {  // Scope 2nd buffer to cause early destruction
-        vk_testing::Buffer buffer1;
+        VkBufferObj buffer1;
         bci.size = 1024;
         buffer1.init(*m_device, bci);
 
@@ -11170,7 +11229,7 @@ TEST_F(VkLayerTest, FillBufferWithinRenderPass) {
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
 
     VkMemoryPropertyFlags reqs = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
-    vk_testing::Buffer dstBuffer;
+    VkBufferObj dstBuffer;
     dstBuffer.init_as_dst(*m_device, (VkDeviceSize)1024, reqs);
 
     m_commandBuffer->FillBuffer(dstBuffer.handle(), 0, 4, 0x11111111);
@@ -11193,7 +11252,7 @@ TEST_F(VkLayerTest, UpdateBufferWithinRenderPass) {
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
 
     VkMemoryPropertyFlags reqs = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
-    vk_testing::Buffer dstBuffer;
+    VkBufferObj dstBuffer;
     dstBuffer.init_as_dst(*m_device, (VkDeviceSize)1024, reqs);
 
     VkDeviceSize dstOffset = 0;
@@ -11614,8 +11673,8 @@ TEST_F(VkLayerTest, InvalidBarriers) {
     // Use buffer unbound to memory in barrier
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
                                          " used with no memory bound. Memory should be bound by calling vkBindBufferMemory()");
-    vk_testing::Buffer unbound_buffer;
-    auto unbound_buffer_info = vk_testing::Buffer::create_info(16, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    VkBufferObj unbound_buffer;
+    auto unbound_buffer_info = VkBufferObj::create_info(16, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
     unbound_buffer.init_no_mem(*m_device, unbound_buffer_info);
     auto unbound_buffer_barrier = unbound_buffer.buffer_memory_barrier(0, VK_ACCESS_TRANSFER_WRITE_BIT, 0, 16);
     vkCmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0,
@@ -11659,7 +11718,7 @@ TEST_F(VkLayerTest, InvalidBarriers) {
     // Can't send buffer memory barrier during a render pass
     vkCmdEndRenderPass(m_commandBuffer->handle());
 
-    vk_testing::Buffer buffer;
+    VkBufferObj buffer;
     VkMemoryPropertyFlags mem_reqs = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
     buffer.init_as_src_and_dst(*m_device, 256, mem_reqs);
     VkBufferMemoryBarrier buf_barrier = {};
@@ -12108,7 +12167,7 @@ class BarrierQueueFamilyTestHelper {
     VkLayerTest &layer_test_;
     VkImageObj image_;
     VkImageMemoryBarrier image_barrier_;
-    vk_testing::Buffer buffer_;
+    VkBufferObj buffer_;
     VkBufferMemoryBarrier buffer_barrier_;
 };
 
@@ -19015,7 +19074,7 @@ TEST_F(VkLayerTest, CompressedImageMipCopyTests) {
 
     // Allocate buffers
     VkMemoryPropertyFlags reqs = 0;
-    vk_testing::Buffer buffer_1024, buffer_64, buffer_16, buffer_8;
+    VkBufferObj buffer_1024, buffer_64, buffer_16, buffer_8;
     buffer_1024.init_as_src_and_dst(*m_device, 1024, reqs);
     buffer_64.init_as_src_and_dst(*m_device, 64, reqs);
     buffer_16.init_as_src_and_dst(*m_device, 16, reqs);
@@ -19207,7 +19266,7 @@ TEST_F(VkLayerTest, ImageBufferCopyTests) {
     }
 
     // Allocate buffers
-    vk_testing::Buffer buffer_256k, buffer_128k, buffer_64k, buffer_16k;
+    VkBufferObj buffer_256k, buffer_128k, buffer_64k, buffer_16k;
     VkMemoryPropertyFlags reqs = 0;
     buffer_256k.init_as_src_and_dst(*m_device, 262144, reqs);  // 256k
     buffer_128k.init_as_src_and_dst(*m_device, 131072, reqs);  // 128k
@@ -19522,7 +19581,7 @@ TEST_F(VkLayerTest, MiscImageLayerTests) {
     VkImageObj image(m_device);
     image.Init(128, 128, 1, VK_FORMAT_R16G16B16A16_UINT, VK_IMAGE_USAGE_TRANSFER_DST_BIT, VK_IMAGE_TILING_OPTIMAL, 0);  // 64bpp
     ASSERT_TRUE(image.initialized());
-    vk_testing::Buffer buffer;
+    VkBufferObj buffer;
     VkMemoryPropertyFlags reqs = 0;
     buffer.init_as_src(*m_device, 128 * 128 * 8, reqs);
     VkBufferImageCopy region = {};
@@ -19538,7 +19597,7 @@ TEST_F(VkLayerTest, MiscImageLayerTests) {
     VkImageObj image2(m_device);
     image2.Init(128, 128, 1, VK_FORMAT_R8G8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT, VK_IMAGE_TILING_OPTIMAL, 0);  // 16bpp
     ASSERT_TRUE(image2.initialized());
-    vk_testing::Buffer buffer2;
+    VkBufferObj buffer2;
     VkMemoryPropertyFlags reqs2 = 0;
     buffer2.init_as_src(*m_device, 128 * 128 * 2, reqs2);
     VkBufferImageCopy region2 = {};
@@ -27785,8 +27844,8 @@ TEST_F(VkLayerTest, DedicatedAllocation) {
 
     VkMemoryPropertyFlags mem_flags = 0;
     const VkDeviceSize resource_size = 1024;
-    auto buffer_info = vk_testing::Buffer::create_info(resource_size, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
-    vk_testing::Buffer buffer;
+    auto buffer_info = VkBufferObj::create_info(resource_size, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    VkBufferObj buffer;
     buffer.init_no_mem(*m_device, buffer_info);
     auto buffer_alloc_info = vk_testing::DeviceMemory::get_resource_alloc_info(*m_device, buffer.memory_requirements(), mem_flags);
     auto buffer_dedicated_info = lvl_init_struct<VkMemoryDedicatedAllocateInfoKHR>();
@@ -27795,7 +27854,7 @@ TEST_F(VkLayerTest, DedicatedAllocation) {
     vk_testing::DeviceMemory dedicated_buffer_memory;
     dedicated_buffer_memory.init(*m_device, buffer_alloc_info);
 
-    vk_testing::Buffer wrong_buffer;
+    VkBufferObj wrong_buffer;
     wrong_buffer.init_no_mem(*m_device, buffer_info);
 
     // Bind with wrong buffer
@@ -28700,12 +28759,11 @@ TEST_F(VkPositiveLayerTest, ExternalMemory) {
     // Create export and import buffers
     const VkExternalMemoryBufferCreateInfoKHR external_buffer_info = {VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_BUFFER_CREATE_INFO_KHR,
                                                                       nullptr, handle_type};
-    auto buffer_info =
-        vk_testing::Buffer::create_info(buffer_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    auto buffer_info = VkBufferObj::create_info(buffer_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
     buffer_info.pNext = &external_buffer_info;
-    vk_testing::Buffer buffer_export;
+    VkBufferObj buffer_export;
     buffer_export.init_no_mem(*m_device, buffer_info);
-    vk_testing::Buffer buffer_import;
+    VkBufferObj buffer_import;
     buffer_import.init_no_mem(*m_device, buffer_info);
 
     // Allocation info
@@ -28762,14 +28820,14 @@ TEST_F(VkPositiveLayerTest, ExternalMemory) {
 
     // Create test buffers and fill input buffer
     VkMemoryPropertyFlags mem_prop = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    vk_testing::Buffer buffer_input;
+    VkBufferObj buffer_input;
     buffer_input.init_as_src_and_dst(*m_device, buffer_size, mem_prop);
     auto input_mem = (uint8_t *)buffer_input.memory().map();
     for (uint32_t i = 0; i < buffer_size; i++) {
         input_mem[i] = (i & 0xFF);
     }
     buffer_input.memory().unmap();
-    vk_testing::Buffer buffer_output;
+    VkBufferObj buffer_output;
     buffer_output.init_as_src_and_dst(*m_device, buffer_size, mem_prop);
 
     // Copy from input buffer to output buffer through the exported/imported memory
@@ -29011,9 +29069,9 @@ TEST_F(VkPositiveLayerTest, GetMemoryRequirements2) {
     m_errorMonitor->ExpectSuccess(VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT);
 
     // Create a test buffer
-    vk_testing::Buffer buffer;
+    VkBufferObj buffer;
     buffer.init_no_mem(*m_device,
-                       vk_testing::Buffer::create_info(1024, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT));
+                       VkBufferObj::create_info(1024, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT));
 
     // Use extension to get buffer memory requirements
     auto vkGetBufferMemoryRequirements2KHR = reinterpret_cast<PFN_vkGetBufferMemoryRequirements2KHR>(
@@ -29095,8 +29153,8 @@ TEST_F(VkPositiveLayerTest, BindMemory2) {
     m_errorMonitor->ExpectSuccess(VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT);
 
     // Create a test buffer
-    vk_testing::Buffer buffer;
-    buffer.init_no_mem(*m_device, vk_testing::Buffer::create_info(1024, VK_BUFFER_USAGE_TRANSFER_DST_BIT));
+    VkBufferObj buffer;
+    buffer.init_no_mem(*m_device, VkBufferObj::create_info(1024, VK_BUFFER_USAGE_TRANSFER_DST_BIT));
 
     // Allocate buffer memory
     vk_testing::DeviceMemory buffer_memory;
