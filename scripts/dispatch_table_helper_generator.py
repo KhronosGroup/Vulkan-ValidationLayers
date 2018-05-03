@@ -56,6 +56,7 @@ class DispatchTableHelperOutputGeneratorOptions(GeneratorOptions):
         self.apicall         = apicall
         self.apientry        = apientry
         self.apientryp       = apientryp
+        self.alignFuncParam  = alignFuncParam
 #
 # DispatchTableHelperOutputGenerator - subclass of OutputGenerator.
 # Generates dispatch table helper header files for LVL
@@ -69,6 +70,9 @@ class DispatchTableHelperOutputGenerator(OutputGenerator):
         # Internal state - accumulators for different inner block text
         self.instance_dispatch_list = []      # List of entries for instance dispatch list
         self.device_dispatch_list = []        # List of entries for device dispatch list
+        self.dev_ext_stub_list = []           # List of stub functions for device extension functions
+        self.device_extension_list = []       # List of device extension functions
+        self.extension_type = ''
     #
     # Called once at the beginning of each run
     def beginFile(self, genOpts):
@@ -121,6 +125,9 @@ class DispatchTableHelperOutputGenerator(OutputGenerator):
         device_table += self.OutputDispatchTableHelper('device')
         instance_table += self.OutputDispatchTableHelper('instance')
 
+        for stub in self.dev_ext_stub_list:
+            write(stub, file=self.outFile)
+        write("\n\n", file=self.outFile)
         write(device_table, file=self.outFile);
         write("\n", file=self.outFile)
         write(instance_table, file=self.outFile);
@@ -132,6 +139,7 @@ class DispatchTableHelperOutputGenerator(OutputGenerator):
     def beginFeature(self, interface, emit):
         OutputGenerator.beginFeature(self, interface, emit)
         self.featureExtraProtect = GetFeatureProtect(interface)
+        self.extension_type = interface.get('type')
 
     #
     # Process commands, adding to appropriate dispatch tables
@@ -145,16 +153,36 @@ class DispatchTableHelperOutputGenerator(OutputGenerator):
         info = self.getTypeNameTuple(params[0])
 
         if name not in avoid_entries:
-            self.AddCommandToDispatchList(name, info[0], self.featureExtraProtect)
+            self.AddCommandToDispatchList(name, info[0], self.featureExtraProtect, cmdinfo)
 
     #
     # Determine if this API should be ignored or added to the instance or device dispatch table
-    def AddCommandToDispatchList(self, name, handle_type, protect):
+    def AddCommandToDispatchList(self, name, handle_type, protect, cmdinfo):
         handle = self.registry.tree.find("types/type/[name='" + handle_type + "'][@category='handle']")
         if handle == None:
             return
         if handle_type != 'VkInstance' and handle_type != 'VkPhysicalDevice' and name != 'vkGetInstanceProcAddr':
             self.device_dispatch_list.append((name, self.featureExtraProtect))
+            if "VK_VERSION" not in self.featureName and self.extension_type == 'device':
+                self.device_extension_list.append(name)
+                # Build up stub function
+                return_type = ''
+                decl = self.makeCDecls(cmdinfo.elem)[1]
+                if 'typedef VkResult' in decl:
+                    return_type = 'return VK_SUCCESS;'
+                decl = decl.split('*PFN_vk')[1]
+                decl = decl.replace(')(', '(')
+                if return_type == '':
+                    decl = 'static VKAPI_ATTR void VKAPI_CALL Stub' + decl
+                else:
+                    decl = 'static VKAPI_ATTR VkResult VKAPI_CALL Stub' + decl
+                func_body = ' { ' + return_type + ' };'
+                decl = decl.replace (';', func_body)
+                if self.featureExtraProtect is not None:
+                    self.dev_ext_stub_list.append('#ifdef %s' % self.featureExtraProtect)
+                self.dev_ext_stub_list.append(decl)
+                if self.featureExtraProtect is not None:
+                    self.dev_ext_stub_list.append('#endif // %s' % self.featureExtraProtect)
         else:
             self.instance_dispatch_list.append((name, self.featureExtraProtect))
         return
@@ -200,8 +228,11 @@ class DispatchTableHelperOutputGenerator(OutputGenerator):
                 table += '    table->GetInstanceProcAddr = gpa;\n'
             else:
                 table += '    table->%s = (PFN_%s) gpa(%s, "%s");\n' % (base_name, item[0], table_type, item[0])
-
+            if item[0] in self.device_extension_list:
+                stub_check = '    if (table->%s == nullptr) { table->%s = (PFN_%s)Stub%s; }\n' % (base_name, base_name, item[0], base_name)
+                table += stub_check
             if item[1] is not None:
                 table += '#endif // %s\n' % item[1]
+
         table += '}'
         return table
