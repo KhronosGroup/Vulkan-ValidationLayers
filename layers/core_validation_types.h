@@ -165,6 +165,13 @@ struct MEM_BINDING {
     VkDeviceSize size;
 };
 
+struct INDEX_BUFFER_BINDING {
+    VkBuffer buffer;
+    VkDeviceSize size;
+    VkDeviceSize offset;
+    VkIndexType index_type;
+};
+
 inline bool operator==(MEM_BINDING a, MEM_BINDING b) NOEXCEPT { return a.mem == b.mem && a.offset == b.offset && a.size == b.size; }
 
 namespace std {
@@ -781,6 +788,8 @@ struct GLOBAL_CB_NODE : public BASE_NODE {
     std::vector<std::function<bool(VkQueue)>> eventUpdates;
     std::vector<std::function<bool(VkQueue)>> queryUpdates;
     std::unordered_set<cvdescriptorset::DescriptorSet *> validated_descriptor_sets;
+    // Contents valid only after an index buffer is bound (CBSTATUS_INDEX_BUFFER_BOUND set)
+    INDEX_BUFFER_BINDING index_buffer_binding;
 };
 
 struct SEMAPHORE_WAIT {

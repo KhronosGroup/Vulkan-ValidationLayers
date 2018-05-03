@@ -1944,6 +1944,7 @@ static void ResetCommandBufferState(layer_data *dev_data, const VkCommandBuffer 
         }
         pCB->framebuffers.clear();
         pCB->activeFramebuffer = VK_NULL_HANDLE;
+        memset(&pCB->index_buffer_binding, 0, sizeof(pCB->index_buffer_binding));
     }
 }
 
@@ -6708,6 +6709,10 @@ VKAPI_ATTR void VKAPI_CALL CmdBindIndexBuffer(VkCommandBuffer commandBuffer, VkB
     if (skip) return;
 
     cb_node->status |= CBSTATUS_INDEX_BUFFER_BOUND;
+    cb_node->index_buffer_binding.buffer = buffer;
+    cb_node->index_buffer_binding.size = buffer_state->createInfo.size;
+    cb_node->index_buffer_binding.offset = offset;
+    cb_node->index_buffer_binding.index_type = indexType;
 
     lock.unlock();
     dev_data->dispatch_table.CmdBindIndexBuffer(commandBuffer, buffer, offset, indexType);
@@ -6812,9 +6817,31 @@ VKAPI_ATTR void VKAPI_CALL CmdDraw(VkCommandBuffer commandBuffer, uint32_t verte
 }
 
 static bool PreCallValidateCmdDrawIndexed(layer_data *dev_data, VkCommandBuffer cmd_buffer, bool indexed,
-                                          VkPipelineBindPoint bind_point, GLOBAL_CB_NODE **cb_state, const char *caller) {
-    return ValidateCmdDrawType(dev_data, cmd_buffer, indexed, bind_point, CMD_DRAWINDEXED, cb_state, caller, VK_QUEUE_GRAPHICS_BIT,
-                               VALIDATION_ERROR_1a402415, VALIDATION_ERROR_1a400017, VALIDATION_ERROR_1a40039c);
+                                          VkPipelineBindPoint bind_point, GLOBAL_CB_NODE **cb_state, const char *caller,
+                                          uint32_t indexCount, uint32_t firstIndex) {
+    bool skip =
+        ValidateCmdDrawType(dev_data, cmd_buffer, indexed, bind_point, CMD_DRAWINDEXED, cb_state, caller, VK_QUEUE_GRAPHICS_BIT,
+                            VALIDATION_ERROR_1a402415, VALIDATION_ERROR_1a400017, VALIDATION_ERROR_1a40039c);
+    if (!skip && ((*cb_state)->status & CBSTATUS_INDEX_BUFFER_BOUND)) {
+        unsigned int index_size = 0;
+        const auto &index_buffer_binding = (*cb_state)->index_buffer_binding;
+        if (index_buffer_binding.index_type == VK_INDEX_TYPE_UINT16) {
+            index_size = 2;
+        } else if (index_buffer_binding.index_type == VK_INDEX_TYPE_UINT32) {
+            index_size = 4;
+        }
+        VkDeviceSize end_offset = (index_size * ((VkDeviceSize)firstIndex + indexCount)) + index_buffer_binding.offset;
+        if (end_offset > index_buffer_binding.size) {
+            skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT,
+                            HandleToUint64(index_buffer_binding.buffer), VALIDATION_ERROR_1a40039e,
+                            "vkCmdDrawIndexed() index size (%d) * (firstIndex (%d) + indexCount (%d)) "
+                            "+ binding offset (%" PRIuLEAST64 ") = an ending offset of %" PRIuLEAST64
+                            " bytes, "
+                            "which is greater than the index buffer size (%" PRIuLEAST64 ").",
+                            index_size, firstIndex, indexCount, index_buffer_binding.offset, end_offset, index_buffer_binding.size);
+        }
+    }
+    return skip;
 }
 
 static void PostCallRecordCmdDrawIndexed(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, VkPipelineBindPoint bind_point) {
@@ -6827,7 +6854,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawIndexed(VkCommandBuffer commandBuffer, uint32_
     GLOBAL_CB_NODE *cb_state = nullptr;
     unique_lock_t lock(global_lock);
     bool skip = PreCallValidateCmdDrawIndexed(dev_data, commandBuffer, true, VK_PIPELINE_BIND_POINT_GRAPHICS, &cb_state,
-                                              "vkCmdDrawIndexed()");
+                                              "vkCmdDrawIndexed()", indexCount, firstIndex);
     lock.unlock();
     if (!skip) {
         dev_data->dispatch_table.CmdDrawIndexed(commandBuffer, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
