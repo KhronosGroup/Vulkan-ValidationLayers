@@ -362,8 +362,6 @@ SURFACE_STATE *GetSurfaceState(instance_layer_data *instance_data, VkSurfaceKHR 
     return &it->second;
 }
 
-DeviceExtensions const *GetEnabledExtensions(layer_data const *dev_data) { return &dev_data->extensions; }
-
 // Return ptr to memory binding for given handle of specified type
 static BINDABLE *GetObjectMemBinding(layer_data *dev_data, uint64_t handle, VulkanObjectType type) {
     switch (type) {

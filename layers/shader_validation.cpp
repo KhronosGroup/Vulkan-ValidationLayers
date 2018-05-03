@@ -1195,7 +1195,7 @@ static bool validate_shader_capabilities(layer_data *dev_data, shader_module con
 
     auto report_data = GetReportData(dev_data);
     auto const &enabledFeatures = GetEnabledFeatures(dev_data);
-    auto const &extensions = GetEnabledExtensions(dev_data);
+    auto const &extensions = GetDeviceExtensions(dev_data);
     auto const &descriptorIndexingFeatures = GetEnabledDescriptorIndexingFeatures(dev_data);
 
     struct CapabilityInfo {
@@ -1686,7 +1686,7 @@ bool PreCallValidateCreateShaderModule(layer_data *dev_data, VkShaderModuleCreat
         return false;
     }
 
-    auto have_glsl_shader = GetEnabledExtensions(dev_data)->vk_nv_glsl_shader;
+    auto have_glsl_shader = GetDeviceExtensions(dev_data)->vk_nv_glsl_shader;
 
     if (!have_glsl_shader && (pCreateInfo->codeSize % 4)) {
         skip |= log_msg(
