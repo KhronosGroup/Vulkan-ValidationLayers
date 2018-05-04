@@ -207,7 +207,8 @@ void PostCallRecordCreateImageView(layer_data *device_data, const VkImageViewCre
 
 bool ValidateCopyBufferImageTransferGranularityRequirements(layer_data *device_data, const GLOBAL_CB_NODE *cb_node,
                                                             const IMAGE_STATE *img, const VkBufferImageCopy *region,
-                                                            const uint32_t i, const char *function);
+                                                            const uint32_t i, const char *function,
+                                                            UNIQUE_VALIDATION_ERROR_CODE vuid);
 
 void PreCallRecordCmdCopyImage(layer_data *device_data, GLOBAL_CB_NODE *cb_node, IMAGE_STATE *src_image_state,
                                IMAGE_STATE *dst_image_state, uint32_t region_count, const VkImageCopy *regions,
