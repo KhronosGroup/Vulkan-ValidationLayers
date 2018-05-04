@@ -8987,14 +8987,84 @@ static bool ValidateAttachmentIndex(layer_data *dev_data, uint32_t attachment, u
 
 static bool IsPowerOfTwo(unsigned x) { return x && !(x & (x - 1)); }
 
+enum AttachmentType {
+    ATTACHMENT_COLOR = 1,
+    ATTACHMENT_DEPTH = 2,
+    ATTACHMENT_INPUT = 4,
+    ATTACHMENT_PRESERVE = 8,
+    ATTACHMENT_RESOLVE = 16,
+};
+
+char const *string_AttachmentType(uint8_t type) {
+    switch (type) {
+        case ATTACHMENT_COLOR:
+            return "color";
+        case ATTACHMENT_DEPTH:
+            return "depth";
+        case ATTACHMENT_INPUT:
+            return "input";
+        case ATTACHMENT_PRESERVE:
+            return "preserve";
+        case ATTACHMENT_RESOLVE:
+            return "resolve";
+        default:
+            return "(multiple)";
+    }
+}
+
+static bool AddAttachmentUse(layer_data *dev_data, uint32_t subpass, std::vector<uint8_t> &attachment_uses,
+                             std::vector<VkImageLayout> &attachment_layouts, uint32_t attachment, uint8_t new_use,
+                             VkImageLayout new_layout) {
+    if (attachment >= attachment_uses.size()) return false; /* out of range, but already reported */
+
+    bool skip = false;
+    auto &uses = attachment_uses[attachment];
+    if (uses & new_use) {
+        skip |=
+            log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                    DRAWSTATE_INVALID_RENDERPASS, "vkCreateRenderPass(): subpass %u already uses attachment %u as a %s attachment.",
+                    subpass, attachment, string_AttachmentType(new_use));
+    } else if (uses & ~ATTACHMENT_INPUT || (uses && (new_use == ATTACHMENT_RESOLVE || new_use == ATTACHMENT_PRESERVE))) {
+        /* Note: input attachments are assumed to be done first. */
+        skip |=
+            log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                    VALIDATION_ERROR_140006ac, "vkCreateRenderPass(): subpass %u uses attachment %u as both %s and %s attachment.",
+                    subpass, attachment, string_AttachmentType(uses), string_AttachmentType(new_use));
+    } else if (uses && attachment_layouts[attachment] != new_layout) {
+        skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                        VALIDATION_ERROR_140006ae,
+                        "vkCreateRenderPass(): subpass %u uses attachment %u with conflicting layouts: input uses %s, but %s "
+                        "attachment uses %s.",
+                        subpass, attachment, string_VkImageLayout(attachment_layouts[attachment]), string_AttachmentType(new_use),
+                        string_VkImageLayout(new_layout));
+    } else {
+        attachment_layouts[attachment] = new_layout;
+        uses |= new_use;
+    }
+
+    return skip;
+}
+
 static bool ValidateRenderpassAttachmentUsage(layer_data *dev_data, const VkRenderPassCreateInfo *pCreateInfo) {
     bool skip = false;
     for (uint32_t i = 0; i < pCreateInfo->subpassCount; ++i) {
         const VkSubpassDescription &subpass = pCreateInfo->pSubpasses[i];
+        std::vector<uint8_t> attachment_uses(pCreateInfo->attachmentCount);
+        std::vector<VkImageLayout> attachment_layouts(pCreateInfo->attachmentCount);
+
         if (subpass.pipelineBindPoint != VK_PIPELINE_BIND_POINT_GRAPHICS) {
             skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                             VALIDATION_ERROR_14000698,
-                            "CreateRenderPass: Pipeline bind point for subpass %d must be VK_PIPELINE_BIND_POINT_GRAPHICS.", i);
+                            "vkCreateRenderPass(): Pipeline bind point for subpass %d must be VK_PIPELINE_BIND_POINT_GRAPHICS.", i);
+        }
+
+        for (uint32_t j = 0; j < subpass.inputAttachmentCount; ++j) {
+            auto const &attachment_ref = subpass.pInputAttachments[j];
+            if (attachment_ref.attachment != VK_ATTACHMENT_UNUSED) {
+                skip |= ValidateAttachmentIndex(dev_data, attachment_ref.attachment, pCreateInfo->attachmentCount, "Input");
+                skip |= AddAttachmentUse(dev_data, i, attachment_uses, attachment_layouts, attachment_ref.attachment,
+                                         ATTACHMENT_INPUT, attachment_ref.layout);
+            }
         }
 
         for (uint32_t j = 0; j < subpass.preserveAttachmentCount; ++j) {
@@ -9002,119 +9072,110 @@ static bool ValidateRenderpassAttachmentUsage(layer_data *dev_data, const VkRend
             if (attachment == VK_ATTACHMENT_UNUSED) {
                 skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                                 VALIDATION_ERROR_140006aa,
-                                "CreateRenderPass:  Preserve attachment (%d) must not be VK_ATTACHMENT_UNUSED.", j);
+                                "vkCreateRenderPass():  Preserve attachment (%d) must not be VK_ATTACHMENT_UNUSED.", j);
             } else {
                 skip |= ValidateAttachmentIndex(dev_data, attachment, pCreateInfo->attachmentCount, "Preserve");
+                skip |= AddAttachmentUse(dev_data, i, attachment_uses, attachment_layouts, attachment, ATTACHMENT_PRESERVE,
+                                         VkImageLayout(0) /* preserve doesn't have any layout */);
+            }
+        }
 
-                bool found = (subpass.pDepthStencilAttachment != NULL && subpass.pDepthStencilAttachment->attachment == attachment);
-                for (uint32_t r = 0; !found && r < subpass.inputAttachmentCount; ++r) {
-                    found = (subpass.pInputAttachments[r].attachment == attachment);
-                }
-                for (uint32_t r = 0; !found && r < subpass.colorAttachmentCount; ++r) {
-                    found = (subpass.pColorAttachments[r].attachment == attachment) ||
-                            (subpass.pResolveAttachments != NULL && subpass.pResolveAttachments[r].attachment == attachment);
-                }
-                if (found) {
-                    skip |= log_msg(
-                        dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                        VALIDATION_ERROR_140006ac,
-                        "CreateRenderPass: subpass %u pPreserveAttachments[%u] (%u) must not be used elsewhere in the subpass.", i,
-                        j, attachment);
+        unsigned sample_count = 0;
+        bool subpass_performs_resolve = false;
+
+        for (uint32_t j = 0; j < subpass.colorAttachmentCount; ++j) {
+            if (subpass.pResolveAttachments) {
+                auto const &attachment_ref = subpass.pResolveAttachments[j];
+                if (attachment_ref.attachment != VK_ATTACHMENT_UNUSED) {
+                    skip |= ValidateAttachmentIndex(dev_data, attachment_ref.attachment, pCreateInfo->attachmentCount, "Resolve");
+                    skip |= AddAttachmentUse(dev_data, i, attachment_uses, attachment_layouts, attachment_ref.attachment,
+                                             ATTACHMENT_RESOLVE, attachment_ref.layout);
+
+                    subpass_performs_resolve = true;
+
+                    if (!skip && pCreateInfo->pAttachments[attachment_ref.attachment].samples != VK_SAMPLE_COUNT_1_BIT) {
+                        skip |=
+                            log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,
+                                    0, VALIDATION_ERROR_140006a2,
+                                    "vkCreateRenderPass():  Subpass %u requests multisample resolve into attachment %u, which must "
+                                    "have VK_SAMPLE_COUNT_1_BIT but has %s.",
+                                    i, attachment_ref.attachment,
+                                    string_VkSampleCountFlagBits(pCreateInfo->pAttachments[attachment_ref.attachment].samples));
+                    }
                 }
             }
         }
 
-        auto subpass_performs_resolve =
-            subpass.pResolveAttachments &&
-            std::any_of(subpass.pResolveAttachments, subpass.pResolveAttachments + subpass.colorAttachmentCount,
-                        [](VkAttachmentReference ref) { return ref.attachment != VK_ATTACHMENT_UNUSED; });
-
-        unsigned sample_count = 0;
-
         for (uint32_t j = 0; j < subpass.colorAttachmentCount; ++j) {
-            uint32_t attachment;
-            if (subpass.pResolveAttachments) {
-                attachment = subpass.pResolveAttachments[j].attachment;
-                skip |= ValidateAttachmentIndex(dev_data, attachment, pCreateInfo->attachmentCount, "Resolve");
+            auto const &attachment_ref = subpass.pColorAttachments[j];
+            skip |= ValidateAttachmentIndex(dev_data, attachment_ref.attachment, pCreateInfo->attachmentCount, "Color");
+            if (!skip && attachment_ref.attachment != VK_ATTACHMENT_UNUSED) {
+                skip |= AddAttachmentUse(dev_data, i, attachment_uses, attachment_layouts, attachment_ref.attachment,
+                                         ATTACHMENT_COLOR, attachment_ref.layout);
+                sample_count |= (unsigned)pCreateInfo->pAttachments[attachment_ref.attachment].samples;
 
-                if (!skip && attachment != VK_ATTACHMENT_UNUSED &&
-                    pCreateInfo->pAttachments[attachment].samples != VK_SAMPLE_COUNT_1_BIT) {
-                    skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,
-                                    0, VALIDATION_ERROR_140006a2,
-                                    "CreateRenderPass:  Subpass %u requests multisample resolve into attachment %u, which must "
-                                    "have VK_SAMPLE_COUNT_1_BIT but has %s.",
-                                    i, attachment, string_VkSampleCountFlagBits(pCreateInfo->pAttachments[attachment].samples));
-                }
-
-                if (!skip && subpass.pResolveAttachments[j].attachment != VK_ATTACHMENT_UNUSED &&
-                    subpass.pColorAttachments[j].attachment == VK_ATTACHMENT_UNUSED) {
-                    skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,
-                                    0, VALIDATION_ERROR_1400069e,
-                                    "CreateRenderPass:  Subpass %u requests multisample resolve from attachment %u which has "
-                                    "attachment=VK_ATTACHMENT_UNUSED.",
-                                    i, attachment);
-                }
-            }
-            attachment = subpass.pColorAttachments[j].attachment;
-            skip |= ValidateAttachmentIndex(dev_data, attachment, pCreateInfo->attachmentCount, "Color");
-
-            if (!skip && attachment != VK_ATTACHMENT_UNUSED) {
-                sample_count |= (unsigned)pCreateInfo->pAttachments[attachment].samples;
-
-                if (subpass_performs_resolve && pCreateInfo->pAttachments[attachment].samples == VK_SAMPLE_COUNT_1_BIT) {
+                if (subpass_performs_resolve &&
+                    pCreateInfo->pAttachments[attachment_ref.attachment].samples == VK_SAMPLE_COUNT_1_BIT) {
                     skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,
                                     0, VALIDATION_ERROR_140006a0,
-                                    "CreateRenderPass:  Subpass %u requests multisample resolve from attachment %u which has "
+                                    "vkCreateRenderPass():  Subpass %u requests multisample resolve from attachment %u which has "
                                     "VK_SAMPLE_COUNT_1_BIT.",
-                                    i, attachment);
-                }
-
-                if (subpass_performs_resolve && subpass.pResolveAttachments[j].attachment != VK_ATTACHMENT_UNUSED) {
-                    const auto &color_desc = pCreateInfo->pAttachments[attachment];
-                    const auto &resolve_desc = pCreateInfo->pAttachments[subpass.pResolveAttachments[j].attachment];
-                    if (color_desc.format != resolve_desc.format) {
-                        skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                        VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, VALIDATION_ERROR_140006a4,
-                                        "CreateRenderPass:  Subpass %u pColorAttachments[%u] resolves to an attachment with a "
-                                        "different format. color format: %u, resolve format: %u.",
-                                        i, j, color_desc.format, resolve_desc.format);
-                    }
+                                    i, attachment_ref.attachment);
                 }
 
                 if (dev_data->extensions.vk_amd_mixed_attachment_samples && subpass.pDepthStencilAttachment &&
                     subpass.pDepthStencilAttachment->attachment != VK_ATTACHMENT_UNUSED) {
                     const auto depth_stencil_sample_count =
                         pCreateInfo->pAttachments[subpass.pDepthStencilAttachment->attachment].samples;
-                    if (pCreateInfo->pAttachments[attachment].samples > depth_stencil_sample_count) {
+                    if (pCreateInfo->pAttachments[attachment_ref.attachment].samples > depth_stencil_sample_count) {
                         skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT,
                                         VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, VALIDATION_ERROR_14000bc4,
-                                        "CreateRenderPass:  Subpass %u pColorAttachments[%u] has %s which is larger than "
+                                        "vkCreateRenderPass():  Subpass %u pColorAttachments[%u] has %s which is larger than "
                                         "depth/stencil attachment %s.",
-                                        i, j, string_VkSampleCountFlagBits(pCreateInfo->pAttachments[attachment].samples),
+                                        i, j,
+                                        string_VkSampleCountFlagBits(pCreateInfo->pAttachments[attachment_ref.attachment].samples),
                                         string_VkSampleCountFlagBits(depth_stencil_sample_count));
+                    }
+                }
+            }
+
+            if (!skip && subpass_performs_resolve && subpass.pResolveAttachments[j].attachment != VK_ATTACHMENT_UNUSED) {
+                if (attachment_ref.attachment == VK_ATTACHMENT_UNUSED) {
+                    skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,
+                                    0, VALIDATION_ERROR_1400069e,
+                                    "vkCreateRenderPass():  Subpass %u requests multisample resolve from attachment %u which has "
+                                    "attachment=VK_ATTACHMENT_UNUSED.",
+                                    i, attachment_ref.attachment);
+                } else {
+                    const auto &color_desc = pCreateInfo->pAttachments[attachment_ref.attachment];
+                    const auto &resolve_desc = pCreateInfo->pAttachments[subpass.pResolveAttachments[j].attachment];
+                    if (color_desc.format != resolve_desc.format) {
+                        skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                        VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, VALIDATION_ERROR_140006a4,
+                                        "vkCreateRenderPass():  Subpass %u pColorAttachments[%u] resolves to an attachment with a "
+                                        "different format. color format: %u, resolve format: %u.",
+                                        i, j, color_desc.format, resolve_desc.format);
                     }
                 }
             }
         }
 
         if (subpass.pDepthStencilAttachment && subpass.pDepthStencilAttachment->attachment != VK_ATTACHMENT_UNUSED) {
-            uint32_t attachment = subpass.pDepthStencilAttachment->attachment;
-            skip |= ValidateAttachmentIndex(dev_data, attachment, pCreateInfo->attachmentCount, "Depth stencil");
+            auto const &attachment_ref = *subpass.pDepthStencilAttachment;
+            skip |= ValidateAttachmentIndex(dev_data, attachment_ref.attachment, pCreateInfo->attachmentCount, "Depth stencil");
 
-            if (!skip && attachment != VK_ATTACHMENT_UNUSED) {
-                sample_count |= (unsigned)pCreateInfo->pAttachments[attachment].samples;
+            if (!skip && attachment_ref.attachment != VK_ATTACHMENT_UNUSED) {
+                skip |= AddAttachmentUse(dev_data, i, attachment_uses, attachment_layouts, attachment_ref.attachment,
+                                         ATTACHMENT_DEPTH, attachment_ref.layout);
+                sample_count |= (unsigned)pCreateInfo->pAttachments[attachment_ref.attachment].samples;
             }
         }
 
-        for (uint32_t j = 0; j < subpass.inputAttachmentCount; ++j) {
-            uint32_t attachment = subpass.pInputAttachments[j].attachment;
-            skip |= ValidateAttachmentIndex(dev_data, attachment, pCreateInfo->attachmentCount, "Input");
-        }
-
         if (!dev_data->extensions.vk_amd_mixed_attachment_samples && sample_count && !IsPowerOfTwo(sample_count)) {
-            skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                            VALIDATION_ERROR_0082b401,
-                            "CreateRenderPass:  Subpass %u attempts to render to attachments with inconsistent sample counts.", i);
+            skip |=
+                log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                        VALIDATION_ERROR_0082b401,
+                        "vkCreateRenderPass():  Subpass %u attempts to render to attachments with inconsistent sample counts.", i);
         }
     }
     return skip;

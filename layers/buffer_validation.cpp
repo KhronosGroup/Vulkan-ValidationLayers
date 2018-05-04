@@ -2860,22 +2860,6 @@ bool ValidateLayouts(core_validation::layer_data *device_data, VkDevice device, 
                                     string_VkImageLayout(subpass.pInputAttachments[j].layout));
             }
 
-            VkImageLayout layout = subpass.pInputAttachments[j].layout;
-            bool found_layout_mismatch = subpass.pDepthStencilAttachment &&
-                                         subpass.pDepthStencilAttachment->attachment == attach_index &&
-                                         subpass.pDepthStencilAttachment->layout != layout;
-            for (uint32_t c = 0; !found_layout_mismatch && c < subpass.colorAttachmentCount; ++c) {
-                found_layout_mismatch =
-                    (subpass.pColorAttachments[c].attachment == attach_index && subpass.pColorAttachments[c].layout != layout);
-            }
-            if (found_layout_mismatch) {
-                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                VALIDATION_ERROR_140006ae,
-                                "CreateRenderPass:  Subpass %u pInputAttachments[%u] (%u) has layout %u, but is also used as a "
-                                "depth/color attachment with a different layout.",
-                                i, j, attach_index, layout);
-            }
-
             if (attach_first_use[attach_index]) {
                 skip |= ValidateLayoutVsAttachmentDescription(report_data, subpass.pInputAttachments[j].layout, attach_index,
                                                               pCreateInfo->pAttachments[attach_index]);

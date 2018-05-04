@@ -4241,6 +4241,101 @@ TEST_F(VkLayerTest, RenderPassAttachmentIndexOutOfRange) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(VkLayerTest, RenderPassAttachmentUsedTwiceColor) {
+    ASSERT_NO_FATAL_FAILURE(Init());
+    TEST_DESCRIPTION("Attachment is used simultaneously as two color attachments. This is not acceptable.");
+
+    VkAttachmentDescription attach[] = {
+        {0, VK_FORMAT_R8G8B8A8_UNORM, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE,
+         VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_IMAGE_LAYOUT_UNDEFINED,
+         VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL},
+    };
+    VkAttachmentReference refs[] = {
+        {0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL},
+        {0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL},
+    };
+    VkSubpassDescription subpasses[] = {
+        {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 2, refs, nullptr, nullptr, 0, nullptr},
+    };
+
+    VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 1, attach, 1, subpasses, 0, nullptr};
+    VkRenderPass rp;
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                         "subpass 0 already uses attachment 0 as a color attachment");
+    vkCreateRenderPass(m_device->device(), &rpci, nullptr, &rp);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkLayerTest, RenderPassAttachmentUsedTwiceMismatchingLayout) {
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    TEST_DESCRIPTION("Attachment is used simultaneously as color and input. The layouts differ, which is not acceptable.");
+
+    VkAttachmentDescription attach[] = {
+        {0, VK_FORMAT_R8G8B8A8_UNORM, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_LOAD, VK_ATTACHMENT_STORE_OP_DONT_CARE,
+         VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_GENERAL},
+    };
+    VkAttachmentReference color_ref = {0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
+    VkAttachmentReference input_ref = {0, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
+    VkSubpassDescription subpasses[] = {
+        {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 1, &input_ref, 1, &color_ref, nullptr, nullptr, 0, nullptr},
+    };
+
+    VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 1, attach, 1, subpasses, 0, nullptr};
+    VkRenderPass rp;
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_140006ae);
+    vkCreateRenderPass(m_device->device(), &rpci, nullptr, &rp);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkPositiveLayerTest, RenderPassAttachmentUsedTwiceOK) {
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    TEST_DESCRIPTION("Attachment is used simultaneously as color and input, with the same layout. This is OK.");
+
+    VkAttachmentDescription attach[] = {
+        {0, VK_FORMAT_R8G8B8A8_UNORM, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_LOAD, VK_ATTACHMENT_STORE_OP_DONT_CARE,
+         VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_GENERAL},
+    };
+    VkAttachmentReference ref = {0, VK_IMAGE_LAYOUT_GENERAL};
+    VkSubpassDescription subpasses[] = {
+        {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 1, &ref, 1, &ref, nullptr, nullptr, 0, nullptr},
+    };
+
+    VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 1, attach, 1, subpasses, 0, nullptr};
+    VkRenderPass rp;
+
+    m_errorMonitor->ExpectSuccess();
+    vkCreateRenderPass(m_device->device(), &rpci, nullptr, &rp);
+    m_errorMonitor->VerifyNotFound();
+    vkDestroyRenderPass(m_device->device(), rp, nullptr);
+}
+
+TEST_F(VkLayerTest, RenderPassAttachmentUsedTwicePreserveAndColor) {
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    TEST_DESCRIPTION("Attachment is used simultaneously as color and preserve. This is not acceptable.");
+
+    VkAttachmentDescription attach[] = {
+        {0, VK_FORMAT_R8G8B8A8_UNORM, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_LOAD, VK_ATTACHMENT_STORE_OP_DONT_CARE,
+         VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_GENERAL},
+    };
+    VkAttachmentReference ref = {0, VK_IMAGE_LAYOUT_GENERAL};
+    uint32_t preserve_attachment = 0;
+    VkSubpassDescription subpasses[] = {
+        {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 1, &ref, nullptr, nullptr, 1, &preserve_attachment},
+    };
+
+    VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 1, attach, 1, subpasses, 0, nullptr};
+    VkRenderPass rp;
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_140006ac);
+    vkCreateRenderPass(m_device->device(), &rpci, nullptr, &rp);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(VkLayerTest, RenderPassPipelineSubpassMismatch) {
     TEST_DESCRIPTION("Use a pipeline for the wrong subpass in a render pass instance");
     ASSERT_NO_FATAL_FAILURE(Init());
