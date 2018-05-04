@@ -18519,19 +18519,13 @@ TEST_F(VkLayerTest, ExerciseGetImageSubresourceLayout) {
 }
 
 TEST_F(VkLayerTest, CopyImageLayerCountMismatch) {
-    VkResult err;
-    bool pass;
-
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_09c00118);
-
+    TEST_DESCRIPTION(
+        "Try to copy between images with the source subresource having a different layerCount than the destination subresource");
     ASSERT_NO_FATAL_FAILURE(Init());
 
-    // Create two images of different types and try to copy between them
-    VkImage srcImage;
-    VkImage dstImage;
-    VkDeviceMemory srcMem;
-    VkDeviceMemory destMem;
-    VkMemoryRequirements memReqs;
+    // Create two images to copy between
+    VkImageObj src_image_obj(m_device);
+    VkImageObj dst_image_obj(m_device);
 
     VkImageCreateInfo image_create_info = {};
     image_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -18548,38 +18542,12 @@ TEST_F(VkLayerTest, CopyImageLayerCountMismatch) {
     image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
     image_create_info.flags = 0;
 
-    err = vkCreateImage(m_device->device(), &image_create_info, NULL, &srcImage);
-    ASSERT_VK_SUCCESS(err);
+    src_image_obj.init(&image_create_info);
+    ASSERT_TRUE(src_image_obj.initialized());
 
     image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-    err = vkCreateImage(m_device->device(), &image_create_info, NULL, &dstImage);
-    ASSERT_VK_SUCCESS(err);
-
-    // Allocate memory
-    VkMemoryAllocateInfo memAlloc = {};
-    memAlloc.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    memAlloc.pNext = NULL;
-    memAlloc.allocationSize = 0;
-    memAlloc.memoryTypeIndex = 0;
-
-    vkGetImageMemoryRequirements(m_device->device(), srcImage, &memReqs);
-    memAlloc.allocationSize = memReqs.size;
-    pass = m_device->phy().set_memory_type(memReqs.memoryTypeBits, &memAlloc, 0);
-    ASSERT_TRUE(pass);
-    err = vkAllocateMemory(m_device->device(), &memAlloc, NULL, &srcMem);
-    ASSERT_VK_SUCCESS(err);
-
-    vkGetImageMemoryRequirements(m_device->device(), dstImage, &memReqs);
-    memAlloc.allocationSize = memReqs.size;
-    pass = m_device->phy().set_memory_type(memReqs.memoryTypeBits, &memAlloc, 0);
-    ASSERT_VK_SUCCESS(err);
-    err = vkAllocateMemory(m_device->device(), &memAlloc, NULL, &destMem);
-    ASSERT_VK_SUCCESS(err);
-
-    err = vkBindImageMemory(m_device->device(), srcImage, srcMem, 0);
-    ASSERT_VK_SUCCESS(err);
-    err = vkBindImageMemory(m_device->device(), dstImage, destMem, 0);
-    ASSERT_VK_SUCCESS(err);
+    dst_image_obj.init(&image_create_info);
+    ASSERT_TRUE(dst_image_obj.initialized());
 
     m_commandBuffer->begin();
     VkImageCopy copyRegion;
@@ -18601,15 +18569,11 @@ TEST_F(VkLayerTest, CopyImageLayerCountMismatch) {
     copyRegion.extent.width = 1;
     copyRegion.extent.height = 1;
     copyRegion.extent.depth = 1;
-    m_commandBuffer->CopyImage(srcImage, VK_IMAGE_LAYOUT_GENERAL, dstImage, VK_IMAGE_LAYOUT_GENERAL, 1, &copyRegion);
-    m_commandBuffer->end();
 
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_09c00118);
+    m_commandBuffer->CopyImage(src_image_obj.image(), VK_IMAGE_LAYOUT_GENERAL, dst_image_obj.image(), VK_IMAGE_LAYOUT_GENERAL, 1,
+                               &copyRegion);
     m_errorMonitor->VerifyFound();
-
-    vkDestroyImage(m_device->device(), srcImage, NULL);
-    vkDestroyImage(m_device->device(), dstImage, NULL);
-    vkFreeMemory(m_device->device(), srcMem, NULL);
-    vkFreeMemory(m_device->device(), destMem, NULL);
 }
 
 TEST_F(VkLayerTest, ImageLayerUnsupportedFormat) {
