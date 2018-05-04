@@ -544,6 +544,10 @@ static bool validate_string_array(debug_report_data *report_data, const char *ap
     return skip_call;
 }
 
+// Forward declaration for pNext validation
+bool ValidatePnextStructContents(debug_report_data *report_data, const char *api_name, const ParameterName &parameter_name,
+                                 const GenericHeader *header);
+
 /**
  * Validate a structure's pNext member.
  *
@@ -628,6 +632,8 @@ static bool validate_struct_pnext(debug_report_data *report_data, const char *ap
                                     allowed_struct_names, header_version, parameter_name.get_name().c_str());
                     }
                 }
+                // LUGMAL Insert pNext struct check here:
+                skip_call |= ValidatePnextStructContents(report_data, api_name, parameter_name, current);
                 current = reinterpret_cast<const GenericHeader *>(current->pNext);
             }
         }
