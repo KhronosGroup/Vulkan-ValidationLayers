@@ -175,14 +175,17 @@ class ParameterValidationOutputGenerator(OutputGenerator):
         self.required_extensions = dict()                 # Dictionary of required extensions for each item in the current extension
         self.extension_type = ''                          # Type of active feature (extension), device or instance
         self.extension_names = dict()                     # Dictionary of extension names to extension name defines
+        self.structextends_list = []                      # List of extensions which extend another struct
+        self.struct_feature_protect = dict()              # Dictionary of structnames and FeatureExtraProtect strings
         self.valid_vuids = set()                          # Set of all valid VUIDs
         self.vuid_dict = dict()                           # VUID dictionary (from JSON)
         self.alias_dict = dict()                          # Dict of cmd|struct aliases
+        self.returnedonly_structs = []
         # Named tuples to store struct and command data
         self.StructType = namedtuple('StructType', ['name', 'value'])
         self.CommandParam = namedtuple('CommandParam', ['type', 'name', 'ispointer', 'isstaticarray', 'isbool', 'israngedenum',
-                                                        'isconst', 'isoptional', 'iscount', 'noautovalidity', 'len', 'extstructs',
-                                                        'condition', 'cdecl'])
+                                                        'isconst', 'isoptional', 'iscount', 'noautovalidity',
+                                                        'len', 'extstructs', 'condition', 'cdecl'])
         self.CommandData = namedtuple('CommandData', ['name', 'params', 'cdecl', 'extension_type', 'result'])
         self.StructMemberData = namedtuple('StructMemberData', ['name', 'members'])
 
@@ -302,6 +305,44 @@ class ParameterValidationOutputGenerator(OutputGenerator):
         self.func_pointers += '};\n'
         write(self.func_pointers, file=self.outFile)
         self.newline()
+
+        pnext_handler  = 'bool ValidatePnextStructContents(debug_report_data *report_data, const char *api_name, const ParameterName &parameter_name, const GenericHeader* header) {\n'
+        pnext_handler += '    bool skip = false;\n'
+        pnext_handler += '    switch(header->sType) {\n'
+
+        # Do some processing here to extract data from validatedstructs...
+        for item in self.structextends_list:
+            postProcSpec = {}
+            postProcSpec['ppp'] = '' if not item else '{postProcPrefix}'
+            postProcSpec['pps'] = '' if not item else '{postProcSuffix}'
+            postProcSpec['ppi'] = '' if not item else '{postProcInsert}'
+
+            pnext_case = '\n'
+            protect = ''
+            # Guard struct cases with feature ifdefs, if necessary
+            if item in self.struct_feature_protect.keys():
+                protect = self.struct_feature_protect[item]
+                pnext_case += '#ifdef %s\n' % protect
+            pnext_case += '        // Validation code for %s structure members\n' % item
+            pnext_case += '        case %s: {\n' % self.getStructType(item)
+            pnext_case += '            %s *structure = (%s *) header;\n' % (item, item)
+            expr = self.expandStructCode(self.validatedStructs[item], item, 'structure->', '', '            ', [], postProcSpec)
+            struct_validation_source = self.ScrubStructCode(expr)
+            pnext_case += '%s' % struct_validation_source
+            pnext_case += '        } break;\n'
+            if protect is not '':
+                pnext_case += '#endif // %s\n' % protect
+            # Skip functions containing no validation
+            if struct_validation_source != '':
+                pnext_handler += pnext_case;
+        pnext_handler += '        default:\n'
+        pnext_handler += '            skip = false;\n'
+        pnext_handler += '    }\n'
+        pnext_handler += '    return skip;\n'
+        pnext_handler += '}\n'
+        write(pnext_handler, file=self.outFile)
+        self.newline()
+
         ext_template  = 'template <typename T>\n'
         ext_template += 'bool OutputExtensionError(const T *layer_data, const std::string &api_name, const std::string &extension_name) {\n'
         ext_template += '    return log_msg(layer_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,\n'
@@ -436,6 +477,8 @@ class ParameterValidationOutputGenerator(OutputGenerator):
         OutputGenerator.genStruct(self, typeinfo, typeName, alias)
         conditions = self.structMemberValidationConditions[typeName] if typeName in self.structMemberValidationConditions else None
         members = typeinfo.elem.findall('.//member')
+        if self.featureExtraProtect is not None:
+            self.struct_feature_protect[typeName] = self.featureExtraProtect
         #
         # Iterate over members once to get length parameters for arrays
         lens = set()
@@ -480,6 +523,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             noautovalidity = False
             if (member.attrib.get('noautovalidity') is not None) or ((typeName in self.structMemberBlacklist) and (name in self.structMemberBlacklist[typeName])):
                 noautovalidity = True
+            structextends = False
             membersInfo.append(self.CommandParam(type=type, name=name,
                                                 ispointer=self.paramIsPointer(member),
                                                 isstaticarray=isstaticarray,
@@ -493,6 +537,16 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                                                 extstructs=self.registry.validextensionstructs[typeName] if name == 'pNext' else None,
                                                 condition=conditions[name] if conditions and name in conditions else None,
                                                 cdecl=cdecl))
+        # If this struct extends another, keep its name in list for further processing
+        if typeinfo.elem.attrib.get('structextends') is not None:
+            self.structextends_list.append(typeName)
+        # Returnedonly structs should have most of their members ignored -- on entry, we only care about validating the sType and
+        # pNext members. Everything else will be overwritten by the callee.
+        if typeinfo.elem.attrib.get('returnedonly') is not None:
+            if typeName == 'VkPhysicalDeviceGroupProperties':
+                stop = 'here'
+            self.returnedonly_structs.append(typeName)
+            membersInfo = [m for m in membersInfo if m.name in ('sType', 'pNext')]
         self.structMembers.append(self.StructMemberData(name=typeName, members=membersInfo))
     #
     # Capture group (e.g. C "enum" type) info to be used for param check code generation.
@@ -662,6 +716,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
         value = re.sub('([a-z0-9])([A-Z])', r'\1_\2', typename)
         value = value.replace('D3_D12', 'D3D12')
         value = value.replace('Device_IDProp', 'Device_ID_Prop')
+        value = value.replace('LODGather', 'LOD_Gather')
         # Change to uppercase
         value = value.upper()
         # Add STRUCTURE_TYPE_
@@ -736,8 +791,8 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             if '->' in name:
                 # The count is obtained by dereferencing a member of a struct parameter
                 lenParam = self.CommandParam(name=name, iscount=True, ispointer=False, isbool=False, israngedenum=False, isconst=False,
-                                             isstaticarray=None, isoptional=False, type=None, noautovalidity=False, len=None, extstructs=None,
-                                             condition=None, cdecl=None)
+                                             isstaticarray=None, isoptional=False, type=None, noautovalidity=False,
+                                             len=None, extstructs=None, condition=None, cdecl=None)
             elif 'latexmath' in name:
                 lenName, decoratedName = self.parseLateXMath(name)
                 lenParam = self.getParamByName(params, lenName)
@@ -959,6 +1014,27 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             return line.format(**kwargs)
         return line
     #
+    # Process struct member validation code, stripping metadata
+    def ScrubStructCode(self, code):
+        scrubbed_lines = ''
+        for line in code:
+            if 'validate_struct_pnext' in line:
+                continue
+            if 'allowed_structs' in line:
+                continue
+            if 'xml-driven validation' in line:
+                continue
+            line = line.replace('{postProcPrefix}', '')
+            line = line.replace('{postProcSuffix}', '')
+            line = line.replace('{postProcInsert}', '')
+            line = line.replace('{funcName}', '')
+            line = line.replace('{valuePrefix}', '')
+            line = line.replace('{displayNamePrefix}', '')
+            line = line.replace('{IndexVector}', '')
+            line = line.replace('local_data->', '')
+            scrubbed_lines += line
+        return scrubbed_lines
+    #
     # Process struct validation code for inclusion in function or parent struct validation code
     def expandStructCode(self, lines, funcName, memberNamePrefix, memberDisplayNamePrefix, indent, output, postProcSpec):
         for line in lines:
@@ -1011,6 +1087,10 @@ class ParameterValidationOutputGenerator(OutputGenerator):
     def genFuncBody(self, funcName, values, valuePrefix, displayNamePrefix, structTypeName):
         lines = []    # Generated lines of code
         unused = []   # Unused variable names
+
+        if structTypeName == 'VkPhysicalDeviceGroupProperties':
+            stop = 'here'
+
         for value in values:
             usedLines = []
             lenParam = None
@@ -1028,7 +1108,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             # will be validated with their associated array
             if (value.ispointer or value.isstaticarray) and not value.iscount:
                 # Parameters for function argument generation
-                req = 'true'    # Paramerter cannot be NULL
+                req = 'true'    # Parameter cannot be NULL
                 cpReq = 'true'  # Count pointer cannot be NULL
                 cvReq = 'true'  # Count value cannot be 0
                 lenDisplayName = None # Name of length parameter to print with validation messages; parameter name with prefix applied
@@ -1080,13 +1160,17 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                     else:
                         usedLines += self.makePointerCheck(valuePrefix, value, lenParam, req, cvReq, cpReq, funcName, lenDisplayName, valueDisplayName, postProcSpec, structTypeName)
                     # If this is a pointer to a struct (input), see if it contains members that need to be checked
-                    if value.type in self.validatedStructs and value.isconst:
-                        usedLines.append(self.expandStructPointerCode(valuePrefix, value, lenParam, funcName, valueDisplayName, postProcSpec))
+                 ###if value.type in self.validatedStructs and value.isconst:
+                    if value.type in self.validatedStructs:
+                        if value.isconst: # or value.type in self.returnedonly_structs:
+                            usedLines.append(self.expandStructPointerCode(valuePrefix, value, lenParam, funcName, valueDisplayName, postProcSpec))
+                        elif value.type in self.returnedonly_structs:
+                            usedLines.append(self.expandStructPointerCode(valuePrefix, value, lenParam, funcName, valueDisplayName, postProcSpec))
             # Non-pointer types
             else:
                 # The parameter will not be processes when tagged as 'noautovalidity'
                 # For the struct case, the struct type will not be validated, but any
-                # members not tagged as 'noatuvalidity' will be validated
+                # members not tagged as 'noautovalidity' will be validated
                 if value.noautovalidity:
                     # Log a diagnostic message when validation cannot be automatically generated and must be implemented manually
                     self.logMsg('diag', 'ParameterValidation: No validation for {} {}'.format(structTypeName if structTypeName else funcName, value.name))
@@ -1163,6 +1247,11 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                 just_validate = True
             # Skip first parameter if it is a dispatch handle (everything except vkCreateInstance)
             startIndex = 0 if command.name == 'vkCreateInstance' else 1
+
+            if command.name == 'vkEnumeratePhysicalDeviceGroups':
+                stop = 'here'
+
+
             lines, unused = self.genFuncBody(command.name, command.params[startIndex:], '', '', None)
             # Cannot validate extension dependencies for device extension APIs having a physical device as their dispatchable object
             if (command.name in self.required_extensions) and (self.extension_type != 'device' or command.params[0].type != 'VkPhysicalDevice'):
