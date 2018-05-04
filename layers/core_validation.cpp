@@ -9135,6 +9135,12 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateRenderPass(VkDevice device, const VkRenderP
     // TODO: As part of wrapping up the mem_tracker/core_validation merge the following routine should be consolidated with
     //       ValidateLayouts.
     skip |= ValidateRenderpassAttachmentUsage(dev_data, pCreateInfo);
+
+    std::vector<bool> has_self_dependency(pCreateInfo->subpassCount);
+    std::vector<DAGNode> subpass_to_node(pCreateInfo->subpassCount);
+    std::vector<int32_t> subpass_to_dep_index(pCreateInfo->subpassCount);
+    skip |= CreatePassDAG(dev_data, pCreateInfo, subpass_to_node, has_self_dependency, subpass_to_dep_index);
+
     for (uint32_t i = 0; i < pCreateInfo->dependencyCount; ++i) {
         auto const &dependency = pCreateInfo->pDependencies[i];
         skip |= ValidateStageMaskGsTsEnables(dev_data, dependency.srcStageMask, "vkCreateRenderPass()", VALIDATION_ERROR_13e006b8,
@@ -9169,11 +9175,6 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateRenderPass(VkDevice device, const VkRenderP
 
     if (VK_SUCCESS == result) {
         lock.lock();
-
-        std::vector<bool> has_self_dependency(pCreateInfo->subpassCount);
-        std::vector<DAGNode> subpass_to_node(pCreateInfo->subpassCount);
-        std::vector<int32_t> subpass_to_dep_index(pCreateInfo->subpassCount);
-        skip |= CreatePassDAG(dev_data, pCreateInfo, subpass_to_node, has_self_dependency, subpass_to_dep_index);
 
         auto render_pass = std::make_shared<RENDER_PASS_STATE>(pCreateInfo);
         render_pass->renderPass = *pRenderPass;
