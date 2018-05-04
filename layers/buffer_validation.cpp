@@ -3348,8 +3348,8 @@ bool PreCallValidateCreateImageView(layer_data *device_data, const VkImageViewCr
             image_usage = chained_ivuci_struct->usage;
         }
 
-        // Validate VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT state
-        if (image_flags & VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT) {
+        // Validate VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT state, if view/image formats differ
+        if ((image_flags & VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT) && (image_format != view_format)) {
             if (FormatIsMultiplane(image_format)) {
                 // View format must match the multiplane compatible format
                 uint32_t plane = 3;  // invalid

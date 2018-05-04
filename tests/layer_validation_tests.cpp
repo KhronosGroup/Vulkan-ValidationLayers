@@ -18784,7 +18784,7 @@ TEST_F(VkLayerTest, CreateImageViewDifferentClass) {
 }
 
 TEST_F(VkLayerTest, MultiplaneIncompatibleViewFormat) {
-    TEST_DESCRIPTION("Postive test of multiplane format compatibility checks");
+    TEST_DESCRIPTION("Postive/negative tests of multiplane imageview format compatibility");
 
     // Enable KHR multiplane req'd extensions
     bool mp_extensions = InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,
@@ -18875,16 +18875,26 @@ TEST_F(VkLayerTest, MultiplaneIncompatibleViewFormat) {
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_0ac00c64);
     vkCreateImageView(m_device->device(), &ivci, NULL, &imageView);
     m_errorMonitor->VerifyFound();
+    vkDestroyImageView(m_device->device(), imageView, NULL);  // VK_NULL_HANDLE allowed
+    imageView = VK_NULL_HANDLE;
 
     // Correct format succeeds
     ivci.format = VK_FORMAT_R8_UNORM;
     m_errorMonitor->ExpectSuccess();
     vkCreateImageView(m_device->device(), &ivci, NULL, &imageView);
     m_errorMonitor->VerifyNotFound();
+    vkDestroyImageView(m_device->device(), imageView, NULL);  // VK_NULL_HANDLE allowed
+    imageView = VK_NULL_HANDLE;
 
-    if (VK_NULL_HANDLE != imageView) {
-        vkDestroyImageView(m_device->device(), imageView, NULL);
-    }
+    // Try a multiplane imageview
+    ivci.format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM;
+    ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    m_errorMonitor->ExpectSuccess();
+    vkCreateImageView(m_device->device(), &ivci, NULL, &imageView);
+    m_errorMonitor->VerifyNotFound();
+    vkDestroyImageView(m_device->device(), imageView, NULL);  // VK_NULL_HANDLE allowed
+    imageView = VK_NULL_HANDLE;
+
     vkFreeMemory(device(), mem_obj, NULL);
     vkDestroyImage(m_device->device(), image, NULL);
 }
