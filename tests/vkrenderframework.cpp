@@ -300,8 +300,8 @@ void VkRenderFramework::InitState(VkPhysicalDeviceFeatures *features, VkPhysical
     for (auto ext = m_device_extension_names.begin(); ext != m_device_extension_names.end();) {
         if (!DeviceExtensionSupported(objs[0], nullptr, *ext)) {
             bool found = false;
-            for (auto layer = m_instance_layer_names.begin(); layer != m_instance_layer_names.end();) {
-                if (!DeviceExtensionSupported(objs[0], *layer, *ext)) {
+            for (auto layer = m_instance_layer_names.begin(); layer != m_instance_layer_names.end(); ++layer) {
+                if (DeviceExtensionSupported(objs[0], *layer, *ext)) {
                     found = true;
                     break;
                 }
