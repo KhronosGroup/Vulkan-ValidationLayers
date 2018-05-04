@@ -4035,81 +4035,64 @@ TEST_F(VkLayerTest, MiscBlitImageTests) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, DSImageTransferGranularityTests) {
-    VkResult err;
-    bool pass;
-
+TEST_F(VkLayerTest, MinImageTransferGranularity) {
     TEST_DESCRIPTION("Tests for validation of Queue Family property minImageTransferGranularity.");
     ASSERT_NO_FATAL_FAILURE(Init());
 
-    // If w/d/h granularity is 1, test is not meaningful
-    // TODO: When virtual device limits are available, create a set of limits for this test that
-    // will always have a granularity of > 1 for w, h, and d
-    auto index = m_device->graphics_queue_node_index_;
     auto queue_family_properties = m_device->phy().queue_properties();
+    auto large_granularity_family =
+        std::find_if(queue_family_properties.begin(), queue_family_properties.end(), [](VkQueueFamilyProperties family_properties) {
+            VkExtent3D family_granularity = family_properties.minImageTransferGranularity;
+            // We need a queue family that supports copy operations and has a large enough minImageTransferGranularity for the tests
+            // below to make sense.
+            return (family_properties.queueFlags & VK_QUEUE_TRANSFER_BIT || family_properties.queueFlags & VK_QUEUE_GRAPHICS_BIT ||
+                    family_properties.queueFlags & VK_QUEUE_COMPUTE_BIT) &&
+                   family_granularity.depth >= 4 && family_granularity.width >= 4 && family_granularity.height >= 4;
+        });
 
-    if ((queue_family_properties[index].minImageTransferGranularity.depth < 4) ||
-        (queue_family_properties[index].minImageTransferGranularity.width < 4) ||
-        (queue_family_properties[index].minImageTransferGranularity.height < 4)) {
-        printf("             Image transfer granularity is too small to test meaningfully. Skipping.\n");
+    if (large_granularity_family == queue_family_properties.end()) {
+        printf("             No queue family has a large enough granularity for this test to be meaningful, skipping test\n");
         return;
     }
+    const size_t queue_family_index = std::distance(queue_family_properties.begin(), large_granularity_family);
+    VkExtent3D granularity = queue_family_properties[queue_family_index].minImageTransferGranularity;
+    VkCommandPoolObj command_pool(m_device, queue_family_index, 0);
 
     // Create two images of different types and try to copy between them
     VkImage srcImage;
     VkImage dstImage;
-    VkDeviceMemory srcMem;
-    VkDeviceMemory destMem;
-    VkMemoryRequirements memReqs;
 
     VkImageCreateInfo image_create_info = {};
     image_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
     image_create_info.pNext = NULL;
-    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.imageType = VK_IMAGE_TYPE_3D;
     image_create_info.format = VK_FORMAT_B8G8R8A8_UNORM;
-    image_create_info.extent.width = 32;
-    image_create_info.extent.height = 32;
-    image_create_info.extent.depth = 1;
+    image_create_info.extent.width = granularity.width * 2;
+    image_create_info.extent.height = granularity.height * 2;
+    image_create_info.extent.depth = granularity.depth * 2;
     image_create_info.mipLevels = 1;
-    image_create_info.arrayLayers = 4;
+    image_create_info.arrayLayers = 1;
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
-    image_create_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    image_create_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
     image_create_info.flags = 0;
 
-    err = vkCreateImage(m_device->device(), &image_create_info, NULL, &srcImage);
-    ASSERT_VK_SUCCESS(err);
+    VkImageObj src_image_obj(m_device);
+    src_image_obj.init(&image_create_info);
+    ASSERT_TRUE(src_image_obj.initialized());
+    srcImage = src_image_obj.handle();
 
-    err = vkCreateImage(m_device->device(), &image_create_info, NULL, &dstImage);
-    ASSERT_VK_SUCCESS(err);
+    image_create_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 
-    // Allocate memory
-    VkMemoryAllocateInfo memAlloc = {};
-    memAlloc.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    memAlloc.pNext = NULL;
-    memAlloc.allocationSize = 0;
-    memAlloc.memoryTypeIndex = 0;
+    VkImageObj dst_image_obj(m_device);
+    dst_image_obj.init(&image_create_info);
+    ASSERT_TRUE(dst_image_obj.initialized());
+    dstImage = dst_image_obj.handle();
 
-    vkGetImageMemoryRequirements(m_device->device(), srcImage, &memReqs);
-    memAlloc.allocationSize = memReqs.size;
-    pass = m_device->phy().set_memory_type(memReqs.memoryTypeBits, &memAlloc, 0);
-    ASSERT_TRUE(pass);
-    err = vkAllocateMemory(m_device->device(), &memAlloc, NULL, &srcMem);
-    ASSERT_VK_SUCCESS(err);
+    VkCommandBufferObj command_buffer(m_device, &command_pool);
+    ASSERT_TRUE(command_buffer.initialized());
+    command_buffer.begin();
 
-    vkGetImageMemoryRequirements(m_device->device(), dstImage, &memReqs);
-    memAlloc.allocationSize = memReqs.size;
-    pass = m_device->phy().set_memory_type(memReqs.memoryTypeBits, &memAlloc, 0);
-    ASSERT_VK_SUCCESS(err);
-    err = vkAllocateMemory(m_device->device(), &memAlloc, NULL, &destMem);
-    ASSERT_VK_SUCCESS(err);
-
-    err = vkBindImageMemory(m_device->device(), srcImage, srcMem, 0);
-    ASSERT_VK_SUCCESS(err);
-    err = vkBindImageMemory(m_device->device(), dstImage, destMem, 0);
-    ASSERT_VK_SUCCESS(err);
-
-    m_commandBuffer->begin();
     VkImageCopy copyRegion;
     copyRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     copyRegion.srcSubresource.mipLevel = 0;
@@ -4125,38 +4108,41 @@ TEST_F(VkLayerTest, DSImageTransferGranularityTests) {
     copyRegion.dstOffset.x = 0;
     copyRegion.dstOffset.y = 0;
     copyRegion.dstOffset.z = 0;
-    copyRegion.extent.width = 1;
-    copyRegion.extent.height = 1;
-    copyRegion.extent.depth = 1;
+    copyRegion.extent.width = granularity.width;
+    copyRegion.extent.height = granularity.height;
+    copyRegion.extent.depth = granularity.depth;
 
     // Introduce failure by setting srcOffset to a bad granularity value
     copyRegion.srcOffset.y = 3;
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
                                          VALIDATION_ERROR_19000dee);  // srcOffset image transfer granularity
-    m_commandBuffer->CopyImage(srcImage, VK_IMAGE_LAYOUT_GENERAL, dstImage, VK_IMAGE_LAYOUT_GENERAL, 1, &copyRegion);
+    command_buffer.CopyImage(srcImage, VK_IMAGE_LAYOUT_GENERAL, dstImage, VK_IMAGE_LAYOUT_GENERAL, 1, &copyRegion);
     m_errorMonitor->VerifyFound();
 
-    // Introduce failure by setting extent to a bad granularity value
+    // Introduce failure by setting extent to a granularity value that is bad
+    // for both the source and destination image.
     copyRegion.srcOffset.y = 0;
     copyRegion.extent.width = 3;
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
                                          VALIDATION_ERROR_19000dee);  // src extent image transfer granularity
-    m_commandBuffer->CopyImage(srcImage, VK_IMAGE_LAYOUT_GENERAL, dstImage, VK_IMAGE_LAYOUT_GENERAL, 1, &copyRegion);
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                         VALIDATION_ERROR_19000df0);  // dst extent image transfer granularity
+    command_buffer.CopyImage(srcImage, VK_IMAGE_LAYOUT_GENERAL, dstImage, VK_IMAGE_LAYOUT_GENERAL, 1, &copyRegion);
     m_errorMonitor->VerifyFound();
 
     // Now do some buffer/image copies
     VkBufferObj buffer;
     VkMemoryPropertyFlags reqs = 0;
-    buffer.init_as_dst(*m_device, 128 * 128, reqs);
+    buffer.init_as_src_and_dst(*m_device, 8 * granularity.height * granularity.width * granularity.depth, reqs);
     VkBufferImageCopy region = {};
     region.bufferOffset = 0;
-    region.bufferRowLength = 3;
-    region.bufferImageHeight = 128;
+    region.bufferRowLength = 0;
+    region.bufferImageHeight = 0;
     region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     region.imageSubresource.layerCount = 1;
-    region.imageExtent.height = 16;
-    region.imageExtent.width = 16;
-    region.imageExtent.depth = 1;
+    region.imageExtent.height = granularity.height;
+    region.imageExtent.width = granularity.width;
+    region.imageExtent.depth = granularity.depth;
     region.imageOffset.x = 0;
     region.imageOffset.y = 0;
     region.imageOffset.z = 0;
@@ -4164,22 +4150,17 @@ TEST_F(VkLayerTest, DSImageTransferGranularityTests) {
     // Introduce failure by setting imageExtent to a bad granularity value
     region.imageExtent.width = 3;
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_19200e04);  // image transfer granularity
-    vkCmdCopyImageToBuffer(m_commandBuffer->handle(), srcImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, buffer.handle(), 1, &region);
+    vkCmdCopyImageToBuffer(command_buffer.handle(), srcImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, buffer.handle(), 1, &region);
     m_errorMonitor->VerifyFound();
-    region.imageExtent.width = 16;
+    region.imageExtent.width = granularity.width;
 
     // Introduce failure by setting imageOffset to a bad granularity value
     region.imageOffset.z = 3;
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_18e00e02);  // image transfer granularity
-    vkCmdCopyBufferToImage(m_commandBuffer->handle(), buffer.handle(), srcImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+    vkCmdCopyBufferToImage(command_buffer.handle(), buffer.handle(), dstImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
     m_errorMonitor->VerifyFound();
 
-    m_commandBuffer->end();
-
-    vkDestroyImage(m_device->device(), srcImage, NULL);
-    vkDestroyImage(m_device->device(), dstImage, NULL);
-    vkFreeMemory(m_device->device(), srcMem, NULL);
-    vkFreeMemory(m_device->device(), destMem, NULL);
+    command_buffer.end();
 }
 
 TEST_F(VkLayerTest, MismatchedQueueFamiliesOnSubmit) {
