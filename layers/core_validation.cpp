@@ -4753,6 +4753,8 @@ const VkPhysicalDeviceDescriptorIndexingFeaturesEXT *GetEnabledDescriptorIndexin
 
 const DeviceExtensions *GetDeviceExtensions(const layer_data *device_data) { return &device_data->extensions; }
 
+uint32_t GetApiVersion(const layer_data *device_data) { return device_data->api_version; }
+
 VKAPI_ATTR VkResult VKAPI_CALL CreateImage(VkDevice device, const VkImageCreateInfo *pCreateInfo,
                                            const VkAllocationCallbacks *pAllocator, VkImage *pImage) {
     VkResult result = VK_ERROR_VALIDATION_FAILED_EXT;
