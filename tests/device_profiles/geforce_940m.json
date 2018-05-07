@@ -394,6 +394,10 @@
             "specVersion": 1
         },
         {
+            "extensionName": "VK_KHR_get_physical_device_properties2",
+            "specVersion": 1
+        },
+        {
             "extensionName": "VK_KHR_image_format_list",
             "specVersion": 1
         },
@@ -1672,6 +1676,12 @@
             "linearTilingFeatures": 0,
             "optimalTilingFeatures": 0,
             "bufferFeatures": 0
+        },
+        {
+            "formatID": 1000156002,
+            "linearTilingFeatures": 0,
+            "optimalTilingFeatures": 1,
+            "bufferFeatures": 1
         }
     ]
 }

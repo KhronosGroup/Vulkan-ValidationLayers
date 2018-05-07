@@ -18890,38 +18890,13 @@ TEST_F(VkLayerTest, MultiplaneIncompatibleViewFormat) {
         return;
     }
 
-    VkImage image;
-    ASSERT_VK_SUCCESS(vkCreateImage(device(), &ci, NULL, &image));
-
-    // Allocate & bind memory
-    VkPhysicalDeviceMemoryProperties phys_mem_props;
-    vkGetPhysicalDeviceMemoryProperties(gpu(), &phys_mem_props);
-    VkMemoryRequirements mem_reqs;
-    vkGetImageMemoryRequirements(device(), image, &mem_reqs);
-    VkDeviceMemory mem_obj = VK_NULL_HANDLE;
-    VkMemoryPropertyFlagBits mem_props = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-    for (uint32_t type = 0; type < phys_mem_props.memoryTypeCount; type++) {
-        if ((mem_reqs.memoryTypeBits & (1 << type)) &&
-            ((phys_mem_props.memoryTypes[type].propertyFlags & mem_props) == mem_props)) {
-            VkMemoryAllocateInfo alloc_info = {};
-            alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-            alloc_info.allocationSize = mem_reqs.size;
-            alloc_info.memoryTypeIndex = type;
-            ASSERT_VK_SUCCESS(vkAllocateMemory(device(), &alloc_info, NULL, &mem_obj));
-            break;
-        }
-    }
-
-    if (VK_NULL_HANDLE == mem_obj) {
-        printf("             Unable to allocate image memory. Skipping test.\n");
-        vkDestroyImage(device(), image, NULL);
-        return;
-    }
-    ASSERT_VK_SUCCESS(vkBindImageMemory(device(), image, mem_obj, 0));
+    VkImageObj image_obj(m_device);
+    image_obj.init(&ci);
+    ASSERT_TRUE(image_obj.initialized());
 
     VkImageViewCreateInfo ivci = {};
     ivci.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-    ivci.image = image;
+    ivci.image = image_obj.image();
     ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
     ivci.format = VK_FORMAT_R8_SNORM;  // Compat is VK_FORMAT_R8_UNORM
     ivci.subresourceRange.layerCount = 1;
@@ -18952,10 +18927,6 @@ TEST_F(VkLayerTest, MultiplaneIncompatibleViewFormat) {
     vkCreateImageView(m_device->device(), &ivci, NULL, &imageView);
     m_errorMonitor->VerifyNotFound();
     vkDestroyImageView(m_device->device(), imageView, NULL);  // VK_NULL_HANDLE allowed
-    imageView = VK_NULL_HANDLE;
-
-    vkFreeMemory(device(), mem_obj, NULL);
-    vkDestroyImage(m_device->device(), image, NULL);
 }
 
 TEST_F(VkLayerTest, CreateImageViewInvalidSubresourceRange) {
