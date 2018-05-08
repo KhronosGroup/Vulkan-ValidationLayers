@@ -57,17 +57,6 @@ set(COMMON_CPP
     test_environment.cpp
    )
 
-include_directories(
-    ${PROJECT_SOURCE_DIR}/tests
-    ${PROJECT_SOURCE_DIR}/submodules/googletest/googletest/include
-    ${PROJECT_SOURCE_DIR}/icd/common
-    ${PROJECT_SOURCE_DIR}/layers
-    ${GLSLANG_SPIRV_INCLUDE_DIR}
-    ${LIBGLM_INCLUDE_DIR}
-    ${CMAKE_CURRENT_BINARY_DIR}
-    ${CMAKE_BINARY_DIR}
-    ${PROJECT_BINARY_DIR}
-    )
 
 if (NOT WIN32)
     # extra setup for out-of-tree builds
@@ -99,30 +88,46 @@ elseif(UNIX)
 else()
 endif()
 
-add_executable(vk_layer_validation_tests layer_validation_tests.cpp ${COMMON_CPP})
+add_executable(vk_layer_validation_tests layer_validation_tests.cpp ../layers/vk_format_utils.cpp ${COMMON_CPP})
 set_target_properties(vk_layer_validation_tests
    PROPERTIES
    COMPILE_DEFINITIONS "GTEST_LINKED_AS_SHARED_LIBRARY=1")
+# TODO: Winnow this list!!!!
+target_include_directories(vk_layer_validation_tests
+    ${VULKAN_HEADERS_LOCATION}/include
+    ${VULKAN_HEADERS_LOCATION}/include/vulkan
+    ${PROJECT_SOURCE_DIR}/tests
+    ${PROJECT_SOURCE_DIR}/submodules/googletest/googletest/include
+    ${PROJECT_SOURCE_DIR}/layers
+    ${GLSLANG_SPIRV_INCLUDE_DIR}
+   #### ${LIBGLM_INCLUDE_DIR}
+    ${CMAKE_CURRENT_BINARY_DIR}
+    ${CMAKE_BINARY_DIR}
+    ${PROJECT_BINARY_DIR}
+    )
+
 if(NOT WIN32)
     set_target_properties(vk_layer_validation_tests
         PROPERTIES
         COMPILE_FLAGS "-Wno-sign-compare")
     if (BUILD_WSI_XCB_SUPPORT OR BUILD_WSI_XLIB_SUPPORT)
-        target_link_libraries(vk_layer_validation_tests ${LIBVK} ${XCB_LIBRARIES} ${X11_LIBRARIES} gtest gtest_main VkLayer_utils ${GLSLANG_LIBRARIES})
+        target_link_libraries(vk_layer_validation_tests ${LIBVK} ${XCB_LIBRARIES} ${X11_LIBRARIES} gtest gtest_main ${GLSLANG_LIBRARIES})
     else()
-        target_link_libraries(vk_layer_validation_tests ${LIBVK} gtest gtest_main VkLayer_utils ${GLSLANG_LIBRARIES})
+        target_link_libraries(vk_layer_validation_tests ${LIBVK} gtest gtest_main ${GLSLANG_LIBRARIES})
     endif()
 endif()
 if(WIN32)
-   target_link_libraries(vk_layer_validation_tests ${LIBVK} gtest gtest_main VkLayer_utils ${GLSLANG_LIBRARIES})
+   target_link_libraries(vk_layer_validation_tests ${LIBVK} gtest gtest_main ${GLSLANG_LIBRARIES})
 endif()
-add_dependencies(vk_layer_validation_tests
-   VkLayer_core_validation
-   VkLayer_object_tracker
-   VkLayer_threading
-   VkLayer_unique_objects
-   VkLayer_parameter_validation
-)
+# TODO: change to add_target_dependencies
+# TODO: WHY DO THESE MATTER?  Seems silly
+#add_dependencies(vk_layer_validation_tests
+#   VkLayer_core_validation
+#   VkLayer_object_tracker
+#   VkLayer_threading
+#   VkLayer_unique_objects
+#   VkLayer_parameter_validation
+#)
 
 if (WIN32)
     # For Windows, copy necessary gtest DLLs to the right spot for the vk_layer_tests...

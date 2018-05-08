@@ -32,6 +32,94 @@ else()
     message(FATAL_ERROR "Unsupported Platform!")
 endif()
 
+set (PYTHON_CMD ${PYTHON_EXECUTABLE})
+set(SCRIPTS_DIR "${PROJECT_SOURCE_DIR}/scripts")
+message("xXXXxxXXxX scrips_dir is ${SCRIPTS_DIR}")
+
+# Define macro used for building vkxml generated files
+macro(run_vk_xml_generate dependency output)
+    add_custom_command(OUTPUT ${output}
+    COMMAND ${PYTHON_CMD} ${SCRIPTS_DIR}/lvl_genvk.py -registry ${SCRIPTS_DIR}/vk.xml ${output}
+    DEPENDS ${SCRIPTS_DIR}/vk.xml ${SCRIPTS_DIR}/generator.py ${SCRIPTS_DIR}/${dependency} ${SCRIPTS_DIR}/lvl_genvk.py ${SCRIPTS_DIR}/reg.py
+    )
+endmacro()
+
+# Define macro used for generating header files containing commit IDs for external dependencies
+macro(run_external_revision_generate source_dir symbol_name output)
+    add_custom_command(OUTPUT ${output}
+    # NOTE: If you modify this call to use --rev_file instead of --git_dir (to read the commit ID from a file instead of
+    # parsing from a Git repository), you probably also want to add the revision file to the list of DEPENDS on the
+    # subsequent line (to ensure that the script is re-run when the revision file is modified).
+    COMMAND ${PYTHON_CMD} ${SCRIPTS_DIR}/external_revision_generator.py --git_dir ${source_dir} -s ${symbol_name} -o ${output}
+    DEPENDS ${SCRIPTS_DIR}/external_revision_generator.py ${source_dir}/.git/HEAD ${source_dir}/.git/index
+    )
+endmacro()
+
+# Custom target for generated vulkan helper file dependencies
+set(generate_helper_files_DEPENDS)
+if(BUILD_LAYERS)
+    LIST(APPEND generate_helper_files_DEPENDS spirv_tools_commit_id.h)
+endif()
+add_custom_target(generate_helper_files DEPENDS
+    vk_enum_string_helper.h
+    vk_safe_struct.h
+    vk_safe_struct.cpp
+    vk_object_types.h
+    vk_layer_dispatch_table.h
+    vk_dispatch_table_helper.h
+    vk_extension_helper.h
+    vk_typemap_helper.h
+    ${generate_helper_files_DEPENDS}
+    )
+set_target_properties(generate_helper_files PROPERTIES FOLDER ${LVL_TARGET_FOLDER})
+
+# Rules to build generated helper files
+run_vk_xml_generate(loader_extension_generator.py vk_layer_dispatch_table.h)
+run_vk_xml_generate(dispatch_table_helper_generator.py vk_dispatch_table_helper.h)
+run_vk_xml_generate(helper_file_generator.py vk_safe_struct.h)
+run_vk_xml_generate(helper_file_generator.py vk_safe_struct.cpp)
+run_vk_xml_generate(helper_file_generator.py vk_enum_string_helper.h)
+run_vk_xml_generate(helper_file_generator.py vk_object_types.h)
+run_vk_xml_generate(helper_file_generator.py vk_extension_helper.h)
+run_vk_xml_generate(helper_file_generator.py vk_typemap_helper.h)
+if(BUILD_LAYERS)
+    # TODO: fix this or find out if we can nuke it.VUID-VkImageCreateInfo-tiling-00977
+    #run_external_revision_generate(${EXTERNAL_SOURCE_ROOT}/glslang/External/spirv-tools SPIRV_TOOLS_COMMIT_ID spirv_tools_commit_id.h)
+endif()
+
+
+
+
+# Layer Utils Library
+# For Windows, we use a static lib because the Windows loader has a fairly restrictive loader search
+# path that can't be easily modified to point it to the same directory that contains the layers.
+set(VKLAYER_UTILS_VLF_SOURCES
+    vk_layer_config.cpp
+    vk_layer_extension_utils.cpp
+    vk_layer_utils.cpp
+    vk_format_utils.cpp
+    )
+if (WIN32)
+    add_library(VkLayer_utils STATIC ${VKLAYER_UTILS_VLF_SOURCES})
+    target_compile_definitions(VkLayer_utils PUBLIC _CRT_SECURE_NO_WARNINGS)
+else()
+    add_library(VkLayer_utils SHARED ${VKLAYER_UTILS_VLF_SOURCES})
+    if(INSTALL_LVL_FILES)
+        install(TARGETS VkLayer_utils DESTINATION ${CMAKE_INSTALL_LIBDIR})
+    endif()
+endif()
+add_dependencies(VkLayer_utils generate_helper_files)
+target_include_directories(
+    VkLayer_utils PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/loader
+    ${VULKAN_HEADERS_LOCATION}/include
+    ${VULKAN_HEADERS_LOCATION}/include/vulkan
+    ${CMAKE_CURRENT_BINARY_DIR}
+    )
+
+message("OOOOOOOOOOOO vulkan hdrs loc = ${VULKAN_HEADERS_LOCATION}")
+
+
 set(LAYER_JSON_FILES_WITH_DEPENDENCIES
     VkLayer_core_validation
     VkLayer_object_tracker
@@ -165,10 +253,10 @@ elseif(APPLE)
     add_library(VkLayer_${target} SHARED ${ARGN})
     target_link_Libraries(VkLayer_${target} VkLayer_utils)
     add_dependencies(VkLayer_${target} generate_helper_files VkLayer_utils)
-    set_target_properties(VkLayer_${target} PROPERTIES 
+    set_target_properties(VkLayer_${target} PROPERTIES
         LINK_FLAGS "-Wl"
         INSTALL_RPATH "@loader_path/"
-    ) 
+    )
     install(TARGETS VkLayer_${target} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
     endmacro()
 else()
@@ -183,14 +271,16 @@ else()
     endmacro()
 endif()
 
+# TODO: cut down this list, maybe add target includes?
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/../loader
-    ${CMAKE_CURRENT_SOURCE_DIR}/../include/vulkan
     ${CMAKE_CURRENT_BINARY_DIR}
+    ${VULKAN_HEADERS_LOCATION}/include
+    ${VULKAN_HEADERS_LOCATION}/include/vulkan
     ${PROJECT_BINARY_DIR}
     ${CMAKE_BINARY_DIR}
-)
+    )
+message("FFFFFFFFFF cmake_current_binary_dir is ${CMAKE_CURRENT_BINARY_DIR}")
 
 if (WIN32)
     # Applies to all configurations
@@ -208,7 +298,7 @@ endif()
 
 # Clang (and not gcc) warns about unused const variables.
 # Generated files may purposely contain unused consts, so
-# silence this warning in Clang. 
+# silence this warning in Clang.
 if (CMAKE_C_COMPILER_ID MATCHES "Clang")
    set_source_files_properties(parameter_validation.cpp PROPERTIES
         COMPILE_FLAGS "-Wno-unused-const-variable")
