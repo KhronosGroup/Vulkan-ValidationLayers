@@ -295,13 +295,23 @@ void SetImageLayout(layer_data *device_data, GLOBAL_CB_NODE *cb_node, const IMAG
     image_subresource_range.levelCount = 1;
     SetImageLayout(device_data, cb_node, image_state, image_subresource_range, layout);
 }
+
 // Set image layout for all slices of an image view
 void SetImageViewLayout(layer_data *device_data, GLOBAL_CB_NODE *cb_node, VkImageView imageView, const VkImageLayout &layout) {
     auto view_state = GetImageViewState(device_data, imageView);
     assert(view_state);
 
-    SetImageLayout(device_data, cb_node, GetImageState(device_data, view_state->create_info.image),
-                   view_state->create_info.subresourceRange, layout);
+    IMAGE_STATE *image_state = GetImageState(device_data, view_state->create_info.image);
+    VkImageSubresourceRange sub_range = view_state->create_info.subresourceRange;
+
+    // When changing the layout of a 3D image subresource via a 2D or 2D_ARRRAY image view, all depth slices of
+    // the subresource mip level(s) are transitioned, ignoring any layers restriction in the subresource info.
+    if ((image_state->createInfo.imageType == VK_IMAGE_TYPE_3D) && (view_state->create_info.viewType != VK_IMAGE_VIEW_TYPE_3D)) {
+        sub_range.baseArrayLayer = 0;
+        sub_range.layerCount = image_state->createInfo.extent.depth;
+    }
+
+    SetImageLayout(device_data, cb_node, image_state, sub_range, layout);
 }
 
 bool VerifyFramebufferAndRenderPassLayouts(layer_data *device_data, GLOBAL_CB_NODE *pCB,
