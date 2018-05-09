@@ -3029,6 +3029,7 @@ static VkResult loader_get_manifest_files(const struct loader_instance *inst, co
     const char *override = NULL;
     char *override_getenv = NULL;
     char *loc, *orig_loc = NULL;
+    size_t loc_size = 0;
     char *reg = NULL;
     char *file, *next_file, *name;
     size_t alloced_count = 64;
@@ -3076,7 +3077,6 @@ static VkResult loader_get_manifest_files(const struct loader_instance *inst, co
     // Make a copy of the input we are using so it is not modified
     // Also handle getting the location(s) from registry on Windows
     if (override == NULL) {
-        size_t loc_size = 0;
 #if !defined(_WIN32)
         const char *xdgconfdirs = loader_secure_getenv("XDG_CONFIG_DIRS", inst);
         const char *xdgdatadirs = loader_secure_getenv("XDG_DATA_DIRS", inst);
@@ -3256,6 +3256,18 @@ static VkResult loader_get_manifest_files(const struct loader_instance *inst, co
         }
         strcpy(loc, override);
     }
+
+    size_t n = 0;
+    loc_size = strlen(loc);
+    // Remove duplicated directory symbols (could hide duplicated paths)
+    for (size_t i = 0; i < loc_size; i++) {
+        if (n > 0) loc[i] = loc[i + n];
+        if (loc[i] == DIRECTORY_SYMBOL && loc[i + 1 + n] == DIRECTORY_SYMBOL) {
+            loc_size--;
+            n++;
+        }
+    }
+    loc[loc_size] = '\0';
 
     // Print out the paths being searched if debugging is enabled
     loader_log(inst, VK_DEBUG_REPORT_DEBUG_BIT_EXT, 0, "Searching the following paths for manifest files: %s\n", loc);
