@@ -1,5 +1,5 @@
 [submodule "submodules/googletest"]
-	path = submodules/googletest
+	path = tests/googletest
 	url = https://github.com/google/googletest.git
 [submodule "Vulkan-Headers"]
 	path = Vulkan-Headers
