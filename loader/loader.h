@@ -165,7 +165,7 @@ struct loader_dispatch_hash_entry {
     struct loader_dispatch_hash_list list;  // to handle hashing collisions
 };
 
-typedef void(VKAPI_PTR *PFN_vkDevExt)(VkDevice device);
+typedef VkResult(VKAPI_PTR *PFN_vkDevExt)(VkDevice device);
 struct loader_dev_ext_dispatch_table {
     PFN_vkDevExt dev_ext[MAX_NUM_UNKNOWN_EXTS];
 };
