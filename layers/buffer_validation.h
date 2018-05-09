@@ -121,6 +121,21 @@ bool ValidateBarrierLayoutToImageUsage(layer_data *device_data, const VkImageMem
 bool ValidateBarriersToImages(layer_data *device_data, GLOBAL_CB_NODE const *cb_state, uint32_t imageMemoryBarrierCount,
                               const VkImageMemoryBarrier *pImageMemoryBarriers, const char *func_name);
 
+bool ValidateBarriersQFOTransferUniqueness(layer_data *device_data, const char *func_name, GLOBAL_CB_NODE *cb_state,
+                                           uint32_t bufferBarrierCount, const VkBufferMemoryBarrier *pBufferMemBarriers,
+                                           uint32_t imageMemBarrierCount, const VkImageMemoryBarrier *pImageMemBarriers);
+
+void RecordBarriersQFOTransfers(layer_data *device_data, const char *func_name, GLOBAL_CB_NODE *cb_state,
+                                uint32_t bufferBarrierCount, const VkBufferMemoryBarrier *pBufferMemBarriers,
+                                uint32_t imageMemBarrierCount, const VkImageMemoryBarrier *pImageMemBarriers);
+
+bool ValidateQueuedQFOTransfers(layer_data *dev_data, GLOBAL_CB_NODE *pCB,
+                                QFOTransferCBScoreboards<VkImageMemoryBarrier> *qfo_image_scoreboards,
+                                QFOTransferCBScoreboards<VkBufferMemoryBarrier> *qfo_buffer_scoreboards);
+
+void RecordQueuedQFOTransfers(layer_data *dev_data, GLOBAL_CB_NODE *pCB);
+void EraseQFOImageRelaseBarriers(layer_data *device_data, const VkImage &image);
+
 void TransitionImageLayouts(layer_data *device_data, GLOBAL_CB_NODE *cb_state, uint32_t memBarrierCount,
                             const VkImageMemoryBarrier *pImgMemBarriers);
 

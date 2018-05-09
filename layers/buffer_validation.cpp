@@ -590,6 +590,206 @@ static bool IsReleaseOp(layer_data *device_data, GLOBAL_CB_NODE *cb_state, VkIma
     return pool && IsReleaseOp<VkImageMemoryBarrier, true>(pool, barrier);
 }
 
+template <typename Barrier>
+bool ValidateQFOTransferBarrierUniqueness(layer_data *device_data, const char *func_name, GLOBAL_CB_NODE *cb_state,
+                                          uint32_t barrier_count, const Barrier *barriers) {
+    using BarrierRecord = QFOTransferBarrier<Barrier>;
+    bool skip = false;
+    const auto report_data = core_validation::GetReportData(device_data);
+    auto pool = GetCommandPoolNode(device_data, cb_state->createInfo.commandPool);
+    auto &barrier_sets = GetQFOBarrierSets(cb_state, typename BarrierRecord::Tag());
+    const char *barrier_name = BarrierRecord::BarrierName();
+    const char *handle_name = BarrierRecord::HandleName();
+    const char *transfer_type = nullptr;
+    for (uint32_t b = 0; b < barrier_count; b++) {
+        if (!IsTransferOp(&barriers[b])) continue;
+        const BarrierRecord *barrier_record = nullptr;
+        if (IsReleaseOp<Barrier, true /* Assume IsTransfer */>(pool, &barriers[b])) {
+            const auto found = barrier_sets.release.find(barriers[b]);
+            if (found != barrier_sets.release.cend()) {
+                barrier_record = &(*found);
+                transfer_type = "releasing";
+            }
+        } else if (IsAcquireOp<Barrier, true /*Assume IsTransfer */>(pool, &barriers[b])) {
+            const auto found = barrier_sets.acquire.find(barriers[b]);
+            if (found != barrier_sets.acquire.cend()) {
+                barrier_record = &(*found);
+                transfer_type = "acquiring";
+            }
+        }
+        if (barrier_record != nullptr) {
+            skip |=
+                log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                        HandleToUint64(cb_state->commandBuffer), BarrierRecord::ErrMsgDuplicateQFOInCB(),
+                        "%s: %s at index %" PRIu32 " %s queue ownership of %s (0x%" PRIx64 "), from srcQueueFamilyIndex %" PRIu32
+                        " to dstQueueFamilyIndex %" PRIu32 " duplicates existing barrier recorded in this command buffer.",
+                        func_name, barrier_name, b, transfer_type, handle_name, HandleToUint64(barrier_record->handle),
+                        barrier_record->srcQueueFamilyIndex, barrier_record->dstQueueFamilyIndex);
+        }
+    }
+    return skip;
+}
+
+template <typename Barrier>
+void RecordQFOTransferBarriers(layer_data *device_data, GLOBAL_CB_NODE *cb_state, uint32_t barrier_count, const Barrier *barriers) {
+    auto pool = GetCommandPoolNode(device_data, cb_state->createInfo.commandPool);
+    auto &barrier_sets = GetQFOBarrierSets(cb_state, typename QFOTransferBarrier<Barrier>::Tag());
+    for (uint32_t b = 0; b < barrier_count; b++) {
+        if (!IsTransferOp(&barriers[b])) continue;
+        if (IsReleaseOp<Barrier, true /* Assume IsTransfer*/>(pool, &barriers[b])) {
+            barrier_sets.release.emplace(barriers[b]);
+        } else if (IsAcquireOp<Barrier, true /*Assume IsTransfer */>(pool, &barriers[b])) {
+            barrier_sets.acquire.emplace(barriers[b]);
+        }
+    }
+}
+
+bool ValidateBarriersQFOTransferUniqueness(layer_data *device_data, const char *func_name, GLOBAL_CB_NODE *cb_state,
+                                           uint32_t bufferBarrierCount, const VkBufferMemoryBarrier *pBufferMemBarriers,
+                                           uint32_t imageMemBarrierCount, const VkImageMemoryBarrier *pImageMemBarriers) {
+    bool skip = false;
+    skip |= ValidateQFOTransferBarrierUniqueness(device_data, func_name, cb_state, bufferBarrierCount, pBufferMemBarriers);
+    skip |= ValidateQFOTransferBarrierUniqueness(device_data, func_name, cb_state, imageMemBarrierCount, pImageMemBarriers);
+    return skip;
+}
+
+void RecordBarriersQFOTransfers(layer_data *device_data, const char *func_name, GLOBAL_CB_NODE *cb_state,
+                                uint32_t bufferBarrierCount, const VkBufferMemoryBarrier *pBufferMemBarriers,
+                                uint32_t imageMemBarrierCount, const VkImageMemoryBarrier *pImageMemBarriers) {
+    RecordQFOTransferBarriers(device_data, cb_state, bufferBarrierCount, pBufferMemBarriers);
+    RecordQFOTransferBarriers(device_data, cb_state, imageMemBarrierCount, pImageMemBarriers);
+}
+
+template <typename BarrierRecord, typename Scoreboard>
+static bool ValidateAndUpdateQFOScoreboard(const debug_report_data *report_data, const GLOBAL_CB_NODE *cb_state,
+                                           const char *operation, const BarrierRecord &barrier, Scoreboard *scoreboard) {
+    // Record to the scoreboard or report that we have a duplication
+    bool skip = false;
+    auto inserted = scoreboard->insert(std::make_pair(barrier, cb_state));
+    if (!inserted.second && inserted.first->second != cb_state) {
+        // This is a duplication (but don't report duplicates from the same CB, as we do that at record time
+        skip = log_msg(
+            report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+            HandleToUint64(cb_state->commandBuffer), BarrierRecord::ErrMsgDuplicateQFOInSubmit(),
+            "%s: %s %s queue ownership of %s (0x%" PRIx64 "), from srcQueueFamilyIndex %" PRIu32 " to dstQueueFamilyIndex %" PRIu32
+            " duplicates existing barrier submitted in this batch from command buffer 0x%" PRIx64 ".",
+            "vkQueueSubmit()", BarrierRecord::BarrierName(), operation, BarrierRecord::HandleName(), HandleToUint64(barrier.handle),
+            barrier.srcQueueFamilyIndex, barrier.dstQueueFamilyIndex, HandleToUint64(inserted.first->second));
+    }
+    return skip;
+}
+
+template <typename Barrier>
+static bool ValidateQueuedQFOTransferBarriers(layer_data *device_data, GLOBAL_CB_NODE *cb_state,
+                                              QFOTransferCBScoreboards<Barrier> *scoreboards) {
+    using BarrierRecord = QFOTransferBarrier<Barrier>;
+    using TypeTag = typename BarrierRecord::Tag;
+    bool skip = false;
+    const auto report_data = core_validation::GetReportData(device_data);
+    const auto &cb_barriers = GetQFOBarrierSets(cb_state, TypeTag());
+    const GlobalQFOTransferBarrierMap<Barrier> &global_release_barriers =
+        core_validation::GetGlobalQFOReleaseBarrierMap(device_data, TypeTag());
+    const char *barrier_name = BarrierRecord::BarrierName();
+    const char *handle_name = BarrierRecord::HandleName();
+    // No release should have an extant duplicate (WARNING)
+    for (const auto &release : cb_barriers.release) {
+        // Check the global pending release barriers
+        const auto set_it = global_release_barriers.find(release.handle);
+        if (set_it != global_release_barriers.cend()) {
+            const QFOTransferBarrierSet<Barrier> &set_for_handle = set_it->second;
+            const auto found = set_for_handle.find(release);
+            if (found != set_for_handle.cend()) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                                HandleToUint64(cb_state->commandBuffer), BarrierRecord::ErrMsgDuplicateQFOSubmitted(),
+                                "%s: %s releasing queue ownership of %s (0x%" PRIx64 "), from srcQueueFamilyIndex %" PRIu32
+                                " to dstQueueFamilyIndex %" PRIu32
+                                " duplicates existing barrier queued for execution, without intervening acquire operation.",
+                                "vkQueueSubmit()", barrier_name, handle_name, HandleToUint64(found->handle),
+                                found->srcQueueFamilyIndex, found->dstQueueFamilyIndex);
+            }
+        }
+        skip |= ValidateAndUpdateQFOScoreboard(report_data, cb_state, "releasing", release, &scoreboards->release);
+    }
+    // Each acquire must have a matching release (ERROR)
+    for (const auto &acquire : cb_barriers.acquire) {
+        const auto set_it = global_release_barriers.find(acquire.handle);
+        bool matching_release_found = false;
+        if (set_it != global_release_barriers.cend()) {
+            const QFOTransferBarrierSet<Barrier> &set_for_handle = set_it->second;
+            matching_release_found = set_for_handle.find(acquire) != set_for_handle.cend();
+        }
+        if (!matching_release_found) {
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                            HandleToUint64(cb_state->commandBuffer), BarrierRecord::ErrMsgMissingQFOReleaseInSubmit(),
+                            "%s: in submitted command buffer %s aquiring ownership of %s (0x%" PRIx64
+                            "), from srcQueueFamilyIndex %" PRIu32 " to dstQueueFamilyIndex %" PRIu32
+                            " has no matching release barrier queued for execution.",
+                            "vkQueueSubmit()", barrier_name, handle_name, HandleToUint64(acquire.handle),
+                            acquire.srcQueueFamilyIndex, acquire.dstQueueFamilyIndex);
+        }
+        skip |= ValidateAndUpdateQFOScoreboard(report_data, cb_state, "acquiring", acquire, &scoreboards->acquire);
+    }
+    return skip;
+}
+
+bool ValidateQueuedQFOTransfers(layer_data *device_data, GLOBAL_CB_NODE *cb_state,
+                                QFOTransferCBScoreboards<VkImageMemoryBarrier> *qfo_image_scoreboards,
+                                QFOTransferCBScoreboards<VkBufferMemoryBarrier> *qfo_buffer_scoreboards) {
+    bool skip = false;
+    skip |= ValidateQueuedQFOTransferBarriers<VkImageMemoryBarrier>(device_data, cb_state, qfo_image_scoreboards);
+    skip |= ValidateQueuedQFOTransferBarriers<VkBufferMemoryBarrier>(device_data, cb_state, qfo_buffer_scoreboards);
+    return skip;
+}
+
+template <typename Barrier>
+static void RecordQueuedQFOTransferBarriers(layer_data *device_data, GLOBAL_CB_NODE *cb_state) {
+    using BarrierRecord = QFOTransferBarrier<Barrier>;
+    using TypeTag = typename BarrierRecord::Tag;
+    const auto &cb_barriers = GetQFOBarrierSets(cb_state, TypeTag());
+    GlobalQFOTransferBarrierMap<Barrier> &global_release_barriers =
+        core_validation::GetGlobalQFOReleaseBarrierMap(device_data, TypeTag());
+
+    // Add release barriers from this submit to the global map
+    for (const auto &release : cb_barriers.release) {
+        // the global barrier list is mapped by resource handle to allow cleanup on resource destruction
+        // NOTE: We're using [] because creation of a Set is a needed side effect for new handles
+        global_release_barriers[release.handle].insert(release);
+    }
+
+    // Erase acquired barriers from this submit from the global map -- essentially marking releases as consumed
+    for (const auto &acquire : cb_barriers.acquire) {
+        // NOTE: We're not using [] because we don't want to create entries for missing releases
+        auto set_it = global_release_barriers.find(acquire.handle);
+        if (set_it != global_release_barriers.end()) {
+            QFOTransferBarrierSet<Barrier> &set_for_handle = set_it->second;
+            set_for_handle.erase(acquire);
+            if (set_for_handle.size() == 0) {  // Clean up empty sets
+                global_release_barriers.erase(set_it);
+            }
+        }
+    }
+}
+
+void RecordQueuedQFOTransfers(layer_data *device_data, GLOBAL_CB_NODE *cb_state) {
+    RecordQueuedQFOTransferBarriers<VkImageMemoryBarrier>(device_data, cb_state);
+    RecordQueuedQFOTransferBarriers<VkBufferMemoryBarrier>(device_data, cb_state);
+}
+
+// Remove the pending QFO release records from the global set
+// Note that the type of the handle argument constrained to match Barrier type
+// The defaulted BarrierRecord argument allows use to declare the type once, but is not intended to be specified by the caller
+template <typename Barrier, typename BarrierRecord = QFOTransferBarrier<Barrier>>
+static void EraseQFOReleaseBarriers(layer_data *device_data, const typename BarrierRecord::HandleType &handle) {
+    GlobalQFOTransferBarrierMap<Barrier> &global_release_barriers =
+        core_validation::GetGlobalQFOReleaseBarrierMap(device_data, typename BarrierRecord::Tag());
+    global_release_barriers.erase(handle);
+}
+
+// Avoid making the template globally visible by exporting the one instance of it we need.
+void EraseQFOImageRelaseBarriers(layer_data *device_data, const VkImage &image) {
+    EraseQFOReleaseBarriers<VkImageMemoryBarrier>(device_data, image);
+}
+
 void TransitionImageLayouts(layer_data *device_data, GLOBAL_CB_NODE *cb_state, uint32_t memBarrierCount,
                             const VkImageMemoryBarrier *pImgMemBarriers) {
     for (uint32_t i = 0; i < memBarrierCount; ++i) {
@@ -907,6 +1107,7 @@ void PreCallRecordDestroyImage(layer_data *device_data, VkImage image, IMAGE_STA
         }
     }
     core_validation::ClearMemoryObjectBindings(device_data, obj_struct.handle, kVulkanObjectTypeImage);
+    EraseQFOReleaseBarriers<VkImageMemoryBarrier>(device_data, image);
     // Remove image from imageMap
     core_validation::GetImageMap(device_data)->erase(image);
     std::unordered_map<VkImage, std::vector<ImageSubresourcePair>> *imageSubresourceMap =
@@ -3662,6 +3863,7 @@ void PreCallRecordDestroyBuffer(layer_data *device_data, VkBuffer buffer, BUFFER
         }
     }
     ClearMemoryObjectBindings(device_data, HandleToUint64(buffer), kVulkanObjectTypeBuffer);
+    EraseQFOReleaseBarriers<VkBufferMemoryBarrier>(device_data, buffer);
     GetBufferMap(device_data)->erase(buffer_state->buffer);
 }
 

@@ -193,6 +193,8 @@ struct layer_data {
     unordered_map<VkShaderModule, unique_ptr<shader_module>> shaderModuleMap;
     unordered_map<VkDescriptorUpdateTemplateKHR, unique_ptr<TEMPLATE_STATE>> desc_template_map;
     unordered_map<VkSwapchainKHR, std::unique_ptr<SWAPCHAIN_NODE>> swapchainMap;
+    GlobalQFOTransferBarrierMap<VkImageMemoryBarrier> qfo_release_image_barrier_map;
+    GlobalQFOTransferBarrierMap<VkBufferMemoryBarrier> qfo_release_buffer_barrier_map;
 
     VkDevice device = VK_NULL_HANDLE;
     VkPhysicalDevice physical_device = VK_NULL_HANDLE;
@@ -248,6 +250,16 @@ void ValidateLayerOrdering(const TCreateInfo &createInfo) {
 
 // TODO : This can be much smarter, using separate locks for separate global data
 static mutex_t global_lock;
+
+// Get the global map of pending releases
+GlobalQFOTransferBarrierMap<VkImageMemoryBarrier> &GetGlobalQFOReleaseBarrierMap(
+    layer_data *dev_data, const QFOTransferBarrier<VkImageMemoryBarrier>::Tag &type_tag) {
+    return dev_data->qfo_release_image_barrier_map;
+}
+GlobalQFOTransferBarrierMap<VkBufferMemoryBarrier> &GetGlobalQFOReleaseBarrierMap(
+    layer_data *dev_data, const QFOTransferBarrier<VkBufferMemoryBarrier>::Tag &type_tag) {
+    return dev_data->qfo_release_buffer_barrier_map;
+}
 
 // Return IMAGE_VIEW_STATE ptr for specified imageView or else NULL
 IMAGE_VIEW_STATE *GetImageViewState(const layer_data *dev_data, VkImageView image_view) {
@@ -1954,6 +1966,9 @@ static void ResetCommandBufferState(layer_data *dev_data, const VkCommandBuffer 
         pCB->framebuffers.clear();
         pCB->activeFramebuffer = VK_NULL_HANDLE;
         memset(&pCB->index_buffer_binding, 0, sizeof(pCB->index_buffer_binding));
+
+        pCB->qfo_transfer_image_barriers.Reset();
+        pCB->qfo_transfer_buffer_barriers.Reset();
     }
 }
 
@@ -2731,7 +2746,9 @@ static bool validateQueueFamilyIndices(layer_data *dev_data, GLOBAL_CB_NODE *pCB
     return skip;
 }
 
-static bool validatePrimaryCommandBufferState(layer_data *dev_data, GLOBAL_CB_NODE *pCB, int current_submit_count) {
+static bool validatePrimaryCommandBufferState(layer_data *dev_data, GLOBAL_CB_NODE *pCB, int current_submit_count,
+                                              QFOTransferCBScoreboards<VkImageMemoryBarrier> *qfo_image_scoreboards,
+                                              QFOTransferCBScoreboards<VkBufferMemoryBarrier> *qfo_buffer_scoreboards) {
     // Track in-use for resources off of primary and any secondary CBs
     bool skip = false;
 
@@ -2740,9 +2757,11 @@ static bool validatePrimaryCommandBufferState(layer_data *dev_data, GLOBAL_CB_NO
     skip |= validateCommandBufferSimultaneousUse(dev_data, pCB, current_submit_count);
 
     skip |= validateResources(dev_data, pCB);
+    skip |= ValidateQueuedQFOTransfers(dev_data, pCB, qfo_image_scoreboards, qfo_buffer_scoreboards);
 
     for (auto pSubCB : pCB->linkedCommandBuffers) {
         skip |= validateResources(dev_data, pSubCB);
+        skip |= ValidateQueuedQFOTransfers(dev_data, pSubCB, qfo_image_scoreboards, qfo_buffer_scoreboards);
         // TODO: replace with invalidateCommandBuffers() at recording.
         if ((pSubCB->primaryCommandBuffer != pCB->commandBuffer) &&
             !(pSubCB->beginInfo.flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT)) {
@@ -2879,9 +2898,11 @@ static void PostCallRecordQueueSubmit(layer_data *dev_data, VkQueue queue, uint3
                     cbs.push_back(secondaryCmdBuffer->commandBuffer);
                     UpdateCmdBufImageLayouts(dev_data, secondaryCmdBuffer);
                     incrementResources(dev_data, secondaryCmdBuffer);
+                    RecordQueuedQFOTransfers(dev_data, secondaryCmdBuffer);
                 }
                 UpdateCmdBufImageLayouts(dev_data, cb_node);
                 incrementResources(dev_data, cb_node);
+                RecordQueuedQFOTransfers(dev_data, cb_node);
             }
         }
         pQueue->submissions.emplace_back(cbs, semaphore_waits, semaphore_signals, semaphore_externals,
@@ -2947,13 +2968,17 @@ static bool PreCallValidateQueueSubmit(layer_data *dev_data, VkQueue queue, uint
                 }
             }
         }
+        QFOTransferCBScoreboards<VkImageMemoryBarrier> qfo_image_scoreboards;
+        QFOTransferCBScoreboards<VkBufferMemoryBarrier> qfo_buffer_scoreboards;
+
         for (uint32_t i = 0; i < submit->commandBufferCount; i++) {
             auto cb_node = GetCBNode(dev_data, submit->pCommandBuffers[i]);
             if (cb_node) {
                 skip |= ValidateCmdBufImageLayouts(dev_data, cb_node, dev_data->imageLayoutMap, localImageLayoutMap);
                 current_cmds.push_back(submit->pCommandBuffers[i]);
                 skip |= validatePrimaryCommandBufferState(
-                    dev_data, cb_node, (int)std::count(current_cmds.begin(), current_cmds.end(), submit->pCommandBuffers[i]));
+                    dev_data, cb_node, (int)std::count(current_cmds.begin(), current_cmds.end(), submit->pCommandBuffers[i]),
+                    &qfo_image_scoreboards, &qfo_buffer_scoreboards);
                 skip |= validateQueueFamilyIndices(dev_data, cb_node, queue);
 
                 // Potential early exit here as bad object state may crash in delayed function calls
@@ -8014,6 +8039,10 @@ static bool ValidateBarriers(layer_data *device_data, const char *funcName, GLOB
             }
         }
     }
+
+    skip |= ValidateBarriersQFOTransferUniqueness(device_data, funcName, cb_state, bufferBarrierCount, pBufferMemBarriers,
+                                                  imageMemBarrierCount, pImageMemBarriers);
+
     return skip;
 }
 
@@ -8219,6 +8248,10 @@ VKAPI_ATTR void VKAPI_CALL CmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t
         dev_data->dispatch_table.CmdWaitEvents(commandBuffer, eventCount, pEvents, sourceStageMask, dstStageMask,
                                                memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers,
                                                imageMemoryBarrierCount, pImageMemoryBarriers);
+    lock.lock();
+
+    RecordBarriersQFOTransfers(dev_data, "vkCmdWaitEvents()", cb_state, bufferMemoryBarrierCount, pBufferMemoryBarriers,
+                               imageMemoryBarrierCount, pImageMemoryBarriers);
 }
 
 static bool PreCallValidateCmdPipelineBarrier(layer_data *device_data, GLOBAL_CB_NODE *cb_state, VkPipelineStageFlags srcStageMask,
@@ -8256,7 +8289,10 @@ static bool PreCallValidateCmdPipelineBarrier(layer_data *device_data, GLOBAL_CB
 }
 
 static void PreCallRecordCmdPipelineBarrier(layer_data *device_data, GLOBAL_CB_NODE *cb_state, VkCommandBuffer commandBuffer,
+                                            uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier *pBufferMemoryBarriers,
                                             uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier *pImageMemoryBarriers) {
+    RecordBarriersQFOTransfers(device_data, "vkCmdPipelineBarrier()", cb_state, bufferMemoryBarrierCount, pBufferMemoryBarriers,
+                               imageMemoryBarrierCount, pImageMemoryBarriers);
     TransitionImageLayouts(device_data, cb_state, imageMemoryBarrierCount, pImageMemoryBarriers);
 }
 
@@ -8274,7 +8310,8 @@ VKAPI_ATTR void VKAPI_CALL CmdPipelineBarrier(VkCommandBuffer commandBuffer, VkP
                                                   memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount,
                                                   pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
         if (!skip) {
-            PreCallRecordCmdPipelineBarrier(device_data, cb_state, commandBuffer, imageMemoryBarrierCount, pImageMemoryBarriers);
+            PreCallRecordCmdPipelineBarrier(device_data, cb_state, commandBuffer, bufferMemoryBarrierCount, pBufferMemoryBarriers,
+                                            imageMemoryBarrierCount, pImageMemoryBarriers);
         }
     } else {
         assert(0);
@@ -10857,6 +10894,7 @@ VKAPI_ATTR void VKAPI_CALL DestroySwapchainKHR(VkDevice device, VkSwapchainKHR s
                     dev_data->imageSubresourceMap.erase(image_sub);
                 }
                 skip = ClearMemoryObjectBindings(dev_data, HandleToUint64(swapchain_image), kVulkanObjectTypeSwapchainKHR);
+                EraseQFOImageRelaseBarriers(dev_data, swapchain_image);
                 dev_data->imageMap.erase(swapchain_image);
             }
         }
