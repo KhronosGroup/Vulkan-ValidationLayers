@@ -23321,7 +23321,7 @@ TEST_F(VkLayerTest, DescriptorIndexingUpdateAfterBind) {
 
     indexingFeatures.descriptorBindingUniformBufferUpdateAfterBind = VK_FALSE;
 
-    if (!indexingFeatures.descriptorBindingStorageBufferUpdateAfterBind) {
+    if (VK_FALSE == indexingFeatures.descriptorBindingStorageBufferUpdateAfterBind) {
         printf("             Test requires (unsupported) descriptorBindingStorageBufferUpdateAfterBind, skipping\n");
         return;
     }
