@@ -83,4 +83,20 @@ template <>
 struct hash<PushConstantRanges> : public hash_util::IsOrderedContainer<PushConstantRanges> {};
 }  // namespace std
 
+// VkImageSubresourceRange
+static bool operator==(const VkImageSubresourceRange &lhs, const VkImageSubresourceRange &rhs) {
+    return (lhs.aspectMask == rhs.aspectMask) && (lhs.baseMipLevel == rhs.baseMipLevel) && (lhs.levelCount == rhs.levelCount) &&
+           (lhs.baseArrayLayer == lhs.baseArrayLayer) && (lhs.layerCount == lhs.layerCount);
+}
+namespace std {
+template <>
+struct hash<VkImageSubresourceRange> {
+    size_t operator()(const VkImageSubresourceRange &value) const {
+        hash_util::HashCombiner hc;
+        hc << value.aspectMask << value.baseMipLevel << value.levelCount << value.baseArrayLayer << value.layerCount;
+        return hc.Value();
+    }
+};
+}  // namespace std
+
 #endif  // HASH_VK_TYPES_H_

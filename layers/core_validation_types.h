@@ -727,6 +727,135 @@ struct LAST_BOUND_STATE {
         dynamicOffsets.clear();
     }
 };
+
+// Types to store queue family ownership (QFO) Transfers
+
+// Common to image and buffer memory barriers
+template <typename Handle, typename Barrier>
+struct QFOTransferBarrierBase {
+    using HandleType = Handle;
+    using BarrierType = Barrier;
+    struct Tag {};
+    HandleType handle = VK_NULL_HANDLE;
+    uint32_t srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    uint32_t dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+
+    QFOTransferBarrierBase() = default;
+    QFOTransferBarrierBase(const BarrierType &barrier, const HandleType &resource_handle)
+        : handle(resource_handle),
+          srcQueueFamilyIndex(barrier.srcQueueFamilyIndex),
+          dstQueueFamilyIndex(barrier.dstQueueFamilyIndex) {}
+
+    hash_util::HashCombiner base_hash_combiner() const {
+        hash_util::HashCombiner hc;
+        hc << srcQueueFamilyIndex << dstQueueFamilyIndex << handle;
+        return hc;
+    }
+
+    bool operator==(const QFOTransferBarrierBase &rhs) const {
+        return (srcQueueFamilyIndex == rhs.srcQueueFamilyIndex) && (dstQueueFamilyIndex == rhs.dstQueueFamilyIndex) &&
+               (handle == rhs.handle);
+    }
+};
+
+template <typename Barrier>
+struct QFOTransferBarrier {};
+
+// Image barrier specific implementation
+template <>
+struct QFOTransferBarrier<VkImageMemoryBarrier> : public QFOTransferBarrierBase<VkImage, VkImageMemoryBarrier> {
+    using BaseType = QFOTransferBarrierBase<VkImage, VkImageMemoryBarrier>;
+    VkImageLayout oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    VkImageLayout newLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    VkImageSubresourceRange subresourceRange;
+
+    QFOTransferBarrier() = default;
+    QFOTransferBarrier(const BarrierType &barrier)
+        : BaseType(barrier, barrier.image),
+          oldLayout(barrier.oldLayout),
+          newLayout(barrier.newLayout),
+          subresourceRange(barrier.subresourceRange) {}
+    size_t hash() const {
+        // Ignoring the layout information for the purpose of the hash, as we're interested in QFO release/acquisition w.r.t.
+        // the subresource affected, an layout transitions are current validated on another path
+        auto hc = base_hash_combiner() << subresourceRange;
+        return hc.Value();
+    }
+    bool operator==(const QFOTransferBarrier<BarrierType> &rhs) const {
+        // Ignoring layout w.r.t. equality. See comment in hash above.
+        return (static_cast<BaseType>(*this) == static_cast<BaseType>(rhs)) && (subresourceRange == rhs.subresourceRange);
+    }
+    // TODO: codegen a comprehensive complie time type -> string (and or other traits) template family
+    static const char *BarrierName() { return "VkImageMemoryBarrier"; }
+    static const char *HandleName() { return "VkImage"; }
+    // UNASSIGNED-VkImageMemoryBarrier-image-00001 QFO transfer image barrier must not duplicate QFO recorded in command buffer
+    static const char *ErrMsgDuplicateQFOInCB() { return "UNASSIGNED-VkImageMemoryBarrier-image-00001"; }
+    // UNASSIGNED-VkImageMemoryBarrier-image-00002 QFO transfer image barrier must not duplicate QFO submitted in batch
+    static const char *ErrMsgDuplicateQFOInSubmit() { return "UNASSIGNED-VkImageMemoryBarrier-image-00002"; }
+    // UNASSIGNED-VkImageMemoryBarrier-image-00003 QFO transfer image barrier must not duplicate QFO submitted previously
+    static const char *ErrMsgDuplicateQFOSubmitted() { return "UNASSIGNED-VkImageMemoryBarrier-image-00003"; }
+    // UNASSIGNED-VkImageMemoryBarrier-image-00004 QFO acquire image barrier must have matching QFO release submitted previously
+    static const char *ErrMsgMissingQFOReleaseInSubmit() { return "UNASSIGNED-VkImageMemoryBarrier-image-00004"; }
+};
+
+// Buffer barrier specific implementation
+template <>
+struct QFOTransferBarrier<VkBufferMemoryBarrier> : public QFOTransferBarrierBase<VkBuffer, VkBufferMemoryBarrier> {
+    using BaseType = QFOTransferBarrierBase<VkBuffer, VkBufferMemoryBarrier>;
+    VkDeviceSize offset = 0;
+    VkDeviceSize size = 0;
+    QFOTransferBarrier(const VkBufferMemoryBarrier &barrier)
+        : BaseType(barrier, barrier.buffer), offset(barrier.offset), size(barrier.size) {}
+    size_t hash() const {
+        auto hc = base_hash_combiner() << offset << size;
+        return hc.Value();
+    }
+    bool operator==(const QFOTransferBarrier<BarrierType> &rhs) const {
+        return (static_cast<BaseType>(*this) == static_cast<BaseType>(rhs)) && (offset == rhs.offset) && (size == rhs.size);
+    }
+    static const char *BarrierName() { return "VkBufferMemoryBarrier"; }
+    static const char *HandleName() { return "VkBuffer"; }
+    // UNASSIGNED-VkImageMemoryBarrier-buffer-00001 QFO transfer buffer barrier must not duplicate QFO recorded in command buffer
+    static const char *ErrMsgDuplicateQFOInCB() { return "UNASSIGNED-VkBufferMemoryBarrier-buffer-00001"; }
+    // UNASSIGNED-VkBufferMemoryBarrier-buffer-00002 QFO transfer buffer barrier must not duplicate QFO submitted in batch
+    static const char *ErrMsgDuplicateQFOInSubmit() { return "UNASSIGNED-VkBufferMemoryBarrier-buffer-00002"; }
+    // UNASSIGNED-VkBufferMemoryBarrier-buffer-00003 QFO transfer buffer barrier must not duplicate QFO submitted previously
+    static const char *ErrMsgDuplicateQFOSubmitted() { return "UNASSIGNED-VkBufferMemoryBarrier-buffer-00003"; }
+    // UNASSIGNED-VkBufferMemoryBarrier-buffer-00004 QFO acquire buffer barrier must have matching QFO release submitted previously
+    static const char *ErrMsgMissingQFOReleaseInSubmit() { return "UNASSIGNED-VkBufferMemoryBarrier-buffer-00004"; }
+};
+
+template <typename Barrier>
+using QFOTransferBarrierHash = hash_util::HasHashMember<QFOTransferBarrier<Barrier>>;
+
+// Command buffers store the set of barriers recorded
+template <typename Barrier>
+using QFOTransferBarrierSet = std::unordered_set<QFOTransferBarrier<Barrier>, QFOTransferBarrierHash<Barrier>>;
+template <typename Barrier>
+struct QFOTransferBarrierSets {
+    QFOTransferBarrierSet<Barrier> release;
+    QFOTransferBarrierSet<Barrier> acquire;
+    void Reset() {
+        acquire.clear();
+        release.clear();
+    }
+};
+
+// The layer_data stores the map of pending release barriers
+template <typename Barrier>
+using GlobalQFOTransferBarrierMap =
+    std::unordered_map<typename QFOTransferBarrier<Barrier>::HandleType, QFOTransferBarrierSet<Barrier>>;
+
+// Submit queue uses the Scoreboard to track all release/acquire operations in a batch.
+template <typename Barrier>
+using QFOTransferCBScoreboard =
+    std::unordered_map<QFOTransferBarrier<Barrier>, const GLOBAL_CB_NODE *, QFOTransferBarrierHash<Barrier>>;
+template <typename Barrier>
+struct QFOTransferCBScoreboards {
+    QFOTransferCBScoreboard<Barrier> acquire;
+    QFOTransferCBScoreboard<Barrier> release;
+};
+
 // Cmd Buffer Wrapper Struct - TODO : This desperately needs its own class
 struct GLOBAL_CB_NODE : public BASE_NODE {
     VkCommandBuffer commandBuffer;
@@ -761,6 +890,9 @@ struct GLOBAL_CB_NODE : public BASE_NODE {
     std::unordered_set<VK_OBJECT> object_bindings;
     std::vector<VK_OBJECT> broken_bindings;
 
+    QFOTransferBarrierSets<VkBufferMemoryBarrier> qfo_transfer_buffer_barriers;
+    QFOTransferBarrierSets<VkImageMemoryBarrier> qfo_transfer_image_barriers;
+
     std::unordered_set<VkEvent> waitedEvents;
     std::vector<VkEvent> writeEventsBeforeWait;
     std::vector<VkEvent> events;
@@ -791,6 +923,15 @@ struct GLOBAL_CB_NODE : public BASE_NODE {
     // Contents valid only after an index buffer is bound (CBSTATUS_INDEX_BUFFER_BOUND set)
     INDEX_BUFFER_BINDING index_buffer_binding;
 };
+
+static QFOTransferBarrierSets<VkImageMemoryBarrier> &GetQFOBarrierSets(
+    GLOBAL_CB_NODE *cb, const QFOTransferBarrier<VkImageMemoryBarrier>::Tag &type_tag) {
+    return cb->qfo_transfer_image_barriers;
+}
+static QFOTransferBarrierSets<VkBufferMemoryBarrier> &GetQFOBarrierSets(
+    GLOBAL_CB_NODE *cb, const QFOTransferBarrier<VkBufferMemoryBarrier>::Tag &type_tag) {
+    return cb->qfo_transfer_buffer_barriers;
+}
 
 struct SEMAPHORE_WAIT {
     VkSemaphore semaphore;
@@ -947,6 +1088,11 @@ std::unordered_map<VkBufferView, std::unique_ptr<BUFFER_VIEW_STATE>> *GetBufferV
 std::unordered_map<VkImageView, std::unique_ptr<IMAGE_VIEW_STATE>> *GetImageViewMap(layer_data *device_data);
 const DeviceExtensions *GetDeviceExtensions(const layer_data *);
 uint32_t GetApiVersion(const layer_data *);
+
+GlobalQFOTransferBarrierMap<VkImageMemoryBarrier> &GetGlobalQFOReleaseBarrierMap(
+    layer_data *dev_data, const QFOTransferBarrier<VkImageMemoryBarrier>::Tag &type_tag);
+GlobalQFOTransferBarrierMap<VkBufferMemoryBarrier> &GetGlobalQFOReleaseBarrierMap(
+    layer_data *dev_data, const QFOTransferBarrier<VkBufferMemoryBarrier>::Tag &type_tag);
 }  // namespace core_validation
 
 #endif  // CORE_VALIDATION_TYPES_H_
