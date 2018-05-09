@@ -2,7 +2,7 @@ cmake_minimum_required (VERSION 2.8.11)
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     add_definitions(-DVK_USE_PLATFORM_WIN32_KHR -DVK_USE_PLATFORM_WIN32_KHX -DWIN32_LEAN_AND_MEAN)
     add_custom_target(mk_layer_config_dir ALL COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>)
-    set_target_properties(mk_layer_config_dir PROPERTIES FOLDER ${LVL_TARGET_FOLDER})
+    set_target_properties(mk_layer_config_dir PROPERTIES FOLDER ${VVL_TARGET_FOLDER})
     set(DisplayServer Win32)
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Android")
     add_definitions(-DVK_USE_PLATFORM_ANDROID_KHR -DVK_USE_PLATFORM_ANDROID_KHX)
@@ -34,7 +34,6 @@ endif()
 
 set (PYTHON_CMD ${PYTHON_EXECUTABLE})
 set(SCRIPTS_DIR "${PROJECT_SOURCE_DIR}/scripts")
-message("xXXXxxXXxX scrips_dir is ${SCRIPTS_DIR}")
 
 # Define macro used for building vkxml generated files
 macro(run_vk_xml_generate dependency output)
@@ -50,16 +49,16 @@ macro(run_external_revision_generate source_dir symbol_name output)
     # NOTE: If you modify this call to use --rev_file instead of --git_dir (to read the commit ID from a file instead of
     # parsing from a Git repository), you probably also want to add the revision file to the list of DEPENDS on the
     # subsequent line (to ensure that the script is re-run when the revision file is modified).
-    COMMAND ${PYTHON_CMD} ${SCRIPTS_DIR}/external_revision_generator.py --git_dir ${source_dir} -s ${symbol_name} -o ${output}
+  # COMMAND ${PYTHON_CMD} ${SCRIPTS_DIR}/external_revision_generator.py --git_dir ${source_dir} -s ${symbol_name} -o ${output}
+    COMMAND ${PYTHON_CMD} ${SCRIPTS_DIR}/external_revision_generator.py --rev_file ${source_dir} -s ${symbol_name} -o ${output}
     DEPENDS ${SCRIPTS_DIR}/external_revision_generator.py ${source_dir}/.git/HEAD ${source_dir}/.git/index
     )
 endmacro()
 
-# Custom target for generated vulkan helper file dependencies
-set(generate_helper_files_DEPENDS)
-if(BUILD_LAYERS)
-    LIST(APPEND generate_helper_files_DEPENDS spirv_tools_commit_id.h)
-endif()
+# Custom targets for generated validation layer helper file dependencies
+add_custom_target(spirv_tools_revision_file DEPENDS
+    spirv_tools_commit_id.h
+    )
 add_custom_target(generate_helper_files DEPENDS
     vk_enum_string_helper.h
     vk_safe_struct.h
@@ -69,9 +68,9 @@ add_custom_target(generate_helper_files DEPENDS
     vk_dispatch_table_helper.h
     vk_extension_helper.h
     vk_typemap_helper.h
-    ${generate_helper_files_DEPENDS}
     )
-set_target_properties(generate_helper_files PROPERTIES FOLDER ${LVL_TARGET_FOLDER})
+set_target_properties(spirv_tools_revision_file PROPERTIES FOLDER ${VVL_TARGET_FOLDER})
+set_target_properties(generate_helper_files PROPERTIES FOLDER ${VVL_TARGET_FOLDER})
 
 # Rules to build generated helper files
 run_vk_xml_generate(loader_extension_generator.py vk_layer_dispatch_table.h)
@@ -83,8 +82,9 @@ run_vk_xml_generate(helper_file_generator.py vk_object_types.h)
 run_vk_xml_generate(helper_file_generator.py vk_extension_helper.h)
 run_vk_xml_generate(helper_file_generator.py vk_typemap_helper.h)
 if(BUILD_LAYERS)
-    # TODO: fix this or find out if we can nuke it.VUID-VkImageCreateInfo-tiling-00977
-    #run_external_revision_generate(${EXTERNAL_SOURCE_ROOT}/glslang/External/spirv-tools SPIRV_TOOLS_COMMIT_ID spirv_tools_commit_id.h)
+   #run_external_revision_generate(${EXTERNAL_SOURCE_ROOT}/glslang/External/spirv-tools SPIRV_TOOLS_COMMIT_ID spirv_tools_commit_id.h)
+    #run_external_revision_generate(${SPIRV_TOOLS_INCLUDE_DIR} SPIRV_TOOLS_COMMIT_ID spirv_tools_commit_id.h)
+    #### TODO LUGMAL FIX THIS!!!! run_external_revision_generate(${SPIRV_TOOLS_INCLUDE_DIR}/.. SPIRV_TOOLS_COMMIT_ID spirv_tools_commit_id.h)
 endif()
 
 
@@ -104,7 +104,7 @@ if (WIN32)
     target_compile_definitions(VkLayer_utils PUBLIC _CRT_SECURE_NO_WARNINGS)
 else()
     add_library(VkLayer_utils SHARED ${VKLAYER_UTILS_VLF_SOURCES})
-    if(INSTALL_LVL_FILES)
+    if(INSTALL_VL_FILES)
         install(TARGETS VkLayer_utils DESTINATION ${CMAKE_INSTALL_LIBDIR})
     endif()
 endif()
@@ -113,12 +113,10 @@ target_include_directories(
     VkLayer_utils PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/loader
     ${VULKAN_HEADERS_LOCATION}/include
-    ${VULKAN_HEADERS_LOCATION}/include/vulkan
+    ${VULKAN_HEADERS_LOCATION}/interfaces
     ${CMAKE_CURRENT_BINARY_DIR}
+    ${PROJECT_BINARY_DIR}
     )
-
-message("OOOOOOOOOOOO vulkan hdrs loc = ${VULKAN_HEADERS_LOCATION}")
-
 
 set(LAYER_JSON_FILES_WITH_DEPENDENCIES
     VkLayer_core_validation
@@ -144,7 +142,7 @@ if (WIN32)
                     COMMAND copy ${src_json} ${dst_json}
                     VERBATIM
                     )
-                set_target_properties(${config_file}-json PROPERTIES FOLDER ${LVL_TARGET_FOLDER})
+                set_target_properties(${config_file}-json PROPERTIES FOLDER ${VVL_TARGET_FOLDER})
             endforeach(config_file)
         else()
             foreach (config_file ${LAYER_JSON_FILES})
@@ -164,7 +162,7 @@ if (WIN32)
             COMMAND copy ${src_val_msgs} ${dst_val_msgs}
             VERBATIM
             )
-        set_target_properties(vk_validation_error_messages PROPERTIES FOLDER ${LVL_TARGET_FOLDER})
+        set_target_properties(vk_validation_error_messages PROPERTIES FOLDER ${VVL_TARGET_FOLDER})
     endif()
 elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
     # extra setup for out-of-tree builds
@@ -207,6 +205,7 @@ elseif(APPLE)
             )
     endif()
 endif()
+
 # If a layer has a direct dependency on a project with the same name, use it.
 if ((Win32) OR (NOT (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_CURRENT_BINARY_DIR)))
     foreach (config_file ${LAYER_JSON_FILES_WITH_DEPENDENCIES})
@@ -221,7 +220,7 @@ endif()
 # Add targets for JSON file install on Linux.
 # Need to remove the "./" from the library path before installing to system directories.
 if(UNIX)
-    if(INSTALL_LVL_FILES)
+    if(INSTALL_VL_FILES)
         foreach (config_file ${LAYER_JSON_FILES})
             add_custom_target(${config_file}-staging-json ALL
                 COMMAND mkdir -p ${CMAKE_CURRENT_BINARY_DIR}/staging-json
@@ -242,7 +241,7 @@ if (WIN32)
         COMMAND ${CMAKE_COMMAND} -E copy_if_different ${DEF_FILE} VkLayer_${target}.def
         VERBATIM
     )
-    set_target_properties(copy-${target}-def-file PROPERTIES FOLDER ${LVL_TARGET_FOLDER})
+    set_target_properties(copy-${target}-def-file PROPERTIES FOLDER ${VVL_TARGET_FOLDER})
     add_library(VkLayer_${target} SHARED ${ARGN} VkLayer_${target}.def)
     add_dependencies(VkLayer_${target} generate_helper_files)
     target_link_Libraries(VkLayer_${target} VkLayer_utils)
@@ -265,29 +264,25 @@ else()
     target_link_Libraries(VkLayer_${target} VkLayer_utils)
     add_dependencies(VkLayer_${target} generate_helper_files VkLayer_utils)
     set_target_properties(VkLayer_${target} PROPERTIES LINK_FLAGS "-Wl,-Bsymbolic,--exclude-libs,ALL")
-    if(INSTALL_LVL_FILES)
+    if(INSTALL_VL_FILES)
         install(TARGETS VkLayer_${target} DESTINATION ${CMAKE_INSTALL_LIBDIR})
     endif()
     endmacro()
 endif()
 
-# TODO: cut down this list, maybe add target includes?
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_BINARY_DIR}
     ${VULKAN_HEADERS_LOCATION}/include
     ${VULKAN_HEADERS_LOCATION}/include/vulkan
-    ${PROJECT_BINARY_DIR}
-    ${CMAKE_BINARY_DIR}
     )
-message("FFFFFFFFFF cmake_current_binary_dir is ${CMAKE_CURRENT_BINARY_DIR}")
 
 if (WIN32)
     # Applies to all configurations
     add_definitions(-D_CRT_SECURE_NO_WARNINGS)
     # Avoid: fatal error C1128: number of sections exceeded object file format limit: compile with /bigobj
     set_source_files_properties(core_validation.cpp threading.cpp
-        PROPERTIES COMPILE_FLAGS "/bigobj")
+        PROPERTIES COMPILE_FLAGS "/bigobj"
+        )
     # Turn off transitional "changed behavior" warning message for Visual Studio versions prior to 2015.
     # The changed behavior is that constructor initializers are now fixed to clear the struct members.
     add_compile_options("$<$<AND:$<CXX_COMPILER_ID:MSVC>,$<VERSION_LESS:$<CXX_COMPILER_VERSION>,19>>:/wd4351>")
@@ -296,9 +291,7 @@ else()
     set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wpointer-arith -Wno-unused-function -Wno-sign-compare")
 endif()
 
-# Clang (and not gcc) warns about unused const variables.
-# Generated files may purposely contain unused consts, so
-# silence this warning in Clang.
+# Clang warns about unused const variables. Generated files may purposely contain unused consts, so silence this warning in Clang
 if (CMAKE_C_COMPILER_ID MATCHES "Clang")
    set_source_files_properties(parameter_validation.cpp PROPERTIES
         COMPILE_FLAGS "-Wno-unused-const-variable")
@@ -312,7 +305,6 @@ run_vk_xml_generate(object_tracker_generator.py object_tracker.cpp)
 
 add_vk_layer(core_validation core_validation.cpp vk_layer_table.cpp descriptor_sets.cpp buffer_validation.cpp shader_validation.cpp xxhash.c)
 add_vk_layer(object_tracker object_tracker.cpp object_tracker_utils.cpp vk_layer_table.cpp)
-# generated
 add_vk_layer(threading threading.cpp thread_check.h vk_layer_table.cpp)
 add_vk_layer(unique_objects unique_objects.cpp unique_objects_wrappers.h vk_layer_table.cpp)
 add_vk_layer(parameter_validation parameter_validation.cpp parameter_validation_utils.cpp parameter_validation.h vk_layer_table.cpp vk_validation_error_messages.h)
@@ -321,3 +313,4 @@ add_vk_layer(parameter_validation parameter_validation.cpp parameter_validation_
 target_include_directories(VkLayer_core_validation PRIVATE ${GLSLANG_SPIRV_INCLUDE_DIR})
 target_include_directories(VkLayer_core_validation PRIVATE ${SPIRV_TOOLS_INCLUDE_DIR})
 target_link_libraries(VkLayer_core_validation ${SPIRV_TOOLS_LIBRARIES})
+add_dependencies(VkLayer_core_validation spirv_tools_revision_file)

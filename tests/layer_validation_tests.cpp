@@ -23417,8 +23417,7 @@ TEST_F(VkLayerTest, DescriptorIndexingUpdateAfterBind) {
 
     vkCreatePipelineLayout(m_device->device(), &pipeline_layout_ci, NULL, &pipeline_layout);
 
-    // Create a dummy pipeline, since LVL inspects which bindings are
-    // actually used at draw time
+    // Create a dummy pipeline, since VL inspects which bindings are actually used at draw time
     char const *vsSource =
         "#version 450\n"
         "void main(){\n"

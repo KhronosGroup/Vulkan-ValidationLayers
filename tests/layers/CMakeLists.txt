@@ -21,7 +21,7 @@ if (WIN32)
                 VERBATIM
                 )
             add_dependencies(${config_file}-json ${config_file})
-            set_target_properties(${config_file}-json PROPERTIES FOLDER ${LVL_TARGET_FOLDER})
+            set_target_properties(${config_file}-json PROPERTIES FOLDER ${VVL_TARGET_FOLDER})
         endforeach(config_file)
     endif()
 elseif(APPLE)
@@ -58,24 +58,24 @@ else()
 endif()
 
 if (WIN32)
-    macro(add_vk_layer target)
+    macro(add_test_layer target)
     FILE(TO_NATIVE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/VkLayer_${target}.def DEF_FILE)
     add_custom_target(copy-${target}-def-file ALL
         COMMAND ${CMAKE_COMMAND} -E copy_if_different ${DEF_FILE} VkLayer_${target}.def
         VERBATIM
     )
-    set_target_properties(copy-${target}-def-file PROPERTIES FOLDER ${LVL_TARGET_FOLDER})
+    set_target_properties(copy-${target}-def-file PROPERTIES FOLDER ${VVL_TARGET_FOLDER})
     add_library(VkLayer_${target} SHARED ${ARGN} VkLayer_${target}.def)
     add_dependencies(VkLayer_${target} generate_helper_files VkLayer_utils)
     endmacro()
 elseif(APPLE)
-    macro(add_vk_layer target)
+    macro(add_test_layer target)
     add_library(VkLayer_${target} SHARED ${ARGN})
     add_dependencies(VkLayer_${target} generate_helper_files VkLayer_utils)
     set_target_properties(VkLayer_${target} PROPERTIES LINK_FLAGS "-Wl")
     endmacro()
 else()
-    macro(add_vk_layer target)
+    macro(add_test_layer target)
     add_library(VkLayer_${target} SHARED ${ARGN})
     add_dependencies(VkLayer_${target} generate_helper_files VkLayer_utils)
     set_target_properties(VkLayer_${target} PROPERTIES LINK_FLAGS "-Wl,-Bsymbolic")
@@ -83,12 +83,13 @@ else()
 endif()
 
 include_directories(
+    ${VULKAN_HEADERS_LOCATION}/include
+    #TODO: Clear out this list
     ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../layers
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../loader
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../include/vulkan
+    ${PROJECT_SOURCE_DIR}/layers
     ${CMAKE_CURRENT_BINARY_DIR}
     ${PROJECT_BINARY_DIR}
+    ${PROJECT_BINARY_DIR}/layers
     ${CMAKE_BINARY_DIR}
 )
 
@@ -103,12 +104,12 @@ else()
 endif()
 
 set (DEVICE_PROFILE_API_SRCS
-       device_profile_api.cpp
-       ${CMAKE_CURRENT_SOURCE_DIR}/../../layers/vk_layer_table.cpp
-       ${CMAKE_CURRENT_SOURCE_DIR}/../../layers/vk_layer_extension_utils.cpp
-       )
+    device_profile_api.cpp
+    ${PROJECT_SOURCE_DIR}/layers/vk_layer_table.cpp
+    ${PROJECT_SOURCE_DIR}/layers/vk_layer_extension_utils.cpp
+    )
 
-add_vk_layer(device_profile_api ${DEVICE_PROFILE_API_SRCS})
+add_test_layer(device_profile_api ${DEVICE_PROFILE_API_SRCS})
 
 if (WIN32)
     # For Windows, copy necessary gtest DLLs to the right spot for the vk_layer_tests...

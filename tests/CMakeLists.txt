@@ -76,7 +76,7 @@ else()
             COMMAND ${CMAKE_COMMAND} -E copy_if_different ${VALIDATE_DOC} vkvalidatelayerdoc.ps1
             VERBATIM
             )
-        set_target_properties(binary-dir-symlinks PROPERTIES FOLDER ${LVL_TARGET_FOLDER})
+        set_target_properties(binary-dir-symlinks PROPERTIES FOLDER ${VVL_TARGET_FOLDER})
     endif()
 endif()
 
@@ -92,18 +92,16 @@ add_executable(vk_layer_validation_tests layer_validation_tests.cpp ../layers/vk
 set_target_properties(vk_layer_validation_tests
    PROPERTIES
    COMPILE_DEFINITIONS "GTEST_LINKED_AS_SHARED_LIBRARY=1")
-# TODO: Winnow this list!!!!
-target_include_directories(vk_layer_validation_tests
+target_include_directories(vk_layer_validation_tests PUBLIC
     ${VULKAN_HEADERS_LOCATION}/include
-    ${VULKAN_HEADERS_LOCATION}/include/vulkan
-    ${PROJECT_SOURCE_DIR}/tests
-    ${PROJECT_SOURCE_DIR}/submodules/googletest/googletest/include
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/googletest/googletest/include
     ${PROJECT_SOURCE_DIR}/layers
     ${GLSLANG_SPIRV_INCLUDE_DIR}
-   #### ${LIBGLM_INCLUDE_DIR}
     ${CMAKE_CURRENT_BINARY_DIR}
     ${CMAKE_BINARY_DIR}
     ${PROJECT_BINARY_DIR}
+    ${PROJECT_BINARY_DIR}/layers
     )
 
 if(NOT WIN32)
@@ -117,31 +115,22 @@ if(NOT WIN32)
     endif()
 endif()
 if(WIN32)
-   target_link_libraries(vk_layer_validation_tests ${LIBVK} gtest gtest_main ${GLSLANG_LIBRARIES})
+    target_link_libraries(vk_layer_validation_tests ${LIBVK} gtest gtest_main ${GLSLANG_LIBRARIES})
 endif()
-# TODO: change to add_target_dependencies
-# TODO: WHY DO THESE MATTER?  Seems silly
-#add_dependencies(vk_layer_validation_tests
-#   VkLayer_core_validation
-#   VkLayer_object_tracker
-#   VkLayer_threading
-#   VkLayer_unique_objects
-#   VkLayer_parameter_validation
-#)
 
 if (WIN32)
     # For Windows, copy necessary gtest DLLs to the right spot for the vk_layer_tests...
-    FILE(TO_NATIVE_PATH ${CMAKE_CURRENT_BINARY_DIR}/../submodules/googletest/googletest/$<CONFIGURATION>/*.dll SRC_GTEST_DLLS)
+    FILE(TO_NATIVE_PATH ${CMAKE_CURRENT_BINARY_DIR}/googletest/googletest/$<CONFIGURATION>/*.dll SRC_GTEST_DLLS)
     FILE(TO_NATIVE_PATH ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIGURATION> DST_GTEST_DLLS)
     add_custom_command(TARGET vk_layer_validation_tests POST_BUILD
         COMMAND xcopy /Y /I ${SRC_GTEST_DLLS} ${DST_GTEST_DLLS})
 endif()
 
-set (GTEST_RELATIVE_LOCATION ../submodules/googletest)
+set (GTEST_RELATIVE_LOCATION googletest)
 SET(BUILD_GTEST ON CACHE BOOL "Builds the googletest subproject")
 SET(BUILD_GMOCK OFF CACHE BOOL "Builds the googlemock subproject")
 SET(gtest_force_shared_crt ON CACHE BOOL "Link gtest runtimes dynamically")
 SET(BUILD_SHARED_LIBS ON CACHE BOOL "Build shared libraries")
-add_subdirectory(${GTEST_RELATIVE_LOCATION} ${CMAKE_CURRENT_BINARY_DIR}/../submodules/googletest)
+add_subdirectory(${GTEST_RELATIVE_LOCATION} ${CMAKE_CURRENT_BINARY_DIR}/googletest)
 
 add_subdirectory(layers)
