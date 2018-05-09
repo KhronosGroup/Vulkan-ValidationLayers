@@ -179,6 +179,13 @@ static VkPhysicalDeviceLimits SetLimits(VkPhysicalDeviceLimits *limits) {
 
     return *limits;
 }
+
+void SetBoolArrayTrue(VkBool32* bool_array, uint32_t num_bools)
+{
+    for (uint32_t i = 0; i < num_bools; ++i) {
+        bool_array[i] = VK_TRUE;
+    }
+}
 '''
 
 # Manual code at the end of the cpp source file
@@ -698,13 +705,27 @@ CUSTOM_C_INTERCEPTS = {
 ''',
 'vkGetPhysicalDeviceFeatures': '''
     uint32_t num_bools = sizeof(VkPhysicalDeviceFeatures) / sizeof(VkBool32);
-    VkBool32 *pBool = &pFeatures->robustBufferAccess;
-    for (uint32_t i = 0; i < num_bools; ++i) {
-        pBool[i] = VK_TRUE;
-    }
+    VkBool32 *bool_array = &pFeatures->robustBufferAccess;
+    SetBoolArrayTrue(bool_array, num_bools);
 ''',
 'vkGetPhysicalDeviceFeatures2KHR': '''
     GetPhysicalDeviceFeatures(physicalDevice, &pFeatures->features);
+    uint32_t num_bools = 0; // Count number of VkBool32s in extension structs
+    VkBool32* feat_bools = nullptr;
+    const auto *desc_idx_features = lvl_find_in_chain<VkPhysicalDeviceDescriptorIndexingFeaturesEXT>(pFeatures->pNext);
+    if (desc_idx_features) {
+        const auto bool_size = sizeof(VkPhysicalDeviceDescriptorIndexingFeaturesEXT) - offsetof(VkPhysicalDeviceDescriptorIndexingFeaturesEXT, shaderInputAttachmentArrayDynamicIndexing);
+        num_bools = bool_size/sizeof(VkBool32);
+        feat_bools = (VkBool32*)&desc_idx_features->shaderInputAttachmentArrayDynamicIndexing;
+        SetBoolArrayTrue(feat_bools, num_bools);
+    }
+    const auto *blendop_features = lvl_find_in_chain<VkPhysicalDeviceBlendOperationAdvancedFeaturesEXT>(pFeatures->pNext);
+    if (blendop_features) {
+        const auto bool_size = sizeof(VkPhysicalDeviceBlendOperationAdvancedFeaturesEXT) - offsetof(VkPhysicalDeviceBlendOperationAdvancedFeaturesEXT, advancedBlendCoherentOperations);
+        num_bools = bool_size/sizeof(VkBool32);
+        feat_bools = (VkBool32*)&blendop_features->advancedBlendCoherentOperations;
+        SetBoolArrayTrue(feat_bools, num_bools);
+    }
 ''',
 'vkGetPhysicalDeviceFormatProperties': '''
     if (VK_FORMAT_UNDEFINED == format) {
@@ -967,6 +988,7 @@ class MockICDOutputGenerator(OutputGenerator):
             write('#include "mock_icd.h"', file=self.outFile)
             write('#include <stdlib.h>', file=self.outFile)
             write('#include <vector>', file=self.outFile)
+            write('#include "vk_typemap_helper.h"', file=self.outFile)
 
         write('namespace vkmock {', file=self.outFile)
         if self.header:
@@ -1149,6 +1171,24 @@ class MockICDOutputGenerator(OutputGenerator):
         if name in CUSTOM_C_INTERCEPTS:
             self.appendSection('command', '{%s}' % (CUSTOM_C_INTERCEPTS[name]))
             return
+
+        # Declare result variable, if any.
+        resulttype = cmdinfo.elem.find('proto/type')
+        if (resulttype != None and resulttype.text == 'void'):
+            resulttype = None
+        # if the name w/ KHR postfix is in the CUSTOM_C_INTERCEPTS
+        # Call the KHR custom version instead of generating separate code
+        khr_name = name + "KHR"
+        if khr_name in CUSTOM_C_INTERCEPTS:
+            return_string = ''
+            if resulttype != None:
+                return_string = 'return '
+            params = cmdinfo.elem.findall('param/name')
+            param_names = []
+            for param in params:
+                param_names.append(param.text)
+            self.appendSection('command', '{\n    %s%s(%s);\n}' % (return_string, khr_name[2:], ", ".join(param_names)))
+            return
         self.appendSection('command', '{')
 
         api_function_name = cmdinfo.elem.attrib.get('name')
@@ -1181,10 +1221,6 @@ class MockICDOutputGenerator(OutputGenerator):
             self.appendSection('command', '//Destroy object')
         else:
             self.appendSection('command', '//Not a CREATE or DESTROY function')
-        # Declare result variable, if any.
-        resulttype = cmdinfo.elem.find('proto/type')
-        if (resulttype != None and resulttype.text == 'void'):
-          resulttype = None
 
         # Return result variable, if any.
         if (resulttype != None):
