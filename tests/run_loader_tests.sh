@@ -23,7 +23,7 @@ RunEnvironmentVariablePathsTest()
        ./vk_loader_validation_tests 2>&1)
 
     # Here is a path we expect to find.  The loader constructs these from the XDG* env vars. 
-    right_path="/tmp/goober/vulkan/icd.d:/tmp/goober2//vulkan/icd.d:/tmp/goober3/with spaces/vulkan/icd.d"
+    right_path="/tmp/goober/vulkan/icd.d:/tmp/goober2/vulkan/icd.d:/tmp/goober3/with spaces/vulkan/icd.d"
     # There are other paths that come from SYSCONFIG settings established at build time.
     # So we can't really guess at what those are here.
     right_path+=".*"
