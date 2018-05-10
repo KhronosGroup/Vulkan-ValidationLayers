@@ -44,15 +44,11 @@ macro(run_vk_xml_generate dependency output)
 endmacro()
 
 # Define macro used for generating header files containing commit IDs for external dependencies
-macro(run_external_revision_generate source_dir symbol_name output)
+macro(run_external_revision_generate symbol_name output)
     add_custom_command(OUTPUT ${output}
-    # NOTE: If you modify this call to use --rev_file instead of --git_dir (to read the commit ID from a file instead of
-    # parsing from a Git repository), you probably also want to add the revision file to the list of DEPENDS on the
-    # subsequent line (to ensure that the script is re-run when the revision file is modified).
-  # COMMAND ${PYTHON_CMD} ${SCRIPTS_DIR}/external_revision_generator.py --git_dir ${source_dir} -s ${symbol_name} -o ${output}
-    COMMAND ${PYTHON_CMD} ${SCRIPTS_DIR}/external_revision_generator.py --rev_file ${source_dir} -s ${symbol_name} -o ${output}
-    DEPENDS ${SCRIPTS_DIR}/external_revision_generator.py ${source_dir}/.git/HEAD ${source_dir}/.git/index
-    )
+        COMMAND ${PYTHON_CMD} ${SCRIPTS_DIR}/external_revision_generator.py --from_uuid -s ${symbol_name} -o ${output}
+        DEPENDS ${SCRIPTS_DIR}/external_revision_generator.py
+        )
 endmacro()
 
 # Custom targets for generated validation layer helper file dependencies
@@ -82,13 +78,8 @@ run_vk_xml_generate(helper_file_generator.py vk_object_types.h)
 run_vk_xml_generate(helper_file_generator.py vk_extension_helper.h)
 run_vk_xml_generate(helper_file_generator.py vk_typemap_helper.h)
 if(BUILD_LAYERS)
-   #run_external_revision_generate(${EXTERNAL_SOURCE_ROOT}/glslang/External/spirv-tools SPIRV_TOOLS_COMMIT_ID spirv_tools_commit_id.h)
-    #run_external_revision_generate(${SPIRV_TOOLS_INCLUDE_DIR} SPIRV_TOOLS_COMMIT_ID spirv_tools_commit_id.h)
-    #### TODO LUGMAL FIX THIS!!!! run_external_revision_generate(${SPIRV_TOOLS_INCLUDE_DIR}/.. SPIRV_TOOLS_COMMIT_ID spirv_tools_commit_id.h)
+    run_external_revision_generate(SPIRV_TOOLS_COMMIT_ID spirv_tools_commit_id.h)
 endif()
-
-
-
 
 # Layer Utils Library
 # For Windows, we use a static lib because the Windows loader has a fairly restrictive loader search

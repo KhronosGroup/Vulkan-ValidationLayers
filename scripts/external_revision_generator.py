@@ -23,6 +23,7 @@
 import argparse
 import hashlib
 import subprocess
+import uuid
 
 def generate(symbol_name, commit_id, output_header_file):
     # Write commit ID to output header file
@@ -64,7 +65,8 @@ def generate(symbol_name, commit_id, output_header_file):
         header_file.write(contents)
 
 def get_commit_id_from_git(git_binary, source_dir):
-    return subprocess.check_output([git_binary, "rev-parse", "HEAD"], cwd=source_dir).decode('utf-8').strip()
+    value = subprocess.check_output([git_binary, "rev-parse", "HEAD"], cwd=source_dir).decode('utf-8').strip()
+    return value
 
 def is_sha1(str):
     try: str_as_int = int(str, 16)
@@ -82,6 +84,12 @@ def get_commit_id_from_file(rev_file):
         sha1.update(rev_contents.encode('utf-8'))
         return sha1.hexdigest()
 
+def get_commit_id_from_uuid():
+        unique_uuid = str(uuid.uuid4())
+        sha1 = hashlib.sha1();
+        sha1.update(unique_uuid.encode())
+        return sha1.hexdigest()
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-s", "--symbol_name", metavar="SYMBOL_NAME", required=True, help="C symbol name")
@@ -89,6 +97,7 @@ def main():
     rev_method_group = parser.add_mutually_exclusive_group(required=True)
     rev_method_group.add_argument("--git_dir", metavar="SOURCE_DIR", help="git working copy directory")
     rev_method_group.add_argument("--rev_file", metavar="REVISION_FILE", help="source revision file path (must contain a SHA1 hash")
+    rev_method_group.add_argument("--from_uuid", action='store_true', help="base SHA1 on a dynamically generated UUID")
     args = parser.parse_args()
 
     # We can either parse the latest Git commit ID out of the specified repository (preferred where possible),
@@ -99,11 +108,13 @@ def main():
         try:
             commit_id = get_commit_id_from_git('git', args.git_dir)
         except WindowsError:
-            # Call git.bat on Windows for compatiblity.
+            # Call git.bat on Windows for compatibility.
             commit_id = get_commit_id_from_git('git.bat', args.git_dir)
     elif args.rev_file is not None:
         # Read the commit ID from a file.
         commit_id = get_commit_id_from_file(args.rev_file)
+    elif args.from_uuid is not None:
+        commit_id = get_commit_id_from_uuid()
 
     if not is_sha1(commit_id):
         raise ValueError("commit ID for " + args.symbol_name + " must be a SHA1 hash.")
