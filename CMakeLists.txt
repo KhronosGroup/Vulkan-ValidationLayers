@@ -18,11 +18,6 @@ string(TOLOWER ${API_NAME} API_LOWERCASE)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
-# if CMAKE 3.7+, use FindVulkan
-if (NOT CMAKE_VERSION VERSION_LESS 3.7.0)
-    message(STATUS "Using find_package to locate Vulkan")
-    find_package(Vulkan)
-endif()
 find_package(PythonInterp 3 REQUIRED)
 
 option(USE_CCACHE "Use ccache" OFF)
@@ -155,6 +150,12 @@ option(BUILD_LAYERS "Build layers" ON)
 set(VULKAN_SDK $ENV{VULKAN_SDK})
 
 # Set GLSLANG_REPO_ROOT to define the path to the glslang binaries for this project
+
+if (NOT DEFINED GLSLANG_REPO_ROOT)
+    message(ERROR "Must define GLSLANG_REPO_ROOT -- see BUILD.md")
+else()
+    message("Using glslang instance located at ${GLSLANG_REPO_ROOT}")
+endif()
 
 # These paths assume that the update_glslang_sources.py script was run in the indicated glslang repo and the repo was built
 set(SPIRV_TOOLS_BINARY_ROOT "${GLSLANG_REPO_ROOT}/${BUILDTGT_DIR}/External/spirv-tools/source" CACHE STRING "User defined path to the SPIRV-Tools binaries for this project")

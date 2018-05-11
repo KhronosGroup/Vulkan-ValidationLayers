@@ -54,6 +54,17 @@ Windows 7+ with the following software packages:
   - Tell the installer to treat line endings "as is" (i.e. both DOS and Unix-style line endings).
   - Install both the 32-bit and 64-bit versions, as the 64-bit installer does not install the
     32-bit libraries and tools.
+- Vulkan Loader Library
+  - Building the Layer Validation Tests requires linking to the Vulkan Loader Library (vulkan-1.dll).
+    Locating the library for this repo can be done in two different ways:
+      -  The Vulkan SDK can be installed. In this case, cmake should be able to locate the loader repo through the VulkanSDK
+         environment variable
+      -  The library can be built from the [Vulkan-Loader](https://github.com/KhronosGroup/Vulkan-Loader.git) repository.
+         In this case, the following option should be used on the cmake command line:
+             LOADER_REPO_ROOT=c:\developement\Vulkan-Loader
+         like so:
+             cmake -DLOADER_REPO_ROOT=c:\development\Vulkan-Loader ....
+  - Tell the installer to treat line endings "as is" (i.e. both DOS and Unix-style line endings).
 - Notes for using [Cygwin](https://www.cygwin.com)
   - First, in a Cygwin shell:
     - `./update_external_sources.sh --no-build`
@@ -72,7 +83,7 @@ Windows 7+ with the following software packages:
 
 For example, for VS2017 (generators for other versions are [specified here](#cmake-visual-studio-generators)):
 
-    cmake -G -DGLSLANG_REPO_ROOT=c:\development\glslang "Visual Studio 15 2017 Win64" ..
+    cmake -G -DLOADER_REPO_ROOT=c:\development\VULKAN_LOADER -DGLSLANG_REPO_ROOT=c:\development\glslang "Visual Studio 15 2017 Win64" ..
 
 This will create a Windows solution file named `Vulkan-ValidationLayers.sln` in the build directory.
 
@@ -131,7 +142,12 @@ It should be straightforward to adapt this repository to other Linux distributio
 
     sudo apt-get install git cmake build-essential libx11-xcb-dev libxkbcommon-dev libmirclient-dev libwayland-dev libxrandr-dev
 
-####TODO:
+Vulkan Loader Library
+  - Building the Layer Validation Tests requires linking to the Vulkan Loader Library (libvulkan-1.so).
+      - The following option should be used on the cmake command line to specify a vulkan loader library:
+             LOADER_REPO_ROOT=c:\developement\Vulkan-Loader
+         like so:
+             cmake -DLOADER_REPO_ROOT=c:\development\Vulkan-Loader ....
 
 ### Linux Build
 
@@ -145,7 +161,7 @@ See **Validation Layer Dependencies** for more information and other options):
 
         mkdir build
         cd build
-        cmake -DGLSLANG_REPO_ROOT=/path_to_/glslang -DCMAKE_BUILD_TYPE=Debug ..
+        cmake -DLOADER_REPO_ROOT=/path_to/Vulkan-Loader -DGLSLANG_REPO_ROOT=/path_to_/glslang -DCMAKE_BUILD_TYPE=Debug ..
 
 4. Run `make -j8` to begin the build
 

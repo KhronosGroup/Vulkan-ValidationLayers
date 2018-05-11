@@ -80,12 +80,34 @@ else()
     endif()
 endif()
 
+if(DEFINED LOADER_REPO_ROOT)
+    message(STATUS "Using user-supplied path to locate Vulkan")
 
-if(WIN32)
-    set (LIBVK "Vulkan::Vulkan")
-elseif(UNIX)
-    set (LIBVK "Vulkan::Vulkan")
+    if(WIN32)
+        set(LOADER_FINAL_BINARY_PATH ${LOADER_REPO_ROOT}/${BUILDTGT_DIR})
+        set (LOADER_SEARCH_PATH
+            "${LOADER_FINAL_BINARY_PATH}/loader/${RELEASE_DECORATION}"
+            )
+
+        set (LOADER_DEBUG_SEARCH_PATH
+            "${LOADER_FINAL_BINARY_PATH}/loader/${DEBUG_DECORATION}"
+            )
+    elseif(UNIX)
+        set (LOADER_SEARCH_PATH
+            "${GLSLANG_REPO_ROOT}/${BUILDTGT_DIR}/install/lib"
+            )
+    endif()
+
+    find_library(LIBVK NAMES vulkan-1
+                 HINTS ${VULKAN_LIBRARY_SEARCH_PATH})
+    if(WIN32)
+        find_library(LIBVK NAMES vulkan-1
+                     HINTS ${LOADER_DEBUG_SEARCH_PATH})
+    endif()
 else()
+    message(STATUS "Using find_package to locate Vulkan")
+    find_package(Vulkan)
+    set (LIBVK "Vulkan::Vulkan")
 endif()
 
 add_executable(vk_layer_validation_tests layer_validation_tests.cpp ../layers/vk_format_utils.cpp ${COMMON_CPP})
