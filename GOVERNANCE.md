@@ -1,4 +1,4 @@
-## Vulkan Loader and Validation Layers Repository Management
+## Vulkan Validation Layers Repository Management
 
 # **Open Source Project – Objectives**
 
@@ -9,7 +9,7 @@ interpretations may require consulting with the Khronos Vulkan Workgroup for res
     - [Header Files](https://www.khronos.org/registry/vulkan/#headers)
     - [SDK Resources](https://vulkan.lunarg.com)
 * ISV Enablement
-  - Updates of loader and validation layer functionality should be available in a timely fashion
+  - Updates of validation layer functionality should be available in a timely fashion
   - Every effort will be made to be responsive to ISV issues with validation layers
 * Cross Platform Compatibility
   - Google and LunarG collaboration:
