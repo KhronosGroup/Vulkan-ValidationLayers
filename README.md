@@ -1,12 +1,12 @@
 # Vulkan Ecosystem Components
 
-This project provides the Khronos official Vulkan ICD desktop loader and the Vulkan validation layers for Windows, Linux, Android, and MacOS.
+This project provides the Khronos official Vulkan validation layers for Windows, Linux, Android, and MacOS.
 
 ## CI Build Status
 | Platform | Build Status |
 |:--------:|:------------:|
-| Linux/Android | [![Build Status](https://travis-ci.org/KhronosGroup/Vulkan-LoaderAndValidationLayers.svg?branch=master)](https://travis-ci.org/KhronosGroup/Vulkan-LoaderAndValidationLayers) |
-| Windows |[![Build status](https://ci.appveyor.com/api/projects/status/ri4584d6qramrjiv/branch/master?svg=true)](https://ci.appveyor.com/project/Khronoswebmaster/vulkan-loaderandvalidationlayers/branch/master) |
+| Linux/Android | [![Build Status](https://travis-ci.org/KhronosGroup/Vulkan-ValidationLayers.svg?branch=master)](https://travis-ci.org/KhronosGroup/Vulkan-ValidationLayers) |
+| Windows |[![Build status](https://ci.appveyor.com/api/projects/status/ri4584d6qramrjiv/branch/master?svg=true)](https://ci.appveyor.com/project/Khronoswebmaster/vulkan-validationlayers/branch/master) |
 
 
 ## Introduction
@@ -16,16 +16,8 @@ a Vulkan driver. Applications have full control and responsibility for correct o
 how Vulkan is used can result in a crash. This project provides Vulkan validation layers that can be enabled
 to assist development by enabling developers to verify their applications correct use of the Vulkan API.
 
-Vulkan supports multiple GPUs and multiple global contexts (VkInstance). The ICD loader is necessary to
-support multiple GPUs and VkInstance-level Vulkan commands.  Additionally, the loader manages inserting
-Vulkan layer libraries such as validation layers between the application and the ICD.
-
 The following components are available in this repository:
-- [Vulkan header files](include/vulkan/)
-- [*ICD Loader*](loader/)
 - [*Validation Layers*](layers/)
-- [*Mock ICD*](icd/)
-- [*Demos*](demos/)
 - [*Tests*](tests/)
 
 ## Contact Information
@@ -40,13 +32,10 @@ Please see the [GOVERNANCE.md](GOVERNANCE.md) file in this repository for reposi
 ## How to Build and Run
 
 [BUILD.md](BUILD.md)
-Includes directions for building all components as well as running validation tests and demo applications.
+Includes directions for building all components as well as running validation tests.
 
 Information on how to enable the various Validation layers is in
 [layers/README.md](layers/README.md).
-
-Architecture and interface information for the loader is in
-[loader/LoaderAndLayerInterface.md](loader/LoaderAndLayerInterface.md).
 
 ## License
 This work is released as open source under a Apache-style license from Khronos including a Khronos copyright.
