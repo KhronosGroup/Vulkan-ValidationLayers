@@ -2,8 +2,8 @@
 
 ### **The Repository**
 
-The source code for The Vulkan-LoaderAndValidationLayer components is sponsored by Khronos and LunarG.
-* [Khronos Vulkan-LoaderAndValidationLayers](https://github.com/KhronosGroup/Vulkan-LoaderAndValidationLayers)
+The source code for The Vulkan-ValidationLayer components is sponsored by Khronos and LunarG.
+* [Khronos Vulkan-ValidationLayers](https://github.com/KhronosGroup/Vulkan-ValidationLayers)
 
 
 ### **The Vulkan Ecosystem Needs Your Help**
@@ -14,10 +14,11 @@ there are always opportunities for anyone to help by contributing additional val
 and tests for these validation checks.
 
 There are a couple of methods to identify areas of need:
-* Examine the [issues list](https://github.com/KhronosGroup/Vulkan-LoaderAndValidationLayers/issues)
+* Examine the [issues list](https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues)
 in this repository and look for issues that are of interest
-* Alternatively, examine the [vk_validation_error_database.txt](layers/vk_validation_error_database.txt) file -- unimplemented validation checks are marked
-with an 'N' in the 'check_implemented' column and each of these needs coverage in the validation layers.
+* Alternatively, examine the [vk_validation_error_database.txt](layers/vk_validation_error_database.txt)
+file -- unimplemented validation checks are marked with an 'N' in the 'check_implemented' column and each
+of these needs coverage in the validation layers.
 
 Of course, if you have your own work in mind, please open an issue to describe it and assign it to yourself.
 Finally, please feel free to contact any of the developers that are actively contributing should you
@@ -30,7 +31,7 @@ Repository Issue labels:
 * _Bug_:          These issues refer to invalid or broken functionality and are the highest priority.
 * _Incomplete_:   These issues refer to missing validation checks that users have encountered during application
 development that would have been directly useful, and are high priority.
-* _Enhancement_:  These issues refer to ideas for extending or improving the loader, demos, or validation layers.
+* _Enhancement_:  These issues refer to ideas for extending or improving the validation layers.
 
 It is the maintainers goal for all issues to be assigned within one business day of their submission. If you choose
 to work on an issue that is assigned, simply coordinate with the current assignee.
@@ -71,7 +72,7 @@ a good reason is "This violates the style guide, but it improves type safety."
 
 * **Commit Messages**
     * Limit the subject line to 50 characters -- this allows the information to display correctly in git/Github logs
-    * Begin subject line with a one-word component description followed by a colon (e.g. loader, layers, tests, etc.)
+    * Begin subject line with a one-word component description followed by a colon (e.g. build, docs, layers, tests, etc.)
     * Separate subject from body with a blank line
     * Wrap the body at 72 characters
     * Capitalize the subject line
@@ -90,13 +91,6 @@ that to be accepted into the repository, the pull request must [pass all tests](
   These tests can be found in the following folders inside of your target build directory:
 
   (These instructions are for Linux)
-* In the `demos` directory, run:
-
->        cube
->        cube --validate
->        smoke
->        smoke --validate
->        vulkaninfo
 
 * In the `tests` directory, run:
 
@@ -135,7 +129,7 @@ or other contribution to GitHub.
 
 ### **License and Copyrights**
 
-All contributions made to the Vulkan-LoaderAndValidationLayers repository are Khronos branded and as such,
+All contributions made to the Vulkan-ValidationLayers repository are Khronos branded and as such,
 any new files need to have the Khronos license (Apache 2.0 style) and copyright included.
 Please see an existing file in this repository for an example.
 
