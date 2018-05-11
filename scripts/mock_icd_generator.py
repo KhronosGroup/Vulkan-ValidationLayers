@@ -767,6 +767,33 @@ CUSTOM_C_INTERCEPTS = {
 ''',
 'vkGetPhysicalDeviceProperties2KHR': '''
     GetPhysicalDeviceProperties(physicalDevice, &pProperties->properties);
+    const auto *desc_idx_props = lvl_find_in_chain<VkPhysicalDeviceDescriptorIndexingPropertiesEXT>(pProperties->pNext);
+    if (desc_idx_props) {
+        VkPhysicalDeviceDescriptorIndexingPropertiesEXT* write_props = (VkPhysicalDeviceDescriptorIndexingPropertiesEXT*)desc_idx_props;
+        write_props->maxUpdateAfterBindDescriptorsInAllPools = 500000;
+        write_props->shaderUniformBufferArrayNonUniformIndexingNative = false;
+        write_props->shaderSampledImageArrayNonUniformIndexingNative = false;
+        write_props->shaderStorageBufferArrayNonUniformIndexingNative = false;
+        write_props->shaderStorageImageArrayNonUniformIndexingNative = false;
+        write_props->shaderInputAttachmentArrayNonUniformIndexingNative = false;
+        write_props->robustBufferAccessUpdateAfterBind = true;
+        write_props->quadDivergentImplicitLod = true;
+        write_props->maxPerStageDescriptorUpdateAfterBindSamplers = 500000;
+        write_props->maxPerStageDescriptorUpdateAfterBindUniformBuffers = 500000;
+        write_props->maxPerStageDescriptorUpdateAfterBindStorageBuffers = 500000;
+        write_props->maxPerStageDescriptorUpdateAfterBindSampledImages = 500000;
+        write_props->maxPerStageDescriptorUpdateAfterBindStorageImages = 500000;
+        write_props->maxPerStageDescriptorUpdateAfterBindInputAttachments = 500000;
+        write_props->maxPerStageUpdateAfterBindResources = 500000;
+        write_props->maxDescriptorSetUpdateAfterBindSamplers = 500000;
+        write_props->maxDescriptorSetUpdateAfterBindUniformBuffers = 96;
+        write_props->maxDescriptorSetUpdateAfterBindUniformBuffersDynamic = 8;
+        write_props->maxDescriptorSetUpdateAfterBindStorageBuffers = 500000;
+        write_props->maxDescriptorSetUpdateAfterBindStorageBuffersDynamic = 4;
+        write_props->maxDescriptorSetUpdateAfterBindSampledImages = 500000;
+        write_props->maxDescriptorSetUpdateAfterBindStorageImages = 500000;
+        write_props->maxDescriptorSetUpdateAfterBindInputAttachments = 500000;
+    }
 ''',
 'vkGetBufferMemoryRequirements': '''
     // TODO: Just hard-coding reqs for now
