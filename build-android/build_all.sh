@@ -50,7 +50,7 @@ echo LAYER_BUILD_DIR="${LAYER_BUILD_DIR}"
 echo DEMO_BUILD_DIR="${DEMO_BUILD_DIR}"
 
 function create_APK() {
-    aapt package -f -M AndroidManifest.xml -I "$ANDROID_SDK_HOME/platforms/android-23/android.jar" -S res -F bin/$1-unaligned.apk bin/libs
+    aapt package -f -M AndroidManifest.xml -I "$ANDROID_SDK_HOME/platforms/android-24/android.jar" -S res -F bin/$1-unaligned.apk bin/libs
     # update this logic to detect if key is already there.  If so, use it, otherwise create it.
     jarsigner -verbose -keystore ~/.android/debug.keystore -storepass android -keypass android  bin/$1-unaligned.apk androiddebugkey
     zipalign -f 4 bin/$1-unaligned.apk bin/$1.apk
@@ -69,31 +69,6 @@ ndk-build -j $cores
 mkdir -p bin/libs/lib
 cp -r $LAYER_BUILD_DIR/libs/* $LAYER_BUILD_DIR/bin/libs/lib/
 create_APK VulkanLayerValidationTests
-
-#
-# build cube APKs (with and without layers)
-#
-(
-pushd $DEMO_BUILD_DIR
-ndk-build -j $cores
-# Package one APK without validation layers
-mkdir -p $DEMO_BUILD_DIR/cube/bin/libs/lib
-cp -r $DEMO_BUILD_DIR/libs/* $DEMO_BUILD_DIR/cube/bin/libs/lib/
-cd $DEMO_BUILD_DIR/cube
-create_APK cube
-# And one with validation layers
-mkdir -p $DEMO_BUILD_DIR/cube-with-layers/bin/libs/lib
-cp -r $DEMO_BUILD_DIR/libs/* $DEMO_BUILD_DIR/cube-with-layers/bin/libs/lib/
-cp -r $LAYER_BUILD_DIR/libs/* $DEMO_BUILD_DIR/cube-with-layers/bin/libs/lib/
-cd $DEMO_BUILD_DIR/cube-with-layers
-create_APK cube-with-layers
-popd
-)
-
-#
-# build Smoke with layers
-#
-# TODO
 
 echo Builds succeeded
 exit 0
