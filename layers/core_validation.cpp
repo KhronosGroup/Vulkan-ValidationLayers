@@ -2175,7 +2175,7 @@ static bool ValidateRequestedFeatures(instance_layer_data *instance_data, const 
                                       const VkPhysicalDeviceFeatures *requested_features) {
     bool skip = false;
 
-    const VkBool32 *actual = reinterpret_cast<const VkBool32 *>(&pd_state->features);
+    const VkBool32 *actual = reinterpret_cast<const VkBool32 *>(&pd_state->features2.features.robustBufferAccess);
     const VkBool32 *requested = reinterpret_cast<const VkBool32 *>(requested_features);
     // TODO : This is a nice, compact way to loop through struct, but a bad way to report issues
     //  Need to provide the struct member name with the issue. To do that seems like we'll
@@ -11283,7 +11283,7 @@ VKAPI_ATTR VkResult VKAPI_CALL EnumeratePhysicalDevices(VkInstance instance, uin
             auto &phys_device_state = instance_data->physical_device_map[pPhysicalDevices[i]];
             phys_device_state.phys_device = pPhysicalDevices[i];
             // Init actual features for each physical device
-            instance_data->dispatch_table.GetPhysicalDeviceFeatures(pPhysicalDevices[i], &phys_device_state.features);
+            instance_data->dispatch_table.GetPhysicalDeviceFeatures(pPhysicalDevices[i], &phys_device_state.features2.features);
         }
     }
     return result;
@@ -12121,7 +12121,7 @@ static void PostCallRecordEnumeratePhysicalDeviceGroups(instance_layer_data *ins
                 auto &phys_device_state = instance_data->physical_device_map[cur_phys_dev];
                 phys_device_state.phys_device = cur_phys_dev;
                 // Init actual features for each physical device
-                instance_data->dispatch_table.GetPhysicalDeviceFeatures(cur_phys_dev, &phys_device_state.features);
+                instance_data->dispatch_table.GetPhysicalDeviceFeatures(cur_phys_dev, &phys_device_state.features2.features);
             }
         }
     }

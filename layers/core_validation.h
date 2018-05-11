@@ -128,7 +128,7 @@ struct PHYSICAL_DEVICE_STATE {
     CALL_STATE vkGetPhysicalDeviceSurfacePresentModesKHRState = UNCALLED;
     CALL_STATE vkGetPhysicalDeviceSurfaceFormatsKHRState = UNCALLED;
     CALL_STATE vkGetPhysicalDeviceDisplayPlanePropertiesKHRState = UNCALLED;
-    VkPhysicalDeviceFeatures features = {};
+    safe_VkPhysicalDeviceFeatures2 features2 = {};
     VkPhysicalDevice phys_device = VK_NULL_HANDLE;
     uint32_t queue_family_count = 0;
     std::vector<VkQueueFamilyProperties> queue_family_properties;
