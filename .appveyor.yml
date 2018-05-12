@@ -54,7 +54,7 @@ before_build:
   - cd %TOP_DIR%
   - git clone https://github.com/KhronosGroup/glslang.git
   - cd glslang
-  - ./update_glslang_sources.py
+  - update_glslang_sources.py
   - mkdir build
   - cd build
   - cmake -G %GENERATOR% -DCMAKE_INSTALL_PREFIX=install ..
