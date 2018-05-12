@@ -30,7 +30,7 @@ branches:
 before_build:
   - "SET PATH=C:\\Python35;C:\\Python35\\Scripts;%PATH%"
   - echo.
-  - echo Starting build for %APPVEYOR_REPO_NAME%
+  - echo Starting build for %APPVEYOR_REPO_NAME% in %APPVEYOR_BUILD_FOLDER%
   - git submodule update --init --recursive
   # Determine the appropriate CMake generator for the current version of Visual Studio
   - echo Determining VS version
@@ -40,31 +40,33 @@ before_build:
   - del /Q /F vsversion.tmp
   - if %PLATFORM% == Win32 (set GENERATOR="Visual Studio %VS_VERSION%")
   - if %PLATFORM% == x64 (set GENERATOR="Visual Studio %VS_VERSION% Win64")
+  - if %PLATFORM% == Win32 (set BUILD_DIR="build32")
+  - if %PLATFORM% == x64 (set BUILD_DIR="build")
   # Build Vulkan-Loader
   - echo Building Vulkan-Loader for %PLATFORM% %CONFIGURATION%
-  - cd %TOP_DIR%
+  - cd %APPVEYOR_BUILD_FOLDER%
   - git clone --recurse-submodules https://github.com/KhronosGroup/Vulkan-Loader.git
   - cd Vulkan-Loader
-  - mkdir build
-  - cd build
+  - mkdir %BUILD_DIR%
+  - cd %BUILD_DIR%
   - cmake -G %GENERATOR% ..
-  - cmake --build . --config %CONFIGURATION%
+  - cmake --build . --config %CONFIGURATION% -- /maxcpucount
   # Build glslang
   - echo Building glslang for %PLATFORM% %CONFIGURATION%
-  - cd %TOP_DIR%
+  - cd %APPVEYOR_BUILD_FOLDER%
   - git clone https://github.com/KhronosGroup/glslang.git
   - cd glslang
   - update_glslang_sources.py
-  - mkdir build
-  - cd build
+  - mkdir %BUILD_DIR%
+  - cd %BUILD_DIR%
   - cmake -G %GENERATOR% -DCMAKE_INSTALL_PREFIX=install ..
-  - cmake --build . --config %CONFIGURATION%
+  - cmake --build . --config %CONFIGURATION% -- /maxcpucount
   # Generate build files using CMake for the build step.
-  - echo Generating CMake files for %PLATFORM% %CONFIGURATION%
-  - cd %TOP_DIR%
+  - echo Generating Vulkan-ValidationLayers CMake files for %PLATFORM% %CONFIGURATION%
+  - cd %APPVEYOR_BUILD_FOLDER%
   - mkdir build
   - cd build
-  - cmake -G %GENERATOR% -DGLSLANG_REPO_ROOT=../../glslang -DLOADER_REPO_ROOT=../../Vulkan-Loader ..
+  - cmake -G %GENERATOR% -DGLSLANG_REPO_ROOT=%APPVEYOR_BUILD_FOLDER%\glslang -DLOADER_REPO_ROOT=%APPVEYOR_BUILD_FOLDER%\Vulkan-Loader ..
   - echo Building platform=%PLATFORM% configuration=%CONFIGURATION%
 
 platform:
