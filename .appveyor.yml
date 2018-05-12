@@ -31,11 +31,7 @@ before_build:
   - "SET PATH=C:\\Python35;C:\\Python35\\Scripts;%PATH%"
   - echo.
   - echo Starting build for %APPVEYOR_REPO_NAME%
-  - echo Update external sources
-  - if %PLATFORM% == Win32 (if %CONFIGURATION% == Debug (update_external_sources.bat --32 --debug))
-  - if %PLATFORM% == Win32 (if %CONFIGURATION% == Release (update_external_sources.bat --32 --release))
-  - if %PLATFORM% == x64 (if %CONFIGURATION% == Debug (update_external_sources.bat --64 --debug))
-  - if %PLATFORM% == x64 (if %CONFIGURATION% == Release (update_external_sources.bat --64 --release))
+  - git submodule update --init --recursive
   # Determine the appropriate CMake generator for the current version of Visual Studio
   - echo Determining VS version
   - python .\scripts\determine_vs_version.py > vsversion.tmp
@@ -44,12 +40,31 @@ before_build:
   - del /Q /F vsversion.tmp
   - if %PLATFORM% == Win32 (set GENERATOR="Visual Studio %VS_VERSION%")
   - if %PLATFORM% == x64 (set GENERATOR="Visual Studio %VS_VERSION% Win64")
-  # Generate build files using CMake for the build step.
-  - echo Generating CMake files for %GENERATOR%
+  # Build Vulkan-Loader
+  - echo Building Vulkan-Loader for %PLATFORM% %CONFIGURATION%
   - cd %TOP_DIR%
+  - git clone --recurse-submodules https://github.com/KhronosGroup/Vulkan-Loader.git
+  - cd Vulkan-Loader
   - mkdir build
   - cd build
   - cmake -G %GENERATOR% ..
+  - cmake --build . --config %CONFIGURATION%
+  # Build glslang
+  - echo Building glslang for %PLATFORM% %CONFIGURATION%
+  - cd %TOP_DIR%
+  - git clone https://github.com/KhronosGroup/glslang.git
+  - cd glslang
+  - ./update_glslang_sources.py
+  - mkdir build
+  - cd build
+  - cmake -G %GENERATOR% -DCMAKE_INSTALL_PREFIX=install ..
+  - cmake --build . --config %CONFIGURATION%
+  # Generate build files using CMake for the build step.
+  - echo Generating CMake files for %PLATFORM% %CONFIGURATION%
+  - cd %TOP_DIR%
+  - mkdir build
+  - cd build
+  - cmake -G %GENERATOR% -DGLSLANG_REPO_ROOT=../../glslang -DLOADER_REPO_ROOT=../../Vulkan-Loader ..
   - echo Building platform=%PLATFORM% configuration=%CONFIGURATION%
 
 platform:
@@ -61,6 +76,6 @@ configuration:
   - Debug
 
 build:
-  parallel: true                  # enable MSBuild parallel builds
-  project: build/VULKAN.sln       # path to Visual Studio solution or project
-  verbosity: quiet                # quiet|minimal|normal|detailed
+  parallel: true                              # enable MSBuild parallel builds
+  project: build/Vulkan-ValidationLayers.sln  # path to Visual Studio solution or project
+  verbosity: quiet                            # quiet|minimal|normal|detailed
