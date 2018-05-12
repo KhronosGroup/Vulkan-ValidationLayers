@@ -20,6 +20,14 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 find_package(PythonInterp 3 REQUIRED)
 
+# TODO: Add option to override this with env var, or even to use SDK
+set(VULKAN_HEADERS_LOCATION "${CMAKE_CURRENT_SOURCE_DIR}/Vulkan-Headers")
+
+# Output warning if vulkan headers submodule contents are not present
+if (NOT EXISTS "${VULKAN_HEADERS_LOCATION}/include/vulkan/vulkan_core.h")
+    message(FATAL_ERROR "Please run 'git submodule update --init' before running cmake")
+endif()
+
 option(USE_CCACHE "Use ccache" OFF)
 if (USE_CCACHE)
     find_program(CCACHE_FOUND ccache)
@@ -79,9 +87,6 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     # overwriting of VL artifacts when installing these downstream repos.
     option(INSTALL_VL_FILES "Install content from ValidationLayers repo" ON)
 endif()
-
-# TODO: Add option to override this with env var, or even to use SDK
-set(VULKAN_HEADERS_LOCATION "${CMAKE_CURRENT_SOURCE_DIR}/Vulkan-Headers")
 
 if (CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID MATCHES "Clang")
     set(COMMON_COMPILE_FLAGS "-Wall -Wextra -Wno-unused-parameter -Wno-missing-field-initializers")
@@ -212,7 +217,7 @@ find_path(SPIRV_TOOLS_INCLUDE_DIR spirv-tools/libspirv.h HINTS
           "${GLSLANG_REPO_ROOT}/External/spirv-tools/include"
           "${CMAKE_SOURCE_DIR}/../glslang/External/spirv-tools/include"
           DOC "Path to spirv-tools/libspirv.h")
-                                             
+
 find_library(GLSLANG_LIB NAMES glslang
              HINTS ${GLSLANG_SEARCH_PATH} )
 
@@ -332,6 +337,10 @@ endif()
 add_definitions(-DAPI_NAME="${API_NAME}")
 
 if(BUILD_TESTS)
+    # Output warning if googletest submodule contents are not present
+    if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/tests/googletest/googletest/include/gtest/gtest.h")
+        message(FATAL_ERROR "Please run 'git submodule update --init' before running cmake")
+    endif()
     add_subdirectory(tests)
 endif()
 
