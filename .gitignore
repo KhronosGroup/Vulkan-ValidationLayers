@@ -4,18 +4,11 @@ CMakeFiles/
 cmake_install.cmake
 Makefile
 scripts/__pycache__
-VKConfig.h
 *.so
 *.so.*
 _out64
 out32/*
 out64/*
-demos/Debug/*
-demos/Win32/Debug/*
-demos/xcb_nvidia.dir/*
-demos/smoke/HelpersDispatchTable.cpp
-demos/smoke/HelpersDispatchTable.h
-libs/Win32/Debug/*
 *.pyc
 *.vcproj
 *.sln
@@ -26,7 +19,6 @@ libs/Win32/Debug/*
 build
 build32
 dbuild
-external
 build-android/external
 *.config
 *.creator
