@@ -65,13 +65,6 @@ Windows 7+ with the following software packages:
          like so:
              cmake -DLOADER_REPO_ROOT=c:\development\Vulkan-Loader ....
   - Tell the installer to treat line endings "as is" (i.e. both DOS and Unix-style line endings).
-- Notes for using [Cygwin](https://www.cygwin.com)
-  - First, in a Cygwin shell:
-    - `./update_external_sources.sh --no-build`
-  - Then, in a Visual Studio Developer Command Prompt:
-    - Ensure python3.x and CMake in are in the path
-    - Run `update_external_sources.bat --no-sync`
-    - Run build_windows_targets.bat cmake
 
 ### Windows Build - Microsoft Visual Studio
 
@@ -272,12 +265,6 @@ Set up your environment for building 32-bit targets:
 
 Again, your PKG_CONFIG configuration may be different, depending on your distribution.
 
-If the libraries in the `external` directory have already been built for 64-bit targets,
-delete or "clean" this directory and rebuild it with the above settings using the
-`update_external_sources` shell script.
-This is required because the libraries in `external` must be built for 32-bit in order
-to be usable by the rest of the components in the repository.
-
 Finally, rebuild the repository using `cmake` and `make`, as explained above.
 
 ## Building On Android
@@ -428,11 +415,11 @@ Clone the Vulkan-ValidationLayers repository:
 
 ### Get the External Libraries
 
-Change to the cloned directory (`cd Vulkan-ValidationLayers`) and run the script:
+Get the in-tree exernal components:
 
-    ./update_external_sources.sh
+    git submodule update --init --recursive
 
-This script downloads and builds the `glslang` and `MoltenVK` repositories.
+TODO: Add mac info for dependencies
 
 ### MacOS build
 
@@ -490,30 +477,6 @@ files to be used as project files for QtCreator
 
 Note that installing the WDK breaks the MSVC vcvarsall.bat build scripts provided by MSVC,
 requiring that the LIB, INCLUDE, and PATHenv variables be set to the WDK paths by some other means
-
-## Update External Sources Optional Parameters
-
-This script will default to building 64-bit _and_ 32-bit versions of debug _and_ release
-configurations, which can take a substantial amount of time.
-However, it supports the following options to select a particular build configuration which can
-reduce the time needed for repository set-up:
-
-| Command Line Option  |  Function                                    |
-|----------------------|----------------------------------------------|
-|   --32               | Build 32-bit targets only                    |
-|   --64               | Build 64-bit targets only                    |
-|   --release          | Perform release builds only                  |
-|   --debug            | Perform debug builds only                    |
-|   --no-build         | Sync without building targets                |
-|   --no-sync          | Skip repository sync step                    |
-
-For example, to target a Windows 64-bit debug development configuration, invoke the batch file as follows:
-
-`update_external_sources.bat --64 --debug`
-
-Similarly, invoking the same configuration for Linux would be:
-
-`update_external_sources.sh --64 --debug`
 
 ## Validation Layer Dependencies
 
