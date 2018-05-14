@@ -76,7 +76,7 @@ Windows 7+ with the following software packages:
 
 For example, for VS2017 (generators for other versions are [specified here](#cmake-visual-studio-generators)):
 
-    cmake -G -DLOADER_REPO_ROOT=c:\development\VULKAN_LOADER -DGLSLANG_REPO_ROOT=c:\development\glslang "Visual Studio 15 2017 Win64" ..
+    cmake -DLOADER_REPO_ROOT=c:\development\VULKAN_LOADER -DGLSLANG_REPO_ROOT=c:\development\glslang -G "Visual Studio 15 2017 Win64" ..
 
 This will create a Windows solution file named `Vulkan-ValidationLayers.sln` in the build directory.
 
