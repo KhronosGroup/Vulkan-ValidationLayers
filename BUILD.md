@@ -62,8 +62,8 @@ Windows 7+ with the following software packages:
       -  The library can be built from the [Vulkan-Loader](https://github.com/KhronosGroup/Vulkan-Loader.git) repository.
          In this case, the following option should be used on the cmake command line:
              LOADER_REPO_ROOT=c:\developement\Vulkan-Loader
-         like so:
-             cmake -DLOADER_REPO_ROOT=c:\development\Vulkan-Loader ....
+         and use absolute (not relative) paths, like so:
+             cmake -DLOADER_REPO_ROOT=c:\absolute_path_to\Vulkan-Loader ....
   - Tell the installer to treat line endings "as is" (i.e. both DOS and Unix-style line endings).
 
 ### Windows Build - Microsoft Visual Studio
@@ -76,8 +76,9 @@ Windows 7+ with the following software packages:
 
 For example, for VS2017 (generators for other versions are [specified here](#cmake-visual-studio-generators)):
 
-    cmake -DLOADER_REPO_ROOT=c:\development\VULKAN_LOADER -DGLSLANG_REPO_ROOT=c:\development\glslang -G "Visual Studio 15 2017 Win64" ..
+    cmake -DLOADER_REPO_ROOT=c:\absolute_path_to\VULKAN_LOADER -DGLSLANG_REPO_ROOT=c:\absolute_path_to\glslang -G "Visual Studio 15 2017 Win64" ..
 
+Both LOADER_REPO_ROOT and GLSLANG_REPO_ROOT each require absolute paths.
 This will create a Windows solution file named `Vulkan-ValidationLayers.sln` in the build directory.
 
 Launch Visual Studio and open the "Vulkan-ValidationLayers.sln" solution file in the build folder.
@@ -139,7 +140,7 @@ Vulkan Loader Library
   - Building the Layer Validation Tests requires linking to the Vulkan Loader Library (libvulkan-1.so).
       - The following option should be used on the cmake command line to specify a vulkan loader library:
              LOADER_REPO_ROOT=c:\developement\Vulkan-Loader
-         like so:
+         makeing sure to specify an absoute path, like so:
              cmake -DLOADER_REPO_ROOT=c:\development\Vulkan-Loader ....
 
 ### Linux Build
@@ -150,11 +151,11 @@ See **Validation Layer Dependencies** for more information and other options):
 
 1. In a Linux terminal, `cd Vulkan-ValidationLayers` -- the root of the cloned git repository
 2. Execute `git submodule update --init`. This will download and external component repositories.
-3. Create a `build` directory, change into that directory, and run cmake:
+3. Create a `build` directory, change into that directory, and run cmake using absolute paths for the repo locations:
 
         mkdir build
         cd build
-        cmake -DLOADER_REPO_ROOT=/path_to/Vulkan-Loader -DGLSLANG_REPO_ROOT=/path_to_/glslang -DCMAKE_BUILD_TYPE=Debug ..
+        cmake -DLOADER_REPO_ROOT=/absolute_path_to/Vulkan-Loader -DGLSLANG_REPO_ROOT=/absolute_path_to_/glslang -DCMAKE_BUILD_TYPE=Debug ..
 
 4. Run `make -j8` to begin the build
 
@@ -495,11 +496,11 @@ Instructions to install an instance of the glslang repository follow here.
 
 After installing and building glslang, the location will be used to build the Vulkan-ValidationLayers repo:
 
-1) Pass in the location of your glslang repository to cmake.  From your build directory run:
+1) Pass in the location of your glslang repository to cmake using absolute paths. From your build directory run:
 
-    cmake -DGLSLANG_REPO_ROOT=c:/path_to_your_installation_of/glslang -G "Visual Studio 15 Win64" ..
+    cmake -DGLSLANG_REPO_ROOT=c:/absolute_path_to_your_installation_of/glslang -G "Visual Studio 15 Win64" ..
 or
-    cmake -DGLSLANG_REPO_ROOT=/path_to_your_installation_of/glslang -DCMAKE_BUILD_TYPE=Debug ..
+    cmake -DGLSLANG_REPO_ROOT=/absolute_path_to_your_installation_of/glslang -DCMAKE_BUILD_TYPE=Debug ..
 
 2) If building on Windows with MSVC, set `DISABLE_BUILDTGT_DIR_DECORATION` to _On_.
  If building on Windows, but without MSVC set `DISABLE_BUILD_PATH_DECORATION` to _On_
