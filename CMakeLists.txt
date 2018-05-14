@@ -80,12 +80,6 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     if (BUILD_WSI_MIR_SUPPORT)
         find_package(Mir REQUIRED)
     endif()
-
-    # This option can be used to suppress the installation of artifacts from the
-    # Vulkan-LoaderAndValidationLayers repo while running "make install" for the
-    # VulkanTools and VulkanSamples repos.  This can be used to prevent the
-    # overwriting of VL artifacts when installing these downstream repos.
-    option(INSTALL_VL_FILES "Install content from ValidationLayers repo" ON)
 endif()
 
 if (CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID MATCHES "Clang")
@@ -319,19 +313,14 @@ if(NOT WIN32)
 endif()
 
 if(UNIX)
-    if(INSTALL_VL_FILES)
-        install(DIRECTORY "${PROJECT_SOURCE_DIR}/include/vulkan" DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
-        install(FILES "${CMAKE_CURRENT_BINARY_DIR}/vk_layer_dispatch_table.h" DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/vulkan")
-    endif()
+    # uninstall target
+    configure_file(
+        "${CMAKE_CURRENT_SOURCE_DIR}/cmake/cmake_uninstall.cmake.in"
+        "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
+        IMMEDIATE @ONLY)
 
-# uninstall target
-configure_file(
-    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/cmake_uninstall.cmake.in"
-    "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
-    IMMEDIATE @ONLY)
-
-add_custom_target(uninstall
-    COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake)
+    add_custom_target(uninstall
+        COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake)
 endif()
 
 add_definitions(-DAPI_NAME="${API_NAME}")

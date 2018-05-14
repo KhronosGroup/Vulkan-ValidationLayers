@@ -186,9 +186,8 @@ Assuming that you have built the code as described above and the current directo
 
 This command installs files to:
 
-- `/usr/local/include/vulkan`:  Vulkan include files
 - `/usr/local/lib`:  Vulkan layers shared objects
-- `/usr/local/etc/vulkan/explicit_layer.d`:  Layer JSON files
+- `/usr/local/share/vulkan/explicit_layer.d`:  Layer JSON files
 
 You can further customize the installation location by setting additional CMake variables to override their defaults.
 For example, if you would like to install to `/tmp/build` instead of `/usr/local`, on your CMake command line specify:

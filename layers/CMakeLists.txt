@@ -95,9 +95,7 @@ if (WIN32)
     target_compile_definitions(VkLayer_utils PUBLIC _CRT_SECURE_NO_WARNINGS)
 else()
     add_library(VkLayer_utils SHARED ${VKLAYER_UTILS_VLF_SOURCES})
-    if(INSTALL_VL_FILES)
-        install(TARGETS VkLayer_utils DESTINATION ${CMAKE_INSTALL_LIBDIR})
-    endif()
+    install(TARGETS VkLayer_utils DESTINATION ${CMAKE_INSTALL_LIBDIR})
 endif()
 add_dependencies(VkLayer_utils generate_helper_files)
 target_include_directories(
@@ -211,18 +209,16 @@ endif()
 # Add targets for JSON file install on Linux.
 # Need to remove the "./" from the library path before installing to system directories.
 if(UNIX)
-    if(INSTALL_VL_FILES)
-        foreach (config_file ${LAYER_JSON_FILES})
-            add_custom_target(${config_file}-staging-json ALL
-                COMMAND mkdir -p ${CMAKE_CURRENT_BINARY_DIR}/staging-json
-                COMMAND cp ${CMAKE_CURRENT_SOURCE_DIR}/linux/${config_file}.json ${CMAKE_CURRENT_BINARY_DIR}/staging-json
-                COMMAND sed -i -e "/\"library_path\":/s$./libVkLayer$libVkLayer$" ${CMAKE_CURRENT_BINARY_DIR}/staging-json/${config_file}.json
-                VERBATIM
-                DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/linux/${config_file}.json
-                )
-            install(FILES ${CMAKE_CURRENT_BINARY_DIR}/staging-json/${config_file}.json DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/vulkan/explicit_layer.d)
-        endforeach(config_file)
-    endif()
+    foreach (config_file ${LAYER_JSON_FILES})
+        add_custom_target(${config_file}-staging-json ALL
+            COMMAND mkdir -p ${CMAKE_CURRENT_BINARY_DIR}/staging-json
+            COMMAND cp ${CMAKE_CURRENT_SOURCE_DIR}/linux/${config_file}.json ${CMAKE_CURRENT_BINARY_DIR}/staging-json
+            COMMAND sed -i -e "/\"library_path\":/s$./libVkLayer$libVkLayer$" ${CMAKE_CURRENT_BINARY_DIR}/staging-json/${config_file}.json
+            VERBATIM
+            DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/linux/${config_file}.json
+            )
+        install(FILES ${CMAKE_CURRENT_BINARY_DIR}/staging-json/${config_file}.json DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/vulkan/explicit_layer.d)
+    endforeach(config_file)
 endif()
 
 if (WIN32)
@@ -255,9 +251,7 @@ else()
     target_link_Libraries(VkLayer_${target} VkLayer_utils)
     add_dependencies(VkLayer_${target} generate_helper_files VkLayer_utils)
     set_target_properties(VkLayer_${target} PROPERTIES LINK_FLAGS "-Wl,-Bsymbolic,--exclude-libs,ALL")
-    if(INSTALL_VL_FILES)
-        install(TARGETS VkLayer_${target} DESTINATION ${CMAKE_INSTALL_LIBDIR})
-    endif()
+    install(TARGETS VkLayer_${target} DESTINATION ${CMAKE_INSTALL_LIBDIR})
     endmacro()
 endif()
 

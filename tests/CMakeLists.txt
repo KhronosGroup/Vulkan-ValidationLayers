@@ -145,6 +145,7 @@ SET(BUILD_GTEST ON CACHE BOOL "Builds the googletest subproject")
 SET(BUILD_GMOCK OFF CACHE BOOL "Builds the googlemock subproject")
 SET(gtest_force_shared_crt ON CACHE BOOL "Link gtest runtimes dynamically")
 SET(BUILD_SHARED_LIBS ON CACHE BOOL "Build shared libraries")
-add_subdirectory(${GTEST_RELATIVE_LOCATION} ${CMAKE_CURRENT_BINARY_DIR}/googletest)
+# EXCLUDE_FROM_ALL keeps the install target from installing GTEST files.
+add_subdirectory(${GTEST_RELATIVE_LOCATION} ${CMAKE_CURRENT_BINARY_DIR}/googletest EXCLUDE_FROM_ALL)
 
 add_subdirectory(layers)
