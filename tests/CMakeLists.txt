@@ -117,6 +117,7 @@ target_include_directories(vk_layer_validation_tests PUBLIC
     ${PROJECT_BINARY_DIR}
     ${PROJECT_BINARY_DIR}/layers
     )
+add_dependencies(vk_layer_validation_tests VkLayer_utils)
 
 if(NOT WIN32)
     set_target_properties(vk_layer_validation_tests
