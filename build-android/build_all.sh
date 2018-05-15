@@ -59,6 +59,7 @@ function create_APK() {
 #
 # build layers
 #
+git submodule update --init --recursive
 ./update_external_sources_android.sh --no-build
 ./android-generate.sh
 ndk-build -j $cores
