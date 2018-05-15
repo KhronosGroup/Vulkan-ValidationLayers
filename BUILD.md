@@ -138,16 +138,15 @@ It should be straightforward to adapt this repository to other Linux distributio
 
 Vulkan Loader Library
   - Building the Layer Validation Tests requires linking to the Vulkan Loader Library (libvulkan-1.so).
-      - The following option should be used on the cmake command line to specify a vulkan loader library:
-             LOADER_REPO_ROOT=c:\developement\Vulkan-Loader
-         makeing sure to specify an absoute path, like so:
-             cmake -DLOADER_REPO_ROOT=c:\development\Vulkan-Loader ....
+      - The LOADER_REPO_ROOT environment variable should be used on the cmake command line to specify a vulkan loader library. Make sure to specify an absoute path, like so:
+      
+          `cmake -DLOADER_REPO_ROOT=c:\development\Vulkan-Loader ....`
 
 ### Linux Build
 
 Example debug build
 
-See **Validation Layer Dependencies** for more information and other options):
+See **Validation Layer Dependencies** (below) for more information and other options:
 
 1. In a Linux terminal, `cd Vulkan-ValidationLayers` -- the root of the cloned git repository
 2. Execute `git submodule update --init`. This will download and external component repositories.
@@ -489,17 +488,19 @@ Instructions to install an instance of the glslang repository follow here.
 
 2) Execute the glslang python script to pull in the SPIRV-tools componenets:
 
-    'python update_glslang_sources.py'
+    `python update_glslang_sources.py`
 
 3) Configure the glslang source tree with CMake and build it with your IDE of choice
 
 After installing and building glslang, the location will be used to build the Vulkan-ValidationLayers repo:
 
 1) Pass in the location of your glslang repository to cmake using absolute paths. From your build directory run:
-
-    cmake -DGLSLANG_REPO_ROOT=c:/absolute_path_to_your_installation_of/glslang -G "Visual Studio 15 Win64" ..
-or
-    cmake -DGLSLANG_REPO_ROOT=/absolute_path_to_your_installation_of/glslang -DCMAKE_BUILD_TYPE=Debug ..
+    1) on Windows
+    
+        `cmake -DGLSLANG_REPO_ROOT=c:/absolute_path_to_your_installation_of/glslang -G "Visual Studio 15 Win64" ..`
+    1) or Linux
+    
+        `cmake -DGLSLANG_REPO_ROOT=/absolute_path_to_your_installation_of/glslang -DCMAKE_BUILD_TYPE=Debug ..`
 
 2) If building on Windows with MSVC, set `DISABLE_BUILDTGT_DIR_DECORATION` to _On_.
  If building on Windows, but without MSVC set `DISABLE_BUILD_PATH_DECORATION` to _On_
