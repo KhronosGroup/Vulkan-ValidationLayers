@@ -338,7 +338,7 @@ struct MEMORY_RANGE {
 
 // Data struct for tracking memory object
 struct DEVICE_MEM_INFO : public BASE_NODE {
-    void *object;       // Dispatchable object used to create this memory (device of swapchain)
+    void *object;  // Dispatchable object used to create this memory (device of swapchain)
     VkDeviceMemory mem;
     VkMemoryAllocateInfo alloc_info;
     bool is_dedicated;
@@ -901,31 +901,30 @@ const DeviceExtensions *GetEnabledExtensions(const layer_data *device_data);
 const VkPhysicalDeviceDescriptorIndexingFeaturesEXT *GetEnabledDescriptorIndexingFeatures(const layer_data *device_data);
 
 void invalidateCommandBuffers(const layer_data *, std::unordered_set<GLOBAL_CB_NODE *> const &, VK_OBJECT);
-bool ValidateMemoryIsBoundToBuffer(const layer_data *, const BUFFER_STATE *, const char *, UNIQUE_VALIDATION_ERROR_CODE);
-bool ValidateMemoryIsBoundToImage(const layer_data *, const IMAGE_STATE *, const char *, UNIQUE_VALIDATION_ERROR_CODE);
+bool ValidateMemoryIsBoundToBuffer(const layer_data *, const BUFFER_STATE *, const char *, const std::string);
+bool ValidateMemoryIsBoundToImage(const layer_data *, const IMAGE_STATE *, const char *, const std::string);
 void AddCommandBufferBindingSampler(GLOBAL_CB_NODE *, SAMPLER_STATE *);
 void AddCommandBufferBindingImage(const layer_data *, GLOBAL_CB_NODE *, IMAGE_STATE *);
 void AddCommandBufferBindingImageView(const layer_data *, GLOBAL_CB_NODE *, IMAGE_VIEW_STATE *);
 void AddCommandBufferBindingBuffer(const layer_data *, GLOBAL_CB_NODE *, BUFFER_STATE *);
 void AddCommandBufferBindingBufferView(const layer_data *, GLOBAL_CB_NODE *, BUFFER_VIEW_STATE *);
 bool ValidateObjectNotInUse(const layer_data *dev_data, BASE_NODE *obj_node, VK_OBJECT obj_struct, const char *caller_name,
-                            UNIQUE_VALIDATION_ERROR_CODE error_code);
+                            const std::string error_code);
 void invalidateCommandBuffers(const layer_data *dev_data, std::unordered_set<GLOBAL_CB_NODE *> const &cb_nodes, VK_OBJECT obj);
 void RemoveImageMemoryRange(uint64_t handle, DEVICE_MEM_INFO *mem_info);
 void RemoveBufferMemoryRange(uint64_t handle, DEVICE_MEM_INFO *mem_info);
 bool ClearMemoryObjectBindings(layer_data *dev_data, uint64_t handle, VulkanObjectType type);
 bool ValidateCmdQueueFlags(layer_data *dev_data, const GLOBAL_CB_NODE *cb_node, const char *caller_name, VkQueueFlags flags,
-                           UNIQUE_VALIDATION_ERROR_CODE error_code);
+                           const std::string error_code);
 bool ValidateCmd(layer_data *my_data, const GLOBAL_CB_NODE *pCB, const CMD_TYPE cmd, const char *caller_name);
-bool insideRenderPass(const layer_data *my_data, const GLOBAL_CB_NODE *pCB, const char *apiName,
-                      UNIQUE_VALIDATION_ERROR_CODE msgCode);
+bool insideRenderPass(const layer_data *my_data, const GLOBAL_CB_NODE *pCB, const char *apiName, const std::string msgCode);
 void SetImageMemoryValid(layer_data *dev_data, IMAGE_STATE *image_state, bool valid);
-bool outsideRenderPass(const layer_data *my_data, GLOBAL_CB_NODE *pCB, const char *apiName, UNIQUE_VALIDATION_ERROR_CODE msgCode);
+bool outsideRenderPass(const layer_data *my_data, GLOBAL_CB_NODE *pCB, const char *apiName, const std::string msgCode);
 void SetLayout(GLOBAL_CB_NODE *pCB, ImageSubresourcePair imgpair, const IMAGE_CMD_BUF_LAYOUT_NODE &node);
 void SetLayout(GLOBAL_CB_NODE *pCB, ImageSubresourcePair imgpair, const VkImageLayout &layout);
 bool ValidateImageMemoryIsValid(layer_data *dev_data, IMAGE_STATE *image_state, const char *functionName);
 bool ValidateImageSampleCount(layer_data *dev_data, IMAGE_STATE *image_state, VkSampleCountFlagBits sample_count,
-                              const char *location, UNIQUE_VALIDATION_ERROR_CODE msgCode);
+                              const char *location, const std::string msgCode);
 bool rangesIntersect(layer_data const *dev_data, MEMORY_RANGE const *range1, VkDeviceSize offset, VkDeviceSize end);
 bool ValidateBufferMemoryIsValid(layer_data *dev_data, BUFFER_STATE *buffer_state, const char *functionName);
 void SetBufferMemoryValid(layer_data *dev_data, BUFFER_STATE *buffer_state, bool valid);
