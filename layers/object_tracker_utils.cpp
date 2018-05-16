@@ -635,10 +635,14 @@ VKAPI_ATTR VkResult VKAPI_CALL SetDebugUtilsObjectNameEXT(VkDevice device, const
     }
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (pNameInfo->pObjectName) {
+        lock.lock();
         dev_data->report_data->debugUtilsObjectNameMap->insert(
             std::make_pair<uint64_t, std::string>((uint64_t &&) pNameInfo->objectHandle, pNameInfo->pObjectName));
+        lock.unlock();
     } else {
+        lock.lock();
         dev_data->report_data->debugUtilsObjectNameMap->erase(pNameInfo->objectHandle);
+        lock.unlock();
     }
     VkResult result = dev_data->dispatch_table.SetDebugUtilsObjectNameEXT(device, pNameInfo);
     return result;
@@ -664,7 +668,9 @@ VKAPI_ATTR void VKAPI_CALL QueueBeginDebugUtilsLabelEXT(VkQueue queue, const VkD
     lock.unlock();
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(queue), layer_data_map);
     if (!skip) {
+        lock.lock();
         BeginQueueDebugUtilsLabel(dev_data->report_data, queue, pLabelInfo);
+        lock.unlock();
         if (dev_data->dispatch_table.QueueBeginDebugUtilsLabelEXT) {
             dev_data->dispatch_table.QueueBeginDebugUtilsLabelEXT(queue, pLabelInfo);
         }
@@ -681,7 +687,9 @@ VKAPI_ATTR void VKAPI_CALL QueueEndDebugUtilsLabelEXT(VkQueue queue) {
         if (dev_data->dispatch_table.QueueEndDebugUtilsLabelEXT) {
             dev_data->dispatch_table.QueueEndDebugUtilsLabelEXT(queue);
         }
+        lock.lock();
         EndQueueDebugUtilsLabel(dev_data->report_data, queue);
+        lock.unlock();
     }
 }
 
@@ -692,7 +700,9 @@ VKAPI_ATTR void VKAPI_CALL QueueInsertDebugUtilsLabelEXT(VkQueue queue, const Vk
     lock.unlock();
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(queue), layer_data_map);
     if (!skip) {
+        lock.lock();
         InsertQueueDebugUtilsLabel(dev_data->report_data, queue, pLabelInfo);
+        lock.unlock();
         if (dev_data->dispatch_table.QueueInsertDebugUtilsLabelEXT) {
             dev_data->dispatch_table.QueueInsertDebugUtilsLabelEXT(queue, pLabelInfo);
         }
@@ -707,7 +717,9 @@ VKAPI_ATTR void VKAPI_CALL CmdBeginDebugUtilsLabelEXT(VkCommandBuffer commandBuf
     lock.unlock();
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     if (!skip) {
+        lock.lock();
         BeginCmdDebugUtilsLabel(dev_data->report_data, commandBuffer, pLabelInfo);
+        lock.unlock();
         if (dev_data->dispatch_table.CmdBeginDebugUtilsLabelEXT) {
             dev_data->dispatch_table.CmdBeginDebugUtilsLabelEXT(commandBuffer, pLabelInfo);
         }
@@ -725,7 +737,9 @@ VKAPI_ATTR void VKAPI_CALL CmdEndDebugUtilsLabelEXT(VkCommandBuffer commandBuffe
         if (dev_data->dispatch_table.CmdEndDebugUtilsLabelEXT) {
             dev_data->dispatch_table.CmdEndDebugUtilsLabelEXT(commandBuffer);
         }
+        lock.lock();
         EndCmdDebugUtilsLabel(dev_data->report_data, commandBuffer);
+        lock.unlock();
     }
 }
 
@@ -737,7 +751,9 @@ VKAPI_ATTR void VKAPI_CALL CmdInsertDebugUtilsLabelEXT(VkCommandBuffer commandBu
     lock.unlock();
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     if (!skip) {
+        lock.lock();
         InsertCmdDebugUtilsLabel(dev_data->report_data, commandBuffer, pLabelInfo);
+        lock.unlock();
         if (dev_data->dispatch_table.CmdInsertDebugUtilsLabelEXT) {
             dev_data->dispatch_table.CmdInsertDebugUtilsLabelEXT(commandBuffer, pLabelInfo);
         }
