@@ -1757,7 +1757,7 @@ bool cvdescriptorset::DescriptorSet::ValidateBufferUsage(BUFFER_STATE const *buf
         case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
         case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:
             if (!(usage & VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT)) {
-                *error_code = VALIDATION_ERROR_15c00292;
+                *error_code = VALIDATION_ERROR_15c00294;
                 error_usage_bit = "VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT";
             }
             break;
@@ -1794,8 +1794,8 @@ bool cvdescriptorset::DescriptorSet::ValidateBufferUpdate(VkDescriptorBufferInfo
     auto buffer_node = GetBufferState(device_data_, buffer_info->buffer);
     // Any invalid buffer should already be caught by object_tracker
     assert(buffer_node);
-    if (ValidateMemoryIsBoundToBuffer(device_data_, buffer_node, "vkUpdateDescriptorSets()", VALIDATION_ERROR_15c00294)) {
-        *error_code = VALIDATION_ERROR_15c00294;
+    if (ValidateMemoryIsBoundToBuffer(device_data_, buffer_node, "vkUpdateDescriptorSets()", VALIDATION_ERROR_15c00292)) {
+        *error_code = VALIDATION_ERROR_15c00292;
         *error_msg = "No memory bound to buffer.";
         return false;
     }
