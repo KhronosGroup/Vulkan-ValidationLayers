@@ -54,7 +54,7 @@ bool VerifyClearImageLayout(layer_data *device_data, GLOBAL_CB_NODE *cb_node, IM
 
 bool VerifyImageLayout(layer_data const *device_data, GLOBAL_CB_NODE const *cb_node, IMAGE_STATE *image_state,
                        VkImageSubresourceLayers subLayers, VkImageLayout explicit_layout, VkImageLayout optimal_layout,
-                       const char *caller, UNIQUE_VALIDATION_ERROR_CODE msg_code, bool *error);
+                       const char *caller, const std::string msg_code, bool *error);
 
 void RecordClearImageLayout(layer_data *dev_data, GLOBAL_CB_NODE *cb_node, VkImage image, VkImageSubresourceRange range,
                             VkImageLayout dest_image_layout);
@@ -125,10 +125,10 @@ void TransitionImageLayouts(layer_data *device_data, GLOBAL_CB_NODE *cb_state, u
                             const VkImageMemoryBarrier *pImgMemBarriers);
 
 bool VerifySourceImageLayout(layer_data *dev_data, GLOBAL_CB_NODE *cb_node, VkImage srcImage, VkImageSubresourceLayers subLayers,
-                             VkImageLayout srcImageLayout, UNIQUE_VALIDATION_ERROR_CODE msgCode);
+                             VkImageLayout srcImageLayout, const std::string msgCode);
 
 bool VerifyDestImageLayout(layer_data *dev_data, GLOBAL_CB_NODE *cb_node, VkImage destImage, VkImageSubresourceLayers subLayers,
-                           VkImageLayout destImageLayout, UNIQUE_VALIDATION_ERROR_CODE msgCode);
+                           VkImageLayout destImageLayout, const std::string msgCode);
 
 void TransitionFinalSubpassLayouts(layer_data *dev_data, GLOBAL_CB_NODE *pCB, const VkRenderPassBeginInfo *pRenderPassBegin,
                                    FRAMEBUFFER_STATE *framebuffer_state);
@@ -172,14 +172,13 @@ bool ValidateMapImageLayouts(core_validation::layer_data *dev_data, VkDevice dev
                              VkDeviceSize offset, VkDeviceSize end_offset);
 
 bool ValidateImageUsageFlags(layer_data *dev_data, IMAGE_STATE const *image_state, VkFlags desired, bool strict,
-                             int32_t const msgCode, char const *func_name, char const *usage_string);
+                             std::string msgCode, char const *func_name, char const *usage_string);
 
 bool ValidateImageFormatFeatureFlags(layer_data *dev_data, IMAGE_STATE const *image_state, VkFormatFeatureFlags desired,
-                                     char const *func_name, UNIQUE_VALIDATION_ERROR_CODE linear_vuid,
-                                     UNIQUE_VALIDATION_ERROR_CODE optimal_vuid);
+                                     char const *func_name, const std::string linear_vuid, const std::string optimal_vuid);
 
 bool ValidateBufferUsageFlags(layer_data *dev_data, BUFFER_STATE const *buffer_state, VkFlags desired, bool strict,
-                              int32_t const msgCode, char const *func_name, char const *usage_string);
+                              std::string const msgCode, char const *func_name, char const *usage_string);
 
 bool PreCallValidateCreateBuffer(layer_data *dev_data, const VkBufferCreateInfo *pCreateInfo);
 
@@ -211,8 +210,7 @@ void PostCallRecordCreateImageView(layer_data *device_data, const VkImageViewCre
 
 bool ValidateCopyBufferImageTransferGranularityRequirements(layer_data *device_data, const GLOBAL_CB_NODE *cb_node,
                                                             const IMAGE_STATE *img, const VkBufferImageCopy *region,
-                                                            const uint32_t i, const char *function,
-                                                            UNIQUE_VALIDATION_ERROR_CODE vuid);
+                                                            const uint32_t i, const char *function, const std::string vuid);
 
 void PreCallRecordCmdCopyImage(layer_data *device_data, GLOBAL_CB_NODE *cb_node, IMAGE_STATE *src_image_state,
                                IMAGE_STATE *dst_image_state, uint32_t region_count, const VkImageCopy *regions,
