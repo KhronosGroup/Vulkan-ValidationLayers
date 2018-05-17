@@ -1930,6 +1930,7 @@ TEST_F(VkLayerTest, SparseResidencyImageCreateUnsupportedSamples) {
     // Determine which device feature are available
     VkPhysicalDeviceFeatures device_features = {};
     ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(GetPhysicalDeviceFeatures(&device_features));
 
     // These tests require that the device support sparse residency for 2D images
     if (VK_TRUE != device_features.sparseResidencyImage2D) {
