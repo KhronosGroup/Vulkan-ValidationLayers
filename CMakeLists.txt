@@ -146,14 +146,16 @@ endif()
 option(BUILD_TESTS "Build tests" ON)
 option(BUILD_LAYERS "Build layers" ON)
 
+set(NOT_DEFINED "NOT_DEFINED")
 set(VULKAN_SDK $ENV{VULKAN_SDK})
 
 # Set GLSLANG_REPO_ROOT to define the path to the glslang binaries for this project
+set(GLSLANG_REPO_ROOT ${NOT_DEFINED} CACHE PATH "Absolute path to glslang repository")
 
-if (NOT DEFINED GLSLANG_REPO_ROOT)
-    message(ERROR "Must define GLSLANG_REPO_ROOT -- see BUILD.md")
+if (${GLSLANG_REPO_ROOT} STREQUAL ${NOT_DEFINED})
+    message(FATAL_ERROR "Must define GLSLANG_REPO_ROOT -- see BUILD.md")
 else()
-    message("Using glslang instance located at ${GLSLANG_REPO_ROOT}")
+    message(STATUS "Using glslang instance located at ${GLSLANG_REPO_ROOT}")
 endif()
 
 # These paths assume that the update_glslang_sources.py script was run in the indicated glslang repo and the repo was built

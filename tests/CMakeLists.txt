@@ -80,7 +80,13 @@ else()
     endif()
 endif()
 
-if(DEFINED LOADER_REPO_ROOT)
+set(LOADER_REPO_ROOT ${NOT_DEFINED} CACHE PATH "Absolute path to Vulkan-Loader repository")
+
+if(${LOADER_REPO_ROOT} STREQUAL ${NOT_DEFINED})
+    message(STATUS "LOADER_REPO_ROOT not set, using find_package to locate Vulkan")
+    find_package(Vulkan)
+    set (LIBVK "Vulkan::Vulkan")
+else()
     message(STATUS "Using user-supplied path to locate Vulkan")
     if(WIN32)
         set (LOADER_SEARCH_PATHS
@@ -96,10 +102,6 @@ if(DEFINED LOADER_REPO_ROOT)
         HINTS ${LOADER_SEARCH_PATHS}
         )
     message(STATUS "Found Vulkan: ${LIBVK}")
-else()
-    message(STATUS "Using find_package to locate Vulkan")
-    find_package(Vulkan)
-    set (LIBVK "Vulkan::Vulkan")
 endif()
 
 add_executable(vk_layer_validation_tests layer_validation_tests.cpp ../layers/vk_format_utils.cpp ${COMMON_CPP})
