@@ -739,7 +739,7 @@ static bool validate_vi_consistency(debug_report_data const *report_data, VkPipe
         auto desc = &vi->pVertexBindingDescriptions[i];
         auto &binding = bindings[desc->binding];
         if (binding) {
-            // TODO: VALIDATION_ERROR_096005cc perhaps?
+            // TODO: "VUID-VkGraphicsPipelineCreateInfo-pStages-00742" perhaps?
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                             SHADER_CHECKER_INCONSISTENT_VI, "Duplicate vertex input binding descriptions for binding %d",
                             desc->binding);
@@ -1064,10 +1064,10 @@ static bool validate_specialization_offsets(debug_report_data const *report_data
 
     if (spec) {
         for (auto i = 0u; i < spec->mapEntryCount; i++) {
-            // TODO: This is a good place for VALIDATION_ERROR_1360060a.
+            // TODO: This is a good place for "VUID-VkSpecializationInfo-offset-00773".
             if (spec->pMapEntries[i].offset + spec->pMapEntries[i].size > spec->dataSize) {
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, 0,
-                                VALIDATION_ERROR_1360060c,
+                                "VUID-VkSpecializationInfo-pMapEntries-00774",
                                 "Specialization entry %u (for constant id %u) references memory outside provided specialization "
                                 "data (bytes %u.." PRINTF_SIZE_T_SPECIFIER "; " PRINTF_SIZE_T_SPECIFIER " bytes provided)..",
                                 i, spec->pMapEntries[i].constantID, spec->pMapEntries[i].offset,
@@ -1443,8 +1443,8 @@ static bool validate_pipeline_shader_stage(layer_data *dev_data, VkPipelineShade
     auto entrypoint = *out_entrypoint = find_entrypoint(module, pStage->pName, pStage->stage);
     if (entrypoint == module->end()) {
         if (log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                    VALIDATION_ERROR_10600586, "No entrypoint found named `%s` for stage %s..", pStage->pName,
-                    string_VkShaderStageFlagBits(pStage->stage))) {
+                    "VUID-VkPipelineShaderStageCreateInfo-pName-00707", "No entrypoint found named `%s` for stage %s..",
+                    pStage->pName, string_VkShaderStageFlagBits(pStage->stage))) {
             return true;  // no point continuing beyond here, any analysis is just going to be garbage.
         }
     }
@@ -1689,9 +1689,10 @@ bool PreCallValidateCreateShaderModule(layer_data *dev_data, VkShaderModuleCreat
     auto have_glsl_shader = GetDeviceExtensions(dev_data)->vk_nv_glsl_shader;
 
     if (!have_glsl_shader && (pCreateInfo->codeSize % 4)) {
-        skip |= log_msg(
-            report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, VALIDATION_ERROR_12a00ac0,
-            "SPIR-V module not valid: Codesize must be a multiple of 4 but is " PRINTF_SIZE_T_SPECIFIER ".", pCreateInfo->codeSize);
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                        "VUID-VkShaderModuleCreateInfo-pCode-01376",
+                        "SPIR-V module not valid: Codesize must be a multiple of 4 but is " PRINTF_SIZE_T_SPECIFIER ".",
+                        pCreateInfo->codeSize);
     } else {
         auto cache = GetValidationCacheInfo(pCreateInfo);
         uint32_t hash = 0;

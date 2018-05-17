@@ -7681,25 +7681,25 @@ static const char *vu_summary[] = {"Source or destination queue family must be i
                                    "Source or destination queue family must match submit queue family, if not ignored."};
 
 static const std::string image_error_codes[] = {
-    "VUID-VkImageMemoryBarrier-image-01381",  //  VUID-VkImageMemoryBarrier-image-01381 -- kSrcOrDstMustBeIgnore
-    "VUID-VkImageMemoryBarrier-image-01766",  //  VUID-VkImageMemoryBarrier-image-01766 -- kSpecialOrIgnoreOnly
-    "VUID-VkImageMemoryBarrier-image-01201",  //  VUID-VkImageMemoryBarrier-image-01201 -- kSrcIgnoreRequiresDstIgnore
-    "VUID-VkImageMemoryBarrier-image-01768",  //  VUID-VkImageMemoryBarrier-image-01768 -- kDstValidOrSpecialIfNotIgnore
-    "VUID-VkImageMemoryBarrier-image-01767",  //  VUID-VkImageMemoryBarrier-image-01767 -- kSrcValidOrSpecialIfNotIgnore
-    "VUID-VkImageMemoryBarrier-image-01199",  //  VUID-VkImageMemoryBarrier-image-01199 -- kSrcAndDestMustBeIgnore
-    "VUID-VkImageMemoryBarrier-image-01200",  //  VUID-VkImageMemoryBarrier-image-01200 -- kBothIgnoreOrBothValid
-    "VUID-VkImageMemoryBarrier-image-01205",  //  VUID-VkImageMemoryBarrier-image-01205 -- kSubmitQueueMustMatchSrcOrDst
+    "VUID-VkImageMemoryBarrier-image-01381",  //   kSrcOrDstMustBeIgnore
+    "VUID-VkImageMemoryBarrier-image-01766",  //   kSpecialOrIgnoreOnly
+    "VUID-VkImageMemoryBarrier-image-01201",  //   kSrcIgnoreRequiresDstIgnore
+    "VUID-VkImageMemoryBarrier-image-01768",  //   kDstValidOrSpecialIfNotIgnore
+    "VUID-VkImageMemoryBarrier-image-01767",  //   kSrcValidOrSpecialIfNotIgnore
+    "VUID-VkImageMemoryBarrier-image-01199",  //   kSrcAndDestMustBeIgnore
+    "VUID-VkImageMemoryBarrier-image-01200",  //   kBothIgnoreOrBothValid
+    "VUID-VkImageMemoryBarrier-image-01205",  //   kSubmitQueueMustMatchSrcOrDst
 };
 
 static const std::string buffer_error_codes[] = {
-    "VUID-VkBufferMemoryBarrier-buffer-01191",  //  VUID-VkBufferMemoryBarrier-buffer-01191 -- kSrcOrDstMustBeIgnore
-    "VUID-VkBufferMemoryBarrier-buffer-01763",  //  VUID-VkBufferMemoryBarrier-buffer-01763 -- kSpecialOrIgnoreOnly
-    "VUID-VkBufferMemoryBarrier-buffer-01193",  //  VUID-VkBufferMemoryBarrier-buffer-01193 -- kSrcIgnoreRequiresDstIgnore
-    "VUID-VkBufferMemoryBarrier-buffer-01765",  //  VUID-VkBufferMemoryBarrier-buffer-01765 -- kDstValidOrSpecialIfNotIgnore
-    "VUID-VkBufferMemoryBarrier-buffer-01764",  //  VUID-VkBufferMemoryBarrier-buffer-01764 -- kSrcValidOrSpecialIfNotIgnore
-    "VUID-VkBufferMemoryBarrier-buffer-01190",  //  VUID-VkBufferMemoryBarrier-buffer-01190 -- kSrcAndDestMustBeIgnore
-    "VUID-VkBufferMemoryBarrier-buffer-01192",  //  VUID-VkBufferMemoryBarrier-buffer-01192 -- kBothIgnoreOrBothValid
-    "VUID-VkBufferMemoryBarrier-buffer-01196",  //  VUID-VkBufferMemoryBarrier-buffer-01196 -- kSubmitQueueMustMatchSrcOrDst
+    "VUID-VkBufferMemoryBarrier-buffer-01191",  //  kSrcOrDstMustBeIgnore
+    "VUID-VkBufferMemoryBarrier-buffer-01763",  //  kSpecialOrIgnoreOnly
+    "VUID-VkBufferMemoryBarrier-buffer-01193",  //  kSrcIgnoreRequiresDstIgnore
+    "VUID-VkBufferMemoryBarrier-buffer-01765",  //  kDstValidOrSpecialIfNotIgnore
+    "VUID-VkBufferMemoryBarrier-buffer-01764",  //  kSrcValidOrSpecialIfNotIgnore
+    "VUID-VkBufferMemoryBarrier-buffer-01190",  //  kSrcAndDestMustBeIgnore
+    "VUID-VkBufferMemoryBarrier-buffer-01192",  //  kBothIgnoreOrBothValid
+    "VUID-VkBufferMemoryBarrier-buffer-01196",  //  kSubmitQueueMustMatchSrcOrDst
 };
 
 class ValidatorState {
