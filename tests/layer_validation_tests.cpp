@@ -5807,22 +5807,37 @@ TEST_F(VkLayerTest, IndexBufferNotBound) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, IndexBufferBadSizeOffset) {
-    TEST_DESCRIPTION("Run indexed draw calls with invalid index ranges.");
+TEST_F(VkLayerTest, IndexBufferBadSize) {
+    TEST_DESCRIPTION("Run indexed draw call with bad index buffer size.");
 
     ASSERT_NO_FATAL_FAILURE(Init(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "vkCmdDrawIndexed() index size ");
     VKTriangleTest(BsoFailIndexBufferBadSize);
     m_errorMonitor->VerifyFound();
+}
 
+TEST_F(VkLayerTest, IndexBufferBadOffset) {
+    TEST_DESCRIPTION("Run indexed draw call with bad index buffer offset.");
+
+    ASSERT_NO_FATAL_FAILURE(Init(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "vkCmdDrawIndexed() index size ");
     VKTriangleTest(BsoFailIndexBufferBadOffset);
     m_errorMonitor->VerifyFound();
+}
 
+TEST_F(VkLayerTest, IndexBufferBadBindSize) {
+    TEST_DESCRIPTION("Run bind index buffer with a size greater than the index buffer.");
+
+    ASSERT_NO_FATAL_FAILURE(Init(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "vkCmdDrawIndexed() index size ");
     VKTriangleTest(BsoFailIndexBufferBadMapSize);
     m_errorMonitor->VerifyFound();
+}
 
+TEST_F(VkLayerTest, IndexBufferBadBindOffset) {
+    TEST_DESCRIPTION("Run bind index buffer with an offset greater than the size of the index buffer.");
+
+    ASSERT_NO_FATAL_FAILURE(Init(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "vkCmdDrawIndexed() index size ");
     VKTriangleTest(BsoFailIndexBufferBadMapOffset);
     m_errorMonitor->VerifyFound();
