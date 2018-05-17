@@ -92,10 +92,12 @@ else()
         set (LOADER_SEARCH_PATHS
             "${LOADER_REPO_ROOT}/${BUILDTGT_DIR}/loader/${DEBUG_DECORATION}"
             "${LOADER_REPO_ROOT}/${BUILDTGT_DIR}/loader/${RELEASE_DECORATION}"
+            "${LOADER_REPO_ROOT}/Lib"
             )
     elseif(UNIX)
         set (LOADER_SEARCH_PATHS
             "${LOADER_REPO_ROOT}/${BUILDTGT_DIR}/loader"
+            "${LOADER_REPO_ROOT}/x86_64/lib"
             )
     endif()
     find_library(LIBVK NAMES vulkan vulkan-1
