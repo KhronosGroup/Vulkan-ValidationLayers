@@ -149,70 +149,94 @@ option(BUILD_LAYERS "Build layers" ON)
 set(NOT_DEFINED "NOT_DEFINED")
 set(VULKAN_SDK $ENV{VULKAN_SDK})
 
-# Set GLSLANG_REPO_ROOT to define the path to the glslang binaries for this project
+# set GLSLANG_INSTALL_DIR to define locations of glslang includes, libs, and binaries.
+# This is the preferred method for building this repository.
+set(GLSLANG_INSTALL_DIR ${NOT_DEFINED} CACHE PATH "Absolute path to a glslang install directory")
+
+# Set GLSLANG_REPO_ROOT to locate glslang repository
+# This should be deprecated in lieu of GLSANG_INSTALL_DIR, remove once users have switched to preferred solution
 set(GLSLANG_REPO_ROOT ${NOT_DEFINED} CACHE PATH "Absolute path to glslang repository")
 
-if (${GLSLANG_REPO_ROOT} STREQUAL ${NOT_DEFINED})
-    message(FATAL_ERROR "Must define GLSLANG_REPO_ROOT -- see BUILD.md")
+# Repo requires glslang and that the update_glslang_sources.py script was run in the indicated glslang repo
+
+if (${GLSLANG_INSTALL_DIR} STREQUAL ${NOT_DEFINED} AND ${GLSLANG_REPO_ROOT} STREQUAL ${NOT_DEFINED})
+    message(FATAL_ERROR "Must define location of glslang binaries -- see BUILD.md")
+endif()
+
+# Is user specifying a glslang install directory?
+if (NOT ${GLSLANG_INSTALL_DIR} STREQUAL ${NOT_DEFINED})
+    message(STATUS "Using glslang install located at ${GLSLANG_INSTALL_DIR}")
+    set(SPIRV_TOOLS_BINARY_ROOT "${GLSLANG_INSTALL_DIR}/lib" CACHE PATH "User defined path to the SPIRV-Tools binaries for this project")
+    set(SPIRV_TOOLS_OPT_BINARY_ROOT "${GLSLANG_INSTALL_DIR}/lib" CACHE PATH "User defined path to the SPIRV-Tools-opt binaries for this project")
+    set(GLSLANG_SPIRV_INCLUDE_DIR "${GLSLANG_INSTALL_DIR}/include" CACHE PATH "Path to glslang spirv headers")
+    set(SPIRV_TOOLS_INCLUDE_DIR "${GLSLANG_INSTALL_DIR}/include" CACHE PATH "Path to spirv tools headers")
+
+    set(GLSLANG_SEARCH_PATH "${GLSLANG_INSTALL_DIR}/lib")
+    set(GLSLANG_DEBUG_SEARCH_PATH "${GLSLANG_INSTALL_DIR}/lib")
+    set (SPIRV_TOOLS_SEARCH_PATH "${GLSLANG_INSTALL_DIR}/lib")
+    set (SPIRV_TOOLS_DEBUG_SEARCH_PATH "${GLSLANG_INSTALL_DIR}/lib")
+    set (SPIRV_TOOLS_OPT_SEARCH_PATH "${GLSLANG_INSTALL_DIR}/lib")
+    set (SPIRV_TOOLS_OPT_DEBUG_SEARCH_PATH "${GLSLANG_INSTALL_DIR}/lib")
 else()
     message(STATUS "Using glslang instance located at ${GLSLANG_REPO_ROOT}")
-endif()
 
-# These paths assume that the update_glslang_sources.py script was run in the indicated glslang repo and the repo was built
-set(SPIRV_TOOLS_BINARY_ROOT "${GLSLANG_REPO_ROOT}/${BUILDTGT_DIR}/External/spirv-tools/source" CACHE STRING "User defined path to the SPIRV-Tools binaries for this project")
-set(SPIRV_TOOLS_OPT_BINARY_ROOT "${GLSLANG_REPO_ROOT}/${BUILDTGT_DIR}/External/spirv-tools/source/opt" CACHE STRING "User defined path to the SPIRV-Tools-opt binaries for this project")
+    # These paths assume that the update_glslang_sources.py script was run in the indicated glslang repo and the repo was built
+    set(SPIRV_TOOLS_BINARY_ROOT "${GLSLANG_REPO_ROOT}/${BUILDTGT_DIR}/External/spirv-tools/source" CACHE PATH "User defined path to the SPIRV-Tools binaries for this project")
+    set(SPIRV_TOOLS_OPT_BINARY_ROOT "${GLSLANG_REPO_ROOT}/${BUILDTGT_DIR}/External/spirv-tools/source/opt" CACHE PATH "User defined path to the SPIRV-Tools-opt binaries for this project")
 
-if (WIN32)
-    set(GSLANG_FINAL_BINARY_PATH ${GLSLANG_REPO_ROOT}/${BUILDTGT_DIR})
+    if(WIN32)
+        set(GSLANG_FINAL_BINARY_PATH ${GLSLANG_REPO_ROOT}/${BUILDTGT_DIR})
 
-    if(DISABLE_BUILD_PATH_DECORATION)
-        set (DEBUG_DECORATION "")
-        set (RELEASE_DECORATION "")
+        if(DISABLE_BUILD_PATH_DECORATION)
+            set (DEBUG_DECORATION "")
+            set (RELEASE_DECORATION "")
+        else()
+            set (DEBUG_DECORATION "Debug")
+            set (RELEASE_DECORATION "Release")
+        endif()
+
+        # Take some steps to set up a variable pointing to the final glslang binaries given the variety of input options
+        set (GLSLANG_SEARCH_PATH "${GSLANG_FINAL_BINARY_PATH}/glslang/${RELEASE_DECORATION}"
+                                 "${GSLANG_FINAL_BINARY_PATH}/glslang/OSDependent/Windows/${RELEASE_DECORATION}"
+                                 "${GSLANG_FINAL_BINARY_PATH}/hlsl/${RELEASE_DECORATION}"
+                                 "${GSLANG_FINAL_BINARY_PATH}/OGLCompilersDLL/${RELEASE_DECORATION}"
+                                 "${GSLANG_FINAL_BINARY_PATH}/SPIRV/${RELEASE_DECORATION}" )
+
+        set (GLSLANG_DEBUG_SEARCH_PATH "${GSLANG_FINAL_BINARY_PATH}/glslang/${DEBUG_DECORATION}"
+                                       "${GSLANG_FINAL_BINARY_PATH}/glslang/OSDependent/Windows/${DEBUG_DECORATION}"
+                                       "${GSLANG_FINAL_BINARY_PATH}/hlsl/${DEBUG_DECORATION}"
+                                       "${GSLANG_FINAL_BINARY_PATH}/OGLCompilersDLL/${DEBUG_DECORATION}"
+                                       "${GSLANG_FINAL_BINARY_PATH}/SPIRV/${DEBUG_DECORATION}")
+
+        set (SPIRV_TOOLS_SEARCH_PATH "${SPIRV_TOOLS_BINARY_ROOT}/${RELEASE_DECORATION}")
+        set (SPIRV_TOOLS_DEBUG_SEARCH_PATH "${SPIRV_TOOLS_BINARY_ROOT}/${DEBUG_DECORATION}")
+        set (SPIRV_TOOLS_OPT_SEARCH_PATH "${SPIRV_TOOLS_OPT_BINARY_ROOT}/${RELEASE_DECORATION}")
+        set (SPIRV_TOOLS_OPT_DEBUG_SEARCH_PATH "${SPIRV_TOOLS_OPT_BINARY_ROOT}/${DEBUG_DECORATION}")
     else()
-        set (DEBUG_DECORATION "Debug")
-        set (RELEASE_DECORATION "Release")
+        # not WIN32
+        set (GLSLANG_SEARCH_PATH "${GLSLANG_REPO_ROOT}/${BUILDTGT_DIR}/install/lib"
+                                 "${GLSLANG_REPO_ROOT}/${BUILDTGT_DIR}/glslang"
+                                 "${GLSLANG_REPO_ROOT}/${BUILDTGT_DIR}/glslang/OSDependent/Unix"
+                                 "${GLSLANG_REPO_ROOT}/${BUILDTGT_DIR}/OGLCompilersDLL"
+                                 "${GLSLANG_REPO_ROOT}/${BUILDTGT_DIR}/SPIRV"
+                                 "${GLSLANG_REPO_ROOT}/${BUILDTGT_DIR}/hlsl"
+                                 "${GLSLANG_REPO_ROOT}/${BUILDTGT_DIR}/StandAlone")
+
+        set (SPIRV_TOOLS_SEARCH_PATH "${SPIRV_TOOLS_BINARY_ROOT}" )
+        set (SPIRV_TOOLS_OPT_SEARCH_PATH "${SPIRV_TOOLS_OPT_BINARY_ROOT}" )
     endif()
+    find_path(GLSLANG_SPIRV_INCLUDE_DIR SPIRV/spirv.hpp HINTS
+             "${GLSLANG_REPO_ROOT}"
+             "${CMAKE_SOURCE_DIR}/../glslang"
+             DOC "Path to SPIRV/spirv.hpp")
 
-    # Take some steps to set up a variable pointing to the final glslang binaries given the variety of input options
-    set (GLSLANG_SEARCH_PATH "${GSLANG_FINAL_BINARY_PATH}/glslang/${RELEASE_DECORATION}"
-                             "${GSLANG_FINAL_BINARY_PATH}/glslang/OSDependent/Windows/${RELEASE_DECORATION}"
-                             "${GSLANG_FINAL_BINARY_PATH}/hlsl/${RELEASE_DECORATION}"
-                             "${GSLANG_FINAL_BINARY_PATH}/OGLCompilersDLL/${RELEASE_DECORATION}"
-                             "${GSLANG_FINAL_BINARY_PATH}/SPIRV/${RELEASE_DECORATION}" )
-
-    set (GLSLANG_DEBUG_SEARCH_PATH "${GSLANG_FINAL_BINARY_PATH}/glslang/${DEBUG_DECORATION}"
-                                   "${GSLANG_FINAL_BINARY_PATH}/glslang/OSDependent/Windows/${DEBUG_DECORATION}"
-                                   "${GSLANG_FINAL_BINARY_PATH}/hlsl/${DEBUG_DECORATION}"
-                                   "${GSLANG_FINAL_BINARY_PATH}/OGLCompilersDLL/${DEBUG_DECORATION}"
-                                   "${GSLANG_FINAL_BINARY_PATH}/SPIRV/${DEBUG_DECORATION}")
-
-    set (SPIRV_TOOLS_SEARCH_PATH "${SPIRV_TOOLS_BINARY_ROOT}/${RELEASE_DECORATION}")
-    set (SPIRV_TOOLS_DEBUG_SEARCH_PATH "${SPIRV_TOOLS_BINARY_ROOT}/${DEBUG_DECORATION}")
-    set (SPIRV_TOOLS_OPT_SEARCH_PATH "${SPIRV_TOOLS_OPT_BINARY_ROOT}/${RELEASE_DECORATION}")
-    set (SPIRV_TOOLS_OPT_DEBUG_SEARCH_PATH "${SPIRV_TOOLS_OPT_BINARY_ROOT}/${DEBUG_DECORATION}")
-else()
-    # not WIN32
-    set (GLSLANG_SEARCH_PATH "${GLSLANG_REPO_ROOT}/${BUILDTGT_DIR}/install/lib"
-                             "${GLSLANG_REPO_ROOT}/${BUILDTGT_DIR}/glslang"
-                             "${GLSLANG_REPO_ROOT}/${BUILDTGT_DIR}/glslang/OSDependent/Unix"
-                             "${GLSLANG_REPO_ROOT}/${BUILDTGT_DIR}/OGLCompilersDLL"
-                             "${GLSLANG_REPO_ROOT}/${BUILDTGT_DIR}/SPIRV"
-                             "${GLSLANG_REPO_ROOT}/${BUILDTGT_DIR}/hlsl"
-                             "${GLSLANG_REPO_ROOT}/${BUILDTGT_DIR}/StandAlone")
-
-    set (SPIRV_TOOLS_SEARCH_PATH "${SPIRV_TOOLS_BINARY_ROOT}" )
-    set (SPIRV_TOOLS_OPT_SEARCH_PATH "${SPIRV_TOOLS_OPT_BINARY_ROOT}" )
+    find_path(SPIRV_TOOLS_INCLUDE_DIR spirv-tools/libspirv.h HINTS
+              "${GLSLANG_REPO_ROOT}/External/spirv-tools/include"
+              "${CMAKE_SOURCE_DIR}/../glslang/External/spirv-tools/include"
+              DOC "Path to spirv-tools/libspirv.h")
 endif()
 
-find_path(GLSLANG_SPIRV_INCLUDE_DIR SPIRV/spirv.hpp HINTS
-         "${GLSLANG_REPO_ROOT}"
-         "${CMAKE_SOURCE_DIR}/../glslang"
-         DOC "Path to SPIRV/spirv.hpp")
 
-find_path(SPIRV_TOOLS_INCLUDE_DIR spirv-tools/libspirv.h HINTS
-          "${GLSLANG_REPO_ROOT}/External/spirv-tools/include"
-          "${CMAKE_SOURCE_DIR}/../glslang/External/spirv-tools/include"
-          DOC "Path to spirv-tools/libspirv.h")
 
 find_library(GLSLANG_LIB NAMES glslang
              HINTS ${GLSLANG_SEARCH_PATH} )
@@ -265,7 +289,6 @@ if (WIN32)
                  HINTS ${SPIRV_TOOLS_DEBUG_SEARCH_PATH} )
     find_library(SPIRV_TOOLS_OPT_DLIB NAMES SPIRV-Tools-optd
                  HINTS ${SPIRV_TOOLS_OPT_DEBUG_SEARCH_PATH} )
-
     set_target_properties(glslang PROPERTIES
                          IMPORTED_LOCATION       "${GLSLANG_LIB}"
                          IMPORTED_LOCATION_DEBUG "${GLSLANG_DLIB}")
@@ -291,10 +314,12 @@ if (WIN32)
                          IMPORTED_LOCATION       "${SPIRV_TOOLS_OPT_LIB}"
                          IMPORTED_LOCATION_DEBUG "${SPIRV_TOOLS_OPT_DLIB}")
 
+endif()
+
+if(WIN32)
     set (SPIRV_TOOLS_LIBRARIES SPIRV-Tools-opt SPIRV-Tools)
     set (GLSLANG_LIBRARIES glslang OGLCompiler OSDependent HLSL SPIRV SPVRemapper ${SPIRV_TOOLS_LIBRARIES})
 else ()
-    # not WIN32
     set (SPIRV_TOOLS_LIBRARIES ${SPIRV_TOOLS_OPT_LIB} ${SPIRV_TOOLS_LIB})
     set (GLSLANG_LIBRARIES ${GLSLANG_LIB} ${OGLCompiler_LIB} ${OSDependent_LIB} ${HLSL_LIB} ${SPIRV_LIB} ${SPIRV_REMAPPER_LIB} ${SPIRV_TOOLS_LIBRARIES})
 endif()
