@@ -6487,7 +6487,7 @@ TEST_F(VkLayerTest, CreatePipelineLayoutExcessPerStageDescriptors) {
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
                                              "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01681");  // expect all-stages sum too
     }
-    if (dslb.descriptorCount > sum_storage_buffers) {
+    if (dslb_vec[0].descriptorCount + dslb_vec[2].descriptorCount > sum_storage_buffers) {
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
                                              "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01680");  // expect all-stages sum too
     }
@@ -6519,7 +6519,7 @@ TEST_F(VkLayerTest, CreatePipelineLayoutExcessPerStageDescriptors) {
     ASSERT_VK_SUCCESS(err);
 
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-00290");
-    if (max_combined + max_sampled_images > sum_sampled_images) {
+    if (max_combined + 2 * max_sampled_images > sum_sampled_images) {
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
                                              "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01682");  // expect all-stages sum too
     }
@@ -6648,8 +6648,19 @@ TEST_F(VkLayerTest, CreatePipelineLayoutExcessDescriptorsOverall) {
 
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01677");
     if (dslb.descriptorCount > max_samplers) {
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                             "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-00287");  // expect max-per-stage too
+        m_errorMonitor->SetDesiredFailureMsg(
+            VK_DEBUG_REPORT_ERROR_BIT_EXT,
+            "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-00287");  // Expect max-per-stage samplers exceeds limits
+    }
+    if (dslb.descriptorCount > sum_sampled_images) {
+        m_errorMonitor->SetDesiredFailureMsg(
+            VK_DEBUG_REPORT_ERROR_BIT_EXT,
+            "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01682");  // Expect max overall sampled image count exceeds limits
+    }
+    if (dslb.descriptorCount > max_sampled_images) {
+        m_errorMonitor->SetDesiredFailureMsg(
+            VK_DEBUG_REPORT_ERROR_BIT_EXT,
+            "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-00290");  // Expect max per-stage sampled image count exceeds limits
     }
     err = vkCreatePipelineLayout(m_device->device(), &pipeline_layout_ci, NULL, &pipeline_layout);
     m_errorMonitor->VerifyFound();
@@ -6783,10 +6794,10 @@ TEST_F(VkLayerTest, CreatePipelineLayoutExcessDescriptorsOverall) {
     ASSERT_VK_SUCCESS(err);
 
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01682");
-    if (dslb.descriptorCount > max_sampled_images) {
-        // revisit: not robust to `remaining` being small.
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                             "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-00290");  // expect max-per-stage too
+    if (std::max(dslb_vec[0].descriptorCount, dslb_vec[1].descriptorCount) > max_sampled_images) {
+        m_errorMonitor->SetDesiredFailureMsg(
+            VK_DEBUG_REPORT_ERROR_BIT_EXT,
+            "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-00290");  // Expect max-per-stage sampled images to exceed limits
     }
     err = vkCreatePipelineLayout(m_device->device(), &pipeline_layout_ci, NULL, &pipeline_layout);
     m_errorMonitor->VerifyFound();
