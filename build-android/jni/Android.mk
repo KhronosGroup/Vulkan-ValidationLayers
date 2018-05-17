@@ -16,6 +16,7 @@
 LOCAL_PATH := $(call my-dir)
 SRC_DIR := ../..
 LAYER_DIR := ../generated
+THIRD_PARTY := ../third_party
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := layer_utils
@@ -117,16 +118,16 @@ LOCAL_SRC_FILES += $(SRC_DIR)/tests/layer_validation_tests.cpp \
                    $(SRC_DIR)/tests/vktestbinding.cpp \
                    $(SRC_DIR)/tests/vktestframeworkandroid.cpp \
                    $(SRC_DIR)/tests/vkrenderframework.cpp \
-                   $(SRC_DIR)/common/vulkan_wrapper.cpp
+                   $(THIRD_PARTY)/Vulkan-Tools/common/vulkan_wrapper.cpp
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/$(SRC_DIR)/Vulkan-Headers/include \
                     $(LOCAL_PATH)/$(LAYER_DIR)/include \
                     $(LOCAL_PATH)/$(SRC_DIR)/layers \
                     $(LOCAL_PATH)/$(SRC_DIR)/libs \
-                    $(LOCAL_PATH)/$(SRC_DIR)/common
+                    $(LOCAL_PATH)/$(THIRD_PARTY)/Vulkan-Tools/common
 
 LOCAL_STATIC_LIBRARIES := googletest_main layer_utils shaderc
 LOCAL_CPPFLAGS += -std=c++11 -DVK_PROTOTYPES -Wall -Werror -Wno-unused-function -Wno-unused-const-variable
-LOCAL_CPPFLAGS += -DVK_USE_PLATFORM_ANDROID_KHR -fvisibility=hidden --include=$(SRC_DIR)/common/vulkan_wrapper.h
+LOCAL_CPPFLAGS += -DVK_USE_PLATFORM_ANDROID_KHR -fvisibility=hidden --include=$(THIRD_PARTY)/Vulkan-Tools/common/vulkan_wrapper.h
 LOCAL_LDLIBS := -llog
 LOCAL_LDFLAGS   += -Wl,-Bsymbolic
 LOCAL_LDFLAGS   += -Wl,--exclude-libs,ALL
@@ -139,44 +140,20 @@ LOCAL_SRC_FILES += $(SRC_DIR)/tests/layer_validation_tests.cpp \
                    $(SRC_DIR)/tests/vktestbinding.cpp \
                    $(SRC_DIR)/tests/vktestframeworkandroid.cpp \
                    $(SRC_DIR)/tests/vkrenderframework.cpp \
-                   $(SRC_DIR)/common/vulkan_wrapper.cpp
+                   $(THIRD_PARTY)/Vulkan-Tools/common/vulkan_wrapper.cpp
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/$(SRC_DIR)/Vulkan-Headers/include \
                     $(LOCAL_PATH)/$(LAYER_DIR)/include \
                     $(LOCAL_PATH)/$(SRC_DIR)/layers \
                     $(LOCAL_PATH)/$(SRC_DIR)/libs \
-                    $(LOCAL_PATH)/$(SRC_DIR)/common
+                    $(LOCAL_PATH)/$(THIRD_PARTY)/Vulkan-Tools/common
 
 LOCAL_STATIC_LIBRARIES := googletest_main layer_utils shaderc
 LOCAL_CPPFLAGS += -std=c++11 -DVK_PROTOTYPES -Wall -Werror -Wno-unused-function -Wno-unused-const-variable
-LOCAL_CPPFLAGS += -DVK_USE_PLATFORM_ANDROID_KHR -fvisibility=hidden -DVALIDATION_APK --include=$(SRC_DIR)/common/vulkan_wrapper.h
+LOCAL_CPPFLAGS += -DVK_USE_PLATFORM_ANDROID_KHR -fvisibility=hidden -DVALIDATION_APK --include=$(THIRD_PARTY)/Vulkan-Tools/common/vulkan_wrapper.h
 LOCAL_WHOLE_STATIC_LIBRARIES += android_native_app_glue
 LOCAL_LDLIBS := -llog -landroid
 LOCAL_LDFLAGS := -u ANativeActivity_onCreate
 include $(BUILD_SHARED_LIBRARY)
-
-#include $(CLEAR_VARS)
-#LOCAL_MODULE := vkjson
-#LOCAL_SRC_FILES += $(SRC_DIR)/libs/vkjson/vkjson.cc \
-#                   $(SRC_DIR)/libs/vkjson/vkjson_instance.cc \
-#                   $(SRC_DIR)/common/vulkan_wrapper.cpp
-#LOCAL_C_INCLUDES += $(LOCAL_PATH)/$(SRC_DIR)/Vulkan-Headers/include
-#
-#LOCAL_CPPFLAGS += -std=c++11 -DVK_PROTOTYPES -Wall -Werror -Wno-unused-function -Wno-unused-const-variable
-#LOCAL_CPPFLAGS += -DVK_USE_PLATFORM_ANDROID_KHR -fvisibility=hidden --include=$(SRC_DIR)/common/vulkan_wrapper.h
-#include $(BUILD_STATIC_LIBRARY)
-#
-#include $(CLEAR_VARS)
-#LOCAL_MODULE := vkjson_info
-#LOCAL_SRC_FILES += $(SRC_DIR)/libs/vkjson/vkjson_info.cc \
-#                   $(SRC_DIR)/common/vulkan_wrapper.cpp \
-#                    $(LOCAL_PATH)/$(SRC_DIR)/Vulkan-Headers/include
-#
-#LOCAL_STATIC_LIBRARIES += vkjson
-#LOCAL_CPPFLAGS += -std=c++11 -DVK_PROTOTYPES -Wall -Werror -Wno-unused-function -Wno-unused-const-variable
-#LOCAL_CPPFLAGS += -Wno-sign-compare -DVK_USE_PLATFORM_ANDROID_KHR --include=$(SRC_DIR)/common/vulkan_wrapper.h
-#LOCAL_LDLIBS := -llog
-#LOCAL_LDFLAGS += -Wl,--exclude-libs,ALL
-#include $(BUILD_EXECUTABLE)
 
 $(call import-module,android/native_app_glue)
 $(call import-module,third_party/googletest)
