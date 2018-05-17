@@ -26,21 +26,25 @@ GLSLANG_REVISION=$(cat $ANDROIDBUILDDIR/glslang_revision_android)
 SPIRV_TOOLS_REVISION=$(cat $ANDROIDBUILDDIR/spirv-tools_revision_android)
 SPIRV_HEADERS_REVISION=$(cat $ANDROIDBUILDDIR/spirv-headers_revision_android)
 SHADERC_REVISION=$(cat $ANDROIDBUILDDIR/shaderc_revision_android)
+VULKAN_TOOLS_REVISION=$(cat $ANDROIDBUILDDIR/vulkan-tools_revision_android)
 
 echo "GLSLANG_REVISION=$GLSLANG_REVISION"
 echo "SPIRV_TOOLS_REVISION=$SPIRV_TOOLS_REVISION"
 echo "SPIRV_HEADERS_REVISION=$SPIRV_HEADERS_REVISION"
 echo "SHADERC_REVISION=$SHADERC_REVISION"
+echo "VULKAN_TOOLS_REVISION=$VULKAN_TOOLS_REVISION"
 
 GLSLANG_URL=$(cat $ANDROIDBUILDDIR/glslang_url_android)
 SPIRV_TOOLS_URL=$(cat $ANDROIDBUILDDIR/spirv-tools_url_android)
 SPIRV_HEADERS_URL=$(cat $ANDROIDBUILDDIR/spirv-headers_url_android)
 SHADERC_URL=$(cat $ANDROIDBUILDDIR/shaderc_url_android)
+VULKAN_TOOLS_URL=$(cat $ANDROIDBUILDDIR/vulkan-tools_url_android)
 
 echo "GLSLANG_URL=$GLSLANG_URL"
 echo "SPIRV_TOOL_URLS_=$SPIRV_TOOLS_URL"
 echo "SPIRV_HEADERS_URL=$SPIRV_HEADERS_URL"
 echo "SHADERC_URL=$SHADERC_URL"
+echo "VULKAN_TOOLS_URL=$VULKAN_TOOLS_URL"
 
 if [[ $(uname) == "Linux" ]]; then
     cores="$(nproc || echo 4)"
@@ -188,6 +192,31 @@ function build_shaderc () {
    fi
 }
 
+function create_vulkan-tools () {
+   rm -rf $BASEDIR/Vulkan-Tools
+   echo "Creating local Vulkan-Tools repository ($BASEDIR/Vulkan-Tools)."
+   mkdir -p $BASEDIR/Vulkan-Tools
+   cd $BASEDIR/Vulkan-Tools
+   git clone $VULKAN_TOOLS_URL .
+   git checkout $VULKAN_TOOLS_REVISION
+}
+
+function update_vulkan-tools () {
+   echo "Updating $BASEDIR/Vulkan-Tools"
+   cd $BASEDIR/Vulkan-Tools
+   if [[ $(git config --get remote.origin.url) != $VULKAN_TOOLS_URL ]]; then
+      echo "Vulkan-Tools URL mismatch, recreating local repo"
+      create_vulkan-tools
+      return
+   fi
+   git fetch --all
+   git checkout $VULKAN_TOOLS_REVISION
+}
+
+# Always init the submodules, which includes vulkan headers
+echo "Initializing submodules"
+git submodule update --init --recursive
+
 if [ ! -d "$BASEDIR/shaderc" -o ! -d "$BASEDIR/shaderc/.git" ]; then
      create_shaderc
 fi
@@ -207,6 +236,11 @@ if [ ! -d "$BASEDIR/shaderc/third_party/spirv-tools/external/spirv-headers" -o !
    create_spirv-headers
 fi
 update_spirv-headers
+
+if [ ! -d "$BASEDIR/Vulkan-Tools" -o ! -d "$BASEDIR/Vulkan-Tools/.git" ]; then
+   create_vulkan-tools
+fi
+update_vulkan-tools
 
 if [[ -z $nobuild ]]
 then

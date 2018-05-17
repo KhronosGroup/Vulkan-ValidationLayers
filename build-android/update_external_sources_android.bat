@@ -27,6 +27,7 @@ set GLSLANG_DIR=%BASE_DIR%\shaderc\third_party\glslang
 set SPIRV_TOOLS_DIR=%BASE_DIR%\shaderc\third_party\spirv-tools
 set SPIRV_HEADERS_DIR=%BASE_DIR%\shaderc\third_party\spirv-tools\external\spirv-headers
 set SHADERC_DIR=%BASE_DIR%\shaderc
+set VULKAN_TOOLS_DIR=%BASE_DIR%\Vulkan-Tools
 
 for %%X in (where.exe) do (set FOUND=%%~$PATH:X)
 if not defined FOUND (
@@ -93,23 +94,37 @@ if not exist %ANDROID_BUILD_DIR%\shaderc_revision_android (
    goto:error
 )
 
+if not exist %ANDROID_BUILD_DIR%\vulkan-tools_revision_android (
+   echo.
+   echo Missing vulkan-tools_revision_android file. Place it in %ANDROID_BUILD_DIR%
+   set errorCode=1
+   goto:error
+)
+
 set /p GLSLANG_REVISION= < glslang_revision_android
 set /p SPIRV_TOOLS_REVISION= < spirv-tools_revision_android
 set /p SPIRV_HEADERS_REVISION= < spirv-headers_revision_android
 set /p SHADERC_REVISION= < shaderc_revision_android
+set /p VULKAN_TOOLS_REVISION= < vulkan-tools_revision_android
 echo GLSLANG_REVISION=%GLSLANG_REVISION%
 echo SPIRV_TOOLS_REVISION=%SPIRV_TOOLS_REVISION%
 echo SPIRV_HEADERS_REVISION=%SPIRV_HEADERS_REVISION%
 echo SHADERC_REVISION=%SHADERC_REVISION%
+echo VULKAN_TOOLS_REVISION=%VULKAN_TOOLS_REVISION%
 
 
-echo Creating and/or updating glslang, spirv-tools, spirv-headers, shaderc in %BASE_DIR%
+echo Creating and/or updating glslang, spirv-tools, spirv-headers, shaderc, vulkan-tools in %BASE_DIR%
 
 set sync-glslang=1
 set sync-spirv-tools=1
 set sync-spirv-headers=1
 set sync-shaderc=1
+set sync-vulkan-tools=1
 set build-shaderc=1
+
+REM Always init the submodules, which includes vulkan headers
+echo Initializing submodules
+git submodule update --init --recursive
 
 if %sync-shaderc% equ 1 (
    if not exist %SHADERC_DIR% (
@@ -146,6 +161,16 @@ if %sync-spirv-headers% equ 1 (
    )
    if %errorCode% neq 0 (goto:error)
    call:update_spirv-headers
+   if %errorCode% neq 0 (goto:error)
+)
+
+if %sync-vulkan-tools% equ 1 (
+   if %ERRORLEVEL% neq 0 (goto:error)
+   if not exist %VULKAN_TOOLS_DIR% (
+      call:create_vulkan-tools
+   )
+   if %errorCode% neq 0 (goto:error)
+   call:update_vulkan-tools
    if %errorCode% neq 0 (goto:error)
 )
 
@@ -284,6 +309,31 @@ goto:eof
    if not exist %SHADERC_DIR%\android_test\obj\local\x86\libshaderc.a (
       echo.
       echo shaderc build failed!
+      set errorCode=1
+   )
+goto:eof
+
+:create_vulkan-tools
+   echo.
+   echo Creating local vulkan-tools repository %VULKAN_TOOLS_DIR%
+   if not exist "%VULKAN_TOOLS_DIR%\" mkdir %VULKAN_TOOLS_DIR%
+   cd %VULKAN_TOOLS_DIR%
+   git clone https://github.com/KhronosGroup/Vulkan-Tools.git .
+   git checkout %VULKAN_TOOLS_REVISION%
+   if not exist %VULKAN_TOOLS_DIR%\common (
+      echo vulkan-tools source download failed!
+      set errorCode=1
+   )
+goto:eof
+
+:update_vulkan-tools
+   echo.
+   echo Updating %VULKAN_TOOLS_DIR%
+   cd %VULKAN_TOOLS_DIR%
+   git fetch --all
+   git checkout %VULKAN_TOOLS_REVISION%
+   if not exist %VULKAN_TOOLS_DIR%\common (
+      echo vulkan-tools source update failed!
       set errorCode=1
    )
 goto:eof
