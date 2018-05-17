@@ -55,6 +55,8 @@
 // Mesh and VertexFormat Data
 //--------------------------------------------------------------------------------------
 
+const char *kSkipPrefix = "             TEST SKIPPED:";
+
 enum BsoFailSelect {
     BsoFailNone,
     BsoFailLineWidth,
@@ -551,7 +553,7 @@ class VkLayerTest : public VkRenderFramework {
                 instance(), "vkGetOriginalPhysicalDeviceFormatPropertiesEXT");
 
         if (!(fpvkSetPhysicalDeviceFormatPropertiesEXT) || !(fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT)) {
-            printf("             Can't find device_profile_api functions; skipped.\n");
+            printf("%s Can't find device_profile_api functions; skipped.\n", kSkipPrefix);
             return 0;
         }
 
@@ -1403,7 +1405,7 @@ TEST_F(VkLayerTest, DebugMarkerNameTest) {
     if (DeviceExtensionSupported(gpu(), "VK_LAYER_LUNARG_core_validation", VK_EXT_DEBUG_MARKER_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_EXT_DEBUG_MARKER_EXTENSION_NAME);
     } else {
-        printf("             Debug Marker Extension not supported, skipping test\n");
+        printf("%s Debug Marker Extension not supported, skipping test\n", kSkipPrefix);
         return;
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
@@ -1411,7 +1413,7 @@ TEST_F(VkLayerTest, DebugMarkerNameTest) {
     PFN_vkDebugMarkerSetObjectNameEXT fpvkDebugMarkerSetObjectNameEXT =
         (PFN_vkDebugMarkerSetObjectNameEXT)vkGetInstanceProcAddr(instance(), "vkDebugMarkerSetObjectNameEXT");
     if (!(fpvkDebugMarkerSetObjectNameEXT)) {
-        printf("             Can't find fpvkDebugMarkerSetObjectNameEXT; skipped.\n");
+        printf("%s Can't find fpvkDebugMarkerSetObjectNameEXT; skipped.\n", kSkipPrefix);
         return;
     }
 
@@ -1547,7 +1549,7 @@ TEST_F(VkLayerTest, UnrecognizedValueBadBool) {
     if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SAMPLER_MIRROR_CLAMP_TO_EDGE_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_KHR_SAMPLER_MIRROR_CLAMP_TO_EDGE_EXTENSION_NAME);
     } else {
-        printf("             VK_KHR_sampler_mirror_clamp_to_edge extension not supported, skipping test\n");
+        printf("%s VK_KHR_sampler_mirror_clamp_to_edge extension not supported, skipping test\n", kSkipPrefix);
         return;
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
@@ -1618,7 +1620,7 @@ TEST_F(VkLayerTest, AnisotropyFeatureEnabled) {
 
     // These tests require that the device support sparse residency for 2D images
     if (VK_TRUE != device_features.samplerAnisotropy) {
-        printf("             Test requires unsupported samplerAnisotropy feature. Skipped.\n");
+        printf("%s Test requires unsupported samplerAnisotropy feature. Skipped.\n", kSkipPrefix);
         return;
     }
 
@@ -1669,7 +1671,7 @@ TEST_F(VkLayerTest, AnisotropyFeatureEnabled) {
         do_test(VALIDATION_ERROR_12600872, &sampler_info);
         sampler_info.magFilter = sampler_info_ref.magFilter;
     } else {
-        printf("             Test requires unsupported extension \"VK_IMG_filter_cubic\". Skipped.\n");
+        printf("%s Test requires unsupported extension \"VK_IMG_filter_cubic\". Skipped.\n", kSkipPrefix);
     }
 }
 
@@ -1827,7 +1829,7 @@ TEST_F(VkLayerTest, SparseBindingImageBufferCreate) {
         vkCreateBuffer(m_device->device(), &buf_info, NULL, &buffer);
         m_errorMonitor->VerifyFound();
     } else {
-        printf("             Test requires unsupported sparseResidencyBuffer feature. Skipped.\n");
+        printf("%s Test requires unsupported sparseResidencyBuffer feature. Skipped.\n", kSkipPrefix);
         return;
     }
 
@@ -1838,7 +1840,7 @@ TEST_F(VkLayerTest, SparseBindingImageBufferCreate) {
         vkCreateBuffer(m_device->device(), &buf_info, NULL, &buffer);
         m_errorMonitor->VerifyFound();
     } else {
-        printf("             Test requires unsupported sparseResidencyAliased feature. Skipped.\n");
+        printf("%s Test requires unsupported sparseResidencyAliased feature. Skipped.\n", kSkipPrefix);
         return;
     }
 
@@ -1868,7 +1870,7 @@ TEST_F(VkLayerTest, SparseBindingImageBufferCreate) {
         vkCreateImage(m_device->device(), &image_create_info, NULL, &image);
         m_errorMonitor->VerifyFound();
     } else {
-        printf("             Test requires unsupported sparseResidencyImage2D feature. Skipped.\n");
+        printf("%s Test requires unsupported sparseResidencyImage2D feature. Skipped.\n", kSkipPrefix);
         return;
     }
 
@@ -1879,7 +1881,7 @@ TEST_F(VkLayerTest, SparseBindingImageBufferCreate) {
         vkCreateImage(m_device->device(), &image_create_info, NULL, &image);
         m_errorMonitor->VerifyFound();
     } else {
-        printf("             Test requires unsupported sparseResidencyAliased feature. Skipped.\n");
+        printf("%s Test requires unsupported sparseResidencyAliased feature. Skipped.\n", kSkipPrefix);
         return;
     }
 }
@@ -1898,7 +1900,7 @@ TEST_F(VkLayerTest, SparseResidencyImageCreateUnsupportedTypes) {
     ASSERT_NO_FATAL_FAILURE(InitState(&device_features));
 
     if (!m_device->phy().features().sparseBinding) {
-        printf("             Test requires unsupported sparseBinding feature. Skipped.\n");
+        printf("%s Test requires unsupported sparseBinding feature. Skipped.\n", kSkipPrefix);
         return;
     }
 
@@ -1964,7 +1966,7 @@ TEST_F(VkLayerTest, SparseResidencyImageCreateUnsupportedSamples) {
 
     // These tests require that the device support sparse residency for 2D images
     if (VK_TRUE != device_features.sparseResidencyImage2D) {
-        printf("             Test requires unsupported SparseResidencyImage2D feature. Skipped.\n");
+        printf("%s Test requires unsupported SparseResidencyImage2D feature. Skipped.\n", kSkipPrefix);
         return;
     }
 
@@ -2111,6 +2113,7 @@ TEST_F(VkLayerTest, InvalidMemoryAliasing) {
     pass = m_device->phy().set_memory_type(buff_mem_reqs.memoryTypeBits & img_mem_reqs.memoryTypeBits, &alloc_info,
                                            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     if (!pass) {
+        printf("%s Failed to set memory type.\n", kSkipPrefix);
         vkDestroyBuffer(m_device->device(), buffer, NULL);
         vkDestroyImage(m_device->device(), image, NULL);
         vkDestroyImage(m_device->device(), image2, NULL);
@@ -2184,6 +2187,7 @@ TEST_F(VkLayerTest, InvalidMemoryMapping) {
     alloc_info.allocationSize = allocation_size;
     pass = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
     if (!pass) {
+        printf("%s Failed to set memory type.\n", kSkipPrefix);
         vkDestroyBuffer(m_device->device(), buffer, NULL);
         return;
     }
@@ -2276,6 +2280,7 @@ TEST_F(VkLayerTest, InvalidMemoryMapping) {
     pass = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
                                            VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
     if (!pass) {
+        printf("%s Failed to set memory type.\n", kSkipPrefix);
         vkFreeMemory(m_device->device(), mem, NULL);
         vkDestroyBuffer(m_device->device(), buffer, NULL);
         return;
@@ -2303,7 +2308,7 @@ TEST_F(VkLayerTest, MapMemWithoutHostVisibleBit) {
     pass = m_device->phy().set_memory_type(0xFFFFFFFF, &mem_alloc, 0, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
     if (!pass) {  // If we can't find any unmappable memory this test doesn't
                   // make sense
-        printf("             No unmappable memory types found, skipping test\n");
+        printf("%s No unmappable memory types found, skipping test\n", kSkipPrefix);
         return;
     }
 
@@ -2436,7 +2441,7 @@ TEST_F(VkLayerTest, InvalidUsageBits) {
     ASSERT_NO_FATAL_FAILURE(Init());
     auto format = FindSupportedDepthStencilFormat(gpu());
     if (!format) {
-        printf("             No Depth + Stencil format found. Skipped.\n");
+        printf("%s No Depth + Stencil format found. Skipped.\n", kSkipPrefix);
         return;
     }
 
@@ -2726,7 +2731,7 @@ TEST_F(VkLayerTest, BindImageInvalidMemoryType) {
         }
     }
     if (i >= memory_info.memoryTypeCount) {
-        printf("             No invalid memory type index could be found; skipped.\n");
+        printf("%s No invalid memory type index could be found; skipped.\n", kSkipPrefix);
         vkDestroyImage(m_device->device(), image, NULL);
         return;
     }
@@ -3025,7 +3030,7 @@ TEST_F(VkLayerTest, BindInvalidMemory) {
         } else {
             ASSERT_VK_SUCCESS(err);
             if (image_format_properties.maxExtent.width == 0) {
-                printf("             Sparse image format not supported; skipped.\n");
+                printf("%s Sparse image format not supported; skipped.\n", kSkipPrefix);
                 return;
             } else {
                 VkImage sparse_image = VK_NULL_HANDLE;
@@ -3162,7 +3167,10 @@ TEST_F(VkLayerTest, ExceedMemoryAllocationCount) {
     const int max_mems = 32;
     VkDeviceMemory mems[max_mems + 1];
 
-    if (!EnableDeviceProfileLayer()) return;
+    if (!EnableDeviceProfileLayer()) {
+        printf("%s Failed to enable device profile layer.\n", kSkipPrefix);
+        return;
+    }
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
 
@@ -3172,7 +3180,7 @@ TEST_F(VkLayerTest, ExceedMemoryAllocationCount) {
         (PFN_vkGetOriginalPhysicalDeviceLimitsEXT)vkGetInstanceProcAddr(instance(), "vkGetOriginalPhysicalDeviceLimitsEXT");
 
     if (!(fpvkSetPhysicalDeviceLimitsEXT) || !(fpvkGetOriginalPhysicalDeviceLimitsEXT)) {
-        printf("             Can't find device_profile_api functions; skipped.\n");
+        printf("%s Can't find device_profile_api functions; skipped.\n", kSkipPrefix);
         return;
     }
     VkPhysicalDeviceProperties props;
@@ -3221,7 +3229,7 @@ TEST_F(VkLayerTest, CreatePipelineBadVertexAttributeFormat) {
     input_attribs.format = VK_FORMAT_BC2_UNORM_BLOCK;
     VkFormatProperties format_props = m_device->format_properties(input_attribs.format);
     if ((format_props.bufferFeatures & VK_FORMAT_FEATURE_VERTEX_BUFFER_BIT) != 0) {
-        printf("             Format unsuitable for test; skipped.\n");
+        printf("%s Format unsuitable for test; skipped.\n", kSkipPrefix);
         return;
     }
 
@@ -3402,7 +3410,7 @@ TEST_F(VkLayerTest, BlitImageFormatTypes) {
         !ImageFormatIsSupported(gpu(), f_float, VK_IMAGE_TILING_OPTIMAL) ||
         !ImageFormatIsSupported(gpu(), f_depth, VK_IMAGE_TILING_OPTIMAL) ||
         !ImageFormatIsSupported(gpu(), f_depth2, VK_IMAGE_TILING_OPTIMAL)) {
-        printf("             Requested formats not supported - BlitImageFormatTypes skipped.\n");
+        printf("%s Requested formats not supported - BlitImageFormatTypes skipped.\n", kSkipPrefix);
         return;
     }
 
@@ -3530,7 +3538,7 @@ TEST_F(VkLayerTest, BlitImageFilters) {
 
     VkFormat fmt = VK_FORMAT_R8_UINT;
     if (!ImageFormatIsSupported(gpu(), fmt, VK_IMAGE_TILING_OPTIMAL)) {
-        printf("             No R8_UINT format support - BlitImageFilters skipped.\n");
+        printf("%s No R8_UINT format support - BlitImageFilters skipped.\n", kSkipPrefix);
         return;
     }
 
@@ -3777,7 +3785,7 @@ TEST_F(VkLayerTest, BlitImageOffsets) {
     VkFormat fmt = VK_FORMAT_R8G8B8A8_UNORM;
     if (!ImageFormatAndFeaturesSupported(gpu(), fmt, VK_IMAGE_TILING_OPTIMAL,
                                          VK_FORMAT_FEATURE_BLIT_SRC_BIT | VK_FORMAT_FEATURE_BLIT_DST_BIT)) {
-        printf("             No blit feature bits - BlitImageOffsets skipped.\n");
+        printf("%s No blit feature bits - BlitImageOffsets skipped.\n", kSkipPrefix);
         return;
     }
 
@@ -3925,7 +3933,7 @@ TEST_F(VkLayerTest, MiscBlitImageTests) {
                                          VK_FORMAT_FEATURE_BLIT_SRC_BIT | VK_FORMAT_FEATURE_BLIT_DST_BIT) ||
         !ImageFormatAndFeaturesSupported(gpu(), f_depth, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_BLIT_SRC_BIT) ||
         ImageFormatAndFeaturesSupported(gpu(), f_depth, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_BLIT_DST_BIT)) {
-        printf("             Requested format features unavailable - MiscBlitImageTests skipped.\n");
+        printf("%s Requested format features unavailable - MiscBlitImageTests skipped.\n", kSkipPrefix);
         return;
     }
 
@@ -4051,7 +4059,7 @@ TEST_F(VkLayerTest, MinImageTransferGranularity) {
         });
 
     if (large_granularity_family == queue_family_properties.end()) {
-        printf("             No queue family has a large enough granularity for this test to be meaningful, skipping test\n");
+        printf("%s No queue family has a large enough granularity for this test to be meaningful, skipping test\n", kSkipPrefix);
         return;
     }
     const size_t queue_family_index = std::distance(queue_family_properties.begin(), large_granularity_family);
@@ -4177,7 +4185,7 @@ TEST_F(VkLayerTest, MismatchedQueueFamiliesOnSubmit) {
         if (queue_family_properties[i].queueCount > 0) queue_families.push_back(i);
 
     if (queue_families.size() < 2) {
-        printf("             Device only has one queue family; skipped.\n");
+        printf("%s Device only has one queue family; skipped.\n", kSkipPrefix);
         return;
     }
 
@@ -4801,7 +4809,7 @@ TEST_F(VkLayerTest, TemporaryExternalSemaphore) {
         m_instance_extension_names.push_back(VK_KHR_EXTERNAL_SEMAPHORE_CAPABILITIES_EXTENSION_NAME);
         m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     } else {
-        printf("             External semaphore extension not supported, skipping test\n");
+        printf("%s External semaphore extension not supported, skipping test\n", kSkipPrefix);
         return;
     }
     ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
@@ -4811,7 +4819,7 @@ TEST_F(VkLayerTest, TemporaryExternalSemaphore) {
         m_device_extension_names.push_back(extension_name);
         m_device_extension_names.push_back(VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME);
     } else {
-        printf("             External semaphore extension not supported, skipping test\n");
+        printf("%s External semaphore extension not supported, skipping test\n", kSkipPrefix);
         return;
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
@@ -4827,7 +4835,7 @@ TEST_F(VkLayerTest, TemporaryExternalSemaphore) {
 
     if (!(esp.externalSemaphoreFeatures & VK_EXTERNAL_SEMAPHORE_FEATURE_EXPORTABLE_BIT_KHR) ||
         !(esp.externalSemaphoreFeatures & VK_EXTERNAL_SEMAPHORE_FEATURE_IMPORTABLE_BIT_KHR)) {
-        printf("             External semaphore does not support importing and exporting, skipping test\n");
+        printf("%s External semaphore does not support importing and exporting, skipping test\n", kSkipPrefix);
         return;
     }
 
@@ -4928,7 +4936,7 @@ TEST_F(VkLayerTest, TemporaryExternalFence) {
         m_instance_extension_names.push_back(VK_KHR_EXTERNAL_FENCE_CAPABILITIES_EXTENSION_NAME);
         m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     } else {
-        printf("             External fence extension not supported, skipping test\n");
+        printf("%s External fence extension not supported, skipping test\n", kSkipPrefix);
         return;
     }
     ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
@@ -4938,7 +4946,7 @@ TEST_F(VkLayerTest, TemporaryExternalFence) {
         m_device_extension_names.push_back(extension_name);
         m_device_extension_names.push_back(VK_KHR_EXTERNAL_FENCE_EXTENSION_NAME);
     } else {
-        printf("             External fence extension not supported, skipping test\n");
+        printf("%s External fence extension not supported, skipping test\n", kSkipPrefix);
         return;
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
@@ -4952,7 +4960,7 @@ TEST_F(VkLayerTest, TemporaryExternalFence) {
 
     if (!(efp.externalFenceFeatures & VK_EXTERNAL_FENCE_FEATURE_EXPORTABLE_BIT_KHR) ||
         !(efp.externalFenceFeatures & VK_EXTERNAL_FENCE_FEATURE_IMPORTABLE_BIT_KHR)) {
-        printf("             External fence does not support importing and exporting, skipping test\n");
+        printf("%s External fence does not support importing and exporting, skipping test\n", kSkipPrefix);
         return;
     }
 
@@ -5773,7 +5781,7 @@ TEST_F(VkLayerTest, DynamicDepthBoundsNotBound) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
     if (!m_device->phy().features().depthBounds) {
-        printf("             Device does not support depthBounds test; skipped.\n");
+        printf("%s Device does not support depthBounds test; skipped.\n", kSkipPrefix);
         return;
     }
     // Dynamic depth bounds
@@ -5898,7 +5906,7 @@ TEST_F(VkLayerTest, AllocDescriptorFromEmptyPool) {
 
     // This test is valid for Vulkan 1.0 only -- skip if device has an API version greater than 1.0.
     if (m_device->props.apiVersion >= VK_API_VERSION_1_1) {
-        printf("             Device has apiVersion greater than 1.0 -- skipping Descriptor Set checks.\n");
+        printf("%s Device has apiVersion greater than 1.0 -- skipping Descriptor Set checks.\n", kSkipPrefix);
         return;
     }
 
@@ -6384,7 +6392,7 @@ TEST_F(VkLayerTest, CreatePipelineLayoutExcessPerStageDescriptors) {
 
     // Devices that report UINT32_MAX for any of these limits can't run this test
     if (UINT32_MAX == std::max({max_uniform_buffers, max_storage_buffers, max_sampled_images, max_storage_images, max_samplers})) {
-        printf("             Physical device limits report as 2^32-1. Skipping test.\n");
+        printf("%s Physical device limits report as 2^32-1. Skipping test.\n", kSkipPrefix);
         return;
     }
 
@@ -6615,7 +6623,7 @@ TEST_F(VkLayerTest, CreatePipelineLayoutExcessDescriptorsOverall) {
     // Devices that report UINT32_MAX for any of these limits can't run this test
     if (UINT32_MAX == std::max({sum_dyn_uniform_buffers, sum_uniform_buffers, sum_dyn_storage_buffers, sum_storage_buffers,
                                 sum_sampled_images, sum_storage_images, sum_samplers, sum_input_attachments})) {
-        printf("             Physical device limits report as 2^32-1. Skipping test.\n");
+        printf("%s Physical device limits report as 2^32-1. Skipping test.\n", kSkipPrefix);
         return;
     }
 
@@ -6879,6 +6887,7 @@ TEST_F(VkLayerTest, InvalidCmdBufferBufferDestroyed) {
     bool pass = false;
     pass = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
     if (!pass) {
+        printf("%s Failed to set memory type.\n", kSkipPrefix);
         vkDestroyBuffer(m_device->device(), buffer, NULL);
         return;
     }
@@ -7128,6 +7137,7 @@ TEST_F(VkLayerTest, InvalidCmdBufferFramebufferImageDestroyed) {
     VkResult err = VK_SUCCESS;
     vkGetPhysicalDeviceFormatProperties(gpu(), VK_FORMAT_B8G8R8A8_UNORM, &format_properties);
     if (!(format_properties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT)) {
+        printf("%s Image format doesn't support required features.\n", kSkipPrefix);
         return;
     }
 
@@ -7487,6 +7497,7 @@ TEST_F(VkLayerTest, BufferMemoryNotBound) {
     bool pass = false;
     pass = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
     if (!pass) {
+        printf("%s Failed to set memory type.\n", kSkipPrefix);
         vkDestroyBuffer(m_device->device(), buffer, NULL);
         return;
     }
@@ -7751,6 +7762,7 @@ TEST_F(VkLayerTest, InvalidCmdBufferDescriptorSetBufferDestroyed) {
     mem_alloc.memoryTypeIndex = 0;
     bool pass = m_device->phy().set_memory_type(memReqs.memoryTypeBits, &mem_alloc, 0);
     if (!pass) {
+        printf("%s Failed to set memory type.\n", kSkipPrefix);
         vkDestroyBuffer(m_device->device(), buffer, NULL);
         return;
     }
@@ -8792,7 +8804,7 @@ TEST_F(VkLayerTest, CmdDispatchExceedLimits) {
     uint32_t y_limit = m_device->props.limits.maxComputeWorkGroupCount[1];
     uint32_t z_limit = m_device->props.limits.maxComputeWorkGroupCount[2];
     if (std::max({x_limit, y_limit, z_limit}) == UINT32_MAX) {
-        printf("             device maxComputeWorkGroupCount limit reports UINT32_MAX, test not possible, skipping.\n");
+        printf("%s device maxComputeWorkGroupCount limit reports UINT32_MAX, test not possible, skipping.\n", kSkipPrefix);
         return;
     }
 
@@ -8877,7 +8889,7 @@ TEST_F(VkLayerTest, CmdDispatchExceedLimits) {
         fp_vkCmdDispatchBaseKHR(m_commandBuffer->handle(), x_base, y_base, z_base, x_limit, y_limit, z_limit + 1);
         m_errorMonitor->VerifyFound();
     } else {
-        printf("             KHX_DEVICE_GROUP_* extensions not supported, skipping CmdDispatchBaseKHR() tests.\n");
+        printf("%s KHX_DEVICE_GROUP_* extensions not supported, skipping CmdDispatchBaseKHR() tests.\n", kSkipPrefix);
     }
 
     // Clean up
@@ -8905,7 +8917,7 @@ TEST_F(VkLayerTest, MultiplaneImageLayoutBadAspectFlags) {
         m_device_extension_names.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
         m_device_extension_names.push_back(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
     } else {
-        printf("             test requires KHR multiplane extensions, not available.  Skipping.\n");
+        printf("%s test requires KHR multiplane extensions, not available.  Skipping.\n", kSkipPrefix);
         return;
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
@@ -8930,7 +8942,7 @@ TEST_F(VkLayerTest, MultiplaneImageLayoutBadAspectFlags) {
     ci.format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM_KHR;
     supported = supported && ImageFormatAndFeaturesSupported(instance(), gpu(), ci, VK_FORMAT_FEATURE_TRANSFER_SRC_BIT);
     if (!supported) {
-        printf("             Multiplane image format not supported.  Skipping test.\n");
+        printf("%s Multiplane image format not supported.  Skipping test.\n", kSkipPrefix);
         return;  // Assume there's low ROI on searching for different mp formats
     }
 
@@ -8985,7 +8997,7 @@ TEST_F(VkPositiveLayerTest, MultiplaneGetImageSubresourceLayout) {
         m_device_extension_names.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
         m_device_extension_names.push_back(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
     } else {
-        printf("             test requires KHR multiplane extensions, not available.  Skipping.\n");
+        printf("%s test requires KHR multiplane extensions, not available.  Skipping.\n", kSkipPrefix);
         return;
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
@@ -9008,7 +9020,7 @@ TEST_F(VkPositiveLayerTest, MultiplaneGetImageSubresourceLayout) {
     // Verify format
     bool supported = ImageFormatAndFeaturesSupported(instance(), gpu(), ci, VK_FORMAT_FEATURE_TRANSFER_SRC_BIT);
     if (!supported) {
-        printf("             Multiplane image format not supported.  Skipping test.\n");
+        printf("%s Multiplane image format not supported.  Skipping test.\n", kSkipPrefix);
         return;  // Assume there's low ROI on searching for different mp formats
     }
 
@@ -9310,6 +9322,7 @@ TEST_F(VkLayerTest, InvalidDynamicOffsetCases) {
     mem_alloc.memoryTypeIndex = 0;
     bool pass = m_device->phy().set_memory_type(memReqs.memoryTypeBits, &mem_alloc, 0);
     if (!pass) {
+        printf("%s Failed to allocate memory.\n", kSkipPrefix);
         vkDestroyBuffer(m_device->device(), dyub, NULL);
         return;
     }
@@ -10132,7 +10145,7 @@ TEST_F(VkLayerTest, InvalidPipelineSampleRateFeatureEnable) {
     VkPhysicalDeviceFeatures device_features = {};
     ASSERT_NO_FATAL_FAILURE(GetPhysicalDeviceFeatures(&device_features));
     if (device_features.sampleRateShading == VK_FALSE) {
-        printf("             SampleRateShading feature is disabled -- skipping related checks.\n");
+        printf("%s SampleRateShading feature is disabled -- skipping related checks.\n", kSkipPrefix);
         return;
     }
 
@@ -10177,7 +10190,7 @@ TEST_F(VkLayerTest, InvalidPipelineSamplePNext) {
         CreatePipelineHelper::OneshotTest(*this, good_chain, (VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT),
                                           "No error", true);
     } else {
-        printf("             Required extension not present -- skipping positive checks.\n");
+        printf("%s Required extension not present -- skipping positive checks.\n", kSkipPrefix);
     }
 
     auto instance_ci = chain_util::Init<VkInstanceCreateInfo>();
@@ -10461,7 +10474,7 @@ TEST_F(VkLayerTest, PSOViewportStateMultiViewportTests) {
     ASSERT_NO_FATAL_FAILURE(Init());  // enables all supported features
 
     if (!m_device->phy().features().multiViewport) {
-        printf("             VkPhysicalDeviceFeatures::multiViewport is not supported -- skipping test.\n");
+        printf("%s VkPhysicalDeviceFeatures::multiViewport is not supported -- skipping test.\n", kSkipPrefix);
         return;
     }
     // at least 16 viewports supported from here on
@@ -10496,9 +10509,8 @@ TEST_F(VkLayerTest, PSOViewportStateMultiViewportTests) {
     const auto max_viewports = m_device->phy().properties().limits.maxViewports;
     const bool max_viewports_maxxed = max_viewports == std::numeric_limits<decltype(max_viewports)>::max();
     if (max_viewports_maxxed) {
-        printf(
-            "             VkPhysicalDeviceLimits::maxViewports is UINT32_MAX -- skipping part of test requiring to exceed "
-            "maxViewports.\n");
+        printf("%s VkPhysicalDeviceLimits::maxViewports is UINT32_MAX -- skipping part of test requiring to exceed maxViewports.\n",
+               kSkipPrefix);
     } else {
         const auto too_much_viewports = max_viewports + 1;
         // avoid potentially big allocations by using only nullptr
@@ -10574,7 +10586,7 @@ TEST_F(VkLayerTest, DynViewportAndScissorUndefinedDrawState) {
 
     // TODO: should also test on !multiViewport
     if (!m_device->phy().features().multiViewport) {
-        printf("             Device does not support multiple viewports/scissors; skipped.\n");
+        printf("%s Device does not support multiple viewports/scissors; skipped.\n", kSkipPrefix);
         return;
     }
 
@@ -11084,7 +11096,7 @@ TEST_F(VkLayerTest, VALIDATION_ERROR_14a004dc) {
             PFN_vkSetPhysicalDeviceLimitsEXT fpvkSetPhysicalDeviceLimitsEXT =
                 (PFN_vkSetPhysicalDeviceLimitsEXT)vkGetInstanceProcAddr(instance(), "vkSetPhysicalDeviceLimitsEXT");
             if (!fpvkSetPhysicalDeviceLimitsEXT) {
-                printf("             All offsets are valid & device_profile_api not found; skipped.\n");
+                printf("%s All offsets are valid & device_profile_api not found; skipped.\n", kSkipPrefix);
                 return;
             }
             device_props.limits.maxVertexInputAttributeOffset = device_props.limits.maxVertexInputBindingStride - 2;
@@ -11437,7 +11449,7 @@ TEST_F(VkLayerTest, ClearDepthStencilWithBadRange) {
 
     const auto depth_format = FindSupportedDepthStencilFormat(gpu());
     if (!depth_format) {
-        printf("             No Depth + Stencil format found. Skipped.\n");
+        printf("%s No Depth + Stencil format found. Skipped.\n", kSkipPrefix);
         return;
     }
 
@@ -11574,7 +11586,7 @@ TEST_F(VkLayerTest, ClearDepthStencilImageErrors) {
 
     auto depth_format = FindSupportedDepthStencilFormat(gpu());
     if (!depth_format) {
-        printf("             No Depth + Stencil format found. Skipped.\n");
+        printf("%s No Depth + Stencil format found. Skipped.\n", kSkipPrefix);
         return;
     }
 
@@ -11725,7 +11737,7 @@ TEST_F(VkLayerTest, InvalidBarriers) {
     ASSERT_NO_FATAL_FAILURE(Init());
     auto depth_format = FindSupportedDepthStencilFormat(gpu());
     if (!depth_format) {
-        printf("             No Depth + Stencil format found. Skipped.\n");
+        printf("%s No Depth + Stencil format found. Skipped.\n", kSkipPrefix);
         return;
     }
     // Add a token self-dependency for this test to avoid unexpected errors
@@ -12056,7 +12068,7 @@ TEST_F(VkLayerTest, InvalidBarriers) {
     const std::vector<VkQueueFamilyProperties> queue_props = m_device->queue_props;
     uint32_t queue_family_index = m_device->QueueFamilyWithoutCapabilities(VK_QUEUE_COMPUTE_BIT);
     if (queue_family_index == UINT32_MAX) {
-        printf("             No non-compute queue found; skipped.\n");
+        printf("%s No non-compute queue supporting graphics found; skipped.\n", kSkipPrefix);
         return;  // NOTE: this exits the test function!
     }
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, VALIDATION_ERROR_1b80093e);
@@ -12113,7 +12125,7 @@ TEST_F(VkPositiveLayerTest, OwnershipTranfersImage) {
 
     uint32_t no_gfx = m_device->QueueFamilyWithoutCapabilities(VK_QUEUE_GRAPHICS_BIT);
     if (no_gfx == UINT32_MAX) {
-        printf("             Required queue families not present (non-graphics capable required).\n");
+        printf("%s Required queue families not present (non-graphics capable required).\n", kSkipPrefix);
         return;
     }
     VkQueueObj *no_gfx_queue = m_device->queue_family_queues(no_gfx)[0].get();
@@ -12155,7 +12167,7 @@ TEST_F(VkPositiveLayerTest, OwnershipTranfersBuffer) {
 
     uint32_t no_gfx = m_device->QueueFamilyWithoutCapabilities(VK_QUEUE_GRAPHICS_BIT);
     if (no_gfx == UINT32_MAX) {
-        printf("             Required queue families not present (non-graphics capable required).\n");
+        printf("%s Required queue families not present (non-graphics capable required).\n", kSkipPrefix);
         return;
     }
     VkQueueObj *no_gfx_queue = m_device->queue_family_queues(no_gfx)[0].get();
@@ -12262,11 +12274,13 @@ TEST_F(VkLayerTest, InvalidBarrierQueueFamily) {
 
     if (m_device->props.apiVersion >= VK_API_VERSION_1_1) {
         printf(
-            "             Device has apiVersion greater than 1.0 -- skipping test cases that require external memory to be "
-            "disabled.\n");
+            "%s Device has apiVersion greater than 1.0 -- skipping test cases that require external memory "
+            "to be "
+            "disabled.\n",
+            kSkipPrefix);
     } else {
         if (only_one_family) {
-            printf("             Single queue family found -- VK_SHARING_MODE_CONCURRENT testcases skipped.\n");
+            printf("%s Single queue family found -- VK_SHARING_MODE_CONCURRENT testcases skipped.\n", kSkipPrefix);
         } else {
             std::vector<uint32_t> families = {submit_family, other_family};
             BarrierQueueFamilyTestHelper conc_test(*this);
@@ -12291,7 +12305,7 @@ TEST_F(VkLayerTest, InvalidBarrierQueueFamily) {
     }
 
     if (only_one_family) {
-        printf("             Single queue family found -- VK_SHARING_MODE_EXCLUSIVE submit testcases skipped.\n");
+        printf("%s Single queue family found -- VK_SHARING_MODE_EXCLUSIVE submit testcases skipped.\n", kSkipPrefix);
     } else {
         BarrierQueueFamilyTestHelper excl_test(*this);
         excl_test.Init(nullptr);
@@ -12314,7 +12328,7 @@ TEST_F(VkLayerTest, InvalidBarrierQueueFamilyWithMemExt) {
         if (InstanceExtensionSupported(extension_name)) {
             m_instance_extension_names.push_back(extension_name);
         } else {
-            printf("             Required instance extension %s not supported, skipping test\n", extension_name);
+            printf("%s Required instance extension %s not supported, skipping test\n", kSkipPrefix, extension_name);
             return;
         }
     }
@@ -12324,7 +12338,7 @@ TEST_F(VkLayerTest, InvalidBarrierQueueFamilyWithMemExt) {
     if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
     } else {
-        printf("             External memory extension not supported, skipping test\n");
+        printf("%s External memory extension not supported, skipping test\n", kSkipPrefix);
         return;
     }
 
@@ -12337,7 +12351,7 @@ TEST_F(VkLayerTest, InvalidBarrierQueueFamilyWithMemExt) {
     const bool only_one_family = invalid == 1;
 
     if (only_one_family) {
-        printf("             Single queue family found -- VK_SHARING_MODE_CONCURRENT testcases skipped.\n");
+        printf("%s Single queue family found -- VK_SHARING_MODE_CONCURRENT testcases skipped.\n", kSkipPrefix);
     } else {
         std::vector<uint32_t> families = {submit_family, other_family};
         BarrierQueueFamilyTestHelper conc_test(*this);
@@ -12620,7 +12634,7 @@ TEST_F(VkLayerTest, ValidationCacheTestBadMerge) {
     if (DeviceExtensionSupported(gpu(), "VK_LAYER_LUNARG_core_validation", VK_EXT_VALIDATION_CACHE_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_EXT_VALIDATION_CACHE_EXTENSION_NAME);
     } else {
-        printf("             %s not supported, skipping test\n", VK_EXT_VALIDATION_CACHE_EXTENSION_NAME);
+        printf("%s %s not supported, skipping test\n", kSkipPrefix, VK_EXT_VALIDATION_CACHE_EXTENSION_NAME);
         return;
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
@@ -12633,7 +12647,7 @@ TEST_F(VkLayerTest, ValidationCacheTestBadMerge) {
     auto fpMergeValidationCaches =
         (PFN_vkMergeValidationCachesEXT)vkGetDeviceProcAddr(m_device->device(), "vkMergeValidationCachesEXT");
     if (!fpCreateValidationCache || !fpDestroyValidationCache || !fpMergeValidationCaches) {
-        printf("             Failed to load function pointers for %s\n", VK_EXT_VALIDATION_CACHE_EXTENSION_NAME);
+        printf("%s Failed to load function pointers for %s\n", kSkipPrefix, VK_EXT_VALIDATION_CACHE_EXTENSION_NAME);
         return;
     }
 
@@ -12789,6 +12803,7 @@ TEST_F(VkLayerTest, InvalidQueueFamilyIndex) {
         bool pass = false;
         pass = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
         if (!pass) {
+            printf("%s Failed to allocate required memory.\n", kSkipPrefix);
             vkDestroyBuffer(m_device->device(), ib2, NULL);
             return;
         }
@@ -12965,6 +12980,7 @@ TEST_F(VkLayerTest, DSBufferInfoErrors) {
     mem_alloc.memoryTypeIndex = 0;
     bool pass = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &mem_alloc, 0);
     if (!pass) {
+        printf("%s Failed to allocate memory.\n", kSkipPrefix);
         vkDestroyBuffer(m_device->device(), buffer, NULL);
         return;
     }
@@ -13069,7 +13085,7 @@ TEST_F(VkLayerTest, DSBufferLimitErrors) {
         mem_alloc.allocationSize = mem_reqs.size;
         bool pass = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &mem_alloc, 0);
         if (!pass) {
-            printf("             Failed to allocate memory in DSBufferLimitErrors; skipped.\n");
+            printf("%s Failed to allocate memory in DSBufferLimitErrors; skipped.\n", kSkipPrefix);
             vkDestroyBuffer(m_device->device(), buffer, NULL);
             continue;
         }
@@ -13077,7 +13093,7 @@ TEST_F(VkLayerTest, DSBufferLimitErrors) {
         VkDeviceMemory mem;
         err = vkAllocateMemory(m_device->device(), &mem_alloc, NULL, &mem);
         if (VK_SUCCESS != err) {
-            printf("             Failed to allocate memory in DSBufferLimitErrors; skipped.\n");
+            printf("%s Failed to allocate memory in DSBufferLimitErrors; skipped.\n", kSkipPrefix);
             vkDestroyBuffer(m_device->device(), buffer, NULL);
             continue;
         }
@@ -13129,7 +13145,7 @@ TEST_F(VkLayerTest, DSAspectBitsErrors) {
     ASSERT_NO_FATAL_FAILURE(Init());
     auto depth_format = FindSupportedDepthStencilFormat(gpu());
     if (!depth_format) {
-        printf("             No Depth + Stencil format found. Skipped.\n");
+        printf("%s No Depth + Stencil format found. Skipped.\n", kSkipPrefix);
         return;
     }
 
@@ -13231,7 +13247,7 @@ TEST_F(VkLayerTest, DSUpdateOutOfBounds) {
     VkBufferTest buffer_test(m_device, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
     if (!buffer_test.GetBufferCurrent()) {
         // Something prevented creation of buffer so abort
-        printf("             Buffer creation failed, skipping test\n");
+        printf("%s Buffer creation failed, skipping test\n", kSkipPrefix);
         return;
     }
 
@@ -13706,7 +13722,7 @@ TEST_F(VkLayerTest, Maint1BindingSliceOf3DImage) {
     if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE1_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
     } else {
-        printf(VK_KHR_MAINTENANCE1_EXTENSION_NAME " is not supported; skipping\n");
+        printf("%s %s is not supported; skipping\n", kSkipPrefix, VK_KHR_MAINTENANCE1_EXTENSION_NAME);
         return;
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
@@ -14250,7 +14266,7 @@ TEST_F(VkLayerTest, InvalidImageLayout) {
     ASSERT_NO_FATAL_FAILURE(Init());
     auto depth_format = FindSupportedDepthStencilFormat(gpu());
     if (!depth_format) {
-        printf("             No Depth + Stencil format found. Skipped.\n");
+        printf("%s No Depth + Stencil format found. Skipped.\n", kSkipPrefix);
         return;
     }
     // Create src & dst images to use for copy operations
@@ -14561,7 +14577,7 @@ TEST_F(VkLayerTest, InvalidStorageImageLayout) {
     } else if (format_properties.optimalTilingFeatures & VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT) {
         tiling = VK_IMAGE_TILING_OPTIMAL;
     } else {
-        printf("             Device does not support VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT; skipped.\n");
+        printf("%s Device does not support VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT; skipped.\n", kSkipPrefix);
         return;
     }
 
@@ -15143,6 +15159,7 @@ TEST_F(VkLayerTest, CreateImageViewBreaksParameterCompatibilityRequirements) {
     // If not, skip this part of the test.
     if (res || !m_device->phy().features().sparseBinding ||
         !DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE1_EXTENSION_NAME)) {
+        printf("%s %s is not supported.\n", kSkipPrefix, VK_KHR_MAINTENANCE1_EXTENSION_NAME);
         return;
     }
 
@@ -15196,7 +15213,10 @@ TEST_F(VkLayerTest, CreateImageViewBreaksParameterCompatibilityRequirements) {
 TEST_F(VkLayerTest, CreateImageViewFormatFeatureMismatch) {
     TEST_DESCRIPTION("Create view with a format that does not have the same features as the image format.");
 
-    if (!EnableDeviceProfileLayer()) return;
+    if (!EnableDeviceProfileLayer()) {
+        printf("%s Failed to enable device profile layer.\n", kSkipPrefix);
+        return;
+    }
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
     ASSERT_NO_FATAL_FAILURE(InitState());
@@ -15206,6 +15226,7 @@ TEST_F(VkLayerTest, CreateImageViewFormatFeatureMismatch) {
 
     // Load required functions
     if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceFormatPropertiesEXT, fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT)) {
+        printf("%s Failed to device profile layer.\n", kSkipPrefix);
         return;
     }
 
@@ -15291,7 +15312,7 @@ TEST_F(VkLayerTest, CreateImageViewFormatFeatureMismatch) {
 
     // Only run this test if format supported
     if (!ImageFormatIsSupported(gpu(), VK_FORMAT_D24_UNORM_S8_UINT, VK_IMAGE_TILING_OPTIMAL)) {
-        printf("             VK_FORMAT_D24_UNORM_S8_UINT format not supported - skipped.\n");
+        printf("%s VK_FORMAT_D24_UNORM_S8_UINT format not supported - skipped.\n", kSkipPrefix);
         return;
     }
     // Modify formats to have mismatched features
@@ -15356,13 +15377,13 @@ TEST_F(VkLayerTest, InvalidImageViewUsageCreateInfo) {
     TEST_DESCRIPTION("Usage modification via a chained VkImageViewUsageCreateInfo struct");
 
     if (!EnableDeviceProfileLayer()) {
-        printf("             Test requires DeviceProfileLayer, unavailable - skipped.\n");
+        printf("%s Test requires DeviceProfileLayer, unavailable - skipped.\n", kSkipPrefix);
         return;
     }
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
     if (!DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE2_EXTENSION_NAME)) {
-        printf("             Test requires API >= 1.1 or KHR_MAINTENANCE2 extension, unavailable - skipped.\n");
+        printf("%s Test requires API >= 1.1 or KHR_MAINTENANCE2 extension, unavailable - skipped.\n", kSkipPrefix);
         return;
     }
     m_device_extension_names.push_back(VK_KHR_MAINTENANCE2_EXTENSION_NAME);
@@ -15373,6 +15394,7 @@ TEST_F(VkLayerTest, InvalidImageViewUsageCreateInfo) {
 
     // Load required functions
     if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceFormatPropertiesEXT, fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT)) {
+        printf("%s Required extensions are not avaiable.\n", kSkipPrefix);
         return;
     }
 
@@ -16038,7 +16060,7 @@ TEST_F(VkLayerTest, ColorBlendInvalidLogicOp) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     if (!m_device->phy().features().logicOp) {
-        printf("             Device does not support logicOp feature; skipped.\n");
+        printf("%s Device does not support logicOp feature; skipped.\n", kSkipPrefix);
         return;
     }
 
@@ -16314,7 +16336,7 @@ TEST_F(VkPositiveLayerTest, CreatePipelineComplexTypes) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     if (!m_device->phy().features().tessellationShader) {
-        printf("             Device does not support tessellation shaders; skipped.\n");
+        printf("%s Device does not support tessellation shaders; skipped.\n", kSkipPrefix);
         return;
     }
 
@@ -16715,7 +16737,7 @@ TEST_F(VkPositiveLayerTest, CreatePipelineCheckShaderCapabilityExtension1of2) {
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
     if (!DeviceExtensionSupported(gpu(), nullptr, VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME)) {
-        printf("             Extension %s not supported, skipping this pass. \n",
+        printf("%s Extension %s not supported, skipping this pass. \n", kSkipPrefix,
                VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME);
         return;
     }
@@ -16724,7 +16746,7 @@ TEST_F(VkPositiveLayerTest, CreatePipelineCheckShaderCapabilityExtension1of2) {
 
     // These tests require that the device support multiViewport
     if (!m_device->phy().features().multiViewport) {
-        printf("             Device does not support multiViewport, test skipped.\n");
+        printf("%s Device does not support multiViewport, test skipped.\n", kSkipPrefix);
         return;
     }
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -16757,7 +16779,7 @@ TEST_F(VkPositiveLayerTest, CreatePipelineCheckShaderCapabilityExtension2of2) {
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
     if (!DeviceExtensionSupported(gpu(), nullptr, VK_NV_VIEWPORT_ARRAY2_EXTENSION_NAME)) {
-        printf("             Extension %s not supported, skipping this pass. \n", VK_NV_VIEWPORT_ARRAY2_EXTENSION_NAME);
+        printf("%s Extension %s not supported, skipping this pass. \n", kSkipPrefix, VK_NV_VIEWPORT_ARRAY2_EXTENSION_NAME);
         return;
     }
     m_device_extension_names.push_back(VK_NV_VIEWPORT_ARRAY2_EXTENSION_NAME);
@@ -16765,7 +16787,7 @@ TEST_F(VkPositiveLayerTest, CreatePipelineCheckShaderCapabilityExtension2of2) {
 
     // These tests require that the device support multiViewport
     if (!m_device->phy().features().multiViewport) {
-        printf("             Device does not support multiViewport, test skipped.\n");
+        printf("%s Device does not support multiViewport, test skipped.\n", kSkipPrefix);
         return;
     }
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -17507,7 +17529,7 @@ TEST_F(VkLayerTest, CreatePipelineTessPatchDecorationMismatch) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     if (!m_device->phy().features().tessellationShader) {
-        printf("             Device does not support tessellation shaders; skipped.\n");
+        printf("%s Device does not support tessellation shaders; skipped.\n", kSkipPrefix);
         return;
     }
 
@@ -17573,7 +17595,7 @@ TEST_F(VkLayerTest, CreatePipelineTessErrors) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     if (!m_device->phy().features().tessellationShader) {
-        printf("             Device does not support tessellation shaders; skipped.\n");
+        printf("%s Device does not support tessellation shaders; skipped.\n", kSkipPrefix);
         return;
     }
 
@@ -18683,7 +18705,10 @@ TEST_F(VkLayerTest, ImageLayerUnsupportedFormat) {
 TEST_F(VkLayerTest, CreateImageViewFormatMismatchUnrelated) {
     TEST_DESCRIPTION("Create an image with a color format, then try to create a depth view of it");
 
-    if (!EnableDeviceProfileLayer()) return;
+    if (!EnableDeviceProfileLayer()) {
+        printf("%s Failed to enable device profile layer.\n", kSkipPrefix);
+        return;
+    }
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
     ASSERT_NO_FATAL_FAILURE(InitState());
@@ -18696,12 +18721,13 @@ TEST_F(VkLayerTest, CreateImageViewFormatMismatchUnrelated) {
                                                                                   "vkGetOriginalPhysicalDeviceFormatPropertiesEXT");
 
     if (!(fpvkSetPhysicalDeviceFormatPropertiesEXT) || !(fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT)) {
-        printf("             Can't find device_profile_api functions; skipped.\n");
+        printf("%s Can't find device_profile_api functions; skipped.\n", kSkipPrefix);
         return;
     }
 
     auto depth_format = FindSupportedDepthStencilFormat(gpu());
     if (!depth_format) {
+        printf("%s Couldn't find depth stencil image format.\n", kSkipPrefix);
         return;
     }
 
@@ -18737,7 +18763,10 @@ TEST_F(VkLayerTest, CreateImageViewFormatMismatchUnrelated) {
 TEST_F(VkLayerTest, CreateImageViewNoMutableFormatBit) {
     TEST_DESCRIPTION("Create an image view with a different format, when the image does not have MUTABLE_FORMAT bit");
 
-    if (!EnableDeviceProfileLayer()) return;
+    if (!EnableDeviceProfileLayer()) {
+        printf("%s Couldn't enable device profile layer.\n", kSkipPrefix);
+        return;
+    }
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
     ASSERT_NO_FATAL_FAILURE(InitState());
@@ -18747,6 +18776,7 @@ TEST_F(VkLayerTest, CreateImageViewNoMutableFormatBit) {
 
     // Load required functions
     if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceFormatPropertiesEXT, fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT)) {
+        printf("%s Required extensions are not present.\n", kSkipPrefix);
         return;
     }
 
@@ -18784,7 +18814,7 @@ TEST_F(VkLayerTest, CreateImageViewDifferentClass) {
     ASSERT_NO_FATAL_FAILURE(Init());
 
     if (!(m_device->format_properties(VK_FORMAT_R8_UINT).optimalTilingFeatures & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT)) {
-        printf("Device does not support R8_UINT as color attachment; skipped");
+        printf("%s Device does not support R8_UINT as color attachment; skipped", kSkipPrefix);
         return;
     }
 
@@ -18843,7 +18873,7 @@ TEST_F(VkLayerTest, MultiplaneIncompatibleViewFormat) {
         m_device_extension_names.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
         m_device_extension_names.push_back(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
     } else {
-        printf("             test requires KHR multiplane extensions, not available.  Skipping.\n");
+        printf("%s test requires KHR multiplane extensions, not available.  Skipping.\n", kSkipPrefix);
         return;
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
@@ -18867,7 +18897,7 @@ TEST_F(VkLayerTest, MultiplaneIncompatibleViewFormat) {
     VkFormatFeatureFlags features = VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT;
     bool supported = ImageFormatAndFeaturesSupported(instance(), gpu(), ci, features);
     if (!supported) {
-        printf("             Multiplane image format not supported.  Skipping test.\n");
+        printf("%s Multiplane image format not supported.  Skipping test.\n", kSkipPrefix);
         return;
     }
 
@@ -19038,7 +19068,7 @@ TEST_F(VkLayerTest, CompressedImageMipCopyTests) {
     } else if (device_features.textureCompressionASTC_LDR) {
         compressed_format = VK_FORMAT_ASTC_4x4_UNORM_BLOCK;
     } else {
-        printf("             No compressed formats supported - CompressedImageMipCopyTests skipped.\n");
+        printf("%s No compressed formats supported - CompressedImageMipCopyTests skipped.\n", kSkipPrefix);
         return;
     }
 
@@ -19205,7 +19235,7 @@ TEST_F(VkLayerTest, ImageBufferCopyTests) {
     ASSERT_NO_FATAL_FAILURE(Init());
     VkFormatProperties format_props = m_device->format_properties(VK_FORMAT_D24_UNORM_S8_UINT);
     if (!(format_props.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT)) {
-        printf("             VK_FORMAT_D24_UNORM_S8_UINT not supported. Skipped.\n");
+        printf("%s VK_FORMAT_D24_UNORM_S8_UINT not supported. Skipped.\n", kSkipPrefix);
         return;
     }
 
@@ -19215,7 +19245,7 @@ TEST_F(VkLayerTest, ImageBufferCopyTests) {
     if ((queue_family_properties[index].minImageTransferGranularity.depth == 0) ||
         (queue_family_properties[index].minImageTransferGranularity.width == 0) ||
         (queue_family_properties[index].minImageTransferGranularity.height == 0)) {
-        printf("             Subresource copies are disallowed when xfer granularity (x|y|z) is 0. Skipped.\n");
+        printf("%s Subresource copies are disallowed when xfer granularity (x|y|z) is 0. Skipped.\n", kSkipPrefix);
         return;
     }
 
@@ -19391,7 +19421,7 @@ TEST_F(VkLayerTest, ImageBufferCopyTests) {
 
     // Test Depth/Stencil copies
     if (missing_ds_support) {
-        printf("             Depth / Stencil formats unsupported - skipping D/S tests.\n");
+        printf("%s Depth / Stencil formats unsupported - skipping D/S tests.\n", kSkipPrefix);
     } else {
         VkBufferImageCopy ds_region = {};
         ds_region.bufferOffset = 0;
@@ -19487,7 +19517,7 @@ TEST_F(VkLayerTest, ImageBufferCopyTests) {
     ASSERT_NO_FATAL_FAILURE(GetPhysicalDeviceFeatures(&device_features));
     if (!(device_features.textureCompressionBC || device_features.textureCompressionETC2 ||
           device_features.textureCompressionASTC_LDR)) {
-        printf("             No compressed formats supported - block compression tests skipped.\n");
+        printf("%s No compressed formats supported - block compression tests skipped.\n", kSkipPrefix);
     } else {
         VkImageObj image_16k_4x4comp(m_device);   // 128^2 texels as 32^2 compressed (4x4) blocks, 16k
         VkImageObj image_NPOT_4x4comp(m_device);  // 130^2 texels as 33^2 compressed (4x4) blocks
@@ -20107,7 +20137,7 @@ TEST_F(VkLayerTest, CreateImageMaxLimitsViolation) {
             vkCreateImage(m_device->handle(), &image_ci, NULL, &null_image);
             m_errorMonitor->VerifyFound();
         } else {
-            printf("             1D VkImageFormatProperties::maxExtent is already UINT32_MAX; skipping part of test.\n");
+            printf("%s 1D VkImageFormatProperties::maxExtent is already UINT32_MAX; skipping part of test.\n", kSkipPrefix);
         }
     }
 
@@ -20128,7 +20158,7 @@ TEST_F(VkLayerTest, CreateImageMaxLimitsViolation) {
             vkCreateImage(m_device->handle(), &image_ci, NULL, &null_image);
             m_errorMonitor->VerifyFound();
         } else {
-            printf("             2D VkImageFormatProperties::maxExtent is already UINT32_MAX; skipping part of test.\n");
+            printf("%s 2D VkImageFormatProperties::maxExtent is already UINT32_MAX; skipping part of test.\n", kSkipPrefix);
         }
 
         if (img_limits.maxExtent.height != UINT32_MAX) {
@@ -20138,7 +20168,7 @@ TEST_F(VkLayerTest, CreateImageMaxLimitsViolation) {
             vkCreateImage(m_device->handle(), &image_ci, NULL, &null_image);
             m_errorMonitor->VerifyFound();
         } else {
-            printf("             2D VkImageFormatProperties::maxExtent is already UINT32_MAX; skipping part of test.\n");
+            printf("%s 2D VkImageFormatProperties::maxExtent is already UINT32_MAX; skipping part of test.\n", kSkipPrefix);
         }
     }
 
@@ -20161,7 +20191,7 @@ TEST_F(VkLayerTest, CreateImageMaxLimitsViolation) {
             vkCreateImage(m_device->handle(), &image_ci, NULL, &null_image);
             m_errorMonitor->VerifyFound();
         } else {
-            printf("             CUBE VkImageFormatProperties::maxExtent is already UINT32_MAX; skipping part of test.\n");
+            printf("%s CUBE VkImageFormatProperties::maxExtent is already UINT32_MAX; skipping part of test.\n", kSkipPrefix);
         }
     }
 
@@ -20183,7 +20213,7 @@ TEST_F(VkLayerTest, CreateImageMaxLimitsViolation) {
             vkCreateImage(m_device->handle(), &image_ci, NULL, &null_image);
             m_errorMonitor->VerifyFound();
         } else {
-            printf("             3D VkImageFormatProperties::maxExtent is already UINT32_MAX; skipping part of test.\n");
+            printf("%s 3D VkImageFormatProperties::maxExtent is already UINT32_MAX; skipping part of test.\n", kSkipPrefix);
         }
 
         if (img_limits.maxExtent.height != UINT32_MAX) {
@@ -20193,7 +20223,7 @@ TEST_F(VkLayerTest, CreateImageMaxLimitsViolation) {
             vkCreateImage(m_device->handle(), &image_ci, NULL, &null_image);
             m_errorMonitor->VerifyFound();
         } else {
-            printf("             3D VkImageFormatProperties::maxExtent is already UINT32_MAX; skipping part of test.\n");
+            printf("%s 3D VkImageFormatProperties::maxExtent is already UINT32_MAX; skipping part of test.\n", kSkipPrefix);
         }
 
         if (img_limits.maxExtent.depth != UINT32_MAX) {
@@ -20203,7 +20233,7 @@ TEST_F(VkLayerTest, CreateImageMaxLimitsViolation) {
             vkCreateImage(m_device->handle(), &image_ci, NULL, &null_image);
             m_errorMonitor->VerifyFound();
         } else {
-            printf("             3D VkImageFormatProperties::maxExtent is already UINT32_MAX; skipping part of test.\n");
+            printf("%s 3D VkImageFormatProperties::maxExtent is already UINT32_MAX; skipping part of test.\n", kSkipPrefix);
         }
     }
 
@@ -20236,7 +20266,7 @@ TEST_F(VkLayerTest, CreateImageMaxLimitsViolation) {
             vkCreateImage(m_device->handle(), &image_ci, NULL, &null_image);
             m_errorMonitor->VerifyFound();
         } else {
-            printf("             Cannot find a format to test maxMipLevels limit; skipping part of test.\n");
+            printf("%s Cannot find a format to test maxMipLevels limit; skipping part of test.\n", kSkipPrefix);
         }
     }
 
@@ -20253,7 +20283,7 @@ TEST_F(VkLayerTest, CreateImageMaxLimitsViolation) {
             vkCreateImage(m_device->handle(), &image_ci, NULL, &null_image);
             m_errorMonitor->VerifyFound();
         } else {
-            printf("             VkImageFormatProperties::maxArrayLayers is already UINT32_MAX; skipping part of test.\n");
+            printf("%s VkImageFormatProperties::maxArrayLayers is already UINT32_MAX; skipping part of test.\n", kSkipPrefix);
         }
     }
 
@@ -20266,7 +20296,7 @@ TEST_F(VkLayerTest, CreateImageMaxLimitsViolation) {
             vkCreateImage(m_device->handle(), &image_ci, NULL, &null_image);
             m_errorMonitor->VerifyFound();
         } else {
-            printf("             Could not find a format with some unsupported samples; skipping part of test.\n");
+            printf("%s Could not find a format with some unsupported samples; skipping part of test.\n", kSkipPrefix);
         }
     }
 
@@ -20287,7 +20317,7 @@ TEST_F(VkLayerTest, CreateImageMaxLimitsViolation) {
             vkCreateImage(m_device->handle(), &image_ci, NULL, &null_image);
             m_errorMonitor->VerifyFound();
         } else {
-            printf("             VkPhysicalDeviceLimits::maxFramebufferWidth is already UINT32_MAX; skipping part of test.\n");
+            printf("%s VkPhysicalDeviceLimits::maxFramebufferWidth is already UINT32_MAX; skipping part of test.\n", kSkipPrefix);
         }
 
         if (dev_limits.maxFramebufferHeight != UINT32_MAX) {
@@ -20301,7 +20331,7 @@ TEST_F(VkLayerTest, CreateImageMaxLimitsViolation) {
             vkCreateImage(m_device->handle(), &image_ci, NULL, &null_image);
             m_errorMonitor->VerifyFound();
         } else {
-            printf("             VkPhysicalDeviceLimits::maxFramebufferHeight is already UINT32_MAX; skipping part of test.\n");
+            printf("%s VkPhysicalDeviceLimits::maxFramebufferHeight is already UINT32_MAX; skipping part of test.\n", kSkipPrefix);
         }
     }
 }
@@ -20401,7 +20431,8 @@ TEST_F(VkLayerTest, CreateImageFormatSupportErrors) {
             m_errorMonitor->VerifyFound();
 
         } else {
-            printf("             Failed to find image unsupported by vkGetPhysicalDeviceImageFormatProperties; skipping test.\n");
+            printf("%s Failed to find image unsupported by vkGetPhysicalDeviceImageFormatProperties; skipping test.\n",
+                   kSkipPrefix);
         }
     }
 }
@@ -20571,7 +20602,7 @@ TEST_F(VkLayerTest, CopyImageTypeExtentMismatchMaintenance1) {
     if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE1_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
     } else {
-        printf("             Maintenance1 extension cannot be enabled, test skipped.\n");
+        printf("%s Maintenance1 extension cannot be enabled, test skipped.\n", kSkipPrefix);
         return;
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
@@ -20694,7 +20725,7 @@ TEST_F(VkLayerTest, CopyImageCompressedBlockAlignment) {
     VkImageFormatProperties img_prop = {};
     if (VK_SUCCESS != vkGetPhysicalDeviceImageFormatProperties(m_device->phy().handle(), ci.format, ci.imageType, ci.tiling,
                                                                ci.usage, ci.flags, &img_prop)) {
-        printf("             No compressed formats supported - CopyImageCompressedBlockAlignment skipped.\n");
+        printf("%s No compressed formats supported - CopyImageCompressedBlockAlignment skipped.\n", kSkipPrefix);
         return;
     }
 
@@ -20821,7 +20852,7 @@ TEST_F(VkLayerTest, CopyImageSinglePlane422Alignment) {
         m_device_extension_names.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
         m_device_extension_names.push_back(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
     } else {
-        printf("             test requires KHR multiplane extensions, not available.  Skipping.\n");
+        printf("%s test requires KHR multiplane extensions, not available.  Skipping.\n", kSkipPrefix);
         return;
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
@@ -20847,7 +20878,7 @@ TEST_F(VkLayerTest, CopyImageSinglePlane422Alignment) {
     VkFormatFeatureFlags features = VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT;
     bool supported = ImageFormatAndFeaturesSupported(instance(), gpu(), ci, features);
     if (!supported) {
-        printf("             Single-plane _422 image format not supported.  Skipping test.\n");
+        printf("%s Single-plane _422 image format not supported.  Skipping test.\n", kSkipPrefix);
         return;  // Assume there's low ROI on searching for different mp formats
     }
 
@@ -20931,7 +20962,7 @@ TEST_F(VkLayerTest, CopyImageMultiplaneAspectBits) {
         m_device_extension_names.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
         m_device_extension_names.push_back(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
     } else {
-        printf("             test requires KHR multiplane extensions, not available.  Skipping.\n");
+        printf("%s test requires KHR multiplane extensions, not available.  Skipping.\n", kSkipPrefix);
         return;
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
@@ -20963,7 +20994,7 @@ TEST_F(VkLayerTest, CopyImageMultiplaneAspectBits) {
     ci.format = mp3_format;
     supported = supported && ImageFormatAndFeaturesSupported(instance(), gpu(), ci, features);
     if (!supported) {
-        printf("             Multiplane image formats not supported.  Skipping test.\n");
+        printf("%s Multiplane image formats not supported.  Skipping test.\n", kSkipPrefix);
         return;  // Assume there's low ROI on searching for different mp formats
     }
 
@@ -21249,7 +21280,7 @@ TEST_F(VkLayerTest, CopyImageFormatSizeMismatch) {
     vkGetPhysicalDeviceFormatProperties(m_device->phy().handle(), image_create_info.format, &properties);
     if (properties.optimalTilingFeatures == 0) {
         vkDestroyImage(m_device->device(), srcImage, NULL);
-        printf("             Image format not supported; skipped.\n");
+        printf("%s Image format not supported; skipped.\n", kSkipPrefix);
         return;
     }
 
@@ -21316,13 +21347,14 @@ TEST_F(VkLayerTest, CopyImageDepthStencilFormatMismatch) {
     ASSERT_NO_FATAL_FAILURE(Init());
     auto depth_format = FindSupportedDepthStencilFormat(gpu());
     if (!depth_format) {
+        printf("%s Couldn't depth stencil image format.\n", kSkipPrefix);
         return;
     }
 
     VkFormatProperties properties;
     vkGetPhysicalDeviceFormatProperties(m_device->phy().handle(), VK_FORMAT_D32_SFLOAT, &properties);
     if (properties.optimalTilingFeatures == 0) {
-        printf("             Image format not supported; skipped.\n");
+        printf("%s Image format not supported; skipped.\n", kSkipPrefix);
         return;
     }
 
@@ -21376,7 +21408,7 @@ TEST_F(VkLayerTest, CopyImageSampleCountMismatch) {
 
     if ((0 == (VK_SAMPLE_COUNT_2_BIT & image_format_properties.sampleCounts)) ||
         (0 == (VK_SAMPLE_COUNT_4_BIT & image_format_properties.sampleCounts))) {
-        printf("             Image multi-sample support not found; skipped.\n");
+        printf("%s Image multi-sample support not found; skipped.\n", kSkipPrefix);
         return;
     }
 
@@ -21456,13 +21488,14 @@ TEST_F(VkLayerTest, CopyImageAspectMismatch) {
     ASSERT_NO_FATAL_FAILURE(Init());
     auto ds_format = FindSupportedDepthStencilFormat(gpu());
     if (!ds_format) {
+        printf("%s Couldn't find depth stencil format.\n", kSkipPrefix);
         return;
     }
 
     VkFormatProperties properties;
     vkGetPhysicalDeviceFormatProperties(m_device->phy().handle(), VK_FORMAT_D32_SFLOAT, &properties);
     if (properties.optimalTilingFeatures == 0) {
-        printf("             Image format VK_FORMAT_D32_SFLOAT not supported; skipped.\n");
+        printf("%s Image format VK_FORMAT_D32_SFLOAT not supported; skipped.\n", kSkipPrefix);
         return;
     }
     VkImageObj color_image(m_device), ds_image(m_device), depth_image(m_device);
@@ -21894,6 +21927,7 @@ TEST_F(VkLayerTest, DepthStencilImageViewWithColorAspectBitError) {
     ASSERT_NO_FATAL_FAILURE(Init());
     auto depth_format = FindSupportedDepthStencilFormat(gpu());
     if (!depth_format) {
+        printf("%s Couldn't find depth stencil format.\n", kSkipPrefix);
         return;
     }
 
@@ -22087,7 +22121,7 @@ TEST_F(VkLayerTest, CommandQueueFlags) {
 
     uint32_t queueFamilyIndex = m_device->QueueFamilyWithoutCapabilities(VK_QUEUE_GRAPHICS_BIT);
     if (queueFamilyIndex == UINT32_MAX) {
-        printf("             Non-graphics queue family not found; skipped.\n");
+        printf("%s Non-graphics queue family not found; skipped.\n", kSkipPrefix);
         return;
     } else {
         // Create command pool on a non-graphics queue
@@ -22141,7 +22175,7 @@ TEST_F(VkLayerTest, ExtensionNotEnabled) {
 
     // TODO: Main1 is ALWAYS enabled in 1.1.  Re-write test with an extension present in both 1.0 and 1.1
     if (m_device->props.apiVersion >= VK_API_VERSION_1_1) {
-        printf("             Device has apiVersion greater than 1.0 -- skipping extension enabled check.\n");
+        printf("%s Device has apiVersion greater than 1.0 -- skipping extension enabled check.\n", kSkipPrefix);
         return;
     }
 
@@ -22149,7 +22183,7 @@ TEST_F(VkLayerTest, ExtensionNotEnabled) {
     PFN_vkTrimCommandPoolKHR vkTrimCommandPoolKHR =
         (PFN_vkTrimCommandPoolKHR)vkGetDeviceProcAddr(m_device->handle(), "vkTrimCommandPoolKHR");
     if (vkTrimCommandPoolKHR == nullptr) {
-        printf("             Maintenance1 not supported by device; skipped.\n");
+        printf("%s Maintenance1 not supported by device; skipped.\n", kSkipPrefix);
         return;
     }
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
@@ -22164,7 +22198,7 @@ TEST_F(VkLayerTest, Maintenance1AndNegativeViewport) {
     ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
     if (!((DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE1_EXTENSION_NAME)) &&
           (DeviceExtensionSupported(gpu(), nullptr, VK_AMD_NEGATIVE_VIEWPORT_HEIGHT_EXTENSION_NAME)))) {
-        printf("             Maintenance1 and AMD_negative viewport height extensions not supported, skipping test\n");
+        printf("%s Maintenance1 and AMD_negative viewport height extensions not supported, skipping test\n", kSkipPrefix);
         return;
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
@@ -22393,7 +22427,7 @@ TEST_F(VkLayerTest, SetDynViewportParamMaintenance1Tests) {
     if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE1_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
     } else {
-        printf("             VK_KHR_maintenance1 extension not supported -- skipping test\n");
+        printf("%s VK_KHR_maintenance1 extension not supported -- skipping test\n", kSkipPrefix);
         return;
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
@@ -22423,7 +22457,7 @@ TEST_F(VkLayerTest, SetDynViewportParamMultiviewportTests) {
     ASSERT_NO_FATAL_FAILURE(Init());
 
     if (!m_device->phy().features().multiViewport) {
-        printf("             VkPhysicalDeviceFeatures::multiViewport is not supported -- skipping test.\n");
+        printf("%s VkPhysicalDeviceFeatures::multiViewport is not supported -- skipping test.\n", kSkipPrefix);
         return;
     }
 
@@ -22442,8 +22476,10 @@ TEST_F(VkLayerTest, SetDynViewportParamMultiviewportTests) {
 
     if (max_viewports >= too_many_viewports) {
         printf(
-            "             VkPhysicalDeviceLimits::maxViewports is too large to practically test against -- skipping part of "
-            "test.\n");
+            "%s VkPhysicalDeviceLimits::maxViewports is too large to practically test against -- skipping "
+            "part of "
+            "test.\n",
+            kSkipPrefix);
         return;
     }
 
@@ -22483,7 +22519,7 @@ TEST_F(VkPositiveLayerTest, UncompressedToCompressedImageCopy) {
                                          VK_FORMAT_FEATURE_TRANSFER_SRC_BIT_KHR | VK_FORMAT_FEATURE_TRANSFER_DST_BIT_KHR) ||
         !ImageFormatAndFeaturesSupported(gpu(), VK_FORMAT_BC1_RGBA_SRGB_BLOCK, VK_IMAGE_TILING_OPTIMAL,
                                          VK_FORMAT_FEATURE_TRANSFER_SRC_BIT_KHR | VK_FORMAT_FEATURE_TRANSFER_DST_BIT_KHR)) {
-        printf("             Required formats/features not supported - UncompressedToCompressedImageCopy skipped.\n");
+        printf("%s Required formats/features not supported - UncompressedToCompressedImageCopy skipped.\n", kSkipPrefix);
         return;
     }
 
@@ -22496,7 +22532,7 @@ TEST_F(VkPositiveLayerTest, UncompressedToCompressedImageCopy) {
                                   VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, VK_IMAGE_TILING_OPTIMAL);
 
     if (!uncomp_10x10t_image.initialized() || !comp_10x10b_40x40t_image.initialized()) {
-        printf("             Unable to initialize surfaces - UncompressedToCompressedImageCopy skipped.\n");
+        printf("%s Unable to initialize surfaces - UncompressedToCompressedImageCopy skipped.\n", kSkipPrefix);
         return;
     }
 
@@ -22731,6 +22767,7 @@ TEST_F(VkPositiveLayerTest, SecondaryCommandBufferImageLayoutTransitions) {
     ASSERT_NO_FATAL_FAILURE(Init());
     auto depth_format = FindSupportedDepthStencilFormat(gpu());
     if (!depth_format) {
+        printf("%s Couldn't find depth stencil format.\n", kSkipPrefix);
         return;
     }
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -23081,7 +23118,7 @@ TEST_F(VkLayerTest, InvalidPushDescriptorSetLayout) {
     if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
         m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     } else {
-        printf("             Did not find VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME; skipped.\n");
+        printf("%s Did not find VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME; skipped.\n", kSkipPrefix);
         return;
     }
 
@@ -23089,7 +23126,7 @@ TEST_F(VkLayerTest, InvalidPushDescriptorSetLayout) {
     if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
     } else {
-        printf("             %s Extension not supported, skipping tests\n", VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
+        printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
         return;
     }
 
@@ -23132,7 +23169,7 @@ TEST_F(VkLayerTest, InvalidPushDescriptorSetLayout) {
         binding.descriptorCount = push_descriptor_prop.maxPushDescriptors + 1;
         test_create_ds_layout(VALIDATION_ERROR_05000232);
     } else {
-        printf("             maxPushDescriptors is set to maximum unit32_t value, skipping 'out of range test'.\n");
+        printf("%s maxPushDescriptors is set to maximum unit32_t value, skipping 'out of range test'.\n", kSkipPrefix);
     }
 }
 
@@ -23188,7 +23225,7 @@ TEST_F(VkLayerTest, DescriptorIndexingSetLayout) {
         if (InstanceExtensionSupported(instance_ext)) {
             m_instance_extension_names.push_back(instance_ext);
         } else {
-            printf("             Did not find required instance extension %s; skipped.\n", instance_ext);
+            printf("%s Did not find required instance extension %s; skipped.\n", kSkipPrefix, instance_ext);
             return;
         }
     }
@@ -23196,7 +23233,7 @@ TEST_F(VkLayerTest, DescriptorIndexingSetLayout) {
     if (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
     } else {
-        printf("             %s Extension not supported, skipping tests\n", VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+        printf("%s %s Extension not supported.\n", kSkipPrefix, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
         return;
     }
 
@@ -23310,7 +23347,7 @@ TEST_F(VkLayerTest, DescriptorIndexingUpdateAfterBind) {
     if (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
     } else {
-        printf("             %s Extension not supported, skipping tests\n", VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+        printf("%s Descriptor Indexing or Maintenance3 Extension not supported, skipping tests\n", kSkipPrefix);
         return;
     }
 
@@ -23322,7 +23359,7 @@ TEST_F(VkLayerTest, DescriptorIndexingUpdateAfterBind) {
     indexingFeatures.descriptorBindingUniformBufferUpdateAfterBind = VK_FALSE;
 
     if (VK_FALSE == indexingFeatures.descriptorBindingStorageBufferUpdateAfterBind) {
-        printf("             Test requires (unsupported) descriptorBindingStorageBufferUpdateAfterBind, skipping\n");
+        printf("%s Test requires (unsupported) descriptorBindingStorageBufferUpdateAfterBind, skipping\n", kSkipPrefix);
         return;
     }
 
@@ -23495,7 +23532,8 @@ TEST_F(VkLayerTest, AllocatePushDescriptorSet) {
     if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
         m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     } else {
-        printf("             %s Extension not supported, skipping tests\n", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix,
+               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
         return;
     }
 
@@ -23503,7 +23541,7 @@ TEST_F(VkLayerTest, AllocatePushDescriptorSet) {
     if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
     } else {
-        printf("             %s Extension not supported, skipping tests\n", VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
+        printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
         return;
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
@@ -23545,7 +23583,8 @@ TEST_F(VkLayerTest, PushDescriptorSetCmdPushBadArgs) {
     if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
         m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     } else {
-        printf("             %s Extension not supported, skipping tests\n", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix,
+               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
         return;
     }
 
@@ -23553,7 +23592,7 @@ TEST_F(VkLayerTest, PushDescriptorSetCmdPushBadArgs) {
     if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
     } else {
-        printf("             %s Extension not supported, skipping tests\n", VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
+        printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
         return;
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
@@ -23592,7 +23631,7 @@ TEST_F(VkLayerTest, PushDescriptorSetCmdPushBadArgs) {
     const uint32_t transfer_only_qfi =
         m_device->QueueFamilyMatching(VK_QUEUE_TRANSFER_BIT, (VK_QUEUE_COMPUTE_BIT | VK_QUEUE_GRAPHICS_BIT));
     if ((UINT32_MAX == transfer_only_qfi) && (UINT32_MAX == no_gfx_qfi)) {
-        printf("             No compute or transfer only queue family, skipping bindpoint and queue tests.");
+        printf("%s No compute or transfer only queue family, skipping bindpoint and queue tests.", kSkipPrefix);
     } else {
         const uint32_t err_qfi = (UINT32_MAX == no_gfx_qfi) ? transfer_only_qfi : no_gfx_qfi;
 
@@ -23721,7 +23760,7 @@ TEST_F(VkLayerTest, SetDynScissorParamMultiviewportTests) {
     ASSERT_NO_FATAL_FAILURE(Init());
 
     if (!m_device->phy().features().multiViewport) {
-        printf("             VkPhysicalDeviceFeatures::multiViewport is not supported -- skipping test.\n");
+        printf("%s VkPhysicalDeviceFeatures::multiViewport is not supported -- skipping test.\n", kSkipPrefix);
         return;
     }
 
@@ -23740,8 +23779,10 @@ TEST_F(VkLayerTest, SetDynScissorParamMultiviewportTests) {
 
     if (max_scissors >= too_many_scissors) {
         printf(
-            "             VkPhysicalDeviceLimits::maxViewports is too large to practically test against -- skipping part of "
-            "test.\n");
+            "%s VkPhysicalDeviceLimits::maxViewports is too large to practically test against -- skipping "
+            "part of "
+            "test.\n",
+            kSkipPrefix);
         return;
     }
 
@@ -23801,6 +23842,7 @@ TEST_F(VkPositiveLayerTest, EmptyDescriptorUpdateTest) {
     vkGetBufferMemoryRequirements(m_device->device(), buffer, &mem_reqs);
     bool pass = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &mem_alloc, 0);
     if (!pass) {
+        printf("%s Failed to allocate memory.\n", kSkipPrefix);
         vkDestroyBuffer(m_device->device(), buffer, NULL);
         return;
     }
@@ -23844,14 +23886,14 @@ TEST_F(VkLayerTest, MultiplePushDescriptorSets) {
     if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
         m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     } else {
-        printf("             Did not find VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME; skipped.\n");
+        printf("%s Did not find VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME; skipped.\n", kSkipPrefix);
         return;
     }
     ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
     if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
     } else {
-        printf("             Push Descriptors Extension not supported, skipping tests\n");
+        printf("%s Push Descriptors Extension not supported, skipping tests\n", kSkipPrefix);
         return;
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
@@ -23892,7 +23934,7 @@ TEST_F(VkLayerTest, CreateDescriptorUpdateTemplate) {
     if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
         m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     } else {
-        printf("             Did not find VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME; skipped.\n");
+        printf("%s Did not find VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME; skipped.\n", kSkipPrefix);
         return;
     }
     ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
@@ -23901,7 +23943,7 @@ TEST_F(VkLayerTest, CreateDescriptorUpdateTemplate) {
         m_device_extension_names.push_back(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
         m_device_extension_names.push_back(VK_KHR_DESCRIPTOR_UPDATE_TEMPLATE_EXTENSION_NAME);
     } else {
-        printf("             Push Descriptors and Descriptor Update Template Extensions not supported, skipping tests\n");
+        printf("%s Push Descriptors and Descriptor Update Template Extensions not supported, skipping tests\n", kSkipPrefix);
         return;
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
@@ -23979,14 +24021,14 @@ TEST_F(VkPositiveLayerTest, PushDescriptorNullDstSetTest) {
     if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
         m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     } else {
-        printf("             Did not find VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME; skipped.\n");
+        printf("%s Did not find VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME; skipped.\n", kSkipPrefix);
         return;
     }
     ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
     if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
     } else {
-        printf("             Push Descriptors Extension not supported, skipping tests\n");
+        printf("%s Push Descriptors Extension not supported, skipping tests\n", kSkipPrefix);
         return;
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
@@ -24039,14 +24081,14 @@ TEST_F(VkPositiveLayerTest, PushDescriptorUnboundSetTest) {
     if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
         m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     } else {
-        printf("             Did not find VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME; skipped.\n");
+        printf("%s Did not find VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME; skipped.\n", kSkipPrefix);
         return;
     }
     ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
     if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
     } else {
-        printf("             Push Descriptors Extension not supported, skipping tests\n");
+        printf("%s Push Descriptors Extension not supported, skipping tests\n", kSkipPrefix);
         return;
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
@@ -24208,6 +24250,7 @@ TEST_F(VkPositiveLayerTest, TestAliasedMemoryTracking) {
 
     pass = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
     if (!pass) {
+        printf("%s Failed to allocate memory.\n", kSkipPrefix);
         vkDestroyBuffer(m_device->device(), buffer, NULL);
         return;
     }
@@ -24238,7 +24281,7 @@ TEST_F(VkPositiveLayerTest, TestAliasedMemoryTracking) {
     vkGetPhysicalDeviceImageFormatProperties(gpu(), VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TYPE_2D, image_tiling,
                                              VK_IMAGE_USAGE_TRANSFER_SRC_BIT, 0, &image_format_properties);
     if (image_format_properties.maxExtent.width == 0) {
-        printf("             Image format not supported; skipped.\n");
+        printf("%s Image format not supported; skipped.\n", kSkipPrefix);
         vkFreeMemory(m_device->device(), mem, NULL);
         return;
     }
@@ -24278,6 +24321,7 @@ TEST_F(VkPositiveLayerTest, TestAliasedMemoryTracking) {
 
     pass = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &mem_alloc, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
     if (!pass) {
+        printf("%s Failed to allocate memory.\n", kSkipPrefix);
         vkFreeMemory(m_device->device(), mem, NULL);
         vkDestroyImage(m_device->device(), image, NULL);
         return;
@@ -24540,6 +24584,7 @@ TEST_F(VkPositiveLayerTest, DynamicOffsetWithInactiveBinding) {
     mem_alloc[1].allocationSize = mem_reqs2.size;
     pass &= m_device->phy().set_memory_type(mem_reqs2.memoryTypeBits, &mem_alloc[1], 0);
     if (!pass) {
+        printf("%s Failed to allocate memory.\n", kSkipPrefix);
         vkDestroyBuffer(m_device->device(), dyub1, NULL);
         vkDestroyBuffer(m_device->device(), dyub2, NULL);
         return;
@@ -24659,6 +24704,7 @@ TEST_F(VkPositiveLayerTest, NonCoherentMemoryMapping) {
                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT,
                 VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
             if (!pass) {
+                printf("%s Couldn't find a memory type wihtout a COHERENT bit.\n", kSkipPrefix);
                 return;
             }
         }
@@ -24910,8 +24956,14 @@ TEST_F(VkPositiveLayerTest, BindSparse) {
     ASSERT_NO_FATAL_FAILURE(Init());
 
     auto index = m_device->graphics_queue_node_index_;
-    if (!(m_device->queue_props[index].queueFlags & VK_QUEUE_SPARSE_BINDING_BIT)) return;
-    if (!m_device->phy().features().sparseBinding) return;
+    if (!(m_device->queue_props[index].queueFlags & VK_QUEUE_SPARSE_BINDING_BIT)) {
+        printf("%s Graphics queue does not have sparse binding bit.\n", kSkipPrefix);
+        return;
+    }
+    if (!m_device->phy().features().sparseBinding) {
+        printf("%s Device does not support sparse bindings.\n", kSkipPrefix);
+        return;
+    }
 
     m_errorMonitor->ExpectSuccess();
 
@@ -25231,6 +25283,7 @@ TEST_F(VkPositiveLayerTest, DepthStencilLayoutTransitionForDepthOnlyImageview) {
     VkFormatProperties format_properties;
     vkGetPhysicalDeviceFormatProperties(gpu(), VK_FORMAT_D32_SFLOAT_S8_UINT, &format_properties);
     if (!(format_properties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT)) {
+        printf("%s Image format does not support sampling.\n", kSkipPrefix);
         return;
     }
 
@@ -25366,7 +25419,7 @@ TEST_F(VkPositiveLayerTest, StencilLoadOp) {
     ASSERT_NO_FATAL_FAILURE(Init());
     auto depth_format = FindSupportedDepthStencilFormat(gpu());
     if (!depth_format) {
-        printf("             No Depth + Stencil format found. Skipped.\n");
+        printf("%s No Depth + Stencil format found. Skipped.\n", kSkipPrefix);
         return;
     }
     VkImageFormatProperties formatProps;
@@ -25374,6 +25427,7 @@ TEST_F(VkPositiveLayerTest, StencilLoadOp) {
                                              VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, 0,
                                              &formatProps);
     if (formatProps.maxExtent.width < 100 || formatProps.maxExtent.height < 100) {
+        printf("%s Image format max extent is too small.\n", kSkipPrefix);
         return;
     }
 
@@ -25535,7 +25589,7 @@ TEST_F(VkPositiveLayerTest, BarrierLayoutToImageUsage) {
     ASSERT_NO_FATAL_FAILURE(Init());
     auto depth_format = FindSupportedDepthStencilFormat(gpu());
     if (!depth_format) {
-        printf("             No Depth + Stencil format found. Skipped.\n");
+        printf("%s No Depth + Stencil format found. Skipped.\n", kSkipPrefix);
         return;
     }
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -25691,7 +25745,10 @@ TEST_F(VkPositiveLayerTest, QueryAndCopySecondaryCommandBuffers) {
     TEST_DESCRIPTION("Issue a query on a secondary command buffer and copy it on a primary.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
-    if ((m_device->queue_props.empty()) || (m_device->queue_props[0].queueCount < 2)) return;
+    if ((m_device->queue_props.empty()) || (m_device->queue_props[0].queueCount < 2)) {
+        printf("%s Queue family needs to have multiple queues to run this test.\n", kSkipPrefix);
+        return;
+    }
 
     m_errorMonitor->ExpectSuccess();
 
@@ -25731,6 +25788,7 @@ TEST_F(VkPositiveLayerTest, QueryAndCopySecondaryCommandBuffers) {
     mem_alloc.memoryTypeIndex = 0;
     bool pass = m_device->phy().set_memory_type(memReqs.memoryTypeBits, &mem_alloc, 0);
     if (!pass) {
+        printf("%s Failed to allocate memory.\n", kSkipPrefix);
         vkDestroyBuffer(m_device->device(), buffer, NULL);
         return;
     }
@@ -25780,7 +25838,10 @@ TEST_F(VkPositiveLayerTest, QueryAndCopyMultipleCommandBuffers) {
     TEST_DESCRIPTION("Issue a query and copy from it on a second command buffer.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
-    if ((m_device->queue_props.empty()) || (m_device->queue_props[0].queueCount < 2)) return;
+    if ((m_device->queue_props.empty()) || (m_device->queue_props[0].queueCount < 2)) {
+        printf("%s Queue family needs to have multiple queues to run this test.\n", kSkipPrefix);
+        return;
+    }
 
     m_errorMonitor->ExpectSuccess();
 
@@ -26013,7 +26074,10 @@ TEST_F(VkPositiveLayerTest, TwoQueueSubmitsSeparateQueuesWithSemaphoreAndOneFenc
         "Two command buffers, each in a separate QueueSubmit call submitted on separate queues followed by a QueueWaitIdle.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
-    if ((m_device->queue_props.empty()) || (m_device->queue_props[0].queueCount < 2)) return;
+    if ((m_device->queue_props.empty()) || (m_device->queue_props[0].queueCount < 2)) {
+        printf("%s Queue family needs to have multiple queues to run this test.\n", kSkipPrefix);
+        return;
+    }
 
     m_errorMonitor->ExpectSuccess();
 
@@ -26110,7 +26174,10 @@ TEST_F(VkPositiveLayerTest, TwoQueueSubmitsSeparateQueuesWithSemaphoreAndOneFenc
         "by a QueueWaitIdle.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
-    if ((m_device->queue_props.empty()) || (m_device->queue_props[0].queueCount < 2)) return;
+    if ((m_device->queue_props.empty()) || (m_device->queue_props[0].queueCount < 2)) {
+        printf("%s Queue family needs to have multiple queues to run this test.\n", kSkipPrefix);
+        return;
+    }
 
     m_errorMonitor->ExpectSuccess();
 
@@ -26213,7 +26280,10 @@ TEST_F(VkPositiveLayerTest, TwoQueueSubmitsSeparateQueuesWithSemaphoreAndOneFenc
         "by two consecutive WaitForFences calls on the same fence.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
-    if ((m_device->queue_props.empty()) || (m_device->queue_props[0].queueCount < 2)) return;
+    if ((m_device->queue_props.empty()) || (m_device->queue_props[0].queueCount < 2)) {
+        printf("%s Queue family needs to have multiple queues to run this test.\n", kSkipPrefix);
+        return;
+    }
 
     m_errorMonitor->ExpectSuccess();
 
@@ -26313,7 +26383,7 @@ TEST_F(VkPositiveLayerTest, TwoQueueSubmitsSeparateQueuesWithSemaphoreAndOneFenc
 TEST_F(VkPositiveLayerTest, TwoQueuesEnsureCorrectRetirementWithWorkStolen) {
     ASSERT_NO_FATAL_FAILURE(Init());
     if ((m_device->queue_props.empty()) || (m_device->queue_props[0].queueCount < 2)) {
-        printf("             Test requires two queues, skipping\n");
+        printf("%s Test requires two queues, skipping\n", kSkipPrefix);
         return;
     }
 
@@ -26384,7 +26454,10 @@ TEST_F(VkPositiveLayerTest, TwoQueueSubmitsSeparateQueuesWithSemaphoreAndOneFenc
         "followed by a WaitForFences call.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
-    if ((m_device->queue_props.empty()) || (m_device->queue_props[0].queueCount < 2)) return;
+    if ((m_device->queue_props.empty()) || (m_device->queue_props[0].queueCount < 2)) {
+        printf("%s Queue family needs to have multiple queues to run this test.\n", kSkipPrefix);
+        return;
+    }
 
     m_errorMonitor->ExpectSuccess();
 
@@ -26895,7 +26968,7 @@ TEST_F(VkPositiveLayerTest, ValidRenderPassAttachmentLayoutWithLoadOp) {
     ASSERT_NO_FATAL_FAILURE(Init());
     auto depth_format = FindSupportedDepthStencilFormat(gpu());
     if (!depth_format) {
-        printf("             No Depth + Stencil format found. Skipped.\n");
+        printf("%s No Depth + Stencil format found. Skipped.\n", kSkipPrefix);
         return;
     }
 
@@ -26942,14 +27015,14 @@ TEST_F(VkPositiveLayerTest, RenderPassDepthStencilLayoutTransition) {
     ASSERT_NO_FATAL_FAILURE(Init());
     auto depth_format = FindSupportedDepthStencilFormat(gpu());
     if (!depth_format) {
-        printf("             No Depth + Stencil format found. Skipped.\n");
+        printf("%s No Depth + Stencil format found. Skipped.\n", kSkipPrefix);
         return;
     }
     VkImageFormatProperties format_props;
     vkGetPhysicalDeviceImageFormatProperties(gpu(), depth_format, VK_IMAGE_TYPE_2D, VK_IMAGE_TILING_OPTIMAL,
                                              VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, 0, &format_props);
     if (format_props.maxExtent.width < 32 || format_props.maxExtent.height < 32) {
-        printf("Depth extent too small, RenderPassDepthStencilLayoutTransition skipped.\n");
+        printf("%s Depth extent too small, RenderPassDepthStencilLayoutTransition skipped.\n", kSkipPrefix);
         return;
     }
 
@@ -27273,7 +27346,7 @@ TEST_F(VkPositiveLayerTest, CreatePipelineTessPerVertex) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     if (!m_device->phy().features().tessellationShader) {
-        printf("             Device does not support tessellation shaders; skipped.\n");
+        printf("%s Device does not support tessellation shaders; skipped.\n", kSkipPrefix);
         return;
     }
 
@@ -27342,7 +27415,7 @@ TEST_F(VkPositiveLayerTest, CreatePipelineGeometryInputBlockPositive) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     if (!m_device->phy().features().geometryShader) {
-        printf("             Device does not support geometry shaders; skipped.\n");
+        printf("%s Device does not support geometry shaders; skipped.\n", kSkipPrefix);
         return;
     }
 
@@ -27393,14 +27466,17 @@ TEST_F(VkPositiveLayerTest, CreatePipeline64BitAttributesPositive) {
         "multiple locations.");
     m_errorMonitor->ExpectSuccess();
 
-    if (!EnableDeviceProfileLayer()) return;
+    if (!EnableDeviceProfileLayer()) {
+        printf("%s Failed to enable device profile layer.\n", kSkipPrefix);
+        return;
+    }
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     if (!m_device->phy().features().shaderFloat64) {
-        printf("             Device does not support 64bit vertex attributes; skipped.\n");
+        printf("%s Device does not support 64bit vertex attributes; skipped.\n", kSkipPrefix);
         return;
     }
     // Set 64bit format to support VTX Buffer feature
@@ -27725,7 +27801,7 @@ TEST_F(VkPositiveLayerTest, CreateDescriptorSetBindingWithIgnoredSamplers) {
         m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
         prop2_found = true;
     } else {
-        printf("             %s Extension not supported, skipping push descriptor sub-tests\n",
+        printf("%s %s Extension not supported, skipping push descriptor sub-tests\n", kSkipPrefix,
                VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     }
 
@@ -27735,7 +27811,7 @@ TEST_F(VkPositiveLayerTest, CreateDescriptorSetBindingWithIgnoredSamplers) {
         m_device_extension_names.push_back(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
         push_descriptor_found = true;
     } else {
-        printf("             %s Extension not supported, skipping push descriptor sub-tests\n",
+        printf("%s %s Extension not supported, skipping push descriptor sub-tests\n", kSkipPrefix,
                VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
     }
 
@@ -27801,7 +27877,7 @@ TEST_F(VkPositiveLayerTest, Maintenance1Tests) {
     if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE1_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
     } else {
-        printf("             Maintenance1 Extension not supported, skipping tests\n");
+        printf("%s Maintenance1 Extension not supported, skipping tests\n", kSkipPrefix);
         return;
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
@@ -27825,7 +27901,7 @@ TEST_F(VkLayerTest, DuplicateValidPNextStructures) {
     if (DeviceExtensionSupported(gpu(), nullptr, VK_NV_DEDICATED_ALLOCATION_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_NV_DEDICATED_ALLOCATION_EXTENSION_NAME);
     } else {
-        printf("             VK_NV_dedicated_allocation extension not supported, skipping test\n");
+        printf("%s VK_NV_dedicated_allocation extension not supported, skipping test\n", kSkipPrefix);
         return;
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
@@ -27862,7 +27938,7 @@ TEST_F(VkLayerTest, DedicatedAllocation) {
         m_device_extension_names.push_back(VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME);
         m_device_extension_names.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
     } else {
-        printf("             Dedicated allocation extension not supported, skipping test\n");
+        printf("%s Dedicated allocation extension not supported, skipping test\n", kSkipPrefix);
         return;
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
@@ -27942,7 +28018,7 @@ TEST_F(VkPositiveLayerTest, ValidStructPNext) {
     if (DeviceExtensionSupported(gpu(), nullptr, VK_NV_DEDICATED_ALLOCATION_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_NV_DEDICATED_ALLOCATION_EXTENSION_NAME);
     } else {
-        printf("             VK_NV_DEDICATED_ALLOCATION_EXTENSION_NAME Extension not supported, skipping test\n");
+        printf("%s VK_NV_DEDICATED_ALLOCATION_EXTENSION_NAME Extension not supported, skipping test\n", kSkipPrefix);
         return;
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
@@ -28101,7 +28177,7 @@ TEST_F(VkPositiveLayerTest, ExternalSemaphore) {
         m_instance_extension_names.push_back(VK_KHR_EXTERNAL_SEMAPHORE_CAPABILITIES_EXTENSION_NAME);
         m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     } else {
-        printf("             External semaphore extension not supported, skipping test\n");
+        printf("%s External semaphore extension not supported, skipping test\n", kSkipPrefix);
         return;
     }
     ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
@@ -28111,7 +28187,7 @@ TEST_F(VkPositiveLayerTest, ExternalSemaphore) {
         m_device_extension_names.push_back(extension_name);
         m_device_extension_names.push_back(VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME);
     } else {
-        printf("             External semaphore extension not supported, skipping test\n");
+        printf("%s External semaphore extension not supported, skipping test\n", kSkipPrefix);
         return;
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
@@ -28127,7 +28203,7 @@ TEST_F(VkPositiveLayerTest, ExternalSemaphore) {
 
     if (!(esp.externalSemaphoreFeatures & VK_EXTERNAL_SEMAPHORE_FEATURE_EXPORTABLE_BIT_KHR) ||
         !(esp.externalSemaphoreFeatures & VK_EXTERNAL_SEMAPHORE_FEATURE_IMPORTABLE_BIT_KHR)) {
-        printf("             External semaphore does not support importing and exporting, skipping test\n");
+        printf("%s External semaphore does not support importing and exporting, skipping test\n", kSkipPrefix);
         return;
     }
 
@@ -28226,7 +28302,7 @@ TEST_F(VkPositiveLayerTest, ExternalFence) {
         m_instance_extension_names.push_back(VK_KHR_EXTERNAL_FENCE_CAPABILITIES_EXTENSION_NAME);
         m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     } else {
-        printf("             External fence extension not supported, skipping test\n");
+        printf("%s External fence extension not supported, skipping test\n", kSkipPrefix);
         return;
     }
     ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
@@ -28236,7 +28312,7 @@ TEST_F(VkPositiveLayerTest, ExternalFence) {
         m_device_extension_names.push_back(extension_name);
         m_device_extension_names.push_back(VK_KHR_EXTERNAL_FENCE_EXTENSION_NAME);
     } else {
-        printf("             External fence extension not supported, skipping test\n");
+        printf("%s External fence extension not supported, skipping test\n", kSkipPrefix);
         return;
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
@@ -28250,7 +28326,7 @@ TEST_F(VkPositiveLayerTest, ExternalFence) {
 
     if (!(efp.externalFenceFeatures & VK_EXTERNAL_FENCE_FEATURE_EXPORTABLE_BIT_KHR) ||
         !(efp.externalFenceFeatures & VK_EXTERNAL_FENCE_FEATURE_IMPORTABLE_BIT_KHR)) {
-        printf("             External fence does not support importing and exporting, skipping test\n");
+        printf("%s External fence does not support importing and exporting, skipping test\n", kSkipPrefix);
         return;
     }
 
@@ -28417,7 +28493,7 @@ TEST_F(VkPositiveLayerTest, ClearDepthStencilWithValidRange) {
 
     auto depth_format = FindSupportedDepthStencilFormat(gpu());
     if (!depth_format) {
-        printf("             No Depth + Stencil format found. Skipped.\n");
+        printf("%s No Depth + Stencil format found. Skipped.\n", kSkipPrefix);
         return;
     }
 
@@ -28731,7 +28807,7 @@ TEST_F(VkPositiveLayerTest, ExternalMemory) {
         if (InstanceExtensionSupported(extension_name)) {
             m_instance_extension_names.push_back(extension_name);
         } else {
-            printf("             Required instance extension %s not supported, skipping test\n", extension_name);
+            printf("%s Required instance extension %s not supported, skipping test\n", kSkipPrefix, extension_name);
             return;
         }
     }
@@ -28749,7 +28825,7 @@ TEST_F(VkPositiveLayerTest, ExternalMemory) {
     if (!(ebp.externalMemoryProperties.compatibleHandleTypes & handle_type) ||
         !(ebp.externalMemoryProperties.externalMemoryFeatures & VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT_KHR) ||
         !(ebp.externalMemoryProperties.externalMemoryFeatures & VK_EXTERNAL_MEMORY_FEATURE_IMPORTABLE_BIT_KHR)) {
-        printf("             External buffer does not support importing and exporting, skipping test\n");
+        printf("%s External buffer does not support importing and exporting, skipping test\n", kSkipPrefix);
         return;
     }
 
@@ -28761,7 +28837,7 @@ TEST_F(VkPositiveLayerTest, ExternalMemory) {
             m_device_extension_names.push_back(VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME);
             m_device_extension_names.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
         } else {
-            printf("             Dedicated allocation extension not supported, skipping test\n");
+            printf("%s Dedicated allocation extension not supported, skipping test\n", kSkipPrefix);
             return;
         }
     }
@@ -28771,7 +28847,7 @@ TEST_F(VkPositiveLayerTest, ExternalMemory) {
         m_device_extension_names.push_back(ext_mem_extension_name);
         m_device_extension_names.push_back(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
     } else {
-        printf("             External memory extension not supported, skipping test\n");
+        printf("%s External memory extension not supported, skipping test\n", kSkipPrefix);
         return;
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
@@ -28878,6 +28954,7 @@ TEST_F(VkLayerTest, AMDMixedAttachmentSamplesValidateRenderPass) {
     if (DeviceExtensionSupported(gpu(), nullptr, VK_AMD_MIXED_ATTACHMENT_SAMPLES_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_AMD_MIXED_ATTACHMENT_SAMPLES_EXTENSION_NAME);
     } else {
+        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_AMD_MIXED_ATTACHMENT_SAMPLES_EXTENSION_NAME);
         return;
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
@@ -28957,6 +29034,7 @@ TEST_F(VkLayerTest, AMDMixedAttachmentSamplesValidateGraphicsPipeline) {
     if (DeviceExtensionSupported(gpu(), nullptr, VK_AMD_MIXED_ATTACHMENT_SAMPLES_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_AMD_MIXED_ATTACHMENT_SAMPLES_EXTENSION_NAME);
     } else {
+        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_AMD_MIXED_ATTACHMENT_SAMPLES_EXTENSION_NAME);
         return;
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
@@ -28992,7 +29070,7 @@ TEST_F(VkPositiveLayerTest, ParameterLayerFeatures2Capture) {
     if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
         m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     } else {
-        printf("             Did not find VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME; skipped.\n");
+        printf("%s Did not find VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME; skipped.\n", kSkipPrefix);
         return;
     }
 
@@ -29051,7 +29129,7 @@ TEST_F(VkPositiveLayerTest, ParameterLayerFeatures2Capture) {
         ASSERT_VK_SUCCESS(err);
         vkDestroySampler(device, sampler, nullptr);
     } else {
-        printf("             Feature samplerAnisotropy not enabled;  parameter_layer check skipped.\n");
+        printf("%s Feature samplerAnisotropy not enabled;  parameter_layer check skipped.\n", kSkipPrefix);
     }
 
     // Verify the core validation layer has captured the physical device features by creating a a query pool.
@@ -29066,7 +29144,7 @@ TEST_F(VkPositiveLayerTest, ParameterLayerFeatures2Capture) {
 
         vkDestroyQueryPool(device, query_pool, nullptr);
     } else {
-        printf("             Feature pipelineStatisticsQuery not enabled;  core_validation_layer check skipped.\n");
+        printf("%s Feature pipelineStatisticsQuery not enabled;  core_validation_layer check skipped.\n", kSkipPrefix);
     }
 
     vkDestroyDevice(device, nullptr);
@@ -29085,7 +29163,7 @@ TEST_F(VkPositiveLayerTest, GetMemoryRequirements2) {
     if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
     } else {
-        printf("             %s not supported, skipping test\n", VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
+        printf("%s %s not supported, skipping test\n", kSkipPrefix, VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
         return;
     }
 
@@ -29169,7 +29247,7 @@ TEST_F(VkPositiveLayerTest, BindMemory2) {
     if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_BIND_MEMORY_2_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
     } else {
-        printf("             %s not supported, skipping test\n", VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
+        printf("%s %s not supported, skipping test\n", kSkipPrefix, VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
         return;
     }
 
@@ -29257,7 +29335,7 @@ TEST_F(VkPositiveLayerTest, MultiplaneImageTests) {
         m_device_extension_names.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
         m_device_extension_names.push_back(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
     } else {
-        printf("             test requires KHR multiplane extensions, not available.  Skipping.\n");
+        printf("%s test requires KHR multiplane extensions, not available.  Skipping.\n", kSkipPrefix);
         return;
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
@@ -29281,7 +29359,7 @@ TEST_F(VkPositiveLayerTest, MultiplaneImageTests) {
     VkFormatFeatureFlags features = VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT;
     bool supported = ImageFormatAndFeaturesSupported(instance(), gpu(), ci, features);
     if (!supported) {
-        printf("             Multiplane image format not supported.  Skipping test.\n");
+        printf("%s Multiplane image format not supported.  Skipping test.\n", kSkipPrefix);
         return;  // Assume there's low ROI on searching for different mp formats
     }
 
@@ -29308,7 +29386,7 @@ TEST_F(VkPositiveLayerTest, MultiplaneImageTests) {
     }
 
     if (VK_NULL_HANDLE == mem_obj) {
-        printf("             Unable to allocate image memory. Skipping test.\n");
+        printf("%s Unable to allocate image memory. Skipping test.\n", kSkipPrefix);
         vkDestroyImage(device(), image, NULL);
         return;
     }
