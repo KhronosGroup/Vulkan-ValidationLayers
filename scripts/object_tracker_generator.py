@@ -1,9 +1,9 @@
 #!/usr/bin/python3 -i
 #
-# Copyright (c) 2015-2017 The Khronos Group Inc.
-# Copyright (c) 2015-2017 Valve Corporation
-# Copyright (c) 2015-2017 LunarG, Inc.
-# Copyright (c) 2015-2017 Google Inc.
+# Copyright (c) 2015-2018 The Khronos Group Inc.
+# Copyright (c) 2015-2018 Valve Corporation
+# Copyright (c) 2015-2018 LunarG, Inc.
+# Copyright (c) 2015-2018 Google Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,12 +18,12 @@
 # limitations under the License.
 #
 # Author: Mark Lobodzinski <mark@lunarg.com>
+# Author: Dave Houlton <daveh@lunarg.com>
 
-import os,re,sys,string
+import os,re,sys,string,json
 import xml.etree.ElementTree as etree
 from generator import *
 from collections import namedtuple
-from vuid_mapping import *
 from common_codegen import *
 
 # This is a workaround to use a Python 2.7 and 3.x compatible syntax.
@@ -191,42 +191,42 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
         # which is translated here into a good VU.  Saves ~40 checks.
         self.manual_vuids = dict()
         self.manual_vuids = {
-            "fence-compatalloc": "VALIDATION_ERROR_24e008c2",
-            "fence-nullalloc": "VALIDATION_ERROR_24e008c4",
-            "event-compatalloc": "VALIDATION_ERROR_24c008f4",
-            "event-nullalloc": "VALIDATION_ERROR_24c008f6",
-            "buffer-compatalloc": "VALIDATION_ERROR_23c00736",
-            "buffer-nullalloc": "VALIDATION_ERROR_23c00738",
-            "image-compatalloc": "VALIDATION_ERROR_252007d2",
-            "image-nullalloc": "VALIDATION_ERROR_252007d4",
-            "shaderModule-compatalloc": "VALIDATION_ERROR_26a00888",
-            "shaderModule-nullalloc": "VALIDATION_ERROR_26a0088a",
-            "pipeline-compatalloc": "VALIDATION_ERROR_25c005fc",
-            "pipeline-nullalloc": "VALIDATION_ERROR_25c005fe",
-            "sampler-compatalloc": "VALIDATION_ERROR_26600876",
-            "sampler-nullalloc": "VALIDATION_ERROR_26600878",
-            "renderPass-compatalloc": "VALIDATION_ERROR_264006d4",
-            "renderPass-nullalloc": "VALIDATION_ERROR_264006d6",
-            "descriptorUpdateTemplate-compatalloc": "VALIDATION_ERROR_248002c8",
-            "descriptorUpdateTemplate-nullalloc": "VALIDATION_ERROR_248002ca",
-            "imageView-compatalloc": "VALIDATION_ERROR_25400806",
-            "imageView-nullalloc": "VALIDATION_ERROR_25400808",
-            "pipelineCache-compatalloc": "VALIDATION_ERROR_25e00606",
-            "pipelineCache-nullalloc": "VALIDATION_ERROR_25e00608",
-            "pipelineLayout-compatalloc": "VALIDATION_ERROR_26000256",
-            "pipelineLayout-nullalloc": "VALIDATION_ERROR_26000258",
-            "descriptorSetLayout-compatalloc": "VALIDATION_ERROR_24600238",
-            "descriptorSetLayout-nullalloc": "VALIDATION_ERROR_2460023a",
-            "semaphore-compatalloc": "VALIDATION_ERROR_268008e4",
-            "semaphore-nullalloc": "VALIDATION_ERROR_268008e6",
-            "queryPool-compatalloc": "VALIDATION_ERROR_26200634",
-            "queryPool-nullalloc": "VALIDATION_ERROR_26200636",
-            "bufferView-compatalloc": "VALIDATION_ERROR_23e00752",
-            "bufferView-nullalloc": "VALIDATION_ERROR_23e00754",
-            "surface-compatalloc": "VALIDATION_ERROR_26c009e6",
-            "surface-nullalloc": "VALIDATION_ERROR_26c009e8",
-            "framebuffer-compatalloc": "VALIDATION_ERROR_250006fa",
-            "framebuffer-nullalloc": "VALIDATION_ERROR_250006fc",
+            "fence-compatalloc": "\"VUID-vkDestroyFence-fence-01121\"",
+            "fence-nullalloc": "\"VUID-vkDestroyFence-fence-01122\"",
+            "event-compatalloc": "\"VUID-vkDestroyEvent-event-01146\"",
+            "event-nullalloc": "\"VUID-vkDestroyEvent-event-01147\"",
+            "buffer-compatalloc": "\"VUID-vkDestroyBuffer-buffer-00923\"",
+            "buffer-nullalloc": "\"VUID-vkDestroyBuffer-buffer-00924\"",
+            "image-compatalloc": "\"VUID-vkDestroyImage-image-01001\"",
+            "image-nullalloc": "\"VUID-vkDestroyImage-image-01002\"",
+            "shaderModule-compatalloc": "\"VUID-vkDestroyShaderModule-shaderModule-01092\"",
+            "shaderModule-nullalloc": "\"VUID-vkDestroyShaderModule-shaderModule-01093\"",
+            "pipeline-compatalloc": "\"VUID-vkDestroyPipeline-pipeline-00766\"",
+            "pipeline-nullalloc": "\"VUID-vkDestroyPipeline-pipeline-00767\"",
+            "sampler-compatalloc": "\"VUID-vkDestroySampler-sampler-01083\"",
+            "sampler-nullalloc": "\"VUID-vkDestroySampler-sampler-01084\"",
+            "renderPass-compatalloc": "\"VUID-vkDestroyRenderPass-renderPass-00874\"",
+            "renderPass-nullalloc": "\"VUID-vkDestroyRenderPass-renderPass-00875\"",
+            "descriptorUpdateTemplate-compatalloc": "\"VUID-vkDestroyDescriptorUpdateTemplate-descriptorSetLayout-00356\"",
+            "descriptorUpdateTemplate-nullalloc": "\"VUID-vkDestroyDescriptorUpdateTemplate-descriptorSetLayout-00357\"",
+            "imageView-compatalloc": "\"VUID-vkDestroyImageView-imageView-01027\"",
+            "imageView-nullalloc": "\"VUID-vkDestroyImageView-imageView-01028\"",
+            "pipelineCache-compatalloc": "\"VUID-vkDestroyPipelineCache-pipelineCache-00771\"",
+            "pipelineCache-nullalloc": "\"VUID-vkDestroyPipelineCache-pipelineCache-00772\"",
+            "pipelineLayout-compatalloc": "\"VUID-vkDestroyPipelineLayout-pipelineLayout-00299\"",
+            "pipelineLayout-nullalloc": "\"VUID-vkDestroyPipelineLayout-pipelineLayout-00300\"",
+            "descriptorSetLayout-compatalloc": "\"VUID-vkDestroyDescriptorSetLayout-descriptorSetLayout-00284\"",
+            "descriptorSetLayout-nullalloc": "\"VUID-vkDestroyDescriptorSetLayout-descriptorSetLayout-00285\"",
+            "semaphore-compatalloc": "\"VUID-vkDestroySemaphore-semaphore-01138\"",
+            "semaphore-nullalloc": "\"VUID-vkDestroySemaphore-semaphore-01139\"",
+            "queryPool-compatalloc": "\"VUID-vkDestroyQueryPool-queryPool-00794\"",
+            "queryPool-nullalloc": "\"VUID-vkDestroyQueryPool-queryPool-00795\"",
+            "bufferView-compatalloc": "\"VUID-vkDestroyBufferView-bufferView-00937\"",
+            "bufferView-nullalloc": "\"VUID-vkDestroyBufferView-bufferView-00938\"",
+            "surface-compatalloc": "\"VUID-vkDestroySurfaceKHR-surface-01267\"",
+            "surface-nullalloc": "\"VUID-vkDestroySurfaceKHR-surface-01268\"",
+            "framebuffer-compatalloc": "\"VUID-vkDestroyFramebuffer-framebuffer-00893\"",
+            "framebuffer-nullalloc": "\"VUID-vkDestroyFramebuffer-framebuffer-00894\"",
            }
 
         # Commands shadowed by interface functions and are not implemented
@@ -246,29 +246,32 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
         # Named tuples to store struct and command data
         self.StructType = namedtuple('StructType', ['name', 'value'])
         self.CmdMemberData = namedtuple('CmdMemberData', ['name', 'members'])
+        self.CmdMemberAlias = dict()
         self.CmdInfoData = namedtuple('CmdInfoData', ['name', 'cmdinfo'])
         self.CmdExtraProtect = namedtuple('CmdExtraProtect', ['name', 'extra_protect'])
         self.CommandParam = namedtuple('CommandParam', ['type', 'name', 'ispointer', 'isconst', 'isoptional', 'iscount', 'len', 'extstructs', 'cdecl', 'islocal', 'iscreate', 'isdestroy', 'feature_protect'])
         self.StructMemberData = namedtuple('StructMemberData', ['name', 'members'])
         self.object_types = []         # List of all handle types
         self.valid_vuids = set()       # Set of all valid VUIDs
-        self.vuid_file = None
+        self.vuid_dict = dict()        # VUID dictionary (from JSON)
         # Cover cases where file is built from scripts directory, Lin/Win, or Android build structure
         # Set cwd to the script directory to more easily locate the header.
         previous_dir = os.getcwd()
         os.chdir(os.path.dirname(sys.argv[0]))
         vuid_filename_locations = [
-            './vk_validation_error_messages.h',
-            '../layers/vk_validation_error_messages.h',
-            '../../layers/vk_validation_error_messages.h',
-            '../../../layers/vk_validation_error_messages.h',
+            './Vulkan-Headers/registry/validusage.json',
+            '../Vulkan-Headers/registry/validusage.json',
+            '../../Vulkan-Headers/registry/validusage.json',
+            '../../../Vulkan-Headers/registry/validusage.json'
             ]
         for vuid_filename in vuid_filename_locations:
             if os.path.isfile(vuid_filename):
-                self.vuid_file = open(vuid_filename, "r", encoding="utf8")
+                json_file = open(vuid_filename, 'r')
+                self.vuid_dict = json.load(json_file)
+                json_file.close()
                 break
-        if self.vuid_file == None:
-            print("Error: Could not find vk_validation_error_messages.h")
+        if len(self.vuid_dict) == 0:
+            print("Error: Could not find, or error loading validusage.json")
             sys.exit(1)
         os.chdir(previous_dir)
     #
@@ -299,23 +302,19 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
                 isoptional = True;
         return isoptional
     #
-    # Convert decimal number to 8 digit hexadecimal lower-case representation
-    def IdToHex(self, dec_num):
-        if dec_num > 4294967295:
-            print ("ERROR: Decimal # %d can't be represented in 8 hex digits" % (dec_num))
-            sys.exit()
-        hex_num = hex(dec_num)
-        return hex_num[2:].zfill(8)
-    #
     # Get VUID identifier from implicit VUID tag
-    def GetVuid(self, vuid_string):
+    def GetVuid(self, parent, suffix):
+        vuid_string = 'VUID-%s-%s' % (parent, suffix)
+        vuid = "kVUIDUndefined"
         if '->' in vuid_string:
-           return "VALIDATION_ERROR_UNDEFINED"
-        vuid_num = self.IdToHex(convertVUID(vuid_string))
-        if vuid_num in self.valid_vuids:
-            vuid = "VALIDATION_ERROR_%s" % vuid_num
+           return vuid
+        if vuid_string in self.valid_vuids:
+            vuid = "\"%s\"" % vuid_string
         else:
-            vuid = "VALIDATION_ERROR_UNDEFINED"
+            if parent in self.CmdMemberAlias:
+                alias_string = 'VUID-%s-%s' % (self.CmdMemberAlias[parent], suffix)
+                if alias_string in self.valid_vuids:
+                    vuid = "\"%s\"" % vuid_string
         return vuid
     #
     # Increases indent by 4 spaces and tracks it globally
@@ -343,7 +342,7 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
     # Generate the object tracker undestroyed object validation function
     def GenReportFunc(self):
         output_func = ''
-        output_func += 'void ReportUndestroyedObjects(VkDevice device, enum UNIQUE_VALIDATION_ERROR_CODE error_code) {\n'
+        output_func += 'void ReportUndestroyedObjects(VkDevice device, std::string error_code) {\n'
         output_func += '    DeviceReportUndestroyedObjects(device, kVulkanObjectTypeCommandBuffer, error_code);\n'
         for handle in self.object_types:
             if self.isHandleTypeNonDispatchable(handle):
@@ -364,19 +363,28 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
         return output_func
 
     #
+    # Walk the JSON-derived dict and find all "vuid" key values
+    def ExtractVUIDs(self, d):
+        if hasattr(d, 'items'):
+            for k, v in d.items():
+                if k == "vuid":
+                    yield v
+                elif isinstance(v, dict):
+                    for s in self.ExtractVUIDs(v):
+                        yield s
+                elif isinstance (v, list):
+                    for l in v:
+                        for s in self.ExtractVUIDs(l):
+                            yield s
+
+    #
     # Called at beginning of processing as file is opened
     def beginFile(self, genOpts):
         OutputGenerator.beginFile(self, genOpts)
-        # Open vk_validation_error_messages.h file to verify computed VUIDs
-        for line in self.vuid_file:
-            # Grab hex number from enum definition
-            vuid_list = line.split('0x')
-            # If this is a valid enumeration line, remove trailing comma and CR
-            if len(vuid_list) == 2:
-                vuid_num = vuid_list[1][:-2]
-                # Make sure this is a good hex number before adding to set
-                if len(vuid_num) == 8 and all(c in string.hexdigits for c in vuid_num):
-                    self.valid_vuids.add(vuid_num)
+        # Build a set of all vuid text strings found in validusage.json
+        for json_vuid_string in self.ExtractVUIDs(self.vuid_dict):
+            self.valid_vuids.add(json_vuid_string)
+
         # File Comment
         file_comment = '// *** THIS FILE IS GENERATED - DO NOT EDIT ***\n'
         file_comment += '// See object_tracker_generator.py for modifications\n'
@@ -386,10 +394,10 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
         copyright += '\n'
         copyright += '/***************************************************************************\n'
         copyright += ' *\n'
-        copyright += ' * Copyright (c) 2015-2017 The Khronos Group Inc.\n'
-        copyright += ' * Copyright (c) 2015-2017 Valve Corporation\n'
-        copyright += ' * Copyright (c) 2015-2017 LunarG, Inc.\n'
-        copyright += ' * Copyright (c) 2015-2017 Google Inc.\n'
+        copyright += ' * Copyright (c) 2015-2018 The Khronos Group Inc.\n'
+        copyright += ' * Copyright (c) 2015-2018 Valve Corporation\n'
+        copyright += ' * Copyright (c) 2015-2018 LunarG, Inc.\n'
+        copyright += ' * Copyright (c) 2015-2018 Google Inc.\n'
         copyright += ' *\n'
         copyright += ' * Licensed under the Apache License, Version 2.0 (the "License");\n'
         copyright += ' * you may not use this file except in compliance with the License.\n'
@@ -404,6 +412,7 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
         copyright += ' * limitations under the License.\n'
         copyright += ' *\n'
         copyright += ' * Author: Mark Lobodzinski <mark@lunarg.com>\n'
+        copyright += ' * Author: Dave Houlton <daveh@lunarg.com>\n'
         copyright += ' *\n'
         copyright += ' ****************************************************************************/\n'
         write(copyright, file=self.outFile)
@@ -722,8 +731,8 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
                 param = -2
             compatalloc_vuid_string = '%s-compatalloc' % cmd_info[param].name
             nullalloc_vuid_string = '%s-nullalloc' % cmd_info[param].name
-            compatalloc_vuid = self.manual_vuids.get(compatalloc_vuid_string, "VALIDATION_ERROR_UNDEFINED")
-            nullalloc_vuid = self.manual_vuids.get(nullalloc_vuid_string, "VALIDATION_ERROR_UNDEFINED")
+            compatalloc_vuid = self.manual_vuids.get(compatalloc_vuid_string, "kVUIDUndefined")
+            nullalloc_vuid = self.manual_vuids.get(nullalloc_vuid_string, "kVUIDUndefined")
             if self.isHandleTypeObject(cmd_info[param].type) == True:
                 if object_array == True:
                     # This API is freeing an array of handles -- add loop control
@@ -742,14 +751,14 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
         decl_code = ''
         pre_call_code = ''
         post_call_code = ''
-        param_vuid_string = 'VUID-%s-%s-parameter' % (parent_name, obj_name)
-        parent_vuid_string = 'VUID-%s-%s-parent' % (parent_name, obj_name)
-        param_vuid = self.GetVuid(param_vuid_string)
-        parent_vuid = self.GetVuid(parent_vuid_string)
+        param_suffix = '%s-parameter' % (obj_name)
+        parent_suffix = '%s-parent' % (obj_name)
+        param_vuid = self.GetVuid(parent_name, param_suffix)
+        parent_vuid = self.GetVuid(parent_name, parent_suffix)
+
         # If no parent VUID for this member, look for a commonparent VUID
-        if parent_vuid == 'VALIDATION_ERROR_UNDEFINED':
-            commonparent_vuid_string = 'VUID-%s-commonparent' % parent_name
-            parent_vuid = self.GetVuid(commonparent_vuid_string)
+        if parent_vuid == 'kVUIDUndefined':
+            parent_vuid = self.GetVuid(parent_name, 'commonparent')
         if obj_count is not None:
             pre_call_code += '%s    for (uint32_t %s = 0; %s < %s; ++%s) {\n' % (indent, index, index, obj_count, index)
             indent = self.incIndent(indent)
@@ -913,6 +922,8 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
                                                  isdestroy=isdestroy,
                                                  feature_protect=self.featureExtraProtect))
         self.cmdMembers.append(self.CmdMemberData(name=cmdname, members=membersInfo))
+        if alias != None:
+            self.CmdMemberAlias[cmdname] = alias
         self.cmd_info_data.append(self.CmdInfoData(name=cmdname, cmdinfo=cmdinfo))
         self.cmd_feature_protect.append(self.CmdExtraProtect(name=cmdname, extra_protect=self.featureExtraProtect))
     #
