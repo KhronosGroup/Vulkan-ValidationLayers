@@ -20961,12 +20961,23 @@ TEST_F(VkLayerTest, CopyImageTypeExtentMismatchMaintenance1) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
+    VkFormat image_format = VK_FORMAT_R8G8B8A8_UNORM;
+    VkFormatProperties format_props;
+    // TODO: Remove this check if or when devsim handles extensions.
+    // The chosen format has mandatory support the transfer src and dst format features when Maitenance1 is enabled. However, our
+    // use of devsim and the mock ICD violate this guarantee.
+    vkGetPhysicalDeviceFormatProperties(m_device->phy().handle(), image_format, &format_props);
+    if (!(format_props.optimalTilingFeatures & VK_FORMAT_FEATURE_TRANSFER_SRC_BIT)) {
+        printf("%s Maintenance1 extension is not supported.\n", kSkipPrefix);
+        return;
+    }
+
     VkImageCreateInfo ci;
     ci.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
     ci.pNext = NULL;
     ci.flags = 0;
     ci.imageType = VK_IMAGE_TYPE_1D;
-    ci.format = VK_FORMAT_R8G8B8A8_UNORM;
+    ci.format = image_format;
     ci.extent = {32, 1, 1};
     ci.mipLevels = 1;
     ci.arrayLayers = 1;
