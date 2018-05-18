@@ -13101,7 +13101,7 @@ TEST_F(VkLayerTest, InvalidQueueFamilyIndex) {
 
         VkMemoryAllocateInfo alloc_info = {};
         alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-        alloc_info.allocationSize = 1024;
+        alloc_info.allocationSize = mem_reqs.size;
         bool pass = false;
         pass = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
         if (!pass) {
