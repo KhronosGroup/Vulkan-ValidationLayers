@@ -839,7 +839,8 @@ void TransitionImageLayouts(layer_data *device_data, GLOBAL_CB_NODE *cb_state, u
 
 bool VerifyImageLayout(layer_data const *device_data, GLOBAL_CB_NODE const *cb_node, IMAGE_STATE *image_state,
                        VkImageSubresourceLayers subLayers, VkImageLayout explicit_layout, VkImageLayout optimal_layout,
-                       const char *caller, const std::string &msg_code, bool *error) {
+                       const char *caller, const std::string &layout_invalid_msg_code, const std::string &layout_mismatch_msg_code,
+                       bool *error) {
     const auto report_data = core_validation::GetReportData(device_data);
     const auto image = image_state->image;
     bool skip = false;
@@ -851,12 +852,12 @@ bool VerifyImageLayout(layer_data const *device_data, GLOBAL_CB_NODE const *cb_n
         if (FindCmdBufLayout(device_data, cb_node, image, sub, node)) {
             if (node.layout != explicit_layout) {
                 *error = true;
-                // TODO: Improve log message in the next pass
-                skip |= log_msg(
-                    report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                    HandleToUint64(cb_node->commandBuffer), DRAWSTATE_INVALID_IMAGE_LAYOUT,
-                    "%s: Cannot use image 0x%" PRIx64 " with specific layout %s that doesn't match the actual current layout %s.",
-                    caller, HandleToUint64(image), string_VkImageLayout(explicit_layout), string_VkImageLayout(node.layout));
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                                HandleToUint64(cb_node->commandBuffer), layout_mismatch_msg_code,
+                                "%s: Cannot use image 0x%" PRIx64
+                                " (layer=%u mip=%u) with specific layout %s that doesn't match the actual current layout %s.",
+                                caller, HandleToUint64(image), layer, subLayers.mipLevel, string_VkImageLayout(explicit_layout),
+                                string_VkImageLayout(node.layout));
             }
         }
     }
@@ -874,17 +875,16 @@ bool VerifyImageLayout(layer_data const *device_data, GLOBAL_CB_NODE const *cb_n
         } else if (GetDeviceExtensions(device_data)->vk_khr_shared_presentable_image) {
             if (image_state->shared_presentable) {
                 if (VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR != explicit_layout) {
-                    // TODO: Add unique error id when available.
-                    skip |=
-                        log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, msg_code,
-                                "Layout for shared presentable image is %s but must be VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR.",
-                                string_VkImageLayout(optimal_layout));
+                    skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                    layout_invalid_msg_code,
+                                    "Layout for shared presentable image is %s but must be VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR.",
+                                    string_VkImageLayout(optimal_layout));
                 }
             }
         } else {
             *error = true;
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                            HandleToUint64(cb_node->commandBuffer), msg_code,
+                            HandleToUint64(cb_node->commandBuffer), layout_invalid_msg_code,
                             "%s: Layout for image 0x%" PRIx64 " is %s but can only be %s or VK_IMAGE_LAYOUT_GENERAL.", caller,
                             HandleToUint64(image), string_VkImageLayout(explicit_layout), string_VkImageLayout(optimal_layout));
         }
@@ -2268,13 +2268,21 @@ bool PreCallValidateCmdCopyImage(layer_data *device_data, GLOBAL_CB_NODE *cb_nod
     skip |= ValidateCmd(device_data, cb_node, CMD_COPYIMAGE, "vkCmdCopyImage()");
     skip |= insideRenderPass(device_data, cb_node, "vkCmdCopyImage()", "VUID-vkCmdCopyImage-renderpass");
     bool hit_error = false;
+    const std::string invalid_src_layout_vuid =
+        (src_image_state->shared_presentable && core_validation::GetDeviceExtensions(device_data)->vk_khr_shared_presentable_image)
+            ? "VUID-vkCmdCopyImage-srcImageLayout-01917"
+            : "VUID-vkCmdCopyImage-srcImageLayout-00129";
+    const std::string invalid_dst_layout_vuid =
+        (dst_image_state->shared_presentable && core_validation::GetDeviceExtensions(device_data)->vk_khr_shared_presentable_image)
+            ? "VUID-vkCmdCopyImage-dstImageLayout-01395"
+            : "VUID-vkCmdCopyImage-dstImageLayout-00134";
     for (uint32_t i = 0; i < region_count; ++i) {
         skip |= VerifyImageLayout(device_data, cb_node, src_image_state, regions[i].srcSubresource, src_image_layout,
-                                  VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, "vkCmdCopyImage()",
-                                  "VUID-vkCmdCopyImage-srcImageLayout-00129", &hit_error);
+                                  VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, "vkCmdCopyImage()", invalid_src_layout_vuid,
+                                  "VUID-vkCmdCopyImage-srcImageLayout-00128", &hit_error);
         skip |= VerifyImageLayout(device_data, cb_node, dst_image_state, regions[i].dstSubresource, dst_image_layout,
-                                  VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, "vkCmdCopyImage()",
-                                  "VUID-vkCmdCopyImage-dstImageLayout-00134", &hit_error);
+                                  VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, "vkCmdCopyImage()", invalid_dst_layout_vuid,
+                                  "VUID-vkCmdCopyImage-dstImageLayout-00133", &hit_error);
         skip |= ValidateCopyImageTransferGranularityRequirements(device_data, cb_node, src_image_state, dst_image_state,
                                                                  &regions[i], i, "vkCmdCopyImage()");
     }
@@ -2433,7 +2441,8 @@ bool PreCallValidateCmdClearAttachments(layer_data *device_data, VkCommandBuffer
 }
 
 bool PreCallValidateCmdResolveImage(layer_data *device_data, GLOBAL_CB_NODE *cb_node, IMAGE_STATE *src_image_state,
-                                    IMAGE_STATE *dst_image_state, uint32_t regionCount, const VkImageResolve *pRegions) {
+                                    VkImageLayout src_image_layout, IMAGE_STATE *dst_image_state, VkImageLayout dst_image_layout,
+                                    uint32_t regionCount, const VkImageResolve *pRegions) {
     const debug_report_data *report_data = core_validation::GetReportData(device_data);
     bool skip = false;
     if (cb_node && src_image_state && dst_image_state) {
@@ -2449,6 +2458,17 @@ bool PreCallValidateCmdResolveImage(layer_data *device_data, GLOBAL_CB_NODE *cb_
                                                 "vkCmdResolveImage()", "VUID-vkCmdResolveImage-dstImage-00264",
                                                 "VUID-vkCmdResolveImage-dstImage-00265");
 
+        bool hit_error = false;
+        const std::string invalid_src_layout_vuid =
+            (src_image_state->shared_presentable &&
+             core_validation::GetDeviceExtensions(device_data)->vk_khr_shared_presentable_image)
+                ? "VUID-vkCmdResolveImage-srcImageLayout-01400"
+                : "VUID-vkCmdResolveImage-srcImageLayout-00261";
+        const std::string invalid_dst_layout_vuid =
+            (dst_image_state->shared_presentable &&
+             core_validation::GetDeviceExtensions(device_data)->vk_khr_shared_presentable_image)
+                ? "VUID-vkCmdResolveImage-dstImageLayout-01401"
+                : "VUID-vkCmdResolveImage-dstImageLayout-00263";
         // For each region, the number of layers in the image subresource should not be zero
         // For each region, src and dest image aspect must be color only
         for (uint32_t i = 0; i < regionCount; i++) {
@@ -2462,12 +2482,21 @@ bool PreCallValidateCmdResolveImage(layer_data *device_data, GLOBAL_CB_NODE *cb_
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                                 HandleToUint64(cb_node->commandBuffer), DRAWSTATE_MISMATCHED_IMAGE_ASPECT, str);
             }
+            skip |= VerifyImageLayout(device_data, cb_node, src_image_state, pRegions[i].srcSubresource, src_image_layout,
+                                      VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, "vkCmdResolveImage()", invalid_src_layout_vuid,
+                                      "VUID-vkCmdResolveImage-srcImageLayout-00260", &hit_error);
+            skip |= VerifyImageLayout(device_data, cb_node, dst_image_state, pRegions[i].dstSubresource, dst_image_layout,
+                                      VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, "vkCmdResolveImage()", invalid_dst_layout_vuid,
+                                      "VUID-vkCmdResolveImage-dstImageLayout-00262", &hit_error);
+
+            // layer counts must match
             if (pRegions[i].srcSubresource.layerCount != pRegions[i].dstSubresource.layerCount) {
                 skip |= log_msg(
                     report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                     HandleToUint64(cb_node->commandBuffer), "VUID-VkImageResolve-layerCount-00267",
                     "vkCmdResolveImage: layerCount in source and destination subresource of pRegions[%d] does not match.", i);
             }
+            // For each region, src and dest image aspect must be color only
             if ((pRegions[i].srcSubresource.aspectMask != VK_IMAGE_ASPECT_COLOR_BIT) ||
                 (pRegions[i].dstSubresource.aspectMask != VK_IMAGE_ASPECT_COLOR_BIT)) {
                 char const str[] =
@@ -2497,7 +2526,6 @@ bool PreCallValidateCmdResolveImage(layer_data *device_data, GLOBAL_CB_NODE *cb_
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                             HandleToUint64(cb_node->commandBuffer), "VUID-vkCmdResolveImage-dstImage-00259", "%s.", str);
         }
-        // TODO: Need to validate image layouts, which will include layout validation for shared presentable images
     } else {
         assert(0);
     }
@@ -2655,16 +2683,25 @@ bool PreCallValidateCmdBlitImage(layer_data *device_data, GLOBAL_CB_NODE *cb_nod
         }  // Depth or Stencil
 
         // Do per-region checks
+        const std::string invalid_src_layout_vuid =
+            (src_image_state->shared_presentable &&
+             core_validation::GetDeviceExtensions(device_data)->vk_khr_shared_presentable_image)
+                ? "VUID-vkCmdBlitImage-srcImageLayout-01398"
+                : "VUID-vkCmdBlitImage-srcImageLayout-00222";
+        const std::string invalid_dst_layout_vuid =
+            (dst_image_state->shared_presentable &&
+             core_validation::GetDeviceExtensions(device_data)->vk_khr_shared_presentable_image)
+                ? "VUID-vkCmdBlitImage-dstImageLayout-01399"
+                : "VUID-vkCmdBlitImage-dstImageLayout-00227";
         for (uint32_t i = 0; i < region_count; i++) {
             const VkImageBlit rgn = regions[i];
             bool hit_error = false;
             skip |= VerifyImageLayout(device_data, cb_node, src_image_state, rgn.srcSubresource, src_image_layout,
-                                      VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, "vkCmdBlitImage()",
-                                      "VUID-vkCmdBlitImage-srcImageLayout-00222", &hit_error);
+                                      VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, "vkCmdBlitImage()", invalid_src_layout_vuid,
+                                      "VUID-vkCmdBlitImage-srcImageLayout-00221", &hit_error);
             skip |= VerifyImageLayout(device_data, cb_node, dst_image_state, rgn.dstSubresource, dst_image_layout,
-                                      VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, "vkCmdBlitImage()",
-                                      "VUID-vkCmdBlitImage-dstImageLayout-00227", &hit_error);
-
+                                      VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, "vkCmdBlitImage()", invalid_dst_layout_vuid,
+                                      "VUID-vkCmdBlitImage-dstImageLayout-00226", &hit_error);
             // Warn for zero-sized regions
             if ((rgn.srcOffsets[0].x == rgn.srcOffsets[1].x) || (rgn.srcOffsets[0].y == rgn.srcOffsets[1].y) ||
                 (rgn.srcOffsets[0].z == rgn.srcOffsets[1].z)) {
@@ -4237,10 +4274,14 @@ bool PreCallValidateCmdCopyImageToBuffer(layer_data *device_data, VkImageLayout 
     }
     skip |= insideRenderPass(device_data, cb_node, "vkCmdCopyImageToBuffer()", "VUID-vkCmdCopyImageToBuffer-renderpass");
     bool hit_error = false;
+    const std::string src_invalid_layout_vuid =
+        (src_image_state->shared_presentable && core_validation::GetDeviceExtensions(device_data)->vk_khr_shared_presentable_image)
+            ? "VUID-vkCmdCopyImageToBuffer-srcImageLayout-01397"
+            : "VUID-vkCmdCopyImageToBuffer-srcImageLayout-00190";
     for (uint32_t i = 0; i < regionCount; ++i) {
         skip |= VerifyImageLayout(device_data, cb_node, src_image_state, pRegions[i].imageSubresource, srcImageLayout,
-                                  VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, "vkCmdCopyImageToBuffer()",
-                                  "VUID-vkCmdCopyImageToBuffer-srcImageLayout-00190", &hit_error);
+                                  VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, "vkCmdCopyImageToBuffer()", src_invalid_layout_vuid,
+                                  "VUID-vkCmdCopyImageToBuffer-srcImageLayout-00189", &hit_error);
         skip |= ValidateCopyBufferImageTransferGranularityRequirements(device_data, cb_node, src_image_state, &pRegions[i], i,
                                                                        "vkCmdCopyImageToBuffer()",
                                                                        "VUID-vkCmdCopyImageToBuffer-imageOffset-01794");
@@ -4301,10 +4342,14 @@ bool PreCallValidateCmdCopyBufferToImage(layer_data *device_data, VkImageLayout 
     }
     skip |= insideRenderPass(device_data, cb_node, "vkCmdCopyBufferToImage()", "VUID-vkCmdCopyBufferToImage-renderpass");
     bool hit_error = false;
+    const std::string dst_invalid_layout_vuid =
+        (dst_image_state->shared_presentable && core_validation::GetDeviceExtensions(device_data)->vk_khr_shared_presentable_image)
+            ? "VUID-vkCmdCopyBufferToImage-dstImageLayout-01396"
+            : "VUID-vkCmdCopyBufferToImage-dstImageLayout-00181";
     for (uint32_t i = 0; i < regionCount; ++i) {
         skip |= VerifyImageLayout(device_data, cb_node, dst_image_state, pRegions[i].imageSubresource, dstImageLayout,
-                                  VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, "vkCmdCopyBufferToImage()",
-                                  "VUID-vkCmdCopyBufferToImage-dstImageLayout-00181", &hit_error);
+                                  VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, "vkCmdCopyBufferToImage()", dst_invalid_layout_vuid,
+                                  "VUID-vkCmdCopyBufferToImage-dstImageLayout-00180", &hit_error);
         skip |= ValidateCopyBufferImageTransferGranularityRequirements(device_data, cb_node, dst_image_state, &pRegions[i], i,
                                                                        "vkCmdCopyBufferToImage()",
                                                                        "VUID-vkCmdCopyBufferToImage-imageOffset-01793");
