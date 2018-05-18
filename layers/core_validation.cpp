@@ -1710,7 +1710,7 @@ static bool ReportInvalidCommandBuffer(layer_data *dev_data, const GLOBAL_CB_NOD
 // Note: C++11 doesn't automatically devolve enum types to the underlying type for hash traits purposes (fixed in C++14)
 using CmdTypeHashType = std::underlying_type<CMD_TYPE>::type;
 static const std::unordered_map<CmdTypeHashType, std::string> must_be_recording_map = {
-    {CMD_NONE, "VUID_Undefined"},  // UNMATCHED
+    {CMD_NONE, kVUIDUndefined},  // UNMATCHED
     {CMD_BEGINQUERY, "VUID-vkCmdBeginQuery-commandBuffer-recording"},
     {CMD_BEGINRENDERPASS, "VUID-vkCmdBeginRenderPass-commandBuffer-recording"},
     {CMD_BINDDESCRIPTORSETS, "VUID-vkCmdBindDescriptorSets-commandBuffer-recording"},
@@ -2998,7 +2998,7 @@ static bool PreCallValidateAllocateMemory(layer_data *dev_data) {
     bool skip = false;
     if (dev_data->memObjMap.size() >= dev_data->phys_dev_properties.properties.limits.maxMemoryAllocationCount) {
         skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
-                        HandleToUint64(dev_data->device), "VUID_Undefined",
+                        HandleToUint64(dev_data->device), kVUIDUndefined,
                         "Number of currently valid memory objects is not less than the maximum allowed (%u).",
                         dev_data->phys_dev_properties.properties.limits.maxMemoryAllocationCount);
     }
@@ -3910,7 +3910,7 @@ static bool PreCallValidateBindBufferMemory(layer_data *dev_data, VkBuffer buffe
             // Validate dedicated allocation
             if (mem_info->is_dedicated && ((mem_info->dedicated_buffer != buffer) || (memoryOffset != 0))) {
                 // TODO: Add vkBindBufferMemory2KHR error message when added to spec.
-                auto validation_error = "VUID_Undefined";
+                auto validation_error = kVUIDUndefined;
                 if (strcmp(api_name, "vkBindBufferMemory()") == 0) {
                     validation_error = "VUID-vkBindBufferMemory-memory-01508";
                 }
@@ -6984,7 +6984,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawIndexedIndirect(VkCommandBuffer commandBuffer,
 static bool PreCallValidateCmdDispatch(layer_data *dev_data, VkCommandBuffer cmd_buffer, bool indexed,
                                        VkPipelineBindPoint bind_point, GLOBAL_CB_NODE **cb_state, const char *caller) {
     return ValidateCmdDrawType(dev_data, cmd_buffer, indexed, bind_point, CMD_DISPATCH, cb_state, caller, VK_QUEUE_COMPUTE_BIT,
-                               "VUID-vkCmdDispatch-commandBuffer-cmdpool", "VUID-vkCmdDispatch-renderpass", "VUID_Undefined");
+                               "VUID-vkCmdDispatch-commandBuffer-cmdpool", "VUID-vkCmdDispatch-renderpass", kVUIDUndefined);
 }
 
 static void PostCallRecordCmdDispatch(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, VkPipelineBindPoint bind_point) {
@@ -7011,7 +7011,7 @@ static bool PreCallValidateCmdDispatchIndirect(layer_data *dev_data, VkCommandBu
                                                BUFFER_STATE **buffer_state, const char *caller) {
     bool skip = ValidateCmdDrawType(dev_data, cmd_buffer, indexed, bind_point, CMD_DISPATCHINDIRECT, cb_state, caller,
                                     VK_QUEUE_COMPUTE_BIT, "VUID-vkCmdDispatchIndirect-commandBuffer-cmdpool",
-                                    "VUID-vkCmdDispatchIndirect-renderpass", "VUID_Undefined");
+                                    "VUID-vkCmdDispatchIndirect-renderpass", kVUIDUndefined);
     *buffer_state = GetBufferState(dev_data, buffer);
     skip |= ValidateMemoryIsBoundToBuffer(dev_data, *buffer_state, caller, "VUID-vkCmdDispatchIndirect-buffer-00401");
     return skip;
@@ -7957,7 +7957,7 @@ static bool ValidateBarriers(layer_data *device_data, const char *funcName, GLOB
             //     "Non-sparse resources must be bound completely and contiguously to a single VkDeviceMemory object before
             //     recording commands in a command buffer."
             // TODO: Update this when VUID is defined
-            skip |= ValidateMemoryIsBoundToImage(device_data, image_data, funcName, "VUID_Undefined");
+            skip |= ValidateMemoryIsBoundToImage(device_data, image_data, funcName, kVUIDUndefined);
 
             auto aspect_mask = mem_barrier->subresourceRange.aspectMask;
             skip |= ValidateImageAspectMask(device_data, image_data->image, image_data->createInfo.format, aspect_mask, funcName);
@@ -7993,7 +7993,7 @@ static bool ValidateBarriers(layer_data *device_data, const char *funcName, GLOB
             //     "Non-sparse resources must be bound completely and contiguously to a single VkDeviceMemory object before
             //     recording commands in a command buffer"
             // TODO: Update this when VUID is defined
-            skip |= ValidateMemoryIsBoundToBuffer(device_data, buffer_state, funcName, "VUID_Undefined");
+            skip |= ValidateMemoryIsBoundToBuffer(device_data, buffer_state, funcName, kVUIDUndefined);
 
             auto buffer_size = buffer_state->createInfo.size;
             if (mem_barrier->offset >= buffer_size) {
@@ -9967,7 +9967,7 @@ static bool PreCallValidateBindImageMemory(layer_data *dev_data, VkImage image, 
             // Validate dedicated allocation
             if (mem_info->is_dedicated && ((mem_info->dedicated_image != image) || (memoryOffset != 0))) {
                 // TODO: Add vkBindImageMemory2KHR error message when added to spec.
-                auto validation_error = "VUID_Undefined";
+                auto validation_error = kVUIDUndefined;
                 if (strcmp(api_name, "vkBindImageMemory()") == 0) {
                     validation_error = "VUID-vkBindImageMemory-memory-01509";
                 }
@@ -10352,7 +10352,7 @@ static bool PreCallValidateImportSemaphore(layer_data *dev_data, VkSemaphore sem
     VK_OBJECT obj_struct = {HandleToUint64(semaphore), kVulkanObjectTypeSemaphore};
     bool skip = false;
     if (sema_node) {
-        skip |= ValidateObjectNotInUse(dev_data, sema_node, obj_struct, caller_name, "VUID_Undefined");
+        skip |= ValidateObjectNotInUse(dev_data, sema_node, obj_struct, caller_name, kVUIDUndefined);
     }
     return skip;
 }
@@ -10444,7 +10444,7 @@ static bool PreCallValidateImportFence(layer_data *dev_data, VkFence fence, cons
     bool skip = false;
     if (fence_node && fence_node->scope == kSyncScopeInternal && fence_node->state == FENCE_INFLIGHT) {
         skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_FENCE_EXT,
-                        HandleToUint64(fence), "VUID_Undefined", "Cannot call %s on fence 0x%" PRIx64 " that is currently in use.",
+                        HandleToUint64(fence), kVUIDUndefined, "Cannot call %s on fence 0x%" PRIx64 " that is currently in use.",
                         caller_name, HandleToUint64(fence));
     }
     return skip;
