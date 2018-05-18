@@ -128,7 +128,7 @@ class OutputStats(object):
             self.current_test_output = ""
 
     def skip_test_match(self, line):
-        if re.search(r'TEST_SKIPPED', line) != None:
+        if re.search(r'TEST SKIPPED', line) != None:
             self.test_results[self.current_test][self.current_profile] = "skip"
 
     def pass_test_match(self, line):
