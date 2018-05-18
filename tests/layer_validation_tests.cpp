@@ -7013,7 +7013,7 @@ TEST_F(VkLayerTest, InvalidCmdBufferBufferViewDestroyed) {
     char const *fsSource =
         "#version 450\n"
         "\n"
-        "layout(set=0, binding=0, r32f) uniform imageBuffer s;\n"
+        "layout(set=0, binding=0, r32f) uniform readonly imageBuffer s;\n"
         "layout(location=0) out vec4 x;\n"
         "void main(){\n"
         "   x = imageLoad(s, 0);\n"
@@ -15975,7 +15975,7 @@ TEST_F(VkLayerTest, BufferViewInUseDestroyedSignaled) {
     char const *fsSource =
         "#version 450\n"
         "\n"
-        "layout(set=0, binding=0, r32f) uniform imageBuffer s;\n"
+        "layout(set=0, binding=0, r32f) uniform readonly imageBuffer s;\n"
         "layout(location=0) out vec4 x;\n"
         "void main(){\n"
         "   x = imageLoad(s, 0);\n"
