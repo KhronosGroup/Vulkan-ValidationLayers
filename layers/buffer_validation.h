@@ -194,6 +194,10 @@ bool ValidateImageUsageFlags(layer_data *dev_data, IMAGE_STATE const *image_stat
 bool ValidateImageFormatFeatureFlags(layer_data *dev_data, IMAGE_STATE const *image_state, VkFormatFeatureFlags desired,
                                      char const *func_name, const std::string &linear_vuid, const std::string &optimal_vuid);
 
+bool ValidateImageSubresourceLayers(layer_data *dev_data, const GLOBAL_CB_NODE *cb_node,
+                                    const VkImageSubresourceLayers *subresource_layers, char const *func_name, char const *member,
+                                    uint32_t i);
+
 bool ValidateBufferUsageFlags(layer_data *dev_data, BUFFER_STATE const *buffer_state, VkFlags desired, bool strict,
                               const std::string &msgCode, char const *func_name, char const *usage_string);
 

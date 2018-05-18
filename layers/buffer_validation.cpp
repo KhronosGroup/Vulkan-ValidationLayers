@@ -1998,19 +1998,8 @@ bool PreCallValidateCmdCopyImage(layer_data *device_data, GLOBAL_CB_NODE *cb_nod
             slice_override = (depth_slices != 1);
         }
 
-        if (region.srcSubresource.layerCount == 0) {
-            std::stringstream ss;
-            ss << "vkCmdCopyImage: number of layers in pRegions[" << i << "] srcSubresource is zero";
-            skip |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                            HandleToUint64(command_buffer), DRAWSTATE_INVALID_IMAGE_ASPECT, "%s", ss.str().c_str());
-        }
-
-        if (region.dstSubresource.layerCount == 0) {
-            std::stringstream ss;
-            ss << "vkCmdCopyImage: number of layers in pRegions[" << i << "] dstSubresource is zero";
-            skip |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                            HandleToUint64(command_buffer), DRAWSTATE_INVALID_IMAGE_ASPECT, "%s", ss.str().c_str());
-        }
+        skip |= ValidateImageSubresourceLayers(device_data, cb_node, &region.srcSubresource, "vkCmdCopyImage", "srcSubresource", i);
+        skip |= ValidateImageSubresourceLayers(device_data, cb_node, &region.dstSubresource, "vkCmdCopyImage", "dstSubresource", i);
 
         if (GetDeviceExtensions(device_data)->vk_khr_maintenance1) {
             // No chance of mismatch if we're overriding depth slice count
@@ -2071,25 +2060,6 @@ bool PreCallValidateCmdCopyImage(layer_data *device_data, GLOBAL_CB_NODE *cb_nod
             ss << "vkCmdCopyImage: pRegion[" << i << "] dstSubresource.aspectMask cannot specify aspects not present in dest image";
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                             HandleToUint64(command_buffer), "VUID-VkImageCopy-aspectMask-00143", "%s.", ss.str().c_str());
-        }
-
-        // AspectMask must not contain VK_IMAGE_ASPECT_METADATA_BIT
-        if ((region.srcSubresource.aspectMask & VK_IMAGE_ASPECT_METADATA_BIT) ||
-            (region.dstSubresource.aspectMask & VK_IMAGE_ASPECT_METADATA_BIT)) {
-            std::stringstream ss;
-            ss << "vkCmdCopyImage: pRegions[" << i << "] may not specify aspectMask containing VK_IMAGE_ASPECT_METADATA_BIT";
-            skip |=
-                log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                        HandleToUint64(command_buffer), "VUID-VkImageSubresourceLayers-aspectMask-00168", "%s.", ss.str().c_str());
-        }
-
-        // For each region, if aspectMask contains VK_IMAGE_ASPECT_COLOR_BIT, it must not contain either of
-        // VK_IMAGE_ASPECT_DEPTH_BIT or VK_IMAGE_ASPECT_STENCIL_BIT
-        if ((region.srcSubresource.aspectMask & VK_IMAGE_ASPECT_COLOR_BIT) &&
-            (region.srcSubresource.aspectMask & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT))) {
-            char const str[] = "vkCmdCopyImage aspectMask cannot specify both COLOR and DEPTH/STENCIL aspects";
-            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                            HandleToUint64(command_buffer), "VUID-VkImageSubresourceLayers-aspectMask-00167", "%s.", str);
         }
 
         // MipLevel must be less than the mipLevels specified in VkImageCreateInfo when the image was created
@@ -2472,16 +2442,10 @@ bool PreCallValidateCmdResolveImage(layer_data *device_data, GLOBAL_CB_NODE *cb_
         // For each region, the number of layers in the image subresource should not be zero
         // For each region, src and dest image aspect must be color only
         for (uint32_t i = 0; i < regionCount; i++) {
-            if (pRegions[i].srcSubresource.layerCount == 0) {
-                char const str[] = "vkCmdResolveImage: number of layers in source subresource is zero";
-                skip |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                                HandleToUint64(cb_node->commandBuffer), DRAWSTATE_MISMATCHED_IMAGE_ASPECT, str);
-            }
-            if (pRegions[i].dstSubresource.layerCount == 0) {
-                char const str[] = "vkCmdResolveImage: number of layers in destination subresource is zero";
-                skip |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                                HandleToUint64(cb_node->commandBuffer), DRAWSTATE_MISMATCHED_IMAGE_ASPECT, str);
-            }
+            skip |= ValidateImageSubresourceLayers(device_data, cb_node, &pRegions[i].srcSubresource, "vkCmdResolveImage()",
+                                                   "srcSubresource", i);
+            skip |= ValidateImageSubresourceLayers(device_data, cb_node, &pRegions[i].dstSubresource, "vkCmdResolveImage()",
+                                                   "dstSubresource", i);
             skip |= VerifyImageLayout(device_data, cb_node, src_image_state, pRegions[i].srcSubresource, src_image_layout,
                                       VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, "vkCmdResolveImage()", invalid_src_layout_vuid,
                                       "VUID-vkCmdResolveImage-srcImageLayout-00260", &hit_error);
@@ -2702,6 +2666,10 @@ bool PreCallValidateCmdBlitImage(layer_data *device_data, GLOBAL_CB_NODE *cb_nod
             skip |= VerifyImageLayout(device_data, cb_node, dst_image_state, rgn.dstSubresource, dst_image_layout,
                                       VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, "vkCmdBlitImage()", invalid_dst_layout_vuid,
                                       "VUID-vkCmdBlitImage-dstImageLayout-00226", &hit_error);
+            skip |=
+                ValidateImageSubresourceLayers(device_data, cb_node, &rgn.srcSubresource, "vkCmdBlitImage()", "srcSubresource", i);
+            skip |=
+                ValidateImageSubresourceLayers(device_data, cb_node, &rgn.dstSubresource, "vkCmdBlitImage()", "dstSubresource", i);
             // Warn for zero-sized regions
             if ((rgn.srcOffsets[0].x == rgn.srcOffsets[1].x) || (rgn.srcOffsets[0].y == rgn.srcOffsets[1].y) ||
                 (rgn.srcOffsets[0].z == rgn.srcOffsets[1].z)) {
@@ -2716,16 +2684,6 @@ bool PreCallValidateCmdBlitImage(layer_data *device_data, GLOBAL_CB_NODE *cb_nod
                 ss << "vkCmdBlitImage: pRegions[" << i << "].dstOffsets specify a zero-volume area.";
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                                 HandleToUint64(cb_node->commandBuffer), DRAWSTATE_INVALID_EXTENTS, "%s", ss.str().c_str());
-            }
-            if (rgn.srcSubresource.layerCount == 0) {
-                char const str[] = "vkCmdBlitImage: number of layers in source subresource is zero";
-                skip |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                                HandleToUint64(cb_node->commandBuffer), DRAWSTATE_MISMATCHED_IMAGE_ASPECT, str);
-            }
-            if (rgn.dstSubresource.layerCount == 0) {
-                char const str[] = "vkCmdBlitImage: number of layers in destination subresource is zero";
-                skip |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                                HandleToUint64(cb_node->commandBuffer), DRAWSTATE_MISMATCHED_IMAGE_ASPECT, str);
             }
 
             // Check that src/dst layercounts match
@@ -3305,6 +3263,35 @@ bool ValidateImageFormatFeatureFlags(layer_data *dev_data, IMAGE_STATE const *im
                             format_properties.optimalTilingFeatures, image_state->createInfo.format,
                             HandleToUint64(image_state->image));
         }
+    }
+    return skip;
+}
+
+bool ValidateImageSubresourceLayers(layer_data *dev_data, const GLOBAL_CB_NODE *cb_node,
+                                    const VkImageSubresourceLayers *subresource_layers, char const *func_name, char const *member,
+                                    uint32_t i) {
+    bool skip = false;
+    const debug_report_data *report_data = core_validation::GetReportData(dev_data);
+    // layerCount must not be zero
+    if (subresource_layers->layerCount == 0) {
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                        HandleToUint64(cb_node->commandBuffer), "VUID-VkImageSubresourceLayers-layerCount-01700",
+                        "In %s, pRegions[%u].%s.layerCount must not be zero.", func_name, i, member);
+    }
+    // aspectMask must not contain VK_IMAGE_ASPECT_METADATA_BIT
+    if (subresource_layers->aspectMask & VK_IMAGE_ASPECT_METADATA_BIT) {
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                        HandleToUint64(cb_node->commandBuffer), "VUID-VkImageSubresourceLayers-aspectMask-00168",
+                        "In %s, pRegions[%u].%s.aspectMask has VK_IMAGE_ASPECT_METADATA_BIT set.", func_name, i, member);
+    }
+    // if aspectMask contains COLOR, it must not contain either DEPTH or STENCIL
+    if ((subresource_layers->aspectMask & VK_IMAGE_ASPECT_COLOR_BIT) &&
+        (subresource_layers->aspectMask & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT))) {
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                        HandleToUint64(cb_node->commandBuffer), "VUID-VkImageSubresourceLayers-aspectMask-00167",
+                        "In %s, pRegions[%u].%s.aspectMask has VK_IMAGE_ASPECT_COLOR_BIT and either VK_IMAGE_ASPECT_DEPTH_BIT or "
+                        "VK_IMAGE_ASPECT_STENCIL_BIT set.",
+                        func_name, i, member);
     }
     return skip;
 }
@@ -4279,6 +4266,8 @@ bool PreCallValidateCmdCopyImageToBuffer(layer_data *device_data, VkImageLayout 
             ? "VUID-vkCmdCopyImageToBuffer-srcImageLayout-01397"
             : "VUID-vkCmdCopyImageToBuffer-srcImageLayout-00190";
     for (uint32_t i = 0; i < regionCount; ++i) {
+        skip |= ValidateImageSubresourceLayers(device_data, cb_node, &pRegions[i].imageSubresource, "vkCmdCopyImageToBuffer()",
+                                               "imageSubresource", i);
         skip |= VerifyImageLayout(device_data, cb_node, src_image_state, pRegions[i].imageSubresource, srcImageLayout,
                                   VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, "vkCmdCopyImageToBuffer()", src_invalid_layout_vuid,
                                   "VUID-vkCmdCopyImageToBuffer-srcImageLayout-00189", &hit_error);
@@ -4347,6 +4336,8 @@ bool PreCallValidateCmdCopyBufferToImage(layer_data *device_data, VkImageLayout 
             ? "VUID-vkCmdCopyBufferToImage-dstImageLayout-01396"
             : "VUID-vkCmdCopyBufferToImage-dstImageLayout-00181";
     for (uint32_t i = 0; i < regionCount; ++i) {
+        skip |= ValidateImageSubresourceLayers(device_data, cb_node, &pRegions[i].imageSubresource, "vkCmdCopyBufferToImage()",
+                                               "imageSubresource", i);
         skip |= VerifyImageLayout(device_data, cb_node, dst_image_state, pRegions[i].imageSubresource, dstImageLayout,
                                   VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, "vkCmdCopyBufferToImage()", dst_invalid_layout_vuid,
                                   "VUID-vkCmdCopyBufferToImage-dstImageLayout-00180", &hit_error);
