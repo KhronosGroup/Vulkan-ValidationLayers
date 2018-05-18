@@ -2,8 +2,9 @@ import re
 import sys
 import os
 
+# create dict from validation_error_text_map in vk_validation_error_messages.h
 vuid_dict = {
-    '"VUID-Undefined"' : 'VALIDATION_ERROR_UNDEFINED',
+    'kVUIDUndefined' : 'VALIDATION_ERROR_UNDEFINED',
     '"VUID-VkAcquireNextImageInfoKHR-commonparent"' : 'VALIDATION_ERROR_00000009',
     '"VUID-VkAcquireNextImageInfoKHR-semaphore-01288"' : 'VALIDATION_ERROR_00000a10',
     '"VUID-VkAcquireNextImageInfoKHR-fence-01289"' : 'VALIDATION_ERROR_00000a12',
