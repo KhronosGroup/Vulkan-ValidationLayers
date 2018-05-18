@@ -22790,22 +22790,6 @@ TEST_F(VkLayerTest, SetDynViewportParamMaintenance1Tests) {
     NegHeightViewportTests(m_device, m_commandBuffer, m_errorMonitor);
 }
 
-TEST_F(VkLayerTest, SetDynViewportParamAmdNegHeightTests) {
-    TEST_DESCRIPTION("Verify errors are detected on misuse of SetViewport with AMD negative viewport extension enabled.");
-
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
-
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_AMD_NEGATIVE_VIEWPORT_HEIGHT_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_AMD_NEGATIVE_VIEWPORT_HEIGHT_EXTENSION_NAME);
-    } else {
-        printf("%s VK_AMD_negative_viewport_height extension not supported -- skipping test\n", kSkipPrefix);
-        return;
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState());
-
-    NegHeightViewportTests(m_device, m_commandBuffer, m_errorMonitor);
-}
-
 TEST_F(VkLayerTest, SetDynViewportParamMultiviewportTests) {
     TEST_DESCRIPTION("Test parameters of vkCmdSetViewport with multiViewport feature enabled");
 
