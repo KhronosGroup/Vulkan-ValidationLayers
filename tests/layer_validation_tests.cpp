@@ -3998,8 +3998,9 @@ TEST_F(VkLayerTest, MiscBlitImageTests) {
     m_errorMonitor->VerifyFound();
     blitRegion.srcSubresource.baseArrayLayer = 0;
     blitRegion.srcSubresource.layerCount = 0;
-    blitRegion.dstSubresource.layerCount = 0;
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkImageBlit-srcImage-00240");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                         "VUID-VkImageSubresourceLayers-layerCount-01700");  // layer count == 0 (src)
     vkCmdBlitImage(m_commandBuffer->handle(), color_3D_img.image(), color_3D_img.Layout(), color_3D_img.image(),
                    color_3D_img.Layout(), 1, &blitRegion, VK_FILTER_NEAREST);
     m_errorMonitor->VerifyFound();
@@ -19548,7 +19549,6 @@ TEST_F(VkLayerTest, CompressedImageMipCopyTests) {
 
 TEST_F(VkLayerTest, ImageBufferCopyTests) {
     TEST_DESCRIPTION("Image to buffer and buffer to image tests");
-
     ASSERT_NO_FATAL_FAILURE(Init());
     VkFormatProperties format_props = m_device->format_properties(VK_FORMAT_D24_UNORM_S8_UINT);
     if (!(format_props.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT)) {
@@ -21670,14 +21670,14 @@ TEST_F(VkLayerTest, CopyImageFormatSizeMismatch) {
     copyRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     copyRegion.srcSubresource.mipLevel = 0;
     copyRegion.srcSubresource.baseArrayLayer = 0;
-    copyRegion.srcSubresource.layerCount = 0;
+    copyRegion.srcSubresource.layerCount = 1;
     copyRegion.srcOffset.x = 0;
     copyRegion.srcOffset.y = 0;
     copyRegion.srcOffset.z = 0;
     copyRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     copyRegion.dstSubresource.mipLevel = 0;
     copyRegion.dstSubresource.baseArrayLayer = 0;
-    copyRegion.dstSubresource.layerCount = 0;
+    copyRegion.dstSubresource.layerCount = 1;
     copyRegion.dstOffset.x = 0;
     copyRegion.dstOffset.y = 0;
     copyRegion.dstOffset.z = 0;
@@ -21724,14 +21724,14 @@ TEST_F(VkLayerTest, CopyImageDepthStencilFormatMismatch) {
     copyRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
     copyRegion.srcSubresource.mipLevel = 0;
     copyRegion.srcSubresource.baseArrayLayer = 0;
-    copyRegion.srcSubresource.layerCount = 0;
+    copyRegion.srcSubresource.layerCount = 1;
     copyRegion.srcOffset.x = 0;
     copyRegion.srcOffset.y = 0;
     copyRegion.srcOffset.z = 0;
     copyRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
     copyRegion.dstSubresource.mipLevel = 0;
     copyRegion.dstSubresource.baseArrayLayer = 0;
-    copyRegion.dstSubresource.layerCount = 0;
+    copyRegion.dstSubresource.layerCount = 1;
     copyRegion.dstOffset.x = 0;
     copyRegion.dstOffset.y = 0;
     copyRegion.dstOffset.z = 0;
@@ -21893,21 +21893,42 @@ TEST_F(VkLayerTest, CopyImageAspectMismatch) {
     m_errorMonitor->VerifyFound();
     copyRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
 
-    // Illegal combinations of aspect bits - VU 01221
+    // Illegal combinations of aspect bits
     copyRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT | VK_IMAGE_ASPECT_DEPTH_BIT;  // color must be alone
-    copyRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT | VK_IMAGE_ASPECT_DEPTH_BIT;
+    copyRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkImageSubresourceLayers-aspectMask-00167");
     // These aspect/format mismatches are redundant but unavoidable here
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkImageCopy-aspectMask-00142");
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkImageCopy-aspectMask-00143");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, vuid);
     vkCmdCopyImage(m_commandBuffer->handle(), color_image.handle(), VK_IMAGE_LAYOUT_GENERAL, color_image.handle(),
                    VK_IMAGE_LAYOUT_GENERAL, 1, &copyRegion);
     m_errorMonitor->VerifyFound();
-    // Metadata aspect is illegal - VU 01222
+    // same test for dstSubresource
+    copyRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    copyRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT | VK_IMAGE_ASPECT_DEPTH_BIT;  // color must be alone
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkImageSubresourceLayers-aspectMask-00167");
+    // These aspect/format mismatches are redundant but unavoidable here
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkImageCopy-aspectMask-00143");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, vuid);
+    vkCmdCopyImage(m_commandBuffer->handle(), color_image.handle(), VK_IMAGE_LAYOUT_GENERAL, color_image.handle(),
+                   VK_IMAGE_LAYOUT_GENERAL, 1, &copyRegion);
+    m_errorMonitor->VerifyFound();
+
+    // Metadata aspect is illegal
     copyRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_METADATA_BIT;
+    copyRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkImageSubresourceLayers-aspectMask-00168");
+    // These aspect/format mismatches are redundant but unavoidable here
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, vuid);
+    vkCmdCopyImage(m_commandBuffer->handle(), color_image.handle(), VK_IMAGE_LAYOUT_GENERAL, color_image.handle(),
+                   VK_IMAGE_LAYOUT_GENERAL, 1, &copyRegion);
+    m_errorMonitor->VerifyFound();
+    // same test for dstSubresource
+    copyRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     copyRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_METADATA_BIT;
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkImageSubresourceLayers-aspectMask-00168");
     // These aspect/format mismatches are redundant but unavoidable here
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, vuid);
     vkCmdCopyImage(m_commandBuffer->handle(), color_image.handle(), VK_IMAGE_LAYOUT_GENERAL, color_image.handle(),
                    VK_IMAGE_LAYOUT_GENERAL, 1, &copyRegion);
     m_errorMonitor->VerifyFound();
@@ -21915,19 +21936,19 @@ TEST_F(VkLayerTest, CopyImageAspectMismatch) {
     copyRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
     copyRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
 
-    // Aspect mask doesn't match source image format - VU 01200
+    // Aspect mask doesn't match source image format
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkImageCopy-aspectMask-00142");
-    // Again redundant but unavoidable when provoking vu01200 w/o vu01201
+    // Again redundant but unavoidable
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "unmatched source and dest image depth/stencil formats");
     vkCmdCopyImage(m_commandBuffer->handle(), color_image.handle(), VK_IMAGE_LAYOUT_GENERAL, depth_image.handle(),
                    VK_IMAGE_LAYOUT_GENERAL, 1, &copyRegion);
     m_errorMonitor->VerifyFound();
 
-    // Aspect mask doesn't match dest image format - VU 01201
+    // Aspect mask doesn't match dest image format
     copyRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     copyRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkImageCopy-aspectMask-00143");
-    // Again redundant but unavoidable when provoking vu01201 w/o vu01200
+    // Again redundant but unavoidable
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "unmatched source and dest image depth/stencil formats");
     vkCmdCopyImage(m_commandBuffer->handle(), color_image.handle(), VK_IMAGE_LAYOUT_GENERAL, depth_image.handle(),
                    VK_IMAGE_LAYOUT_GENERAL, 1, &copyRegion);
