@@ -54,7 +54,8 @@ bool VerifyClearImageLayout(layer_data *device_data, GLOBAL_CB_NODE *cb_node, IM
 
 bool VerifyImageLayout(layer_data const *device_data, GLOBAL_CB_NODE const *cb_node, IMAGE_STATE *image_state,
                        VkImageSubresourceLayers subLayers, VkImageLayout explicit_layout, VkImageLayout optimal_layout,
-                       const char *caller, const std::string &msg_code, bool *error);
+                       const char *caller, const std::string &layout_invalid_msg_code, const std::string &layout_mismatch_msg_code,
+                       bool *error);
 
 void RecordClearImageLayout(layer_data *dev_data, GLOBAL_CB_NODE *cb_node, VkImage image, VkImageSubresourceRange range,
                             VkImageLayout dest_image_layout);
@@ -156,7 +157,8 @@ bool PreCallValidateCmdClearAttachments(layer_data *device_data, VkCommandBuffer
                                         const VkClearAttachment *pAttachments, uint32_t rectCount, const VkClearRect *pRects);
 
 bool PreCallValidateCmdResolveImage(layer_data *device_data, GLOBAL_CB_NODE *cb_node, IMAGE_STATE *src_image_state,
-                                    IMAGE_STATE *dst_image_state, uint32_t regionCount, const VkImageResolve *pRegions);
+                                    VkImageLayout src_image_layout, IMAGE_STATE *dst_image_state, VkImageLayout dst_image_layout,
+                                    uint32_t regionCount, const VkImageResolve *pRegions);
 
 void PreCallRecordCmdResolveImage(layer_data *device_data, GLOBAL_CB_NODE *cb_node, IMAGE_STATE *src_image_state,
                                   IMAGE_STATE *dst_image_state);
