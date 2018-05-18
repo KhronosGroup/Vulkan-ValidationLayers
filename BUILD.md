@@ -426,7 +426,22 @@ Get the in-tree exernal components:
 
     git submodule update --init --recursive
 
-TODO: Add mac info for dependencies
+#### Out-of-Tree External Libraries
+
+Also clone the following repos:
+
+- [glslang](https://github.com/KhronosGroup/glslang)
+  - Ensure that the 'update_glslang_sources.py' script has been run, and the repository successfully built.
+- Vulkan Loader Library
+  - Building the Layer Validation Tests requires linking to the Vulkan Loader Library (libvulkan.1.dylib).
+    Locating the library for this repo can be done in two different ways:
+      -  The Vulkan SDK can be installed. In this case, cmake should be able to locate the loader repo through the VulkanSDK
+         environment variable
+      -  The library can be built from the [Vulkan-Loader](https://github.com/KhronosGroup/Vulkan-Loader.git) repository.
+         In this case, the following option should be used on the cmake command line:
+             LOADER_REPO_ROOT=/absolute_path_to_/Vulkan-Loader
+         and use absolute (not relative) paths, like so:
+             cmake -DLOADER_REPO_ROOT=/absolute_path_to_/Vulkan-Loader ....
 
 ### MacOS build
 
@@ -446,7 +461,7 @@ build is:
 
         mkdir build
         cd build
-        cmake -DCMAKE_BUILD_TYPE=Debug ..
+        cmake -DLOADER_REPO_ROOT=/absolute_path_to/Vulkan-Loader -DGLSLANG_INSTALL_DIR=/absolute_path_to_/glslang/build/install -DCMAKE_BUILD_TYPE=Debug ..
         make
 
 To speed up the build on a multi-core machine, use the `-j` option for `make`
@@ -461,11 +476,62 @@ To create and open an Xcode project:
 
         mkdir build-xcode
         cd build-xcode
-        cmake -GXcode ..
+        cmake -DLOADER_REPO_ROOT=/absolute_path_to/Vulkan-Loader -DGLSLANG_INSTALL_DIR=/absolute_path_to_/glslang/build/install -GXcode ..
         open VULKAN.xcodeproj
 
 Within Xcode, you can select Debug or Release builds in the Build Settings of the project.
 You can also select individual schemes for working with specific applications like `cube`.
+
+#### Using the new layers
+
+    export VK_LAYER_PATH=<path to your repository root>/build/layers
+
+You can run the `vulkaninfo` applications from the Vulkan-Tools repository to see which driver, loader and layers are being used.
+
+### MacOS Tests
+
+After making any changes to the repository, you should perform the included sanity tests by running
+the run_all_tests shell script.
+
+These test require a manual path to an ICD to run properly on MacOS.
+
+You can use:
+
+- MoltenVK ICD
+- Mock ICD
+
+#### Using MoltenVK ICD
+
+Clone and build the [MoltenVK](https://github.com/KhronosGroup/MoltenVK) repository.
+
+You will have to direct the loader from Vulkan-Loader to the MoltenVK ICD:
+
+    export VK_ICD_FILENAMES=<path to MoltenVK repository>/Package/Latest/MoltenVK/macOS/MoltenVK_icd.json
+
+#### Using Mock ICD
+
+Clone and build the [Vulkan-Tools](https://github.com/KhronosGroup/Vulkan-Tools) repository.
+
+You will have to direct the loader from Vulkan-Loader to the Mock ICD:
+
+    export VK_ICD_FILENAMES=<path to Vulkan-Tools repository>/build/icd/VkICD_mock_icd.json
+
+#### Running the Tests
+
+To run the **validation test script**, in a terminal change to the build/tests directory and run:
+
+    VK_LAYER_PATH=../layers ./run_all_tests.sh
+
+This script will run the following tests:
+
+- `vk_layer_validation_tests`: Test Vulkan validation layers
+- `vkvalidatelayerdoc`: Tests that validation database is in up-to-date and in synchronization with
+  the validation source code
+
+Further testing and sanity checking can be achieved by running the cube and vulkaninfo applications
+in the [Vulkan-Tools](https://github.com/KhronosGroup/Vulkan-Tools) repository.
+
+Note that MoltenVK is still adding Vulkan features and some tests may fail.
 
 ## Ninja Builds - All Platforms
 
