@@ -12232,7 +12232,7 @@ TEST_F(VkLayerTest, InvalidBarriers) {
     m_errorMonitor->VerifyFound();
 
     if ((queue_props[queue_family_index].queueFlags & VK_QUEUE_GRAPHICS_BIT) == 0) {
-        printf("             The non-compute queue does not support graphics; skipped.\n");
+        printf("%s The non-compute queue does not support graphics; skipped.\n", kSkipPrefix);
         return;  // NOTE: this exits the test function!
     }
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdWaitEvents-srcStageMask-01164");
@@ -22666,7 +22666,7 @@ TEST_F(VkLayerTest, SetDynViewportParamAmdNegHeightTests) {
     if (DeviceExtensionSupported(gpu(), nullptr, VK_AMD_NEGATIVE_VIEWPORT_HEIGHT_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_AMD_NEGATIVE_VIEWPORT_HEIGHT_EXTENSION_NAME);
     } else {
-        printf("             VK_AMD_negative_viewport_height extension not supported -- skipping test\n");
+        printf("%s VK_AMD_negative_viewport_height extension not supported -- skipping test\n", kSkipPrefix);
         return;
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
