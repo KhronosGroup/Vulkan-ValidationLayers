@@ -778,17 +778,18 @@ static bool validate_vi_against_vs_inputs(debug_report_data const *report_data, 
         auto a_first = a_at_end ? 0 : it_a->first;
         auto b_first = b_at_end ? 0 : it_b->first.first;
         if (!a_at_end && (b_at_end || a_first < b_first)) {
-            if (!used && log_msg(report_data, VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,
-                                 0, SHADER_CHECKER_OUTPUT_NOT_CONSUMED,
-                                 "Vertex attribute at location %d not consumed by vertex shader", a_first)) {
+            if (!used &&
+                log_msg(report_data, VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SHADER_MODULE_EXT,
+                        HandleToUint64(vs->vk_shader_module), SHADER_CHECKER_OUTPUT_NOT_CONSUMED,
+                        "Vertex attribute at location %d not consumed by vertex shader", a_first)) {
                 skip = true;
             }
             used = false;
             it_a++;
         } else if (!b_at_end && (a_at_end || b_first < a_first)) {
-            skip |=
-                log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, 0,
-                        SHADER_CHECKER_INPUT_NOT_PRODUCED, "Vertex shader consumes input at location %d but not provided", b_first);
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SHADER_MODULE_EXT,
+                            HandleToUint64(vs->vk_shader_module), SHADER_CHECKER_INPUT_NOT_PRODUCED,
+                            "Vertex shader consumes input at location %d but not provided", b_first);
             it_b++;
         } else {
             unsigned attrib_type = get_format_type(it_a->second->format);
@@ -796,8 +797,8 @@ static bool validate_vi_against_vs_inputs(debug_report_data const *report_data, 
 
             // Type checking
             if (!(attrib_type & input_type)) {
-                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                SHADER_CHECKER_INTERFACE_TYPE_MISMATCH,
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SHADER_MODULE_EXT,
+                                HandleToUint64(vs->vk_shader_module), SHADER_CHECKER_INTERFACE_TYPE_MISMATCH,
                                 "Attribute type of `%s` at location %d does not match vertex shader input type of `%s`",
                                 string_VkFormat(it_a->second->format), a_first, describe_type(vs, it_b->second.type_id).c_str());
             }
@@ -842,16 +843,17 @@ static bool validate_fs_outputs_against_render_pass(debug_report_data const *rep
         bool b_at_end = color_attachments.size() == 0 || it_b == color_attachments.end();
 
         if (!a_at_end && (b_at_end || it_a->first.first < it_b->first)) {
-            skip |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                            SHADER_CHECKER_OUTPUT_NOT_CONSUMED,
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SHADER_MODULE_EXT,
+                            HandleToUint64(fs->vk_shader_module), SHADER_CHECKER_OUTPUT_NOT_CONSUMED,
                             "fragment shader writes to output location %d with no matching attachment", it_a->first.first);
             it_a++;
         } else if (!b_at_end && (a_at_end || it_a->first.first > it_b->first)) {
             // Only complain if there are unmasked channels for this attachment. If the writemask is 0, it's acceptable for the
             // shader to not produce a matching output.
             if (pipeline->attachments[it_b->first].colorWriteMask != 0) {
-                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                SHADER_CHECKER_INPUT_NOT_PRODUCED, "Attachment %d not written by fragment shader", it_b->first);
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SHADER_MODULE_EXT,
+                                HandleToUint64(fs->vk_shader_module), SHADER_CHECKER_INPUT_NOT_PRODUCED,
+                                "Attachment %d not written by fragment shader", it_b->first);
             }
             it_b++;
         } else {
@@ -860,8 +862,8 @@ static bool validate_fs_outputs_against_render_pass(debug_report_data const *rep
 
             // Type checking
             if (!(output_type & att_type)) {
-                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                SHADER_CHECKER_INTERFACE_TYPE_MISMATCH,
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SHADER_MODULE_EXT,
+                                HandleToUint64(fs->vk_shader_module), SHADER_CHECKER_INTERFACE_TYPE_MISMATCH,
                                 "Attachment %d of type `%s` does not match fragment shader output type of `%s`", it_b->first,
                                 string_VkFormat(it_b->second), describe_type(fs, it_a->second.type_id).c_str());
             }
@@ -1552,14 +1554,16 @@ static bool validate_interface_between_stages(debug_report_data const *report_da
         auto b_first = b_at_end ? std::make_pair(0u, 0u) : b_it->first;
 
         if (b_at_end || ((!a_at_end) && (a_first < b_first))) {
-            skip |= log_msg(report_data, VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                            SHADER_CHECKER_OUTPUT_NOT_CONSUMED, "%s writes to output location %u.%u which is not consumed by %s",
-                            producer_stage->name, a_first.first, a_first.second, consumer_stage->name);
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SHADER_MODULE_EXT,
+                            HandleToUint64(producer->vk_shader_module), SHADER_CHECKER_OUTPUT_NOT_CONSUMED,
+                            "%s writes to output location %u.%u which is not consumed by %s", producer_stage->name, a_first.first,
+                            a_first.second, consumer_stage->name);
             a_it++;
         } else if (a_at_end || a_first > b_first) {
-            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                            SHADER_CHECKER_INPUT_NOT_PRODUCED, "%s consumes input location %u.%u which is not written by %s",
-                            consumer_stage->name, b_first.first, b_first.second, producer_stage->name);
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SHADER_MODULE_EXT,
+                            HandleToUint64(consumer->vk_shader_module), SHADER_CHECKER_INPUT_NOT_PRODUCED,
+                            "%s consumes input location %u.%u which is not written by %s", consumer_stage->name, b_first.first,
+                            b_first.second, producer_stage->name);
             b_it++;
         } else {
             // subtleties of arrayed interfaces:
@@ -1569,21 +1573,22 @@ static bool validate_interface_between_stages(debug_report_data const *report_da
             if (!types_match(producer, consumer, a_it->second.type_id, b_it->second.type_id,
                              producer_stage->arrayed_output && !a_it->second.is_patch && !a_it->second.is_block_member,
                              consumer_stage->arrayed_input && !b_it->second.is_patch && !b_it->second.is_block_member, true)) {
-                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                SHADER_CHECKER_INTERFACE_TYPE_MISMATCH, "Type mismatch on location %u.%u: '%s' vs '%s'",
-                                a_first.first, a_first.second, describe_type(producer, a_it->second.type_id).c_str(),
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SHADER_MODULE_EXT,
+                                HandleToUint64(producer->vk_shader_module), SHADER_CHECKER_INTERFACE_TYPE_MISMATCH,
+                                "Type mismatch on location %u.%u: '%s' vs '%s'", a_first.first, a_first.second,
+                                describe_type(producer, a_it->second.type_id).c_str(),
                                 describe_type(consumer, b_it->second.type_id).c_str());
             }
             if (a_it->second.is_patch != b_it->second.is_patch) {
-                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, 0,
-                                SHADER_CHECKER_INTERFACE_TYPE_MISMATCH,
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SHADER_MODULE_EXT,
+                                HandleToUint64(producer->vk_shader_module), SHADER_CHECKER_INTERFACE_TYPE_MISMATCH,
                                 "Decoration mismatch on location %u.%u: is per-%s in %s stage but per-%s in %s stage",
                                 a_first.first, a_first.second, a_it->second.is_patch ? "patch" : "vertex", producer_stage->name,
                                 b_it->second.is_patch ? "patch" : "vertex", consumer_stage->name);
             }
             if (a_it->second.is_relaxed_precision != b_it->second.is_relaxed_precision) {
-                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, 0,
-                                SHADER_CHECKER_INTERFACE_TYPE_MISMATCH,
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SHADER_MODULE_EXT,
+                                HandleToUint64(producer->vk_shader_module), SHADER_CHECKER_INTERFACE_TYPE_MISMATCH,
                                 "Decoration mismatch on location %u.%u: %s and %s stages differ in precision", a_first.first,
                                 a_first.second, producer_stage->name, consumer_stage->name);
             }

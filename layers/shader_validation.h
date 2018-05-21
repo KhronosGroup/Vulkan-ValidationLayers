@@ -74,15 +74,17 @@ struct shader_module {
     // trees, constant expressions, etc requires jumping all over the instruction stream.
     std::unordered_map<unsigned, unsigned> def_index;
     bool has_valid_spirv;
+    VkShaderModule vk_shader_module;
 
-    shader_module(VkShaderModuleCreateInfo const *pCreateInfo)
+    shader_module(VkShaderModuleCreateInfo const *pCreateInfo, VkShaderModule shaderModule)
         : words((uint32_t *)pCreateInfo->pCode, (uint32_t *)pCreateInfo->pCode + pCreateInfo->codeSize / sizeof(uint32_t)),
           def_index(),
-          has_valid_spirv(true) {
+          has_valid_spirv(true),
+          vk_shader_module(shaderModule) {
         build_def_index();
     }
 
-    shader_module() : has_valid_spirv(false) {}
+    shader_module() : has_valid_spirv(false), vk_shader_module(VK_NULL_HANDLE) {}
 
     // Expose begin() / end() to enable range-based for
     spirv_inst_iter begin() const { return spirv_inst_iter(words.begin(), words.begin() + 5); }  // First insn
