@@ -41,7 +41,7 @@ Windows 7+ with the following software packages:
 - Microsoft Visual Studio 2013 Update 4 Professional, VS2015 (any version), or VS2017 (any version).
 - [glslang](https://github.com/KhronosGroup/glslang)
   - Ensure that the 'update_glslang_sources.py' script has been run. Follow the build instructions in the
-    glslang README.md file, noting the location of the chosen install directory.
+    glslang [README.md](https://github.com/KhronosGroup/glslang/blob/master/README.md) file, noting the location of the chosen install directory.
 - [CMake](http://www.cmake.org/download/)
   - Tell the installer to "Add CMake to the system PATH" environment variable.
 - [Python 3](https://www.python.org/downloads)
@@ -145,7 +145,7 @@ Vulkan Loader Library
 
 - [glslang](https://github.com/KhronosGroup/glslang)
   - Ensure that the 'update_glslang_sources.py' script has been run. Follow the build instructions in the
-    glslang README.md file, noting the location of the chosen install directory.
+    glslang [README.md](https://github.com/KhronosGroup/glslang/blob/master/README.md) file, noting the location of the chosen install directory.
 
 ### Linux Build
 
