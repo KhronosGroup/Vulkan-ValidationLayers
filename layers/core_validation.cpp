@@ -664,13 +664,15 @@ static bool SetSparseMemBinding(layer_data *dev_data, MEM_BINDING binding, uint6
     } else {
         BINDABLE *mem_binding = GetObjectMemBinding(dev_data, handle, type);
         assert(mem_binding);
-        assert(mem_binding->sparse);
-        DEVICE_MEM_INFO *mem_info = GetMemObjInfo(dev_data, binding.mem);
-        if (mem_info) {
-            mem_info->obj_bindings.insert({handle, type});
-            // Need to set mem binding for this object
-            mem_binding->sparse_bindings.insert(binding);
-            mem_binding->UpdateBoundMemorySet();
+        if (mem_binding) {  // Invalid handles are reported by object tracker, but Get returns NULL for them, so avoid SEGV here
+            assert(mem_binding->sparse);
+            DEVICE_MEM_INFO *mem_info = GetMemObjInfo(dev_data, binding.mem);
+            if (mem_info) {
+                mem_info->obj_bindings.insert({handle, type});
+                // Need to set mem binding for this object
+                mem_binding->sparse_bindings.insert(binding);
+                mem_binding->UpdateBoundMemorySet();
+            }
         }
     }
     return skip;
@@ -10197,6 +10199,8 @@ static bool PreCallValidateQueueBindSparse(layer_data *dev_data, VkQueue queue, 
         for (uint32_t i = 0; i < bindInfo.imageBindCount; ++i) {
             const auto &image_bind = bindInfo.pImageBinds[i];
             auto image_state = GetImageState(dev_data, image_bind.image);
+            if (!image_state)
+                continue;  // Param/Object validation should report image_bind.image handles being invalid, so just skip here.
             sparse_images.insert(image_state);
             if (!image_state->get_sparse_reqs_called || image_state->sparse_requirements.empty()) {
                 // For now just warning if sparse image binding occurs without calling to get reqs first
@@ -10214,6 +10218,8 @@ static bool PreCallValidateQueueBindSparse(layer_data *dev_data, VkQueue queue, 
         }
         for (uint32_t i = 0; i < bindInfo.imageOpaqueBindCount; ++i) {
             auto image_state = GetImageState(dev_data, bindInfo.pImageOpaqueBinds[i].image);
+            if (!image_state)
+                continue;  // Param/Object validation should report image_bind.image handles being invalid, so just skip here.
             sparse_images.insert(image_state);
             if (!image_state->get_sparse_reqs_called || image_state->sparse_requirements.empty()) {
                 // For now just warning if sparse image binding occurs without calling to get reqs first
