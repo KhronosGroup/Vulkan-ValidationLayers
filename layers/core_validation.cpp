@@ -9060,7 +9060,8 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateShaderModule(VkDevice device, const VkShade
 
     if (res == VK_SUCCESS) {
         lock_guard_t lock(global_lock);
-        unique_ptr<shader_module> new_shader_module(spirv_valid ? new shader_module(pCreateInfo) : new shader_module());
+        unique_ptr<shader_module> new_shader_module(spirv_valid ? new shader_module(pCreateInfo, *pShaderModule)
+                                                                : new shader_module());
         dev_data->shaderModuleMap[*pShaderModule] = std::move(new_shader_module);
     }
     return res;
