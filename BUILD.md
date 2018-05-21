@@ -65,6 +65,7 @@ Windows 7+ with the following software packages:
              LOADER_REPO_ROOT=c:\developement\Vulkan-Loader
          and use absolute (not relative) paths, like so:
              cmake -DLOADER_REPO_ROOT=c:\absolute_path_to\Vulkan-Loader ....
+         Currently, the build directory *must* be named either 'build' or 'build32'.
   - Tell the installer to treat line endings "as is" (i.e. both DOS and Unix-style line endings).
 
 ### Windows Build - Microsoft Visual Studio
@@ -142,6 +143,8 @@ Vulkan Loader Library
       - The LOADER_REPO_ROOT environment variable should be used on the cmake command line to specify a vulkan loader library. Make sure to specify an absoute path, like so:
 
           `cmake -DLOADER_REPO_ROOT=c:\development\Vulkan-Loader ....`
+
+    Currently, the build directory *must* be named either 'build' or 'build32'.
 
 - [glslang](https://github.com/KhronosGroup/glslang)
   - Ensure that the 'update_glslang_sources.py' script has been run. Follow the build instructions in the
