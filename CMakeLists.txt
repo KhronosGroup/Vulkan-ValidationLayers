@@ -161,6 +161,14 @@ if (NOT GLSLANG_INSTALL_DIR AND NOT GLSLANG_REPO_ROOT)
     message(FATAL_ERROR "Must define location of glslang binaries -- see BUILD.md")
 endif()
 
+if(DISABLE_BUILD_PATH_DECORATION)
+    set (DEBUG_DECORATION "")
+    set (RELEASE_DECORATION "")
+else()
+    set (DEBUG_DECORATION "Debug")
+    set (RELEASE_DECORATION "Release")
+endif()
+
 # Is user specifying a glslang install directory?
 if (GLSLANG_INSTALL_DIR)
     message(STATUS "Using glslang install located at ${GLSLANG_INSTALL_DIR}")
@@ -184,14 +192,6 @@ else()
 
     if(WIN32)
         set(GSLANG_FINAL_BINARY_PATH ${GLSLANG_REPO_ROOT}/${BUILDTGT_DIR})
-
-        if(DISABLE_BUILD_PATH_DECORATION)
-            set (DEBUG_DECORATION "")
-            set (RELEASE_DECORATION "")
-        else()
-            set (DEBUG_DECORATION "Debug")
-            set (RELEASE_DECORATION "Release")
-        endif()
 
         # Take some steps to set up a variable pointing to the final glslang binaries given the variety of input options
         set (GLSLANG_SEARCH_PATH "${GSLANG_FINAL_BINARY_PATH}/glslang/${RELEASE_DECORATION}"
