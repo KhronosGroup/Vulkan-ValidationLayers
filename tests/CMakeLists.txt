@@ -80,9 +80,10 @@ else()
     endif()
 endif()
 
-set(LOADER_REPO_ROOT ${NOT_DEFINED} CACHE PATH "Absolute path to Vulkan-Loader repository")
+# Predefine loader root as a cmake cache variable for cmake-gui
+set(LOADER_REPO_ROOT "LOADER-NOTFOUND" CACHE PATH "Absolute path to the root of the loader repository")
 
-if(${LOADER_REPO_ROOT} STREQUAL ${NOT_DEFINED})
+if(NOT LOADER_REPO_ROOT)
     message(STATUS "LOADER_REPO_ROOT not set, using find_package to locate Vulkan")
     find_package(Vulkan)
     set (LIBVK "Vulkan::Vulkan")

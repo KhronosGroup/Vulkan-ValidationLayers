@@ -146,25 +146,23 @@ endif()
 option(BUILD_TESTS "Build tests" ON)
 option(BUILD_LAYERS "Build layers" ON)
 
-set(NOT_DEFINED "NOT_DEFINED")
 set(VULKAN_SDK $ENV{VULKAN_SDK})
 
 # set GLSLANG_INSTALL_DIR to define locations of glslang includes, libs, and binaries.
 # This is the preferred method for building this repository.
-set(GLSLANG_INSTALL_DIR ${NOT_DEFINED} CACHE PATH "Absolute path to a glslang install directory")
+set(GLSLANG_INSTALL_DIR "GLSLANG-NOTFOUND" CACHE PATH "Absolute path to a glslang install directory")
 
 # Set GLSLANG_REPO_ROOT to locate glslang repository
 # This should be deprecated in lieu of GLSANG_INSTALL_DIR, remove once users have switched to preferred solution
-set(GLSLANG_REPO_ROOT ${NOT_DEFINED} CACHE PATH "Absolute path to glslang repository")
+set(GLSLANG_REPO_ROOT "GLSLANG-NOTFOUND" CACHE PATH "Absolute path to glslang repository")
 
 # Repo requires glslang and that the update_glslang_sources.py script was run in the indicated glslang repo
-
-if (${GLSLANG_INSTALL_DIR} STREQUAL ${NOT_DEFINED} AND ${GLSLANG_REPO_ROOT} STREQUAL ${NOT_DEFINED})
+if (NOT GLSLANG_INSTALL_DIR AND NOT GLSLANG_REPO_ROOT)
     message(FATAL_ERROR "Must define location of glslang binaries -- see BUILD.md")
 endif()
 
 # Is user specifying a glslang install directory?
-if (NOT ${GLSLANG_INSTALL_DIR} STREQUAL ${NOT_DEFINED})
+if (GLSLANG_INSTALL_DIR)
     message(STATUS "Using glslang install located at ${GLSLANG_INSTALL_DIR}")
     set(SPIRV_TOOLS_BINARY_ROOT "${GLSLANG_INSTALL_DIR}/lib" CACHE PATH "User defined path to the SPIRV-Tools binaries for this project")
     set(SPIRV_TOOLS_OPT_BINARY_ROOT "${GLSLANG_INSTALL_DIR}/lib" CACHE PATH "User defined path to the SPIRV-Tools-opt binaries for this project")
@@ -178,7 +176,7 @@ if (NOT ${GLSLANG_INSTALL_DIR} STREQUAL ${NOT_DEFINED})
     set (SPIRV_TOOLS_OPT_SEARCH_PATH "${GLSLANG_INSTALL_DIR}/lib")
     set (SPIRV_TOOLS_OPT_DEBUG_SEARCH_PATH "${GLSLANG_INSTALL_DIR}/lib")
 else()
-    message(STATUS "Using glslang instance located at ${GLSLANG_REPO_ROOT}")
+    message(STATUS "Using glslang built in repository located at ${GLSLANG_REPO_ROOT}")
 
     # These paths assume that the update_glslang_sources.py script was run in the indicated glslang repo and the repo was built
     set(SPIRV_TOOLS_BINARY_ROOT "${GLSLANG_REPO_ROOT}/${BUILDTGT_DIR}/External/spirv-tools/source" CACHE PATH "User defined path to the SPIRV-Tools binaries for this project")
@@ -235,8 +233,6 @@ else()
               "${CMAKE_SOURCE_DIR}/../glslang/External/spirv-tools/include"
               DOC "Path to spirv-tools/libspirv.h")
 endif()
-
-
 
 find_library(GLSLANG_LIB NAMES glslang
              HINTS ${GLSLANG_SEARCH_PATH} )
