@@ -39,7 +39,7 @@ set(SCRIPTS_DIR "${PROJECT_SOURCE_DIR}/scripts")
 macro(run_vk_xml_generate dependency output)
     add_custom_command(OUTPUT ${output}
     COMMAND ${PYTHON_CMD} ${SCRIPTS_DIR}/lvl_genvk.py -registry ${SCRIPTS_DIR}/vk.xml ${output}
-    DEPENDS ${SCRIPTS_DIR}/vk.xml ${SCRIPTS_DIR}/generator.py ${SCRIPTS_DIR}/${dependency} ${SCRIPTS_DIR}/lvl_genvk.py ${SCRIPTS_DIR}/reg.py
+    DEPENDS ${SCRIPTS_DIR}/vk.xml ${VULKAN_HEADERS_LOCATION}/registry/generator.py ${SCRIPTS_DIR}/${dependency} ${SCRIPTS_DIR}/lvl_genvk.py ${VULKAN_HEADERS_LOCATION}/registry/reg.py
     )
 endmacro()
 
