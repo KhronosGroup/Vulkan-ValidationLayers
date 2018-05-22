@@ -20,18 +20,18 @@ if exist generated (
 mkdir generated\include generated\common
 
 cd generated/include
-py -3 ../../../scripts/lvl_genvk.py -registry ../../../scripts/vk.xml vk_safe_struct.h
-py -3 ../../../scripts/lvl_genvk.py -registry ../../../scripts/vk.xml vk_safe_struct.cpp
-py -3 ../../../scripts/lvl_genvk.py -registry ../../../scripts/vk.xml vk_enum_string_helper.h
-py -3 ../../../scripts/lvl_genvk.py -registry ../../../scripts/vk.xml vk_object_types.h
-py -3 ../../../scripts/lvl_genvk.py -registry ../../../scripts/vk.xml vk_dispatch_table_helper.h
-py -3 ../../../scripts/lvl_genvk.py -registry ../../../scripts/vk.xml thread_check.h
-py -3 ../../../scripts/lvl_genvk.py -registry ../../../scripts/vk.xml parameter_validation.cpp
-py -3 ../../../scripts/lvl_genvk.py -registry ../../../scripts/vk.xml unique_objects_wrappers.h
-py -3 ../../../scripts/lvl_genvk.py -registry ../../../scripts/vk.xml vk_layer_dispatch_table.h
-py -3 ../../../scripts/lvl_genvk.py -registry ../../../scripts/vk.xml vk_extension_helper.h
-py -3 ../../../scripts/lvl_genvk.py -registry ../../../scripts/vk.xml object_tracker.cpp
-py -3 ../../../scripts/lvl_genvk.py -registry ../../../scripts/vk.xml vk_typemap_helper.h
+py -3 ../../../scripts/lvl_genvk.py -registry ../../../Vulkan-Headers/registry/vk.xml vk_safe_struct.h
+py -3 ../../../scripts/lvl_genvk.py -registry ../../../Vulkan-Headers/registry/vk.xml vk_safe_struct.cpp
+py -3 ../../../scripts/lvl_genvk.py -registry ../../../Vulkan-Headers/registry/vk.xml vk_enum_string_helper.h
+py -3 ../../../scripts/lvl_genvk.py -registry ../../../Vulkan-Headers/registry/vk.xml vk_object_types.h
+py -3 ../../../scripts/lvl_genvk.py -registry ../../../Vulkan-Headers/registry/vk.xml vk_dispatch_table_helper.h
+py -3 ../../../scripts/lvl_genvk.py -registry ../../../Vulkan-Headers/registry/vk.xml thread_check.h
+py -3 ../../../scripts/lvl_genvk.py -registry ../../../Vulkan-Headers/registry/vk.xml parameter_validation.cpp
+py -3 ../../../scripts/lvl_genvk.py -registry ../../../Vulkan-Headers/registry/vk.xml unique_objects_wrappers.h
+py -3 ../../../scripts/lvl_genvk.py -registry ../../../Vulkan-Headers/registry/vk.xml vk_layer_dispatch_table.h
+py -3 ../../../scripts/lvl_genvk.py -registry ../../../Vulkan-Headers/registry/vk.xml vk_extension_helper.h
+py -3 ../../../scripts/lvl_genvk.py -registry ../../../Vulkan-Headers/registry/vk.xml object_tracker.cpp
+py -3 ../../../scripts/lvl_genvk.py -registry ../../../Vulkan-Headers/registry/vk.xml vk_typemap_helper.h
 
 set SPIRV_TOOLS_PATH=../../third_party/shaderc/third_party/spirv-tools
 set SPIRV_TOOLS_UUID=spirv_tools_uuid.txt
