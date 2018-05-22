@@ -14,11 +14,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import argparse, cProfile, pdb, string, sys, time
+import argparse, cProfile, pdb, string, sys, time, os
+scripts_directory_path = os.path.dirname(os.path.abspath(__file__))
+registry_headers_path = os.path.join(scripts_directory_path, '../Vulkan-Headers/registry')
+sys.path.insert(0, registry_headers_path)
+
 from reg import *
 from generator import write
 from cgenerator import CGeneratorOptions, COutputGenerator
-# LoaderAndValidationLayer Generator Modifications
+
+# ValidationLayer Generator Modifications
 from threading_generator import  ThreadGeneratorOptions, ThreadOutputGenerator
 from parameter_validation_generator import ParameterValidationGeneratorOptions, ParameterValidationOutputGenerator
 from unique_objects_generator import UniqueObjectsGeneratorOptions, UniqueObjectsOutputGenerator
