@@ -99,6 +99,26 @@ struct layer_data {
     VkLayerDispatchTable dispatch_table = {};
 };
 
+#if defined(__GNUC__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-variable"
+#endif
+static const char *kVUID_PVError_NONE = "UNASSIGNED-GeneralParameterError-Info";
+static const char *kVUID_PVError_InvalidUsage = "UNASSIGNED-GeneralParameterError-InvalidUsage";
+static const char *kVUID_PVError_InvalidStructSType = "UNASSIGNED-GeneralParameterError-InvalidStructSType";
+static const char *kVUID_PVError_InvalidStructPNext = "UNASSIGNED-GeneralParameterError-InvalidStructPNext";
+static const char *kVUID_PVError_RequiredParameter = "UNASSIGNED-GeneralParameterError-RequiredParameter";
+static const char *kVUID_PVError_ReservedParameter = "UNASSIGNED-GeneralParameterError-ReservedParameter";
+static const char *kVUID_PVError_UnrecognizedValue = "UNASSIGNED-GeneralParameterError-UnrecognizedValue";
+static const char *kVUID_PVError_DeviceLimit = "UNASSIGNED-GeneralParameterError-DeviceLimit";
+static const char *kVUID_PVError_DeviceFeature = "UNASSIGNED-GeneralParameterError-DeviceFeature";
+static const char *kVUID_PVError_FailureCode = "UNASSIGNED-GeneralParameterError-FailureCode";
+static const char *kVUID_PVError_ExtensionNotEnabled = "UNASSIGNED-GeneralParameterError-ExtensionNotEnabled";
+#if defined(__GNUC__)
+#pragma GCC diagnostic pop
+#endif
+
+#if 0  // TBD - should see if we can add the expository text below into the spec reference string database
 enum ErrorCode {
     NONE,                   // Used for INFO & other non-error messages
     INVALID_USAGE,          // The value of a parameter is not consistent
@@ -127,6 +147,7 @@ enum ErrorCode {
                             // extension was not enabled at CreateInstance or
                             // CreateDevice time.
 };
+#endif
 
 struct GenericHeader {
     VkStructureType sType;
@@ -168,8 +189,8 @@ struct LogMiscParams {
  * @return Boolean value indicating that the call should be skipped.
  */
 template <typename T>
-bool ValidateGreaterThan(const T value, const T lower_bound, const ParameterName &parameter_name,
-                         const UNIQUE_VALIDATION_ERROR_CODE vuid, const LogMiscParams &misc) {
+bool ValidateGreaterThan(const T value, const T lower_bound, const ParameterName &parameter_name, const std::string vuid,
+                         const LogMiscParams &misc) {
     bool skip_call = false;
 
     if (value <= lower_bound) {
@@ -184,7 +205,7 @@ bool ValidateGreaterThan(const T value, const T lower_bound, const ParameterName
 }
 
 template <typename T>
-bool ValidateGreaterThanZero(const T value, const ParameterName &parameter_name, const UNIQUE_VALIDATION_ERROR_CODE vuid,
+bool ValidateGreaterThanZero(const T value, const ParameterName &parameter_name, const std::string vuid,
                              const LogMiscParams &misc) {
     return ValidateGreaterThan(value, T{0}, parameter_name, vuid, misc);
 }
@@ -200,7 +221,7 @@ bool ValidateGreaterThanZero(const T value, const ParameterName &parameter_name,
  * @return Boolean value indicating that the call should be skipped.
  */
 static bool validate_required_pointer(debug_report_data *report_data, const char *apiName, const ParameterName &parameterName,
-                                      const void *value, UNIQUE_VALIDATION_ERROR_CODE vuid) {
+                                      const void *value, std::string vuid) {
     bool skip_call = false;
 
     if (value == NULL) {
@@ -231,7 +252,7 @@ static bool validate_required_pointer(debug_report_data *report_data, const char
 template <typename T1, typename T2>
 bool validate_array(debug_report_data *report_data, const char *apiName, const ParameterName &countName,
                     const ParameterName &arrayName, T1 count, const T2 *array, bool countRequired, bool arrayRequired,
-                    UNIQUE_VALIDATION_ERROR_CODE count_required_vuid, UNIQUE_VALIDATION_ERROR_CODE array_required_vuid) {
+                    std::string count_required_vuid, std::string array_required_vuid) {
     bool skip_call = false;
 
     // Count parameters not tagged as optional cannot be 0
@@ -274,15 +295,14 @@ bool validate_array(debug_report_data *report_data, const char *apiName, const P
 template <typename T1, typename T2>
 bool validate_array(debug_report_data *report_data, const char *apiName, const ParameterName &countName,
                     const ParameterName &arrayName, const T1 *count, const T2 *array, bool countPtrRequired,
-                    bool countValueRequired, bool arrayRequired, UNIQUE_VALIDATION_ERROR_CODE count_required_vuid,
-                    UNIQUE_VALIDATION_ERROR_CODE array_required_vuid) {
+                    bool countValueRequired, bool arrayRequired, std::string count_required_vuid, std::string array_required_vuid) {
     bool skip_call = false;
 
     if (count == NULL) {
         if (countPtrRequired) {
-            skip_call |=
-                log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, REQUIRED_PARAMETER,
-                        "%s: required parameter %s specified as NULL", apiName, countName.get_name().c_str());
+            skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                 kVUID_PVError_RequiredParameter, "%s: required parameter %s specified as NULL", apiName,
+                                 countName.get_name().c_str());
         }
     } else {
         skip_call |= validate_array(report_data, apiName, countName, arrayName, *array ? (*count) : 0, &array, countValueRequired,
@@ -310,15 +330,14 @@ bool validate_array(debug_report_data *report_data, const char *apiName, const P
  */
 template <typename T>
 bool validate_struct_type(debug_report_data *report_data, const char *apiName, const ParameterName &parameterName,
-                          const char *sTypeName, const T *value, VkStructureType sType, bool required,
-                          UNIQUE_VALIDATION_ERROR_CODE vuid) {
+                          const char *sTypeName, const T *value, VkStructureType sType, bool required, std::string vuid) {
     bool skip_call = false;
 
     if (value == NULL) {
         if (required) {
-            skip_call |=
-                log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, REQUIRED_PARAMETER,
-                        "%s: required parameter %s specified as NULL", apiName, parameterName.get_name().c_str());
+            skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                 kVUID_PVError_RequiredParameter, "%s: required parameter %s specified as NULL", apiName,
+                                 parameterName.get_name().c_str());
         }
     } else if (value->sType != sType) {
         skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, vuid,
@@ -350,18 +369,18 @@ bool validate_struct_type(debug_report_data *report_data, const char *apiName, c
 template <typename T>
 bool validate_struct_type_array(debug_report_data *report_data, const char *apiName, const ParameterName &countName,
                                 const ParameterName &arrayName, const char *sTypeName, uint32_t count, const T *array,
-                                VkStructureType sType, bool countRequired, bool arrayRequired, UNIQUE_VALIDATION_ERROR_CODE vuid) {
+                                VkStructureType sType, bool countRequired, bool arrayRequired, std::string vuid) {
     bool skip_call = false;
 
     if ((count == 0) || (array == NULL)) {
         skip_call |= validate_array(report_data, apiName, countName, arrayName, count, &array, countRequired, arrayRequired,
-                                    VALIDATION_ERROR_UNDEFINED, vuid);
+                                    kVUIDUndefined, vuid);
     } else {
         // Verify that all structs in the array have the correct type
         for (uint32_t i = 0; i < count; ++i) {
             if (array[i].sType != sType) {
                 skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                     INVALID_STRUCT_STYPE, "%s: parameter %s[%d].sType must be %s", apiName,
+                                     kVUID_PVError_InvalidStructSType, "%s: parameter %s[%d].sType must be %s", apiName,
                                      arrayName.get_name().c_str(), i, sTypeName);
             }
         }
@@ -395,14 +414,14 @@ template <typename T>
 bool validate_struct_type_array(debug_report_data *report_data, const char *apiName, const ParameterName &countName,
                                 const ParameterName &arrayName, const char *sTypeName, uint32_t *count, const T *array,
                                 VkStructureType sType, bool countPtrRequired, bool countValueRequired, bool arrayRequired,
-                                UNIQUE_VALIDATION_ERROR_CODE vuid) {
+                                std::string vuid) {
     bool skip_call = false;
 
     if (count == NULL) {
         if (countPtrRequired) {
-            skip_call |=
-                log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, REQUIRED_PARAMETER,
-                        "%s: required parameter %s specified as NULL", apiName, countName.get_name().c_str());
+            skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                 kVUID_PVError_RequiredParameter, "%s: required parameter %s specified as NULL", apiName,
+                                 countName.get_name().c_str());
         }
     } else {
         skip_call |= validate_struct_type_array(report_data, apiName, countName, arrayName, sTypeName, (*count), array, sType,
@@ -428,9 +447,9 @@ bool validate_required_handle(debug_report_data *report_data, const char *api_na
     bool skip_call = false;
 
     if (value == VK_NULL_HANDLE) {
-        skip_call |=
-            log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, REQUIRED_PARAMETER,
-                    "%s: required parameter %s specified as VK_NULL_HANDLE", api_name, parameter_name.get_name().c_str());
+        skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                             kVUID_PVError_RequiredParameter, "%s: required parameter %s specified as VK_NULL_HANDLE", api_name,
+                             parameter_name.get_name().c_str());
     }
 
     return skip_call;
@@ -466,14 +485,14 @@ bool validate_handle_array(debug_report_data *report_data, const char *api_name,
 
     if ((count == 0) || (array == NULL)) {
         skip_call |= validate_array(report_data, api_name, count_name, array_name, count, &array, count_required, array_required,
-                                    VALIDATION_ERROR_UNDEFINED, VALIDATION_ERROR_UNDEFINED);
+                                    kVUIDUndefined, kVUIDUndefined);
     } else {
         // Verify that no handles in the array are VK_NULL_HANDLE
         for (uint32_t i = 0; i < count; ++i) {
             if (array[i] == VK_NULL_HANDLE) {
                 skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                     REQUIRED_PARAMETER, "%s: required parameter %s[%d] specified as VK_NULL_HANDLE", api_name,
-                                     array_name.get_name().c_str(), i);
+                                     kVUID_PVError_RequiredParameter, "%s: required parameter %s[%d] specified as VK_NULL_HANDLE",
+                                     api_name, array_name.get_name().c_str(), i);
             }
         }
     }
@@ -501,8 +520,7 @@ bool validate_handle_array(debug_report_data *report_data, const char *api_name,
  */
 static bool validate_string_array(debug_report_data *report_data, const char *apiName, const ParameterName &countName,
                                   const ParameterName &arrayName, uint32_t count, const char *const *array, bool countRequired,
-                                  bool arrayRequired, UNIQUE_VALIDATION_ERROR_CODE count_required_vuid,
-                                  UNIQUE_VALIDATION_ERROR_CODE array_required_vuid) {
+                                  bool arrayRequired, std::string count_required_vuid, std::string array_required_vuid) {
     bool skip_call = false;
 
     if ((count == 0) || (array == NULL)) {
@@ -513,7 +531,7 @@ static bool validate_string_array(debug_report_data *report_data, const char *ap
         for (uint32_t i = 0; i < count; ++i) {
             if (array[i] == NULL) {
                 skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                     REQUIRED_PARAMETER, "%s: required parameter %s[%d] specified as NULL", apiName,
+                                     kVUID_PVError_RequiredParameter, "%s: required parameter %s[%d] specified as NULL", apiName,
                                      arrayName.get_name().c_str(), i);
             }
         }
@@ -541,8 +559,7 @@ static bool validate_string_array(debug_report_data *report_data, const char *ap
  */
 static bool validate_struct_pnext(debug_report_data *report_data, const char *api_name, const ParameterName &parameter_name,
                                   const char *allowed_struct_names, const void *next, size_t allowed_type_count,
-                                  const VkStructureType *allowed_types, uint32_t header_version,
-                                  UNIQUE_VALIDATION_ERROR_CODE vuid) {
+                                  const VkStructureType *allowed_types, uint32_t header_version, std::string vuid) {
     bool skip_call = false;
     std::unordered_set<const void *> cycle_check;
     std::unordered_set<VkStructureType, std::hash<int>> unique_stype_check;
@@ -572,8 +589,8 @@ static bool validate_struct_pnext(debug_report_data *report_data, const char *ap
                 if (cycle_check.find(current->pNext) != cycle_check.end()) {
                     std::string message = "%s: %s chain contains a cycle -- pNext pointer " PRIx64 " is repeated.";
                     skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                         INVALID_STRUCT_PNEXT, message.c_str(), api_name, parameter_name.get_name().c_str(),
-                                         reinterpret_cast<uint64_t>(next));
+                                         kVUID_PVError_InvalidStructPNext, message.c_str(), api_name,
+                                         parameter_name.get_name().c_str(), reinterpret_cast<uint64_t>(next));
                     break;
                 } else {
                     cycle_check.insert(current->pNext);
@@ -583,8 +600,8 @@ static bool validate_struct_pnext(debug_report_data *report_data, const char *ap
                 if (unique_stype_check.find(current->sType) != unique_stype_check.end()) {
                     std::string message = "%s: %s chain contains duplicate structure types: %s appears multiple times.";
                     skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                         INVALID_STRUCT_PNEXT, message.c_str(), api_name, parameter_name.get_name().c_str(),
-                                         type_name.c_str());
+                                         kVUID_PVError_InvalidStructPNext, message.c_str(), api_name,
+                                         parameter_name.get_name().c_str(), type_name.c_str());
                 } else {
                     unique_stype_check.insert(current->sType);
                 }
@@ -631,9 +648,9 @@ static bool validate_bool32(debug_report_data *report_data, const char *apiName,
     bool skip_call = false;
 
     if ((value != VK_TRUE) && (value != VK_FALSE)) {
-        skip_call |=
-            log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, UNRECOGNIZED_VALUE,
-                    "%s: value of %s (%d) is neither VK_TRUE nor VK_FALSE", apiName, parameterName.get_name().c_str(), value);
+        skip_call |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                             kVUID_PVError_UnrecognizedValue, "%s: value of %s (%d) is neither VK_TRUE nor VK_FALSE", apiName,
+                             parameterName.get_name().c_str(), value);
     }
 
     return skip_call;
@@ -659,7 +676,7 @@ static bool validate_bool32(debug_report_data *report_data, const char *apiName,
  */
 template <typename T>
 bool validate_ranged_enum(debug_report_data *report_data, const char *apiName, const ParameterName &parameterName,
-                          const char *enumName, const std::vector<T> &valid_values, T value, UNIQUE_VALIDATION_ERROR_CODE vuid) {
+                          const char *enumName, const std::vector<T> &valid_values, T value, std::string vuid) {
     bool skip = false;
 
     if (std::find(valid_values.begin(), valid_values.end(), value) == valid_values.end()) {
@@ -702,12 +719,12 @@ static bool validate_ranged_enum_array(debug_report_data *report_data, const cha
 
     if ((count == 0) || (array == NULL)) {
         skip_call |= validate_array(report_data, apiName, countName, arrayName, count, &array, countRequired, arrayRequired,
-                                    VALIDATION_ERROR_UNDEFINED, VALIDATION_ERROR_UNDEFINED);
+                                    kVUIDUndefined, kVUIDUndefined);
     } else {
         for (uint32_t i = 0; i < count; ++i) {
             if (std::find(valid_values.begin(), valid_values.end(), array[i]) == valid_values.end()) {
                 skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                     UNRECOGNIZED_VALUE,
+                                     kVUID_PVError_UnrecognizedValue,
                                      "%s: value of %s[%d] (%d) does not fall within the begin..end range of the core %s "
                                      "enumeration tokens and is not an extension added token",
                                      apiName, arrayName.get_name().c_str(), i, array[i], enumName);
@@ -731,7 +748,7 @@ static bool validate_ranged_enum_array(debug_report_data *report_data, const cha
  * @return Boolean value indicating that the call should be skipped.
  */
 static bool validate_reserved_flags(debug_report_data *report_data, const char *api_name, const ParameterName &parameter_name,
-                                    VkFlags value, UNIQUE_VALIDATION_ERROR_CODE vuid) {
+                                    VkFlags value, std::string vuid) {
     bool skip_call = false;
 
     if (value != 0) {
@@ -760,7 +777,7 @@ static bool validate_reserved_flags(debug_report_data *report_data, const char *
  */
 static bool validate_flags(debug_report_data *report_data, const char *api_name, const ParameterName &parameter_name,
                            const char *flag_bits_name, VkFlags all_flags, VkFlags value, bool flags_required, bool singleFlag,
-                           UNIQUE_VALIDATION_ERROR_CODE vuid) {
+                           std::string vuid) {
     bool skip_call = false;
 
     if (value == 0) {
@@ -769,14 +786,15 @@ static bool validate_flags(debug_report_data *report_data, const char *api_name,
                                  "%s: value of %s must not be 0.", api_name, parameter_name.get_name().c_str());
         }
     } else if ((value & (~all_flags)) != 0) {
-        skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                             UNRECOGNIZED_VALUE, "%s: value of %s contains flag bits that are not recognized members of %s",
-                             api_name, parameter_name.get_name().c_str(), flag_bits_name);
-    } else if (singleFlag && (std::bitset<sizeof(VkFlags) * 8>(value).count() > 1)) {
         skip_call |=
-            log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, UNRECOGNIZED_VALUE,
-                    "%s: value of %s contains multiple members of %s when only a single value is allowed", api_name,
-                    parameter_name.get_name().c_str(), flag_bits_name);
+            log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                    kVUID_PVError_UnrecognizedValue, "%s: value of %s contains flag bits that are not recognized members of %s",
+                    api_name, parameter_name.get_name().c_str(), flag_bits_name);
+    } else if (singleFlag && (std::bitset<sizeof(VkFlags) * 8>(value).count() > 1)) {
+        skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                             kVUID_PVError_UnrecognizedValue,
+                             "%s: value of %s contains multiple members of %s when only a single value is allowed", api_name,
+                             parameter_name.get_name().c_str(), flag_bits_name);
     }
 
     return skip_call;
@@ -807,7 +825,7 @@ static bool validate_flags_array(debug_report_data *report_data, const char *api
 
     if ((count == 0) || (array == NULL)) {
         skip_call |= validate_array(report_data, api_name, count_name, array_name, count, &array, count_required, array_required,
-                                    VALIDATION_ERROR_UNDEFINED, VALIDATION_ERROR_UNDEFINED);
+                                    kVUIDUndefined, kVUIDUndefined);
     } else {
         // Verify that all VkFlags values in the array
         for (uint32_t i = 0; i < count; ++i) {
@@ -816,14 +834,14 @@ static bool validate_flags_array(debug_report_data *report_data, const char *api
                 // elements in the array are allowed be 0
                 if (array_required) {
                     skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                         REQUIRED_PARAMETER, "%s: value of %s[%d] must not be 0", api_name,
+                                         kVUID_PVError_RequiredParameter, "%s: value of %s[%d] must not be 0", api_name,
                                          array_name.get_name().c_str(), i);
                 }
             } else if ((array[i] & (~all_flags)) != 0) {
-                skip_call |=
-                    log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                            UNRECOGNIZED_VALUE, "%s: value of %s[%d] contains flag bits that are not recognized members of %s",
-                            api_name, array_name.get_name().c_str(), i, flag_bits_name);
+                skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                     kVUID_PVError_UnrecognizedValue,
+                                     "%s: value of %s[%d] contains flag bits that are not recognized members of %s", api_name,
+                                     array_name.get_name().c_str(), i, flag_bits_name);
             }
         }
     }
@@ -897,12 +915,13 @@ static void validate_result(debug_report_data *report_data, const char *apiName,
         std::string resultName = string_VkResult(result);
         if (resultName == UnsupportedResultString) {
             // Unrecognized result code
-            log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, FAILURE_RETURN_CODE,
-                    "%s: returned a result code indicating that an error has occurred", apiName);
+            log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                    kVUID_PVError_FailureCode, "%s: returned a result code indicating that an error has occurred", apiName);
         } else {
             std::string resultDesc = get_result_description(result);
-            log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, FAILURE_RETURN_CODE,
-                    "%s: returned %s, indicating that %s", apiName, resultName.c_str(), resultDesc.c_str());
+            log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                    kVUID_PVError_FailureCode, "%s: returned %s, indicating that %s", apiName, resultName.c_str(),
+                    resultDesc.c_str());
         }
     }
 }
