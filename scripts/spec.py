@@ -28,7 +28,7 @@ import re
 
 out_filename = "../layers/vk_validation_error_messages.h" # can override w/ '-out <filename>' option
 db_filename = "../layers/vk_validation_error_database.txt" # can override w/ '-gendb <filename>' option
-json_filename = "../scripts/validusage.json" # can override w/ '-json-file <filename> option
+json_filename = "../Vulkan-Headers/registry/validusage.json" # can override w/ '-json-file <filename> option
 gen_db = False # set to True when '-gendb <filename>' option provided
 json_compare = False # compare existing DB to json file input
 # This is the root spec link that is used in error messages to point users to spec sections
