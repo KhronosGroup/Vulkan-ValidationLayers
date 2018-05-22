@@ -625,6 +625,8 @@ func_struct_id_map = {
 'VkPhysicalDeviceDescriptorIndexingPropertiesEXT' : 569,
 'VkPhysicalDeviceShaderCorePropertiesAMD' : 570,
 'VkVertexInputBindingDivisorDescriptionEXT' : 571,
+'VkBaseOutStructure' : 572,
+'VkBaseInStructure' : 573,
 ### ADD New func/struct mappings above this line
 }
 # Mapping of params to unique IDs
