@@ -86,7 +86,7 @@ struct hash<PushConstantRanges> : public hash_util::IsOrderedContainer<PushConst
 // VkImageSubresourceRange
 static bool operator==(const VkImageSubresourceRange &lhs, const VkImageSubresourceRange &rhs) {
     return (lhs.aspectMask == rhs.aspectMask) && (lhs.baseMipLevel == rhs.baseMipLevel) && (lhs.levelCount == rhs.levelCount) &&
-           (lhs.baseArrayLayer == lhs.baseArrayLayer) && (lhs.layerCount == lhs.layerCount);
+           (lhs.baseArrayLayer == rhs.baseArrayLayer) && (lhs.layerCount == rhs.layerCount);
 }
 namespace std {
 template <>
