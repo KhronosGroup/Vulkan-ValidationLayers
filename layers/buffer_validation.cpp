@@ -839,7 +839,7 @@ void TransitionImageLayouts(layer_data *device_data, GLOBAL_CB_NODE *cb_state, u
 
 bool VerifyImageLayout(layer_data const *device_data, GLOBAL_CB_NODE const *cb_node, IMAGE_STATE *image_state,
                        VkImageSubresourceLayers subLayers, VkImageLayout explicit_layout, VkImageLayout optimal_layout,
-                       const char *caller, std::string msg_code, bool *error) {
+                       const char *caller, const std::string &msg_code, bool *error) {
     const auto report_data = core_validation::GetReportData(device_data);
     const auto image = image_state->image;
     bool skip = false;
@@ -1605,7 +1605,7 @@ static inline bool CheckItgExtent(layer_data *device_data, const GLOBAL_CB_NODE 
 // Check valid usage Image Transfer Granularity requirements for elements of a VkBufferImageCopy structure
 bool ValidateCopyBufferImageTransferGranularityRequirements(layer_data *device_data, const GLOBAL_CB_NODE *cb_node,
                                                             const IMAGE_STATE *img, const VkBufferImageCopy *region,
-                                                            const uint32_t i, const char *function, std::string vuid) {
+                                                            const uint32_t i, const char *function, const std::string &vuid) {
     bool skip = false;
     VkExtent3D granularity = GetScaledItg(device_data, cb_node, img);
     skip |= CheckItgOffset(device_data, cb_node, &region->imageOffset, &granularity, i, function, "imageOffset", vuid);
@@ -3242,13 +3242,13 @@ static bool validate_usage_flags(layer_data *device_data, VkFlags actual, VkFlag
 // Helper function to validate usage flags for buffers. For given buffer_state send actual vs. desired usage off to helper above
 // where an error will be flagged if usage is not correct
 bool ValidateImageUsageFlags(layer_data *device_data, IMAGE_STATE const *image_state, VkFlags desired, bool strict,
-                             std::string msgCode, char const *func_name, char const *usage_string) {
+                             const std::string &msgCode, char const *func_name, char const *usage_string) {
     return validate_usage_flags(device_data, image_state->createInfo.usage, desired, strict, HandleToUint64(image_state->image),
                                 kVulkanObjectTypeImage, msgCode, func_name, usage_string);
 }
 
 bool ValidateImageFormatFeatureFlags(layer_data *dev_data, IMAGE_STATE const *image_state, VkFormatFeatureFlags desired,
-                                     char const *func_name, std::string linear_vuid, std::string optimal_vuid) {
+                                     char const *func_name, const std::string &linear_vuid, const std::string &optimal_vuid) {
     VkFormatProperties format_properties = GetFormatProperties(dev_data, image_state->createInfo.format);
     const debug_report_data *report_data = core_validation::GetReportData(dev_data);
     bool skip = false;
@@ -3275,7 +3275,7 @@ bool ValidateImageFormatFeatureFlags(layer_data *dev_data, IMAGE_STATE const *im
 // Helper function to validate usage flags for buffers. For given buffer_state send actual vs. desired usage off to helper above
 // where an error will be flagged if usage is not correct
 bool ValidateBufferUsageFlags(layer_data *device_data, BUFFER_STATE const *buffer_state, VkFlags desired, bool strict,
-                              std::string msgCode, char const *func_name, char const *usage_string) {
+                              const std::string &msgCode, char const *func_name, char const *usage_string) {
     return validate_usage_flags(device_data, buffer_state->createInfo.usage, desired, strict, HandleToUint64(buffer_state->buffer),
                                 kVulkanObjectTypeBuffer, msgCode, func_name, usage_string);
 }
