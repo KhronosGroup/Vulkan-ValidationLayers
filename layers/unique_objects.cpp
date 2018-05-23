@@ -21,6 +21,7 @@
  */
 
 #define NOMINMAX
+#define VALIDATION_ERROR_MAP_IMPL
 
 #include <stdio.h>
 #include <stdlib.h>

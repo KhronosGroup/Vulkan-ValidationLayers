@@ -3965,7 +3965,8 @@ enum UNIQUE_VALIDATION_ERROR_CODE {
 };
 
 // Mapping from unique validation error enum to the corresponding spec text
-static std::unordered_map<int, char const *const> validation_error_map{
+#ifdef VALIDATION_ERROR_MAP_IMPL
+std::unordered_map<int, char const *const> validation_error_map {
     {VALIDATION_ERROR_00000009, "The spec valid usage text states 'Each of fence, semaphore, and swapchain that are valid handles must have been created, allocated, or retrieved from the same VkInstance' (https://www.khronos.org/registry/vulkan/specs/1.0-extensions/html/vkspec.html#VUID-VkAcquireNextImageInfoKHR-commonparent)"},
     {VALIDATION_ERROR_00000a10, "The spec valid usage text states 'If semaphore is not VK_NULL_HANDLE it must be unsignaled' (https://www.khronos.org/registry/vulkan/specs/1.0-extensions/html/vkspec.html#VUID-VkAcquireNextImageInfoKHR-semaphore-01288)"},
     {VALIDATION_ERROR_00000a12, "The spec valid usage text states 'If fence is not VK_NULL_HANDLE it must be unsignaled and must not be associated with any other queue command that has not yet completed execution on that queue' (https://www.khronos.org/registry/vulkan/specs/1.0-extensions/html/vkspec.html#VUID-VkAcquireNextImageInfoKHR-fence-01289)"},
@@ -7893,10 +7894,14 @@ static std::unordered_map<int, char const *const> validation_error_map{
     {VALIDATION_ERROR_47600e9c, "The spec valid usage text states 'divisor must be a value between 0 and VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT::maxVertexAttribDivisor, inclusive.' (https://www.khronos.org/registry/vulkan/specs/1.0-extensions/html/vkspec.html#VUID-VkVertexInputBindingDivisorDescriptionEXT-divisor-01870)"},
     {VALIDATION_ERROR_47600e9e, "The spec valid usage text states 'VkVertexInputBindingDescription::inputRate must be of type VK_VERTEX_INPUT_RATE_INSTANCE for this binding.' (https://www.khronos.org/registry/vulkan/specs/1.0-extensions/html/vkspec.html#VUID-VkVertexInputBindingDivisorDescriptionEXT-inputRate-01871)"},
 };
+#else
+extern std::unordered_map<int, char const *const> validation_error_map;
+#endif
 
 
 // Mapping from spec validation error text string to unique validation error enum
-static std::unordered_map<std::string, int> validation_error_text_map{
+#ifdef VALIDATION_ERROR_MAP_IMPL
+std::unordered_map<std::string, int> validation_error_text_map {
     {"VUID-VkAcquireNextImageInfoKHR-commonparent", VALIDATION_ERROR_00000009},
     {"VUID-VkAcquireNextImageInfoKHR-semaphore-01288", VALIDATION_ERROR_00000a10},
     {"VUID-VkAcquireNextImageInfoKHR-fence-01289", VALIDATION_ERROR_00000a12},
@@ -11824,3 +11829,6 @@ static std::unordered_map<std::string, int> validation_error_text_map{
     {"VUID-VkVertexInputBindingDivisorDescriptionEXT-divisor-01870", VALIDATION_ERROR_47600e9c},
     {"VUID-VkVertexInputBindingDivisorDescriptionEXT-inputRate-01871", VALIDATION_ERROR_47600e9e},
 };
+#else
+extern std::unordered_map<std::string, int> validation_error_text_map;
+#endif

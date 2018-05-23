@@ -35,6 +35,7 @@
 
 // Allow use of STL min and max functions in Windows
 #define NOMINMAX
+#define VALIDATION_ERROR_MAP_IMPL
 
 #include <algorithm>
 #include <array>

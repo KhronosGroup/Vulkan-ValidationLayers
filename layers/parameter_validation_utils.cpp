@@ -19,6 +19,7 @@
  */
 
 #define NOMINMAX
+#define VALIDATION_ERROR_MAP_IMPL
 
 #include <limits.h>
 #include <math.h>

@@ -23,6 +23,8 @@
 #include <assert.h>
 #include <unordered_map>
 
+#define VALIDATION_ERROR_MAP_IMPL
+
 #include "vk_dispatch_table_helper.h"
 #include "vk_lunarg_device_profile_api_layer.h"
 #include "vk_device_profile_api_layer.h"
