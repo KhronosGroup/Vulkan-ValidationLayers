@@ -202,8 +202,10 @@ class Specification:
         file_contents.append('//  When a given error occurs, these enum values should be passed to the as the messageCode')
         file_contents.append('//  parameter to the PFN_vkDebugReportCallbackEXT function')
         enum_decl = ['enum UNIQUE_VALIDATION_ERROR_CODE {\n    VALIDATION_ERROR_UNDEFINED = -1,']
-        vuid_int_to_error_map = ['static std::unordered_map<int, char const *const> validation_error_map{']
-        vuid_string_to_error_map = ['static std::unordered_map<std::string, int> validation_error_text_map{']
+        vuid_int_to_error_map_decl = 'std::unordered_map<int, char const *const> validation_error_map'
+        vuid_int_to_error_map = [ '#ifdef VALIDATION_ERROR_MAP_IMPL', vuid_int_to_error_map_decl + ' {']
+        vuid_string_to_error_map_decl = 'std::unordered_map<std::string, int> validation_error_text_map'
+        vuid_string_to_error_map = [ '#ifdef VALIDATION_ERROR_MAP_IMPL', vuid_string_to_error_map_decl + ' {']
         enum_value = 0
         max_enum_val = 0
         for enum in sorted(self.error_db_dict):
@@ -214,8 +216,16 @@ class Specification:
             max_enum_val = max(max_enum_val, enum_value)
         enum_decl.append('    %sMAX_ENUM = %d,' % (validation_error_enum_name, max_enum_val + 1))
         enum_decl.append('};')
-        vuid_int_to_error_map.append('};\n')
-        vuid_string_to_error_map.append('};\n')
+        vuid_int_to_error_map.extend([
+            '};',
+            '#else',
+            'extern ' + vuid_int_to_error_map_decl + ';',
+            '#endif\n'])
+        vuid_string_to_error_map.extend([
+            '};',
+            '#else',
+            'extern ' + vuid_string_to_error_map_decl + ';',
+            '#endif\n'])
         file_contents.extend(enum_decl)
         file_contents.append('\n// Mapping from unique validation error enum to the corresponding spec text')
         file_contents.extend(vuid_int_to_error_map)
