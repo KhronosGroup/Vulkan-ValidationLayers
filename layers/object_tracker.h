@@ -139,7 +139,7 @@ extern uint64_t object_track_index;
 extern uint32_t loader_layer_if_version;
 extern const std::unordered_map<std::string, void *> name_to_funcptr_map;
 
-void DeviceReportUndestroyedObjects(VkDevice device, VulkanObjectType object_type, std::string error_code);
+void DeviceReportUndestroyedObjects(VkDevice device, VulkanObjectType object_type, const std::string &error_code);
 void DeviceDestroyUndestroyedObjects(VkDevice device, VulkanObjectType object_type);
 void CreateQueue(VkDevice device, VkQueue vkObj);
 void AddQueueInfo(VkDevice device, uint32_t queue_node_index, VkQueue queue);
@@ -148,13 +148,13 @@ void AllocateCommandBuffer(VkDevice device, const VkCommandPool command_pool, co
                            VkCommandBufferLevel level);
 void AllocateDescriptorSet(VkDevice device, VkDescriptorPool descriptor_pool, VkDescriptorSet descriptor_set);
 void CreateSwapchainImageObject(VkDevice dispatchable_object, VkImage swapchain_image, VkSwapchainKHR swapchain);
-void ReportUndestroyedObjects(VkDevice device, std::string error_code);
+void ReportUndestroyedObjects(VkDevice device, const std::string &error_code);
 void DestroyUndestroyedObjects(VkDevice device);
-bool ValidateDeviceObject(uint64_t device_handle, std::string invalid_handle_code, std::string wrong_device_code);
+bool ValidateDeviceObject(uint64_t device_handle, const std::string &invalid_handle_code, const std::string &wrong_device_code);
 
 template <typename T1, typename T2>
 bool ValidateObject(T1 dispatchable_object, T2 object, VulkanObjectType object_type, bool null_allowed,
-                    std::string invalid_handle_code, std::string wrong_device_code) {
+                    const std::string &invalid_handle_code, const std::string &wrong_device_code) {
     if (null_allowed && (object == VK_NULL_HANDLE)) {
         return false;
     }
@@ -248,7 +248,7 @@ void DestroyObjectSilently(T1 dispatchable_object, T2 object, VulkanObjectType o
 
 template <typename T1, typename T2>
 void DestroyObject(T1 dispatchable_object, T2 object, VulkanObjectType object_type, const VkAllocationCallbacks *pAllocator,
-                   std::string expected_custom_allocator_code, std::string expected_default_allocator_code) {
+                   const std::string &expected_custom_allocator_code, const std::string &expected_default_allocator_code) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(dispatchable_object), layer_data_map);
 
     auto object_handle = HandleToUint64(object);
