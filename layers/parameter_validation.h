@@ -189,7 +189,7 @@ struct LogMiscParams {
  * @return Boolean value indicating that the call should be skipped.
  */
 template <typename T>
-bool ValidateGreaterThan(const T value, const T lower_bound, const ParameterName &parameter_name, const std::string vuid,
+bool ValidateGreaterThan(const T value, const T lower_bound, const ParameterName &parameter_name, const std::string &vuid,
                          const LogMiscParams &misc) {
     bool skip_call = false;
 
@@ -205,7 +205,7 @@ bool ValidateGreaterThan(const T value, const T lower_bound, const ParameterName
 }
 
 template <typename T>
-bool ValidateGreaterThanZero(const T value, const ParameterName &parameter_name, const std::string vuid,
+bool ValidateGreaterThanZero(const T value, const ParameterName &parameter_name, const std::string &vuid,
                              const LogMiscParams &misc) {
     return ValidateGreaterThan(value, T{0}, parameter_name, vuid, misc);
 }
@@ -221,7 +221,7 @@ bool ValidateGreaterThanZero(const T value, const ParameterName &parameter_name,
  * @return Boolean value indicating that the call should be skipped.
  */
 static bool validate_required_pointer(debug_report_data *report_data, const char *apiName, const ParameterName &parameterName,
-                                      const void *value, std::string vuid) {
+                                      const void *value, const std::string &vuid) {
     bool skip_call = false;
 
     if (value == NULL) {
@@ -252,7 +252,7 @@ static bool validate_required_pointer(debug_report_data *report_data, const char
 template <typename T1, typename T2>
 bool validate_array(debug_report_data *report_data, const char *apiName, const ParameterName &countName,
                     const ParameterName &arrayName, T1 count, const T2 *array, bool countRequired, bool arrayRequired,
-                    std::string count_required_vuid, std::string array_required_vuid) {
+                    const std::string &count_required_vuid, const std::string &array_required_vuid) {
     bool skip_call = false;
 
     // Count parameters not tagged as optional cannot be 0
@@ -295,7 +295,8 @@ bool validate_array(debug_report_data *report_data, const char *apiName, const P
 template <typename T1, typename T2>
 bool validate_array(debug_report_data *report_data, const char *apiName, const ParameterName &countName,
                     const ParameterName &arrayName, const T1 *count, const T2 *array, bool countPtrRequired,
-                    bool countValueRequired, bool arrayRequired, std::string count_required_vuid, std::string array_required_vuid) {
+                    bool countValueRequired, bool arrayRequired, const std::string &count_required_vuid,
+                    const std::string &array_required_vuid) {
     bool skip_call = false;
 
     if (count == NULL) {
@@ -330,7 +331,7 @@ bool validate_array(debug_report_data *report_data, const char *apiName, const P
  */
 template <typename T>
 bool validate_struct_type(debug_report_data *report_data, const char *apiName, const ParameterName &parameterName,
-                          const char *sTypeName, const T *value, VkStructureType sType, bool required, std::string vuid) {
+                          const char *sTypeName, const T *value, VkStructureType sType, bool required, const std::string &vuid) {
     bool skip_call = false;
 
     if (value == NULL) {
@@ -369,7 +370,7 @@ bool validate_struct_type(debug_report_data *report_data, const char *apiName, c
 template <typename T>
 bool validate_struct_type_array(debug_report_data *report_data, const char *apiName, const ParameterName &countName,
                                 const ParameterName &arrayName, const char *sTypeName, uint32_t count, const T *array,
-                                VkStructureType sType, bool countRequired, bool arrayRequired, std::string vuid) {
+                                VkStructureType sType, bool countRequired, bool arrayRequired, const std::string &vuid) {
     bool skip_call = false;
 
     if ((count == 0) || (array == NULL)) {
@@ -414,7 +415,7 @@ template <typename T>
 bool validate_struct_type_array(debug_report_data *report_data, const char *apiName, const ParameterName &countName,
                                 const ParameterName &arrayName, const char *sTypeName, uint32_t *count, const T *array,
                                 VkStructureType sType, bool countPtrRequired, bool countValueRequired, bool arrayRequired,
-                                std::string vuid) {
+                                const std::string &vuid) {
     bool skip_call = false;
 
     if (count == NULL) {
@@ -520,7 +521,8 @@ bool validate_handle_array(debug_report_data *report_data, const char *api_name,
  */
 static bool validate_string_array(debug_report_data *report_data, const char *apiName, const ParameterName &countName,
                                   const ParameterName &arrayName, uint32_t count, const char *const *array, bool countRequired,
-                                  bool arrayRequired, std::string count_required_vuid, std::string array_required_vuid) {
+                                  bool arrayRequired, const std::string &count_required_vuid,
+                                  const std::string &array_required_vuid) {
     bool skip_call = false;
 
     if ((count == 0) || (array == NULL)) {
@@ -559,7 +561,7 @@ static bool validate_string_array(debug_report_data *report_data, const char *ap
  */
 static bool validate_struct_pnext(debug_report_data *report_data, const char *api_name, const ParameterName &parameter_name,
                                   const char *allowed_struct_names, const void *next, size_t allowed_type_count,
-                                  const VkStructureType *allowed_types, uint32_t header_version, std::string vuid) {
+                                  const VkStructureType *allowed_types, uint32_t header_version, const std::string &vuid) {
     bool skip_call = false;
     std::unordered_set<const void *> cycle_check;
     std::unordered_set<VkStructureType, std::hash<int>> unique_stype_check;
@@ -676,7 +678,7 @@ static bool validate_bool32(debug_report_data *report_data, const char *apiName,
  */
 template <typename T>
 bool validate_ranged_enum(debug_report_data *report_data, const char *apiName, const ParameterName &parameterName,
-                          const char *enumName, const std::vector<T> &valid_values, T value, std::string vuid) {
+                          const char *enumName, const std::vector<T> &valid_values, T value, const std::string &vuid) {
     bool skip = false;
 
     if (std::find(valid_values.begin(), valid_values.end(), value) == valid_values.end()) {
@@ -748,7 +750,7 @@ static bool validate_ranged_enum_array(debug_report_data *report_data, const cha
  * @return Boolean value indicating that the call should be skipped.
  */
 static bool validate_reserved_flags(debug_report_data *report_data, const char *api_name, const ParameterName &parameter_name,
-                                    VkFlags value, std::string vuid) {
+                                    VkFlags value, const std::string &vuid) {
     bool skip_call = false;
 
     if (value != 0) {
@@ -777,7 +779,7 @@ static bool validate_reserved_flags(debug_report_data *report_data, const char *
  */
 static bool validate_flags(debug_report_data *report_data, const char *api_name, const ParameterName &parameter_name,
                            const char *flag_bits_name, VkFlags all_flags, VkFlags value, bool flags_required, bool singleFlag,
-                           std::string vuid) {
+                           const std::string &vuid) {
     bool skip_call = false;
 
     if (value == 0) {
