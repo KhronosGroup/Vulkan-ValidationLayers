@@ -150,7 +150,7 @@ static bool validate_string(debug_report_data *report_data, const char *apiName,
 }
 
 static bool ValidateDeviceQueueFamily(layer_data *device_data, uint32_t queue_family, const char *cmd_name,
-                                      const char *parameter_name, std::string error_code, bool optional = false) {
+                                      const char *parameter_name, const std::string &error_code, bool optional = false) {
     bool skip = false;
 
     if (!optional && queue_family == VK_QUEUE_FAMILY_IGNORED) {
@@ -171,8 +171,8 @@ static bool ValidateDeviceQueueFamily(layer_data *device_data, uint32_t queue_fa
 }
 
 static bool ValidateQueueFamilies(layer_data *device_data, uint32_t queue_family_count, const uint32_t *queue_families,
-                                  const char *cmd_name, const char *array_parameter_name, std::string unique_error_code,
-                                  std::string valid_error_code, bool optional = false) {
+                                  const char *cmd_name, const char *array_parameter_name, const std::string &unique_error_code,
+                                  const std::string &valid_error_code, bool optional = false) {
     bool skip = false;
     if (queue_families) {
         std::unordered_set<uint32_t> set;
@@ -216,8 +216,8 @@ static bool validate_api_version(const instance_layer_data *instance_data, uint3
 }
 
 template <typename ExtensionState>
-static bool validate_extension_reqs(const instance_layer_data *instance_data, const ExtensionState &extensions, std::string vuid,
-                                    const char *extension_type, const char *extension_name) {
+static bool validate_extension_reqs(const instance_layer_data *instance_data, const ExtensionState &extensions,
+                                    const std::string &vuid, const char *extension_type, const char *extension_name) {
     bool skip = false;
     if (!extension_name) {
         return skip;  // Robust to invalid char *
