@@ -2,25 +2,25 @@
     "$schema": "https://schema.khronos.org/vulkan/devsim_1_0_0.json#",
     "comments": {
         "info": "Vulkan Hardware Report generated via https://vulkan.gpuinfo.org",
-        "desc": "https://vulkan.gpuinfo.org/displayreport.php?id=2001"
+        "desc": ""
     },
     "environment": {
-        "architecture": "arm",
+        "architecture": "",
         "comment": "",
-        "name": "android",
+        "name": "",
         "reportversion": "1.4",
-        "submitter": "Iwandi",
-        "version": "7.1.2"
+        "submitter": "",
+        "version": ""
     },
     "extended": {
         "devicefeatures2": [],
         "deviceproperties2": []
     },
     "platformdetails": {
-        "android.BuildID": "NHG47K",
-        "android.BuildVersionIncremental": "eng.root.20170901.232851",
-        "android.ProductManufacturer": "rockchip",
-        "android.ProductModel": "rk3288"
+        "android.BuildID": "",
+        "android.BuildVersionIncremental": "",
+        "android.ProductManufacturer": "",
+        "android.ProductModel": ""
     },
     "surfacecapabilites": {
         "maxImageArrayLayers": 1,
@@ -314,6 +314,16 @@
             },
             "queueCount": 2,
             "queueFlags": 7,
+            "timestampValidBits": 0
+        },
+        {
+            "minImageTransferGranularity": {
+                "depth": 1,
+                "height": 1,
+                "width": 1
+            },
+            "queueCount": 2,
+            "queueFlags": 1,
             "timestampValidBits": 0
         }
     ],

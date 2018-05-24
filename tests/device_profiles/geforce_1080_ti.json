@@ -1,8 +1,8 @@
 {
     "$schema": "https://schema.khronos.org/vulkan/devsim_1_0_0.json#",
     "comments": {
-        "info": "Vulkan Hardware Report generated via https://vulkan.gpuinfo.org",
-        "desc": "https://vulkan.gpuinfo.org/displayreport.php?id=3292"
+        "info": "Modified version of Vulkan Hardware Report generated via https://vulkan.gpuinfo.org",
+        "desc": "Removed subgroup properties from https://vulkan.gpuinfo.org/displayreport.php?id=3292"
     },
     "environment": {
         "architecture": "x86_64",
@@ -562,12 +562,6 @@
             "residencyStandard2DBlockShape": 1,
             "residencyStandard2DMultisampleBlockShape": 1,
             "residencyStandard3DBlockShape": 1
-        },
-        "subgroupProperties": {
-            "quadOperationsInAllStages": true,
-            "subgroupSize": 32,
-            "supportedOperations": 255,
-            "supportedStages": 63
         },
         "vendorID": 4318
     },

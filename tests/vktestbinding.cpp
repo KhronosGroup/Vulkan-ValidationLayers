@@ -249,6 +249,7 @@ void Device::init(std::vector<const char *> &extensions, VkPhysicalDeviceFeature
     for (uint32_t i = 0; i < (uint32_t)queue_props.size(); i++) {
         if (queue_props[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
             graphics_queue_node_index_ = i;
+            break;
         }
     }
     // Only request creation with queuefamilies that have at least one queue
