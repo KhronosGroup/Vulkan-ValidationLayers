@@ -646,8 +646,11 @@ VKAPI_ATTR VkResult VKAPI_CALL SetDebugUtilsObjectNameEXT(VkDevice device, const
         dev_data->report_data->debugUtilsObjectNameMap->erase(pNameInfo->objectHandle);
         lock.unlock();
     }
-    VkResult result = dev_data->dispatch_table.SetDebugUtilsObjectNameEXT(device, pNameInfo);
-    return result;
+    if (nullptr != dev_data->dispatch_table.SetDebugUtilsObjectNameEXT) {
+        return dev_data->dispatch_table.SetDebugUtilsObjectNameEXT(device, pNameInfo);
+    } else {
+        return VK_SUCCESS;
+    }
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL SetDebugUtilsObjectTagEXT(VkDevice device, const VkDebugUtilsObjectTagInfoEXT *pTagInfo) {
@@ -659,8 +662,11 @@ VKAPI_ATTR VkResult VKAPI_CALL SetDebugUtilsObjectTagEXT(VkDevice device, const 
         return VK_ERROR_VALIDATION_FAILED_EXT;
     }
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    VkResult result = dev_data->dispatch_table.SetDebugUtilsObjectTagEXT(device, pTagInfo);
-    return result;
+    if (nullptr != dev_data->dispatch_table.SetDebugUtilsObjectTagEXT) {
+        return dev_data->dispatch_table.SetDebugUtilsObjectTagEXT(device, pTagInfo);
+    } else {
+        return VK_SUCCESS;
+    }
 }
 
 VKAPI_ATTR void VKAPI_CALL QueueBeginDebugUtilsLabelEXT(VkQueue queue, const VkDebugUtilsLabelEXT *pLabelInfo) {
