@@ -326,7 +326,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             pnext_case += '        // Validation code for %s structure members\n' % item
             pnext_case += '        case %s: {\n' % self.getStructType(item)
             pnext_case += '            %s *structure = (%s *) header;\n' % (item, item)
-            expr = self.expandStructCode(self.validatedStructs[item], item, 'structure->', '', '            ', [], postProcSpec)
+            expr = self.expandStructCode(item, item, 'structure->', '', '            ', [], postProcSpec)
             struct_validation_source = self.ScrubStructCode(expr)
             pnext_case += '%s' % struct_validation_source
             pnext_case += '        } break;\n'
@@ -543,8 +543,6 @@ class ParameterValidationOutputGenerator(OutputGenerator):
         # Returnedonly structs should have most of their members ignored -- on entry, we only care about validating the sType and
         # pNext members. Everything else will be overwritten by the callee.
         if typeinfo.elem.attrib.get('returnedonly') is not None:
-            if typeName == 'VkPhysicalDeviceGroupProperties':
-                stop = 'here'
             self.returnedonly_structs.append(typeName)
             membersInfo = [m for m in membersInfo if m.name in ('sType', 'pNext')]
         self.structMembers.append(self.StructMemberData(name=typeName, members=membersInfo))
@@ -1041,11 +1039,12 @@ class ParameterValidationOutputGenerator(OutputGenerator):
         sub_struct_code = []
         check_type = "%s-parameter" % struct_info.name
         vuid = self.GetVuid(funcname, check_type)
-        sub_struct_code.append('skip |= ValidateSubstructure(local_data->report_data, "%s", "%s", %s);' % (funcname, struct_info.name, vuid))
+        sub_struct_code.append('skip |= ValidateSubstructure(local_data->report_data, "%s", "%s", %s);\n' % (funcname, struct_info.name, vuid))
         return sub_struct_code
     #
     # Process struct validation code for inclusion in function or parent struct validation code
-    def expandStructCode(self, lines, funcName, memberNamePrefix, memberDisplayNamePrefix, indent, output, postProcSpec):
+    def expandStructCode(self, item_type, funcName, memberNamePrefix, memberDisplayNamePrefix, indent, output, postProcSpec):
+        lines = self.validatedStructs[item_type]
         for line in lines:
             if output:
                 output[-1] += '\n'
@@ -1084,7 +1083,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             memberNamePrefix = '{}{}->'.format(prefix, value.name)
             memberDisplayNamePrefix = '{}->'.format(valueDisplayName)
         # Expand the struct validation lines
-        expr = self.expandStructCode(self.validatedStructs[value.type], funcName, memberNamePrefix, memberDisplayNamePrefix, indent, expr, postProcSpec)
+        expr = self.expandStructCode(value.type, funcName, memberNamePrefix, memberDisplayNamePrefix, indent, expr, postProcSpec)
         if lenValue:
             # Close if and for scopes
             indent = self.decIndent(indent)
@@ -1096,10 +1095,6 @@ class ParameterValidationOutputGenerator(OutputGenerator):
     def genFuncBody(self, funcName, values, valuePrefix, displayNamePrefix, structTypeName):
         lines = []    # Generated lines of code
         unused = []   # Unused variable names
-
-        if funcName == 'vkCmdCopyImage':
-            stop = 'here'
-
         for value in values:
             usedLines = []
             lenParam = None
@@ -1227,7 +1222,11 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                     if value.type in self.validatedStructs:
                         memberNamePrefix = '{}{}.'.format(valuePrefix, value.name)
                         memberDisplayNamePrefix = '{}.'.format(valueDisplayName)
-                        usedLines.append(self.expandStructCode(self.validatedStructs[value.type], funcName, memberNamePrefix, memberDisplayNamePrefix, '', [], postProcSpec))
+
+                        sub_struct_check = self.MakeSubStructCheck(structTypeName, value)
+                        if 'UNDEFINED' not in sub_struct_check[0]:
+                            usedLines.append(sub_struct_check)
+                        usedLines.append(self.expandStructCode(value.type, funcName, memberNamePrefix, memberDisplayNamePrefix, '', [], postProcSpec))
             # Append the parameter check to the function body for the current command
             if usedLines:
                 # Apply special conditional checks
@@ -1261,11 +1260,6 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                 just_validate = True
             # Skip first parameter if it is a dispatch handle (everything except vkCreateInstance)
             startIndex = 0 if command.name == 'vkCreateInstance' else 1
-
-            if command.name == 'vkEnumeratePhysicalDeviceGroups':
-                stop = 'here'
-
-
             lines, unused = self.genFuncBody(command.name, command.params[startIndex:], '', '', None)
             # Cannot validate extension dependencies for device extension APIs having a physical device as their dispatchable object
             if (command.name in self.required_extensions) and (self.extension_type != 'device' or command.params[0].type != 'VkPhysicalDevice'):
