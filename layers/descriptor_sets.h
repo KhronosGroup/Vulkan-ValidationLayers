@@ -313,7 +313,7 @@ class Descriptor {
 // Shared helper functions - These are useful because the shared sampler image descriptor type
 //  performs common functions with both sampler and image descriptors so they can share their common functions
 bool ValidateSampler(const VkSampler, const core_validation::layer_data *);
-bool ValidateImageUpdate(VkImageView, VkImageLayout, VkDescriptorType, const core_validation::layer_data *, std::string &vuid,
+bool ValidateImageUpdate(VkImageView, VkImageLayout, VkDescriptorType, const core_validation::layer_data *, std::string *,
                          std::string *);
 
 class SamplerDescriptor : public Descriptor {
@@ -478,11 +478,11 @@ class DescriptorSet : public BASE_NODE {
 
     // Descriptor Update functions. These functions validate state and perform update separately
     // Validate contents of a WriteUpdate
-    bool ValidateWriteUpdate(const debug_report_data *, const VkWriteDescriptorSet *, std::string &vuid, std::string *);
+    bool ValidateWriteUpdate(const debug_report_data *, const VkWriteDescriptorSet *, std::string *, std::string *);
     // Perform a WriteUpdate whose contents were just validated using ValidateWriteUpdate
     void PerformWriteUpdate(const VkWriteDescriptorSet *);
     // Validate contents of a CopyUpdate
-    bool ValidateCopyUpdate(const debug_report_data *, const VkCopyDescriptorSet *, const DescriptorSet *, std::string &vuid,
+    bool ValidateCopyUpdate(const debug_report_data *, const VkCopyDescriptorSet *, const DescriptorSet *, std::string *,
                             std::string *);
     // Perform a CopyUpdate whose contents were just validated using ValidateCopyUpdate
     void PerformCopyUpdate(const VkCopyDescriptorSet *, const DescriptorSet *);
@@ -528,11 +528,11 @@ class DescriptorSet : public BASE_NODE {
     DESCRIPTOR_POOL_STATE *GetPoolState() const { return pool_state_; }
 
    private:
-    bool VerifyWriteUpdateContents(const VkWriteDescriptorSet *, const uint32_t, std::string &vuid, std::string *) const;
-    bool VerifyCopyUpdateContents(const VkCopyDescriptorSet *, const DescriptorSet *, VkDescriptorType, uint32_t, std::string &vuid,
+    bool VerifyWriteUpdateContents(const VkWriteDescriptorSet *, const uint32_t, std::string *, std::string *) const;
+    bool VerifyCopyUpdateContents(const VkCopyDescriptorSet *, const DescriptorSet *, VkDescriptorType, uint32_t, std::string *,
                                   std::string *) const;
-    bool ValidateBufferUsage(BUFFER_STATE const *, VkDescriptorType, std::string &vuid, std::string *) const;
-    bool ValidateBufferUpdate(VkDescriptorBufferInfo const *, VkDescriptorType, std::string &vuid, std::string *) const;
+    bool ValidateBufferUsage(BUFFER_STATE const *, VkDescriptorType, std::string *, std::string *) const;
+    bool ValidateBufferUpdate(VkDescriptorBufferInfo const *, VkDescriptorType, std::string *, std::string *) const;
     // Private helper to set all bound cmd buffers to INVALID state
     void InvalidateBoundCmdBuffers();
     bool some_update_;  // has any part of the set ever been updated?
