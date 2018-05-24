@@ -12240,7 +12240,7 @@ TEST_F(VkLayerTest, InvalidBarriers) {
     // Attempt to mismatch barriers/waitEvents calls with incompatible queues
     // Create command pool with incompatible queueflags
     const std::vector<VkQueueFamilyProperties> queue_props = m_device->queue_props;
-    uint32_t queue_family_index = m_device->QueueFamilyWithoutCapabilities(VK_QUEUE_COMPUTE_BIT);
+    uint32_t queue_family_index = m_device->QueueFamilyMatching(VK_QUEUE_GRAPHICS_BIT, VK_QUEUE_COMPUTE_BIT);
     if (queue_family_index == UINT32_MAX) {
         printf("%s No non-compute queue supporting graphics found; skipped.\n", kSkipPrefix);
         return;  // NOTE: this exits the test function!
@@ -12258,19 +12258,19 @@ TEST_F(VkLayerTest, InvalidBarriers) {
                          VK_DEPENDENCY_BY_REGION_BIT, 0, nullptr, 1, &buf_barrier, 0, nullptr);
     m_errorMonitor->VerifyFound();
 
-    if ((queue_props[queue_family_index].queueFlags & VK_QUEUE_GRAPHICS_BIT) == 0) {
-        printf("%s The non-compute queue does not support graphics; skipped.\n", kSkipPrefix);
-        return;  // NOTE: this exits the test function!
-    }
+    // Check for error for trying to wait on pipeline stage not supported by this queue. Specifically since our queue is not a
+    // compute queue, vkCmdWaitEvents cannot have it's source stage mask be VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdWaitEvents-srcStageMask-01164");
     VkEvent event;
     VkEventCreateInfo event_create_info{};
     event_create_info.sType = VK_STRUCTURE_TYPE_EVENT_CREATE_INFO;
     vkCreateEvent(m_device->device(), &event_create_info, nullptr, &event);
-    vkCmdWaitEvents(bad_command_buffer.handle(), 1, &event, VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT, 0,
-                    nullptr, 0, nullptr, 0, nullptr);
+    vkCmdWaitEvents(bad_command_buffer.handle(), 1, &event, /*source stage mask*/ VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                    VK_PIPELINE_STAGE_VERTEX_SHADER_BIT, 0, nullptr, 0, nullptr, 0, nullptr);
     m_errorMonitor->VerifyFound();
     bad_command_buffer.end();
+
+    vkDestroyEvent(m_device->device(), event, nullptr);
 }
 
 // Helpers for the tests below
