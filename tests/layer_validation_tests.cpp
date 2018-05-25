@@ -23570,22 +23570,23 @@ TEST_F(VkLayerTest, DescriptorIndexingSetLayoutWithoutExtension) {
 TEST_F(VkLayerTest, DescriptorIndexingSetLayout) {
     TEST_DESCRIPTION("Exercise various create/allocate-time errors related to VK_EXT_descriptor_indexing.");
 
-    std::array<const char *, 2> reqd_instance_extensions = {
-        {VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME, VK_KHR_MAINTENANCE3_EXTENSION_NAME}};
-    for (auto instance_ext : reqd_instance_extensions) {
-        if (InstanceExtensionSupported(instance_ext)) {
-            m_instance_extension_names.push_back(instance_ext);
-        } else {
-            printf("%s Did not find required instance extension %s; skipped.\n", kSkipPrefix, instance_ext);
-            return;
-        }
+    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    } else {
+        printf("%s Did not find required instance extension %s; skipped.\n", kSkipPrefix,
+               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
     }
     ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
-    } else {
-        printf("%s %s Extension not supported.\n", kSkipPrefix, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
-        return;
+    std::array<const char *, 2> required_device_extensions = {
+        {VK_KHR_MAINTENANCE3_EXTENSION_NAME, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME}};
+    for (auto device_extension : required_device_extensions) {
+        if (DeviceExtensionSupported(gpu(), nullptr, device_extension)) {
+            m_device_extension_names.push_back(device_extension);
+        } else {
+            printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, device_extension);
+            return;
+        }
     }
 
     // Create a device that enables all supported indexing features except descriptorBindingUniformBufferUpdateAfterBind
