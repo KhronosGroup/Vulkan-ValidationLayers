@@ -1439,6 +1439,12 @@ static bool validate_pipeline_shader_stage(layer_data *dev_data, VkPipelineShade
     auto module = *out_module = GetShaderModuleState(dev_data, pStage->module);
     auto report_data = GetReportData(dev_data);
 
+    if (!module) {
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                        SHADER_CHECKER_NONE, "Cannot find the given module");
+        return true;
+    }
+
     if (!module->has_valid_spirv) return false;
 
     // Find the entrypoint
