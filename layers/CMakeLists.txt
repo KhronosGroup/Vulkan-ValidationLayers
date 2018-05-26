@@ -95,8 +95,8 @@ if (WIN32)
     target_compile_definitions(VkLayer_utils PUBLIC _CRT_SECURE_NO_WARNINGS)
 else()
     add_library(VkLayer_utils SHARED ${VKLAYER_UTILS_VLF_SOURCES})
-    install(TARGETS VkLayer_utils DESTINATION ${CMAKE_INSTALL_LIBDIR})
 endif()
+install(TARGETS VkLayer_utils DESTINATION ${CMAKE_INSTALL_LIBDIR})
 add_dependencies(VkLayer_utils generate_helper_files)
 target_include_directories(
     VkLayer_utils PUBLIC
@@ -122,27 +122,29 @@ set(LAYER_JSON_FILES_NO_DEPENDENCIES
 set(LAYER_JSON_FILES ${LAYER_JSON_FILES_WITH_DEPENDENCIES} ${LAYER_JSON_FILES_NO_DEPENDENCIES})
 
 if (WIN32)
-        if (CMAKE_GENERATOR MATCHES "^Visual Studio.*")
-            foreach (config_file ${LAYER_JSON_FILES})
-                FILE(TO_NATIVE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/windows/${config_file}.json src_json)
-                FILE(TO_NATIVE_PATH ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/${config_file}.json dst_json)
-                add_custom_target(${config_file}-json ALL
-                    DEPENDS mk_layer_config_dir
-                    COMMAND copy ${src_json} ${dst_json}
-                    VERBATIM
-                    )
-                set_target_properties(${config_file}-json PROPERTIES FOLDER ${VVL_TARGET_FOLDER})
-            endforeach(config_file)
-        else()
-            foreach (config_file ${LAYER_JSON_FILES})
-                FILE(TO_NATIVE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/windows/${config_file}.json src_json)
-                FILE(TO_NATIVE_PATH ${CMAKE_CURRENT_BINARY_DIR}/${config_file}.json dst_json)
-                add_custom_target(${config_file}-json ALL
-                    COMMAND copy ${src_json} ${dst_json}
-                    VERBATIM
-                    )
-            endforeach(config_file)
-        endif()
+    if (CMAKE_GENERATOR MATCHES "^Visual Studio.*")
+        foreach (config_file ${LAYER_JSON_FILES})
+            FILE(TO_NATIVE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/windows/${config_file}.json src_json)
+            FILE(TO_NATIVE_PATH ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/${config_file}.json dst_json)
+            add_custom_target(${config_file}-json ALL
+                DEPENDS mk_layer_config_dir
+                COMMAND copy ${src_json} ${dst_json}
+                VERBATIM
+                )
+            set_target_properties(${config_file}-json PROPERTIES FOLDER ${VVL_TARGET_FOLDER})
+            install(FILES ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/${config_file}.json DESTINATION ${CMAKE_INSTALL_LIBDIR})
+        endforeach(config_file)
+    else()
+        foreach (config_file ${LAYER_JSON_FILES})
+            FILE(TO_NATIVE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/windows/${config_file}.json src_json)
+            FILE(TO_NATIVE_PATH ${CMAKE_CURRENT_BINARY_DIR}/${config_file}.json dst_json)
+            add_custom_target(${config_file}-json ALL
+                COMMAND copy ${src_json} ${dst_json}
+                VERBATIM
+                )
+            install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${config_file}.json DESTINATION ${CMAKE_INSTALL_LIBDIR})
+        endforeach(config_file)
+    endif()
     if (NOT (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_CURRENT_BINARY_DIR))
         # Copy vk_validation_error_messages.h from source to build dir for scripts to pick up
         FILE(TO_NATIVE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/vk_validation_error_messages.h src_val_msgs)
@@ -233,6 +235,7 @@ if (WIN32)
     add_dependencies(VkLayer_${target} generate_helper_files)
     target_link_Libraries(VkLayer_${target} VkLayer_utils)
     add_dependencies(VkLayer_${target} generate_helper_files VkLayer_utils)
+    install(TARGETS VkLayer_${target} DESTINATION ${CMAKE_INSTALL_LIBDIR})
     endmacro()
 elseif(APPLE)
     macro(add_vk_layer target)
