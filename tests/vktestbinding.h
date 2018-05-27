@@ -205,7 +205,7 @@ class Device : public internal::Handle<VkDevice> {
     const PhysicalDevice &phy() const { return phy_; }
 
     std::vector<const char *> GetEnabledExtensions() { return enabled_extensions_; }
-    bool IsEnbledExtension(const char *extension);
+    bool IsEnabledExtension(const char *extension);
 
     // vkGetDeviceProcAddr()
     PFN_vkVoidFunction get_proc(const char *name) const { return vkGetDeviceProcAddr(handle(), name); }
