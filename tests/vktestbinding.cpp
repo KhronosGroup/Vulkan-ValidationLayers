@@ -365,7 +365,7 @@ void Device::init_formats() {
     EXPECT(!formats_.empty());
 }
 
-bool Device::IsEnbledExtension(const char *extension) {
+bool Device::IsEnabledExtension(const char *extension) {
     const auto is_x = [&extension](const char *enabled_extension) { return strcmp(extension, enabled_extension) == 0; };
     return std::any_of(enabled_extensions_.begin(), enabled_extensions_.end(), is_x);
 }
