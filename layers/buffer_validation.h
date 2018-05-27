@@ -233,6 +233,13 @@ bool ValidateCopyBufferImageTransferGranularityRequirements(layer_data *device_d
                                                             const IMAGE_STATE *img, const VkBufferImageCopy *region,
                                                             const uint32_t i, const char *function, const std::string &vuid);
 
+bool ValidateImageMipLevel(layer_data *device_data, const GLOBAL_CB_NODE *cb_node, const IMAGE_STATE *img, uint32_t mip_level,
+                           const uint32_t i, const char *function, const char *member, const std::string &vuid);
+
+bool ValidateImageArrayLayerRange(layer_data *device_data, const GLOBAL_CB_NODE *cb_node, const IMAGE_STATE *img,
+                                  const uint32_t base_layer, const uint32_t layer_count, const uint32_t i, const char *function,
+                                  const char *member, const std::string &vuid);
+
 void PreCallRecordCmdCopyImage(layer_data *device_data, GLOBAL_CB_NODE *cb_node, IMAGE_STATE *src_image_state,
                                IMAGE_STATE *dst_image_state, uint32_t region_count, const VkImageCopy *regions,
                                VkImageLayout src_image_layout, VkImageLayout dst_image_layout);

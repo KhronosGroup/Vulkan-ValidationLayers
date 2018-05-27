@@ -3993,6 +3993,8 @@ TEST_F(VkLayerTest, MiscBlitImageTests) {
     blitRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     blitRegion.srcSubresource.baseArrayLayer = 1;
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkImageBlit-srcImage-00240");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                         "VUID-vkCmdBlitImage-srcSubresource-01707");  // base+count > total layer count
     vkCmdBlitImage(m_commandBuffer->handle(), color_3D_img.image(), color_3D_img.Layout(), color_3D_img.image(),
                    color_3D_img.Layout(), 1, &blitRegion, VK_FILTER_NEAREST);
     m_errorMonitor->VerifyFound();
@@ -4001,6 +4003,8 @@ TEST_F(VkLayerTest, MiscBlitImageTests) {
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkImageBlit-srcImage-00240");
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
                                          "VUID-VkImageSubresourceLayers-layerCount-01700");  // layer count == 0 (src)
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                         "VUID-VkImageBlit-layerCount-00239");  // src/dst layer count mismatch
     vkCmdBlitImage(m_commandBuffer->handle(), color_3D_img.image(), color_3D_img.Layout(), color_3D_img.image(),
                    color_3D_img.Layout(), 1, &blitRegion, VK_FILTER_NEAREST);
     m_errorMonitor->VerifyFound();
@@ -19744,6 +19748,33 @@ TEST_F(VkLayerTest, ImageBufferCopyTests) {
     vkCmdCopyImageToBuffer(m_commandBuffer->handle(), image_16k_depth.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer_16k.handle(), 1,
                            &region);
     m_errorMonitor->VerifyFound();
+
+    // Out-of-range mip levels should fail
+    region.imageSubresource.mipLevel = image_16k.create_info().mipLevels + 1;
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdCopyImageToBuffer-imageSubresource-01703");
+    m_errorMonitor->SetDesiredFailureMsg(
+        VK_DEBUG_REPORT_ERROR_BIT_EXT,
+        "VUID-vkCmdCopyImageToBuffer-pRegions-00182");  // unavoidable "region exceeds image bounds" for non-existent mip
+    vkCmdCopyImageToBuffer(m_commandBuffer->handle(), image_16k.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer_16k.handle(), 1, &region);
+    m_errorMonitor->VerifyFound();
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdCopyBufferToImage-imageSubresource-01701");
+    m_errorMonitor->SetDesiredFailureMsg(
+        VK_DEBUG_REPORT_ERROR_BIT_EXT,
+        "VUID-vkCmdCopyBufferToImage-pRegions-00172");  // unavoidable "region exceeds image bounds" for non-existent mip
+    vkCmdCopyBufferToImage(m_commandBuffer->handle(), buffer_16k.handle(), image_16k.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &region);
+    m_errorMonitor->VerifyFound();
+    region.imageSubresource.mipLevel = 0;
+
+    // Out-of-range array layers should fail
+    region.imageSubresource.baseArrayLayer = image_16k.create_info().arrayLayers;
+    region.imageSubresource.layerCount = 1;
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdCopyImageToBuffer-imageSubresource-01704");
+    vkCmdCopyImageToBuffer(m_commandBuffer->handle(), image_16k.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer_16k.handle(), 1, &region);
+    m_errorMonitor->VerifyFound();
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdCopyBufferToImage-imageSubresource-01702");
+    vkCmdCopyBufferToImage(m_commandBuffer->handle(), buffer_16k.handle(), image_16k.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &region);
+    m_errorMonitor->VerifyFound();
+    region.imageSubresource.baseArrayLayer = 0;
 
     // Test Depth/Stencil copies
     if (missing_ds_support) {
