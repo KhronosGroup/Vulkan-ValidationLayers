@@ -385,19 +385,20 @@ bool validate_struct_type(debug_report_data *report_data, const char *apiName, c
 template <typename T>
 bool validate_struct_type_array(debug_report_data *report_data, const char *apiName, const ParameterName &countName,
                                 const ParameterName &arrayName, const char *sTypeName, uint32_t count, const T *array,
-                                VkStructureType sType, bool countRequired, bool arrayRequired, const std::string &vuid) {
+                                VkStructureType sType, bool countRequired, bool arrayRequired, const std::string &stype_vuid,
+                                const std::string &param_vuid) {
     bool skip_call = false;
 
     if ((count == 0) || (array == NULL)) {
         skip_call |= validate_array(report_data, apiName, countName, arrayName, count, &array, countRequired, arrayRequired,
-                                    kVUIDUndefined, vuid);
+                                    kVUIDUndefined, param_vuid);
     } else {
         // Verify that all structs in the array have the correct type
         for (uint32_t i = 0; i < count; ++i) {
             if (array[i].sType != sType) {
-                skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                     kVUID_PVError_InvalidStructSType, "%s: parameter %s[%d].sType must be %s", apiName,
-                                     arrayName.get_name().c_str(), i, sTypeName);
+                skip_call |=
+                    log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, stype_vuid,
+                            "%s: parameter %s[%d].sType must be %s", apiName, arrayName.get_name().c_str(), i, sTypeName);
             }
         }
     }
@@ -430,7 +431,7 @@ template <typename T>
 bool validate_struct_type_array(debug_report_data *report_data, const char *apiName, const ParameterName &countName,
                                 const ParameterName &arrayName, const char *sTypeName, uint32_t *count, const T *array,
                                 VkStructureType sType, bool countPtrRequired, bool countValueRequired, bool arrayRequired,
-                                const std::string &vuid) {
+                                const std::string &stype_vuid, const std::string &param_vuid) {
     bool skip_call = false;
 
     if (count == NULL) {
@@ -441,7 +442,7 @@ bool validate_struct_type_array(debug_report_data *report_data, const char *apiN
         }
     } else {
         skip_call |= validate_struct_type_array(report_data, apiName, countName, arrayName, sTypeName, (*count), array, sType,
-                                                countValueRequired, arrayRequired, vuid);
+                                                countValueRequired, arrayRequired, stype_vuid, param_vuid);
     }
 
     return skip_call;
