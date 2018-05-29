@@ -3891,12 +3891,9 @@ TEST_F(VkLayerTest, MiscBlitImageTests) {
     ASSERT_NO_FATAL_FAILURE(Init());
 
     VkFormat f_color = VK_FORMAT_R32_SFLOAT;  // Need features ..BLIT_SRC_BIT & ..BLIT_DST_BIT
-    VkFormat f_depth = VK_FORMAT_D32_SFLOAT;  // Need feature ..BLIT_SRC_BIT but not ..BLIT_DST_BIT
 
     if (!ImageFormatAndFeaturesSupported(gpu(), f_color, VK_IMAGE_TILING_OPTIMAL,
-                                         VK_FORMAT_FEATURE_BLIT_SRC_BIT | VK_FORMAT_FEATURE_BLIT_DST_BIT) ||
-        !ImageFormatAndFeaturesSupported(gpu(), f_depth, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_BLIT_SRC_BIT) ||
-        ImageFormatAndFeaturesSupported(gpu(), f_depth, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_BLIT_DST_BIT)) {
+                                         VK_FORMAT_FEATURE_BLIT_SRC_BIT | VK_FORMAT_FEATURE_BLIT_DST_BIT)) {
         printf("%s Requested format features unavailable - MiscBlitImageTests skipped.\n", kSkipPrefix);
         return;
     }
@@ -3929,15 +3926,8 @@ TEST_F(VkLayerTest, MiscBlitImageTests) {
     ms_img.init(&ci);
     ASSERT_TRUE(ms_img.initialized());
 
-    // 2D depth image
-    ci.format = f_depth;
-    ci.samples = VK_SAMPLE_COUNT_1_BIT;
-    VkImageObj depth_img(m_device);
-    depth_img.init(&ci);
-    ASSERT_TRUE(depth_img.initialized());
-
     // 3D color image
-    ci.format = f_color;
+    ci.samples = VK_SAMPLE_COUNT_1_BIT;
     ci.imageType = VK_IMAGE_TYPE_3D;
     ci.extent = {64, 64, 8};
     VkImageObj color_3D_img(m_device);
@@ -3960,14 +3950,6 @@ TEST_F(VkLayerTest, MiscBlitImageTests) {
 
     m_commandBuffer->begin();
 
-    // Blit depth image - has SRC_BIT but not DST_BIT
-    blitRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-    blitRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdBlitImage-dstImage-00223");
-    vkCmdBlitImage(m_commandBuffer->handle(), depth_img.image(), depth_img.Layout(), depth_img.image(), depth_img.Layout(), 1,
-                   &blitRegion, VK_FILTER_NEAREST);
-    m_errorMonitor->VerifyFound();
-
     // Blit with aspectMask errors
     blitRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
     blitRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
@@ -3977,9 +3959,65 @@ TEST_F(VkLayerTest, MiscBlitImageTests) {
                    &blitRegion, VK_FILTER_NEAREST);
     m_errorMonitor->VerifyFound();
 
-    // Blit multi-sample image
+    // Blit with invalid src mip level
     blitRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     blitRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    blitRegion.srcSubresource.mipLevel = ci.mipLevels;
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                         "VUID-vkCmdBlitImage-srcSubresource-01705");  // invalid srcSubresource.mipLevel
+    // Redundant unavoidable errors
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                         "VUID-VkImageBlit-srcOffset-00243");  // out-of-bounds srcOffset.x
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                         "VUID-VkImageBlit-srcOffset-00244");  // out-of-bounds srcOffset.y
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                         "VUID-VkImageBlit-srcOffset-00246");  // out-of-bounds srcOffset.z
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                         "VUID-vkCmdBlitImage-pRegions-00215");  // region not contained within src image
+    vkCmdBlitImage(m_commandBuffer->handle(), color_img.image(), color_img.Layout(), color_img.image(), color_img.Layout(), 1,
+                   &blitRegion, VK_FILTER_NEAREST);
+    m_errorMonitor->VerifyFound();
+
+    // Blit with invalid dst mip level
+    blitRegion.srcSubresource.mipLevel = 0;
+    blitRegion.dstSubresource.mipLevel = ci.mipLevels;
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                         "VUID-vkCmdBlitImage-dstSubresource-01706");  // invalid dstSubresource.mipLevel
+    // Redundant unavoidable errors
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                         "VUID-VkImageBlit-dstOffset-00248");  // out-of-bounds dstOffset.x
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                         "VUID-VkImageBlit-dstOffset-00249");  // out-of-bounds dstOffset.y
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                         "VUID-VkImageBlit-dstOffset-00251");  // out-of-bounds dstOffset.z
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                         "VUID-vkCmdBlitImage-pRegions-00216");  // region not contained within dst image
+    vkCmdBlitImage(m_commandBuffer->handle(), color_img.image(), color_img.Layout(), color_img.image(), color_img.Layout(), 1,
+                   &blitRegion, VK_FILTER_NEAREST);
+    m_errorMonitor->VerifyFound();
+
+    // Blit with invalid src array layer
+    blitRegion.dstSubresource.mipLevel = 0;
+    blitRegion.srcSubresource.baseArrayLayer = ci.arrayLayers;
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                         "VUID-vkCmdBlitImage-srcSubresource-01707");  // invalid srcSubresource layer range
+    vkCmdBlitImage(m_commandBuffer->handle(), color_img.image(), color_img.Layout(), color_img.image(), color_img.Layout(), 1,
+                   &blitRegion, VK_FILTER_NEAREST);
+    m_errorMonitor->VerifyFound();
+
+    // Blit with invalid dst array layer
+    blitRegion.srcSubresource.baseArrayLayer = 0;
+    blitRegion.dstSubresource.baseArrayLayer = ci.arrayLayers;
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                         "VUID-vkCmdBlitImage-dstSubresource-01708");  // invalid dstSubresource layer range
+                                                                                       // Redundant unavoidable errors
+    vkCmdBlitImage(m_commandBuffer->handle(), color_img.image(), color_img.Layout(), color_img.image(), color_img.Layout(), 1,
+                   &blitRegion, VK_FILTER_NEAREST);
+    m_errorMonitor->VerifyFound();
+
+    blitRegion.dstSubresource.baseArrayLayer = 0;
+
+    // Blit multi-sample image
     // TODO: redundant VUs, one (1c8) or two (1d2 & 1d4) should be eliminated.
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdBlitImage-srcImage-00228");
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdBlitImage-srcImage-00233");
@@ -4007,6 +4045,68 @@ TEST_F(VkLayerTest, MiscBlitImageTests) {
                                          "VUID-VkImageBlit-layerCount-00239");  // src/dst layer count mismatch
     vkCmdBlitImage(m_commandBuffer->handle(), color_3D_img.image(), color_3D_img.Layout(), color_3D_img.image(),
                    color_3D_img.Layout(), 1, &blitRegion, VK_FILTER_NEAREST);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->end();
+}
+
+TEST_F(VkLayerTest, BlitToDepthImageTests) {
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    // Need feature ..BLIT_SRC_BIT but not ..BLIT_DST_BIT
+    // TODO: provide more choices here; supporting D32_SFLOAT as BLIT_DST isn't unheard of.
+    VkFormat f_depth = VK_FORMAT_D32_SFLOAT;
+
+    if (!ImageFormatAndFeaturesSupported(gpu(), f_depth, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_BLIT_SRC_BIT) ||
+        ImageFormatAndFeaturesSupported(gpu(), f_depth, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_BLIT_DST_BIT)) {
+        printf("%s Requested format features unavailable - BlitToDepthImageTests skipped.\n", kSkipPrefix);
+        return;
+    }
+
+    VkImageCreateInfo ci;
+    ci.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    ci.pNext = NULL;
+    ci.flags = 0;
+    ci.imageType = VK_IMAGE_TYPE_2D;
+    ci.format = f_depth;
+    ci.extent = {64, 64, 1};
+    ci.mipLevels = 1;
+    ci.arrayLayers = 1;
+    ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    ci.queueFamilyIndexCount = 0;
+    ci.pQueueFamilyIndices = NULL;
+    ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+    // 2D depth image
+    VkImageObj depth_img(m_device);
+    depth_img.init(&ci);
+    ASSERT_TRUE(depth_img.initialized());
+
+    VkImageBlit blitRegion = {};
+    blitRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    blitRegion.srcSubresource.baseArrayLayer = 0;
+    blitRegion.srcSubresource.layerCount = 1;
+    blitRegion.srcSubresource.mipLevel = 0;
+    blitRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    blitRegion.dstSubresource.baseArrayLayer = 0;
+    blitRegion.dstSubresource.layerCount = 1;
+    blitRegion.dstSubresource.mipLevel = 0;
+    blitRegion.srcOffsets[0] = {0, 0, 0};
+    blitRegion.srcOffsets[1] = {16, 16, 1};
+    blitRegion.dstOffsets[0] = {32, 32, 0};
+    blitRegion.dstOffsets[1] = {64, 64, 1};
+
+    m_commandBuffer->begin();
+
+    // Blit depth image - has SRC_BIT but not DST_BIT
+    blitRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+    blitRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdBlitImage-dstImage-00223");
+    vkCmdBlitImage(m_commandBuffer->handle(), depth_img.image(), depth_img.Layout(), depth_img.image(), depth_img.Layout(), 1,
+                   &blitRegion, VK_FILTER_NEAREST);
     m_errorMonitor->VerifyFound();
 
     m_commandBuffer->end();
