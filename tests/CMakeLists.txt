@@ -126,7 +126,16 @@ if (TARGET gtest_main)
         ${PROJECT_BINARY_DIR}
         ${PROJECT_BINARY_DIR}/layers
         )
-    add_dependencies(vk_layer_validation_tests VkLayer_utils)
+    add_dependencies(vk_layer_validation_tests
+        VkLayer_utils
+        VkLayer_core_validation-json
+        VkLayer_device_profile_api-json
+        VkLayer_object_tracker-json
+        VkLayer_parameter_validation-json
+        VkLayer_standard_validation-json
+        VkLayer_threading-json
+        VkLayer_unique_objects-json
+        )
 
     if(NOT WIN32)
         set_target_properties(vk_layer_validation_tests
