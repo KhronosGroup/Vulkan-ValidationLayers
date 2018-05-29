@@ -127,10 +127,7 @@ static inline bool in_inclusive_range(const T &value, const T &min, const T &max
 }
 
 static bool validate_string(debug_report_data *report_data, const char *apiName, const ParameterName &stringName,
-                            const char *validateString) {
-    assert(apiName != nullptr);
-    assert(validateString != nullptr);
-
+                            const std::string &vuid, const char *validateString) {
     bool skip = false;
 
     VkStringErrorFlags result = vk_string_validate(MaxParamCheckerStringLength, validateString);
@@ -138,13 +135,11 @@ static bool validate_string(debug_report_data *report_data, const char *apiName,
     if (result == VK_STRING_ERROR_NONE) {
         return skip;
     } else if (result & VK_STRING_ERROR_LENGTH) {
-        skip = log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                       kVUID_PVError_InvalidUsage, "%s: string %s exceeds max length %d", apiName, stringName.get_name().c_str(),
-                       MaxParamCheckerStringLength);
+        skip = log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, vuid,
+                       "%s: string %s exceeds max length %d", apiName, stringName.get_name().c_str(), MaxParamCheckerStringLength);
     } else if (result & VK_STRING_ERROR_BAD_DATA) {
-        skip = log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                       kVUID_PVError_InvalidUsage, "%s: string %s contains invalid characters or is badly formed", apiName,
-                       stringName.get_name().c_str());
+        skip = log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, vuid,
+                       "%s: string %s contains invalid characters or is badly formed", apiName, stringName.get_name().c_str());
     }
     return skip;
 }
@@ -340,14 +335,14 @@ VKAPI_ATTR VkResult VKAPI_CALL vkCreateInstance(const VkInstanceCreateInfo *pCre
 
         if (pCreateInfo->pApplicationInfo) {
             if (pCreateInfo->pApplicationInfo->pApplicationName) {
-                validate_string(my_instance_data->report_data, "vkCreateInstance",
-                                "pCreateInfo->VkApplicationInfo->pApplicationName",
-                                pCreateInfo->pApplicationInfo->pApplicationName);
+                validate_string(
+                    my_instance_data->report_data, "vkCreateInstance", "pCreateInfo->VkApplicationInfo->pApplicationName",
+                    "VUID-VkApplicationInfo-pApplicationName-parameter", pCreateInfo->pApplicationInfo->pApplicationName);
             }
 
             if (pCreateInfo->pApplicationInfo->pEngineName) {
                 validate_string(my_instance_data->report_data, "vkCreateInstance", "pCreateInfo->VkApplicationInfo->pEngineName",
-                                pCreateInfo->pApplicationInfo->pEngineName);
+                                "VUID-VkApplicationInfo-pEngineName-parameter", pCreateInfo->pApplicationInfo->pEngineName);
             }
         }
 
@@ -500,7 +495,7 @@ static bool ValidateDeviceCreateInfo(instance_layer_data *instance_data, VkPhysi
     if ((pCreateInfo->enabledLayerCount > 0) && (pCreateInfo->ppEnabledLayerNames != NULL)) {
         for (size_t i = 0; i < pCreateInfo->enabledLayerCount; i++) {
             skip |= validate_string(instance_data->report_data, "vkCreateDevice", "pCreateInfo->ppEnabledLayerNames",
-                                    pCreateInfo->ppEnabledLayerNames[i]);
+                                    "VUID-VkDeviceCreateInfo-ppEnabledLayerNames-parameter", pCreateInfo->ppEnabledLayerNames[i]);
         }
     }
 
@@ -510,6 +505,7 @@ static bool ValidateDeviceCreateInfo(instance_layer_data *instance_data, VkPhysi
 
         for (size_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
             skip |= validate_string(instance_data->report_data, "vkCreateDevice", "pCreateInfo->ppEnabledExtensionNames",
+                                    "VUID-VkDeviceCreateInfo-ppEnabledExtensionNames-parameter",
                                     pCreateInfo->ppEnabledExtensionNames[i]);
             skip |= validate_extension_reqs(instance_data, extensions, "VUID-vkCreateDevice-ppEnabledExtensionNames-01387",
                                             "device", pCreateInfo->ppEnabledExtensionNames[i]);
@@ -1989,7 +1985,7 @@ bool pv_vkCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache
             for (size_t j = 0; j < pCreateInfos[i].stageCount; j++) {
                 skip |= validate_string(device_data->report_data, "vkCreateGraphicsPipelines",
                                         ParameterName("pCreateInfos[%i].pStages[%i].pName", ParameterName::IndexVector{i, j}),
-                                        pCreateInfos[i].pStages[j].pName);
+                                        "VUID-VkGraphicsPipelineCreateInfo-pStages-parameter", pCreateInfos[i].pStages[j].pName);
             }
         }
     }
@@ -2006,7 +2002,7 @@ bool pv_vkCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache,
     for (uint32_t i = 0; i < createInfoCount; i++) {
         skip |= validate_string(device_data->report_data, "vkCreateComputePipelines",
                                 ParameterName("pCreateInfos[%i].stage.pName", ParameterName::IndexVector{i}),
-                                pCreateInfos[i].stage.pName);
+                                "VUID-VkPipelineShaderStageCreateInfo-pName-parameter", pCreateInfos[i].stage.pName);
     }
 
     return skip;
