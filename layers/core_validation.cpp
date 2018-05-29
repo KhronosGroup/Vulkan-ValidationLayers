@@ -9714,14 +9714,44 @@ VKAPI_ATTR void VKAPI_CALL CmdExecuteCommands(VkCommandBuffer commandBuffer, uin
             }
             // TODO: separate validate from update! This is very tangled.
             // Propagate layout transitions to the primary cmd buffer
-            for (auto ilm_entry : pSubCB->imageLayoutMap) {
-                if (pCB->imageLayoutMap.find(ilm_entry.first) != pCB->imageLayoutMap.end()) {
-                    pCB->imageLayoutMap[ilm_entry.first].layout = ilm_entry.second.layout;
+            // Novel Valid usage: "UNASSIGNED-vkCmdExecuteCommands-commandBuffer-00001"
+            //  initial layout usage of secondary command buffers resources must match parent command buffer
+            for (const auto &ilm_entry : pSubCB->imageLayoutMap) {
+                auto cb_entry = pCB->imageLayoutMap.find(ilm_entry.first);
+                if (cb_entry != pCB->imageLayoutMap.end()) {
+                    // For exact matches ImageSubresourcePair matches, validate and update the parent entry
+                    if ((VK_IMAGE_LAYOUT_UNDEFINED != ilm_entry.second.initialLayout) &&
+                        (cb_entry->second.layout != ilm_entry.second.initialLayout)) {
+                        const VkImageSubresource &subresource = ilm_entry.first.subresource;
+                        log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT, HandleToUint64(pCommandBuffers[i]),
+                                "UNASSIGNED-vkCmdExecuteCommands-commandBuffer-00001",
+                                "%s: Cannot execute cmd buffer using image (0x%" PRIx64
+                                ") [sub-resource: aspectMask 0x%X "
+                                "array layer %u, mip level %u], with current layout %s when first use is %s.",
+                                "vkCmdExecuteCommands():", HandleToUint64(ilm_entry.first.image), subresource.aspectMask,
+                                subresource.arrayLayer, subresource.mipLevel, string_VkImageLayout(cb_entry->second.layout),
+                                string_VkImageLayout(ilm_entry.second.initialLayout));
+                    }
+                    cb_entry->second.layout = ilm_entry.second.layout;
                 } else {
+                    // Look for partial matches (in aspectMask), and update or create parent map entry in SetLayout
                     assert(ilm_entry.first.hasSubresource);
                     IMAGE_CMD_BUF_LAYOUT_NODE node;
                     if (!FindCmdBufLayout(dev_data, pCB, ilm_entry.first.image, ilm_entry.first.subresource, node)) {
                         node.initialLayout = ilm_entry.second.initialLayout;
+                    } else if ((VK_IMAGE_LAYOUT_UNDEFINED != ilm_entry.second.initialLayout) &&
+                               (node.layout != ilm_entry.second.initialLayout)) {
+                        const VkImageSubresource &subresource = ilm_entry.first.subresource;
+                        log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT, HandleToUint64(pCommandBuffers[i]),
+                                "UNASSIGNED-vkCmdExecuteCommands-commandBuffer-00001",
+                                "%s: Cannot execute cmd buffer using image (0x%" PRIx64
+                                ") [sub-resource: aspectMask 0x%X "
+                                "array layer %u, mip level %u], with current layout %s when first use is %s.",
+                                "vkCmdExecuteCommands():", HandleToUint64(ilm_entry.first.image), subresource.aspectMask,
+                                subresource.arrayLayer, subresource.mipLevel, string_VkImageLayout(node.layout),
+                                string_VkImageLayout(ilm_entry.second.initialLayout));
                     }
                     node.layout = ilm_entry.second.layout;
                     SetLayout(dev_data, pCB, ilm_entry.first, node);
