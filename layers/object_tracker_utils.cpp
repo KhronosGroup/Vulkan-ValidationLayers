@@ -1363,6 +1363,71 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetInstanceProcAddr(VkInstance instance
     return instance_data->instance_dispatch_table.GetInstanceProcAddr(instance, funcName);
 }
 
+VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceDisplayProperties2KHR(VkPhysicalDevice physicalDevice, uint32_t *pPropertyCount,
+                                                                      VkDisplayProperties2KHR *pProperties) {
+    bool skip = false;
+    {
+        std::lock_guard<std::mutex> lock(global_lock);
+        skip |=
+            ValidateObject(physicalDevice, physicalDevice, kVulkanObjectTypePhysicalDevice, false, kVUIDUndefined, kVUIDUndefined);
+    }
+    if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+    VkResult result = get_dispatch_table(ot_instance_table_map, physicalDevice)
+                          ->GetPhysicalDeviceDisplayProperties2KHR(physicalDevice, pPropertyCount, pProperties);
+    if (pProperties && (VK_SUCCESS == result || VK_INCOMPLETE == result)) {
+        std::lock_guard<std::mutex> lock(global_lock);
+        for (uint32_t index = 0; index < *pPropertyCount; ++index) {
+            CreateObject(physicalDevice, pProperties[index].displayProperties.display, kVulkanObjectTypeDisplayKHR, nullptr);
+        }
+    }
+
+    return result;
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL GetDisplayPlaneSupportedDisplaysKHR(VkPhysicalDevice physicalDevice, uint32_t planeIndex,
+                                                                   uint32_t *pDisplayCount, VkDisplayKHR *pDisplays) {
+    bool skip = false;
+    {
+        std::lock_guard<std::mutex> lock(global_lock);
+        skip |= ValidateObject(physicalDevice, physicalDevice, kVulkanObjectTypePhysicalDevice, false,
+                               "VUID-vkGetDisplayPlaneSupportedDisplaysKHR-physicalDevice-parameter", kVUIDUndefined);
+    }
+    if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+    VkResult result = get_dispatch_table(ot_instance_table_map, physicalDevice)
+                          ->GetDisplayPlaneSupportedDisplaysKHR(physicalDevice, planeIndex, pDisplayCount, pDisplays);
+    if (pDisplays && (VK_SUCCESS == result || VK_INCOMPLETE == result)) {
+        std::lock_guard<std::mutex> lock(global_lock);
+        for (uint32_t index = 0; index < *pDisplayCount; ++index) {
+            CreateObject(physicalDevice, pDisplays[index], kVulkanObjectTypeDisplayKHR, nullptr);
+        }
+    }
+
+    return result;
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL GetDisplayModeProperties2KHR(VkPhysicalDevice physicalDevice, VkDisplayKHR display,
+                                                            uint32_t *pPropertyCount, VkDisplayModeProperties2KHR *pProperties) {
+    bool skip = false;
+    {
+        std::lock_guard<std::mutex> lock(global_lock);
+        skip |=
+            ValidateObject(physicalDevice, physicalDevice, kVulkanObjectTypePhysicalDevice, false, kVUIDUndefined, kVUIDUndefined);
+        skip |= ValidateObject(physicalDevice, display, kVulkanObjectTypeDisplayKHR, false, kVUIDUndefined, kVUIDUndefined);
+    }
+    if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+    VkResult result = get_dispatch_table(ot_instance_table_map, physicalDevice)
+                          ->GetDisplayModeProperties2KHR(physicalDevice, display, pPropertyCount, pProperties);
+    if (pProperties && (VK_SUCCESS == result || VK_INCOMPLETE == result)) {
+        std::lock_guard<std::mutex> lock(global_lock);
+        for (uint32_t index = 0; index < *pPropertyCount; ++index) {
+            CreateObject(physicalDevice, pProperties[index].displayModeProperties.displayMode, kVulkanObjectTypeDisplayModeKHR,
+                         nullptr);
+        }
+    }
+
+    return result;
+}
+
 }  // namespace object_tracker
 
 VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceExtensionProperties(const char *pLayerName, uint32_t *pCount,

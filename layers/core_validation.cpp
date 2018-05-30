@@ -12561,23 +12561,41 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceDisplayPlanePropertiesKHR(VkPhys
     return result;
 }
 
+VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceDisplayPlaneProperties2KHR(VkPhysicalDevice physicalDevice,
+                                                                           uint32_t *pPropertyCount,
+                                                                           VkDisplayPlaneProperties2KHR *pProperties) {
+    VkResult result = VK_SUCCESS;
+    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), instance_layer_data_map);
+
+    result = instance_data->dispatch_table.GetPhysicalDeviceDisplayPlaneProperties2KHR(physicalDevice, pPropertyCount, pProperties);
+
+    if (result == VK_SUCCESS || result == VK_INCOMPLETE) {
+        PostCallRecordGetPhysicalDeviceDisplayPlanePropertiesKHR(instance_data, physicalDevice, pPropertyCount,
+                                                                 (pProperties) ? &pProperties->displayPlaneProperties : 0);
+    }
+
+    return result;
+}
+
 static bool ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(instance_layer_data *instance_data,
                                                                     VkPhysicalDevice physicalDevice, uint32_t planeIndex,
                                                                     const char *api_name) {
     bool skip = false;
     auto physical_device_state = GetPhysicalDeviceState(instance_data, physicalDevice);
     if (physical_device_state->vkGetPhysicalDeviceDisplayPlanePropertiesKHRState == UNCALLED) {
-        skip |= log_msg(
-            instance_data->report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT,
-            HandleToUint64(physicalDevice), SWAPCHAIN_GET_SUPPORTED_DISPLAYS_WITHOUT_QUERY,
-            "Potential problem with calling %s() without first querying vkGetPhysicalDeviceDisplayPlanePropertiesKHR.", api_name);
+        skip |=
+            log_msg(instance_data->report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT,
+                    HandleToUint64(physicalDevice), SWAPCHAIN_GET_SUPPORTED_DISPLAYS_WITHOUT_QUERY,
+                    "Potential problem with calling %s() without first querying vkGetPhysicalDeviceDisplayPlanePropertiesKHR "
+                    "or vkGetPhysicalDeviceDisplayPlaneProperties2KHR.",
+                    api_name);
     } else {
         if (planeIndex >= physical_device_state->display_plane_property_count) {
             skip |= log_msg(
                 instance_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT,
                 HandleToUint64(physicalDevice), "VUID-vkGetDisplayPlaneSupportedDisplaysKHR-planeIndex-01249",
-                "%s(): planeIndex must be in the range [0, %d] that was returned by vkGetPhysicalDeviceDisplayPlanePropertiesKHR. "
-                "Do you have the plane index hardcoded?",
+                "%s(): planeIndex must be in the range [0, %d] that was returned by vkGetPhysicalDeviceDisplayPlanePropertiesKHR "
+                "or vkGetPhysicalDeviceDisplayPlaneProperties2KHR. Do you have the plane index hardcoded?",
                 api_name, physical_device_state->display_plane_property_count - 1);
         }
     }
@@ -12622,6 +12640,20 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDisplayPlaneCapabilitiesKHR(VkPhysicalDevice p
 
     if (!skip) {
         result = instance_data->dispatch_table.GetDisplayPlaneCapabilitiesKHR(physicalDevice, mode, planeIndex, pCapabilities);
+    }
+
+    return result;
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL GetDisplayPlaneCapabilities2KHR(VkPhysicalDevice physicalDevice,
+                                                               const VkDisplayPlaneInfo2KHR *pDisplayPlaneInfo,
+                                                               VkDisplayPlaneCapabilities2KHR *pCapabilities) {
+    VkResult result = VK_ERROR_VALIDATION_FAILED_EXT;
+    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), instance_layer_data_map);
+    bool skip = PreCallValidateGetDisplayPlaneCapabilitiesKHR(instance_data, physicalDevice, pDisplayPlaneInfo->planeIndex);
+
+    if (!skip) {
+        result = instance_data->dispatch_table.GetDisplayPlaneCapabilities2KHR(physicalDevice, pDisplayPlaneInfo, pCapabilities);
     }
 
     return result;
@@ -13073,8 +13105,10 @@ static const std::unordered_map<std::string, void *> name_to_funcptr_map = {
     {"vkDestroyDebugReportCallbackEXT", (void *)DestroyDebugReportCallbackEXT},
     {"vkDebugReportMessageEXT", (void *)DebugReportMessageEXT},
     {"vkGetPhysicalDeviceDisplayPlanePropertiesKHR", (void *)GetPhysicalDeviceDisplayPlanePropertiesKHR},
+    {"vkGetPhysicalDeviceDisplayPlaneProperties2KHR", (void *)GetPhysicalDeviceDisplayPlaneProperties2KHR},
     {"vkGetDisplayPlaneSupportedDisplaysKHR", (void *)GetDisplayPlaneSupportedDisplaysKHR},
     {"vkGetDisplayPlaneCapabilitiesKHR", (void *)GetDisplayPlaneCapabilitiesKHR},
+    {"vkGetDisplayPlaneCapabilities2KHR", (void *)GetDisplayPlaneCapabilities2KHR},
     {"vkImportSemaphoreFdKHR", (void *)ImportSemaphoreFdKHR},
     {"vkGetSemaphoreFdKHR", (void *)GetSemaphoreFdKHR},
     {"vkImportFenceFdKHR", (void *)ImportFenceFdKHR},
