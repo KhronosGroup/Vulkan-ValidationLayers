@@ -1166,6 +1166,8 @@ implicit_param_map = {
 'pCallbackData' : 532,
 'pBindingFlags' : 533,
 'pDescriptorCounts' : 534,
+'srcOffsets' : 535,
+'dstOffsets' : 536,
 ### ADD New implicit param mappings above this line
 }
 
