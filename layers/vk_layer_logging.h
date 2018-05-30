@@ -88,23 +88,23 @@ template debug_report_data *GetLayerDataPtr<debug_report_data>(void *data_key,
 static inline void DebugReportFlagsToAnnotFlags(VkDebugReportFlagsEXT dr_flags, bool default_flag_is_spec,
                                                 VkDebugUtilsMessageSeverityFlagsEXT *da_severity,
                                                 VkDebugUtilsMessageTypeFlagsEXT *da_type) {
-    // All layer warnings are spec warnings currently.  At least as far as anything not specifically
-    // called out.  In the future, we'll label things using the new split severity and type values.
-    *da_type = VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT;
     *da_severity = 0;
+    // If it's explicitly listed as a performance warning, treat it as a performance message.
+    // Otherwise, treat it as a validation issue.
+    if ((dr_flags & VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT) != 0) {
+        *da_type = VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+    } else {
+        *da_type = VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT;
+    }
     if ((dr_flags & VK_DEBUG_REPORT_DEBUG_BIT_EXT) != 0) {
         *da_severity |= VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT;
-        *da_type |= VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT;
+        // If this is a debug message, it's really intended for the general messages
+        *da_type = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT;
     }
     if ((dr_flags & VK_DEBUG_REPORT_INFORMATION_BIT_EXT) != 0) {
         *da_severity |= VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT;
-        *da_type |= VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT;
     }
-    if ((dr_flags & VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT) != 0) {
-        *da_severity |= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT;
-        *da_type |= VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-    }
-    if ((dr_flags & VK_DEBUG_REPORT_WARNING_BIT_EXT) != 0) {
+    if ((dr_flags & VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT) != 0 || (dr_flags & VK_DEBUG_REPORT_WARNING_BIT_EXT) != 0) {
         *da_severity |= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT;
     }
     if ((dr_flags & VK_DEBUG_REPORT_ERROR_BIT_EXT) != 0) {
