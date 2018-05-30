@@ -453,7 +453,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             self.alias_dict[name]=alias
         OutputGenerator.genType(self, typeinfo, name, alias)
         typeElem = typeinfo.elem
-        # If the type is a struct type, traverse the imbedded <member> tags generating a structure. Otherwise, emit the tag text.
+        # If the type is a struct type, traverse the embedded <member> tags generating a structure. Otherwise, emit the tag text.
         category = typeElem.get('category')
         if (category == 'struct' or category == 'union'):
             self.structNames.append(name)
@@ -973,7 +973,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                 checkExpr.append('skip |= validate_required_pointer(local_data->report_data, "{}", {ppp}"{}"{pps}, {}{}, {});\n'.format(funcPrintName, valuePrintName, prefix, value.name, ptr_required_vuid, **postProcSpec))
         return checkExpr
     #
-    # Process struct member validation code, performing name suibstitution if required
+    # Process struct member validation code, performing name substitution if required
     def processStructMemberCode(self, line, funcName, memberNamePrefix, memberDisplayNamePrefix, postProcSpec):
         # Build format specifier list
         kwargs = {}
@@ -1035,6 +1035,15 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             scrubbed_lines += line
         return scrubbed_lines
     #
+    # Create a placeholder check for a substructure for an API call. We check all the parameters of the structure, and so
+    # cover the VU for the structure itself being valid.
+    def MakeSubStructCheck(self, funcname, struct_info):
+        sub_struct_code = []
+        check_type = "%s-parameter" % struct_info.name
+        vuid = self.GetVuid(funcname, check_type)
+        sub_struct_code.append('skip |= ValidateSubstructure(local_data->report_data, "%s", "%s", %s);' % (funcname, struct_info.name, vuid))
+        return sub_struct_code
+    #
     # Process struct validation code for inclusion in function or parent struct validation code
     def expandStructCode(self, lines, funcName, memberNamePrefix, memberDisplayNamePrefix, indent, output, postProcSpec):
         for line in lines:
@@ -1047,7 +1056,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                 output.append(self.processStructMemberCode(indent + line, funcName, memberNamePrefix, memberDisplayNamePrefix, postProcSpec))
         return output
     #
-    # Process struct pointer/array validation code, perfoeming name substitution if required
+    # Process struct pointer/array validation code, performing name substitution if required
     def expandStructPointerCode(self, prefix, value, lenValue, funcName, valueDisplayName, postProcSpec):
         expr = []
         expr.append('if ({}{} != NULL)\n'.format(prefix, value.name))
@@ -1088,7 +1097,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
         lines = []    # Generated lines of code
         unused = []   # Unused variable names
 
-        if structTypeName == 'VkPhysicalDeviceGroupProperties':
+        if funcName == 'vkCmdCopyImage':
             stop = 'here'
 
         for value in values:
@@ -1104,7 +1113,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             # Generate the full name of the value, which will be printed in the error message, by adding the variable prefix to the value name
             valueDisplayName = '{}{}'.format(displayNamePrefix, value.name)
             #
-            # Check for NULL pointers, ignore the inout count parameters that
+            # Check for NULL pointers, ignore the in-out count parameters that
             # will be validated with their associated array
             if (value.ispointer or value.isstaticarray) and not value.iscount:
                 # Parameters for function argument generation
@@ -1140,8 +1149,14 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                     # Log a diagnostic message when validation cannot be automatically generated and must be implemented manually
                     self.logMsg('diag', 'ParameterValidation: No validation for {} {}'.format(structTypeName if structTypeName else funcName, value.name))
                 else:
-                    # If this is a pointer to a struct with an sType field, verify the type
+                    if value.type in self.structNames:
+                        # If we are validating a structure's contents, add VUID for the valid parent structure
+                        if structTypeName is None:
+                            usedLines += self.MakeSubStructCheck(funcName, value)
+                        else:
+                            usedLines += self.MakeSubStructCheck(structTypeName, value)
                     if value.type in self.structTypes:
+                        # If this is a pointer to a struct with an sType field, verify the type
                         usedLines += self.makeStructTypeCheck(valuePrefix, value, lenParam, req, cvReq, cpReq, funcName, lenDisplayName, valueDisplayName, postProcSpec, structTypeName)
                     # If this is an input handle array that is not allowed to contain NULL handles, verify that none of the handles are VK_NULL_HANDLE
                     elif value.type in self.handleTypes and value.isconst and not self.isHandleOptional(value, lenParam):
@@ -1160,7 +1175,6 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                     else:
                         usedLines += self.makePointerCheck(valuePrefix, value, lenParam, req, cvReq, cpReq, funcName, lenDisplayName, valueDisplayName, postProcSpec, structTypeName)
                     # If this is a pointer to a struct (input), see if it contains members that need to be checked
-                 ###if value.type in self.validatedStructs and value.isconst:
                     if value.type in self.validatedStructs:
                         if value.isconst: # or value.type in self.returnedonly_structs:
                             usedLines.append(self.expandStructPointerCode(valuePrefix, value, lenParam, funcName, valueDisplayName, postProcSpec))

@@ -178,6 +178,19 @@ struct LogMiscParams {
     const char *api_name;
 };
 
+// Pick up VUIDS from validated substructures. Many structures contain substructures.  In addition to the implicit VUs covered
+// when each of the substructures is parsed, there is often a VUID for 'xxx MUST be a valid XxxStruct'. If all implicit valid usage
+// is covered for a substructure, we should claim the VUID for the validity of the structure itself.
+static bool ValidateSubstructure(debug_report_data *report_data, const char *api_name, const char *struct_name,
+                                 const std::string &substructure_vuid) {
+    bool skip = false;
+    if (false) {
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, substructure_vuid,
+                        "%s: parameter %s must be a valid structure.", api_name, struct_name);
+    }
+    return skip;
+}
+
 /**
  * Validate a minimum value.
  *
