@@ -348,10 +348,7 @@ add_custom_target(uninstall
 add_definitions(-DAPI_NAME="${API_NAME}")
 
 if(BUILD_TESTS)
-    # Output warning if googletest submodule contents are not present
-    if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/tests/googletest/googletest/include/gtest/gtest.h")
-        message(FATAL_ERROR "Please run 'git submodule update --init' before running cmake")
-    endif()
+    add_subdirectory(external)
     add_subdirectory(tests)
 endif()
 

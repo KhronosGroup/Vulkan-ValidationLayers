@@ -4,6 +4,7 @@ CMakeFiles/
 cmake_install.cmake
 Makefile
 scripts/__pycache__
+external/googletest
 *.so
 *.so.*
 _out64

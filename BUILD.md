@@ -55,6 +55,7 @@ Windows 7+ with the following software packages:
   - Tell the installer to treat line endings "as is" (i.e. both DOS and Unix-style line endings).
   - Install both the 32-bit and 64-bit versions, as the 64-bit installer does not install the
     32-bit libraries and tools.
+  - Tell the installer to treat line endings "as is" (i.e. both DOS and Unix-style line endings).
 - Vulkan Loader Library
   - Building the Layer Validation Tests requires linking to the Vulkan Loader Library (vulkan-1.dll).
     Locating the library for this repo can be done in two different ways:
@@ -66,7 +67,13 @@ Windows 7+ with the following software packages:
          and use absolute (not relative) paths, like so:
              cmake -DLOADER_REPO_ROOT=c:\absolute_path_to\Vulkan-Loader ....
          Currently, the build directory *must* be named either 'build' or 'build32'.
-  - Tell the installer to treat line endings "as is" (i.e. both DOS and Unix-style line endings).
+- [googletest](https://github.com/google/googletest.git)
+  - This is an optional component, but required for building the validation layer tests. To install,
+
+        cd <the root directory of your copy of the Vulkan-ValidationLayers repository, "external" will be a subdirectory>
+        git clone https://github.com/google/googletest.git external/googletest
+
+  - The gtest libraries will be built as part of the main project cmake/build process
 
 ### Windows Build - Microsoft Visual Studio
 
@@ -149,6 +156,14 @@ Vulkan Loader Library
 - [glslang](https://github.com/KhronosGroup/glslang)
   - Ensure that the 'update_glslang_sources.py' script has been run. Follow the build instructions in the
     glslang [README.md](https://github.com/KhronosGroup/glslang/blob/master/README.md) file, noting the location of the chosen install directory.
+
+- [googletest](https://github.com/google/googletest.git)
+  - This is an optional component, but required for building the validation layer tests. To install,
+
+        cd <the root directory of your copy of the Vulkan-ValidationLayers repository, "external" will be a subdirectory>
+        git clone https://github.com/google/googletest.git external/googletest
+
+  - The gtest libraries will be built as part of the main project cmake/build process
 
 ### Linux Build
 
@@ -442,6 +457,14 @@ Also clone the following repos:
              LOADER_REPO_ROOT=/absolute_path_to_/Vulkan-Loader
          and use absolute (not relative) paths, like so:
              cmake -DLOADER_REPO_ROOT=/absolute_path_to_/Vulkan-Loader ....
+- [googletest](https://github.com/google/googletest.git)
+  - This is an optional component, but required for building the validation layer tests. To install,
+
+        cd <the root directory of your copy of the Vulkan-ValidationLayers repository, "external" will be a subdirectory>
+        git clone https://github.com/google/googletest.git external/googletest
+
+  - The gtest libraries will be built as part of the main project cmake/build process
+
 
 ### MacOS build
 
