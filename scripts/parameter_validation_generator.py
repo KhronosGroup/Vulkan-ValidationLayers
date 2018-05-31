@@ -715,6 +715,8 @@ class ParameterValidationOutputGenerator(OutputGenerator):
         value = value.replace('D3_D12', 'D3D12')
         value = value.replace('Device_IDProp', 'Device_ID_Prop')
         value = value.replace('LODGather', 'LOD_Gather')
+        value = value.replace('Features2', 'FEATURES_2')
+        value = value.replace('e16_Bit', 'E_16BIT')
         # Change to uppercase
         value = value.upper()
         # Add STRUCTURE_TYPE_
@@ -722,6 +724,8 @@ class ParameterValidationOutputGenerator(OutputGenerator):
     #
     # Get the cached VkStructureType value for the specified struct typename, or generate a VkStructureType
     # value assuming the struct is defined by a different feature
+    # TODO: The structTypes list gets built incrementally -- half the time, the sType you're looking for is not yet in the list.
+    #       The list needs to be built up-front, probably by accessing the XML directly, or by rewriting the generator.
     def getStructType(self, typename):
         value = None
         if typename in self.structTypes:
@@ -1165,9 +1169,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                         enum_value_list = 'All%sEnums' % value.type
                         usedLines.append('skip |= validate_ranged_enum_array(local_data->report_data, "{}", {ppp}"{}"{pps}, {ppp}"{}"{pps}, "{}", {}, {pf}{}, {pf}{}, {}, {});\n'.format(funcName, lenDisplayName, valueDisplayName, value.type, enum_value_list, lenParam.name, value.name, cvReq, req, pf=valuePrefix, **postProcSpec))
                     elif value.name == 'pNext':
-                        # We need to ignore VkDeviceCreateInfo and VkInstanceCreateInfo, as the loader manipulates them in a way that is not documented in vk.xml
-                        if not structTypeName in ['VkDeviceCreateInfo', 'VkInstanceCreateInfo']:
-                            usedLines += self.makeStructNextCheck(valuePrefix, value, funcName, valueDisplayName, postProcSpec, structTypeName)
+                        usedLines += self.makeStructNextCheck(valuePrefix, value, funcName, valueDisplayName, postProcSpec, structTypeName)
                     else:
                         usedLines += self.makePointerCheck(valuePrefix, value, lenParam, req, cvReq, cpReq, funcName, lenDisplayName, valueDisplayName, postProcSpec, structTypeName)
                     # If this is a pointer to a struct (input), see if it contains members that need to be checked
