@@ -116,7 +116,7 @@ if (TARGET gtest_main)
        PROPERTIES
        COMPILE_DEFINITIONS "GTEST_LINKED_AS_SHARED_LIBRARY=1")
     target_include_directories(vk_layer_validation_tests PUBLIC
-        ${VULKAN_HEADERS_LOCATION}/include
+        ${VulkanHeaders_INCLUDE_DIR}
         ${CMAKE_CURRENT_SOURCE_DIR}
         ${GTEST_LOCATION}/googletest/include
         ${PROJECT_SOURCE_DIR}/layers

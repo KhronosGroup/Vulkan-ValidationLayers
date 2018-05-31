@@ -82,7 +82,8 @@ class ParameterValidationGeneratorOptions(GeneratorOptions):
                  indentFuncProto = True,
                  indentFuncPointer = False,
                  alignFuncParam = 0,
-                 expandEnumerants = True):
+                 expandEnumerants = True,
+                 valid_usage_path = ''):
         GeneratorOptions.__init__(self, filename, directory, apiname, profile,
                                   versions, emitversions, defaultExtensions,
                                   addExtensions, removeExtensions, emitExtensions, sortProcedure)
@@ -94,6 +95,7 @@ class ParameterValidationGeneratorOptions(GeneratorOptions):
         self.indentFuncPointer = indentFuncPointer
         self.alignFuncParam  = alignFuncParam
         self.expandEnumerants = expandEnumerants
+        self.valid_usage_path = valid_usage_path
 
 # ParameterValidationOutputGenerator - subclass of OutputGenerator.
 # Generates param checker layer code.
@@ -184,26 +186,6 @@ class ParameterValidationOutputGenerator(OutputGenerator):
         self.CommandData = namedtuple('CommandData', ['name', 'params', 'cdecl', 'extension_type', 'result'])
         self.StructMemberData = namedtuple('StructMemberData', ['name', 'members'])
 
-        # Cover cases where file is built from scripts directory, Lin/Win, or Android build structure
-        # Set cwd to the script directory to more easily locate the header.
-        previous_dir = os.getcwd()
-        os.chdir(os.path.dirname(sys.argv[0]))
-        vuid_filename_locations = [
-            './Vulkan-Headers/registry/validusage.json',
-            '../Vulkan-Headers/registry/validusage.json',
-            '../../Vulkan-Headers/registry/validusage.json',
-            '../../../Vulkan-Headers/registry/validusage.json'
-            ]
-        for vuid_filename in vuid_filename_locations:
-            if os.path.isfile(vuid_filename):
-                json_file = open(vuid_filename, 'r')
-                self.vuid_dict = json.load(json_file)
-                json_file.close()
-                break
-        if len(self.vuid_dict) == 0:
-            print("Error: Could not find, or error loading validusage.json")
-            sys.exit(1)
-        os.chdir(previous_dir)
     #
     # Generate Copyright comment block for file
     def GenerateCopyright(self):
@@ -262,6 +244,17 @@ class ParameterValidationOutputGenerator(OutputGenerator):
     # Called at file creation time
     def beginFile(self, genOpts):
         OutputGenerator.beginFile(self, genOpts)
+
+        self.valid_usage_path = genOpts.valid_usage_path
+        vu_json_filename = os.path.join(self.valid_usage_path + os.sep, 'validusage.json')
+        if os.path.isfile(vu_json_filename):
+            json_file = open(vu_json_filename, 'r')
+            self.vuid_dict = json.load(json_file)
+            json_file.close()
+        if len(self.vuid_dict) == 0:
+            print("Error: Could not find, or error loading %s/validusage.json\n", vu_json_filename)
+            sys.exit(1)
+
         # C-specific
         #
         # Build a set of all vuid text strings found in validusage.json

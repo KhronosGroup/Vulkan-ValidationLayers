@@ -17,13 +17,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 find_package(PythonInterp 3 REQUIRED)
 
-# TODO: Add option to override this with env var, or even to use SDK
-set(VULKAN_HEADERS_LOCATION "${CMAKE_CURRENT_SOURCE_DIR}/Vulkan-Headers")
-
-# Output warning if vulkan headers submodule contents are not present
-if (NOT EXISTS "${VULKAN_HEADERS_LOCATION}/include/vulkan/vulkan_core.h")
-    message(FATAL_ERROR "Please run 'git submodule update --init' before running cmake")
-endif()
+find_package(VulkanHeaders)
 
 option(USE_CCACHE "Use ccache" OFF)
 if (USE_CCACHE)
@@ -148,8 +142,6 @@ endif()
 
 option(BUILD_TESTS "Build tests" ON)
 option(BUILD_LAYERS "Build layers" ON)
-
-set(VULKAN_SDK $ENV{VULKAN_SDK})
 
 # set GLSLANG_INSTALL_DIR to define locations of glslang includes, libs, and binaries.
 # This is the preferred method for building this repository.
