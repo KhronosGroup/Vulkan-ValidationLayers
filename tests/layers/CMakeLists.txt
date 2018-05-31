@@ -83,7 +83,7 @@ else()
 endif()
 
 include_directories(
-    ${VULKAN_HEADERS_LOCATION}/include
+    ${VulkanHeaders_INCLUDE_DIR}
     #TODO: Clear out this list
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${PROJECT_SOURCE_DIR}/layers

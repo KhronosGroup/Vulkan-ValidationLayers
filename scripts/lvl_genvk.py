@@ -15,22 +15,6 @@
 # limitations under the License.
 
 import argparse, cProfile, pdb, string, sys, time, os
-scripts_directory_path = os.path.dirname(os.path.abspath(__file__))
-registry_headers_path = os.path.join(scripts_directory_path, '../Vulkan-Headers/registry')
-sys.path.insert(0, registry_headers_path)
-
-from reg import *
-from generator import write
-from cgenerator import CGeneratorOptions, COutputGenerator
-
-# ValidationLayer Generator Modifications
-from threading_generator import  ThreadGeneratorOptions, ThreadOutputGenerator
-from parameter_validation_generator import ParameterValidationGeneratorOptions, ParameterValidationOutputGenerator
-from unique_objects_generator import UniqueObjectsGeneratorOptions, UniqueObjectsOutputGenerator
-from object_tracker_generator import ObjectTrackerGeneratorOptions, ObjectTrackerOutputGenerator
-from dispatch_table_helper_generator import DispatchTableHelperOutputGenerator, DispatchTableHelperOutputGeneratorOptions
-from helper_file_generator import HelperFileOutputGenerator, HelperFileOutputGeneratorOptions
-from loader_extension_generator import LoaderExtensionOutputGenerator, LoaderExtensionGeneratorOptions
 
 # Simple timer functions
 startTime = None
@@ -169,7 +153,8 @@ def makeGenOpts(args):
             apientry          = 'VKAPI_CALL ',
             apientryp         = 'VKAPI_PTR *',
             alignFuncParam    = 48,
-            expandEnumerants  = False)
+            expandEnumerants  = False,
+            valid_usage_path  = args.scripts)
           ]
 
     # Options for unique objects layer
@@ -215,7 +200,8 @@ def makeGenOpts(args):
             apientry          = 'VKAPI_CALL ',
             apientryp         = 'VKAPI_PTR *',
             alignFuncParam    = 48,
-            expandEnumerants = False)
+            expandEnumerants  = False,
+            valid_usage_path  = args.scripts)
         ]
 
     # Options for dispatch table helper generator
@@ -496,7 +482,28 @@ if __name__ == '__main__':
     parser.add_argument('-verbose', action='store_false', dest='quiet', default=True,
                         help='Enable script output during normal execution.')
 
+    # This argument tells us where to load the script from the Vulkan-Headers registry
+    parser.add_argument('-scripts', action='store',
+                        help='Find additional scripts in this directory')
+
     args = parser.parse_args()
+
+    scripts_directory_path = os.path.dirname(os.path.abspath(__file__))
+    registry_headers_path = os.path.join(scripts_directory_path, args.scripts)
+    sys.path.insert(0, registry_headers_path)
+
+    from reg import *
+    from generator import write
+    from cgenerator import CGeneratorOptions, COutputGenerator
+
+    # ValidationLayer Generator Modifications
+    from threading_generator import  ThreadGeneratorOptions, ThreadOutputGenerator
+    from parameter_validation_generator import ParameterValidationGeneratorOptions, ParameterValidationOutputGenerator
+    from unique_objects_generator import UniqueObjectsGeneratorOptions, UniqueObjectsOutputGenerator
+    from object_tracker_generator import ObjectTrackerGeneratorOptions, ObjectTrackerOutputGenerator
+    from dispatch_table_helper_generator import DispatchTableHelperOutputGenerator, DispatchTableHelperOutputGeneratorOptions
+    from helper_file_generator import HelperFileOutputGenerator, HelperFileOutputGeneratorOptions
+    from loader_extension_generator import LoaderExtensionOutputGenerator, LoaderExtensionGeneratorOptions
 
     # This splits arguments which are space-separated lists
     args.feature = [name for arg in args.feature for name in arg.split()]

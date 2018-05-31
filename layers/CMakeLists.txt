@@ -38,8 +38,8 @@ set(SCRIPTS_DIR "${PROJECT_SOURCE_DIR}/scripts")
 # Define macro used for building vkxml generated files
 macro(run_vk_xml_generate dependency output)
     add_custom_command(OUTPUT ${output}
-    COMMAND ${PYTHON_CMD} ${SCRIPTS_DIR}/lvl_genvk.py -registry ${VULKAN_HEADERS_LOCATION}/registry/vk.xml ${output}
-    DEPENDS ${VULKAN_HEADERS_LOCATION}/registry/vk.xml ${VULKAN_HEADERS_LOCATION}/registry/generator.py ${SCRIPTS_DIR}/${dependency} ${SCRIPTS_DIR}/lvl_genvk.py ${VULKAN_HEADERS_LOCATION}/registry/reg.py
+    COMMAND ${PYTHON_CMD} ${SCRIPTS_DIR}/lvl_genvk.py -registry ${VulkanRegistry_DIR}/vk.xml -scripts ${VulkanRegistry_DIR} ${output}
+    DEPENDS ${VulkanRegistry_DIR}/vk.xml ${VulkanRegistry_DIR}/generator.py ${SCRIPTS_DIR}/${dependency} ${SCRIPTS_DIR}/lvl_genvk.py ${VulkanRegistry_DIR}/reg.py
     )
 endmacro()
 
@@ -101,8 +101,7 @@ add_dependencies(VkLayer_utils generate_helper_files)
 target_include_directories(
     VkLayer_utils PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/loader
-    ${VULKAN_HEADERS_LOCATION}/include
-    ${VULKAN_HEADERS_LOCATION}/interfaces
+    ${VulkanHeaders_INCLUDE_DIR}
     ${CMAKE_CURRENT_BINARY_DIR}
     ${PROJECT_BINARY_DIR}
     )
@@ -260,8 +259,7 @@ endif()
 
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
-    ${VULKAN_HEADERS_LOCATION}/include
-    ${VULKAN_HEADERS_LOCATION}/include/vulkan
+    ${VulkanHeaders_INCLUDE_DIR}
     )
 
 if (WIN32)
