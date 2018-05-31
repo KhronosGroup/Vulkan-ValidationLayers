@@ -514,14 +514,62 @@ bool ValidateBarrierLayoutToImageUsage(layer_data *device_data, const VkImageMem
     return skip;
 }
 
+// Scoreboard for checking for duplicate and inconsistent barriers to images
+struct ImageBarrierScoreboardEntry {
+    uint32_t index;
+    // This is designed for temporary storage within the scope of the API call.  If retained storage of the barriers is
+    // required, copies should be made and smart or unique pointers used in some other stucture (or this one refactored)
+    const VkImageMemoryBarrier *barrier;
+};
+using ImageBarrierScoreboardSubresMap = std::unordered_map<VkImageSubresourceRange, ImageBarrierScoreboardEntry>;
+using ImageBarrierScoreboardImageMap = std::unordered_map<VkImage, ImageBarrierScoreboardSubresMap>;
+
 // Verify image barriers are compatible with the images they reference.
 bool ValidateBarriersToImages(layer_data *device_data, GLOBAL_CB_NODE const *cb_state, uint32_t imageMemoryBarrierCount,
                               const VkImageMemoryBarrier *pImageMemoryBarriers, const char *func_name) {
     bool skip = false;
 
+    // Scoreboard for duplicate layout transition barriers within the list
+    // Pointers retained in the scoreboard only have the lifetime of *this* call (i.e. within the scope of the API call)
+    ImageBarrierScoreboardImageMap layout_transitions;
+
     for (uint32_t i = 0; i < imageMemoryBarrierCount; ++i) {
         auto img_barrier = &pImageMemoryBarriers[i];
         if (!img_barrier) continue;
+
+        // Update the scoreboard of layout transitions and check for barriers affecting the same image and subresource
+        // TODO: a higher precision could be gained by adapting the command_buffer image_layout_map logic looking for conflicts
+        // at a per sub-resource level
+        if (img_barrier->oldLayout != img_barrier->newLayout) {
+            ImageBarrierScoreboardEntry new_entry{i, img_barrier};
+            auto image_it = layout_transitions.find(img_barrier->image);
+            if (image_it != layout_transitions.end()) {
+                auto &subres_map = image_it->second;
+                auto subres_it = subres_map.find(img_barrier->subresourceRange);
+                if (subres_it != subres_map.end()) {
+                    auto &entry = subres_it->second;
+                    if ((entry.barrier->newLayout != img_barrier->oldLayout) &&
+                        (img_barrier->oldLayout != VK_IMAGE_LAYOUT_UNDEFINED)) {
+                        const VkImageSubresourceRange &range = img_barrier->subresourceRange;
+                        skip = log_msg(
+                            core_validation::GetReportData(device_data), VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                            VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT, HandleToUint64(cb_state->commandBuffer),
+                            "VUID-VkImageMemoryBarrier-oldLayout-01197",
+                            "%s: pImageMemoryBarrier[%u] conflicts with earlier entry pImageMemoryBarrier[%u]. Image 0x%" PRIx64
+                            " subresourceRange: aspectMask=%u baseMipLevel=%u levelCount=%u, baseArrayLayer=%u, layerCount=%u; "
+                            "conflicting barrier transitions image layout from %s when earlier barrier transitioned to layout %s.",
+                            func_name, i, entry.index, HandleToUint64(img_barrier->image), range.aspectMask, range.baseMipLevel,
+                            range.levelCount, range.baseArrayLayer, range.layerCount, string_VkImageLayout(img_barrier->oldLayout),
+                            string_VkImageLayout(entry.barrier->newLayout));
+                    }
+                    entry = new_entry;
+                } else {
+                    subres_map[img_barrier->subresourceRange] = new_entry;
+                }
+            } else {
+                layout_transitions[img_barrier->image][img_barrier->subresourceRange] = new_entry;
+            }
+        }
 
         auto image_state = GetImageState(device_data, img_barrier->image);
         if (image_state) {
