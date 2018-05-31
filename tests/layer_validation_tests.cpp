@@ -30333,6 +30333,288 @@ TEST_F(VkPositiveLayerTest, ApiVersionZero) {
     m_errorMonitor->VerifyNotFound();
 }
 
+TEST_F(VkLayerTest, DrawIndirectCountKHR) {
+    VkMemoryRequirements memory_requirements;
+    VkMemoryAllocateInfo memory_allocate_info = {VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};
+
+    TEST_DESCRIPTION("Test covered valid usage for vkCmdDrawIndirectCountKHR");
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME);
+    } else {
+        printf("             VK_KHR_draw_indirect_count Extension not supported, skipping test\n");
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    auto vkCmdDrawIndirectCountKHR =
+        (PFN_vkCmdDrawIndirectCountKHR)vkGetDeviceProcAddr(m_device->device(), "vkCmdDrawIndirectCountKHR");
+
+    char const *vsSource =
+        "#version 450\n"
+        "\n"
+        "void main() { gl_Position = vec4(0); }\n";
+    char const *fsSource =
+        "#version 450\n"
+        "\n"
+        "layout(location=0) out vec4 color;\n"
+        "void main() {\n"
+        "   color = vec4(1, 0, 0, 1);\n"
+        "}\n";
+    VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
+    VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+
+    VkPipelineObj pipe(m_device);
+    pipe.AddShader(&vs);
+    pipe.AddShader(&fs);
+    pipe.AddDefaultColorAttachment();
+
+    VkDescriptorSetObj descriptorSet(m_device);
+    descriptorSet.AppendDummy();
+    descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
+
+    VkResult err = pipe.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderPass());
+    ASSERT_VK_SUCCESS(err);
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+
+    vkCmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
+    m_commandBuffer->BindDescriptorSet(descriptorSet);
+
+    VkViewport viewport = {0, 0, 16, 16, 0, 1};
+    vkCmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
+    VkRect2D scissor = {{0, 0}, {16, 16}};
+    vkCmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissor);
+
+    VkBufferCreateInfo buffer_create_info = {VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
+    buffer_create_info.size = sizeof(VkDrawIndirectCommand);
+    buffer_create_info.usage = VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
+    VkBuffer drawBuffer;
+    vkCreateBuffer(m_device->device(), &buffer_create_info, nullptr, &drawBuffer);
+
+    VkBufferCreateInfo countBuffer_create_info = {VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
+    countBuffer_create_info.size = sizeof(uint32_t);
+    countBuffer_create_info.usage = VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
+    VkBuffer countBuffer;
+    vkCreateBuffer(m_device->device(), &countBuffer_create_info, nullptr, &countBuffer);
+    vkGetBufferMemoryRequirements(m_device->device(), countBuffer, &memory_requirements);
+    memory_allocate_info.allocationSize = memory_requirements.size;
+    m_device->phy().set_memory_type(memory_requirements.memoryTypeBits, &memory_allocate_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+    VkDeviceMemory countBufferMemory;
+    vkAllocateMemory(m_device->device(), &memory_allocate_info, NULL, &countBufferMemory);
+    vkBindBufferMemory(m_device->device(), countBuffer, countBufferMemory, 0);
+
+    // VUID-vkCmdDrawIndirectCountKHR-buffer-03104
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDrawIndirectCountKHR-buffer-03104");
+    vkCmdDrawIndirectCountKHR(m_commandBuffer->handle(), drawBuffer, 0, countBuffer, 0, 1, sizeof(VkDrawIndirectCommand));
+    m_errorMonitor->VerifyFound();
+
+    vkGetBufferMemoryRequirements(m_device->device(), drawBuffer, &memory_requirements);
+    memory_allocate_info.allocationSize = memory_requirements.size;
+    m_device->phy().set_memory_type(memory_requirements.memoryTypeBits, &memory_allocate_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+    VkDeviceMemory drawBufferMemory;
+    vkAllocateMemory(m_device->device(), &memory_allocate_info, NULL, &drawBufferMemory);
+    vkBindBufferMemory(m_device->device(), drawBuffer, drawBufferMemory, 0);
+
+    VkBuffer countBufferUnbound;
+    vkCreateBuffer(m_device->device(), &countBuffer_create_info, nullptr, &countBufferUnbound);
+
+    // VUID-vkCmdDrawIndirectCountKHR-countBuffer-03106
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDrawIndirectCountKHR-countBuffer-03106");
+    vkCmdDrawIndirectCountKHR(m_commandBuffer->handle(), drawBuffer, 0, countBufferUnbound, 0, 1, sizeof(VkDrawIndirectCommand));
+    m_errorMonitor->VerifyFound();
+
+    // VUID-vkCmdDrawIndirectCountKHR-offset-03108
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDrawIndirectCountKHR-offset-03108");
+    vkCmdDrawIndirectCountKHR(m_commandBuffer->handle(), drawBuffer, 1, countBuffer, 0, 1, sizeof(VkDrawIndirectCommand));
+    m_errorMonitor->VerifyFound();
+
+    // VUID-vkCmdDrawIndirectCountKHR-countBufferOffset-03109
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDrawIndirectCountKHR-countBufferOffset-03109");
+    vkCmdDrawIndirectCountKHR(m_commandBuffer->handle(), drawBuffer, 0, countBuffer, 1, 1, sizeof(VkDrawIndirectCommand));
+    m_errorMonitor->VerifyFound();
+
+    // VUID-vkCmdDrawIndirectCountKHR-stride-03110
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDrawIndirectCountKHR-stride-03110");
+    vkCmdDrawIndirectCountKHR(m_commandBuffer->handle(), drawBuffer, 0, countBuffer, 0, 1, 1);
+    m_errorMonitor->VerifyFound();
+
+    // TODO: These covered VUIDs aren't tested. There is also no test coverage for the core Vulkan 1.0 vkCmdDraw* equivalent of
+    // these:
+    //     VUID-vkCmdDrawIndirectCountKHR-renderPass-03113
+    //     VUID-vkCmdDrawIndirectCountKHR-subpass-03114
+    //     VUID-vkCmdDrawIndirectCountKHR-None-03120
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+
+    vkDestroyBuffer(m_device->device(), drawBuffer, 0);
+    vkDestroyBuffer(m_device->device(), countBuffer, 0);
+    vkDestroyBuffer(m_device->device(), countBufferUnbound, 0);
+
+    vkFreeMemory(m_device->device(), drawBufferMemory, 0);
+    vkFreeMemory(m_device->device(), countBufferMemory, 0);
+}
+
+TEST_F(VkLayerTest, DrawIndexedIndirectCountKHR) {
+    VkMemoryRequirements memory_requirements;
+    VkMemoryAllocateInfo memory_allocate_info = {VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};
+
+    TEST_DESCRIPTION("Test covered valid usage for vkCmdDrawIndexedIndirectCountKHR");
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME);
+    } else {
+        printf("             VK_KHR_draw_indirect_count Extension not supported, skipping test\n");
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    auto vkCmdDrawIndexedIndirectCountKHR =
+        (PFN_vkCmdDrawIndexedIndirectCountKHR)vkGetDeviceProcAddr(m_device->device(), "vkCmdDrawIndexedIndirectCountKHR");
+
+    char const *vsSource =
+        "#version 450\n"
+        "\n"
+        "void main() { gl_Position = vec4(0); }\n";
+    char const *fsSource =
+        "#version 450\n"
+        "\n"
+        "layout(location=0) out vec4 color;\n"
+        "void main() {\n"
+        "   color = vec4(1, 0, 0, 1);\n"
+        "}\n";
+    VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
+    VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+
+    VkPipelineObj pipe(m_device);
+    pipe.AddShader(&vs);
+    pipe.AddShader(&fs);
+    pipe.AddDefaultColorAttachment();
+
+    VkDescriptorSetObj descriptorSet(m_device);
+    descriptorSet.AppendDummy();
+    descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
+
+    VkResult err = pipe.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderPass());
+    ASSERT_VK_SUCCESS(err);
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+
+    vkCmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
+    m_commandBuffer->BindDescriptorSet(descriptorSet);
+
+    VkViewport viewport = {0, 0, 16, 16, 0, 1};
+    vkCmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
+    VkRect2D scissor = {{0, 0}, {16, 16}};
+    vkCmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissor);
+
+    VkBufferCreateInfo buffer_create_info = {VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
+    buffer_create_info.size = sizeof(VkDrawIndexedIndirectCommand);
+    buffer_create_info.usage = VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
+    VkBuffer drawBuffer;
+    vkCreateBuffer(m_device->device(), &buffer_create_info, nullptr, &drawBuffer);
+    vkGetBufferMemoryRequirements(m_device->device(), drawBuffer, &memory_requirements);
+    memory_allocate_info.allocationSize = memory_requirements.size;
+    m_device->phy().set_memory_type(memory_requirements.memoryTypeBits, &memory_allocate_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+    VkDeviceMemory drawBufferMemory;
+    vkAllocateMemory(m_device->device(), &memory_allocate_info, NULL, &drawBufferMemory);
+    vkBindBufferMemory(m_device->device(), drawBuffer, drawBufferMemory, 0);
+
+    VkBufferCreateInfo countBuffer_create_info = {VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
+    countBuffer_create_info.size = sizeof(uint32_t);
+    countBuffer_create_info.usage = VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
+    VkBuffer countBuffer;
+    vkCreateBuffer(m_device->device(), &countBuffer_create_info, nullptr, &countBuffer);
+    vkGetBufferMemoryRequirements(m_device->device(), countBuffer, &memory_requirements);
+    memory_allocate_info.allocationSize = memory_requirements.size;
+    m_device->phy().set_memory_type(memory_requirements.memoryTypeBits, &memory_allocate_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+    VkDeviceMemory countBufferMemory;
+    vkAllocateMemory(m_device->device(), &memory_allocate_info, NULL, &countBufferMemory);
+    vkBindBufferMemory(m_device->device(), countBuffer, countBufferMemory, 0);
+
+    VkBufferCreateInfo indexBuffer_create_info = {VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
+    indexBuffer_create_info.size = sizeof(uint32_t);
+    indexBuffer_create_info.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+    VkBuffer indexBuffer;
+    vkCreateBuffer(m_device->device(), &indexBuffer_create_info, nullptr, &indexBuffer);
+    vkGetBufferMemoryRequirements(m_device->device(), indexBuffer, &memory_requirements);
+    memory_allocate_info.allocationSize = memory_requirements.size;
+    m_device->phy().set_memory_type(memory_requirements.memoryTypeBits, &memory_allocate_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+    VkDeviceMemory indexBufferMemory;
+    vkAllocateMemory(m_device->device(), &memory_allocate_info, NULL, &indexBufferMemory);
+    vkBindBufferMemory(m_device->device(), indexBuffer, indexBufferMemory, 0);
+
+    // VUID-vkCmdDrawIndexedIndirectCountKHR-None-03152 (partial - only tests whether the index buffer is bound)
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDrawIndexedIndirectCountKHR-None-03152");
+    vkCmdDrawIndexedIndirectCountKHR(m_commandBuffer->handle(), drawBuffer, 0, countBuffer, 0, 1,
+                                     sizeof(VkDrawIndexedIndirectCommand));
+    m_errorMonitor->VerifyFound();
+
+    vkCmdBindIndexBuffer(m_commandBuffer->handle(), indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+
+    VkBuffer drawBufferUnbound;
+    vkCreateBuffer(m_device->device(), &countBuffer_create_info, nullptr, &drawBufferUnbound);
+
+    // VUID-vkCmdDrawIndexedIndirectCountKHR-buffer-03136
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDrawIndexedIndirectCountKHR-buffer-03136");
+    vkCmdDrawIndexedIndirectCountKHR(m_commandBuffer->handle(), drawBufferUnbound, 0, countBuffer, 0, 1,
+                                     sizeof(VkDrawIndexedIndirectCommand));
+    m_errorMonitor->VerifyFound();
+
+    VkBuffer countBufferUnbound;
+    vkCreateBuffer(m_device->device(), &countBuffer_create_info, nullptr, &countBufferUnbound);
+
+    // VUID-vkCmdDrawIndexedIndirectCountKHR-countBuffer-03138
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDrawIndexedIndirectCountKHR-countBuffer-03138");
+    vkCmdDrawIndexedIndirectCountKHR(m_commandBuffer->handle(), drawBuffer, 0, countBufferUnbound, 0, 1,
+                                     sizeof(VkDrawIndexedIndirectCommand));
+    m_errorMonitor->VerifyFound();
+
+    // VUID-vkCmdDrawIndexedIndirectCountKHR-offset-03140
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDrawIndexedIndirectCountKHR-offset-03140");
+    vkCmdDrawIndexedIndirectCountKHR(m_commandBuffer->handle(), drawBuffer, 1, countBuffer, 0, 1,
+                                     sizeof(VkDrawIndexedIndirectCommand));
+    m_errorMonitor->VerifyFound();
+
+    // VUID-vkCmdDrawIndexedIndirectCountKHR-countBufferOffset-03141
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                         "VUID-vkCmdDrawIndexedIndirectCountKHR-countBufferOffset-03141");
+    vkCmdDrawIndexedIndirectCountKHR(m_commandBuffer->handle(), drawBuffer, 0, countBuffer, 1, 1,
+                                     sizeof(VkDrawIndexedIndirectCommand));
+    m_errorMonitor->VerifyFound();
+
+    // VUID-vkCmdDrawIndexedIndirectCountKHR-stride-03142
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDrawIndexedIndirectCountKHR-stride-03142");
+    vkCmdDrawIndexedIndirectCountKHR(m_commandBuffer->handle(), drawBuffer, 0, countBuffer, 0, 1, 1);
+    m_errorMonitor->VerifyFound();
+
+    // TODO: These covered VUIDs aren't tested. There is also no test coverage for the core Vulkan 1.0 vkCmdDraw* equivalent of
+    // these:
+    //     VUID-vkCmdDrawIndexedIndirectCountKHR-renderPass-03145
+    //     VUID-vkCmdDrawIndexedIndirectCountKHR-subpass-03146
+    //     VUID-vkCmdDrawIndexedIndirectCountKHR-None-03152 (partial)
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+
+    vkDestroyBuffer(m_device->device(), drawBuffer, 0);
+    vkDestroyBuffer(m_device->device(), drawBufferUnbound, 0);
+    vkDestroyBuffer(m_device->device(), countBuffer, 0);
+    vkDestroyBuffer(m_device->device(), countBufferUnbound, 0);
+    vkDestroyBuffer(m_device->device(), indexBuffer, 0);
+
+    vkFreeMemory(m_device->device(), drawBufferMemory, 0);
+    vkFreeMemory(m_device->device(), countBufferMemory, 0);
+    vkFreeMemory(m_device->device(), indexBufferMemory, 0);
+}
+
 #if defined(ANDROID) && defined(VALIDATION_APK)
 const char *appTag = "VulkanLayerValidationTests";
 static bool initialized = false;
