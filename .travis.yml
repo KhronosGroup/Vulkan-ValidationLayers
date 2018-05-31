@@ -122,6 +122,9 @@ script:
     fi
   - |
     if [[ "$VULKAN_BUILD_TARGET" == "LINUX" ]]; then
+      # Fetch googletest componenet to build validation layer tests
+      echo Fetching googletest external dependencies for building validation layer tests
+      git clone https://github.com/google/googletest.git external/googletest
       # Build Vulkan-ValidationLayers
       cd ${TRAVIS_BUILD_DIR}
       mkdir build

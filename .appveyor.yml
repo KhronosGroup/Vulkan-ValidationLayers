@@ -62,6 +62,8 @@ before_build:
   - cmake -G %GENERATOR% -DCMAKE_INSTALL_PREFIX=install ..
   - cmake --build . --config %CONFIGURATION% -- /maxcpucount
   # Generate build files using CMake for the build step.
+  - echo Fetching googletest external dependencies for building validation layer tests
+  - git clone https://github.com/google/googletest.git external/googletest
   - echo Generating Vulkan-ValidationLayers CMake files for %PLATFORM% %CONFIGURATION%
   - cd %APPVEYOR_BUILD_FOLDER%
   - mkdir build
