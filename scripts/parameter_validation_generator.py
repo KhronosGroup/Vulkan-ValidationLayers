@@ -312,7 +312,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
         ext_template  = 'template <typename T>\n'
         ext_template += 'bool OutputExtensionError(const T *layer_data, const std::string &api_name, const std::string &extension_name) {\n'
         ext_template += '    return log_msg(layer_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,\n'
-        ext_template += '                   kVUID_PVError_ExtensionNotEnabled, "Attemped to call %s() but its required extension %s has not been enabled\\n",\n'
+        ext_template += '                   PVError::ExtensionNotEnabled(), "Attemped to call %s() but its required extension %s has not been enabled\\n",\n'
         ext_template += '                   api_name.c_str(), extension_name.c_str());\n'
         ext_template += '}\n'
         write(ext_template, file=self.outFile)
@@ -799,7 +799,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
     # Get VUID identifier from implicit VUID tag
     def GetVuid(self, name, suffix):
         vuid_string = 'VUID-%s-%s' % (name, suffix)
-        vuid = "kVUIDUndefined"
+        vuid = "LogError::Undefined()"
         if '->' in vuid_string:
            return vuid
         if vuid_string in self.valid_vuids:

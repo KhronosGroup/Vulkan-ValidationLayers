@@ -466,7 +466,7 @@ bool ValidateBarrierLayoutToImageUsage(layer_data *device_data, const VkImageMem
     const auto report_data = core_validation::GetReportData(device_data);
     bool skip = false;
     const VkImageLayout layout = (new_not_old) ? img_barrier->newLayout : img_barrier->oldLayout;
-    std::string msg_code = kVUIDUndefined;  // sentinel value meaning "no error"
+    std::string msg_code = LogError::Undefined();  // sentinel value meaning "no error"
 
     switch (layout) {
         case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
@@ -504,7 +504,7 @@ bool ValidateBarrierLayoutToImageUsage(layer_data *device_data, const VkImageMem
             break;
     }
 
-    if (msg_code != kVUIDUndefined) {
+    if (msg_code != LogError::Undefined()) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
                         HandleToUint64(img_barrier->image), msg_code,
                         "%s: Image barrier 0x%p %sLayout=%s is not compatible with image 0x%" PRIx64 " usage flags 0x%" PRIx32 ".",
@@ -1055,18 +1055,18 @@ bool PreCallValidateCreateImage(layer_data *device_data, const VkImageCreateInfo
             if (!(FormatIsCompressed_BC(pCreateInfo->format) || FormatIsCompressed_ASTC_LDR(pCreateInfo->format) ||
                   FormatIsCompressed_ETC2_EAC(pCreateInfo->format))) {
                 // TODO: Add Maintenance2 VUID
-                skip |=
-                    log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, kVUIDUndefined,
-                            "vkCreateImage(): If pCreateInfo->flags contains VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT_KHR, "
-                            "format must be block, ETC or ASTC compressed, but is %s",
-                            string_VkFormat(pCreateInfo->format));
+                skip |= log_msg(
+                    report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, LogError::Undefined(),
+                    "vkCreateImage(): If pCreateInfo->flags contains VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT_KHR, "
+                    "format must be block, ETC or ASTC compressed, but is %s",
+                    string_VkFormat(pCreateInfo->format));
             }
             if (!(pCreateInfo->flags & VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT)) {
                 // TODO: Add Maintenance2 VUID
-                skip |=
-                    log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, kVUIDUndefined,
-                            "vkCreateImage(): If pCreateInfo->flags contains VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT_KHR, "
-                            "flags must also contain VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT.");
+                skip |= log_msg(
+                    report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, LogError::Undefined(),
+                    "vkCreateImage(): If pCreateInfo->flags contains VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT_KHR, "
+                    "flags must also contain VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT.");
             }
         }
     }
@@ -3233,7 +3233,7 @@ static bool validate_usage_flags(layer_data *device_data, VkFlags actual, VkFlag
         correct_usage = ((actual & desired) != 0);
     }
     if (!correct_usage) {
-        if (msgCode == kVUIDUndefined) {
+        if (msgCode == LogError::Undefined()) {
             // TODO: Fix callers with msgCode == -1 to use correct validation checks.
             skip =
                 log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, get_debug_report_enum[obj_type], obj_handle,
@@ -3585,7 +3585,7 @@ bool PreCallValidateCreateImageView(layer_data *device_data, const VkImageViewCr
             device_data, image_state,
             VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT |
                 VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-            false, kVUIDUndefined, "vkCreateImageView()",
+            false, LogError::Undefined(), "vkCreateImageView()",
             "VK_IMAGE_USAGE_[SAMPLED|STORAGE|COLOR_ATTACHMENT|DEPTH_STENCIL_ATTACHMENT|INPUT_ATTACHMENT]_BIT");
         // If this isn't a sparse image, it needs to have memory backing it at CreateImageView time
         skip |=

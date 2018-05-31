@@ -305,7 +305,7 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
     # Get VUID identifier from implicit VUID tag
     def GetVuid(self, parent, suffix):
         vuid_string = 'VUID-%s-%s' % (parent, suffix)
-        vuid = "kVUIDUndefined"
+        vuid = "LogError::Undefined()"
         if '->' in vuid_string:
            return vuid
         if vuid_string in self.valid_vuids:
@@ -731,8 +731,8 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
                 param = -2
             compatalloc_vuid_string = '%s-compatalloc' % cmd_info[param].name
             nullalloc_vuid_string = '%s-nullalloc' % cmd_info[param].name
-            compatalloc_vuid = self.manual_vuids.get(compatalloc_vuid_string, "kVUIDUndefined")
-            nullalloc_vuid = self.manual_vuids.get(nullalloc_vuid_string, "kVUIDUndefined")
+            compatalloc_vuid = self.manual_vuids.get(compatalloc_vuid_string, "LogError::Undefined()")
+            nullalloc_vuid = self.manual_vuids.get(nullalloc_vuid_string, "LogError::Undefined()")
             if self.isHandleTypeObject(cmd_info[param].type) == True:
                 if object_array == True:
                     # This API is freeing an array of handles -- add loop control
@@ -757,7 +757,7 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
         parent_vuid = self.GetVuid(parent_name, parent_suffix)
 
         # If no parent VUID for this member, look for a commonparent VUID
-        if parent_vuid == 'kVUIDUndefined':
+        if parent_vuid == 'LogError::Undefined()':
             parent_vuid = self.GetVuid(parent_name, 'commonparent')
         if obj_count is not None:
             pre_call_code += '%s    for (uint32_t %s = 0; %s < %s; ++%s) {\n' % (indent, index, index, obj_count, index)
