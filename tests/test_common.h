@@ -64,7 +64,7 @@
 
 // Use the NDK's header on Android
 #ifndef __ANDROID__
-#include "googletest/googletest/include/gtest/gtest.h"
+#include "gtest/gtest.h"
 #else
 #include "gtest/gtest.h"
 #endif
