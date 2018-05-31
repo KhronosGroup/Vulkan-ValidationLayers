@@ -12147,12 +12147,38 @@ TEST_F(VkLayerTest, InvalidBarriers) {
     vkCmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
                          VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, VK_DEPENDENCY_BY_REGION_BIT, 0, nullptr, 0, nullptr, 1,
                          &img_barrier);
+
+    // TODO: this looks vestigal or incomplete...
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
 
     img_barrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
     // Can't send buffer memory barrier during a render pass
     vkCmdEndRenderPass(m_commandBuffer->handle());
+
+    // Duplicate barriers that change layout
+    img_barrier.image = image.handle();
+    img_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    img_barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+    VkImageMemoryBarrier img_barriers[2] = {img_barrier, img_barrier};
+
+    // Transitions from UNDEFINED  are valid, even if duplicated
+    m_errorMonitor->ExpectSuccess();
+    vkCmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                         VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, VK_DEPENDENCY_BY_REGION_BIT, 0, nullptr, 0, nullptr, 2,
+                         img_barriers);
+    m_errorMonitor->VerifyNotFound();
+
+    // Duplication of layout transitions (not from undefined) are not valid
+    img_barriers[0].oldLayout = VK_IMAGE_LAYOUT_GENERAL;
+    img_barriers[0].newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    img_barriers[1].oldLayout = img_barriers[0].oldLayout;
+    img_barriers[1].newLayout = img_barriers[0].newLayout;
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkImageMemoryBarrier-oldLayout-01197");
+    vkCmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                         VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, VK_DEPENDENCY_BY_REGION_BIT, 0, nullptr, 0, nullptr, 2,
+                         img_barriers);
+    m_errorMonitor->VerifyFound();
 
     VkBufferObj buffer;
     VkMemoryPropertyFlags mem_reqs = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
