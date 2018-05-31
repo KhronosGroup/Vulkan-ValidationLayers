@@ -121,6 +121,7 @@ endif()
 option(BUILD_TESTS "Build tests" ON)
 option(INSTALL_TESTS "Install tests" OFF)
 option(BUILD_LAYERS "Build layers" ON)
+option(BUILD_LAYER_SUPPORT_FILES "Generate layer files" OFF) # For generating files when not building layers
 
 set(GLSLANG_INSTALL_DIR "GLSLANG-NOTFOUND" CACHE PATH "Absolute path to a glslang install directory")
 if (NOT GLSLANG_INSTALL_DIR AND NOT DEFINED ENV{GLSLANG_INSTALL_DIR})
@@ -259,6 +260,6 @@ if(BUILD_TESTS)
     add_subdirectory(tests)
 endif()
 
-if(BUILD_LAYERS)
+if(BUILD_LAYERS OR BUILD_LAYER_SUPPORT_FILES)
     add_subdirectory(layers)
 endif()

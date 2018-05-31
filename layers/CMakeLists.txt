@@ -196,15 +196,17 @@ elseif(APPLE)
     endif()
 endif()
 
-# If a layer has a direct dependency on a project with the same name, use it.
-if ((Win32) OR (NOT (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_CURRENT_BINARY_DIR)))
-    foreach (config_file ${LAYER_JSON_FILES_WITH_DEPENDENCIES})
-        add_dependencies(${config_file}-json ${config_file})
-    endforeach(config_file)
-    # If a layer has no direct dependencies, give it one so it copies in the proper order
-    foreach (config_file ${LAYER_JSON_FILES_NO_DEPENDENCIES})
-        add_dependencies(${config_file}-json VkLayer_utils)
-    endforeach(config_file)
+if (BUILD_LAYERS)
+    # If a layer has a direct dependency on a project with the same name, use it.
+    if ((Win32) OR (NOT (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_CURRENT_BINARY_DIR)))
+        foreach (config_file ${LAYER_JSON_FILES_WITH_DEPENDENCIES})
+            add_dependencies(${config_file}-json ${config_file})
+        endforeach(config_file)
+        # If a layer has no direct dependencies, give it one so it copies in the proper order
+        foreach (config_file ${LAYER_JSON_FILES_NO_DEPENDENCIES})
+            add_dependencies(${config_file}-json VkLayer_utils)
+        endforeach(config_file)
+    endif()
 endif()
 
 # Add targets for JSON file install on Linux.
@@ -289,14 +291,16 @@ run_vk_xml_generate(unique_objects_generator.py unique_objects_wrappers.h)
 run_vk_xml_generate(dispatch_table_helper_generator.py vk_dispatch_table_helper.h)
 run_vk_xml_generate(object_tracker_generator.py object_tracker.cpp)
 
-add_vk_layer(core_validation core_validation.cpp vk_layer_table.cpp descriptor_sets.cpp buffer_validation.cpp shader_validation.cpp xxhash.c)
-add_vk_layer(object_tracker object_tracker.cpp object_tracker_utils.cpp vk_layer_table.cpp)
-add_vk_layer(threading threading.cpp thread_check.h vk_layer_table.cpp)
-add_vk_layer(unique_objects unique_objects.cpp unique_objects_wrappers.h vk_layer_table.cpp)
-add_vk_layer(parameter_validation parameter_validation.cpp parameter_validation_utils.cpp parameter_validation.h vk_layer_table.cpp vk_validation_error_messages.h)
+if (BUILD_LAYERS)
+    add_vk_layer(core_validation core_validation.cpp vk_layer_table.cpp descriptor_sets.cpp buffer_validation.cpp shader_validation.cpp xxhash.c)
+    add_vk_layer(object_tracker object_tracker.cpp object_tracker_utils.cpp vk_layer_table.cpp)
+    add_vk_layer(threading threading.cpp thread_check.h vk_layer_table.cpp)
+    add_vk_layer(unique_objects unique_objects.cpp unique_objects_wrappers.h vk_layer_table.cpp)
+    add_vk_layer(parameter_validation parameter_validation.cpp parameter_validation_utils.cpp parameter_validation.h vk_layer_table.cpp vk_validation_error_messages.h)
 
-# Core validation has additional dependencies
-target_include_directories(VkLayer_core_validation PRIVATE ${GLSLANG_SPIRV_INCLUDE_DIR})
-target_include_directories(VkLayer_core_validation PRIVATE ${SPIRV_TOOLS_INCLUDE_DIR})
-target_link_libraries(VkLayer_core_validation ${SPIRV_TOOLS_LIBRARIES})
-add_dependencies(VkLayer_core_validation spirv_tools_revision_file)
+    # Core validation has additional dependencies
+    target_include_directories(VkLayer_core_validation PRIVATE ${GLSLANG_SPIRV_INCLUDE_DIR})
+    target_include_directories(VkLayer_core_validation PRIVATE ${SPIRV_TOOLS_INCLUDE_DIR})
+    target_link_libraries(VkLayer_core_validation ${SPIRV_TOOLS_LIBRARIES})
+    add_dependencies(VkLayer_core_validation spirv_tools_revision_file)
+endif()
