@@ -608,46 +608,54 @@ static bool validate_struct_pnext(debug_report_data *report_data, const char *ap
             cycle_check.insert(next);
 
             while (current != NULL) {
-                if (cycle_check.find(current->pNext) != cycle_check.end()) {
-                    std::string message = "%s: %s chain contains a cycle -- pNext pointer " PRIx64 " is repeated.";
-                    skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                         kVUID_PVError_InvalidStructPNext, message.c_str(), api_name,
-                                         parameter_name.get_name().c_str(), reinterpret_cast<uint64_t>(next));
-                    break;
-                } else {
-                    cycle_check.insert(current->pNext);
-                }
-
-                std::string type_name = string_VkStructureType(current->sType);
-                if (unique_stype_check.find(current->sType) != unique_stype_check.end()) {
-                    std::string message = "%s: %s chain contains duplicate structure types: %s appears multiple times.";
-                    skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                         kVUID_PVError_InvalidStructPNext, message.c_str(), api_name,
-                                         parameter_name.get_name().c_str(), type_name.c_str());
-                } else {
-                    unique_stype_check.insert(current->sType);
-                }
-
-                if (std::find(start, end, current->sType) == end) {
-                    if (type_name == UnsupportedStructureTypeString) {
-                        std::string message =
-                            "%s: %s chain includes a structure with unknown VkStructureType (%d); Allowed structures are [%s]. ";
-                        message += disclaimer;
-                        skip_call |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,
-                                             0, vuid, message.c_str(), api_name, parameter_name.get_name().c_str(), current->sType,
-                                             allowed_struct_names, header_version, parameter_name.get_name().c_str());
+                if (((strncmp(api_name, "vkCreateInstance", strlen(api_name)) != 0) ||
+                     (current->sType != VK_STRUCTURE_TYPE_LOADER_INSTANCE_CREATE_INFO)) &&
+                    ((strncmp(api_name, "vkCreateDevice", strlen(api_name)) != 0) ||
+                     (current->sType != VK_STRUCTURE_TYPE_LOADER_DEVICE_CREATE_INFO))) {
+                    if (cycle_check.find(current->pNext) != cycle_check.end()) {
+                        std::string message = "%s: %s chain contains a cycle -- pNext pointer " PRIx64 " is repeated.";
+                        skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                             kVUID_PVError_InvalidStructPNext, message.c_str(), api_name,
+                                             parameter_name.get_name().c_str(), reinterpret_cast<uint64_t>(next));
+                        break;
                     } else {
-                        std::string message =
-                            "%s: %s chain includes a structure with unexpected VkStructureType %s; Allowed structures are [%s]. ";
-                        message += disclaimer;
-                        skip_call |=
-                            log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, vuid,
-                                    message.c_str(), api_name, parameter_name.get_name().c_str(), type_name.c_str(),
-                                    allowed_struct_names, header_version, parameter_name.get_name().c_str());
+                        cycle_check.insert(current->pNext);
                     }
+
+                    std::string type_name = string_VkStructureType(current->sType);
+                    if (unique_stype_check.find(current->sType) != unique_stype_check.end()) {
+                        std::string message = "%s: %s chain contains duplicate structure types: %s appears multiple times.";
+                        skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                             kVUID_PVError_InvalidStructPNext, message.c_str(), api_name,
+                                             parameter_name.get_name().c_str(), type_name.c_str());
+                    } else {
+                        unique_stype_check.insert(current->sType);
+                    }
+
+                    if (std::find(start, end, current->sType) == end) {
+                        if (type_name == UnsupportedStructureTypeString) {
+                            std::string message =
+                                "%s: %s chain includes a structure with unknown VkStructureType (%d); Allowed structures are "
+                                "[%s]. ";
+                            message += disclaimer;
+                            skip_call |=
+                                log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                        vuid, message.c_str(), api_name, parameter_name.get_name().c_str(), current->sType,
+                                        allowed_struct_names, header_version, parameter_name.get_name().c_str());
+                        } else {
+                            std::string message =
+                                "%s: %s chain includes a structure with unexpected VkStructureType %s; Allowed structures are "
+                                "[%s]. ";
+                            message += disclaimer;
+                            skip_call |=
+                                log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                        vuid, message.c_str(), api_name, parameter_name.get_name().c_str(), type_name.c_str(),
+                                        allowed_struct_names, header_version, parameter_name.get_name().c_str());
+                        }
+                    }
+                    // LUGMAL Insert pNext struct check here:
+                    skip_call |= ValidatePnextStructContents(report_data, api_name, parameter_name, current);
                 }
-                // LUGMAL Insert pNext struct check here:
-                skip_call |= ValidatePnextStructContents(report_data, api_name, parameter_name, current);
                 current = reinterpret_cast<const GenericHeader *>(current->pNext);
             }
         }
