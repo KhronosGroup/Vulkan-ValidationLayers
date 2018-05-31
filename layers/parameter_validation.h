@@ -99,24 +99,19 @@ struct layer_data {
     VkLayerDispatchTable dispatch_table = {};
 };
 
-#if defined(__GNUC__)
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-variable"
-#endif
-static const char *kVUID_PVError_NONE = "UNASSIGNED-GeneralParameterError-Info";
-static const char *kVUID_PVError_InvalidUsage = "UNASSIGNED-GeneralParameterError-InvalidUsage";
-static const char *kVUID_PVError_InvalidStructSType = "UNASSIGNED-GeneralParameterError-InvalidStructSType";
-static const char *kVUID_PVError_InvalidStructPNext = "UNASSIGNED-GeneralParameterError-InvalidStructPNext";
-static const char *kVUID_PVError_RequiredParameter = "UNASSIGNED-GeneralParameterError-RequiredParameter";
-static const char *kVUID_PVError_ReservedParameter = "UNASSIGNED-GeneralParameterError-ReservedParameter";
-static const char *kVUID_PVError_UnrecognizedValue = "UNASSIGNED-GeneralParameterError-UnrecognizedValue";
-static const char *kVUID_PVError_DeviceLimit = "UNASSIGNED-GeneralParameterError-DeviceLimit";
-static const char *kVUID_PVError_DeviceFeature = "UNASSIGNED-GeneralParameterError-DeviceFeature";
-static const char *kVUID_PVError_FailureCode = "UNASSIGNED-GeneralParameterError-FailureCode";
-static const char *kVUID_PVError_ExtensionNotEnabled = "UNASSIGNED-GeneralParameterError-ExtensionNotEnabled";
-#if defined(__GNUC__)
-#pragma GCC diagnostic pop
-#endif
+struct PVError {
+    static const char *NONE() { return "UNASSIGNED-GeneralParameterError-Info"; }
+    static const char *InvalidUsage() { return "UNASSIGNED-GeneralParameterError-InvalidUsage"; }
+    static const char *InvalidStructSType() { return "UNASSIGNED-GeneralParameterError-InvalidStructSType"; }
+    static const char *InvalidStructPNext() { return "UNASSIGNED-GeneralParameterError-InvalidStructPNext"; }
+    static const char *RequiredParameter() { return "UNASSIGNED-GeneralParameterError-RequiredParameter"; }
+    static const char *ReservedParameter() { return "UNASSIGNED-GeneralParameterError-ReservedParameter"; }
+    static const char *UnrecognizedValue() { return "UNASSIGNED-GeneralParameterError-UnrecognizedValue"; }
+    static const char *DeviceLimit() { return "UNASSIGNED-GeneralParameterError-DeviceLimit"; }
+    static const char *DeviceFeature() { return "UNASSIGNED-GeneralParameterError-DeviceFeature"; }
+    static const char *FailureCode() { return "UNASSIGNED-GeneralParameterError-FailureCode"; }
+    static const char *ExtensionNotEnabled() { return "UNASSIGNED-GeneralParameterError-ExtensionNotEnabled"; }
+};
 
 #if 0  // TBD - should see if we can add the expository text below into the spec reference string database
 enum ErrorCode {
@@ -302,7 +297,7 @@ bool validate_array(debug_report_data *report_data, const char *apiName, const P
     if (count == NULL) {
         if (countPtrRequired) {
             skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                 kVUID_PVError_RequiredParameter, "%s: required parameter %s specified as NULL", apiName,
+                                 PVError::RequiredParameter(), "%s: required parameter %s specified as NULL", apiName,
                                  countName.get_name().c_str());
         }
     } else {
@@ -337,7 +332,7 @@ bool validate_struct_type(debug_report_data *report_data, const char *apiName, c
     if (value == NULL) {
         if (required) {
             skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                 kVUID_PVError_RequiredParameter, "%s: required parameter %s specified as NULL", apiName,
+                                 PVError::RequiredParameter(), "%s: required parameter %s specified as NULL", apiName,
                                  parameterName.get_name().c_str());
         }
     } else if (value->sType != sType) {
@@ -375,13 +370,13 @@ bool validate_struct_type_array(debug_report_data *report_data, const char *apiN
 
     if ((count == 0) || (array == NULL)) {
         skip_call |= validate_array(report_data, apiName, countName, arrayName, count, &array, countRequired, arrayRequired,
-                                    kVUIDUndefined, vuid);
+                                    LogError::Undefined(), vuid);
     } else {
         // Verify that all structs in the array have the correct type
         for (uint32_t i = 0; i < count; ++i) {
             if (array[i].sType != sType) {
                 skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                     kVUID_PVError_InvalidStructSType, "%s: parameter %s[%d].sType must be %s", apiName,
+                                     PVError::InvalidStructSType(), "%s: parameter %s[%d].sType must be %s", apiName,
                                      arrayName.get_name().c_str(), i, sTypeName);
             }
         }
@@ -421,7 +416,7 @@ bool validate_struct_type_array(debug_report_data *report_data, const char *apiN
     if (count == NULL) {
         if (countPtrRequired) {
             skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                 kVUID_PVError_RequiredParameter, "%s: required parameter %s specified as NULL", apiName,
+                                 PVError::RequiredParameter(), "%s: required parameter %s specified as NULL", apiName,
                                  countName.get_name().c_str());
         }
     } else {
@@ -449,7 +444,7 @@ bool validate_required_handle(debug_report_data *report_data, const char *api_na
 
     if (value == VK_NULL_HANDLE) {
         skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                             kVUID_PVError_RequiredParameter, "%s: required parameter %s specified as VK_NULL_HANDLE", api_name,
+                             PVError::RequiredParameter(), "%s: required parameter %s specified as VK_NULL_HANDLE", api_name,
                              parameter_name.get_name().c_str());
     }
 
@@ -486,13 +481,13 @@ bool validate_handle_array(debug_report_data *report_data, const char *api_name,
 
     if ((count == 0) || (array == NULL)) {
         skip_call |= validate_array(report_data, api_name, count_name, array_name, count, &array, count_required, array_required,
-                                    kVUIDUndefined, kVUIDUndefined);
+                                    LogError::Undefined(), LogError::Undefined());
     } else {
         // Verify that no handles in the array are VK_NULL_HANDLE
         for (uint32_t i = 0; i < count; ++i) {
             if (array[i] == VK_NULL_HANDLE) {
                 skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                     kVUID_PVError_RequiredParameter, "%s: required parameter %s[%d] specified as VK_NULL_HANDLE",
+                                     PVError::RequiredParameter(), "%s: required parameter %s[%d] specified as VK_NULL_HANDLE",
                                      api_name, array_name.get_name().c_str(), i);
             }
         }
@@ -533,7 +528,7 @@ static bool validate_string_array(debug_report_data *report_data, const char *ap
         for (uint32_t i = 0; i < count; ++i) {
             if (array[i] == NULL) {
                 skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                     kVUID_PVError_RequiredParameter, "%s: required parameter %s[%d] specified as NULL", apiName,
+                                     PVError::RequiredParameter(), "%s: required parameter %s[%d] specified as NULL", apiName,
                                      arrayName.get_name().c_str(), i);
             }
         }
@@ -591,7 +586,7 @@ static bool validate_struct_pnext(debug_report_data *report_data, const char *ap
                 if (cycle_check.find(current->pNext) != cycle_check.end()) {
                     std::string message = "%s: %s chain contains a cycle -- pNext pointer " PRIx64 " is repeated.";
                     skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                         kVUID_PVError_InvalidStructPNext, message.c_str(), api_name,
+                                         PVError::InvalidStructPNext(), message.c_str(), api_name,
                                          parameter_name.get_name().c_str(), reinterpret_cast<uint64_t>(next));
                     break;
                 } else {
@@ -602,7 +597,7 @@ static bool validate_struct_pnext(debug_report_data *report_data, const char *ap
                 if (unique_stype_check.find(current->sType) != unique_stype_check.end()) {
                     std::string message = "%s: %s chain contains duplicate structure types: %s appears multiple times.";
                     skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                         kVUID_PVError_InvalidStructPNext, message.c_str(), api_name,
+                                         PVError::InvalidStructPNext(), message.c_str(), api_name,
                                          parameter_name.get_name().c_str(), type_name.c_str());
                 } else {
                     unique_stype_check.insert(current->sType);
@@ -651,7 +646,7 @@ static bool validate_bool32(debug_report_data *report_data, const char *apiName,
 
     if ((value != VK_TRUE) && (value != VK_FALSE)) {
         skip_call |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                             kVUID_PVError_UnrecognizedValue, "%s: value of %s (%d) is neither VK_TRUE nor VK_FALSE", apiName,
+                             PVError::UnrecognizedValue(), "%s: value of %s (%d) is neither VK_TRUE nor VK_FALSE", apiName,
                              parameterName.get_name().c_str(), value);
     }
 
@@ -721,12 +716,12 @@ static bool validate_ranged_enum_array(debug_report_data *report_data, const cha
 
     if ((count == 0) || (array == NULL)) {
         skip_call |= validate_array(report_data, apiName, countName, arrayName, count, &array, countRequired, arrayRequired,
-                                    kVUIDUndefined, kVUIDUndefined);
+                                    LogError::Undefined(), LogError::Undefined());
     } else {
         for (uint32_t i = 0; i < count; ++i) {
             if (std::find(valid_values.begin(), valid_values.end(), array[i]) == valid_values.end()) {
                 skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                     kVUID_PVError_UnrecognizedValue,
+                                     PVError::UnrecognizedValue(),
                                      "%s: value of %s[%d] (%d) does not fall within the begin..end range of the core %s "
                                      "enumeration tokens and is not an extension added token",
                                      apiName, arrayName.get_name().c_str(), i, array[i], enumName);
@@ -790,11 +785,11 @@ static bool validate_flags(debug_report_data *report_data, const char *api_name,
     } else if ((value & (~all_flags)) != 0) {
         skip_call |=
             log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                    kVUID_PVError_UnrecognizedValue, "%s: value of %s contains flag bits that are not recognized members of %s",
+                    PVError::UnrecognizedValue(), "%s: value of %s contains flag bits that are not recognized members of %s",
                     api_name, parameter_name.get_name().c_str(), flag_bits_name);
     } else if (singleFlag && (std::bitset<sizeof(VkFlags) * 8>(value).count() > 1)) {
         skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                             kVUID_PVError_UnrecognizedValue,
+                             PVError::UnrecognizedValue(),
                              "%s: value of %s contains multiple members of %s when only a single value is allowed", api_name,
                              parameter_name.get_name().c_str(), flag_bits_name);
     }
@@ -827,7 +822,7 @@ static bool validate_flags_array(debug_report_data *report_data, const char *api
 
     if ((count == 0) || (array == NULL)) {
         skip_call |= validate_array(report_data, api_name, count_name, array_name, count, &array, count_required, array_required,
-                                    kVUIDUndefined, kVUIDUndefined);
+                                    LogError::Undefined(), LogError::Undefined());
     } else {
         // Verify that all VkFlags values in the array
         for (uint32_t i = 0; i < count; ++i) {
@@ -836,12 +831,12 @@ static bool validate_flags_array(debug_report_data *report_data, const char *api
                 // elements in the array are allowed be 0
                 if (array_required) {
                     skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                         kVUID_PVError_RequiredParameter, "%s: value of %s[%d] must not be 0", api_name,
+                                         PVError::RequiredParameter(), "%s: value of %s[%d] must not be 0", api_name,
                                          array_name.get_name().c_str(), i);
                 }
             } else if ((array[i] & (~all_flags)) != 0) {
                 skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                     kVUID_PVError_UnrecognizedValue,
+                                     PVError::UnrecognizedValue(),
                                      "%s: value of %s[%d] contains flag bits that are not recognized members of %s", api_name,
                                      array_name.get_name().c_str(), i, flag_bits_name);
             }
@@ -918,12 +913,11 @@ static void validate_result(debug_report_data *report_data, const char *apiName,
         if (resultName == UnsupportedResultString) {
             // Unrecognized result code
             log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                    kVUID_PVError_FailureCode, "%s: returned a result code indicating that an error has occurred", apiName);
+                    PVError::FailureCode(), "%s: returned a result code indicating that an error has occurred", apiName);
         } else {
             std::string resultDesc = get_result_description(result);
             log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                    kVUID_PVError_FailureCode, "%s: returned %s, indicating that %s", apiName, resultName.c_str(),
-                    resultDesc.c_str());
+                    PVError::FailureCode(), "%s: returned %s, indicating that %s", apiName, resultName.c_str(), resultDesc.c_str());
         }
     }
 }

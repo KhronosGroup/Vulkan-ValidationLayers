@@ -47,7 +47,9 @@
 #pragma GCC diagnostic ignored "-Wunused-variable"
 #endif
 
-static const char *kVUIDUndefined = "VUID_Undefined";
+struct LogError {
+    static const char *Undefined() { return "VUID_Undefined"; }
+};
 
 #if defined(__GNUC__)
 #pragma GCC diagnostic pop

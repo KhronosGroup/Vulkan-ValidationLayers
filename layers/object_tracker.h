@@ -180,7 +180,7 @@ bool ValidateObject(T1 dispatchable_object, T2 object, VulkanObjectType object_t
                         (object_type == kVulkanObjectTypeImage && other_device_data.second->swapchainImageMap.find(object_handle) !=
                                                                       other_device_data.second->swapchainImageMap.end())) {
                         // Object found on other device, report an error if object has a device parent error code
-                        if ((wrong_device_code != kVUIDUndefined) && (object_type != kVulkanObjectTypeSurfaceKHR)) {
+                        if ((wrong_device_code != LogError::Undefined()) && (object_type != kVulkanObjectTypeSurfaceKHR)) {
                             return log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, debug_object_type,
                                            object_handle, wrong_device_code,
                                            "Object 0x%" PRIxLEAST64
@@ -266,14 +266,14 @@ void DestroyObject(T1 dispatchable_object, T2 object, VulkanObjectType object_ty
                     device_data->num_objects[pNode->object_type] - 1, object_string[object_type]);
 
             auto allocated_with_custom = (pNode->status & OBJSTATUS_CUSTOM_ALLOCATOR) ? true : false;
-            if (allocated_with_custom && !custom_allocator && expected_custom_allocator_code != kVUIDUndefined) {
+            if (allocated_with_custom && !custom_allocator && expected_custom_allocator_code != LogError::Undefined()) {
                 // This check only verifies that custom allocation callbacks were provided to both Create and Destroy calls,
                 // it cannot verify that these allocation callbacks are compatible with each other.
                 log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, debug_object_type, object_handle,
                         expected_custom_allocator_code,
                         "Custom allocator not specified while destroying %s obj 0x%" PRIxLEAST64 " but specified at creation.",
                         object_string[object_type], object_handle);
-            } else if (!allocated_with_custom && custom_allocator && expected_default_allocator_code != kVUIDUndefined) {
+            } else if (!allocated_with_custom && custom_allocator && expected_default_allocator_code != LogError::Undefined()) {
                 log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, debug_object_type, object_handle,
                         expected_default_allocator_code,
                         "Custom allocator specified while destroying %s obj 0x%" PRIxLEAST64 " but not specified at creation.",

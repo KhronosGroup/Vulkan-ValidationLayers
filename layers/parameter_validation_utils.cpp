@@ -138,13 +138,13 @@ static bool validate_string(debug_report_data *report_data, const char *apiName,
     if (result == VK_STRING_ERROR_NONE) {
         return skip;
     } else if (result & VK_STRING_ERROR_LENGTH) {
-        skip = log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                       kVUID_PVError_InvalidUsage, "%s: string %s exceeds max length %d", apiName, stringName.get_name().c_str(),
-                       MaxParamCheckerStringLength);
+        skip =
+            log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, PVError::InvalidUsage(),
+                    "%s: string %s exceeds max length %d", apiName, stringName.get_name().c_str(), MaxParamCheckerStringLength);
     } else if (result & VK_STRING_ERROR_BAD_DATA) {
-        skip = log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                       kVUID_PVError_InvalidUsage, "%s: string %s contains invalid characters or is badly formed", apiName,
-                       stringName.get_name().c_str());
+        skip =
+            log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, PVError::InvalidUsage(),
+                    "%s: string %s contains invalid characters or is badly formed", apiName, stringName.get_name().c_str());
     }
     return skip;
 }
@@ -200,13 +200,13 @@ static bool validate_api_version(const instance_layer_data *instance_data, uint3
     if (api_version_nopatch != effective_api_version) {
         if (api_version_nopatch < VK_API_VERSION_1_0) {
             skip |= log_msg(instance_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_INSTANCE_EXT,
-                            HandleToUint64(instance_data->instance), kVUIDUndefined,
+                            HandleToUint64(instance_data->instance), LogError::Undefined(),
                             "Invalid CreateInstance->pCreateInfo->pApplicationInfo.apiVersion number (0x%08x). "
                             "Using VK_API_VERSION_%" PRIu32 "_%" PRIu32 ".",
                             api_version, VK_VERSION_MAJOR(effective_api_version), VK_VERSION_MINOR(effective_api_version));
         } else {
             skip |= log_msg(instance_data->report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_INSTANCE_EXT,
-                            HandleToUint64(instance_data->instance), kVUIDUndefined,
+                            HandleToUint64(instance_data->instance), LogError::Undefined(),
                             "Unrecognized CreateInstance->pCreateInfo->pApplicationInfo.apiVersion number (0x%08x). "
                             "Assuming VK_API_VERSION_%" PRIu32 "_%" PRIu32 ".",
                             api_version, VK_VERSION_MAJOR(effective_api_version), VK_VERSION_MINOR(effective_api_version));
@@ -529,7 +529,7 @@ static bool ValidateDeviceCreateInfo(instance_layer_data *instance_data, VkPhysi
         if (features2) {
             // Cannot include VkPhysicalDeviceFeatures2KHR and have non-null pEnabledFeatures
             skip |= log_msg(instance_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                            kVUID_PVError_InvalidUsage,
+                            PVError::InvalidUsage(),
                             "VkDeviceCreateInfo->pNext includes a VkPhysicalDeviceFeatures2KHR struct when "
                             "pCreateInfo->pEnabledFeatures is non-NULL.");
         }
@@ -849,8 +849,8 @@ bool pv_vkCreateBuffer(VkDevice device, const VkBufferCreateInfo *pCreateInfo, c
                                 "pCreateInfo->queueFamilyIndexCount uint32_t values.");
             } else {
                 skip |= ValidateQueueFamilies(device_data, pCreateInfo->queueFamilyIndexCount, pCreateInfo->pQueueFamilyIndices,
-                                              "vkCreateBuffer", "pCreateInfo->pQueueFamilyIndices", kVUID_PVError_InvalidUsage,
-                                              kVUID_PVError_InvalidUsage, false);
+                                              "vkCreateBuffer", "pCreateInfo->pQueueFamilyIndices", PVError::InvalidUsage(),
+                                              PVError::InvalidUsage(), false);
             }
         }
 
@@ -880,7 +880,7 @@ bool pv_vkCreateImage(VkDevice device, const VkImageCreateInfo *pCreateInfo, con
         if ((device_data->physical_device_features.textureCompressionETC2 == false) &&
             FormatIsCompressed_ETC2_EAC(pCreateInfo->format)) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                            kVUID_PVError_DeviceFeature,
+                            PVError::DeviceFeature(),
                             "vkCreateImage(): Attempting to create VkImage with format %s. The textureCompressionETC2 feature is "
                             "not enabled: neither ETC2 nor EAC formats can be used to create images.",
                             string_VkFormat(pCreateInfo->format));
@@ -889,7 +889,7 @@ bool pv_vkCreateImage(VkDevice device, const VkImageCreateInfo *pCreateInfo, con
         if ((device_data->physical_device_features.textureCompressionASTC_LDR == false) &&
             FormatIsCompressed_ASTC_LDR(pCreateInfo->format)) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                            kVUID_PVError_DeviceFeature,
+                            PVError::DeviceFeature(),
                             "vkCreateImage(): Attempting to create VkImage with format %s. The textureCompressionASTC_LDR feature "
                             "is not enabled: ASTC formats cannot be used to create images.",
                             string_VkFormat(pCreateInfo->format));
@@ -897,7 +897,7 @@ bool pv_vkCreateImage(VkDevice device, const VkImageCreateInfo *pCreateInfo, con
 
         if ((device_data->physical_device_features.textureCompressionBC == false) && FormatIsCompressed_BC(pCreateInfo->format)) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                            kVUID_PVError_DeviceFeature,
+                            PVError::DeviceFeature(),
                             "vkCreateImage(): Attempting to create VkImage with format %s. The textureCompressionBC feature is not "
                             "enabled: BC compressed formats cannot be used to create images.",
                             string_VkFormat(pCreateInfo->format));
@@ -923,8 +923,8 @@ bool pv_vkCreateImage(VkDevice device, const VkImageCreateInfo *pCreateInfo, con
                                 "pCreateInfo->queueFamilyIndexCount uint32_t values.");
             } else {
                 skip |= ValidateQueueFamilies(device_data, pCreateInfo->queueFamilyIndexCount, pCreateInfo->pQueueFamilyIndices,
-                                              "vkCreateImage", "pCreateInfo->pQueueFamilyIndices", kVUID_PVError_InvalidUsage,
-                                              kVUID_PVError_InvalidUsage, false);
+                                              "vkCreateImage", "pCreateInfo->pQueueFamilyIndices", PVError::InvalidUsage(),
+                                              PVError::InvalidUsage(), false);
             }
         }
 
@@ -1053,7 +1053,7 @@ bool pv_vkCreateImage(VkDevice device, const VkImageCreateInfo *pCreateInfo, con
             // Linear tiling is unsupported
             if (VK_IMAGE_TILING_LINEAR == pCreateInfo->tiling) {
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                kVUID_PVError_InvalidUsage,
+                                PVError::InvalidUsage(),
                                 "vkCreateImage: if pCreateInfo->flags contains VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT then image "
                                 "tiling of VK_IMAGE_TILING_LINEAR is not supported");
             }
@@ -1248,7 +1248,7 @@ bool pv_VkViewport(const layer_data *device_data, const VkViewport &viewport, co
                         "%s: %s.width (=%f) exceeds VkPhysicalDeviceLimits::maxViewportDimensions[0] (=%" PRIu32 ").", fn_name,
                         param_name, viewport.width, max_w);
     } else if (!f_lte_u32_exact(viewport.width, max_w) && f_lte_u32_direct(viewport.width, max_w)) {
-        skip |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, object_type, object, kVUID_PVError_NONE,
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, object_type, object, PVError::NONE(),
                         "%s: %s.width (=%f) technically exceeds VkPhysicalDeviceLimits::maxViewportDimensions[0] (=%" PRIu32
                         "), but it is within the static_cast<float>(maxViewportDimensions[0]) limit.",
                         fn_name, param_name, viewport.width, max_w);
@@ -1276,7 +1276,7 @@ bool pv_VkViewport(const layer_data *device_data, const VkViewport &viewport, co
         height_healthy = false;
 
         skip |= log_msg(
-            report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, object_type, object, kVUID_PVError_NONE,
+            report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, object_type, object, PVError::NONE(),
             "%s: Absolute value of %s.height (=%f) technically exceeds VkPhysicalDeviceLimits::maxViewportDimensions[1] (=%" PRIu32
             "), but it is within the static_cast<float>(maxViewportDimensions[1]) limit.",
             fn_name, param_name, viewport.height, max_h);
@@ -1626,7 +1626,7 @@ bool pv_vkCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache
 
                     if (has_dynamic_viewport_w_scaling_nv && !device_data->extensions.vk_nv_clip_space_w_scaling) {
                         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
-                                        VK_NULL_HANDLE, kVUID_PVError_ExtensionNotEnabled,
+                                        VK_NULL_HANDLE, PVError::ExtensionNotEnabled(),
                                         "vkCreateGraphicsPipelines: pCreateInfos[%" PRIu32
                                         "].pDynamicState->pDynamicStates contains VK_DYNAMIC_STATE_VIEWPORT_W_SCALING_NV, but "
                                         "VK_NV_clip_space_w_scaling extension is not enabled.",
@@ -1635,7 +1635,7 @@ bool pv_vkCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache
 
                     if (has_dynamic_discard_rectangle_ext && !device_data->extensions.vk_ext_discard_rectangles) {
                         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
-                                        VK_NULL_HANDLE, kVUID_PVError_ExtensionNotEnabled,
+                                        VK_NULL_HANDLE, PVError::ExtensionNotEnabled(),
                                         "vkCreateGraphicsPipelines: pCreateInfos[%" PRIu32
                                         "].pDynamicState->pDynamicStates contains VK_DYNAMIC_STATE_DISCARD_RECTANGLE_EXT, but "
                                         "VK_EXT_discard_rectangles extension is not enabled.",
@@ -1644,7 +1644,7 @@ bool pv_vkCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache
 
                     if (has_dynamic_sample_locations_ext && !device_data->extensions.vk_ext_sample_locations) {
                         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
-                                        VK_NULL_HANDLE, kVUID_PVError_ExtensionNotEnabled,
+                                        VK_NULL_HANDLE, PVError::ExtensionNotEnabled(),
                                         "vkCreateGraphicsPipelines: pCreateInfos[%" PRIu32
                                         "].pDynamicState->pDynamicStates contains VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT, but "
                                         "VK_EXT_sample_locations extension is not enabled.",
@@ -1686,7 +1686,7 @@ bool pv_vkCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache
                         ParameterName("pCreateInfos[%i].pMultisampleState->rasterizationSamples", ParameterName::IndexVector{i}),
                         ParameterName("pCreateInfos[%i].pMultisampleState->pSampleMask", ParameterName::IndexVector{i}),
                         pCreateInfos[i].pMultisampleState->rasterizationSamples, &pCreateInfos[i].pMultisampleState->pSampleMask,
-                        true, false, kVUIDUndefined, kVUIDUndefined);
+                        true, false, LogError::Undefined(), LogError::Undefined());
 
                     skip |= validate_bool32(
                         report_data, "vkCreateGraphicsPipelines",
@@ -1700,7 +1700,7 @@ bool pv_vkCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache
 
                     if (pCreateInfos[i].pMultisampleState->sType != VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO) {
                         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                        kVUID_PVError_InvalidStructSType,
+                                        PVError::InvalidStructSType(),
                                         "vkCreateGraphicsPipelines: parameter pCreateInfos[%d].pMultisampleState->sType must be "
                                         "VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO",
                                         i);
@@ -1825,7 +1825,7 @@ bool pv_vkCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache
 
                     if (pCreateInfos[i].pDepthStencilState->sType != VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO) {
                         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                        kVUID_PVError_InvalidStructSType,
+                                        PVError::InvalidStructSType(),
                                         "vkCreateGraphicsPipelines: parameter pCreateInfos[%d].pDepthStencilState->sType must be "
                                         "VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO",
                                         i);
@@ -1854,7 +1854,7 @@ bool pv_vkCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache
                         ParameterName("pCreateInfos[%i].pColorBlendState->attachmentCount", ParameterName::IndexVector{i}),
                         ParameterName("pCreateInfos[%i].pColorBlendState->pAttachments", ParameterName::IndexVector{i}),
                         pCreateInfos[i].pColorBlendState->attachmentCount, &pCreateInfos[i].pColorBlendState->pAttachments, false,
-                        true, kVUIDUndefined, kVUIDUndefined);
+                        true, LogError::Undefined(), LogError::Undefined());
 
                     if (pCreateInfos[i].pColorBlendState->pAttachments != NULL) {
                         for (uint32_t attachmentIndex = 0; attachmentIndex < pCreateInfos[i].pColorBlendState->attachmentCount;
@@ -1924,7 +1924,7 @@ bool pv_vkCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache
 
                     if (pCreateInfos[i].pColorBlendState->sType != VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO) {
                         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                        kVUID_PVError_InvalidStructSType,
+                                        PVError::InvalidStructSType(),
                                         "vkCreateGraphicsPipelines: parameter pCreateInfos[%d].pColorBlendState->sType must be "
                                         "VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO",
                                         i);
@@ -1967,7 +1967,7 @@ bool pv_vkCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache
                 if ((pCreateInfos[i].pRasterizationState->polygonMode != VK_POLYGON_MODE_FILL) &&
                     (device_data->physical_device_features.fillModeNonSolid == false)) {
                     skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                    kVUID_PVError_DeviceFeature,
+                                    PVError::DeviceFeature(),
                                     "vkCreateGraphicsPipelines parameter, VkPolygonMode "
                                     "pCreateInfos->pRasterizationState->polygonMode cannot be VK_POLYGON_MODE_POINT or "
                                     "VK_POLYGON_MODE_LINE if VkPhysicalDeviceFeatures->fillModeNonSolid is false.");
@@ -2112,7 +2112,7 @@ bool pv_vkCreateDescriptorSetLayout(VkDevice device, const VkDescriptorSetLayout
                          ++descriptor_index) {
                         if (pCreateInfo->pBindings[i].pImmutableSamplers[descriptor_index] == VK_NULL_HANDLE) {
                             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                            kVUID_PVError_RequiredParameter,
+                                            PVError::RequiredParameter(),
                                             "vkCreateDescriptorSetLayout: required parameter "
                                             "pCreateInfo->pBindings[%d].pImmutableSamplers[%d] specified as VK_NULL_HANDLE",
                                             i, descriptor_index);
@@ -2147,7 +2147,7 @@ bool pv_vkFreeDescriptorSets(VkDevice device, VkDescriptorPool descriptorPool, u
     // This is an array of handles, where the elements are allowed to be VK_NULL_HANDLE, and does not require any validation beyond
     // validate_array()
     skip |= validate_array(report_data, "vkFreeDescriptorSets", "descriptorSetCount", "pDescriptorSets", descriptorSetCount,
-                           &pDescriptorSets, true, true, kVUIDUndefined, kVUIDUndefined);
+                           &pDescriptorSets, true, true, LogError::Undefined(), LogError::Undefined());
     return skip;
 }
 
@@ -2203,7 +2203,8 @@ bool pv_vkUpdateDescriptorSets(VkDevice device, uint32_t descriptorWriteCount, c
                                                      ParameterName("pDescriptorWrites[%i].pImageInfo[%i].imageLayout",
                                                                    ParameterName::IndexVector{i, descriptor_index}),
                                                      "VkImageLayout", AllVkImageLayoutEnums,
-                                                     pDescriptorWrites[i].pImageInfo[descriptor_index].imageLayout, kVUIDUndefined);
+                                                     pDescriptorWrites[i].pImageInfo[descriptor_index].imageLayout,
+                                                     LogError::Undefined());
                     }
                 }
             } else if ((pDescriptorWrites[i].descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) ||
@@ -2333,7 +2334,7 @@ bool pv_vkFreeCommandBuffers(VkDevice device, VkCommandPool commandPool, uint32_
     // This is an array of handles, where the elements are allowed to be VK_NULL_HANDLE, and does not require any validation beyond
     // validate_array()
     skip |= validate_array(report_data, "vkFreeCommandBuffers", "commandBufferCount", "pCommandBuffers", commandBufferCount,
-                           &pCommandBuffers, true, true, kVUIDUndefined, kVUIDUndefined);
+                           &pCommandBuffers, true, true, LogError::Undefined(), LogError::Undefined());
     return skip;
 }
 
@@ -2347,7 +2348,7 @@ bool pv_vkBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBuffe
     // TODO: pBeginInfo->pInheritanceInfo must not be NULL if commandBuffer is a secondary command buffer
     skip |= validate_struct_type(report_data, "vkBeginCommandBuffer", "pBeginInfo->pInheritanceInfo",
                                  "VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO", pBeginInfo->pInheritanceInfo,
-                                 VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO, false, kVUIDUndefined);
+                                 VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO, false, LogError::Undefined());
 
     if (pBeginInfo->pInheritanceInfo != NULL) {
         skip |= validate_struct_pnext(report_data, "vkBeginCommandBuffer", "pBeginInfo->pInheritanceInfo->pNext", NULL,
@@ -2364,7 +2365,7 @@ bool pv_vkBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBuffe
         // TODO: This must be 0 if the pipeline statistics queries feature is not enabled
         skip |= validate_flags(report_data, "vkBeginCommandBuffer", "pBeginInfo->pInheritanceInfo->pipelineStatistics",
                                "VkQueryPipelineStatisticFlagBits", AllVkQueryPipelineStatisticFlagBits,
-                               pBeginInfo->pInheritanceInfo->pipelineStatistics, false, false, kVUIDUndefined);
+                               pBeginInfo->pInheritanceInfo->pipelineStatistics, false, false, LogError::Undefined());
     }
 
     if (pInfo != NULL) {
@@ -2518,14 +2519,14 @@ bool pv_vkCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t 
         // TODO: Verify against Valid Usage section. I don't see a non-zero vertexCount listed, may need to add that and make
         // this an error or leave as is.
         skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                        kVUID_PVError_RequiredParameter, "vkCmdDraw parameter, uint32_t vertexCount, is 0");
+                        PVError::RequiredParameter(), "vkCmdDraw parameter, uint32_t vertexCount, is 0");
     }
 
     if (instanceCount == 0) {
         // TODO: Verify against Valid Usage section. I don't see a non-zero instanceCount listed, may need to add that and make
         // this an error or leave as is.
         skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                        kVUID_PVError_RequiredParameter, "vkCmdDraw parameter, uint32_t instanceCount, is 0");
+                        PVError::RequiredParameter(), "vkCmdDraw parameter, uint32_t instanceCount, is 0");
     }
     return skip;
 }
@@ -2536,7 +2537,7 @@ bool pv_vkCmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDevi
 
     if (!device_data->physical_device_features.multiDrawIndirect && ((count > 1))) {
         skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                        kVUID_PVError_DeviceFeature,
+                        PVError::DeviceFeature(),
                         "CmdDrawIndirect(): Device feature multiDrawIndirect disabled: count must be 0 or 1 but is %d", count);
     }
     return skip;
@@ -2549,7 +2550,7 @@ bool pv_vkCmdDrawIndexedIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer,
     if (!device_data->physical_device_features.multiDrawIndirect && ((count > 1))) {
         skip |=
             log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                    kVUID_PVError_DeviceFeature,
+                    PVError::DeviceFeature(),
                     "CmdDrawIndexedIndirect(): Device feature multiDrawIndirect disabled: count must be 0 or 1 but is %d", count);
     }
     return skip;
@@ -2598,13 +2599,13 @@ bool pv_vkCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageL
         if ((pRegions->srcSubresource.aspectMask & legal_aspect_flags) == 0) {
             skip |= log_msg(
                 device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                kVUID_PVError_UnrecognizedValue,
+                PVError::UnrecognizedValue(),
                 "vkCmdBlitImage() parameter, VkImageAspect pRegions->srcSubresource.aspectMask, is an unrecognized enumerator");
         }
         if ((pRegions->dstSubresource.aspectMask & legal_aspect_flags) == 0) {
             skip |= log_msg(
                 device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                kVUID_PVError_UnrecognizedValue,
+                PVError::UnrecognizedValue(),
                 "vkCmdBlitImage() parameter, VkImageAspect pRegions->dstSubresource.aspectMask, is an unrecognized enumerator");
         }
     }
@@ -2625,7 +2626,7 @@ bool pv_vkCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer
     if (pRegions != nullptr) {
         if ((pRegions->imageSubresource.aspectMask & legal_aspect_flags) == 0) {
             skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                            kVUID_PVError_UnrecognizedValue,
+                            PVError::UnrecognizedValue(),
                             "vkCmdCopyBufferToImage() parameter, VkImageAspect pRegions->imageSubresource.aspectMask, is an "
                             "unrecognized enumerator");
         }
@@ -2647,7 +2648,7 @@ bool pv_vkCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, 
     if (pRegions != nullptr) {
         if ((pRegions->imageSubresource.aspectMask & legal_aspect_flags) == 0) {
             log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                    kVUID_PVError_UnrecognizedValue,
+                    PVError::UnrecognizedValue(),
                     "vkCmdCopyImageToBuffer parameter, VkImageAspect pRegions->imageSubresource.aspectMask, is an unrecognized "
                     "enumerator");
         }
@@ -2734,7 +2735,7 @@ VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateDeviceExtensionProperties(VkPhysicalDe
 
     instance_layer_data *local_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), instance_layer_data_map);
     bool skip = validate_array(local_data->report_data, "vkEnumerateDeviceExtensionProperties", "pPropertyCount", "pProperties",
-                               pPropertyCount, &pProperties, true, false, false, kVUIDUndefined,
+                               pPropertyCount, &pProperties, true, false, false, LogError::Undefined(),
                                "VUID-vkEnumerateDeviceExtensionProperties-pProperties-parameter");
     if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
 
@@ -2744,7 +2745,7 @@ VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateDeviceExtensionProperties(VkPhysicalDe
 static bool require_device_extension(layer_data *device_data, bool flag, char const *function_name, char const *extension_name) {
     if (!flag) {
         return log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                       kVUID_PVError_ExtensionNotEnabled,
+                       PVError::ExtensionNotEnabled(),
                        "%s() called even though the %s extension was not enabled for this VkDevice.", function_name,
                        extension_name);
     }
@@ -2765,7 +2766,7 @@ bool pv_vkCreateSwapchainKHR(VkDevice device, const VkSwapchainCreateInfoKHR *pC
         if ((device_data->physical_device_features.textureCompressionETC2 == false) &&
             FormatIsCompressed_ETC2_EAC(pCreateInfo->imageFormat)) {
             skip |= log_msg(
-                report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, kVUID_PVError_DeviceFeature,
+                report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, PVError::DeviceFeature(),
                 "vkCreateSwapchainKHR(): Attempting to create swapchain VkImage with format %s. The textureCompressionETC2 "
                 "feature is not enabled: neither ETC2 nor EAC formats can be used to create images.",
                 string_VkFormat(pCreateInfo->imageFormat));
@@ -2774,7 +2775,7 @@ bool pv_vkCreateSwapchainKHR(VkDevice device, const VkSwapchainCreateInfoKHR *pC
         if ((device_data->physical_device_features.textureCompressionASTC_LDR == false) &&
             FormatIsCompressed_ASTC_LDR(pCreateInfo->imageFormat)) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                            kVUID_PVError_DeviceFeature,
+                            PVError::DeviceFeature(),
                             "vkCreateSwapchainKHR(): Attempting to create swapchain VkImage with format %s. The "
                             "textureCompressionASTC_LDR feature is not enabled: ASTC formats cannot be used to create images.",
                             string_VkFormat(pCreateInfo->imageFormat));
@@ -2783,7 +2784,7 @@ bool pv_vkCreateSwapchainKHR(VkDevice device, const VkSwapchainCreateInfoKHR *pC
         if ((device_data->physical_device_features.textureCompressionBC == false) &&
             FormatIsCompressed_BC(pCreateInfo->imageFormat)) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                            kVUID_PVError_DeviceFeature,
+                            PVError::DeviceFeature(),
                             "vkCreateSwapchainKHR(): Attempting to create swapchain VkImage with format %s. The "
                             "textureCompressionBC feature is not enabled: BC compressed formats cannot be used to create images.",
                             string_VkFormat(pCreateInfo->imageFormat));
@@ -2809,8 +2810,8 @@ bool pv_vkCreateSwapchainKHR(VkDevice device, const VkSwapchainCreateInfoKHR *pC
                                 "pCreateInfo->queueFamilyIndexCount uint32_t values.");
             } else {
                 skip |= ValidateQueueFamilies(device_data, pCreateInfo->queueFamilyIndexCount, pCreateInfo->pQueueFamilyIndices,
-                                              "vkCreateSwapchainKHR", "pCreateInfo->pQueueFamilyIndices",
-                                              kVUID_PVError_InvalidUsage, kVUID_PVError_InvalidUsage, false);
+                                              "vkCreateSwapchainKHR", "pCreateInfo->pQueueFamilyIndices", PVError::InvalidUsage(),
+                                              PVError::InvalidUsage(), false);
             }
         }
 
@@ -2833,7 +2834,7 @@ bool pv_vkQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR *pPresentInfo) {
                                              VK_KHR_INCREMENTAL_PRESENT_EXTENSION_NAME);
             if (present_regions->swapchainCount != pPresentInfo->swapchainCount) {
                 skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                kVUID_PVError_InvalidUsage,
+                                PVError::InvalidUsage(),
                                 "QueuePresentKHR(): pPresentInfo->swapchainCount has a value of %i but VkPresentRegionsKHR "
                                 "extension swapchainCount is %i. These values must be equal.",
                                 pPresentInfo->swapchainCount, present_regions->swapchainCount);
@@ -2843,11 +2844,12 @@ bool pv_vkQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR *pPresentInfo) {
                                       present_regions->pNext, 0, NULL, GeneratedHeaderVersion, "VUID-VkPresentInfoKHR-pNext-pNext");
             skip |= validate_array(device_data->report_data, "QueuePresentKHR", "pCreateInfo->pNext->swapchainCount",
                                    "pCreateInfo->pNext->pRegions", present_regions->swapchainCount, &present_regions->pRegions,
-                                   true, false, kVUIDUndefined, kVUIDUndefined);
+                                   true, false, LogError::Undefined(), LogError::Undefined());
             for (uint32_t i = 0; i < present_regions->swapchainCount; ++i) {
                 skip |= validate_array(device_data->report_data, "QueuePresentKHR", "pCreateInfo->pNext->pRegions[].rectangleCount",
                                        "pCreateInfo->pNext->pRegions[].pRectangles", present_regions->pRegions[i].rectangleCount,
-                                       &present_regions->pRegions[i].pRectangles, true, false, kVUIDUndefined, kVUIDUndefined);
+                                       &present_regions->pRegions[i].pRectangles, true, false, LogError::Undefined(),
+                                       LogError::Undefined());
             }
         }
     }
