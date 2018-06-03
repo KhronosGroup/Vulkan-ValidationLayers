@@ -197,13 +197,13 @@ static VkSamplerCreateInfo SafeSaneSamplerCreateInfo() {
     sampler_create_info.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
     sampler_create_info.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
     sampler_create_info.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-    sampler_create_info.mipLodBias = 1.0;
+    sampler_create_info.mipLodBias = 0.0;
     sampler_create_info.anisotropyEnable = VK_FALSE;
     sampler_create_info.maxAnisotropy = 1.0;
     sampler_create_info.compareEnable = VK_FALSE;
     sampler_create_info.compareOp = VK_COMPARE_OP_NEVER;
-    sampler_create_info.minLod = 1.0;
-    sampler_create_info.maxLod = 1.0;
+    sampler_create_info.minLod = 0.0;
+    sampler_create_info.maxLod = 16.0;
     sampler_create_info.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
     sampler_create_info.unnormalizedCoordinates = VK_FALSE;
 
@@ -1585,7 +1585,7 @@ TEST_F(VkLayerTest, AnisotropyFeatureEnabled) {
     ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
     ASSERT_NO_FATAL_FAILURE(GetPhysicalDeviceFeatures(&device_features));
 
-    // These tests require that the device support sparse residency for 2D images
+    // These tests require that the device support anisotropic filtering
     if (VK_TRUE != device_features.samplerAnisotropy) {
         printf("%s Test requires unsupported samplerAnisotropy feature. Skipped.\n", kSkipPrefix);
         return;
@@ -1640,6 +1640,78 @@ TEST_F(VkLayerTest, AnisotropyFeatureEnabled) {
     } else {
         printf("%s Test requires unsupported extension \"VK_IMG_filter_cubic\". Skipped.\n", kSkipPrefix);
     }
+}
+
+TEST_F(VkLayerTest, UnnormalizedCoordinatesEnabled) {
+    TEST_DESCRIPTION("Validate restrictions on sampler parameters when unnormalizedCoordinates is true.");
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    VkSamplerCreateInfo sampler_info_ref = SafeSaneSamplerCreateInfo();
+    sampler_info_ref.unnormalizedCoordinates = VK_TRUE;
+    sampler_info_ref.minLod = 0.0f;
+    sampler_info_ref.maxLod = 0.0f;
+    VkSamplerCreateInfo sampler_info = sampler_info_ref;
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    auto do_test = [this](std::string code, const VkSamplerCreateInfo *pCreateInfo) -> void {
+        VkResult err;
+        VkSampler sampler = VK_NULL_HANDLE;
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, code);
+        err = vkCreateSampler(m_device->device(), pCreateInfo, NULL, &sampler);
+        m_errorMonitor->VerifyFound();
+        if (VK_SUCCESS == err) {
+            vkDestroySampler(m_device->device(), sampler, NULL);
+        }
+    };
+
+    // min and mag filters must be the same
+    sampler_info.minFilter = VK_FILTER_NEAREST;
+    sampler_info.magFilter = VK_FILTER_LINEAR;
+    do_test("VUID-VkSamplerCreateInfo-unnormalizedCoordinates-01072", &sampler_info);
+    std::swap(sampler_info.minFilter, sampler_info.magFilter);
+    do_test("VUID-VkSamplerCreateInfo-unnormalizedCoordinates-01072", &sampler_info);
+    sampler_info = sampler_info_ref;
+
+    // mipmapMode must be NEAREST
+    sampler_info.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+    do_test("VUID-VkSamplerCreateInfo-unnormalizedCoordinates-01073", &sampler_info);
+    sampler_info = sampler_info_ref;
+
+    // minlod and maxlod must be zero
+    sampler_info.maxLod = 3.14159f;
+    do_test("VUID-VkSamplerCreateInfo-unnormalizedCoordinates-01074", &sampler_info);
+    sampler_info.minLod = 2.71828f;
+    do_test("VUID-VkSamplerCreateInfo-unnormalizedCoordinates-01074", &sampler_info);
+    sampler_info = sampler_info_ref;
+
+    // addressModeU and addressModeV must both be CLAMP_TO_EDGE or CLAMP_TO_BORDER
+    // checks all 12 invalid combinations out of 16 total combinations
+    const std::array<VkSamplerAddressMode, 4> kAddressModes = {{
+        VK_SAMPLER_ADDRESS_MODE_REPEAT,
+        VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT,
+        VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+        VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER,
+    }};
+    for (const auto umode : kAddressModes) {
+        for (const auto vmode : kAddressModes) {
+            if ((umode != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE && umode != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER) ||
+                (vmode != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE && vmode != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER)) {
+                sampler_info.addressModeU = umode;
+                sampler_info.addressModeV = vmode;
+                do_test("VUID-VkSamplerCreateInfo-unnormalizedCoordinates-01075", &sampler_info);
+            }
+        }
+    }
+    sampler_info = sampler_info_ref;
+
+    // VUID-VkSamplerCreateInfo-unnormalizedCoordinates-01076 is tested in AnisotropyFeatureEnabled above
+    // Since it requires checking/enabling the anisotropic filtering feature, it's easier to do it
+    // with the other anisotropic tests.
+
+    // compareEnable must be VK_FALSE
+    sampler_info.compareEnable = VK_TRUE;
+    do_test("VUID-VkSamplerCreateInfo-unnormalizedCoordinates-01077", &sampler_info);
+    sampler_info = sampler_info_ref;
 }
 
 TEST_F(VkLayerTest, UnrecognizedValueMaxEnum) {
@@ -30118,7 +30190,7 @@ TEST_F(VkPositiveLayerTest, MultiplaneImageTests) {
     m_commandBuffer->end();
     m_errorMonitor->VerifyNotFound();
 
-#if 0  
+#if 0
     // Copy to/from buffer
     VkBufferCreateInfo bci = {};
     bci.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;

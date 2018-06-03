@@ -2021,6 +2021,7 @@ bool pv_vkCreateSampler(VkDevice device, const VkSamplerCreateInfo *pCreateInfo,
     if (pCreateInfo != nullptr) {
         const auto &features = device_data->physical_device_features;
         const auto &limits = device_data->device_limits;
+
         if (pCreateInfo->anisotropyEnable == VK_TRUE) {
             if (!in_inclusive_range(pCreateInfo->maxAnisotropy, 1.0F, limits.maxSamplerAnisotropy)) {
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
@@ -2037,12 +2038,52 @@ bool pv_vkCreateSampler(VkDevice device, const VkSamplerCreateInfo *pCreateInfo,
                                 "vkCreateSampler(): Anisotropic sampling feature is not enabled, %s must be VK_FALSE.",
                                 "pCreateInfo->anisotropyEnable");
             }
+        }
 
-            // Anistropy and unnormalized coordinates cannot be enabled simultaneously
-            if (pCreateInfo->unnormalizedCoordinates == VK_TRUE) {
+        if (pCreateInfo->unnormalizedCoordinates == VK_TRUE) {
+            if (pCreateInfo->minFilter != pCreateInfo->magFilter) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                "VUID-VkSamplerCreateInfo-unnormalizedCoordinates-01072",
+                                "vkCreateSampler(): when pCreateInfo->unnormalizedCoordinates is VK_TRUE, "
+                                "pCreateInfo->minFilter (%s) and pCreateInfo->magFilter (%s) must be equal.",
+                                string_VkFilter(pCreateInfo->minFilter), string_VkFilter(pCreateInfo->magFilter));
+            }
+            if (pCreateInfo->mipmapMode != VK_SAMPLER_MIPMAP_MODE_NEAREST) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                "VUID-VkSamplerCreateInfo-unnormalizedCoordinates-01073",
+                                "vkCreateSampler(): when pCreateInfo->unnormalizedCoordinates is VK_TRUE, "
+                                "pCreateInfo->mipmapMode (%s) must be VK_SAMPLER_MIPMAP_MODE_NEAREST.",
+                                string_VkSamplerMipmapMode(pCreateInfo->mipmapMode));
+            }
+            if (pCreateInfo->minLod != 0.0f || pCreateInfo->maxLod != 0.0f) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                "VUID-VkSamplerCreateInfo-unnormalizedCoordinates-01074",
+                                "vkCreateSampler(): when pCreateInfo->unnormalizedCoordinates is VK_TRUE, "
+                                "pCreateInfo->minLod (%f) and pCreateInfo->maxLod (%f) must both be zero.",
+                                pCreateInfo->minLod, pCreateInfo->maxLod);
+            }
+            if ((pCreateInfo->addressModeU != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE &&
+                 pCreateInfo->addressModeU != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER) ||
+                (pCreateInfo->addressModeV != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE &&
+                 pCreateInfo->addressModeV != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER)) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                "VUID-VkSamplerCreateInfo-unnormalizedCoordinates-01075",
+                                "vkCreateSampler(): when pCreateInfo->unnormalizedCoordinates is VK_TRUE, "
+                                "pCreateInfo->addressModeU (%s) and pCreateInfo->addressModeV (%s) must both be "
+                                "VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE or VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER.",
+                                string_VkSamplerAddressMode(pCreateInfo->addressModeU),
+                                string_VkSamplerAddressMode(pCreateInfo->addressModeV));
+            }
+            if (pCreateInfo->anisotropyEnable == VK_TRUE) {
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                                 "VUID-VkSamplerCreateInfo-unnormalizedCoordinates-01076",
                                 "vkCreateSampler(): pCreateInfo->anisotropyEnable and pCreateInfo->unnormalizedCoordinates must "
+                                "not both be VK_TRUE.");
+            }
+            if (pCreateInfo->compareEnable == VK_TRUE) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                "VUID-VkSamplerCreateInfo-unnormalizedCoordinates-01077",
+                                "vkCreateSampler(): pCreateInfo->compareEnable and pCreateInfo->unnormalizedCoordinates must "
                                 "not both be VK_TRUE.");
             }
         }
