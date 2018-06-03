@@ -47,11 +47,13 @@ find_path(VulkanHeaders_INCLUDE_DIR
         ${VULKAN_HEADERS_INSTALL_DIR}/include
         "$ENV{VULKAN_HEADERS_INSTALL_DIR}/include"
         "$ENV{VULKAN_SDK}/include")
-find_path(VulkanRegistry_DIR
-    NAMES vk.xml
-    HINTS
-        ${VULKAN_HEADERS_INSTALL_DIR}/share/vulkan/registry
-        $ENV{VULKAN_HEADERS_INSTALL_DIR}/share/vulkan/registry)
+
+if(VulkanHeaders_INCLUDE_DIR)
+   get_filename_component(VULKAN_REGISTRY_PATH_HINT ${VulkanHeaders_INCLUDE_DIR} DIRECTORY)
+   find_path(VulkanRegistry_DIR
+       NAMES vk.xml
+       HINTS "${VULKAN_REGISTRY_PATH_HINT}/share/vulkan/registry")
+endif()
 
 set(VulkanHeaders_INCLUDE_DIRS ${VulkanHeaders_INCLUDE_DIR})
 set(VulkanRegistry_DIRS ${VulkanRegistry_DIR})
