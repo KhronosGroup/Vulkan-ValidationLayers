@@ -56,6 +56,9 @@ Windows 7+ with the following software packages:
   - Install both the 32-bit and 64-bit versions, as the 64-bit installer does not install the
     32-bit libraries and tools.
   - Tell the installer to treat line endings "as is" (i.e. both DOS and Unix-style line endings).
+- [Vulkan-Headers](https://github.com/KhronosGroup/Vulkan-Headers.git)
+  - Vulkan headers should be built with the "install" target. Generally, you will want to use the
+    `CMAKE_INSTALL_PREFIX` and remember where you set this to.
 - Vulkan Loader Library
   - Building the Layer Validation Tests requires linking to the Vulkan Loader Library (vulkan-1.dll).
     Locating the library for this repo can be done in two different ways:
@@ -79,15 +82,15 @@ Windows 7+ with the following software packages:
 
 1. Open a Developer Command Prompt for VS201x
 2. Change directory to `Vulkan-ValidationLayers` -- the root of the cloned git repository
-3. Run 'git submodule update --init' -- this will download external repository components.
-4. Note the location of a local glslang repository. This will be passed to cmake as a command line variable.
-4. Create a `build` directory, change into that directory, and run cmake
+3. Note the location of a local glslang repository. This will be passed to cmake as a command line variable.
+4. Note the location of a local Vulkan-Headers install location. This will be passed to cmake as a command line variable.
+5. Create a `build` directory, change into that directory, and run cmake
 
 For example, for VS2017 (generators for other versions are [specified here](#cmake-visual-studio-generators)):
 
-    cmake -DLOADER_REPO_ROOT=c:\absolute_path_to\VULKAN_LOADER -DGLSLANG_INSTALL_DIR=c:\absolute_path_to\glslang\install -G "Visual Studio 15 2017 Win64" ..
+    cmake -DVULKAN_HEADERS_INSTALL_DIR=c:\absolute_path_to\Vulkan-Headers\install -DLOADER_REPO_ROOT=c:\absolute_path_to\VULKAN_LOADER -DGLSLANG_INSTALL_DIR=c:\absolute_path_to\glslang\install -G "Visual Studio 15 2017 Win64" ..
 
-Both LOADER_REPO_ROOT and GLSLANG_INSTALL_DIR each require absolute paths.
+LOADER_REPO_ROOT, VULKAN_HEADERS_INSTALL_DIR, and GLSLANG_INSTALL_DIR each require absolute paths.
 This will create a Windows solution file named `Vulkan-ValidationLayers.sln` in the build directory.
 
 Launch Visual Studio and open the "Vulkan-ValidationLayers.sln" solution file in the build folder.
@@ -153,6 +156,10 @@ Vulkan Loader Library
 
     Currently, the build directory *must* be named either 'build' or 'build32'.
 
+- [Vulkan-Headers](https://github.com/KhronosGroup/Vulkan-Headers.git)
+  - This repo should be built and installed to the directory of your choosing. This can be done by setting `CMAKE_INSTALL_PREFIX`
+    and building the "install" target from within the Vulkan-Headers repository.
+
 - [glslang](https://github.com/KhronosGroup/glslang)
   - Ensure that the 'update_glslang_sources.py' script has been run. Follow the build instructions in the
     glslang [README.md](https://github.com/KhronosGroup/glslang/blob/master/README.md) file, noting the location of the chosen install directory.
@@ -172,14 +179,13 @@ Example debug build
 See **Validation Layer Dependencies** (below) for more information and other options:
 
 1. In a Linux terminal, `cd Vulkan-ValidationLayers` -- the root of the cloned git repository
-2. Execute `git submodule update --init`. This will download and external component repositories.
-3. Create a `build` directory, change into that directory, and run cmake using absolute paths for the repo locations:
+2. Create a `build` directory, change into that directory, and run cmake using absolute paths for the repo locations:
 
         mkdir build
         cd build
-        cmake -DLOADER_REPO_ROOT=/absolute_path_to/Vulkan-Loader -DGLSLANG_INSTALL_DIR=/absolute_path_to_/glslang/location_of/install -DCMAKE_BUILD_TYPE=Debug ..
+        cmake -DVULKAN_HEADERS_INSTALL_DIR=/absolute_path_to/Vulkan-Headers/install -DLOADER_REPO_ROOT=/absolute_path_to/Vulkan-Loader -DGLSLANG_INSTALL_DIR=/absolute_path_to_/glslang/location_of/install -DCMAKE_BUILD_TYPE=Debug ..
 
-4. Run `make -j8` to begin the build
+3. Run `make -j8` to begin the build
 
 If your build system supports ccache, you can enable that via CMake option `-DUSE_CCACHE=On`
 
@@ -435,12 +441,6 @@ Clone the Vulkan-ValidationLayers repository:
 
     git clone https://github.com/KhronosGroup/Vulkan-ValidationLayers.git
 
-### Get the External Libraries
-
-Get the in-tree exernal components:
-
-    git submodule update --init --recursive
-
 #### Out-of-Tree External Libraries
 
 Also clone the following repos:
@@ -457,6 +457,9 @@ Also clone the following repos:
              LOADER_REPO_ROOT=/absolute_path_to_/Vulkan-Loader
          and use absolute (not relative) paths, like so:
              cmake -DLOADER_REPO_ROOT=/absolute_path_to_/Vulkan-Loader ....
+- [Vulkan-Headers](https://github.com/KhronosGroup/Vulkan-Headers.git)
+  - This repo should be built and installed to the directory of your choosing. This can be done by setting `CMAKE_INSTALL_PREFIX`
+    and building the "install" target from within the Vulkan-Headers repository.
 - [googletest](https://github.com/google/googletest.git)
   - This is an optional component, but required for building the validation layer tests. To install,
 
@@ -484,7 +487,7 @@ build is:
 
         mkdir build
         cd build
-        cmake -DLOADER_REPO_ROOT=/absolute_path_to/Vulkan-Loader -DGLSLANG_INSTALL_DIR=/absolute_path_to_/glslang/build/install -DCMAKE_BUILD_TYPE=Debug ..
+        cmake -DVULKAN_HEADERS_INSTALL_DIR=/absolute_path_to/Vulkan-Headers/install -DLOADER_REPO_ROOT=/absolute_path_to/Vulkan-Loader -DGLSLANG_INSTALL_DIR=/absolute_path_to_/glslang/build/install -DCMAKE_BUILD_TYPE=Debug ..
         make
 
 To speed up the build on a multi-core machine, use the `-j` option for `make`
