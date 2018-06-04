@@ -100,10 +100,8 @@ script:
     if [[ "$VULKAN_BUILD_TARGET" == "LINUX" ]]; then
       # Build Vulkan-Headers
       cd ${TRAVIS_BUILD_DIR}
-      # Need to name this directory differently since Vulkan-ValidationLayers still has
-      # Vulkan-Headers as a submodule.
-      git clone https://github.com/KhronosGroup/Vulkan-Headers.git Vulkan-Headers-TMP
-      cd Vulkan-Headers-TMP
+      git clone https://github.com/KhronosGroup/Vulkan-Headers.git Vulkan-Headers
+      cd Vulkan-Headers
       mkdir build
       cd build
       cmake -DCMAKE_INSTALL_PREFIX=install ..
@@ -118,7 +116,7 @@ script:
       cd Vulkan-Loader
       mkdir build
       cd build
-      cmake -DVULKAN_HEADERS_INSTALL_DIR=${TRAVIS_BUILD_DIR}/Vulkan-Headers-TMP/build/install -DCMAKE_BUILD_TYPE=Debug ..
+      cmake -DVULKAN_HEADERS_INSTALL_DIR=${TRAVIS_BUILD_DIR}/Vulkan-Headers/build/install -DCMAKE_BUILD_TYPE=Debug ..
       make -j $core_count
       cd ${TRAVIS_BUILD_DIR}
     fi
@@ -143,7 +141,7 @@ script:
       cd ${TRAVIS_BUILD_DIR}
       mkdir build
       cd build
-      cmake -DGLSLANG_REPO_ROOT=${TRAVIS_BUILD_DIR}/glslang -DLOADER_REPO_ROOT=${TRAVIS_BUILD_DIR}/Vulkan-Loader -DCMAKE_BUILD_TYPE=Debug ..
+      cmake -DVULKAN_HEADERS_INSTALL_DIR=${TRAVIS_BUILD_DIR}/Vulkan-Headers/build/install -DGLSLANG_REPO_ROOT=${TRAVIS_BUILD_DIR}/glslang -DLOADER_REPO_ROOT=${TRAVIS_BUILD_DIR}/Vulkan-Loader -DCMAKE_BUILD_TYPE=Debug ..
       make -j $core_count
       cd ${TRAVIS_BUILD_DIR}
     fi
