@@ -110,7 +110,7 @@ def makeGenOpts(args):
     # Defaults for generating re-inclusion protection wrappers (or not)
     protectFeature = protect
 
-    # LoaderAndValidationLayer Generators
+    # ValidationLayer Generators
     # Options for threading layer
     genOpts['thread_check.h'] = [
           ThreadOutputGenerator,

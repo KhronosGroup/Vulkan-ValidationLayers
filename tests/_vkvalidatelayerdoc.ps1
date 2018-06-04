@@ -1,7 +1,7 @@
 # Powershell script for running validating the layer database file
 # To run this test:
 #    From a Windows powershell:
-#    cd C:\src\Vulkan-LoaderAndValidationLayers\build\tests
+#    cd C:\src\Vulkan-ValidationLayers\build\tests
 #    .\vkvalidatelayerdoc.ps1 [-Debug]
 
 if (-not (Test-Path -LiteralPath '..\..\scripts')) {
