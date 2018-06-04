@@ -84,15 +84,29 @@ if (TARGET gtest_main)
         endif()
     endif()
 
-    # Predefine loader root as a cmake cache variable for cmake-gui
+    # The vulkan loader search is:
+    #     User-supplied setting of CMAKE_PREFIX_PATH
+    #     VULKAN_LOADER_INSTALL_DIR defined via cmake option
+    #     VULKAN_LOADER_INSTALL_DIR defined via environment variable
+    #     Default findVulkan operation if the VULKAN_SDK environment variable is defined
+    set(VULKAN_LOADER_INSTALL_DIR "LOADER-NOTFOUND" CACHE PATH "Absolute path to a Vulkan-Loader install directory")
+
+    # TODO: Remove this option after all repos converted
     set(LOADER_REPO_ROOT "LOADER-NOTFOUND" CACHE PATH "Absolute path to the root of the loader repository")
 
     if(NOT LOADER_REPO_ROOT)
-        message(STATUS "LOADER_REPO_ROOT not set, using find_package to locate Vulkan")
+        if ({VULKAN_LOADER_INSTALL_DIR)
+            message(STATUS "VULKAN_LOADER_INSTALL_DIR specified, using find_package to locate Vulkan")
+        elseif(ENV{VULKAN_LOADER_INSTALL_DIR})
+            message(STATUS "VULKAN_LOADER_INSTALL_DIR environment variable specified, using find_package to locate Vulkan")
+        endif()
+        set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH};${VULKAN_LOADER_INSTALL_DIR};$ENV{VULKAN_LOADER_INSTALL_DIR})
         find_package(Vulkan)
         set (LIBVK "Vulkan::Vulkan")
     else()
-        message(STATUS "Using user-supplied path to locate Vulkan")
+        # TODO: Delete this code block when we're done with REPO_ROOT
+        message(STATUS "Using user-supplied LOADER_REPO_ROOT to locate Vulkan")
+        message(STATUS "DO NOT USE LOADER_REPO_ROOT!  See BUILD.md for information on using VULKAN_LOADER_INSTALL_DIR.")
         if(WIN32)
             set (LOADER_SEARCH_PATHS
                 "${LOADER_REPO_ROOT}/${BUILDTGT_DIR}/loader/${DEBUG_DECORATION}"
@@ -108,7 +122,9 @@ if (TARGET gtest_main)
         find_library(LIBVK NAMES vulkan vulkan-1
             HINTS ${LOADER_SEARCH_PATHS}
             )
-        message(STATUS "Found Vulkan: ${LIBVK}")
+        if (LIBVK)
+            message(STATUS "Found Vulkan: ${LIBVK}")
+        endif()
     endif()
 
     add_executable(vk_layer_validation_tests layer_validation_tests.cpp ../layers/vk_format_utils.cpp ${COMMON_CPP})
