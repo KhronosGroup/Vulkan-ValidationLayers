@@ -24,7 +24,7 @@ LOCAL_SRC_FILES += $(SRC_DIR)/layers/vk_layer_config.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/vk_layer_extension_utils.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/vk_layer_utils.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/vk_format_utils.cpp
-LOCAL_C_INCLUDES += $(LOCAL_PATH)/$(SRC_DIR)/Vulkan-Headers/include \
+LOCAL_C_INCLUDES += $(THIRD_PARTY)/Vulkan-Headers/include \
                     $(LOCAL_PATH)/$(LAYER_DIR)/include \
                     $(LOCAL_PATH)/$(SRC_DIR)/layers
 LOCAL_CPPFLAGS += -std=c++11 -Wall -Werror -Wno-unused-function -Wno-unused-const-variable
@@ -39,7 +39,7 @@ LOCAL_SRC_FILES += $(SRC_DIR)/layers/buffer_validation.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/shader_validation.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/vk_layer_table.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/xxhash.c
-LOCAL_C_INCLUDES += $(LOCAL_PATH)/$(SRC_DIR)/Vulkan-Headers/include \
+LOCAL_C_INCLUDES += $(THIRD_PARTY)/Vulkan-Headers/include \
                     $(LOCAL_PATH)/$(SRC_DIR)/layers \
                     $(LOCAL_PATH)/$(LAYER_DIR)/include
 LOCAL_STATIC_LIBRARIES += layer_utils glslang SPIRV-Tools
@@ -55,7 +55,7 @@ LOCAL_MODULE := VkLayer_parameter_validation
 LOCAL_SRC_FILES += $(LAYER_DIR)/include/parameter_validation.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/parameter_validation_utils.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/vk_layer_table.cpp
-LOCAL_C_INCLUDES += $(LOCAL_PATH)/$(SRC_DIR)/Vulkan-Headers/include \
+LOCAL_C_INCLUDES += $(THIRD_PARTY)/Vulkan-Headers/include \
                     $(LOCAL_PATH)/$(LAYER_DIR)/include \
                     $(LOCAL_PATH)/$(SRC_DIR)/layers
 LOCAL_STATIC_LIBRARIES += layer_utils
@@ -71,7 +71,7 @@ LOCAL_MODULE := VkLayer_object_tracker
 LOCAL_SRC_FILES += $(LAYER_DIR)/include/object_tracker.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/object_tracker_utils.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/vk_layer_table.cpp
-LOCAL_C_INCLUDES += $(LOCAL_PATH)/$(SRC_DIR)/Vulkan-Headers/include \
+LOCAL_C_INCLUDES += $(THIRD_PARTY)/Vulkan-Headers/include \
                     $(LOCAL_PATH)/$(SRC_DIR)/layers \
                     $(LOCAL_PATH)/$(LAYER_DIR)/include
 LOCAL_STATIC_LIBRARIES += layer_utils
@@ -86,7 +86,7 @@ include $(CLEAR_VARS)
 LOCAL_MODULE := VkLayer_threading
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/threading.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/vk_layer_table.cpp
-LOCAL_C_INCLUDES += $(LOCAL_PATH)/$(SRC_DIR)/Vulkan-Headers/include \
+LOCAL_C_INCLUDES += $(THIRD_PARTY)/Vulkan-Headers/include \
                     $(LOCAL_PATH)/$(SRC_DIR)/layers \
                     $(LOCAL_PATH)/$(LAYER_DIR)/include
 LOCAL_STATIC_LIBRARIES += layer_utils
@@ -101,7 +101,7 @@ include $(CLEAR_VARS)
 LOCAL_MODULE := VkLayer_unique_objects
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/unique_objects.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/vk_layer_table.cpp
-LOCAL_C_INCLUDES += $(LOCAL_PATH)/$(SRC_DIR)/Vulkan-Headers/include \
+LOCAL_C_INCLUDES += $(THIRD_PARTY)/Vulkan-Headers/include \
                     $(LOCAL_PATH)/$(SRC_DIR)/layers \
                     $(LOCAL_PATH)/$(LAYER_DIR)/include
 LOCAL_STATIC_LIBRARIES += layer_utils
@@ -119,7 +119,7 @@ LOCAL_SRC_FILES += $(SRC_DIR)/tests/layer_validation_tests.cpp \
                    $(SRC_DIR)/tests/vktestframeworkandroid.cpp \
                    $(SRC_DIR)/tests/vkrenderframework.cpp \
                    $(THIRD_PARTY)/Vulkan-Tools/common/vulkan_wrapper.cpp
-LOCAL_C_INCLUDES += $(LOCAL_PATH)/$(SRC_DIR)/Vulkan-Headers/include \
+LOCAL_C_INCLUDES += $(THIRD_PARTY)/Vulkan-Headers/include \
                     $(LOCAL_PATH)/$(LAYER_DIR)/include \
                     $(LOCAL_PATH)/$(SRC_DIR)/layers \
                     $(LOCAL_PATH)/$(SRC_DIR)/libs \
@@ -141,7 +141,7 @@ LOCAL_SRC_FILES += $(SRC_DIR)/tests/layer_validation_tests.cpp \
                    $(SRC_DIR)/tests/vktestframeworkandroid.cpp \
                    $(SRC_DIR)/tests/vkrenderframework.cpp \
                    $(THIRD_PARTY)/Vulkan-Tools/common/vulkan_wrapper.cpp
-LOCAL_C_INCLUDES += $(LOCAL_PATH)/$(SRC_DIR)/Vulkan-Headers/include \
+LOCAL_C_INCLUDES += $(THIRD_PARTY)/Vulkan-Headers/include \
                     $(LOCAL_PATH)/$(LAYER_DIR)/include \
                     $(LOCAL_PATH)/$(SRC_DIR)/layers \
                     $(LOCAL_PATH)/$(SRC_DIR)/libs \
