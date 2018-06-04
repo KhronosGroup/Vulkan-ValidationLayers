@@ -45,10 +45,8 @@ before_build:
   # Build Vulkan-Headers
   - echo Building Vulkan-Headers for %PLATFORM% %CONFIGURATION%
   - cd %APPVEYOR_BUILD_FOLDER%
-  # Need to name this directory differently since Vulkan-ValidationLayers still has
-  # Vulkan-Headers as a submodule.
-  - git clone https://github.com/KhronosGroup/Vulkan-Headers.git Vulkan-Headers-TMP
-  - cd Vulkan-Headers-TMP
+  - git clone https://github.com/KhronosGroup/Vulkan-Headers.git Vulkan-Headers
+  - cd Vulkan-Headers
   - mkdir %BUILD_DIR%
   - cd %BUILD_DIR%
   - cmake -G %GENERATOR% -DCMAKE_INSTALL_PREFIX=install ..
@@ -60,7 +58,7 @@ before_build:
   - cd Vulkan-Loader
   - mkdir %BUILD_DIR%
   - cd %BUILD_DIR%
-  - cmake -G %GENERATOR% -DVULKAN_HEADERS_INSTALL_DIR=%APPVEYOR_BUILD_FOLDER%/Vulkan-Headers-TMP/%BUILD_DIR%/install ..
+  - cmake -G %GENERATOR% -DVULKAN_HEADERS_INSTALL_DIR=%APPVEYOR_BUILD_FOLDER%/Vulkan-Headers/%BUILD_DIR%/install ..
   - cmake --build . --config %CONFIGURATION% -- /maxcpucount
   # Build glslang
   - echo Building glslang for %PLATFORM% %CONFIGURATION%
@@ -79,7 +77,7 @@ before_build:
   - cd %APPVEYOR_BUILD_FOLDER%
   - mkdir build
   - cd build
-  - cmake -G %GENERATOR% -DGLSLANG_REPO_ROOT=%APPVEYOR_BUILD_FOLDER%\glslang -DLOADER_REPO_ROOT=%APPVEYOR_BUILD_FOLDER%\Vulkan-Loader ..
+  - cmake -G %GENERATOR% -DVULKAN_HEADERS_INSTALL_DIR=%APPVEYOR_BUILD_FOLDER%/Vulkan-Headers/%BUILD_DIR%/install -DGLSLANG_REPO_ROOT=%APPVEYOR_BUILD_FOLDER%\glslang -DLOADER_REPO_ROOT=%APPVEYOR_BUILD_FOLDER%\Vulkan-Loader ..
   - echo Building platform=%PLATFORM% configuration=%CONFIGURATION%
 
 platform:
