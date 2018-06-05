@@ -78,8 +78,8 @@ script:
       ./update_glslang_sources.py
       mkdir build
       cd build
-      cmake -DCMAKE_BUILD_TYPE=Debug ..
-      make -j $core_count
+      cmake -DCMAKE_INSTALL_PREFIX=install -DCMAKE_BUILD_TYPE=Debug ..
+      make install -j $core_count
       cd ${TRAVIS_BUILD_DIR}
     fi
   - |
@@ -112,23 +112,23 @@ script:
     if [[ "$VULKAN_BUILD_TARGET" == "LINUX" ]]; then
       # Build Vulkan-Loader for Vulkan-ValidationLayers
       cd ${TRAVIS_BUILD_DIR}
-      git clone --recurse-submodules https://github.com/KhronosGroup/Vulkan-Loader.git
+      git clone https://github.com/KhronosGroup/Vulkan-Loader.git
       cd Vulkan-Loader
       mkdir build
       cd build
-      cmake -DVULKAN_HEADERS_INSTALL_DIR=${TRAVIS_BUILD_DIR}/Vulkan-Headers/build/install -DCMAKE_BUILD_TYPE=Debug ..
-      make -j $core_count
+      cmake -DVULKAN_HEADERS_INSTALL_DIR=${TRAVIS_BUILD_DIR}/Vulkan-Headers/build/install -DCMAKE_INSTALL_PREFIX=install -DCMAKE_BUILD_TYPE=Debug ..
+      make install -j $core_count
       cd ${TRAVIS_BUILD_DIR}
     fi
   - |
     if [[ "$VULKAN_BUILD_TARGET" == "LINUX" ]]; then
       # Build Vulkan-Tools for Vulkan-ValidationLayers
       cd ${TRAVIS_BUILD_DIR}
-      git clone --recurse-submodules https://github.com/KhronosGroup/Vulkan-Tools.git
+      git clone https://github.com/KhronosGroup/Vulkan-Tools.git
       cd Vulkan-Tools
       mkdir build
       cd build
-      cmake -DCMAKE_BUILD_TYPE=Debug -DBUILD_CUBE=OFF -DBUILD_VULKANINFO=OFF ..
+      cmake -DVULKAN_HEADERS_INSTALL_DIR=${TRAVIS_BUILD_DIR}/Vulkan-Headers/build/install -DVULKAN_LOADER_INSTALL_DIR=${TRAVIS_BUILD_DIR}/Vulkan-Loader/build/install -DCMAKE_BUILD_TYPE=Debug -DBUILD_CUBE=OFF -DBUILD_VULKANINFO=OFF ..
       make -j $core_count
       cd ${TRAVIS_BUILD_DIR}
     fi
@@ -141,7 +141,7 @@ script:
       cd ${TRAVIS_BUILD_DIR}
       mkdir build
       cd build
-      cmake -DVULKAN_HEADERS_INSTALL_DIR=${TRAVIS_BUILD_DIR}/Vulkan-Headers/build/install -DGLSLANG_REPO_ROOT=${TRAVIS_BUILD_DIR}/glslang -DLOADER_REPO_ROOT=${TRAVIS_BUILD_DIR}/Vulkan-Loader -DCMAKE_BUILD_TYPE=Debug ..
+      cmake -DVULKAN_HEADERS_INSTALL_DIR=${TRAVIS_BUILD_DIR}/Vulkan-Headers/build/install -DGLSLANG_INSTALL_DIR=${TRAVIS_BUILD_DIR}/glslang/build/install -DVULKAN_LOADER_INSTALL_DIR=${TRAVIS_BUILD_DIR}/Vulkan-Loader/build/install -DCMAKE_BUILD_TYPE=Debug ..
       make -j $core_count
       cd ${TRAVIS_BUILD_DIR}
     fi
@@ -149,7 +149,6 @@ script:
     if [[ "$VULKAN_BUILD_TARGET" == "LINUX" ]]; then
       # Run Tests
       cd ${TRAVIS_BUILD_DIR}
-      #(cd build/tests; ./vkvalidatelayerdoc.sh)
       export LD_LIBRARY_PATH=${TRAVIS_BUILD_DIR}/Vulkan-Loader/build/loader:$LD_LIBRARY_PATH
       export VK_LAYER_PATH=${TRAVIS_BUILD_DIR}/external/VulkanTools/build/layersvt:${TRAVIS_BUILD_DIR}/build/layers
       export VK_ICD_FILENAMES=${TRAVIS_BUILD_DIR}/Vulkan-Tools/build/icd/VkICD_mock_icd.json

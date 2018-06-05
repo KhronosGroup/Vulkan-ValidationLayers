@@ -31,7 +31,6 @@ before_build:
   - "SET PATH=C:\\Python35;C:\\Python35\\Scripts;%PATH%"
   - echo.
   - echo Starting build for %APPVEYOR_REPO_NAME% in %APPVEYOR_BUILD_FOLDER%
-  - git submodule update --init --recursive
   # Determine the appropriate CMake generator for the current version of Visual Studio
   - echo Determining VS version
   - python .\scripts\determine_vs_version.py > vsversion.tmp
@@ -54,12 +53,12 @@ before_build:
   # Build Vulkan-Loader
   - echo Building Vulkan-Loader for %PLATFORM% %CONFIGURATION%
   - cd %APPVEYOR_BUILD_FOLDER%
-  - git clone --recurse-submodules https://github.com/KhronosGroup/Vulkan-Loader.git
+  - git clone https://github.com/KhronosGroup/Vulkan-Loader.git
   - cd Vulkan-Loader
   - mkdir %BUILD_DIR%
   - cd %BUILD_DIR%
-  - cmake -G %GENERATOR% -DVULKAN_HEADERS_INSTALL_DIR=%APPVEYOR_BUILD_FOLDER%/Vulkan-Headers/%BUILD_DIR%/install ..
-  - cmake --build . --config %CONFIGURATION% -- /maxcpucount
+  - cmake -G %GENERATOR% -DCMAKE_INSTALL_PREFIX=install -DVULKAN_HEADERS_INSTALL_DIR=%APPVEYOR_BUILD_FOLDER%/Vulkan-Headers/%BUILD_DIR%/install ..
+  - cmake --build . --config %CONFIGURATION% --target install -- /maxcpucount
   # Build glslang
   - echo Building glslang for %PLATFORM% %CONFIGURATION%
   - cd %APPVEYOR_BUILD_FOLDER%
@@ -69,7 +68,7 @@ before_build:
   - mkdir %BUILD_DIR%
   - cd %BUILD_DIR%
   - cmake -G %GENERATOR% -DCMAKE_INSTALL_PREFIX=install ..
-  - cmake --build . --config %CONFIGURATION% -- /maxcpucount
+  - cmake --build . --config %CONFIGURATION% --target install -- /maxcpucount
   # Generate build files using CMake for the build step.
   - echo Fetching googletest external dependencies for building validation layer tests
   - git clone https://github.com/google/googletest.git external/googletest
@@ -77,7 +76,7 @@ before_build:
   - cd %APPVEYOR_BUILD_FOLDER%
   - mkdir build
   - cd build
-  - cmake -G %GENERATOR% -DVULKAN_HEADERS_INSTALL_DIR=%APPVEYOR_BUILD_FOLDER%/Vulkan-Headers/%BUILD_DIR%/install -DGLSLANG_REPO_ROOT=%APPVEYOR_BUILD_FOLDER%\glslang -DLOADER_REPO_ROOT=%APPVEYOR_BUILD_FOLDER%\Vulkan-Loader ..
+  - cmake -G %GENERATOR% -DVULKAN_HEADERS_INSTALL_DIR=%APPVEYOR_BUILD_FOLDER%/Vulkan-Headers/%BUILD_DIR%/install -DGLSLANG_INSTALL_DIR=%APPVEYOR_BUILD_FOLDER%/glslang/%BUILD_DIR%/install -DVULKAN_LOADER_INSTALL_DIR=%APPVEYOR_BUILD_FOLDER%/Vulkan-Loader/%BUILD_DIR%/install ..
   - echo Building platform=%PLATFORM% configuration=%CONFIGURATION%
 
 platform:
