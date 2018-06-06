@@ -118,8 +118,6 @@ This script will run the following tests:
 
 - `vk_layer_validation_tests`:
   Test Vulkan validation layers
-- `vkvalidatelayerdoc`:
-  Tests that validation database is up-to-date and is synchronized with the validation source code
 
 ### Windows Notes
 
@@ -258,8 +256,6 @@ To run the **validation test script**, in a terminal change to the build/tests d
 This script will run the following tests:
 
 - `vk_layer_validation_tests`: Test Vulkan validation layers
-- `vkvalidatelayerdoc`: Tests that validation database is in up-to-date and in synchronization with
-  the validation source code
 
 Further testing and sanity checking can be achieved by running the cube and vulkaninfo applications
 in the [Vulkan-Tools](https://github.com/KhronosGroup/Vulkan-Tools) repository.
@@ -545,8 +541,6 @@ To run the **validation test script**, in a terminal change to the build/tests d
 This script will run the following tests:
 
 - `vk_layer_validation_tests`: Test Vulkan validation layers
-- `vkvalidatelayerdoc`: Tests that validation database is in up-to-date and in synchronization with
-  the validation source code
 
 Further testing and sanity checking can be achieved by running the cube and vulkaninfo applications
 in the [Vulkan-Tools](https://github.com/KhronosGroup/Vulkan-Tools) repository.
