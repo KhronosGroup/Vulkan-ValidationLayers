@@ -43,7 +43,6 @@
 #include "vk_layer_logging.h"
 #include "vk_layer_table.h"
 #include "vk_layer_utils.h"
-#include "vk_layer_utils.h"
 #include "vk_enum_string_helper.h"
 #include "vk_validation_error_messages.h"
 #include "vk_object_types.h"
@@ -845,7 +844,8 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceDisplayPlanePropertiesKHR(VkPhys
     if ((result == VK_SUCCESS || result == VK_INCOMPLETE) && pProperties) {
         std::lock_guard<std::mutex> lock(global_lock);
         for (uint32_t idx0 = 0; idx0 < *pPropertyCount; ++idx0) {
-            pProperties[idx0].currentDisplay = WrapNew(pProperties[idx0].currentDisplay);
+            VkDisplayKHR &opt_display = pProperties[idx0].currentDisplay;
+            if (opt_display) opt_display = WrapNew(opt_display);
         }
     }
     return result;
@@ -861,8 +861,8 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceDisplayPlaneProperties2KHR(VkPhy
     if ((result == VK_SUCCESS || result == VK_INCOMPLETE) && pProperties) {
         std::lock_guard<std::mutex> lock(global_lock);
         for (uint32_t idx0 = 0; idx0 < *pPropertyCount; ++idx0) {
-            pProperties[idx0].displayPlaneProperties.currentDisplay =
-                WrapNew(pProperties[idx0].displayPlaneProperties.currentDisplay);
+            VkDisplayKHR &opt_display = pProperties[idx0].displayPlaneProperties.currentDisplay;
+            if (opt_display) opt_display = WrapNew(opt_display);
         }
     }
     return result;
@@ -873,15 +873,13 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDisplayPlaneSupportedDisplaysKHR(VkPhysicalDev
     instance_layer_data *my_map_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), instance_layer_data_map);
     VkResult result =
         my_map_data->dispatch_table.GetDisplayPlaneSupportedDisplaysKHR(physicalDevice, planeIndex, pDisplayCount, pDisplays);
-    if (VK_SUCCESS == result) {
-        if ((*pDisplayCount > 0) && pDisplays) {
-            std::lock_guard<std::mutex> lock(global_lock);
-            for (uint32_t i = 0; i < *pDisplayCount; i++) {
-                // TODO: this looks like it really wants a /reverse/ mapping. What's going on here?
-                auto it = unique_id_mapping.find(reinterpret_cast<const uint64_t &>(pDisplays[i]));
-                assert(it != unique_id_mapping.end());
-                pDisplays[i] = reinterpret_cast<VkDisplayKHR &>(it->second);
-            }
+    if ((result == VK_SUCCESS || result == VK_INCOMPLETE) && pDisplays) {
+        std::lock_guard<std::mutex> lock(global_lock);
+        for (uint32_t i = 0; i < *pDisplayCount; ++i) {
+            // TODO: this looks like it really wants a /reverse/ mapping. What's going on here?
+            auto it = unique_id_mapping.find(reinterpret_cast<const uint64_t &>(pDisplays[i]));
+            assert(it != unique_id_mapping.end());
+            pDisplays[i] = reinterpret_cast<VkDisplayKHR &>(it->second);
         }
     }
     return result;
@@ -896,7 +894,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDisplayModePropertiesKHR(VkPhysicalDevice phys
     }
 
     VkResult result = my_map_data->dispatch_table.GetDisplayModePropertiesKHR(physicalDevice, display, pPropertyCount, pProperties);
-    if (result == VK_SUCCESS && pProperties) {
+    if ((result == VK_SUCCESS || result == VK_INCOMPLETE) && pProperties) {
         std::lock_guard<std::mutex> lock(global_lock);
         for (uint32_t idx0 = 0; idx0 < *pPropertyCount; ++idx0) {
             pProperties[idx0].displayMode = WrapNew(pProperties[idx0].displayMode);
@@ -915,23 +913,12 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDisplayModeProperties2KHR(VkPhysicalDevice phy
 
     VkResult result =
         my_map_data->dispatch_table.GetDisplayModeProperties2KHR(physicalDevice, display, pPropertyCount, pProperties);
-    if (result == VK_SUCCESS && pProperties) {
+    if ((result == VK_SUCCESS || result == VK_INCOMPLETE) && pProperties) {
         std::lock_guard<std::mutex> lock(global_lock);
         for (uint32_t idx0 = 0; idx0 < *pPropertyCount; ++idx0) {
             pProperties[idx0].displayModeProperties.displayMode = WrapNew(pProperties[idx0].displayModeProperties.displayMode);
         }
     }
-    return result;
-}
-
-VKAPI_ATTR VkResult VKAPI_CALL GetDisplayPlaneCapabilitiesKHR(VkPhysicalDevice physicalDevice, VkDisplayModeKHR mode,
-                                                              uint32_t planeIndex, VkDisplayPlaneCapabilitiesKHR *pCapabilities) {
-    instance_layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), instance_layer_data_map);
-    {
-        std::lock_guard<std::mutex> lock(global_lock);
-        mode = Unwrap(mode);
-    }
-    VkResult result = dev_data->dispatch_table.GetDisplayPlaneCapabilitiesKHR(physicalDevice, mode, planeIndex, pCapabilities);
     return result;
 }
 
