@@ -156,14 +156,17 @@ class UniqueObjectsOutputGenerator(OutputGenerator):
             'vkDestroyRenderPass',
             'vkSetDebugUtilsObjectNameEXT',
             'vkSetDebugUtilsObjectTagEXT',
+            'vkGetPhysicalDeviceDisplayPropertiesKHR',
+            'vkGetPhysicalDeviceDisplayProperties2KHR',
+            'vkGetPhysicalDeviceDisplayPlanePropertiesKHR',
+            'vkGetPhysicalDeviceDisplayPlaneProperties2KHR',
+            'vkGetDisplayPlaneSupportedDisplaysKHR',
+            'vkGetDisplayModePropertiesKHR',
+            'vkGetDisplayModeProperties2KHR',
+            'vkGetDisplayPlaneCapabilitiesKHR',
             ]
         # Commands shadowed by interface functions and are not implemented
         self.interface_functions = [
-            'vkGetPhysicalDeviceDisplayPropertiesKHR',
-            'vkGetPhysicalDeviceDisplayPlanePropertiesKHR',
-            'vkGetDisplayPlaneSupportedDisplaysKHR',
-            'vkGetDisplayModePropertiesKHR',
-            'vkGetDisplayPlaneCapabilitiesKHR',
             # VK_EXT_debug_report APIs are hooked, but handled separately in the source file
             'vkCreateDebugReportCallbackEXT',
             'vkDestroyDebugReportCallbackEXT',
