@@ -806,7 +806,6 @@ VKAPI_ATTR void VKAPI_CALL CmdPushDescriptorSetWithTemplateKHR(VkCommandBuffer c
     free(unwrapped_buffer);
 }
 
-#ifndef __ANDROID__
 VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceDisplayPropertiesKHR(VkPhysicalDevice physicalDevice, uint32_t *pPropertyCount,
                                                                      VkDisplayPropertiesKHR *pProperties) {
     instance_layer_data *my_map_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), instance_layer_data_map);
@@ -817,6 +816,53 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceDisplayPropertiesKHR(VkPhysicalD
         std::lock_guard<std::mutex> lock(global_lock);
         for (uint32_t idx0 = 0; idx0 < *pPropertyCount; ++idx0) {
             pProperties[idx0].display = WrapNew(pProperties[idx0].display);
+        }
+    }
+    return result;
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceDisplayProperties2KHR(VkPhysicalDevice physicalDevice, uint32_t *pPropertyCount,
+                                                                      VkDisplayProperties2KHR *pProperties) {
+    instance_layer_data *my_map_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), instance_layer_data_map);
+
+    VkResult result =
+        my_map_data->dispatch_table.GetPhysicalDeviceDisplayProperties2KHR(physicalDevice, pPropertyCount, pProperties);
+    if ((result == VK_SUCCESS || result == VK_INCOMPLETE) && pProperties) {
+        std::lock_guard<std::mutex> lock(global_lock);
+        for (uint32_t idx0 = 0; idx0 < *pPropertyCount; ++idx0) {
+            pProperties[idx0].displayProperties.display = WrapNew(pProperties[idx0].displayProperties.display);
+        }
+    }
+    return result;
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceDisplayPlanePropertiesKHR(VkPhysicalDevice physicalDevice, uint32_t *pPropertyCount,
+                                                                          VkDisplayPlanePropertiesKHR *pProperties) {
+    instance_layer_data *my_map_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), instance_layer_data_map);
+
+    VkResult result =
+        my_map_data->dispatch_table.GetPhysicalDeviceDisplayPlanePropertiesKHR(physicalDevice, pPropertyCount, pProperties);
+    if ((result == VK_SUCCESS || result == VK_INCOMPLETE) && pProperties) {
+        std::lock_guard<std::mutex> lock(global_lock);
+        for (uint32_t idx0 = 0; idx0 < *pPropertyCount; ++idx0) {
+            pProperties[idx0].currentDisplay = WrapNew(pProperties[idx0].currentDisplay);
+        }
+    }
+    return result;
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceDisplayPlaneProperties2KHR(VkPhysicalDevice physicalDevice,
+                                                                           uint32_t *pPropertyCount,
+                                                                           VkDisplayPlaneProperties2KHR *pProperties) {
+    instance_layer_data *my_map_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), instance_layer_data_map);
+
+    VkResult result =
+        my_map_data->dispatch_table.GetPhysicalDeviceDisplayPlaneProperties2KHR(physicalDevice, pPropertyCount, pProperties);
+    if ((result == VK_SUCCESS || result == VK_INCOMPLETE) && pProperties) {
+        std::lock_guard<std::mutex> lock(global_lock);
+        for (uint32_t idx0 = 0; idx0 < *pPropertyCount; ++idx0) {
+            pProperties[idx0].displayPlaneProperties.currentDisplay =
+                WrapNew(pProperties[idx0].displayPlaneProperties.currentDisplay);
         }
     }
     return result;
@@ -859,6 +905,25 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDisplayModePropertiesKHR(VkPhysicalDevice phys
     return result;
 }
 
+VKAPI_ATTR VkResult VKAPI_CALL GetDisplayModeProperties2KHR(VkPhysicalDevice physicalDevice, VkDisplayKHR display,
+                                                            uint32_t *pPropertyCount, VkDisplayModeProperties2KHR *pProperties) {
+    instance_layer_data *my_map_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), instance_layer_data_map);
+    {
+        std::lock_guard<std::mutex> lock(global_lock);
+        display = Unwrap(display);
+    }
+
+    VkResult result =
+        my_map_data->dispatch_table.GetDisplayModeProperties2KHR(physicalDevice, display, pPropertyCount, pProperties);
+    if (result == VK_SUCCESS && pProperties) {
+        std::lock_guard<std::mutex> lock(global_lock);
+        for (uint32_t idx0 = 0; idx0 < *pPropertyCount; ++idx0) {
+            pProperties[idx0].displayModeProperties.displayMode = WrapNew(pProperties[idx0].displayModeProperties.displayMode);
+        }
+    }
+    return result;
+}
+
 VKAPI_ATTR VkResult VKAPI_CALL GetDisplayPlaneCapabilitiesKHR(VkPhysicalDevice physicalDevice, VkDisplayModeKHR mode,
                                                               uint32_t planeIndex, VkDisplayPlaneCapabilitiesKHR *pCapabilities) {
     instance_layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), instance_layer_data_map);
@@ -869,7 +934,6 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDisplayPlaneCapabilitiesKHR(VkPhysicalDevice p
     VkResult result = dev_data->dispatch_table.GetDisplayPlaneCapabilitiesKHR(physicalDevice, mode, planeIndex, pCapabilities);
     return result;
 }
-#endif
 
 VKAPI_ATTR VkResult VKAPI_CALL DebugMarkerSetObjectTagEXT(VkDevice device, const VkDebugMarkerObjectTagInfoEXT *pTagInfo) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
