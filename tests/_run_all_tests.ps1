@@ -29,6 +29,4 @@ if ($lastexitcode -ne 0) {
    exit 1
 }
 
-& .\vkvalidatelayerdoc.ps1
-
 exit $lastexitcode
