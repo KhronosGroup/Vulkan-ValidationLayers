@@ -582,16 +582,13 @@ Instructions to install an instance of the glslang repository follow here.
 
 After installing and building glslang, the location will be used to build the Vulkan-ValidationLayers repo:
 
-1) Pass in the location of your glslang repository to cmake using absolute paths. From your build directory run:
+  Pass in the location of your glslang repository to cmake using absolute paths. From your build directory run:
     1) on Windows
 
         `cmake -DGLSLANG_INSTALL_DIR=c:/absolute_path_to/glslang/location_of/install -G "Visual Studio 15 Win64" ..`
-    1) or Linux
+    2) or Linux
 
         `cmake -DGLSLANG_INSTALL_DIR=/absolute_path_to/glslang/location_of/install -DCMAKE_BUILD_TYPE=Debug ..`
-
-2) If building on Windows with MSVC, set `DISABLE_BUILDTGT_DIR_DECORATION` to _On_.
- If building on Windows, but without MSVC set `DISABLE_BUILD_PATH_DECORATION` to _On_
 
 ## Optional software packages
 
