@@ -163,7 +163,6 @@ class UniqueObjectsOutputGenerator(OutputGenerator):
             'vkGetDisplayPlaneSupportedDisplaysKHR',
             'vkGetDisplayModePropertiesKHR',
             'vkGetDisplayModeProperties2KHR',
-            'vkGetDisplayPlaneCapabilitiesKHR',
             ]
         # Commands shadowed by interface functions and are not implemented
         self.interface_functions = [
