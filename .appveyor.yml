@@ -89,7 +89,6 @@ configuration:
 
 
 
-
 build:
   parallel: true                              # enable MSBuild parallel builds
   project: build/Vulkan-ValidationLayers.sln  # path to Visual Studio solution or project
