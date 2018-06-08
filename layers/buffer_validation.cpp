@@ -3078,7 +3078,7 @@ bool ValidateLayoutVsAttachmentDescription(const debug_report_data *report_data,
     return skip;
 }
 
-bool ValidateLayouts(core_validation::layer_data *device_data, VkDevice device, const VkRenderPassCreateInfo *pCreateInfo) {
+bool ValidateLayouts(const core_validation::layer_data *device_data, VkDevice device, const VkRenderPassCreateInfo *pCreateInfo) {
     const debug_report_data *report_data = core_validation::GetReportData(device_data);
     bool skip = false;
 

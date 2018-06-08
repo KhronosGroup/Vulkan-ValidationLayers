@@ -2388,7 +2388,7 @@ static const VkExtensionProperties instance_extensions[] = {{VK_EXT_DEBUG_REPORT
 
 // For given stage mask, if Geometry shader stage is on w/o GS being enabled, report geo_error_id
 //   and if Tessellation Control or Evaluation shader stages are on w/o TS being enabled, report tess_error_id
-static bool ValidateStageMaskGsTsEnables(layer_data *dev_data, VkPipelineStageFlags stageMask, const char *caller,
+static bool ValidateStageMaskGsTsEnables(const layer_data *dev_data, VkPipelineStageFlags stageMask, const char *caller,
                                          std::string geo_error_id, std::string tess_error_id) {
     bool skip = false;
     if (!dev_data->enabled_features2.features.geometryShader && (stageMask & VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT)) {
@@ -9020,9 +9020,12 @@ static bool ValidateDependencies(const layer_data *dev_data, FRAMEBUFFER_STATE c
     return skip;
 }
 
-static bool CreatePassDAG(const layer_data *dev_data, const VkRenderPassCreateInfo *pCreateInfo,
-                          std::vector<DAGNode> &subpass_to_node, std::vector<bool> &has_self_dependency,
-                          std::vector<int32_t> &subpass_to_dep_index) {
+static bool CreatePassDAG(const layer_data *dev_data, const VkRenderPassCreateInfo *pCreateInfo, RENDER_PASS_STATE *render_pass) {
+    // Shorthand...
+    auto &subpass_to_node = render_pass->subpassToNode;
+    auto &has_self_dependency = render_pass->hasSelfDependency;
+    auto &subpass_to_dep_index = render_pass->subpass_to_dependency_index;
+
     bool skip = false;
     for (uint32_t i = 0; i < pCreateInfo->subpassCount; ++i) {
         DAGNode &subpass_node = subpass_to_node[i];
@@ -9069,7 +9072,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateShaderModule(VkDevice device, const VkShade
     return res;
 }
 
-static bool ValidateAttachmentIndex(layer_data *dev_data, uint32_t attachment, uint32_t attachment_count, const char *type) {
+static bool ValidateAttachmentIndex(const layer_data *dev_data, uint32_t attachment, uint32_t attachment_count, const char *type) {
     bool skip = false;
     if (attachment >= attachment_count && attachment != VK_ATTACHMENT_UNUSED) {
         skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
@@ -9107,7 +9110,7 @@ char const *string_AttachmentType(uint8_t type) {
     }
 }
 
-static bool AddAttachmentUse(layer_data *dev_data, uint32_t subpass, std::vector<uint8_t> &attachment_uses,
+static bool AddAttachmentUse(const layer_data *dev_data, uint32_t subpass, std::vector<uint8_t> &attachment_uses,
                              std::vector<VkImageLayout> &attachment_layouts, uint32_t attachment, uint8_t new_use,
                              VkImageLayout new_layout) {
     if (attachment >= attachment_uses.size()) return false; /* out of range, but already reported */
@@ -9140,7 +9143,7 @@ static bool AddAttachmentUse(layer_data *dev_data, uint32_t subpass, std::vector
     return skip;
 }
 
-static bool ValidateRenderpassAttachmentUsage(layer_data *dev_data, const VkRenderPassCreateInfo *pCreateInfo) {
+static bool ValidateRenderpassAttachmentUsage(const layer_data *dev_data, const VkRenderPassCreateInfo *pCreateInfo) {
     bool skip = false;
     for (uint32_t i = 0; i < pCreateInfo->subpassCount; ++i) {
         const VkSubpassDescription &subpass = pCreateInfo->pSubpasses[i];
@@ -9283,20 +9286,19 @@ static void MarkAttachmentFirstUse(RENDER_PASS_STATE *render_pass, uint32_t inde
     if (!render_pass->attachment_first_read.count(index)) render_pass->attachment_first_read[index] = is_read;
 }
 
-VKAPI_ATTR VkResult VKAPI_CALL CreateRenderPass(VkDevice device, const VkRenderPassCreateInfo *pCreateInfo,
-                                                const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass) {
+static bool PreCallValidateCreateRenderPass(const layer_data *dev_data, VkDevice device, const VkRenderPassCreateInfo *pCreateInfo,
+                                            RENDER_PASS_STATE *render_pass) {
     bool skip = false;
-    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
 
-    unique_lock_t lock(global_lock);
     // TODO: As part of wrapping up the mem_tracker/core_validation merge the following routine should be consolidated with
     //       ValidateLayouts.
     skip |= ValidateRenderpassAttachmentUsage(dev_data, pCreateInfo);
 
-    std::vector<bool> has_self_dependency(pCreateInfo->subpassCount);
-    std::vector<DAGNode> subpass_to_node(pCreateInfo->subpassCount);
-    std::vector<int32_t> subpass_to_dep_index(pCreateInfo->subpassCount);
-    skip |= CreatePassDAG(dev_data, pCreateInfo, subpass_to_node, has_self_dependency, subpass_to_dep_index);
+    render_pass->renderPass = VK_NULL_HANDLE;
+    render_pass->hasSelfDependency.resize(pCreateInfo->subpassCount);
+    render_pass->subpassToNode.resize(pCreateInfo->subpassCount);
+    render_pass->subpass_to_dependency_index.resize(pCreateInfo->subpassCount);
+    skip |= CreatePassDAG(dev_data, pCreateInfo, render_pass);
 
     for (uint32_t i = 0; i < pCreateInfo->dependencyCount; ++i) {
         auto const &dependency = pCreateInfo->pDependencies[i];
@@ -9324,6 +9326,44 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateRenderPass(VkDevice device, const VkRenderP
     if (!skip) {
         skip |= ValidateLayouts(dev_data, device, pCreateInfo);
     }
+    return skip;
+}
+
+// Note:  we are passing a shared_ptr by value -- but the caller is std::move'ing it to avoid ref count changes. (and it's also
+//        clearer in the caller that we are relinquishing ownership to the share_ptr from the calling code)
+static void PostCallRecordCreateRenderPass(layer_data *dev_data, const VkRenderPassCreateInfo *pCreateInfo,
+                                           VkRenderPass *pRenderPass, std::shared_ptr<RENDER_PASS_STATE> render_pass) {
+    render_pass->renderPass = *pRenderPass;
+    for (uint32_t i = 0; i < pCreateInfo->subpassCount; ++i) {
+        const VkSubpassDescription &subpass = pCreateInfo->pSubpasses[i];
+        for (uint32_t j = 0; j < subpass.colorAttachmentCount; ++j) {
+            MarkAttachmentFirstUse(render_pass.get(), subpass.pColorAttachments[j].attachment, false);
+
+            // resolve attachments are considered to be written
+            if (subpass.pResolveAttachments) {
+                MarkAttachmentFirstUse(render_pass.get(), subpass.pResolveAttachments[j].attachment, false);
+            }
+        }
+        if (subpass.pDepthStencilAttachment) {
+            MarkAttachmentFirstUse(render_pass.get(), subpass.pDepthStencilAttachment->attachment, false);
+        }
+        for (uint32_t j = 0; j < subpass.inputAttachmentCount; ++j) {
+            MarkAttachmentFirstUse(render_pass.get(), subpass.pInputAttachments[j].attachment, true);
+        }
+    }
+
+    dev_data->renderPassMap[*pRenderPass] = std::move(render_pass);
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL CreateRenderPass(VkDevice device, const VkRenderPassCreateInfo *pCreateInfo,
+                                                const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass) {
+    bool skip = false;
+    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    // If we fail, this will act like a unique_ptr and auto-cleanup, as we aren't saving it anywhere
+    auto render_pass = std::make_shared<RENDER_PASS_STATE>(pCreateInfo);
+
+    unique_lock_t lock(global_lock);
+    skip = PreCallValidateCreateRenderPass(dev_data, device, pCreateInfo, render_pass.get());
     lock.unlock();
 
     if (skip) {
@@ -9334,32 +9374,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateRenderPass(VkDevice device, const VkRenderP
 
     if (VK_SUCCESS == result) {
         lock.lock();
-
-        auto render_pass = std::make_shared<RENDER_PASS_STATE>(pCreateInfo);
-        render_pass->renderPass = *pRenderPass;
-        render_pass->hasSelfDependency = has_self_dependency;
-        render_pass->subpassToNode = subpass_to_node;
-        render_pass->subpass_to_dependency_index = subpass_to_dep_index;
-
-        for (uint32_t i = 0; i < pCreateInfo->subpassCount; ++i) {
-            const VkSubpassDescription &subpass = pCreateInfo->pSubpasses[i];
-            for (uint32_t j = 0; j < subpass.colorAttachmentCount; ++j) {
-                MarkAttachmentFirstUse(render_pass.get(), subpass.pColorAttachments[j].attachment, false);
-
-                // resolve attachments are considered to be written
-                if (subpass.pResolveAttachments) {
-                    MarkAttachmentFirstUse(render_pass.get(), subpass.pResolveAttachments[j].attachment, false);
-                }
-            }
-            if (subpass.pDepthStencilAttachment) {
-                MarkAttachmentFirstUse(render_pass.get(), subpass.pDepthStencilAttachment->attachment, false);
-            }
-            for (uint32_t j = 0; j < subpass.inputAttachmentCount; ++j) {
-                MarkAttachmentFirstUse(render_pass.get(), subpass.pInputAttachments[j].attachment, true);
-            }
-        }
-
-        dev_data->renderPassMap[*pRenderPass] = std::move(render_pass);
+        PostCallRecordCreateRenderPass(dev_data, pCreateInfo, pRenderPass, std::move(render_pass));
     }
     return result;
 }

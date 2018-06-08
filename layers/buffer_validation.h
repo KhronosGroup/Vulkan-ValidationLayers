@@ -183,7 +183,7 @@ bool ValidateMaskBitsFromLayouts(core_validation::layer_data *device_data, VkCom
 bool ValidateLayoutVsAttachmentDescription(const debug_report_data *report_data, const VkImageLayout first_layout,
                                            const uint32_t attachment, const VkAttachmentDescription &attachment_description);
 
-bool ValidateLayouts(core_validation::layer_data *dev_data, VkDevice device, const VkRenderPassCreateInfo *pCreateInfo);
+bool ValidateLayouts(const core_validation::layer_data *dev_data, VkDevice device, const VkRenderPassCreateInfo *pCreateInfo);
 
 bool ValidateMapImageLayouts(core_validation::layer_data *dev_data, VkDevice device, DEVICE_MEM_INFO const *mem_info,
                              VkDeviceSize offset, VkDeviceSize end_offset);
