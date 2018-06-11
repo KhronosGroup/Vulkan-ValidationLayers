@@ -118,6 +118,7 @@ if(WIN32)
 endif()
 
 option(BUILD_TESTS "Build tests" ON)
+option(INSTALL_TESTS "Install tests" OFF)
 option(BUILD_LAYERS "Build layers" ON)
 
 set(GLSLANG_INSTALL_DIR "GLSLANG-NOTFOUND" CACHE PATH "Absolute path to a glslang install directory")
