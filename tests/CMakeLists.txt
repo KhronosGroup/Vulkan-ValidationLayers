@@ -145,5 +145,9 @@ if (TARGET gtest_main)
             COMMAND xcopy /Y /I ${SRC_GTEST_DLLS} ${DST_GTEST_DLLS})
     endif()
 
+    if(INSTALL_TESTS)
+        install(TARGETS vk_layer_validation_tests DESTINATION ${CMAKE_INSTALL_BINDIR})
+    endif()
+
     add_subdirectory(layers)
 endif()
