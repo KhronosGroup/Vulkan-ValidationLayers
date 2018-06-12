@@ -404,9 +404,8 @@ struct DAGNode {
 struct RENDER_PASS_STATE : public BASE_NODE {
     VkRenderPass renderPass;
     safe_VkRenderPassCreateInfo createInfo;
-    std::vector<bool> hasSelfDependency;
+    std::vector<std::vector<uint32_t>> self_dependencies;
     std::vector<DAGNode> subpassToNode;
-    std::vector<int32_t> subpass_to_dependency_index;  // srcSubpass to dependency index of self dep, or -1 if none
     std::unordered_map<uint32_t, bool> attachment_first_read;
 
     RENDER_PASS_STATE(VkRenderPassCreateInfo const *pCreateInfo) : createInfo(pCreateInfo) {}

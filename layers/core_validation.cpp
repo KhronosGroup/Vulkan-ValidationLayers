@@ -7495,26 +7495,35 @@ static bool ValidateImageBarrierImage(layer_data *device_data, const char *funcN
 // Validate image barriers within a renderPass
 static bool ValidateRenderPassImageBarriers(layer_data *device_data, const char *funcName, GLOBAL_CB_NODE *cb_state,
                                             uint32_t active_subpass, const safe_VkSubpassDescription &sub_desc, uint64_t rp_handle,
-                                            VkAccessFlags sub_src_access_mask, VkAccessFlags sub_dst_access_mask,
+                                            const VkSubpassDependency *dependencies, const std::vector<uint32_t> &self_dependencies,
                                             uint32_t image_mem_barrier_count, const VkImageMemoryBarrier *image_barriers) {
     bool skip = false;
     for (uint32_t i = 0; i < image_mem_barrier_count; ++i) {
         const auto &img_barrier = image_barriers[i];
         const auto &img_src_access_mask = img_barrier.srcAccessMask;
-        if (img_src_access_mask != (sub_src_access_mask & img_src_access_mask)) {
+        const auto &img_dst_access_mask = img_barrier.dstAccessMask;
+        bool access_mask_match = false;
+        for (const auto self_dep_index : self_dependencies) {
+            const auto &sub_dep = dependencies[self_dep_index];
+            access_mask_match = (img_src_access_mask == (sub_dep.srcAccessMask & img_src_access_mask)) &&
+                                (img_dst_access_mask == (sub_dep.dstAccessMask & img_dst_access_mask));
+            if (access_mask_match) break;
+        }
+        if (!access_mask_match) {
+            std::stringstream self_dep_ss;
+            stream_join(self_dep_ss, ", ", self_dependencies);
             skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT,
                             rp_handle, "VUID-vkCmdPipelineBarrier-srcAccessMask-01175",
                             "%s: Barrier pImageMemoryBarriers[%d].srcAccessMask(0x%X) is not a subset of VkSubpassDependency "
-                            "srcAccessMask(0x%X) of subpass %d of renderPass 0x%" PRIx64 ".",
-                            funcName, i, img_src_access_mask, sub_src_access_mask, active_subpass, rp_handle);
-        }
-        const auto &img_dst_access_mask = img_barrier.dstAccessMask;
-        if (img_dst_access_mask != (sub_dst_access_mask & img_dst_access_mask)) {
+                            "srcAccessMask of subpass %d of renderPass 0x%" PRIx64
+                            ". Candidate VkSubpassDependency are pDependencies entries [%s].",
+                            funcName, i, img_src_access_mask, active_subpass, rp_handle, self_dep_ss.str().c_str());
             skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT,
                             rp_handle, "VUID-vkCmdPipelineBarrier-dstAccessMask-01176",
                             "%s: Barrier pImageMemoryBarriers[%d].dstAccessMask(0x%X) is not a subset of VkSubpassDependency "
-                            "dstAccessMask(0x%X) of subpass %d of renderPass 0x%" PRIx64 ".",
-                            funcName, i, img_dst_access_mask, sub_dst_access_mask, active_subpass, rp_handle);
+                            "dstAccessMask of subpass %d of renderPass 0x%" PRIx64
+                            ". Candidate VkSubpassDependency are pDependencies entries [%s].",
+                            funcName, i, img_dst_access_mask, active_subpass, rp_handle, self_dep_ss.str().c_str());
         }
         if (VK_QUEUE_FAMILY_IGNORED != img_barrier.srcQueueFamilyIndex ||
             VK_QUEUE_FAMILY_IGNORED != img_barrier.dstQueueFamilyIndex) {
@@ -7549,74 +7558,108 @@ static bool ValidateRenderPassPipelineBarriers(layer_data *device_data, const ch
                                                const VkBufferMemoryBarrier *buffer_mem_barriers, uint32_t image_mem_barrier_count,
                                                const VkImageMemoryBarrier *image_barriers) {
     bool skip = false;
-    auto rp_state = cb_state->activeRenderPass;
+    const auto rp_state = cb_state->activeRenderPass;
     const auto active_subpass = cb_state->activeSubpass;
     auto rp_handle = HandleToUint64(rp_state->renderPass);
-    if (!rp_state->hasSelfDependency[active_subpass]) {
+    const auto &self_dependencies = rp_state->self_dependencies[active_subpass];
+    const auto &dependencies = rp_state->createInfo.pDependencies;
+    if (self_dependencies.size() == 0) {
         skip |=
             log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT, rp_handle,
                     "VUID-vkCmdPipelineBarrier-pDependencies-01172",
                     "%s: Barriers cannot be set during subpass %d of renderPass 0x%" PRIx64 " with no self-dependency specified.",
                     funcName, active_subpass, rp_handle);
     } else {
-        assert(rp_state->subpass_to_dependency_index[cb_state->activeSubpass] != -1);
         // Grab ref to current subpassDescription up-front for use below
         const auto &sub_desc = rp_state->createInfo.pSubpasses[active_subpass];
-        const auto &sub_dep = rp_state->createInfo.pDependencies[rp_state->subpass_to_dependency_index[active_subpass]];
-        const auto &sub_src_stage_mask = ExpandPipelineStageFlags(sub_dep.srcStageMask);
-        const auto &sub_dst_stage_mask = ExpandPipelineStageFlags(sub_dep.dstStageMask);
-        if ((sub_src_stage_mask != VK_PIPELINE_STAGE_ALL_COMMANDS_BIT) &&
-            (src_stage_mask != (sub_src_stage_mask & src_stage_mask))) {
+        // Look for matching mask in any self-dependency
+        bool stage_mask_match = false;
+        for (const auto self_dep_index : self_dependencies) {
+            const auto &sub_dep = dependencies[self_dep_index];
+            const auto &sub_src_stage_mask = ExpandPipelineStageFlags(sub_dep.srcStageMask);
+            const auto &sub_dst_stage_mask = ExpandPipelineStageFlags(sub_dep.dstStageMask);
+            stage_mask_match = ((sub_src_stage_mask == VK_PIPELINE_STAGE_ALL_COMMANDS_BIT) ||
+                                (src_stage_mask == (sub_src_stage_mask & src_stage_mask))) &&
+                               ((sub_dst_stage_mask == VK_PIPELINE_STAGE_ALL_COMMANDS_BIT) ||
+                                (dst_stage_mask == (sub_dst_stage_mask & dst_stage_mask)));
+            if (stage_mask_match) break;
+        }
+        if (!stage_mask_match) {
+            std::stringstream self_dep_ss;
+            stream_join(self_dep_ss, ", ", self_dependencies);
             skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT,
                             rp_handle, "VUID-vkCmdPipelineBarrier-srcStageMask-01173",
-                            "%s: Barrier srcStageMask(0x%X) is not a subset of VkSubpassDependency srcStageMask(0x%X) of subpass "
-                            "%d of renderPass 0x%" PRIx64 ".",
-                            funcName, src_stage_mask, sub_src_stage_mask, active_subpass, rp_handle);
-        }
-        if ((sub_dst_stage_mask != VK_PIPELINE_STAGE_ALL_COMMANDS_BIT) &&
-            (dst_stage_mask != (sub_dst_stage_mask & dst_stage_mask))) {
+                            "%s: Barrier srcStageMask(0x%X) is not a subset of VkSubpassDependency srcStageMask of any "
+                            "self-dependency of subpass %d of renderPass 0x%" PRIx64
+                            " for which dstStageMask is also a subset. "
+                            "Candidate VkSubpassDependency are pDependencies entries [%s].",
+                            funcName, src_stage_mask, active_subpass, rp_handle, self_dep_ss.str().c_str());
             skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT,
                             rp_handle, "VUID-vkCmdPipelineBarrier-dstStageMask-01174",
-                            "%s: Barrier dstStageMask(0x%X) is not a subset of VkSubpassDependency dstStageMask(0x%X) of subpass "
-                            "%d of renderPass 0x%" PRIx64 ".",
-                            funcName, dst_stage_mask, sub_dst_stage_mask, active_subpass, rp_handle);
+                            "%s: Barrier dstStageMask(0x%X) is not a subset of VkSubpassDependency dstStageMask of any "
+                            "self-dependency of subpass %d of renderPass 0x%" PRIx64
+                            " for which srcStageMask is also a subset. "
+                            "Candidate VkSubpassDependency are pDependencies entries [%s].",
+                            funcName, dst_stage_mask, active_subpass, rp_handle, self_dep_ss.str().c_str());
         }
+
         if (0 != buffer_mem_barrier_count) {
             skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT,
                             rp_handle, "VUID-vkCmdPipelineBarrier-bufferMemoryBarrierCount-01178",
                             "%s: bufferMemoryBarrierCount is non-zero (%d) for subpass %d of renderPass 0x%" PRIx64 ".", funcName,
                             buffer_mem_barrier_count, active_subpass, rp_handle);
         }
-        const auto &sub_src_access_mask = sub_dep.srcAccessMask;
-        const auto &sub_dst_access_mask = sub_dep.dstAccessMask;
         for (uint32_t i = 0; i < mem_barrier_count; ++i) {
             const auto &mb_src_access_mask = mem_barriers[i].srcAccessMask;
-            if (mb_src_access_mask != (sub_src_access_mask & mb_src_access_mask)) {
-                skip |=
-                    log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT,
-                            rp_handle, "VUID-vkCmdPipelineBarrier-srcAccessMask-01175",
-                            "%s: Barrier pMemoryBarriers[%d].srcAccessMask(0x%X) is not a subset of VkSubpassDependency "
-                            "srcAccessMask(0x%X) of subpass %d of renderPass 0x%" PRIx64 ".",
-                            funcName, i, mb_src_access_mask, sub_src_access_mask, active_subpass, rp_handle);
-            }
             const auto &mb_dst_access_mask = mem_barriers[i].dstAccessMask;
-            if (mb_dst_access_mask != (sub_dst_access_mask & mb_dst_access_mask)) {
-                skip |=
-                    log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT,
-                            rp_handle, "VUID-vkCmdPipelineBarrier-dstAccessMask-01176",
-                            "%s: Barrier pMemoryBarriers[%d].dstAccessMask(0x%X) is not a subset of VkSubpassDependency "
-                            "dstAccessMask(0x%X) of subpass %d of renderPass 0x%" PRIx64 ".",
-                            funcName, i, mb_dst_access_mask, sub_dst_access_mask, active_subpass, rp_handle);
+            bool access_mask_match = false;
+            for (const auto self_dep_index : self_dependencies) {
+                const auto &sub_dep = dependencies[self_dep_index];
+                access_mask_match = (mb_src_access_mask == (sub_dep.srcAccessMask & mb_src_access_mask)) &&
+                                    (mb_dst_access_mask == (sub_dep.dstAccessMask & mb_dst_access_mask));
+                if (access_mask_match) break;
+            }
+
+            if (!access_mask_match) {
+                std::stringstream self_dep_ss;
+                stream_join(self_dep_ss, ", ", self_dependencies);
+                skip |= log_msg(
+                    device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT, rp_handle,
+                    "VUID-vkCmdPipelineBarrier-srcAccessMask-01175",
+                    "%s: Barrier pMemoryBarriers[%d].srcAccessMask(0x%X) is not a subset of VkSubpassDependency srcAccessMask "
+                    "for any self-dependency of subpass %d of renderPass 0x%" PRIx64
+                    " for which dstAccessMask is also a subset. "
+                    "Candidate VkSubpassDependency are pDependencies entries [%s].",
+                    funcName, i, mb_src_access_mask, active_subpass, rp_handle, self_dep_ss.str().c_str());
+                skip |= log_msg(
+                    device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT, rp_handle,
+                    "VUID-vkCmdPipelineBarrier-dstAccessMask-01176",
+                    "%s: Barrier pMemoryBarriers[%d].dstAccessMask(0x%X) is not a subset of VkSubpassDependency dstAccessMask "
+                    "for any self-dependency of subpass %d of renderPass 0x%" PRIx64
+                    " for which srcAccessMask is also a subset. "
+                    "Candidate VkSubpassDependency are pDependencies entries [%s].",
+                    funcName, i, mb_dst_access_mask, active_subpass, rp_handle, self_dep_ss.str().c_str());
             }
         }
-        skip |= ValidateRenderPassImageBarriers(device_data, funcName, cb_state, active_subpass, sub_desc, rp_handle,
-                                                sub_src_access_mask, sub_dst_access_mask, image_mem_barrier_count, image_barriers);
-        if (sub_dep.dependencyFlags != dependency_flags) {
+
+        skip |= ValidateRenderPassImageBarriers(device_data, funcName, cb_state, active_subpass, sub_desc, rp_handle, dependencies,
+                                                self_dependencies, image_mem_barrier_count, image_barriers);
+
+        bool flag_match = false;
+        for (const auto self_dep_index : self_dependencies) {
+            const auto &sub_dep = dependencies[self_dep_index];
+            flag_match = sub_dep.dependencyFlags == dependency_flags;
+            if (flag_match) break;
+        }
+        if (!flag_match) {
+            std::stringstream self_dep_ss;
+            stream_join(self_dep_ss, ", ", self_dependencies);
             skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT,
                             rp_handle, "VUID-vkCmdPipelineBarrier-dependencyFlags-01177",
-                            "%s: dependencyFlags param (0x%X) does not equal VkSubpassDependency dependencyFlags value (0x%X) for "
-                            "subpass %d of renderPass 0x%" PRIx64 ".",
-                            funcName, dependency_flags, sub_dep.dependencyFlags, cb_state->activeSubpass, rp_handle);
+                            "%s: dependencyFlags param (0x%X) does not equal VkSubpassDependency dependencyFlags value for any "
+                            "self-dependency of subpass %d of renderPass 0x%" PRIx64
+                            ". Candidate VkSubpassDependency are pDependencies entries [%s].",
+                            funcName, dependency_flags, cb_state->activeSubpass, rp_handle, self_dep_ss.str().c_str());
         }
     }
     return skip;
@@ -9023,14 +9066,14 @@ static bool ValidateDependencies(const layer_data *dev_data, FRAMEBUFFER_STATE c
 static bool CreatePassDAG(const layer_data *dev_data, const VkRenderPassCreateInfo *pCreateInfo, RENDER_PASS_STATE *render_pass) {
     // Shorthand...
     auto &subpass_to_node = render_pass->subpassToNode;
-    auto &has_self_dependency = render_pass->hasSelfDependency;
-    auto &subpass_to_dep_index = render_pass->subpass_to_dependency_index;
+    subpass_to_node.resize(pCreateInfo->subpassCount);
+    auto &self_dependencies = render_pass->self_dependencies;
+    self_dependencies.resize(pCreateInfo->subpassCount);
 
     bool skip = false;
     for (uint32_t i = 0; i < pCreateInfo->subpassCount; ++i) {
-        DAGNode &subpass_node = subpass_to_node[i];
-        subpass_node.pass = i;
-        subpass_to_dep_index[i] = -1;  // Default to no dependency and overwrite below as needed
+        subpass_to_node[i].pass = i;
+        self_dependencies[i].clear();
     }
     for (uint32_t i = 0; i < pCreateInfo->dependencyCount; ++i) {
         const VkSubpassDependency &dependency = pCreateInfo->pDependencies[i];
@@ -9044,8 +9087,7 @@ static bool CreatePassDAG(const layer_data *dev_data, const VkRenderPassCreateIn
                             DRAWSTATE_INVALID_RENDERPASS,
                             "Dependency graph must be specified such that an earlier pass cannot depend on a later pass.");
         } else if (dependency.srcSubpass == dependency.dstSubpass) {
-            has_self_dependency[dependency.srcSubpass] = true;
-            subpass_to_dep_index[dependency.srcSubpass] = i;
+            self_dependencies[dependency.srcSubpass].push_back(i);
         } else {
             subpass_to_node[dependency.dstSubpass].prev.push_back(dependency.srcSubpass);
             subpass_to_node[dependency.srcSubpass].next.push_back(dependency.dstSubpass);
@@ -9295,9 +9337,6 @@ static bool PreCallValidateCreateRenderPass(const layer_data *dev_data, VkDevice
     skip |= ValidateRenderpassAttachmentUsage(dev_data, pCreateInfo);
 
     render_pass->renderPass = VK_NULL_HANDLE;
-    render_pass->hasSelfDependency.resize(pCreateInfo->subpassCount);
-    render_pass->subpassToNode.resize(pCreateInfo->subpassCount);
-    render_pass->subpass_to_dependency_index.resize(pCreateInfo->subpassCount);
     skip |= CreatePassDAG(dev_data, pCreateInfo, render_pass);
 
     for (uint32_t i = 0; i < pCreateInfo->dependencyCount; ++i) {
@@ -9329,11 +9368,14 @@ static bool PreCallValidateCreateRenderPass(const layer_data *dev_data, VkDevice
     return skip;
 }
 
-// Note:  we are passing a shared_ptr by value -- but the caller is std::move'ing it to avoid ref count changes. (and it's also
-//        clearer in the caller that we are relinquishing ownership to the share_ptr from the calling code)
+// Style note:
+// Use of rvalue reference exceeds reccommended usage of rvalue refs in google style guide, but intentionally forces caller to move
+// or copy.  This is clearer than passing a pointer to shared_ptr and avoids the atomic increment/decrement of shared_ptr copy
+// construction or assignment.
 static void PostCallRecordCreateRenderPass(layer_data *dev_data, const VkRenderPassCreateInfo *pCreateInfo,
-                                           VkRenderPass *pRenderPass, std::shared_ptr<RENDER_PASS_STATE> render_pass) {
-    render_pass->renderPass = *pRenderPass;
+                                           const VkRenderPass render_pass_handle,
+                                           std::shared_ptr<RENDER_PASS_STATE> &&render_pass) {
+    render_pass->renderPass = render_pass_handle;
     for (uint32_t i = 0; i < pCreateInfo->subpassCount; ++i) {
         const VkSubpassDescription &subpass = pCreateInfo->pSubpasses[i];
         for (uint32_t j = 0; j < subpass.colorAttachmentCount; ++j) {
@@ -9352,7 +9394,8 @@ static void PostCallRecordCreateRenderPass(layer_data *dev_data, const VkRenderP
         }
     }
 
-    dev_data->renderPassMap[*pRenderPass] = std::move(render_pass);
+    // Even though render_pass is an rvalue-ref parameter, still must move s.t. move assignment is invoked.
+    dev_data->renderPassMap[render_pass_handle] = std::move(render_pass);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL CreateRenderPass(VkDevice device, const VkRenderPassCreateInfo *pCreateInfo,
@@ -9374,7 +9417,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateRenderPass(VkDevice device, const VkRenderP
 
     if (VK_SUCCESS == result) {
         lock.lock();
-        PostCallRecordCreateRenderPass(dev_data, pCreateInfo, pRenderPass, std::move(render_pass));
+        PostCallRecordCreateRenderPass(dev_data, pCreateInfo, *pRenderPass, std::move(render_pass));
     }
     return result;
 }
