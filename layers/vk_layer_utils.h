@@ -85,6 +85,28 @@ static inline SepString string_join(const char *sep, const StringCollection &str
     return string_join<SepString, StringCollection>(SepString(sep), strings);
 }
 
+// Perl/Python style join operation for general types using stream semantics
+// Note: won't be as fast as string_join above, but simpler to use (and code)
+// Note: Modifiable reference doesn't match the google style but does match std style for stream handling and algorithms
+template <typename Stream, typename String, typename ForwardIt>
+Stream &stream_join(Stream &stream, const String &sep, ForwardIt first, ForwardIt last) {
+    if (first != last) {
+        stream << *first;
+        ++first;
+        while (first != last) {
+            stream << sep << *first;
+            ++first;
+        }
+    }
+    return stream;
+}
+
+// stream_join For whole collections with forward iterators
+template <typename Stream, typename String, typename Collection>
+Stream &stream_join(Stream &stream, const String &sep, const Collection &values) {
+    return stream_join(stream, sep, values.cbegin(), values.cend());
+}
+
 extern "C" {
 #endif
 
