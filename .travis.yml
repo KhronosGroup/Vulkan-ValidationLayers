@@ -84,20 +84,6 @@ script:
     fi
   - |
     if [[ "$VULKAN_BUILD_TARGET" == "LINUX" ]]; then
-      # Get VulkanTools and build DevSim
-      mkdir -p external
-      cd external
-      git clone https://github.com/LunarG/VulkanTools.git
-      cd VulkanTools
-      ./update_external_sources.sh
-      # Build as few components as possible
-      cmake -H. -Bbuild -DGLSLANG_REPO_ROOT=${TRAVIS_BUILD_DIR}/glslang -DBUILD_LOADER=NO -DBUILD_TESTS=NO \
-          -DBUILD_DEMOS=NO -DBUILD_VKTRACE=NO -DBUILD_VLF=NO -DBUILD_VKJSON=NO -DBUILD_VIA=NO -DBUILD_ICD=NO
-      make -C build -j $core_count
-      cd ${TRAVIS_BUILD_DIR}
-    fi
-  - |
-    if [[ "$VULKAN_BUILD_TARGET" == "LINUX" ]]; then
       # Build Vulkan-Headers
       cd ${TRAVIS_BUILD_DIR}
       git clone https://github.com/KhronosGroup/Vulkan-Headers.git Vulkan-Headers
@@ -106,6 +92,22 @@ script:
       cd build
       cmake -DCMAKE_INSTALL_PREFIX=install ..
       make install
+      cd ${TRAVIS_BUILD_DIR}
+    fi
+  - |
+    if [[ "$VULKAN_BUILD_TARGET" == "LINUX" ]]; then
+      # Get VulkanTools and build DevSim
+      mkdir -p external
+      cd external
+      git clone https://github.com/LunarG/VulkanTools.git
+      cd VulkanTools
+      ./update_external_sources.sh
+      # Build as few components as possible
+      cmake -H. -Bbuild -DGLSLANG_INSTALL_DIR=${TRAVIS_BUILD_DIR}/glslang/build/install \
+          -DVULKAN_HEADERS_INSTALL_DIR=${TRAVIS_BUILD_DIR}/Vulkan-Headers/build/install \
+          -DBUILD_LOADER=NO -DBUILD_TESTS=NO \
+          -DBUILD_DEMOS=NO -DBUILD_VKTRACE=NO -DBUILD_VLF=NO -DBUILD_VKJSON=NO -DBUILD_VIA=NO -DBUILD_ICD=NO
+      make -C build -j $core_count
       cd ${TRAVIS_BUILD_DIR}
     fi
   - |
