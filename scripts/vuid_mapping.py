@@ -627,6 +627,17 @@ func_struct_id_map = {
 'VkVertexInputBindingDivisorDescriptionEXT' : 571,
 'VkBaseOutStructure' : 572,
 'VkBaseInStructure' : 573,
+'VkDisplayModeProperties2' : 574,
+'VkDisplayPlaneCapabilities2' : 575,
+'VkDisplayPlaneInfo2' : 576,
+'VkDisplayPlaneProperties2' : 577,
+'VkDisplayProperties2' : 578,
+'vkCmdDrawIndexedIndirectCount' : 579,
+'vkCmdDrawIndirectCount' : 580,
+'vkGetDisplayModeProperties2' : 581,
+'vkGetDisplayPlaneCapabilities2' : 582,
+'vkGetPhysicalDeviceDisplayPlaneProperties2' : 583,
+'vkGetPhysicalDeviceDisplayProperties2' : 584,
 ### ADD New func/struct mappings above this line
 }
 # Mapping of params to unique IDs
@@ -1166,6 +1177,7 @@ implicit_param_map = {
 'pCallbackData' : 532,
 'pBindingFlags' : 533,
 'pDescriptorCounts' : 534,
+'pDisplayPlaneInfo' : 535,
 ### ADD New implicit param mappings above this line
 }
 
