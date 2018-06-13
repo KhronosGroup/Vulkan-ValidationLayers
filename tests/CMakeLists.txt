@@ -143,14 +143,11 @@ if (TARGET gtest_main)
         FILE(TO_NATIVE_PATH ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIGURATION> DST_GTEST_DLLS)
         add_custom_command(TARGET vk_layer_validation_tests POST_BUILD
             COMMAND xcopy /Y /I ${SRC_GTEST_DLLS} ${DST_GTEST_DLLS})
-        # Copy the loader shared lib to the test application directory so the test app finds it.
-        set(default_find_library_suffixes ${CMAKE_FIND_LIBRARY_SUFFIXES})
-        set(CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_SHARED_LIBRARY_SUFFIX})
-        get_filename_component(lib_name ${Vulkan_LIBRARY} NAME_WE)
-        find_library(vulkan_dll NAMES ${lib_name} HINTS ${Vulkan_LIBRARY} PATH_SUFFIXES "bin")
-        set(CMAKE_FIND_LIBRARY_SUFFIXES ${default_find_library_suffixes})
-        add_custom_command(TARGET vk_layer_validation_tests POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy ${vulkan_dll} $<TARGET_FILE_DIR:vk_layer_validation_tests>)
+        # Copy the loader shared lib (if supplied) to the test application directory so the test app finds it.
+        if(VULKAN_LOADER_INSTALL_DIR)
+            add_custom_command(TARGET vk_layer_validation_tests POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy ${VULKAN_LOADER_INSTALL_DIR}/bin/vulkan-1.dll $<TARGET_FILE_DIR:vk_layer_validation_tests>)
+        endif()
     endif()
 
     if(INSTALL_TESTS)
