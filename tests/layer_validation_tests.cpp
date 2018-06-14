@@ -9499,6 +9499,44 @@ TEST_F(VkLayerTest, CreateBufferViewNoMemoryBoundToBuffer) {
     }
 }
 
+TEST_F(VkLayerTest, InvalidBufferViewCreateInfoEntries) {
+    TEST_DESCRIPTION("Attempt to create a buffer view with invalid create info.");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    const VkPhysicalDeviceLimits &dev_limits = m_device->props.limits;
+    const VkDeviceSize minTexelBufferOffsetAlignment = dev_limits.minTexelBufferOffsetAlignment;
+    if (minTexelBufferOffsetAlignment == 1) {
+        printf("%s Test requires minTexelOffsetAlignment to not be equal to 1. \n", kSkipPrefix);
+        return;
+    }
+
+    // Create a test buffer
+    const VkDeviceSize resource_size = 1024;
+    const VkBufferCreateInfo buffer_info = VkBufferObj::create_info(resource_size, VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT);
+    VkBufferObj buffer;
+    buffer.init(*m_device, buffer_info, (VkMemoryPropertyFlags)VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+    // Create a test buffer view
+    VkBufferViewCreateInfo buff_view_ci = {};
+    buff_view_ci.sType = VK_STRUCTURE_TYPE_BUFFER_VIEW_CREATE_INFO;
+    buff_view_ci.buffer = buffer.handle();
+    buff_view_ci.format = VK_FORMAT_R8_UNORM;
+    buff_view_ci.offset = minTexelBufferOffsetAlignment + 1;
+    buff_view_ci.range = VK_WHOLE_SIZE;
+    VkBufferView buff_view;
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkBufferViewCreateInfo-offset-00926");
+    const VkResult err = vkCreateBufferView(m_device->device(), &buff_view_ci, NULL, &buff_view);
+
+    m_errorMonitor->VerifyFound();
+
+    // If previous error is success, it still created the view, so delete it
+    if (err == VK_SUCCESS) {
+        vkDestroyBufferView(m_device->device(), buff_view, NULL);
+    }
+}
+
 TEST_F(VkLayerTest, InvalidDynamicOffsetCases) {
     // Create a descriptorSet w/ dynamic descriptor and then hit 3 offset error
     // cases:

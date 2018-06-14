@@ -3405,6 +3405,7 @@ void PostCallRecordCreateBuffer(layer_data *device_data, const VkBufferCreateInf
 
 bool PreCallValidateCreateBufferView(layer_data *device_data, const VkBufferViewCreateInfo *pCreateInfo) {
     bool skip = false;
+    const debug_report_data *report_data = core_validation::GetReportData(device_data);
     BUFFER_STATE *buffer_state = GetBufferState(device_data, pCreateInfo->buffer);
     // If this isn't a sparse buffer, it needs to have memory backing it at CreateBufferView time
     if (buffer_state) {
@@ -3416,6 +3417,16 @@ bool PreCallValidateCreateBufferView(layer_data *device_data, const VkBufferView
                                          VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT, false,
                                          "VUID-VkBufferViewCreateInfo-buffer-00932", "vkCreateBufferView()",
                                          "VK_BUFFER_USAGE_[STORAGE|UNIFORM]_TEXEL_BUFFER_BIT");
+
+        const VkPhysicalDeviceLimits *device_limits = &(GetPhysicalDeviceProperties(device_data)->limits);
+        // Buffer view offset must be a multiple of VkPhysicalDeviceLimits::minTexelBufferOffsetAlignment
+        if ((pCreateInfo->offset % device_limits->minTexelBufferOffsetAlignment) != 0) {
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT,
+                            HandleToUint64(buffer_state->buffer), "VUID-VkBufferViewCreateInfo-offset-00926",
+                            "VkBufferViewCreateInfo offset (%" PRIuLEAST64
+                            ") must be a multiple of VkPhysicalDeviceLimits::minTexelBufferOffsetAlignment (%" PRIuLEAST64 ").",
+                            pCreateInfo->offset, device_limits->minTexelBufferOffsetAlignment);
+        }
     }
     return skip;
 }
