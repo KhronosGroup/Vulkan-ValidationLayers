@@ -1197,6 +1197,7 @@ static bool ValidateShaderCapabilities(layer_data *dev_data, shader_module const
     auto const &enabledFeatures = GetEnabledFeatures(dev_data);
     auto const &extensions = GetDeviceExtensions(dev_data);
     auto const &descriptorIndexingFeatures = GetEnabledDescriptorIndexingFeatures(dev_data);
+    auto const &eightBitStorageFeatures = GetEnabled8BitStorageFeatures(dev_data);
 
     struct CapabilityInfo {
         char const *name;
@@ -1280,6 +1281,11 @@ static bool ValidateShaderCapabilities(layer_data *dev_data, shader_module const
         {spv::CapabilityShaderViewportMaskNV, {VK_NV_VIEWPORT_ARRAY2_EXTENSION_NAME, nullptr, &extensions->vk_nv_viewport_array2}},
         {spv::CapabilitySubgroupBallotKHR, {VK_EXT_SHADER_SUBGROUP_BALLOT_EXTENSION_NAME, nullptr, &extensions->vk_ext_shader_subgroup_ballot }},
         {spv::CapabilitySubgroupVoteKHR, {VK_EXT_SHADER_SUBGROUP_VOTE_EXTENSION_NAME, nullptr, &extensions->vk_ext_shader_subgroup_vote }},
+
+        {spv::CapabilityStorageBuffer8BitAccess , {"VkPhysicalDeviceFeatures::storageBuffer8BitAccess", &eightBitStorageFeatures->storageBuffer8BitAccess, &extensions->vk_khr_8bit_storage}},
+        {spv::CapabilityUniformAndStorageBuffer8BitAccess , {"VkPhysicalDeviceFeatures::uniformAndStorageBuffer8BitAccess", &eightBitStorageFeatures->uniformAndStorageBuffer8BitAccess, &extensions->vk_khr_8bit_storage}},
+        {spv::CapabilityStoragePushConstant8 , {"VkPhysicalDeviceFeatures::storagePushConstant8", &eightBitStorageFeatures->storagePushConstant8, &extensions->vk_khr_8bit_storage}},
+
     };
     // clang-format on
 
