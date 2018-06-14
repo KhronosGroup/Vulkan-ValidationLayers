@@ -211,6 +211,7 @@ struct layer_data {
         uint32_t max_push_descriptors;  // from VkPhysicalDevicePushDescriptorPropertiesKHR::maxPushDescriptors
         VkPhysicalDeviceDescriptorIndexingPropertiesEXT descriptor_indexing_props;
         VkPhysicalDeviceDescriptorIndexingFeaturesEXT descriptor_indexing_features;
+        VkPhysicalDevice8BitStorageFeaturesKHR eight_bit_storage_features;
     };
     DeviceExtensionProperties phys_dev_ext_props = {};
     bool external_sync_warning = false;
@@ -2349,6 +2350,10 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
         device_data->phys_dev_ext_props.descriptor_indexing_features = *descriptor_indexing_features;
     }
 
+    const auto *eight_bit_storage_features = lvl_find_in_chain<VkPhysicalDevice8BitStorageFeaturesKHR>(pCreateInfo->pNext);
+    if (eight_bit_storage_features) {
+        device_data->phys_dev_ext_props.eight_bit_storage_features = *eight_bit_storage_features;
+    }
     lock.unlock();
 
     ValidateLayerOrdering(*pCreateInfo);
@@ -4825,6 +4830,9 @@ const VkPhysicalDeviceDescriptorIndexingFeaturesEXT *GetEnabledDescriptorIndexin
     return &device_data->phys_dev_ext_props.descriptor_indexing_features;
 }
 
+const VkPhysicalDevice8BitStorageFeaturesKHR *GetEnabled8BitStorageFeatures(const layer_data *device_data) {
+    return &device_data->phys_dev_ext_props.eight_bit_storage_features;
+}
 const DeviceExtensions *GetDeviceExtensions(const layer_data *device_data) { return &device_data->extensions; }
 
 uint32_t GetApiVersion(const layer_data *device_data) { return device_data->api_version; }
