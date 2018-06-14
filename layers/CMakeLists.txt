@@ -2,7 +2,7 @@ cmake_minimum_required (VERSION 2.8.11)
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     add_definitions(-DVK_USE_PLATFORM_WIN32_KHR -DVK_USE_PLATFORM_WIN32_KHX -DWIN32_LEAN_AND_MEAN)
     add_custom_target(mk_layer_config_dir ALL COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>)
-    set_target_properties(mk_layer_config_dir PROPERTIES FOLDER ${VVL_TARGET_FOLDER})
+    set_target_properties(mk_layer_config_dir PROPERTIES FOLDER ${LAYERS_HELPER_FOLDER})
     set(DisplayServer Win32)
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Android")
     add_definitions(-DVK_USE_PLATFORM_ANDROID_KHR -DVK_USE_PLATFORM_ANDROID_KHX)
@@ -65,8 +65,8 @@ add_custom_target(generate_helper_files DEPENDS
     vk_extension_helper.h
     vk_typemap_helper.h
     )
-set_target_properties(spirv_tools_revision_file PROPERTIES FOLDER ${VVL_TARGET_FOLDER})
-set_target_properties(generate_helper_files PROPERTIES FOLDER ${VVL_TARGET_FOLDER})
+set_target_properties(spirv_tools_revision_file PROPERTIES FOLDER ${LAYERS_HELPER_FOLDER})
+set_target_properties(generate_helper_files PROPERTIES FOLDER ${LAYERS_HELPER_FOLDER})
 
 # Rules to build generated helper files
 run_vk_xml_generate(loader_extension_generator.py vk_layer_dispatch_table.h)
@@ -130,7 +130,7 @@ if (WIN32)
                 COMMAND copy ${src_json} ${dst_json}
                 VERBATIM
                 )
-            set_target_properties(${config_file}-json PROPERTIES FOLDER ${VVL_TARGET_FOLDER})
+            set_target_properties(${config_file}-json PROPERTIES FOLDER ${LAYERS_HELPER_FOLDER})
             install(FILES ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/${config_file}.json DESTINATION ${CMAKE_INSTALL_LIBDIR})
         endforeach(config_file)
     else()
@@ -152,7 +152,7 @@ if (WIN32)
             COMMAND copy ${src_val_msgs} ${dst_val_msgs}
             VERBATIM
             )
-        set_target_properties(vk_validation_error_messages PROPERTIES FOLDER ${VVL_TARGET_FOLDER})
+        set_target_properties(vk_validation_error_messages PROPERTIES FOLDER ${LAYERS_HELPER_FOLDER})
     endif()
 elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
     # extra setup for out-of-tree builds
@@ -229,7 +229,7 @@ if (WIN32)
         COMMAND ${CMAKE_COMMAND} -E copy_if_different ${DEF_FILE} VkLayer_${target}.def
         VERBATIM
     )
-    set_target_properties(copy-${target}-def-file PROPERTIES FOLDER ${VVL_TARGET_FOLDER})
+    set_target_properties(copy-${target}-def-file PROPERTIES FOLDER ${LAYERS_HELPER_FOLDER})
     add_library(VkLayer_${target} SHARED ${ARGN} VkLayer_${target}.def)
     add_dependencies(VkLayer_${target} generate_helper_files)
     target_link_Libraries(VkLayer_${target} VkLayer_utils)

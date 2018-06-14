@@ -42,9 +42,10 @@ if(APPLE)
     set(CMAKE_INSTALL_PREFIX ${CMAKE_BINARY_DIR})
 endif()
 
-# Enable cmake folders
+# Enable IDE GUI folders
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
-set(VVL_TARGET_FOLDER vl_cmake_targets)
+# "Helper" targets that don't have interesting source code should set their FOLDER property to this
+set(LAYERS_HELPER_FOLDER "Helper Targets")
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux" OR CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     set(FALLBACK_CONFIG_DIRS "/etc/xdg" CACHE STRING
@@ -248,6 +249,7 @@ if(NOT TARGET uninstall)
         IMMEDIATE @ONLY)
     add_custom_target(uninstall
         COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake)
+    set_target_properties(uninstall PROPERTIES FOLDER ${LAYERS_HELPER_FOLDER})
 endif()
 
 add_definitions(-DAPI_NAME="${API_NAME}")
