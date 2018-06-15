@@ -68,6 +68,34 @@ if(BUILD_LAYERS)
     run_external_revision_generate(SPIRV_TOOLS_COMMIT_ID spirv_tools_commit_id.h)
 endif()
 
+# Configure installation of source files that are dependencies of other repos.
+set(LAYER_UTIL_FILES
+   hash_util.h
+   hash_vk_types.h
+   vk_format_utils.h
+   vk_format_utils.cpp
+   vk_layer_config.h
+   vk_layer_config.cpp
+   vk_layer_data.h
+   vk_layer_extension_utils.h
+   vk_layer_extension_utils.cpp
+   vk_layer_logging.h
+   vk_layer_utils.h
+   vk_layer_utils.cpp
+   vk_loader_layer.h
+   vk_loader_platform.h
+   vk_validation_error_messages.h
+   ${PROJECT_BINARY_DIR}/vk_layer_dispatch_table.h
+   ${PROJECT_BINARY_DIR}/vk_dispatch_table_helper.h
+   ${PROJECT_BINARY_DIR}/vk_safe_struct.h
+   ${PROJECT_BINARY_DIR}/vk_safe_struct.cpp
+   ${PROJECT_BINARY_DIR}/vk_enum_string_helper.h
+   ${PROJECT_BINARY_DIR}/vk_object_types.h
+   ${PROJECT_BINARY_DIR}/vk_extension_helper.h
+   ${PROJECT_BINARY_DIR}/vk_typemap_helper.h
+   )
+install(FILES ${LAYER_UTIL_FILES} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+
 set(LAYER_JSON_FILES_WITH_DEPENDENCIES
     VkLayer_core_validation
     VkLayer_object_tracker
