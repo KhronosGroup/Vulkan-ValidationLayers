@@ -346,17 +346,18 @@ bool validate_array(debug_report_data *report_data, const char *apiName, const P
  */
 template <typename T>
 bool validate_struct_type(debug_report_data *report_data, const char *apiName, const ParameterName &parameterName,
-                          const char *sTypeName, const T *value, VkStructureType sType, bool required, const std::string &vuid) {
+                          const char *sTypeName, const T *value, VkStructureType sType, bool required,
+                          const std::string &struct_vuid, const std::string &stype_vuid) {
     bool skip_call = false;
 
     if (value == NULL) {
         if (required) {
-            skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                 kVUID_PVError_RequiredParameter, "%s: required parameter %s specified as NULL", apiName,
-                                 parameterName.get_name().c_str());
+            skip_call |=
+                log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, struct_vuid,
+                        "%s: required parameter %s specified as NULL", apiName, parameterName.get_name().c_str());
         }
     } else if (value->sType != sType) {
-        skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, vuid,
+        skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, stype_vuid,
                              "%s: parameter %s->sType must be %s.", apiName, parameterName.get_name().c_str(), sTypeName);
     }
 

@@ -158,7 +158,6 @@ class ParameterValidationOutputGenerator(OutputGenerator):
         self.headerVersion = None
         # Internal state - accumulators for different inner block text
         self.validation = []                              # Text comprising the main per-api parameter validation routines
-        self.structNames = []                             # List of Vulkan struct typenames
         self.stypes = []                                  # Values from the VkStructureType enumeration
         self.structTypes = dict()                         # Map of Vulkan struct typename to required VkStructureType
         self.handleTypes = set()                          # Set of handle type names
@@ -375,7 +374,6 @@ class ParameterValidationOutputGenerator(OutputGenerator):
         # Accumulate includes, defines, types, enums, function pointer typedefs, end function prototypes separately for this
         # feature. They're only printed in endFeature().
         self.headerVersion = None
-        self.structNames = []
         self.stypes = []
         self.commands = []
         self.structMembers = []
@@ -456,7 +454,6 @@ class ParameterValidationOutputGenerator(OutputGenerator):
         # If the type is a struct type, traverse the embedded <member> tags generating a structure. Otherwise, emit the tag text.
         category = typeElem.get('category')
         if (category == 'struct' or category == 'union'):
-            self.structNames.append(name)
             self.genStruct(typeinfo, name, alias)
         elif (category == 'handle'):
             self.handleTypes.add(name)
@@ -881,8 +878,8 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                     funcPrintName, lenValueRequired, valueRequired, stype_vuid, param_vuid, ln=lenValue.name, ldn=lenPrintName, dn=valuePrintName, vn=value.name, sv=stype.value, pf=prefix, **postProcSpec))
         # This is an individual struct
         else:
-            checkExpr.append('skip |= validate_struct_type(local_data->report_data, "{}", {ppp}"{}"{pps}, "{sv}", {}{vn}, {sv}, {}, {});\n'.format(
-                funcPrintName, valuePrintName, prefix, valueRequired, stype_vuid, vn=value.name, sv=stype.value, vt=value.type, **postProcSpec))
+            checkExpr.append('skip |= validate_struct_type(local_data->report_data, "{}", {ppp}"{}"{pps}, "{sv}", {}{vn}, {sv}, {}, {}, {});\n'.format(
+                funcPrintName, valuePrintName, prefix, valueRequired, param_vuid, stype_vuid, vn=value.name, sv=stype.value, vt=value.type, **postProcSpec))
         return checkExpr
     #
     # Generate the handle check string
@@ -1038,15 +1035,6 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             scrubbed_lines += line
         return scrubbed_lines
     #
-    # Create a placeholder check for a substructure for an API call. We check all the parameters of the structure, and so
-    # cover the VU for the structure itself being valid.
-    def MakeSubStructCheck(self, funcname, struct_info):
-        sub_struct_code = []
-        check_type = "%s-parameter" % struct_info.name
-        vuid = self.GetVuid(funcname, check_type)
-        sub_struct_code.append('skip |= ValidateSubstructure(local_data->report_data, "%s", "%s", %s);\n' % (funcname, struct_info.name, vuid))
-        return sub_struct_code
-    #
     # Process struct validation code for inclusion in function or parent struct validation code
     def expandStructCode(self, item_type, funcName, memberNamePrefix, memberDisplayNamePrefix, indent, output, postProcSpec):
         lines = self.validatedStructs[item_type]
@@ -1149,12 +1137,6 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                     # Log a diagnostic message when validation cannot be automatically generated and must be implemented manually
                     self.logMsg('diag', 'ParameterValidation: No validation for {} {}'.format(structTypeName if structTypeName else funcName, value.name))
                 else:
-                    if value.type in self.structNames:
-                        # If we are validating a structure's contents, add VUID for the valid parent structure
-                        if structTypeName is None:
-                            usedLines += self.MakeSubStructCheck(funcName, value)
-                        else:
-                            usedLines += self.MakeSubStructCheck(structTypeName, value)
                     if value.type in self.structTypes:
                         # If this is a pointer to a struct with an sType field, verify the type
                         usedLines += self.makeStructTypeCheck(valuePrefix, value, lenParam, req, cvReq, cpReq, funcName, lenDisplayName, valueDisplayName, postProcSpec, structTypeName)
@@ -1191,7 +1173,8 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                     if value.type in self.structTypes:
                         stype = self.structTypes[value.type]
                         vuid = self.GetVuid(value.type, "sType-sType")
-                        usedLines.append('skip |= validate_struct_type(local_data->report_data, "{}", {ppp}"{}"{pps}, "{sv}", &({}{vn}), {sv}, false, {});\n'.format(
+                        undefined_vuid = '"kVUIDUndefined"'
+                        usedLines.append('skip |= validate_struct_type(local_data->report_data, "{}", {ppp}"{}"{pps}, "{sv}", &({}{vn}), {sv}, false, kVUIDUndefined, {});\n'.format(
                             funcName, valueDisplayName, valuePrefix, vuid, vn=value.name, sv=stype.value, vt=value.type, **postProcSpec))
                     elif value.type in self.handleTypes:
                         if not self.isHandleOptional(value, None):
@@ -1225,10 +1208,6 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                     if value.type in self.validatedStructs:
                         memberNamePrefix = '{}{}.'.format(valuePrefix, value.name)
                         memberDisplayNamePrefix = '{}.'.format(valueDisplayName)
-
-                        sub_struct_check = self.MakeSubStructCheck(structTypeName, value)
-                        if 'UNDEFINED' not in sub_struct_check[0]:
-                            usedLines.append(sub_struct_check)
                         usedLines.append(self.expandStructCode(value.type, funcName, memberNamePrefix, memberDisplayNamePrefix, '', [], postProcSpec))
             # Append the parameter check to the function body for the current command
             if usedLines:
