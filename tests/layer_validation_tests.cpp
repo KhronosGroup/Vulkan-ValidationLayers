@@ -284,7 +284,6 @@ class ErrorMonitor {
         }
     }
 
-
     // Set an error that the error monitor will ignore. Do not use this function if you are creating a new test.
     // TODO: This is stopgap to block new unexpected errors from being introduced. The long-term goal is to remove the use of this
     // function and its definition.
@@ -1297,6 +1296,12 @@ TEST_F(VkLayerTest, RequiredParameter) {
     // Expected to trigger an error with parameter_validation::validate_array
     VkViewport viewport = {0.0f, 0.0f, 64.0f, 64.0f, 0.0f, 1.0f};
     m_commandBuffer->SetViewport(0, 0, &viewport);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCreateImage-pCreateInfo-parameter");
+    // Specify a null pImageCreateInfo struct pointer
+    VkImage test_image;
+    vkCreateImage(device(), NULL, NULL, &test_image);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdSetViewport-pViewports-parameter");
