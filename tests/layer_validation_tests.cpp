@@ -20,6 +20,7 @@
  * Author: Cody Northrop <cnorthrop@google.com>
  * Author: Dave Houlton <daveh@lunarg.com>
  * Author: Jeremy Kniager <jeremyk@lunarg.com>
+ * Author: Shannon McPherson <shannon@lunarg.com>
  */
 
 #ifdef ANDROID
@@ -305,8 +306,9 @@ class ErrorMonitor {
         bool found_expected = false;
 
         if (!IgnoreMessage(errorString)) {
-            for (auto desired_msg : desired_message_strings_) {
-                if (desired_msg.length() == 0) {
+            for (auto desired_msg_it = desired_message_strings_.begin(); desired_msg_it != desired_message_strings_.end();
+                 ++desired_msg_it) {
+                if ((*desired_msg_it).length() == 0) {
                     // An empty desired_msg string "" indicates a positive test - not expecting an error.
                     // Return true to avoid calling layers/driver with this error.
                     // And don't erase the "" string, so it remains if another error is found.
@@ -314,15 +316,15 @@ class ErrorMonitor {
                     found_expected = true;
                     message_found_ = true;
                     failure_message_strings_.insert(errorString);
-                } else if (errorString.find(desired_msg) != string::npos) {
+                } else if (errorString.find(*desired_msg_it) != string::npos) {
                     found_expected = true;
                     message_outstanding_count_--;
                     failure_message_strings_.insert(errorString);
                     message_found_ = true;
                     result = VK_TRUE;
-                    // We only want one match for each expected error so remove from set here
-                    // Since we're about the break the loop it's OK to remove from set we're iterating over
-                    desired_message_strings_.erase(desired_msg);
+                    // Remove a maximum of one failure message from the set
+                    // Multiset mutation is acceptable because `break` causes flow of control to exit the for loop
+                    desired_message_strings_.erase(desired_msg_it);
                     break;
                 }
             }
@@ -367,10 +369,10 @@ class ErrorMonitor {
     }
 
     void VerifyFound() {
-        // Not seeing the desired message is a failure. /Before/ throwing, dump any other messages.
+        // Not receiving expected message(s) is a failure. /Before/ throwing, dump any other messages
         if (!AllDesiredMsgsFound()) {
             DumpFailureMsgs();
-            for (auto desired_msg : desired_message_strings_) {
+            for (const auto desired_msg : desired_message_strings_) {
                 ADD_FAILURE() << "Did not receive expected error '" << desired_msg << "'";
             }
         }
@@ -381,7 +383,7 @@ class ErrorMonitor {
         // ExpectSuccess() configured us to match anything. Any error is a failure.
         if (AnyDesiredMsgFound()) {
             DumpFailureMsgs();
-            for (auto msg : failure_message_strings_) {
+            for (const auto msg : failure_message_strings_) {
                 ADD_FAILURE() << "Expected to succeed but got error: " << msg;
             }
         }
@@ -402,8 +404,8 @@ class ErrorMonitor {
     }
 
     VkFlags message_flags_;
-    std::unordered_set<string> desired_message_strings_;
-    std::unordered_set<string> failure_message_strings_;
+    std::unordered_multiset<std::string> desired_message_strings_;
+    std::unordered_multiset<std::string> failure_message_strings_;
     std::vector<std::string> ignore_message_strings_;
     vector<string> other_messages_;
     test_platform_thread_mutex mutex_;
