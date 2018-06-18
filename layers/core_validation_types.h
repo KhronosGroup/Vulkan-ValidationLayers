@@ -1076,7 +1076,7 @@ VkFormatProperties GetFormatProperties(core_validation::layer_data *device_data,
 VkResult GetImageFormatProperties(core_validation::layer_data *device_data, const VkImageCreateInfo *image_ci,
                                   VkImageFormatProperties *image_format_properties);
 const debug_report_data *GetReportData(const layer_data *);
-const VkPhysicalDeviceProperties *GetPhysicalDeviceProperties(layer_data *);
+const VkPhysicalDeviceProperties *GetPhysicalDeviceProperties(const layer_data *);
 const CHECK_DISABLED *GetDisables(layer_data *);
 std::unordered_map<VkImage, std::unique_ptr<IMAGE_STATE>> *GetImageMap(core_validation::layer_data *);
 std::unordered_map<VkImage, std::vector<ImageSubresourcePair>> *GetImageSubresourceMap(layer_data *);

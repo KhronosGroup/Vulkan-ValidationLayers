@@ -4758,7 +4758,7 @@ VkResult GetImageFormatProperties(core_validation::layer_data *device_data, cons
 
 const debug_report_data *GetReportData(const core_validation::layer_data *device_data) { return device_data->report_data; }
 
-const VkPhysicalDeviceProperties *GetPhysicalDeviceProperties(core_validation::layer_data *device_data) {
+const VkPhysicalDeviceProperties *GetPhysicalDeviceProperties(const core_validation::layer_data *device_data) {
     return &device_data->phys_dev_props;
 }
 

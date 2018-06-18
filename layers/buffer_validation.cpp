@@ -3268,8 +3268,9 @@ bool ValidateMapImageLayouts(core_validation::layer_data *device_data, VkDevice 
 
 // Helper function to validate correct usage bits set for buffers or images. Verify that (actual & desired) flags != 0 or, if strict
 // is true, verify that (actual & desired) flags == desired
-static bool validate_usage_flags(layer_data *device_data, VkFlags actual, VkFlags desired, VkBool32 strict, uint64_t obj_handle,
-                                 VulkanObjectType obj_type, std::string msgCode, char const *func_name, char const *usage_str) {
+static bool validate_usage_flags(const layer_data *device_data, VkFlags actual, VkFlags desired, VkBool32 strict,
+                                 uint64_t obj_handle, VulkanObjectType obj_type, std::string msgCode, char const *func_name,
+                                 char const *usage_str) {
     const debug_report_data *report_data = core_validation::GetReportData(device_data);
 
     bool correct_usage = false;
@@ -3362,7 +3363,7 @@ bool ValidateImageSubresourceLayers(layer_data *dev_data, const GLOBAL_CB_NODE *
 
 // Helper function to validate usage flags for buffers. For given buffer_state send actual vs. desired usage off to helper above
 // where an error will be flagged if usage is not correct
-bool ValidateBufferUsageFlags(layer_data *device_data, BUFFER_STATE const *buffer_state, VkFlags desired, bool strict,
+bool ValidateBufferUsageFlags(const layer_data *device_data, BUFFER_STATE const *buffer_state, VkFlags desired, bool strict,
                               const std::string &msgCode, char const *func_name, char const *usage_string) {
     return validate_usage_flags(device_data, buffer_state->createInfo.usage, desired, strict, HandleToUint64(buffer_state->buffer),
                                 kVulkanObjectTypeBuffer, msgCode, func_name, usage_string);
@@ -3403,7 +3404,7 @@ void PostCallRecordCreateBuffer(layer_data *device_data, const VkBufferCreateInf
         ->insert(std::make_pair(*pBuffer, std::unique_ptr<BUFFER_STATE>(new BUFFER_STATE(*pBuffer, pCreateInfo))));
 }
 
-bool PreCallValidateCreateBufferView(layer_data *device_data, const VkBufferViewCreateInfo *pCreateInfo) {
+bool PreCallValidateCreateBufferView(const layer_data *device_data, const VkBufferViewCreateInfo *pCreateInfo) {
     bool skip = false;
     const debug_report_data *report_data = core_validation::GetReportData(device_data);
     BUFFER_STATE *buffer_state = GetBufferState(device_data, pCreateInfo->buffer);
