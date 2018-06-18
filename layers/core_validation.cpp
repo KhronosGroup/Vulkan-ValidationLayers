@@ -12530,7 +12530,7 @@ VKAPI_ATTR void VKAPI_CALL CmdPushDescriptorSetWithTemplateKHR(VkCommandBuffer c
 
 static void PostCallRecordGetPhysicalDeviceDisplayPlanePropertiesKHR(instance_layer_data *instanceData,
                                                                      VkPhysicalDevice physicalDevice, uint32_t *pPropertyCount,
-                                                                     VkDisplayPlanePropertiesKHR *pProperties) {
+                                                                     void *pProperties) {
     unique_lock_t lock(global_lock);
     auto physical_device_state = GetPhysicalDeviceState(instanceData, physicalDevice);
 
@@ -12570,8 +12570,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceDisplayPlaneProperties2KHR(VkPhy
     result = instance_data->dispatch_table.GetPhysicalDeviceDisplayPlaneProperties2KHR(physicalDevice, pPropertyCount, pProperties);
 
     if (result == VK_SUCCESS || result == VK_INCOMPLETE) {
-        PostCallRecordGetPhysicalDeviceDisplayPlanePropertiesKHR(instance_data, physicalDevice, pPropertyCount,
-                                                                 (pProperties) ? &pProperties->displayPlaneProperties : 0);
+        PostCallRecordGetPhysicalDeviceDisplayPlanePropertiesKHR(instance_data, physicalDevice, pPropertyCount, pProperties);
     }
 
     return result;
