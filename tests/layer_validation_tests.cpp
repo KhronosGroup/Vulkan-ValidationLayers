@@ -1355,6 +1355,64 @@ TEST_F(VkLayerTest, RequiredParameter) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(VkLayerTest, PnextOnlyStructValidation) {
+    TEST_DESCRIPTION("See if checks occur on structs ONLY used in pnext chains.");
+
+    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    } else {
+        printf("%s Did not find required instance extension %s; skipped.\n", kSkipPrefix,
+               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+
+    std::array<const char *, 2> required_device_extensions = {
+        {VK_KHR_MAINTENANCE3_EXTENSION_NAME, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME}};
+    for (auto device_extension : required_device_extensions) {
+        if (DeviceExtensionSupported(gpu(), nullptr, device_extension)) {
+            m_device_extension_names.push_back(device_extension);
+        } else {
+            printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, device_extension);
+            return;
+        }
+    }
+    // Create a device passing in a bad PdevFeatures2 value
+    auto indexingFeatures = lvl_init_struct<VkPhysicalDeviceDescriptorIndexingFeaturesEXT>();
+    auto features2 = lvl_init_struct<VkPhysicalDeviceFeatures2KHR>(&indexingFeatures);
+    vkGetPhysicalDeviceFeatures2(gpu(), &features2);
+    // Set one of the features values to an invalid boolean value
+    indexingFeatures.descriptorBindingUniformBufferUpdateAfterBind = 800;
+
+    uint32_t queue_node_count;
+    vkGetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_node_count, NULL);
+    VkQueueFamilyProperties *queue_props = new VkQueueFamilyProperties[queue_node_count];
+    vkGetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_node_count, queue_props);
+    float priorities[] = {1.0f};
+    VkDeviceQueueCreateInfo queue_info{};
+    queue_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+    queue_info.pNext = NULL;
+    queue_info.flags = 0;
+    queue_info.queueFamilyIndex = 0;
+    queue_info.queueCount = 1;
+    queue_info.pQueuePriorities = &priorities[0];
+    VkDeviceCreateInfo dev_info = {};
+    dev_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+    dev_info.pNext = NULL;
+    dev_info.queueCreateInfoCount = 1;
+    dev_info.pQueueCreateInfos = &queue_info;
+    dev_info.enabledLayerCount = 0;
+    dev_info.ppEnabledLayerNames = NULL;
+    dev_info.enabledExtensionCount = m_device_extension_names.size();
+    dev_info.ppEnabledExtensionNames = m_device_extension_names.data();
+    dev_info.pNext = &features2;
+    VkDevice dev;
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_WARNING_BIT_EXT, "is neither VK_TRUE nor VK_FALSE");
+    m_errorMonitor->SetUnexpectedError("Failed to create");
+    vkCreateDevice(gpu(), &dev_info, NULL, &dev);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(VkLayerTest, ReservedParameter) {
     TEST_DESCRIPTION("Specify a non-zero value for a reserved parameter");
 
