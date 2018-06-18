@@ -264,7 +264,6 @@ class ErrorMonitor {
         desired_message_strings_.clear();
         ignore_message_strings_.clear();
         other_messages_.clear();
-        message_outstanding_count_ = 0;
     }
 
     // ErrorMonitor will look for an error message containing the specified string(s)
@@ -273,7 +272,6 @@ class ErrorMonitor {
         test_platform_thread_lock_mutex(&mutex_);
         desired_message_strings_.insert(msgString);
         message_flags_ |= msgFlags;
-        message_outstanding_count_++;
         test_platform_thread_unlock_mutex(&mutex_);
     }
 
@@ -318,7 +316,6 @@ class ErrorMonitor {
                     failure_message_strings_.insert(errorString);
                 } else if (errorString.find(*desired_msg_it) != string::npos) {
                     found_expected = true;
-                    message_outstanding_count_--;
                     failure_message_strings_.insert(errorString);
                     message_found_ = true;
                     result = VK_TRUE;
@@ -345,7 +342,7 @@ class ErrorMonitor {
 
     bool AnyDesiredMsgFound() const { return message_found_; }
 
-    bool AllDesiredMsgsFound() const { return (0 == message_outstanding_count_); }
+    bool AllDesiredMsgsFound() const { return desired_message_strings_.empty(); }
 
     void SetBailout(bool *bailout) { bailout_ = bailout; }
 
@@ -411,7 +408,6 @@ class ErrorMonitor {
     test_platform_thread_mutex mutex_;
     bool *bailout_;
     bool message_found_;
-    int message_outstanding_count_;
 };
 
 static VKAPI_ATTR VkBool32 VKAPI_CALL myDbgFunc(VkFlags msgFlags, VkDebugReportObjectTypeEXT objType, uint64_t srcObject,
