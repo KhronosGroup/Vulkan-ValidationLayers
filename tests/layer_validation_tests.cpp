@@ -9525,19 +9525,26 @@ TEST_F(VkLayerTest, InvalidBufferViewCreateInfoEntries) {
     buff_view_ci.sType = VK_STRUCTURE_TYPE_BUFFER_VIEW_CREATE_INFO;
     buff_view_ci.buffer = buffer.handle();
     buff_view_ci.format = VK_FORMAT_R8_UNORM;
-    buff_view_ci.offset = minTexelBufferOffsetAlignment + 1;
+    // Offset must be less than the size of buffer so make it the same size to throw an error
+    buff_view_ci.offset = buffer.create_info().size;
     buff_view_ci.range = VK_WHOLE_SIZE;
-    VkBufferView buff_view;
 
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkBufferViewCreateInfo-offset-00926");
-    const VkResult err = vkCreateBufferView(m_device->device(), &buff_view_ci, NULL, &buff_view);
+    auto CatchError = [this, &buff_view_ci](const string &desired_error_string) {
+        VkBufferView buff_view;
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, desired_error_string);
+        VkResult err = vkCreateBufferView(m_device->device(), &buff_view_ci, NULL, &buff_view);
+        m_errorMonitor->VerifyFound();
+        // If previous error is success, it still created the view, so delete it
+        if (err == VK_SUCCESS) {
+            vkDestroyBufferView(m_device->device(), buff_view, NULL);
+        }
+    };
 
-    m_errorMonitor->VerifyFound();
+    CatchError("VUID-VkBufferViewCreateInfo-offset-00925");
 
-    // If previous error is success, it still created the view, so delete it
-    if (err == VK_SUCCESS) {
-        vkDestroyBufferView(m_device->device(), buff_view, NULL);
-    }
+    // Offset must be a multiple of VkPhysicalDeviceLimits::minTexelBufferOffsetAlignment so add one to ensure it is not
+    buff_view_ci.offset = minTexelBufferOffsetAlignment + 1;
+    CatchError("VUID-VkBufferViewCreateInfo-offset-00926");
 }
 
 TEST_F(VkLayerTest, InvalidDynamicOffsetCases) {
