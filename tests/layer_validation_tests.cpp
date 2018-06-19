@@ -10364,6 +10364,17 @@ TEST_F(VkLayerTest, InvalidPipelineCreateState) {
     err = vkCreateGraphicsPipelines(m_device->device(), pipelineCache, 1, &gp_ci, NULL, &pipeline);
     m_errorMonitor->VerifyFound();
 
+    // Finally, check the string validation for the shader stage pName variable.  Correct the shader stage data, and bork the
+    // string before calling again
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "contains invalid characters or is badly formed");
+    shaderStages[0] = vs.GetStageCreateInfo();
+    const uint8_t cont_char = 0xf8;
+    char bad_string[] = {static_cast<char>(cont_char), static_cast<char>(cont_char), static_cast<char>(cont_char),
+                         static_cast<char>(cont_char)};
+    shaderStages[0].pName = bad_string;
+    err = vkCreateGraphicsPipelines(m_device->device(), pipelineCache, 1, &gp_ci, NULL, &pipeline);
+    m_errorMonitor->VerifyFound();
+
     vkDestroyPipelineCache(m_device->device(), pipelineCache, NULL);
     vkDestroyDescriptorPool(m_device->device(), ds_pool, NULL);
 }
