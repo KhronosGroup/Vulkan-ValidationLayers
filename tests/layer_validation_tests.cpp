@@ -30454,9 +30454,6 @@ TEST_F(VkPositiveLayerTest, ApiVersionZero) {
 }
 
 TEST_F(VkLayerTest, DrawIndirectCountKHR) {
-    VkMemoryRequirements memory_requirements;
-    VkMemoryAllocateInfo memory_allocate_info = {VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};
-
     TEST_DESCRIPTION("Test covered valid usage for vkCmdDrawIndirectCountKHR");
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
@@ -30468,6 +30465,9 @@ TEST_F(VkLayerTest, DrawIndirectCountKHR) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkMemoryRequirements memory_requirements;
+    VkMemoryAllocateInfo memory_allocate_info = {VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};
 
     auto vkCmdDrawIndirectCountKHR =
         (PFN_vkCmdDrawIndirectCountKHR)vkGetDeviceProcAddr(m_device->device(), "vkCmdDrawIndirectCountKHR");
@@ -30580,9 +30580,6 @@ TEST_F(VkLayerTest, DrawIndirectCountKHR) {
 }
 
 TEST_F(VkLayerTest, DrawIndexedIndirectCountKHR) {
-    VkMemoryRequirements memory_requirements;
-    VkMemoryAllocateInfo memory_allocate_info = {VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};
-
     TEST_DESCRIPTION("Test covered valid usage for vkCmdDrawIndexedIndirectCountKHR");
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
@@ -30594,6 +30591,9 @@ TEST_F(VkLayerTest, DrawIndexedIndirectCountKHR) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkMemoryRequirements memory_requirements;
+    VkMemoryAllocateInfo memory_allocate_info = {VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};
 
     auto vkCmdDrawIndexedIndirectCountKHR =
         (PFN_vkCmdDrawIndexedIndirectCountKHR)vkGetDeviceProcAddr(m_device->device(), "vkCmdDrawIndexedIndirectCountKHR");
