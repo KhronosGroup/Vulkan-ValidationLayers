@@ -3338,6 +3338,54 @@ bool ValidateBufferUsageFlags(const layer_data *device_data, BUFFER_STATE const 
                                 kVulkanObjectTypeBuffer, msgCode, func_name, usage_string);
 }
 
+bool ValidateBufferViewRange(const layer_data *device_data, const BUFFER_STATE *buffer_state,
+                             const VkBufferViewCreateInfo *pCreateInfo, const VkPhysicalDeviceLimits *device_limits) {
+    bool skip = false;
+    const debug_report_data *report_data = core_validation::GetReportData(device_data);
+
+    const VkDeviceSize &range = pCreateInfo->range;
+    if (range != VK_WHOLE_SIZE) {
+        // Range must be greater than 0
+        if (range <= 0) {
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT,
+                            HandleToUint64(buffer_state->buffer), "VUID-VkBufferViewCreateInfo-range-00928",
+                            "If VkBufferViewCreateInfo range (%" PRIuLEAST64
+                            ") does not equal VK_WHOLE_SIZE, range must be greater than 0.",
+                            range);
+        }
+        // Range must be a multiple of the element size of format
+        const size_t format_size = FormatSize(pCreateInfo->format);
+        if (range % format_size != 0) {
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT,
+                            HandleToUint64(buffer_state->buffer), "VUID-VkBufferViewCreateInfo-range-00929",
+                            "If VkBufferViewCreateInfo range (%" PRIuLEAST64
+                            ") does not equal VK_WHOLE_SIZE, range must be a multiple of the element size of the format "
+                            "(" PRINTF_SIZE_T_SPECIFIER ").",
+                            range, format_size);
+        }
+        // Range divided by the element size of format must be less than or equal to VkPhysicalDeviceLimits::maxTexelBufferElements
+        if (range / format_size > device_limits->maxTexelBufferElements) {
+            skip |=
+                log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT,
+                        HandleToUint64(buffer_state->buffer), "VUID-VkBufferViewCreateInfo-range-00930",
+                        "If VkBufferViewCreateInfo range (%" PRIuLEAST64
+                        ") does not equal VK_WHOLE_SIZE, range divided by the element size of the format (" PRINTF_SIZE_T_SPECIFIER
+                        ") must be less than or equal to VkPhysicalDeviceLimits::maxTexelBufferElements (%" PRIuLEAST32 ").",
+                        range, format_size, device_limits->maxTexelBufferElements);
+        }
+        // The sum of range and offset must be less than or equal to the size of buffer
+        if (range + pCreateInfo->offset > buffer_state->createInfo.size) {
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT,
+                            HandleToUint64(buffer_state->buffer), "VUID-VkBufferViewCreateInfo-offset-00931",
+                            "If VkBufferViewCreateInfo range (%" PRIuLEAST64
+                            ") does not equal VK_WHOLE_SIZE, the sum of offset (%" PRIuLEAST64
+                            ") and range must be less than or equal to the size of the buffer (%" PRIuLEAST64 ").",
+                            range, pCreateInfo->offset, buffer_state->createInfo.size);
+        }
+    }
+    return skip;
+}
+
 bool PreCallValidateCreateBuffer(layer_data *device_data, const VkBufferCreateInfo *pCreateInfo) {
     bool skip = false;
     const debug_report_data *report_data = core_validation::GetReportData(device_data);
@@ -3406,6 +3454,8 @@ bool PreCallValidateCreateBufferView(const layer_data *device_data, const VkBuff
                             ") must be a multiple of VkPhysicalDeviceLimits::minTexelBufferOffsetAlignment (%" PRIuLEAST64 ").",
                             pCreateInfo->offset, device_limits->minTexelBufferOffsetAlignment);
         }
+
+        skip |= ValidateBufferViewRange(device_data, buffer_state, pCreateInfo, device_limits);
     }
     return skip;
 }

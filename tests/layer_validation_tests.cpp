@@ -9524,8 +9524,8 @@ TEST_F(VkLayerTest, InvalidBufferViewCreateInfoEntries) {
     VkBufferViewCreateInfo buff_view_ci = {};
     buff_view_ci.sType = VK_STRUCTURE_TYPE_BUFFER_VIEW_CREATE_INFO;
     buff_view_ci.buffer = buffer.handle();
-    buff_view_ci.format = VK_FORMAT_R8_UNORM;
     // Offset must be less than the size of buffer so make it the same size to throw an error
+    buff_view_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
     buff_view_ci.offset = buffer.create_info().size;
     buff_view_ci.range = VK_WHOLE_SIZE;
 
@@ -9545,6 +9545,22 @@ TEST_F(VkLayerTest, InvalidBufferViewCreateInfoEntries) {
     // Offset must be a multiple of VkPhysicalDeviceLimits::minTexelBufferOffsetAlignment so add one to ensure it is not
     buff_view_ci.offset = minTexelBufferOffsetAlignment + 1;
     CatchError("VUID-VkBufferViewCreateInfo-offset-00926");
+
+    // Set offset to acceptable value for range tests
+    buff_view_ci.offset = minTexelBufferOffsetAlignment;
+    buff_view_ci.range = 0;
+    CatchError("VUID-VkBufferViewCreateInfo-range-00928");
+
+    const size_t format_size = FormatSize(buff_view_ci.format);
+    // Range must be a multiple of the element size of format, so add one to ensure it is not
+    buff_view_ci.range = format_size + 1;
+    CatchError("VUID-VkBufferViewCreateInfo-range-00929");
+
+    // Twice the element size of format multiplied by VkPhysicalDeviceLimits::maxTexelBufferElements guarantees range divided by the
+    // element size is greater than maxTexelBufferElements, causing failure
+    buff_view_ci.range = 2 * format_size * dev_limits.maxTexelBufferElements;
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkBufferViewCreateInfo-range-00930");
+    CatchError("VUID-VkBufferViewCreateInfo-offset-00931");
 }
 
 TEST_F(VkLayerTest, InvalidDynamicOffsetCases) {
