@@ -12751,30 +12751,34 @@ VKAPI_ATTR void VKAPI_CALL CmdSetSampleLocationsEXT(VkCommandBuffer commandBuffe
 
 static bool PreCallValidateCmdDrawIndirectCountKHR(layer_data *dev_data, VkCommandBuffer cmd_buffer, VkBuffer buffer,
                                                    VkBuffer count_buffer, bool indexed, VkPipelineBindPoint bind_point,
-                                                   const char *caller) {
-    GLOBAL_CB_NODE *cb_state = nullptr;
-    BUFFER_STATE *buffer_state = nullptr;
-    BUFFER_STATE *count_buffer_state = nullptr;
-
-    bool skip = ValidateCmdDrawType(dev_data, cmd_buffer, indexed, bind_point, CMD_DRAWINDIRECTCOUNTKHR, &cb_state, caller,
+                                                   GLOBAL_CB_NODE **cb_state, BUFFER_STATE **buffer_state,
+                                                   BUFFER_STATE **count_buffer_state, const char *caller) {
+    bool skip = ValidateCmdDrawType(dev_data, cmd_buffer, indexed, bind_point, CMD_DRAWINDIRECTCOUNTKHR, cb_state, caller,
                                     VK_QUEUE_GRAPHICS_BIT, "VUID-vkCmdDrawIndirectCountKHR-commandBuffer-cmdpool",
                                     "VUID-vkCmdDrawIndirectCountKHR-renderpass", "VUID-vkCmdDrawIndirectCountKHR-None-03120");
-    buffer_state = GetBufferState(dev_data, buffer);
-    count_buffer_state = GetBufferState(dev_data, count_buffer);
-    skip |= ValidateMemoryIsBoundToBuffer(dev_data, buffer_state, caller, "VUID-vkCmdDrawIndirectCountKHR-buffer-03104");
-    skip |= ValidateMemoryIsBoundToBuffer(dev_data, count_buffer_state, caller, "VUID-vkCmdDrawIndirectCountKHR-countBuffer-03106");
-    if (!skip) {
-        UpdateStateCmdDrawType(dev_data, cb_state, bind_point);
-        AddCommandBufferBindingBuffer(dev_data, cb_state, buffer_state);
-        AddCommandBufferBindingBuffer(dev_data, cb_state, count_buffer_state);
-    }
+    *buffer_state = GetBufferState(dev_data, buffer);
+    *count_buffer_state = GetBufferState(dev_data, count_buffer);
+    skip |= ValidateMemoryIsBoundToBuffer(dev_data, *buffer_state, caller, "VUID-vkCmdDrawIndirectCountKHR-buffer-03104");
+    skip |=
+        ValidateMemoryIsBoundToBuffer(dev_data, *count_buffer_state, caller, "VUID-vkCmdDrawIndirectCountKHR-countBuffer-03106");
+
     return skip;
+}
+
+static void PreCallRecordCmdDrawIndirectCountKHR(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, VkPipelineBindPoint bind_point,
+                                                 BUFFER_STATE *buffer_state, BUFFER_STATE *count_buffer_state) {
+    UpdateStateCmdDrawType(dev_data, cb_state, bind_point);
+    AddCommandBufferBindingBuffer(dev_data, cb_state, buffer_state);
+    AddCommandBufferBindingBuffer(dev_data, cb_state, count_buffer_state);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdDrawIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                    VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
                                                    uint32_t stride) {
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    GLOBAL_CB_NODE *cb_state = nullptr;
+    BUFFER_STATE *buffer_state = nullptr;
+    BUFFER_STATE *count_buffer_state = nullptr;
     bool skip = false;
 
     if (offset & 3) {
@@ -12803,10 +12807,11 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawIndirectCountKHR(VkCommandBuffer commandBuffer
     unique_lock_t lock(global_lock);
     skip |=
         PreCallValidateCmdDrawIndirectCountKHR(dev_data, commandBuffer, buffer, countBuffer, false, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                               "vkCmdDrawIndirectCountKHR()");
-    lock.unlock();
+                                               &cb_state, &buffer_state, &count_buffer_state, "vkCmdDrawIndirectCountKHR()");
 
     if (!skip) {
+        PreCallRecordCmdDrawIndirectCountKHR(dev_data, cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, buffer_state, count_buffer_state);
+        lock.unlock();
         dev_data->dispatch_table.CmdDrawIndirectCountKHR(commandBuffer, buffer, offset, countBuffer, countBufferOffset,
                                                          maxDrawCount, stride);
     }
@@ -12814,32 +12819,36 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawIndirectCountKHR(VkCommandBuffer commandBuffer
 
 static bool PreCallValidateCmdDrawIndexedIndirectCountKHR(layer_data *dev_data, VkCommandBuffer cmd_buffer, VkBuffer buffer,
                                                           VkBuffer count_buffer, bool indexed, VkPipelineBindPoint bind_point,
-                                                          const char *caller) {
-    GLOBAL_CB_NODE *cb_state = nullptr;
-    BUFFER_STATE *buffer_state = nullptr;
-    BUFFER_STATE *count_buffer_state = nullptr;
-
+                                                          GLOBAL_CB_NODE **cb_state, BUFFER_STATE **buffer_state,
+                                                          BUFFER_STATE **count_buffer_state, const char *caller) {
     bool skip =
-        ValidateCmdDrawType(dev_data, cmd_buffer, indexed, bind_point, CMD_DRAWINDEXEDINDIRECTCOUNTKHR, &cb_state, caller,
+        ValidateCmdDrawType(dev_data, cmd_buffer, indexed, bind_point, CMD_DRAWINDEXEDINDIRECTCOUNTKHR, cb_state, caller,
                             VK_QUEUE_GRAPHICS_BIT, "VUID-vkCmdDrawIndexedIndirectCountKHR-commandBuffer-cmdpool",
                             "VUID-vkCmdDrawIndexedIndirectCountKHR-renderpass", "VUID-vkCmdDrawIndexedIndirectCountKHR-None-03152");
-    buffer_state = GetBufferState(dev_data, buffer);
-    count_buffer_state = GetBufferState(dev_data, count_buffer);
-    skip |= ValidateMemoryIsBoundToBuffer(dev_data, buffer_state, caller, "VUID-vkCmdDrawIndexedIndirectCountKHR-buffer-03136");
-    skip |= ValidateMemoryIsBoundToBuffer(dev_data, count_buffer_state, caller,
+    *buffer_state = GetBufferState(dev_data, buffer);
+    *count_buffer_state = GetBufferState(dev_data, count_buffer);
+    skip |= ValidateMemoryIsBoundToBuffer(dev_data, *buffer_state, caller, "VUID-vkCmdDrawIndexedIndirectCountKHR-buffer-03136");
+    skip |= ValidateMemoryIsBoundToBuffer(dev_data, *count_buffer_state, caller,
                                           "VUID-vkCmdDrawIndexedIndirectCountKHR-countBuffer-03138");
-    if (!skip) {
-        UpdateStateCmdDrawType(dev_data, cb_state, bind_point);
-        AddCommandBufferBindingBuffer(dev_data, cb_state, buffer_state);
-        AddCommandBufferBindingBuffer(dev_data, cb_state, count_buffer_state);
-    }
+
     return skip;
+}
+
+static void PreCallRecordCmdDrawIndexedIndirectCountKHR(layer_data *dev_data, GLOBAL_CB_NODE *cb_state,
+                                                        VkPipelineBindPoint bind_point, BUFFER_STATE *buffer_state,
+                                                        BUFFER_STATE *count_buffer_state) {
+    UpdateStateCmdDrawType(dev_data, cb_state, bind_point);
+    AddCommandBufferBindingBuffer(dev_data, cb_state, buffer_state);
+    AddCommandBufferBindingBuffer(dev_data, cb_state, count_buffer_state);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdDrawIndexedIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                           VkBuffer countBuffer, VkDeviceSize countBufferOffset,
                                                           uint32_t maxDrawCount, uint32_t stride) {
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    GLOBAL_CB_NODE *cb_state = nullptr;
+    BUFFER_STATE *buffer_state = nullptr;
+    BUFFER_STATE *count_buffer_state = nullptr;
     bool skip = false;
 
     if (offset & 3) {
@@ -12868,9 +12877,13 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawIndexedIndirectCountKHR(VkCommandBuffer comman
 
     unique_lock_t lock(global_lock);
     skip |= PreCallValidateCmdDrawIndexedIndirectCountKHR(dev_data, commandBuffer, buffer, countBuffer, true,
-                                                          VK_PIPELINE_BIND_POINT_GRAPHICS, "vkCmdDrawIndexedIndirectCountKHR()");
-    lock.unlock();
+                                                          VK_PIPELINE_BIND_POINT_GRAPHICS, &cb_state, &buffer_state,
+                                                          &count_buffer_state, "vkCmdDrawIndexedIndirectCountKHR()");
+
     if (!skip) {
+        PreCallRecordCmdDrawIndexedIndirectCountKHR(dev_data, cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, buffer_state,
+                                                    count_buffer_state);
+        lock.unlock();
         dev_data->dispatch_table.CmdDrawIndexedIndirectCountKHR(commandBuffer, buffer, offset, countBuffer, countBufferOffset,
                                                                 maxDrawCount, stride);
     }
