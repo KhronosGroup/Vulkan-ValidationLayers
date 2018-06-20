@@ -22,7 +22,6 @@ import os,re,sys,string
 import xml.etree.ElementTree as etree
 from generator import *
 from collections import namedtuple
-from vuid_mapping import *
 
 # Copyright text prefixing all headers (list of strings).
 prefixStrings = [
