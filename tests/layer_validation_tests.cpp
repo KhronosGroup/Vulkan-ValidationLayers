@@ -1270,7 +1270,6 @@ class ExtensionChain {
 // ********************************************************************************************************************
 // ********************************************************************************************************************
 // ********************************************************************************************************************
-#if 0
 TEST_F(VkLayerTest, RequiredParameter) {
     TEST_DESCRIPTION("Specify VK_NULL_HANDLE, NULL, and 0 for required handle, pointer, array, and array count parameters");
 
@@ -30453,8 +30452,6 @@ TEST_F(VkPositiveLayerTest, ApiVersionZero) {
     ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
     m_errorMonitor->VerifyNotFound();
 }
-
-#endif
 
 TEST_F(VkLayerTest, DrawIndirectCountKHR) {
     TEST_DESCRIPTION("Test covered valid usage for vkCmdDrawIndirectCountKHR");
