@@ -1385,10 +1385,15 @@ TEST_F(VkLayerTest, PnextOnlyStructValidation) {
             return;
         }
     }
+
+    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
+        (PFN_vkGetPhysicalDeviceFeatures2KHR)vkGetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
+
     // Create a device passing in a bad PdevFeatures2 value
     auto indexing_features = lvl_init_struct<VkPhysicalDeviceDescriptorIndexingFeaturesEXT>();
     auto features2 = lvl_init_struct<VkPhysicalDeviceFeatures2KHR>(&indexing_features);
-    vkGetPhysicalDeviceFeatures2(gpu(), &features2);
+    vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
     // Set one of the features values to an invalid boolean value
     indexing_features.descriptorBindingUniformBufferUpdateAfterBind = 800;
 
@@ -24208,10 +24213,14 @@ TEST_F(VkLayerTest, DescriptorIndexingSetLayout) {
         }
     }
 
+    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
+        (PFN_vkGetPhysicalDeviceFeatures2KHR)vkGetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
+
     // Create a device that enables all supported indexing features except descriptorBindingUniformBufferUpdateAfterBind
     auto indexing_features = lvl_init_struct<VkPhysicalDeviceDescriptorIndexingFeaturesEXT>();
     auto features2 = lvl_init_struct<VkPhysicalDeviceFeatures2KHR>(&indexing_features);
-    vkGetPhysicalDeviceFeatures2(gpu(), &features2);
+    vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
 
     indexing_features.descriptorBindingUniformBufferUpdateAfterBind = VK_FALSE;
 
@@ -24336,10 +24345,14 @@ TEST_F(VkLayerTest, DescriptorIndexingUpdateAfterBind) {
         return;
     }
 
+    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
+        (PFN_vkGetPhysicalDeviceFeatures2KHR)vkGetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
+
     // Create a device that enables all supported indexing features except descriptorBindingUniformBufferUpdateAfterBind
     auto indexing_features = lvl_init_struct<VkPhysicalDeviceDescriptorIndexingFeaturesEXT>();
     auto features2 = lvl_init_struct<VkPhysicalDeviceFeatures2KHR>(&indexing_features);
-    vkGetPhysicalDeviceFeatures2(gpu(), &features2);
+    vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
 
     indexing_features.descriptorBindingUniformBufferUpdateAfterBind = VK_FALSE;
 
