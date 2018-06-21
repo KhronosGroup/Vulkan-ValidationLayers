@@ -14725,10 +14725,7 @@ TEST_F(VkLayerTest, VertexBufferInvalid) {
         "and attempt to bind a null buffer");
 
     const char *deleted_buffer_in_command_buffer = "Cannot submit cmd buffer using deleted buffer ";
-    const char *invalid_offset_message = "vkBindBufferMemory(): memoryOffset is 0x";
-    const char *invalid_storage_buffer_offset_message = "vkBindBufferMemory(): storage memoryOffset is 0x";
-    const char *invalid_texel_buffer_offset_message = "vkBindBufferMemory(): texel memoryOffset is 0x";
-    const char *invalid_uniform_buffer_offset_message = "vkBindBufferMemory(): uniform memoryOffset is 0x";
+    const char *invalid_offset_message = "VUID-vkBindBufferMemory-memoryOffset-01036";
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitViewport());
@@ -14794,43 +14791,6 @@ TEST_F(VkLayerTest, VertexBufferInvalid) {
             "If buffer was created with the VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT or VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT, "
             "memoryOffset must be a multiple of VkPhysicalDeviceLimits::minTexelBufferOffsetAlignment");
         VkBufferTest buffer_test(m_device, VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT, VkBufferTest::eInvalidMemoryOffset);
-        (void)buffer_test;
-        m_errorMonitor->VerifyFound();
-    }
-
-    if (VkBufferTest::GetTestConditionValid(m_device, VkBufferTest::eInvalidDeviceOffset,
-                                            VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT)) {
-        // Create and bind a memory buffer with an invalid offset again,
-        // but look for a texel buffer message.
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, invalid_texel_buffer_offset_message);
-        m_errorMonitor->SetUnexpectedError(
-            "memoryOffset must be an integer multiple of the alignment member of the VkMemoryRequirements structure returned from "
-            "a call to vkGetBufferMemoryRequirements with buffer");
-        VkBufferTest buffer_test(m_device, VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT, VkBufferTest::eInvalidDeviceOffset);
-        (void)buffer_test;
-        m_errorMonitor->VerifyFound();
-    }
-
-    if (VkBufferTest::GetTestConditionValid(m_device, VkBufferTest::eInvalidDeviceOffset, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT)) {
-        // Create and bind a memory buffer with an invalid offset again, but
-        // look for a uniform buffer message.
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, invalid_uniform_buffer_offset_message);
-        m_errorMonitor->SetUnexpectedError(
-            "memoryOffset must be an integer multiple of the alignment member of the VkMemoryRequirements structure returned from "
-            "a call to vkGetBufferMemoryRequirements with buffer");
-        VkBufferTest buffer_test(m_device, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VkBufferTest::eInvalidDeviceOffset);
-        (void)buffer_test;
-        m_errorMonitor->VerifyFound();
-    }
-
-    if (VkBufferTest::GetTestConditionValid(m_device, VkBufferTest::eInvalidDeviceOffset, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT)) {
-        // Create and bind a memory buffer with an invalid offset again, but
-        // look for a storage buffer message.
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, invalid_storage_buffer_offset_message);
-        m_errorMonitor->SetUnexpectedError(
-            "memoryOffset must be an integer multiple of the alignment member of the VkMemoryRequirements structure returned from "
-            "a call to vkGetBufferMemoryRequirements with buffer");
-        VkBufferTest buffer_test(m_device, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VkBufferTest::eInvalidDeviceOffset);
         (void)buffer_test;
         m_errorMonitor->VerifyFound();
     }

@@ -3961,39 +3961,6 @@ static bool PreCallValidateBindBufferMemory(layer_data *dev_data, VkBuffer buffe
                             api_name, HandleToUint64(mem), HandleToUint64(mem_info->dedicated_buffer), buffer_handle, memoryOffset);
             }
         }
-
-        // Validate device limits alignments
-        static const VkBufferUsageFlagBits usage_list[3] = {
-            static_cast<VkBufferUsageFlagBits>(VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT),
-            VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT};
-        static const char *memory_type[3] = {"texel", "uniform", "storage"};
-        static const char *offset_name[3] = {"minTexelBufferOffsetAlignment", "minUniformBufferOffsetAlignment",
-                                             "minStorageBufferOffsetAlignment"};
-
-        // TODO:  vk_validation_stats.py cannot abide braces immediately preceding or following a validation error enum
-        // clang-format off
-        static const std::string msgCode[3] = { "VUID-vkBindBufferMemory-buffer-01032", "VUID-vkBindBufferMemory-buffer-01033",
-            "VUID-vkBindBufferMemory-buffer-01034" };
-        // clang-format on
-
-        // Keep this one fresh!
-        const VkDeviceSize offset_requirement[3] = {
-            dev_data->phys_dev_properties.properties.limits.minTexelBufferOffsetAlignment,
-            dev_data->phys_dev_properties.properties.limits.minUniformBufferOffsetAlignment,
-            dev_data->phys_dev_properties.properties.limits.minStorageBufferOffsetAlignment};
-        VkBufferUsageFlags usage = dev_data->bufferMap[buffer].get()->createInfo.usage;
-
-        for (int i = 0; i < 3; i++) {
-            if (usage & usage_list[i]) {
-                if (SafeModulo(memoryOffset, offset_requirement[i]) != 0) {
-                    skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT,
-                                    buffer_handle, msgCode[i],
-                                    "%s: %s memoryOffset is 0x%" PRIxLEAST64
-                                    " but must be a multiple of device limit %s 0x%" PRIxLEAST64 ".",
-                                    api_name, memory_type[i], memoryOffset, offset_name[i], offset_requirement[i]);
-                }
-            }
-        }
     }
     return skip;
 }
@@ -6585,7 +6552,7 @@ static bool PreCallValidateCmdBindDescriptorSets(layer_data *device_data, GLOBAL
                                 0) {
                                 skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT,
                                                 VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT, 0,
-                                                "VUID-vkCmdBindDescriptorSets-pDynamicOffsets-00362",
+                                                "VUID-vkCmdBindDescriptorSets-pDynamicOffsets-01971",
                                                 "vkCmdBindDescriptorSets(): pDynamicOffsets[%d] is %d but must be a multiple of "
                                                 "device limit minUniformBufferOffsetAlignment 0x%" PRIxLEAST64 ".",
                                                 cur_dyn_offset, pDynamicOffsets[cur_dyn_offset],
@@ -6598,7 +6565,7 @@ static bool PreCallValidateCmdBindDescriptorSets(layer_data *device_data, GLOBAL
                                 0) {
                                 skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT,
                                                 VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT, 0,
-                                                "VUID-vkCmdBindDescriptorSets-pDynamicOffsets-00362",
+                                                "VUID-vkCmdBindDescriptorSets-pDynamicOffsets-01972",
                                                 "vkCmdBindDescriptorSets(): pDynamicOffsets[%d] is %d but must be a multiple of "
                                                 "device limit minStorageBufferOffsetAlignment 0x%" PRIxLEAST64 ".",
                                                 cur_dyn_offset, pDynamicOffsets[cur_dyn_offset],

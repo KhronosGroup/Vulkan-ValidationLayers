@@ -704,7 +704,7 @@ VKAPI_ATTR VkResult VKAPI_CALL vkCreateCommandPool(VkDevice device, const VkComm
     std::unique_lock<std::mutex> lock(global_lock);
 
     skip |= ValidateDeviceQueueFamily(local_data, pCreateInfo->queueFamilyIndex, "vkCreateCommandPool",
-                                      "pCreateInfo->queueFamilyIndex", "VUID-VkCommandPoolCreateInfo-queueFamilyIndex-00039");
+                                      "pCreateInfo->queueFamilyIndex", "VUID-vkCreateCommandPool-queueFamilyIndex-01937");
 
     skip |= parameter_validation_vkCreateCommandPool(device, pCreateInfo, pAllocator, pCommandPool);
 
