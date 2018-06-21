@@ -1710,7 +1710,11 @@ bool PreCallValidateCreateShaderModule(layer_data *dev_data, VkShaderModuleCreat
         }
 
         // Use SPIRV-Tools validator to try and catch any issues with the module itself
-        spv_context ctx = spvContextCreate(SPV_ENV_VULKAN_1_0);
+        spv_target_env spirv_environment = SPV_ENV_VULKAN_1_0;
+        if (GetApiVersion(dev_data) >= VK_API_VERSION_1_1) {
+            spirv_environment = SPV_ENV_VULKAN_1_1;
+        }
+        spv_context ctx = spvContextCreate(spirv_environment);
         spv_const_binary_t binary{pCreateInfo->pCode, pCreateInfo->codeSize / sizeof(uint32_t)};
         spv_diagnostic diag = nullptr;
 
