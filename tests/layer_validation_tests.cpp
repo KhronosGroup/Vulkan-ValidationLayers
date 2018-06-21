@@ -9514,19 +9514,39 @@ TEST_F(VkLayerTest, InvalidBufferViewCreateInfoEntries) {
         return;
     }
 
-    // Create a test buffer
+    const VkFormat format_with_uniform_texel_support = VK_FORMAT_R8G8B8A8_UNORM;
+    const char *format_with_uniform_texel_support_string = "VK_FORMAT_R8G8B8A8_UNORM";
+    const VkFormat format_without_texel_support = VK_FORMAT_R8G8B8_UNORM;
+    const char *format_without_texel_support_string = "VK_FORMAT_R8G8B8_UNORM";
+    VkFormatProperties format_properties;
+    vkGetPhysicalDeviceFormatProperties(gpu(), format_with_uniform_texel_support, &format_properties);
+    if (!(format_properties.bufferFeatures & VK_FORMAT_FEATURE_UNIFORM_TEXEL_BUFFER_BIT)) {
+        printf("%s Test requires %s to support VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT\n", kSkipPrefix,
+               format_with_uniform_texel_support_string);
+        return;
+    }
+    vkGetPhysicalDeviceFormatProperties(gpu(), format_without_texel_support, &format_properties);
+    if ((format_properties.bufferFeatures & VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_BIT) ||
+        (format_properties.bufferFeatures & VK_FORMAT_FEATURE_UNIFORM_TEXEL_BUFFER_BIT)) {
+        printf(
+            "%s Test requires %s to not support VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT nor "
+            "VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT\n",
+            kSkipPrefix, format_without_texel_support_string);
+        return;
+    }
+
+    // Create a test buffer--buffer must have been created using VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT or
+    // VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT, so use a different usage value instead to cause an error
     const VkDeviceSize resource_size = 1024;
-    const VkBufferCreateInfo buffer_info = VkBufferObj::create_info(resource_size, VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT);
-    VkBufferObj buffer;
-    buffer.init(*m_device, buffer_info, (VkMemoryPropertyFlags)VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    const VkBufferCreateInfo bad_buffer_info = VkBufferObj::create_info(resource_size, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+    VkBufferObj bad_buffer;
+    bad_buffer.init(*m_device, bad_buffer_info, (VkMemoryPropertyFlags)VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     // Create a test buffer view
     VkBufferViewCreateInfo buff_view_ci = {};
     buff_view_ci.sType = VK_STRUCTURE_TYPE_BUFFER_VIEW_CREATE_INFO;
-    buff_view_ci.buffer = buffer.handle();
-    // Offset must be less than the size of buffer so make it the same size to throw an error
-    buff_view_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
-    buff_view_ci.offset = buffer.create_info().size;
+    buff_view_ci.buffer = bad_buffer.handle();
+    buff_view_ci.format = format_with_uniform_texel_support;
     buff_view_ci.range = VK_WHOLE_SIZE;
 
     auto CatchError = [this, &buff_view_ci](const string &desired_error_string) {
@@ -9540,18 +9560,29 @@ TEST_F(VkLayerTest, InvalidBufferViewCreateInfoEntries) {
         }
     };
 
+    CatchError("VUID-VkBufferViewCreateInfo-buffer-00932");
+
+    // Create a better test buffer
+    const VkBufferCreateInfo buffer_info = VkBufferObj::create_info(resource_size, VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT);
+    VkBufferObj buffer;
+    buffer.init(*m_device, buffer_info, (VkMemoryPropertyFlags)VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+    // Offset must be less than the size of the buffer, so set it equal to the buffer size to cause an error
+    buff_view_ci.buffer = buffer.handle();
+    buff_view_ci.offset = buffer.create_info().size;
     CatchError("VUID-VkBufferViewCreateInfo-offset-00925");
 
-    // Offset must be a multiple of VkPhysicalDeviceLimits::minTexelBufferOffsetAlignment so add one to ensure it is not
+    // Offset must be a multiple of VkPhysicalDeviceLimits::minTexelBufferOffsetAlignment so add 1 to ensure it is not
     buff_view_ci.offset = minTexelBufferOffsetAlignment + 1;
     CatchError("VUID-VkBufferViewCreateInfo-offset-00926");
 
     // Set offset to acceptable value for range tests
     buff_view_ci.offset = minTexelBufferOffsetAlignment;
+    // Setting range equal to 0 will cause an error to occur
     buff_view_ci.range = 0;
     CatchError("VUID-VkBufferViewCreateInfo-range-00928");
 
-    const size_t format_size = FormatSize(buff_view_ci.format);
+    size_t format_size = FormatSize(buff_view_ci.format);
     // Range must be a multiple of the element size of format, so add one to ensure it is not
     buff_view_ci.range = format_size + 1;
     CatchError("VUID-VkBufferViewCreateInfo-range-00929");
@@ -9561,6 +9592,22 @@ TEST_F(VkLayerTest, InvalidBufferViewCreateInfoEntries) {
     buff_view_ci.range = 2 * format_size * dev_limits.maxTexelBufferElements;
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkBufferViewCreateInfo-range-00930");
     CatchError("VUID-VkBufferViewCreateInfo-offset-00931");
+
+    // Set rage to acceptable value for buffer tests
+    buff_view_ci.format = format_without_texel_support;
+    buff_view_ci.range = VK_WHOLE_SIZE;
+
+    // `buffer` was created using VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT so we can use that for the first buffer test
+    CatchError("VUID-VkBufferViewCreateInfo-buffer-00933");
+
+    // Create a new buffer using VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT
+    const VkBufferCreateInfo storage_buffer_info =
+        VkBufferObj::create_info(resource_size, VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT);
+    VkBufferObj storage_buffer;
+    storage_buffer.init(*m_device, storage_buffer_info, (VkMemoryPropertyFlags)VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+    buff_view_ci.buffer = storage_buffer.handle();
+    CatchError("VUID-VkBufferViewCreateInfo-buffer-00934");
 }
 
 TEST_F(VkLayerTest, InvalidDynamicOffsetCases) {

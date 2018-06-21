@@ -3386,6 +3386,28 @@ bool ValidateBufferViewRange(const layer_data *device_data, const BUFFER_STATE *
     return skip;
 }
 
+bool ValidateBufferViewBuffer(const layer_data *device_data, const BUFFER_STATE *buffer_state,
+                              const VkBufferViewCreateInfo *pCreateInfo) {
+    bool skip = false;
+    const debug_report_data *report_data = GetReportData(device_data);
+    const VkFormatProperties format_properties = GetFormatProperties(device_data, pCreateInfo->format);
+    if ((buffer_state->createInfo.usage & VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT) &&
+        !(format_properties.bufferFeatures & VK_FORMAT_FEATURE_UNIFORM_TEXEL_BUFFER_BIT)) {
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT,
+                        HandleToUint64(buffer_state->buffer), "VUID-VkBufferViewCreateInfo-buffer-00933",
+                        "If buffer was created with `usage` containing VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT, format must "
+                        "be supported for uniform texel buffers");
+    }
+    if ((buffer_state->createInfo.usage & VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT) &&
+        !(format_properties.bufferFeatures & VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_BIT)) {
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT,
+                        HandleToUint64(buffer_state->buffer), "VUID-VkBufferViewCreateInfo-buffer-00934",
+                        "If buffer was created with `usage` containing VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT, format must "
+                        "be supported for storage texel buffers");
+    }
+    return skip;
+}
+
 bool PreCallValidateCreateBuffer(layer_data *device_data, const VkBufferCreateInfo *pCreateInfo) {
     bool skip = false;
     const debug_report_data *report_data = core_validation::GetReportData(device_data);
@@ -3456,6 +3478,8 @@ bool PreCallValidateCreateBufferView(const layer_data *device_data, const VkBuff
         }
 
         skip |= ValidateBufferViewRange(device_data, buffer_state, pCreateInfo, device_limits);
+
+        skip |= ValidateBufferViewBuffer(device_data, buffer_state, pCreateInfo);
     }
     return skip;
 }
