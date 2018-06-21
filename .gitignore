@@ -3,8 +3,10 @@ CMakeLists.txt.user
 CMakeFiles/
 cmake_install.cmake
 Makefile
-scripts/__pycache__
-external/googletest
+__pycache__
+# Ignore everything in external except the CMake file
+/external/*
+!/external/CMakeLists.txt
 *.so
 *.so.*
 _out64

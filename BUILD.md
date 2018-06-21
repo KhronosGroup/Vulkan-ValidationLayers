@@ -130,6 +130,52 @@ child of the build directory with the name `install`. The remainder of these
 instructions follow this convention, although you can use any name for these
 directories and place them in any location.
 
+### Building Dependent Repositories with Known-Good Revisions
+
+There is a Python utility script, `scripts/update_deps.py`, that you can use
+to gather and build the dependent repositories mentioned above. This program
+also uses information stored in the `scripts/known-good.json` file to checkout
+dependent repository revisions that are known to be compatible with the
+revision of this repository that you currently have checked out.
+
+Here is a usage example for this repository:
+
+    git clone git@github.com:KhronosGroup/Vulkan-ValidationLayers.git
+    cd Vulkan-ValidationLayers
+    mkdir build
+    cd build
+    ../scripts/update_deps.py
+    cmake -C helper.cmake ..
+    cmake --build .
+
+#### Notes
+
+- You may need to adjust some of the CMake options based on your platform. See
+  the platform-specific sections later in this document.
+- The `update_deps.py` script fetches and builds the dependent repositories in
+  the current directory when it is invoked. In this case, they are built in
+  the `build` directory.
+- The `build` directory is also being used to build this
+  (Vulkan-ValidationLayers) repository. But there shouldn't be any conflicts
+  inside the `build` directory between the dependent repositories and the
+  build files for this repository.
+- The `--dir` option for `update_deps.py` can be used to relocate the
+  dependent repositories to another arbitrary directory using an absolute or
+  relative path.
+- The `update_deps.py` script generates a file named `helper.cmake` and places
+  it in the same directory as the dependent repositories (`build` in this
+  case). This file contains CMake commands to set the CMake `*_INSTALL_DIR`
+  variables that are used to point to the install artifacts of the dependent
+  repositories. You can use this file with the `cmake -C` option to set these
+  variables when you generate your build files with CMake. This lets you avoid
+  entering several `*_INSTALL_DIR` variable settings on the CMake command line.
+- If using "MINGW" (Git For Windows), you may wish to run
+  `winpty update_deps.py` in order to avoid buffering all of the script's
+  "print" output until the end and to retain the ability to interrupt script
+  execution.
+- Please use `update_deps.py --help` to list additional options and read the
+  internal documentation in `update_deps.py` for further information.
+
 ### Build Options
 
 When generating native platform build files through CMake, several options can
@@ -210,7 +256,7 @@ See below for the details.
 Change your current directory to the top of the cloned repository directory,
 create a build directory and generate the Visual Studio project files:
 
-    cd Vulkan-Loader
+    cd Vulkan-ValidationLayers
     mkdir build
     cd build
     cmake -A x64 -DVULKAN_HEADERS_INSTALL_DIR=absolute_path_to_install_dir \
