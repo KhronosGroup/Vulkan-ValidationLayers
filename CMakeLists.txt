@@ -118,7 +118,11 @@ if(WIN32)
     add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/w34245>")
 endif()
 
-option(BUILD_TESTS "Build tests" ON)
+if(IS_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/external/googletest)
+    option(BUILD_TESTS "Build tests" ON)
+else()
+    option(BUILD_TESTS "Build tests" OFF)
+endif()
 option(INSTALL_TESTS "Install tests" OFF)
 option(BUILD_LAYERS "Build layers" ON)
 option(BUILD_LAYER_SUPPORT_FILES "Generate layer files" OFF) # For generating files when not building layers
@@ -255,8 +259,8 @@ endif()
 
 add_definitions(-DAPI_NAME="${API_NAME}")
 
+add_subdirectory(external)
 if(BUILD_TESTS)
-    add_subdirectory(external)
     add_subdirectory(tests)
 endif()
 
