@@ -17441,7 +17441,7 @@ TEST_F(VkLayerTest, CreatePipelineCheckShaderDescriptorTypeMismatch) {
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    const char *descriptor_type_mismatch_message = "Type mismatch on descriptor slot 0.0 (used as type ";
+    const char *descriptor_type_mismatch_message = "Type mismatch on descriptor slot 0.0 ";
 
     OneOffDescriptorSet ds(m_device, {
                                          {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
@@ -17487,7 +17487,7 @@ TEST_F(VkLayerTest, CreatePipelineCheckShaderDescriptorNotAccessible) {
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    const char *descriptor_not_accessible_message = "Shader uses descriptor slot 0.0 (used as type ";
+    const char *descriptor_not_accessible_message = "Shader uses descriptor slot 0.0 ";
 
     OneOffDescriptorSet ds(m_device, {
                                          {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT /*!*/, nullptr},

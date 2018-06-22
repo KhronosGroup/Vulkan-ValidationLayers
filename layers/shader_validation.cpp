@@ -1084,8 +1084,7 @@ static bool ValidateSpecializationOffsets(debug_report_data const *report_data, 
     return skip;
 }
 
-static bool DescriptorTypeMatch(shader_module const *module, uint32_t type_id, VkDescriptorType descriptor_type,
-                                unsigned &descriptor_count) {
+static uint32_t TypeToDescriptorTypeBits(shader_module const *module, uint32_t type_id, unsigned &descriptor_count) {
     auto type = module->get_def(type_id);
     bool is_storage_buffer = false;
     descriptor_count = 1;
@@ -1112,36 +1111,34 @@ static bool DescriptorTypeMatch(shader_module const *module, uint32_t type_id, V
                 if (insn.opcode() == spv::OpDecorate && insn.word(1) == type.word(1)) {
                     if (insn.word(2) == spv::DecorationBlock) {
                         if (is_storage_buffer) {
-                            return descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER ||
-                                   descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC;
+                            return (1 << VK_DESCRIPTOR_TYPE_STORAGE_BUFFER) | (1 << VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC);
                         } else {
-                            return descriptor_type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER ||
-                                   descriptor_type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+                            return (1 << VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) | (1 << VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC);
                         }
                     } else if (insn.word(2) == spv::DecorationBufferBlock) {
-                        return descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER ||
-                               descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC;
+                        return (1 << VK_DESCRIPTOR_TYPE_STORAGE_BUFFER) | (1 << VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC);
                     }
                 }
             }
 
             // Invalid
-            return false;
+            return 0;
         }
 
         case spv::OpTypeSampler:
-            return descriptor_type == VK_DESCRIPTOR_TYPE_SAMPLER || descriptor_type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+            return (1 << VK_DESCRIPTOR_TYPE_SAMPLER) | (1 << VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
 
-        case spv::OpTypeSampledImage:
-            if (descriptor_type == VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER) {
-                // Slight relaxation for some GLSL historical madness: samplerBuffer doesn't really have a sampler, and a texel
-                // buffer descriptor doesn't really provide one. Allow this slight mismatch.
-                auto image_type = module->get_def(type.word(2));
-                auto dim = image_type.word(3);
-                auto sampled = image_type.word(7);
-                return dim == spv::DimBuffer && sampled == 1;
+        case spv::OpTypeSampledImage: {
+            // Slight relaxation for some GLSL historical madness: samplerBuffer doesn't really have a sampler, and a texel
+            // buffer descriptor doesn't really provide one. Allow this slight mismatch.
+            auto image_type = module->get_def(type.word(2));
+            auto dim = image_type.word(3);
+            auto sampled = image_type.word(7);
+            if (dim == spv::DimBuffer && sampled == 1) {
+                return 1 << VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER;
             }
-            return descriptor_type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        }
+            return 1 << VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 
         case spv::OpTypeImage: {
             // Many descriptor types backing image types-- depends on dimension and whether the image will be used with a sampler.
@@ -1150,25 +1147,35 @@ static bool DescriptorTypeMatch(shader_module const *module, uint32_t type_id, V
             auto sampled = type.word(7);
 
             if (dim == spv::DimSubpassData) {
-                return descriptor_type == VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
+                return 1 << VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
             } else if (dim == spv::DimBuffer) {
                 if (sampled == 1) {
-                    return descriptor_type == VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER;
+                    return 1 << VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER;
                 } else {
-                    return descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER;
+                    return 1 << VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER;
                 }
             } else if (sampled == 1) {
-                return descriptor_type == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE ||
-                       descriptor_type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+                return (1 << VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE) | (1 << VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
             } else {
-                return descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+                return 1 << VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
             }
         }
 
             // We shouldn't really see any other junk types -- but if we do, they're a mismatch.
         default:
-            return false;  // Mismatch
+            return 0;  // Matches nothing
     }
+}
+
+static std::string string_descriptorTypeBits(uint32_t bits) {
+    std::stringstream ss;
+    for (int i = 0; i < 32; i++) {
+        if (bits & (1 << i)) {
+            if (ss.tellp()) ss << ", ";
+            ss << string_VkDescriptorType(VkDescriptorType(i));
+        }
+    }
+    return ss.str();
 }
 
 static bool RequireFeature(debug_report_data const *report_data, VkBool32 feature, char const *feature_name) {
@@ -1488,30 +1495,29 @@ static bool ValidatePipelineShaderStage(layer_data *dev_data, VkPipelineShaderSt
         // Verify given pipelineLayout has requested setLayout with requested binding
         const auto &binding = GetDescriptorBinding(&pipeline->pipeline_layout, use.first);
         unsigned required_descriptor_count;
+        uint32_t descriptor_type_bits = TypeToDescriptorTypeBits(module, use.second.type_id, required_descriptor_count);
 
         if (!binding) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                             kVUID_Core_Shader_MissingDescriptor,
-                            "Shader uses descriptor slot %u.%u (used as type `%s`) but not declared in pipeline layout",
-                            use.first.first, use.first.second, DescribeType(module, use.second.type_id).c_str());
+                            "Shader uses descriptor slot %u.%u (expected `%s`) but not declared in pipeline layout",
+                            use.first.first, use.first.second, string_descriptorTypeBits(descriptor_type_bits).c_str());
         } else if (~binding->stageFlags & pStage->stage) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, 0,
                             kVUID_Core_Shader_DescriptorNotAccessibleFromStage,
-                            "Shader uses descriptor slot %u.%u (used as type `%s`) but descriptor not accessible from stage %s",
-                            use.first.first, use.first.second, DescribeType(module, use.second.type_id).c_str(),
-                            string_VkShaderStageFlagBits(pStage->stage));
-        } else if (!DescriptorTypeMatch(module, use.second.type_id, binding->descriptorType, required_descriptor_count)) {
+                            "Shader uses descriptor slot %u.%u but descriptor not accessible from stage %s", use.first.first,
+                            use.first.second, string_VkShaderStageFlagBits(pStage->stage));
+        } else if (!(descriptor_type_bits & (1 << binding->descriptorType))) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                             kVUID_Core_Shader_DescriptorTypeMismatch,
-                            "Type mismatch on descriptor slot %u.%u (used as type `%s`) but descriptor of type %s", use.first.first,
-                            use.first.second, DescribeType(module, use.second.type_id).c_str(),
+                            "Type mismatch on descriptor slot %u.%u (expected `%s`) but descriptor of type %s", use.first.first,
+                            use.first.second, string_descriptorTypeBits(descriptor_type_bits).c_str(),
                             string_VkDescriptorType(binding->descriptorType));
         } else if (binding->descriptorCount < required_descriptor_count) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                             kVUID_Core_Shader_DescriptorTypeMismatch,
-                            "Shader expects at least %u descriptors for binding %u.%u (used as type `%s`) but only %u provided",
-                            required_descriptor_count, use.first.first, use.first.second,
-                            DescribeType(module, use.second.type_id).c_str(), binding->descriptorCount);
+                            "Shader expects at least %u descriptors for binding %u.%u but only %u provided",
+                            required_descriptor_count, use.first.first, use.first.second, binding->descriptorCount);
         }
     }
 
