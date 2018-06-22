@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2017 The Khronos Group Inc.
- * Copyright (c) 2015-2017 Valve Corporation
- * Copyright (c) 2015-2017 LunarG, Inc.
- * Copyright (c) 2015-2017 Google, Inc.
+ * Copyright (c) 2015-2018 The Khronos Group Inc.
+ * Copyright (c) 2015-2018 Valve Corporation
+ * Copyright (c) 2015-2018 LunarG, Inc.
+ * Copyright (c) 2015-2018 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -2402,7 +2402,7 @@ TEST_F(VkLayerTest, InvalidMemoryMapping) {
         return;
     }
     // TODO : If we can get HOST_VISIBLE w/o HOST_COHERENT we can test cases of
-    //  MEMTRACK_INVALID_MAP in validateAndCopyNoncoherentMemoryToDriver()
+    //  kVUID_Core_MemTrack_InvalidMap in validateAndCopyNoncoherentMemoryToDriver()
 
     vkDestroyBuffer(m_device->device(), buffer, NULL);
     vkFreeMemory(m_device->device(), mem, NULL);
@@ -14846,8 +14846,8 @@ TEST_F(VkLayerTest, BadVertexBufferOffset) {
 // INVALID_IMAGE_LAYOUT tests (one other case is hit by MapMemWithoutHostVisibleBit and not here)
 TEST_F(VkLayerTest, InvalidImageLayout) {
     TEST_DESCRIPTION(
-        "Hit all possible validation checks associated with the DRAWSTATE_INVALID_IMAGE_LAYOUT enum. Generally these involve "
-        "having images in the wrong layout when they're copied or transitioned.");
+        "Hit all possible validation checks associated with the UNASSIGNED-CoreValidation-DrawState-InvalidImageLayout error. "
+        "Generally these involve having images in the wrong layout when they're copied or transitioned.");
     // 3 in ValidateCmdBufImageLayouts
     // *  -1 Attempt to submit cmd buf w/ deleted image
     // *  -2 Cmd buf submit of image w/ layout not matching first use w/ subresource

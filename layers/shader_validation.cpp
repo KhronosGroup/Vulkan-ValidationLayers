@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2017 The Khronos Group Inc.
- * Copyright (c) 2015-2017 Valve Corporation
- * Copyright (c) 2015-2017 LunarG, Inc.
- * Copyright (C) 2015-2017 Google Inc.
+/* Copyright (c) 2015-2018 The Khronos Group Inc.
+ * Copyright (c) 2015-2018 Valve Corporation
+ * Copyright (c) 2015-2018 LunarG, Inc.
+ * Copyright (C) 2015-2018 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
  * limitations under the License.
  *
  * Author: Chris Forbes <chrisf@ijw.co.nz>
+ * Author: Dave Houlton <daveh@lunarg.com>
  */
 
 #include <cinttypes>
@@ -741,7 +742,7 @@ static bool validate_vi_consistency(debug_report_data const *report_data, VkPipe
         if (binding) {
             // TODO: "VUID-VkGraphicsPipelineCreateInfo-pStages-00742" perhaps?
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                            SHADER_CHECKER_INCONSISTENT_VI, "Duplicate vertex input binding descriptions for binding %d",
+                            kVUID_Core_Shader_InconsistentVi, "Duplicate vertex input binding descriptions for binding %d",
                             desc->binding);
         } else {
             binding = desc;
@@ -780,7 +781,7 @@ static bool validate_vi_against_vs_inputs(debug_report_data const *report_data, 
         if (!a_at_end && (b_at_end || a_first < b_first)) {
             if (!used &&
                 log_msg(report_data, VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SHADER_MODULE_EXT,
-                        HandleToUint64(vs->vk_shader_module), SHADER_CHECKER_OUTPUT_NOT_CONSUMED,
+                        HandleToUint64(vs->vk_shader_module), kVUID_Core_Shader_OutputNotConsumed,
                         "Vertex attribute at location %d not consumed by vertex shader", a_first)) {
                 skip = true;
             }
@@ -788,7 +789,7 @@ static bool validate_vi_against_vs_inputs(debug_report_data const *report_data, 
             it_a++;
         } else if (!b_at_end && (a_at_end || b_first < a_first)) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SHADER_MODULE_EXT,
-                            HandleToUint64(vs->vk_shader_module), SHADER_CHECKER_INPUT_NOT_PRODUCED,
+                            HandleToUint64(vs->vk_shader_module), kVUID_Core_Shader_InputNotProduced,
                             "Vertex shader consumes input at location %d but not provided", b_first);
             it_b++;
         } else {
@@ -798,7 +799,7 @@ static bool validate_vi_against_vs_inputs(debug_report_data const *report_data, 
             // Type checking
             if (!(attrib_type & input_type)) {
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SHADER_MODULE_EXT,
-                                HandleToUint64(vs->vk_shader_module), SHADER_CHECKER_INTERFACE_TYPE_MISMATCH,
+                                HandleToUint64(vs->vk_shader_module), kVUID_Core_Shader_InterfaceTypeMismatch,
                                 "Attribute type of `%s` at location %d does not match vertex shader input type of `%s`",
                                 string_VkFormat(it_a->second->format), a_first, describe_type(vs, it_b->second.type_id).c_str());
             }
@@ -844,7 +845,7 @@ static bool validate_fs_outputs_against_render_pass(debug_report_data const *rep
 
         if (!a_at_end && (b_at_end || it_a->first.first < it_b->first)) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SHADER_MODULE_EXT,
-                            HandleToUint64(fs->vk_shader_module), SHADER_CHECKER_OUTPUT_NOT_CONSUMED,
+                            HandleToUint64(fs->vk_shader_module), kVUID_Core_Shader_OutputNotConsumed,
                             "fragment shader writes to output location %d with no matching attachment", it_a->first.first);
             it_a++;
         } else if (!b_at_end && (a_at_end || it_a->first.first > it_b->first)) {
@@ -852,7 +853,7 @@ static bool validate_fs_outputs_against_render_pass(debug_report_data const *rep
             // shader to not produce a matching output.
             if (pipeline->attachments[it_b->first].colorWriteMask != 0) {
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SHADER_MODULE_EXT,
-                                HandleToUint64(fs->vk_shader_module), SHADER_CHECKER_INPUT_NOT_PRODUCED,
+                                HandleToUint64(fs->vk_shader_module), kVUID_Core_Shader_InputNotProduced,
                                 "Attachment %d not written by fragment shader", it_b->first);
             }
             it_b++;
@@ -863,7 +864,7 @@ static bool validate_fs_outputs_against_render_pass(debug_report_data const *rep
             // Type checking
             if (!(output_type & att_type)) {
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SHADER_MODULE_EXT,
-                                HandleToUint64(fs->vk_shader_module), SHADER_CHECKER_INTERFACE_TYPE_MISMATCH,
+                                HandleToUint64(fs->vk_shader_module), kVUID_Core_Shader_InterfaceTypeMismatch,
                                 "Attachment %d of type `%s` does not match fragment shader output type of `%s`", it_b->first,
                                 string_VkFormat(it_b->second), describe_type(fs, it_a->second.type_id).c_str());
             }
@@ -1021,7 +1022,7 @@ static bool validate_push_constant_block_against_pipeline(debug_report_data cons
                         if ((range.stageFlags & stage) == 0) {
                             skip |=
                                 log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                        SHADER_CHECKER_PUSH_CONSTANT_NOT_ACCESSIBLE_FROM_STAGE,
+                                        kVUID_Core_Shader_PushConstantNotAccessibleFromStage,
                                         "Push constant range covering variable starting at offset %u not accessible from stage %s",
                                         offset, string_VkShaderStageFlagBits(stage));
                         }
@@ -1032,7 +1033,7 @@ static bool validate_push_constant_block_against_pipeline(debug_report_data cons
 
                 if (!found_range) {
                     skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                    SHADER_CHECKER_PUSH_CONSTANT_OUT_OF_RANGE,
+                                    kVUID_Core_Shader_PushConstantOutOfRange,
                                     "Push constant range covering variable starting at offset %u not declared in layout", offset);
                 }
             }
@@ -1171,7 +1172,7 @@ static bool descriptor_type_match(shader_module const *module, uint32_t type_id,
 static bool require_feature(debug_report_data const *report_data, VkBool32 feature, char const *feature_name) {
     if (!feature) {
         if (log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                    SHADER_CHECKER_FEATURE_NOT_ENABLED, "Shader requires %s but is not enabled on the device", feature_name)) {
+                    kVUID_Core_Shader_FeatureNotEnabled, "Shader requires %s but is not enabled on the device", feature_name)) {
             return true;
         }
     }
@@ -1182,7 +1183,7 @@ static bool require_feature(debug_report_data const *report_data, VkBool32 featu
 static bool require_extension(debug_report_data const *report_data, bool extension, char const *extension_name) {
     if (!extension) {
         if (log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                    SHADER_CHECKER_FEATURE_NOT_ENABLED, "Shader requires extension %s but is not enabled on the device",
+                    kVUID_Core_Shader_FeatureNotEnabled, "Shader requires extension %s but is not enabled on the device",
                     extension_name)) {
             return true;
         }
@@ -1478,24 +1479,24 @@ static bool validate_pipeline_shader_stage(layer_data *dev_data, VkPipelineShade
 
         if (!binding) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                            SHADER_CHECKER_MISSING_DESCRIPTOR,
+                            kVUID_Core_Shader_MissingDescriptor,
                             "Shader uses descriptor slot %u.%u (used as type `%s`) but not declared in pipeline layout",
                             use.first.first, use.first.second, describe_type(module, use.second.type_id).c_str());
         } else if (~binding->stageFlags & pStage->stage) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, 0,
-                            SHADER_CHECKER_DESCRIPTOR_NOT_ACCESSIBLE_FROM_STAGE,
+                            kVUID_Core_Shader_DescriptorNotAccessibleFromStage,
                             "Shader uses descriptor slot %u.%u (used as type `%s`) but descriptor not accessible from stage %s",
                             use.first.first, use.first.second, describe_type(module, use.second.type_id).c_str(),
                             string_VkShaderStageFlagBits(pStage->stage));
         } else if (!descriptor_type_match(module, use.second.type_id, binding->descriptorType, required_descriptor_count)) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                            SHADER_CHECKER_DESCRIPTOR_TYPE_MISMATCH,
+                            kVUID_Core_Shader_DescriptorTypeMismatch,
                             "Type mismatch on descriptor slot %u.%u (used as type `%s`) but descriptor of type %s", use.first.first,
                             use.first.second, describe_type(module, use.second.type_id).c_str(),
                             string_VkDescriptorType(binding->descriptorType));
         } else if (binding->descriptorCount < required_descriptor_count) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                            SHADER_CHECKER_DESCRIPTOR_TYPE_MISMATCH,
+                            kVUID_Core_Shader_DescriptorTypeMismatch,
                             "Shader expects at least %u descriptors for binding %u.%u (used as type `%s`) but only %u provided",
                             required_descriptor_count, use.first.first, use.first.second,
                             describe_type(module, use.second.type_id).c_str(), binding->descriptorCount);
@@ -1517,12 +1518,12 @@ static bool validate_pipeline_shader_stage(layer_data *dev_data, VkPipelineShade
 
             if (index == VK_ATTACHMENT_UNUSED) {
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                SHADER_CHECKER_MISSING_INPUT_ATTACHMENT,
+                                kVUID_Core_Shader_MissingInputAttachment,
                                 "Shader consumes input attachment index %d but not provided in subpass", use.first);
             } else if (!(get_format_type(rpci->pAttachments[index].format) & get_fundamental_type(module, use.second.type_id))) {
                 skip |=
                     log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                            SHADER_CHECKER_INPUT_ATTACHMENT_TYPE_MISMATCH,
+                            kVUID_Core_Shader_InputAttachmentTypeMismatch,
                             "Subpass input attachment %u format of %s does not match type used in shader `%s`", use.first,
                             string_VkFormat(rpci->pAttachments[index].format), describe_type(module, use.second.type_id).c_str());
             }
@@ -1555,13 +1556,13 @@ static bool validate_interface_between_stages(debug_report_data const *report_da
 
         if (b_at_end || ((!a_at_end) && (a_first < b_first))) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SHADER_MODULE_EXT,
-                            HandleToUint64(producer->vk_shader_module), SHADER_CHECKER_OUTPUT_NOT_CONSUMED,
+                            HandleToUint64(producer->vk_shader_module), kVUID_Core_Shader_OutputNotConsumed,
                             "%s writes to output location %u.%u which is not consumed by %s", producer_stage->name, a_first.first,
                             a_first.second, consumer_stage->name);
             a_it++;
         } else if (a_at_end || a_first > b_first) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SHADER_MODULE_EXT,
-                            HandleToUint64(consumer->vk_shader_module), SHADER_CHECKER_INPUT_NOT_PRODUCED,
+                            HandleToUint64(consumer->vk_shader_module), kVUID_Core_Shader_InputNotProduced,
                             "%s consumes input location %u.%u which is not written by %s", consumer_stage->name, b_first.first,
                             b_first.second, producer_stage->name);
             b_it++;
@@ -1574,21 +1575,21 @@ static bool validate_interface_between_stages(debug_report_data const *report_da
                              producer_stage->arrayed_output && !a_it->second.is_patch && !a_it->second.is_block_member,
                              consumer_stage->arrayed_input && !b_it->second.is_patch && !b_it->second.is_block_member, true)) {
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SHADER_MODULE_EXT,
-                                HandleToUint64(producer->vk_shader_module), SHADER_CHECKER_INTERFACE_TYPE_MISMATCH,
+                                HandleToUint64(producer->vk_shader_module), kVUID_Core_Shader_InterfaceTypeMismatch,
                                 "Type mismatch on location %u.%u: '%s' vs '%s'", a_first.first, a_first.second,
                                 describe_type(producer, a_it->second.type_id).c_str(),
                                 describe_type(consumer, b_it->second.type_id).c_str());
             }
             if (a_it->second.is_patch != b_it->second.is_patch) {
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SHADER_MODULE_EXT,
-                                HandleToUint64(producer->vk_shader_module), SHADER_CHECKER_INTERFACE_TYPE_MISMATCH,
+                                HandleToUint64(producer->vk_shader_module), kVUID_Core_Shader_InterfaceTypeMismatch,
                                 "Decoration mismatch on location %u.%u: is per-%s in %s stage but per-%s in %s stage",
                                 a_first.first, a_first.second, a_it->second.is_patch ? "patch" : "vertex", producer_stage->name,
                                 b_it->second.is_patch ? "patch" : "vertex", consumer_stage->name);
             }
             if (a_it->second.is_relaxed_precision != b_it->second.is_relaxed_precision) {
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SHADER_MODULE_EXT,
-                                HandleToUint64(producer->vk_shader_module), SHADER_CHECKER_INTERFACE_TYPE_MISMATCH,
+                                HandleToUint64(producer->vk_shader_module), kVUID_Core_Shader_InterfaceTypeMismatch,
                                 "Decoration mismatch on location %u.%u: %s and %s stages differ in precision", a_first.first,
                                 a_first.second, producer_stage->name, consumer_stage->name);
             }
@@ -1716,7 +1717,7 @@ bool PreCallValidateCreateShaderModule(layer_data *dev_data, VkShaderModuleCreat
             if (!have_glsl_shader || (pCreateInfo->pCode[0] == spv::MagicNumber)) {
                 skip |=
                     log_msg(report_data, spv_valid == SPV_WARNING ? VK_DEBUG_REPORT_WARNING_BIT_EXT : VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                            VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, SHADER_CHECKER_INCONSISTENT_SPIRV,
+                            VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, kVUID_Core_Shader_InconsistentSpirv,
                             "SPIR-V module not valid: %s", diag && diag->error ? diag->error : "(no error text)");
             }
         } else {
