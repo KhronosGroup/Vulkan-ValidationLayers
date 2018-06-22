@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2016 The Khronos Group Inc.
- * Copyright (c) 2015-2016 Valve Corporation
- * Copyright (c) 2015-2016 LunarG, Inc.
- * Copyright (C) 2015-2016 Google Inc.
+/* Copyright (c) 2015-2018 The Khronos Group Inc.
+ * Copyright (c) 2015-2018 Valve Corporation
+ * Copyright (c) 2015-2018 LunarG, Inc.
+ * Copyright (C) 2015-2018 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -369,7 +369,7 @@ bool cvdescriptorset::DescriptorSetLayout::ValidateCreateInfo(
     const bool push_descriptor_set = !!(create_info->flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR);
     if (push_descriptor_set && !push_descriptor_ext) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                        DRAWSTATE_EXTENSION_NOT_ENABLED,
+                        kVUID_Core_DrawState_ExtensionNotEnabled,
                         "Attempted to use %s in %s but its required extension %s has not been enabled.\n",
                         "VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR", "VkDescriptorSetLayoutCreateInfo::flags",
                         VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
@@ -378,7 +378,7 @@ bool cvdescriptorset::DescriptorSetLayout::ValidateCreateInfo(
     const bool update_after_bind_set = !!(create_info->flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT);
     if (update_after_bind_set && !descriptor_indexing_ext) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                        DRAWSTATE_EXTENSION_NOT_ENABLED,
+                        kVUID_Core_DrawState_ExtensionNotEnabled,
                         "Attemped to use %s in %s but its required extension %s has not been enabled.\n",
                         "VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT", "VkDescriptorSetLayoutCreateInfo::flags",
                         VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
@@ -1532,7 +1532,7 @@ bool cvdescriptorset::ValidateUpdateDescriptorSets(const debug_report_data *repo
         if (!set_node) {
             skip |=
                 log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_EXT,
-                        HandleToUint64(dest_set), DRAWSTATE_INVALID_DESCRIPTOR_SET,
+                        HandleToUint64(dest_set), kVUID_Core_DrawState_InvalidDescriptorSet,
                         "Cannot call vkUpdateDescriptorSets() on descriptor set 0x%" PRIxLEAST64 " that has not been allocated.",
                         HandleToUint64(dest_set));
         } else {
