@@ -111,7 +111,8 @@ struct layer_data {
     // Map of queue information structures, one per queue
     std::unordered_map<VkQueue, ObjTrackQueueInfo *> queue_info_map;
 
-    VkLayerDispatchTable dispatch_table;
+    VkLayerDispatchTable device_dispatch_table;
+    VkLayerInstanceDispatchTable instance_dispatch_table;
     // Default constructor
     layer_data()
         : instance(nullptr),
@@ -126,14 +127,13 @@ struct layer_data {
           tmp_messenger_create_infos(nullptr),
           tmp_debug_messengers(nullptr),
           object_map{},
-          dispatch_table{} {
+          device_dispatch_table{},
+          instance_dispatch_table{} {
         object_map.resize(kVulkanObjectTypeMax + 1);
     }
 };
 
 extern std::unordered_map<void *, layer_data *> layer_data_map;
-extern device_table_map ot_device_table_map;
-extern instance_table_map ot_instance_table_map;
 extern std::mutex global_lock;
 extern uint64_t object_track_index;
 extern uint32_t loader_layer_if_version;
