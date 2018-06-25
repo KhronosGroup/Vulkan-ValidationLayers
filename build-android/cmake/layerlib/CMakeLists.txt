@@ -65,8 +65,7 @@ add_library(VkLayer_core_validation SHARED
         ${SRC_DIR}/layers/descriptor_sets.cpp
         ${SRC_DIR}/layers/buffer_validation.cpp
         ${SRC_DIR}/layers/shader_validation.cpp
-        ${SRC_DIR}/layers/vk_layer_table.cpp
-	${SRC_DIR}/layers/xxhash.c)
+	    ${SRC_DIR}/layers/xxhash.c)
 target_include_directories(VkLayer_core_validation PRIVATE
         ${SRC_DIR}/include
         ${SRC_DIR}/layers
@@ -79,8 +78,7 @@ target_link_libraries(VkLayer_core_validation PRIVATE
 
 add_library(VkLayer_parameter_validation SHARED
         ${COMMON_DIR}/include/parameter_validation.cpp
-        ${SRC_DIR}/layers/parameter_validation_utils.cpp
-        ${SRC_DIR}/layers/vk_layer_table.cpp)
+        ${SRC_DIR}/layers/parameter_validation_utils.cpp)
 target_include_directories(VkLayer_parameter_validation PRIVATE
         ${SRC_DIR}/include
         ${COMMON_DIR}/include
@@ -90,8 +88,7 @@ target_link_libraries(VkLayer_parameter_validation PRIVATE log layer_utils)
 
 add_library(VkLayer_object_tracker SHARED
         ${COMMON_DIR}/include/object_tracker.cpp
-        ${SRC_DIR}/layers/object_tracker_utils.cpp
-        ${SRC_DIR}/layers/vk_layer_table.cpp)
+        ${SRC_DIR}/layers/object_tracker_utils.cpp)
 target_include_directories(VkLayer_object_tracker PRIVATE
         ${SRC_DIR}/include
         ${SRC_DIR}/layers
@@ -100,8 +97,7 @@ target_include_directories(VkLayer_object_tracker PRIVATE
 target_link_libraries(VkLayer_object_tracker PRIVATE log layer_utils)
 
 add_library(VkLayer_threading SHARED
-        ${SRC_DIR}/layers/threading.cpp
-        ${SRC_DIR}/layers/vk_layer_table.cpp)
+        ${SRC_DIR}/layers/threading.cpp)
 target_include_directories(VkLayer_threading PRIVATE
         ${SRC_DIR}/include
         ${SRC_DIR}/layers
@@ -110,8 +106,7 @@ target_include_directories(VkLayer_threading PRIVATE
 target_link_libraries(VkLayer_threading PRIVATE log layer_utils)
 
 add_library(VkLayer_unique_objects SHARED
-        ${SRC_DIR}/layers/unique_objects.cpp
-        ${SRC_DIR}/layers/vk_layer_table.cpp)
+        ${SRC_DIR}/layers/unique_objects.cpp)
 target_include_directories(VkLayer_unique_objects PRIVATE
         ${SRC_DIR}/include
         ${SRC_DIR}/layers
