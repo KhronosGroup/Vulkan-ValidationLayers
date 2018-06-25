@@ -28,7 +28,6 @@
 #include <SPIRV/spirv.hpp>
 #include "vk_loader_platform.h"
 #include "vk_enum_string_helper.h"
-#include "vk_layer_table.h"
 #include "vk_layer_data.h"
 #include "vk_layer_extension_utils.h"
 #include "vk_layer_utils.h"

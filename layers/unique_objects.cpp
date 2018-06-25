@@ -41,7 +41,6 @@
 #include "vk_layer_data.h"
 #include "vk_layer_extension_utils.h"
 #include "vk_layer_logging.h"
-#include "vk_layer_table.h"
 #include "vk_layer_utils.h"
 #include "vk_enum_string_helper.h"
 #include "vk_validation_error_messages.h"
