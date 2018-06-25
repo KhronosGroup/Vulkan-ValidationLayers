@@ -29,6 +29,7 @@
 
 #include "vk_layer_data.h"
 #include "vk_dispatch_table_helper.h"
+#include "vk_layer_utils.h"
 #include "vk_lunarg_device_profile_api_layer.h"
 #include "vk_device_profile_api_layer.h"
 

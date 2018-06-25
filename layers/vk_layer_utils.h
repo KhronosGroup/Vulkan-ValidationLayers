@@ -107,6 +107,12 @@ Stream &stream_join(Stream &stream, const String &sep, const Collection &values)
     return stream_join(stream, sep, values.cbegin(), values.cend());
 }
 
+typedef void *dispatch_key;
+static inline dispatch_key get_dispatch_key(const void *object) { return (dispatch_key) * (VkLayerDispatchTable **)object; }
+
+VK_LAYER_EXPORT VkLayerInstanceCreateInfo *get_chain_info(const VkInstanceCreateInfo *pCreateInfo, VkLayerFunction func);
+VK_LAYER_EXPORT VkLayerDeviceCreateInfo *get_chain_info(const VkDeviceCreateInfo *pCreateInfo, VkLayerFunction func);
+
 extern "C" {
 #endif
 

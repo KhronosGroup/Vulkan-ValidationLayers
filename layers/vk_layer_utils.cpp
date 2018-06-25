@@ -205,3 +205,21 @@ VK_LAYER_EXPORT void layer_debug_messenger_actions(debug_report_data *report_dat
         logging_messenger.push_back(messenger);
     }
 }
+
+VK_LAYER_EXPORT VkLayerInstanceCreateInfo *get_chain_info(const VkInstanceCreateInfo *pCreateInfo, VkLayerFunction func) {
+    VkLayerInstanceCreateInfo *chain_info = (VkLayerInstanceCreateInfo *)pCreateInfo->pNext;
+    while (chain_info && !(chain_info->sType == VK_STRUCTURE_TYPE_LOADER_INSTANCE_CREATE_INFO && chain_info->function == func)) {
+        chain_info = (VkLayerInstanceCreateInfo *)chain_info->pNext;
+    }
+    assert(chain_info != NULL);
+    return chain_info;
+}
+
+VK_LAYER_EXPORT VkLayerDeviceCreateInfo *get_chain_info(const VkDeviceCreateInfo *pCreateInfo, VkLayerFunction func) {
+    VkLayerDeviceCreateInfo *chain_info = (VkLayerDeviceCreateInfo *)pCreateInfo->pNext;
+    while (chain_info && !(chain_info->sType == VK_STRUCTURE_TYPE_LOADER_DEVICE_CREATE_INFO && chain_info->function == func)) {
+        chain_info = (VkLayerDeviceCreateInfo *)chain_info->pNext;
+    }
+    assert(chain_info != NULL);
+    return chain_info;
+}

@@ -21,12 +21,3 @@
 
 #include "vulkan/vk_layer.h"
 #include "vulkan/vulkan.h"
-#include <unordered_map>
-
-typedef void *dispatch_key;
-
-static inline dispatch_key get_dispatch_key(const void *object) { return (dispatch_key) * (VkLayerDispatchTable **)object; }
-
-VkLayerInstanceCreateInfo *get_chain_info(const VkInstanceCreateInfo *pCreateInfo, VkLayerFunction func);
-VkLayerDeviceCreateInfo *get_chain_info(const VkDeviceCreateInfo *pCreateInfo, VkLayerFunction func);
-

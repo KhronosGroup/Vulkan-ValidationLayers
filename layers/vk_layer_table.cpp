@@ -18,26 +18,5 @@
  * Author: Tobin Ehlis <tobin@lunarg.com>
  */
 #include <assert.h>
-#include <unordered_map>
 #include "vk_dispatch_table_helper.h"
 #include "vulkan/vk_layer.h"
-#include "vk_layer_table.h"
-
-
-VkLayerInstanceCreateInfo *get_chain_info(const VkInstanceCreateInfo *pCreateInfo, VkLayerFunction func) {
-    VkLayerInstanceCreateInfo *chain_info = (VkLayerInstanceCreateInfo *)pCreateInfo->pNext;
-    while (chain_info && !(chain_info->sType == VK_STRUCTURE_TYPE_LOADER_INSTANCE_CREATE_INFO && chain_info->function == func)) {
-        chain_info = (VkLayerInstanceCreateInfo *)chain_info->pNext;
-    }
-    assert(chain_info != NULL);
-    return chain_info;
-}
-
-VkLayerDeviceCreateInfo *get_chain_info(const VkDeviceCreateInfo *pCreateInfo, VkLayerFunction func) {
-    VkLayerDeviceCreateInfo *chain_info = (VkLayerDeviceCreateInfo *)pCreateInfo->pNext;
-    while (chain_info && !(chain_info->sType == VK_STRUCTURE_TYPE_LOADER_DEVICE_CREATE_INFO && chain_info->function == func)) {
-        chain_info = (VkLayerDeviceCreateInfo *)chain_info->pNext;
-    }
-    assert(chain_info != NULL);
-    return chain_info;
-}
