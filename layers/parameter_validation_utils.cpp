@@ -41,7 +41,6 @@
 #include "vk_dispatch_table_helper.h"
 #include "vk_typemap_helper.h"
 
-#include "vk_layer_table.h"
 #include "vk_layer_data.h"
 #include "vk_layer_logging.h"
 #include "vk_layer_extension_utils.h"

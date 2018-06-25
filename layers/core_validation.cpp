@@ -65,7 +65,6 @@
 #include "core_validation.h"
 #include "buffer_validation.h"
 #include "shader_validation.h"
-#include "vk_layer_table.h"
 #include "vk_layer_data.h"
 #include "vk_layer_extension_utils.h"
 #include "vk_layer_utils.h"

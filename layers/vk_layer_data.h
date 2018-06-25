@@ -22,7 +22,6 @@
 
 #include <cassert>
 #include <unordered_map>
-#include "vk_layer_table.h"
 
 // For the given data key, look up the layer_data instance from given layer_data_map
 template <typename DATA_T>

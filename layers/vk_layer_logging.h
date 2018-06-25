@@ -26,7 +26,6 @@
 #include "vk_loader_layer.h"
 #include "vk_layer_config.h"
 #include "vk_layer_data.h"
-#include "vk_layer_table.h"
 #include "vk_loader_platform.h"
 #include "vulkan/vk_layer.h"
 #include "vk_object_types.h"
