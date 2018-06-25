@@ -108,7 +108,6 @@ endif()
 
 set (DEVICE_PROFILE_API_SRCS
     device_profile_api.cpp
-    ${PROJECT_SOURCE_DIR}/layers/vk_layer_table.cpp
     ${PROJECT_SOURCE_DIR}/layers/vk_layer_extension_utils.cpp
     )
 
