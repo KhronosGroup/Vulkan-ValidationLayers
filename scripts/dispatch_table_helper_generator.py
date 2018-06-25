@@ -112,22 +112,28 @@ class DispatchTableHelperOutputGenerator(OutputGenerator):
         preamble = ''
         preamble += '#include <vulkan/vulkan.h>\n'
         preamble += '#include <vulkan/vk_layer.h>\n'
-        preamble += '#include <string.h>\n'
+        preamble += '#include <string>\n'
+        preamble += '#include <unordered_set>\n'
+        preamble += '#include <unordered_map>\n'
 
         write(copyright, file=self.outFile)
         write(preamble, file=self.outFile)
     #
     # Write generate and write dispatch tables to output file
     def endFile(self):
+        ext_enabled_fcn = ''
         device_table = ''
         instance_table = ''
 
+        ext_enabled_fcn += self.OutputExtEnabledFunction()
         device_table += self.OutputDispatchTableHelper('device')
         instance_table += self.OutputDispatchTableHelper('instance')
 
         for stub in self.dev_ext_stub_list:
             write(stub, file=self.outFile)
         write("\n\n", file=self.outFile)
+        write(ext_enabled_fcn, file=self.outFile)
+        write("\n", file=self.outFile)
         write(device_table, file=self.outFile);
         write("\n", file=self.outFile)
         write(instance_table, file=self.outFile);
@@ -164,7 +170,7 @@ class DispatchTableHelperOutputGenerator(OutputGenerator):
         if handle_type != 'VkInstance' and handle_type != 'VkPhysicalDevice' and name != 'vkGetInstanceProcAddr':
             self.device_dispatch_list.append((name, self.featureExtraProtect))
             if "VK_VERSION" not in self.featureName and self.extension_type == 'device':
-                self.device_extension_list.append(name)
+                self.device_extension_list.append([name, self.featureName])
                 # Build up stub function
                 return_type = ''
                 decl = self.makeCDecls(cmdinfo.elem)[1]
@@ -198,6 +204,32 @@ class DispatchTableHelperOutputGenerator(OutputGenerator):
                 name = noneStr(elem.text)
         return (type, name)
     #
+    # Output a function that'll determine if an extension is in the enabled list
+    def OutputExtEnabledFunction(self):
+        ##extension_functions = dict(self.device_dispatch_list)
+        ext_fcn  = ''
+        # First, write out our static data structure -- map of all APIs that are part of extensions to their extension.
+        ext_fcn += 'const std::unordered_map<std::string, std::string> api_extension_map {\n'
+        for extn in self.device_extension_list:
+            ext_fcn += '    {"%s", "%s"},\n' % (extn[0], extn[1])
+        ext_fcn += '};\n\n'
+        ext_fcn += '// Using the above code-generated map of APINames-to-parent extension names, this function will:\n'
+        ext_fcn += '//   o  Determine if the API has an associated extension\n'
+        ext_fcn += '//   o  If it does, determine if that extension name is present in the passed-in set of enabled_ext_names \n'
+        ext_fcn += '//   If the APIname has no parent extension, OR its parent extension name is IN the set, return TRUE, else FALSE\n'
+        ext_fcn += 'static inline bool ApiParentExtensionEnabled(const std::string api_name, const std::unordered_set<std::string> &enabled_ext_names) {\n'
+        ext_fcn += '    auto has_ext = api_extension_map.find(api_name);\n'
+        ext_fcn += '    // Is this API part of an extension?\n'
+        ext_fcn += '    if (has_ext != api_extension_map.end()) {\n'
+        ext_fcn += '        // Was the extension for this API enabled in the CreateDevice call?\n'
+        ext_fcn += '        if (enabled_ext_names.find(has_ext->second) == enabled_ext_names.end()) {\n'
+        ext_fcn += '            return false;\n'
+        ext_fcn += '        }\n'
+        ext_fcn += '    }\n'
+        ext_fcn += '    return true;\n'
+        ext_fcn += '}\n'
+        return ext_fcn
+    #
     # Create a dispatch table from the appropriate list and return it as a string
     def OutputDispatchTableHelper(self, table_type):
         entries = []
@@ -213,6 +245,7 @@ class DispatchTableHelperOutputGenerator(OutputGenerator):
             table += '    memset(table, 0, sizeof(*table));\n'
             table += '    // Instance function pointers\n'
 
+        extension_functions = dict(self.device_extension_list)
         for item in entries:
             # Remove 'vk' from proto name
             base_name = item[0][2:]
@@ -222,15 +255,15 @@ class DispatchTableHelperOutputGenerator(OutputGenerator):
 
             # If we're looking for the proc we are passing in, just point the table to it.  This fixes the issue where
             # a layer overrides the function name for the loader.
-            if (table_type == 'device' and base_name == 'GetDeviceProcAddr'):
+            if ('device' in table_type and base_name == 'GetDeviceProcAddr'):
                 table += '    table->GetDeviceProcAddr = gpa;\n'
-            elif (table_type != 'device' and base_name == 'GetInstanceProcAddr'):
+            elif ('device' not in table_type and base_name == 'GetInstanceProcAddr'):
                 table += '    table->GetInstanceProcAddr = gpa;\n'
             else:
                 table += '    table->%s = (PFN_%s) gpa(%s, "%s");\n' % (base_name, item[0], table_type, item[0])
-            if item[0] in self.device_extension_list:
-                stub_check = '    if (table->%s == nullptr) { table->%s = (PFN_%s)Stub%s; }\n' % (base_name, base_name, item[0], base_name)
-                table += stub_check
+                if 'device' in table_type and item[0] in extension_functions:
+                    stub_check = '    if (table->%s == nullptr) { table->%s = (PFN_%s)Stub%s; }\n' % (base_name, base_name, item[0], base_name)
+                    table += stub_check
             if item[1] is not None:
                 table += '#endif // %s\n' % item[1]
 
