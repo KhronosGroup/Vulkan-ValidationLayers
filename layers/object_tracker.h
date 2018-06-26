@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2017 The Khronos Group Inc.
- * Copyright (c) 2015-2017 Valve Corporation
- * Copyright (c) 2015-2017 LunarG, Inc.
- * Copyright (C) 2015-2017 Google Inc.
+/* Copyright (c) 2015-2018 The Khronos Group Inc.
+ * Copyright (c) 2015-2018 Valve Corporation
+ * Copyright (c) 2015-2018 LunarG, Inc.
+ * Copyright (C) 2015-2018 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,13 +43,21 @@
 
 namespace object_tracker {
 
-// Object Tracker ERROR codes
-enum ObjectTrackerError {
-    OBJTRACK_NONE,            // Used for INFO & other non-error messages
-    OBJTRACK_UNKNOWN_OBJECT,  // Updating uses of object that's not in global object list
-    OBJTRACK_INTERNAL_ERROR,  // Bug with data tracking within the layer
-    OBJTRACK_OBJECT_LEAK,     // OBJECT was not correctly freed/destroyed
-};
+// Suppress unused warning on Linux
+#if defined(__GNUC__)
+#define DECORATE_UNUSED __attribute__((unused))
+#else
+#define DECORATE_UNUSED
+#endif
+
+// clang-format off
+static const char DECORATE_UNUSED *kVUID_ObjectTracker_Info = "UNASSIGNED-ObjectTracker-Info";
+static const char DECORATE_UNUSED *kVUID_ObjectTracker_InternalError = "UNASSIGNED-ObjectTracker-InternalError";
+static const char DECORATE_UNUSED *kVUID_ObjectTracker_ObjectLeak =    "UNASSIGNED-ObjectTracker-ObjectLeak";
+static const char DECORATE_UNUSED *kVUID_ObjectTracker_UnknownObject = "UNASSIGNED-ObjectTracker-UnknownObject";
+// clang-format on
+
+#undef DECORATE_UNUSED
 
 // Object Status -- used to track state of individual objects
 typedef VkFlags ObjectStatusFlags;
@@ -207,9 +215,9 @@ void CreateObject(T1 dispatchable_object, T2 object, VulkanObjectType object_typ
 
     if (!instance_data->object_map[object_type].count(object_handle)) {
         VkDebugReportObjectTypeEXT debug_object_type = get_debug_report_enum[object_type];
-        log_msg(instance_data->report_data, VK_DEBUG_REPORT_INFORMATION_BIT_EXT, debug_object_type, object_handle, OBJTRACK_NONE,
-                "OBJ[0x%" PRIxLEAST64 "] : CREATE %s object 0x%" PRIxLEAST64, object_track_index++, object_string[object_type],
-                object_handle);
+        log_msg(instance_data->report_data, VK_DEBUG_REPORT_INFORMATION_BIT_EXT, debug_object_type, object_handle,
+                kVUID_ObjectTracker_Info, "OBJ[0x%" PRIxLEAST64 "] : CREATE %s object 0x%" PRIxLEAST64, object_track_index++,
+                object_string[object_type], object_handle);
 
         ObjTrackState *pNewObjNode = new ObjTrackState;
         pNewObjNode->object_type = object_type;
@@ -258,7 +266,8 @@ void DestroyObject(T1 dispatchable_object, T2 object, VulkanObjectType object_ty
         if (item != device_data->object_map[object_type].end()) {
             ObjTrackState *pNode = item->second;
 
-            log_msg(device_data->report_data, VK_DEBUG_REPORT_INFORMATION_BIT_EXT, debug_object_type, object_handle, OBJTRACK_NONE,
+            log_msg(device_data->report_data, VK_DEBUG_REPORT_INFORMATION_BIT_EXT, debug_object_type, object_handle,
+                    kVUID_ObjectTracker_Info,
                     "OBJ_STAT Destroy %s obj 0x%" PRIxLEAST64 " (%" PRIu64 " total objs remain & %" PRIu64 " %s objs).",
                     object_string[object_type], HandleToUint64(object), device_data->num_total_objects - 1,
                     device_data->num_objects[pNode->object_type] - 1, object_string[object_type]);
@@ -281,7 +290,7 @@ void DestroyObject(T1 dispatchable_object, T2 object, VulkanObjectType object_ty
             DestroyObjectSilently(dispatchable_object, object, object_type);
         } else {
             log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, object_handle,
-                    OBJTRACK_UNKNOWN_OBJECT,
+                    kVUID_ObjectTracker_UnknownObject,
                     "Unable to remove %s obj 0x%" PRIxLEAST64 ". Was it created? Has it already been destroyed?",
                     object_string[object_type], object_handle);
         }

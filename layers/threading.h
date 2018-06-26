@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2016 The Khronos Group Inc.
- * Copyright (c) 2015-2016 Valve Corporation
- * Copyright (c) 2015-2016 LunarG, Inc.
+/* Copyright (c) 2015-2018 The Khronos Group Inc.
+ * Copyright (c) 2015-2018 Valve Corporation
+ * Copyright (c) 2015-2018 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,12 +42,20 @@ static_assert(std::is_same<uint64_t, DISTINCT_NONDISPATCHABLE_PHONY_HANDLE>::val
               "Mismatched non-dispatchable handle handle, expected uint64_t.");
 #endif
 
-// Draw State ERROR codes
-enum THREADING_CHECKER_ERROR {
-    THREADING_CHECKER_NONE,                 // Used for INFO & other non-error messages
-    THREADING_CHECKER_MULTIPLE_THREADS,     // Object used simultaneously by multiple threads
-    THREADING_CHECKER_SINGLE_THREAD_REUSE,  // Object used simultaneously by recursion in single thread
-};
+// Suppress unused warning on Linux
+#if defined(__GNUC__)
+#define DECORATE_UNUSED __attribute__((unused))
+#else
+#define DECORATE_UNUSED
+#endif
+
+// clang-format off
+static const char DECORATE_UNUSED *kVUID_Threading_Info = "UNASSIGNED-Threading-Info";
+static const char DECORATE_UNUSED *kVUID_Threading_MultipleThreads = "UNASSIGNED-Threading-MultipleThreads";
+static const char DECORATE_UNUSED *kVUID_Threading_SingleThreadReuse = "UNASSIGNED-Threading-SingleThreadReuse";
+// clang-format on
+
+#undef DECORATE_UNUSED
 
 struct object_use_data {
     loader_platform_thread_id thread;
@@ -104,7 +112,7 @@ class counter {
                 // There are no readers.  Two writers just collided.
                 if (use_data->thread != tid) {
                     skipCall |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, objectType, (uint64_t)(object),
-                                        THREADING_CHECKER_MULTIPLE_THREADS,
+                                        kVUID_Threading_MultipleThreads,
                                         "THREADING ERROR : object of type %s is simultaneously used in "
                                         "thread 0x%" PRIx64 " and thread 0x%" PRIx64,
                                         typeName, (uint64_t)use_data->thread, (uint64_t)tid);
@@ -132,7 +140,7 @@ class counter {
                 // There are readers.  This writer collided with them.
                 if (use_data->thread != tid) {
                     skipCall |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, objectType, (uint64_t)(object),
-                                        THREADING_CHECKER_MULTIPLE_THREADS,
+                                        kVUID_Threading_MultipleThreads,
                                         "THREADING ERROR : object of type %s is simultaneously used in "
                                         "thread 0x%" PRIx64 " and thread 0x%" PRIx64,
                                         typeName, (uint64_t)use_data->thread, (uint64_t)tid);
@@ -190,11 +198,11 @@ class counter {
             use_data->thread = tid;
         } else if (uses[object].writer_count > 0 && uses[object].thread != tid) {
             // There is a writer of the object.
-            skipCall |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, objectType, (uint64_t)(object),
-                                THREADING_CHECKER_MULTIPLE_THREADS,
-                                "THREADING ERROR : object of type %s is simultaneously used in "
-                                "thread 0x%" PRIx64 " and thread 0x%" PRIx64,
-                                typeName, (uint64_t)uses[object].thread, (uint64_t)tid);
+            skipCall |=
+                log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, objectType, (uint64_t)(object), kVUID_Threading_MultipleThreads,
+                        "THREADING ERROR : object of type %s is simultaneously used in "
+                        "thread 0x%" PRIx64 " and thread 0x%" PRIx64,
+                        typeName, (uint64_t)uses[object].thread, (uint64_t)tid);
             if (skipCall) {
                 // Wait for thread-safe access to object instead of skipping call.
                 while (uses.find(object) != uses.end()) {
