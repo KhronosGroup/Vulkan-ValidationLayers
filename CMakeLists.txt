@@ -246,6 +246,65 @@ if(NOT WIN32)
     endif()
 endif()
 
+
+# Generate dependent helper files
+set(SCRIPTS_DIR "${PROJECT_SOURCE_DIR}/scripts")
+# Define macro used for building vkxml generated files
+macro(run_vk_xml_generate dependency output)
+    add_custom_command(OUTPUT ${output}
+    COMMAND ${PYTHON_CMD} ${SCRIPTS_DIR}/lvl_genvk.py -registry ${VulkanRegistry_DIR}/vk.xml -scripts ${VulkanRegistry_DIR} ${output}
+    DEPENDS ${VulkanRegistry_DIR}/vk.xml ${VulkanRegistry_DIR}/generator.py ${SCRIPTS_DIR}/${dependency} ${SCRIPTS_DIR}/lvl_genvk.py ${VulkanRegistry_DIR}/reg.py
+    )
+endmacro()
+add_custom_target(generate_helper_files DEPENDS
+    vk_enum_string_helper.h
+    vk_safe_struct.h
+    vk_safe_struct.cpp
+    vk_object_types.h
+    vk_layer_dispatch_table.h
+    vk_dispatch_table_helper.h
+    vk_extension_helper.h
+    vk_typemap_helper.h
+    )
+set_target_properties(generate_helper_files PROPERTIES FOLDER ${LAYERS_HELPER_FOLDER})
+# Rules to build generated helper files
+run_vk_xml_generate(loader_extension_generator.py vk_layer_dispatch_table.h)
+run_vk_xml_generate(dispatch_table_helper_generator.py vk_dispatch_table_helper.h)
+run_vk_xml_generate(helper_file_generator.py vk_safe_struct.h)
+run_vk_xml_generate(helper_file_generator.py vk_safe_struct.cpp)
+run_vk_xml_generate(helper_file_generator.py vk_enum_string_helper.h)
+run_vk_xml_generate(helper_file_generator.py vk_object_types.h)
+run_vk_xml_generate(helper_file_generator.py vk_extension_helper.h)
+run_vk_xml_generate(helper_file_generator.py vk_typemap_helper.h)
+
+
+# Layer Utils Library
+# For Windows, we use a static lib because the Windows loader has a fairly restrictive loader search
+# path that can't be easily modified to point it to the same directory that contains the layers.
+# TODO: This should not be a library -- in future, include files directly in layers.
+set(VALIDATION_LAYER_UTILS_SOURCES
+    layers/vk_layer_config.cpp
+    layers/vk_layer_extension_utils.cpp
+    layers/vk_layer_utils.cpp
+    layers/vk_format_utils.cpp
+    )
+if (WIN32)
+    add_library(VkLayer_utils STATIC ${VALIDATION_LAYER_UTILS_SOURCES})
+    target_compile_definitions(VkLayer_utils PUBLIC _CRT_SECURE_NO_WARNINGS)
+else()
+    add_library(VkLayer_utils SHARED ${VALIDATION_LAYER_UTILS_SOURCES})
+endif()
+install(TARGETS VkLayer_utils DESTINATION ${CMAKE_INSTALL_LIBDIR})
+set_target_properties(VkLayer_utils PROPERTIES LINKER_LANGUAGE CXX)
+add_dependencies(VkLayer_utils generate_helper_files)
+target_include_directories(
+    VkLayer_utils PUBLIC
+    ${VulkanHeaders_INCLUDE_DIR}
+    ${CMAKE_CURRENT_BINARY_DIR}
+    ${CMAKE_CURRENT_BINARY_DIR}/layers
+    ${PROJECT_BINARY_DIR}
+    )
+
 # uninstall target
 if(NOT TARGET uninstall)
     configure_file(
