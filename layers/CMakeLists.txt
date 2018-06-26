@@ -50,15 +50,6 @@ else()
 endif()
 
 set (PYTHON_CMD ${PYTHON_EXECUTABLE})
-set(SCRIPTS_DIR "${PROJECT_SOURCE_DIR}/scripts")
-
-# Define macro used for building vkxml generated files
-macro(run_vk_xml_generate dependency output)
-    add_custom_command(OUTPUT ${output}
-    COMMAND ${PYTHON_CMD} ${SCRIPTS_DIR}/lvl_genvk.py -registry ${VulkanRegistry_DIR}/vk.xml -scripts ${VulkanRegistry_DIR} ${output}
-    DEPENDS ${VulkanRegistry_DIR}/vk.xml ${VulkanRegistry_DIR}/generator.py ${SCRIPTS_DIR}/${dependency} ${SCRIPTS_DIR}/lvl_genvk.py ${VulkanRegistry_DIR}/reg.py
-    )
-endmacro()
 
 # Define macro used for generating header files containing commit IDs for external dependencies
 macro(run_external_revision_generate symbol_name output)
@@ -72,56 +63,12 @@ endmacro()
 add_custom_target(spirv_tools_revision_file DEPENDS
     spirv_tools_commit_id.h
     )
-add_custom_target(generate_helper_files DEPENDS
-    vk_enum_string_helper.h
-    vk_safe_struct.h
-    vk_safe_struct.cpp
-    vk_object_types.h
-    vk_layer_dispatch_table.h
-    vk_dispatch_table_helper.h
-    vk_extension_helper.h
-    vk_typemap_helper.h
-    )
-set_target_properties(spirv_tools_revision_file PROPERTIES FOLDER ${LAYERS_HELPER_FOLDER})
-set_target_properties(generate_helper_files PROPERTIES FOLDER ${LAYERS_HELPER_FOLDER})
 
-# Rules to build generated helper files
-run_vk_xml_generate(loader_extension_generator.py vk_layer_dispatch_table.h)
-run_vk_xml_generate(dispatch_table_helper_generator.py vk_dispatch_table_helper.h)
-run_vk_xml_generate(helper_file_generator.py vk_safe_struct.h)
-run_vk_xml_generate(helper_file_generator.py vk_safe_struct.cpp)
-run_vk_xml_generate(helper_file_generator.py vk_enum_string_helper.h)
-run_vk_xml_generate(helper_file_generator.py vk_object_types.h)
-run_vk_xml_generate(helper_file_generator.py vk_extension_helper.h)
-run_vk_xml_generate(helper_file_generator.py vk_typemap_helper.h)
+set_target_properties(spirv_tools_revision_file PROPERTIES FOLDER ${LAYERS_HELPER_FOLDER})
+
 if(BUILD_LAYERS)
     run_external_revision_generate(SPIRV_TOOLS_COMMIT_ID spirv_tools_commit_id.h)
 endif()
-
-# Layer Utils Library
-# For Windows, we use a static lib because the Windows loader has a fairly restrictive loader search
-# path that can't be easily modified to point it to the same directory that contains the layers.
-set(VKLAYER_UTILS_VLF_SOURCES
-    vk_layer_config.cpp
-    vk_layer_extension_utils.cpp
-    vk_layer_utils.cpp
-    vk_format_utils.cpp
-    )
-if (WIN32)
-    add_library(VkLayer_utils STATIC ${VKLAYER_UTILS_VLF_SOURCES})
-    target_compile_definitions(VkLayer_utils PUBLIC _CRT_SECURE_NO_WARNINGS)
-else()
-    add_library(VkLayer_utils SHARED ${VKLAYER_UTILS_VLF_SOURCES})
-endif()
-install(TARGETS VkLayer_utils DESTINATION ${CMAKE_INSTALL_LIBDIR})
-add_dependencies(VkLayer_utils generate_helper_files)
-target_include_directories(
-    VkLayer_utils PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}/loader
-    ${VulkanHeaders_INCLUDE_DIR}
-    ${CMAKE_CURRENT_BINARY_DIR}
-    ${PROJECT_BINARY_DIR}
-    )
 
 set(LAYER_JSON_FILES_WITH_DEPENDENCIES
     VkLayer_core_validation
