@@ -5,6 +5,8 @@
 
 override_dh_auto_configure:
 	dh_auto_configure -- \
+	-DUSE_CCACHE=On \
+	-DGLSLANG_INSTALL_DIR=/usr \
 	-DCMAKE_BUILD_TYPE=Release
 
 override_dh_auto_install:
