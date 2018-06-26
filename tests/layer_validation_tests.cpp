@@ -23860,6 +23860,16 @@ TEST_F(VkPositiveLayerTest, IgnoreUnrelatedDescriptor) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
+    // Verify VK_FORMAT_R8_UNORM supports VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT
+    const VkFormat format_texel_case = VK_FORMAT_R8_UNORM;
+    const char *format_texel_case_string = "VK_FORMAT_R8_UNORM";
+    VkFormatProperties format_properties;
+    vkGetPhysicalDeviceFormatProperties(gpu(), format_texel_case, &format_properties);
+    if (!(format_properties.bufferFeatures & VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_BIT)) {
+        printf("%s Test requires %s to support VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT\n", kSkipPrefix, format_texel_case_string);
+        return;
+    }
+
     // Image Case
     {
         m_errorMonitor->ExpectSuccess();
@@ -24008,7 +24018,7 @@ TEST_F(VkPositiveLayerTest, IgnoreUnrelatedDescriptor) {
         VkBufferViewCreateInfo buff_view_ci = {};
         buff_view_ci.sType = VK_STRUCTURE_TYPE_BUFFER_VIEW_CREATE_INFO;
         buff_view_ci.buffer = buffer;
-        buff_view_ci.format = VK_FORMAT_R8_UNORM;
+        buff_view_ci.format = format_texel_case;
         buff_view_ci.range = VK_WHOLE_SIZE;
         VkBufferView buffer_view;
         err = vkCreateBufferView(m_device->device(), &buff_view_ci, NULL, &buffer_view);
