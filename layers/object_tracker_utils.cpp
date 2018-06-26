@@ -1372,8 +1372,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceDisplayProperties2KHR(VkPhysical
             ValidateObject(physicalDevice, physicalDevice, kVulkanObjectTypePhysicalDevice, false, kVUIDUndefined, kVUIDUndefined);
     }
     if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
-    VkResult result = get_dispatch_table(ot_instance_table_map, physicalDevice)
-                          ->GetPhysicalDeviceDisplayProperties2KHR(physicalDevice, pPropertyCount, pProperties);
+    layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), layer_data_map);
+    VkResult result =
+        instance_data->instance_dispatch_table.GetPhysicalDeviceDisplayProperties2KHR(physicalDevice, pPropertyCount, pProperties);
     if (pProperties && (VK_SUCCESS == result || VK_INCOMPLETE == result)) {
         std::lock_guard<std::mutex> lock(global_lock);
         for (uint32_t index = 0; index < *pPropertyCount; ++index) {
@@ -1393,8 +1394,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDisplayPlaneSupportedDisplaysKHR(VkPhysicalDev
                                "VUID-vkGetDisplayPlaneSupportedDisplaysKHR-physicalDevice-parameter", kVUIDUndefined);
     }
     if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
-    VkResult result = get_dispatch_table(ot_instance_table_map, physicalDevice)
-                          ->GetDisplayPlaneSupportedDisplaysKHR(physicalDevice, planeIndex, pDisplayCount, pDisplays);
+    layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), layer_data_map);
+    VkResult result = instance_data->instance_dispatch_table.GetDisplayPlaneSupportedDisplaysKHR(physicalDevice, planeIndex,
+                                                                                                 pDisplayCount, pDisplays);
     if (pDisplays && (VK_SUCCESS == result || VK_INCOMPLETE == result)) {
         std::lock_guard<std::mutex> lock(global_lock);
         for (uint32_t index = 0; index < *pDisplayCount; ++index) {
@@ -1415,8 +1417,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDisplayModeProperties2KHR(VkPhysicalDevice phy
         skip |= ValidateObject(physicalDevice, display, kVulkanObjectTypeDisplayKHR, false, kVUIDUndefined, kVUIDUndefined);
     }
     if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
-    VkResult result = get_dispatch_table(ot_instance_table_map, physicalDevice)
-                          ->GetDisplayModeProperties2KHR(physicalDevice, display, pPropertyCount, pProperties);
+    layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), layer_data_map);
+    VkResult result =
+        instance_data->instance_dispatch_table.GetDisplayModeProperties2KHR(physicalDevice, display, pPropertyCount, pProperties);
     if (pProperties && (VK_SUCCESS == result || VK_INCOMPLETE == result)) {
         std::lock_guard<std::mutex> lock(global_lock);
         for (uint32_t index = 0; index < *pPropertyCount; ++index) {
