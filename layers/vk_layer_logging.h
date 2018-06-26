@@ -833,45 +833,9 @@ static inline int vasprintf(char **strp, char const *fmt, va_list ap) {
 // needs to be logged
 #ifndef WIN32
 static inline bool log_msg(const debug_report_data *debug_data, VkFlags msg_flags, VkDebugReportObjectTypeEXT object_type,
-                           uint64_t src_object, int32_t msg_code, const char *format, ...) __attribute__((format(printf, 6, 7)));
-static inline bool log_msg(const debug_report_data *debug_data, VkFlags msg_flags, VkDebugReportObjectTypeEXT object_type,
                            uint64_t src_object, std::string vuid_text, const char *format, ...)
     __attribute__((format(printf, 6, 7)));
 #endif
-static inline bool log_msg(const debug_report_data *debug_data, VkFlags msg_flags, VkDebugReportObjectTypeEXT object_type,
-                           uint64_t src_object, int32_t msg_code, const char *format, ...) {
-    VkFlags local_severity = 0;
-    VkFlags local_type = 0;
-    DebugReportFlagsToAnnotFlags(msg_flags, true, &local_severity, &local_type);
-    if (!debug_data || !(debug_data->active_severities & local_severity) || !(debug_data->active_types & local_type)) {
-        // Message is not wanted
-        return false;
-    }
-
-    va_list argptr;
-    va_start(argptr, format);
-    char *str;
-    if (-1 == vasprintf(&str, format, argptr)) {
-        // On failure, glibc vasprintf leaves str undefined
-        str = nullptr;
-    }
-    va_end(argptr);
-
-    std::string str_plus_spec_text(str);
-
-    // If the msg_code is in the error map, tack on spec text to error message.
-    if (validation_error_map.find(msg_code) != validation_error_map.end()) {
-        str_plus_spec_text += " ";
-        str_plus_spec_text += validation_error_map[msg_code];
-    }
-
-    bool result = debug_log_msg(debug_data, msg_flags, object_type, src_object, 0, msg_code, "Validation",
-                                str_plus_spec_text.c_str() ? str_plus_spec_text.c_str() : "Allocation failure");
-    free(str);
-    return result;
-}
-
-// Overload of log_msg that takes a VUID string in place of a numerical VUID abstraction
 static inline bool log_msg(const debug_report_data *debug_data, VkFlags msg_flags, VkDebugReportObjectTypeEXT object_type,
                            uint64_t src_object, std::string vuid_text, const char *format, ...) {
     VkFlags local_severity = 0;

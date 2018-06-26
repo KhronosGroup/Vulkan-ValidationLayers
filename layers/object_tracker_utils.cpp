@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2017 The Khronos Group Inc.
- * Copyright (c) 2015-2017 Valve Corporation
- * Copyright (c) 2015-2017 LunarG, Inc.
- * Copyright (C) 2015-2017 Google Inc.
+/* Copyright (c) 2015-2018 The Khronos Group Inc.
+ * Copyright (c) 2015-2018 Valve Corporation
+ * Copyright (c) 2015-2018 LunarG, Inc.
+ * Copyright (C) 2015-2018 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,7 +49,7 @@ void AddQueueInfo(VkDevice device, uint32_t queue_node_index, VkQueue queue) {
             device_data->queue_info_map[queue] = p_queue_info;
         } else {
             log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_QUEUE_EXT,
-                    HandleToUint64(queue), OBJTRACK_INTERNAL_ERROR,
+                    HandleToUint64(queue), kVUID_ObjectTracker_InternalError,
                     "ERROR:  VK_ERROR_OUT_OF_HOST_MEMORY -- could not allocate memory for Queue Information");
         }
     }
@@ -73,7 +73,7 @@ void DestroyQueueDataStructures(VkDevice device) {
         assert(device_data->num_objects[obj_index] > 0);
         device_data->num_objects[obj_index]--;
         log_msg(device_data->report_data, VK_DEBUG_REPORT_INFORMATION_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_QUEUE_EXT,
-                queue->second->handle, OBJTRACK_NONE,
+                queue->second->handle, kVUID_ObjectTracker_Info,
                 "OBJ_STAT Destroy Queue obj 0x%" PRIxLEAST64 " (%" PRIu64 " total objs remain & %" PRIu64 " Queue objs).",
                 queue->second->handle, device_data->num_total_objects, device_data->num_objects[obj_index]);
         delete queue->second;
@@ -122,7 +122,7 @@ void AllocateCommandBuffer(VkDevice device, const VkCommandPool command_pool, co
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
 
     log_msg(device_data->report_data, VK_DEBUG_REPORT_INFORMATION_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-            HandleToUint64(command_buffer), OBJTRACK_NONE, "OBJ[0x%" PRIxLEAST64 "] : CREATE %s object 0x%" PRIxLEAST64,
+            HandleToUint64(command_buffer), kVUID_ObjectTracker_Info, "OBJ[0x%" PRIxLEAST64 "] : CREATE %s object 0x%" PRIxLEAST64,
             object_track_index++, "VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT", HandleToUint64(command_buffer));
 
     ObjTrackState *pNewObjNode = new ObjTrackState;
@@ -166,7 +166,7 @@ void AllocateDescriptorSet(VkDevice device, VkDescriptorPool descriptor_pool, Vk
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
 
     log_msg(device_data->report_data, VK_DEBUG_REPORT_INFORMATION_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_EXT,
-            HandleToUint64(descriptor_set), OBJTRACK_NONE, "OBJ[0x%" PRIxLEAST64 "] : CREATE %s object 0x%" PRIxLEAST64,
+            HandleToUint64(descriptor_set), kVUID_ObjectTracker_Info, "OBJ[0x%" PRIxLEAST64 "] : CREATE %s object 0x%" PRIxLEAST64,
             object_track_index++, "VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_EXT", HandleToUint64(descriptor_set));
 
     ObjTrackState *pNewObjNode = new ObjTrackState;
@@ -270,7 +270,7 @@ void CreateQueue(VkDevice device, VkQueue vkObj) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
 
     log_msg(device_data->report_data, VK_DEBUG_REPORT_INFORMATION_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_QUEUE_EXT,
-            HandleToUint64(vkObj), OBJTRACK_NONE, "OBJ[0x%" PRIxLEAST64 "] : CREATE %s object 0x%" PRIxLEAST64,
+            HandleToUint64(vkObj), kVUID_ObjectTracker_Info, "OBJ[0x%" PRIxLEAST64 "] : CREATE %s object 0x%" PRIxLEAST64,
             object_track_index++, "VK_DEBUG_REPORT_OBJECT_TYPE_QUEUE_EXT", HandleToUint64(vkObj));
 
     ObjTrackState *p_obj_node = NULL;
@@ -291,7 +291,7 @@ void CreateQueue(VkDevice device, VkQueue vkObj) {
 void CreateSwapchainImageObject(VkDevice dispatchable_object, VkImage swapchain_image, VkSwapchainKHR swapchain) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(dispatchable_object), layer_data_map);
     log_msg(device_data->report_data, VK_DEBUG_REPORT_INFORMATION_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
-            HandleToUint64(swapchain_image), OBJTRACK_NONE, "OBJ[0x%" PRIxLEAST64 "] : CREATE %s object 0x%" PRIxLEAST64,
+            HandleToUint64(swapchain_image), kVUID_ObjectTracker_Info, "OBJ[0x%" PRIxLEAST64 "] : CREATE %s object 0x%" PRIxLEAST64,
             object_track_index++, "SwapchainImage", HandleToUint64(swapchain_image));
 
     ObjTrackState *pNewObjNode = new ObjTrackState;
@@ -360,8 +360,8 @@ VKAPI_ATTR void VKAPI_CALL DestroyInstance(VkInstance instance, const VkAllocati
         VkDevice device = reinterpret_cast<VkDevice>(pNode->handle);
         VkDebugReportObjectTypeEXT debug_object_type = get_debug_report_enum[pNode->object_type];
 
-        log_msg(instance_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, debug_object_type, pNode->handle, OBJTRACK_OBJECT_LEAK,
-                "OBJ ERROR : %s object 0x%" PRIxLEAST64 " has not been destroyed.",
+        log_msg(instance_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, debug_object_type, pNode->handle,
+                kVUID_ObjectTracker_ObjectLeak, "OBJ ERROR : %s object 0x%" PRIxLEAST64 " has not been destroyed.",
                 string_VkDebugReportObjectTypeEXT(debug_object_type), pNode->handle);
 
         // Report any remaining objects in LL
