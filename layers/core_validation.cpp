@@ -1055,7 +1055,7 @@ static bool ValidatePipelineDrawtimeState(layer_data const *dev_data, LAST_BOUND
             }
         } else {
             skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
-                            HandleToUint64(pPipeline->pipeline), kVUID_Core_DrawState_NumSamplesMismatch,
+                            HandleToUint64(pPipeline->pipeline), kVUID_Core_DrawState_NoActiveRenderpass,
                             "No active render pass found at draw-time in Pipeline (0x%" PRIx64 ")!",
                             HandleToUint64(pPipeline->pipeline));
         }
@@ -11326,7 +11326,7 @@ static bool PreCallValidateAcquireNextImageKHR(layer_data *dev_data, VkDevice de
     bool skip = false;
     if (fence == VK_NULL_HANDLE && semaphore == VK_NULL_HANDLE) {
         skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
-                        HandleToUint64(device), kVUID_Core_DrawState_SwapchainNoSyncForAcquire,
+                        HandleToUint64(device), "VUID-vkAcquireNextImageKHR-semaphore-01780",
                         "vkAcquireNextImageKHR: Semaphore and fence cannot both be VK_NULL_HANDLE. There would be no way to "
                         "determine the completion of this operation.");
     }
@@ -11346,8 +11346,8 @@ static bool PreCallValidateAcquireNextImageKHR(layer_data *dev_data, VkDevice de
     auto swapchain_data = GetSwapchainNode(dev_data, swapchain);
     if (swapchain_data->replaced) {
         skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SWAPCHAIN_KHR_EXT,
-                        HandleToUint64(swapchain), kVUID_Core_DrawState_SwapchainReplaced,
-                        "vkAcquireNextImageKHR: This swapchain has been replaced. The application can still present any images it "
+                        HandleToUint64(swapchain), "VUID-vkAcquireNextImageKHR-swapchain-01285",
+                        "vkAcquireNextImageKHR: This swapchain has been retired. The application can still present any images it "
                         "has acquired, but cannot acquire any more.");
     }
 

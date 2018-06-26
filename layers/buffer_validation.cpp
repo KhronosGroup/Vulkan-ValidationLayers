@@ -1093,7 +1093,7 @@ bool PreCallValidateCreateImage(layer_data *device_data, const VkImageCreateInfo
 
     if ((pCreateInfo->flags & VK_IMAGE_CREATE_SPARSE_ALIASED_BIT) && (!GetEnabledFeatures(device_data)->sparseResidencyAliased)) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                        kVUID_Core_DrawState_InvalidFeature,
+                        "VUID-VkImageCreateInfo-flags-01924",
                         "vkCreateImage(): the sparseResidencyAliased device feature is disabled: Images cannot be created with the "
                         "VK_IMAGE_CREATE_SPARSE_ALIASED_BIT set.");
     }
@@ -1377,8 +1377,8 @@ bool PreCallValidateCmdClearDepthStencilImage(layer_data *device_data, VkCommand
             skip |=
                 VerifyClearImageLayout(device_data, cb_node, image_state, pRanges[i], imageLayout, "vkCmdClearDepthStencilImage()");
             // Image aspect must be depth or stencil or both
-            if (((pRanges[i].aspectMask & VK_IMAGE_ASPECT_DEPTH_BIT) != VK_IMAGE_ASPECT_DEPTH_BIT) &&
-                ((pRanges[i].aspectMask & VK_IMAGE_ASPECT_STENCIL_BIT) != VK_IMAGE_ASPECT_STENCIL_BIT)) {
+            VkImageAspectFlags valid_aspects = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+            if (((pRanges[i].aspectMask & valid_aspects) == 0) || ((pRanges[i].aspectMask & ~valid_aspects) != 0)) {
                 char const str[] =
                     "vkCmdClearDepthStencilImage aspectMasks for all subresource ranges must be set to VK_IMAGE_ASPECT_DEPTH_BIT "
                     "and/or VK_IMAGE_ASPECT_STENCIL_BIT";
@@ -2671,43 +2671,6 @@ bool PreCallValidateCmdBlitImage(layer_data *device_data, GLOBAL_CB_NODE *cb_nod
                     log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                             HandleToUint64(cb_node->commandBuffer), "VUID-vkCmdBlitImage-srcImage-00231", "%s.", ss.str().c_str());
             }
-
-#if 0  // TODO: Cannot find VU statements or spec language for these in CmdBlitImage. Verify or remove.
-            for (uint32_t i = 0; i < regionCount; i++) {
-                VkImageAspectFlags srcAspect = pRegions[i].srcSubresource.aspectMask;
-
-                if (FormatIsDepthAndStencil(src_format)) {
-                    if ((srcAspect != VK_IMAGE_ASPECT_DEPTH_BIT) && (srcAspect != VK_IMAGE_ASPECT_STENCIL_BIT)) {
-                        std::stringstream ss;
-                        ss << "vkCmdBlitImage: Combination depth/stencil image formats must have only one of VK_IMAGE_ASPECT_DEPTH_BIT "
-                            << "and VK_IMAGE_ASPECT_STENCIL_BIT set in srcImage and dstImage";
-                        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                            HandleToUint64(cb_node->commandBuffer), kVUID_Core_DrawState_InvalidImageAspect,
-                            "%s", ss.str().c_str());
-                    }
-                }
-                else if (FormatIsStencilOnly(src_format)) {
-                    if (srcAspect != VK_IMAGE_ASPECT_STENCIL_BIT) {
-                        std::stringstream ss;
-                        ss << "vkCmdBlitImage: Stencil-only image formats must have only the VK_IMAGE_ASPECT_STENCIL_BIT "
-                            << "set in both the srcImage and dstImage";
-                        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                            HandleToUint64(cb_node->commandBuffer), kVUID_Core_DrawState_InvalidImageAspect,
-                            "%s", ss.str().c_str());
-                    }
-                }
-                else if (FormatIsDepthOnly(src_format)) {
-                    if (srcAspect != VK_IMAGE_ASPECT_DEPTH_BIT) {
-                        std::stringstream ss;
-                        ss << "vkCmdBlitImage: Depth-only image formats must have only the VK_IMAGE_ASPECT_DEPTH "
-                            << "set in both the srcImage and dstImage";
-                        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                            HandleToUint64(cb_node->commandBuffer), kVUID_Core_DrawState_InvalidImageAspect,
-                            "%s", ss.str().c_str());
-                    }
-                }
-            }
-#endif
         }  // Depth or Stencil
 
         // Do per-region checks
@@ -3001,6 +2964,9 @@ static std::string string_VkAccessFlags(VkAccessFlags accessMask) {
     return result;
 }
 
+#if 0  // This fxn seems vestigial, not called anywhere.  All VkAccessFlagBits VUIDs are implicit & being checked by parameter
+       // validation ToBeRemoved (disabled 6/18) 
+
 // AccessFlags MUST have 'required_bit' set, and may have one or more of 'optional_bits' set. If required_bit is zero, accessMask
 // must have at least one of 'optional_bits' set
 // TODO: Add tracking to ensure that at least one barrier has been set for these layout transitions
@@ -3043,6 +3009,7 @@ static bool ValidateMaskBits(core_validation::layer_data *device_data, VkCommand
     }
     return skip;
 }
+#endif
 
 // ValidateLayoutVsAttachmentDescription is a general function where we can validate various state associated with the
 // VkAttachmentDescription structs that are used by the sub-passes of a renderpass. Initial check is to make sure that READ_ONLY
@@ -3285,7 +3252,7 @@ static bool validate_usage_flags(const layer_data *device_data, VkFlags actual, 
     }
     if (!correct_usage) {
         if (msgCode == kVUIDUndefined) {
-            // TODO: Fix callers with msgCode == -1 to use correct validation checks.
+            // TODO: Fix callers with kVUIDUndefined to use correct validation checks.
             skip =
                 log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, get_debug_report_enum[obj_type], obj_handle,
                         kVUID_Core_MemTrack_InvalidUsageFlag,
