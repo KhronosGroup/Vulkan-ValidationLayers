@@ -169,7 +169,7 @@ class ValidationJSON:
         self.all_vuids = set()
         self.vuid_db = defaultdict(list) # Maps VUID string to list of json-data dicts
         self.apiversion = ""
-        self.re_striptags = re.compile('<.*?>')
+        self.re_striptags = re.compile('<.*?>|&(amp;)+lt;|&(amp;)+gt;')
         self.duplicate_vuids = set()
 
     def read(self):
@@ -204,8 +204,12 @@ class ValidationJSON:
                         self.implicit_vuids.add(vuid_string)    # otherwise, implicit
                         vtype = 'implicit'
                     vuid_text = ventry['text']
-                    stripped = re.sub(self.re_striptags, '', vuid_text) # strip tags
-                    stripped = html.unescape(stripped) # unescape html literals (only partially works - because asciiDoctor?)
+                    #if 'amp;' in vuid_text:
+                    #    print(vuid_text)
+                    stripped = re.sub(self.re_striptags, '', vuid_text) # strip tags & literals
+                    stripped = html.unescape(stripped) # anything missed by the regex
+                    #if 'amp;' in stripped:
+                    #    print("  %s" % stripped)
                     self.vuid_db[vuid_string].append({'api':apiname, 'ext':ext, 'type':vtype, 'text':stripped})
         self.all_vuids = self.explicit_vuids | self.implicit_vuids
         self.duplicate_vuids = set({v for v in self.vuid_db if len(self.vuid_db[v]) > 1})
@@ -653,9 +657,14 @@ def main(argv):
                 line_list = val_source.vuid_count_dict[get_vuid_status]['file_line']
                 for line in line_list:
                     print('    => %s' % line)
+            elif get_vuid_status in val_source.implicit_vuids:
+                print('  Implemented! (Implicit)')
+                line_list = val_source.vuid_count_dict[get_vuid_status]['file_line']
+                for line in line_list:
+                    print('    => %s' % line)
             else:
                 print('  Not implemented.')
-            if get_vuid_status in val_tests.explicit_vuids:
+            if get_vuid_status in val_tests.all_vuids:
                 print('  Has a test!')
                 test_list = val_tests.vuid_to_tests[get_vuid_status]
                 for test in test_list:
