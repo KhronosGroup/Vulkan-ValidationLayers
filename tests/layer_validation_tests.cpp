@@ -19623,7 +19623,8 @@ TEST_F(VkLayerTest, CreateImageViewInvalidSubresourceRange) {
 
         // Try layerCount = 0
         {
-            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkImageViewCreateInfo-subresourceRange-01719");
+            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                                 "VUID-VkImageViewCreateInfo-subresourceRange-01719");
             const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 0};
             VkImageViewCreateInfo img_view_info = img_view_info_template;
             img_view_info.subresourceRange = range;
