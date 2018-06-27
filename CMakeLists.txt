@@ -45,6 +45,8 @@ if (USE_CCACHE)
     endif(CCACHE_FOUND)
 endif()
 
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
 include(GNUInstallDirs)
 # Set a better default install location for Windows only if the user did not provide one.
 if (CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT AND WIN32)
@@ -309,7 +311,7 @@ if (WIN32)
     add_library(VkLayer_utils STATIC ${VALIDATION_LAYER_UTILS_SOURCES})
     target_compile_definitions(VkLayer_utils PUBLIC _CRT_SECURE_NO_WARNINGS)
 else()
-    add_library(VkLayer_utils SHARED ${VALIDATION_LAYER_UTILS_SOURCES})
+    add_library(VkLayer_utils STATIC ${VALIDATION_LAYER_UTILS_SOURCES})
 endif()
 install(TARGETS VkLayer_utils DESTINATION ${CMAKE_INSTALL_LIBDIR})
 set_target_properties(VkLayer_utils PROPERTIES LINKER_LANGUAGE CXX)
