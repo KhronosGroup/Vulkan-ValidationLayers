@@ -1146,7 +1146,7 @@ bool PreCallValidateDestroyImage(layer_data *device_data, VkImage image, IMAGE_S
 }
 
 void PreCallRecordDestroyImage(layer_data *device_data, VkImage image, IMAGE_STATE *image_state, VK_OBJECT obj_struct) {
-    core_validation::invalidateCommandBuffers(device_data, image_state->cb_bindings, obj_struct);
+    core_validation::InvalidateCommandBuffers(device_data, image_state->cb_bindings, obj_struct);
     // Clean up memory mapping, bindings and range references for image
     for (auto mem_binding : image_state->GetBoundMemory()) {
         auto mem_info = core_validation::GetMemObjInfo(device_data, mem_binding);
@@ -1325,7 +1325,7 @@ bool PreCallValidateCmdClearColorImage(layer_data *dev_data, VkCommandBuffer com
                 ValidateImageFormatFeatureFlags(dev_data, image_state, VK_FORMAT_FEATURE_TRANSFER_DST_BIT, "vkCmdClearColorImage",
                                                 "VUID-vkCmdClearColorImage-image-00001", "VUID-vkCmdClearColorImage-image-00001");
         }
-        skip |= insideRenderPass(dev_data, cb_node, "vkCmdClearColorImage()", "VUID-vkCmdClearColorImage-renderpass");
+        skip |= InsideRenderPass(dev_data, cb_node, "vkCmdClearColorImage()", "VUID-vkCmdClearColorImage-renderpass");
         for (uint32_t i = 0; i < rangeCount; ++i) {
             std::string param_name = "pRanges[" + std::to_string(i) + "]";
             skip |= ValidateCmdClearColorSubresourceRange(dev_data, image_state, pRanges[i], param_name.c_str());
@@ -1370,7 +1370,7 @@ bool PreCallValidateCmdClearDepthStencilImage(layer_data *device_data, VkCommand
                                                     "VUID-vkCmdClearDepthStencilImage-image-00008");
         }
         skip |=
-            insideRenderPass(device_data, cb_node, "vkCmdClearDepthStencilImage()", "VUID-vkCmdClearDepthStencilImage-renderpass");
+            InsideRenderPass(device_data, cb_node, "vkCmdClearDepthStencilImage()", "VUID-vkCmdClearDepthStencilImage-renderpass");
         for (uint32_t i = 0; i < rangeCount; ++i) {
             std::string param_name = "pRanges[" + std::to_string(i) + "]";
             skip |= ValidateCmdClearDepthSubresourceRange(device_data, image_state, pRanges[i], param_name.c_str());
@@ -2290,7 +2290,7 @@ bool PreCallValidateCmdCopyImage(layer_data *device_data, GLOBAL_CB_NODE *cb_nod
                                   VK_QUEUE_TRANSFER_BIT | VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
                                   "VUID-vkCmdCopyImage-commandBuffer-cmdpool");
     skip |= ValidateCmd(device_data, cb_node, CMD_COPYIMAGE, "vkCmdCopyImage()");
-    skip |= insideRenderPass(device_data, cb_node, "vkCmdCopyImage()", "VUID-vkCmdCopyImage-renderpass");
+    skip |= InsideRenderPass(device_data, cb_node, "vkCmdCopyImage()", "VUID-vkCmdCopyImage-renderpass");
     bool hit_error = false;
     const std::string invalid_src_layout_vuid =
         (src_image_state->shared_presentable && core_validation::GetDeviceExtensions(device_data)->vk_khr_shared_presentable_image)
@@ -2358,7 +2358,7 @@ bool PreCallValidateCmdClearAttachments(layer_data *device_data, VkCommandBuffer
                 " prior to any Draw Cmds. It is recommended you use RenderPass LOAD_OP_CLEAR on Attachments prior to any Draw.",
                 HandleToUint64(commandBuffer));
         }
-        skip |= outsideRenderPass(device_data, cb_node, "vkCmdClearAttachments()", "VUID-vkCmdClearAttachments-renderpass");
+        skip |= OutsideRenderPass(device_data, cb_node, "vkCmdClearAttachments()", "VUID-vkCmdClearAttachments-renderpass");
     }
 
     // Validate that attachment is in reference list of active subpass
@@ -2477,7 +2477,7 @@ bool PreCallValidateCmdResolveImage(layer_data *device_data, GLOBAL_CB_NODE *cb_
         skip |= ValidateCmdQueueFlags(device_data, cb_node, "vkCmdResolveImage()", VK_QUEUE_GRAPHICS_BIT,
                                       "VUID-vkCmdResolveImage-commandBuffer-cmdpool");
         skip |= ValidateCmd(device_data, cb_node, CMD_RESOLVEIMAGE, "vkCmdResolveImage()");
-        skip |= insideRenderPass(device_data, cb_node, "vkCmdResolveImage()", "VUID-vkCmdResolveImage-renderpass");
+        skip |= InsideRenderPass(device_data, cb_node, "vkCmdResolveImage()", "VUID-vkCmdResolveImage-renderpass");
         skip |= ValidateImageFormatFeatureFlags(device_data, dst_image_state, VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT,
                                                 "vkCmdResolveImage()", "VUID-vkCmdResolveImage-dstImage-00264",
                                                 "VUID-vkCmdResolveImage-dstImage-00265");
@@ -2594,7 +2594,7 @@ bool PreCallValidateCmdBlitImage(layer_data *device_data, GLOBAL_CB_NODE *cb_nod
         skip |= ValidateCmdQueueFlags(device_data, cb_node, "vkCmdBlitImage()", VK_QUEUE_GRAPHICS_BIT,
                                       "VUID-vkCmdBlitImage-commandBuffer-cmdpool");
         skip |= ValidateCmd(device_data, cb_node, CMD_BLITIMAGE, "vkCmdBlitImage()");
-        skip |= insideRenderPass(device_data, cb_node, "vkCmdBlitImage()", "VUID-vkCmdBlitImage-renderpass");
+        skip |= InsideRenderPass(device_data, cb_node, "vkCmdBlitImage()", "VUID-vkCmdBlitImage-renderpass");
         skip |= ValidateImageFormatFeatureFlags(device_data, src_image_state, VK_FORMAT_FEATURE_BLIT_SRC_BIT, "vkCmdBlitImage()",
                                                 "VUID-vkCmdBlitImage-srcImage-00218", "VUID-vkCmdBlitImage-srcImage-00218");
         skip |= ValidateImageFormatFeatureFlags(device_data, dst_image_state, VK_FORMAT_FEATURE_BLIT_DST_BIT, "vkCmdBlitImage()",
@@ -2945,7 +2945,7 @@ void UpdateCmdBufImageLayouts(layer_data *device_data, GLOBAL_CB_NODE *pCB) {
 }
 
 // Print readable FlagBits in FlagMask
-static std::string string_VkAccessFlags(VkAccessFlags accessMask) {
+static std::string StringVkAccessFlags(VkAccessFlags accessMask) {
     std::string result;
     std::string separator;
 
@@ -2982,7 +2982,7 @@ static bool ValidateMaskBits(core_validation::layer_data *device_data, VkCommand
             skip |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                             HandleToUint64(cmdBuffer), kVUID_Core_DrawState_InvalidBarrier,
                             "Additional bits in %s accessMask 0x%X %s are specified when layout is %s.", type, accessMask,
-                            string_VkAccessFlags(accessMask).c_str(), string_VkImageLayout(layout));
+                            StringVkAccessFlags(accessMask).c_str(), string_VkImageLayout(layout));
         }
     } else {
         if (!required_bit) {
@@ -2990,21 +2990,21 @@ static bool ValidateMaskBits(core_validation::layer_data *device_data, VkCommand
                             HandleToUint64(cmdBuffer), kVUID_Core_DrawState_InvalidBarrier,
                             "%s AccessMask %d %s must contain at least one of access bits %d %s when layout is %s, unless the app "
                             "has previously added a barrier for this transition.",
-                            type, accessMask, string_VkAccessFlags(accessMask).c_str(), optional_bits,
-                            string_VkAccessFlags(optional_bits).c_str(), string_VkImageLayout(layout));
+                            type, accessMask, StringVkAccessFlags(accessMask).c_str(), optional_bits,
+                            StringVkAccessFlags(optional_bits).c_str(), string_VkImageLayout(layout));
         } else {
             std::string opt_bits;
             if (optional_bits != 0) {
                 std::stringstream ss;
                 ss << optional_bits;
-                opt_bits = "and may have optional bits " + ss.str() + ' ' + string_VkAccessFlags(optional_bits);
+                opt_bits = "and may have optional bits " + ss.str() + ' ' + StringVkAccessFlags(optional_bits);
             }
             skip |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                             HandleToUint64(cmdBuffer), kVUID_Core_DrawState_InvalidBarrier,
                             "%s AccessMask %d %s must have required access bit %d %s %s when layout is %s, unless the app has "
                             "previously added a barrier for this transition.",
-                            type, accessMask, string_VkAccessFlags(accessMask).c_str(), required_bit,
-                            string_VkAccessFlags(required_bit).c_str(), opt_bits.c_str(), string_VkImageLayout(layout));
+                            type, accessMask, StringVkAccessFlags(accessMask).c_str(), required_bit,
+                            StringVkAccessFlags(required_bit).c_str(), opt_bits.c_str(), string_VkImageLayout(layout));
         }
     }
     return skip;
@@ -3215,7 +3215,7 @@ bool ValidateMapImageLayouts(core_validation::layer_data *device_data, VkDevice 
     for (auto image_handle : mem_info->bound_images) {
         auto img_it = mem_info->bound_ranges.find(image_handle);
         if (img_it != mem_info->bound_ranges.end()) {
-            if (rangesIntersect(device_data, &img_it->second, offset, end_offset)) {
+            if (RangesIntersect(device_data, &img_it->second, offset, end_offset)) {
                 std::vector<VkImageLayout> layouts;
                 if (FindLayouts(device_data, VkImage(image_handle), layouts)) {
                     for (auto layout : layouts) {
@@ -3237,9 +3237,8 @@ bool ValidateMapImageLayouts(core_validation::layer_data *device_data, VkDevice 
 
 // Helper function to validate correct usage bits set for buffers or images. Verify that (actual & desired) flags != 0 or, if strict
 // is true, verify that (actual & desired) flags == desired
-static bool validate_usage_flags(const layer_data *device_data, VkFlags actual, VkFlags desired, VkBool32 strict,
-                                 uint64_t obj_handle, VulkanObjectType obj_type, std::string msgCode, char const *func_name,
-                                 char const *usage_str) {
+static bool ValidateUsageFlags(const layer_data *device_data, VkFlags actual, VkFlags desired, VkBool32 strict, uint64_t obj_handle,
+                               VulkanObjectType obj_type, std::string msgCode, char const *func_name, char const *usage_str) {
     const debug_report_data *report_data = core_validation::GetReportData(device_data);
 
     bool correct_usage = false;
@@ -3272,8 +3271,8 @@ static bool validate_usage_flags(const layer_data *device_data, VkFlags actual, 
 // where an error will be flagged if usage is not correct
 bool ValidateImageUsageFlags(layer_data *device_data, IMAGE_STATE const *image_state, VkFlags desired, bool strict,
                              const std::string &msgCode, char const *func_name, char const *usage_string) {
-    return validate_usage_flags(device_data, image_state->createInfo.usage, desired, strict, HandleToUint64(image_state->image),
-                                kVulkanObjectTypeImage, msgCode, func_name, usage_string);
+    return ValidateUsageFlags(device_data, image_state->createInfo.usage, desired, strict, HandleToUint64(image_state->image),
+                              kVulkanObjectTypeImage, msgCode, func_name, usage_string);
 }
 
 bool ValidateImageFormatFeatureFlags(layer_data *dev_data, IMAGE_STATE const *image_state, VkFormatFeatureFlags desired,
@@ -3334,8 +3333,8 @@ bool ValidateImageSubresourceLayers(layer_data *dev_data, const GLOBAL_CB_NODE *
 // where an error will be flagged if usage is not correct
 bool ValidateBufferUsageFlags(const layer_data *device_data, BUFFER_STATE const *buffer_state, VkFlags desired, bool strict,
                               const std::string &msgCode, char const *func_name, char const *usage_string) {
-    return validate_usage_flags(device_data, buffer_state->createInfo.usage, desired, strict, HandleToUint64(buffer_state->buffer),
-                                kVulkanObjectTypeBuffer, msgCode, func_name, usage_string);
+    return ValidateUsageFlags(device_data, buffer_state->createInfo.usage, desired, strict, HandleToUint64(buffer_state->buffer),
+                              kVulkanObjectTypeBuffer, msgCode, func_name, usage_string);
 }
 
 bool ValidateBufferViewRange(const layer_data *device_data, const BUFFER_STATE *buffer_state,
@@ -3950,7 +3949,7 @@ bool PreCallValidateCmdCopyBuffer(layer_data *device_data, GLOBAL_CB_NODE *cb_no
                                   VK_QUEUE_TRANSFER_BIT | VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
                                   "VUID-vkCmdCopyBuffer-commandBuffer-cmdpool");
     skip |= ValidateCmd(device_data, cb_node, CMD_COPYBUFFER, "vkCmdCopyBuffer()");
-    skip |= insideRenderPass(device_data, cb_node, "vkCmdCopyBuffer()", "VUID-vkCmdCopyBuffer-renderpass");
+    skip |= InsideRenderPass(device_data, cb_node, "vkCmdCopyBuffer()", "VUID-vkCmdCopyBuffer-renderpass");
     return skip;
 }
 
@@ -3961,7 +3960,7 @@ void PreCallRecordCmdCopyBuffer(layer_data *device_data, GLOBAL_CB_NODE *cb_node
     AddCommandBufferBindingBuffer(device_data, cb_node, dst_buffer_state);
 }
 
-static bool validateIdleBuffer(layer_data *device_data, VkBuffer buffer) {
+static bool ValidateIdleBuffer(layer_data *device_data, VkBuffer buffer) {
     const debug_report_data *report_data = core_validation::GetReportData(device_data);
     bool skip = false;
     auto buffer_state = GetBufferState(device_data, buffer);
@@ -3995,7 +3994,7 @@ bool PreCallValidateDestroyImageView(layer_data *device_data, VkImageView image_
 void PreCallRecordDestroyImageView(layer_data *device_data, VkImageView image_view, IMAGE_VIEW_STATE *image_view_state,
                                    VK_OBJECT obj_struct) {
     // Any bound cmd buffers are now invalid
-    invalidateCommandBuffers(device_data, image_view_state->cb_bindings, obj_struct);
+    InvalidateCommandBuffers(device_data, image_view_state->cb_bindings, obj_struct);
     (*GetImageViewMap(device_data)).erase(image_view);
 }
 
@@ -4005,13 +4004,13 @@ bool PreCallValidateDestroyBuffer(layer_data *device_data, VkBuffer buffer, BUFF
     if (GetDisables(device_data)->destroy_buffer) return false;
     bool skip = false;
     if (*buffer_state) {
-        skip |= validateIdleBuffer(device_data, buffer);
+        skip |= ValidateIdleBuffer(device_data, buffer);
     }
     return skip;
 }
 
 void PreCallRecordDestroyBuffer(layer_data *device_data, VkBuffer buffer, BUFFER_STATE *buffer_state, VK_OBJECT obj_struct) {
-    invalidateCommandBuffers(device_data, buffer_state->cb_bindings, obj_struct);
+    InvalidateCommandBuffers(device_data, buffer_state->cb_bindings, obj_struct);
     for (auto mem_binding : buffer_state->GetBoundMemory()) {
         auto mem_info = GetMemObjInfo(device_data, mem_binding);
         if (mem_info) {
@@ -4039,7 +4038,7 @@ bool PreCallValidateDestroyBufferView(layer_data *device_data, VkBufferView buff
 void PreCallRecordDestroyBufferView(layer_data *device_data, VkBufferView buffer_view, BUFFER_VIEW_STATE *buffer_view_state,
                                     VK_OBJECT obj_struct) {
     // Any bound cmd buffers are now invalid
-    invalidateCommandBuffers(device_data, buffer_view_state->cb_bindings, obj_struct);
+    InvalidateCommandBuffers(device_data, buffer_view_state->cb_bindings, obj_struct);
     GetBufferViewMap(device_data)->erase(buffer_view);
 }
 
@@ -4054,7 +4053,7 @@ bool PreCallValidateCmdFillBuffer(layer_data *device_data, GLOBAL_CB_NODE *cb_no
     skip |=
         ValidateBufferUsageFlags(device_data, buffer_state, VK_BUFFER_USAGE_TRANSFER_DST_BIT, true,
                                  "VUID-vkCmdFillBuffer-dstBuffer-00029", "vkCmdFillBuffer()", "VK_BUFFER_USAGE_TRANSFER_DST_BIT");
-    skip |= insideRenderPass(device_data, cb_node, "vkCmdFillBuffer()", "VUID-vkCmdFillBuffer-renderpass");
+    skip |= InsideRenderPass(device_data, cb_node, "vkCmdFillBuffer()", "VUID-vkCmdFillBuffer-renderpass");
     return skip;
 }
 
@@ -4388,7 +4387,7 @@ bool PreCallValidateCmdCopyImageToBuffer(layer_data *device_data, VkImageLayout 
                                                 "vkCmdCopyImageToBuffer()", "VUID-vkCmdCopyImageToBuffer-srcImage-00185",
                                                 "VUID-vkCmdCopyImageToBuffer-srcImage-00185");
     }
-    skip |= insideRenderPass(device_data, cb_node, "vkCmdCopyImageToBuffer()", "VUID-vkCmdCopyImageToBuffer-renderpass");
+    skip |= InsideRenderPass(device_data, cb_node, "vkCmdCopyImageToBuffer()", "VUID-vkCmdCopyImageToBuffer-renderpass");
     bool hit_error = false;
     const std::string src_invalid_layout_vuid =
         (src_image_state->shared_presentable && core_validation::GetDeviceExtensions(device_data)->vk_khr_shared_presentable_image)
@@ -4464,7 +4463,7 @@ bool PreCallValidateCmdCopyBufferToImage(layer_data *device_data, VkImageLayout 
                                                 "vkCmdCopyBufferToImage()", "VUID-vkCmdCopyBufferToImage-dstImage-00175",
                                                 "VUID-vkCmdCopyBufferToImage-dstImage-00175");
     }
-    skip |= insideRenderPass(device_data, cb_node, "vkCmdCopyBufferToImage()", "VUID-vkCmdCopyBufferToImage-renderpass");
+    skip |= InsideRenderPass(device_data, cb_node, "vkCmdCopyBufferToImage()", "VUID-vkCmdCopyBufferToImage-renderpass");
     bool hit_error = false;
     const std::string dst_invalid_layout_vuid =
         (dst_image_state->shared_presentable && core_validation::GetDeviceExtensions(device_data)->vk_khr_shared_presentable_image)

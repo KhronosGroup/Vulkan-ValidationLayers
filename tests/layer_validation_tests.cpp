@@ -10205,7 +10205,7 @@ TEST_F(VkLayerTest, DescriptorSetCompatibility) {
     // DrawState
     //  First cause various verify_layout_compatibility() fails
     //  Second disturb early and late sets and verify INFO msgs
-    // verify_set_layout_compatibility fail cases:
+    // VerifySetLayoutCompatibility fail cases:
     // 1. invalid VkPipelineLayout (layout) passed into vkCmdBindDescriptorSets
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdBindDescriptorSets-layout-parameter");
     vkCmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, (VkPipelineLayout)((size_t)0xbaadb1be), 0,

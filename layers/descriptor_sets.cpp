@@ -54,7 +54,7 @@ using DescriptorSetLayoutId = cvdescriptorset::DescriptorSetLayoutId;
 // Canonical dictionary of DescriptorSetLayoutDef (without any handle/device specific information)
 cvdescriptorset::DescriptorSetLayoutDict descriptor_set_layout_dict;
 
-DescriptorSetLayoutId get_canonical_id(const VkDescriptorSetLayoutCreateInfo *p_create_info) {
+DescriptorSetLayoutId GetCanonicalId(const VkDescriptorSetLayoutCreateInfo *p_create_info) {
     return descriptor_set_layout_dict.look_up(DescriptorSetLayoutDef(p_create_info));
 }
 
@@ -235,9 +235,9 @@ bool cvdescriptorset::DescriptorSetLayout::IsCompatible(DescriptorSetLayout cons
                                                         std::string *error_msg) const {
     // Trivial case
     if (layout_ == rh_ds_layout->GetDescriptorSetLayout()) return true;
-    if (get_layout_def() == rh_ds_layout->get_layout_def()) return true;
+    if (GetLayoutDef() == rh_ds_layout->GetLayoutDef()) return true;
     bool detailed_compat_check =
-        get_layout_def()->IsCompatible(layout_, rh_ds_layout->GetDescriptorSetLayout(), rh_ds_layout->get_layout_def(), error_msg);
+        GetLayoutDef()->IsCompatible(layout_, rh_ds_layout->GetDescriptorSetLayout(), rh_ds_layout->GetLayoutDef(), error_msg);
     // The detailed check should never tell us mismatching DSL are compatible
     assert(!detailed_compat_check);
     return detailed_compat_check;
@@ -353,7 +353,7 @@ bool cvdescriptorset::DescriptorSetLayoutDef::VerifyUpdateConsistency(uint32_t c
 // handle invariant portion
 cvdescriptorset::DescriptorSetLayout::DescriptorSetLayout(const VkDescriptorSetLayoutCreateInfo *p_create_info,
                                                           const VkDescriptorSetLayout layout)
-    : layout_(layout), layout_destroyed_(false), layout_id_(get_canonical_id(p_create_info)) {}
+    : layout_(layout), layout_destroyed_(false), layout_id_(GetCanonicalId(p_create_info)) {}
 
 // Validate descriptor set layout create info
 bool cvdescriptorset::DescriptorSetLayout::ValidateCreateInfo(
@@ -614,7 +614,7 @@ cvdescriptorset::DescriptorSet::DescriptorSet(const VkDescriptorSet set, const V
 
 cvdescriptorset::DescriptorSet::~DescriptorSet() { InvalidateBoundCmdBuffers(); }
 
-static std::string string_descriptor_req_view_type(descriptor_req req) {
+static std::string StringDescriptorReqViewType(descriptor_req req) {
     std::string result("");
     for (unsigned i = 0; i <= VK_IMAGE_VIEW_TYPE_END_RANGE; i++) {
         if (req & (1 << i)) {
@@ -747,7 +747,7 @@ bool cvdescriptorset::DescriptorSet::ValidateDrawState(const std::map<uint32_t, 
                         // bad view type
                         std::stringstream error_str;
                         error_str << "Descriptor in binding #" << binding << " at global descriptor index " << i
-                                  << " requires an image view of type " << string_descriptor_req_view_type(reqs) << " but got "
+                                  << " requires an image view of type " << StringDescriptorReqViewType(reqs) << " but got "
                                   << string_VkImageViewType(image_view_ci.viewType) << ".";
                         *error = error_str.str();
                         return false;
@@ -859,7 +859,7 @@ uint32_t cvdescriptorset::DescriptorSet::GetStorageUpdates(const std::map<uint32
 }
 // Set is being deleted or updates so invalidate all bound cmd buffers
 void cvdescriptorset::DescriptorSet::InvalidateBoundCmdBuffers() {
-    core_validation::invalidateCommandBuffers(device_data_, cb_bindings, {HandleToUint64(set_), kVulkanObjectTypeDescriptorSet});
+    core_validation::InvalidateCommandBuffers(device_data_, cb_bindings, {HandleToUint64(set_), kVulkanObjectTypeDescriptorSet});
 }
 // Perform write update in given update struct
 void cvdescriptorset::DescriptorSet::PerformWriteUpdate(const VkWriteDescriptorSet *update) {

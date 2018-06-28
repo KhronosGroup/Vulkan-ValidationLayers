@@ -81,7 +81,7 @@ struct shader_module {
           def_index(),
           has_valid_spirv(true),
           vk_shader_module(shaderModule) {
-        build_def_index();
+        BuildDefIndex();
     }
 
     shader_module() : has_valid_spirv(false), vk_shader_module(VK_NULL_HANDLE) {}
@@ -101,7 +101,7 @@ struct shader_module {
         return at(it->second);
     }
 
-    void build_def_index();
+    void BuildDefIndex();
 };
 
 class ValidationCache {
@@ -194,8 +194,8 @@ class ValidationCache {
     }
 };
 
-bool validate_and_capture_pipeline_shader_state(layer_data *dev_data, PIPELINE_STATE *pPipeline);
-bool validate_compute_pipeline(layer_data *dev_data, PIPELINE_STATE *pPipeline);
+bool ValidateAndCapturePipelineShaderState(layer_data *dev_data, PIPELINE_STATE *pPipeline);
+bool ValidateComputePipeline(layer_data *dev_data, PIPELINE_STATE *pPipeline);
 typedef std::pair<unsigned, unsigned> descriptor_slot_t;
 bool PreCallValidateCreateShaderModule(layer_data *dev_data, VkShaderModuleCreateInfo const *pCreateInfo, bool *spirv_valid);
 

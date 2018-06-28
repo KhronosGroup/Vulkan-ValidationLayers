@@ -209,8 +209,8 @@ class DescriptorSetLayout {
     VkDescriptorSetLayout GetDescriptorSetLayout() const { return layout_; };
     bool IsDestroyed() const { return layout_destroyed_; }
     void MarkDestroyed() { layout_destroyed_ = true; }
-    const DescriptorSetLayoutDef *get_layout_def() const { return layout_id_.get(); }
-    DescriptorSetLayoutId get_layout_id() const { return layout_id_; }
+    const DescriptorSetLayoutDef *GetLayoutDef() const { return layout_id_.get(); }
+    DescriptorSetLayoutId GetLayoutId() const { return layout_id_; }
     uint32_t GetTotalDescriptorCount() const { return layout_id_->GetTotalDescriptorCount(); };
     uint32_t GetDynamicDescriptorCount() const { return layout_id_->GetDynamicDescriptorCount(); };
     uint32_t GetBindingCount() const { return layout_id_->GetBindingCount(); };
