@@ -9009,30 +9009,75 @@ TEST_F(VkLayerTest, DescriptorImageUpdateNoMemoryBound) {
 }
 
 TEST_F(VkLayerTest, InvalidPipeline) {
-    // Attempt to bind an invalid Pipeline to a valid Command Buffer
-    // ObjectTracker should catch this.
-    // Create a valid cmd buffer
-    // call vkCmdBindPipeline w/ false Pipeline
     uint64_t fake_pipeline_handle = 0xbaad6001;
     VkPipeline bad_pipeline = reinterpret_cast<VkPipeline &>(fake_pipeline_handle);
-    ASSERT_NO_FATAL_FAILURE(Init());
+
+    // Enable VK_KHR_draw_indirect_count for KHR variants
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME);
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    bool has_khr_indirect = DeviceExtensionEnabled(VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
+    // Attempt to bind an invalid Pipeline to a valid Command Buffer
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdBindPipeline-pipeline-parameter");
     m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     vkCmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, bad_pipeline);
     m_errorMonitor->VerifyFound();
 
-    // Now issue a draw call with no pipeline bound
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "At Draw/Dispatch time no valid VkPipeline is bound!");
+    // Try each of the 6 flavors of Draw()
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);  // Draw*() calls must be submitted within a renderpass
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDraw-None-00442");
     m_commandBuffer->Draw(1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
 
-    // Finally same check once more but with Dispatch/Compute
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "At Draw/Dispatch time no valid VkPipeline is bound!");
-    vkCmdEndRenderPass(m_commandBuffer->handle());  // must be outside renderpass
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDrawIndexed-None-00461");
+    m_commandBuffer->DrawIndexed(1, 1, 0, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    VkBufferObj buffer;
+    VkBufferCreateInfo ci = {};
+    ci.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    ci.usage = VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
+    ci.size = 1024;
+    buffer.init(*m_device, ci);
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDrawIndirect-None-00485");
+    vkCmdDrawIndirect(m_commandBuffer->handle(), buffer.handle(), 0, 1, 0);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDrawIndexedIndirect-None-00537");
+    vkCmdDrawIndexedIndirect(m_commandBuffer->handle(), buffer.handle(), 0, 1, 0);
+    m_errorMonitor->VerifyFound();
+
+    if (has_khr_indirect) {
+        auto fpCmdDrawIndirectCountKHR =
+            (PFN_vkCmdDrawIndirectCountKHR)vkGetDeviceProcAddr(m_device->device(), "vkCmdDrawIndirectCountKHR");
+        ASSERT_NE(fpCmdDrawIndirectCountKHR, nullptr);
+
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDrawIndirectCountKHR-None-03119");
+        fpCmdDrawIndirectCountKHR(m_commandBuffer->handle(), buffer.handle(), 0, buffer.handle(), 512, 1, 0);
+        m_errorMonitor->VerifyFound();
+
+        auto fpCmdDrawIndexedIndirectCountKHR =
+            (PFN_vkCmdDrawIndexedIndirectCountKHR)vkGetDeviceProcAddr(m_device->device(), "vkCmdDrawIndexedIndirectCountKHR");
+        ASSERT_NE(fpCmdDrawIndexedIndirectCountKHR, nullptr);
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDrawIndexedIndirectCountKHR-None-03151");
+        fpCmdDrawIndexedIndirectCountKHR(m_commandBuffer->handle(), buffer.handle(), 0, buffer.handle(), 512, 1, 0);
+        m_errorMonitor->VerifyFound();
+    }
+
+    // Also try the Dispatch variants
+    vkCmdEndRenderPass(m_commandBuffer->handle());  // Compute submissions must be outside a renderpass
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDispatch-None-00391");
     vkCmdDispatch(m_commandBuffer->handle(), 0, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDispatchIndirect-None-00404");
+    vkCmdDispatchIndirect(m_commandBuffer->handle(), buffer.handle(), 0);
     m_errorMonitor->VerifyFound();
 }
 
