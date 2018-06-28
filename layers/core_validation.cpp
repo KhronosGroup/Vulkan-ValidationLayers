@@ -13147,6 +13147,9 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetDeviceProcAddr(VkDevice device, cons
     assert(device);
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
 
+    if (!ApiParentExtensionEnabled(funcName, device_data->extensions.device_extension_set)) {
+        return nullptr;
+    }
     // Is API to be intercepted by this layer?
     const auto &item = name_to_funcptr_map.find(funcName);
     if (item != name_to_funcptr_map.end()) {
