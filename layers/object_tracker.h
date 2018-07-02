@@ -26,6 +26,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unordered_map>
+#include <unordered_set>
 
 #include "vk_loader_platform.h"
 #include "vulkan/vulkan.h"
@@ -40,6 +41,7 @@
 #include "vulkan/vk_layer.h"
 #include "vk_dispatch_table_helper.h"
 #include "vk_validation_error_messages.h"
+#include "vk_extension_helper.h"
 
 namespace object_tracker {
 
@@ -95,6 +97,7 @@ struct layer_data {
 
     uint64_t num_objects[kVulkanObjectTypeMax + 1];
     uint64_t num_total_objects;
+    std::unordered_set<std::string> device_extension_set;
 
     debug_report_data *report_data;
     std::vector<VkDebugReportCallbackEXT> logging_callback;
