@@ -913,6 +913,58 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDescriptorSetLayout(VkDevice device, const 
     return result;
 }
 
+VKAPI_ATTR void VKAPI_CALL GetDescriptorSetLayoutSupport(VkDevice device, const VkDescriptorSetLayoutCreateInfo *pCreateInfo,
+                                                         VkDescriptorSetLayoutSupport *pSupport) {
+    bool skip = false;
+    {
+        std::lock_guard<std::mutex> lock(global_lock);
+        skip |= ValidateObject(device, device, kVulkanObjectTypeDevice, false,
+                               "VUID-vkGetDescriptorSetLayoutSupport-device-parameter", kVUIDUndefined);
+        if (pCreateInfo) {
+            if (pCreateInfo->pBindings) {
+                for (uint32_t index1 = 0; index1 < pCreateInfo->bindingCount; ++index1) {
+                    for (uint32_t index2 = 0; index2 < pCreateInfo->pBindings[index1].descriptorCount; ++index2) {
+                        if (pCreateInfo->pBindings[index1].pImmutableSamplers) {
+                            skip |= ValidateObject(device, pCreateInfo->pBindings[index1].pImmutableSamplers[index2],
+                                                   kVulkanObjectTypeSampler, true,
+                                                   "VUID-VkDescriptorSetLayoutBinding-descriptorType-00282", kVUIDUndefined);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    if (skip) return;
+    GetLayerDataPtr(get_dispatch_key(device), layer_data_map)
+        ->device_dispatch_table.GetDescriptorSetLayoutSupport(device, pCreateInfo, pSupport);
+}
+
+VKAPI_ATTR void VKAPI_CALL GetDescriptorSetLayoutSupportKHR(VkDevice device, const VkDescriptorSetLayoutCreateInfo *pCreateInfo,
+                                                            VkDescriptorSetLayoutSupport *pSupport) {
+    bool skip = false;
+    {
+        std::lock_guard<std::mutex> lock(global_lock);
+        skip |= ValidateObject(device, device, kVulkanObjectTypeDevice, false,
+                               "VUID-vkGetDescriptorSetLayoutSupportKHR-device-parameter", kVUIDUndefined);
+        if (pCreateInfo) {
+            if (pCreateInfo->pBindings) {
+                for (uint32_t index1 = 0; index1 < pCreateInfo->bindingCount; ++index1) {
+                    for (uint32_t index2 = 0; index2 < pCreateInfo->pBindings[index1].descriptorCount; ++index2) {
+                        if (pCreateInfo->pBindings[index1].pImmutableSamplers) {
+                            skip |= ValidateObject(device, pCreateInfo->pBindings[index1].pImmutableSamplers[index2],
+                                                   kVulkanObjectTypeSampler, true,
+                                                   "VUID-VkDescriptorSetLayoutBinding-descriptorType-00282", kVUIDUndefined);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    if (skip) return;
+    GetLayerDataPtr(get_dispatch_key(device), layer_data_map)
+        ->device_dispatch_table.GetDescriptorSetLayoutSupportKHR(device, pCreateInfo, pSupport);
+}
+
 VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceQueueFamilyProperties(VkPhysicalDevice physicalDevice,
                                                                   uint32_t *pQueueFamilyPropertyCount,
                                                                   VkQueueFamilyProperties *pQueueFamilyProperties) {
