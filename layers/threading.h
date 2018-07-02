@@ -23,6 +23,8 @@
 #include <condition_variable>
 #include <mutex>
 #include <vector>
+#include <unordered_set>
+#include <string>
 #include "vk_layer_config.h"
 #include "vk_layer_logging.h"
 
@@ -248,6 +250,7 @@ struct layer_data {
     std::vector<VkDebugUtilsMessengerEXT> logging_messenger;
     VkLayerDispatchTable *device_dispatch_table;
     VkLayerInstanceDispatchTable *instance_dispatch_table;
+    std::unordered_set<std::string> device_extension_set;
 
     // The following are for keeping track of the temporary callbacks that can
     // be used in vkCreateInstance and vkDestroyInstance:
