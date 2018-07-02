@@ -175,6 +175,8 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
             'vkGetDeviceQueue2',
             'vkGetSwapchainImagesKHR',
             'vkCreateDescriptorSetLayout',
+            'vkGetDescriptorSetLayoutSupport',
+            'vkGetDescriptorSetLayoutSupportKHR',
             'vkCreateDebugUtilsMessengerEXT',
             'vkDestroyDebugUtilsMessengerEXT',
             'vkSubmitDebugUtilsMessageEXT',
