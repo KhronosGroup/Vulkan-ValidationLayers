@@ -21,6 +21,7 @@
 
 #include "vulkan/vulkan.h"
 
+#include <string>
 #include <unordered_map>
 #include <unordered_set>
 
@@ -71,6 +72,7 @@ struct layer_data {
     VkLayerDispatchTable dispatch_table = {};
 
     std::unordered_map<uint64_t, std::unique_ptr<TEMPLATE_STATE>> desc_template_map;
+    std::unordered_set<std::string> device_extension_set;
 
     bool wsi_enabled;
     VkPhysicalDevice gpu;

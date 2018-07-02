@@ -215,6 +215,10 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
 
     // Setup layer's device dispatch table
     layer_init_device_dispatch_table(*pDevice, &my_device_data->dispatch_table, fpGetDeviceProcAddr);
+    // Save pCreateInfo device extension list for GetDeviceProcAddr()
+    for (uint32_t extn = 0; extn < pCreateInfo->enabledExtensionCount; extn++) {
+        my_device_data->device_extension_set.insert(pCreateInfo->ppEnabledExtensionNames[extn]);
+    }
 
     DeviceExtensionWhitelist(pCreateInfo, *pDevice);
 
@@ -272,12 +276,14 @@ VKAPI_ATTR VkResult VKAPI_CALL EnumerateDeviceExtensionProperties(VkPhysicalDevi
 }
 
 VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetDeviceProcAddr(VkDevice device, const char *funcName) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!ApiParentExtensionEnabled(funcName, device_data->device_extension_set)) {
+        return nullptr;
+    }
     const auto item = name_to_funcptr_map.find(funcName);
     if (item != name_to_funcptr_map.end()) {
         return reinterpret_cast<PFN_vkVoidFunction>(item->second);
     }
-
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     const auto &table = device_data->dispatch_table;
     if (!table.GetDeviceProcAddr) return nullptr;
     return table.GetDeviceProcAddr(device, funcName);
