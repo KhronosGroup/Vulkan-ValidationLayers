@@ -63,7 +63,6 @@ before_install:
       curl -L http://llvm.org/svn/llvm-project/cfe/trunk/tools/clang-format/clang-format-diff.py -o scripts/clang-format-diff.py;
     fi
   # Misc setup
-  - |
   - export core_count=$(nproc || echo 4) && echo core_count = $core_count
   - set +e
 
@@ -71,96 +70,42 @@ script:
   - set -e
   - |
     if [[ "$VULKAN_BUILD_TARGET" == "LINUX" ]]; then
-      # Build glslang for Vulkan-ValidationLayers and VulkanTools
-      cd ${TRAVIS_BUILD_DIR}
-      git clone https://github.com/KhronosGroup/glslang.git
-      cd glslang
-      ./update_glslang_sources.py
-      mkdir build
-      cd build
-      cmake -DCMAKE_INSTALL_PREFIX=install -DCMAKE_BUILD_TYPE=Debug ..
-      make install -j $core_count
-      cd ${TRAVIS_BUILD_DIR}
+      # Build all dependencies for Vulkan-ValidationLayers
+      if [[ "$TRAVIS_EVENT_TYPE" == "cron" ]]; then
+        # Build master branch when triggered by (daily) cron job
+        ${TRAVIS_BUILD_DIR}/scripts/update_deps.py --dir=${TRAVIS_BUILD_DIR}/external --ref=master
+      else
+        ${TRAVIS_BUILD_DIR}/scripts/update_deps.py --dir=${TRAVIS_BUILD_DIR}/external
+      fi
     fi
   - |
     if [[ "$VULKAN_BUILD_TARGET" == "LINUX" ]]; then
-      # Build Vulkan-Headers
-      cd ${TRAVIS_BUILD_DIR}
-      git clone https://github.com/KhronosGroup/Vulkan-Headers.git Vulkan-Headers
-      cd Vulkan-Headers
-      mkdir build
-      cd build
-      cmake -DCMAKE_INSTALL_PREFIX=install ..
-      make install
-      cd ${TRAVIS_BUILD_DIR}
-    fi
-  - |
-    if [[ "$VULKAN_BUILD_TARGET" == "LINUX" ]]; then
-      # Get VulkanTools and build DevSim
-      mkdir -p external
-      cd external
-      git clone https://github.com/LunarG/VulkanTools.git
-      cd VulkanTools
-      ./update_external_sources.sh
-      # Build as few components as possible
-      cmake -H. -Bbuild -DGLSLANG_INSTALL_DIR=${TRAVIS_BUILD_DIR}/glslang/build/install \
-          -DVULKAN_HEADERS_INSTALL_DIR=${TRAVIS_BUILD_DIR}/Vulkan-Headers/build/install \
-          -DBUILD_LOADER=NO -DBUILD_TESTS=NO \
-          -DBUILD_DEMOS=NO -DBUILD_VKTRACE=NO -DBUILD_VLF=NO -DBUILD_VKJSON=NO -DBUILD_VIA=NO -DBUILD_ICD=NO
-      make -C build -j $core_count
-      cd ${TRAVIS_BUILD_DIR}
-    fi
-  - |
-    if [[ "$VULKAN_BUILD_TARGET" == "LINUX" ]]; then
-      # Build Vulkan-Loader for Vulkan-ValidationLayers
-      cd ${TRAVIS_BUILD_DIR}
-      git clone https://github.com/KhronosGroup/Vulkan-Loader.git
-      cd Vulkan-Loader
-      mkdir build
-      cd build
-      cmake -DVULKAN_HEADERS_INSTALL_DIR=${TRAVIS_BUILD_DIR}/Vulkan-Headers/build/install -DCMAKE_INSTALL_PREFIX=install -DCMAKE_BUILD_TYPE=Debug ..
-      make install -j $core_count
-      cd ${TRAVIS_BUILD_DIR}
-    fi
-  - |
-    if [[ "$VULKAN_BUILD_TARGET" == "LINUX" ]]; then
-      # Build Vulkan-Tools for Vulkan-ValidationLayers
-      cd ${TRAVIS_BUILD_DIR}
-      git clone https://github.com/KhronosGroup/Vulkan-Tools.git
-      cd Vulkan-Tools
-      mkdir build
-      cd build
-      cmake -DVULKAN_HEADERS_INSTALL_DIR=${TRAVIS_BUILD_DIR}/Vulkan-Headers/build/install -DVULKAN_LOADER_INSTALL_DIR=${TRAVIS_BUILD_DIR}/Vulkan-Loader/build/install -DCMAKE_BUILD_TYPE=Debug -DBUILD_CUBE=OFF -DBUILD_VULKANINFO=OFF ..
-      make -j $core_count
-      cd ${TRAVIS_BUILD_DIR}
-    fi
-  - |
-    if [[ "$VULKAN_BUILD_TARGET" == "LINUX" ]]; then
-      # Fetch googletest componenet to build validation layer tests
+      # Fetch googletest component to build validation layer tests
       echo Fetching googletest external dependencies for building validation layer tests
-      git clone https://github.com/google/googletest.git external/googletest
+      git clone https://github.com/google/googletest.git ${TRAVIS_BUILD_DIR}/external/googletest
+    fi
+  - |
+    if [[ "$VULKAN_BUILD_TARGET" == "LINUX" ]]; then
       # Build Vulkan-ValidationLayers
       cd ${TRAVIS_BUILD_DIR}
       mkdir build
       cd build
-      cmake -DVULKAN_HEADERS_INSTALL_DIR=${TRAVIS_BUILD_DIR}/Vulkan-Headers/build/install -DGLSLANG_INSTALL_DIR=${TRAVIS_BUILD_DIR}/glslang/build/install -DVULKAN_LOADER_INSTALL_DIR=${TRAVIS_BUILD_DIR}/Vulkan-Loader/build/install -DCMAKE_BUILD_TYPE=Debug ..
-      make -j $core_count
-      cd ${TRAVIS_BUILD_DIR}
+      cmake -C ${TRAVIS_BUILD_DIR}/external/helper.cmake -DCMAKE_BUILD_TYPE=Debug ..
+      cmake --build . -- -j$core_count
     fi
   - |
     if [[ "$VULKAN_BUILD_TARGET" == "LINUX" ]]; then
       # Run Tests
       cd ${TRAVIS_BUILD_DIR}
-      export LD_LIBRARY_PATH=${TRAVIS_BUILD_DIR}/Vulkan-Loader/build/loader:$LD_LIBRARY_PATH
+      export LD_LIBRARY_PATH=${TRAVIS_BUILD_DIR}/external/Vulkan-Loader/build/loader:$LD_LIBRARY_PATH
       export VK_LAYER_PATH=${TRAVIS_BUILD_DIR}/external/VulkanTools/build/layersvt:${TRAVIS_BUILD_DIR}/build/layers
-      export VK_ICD_FILENAMES=${TRAVIS_BUILD_DIR}/Vulkan-Tools/build/icd/VkICD_mock_icd.json
+      export VK_ICD_FILENAMES=${TRAVIS_BUILD_DIR}/external/Vulkan-Tools/build/icd/VkICD_mock_icd.json
       build/tests/vk_layer_validation_tests
       for profile in tests/device_profiles/*.json
       do
         echo Testing with profile $profile
         VK_DEVSIM_FILENAME=$profile build/tests/vk_layer_validation_tests --devsim
       done
-      cd ${TRAVIS_BUILD_DIR}
     fi
   - |
     if [[ "$VULKAN_BUILD_TARGET" == "ANDROID" ]]; then
