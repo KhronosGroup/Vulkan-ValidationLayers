@@ -30,6 +30,7 @@
 #include "vulkan/vk_layer.h"
 #include "vk_object_types.h"
 #include "vk_validation_error_messages.h"
+#include "vk_layer_dispatch_table.h"
 #include <signal.h>
 #include <cinttypes>
 #include <stdarg.h>

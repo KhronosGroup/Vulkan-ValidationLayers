@@ -115,6 +115,7 @@ class DispatchTableHelperOutputGenerator(OutputGenerator):
         preamble += '#include <string>\n'
         preamble += '#include <unordered_set>\n'
         preamble += '#include <unordered_map>\n'
+        preamble += '#include "vk_layer_dispatch_table.h"\n'
 
         write(copyright, file=self.outFile)
         write(preamble, file=self.outFile)

@@ -45,6 +45,7 @@
 #include "vk_layer_logging.h"
 #include "vk_layer_extension_utils.h"
 #include "vk_layer_utils.h"
+#include "vk_layer_dispatch_table.h"
 
 #include "parameter_name.h"
 #include "parameter_validation.h"
