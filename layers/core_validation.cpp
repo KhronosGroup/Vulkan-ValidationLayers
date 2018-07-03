@@ -9821,13 +9821,9 @@ VKAPI_ATTR void VKAPI_CALL CmdExecuteCommands(VkCommandBuffer commandBuffer, uin
     if (!skip) dev_data->dispatch_table.CmdExecuteCommands(commandBuffer, commandBuffersCount, pCommandBuffers);
 }
 
-VKAPI_ATTR VkResult VKAPI_CALL MapMemory(VkDevice device, VkDeviceMemory mem, VkDeviceSize offset, VkDeviceSize size, VkFlags flags,
-                                         void **ppData) {
-    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-
+static bool PreCallValidateMapMemory(layer_data *dev_data, VkDevice device, VkDeviceMemory mem, VkDeviceSize offset,
+                                     VkDeviceSize size) {
     bool skip = false;
-    VkResult result = VK_ERROR_VALIDATION_FAILED_EXT;
-    unique_lock_t lock(global_lock);
     DEVICE_MEM_INFO *mem_info = GetMemObjInfo(dev_data, mem);
     if (mem_info) {
         auto end_offset = (VK_WHOLE_SIZE == size) ? mem_info->alloc_info.allocationSize - 1 : offset + size - 1;
@@ -9841,15 +9837,28 @@ VKAPI_ATTR VkResult VKAPI_CALL MapMemory(VkDevice device, VkDeviceMemory mem, Vk
         }
     }
     skip |= ValidateMapMemRange(dev_data, mem, offset, size);
-    lock.unlock();
+    return skip;
+}
 
+static void PostCallRecordMapMemory(layer_data *dev_data, VkDeviceMemory mem, VkDeviceSize offset, VkDeviceSize size,
+                                    void **ppData) {
+    // TODO : What's the point of this range? See comment on creating new "bound_range" above, which may replace this
+    StoreMemRanges(dev_data, mem, offset, size);
+    InitializeAndTrackMemory(dev_data, mem, offset, size, ppData);
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL MapMemory(VkDevice device, VkDeviceMemory mem, VkDeviceSize offset, VkDeviceSize size, VkFlags flags,
+                                         void **ppData) {
+    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    unique_lock_t lock(global_lock);
+    bool skip = PreCallValidateMapMemory(dev_data, device, mem, offset, size);
+    lock.unlock();
+    VkResult result = VK_ERROR_VALIDATION_FAILED_EXT;
     if (!skip) {
         result = dev_data->dispatch_table.MapMemory(device, mem, offset, size, flags, ppData);
         if (VK_SUCCESS == result) {
             lock.lock();
-            // TODO : What's the point of this range? See comment on creating new "bound_range" above, which may replace this
-            StoreMemRanges(dev_data, mem, offset, size);
-            InitializeAndTrackMemory(dev_data, mem, offset, size, ppData);
+            PostCallRecordMapMemory(dev_data, mem, offset, size, ppData);
             lock.unlock();
         }
     }
