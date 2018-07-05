@@ -364,7 +364,9 @@ class HelperFileOutputGenerator(OutputGenerator):
         outstring += '{\n'
         outstring += '    switch ((%s)input_value)\n' % groupName
         outstring += '    {\n'
-        for item in value_list:
+        # Emit these in a repeatable order so file is generated with the same contents each time.
+        # This helps compiler caching systems like ccache.
+        for item in sorted(value_list):
             outstring += '        case %s:\n' % item
             outstring += '            return "%s";\n' % item
         outstring += '        default:\n'
