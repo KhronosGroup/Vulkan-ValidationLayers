@@ -11773,18 +11773,20 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateMirSurfaceKHR(VkInstance instance, const Vk
     return CreateSurface(instance, pCreateInfo, pAllocator, pSurface, &VkLayerInstanceDispatchTable::CreateMirSurfaceKHR);
 }
 
+static bool PreCallValidateGetPhysicalDeviceMirPresentationSupportKHR(instance_layer_data *instance_data,
+                                                                      VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex) {
+    const auto pd_state = GetPhysicalDeviceState(instance_data, physicalDevice);
+    return ValidatePhysicalDeviceQueueFamily(instance_data, pd_state, queueFamilyIndex,
+                                             "VUID-vkGetPhysicalDeviceMirPresentationSupportKHR-queueFamilyIndex-01265",
+                                             "vkGetPhysicalDeviceMirPresentationSupportKHR", "queueFamilyIndex");
+}
+
 VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceMirPresentationSupportKHR(VkPhysicalDevice physicalDevice,
                                                                           uint32_t queueFamilyIndex, MirConnection *connection) {
-    bool skip = false;
     instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), instance_layer_data_map);
 
     unique_lock_t lock(global_lock);
-    const auto pd_state = GetPhysicalDeviceState(instance_data, physicalDevice);
-
-    skip |= ValidatePhysicalDeviceQueueFamily(instance_data, pd_state, queueFamilyIndex,
-                                              "VUID-vkGetPhysicalDeviceMirPresentationSupportKHR-queueFamilyIndex-01265",
-                                              "vkGetPhysicalDeviceMirPresentationSupportKHR", "queueFamilyIndex");
-
+    bool skip = PreCallValidateGetPhysicalDeviceMirPresentationSupportKHR(instance_data, physicalDevice, queueFamilyIndex);
     lock.unlock();
 
     if (skip) return VK_FALSE;
@@ -11803,19 +11805,22 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateWaylandSurfaceKHR(VkInstance instance, cons
     return CreateSurface(instance, pCreateInfo, pAllocator, pSurface, &VkLayerInstanceDispatchTable::CreateWaylandSurfaceKHR);
 }
 
+static bool PreCallValidateGetPhysicalDeviceWaylandPresentationSupportKHR(instance_layer_data *instance_data,
+                                                                          VkPhysicalDevice physicalDevice,
+                                                                          uint32_t queueFamilyIndex) {
+    const auto pd_state = GetPhysicalDeviceState(instance_data, physicalDevice);
+    return ValidatePhysicalDeviceQueueFamily(instance_data, pd_state, queueFamilyIndex,
+                                             "VUID-vkGetPhysicalDeviceWaylandPresentationSupportKHR-queueFamilyIndex-01306",
+                                             "vkGetPhysicalDeviceWaylandPresentationSupportKHR", "queueFamilyIndex");
+}
+
 VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceWaylandPresentationSupportKHR(VkPhysicalDevice physicalDevice,
                                                                               uint32_t queueFamilyIndex,
                                                                               struct wl_display *display) {
-    bool skip = false;
     instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), instance_layer_data_map);
 
     unique_lock_t lock(global_lock);
-    const auto pd_state = GetPhysicalDeviceState(instance_data, physicalDevice);
-
-    skip |= ValidatePhysicalDeviceQueueFamily(instance_data, pd_state, queueFamilyIndex,
-                                              "VUID-vkGetPhysicalDeviceWaylandPresentationSupportKHR-queueFamilyIndex-01306",
-                                              "vkGetPhysicalDeviceWaylandPresentationSupportKHR", "queueFamilyIndex");
-
+    bool skip = PreCallValidateGetPhysicalDeviceWaylandPresentationSupportKHR(instance_data, physicalDevice, queueFamilyIndex);
     lock.unlock();
 
     if (skip) return VK_FALSE;
@@ -11834,18 +11839,21 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateWin32SurfaceKHR(VkInstance instance, const 
     return CreateSurface(instance, pCreateInfo, pAllocator, pSurface, &VkLayerInstanceDispatchTable::CreateWin32SurfaceKHR);
 }
 
+static bool PreCallValidateGetPhysicalDeviceWin32PresentationSupportKHR(instance_layer_data *instance_data,
+                                                                        VkPhysicalDevice physicalDevice,
+                                                                        uint32_t queueFamilyIndex) {
+    const auto pd_state = GetPhysicalDeviceState(instance_data, physicalDevice);
+    return ValidatePhysicalDeviceQueueFamily(instance_data, pd_state, queueFamilyIndex,
+                                             "VUID-vkGetPhysicalDeviceWin32PresentationSupportKHR-queueFamilyIndex-01309",
+                                             "vkGetPhysicalDeviceWin32PresentationSupportKHR", "queueFamilyIndex");
+}
+
 VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceWin32PresentationSupportKHR(VkPhysicalDevice physicalDevice,
                                                                             uint32_t queueFamilyIndex) {
-    bool skip = false;
     instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), instance_layer_data_map);
 
     unique_lock_t lock(global_lock);
-    const auto pd_state = GetPhysicalDeviceState(instance_data, physicalDevice);
-
-    skip |= ValidatePhysicalDeviceQueueFamily(instance_data, pd_state, queueFamilyIndex,
-                                              "VUID-vkGetPhysicalDeviceWin32PresentationSupportKHR-queueFamilyIndex-01309",
-                                              "vkGetPhysicalDeviceWin32PresentationSupportKHR", "queueFamilyIndex");
-
+    bool skip = PreCallValidateGetPhysicalDeviceWin32PresentationSupportKHR(instance_data, physicalDevice, queueFamilyIndex);
     lock.unlock();
 
     if (skip) return VK_FALSE;
@@ -11863,19 +11871,21 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateXcbSurfaceKHR(VkInstance instance, const Vk
     return CreateSurface(instance, pCreateInfo, pAllocator, pSurface, &VkLayerInstanceDispatchTable::CreateXcbSurfaceKHR);
 }
 
+static bool PreCallValidateGetPhysicalDeviceXcbPresentationSupportKHR(instance_layer_data *instance_data,
+                                                                      VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex) {
+    const auto pd_state = GetPhysicalDeviceState(instance_data, physicalDevice);
+    return ValidatePhysicalDeviceQueueFamily(instance_data, pd_state, queueFamilyIndex,
+                                             "VUID-vkGetPhysicalDeviceXcbPresentationSupportKHR-queueFamilyIndex-01312",
+                                             "vkGetPhysicalDeviceXcbPresentationSupportKHR", "queueFamilyIndex");
+}
+
 VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceXcbPresentationSupportKHR(VkPhysicalDevice physicalDevice,
                                                                           uint32_t queueFamilyIndex, xcb_connection_t *connection,
                                                                           xcb_visualid_t visual_id) {
-    bool skip = false;
     instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), instance_layer_data_map);
 
     unique_lock_t lock(global_lock);
-    const auto pd_state = GetPhysicalDeviceState(instance_data, physicalDevice);
-
-    skip |= ValidatePhysicalDeviceQueueFamily(instance_data, pd_state, queueFamilyIndex,
-                                              "VUID-vkGetPhysicalDeviceXcbPresentationSupportKHR-queueFamilyIndex-01312",
-                                              "vkGetPhysicalDeviceXcbPresentationSupportKHR", "queueFamilyIndex");
-
+    bool skip = PreCallValidateGetPhysicalDeviceXcbPresentationSupportKHR(instance_data, physicalDevice, queueFamilyIndex);
     lock.unlock();
 
     if (skip) return VK_FALSE;
@@ -11894,19 +11904,21 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateXlibSurfaceKHR(VkInstance instance, const V
     return CreateSurface(instance, pCreateInfo, pAllocator, pSurface, &VkLayerInstanceDispatchTable::CreateXlibSurfaceKHR);
 }
 
+static bool PreCallValidateGetPhysicalDeviceXlibPresentationSupportKHR(instance_layer_data *instance_data,
+                                                                       VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex) {
+    const auto pd_state = GetPhysicalDeviceState(instance_data, physicalDevice);
+    return ValidatePhysicalDeviceQueueFamily(instance_data, pd_state, queueFamilyIndex,
+                                             "VUID-vkGetPhysicalDeviceXlibPresentationSupportKHR-queueFamilyIndex-01315",
+                                             "vkGetPhysicalDeviceXlibPresentationSupportKHR", "queueFamilyIndex");
+}
+
 VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceXlibPresentationSupportKHR(VkPhysicalDevice physicalDevice,
                                                                            uint32_t queueFamilyIndex, Display *dpy,
                                                                            VisualID visualID) {
-    bool skip = false;
     instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), instance_layer_data_map);
 
     unique_lock_t lock(global_lock);
-    const auto pd_state = GetPhysicalDeviceState(instance_data, physicalDevice);
-
-    skip |= ValidatePhysicalDeviceQueueFamily(instance_data, pd_state, queueFamilyIndex,
-                                              "VUID-vkGetPhysicalDeviceXlibPresentationSupportKHR-queueFamilyIndex-01315",
-                                              "vkGetPhysicalDeviceXlibPresentationSupportKHR", "queueFamilyIndex");
-
+    bool skip = PreCallValidateGetPhysicalDeviceXlibPresentationSupportKHR(instance_data, physicalDevice, queueFamilyIndex);
     lock.unlock();
 
     if (skip) return VK_FALSE;
