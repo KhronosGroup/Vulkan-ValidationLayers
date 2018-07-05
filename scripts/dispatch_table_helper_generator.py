@@ -112,6 +112,7 @@ class DispatchTableHelperOutputGenerator(OutputGenerator):
         preamble = ''
         preamble += '#include <vulkan/vulkan.h>\n'
         preamble += '#include <vulkan/vk_layer.h>\n'
+        preamble += '#include <cstring>\n'
         preamble += '#include <string>\n'
         preamble += '#include <unordered_set>\n'
         preamble += '#include <unordered_map>\n'
