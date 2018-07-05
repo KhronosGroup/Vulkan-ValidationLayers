@@ -11093,8 +11093,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetSwapchainImagesKHR(VkDevice device, VkSwapchai
     return result;
 }
 
-VKAPI_ATTR VkResult VKAPI_CALL QueuePresentKHR(VkQueue queue, const VkPresentInfoKHR *pPresentInfo) {
-    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(queue), layer_data_map);
+static bool PreCallValidateQueuePresentKHR(layer_data *dev_data, VkQueue queue, const VkPresentInfoKHR *pPresentInfo) {
     bool skip = false;
 
     lock_guard_t lock(global_lock);
@@ -11150,9 +11149,8 @@ VKAPI_ATTR VkResult VKAPI_CALL QueuePresentKHR(VkQueue queue, const VkPresentInf
                 }
             }
 
-            // All physical devices and queue families are required to be able
-            // to present to any native window on Android; require the
-            // application to have established support on any other platform.
+            // All physical devices and queue families are required to be able to present to any native window on Android; require
+            // the application to have established support on any other platform.
             if (!dev_data->instance_data->extensions.vk_khr_android_surface) {
                 auto surface_state = GetSurfaceState(dev_data->instance_data, swapchain_data->createInfo.surface);
                 auto support_it = surface_state->gpu_queue_support.find({dev_data->physical_device, queue_state->queueFamilyIndex});
@@ -11216,9 +11214,7 @@ VKAPI_ATTR VkResult VKAPI_CALL QueuePresentKHR(VkQueue queue, const VkPresentInf
             if (pPresentInfo->swapchainCount != present_times_info->swapchainCount) {
                 skip |=
                     log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SWAPCHAIN_KHR_EXT,
-                            HandleToUint64(pPresentInfo->pSwapchains[0]),
-
-                            "VUID-VkPresentTimesInfoGOOGLE-swapchainCount-01247",
+                            HandleToUint64(pPresentInfo->pSwapchains[0]), "VUID-VkPresentTimesInfoGOOGLE-swapchainCount-01247",
                             "vkQueuePresentKHR(): VkPresentTimesInfoGOOGLE.swapchainCount is %i but pPresentInfo->swapchainCount "
                             "is %i. For VkPresentTimesInfoGOOGLE down pNext chain of VkPresentInfoKHR, "
                             "VkPresentTimesInfoGOOGLE.swapchainCount must equal VkPresentInfoKHR.swapchainCount.",
@@ -11227,41 +11223,47 @@ VKAPI_ATTR VkResult VKAPI_CALL QueuePresentKHR(VkQueue queue, const VkPresentInf
         }
     }
 
-    if (skip) {
-        return VK_ERROR_VALIDATION_FAILED_EXT;
+    return skip;
+}
+
+static void PostCallRecordQueuePresentKHR(layer_data *dev_data, const VkPresentInfoKHR *pPresentInfo, const VkResult &result) {
+    // Semaphore waits occur before error generation, if the call reached the ICD. (Confirm?)
+    for (uint32_t i = 0; i < pPresentInfo->waitSemaphoreCount; ++i) {
+        auto pSemaphore = GetSemaphoreNode(dev_data, pPresentInfo->pWaitSemaphores[i]);
+        if (pSemaphore) {
+            pSemaphore->signaler.first = VK_NULL_HANDLE;
+            pSemaphore->signaled = false;
+        }
     }
 
+    for (uint32_t i = 0; i < pPresentInfo->swapchainCount; ++i) {
+        // Note: this is imperfect, in that we can get confused about what did or didn't succeed-- but if the app does that, it's
+        // confused itself just as much.
+        auto local_result = pPresentInfo->pResults ? pPresentInfo->pResults[i] : result;
+
+        if (local_result != VK_SUCCESS && local_result != VK_SUBOPTIMAL_KHR) continue;  // this present didn't actually happen.
+
+        // Mark the image as having been released to the WSI
+        auto swapchain_data = GetSwapchainNode(dev_data, pPresentInfo->pSwapchains[i]);
+        auto image = swapchain_data->images[pPresentInfo->pImageIndices[i]];
+        auto image_state = GetImageState(dev_data, image);
+        image_state->acquired = false;
+    }
+
+    // Note: even though presentation is directed to a queue, there is no direct ordering between QP and subsequent work, so QP (and
+    // its semaphore waits) /never/ participate in any completion proof.
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL QueuePresentKHR(VkQueue queue, const VkPresentInfoKHR *pPresentInfo) {
+    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(queue), layer_data_map);
+
+    bool skip = PreCallValidateQueuePresentKHR(dev_data, queue, pPresentInfo);
+
+    if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     VkResult result = dev_data->dispatch_table.QueuePresentKHR(queue, pPresentInfo);
 
     if (result != VK_ERROR_VALIDATION_FAILED_EXT) {
-        // Semaphore waits occur before error generation, if the call reached
-        // the ICD. (Confirm?)
-        for (uint32_t i = 0; i < pPresentInfo->waitSemaphoreCount; ++i) {
-            auto pSemaphore = GetSemaphoreNode(dev_data, pPresentInfo->pWaitSemaphores[i]);
-            if (pSemaphore) {
-                pSemaphore->signaler.first = VK_NULL_HANDLE;
-                pSemaphore->signaled = false;
-            }
-        }
-
-        for (uint32_t i = 0; i < pPresentInfo->swapchainCount; ++i) {
-            // Note: this is imperfect, in that we can get confused about what
-            // did or didn't succeed-- but if the app does that, it's confused
-            // itself just as much.
-            auto local_result = pPresentInfo->pResults ? pPresentInfo->pResults[i] : result;
-
-            if (local_result != VK_SUCCESS && local_result != VK_SUBOPTIMAL_KHR) continue;  // this present didn't actually happen.
-
-            // Mark the image as having been released to the WSI
-            auto swapchain_data = GetSwapchainNode(dev_data, pPresentInfo->pSwapchains[i]);
-            auto image = swapchain_data->images[pPresentInfo->pImageIndices[i]];
-            auto image_state = GetImageState(dev_data, image);
-            image_state->acquired = false;
-        }
-
-        // Note: even though presentation is directed to a queue, there is no
-        // direct ordering between QP and subsequent work, so QP (and its
-        // semaphore waits) /never/ participate in any completion proof.
+        PostCallRecordQueuePresentKHR(dev_data, pPresentInfo, result);
     }
 
     return result;
