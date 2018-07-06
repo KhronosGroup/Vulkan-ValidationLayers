@@ -12105,9 +12105,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfaceFormats2KHR(VkPhysicalDev
 }
 
 // VK_EXT_debug_utils commands
-VKAPI_ATTR VkResult VKAPI_CALL SetDebugUtilsObjectNameEXT(VkDevice device, const VkDebugUtilsObjectNameInfoEXT *pNameInfo) {
-    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    VkResult result = VK_SUCCESS;
+static void PreCallRecordSetDebugUtilsObectNameEXT(layer_data *dev_data, const VkDebugUtilsObjectNameInfoEXT *pNameInfo) {
     if (pNameInfo->pObjectName) {
         lock_guard_t lock(global_lock);
         dev_data->report_data->debugUtilsObjectNameMap->insert(
@@ -12116,6 +12114,14 @@ VKAPI_ATTR VkResult VKAPI_CALL SetDebugUtilsObjectNameEXT(VkDevice device, const
         lock_guard_t lock(global_lock);
         dev_data->report_data->debugUtilsObjectNameMap->erase(pNameInfo->objectHandle);
     }
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL SetDebugUtilsObjectNameEXT(VkDevice device, const VkDebugUtilsObjectNameInfoEXT *pNameInfo) {
+    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    VkResult result = VK_SUCCESS;
+
+    PreCallRecordSetDebugUtilsObectNameEXT(dev_data, pNameInfo);
+
     if (nullptr != dev_data->dispatch_table.SetDebugUtilsObjectNameEXT) {
         result = dev_data->dispatch_table.SetDebugUtilsObjectNameEXT(device, pNameInfo);
     }
@@ -12131,14 +12137,22 @@ VKAPI_ATTR VkResult VKAPI_CALL SetDebugUtilsObjectTagEXT(VkDevice device, const 
     return result;
 }
 
+static void PreCallRecordQueueBeginDebugUtilsLabelEXT(layer_data *dev_data, VkQueue queue, const VkDebugUtilsLabelEXT *pLabelInfo) {
+    BeginQueueDebugUtilsLabel(dev_data->report_data, queue, pLabelInfo);
+}
+
 VKAPI_ATTR void VKAPI_CALL QueueBeginDebugUtilsLabelEXT(VkQueue queue, const VkDebugUtilsLabelEXT *pLabelInfo) {
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(queue), layer_data_map);
     std::unique_lock<std::mutex> lock(global_lock);
-    BeginQueueDebugUtilsLabel(dev_data->report_data, queue, pLabelInfo);
+    PreCallRecordQueueBeginDebugUtilsLabelEXT(dev_data, queue, pLabelInfo);
     lock.unlock();
     if (nullptr != dev_data->dispatch_table.QueueBeginDebugUtilsLabelEXT) {
         dev_data->dispatch_table.QueueBeginDebugUtilsLabelEXT(queue, pLabelInfo);
     }
+}
+
+static void PostCallRecordQueueEndDebugUtilsLabelEXT(layer_data *dev_data, VkQueue queue) {
+    EndQueueDebugUtilsLabel(dev_data->report_data, queue);
 }
 
 VKAPI_ATTR void VKAPI_CALL QueueEndDebugUtilsLabelEXT(VkQueue queue) {
@@ -12147,13 +12161,18 @@ VKAPI_ATTR void VKAPI_CALL QueueEndDebugUtilsLabelEXT(VkQueue queue) {
         dev_data->dispatch_table.QueueEndDebugUtilsLabelEXT(queue);
     }
     lock_guard_t lock(global_lock);
-    EndQueueDebugUtilsLabel(dev_data->report_data, queue);
+    PostCallRecordQueueEndDebugUtilsLabelEXT(dev_data, queue);
+}
+
+static void PreCallRecordQueueInsertDebugUtilsLabelEXT(layer_data *dev_data, VkQueue queue,
+                                                       const VkDebugUtilsLabelEXT *pLabelInfo) {
+    InsertQueueDebugUtilsLabel(dev_data->report_data, queue, pLabelInfo);
 }
 
 VKAPI_ATTR void VKAPI_CALL QueueInsertDebugUtilsLabelEXT(VkQueue queue, const VkDebugUtilsLabelEXT *pLabelInfo) {
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(queue), layer_data_map);
     std::unique_lock<std::mutex> lock(global_lock);
-    InsertQueueDebugUtilsLabel(dev_data->report_data, queue, pLabelInfo);
+    PreCallRecordQueueInsertDebugUtilsLabelEXT(dev_data, queue, pLabelInfo);
     lock.unlock();
     if (nullptr != dev_data->dispatch_table.QueueInsertDebugUtilsLabelEXT) {
         dev_data->dispatch_table.QueueInsertDebugUtilsLabelEXT(queue, pLabelInfo);
