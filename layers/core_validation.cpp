@@ -12179,14 +12179,23 @@ VKAPI_ATTR void VKAPI_CALL QueueInsertDebugUtilsLabelEXT(VkQueue queue, const Vk
     }
 }
 
+static void PreCallRecordCmdBeginDebugUtilsLabelEXT(layer_data *dev_data, VkCommandBuffer commandBuffer,
+                                                    const VkDebugUtilsLabelEXT *pLabelInfo) {
+    BeginCmdDebugUtilsLabel(dev_data->report_data, commandBuffer, pLabelInfo);
+}
+
 VKAPI_ATTR void VKAPI_CALL CmdBeginDebugUtilsLabelEXT(VkCommandBuffer commandBuffer, const VkDebugUtilsLabelEXT *pLabelInfo) {
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     std::unique_lock<std::mutex> lock(global_lock);
-    BeginCmdDebugUtilsLabel(dev_data->report_data, commandBuffer, pLabelInfo);
+    PreCallRecordCmdBeginDebugUtilsLabelEXT(dev_data, commandBuffer, pLabelInfo);
     lock.unlock();
     if (nullptr != dev_data->dispatch_table.CmdBeginDebugUtilsLabelEXT) {
         dev_data->dispatch_table.CmdBeginDebugUtilsLabelEXT(commandBuffer, pLabelInfo);
     }
+}
+
+static void PostCallRecordCmdEndDebugUtilsLabelEXT(layer_data *dev_data, VkCommandBuffer commandBuffer) {
+    EndCmdDebugUtilsLabel(dev_data->report_data, commandBuffer);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdEndDebugUtilsLabelEXT(VkCommandBuffer commandBuffer) {
@@ -12195,17 +12204,29 @@ VKAPI_ATTR void VKAPI_CALL CmdEndDebugUtilsLabelEXT(VkCommandBuffer commandBuffe
         dev_data->dispatch_table.CmdEndDebugUtilsLabelEXT(commandBuffer);
     }
     lock_guard_t lock(global_lock);
-    EndCmdDebugUtilsLabel(dev_data->report_data, commandBuffer);
+    PostCallRecordCmdEndDebugUtilsLabelEXT(dev_data, commandBuffer);
+}
+
+static void PreCallRecordCmdInsertDebugUtilsLabelEXT(layer_data *dev_data, VkCommandBuffer commandBuffer,
+                                                     const VkDebugUtilsLabelEXT *pLabelInfo) {
+    InsertCmdDebugUtilsLabel(dev_data->report_data, commandBuffer, pLabelInfo);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdInsertDebugUtilsLabelEXT(VkCommandBuffer commandBuffer, const VkDebugUtilsLabelEXT *pLabelInfo) {
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     std::unique_lock<std::mutex> lock(global_lock);
-    InsertCmdDebugUtilsLabel(dev_data->report_data, commandBuffer, pLabelInfo);
+    PreCallRecordCmdInsertDebugUtilsLabelEXT(dev_data, commandBuffer, pLabelInfo);
     lock.unlock();
     if (nullptr != dev_data->dispatch_table.CmdInsertDebugUtilsLabelEXT) {
         dev_data->dispatch_table.CmdInsertDebugUtilsLabelEXT(commandBuffer, pLabelInfo);
     }
+}
+
+static VkResult PostCallRecordCreateDebugUtilsMessengerEXT(instance_layer_data *instance_data,
+                                                           const VkDebugUtilsMessengerCreateInfoEXT *pCreateInfo,
+                                                           const VkAllocationCallbacks *pAllocator,
+                                                           VkDebugUtilsMessengerEXT *pMessenger) {
+    return layer_create_messenger_callback(instance_data->report_data, false, pCreateInfo, pAllocator, pMessenger);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL CreateDebugUtilsMessengerEXT(VkInstance instance,
@@ -12216,16 +12237,21 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDebugUtilsMessengerEXT(VkInstance instance,
     VkResult result = instance_data->dispatch_table.CreateDebugUtilsMessengerEXT(instance, pCreateInfo, pAllocator, pMessenger);
 
     if (VK_SUCCESS == result) {
-        result = layer_create_messenger_callback(instance_data->report_data, false, pCreateInfo, pAllocator, pMessenger);
+        result = PostCallRecordCreateDebugUtilsMessengerEXT(instance_data, pCreateInfo, pAllocator, pMessenger);
     }
     return result;
+}
+
+static void PostCallRecordDestroyDebugUtilsMessengerEXT(instance_layer_data *instance_data, VkDebugUtilsMessengerEXT messenger,
+                                                        const VkAllocationCallbacks *pAllocator) {
+    layer_destroy_messenger_callback(instance_data->report_data, messenger, pAllocator);
 }
 
 VKAPI_ATTR void VKAPI_CALL DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT messenger,
                                                          const VkAllocationCallbacks *pAllocator) {
     instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(instance), instance_layer_data_map);
     instance_data->dispatch_table.DestroyDebugUtilsMessengerEXT(instance, messenger, pAllocator);
-    layer_destroy_messenger_callback(instance_data->report_data, messenger, pAllocator);
+    PostCallRecordDestroyDebugUtilsMessengerEXT(instance_data, messenger, pAllocator);
 }
 
 VKAPI_ATTR void VKAPI_CALL SubmitDebugUtilsMessageEXT(VkInstance instance, VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
