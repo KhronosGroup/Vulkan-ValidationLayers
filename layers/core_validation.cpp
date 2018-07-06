@@ -4292,12 +4292,16 @@ VKAPI_ATTR void VKAPI_CALL DestroyPipeline(VkDevice device, VkPipeline pipeline,
     }
 }
 
+static void PreCallRecordDestroyPipelineLayout(layer_data *dev_data, VkPipelineLayout pipelineLayout) {
+    dev_data->pipelineLayoutMap.erase(pipelineLayout);
+}
+
 VKAPI_ATTR void VKAPI_CALL DestroyPipelineLayout(VkDevice device, VkPipelineLayout pipelineLayout,
                                                  const VkAllocationCallbacks *pAllocator) {
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     unique_lock_t lock(global_lock);
     // Pre-record to avoid Destroy/Create race
-    dev_data->pipelineLayoutMap.erase(pipelineLayout);
+    PreCallRecordDestroyPipelineLayout(dev_data, pipelineLayout);
     lock.unlock();
 
     dev_data->dispatch_table.DestroyPipelineLayout(device, pipelineLayout, pAllocator);
@@ -11736,21 +11740,27 @@ static VkResult CreateSurface(VkInstance instance, TCreateInfo const *pCreateInf
     return result;
 }
 
-VKAPI_ATTR void VKAPI_CALL DestroySurfaceKHR(VkInstance instance, VkSurfaceKHR surface, const VkAllocationCallbacks *pAllocator) {
-    bool skip = false;
-    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(instance), instance_layer_data_map);
-    unique_lock_t lock(global_lock);
+static bool PreCallValidateDestroySurfaceKHR(instance_layer_data *instance_data, VkInstance instance, VkSurfaceKHR surface) {
     auto surface_state = GetSurfaceState(instance_data, surface);
-
+    bool skip = false;
     if ((surface_state) && (surface_state->swapchain)) {
         skip |= log_msg(instance_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_INSTANCE_EXT,
                         HandleToUint64(instance), "VUID-vkDestroySurfaceKHR-surface-01266",
                         "vkDestroySurfaceKHR() called before its associated VkSwapchainKHR was destroyed.");
     }
+    return skip;
+}
 
-    // Pre-record to avoid Destroy/Create race
+static void PreCallRecordValidateDestroySurfaceKHR(instance_layer_data *instance_data, VkSurfaceKHR surface) {
     instance_data->surface_map.erase(surface);
+}
 
+VKAPI_ATTR void VKAPI_CALL DestroySurfaceKHR(VkInstance instance, VkSurfaceKHR surface, const VkAllocationCallbacks *pAllocator) {
+    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(instance), instance_layer_data_map);
+    unique_lock_t lock(global_lock);
+    bool skip = PreCallValidateDestroySurfaceKHR(instance_data, instance, surface);
+    // Pre-record to avoid Destroy/Create race
+    PreCallRecordValidateDestroySurfaceKHR(instance_data, surface);
     lock.unlock();
     if (!skip) {
         instance_data->dispatch_table.DestroySurfaceKHR(instance, surface, pAllocator);
@@ -12376,12 +12386,17 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDebugReportCallbackEXT(VkInstance instance,
     return res;
 }
 
+static void PostCallDestroyDebugReportCallbackEXT(instance_layer_data *instance_data, VkDebugReportCallbackEXT msgCallback,
+                                                  const VkAllocationCallbacks *pAllocator) {
+    layer_destroy_report_callback(instance_data->report_data, msgCallback, pAllocator);
+}
+
 VKAPI_ATTR void VKAPI_CALL DestroyDebugReportCallbackEXT(VkInstance instance, VkDebugReportCallbackEXT msgCallback,
                                                          const VkAllocationCallbacks *pAllocator) {
     instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(instance), instance_layer_data_map);
     instance_data->dispatch_table.DestroyDebugReportCallbackEXT(instance, msgCallback, pAllocator);
     lock_guard_t lock(global_lock);
-    layer_destroy_report_callback(instance_data->report_data, msgCallback, pAllocator);
+    PostCallDestroyDebugReportCallbackEXT(instance_data, msgCallback, pAllocator);
 }
 
 VKAPI_ATTR void VKAPI_CALL DebugReportMessageEXT(VkInstance instance, VkDebugReportFlagsEXT flags,
