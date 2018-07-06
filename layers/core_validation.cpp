@@ -4529,13 +4529,21 @@ VKAPI_ATTR void VKAPI_CALL DestroyCommandPool(VkDevice device, VkCommandPool com
     }
 }
 
+static bool PreCallValidateResetCommandPool(layer_data *dev_data, COMMAND_POOL_NODE *pPool) {
+    return CheckCommandBuffersInFlight(dev_data, pPool, "reset command pool with", "VUID-vkResetCommandPool-commandPool-00040");
+}
+
+static void PostCallRecordResetCommandPool(layer_data *dev_data, COMMAND_POOL_NODE *pPool) {
+    for (auto cmdBuffer : pPool->commandBuffers) {
+        ResetCommandBufferState(dev_data, cmdBuffer);
+    }
+}
+
 VKAPI_ATTR VkResult VKAPI_CALL ResetCommandPool(VkDevice device, VkCommandPool commandPool, VkCommandPoolResetFlags flags) {
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    bool skip = false;
-
     unique_lock_t lock(global_lock);
     auto pPool = GetCommandPoolNode(dev_data, commandPool);
-    skip |= CheckCommandBuffersInFlight(dev_data, pPool, "reset command pool with", "VUID-vkResetCommandPool-commandPool-00040");
+    bool skip = PreCallValidateResetCommandPool(dev_data, pPool);
     lock.unlock();
 
     if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
@@ -4545,26 +4553,42 @@ VKAPI_ATTR VkResult VKAPI_CALL ResetCommandPool(VkDevice device, VkCommandPool c
     // Reset all of the CBs allocated from this pool
     if (VK_SUCCESS == result) {
         lock.lock();
-        for (auto cmdBuffer : pPool->commandBuffers) {
-            ResetCommandBufferState(dev_data, cmdBuffer);
-        }
+        PostCallRecordResetCommandPool(dev_data, pPool);
         lock.unlock();
     }
     return result;
 }
 
-VKAPI_ATTR VkResult VKAPI_CALL ResetFences(VkDevice device, uint32_t fenceCount, const VkFence *pFences) {
-    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+static bool PreCallValidateResetFences(layer_data *dev_data, uint32_t fenceCount, const VkFence *pFences) {
     bool skip = false;
-    unique_lock_t lock(global_lock);
     for (uint32_t i = 0; i < fenceCount; ++i) {
         auto pFence = GetFenceNode(dev_data, pFences[i]);
         if (pFence && pFence->scope == kSyncScopeInternal && pFence->state == FENCE_INFLIGHT) {
             skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_FENCE_EXT,
-                            HandleToUint64(pFences[i]), "VUID-vkResetFences-pFences-01123", "Fence 0x%" PRIx64 " is in use.",
-                            HandleToUint64(pFences[i]));
+                HandleToUint64(pFences[i]), "VUID-vkResetFences-pFences-01123", "Fence 0x%" PRIx64 " is in use.",
+                HandleToUint64(pFences[i]));
         }
     }
+    return skip;
+}
+
+static void PostCallRecordResetFences(layer_data *dev_data, uint32_t fenceCount, const VkFence *pFences) {
+    for (uint32_t i = 0; i < fenceCount; ++i) {
+        auto pFence = GetFenceNode(dev_data, pFences[i]);
+        if (pFence) {
+            if (pFence->scope == kSyncScopeInternal) {
+                pFence->state = FENCE_UNSIGNALED;
+            } else if (pFence->scope == kSyncScopeExternalTemporary) {
+                pFence->scope = kSyncScopeInternal;
+            }
+        }
+    }
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL ResetFences(VkDevice device, uint32_t fenceCount, const VkFence *pFences) {
+    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    unique_lock_t lock(global_lock);
+    bool skip = PreCallValidateResetFences(dev_data, fenceCount, pFences);
     lock.unlock();
 
     if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
@@ -4573,16 +4597,7 @@ VKAPI_ATTR VkResult VKAPI_CALL ResetFences(VkDevice device, uint32_t fenceCount,
 
     if (result == VK_SUCCESS) {
         lock.lock();
-        for (uint32_t i = 0; i < fenceCount; ++i) {
-            auto pFence = GetFenceNode(dev_data, pFences[i]);
-            if (pFence) {
-                if (pFence->scope == kSyncScopeInternal) {
-                    pFence->state = FENCE_UNSIGNALED;
-                } else if (pFence->scope == kSyncScopeExternalTemporary) {
-                    pFence->scope = kSyncScopeInternal;
-                }
-            }
-        }
+        PostCallRecordResetFences(dev_data, fenceCount, pFences);
         lock.unlock();
     }
 
