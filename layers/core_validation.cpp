@@ -2108,16 +2108,8 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
     return result;
 }
 
-// Hook DestroyInstance to remove tableInstanceMap entry
-VKAPI_ATTR void VKAPI_CALL DestroyInstance(VkInstance instance, const VkAllocationCallbacks *pAllocator) {
-    // TODOSC : Shouldn't need any customization here
-    dispatch_key key = get_dispatch_key(instance);
-    // TBD: Need any locking this early, in case this function is called at the
-    // same time by more than one thread?
-    instance_layer_data *instance_data = GetLayerDataPtr(key, instance_layer_data_map);
-    instance_data->dispatch_table.DestroyInstance(instance, pAllocator);
-
-    lock_guard_t lock(global_lock);
+static void PostCallRecordDestroyInstance(instance_layer_data *instance_data, const VkAllocationCallbacks *pAllocator,
+                                          dispatch_key key) {
     // Clean up logging callback, if any
     while (instance_data->logging_messenger.size() > 0) {
         VkDebugUtilsMessengerEXT messenger = instance_data->logging_messenger.back();
@@ -2132,6 +2124,19 @@ VKAPI_ATTR void VKAPI_CALL DestroyInstance(VkInstance instance, const VkAllocati
 
     layer_debug_utils_destroy_instance(instance_data->report_data);
     FreeLayerDataPtr(key, instance_layer_data_map);
+}
+
+// Hook DestroyInstance to remove tableInstanceMap entry
+VKAPI_ATTR void VKAPI_CALL DestroyInstance(VkInstance instance, const VkAllocationCallbacks *pAllocator) {
+    // TODOSC : Shouldn't need any customization here
+    dispatch_key key = get_dispatch_key(instance);
+    // TBD: Need any locking this early, in case this function is called at the
+    // same time by more than one thread?
+    instance_layer_data *instance_data = GetLayerDataPtr(key, instance_layer_data_map);
+    instance_data->dispatch_table.DestroyInstance(instance, pAllocator);
+
+    lock_guard_t lock(global_lock);
+    PostCallRecordDestroyInstance(instance_data, pAllocator, key);
 }
 
 static bool ValidatePhysicalDeviceQueueFamily(instance_layer_data *instance_data, const PHYSICAL_DEVICE_STATE *pd_state,
@@ -2351,13 +2356,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
     return result;
 }
 
-// prototype
-VKAPI_ATTR void VKAPI_CALL DestroyDevice(VkDevice device, const VkAllocationCallbacks *pAllocator) {
-    // TODOSC : Shouldn't need any customization here
-    dispatch_key key = get_dispatch_key(device);
-    layer_data *dev_data = GetLayerDataPtr(key, layer_data_map);
-    // Free all the memory
-    unique_lock_t lock(global_lock);
+static void PreCallRecordDestroyDevice(layer_data *dev_data, VkDevice device) {
     dev_data->pipelineMap.clear();
     dev_data->renderPassMap.clear();
     for (auto ii = dev_data->commandBufferMap.begin(); ii != dev_data->commandBufferMap.end(); ++ii) {
@@ -2379,6 +2378,16 @@ VKAPI_ATTR void VKAPI_CALL DestroyDevice(VkDevice device, const VkAllocationCall
     dev_data->queueMap.clear();
     // Report any memory leaks
     layer_debug_utils_destroy_device(device);
+}
+
+static void PostCallRecordDestroyDevice(const dispatch_key &key) { FreeLayerDataPtr(key, layer_data_map); }
+
+VKAPI_ATTR void VKAPI_CALL DestroyDevice(VkDevice device, const VkAllocationCallbacks *pAllocator) {
+    // TODOSC : Shouldn't need any customization here
+    dispatch_key key = get_dispatch_key(device);
+    layer_data *dev_data = GetLayerDataPtr(key, layer_data_map);
+    unique_lock_t lock(global_lock);
+    PreCallRecordDestroyDevice(dev_data, device);
     lock.unlock();
 
 #if DISPATCH_MAP_DEBUG
@@ -2386,7 +2395,10 @@ VKAPI_ATTR void VKAPI_CALL DestroyDevice(VkDevice device, const VkAllocationCall
 #endif
 
     dev_data->dispatch_table.DestroyDevice(device, pAllocator);
-    FreeLayerDataPtr(key, layer_data_map);
+
+    // Free all the memory
+    lock.lock();
+    PostCallRecordDestroyDevice(key);
 }
 
 static const VkExtensionProperties instance_extensions[] = {{VK_EXT_DEBUG_REPORT_EXTENSION_NAME, VK_EXT_DEBUG_REPORT_SPEC_VERSION}};
@@ -4228,13 +4240,17 @@ VKAPI_ATTR void VKAPI_CALL DestroyImageView(VkDevice device, VkImageView imageVi
     }
 }
 
+static void PreCallRecordDestroyShaderModule(layer_data *dev_data, VkShaderModule shaderModule) {
+    dev_data->shaderModuleMap.erase(shaderModule);
+}
+
 VKAPI_ATTR void VKAPI_CALL DestroyShaderModule(VkDevice device, VkShaderModule shaderModule,
                                                const VkAllocationCallbacks *pAllocator) {
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
 
     unique_lock_t lock(global_lock);
     // Pre-record to avoid Destroy/Create race
-    dev_data->shaderModuleMap.erase(shaderModule);
+    PreCallRecordDestroyShaderModule(dev_data, shaderModule);
     lock.unlock();
 
     dev_data->dispatch_table.DestroyShaderModule(device, shaderModule, pAllocator);
