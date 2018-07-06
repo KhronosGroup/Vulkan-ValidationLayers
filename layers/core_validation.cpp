@@ -1600,28 +1600,6 @@ static bool ValidateIdleDescriptorSet(const layer_data *dev_data, VkDescriptorSe
     return skip;
 }
 
-// Validate that given pool does not store any descriptor sets used by an in-flight CmdBuffer
-// pool stores the descriptor sets to be validated
-// Return false if no errors occur
-// Return true if validation error occurs and callback returns true (to skip upcoming API call down the chain)
-static bool ValidateIdleDescriptorSetForPoolReset(const layer_data *dev_data, const VkDescriptorPool pool) {
-    if (dev_data->instance_data->disabled.idle_descriptor_set) return false;
-    bool skip = false;
-    DESCRIPTOR_POOL_STATE *pPool = GetDescriptorPoolState(dev_data, pool);
-    if (pPool != nullptr) {
-        for (auto ds : pPool->sets) {
-            if (ds && ds->in_use.load()) {
-                skip |=
-                    log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_POOL_EXT,
-                            HandleToUint64(pool), "VUID-vkResetDescriptorPool-descriptorPool-00313",
-                            "It is invalid to call vkResetDescriptorPool() with descriptor sets in use by a command buffer.");
-                if (skip) break;
-            }
-        }
-    }
-    return skip;
-}
-
 // Remove set from setMap and delete the set
 static void FreeDescriptorSet(layer_data *dev_data, cvdescriptorset::DescriptorSet *descriptor_set) {
     dev_data->setMap.erase(descriptor_set->GetSet());
@@ -1639,22 +1617,6 @@ static void DeletePools(layer_data *dev_data) {
         delete ii->second;
         ii = dev_data->descriptorPoolMap.erase(ii);
     }
-}
-
-static void ClearDescriptorPool(layer_data *dev_data, const VkDevice device, const VkDescriptorPool pool,
-                                VkDescriptorPoolResetFlags flags) {
-    DESCRIPTOR_POOL_STATE *pPool = GetDescriptorPoolState(dev_data, pool);
-    // TODO: validate flags
-    // For every set off of this pool, clear it, remove from setMap, and free cvdescriptorset::DescriptorSet
-    for (auto ds : pPool->sets) {
-        FreeDescriptorSet(dev_data, ds);
-    }
-    pPool->sets.clear();
-    // Reset available count for each type and available sets for this pool
-    for (uint32_t i = 0; i < pPool->availableDescriptorTypeCount.size(); ++i) {
-        pPool->availableDescriptorTypeCount[i] = pPool->maxDescriptorTypeCount[i];
-    }
-    pPool->availableSets = pPool->maxSets;
 }
 
 // For given CB object, fetch associated CB Node from map
@@ -4565,8 +4527,8 @@ static bool PreCallValidateResetFences(layer_data *dev_data, uint32_t fenceCount
         auto pFence = GetFenceNode(dev_data, pFences[i]);
         if (pFence && pFence->scope == kSyncScopeInternal && pFence->state == FENCE_INFLIGHT) {
             skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_FENCE_EXT,
-                HandleToUint64(pFences[i]), "VUID-vkResetFences-pFences-01123", "Fence 0x%" PRIx64 " is in use.",
-                HandleToUint64(pFences[i]));
+                            HandleToUint64(pFences[i]), "VUID-vkResetFences-pFences-01123", "Fence 0x%" PRIx64 " is in use.",
+                            HandleToUint64(pFences[i]));
         }
     }
     return skip;
@@ -5760,13 +5722,51 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDescriptorPool(VkDevice device, const VkDes
     return result;
 }
 
+// Validate that given pool does not store any descriptor sets used by an in-flight CmdBuffer
+// pool stores the descriptor sets to be validated
+// Return false if no errors occur
+// Return true if validation error occurs and callback returns true (to skip upcoming API call down the chain)
+static bool PreCallValidateResetDescriptorPool(layer_data *dev_data, VkDescriptorPool descriptorPool) {
+    if (dev_data->instance_data->disabled.idle_descriptor_set) return false;
+    bool skip = false;
+    DESCRIPTOR_POOL_STATE *pPool = GetDescriptorPoolState(dev_data, descriptorPool);
+    if (pPool != nullptr) {
+        for (auto ds : pPool->sets) {
+            if (ds && ds->in_use.load()) {
+                skip |=
+                    log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_POOL_EXT,
+                            HandleToUint64(descriptorPool), "VUID-vkResetDescriptorPool-descriptorPool-00313",
+                            "It is invalid to call vkResetDescriptorPool() with descriptor sets in use by a command buffer.");
+                if (skip) break;
+            }
+        }
+    }
+    return skip;
+}
+
+static void PostCallRecordResetDescriptorPool(layer_data *dev_data, VkDevice device, VkDescriptorPool descriptorPool,
+                                              VkDescriptorPoolResetFlags flags) {
+    DESCRIPTOR_POOL_STATE *pPool = GetDescriptorPoolState(dev_data, descriptorPool);
+    // TODO: validate flags
+    // For every set off of this pool, clear it, remove from setMap, and free cvdescriptorset::DescriptorSet
+    for (auto ds : pPool->sets) {
+        FreeDescriptorSet(dev_data, ds);
+    }
+    pPool->sets.clear();
+    // Reset available count for each type and available sets for this pool
+    for (uint32_t i = 0; i < pPool->availableDescriptorTypeCount.size(); ++i) {
+        pPool->availableDescriptorTypeCount[i] = pPool->maxDescriptorTypeCount[i];
+    }
+    pPool->availableSets = pPool->maxSets;
+}
+
 VKAPI_ATTR VkResult VKAPI_CALL ResetDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool,
                                                    VkDescriptorPoolResetFlags flags) {
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
 
     unique_lock_t lock(global_lock);
     // Make sure sets being destroyed are not currently in-use
-    bool skip = ValidateIdleDescriptorSetForPoolReset(dev_data, descriptorPool);
+    bool skip = PreCallValidateResetDescriptorPool(dev_data, descriptorPool);
     lock.unlock();
 
     if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
@@ -5774,11 +5774,12 @@ VKAPI_ATTR VkResult VKAPI_CALL ResetDescriptorPool(VkDevice device, VkDescriptor
     VkResult result = dev_data->dispatch_table.ResetDescriptorPool(device, descriptorPool, flags);
     if (VK_SUCCESS == result) {
         lock.lock();
-        ClearDescriptorPool(dev_data, device, descriptorPool, flags);
+        PostCallRecordResetDescriptorPool(dev_data, device, descriptorPool, flags);
         lock.unlock();
     }
     return result;
 }
+
 // Ensure the pool contains enough descriptors and descriptor sets to satisfy
 // an allocation request. Fills common_data with the total number of descriptors of each type required,
 // as well as DescriptorSetLayout ptrs used for later update.
@@ -6117,13 +6118,12 @@ VKAPI_ATTR VkResult VKAPI_CALL EndCommandBuffer(VkCommandBuffer commandBuffer) {
     }
 }
 
-VKAPI_ATTR VkResult VKAPI_CALL ResetCommandBuffer(VkCommandBuffer commandBuffer, VkCommandBufferResetFlags flags) {
+static bool PreCallValidateResetCommandBuffer(layer_data *dev_data, VkCommandBuffer commandBuffer) {
     bool skip = false;
-    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    unique_lock_t lock(global_lock);
     GLOBAL_CB_NODE *pCB = GetCBNode(dev_data, commandBuffer);
     VkCommandPool cmdPool = pCB->createInfo.commandPool;
     auto pPool = GetCommandPoolNode(dev_data, cmdPool);
+
     if (!(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT & pPool->createFlags)) {
         skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                         HandleToUint64(commandBuffer), "VUID-vkResetCommandBuffer-commandBuffer-00046",
@@ -6132,14 +6132,30 @@ VKAPI_ATTR VkResult VKAPI_CALL ResetCommandBuffer(VkCommandBuffer commandBuffer,
                         HandleToUint64(commandBuffer), HandleToUint64(cmdPool));
     }
     skip |= CheckCommandBufferInFlight(dev_data, pCB, "reset", "VUID-vkResetCommandBuffer-commandBuffer-00045");
+
+    return skip;
+}
+
+static void PostCallRecordResetCommandBuffer(layer_data *dev_data, VkCommandBuffer commandBuffer) {
+    ResetCommandBufferState(dev_data, commandBuffer);
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL ResetCommandBuffer(VkCommandBuffer commandBuffer, VkCommandBufferResetFlags flags) {
+    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    unique_lock_t lock(global_lock);
+    bool skip = PreCallValidateResetCommandBuffer(dev_data, commandBuffer);
     lock.unlock();
+
     if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+
     VkResult result = dev_data->dispatch_table.ResetCommandBuffer(commandBuffer, flags);
+
     if (VK_SUCCESS == result) {
         lock.lock();
-        ResetCommandBufferState(dev_data, commandBuffer);
+        PostCallRecordResetCommandBuffer(dev_data, commandBuffer);
         lock.unlock();
     }
+
     return result;
 }
 
