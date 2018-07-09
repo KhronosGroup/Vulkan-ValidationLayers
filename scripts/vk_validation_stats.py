@@ -558,7 +558,7 @@ def main(argv):
             i = i + 1
         elif (arg == '-todo'):
             report_unimplemented = True
-        elif (arg == '-txt'):
+        elif (arg == '-text'):
             txt_out = True
             # Set filename if supplied, else use default
             if i < len(argv) and not argv[i].startswith('-'):
