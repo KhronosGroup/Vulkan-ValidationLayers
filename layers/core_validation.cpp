@@ -5983,26 +5983,30 @@ VKAPI_ATTR void VKAPI_CALL UpdateDescriptorSets(VkDevice device, uint32_t descri
     }
 }
 
+static void PostCallRecordAllocateCommandBuffers(layer_data *dev_data, VkDevice device,
+                                                 const VkCommandBufferAllocateInfo *pCreateInfo, VkCommandBuffer *pCommandBuffer) {
+    auto pPool = GetCommandPoolNode(dev_data, pCreateInfo->commandPool);
+    if (pPool) {
+        for (uint32_t i = 0; i < pCreateInfo->commandBufferCount; i++) {
+            // Add command buffer to its commandPool map
+            pPool->commandBuffers.insert(pCommandBuffer[i]);
+            GLOBAL_CB_NODE *pCB = new GLOBAL_CB_NODE;
+            // Add command buffer to map
+            dev_data->commandBufferMap[pCommandBuffer[i]] = pCB;
+            ResetCommandBufferState(dev_data, pCommandBuffer[i]);
+            pCB->createInfo = *pCreateInfo;
+            pCB->device = device;
+        }
+    }
+}
+
 VKAPI_ATTR VkResult VKAPI_CALL AllocateCommandBuffers(VkDevice device, const VkCommandBufferAllocateInfo *pCreateInfo,
                                                       VkCommandBuffer *pCommandBuffer) {
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     VkResult result = dev_data->dispatch_table.AllocateCommandBuffers(device, pCreateInfo, pCommandBuffer);
     if (VK_SUCCESS == result) {
         unique_lock_t lock(global_lock);
-        auto pPool = GetCommandPoolNode(dev_data, pCreateInfo->commandPool);
-
-        if (pPool) {
-            for (uint32_t i = 0; i < pCreateInfo->commandBufferCount; i++) {
-                // Add command buffer to its commandPool map
-                pPool->commandBuffers.insert(pCommandBuffer[i]);
-                GLOBAL_CB_NODE *pCB = new GLOBAL_CB_NODE;
-                // Add command buffer to map
-                dev_data->commandBufferMap[pCommandBuffer[i]] = pCB;
-                ResetCommandBufferState(dev_data, pCommandBuffer[i]);
-                pCB->createInfo = *pCreateInfo;
-                pCB->device = device;
-            }
-        }
+        PostCallRecordAllocateCommandBuffers(dev_data, device, pCreateInfo, pCommandBuffer);
         lock.unlock();
     }
     return result;
@@ -6812,20 +6816,12 @@ static VkDeviceSize GetIndexAlignment(VkIndexType indexType) {
     }
 }
 
-VKAPI_ATTR void VKAPI_CALL CmdBindIndexBuffer(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+static bool PreCallValidateCmdBindIndexBuffer(layer_data *dev_data, BUFFER_STATE *buffer_state, GLOBAL_CB_NODE *cb_node,
+                                              VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                               VkIndexType indexType) {
-    bool skip = false;
-    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    unique_lock_t lock(global_lock);
-
-    auto buffer_state = GetBufferState(dev_data, buffer);
-    auto cb_node = GetCBNode(dev_data, commandBuffer);
-    assert(cb_node);
-    assert(buffer_state);
-
-    skip |= ValidateBufferUsageFlags(dev_data, buffer_state, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, true,
-                                     "VUID-vkCmdBindIndexBuffer-buffer-00433", "vkCmdBindIndexBuffer()",
-                                     "VK_BUFFER_USAGE_INDEX_BUFFER_BIT");
+    bool skip = ValidateBufferUsageFlags(dev_data, buffer_state, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, true,
+                                         "VUID-vkCmdBindIndexBuffer-buffer-00433", "vkCmdBindIndexBuffer()",
+                                         "VK_BUFFER_USAGE_INDEX_BUFFER_BIT");
     skip |= ValidateCmdQueueFlags(dev_data, cb_node, "vkCmdBindIndexBuffer()", VK_QUEUE_GRAPHICS_BIT,
                                   "VUID-vkCmdBindIndexBuffer-commandBuffer-cmdpool");
     skip |= ValidateCmd(dev_data, cb_node, CMD_BINDINDEXBUFFER, "vkCmdBindIndexBuffer()");
@@ -6839,15 +6835,36 @@ VKAPI_ATTR void VKAPI_CALL CmdBindIndexBuffer(VkCommandBuffer commandBuffer, VkB
                         string_VkIndexType(indexType));
     }
 
-    if (skip) return;
+    return skip;
+}
 
+static void PreCallRecordCmdBindIndexBuffer(BUFFER_STATE *buffer_state, GLOBAL_CB_NODE *cb_node, VkBuffer buffer,
+                                            VkDeviceSize offset, VkIndexType indexType) {
     cb_node->status |= CBSTATUS_INDEX_BUFFER_BOUND;
     cb_node->index_buffer_binding.buffer = buffer;
     cb_node->index_buffer_binding.size = buffer_state->createInfo.size;
     cb_node->index_buffer_binding.offset = offset;
     cb_node->index_buffer_binding.index_type = indexType;
+}
 
+VKAPI_ATTR void VKAPI_CALL CmdBindIndexBuffer(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                              VkIndexType indexType) {
+    bool skip = false;
+    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    unique_lock_t lock(global_lock);
+
+    auto buffer_state = GetBufferState(dev_data, buffer);
+    auto cb_node = GetCBNode(dev_data, commandBuffer);
+    assert(cb_node);
+    assert(buffer_state);
+
+    PreCallValidateCmdBindIndexBuffer(dev_data, buffer_state, cb_node, commandBuffer, buffer, offset, indexType);
+
+    if (skip) return;
+
+    PreCallRecordCmdBindIndexBuffer(buffer_state, cb_node, buffer, offset, indexType);
     lock.unlock();
+
     dev_data->dispatch_table.CmdBindIndexBuffer(commandBuffer, buffer, offset, indexType);
 }
 
@@ -8461,15 +8478,28 @@ static bool SetQueryState(VkQueue queue, VkCommandBuffer commandBuffer, QueryObj
     return false;
 }
 
+static bool PreCallValidateCmdBeginQuery(layer_data *dev_data, GLOBAL_CB_NODE *pCB) {
+    bool skip = ValidateCmdQueueFlags(dev_data, pCB, "vkCmdBeginQuery()", VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
+                                      "VUID-vkCmdBeginQuery-commandBuffer-cmdpool");
+    skip |= ValidateCmd(dev_data, pCB, CMD_BEGINQUERY, "vkCmdBeginQuery()");
+    return skip;
+}
+
+static void PostCallRecordCmdBeginQuery(layer_data *dev_data, VkQueryPool queryPool, uint32_t slot, GLOBAL_CB_NODE *pCB) {
+    QueryObject query = {queryPool, slot};
+    pCB->activeQueries.insert(query);
+    pCB->startedQueries.insert(query);
+    AddCommandBufferBinding(&GetQueryPoolNode(dev_data, queryPool)->cb_bindings,
+                            {HandleToUint64(queryPool), kVulkanObjectTypeQueryPool}, pCB);
+}
+
 VKAPI_ATTR void VKAPI_CALL CmdBeginQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot, VkFlags flags) {
     bool skip = false;
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     unique_lock_t lock(global_lock);
     GLOBAL_CB_NODE *pCB = GetCBNode(dev_data, commandBuffer);
     if (pCB) {
-        skip |= ValidateCmdQueueFlags(dev_data, pCB, "vkCmdBeginQuery()", VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
-                                      "VUID-vkCmdBeginQuery-commandBuffer-cmdpool");
-        skip |= ValidateCmd(dev_data, pCB, CMD_BEGINQUERY, "vkCmdBeginQuery()");
+        PreCallValidateCmdBeginQuery(dev_data, pCB);
     }
     lock.unlock();
 
@@ -8479,11 +8509,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBeginQuery(VkCommandBuffer commandBuffer, VkQueryP
 
     lock.lock();
     if (pCB) {
-        QueryObject query = {queryPool, slot};
-        pCB->activeQueries.insert(query);
-        pCB->startedQueries.insert(query);
-        AddCommandBufferBinding(&GetQueryPoolNode(dev_data, queryPool)->cb_bindings,
-                                {HandleToUint64(queryPool), kVulkanObjectTypeQueryPool}, pCB);
+        PostCallRecordCmdBeginQuery(dev_data, queryPool, slot, pCB);
     }
 }
 
