@@ -4448,12 +4448,9 @@ static void FreeCommandBufferStates(layer_data *dev_data, COMMAND_POOL_NODE *poo
     }
 }
 
-VKAPI_ATTR void VKAPI_CALL FreeCommandBuffers(VkDevice device, VkCommandPool commandPool, uint32_t commandBufferCount,
+static bool PreCallValidateFreeCommandBuffers(layer_data *dev_data, uint32_t commandBufferCount,
                                               const VkCommandBuffer *pCommandBuffers) {
-    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
-    unique_lock_t lock(global_lock);
-
     for (uint32_t i = 0; i < commandBufferCount; i++) {
         auto cb_node = GetCBNode(dev_data, pCommandBuffers[i]);
         // Delete CB information structure, and remove from commandBufferMap
@@ -4461,11 +4458,23 @@ VKAPI_ATTR void VKAPI_CALL FreeCommandBuffers(VkDevice device, VkCommandPool com
             skip |= CheckCommandBufferInFlight(dev_data, cb_node, "free", "VUID-vkFreeCommandBuffers-pCommandBuffers-00047");
         }
     }
+    return skip;
+}
 
-    if (skip) return;
-
+static void PreCallRecordFreeCommandBuffers(layer_data *dev_data, VkCommandPool commandPool, uint32_t commandBufferCount,
+                                            const VkCommandBuffer *pCommandBuffers) {
     auto pPool = GetCommandPoolNode(dev_data, commandPool);
     FreeCommandBufferStates(dev_data, pPool, commandBufferCount, pCommandBuffers);
+}
+
+VKAPI_ATTR void VKAPI_CALL FreeCommandBuffers(VkDevice device, VkCommandPool commandPool, uint32_t commandBufferCount,
+                                              const VkCommandBuffer *pCommandBuffers) {
+    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    unique_lock_t lock(global_lock);
+
+    bool skip = PreCallValidateFreeCommandBuffers(dev_data, commandBufferCount, pCommandBuffers);
+    if (skip) return;
+    PreCallRecordFreeCommandBuffers(dev_data, commandPool, commandBufferCount, pCommandBuffers);
     lock.unlock();
 
     dev_data->dispatch_table.FreeCommandBuffers(device, commandPool, commandBufferCount, pCommandBuffers);
@@ -11983,20 +11992,24 @@ VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceXlibPresentationSupportKHR(VkPhy
 }
 #endif  // VK_USE_PLATFORM_XLIB_KHR
 
+static void PostCallRecordGetPhysicalDeviceSurfaceCapabilitiesKHR(instance_layer_data *instance_data,
+                                                                  VkPhysicalDevice physicalDevice,
+                                                                  VkSurfaceCapabilitiesKHR *pSurfaceCapabilities) {
+    auto physical_device_state = GetPhysicalDeviceState(instance_data, physicalDevice);
+    physical_device_state->vkGetPhysicalDeviceSurfaceCapabilitiesKHRState = QUERY_DETAILS;
+    physical_device_state->surfaceCapabilities = *pSurfaceCapabilities;
+}
+
 VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfaceCapabilitiesKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
                                                                        VkSurfaceCapabilitiesKHR *pSurfaceCapabilities) {
     auto instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), instance_layer_data_map);
 
-    unique_lock_t lock(global_lock);
-    auto physical_device_state = GetPhysicalDeviceState(instance_data, physicalDevice);
-    lock.unlock();
-
     auto result =
         instance_data->dispatch_table.GetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, pSurfaceCapabilities);
 
+    unique_lock_t lock(global_lock);
     if (result == VK_SUCCESS) {
-        physical_device_state->vkGetPhysicalDeviceSurfaceCapabilitiesKHRState = QUERY_DETAILS;
-        physical_device_state->surfaceCapabilities = *pSurfaceCapabilities;
+        PostCallRecordGetPhysicalDeviceSurfaceCapabilitiesKHR(instance_data, physicalDevice, pSurfaceCapabilities);
     }
 
     return result;
@@ -12145,6 +12158,53 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfacePresentModesKHR(VkPhysica
     return result;
 }
 
+static bool PreCallValidateGetPhysicalDeviceSurfaceFormatsKHR(instance_layer_data *instance_data,
+                                                              PHYSICAL_DEVICE_STATE *physical_device_state, CALL_STATE &call_state,
+                                                              VkPhysicalDevice physicalDevice, uint32_t *pSurfaceFormatCount) {
+    auto prev_format_count = (uint32_t)physical_device_state->surface_formats.size();
+    bool skip = false;
+
+    switch (call_state) {
+        case UNCALLED:
+            // Since we haven't recorded a preliminary value of *pSurfaceFormatCount, that likely means that the application
+            // didn't
+            // previously call this function with a NULL value of pSurfaceFormats:
+            skip |= log_msg(instance_data->report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT,
+                            VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT, HandleToUint64(physicalDevice),
+                            kVUID_Core_DevLimit_MustQueryCount,
+                            "vkGetPhysicalDeviceSurfaceFormatsKHR() called with non-NULL pSurfaceFormatCount; but no prior "
+                            "positive value has been seen for pSurfaceFormats.");
+            break;
+        default:
+            if (prev_format_count != *pSurfaceFormatCount) {
+                skip |= log_msg(instance_data->report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT,
+                                VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT, HandleToUint64(physicalDevice),
+                                kVUID_Core_DevLimit_CountMismatch,
+                                "vkGetPhysicalDeviceSurfaceFormatsKHR() called with non-NULL pSurfaceFormatCount, and with "
+                                "pSurfaceFormats set to a value (%u) that is greater than the value (%u) that was returned "
+                                "when pSurfaceFormatCount was NULL.",
+                                *pSurfaceFormatCount, prev_format_count);
+            }
+            break;
+    }
+    return skip;
+}
+
+static void PostCallRecordGetPhysicalDeviceSurfaceFormatsKHR(PHYSICAL_DEVICE_STATE *physical_device_state, CALL_STATE &call_state,
+                                                             uint32_t *pSurfaceFormatCount, VkSurfaceFormatKHR *pSurfaceFormats) {
+    if (*pSurfaceFormatCount) {
+        if (call_state < QUERY_COUNT) call_state = QUERY_COUNT;
+        if (*pSurfaceFormatCount > physical_device_state->surface_formats.size())
+            physical_device_state->surface_formats.resize(*pSurfaceFormatCount);
+    }
+    if (pSurfaceFormats) {
+        if (call_state < QUERY_DETAILS) call_state = QUERY_DETAILS;
+        for (uint32_t i = 0; i < *pSurfaceFormatCount; i++) {
+            physical_device_state->surface_formats[i] = pSurfaceFormats[i];
+        }
+    }
+}
+
 VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
                                                                   uint32_t *pSurfaceFormatCount,
                                                                   VkSurfaceFormatKHR *pSurfaceFormats) {
@@ -12155,31 +12215,8 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDevi
     auto &call_state = physical_device_state->vkGetPhysicalDeviceSurfaceFormatsKHRState;
 
     if (pSurfaceFormats) {
-        auto prev_format_count = (uint32_t)physical_device_state->surface_formats.size();
-
-        switch (call_state) {
-            case UNCALLED:
-                // Since we haven't recorded a preliminary value of *pSurfaceFormatCount, that likely means that the application
-                // didn't
-                // previously call this function with a NULL value of pSurfaceFormats:
-                skip |= log_msg(instance_data->report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT,
-                                VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT, HandleToUint64(physicalDevice),
-                                kVUID_Core_DevLimit_MustQueryCount,
-                                "vkGetPhysicalDeviceSurfaceFormatsKHR() called with non-NULL pSurfaceFormatCount; but no prior "
-                                "positive value has been seen for pSurfaceFormats.");
-                break;
-            default:
-                if (prev_format_count != *pSurfaceFormatCount) {
-                    skip |= log_msg(instance_data->report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT,
-                                    VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT, HandleToUint64(physicalDevice),
-                                    kVUID_Core_DevLimit_CountMismatch,
-                                    "vkGetPhysicalDeviceSurfaceFormatsKHR() called with non-NULL pSurfaceFormatCount, and with "
-                                    "pSurfaceFormats set to a value (%u) that is greater than the value (%u) that was returned "
-                                    "when pSurfaceFormatCount was NULL.",
-                                    *pSurfaceFormatCount, prev_format_count);
-                }
-                break;
-        }
+        skip |= PreCallValidateGetPhysicalDeviceSurfaceFormatsKHR(instance_data, physical_device_state, call_state, physicalDevice,
+                                                                  pSurfaceFormatCount);
     }
     lock.unlock();
 
@@ -12191,18 +12228,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDevi
 
     if (result == VK_SUCCESS || result == VK_INCOMPLETE) {
         lock.lock();
-
-        if (*pSurfaceFormatCount) {
-            if (call_state < QUERY_COUNT) call_state = QUERY_COUNT;
-            if (*pSurfaceFormatCount > physical_device_state->surface_formats.size())
-                physical_device_state->surface_formats.resize(*pSurfaceFormatCount);
-        }
-        if (pSurfaceFormats) {
-            if (call_state < QUERY_DETAILS) call_state = QUERY_DETAILS;
-            for (uint32_t i = 0; i < *pSurfaceFormatCount; i++) {
-                physical_device_state->surface_formats[i] = pSurfaceFormats[i];
-            }
-        }
+        PostCallRecordGetPhysicalDeviceSurfaceFormatsKHR(physical_device_state, call_state, pSurfaceFormatCount, pSurfaceFormats);
     }
     return result;
 }
