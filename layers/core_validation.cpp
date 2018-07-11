@@ -10324,11 +10324,8 @@ VKAPI_ATTR VkResult VKAPI_CALL BindImageMemory2KHR(VkDevice device, uint32_t bin
     return result;
 }
 
-VKAPI_ATTR VkResult VKAPI_CALL SetEvent(VkDevice device, VkEvent event) {
+static bool PreCallValidateSetEvent(layer_data *dev_data, VkEvent event) {
     bool skip = false;
-    VkResult result = VK_ERROR_VALIDATION_FAILED_EXT;
-    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    unique_lock_t lock(global_lock);
     auto event_state = GetEventNode(dev_data, event);
     if (event_state) {
         event_state->needsSignaled = false;
@@ -10340,7 +10337,10 @@ VKAPI_ATTR VkResult VKAPI_CALL SetEvent(VkDevice device, VkEvent event) {
                             HandleToUint64(event));
         }
     }
-    lock.unlock();
+    return skip;
+}
+
+static void PreCallRecordSetEvent(layer_data *dev_data, VkEvent event) {
     // Host setting event is visible to all queues immediately so update stageMask for any queue that's seen this event
     // TODO : For correctness this needs separate fix to verify that app doesn't make incorrect assumptions about the
     // ordering of this command in relation to vkCmd[Set|Reset]Events (see GH297)
@@ -10350,6 +10350,17 @@ VKAPI_ATTR VkResult VKAPI_CALL SetEvent(VkDevice device, VkEvent event) {
             event_entry->second |= VK_PIPELINE_STAGE_HOST_BIT;
         }
     }
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL SetEvent(VkDevice device, VkEvent event) {
+    VkResult result = VK_ERROR_VALIDATION_FAILED_EXT;
+    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+
+    unique_lock_t lock(global_lock);
+    bool skip = PreCallValidateSetEvent(dev_data, event);
+    PreCallRecordSetEvent(dev_data, event);
+    lock.unlock();
+
     if (!skip) result = dev_data->dispatch_table.SetEvent(device, event);
     return result;
 }
@@ -11564,38 +11575,33 @@ VKAPI_ATTR VkResult VKAPI_CALL AcquireNextImageKHR(VkDevice device, VkSwapchainK
     return result;
 }
 
-VKAPI_ATTR VkResult VKAPI_CALL EnumeratePhysicalDevices(VkInstance instance, uint32_t *pPhysicalDeviceCount,
-                                                        VkPhysicalDevice *pPhysicalDevices) {
+static bool PreCallValidateEnumeratePhysicalDevices(instance_layer_data *instance_data, uint32_t *pPhysicalDeviceCount) {
     bool skip = false;
-    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(instance), instance_layer_data_map);
-    assert(instance_data);
+    if (UNCALLED == instance_data->vkEnumeratePhysicalDevicesState) {
+        // Flag warning here. You can call this without having queried the count, but it may not be
+        // robust on platforms with multiple physical devices.
+        skip |= log_msg(instance_data->report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_INSTANCE_EXT, 0,
+                        kVUID_Core_DevLimit_MissingQueryCount,
+                        "Call sequence has vkEnumeratePhysicalDevices() w/ non-NULL pPhysicalDevices. You should first call "
+                        "vkEnumeratePhysicalDevices() w/ NULL pPhysicalDevices to query pPhysicalDeviceCount.");
+    }  // TODO : Could also flag a warning if re-calling this function in QUERY_DETAILS state
+    else if (instance_data->physical_devices_count != *pPhysicalDeviceCount) {
+        // Having actual count match count from app is not a requirement, so this can be a warning
+        skip |= log_msg(instance_data->report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT,
+                        VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT, 0, kVUID_Core_DevLimit_CountMismatch,
+                        "Call to vkEnumeratePhysicalDevices() w/ pPhysicalDeviceCount value %u, but actual count supported by "
+                        "this instance is %u.",
+                        *pPhysicalDeviceCount, instance_data->physical_devices_count);
+    }
+    return skip;
+}
 
-    // For this instance, flag when vkEnumeratePhysicalDevices goes to QUERY_COUNT and then QUERY_DETAILS
-    if (NULL == pPhysicalDevices) {
-        instance_data->vkEnumeratePhysicalDevicesState = QUERY_COUNT;
-    } else {
-        if (UNCALLED == instance_data->vkEnumeratePhysicalDevicesState) {
-            // Flag warning here. You can call this without having queried the count, but it may not be
-            // robust on platforms with multiple physical devices.
-            skip |= log_msg(instance_data->report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_INSTANCE_EXT,
-                            0, kVUID_Core_DevLimit_MissingQueryCount,
-                            "Call sequence has vkEnumeratePhysicalDevices() w/ non-NULL pPhysicalDevices. You should first call "
-                            "vkEnumeratePhysicalDevices() w/ NULL pPhysicalDevices to query pPhysicalDeviceCount.");
-        }  // TODO : Could also flag a warning if re-calling this function in QUERY_DETAILS state
-        else if (instance_data->physical_devices_count != *pPhysicalDeviceCount) {
-            // Having actual count match count from app is not a requirement, so this can be a warning
-            skip |= log_msg(instance_data->report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT,
-                            VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT, 0, kVUID_Core_DevLimit_CountMismatch,
-                            "Call to vkEnumeratePhysicalDevices() w/ pPhysicalDeviceCount value %u, but actual count supported by "
-                            "this instance is %u.",
-                            *pPhysicalDeviceCount, instance_data->physical_devices_count);
-        }
-        instance_data->vkEnumeratePhysicalDevicesState = QUERY_DETAILS;
-    }
-    if (skip) {
-        return VK_ERROR_VALIDATION_FAILED_EXT;
-    }
-    VkResult result = instance_data->dispatch_table.EnumeratePhysicalDevices(instance, pPhysicalDeviceCount, pPhysicalDevices);
+static void PreCallRecordEnumeratePhysicalDevices(instance_layer_data *instance_data) {
+    instance_data->vkEnumeratePhysicalDevicesState = QUERY_COUNT;
+}
+
+static void PostCallRecordEnumeratePhysicalDevices(instance_layer_data *instance_data, const VkResult &result,
+                                                   uint32_t *pPhysicalDeviceCount, VkPhysicalDevice *pPhysicalDevices) {
     if (NULL == pPhysicalDevices) {
         instance_data->physical_devices_count = *pPhysicalDeviceCount;
     } else if (result == VK_SUCCESS) {  // Save physical devices
@@ -11606,6 +11612,29 @@ VKAPI_ATTR VkResult VKAPI_CALL EnumeratePhysicalDevices(VkInstance instance, uin
             instance_data->dispatch_table.GetPhysicalDeviceFeatures(pPhysicalDevices[i], &phys_device_state.features2.features);
         }
     }
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL EnumeratePhysicalDevices(VkInstance instance, uint32_t *pPhysicalDeviceCount,
+                                                        VkPhysicalDevice *pPhysicalDevices) {
+    bool skip = false;
+    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(instance), instance_layer_data_map);
+    assert(instance_data);
+
+    unique_lock_t lock(global_lock);
+    // For this instance, flag when vkEnumeratePhysicalDevices goes to QUERY_COUNT and then QUERY_DETAILS
+    if (pPhysicalDevices) {
+        skip |= PreCallValidateEnumeratePhysicalDevices(instance_data, pPhysicalDeviceCount);
+    }
+    PreCallRecordEnumeratePhysicalDevices(instance_data);
+    lock.unlock();
+
+    if (skip) {
+        return VK_ERROR_VALIDATION_FAILED_EXT;
+    }
+    VkResult result = instance_data->dispatch_table.EnumeratePhysicalDevices(instance, pPhysicalDeviceCount, pPhysicalDevices);
+
+    lock.lock();
+    PostCallRecordEnumeratePhysicalDevices(instance_data, result, pPhysicalDeviceCount, pPhysicalDevices);
     return result;
 }
 
@@ -12071,6 +12100,21 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfaceCapabilities2EXT(VkPhysic
     return result;
 }
 
+static bool PreCallValidateGetPhysicalDeviceSurfaceSupportKHR(instance_layer_data *instance_data,
+                                                              PHYSICAL_DEVICE_STATE *physical_device_state,
+                                                              uint32_t queueFamilyIndex) {
+    return ValidatePhysicalDeviceQueueFamily(instance_data, physical_device_state, queueFamilyIndex,
+                                             "VUID-vkGetPhysicalDeviceSurfaceSupportKHR-queueFamilyIndex-01269",
+                                             "vkGetPhysicalDeviceSurfaceSupportKHR", "queueFamilyIndex");
+}
+
+static void PostCallRecordGetPhysicalDeviceSurfaceSupportKHR(instance_layer_data *instance_data, VkPhysicalDevice physicalDevice,
+                                                             uint32_t queueFamilyIndex, VkSurfaceKHR surface,
+                                                             VkBool32 *pSupported) {
+    auto surface_state = GetSurfaceState(instance_data, surface);
+    surface_state->gpu_queue_support[{physicalDevice, queueFamilyIndex}] = (*pSupported == VK_TRUE);
+}
+
 VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfaceSupportKHR(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
                                                                   VkSurfaceKHR surface, VkBool32 *pSupported) {
     bool skip = false;
@@ -12078,12 +12122,8 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfaceSupportKHR(VkPhysicalDevi
 
     unique_lock_t lock(global_lock);
     const auto pd_state = GetPhysicalDeviceState(instance_data, physicalDevice);
-    auto surface_state = GetSurfaceState(instance_data, surface);
 
-    skip |= ValidatePhysicalDeviceQueueFamily(instance_data, pd_state, queueFamilyIndex,
-                                              "VUID-vkGetPhysicalDeviceSurfaceSupportKHR-queueFamilyIndex-01269",
-                                              "vkGetPhysicalDeviceSurfaceSupportKHR", "queueFamilyIndex");
-
+    skip |= PreCallValidateGetPhysicalDeviceSurfaceSupportKHR(instance_data, pd_state, queueFamilyIndex);
     lock.unlock();
 
     if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
@@ -12092,10 +12132,57 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfaceSupportKHR(VkPhysicalDevi
         instance_data->dispatch_table.GetPhysicalDeviceSurfaceSupportKHR(physicalDevice, queueFamilyIndex, surface, pSupported);
 
     if (result == VK_SUCCESS) {
-        surface_state->gpu_queue_support[{physicalDevice, queueFamilyIndex}] = (*pSupported == VK_TRUE);
+        lock.lock();
+        PostCallRecordGetPhysicalDeviceSurfaceSupportKHR(instance_data, physicalDevice, queueFamilyIndex, surface, pSupported);
     }
 
     return result;
+}
+
+static bool PreCallValidateGetPhysicalDeviceSurfacePresentModesKHR(instance_layer_data *instance_data,
+                                                                   PHYSICAL_DEVICE_STATE *physical_device_state,
+                                                                   CALL_STATE &call_state, VkPhysicalDevice physicalDevice,
+                                                                   uint32_t *pPresentModeCount) {
+    // Compare the preliminary value of *pPresentModeCount with the value this time:
+    auto prev_mode_count = (uint32_t)physical_device_state->present_modes.size();
+    bool skip = false;
+    switch (call_state) {
+        case UNCALLED:
+            skip |= log_msg(instance_data->report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT,
+                            VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT, HandleToUint64(physicalDevice),
+                            kVUID_Core_DevLimit_MustQueryCount,
+                            "vkGetPhysicalDeviceSurfacePresentModesKHR() called with non-NULL pPresentModeCount; but no prior "
+                            "positive value has been seen for pPresentModeCount.");
+            break;
+        default:
+            // both query count and query details
+            if (*pPresentModeCount != prev_mode_count) {
+                skip |= log_msg(instance_data->report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT,
+                                VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT, HandleToUint64(physicalDevice),
+                                kVUID_Core_DevLimit_CountMismatch,
+                                "vkGetPhysicalDeviceSurfacePresentModesKHR() called with *pPresentModeCount (%u) that differs "
+                                "from the value (%u) that was returned when pPresentModes was NULL.",
+                                *pPresentModeCount, prev_mode_count);
+            }
+            break;
+    }
+    return skip;
+}
+
+static void PostCallRecordGetPhysicalDeviceSurfacePresentModesKHR(PHYSICAL_DEVICE_STATE *physical_device_state,
+                                                                  CALL_STATE &call_state, uint32_t *pPresentModeCount,
+                                                                  VkPresentModeKHR *pPresentModes) {
+    if (*pPresentModeCount) {
+        if (call_state < QUERY_COUNT) call_state = QUERY_COUNT;
+        if (*pPresentModeCount > physical_device_state->present_modes.size())
+            physical_device_state->present_modes.resize(*pPresentModeCount);
+    }
+    if (pPresentModes) {
+        if (call_state < QUERY_DETAILS) call_state = QUERY_DETAILS;
+        for (uint32_t i = 0; i < *pPresentModeCount; i++) {
+            physical_device_state->present_modes[i] = pPresentModes[i];
+        }
+    }
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfacePresentModesKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
@@ -12109,28 +12196,8 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfacePresentModesKHR(VkPhysica
     auto &call_state = physical_device_state->vkGetPhysicalDeviceSurfacePresentModesKHRState;
 
     if (pPresentModes) {
-        // Compare the preliminary value of *pPresentModeCount with the value this time:
-        auto prev_mode_count = (uint32_t)physical_device_state->present_modes.size();
-        switch (call_state) {
-            case UNCALLED:
-                skip |= log_msg(instance_data->report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT,
-                                VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT, HandleToUint64(physicalDevice),
-                                kVUID_Core_DevLimit_MustQueryCount,
-                                "vkGetPhysicalDeviceSurfacePresentModesKHR() called with non-NULL pPresentModeCount; but no prior "
-                                "positive value has been seen for pPresentModeCount.");
-                break;
-            default:
-                // both query count and query details
-                if (*pPresentModeCount != prev_mode_count) {
-                    skip |= log_msg(instance_data->report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT,
-                                    VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT, HandleToUint64(physicalDevice),
-                                    kVUID_Core_DevLimit_CountMismatch,
-                                    "vkGetPhysicalDeviceSurfacePresentModesKHR() called with *pPresentModeCount (%u) that differs "
-                                    "from the value (%u) that was returned when pPresentModes was NULL.",
-                                    *pPresentModeCount, prev_mode_count);
-                }
-                break;
-        }
+        skip |= PreCallValidateGetPhysicalDeviceSurfacePresentModesKHR(instance_data, physical_device_state, call_state,
+                                                                       physicalDevice, pPresentModeCount);
     }
     lock.unlock();
 
@@ -12141,18 +12208,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfacePresentModesKHR(VkPhysica
 
     if (result == VK_SUCCESS || result == VK_INCOMPLETE) {
         lock.lock();
-
-        if (*pPresentModeCount) {
-            if (call_state < QUERY_COUNT) call_state = QUERY_COUNT;
-            if (*pPresentModeCount > physical_device_state->present_modes.size())
-                physical_device_state->present_modes.resize(*pPresentModeCount);
-        }
-        if (pPresentModes) {
-            if (call_state < QUERY_DETAILS) call_state = QUERY_DETAILS;
-            for (uint32_t i = 0; i < *pPresentModeCount; i++) {
-                physical_device_state->present_modes[i] = pPresentModes[i];
-            }
-        }
+        PostCallRecordGetPhysicalDeviceSurfacePresentModesKHR(physical_device_state, call_state, pPresentModeCount, pPresentModes);
     }
 
     return result;
