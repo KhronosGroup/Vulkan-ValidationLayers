@@ -984,6 +984,44 @@ static bool ValidatePipelineDrawtimeState(layer_data const *dev_data, LAST_BOUND
                             HandleToUint64(pCB->commandBuffer), HandleToUint64(state.pipeline_state->pipeline));
         }
     }
+
+    // Verify vertex attribute address alignment
+    if (pPipeline->vertexAttributeDescriptions.size() > 0 && pPipeline->vertexBindingDescriptions.size() > 0) {
+        for (size_t i = 0; i < pPipeline->vertexAttributeDescriptions.size(); i++) {
+            const auto &attribute_description = pPipeline->vertexAttributeDescriptions[i];
+            auto attribute_binding = attribute_description.binding;
+            auto attribute_offset = attribute_description.offset;
+            auto attribute_format = attribute_description.format;
+
+            if (attribute_binding < pPipeline->vertexBindingDescriptions.size()) {
+                auto vertex_binding = pPipeline->vertexBindingDescriptions[attribute_binding].binding;
+                auto vertex_stride = pPipeline->vertexBindingDescriptions[attribute_binding].stride;
+
+                if (vertex_binding < pCB->currentDrawData.buffers.size() &&
+                    pCB->currentDrawData.buffers[vertex_binding] != VK_NULL_HANDLE) {
+                    auto buffer_offset = pCB->currentDrawData.bufferOffsets[vertex_binding];
+                    auto buffer_state = GetBufferState(dev_data, pCB->currentDrawData.buffers[vertex_binding]);
+
+                    // Use only memory binding offset as base memory should be properly aligned by the driver
+                    auto buffer_binding_address = buffer_state->binding.offset + buffer_offset;
+                    // Use 1 as vertex/instance index to use buffer stride as well
+                    auto attrib_address = buffer_binding_address + vertex_stride + attribute_offset;
+
+                    if (SafeModulo(attrib_address, FormatAlignment(attribute_format)) != 0) {
+                        skip |=
+                            log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT,
+                                    HandleToUint64(pCB->currentDrawData.buffers[vertex_binding]),
+                                    kVUID_Core_DrawState_InvalidVtxAttributeAlignment,
+                                    "Invalid attribAddress alignment for vertex attribute %zu from pipeline 0x%" PRIx64
+                                    " and vertex buffer 0x%" PRIx64 ".",
+                                    i, HandleToUint64(state.pipeline_state->pipeline),
+                                    HandleToUint64(pCB->currentDrawData.buffers[vertex_binding]));
+                    }
+                }
+            }
+        }
+    }
+
     // If Viewport or scissors are dynamic, verify that dynamic count matches PSO count.
     // Skip check if rasterization is disabled or there is no viewport.
     if ((!pPipeline->graphicsPipelineCI.pRasterizationState ||
@@ -1906,6 +1944,7 @@ static void ResetCommandBufferState(layer_data *dev_data, const VkCommandBuffer 
         pCB->eventToStageMap.clear();
         pCB->drawData.clear();
         pCB->currentDrawData.buffers.clear();
+        pCB->currentDrawData.bufferOffsets.clear();
         pCB->vertex_buffer_used = false;
         pCB->primaryCommandBuffer = VK_NULL_HANDLE;
         // If secondary, invalidate any primary command buffer that may call us.
@@ -6795,13 +6834,19 @@ VKAPI_ATTR void VKAPI_CALL CmdBindIndexBuffer(VkCommandBuffer commandBuffer, VkB
     dev_data->dispatch_table.CmdBindIndexBuffer(commandBuffer, buffer, offset, indexType);
 }
 
-void UpdateResourceTracking(GLOBAL_CB_NODE *pCB, uint32_t firstBinding, uint32_t bindingCount, const VkBuffer *pBuffers) {
+void UpdateResourceTracking(GLOBAL_CB_NODE *pCB, uint32_t firstBinding, uint32_t bindingCount, const VkBuffer *pBuffers,
+                            const VkDeviceSize *pOffsets) {
     uint32_t end = firstBinding + bindingCount;
     if (pCB->currentDrawData.buffers.size() < end) {
         pCB->currentDrawData.buffers.resize(end);
     }
+    if (pCB->currentDrawData.bufferOffsets.size() < end) {
+        pCB->currentDrawData.bufferOffsets.resize(end);
+    }
+
     for (uint32_t i = 0; i < bindingCount; ++i) {
         pCB->currentDrawData.buffers[i + firstBinding] = pBuffers[i];
+        pCB->currentDrawData.bufferOffsets[i + firstBinding] = pOffsets[i];
     }
 }
 
@@ -6836,7 +6881,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBindVertexBuffers(VkCommandBuffer commandBuffer, u
 
     if (skip) return;
 
-    UpdateResourceTracking(cb_node, firstBinding, bindingCount, pBuffers);
+    UpdateResourceTracking(cb_node, firstBinding, bindingCount, pBuffers, pOffsets);
 
     lock.unlock();
     dev_data->dispatch_table.CmdBindVertexBuffers(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets);

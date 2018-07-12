@@ -408,6 +408,54 @@ VK_LAYER_EXPORT bool FormatIsCompressed(VkFormat format) {
     return (FormatIsCompressed_ASTC_LDR(format) || FormatIsCompressed_BC(format) || FormatIsCompressed_ETC2_EAC(format) ||
             FormatIsCompressed_PVRTC(format));
 }
+// Return true if format is packed
+VK_LAYER_EXPORT bool FormatIsPacked(VkFormat format) {
+    bool found = false;
+
+    switch (format) {
+        case VK_FORMAT_R4G4_UNORM_PACK8:
+        case VK_FORMAT_R4G4B4A4_UNORM_PACK16:
+        case VK_FORMAT_B4G4R4A4_UNORM_PACK16:
+        case VK_FORMAT_R5G6B5_UNORM_PACK16:
+        case VK_FORMAT_B5G6R5_UNORM_PACK16:
+        case VK_FORMAT_R5G5B5A1_UNORM_PACK16:
+        case VK_FORMAT_B5G5R5A1_UNORM_PACK16:
+        case VK_FORMAT_A1R5G5B5_UNORM_PACK16:
+        case VK_FORMAT_A8B8G8R8_UNORM_PACK32:
+        case VK_FORMAT_A8B8G8R8_SNORM_PACK32:
+        case VK_FORMAT_A8B8G8R8_USCALED_PACK32:
+        case VK_FORMAT_A8B8G8R8_SSCALED_PACK32:
+        case VK_FORMAT_A8B8G8R8_UINT_PACK32:
+        case VK_FORMAT_A8B8G8R8_SINT_PACK32:
+        case VK_FORMAT_A8B8G8R8_SRGB_PACK32:
+        case VK_FORMAT_A2R10G10B10_UNORM_PACK32:
+        case VK_FORMAT_A2R10G10B10_SNORM_PACK32:
+        case VK_FORMAT_A2R10G10B10_USCALED_PACK32:
+        case VK_FORMAT_A2R10G10B10_SSCALED_PACK32:
+        case VK_FORMAT_A2R10G10B10_UINT_PACK32:
+        case VK_FORMAT_A2R10G10B10_SINT_PACK32:
+        case VK_FORMAT_A2B10G10R10_UNORM_PACK32:
+        case VK_FORMAT_A2B10G10R10_SNORM_PACK32:
+        case VK_FORMAT_A2B10G10R10_USCALED_PACK32:
+        case VK_FORMAT_A2B10G10R10_SSCALED_PACK32:
+        case VK_FORMAT_A2B10G10R10_UINT_PACK32:
+        case VK_FORMAT_A2B10G10R10_SINT_PACK32:
+        case VK_FORMAT_B10G11R11_UFLOAT_PACK32:
+        case VK_FORMAT_E5B9G9R9_UFLOAT_PACK32:
+        case VK_FORMAT_X8_D24_UNORM_PACK32:
+        case VK_FORMAT_R10X6G10X6B10X6A10X6_UNORM_4PACK16_KHR:
+        case VK_FORMAT_G10X6B10X6G10X6R10X6_422_UNORM_4PACK16_KHR:
+        case VK_FORMAT_B10X6G10X6R10X6G10X6_422_UNORM_4PACK16_KHR:
+        case VK_FORMAT_R12X4G12X4B12X4A12X4_UNORM_4PACK16_KHR:
+        case VK_FORMAT_G12X4B12X4G12X4R12X4_422_UNORM_4PACK16_KHR:
+        case VK_FORMAT_B12X4G12X4R12X4G12X4_422_UNORM_4PACK16_KHR:
+            found = true;
+            break;
+        default:
+            break;
+    }
+    return found;
+}
 
 // Return true if format is a depth or stencil format
 VK_LAYER_EXPORT bool FormatIsDepthOrStencil(VkFormat format) {
@@ -1081,4 +1129,13 @@ VK_LAYER_EXPORT VkFormat FindMultiplaneCompatibleFormat(VkFormat mp_fmt, uint32_
     }
 
     return it->second.per_plane[plane].compatible_format;
+}
+
+// Return alignment, in bytes, of a data for the specified format
+VK_LAYER_EXPORT size_t FormatAlignment(VkFormat format) {
+    if (FormatIsPacked(format)) {
+        return FormatSize(format);
+    } else {
+        return FormatSize(format) / FormatChannelCount(format);
+    }
 }
