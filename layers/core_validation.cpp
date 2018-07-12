@@ -6288,6 +6288,23 @@ VKAPI_ATTR void VKAPI_CALL CmdSetViewport(VkCommandBuffer commandBuffer, uint32_
     if (!skip) dev_data->dispatch_table.CmdSetViewport(commandBuffer, firstViewport, viewportCount, pViewports);
 }
 
+static bool PreCallValidateCmdSetScissor(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, VkCommandBuffer commandBuffer) {
+    bool skip = ValidateCmdQueueFlags(dev_data, cb_state, "vkCmdSetScissor()", VK_QUEUE_GRAPHICS_BIT,
+                                      "VUID-vkCmdSetScissor-commandBuffer-cmdpool");
+    skip |= ValidateCmd(dev_data, cb_state, CMD_SETSCISSOR, "vkCmdSetScissor()");
+    if (cb_state->static_status & CBSTATUS_SCISSOR_SET) {
+        skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                        HandleToUint64(commandBuffer), "VUID-vkCmdSetScissor-None-00590",
+                        "vkCmdSetScissor(): pipeline was created without VK_DYNAMIC_STATE_SCISSOR flag..");
+    }
+    return skip;
+}
+
+static void PreCallRecordCmdSetScissor(GLOBAL_CB_NODE *cb_state, uint32_t firstScissor, uint32_t scissorCount) {
+    cb_state->scissorMask |= ((1u << scissorCount) - 1u) << firstScissor;
+    cb_state->status |= CBSTATUS_SCISSOR_SET;
+}
+
 VKAPI_ATTR void VKAPI_CALL CmdSetScissor(VkCommandBuffer commandBuffer, uint32_t firstScissor, uint32_t scissorCount,
                                          const VkRect2D *pScissors) {
     bool skip = false;
@@ -6295,22 +6312,29 @@ VKAPI_ATTR void VKAPI_CALL CmdSetScissor(VkCommandBuffer commandBuffer, uint32_t
     unique_lock_t lock(global_lock);
     GLOBAL_CB_NODE *pCB = GetCBNode(dev_data, commandBuffer);
     if (pCB) {
-        skip |= ValidateCmdQueueFlags(dev_data, pCB, "vkCmdSetScissor()", VK_QUEUE_GRAPHICS_BIT,
-                                      "VUID-vkCmdSetScissor-commandBuffer-cmdpool");
-        skip |= ValidateCmd(dev_data, pCB, CMD_SETSCISSOR, "vkCmdSetScissor()");
-        if (pCB->static_status & CBSTATUS_SCISSOR_SET) {
-            skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                            HandleToUint64(commandBuffer), "VUID-vkCmdSetScissor-None-00590",
-                            "vkCmdSetScissor(): pipeline was created without VK_DYNAMIC_STATE_SCISSOR flag..");
-        }
+        skip |= PreCallValidateCmdSetScissor(dev_data, pCB, commandBuffer);
         if (!skip) {
-            pCB->scissorMask |= ((1u << scissorCount) - 1u) << firstScissor;
-            pCB->status |= CBSTATUS_SCISSOR_SET;
+            PreCallRecordCmdSetScissor(pCB, firstScissor, scissorCount);
         }
     }
     lock.unlock();
     if (!skip) dev_data->dispatch_table.CmdSetScissor(commandBuffer, firstScissor, scissorCount, pScissors);
 }
+
+static bool PreCallValidateCmdSetLineWidth(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, VkCommandBuffer commandBuffer) {
+    bool skip = ValidateCmdQueueFlags(dev_data, cb_state, "vkCmdSetLineWidth()", VK_QUEUE_GRAPHICS_BIT,
+                                      "VUID-vkCmdSetLineWidth-commandBuffer-cmdpool");
+    skip |= ValidateCmd(dev_data, cb_state, CMD_SETLINEWIDTH, "vkCmdSetLineWidth()");
+
+    if (cb_state->static_status & CBSTATUS_LINE_WIDTH_SET) {
+        skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                        HandleToUint64(commandBuffer), "VUID-vkCmdSetLineWidth-None-00787",
+                        "vkCmdSetLineWidth called but pipeline was created without VK_DYNAMIC_STATE_LINE_WIDTH flag.");
+    }
+    return skip;
+}
+
+static void PreCallRecordCmdSetLineWidth(GLOBAL_CB_NODE *cb_state) { cb_state->status |= CBSTATUS_LINE_WIDTH_SET; }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetLineWidth(VkCommandBuffer commandBuffer, float lineWidth) {
     bool skip = false;
@@ -6318,17 +6342,9 @@ VKAPI_ATTR void VKAPI_CALL CmdSetLineWidth(VkCommandBuffer commandBuffer, float 
     unique_lock_t lock(global_lock);
     GLOBAL_CB_NODE *pCB = GetCBNode(dev_data, commandBuffer);
     if (pCB) {
-        skip |= ValidateCmdQueueFlags(dev_data, pCB, "vkCmdSetLineWidth()", VK_QUEUE_GRAPHICS_BIT,
-                                      "VUID-vkCmdSetLineWidth-commandBuffer-cmdpool");
-        skip |= ValidateCmd(dev_data, pCB, CMD_SETLINEWIDTH, "vkCmdSetLineWidth()");
-
-        if (pCB->static_status & CBSTATUS_LINE_WIDTH_SET) {
-            skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                            HandleToUint64(commandBuffer), "VUID-vkCmdSetLineWidth-None-00787",
-                            "vkCmdSetLineWidth called but pipeline was created without VK_DYNAMIC_STATE_LINE_WIDTH flag.");
-        }
+        skip |= PreCallValidateCmdSetLineWidth(dev_data, pCB, commandBuffer);
         if (!skip) {
-            pCB->status |= CBSTATUS_LINE_WIDTH_SET;
+            PreCallRecordCmdSetLineWidth(pCB);
         }
     }
     lock.unlock();
@@ -6409,6 +6425,20 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDepthBounds(VkCommandBuffer commandBuffer, floa
     if (!skip) dev_data->dispatch_table.CmdSetDepthBounds(commandBuffer, minDepthBounds, maxDepthBounds);
 }
 
+static bool PreCallValidateCmdSetStencilCompareMask(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, VkCommandBuffer commandBuffer) {
+    bool skip = ValidateCmdQueueFlags(dev_data, cb_state, "vkCmdSetStencilCompareMask()", VK_QUEUE_GRAPHICS_BIT,
+                                      "VUID-vkCmdSetStencilCompareMask-commandBuffer-cmdpool");
+    skip |= ValidateCmd(dev_data, cb_state, CMD_SETSTENCILCOMPAREMASK, "vkCmdSetStencilCompareMask()");
+    if (cb_state->static_status & CBSTATUS_STENCIL_READ_MASK_SET) {
+        skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                        HandleToUint64(commandBuffer), "VUID-vkCmdSetStencilCompareMask-None-00602",
+                        "vkCmdSetStencilCompareMask(): pipeline was created without VK_DYNAMIC_STATE_STENCIL_COMPARE_MASK flag..");
+    }
+    return skip;
+}
+
+static void PreCallRecordCmdSetStencilCompareMask(GLOBAL_CB_NODE *cb_state) { cb_state->status |= CBSTATUS_STENCIL_READ_MASK_SET; }
+
 VKAPI_ATTR void VKAPI_CALL CmdSetStencilCompareMask(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask,
                                                     uint32_t compareMask) {
     bool skip = false;
@@ -6416,17 +6446,9 @@ VKAPI_ATTR void VKAPI_CALL CmdSetStencilCompareMask(VkCommandBuffer commandBuffe
     unique_lock_t lock(global_lock);
     GLOBAL_CB_NODE *pCB = GetCBNode(dev_data, commandBuffer);
     if (pCB) {
-        skip |= ValidateCmdQueueFlags(dev_data, pCB, "vkCmdSetStencilCompareMask()", VK_QUEUE_GRAPHICS_BIT,
-                                      "VUID-vkCmdSetStencilCompareMask-commandBuffer-cmdpool");
-        skip |= ValidateCmd(dev_data, pCB, CMD_SETSTENCILCOMPAREMASK, "vkCmdSetStencilCompareMask()");
-        if (pCB->static_status & CBSTATUS_STENCIL_READ_MASK_SET) {
-            skip |=
-                log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                        HandleToUint64(commandBuffer), "VUID-vkCmdSetStencilCompareMask-None-00602",
-                        "vkCmdSetStencilCompareMask(): pipeline was created without VK_DYNAMIC_STATE_STENCIL_COMPARE_MASK flag..");
-        }
+        skip |= PreCallValidateCmdSetStencilCompareMask(dev_data, pCB, commandBuffer);
         if (!skip) {
-            pCB->status |= CBSTATUS_STENCIL_READ_MASK_SET;
+            PreCallRecordCmdSetStencilCompareMask(pCB);
         }
     }
     lock.unlock();
@@ -6462,22 +6484,29 @@ VKAPI_ATTR void VKAPI_CALL CmdSetStencilWriteMask(VkCommandBuffer commandBuffer,
     if (!skip) dev_data->dispatch_table.CmdSetStencilWriteMask(commandBuffer, faceMask, writeMask);
 }
 
+static bool PreCallValidateCmdSetStencilReference(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, VkCommandBuffer commandBuffer) {
+    bool skip = ValidateCmdQueueFlags(dev_data, cb_state, "vkCmdSetStencilReference()", VK_QUEUE_GRAPHICS_BIT,
+                                      "VUID-vkCmdSetStencilReference-commandBuffer-cmdpool");
+    skip |= ValidateCmd(dev_data, cb_state, CMD_SETSTENCILREFERENCE, "vkCmdSetStencilReference()");
+    if (cb_state->static_status & CBSTATUS_STENCIL_REFERENCE_SET) {
+        skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                        HandleToUint64(commandBuffer), "VUID-vkCmdSetStencilReference-None-00604",
+                        "vkCmdSetStencilReference(): pipeline was created without VK_DYNAMIC_STATE_STENCIL_REFERENCE flag..");
+    }
+    return skip;
+}
+
+static void PreCallRecordCmdSetStencilReference(GLOBAL_CB_NODE *cb_state) { cb_state->status |= CBSTATUS_STENCIL_REFERENCE_SET; }
+
 VKAPI_ATTR void VKAPI_CALL CmdSetStencilReference(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, uint32_t reference) {
     bool skip = false;
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     unique_lock_t lock(global_lock);
     GLOBAL_CB_NODE *pCB = GetCBNode(dev_data, commandBuffer);
     if (pCB) {
-        skip |= ValidateCmdQueueFlags(dev_data, pCB, "vkCmdSetStencilReference()", VK_QUEUE_GRAPHICS_BIT,
-                                      "VUID-vkCmdSetStencilReference-commandBuffer-cmdpool");
-        skip |= ValidateCmd(dev_data, pCB, CMD_SETSTENCILREFERENCE, "vkCmdSetStencilReference()");
-        if (pCB->static_status & CBSTATUS_STENCIL_REFERENCE_SET) {
-            skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                            HandleToUint64(commandBuffer), "VUID-vkCmdSetStencilReference-None-00604",
-                            "vkCmdSetStencilReference(): pipeline was created without VK_DYNAMIC_STATE_STENCIL_REFERENCE flag..");
-        }
+        skip |= PreCallValidateCmdSetStencilReference(dev_data, pCB, commandBuffer);
         if (!skip) {
-            pCB->status |= CBSTATUS_STENCIL_REFERENCE_SET;
+            PreCallRecordCmdSetStencilReference(pCB);
         }
     }
     lock.unlock();
@@ -13067,6 +13096,10 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDiscardRectangleEXT(VkCommandBuffer commandBuff
     }
 }
 
+static bool PreCallValidateCmdSetSampleLocationsEXT(layer_data *dev_data, GLOBAL_CB_NODE *cb_state) {
+    return ValidateCmd(dev_data, cb_state, CMD_SETSAMPLELOCATIONSEXT, "vkCmdSetSampleLocationsEXT()");
+}
+
 VKAPI_ATTR void VKAPI_CALL CmdSetSampleLocationsEXT(VkCommandBuffer commandBuffer,
                                                     const VkSampleLocationsInfoEXT *pSampleLocationsInfo) {
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
@@ -13075,7 +13108,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetSampleLocationsEXT(VkCommandBuffer commandBuffe
     GLOBAL_CB_NODE *cb_state = GetCBNode(dev_data, commandBuffer);
     // Minimal validation for command buffer state
     if (cb_state) {
-        skip |= ValidateCmd(dev_data, cb_state, CMD_SETSAMPLELOCATIONSEXT, "vkCmdSetSampleLocationsEXT()");
+        skip |= PreCallValidateCmdSetSampleLocationsEXT(dev_data, cb_state);
     }
     lock.unlock();
 
