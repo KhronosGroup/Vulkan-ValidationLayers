@@ -7555,30 +7555,40 @@ VKAPI_ATTR void VKAPI_CALL CmdSetEvent(VkCommandBuffer commandBuffer, VkEvent ev
     if (!skip) dev_data->dispatch_table.CmdSetEvent(commandBuffer, event, stageMask);
 }
 
+static bool PreCallValidateCmdResetEvent(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, VkPipelineStageFlags stageMask) {
+    bool skip = ValidateCmdQueueFlags(dev_data, cb_state, "vkCmdResetEvent()", VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
+                                      "VUID-vkCmdResetEvent-commandBuffer-cmdpool");
+    skip |= ValidateCmd(dev_data, cb_state, CMD_RESETEVENT, "vkCmdResetEvent()");
+    skip |= InsideRenderPass(dev_data, cb_state, "vkCmdResetEvent()", "VUID-vkCmdResetEvent-renderpass");
+    skip |= ValidateStageMaskGsTsEnables(dev_data, stageMask, "vkCmdResetEvent()", "VUID-vkCmdResetEvent-stageMask-01154",
+                                         "VUID-vkCmdResetEvent-stageMask-01155");
+    return skip;
+}
+
+static void PreCallRecordCmdResetEvent(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, VkCommandBuffer commandBuffer,
+                                       VkEvent event) {
+    auto event_state = GetEventNode(dev_data, event);
+    if (event_state) {
+        AddCommandBufferBinding(&event_state->cb_bindings, {HandleToUint64(event), kVulkanObjectTypeEvent}, cb_state);
+        event_state->cb_bindings.insert(cb_state);
+    }
+    cb_state->events.push_back(event);
+    if (!cb_state->waitedEvents.count(event)) {
+        cb_state->writeEventsBeforeWait.push_back(event);
+    }
+    // TODO : Add check for "VUID-vkResetEvent-event-01148"
+    cb_state->eventUpdates.emplace_back(
+        [=](VkQueue q) { return SetEventStageMask(q, commandBuffer, event, VkPipelineStageFlags(0)); });
+}
+
 VKAPI_ATTR void VKAPI_CALL CmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask) {
     bool skip = false;
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     unique_lock_t lock(global_lock);
     GLOBAL_CB_NODE *pCB = GetCBNode(dev_data, commandBuffer);
     if (pCB) {
-        skip |= ValidateCmdQueueFlags(dev_data, pCB, "vkCmdResetEvent()", VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
-                                      "VUID-vkCmdResetEvent-commandBuffer-cmdpool");
-        skip |= ValidateCmd(dev_data, pCB, CMD_RESETEVENT, "vkCmdResetEvent()");
-        skip |= InsideRenderPass(dev_data, pCB, "vkCmdResetEvent()", "VUID-vkCmdResetEvent-renderpass");
-        skip |= ValidateStageMaskGsTsEnables(dev_data, stageMask, "vkCmdResetEvent()", "VUID-vkCmdResetEvent-stageMask-01154",
-                                             "VUID-vkCmdResetEvent-stageMask-01155");
-        auto event_state = GetEventNode(dev_data, event);
-        if (event_state) {
-            AddCommandBufferBinding(&event_state->cb_bindings, {HandleToUint64(event), kVulkanObjectTypeEvent}, pCB);
-            event_state->cb_bindings.insert(pCB);
-        }
-        pCB->events.push_back(event);
-        if (!pCB->waitedEvents.count(event)) {
-            pCB->writeEventsBeforeWait.push_back(event);
-        }
-        // TODO : Add check for "VUID-vkResetEvent-event-01148"
-        pCB->eventUpdates.emplace_back(
-            [=](VkQueue q) { return SetEventStageMask(q, commandBuffer, event, VkPipelineStageFlags(0)); });
+        skip |= PreCallValidateCmdResetEvent(dev_data, pCB, stageMask);
+        PreCallRecordCmdResetEvent(dev_data, pCB, commandBuffer, event);
     }
     lock.unlock();
     if (!skip) dev_data->dispatch_table.CmdResetEvent(commandBuffer, event, stageMask);
@@ -8658,23 +8668,16 @@ VKAPI_ATTR void VKAPI_CALL CmdEndQuery(VkCommandBuffer commandBuffer, VkQueryPoo
     }
 }
 
-VKAPI_ATTR void VKAPI_CALL CmdResetQueryPool(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery,
-                                             uint32_t queryCount) {
-    bool skip = false;
-    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    unique_lock_t lock(global_lock);
-    GLOBAL_CB_NODE *cb_state = GetCBNode(dev_data, commandBuffer);
-    skip |= InsideRenderPass(dev_data, cb_state, "vkCmdResetQueryPool()", "VUID-vkCmdResetQueryPool-renderpass");
+static bool PreCallValidateCmdResetQueryPool(layer_data *dev_data, GLOBAL_CB_NODE *cb_state) {
+    bool skip = InsideRenderPass(dev_data, cb_state, "vkCmdResetQueryPool()", "VUID-vkCmdResetQueryPool-renderpass");
     skip |= ValidateCmd(dev_data, cb_state, CMD_RESETQUERYPOOL, "VkCmdResetQueryPool()");
     skip |= ValidateCmdQueueFlags(dev_data, cb_state, "VkCmdResetQueryPool()", VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
                                   "VUID-vkCmdResetQueryPool-commandBuffer-cmdpool");
-    lock.unlock();
+    return skip;
+}
 
-    if (skip) return;
-
-    dev_data->dispatch_table.CmdResetQueryPool(commandBuffer, queryPool, firstQuery, queryCount);
-
-    lock.lock();
+static void PostCallRecordCmdResetQueryPool(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, VkCommandBuffer commandBuffer,
+                                            VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount) {
     for (uint32_t i = 0; i < queryCount; i++) {
         QueryObject query = {queryPool, firstQuery + i};
         cb_state->waitedEventsBeforeQueryReset[query] = cb_state->waitedEvents;
@@ -8682,6 +8685,22 @@ VKAPI_ATTR void VKAPI_CALL CmdResetQueryPool(VkCommandBuffer commandBuffer, VkQu
     }
     AddCommandBufferBinding(&GetQueryPoolNode(dev_data, queryPool)->cb_bindings,
                             {HandleToUint64(queryPool), kVulkanObjectTypeQueryPool}, cb_state);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdResetQueryPool(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery,
+                                             uint32_t queryCount) {
+    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    unique_lock_t lock(global_lock);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(dev_data, commandBuffer);
+    bool skip = PreCallValidateCmdResetQueryPool(dev_data, cb_state);
+    lock.unlock();
+
+    if (skip) return;
+
+    dev_data->dispatch_table.CmdResetQueryPool(commandBuffer, queryPool, firstQuery, queryCount);
+
+    lock.lock();
+    PostCallRecordCmdResetQueryPool(dev_data, cb_state, commandBuffer, queryPool, firstQuery, queryCount);
 }
 
 static bool IsQueryInvalid(layer_data *dev_data, QUEUE_STATE *queue_data, VkQueryPool queryPool, uint32_t queryIndex) {
@@ -8751,11 +8770,9 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyQueryPoolResults(VkCommandBuffer commandBuffer
     }
 }
 
-VKAPI_ATTR void VKAPI_CALL CmdPushConstants(VkCommandBuffer commandBuffer, VkPipelineLayout layout, VkShaderStageFlags stageFlags,
-                                            uint32_t offset, uint32_t size, const void *pValues) {
+static bool PreCallValidateCmdPushConstants(layer_data *dev_data, VkCommandBuffer commandBuffer, VkPipelineLayout layout,
+                                            VkShaderStageFlags stageFlags, uint32_t offset, uint32_t size) {
     bool skip = false;
-    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    unique_lock_t lock(global_lock);
     GLOBAL_CB_NODE *cb_state = GetCBNode(dev_data, commandBuffer);
     if (cb_state) {
         skip |= ValidateCmdQueueFlags(dev_data, cb_state, "vkCmdPushConstants()", VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
@@ -8804,6 +8821,15 @@ VKAPI_ATTR void VKAPI_CALL CmdPushConstants(VkCommandBuffer commandBuffer, VkPip
                             (uint32_t)stageFlags, HandleToUint64(layout), offset, size, missing_stages);
         }
     }
+    return skip;
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdPushConstants(VkCommandBuffer commandBuffer, VkPipelineLayout layout, VkShaderStageFlags stageFlags,
+                                            uint32_t offset, uint32_t size, const void *pValues) {
+    bool skip = false;
+    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    unique_lock_t lock(global_lock);
+    skip |= PreCallValidateCmdPushConstants(dev_data, commandBuffer, layout, stageFlags, offset, size);
     lock.unlock();
     if (!skip) dev_data->dispatch_table.CmdPushConstants(commandBuffer, layout, stageFlags, offset, size, pValues);
 }
@@ -9759,24 +9785,36 @@ VKAPI_ATTR void VKAPI_CALL CmdBeginRenderPass(VkCommandBuffer commandBuffer, con
     }
 }
 
+static bool PreCallValidateCmdNextSubpass(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, VkCommandBuffer commandBuffer) {
+    bool skip = ValidatePrimaryCommandBuffer(dev_data, cb_state, "vkCmdNextSubpass()", "VUID-vkCmdNextSubpass-bufferlevel");
+    skip |= ValidateCmdQueueFlags(dev_data, cb_state, "vkCmdNextSubpass()", VK_QUEUE_GRAPHICS_BIT,
+                                  "VUID-vkCmdNextSubpass-commandBuffer-cmdpool");
+    skip |= ValidateCmd(dev_data, cb_state, CMD_NEXTSUBPASS, "vkCmdNextSubpass()");
+    skip |= OutsideRenderPass(dev_data, cb_state, "vkCmdNextSubpass()", "VUID-vkCmdNextSubpass-renderpass");
+
+    auto subpassCount = cb_state->activeRenderPass->createInfo.subpassCount;
+    if (cb_state->activeSubpass == subpassCount - 1) {
+        skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                        HandleToUint64(commandBuffer), "VUID-vkCmdNextSubpass-None-00909",
+                        "vkCmdNextSubpass(): Attempted to advance beyond final subpass.");
+    }
+    return skip;
+}
+
+static void PostCallRecordCmdNextSubpass(layer_data *dev_data, GLOBAL_CB_NODE *cb_node, VkSubpassContents contents) {
+    cb_node->activeSubpass++;
+    cb_node->activeSubpassContents = contents;
+    TransitionSubpassLayouts(dev_data, cb_node, cb_node->activeRenderPass, cb_node->activeSubpass,
+                             GetFramebufferState(dev_data, cb_node->activeRenderPassBeginInfo.framebuffer));
+}
+
 VKAPI_ATTR void VKAPI_CALL CmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpassContents contents) {
     bool skip = false;
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     unique_lock_t lock(global_lock);
     GLOBAL_CB_NODE *pCB = GetCBNode(dev_data, commandBuffer);
     if (pCB) {
-        skip |= ValidatePrimaryCommandBuffer(dev_data, pCB, "vkCmdNextSubpass()", "VUID-vkCmdNextSubpass-bufferlevel");
-        skip |= ValidateCmdQueueFlags(dev_data, pCB, "vkCmdNextSubpass()", VK_QUEUE_GRAPHICS_BIT,
-                                      "VUID-vkCmdNextSubpass-commandBuffer-cmdpool");
-        skip |= ValidateCmd(dev_data, pCB, CMD_NEXTSUBPASS, "vkCmdNextSubpass()");
-        skip |= OutsideRenderPass(dev_data, pCB, "vkCmdNextSubpass()", "VUID-vkCmdNextSubpass-renderpass");
-
-        auto subpassCount = pCB->activeRenderPass->createInfo.subpassCount;
-        if (pCB->activeSubpass == subpassCount - 1) {
-            skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                            HandleToUint64(commandBuffer), "VUID-vkCmdNextSubpass-None-00909",
-                            "vkCmdNextSubpass(): Attempted to advance beyond final subpass.");
-        }
+        skip |= PreCallValidateCmdNextSubpass(dev_data, pCB, commandBuffer);
     }
     lock.unlock();
 
@@ -9786,10 +9824,7 @@ VKAPI_ATTR void VKAPI_CALL CmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpa
 
     if (pCB) {
         lock.lock();
-        pCB->activeSubpass++;
-        pCB->activeSubpassContents = contents;
-        TransitionSubpassLayouts(dev_data, pCB, pCB->activeRenderPass, pCB->activeSubpass,
-                                 GetFramebufferState(dev_data, pCB->activeRenderPassBeginInfo.framebuffer));
+        PostCallRecordCmdNextSubpass(dev_data, pCB, contents);
     }
 }
 
@@ -12908,6 +12943,10 @@ VKAPI_ATTR void VKAPI_CALL UpdateDescriptorSetWithTemplateKHR(VkDevice device, V
     PostCallRecordUpdateDescriptorSetWithTemplate(device_data, descriptorSet, descriptorUpdateTemplate, pData);
 }
 
+static bool PreCallValidateCmdPushDescriptorSetWithTemplateKHR(layer_data *dev_data, GLOBAL_CB_NODE *cb_state) {
+    return ValidateCmd(dev_data, cb_state, CMD_PUSHDESCRIPTORSETWITHTEMPLATEKHR, "vkCmdPushDescriptorSetWithTemplateKHR()");
+}
+
 VKAPI_ATTR void VKAPI_CALL CmdPushDescriptorSetWithTemplateKHR(VkCommandBuffer commandBuffer,
                                                                VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate,
                                                                VkPipelineLayout layout, uint32_t set, const void *pData) {
@@ -12917,7 +12956,7 @@ VKAPI_ATTR void VKAPI_CALL CmdPushDescriptorSetWithTemplateKHR(VkCommandBuffer c
     GLOBAL_CB_NODE *cb_state = GetCBNode(dev_data, commandBuffer);
     // Minimal validation for command buffer state
     if (cb_state) {
-        skip |= ValidateCmd(dev_data, cb_state, CMD_PUSHDESCRIPTORSETWITHTEMPLATEKHR, "vkCmdPushDescriptorSetWithTemplateKHR()");
+        skip |= PreCallValidateCmdPushDescriptorSetWithTemplateKHR(dev_data, cb_state);
     }
     lock.unlock();
 
