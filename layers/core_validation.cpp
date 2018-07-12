@@ -6255,6 +6255,23 @@ VKAPI_ATTR void VKAPI_CALL CmdBindPipeline(VkCommandBuffer commandBuffer, VkPipe
     if (!skip) dev_data->dispatch_table.CmdBindPipeline(commandBuffer, pipelineBindPoint, pipeline);
 }
 
+static bool PreCallValidateCmdSetViewport(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, VkCommandBuffer commandBuffer) {
+    bool skip = ValidateCmdQueueFlags(dev_data, cb_state, "vkCmdSetViewport()", VK_QUEUE_GRAPHICS_BIT,
+                                      "VUID-vkCmdSetViewport-commandBuffer-cmdpool");
+    skip |= ValidateCmd(dev_data, cb_state, CMD_SETVIEWPORT, "vkCmdSetViewport()");
+    if (cb_state->static_status & CBSTATUS_VIEWPORT_SET) {
+        skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                        HandleToUint64(commandBuffer), "VUID-vkCmdSetViewport-None-01221",
+                        "vkCmdSetViewport(): pipeline was created without VK_DYNAMIC_STATE_VIEWPORT flag..");
+    }
+    return skip;
+}
+
+static void PreCallRecordCmdSetViewport(GLOBAL_CB_NODE *cb_state, uint32_t firstViewport, uint32_t viewportCount) {
+    cb_state->viewportMask |= ((1u << viewportCount) - 1u) << firstViewport;
+    cb_state->status |= CBSTATUS_VIEWPORT_SET;
+}
+
 VKAPI_ATTR void VKAPI_CALL CmdSetViewport(VkCommandBuffer commandBuffer, uint32_t firstViewport, uint32_t viewportCount,
                                           const VkViewport *pViewports) {
     bool skip = false;
@@ -6262,17 +6279,9 @@ VKAPI_ATTR void VKAPI_CALL CmdSetViewport(VkCommandBuffer commandBuffer, uint32_
     unique_lock_t lock(global_lock);
     GLOBAL_CB_NODE *pCB = GetCBNode(dev_data, commandBuffer);
     if (pCB) {
-        skip |= ValidateCmdQueueFlags(dev_data, pCB, "vkCmdSetViewport()", VK_QUEUE_GRAPHICS_BIT,
-                                      "VUID-vkCmdSetViewport-commandBuffer-cmdpool");
-        skip |= ValidateCmd(dev_data, pCB, CMD_SETVIEWPORT, "vkCmdSetViewport()");
-        if (pCB->static_status & CBSTATUS_VIEWPORT_SET) {
-            skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                            HandleToUint64(commandBuffer), "VUID-vkCmdSetViewport-None-01221",
-                            "vkCmdSetViewport(): pipeline was created without VK_DYNAMIC_STATE_VIEWPORT flag..");
-        }
+        skip |= PreCallValidateCmdSetViewport(dev_data, pCB, commandBuffer);
         if (!skip) {
-            pCB->viewportMask |= ((1u << viewportCount) - 1u) << firstViewport;
-            pCB->status |= CBSTATUS_VIEWPORT_SET;
+            PreCallRecordCmdSetViewport(pCB, firstViewport, viewportCount);
         }
     }
     lock.unlock();
@@ -6424,22 +6433,29 @@ VKAPI_ATTR void VKAPI_CALL CmdSetStencilCompareMask(VkCommandBuffer commandBuffe
     if (!skip) dev_data->dispatch_table.CmdSetStencilCompareMask(commandBuffer, faceMask, compareMask);
 }
 
+static bool PreCallValidateCmdSetStencilWriteMask(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, VkCommandBuffer commandBuffer) {
+    bool skip = ValidateCmdQueueFlags(dev_data, cb_state, "vkCmdSetStencilWriteMask()", VK_QUEUE_GRAPHICS_BIT,
+                                      "VUID-vkCmdSetStencilWriteMask-commandBuffer-cmdpool");
+    skip |= ValidateCmd(dev_data, cb_state, CMD_SETSTENCILWRITEMASK, "vkCmdSetStencilWriteMask()");
+    if (cb_state->static_status & CBSTATUS_STENCIL_WRITE_MASK_SET) {
+        skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                        HandleToUint64(commandBuffer), "VUID-vkCmdSetStencilWriteMask-None-00603",
+                        "vkCmdSetStencilWriteMask(): pipeline was created without VK_DYNAMIC_STATE_STENCIL_WRITE_MASK flag..");
+    }
+    return skip;
+}
+
+static void PreCallRecordCmdSetStencilWriteMask(GLOBAL_CB_NODE *cb_state) { cb_state->status |= CBSTATUS_STENCIL_WRITE_MASK_SET; }
+
 VKAPI_ATTR void VKAPI_CALL CmdSetStencilWriteMask(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, uint32_t writeMask) {
     bool skip = false;
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     unique_lock_t lock(global_lock);
     GLOBAL_CB_NODE *pCB = GetCBNode(dev_data, commandBuffer);
     if (pCB) {
-        skip |= ValidateCmdQueueFlags(dev_data, pCB, "vkCmdSetStencilWriteMask()", VK_QUEUE_GRAPHICS_BIT,
-                                      "VUID-vkCmdSetStencilWriteMask-commandBuffer-cmdpool");
-        skip |= ValidateCmd(dev_data, pCB, CMD_SETSTENCILWRITEMASK, "vkCmdSetStencilWriteMask()");
-        if (pCB->static_status & CBSTATUS_STENCIL_WRITE_MASK_SET) {
-            skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                            HandleToUint64(commandBuffer), "VUID-vkCmdSetStencilWriteMask-None-00603",
-                            "vkCmdSetStencilWriteMask(): pipeline was created without VK_DYNAMIC_STATE_STENCIL_WRITE_MASK flag..");
-        }
+        skip |= PreCallValidateCmdSetStencilWriteMask(dev_data, pCB, commandBuffer);
         if (!skip) {
-            pCB->status |= CBSTATUS_STENCIL_WRITE_MASK_SET;
+            PreCallRecordCmdSetStencilWriteMask(pCB);
         }
     }
     lock.unlock();
@@ -8351,6 +8367,54 @@ bool ValidateStageMasksAgainstQueueCapabilities(layer_data *dev_data, GLOBAL_CB_
     return skip;
 }
 
+static bool PreCallValidateCmdEventCount(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, VkPipelineStageFlags sourceStageMask,
+                                         VkPipelineStageFlags dstStageMask, uint32_t memoryBarrierCount,
+                                         const VkMemoryBarrier *pMemoryBarriers, uint32_t bufferMemoryBarrierCount,
+                                         const VkBufferMemoryBarrier *pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount,
+                                         const VkImageMemoryBarrier *pImageMemoryBarriers) {
+    auto barrier_op_type = ComputeBarrierOperationsType(dev_data, cb_state, bufferMemoryBarrierCount, pBufferMemoryBarriers,
+                                                        imageMemoryBarrierCount, pImageMemoryBarriers);
+    bool skip = ValidateStageMasksAgainstQueueCapabilities(dev_data, cb_state, sourceStageMask, dstStageMask, barrier_op_type,
+                                                           "vkCmdWaitEvents", "VUID-vkCmdWaitEvents-srcStageMask-01164");
+    skip |= ValidateStageMaskGsTsEnables(dev_data, sourceStageMask, "vkCmdWaitEvents()", "VUID-vkCmdWaitEvents-srcStageMask-01159",
+                                         "VUID-vkCmdWaitEvents-srcStageMask-01161");
+    skip |= ValidateStageMaskGsTsEnables(dev_data, dstStageMask, "vkCmdWaitEvents()", "VUID-vkCmdWaitEvents-dstStageMask-01160",
+                                         "VUID-vkCmdWaitEvents-dstStageMask-01162");
+    skip |= ValidateCmdQueueFlags(dev_data, cb_state, "vkCmdWaitEvents()", VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
+                                  "VUID-vkCmdWaitEvents-commandBuffer-cmdpool");
+    skip |= ValidateCmd(dev_data, cb_state, CMD_WAITEVENTS, "vkCmdWaitEvents()");
+    skip |= ValidateBarriersToImages(dev_data, cb_state, imageMemoryBarrierCount, pImageMemoryBarriers, "vkCmdWaitEvents()");
+    skip |= ValidateBarriers(dev_data, "vkCmdWaitEvents()", cb_state, sourceStageMask, dstStageMask, memoryBarrierCount,
+                             pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount,
+                             pImageMemoryBarriers);
+    return skip;
+}
+
+static void PreCallRecordCmdWaitEvents(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, uint32_t eventCount, const VkEvent *pEvents,
+                                       VkPipelineStageFlags sourceStageMask, uint32_t imageMemoryBarrierCount,
+                                       const VkImageMemoryBarrier *pImageMemoryBarriers) {
+    auto first_event_index = cb_state->events.size();
+    for (uint32_t i = 0; i < eventCount; ++i) {
+        auto event_state = GetEventNode(dev_data, pEvents[i]);
+        if (event_state) {
+            AddCommandBufferBinding(&event_state->cb_bindings, {HandleToUint64(pEvents[i]), kVulkanObjectTypeEvent}, cb_state);
+            event_state->cb_bindings.insert(cb_state);
+        }
+        cb_state->waitedEvents.insert(pEvents[i]);
+        cb_state->events.push_back(pEvents[i]);
+    }
+    cb_state->eventUpdates.emplace_back(
+        [=](VkQueue q) { return ValidateEventStageMask(q, cb_state, eventCount, first_event_index, sourceStageMask); });
+    TransitionImageLayouts(dev_data, cb_state, imageMemoryBarrierCount, pImageMemoryBarriers);
+}
+
+static void PostCallRecordCmdWaitEvents(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, uint32_t bufferMemoryBarrierCount,
+                                        const VkBufferMemoryBarrier *pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount,
+                                        const VkImageMemoryBarrier *pImageMemoryBarriers) {
+    RecordBarriersQFOTransfers(dev_data, "vkCmdWaitEvents()", cb_state, bufferMemoryBarrierCount, pBufferMemoryBarriers,
+                               imageMemoryBarrierCount, pImageMemoryBarriers);
+}
+
 VKAPI_ATTR void VKAPI_CALL CmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
                                          VkPipelineStageFlags sourceStageMask, VkPipelineStageFlags dstStageMask,
                                          uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers,
@@ -8361,47 +8425,25 @@ VKAPI_ATTR void VKAPI_CALL CmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t
     unique_lock_t lock(global_lock);
     GLOBAL_CB_NODE *cb_state = GetCBNode(dev_data, commandBuffer);
     if (cb_state) {
-        auto barrier_op_type = ComputeBarrierOperationsType(dev_data, cb_state, bufferMemoryBarrierCount, pBufferMemoryBarriers,
-                                                            imageMemoryBarrierCount, pImageMemoryBarriers);
-        skip |= ValidateStageMasksAgainstQueueCapabilities(dev_data, cb_state, sourceStageMask, dstStageMask, barrier_op_type,
-                                                           "vkCmdWaitEvents", "VUID-vkCmdWaitEvents-srcStageMask-01164");
-        skip |= ValidateStageMaskGsTsEnables(dev_data, sourceStageMask, "vkCmdWaitEvents()",
-                                             "VUID-vkCmdWaitEvents-srcStageMask-01159", "VUID-vkCmdWaitEvents-srcStageMask-01161");
-        skip |= ValidateStageMaskGsTsEnables(dev_data, dstStageMask, "vkCmdWaitEvents()", "VUID-vkCmdWaitEvents-dstStageMask-01160",
-                                             "VUID-vkCmdWaitEvents-dstStageMask-01162");
-        skip |= ValidateCmdQueueFlags(dev_data, cb_state, "vkCmdWaitEvents()", VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
-                                      "VUID-vkCmdWaitEvents-commandBuffer-cmdpool");
-        skip |= ValidateCmd(dev_data, cb_state, CMD_WAITEVENTS, "vkCmdWaitEvents()");
-        skip |= ValidateBarriersToImages(dev_data, cb_state, imageMemoryBarrierCount, pImageMemoryBarriers, "vkCmdWaitEvents()");
-        skip |= ValidateBarriers(dev_data, "vkCmdWaitEvents()", cb_state, sourceStageMask, dstStageMask, memoryBarrierCount,
-                                 pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount,
-                                 pImageMemoryBarriers);
+        skip |= PreCallValidateCmdEventCount(dev_data, cb_state, sourceStageMask, dstStageMask, memoryBarrierCount, pMemoryBarriers,
+                                             bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount,
+                                             pImageMemoryBarriers);
         if (!skip) {
-            auto first_event_index = cb_state->events.size();
-            for (uint32_t i = 0; i < eventCount; ++i) {
-                auto event_state = GetEventNode(dev_data, pEvents[i]);
-                if (event_state) {
-                    AddCommandBufferBinding(&event_state->cb_bindings, {HandleToUint64(pEvents[i]), kVulkanObjectTypeEvent},
-                                            cb_state);
-                    event_state->cb_bindings.insert(cb_state);
-                }
-                cb_state->waitedEvents.insert(pEvents[i]);
-                cb_state->events.push_back(pEvents[i]);
-            }
-            cb_state->eventUpdates.emplace_back(
-                [=](VkQueue q) { return ValidateEventStageMask(q, cb_state, eventCount, first_event_index, sourceStageMask); });
-            TransitionImageLayouts(dev_data, cb_state, imageMemoryBarrierCount, pImageMemoryBarriers);
+            PreCallRecordCmdWaitEvents(dev_data, cb_state, eventCount, pEvents, sourceStageMask, imageMemoryBarrierCount,
+                                       pImageMemoryBarriers);
         }
     }
     lock.unlock();
-    if (!skip)
+
+    if (!skip) {
         dev_data->dispatch_table.CmdWaitEvents(commandBuffer, eventCount, pEvents, sourceStageMask, dstStageMask,
                                                memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers,
                                                imageMemoryBarrierCount, pImageMemoryBarriers);
-    lock.lock();
+    }
 
-    RecordBarriersQFOTransfers(dev_data, "vkCmdWaitEvents()", cb_state, bufferMemoryBarrierCount, pBufferMemoryBarriers,
-                               imageMemoryBarrierCount, pImageMemoryBarriers);
+    lock.lock();
+    PostCallRecordCmdWaitEvents(dev_data, cb_state, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount,
+                                pImageMemoryBarriers);
 }
 
 static bool PreCallValidateCmdPipelineBarrier(layer_data *device_data, GLOBAL_CB_NODE *cb_state, VkPipelineStageFlags srcStageMask,
@@ -8704,6 +8746,20 @@ VKAPI_ATTR void VKAPI_CALL CmdPushConstants(VkCommandBuffer commandBuffer, VkPip
     if (!skip) dev_data->dispatch_table.CmdPushConstants(commandBuffer, layout, stageFlags, offset, size, pValues);
 }
 
+static bool PreCallValidateCmdWriteTimestamp(layer_data *dev_data, GLOBAL_CB_NODE *cb_state) {
+    bool skip = ValidateCmdQueueFlags(dev_data, cb_state, "vkCmdWriteTimestamp()",
+                                      VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT,
+                                      "VUID-vkCmdWriteTimestamp-commandBuffer-cmdpool");
+    skip |= ValidateCmd(dev_data, cb_state, CMD_WRITETIMESTAMP, "vkCmdWriteTimestamp()");
+    return skip;
+}
+
+static void PostCallRecordCmdWriteTimestamp(GLOBAL_CB_NODE *cb_state, VkCommandBuffer commandBuffer, VkQueryPool queryPool,
+                                            uint32_t slot) {
+    QueryObject query = {queryPool, slot};
+    cb_state->queryUpdates.emplace_back([=](VkQueue q) { return SetQueryState(q, commandBuffer, query, true); });
+}
+
 VKAPI_ATTR void VKAPI_CALL CmdWriteTimestamp(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage,
                                              VkQueryPool queryPool, uint32_t slot) {
     bool skip = false;
@@ -8711,10 +8767,7 @@ VKAPI_ATTR void VKAPI_CALL CmdWriteTimestamp(VkCommandBuffer commandBuffer, VkPi
     unique_lock_t lock(global_lock);
     GLOBAL_CB_NODE *cb_state = GetCBNode(dev_data, commandBuffer);
     if (cb_state) {
-        skip |= ValidateCmdQueueFlags(dev_data, cb_state, "vkCmdWriteTimestamp()",
-                                      VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT,
-                                      "VUID-vkCmdWriteTimestamp-commandBuffer-cmdpool");
-        skip |= ValidateCmd(dev_data, cb_state, CMD_WRITETIMESTAMP, "vkCmdWriteTimestamp()");
+        skip |= PreCallValidateCmdWriteTimestamp(dev_data, cb_state);
     }
     lock.unlock();
 
@@ -8723,10 +8776,7 @@ VKAPI_ATTR void VKAPI_CALL CmdWriteTimestamp(VkCommandBuffer commandBuffer, VkPi
     dev_data->dispatch_table.CmdWriteTimestamp(commandBuffer, pipelineStage, queryPool, slot);
 
     lock.lock();
-    if (cb_state) {
-        QueryObject query = {queryPool, slot};
-        cb_state->queryUpdates.emplace_back([=](VkQueue q) { return SetQueryState(q, commandBuffer, query, true); });
-    }
+    if (cb_state) PostCallRecordCmdWriteTimestamp(cb_state, commandBuffer, queryPool, slot);
 }
 
 static bool MatchUsage(layer_data *dev_data, uint32_t count, const VkAttachmentReference *attachments,
