@@ -144,6 +144,7 @@ VK_LAYER_EXPORT bool FormatIsSRGB(VkFormat format);
 VK_LAYER_EXPORT bool FormatIsUScaled(VkFormat format);
 VK_LAYER_EXPORT bool FormatIsSScaled(VkFormat format);
 VK_LAYER_EXPORT bool FormatIsCompressed(VkFormat format);
+VK_LAYER_EXPORT bool FormatIsPacked(VkFormat format);
 
 VK_LAYER_EXPORT uint32_t FormatPlaneCount(VkFormat format);
 VK_LAYER_EXPORT uint32_t FormatChannelCount(VkFormat format);
@@ -152,6 +153,7 @@ VK_LAYER_EXPORT size_t FormatSize(VkFormat format);
 VK_LAYER_EXPORT VkFormatCompatibilityClass FormatCompatibilityClass(VkFormat format);
 VK_LAYER_EXPORT VkDeviceSize SafeModulo(VkDeviceSize dividend, VkDeviceSize divisor);
 VK_LAYER_EXPORT VkFormat FindMultiplaneCompatibleFormat(VkFormat fmt, uint32_t plane);
+VK_LAYER_EXPORT size_t FormatAlignment(VkFormat format);
 
 static inline bool FormatIsUndef(VkFormat format) { return (format == VK_FORMAT_UNDEFINED); }
 static inline bool FormatHasDepth(VkFormat format) { return (FormatIsDepthOnly(format) || FormatIsDepthAndStencil(format)); }

@@ -14958,6 +14958,119 @@ TEST_F(VkLayerTest, BadVertexBufferOffset) {
     m_commandBuffer->end();
 }
 
+TEST_F(VkLayerTest, InvalidVertexAttributeAlignment) {
+    TEST_DESCRIPTION("Check for proper aligment of attribAddress which depends on a bound pipeline and on a bound vertex buffer");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitViewport());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    const VkPipelineLayoutObj pipeline_layout(m_device);
+
+    struct VboEntry {
+        uint16_t input0[2];
+        uint32_t input1;
+        float input2[4];
+    };
+
+    const unsigned vbo_entry_count = 3;
+    const VboEntry vbo_data[vbo_entry_count] = {};
+
+    VkConstantBufferObj vbo(m_device, static_cast<int>(sizeof(VboEntry) * vbo_entry_count),
+                            reinterpret_cast<const void *>(vbo_data), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+
+    VkVertexInputBindingDescription input_binding;
+    input_binding.binding = 0;
+    input_binding.stride = sizeof(VboEntry);
+    input_binding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+    VkVertexInputAttributeDescription input_attribs[3];
+    input_attribs[0].binding = 0;
+    input_attribs[0].location = 0;
+    input_attribs[0].format = VK_FORMAT_R16G16_UNORM;
+    input_attribs[0].offset = offsetof(VboEntry, input0);
+
+    input_attribs[1].binding = 0;
+    input_attribs[1].location = 1;
+    input_attribs[1].format = VK_FORMAT_A8B8G8R8_UNORM_PACK32;
+    input_attribs[1].offset = offsetof(VboEntry, input1);
+
+    input_attribs[2].binding = 0;
+    input_attribs[2].location = 2;
+    input_attribs[2].format = VK_FORMAT_R32G32B32A32_SFLOAT;
+    input_attribs[2].offset = offsetof(VboEntry, input2);
+
+    char const *vsSource =
+        "#version 450\n"
+        "\n"
+        "layout(location = 0) in vec2 input0;"
+        "layout(location = 1) in vec4 input1;"
+        "layout(location = 2) in vec4 input2;"
+        "\n"
+        "void main(){\n"
+        "   gl_Position = input1 + input2;\n"
+        "   gl_Position.xy += input0;\n"
+        "}\n";
+    char const *fsSource =
+        "#version 450\n"
+        "\n"
+        "layout(location=0) out vec4 color;\n"
+        "void main(){\n"
+        "   color = vec4(1);\n"
+        "}\n";
+
+    VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
+    VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+
+    VkPipelineObj pipe1(m_device);
+    pipe1.AddDefaultColorAttachment();
+    pipe1.AddShader(&vs);
+    pipe1.AddShader(&fs);
+    pipe1.AddVertexInputBindings(&input_binding, 1);
+    pipe1.AddVertexInputAttribs(&input_attribs[0], 3);
+    pipe1.SetViewport(m_viewports);
+    pipe1.SetScissor(m_scissors);
+    pipe1.CreateVKPipeline(pipeline_layout.handle(), renderPass());
+
+    input_binding.stride = 6;
+
+    VkPipelineObj pipe2(m_device);
+    pipe2.AddDefaultColorAttachment();
+    pipe2.AddShader(&vs);
+    pipe2.AddShader(&fs);
+    pipe2.AddVertexInputBindings(&input_binding, 1);
+    pipe2.AddVertexInputAttribs(&input_attribs[0], 3);
+    pipe2.SetViewport(m_viewports);
+    pipe2.SetScissor(m_scissors);
+    pipe2.CreateVKPipeline(pipeline_layout.handle(), renderPass());
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+
+    // Test with invalid buffer offset
+    VkDeviceSize offset = 1;
+    vkCmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe1.handle());
+    vkCmdBindVertexBuffers(m_commandBuffer->handle(), 0, 1, &vbo.handle(), &offset);
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "Invalid attribAddress alignment for vertex attribute 0");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "Invalid attribAddress alignment for vertex attribute 1");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "Invalid attribAddress alignment for vertex attribute 2");
+    m_commandBuffer->Draw(1, 0, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    // Test with invalid buffer stride
+    offset = 0;
+    vkCmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe2.handle());
+    vkCmdBindVertexBuffers(m_commandBuffer->handle(), 0, 1, &vbo.handle(), &offset);
+    // Attribute[0] is aligned properly even with a wrong stride
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "Invalid attribAddress alignment for vertex attribute 1");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "Invalid attribAddress alignment for vertex attribute 2");
+    m_commandBuffer->Draw(1, 0, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
+
 // INVALID_IMAGE_LAYOUT tests (one other case is hit by MapMemWithoutHostVisibleBit and not here)
 TEST_F(VkLayerTest, InvalidImageLayout) {
     TEST_DESCRIPTION(
