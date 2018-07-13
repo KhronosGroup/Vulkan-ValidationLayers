@@ -4467,9 +4467,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateCommandPool(VkDevice device, const VkComman
     return result;
 }
 
-VKAPI_ATTR VkResult VKAPI_CALL CreateQueryPool(VkDevice device, const VkQueryPoolCreateInfo *pCreateInfo,
-                                               const VkAllocationCallbacks *pAllocator, VkQueryPool *pQueryPool) {
-    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+static bool PreCallValidateCreateQueryPool(layer_data *dev_data, const VkQueryPoolCreateInfo *pCreateInfo) {
     bool skip = false;
     if (pCreateInfo && pCreateInfo->queryType == VK_QUERY_TYPE_PIPELINE_STATISTICS) {
         if (!dev_data->enabled_features.core.pipelineStatisticsQuery) {
@@ -4479,15 +4477,28 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateQueryPool(VkDevice device, const VkQueryPoo
                             "VkDeviceCreateInfo.pEnabledFeatures.pipelineStatisticsQuery == VK_FALSE.");
         }
     }
+    return skip;
+}
+
+static void PostCallRecordCreateQueryPool(layer_data *dev_data, const VkQueryPoolCreateInfo *pCreateInfo, VkQueryPool *pQueryPool) {
+    QUERY_POOL_NODE *qp_node = &dev_data->queryPoolMap[*pQueryPool];
+    qp_node->createInfo = *pCreateInfo;
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL CreateQueryPool(VkDevice device, const VkQueryPoolCreateInfo *pCreateInfo,
+                                               const VkAllocationCallbacks *pAllocator, VkQueryPool *pQueryPool) {
+    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    unique_lock_t lock(global_lock);
+    bool skip = PreCallValidateCreateQueryPool(dev_data, pCreateInfo);
+    lock.unlock();
 
     VkResult result = VK_ERROR_VALIDATION_FAILED_EXT;
     if (!skip) {
         result = dev_data->dispatch_table.CreateQueryPool(device, pCreateInfo, pAllocator, pQueryPool);
     }
     if (result == VK_SUCCESS) {
-        lock_guard_t lock(global_lock);
-        QUERY_POOL_NODE *qp_node = &dev_data->queryPoolMap[*pQueryPool];
-        qp_node->createInfo = *pCreateInfo;
+        lock.lock();
+        PostCallRecordCreateQueryPool(dev_data, pCreateInfo, pQueryPool);
     }
     return result;
 }
@@ -4823,16 +4834,20 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateImageView(VkDevice device, const VkImageVie
     return result;
 }
 
+static void PostCallRecordCreateFence(layer_data *dev_data, const VkFenceCreateInfo *pCreateInfo, VkFence *pFence) {
+    auto &fence_node = dev_data->fenceMap[*pFence];
+    fence_node.fence = *pFence;
+    fence_node.createInfo = *pCreateInfo;
+    fence_node.state = (pCreateInfo->flags & VK_FENCE_CREATE_SIGNALED_BIT) ? FENCE_RETIRED : FENCE_UNSIGNALED;
+}
+
 VKAPI_ATTR VkResult VKAPI_CALL CreateFence(VkDevice device, const VkFenceCreateInfo *pCreateInfo,
                                            const VkAllocationCallbacks *pAllocator, VkFence *pFence) {
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     VkResult result = dev_data->dispatch_table.CreateFence(device, pCreateInfo, pAllocator, pFence);
     if (VK_SUCCESS == result) {
         lock_guard_t lock(global_lock);
-        auto &fence_node = dev_data->fenceMap[*pFence];
-        fence_node.fence = *pFence;
-        fence_node.createInfo = *pCreateInfo;
-        fence_node.state = (pCreateInfo->flags & VK_FENCE_CREATE_SIGNALED_BIT) ? FENCE_RETIRED : FENCE_UNSIGNALED;
+        PostCallRecordCreateFence(dev_data, pCreateInfo, pFence);
     }
     return result;
 }
@@ -5024,13 +5039,17 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateComputePipelines(VkDevice device, VkPipelin
     return result;
 }
 
+static void PostCallRecordCreateSampler(layer_data *dev_data, const VkSamplerCreateInfo *pCreateInfo, VkSampler *pSampler) {
+    dev_data->samplerMap[*pSampler] = unique_ptr<SAMPLER_STATE>(new SAMPLER_STATE(pSampler, pCreateInfo));
+}
+
 VKAPI_ATTR VkResult VKAPI_CALL CreateSampler(VkDevice device, const VkSamplerCreateInfo *pCreateInfo,
                                              const VkAllocationCallbacks *pAllocator, VkSampler *pSampler) {
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     VkResult result = dev_data->dispatch_table.CreateSampler(device, pCreateInfo, pAllocator, pSampler);
     if (VK_SUCCESS == result) {
         lock_guard_t lock(global_lock);
-        dev_data->samplerMap[*pSampler] = unique_ptr<SAMPLER_STATE>(new SAMPLER_STATE(pSampler, pCreateInfo));
+        PostCallRecordCreateSampler(dev_data, pCreateInfo, pSampler);
     }
     return result;
 }
@@ -9363,6 +9382,12 @@ static bool CreatePassDAG(const layer_data *dev_data, const VkRenderPassCreateIn
     return skip;
 }
 
+static void PostCallRecordCreateShaderModule(layer_data *dev_data, bool spirv_valid, const VkShaderModuleCreateInfo *pCreateInfo,
+                                             VkShaderModule *pShaderModule) {
+    unique_ptr<shader_module> new_shader_module(spirv_valid ? new shader_module(pCreateInfo, *pShaderModule) : new shader_module());
+    dev_data->shaderModuleMap[*pShaderModule] = std::move(new_shader_module);
+}
+
 VKAPI_ATTR VkResult VKAPI_CALL CreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo *pCreateInfo,
                                                   const VkAllocationCallbacks *pAllocator, VkShaderModule *pShaderModule) {
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
@@ -9374,9 +9399,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateShaderModule(VkDevice device, const VkShade
 
     if (res == VK_SUCCESS) {
         lock_guard_t lock(global_lock);
-        unique_ptr<shader_module> new_shader_module(spirv_valid ? new shader_module(pCreateInfo, *pShaderModule)
-                                                                : new shader_module());
-        dev_data->shaderModuleMap[*pShaderModule] = std::move(new_shader_module);
+        PostCallRecordCreateShaderModule(dev_data, spirv_valid, pCreateInfo, pShaderModule);
     }
     return res;
 }
@@ -10771,17 +10794,21 @@ VKAPI_ATTR VkResult VKAPI_CALL QueueBindSparse(VkQueue queue, uint32_t bindInfoC
     return result;
 }
 
+static void PostCallRecordCreateSemaphore(layer_data *dev_data, VkSemaphore *pSemaphore) {
+    SEMAPHORE_NODE *sNode = &dev_data->semaphoreMap[*pSemaphore];
+    sNode->signaler.first = VK_NULL_HANDLE;
+    sNode->signaler.second = 0;
+    sNode->signaled = false;
+    sNode->scope = kSyncScopeInternal;
+}
+
 VKAPI_ATTR VkResult VKAPI_CALL CreateSemaphore(VkDevice device, const VkSemaphoreCreateInfo *pCreateInfo,
                                                const VkAllocationCallbacks *pAllocator, VkSemaphore *pSemaphore) {
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     VkResult result = dev_data->dispatch_table.CreateSemaphore(device, pCreateInfo, pAllocator, pSemaphore);
     if (result == VK_SUCCESS) {
         lock_guard_t lock(global_lock);
-        SEMAPHORE_NODE *sNode = &dev_data->semaphoreMap[*pSemaphore];
-        sNode->signaler.first = VK_NULL_HANDLE;
-        sNode->signaler.second = 0;
-        sNode->signaled = false;
-        sNode->scope = kSyncScopeInternal;
+        PostCallRecordCreateSemaphore(dev_data, pSemaphore);
     }
     return result;
 }
@@ -10972,15 +10999,19 @@ VKAPI_ATTR VkResult VKAPI_CALL GetFenceFdKHR(VkDevice device, const VkFenceGetFd
     return result;
 }
 
+static void PostCallRecordCreateEvent(layer_data *dev_data, VkEvent *pEvent) {
+    dev_data->eventMap[*pEvent].needsSignaled = false;
+    dev_data->eventMap[*pEvent].write_in_use = 0;
+    dev_data->eventMap[*pEvent].stageMask = VkPipelineStageFlags(0);
+}
+
 VKAPI_ATTR VkResult VKAPI_CALL CreateEvent(VkDevice device, const VkEventCreateInfo *pCreateInfo,
                                            const VkAllocationCallbacks *pAllocator, VkEvent *pEvent) {
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     VkResult result = dev_data->dispatch_table.CreateEvent(device, pCreateInfo, pAllocator, pEvent);
     if (result == VK_SUCCESS) {
         lock_guard_t lock(global_lock);
-        dev_data->eventMap[*pEvent].needsSignaled = false;
-        dev_data->eventMap[*pEvent].write_in_use = 0;
-        dev_data->eventMap[*pEvent].stageMask = VkPipelineStageFlags(0);
+        PostCallRecordCreateEvent(dev_data, pEvent);
     }
     return result;
 }
@@ -13232,15 +13263,19 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDisplayPlaneCapabilities2KHR(VkPhysicalDevice 
     return result;
 }
 
+static void PreCallRecordDebugMarkerSetObjectNameEXT(layer_data *dev_data, const VkDebugMarkerObjectNameInfoEXT *pNameInfo) {
+    if (pNameInfo->pObjectName) {
+        dev_data->report_data->debugObjectNameMap->insert(
+            std::make_pair<uint64_t, std::string>((uint64_t &&) pNameInfo->object, pNameInfo->pObjectName));
+    } else {
+        dev_data->report_data->debugObjectNameMap->erase(pNameInfo->object);
+    }
+}
+
 VKAPI_ATTR VkResult VKAPI_CALL DebugMarkerSetObjectNameEXT(VkDevice device, const VkDebugMarkerObjectNameInfoEXT *pNameInfo) {
     unique_lock_t lock(global_lock);
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    if (pNameInfo->pObjectName) {
-        device_data->report_data->debugObjectNameMap->insert(
-            std::make_pair<uint64_t, std::string>((uint64_t &&) pNameInfo->object, pNameInfo->pObjectName));
-    } else {
-        device_data->report_data->debugObjectNameMap->erase(pNameInfo->object);
-    }
+    PreCallRecordDebugMarkerSetObjectNameEXT(device_data, pNameInfo);
     lock.unlock();
     VkResult result = device_data->dispatch_table.DebugMarkerSetObjectNameEXT(device, pNameInfo);
     return result;
