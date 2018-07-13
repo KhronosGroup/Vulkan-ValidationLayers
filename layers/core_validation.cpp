@@ -4480,6 +4480,12 @@ VKAPI_ATTR void VKAPI_CALL FreeCommandBuffers(VkDevice device, VkCommandPool com
     dev_data->dispatch_table.FreeCommandBuffers(device, commandPool, commandBufferCount, pCommandBuffers);
 }
 
+static void PostCallRecordCreateCommandPool(layer_data *dev_data, const VkCommandPoolCreateInfo *pCreateInfo,
+                                            VkCommandPool *pCommandPool) {
+    dev_data->commandPoolMap[*pCommandPool].createFlags = pCreateInfo->flags;
+    dev_data->commandPoolMap[*pCommandPool].queueFamilyIndex = pCreateInfo->queueFamilyIndex;
+}
+
 VKAPI_ATTR VkResult VKAPI_CALL CreateCommandPool(VkDevice device, const VkCommandPoolCreateInfo *pCreateInfo,
                                                  const VkAllocationCallbacks *pAllocator, VkCommandPool *pCommandPool) {
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
@@ -4488,8 +4494,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateCommandPool(VkDevice device, const VkComman
 
     if (VK_SUCCESS == result) {
         lock_guard_t lock(global_lock);
-        dev_data->commandPoolMap[*pCommandPool].createFlags = pCreateInfo->flags;
-        dev_data->commandPoolMap[*pCommandPool].queueFamilyIndex = pCreateInfo->queueFamilyIndex;
+        PostCallRecordCreateCommandPool(dev_data, pCreateInfo, pCommandPool);
     }
     return result;
 }
@@ -5766,20 +5771,29 @@ VKAPI_ATTR VkResult VKAPI_CALL CreatePipelineLayout(VkDevice device, const VkPip
     return result;
 }
 
+static bool PostCallValidateCreateDescriptorPool(layer_data *dev_data, VkDescriptorPool *pDescriptorPool) {
+    return log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_POOL_EXT,
+                   HandleToUint64(*pDescriptorPool), kVUID_Core_DrawState_OutOfMemory,
+                   "Out of memory while attempting to allocate DESCRIPTOR_POOL_STATE in vkCreateDescriptorPool()");
+}
+
+static void PostCallRecordCreateDescriptorPool(layer_data *dev_data, DESCRIPTOR_POOL_STATE *pNewNode,
+                                               VkDescriptorPool *pDescriptorPool) {
+    dev_data->descriptorPoolMap[*pDescriptorPool] = pNewNode;
+}
+
 VKAPI_ATTR VkResult VKAPI_CALL CreateDescriptorPool(VkDevice device, const VkDescriptorPoolCreateInfo *pCreateInfo,
                                                     const VkAllocationCallbacks *pAllocator, VkDescriptorPool *pDescriptorPool) {
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     VkResult result = dev_data->dispatch_table.CreateDescriptorPool(device, pCreateInfo, pAllocator, pDescriptorPool);
     if (VK_SUCCESS == result) {
         DESCRIPTOR_POOL_STATE *pNewNode = new DESCRIPTOR_POOL_STATE(*pDescriptorPool, pCreateInfo);
+        lock_guard_t lock(global_lock);
         if (NULL == pNewNode) {
-            if (log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_POOL_EXT,
-                        HandleToUint64(*pDescriptorPool), kVUID_Core_DrawState_OutOfMemory,
-                        "Out of memory while attempting to allocate DESCRIPTOR_POOL_STATE in vkCreateDescriptorPool()"))
-                return VK_ERROR_VALIDATION_FAILED_EXT;
+            bool skip = PostCallValidateCreateDescriptorPool(dev_data, pDescriptorPool);
+            if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
         } else {
-            lock_guard_t lock(global_lock);
-            dev_data->descriptorPoolMap[*pDescriptorPool] = pNewNode;
+            PostCallRecordCreateDescriptorPool(dev_data, pNewNode, pDescriptorPool);
         }
     } else {
         // Need to do anything if pool create fails?
@@ -6228,6 +6242,28 @@ VKAPI_ATTR VkResult VKAPI_CALL ResetCommandBuffer(VkCommandBuffer commandBuffer,
     return result;
 }
 
+static bool PreCallValidateCmdBindPipeline(layer_data *dev_data, GLOBAL_CB_NODE *cb_state) {
+    bool skip = ValidateCmdQueueFlags(dev_data, cb_state, "vkCmdBindPipeline()", VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
+                                      "VUID-vkCmdBindPipeline-commandBuffer-cmdpool");
+    skip |= ValidateCmd(dev_data, cb_state, CMD_BINDPIPELINE, "vkCmdBindPipeline()");
+    // TODO: "VUID-vkCmdBindPipeline-pipelineBindPoint-00777" "VUID-vkCmdBindPipeline-pipelineBindPoint-00779"  -- using
+    // ValidatePipelineBindPoint
+    return skip;
+}
+
+static void PreCallRecordCmdBindPipeline(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, VkPipelineBindPoint pipelineBindPoint,
+                                         VkPipeline pipeline) {
+    auto pipe_state = GetPipelineState(dev_data, pipeline);
+    if (VK_PIPELINE_BIND_POINT_GRAPHICS == pipelineBindPoint) {
+        cb_state->status &= ~cb_state->static_status;
+        cb_state->static_status = MakeStaticStateMask(pipe_state->graphicsPipelineCI.ptr()->pDynamicState);
+        cb_state->status |= cb_state->static_status;
+    }
+    cb_state->lastBound[pipelineBindPoint].pipeline_state = pipe_state;
+    SetPipelineState(pipe_state);
+    AddCommandBufferBinding(&pipe_state->cb_bindings, {HandleToUint64(pipeline), kVulkanObjectTypePipeline}, cb_state);
+}
+
 VKAPI_ATTR void VKAPI_CALL CmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
                                            VkPipeline pipeline) {
     bool skip = false;
@@ -6235,21 +6271,8 @@ VKAPI_ATTR void VKAPI_CALL CmdBindPipeline(VkCommandBuffer commandBuffer, VkPipe
     unique_lock_t lock(global_lock);
     GLOBAL_CB_NODE *cb_state = GetCBNode(dev_data, commandBuffer);
     if (cb_state) {
-        skip |= ValidateCmdQueueFlags(dev_data, cb_state, "vkCmdBindPipeline()", VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
-                                      "VUID-vkCmdBindPipeline-commandBuffer-cmdpool");
-        skip |= ValidateCmd(dev_data, cb_state, CMD_BINDPIPELINE, "vkCmdBindPipeline()");
-        // TODO: "VUID-vkCmdBindPipeline-pipelineBindPoint-00777" "VUID-vkCmdBindPipeline-pipelineBindPoint-00779"  -- using
-        // ValidatePipelineBindPoint
-
-        auto pipe_state = GetPipelineState(dev_data, pipeline);
-        if (VK_PIPELINE_BIND_POINT_GRAPHICS == pipelineBindPoint) {
-            cb_state->status &= ~cb_state->static_status;
-            cb_state->static_status = MakeStaticStateMask(pipe_state->graphicsPipelineCI.ptr()->pDynamicState);
-            cb_state->status |= cb_state->static_status;
-        }
-        cb_state->lastBound[pipelineBindPoint].pipeline_state = pipe_state;
-        SetPipelineState(pipe_state);
-        AddCommandBufferBinding(&pipe_state->cb_bindings, {HandleToUint64(pipeline), kVulkanObjectTypePipeline}, cb_state);
+        skip |= PreCallValidateCmdBindPipeline(dev_data, cb_state);
+        PreCallRecordCmdBindPipeline(dev_data, cb_state, pipelineBindPoint, pipeline);
     }
     lock.unlock();
     if (!skip) dev_data->dispatch_table.CmdBindPipeline(commandBuffer, pipelineBindPoint, pipeline);
@@ -6945,34 +6968,13 @@ VKAPI_ATTR void VKAPI_CALL CmdBindIndexBuffer(VkCommandBuffer commandBuffer, VkB
     dev_data->dispatch_table.CmdBindIndexBuffer(commandBuffer, buffer, offset, indexType);
 }
 
-void UpdateResourceTracking(GLOBAL_CB_NODE *pCB, uint32_t firstBinding, uint32_t bindingCount, const VkBuffer *pBuffers,
-                            const VkDeviceSize *pOffsets) {
-    uint32_t end = firstBinding + bindingCount;
-    if (pCB->current_draw_data.vertex_buffer_bindings.size() < end) {
-        pCB->current_draw_data.vertex_buffer_bindings.resize(end);
-    }
-
-    for (uint32_t i = 0; i < bindingCount; ++i) {
-        auto &vertex_buffer_binding = pCB->current_draw_data.vertex_buffer_bindings[i + firstBinding];
-        vertex_buffer_binding.buffer = pBuffers[i];
-        vertex_buffer_binding.offset = pOffsets[i];
-    }
-}
-
 static inline void UpdateResourceTrackingOnDraw(GLOBAL_CB_NODE *pCB) { pCB->draw_data.push_back(pCB->current_draw_data); }
 
-VKAPI_ATTR void VKAPI_CALL CmdBindVertexBuffers(VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount,
+static bool PreCallValidateCmdBindVertexBuffers(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, uint32_t bindingCount,
                                                 const VkBuffer *pBuffers, const VkDeviceSize *pOffsets) {
-    bool skip = false;
-    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    unique_lock_t lock(global_lock);
-
-    auto cb_node = GetCBNode(dev_data, commandBuffer);
-    assert(cb_node);
-
-    skip |= ValidateCmdQueueFlags(dev_data, cb_node, "vkCmdBindVertexBuffers()", VK_QUEUE_GRAPHICS_BIT,
-                                  "VUID-vkCmdBindVertexBuffers-commandBuffer-cmdpool");
-    skip |= ValidateCmd(dev_data, cb_node, CMD_BINDVERTEXBUFFERS, "vkCmdBindVertexBuffers()");
+    bool skip = ValidateCmdQueueFlags(dev_data, cb_state, "vkCmdBindVertexBuffers()", VK_QUEUE_GRAPHICS_BIT,
+                                      "VUID-vkCmdBindVertexBuffers-commandBuffer-cmdpool");
+    skip |= ValidateCmd(dev_data, cb_state, CMD_BINDVERTEXBUFFERS, "vkCmdBindVertexBuffers()");
     for (uint32_t i = 0; i < bindingCount; ++i) {
         auto buffer_state = GetBufferState(dev_data, pBuffers[i]);
         assert(buffer_state);
@@ -6987,10 +6989,37 @@ VKAPI_ATTR void VKAPI_CALL CmdBindVertexBuffers(VkCommandBuffer commandBuffer, u
                             "vkCmdBindVertexBuffers() offset (0x%" PRIxLEAST64 ") is beyond the end of the buffer.", pOffsets[i]);
         }
     }
+    return skip;
+}
+
+static void PreCallRecordCmdBindVertexBuffers(GLOBAL_CB_NODE *pCB, uint32_t firstBinding, uint32_t bindingCount,
+                                              const VkBuffer *pBuffers, const VkDeviceSize *pOffsets) {
+    uint32_t end = firstBinding + bindingCount;
+    if (pCB->current_draw_data.vertex_buffer_bindings.size() < end) {
+        pCB->current_draw_data.vertex_buffer_bindings.resize(end);
+    }
+
+    for (uint32_t i = 0; i < bindingCount; ++i) {
+        auto &vertex_buffer_binding = pCB->current_draw_data.vertex_buffer_bindings[i + firstBinding];
+        vertex_buffer_binding.buffer = pBuffers[i];
+        vertex_buffer_binding.offset = pOffsets[i];
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdBindVertexBuffers(VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount,
+                                                const VkBuffer *pBuffers, const VkDeviceSize *pOffsets) {
+    bool skip = false;
+    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    unique_lock_t lock(global_lock);
+
+    auto cb_node = GetCBNode(dev_data, commandBuffer);
+    assert(cb_node);
+
+    skip |= PreCallValidateCmdBindVertexBuffers(dev_data, cb_node, bindingCount, pBuffers, pOffsets);
 
     if (skip) return;
 
-    UpdateResourceTracking(cb_node, firstBinding, bindingCount, pBuffers, pOffsets);
+    PreCallRecordCmdBindVertexBuffers(cb_node, firstBinding, bindingCount, pBuffers, pOffsets);
 
     lock.unlock();
     dev_data->dispatch_table.CmdBindVertexBuffers(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets);
@@ -12659,6 +12688,13 @@ VKAPI_ATTR void VKAPI_CALL SubmitDebugUtilsMessageEXT(VkInstance instance, VkDeb
 }
 
 // VK_EXT_debug_report commands
+static VkResult PostCallRecordCreateDebugReportCallbackEXT(instance_layer_data *instance_data,
+                                                           const VkDebugReportCallbackCreateInfoEXT *pCreateInfo,
+                                                           const VkAllocationCallbacks *pAllocator,
+                                                           VkDebugReportCallbackEXT *pMsgCallback) {
+    return layer_create_report_callback(instance_data->report_data, false, pCreateInfo, pAllocator, pMsgCallback);
+}
+
 VKAPI_ATTR VkResult VKAPI_CALL CreateDebugReportCallbackEXT(VkInstance instance,
                                                             const VkDebugReportCallbackCreateInfoEXT *pCreateInfo,
                                                             const VkAllocationCallbacks *pAllocator,
@@ -12667,7 +12703,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDebugReportCallbackEXT(VkInstance instance,
     VkResult res = instance_data->dispatch_table.CreateDebugReportCallbackEXT(instance, pCreateInfo, pAllocator, pMsgCallback);
     if (VK_SUCCESS == res) {
         lock_guard_t lock(global_lock);
-        res = layer_create_report_callback(instance_data->report_data, false, pCreateInfo, pAllocator, pMsgCallback);
+        res = PostCallRecordCreateDebugReportCallbackEXT(instance_data, pCreateInfo, pAllocator, pMsgCallback);
     }
     return res;
 }
