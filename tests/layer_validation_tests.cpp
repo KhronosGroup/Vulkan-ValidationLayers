@@ -13875,6 +13875,19 @@ TEST_F(VkLayerTest, DSBufferLimitErrors) {
             m_errorMonitor->VerifyFound();
         }
 
+        // Exceed effictive range limit by using VK_WHOLE_SIZE
+        buff_info.range = VK_WHOLE_SIZE;
+        buff_info.offset = 0;
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, test_case.max_range_vu);
+        vkUpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+        m_errorMonitor->VerifyFound();
+
+        // Don't exceed effective range limit by using VK_WHOLE_SIZE and offset
+        buff_info.range = VK_WHOLE_SIZE;
+        buff_info.offset = test_case.min_align;
+        vkUpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+        m_errorMonitor->VerifyNotFound();
+
         // Cleanup
         vkFreeMemory(m_device->device(), mem, NULL);
         vkDestroyBuffer(m_device->device(), buffer, NULL);
