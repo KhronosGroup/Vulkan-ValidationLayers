@@ -165,10 +165,13 @@ struct MEM_BINDING {
     VkDeviceSize size;
 };
 
-struct INDEX_BUFFER_BINDING {
+struct BufferBinding {
     VkBuffer buffer;
     VkDeviceSize size;
     VkDeviceSize offset;
+};
+
+struct IndexBufferBinding : BufferBinding {
     VkIndexType index_type;
 };
 
@@ -532,9 +535,9 @@ struct hash<QueryObject> {
     }
 };
 }  // namespace std
-struct DRAW_DATA {
-    std::vector<VkBuffer> buffers;
-    std::vector<VkDeviceSize> bufferOffsets;
+
+struct DrawData {
+    std::vector<BufferBinding> vertex_buffer_bindings;
 };
 
 struct ImageSubresourcePair {
@@ -626,8 +629,9 @@ class PIPELINE_STATE : public BASE_NODE {
     // Capture which slots (set#->bindings) are actually used by the shaders of this pipeline
     std::unordered_map<uint32_t, std::map<uint32_t, descriptor_req>> active_slots;
     // Vtx input info (if any)
-    std::vector<VkVertexInputBindingDescription> vertexBindingDescriptions;
-    std::vector<VkVertexInputAttributeDescription> vertexAttributeDescriptions;
+    std::vector<VkVertexInputBindingDescription> vertex_binding_descriptions_;
+    std::vector<VkVertexInputAttributeDescription> vertex_attribute_descriptions_;
+    std::unordered_map<uint32_t, uint32_t> vertex_binding_to_index_map_;
     std::vector<VkPipelineColorBlendAttachmentState> attachments;
     bool blendConstantsEnabled;  // Blend constants enabled for any attachments
     PIPELINE_LAYOUT_NODE pipeline_layout;
@@ -642,7 +646,9 @@ class PIPELINE_STATE : public BASE_NODE {
           active_shaders(0),
           duplicate_shaders(0),
           active_slots(),
-          vertexBindingDescriptions(),
+          vertex_binding_descriptions_(),
+          vertex_attribute_descriptions_(),
+          vertex_binding_to_index_map_(),
           attachments(),
           blendConstantsEnabled(false),
           pipeline_layout(),
@@ -677,11 +683,16 @@ class PIPELINE_STATE : public BASE_NODE {
         if (graphicsPipelineCI.pVertexInputState) {
             const auto pVICI = graphicsPipelineCI.pVertexInputState;
             if (pVICI->vertexBindingDescriptionCount) {
-                this->vertexBindingDescriptions = std::vector<VkVertexInputBindingDescription>(
+                this->vertex_binding_descriptions_ = std::vector<VkVertexInputBindingDescription>(
                     pVICI->pVertexBindingDescriptions, pVICI->pVertexBindingDescriptions + pVICI->vertexBindingDescriptionCount);
+
+                this->vertex_binding_to_index_map_.reserve(pVICI->vertexBindingDescriptionCount);
+                for (uint32_t i = 0; i < pVICI->vertexBindingDescriptionCount; ++i) {
+                    this->vertex_binding_to_index_map_[pVICI->pVertexBindingDescriptions[i].binding] = i;
+                }
             }
             if (pVICI->vertexAttributeDescriptionCount) {
-                this->vertexAttributeDescriptions = std::vector<VkVertexInputAttributeDescription>(
+                this->vertex_attribute_descriptions_ = std::vector<VkVertexInputAttributeDescription>(
                     pVICI->pVertexAttributeDescriptions,
                     pVICI->pVertexAttributeDescriptions + pVICI->vertexAttributeDescriptionCount);
             }
@@ -910,8 +921,8 @@ struct GLOBAL_CB_NODE : public BASE_NODE {
     std::unordered_set<QueryObject> startedQueries;
     std::unordered_map<ImageSubresourcePair, IMAGE_CMD_BUF_LAYOUT_NODE> imageLayoutMap;
     std::unordered_map<VkEvent, VkPipelineStageFlags> eventToStageMap;
-    std::vector<DRAW_DATA> drawData;
-    DRAW_DATA currentDrawData;
+    std::vector<DrawData> draw_data;
+    DrawData current_draw_data;
     bool vertex_buffer_used;  // Track for perf warning to make sure any bound vtx buffer used
     VkCommandBuffer primaryCommandBuffer;
     // Track images and buffers that are updated by this CB at the point of a draw
@@ -929,7 +940,7 @@ struct GLOBAL_CB_NODE : public BASE_NODE {
     std::vector<std::function<bool(VkQueue)>> queryUpdates;
     std::unordered_set<cvdescriptorset::DescriptorSet *> validated_descriptor_sets;
     // Contents valid only after an index buffer is bound (CBSTATUS_INDEX_BUFFER_BOUND set)
-    INDEX_BUFFER_BINDING index_buffer_binding;
+    IndexBufferBinding index_buffer_binding;
 };
 
 static QFOTransferBarrierSets<VkImageMemoryBarrier> &GetQFOBarrierSets(
