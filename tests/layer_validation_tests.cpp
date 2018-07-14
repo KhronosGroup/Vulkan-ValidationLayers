@@ -14986,14 +14986,15 @@ TEST_F(VkLayerTest, InvalidVertexAttributeAlignment) {
 
     VkVertexInputAttributeDescription input_attribs[3];
     input_attribs[0].binding = 0;
-    input_attribs[0].location = 0;
-    input_attribs[0].format = VK_FORMAT_R16G16_UNORM;
-    input_attribs[0].offset = offsetof(VboEntry, input0);
+    // Location switch between attrib[0] and attrib[1] is intentional
+    input_attribs[0].location = 1;
+    input_attribs[0].format = VK_FORMAT_A8B8G8R8_UNORM_PACK32;
+    input_attribs[0].offset = offsetof(VboEntry, input1);
 
     input_attribs[1].binding = 0;
-    input_attribs[1].location = 1;
-    input_attribs[1].format = VK_FORMAT_A8B8G8R8_UNORM_PACK32;
-    input_attribs[1].offset = offsetof(VboEntry, input1);
+    input_attribs[1].location = 0;
+    input_attribs[1].format = VK_FORMAT_R16G16_UNORM;
+    input_attribs[1].offset = offsetof(VboEntry, input0);
 
     input_attribs[2].binding = 0;
     input_attribs[2].location = 2;
@@ -15061,8 +15062,8 @@ TEST_F(VkLayerTest, InvalidVertexAttributeAlignment) {
     offset = 0;
     vkCmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe2.handle());
     vkCmdBindVertexBuffers(m_commandBuffer->handle(), 0, 1, &vbo.handle(), &offset);
-    // Attribute[0] is aligned properly even with a wrong stride
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "Invalid attribAddress alignment for vertex attribute 1");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "Invalid attribAddress alignment for vertex attribute 0");
+    // Attribute[1] is aligned properly even with a wrong stride
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "Invalid attribAddress alignment for vertex attribute 2");
     m_commandBuffer->Draw(1, 0, 0, 0);
     m_errorMonitor->VerifyFound();

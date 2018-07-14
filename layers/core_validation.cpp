@@ -959,11 +959,11 @@ static bool ValidatePipelineDrawtimeState(layer_data const *dev_data, LAST_BOUND
     bool skip = false;
 
     // Verify vertex binding
-    if (pPipeline->vertexBindingDescriptions.size() > 0) {
-        for (size_t i = 0; i < pPipeline->vertexBindingDescriptions.size(); i++) {
-            auto vertex_binding = pPipeline->vertexBindingDescriptions[i].binding;
-            if ((pCB->currentDrawData.buffers.size() < (vertex_binding + 1)) ||
-                (pCB->currentDrawData.buffers[vertex_binding] == VK_NULL_HANDLE)) {
+    if (pPipeline->vertex_binding_descriptions_.size() > 0) {
+        for (size_t i = 0; i < pPipeline->vertex_binding_descriptions_.size(); i++) {
+            const auto vertex_binding = pPipeline->vertex_binding_descriptions_[i].binding;
+            if ((pCB->current_draw_data.vertex_buffer_bindings.size() < (vertex_binding + 1)) ||
+                (pCB->current_draw_data.vertex_buffer_bindings[vertex_binding].buffer == VK_NULL_HANDLE)) {
                 skip |=
                     log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                             HandleToUint64(pCB->commandBuffer), kVUID_Core_DrawState_VtxIndexOutOfBounds,
@@ -974,51 +974,48 @@ static bool ValidatePipelineDrawtimeState(layer_data const *dev_data, LAST_BOUND
                             HandleToUint64(state.pipeline_state->pipeline), vertex_binding, i, vertex_binding);
             }
         }
+
+        // Verify vertex attribute address alignment
+        for (size_t i = 0; i < pPipeline->vertex_attribute_descriptions_.size(); i++) {
+            const auto &attribute_description = pPipeline->vertex_attribute_descriptions_[i];
+            const auto vertex_binding = attribute_description.binding;
+            const auto attribute_offset = attribute_description.offset;
+            const auto attribute_format = attribute_description.format;
+
+            const auto &vertex_binding_map_it = pPipeline->vertex_binding_to_index_map_.find(vertex_binding);
+            if ((vertex_binding_map_it != pPipeline->vertex_binding_to_index_map_.cend()) &&
+                (vertex_binding < pCB->current_draw_data.vertex_buffer_bindings.size()) &&
+                (pCB->current_draw_data.vertex_buffer_bindings[vertex_binding].buffer != VK_NULL_HANDLE)) {
+                const auto vertex_buffer_stride = pPipeline->vertex_binding_descriptions_[vertex_binding_map_it->second].stride;
+                const auto vertex_buffer_offset = pCB->current_draw_data.vertex_buffer_bindings[vertex_binding].offset;
+                const auto buffer_state =
+                    GetBufferState(dev_data, pCB->current_draw_data.vertex_buffer_bindings[vertex_binding].buffer);
+
+                // Use only memory binding offset as base memory should be properly aligned by the driver
+                const auto buffer_binding_address = buffer_state->binding.offset + vertex_buffer_offset;
+                // Use 1 as vertex/instance index to use buffer stride as well
+                const auto attrib_address = buffer_binding_address + vertex_buffer_stride + attribute_offset;
+
+                if (SafeModulo(attrib_address, FormatAlignment(attribute_format)) != 0) {
+                    skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT,
+                                    HandleToUint64(pCB->current_draw_data.vertex_buffer_bindings[vertex_binding].buffer),
+                                    kVUID_Core_DrawState_InvalidVtxAttributeAlignment,
+                                    "Invalid attribAddress alignment for vertex attribute " PRINTF_SIZE_T_SPECIFIER
+                                    " from "
+                                    "pipeline (0x%" PRIx64 ") and vertex buffer (0x%" PRIx64 ").",
+                                    i, HandleToUint64(state.pipeline_state->pipeline),
+                                    HandleToUint64(pCB->current_draw_data.vertex_buffer_bindings[vertex_binding].buffer));
+                }
+            }
+        }
     } else {
-        if (!pCB->currentDrawData.buffers.empty() && !pCB->vertex_buffer_used) {
+        if (!pCB->current_draw_data.vertex_buffer_bindings.empty() && !pCB->vertex_buffer_used) {
             skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
                             VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT, HandleToUint64(pCB->commandBuffer),
                             kVUID_Core_DrawState_VtxIndexOutOfBounds,
                             "Vertex buffers are bound to command buffer (0x%" PRIx64
                             ") but no vertex buffers are attached to this Pipeline State Object (0x%" PRIx64 ").",
                             HandleToUint64(pCB->commandBuffer), HandleToUint64(state.pipeline_state->pipeline));
-        }
-    }
-
-    // Verify vertex attribute address alignment
-    if (pPipeline->vertexAttributeDescriptions.size() > 0 && pPipeline->vertexBindingDescriptions.size() > 0) {
-        for (size_t i = 0; i < pPipeline->vertexAttributeDescriptions.size(); i++) {
-            const auto &attribute_description = pPipeline->vertexAttributeDescriptions[i];
-            auto attribute_binding = attribute_description.binding;
-            auto attribute_offset = attribute_description.offset;
-            auto attribute_format = attribute_description.format;
-
-            if (attribute_binding < pPipeline->vertexBindingDescriptions.size()) {
-                auto vertex_binding = pPipeline->vertexBindingDescriptions[attribute_binding].binding;
-                auto vertex_stride = pPipeline->vertexBindingDescriptions[attribute_binding].stride;
-
-                if (vertex_binding < pCB->currentDrawData.buffers.size() &&
-                    pCB->currentDrawData.buffers[vertex_binding] != VK_NULL_HANDLE) {
-                    auto buffer_offset = pCB->currentDrawData.bufferOffsets[vertex_binding];
-                    auto buffer_state = GetBufferState(dev_data, pCB->currentDrawData.buffers[vertex_binding]);
-
-                    // Use only memory binding offset as base memory should be properly aligned by the driver
-                    auto buffer_binding_address = buffer_state->binding.offset + buffer_offset;
-                    // Use 1 as vertex/instance index to use buffer stride as well
-                    auto attrib_address = buffer_binding_address + vertex_stride + attribute_offset;
-
-                    if (SafeModulo(attrib_address, FormatAlignment(attribute_format)) != 0) {
-                        skip |=
-                            log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT,
-                                    HandleToUint64(pCB->currentDrawData.buffers[vertex_binding]),
-                                    kVUID_Core_DrawState_InvalidVtxAttributeAlignment,
-                                    "Invalid attribAddress alignment for vertex attribute %zu from pipeline 0x%" PRIx64
-                                    " and vertex buffer 0x%" PRIx64 ".",
-                                    i, HandleToUint64(state.pipeline_state->pipeline),
-                                    HandleToUint64(pCB->currentDrawData.buffers[vertex_binding]));
-                    }
-                }
-            }
         }
     }
 
@@ -1031,8 +1028,8 @@ static bool ValidatePipelineDrawtimeState(layer_data const *dev_data, LAST_BOUND
         bool dynScissor = IsDynamic(pPipeline, VK_DYNAMIC_STATE_SCISSOR);
 
         if (dynViewport) {
-            auto requiredViewportsMask = (1 << pPipeline->graphicsPipelineCI.pViewportState->viewportCount) - 1;
-            auto missingViewportMask = ~pCB->viewportMask & requiredViewportsMask;
+            const auto requiredViewportsMask = (1 << pPipeline->graphicsPipelineCI.pViewportState->viewportCount) - 1;
+            const auto missingViewportMask = ~pCB->viewportMask & requiredViewportsMask;
             if (missingViewportMask) {
                 std::stringstream ss;
                 ss << "Dynamic viewport(s) ";
@@ -1044,8 +1041,8 @@ static bool ValidatePipelineDrawtimeState(layer_data const *dev_data, LAST_BOUND
         }
 
         if (dynScissor) {
-            auto requiredScissorMask = (1 << pPipeline->graphicsPipelineCI.pViewportState->scissorCount) - 1;
-            auto missingScissorMask = ~pCB->scissorMask & requiredScissorMask;
+            const auto requiredScissorMask = (1 << pPipeline->graphicsPipelineCI.pViewportState->scissorCount) - 1;
+            const auto missingScissorMask = ~pCB->scissorMask & requiredScissorMask;
             if (missingScissorMask) {
                 std::stringstream ss;
                 ss << "Dynamic scissor(s) ";
@@ -1063,20 +1060,20 @@ static bool ValidatePipelineDrawtimeState(layer_data const *dev_data, LAST_BOUND
         (pPipeline->graphicsPipelineCI.pRasterizationState->rasterizerDiscardEnable == VK_FALSE)) {
         VkSampleCountFlagBits pso_num_samples = GetNumSamples(pPipeline);
         if (pCB->activeRenderPass) {
-            auto const render_pass_info = pCB->activeRenderPass->createInfo.ptr();
+            const auto render_pass_info = pCB->activeRenderPass->createInfo.ptr();
             const VkSubpassDescription *subpass_desc = &render_pass_info->pSubpasses[pCB->activeSubpass];
             uint32_t i;
             unsigned subpass_num_samples = 0;
 
             for (i = 0; i < subpass_desc->colorAttachmentCount; i++) {
-                auto attachment = subpass_desc->pColorAttachments[i].attachment;
+                const auto attachment = subpass_desc->pColorAttachments[i].attachment;
                 if (attachment != VK_ATTACHMENT_UNUSED)
                     subpass_num_samples |= (unsigned)render_pass_info->pAttachments[attachment].samples;
             }
 
             if (subpass_desc->pDepthStencilAttachment &&
                 subpass_desc->pDepthStencilAttachment->attachment != VK_ATTACHMENT_UNUSED) {
-                auto attachment = subpass_desc->pDepthStencilAttachment->attachment;
+                const auto attachment = subpass_desc->pDepthStencilAttachment->attachment;
                 subpass_num_samples |= (unsigned)render_pass_info->pAttachments[attachment].samples;
             }
 
@@ -1263,7 +1260,7 @@ static void UpdateDrawState(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, cons
             }
         }
     }
-    if (pPipe->vertexBindingDescriptions.size() > 0) {
+    if (!pPipe->vertex_binding_descriptions_.empty()) {
         cb_state->vertex_buffer_used = true;
     }
 }
@@ -1980,9 +1977,8 @@ static void ResetCommandBufferState(layer_data *dev_data, const VkCommandBuffer 
         pCB->startedQueries.clear();
         pCB->imageLayoutMap.clear();
         pCB->eventToStageMap.clear();
-        pCB->drawData.clear();
-        pCB->currentDrawData.buffers.clear();
-        pCB->currentDrawData.bufferOffsets.clear();
+        pCB->draw_data.clear();
+        pCB->current_draw_data.vertex_buffer_bindings.clear();
         pCB->vertex_buffer_used = false;
         pCB->primaryCommandBuffer = VK_NULL_HANDLE;
         // If secondary, invalidate any primary command buffer that may call us.
@@ -2476,9 +2472,9 @@ static void IncrementResources(layer_data *dev_data, GLOBAL_CB_NODE *cb_node) {
     // TODO : We should be able to remove the NULL look-up checks from the code below as long as
     //  all the corresponding cases are verified to cause CB_INVALID state and the CB_INVALID state
     //  should then be flagged prior to calling this function
-    for (auto drawDataElement : cb_node->drawData) {
-        for (auto buffer : drawDataElement.buffers) {
-            auto buffer_state = GetBufferState(dev_data, buffer);
+    for (auto draw_data_element : cb_node->draw_data) {
+        for (auto &vertex_buffer : draw_data_element.vertex_buffer_bindings) {
+            auto buffer_state = GetBufferState(dev_data, vertex_buffer.buffer);
             if (buffer_state) {
                 buffer_state->in_use.fetch_add(1);
             }
@@ -2612,9 +2608,9 @@ static void RetireWorkOnQueue(layer_data *dev_data, QUEUE_STATE *pQueue, uint64_
             }
             // First perform decrement on general case bound objects
             DecrementBoundResources(dev_data, cb_node);
-            for (auto drawDataElement : cb_node->drawData) {
-                for (auto buffer : drawDataElement.buffers) {
-                    auto buffer_state = GetBufferState(dev_data, buffer);
+            for (auto draw_data_element : cb_node->draw_data) {
+                for (auto &vertex_buffer_binding : draw_data_element.vertex_buffer_bindings) {
+                    auto buffer_state = GetBufferState(dev_data, vertex_buffer_binding.buffer);
                     if (buffer_state) {
                         buffer_state->in_use.fetch_sub(1);
                     }
@@ -2719,13 +2715,14 @@ static bool ValidateResources(layer_data *dev_data, GLOBAL_CB_NODE *cb_node) {
     // TODO : We should be able to remove the NULL look-up checks from the code below as long as
     //  all the corresponding cases are verified to cause CB_INVALID state and the CB_INVALID state
     //  should then be flagged prior to calling this function
-    for (auto drawDataElement : cb_node->drawData) {
-        for (auto buffer : drawDataElement.buffers) {
-            auto buffer_state = GetBufferState(dev_data, buffer);
-            if (buffer != VK_NULL_HANDLE && !buffer_state) {
+    for (const auto &draw_data_element : cb_node->draw_data) {
+        for (const auto &vertex_buffer_binding : draw_data_element.vertex_buffer_bindings) {
+            auto buffer_state = GetBufferState(dev_data, vertex_buffer_binding.buffer);
+            if (vertex_buffer_binding.buffer != VK_NULL_HANDLE && !buffer_state) {
                 skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT,
-                                HandleToUint64(buffer), kVUID_Core_DrawState_InvalidBuffer,
-                                "Cannot submit cmd buffer using deleted buffer 0x%" PRIx64 ".", HandleToUint64(buffer));
+                                HandleToUint64(vertex_buffer_binding.buffer), kVUID_Core_DrawState_InvalidBuffer,
+                                "Cannot submit cmd buffer using deleted buffer 0x%" PRIx64 ".",
+                                HandleToUint64(vertex_buffer_binding.buffer));
             }
         }
     }
@@ -6806,20 +6803,18 @@ VKAPI_ATTR void VKAPI_CALL CmdBindIndexBuffer(VkCommandBuffer commandBuffer, VkB
 void UpdateResourceTracking(GLOBAL_CB_NODE *pCB, uint32_t firstBinding, uint32_t bindingCount, const VkBuffer *pBuffers,
                             const VkDeviceSize *pOffsets) {
     uint32_t end = firstBinding + bindingCount;
-    if (pCB->currentDrawData.buffers.size() < end) {
-        pCB->currentDrawData.buffers.resize(end);
-    }
-    if (pCB->currentDrawData.bufferOffsets.size() < end) {
-        pCB->currentDrawData.bufferOffsets.resize(end);
+    if (pCB->current_draw_data.vertex_buffer_bindings.size() < end) {
+        pCB->current_draw_data.vertex_buffer_bindings.resize(end);
     }
 
     for (uint32_t i = 0; i < bindingCount; ++i) {
-        pCB->currentDrawData.buffers[i + firstBinding] = pBuffers[i];
-        pCB->currentDrawData.bufferOffsets[i + firstBinding] = pOffsets[i];
+        auto &vertex_buffer_binding = pCB->current_draw_data.vertex_buffer_bindings[i + firstBinding];
+        vertex_buffer_binding.buffer = pBuffers[i];
+        vertex_buffer_binding.offset = pOffsets[i];
     }
 }
 
-static inline void UpdateResourceTrackingOnDraw(GLOBAL_CB_NODE *pCB) { pCB->drawData.push_back(pCB->currentDrawData); }
+static inline void UpdateResourceTrackingOnDraw(GLOBAL_CB_NODE *pCB) { pCB->draw_data.push_back(pCB->current_draw_data); }
 
 VKAPI_ATTR void VKAPI_CALL CmdBindVertexBuffers(VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount,
                                                 const VkBuffer *pBuffers, const VkDeviceSize *pOffsets) {
