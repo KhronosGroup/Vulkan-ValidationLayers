@@ -11566,6 +11566,8 @@ TEST_F(VkLayerTest, VUID_VkVertexInputAttributeDescription_location_00620) {
 
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
                                              "VUID-VkVertexInputAttributeDescription-location-00620");
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                             "VUID-VkPipelineVertexInputStateCreateInfo-binding-00615");
         VkPipeline pipeline;
         vkCreateGraphicsPipelines(m_device->device(), pipeline_cache, 1, &create_info, nullptr, &pipeline);
         m_errorMonitor->VerifyFound();
@@ -11658,6 +11660,8 @@ TEST_F(VkLayerTest, VUID_VkVertexInputAttributeDescription_binding_00621) {
         create_info.renderPass = renderPass();
 
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkVertexInputAttributeDescription-binding-00621");
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                             "VUID-VkPipelineVertexInputStateCreateInfo-binding-00615");
         VkPipeline pipeline;
         vkCreateGraphicsPipelines(m_device->device(), pipeline_cache, 1, &create_info, nullptr, &pipeline);
         m_errorMonitor->VerifyFound();
@@ -14994,6 +14998,7 @@ TEST_F(VkLayerTest, InvalidVertexAttributeAlignment) {
     input_binding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
     VkVertexInputAttributeDescription input_attribs[3];
+
     input_attribs[0].binding = 0;
     // Location switch between attrib[0] and attrib[1] is intentional
     input_attribs[0].location = 1;
@@ -15079,6 +15084,98 @@ TEST_F(VkLayerTest, InvalidVertexAttributeAlignment) {
 
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
+}
+
+TEST_F(VkLayerTest, InvalidVertexBindingDescriptions) {
+    TEST_DESCRIPTION(
+        "Check VUID-VkPipelineVertexInputStateCreateInfo-vertexBindingDescriptionCount-00613 "
+        "and VUID-VkPipelineVertexInputStateCreateInfo-pVertexBindingDescriptions-00616");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    const VkPipelineLayoutObj pipeline_layout(m_device);
+
+    const uint32_t binding_count = m_device->props.limits.maxVertexInputBindings + 1;
+    VkVertexInputBindingDescription input_bindings[binding_count];
+    for (uint32_t i = 0; i < binding_count; ++i) {
+        input_bindings[i].binding = i;
+        input_bindings[i].stride = 4;
+        input_bindings[i].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+    }
+    // Let the last binding description use same binding as the first one
+    input_bindings[binding_count - 1].binding = 0;
+
+    VkVertexInputAttributeDescription input_attrib;
+    input_attrib.binding = 0;
+    input_attrib.location = 0;
+    input_attrib.format = VK_FORMAT_R32G32B32_SFLOAT;
+    input_attrib.offset = 0;
+
+    VkShaderObj vs(m_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
+    VkShaderObj fs(m_device, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+
+    VkPipelineObj pipe(m_device);
+    pipe.AddDefaultColorAttachment();
+    pipe.AddShader(&vs);
+    pipe.AddShader(&fs);
+    pipe.AddVertexInputBindings(&input_bindings[0], binding_count);
+    pipe.AddVertexInputAttribs(&input_attrib, 1);
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                         "VUID-VkPipelineVertexInputStateCreateInfo-vertexBindingDescriptionCount-00613");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                         "VUID-VkPipelineVertexInputStateCreateInfo-pVertexBindingDescriptions-00616");
+    pipe.CreateVKPipeline(pipeline_layout.handle(), renderPass());
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkLayerTest, InvalidVertexAttributeDescriptions) {
+    TEST_DESCRIPTION(
+        "Check VUID-VkPipelineVertexInputStateCreateInfo-vertexAttributeDescriptionCount-00614,"
+        "VUID-VkPipelineVertexInputStateCreateInfo-binding-00615 and "
+        "VUID-VkPipelineVertexInputStateCreateInfo-pVertexAttributeDescriptions-00617");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    const VkPipelineLayoutObj pipeline_layout(m_device);
+
+    VkVertexInputBindingDescription input_binding;
+    input_binding.binding = 0;
+    input_binding.stride = 4;
+    input_binding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+    const uint32_t attribute_count = m_device->props.limits.maxVertexInputAttributes + 1;
+    VkVertexInputAttributeDescription input_attribs[attribute_count];
+    for (uint32_t i = 0; i < attribute_count; ++i) {
+        input_attribs[i].binding = 0;
+        input_attribs[i].location = i;
+        input_attribs[i].format = VK_FORMAT_R32G32B32_SFLOAT;
+        input_attribs[i].offset = 0;
+    }
+    // Let the last input_attribs description use same location as the first one
+    input_attribs[attribute_count - 1].location = 0;
+    // Let the last input_attribs description use binding which is not defined
+    input_attribs[attribute_count - 1].binding = 1;
+
+    VkShaderObj vs(m_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
+    VkShaderObj fs(m_device, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+
+    VkPipelineObj pipe(m_device);
+    pipe.AddDefaultColorAttachment();
+    pipe.AddShader(&vs);
+    pipe.AddShader(&fs);
+    pipe.AddVertexInputBindings(&input_binding, 1);
+    pipe.AddVertexInputAttribs(&input_attribs[0], attribute_count);
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                         "VUID-VkPipelineVertexInputStateCreateInfo-vertexAttributeDescriptionCount-00614");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkPipelineVertexInputStateCreateInfo-binding-00615");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                         "VUID-VkPipelineVertexInputStateCreateInfo-pVertexAttributeDescriptions-00617");
+    pipe.CreateVKPipeline(pipeline_layout.handle(), renderPass());
+    m_errorMonitor->VerifyFound();
 }
 
 // INVALID_IMAGE_LAYOUT tests (one other case is hit by MapMemWithoutHostVisibleBit and not here)
