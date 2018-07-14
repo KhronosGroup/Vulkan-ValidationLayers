@@ -1328,8 +1328,41 @@ bool pv_vkCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache
             // Validation for parameters excluded from the generated validation code due to a 'noautovalidity' tag in vk.xml
             if (pCreateInfos[i].pVertexInputState != nullptr) {
                 auto const &vertex_input_state = pCreateInfos[i].pVertexInputState;
+
+                if (vertex_input_state->vertexBindingDescriptionCount > device_data->device_limits.maxVertexInputBindings) {
+                    skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                    "VUID-VkPipelineVertexInputStateCreateInfo-vertexBindingDescriptionCount-00613",
+                                    "vkCreateGraphicsPipelines: pararameter "
+                                    "pCreateInfo[%d].pVertexInputState->vertexBindingDescriptionCount (%u) is "
+                                    "greater than VkPhysicalDeviceLimits::maxVertexInputBindings (%u).",
+                                    i, vertex_input_state->vertexBindingDescriptionCount,
+                                    device_data->device_limits.maxVertexInputBindings);
+                }
+
+                if (vertex_input_state->vertexAttributeDescriptionCount > device_data->device_limits.maxVertexInputAttributes) {
+                    skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                    "VUID-VkPipelineVertexInputStateCreateInfo-vertexAttributeDescriptionCount-00614",
+                                    "vkCreateGraphicsPipelines: pararameter "
+                                    "pCreateInfo[%d].pVertexInputState->vertexAttributeDescriptionCount  (%u) is "
+                                    "greater than VkPhysicalDeviceLimits::maxVertexInputAttributes (%u).",
+                                    i, vertex_input_state->vertexBindingDescriptionCount,
+                                    device_data->device_limits.maxVertexInputAttributes);
+                }
+
+                std::unordered_set<uint32_t> vertex_bindings(vertex_input_state->vertexBindingDescriptionCount);
                 for (uint32_t d = 0; d < vertex_input_state->vertexBindingDescriptionCount; ++d) {
                     auto const &vertex_bind_desc = vertex_input_state->pVertexBindingDescriptions[d];
+                    auto const &binding_it = vertex_bindings.find(vertex_bind_desc.binding);
+                    if (binding_it != vertex_bindings.cend()) {
+                        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                        "VUID-VkPipelineVertexInputStateCreateInfo-pVertexBindingDescriptions-00616",
+                                        "vkCreateGraphicsPipelines: parameter "
+                                        "pCreateInfo[%d].pVertexInputState->pVertexBindingDescription[%d].binding "
+                                        "(%" PRIu32 ") is not distinct.",
+                                        i, d, vertex_bind_desc.binding);
+                    }
+                    vertex_bindings.insert(vertex_bind_desc.binding);
+
                     if (vertex_bind_desc.binding >= device_data->device_limits.maxVertexInputBindings) {
                         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                                         "VUID-VkVertexInputBindingDescription-binding-00618",
@@ -1349,8 +1382,31 @@ bool pv_vkCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache
                     }
                 }
 
+                std::unordered_set<uint32_t> attribute_locations(vertex_input_state->vertexAttributeDescriptionCount);
                 for (uint32_t d = 0; d < vertex_input_state->vertexAttributeDescriptionCount; ++d) {
                     auto const &vertex_attrib_desc = vertex_input_state->pVertexAttributeDescriptions[d];
+                    auto const &location_it = attribute_locations.find(vertex_attrib_desc.location);
+                    if (location_it != attribute_locations.cend()) {
+                        skip |= log_msg(
+                            report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                            "VUID-VkPipelineVertexInputStateCreateInfo-pVertexAttributeDescriptions-00617",
+                            "vkCreateGraphicsPipelines: parameter "
+                            "pCreateInfo[%d].pVertexInputState->vertexAttributeDescriptions[%d].location (%u) is not distinct.",
+                            i, d, vertex_attrib_desc.location);
+                    }
+                    attribute_locations.insert(vertex_attrib_desc.location);
+
+                    auto const &binding_it = vertex_bindings.find(vertex_attrib_desc.binding);
+                    if (binding_it == vertex_bindings.cend()) {
+                        skip |= log_msg(
+                            report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                            "VUID-VkPipelineVertexInputStateCreateInfo-binding-00615",
+                            "vkCreateGraphicsPipelines: parameter "
+                            " pCreateInfo[%d].pVertexInputState->vertexAttributeDescriptions[%d].binding (%u) does not exist "
+                            "in any pCreateInfo[%d].pVertexInputState->pVertexBindingDescription.",
+                            i, d, vertex_attrib_desc.binding, i);
+                    }
+
                     if (vertex_attrib_desc.location >= device_data->device_limits.maxVertexInputAttributes) {
                         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                                         "VUID-VkVertexInputAttributeDescription-location-00620",
