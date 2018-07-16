@@ -15097,7 +15097,8 @@ TEST_F(VkLayerTest, InvalidVertexBindingDescriptions) {
     const VkPipelineLayoutObj pipeline_layout(m_device);
 
     const uint32_t binding_count = m_device->props.limits.maxVertexInputBindings + 1;
-    VkVertexInputBindingDescription input_bindings[binding_count];
+
+    std::vector<VkVertexInputBindingDescription> input_bindings(binding_count);
     for (uint32_t i = 0; i < binding_count; ++i) {
         input_bindings[i].binding = i;
         input_bindings[i].stride = 4;
@@ -15119,7 +15120,7 @@ TEST_F(VkLayerTest, InvalidVertexBindingDescriptions) {
     pipe.AddDefaultColorAttachment();
     pipe.AddShader(&vs);
     pipe.AddShader(&fs);
-    pipe.AddVertexInputBindings(&input_bindings[0], binding_count);
+    pipe.AddVertexInputBindings(input_bindings.data(), binding_count);
     pipe.AddVertexInputAttribs(&input_attrib, 1);
 
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
@@ -15147,7 +15148,7 @@ TEST_F(VkLayerTest, InvalidVertexAttributeDescriptions) {
     input_binding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
     const uint32_t attribute_count = m_device->props.limits.maxVertexInputAttributes + 1;
-    VkVertexInputAttributeDescription input_attribs[attribute_count];
+    std::vector<VkVertexInputAttributeDescription> input_attribs(attribute_count);
     for (uint32_t i = 0; i < attribute_count; ++i) {
         input_attribs[i].binding = 0;
         input_attribs[i].location = i;
@@ -15167,7 +15168,7 @@ TEST_F(VkLayerTest, InvalidVertexAttributeDescriptions) {
     pipe.AddShader(&vs);
     pipe.AddShader(&fs);
     pipe.AddVertexInputBindings(&input_binding, 1);
-    pipe.AddVertexInputAttribs(&input_attribs[0], attribute_count);
+    pipe.AddVertexInputAttribs(input_attribs.data(), attribute_count);
 
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
                                          "VUID-VkPipelineVertexInputStateCreateInfo-vertexAttributeDescriptionCount-00614");
