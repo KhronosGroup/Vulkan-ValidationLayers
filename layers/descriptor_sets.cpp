@@ -1858,7 +1858,8 @@ bool cvdescriptorset::DescriptorSet::ValidateBufferUpdate(VkDescriptorBufferInfo
         } else if (buffer_info->range == VK_WHOLE_SIZE && (buffer_node->createInfo.size - buffer_info->offset) > max_ub_range) {
             *error_code = "VUID-VkWriteDescriptorSet-descriptorType-00332";
             std::stringstream error_str;
-            error_str << "VkDescriptorBufferInfo range is VK_WHOLE_SIZE but effective range is greater than this device's "
+            error_str << "VkDescriptorBufferInfo range is VK_WHOLE_SIZE but effective range "
+                      << "(" << (buffer_node->createInfo.size - buffer_info->offset) << ") is greater than this device's "
                       << "maxUniformBufferRange (" << max_ub_range << ")";
             *error_msg = error_str.str();
             return false;
@@ -1875,7 +1876,8 @@ bool cvdescriptorset::DescriptorSet::ValidateBufferUpdate(VkDescriptorBufferInfo
         } else if (buffer_info->range == VK_WHOLE_SIZE && (buffer_node->createInfo.size - buffer_info->offset) > max_sb_range) {
             *error_code = "VUID-VkWriteDescriptorSet-descriptorType-00333";
             std::stringstream error_str;
-            error_str << "VkDescriptorBufferInfo range is VK_WHOLE_SIZE but effective range is greater than this device's "
+            error_str << "VkDescriptorBufferInfo range is VK_WHOLE_SIZE but effective range "
+                      << "(" << (buffer_node->createInfo.size - buffer_info->offset) << ") is greater than this device's "
                       << "maxStorageBufferRange (" << max_sb_range << ")";
             *error_msg = error_str.str();
             return false;

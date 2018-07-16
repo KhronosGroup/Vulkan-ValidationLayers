@@ -13782,8 +13782,10 @@ TEST_F(VkLayerTest, DSBufferLimitErrors) {
         "Test cases include:\n"
         "1. range of uniform buffer update exceeds maxUniformBufferRange\n"
         "2. offset of uniform buffer update is not multiple of minUniformBufferOffsetAlignment\n"
-        "3. range of storage buffer update exceeds maxStorageBufferRange\n"
-        "4. offset of storage buffer update is not multiple of minStorageBufferOffsetAlignment");
+        "3. using VK_WHOLE_SIZE with uniform buffer size exceeding maxUniformBufferRange\n"
+        "4. range of storage buffer update exceeds maxStorageBufferRange\n"
+        "5. offset of storage buffer update is not multiple of minStorageBufferOffsetAlignment\n"
+        "6. using VK_WHOLE_SIZE with storage buffer size exceeding maxStorageBufferRange");
     VkResult err;
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -13875,18 +13877,12 @@ TEST_F(VkLayerTest, DSBufferLimitErrors) {
             m_errorMonitor->VerifyFound();
         }
 
-        // Exceed effictive range limit by using VK_WHOLE_SIZE
+        // Exceed effective range limit by using VK_WHOLE_SIZE
         buff_info.range = VK_WHOLE_SIZE;
         buff_info.offset = 0;
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, test_case.max_range_vu);
         vkUpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
         m_errorMonitor->VerifyFound();
-
-        // Don't exceed effective range limit by using VK_WHOLE_SIZE and offset
-        buff_info.range = VK_WHOLE_SIZE;
-        buff_info.offset = test_case.min_align;
-        vkUpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
-        m_errorMonitor->VerifyNotFound();
 
         // Cleanup
         vkFreeMemory(m_device->device(), mem, NULL);
