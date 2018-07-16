@@ -714,6 +714,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
         value = value.replace('LODGather', 'LOD_Gather')
         value = value.replace('Features2', 'FEATURES_2')
         value = value.replace('e16_Bit', 'E_16BIT')
+        value = value.replace('e8_Bit', 'E_8BIT')
         # Change to uppercase
         value = value.upper()
         # Add STRUCTURE_TYPE_
