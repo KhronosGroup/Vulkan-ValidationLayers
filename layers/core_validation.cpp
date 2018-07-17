@@ -1009,7 +1009,7 @@ static bool ValidatePipelineDrawtimeState(layer_data const *dev_data, LAST_BOUND
             }
         }
     } else {
-        if (!pCB->current_draw_data.vertex_buffer_bindings.empty() && !pCB->vertex_buffer_used) {
+        if ((!pCB->current_draw_data.vertex_buffer_bindings.empty()) && (!pCB->vertex_buffer_used)) {
             skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
                             VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT, HandleToUint64(pCB->commandBuffer),
                             kVUID_Core_DrawState_VtxIndexOutOfBounds,
@@ -2718,7 +2718,7 @@ static bool ValidateResources(layer_data *dev_data, GLOBAL_CB_NODE *cb_node) {
     for (const auto &draw_data_element : cb_node->draw_data) {
         for (const auto &vertex_buffer_binding : draw_data_element.vertex_buffer_bindings) {
             auto buffer_state = GetBufferState(dev_data, vertex_buffer_binding.buffer);
-            if (vertex_buffer_binding.buffer != VK_NULL_HANDLE && !buffer_state) {
+            if ((vertex_buffer_binding.buffer != VK_NULL_HANDLE) && (!buffer_state)) {
                 skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT,
                                 HandleToUint64(vertex_buffer_binding.buffer), kVUID_Core_DrawState_InvalidBuffer,
                                 "Cannot submit cmd buffer using deleted buffer 0x%" PRIx64 ".",

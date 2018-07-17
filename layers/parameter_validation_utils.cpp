@@ -1343,7 +1343,7 @@ bool pv_vkCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache
                     skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                                     "VUID-VkPipelineVertexInputStateCreateInfo-vertexAttributeDescriptionCount-00614",
                                     "vkCreateGraphicsPipelines: pararameter "
-                                    "pCreateInfo[%d].pVertexInputState->vertexAttributeDescriptionCount  (%u) is "
+                                    "pCreateInfo[%d].pVertexInputState->vertexAttributeDescriptionCount (%u) is "
                                     "greater than VkPhysicalDeviceLimits::maxVertexInputAttributes (%u).",
                                     i, vertex_input_state->vertexBindingDescriptionCount,
                                     device_data->device_limits.maxVertexInputAttributes);
