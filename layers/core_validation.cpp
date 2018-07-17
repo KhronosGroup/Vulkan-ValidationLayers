@@ -6005,109 +6005,134 @@ static void AddFramebufferBinding(layer_data *dev_data, GLOBAL_CB_NODE *cb_state
     }
 }
 
-VKAPI_ATTR VkResult VKAPI_CALL BeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo *pBeginInfo) {
+static bool PreCallValidateBeginCommandBuffer(layer_data *dev_data, const GLOBAL_CB_NODE *cb_state,
+                                              const VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo *pBeginInfo) {
+    assert(cb_state);
     bool skip = false;
-    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    unique_lock_t lock(global_lock);
-    // Validate command buffer level
-    GLOBAL_CB_NODE *cb_node = GetCBNode(dev_data, commandBuffer);
-    if (cb_node) {
-        // This implicitly resets the Cmd Buffer so make sure any fence is done and then clear memory references
-        if (cb_node->in_use.load()) {
+    if (cb_state->in_use.load()) {
+        skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                        HandleToUint64(commandBuffer), "VUID-vkBeginCommandBuffer-commandBuffer-00049",
+                        "Calling vkBeginCommandBuffer() on active command buffer %" PRIx64
+                        " before it has completed. You must check command buffer fence before this call.",
+                        HandleToUint64(commandBuffer));
+    }
+    if (cb_state->createInfo.level != VK_COMMAND_BUFFER_LEVEL_PRIMARY) {
+        // Secondary Command Buffer
+        const VkCommandBufferInheritanceInfo *pInfo = pBeginInfo->pInheritanceInfo;
+        if (!pInfo) {
             skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                            HandleToUint64(commandBuffer), "VUID-vkBeginCommandBuffer-commandBuffer-00049",
-                            "Calling vkBeginCommandBuffer() on active command buffer %" PRIx64
-                            " before it has completed. You must check command buffer fence before this call.",
-                            HandleToUint64(commandBuffer));
-        }
-        ClearCmdBufAndMemReferences(dev_data, cb_node);
-        if (cb_node->createInfo.level != VK_COMMAND_BUFFER_LEVEL_PRIMARY) {
-            // Secondary Command Buffer
-            const VkCommandBufferInheritanceInfo *pInfo = pBeginInfo->pInheritanceInfo;
-            if (!pInfo) {
-                skip |=
-                    log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                             HandleToUint64(commandBuffer), "VUID-vkBeginCommandBuffer-commandBuffer-00051",
                             "vkBeginCommandBuffer(): Secondary Command Buffer (0x%" PRIx64 ") must have inheritance info.",
                             HandleToUint64(commandBuffer));
-            } else {
-                if (pBeginInfo->flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT) {
-                    assert(pInfo->renderPass);
-                    string errorString = "";
-                    auto framebuffer = GetFramebufferState(dev_data, pInfo->framebuffer);
-                    if (framebuffer) {
-                        if (framebuffer->createInfo.renderPass != pInfo->renderPass) {
-                            // renderPass that framebuffer was created with must be compatible with local renderPass
-                            skip |= ValidateRenderPassCompatibility(
-                                dev_data, "framebuffer", framebuffer->rp_state.get(), "command buffer",
-                                GetRenderPassState(dev_data, pInfo->renderPass), "vkBeginCommandBuffer()",
-                                "VUID-VkCommandBufferBeginInfo-flags-00055");
-                        }
-                        // Connect this framebuffer and its children to this cmdBuffer
-                        AddFramebufferBinding(dev_data, cb_node, framebuffer);
+        } else {
+            if (pBeginInfo->flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT) {
+                assert(pInfo->renderPass);
+                string errorString = "";
+                auto framebuffer = GetFramebufferState(dev_data, pInfo->framebuffer);
+                if (framebuffer) {
+                    if (framebuffer->createInfo.renderPass != pInfo->renderPass) {
+                        // renderPass that framebuffer was created with must be compatible with local renderPass
+                        skip |=
+                            ValidateRenderPassCompatibility(dev_data, "framebuffer", framebuffer->rp_state.get(), "command buffer",
+                                                            GetRenderPassState(dev_data, pInfo->renderPass),
+                                                            "vkBeginCommandBuffer()", "VUID-VkCommandBufferBeginInfo-flags-00055");
                     }
-                }
-                if ((pInfo->occlusionQueryEnable == VK_FALSE ||
-                     dev_data->enabled_features.core.occlusionQueryPrecise == VK_FALSE) &&
-                    (pInfo->queryFlags & VK_QUERY_CONTROL_PRECISE_BIT)) {
-                    skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                    VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT, HandleToUint64(commandBuffer),
-                                    "VUID-vkBeginCommandBuffer-commandBuffer-00052",
-                                    "vkBeginCommandBuffer(): Secondary Command Buffer (0x%" PRIx64
-                                    ") must not have VK_QUERY_CONTROL_PRECISE_BIT if occulusionQuery is disabled or the device "
-                                    "does not support precise occlusion queries.",
-                                    HandleToUint64(commandBuffer));
                 }
             }
-            if (pInfo && pInfo->renderPass != VK_NULL_HANDLE) {
-                auto renderPass = GetRenderPassState(dev_data, pInfo->renderPass);
-                if (renderPass) {
-                    if (pInfo->subpass >= renderPass->createInfo.subpassCount) {
-                        skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                        VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT, HandleToUint64(commandBuffer),
-                                        "VUID-VkCommandBufferBeginInfo-flags-00054",
-                                        "vkBeginCommandBuffer(): Secondary Command Buffers (0x%" PRIx64
-                                        ") must have a subpass index (%d) that is less than the number of subpasses (%d).",
-                                        HandleToUint64(commandBuffer), pInfo->subpass, renderPass->createInfo.subpassCount);
-                    }
+            if ((pInfo->occlusionQueryEnable == VK_FALSE || dev_data->enabled_features.core.occlusionQueryPrecise == VK_FALSE) &&
+                (pInfo->queryFlags & VK_QUERY_CONTROL_PRECISE_BIT)) {
+                skip |=
+                    log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                            HandleToUint64(commandBuffer), "VUID-vkBeginCommandBuffer-commandBuffer-00052",
+                            "vkBeginCommandBuffer(): Secondary Command Buffer (0x%" PRIx64
+                            ") must not have VK_QUERY_CONTROL_PRECISE_BIT if occulusionQuery is disabled or the device "
+                            "does not support precise occlusion queries.",
+                            HandleToUint64(commandBuffer));
+            }
+        }
+        if (pInfo && pInfo->renderPass != VK_NULL_HANDLE) {
+            auto renderPass = GetRenderPassState(dev_data, pInfo->renderPass);
+            if (renderPass) {
+                if (pInfo->subpass >= renderPass->createInfo.subpassCount) {
+                    skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                    VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT, HandleToUint64(commandBuffer),
+                                    "VUID-VkCommandBufferBeginInfo-flags-00054",
+                                    "vkBeginCommandBuffer(): Secondary Command Buffers (0x%" PRIx64
+                                    ") must have a subpass index (%d) that is less than the number of subpasses (%d).",
+                                    HandleToUint64(commandBuffer), pInfo->subpass, renderPass->createInfo.subpassCount);
                 }
             }
         }
-        if (CB_RECORDING == cb_node->state) {
+    }
+    if (CB_RECORDING == cb_state->state) {
+        skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                        HandleToUint64(commandBuffer), "VUID-vkBeginCommandBuffer-commandBuffer-00049",
+                        "vkBeginCommandBuffer(): Cannot call Begin on command buffer (0x%" PRIx64
+                        ") in the RECORDING state. Must first call vkEndCommandBuffer().",
+                        HandleToUint64(commandBuffer));
+    } else if (CB_RECORDED == cb_state->state || CB_INVALID_COMPLETE == cb_state->state) {
+        VkCommandPool cmdPool = cb_state->createInfo.commandPool;
+        auto pPool = GetCommandPoolNode(dev_data, cmdPool);
+        if (!(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT & pPool->createFlags)) {
             skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                            HandleToUint64(commandBuffer), "VUID-vkBeginCommandBuffer-commandBuffer-00049",
-                            "vkBeginCommandBuffer(): Cannot call Begin on command buffer (0x%" PRIx64
-                            ") in the RECORDING state. Must first call vkEndCommandBuffer().",
-                            HandleToUint64(commandBuffer));
-        } else if (CB_RECORDED == cb_node->state || CB_INVALID_COMPLETE == cb_node->state) {
-            VkCommandPool cmdPool = cb_node->createInfo.commandPool;
-            auto pPool = GetCommandPoolNode(dev_data, cmdPool);
-            if (!(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT & pPool->createFlags)) {
-                skip |=
-                    log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                             HandleToUint64(commandBuffer), "VUID-vkBeginCommandBuffer-commandBuffer-00050",
                             "Call to vkBeginCommandBuffer() on command buffer (0x%" PRIx64
                             ") attempts to implicitly reset cmdBuffer created from command pool (0x%" PRIx64
                             ") that does NOT have the VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT bit set.",
                             HandleToUint64(commandBuffer), HandleToUint64(cmdPool));
-            }
-            ResetCommandBufferState(dev_data, commandBuffer);
         }
-        // Set updated state here in case implicit reset occurs above
-        cb_node->state = CB_RECORDING;
-        cb_node->beginInfo = *pBeginInfo;
-        if (cb_node->beginInfo.pInheritanceInfo) {
-            cb_node->inheritanceInfo = *(cb_node->beginInfo.pInheritanceInfo);
-            cb_node->beginInfo.pInheritanceInfo = &cb_node->inheritanceInfo;
-            // If we are a secondary command-buffer and inheriting.  Update the items we should inherit.
-            if ((cb_node->createInfo.level != VK_COMMAND_BUFFER_LEVEL_PRIMARY) &&
-                (cb_node->beginInfo.flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT)) {
-                cb_node->activeRenderPass = GetRenderPassState(dev_data, cb_node->beginInfo.pInheritanceInfo->renderPass);
-                cb_node->activeSubpass = cb_node->beginInfo.pInheritanceInfo->subpass;
-                cb_node->activeFramebuffer = cb_node->beginInfo.pInheritanceInfo->framebuffer;
-                cb_node->framebuffers.insert(cb_node->beginInfo.pInheritanceInfo->framebuffer);
+    }
+    return skip;
+}
+
+static void PreCallRecordBeginCommandBuffer(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, const VkCommandBuffer commandBuffer,
+                                            const VkCommandBufferBeginInfo *pBeginInfo) {
+    assert(cb_state);
+    // This implicitly resets the Cmd Buffer so make sure any fence is done and then clear memory references
+    ClearCmdBufAndMemReferences(dev_data, cb_state);
+    if (cb_state->createInfo.level != VK_COMMAND_BUFFER_LEVEL_PRIMARY) {
+        // Secondary Command Buffer
+        const VkCommandBufferInheritanceInfo *pInfo = pBeginInfo->pInheritanceInfo;
+        if (pInfo) {
+            if (pBeginInfo->flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT) {
+                assert(pInfo->renderPass);
+                auto framebuffer = GetFramebufferState(dev_data, pInfo->framebuffer);
+                if (framebuffer) {
+                    // Connect this framebuffer and its children to this cmdBuffer
+                    AddFramebufferBinding(dev_data, cb_state, framebuffer);
+                }
             }
         }
+    }
+    if (CB_RECORDED == cb_state->state || CB_INVALID_COMPLETE == cb_state->state) {
+        ResetCommandBufferState(dev_data, commandBuffer);
+    }
+    // Set updated state here in case implicit reset occurs above
+    cb_state->state = CB_RECORDING;
+    cb_state->beginInfo = *pBeginInfo;
+    if (cb_state->beginInfo.pInheritanceInfo) {
+        cb_state->inheritanceInfo = *(cb_state->beginInfo.pInheritanceInfo);
+        cb_state->beginInfo.pInheritanceInfo = &cb_state->inheritanceInfo;
+        // If we are a secondary command-buffer and inheriting.  Update the items we should inherit.
+        if ((cb_state->createInfo.level != VK_COMMAND_BUFFER_LEVEL_PRIMARY) &&
+            (cb_state->beginInfo.flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT)) {
+            cb_state->activeRenderPass = GetRenderPassState(dev_data, cb_state->beginInfo.pInheritanceInfo->renderPass);
+            cb_state->activeSubpass = cb_state->beginInfo.pInheritanceInfo->subpass;
+            cb_state->activeFramebuffer = cb_state->beginInfo.pInheritanceInfo->framebuffer;
+            cb_state->framebuffers.insert(cb_state->beginInfo.pInheritanceInfo->framebuffer);
+        }
+    }
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL BeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo *pBeginInfo) {
+    bool skip = false;
+    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    unique_lock_t lock(global_lock);
+    // Validate command buffer level
+    GLOBAL_CB_NODE *cb_state = GetCBNode(dev_data, commandBuffer);
+    if (cb_state) {
+        skip |= PreCallValidateBeginCommandBuffer(dev_data, cb_state, commandBuffer, pBeginInfo);
+        PreCallRecordBeginCommandBuffer(dev_data, cb_state, commandBuffer, pBeginInfo);
     }
     lock.unlock();
     if (skip) {
@@ -6117,6 +6142,7 @@ VKAPI_ATTR VkResult VKAPI_CALL BeginCommandBuffer(VkCommandBuffer commandBuffer,
 
     return result;
 }
+
 static void PostCallRecordEndCommandBuffer(layer_data *dev_data, GLOBAL_CB_NODE *cb_state) {
     // Cached validation is specific to a specific recording of a specific command buffer.
     for (auto descriptor_set : cb_state->validated_descriptor_sets) {
