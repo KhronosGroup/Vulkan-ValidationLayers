@@ -3162,26 +3162,6 @@ static void StoreMemRanges(layer_data *dev_data, VkDeviceMemory mem, VkDeviceSiz
     }
 }
 
-static bool DeleteMemRanges(layer_data *dev_data, VkDeviceMemory mem) {
-    bool skip = false;
-    auto mem_info = GetMemObjInfo(dev_data, mem);
-    if (mem_info) {
-        if (!mem_info->mem_range.size) {
-            // Valid Usage: memory must currently be mapped
-            skip = log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_MEMORY_EXT,
-                           HandleToUint64(mem), "VUID-vkUnmapMemory-memory-00689",
-                           "Unmapping Memory without memory being mapped: mem obj 0x%" PRIx64 ".", HandleToUint64(mem));
-        }
-        mem_info->mem_range.size = 0;
-        if (mem_info->shadow_copy) {
-            free(mem_info->shadow_copy_base);
-            mem_info->shadow_copy_base = 0;
-            mem_info->shadow_copy = 0;
-        }
-    }
-    return skip;
-}
-
 // Guard value for pad data
 static char NoncoherentMemoryFillValue = 0xb;
 
@@ -10186,12 +10166,35 @@ VKAPI_ATTR VkResult VKAPI_CALL MapMemory(VkDevice device, VkDeviceMemory mem, Vk
     return result;
 }
 
+static bool PreCallValidateUnmapMemory(const layer_data *dev_data, DEVICE_MEM_INFO *mem_info, const VkDeviceMemory mem) {
+    bool skip = false;
+    if (!mem_info->mem_range.size) {
+        // Valid Usage: memory must currently be mapped
+        skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_MEMORY_EXT,
+                        HandleToUint64(mem), "VUID-vkUnmapMemory-memory-00689",
+                        "Unmapping Memory without memory being mapped: mem obj 0x%" PRIx64 ".", HandleToUint64(mem));
+    }
+    return skip;
+}
+
+static void PreCallRecordUnmapMemory(DEVICE_MEM_INFO *mem_info) {
+    mem_info->mem_range.size = 0;
+    if (mem_info->shadow_copy) {
+        free(mem_info->shadow_copy_base);
+        mem_info->shadow_copy_base = 0;
+        mem_info->shadow_copy = 0;
+    }
+}
+
 VKAPI_ATTR void VKAPI_CALL UnmapMemory(VkDevice device, VkDeviceMemory mem) {
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
-
     unique_lock_t lock(global_lock);
-    skip |= DeleteMemRanges(dev_data, mem);
+    auto mem_info = GetMemObjInfo(dev_data, mem);
+    if (mem_info) {
+        skip |= PreCallValidateUnmapMemory(dev_data, mem_info, mem);
+        PreCallRecordUnmapMemory(mem_info);
+    }
     lock.unlock();
     if (!skip) {
         dev_data->dispatch_table.UnmapMemory(device, mem);
