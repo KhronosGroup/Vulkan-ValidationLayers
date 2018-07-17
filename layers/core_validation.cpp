@@ -492,32 +492,29 @@ static void ClearCmdBufAndMemReferences(layer_data *dev_data, GLOBAL_CB_NODE *cb
     }
 }
 
-// Clear a single object binding from given memory object, or report error if binding is missing
-static bool ClearMemoryObjectBinding(layer_data *dev_data, uint64_t handle, VulkanObjectType type, VkDeviceMemory mem) {
+// Clear a single object binding from given memory object
+static void ClearMemoryObjectBinding(layer_data *dev_data, uint64_t handle, VulkanObjectType type, VkDeviceMemory mem) {
     DEVICE_MEM_INFO *mem_info = GetMemObjInfo(dev_data, mem);
     // This obj is bound to a memory object. Remove the reference to this object in that memory object's list
     if (mem_info) {
         mem_info->obj_bindings.erase({handle, type});
     }
-    return false;
 }
 
 // ClearMemoryObjectBindings clears the binding of objects to memory
 //  For the given object it pulls the memory bindings and makes sure that the bindings
 //  no longer refer to the object being cleared. This occurs when objects are destroyed.
-bool ClearMemoryObjectBindings(layer_data *dev_data, uint64_t handle, VulkanObjectType type) {
-    bool skip = false;
+void ClearMemoryObjectBindings(layer_data *dev_data, uint64_t handle, VulkanObjectType type) {
     BINDABLE *mem_binding = GetObjectMemBinding(dev_data, handle, type);
     if (mem_binding) {
         if (!mem_binding->sparse) {
-            skip = ClearMemoryObjectBinding(dev_data, handle, type, mem_binding->binding.mem);
+            ClearMemoryObjectBinding(dev_data, handle, type, mem_binding->binding.mem);
         } else {  // Sparse, clear all bindings
             for (auto &sparse_mem_binding : mem_binding->sparse_bindings) {
-                skip |= ClearMemoryObjectBinding(dev_data, handle, type, sparse_mem_binding.mem);
+                ClearMemoryObjectBinding(dev_data, handle, type, sparse_mem_binding.mem);
             }
         }
     }
-    return skip;
 }
 
 // For given mem object, verify that it is not null or UNBOUND, if it is, report error. Return skip value.
@@ -11309,14 +11306,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateSwapchainKHR(VkDevice device, const VkSwapc
     return result;
 }
 
-VKAPI_ATTR void VKAPI_CALL DestroySwapchainKHR(VkDevice device, VkSwapchainKHR swapchain, const VkAllocationCallbacks *pAllocator) {
-    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    bool skip = false;
-
-    unique_lock_t lock(global_lock);
+static void PreCallRecordDestroySwapchainKHR(layer_data *dev_data, const VkSwapchainKHR swapchain) {
     auto swapchain_data = GetSwapchainNode(dev_data, swapchain);
     if (swapchain_data) {
-        // Pre-record to avoid Destroy/Create race
         if (swapchain_data->images.size() > 0) {
             for (auto swapchain_image : swapchain_data->images) {
                 auto image_sub = dev_data->imageSubresourceMap.find(swapchain_image);
@@ -11329,7 +11321,7 @@ VKAPI_ATTR void VKAPI_CALL DestroySwapchainKHR(VkDevice device, VkSwapchainKHR s
                     }
                     dev_data->imageSubresourceMap.erase(image_sub);
                 }
-                skip = ClearMemoryObjectBindings(dev_data, HandleToUint64(swapchain_image), kVulkanObjectTypeSwapchainKHR);
+                ClearMemoryObjectBindings(dev_data, HandleToUint64(swapchain_image), kVulkanObjectTypeSwapchainKHR);
                 EraseQFOImageRelaseBarriers(dev_data, swapchain_image);
                 dev_data->imageMap.erase(swapchain_image);
             }
@@ -11343,8 +11335,15 @@ VKAPI_ATTR void VKAPI_CALL DestroySwapchainKHR(VkDevice device, VkSwapchainKHR s
 
         dev_data->swapchainMap.erase(swapchain);
     }
+}
+
+VKAPI_ATTR void VKAPI_CALL DestroySwapchainKHR(VkDevice device, VkSwapchainKHR swapchain, const VkAllocationCallbacks *pAllocator) {
+    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    unique_lock_t lock(global_lock);
+    // Pre-record to avoid Destroy/Create race
+    PreCallRecordDestroySwapchainKHR(dev_data, swapchain);
     lock.unlock();
-    if (!skip) dev_data->dispatch_table.DestroySwapchainKHR(device, swapchain, pAllocator);
+    dev_data->dispatch_table.DestroySwapchainKHR(device, swapchain, pAllocator);
 }
 
 static bool PreCallValidateGetSwapchainImagesKHR(layer_data *device_data, SWAPCHAIN_NODE *swapchain_state, VkDevice device,
