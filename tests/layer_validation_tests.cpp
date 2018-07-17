@@ -15088,8 +15088,9 @@ TEST_F(VkLayerTest, InvalidVertexAttributeAlignment) {
 
 TEST_F(VkLayerTest, InvalidVertexBindingDescriptions) {
     TEST_DESCRIPTION(
-        "Check VUID-VkPipelineVertexInputStateCreateInfo-vertexBindingDescriptionCount-00613 "
-        "and VUID-VkPipelineVertexInputStateCreateInfo-pVertexBindingDescriptions-00616");
+        "Attempt to create a graphics pipeline where:"
+        "1) count of vertex bindings exceeds device's maxVertexInputBindings limit"
+        "2) requested bindings include a duplicate binding value");
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -15133,9 +15134,10 @@ TEST_F(VkLayerTest, InvalidVertexBindingDescriptions) {
 
 TEST_F(VkLayerTest, InvalidVertexAttributeDescriptions) {
     TEST_DESCRIPTION(
-        "Check VUID-VkPipelineVertexInputStateCreateInfo-vertexAttributeDescriptionCount-00614,"
-        "VUID-VkPipelineVertexInputStateCreateInfo-binding-00615 and "
-        "VUID-VkPipelineVertexInputStateCreateInfo-pVertexAttributeDescriptions-00617");
+        "Attempt to create a graphics pipeline where:"
+        "1) count of vertex attributes exceeds device's maxVertexInputAttributes limit"
+        "2) requested location include a duplicate location value"
+        "3) binding used by one attribute is not defined by a binding description");
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
