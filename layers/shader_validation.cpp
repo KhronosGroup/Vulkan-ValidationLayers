@@ -1246,31 +1246,18 @@ static bool ValidateShaderCapabilities(layer_data *dev_data, shader_module const
         {spv::CapabilityStorageImageWriteWithoutFormat, {"VkPhysicalDeviceFeatures::shaderStorageImageWriteWithoutFormat", &enabledFeatures->shaderStorageImageWriteWithoutFormat}},
         {spv::CapabilityMultiViewport, {"VkPhysicalDeviceFeatures::multiViewport", &enabledFeatures->multiViewport}},
 
-        // XXX TODO: Descriptor indexing capability enums are not yet available in the spirv-tools we fetch.
-#define CapabilityShaderNonUniformEXT 5301
-#define CapabilityRuntimeDescriptorArrayEXT 5302
-#define CapabilityInputAttachmentArrayDynamicIndexingEXT 5303
-#define CapabilityUniformTexelBufferArrayDynamicIndexingEXT 5304
-#define CapabilityStorageTexelBufferArrayDynamicIndexingEXT 5305
-#define CapabilityUniformBufferArrayNonUniformIndexingEXT 5306
-#define CapabilitySampledImageArrayNonUniformIndexingEXT 5307
-#define CapabilityStorageBufferArrayNonUniformIndexingEXT 5308
-#define CapabilityStorageImageArrayNonUniformIndexingEXT 5309
-#define CapabilityInputAttachmentArrayNonUniformIndexingEXT 5310
-#define CapabilityUniformTexelBufferArrayNonUniformIndexingEXT 5311
-#define CapabilityStorageTexelBufferArrayNonUniformIndexingEXT 5312
-        {CapabilityShaderNonUniformEXT, {VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME, nullptr, &extensions->vk_ext_descriptor_indexing}},
-        {CapabilityRuntimeDescriptorArrayEXT, {"VkPhysicalDeviceDescriptorIndexingFeaturesEXT::runtimeDescriptorArray", &descriptorIndexingFeatures->runtimeDescriptorArray}},
-        {CapabilityInputAttachmentArrayDynamicIndexingEXT, {"VkPhysicalDeviceDescriptorIndexingFeaturesEXT::shaderInputAttachmentArrayDynamicIndexing", &descriptorIndexingFeatures->shaderInputAttachmentArrayDynamicIndexing}},
-        {CapabilityUniformTexelBufferArrayDynamicIndexingEXT, {"VkPhysicalDeviceDescriptorIndexingFeaturesEXT::shaderUniformTexelBufferArrayDynamicIndexing", &descriptorIndexingFeatures->shaderUniformTexelBufferArrayDynamicIndexing}},
-        {CapabilityStorageTexelBufferArrayDynamicIndexingEXT, {"VkPhysicalDeviceDescriptorIndexingFeaturesEXT::shaderStorageTexelBufferArrayDynamicIndexing", &descriptorIndexingFeatures->shaderStorageTexelBufferArrayDynamicIndexing}},
-        {CapabilityUniformBufferArrayNonUniformIndexingEXT, {"VkPhysicalDeviceDescriptorIndexingFeaturesEXT::shaderUniformBufferArrayNonUniformIndexing", &descriptorIndexingFeatures->shaderUniformBufferArrayNonUniformIndexing}},
-        {CapabilitySampledImageArrayNonUniformIndexingEXT, {"VkPhysicalDeviceDescriptorIndexingFeaturesEXT::shaderSampledImageArrayNonUniformIndexing", &descriptorIndexingFeatures->shaderSampledImageArrayNonUniformIndexing}},
-        {CapabilityStorageBufferArrayNonUniformIndexingEXT, {"VkPhysicalDeviceDescriptorIndexingFeaturesEXT::shaderStorageBufferArrayNonUniformIndexing", &descriptorIndexingFeatures->shaderStorageBufferArrayNonUniformIndexing}},
-        {CapabilityStorageImageArrayNonUniformIndexingEXT, {"VkPhysicalDeviceDescriptorIndexingFeaturesEXT::shaderStorageImageArrayNonUniformIndexing", &descriptorIndexingFeatures->shaderStorageImageArrayNonUniformIndexing}},
-        {CapabilityInputAttachmentArrayNonUniformIndexingEXT, {"VkPhysicalDeviceDescriptorIndexingFeaturesEXT::shaderInputAttachmentArrayNonUniformIndexing", &descriptorIndexingFeatures->shaderInputAttachmentArrayNonUniformIndexing}},
-        {CapabilityUniformTexelBufferArrayNonUniformIndexingEXT, {"VkPhysicalDeviceDescriptorIndexingFeaturesEXT::shaderUniformTexelBufferArrayNonUniformIndexing", &descriptorIndexingFeatures->shaderUniformTexelBufferArrayNonUniformIndexing}},
-        {CapabilityStorageTexelBufferArrayNonUniformIndexingEXT , {"VkPhysicalDeviceDescriptorIndexingFeaturesEXT::shaderStorageTexelBufferArrayNonUniformIndexing", &descriptorIndexingFeatures->shaderStorageTexelBufferArrayNonUniformIndexing}},
+        {spv::CapabilityShaderNonUniformEXT, {VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME, nullptr, &extensions->vk_ext_descriptor_indexing}},
+        {spv::CapabilityRuntimeDescriptorArrayEXT, {"VkPhysicalDeviceDescriptorIndexingFeaturesEXT::runtimeDescriptorArray", &descriptorIndexingFeatures->runtimeDescriptorArray}},
+        {spv::CapabilityInputAttachmentArrayDynamicIndexingEXT, {"VkPhysicalDeviceDescriptorIndexingFeaturesEXT::shaderInputAttachmentArrayDynamicIndexing", &descriptorIndexingFeatures->shaderInputAttachmentArrayDynamicIndexing}},
+        {spv::CapabilityUniformTexelBufferArrayDynamicIndexingEXT, {"VkPhysicalDeviceDescriptorIndexingFeaturesEXT::shaderUniformTexelBufferArrayDynamicIndexing", &descriptorIndexingFeatures->shaderUniformTexelBufferArrayDynamicIndexing}},
+        {spv::CapabilityStorageTexelBufferArrayDynamicIndexingEXT, {"VkPhysicalDeviceDescriptorIndexingFeaturesEXT::shaderStorageTexelBufferArrayDynamicIndexing", &descriptorIndexingFeatures->shaderStorageTexelBufferArrayDynamicIndexing}},
+        {spv::CapabilityUniformBufferArrayNonUniformIndexingEXT, {"VkPhysicalDeviceDescriptorIndexingFeaturesEXT::shaderUniformBufferArrayNonUniformIndexing", &descriptorIndexingFeatures->shaderUniformBufferArrayNonUniformIndexing}},
+        {spv::CapabilitySampledImageArrayNonUniformIndexingEXT, {"VkPhysicalDeviceDescriptorIndexingFeaturesEXT::shaderSampledImageArrayNonUniformIndexing", &descriptorIndexingFeatures->shaderSampledImageArrayNonUniformIndexing}},
+        {spv::CapabilityStorageBufferArrayNonUniformIndexingEXT, {"VkPhysicalDeviceDescriptorIndexingFeaturesEXT::shaderStorageBufferArrayNonUniformIndexing", &descriptorIndexingFeatures->shaderStorageBufferArrayNonUniformIndexing}},
+        {spv::CapabilityStorageImageArrayNonUniformIndexingEXT, {"VkPhysicalDeviceDescriptorIndexingFeaturesEXT::shaderStorageImageArrayNonUniformIndexing", &descriptorIndexingFeatures->shaderStorageImageArrayNonUniformIndexing}},
+        {spv::CapabilityInputAttachmentArrayNonUniformIndexingEXT, {"VkPhysicalDeviceDescriptorIndexingFeaturesEXT::shaderInputAttachmentArrayNonUniformIndexing", &descriptorIndexingFeatures->shaderInputAttachmentArrayNonUniformIndexing}},
+        {spv::CapabilityUniformTexelBufferArrayNonUniformIndexingEXT, {"VkPhysicalDeviceDescriptorIndexingFeaturesEXT::shaderUniformTexelBufferArrayNonUniformIndexing", &descriptorIndexingFeatures->shaderUniformTexelBufferArrayNonUniformIndexing}},
+        {spv::CapabilityStorageTexelBufferArrayNonUniformIndexingEXT , {"VkPhysicalDeviceDescriptorIndexingFeaturesEXT::shaderStorageTexelBufferArrayNonUniformIndexing", &descriptorIndexingFeatures->shaderStorageTexelBufferArrayNonUniformIndexing}},
 
         // Capabilities that require an extension
         {spv::CapabilityDrawParameters, {VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME, nullptr, &extensions->vk_khr_shader_draw_parameters}},
