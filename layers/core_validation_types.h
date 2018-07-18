@@ -1036,6 +1036,12 @@ class FRAMEBUFFER_STATE : public BASE_NODE {
 struct shader_module;
 struct DeviceExtensions;
 
+struct DeviceFeatures {
+    VkPhysicalDeviceFeatures core;
+    VkPhysicalDeviceDescriptorIndexingFeaturesEXT descriptor_indexing;
+    VkPhysicalDevice8BitStorageFeaturesKHR eight_bit_storage;
+};
+
 // Fwd declarations of layer_data and helpers to look-up/validate state from layer_data maps
 namespace core_validation {
 struct layer_data;
@@ -1056,10 +1062,8 @@ FRAMEBUFFER_STATE *GetFramebufferState(const layer_data *my_data, VkFramebuffer 
 COMMAND_POOL_NODE *GetCommandPoolNode(layer_data *dev_data, VkCommandPool pool);
 shader_module const *GetShaderModuleState(layer_data const *dev_data, VkShaderModule module);
 const PHYS_DEV_PROPERTIES_NODE *GetPhysDevProperties(const layer_data *device_data);
-const VkPhysicalDeviceFeatures *GetEnabledFeatures(const layer_data *device_data);
+const DeviceFeatures *GetEnabledFeatures(const layer_data *device_data);
 const DeviceExtensions *GetEnabledExtensions(const layer_data *device_data);
-const VkPhysicalDeviceDescriptorIndexingFeaturesEXT *GetEnabledDescriptorIndexingFeatures(const layer_data *device_data);
-const VkPhysicalDevice8BitStorageFeaturesKHR *GetEnabled8BitStorageFeatures(const layer_data *device_data);
 
 void InvalidateCommandBuffers(const layer_data *, std::unordered_set<GLOBAL_CB_NODE *> const &, VK_OBJECT);
 bool ValidateMemoryIsBoundToBuffer(const layer_data *, const BUFFER_STATE *, const char *, const std::string &);
