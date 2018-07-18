@@ -1196,8 +1196,6 @@ static bool ValidateShaderCapabilities(layer_data *dev_data, shader_module const
     auto report_data = GetReportData(dev_data);
     auto const &enabledFeatures = GetEnabledFeatures(dev_data);
     auto const &extensions = GetDeviceExtensions(dev_data);
-    auto const &descriptorIndexingFeatures = GetEnabledDescriptorIndexingFeatures(dev_data);
-    auto const &eightBitStorageFeatures = GetEnabled8BitStorageFeatures(dev_data);
 
     struct CapabilityInfo {
         char const *name;
@@ -1220,44 +1218,44 @@ static bool ValidateShaderCapabilities(layer_data *dev_data, shader_module const
 
         // Capabilities that are optionally supported, but require a feature to
         // be enabled on the device
-        {spv::CapabilityGeometry, {"VkPhysicalDeviceFeatures::geometryShader", &enabledFeatures->geometryShader}},
-        {spv::CapabilityTessellation, {"VkPhysicalDeviceFeatures::tessellationShader", &enabledFeatures->tessellationShader}},
-        {spv::CapabilityFloat64, {"VkPhysicalDeviceFeatures::shaderFloat64", &enabledFeatures->shaderFloat64}},
-        {spv::CapabilityInt64, {"VkPhysicalDeviceFeatures::shaderInt64", &enabledFeatures->shaderInt64}},
-        {spv::CapabilityTessellationPointSize, {"VkPhysicalDeviceFeatures::shaderTessellationAndGeometryPointSize", &enabledFeatures->shaderTessellationAndGeometryPointSize}},
-        {spv::CapabilityGeometryPointSize, {"VkPhysicalDeviceFeatures::shaderTessellationAndGeometryPointSize", &enabledFeatures->shaderTessellationAndGeometryPointSize}},
-        {spv::CapabilityImageGatherExtended, {"VkPhysicalDeviceFeatures::shaderImageGatherExtended", &enabledFeatures->shaderImageGatherExtended}},
-        {spv::CapabilityStorageImageMultisample, {"VkPhysicalDeviceFeatures::shaderStorageImageMultisample", &enabledFeatures->shaderStorageImageMultisample}},
-        {spv::CapabilityUniformBufferArrayDynamicIndexing, {"VkPhysicalDeviceFeatures::shaderUniformBufferArrayDynamicIndexing", &enabledFeatures->shaderUniformBufferArrayDynamicIndexing}},
-        {spv::CapabilitySampledImageArrayDynamicIndexing, {"VkPhysicalDeviceFeatures::shaderSampledImageArrayDynamicIndexing", &enabledFeatures->shaderSampledImageArrayDynamicIndexing}},
-        {spv::CapabilityStorageBufferArrayDynamicIndexing, {"VkPhysicalDeviceFeatures::shaderStorageBufferArrayDynamicIndexing", &enabledFeatures->shaderStorageBufferArrayDynamicIndexing}},
-        {spv::CapabilityStorageImageArrayDynamicIndexing, {"VkPhysicalDeviceFeatures::shaderStorageImageArrayDynamicIndexing", &enabledFeatures->shaderStorageBufferArrayDynamicIndexing}},
-        {spv::CapabilityClipDistance, {"VkPhysicalDeviceFeatures::shaderClipDistance", &enabledFeatures->shaderClipDistance}},
-        {spv::CapabilityCullDistance, {"VkPhysicalDeviceFeatures::shaderCullDistance", &enabledFeatures->shaderCullDistance}},
-        {spv::CapabilityImageCubeArray, {"VkPhysicalDeviceFeatures::imageCubeArray", &enabledFeatures->imageCubeArray}},
-        {spv::CapabilitySampleRateShading, {"VkPhysicalDeviceFeatures::sampleRateShading", &enabledFeatures->sampleRateShading}},
-        {spv::CapabilitySparseResidency, {"VkPhysicalDeviceFeatures::shaderResourceResidency", &enabledFeatures->shaderResourceResidency}},
-        {spv::CapabilityMinLod, {"VkPhysicalDeviceFeatures::shaderResourceMinLod", &enabledFeatures->shaderResourceMinLod}},
-        {spv::CapabilitySampledCubeArray, {"VkPhysicalDeviceFeatures::imageCubeArray", &enabledFeatures->imageCubeArray}},
-        {spv::CapabilityImageMSArray, {"VkPhysicalDeviceFeatures::shaderStorageImageMultisample", &enabledFeatures->shaderStorageImageMultisample}},
-        {spv::CapabilityStorageImageExtendedFormats, {"VkPhysicalDeviceFeatures::shaderStorageImageExtendedFormats", &enabledFeatures->shaderStorageImageExtendedFormats}},
-        {spv::CapabilityInterpolationFunction, {"VkPhysicalDeviceFeatures::sampleRateShading", &enabledFeatures->sampleRateShading}},
-        {spv::CapabilityStorageImageReadWithoutFormat, {"VkPhysicalDeviceFeatures::shaderStorageImageReadWithoutFormat", &enabledFeatures->shaderStorageImageReadWithoutFormat}},
-        {spv::CapabilityStorageImageWriteWithoutFormat, {"VkPhysicalDeviceFeatures::shaderStorageImageWriteWithoutFormat", &enabledFeatures->shaderStorageImageWriteWithoutFormat}},
-        {spv::CapabilityMultiViewport, {"VkPhysicalDeviceFeatures::multiViewport", &enabledFeatures->multiViewport}},
+        {spv::CapabilityGeometry, {"VkPhysicalDeviceFeatures::geometryShader", &enabledFeatures->core.geometryShader}},
+        {spv::CapabilityTessellation, {"VkPhysicalDeviceFeatures::tessellationShader", &enabledFeatures->core.tessellationShader}},
+        {spv::CapabilityFloat64, {"VkPhysicalDeviceFeatures::shaderFloat64", &enabledFeatures->core.shaderFloat64}},
+        {spv::CapabilityInt64, {"VkPhysicalDeviceFeatures::shaderInt64", &enabledFeatures->core.shaderInt64}},
+        {spv::CapabilityTessellationPointSize, {"VkPhysicalDeviceFeatures::shaderTessellationAndGeometryPointSize", &enabledFeatures->core.shaderTessellationAndGeometryPointSize}},
+        {spv::CapabilityGeometryPointSize, {"VkPhysicalDeviceFeatures::shaderTessellationAndGeometryPointSize", &enabledFeatures->core.shaderTessellationAndGeometryPointSize}},
+        {spv::CapabilityImageGatherExtended, {"VkPhysicalDeviceFeatures::shaderImageGatherExtended", &enabledFeatures->core.shaderImageGatherExtended}},
+        {spv::CapabilityStorageImageMultisample, {"VkPhysicalDeviceFeatures::shaderStorageImageMultisample", &enabledFeatures->core.shaderStorageImageMultisample}},
+        {spv::CapabilityUniformBufferArrayDynamicIndexing, {"VkPhysicalDeviceFeatures::shaderUniformBufferArrayDynamicIndexing", &enabledFeatures->core.shaderUniformBufferArrayDynamicIndexing}},
+        {spv::CapabilitySampledImageArrayDynamicIndexing, {"VkPhysicalDeviceFeatures::shaderSampledImageArrayDynamicIndexing", &enabledFeatures->core.shaderSampledImageArrayDynamicIndexing}},
+        {spv::CapabilityStorageBufferArrayDynamicIndexing, {"VkPhysicalDeviceFeatures::shaderStorageBufferArrayDynamicIndexing", &enabledFeatures->core.shaderStorageBufferArrayDynamicIndexing}},
+        {spv::CapabilityStorageImageArrayDynamicIndexing, {"VkPhysicalDeviceFeatures::shaderStorageImageArrayDynamicIndexing", &enabledFeatures->core.shaderStorageBufferArrayDynamicIndexing}},
+        {spv::CapabilityClipDistance, {"VkPhysicalDeviceFeatures::shaderClipDistance", &enabledFeatures->core.shaderClipDistance}},
+        {spv::CapabilityCullDistance, {"VkPhysicalDeviceFeatures::shaderCullDistance", &enabledFeatures->core.shaderCullDistance}},
+        {spv::CapabilityImageCubeArray, {"VkPhysicalDeviceFeatures::imageCubeArray", &enabledFeatures->core.imageCubeArray}},
+        {spv::CapabilitySampleRateShading, {"VkPhysicalDeviceFeatures::sampleRateShading", &enabledFeatures->core.sampleRateShading}},
+        {spv::CapabilitySparseResidency, {"VkPhysicalDeviceFeatures::shaderResourceResidency", &enabledFeatures->core.shaderResourceResidency}},
+        {spv::CapabilityMinLod, {"VkPhysicalDeviceFeatures::shaderResourceMinLod", &enabledFeatures->core.shaderResourceMinLod}},
+        {spv::CapabilitySampledCubeArray, {"VkPhysicalDeviceFeatures::imageCubeArray", &enabledFeatures->core.imageCubeArray}},
+        {spv::CapabilityImageMSArray, {"VkPhysicalDeviceFeatures::shaderStorageImageMultisample", &enabledFeatures->core.shaderStorageImageMultisample}},
+        {spv::CapabilityStorageImageExtendedFormats, {"VkPhysicalDeviceFeatures::shaderStorageImageExtendedFormats", &enabledFeatures->core.shaderStorageImageExtendedFormats}},
+        {spv::CapabilityInterpolationFunction, {"VkPhysicalDeviceFeatures::sampleRateShading", &enabledFeatures->core.sampleRateShading}},
+        {spv::CapabilityStorageImageReadWithoutFormat, {"VkPhysicalDeviceFeatures::shaderStorageImageReadWithoutFormat", &enabledFeatures->core.shaderStorageImageReadWithoutFormat}},
+        {spv::CapabilityStorageImageWriteWithoutFormat, {"VkPhysicalDeviceFeatures::shaderStorageImageWriteWithoutFormat", &enabledFeatures->core.shaderStorageImageWriteWithoutFormat}},
+        {spv::CapabilityMultiViewport, {"VkPhysicalDeviceFeatures::multiViewport", &enabledFeatures->core.multiViewport}},
 
         {spv::CapabilityShaderNonUniformEXT, {VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME, nullptr, &extensions->vk_ext_descriptor_indexing}},
-        {spv::CapabilityRuntimeDescriptorArrayEXT, {"VkPhysicalDeviceDescriptorIndexingFeaturesEXT::runtimeDescriptorArray", &descriptorIndexingFeatures->runtimeDescriptorArray}},
-        {spv::CapabilityInputAttachmentArrayDynamicIndexingEXT, {"VkPhysicalDeviceDescriptorIndexingFeaturesEXT::shaderInputAttachmentArrayDynamicIndexing", &descriptorIndexingFeatures->shaderInputAttachmentArrayDynamicIndexing}},
-        {spv::CapabilityUniformTexelBufferArrayDynamicIndexingEXT, {"VkPhysicalDeviceDescriptorIndexingFeaturesEXT::shaderUniformTexelBufferArrayDynamicIndexing", &descriptorIndexingFeatures->shaderUniformTexelBufferArrayDynamicIndexing}},
-        {spv::CapabilityStorageTexelBufferArrayDynamicIndexingEXT, {"VkPhysicalDeviceDescriptorIndexingFeaturesEXT::shaderStorageTexelBufferArrayDynamicIndexing", &descriptorIndexingFeatures->shaderStorageTexelBufferArrayDynamicIndexing}},
-        {spv::CapabilityUniformBufferArrayNonUniformIndexingEXT, {"VkPhysicalDeviceDescriptorIndexingFeaturesEXT::shaderUniformBufferArrayNonUniformIndexing", &descriptorIndexingFeatures->shaderUniformBufferArrayNonUniformIndexing}},
-        {spv::CapabilitySampledImageArrayNonUniformIndexingEXT, {"VkPhysicalDeviceDescriptorIndexingFeaturesEXT::shaderSampledImageArrayNonUniformIndexing", &descriptorIndexingFeatures->shaderSampledImageArrayNonUniformIndexing}},
-        {spv::CapabilityStorageBufferArrayNonUniformIndexingEXT, {"VkPhysicalDeviceDescriptorIndexingFeaturesEXT::shaderStorageBufferArrayNonUniformIndexing", &descriptorIndexingFeatures->shaderStorageBufferArrayNonUniformIndexing}},
-        {spv::CapabilityStorageImageArrayNonUniformIndexingEXT, {"VkPhysicalDeviceDescriptorIndexingFeaturesEXT::shaderStorageImageArrayNonUniformIndexing", &descriptorIndexingFeatures->shaderStorageImageArrayNonUniformIndexing}},
-        {spv::CapabilityInputAttachmentArrayNonUniformIndexingEXT, {"VkPhysicalDeviceDescriptorIndexingFeaturesEXT::shaderInputAttachmentArrayNonUniformIndexing", &descriptorIndexingFeatures->shaderInputAttachmentArrayNonUniformIndexing}},
-        {spv::CapabilityUniformTexelBufferArrayNonUniformIndexingEXT, {"VkPhysicalDeviceDescriptorIndexingFeaturesEXT::shaderUniformTexelBufferArrayNonUniformIndexing", &descriptorIndexingFeatures->shaderUniformTexelBufferArrayNonUniformIndexing}},
-        {spv::CapabilityStorageTexelBufferArrayNonUniformIndexingEXT , {"VkPhysicalDeviceDescriptorIndexingFeaturesEXT::shaderStorageTexelBufferArrayNonUniformIndexing", &descriptorIndexingFeatures->shaderStorageTexelBufferArrayNonUniformIndexing}},
+        {spv::CapabilityRuntimeDescriptorArrayEXT, {"VkPhysicalDeviceDescriptorIndexingFeaturesEXT::runtimeDescriptorArray", &enabledFeatures->descriptor_indexing.runtimeDescriptorArray}},
+        {spv::CapabilityInputAttachmentArrayDynamicIndexingEXT, {"VkPhysicalDeviceDescriptorIndexingFeaturesEXT::shaderInputAttachmentArrayDynamicIndexing", &enabledFeatures->descriptor_indexing.shaderInputAttachmentArrayDynamicIndexing}},
+        {spv::CapabilityUniformTexelBufferArrayDynamicIndexingEXT, {"VkPhysicalDeviceDescriptorIndexingFeaturesEXT::shaderUniformTexelBufferArrayDynamicIndexing", &enabledFeatures->descriptor_indexing.shaderUniformTexelBufferArrayDynamicIndexing}},
+        {spv::CapabilityStorageTexelBufferArrayDynamicIndexingEXT, {"VkPhysicalDeviceDescriptorIndexingFeaturesEXT::shaderStorageTexelBufferArrayDynamicIndexing", &enabledFeatures->descriptor_indexing.shaderStorageTexelBufferArrayDynamicIndexing}},
+        {spv::CapabilityUniformBufferArrayNonUniformIndexingEXT, {"VkPhysicalDeviceDescriptorIndexingFeaturesEXT::shaderUniformBufferArrayNonUniformIndexing", &enabledFeatures->descriptor_indexing.shaderUniformBufferArrayNonUniformIndexing}},
+        {spv::CapabilitySampledImageArrayNonUniformIndexingEXT, {"VkPhysicalDeviceDescriptorIndexingFeaturesEXT::shaderSampledImageArrayNonUniformIndexing", &enabledFeatures->descriptor_indexing.shaderSampledImageArrayNonUniformIndexing}},
+        {spv::CapabilityStorageBufferArrayNonUniformIndexingEXT, {"VkPhysicalDeviceDescriptorIndexingFeaturesEXT::shaderStorageBufferArrayNonUniformIndexing", &enabledFeatures->descriptor_indexing.shaderStorageBufferArrayNonUniformIndexing}},
+        {spv::CapabilityStorageImageArrayNonUniformIndexingEXT, {"VkPhysicalDeviceDescriptorIndexingFeaturesEXT::shaderStorageImageArrayNonUniformIndexing", &enabledFeatures->descriptor_indexing.shaderStorageImageArrayNonUniformIndexing}},
+        {spv::CapabilityInputAttachmentArrayNonUniformIndexingEXT, {"VkPhysicalDeviceDescriptorIndexingFeaturesEXT::shaderInputAttachmentArrayNonUniformIndexing", &enabledFeatures->descriptor_indexing.shaderInputAttachmentArrayNonUniformIndexing}},
+        {spv::CapabilityUniformTexelBufferArrayNonUniformIndexingEXT, {"VkPhysicalDeviceDescriptorIndexingFeaturesEXT::shaderUniformTexelBufferArrayNonUniformIndexing", &enabledFeatures->descriptor_indexing.shaderUniformTexelBufferArrayNonUniformIndexing}},
+        {spv::CapabilityStorageTexelBufferArrayNonUniformIndexingEXT , {"VkPhysicalDeviceDescriptorIndexingFeaturesEXT::shaderStorageTexelBufferArrayNonUniformIndexing", &enabledFeatures->descriptor_indexing.shaderStorageTexelBufferArrayNonUniformIndexing}},
 
         // Capabilities that require an extension
         {spv::CapabilityDrawParameters, {VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME, nullptr, &extensions->vk_khr_shader_draw_parameters}},
@@ -1269,9 +1267,9 @@ static bool ValidateShaderCapabilities(layer_data *dev_data, shader_module const
         {spv::CapabilitySubgroupBallotKHR, {VK_EXT_SHADER_SUBGROUP_BALLOT_EXTENSION_NAME, nullptr, &extensions->vk_ext_shader_subgroup_ballot }},
         {spv::CapabilitySubgroupVoteKHR, {VK_EXT_SHADER_SUBGROUP_VOTE_EXTENSION_NAME, nullptr, &extensions->vk_ext_shader_subgroup_vote }},
 
-        {spv::CapabilityStorageBuffer8BitAccess , {"VkPhysicalDeviceFeatures::storageBuffer8BitAccess", &eightBitStorageFeatures->storageBuffer8BitAccess, &extensions->vk_khr_8bit_storage}},
-        {spv::CapabilityUniformAndStorageBuffer8BitAccess , {"VkPhysicalDeviceFeatures::uniformAndStorageBuffer8BitAccess", &eightBitStorageFeatures->uniformAndStorageBuffer8BitAccess, &extensions->vk_khr_8bit_storage}},
-        {spv::CapabilityStoragePushConstant8 , {"VkPhysicalDeviceFeatures::storagePushConstant8", &eightBitStorageFeatures->storagePushConstant8, &extensions->vk_khr_8bit_storage}},
+        {spv::CapabilityStorageBuffer8BitAccess , {"VkPhysicalDeviceFeatures::storageBuffer8BitAccess", &enabledFeatures->eight_bit_storage.storageBuffer8BitAccess, &extensions->vk_khr_8bit_storage}},
+        {spv::CapabilityUniformAndStorageBuffer8BitAccess , {"VkPhysicalDeviceFeatures::uniformAndStorageBuffer8BitAccess", &enabledFeatures->eight_bit_storage.uniformAndStorageBuffer8BitAccess, &extensions->vk_khr_8bit_storage}},
+        {spv::CapabilityStoragePushConstant8 , {"VkPhysicalDeviceFeatures::storagePushConstant8", &enabledFeatures->eight_bit_storage.storagePushConstant8, &extensions->vk_khr_8bit_storage}},
 
     };
     // clang-format on
@@ -1328,11 +1326,11 @@ static bool ValidateShaderCapabilities(layer_data *dev_data, shader_module const
                  * stage */
                 break;
             case VK_SHADER_STAGE_FRAGMENT_BIT:
-                skip |= RequireFeature(report_data, enabledFeatures->fragmentStoresAndAtomics, "fragmentStoresAndAtomics");
+                skip |= RequireFeature(report_data, enabledFeatures->core.fragmentStoresAndAtomics, "fragmentStoresAndAtomics");
                 break;
             default:
-                skip |=
-                    RequireFeature(report_data, enabledFeatures->vertexPipelineStoresAndAtomics, "vertexPipelineStoresAndAtomics");
+                skip |= RequireFeature(report_data, enabledFeatures->core.vertexPipelineStoresAndAtomics,
+                                       "vertexPipelineStoresAndAtomics");
                 break;
         }
     }
