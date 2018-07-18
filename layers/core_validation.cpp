@@ -9759,68 +9759,85 @@ static bool FormatSpecificLoadAndStoreOpSettings(VkFormat format, T color_depth_
     return ((check_color_depth_load_op && (color_depth_op == op)) || (check_stencil_load_op && (stencil_op == op)));
 }
 
+static bool PreCallValidateCmdBeginRenderPass(layer_data *dev_data, const RENDER_PASS_STATE *render_pass_state,
+                                              GLOBAL_CB_NODE *cb_state, const FRAMEBUFFER_STATE *framebuffer,
+                                              const VkRenderPassBeginInfo *pRenderPassBegin) {
+    assert(cb_state);
+    bool skip = false;
+    if (render_pass_state) {
+        uint32_t clear_op_size = 0;  // Make sure pClearValues is at least as large as last LOAD_OP_CLEAR
+
+        for (uint32_t i = 0; i < render_pass_state->createInfo.attachmentCount; ++i) {
+            auto pAttachment = &render_pass_state->createInfo.pAttachments[i];
+            if (FormatSpecificLoadAndStoreOpSettings(pAttachment->format, pAttachment->loadOp, pAttachment->stencilLoadOp,
+                                                     VK_ATTACHMENT_LOAD_OP_CLEAR)) {
+                clear_op_size = static_cast<uint32_t>(i) + 1;
+            }
+        }
+
+        if (clear_op_size > pRenderPassBegin->clearValueCount) {
+            skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT,
+                            HandleToUint64(render_pass_state->renderPass), "VUID-VkRenderPassBeginInfo-clearValueCount-00902",
+                            "In vkCmdBeginRenderPass() the VkRenderPassBeginInfo struct has a clearValueCount of %u but there "
+                            "must be at least %u entries in pClearValues array to account for the highest index attachment in "
+                            "renderPass 0x%" PRIx64
+                            " that uses VK_ATTACHMENT_LOAD_OP_CLEAR is %u. Note that the pClearValues array is indexed by "
+                            "attachment number so even if some pClearValues entries between 0 and %u correspond to attachments "
+                            "that aren't cleared they will be ignored.",
+                            pRenderPassBegin->clearValueCount, clear_op_size, HandleToUint64(render_pass_state->renderPass),
+                            clear_op_size, clear_op_size - 1);
+        }
+        skip |= VerifyRenderAreaBounds(dev_data, pRenderPassBegin);
+        skip |= VerifyFramebufferAndRenderPassLayouts(dev_data, cb_state, pRenderPassBegin,
+                                                      GetFramebufferState(dev_data, pRenderPassBegin->framebuffer));
+        if (framebuffer->rp_state->renderPass != render_pass_state->renderPass) {
+            skip |= ValidateRenderPassCompatibility(dev_data, "render pass", render_pass_state, "framebuffer",
+                                                    framebuffer->rp_state.get(), "vkCmdBeginRenderPass()",
+                                                    "VUID-VkRenderPassBeginInfo-renderPass-00904");
+        }
+        skip |= InsideRenderPass(dev_data, cb_state, "vkCmdBeginRenderPass()", "VUID-vkCmdBeginRenderPass-renderpass");
+        skip |= ValidateDependencies(dev_data, framebuffer, render_pass_state);
+        skip |= ValidatePrimaryCommandBuffer(dev_data, cb_state, "vkCmdBeginRenderPass()", "VUID-vkCmdBeginRenderPass-bufferlevel");
+        skip |= ValidateCmdQueueFlags(dev_data, cb_state, "vkCmdBeginRenderPass()", VK_QUEUE_GRAPHICS_BIT,
+                                      "VUID-vkCmdBeginRenderPass-commandBuffer-cmdpool");
+        skip |= ValidateCmd(dev_data, cb_state, CMD_BEGINRENDERPASS, "vkCmdBeginRenderPass()");
+    }
+    return skip;
+}
+
+static void PreCallRecordCmdBeginRenderPass(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, FRAMEBUFFER_STATE *framebuffer,
+                                            RENDER_PASS_STATE *render_pass_state, const VkRenderPassBeginInfo *pRenderPassBegin,
+                                            const VkSubpassContents contents) {
+    assert(cb_state);
+    if (render_pass_state) {
+        cb_state->activeFramebuffer = pRenderPassBegin->framebuffer;
+        cb_state->activeRenderPass = render_pass_state;
+        // This is a shallow copy as that is all that is needed for now
+        cb_state->activeRenderPassBeginInfo = *pRenderPassBegin;
+        cb_state->activeSubpass = 0;
+        cb_state->activeSubpassContents = contents;
+        cb_state->framebuffers.insert(pRenderPassBegin->framebuffer);
+        // Connect this framebuffer and its children to this cmdBuffer
+        AddFramebufferBinding(dev_data, cb_state, framebuffer);
+        // Connect this RP to cmdBuffer
+        AddCommandBufferBinding(&render_pass_state->cb_bindings,
+                                {HandleToUint64(render_pass_state->renderPass), kVulkanObjectTypeRenderPass}, cb_state);
+        // transition attachments to the correct layouts for beginning of renderPass and first subpass
+        TransitionBeginRenderPassLayouts(dev_data, cb_state, render_pass_state, framebuffer);
+    }
+}
+
 VKAPI_ATTR void VKAPI_CALL CmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
                                               VkSubpassContents contents) {
     bool skip = false;
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     unique_lock_t lock(global_lock);
-    GLOBAL_CB_NODE *cb_node = GetCBNode(dev_data, commandBuffer);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(dev_data, commandBuffer);
     auto render_pass_state = pRenderPassBegin ? GetRenderPassState(dev_data, pRenderPassBegin->renderPass) : nullptr;
     auto framebuffer = pRenderPassBegin ? GetFramebufferState(dev_data, pRenderPassBegin->framebuffer) : nullptr;
-    if (cb_node) {
-        if (render_pass_state) {
-            uint32_t clear_op_size = 0;  // Make sure pClearValues is at least as large as last LOAD_OP_CLEAR
-            cb_node->activeFramebuffer = pRenderPassBegin->framebuffer;
-
-            for (uint32_t i = 0; i < render_pass_state->createInfo.attachmentCount; ++i) {
-                auto pAttachment = &render_pass_state->createInfo.pAttachments[i];
-                if (FormatSpecificLoadAndStoreOpSettings(pAttachment->format, pAttachment->loadOp, pAttachment->stencilLoadOp,
-                                                         VK_ATTACHMENT_LOAD_OP_CLEAR)) {
-                    clear_op_size = static_cast<uint32_t>(i) + 1;
-                }
-            }
-
-            if (clear_op_size > pRenderPassBegin->clearValueCount) {
-                skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT,
-                                HandleToUint64(render_pass_state->renderPass), "VUID-VkRenderPassBeginInfo-clearValueCount-00902",
-                                "In vkCmdBeginRenderPass() the VkRenderPassBeginInfo struct has a clearValueCount of %u but there "
-                                "must be at least %u entries in pClearValues array to account for the highest index attachment in "
-                                "renderPass 0x%" PRIx64
-                                " that uses VK_ATTACHMENT_LOAD_OP_CLEAR is %u. Note that the pClearValues array is indexed by "
-                                "attachment number so even if some pClearValues entries between 0 and %u correspond to attachments "
-                                "that aren't cleared they will be ignored.",
-                                pRenderPassBegin->clearValueCount, clear_op_size, HandleToUint64(render_pass_state->renderPass),
-                                clear_op_size, clear_op_size - 1);
-            }
-            skip |= VerifyRenderAreaBounds(dev_data, pRenderPassBegin);
-            skip |= VerifyFramebufferAndRenderPassLayouts(dev_data, cb_node, pRenderPassBegin,
-                                                          GetFramebufferState(dev_data, pRenderPassBegin->framebuffer));
-            if (framebuffer->rp_state->renderPass != render_pass_state->renderPass) {
-                skip |= ValidateRenderPassCompatibility(dev_data, "render pass", render_pass_state, "framebuffer",
-                                                        framebuffer->rp_state.get(), "vkCmdBeginRenderPass()",
-                                                        "VUID-VkRenderPassBeginInfo-renderPass-00904");
-            }
-            skip |= InsideRenderPass(dev_data, cb_node, "vkCmdBeginRenderPass()", "VUID-vkCmdBeginRenderPass-renderpass");
-            skip |= ValidateDependencies(dev_data, framebuffer, render_pass_state);
-            skip |=
-                ValidatePrimaryCommandBuffer(dev_data, cb_node, "vkCmdBeginRenderPass()", "VUID-vkCmdBeginRenderPass-bufferlevel");
-            skip |= ValidateCmdQueueFlags(dev_data, cb_node, "vkCmdBeginRenderPass()", VK_QUEUE_GRAPHICS_BIT,
-                                          "VUID-vkCmdBeginRenderPass-commandBuffer-cmdpool");
-            skip |= ValidateCmd(dev_data, cb_node, CMD_BEGINRENDERPASS, "vkCmdBeginRenderPass()");
-            cb_node->activeRenderPass = render_pass_state;
-            // This is a shallow copy as that is all that is needed for now
-            cb_node->activeRenderPassBeginInfo = *pRenderPassBegin;
-            cb_node->activeSubpass = 0;
-            cb_node->activeSubpassContents = contents;
-            cb_node->framebuffers.insert(pRenderPassBegin->framebuffer);
-            // Connect this framebuffer and its children to this cmdBuffer
-            AddFramebufferBinding(dev_data, cb_node, framebuffer);
-            // Connect this RP to cmdBuffer
-            AddCommandBufferBinding(&render_pass_state->cb_bindings,
-                                    {HandleToUint64(render_pass_state->renderPass), kVulkanObjectTypeRenderPass}, cb_node);
-            // transition attachments to the correct layouts for beginning of renderPass and first subpass
-            TransitionBeginRenderPassLayouts(dev_data, cb_node, render_pass_state, framebuffer);
-        }
+    if (cb_state) {
+        skip |= PreCallValidateCmdBeginRenderPass(dev_data, render_pass_state, cb_state, framebuffer, pRenderPassBegin);
+        PreCallRecordCmdBeginRenderPass(dev_data, cb_state, framebuffer, render_pass_state, pRenderPassBegin, contents);
     }
     lock.unlock();
     if (!skip) {
