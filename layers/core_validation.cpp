@@ -9878,11 +9878,9 @@ VKAPI_ATTR void VKAPI_CALL CmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpa
     }
 }
 
-static bool PreCallValidateCmdEndRenderPass(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, FRAMEBUFFER_STATE *framebuffer,
-                                            VkCommandBuffer commandBuffer) {
+static bool PreCallValidateCmdEndRenderPass(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, VkCommandBuffer commandBuffer) {
     bool skip = false;
     RENDER_PASS_STATE *rp_state = cb_state->activeRenderPass;
-    framebuffer = GetFramebufferState(dev_data, cb_state->activeFramebuffer);
     if (rp_state) {
         if (cb_state->activeSubpass != rp_state->createInfo.subpassCount - 1) {
             skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
@@ -9898,11 +9896,12 @@ static bool PreCallValidateCmdEndRenderPass(layer_data *dev_data, GLOBAL_CB_NODE
     return skip;
 }
 
-static void PostCallRecordCmdEndRenderPass(layer_data *dev_data, GLOBAL_CB_NODE *pCB, FRAMEBUFFER_STATE *framebuffer) {
-    TransitionFinalSubpassLayouts(dev_data, pCB, &pCB->activeRenderPassBeginInfo, framebuffer);
-    pCB->activeRenderPass = nullptr;
-    pCB->activeSubpass = 0;
-    pCB->activeFramebuffer = VK_NULL_HANDLE;
+static void PostCallRecordCmdEndRenderPass(layer_data *dev_data, GLOBAL_CB_NODE *cb_state) {
+    FRAMEBUFFER_STATE *framebuffer = GetFramebufferState(dev_data, cb_state->activeFramebuffer);
+    TransitionFinalSubpassLayouts(dev_data, cb_state, &cb_state->activeRenderPassBeginInfo, framebuffer);
+    cb_state->activeRenderPass = nullptr;
+    cb_state->activeSubpass = 0;
+    cb_state->activeFramebuffer = VK_NULL_HANDLE;
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdEndRenderPass(VkCommandBuffer commandBuffer) {
@@ -9910,9 +9909,8 @@ VKAPI_ATTR void VKAPI_CALL CmdEndRenderPass(VkCommandBuffer commandBuffer) {
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     unique_lock_t lock(global_lock);
     auto pCB = GetCBNode(dev_data, commandBuffer);
-    FRAMEBUFFER_STATE *framebuffer = NULL;
     if (pCB) {
-        skip |= PreCallValidateCmdEndRenderPass(dev_data, pCB, framebuffer, commandBuffer);
+        skip |= PreCallValidateCmdEndRenderPass(dev_data, pCB, commandBuffer);
     }
     lock.unlock();
 
@@ -9922,7 +9920,7 @@ VKAPI_ATTR void VKAPI_CALL CmdEndRenderPass(VkCommandBuffer commandBuffer) {
 
     if (pCB) {
         lock.lock();
-        PostCallRecordCmdEndRenderPass(dev_data, pCB, framebuffer);
+        PostCallRecordCmdEndRenderPass(dev_data, pCB);
     }
 }
 
