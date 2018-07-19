@@ -9,6 +9,9 @@
       "commit" : "e99a26810f65314183163c07664a40e05647c15f",
       "prebuild" : [
         "python update_glslang_sources.py"
+      ],
+      "cmake_options" : [
+        "-DUSE_CCACHE=ON"
       ]
     },
     {
