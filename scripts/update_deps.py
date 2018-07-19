@@ -264,10 +264,14 @@ class GoodRepo(object):
         self.name = json['name']
         self.url = json['url']
         self.sub_dir = json['sub_dir']
-        self.build_dir = json['build_dir']
-        self.install_dir = json['install_dir']
         self.commit = json['commit']
         # Optional JSON elements
+        self.build_dir = None
+        self.install_dir = None
+        if json.get('build_dir'):
+            self.build_dir = json['build_dir']
+        if json.get('install_dir'):
+            self.install_dir = json['install_dir']
         self.deps = json['deps'] if ('deps' in json) else []
         self.prebuild = json['prebuild'] if ('prebuild' in json) else []
         self.prebuild_linux = json['prebuild_linux'] if (
@@ -280,8 +284,10 @@ class GoodRepo(object):
         # Absolute paths for a repo's directories
         dir_top = os.path.abspath(args.dir)
         self.repo_dir = os.path.join(dir_top, self.sub_dir)
-        self.build_dir = os.path.join(dir_top, self.build_dir)
-        self.install_dir = os.path.join(dir_top, self.install_dir)
+        if self.build_dir:
+            self.build_dir = os.path.join(dir_top, self.build_dir)
+        if self.install_dir:
+            self.install_dir = os.path.join(dir_top, self.install_dir)
 
     def Clone(self):
         distutils.dir_util.mkpath(self.repo_dir)
@@ -439,7 +445,11 @@ def GetInstallNames(args):
         known_good_file = os.path.join(
             os.path.dirname(os.path.abspath(__file__)), KNOWN_GOOD_FILE_NAME)
     with open(known_good_file) as known_good:
-        return json.loads(known_good.read())['install_names']
+        install_info = json.loads(known_good.read())
+        if install_info.get('install_names'):
+            return install_info['install_names']
+        else:
+            return None
 
 
 def CreateHelper(args, repos, filename):
@@ -456,7 +466,7 @@ def CreateHelper(args, repos, filename):
     install_names = GetInstallNames(args)
     with open(filename, 'w') as helper_file:
         for repo in repos:
-            if repo.name in install_names:
+            if install_names and repo.name in install_names:
                 helper_file.write('set({var} "{dir}" CACHE STRING "" FORCE)\n'
                                   .format(
                                       var=install_names[repo.name],
