@@ -143,5 +143,6 @@ notifications:
       - cnorthrop@google.com
       - tobine@google.com
       - chrisforbes@google.com
+      - shannon@lunarg.com
     on_success: change
     on_failure: always
