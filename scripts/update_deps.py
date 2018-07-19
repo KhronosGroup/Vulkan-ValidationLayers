@@ -213,7 +213,7 @@ import platform
 import multiprocessing
 import shutil
 
-KNOWN_GOOD_FILE = 'known_good.json'
+KNOWN_GOOD_FILE_NAME = 'known_good.json'
 
 CONFIG_MAP = {
     'debug': 'Debug',
@@ -409,10 +409,15 @@ def GetGoodRepos(args):
     """Returns the latest list of GoodRepo objects.
 
     The known-good file is expected to be in the same
-    directory as this script.
+    directory as this script unless overridden by the 'known_good_dir'
+    parameter.
     """
-    known_good_file = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)), KNOWN_GOOD_FILE)
+    if args.known_good_dir:
+        known_good_file = os.path.join( os.path.abspath(args.known_good_dir),
+            KNOWN_GOOD_FILE_NAME)
+    else:
+        known_good_file = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)), KNOWN_GOOD_FILE_NAME)
     with open(known_good_file) as known_good:
         return [
             GoodRepo(repo, args)
@@ -420,21 +425,26 @@ def GetGoodRepos(args):
         ]
 
 
-def GetInstallNames():
+def GetInstallNames(args):
     """Returns the install names list.
-    
+
     The known-good file is expected to be in the same
-    directory as this script.
+    directory as this script unless overridden by the 'known_good_dir'
+    parameter.
     """
-    known_good_file = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)), KNOWN_GOOD_FILE)
+    if args.known_good_dir:
+        known_good_file = os.path.join(os.path.abspath(args.known_good_dir),
+            KNOWN_GOOD_FILE_NAME)
+    else:
+        known_good_file = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)), KNOWN_GOOD_FILE_NAME)
     with open(known_good_file) as known_good:
         return json.loads(known_good.read())['install_names']
 
 
-def CreateHelper(repos, filename):
+def CreateHelper(args, repos, filename):
     """Create a CMake config helper file.
-    
+
     The helper file is intended to be used with 'cmake -C <file>'
     to build this home repo using the dependencies built by this script.
 
@@ -443,7 +453,7 @@ def CreateHelper(repos, filename):
     This information is baked into the CMake files of the home repo and so
     this dictionary is kept with the repo via the json file.
     """
-    install_names = GetInstallNames()
+    install_names = GetInstallNames(args)
     with open(filename, 'w') as helper_file:
         for repo in repos:
             if repo.name in install_names:
@@ -456,6 +466,10 @@ def CreateHelper(repos, filename):
 def main():
     parser = argparse.ArgumentParser(
         description='Get and build dependent repos at known-good commits')
+    parser.add_argument(
+        '--known_good_dir',
+        dest='known_good_dir',
+        help="Specify directory for known_good.json file.")
     parser.add_argument(
         '--dir',
         dest='dir',
@@ -545,7 +559,7 @@ def main():
 
     # Need to restore original cwd in order for CreateHelper to find json file
     os.chdir(save_cwd)
-    CreateHelper(repos, os.path.join(abs_top_dir, 'helper.cmake'))
+    CreateHelper(args, repos, os.path.join(abs_top_dir, 'helper.cmake'))
 
     sys.exit(0)
 
