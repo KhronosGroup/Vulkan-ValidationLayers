@@ -21,7 +21,7 @@ cd $dir
 rm -rf generated
 mkdir -p generated/include generated/common
 HEADERS_REGISTRY_PATH=$dir/third_party/Vulkan-Headers/registry
-echo HEADERS_REGISTRY_PATH defined as $(HEADERS_REGISTRY_PATH)
+echo HEADERS_REGISTRY_PATH defined as $HEADERS_REGISTRY_PATH
 
 ( cd generated/include; python3 ../../../scripts/lvl_genvk.py -registry $HEADERS_REGISTRY_PATH/vk.xml -scripts $HEADERS_REGISTRY_PATH vk_safe_struct.h )
 ( cd generated/include; python3 ../../../scripts/lvl_genvk.py -registry $HEADERS_REGISTRY_PATH/vk.xml -scripts $HEADERS_REGISTRY_PATH vk_safe_struct.cpp )
