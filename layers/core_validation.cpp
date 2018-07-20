@@ -2213,12 +2213,9 @@ static bool ValidateDeviceQueueCreateInfos(instance_layer_data *instance_data, c
     return skip;
 }
 
-VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo *pCreateInfo,
-                                            const VkAllocationCallbacks *pAllocator, VkDevice *pDevice) {
+static bool PreCallValidateCreateDevice(instance_layer_data *instance_data, const VkPhysicalDeviceFeatures **enabled_features_found,
+                                        VkPhysicalDevice gpu, const VkDeviceCreateInfo *pCreateInfo) {
     bool skip = false;
-    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(gpu), instance_layer_data_map);
-
-    unique_lock_t lock(global_lock);
     auto pd_state = GetPhysicalDeviceState(instance_data, gpu);
 
     // TODO: object_tracker should perhaps do this instead
@@ -2231,40 +2228,28 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
 
     // The enabled features can come from either pEnabledFeatures, or from the pNext chain
     // TODO: Validate "VUID-VkDeviceCreateInfo-pNext-00373" here, can't have non-null pEnabledFeatures & GPDF2 in pNext chain
-    const VkPhysicalDeviceFeatures *enabled_features_found = pCreateInfo->pEnabledFeatures;
-    if (nullptr == enabled_features_found) {
+    if (nullptr == *enabled_features_found) {
         const auto *features2 = lvl_find_in_chain<VkPhysicalDeviceFeatures2KHR>(pCreateInfo->pNext);
         if (features2) {
-            enabled_features_found = &(features2->features);
+            *enabled_features_found = &(features2->features);
         }
     }
 
     skip |=
         ValidateDeviceQueueCreateInfos(instance_data, pd_state, pCreateInfo->queueCreateInfoCount, pCreateInfo->pQueueCreateInfos);
 
-    if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+    return skip;
+}
 
-    VkLayerDeviceCreateInfo *chain_info = get_chain_info(pCreateInfo, VK_LAYER_LINK_INFO);
-
-    assert(chain_info->u.pLayerInfo);
-    PFN_vkGetInstanceProcAddr fpGetInstanceProcAddr = chain_info->u.pLayerInfo->pfnNextGetInstanceProcAddr;
-    PFN_vkGetDeviceProcAddr fpGetDeviceProcAddr = chain_info->u.pLayerInfo->pfnNextGetDeviceProcAddr;
-    PFN_vkCreateDevice fpCreateDevice = (PFN_vkCreateDevice)fpGetInstanceProcAddr(instance_data->instance, "vkCreateDevice");
-    if (fpCreateDevice == NULL) {
-        return VK_ERROR_INITIALIZATION_FAILED;
-    }
-
-    // Advance the link info for the next element on the chain
+static void PreCallRecordCreateDevice(VkLayerDeviceCreateInfo *chain_info) {
     chain_info->u.pLayerInfo = chain_info->u.pLayerInfo->pNext;
+}
 
-    lock.unlock();
+static void PostCallValidateCreateDevice(const VkDeviceCreateInfo *pCreateInfo) { ValidateLayerOrdering(*pCreateInfo); }
 
-    VkResult result = fpCreateDevice(gpu, pCreateInfo, pAllocator, pDevice);
-    if (result != VK_SUCCESS) {
-        return result;
-    }
-
-    lock.lock();
+static void PostCallRecordCreateDevice(instance_layer_data *instance_data, const VkPhysicalDeviceFeatures *enabled_features_found,
+                                       PFN_vkGetDeviceProcAddr fpGetDeviceProcAddr, VkPhysicalDevice gpu,
+                                       const VkDeviceCreateInfo *pCreateInfo, VkDevice *pDevice) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(*pDevice), layer_data_map);
 
     device_data->instance_data = instance_data;
@@ -2322,10 +2307,40 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
         instance_data->dispatch_table.GetPhysicalDeviceProperties2KHR(gpu, &prop2);
         device_data->phys_dev_ext_props.descriptor_indexing_props = descriptor_indexing_props;
     }
+}
 
+VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo *pCreateInfo,
+                                            const VkAllocationCallbacks *pAllocator, VkDevice *pDevice) {
+    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(gpu), instance_layer_data_map);
+
+    unique_lock_t lock(global_lock);
+    const VkPhysicalDeviceFeatures *enabled_features_found = pCreateInfo->pEnabledFeatures;
+
+    bool skip = PreCallValidateCreateDevice(instance_data, &enabled_features_found, gpu, pCreateInfo);
+    if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+
+    VkLayerDeviceCreateInfo *chain_info = get_chain_info(pCreateInfo, VK_LAYER_LINK_INFO);
+    assert(chain_info->u.pLayerInfo);
+    PFN_vkGetInstanceProcAddr fpGetInstanceProcAddr = chain_info->u.pLayerInfo->pfnNextGetInstanceProcAddr;
+    PFN_vkGetDeviceProcAddr fpGetDeviceProcAddr = chain_info->u.pLayerInfo->pfnNextGetDeviceProcAddr;
+    PFN_vkCreateDevice fpCreateDevice = (PFN_vkCreateDevice)fpGetInstanceProcAddr(instance_data->instance, "vkCreateDevice");
+    if (fpCreateDevice == NULL) {
+        return VK_ERROR_INITIALIZATION_FAILED;
+    }
+
+    // Advance the link info for the next element on the chain
+    PreCallRecordCreateDevice(chain_info);
     lock.unlock();
 
-    ValidateLayerOrdering(*pCreateInfo);
+    VkResult result = fpCreateDevice(gpu, pCreateInfo, pAllocator, pDevice);
+    if (result != VK_SUCCESS) {
+        return result;
+    }
+
+    lock.lock();
+    PostCallRecordCreateDevice(instance_data, enabled_features_found, fpGetDeviceProcAddr, gpu, pCreateInfo, pDevice);
+    PostCallValidateCreateDevice(pCreateInfo);
+    lock.unlock();
 
     return result;
 }
