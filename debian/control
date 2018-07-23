@@ -26,3 +26,12 @@ Description: Khronos official Vulkan validation layers for Linux
  This package provides Vulkan validation layers that can be enabled to assist
  development by enabling developers to verify their applications correct use of
  the Vulkan API
+
+Package: vulkan-validation-layers-dev
+Section: libdevel
+Architecture: linux-any
+Depends: ${shlibs:Depends},${misc:Depends},libvulkan1 (= ${binary:Version})
+Multi-Arch: same
+Description: Khronos official Vulkan validation layers for Linux development
+ This package provides a Vulkan validation layers utility library used by
+ additional layers, or other applications.
