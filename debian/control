@@ -2,8 +2,9 @@ Source: vulkan-validation-layers
 Section: libs
 Priority: optional
 Maintainer: Brett Johnson <brett@lunarg.com>
-Build-Depends: debhelper (>=10),
+Build-Depends: debhelper (>=9),
  cmake,
+ python3,
  libwayland-dev,
  libx11-dev,
  libxcb1-dev,
