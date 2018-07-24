@@ -6143,41 +6143,49 @@ VKAPI_ATTR VkResult VKAPI_CALL BeginCommandBuffer(VkCommandBuffer commandBuffer,
     return result;
 }
 
-static void PostCallRecordEndCommandBuffer(layer_data *dev_data, GLOBAL_CB_NODE *cb_state) {
+static bool PreCallValidateEndCommandBuffer(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, VkCommandBuffer commandBuffer) {
+    bool skip = false;
+    if ((VK_COMMAND_BUFFER_LEVEL_PRIMARY == cb_state->createInfo.level) ||
+        !(cb_state->beginInfo.flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT)) {
+        // This needs spec clarification to update valid usage, see comments in PR:
+        // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/165
+        skip |= InsideRenderPass(dev_data, cb_state, "vkEndCommandBuffer()", "VUID-vkEndCommandBuffer-commandBuffer-00060");
+    }
+    skip |= ValidateCmd(dev_data, cb_state, CMD_ENDCOMMANDBUFFER, "vkEndCommandBuffer()");
+    for (auto query : cb_state->activeQueries) {
+        skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                        HandleToUint64(commandBuffer), "VUID-vkEndCommandBuffer-commandBuffer-00061",
+                        "Ending command buffer with in progress query: queryPool 0x%" PRIx64 ", index %d.",
+                        HandleToUint64(query.pool), query.index);
+    }
+    return skip;
+}
+
+static void PostCallRecordEndCommandBuffer(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, const VkResult &result) {
     // Cached validation is specific to a specific recording of a specific command buffer.
     for (auto descriptor_set : cb_state->validated_descriptor_sets) {
         descriptor_set->ClearCachedValidation(cb_state);
     }
     cb_state->validated_descriptor_sets.clear();
+    if (VK_SUCCESS == result) {
+        cb_state->state = CB_RECORDED;
+    }
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL EndCommandBuffer(VkCommandBuffer commandBuffer) {
     bool skip = false;
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     unique_lock_t lock(global_lock);
-    GLOBAL_CB_NODE *pCB = GetCBNode(dev_data, commandBuffer);
-    if (pCB) {
-        if ((VK_COMMAND_BUFFER_LEVEL_PRIMARY == pCB->createInfo.level) ||
-            !(pCB->beginInfo.flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT)) {
-            // This needs spec clarification to update valid usage, see comments in PR:
-            // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/165
-            skip |= InsideRenderPass(dev_data, pCB, "vkEndCommandBuffer()", "VUID-vkEndCommandBuffer-commandBuffer-00060");
-        }
-        skip |= ValidateCmd(dev_data, pCB, CMD_ENDCOMMANDBUFFER, "vkEndCommandBuffer()");
-        for (auto query : pCB->activeQueries) {
-            skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                            HandleToUint64(commandBuffer), "VUID-vkEndCommandBuffer-commandBuffer-00061",
-                            "Ending command buffer with in progress query: queryPool 0x%" PRIx64 ", index %d.",
-                            HandleToUint64(query.pool), query.index);
-        }
+    GLOBAL_CB_NODE *cb_state = GetCBNode(dev_data, commandBuffer);
+    if (cb_state) {
+        skip |= PreCallValidateEndCommandBuffer(dev_data, cb_state, commandBuffer);
     }
     if (!skip) {
         lock.unlock();
         auto result = dev_data->dispatch_table.EndCommandBuffer(commandBuffer);
         lock.lock();
-        PostCallRecordEndCommandBuffer(dev_data, pCB);
-        if (VK_SUCCESS == result) {
-            pCB->state = CB_RECORDED;
+        if (cb_state) {
+            PostCallRecordEndCommandBuffer(dev_data, cb_state, result);
         }
         return result;
     } else {
@@ -13418,39 +13426,12 @@ VKAPI_ATTR void VKAPI_CALL CmdSetSampleLocationsEXT(VkCommandBuffer commandBuffe
     }
 }
 
-static bool PreCallValidateCmdDrawIndirectCountKHR(layer_data *dev_data, VkCommandBuffer cmd_buffer, VkBuffer buffer,
-                                                   VkBuffer count_buffer, bool indexed, VkPipelineBindPoint bind_point,
-                                                   GLOBAL_CB_NODE **cb_state, BUFFER_STATE **buffer_state,
-                                                   BUFFER_STATE **count_buffer_state, const char *caller) {
-    bool skip = ValidateCmdDrawType(dev_data, cmd_buffer, indexed, bind_point, CMD_DRAWINDIRECTCOUNTKHR, cb_state, caller,
-                                    VK_QUEUE_GRAPHICS_BIT, "VUID-vkCmdDrawIndirectCountKHR-commandBuffer-cmdpool",
-                                    "VUID-vkCmdDrawIndirectCountKHR-renderpass", "VUID-vkCmdDrawIndirectCountKHR-None-03119",
-                                    "VUID-vkCmdDrawIndirectCountKHR-None-03120");
-    *buffer_state = GetBufferState(dev_data, buffer);
-    *count_buffer_state = GetBufferState(dev_data, count_buffer);
-    skip |= ValidateMemoryIsBoundToBuffer(dev_data, *buffer_state, caller, "VUID-vkCmdDrawIndirectCountKHR-buffer-03104");
-    skip |=
-        ValidateMemoryIsBoundToBuffer(dev_data, *count_buffer_state, caller, "VUID-vkCmdDrawIndirectCountKHR-countBuffer-03106");
-
-    return skip;
-}
-
-static void PreCallRecordCmdDrawIndirectCountKHR(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, VkPipelineBindPoint bind_point,
-                                                 BUFFER_STATE *buffer_state, BUFFER_STATE *count_buffer_state) {
-    UpdateStateCmdDrawType(dev_data, cb_state, bind_point);
-    AddCommandBufferBindingBuffer(dev_data, cb_state, buffer_state);
-    AddCommandBufferBindingBuffer(dev_data, cb_state, count_buffer_state);
-}
-
-VKAPI_ATTR void VKAPI_CALL CmdDrawIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                   VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
-                                                   uint32_t stride) {
-    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    GLOBAL_CB_NODE *cb_state = nullptr;
-    BUFFER_STATE *buffer_state = nullptr;
-    BUFFER_STATE *count_buffer_state = nullptr;
+static bool PreCallValidateCmdDrawIndirectCountKHR(layer_data *dev_data, VkCommandBuffer commandBuffer, VkBuffer buffer,
+                                                   VkDeviceSize offset, VkBuffer countBuffer, VkDeviceSize countBufferOffset,
+                                                   uint32_t stride, GLOBAL_CB_NODE **cb_state, BUFFER_STATE **buffer_state,
+                                                   BUFFER_STATE **count_buffer_state, bool indexed, VkPipelineBindPoint bind_point,
+                                                   const char *caller) {
     bool skip = false;
-
     if (offset & 3) {
         skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                         HandleToUint64(commandBuffer), "VUID-vkCmdDrawIndirectCountKHR-offset-03108",
@@ -13474,10 +13455,38 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawIndirectCountKHR(VkCommandBuffer commandBuffer
                         stride);
     }
 
-    unique_lock_t lock(global_lock);
+    skip |= ValidateCmdDrawType(dev_data, commandBuffer, indexed, bind_point, CMD_DRAWINDIRECTCOUNTKHR, cb_state, caller,
+                                VK_QUEUE_GRAPHICS_BIT, "VUID-vkCmdDrawIndirectCountKHR-commandBuffer-cmdpool",
+                                "VUID-vkCmdDrawIndirectCountKHR-renderpass", "VUID-vkCmdDrawIndirectCountKHR-None-03119",
+                                "VUID-vkCmdDrawIndirectCountKHR-None-03120");
+    *buffer_state = GetBufferState(dev_data, buffer);
+    *count_buffer_state = GetBufferState(dev_data, countBuffer);
+    skip |= ValidateMemoryIsBoundToBuffer(dev_data, *buffer_state, caller, "VUID-vkCmdDrawIndirectCountKHR-buffer-03104");
     skip |=
-        PreCallValidateCmdDrawIndirectCountKHR(dev_data, commandBuffer, buffer, countBuffer, false, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                               &cb_state, &buffer_state, &count_buffer_state, "vkCmdDrawIndirectCountKHR()");
+        ValidateMemoryIsBoundToBuffer(dev_data, *count_buffer_state, caller, "VUID-vkCmdDrawIndirectCountKHR-countBuffer-03106");
+
+    return skip;
+}
+
+static void PreCallRecordCmdDrawIndirectCountKHR(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, VkPipelineBindPoint bind_point,
+                                                 BUFFER_STATE *buffer_state, BUFFER_STATE *count_buffer_state) {
+    UpdateStateCmdDrawType(dev_data, cb_state, bind_point);
+    AddCommandBufferBindingBuffer(dev_data, cb_state, buffer_state);
+    AddCommandBufferBindingBuffer(dev_data, cb_state, count_buffer_state);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdDrawIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                   VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
+                                                   uint32_t stride) {
+    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    GLOBAL_CB_NODE *cb_state = nullptr;
+    BUFFER_STATE *buffer_state = nullptr;
+    BUFFER_STATE *count_buffer_state = nullptr;
+
+    unique_lock_t lock(global_lock);
+    bool skip = PreCallValidateCmdDrawIndirectCountKHR(dev_data, commandBuffer, buffer, offset, countBuffer, countBufferOffset,
+                                                       stride, &cb_state, &buffer_state, &count_buffer_state, false,
+                                                       VK_PIPELINE_BIND_POINT_GRAPHICS, "vkCmdDrawIndirectCountKHR()");
 
     if (!skip) {
         PreCallRecordCmdDrawIndirectCountKHR(dev_data, cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, buffer_state, count_buffer_state);
@@ -13487,40 +13496,12 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawIndirectCountKHR(VkCommandBuffer commandBuffer
     }
 }
 
-static bool PreCallValidateCmdDrawIndexedIndirectCountKHR(layer_data *dev_data, VkCommandBuffer cmd_buffer, VkBuffer buffer,
-                                                          VkBuffer count_buffer, bool indexed, VkPipelineBindPoint bind_point,
-                                                          GLOBAL_CB_NODE **cb_state, BUFFER_STATE **buffer_state,
-                                                          BUFFER_STATE **count_buffer_state, const char *caller) {
-    bool skip = ValidateCmdDrawType(
-        dev_data, cmd_buffer, indexed, bind_point, CMD_DRAWINDEXEDINDIRECTCOUNTKHR, cb_state, caller, VK_QUEUE_GRAPHICS_BIT,
-        "VUID-vkCmdDrawIndexedIndirectCountKHR-commandBuffer-cmdpool", "VUID-vkCmdDrawIndexedIndirectCountKHR-renderpass",
-        "VUID-vkCmdDrawIndexedIndirectCountKHR-None-03151", "VUID-vkCmdDrawIndexedIndirectCountKHR-None-03152");
-    *buffer_state = GetBufferState(dev_data, buffer);
-    *count_buffer_state = GetBufferState(dev_data, count_buffer);
-    skip |= ValidateMemoryIsBoundToBuffer(dev_data, *buffer_state, caller, "VUID-vkCmdDrawIndexedIndirectCountKHR-buffer-03136");
-    skip |= ValidateMemoryIsBoundToBuffer(dev_data, *count_buffer_state, caller,
-                                          "VUID-vkCmdDrawIndexedIndirectCountKHR-countBuffer-03138");
-
-    return skip;
-}
-
-static void PreCallRecordCmdDrawIndexedIndirectCountKHR(layer_data *dev_data, GLOBAL_CB_NODE *cb_state,
-                                                        VkPipelineBindPoint bind_point, BUFFER_STATE *buffer_state,
-                                                        BUFFER_STATE *count_buffer_state) {
-    UpdateStateCmdDrawType(dev_data, cb_state, bind_point);
-    AddCommandBufferBindingBuffer(dev_data, cb_state, buffer_state);
-    AddCommandBufferBindingBuffer(dev_data, cb_state, count_buffer_state);
-}
-
-VKAPI_ATTR void VKAPI_CALL CmdDrawIndexedIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                          VkBuffer countBuffer, VkDeviceSize countBufferOffset,
-                                                          uint32_t maxDrawCount, uint32_t stride) {
-    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    GLOBAL_CB_NODE *cb_state = nullptr;
-    BUFFER_STATE *buffer_state = nullptr;
-    BUFFER_STATE *count_buffer_state = nullptr;
+static bool PreCallValidateCmdDrawIndexedIndirectCountKHR(layer_data *dev_data, VkCommandBuffer commandBuffer, VkBuffer buffer,
+                                                          VkDeviceSize offset, VkBuffer countBuffer, VkDeviceSize countBufferOffset,
+                                                          uint32_t stride, GLOBAL_CB_NODE **cb_state, BUFFER_STATE **buffer_state,
+                                                          BUFFER_STATE **count_buffer_state, bool indexed,
+                                                          VkPipelineBindPoint bind_point, const char *caller) {
     bool skip = false;
-
     if (offset & 3) {
         skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                         HandleToUint64(commandBuffer), "VUID-vkCmdDrawIndexedIndirectCountKHR-offset-03140",
@@ -13545,10 +13526,37 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawIndexedIndirectCountKHR(VkCommandBuffer comman
                         stride);
     }
 
+    skip |= ValidateCmdDrawType(
+        dev_data, commandBuffer, indexed, bind_point, CMD_DRAWINDEXEDINDIRECTCOUNTKHR, cb_state, caller, VK_QUEUE_GRAPHICS_BIT,
+        "VUID-vkCmdDrawIndexedIndirectCountKHR-commandBuffer-cmdpool", "VUID-vkCmdDrawIndexedIndirectCountKHR-renderpass",
+        "VUID-vkCmdDrawIndexedIndirectCountKHR-None-03151", "VUID-vkCmdDrawIndexedIndirectCountKHR-None-03152");
+    *buffer_state = GetBufferState(dev_data, buffer);
+    *count_buffer_state = GetBufferState(dev_data, countBuffer);
+    skip |= ValidateMemoryIsBoundToBuffer(dev_data, *buffer_state, caller, "VUID-vkCmdDrawIndexedIndirectCountKHR-buffer-03136");
+    skip |= ValidateMemoryIsBoundToBuffer(dev_data, *count_buffer_state, caller,
+                                          "VUID-vkCmdDrawIndexedIndirectCountKHR-countBuffer-03138");
+    return skip;
+}
+
+static void PreCallRecordCmdDrawIndexedIndirectCountKHR(layer_data *dev_data, GLOBAL_CB_NODE *cb_state,
+                                                        VkPipelineBindPoint bind_point, BUFFER_STATE *buffer_state,
+                                                        BUFFER_STATE *count_buffer_state) {
+    UpdateStateCmdDrawType(dev_data, cb_state, bind_point);
+    AddCommandBufferBindingBuffer(dev_data, cb_state, buffer_state);
+    AddCommandBufferBindingBuffer(dev_data, cb_state, count_buffer_state);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdDrawIndexedIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                          VkBuffer countBuffer, VkDeviceSize countBufferOffset,
+                                                          uint32_t maxDrawCount, uint32_t stride) {
+    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    GLOBAL_CB_NODE *cb_state = nullptr;
+    BUFFER_STATE *buffer_state = nullptr;
+    BUFFER_STATE *count_buffer_state = nullptr;
     unique_lock_t lock(global_lock);
-    skip |= PreCallValidateCmdDrawIndexedIndirectCountKHR(dev_data, commandBuffer, buffer, countBuffer, true,
-                                                          VK_PIPELINE_BIND_POINT_GRAPHICS, &cb_state, &buffer_state,
-                                                          &count_buffer_state, "vkCmdDrawIndexedIndirectCountKHR()");
+    bool skip = PreCallValidateCmdDrawIndexedIndirectCountKHR(
+        dev_data, commandBuffer, buffer, offset, countBuffer, countBufferOffset, stride, &cb_state, &buffer_state,
+        &count_buffer_state, true, VK_PIPELINE_BIND_POINT_GRAPHICS, "vkCmdDrawIndexedIndirectCountKHR()");
 
     if (!skip) {
         PreCallRecordCmdDrawIndexedIndirectCountKHR(dev_data, cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, buffer_state,
