@@ -6,7 +6,7 @@
       "sub_dir" : "glslang",
       "build_dir" : "glslang/build",
       "install_dir" : "glslang/build/install",
-      "commit" : "3f05beddc8f69466894468efd661826d15c4d90b",
+      "commit" : "6e382f63b4683a7295522a07973dff63d3f40b62",
       "prebuild" : [
         "python update_glslang_sources.py"
       ]
@@ -17,7 +17,7 @@
       "sub_dir" : "Vulkan-Headers",
       "build_dir" : "Vulkan-Headers/build",
       "install_dir" : "Vulkan-Headers/build/install",
-      "commit" : "c339af82091857146e940fa1aafbeb5ee67d7e21"
+      "commit" : "82e73015b0632833939349d767af39cb88836f29"
     },
     {
       "name" : "Vulkan-Loader",
@@ -25,7 +25,7 @@
       "sub_dir" : "Vulkan-Loader",
       "build_dir" : "Vulkan-Loader/build",
       "install_dir" : "Vulkan-Loader/build/install",
-      "commit" : "da58202e9569eff53560b4c3a007de2297be40d2",
+      "commit" : "cb1f18688baaeb1cdb5b5ca37277c0724cd6d044",
       "deps" : [
         {
           "var_name" : "VULKAN_HEADERS_INSTALL_DIR",
@@ -42,7 +42,7 @@
       "sub_dir" : "VulkanTools",
       "build_dir" : "VulkanTools/build",
       "install_dir" : "VulkanTools/build/install",
-      "commit" : "41bf8180688c610efed98a57b9b7678da702286b",
+      "commit" : "75777eacf24593295bd8dfd0fd43384d51af0f37",
       "deps" : [
         {
           "var_name" : "VULKAN_HEADERS_INSTALL_DIR",
@@ -75,7 +75,7 @@
       "sub_dir" : "Vulkan-Tools",
       "build_dir" : "Vulkan-Tools/build",
       "install_dir" : "Vulkan-Tools/build/install",
-      "commit" : "origin/sdk-1.1.77",
+      "commit" : "f9c962c8c799bafbd1c531d6f317bbbaa90aec4f",
       "deps" : [
         {
           "var_name" : "VULKAN_HEADERS_INSTALL_DIR",
