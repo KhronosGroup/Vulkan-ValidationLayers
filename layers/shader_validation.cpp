@@ -777,6 +777,7 @@ static bool ValidateViAgainstVsInputs(debug_report_data const *report_data, VkPi
         bool b_at_end = inputs.size() == 0 || it_b == inputs.end();
         auto a_first = a_at_end ? 0 : it_a->first;
         auto b_first = b_at_end ? 0 : it_b->first.first;
+
         if (!a_at_end && (b_at_end || a_first < b_first)) {
             if (!used &&
                 log_msg(report_data, VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SHADER_MODULE_EXT,
@@ -834,6 +835,7 @@ static bool ValidateFsOutputsAgainstRenderPass(debug_report_data const *report_d
 
     auto it_a = outputs.begin();
     auto it_b = color_attachments.begin();
+    bool used = false;
 
     // Walk attachment list and outputs together
 
@@ -849,11 +851,14 @@ static bool ValidateFsOutputsAgainstRenderPass(debug_report_data const *report_d
         } else if (!b_at_end && (a_at_end || it_a->first.first > it_b->first)) {
             // Only complain if there are unmasked channels for this attachment. If the writemask is 0, it's acceptable for the
             // shader to not produce a matching output.
-            if (pipeline->attachments[it_b->first].colorWriteMask != 0) {
-                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SHADER_MODULE_EXT,
-                                HandleToUint64(fs->vk_shader_module), kVUID_Core_Shader_InputNotProduced,
-                                "Attachment %d not written by fragment shader", it_b->first);
+            if (!used) {
+                if (pipeline->attachments[it_b->first].colorWriteMask != 0) {
+                    skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SHADER_MODULE_EXT,
+                                    HandleToUint64(fs->vk_shader_module), kVUID_Core_Shader_InputNotProduced,
+                                    "Attachment %d not written by fragment shader", it_b->first);
+                }
             }
+            used = false;
             it_b++;
         } else {
             unsigned output_type = GetFundamentalType(fs, it_a->second.type_id);
@@ -869,7 +874,7 @@ static bool ValidateFsOutputsAgainstRenderPass(debug_report_data const *report_d
 
             // OK!
             it_a++;
-            it_b++;
+            used = true;
         }
     }
 
