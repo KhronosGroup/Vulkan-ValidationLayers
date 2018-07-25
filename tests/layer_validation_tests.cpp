@@ -28506,8 +28506,9 @@ TEST_F(VkPositiveLayerTest, CreatePipelineAttribArrayType) {
 TEST_F(VkPositiveLayerTest, CreatePipelineAttribComponents) {
     TEST_DESCRIPTION(
         "Test that pipeline validation accepts consuming a vertex attribute through multiple vertex shader inputs, each consuming "
-        "a different subset of the components.");
-    m_errorMonitor->ExpectSuccess();
+        "a different subset of the components, and that fragment shader-attachment validation tolerates multiple duplicate "
+        "location outputs");
+    m_errorMonitor->ExpectSuccess(VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT);
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -28536,9 +28537,12 @@ TEST_F(VkPositiveLayerTest, CreatePipelineAttribComponents) {
     char const *fsSource =
         "#version 450\n"
         "\n"
-        "layout(location=0) out vec4 color;\n"
+        "layout(location=0, component=0) out float color0;\n"
+        "layout(location=0, component=1) out float color1;\n"
+        "layout(location=0, component=2) out float color2;\n"
+        "layout(location=0, component=3) out float color3;\n"
         "void main(){\n"
-        "   color = vec4(1);\n"
+        "   color0 = float(1);\n"
         "}\n";
 
     VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
