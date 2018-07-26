@@ -2069,6 +2069,21 @@ void SetDisabledFlags(instance_layer_data *instance_data, const VkValidationFlag
     }
 }
 
+static void PreCallRecordCreateInstance(VkLayerInstanceCreateInfo *chain_info) {
+    // Advance the link info for the next element on the chain
+    chain_info->u.pLayerInfo = chain_info->u.pLayerInfo->pNext;
+}
+
+static void PostCallValidateCreateInstance(const VkInstanceCreateInfo *pCreateInfo) { ValidateLayerOrdering(*pCreateInfo); }
+
+static void PostCallRecordCreateInstance(instance_layer_data *instance_data, const VkInstanceCreateInfo *pCreateInfo) {
+    // Parse any pNext chains
+    const auto *validation_flags_ext = lvl_find_in_chain<VkValidationFlagsEXT>(pCreateInfo->pNext);
+    if (validation_flags_ext) {
+        SetDisabledFlags(instance_data, validation_flags_ext);
+    }
+}
+
 VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator,
                                               VkInstance *pInstance) {
     VkLayerInstanceCreateInfo *chain_info = get_chain_info(pCreateInfo, VK_LAYER_LINK_INFO);
@@ -2078,8 +2093,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
     PFN_vkCreateInstance fpCreateInstance = (PFN_vkCreateInstance)fpGetInstanceProcAddr(NULL, "vkCreateInstance");
     if (fpCreateInstance == NULL) return VK_ERROR_INITIALIZATION_FAILED;
 
-    // Advance the link info for the next element on the chain
-    chain_info->u.pLayerInfo = chain_info->u.pLayerInfo->pNext;
+    PreCallRecordCreateInstance(chain_info);
 
     VkResult result = fpCreateInstance(pCreateInfo, pAllocator, pInstance);
     if (result != VK_SUCCESS) return result;
@@ -2094,12 +2108,8 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
         (pCreateInfo->pApplicationInfo ? pCreateInfo->pApplicationInfo->apiVersion : VK_API_VERSION_1_0), pCreateInfo);
     InitCoreValidation(instance_data, pAllocator);
 
-    ValidateLayerOrdering(*pCreateInfo);
-    // Parse any pNext chains
-    const auto *validation_flags_ext = lvl_find_in_chain<VkValidationFlagsEXT>(pCreateInfo->pNext);
-    if (validation_flags_ext) {
-        SetDisabledFlags(instance_data, validation_flags_ext);
-    }
+    PostCallValidateCreateInstance(pCreateInfo);
+    PostCallRecordCreateInstance(instance_data, pCreateInfo);
 
     return result;
 }
