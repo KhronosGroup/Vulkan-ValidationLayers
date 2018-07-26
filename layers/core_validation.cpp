@@ -4923,6 +4923,38 @@ void SetPipelineState(PIPELINE_STATE *pPipe) {
     }
 }
 
+static bool PreCallValidateCreateGraphicsPipelines(layer_data *dev_data, vector<std::unique_ptr<PIPELINE_STATE>> *pipe_state,
+                                                   const uint32_t count, const VkGraphicsPipelineCreateInfo *pCreateInfos) {
+    bool skip = false;
+    pipe_state->reserve(count);
+    // TODO - State changes and validation need to be untangled here
+    for (uint32_t i = 0; i < count; i++) {
+        pipe_state->push_back(std::unique_ptr<PIPELINE_STATE>(new PIPELINE_STATE));
+        (*pipe_state)[i]->initGraphicsPipeline(&pCreateInfos[i], GetRenderPassStateSharedPtr(dev_data, pCreateInfos[i].renderPass));
+        (*pipe_state)[i]->pipeline_layout = *GetPipelineLayout(dev_data, pCreateInfos[i].layout);
+    }
+
+    for (uint32_t i = 0; i < count; i++) {
+        skip |= ValidatePipelineLocked(dev_data, *pipe_state, i);
+    }
+
+    for (uint32_t i = 0; i < count; i++) {
+        skip |= ValidatePipelineUnlocked(dev_data, *pipe_state, i);
+    }
+
+    return skip;
+}
+
+static void PostCallRecordCreateGraphicsPipelines(layer_data *dev_data, vector<std::unique_ptr<PIPELINE_STATE>> *pipe_state,
+                                                  const uint32_t count, VkPipeline *pPipelines) {
+    for (uint32_t i = 0; i < count; i++) {
+        if (pPipelines[i] != VK_NULL_HANDLE) {
+            (*pipe_state)[i]->pipeline = pPipelines[i];
+            dev_data->pipelineMap[pPipelines[i]] = std::move((*pipe_state)[i]);
+        }
+    }
+}
+
 VKAPI_ATTR VkResult VKAPI_CALL CreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                        const VkGraphicsPipelineCreateInfo *pCreateInfos,
                                                        const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines) {
@@ -4930,46 +4962,25 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateGraphicsPipelines(VkDevice device, VkPipeli
     //  1. Pipeline create state is first shadowed into PIPELINE_STATE struct
     //  2. Create state is then validated (which uses flags setup during shadowing)
     //  3. If everything looks good, we'll then create the pipeline and add NODE to pipelineMap
-    bool skip = false;
     vector<std::unique_ptr<PIPELINE_STATE>> pipe_state;
-    pipe_state.reserve(count);
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-
-    uint32_t i = 0;
     unique_lock_t lock(global_lock);
 
-    for (i = 0; i < count; i++) {
-        pipe_state.push_back(std::unique_ptr<PIPELINE_STATE>(new PIPELINE_STATE));
-        pipe_state[i]->initGraphicsPipeline(&pCreateInfos[i], GetRenderPassStateSharedPtr(dev_data, pCreateInfos[i].renderPass));
-        pipe_state[i]->pipeline_layout = *GetPipelineLayout(dev_data, pCreateInfos[i].layout);
-    }
-
-    for (i = 0; i < count; i++) {
-        skip |= ValidatePipelineLocked(dev_data, pipe_state, i);
-    }
-
-    lock.unlock();
-
-    for (i = 0; i < count; i++) {
-        skip |= ValidatePipelineUnlocked(dev_data, pipe_state, i);
-    }
+    bool skip = PreCallValidateCreateGraphicsPipelines(dev_data, &pipe_state, count, pCreateInfos);
 
     if (skip) {
-        for (i = 0; i < count; i++) {
+        for (uint32_t i = 0; i < count; i++) {
             pPipelines[i] = VK_NULL_HANDLE;
         }
         return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+    lock.unlock();
 
     auto result =
         dev_data->dispatch_table.CreateGraphicsPipelines(device, pipelineCache, count, pCreateInfos, pAllocator, pPipelines);
+
     lock.lock();
-    for (i = 0; i < count; i++) {
-        if (pPipelines[i] != VK_NULL_HANDLE) {
-            pipe_state[i]->pipeline = pPipelines[i];
-            dev_data->pipelineMap[pPipelines[i]] = std::move(pipe_state[i]);
-        }
-    }
+    PostCallRecordCreateGraphicsPipelines(dev_data, &pipe_state, count, pPipelines);
 
     return result;
 }
