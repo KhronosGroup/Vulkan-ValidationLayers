@@ -1,7 +1,12 @@
 #!/usr/bin/make -f
 
 %:
-	dh $@ 
+	dh $@ --parallel
+
+override_dh_clean:
+	dh_clean
+	rm -rf __pycache__ \
+		scripts/__pycache__
 
 override_dh_auto_configure:
 	dh_auto_configure -- \
