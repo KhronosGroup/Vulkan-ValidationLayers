@@ -1131,10 +1131,12 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                         if lenParam.isoptional:
                             cvReq = 'false'
                 #
-                # The parameter will not be processes when tagged as 'noautovalidity'
+                # The parameter will not be processed when tagged as 'noautovalidity'
                 # For the pointer to struct case, the struct pointer will not be validated, but any
-                # members not tagged as 'noatuvalidity' will be validated
-                if value.noautovalidity:
+                # members not tagged as 'noautovalidity' will be validated
+                # We special-case the custom allocator checks, as they are explicit but can be auto-generated.
+                AllocatorFunctions = ['PFN_vkAllocationFunction', 'PFN_vkReallocationFunction', 'PFN_vkFreeFunction']
+                if value.noautovalidity and value.type not in AllocatorFunctions:
                     # Log a diagnostic message when validation cannot be automatically generated and must be implemented manually
                     self.logMsg('diag', 'ParameterValidation: No validation for {} {}'.format(structTypeName if structTypeName else funcName, value.name))
                 else:
