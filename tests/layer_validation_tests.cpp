@@ -28541,26 +28541,67 @@ TEST_F(VkPositiveLayerTest, CreatePipelineAttribComponents) {
         "layout(location=0, component=1) out float color1;\n"
         "layout(location=0, component=2) out float color2;\n"
         "layout(location=0, component=3) out float color3;\n"
+        "layout(location=1, component=0) out vec2 second_color0;\n"
+        "layout(location=1, component=2) out vec2 second_color1;\n"
         "void main(){\n"
         "   color0 = float(1);\n"
+        "   second_color0 = vec2(1);\n"
         "}\n";
 
     VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
     VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
 
     VkPipelineObj pipe(m_device);
-    pipe.AddDefaultColorAttachment();
-    pipe.AddShader(&vs);
-    pipe.AddShader(&fs);
-
-    pipe.AddVertexInputBindings(&input_binding, 1);
-    pipe.AddVertexInputAttribs(input_attribs, 3);
 
     VkDescriptorSetObj descriptorSet(m_device);
     descriptorSet.AppendDummy();
     descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
 
-    pipe.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderPass());
+    // Create a renderPass with two color attachments
+    VkAttachmentReference attachments[2] = {};
+    attachments[0].layout = VK_IMAGE_LAYOUT_GENERAL;
+    attachments[1].attachment = 1;
+    attachments[1].layout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkSubpassDescription subpass = {};
+    subpass.pColorAttachments = attachments;
+    subpass.colorAttachmentCount = 2;
+
+    VkRenderPassCreateInfo rpci = {};
+    rpci.subpassCount = 1;
+    rpci.pSubpasses = &subpass;
+    rpci.attachmentCount = 2;
+
+    VkAttachmentDescription attach_desc[2] = {};
+    attach_desc[0].format = VK_FORMAT_B8G8R8A8_UNORM;
+    attach_desc[0].samples = VK_SAMPLE_COUNT_1_BIT;
+    attach_desc[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attach_desc[0].finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+    attach_desc[0].loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attach_desc[1].format = VK_FORMAT_B8G8R8A8_UNORM;
+    attach_desc[1].samples = VK_SAMPLE_COUNT_1_BIT;
+    attach_desc[1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attach_desc[1].finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+    attach_desc[1].loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+
+    rpci.pAttachments = attach_desc;
+    rpci.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+
+    VkRenderPass renderpass;
+    vkCreateRenderPass(m_device->device(), &rpci, NULL, &renderpass);
+    pipe.AddShader(&vs);
+    pipe.AddShader(&fs);
+
+    VkPipelineColorBlendAttachmentState att_state1 = {};
+    att_state1.dstAlphaBlendFactor = VK_BLEND_FACTOR_CONSTANT_COLOR;
+    att_state1.blendEnable = VK_FALSE;
+
+    pipe.AddColorAttachment(0, att_state1);
+    pipe.AddColorAttachment(1, att_state1);
+    pipe.AddVertexInputBindings(&input_binding, 1);
+    pipe.AddVertexInputAttribs(input_attribs, 3);
+    pipe.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderpass);
+    vkDestroyRenderPass(m_device->device(), renderpass, nullptr);
 
     m_errorMonitor->VerifyNotFound();
 }
