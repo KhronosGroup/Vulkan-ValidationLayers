@@ -4995,44 +4995,53 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateGraphicsPipelines(VkDevice device, VkPipeli
     return result;
 }
 
+static bool PreCallValidateCreateComputePipelines(layer_data *dev_data, vector<std::unique_ptr<PIPELINE_STATE>> *pipe_state,
+                                                  const uint32_t count, const VkComputePipelineCreateInfo *pCreateInfos) {
+    bool skip = false;
+    pipe_state->reserve(count);
+    for (uint32_t i = 0; i < count; i++) {
+        // Create and initialize internal tracking data structure
+        pipe_state->push_back(unique_ptr<PIPELINE_STATE>(new PIPELINE_STATE));
+        (*pipe_state)[i]->initComputePipeline(&pCreateInfos[i]);
+        (*pipe_state)[i]->pipeline_layout = *GetPipelineLayout(dev_data, pCreateInfos[i].layout);
+
+        // TODO: Add Compute Pipeline Verification
+        skip |= ValidateComputePipeline(dev_data, (*pipe_state)[i].get());
+    }
+    return skip;
+}
+
+static void PostCallRecordCreateComputePipelines(layer_data *dev_data, vector<std::unique_ptr<PIPELINE_STATE>> *pipe_state,
+                                                 const uint32_t count, VkPipeline *pPipelines) {
+    for (uint32_t i = 0; i < count; i++) {
+        if (pPipelines[i] != VK_NULL_HANDLE) {
+            (*pipe_state)[i]->pipeline = pPipelines[i];
+            dev_data->pipelineMap[pPipelines[i]] = std::move((*pipe_state)[i]);
+        }
+    }
+}
+
 VKAPI_ATTR VkResult VKAPI_CALL CreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                       const VkComputePipelineCreateInfo *pCreateInfos,
                                                       const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines) {
-    bool skip = false;
-
-    vector<std::unique_ptr<PIPELINE_STATE>> pPipeState;
-    pPipeState.reserve(count);
+    vector<std::unique_ptr<PIPELINE_STATE>> pipe_state;
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
 
-    uint32_t i = 0;
     unique_lock_t lock(global_lock);
-    for (i = 0; i < count; i++) {
-        // Create and initialize internal tracking data structure
-        pPipeState.push_back(unique_ptr<PIPELINE_STATE>(new PIPELINE_STATE));
-        pPipeState[i]->initComputePipeline(&pCreateInfos[i]);
-        pPipeState[i]->pipeline_layout = *GetPipelineLayout(dev_data, pCreateInfos[i].layout);
-
-        // TODO: Add Compute Pipeline Verification
-        skip |= ValidateComputePipeline(dev_data, pPipeState[i].get());
-    }
-
+    bool skip = PreCallValidateCreateComputePipelines(dev_data, &pipe_state, count, pCreateInfos);
     if (skip) {
-        for (i = 0; i < count; i++) {
+        for (uint32_t i = 0; i < count; i++) {
             pPipelines[i] = VK_NULL_HANDLE;
         }
         return VK_ERROR_VALIDATION_FAILED_EXT;
     }
-
     lock.unlock();
+
     auto result =
         dev_data->dispatch_table.CreateComputePipelines(device, pipelineCache, count, pCreateInfos, pAllocator, pPipelines);
+
     lock.lock();
-    for (i = 0; i < count; i++) {
-        if (pPipelines[i] != VK_NULL_HANDLE) {
-            pPipeState[i]->pipeline = pPipelines[i];
-            dev_data->pipelineMap[pPipelines[i]] = std::move(pPipeState[i]);
-        }
-    }
+    PostCallRecordCreateComputePipelines(dev_data, &pipe_state, count, pPipelines);
 
     return result;
 }
