@@ -10066,120 +10066,111 @@ static bool ValidateSecondaryCommandBufferState(layer_data *dev_data, GLOBAL_CB_
     return skip;
 }
 
-VKAPI_ATTR void VKAPI_CALL CmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBuffersCount,
-                                              const VkCommandBuffer *pCommandBuffers) {
+static bool PreCallValidateCmdExecuteCommands(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, VkCommandBuffer commandBuffer,
+                                              uint32_t commandBuffersCount, const VkCommandBuffer *pCommandBuffers) {
     bool skip = false;
-    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    unique_lock_t lock(global_lock);
-    GLOBAL_CB_NODE *pCB = GetCBNode(dev_data, commandBuffer);
-    if (pCB) {
-        GLOBAL_CB_NODE *pSubCB = NULL;
-        for (uint32_t i = 0; i < commandBuffersCount; i++) {
-            pSubCB = GetCBNode(dev_data, pCommandBuffers[i]);
-            assert(pSubCB);
-            if (VK_COMMAND_BUFFER_LEVEL_PRIMARY == pSubCB->createInfo.level) {
-                skip |=
-                    log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+    GLOBAL_CB_NODE *sub_cb_state = NULL;
+    for (uint32_t i = 0; i < commandBuffersCount; i++) {
+        sub_cb_state = GetCBNode(dev_data, pCommandBuffers[i]);
+        assert(sub_cb_state);
+        if (VK_COMMAND_BUFFER_LEVEL_PRIMARY == sub_cb_state->createInfo.level) {
+            skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                             HandleToUint64(pCommandBuffers[i]), "VUID-vkCmdExecuteCommands-pCommandBuffers-00088",
                             "vkCmdExecuteCommands() called w/ Primary Cmd Buffer 0x%" PRIx64
                             " in element %u of pCommandBuffers array. All cmd buffers in pCommandBuffers array must be secondary.",
                             HandleToUint64(pCommandBuffers[i]), i);
-            } else if (pCB->activeRenderPass) {  // Secondary CB w/i RenderPass must have *CONTINUE_BIT set
-                if (pSubCB->beginInfo.pInheritanceInfo != nullptr) {
-                    auto secondary_rp_state = GetRenderPassState(dev_data, pSubCB->beginInfo.pInheritanceInfo->renderPass);
-                    if (!(pSubCB->beginInfo.flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT)) {
-                        skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                        VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT, HandleToUint64(pCommandBuffers[i]),
-                                        "VUID-vkCmdExecuteCommands-pCommandBuffers-00096",
-                                        "vkCmdExecuteCommands(): Secondary Command Buffer (0x%" PRIx64
-                                        ") executed within render pass (0x%" PRIx64
-                                        ") must have had vkBeginCommandBuffer() called w/ "
-                                        "VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT set.",
-                                        HandleToUint64(pCommandBuffers[i]), HandleToUint64(pCB->activeRenderPass->renderPass));
-                    } else {
-                        // Make sure render pass is compatible with parent command buffer pass if has continue
-                        if (pCB->activeRenderPass->renderPass != secondary_rp_state->renderPass) {
-                            skip |= ValidateRenderPassCompatibility(
-                                dev_data, "primary command buffer", pCB->activeRenderPass, "secondary command buffer",
-                                secondary_rp_state, "vkCmdExecuteCommands()", "VUID-vkCmdExecuteCommands-pInheritanceInfo-00098");
-                        }
-                        //  If framebuffer for secondary CB is not NULL, then it must match active FB from primaryCB
-                        skip |=
-                            ValidateFramebuffer(dev_data, commandBuffer, pCB, pCommandBuffers[i], pSubCB, "vkCmdExecuteCommands()");
-                        if (!pSubCB->cmd_execute_commands_functions.empty()) {
-                            //  Inherit primary's activeFramebuffer and while running validate functions
-                            for (auto &function : pSubCB->cmd_execute_commands_functions) {
-                                skip |= function(pCB, pCB->activeFramebuffer);
-                            }
+        } else if (cb_state->activeRenderPass) {  // Secondary CB w/i RenderPass must have *CONTINUE_BIT set
+            if (sub_cb_state->beginInfo.pInheritanceInfo != nullptr) {
+                auto secondary_rp_state = GetRenderPassState(dev_data, sub_cb_state->beginInfo.pInheritanceInfo->renderPass);
+                if (!(sub_cb_state->beginInfo.flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT)) {
+                    skip |= log_msg(
+                        dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                        HandleToUint64(pCommandBuffers[i]), "VUID-vkCmdExecuteCommands-pCommandBuffers-00096",
+                        "vkCmdExecuteCommands(): Secondary Command Buffer (0x%" PRIx64 ") executed within render pass (0x%" PRIx64
+                        ") must have had vkBeginCommandBuffer() called w/ "
+                        "VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT set.",
+                        HandleToUint64(pCommandBuffers[i]), HandleToUint64(cb_state->activeRenderPass->renderPass));
+                } else {
+                    // Make sure render pass is compatible with parent command buffer pass if has continue
+                    if (cb_state->activeRenderPass->renderPass != secondary_rp_state->renderPass) {
+                        skip |= ValidateRenderPassCompatibility(
+                            dev_data, "primary command buffer", cb_state->activeRenderPass, "secondary command buffer",
+                            secondary_rp_state, "vkCmdExecuteCommands()", "VUID-vkCmdExecuteCommands-pInheritanceInfo-00098");
+                    }
+                    //  If framebuffer for secondary CB is not NULL, then it must match active FB from primaryCB
+                    skip |= ValidateFramebuffer(dev_data, commandBuffer, cb_state, pCommandBuffers[i], sub_cb_state,
+                                                "vkCmdExecuteCommands()");
+                    if (!sub_cb_state->cmd_execute_commands_functions.empty()) {
+                        //  Inherit primary's activeFramebuffer and while running validate functions
+                        for (auto &function : sub_cb_state->cmd_execute_commands_functions) {
+                            skip |= function(cb_state, cb_state->activeFramebuffer);
                         }
                     }
                 }
             }
-            // TODO(mlentine): Move more logic into this method
-            skip |= ValidateSecondaryCommandBufferState(dev_data, pCB, pSubCB);
-            skip |= ValidateCommandBufferState(dev_data, pSubCB, "vkCmdExecuteCommands()", 0,
-                                               "VUID-vkCmdExecuteCommands-pCommandBuffers-00089");
-            if (!(pSubCB->beginInfo.flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT)) {
-                if (pSubCB->in_use.load() || pCB->linkedCommandBuffers.count(pSubCB)) {
-                    skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                    VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT, HandleToUint64(pCB->commandBuffer),
-                                    "VUID-vkCmdExecuteCommands-pCommandBuffers-00090",
-                                    "Attempt to simultaneously execute command buffer 0x%" PRIx64
-                                    " without VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT set!",
-                                    HandleToUint64(pCB->commandBuffer));
-                }
-                if (pCB->beginInfo.flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT) {
-                    // Warn that non-simultaneous secondary cmd buffer renders primary non-simultaneous
-                    skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT,
-                                    VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT, HandleToUint64(pCommandBuffers[i]),
-                                    kVUID_Core_DrawState_InvalidCommandBufferSimultaneousUse,
-                                    "vkCmdExecuteCommands(): Secondary Command Buffer (0x%" PRIx64
-                                    ") does not have VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT set and will cause primary "
-                                    "command buffer (0x%" PRIx64
-                                    ") to be treated as if it does not have VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT set, even "
-                                    "though it does.",
-                                    HandleToUint64(pCommandBuffers[i]), HandleToUint64(pCB->commandBuffer));
-                    pCB->beginInfo.flags &= ~VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
-                }
-            }
-            if (!pCB->activeQueries.empty() && !dev_data->enabled_features.core.inheritedQueries) {
+        }
+        // TODO(mlentine): Move more logic into this method
+        skip |= ValidateSecondaryCommandBufferState(dev_data, cb_state, sub_cb_state);
+        skip |= ValidateCommandBufferState(dev_data, sub_cb_state, "vkCmdExecuteCommands()", 0,
+                                           "VUID-vkCmdExecuteCommands-pCommandBuffers-00089");
+        if (!(sub_cb_state->beginInfo.flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT)) {
+            if (sub_cb_state->in_use.load() || cb_state->linkedCommandBuffers.count(sub_cb_state)) {
                 skip |=
                     log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                            HandleToUint64(cb_state->commandBuffer), "VUID-vkCmdExecuteCommands-pCommandBuffers-00090",
+                            "Attempt to simultaneously execute command buffer 0x%" PRIx64
+                            " without VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT set!",
+                            HandleToUint64(cb_state->commandBuffer));
+            }
+            if (cb_state->beginInfo.flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT) {
+                // Warn that non-simultaneous secondary cmd buffer renders primary non-simultaneous
+                skip |=
+                    log_msg(dev_data->report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                            HandleToUint64(pCommandBuffers[i]), kVUID_Core_DrawState_InvalidCommandBufferSimultaneousUse,
+                            "vkCmdExecuteCommands(): Secondary Command Buffer (0x%" PRIx64
+                            ") does not have VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT set and will cause primary "
+                            "command buffer (0x%" PRIx64
+                            ") to be treated as if it does not have VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT set, even "
+                            "though it does.",
+                            HandleToUint64(pCommandBuffers[i]), HandleToUint64(cb_state->commandBuffer));
+                // TODO: Clearing the VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT needs to be moved from the validation step to the
+                // recording step
+                cb_state->beginInfo.flags &= ~VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
+            }
+        }
+        if (!cb_state->activeQueries.empty() && !dev_data->enabled_features.core.inheritedQueries) {
+            skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                             HandleToUint64(pCommandBuffers[i]), "VUID-vkCmdExecuteCommands-commandBuffer-00101",
                             "vkCmdExecuteCommands(): Secondary Command Buffer (0x%" PRIx64
                             ") cannot be submitted with a query in flight and inherited queries not supported on this device.",
                             HandleToUint64(pCommandBuffers[i]));
-            }
-            // TODO: separate validate from update! This is very tangled.
-            // Propagate layout transitions to the primary cmd buffer
-            // Novel Valid usage: "UNASSIGNED-vkCmdExecuteCommands-commandBuffer-00001"
-            //  initial layout usage of secondary command buffers resources must match parent command buffer
-            for (const auto &ilm_entry : pSubCB->imageLayoutMap) {
-                auto cb_entry = pCB->imageLayoutMap.find(ilm_entry.first);
-                if (cb_entry != pCB->imageLayoutMap.end()) {
-                    // For exact matches ImageSubresourcePair matches, validate and update the parent entry
+        }
+        // Propagate layout transitions to the primary cmd buffer
+        // Novel Valid usage: "UNASSIGNED-vkCmdExecuteCommands-commandBuffer-00001"
+        //  initial layout usage of secondary command buffers resources must match parent command buffer
+        for (const auto &ilm_entry : sub_cb_state->imageLayoutMap) {
+            auto cb_entry = cb_state->imageLayoutMap.find(ilm_entry.first);
+            if (cb_entry != cb_state->imageLayoutMap.end()) {
+                // For exact matches ImageSubresourcePair matches, validate and update the parent entry
+                if ((VK_IMAGE_LAYOUT_UNDEFINED != ilm_entry.second.initialLayout) &&
+                    (cb_entry->second.layout != ilm_entry.second.initialLayout)) {
+                    const VkImageSubresource &subresource = ilm_entry.first.subresource;
+                    log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                            HandleToUint64(pCommandBuffers[i]), "UNASSIGNED-vkCmdExecuteCommands-commandBuffer-00001",
+                            "%s: Cannot execute cmd buffer using image (0x%" PRIx64
+                            ") [sub-resource: aspectMask 0x%X "
+                            "array layer %u, mip level %u], with current layout %s when first use is %s.",
+                            "vkCmdExecuteCommands():", HandleToUint64(ilm_entry.first.image), subresource.aspectMask,
+                            subresource.arrayLayer, subresource.mipLevel, string_VkImageLayout(cb_entry->second.layout),
+                            string_VkImageLayout(ilm_entry.second.initialLayout));
+                }
+            } else {
+                // Look for partial matches (in aspectMask), and update or create parent map entry in SetLayout
+                assert(ilm_entry.first.hasSubresource);
+                IMAGE_CMD_BUF_LAYOUT_NODE node;
+                if (FindCmdBufLayout(dev_data, cb_state, ilm_entry.first.image, ilm_entry.first.subresource, node)) {
                     if ((VK_IMAGE_LAYOUT_UNDEFINED != ilm_entry.second.initialLayout) &&
-                        (cb_entry->second.layout != ilm_entry.second.initialLayout)) {
-                        const VkImageSubresource &subresource = ilm_entry.first.subresource;
-                        log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT, HandleToUint64(pCommandBuffers[i]),
-                                "UNASSIGNED-vkCmdExecuteCommands-commandBuffer-00001",
-                                "%s: Cannot execute cmd buffer using image (0x%" PRIx64
-                                ") [sub-resource: aspectMask 0x%X "
-                                "array layer %u, mip level %u], with current layout %s when first use is %s.",
-                                "vkCmdExecuteCommands():", HandleToUint64(ilm_entry.first.image), subresource.aspectMask,
-                                subresource.arrayLayer, subresource.mipLevel, string_VkImageLayout(cb_entry->second.layout),
-                                string_VkImageLayout(ilm_entry.second.initialLayout));
-                    }
-                    cb_entry->second.layout = ilm_entry.second.layout;
-                } else {
-                    // Look for partial matches (in aspectMask), and update or create parent map entry in SetLayout
-                    assert(ilm_entry.first.hasSubresource);
-                    IMAGE_CMD_BUF_LAYOUT_NODE node;
-                    if (!FindCmdBufLayout(dev_data, pCB, ilm_entry.first.image, ilm_entry.first.subresource, node)) {
-                        node.initialLayout = ilm_entry.second.initialLayout;
-                    } else if ((VK_IMAGE_LAYOUT_UNDEFINED != ilm_entry.second.initialLayout) &&
-                               (node.layout != ilm_entry.second.initialLayout)) {
+                        (node.layout != ilm_entry.second.initialLayout)) {
                         const VkImageSubresource &subresource = ilm_entry.first.subresource;
                         log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT,
                                 VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT, HandleToUint64(pCommandBuffers[i]),
@@ -10191,25 +10182,77 @@ VKAPI_ATTR void VKAPI_CALL CmdExecuteCommands(VkCommandBuffer commandBuffer, uin
                                 subresource.arrayLayer, subresource.mipLevel, string_VkImageLayout(node.layout),
                                 string_VkImageLayout(ilm_entry.second.initialLayout));
                     }
-                    node.layout = ilm_entry.second.layout;
-                    SetLayout(dev_data, pCB, ilm_entry.first, node);
                 }
             }
-            pSubCB->primaryCommandBuffer = pCB->commandBuffer;
-            pCB->linkedCommandBuffers.insert(pSubCB);
-            pSubCB->linkedCommandBuffers.insert(pCB);
-            for (auto &function : pSubCB->queryUpdates) {
-                pCB->queryUpdates.push_back(function);
-            }
-            for (auto &function : pSubCB->queue_submit_functions) {
-                pCB->queue_submit_functions.push_back(function);
+        }
+        // TODO: Linking command buffers here is necessary to pass existing validation tests--however, this state change still needs
+        // to be removed from the validation step
+        sub_cb_state->primaryCommandBuffer = cb_state->commandBuffer;
+        cb_state->linkedCommandBuffers.insert(sub_cb_state);
+        sub_cb_state->linkedCommandBuffers.insert(cb_state);
+    }
+    skip |= ValidatePrimaryCommandBuffer(dev_data, cb_state, "vkCmdExecuteCommands()", "VUID-vkCmdExecuteCommands-bufferlevel");
+    skip |= ValidateCmdQueueFlags(dev_data, cb_state, "vkCmdExecuteCommands()",
+                                  VK_QUEUE_TRANSFER_BIT | VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
+                                  "VUID-vkCmdExecuteCommands-commandBuffer-cmdpool");
+    skip |= ValidateCmd(dev_data, cb_state, CMD_EXECUTECOMMANDS, "vkCmdExecuteCommands()");
+    return skip;
+}
+
+static void PreCallRecordCmdExecuteCommands(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, uint32_t commandBuffersCount,
+                                            const VkCommandBuffer *pCommandBuffers) {
+    GLOBAL_CB_NODE *sub_cb_state = NULL;
+    for (uint32_t i = 0; i < commandBuffersCount; i++) {
+        sub_cb_state = GetCBNode(dev_data, pCommandBuffers[i]);
+        assert(sub_cb_state);
+        if (!(sub_cb_state->beginInfo.flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT)) {
+            if (cb_state->beginInfo.flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT) {
+                // TODO: Because this is a state change, clearing the VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT needs to be moved
+                // from the validation step to the recording step
+                cb_state->beginInfo.flags &= ~VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
             }
         }
-        skip |= ValidatePrimaryCommandBuffer(dev_data, pCB, "vkCmdExecuteCommands()", "VUID-vkCmdExecuteCommands-bufferlevel");
-        skip |= ValidateCmdQueueFlags(dev_data, pCB, "vkCmdExecuteCommands()",
-                                      VK_QUEUE_TRANSFER_BIT | VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
-                                      "VUID-vkCmdExecuteCommands-commandBuffer-cmdpool");
-        skip |= ValidateCmd(dev_data, pCB, CMD_EXECUTECOMMANDS, "vkCmdExecuteCommands()");
+        // Propagate layout transitions to the primary cmd buffer
+        // Novel Valid usage: "UNASSIGNED-vkCmdExecuteCommands-commandBuffer-00001"
+        //  initial layout usage of secondary command buffers resources must match parent command buffer
+        for (const auto &ilm_entry : sub_cb_state->imageLayoutMap) {
+            auto cb_entry = cb_state->imageLayoutMap.find(ilm_entry.first);
+            if (cb_entry != cb_state->imageLayoutMap.end()) {
+                // For exact matches ImageSubresourcePair matches, update the parent entry
+                cb_entry->second.layout = ilm_entry.second.layout;
+            } else {
+                // Look for partial matches (in aspectMask), and update or create parent map entry in SetLayout
+                assert(ilm_entry.first.hasSubresource);
+                IMAGE_CMD_BUF_LAYOUT_NODE node;
+                if (!FindCmdBufLayout(dev_data, cb_state, ilm_entry.first.image, ilm_entry.first.subresource, node)) {
+                    node.initialLayout = ilm_entry.second.initialLayout;
+                }
+                node.layout = ilm_entry.second.layout;
+                SetLayout(dev_data, cb_state, ilm_entry.first, node);
+            }
+        }
+        sub_cb_state->primaryCommandBuffer = cb_state->commandBuffer;
+        cb_state->linkedCommandBuffers.insert(sub_cb_state);
+        sub_cb_state->linkedCommandBuffers.insert(cb_state);
+        for (auto &function : sub_cb_state->queryUpdates) {
+            cb_state->queryUpdates.push_back(function);
+        }
+        for (auto &function : sub_cb_state->queue_submit_functions) {
+            cb_state->queue_submit_functions.push_back(function);
+        }
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBuffersCount,
+                                              const VkCommandBuffer *pCommandBuffers) {
+    bool skip = false;
+    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    unique_lock_t lock(global_lock);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(dev_data, commandBuffer);
+    if (cb_state) {
+        // TODO: State changes needs to be untangled from validation in PreCallValidationCmdExecuteCommands()
+        skip |= PreCallValidateCmdExecuteCommands(dev_data, cb_state, commandBuffer, commandBuffersCount, pCommandBuffers);
+        PreCallRecordCmdExecuteCommands(dev_data, cb_state, commandBuffersCount, pCommandBuffers);
     }
     lock.unlock();
     if (!skip) dev_data->dispatch_table.CmdExecuteCommands(commandBuffer, commandBuffersCount, pCommandBuffers);
