@@ -1618,6 +1618,74 @@ static bool ValidateInterfaceBetweenStages(debug_report_data const *report_data,
     return skip;
 }
 
+// Return true if the specified built-in is present in the supplied shader source
+bool FindBuiltIn(shader_module const *src, spv::BuiltIn target_built_in) {
+    for (auto insn : *src) {
+        if (insn.opcode() == spv::OpDecorate) {
+            if (insn.word(2) == spv::DecorationBuiltIn) {
+                if (insn.word(3) == target_built_in) {
+                    return true;
+                }
+            }
+        } else if (insn.opcode() == spv::OpMemberDecorate) {
+            if (insn.word(3) == spv::DecorationBuiltIn) {
+                if (insn.word(4) == target_built_in) {
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
+}
+
+bool ValidatePointListShaderState(const layer_data *dev_data, const PIPELINE_STATE *pipeline, shader_module const *shaders[5]) {
+    //    o If you only have a vertex shader : you must write gl_PointSize in the shader when using points
+    //    o If you have a geometry or tessellation shader:
+    //        - If shaderTessellationAndGeometryPointSize feature enabled:
+    //            * you must write gl_PointSize in the last geometry shader stage
+    //        - If shaderTessellationAndGeometryPointSize feature disabled:
+    //            * you must not write gl_PointSize and you get a default of 1.0.
+    bool skip = false;
+    if (pipeline->graphicsPipelineCI.pInputAssemblyState &&
+        pipeline->graphicsPipelineCI.pInputAssemblyState->topology == VK_PRIMITIVE_TOPOLOGY_POINT_LIST) {
+        auto report_data = GetReportData(dev_data);
+        bool pointsize_found = false;
+        std::string shader_name;
+        int vertex_stage = GetShaderStageId(VK_SHADER_STAGE_VERTEX_BIT);
+        int geom_stage = GetShaderStageId(VK_SHADER_STAGE_GEOMETRY_BIT);
+        int tess_eval_stage = GetShaderStageId(VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
+
+        if (shaders[geom_stage]) {
+            pointsize_found = FindBuiltIn(shaders[geom_stage], spv::BuiltInPointSize);
+            shader_name = "geometry";
+        } else if (shaders[tess_eval_stage]) {
+            pointsize_found = FindBuiltIn(shaders[tess_eval_stage], spv::BuiltInPointSize);
+            shader_name = "tessellation evaluation";
+        } else if (shaders[vertex_stage]) {
+            pointsize_found = FindBuiltIn(shaders[vertex_stage], spv::BuiltInPointSize);
+            shader_name = "vertex";
+        }
+
+        if ((shaders[tess_eval_stage] || shaders[geom_stage]) &&
+            !GetEnabledFeatures(dev_data)->core.shaderTessellationAndGeometryPointSize) {
+            if (pointsize_found) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
+                                HandleToUint64(pipeline->pipeline), kVUID_Core_Shader_PointSizeBuiltInOverSpecified,
+                                "Pipeline InputAssemblyState topology is set to POINT_LIST and geometry or tessellation "
+                                "shaders specify PointSize which is prohibited when the shaderTessellationAndGeometryPointSize "
+                                "feature is not enabled");
+            }
+        } else if (!pointsize_found) {
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
+                            HandleToUint64(pipeline->pipeline), kVUID_Core_Shader_MissingPointSizeBuiltIn,
+                            "Pipeline InputAssemblyState topology is set to POINT_LIST, but PointSize is not specified in the "
+                            "%s shader.",
+                            shader_name.c_str());
+        }
+    }
+    return skip;
+}
+
 // Validate that the shaders used by the given pipeline and store the active_slots
 //  that are actually used by the pipeline into pPipeline->active_slots
 bool ValidateAndCapturePipelineShaderState(layer_data *dev_data, PIPELINE_STATE *pipeline) {
@@ -1676,6 +1744,9 @@ bool ValidateAndCapturePipelineShaderState(layer_data *dev_data, PIPELINE_STATE 
         skip |= ValidateFsOutputsAgainstRenderPass(report_data, shaders[fragment_stage], entrypoints[fragment_stage], pipeline,
                                                    pCreateInfo->subpass);
     }
+
+    // If pipeline calls for POINT_LIST, verify that PointSize correctly specified (or not) by shaders
+    skip |= ValidatePointListShaderState(dev_data, pipeline, shaders);
 
     return skip;
 }
