@@ -42,15 +42,19 @@
       "sub_dir" : "VulkanTools",
       "build_dir" : "VulkanTools/build",
       "install_dir" : "VulkanTools/build/install",
-      "commit" : "188cad536064d05db9c7affca5bb66aed77b07ad",
+      "commit" : "7d5375ac509444ccdcbfbfd2b908b9751cea4997",
       "deps" : [
         {
           "var_name" : "VULKAN_HEADERS_INSTALL_DIR",
           "repo_name" : "Vulkan-Headers"
         },
         {
-          "var_name" : "GLSLANG_INSTALL_DIR",
-          "repo_name" : "glslang"
+          "var_name" : "VULKAN_LOADER_INSTALL_DIR",
+          "repo_name" : "Vulkan-Loader"
+        },
+        {
+          "var_name" : "VULKAN_VALIDATIONLAYERS_INSTALL_DIR",
+          "repo_name" : "Vulkan-ValidationLayers"
         }
       ],
       "prebuild_linux" : [
@@ -67,7 +71,8 @@
       ],
       "ci_only" : [
         "TRAVIS"
-      ]
+      ],
+      "build_step" : "skip"
     },
     {
       "name" : "Vulkan-Tools",
