@@ -102,6 +102,7 @@ script:
       export VK_LAYER_PATH=${TRAVIS_BUILD_DIR}/external/VulkanTools/build/layersvt:${TRAVIS_BUILD_DIR}/build/layers
       export VK_ICD_FILENAMES=${TRAVIS_BUILD_DIR}/external/Vulkan-Tools/build/icd/VkICD_mock_icd.json
       build/tests/vk_layer_validation_tests
+      build/tests/vk_layer_validation_tests --device_profile_api
       for profile in tests/device_profiles/*.json
       do
         echo Testing with profile $profile
