@@ -110,6 +110,21 @@ LOCAL_LDFLAGS   += -Wl,--exclude-libs,ALL
 include $(BUILD_SHARED_LIBRARY)
 
 include $(CLEAR_VARS)
+LOCAL_MODULE := VkLayer_device_profile
+LOCAL_SRC_FILES += $(SRC_DIR)/tests/layers/device_profile_api.cpp
+LOCAL_C_INCLUDES += $(VULKAN_INCLUDE) \
+                    $(LOCAL_PATH)/$(SRC_DIR)/tests/layers \
+                    $(LOCAL_PATH)/$(SRC_DIR)/layers \
+                    $(LOCAL_PATH)/$(LAYER_DIR)/include
+LOCAL_STATIC_LIBRARIES += layer_utils
+LOCAL_CPPFLAGS += -std=c++11 -Wall -Werror -Wno-unused-function -Wno-unused-const-variable
+LOCAL_CPPFLAGS += -DVK_USE_PLATFORM_ANDROID_KHR -DVK_PROTOTYPES -fvisibility=hidden
+LOCAL_LDLIBS    := -llog
+LOCAL_LDFLAGS   += -Wl,-Bsymbolic
+LOCAL_LDFLAGS   += -Wl,--exclude-libs,ALL
+include $(BUILD_SHARED_LIBRARY)
+
+include $(CLEAR_VARS)
 LOCAL_MODULE := VkLayerValidationTests
 LOCAL_SRC_FILES += $(SRC_DIR)/tests/layer_validation_tests.cpp \
                    $(SRC_DIR)/tests/vktestbinding.cpp \
