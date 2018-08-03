@@ -536,18 +536,13 @@ To uninstall the files from the system directories, you can execute:
 
 #### Linux Tests
 
-The Vulkan-Loader repository contains some simple unit tests for the loader
-but no other test clients.
+To run the **validation test script**, in a terminal change to the build/tests directory and run:
 
-To run the loader test script, change to the `build/tests` directory, and run:
-
-    ./run_all_tests.sh
+    VK_LAYER_PATH=../layers ./run_all_tests.sh
 
 This script will run the following tests:
 
-- `vk_loader_validation_tests`:
-  Vulkan loader handle wrapping, allocation callback,
-   and loader/layer interface tests
+- `vk_layer_validation_tests`: Test Vulkan validation layers
 
 #### Linux 32-bit support
 
