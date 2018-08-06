@@ -294,7 +294,7 @@ class ErrorMonitor {
         test_platform_thread_unlock_mutex(&mutex_);
     }
 
-    VkBool32 CheckForDesiredMsg(const uint32_t message_code, const char *const msgString) {
+    VkBool32 CheckForDesiredMsg(const char *const msgString) {
         VkBool32 result = VK_FALSE;
         test_platform_thread_lock_mutex(&mutex_);
         if (bailout_ != nullptr) {
@@ -415,13 +415,7 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL myDbgFunc(VkFlags msgFlags, VkDebugReportO
                                                 void *pUserData) {
     ErrorMonitor *errMonitor = (ErrorMonitor *)pUserData;
     if (msgFlags & errMonitor->GetMessageFlags()) {
-#ifdef _DEBUG
-        char embedded_code_string[2048];
-        snprintf(embedded_code_string, 2048, "%s [%08x]", pMsg, msgCode);
-        return errMonitor->CheckForDesiredMsg(msgCode, embedded_code_string);
-#else
-        return errMonitor->CheckForDesiredMsg(msgCode, pMsg);
-#endif
+        return errMonitor->CheckForDesiredMsg(pMsg);
     }
     return VK_FALSE;
 }

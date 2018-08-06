@@ -37,7 +37,7 @@ html_db = False
 txt_filename = "validation_error_database.txt"
 csv_filename = "validation_error_database.csv"
 html_filename = "validation_error_database.html"
-# header_file = '../layers/vk_validation_error_messages.h'
+header_filename = "../layers/vk_validation_error_messages.h"
 test_file = '../tests/layer_validation_tests.cpp'
 vuid_prefixes = ['VUID-', 'UNASSIGNED-']
 
@@ -64,6 +64,7 @@ layer_source_files = [
 '../layers/buffer_validation.cpp',
 ]
 
+# This needs to be updated as new extensions roll in
 khr_aliases = { 
     'VUID-vkBindBufferMemory2KHR-device-parameter'                                        : 'VUID-vkBindBufferMemory2-device-parameter', 
     'VUID-vkBindBufferMemory2KHR-pBindInfos-parameter'                                    : 'VUID-vkBindBufferMemory2-pBindInfos-parameter', 
@@ -142,6 +143,7 @@ def printHelp():
     print ("                                [ -text [ <text_out_filename>] ]")
     print ("                                [ -csv  [ <csv_out_filename>]  ]")
     print ("                                [ -html [ <html_out_filename>] ]")
+    print ("                                [ -export_header ]")
     print ("                                [ -verbose ]")
     print ("                                [ -help ]")
     print ("\n  The vk_validation_stats script parses validation layer source files to") 
@@ -159,6 +161,7 @@ def printHelp():
     print ("                   defaults to 'validation_error_database.csv'")
     print (" -html [filename]  output the error database in html to <html_database_filename>,")
     print ("                   defaults to 'validation_error_database.html'")
+    print (" -export_header    export a new VUID error text header file to <%s>" % header_filename)
     print (" -verbose          show your work (to stdout)")
 
 class ValidationJSON:
@@ -169,13 +172,22 @@ class ValidationJSON:
         self.all_vuids = set()
         self.vuid_db = defaultdict(list) # Maps VUID string to list of json-data dicts
         self.apiversion = ""
-        self.re_striptags = re.compile('<.*?>|&(amp;)+lt;|&(amp;)+gt;')
         self.duplicate_vuids = set()
+        
+        # A set of specific regular expression substitutions needed to clean up VUID text
+        self.regex_dict = {}
+        self.regex_dict[re.compile('<.*?>|&(amp;)+lt;|&(amp;)+gt;')] = ""
+        self.regex_dict[re.compile(r'\\\(codeSize \\over 4\\\)')] = "(codeSize/4)"
+        self.regex_dict[re.compile(r'\\\(\\lceil\{\\mathit\{rasterizationSamples} \\over 32}\\rceil\\\)')] = "(rasterizationSamples/32)"
+        # Some fancy punctuation chars that break the Android build...
+        self.regex_dict[re.compile('&#8594;')] = "->"       # Arrow char
+        self.regex_dict[re.compile('&#8217;')] = "'"        # Left-slanting apostrophe to apostrophe
+        self.regex_dict[re.compile('&#822(0|1);')] = "'"    # L/R-slanting quotes to apostrophe
 
     def read(self):
         self.json_dict = {}
         if os.path.isfile(self.filename):
-            json_file = open(self.filename, 'r')
+            json_file = open(self.filename, 'r', encoding='utf-8')
             self.json_dict = json.load(json_file)
             json_file.close()
         if len(self.json_dict) == 0:
@@ -204,15 +216,15 @@ class ValidationJSON:
                         self.implicit_vuids.add(vuid_string)    # otherwise, implicit
                         vtype = 'implicit'
                     vuid_text = ventry['text']
-                    #if 'amp;' in vuid_text:
-                    #    print(vuid_text)
-                    stripped = re.sub(self.re_striptags, '', vuid_text) # strip tags & literals
-                    stripped = html.unescape(stripped) # anything missed by the regex
-                    #if 'amp;' in stripped:
-                    #    print("  %s" % stripped)
-                    self.vuid_db[vuid_string].append({'api':apiname, 'ext':ext, 'type':vtype, 'text':stripped})
+                    for regex, replacement in self.regex_dict.items():
+                        vuid_text = re.sub(regex, replacement, vuid_text)   # do regex substitution
+                    vuid_text = html.unescape(vuid_text)                    # anything missed by the regex
+                    self.vuid_db[vuid_string].append({'api':apiname, 'ext':ext, 'type':vtype, 'text':vuid_text})
         self.all_vuids = self.explicit_vuids | self.implicit_vuids
         self.duplicate_vuids = set({v for v in self.vuid_db if len(self.vuid_db[v]) > 1})
+        if len(self.duplicate_vuids) > 0:
+            print("Warning: duplicate VUIDs found in validusage.json")
+
 
 class ValidationSource:
     def __init__(self, source_file_list, generated_source_file_list, generated_source_directories):
@@ -452,6 +464,47 @@ class OutputDatabase:
         self.vj = val_json
         self.vs = val_source
         self.vt = val_tests
+        self.header_preamble = """/* THIS FILE IS GENERATED.  DO NOT EDIT. */
+/* (scripts/vk_validation_stats.py) */
+/*
+ * Vulkan
+ *
+ * Copyright (c) 2016-2018 Google Inc.
+ * Copyright (c) 2016-2018 LunarG, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * Author: Tobin Ehlis <tobine@google.com>
+ * Author: Dave Houlton <daveh@lunarg.com>
+ */
+
+#pragma once
+
+// Disable auto-formatting for generated file
+// clang-format off
+            
+#include <string>
+#include <unordered_map>
+            
+// Mapping from VUID string to the corresponding spec text
+#ifdef VALIDATION_ERROR_MAP_IMPL
+std::unordered_map<std::string, std::string> vuid_to_error_text_map {
+"""
+        self.header_postamble = """};
+#else
+extern std::unordered_map<std::string, std::string> vuid_to_error_text_map;
+#endif"""
+        self.spec_url = "https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html"
     
     def dump_txt(self):
         print("\n Dumping database to text file: %s" % txt_filename)
@@ -528,6 +581,21 @@ class OutputDatabase:
                     hfile.write('<th>%s</th></tr>\n' % db_entry['text'])
             hfile.write('</table>\n</body>\n</html>\n')
 
+    def export_header(self):
+        print("\n Exporting header file to: %s" % header_filename)
+        with open (header_filename, 'w') as hfile:
+            hfile.write(self.header_preamble)
+            vuid_list = list(self.vj.all_vuids)
+            vuid_list.sort()
+            for vuid in vuid_list:
+                db_entry = self.vj.vuid_db[vuid][0]
+                hfile.write('    {"%s", "%s (%s#%s)"},\n' % (vuid, db_entry['text'].strip(' '), self.spec_url, vuid))
+                # For multiply-defined VUIDs, include versions with extension appended
+                if len(self.vj.vuid_db[vuid]) > 1:
+                    for db_entry in self.vj.vuid_db[vuid]:
+                        hfile.write('    {"%s[%s]", "%s (%s#%s)"},\n' % (vuid, db_entry['ext'].strip(' '), db_entry['text'].strip(' '), self.spec_url, vuid))
+            hfile.write(self.header_postamble)
+
 def main(argv):
     global verbose_mode
     global txt_filename
@@ -540,6 +608,7 @@ def main(argv):
     txt_out = False
     csv_out = False
     html_out = False
+    header_out = False
     
     if (1 > len(argv)):
         printHelp()
@@ -576,6 +645,8 @@ def main(argv):
             if i < len(argv) and not argv[i].startswith('-'):
                 html_filename = argv[i]
                 i = i + 1
+        elif (arg == '-export_header'):
+            header_out = True
         elif (arg in ['-verbose']):
             verbose_mode = True
         elif (arg in ['-help', '-h']):
@@ -700,7 +771,8 @@ def main(argv):
         db_out.dump_csv()
     if html_out:
         db_out.dump_html()
-
+    if header_out:
+        db_out.export_header()
     return result
 
 if __name__ == "__main__":
