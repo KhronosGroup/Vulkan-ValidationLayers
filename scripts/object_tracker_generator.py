@@ -242,9 +242,8 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
         self.headerVersion = None
         # Internal state - accumulators for different inner block text
         self.sections = dict([(section, []) for section in self.ALL_SECTIONS])
-        self.cmdMembers = []
-        self.cmd_feature_protect = []  # Save ifdef's for each command
-        self.cmd_info_data = []        # Save the cmdinfo data for validating the handles when processing is complete
+        self.cmd_list = []             # list of commands processed to maintain ordering
+        self.cmd_info_dict = {}        # Per entry-point data for code generation and validation
         self.structMembers = []        # List of StructMemberData records for all Vulkan structs
         self.extension_structs = []    # List of all structs or sister-structs containing handles
                                        # A sister-struct may contain no handles but shares <validextensionstructs> with one that does
@@ -252,11 +251,8 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
         self.struct_member_dict = dict()
         # Named tuples to store struct and command data
         self.StructType = namedtuple('StructType', ['name', 'value'])
-        self.CmdMemberData = namedtuple('CmdMemberData', ['name', 'members'])
-        self.CmdMemberAlias = dict()
-        self.CmdInfoData = namedtuple('CmdInfoData', ['name', 'cmdinfo'])
-        self.CmdExtraProtect = namedtuple('CmdExtraProtect', ['name', 'extra_protect'])
-        self.CommandParam = namedtuple('CommandParam', ['type', 'name', 'ispointer', 'isconst', 'isoptional', 'iscount', 'len', 'extstructs', 'cdecl', 'islocal', 'iscreate', 'isdestroy', 'feature_protect'])
+        self.CmdInfoData = namedtuple('CmdInfoData', ['name', 'cmdinfo', 'members', 'extra_protect', 'alias', 'iscreate', 'isdestroy', 'allocator'])
+        self.CommandParam = namedtuple('CommandParam', ['type', 'name', 'isconst', 'isoptional', 'iscount', 'iscreate', 'len', 'extstructs', 'cdecl', 'islocal'])
         self.StructMemberData = namedtuple('StructMemberData', ['name', 'members'])
         self.object_types = []         # List of all handle types
         self.valid_vuids = set()       # Set of all valid VUIDs
@@ -298,8 +294,9 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
         if vuid_string in self.valid_vuids:
             vuid = "\"%s\"" % vuid_string
         else:
-            if parent in self.CmdMemberAlias:
-                alias_string = 'VUID-%s-%s' % (self.CmdMemberAlias[parent], suffix)
+            alias =  self.cmd_info_dict[parent].alias if parent in self.cmd_info_dict else None
+            if alias:
+                alias_string = 'VUID-%s-%s' % (alias, suffix)
                 if alias_string in self.valid_vuids:
                     vuid = "\"%s\"" % vuid_string
         return vuid
@@ -605,7 +602,6 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
             extstructs = member.attrib.get('validextensionstructs') if name == 'pNext' else None
             membersInfo.append(self.CommandParam(type=type,
                                                  name=name,
-                                                 ispointer=self.paramIsPointer(member),
                                                  isconst=True if 'const' in cdecl else False,
                                                  isoptional=self.paramIsOptional(member),
                                                  iscount=True if name in lens else False,
@@ -613,9 +609,7 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
                                                  extstructs=extstructs,
                                                  cdecl=cdecl,
                                                  islocal=False,
-                                                 iscreate=False,
-                                                 isdestroy=False,
-                                                 feature_protect=self.featureExtraProtect))
+                                                 iscreate=False))
         self.structMembers.append(self.StructMemberData(name=typeName, members=membersInfo))
     #
     # Insert a lock_guard line
@@ -691,7 +685,7 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
         return 'instance' if type in ['VkInstance', 'VkPhysicalDevice'] else 'device'
     #
     # Generate source for creating a Vulkan object
-    def generate_create_object_code(self, indent, proto, params, cmd_info):
+    def generate_create_object_code(self, indent, proto, params, cmd_info, allocator):
         create_obj_code = ''
         handle_type = params[-1].find('type')
         if self.isHandleTypeObject(handle_type.text):
@@ -708,7 +702,7 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
                 create_obj_code += '%sfor (uint32_t index = 0; index < %s; index++) {\n' % (indent, cmd_info[-1].len)
                 indent = self.incIndent(indent)
                 object_dest = '%s[index]' % cmd_info[-1].name
-            create_obj_code += '%sCreateObject(%s, %s, %s, pAllocator);\n' % (indent, params[0].find('name').text, object_dest, self.GetVulkanObjType(cmd_info[-1].type))
+            create_obj_code += '%sCreateObject(%s, %s, %s, %s);\n' % (indent, params[0].find('name').text, object_dest, self.GetVulkanObjType(cmd_info[-1].type), allocator)
             if object_array == True:
                 indent = self.decIndent(indent)
                 create_obj_code += '%s}\n' % indent
@@ -836,16 +830,16 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
         proto = cmd.find('proto/name')
         params = cmd.findall('param')
         if proto.text is not None:
-            cmd_member_dict = dict(self.cmdMembers)
-            cmd_info = cmd_member_dict[proto.text]
+            cmddata = self.cmd_info_dict[proto.text]
+            cmd_info = cmddata.members
             disp_name = cmd_info[0].name
-            # Handle object create operations
-            if cmd_info[0].iscreate:
-                create_obj_code = self.generate_create_object_code(indent, proto, params, cmd_info)
+            # Handle object create operations if last parameter is created by this call
+            if cmddata.iscreate:
+                create_obj_code = self.generate_create_object_code(indent, proto, params, cmd_info, cmddata.allocator)
             else:
                 create_obj_code = ''
             # Handle object destroy operations
-            if cmd_info[0].isdestroy:
+            if cmddata.isdestroy:
                 (destroy_array, destroy_object_code) = self.generate_destroy_object_code(indent, proto, cmd_info)
             else:
                 destroy_array = False
@@ -876,13 +870,21 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
         # Iterate over members once to get length parameters for arrays
         lens = set()
         for member in members:
-            len = self.getLen(member)
-            if len:
-                lens.add(len)
+            length = self.getLen(member)
+            if length:
+                lens.add(length)
         struct_member_dict = dict(self.structMembers)
+
+        # Set command invariant information needed at a per member level in validate...
+        is_create_command = any(filter(lambda pat: pat in cmdname, ('Create', 'Allocate', 'Enumerate', 'RegisterDeviceEvent', 'RegisterDisplayEvent')))
+        last_member_is_pointer = len(members) and self.paramIsPointer(members[-1])
+        iscreate = is_create_command or ('vkGet' in cmdname and last_member_is_pointer)
+        isdestroy = any([destroy_txt in cmdname for destroy_txt in ['Destroy', 'Free']])
+
         # Generate member info
         membersInfo = []
         constains_extension_structs = False
+        allocator = 'nullptr'
         for member in members:
             # Get type and name of member
             info = self.getTypeNameTuple(member)
@@ -891,48 +893,39 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
             cdecl = self.makeCParamDecl(member, 0)
             # Check for parameter name in lens set
             iscount = True if name in lens else False
-            len = self.getLen(member)
+            length = self.getLen(member)
             isconst = True if 'const' in cdecl else False
-            ispointer = self.paramIsPointer(member)
             # Mark param as local if it is an array of objects
             islocal = False;
             if self.isHandleTypeObject(type) == True:
-                if (len is not None) and (isconst == True):
+                if (length is not None) and (isconst == True):
                     islocal = True
             # Or if it's a struct that contains an object
             elif type in struct_member_dict:
                 if self.struct_contains_object(type) == True:
                     islocal = True
-            isdestroy = True if True in [destroy_txt in cmdname for destroy_txt in ['Destroy', 'Free']] else False
-            iscreate = True if True in [create_txt in cmdname for create_txt in ['Create', 'Allocate', 'Enumerate', 'RegisterDeviceEvent', 'RegisterDisplayEvent']] or ('vkGet' in cmdname and member == members[-1] and ispointer == True)  else False
+            if type == 'VkAllocationCallbacks':
+                allocator = name
             extstructs = member.attrib.get('validextensionstructs') if name == 'pNext' else None
             membersInfo.append(self.CommandParam(type=type,
                                                  name=name,
-                                                 ispointer=ispointer,
                                                  isconst=isconst,
                                                  isoptional=self.paramIsOptional(member),
                                                  iscount=iscount,
-                                                 len=len,
+                                                 len=length,
                                                  extstructs=extstructs,
                                                  cdecl=cdecl,
                                                  islocal=islocal,
-                                                 iscreate=iscreate,
-                                                 isdestroy=isdestroy,
-                                                 feature_protect=self.featureExtraProtect))
-        self.cmdMembers.append(self.CmdMemberData(name=cmdname, members=membersInfo))
-        if alias != None:
-            self.CmdMemberAlias[cmdname] = alias
-        self.cmd_info_data.append(self.CmdInfoData(name=cmdname, cmdinfo=cmdinfo))
-        self.cmd_feature_protect.append(self.CmdExtraProtect(name=cmdname, extra_protect=self.featureExtraProtect))
+                                                 iscreate=iscreate))
+
+        self.cmd_list.append(cmdname)
+        self.cmd_info_dict[cmdname] =self.CmdInfoData(name=cmdname, cmdinfo=cmdinfo, members=membersInfo, iscreate=iscreate, isdestroy=isdestroy, allocator=allocator, extra_protect=self.featureExtraProtect, alias=alias)
     #
     # Create code Create, Destroy, and validate Vulkan objects
     def WrapCommands(self):
-        cmd_member_dict = dict(self.cmdMembers)
-        cmd_info_dict = dict(self.cmd_info_data)
-        cmd_protect_dict = dict(self.cmd_feature_protect)
-        for api_call in self.cmdMembers:
-            cmdname = api_call.name
-            cmdinfo = cmd_info_dict[api_call.name]
+        for cmdname in self.cmd_list:
+            cmddata = self.cmd_info_dict[cmdname]
+            cmdinfo = cmddata.cmdinfo
             if cmdname in self.interface_functions:
                 continue
             if cmdname in self.no_autogen_list:
@@ -947,7 +940,7 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
             # If API doesn't contain any object handles, don't fool with it
             if not api_decls and not api_pre and not api_post:
                 continue
-            feature_extra_protect = cmd_protect_dict[api_call.name]
+            feature_extra_protect = cmddata.extra_protect
             if (feature_extra_protect != None):
                 self.appendSection('command', '')
                 self.appendSection('command', '#ifdef '+ feature_extra_protect)
