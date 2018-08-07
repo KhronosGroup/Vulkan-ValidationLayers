@@ -21,6 +21,7 @@
 
 #include <cinttypes>
 #include <cassert>
+#include <chrono>
 #include <vector>
 #include <unordered_map>
 #include <string>
@@ -382,6 +383,54 @@ static unsigned GetLocationsConsumedByType(shader_module const *src, unsigned ty
             return 1;
 
             // TODO: extend to handle 64bit scalar types, whose vectors may need multiple locations.
+    }
+}
+
+static unsigned GetComponentsConsumedByType(shader_module const *src, unsigned type, bool strip_array_level) {
+    auto insn = src->get_def(type);
+    assert(insn != src->end());
+
+    switch (insn.opcode()) {
+        case spv::OpTypePointer:
+            // See through the ptr -- this is only ever at the toplevel for graphics shaders we're never actually passing
+            // pointers around.
+            return GetComponentsConsumedByType(src, insn.word(3), strip_array_level);
+        case spv::OpTypeStruct: {
+            uint32_t sum = 0;
+            for (uint32_t i = 2; i < insn.len(); i++) {  // i=2 to skip word(0) and word(1)=ID of struct
+                sum += GetComponentsConsumedByType(src, insn.word(i), false);
+            }
+            return sum;
+        }
+        case spv::OpTypeArray: {
+            uint32_t sum = 0;
+            for (uint32_t i = 2; i < insn.len(); i++) {
+                sum += GetComponentsConsumedByType(src, insn.word(i), false);
+            }
+            return sum;
+        }
+        case spv::OpTypeMatrix:
+            // Num locations is the dimension * element size
+            return insn.word(3) * GetComponentsConsumedByType(src, insn.word(2), false);
+        case spv::OpTypeVector: {
+            auto scalar_type = src->get_def(insn.word(2));
+            auto bit_width =
+                (scalar_type.opcode() == spv::OpTypeInt || scalar_type.opcode() == spv::OpTypeFloat) ? scalar_type.word(2) : 32;
+            // One component is 32-bit
+            return (bit_width * insn.word(3) + 31) / 32;
+        }
+        case spv::OpTypeFloat: {
+            auto bit_width = insn.word(2);
+            return (bit_width + 31) / 32;
+        }
+        case spv::OpTypeInt: {
+            auto bit_width = insn.word(2);
+            return (bit_width + 31) / 32;
+        }
+        case spv::OpConstant:
+            return GetComponentsConsumedByType(src, insn.word(1), false);
+        default:
+            return 0;
     }
 }
 
@@ -1369,6 +1418,222 @@ static bool ValidateShaderCapabilities(layer_data *dev_data, shader_module const
     return skip;
 }
 
+static bool VariableIsBuiltIn(shader_module const *src, const uint32_t ID, std::vector<uint32_t> const &builtInBlockIDs,
+                              std::vector<uint32_t> const &builtInIDs) {
+    auto insn = src->get_def(ID);
+
+    switch (insn.opcode()) {
+        case spv::OpVariable: {
+            // First check if the variable is a "pure" built-in type, e.g. gl_ViewportIndex
+            uint32_t ID = insn.word(2);
+            for (auto builtInID : builtInIDs) {
+                if (ID == builtInID) {
+                    return true;
+                }
+            }
+
+            VariableIsBuiltIn(src, insn.word(1), builtInBlockIDs, builtInIDs);
+            break;
+        }
+        case spv::OpTypePointer:
+            VariableIsBuiltIn(src, insn.word(3), builtInBlockIDs, builtInIDs);
+            break;
+        case spv::OpTypeArray:
+            VariableIsBuiltIn(src, insn.word(2), builtInBlockIDs, builtInIDs);
+            break;
+        case spv::OpTypeStruct: {
+            uint32_t ID = insn.word(1);  // We only need to check the first member as either all will be, or none will be built-in
+            for (auto builtInBlockID : builtInBlockIDs) {
+                if (ID == builtInBlockID) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        default:
+            return false;
+    }
+
+    return false;
+}
+
+static bool ValidateShaderStageInputOutputLimits(layer_data *dev_data, shader_module const *src,
+                                                 VkPipelineShaderStageCreateInfo const *pStage, PIPELINE_STATE *pipeline) {
+    if (pStage->stage == VK_SHADER_STAGE_COMPUTE_BIT || pStage->stage == VK_SHADER_STAGE_ALL_GRAPHICS ||
+        pStage->stage == VK_SHADER_STAGE_ALL) {
+        return false;
+    }
+
+    bool skip = false;
+    auto const &properties = GetPhysDevProperties(dev_data);
+    auto const report_data = GetReportData(dev_data);
+
+    std::vector<uint32_t> builtInBlockIDs;
+    std::vector<uint32_t> builtInIDs;
+    struct Variable {
+        uint32_t baseTypePtrID;
+        uint32_t ID;
+        uint32_t storageClass;
+    };
+    std::vector<Variable> variables;
+
+    for (auto insn : *src) {
+        switch (insn.opcode()) {
+            // Find all built-in member decorations
+            case spv::OpMemberDecorate:
+                if (insn.word(3) == spv::DecorationBuiltIn) {
+                    builtInBlockIDs.push_back(insn.word(1));
+                }
+                break;
+            // Find all built-in decorations
+            case spv::OpDecorate:
+                switch (insn.word(2)) {
+                    case spv::DecorationBlock: {
+                        uint32_t blockID = insn.word(1);
+                        for (auto builtInBlockID : builtInBlockIDs) {
+                            // Check if one of the members of the block are built-in -> the block is built-in
+                            if (blockID == builtInBlockID) {
+                                builtInIDs.push_back(blockID);
+                                break;
+                            }
+                        }
+                        break;
+                    }
+                    case spv::DecorationBuiltIn:
+                        builtInIDs.push_back(insn.word(1));
+                        break;
+                    default:
+                        break;
+                }
+                break;
+            // Find all input and output variables
+            case spv::OpVariable: {
+                Variable var = {};
+                var.storageClass = insn.word(3);
+                if (var.storageClass == spv::StorageClassInput || var.storageClass == spv::StorageClassOutput) {
+                    var.baseTypePtrID = insn.word(1);
+                    var.ID = insn.word(2);
+                    variables.push_back(var);
+                }
+                break;
+            }
+            default:
+                break;
+        }
+    }
+
+    uint32_t numCompIn = 0, numCompOut = 0;
+    for (auto &var : variables) {
+        // Check the variable's ID
+        if (VariableIsBuiltIn(src, var.ID, builtInBlockIDs, builtInIDs)) {
+            continue;
+        }
+        // Check the variable's type's ID - e.g. gl_PerVertex is made of basic types, not built-in types
+        if (VariableIsBuiltIn(src, src->get_def(var.baseTypePtrID).word(3), builtInBlockIDs, builtInIDs)) {
+            continue;
+        }
+
+        if (var.storageClass == spv::StorageClassInput) {
+            numCompIn += GetComponentsConsumedByType(src, var.baseTypePtrID, false);
+        } else {  // var.storageClass == spv::StorageClassOutput
+            numCompOut += GetComponentsConsumedByType(src, var.baseTypePtrID, false);
+        }
+    }
+
+    switch (pStage->stage) {
+        case VK_SHADER_STAGE_VERTEX_BIT:
+            if (numCompOut > properties->properties.limits.maxVertexOutputComponents) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
+                                HandleToUint64(pipeline->pipeline), kVUID_Core_Shader_ExceedDeviceLimit,
+                                "Invalid Pipeline CreateInfo State: Vertex shader exceeds "
+                                "VkPhysicalDeviceLimits::maxVertexOutputComponents of %u "
+                                "components by %u components",
+                                properties->properties.limits.maxVertexOutputComponents,
+                                numCompOut - properties->properties.limits.maxVertexOutputComponents);
+            }
+            break;
+
+        case VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT:
+            if (numCompIn > properties->properties.limits.maxTessellationControlPerVertexInputComponents) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
+                                HandleToUint64(pipeline->pipeline), kVUID_Core_Shader_ExceedDeviceLimit,
+                                "Invalid Pipeline CreateInfo State: Tessellation control shader exceeds "
+                                "VkPhysicalDeviceLimits::maxTessellationControlPerVertexInputComponents of %u "
+                                "components by %u components",
+                                properties->properties.limits.maxTessellationControlPerVertexInputComponents,
+                                numCompIn - properties->properties.limits.maxTessellationControlPerVertexInputComponents);
+            }
+            if (numCompOut > properties->properties.limits.maxTessellationControlPerVertexOutputComponents) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
+                                HandleToUint64(pipeline->pipeline), kVUID_Core_Shader_ExceedDeviceLimit,
+                                "Invalid Pipeline CreateInfo State: Tessellation control shader exceeds "
+                                "VkPhysicalDeviceLimits::maxTessellationControlPerVertexOutputComponents of %u "
+                                "components by %u components",
+                                properties->properties.limits.maxTessellationControlPerVertexOutputComponents,
+                                numCompOut - properties->properties.limits.maxTessellationControlPerVertexOutputComponents);
+            }
+            break;
+
+        case VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT:
+            if (numCompIn > properties->properties.limits.maxTessellationEvaluationInputComponents) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
+                                HandleToUint64(pipeline->pipeline), kVUID_Core_Shader_ExceedDeviceLimit,
+                                "Invalid Pipeline CreateInfo State: Tessellation evaluation shader exceeds "
+                                "VkPhysicalDeviceLimits::maxTessellationEvaluationInputComponents of %u "
+                                "components by %u components",
+                                properties->properties.limits.maxTessellationEvaluationInputComponents,
+                                numCompIn - properties->properties.limits.maxTessellationEvaluationInputComponents);
+            }
+            if (numCompOut > properties->properties.limits.maxTessellationEvaluationOutputComponents) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
+                                HandleToUint64(pipeline->pipeline), kVUID_Core_Shader_ExceedDeviceLimit,
+                                "Invalid Pipeline CreateInfo State: Tessellation evaluation shader exceeds "
+                                "VkPhysicalDeviceLimits::maxTessellationEvaluationOutputComponents of %u "
+                                "components by %u components",
+                                properties->properties.limits.maxTessellationEvaluationOutputComponents,
+                                numCompOut - properties->properties.limits.maxTessellationEvaluationOutputComponents);
+            }
+            break;
+
+        case VK_SHADER_STAGE_GEOMETRY_BIT:
+            if (numCompIn > properties->properties.limits.maxGeometryInputComponents) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
+                                HandleToUint64(pipeline->pipeline), kVUID_Core_Shader_ExceedDeviceLimit,
+                                "Invalid Pipeline CreateInfo State: Geometry shader exceeds "
+                                "VkPhysicalDeviceLimits::maxGeometryInputComponents of %u "
+                                "components by %u components",
+                                properties->properties.limits.maxGeometryInputComponents,
+                                numCompIn - properties->properties.limits.maxGeometryInputComponents);
+            }
+            if (numCompOut > properties->properties.limits.maxGeometryOutputComponents) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
+                                HandleToUint64(pipeline->pipeline), kVUID_Core_Shader_ExceedDeviceLimit,
+                                "Invalid Pipeline CreateInfo State: Geometry shader exceeds "
+                                "VkPhysicalDeviceLimits::maxGeometryOutputComponents of %u "
+                                "components by %u components",
+                                properties->properties.limits.maxGeometryOutputComponents,
+                                numCompOut - properties->properties.limits.maxGeometryOutputComponents);
+            }
+            break;
+
+        case VK_SHADER_STAGE_FRAGMENT_BIT:
+            if (numCompIn > properties->properties.limits.maxFragmentInputComponents) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
+                                HandleToUint64(pipeline->pipeline), kVUID_Core_Shader_ExceedDeviceLimit,
+                                "Invalid Pipeline CreateInfo State: Fragment shader exceeds "
+                                "VkPhysicalDeviceLimits::maxFragmentInputComponents of %u "
+                                "components by %u components",
+                                properties->properties.limits.maxFragmentInputComponents,
+                                numCompIn - properties->properties.limits.maxFragmentInputComponents);
+            }
+            break;
+
+        default:
+            assert(false);  // This should never happen
+    }
+    return skip;
+}
+
 static uint32_t DescriptorTypeToReqs(shader_module const *module, uint32_t type_id) {
     auto type = module->get_def(type_id);
 
@@ -1481,7 +1746,7 @@ static bool ValidatePipelineShaderStage(layer_data *dev_data, VkPipelineShaderSt
 
     // Validate shader capabilities against enabled device features
     skip |= ValidateShaderCapabilities(dev_data, module, pStage->stage, has_writable_descriptor);
-
+    skip |= ValidateShaderStageInputOutputLimits(dev_data, module, pStage, pipeline);
     skip |= ValidateSpecializationOffsets(report_data, pStage);
     skip |= ValidatePushConstantUsage(report_data, pipeline->pipeline_layout.push_constant_ranges.get(), module, accessible_ids,
                                       pStage->stage);

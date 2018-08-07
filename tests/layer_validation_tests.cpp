@@ -18915,6 +18915,507 @@ TEST_F(VkLayerTest, CreatePipelineFragmentOutputTypeMismatch) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(VkLayerTest, CreatePipelineExceedMaxVertexOutputComponents) {
+    TEST_DESCRIPTION(
+        "Test that an error is produced when the number of output components from the vertex stage exceeds the device limit");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                         "Vertex shader exceeds "
+                                         "VkPhysicalDeviceLimits::maxVertexOutputComponents");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    const uint32_t maxVsOutComp = m_device->props.limits.maxVertexOutputComponents;
+    std::string vsSourceStr = "#version 450\n\n";
+    const uint32_t numVec4 = maxVsOutComp / 4;
+    uint32_t location = 0;
+    for (uint32_t i = 0; i < numVec4; i++) {
+        vsSourceStr += "layout(location=" + std::to_string(location) + ") out vec4 v" + std::to_string(i) + ";\n";
+        location += 1;
+    }
+    const uint32_t remainder = maxVsOutComp % 4;
+    if (remainder != 0) {
+        if (remainder == 1) {
+            vsSourceStr += "layout(location=" + std::to_string(location) + ") out float" + " vn;\n";
+        } else {
+            vsSourceStr += "layout(location=" + std::to_string(location) + ") out vec" + std::to_string(remainder) + " vn;\n";
+        }
+        location += 1;
+    }
+    vsSourceStr += "layout(location=" + std::to_string(location) +
+                   ") out vec4 exceedLimit;\n"
+                   "\n"
+                   "void main(){\n"
+                   "    gl_Position = vec4(1);\n"
+                   "}\n";
+
+    std::string fsSourceStr =
+        "#version 450\n"
+        "\n"
+        "layout(location=0) out vec4 color;\n"
+        "\n"
+        "void main(){\n"
+        "    color = vec4(1);\n"
+        "}\n";
+
+    VkShaderObj vs(m_device, vsSourceStr.c_str(), VK_SHADER_STAGE_VERTEX_BIT, this);
+    VkShaderObj fs(m_device, fsSourceStr.c_str(), VK_SHADER_STAGE_FRAGMENT_BIT, this);
+
+    VkPipelineObj pipe(m_device);
+    pipe.AddShader(&vs);
+    pipe.AddShader(&fs);
+
+    // Set up CB 0; type is UNORM by default
+    pipe.AddDefaultColorAttachment();
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkDescriptorSetObj descriptorSet(m_device);
+    descriptorSet.AppendDummy();
+    descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
+
+    pipe.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderPass());
+
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkLayerTest, CreatePipelineExceedMaxTessellationControlInputOutputComponents) {
+    TEST_DESCRIPTION(
+        "Test that errors are produced when the number of per-vertex input and/or output components to the tessellation control "
+        "stage exceeds the device limit");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                         "Tessellation control shader exceeds "
+                                         "VkPhysicalDeviceLimits::maxTessellationControlPerVertexInputComponents");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                         "Tessellation control shader exceeds "
+                                         "VkPhysicalDeviceLimits::maxTessellationControlPerVertexOutputComponents");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    VkPhysicalDeviceFeatures feat;
+    vkGetPhysicalDeviceFeatures(gpu(), &feat);
+    if (!feat.tessellationShader) {
+        printf("%s tessellation shader stage(s) unsupported.\n", kSkipPrefix);
+        return;
+    }
+
+    std::string vsSourceStr =
+        "#version 450\n"
+        "\n"
+        "void main(){\n"
+        "    gl_Position = vec4(1);\n"
+        "}\n";
+
+    // Tessellation control stage
+    std::string tcsSourceStr =
+        "#version 450\n"
+        "\n";
+    // Input components
+    const uint32_t maxTescInComp = m_device->props.limits.maxTessellationControlPerVertexInputComponents;
+    const uint32_t numInVec4 = maxTescInComp / 4;
+    uint32_t inLocation = 0;
+    for (uint32_t i = 0; i < numInVec4; i++) {
+        tcsSourceStr += "layout(location=" + std::to_string(inLocation) + ") in vec4 v" + std::to_string(i) + "In[];\n";
+        inLocation += 1;
+    }
+    const uint32_t inRemainder = maxTescInComp % 4;
+    if (inRemainder != 0) {
+        if (inRemainder == 1) {
+            tcsSourceStr += "layout(location=" + std::to_string(inLocation) + ") in float" + " vnIn[];\n";
+        } else {
+            tcsSourceStr +=
+                "layout(location=" + std::to_string(inLocation) + ") in vec" + std::to_string(inRemainder) + " vnIn[];\n";
+        }
+        inLocation += 1;
+    }
+    tcsSourceStr += "layout(location=" + std::to_string(inLocation) + ") in vec4 exceedLimitIn[];\n\n";
+    // Output components
+    const uint32_t maxTescOutComp = m_device->props.limits.maxTessellationControlPerVertexOutputComponents;
+    const uint32_t numOutVec4 = maxTescOutComp / 4;
+    uint32_t outLocation = 0;
+    for (uint32_t i = 0; i < numOutVec4; i++) {
+        tcsSourceStr += "layout(location=" + std::to_string(outLocation) + ") out vec4 v" + std::to_string(i) + "Out[3];\n";
+        outLocation += 1;
+    }
+    const uint32_t outRemainder = maxTescOutComp % 4;
+    if (outRemainder != 0) {
+        if (outRemainder == 1) {
+            tcsSourceStr += "layout(location=" + std::to_string(outLocation) + ") out float" + " vnOut[3];\n";
+        } else {
+            tcsSourceStr +=
+                "layout(location=" + std::to_string(outLocation) + ") out vec" + std::to_string(outRemainder) + " vnOut[3];\n";
+        }
+        outLocation += 1;
+    }
+    tcsSourceStr += "layout(location=" + std::to_string(outLocation) + ") out vec4 exceedLimitOut[3];\n";
+    tcsSourceStr += "layout(vertices=3) out;\n";
+    // Finalize
+    tcsSourceStr +=
+        "\n"
+        "void main(){\n"
+        "    gl_out[gl_InvocationID].gl_Position = gl_in[gl_InvocationID].gl_Position;\n"
+        "}\n";
+
+    std::string tesSourceStr =
+        "#version 450\n"
+        "\n"
+        "layout(triangles) in;"
+        "\n"
+        "void main(){\n"
+        "    gl_Position = vec4(1);\n"
+        "}\n";
+
+    std::string fsSourceStr =
+        "#version 450\n"
+        "\n"
+        "layout(location=0) out vec4 color;"
+        "\n"
+        "void main(){\n"
+        "    color = vec4(1);\n"
+        "}\n";
+
+    VkShaderObj vs(m_device, vsSourceStr.c_str(), VK_SHADER_STAGE_VERTEX_BIT, this);
+    VkShaderObj tcs(m_device, tcsSourceStr.c_str(), VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, this);
+    VkShaderObj tes(m_device, tesSourceStr.c_str(), VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, this);
+    VkShaderObj fs(m_device, fsSourceStr.c_str(), VK_SHADER_STAGE_FRAGMENT_BIT, this);
+
+    VkPipelineObj pipe(m_device);
+    pipe.AddShader(&vs);
+    pipe.AddShader(&tcs);
+    pipe.AddShader(&tes);
+    pipe.AddShader(&fs);
+
+    // Set up CB 0; type is UNORM by default
+    pipe.AddDefaultColorAttachment();
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkDescriptorSetObj descriptorSet(m_device);
+    descriptorSet.AppendDummy();
+    descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
+
+    VkPipelineInputAssemblyStateCreateInfo inputAssemblyInfo = {};
+    inputAssemblyInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+    inputAssemblyInfo.pNext = NULL;
+    inputAssemblyInfo.flags = 0;
+    inputAssemblyInfo.topology = VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
+    inputAssemblyInfo.primitiveRestartEnable = VK_FALSE;
+    pipe.SetInputAssembly(&inputAssemblyInfo);
+
+    VkPipelineTessellationStateCreateInfo tessInfo = {};
+    tessInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO;
+    tessInfo.pNext = NULL;
+    tessInfo.flags = 0;
+    tessInfo.patchControlPoints = 3;
+    pipe.SetTessellation(&tessInfo);
+
+    pipe.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderPass());
+
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkLayerTest, CreatePipelineExceedMaxTessellationEvaluationInputOutputComponents) {
+    TEST_DESCRIPTION(
+        "Test that errors are produced when the number of input and/or output components to the tessellation evaluation stage "
+        "exceeds the device limit");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                         "Tessellation evaluation shader exceeds "
+                                         "VkPhysicalDeviceLimits::maxTessellationEvaluationInputComponents");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                         "Tessellation evaluation shader exceeds "
+                                         "VkPhysicalDeviceLimits::maxTessellationEvaluationOutputComponents");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    VkPhysicalDeviceFeatures feat;
+    vkGetPhysicalDeviceFeatures(gpu(), &feat);
+    if (!feat.tessellationShader) {
+        printf("%s tessellation shader stage(s) unsupported.\n", kSkipPrefix);
+        return;
+    }
+
+    std::string vsSourceStr =
+        "#version 450\n"
+        "\n"
+        "void main(){\n"
+        "    gl_Position = vec4(1);\n"
+        "}\n";
+
+    std::string tcsSourceStr =
+        "#version 450\n"
+        "\n"
+        "layout (vertices = 3) out;\n"
+        "\n"
+        "void main(){\n"
+        "    gl_out[gl_InvocationID].gl_Position = gl_in[gl_InvocationID].gl_Position;\n"
+        "}\n";
+
+    // Tessellation evaluation stage
+    std::string tesSourceStr =
+        "#version 450\n"
+        "\n"
+        "layout (triangles) in;\n"
+        "\n";
+    // Input components
+    const uint32_t maxTeseInComp = m_device->props.limits.maxTessellationEvaluationInputComponents;
+    const uint32_t numInVec4 = maxTeseInComp / 4;
+    uint32_t inLocation = 0;
+    for (uint32_t i = 0; i < numInVec4; i++) {
+        tesSourceStr += "layout(location=" + std::to_string(inLocation) + ") in vec4 v" + std::to_string(i) + "In[];\n";
+        inLocation += 1;
+    }
+    const uint32_t inRemainder = maxTeseInComp % 4;
+    if (inRemainder != 0) {
+        if (inRemainder == 1) {
+            tesSourceStr += "layout(location=" + std::to_string(inLocation) + ") in float" + " vnIn[];\n";
+        } else {
+            tesSourceStr +=
+                "layout(location=" + std::to_string(inLocation) + ") in vec" + std::to_string(inRemainder) + " vnIn[];\n";
+        }
+        inLocation += 1;
+    }
+    tesSourceStr += "layout(location=" + std::to_string(inLocation) + ") in vec4 exceedLimitIn[];\n\n";
+    // Output components
+    const uint32_t maxTeseOutComp = m_device->props.limits.maxTessellationEvaluationOutputComponents;
+    const uint32_t numOutVec4 = maxTeseOutComp / 4;
+    uint32_t outLocation = 0;
+    for (uint32_t i = 0; i < numOutVec4; i++) {
+        tesSourceStr += "layout(location=" + std::to_string(outLocation) + ") out vec4 v" + std::to_string(i) + "Out;\n";
+        outLocation += 1;
+    }
+    const uint32_t outRemainder = maxTeseOutComp % 4;
+    if (outRemainder != 0) {
+        if (outRemainder == 1) {
+            tesSourceStr += "layout(location=" + std::to_string(outLocation) + ") out float" + " vnOut;\n";
+        } else {
+            tesSourceStr +=
+                "layout(location=" + std::to_string(outLocation) + ") out vec" + std::to_string(outRemainder) + " vnOut;\n";
+        }
+        outLocation += 1;
+    }
+    tesSourceStr += "layout(location=" + std::to_string(outLocation) + ") out vec4 exceedLimitOut;\n";
+    // Finalize
+    tesSourceStr +=
+        "\n"
+        "void main(){\n"
+        "    gl_Position = vec4(1);\n"
+        "}\n";
+
+    std::string fsSourceStr =
+        "#version 450\n"
+        "\n"
+        "layout(location=0) out vec4 color;"
+        "\n"
+        "void main(){\n"
+        "    color = vec4(1);\n"
+        "}\n";
+
+    VkShaderObj vs(m_device, vsSourceStr.c_str(), VK_SHADER_STAGE_VERTEX_BIT, this);
+    VkShaderObj tcs(m_device, tcsSourceStr.c_str(), VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, this);
+    VkShaderObj tes(m_device, tesSourceStr.c_str(), VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, this);
+    VkShaderObj fs(m_device, fsSourceStr.c_str(), VK_SHADER_STAGE_FRAGMENT_BIT, this);
+
+    VkPipelineObj pipe(m_device);
+    pipe.AddShader(&vs);
+    pipe.AddShader(&tcs);
+    pipe.AddShader(&tes);
+    pipe.AddShader(&fs);
+
+    // Set up CB 0; type is UNORM by default
+    pipe.AddDefaultColorAttachment();
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkDescriptorSetObj descriptorSet(m_device);
+    descriptorSet.AppendDummy();
+    descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
+
+    VkPipelineInputAssemblyStateCreateInfo inputAssemblyInfo = {};
+    inputAssemblyInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+    inputAssemblyInfo.pNext = NULL;
+    inputAssemblyInfo.flags = 0;
+    inputAssemblyInfo.topology = VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
+    inputAssemblyInfo.primitiveRestartEnable = VK_FALSE;
+    pipe.SetInputAssembly(&inputAssemblyInfo);
+
+    VkPipelineTessellationStateCreateInfo tessInfo = {};
+    tessInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO;
+    tessInfo.pNext = NULL;
+    tessInfo.flags = 0;
+    tessInfo.patchControlPoints = 3;
+    pipe.SetTessellation(&tessInfo);
+
+    pipe.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderPass());
+
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkLayerTest, CreatePipelineExceedMaxGeometryInputOutputComponents) {
+    TEST_DESCRIPTION(
+        "Test that errors are produced when the number of input and/or output components to the geometry stage exceeds the device "
+        "limit");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                         "Geometry shader exceeds "
+                                         "VkPhysicalDeviceLimits::maxGeometryInputComponents");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                         "Geometry shader exceeds "
+                                         "VkPhysicalDeviceLimits::maxGeometryOutputComponents");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    VkPhysicalDeviceFeatures feat;
+    vkGetPhysicalDeviceFeatures(gpu(), &feat);
+    if (!feat.geometryShader) {
+        printf("%s geometry shader stage unsupported.\n", kSkipPrefix);
+        return;
+    }
+
+    std::string vsSourceStr =
+        "#version 450\n"
+        "\n"
+        "void main(){\n"
+        "    gl_Position = vec4(1);\n"
+        "}\n";
+
+    std::string gsSourceStr =
+        "#version 450\n"
+        "\n"
+        "layout(triangles) in;\n"
+        "layout(invocations=1) in;\n";
+    // Input components
+    const uint32_t maxGeomInComp = m_device->props.limits.maxGeometryInputComponents;
+    const uint32_t numInVec4 = maxGeomInComp / 4;
+    uint32_t inLocation = 0;
+    for (uint32_t i = 0; i < numInVec4; i++) {
+        gsSourceStr += "layout(location=" + std::to_string(inLocation) + ") in vec4 v" + std::to_string(i) + "In[];\n";
+        inLocation += 1;
+    }
+    const uint32_t inRemainder = maxGeomInComp % 4;
+    if (inRemainder != 0) {
+        if (inRemainder == 1) {
+            gsSourceStr += "layout(location=" + std::to_string(inLocation) + ") in float" + " vnIn[];\n";
+        } else {
+            gsSourceStr +=
+                "layout(location=" + std::to_string(inLocation) + ") in vec" + std::to_string(inRemainder) + " vnIn[];\n";
+        }
+        inLocation += 1;
+    }
+    gsSourceStr += "layout(location=" + std::to_string(inLocation) + ") in vec4 exceedLimitIn[];\n\n";
+    // Output components
+    const uint32_t maxGeomOutComp = m_device->props.limits.maxGeometryOutputComponents;
+    const uint32_t numOutVec4 = maxGeomOutComp / 4;
+    uint32_t outLocation = 0;
+    for (uint32_t i = 0; i < numOutVec4; i++) {
+        gsSourceStr += "layout(location=" + std::to_string(outLocation) + ") out vec4 v" + std::to_string(i) + "Out;\n";
+        outLocation += 1;
+    }
+    const uint32_t outRemainder = maxGeomOutComp % 4;
+    if (outRemainder != 0) {
+        if (outRemainder == 1) {
+            gsSourceStr += "layout(location=" + std::to_string(outLocation) + ") out float" + " vnOut;\n";
+        } else {
+            gsSourceStr +=
+                "layout(location=" + std::to_string(outLocation) + ") out vec" + std::to_string(outRemainder) + " vnOut;\n";
+        }
+        outLocation += 1;
+    }
+    gsSourceStr += "layout(location=" + std::to_string(outLocation) + ") out vec4 exceedLimitOut;\n";
+    // Finalize
+    gsSourceStr +=
+        "layout(triangle_strip, max_vertices=3) out;\n"
+        "\n"
+        "void main(){\n"
+        "    exceedLimitOut = vec4(1);\n"
+        "}\n";
+
+    std::string fsSourceStr =
+        "#version 450\n"
+        "\n"
+        "layout(location=0) out vec4 color;"
+        "\n"
+        "void main(){\n"
+        "    color = vec4(1);\n"
+        "}\n";
+
+    VkShaderObj vs(m_device, vsSourceStr.c_str(), VK_SHADER_STAGE_VERTEX_BIT, this);
+    VkShaderObj gs(m_device, gsSourceStr.c_str(), VK_SHADER_STAGE_GEOMETRY_BIT, this);
+    VkShaderObj fs(m_device, fsSourceStr.c_str(), VK_SHADER_STAGE_FRAGMENT_BIT, this);
+
+    VkPipelineObj pipe(m_device);
+    pipe.AddShader(&vs);
+    pipe.AddShader(&gs);
+    pipe.AddShader(&fs);
+
+    // Set up CB 0; type is UNORM by default
+    pipe.AddDefaultColorAttachment();
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkDescriptorSetObj descriptorSet(m_device);
+    descriptorSet.AppendDummy();
+    descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
+
+    pipe.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderPass());
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkLayerTest, CreatePipelineExceedMaxFragmentInputComponents) {
+    TEST_DESCRIPTION(
+        "Test that an error is produced when the number of input components from the fragment stage exceeds the device limit");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                         "Fragment shader exceeds "
+                                         "VkPhysicalDeviceLimits::maxFragmentInputComponents");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    std::string vsSourceStr =
+        "#version 450\n"
+        "\n"
+        "void main(){\n"
+        "    gl_Position = vec4(1);\n"
+        "}\n";
+
+    const uint32_t maxFsInComp = m_device->props.limits.maxFragmentInputComponents;
+    std::string fsSourceStr = "#version 450\n\n";
+    const uint32_t numVec4 = maxFsInComp / 4;
+    uint32_t location = 0;
+    for (uint32_t i = 0; i < numVec4; i++) {
+        fsSourceStr += "layout(location=" + std::to_string(location) + ") in vec4 v" + std::to_string(i) + ";\n";
+        location += 1;
+    }
+    const uint32_t remainder = maxFsInComp % 4;
+    if (remainder != 0) {
+        if (remainder == 1) {
+            fsSourceStr += "layout(location=" + std::to_string(location) + ") in float" + " vn;\n";
+        } else {
+            fsSourceStr += "layout(location=" + std::to_string(location) + ") in vec" + std::to_string(remainder) + " vn;\n";
+        }
+        location += 1;
+    }
+    fsSourceStr += "layout(location=" + std::to_string(location) +
+                   ") in vec4 exceedLimit;\n"
+                   "\n"
+                   "layout(location=0) out vec4 color;"
+                   "\n"
+                   "void main(){\n"
+                   "    color = vec4(1);\n"
+                   "}\n";
+
+    VkShaderObj vs(m_device, vsSourceStr.c_str(), VK_SHADER_STAGE_VERTEX_BIT, this);
+    VkShaderObj fs(m_device, fsSourceStr.c_str(), VK_SHADER_STAGE_FRAGMENT_BIT, this);
+
+    VkPipelineObj pipe(m_device);
+    pipe.AddShader(&vs);
+    pipe.AddShader(&fs);
+
+    // Set up CB 0; type is UNORM by default
+    pipe.AddDefaultColorAttachment();
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkDescriptorSetObj descriptorSet(m_device);
+    descriptorSet.AppendDummy();
+    descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
+
+    pipe.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderPass());
+
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(VkLayerTest, CreatePipelineUniformBlockNotProvided) {
     TEST_DESCRIPTION(
         "Test that an error is produced for a shader consuming a uniform block which has no corresponding binding in the pipeline "
