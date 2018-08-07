@@ -887,6 +887,80 @@ static bool ValidateFsOutputsAgainstRenderPass(debug_report_data const *report_d
     return skip;
 }
 
+// For PointSize analysis we need to know if the variable decorated with the PointSize built-in was actually written to.
+// This function examines instructions in the static call tree for a write to this variable.
+static bool IsPointSizeWritten(shader_module const *src, spirv_inst_iter builtin_instr, spirv_inst_iter entrypoint) {
+    auto type = builtin_instr.opcode();
+    uint32_t target_id = builtin_instr.word(1);
+    bool init_complete = false;
+
+    if (type == spv::OpMemberDecorate) {
+        // Built-in is part of a structure -- examine instructions up to first function body to get initial IDs
+        auto insn = entrypoint;
+        while (!init_complete && (insn.opcode() != spv::OpFunction)) {
+            switch (insn.opcode()) {
+                case spv::OpTypePointer:
+                    if ((insn.word(3) == target_id) && (insn.word(2) == spv::StorageClassOutput)) {
+                        target_id = insn.word(1);
+                    }
+                    break;
+                case spv::OpVariable:
+                    if (insn.word(1) == target_id) {
+                        target_id = insn.word(2);
+                        init_complete = true;
+                    }
+                    break;
+            }
+            insn++;
+        }
+    }
+
+    bool found_write = !init_complete && (type == spv::OpMemberDecorate);
+    std::unordered_set<uint32_t> worklist;
+    worklist.insert(entrypoint.word(2));
+
+    // Follow instructions in call graph looking for writes to target
+    while (!worklist.empty() && !found_write) {
+        auto id_iter = worklist.begin();
+        auto id = *id_iter;
+        worklist.erase(id_iter);
+
+        auto insn = src->get_def(id);
+        if (insn == src->end()) {
+            continue;
+        }
+
+        if (insn.opcode() == spv::OpFunction) {
+            // Scan body of function looking for other function calls or items in our ID chain
+            while (++insn, insn.opcode() != spv::OpFunctionEnd) {
+                switch (insn.opcode()) {
+                    case spv::OpAccessChain:
+                        if (insn.word(3) == target_id) {
+                            if (type == spv::OpMemberDecorate) {
+                                auto value = GetConstantValue(src, insn.word(4));
+                                if (value == builtin_instr.word(2)) {
+                                    target_id = insn.word(2);
+                                }
+                            } else {
+                                target_id = insn.word(2);
+                            }
+                        }
+                        break;
+                    case spv::OpStore:
+                        if (insn.word(1) == target_id) {
+                            found_write = true;
+                        }
+                        break;
+                    case spv::OpFunctionCall:
+                        worklist.insert(insn.word(3));
+                        break;
+                }
+            }
+        }
+    }
+    return found_write;
+}
+
 // For some analyses, we need to know about all ids referenced by the static call tree of a particular entrypoint. This is
 // important for identifying the set of shader resources actually used by an entrypoint, for example.
 // Note: we only explore parts of the image which might actually contain ids we care about for the above analyses.
@@ -1459,9 +1533,64 @@ static void ProcessExecutionModes(shader_module const *src, spirv_inst_iter entr
     if (is_point_mode) pipeline->topology_at_rasterizer = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
 }
 
+// If PointList topology is specified in the pipeline, verify that a shader geometry stage writes PointSize
+//    o If there is only a vertex shader : gl_PointSize must be written when using points
+//    o If there is a geometry or tessellation shader:
+//        - If shaderTessellationAndGeometryPointSize feature is enabled:
+//            * gl_PointSize must be written in the final geometry stage
+//        - If shaderTessellationAndGeometryPointSize feature is disabled:
+//            * gl_PointSize must NOT be written and a default of 1.0 is assumed
+bool ValidatePointListShaderState(const layer_data *dev_data, const PIPELINE_STATE *pipeline, shader_module const *src,
+                                  spirv_inst_iter entrypoint, VkShaderStageFlagBits stage) {
+    if (pipeline->topology_at_rasterizer != VK_PRIMITIVE_TOPOLOGY_POINT_LIST) {
+        return false;
+    }
+
+    bool pointsize_written = false;
+    bool skip = false;
+
+    // Search for PointSize built-in decorations
+    std::vector<uint32_t> pointsize_builtin_offsets;
+    spirv_inst_iter insn = entrypoint;
+    while (!pointsize_written && (insn.opcode() != spv::OpFunction)) {
+        if (insn.opcode() == spv::OpMemberDecorate) {
+            if (insn.word(3) == spv::DecorationBuiltIn) {
+                if (insn.word(4) == spv::BuiltInPointSize) {
+                    pointsize_written = IsPointSizeWritten(src, insn, entrypoint);
+                }
+            }
+        } else if (insn.opcode() == spv::OpDecorate) {
+            if (insn.word(2) == spv::DecorationBuiltIn) {
+                if (insn.word(3) == spv::BuiltInPointSize) {
+                    pointsize_written = IsPointSizeWritten(src, insn, entrypoint);
+                }
+            }
+        }
+
+        insn++;
+    }
+
+    if ((stage == VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT || stage == VK_SHADER_STAGE_GEOMETRY_BIT) &&
+        !GetEnabledFeatures(dev_data)->core.shaderTessellationAndGeometryPointSize) {
+        if (pointsize_written) {
+            skip |= log_msg(GetReportData(dev_data), VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
+                            HandleToUint64(pipeline->pipeline), kVUID_Core_Shader_PointSizeBuiltInOverSpecified,
+                            "Pipeline topology is set to POINT_LIST and geometry or tessellation shaders write PointSize which "
+                            "is prohibited when the shaderTessellationAndGeometryPointSize feature is not enabled.");
+        }
+    } else if (!pointsize_written) {
+        skip |=
+            log_msg(GetReportData(dev_data), VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
+                    HandleToUint64(pipeline->pipeline), kVUID_Core_Shader_MissingPointSizeBuiltIn,
+                    "Pipeline topology is set to POINT_LIST, but PointSize is not written to in the shader corresponding to %s.",
+                    string_VkShaderStageFlagBits(stage));
+    }
+    return skip;
+}
+
 static bool ValidatePipelineShaderStage(layer_data *dev_data, VkPipelineShaderStageCreateInfo const *pStage,
-                                        PIPELINE_STATE *pipeline, shader_module const **out_module,
-                                        spirv_inst_iter *out_entrypoint) {
+                                        PIPELINE_STATE *pipeline, shader_module const **out_module, spirv_inst_iter *out_entrypoint,
+                                        bool check_point_size) {
     bool skip = false;
     auto module = *out_module = GetShaderModuleState(dev_data, pStage->module);
     auto report_data = GetReportData(dev_data);
@@ -1492,6 +1621,9 @@ static bool ValidatePipelineShaderStage(layer_data *dev_data, VkPipelineShaderSt
     skip |= ValidateSpecializationOffsets(report_data, pStage);
     skip |= ValidatePushConstantUsage(report_data, pipeline->pipeline_layout.push_constant_ranges.get(), module, accessible_ids,
                                       pStage->stage);
+    if (check_point_size) {
+        skip |= ValidatePointListShaderState(dev_data, pipeline, module, entrypoint, pStage->stage);
+    }
 
     // Validate descriptor use
     for (auto use : descriptor_uses) {
@@ -1625,72 +1757,22 @@ static bool ValidateInterfaceBetweenStages(debug_report_data const *report_data,
     return skip;
 }
 
-// Return true if the specified built-in is present in the supplied shader source
-bool FindBuiltIn(shader_module const *src, spv::BuiltIn target_built_in) {
-    for (auto insn : *src) {
-        if (insn.opcode() == spv::OpDecorate) {
-            if (insn.word(2) == spv::DecorationBuiltIn) {
-                if (insn.word(3) == target_built_in) {
-                    return true;
-                }
-            }
-        } else if (insn.opcode() == spv::OpMemberDecorate) {
-            if (insn.word(3) == spv::DecorationBuiltIn) {
-                if (insn.word(4) == target_built_in) {
-                    return true;
-                }
-            }
+static inline uint32_t DetermineFinalGeomStage(PIPELINE_STATE *pipeline, VkGraphicsPipelineCreateInfo *pCreateInfo) {
+    uint32_t stage_mask = 0;
+    if (pipeline->topology_at_rasterizer == VK_PRIMITIVE_TOPOLOGY_POINT_LIST) {
+        for (uint32_t i = 0; i < pCreateInfo->stageCount; i++) {
+            stage_mask |= pCreateInfo->pStages[i].stage;
+        }
+        // Determine which shader in which PointSize should be written (the final geometry stage)
+        if (stage_mask & VK_SHADER_STAGE_GEOMETRY_BIT) {
+            stage_mask = VK_SHADER_STAGE_GEOMETRY_BIT;
+        } else if (stage_mask & VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT) {
+            stage_mask = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
+        } else if (stage_mask & VK_SHADER_STAGE_VERTEX_BIT) {
+            stage_mask = VK_SHADER_STAGE_VERTEX_BIT;
         }
     }
-    return false;
-}
-
-bool ValidatePointListShaderState(const layer_data *dev_data, const PIPELINE_STATE *pipeline, shader_module const *shaders[5]) {
-    //    o If you only have a vertex shader : you must write gl_PointSize in the shader when using points
-    //    o If you have a geometry or tessellation shader:
-    //        - If shaderTessellationAndGeometryPointSize feature enabled:
-    //            * you must write gl_PointSize in the last geometry shader stage
-    //        - If shaderTessellationAndGeometryPointSize feature disabled:
-    //            * you must not write gl_PointSize and you get a default of 1.0.
-    bool skip = false;
-    if (pipeline->graphicsPipelineCI.pInputAssemblyState &&
-        pipeline->graphicsPipelineCI.pInputAssemblyState->topology == VK_PRIMITIVE_TOPOLOGY_POINT_LIST) {
-        auto report_data = GetReportData(dev_data);
-        bool pointsize_found = false;
-        std::string shader_name;
-        int vertex_stage = GetShaderStageId(VK_SHADER_STAGE_VERTEX_BIT);
-        int geom_stage = GetShaderStageId(VK_SHADER_STAGE_GEOMETRY_BIT);
-        int tess_eval_stage = GetShaderStageId(VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
-
-        if (shaders[geom_stage]) {
-            pointsize_found = FindBuiltIn(shaders[geom_stage], spv::BuiltInPointSize);
-            shader_name = "geometry";
-        } else if (shaders[tess_eval_stage]) {
-            pointsize_found = FindBuiltIn(shaders[tess_eval_stage], spv::BuiltInPointSize);
-            shader_name = "tessellation evaluation";
-        } else if (shaders[vertex_stage]) {
-            pointsize_found = FindBuiltIn(shaders[vertex_stage], spv::BuiltInPointSize);
-            shader_name = "vertex";
-        }
-
-        if ((shaders[tess_eval_stage] || shaders[geom_stage]) &&
-            !GetEnabledFeatures(dev_data)->core.shaderTessellationAndGeometryPointSize) {
-            if (pointsize_found) {
-                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
-                                HandleToUint64(pipeline->pipeline), kVUID_Core_Shader_PointSizeBuiltInOverSpecified,
-                                "Pipeline InputAssemblyState topology is set to POINT_LIST and geometry or tessellation "
-                                "shaders specify PointSize which is prohibited when the shaderTessellationAndGeometryPointSize "
-                                "feature is not enabled");
-            }
-        } else if (!pointsize_found) {
-            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
-                            HandleToUint64(pipeline->pipeline), kVUID_Core_Shader_MissingPointSizeBuiltIn,
-                            "Pipeline InputAssemblyState topology is set to POINT_LIST, but PointSize is not specified in the "
-                            "%s shader.",
-                            shader_name.c_str());
-        }
-    }
-    return skip;
+    return stage_mask;
 }
 
 // Validate that the shaders used by the given pipeline and store the active_slots
@@ -1707,10 +1789,13 @@ bool ValidateAndCapturePipelineShaderState(layer_data *dev_data, PIPELINE_STATE 
     memset(entrypoints, 0, sizeof(entrypoints));
     bool skip = false;
 
+    uint32_t pointlist_stage_mask = DetermineFinalGeomStage(pipeline, pCreateInfo);
+
     for (uint32_t i = 0; i < pCreateInfo->stageCount; i++) {
         auto pStage = &pCreateInfo->pStages[i];
         auto stage_id = GetShaderStageId(pStage->stage);
-        skip |= ValidatePipelineShaderStage(dev_data, pStage, pipeline, &shaders[stage_id], &entrypoints[stage_id]);
+        skip |= ValidatePipelineShaderStage(dev_data, pStage, pipeline, &shaders[stage_id], &entrypoints[stage_id],
+                                            (pointlist_stage_mask == pStage->stage));
     }
 
     // if the shader stages are no good individually, cross-stage validation is pointless.
@@ -1752,9 +1837,6 @@ bool ValidateAndCapturePipelineShaderState(layer_data *dev_data, PIPELINE_STATE 
                                                    pCreateInfo->subpass);
     }
 
-    // If pipeline calls for POINT_LIST, verify that PointSize correctly specified (or not) by shaders
-    skip |= ValidatePointListShaderState(dev_data, pipeline, shaders);
-
     return skip;
 }
 
@@ -1764,7 +1846,7 @@ bool ValidateComputePipeline(layer_data *dev_data, PIPELINE_STATE *pipeline) {
     shader_module const *module;
     spirv_inst_iter entrypoint;
 
-    return ValidatePipelineShaderStage(dev_data, &pCreateInfo->stage, pipeline, &module, &entrypoint);
+    return ValidatePipelineShaderStage(dev_data, &pCreateInfo->stage, pipeline, &module, &entrypoint, false);
 }
 
 uint32_t ValidationCache::MakeShaderHash(VkShaderModuleCreateInfo const *smci) { return XXH32(smci->pCode, smci->codeSize, 0); }

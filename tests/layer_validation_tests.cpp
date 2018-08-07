@@ -5942,7 +5942,7 @@ TEST_F(VkLayerTest, PointSizeFailure) {
     TEST_DESCRIPTION("Create a pipeline using TOPOLOGY_POINT_LIST but do not set PointSize in vertex shader.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "InputAssemblyState topology is set to POINT_LIST");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "Pipeline topology is set to POINT_LIST");
 
     ASSERT_NO_FATAL_FAILURE(InitViewport());
 
