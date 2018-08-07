@@ -1324,7 +1324,7 @@ bool PreCallValidateCmdClearColorImage(layer_data *dev_data, VkCommandBuffer com
         if (GetApiVersion(dev_data) >= VK_API_VERSION_1_1 || GetDeviceExtensions(dev_data)->vk_khr_maintenance1) {
             skip |=
                 ValidateImageFormatFeatureFlags(dev_data, image_state, VK_FORMAT_FEATURE_TRANSFER_DST_BIT, "vkCmdClearColorImage",
-                                                "VUID-vkCmdClearColorImage-image-00001", "VUID-vkCmdClearColorImage-image-00001");
+                                                "VUID-vkCmdClearColorImage-image-01993", "VUID-vkCmdClearColorImage-image-01993");
         }
         skip |= InsideRenderPass(dev_data, cb_node, "vkCmdClearColorImage()", "VUID-vkCmdClearColorImage-renderpass");
         for (uint32_t i = 0; i < rangeCount; ++i) {
@@ -1367,8 +1367,8 @@ bool PreCallValidateCmdClearDepthStencilImage(layer_data *device_data, VkCommand
         skip |= ValidateCmd(device_data, cb_node, CMD_CLEARDEPTHSTENCILIMAGE, "vkCmdClearDepthStencilImage()");
         if (GetApiVersion(device_data) >= VK_API_VERSION_1_1 || GetDeviceExtensions(device_data)->vk_khr_maintenance1) {
             skip |= ValidateImageFormatFeatureFlags(device_data, image_state, VK_FORMAT_FEATURE_TRANSFER_DST_BIT,
-                                                    "vkCmdClearDepthStencilImage", "VUID-vkCmdClearDepthStencilImage-image-00008",
-                                                    "VUID-vkCmdClearDepthStencilImage-image-00008");
+                                                    "vkCmdClearDepthStencilImage", "VUID-vkCmdClearDepthStencilImage-image-01994",
+                                                    "VUID-vkCmdClearDepthStencilImage-image-01994");
         }
         skip |=
             InsideRenderPass(device_data, cb_node, "vkCmdClearDepthStencilImage()", "VUID-vkCmdClearDepthStencilImage-renderpass");
@@ -2282,10 +2282,10 @@ bool PreCallValidateCmdCopyImage(layer_data *device_data, GLOBAL_CB_NODE *cb_nod
     if (GetApiVersion(device_data) >= VK_API_VERSION_1_1 || GetDeviceExtensions(device_data)->vk_khr_maintenance1) {
         skip |=
             ValidateImageFormatFeatureFlags(device_data, src_image_state, VK_FORMAT_FEATURE_TRANSFER_SRC_BIT, "vkCmdCopyImage()",
-                                            "VUID-vkCmdCopyImage-srcImage-00125", "VUID-vkCmdCopyImage-srcImage-00125");
+                                            "VUID-vkCmdCopyImage-srcImage-01995", "VUID-vkCmdCopyImage-srcImage-01995");
         skip |=
             ValidateImageFormatFeatureFlags(device_data, dst_image_state, VK_FORMAT_FEATURE_TRANSFER_DST_BIT, "vkCmdCopyImage()",
-                                            "VUID-vkCmdCopyImage-dstImage-00130", "VUID-vkCmdCopyImage-dstImage-00130");
+                                            "VUID-vkCmdCopyImage-dstImage-01996", "VUID-vkCmdCopyImage-dstImage-01996");
     }
     skip |= ValidateCmdQueueFlags(device_data, cb_node, "vkCmdCopyImage()",
                                   VK_QUEUE_TRANSFER_BIT | VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
@@ -2480,8 +2480,8 @@ bool PreCallValidateCmdResolveImage(layer_data *device_data, GLOBAL_CB_NODE *cb_
         skip |= ValidateCmd(device_data, cb_node, CMD_RESOLVEIMAGE, "vkCmdResolveImage()");
         skip |= InsideRenderPass(device_data, cb_node, "vkCmdResolveImage()", "VUID-vkCmdResolveImage-renderpass");
         skip |= ValidateImageFormatFeatureFlags(device_data, dst_image_state, VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT,
-                                                "vkCmdResolveImage()", "VUID-vkCmdResolveImage-dstImage-00264",
-                                                "VUID-vkCmdResolveImage-dstImage-00265");
+                                                "vkCmdResolveImage()", "VUID-vkCmdResolveImage-dstImage-02003",
+                                                "VUID-vkCmdResolveImage-dstImage-02003");
 
         bool hit_error = false;
         const std::string invalid_src_layout_vuid =
@@ -2597,9 +2597,9 @@ bool PreCallValidateCmdBlitImage(layer_data *device_data, GLOBAL_CB_NODE *cb_nod
         skip |= ValidateCmd(device_data, cb_node, CMD_BLITIMAGE, "vkCmdBlitImage()");
         skip |= InsideRenderPass(device_data, cb_node, "vkCmdBlitImage()", "VUID-vkCmdBlitImage-renderpass");
         skip |= ValidateImageFormatFeatureFlags(device_data, src_image_state, VK_FORMAT_FEATURE_BLIT_SRC_BIT, "vkCmdBlitImage()",
-                                                "VUID-vkCmdBlitImage-srcImage-00218", "VUID-vkCmdBlitImage-srcImage-00218");
+                                                "VUID-vkCmdBlitImage-srcImage-01999", "VUID-vkCmdBlitImage-srcImage-01999");
         skip |= ValidateImageFormatFeatureFlags(device_data, dst_image_state, VK_FORMAT_FEATURE_BLIT_DST_BIT, "vkCmdBlitImage()",
-                                                "VUID-vkCmdBlitImage-dstImage-00223", "VUID-vkCmdBlitImage-dstImage-00223");
+                                                "VUID-vkCmdBlitImage-dstImage-02000", "VUID-vkCmdBlitImage-dstImage-02000");
 
         // TODO: Need to validate image layouts, which will include layout validation for shared presentable images
 
@@ -2610,12 +2610,12 @@ bool PreCallValidateCmdBlitImage(layer_data *device_data, GLOBAL_CB_NODE *cb_nod
 
         if (VK_FILTER_LINEAR == filter) {
             skip |= ValidateImageFormatFeatureFlags(device_data, src_image_state, VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT,
-                                                    "vkCmdBlitImage()", "VUID-vkCmdBlitImage-filter-00235",
-                                                    "VUID-vkCmdBlitImage-filter-00235");
+                                                    "vkCmdBlitImage()", "VUID-vkCmdBlitImage-filter-02001",
+                                                    "VUID-vkCmdBlitImage-filter-02001");
         } else if (VK_FILTER_CUBIC_IMG == filter) {
             skip |= ValidateImageFormatFeatureFlags(device_data, src_image_state,
                                                     VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_CUBIC_BIT_IMG, "vkCmdBlitImage()",
-                                                    "VUID-vkCmdBlitImage-filter-00236", "VUID-vkCmdBlitImage-filter-00236");
+                                                    "VUID-vkCmdBlitImage-filter-02002", "VUID-vkCmdBlitImage-filter-02002");
         }
 
         if ((VK_FILTER_CUBIC_IMG == filter) && (VK_IMAGE_TYPE_3D != src_type)) {
@@ -2966,7 +2966,7 @@ static std::string StringVkAccessFlags(VkAccessFlags accessMask) {
 }
 
 #if 0  // This fxn seems vestigial, not called anywhere.  All VkAccessFlagBits VUIDs are implicit & being checked by parameter
-       // validation ToBeRemoved (disabled 6/18) 
+       // validation ToBeRemoved (disabled 6/18)
 
 // AccessFlags MUST have 'required_bit' set, and may have one or more of 'optional_bits' set. If required_bit is zero, accessMask
 // must have at least one of 'optional_bits' set
@@ -4387,8 +4387,8 @@ bool PreCallValidateCmdCopyImageToBuffer(layer_data *device_data, VkImageLayout 
                                      "VK_BUFFER_USAGE_TRANSFER_DST_BIT");
     if (GetApiVersion(device_data) >= VK_API_VERSION_1_1 || GetDeviceExtensions(device_data)->vk_khr_maintenance1) {
         skip |= ValidateImageFormatFeatureFlags(device_data, src_image_state, VK_FORMAT_FEATURE_TRANSFER_SRC_BIT,
-                                                "vkCmdCopyImageToBuffer()", "VUID-vkCmdCopyImageToBuffer-srcImage-00185",
-                                                "VUID-vkCmdCopyImageToBuffer-srcImage-00185");
+                                                "vkCmdCopyImageToBuffer()", "VUID-vkCmdCopyImageToBuffer-srcImage-01998",
+                                                "VUID-vkCmdCopyImageToBuffer-srcImage-01998");
     }
     skip |= InsideRenderPass(device_data, cb_node, "vkCmdCopyImageToBuffer()", "VUID-vkCmdCopyImageToBuffer-renderpass");
     bool hit_error = false;
@@ -4463,8 +4463,8 @@ bool PreCallValidateCmdCopyBufferToImage(layer_data *device_data, VkImageLayout 
                                     "VK_IMAGE_USAGE_TRANSFER_DST_BIT");
     if (GetApiVersion(device_data) >= VK_API_VERSION_1_1 || GetDeviceExtensions(device_data)->vk_khr_maintenance1) {
         skip |= ValidateImageFormatFeatureFlags(device_data, dst_image_state, VK_FORMAT_FEATURE_TRANSFER_DST_BIT,
-                                                "vkCmdCopyBufferToImage()", "VUID-vkCmdCopyBufferToImage-dstImage-00175",
-                                                "VUID-vkCmdCopyBufferToImage-dstImage-00175");
+                                                "vkCmdCopyBufferToImage()", "VUID-vkCmdCopyBufferToImage-dstImage-01997",
+                                                "VUID-vkCmdCopyBufferToImage-dstImage-01997");
     }
     skip |= InsideRenderPass(device_data, cb_node, "vkCmdCopyBufferToImage()", "VUID-vkCmdCopyBufferToImage-renderpass");
     bool hit_error = false;
