@@ -531,7 +531,7 @@ def main():
     parser.add_argument(
         '--arch',
         dest='arch',
-        choices=['32', '64', 'x86', 'x64', 'win32', 'win64'],
+        choices=['32', '64', 'x86', 'x64', 'Win32', 'Win64'],
         type=str.lower,
         help="Set build files architecture (Windows)",
         default='64')
