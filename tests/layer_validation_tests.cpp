@@ -17702,6 +17702,69 @@ TEST_F(VkLayerTest, CreateShaderModuleCheckBadCapability) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(VkPositiveLayerTest, ShaderRelaxedBlockLayout) {
+    // This is a positive test, no errors expected
+    // Verifies the ability to relax block layout rules with a shader that requires them to be relaxed
+    TEST_DESCRIPTION("Create a shader that requires relaxed block layout.");
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+
+    // The Relaxed Block Layout extension was promoted to core in 1.1.
+    // Go ahead and check for it and turn it on in case a 1.0 device has it.
+    if (!DeviceExtensionSupported(gpu(), nullptr, VK_KHR_RELAXED_BLOCK_LAYOUT_EXTENSION_NAME)) {
+        printf("%s Extension %s not supported, skipping this pass. \n", kSkipPrefix, VK_KHR_RELAXED_BLOCK_LAYOUT_EXTENSION_NAME);
+        return;
+    }
+    m_device_extension_names.push_back(VK_KHR_RELAXED_BLOCK_LAYOUT_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    // Vertex shader requiring relaxed layout.
+    // Without relaxed layout, we would expect a message like:
+    // "Structure id 2 decorated as Block for variable in Uniform storage class
+    // must follow standard uniform buffer layout rules: member 1 at offset 4 is not aligned to 16"
+
+    const std::string spv_source = R"(
+                  OpCapability Shader
+                  OpMemoryModel Logical GLSL450
+                  OpEntryPoint Vertex %main "main"
+                  OpSource GLSL 450
+                  OpMemberDecorate %S 0 Offset 0
+                  OpMemberDecorate %S 1 Offset 4
+                  OpDecorate %S Block
+                  OpDecorate %B DescriptorSet 0
+                  OpDecorate %B Binding 0
+          %void = OpTypeVoid
+             %3 = OpTypeFunction %void
+         %float = OpTypeFloat 32
+       %v3float = OpTypeVector %float 3
+             %S = OpTypeStruct %float %v3float
+%_ptr_Uniform_S = OpTypePointer Uniform %S
+             %B = OpVariable %_ptr_Uniform_S Uniform
+          %main = OpFunction %void None %3
+             %5 = OpLabel
+                  OpReturn
+                  OpFunctionEnd
+        )";
+
+    std::vector<unsigned int> spv;
+    VkShaderModuleCreateInfo module_create_info;
+    VkShaderModule shader_module;
+    module_create_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+    module_create_info.pNext = NULL;
+    ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, spv_source.data(), spv);
+    module_create_info.pCode = spv.data();
+    module_create_info.codeSize = spv.size() * sizeof(unsigned int);
+    module_create_info.flags = 0;
+
+    m_errorMonitor->ExpectSuccess();
+    VkResult err = vkCreateShaderModule(m_device->handle(), &module_create_info, NULL, &shader_module);
+    m_errorMonitor->VerifyNotFound();
+    if (err == VK_SUCCESS) {
+        vkDestroyShaderModule(m_device->handle(), shader_module, NULL);
+    }
+}
+
 TEST_F(VkPositiveLayerTest, CreatePipelineCheckShaderCapabilityExtension1of2) {
     // This is a positive test, no errors expected
     // Verifies the ability to deal with a shader that declares a non-unique SPIRV capability ID

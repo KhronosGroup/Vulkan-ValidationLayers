@@ -1803,8 +1803,11 @@ bool PreCallValidateCreateShaderModule(layer_data *dev_data, VkShaderModuleCreat
         spv_context ctx = spvContextCreate(spirv_environment);
         spv_const_binary_t binary{pCreateInfo->pCode, pCreateInfo->codeSize / sizeof(uint32_t)};
         spv_diagnostic diag = nullptr;
-
-        spv_valid = spvValidate(ctx, &binary, &diag);
+        spv_validator_options options = spvValidatorOptionsCreate();
+        if (GetDeviceExtensions(dev_data)->vk_khr_relaxed_block_layout) {
+            spvValidatorOptionsSetRelaxBlockLayout(options, true);
+        }
+        spv_valid = spvValidateWithOptions(ctx, options, &binary, &diag);
         if (spv_valid != SPV_SUCCESS) {
             if (!have_glsl_shader || (pCreateInfo->pCode[0] == spv::MagicNumber)) {
                 skip |=
@@ -1818,6 +1821,7 @@ bool PreCallValidateCreateShaderModule(layer_data *dev_data, VkShaderModuleCreat
             }
         }
 
+        spvValidatorOptionsDestroy(options);
         spvDiagnosticDestroy(diag);
         spvContextDestroy(ctx);
     }
