@@ -1,0 +1,40 @@
+Source: vulkan-validation-layers
+Section: libs
+Priority: optional
+Maintainer: Brett Johnson <brett@lunarg.com>
+Build-Depends: debhelper (>=9),
+ cmake,
+ python3,
+ libwayland-dev,
+ libx11-dev,
+ libxcb1-dev,
+ libxrandr-dev,
+ spirv-headers,
+ spirv-tools,
+ vulkan-headers,
+ libvulkan1,
+ glslang-tools,
+ pkg-config,
+ quilt
+Standards-Version: 4.1.3
+Homepage: https://github.com/KhronosGroup/Vulkan-ValidationLayers
+Vcs-Git: 
+Vcs-Browser: 
+
+Package: vulkan-validation-layers
+Architecture: linux-any
+Depends: ${shlibs:Depends},${misc:Depends},libvulkan1
+Multi-Arch: same
+Description: Khronos official Vulkan validation layers for Linux
+ This package provides Vulkan validation layers that can be enabled to assist
+ development by enabling developers to verify their applications correct use of
+ the Vulkan API
+
+Package: vulkan-validation-layers-dev
+Section: libdevel
+Architecture: linux-any
+Depends: ${shlibs:Depends},${misc:Depends},libvulkan1 (= ${binary:Version})
+Multi-Arch: same
+Description: Khronos official Vulkan validation layers for Linux development
+ This package provides a Vulkan validation layers utility library used by
+ additional layers, or other applications.

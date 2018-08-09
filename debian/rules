@@ -1,0 +1,27 @@
+#!/usr/bin/make -f
+
+%:
+	dh $@ --parallel
+
+override_dh_clean:
+	dh_clean
+	rm -rf __pycache__ \
+		scripts/__pycache__
+
+override_dh_auto_configure:
+	dh_auto_configure -- \
+	-DUSE_CCACHE=On \
+	-DGLSLANG_INSTALL_DIR=/usr \
+	-DCMAKE_BUILD_TYPE=Release
+
+override_dh_auto_install:
+	dh_auto_install --destdir=debian/tmp
+
+override_dh_auto_build:
+
+gentarball: SOURCE=vulkan-validation-layers
+gentarball: UV=$(shell dpkg-parsechangelog|awk '/^Version:/ {print $$2}'|sed 's/-.*$$//')
+gentarball:
+	git archive --format=tar upstream-unstable --prefix=$(SOURCE)-$(UV)/ | gzip -9 > \
+		../$(SOURCE)_$(UV).orig.tar.gz
+
