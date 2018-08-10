@@ -3,8 +3,8 @@ Section: libs
 Priority: optional
 Maintainer: Brett Johnson <brett@lunarg.com>
 Build-Depends: debhelper (>=9),
- vulkan-headers (>=${source:Upstream-Version}),
- libvulkan1 (>=${source:Upstream-Version}),
+ vulkan-headers (>=1.0.82.0),
+ libvulkan1 (>=1.0.82.0),
  cmake,
  python3,
  libwayland-dev,
