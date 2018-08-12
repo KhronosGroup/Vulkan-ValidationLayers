@@ -624,8 +624,9 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
         for member in struct_members:
             if self.isHandleTypeObject(member.type):
                 return True
-            elif member.type in struct_member_dict:
-                if self.struct_contains_object(member.type) == True:
+            # recurse for member structs, guard against infinite recursion
+            elif member.type in struct_member_dict and member.type != struct_item:
+                if self.struct_contains_object(member.type):
                     return True
         return False
     #
