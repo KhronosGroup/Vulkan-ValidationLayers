@@ -182,7 +182,6 @@ class ParameterValidationOutputGenerator(OutputGenerator):
         self.alias_dict = dict()                          # Dict of cmd|struct aliases
         self.returnedonly_structs = []
         # Named tuples to store struct and command data
-        self.StructType = namedtuple('StructType', ['name', 'value'])
         self.CommandParam = namedtuple('CommandParam', ['type', 'name', 'ispointer', 'isstaticarray', 'isbool', 'israngedenum',
                                                         'isconst', 'isoptional', 'iscount', 'noautovalidity',
                                                         'len', 'extstructs', 'condition', 'cdecl'])
@@ -247,6 +246,15 @@ class ParameterValidationOutputGenerator(OutputGenerator):
     # Called at file creation time
     def beginFile(self, genOpts):
         OutputGenerator.beginFile(self, genOpts)
+
+        # Build map of structure type names to VkStructureType enum values
+        # Find all types of category "struct"
+        for struct in self.registry.tree.iterfind('types/type[@category="struct"]'):
+            # Check if struct has member named "sType" of type "VkStructureType" which has values defined
+            stype = struct.find('member[name="sType"][type="VkStructureType"][@values]')
+            if stype:
+                # Store VkStructureType value for this type
+                self.structTypes[struct.get('name')] = stype.get('values')
 
         self.valid_usage_path = genOpts.valid_usage_path
         vu_json_filename = os.path.join(self.valid_usage_path + os.sep, 'validusage.json')
@@ -324,7 +332,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                 protect = self.struct_feature_protect[item]
                 pnext_case += '#ifdef %s\n' % protect
             pnext_case += '        // Validation code for %s structure members\n' % item
-            pnext_case += '        case %s: {\n' % self.getStructType(item)
+            pnext_case += '        case %s: {\n' % self.structTypes[item]
             pnext_case += '            %s *structure = (%s *) header;\n' % (item, item)
             expr = self.expandStructCode(item, item, 'structure->', '', '            ', [], postProcSpec)
             struct_validation_source = self.ScrubStructCode(expr)
@@ -494,19 +502,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             name = info[1]
             stypeValue = ''
             cdecl = self.makeCParamDecl(member, 0)
-            # Process VkStructureType
-            if type == 'VkStructureType':
-                # Extract the required struct type value from the comments embedded in the original text defining the
-                # 'typeinfo' element
-                rawXml = etree.tostring(typeinfo.elem).decode('ascii')
-                result = re.search(r'VK_STRUCTURE_TYPE_\w+', rawXml)
-                if result:
-                    value = result.group(0)
-                else:
-                    value = self.genVkStructureType(typeName)
-                # Store the required type value
-                self.structTypes[typeName] = self.StructType(name=name, value=value)
-            #
+
             # Store pointer/array/string info -- Check for parameter name in lens set
             iscount = False
             if name in lens:
@@ -707,36 +703,6 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             return True
         return False
     #
-    # Generate a VkStructureType based on a structure typename
-    def genVkStructureType(self, typename):
-        # Add underscore between lowercase then uppercase
-        value = re.sub('([a-z0-9])([A-Z])', r'\1_\2', typename)
-        value = value.replace('ASTCDecode', 'ASTC_Decode')
-        value = value.replace('D3_D12', 'D3D12')
-        value = value.replace('Device_IDProp', 'Device_ID_Prop')
-        value = value.replace('e8_Bit', 'E_8BIT')
-        value = value.replace('e16_Bit', 'E_16BIT')
-        value = value.replace('Features2', 'FEATURES_2')
-        value = value.replace('LODGather', 'LOD_Gather')
-        value = value.replace('PCIBus', 'PCI_Bus')
-        # Change to uppercase
-        value = value.upper()
-        # Add STRUCTURE_TYPE_
-        return re.sub('VK_', 'VK_STRUCTURE_TYPE_', value)
-    #
-    # Get the cached VkStructureType value for the specified struct typename, or generate a VkStructureType
-    # value assuming the struct is defined by a different feature
-    # TODO: The structTypes list gets built incrementally -- half the time, the sType you're looking for is not yet in the list.
-    #       The list needs to be built up-front, probably by accessing the XML directly, or by rewriting the generator.
-    def getStructType(self, typename):
-        value = None
-        if typename in self.structTypes:
-            value = self.structTypes[typename].value
-        else:
-            value = self.genVkStructureType(typename)
-            self.logMsg('diag', 'ParameterValidation: Generating {} for {} structure type that was not defined by the current feature'.format(value, typename))
-        return value
-    #
     # Retrieve the value of the len tag
     def getLen(self, param):
         result = None
@@ -876,15 +842,15 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             if lenValue.ispointer:
                 # When the length parameter is a pointer, there is an extra Boolean parameter in the function call to indicate if it is required
                 checkExpr.append('skip |= validate_struct_type_array(local_data->report_data, "{}", {ppp}"{ldn}"{pps}, {ppp}"{dn}"{pps}, "{sv}", {pf}{ln}, {pf}{vn}, {sv}, {}, {}, {}, {}, {});\n'.format(
-                    funcPrintName, lenPtrRequired, lenValueRequired, valueRequired, stype_vuid, param_vuid, ln=lenValue.name, ldn=lenPrintName, dn=valuePrintName, vn=value.name, sv=stype.value, pf=prefix, **postProcSpec))
+                    funcPrintName, lenPtrRequired, lenValueRequired, valueRequired, stype_vuid, param_vuid, ln=lenValue.name, ldn=lenPrintName, dn=valuePrintName, vn=value.name, sv=stype, pf=prefix, **postProcSpec))
             # This is an array with an integer count value
             else:
                 checkExpr.append('skip |= validate_struct_type_array(local_data->report_data, "{}", {ppp}"{ldn}"{pps}, {ppp}"{dn}"{pps}, "{sv}", {pf}{ln}, {pf}{vn}, {sv}, {}, {}, {}, {});\n'.format(
-                    funcPrintName, lenValueRequired, valueRequired, stype_vuid, param_vuid, ln=lenValue.name, ldn=lenPrintName, dn=valuePrintName, vn=value.name, sv=stype.value, pf=prefix, **postProcSpec))
+                    funcPrintName, lenValueRequired, valueRequired, stype_vuid, param_vuid, ln=lenValue.name, ldn=lenPrintName, dn=valuePrintName, vn=value.name, sv=stype, pf=prefix, **postProcSpec))
         # This is an individual struct
         else:
             checkExpr.append('skip |= validate_struct_type(local_data->report_data, "{}", {ppp}"{}"{pps}, "{sv}", {}{vn}, {sv}, {}, {}, {});\n'.format(
-                funcPrintName, valuePrintName, prefix, valueRequired, param_vuid, stype_vuid, vn=value.name, sv=stype.value, vt=value.type, **postProcSpec))
+                funcPrintName, valuePrintName, prefix, valueRequired, param_vuid, stype_vuid, vn=value.name, sv=stype, vt=value.type, **postProcSpec))
         return checkExpr
     #
     # Generate the handle check string
@@ -926,7 +892,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             extStructVar = 'allowed_structs_{}'.format(struct_type_name)
             extStructCount = 'ARRAY_SIZE({})'.format(extStructVar)
             extStructNames = '"' + ', '.join(value.extstructs) + '"'
-            checkExpr.append('const VkStructureType {}[] = {{ {} }};\n'.format(extStructVar, ', '.join([self.getStructType(s) for s in value.extstructs])))
+            checkExpr.append('const VkStructureType {}[] = {{ {} }};\n'.format(extStructVar, ', '.join([self.structTypes[s] for s in value.extstructs])))
         checkExpr.append('skip |= validate_struct_pnext(local_data->report_data, "{}", {ppp}"{}"{pps}, {}, {}{}, {}, {}, GeneratedHeaderVersion, {});\n'.format(
             funcPrintName, valuePrintName, extStructNames, prefix, value.name, extStructCount, extStructVar, vuid, **postProcSpec))
         return checkExpr
@@ -1182,7 +1148,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                         vuid = self.GetVuid(value.type, "sType-sType")
                         undefined_vuid = '"kVUIDUndefined"'
                         usedLines.append('skip |= validate_struct_type(local_data->report_data, "{}", {ppp}"{}"{pps}, "{sv}", &({}{vn}), {sv}, false, kVUIDUndefined, {});\n'.format(
-                            funcName, valueDisplayName, valuePrefix, vuid, vn=value.name, sv=stype.value, vt=value.type, **postProcSpec))
+                            funcName, valueDisplayName, valuePrefix, vuid, vn=value.name, sv=stype, vt=value.type, **postProcSpec))
                     elif value.type in self.handleTypes:
                         if not self.isHandleOptional(value, None):
                             usedLines.append('skip |= validate_required_handle(local_data->report_data, "{}", {ppp}"{}"{pps}, {}{});\n'.format(funcName, valueDisplayName, valuePrefix, value.name, **postProcSpec))
