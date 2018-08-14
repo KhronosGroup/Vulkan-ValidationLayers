@@ -15,8 +15,6 @@
 # limitations under the License.
 # ~~~
 
-cmake_minimum_required(VERSION 2.8.11)
-
 set(LAYER_JSON_FILES VkLayer_device_profile_api)
 
 set(VK_LAYER_RPATH /usr/lib/x86_64-linux-gnu/vulkan/layer:/usr/lib/i386-linux-gnu/vulkan/layer)
@@ -27,7 +25,7 @@ if(WIN32)
         foreach(config_file ${LAYER_JSON_FILES})
             file(TO_NATIVE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/windows/${config_file}.json src_json)
             if(CMAKE_GENERATOR MATCHES "^Visual Studio.*")
-                file(TO_NATIVE_PATH ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIGURATION>/${config_file}.json dst_json)
+                file(TO_NATIVE_PATH ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/${config_file}.json dst_json)
             else()
                 file(TO_NATIVE_PATH ${CMAKE_CURRENT_BINARY_DIR}/${config_file}.json dst_json)
             endif()
@@ -116,9 +114,9 @@ add_test_layer(device_profile_api ${DEVICE_PROFILE_API_SRCS})
 
 if(WIN32)
     # For Windows, copy necessary gtest DLLs to the right spot for the vk_layer_tests...
-    file(TO_NATIVE_PATH ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIGURATION>/*device_profile_api.* SRC_LAYER)
+    file(TO_NATIVE_PATH ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/*device_profile_api.* SRC_LAYER)
     file(TO_NATIVE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/windows/VkLayer_device_profile_api.json SRC_JSON)
-    file(TO_NATIVE_PATH ${PROJECT_BINARY_DIR}/layers/$<CONFIGURATION> DST_LAYER)
+    file(TO_NATIVE_PATH ${PROJECT_BINARY_DIR}/layers/$<CONFIG> DST_LAYER)
     add_custom_command(TARGET VkLayer_device_profile_api POST_BUILD
                        COMMAND xcopy /Y /I ${SRC_LAYER} ${DST_LAYER}
                        COMMAND xcopy /Y /I ${SRC_JSON} ${DST_LAYER})

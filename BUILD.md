@@ -200,8 +200,6 @@ The following is a table of all string options currently supported by this repos
 | Option | Platform | Default | Description |
 | ------ | -------- | ------- | ----------- |
 | CMAKE_OSX_DEPLOYMENT_TARGET | MacOS | `10.12` | The minimum version of MacOS for loader deployment. |
-| FALLBACK_CONFIG_DIRS | Linux/MacOS | `/etc/xdg` | Configuration path(s) to use instead of `XDG_CONFIG_DIRS` if that environment variable is unavailable. The default setting is freedesktop compliant. |
-| FALLBACK_DATA_DIRS | Linux/MacOS | `/usr/local/share:/usr/share` | Configuration path(s) to use instead of `XDG_DATA_DIRS` if that environment variable is unavailable. The default setting is freedesktop compliant. |
 
 These variables should be set using the `-D` option when invoking CMake to
 generate the native platform files.

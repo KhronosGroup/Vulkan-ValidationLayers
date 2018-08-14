@@ -21,7 +21,6 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     add_definitions(-DVK_USE_PLATFORM_WIN32_KHR -DWIN32_LEAN_AND_MEAN)
     # Workaround for TR1 deprecation in Visual Studio 15.5 until Google Test is updated
     add_definitions(-D_SILENCE_TR1_NAMESPACE_DEPRECATION_WARNING)
-    set(DisplayServer Win32)
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Android")
     add_definitions(-DVK_USE_PLATFORM_ANDROID_KHR)
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
@@ -50,8 +49,6 @@ endif()
 if(WIN32)
     file(COPY vk_layer_validation_tests.vcxproj.user DESTINATION ${CMAKE_BINARY_DIR}/tests)
 endif()
-
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
 
 if(WIN32)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_CRT_SECURE_NO_WARNINGS -D_USE_MATH_DEFINES")
@@ -103,21 +100,19 @@ set(
     ${CMAKE_PREFIX_PATH};${VULKAN_LOADER_INSTALL_DIR};${VULKAN_HEADERS_INSTALL_DIR};$ENV{VULKAN_LOADER_INSTALL_DIR};$ENV{VULKAN_HEADERS_INSTALL_DIR}
     )
 find_package(Vulkan)
-set(LIBVK "Vulkan::Vulkan")
 
 add_executable(vk_layer_validation_tests layer_validation_tests.cpp ../layers/vk_format_utils.cpp ${COMMON_CPP})
 set_target_properties(vk_layer_validation_tests PROPERTIES COMPILE_DEFINITIONS "GTEST_LINKED_AS_SHARED_LIBRARY=1")
 target_include_directories(vk_layer_validation_tests
-                           PUBLIC
-                           ${VulkanHeaders_INCLUDE_DIR}
-                           ${CMAKE_CURRENT_SOURCE_DIR}
-                           ${GTEST_LOCATION}/googletest/include
-                           ${PROJECT_SOURCE_DIR}/layers
-                           ${GLSLANG_SPIRV_INCLUDE_DIR}
-                           ${CMAKE_CURRENT_BINARY_DIR}
-                           ${CMAKE_BINARY_DIR}
-                           ${PROJECT_BINARY_DIR}
-                           ${PROJECT_BINARY_DIR}/layers)
+                           PUBLIC ${VulkanHeaders_INCLUDE_DIR}
+                                  ${CMAKE_CURRENT_SOURCE_DIR}
+                                  ${GTEST_LOCATION}/googletest/include
+                                  ${PROJECT_SOURCE_DIR}/layers
+                                  ${GLSLANG_SPIRV_INCLUDE_DIR}
+                                  ${CMAKE_CURRENT_BINARY_DIR}
+                                  ${CMAKE_BINARY_DIR}
+                                  ${PROJECT_BINARY_DIR}
+                                  ${PROJECT_BINARY_DIR}/layers)
 add_dependencies(vk_layer_validation_tests
                  VkLayer_utils
                  VkLayer_core_validation-json
@@ -131,21 +126,27 @@ add_dependencies(vk_layer_validation_tests
 if(NOT WIN32)
     set_target_properties(vk_layer_validation_tests PROPERTIES COMPILE_FLAGS "-Wno-sign-compare")
     if(BUILD_WSI_XCB_SUPPORT OR BUILD_WSI_XLIB_SUPPORT)
-        target_link_libraries(
-            vk_layer_validation_tests ${LIBVK} ${XCB_LIBRARIES} ${X11_LIBRARIES} gtest gtest_main ${GLSLANG_LIBRARIES})
+        target_link_libraries(vk_layer_validation_tests
+                              Vulkan::Vulkan
+                              ${XCB_LIBRARIES}
+                              ${X11_LIBRARIES}
+                              gtest
+                              gtest_main
+                              ${GLSLANG_LIBRARIES})
     else()
-        target_link_libraries(vk_layer_validation_tests ${LIBVK} gtest gtest_main ${GLSLANG_LIBRARIES})
+        target_link_libraries(vk_layer_validation_tests Vulkan::Vulkan gtest gtest_main ${GLSLANG_LIBRARIES})
     endif()
 endif()
 if(WIN32)
-    target_link_libraries(vk_layer_validation_tests ${LIBVK} gtest gtest_main ${GLSLANG_LIBRARIES})
+    target_link_libraries(vk_layer_validation_tests Vulkan::Vulkan gtest gtest_main ${GLSLANG_LIBRARIES})
 endif()
 
 if(WIN32)
     # For Windows, copy necessary gtest DLLs to the right spot for the vk_layer_tests...
-    file(TO_NATIVE_PATH ${PROJECT_BINARY_DIR}/external/googletest/googletest/$<CONFIGURATION>/*.dll SRC_GTEST_DLLS)
-    file(TO_NATIVE_PATH ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIGURATION> DST_GTEST_DLLS)
-    add_custom_command(TARGET vk_layer_validation_tests POST_BUILD COMMAND xcopy /Y /I ${SRC_GTEST_DLLS} ${DST_GTEST_DLLS})
+    file(TO_NATIVE_PATH ${PROJECT_BINARY_DIR}/external/googletest/googletest/$<CONFIG>/*.dll SRC_GTEST_DLLS)
+    file(TO_NATIVE_PATH ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG> DST_GTEST_DLLS)
+    add_custom_command(TARGET vk_layer_validation_tests POST_BUILD
+                       COMMAND xcopy /Y /I ${SRC_GTEST_DLLS} ${DST_GTEST_DLLS})
     # Copy the loader shared lib (if supplied) to the test application directory so the test app finds it.
     if(VULKAN_LOADER_INSTALL_DIR)
         add_custom_command(TARGET vk_layer_validation_tests POST_BUILD

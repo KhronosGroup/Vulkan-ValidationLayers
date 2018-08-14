@@ -15,13 +15,12 @@
 # limitations under the License.
 # ~~~
 
-cmake_minimum_required(VERSION 2.8.11)
+cmake_minimum_required(VERSION 3.4)
 
-# This must come before the project command.
+# Apple: Must be set before enable_language() or project() as it may influence configuration of the toolchain and flags.
 set(CMAKE_OSX_DEPLOYMENT_TARGET "10.12" CACHE STRING "Minimum OS X deployment version")
 
 project(Vulkan-ValidationLayers)
-# set (CMAKE_VERBOSE_MAKEFILE 1)
 
 # The API_NAME allows renaming builds to avoid conflicts with installed SDKs. The MAJOR number of the version we're building, used
 # in naming <api-name>-<major>.dll (and other files).
@@ -40,14 +39,15 @@ if(USE_CCACHE)
     find_program(CCACHE_FOUND ccache)
     if(CCACHE_FOUND)
         set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
-    endif(CCACHE_FOUND)
+    endif()
 endif()
 
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 include(GNUInstallDirs)
-# Set a better default install location for Windows only if the user did not provide one.
-if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT AND WIN32)
+
+if(WIN32 AND CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+    # Windows: if install locations not set by user, set install prefix to "<build_dir>\install".
     set(CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}/install" CACHE PATH "default install path" FORCE)
 endif()
 
@@ -62,21 +62,6 @@ endif()
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 # "Helper" targets that don't have interesting source code should set their FOLDER property to this
 set(LAYERS_HELPER_FOLDER "Helper Targets")
-
-if(CMAKE_SYSTEM_NAME STREQUAL "Linux" OR CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-    set(
-        FALLBACK_CONFIG_DIRS "/etc/xdg"
-        CACHE
-            STRING
-            "Search path to use when XDG_CONFIG_DIRS is unset or empty or the current process is SUID/SGID. Default is freedesktop compliant."
-        )
-    set(
-        FALLBACK_DATA_DIRS "/usr/local/share:/usr/share"
-        CACHE
-            STRING
-            "Search path to use when XDG_DATA_DIRS is unset or empty or the current process is SUID/SGID. Default is freedesktop compliant."
-        )
-endif()
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     include(FindPkgConfig)
@@ -126,20 +111,20 @@ if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID MATCHES "Clang")
     endif()
 endif()
 
-if(WIN32)
+if(MSVC)
     # Treat warnings as errors
-    add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/WX>")
+    add_compile_options("/WX")
     # Disable RTTI
-    add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/GR->")
+    add_compile_options("/GR-")
     # Warn about nested declarations
-    add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/w34456>")
+    add_compile_options("/w34456")
     # Warn about potentially uninitialized variables
-    add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/w34701>")
-    add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/w34703>")
+    add_compile_options("/w34701")
+    add_compile_options("/w34703")
     # Warn about different indirection types.
-    add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/w34057>")
+    add_compile_options("/w34057")
     # Warn about signed/unsigned mismatch.
-    add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/w34245>")
+    add_compile_options("/w34245")
 endif()
 
 if(IS_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/external/googletest)
@@ -209,19 +194,46 @@ if(WIN32)
     find_library(SPIRV_REMAPPER_DLIB NAMES SPVRemapperd HINTS ${GLSLANG_DEBUG_SEARCH_PATH})
     find_library(SPIRV_TOOLS_DLIB NAMES SPIRV-Toolsd HINTS ${SPIRV_TOOLS_DEBUG_SEARCH_PATH})
     find_library(SPIRV_TOOLS_OPT_DLIB NAMES SPIRV-Tools-optd HINTS ${SPIRV_TOOLS_OPT_DEBUG_SEARCH_PATH})
-    set_target_properties(glslang PROPERTIES IMPORTED_LOCATION "${GLSLANG_LIB}" IMPORTED_LOCATION_DEBUG "${GLSLANG_DLIB}")
-    set_target_properties(
-        OGLCompiler PROPERTIES IMPORTED_LOCATION "${OGLCompiler_LIB}" IMPORTED_LOCATION_DEBUG "${OGLCompiler_DLIB}")
-    set_target_properties(
-        OSDependent PROPERTIES IMPORTED_LOCATION "${OSDependent_LIB}" IMPORTED_LOCATION_DEBUG "${OSDependent_DLIB}")
-    set_target_properties(HLSL PROPERTIES IMPORTED_LOCATION "${HLSL_LIB}" IMPORTED_LOCATION_DEBUG "${HLSL_DLIB}")
-    set_target_properties(SPIRV PROPERTIES IMPORTED_LOCATION "${SPIRV_LIB}" IMPORTED_LOCATION_DEBUG "${SPIRV_DLIB}")
-    set_target_properties(
-        SPVRemapper PROPERTIES IMPORTED_LOCATION "${SPIRV_REMAPPER_LIB}" IMPORTED_LOCATION_DEBUG "${SPIRV_REMAPPER_DLIB}")
-    set_target_properties(
-        SPIRV-Tools PROPERTIES IMPORTED_LOCATION "${SPIRV_TOOLS_LIB}" IMPORTED_LOCATION_DEBUG "${SPIRV_TOOLS_DLIB}")
-    set_target_properties(
-        SPIRV-Tools-opt PROPERTIES IMPORTED_LOCATION "${SPIRV_TOOLS_OPT_LIB}" IMPORTED_LOCATION_DEBUG "${SPIRV_TOOLS_OPT_DLIB}")
+    set_target_properties(glslang
+                          PROPERTIES IMPORTED_LOCATION
+                                     "${GLSLANG_LIB}"
+                                     IMPORTED_LOCATION_DEBUG
+                                     "${GLSLANG_DLIB}")
+    set_target_properties(OGLCompiler
+                          PROPERTIES IMPORTED_LOCATION
+                                     "${OGLCompiler_LIB}"
+                                     IMPORTED_LOCATION_DEBUG
+                                     "${OGLCompiler_DLIB}")
+    set_target_properties(OSDependent
+                          PROPERTIES IMPORTED_LOCATION
+                                     "${OSDependent_LIB}"
+                                     IMPORTED_LOCATION_DEBUG
+                                     "${OSDependent_DLIB}")
+    set_target_properties(HLSL
+                          PROPERTIES IMPORTED_LOCATION
+                                     "${HLSL_LIB}"
+                                     IMPORTED_LOCATION_DEBUG
+                                     "${HLSL_DLIB}")
+    set_target_properties(SPIRV
+                          PROPERTIES IMPORTED_LOCATION
+                                     "${SPIRV_LIB}"
+                                     IMPORTED_LOCATION_DEBUG
+                                     "${SPIRV_DLIB}")
+    set_target_properties(SPVRemapper
+                          PROPERTIES IMPORTED_LOCATION
+                                     "${SPIRV_REMAPPER_LIB}"
+                                     IMPORTED_LOCATION_DEBUG
+                                     "${SPIRV_REMAPPER_DLIB}")
+    set_target_properties(SPIRV-Tools
+                          PROPERTIES IMPORTED_LOCATION
+                                     "${SPIRV_TOOLS_LIB}"
+                                     IMPORTED_LOCATION_DEBUG
+                                     "${SPIRV_TOOLS_DLIB}")
+    set_target_properties(SPIRV-Tools-opt
+                          PROPERTIES IMPORTED_LOCATION
+                                     "${SPIRV_TOOLS_OPT_LIB}"
+                                     IMPORTED_LOCATION_DEBUG
+                                     "${SPIRV_TOOLS_OPT_DLIB}")
 endif()
 
 if(WIN32)
@@ -239,25 +251,12 @@ else()
         ${SPIRV_TOOLS_LIBRARIES})
 endif()
 
-set(PYTHON_CMD ${PYTHON_EXECUTABLE})
-
-if(NOT WIN32)
-    add_definitions(-DFALLBACK_CONFIG_DIRS="${FALLBACK_CONFIG_DIRS}")
-    add_definitions(-DFALLBACK_DATA_DIRS="${FALLBACK_DATA_DIRS}")
-    add_definitions(-DSYSCONFDIR="${CMAKE_INSTALL_FULL_SYSCONFDIR}")
-
-    # Make sure /etc is searched by the loader
-    if(NOT (CMAKE_INSTALL_FULL_SYSCONFDIR STREQUAL "/etc"))
-        add_definitions(-DEXTRASYSCONFDIR="/etc")
-    endif()
-endif()
-
 # Generate dependent helper files
 set(SCRIPTS_DIR "${PROJECT_SOURCE_DIR}/scripts")
 # Define macro used for building vkxml generated files
 macro(run_vk_xml_generate dependency output)
     add_custom_command(OUTPUT ${output}
-                       COMMAND ${PYTHON_CMD} ${SCRIPTS_DIR}/lvl_genvk.py -registry ${VulkanRegistry_DIR}/vk.xml -scripts
+                       COMMAND ${PYTHON_EXECUTABLE} ${SCRIPTS_DIR}/lvl_genvk.py -registry ${VulkanRegistry_DIR}/vk.xml -scripts
                                ${VulkanRegistry_DIR} ${output}
                        DEPENDS ${VulkanRegistry_DIR}/vk.xml
                                ${VulkanRegistry_DIR}/generator.py
@@ -306,15 +305,15 @@ install(TARGETS VkLayer_utils DESTINATION ${CMAKE_INSTALL_LIBDIR})
 set_target_properties(VkLayer_utils PROPERTIES LINKER_LANGUAGE CXX)
 add_dependencies(VkLayer_utils generate_helper_files)
 target_include_directories(VkLayer_utils
-                           PUBLIC
-                           ${VulkanHeaders_INCLUDE_DIR}
-                           ${CMAKE_CURRENT_BINARY_DIR}
-                           ${CMAKE_CURRENT_BINARY_DIR}/layers
-                           ${PROJECT_BINARY_DIR})
+                           PUBLIC ${VulkanHeaders_INCLUDE_DIR}
+                                  ${CMAKE_CURRENT_BINARY_DIR}
+                                  ${CMAKE_CURRENT_BINARY_DIR}/layers
+                                  ${PROJECT_BINARY_DIR})
 
 # uninstall target
 if(NOT TARGET uninstall)
-    configure_file("${CMAKE_CURRENT_SOURCE_DIR}/cmake/cmake_uninstall.cmake.in" "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
+    configure_file("${CMAKE_CURRENT_SOURCE_DIR}/cmake/cmake_uninstall.cmake.in"
+                   "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
                    IMMEDIATE
                    @ONLY)
     add_custom_target(uninstall COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake)
@@ -327,7 +326,10 @@ add_definitions(-DAPI_NAME="${API_NAME}")
 file(STRINGS "${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan_core.h" lines REGEX "^#define VK_HEADER_VERSION [0-9]+")
 list(LENGTH lines len)
 if(${len} EQUAL 1)
-    string(REGEX MATCHALL "[0-9]+" vk_header_version ${lines})
+    string(REGEX MATCHALL
+                 "[0-9]+"
+                 vk_header_version
+                 ${lines})
 else()
     message(FATAL_ERROR "Unable to fetch version from vulkan_core.h")
 endif()
