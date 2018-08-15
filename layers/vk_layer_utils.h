@@ -23,6 +23,7 @@
 #include <stdbool.h>
 #include <string>
 #include <vector>
+#include <set>
 #include "vk_format_utils.h"
 #include "vk_layer_logging.h"
 
@@ -134,7 +135,7 @@ VK_LAYER_EXPORT void layer_debug_messenger_actions(debug_report_data *report_dat
                                                    const VkAllocationCallbacks *pAllocator, const char *layer_identifier);
 
 VK_LAYER_EXPORT VkStringErrorFlags vk_string_validate(const int max_length, const char *char_array);
-VK_LAYER_EXPORT bool white_list(const char *item, const char *whitelist);
+VK_LAYER_EXPORT bool white_list(const char *item, const std::set<std::string> &whitelist);
 
 static inline int u_ffs(int val) {
 #ifdef WIN32
