@@ -498,6 +498,7 @@ class HelperFileOutputGenerator(OutputGenerator):
             '#include <string>',
             '#include <unordered_map>',
             '#include <utility>',
+            '#include <set>',
             '',
             '#include <vulkan/vulkan.h>',
             '']
@@ -638,9 +639,9 @@ class HelperFileOutputGenerator(OutputGenerator):
                 '};'])
 
             # Output reference lists of instance/device extension names
-            struct.extend(['', 'static const char * const k%sExtensionNames = ' % type])
-            struct.extend([guarded(info['ifdef'], '    %s' % info['define']) for ext_name, info in extension_items])
-            struct.extend([';', ''])
+            struct.extend(['', 'static const std::set<std::string> k%sExtensionNames = {' % type])
+            struct.extend([guarded(info['ifdef'], '    %s,' % info['define']) for ext_name, info in extension_items])
+            struct.extend(['};', ''])
             output.extend(struct)
 
         output.extend(['', '#endif // VK_EXTENSION_HELPER_H_'])

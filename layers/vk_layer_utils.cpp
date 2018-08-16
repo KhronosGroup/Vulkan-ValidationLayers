@@ -74,11 +74,7 @@ VK_LAYER_EXPORT VkStringErrorFlags vk_string_validate(const int max_length, cons
 }
 
 // Utility function for finding a text string in another string
-VK_LAYER_EXPORT bool white_list(const char *item, const char *list) {
-    std::string candidate(item);
-    std::string white_list(list);
-    return (white_list.find(candidate) != std::string::npos);
-}
+VK_LAYER_EXPORT bool white_list(const char *item, const std::set<std::string> &list) { return (list.find(item) != list.end()); }
 
 // Debug callbacks get created in three ways:
 //   o  Application-defined debug callbacks
