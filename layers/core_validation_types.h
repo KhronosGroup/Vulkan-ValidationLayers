@@ -1129,6 +1129,7 @@ struct DeviceFeatures {
     VkPhysicalDeviceMeshShaderFeaturesNV mesh_shader;
     VkPhysicalDeviceInlineUniformBlockFeaturesEXT inline_uniform_block;
     VkPhysicalDeviceTransformFeedbackFeaturesEXT transform_feedback_features;
+    VkPhysicalDeviceFloat16Int8FeaturesKHR float16_int8;
 };
 
 enum RenderPassCreateVersion { RENDER_PASS_VERSION_1 = 0, RENDER_PASS_VERSION_2 = 1 };

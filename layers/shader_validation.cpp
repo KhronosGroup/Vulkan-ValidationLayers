@@ -1432,6 +1432,8 @@ static bool ValidateShaderCapabilities(layer_data *dev_data, shader_module const
             : IsEnabled([=](const DeviceFeatures &features) { return features.eight_bit_storage.*ptr; }) {}
         FeaturePointer(VkBool32 VkPhysicalDeviceTransformFeedbackFeaturesEXT::*ptr)
             : IsEnabled([=](const DeviceFeatures &features) { return features.transform_feedback_features.*ptr; }) {}
+        FeaturePointer(VkBool32 VkPhysicalDeviceFloat16Int8FeaturesKHR::*ptr)
+            : IsEnabled([=](const DeviceFeatures &features) { return features.float16_int8.*ptr; }) {}
     };
 
     struct CapabilityInfo {
@@ -1510,7 +1512,10 @@ static bool ValidateShaderCapabilities(layer_data *dev_data, shader_module const
         {spv::CapabilityStoragePushConstant8 , {"VkPhysicalDevice8BitStorageFeaturesKHR::storagePushConstant8", &VkPhysicalDevice8BitStorageFeaturesKHR::storagePushConstant8, &DeviceExtensions::vk_khr_8bit_storage}},
 
         {spv::CapabilityTransformFeedback , { "VkPhysicalDeviceTransformFeedbackFeaturesEXT::transformFeedback", &VkPhysicalDeviceTransformFeedbackFeaturesEXT::transformFeedback, &DeviceExtensions::vk_ext_transform_feedback}},
-        {spv::CapabilityGeometryStreams , { "VkPhysicalDeviceTransformFeedbackFeaturesEXT::geometryStreams", &VkPhysicalDeviceTransformFeedbackFeaturesEXT::geometryStreams, &DeviceExtensions::vk_ext_transform_feedback}}
+        {spv::CapabilityGeometryStreams , { "VkPhysicalDeviceTransformFeedbackFeaturesEXT::geometryStreams", &VkPhysicalDeviceTransformFeedbackFeaturesEXT::geometryStreams, &DeviceExtensions::vk_ext_transform_feedback}},
+
+        {spv::CapabilityFloat16 , {"VkPhysicalDeviceFloat16Int8FeaturesKHR::shaderFloat16", &VkPhysicalDeviceFloat16Int8FeaturesKHR::shaderFloat16, &DeviceExtensions::vk_khr_shader_float16_int8}},
+        {spv::CapabilityInt8 , {"VkPhysicalDeviceFloat16Int8FeaturesKHR::shaderInt8", &VkPhysicalDeviceFloat16Int8FeaturesKHR::shaderInt8, &DeviceExtensions::vk_khr_shader_float16_int8}},
     };
     // clang-format on
 
