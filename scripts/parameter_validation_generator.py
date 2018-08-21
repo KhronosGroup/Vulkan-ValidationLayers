@@ -559,7 +559,8 @@ class ParameterValidationOutputGenerator(OutputGenerator):
         elif 'FlagBits' in groupName:
             bits = []
             for elem in groupElem.findall('enum'):
-                bits.append(elem.get('name'))
+                if elem.get('supported') != 'disabled':
+                    bits.append(elem.get('name'))
             if bits:
                 self.flagBits[groupName] = bits
         else:
