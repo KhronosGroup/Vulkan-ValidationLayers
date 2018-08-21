@@ -218,6 +218,10 @@ static void DescribeTypeInner(std::ostringstream &ss, shader_module const *src, 
             ss << "arr[" << GetConstantValue(src, insn.word(3)) << "] of ";
             DescribeTypeInner(ss, src, insn.word(2));
             break;
+        case spv::OpTypeRuntimeArray:
+            ss << "runtime arr[] of ";
+            DescribeTypeInner(ss, src, insn.word(2));
+            break;
         case spv::OpTypePointer:
             ss << "ptr to " << StorageClassName(insn.word(2)) << " ";
             DescribeTypeInner(ss, src, insn.word(3));
@@ -268,6 +272,8 @@ static bool TypesMatch(shader_module const *a, shader_module const *b, unsigned 
     auto b_insn = b->get_def(b_type);
     assert(a_insn != a->end());
     assert(b_insn != b->end());
+
+    // Ignore runtime-sized arrays-- they cannot appear in these interfaces.
 
     if (a_arrayed && a_insn.opcode() == spv::OpTypeArray) {
         return TypesMatch(a, b, a_insn.word(2), b_type, false, b_arrayed, relaxed);
@@ -409,6 +415,7 @@ static unsigned GetFormatType(VkFormat fmt) {
 }
 
 // characterizes a SPIR-V type appearing in an interface to a FF stage, for comparison to a VkFormat's characterization above.
+// also used for input attachments, as we statically know their format.
 static unsigned GetFundamentalType(shader_module const *src, unsigned type) {
     auto insn = src->get_def(type);
     assert(insn != src->end());
@@ -419,15 +426,13 @@ static unsigned GetFundamentalType(shader_module const *src, unsigned type) {
         case spv::OpTypeFloat:
             return FORMAT_TYPE_FLOAT;
         case spv::OpTypeVector:
-            return GetFundamentalType(src, insn.word(2));
         case spv::OpTypeMatrix:
-            return GetFundamentalType(src, insn.word(2));
         case spv::OpTypeArray:
+        case spv::OpTypeRuntimeArray:
+        case spv::OpTypeImage:
             return GetFundamentalType(src, insn.word(2));
         case spv::OpTypePointer:
             return GetFundamentalType(src, insn.word(3));
-        case spv::OpTypeImage:
-            return GetFundamentalType(src, insn.word(2));
 
         default:
             return 0;
@@ -647,8 +652,9 @@ static bool IsWritableDescriptorType(shader_module const *module, uint32_t type_
     auto type = module->get_def(type_id);
 
     // Strip off any array or ptrs. Where we remove array levels, adjust the  descriptor count for each dimension.
-    while (type.opcode() == spv::OpTypeArray || type.opcode() == spv::OpTypePointer) {
-        if (type.opcode() == spv::OpTypeArray) {
+    while (type.opcode() == spv::OpTypeArray || type.opcode() == spv::OpTypePointer || type.opcode() == spv::OpTypeRuntimeArray) {
+        if (type.opcode() == spv::OpTypeArray || type.opcode() == spv::OpTypeRuntimeArray) {
+            // Element type
             type = module->get_def(type.word(2));
         } else {
             if (type.word(2) == spv::StorageClassStorageBuffer) {
@@ -1375,6 +1381,7 @@ static uint32_t DescriptorTypeToReqs(shader_module const *module, uint32_t type_
     while (true) {
         switch (type.opcode()) {
             case spv::OpTypeArray:
+            case spv::OpTypeRuntimeArray:
             case spv::OpTypeSampledImage:
                 type = module->get_def(type.word(2));
                 break;
