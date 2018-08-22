@@ -23,6 +23,7 @@
 #define VKTESTFRAMEWORK_H
 
 #include "SPIRV/GLSL.std.450.h"
+#include "spirv-tools/libspirv.h"
 #include "glslang/Public/ShaderLang.h"
 #include "icd-spv.h"
 #include "test_common.h"
@@ -67,6 +68,7 @@ class VkTestFramework : public ::testing::Test {
     static void Finish();
 
     bool GLSLtoSPV(const VkShaderStageFlagBits shader_type, const char *pshader, std::vector<unsigned int> &spv);
+    bool ASMtoSPV(const spv_target_env target_env, const uint32_t options, const char *pasm, std::vector<unsigned int> &spv);
     static bool m_canonicalize_spv;
     static bool m_strip_spv;
     static bool m_do_everything_spv;
