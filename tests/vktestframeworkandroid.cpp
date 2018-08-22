@@ -93,3 +93,25 @@ bool VkTestFramework::GLSLtoSPV(const VkShaderStageFlagBits shader_type, const c
 
     return true;
 }
+
+//
+// Compile a given string containing SPIR-V assembly into SPV for use by VK
+// Return value of false means an error was encountered.
+//
+bool VkTestFramework::ASMtoSPV(const spv_target_env target_env, const uint32_t options, const char *pasm,
+                               std::vector<unsigned int> &spv) {
+    spv_binary binary;
+    spv_diagnostic diagnostic = nullptr;
+    spv_context context = spvContextCreate(target_env);
+    spv_result_t error = spvTextToBinaryWithOptions(context, pasm, strlen(pasm), options, &binary, &diagnostic);
+    spvContextDestroy(context);
+    if (error) {
+        __android_log_print(ANDROID_LOG_ERROR, "VkLayerValidationTest", "ASMtoSPV compilation failed");
+        spvDiagnosticDestroy(diagnostic);
+        return false;
+    }
+    spv.insert(spv.end(), binary->code, binary->code + binary->wordCount);
+    spvBinaryDestroy(binary);
+
+    return true;
+}

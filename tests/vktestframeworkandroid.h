@@ -20,6 +20,7 @@
 #ifndef VKTESTFRAMEWORKANDROID_H
 #define VKTESTFRAMEWORKANDROID_H
 
+#include "spirv-tools/libspirv.h"
 #include "test_common.h"
 
 #if defined(NDEBUG)
@@ -43,6 +44,7 @@ class VkTestFramework : public ::testing::Test {
 
     VkFormat GetFormat(VkInstance instance, vk_testing::Device *device);
     bool GLSLtoSPV(const VkShaderStageFlagBits shader_type, const char *pshader, std::vector<unsigned int> &spv);
+    bool ASMtoSPV(const spv_target_env target_env, const uint32_t options, const char *pasm, std::vector<unsigned int> &spv);
     static bool m_devsim_layer;
 };
 
