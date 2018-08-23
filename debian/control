@@ -25,6 +25,9 @@ Package: vulkan-validation-layers
 Architecture: linux-any
 Depends: ${shlibs:Depends},${misc:Depends},
  libvulkan1 (>=${source:Upstream-Version})
+Breaks: vulkan-loader,
+ libvulkan1 (<<1.1.79),
+ libvulkan-dev
 Multi-Arch: same
 Description: Khronos official Vulkan validation layers for Linux
  This package provides Vulkan validation layers that can be enabled to assist
