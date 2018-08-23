@@ -1211,6 +1211,34 @@ VkShaderObj::VkShaderObj(VkDeviceObj *device, const char *shader_code, VkShaderS
     assert(VK_SUCCESS == err);
 }
 
+VkShaderObj::VkShaderObj(VkDeviceObj *device, const std::string spv_source, VkShaderStageFlagBits stage,
+                         VkRenderFramework *framework, char const *name) {
+    VkResult U_ASSERT_ONLY err = VK_SUCCESS;
+    std::vector<unsigned int> spv;
+    VkShaderModuleCreateInfo moduleCreateInfo;
+
+    m_device = device;
+    m_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    m_stage_info.pNext = nullptr;
+    m_stage_info.flags = 0;
+    m_stage_info.stage = stage;
+    m_stage_info.module = VK_NULL_HANDLE;
+    m_stage_info.pName = name;
+    m_stage_info.pSpecializationInfo = nullptr;
+
+    moduleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+    moduleCreateInfo.pNext = nullptr;
+
+    framework->ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, spv_source.data(), spv);
+    moduleCreateInfo.pCode = spv.data();
+    moduleCreateInfo.codeSize = spv.size() * sizeof(unsigned int);
+    moduleCreateInfo.flags = 0;
+
+    err = init_try(*m_device, moduleCreateInfo);
+    m_stage_info.module = handle();
+    assert(VK_SUCCESS == err);
+}
+
 VkPipelineLayoutObj::VkPipelineLayoutObj(VkDeviceObj *device,
                                          const std::vector<const VkDescriptorSetLayoutObj *> &descriptor_layouts,
                                          const std::vector<VkPushConstantRange> &push_constant_ranges) {
