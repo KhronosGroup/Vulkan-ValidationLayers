@@ -323,6 +323,15 @@ endif()
 
 add_definitions(-DAPI_NAME="${API_NAME}")
 
+# Fetch header version from vulkan_core.h
+file(STRINGS "${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan_core.h" lines REGEX "^#define VK_HEADER_VERSION [0-9]+")
+list(LENGTH lines len)
+if(${len} EQUAL 1)
+    string(REGEX MATCHALL "[0-9]+" vk_header_version ${lines})
+else()
+    message(FATAL_ERROR "Unable to fetch version from vulkan_core.h")
+endif()
+
 add_subdirectory(external)
 if(BUILD_TESTS)
     add_subdirectory(tests)

@@ -1,10 +1,10 @@
 {
     "file_format_version" : "1.1.0",
     "layer" : {
-        "name": "VK_LAYER_LUNARG_parameter_validation",
+        "name": "VK_LAYER_LUNARG_core_validation",
         "type": "GLOBAL",
-        "library_path": "./libVkLayer_parameter_validation.so",
-        "api_version": "1.1.83",
+        "library_path": "@RELATIVE_LAYER_BINARY@",
+        "api_version": "@VK_VERSION@",
         "implementation_version": "1",
         "description": "LunarG Validation Layer",
         "instance_extensions": [
@@ -23,6 +23,15 @@
                         "vkCmdDebugMarkerEndEXT",
                         "vkCmdDebugMarkerInsertEXT"
                        ]
+             },
+             {
+                 "name": "VK_EXT_validation_cache",
+                 "spec_version": "1",
+                 "entrypoints": ["vkCreateValidationCacheEXT",
+                         "vkDestroyValidationCacheEXT",
+                         "vkGetValidationCacheDataEXT",
+                         "vkMergeValidationCachesEXT"
+                        ]
              }
          ]
     }

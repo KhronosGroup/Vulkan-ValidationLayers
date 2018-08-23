@@ -1,10 +1,10 @@
 {
     "file_format_version" : "1.1.0",
     "layer" : {
-        "name": "VK_LAYER_LUNARG_object_tracker",
+        "name": "VK_LAYER_LUNARG_parameter_validation",
         "type": "GLOBAL",
-        "library_path": "./libVkLayer_object_tracker.dylib",
-        "api_version": "1.1.83",
+        "library_path": "@RELATIVE_LAYER_BINARY@",
+        "api_version": "@VK_VERSION@",
         "implementation_version": "1",
         "description": "LunarG Validation Layer",
         "instance_extensions": [

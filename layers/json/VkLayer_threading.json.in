@@ -3,8 +3,8 @@
     "layer" : {
         "name": "VK_LAYER_GOOGLE_threading",
         "type": "GLOBAL",
-        "library_path": "./libVkLayer_threading.dylib",
-        "api_version": "1.1.83",
+        "library_path": "@RELATIVE_LAYER_BINARY@",
+        "api_version": "@VK_VERSION@",
         "implementation_version": "1",
         "description": "Google Validation Layer",
         "instance_extensions": [
