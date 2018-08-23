@@ -14023,7 +14023,10 @@ TEST_F(VkLayerTest, DSAspectBitsErrors) {
     // Create an image to be used for invalid updates
     VkImageObj image_obj(m_device);
     image_obj.Init(64, 64, 1, depth_format, VK_IMAGE_USAGE_SAMPLED_BIT);
-    ASSERT_TRUE(image_obj.initialized());
+    if (!image_obj.initialized()) {
+        printf("%s Depth + Stencil format cannot be sampled. Skipped.\n", kSkipPrefix);
+        return;
+    }
     VkImage image = image_obj.image();
 
     // Now create view for image
