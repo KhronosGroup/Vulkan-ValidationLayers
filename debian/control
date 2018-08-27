@@ -3,9 +3,19 @@ Priority: optional
 Maintainer: Debian X Strike Force <debian-x@lists.debian.org>
 Uploaders: Timo Aaltonen <tjaalton@debian.org>
 Build-Depends: debhelper (>= 9),
+ vulkan-headers (>=1.1.82), vulkan-headers (<<1.1.83),
+ libvulkan-dev (>=1.1.82), libvulkan-dev (<<1.1.83),
  cmake,
- glslang-dev,
+ python3,
+ libwayland-dev,
+ libx11-dev,
+ libxcb1-dev,
+ libxrandr-dev,
+ spirv-headers,
  spirv-tools,
+ glslang-tools,
+ pkg-config,
+ quilt
 Standards-Version: 4.2.0
 Section: libs
 Homepage: https://github.com/KhronosGroup/Vulkan-ValidationLayers
@@ -14,7 +24,8 @@ Vcs-Browser: https://salsa.debian.org/xorg-team/vulkan/vulkan-validationlayers
 
 Package: vulkan-validationlayers
 Architecture: linux-any
-Depends: ${shlibs:Depends}, ${misc:Depends}
+Depends: ${shlibs:Depends}, ${misc:Depends},
+ libvulkan1 (>=${source:Upstream-Version})
 Breaks: vulkan-loader,
  libvulkan1 (<< 1.1.82.0),
 Replaces: vulkan-loader,
