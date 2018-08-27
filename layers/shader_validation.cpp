@@ -1467,20 +1467,40 @@ static uint32_t DescriptorTypeToReqs(shader_module const *module, uint32_t type_
                 auto arrayed = type.word(5);
                 auto msaa = type.word(6);
 
+                uint32_t bits = 0;
+                switch (GetFundamentalType(module, type.word(2))) {
+                    case FORMAT_TYPE_FLOAT:
+                        bits = DESCRIPTOR_REQ_COMPONENT_TYPE_FLOAT;
+                        break;
+                    case FORMAT_TYPE_UINT:
+                        bits = DESCRIPTOR_REQ_COMPONENT_TYPE_UINT;
+                        break;
+                    case FORMAT_TYPE_SINT:
+                        bits = DESCRIPTOR_REQ_COMPONENT_TYPE_SINT;
+                        break;
+                    default:
+                        break;
+                }
+
                 switch (dim) {
                     case spv::Dim1D:
-                        return arrayed ? DESCRIPTOR_REQ_VIEW_TYPE_1D_ARRAY : DESCRIPTOR_REQ_VIEW_TYPE_1D;
+                        bits |= arrayed ? DESCRIPTOR_REQ_VIEW_TYPE_1D_ARRAY : DESCRIPTOR_REQ_VIEW_TYPE_1D;
+                        return bits;
                     case spv::Dim2D:
-                        return (msaa ? DESCRIPTOR_REQ_MULTI_SAMPLE : DESCRIPTOR_REQ_SINGLE_SAMPLE) |
-                               (arrayed ? DESCRIPTOR_REQ_VIEW_TYPE_2D_ARRAY : DESCRIPTOR_REQ_VIEW_TYPE_2D);
+                        bits |= msaa ? DESCRIPTOR_REQ_MULTI_SAMPLE : DESCRIPTOR_REQ_SINGLE_SAMPLE;
+                        bits |= arrayed ? DESCRIPTOR_REQ_VIEW_TYPE_2D_ARRAY : DESCRIPTOR_REQ_VIEW_TYPE_2D;
+                        return bits;
                     case spv::Dim3D:
-                        return DESCRIPTOR_REQ_VIEW_TYPE_3D;
+                        bits |= DESCRIPTOR_REQ_VIEW_TYPE_3D;
+                        return bits;
                     case spv::DimCube:
-                        return arrayed ? DESCRIPTOR_REQ_VIEW_TYPE_CUBE_ARRAY : DESCRIPTOR_REQ_VIEW_TYPE_CUBE;
+                        bits |= arrayed ? DESCRIPTOR_REQ_VIEW_TYPE_CUBE_ARRAY : DESCRIPTOR_REQ_VIEW_TYPE_CUBE;
+                        return bits;
                     case spv::DimSubpassData:
-                        return msaa ? DESCRIPTOR_REQ_MULTI_SAMPLE : DESCRIPTOR_REQ_SINGLE_SAMPLE;
+                        bits |= msaa ? DESCRIPTOR_REQ_MULTI_SAMPLE : DESCRIPTOR_REQ_SINGLE_SAMPLE;
+                        return bits;
                     default:  // buffer, etc.
-                        return 0;
+                        return bits;
                 }
             }
             default:
