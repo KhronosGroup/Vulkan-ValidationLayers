@@ -628,9 +628,25 @@ static std::string StringDescriptorReqViewType(descriptor_req req) {
     return result;
 }
 
+static char const *StringDescriptorReqComponentType(descriptor_req req) {
+    if (req & DESCRIPTOR_REQ_COMPONENT_TYPE_SINT) return "SINT";
+    if (req & DESCRIPTOR_REQ_COMPONENT_TYPE_UINT) return "UINT";
+    if (req & DESCRIPTOR_REQ_COMPONENT_TYPE_FLOAT) return "FLOAT";
+    return "(none)";
+}
+
 // Is this sets underlying layout compatible with passed in layout according to "Pipeline Layout Compatibility" in spec?
 bool cvdescriptorset::DescriptorSet::IsCompatible(DescriptorSetLayout const *const layout, std::string *error) const {
     return layout->IsCompatible(p_layout_.get(), error);
+}
+
+static unsigned DescriptorRequirementsBitsFromFormat(VkFormat fmt) {
+    if (FormatIsSInt(fmt)) return DESCRIPTOR_REQ_COMPONENT_TYPE_SINT;
+    if (FormatIsUInt(fmt)) return DESCRIPTOR_REQ_COMPONENT_TYPE_UINT;
+    if (FormatIsDepthAndStencil(fmt)) return DESCRIPTOR_REQ_COMPONENT_TYPE_FLOAT | DESCRIPTOR_REQ_COMPONENT_TYPE_UINT;
+    if (fmt == VK_FORMAT_UNDEFINED) return 0;
+    // everything else -- UNORM/SNORM/FLOAT/USCALED/SSCALED is all float in the shader.
+    return DESCRIPTOR_REQ_COMPONENT_TYPE_FLOAT;
 }
 
 // Validate that the state of this set is appropriate for the given bindings and dynamic_offsets at Draw time
@@ -749,6 +765,17 @@ bool cvdescriptorset::DescriptorSet::ValidateDrawState(const std::map<uint32_t, 
                         error_str << "Descriptor in binding #" << binding << " at global descriptor index " << i
                                   << " requires an image view of type " << StringDescriptorReqViewType(reqs) << " but got "
                                   << string_VkImageViewType(image_view_ci.viewType) << ".";
+                        *error = error_str.str();
+                        return false;
+                    }
+
+                    auto format_bits = DescriptorRequirementsBitsFromFormat(image_view_ci.format);
+                    if (!(reqs & format_bits)) {
+                        // bad component type
+                        std::stringstream error_str;
+                        error_str << "Descriptor in binding #" << binding << " at global descriptor index " << i << " requires "
+                                  << StringDescriptorReqComponentType(reqs) << " component type, but bound descriptor format is "
+                                  << string_VkFormat(image_view_ci.format) << ".";
                         *error = error_str.str();
                         return false;
                     }
