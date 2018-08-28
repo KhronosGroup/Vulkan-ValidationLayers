@@ -1,1 +1,2 @@
 usr/include/*  usr/include/vulkan/layer-utils
+usr/lib/*/libVkLayer_utils.a
