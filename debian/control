@@ -1,10 +1,10 @@
-Source: vulkan-validation-layers
-Section: libs
+Source: vulkan-validationlayers
 Priority: optional
-Maintainer: Brett Johnson <brett@lunarg.com>
-Build-Depends: debhelper (>=9),
+Maintainer: Debian X Strike Force <debian-x@lists.debian.org>
+Uploaders: Timo Aaltonen <tjaalton@debian.org>
+Build-Depends: debhelper (>= 9),
  vulkan-headers (>=1.1.82), vulkan-headers (<<1.1.83),
- libvulkan1 (>=1.1.82), libvulkan1 (<<1.1.83),
+ libvulkan-dev (>=1.1.82), libvulkan-dev (<<1.1.83),
  cmake,
  python3,
  libwayland-dev,
@@ -16,30 +16,38 @@ Build-Depends: debhelper (>=9),
  glslang-tools,
  pkg-config,
  quilt
-Standards-Version: 4.1.3
+Standards-Version: 4.2.0
+Section: libs
 Homepage: https://github.com/KhronosGroup/Vulkan-ValidationLayers
-Vcs-Git: 
-Vcs-Browser: 
+Vcs-Git: https://salsa.debian.org/xorg-team/vulkan/vulkan-validationlayers.git
+Vcs-Browser: https://salsa.debian.org/xorg-team/vulkan/vulkan-validationlayers
 
-Package: vulkan-validation-layers
+Package: vulkan-validationlayers
 Architecture: linux-any
-Depends: ${shlibs:Depends},${misc:Depends},
+Depends: ${shlibs:Depends}, ${misc:Depends},
  libvulkan1 (>=${source:Upstream-Version})
 Breaks: vulkan-loader,
- libvulkan1 (<<1.1.79),
- libvulkan-dev
+ libvulkan1 (<< 1.1.82.0),
+Replaces: vulkan-loader,
+ libvulkan1 (<< 1.1.82.0),
 Multi-Arch: same
-Description: Khronos official Vulkan validation layers for Linux
- This package provides Vulkan validation layers that can be enabled to assist
- development by enabling developers to verify their applications correct use of
- the Vulkan API
+Description: Vulkan validation layers
+ This project provides the Khronos official Vulkan validation layers.
+ .
+ This package includes the loader library.
 
-Package: vulkan-validation-layers-dev
+Package: vulkan-validationlayers-dev
 Section: libdevel
 Architecture: linux-any
-Depends: ${shlibs:Depends},${misc:Depends},
- libvulkan1 (>=${source:Upstream-Version})
+Depends:
+ vulkan-validationlayers (= ${binary:Version}),
+ ${misc:Depends},
+Breaks:
+ libvulkan-dev (<< 1.1.82.0),
+Replaces:
+ libvulkan-dev (<< 1.1.82.0),
 Multi-Arch: same
-Description: Khronos official Vulkan validation layers for Linux development
- This package provides a Vulkan validation layers utility library used by
- additional layers, or other applications.
+Description: Vulkan validation layers -- development files
+ This project provides the Khronos official Vulkan validation layers.
+ .
+ This package includes files needed for development.
