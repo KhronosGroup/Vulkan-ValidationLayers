@@ -8596,8 +8596,8 @@ TEST_F(VkLayerTest, InvalidDescriptorSetSamplerDestroyed) {
     vkDestroyImageView(m_device->device(), view, NULL);
 }
 
-TEST_F(VkLayerTest, ImageDescriptorLayoutMismatch) {
-    TEST_DESCRIPTION("Update an image sampler with a layout that doesn't match the actual image layout at the image is used.");
+TEST_F(VkLayerTest, ImageDescriptorLayoutMismatchInternal) {
+    TEST_DESCRIPTION("Create an image sampler layout->image layout mismatch within a command buffer");
     ASSERT_NO_FATAL_FAILURE(Init(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
     ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -8736,6 +8736,114 @@ TEST_F(VkLayerTest, ImageDescriptorLayoutMismatch) {
     vkDestroySampler(m_device->device(), sampler, NULL);
     vkDestroyImageView(m_device->device(), view, NULL);
     vkDestroyDescriptorPool(m_device->device(), ds_pool, NULL);
+}
+
+TEST_F(VkLayerTest, ImageDescriptorLayoutMismatchExternal) {
+    TEST_DESCRIPTION("Create an image sampler layout->image layout mismatch external to a command buffer");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    OneOffDescriptorSet ds(m_device, {
+                                         {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+                                     });
+
+    VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
+    VkSampler sampler;
+
+    VkResult err;
+    err = vkCreateSampler(m_device->device(), &sampler_ci, NULL, &sampler);
+    ASSERT_VK_SUCCESS(err);
+
+    const VkPipelineLayoutObj pipeline_layout(m_device, {&ds.layout_});
+
+    VkImageObj image(m_device);
+    // Transition image to be used in shader to SHADER_READ_ONLY_OPTIMAL
+    image.Init(128, 128, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+               VK_IMAGE_TILING_OPTIMAL, 0);
+
+    ASSERT_TRUE(image.initialized());
+
+    VkImageView view;
+    VkImageViewCreateInfo ivci = {};
+    ivci.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    ivci.image = image.handle();
+    ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    ivci.format = VK_FORMAT_R8G8B8A8_UNORM;
+    ivci.subresourceRange.layerCount = 1;
+    ivci.subresourceRange.baseMipLevel = 0;
+    ivci.subresourceRange.levelCount = 1;
+    ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+
+    err = vkCreateImageView(m_device->device(), &ivci, NULL, &view);
+    ASSERT_VK_SUCCESS(err);
+
+    VkDescriptorImageInfo image_info{};
+    // Set error condition -- anything but Shader_Read_Only_Optimal which is the current image layout
+    image_info.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    image_info.imageView = view;
+    image_info.sampler = sampler;
+
+    VkWriteDescriptorSet descriptor_write = {};
+    descriptor_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    descriptor_write.dstSet = ds.set_;
+    descriptor_write.dstBinding = 0;
+    descriptor_write.descriptorCount = 1;
+    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    descriptor_write.pImageInfo = &image_info;
+
+    vkUpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+
+    char const *vsSource =
+        "#version 450\n"
+        "\n"
+        "void main(){\n"
+        "   gl_Position = vec4(1);\n"
+        "}\n";
+    char const *fsSource =
+        "#version 450\n"
+        "\n"
+        "layout(set=0, binding=0) uniform sampler2D s;\n"
+        "layout(location=0) out vec4 x;\n"
+        "void main(){\n"
+        "   x = texture(s, vec2(1));\n"
+        "}\n";
+
+    VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
+    VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+    VkPipelineObj pipe(m_device);
+    pipe.AddShader(&vs);
+    pipe.AddShader(&fs);
+    pipe.AddDefaultColorAttachment();
+    pipe.CreateVKPipeline(pipeline_layout.handle(), renderPass());
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "UNASSIGNED-CoreValidation-DrawState-InvalidImageLayout");
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    // Bind pipeline to cmd buffer
+    vkCmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
+    vkCmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1, &ds.set_, 0,
+                            nullptr);
+
+    VkViewport viewport = {0, 0, 16, 16, 0, 1};
+    VkRect2D scissor = {{0, 0}, {16, 16}};
+    vkCmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
+    vkCmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissor);
+
+    m_commandBuffer->Draw(1, 0, 0, 0);
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+    VkSubmitInfo submit_info = {};
+    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers = &m_commandBuffer->handle();
+    vkQueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+
+    m_errorMonitor->VerifyFound();
+    vkQueueWaitIdle(m_device->m_queue);
+    vkDestroyImageView(m_device->device(), view, NULL);
+    vkDestroySampler(m_device->device(), sampler, nullptr);
 }
 
 TEST_F(VkLayerTest, DescriptorPoolInUseDestroyedSignaled) {
