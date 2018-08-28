@@ -5992,8 +5992,8 @@ TEST_F(VkLayerTest, PointSizeGeomShaderFailure) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
-    if (!m_device->phy().features().geometryShader) {
-        printf("%s Device does not support geometry shaders; skipped.\n", kSkipPrefix);
+    if ((!m_device->phy().features().geometryShader) || (!m_device->phy().features().shaderTessellationAndGeometryPointSize)) {
+        printf("%s Device does not support the required geometry shader features; skipped.\n", kSkipPrefix);
         return;
     }
 
@@ -24069,8 +24069,8 @@ TEST_F(VkPositiveLayerTest, PointSizeGeomShaderSuccess) {
     ASSERT_NO_FATAL_FAILURE(Init());
     m_errorMonitor->ExpectSuccess();
 
-    if (!m_device->phy().features().geometryShader) {
-        printf("%s Device does not support geometry shaders; skipped.\n", kSkipPrefix);
+    if ((!m_device->phy().features().geometryShader) || (!m_device->phy().features().shaderTessellationAndGeometryPointSize)) {
+        printf("%s Device does not support the required geometry shader features; skipped.\n", kSkipPrefix);
         return;
     }
 
