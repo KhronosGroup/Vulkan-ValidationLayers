@@ -23687,25 +23687,42 @@ TEST_F(VkLayerTest, ExecuteSecondaryCBWithLayoutMismatch) {
 TEST_F(VkLayerTest, ExtensionNotEnabled) {
     TEST_DESCRIPTION("Validate that using an API from an unenabled extension returns an error");
 
-    // Do NOT enable VK_KHR_maintenance1
-    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
 
-    // TODO: Main1 is ALWAYS enabled in 1.1.  Re-write test with an extension present in both 1.0 and 1.1
-    if (m_device->props.apiVersion >= VK_API_VERSION_1_1) {
-        printf("%s Device has apiVersion greater than 1.0 -- skipping extension enabled check.\n", kSkipPrefix);
+    // Do NOT enable prerequesite extensions for YCBCR...
+    // Do NOT enable VK_KHR_maintenance1
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+    } else {
+        printf("%s test requires KHR YCBR conversion extension, not available.  Skipping.\n", kSkipPrefix);
         return;
     }
+
+    // Need to ignore this error to get to the one we're testing
+    m_errorMonitor->SetUnexpectedError("VUID-vkCreateDevice-ppEnabledExtensionNames-01387");
+    ASSERT_NO_FATAL_FAILURE(InitState());
 
     // Find address of extension API
-    PFN_vkTrimCommandPoolKHR vkTrimCommandPoolKHR =
-        (PFN_vkTrimCommandPoolKHR)vkGetDeviceProcAddr(m_device->handle(), "vkTrimCommandPoolKHR");
-    if (vkTrimCommandPoolKHR == nullptr) {
-        printf("%s Maintenance1 not supported by device; skipped.\n", kSkipPrefix);
+    auto vkCreateSamplerYcbcrConversionKHR =
+        (PFN_vkCreateSamplerYcbcrConversionKHR)vkGetDeviceProcAddr(m_device->handle(), "vkCreateSamplerYcbcrConversionKHR");
+    if (vkCreateSamplerYcbcrConversionKHR == nullptr) {
+        printf("%s VK_KHR_sampler_ycbcr_conversion not supported by device; skipped.\n", kSkipPrefix);
         return;
     }
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                         "but its required extension VK_KHR_maintenance1 has not been enabled");
-    vkTrimCommandPoolKHR(m_device->handle(), m_commandPool->handle(), (VkCommandPoolTrimFlags)0);
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "UNASSIGNED-GeneralParameterError-ExtensionNotEnabled");
+    VkSamplerYcbcrConversionCreateInfo ycbcr_info = {VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_CREATE_INFO,
+                                                     NULL,
+                                                     VK_FORMAT_UNDEFINED,
+                                                     VK_SAMPLER_YCBCR_MODEL_CONVERSION_RGB_IDENTITY,
+                                                     VK_SAMPLER_YCBCR_RANGE_ITU_FULL,
+                                                     {VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY,
+                                                      VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY},
+                                                     VK_CHROMA_LOCATION_COSITED_EVEN,
+                                                     VK_CHROMA_LOCATION_COSITED_EVEN,
+                                                     VK_FILTER_NEAREST,
+                                                     false};
+    VkSamplerYcbcrConversion conversion;
+    vkCreateSamplerYcbcrConversionKHR(m_device->handle(), &ycbcr_info, nullptr, &conversion);
     m_errorMonitor->VerifyFound();
 }
 
