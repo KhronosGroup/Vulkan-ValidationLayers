@@ -957,6 +957,8 @@ void VkImageObj::Init(uint32_t const width, uint32_t const height, uint32_t cons
                       const std::vector<uint32_t> *queue_families) {
     InitNoLayout(width, height, mipLevels, format, usage, requested_tiling, reqs, queue_families);
 
+    if (!initialized()) return;  // We don't have a valid handle from early stage init, and thus SetLayout will fail
+
     VkImageLayout newLayout;
     if (usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT)
         newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
