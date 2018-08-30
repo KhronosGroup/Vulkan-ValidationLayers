@@ -478,6 +478,7 @@ enum CMD_TYPE {
     CMD_SETDEVICEMASKKHX,
     CMD_SETDISCARDRECTANGLEEXT,
     CMD_SETEVENT,
+    CMD_SETEXCLUSIVESCISSOR,
     CMD_SETLINEWIDTH,
     CMD_SETSAMPLELOCATIONSEXT,
     CMD_SETSCISSOR,
@@ -514,7 +515,8 @@ enum CBStatusFlagBits {
     CBSTATUS_VIEWPORT_SET           = 0x00000080,
     CBSTATUS_SCISSOR_SET            = 0x00000100,
     CBSTATUS_INDEX_BUFFER_BOUND     = 0x00000200,   // Index buffer has been set
-    CBSTATUS_ALL_STATE_SET          = 0x000001FF,   // All state set (intentionally exclude index buffer)
+    CBSTATUS_EXCLUSIVE_SCISSOR_SET  = 0x00000400,
+    CBSTATUS_ALL_STATE_SET          = 0x000005FF,   // All state set (intentionally exclude index buffer)
     // clang-format on
 };
 
@@ -1048,6 +1050,7 @@ struct DeviceFeatures {
     VkPhysicalDeviceFeatures core;
     VkPhysicalDeviceDescriptorIndexingFeaturesEXT descriptor_indexing;
     VkPhysicalDevice8BitStorageFeaturesKHR eight_bit_storage;
+    VkPhysicalDeviceExclusiveScissorFeaturesNV exclusive_scissor;
 };
 
 // Fwd declarations of layer_data and helpers to look-up/validate state from layer_data maps

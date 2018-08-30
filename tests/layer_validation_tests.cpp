@@ -31691,6 +31691,167 @@ TEST_F(VkLayerTest, DrawIndexedIndirectCountKHR) {
     vkFreeMemory(m_device->device(), index_buffer_memory, 0);
 }
 
+TEST_F(VkLayerTest, ExclusiveScissorNV) {
+    TEST_DESCRIPTION("Test VK_NV_scissor_exclusive with multiViewport disabled.");
+
+    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    } else {
+        printf("%s Did not find required instance extension %s; skipped.\n", kSkipPrefix,
+               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    std::array<const char *, 1> required_device_extensions = {
+        {VK_NV_SCISSOR_EXCLUSIVE_EXTENSION_NAME}};
+    for (auto device_extension : required_device_extensions) {
+        if (DeviceExtensionSupported(gpu(), nullptr, device_extension)) {
+            m_device_extension_names.push_back(device_extension);
+        } else {
+            printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, device_extension);
+            return;
+        }
+    }
+
+    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
+        (PFN_vkGetPhysicalDeviceFeatures2KHR)vkGetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
+
+    // Create a device that enables exclusive scissor but disables multiViewport
+    auto exclusive_scissor_features = lvl_init_struct<VkPhysicalDeviceExclusiveScissorFeaturesNV>();
+    auto features2 = lvl_init_struct<VkPhysicalDeviceFeatures2KHR>(&exclusive_scissor_features);
+    vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
+
+    features2.features.multiViewport = VK_FALSE;
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    // Based on PSOViewportStateTests
+    {
+        VkViewport viewport = {0.0f, 0.0f, 64.0f, 64.0f, 0.0f, 1.0f};
+        VkViewport viewports[] = {viewport, viewport};
+        VkRect2D scissor = {{0, 0}, {64, 64}};
+        VkRect2D scissors[100] = {scissor, scissor};
+
+        using std::vector;
+        struct TestCase {
+            uint32_t viewport_count;
+            VkViewport *viewports;
+            uint32_t scissor_count;
+            VkRect2D *scissors;
+            uint32_t exclusive_scissor_count;
+            VkRect2D *exclusive_scissors;
+
+            vector<std::string> vuids;
+        };
+
+        vector<TestCase> test_cases = {
+            {1,
+             viewports,
+             1,
+             scissors,
+             2,
+             scissors,
+             {"VUID-VkPipelineViewportExclusiveScissorStateCreateInfoNV-exclusiveScissorCount-02027",
+              "VUID-VkPipelineViewportExclusiveScissorStateCreateInfoNV-exclusiveScissorCount-02029"}},
+            {1,
+             viewports,
+             1,
+             scissors,
+             100,
+             scissors,
+             {"VUID-VkPipelineViewportExclusiveScissorStateCreateInfoNV-exclusiveScissorCount-02027",
+              "VUID-VkPipelineViewportExclusiveScissorStateCreateInfoNV-exclusiveScissorCount-02028",
+              "VUID-VkPipelineViewportExclusiveScissorStateCreateInfoNV-exclusiveScissorCount-02029"}},
+            {1,
+             viewports,
+             1,
+             scissors,
+             1,
+             nullptr,
+             {"VUID-VkPipelineViewportExclusiveScissorStateCreateInfoNV-pDynamicStates-02030"}},
+        };
+
+        for (const auto &test_case : test_cases) {
+
+            VkPipelineViewportExclusiveScissorStateCreateInfoNV exc = { VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_EXCLUSIVE_SCISSOR_STATE_CREATE_INFO_NV };
+
+            const auto break_vp = [&test_case, &exc](CreatePipelineHelper &helper) {
+                helper.vp_state_ci_.viewportCount = test_case.viewport_count;
+                helper.vp_state_ci_.pViewports = test_case.viewports;
+                helper.vp_state_ci_.scissorCount = test_case.scissor_count;
+                helper.vp_state_ci_.pScissors = test_case.scissors;
+                helper.vp_state_ci_.pNext = &exc;
+
+                exc.exclusiveScissorCount = test_case.exclusive_scissor_count;
+                exc.pExclusiveScissors = test_case.exclusive_scissors;
+            };
+            CreatePipelineHelper::OneshotTest(*this, break_vp, VK_DEBUG_REPORT_ERROR_BIT_EXT, test_case.vuids);
+        }
+    }
+
+    // Based on SetDynScissorParamTests
+    {
+        auto vkCmdSetExclusiveScissorNV =
+            (PFN_vkCmdSetExclusiveScissorNV)vkGetDeviceProcAddr(m_device->device(), "vkCmdSetExclusiveScissorNV");
+
+        const VkRect2D scissor = {{0, 0}, {16, 16}};
+        const VkRect2D scissors[] = {scissor, scissor};
+
+        m_commandBuffer->begin();
+
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdSetExclusiveScissorNV-firstExclusiveScissor-02035");
+        vkCmdSetExclusiveScissorNV(m_commandBuffer->handle(), 1, 1, scissors);
+        m_errorMonitor->VerifyFound();
+
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "vkCmdSetExclusiveScissorNV: parameter exclusiveScissorCount must be greater than 0");
+        vkCmdSetExclusiveScissorNV(m_commandBuffer->handle(), 0, 0, nullptr);
+        m_errorMonitor->VerifyFound();
+
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdSetExclusiveScissorNV-exclusiveScissorCount-02036");
+        vkCmdSetExclusiveScissorNV(m_commandBuffer->handle(), 0, 2, scissors);
+        m_errorMonitor->VerifyFound();
+
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "vkCmdSetExclusiveScissorNV: parameter exclusiveScissorCount must be greater than 0");
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdSetExclusiveScissorNV-firstExclusiveScissor-02035");
+        vkCmdSetExclusiveScissorNV(m_commandBuffer->handle(), 1, 0, scissors);
+        m_errorMonitor->VerifyFound();
+
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdSetExclusiveScissorNV-firstExclusiveScissor-02035");
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdSetExclusiveScissorNV-exclusiveScissorCount-02036");
+        vkCmdSetExclusiveScissorNV(m_commandBuffer->handle(), 1, 2, scissors);
+        m_errorMonitor->VerifyFound();
+
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "vkCmdSetExclusiveScissorNV: required parameter pExclusiveScissors specified as NULL");
+        vkCmdSetExclusiveScissorNV(m_commandBuffer->handle(), 0, 1, nullptr);
+        m_errorMonitor->VerifyFound();
+
+        struct TestCase {
+            VkRect2D scissor;
+            std::string vuid;
+        };
+
+        std::vector<TestCase> test_cases = {{{{-1, 0}, {16, 16}}, "VUID-vkCmdSetExclusiveScissorNV-x-02037"},
+                                            {{{0, -1}, {16, 16}}, "VUID-vkCmdSetExclusiveScissorNV-x-02037"},
+                                            {{{1, 0}, {INT32_MAX, 16}}, "VUID-vkCmdSetExclusiveScissorNV-offset-02038"},
+                                            {{{INT32_MAX, 0}, {1, 16}}, "VUID-vkCmdSetExclusiveScissorNV-offset-02038"},
+                                            {{{0, 0}, {uint32_t{INT32_MAX} + 1, 16}}, "VUID-vkCmdSetExclusiveScissorNV-offset-02038"},
+                                            {{{0, 1}, {16, INT32_MAX}}, "VUID-vkCmdSetExclusiveScissorNV-offset-02039"},
+                                            {{{0, INT32_MAX}, {16, 1}}, "VUID-vkCmdSetExclusiveScissorNV-offset-02039"},
+                                            {{{0, 0}, {16, uint32_t{INT32_MAX} + 1}}, "VUID-vkCmdSetExclusiveScissorNV-offset-02039"}};
+
+        for (const auto &test_case : test_cases) {
+            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, test_case.vuid);
+            vkCmdSetExclusiveScissorNV(m_commandBuffer->handle(), 0, 1, &test_case.scissor);
+            m_errorMonitor->VerifyFound();
+        }
+
+        m_commandBuffer->end();
+    }
+}
+
+
 #if defined(ANDROID) && defined(VALIDATION_APK)
 const char *appTag = "VulkanLayerValidationTests";
 static bool initialized = false;
