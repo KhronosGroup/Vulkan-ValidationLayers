@@ -1319,6 +1319,7 @@ bool pv_vkCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache
             bool has_dynamic_viewport_w_scaling_nv = false;
             bool has_dynamic_discard_rectangle_ext = false;
             bool has_dynamic_sample_locations_ext = false;
+            bool has_dynamic_exclusive_scissor_nv = false;
             if (pCreateInfos[i].pDynamicState != nullptr) {
                 const auto &dynamic_state_info = *pCreateInfos[i].pDynamicState;
                 for (uint32_t state_index = 0; state_index < dynamic_state_info.dynamicStateCount; ++state_index) {
@@ -1329,6 +1330,7 @@ bool pv_vkCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache
                     if (dynamic_state == VK_DYNAMIC_STATE_VIEWPORT_W_SCALING_NV) has_dynamic_viewport_w_scaling_nv = true;
                     if (dynamic_state == VK_DYNAMIC_STATE_DISCARD_RECTANGLE_EXT) has_dynamic_discard_rectangle_ext = true;
                     if (dynamic_state == VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT) has_dynamic_sample_locations_ext = true;
+                    if (dynamic_state == VK_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_NV) has_dynamic_exclusive_scissor_nv = true;
                 }
             }
 
@@ -1524,11 +1526,13 @@ bool pv_vkCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache
 
                     const VkStructureType allowed_structs_VkPipelineViewportStateCreateInfo[] = {
                         VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_SWIZZLE_STATE_CREATE_INFO_NV,
-                        VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_W_SCALING_STATE_CREATE_INFO_NV};
+                        VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_W_SCALING_STATE_CREATE_INFO_NV,
+                        VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_EXCLUSIVE_SCISSOR_STATE_CREATE_INFO_NV,
+                    };
                     skip |= validate_struct_pnext(
                         report_data, "vkCreateGraphicsPipelines",
                         ParameterName("pCreateInfos[%i].pViewportState->pNext", ParameterName::IndexVector{i}),
-                        "VkPipelineViewportSwizzleStateCreateInfoNV, VkPipelineViewportWScalingStateCreateInfoNV",
+                        "VkPipelineViewportSwizzleStateCreateInfoNV, VkPipelineViewportWScalingStateCreateInfoNV, VkPipelineViewportExclusiveScissorStateCreateInfoNV",
                         viewport_state.pNext, ARRAY_SIZE(allowed_structs_VkPipelineViewportStateCreateInfo),
                         allowed_structs_VkPipelineViewportStateCreateInfo, 65,
                         "VUID-VkPipelineViewportStateCreateInfo-pNext-pNext");
@@ -1537,6 +1541,8 @@ bool pv_vkCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache
                         report_data, "vkCreateGraphicsPipelines",
                         ParameterName("pCreateInfos[%i].pViewportState->flags", ParameterName::IndexVector{i}),
                         viewport_state.flags, "VUID-VkPipelineViewportStateCreateInfo-flags-zerobitmask");
+
+                    auto exclusive_scissor_struct = lvl_find_in_chain<VkPipelineViewportExclusiveScissorStateCreateInfoNV>(pCreateInfos[i].pViewportState->pNext);
 
                     if (!device_data->physical_device_features.multiViewport) {
                         if (viewport_state.viewportCount != 1) {
@@ -1556,6 +1562,18 @@ bool pv_vkCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache
                                             ") is not 1.",
                                             i, viewport_state.scissorCount);
                         }
+
+                        if (exclusive_scissor_struct &&
+                            (exclusive_scissor_struct->exclusiveScissorCount != 0 && exclusive_scissor_struct->exclusiveScissorCount != 1)) {
+                            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
+                                            VK_NULL_HANDLE, "VUID-VkPipelineViewportExclusiveScissorStateCreateInfoNV-exclusiveScissorCount-02027",
+                                            "vkCreateGraphicsPipelines: The VkPhysicalDeviceFeatures::multiViewport feature is "
+                                            "disabled, but pCreateInfos[%" PRIu32 "] exclusiveScissorCount (=%" PRIu32
+                                            ") is not 1.",
+                                            i, exclusive_scissor_struct->exclusiveScissorCount);
+
+                        }
+
                     } else {  // multiViewport enabled
                         if (viewport_state.viewportCount == 0) {
                             skip |= log_msg(
@@ -1586,6 +1604,16 @@ bool pv_vkCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache
                         }
                     }
 
+                    if (exclusive_scissor_struct &&
+                        exclusive_scissor_struct->exclusiveScissorCount > device_data->device_limits.maxViewports) {
+                        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
+                                        VK_NULL_HANDLE, "VUID-VkPipelineViewportExclusiveScissorStateCreateInfoNV-exclusiveScissorCount-02028",
+                                        "vkCreateGraphicsPipelines: pCreateInfos[%" PRIu32
+                                        "] exclusiveScissorCount (=%" PRIu32
+                                        ") is greater than VkPhysicalDeviceLimits::maxViewports (=%" PRIu32 ").",
+                                        i, exclusive_scissor_struct->exclusiveScissorCount, device_data->device_limits.maxViewports);
+                    }
+
                     if (viewport_state.scissorCount != viewport_state.viewportCount) {
                         skip |=
                             log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
@@ -1593,6 +1621,17 @@ bool pv_vkCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache
                                     "vkCreateGraphicsPipelines: pCreateInfos[%" PRIu32 "].pViewportState->scissorCount (=%" PRIu32
                                     ") is not identical to pCreateInfos[%" PRIu32 "].pViewportState->viewportCount (=%" PRIu32 ").",
                                     i, viewport_state.scissorCount, i, viewport_state.viewportCount);
+                    }
+
+                    if (exclusive_scissor_struct &&
+                        exclusive_scissor_struct->exclusiveScissorCount != 0 &&
+                        exclusive_scissor_struct->exclusiveScissorCount != viewport_state.viewportCount) {
+                        skip |=
+                            log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
+                                    VK_NULL_HANDLE, "VUID-VkPipelineViewportExclusiveScissorStateCreateInfoNV-exclusiveScissorCount-02029",
+                                    "vkCreateGraphicsPipelines: pCreateInfos[%" PRIu32 "] exclusiveScissorCount (=%" PRIu32
+                                    ") must be zero or identical to pCreateInfos[%" PRIu32 "].pViewportState->viewportCount (=%" PRIu32 ").",
+                                    i, exclusive_scissor_struct->exclusiveScissorCount, i, viewport_state.viewportCount);
                     }
 
                     if (!has_dynamic_viewport && viewport_state.viewportCount > 0 && viewport_state.pViewports == nullptr) {
@@ -1612,6 +1651,17 @@ bool pv_vkCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache
                             "vkCreateGraphicsPipelines: The scissor state is static (pCreateInfos[%" PRIu32
                             "].pDynamicState->pDynamicStates does not contain VK_DYNAMIC_STATE_SCISSOR), but pCreateInfos[%" PRIu32
                             "].pViewportState->pScissors (=NULL) is an invalid pointer.",
+                            i, i);
+                    }
+
+                    if (!has_dynamic_exclusive_scissor_nv && exclusive_scissor_struct &&
+                        exclusive_scissor_struct->exclusiveScissorCount > 0 && exclusive_scissor_struct->pExclusiveScissors == nullptr) {
+                        skip |= log_msg(
+                            report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT, VK_NULL_HANDLE,
+                            "VUID-VkPipelineViewportExclusiveScissorStateCreateInfoNV-pDynamicStates-02030",
+                            "vkCreateGraphicsPipelines: The exclusive scissor state is static (pCreateInfos[%" PRIu32
+                            "].pDynamicState->pDynamicStates does not contain VK_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_NV), but pCreateInfos[%" PRIu32
+                            "] pExclusiveScissors (=NULL) is an invalid pointer.",
                             i, i);
                     }
 
@@ -1651,6 +1701,15 @@ bool pv_vkCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache
                                         "vkCreateGraphicsPipelines: pCreateInfos[%" PRIu32
                                         "].pDynamicState->pDynamicStates contains VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT, but "
                                         "VK_EXT_sample_locations extension is not enabled.",
+                                        i);
+                    }
+
+                    if (has_dynamic_exclusive_scissor_nv && !device_data->extensions.vk_nv_scissor_exclusive) {
+                        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
+                                        VK_NULL_HANDLE, kVUID_PVError_ExtensionNotEnabled,
+                                        "vkCreateGraphicsPipelines: pCreateInfos[%" PRIu32
+                                        "].pDynamicState->pDynamicStates contains VK_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_NV, but "
+                                        "VK_NV_scissor_exclusive extension is not enabled.",
                                         i);
                     }
                 }
@@ -3040,6 +3099,89 @@ bool pv_vkCmdDispatchBaseKHR(VkCommandBuffer commandBuffer, uint32_t baseGroupX,
     return skip;
 }
 
+bool pv_vkCmdSetExclusiveScissorNV(
+    VkCommandBuffer                             commandBuffer,
+    uint32_t                                    firstExclusiveScissor,
+    uint32_t                                    exclusiveScissorCount,
+    const VkRect2D*                             pExclusiveScissors)
+{
+    bool skip = false;
+
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    debug_report_data *report_data = device_data->report_data;
+
+    if (!device_data->physical_device_features.multiViewport) {
+        if (firstExclusiveScissor != 0) {
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                            HandleToUint64(commandBuffer), "VUID-vkCmdSetExclusiveScissorNV-firstExclusiveScissor-02035",
+                            "vkCmdSetExclusiveScissorNV: The multiViewport feature is disabled, but firstExclusiveScissor (=%" PRIu32 ") is not 0.",
+                            firstExclusiveScissor);
+        }
+        if (exclusiveScissorCount > 1) {
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                            HandleToUint64(commandBuffer), "VUID-vkCmdSetExclusiveScissorNV-exclusiveScissorCount-02036",
+                            "vkCmdSetExclusiveScissorNV: The multiViewport feature is disabled, but exclusiveScissorCount (=%" PRIu32 ") is not 1.",
+                            exclusiveScissorCount);
+        }
+    } else {  // multiViewport enabled
+        const uint64_t sum = static_cast<uint64_t>(firstExclusiveScissor) + static_cast<uint64_t>(exclusiveScissorCount);
+        if (sum > device_data->device_limits.maxViewports) {
+            skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                            HandleToUint64(commandBuffer), "VUID-vkCmdSetExclusiveScissorNV-firstExclusiveScissor-02034",
+                            "vkCmdSetExclusiveScissorNV: firstExclusiveScissor + exclusiveScissorCount (=%" PRIu32 " + %" PRIu32 " = %" PRIu64
+                            ") is greater than VkPhysicalDeviceLimits::maxViewports (=%" PRIu32 ").",
+                            firstExclusiveScissor, exclusiveScissorCount, sum, device_data->device_limits.maxViewports);
+        }
+    }
+
+    if (firstExclusiveScissor >= device_data->device_limits.maxViewports) {
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                        HandleToUint64(commandBuffer), "VUID-vkCmdSetExclusiveScissorNV-firstExclusiveScissor-02033",
+                        "vkCmdSetExclusiveScissorNV: firstExclusiveScissor (=%" PRIu32 ") must be less than maxViewports (=%" PRIu32 ").",
+                        firstExclusiveScissor, device_data->device_limits.maxViewports);
+    }
+
+    if (pExclusiveScissors) {
+        for (uint32_t scissor_i = 0; scissor_i < exclusiveScissorCount; ++scissor_i) {
+            const auto &scissor = pExclusiveScissors[scissor_i];  // will crash on invalid ptr
+
+            if (scissor.offset.x < 0) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                                HandleToUint64(commandBuffer), "VUID-vkCmdSetExclusiveScissorNV-x-02037",
+                                "vkCmdSetExclusiveScissorNV: pScissors[%" PRIu32 "].offset.x (=%" PRIi32 ") is negative.", scissor_i,
+                                scissor.offset.x);
+            }
+
+            if (scissor.offset.y < 0) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                                HandleToUint64(commandBuffer), "VUID-vkCmdSetExclusiveScissorNV-x-02037",
+                                "vkCmdSetExclusiveScissorNV: pScissors[%" PRIu32 "].offset.y (=%" PRIi32 ") is negative.", scissor_i,
+                                scissor.offset.y);
+            }
+
+            const int64_t x_sum = static_cast<int64_t>(scissor.offset.x) + static_cast<int64_t>(scissor.extent.width);
+            if (x_sum > INT32_MAX) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                                HandleToUint64(commandBuffer), "VUID-vkCmdSetExclusiveScissorNV-offset-02038",
+                                "vkCmdSetExclusiveScissorNV: offset.x + extent.width (=%" PRIi32 " + %" PRIu32 " = %" PRIi64
+                                ") of pScissors[%" PRIu32 "] will overflow int32_t.",
+                                scissor.offset.x, scissor.extent.width, x_sum, scissor_i);
+            }
+
+            const int64_t y_sum = static_cast<int64_t>(scissor.offset.y) + static_cast<int64_t>(scissor.extent.height);
+            if (y_sum > INT32_MAX) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                                HandleToUint64(commandBuffer), "VUID-vkCmdSetExclusiveScissorNV-offset-02039",
+                                "vkCmdSetExclusiveScissorNV: offset.y + extent.height (=%" PRIi32 " + %" PRIu32 " = %" PRIi64
+                                ") of pScissors[%" PRIu32 "] will overflow int32_t.",
+                                scissor.offset.y, scissor.extent.height, y_sum, scissor_i);
+            }
+        }
+    }
+
+    return skip;
+}
+
 VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vkGetDeviceProcAddr(VkDevice device, const char *funcName) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!ApiParentExtensionEnabled(funcName, device_data->extensions.device_extension_set)) {
@@ -3106,6 +3248,7 @@ void InitializeManualParameterValidationFunctionPointers() {
     custom_functions["vkCreateDescriptorPool"] = (void *)pv_vkCreateDescriptorPool;
     custom_functions["vkCmdDispatch"] = (void *)pv_vkCmdDispatch;
     custom_functions["vkCmdDispatchBaseKHR"] = (void *)pv_vkCmdDispatchBaseKHR;
+    custom_functions["vkCmdSetExclusiveScissorNV"] = (void *)pv_vkCmdSetExclusiveScissorNV;
 }
 
 }  // namespace parameter_validation

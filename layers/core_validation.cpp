@@ -1779,6 +1779,7 @@ static const std::unordered_map<CmdTypeHashType, std::string> must_be_recording_
     // Exclude KHX (if not already present) { CMD_SETDEVICEMASKKHX, "VUID-vkCmdSetDeviceMask-commandBuffer-recording" },
     {CMD_SETDISCARDRECTANGLEEXT, "VUID-vkCmdSetDiscardRectangleEXT-commandBuffer-recording"},
     {CMD_SETEVENT, "VUID-vkCmdSetEvent-commandBuffer-recording"},
+    {CMD_SETEXCLUSIVESCISSOR, "VUID-vkCmdSetExclusiveScissorNV-commandBuffer-recording"},
     {CMD_SETLINEWIDTH, "VUID-vkCmdSetLineWidth-commandBuffer-recording"},
     {CMD_SETSAMPLELOCATIONSEXT, "VUID-vkCmdSetSampleLocationsEXT-commandBuffer-recording"},
     {CMD_SETSCISSOR, "VUID-vkCmdSetScissor-commandBuffer-recording"},
@@ -2009,6 +2010,9 @@ CBStatusFlags MakeStaticStateMask(VkPipelineDynamicStateCreateInfo const *ds) {
                     break;
                 case VK_DYNAMIC_STATE_VIEWPORT:
                     flags &= ~CBSTATUS_VIEWPORT_SET;
+                    break;
+                case VK_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_NV:
+                    flags &= ~CBSTATUS_EXCLUSIVE_SCISSOR_SET;
                     break;
                 default:
                     break;
@@ -2287,6 +2291,11 @@ static void PostCallRecordCreateDevice(instance_layer_data *instance_data, const
     const auto *eight_bit_storage_features = lvl_find_in_chain<VkPhysicalDevice8BitStorageFeaturesKHR>(pCreateInfo->pNext);
     if (eight_bit_storage_features) {
         device_data->enabled_features.eight_bit_storage = *eight_bit_storage_features;
+    }
+
+    const auto *exclusive_scissor_features = lvl_find_in_chain<VkPhysicalDeviceExclusiveScissorFeaturesNV>(pCreateInfo->pNext);
+    if (exclusive_scissor_features) {
+        device_data->enabled_features.exclusive_scissor = *exclusive_scissor_features;
     }
 
     // Store physical device properties and physical device mem limits into device layer_data structs
@@ -6327,6 +6336,47 @@ VKAPI_ATTR void VKAPI_CALL CmdSetScissor(VkCommandBuffer commandBuffer, uint32_t
     }
     lock.unlock();
     if (!skip) dev_data->dispatch_table.CmdSetScissor(commandBuffer, firstScissor, scissorCount, pScissors);
+}
+
+static bool PreCallValidateCmdSetExclusiveScissorNV(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, VkCommandBuffer commandBuffer) {
+    bool skip = ValidateCmdQueueFlags(dev_data, cb_state, "vkCmdSetExclusiveScissorNV()", VK_QUEUE_GRAPHICS_BIT,
+                                      "VUID-vkCmdSetExclusiveScissorNV-commandBuffer-cmdpool");
+    skip |= ValidateCmd(dev_data, cb_state, CMD_SETEXCLUSIVESCISSOR, "vkCmdSetExclusiveScissorNV()");
+    if (cb_state->static_status & CBSTATUS_EXCLUSIVE_SCISSOR_SET) {
+        skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                        HandleToUint64(commandBuffer), "VUID-vkCmdSetExclusiveScissorNV-None-02032",
+                        "vkCmdSetExclusiveScissorNV(): pipeline was created without VK_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_NV flag.");
+    }
+
+    if (!GetEnabledFeatures(dev_data)->exclusive_scissor.exclusiveScissor) {
+        skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                        HandleToUint64(commandBuffer), "VUID-vkCmdSetExclusiveScissorNV-None-02031",
+                        "vkCmdSetExclusiveScissorNV: The exclusiveScissor feature is disabled.");
+    }
+
+    return skip;
+}
+
+static void PreCallRecordCmdSetExclusiveScissorNV(GLOBAL_CB_NODE *cb_state, uint32_t firstExclusiveScissor, uint32_t exclusiveScissorCount) {
+    // XXX TODO: We don't have VUIDs for validating that all exclusive scissors have been set.
+    // cb_state->exclusiveScissorMask |= ((1u << exclusiveScissorCount) - 1u) << firstExclusiveScissor;
+    cb_state->status |= CBSTATUS_EXCLUSIVE_SCISSOR_SET;
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdSetExclusiveScissorNV(VkCommandBuffer commandBuffer, uint32_t firstExclusiveScissor, uint32_t exclusiveScissorCount,
+                                         const VkRect2D *pExclusiveScissors) {
+    bool skip = false;
+    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    unique_lock_t lock(global_lock);
+    GLOBAL_CB_NODE *pCB = GetCBNode(dev_data, commandBuffer);
+    if (pCB) {
+        skip |= PreCallValidateCmdSetExclusiveScissorNV(dev_data, pCB, commandBuffer);
+        if (!skip) {
+            PreCallRecordCmdSetExclusiveScissorNV(pCB, firstExclusiveScissor, exclusiveScissorCount);
+        }
+    }
+    lock.unlock();
+    if (!skip) dev_data->dispatch_table.CmdSetExclusiveScissorNV(commandBuffer, firstExclusiveScissor, exclusiveScissorCount, pExclusiveScissors);
 }
 
 static bool PreCallValidateCmdSetLineWidth(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, VkCommandBuffer commandBuffer) {
@@ -13847,6 +13897,7 @@ static const std::unordered_map<std::string, void *> name_to_funcptr_map = {
     {"vkSubmitDebugUtilsMessageEXT", (void *)SubmitDebugUtilsMessageEXT},
     {"vkCmdDrawIndirectCountKHR", (void *)CmdDrawIndirectCountKHR},
     {"vkCmdDrawIndexedIndirectCountKHR", (void *)CmdDrawIndexedIndirectCountKHR},
+    {"vkCmdSetExclusiveScissorNV", (void *)CmdSetExclusiveScissorNV},
 };
 
 VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetDeviceProcAddr(VkDevice device, const char *funcName) {
