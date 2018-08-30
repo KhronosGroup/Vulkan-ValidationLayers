@@ -652,13 +652,14 @@ bool ValidateQFOTransferBarrierUniqueness(layer_data *device_data, const char *f
     for (uint32_t b = 0; b < barrier_count; b++) {
         if (!IsTransferOp(&barriers[b])) continue;
         const BarrierRecord *barrier_record = nullptr;
-        if (IsReleaseOp<Barrier, true /* Assume IsTransfer */>(pool, &barriers[b])) {
+        if (IsReleaseOp<Barrier, true /* Assume IsTransfer */>(pool, &barriers[b]) && !IsSpecial(barriers[b].dstQueueFamilyIndex)) {
             const auto found = barrier_sets.release.find(barriers[b]);
             if (found != barrier_sets.release.cend()) {
                 barrier_record = &(*found);
                 transfer_type = "releasing";
             }
-        } else if (IsAcquireOp<Barrier, true /*Assume IsTransfer */>(pool, &barriers[b])) {
+        } else if (IsAcquireOp<Barrier, true /*Assume IsTransfer */>(pool, &barriers[b]) &&
+                   !IsSpecial(barriers[b].srcQueueFamilyIndex)) {
             const auto found = barrier_sets.acquire.find(barriers[b]);
             if (found != barrier_sets.acquire.cend()) {
                 barrier_record = &(*found);
@@ -684,9 +685,10 @@ void RecordQFOTransferBarriers(layer_data *device_data, GLOBAL_CB_NODE *cb_state
     auto &barrier_sets = GetQFOBarrierSets(cb_state, typename QFOTransferBarrier<Barrier>::Tag());
     for (uint32_t b = 0; b < barrier_count; b++) {
         if (!IsTransferOp(&barriers[b])) continue;
-        if (IsReleaseOp<Barrier, true /* Assume IsTransfer*/>(pool, &barriers[b])) {
+        if (IsReleaseOp<Barrier, true /* Assume IsTransfer*/>(pool, &barriers[b]) && !IsSpecial(barriers[b].dstQueueFamilyIndex)) {
             barrier_sets.release.emplace(barriers[b]);
-        } else if (IsAcquireOp<Barrier, true /*Assume IsTransfer */>(pool, &barriers[b])) {
+        } else if (IsAcquireOp<Barrier, true /*Assume IsTransfer */>(pool, &barriers[b]) &&
+                   !IsSpecial(barriers[b].srcQueueFamilyIndex)) {
             barrier_sets.acquire.emplace(barriers[b]);
         }
     }

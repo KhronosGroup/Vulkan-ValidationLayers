@@ -8071,9 +8071,6 @@ class ValidatorState {
     // Logical helpers for semantic clarity
     inline bool KhrExternalMem() const { return mem_ext_; }
     inline bool IsValid(uint32_t queue_family) const { return (queue_family < limit_); }
-    inline bool IsSpecial(uint32_t queue_family) const {
-        return (queue_family == VK_QUEUE_FAMILY_EXTERNAL_KHR) || (queue_family == VK_QUEUE_FAMILY_FOREIGN_EXT);
-    }
     inline bool IsValidOrSpecial(uint32_t queue_family) const {
         return IsValid(queue_family) || (mem_ext_ && IsSpecial(queue_family));
     }
@@ -8130,8 +8127,8 @@ bool Validate(const layer_data *device_data, const char *func_name, GLOBAL_CB_NO
             if (!(src_ignored || dst_ignored)) {
                 skip |= val.LogMsg(kSrcOrDstMustBeIgnore, src_queue_family, dst_queue_family);
             }
-            if ((src_ignored && !(dst_ignored || val.IsSpecial(dst_queue_family))) ||
-                (dst_ignored && !(src_ignored || val.IsSpecial(src_queue_family)))) {
+            if ((src_ignored && !(dst_ignored || IsSpecial(dst_queue_family))) ||
+                (dst_ignored && !(src_ignored || IsSpecial(src_queue_family)))) {
                 skip |= val.LogMsg(kSpecialOrIgnoreOnly, src_queue_family, dst_queue_family);
             }
         } else {
