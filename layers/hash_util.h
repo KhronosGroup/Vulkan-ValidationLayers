@@ -51,14 +51,15 @@ size_t HashWithUnderlying(Value value, typename std::enable_if<std::is_enum<Valu
     return std::hash<Underlying>()(static_cast<const Underlying &>(value));
 }
 
+template <typename Value>
+struct HashUnderlying {
+    size_t operator()(const Value &value) const { return HashWithUnderlying(value); }
+};
+
 class HashCombiner {
    public:
     using Key = size_t;
 
-    template <typename Value>
-    struct WrappedHash {
-        size_t operator()(const Value &value) const { return HashWithUnderlying(value); }
-    };
 
     HashCombiner(Key combined = 0) : combined_(combined) {}
     // magic and combination algorithm based on boost::hash_combine
@@ -67,13 +68,13 @@ class HashCombiner {
     static const uint64_t kMagic = sizeof(Key) > 4 ? Key(0x9e3779b97f4a7c16UL) : Key(0x9e3779b9U);
 
     // If you need to override the default hash
-    template <typename Value, typename Hasher = WrappedHash<Value>>
+    template <typename Value, typename Hasher = HashUnderlying<Value>>
     HashCombiner &Combine(const Value &value) {
         combined_ ^= Hasher()(value) + kMagic + (combined_ << 6) + (combined_ >> 2);
         return *this;
     }
 
-    template <typename Iterator, typename Hasher = WrappedHash<typename std::iterator_traits<Iterator>::value_type>>
+    template <typename Iterator, typename Hasher = HashUnderlying<typename std::iterator_traits<Iterator>::value_type>>
     HashCombiner &Combine(Iterator first, Iterator end) {
         using Value = typename std::iterator_traits<Iterator>::value_type;
         auto current = first;
@@ -83,7 +84,7 @@ class HashCombiner {
         return *this;
     }
 
-    template <typename Value, typename Hasher = WrappedHash<Value>>
+    template <typename Value, typename Hasher = HashUnderlying<Value>>
     HashCombiner &Combine(const std::vector<Value> &vector) {
         return Combine(vector.cbegin(), vector.cend());
     }
