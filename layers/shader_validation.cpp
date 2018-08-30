@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2018 The Khronos Group Inc.
- * Copyright (c) 2015-2018 Valve Corporation
- * Copyright (c) 2015-2018 LunarG, Inc.
- * Copyright (C) 2015-2018 Google Inc.
+/* Copyright (c) 2015-2019 The Khronos Group Inc.
+ * Copyright (c) 2015-2019 Valve Corporation
+ * Copyright (c) 2015-2019 LunarG, Inc.
+ * Copyright (C) 2015-2019 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -2261,7 +2261,8 @@ static ValidationCache *GetValidationCacheInfo(VkShaderModuleCreateInfo const *p
     return nullptr;
 }
 
-bool PreCallValidateCreateShaderModule(layer_data *dev_data, VkShaderModuleCreateInfo const *pCreateInfo, bool *spirv_valid) {
+bool PreCallValidateCreateShaderModule(layer_data *dev_data, VkShaderModuleCreateInfo const *pCreateInfo, bool *is_spirv,
+                                       bool *spirv_valid) {
     bool skip = false;
     spv_result_t spv_valid = SPV_SUCCESS;
     auto report_data = GetReportData(dev_data);
@@ -2320,6 +2321,7 @@ bool PreCallValidateCreateShaderModule(layer_data *dev_data, VkShaderModuleCreat
         spvContextDestroy(ctx);
     }
 
+    *is_spirv = (pCreateInfo->pCode[0] == spv::MagicNumber);
     *spirv_valid = (spv_valid == SPV_SUCCESS);
     return skip;
 }

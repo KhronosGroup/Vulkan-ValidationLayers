@@ -1,9 +1,9 @@
 //  VK tests
 //
-//  Copyright (c) 2015-2016 The Khronos Group Inc.
-//  Copyright (c) 2015-2016 Valve Corporation
-//  Copyright (c) 2015-2016 LunarG, Inc.
-//  Copyright (c) 2015-2016 Google, Inc.
+//  Copyright (c) 2015-2019 The Khronos Group Inc.
+//  Copyright (c) 2015-2019 Valve Corporation
+//  Copyright (c) 2015-2019 LunarG, Inc.
+//  Copyright (c) 2015-2019 Google, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -43,7 +43,8 @@ class VkTestFramework : public ::testing::Test {
     static void Finish();
 
     VkFormat GetFormat(VkInstance instance, vk_testing::Device *device);
-    bool GLSLtoSPV(const VkShaderStageFlagBits shader_type, const char *pshader, std::vector<unsigned int> &spv);
+    bool GLSLtoSPV(const VkShaderStageFlagBits shader_type, const char *pshader, std::vector<unsigned int> &spv,
+                   bool debug = false);
     bool ASMtoSPV(const spv_target_env target_env, const uint32_t options, const char *pasm, std::vector<unsigned int> &spv);
     static bool m_devsim_layer;
 };
