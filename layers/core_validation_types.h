@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2018 The Khronos Group Inc.
- * Copyright (c) 2015-2018 Valve Corporation
- * Copyright (c) 2015-2018 LunarG, Inc.
- * Copyright (C) 2015-2018 Google Inc.
+/* Copyright (c) 2015-2019 The Khronos Group Inc.
+ * Copyright (c) 2015-2019 Valve Corporation
+ * Copyright (c) 2015-2019 LunarG, Inc.
+ * Copyright (C) 2015-2019 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,6 +42,8 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
+#include <memory>
+#include <list>
 
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
 #include "android_ndk_types.h"
@@ -968,6 +970,12 @@ struct QFOTransferCBScoreboards {
     QFOTransferCBScoreboard<Barrier> release;
 };
 
+struct GpuDeviceMemoryBlock {
+    VkBuffer buffer;
+    VkDeviceMemory memory;
+    uint32_t offset;
+};
+
 // Cmd Buffer Wrapper Struct - TODO : This desperately needs its own class
 struct GLOBAL_CB_NODE : public BASE_NODE {
     VkCommandBuffer commandBuffer;
@@ -1034,6 +1042,10 @@ struct GLOBAL_CB_NODE : public BASE_NODE {
     std::unordered_set<cvdescriptorset::DescriptorSet *> validated_descriptor_sets;
     // Contents valid only after an index buffer is bound (CBSTATUS_INDEX_BUFFER_BOUND set)
     IndexBufferBinding index_buffer_binding;
+    // GPU Validation data
+    GpuDeviceMemoryBlock gpu_output_memory_block;
+    VkDescriptorSet gpu_buffer_desc_set;
+    VkDescriptorPool gpu_buffer_desc_pool;
 };
 
 static QFOTransferBarrierSets<VkImageMemoryBarrier> &GetQFOBarrierSets(
@@ -1077,6 +1089,8 @@ struct IMAGE_LAYOUT_NODE {
 // The end goal is to have all checks guarded by a bool. The bools are all "false" by default meaning that all checks
 // are enabled. At CreateInstance time, the user can use the VK_EXT_validation_flags extension to pass in enum values
 // of VkValidationCheckEXT that will selectively disable checks.
+// The VK_EXT_validation_features extension can also be used with the VkValidationFeaturesEXT structure to set
+// disables in the CHECK_DISABLED struct and/or enables in the CHECK_ENABLED struct.
 struct CHECK_DISABLED {
     bool command_buffer_state;
     bool create_descriptor_set_layout;
@@ -1109,6 +1123,13 @@ struct CHECK_DISABLED {
     bool shader_validation;  // Skip validation for shaders
 
     void SetAll(bool value) { std::fill(&command_buffer_state, &shader_validation + 1, value); }
+};
+
+struct CHECK_ENABLED {
+    bool gpu_validation;
+    bool gpu_validation_reserve_binding_slot;
+
+    void SetAll(bool value) { std::fill(&gpu_validation, &gpu_validation_reserve_binding_slot + 1, value); }
 };
 
 struct MT_FB_ATTACHMENT_INFO {
@@ -1149,6 +1170,26 @@ struct DeviceFeatures {
 
 enum RenderPassCreateVersion { RENDER_PASS_VERSION_1 = 0, RENDER_PASS_VERSION_2 = 1 };
 
+class GpuDeviceMemoryManager;
+class GpuDescriptorSetManager;
+struct ShaderTracker {
+    VkPipeline pipeline;
+    VkShaderModule shader_module;
+    std::vector<unsigned int> pgm;
+};
+struct GpuValidationState {
+    bool aborted;
+    bool reserve_binding_slot;
+    VkDescriptorSetLayout debug_desc_layout;
+    VkDescriptorSetLayout dummy_desc_layout;
+    uint32_t adjusted_max_desc_sets;
+    uint32_t desc_set_bind_index;
+    uint32_t unique_shader_module_id;
+    std::unordered_map<uint32_t, ShaderTracker> shader_map;
+    std::unique_ptr<GpuDeviceMemoryManager> memory_manager;
+    std::unique_ptr<GpuDescriptorSetManager> desc_set_manager;
+};
+
 // Fwd declarations of layer_data and helpers to look-up/validate state from layer_data maps
 namespace core_validation {
 struct layer_data;
@@ -1164,6 +1205,7 @@ IMAGE_VIEW_STATE *GetAttachmentImageViewState(layer_data *dev_data, FRAMEBUFFER_
 IMAGE_VIEW_STATE *GetImageViewState(const layer_data *, VkImageView);
 SWAPCHAIN_NODE *GetSwapchainNode(const layer_data *, VkSwapchainKHR);
 GLOBAL_CB_NODE *GetCBNode(layer_data const *my_data, const VkCommandBuffer cb);
+PIPELINE_STATE *GetPipelineState(layer_data const *dev_data, VkPipeline pipeline);
 RENDER_PASS_STATE *GetRenderPassState(layer_data const *dev_data, VkRenderPass renderpass);
 std::shared_ptr<RENDER_PASS_STATE> GetRenderPassStateSharedPtr(layer_data const *dev_data, VkRenderPass renderpass);
 FRAMEBUFFER_STATE *GetFramebufferState(const layer_data *my_data, VkFramebuffer framebuffer);
@@ -1210,8 +1252,11 @@ VkResult GetPDImageFormatProperties(core_validation::layer_data *, const VkImage
 VkResult GetPDImageFormatProperties2(core_validation::layer_data *, const VkPhysicalDeviceImageFormatInfo2 *,
                                      VkImageFormatProperties2 *);
 const debug_report_data *GetReportData(const layer_data *);
+const VkLayerDispatchTable *GetDispatchTable(const layer_data *);
 const VkPhysicalDeviceProperties *GetPhysicalDeviceProperties(const layer_data *);
+const VkPhysicalDeviceMemoryProperties *GetPhysicalDeviceMemoryProperties(const layer_data *);
 const CHECK_DISABLED *GetDisables(layer_data *);
+const CHECK_ENABLED *GetEnables(layer_data *);
 std::unordered_map<VkImage, std::unique_ptr<IMAGE_STATE>> *GetImageMap(core_validation::layer_data *);
 std::unordered_map<VkImage, std::vector<ImageSubresourcePair>> *GetImageSubresourceMap(layer_data *);
 std::unordered_map<ImageSubresourcePair, IMAGE_LAYOUT_NODE> *GetImageLayoutMap(layer_data *);
@@ -1223,7 +1268,13 @@ std::unordered_map<VkSamplerYcbcrConversion, uint64_t> *GetYcbcrConversionFormat
 std::unordered_set<uint64_t> *GetAHBExternalFormatsSet(layer_data *);
 
 const DeviceExtensions *GetDeviceExtensions(const layer_data *);
+GpuValidationState *GetGpuValidationState(layer_data *);
+const GpuValidationState *GetGpuValidationState(const layer_data *);
+VkDevice GetDevice(const layer_data *);
+
 uint32_t GetApiVersion(const layer_data *);
+
+VKAPI_ATTR VkResult VKAPI_CALL QueueWaitIdle(VkQueue queue);
 
 GlobalQFOTransferBarrierMap<VkImageMemoryBarrier> &GetGlobalQFOReleaseBarrierMap(
     layer_data *dev_data, const QFOTransferBarrier<VkImageMemoryBarrier>::Tag &type_tag);

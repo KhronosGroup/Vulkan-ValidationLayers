@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2017 The Khronos Group Inc.
- * Copyright (c) 2015-2017 Valve Corporation
- * Copyright (c) 2015-2017 LunarG, Inc.
- * Copyright (C) 2015-2017 Google Inc.
+/* Copyright (c) 2015-2019 The Khronos Group Inc.
+ * Copyright (c) 2015-2019 Valve Corporation
+ * Copyright (c) 2015-2019 LunarG, Inc.
+ * Copyright (C) 2015-2019 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -76,6 +76,7 @@ struct shader_module {
     std::unordered_map<unsigned, unsigned> def_index;
     bool has_valid_spirv;
     VkShaderModule vk_shader_module;
+    uint32_t gpu_validation_shader_id;
 
     std::vector<uint32_t> PreprocessShaderBinary(uint32_t *src_binary, size_t binary_size, spv_target_env env) {
         spvtools::Optimizer optimizer(env);
@@ -85,11 +86,13 @@ struct shader_module {
         return (result ? optimized_binary : std::vector<uint32_t>(src_binary, src_binary + binary_size / sizeof(uint32_t)));
     }
 
-    shader_module(VkShaderModuleCreateInfo const *pCreateInfo, VkShaderModule shaderModule, spv_target_env env)
+    shader_module(VkShaderModuleCreateInfo const *pCreateInfo, VkShaderModule shaderModule, spv_target_env env,
+                  uint32_t unique_shader_id)
         : words(PreprocessShaderBinary((uint32_t *)pCreateInfo->pCode, pCreateInfo->codeSize, env)),
           def_index(),
           has_valid_spirv(true),
-          vk_shader_module(shaderModule) {
+          vk_shader_module(shaderModule),
+          gpu_validation_shader_id(unique_shader_id) {
         BuildDefIndex();
     }
 
@@ -207,6 +210,7 @@ bool ValidateAndCapturePipelineShaderState(layer_data *dev_data, PIPELINE_STATE 
 bool ValidateComputePipeline(layer_data *dev_data, PIPELINE_STATE *pPipeline);
 bool ValidateRayTracingPipelineNV(layer_data *dev_data, PIPELINE_STATE *pipeline);
 typedef std::pair<unsigned, unsigned> descriptor_slot_t;
-bool PreCallValidateCreateShaderModule(layer_data *dev_data, VkShaderModuleCreateInfo const *pCreateInfo, bool *spirv_valid);
+bool PreCallValidateCreateShaderModule(layer_data *dev_data, VkShaderModuleCreateInfo const *pCreateInfo, bool *is_spirv,
+                                       bool *spirv_valid);
 
 #endif  // VULKAN_SHADER_VALIDATION_H

@@ -68,6 +68,7 @@
 #include "core_validation.h"
 #include "buffer_validation.h"
 #include "shader_validation.h"
+#include "gpu_validation.h"
 #include "vk_layer_data.h"
 #include "vk_layer_extension_utils.h"
 #include "vk_layer_utils.h"
@@ -143,6 +144,7 @@ struct instance_layer_data {
     CALL_STATE vkEnumeratePhysicalDeviceGroupsState = UNCALLED;
     uint32_t physical_device_groups_count = 0;
     CHECK_DISABLED disabled = {};
+    CHECK_ENABLED enabled = {};
 
     unordered_map<VkPhysicalDevice, PHYSICAL_DEVICE_STATE> physical_device_map;
     unordered_map<VkSurfaceKHR, SURFACE_STATE> surface_map;
@@ -211,6 +213,7 @@ struct layer_data {
     DeviceExtensionProperties phys_dev_ext_props = {};
     bool external_sync_warning = false;
     uint32_t api_version = 0;
+    GpuValidationState gpu_validation_state = {};
 };
 
 // TODO : Do we need to guard access to layer_data_map w/ lock?
@@ -707,7 +710,7 @@ static bool ValidateStatus(layer_data *dev_data, GLOBAL_CB_NODE *pNode, CBStatus
 }
 
 // Retrieve pipeline node ptr for given pipeline object
-static PIPELINE_STATE *GetPipelineState(layer_data const *dev_data, VkPipeline pipeline) {
+PIPELINE_STATE *GetPipelineState(layer_data const *dev_data, VkPipeline pipeline) {
     auto it = dev_data->pipelineMap.find(pipeline);
     if (it == dev_data->pipelineMap.end()) {
         return nullptr;
@@ -2301,6 +2304,25 @@ bool OutsideRenderPass(const layer_data *dev_data, GLOBAL_CB_NODE *pCB, const ch
 static void InitCoreValidation(instance_layer_data *instance_data, const VkAllocationCallbacks *pAllocator) {
     layer_debug_messenger_actions(instance_data->report_data, instance_data->logging_messenger, pAllocator,
                                   "lunarg_core_validation");
+
+    // Process the layer settings file.
+    enum CoreValidationGpuFlagBits {
+        CORE_VALIDATION_GPU_VALIDATION_ALL_BIT = 0x00000001,
+        CORE_VALIDATION_GPU_VALIDATION_RESERVE_BINDING_SLOT_BIT = 0x00000002,
+    };
+    typedef VkFlags CoreGPUFlags;
+    static const std::unordered_map<std::string, VkFlags> gpu_flags_option_definitions = {
+        {std::string("all"), CORE_VALIDATION_GPU_VALIDATION_ALL_BIT},
+        {std::string("reserve_binding_slot"), CORE_VALIDATION_GPU_VALIDATION_RESERVE_BINDING_SLOT_BIT},
+    };
+    std::string gpu_flags_key = "lunarg_core_validation.gpu_validation";
+    CoreGPUFlags gpu_flags = GetLayerOptionFlags(gpu_flags_key, gpu_flags_option_definitions, 0);
+    if (gpu_flags & CORE_VALIDATION_GPU_VALIDATION_ALL_BIT) {
+        instance_data->enabled.gpu_validation = true;
+    }
+    if (gpu_flags & CORE_VALIDATION_GPU_VALIDATION_RESERVE_BINDING_SLOT_BIT) {
+        instance_data->enabled.gpu_validation_reserve_binding_slot = true;
+    }
 }
 
 // For the given ValidationCheck enum, set all relevant instance disabled flags to true
@@ -2320,6 +2342,34 @@ void SetDisabledFlags(instance_layer_data *instance_data, const VkValidationFlag
     }
 }
 
+static void SetValidationFeatures(instance_layer_data *instance_data, const VkValidationFeaturesEXT *val_features_struct) {
+    for (uint32_t i = 0; i < val_features_struct->disabledValidationFeatureCount; ++i) {
+        switch (val_features_struct->pDisabledValidationFeatures[i]) {
+            case VK_VALIDATION_FEATURE_DISABLE_SHADERS_EXT:
+                instance_data->disabled.shader_validation = true;
+                break;
+            case VK_VALIDATION_FEATURE_DISABLE_ALL_EXT:
+                // Set all disabled flags to true
+                instance_data->disabled.SetAll(true);
+                break;
+            default:
+                break;
+        }
+    }
+    for (uint32_t i = 0; i < val_features_struct->enabledValidationFeatureCount; ++i) {
+        switch (val_features_struct->pEnabledValidationFeatures[i]) {
+            case VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT:
+                instance_data->enabled.gpu_validation = true;
+                break;
+            case VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT:
+                instance_data->enabled.gpu_validation_reserve_binding_slot = true;
+                break;
+            default:
+                break;
+        }
+    }
+}
+
 static void PreCallRecordCreateInstance(VkLayerInstanceCreateInfo *chain_info) {
     // Advance the link info for the next element on the chain
     chain_info->u.pLayerInfo = chain_info->u.pLayerInfo->pNext;
@@ -2332,6 +2382,10 @@ static void PostCallRecordCreateInstance(instance_layer_data *instance_data, con
     const auto *validation_flags_ext = lvl_find_in_chain<VkValidationFlagsEXT>(pCreateInfo->pNext);
     if (validation_flags_ext) {
         SetDisabledFlags(instance_data, validation_flags_ext);
+    }
+    const auto *validation_features_ext = lvl_find_in_chain<VkValidationFeaturesEXT>(pCreateInfo->pNext);
+    if (validation_features_ext) {
+        SetValidationFeatures(instance_data, validation_features_ext);
     }
 }
 
@@ -2622,6 +2676,12 @@ static void PostCallRecordCreateDevice(instance_layer_data *instance_data, const
         instance_data->dispatch_table.GetPhysicalDeviceProperties2KHR(gpu, &prop2);
         device_data->phys_dev_ext_props.depth_stencil_resolve_props = depth_stencil_resolve_props;
     }
+    if (GetEnables(device_data)->gpu_validation) {
+        // Copy any needed instance data into the gpu validation state
+        device_data->gpu_validation_state.reserve_binding_slot =
+            device_data->instance_data->enabled.gpu_validation_reserve_binding_slot;
+        GpuPostCallRecordCreateDevice(device_data);
+    }
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo *pCreateInfo,
@@ -2645,6 +2705,15 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
 
     // Advance the link info for the next element on the chain
     PreCallRecordCreateDevice(chain_info);
+
+    // GPU Validation can possibly turn on device features, so give it a chance to change the create info.
+    std::unique_ptr<safe_VkDeviceCreateInfo> gpu_create_info;
+    if (instance_data->enabled.gpu_validation) {
+        VkPhysicalDeviceFeatures supported_features;
+        instance_data->dispatch_table.GetPhysicalDeviceFeatures(gpu, &supported_features);
+        gpu_create_info = GpuPreCallRecordCreateDevice(gpu, pCreateInfo, &supported_features);
+        pCreateInfo = reinterpret_cast<VkDeviceCreateInfo *>(gpu_create_info.get());
+    }
     lock.unlock();
 
     VkResult result = fpCreateDevice(gpu, pCreateInfo, pAllocator, pDevice);
@@ -2661,6 +2730,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
 }
 
 static void PreCallRecordDestroyDevice(layer_data *dev_data, VkDevice device) {
+    if (GetEnables(dev_data)->gpu_validation) {
+        GpuPreCallRecordDestroyDevice(dev_data);
+    }
     dev_data->pipelineMap.clear();
     dev_data->renderPassMap.clear();
     for (auto ii = dev_data->commandBufferMap.begin(); ii != dev_data->commandBufferMap.end(); ++ii) {
@@ -3341,6 +3413,9 @@ VKAPI_ATTR VkResult VKAPI_CALL QueueSubmit(VkQueue queue, uint32_t submitCount, 
     lock.lock();
     PostCallRecordQueueSubmit(dev_data, queue, submitCount, pSubmits, fence);
     lock.unlock();
+    if (GetEnables(dev_data)->gpu_validation) {
+        GpuPostCallQueueSubmit(dev_data, queue, submitCount, pSubmits, fence, global_lock);
+    }
     return result;
 }
 
@@ -5102,6 +5177,9 @@ static void PreCallRecordDestroyPipeline(layer_data *dev_data, VkPipeline pipeli
                                          VK_OBJECT obj_struct) {
     // Any bound cmd buffers are now invalid
     InvalidateCommandBuffers(dev_data, pipeline_state->cb_bindings, obj_struct);
+    if (GetEnables(dev_data)->gpu_validation) {
+        GpuPreCallRecordDestroyPipeline(dev_data, pipeline);
+    }
     dev_data->pipelineMap.erase(pipeline);
 }
 
@@ -5262,6 +5340,9 @@ static bool CheckCommandBuffersInFlight(layer_data *dev_data, COMMAND_POOL_NODE 
 // Free all command buffers in given list, removing all references/links to them using ResetCommandBufferState
 static void FreeCommandBufferStates(layer_data *dev_data, COMMAND_POOL_NODE *pool_state, const uint32_t command_buffer_count,
                                     const VkCommandBuffer *command_buffers) {
+    if (GetEnables(dev_data)->gpu_validation) {
+        GpuPreCallRecordFreeCommandBuffers(dev_data, command_buffer_count, command_buffers);
+    }
     for (uint32_t i = 0; i < command_buffer_count; i++) {
         auto cb_state = GetCBNode(dev_data, command_buffers[i]);
         // Remove references to command buffer's state and delete
@@ -5631,11 +5712,21 @@ VkResult GetPDImageFormatProperties2(core_validation::layer_data *device_data,
 
 const debug_report_data *GetReportData(const core_validation::layer_data *device_data) { return device_data->report_data; }
 
+const VkLayerDispatchTable *GetDispatchTable(const core_validation::layer_data *device_data) {
+    return &device_data->dispatch_table;
+}
+
 const VkPhysicalDeviceProperties *GetPhysicalDeviceProperties(const core_validation::layer_data *device_data) {
     return &device_data->phys_dev_props;
 }
 
+const VkPhysicalDeviceMemoryProperties *GetPhysicalDeviceMemoryProperties(const core_validation::layer_data *device_data) {
+    return &device_data->phys_dev_mem_props;
+}
+
 const CHECK_DISABLED *GetDisables(core_validation::layer_data *device_data) { return &device_data->instance_data->disabled; }
+
+const CHECK_ENABLED *GetEnables(core_validation::layer_data *device_data) { return &device_data->instance_data->enabled; }
 
 std::unordered_map<VkImage, std::unique_ptr<IMAGE_STATE>> *GetImageMap(core_validation::layer_data *device_data) {
     return &device_data->imageMap;
@@ -5670,6 +5761,11 @@ const PHYS_DEV_PROPERTIES_NODE *GetPhysDevProperties(const layer_data *device_da
 const DeviceFeatures *GetEnabledFeatures(const layer_data *device_data) { return &device_data->enabled_features; }
 
 const DeviceExtensions *GetDeviceExtensions(const layer_data *device_data) { return &device_data->extensions; }
+
+GpuValidationState *GetGpuValidationState(layer_data *device_data) { return &device_data->gpu_validation_state; }
+const GpuValidationState *GetGpuValidationState(const layer_data *device_data) { return &device_data->gpu_validation_state; }
+
+VkDevice GetDevice(const layer_data *device_data) { return device_data->device; }
 
 uint32_t GetApiVersion(const layer_data *device_data) { return device_data->api_version; }
 
@@ -5840,12 +5936,16 @@ static bool PreCallValidateCreateGraphicsPipelines(layer_data *dev_data, vector<
 }
 
 static void PostCallRecordCreateGraphicsPipelines(layer_data *dev_data, vector<std::unique_ptr<PIPELINE_STATE>> *pipe_state,
-                                                  const uint32_t count, VkPipeline *pPipelines) {
+                                                  const uint32_t count, const VkGraphicsPipelineCreateInfo *pCreateInfos,
+                                                  const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines) {
     for (uint32_t i = 0; i < count; i++) {
         if (pPipelines[i] != VK_NULL_HANDLE) {
             (*pipe_state)[i]->pipeline = pPipelines[i];
             dev_data->pipelineMap[pPipelines[i]] = std::move((*pipe_state)[i]);
         }
+    }
+    if (GetEnables(dev_data)->gpu_validation) {
+        GpuPostCallRecordCreateGraphicsPipelines(dev_data, count, pCreateInfos, pAllocator, pPipelines);
     }
 }
 
@@ -5868,13 +5968,23 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateGraphicsPipelines(VkDevice device, VkPipeli
         }
         return VK_ERROR_VALIDATION_FAILED_EXT;
     }
+
+    // GPU Validation can possibly replace instrumented shaders with non-instrumented ones, so give it a chance to modify the create
+    // infos.
+    std::vector<safe_VkGraphicsPipelineCreateInfo> gpu_create_infos;
+    if (GetEnables(dev_data)->gpu_validation) {
+        gpu_create_infos = GpuPreCallRecordCreateGraphicsPipelines(dev_data, pipelineCache, count, pCreateInfos, pAllocator,
+                                                                   pPipelines, pipe_state);
+        pCreateInfos = reinterpret_cast<VkGraphicsPipelineCreateInfo *>(gpu_create_infos.data());
+    }
+
     lock.unlock();
 
     auto result =
         dev_data->dispatch_table.CreateGraphicsPipelines(device, pipelineCache, count, pCreateInfos, pAllocator, pPipelines);
 
     lock.lock();
-    PostCallRecordCreateGraphicsPipelines(dev_data, &pipe_state, count, pPipelines);
+    PostCallRecordCreateGraphicsPipelines(dev_data, &pipe_state, count, pCreateInfos, pAllocator, pPipelines);
 
     return result;
 }
@@ -6756,11 +6866,17 @@ static void PostCallRecordCreatePipelineLayout(layer_data *dev_data, const VkPip
 VKAPI_ATTR VkResult VKAPI_CALL CreatePipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo *pCreateInfo,
                                                     const VkAllocationCallbacks *pAllocator, VkPipelineLayout *pPipelineLayout) {
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    VkResult result;
 
     bool skip = PreCallValiateCreatePipelineLayout(dev_data, pCreateInfo);
     if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
 
-    VkResult result = dev_data->dispatch_table.CreatePipelineLayout(device, pCreateInfo, pAllocator, pPipelineLayout);
+    if (GetEnables(dev_data)->gpu_validation) {
+        unique_lock_t lock(global_lock);
+        result = GpuOverrideDispatchCreatePipelineLayout(dev_data, pCreateInfo, pAllocator, pPipelineLayout);
+    } else {
+        result = dev_data->dispatch_table.CreatePipelineLayout(device, pCreateInfo, pAllocator, pPipelineLayout);
+    }
 
     if (VK_SUCCESS == result) {
         PostCallRecordCreatePipelineLayout(dev_data, pCreateInfo, pPipelineLayout);
@@ -7016,6 +7132,9 @@ static void PostCallRecordAllocateCommandBuffers(layer_data *dev_data, VkDevice 
             ResetCommandBufferState(dev_data, pCommandBuffer[i]);
             pCB->createInfo = *pCreateInfo;
             pCB->device = device;
+        }
+        if (GetEnables(dev_data)->gpu_validation) {
+            GpuPostCallRecordAllocateCommandBuffers(dev_data, pCreateInfo, pCommandBuffer);
         }
     }
 }
@@ -7309,6 +7428,12 @@ VKAPI_ATTR void VKAPI_CALL CmdBindPipeline(VkCommandBuffer commandBuffer, VkPipe
     }
     lock.unlock();
     if (!skip) dev_data->dispatch_table.CmdBindPipeline(commandBuffer, pipelineBindPoint, pipeline);
+    if (GetEnables(dev_data)->gpu_validation) {
+        lock.lock();
+        // Bind the debug descriptor set immediately after binding the pipeline.
+        GpuPostCallDispatchCmdBindPipeline(dev_data, commandBuffer, pipelineBindPoint, pipeline);
+        lock.unlock();
+    }
 }
 
 static bool PreCallValidateCmdSetViewport(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, VkCommandBuffer commandBuffer) {
@@ -9862,6 +9987,9 @@ static void PreCallRecordCmdWaitEvents(layer_data *dev_data, GLOBAL_CB_NODE *cb_
     cb_state->eventUpdates.emplace_back(
         [=](VkQueue q) { return ValidateEventStageMask(q, cb_state, eventCount, first_event_index, sourceStageMask); });
     TransitionImageLayouts(dev_data, cb_state, imageMemoryBarrierCount, pImageMemoryBarriers);
+    if (GetEnables(dev_data)->gpu_validation) {
+        GpuPreCallValidateCmdWaitEvents(dev_data, sourceStageMask);
+    }
 }
 
 static void PostCallRecordCmdWaitEvents(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, uint32_t bufferMemoryBarrierCount,
@@ -10867,28 +10995,35 @@ static bool CreatePassDAG(const layer_data *dev_data, RenderPassCreateVersion rp
     return skip;
 }
 
-static void PostCallRecordCreateShaderModule(layer_data *dev_data, bool spirv_valid, const VkShaderModuleCreateInfo *pCreateInfo,
-                                             VkShaderModule *pShaderModule) {
+static void PostCallRecordCreateShaderModule(layer_data *dev_data, bool is_spirv, const VkShaderModuleCreateInfo *pCreateInfo,
+                                             VkShaderModule *pShaderModule, uint32_t unique_shader_id) {
     spv_target_env spirv_environment = ((GetApiVersion(dev_data) >= VK_API_VERSION_1_1) ? SPV_ENV_VULKAN_1_1 : SPV_ENV_VULKAN_1_0);
-    unique_ptr<shader_module> new_shader_module(spirv_valid ? new shader_module(pCreateInfo, *pShaderModule, spirv_environment)
-                                                            : new shader_module());
+    unique_ptr<shader_module> new_shader_module(
+        is_spirv ? new shader_module(pCreateInfo, *pShaderModule, spirv_environment, unique_shader_id) : new shader_module());
     dev_data->shaderModuleMap[*pShaderModule] = std::move(new_shader_module);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL CreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo *pCreateInfo,
                                                   const VkAllocationCallbacks *pAllocator, VkShaderModule *pShaderModule) {
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    bool is_spirv;
     bool spirv_valid;
+    VkResult result;
+    uint32_t unique_shader_id = 0;
 
-    if (PreCallValidateCreateShaderModule(dev_data, pCreateInfo, &spirv_valid)) return VK_ERROR_VALIDATION_FAILED_EXT;
+    if (PreCallValidateCreateShaderModule(dev_data, pCreateInfo, &is_spirv, &spirv_valid)) return VK_ERROR_VALIDATION_FAILED_EXT;
 
-    VkResult res = dev_data->dispatch_table.CreateShaderModule(device, pCreateInfo, pAllocator, pShaderModule);
-
-    if (res == VK_SUCCESS) {
-        lock_guard_t lock(global_lock);
-        PostCallRecordCreateShaderModule(dev_data, spirv_valid, pCreateInfo, pShaderModule);
+    if (GetEnables(dev_data)->gpu_validation) {
+        result = GpuOverrideDispatchCreateShaderModule(dev_data, pCreateInfo, pAllocator, pShaderModule, &unique_shader_id);
+    } else {
+        result = dev_data->dispatch_table.CreateShaderModule(device, pCreateInfo, pAllocator, pShaderModule);
     }
-    return res;
+
+    if (result == VK_SUCCESS) {
+        lock_guard_t lock(global_lock);
+        PostCallRecordCreateShaderModule(dev_data, is_spirv, pCreateInfo, pShaderModule, unique_shader_id);
+    }
+    return result;
 }
 
 static bool ValidateAttachmentIndex(const layer_data *dev_data, RenderPassCreateVersion rp_version, uint32_t attachment,
@@ -14018,6 +14153,21 @@ VKAPI_ATTR VkResult VKAPI_CALL EnumeratePhysicalDevices(VkInstance instance, uin
     return result;
 }
 
+VKAPI_ATTR void VKAPI_CALL GetPhysicalDevicePropertiesIntercept(VkPhysicalDevice physicalDevice,
+                                                                VkPhysicalDeviceProperties *pPhysicalDeviceProperties) {
+    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), instance_layer_data_map);
+    instance_data->dispatch_table.GetPhysicalDeviceProperties(physicalDevice, pPhysicalDeviceProperties);
+    if (instance_data->enabled.gpu_validation && instance_data->enabled.gpu_validation_reserve_binding_slot) {
+        if (pPhysicalDeviceProperties->limits.maxBoundDescriptorSets > 1) {
+            pPhysicalDeviceProperties->limits.maxBoundDescriptorSets -= 1;
+        } else {
+            log_msg(instance_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT,
+                    HandleToUint64(physicalDevice), "UNASSIGNED-GPU-Assisted Validation Setup Error.",
+                    "Unable to reserve descriptor binding slot on a device with only one slot.");
+        }
+    }
+}
+
 // Common function to handle validation for GetPhysicalDeviceQueueFamilyProperties & 2KHR version
 static bool ValidateCommonGetPhysicalDeviceQueueFamilyProperties(instance_layer_data *instance_data,
                                                                  PHYSICAL_DEVICE_STATE *pd_state,
@@ -15858,6 +16008,7 @@ static const std::unordered_map<std::string, void *> name_to_funcptr_map = {
     {"vkCreateInstance", (void *)CreateInstance},
     {"vkCreateDevice", (void *)CreateDevice},
     {"vkEnumeratePhysicalDevices", (void *)EnumeratePhysicalDevices},
+    {"vkGetPhysicalDeviceProperties", (void *)GetPhysicalDevicePropertiesIntercept},
     {"vkGetPhysicalDeviceQueueFamilyProperties", (void *)GetPhysicalDeviceQueueFamilyProperties},
     {"vkDestroyInstance", (void *)DestroyInstance},
     {"vkEnumerateInstanceLayerProperties", (void *)EnumerateInstanceLayerProperties},
