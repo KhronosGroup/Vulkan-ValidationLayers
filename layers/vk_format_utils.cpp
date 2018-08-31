@@ -22,9 +22,10 @@
 #include <string.h>
 #include <string>
 #include <vector>
-#include <map>
+#include <unordered_map>
 #include "vulkan/vulkan.h"
 #include "vk_format_utils.h"
+#include "hash_util.h"
 
 struct VULKAN_FORMAT_INFO {
     size_t size;
@@ -36,7 +37,8 @@ struct VULKAN_FORMAT_INFO {
 // clang-format off
 
 // Set up data structure with number of bytes and number of channels for each Vulkan format
-const std::map<VkFormat, VULKAN_FORMAT_INFO> vk_format_table = {
+using HashVkFormat = hash_util::HashUnderlying<VkFormat>;
+const std::unordered_map<VkFormat, VULKAN_FORMAT_INFO, HashVkFormat> vk_format_table = {
     {VK_FORMAT_UNDEFINED,                   {0, 0, VK_FORMAT_COMPATIBILITY_CLASS_NONE_BIT }},
     {VK_FORMAT_R4G4_UNORM_PACK8,            {1, 2, VK_FORMAT_COMPATIBILITY_CLASS_8_BIT}},
     {VK_FORMAT_R4G4B4A4_UNORM_PACK16,       {2, 4, VK_FORMAT_COMPATIBILITY_CLASS_16_BIT}},
@@ -1052,7 +1054,7 @@ struct VULKAN_MULTIPLANE_COMPATIBILITY {
 
 // Source: Vulkan spec Table 45. Plane Format Compatibility Table
 // clang-format off
-const std::map<VkFormat, VULKAN_MULTIPLANE_COMPATIBILITY> vk_multiplane_compatibility_map {
+const std::unordered_map<VkFormat, VULKAN_MULTIPLANE_COMPATIBILITY, HashVkFormat> vk_multiplane_compatibility_map {
     { VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM_KHR,                  { { { 1, 1, VK_FORMAT_R8_UNORM },
                                                                     { 2, 2, VK_FORMAT_R8_UNORM },
                                                                     { 2, 2, VK_FORMAT_R8_UNORM } } } },
