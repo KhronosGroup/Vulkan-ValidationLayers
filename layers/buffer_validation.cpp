@@ -499,6 +499,11 @@ bool ValidateBarrierLayoutToImageUsage(layer_data *device_data, const VkImageMem
                 msg_code = "VUID-VkImageMemoryBarrier-oldLayout-01213";
             }
             break;
+        case VK_IMAGE_LAYOUT_SHADING_RATE_OPTIMAL_NV :
+            if ((usage_flags & VK_IMAGE_USAGE_SHADING_RATE_IMAGE_BIT_NV) == 0) {
+                msg_code = "VUID-VkImageMemoryBarrier-oldLayout-02088";
+            }
+            break;
         default:
             // Other VkImageLayout values do not have VUs defined in this context.
             break;
@@ -3700,9 +3705,9 @@ bool PreCallValidateCreateImageView(layer_data *device_data, const VkImageViewCr
         skip |= ValidateImageUsageFlags(
             device_data, image_state,
             VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT |
-                VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+                VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SHADING_RATE_IMAGE_BIT_NV,
             false, kVUIDUndefined, "vkCreateImageView()",
-            "VK_IMAGE_USAGE_[SAMPLED|STORAGE|COLOR_ATTACHMENT|DEPTH_STENCIL_ATTACHMENT|INPUT_ATTACHMENT]_BIT");
+            "VK_IMAGE_USAGE_[SAMPLED|STORAGE|COLOR_ATTACHMENT|DEPTH_STENCIL_ATTACHMENT|INPUT_ATTACHMENT|SHADING_RATE_IMAGE]_BIT");
         // If this isn't a sparse image, it needs to have memory backing it at CreateImageView time
         skip |=
             ValidateMemoryIsBoundToImage(device_data, image_state, "vkCreateImageView()", "VUID-VkImageViewCreateInfo-image-01020");
@@ -3920,6 +3925,21 @@ bool PreCallValidateCreateImageView(layer_data *device_data, const VkImageViewCr
                                 "vkCreateImageView() pCreateInfo->format %s cannot be used with an image having the %s and "
                                 "VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT flags set.",
                                 string_VkFormat(view_format), string_VkImageTiling(image_tiling));
+            }
+        }
+        if (image_usage & VK_IMAGE_USAGE_SHADING_RATE_IMAGE_BIT_NV) {
+            if (view_type != VK_IMAGE_VIEW_TYPE_2D && view_type != VK_IMAGE_VIEW_TYPE_2D_ARRAY) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
+                                HandleToUint64(create_info->image), "VUID-VkImageViewCreateInfo-image-02086",
+                                "vkCreateImageView() If image was created with usage containing "
+                                "VK_IMAGE_USAGE_SHADING_RATE_IMAGE_BIT_NV, viewType must be "
+                                "VK_IMAGE_VIEW_TYPE_2D or VK_IMAGE_VIEW_TYPE_2D_ARRAY.");
+            }
+            if (view_format != VK_FORMAT_R8_UINT) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
+                                HandleToUint64(create_info->image), "VUID-VkImageViewCreateInfo-image-02087",
+                                "vkCreateImageView() If image was created with usage containing "
+                                "VK_IMAGE_USAGE_SHADING_RATE_IMAGE_BIT_NV, format must be VK_FORMAT_R8_UINT.");
             }
         }
     }

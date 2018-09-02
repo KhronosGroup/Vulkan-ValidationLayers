@@ -210,6 +210,7 @@ struct layer_data {
     struct DeviceExtensionProperties {
         uint32_t max_push_descriptors;  // from VkPhysicalDevicePushDescriptorPropertiesKHR::maxPushDescriptors
         VkPhysicalDeviceDescriptorIndexingPropertiesEXT descriptor_indexing_props;
+        VkPhysicalDeviceShadingRateImagePropertiesNV shading_rate_image_props;
     };
     DeviceExtensionProperties phys_dev_ext_props = {};
     bool external_sync_warning = false;
@@ -1730,6 +1731,7 @@ static const std::unordered_map<CmdTypeHashType, std::string> must_be_recording_
     {CMD_BINDDESCRIPTORSETS, "VUID-vkCmdBindDescriptorSets-commandBuffer-recording"},
     {CMD_BINDINDEXBUFFER, "VUID-vkCmdBindIndexBuffer-commandBuffer-recording"},
     {CMD_BINDPIPELINE, "VUID-vkCmdBindPipeline-commandBuffer-recording"},
+    {CMD_BINDSHADINGRATEIMAGE, "VUID-vkCmdBindShadingRateImageNV-commandBuffer-recording"},
     {CMD_BINDVERTEXBUFFERS, "VUID-vkCmdBindVertexBuffers-commandBuffer-recording"},
     {CMD_BLITIMAGE, "VUID-vkCmdBlitImage-commandBuffer-recording"},
     {CMD_CLEARATTACHMENTS, "VUID-vkCmdClearAttachments-commandBuffer-recording"},
@@ -1787,6 +1789,7 @@ static const std::unordered_map<CmdTypeHashType, std::string> must_be_recording_
     {CMD_SETSTENCILREFERENCE, "VUID-vkCmdSetStencilReference-commandBuffer-recording"},
     {CMD_SETSTENCILWRITEMASK, "VUID-vkCmdSetStencilWriteMask-commandBuffer-recording"},
     {CMD_SETVIEWPORT, "VUID-vkCmdSetViewport-commandBuffer-recording"},
+    {CMD_SETVIEWPORTSHADINGRATEPALETTE, "VUID-vkCmdSetViewportShadingRatePaletteNV-commandBuffer-recording"},
     // Exclude vendor ext (if not already present) { CMD_SETVIEWPORTWSCALINGNV,
     // "VUID-vkCmdSetViewportWScalingNV-commandBuffer-recording" },
     {CMD_UPDATEBUFFER, "VUID-vkCmdUpdateBuffer-commandBuffer-recording"},
@@ -2013,6 +2016,9 @@ CBStatusFlags MakeStaticStateMask(VkPipelineDynamicStateCreateInfo const *ds) {
                     break;
                 case VK_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_NV:
                     flags &= ~CBSTATUS_EXCLUSIVE_SCISSOR_SET;
+                    break;
+                case VK_DYNAMIC_STATE_VIEWPORT_SHADING_RATE_PALETTE_NV:
+                    flags &= ~CBSTATUS_SHADING_RATE_PALETTE_SET;
                     break;
                 default:
                     break;
@@ -2298,6 +2304,11 @@ static void PostCallRecordCreateDevice(instance_layer_data *instance_data, const
         device_data->enabled_features.exclusive_scissor = *exclusive_scissor_features;
     }
 
+    const auto *shading_rate_image_features = lvl_find_in_chain<VkPhysicalDeviceShadingRateImageFeaturesNV>(pCreateInfo->pNext);
+    if (shading_rate_image_features) {
+        device_data->enabled_features.shading_rate_image = *shading_rate_image_features;
+    }
+
     // Store physical device properties and physical device mem limits into device layer_data structs
     instance_data->dispatch_table.GetPhysicalDeviceMemoryProperties(gpu, &device_data->phys_dev_mem_props);
     instance_data->dispatch_table.GetPhysicalDeviceProperties(gpu, &device_data->phys_dev_props);
@@ -2315,6 +2326,13 @@ static void PostCallRecordCreateDevice(instance_layer_data *instance_data, const
         auto prop2 = lvl_init_struct<VkPhysicalDeviceProperties2KHR>(&descriptor_indexing_props);
         instance_data->dispatch_table.GetPhysicalDeviceProperties2KHR(gpu, &prop2);
         device_data->phys_dev_ext_props.descriptor_indexing_props = descriptor_indexing_props;
+    }
+    if (device_data->extensions.vk_nv_shading_rate_image) {
+        // Get the needed shading rate image limits
+        auto shading_rate_image_props = lvl_init_struct<VkPhysicalDeviceShadingRateImagePropertiesNV>();
+        auto prop2 = lvl_init_struct<VkPhysicalDeviceProperties2KHR>(&shading_rate_image_props);
+        instance_data->dispatch_table.GetPhysicalDeviceProperties2KHR(gpu, &prop2);
+        device_data->phys_dev_ext_props.shading_rate_image_props = shading_rate_image_props;
     }
 }
 
@@ -6377,6 +6395,140 @@ VKAPI_ATTR void VKAPI_CALL CmdSetExclusiveScissorNV(VkCommandBuffer commandBuffe
     }
     lock.unlock();
     if (!skip) dev_data->dispatch_table.CmdSetExclusiveScissorNV(commandBuffer, firstExclusiveScissor, exclusiveScissorCount, pExclusiveScissors);
+}
+
+static bool PreCallValidateCmdBindShadingRateImageNV(layer_data *dev_data, GLOBAL_CB_NODE *cb_state,
+                                                     VkCommandBuffer commandBuffer, VkImageView imageView, VkImageLayout imageLayout)
+{
+    bool skip = ValidateCmdQueueFlags(dev_data, cb_state, "vkCmdBindShadingRateImageNV()", VK_QUEUE_GRAPHICS_BIT,
+                                      "VUID-vkCmdBindShadingRateImageNV-commandBuffer-cmdpool");
+
+    skip |= ValidateCmd(dev_data, cb_state, CMD_BINDSHADINGRATEIMAGE, "vkCmdBindShadingRateImageNV()");
+
+    if (!GetEnabledFeatures(dev_data)->shading_rate_image.shadingRateImage) {
+        skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                        HandleToUint64(commandBuffer), "VUID-vkCmdBindShadingRateImageNV-None-02058",
+                        "vkCmdBindShadingRateImageNV: The shadingRateImage feature is disabled.");
+    }
+
+    if (imageView != VK_NULL_HANDLE) {
+        auto view_state = GetImageViewState(dev_data, imageView);
+        auto &ivci = view_state->create_info;
+
+        if (!view_state || (ivci.viewType != VK_IMAGE_VIEW_TYPE_2D && ivci.viewType != VK_IMAGE_VIEW_TYPE_2D_ARRAY)) {
+            skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_VIEW_EXT,
+                            HandleToUint64(imageView), "VUID-vkCmdBindShadingRateImageNV-imageView-02059",
+                            "vkCmdBindShadingRateImageNV: If imageView is not VK_NULL_HANDLE, it must be a valid "
+                            "VkImageView handle of type VK_IMAGE_VIEW_TYPE_2D or VK_IMAGE_VIEW_TYPE_2D_ARRAY.");
+        }
+
+        if (view_state && ivci.format != VK_FORMAT_R8_UINT) {
+            skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_VIEW_EXT,
+                            HandleToUint64(imageView), "VUID-vkCmdBindShadingRateImageNV-imageView-02060",
+                            "vkCmdBindShadingRateImageNV: If imageView is not VK_NULL_HANDLE, it must have a format of VK_FORMAT_R8_UINT.");
+        }
+
+        const VkImageCreateInfo *ici = view_state ? &GetImageState(dev_data, view_state->create_info.image)->createInfo : nullptr;
+        if (ici && !(ici->usage & VK_IMAGE_USAGE_SHADING_RATE_IMAGE_BIT_NV)) {
+            skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_VIEW_EXT,
+                            HandleToUint64(imageView), "VUID-vkCmdBindShadingRateImageNV-imageView-02061",
+                            "vkCmdBindShadingRateImageNV: If imageView is not VK_NULL_HANDLE, the image must have been "
+                            "created with VK_IMAGE_USAGE_SHADING_RATE_IMAGE_BIT_NV set.");
+        }
+
+        if (view_state) {
+            auto image_state = GetImageState(dev_data, view_state->create_info.image);
+            bool hit_error = false;
+
+            // XXX TODO: While the VUID says "each subresource", only the base mip level is
+            // actually used. Since we don't have an existing convenience function to iterate
+            // over all mip levels, just don't bother with non-base levels.
+            VkImageSubresourceRange &range = view_state->create_info.subresourceRange;
+            VkImageSubresourceLayers subresource = { range.aspectMask, range.baseMipLevel, range.baseArrayLayer, range.layerCount };
+
+            skip |= VerifyImageLayout(dev_data, cb_state, image_state, subresource, imageLayout,
+                                      VK_IMAGE_LAYOUT_SHADING_RATE_OPTIMAL_NV, "vkCmdCopyImage()", 
+                                      "VUID-vkCmdBindShadingRateImageNV-imageLayout-02063",
+                                      "VUID-vkCmdBindShadingRateImageNV-imageView-02062", &hit_error);
+        }
+    }
+
+    return skip;
+}
+
+static void PreCallRecordCmdBindShadingRateImageNV(GLOBAL_CB_NODE *cb_state, VkImageView imageView, VkImageLayout imageLayout) { }
+
+VKAPI_ATTR void VKAPI_CALL CmdBindShadingRateImageNV(VkCommandBuffer                             commandBuffer,
+                                                     VkImageView                                 imageView,
+                                                     VkImageLayout                               imageLayout) {
+    bool skip = false;
+    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    unique_lock_t lock(global_lock);
+    GLOBAL_CB_NODE *pCB = GetCBNode(dev_data, commandBuffer);
+    if (pCB) {
+        skip |= PreCallValidateCmdBindShadingRateImageNV(dev_data, pCB, commandBuffer, imageView, imageLayout);
+        if (!skip) {
+            PreCallRecordCmdBindShadingRateImageNV(pCB, imageView, imageLayout);
+        }
+    }
+    lock.unlock();
+    if (!skip) dev_data->dispatch_table.CmdBindShadingRateImageNV(commandBuffer, imageView, imageLayout);
+}
+
+static bool PreCallValidateCmdSetViewportShadingRatePaletteNV(layer_data *dev_data, GLOBAL_CB_NODE *cb_state,
+                                                              VkCommandBuffer commandBuffer, uint32_t firstViewport, uint32_t viewportCount, const VkShadingRatePaletteNV* pShadingRatePalettes)
+{
+    bool skip = ValidateCmdQueueFlags(dev_data, cb_state, "vkCmdSetViewportShadingRatePaletteNV()", VK_QUEUE_GRAPHICS_BIT,
+                                      "VUID-vkCmdSetViewportShadingRatePaletteNV-commandBuffer-cmdpool");
+
+    skip |= ValidateCmd(dev_data, cb_state, CMD_SETVIEWPORTSHADINGRATEPALETTE, "vkCmdSetViewportShadingRatePaletteNV()");
+
+    if (!GetEnabledFeatures(dev_data)->shading_rate_image.shadingRateImage) {
+        skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                        HandleToUint64(commandBuffer), "VUID-vkCmdSetViewportShadingRatePaletteNV-None-02064",
+                        "vkCmdSetViewportShadingRatePaletteNV: The shadingRateImage feature is disabled.");
+    }
+
+    if (cb_state->static_status & CBSTATUS_SHADING_RATE_PALETTE_SET) {
+        skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                        HandleToUint64(commandBuffer), "VUID-vkCmdSetViewportShadingRatePaletteNV-None-02065",
+                        "vkCmdSetViewportShadingRatePaletteNV(): pipeline was created without VK_DYNAMIC_STATE_VIEWPORT_SHADING_RATE_PALETTE_NV flag.");
+    }
+
+    for (uint32_t i = 0; i < viewportCount; ++i) {
+        auto *palette = &pShadingRatePalettes[i];
+        if (palette->shadingRatePaletteEntryCount == 0 ||
+            palette->shadingRatePaletteEntryCount > dev_data->phys_dev_ext_props.shading_rate_image_props.shadingRatePaletteSize) {
+            skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                            HandleToUint64(commandBuffer), "VUID-VkShadingRatePaletteNV-shadingRatePaletteEntryCount-02071",
+                            "vkCmdSetViewportShadingRatePaletteNV: shadingRatePaletteEntryCount must be between 1 and shadingRatePaletteSize.");
+
+        }
+    }
+
+    return skip;
+}
+
+static void PreCallRecordCmdSetViewportShadingRatePaletteNV(GLOBAL_CB_NODE *cb_state, uint32_t firstViewport, uint32_t viewportCount) {
+    // XXX TODO: We don't have VUIDs for validating that all shading rate palettes have been set.
+    // cb_state->shadingRatePaletteMask |= ((1u << viewportCount) - 1u) << firstViewport;
+    cb_state->status |= CBSTATUS_SHADING_RATE_PALETTE_SET;
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdSetViewportShadingRatePaletteNV(VkCommandBuffer commandBuffer, uint32_t firstViewport, uint32_t viewportCount,
+                                         const VkShadingRatePaletteNV*               pShadingRatePalettes) {
+    bool skip = false;
+    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    unique_lock_t lock(global_lock);
+    GLOBAL_CB_NODE *pCB = GetCBNode(dev_data, commandBuffer);
+    if (pCB) {
+        skip |= PreCallValidateCmdSetViewportShadingRatePaletteNV(dev_data, pCB, commandBuffer, firstViewport, viewportCount, pShadingRatePalettes);
+        if (!skip) {
+            PreCallRecordCmdSetViewportShadingRatePaletteNV(pCB, firstViewport, viewportCount);
+        }
+    }
+    lock.unlock();
+    if (!skip) dev_data->dispatch_table.CmdSetViewportShadingRatePaletteNV(commandBuffer, firstViewport, viewportCount, pShadingRatePalettes);
 }
 
 static bool PreCallValidateCmdSetLineWidth(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, VkCommandBuffer commandBuffer) {
@@ -13898,6 +14050,8 @@ static const std::unordered_map<std::string, void *> name_to_funcptr_map = {
     {"vkCmdDrawIndirectCountKHR", (void *)CmdDrawIndirectCountKHR},
     {"vkCmdDrawIndexedIndirectCountKHR", (void *)CmdDrawIndexedIndirectCountKHR},
     {"vkCmdSetExclusiveScissorNV", (void *)CmdSetExclusiveScissorNV},
+    {"vkCmdBindShadingRateImageNV", (void *)CmdBindShadingRateImageNV},
+    {"vkCmdSetViewportShadingRatePaletteNV", (void *)CmdSetViewportShadingRatePaletteNV},
 };
 
 VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetDeviceProcAddr(VkDevice device, const char *funcName) {
