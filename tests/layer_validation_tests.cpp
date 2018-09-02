@@ -31851,6 +31851,376 @@ TEST_F(VkLayerTest, ExclusiveScissorNV) {
     }
 }
 
+TEST_F(VkLayerTest, ShadingRateImageNV) {
+    TEST_DESCRIPTION("Test VK_NV_shading_rate_image.");
+
+    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    } else {
+        printf("%s Did not find required instance extension %s; skipped.\n", kSkipPrefix,
+               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    std::array<const char *, 1> required_device_extensions = {
+        {VK_NV_SHADING_RATE_IMAGE_EXTENSION_NAME}};
+    for (auto device_extension : required_device_extensions) {
+        if (DeviceExtensionSupported(gpu(), nullptr, device_extension)) {
+            m_device_extension_names.push_back(device_extension);
+        } else {
+            printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, device_extension);
+            return;
+        }
+    }
+
+    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
+        (PFN_vkGetPhysicalDeviceFeatures2KHR)vkGetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
+
+    // Create a device that enables shading_rate_image but disables multiViewport
+    auto shading_rate_image_features = lvl_init_struct<VkPhysicalDeviceShadingRateImageFeaturesNV>();
+    auto features2 = lvl_init_struct<VkPhysicalDeviceFeatures2KHR>(&shading_rate_image_features);
+    vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
+
+    features2.features.multiViewport = VK_FALSE;
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+
+    // Test shading rate image creation
+    VkImage image = VK_NULL_HANDLE;
+    VkResult result = VK_RESULT_MAX_ENUM;
+    VkImageCreateInfo image_create_info = {};
+    image_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    image_create_info.pNext = NULL;
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.format = VK_FORMAT_R8_UINT;
+    image_create_info.extent.width = 4;
+    image_create_info.extent.height = 4;
+    image_create_info.extent.depth = 1;
+    image_create_info.mipLevels = 1;
+    image_create_info.arrayLayers = 1;
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SHADING_RATE_IMAGE_BIT_NV;
+    image_create_info.queueFamilyIndexCount = 0;
+    image_create_info.pQueueFamilyIndices = NULL;
+    image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    image_create_info.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
+
+    // image type must be 2D
+    image_create_info.imageType = VK_IMAGE_TYPE_3D;
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkImageCreateInfo-imageType-02082");
+    result = vkCreateImage(m_device->device(), &image_create_info, NULL, &image);
+    m_errorMonitor->VerifyFound();
+    if (VK_SUCCESS == result) {
+        vkDestroyImage(m_device->device(), image, NULL);
+        image = VK_NULL_HANDLE;
+    }
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+
+    // must be single sample
+    image_create_info.samples = VK_SAMPLE_COUNT_2_BIT;
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkImageCreateInfo-samples-02083");
+    result = vkCreateImage(m_device->device(), &image_create_info, NULL, &image);
+    m_errorMonitor->VerifyFound();
+    if (VK_SUCCESS == result) {
+        vkDestroyImage(m_device->device(), image, NULL);
+        image = VK_NULL_HANDLE;
+    }
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+
+    // tiling must be optimal
+    image_create_info.tiling = VK_IMAGE_TILING_LINEAR;
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkImageCreateInfo-tiling-02084");
+    result = vkCreateImage(m_device->device(), &image_create_info, NULL, &image);
+    m_errorMonitor->VerifyFound();
+    if (VK_SUCCESS == result) {
+        vkDestroyImage(m_device->device(), image, NULL);
+        image = VK_NULL_HANDLE;
+    }
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+
+    // Should succeed.
+    result = vkCreateImage(m_device->device(), &image_create_info, NULL, &image);
+    m_errorMonitor->VerifyNotFound();
+
+
+    // bind memory to the image
+    VkMemoryRequirements memory_reqs;
+    VkDeviceMemory image_memory;
+    bool pass;
+    VkMemoryAllocateInfo memory_info = {};
+    memory_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    memory_info.pNext = NULL;
+    memory_info.allocationSize = 0;
+    memory_info.memoryTypeIndex = 0;
+    vkGetImageMemoryRequirements(m_device->device(), image, &memory_reqs);
+    memory_info.allocationSize = memory_reqs.size;
+    pass = m_device->phy().set_memory_type(memory_reqs.memoryTypeBits, &memory_info, 0);
+    ASSERT_TRUE(pass);
+    result = vkAllocateMemory(m_device->device(), &memory_info, NULL, &image_memory);
+    ASSERT_VK_SUCCESS(result);
+    result = vkBindImageMemory(m_device->device(), image, image_memory, 0);
+    ASSERT_VK_SUCCESS(result);
+
+
+    // Test image view creation
+    VkImageView view;
+    VkImageViewCreateInfo ivci = {};
+    ivci.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    ivci.image = image;
+    ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    ivci.format = VK_FORMAT_R8_UINT;
+    ivci.subresourceRange.layerCount = 1;
+    ivci.subresourceRange.baseMipLevel = 0;
+    ivci.subresourceRange.levelCount = 1;
+    ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+
+    // view type must be 2D or 2D_ARRAY
+    ivci.viewType = VK_IMAGE_VIEW_TYPE_CUBE;
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkImageViewCreateInfo-image-02086");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkImageViewCreateInfo-image-01003");
+    result = vkCreateImageView(m_device->device(), &ivci, nullptr, &view);
+    m_errorMonitor->VerifyFound();
+    if (VK_SUCCESS == result) {
+        vkDestroyImageView(m_device->device(), view, NULL);
+        view = VK_NULL_HANDLE;
+    }
+    ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+
+    // format must be R8_UINT
+    ivci.format = VK_FORMAT_R8_UNORM;
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkImageViewCreateInfo-image-02087");
+    result = vkCreateImageView(m_device->device(), &ivci, nullptr, &view);
+    m_errorMonitor->VerifyFound();
+    if (VK_SUCCESS == result) {
+        vkDestroyImageView(m_device->device(), view, NULL);
+        view = VK_NULL_HANDLE;
+    }
+    ivci.format = VK_FORMAT_R8_UINT;
+
+    vkCreateImageView(m_device->device(), &ivci, nullptr, &view);
+    m_errorMonitor->VerifyNotFound();
+    
+
+    // Test pipeline creation
+    VkPipelineViewportShadingRateImageStateCreateInfoNV vsrisci = { VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_SHADING_RATE_IMAGE_STATE_CREATE_INFO_NV };
+
+    VkViewport viewport = {0.0f, 0.0f, 64.0f, 64.0f, 0.0f, 1.0f};
+    VkViewport viewports[20] = {viewport, viewport};
+    VkRect2D scissor = {{0, 0}, {64, 64}};
+    VkRect2D scissors[20] = {scissor, scissor};
+    VkDynamicState dynPalette = VK_DYNAMIC_STATE_VIEWPORT_SHADING_RATE_PALETTE_NV;
+    VkPipelineDynamicStateCreateInfo dyn = { VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO, nullptr, 0, 1, &dynPalette };
+
+    // viewportCount must be 0 or 1 when multiViewport is disabled
+    {
+        const auto break_vp = [&](CreatePipelineHelper &helper) {
+            helper.vp_state_ci_.viewportCount = 2;
+            helper.vp_state_ci_.pViewports = viewports;
+            helper.vp_state_ci_.scissorCount = 2;
+            helper.vp_state_ci_.pScissors = scissors;
+            helper.vp_state_ci_.pNext = &vsrisci;
+            helper.dyn_state_ci_ = dyn;
+
+            vsrisci.shadingRateImageEnable = VK_TRUE;
+            vsrisci.viewportCount = 2;
+        };
+        CreatePipelineHelper::OneshotTest(*this, break_vp, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+            vector<std::string>({"VUID-VkPipelineViewportShadingRateImageStateCreateInfoNV-viewportCount-02054",
+                                 "VUID-VkPipelineViewportStateCreateInfo-viewportCount-01216",
+                                 "VUID-VkPipelineViewportStateCreateInfo-scissorCount-01217"}));
+    }
+
+    // viewportCounts must match
+    {
+        const auto break_vp = [&](CreatePipelineHelper &helper) {
+            helper.vp_state_ci_.viewportCount = 1;
+            helper.vp_state_ci_.pViewports = viewports;
+            helper.vp_state_ci_.scissorCount = 1;
+            helper.vp_state_ci_.pScissors = scissors;
+            helper.vp_state_ci_.pNext = &vsrisci;
+            helper.dyn_state_ci_ = dyn;
+
+            vsrisci.shadingRateImageEnable = VK_TRUE;
+            vsrisci.viewportCount = 0;
+        };
+        CreatePipelineHelper::OneshotTest(*this, break_vp, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+            vector<std::string>({"VUID-VkPipelineViewportShadingRateImageStateCreateInfoNV-shadingRateImageEnable-02056"}));
+    }
+
+    // pShadingRatePalettes must not be NULL.
+    {
+        const auto break_vp = [&](CreatePipelineHelper &helper) {
+            helper.vp_state_ci_.viewportCount = 1;
+            helper.vp_state_ci_.pViewports = viewports;
+            helper.vp_state_ci_.scissorCount = 1;
+            helper.vp_state_ci_.pScissors = scissors;
+            helper.vp_state_ci_.pNext = &vsrisci;
+
+            vsrisci.shadingRateImageEnable = VK_TRUE;
+            vsrisci.viewportCount = 1;
+        };
+        CreatePipelineHelper::OneshotTest(*this, break_vp, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+            vector<std::string>({"VUID-VkPipelineViewportShadingRateImageStateCreateInfoNV-pDynamicStates-02057"}));
+    }
+    
+    // Create an image without the SRI bit
+    VkImageObj nonSRIimage(m_device);
+    nonSRIimage.Init(256, 256, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    ASSERT_TRUE(nonSRIimage.initialized());
+    VkImageView nonSRIview = nonSRIimage.targetView(VK_FORMAT_B8G8R8A8_UNORM);
+
+    // Test SRI layout on non-SRI image
+    VkImageMemoryBarrier img_barrier = {};
+    img_barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    img_barrier.pNext = nullptr;
+    img_barrier.srcAccessMask = 0;
+    img_barrier.dstAccessMask = 0;
+    img_barrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
+    img_barrier.newLayout = VK_IMAGE_LAYOUT_SHADING_RATE_OPTIMAL_NV;
+    img_barrier.image = nonSRIimage.handle();
+    img_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    img_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    img_barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    img_barrier.subresourceRange.baseArrayLayer = 0;
+    img_barrier.subresourceRange.baseMipLevel = 0;
+    img_barrier.subresourceRange.layerCount = 1;
+    img_barrier.subresourceRange.levelCount = 1;
+
+    m_commandBuffer->begin();
+
+    // Error trying to convert it to SRI layout
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkImageMemoryBarrier-oldLayout-02088");
+    vkCmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, 0,
+                         nullptr, 0, nullptr, 1, &img_barrier);
+    m_errorMonitor->VerifyFound();
+
+    // succeed converting it to GENERAL
+    img_barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+    vkCmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, 0,
+                         nullptr, 0, nullptr, 1, &img_barrier);
+    m_errorMonitor->VerifyNotFound();
+
+
+    // Test vkCmdBindShadingRateImageNV errors
+    auto vkCmdBindShadingRateImageNV =
+        (PFN_vkCmdBindShadingRateImageNV)vkGetDeviceProcAddr(m_device->device(), "vkCmdBindShadingRateImageNV");
+
+    // if the view is non-NULL, it must be R8_UINT, USAGE_SRI, image layout must match, layout must be valid
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdBindShadingRateImageNV-imageView-02060");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdBindShadingRateImageNV-imageView-02061");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdBindShadingRateImageNV-imageView-02062");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdBindShadingRateImageNV-imageLayout-02063");
+    vkCmdBindShadingRateImageNV(m_commandBuffer->handle(), nonSRIview, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    m_errorMonitor->VerifyFound();
+
+
+    // Test vkCmdSetViewportShadingRatePaletteNV errors
+    auto vkCmdSetViewportShadingRatePaletteNV =
+        (PFN_vkCmdSetViewportShadingRatePaletteNV)vkGetDeviceProcAddr(m_device->device(), "vkCmdSetViewportShadingRatePaletteNV");
+
+    VkShadingRatePaletteEntryNV paletteEntries[100] = {};
+    VkShadingRatePaletteNV palette = { 100, paletteEntries };
+    VkShadingRatePaletteNV palettes[] = { palette, palette };
+
+    // errors on firstViewport/viewportCount
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdSetViewportShadingRatePaletteNV-firstViewport-02066");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdSetViewportShadingRatePaletteNV-firstViewport-02067");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdSetViewportShadingRatePaletteNV-firstViewport-02068");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdSetViewportShadingRatePaletteNV-viewportCount-02069");
+    vkCmdSetViewportShadingRatePaletteNV(m_commandBuffer->handle(), 20, 2, palettes);
+    m_errorMonitor->VerifyFound();
+
+    // shadingRatePaletteEntryCount must be in range
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkShadingRatePaletteNV-shadingRatePaletteEntryCount-02071");
+    vkCmdSetViewportShadingRatePaletteNV(m_commandBuffer->handle(), 0, 1, palettes);
+    m_errorMonitor->VerifyFound();
+
+    VkCoarseSampleLocationNV locations[32] = {
+        {0, 0, 0},
+        {0, 0, 1},
+        {0, 1, 0},
+        {0, 1, 1},
+        {0, 1, 1}, // duplicate
+        {1000, 0, 0}, // pixelX too large
+        {0, 1000, 0}, // pixelY too large
+        {0, 0, 1000}, // sample too large
+    };
+
+    // Test custom sample orders, both via pipeline state and via dynamic state
+    {
+        VkCoarseSampleOrderCustomNV sampOrdBadShadingRate = { VK_SHADING_RATE_PALETTE_ENTRY_1_INVOCATION_PER_PIXEL_NV, 1, 1, locations };
+        VkCoarseSampleOrderCustomNV sampOrdBadSampleCount = { VK_SHADING_RATE_PALETTE_ENTRY_1_INVOCATION_PER_1X2_PIXELS_NV, 3, 1, locations };
+        VkCoarseSampleOrderCustomNV sampOrdBadSampleLocationCount = { VK_SHADING_RATE_PALETTE_ENTRY_1_INVOCATION_PER_1X2_PIXELS_NV, 2, 2, locations };
+        VkCoarseSampleOrderCustomNV sampOrdDuplicateLocations = { VK_SHADING_RATE_PALETTE_ENTRY_1_INVOCATION_PER_1X2_PIXELS_NV, 2, 1*2*2, &locations[1] };
+        VkCoarseSampleOrderCustomNV sampOrdOutOfRangeLocations = { VK_SHADING_RATE_PALETTE_ENTRY_1_INVOCATION_PER_1X2_PIXELS_NV, 2, 1*2*2, &locations[4] };
+        VkCoarseSampleOrderCustomNV sampOrdGood = { VK_SHADING_RATE_PALETTE_ENTRY_1_INVOCATION_PER_1X2_PIXELS_NV, 2, 1*2*2, &locations[0] };
+
+        VkPipelineViewportCoarseSampleOrderStateCreateInfoNV csosci = { VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_COARSE_SAMPLE_ORDER_STATE_CREATE_INFO_NV };
+        csosci.sampleOrderType = VK_COARSE_SAMPLE_ORDER_TYPE_CUSTOM_NV;
+        csosci.customSampleOrderCount = 1;
+
+        using std::vector;
+        struct TestCase {
+            const VkCoarseSampleOrderCustomNV *order;
+            vector<std::string> vuids;
+        };
+
+        vector<TestCase> test_cases = {
+            {&sampOrdBadShadingRate,        {"VUID-VkCoarseSampleOrderCustomNV-shadingRate-02073"}},
+            {&sampOrdBadSampleCount,        {"VUID-VkCoarseSampleOrderCustomNV-sampleCount-02074",
+                                             "VUID-VkCoarseSampleOrderCustomNV-sampleLocationCount-02075"}},
+            {&sampOrdBadSampleLocationCount,{"VUID-VkCoarseSampleOrderCustomNV-sampleLocationCount-02075"}},
+            {&sampOrdDuplicateLocations,    {"VUID-VkCoarseSampleOrderCustomNV-pSampleLocations-02077"}},
+            {&sampOrdOutOfRangeLocations,   {"VUID-VkCoarseSampleOrderCustomNV-pSampleLocations-02077",
+                                             "VUID-VkCoarseSampleLocationNV-pixelX-02078",
+                                             "VUID-VkCoarseSampleLocationNV-pixelY-02079",
+                                             "VUID-VkCoarseSampleLocationNV-sample-02080"}},
+            {&sampOrdGood,                  {}},
+        };
+
+        for (const auto &test_case : test_cases) {
+            const auto break_vp = [&](CreatePipelineHelper &helper) {
+                helper.vp_state_ci_.pNext = &csosci;
+                csosci.pCustomSampleOrders = test_case.order;
+            };
+            CreatePipelineHelper::OneshotTest(*this, break_vp, VK_DEBUG_REPORT_ERROR_BIT_EXT, test_case.vuids);
+        }
+
+        // Test vkCmdSetCoarseSampleOrderNV errors
+        auto vkCmdSetCoarseSampleOrderNV =
+            (PFN_vkCmdSetCoarseSampleOrderNV)vkGetDeviceProcAddr(m_device->device(), "vkCmdSetCoarseSampleOrderNV");
+
+        for (const auto &test_case : test_cases) {
+            for (uint32_t i = 0; i < test_case.vuids.size(); ++i) {
+                m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, test_case.vuids[i]);
+            }
+            vkCmdSetCoarseSampleOrderNV(m_commandBuffer->handle(), VK_COARSE_SAMPLE_ORDER_TYPE_CUSTOM_NV, 1, test_case.order);
+            if (test_case.vuids.size()) {
+                m_errorMonitor->VerifyFound();
+            } else {
+                m_errorMonitor->VerifyNotFound();
+            }
+        }
+
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdSetCoarseSampleOrderNV-sampleOrderType-02081");
+        vkCmdSetCoarseSampleOrderNV(m_commandBuffer->handle(), VK_COARSE_SAMPLE_ORDER_TYPE_PIXEL_MAJOR_NV, 1, &sampOrdGood);
+        m_errorMonitor->VerifyFound();
+    }
+
+    m_commandBuffer->end();
+
+
+    vkDestroyImageView(m_device->device(), view, NULL);
+    vkDestroyImage(m_device->device(), image, NULL);
+    vkFreeMemory(m_device->device(), image_memory, NULL);
+}
+
+
 
 #if defined(ANDROID) && defined(VALIDATION_APK)
 const char *appTag = "VulkanLayerValidationTests";

@@ -433,6 +433,7 @@ enum CMD_TYPE {
     CMD_BINDDESCRIPTORSETS,
     CMD_BINDINDEXBUFFER,
     CMD_BINDPIPELINE,
+    CMD_BINDSHADINGRATEIMAGE,
     CMD_BINDVERTEXBUFFERS,
     CMD_BLITIMAGE,
     CMD_CLEARATTACHMENTS,
@@ -486,6 +487,7 @@ enum CMD_TYPE {
     CMD_SETSTENCILREFERENCE,
     CMD_SETSTENCILWRITEMASK,
     CMD_SETVIEWPORT,
+    CMD_SETVIEWPORTSHADINGRATEPALETTE,
     CMD_SETVIEWPORTWSCALINGNV,
     CMD_UPDATEBUFFER,
     CMD_WAITEVENTS,
@@ -516,7 +518,8 @@ enum CBStatusFlagBits {
     CBSTATUS_SCISSOR_SET            = 0x00000100,
     CBSTATUS_INDEX_BUFFER_BOUND     = 0x00000200,   // Index buffer has been set
     CBSTATUS_EXCLUSIVE_SCISSOR_SET  = 0x00000400,
-    CBSTATUS_ALL_STATE_SET          = 0x000005FF,   // All state set (intentionally exclude index buffer)
+    CBSTATUS_SHADING_RATE_PALETTE_SET = 0x00000800,
+    CBSTATUS_ALL_STATE_SET          = 0x00000DFF,   // All state set (intentionally exclude index buffer)
     // clang-format on
 };
 
@@ -1051,6 +1054,7 @@ struct DeviceFeatures {
     VkPhysicalDeviceDescriptorIndexingFeaturesEXT descriptor_indexing;
     VkPhysicalDevice8BitStorageFeaturesKHR eight_bit_storage;
     VkPhysicalDeviceExclusiveScissorFeaturesNV exclusive_scissor;
+    VkPhysicalDeviceShadingRateImageFeaturesNV shading_rate_image;
 };
 
 // Fwd declarations of layer_data and helpers to look-up/validate state from layer_data maps
