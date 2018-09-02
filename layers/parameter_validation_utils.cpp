@@ -1017,9 +1017,13 @@ bool pv_vkCreateImage(VkDevice device, const VkImageCreateInfo *pCreateInfo, con
             }
         }
 
-        // mipLevels must be less than or equal to floor(log2(max(extent.width,extent.height,extent.depth)))+1
+        // mipLevels must be less than or equal to the number of levels in the complete mipmap chain
         uint32_t maxDim = std::max(std::max(pCreateInfo->extent.width, pCreateInfo->extent.height), pCreateInfo->extent.depth);
-        if (maxDim > 0 && pCreateInfo->mipLevels > (floor(log2(maxDim)) + 1)) {
+        // Max mip levels is different for corner-sampled images vs normal images.
+        uint32_t maxMipLevels = (pCreateInfo->flags & VK_IMAGE_CREATE_CORNER_SAMPLED_BIT_NV)
+                                ? (uint32_t)(ceil(log2(maxDim)))
+                                : (uint32_t)(floor(log2(maxDim)) + 1);
+        if (maxDim > 0 && pCreateInfo->mipLevels > maxMipLevels) {
             skip |=
                 log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                         "VUID-VkImageCreateInfo-mipLevels-00958",
@@ -1115,6 +1119,7 @@ bool pv_vkCreateImage(VkDevice device, const VkImageCreateInfo *pCreateInfo, con
                 }
             }
         }
+
         if (pCreateInfo->usage & VK_IMAGE_USAGE_SHADING_RATE_IMAGE_BIT_NV) {
             if (pCreateInfo->imageType != VK_IMAGE_TYPE_2D) {
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
@@ -1135,7 +1140,46 @@ bool pv_vkCreateImage(VkDevice device, const VkImageCreateInfo *pCreateInfo, con
                                 "tiling must be VK_IMAGE_TILING_OPTIMAL.");
             }
         }
+
+        if (pCreateInfo->flags & VK_IMAGE_CREATE_CORNER_SAMPLED_BIT_NV) {
+            if (pCreateInfo->imageType != VK_IMAGE_TYPE_2D &&
+                pCreateInfo->imageType != VK_IMAGE_TYPE_3D) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                "VUID-VkImageCreateInfo-flags-02050",
+                                "vkCreateImage: If flags contains VK_IMAGE_CREATE_CORNER_SAMPLED_BIT_NV, "
+                                "imageType must be VK_IMAGE_TYPE_2D or VK_IMAGE_TYPE_3D.");
+            }
+
+            if ((pCreateInfo->flags & VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT) ||
+                FormatIsDepthOrStencil(pCreateInfo->format)) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                "VUID-VkImageCreateInfo-flags-02051",
+                                "vkCreateImage: If flags contains VK_IMAGE_CREATE_CORNER_SAMPLED_BIT_NV, "
+                                "it must not also contain VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT and format must "
+                                "not be a depth/stencil format.");
+            }
+
+            if (pCreateInfo->imageType == VK_IMAGE_TYPE_2D &&
+                (pCreateInfo->extent.width == 1 || pCreateInfo->extent.height == 1)) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                "VUID-VkImageCreateInfo-flags-02052",
+                                "vkCreateImage: If flags contains VK_IMAGE_CREATE_CORNER_SAMPLED_BIT_NV and "
+                                "imageType is VK_IMAGE_TYPE_2D, extent.width and extent.height must be "
+                                "greater than 1.");
+            }
+
+            if (pCreateInfo->imageType == VK_IMAGE_TYPE_3D &&
+                (pCreateInfo->extent.width == 1 || pCreateInfo->extent.height == 1 || pCreateInfo->extent.depth == 1)) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                "VUID-VkImageCreateInfo-flags-02053",
+                                "vkCreateImage: If flags contains VK_IMAGE_CREATE_CORNER_SAMPLED_BIT_NV and "
+                                "imageType is VK_IMAGE_TYPE_3D, extent.width, extent.height, and extent.depth "
+                                "must be greater than 1.");
+
+            }
+        }
     }
+
     return skip;
 }
 

@@ -32220,6 +32220,144 @@ TEST_F(VkLayerTest, ShadingRateImageNV) {
     vkFreeMemory(m_device->device(), image_memory, NULL);
 }
 
+TEST_F(VkLayerTest, CornerSampledImageNV) {
+    TEST_DESCRIPTION("Test VK_NV_corner_sampled_image.");
+
+    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    } else {
+        printf("%s Did not find required instance extension %s; skipped.\n", kSkipPrefix,
+               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    std::array<const char *, 1> required_device_extensions = {
+        {VK_NV_CORNER_SAMPLED_IMAGE_EXTENSION_NAME}};
+    for (auto device_extension : required_device_extensions) {
+        if (DeviceExtensionSupported(gpu(), nullptr, device_extension)) {
+            m_device_extension_names.push_back(device_extension);
+        } else {
+            printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, device_extension);
+            return;
+        }
+    }
+
+    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
+        (PFN_vkGetPhysicalDeviceFeatures2KHR)vkGetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
+
+    // Create a device that enables exclusive scissor but disables multiViewport
+    auto corner_sampled_image_features = lvl_init_struct<VkPhysicalDeviceCornerSampledImageFeaturesNV>();
+    auto features2 = lvl_init_struct<VkPhysicalDeviceFeatures2KHR>(&corner_sampled_image_features);
+    vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    VkImage image = VK_NULL_HANDLE;
+    VkResult result = VK_RESULT_MAX_ENUM;
+    VkImageCreateInfo image_create_info = {};
+    image_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    image_create_info.pNext = NULL;
+    image_create_info.imageType = VK_IMAGE_TYPE_1D;
+    image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_create_info.extent.width = 2;
+    image_create_info.extent.height = 1;
+    image_create_info.extent.depth = 1;
+    image_create_info.mipLevels = 1;
+    image_create_info.arrayLayers = 1;
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    image_create_info.queueFamilyIndexCount = 0;
+    image_create_info.pQueueFamilyIndices = NULL;
+    image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    image_create_info.flags = VK_IMAGE_CREATE_CORNER_SAMPLED_BIT_NV;
+
+    // image type must be 2D or 3D
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkImageCreateInfo-flags-02050");
+    result = vkCreateImage(m_device->device(), &image_create_info, NULL, &image);
+    m_errorMonitor->VerifyFound();
+    if (VK_SUCCESS == result) {
+        vkDestroyImage(m_device->device(), image, NULL);
+        image = VK_NULL_HANDLE;
+    }
+
+    // cube/depth not supported
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.extent.height = 2;
+    image_create_info.format = VK_FORMAT_D24_UNORM_S8_UINT;
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkImageCreateInfo-flags-02051");
+    result = vkCreateImage(m_device->device(), &image_create_info, NULL, &image);
+    m_errorMonitor->VerifyFound();
+    if (VK_SUCCESS == result) {
+        vkDestroyImage(m_device->device(), image, NULL);
+        image = VK_NULL_HANDLE;
+    }
+    image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+
+    // 2D width/height must be > 1
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.extent.height = 1;
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkImageCreateInfo-flags-02052");
+    result = vkCreateImage(m_device->device(), &image_create_info, NULL, &image);
+    m_errorMonitor->VerifyFound();
+    if (VK_SUCCESS == result) {
+        vkDestroyImage(m_device->device(), image, NULL);
+        image = VK_NULL_HANDLE;
+    }
+
+    // 3D width/height/depth must be > 1
+    image_create_info.imageType = VK_IMAGE_TYPE_3D;
+    image_create_info.extent.height = 2;
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkImageCreateInfo-flags-02053");
+    result = vkCreateImage(m_device->device(), &image_create_info, NULL, &image);
+    m_errorMonitor->VerifyFound();
+    if (VK_SUCCESS == result) {
+        vkDestroyImage(m_device->device(), image, NULL);
+        image = VK_NULL_HANDLE;
+    }
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+
+    // Valid # of mip levels
+    image_create_info.extent = {7, 7, 1};
+    image_create_info.mipLevels = 3;  // 3 = ceil(log2(7))
+    result = vkCreateImage(m_device->device(), &image_create_info, NULL, &image);
+    m_errorMonitor->VerifyNotFound();
+    if (VK_SUCCESS == result) {
+        vkDestroyImage(m_device->device(), image, NULL);
+        image = VK_NULL_HANDLE;
+    }
+
+    image_create_info.extent = {8, 8, 1};
+    image_create_info.mipLevels = 3;  // 3 = ceil(log2(8))
+    result = vkCreateImage(m_device->device(), &image_create_info, NULL, &image);
+    m_errorMonitor->VerifyNotFound();
+    if (VK_SUCCESS == result) {
+        vkDestroyImage(m_device->device(), image, NULL);
+        image = VK_NULL_HANDLE;
+    }
+
+    image_create_info.extent = {9, 9, 1};
+    image_create_info.mipLevels = 3;  // 4 = ceil(log2(9))
+    result = vkCreateImage(m_device->device(), &image_create_info, NULL, &image);
+    m_errorMonitor->VerifyNotFound();
+    if (VK_SUCCESS == result) {
+        vkDestroyImage(m_device->device(), image, NULL);
+        image = VK_NULL_HANDLE;
+    }
+
+    // Invalid # of mip levels
+    image_create_info.extent = {8, 8, 1};
+    image_create_info.mipLevels = 4;  // 3 = ceil(log2(8))
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkImageCreateInfo-mipLevels-00958");
+    result = vkCreateImage(m_device->device(), &image_create_info, NULL, &image);
+    m_errorMonitor->VerifyFound();
+    if (VK_SUCCESS == result) {
+        vkDestroyImage(m_device->device(), image, NULL);
+        image = VK_NULL_HANDLE;
+    }
+}
 
 
 #if defined(ANDROID) && defined(VALIDATION_APK)

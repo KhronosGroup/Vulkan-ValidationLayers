@@ -1515,9 +1515,16 @@ static inline VkExtent3D GetImageSubresourceExtent(const IMAGE_STATE *img, const
 
     // Don't allow mip adjustment to create 0 dim, but pass along a 0 if that's what subresource specified
     VkExtent3D extent = img->createInfo.extent;
-    extent.width = (0 == extent.width ? 0 : std::max(1U, extent.width >> mip));
-    extent.height = (0 == extent.height ? 0 : std::max(1U, extent.height >> mip));
-    extent.depth = (0 == extent.depth ? 0 : std::max(1U, extent.depth >> mip));
+
+    if (img->createInfo.flags & VK_IMAGE_CREATE_CORNER_SAMPLED_BIT_NV) {
+        extent.width = (0 == extent.width ? 0 : std::max(2U, 1 + ((extent.width - 1) >> mip)));
+        extent.height = (0 == extent.height ? 0 : std::max(2U, 1 + ((extent.height - 1)>> mip)));
+        extent.depth = (0 == extent.depth ? 0 : std::max(2U, 1 + ((extent.depth - 1) >> mip)));
+    } else {
+        extent.width = (0 == extent.width ? 0 : std::max(1U, extent.width >> mip));
+        extent.height = (0 == extent.height ? 0 : std::max(1U, extent.height >> mip));
+        extent.depth = (0 == extent.depth ? 0 : std::max(1U, extent.depth >> mip));
+    }
 
     // Image arrays have an effective z extent that isn't diminished by mip level
     if (VK_IMAGE_TYPE_3D != img->createInfo.imageType) {
