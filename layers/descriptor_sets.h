@@ -493,6 +493,8 @@ class DescriptorSet : public BASE_NODE {
     std::unordered_set<GLOBAL_CB_NODE *> GetBoundCmdBuffers() const { return cb_bindings; }
     // Bind given cmd_buffer to this descriptor set
     void BindCommandBuffer(GLOBAL_CB_NODE *, const std::map<uint32_t, descriptor_req> &);
+    // Update CB image layout map with image/imagesampler descriptor image layouts
+    void UpdateDSImageLayoutState(GLOBAL_CB_NODE *);
 
     // Track work that has been bound or validated to avoid duplicate work, important when large descriptor arrays
     // are present
