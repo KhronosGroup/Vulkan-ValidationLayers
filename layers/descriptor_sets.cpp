@@ -1122,6 +1122,25 @@ void cvdescriptorset::DescriptorSet::BindCommandBuffer(GLOBAL_CB_NODE *cb_node,
         }
     }
 }
+
+// Update CB layout map with any image/imagesampler descriptor image layouts
+void cvdescriptorset::DescriptorSet::UpdateDSImageLayoutState(GLOBAL_CB_NODE *cb_state) {
+    for (auto const &desc : descriptors_) {
+        if (desc->descriptor_class == ImageSampler || desc->descriptor_class == Image) {
+            VkImageView image_view;
+            VkImageLayout image_layout;
+            if (desc->descriptor_class == ImageSampler) {
+                image_view = static_cast<ImageSamplerDescriptor *>(desc.get())->GetImageView();
+                image_layout = static_cast<ImageSamplerDescriptor *>(desc.get())->GetImageLayout();
+            } else {
+                image_view = static_cast<ImageDescriptor *>(desc.get())->GetImageView();
+                image_layout = static_cast<ImageDescriptor *>(desc.get())->GetImageLayout();
+            }
+            SetImageViewLayout(device_data_, cb_state, image_view, image_layout);
+        }
+    }
+}
+
 void cvdescriptorset::DescriptorSet::FilterAndTrackOneBindingReq(const BindingReqMap::value_type &binding_req_pair,
                                                                  const BindingReqMap &in_req, BindingReqMap *out_req,
                                                                  TrackedBindings *bindings) {
@@ -1135,6 +1154,7 @@ void cvdescriptorset::DescriptorSet::FilterAndTrackOneBindingReq(const BindingRe
         out_req->emplace(binding_req_pair);
     }
 }
+
 void cvdescriptorset::DescriptorSet::FilterAndTrackOneBindingReq(const BindingReqMap::value_type &binding_req_pair,
                                                                  const BindingReqMap &in_req, BindingReqMap *out_req,
                                                                  TrackedBindings *bindings, uint32_t limit) {

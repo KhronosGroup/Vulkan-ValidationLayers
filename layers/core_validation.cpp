@@ -7051,6 +7051,12 @@ static void UpdateStateCmdDrawType(layer_data *dev_data, GLOBAL_CB_NODE *cb_stat
     UpdateStateCmdDrawDispatchType(dev_data, cb_state, bind_point);
     UpdateResourceTrackingOnDraw(cb_state);
     cb_state->hasDrawCmd = true;
+
+    // Add descriptor image/CIS layouts to CB layout map
+    auto &desc_sets = cb_state->lastBound->boundDescriptorSets;
+    for (auto &desc : desc_sets) {
+        desc->UpdateDSImageLayoutState(cb_state);
+    }
 }
 
 static bool PreCallValidateCmdDraw(layer_data *dev_data, VkCommandBuffer cmd_buffer, bool indexed, VkPipelineBindPoint bind_point,
