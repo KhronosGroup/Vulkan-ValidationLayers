@@ -208,3 +208,22 @@ foreach(TARGET_NAME ${TARGET_NAMES})
     endif()
     add_custom_target(${TARGET_NAME}-json ALL COMMAND ${CMAKE_COMMAND} ${CONFIG_DEFINES} -P "${CMAKE_CURRENT_BINARY_DIR}/generator.cmake")
 endforeach()
+
+# Install the layer json files
+if(WIN32)
+    if(CMAKE_GENERATOR MATCHES "^Visual Studio.*")
+        foreach(TARGET_NAME ${TARGET_NAMES})
+            install(FILES ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/${TARGET_NAME}.json DESTINATION ${CMAKE_INSTALL_LIBDIR})
+        endforeach(TARGET_NAME)
+    else()
+        foreach(TARGET_NAME ${TARGET_NAMES})
+            install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${TARGET_NAME}.json DESTINATION ${CMAKE_INSTALL_LIBDIR})
+        endforeach(TARGET_NAME)
+    endif()
+elseif(UNIX)   # UNIX includes APPLE
+    foreach(TARGET_NAME ${TARGET_NAMES})
+        install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${TARGET_NAME}.json DESTINATION
+            ${CMAKE_INSTALL_DATAROOTDIR}/vulkan/explicit_layer.d
+        )
+    endforeach(TARGET_NAME)
+endif()
