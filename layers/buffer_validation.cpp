@@ -416,9 +416,27 @@ void TransitionBeginRenderPassLayouts(layer_data *device_data, GLOBAL_CB_NODE *c
                                       FRAMEBUFFER_STATE *framebuffer_state) {
     // First transition into initialLayout
     auto const rpci = render_pass_state->createInfo.ptr();
-    for (uint32_t i = 0; i < rpci->attachmentCount; ++i) {
-        VkImageView image_view = framebuffer_state->createInfo.pAttachments[i];
-        SetImageViewLayout(device_data, cb_state, image_view, rpci->pAttachments[i].initialLayout);
+    for (uint32_t attachment = 0; attachment < rpci->attachmentCount; ++attachment) {
+        bool referencedBySubpass = false;
+        for (uint32_t i = 0; i < rpci->subpassCount; ++i) {
+            const VkSubpassDescription &subpass = rpci->pSubpasses[i];
+            for (uint32_t j = 0; j < subpass.inputAttachmentCount; ++j) {
+                if (subpass.pInputAttachments[j].attachment == attachment)
+                    referencedBySubpass = true;
+            }
+            for (uint32_t j = 0; j < subpass.colorAttachmentCount; ++j) {
+                if (subpass.pColorAttachments[j].attachment == attachment)
+                    referencedBySubpass = true;
+            }
+            if (subpass.pDepthStencilAttachment) {
+                if (subpass.pDepthStencilAttachment->attachment == attachment)
+                    referencedBySubpass = true;
+            }
+        }
+        if (referencedBySubpass) {
+            VkImageView image_view = framebuffer_state->createInfo.pAttachments[attachment];
+            SetImageViewLayout(device_data, cb_state, image_view, rpci->pAttachments[attachment].initialLayout);
+        }
     }
     // Now transition for first subpass (index 0)
     TransitionSubpassLayouts(device_data, cb_state, render_pass_state, 0, framebuffer_state);
@@ -947,9 +965,27 @@ void TransitionFinalSubpassLayouts(layer_data *device_data, GLOBAL_CB_NODE *pCB,
 
     const VkRenderPassCreateInfo *pRenderPassInfo = renderPass->createInfo.ptr();
     if (framebuffer_state) {
-        for (uint32_t i = 0; i < pRenderPassInfo->attachmentCount; ++i) {
-            auto image_view = framebuffer_state->createInfo.pAttachments[i];
-            SetImageViewLayout(device_data, pCB, image_view, pRenderPassInfo->pAttachments[i].finalLayout);
+        for (uint32_t attachment = 0; attachment < pRenderPassInfo->attachmentCount; ++attachment) {
+            bool referencedBySubpass = false;
+            for (uint32_t i = 0; i < pRenderPassInfo->subpassCount; ++i) {
+                const VkSubpassDescription &subpass = pRenderPassInfo->pSubpasses[i];
+                for (uint32_t j = 0; j < subpass.inputAttachmentCount; ++j) {
+                    if (subpass.pInputAttachments[j].attachment == attachment)
+                        referencedBySubpass = true;
+                }
+                for (uint32_t j = 0; j < subpass.colorAttachmentCount; ++j) {
+                    if (subpass.pColorAttachments[j].attachment == attachment)
+                        referencedBySubpass = true;
+                }
+                if (subpass.pDepthStencilAttachment) {
+                    if (subpass.pDepthStencilAttachment->attachment == attachment)
+                        referencedBySubpass = true;
+                }
+            }
+            if (referencedBySubpass) {
+                auto image_view = framebuffer_state->createInfo.pAttachments[attachment];
+                SetImageViewLayout(device_data, pCB, image_view, pRenderPassInfo->pAttachments[attachment].finalLayout);
+            }
         }
     }
 }
