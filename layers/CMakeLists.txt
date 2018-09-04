@@ -101,7 +101,27 @@ set(TARGET_NAMES
     VkLayer_unique_objects
     VkLayer_parameter_validation
     VkLayer_standard_validation
-    VkLayer_threading)
+    VkLayer_threading
+)
+
+# Install the layer json files
+if(WIN32)
+    if(CMAKE_GENERATOR MATCHES "^Visual Studio.*")
+        foreach(TARGET_NAME ${TARGET_NAMES})
+            install(FILES ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/${TARGET_NAME}.json DESTINATION ${CMAKE_INSTALL_LIBDIR})
+        endforeach()
+    else()
+        foreach(TARGET_NAME ${TARGET_NAMES})
+            install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${TARGET_NAME}.json DESTINATION ${CMAKE_INSTALL_LIBDIR})
+        endforeach()
+    endif()
+elseif(UNIX)   # UNIX includes APPLE
+    foreach(TARGET_NAME ${TARGET_NAMES})
+        install(FILES ${CMAKE_CURRENT_BINARY_DIR}/staging-json/${TARGET_NAME}.json
+                DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/vulkan/explicit_layer.d
+        )
+    endforeach()
+endif()
 
 if(WIN32)
     macro(add_vk_layer target)
@@ -210,21 +230,23 @@ foreach(TARGET_NAME ${TARGET_NAMES})
                       COMMAND ${CMAKE_COMMAND} ${CONFIG_DEFINES} -P "${CMAKE_CURRENT_BINARY_DIR}/generator.cmake")
 endforeach()
 
-# Install the layer json files
-if(WIN32)
-    if(CMAKE_GENERATOR MATCHES "^Visual Studio.*")
-        foreach(TARGET_NAME ${TARGET_NAMES})
-            install(FILES ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/${TARGET_NAME}.json DESTINATION ${CMAKE_INSTALL_LIBDIR})
-        endforeach(TARGET_NAME)
-    else()
-        foreach(TARGET_NAME ${TARGET_NAMES})
-            install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${TARGET_NAME}.json DESTINATION ${CMAKE_INSTALL_LIBDIR})
-        endforeach(TARGET_NAME)
-    endif()
-elseif(UNIX)   # UNIX includes APPLE
+# For UNIX-based systems, `library_path` should not contain a relative path (indicated by "./") before installing to system directories,
+# so we do not include it in the staging-json files which are used for installation
+if(UNIX)
     foreach(TARGET_NAME ${TARGET_NAMES})
-        install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${TARGET_NAME}.json DESTINATION
-            ${CMAKE_INSTALL_DATAROOTDIR}/vulkan/explicit_layer.d
+        set(INSTALL_DEFINES
+            -DINPUT_FILE="${CMAKE_CURRENT_SOURCE_DIR}/json/${TARGET_NAME}.json.in"
+            -DOUTPUT_FILE="${CMAKE_CURRENT_BINARY_DIR}/staging-json/${TARGET_NAME}.json"
+            -DVK_VERSION=1.1.${vk_header_version}
         )
-    endforeach(TARGET_NAME)
+        # If this json file is not a metalayer, get the needed properties from that target
+        if(TARGET ${TARGET_NAME})
+            set(INSTALL_DEFINES ${INSTALL_DEFINES}
+                -DRELATIVE_LAYER_BINARY="$<TARGET_FILE_NAME:${TARGET_NAME}>"
+            )
+        endif()
+        add_custom_target(${TARGET_NAME}-staging-json ALL
+                          COMMAND ${CMAKE_COMMAND} ${INSTALL_DEFINES} -P "${CMAKE_CURRENT_BINARY_DIR}/generator.cmake"
+        )
+    endforeach()
 endif()
