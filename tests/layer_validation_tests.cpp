@@ -32360,6 +32360,183 @@ TEST_F(VkLayerTest, CornerSampledImageNV) {
 }
 
 
+TEST_F(VkLayerTest, MeshShaderNV) {
+    TEST_DESCRIPTION("Test VK_NV_mesh_shader.");
+
+    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    } else {
+        printf("%s Did not find required instance extension %s; skipped.\n", kSkipPrefix,
+               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    std::array<const char *, 1> required_device_extensions = {
+        {VK_NV_MESH_SHADER_EXTENSION_NAME}};
+    for (auto device_extension : required_device_extensions) {
+        if (DeviceExtensionSupported(gpu(), nullptr, device_extension)) {
+            m_device_extension_names.push_back(device_extension);
+        } else {
+            printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, device_extension);
+            return;
+        }
+    }
+
+    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
+        (PFN_vkGetPhysicalDeviceFeatures2KHR)vkGetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
+
+    // Create a device that enables mesh_shader
+    auto mesh_shader_features = lvl_init_struct<VkPhysicalDeviceMeshShaderFeaturesNV>();
+    auto features2 = lvl_init_struct<VkPhysicalDeviceFeatures2KHR>(&mesh_shader_features);
+    vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkShaderObj vs(m_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
+    VkShaderObj fs(m_device, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+
+    VkPipelineShaderStageCreateInfo meshStage = { VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO };
+    meshStage = vs.GetStageCreateInfo();
+    meshStage.stage = VK_SHADER_STAGE_MESH_BIT_NV;
+
+    // Test pipeline creation
+    {
+        // can't mix mesh with vertex
+        const auto break_vp = [&](CreatePipelineHelper &helper) {
+            helper.shader_stages_ = { vs.GetStageCreateInfo(), fs.GetStageCreateInfo(), meshStage };
+        };
+        CreatePipelineHelper::OneshotTest(*this, break_vp, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+            vector<std::string>({"VUID-VkPipelineShaderStageCreateInfo-pName-00707",
+                                 "VUID-VkGraphicsPipelineCreateInfo-pStages-02095"}));
+
+        // vertex or mesh must be present
+        const auto break_vp2 = [&](CreatePipelineHelper &helper) {
+            helper.shader_stages_ = { fs.GetStageCreateInfo() };
+        };
+        CreatePipelineHelper::OneshotTest(*this, break_vp2, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+            vector<std::string>({"VUID-VkGraphicsPipelineCreateInfo-stage-02096"}));
+
+        // vertexinput and inputassembly must be valid when vertex stage is present
+        const auto break_vp3 = [&](CreatePipelineHelper &helper) {
+            helper.shader_stages_ = { vs.GetStageCreateInfo(), fs.GetStageCreateInfo() };
+            helper.gp_ci_.pVertexInputState = nullptr;
+            helper.gp_ci_.pInputAssemblyState = nullptr;
+        };
+        CreatePipelineHelper::OneshotTest(*this, break_vp3, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+            vector<std::string>({"VUID-VkGraphicsPipelineCreateInfo-pStages-02097",
+                                 "VUID-VkGraphicsPipelineCreateInfo-pStages-02098"}));
+    }
+}
+
+
+TEST_F(VkLayerTest, MeshShaderDisabledNV) {
+    TEST_DESCRIPTION("Test VK_NV_mesh_shader VUs with NV_mesh_shader disabled.");
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkEvent event;
+    VkEventCreateInfo event_create_info{};
+    event_create_info.sType = VK_STRUCTURE_TYPE_EVENT_CREATE_INFO;
+    vkCreateEvent(m_device->device(), &event_create_info, nullptr, &event);
+
+    m_commandBuffer->begin();
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdSetEvent-stageMask-02107");
+    vkCmdSetEvent(m_commandBuffer->handle(), event, VK_PIPELINE_STAGE_MESH_SHADER_BIT_NV);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdSetEvent-stageMask-02108");
+    vkCmdSetEvent(m_commandBuffer->handle(), event, VK_PIPELINE_STAGE_TASK_SHADER_BIT_NV);
+    m_errorMonitor->VerifyFound();
+
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdResetEvent-stageMask-02109");
+    vkCmdResetEvent(m_commandBuffer->handle(), event, VK_PIPELINE_STAGE_MESH_SHADER_BIT_NV);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdResetEvent-stageMask-02110");
+    vkCmdResetEvent(m_commandBuffer->handle(), event, VK_PIPELINE_STAGE_TASK_SHADER_BIT_NV);
+    m_errorMonitor->VerifyFound();
+
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdWaitEvents-srcStageMask-02111");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdWaitEvents-dstStageMask-02113");
+    vkCmdWaitEvents(m_commandBuffer->handle(), 1, &event, VK_PIPELINE_STAGE_MESH_SHADER_BIT_NV, VK_PIPELINE_STAGE_MESH_SHADER_BIT_NV, 0, nullptr, 0, nullptr, 0, nullptr);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdWaitEvents-srcStageMask-02112");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdWaitEvents-dstStageMask-02114");
+    vkCmdWaitEvents(m_commandBuffer->handle(), 1, &event, VK_PIPELINE_STAGE_TASK_SHADER_BIT_NV, VK_PIPELINE_STAGE_TASK_SHADER_BIT_NV, 0, nullptr, 0, nullptr, 0, nullptr);
+    m_errorMonitor->VerifyFound();
+
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdPipelineBarrier-srcStageMask-02115");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdPipelineBarrier-dstStageMask-02117");
+    vkCmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_MESH_SHADER_BIT_NV, VK_PIPELINE_STAGE_MESH_SHADER_BIT_NV, 0, 0, nullptr, 0, nullptr, 0, nullptr);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdPipelineBarrier-srcStageMask-02116");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdPipelineBarrier-dstStageMask-02118");
+    vkCmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_TASK_SHADER_BIT_NV, VK_PIPELINE_STAGE_TASK_SHADER_BIT_NV, 0, 0, nullptr, 0, nullptr, 0, nullptr);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->end();
+
+    VkSemaphoreCreateInfo semaphore_create_info = {};
+    semaphore_create_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+    VkSemaphore semaphore;
+    ASSERT_VK_SUCCESS(vkCreateSemaphore(m_device->device(), &semaphore_create_info, nullptr, &semaphore));
+
+    VkPipelineStageFlags stage_flags = VK_PIPELINE_STAGE_MESH_SHADER_BIT_NV | VK_PIPELINE_STAGE_TASK_SHADER_BIT_NV;
+    VkSubmitInfo submit_info = {};
+
+    // Signal the semaphore so the next test can wait on it.
+    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submit_info.signalSemaphoreCount = 1;
+    submit_info.pSignalSemaphores = &semaphore;
+    vkQueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    m_errorMonitor->VerifyNotFound();
+
+    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submit_info.signalSemaphoreCount = 0;
+    submit_info.pSignalSemaphores = nullptr;
+    submit_info.waitSemaphoreCount = 1;
+    submit_info.pWaitSemaphores = &semaphore;
+    submit_info.pWaitDstStageMask = &stage_flags;
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkSubmitInfo-pWaitDstStageMask-02089");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkSubmitInfo-pWaitDstStageMask-02090");
+    vkQueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    m_errorMonitor->VerifyFound();
+
+    vkQueueWaitIdle(m_device->m_queue);
+
+
+    VkShaderObj vs(m_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
+    VkPipelineShaderStageCreateInfo meshStage = { VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO };
+    meshStage = vs.GetStageCreateInfo();
+    meshStage.stage = VK_SHADER_STAGE_MESH_BIT_NV;
+    VkPipelineShaderStageCreateInfo taskStage = { VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO };
+    taskStage = vs.GetStageCreateInfo();
+    taskStage.stage = VK_SHADER_STAGE_TASK_BIT_NV;
+
+    // mesh and task shaders not supported
+    const auto break_vp = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = { meshStage, taskStage, vs.GetStageCreateInfo() };
+    };
+    CreatePipelineHelper::OneshotTest(*this, break_vp, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+        vector<std::string>({"VUID-VkPipelineShaderStageCreateInfo-pName-00707",
+                             "VUID-VkPipelineShaderStageCreateInfo-pName-00707",
+                             "VUID-VkPipelineShaderStageCreateInfo-stage-02091",
+                             "VUID-VkPipelineShaderStageCreateInfo-stage-02092"}));
+
+    vkDestroyEvent(m_device->device(), event, nullptr);
+    vkDestroySemaphore(m_device->device(), semaphore, nullptr);
+}
+
+
 #if defined(ANDROID) && defined(VALIDATION_APK)
 const char *appTag = "VulkanLayerValidationTests";
 static bool initialized = false;

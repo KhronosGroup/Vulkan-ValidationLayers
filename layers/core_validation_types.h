@@ -458,6 +458,9 @@ enum CMD_TYPE {
     CMD_DRAWINDIRECT,
     CMD_DRAWINDIRECTCOUNTAMD,
     CMD_DRAWINDIRECTCOUNTKHR,
+    CMD_DRAWMESHTASKSNV,
+    CMD_DRAWMESHTASKSINDIRECTNV,
+    CMD_DRAWMESHTASKSINDIRECTCOUNTNV,
     CMD_ENDCOMMANDBUFFER,  // Should be the last command in any RECORDED cmd buffer
     CMD_ENDQUERY,
     CMD_ENDRENDERPASS,
@@ -1055,6 +1058,7 @@ struct DeviceFeatures {
     VkPhysicalDevice8BitStorageFeaturesKHR eight_bit_storage;
     VkPhysicalDeviceExclusiveScissorFeaturesNV exclusive_scissor;
     VkPhysicalDeviceShadingRateImageFeaturesNV shading_rate_image;
+    VkPhysicalDeviceMeshShaderFeaturesNV mesh_shader;
 };
 
 // Fwd declarations of layer_data and helpers to look-up/validate state from layer_data maps
