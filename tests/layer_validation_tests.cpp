@@ -31552,7 +31552,8 @@ TEST_F(VkLayerTest, DrawIndexedIndirectCountKHR) {
 }
 
 TEST_F(VkPositiveLayerTest, CreateRenderPassWithIgnoredFinalLayout) {
-    TEST_DESCRIPTION("Create render pass with attachement not referenced by any subpasses. The initial and final layout should be ignored.");
+    TEST_DESCRIPTION(
+        "Create render pass with attachement not referenced by any subpasses. The initial and final layout should be ignored.");
 
     m_errorMonitor->ExpectSuccess();
 
@@ -31585,8 +31586,8 @@ TEST_F(VkPositiveLayerTest, CreateRenderPassWithIgnoredFinalLayout) {
     attach_desc[0].loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     attach_desc[1].format = VK_FORMAT_R8G8B8A8_UNORM;
     attach_desc[1].samples = VK_SAMPLE_COUNT_1_BIT;
-    attach_desc[1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED; // Expected to be ignored
-    attach_desc[1].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL; // Expected to be ignored
+    attach_desc[1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;               // Expected to be ignored
+    attach_desc[1].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;  // Expected to be ignored
     attach_desc[1].loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     rpci.pAttachments = attach_desc;
     rpci.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
@@ -31630,7 +31631,8 @@ TEST_F(VkPositiveLayerTest, CreateRenderPassWithIgnoredFinalLayout) {
 
     // Image which is not referenced by any subpass. Initialized to layout VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL.
     VkImageObj unreferencedImage(m_device);
-    unreferencedImage.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    unreferencedImage.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM,
+                           VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
     unreferencedImage.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
     VkImageView unreferencedImageView = unreferencedImage.targetView(VK_FORMAT_R8G8B8A8_UNORM);
 
@@ -31640,7 +31642,7 @@ TEST_F(VkPositiveLayerTest, CreateRenderPassWithIgnoredFinalLayout) {
     dstImage.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
     // Create frame buffer
-    VkImageView imageViews[] = { imageView, unreferencedImageView };
+    VkImageView imageViews[] = {imageView, unreferencedImageView};
     VkFramebufferCreateInfo fbci = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, rp, 2, imageViews, 32, 32, 1};
     VkFramebuffer fb;
     vkCreateFramebuffer(m_device->device(), &fbci, nullptr, &fb);
@@ -31648,7 +31650,17 @@ TEST_F(VkPositiveLayerTest, CreateRenderPassWithIgnoredFinalLayout) {
     m_commandBuffer->begin();
 
     // Render
-    VkRenderPassBeginInfo rpbi = {VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO, nullptr, rp, fb, {{ 0, 0, }, {32, 32}}, 0, nullptr};
+    VkRenderPassBeginInfo rpbi = {VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
+                                  nullptr,
+                                  rp,
+                                  fb,
+                                  {{
+                                       0,
+                                       0,
+                                   },
+                                   {32, 32}},
+                                  0,
+                                  nullptr};
     vkCmdBeginRenderPass(m_commandBuffer->handle(), &rpbi, VK_SUBPASS_CONTENTS_INLINE);
     vkCmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
     vkCmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
@@ -31675,7 +31687,8 @@ TEST_F(VkPositiveLayerTest, CreateRenderPassWithIgnoredFinalLayout) {
     copy_region.extent.depth = 1;
 
     // No error should be produced as the image layout was not expected to change during render pass.
-    m_commandBuffer->CopyImage(unreferencedImage.handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dstImage.handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy_region);
+    m_commandBuffer->CopyImage(unreferencedImage.handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dstImage.handle(),
+                               VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy_region);
 
     m_commandBuffer->end();
 

@@ -421,16 +421,13 @@ void TransitionBeginRenderPassLayouts(layer_data *device_data, GLOBAL_CB_NODE *c
         for (uint32_t i = 0; i < rpci->subpassCount; ++i) {
             const VkSubpassDescription &subpass = rpci->pSubpasses[i];
             for (uint32_t j = 0; j < subpass.inputAttachmentCount; ++j) {
-                if (subpass.pInputAttachments[j].attachment == attachment)
-                    referencedBySubpass = true;
+                if (subpass.pInputAttachments[j].attachment == attachment) referencedBySubpass = true;
             }
             for (uint32_t j = 0; j < subpass.colorAttachmentCount; ++j) {
-                if (subpass.pColorAttachments[j].attachment == attachment)
-                    referencedBySubpass = true;
+                if (subpass.pColorAttachments[j].attachment == attachment) referencedBySubpass = true;
             }
             if (subpass.pDepthStencilAttachment) {
-                if (subpass.pDepthStencilAttachment->attachment == attachment)
-                    referencedBySubpass = true;
+                if (subpass.pDepthStencilAttachment->attachment == attachment) referencedBySubpass = true;
             }
         }
         if (referencedBySubpass) {
@@ -970,16 +967,13 @@ void TransitionFinalSubpassLayouts(layer_data *device_data, GLOBAL_CB_NODE *pCB,
             for (uint32_t i = 0; i < pRenderPassInfo->subpassCount; ++i) {
                 const VkSubpassDescription &subpass = pRenderPassInfo->pSubpasses[i];
                 for (uint32_t j = 0; j < subpass.inputAttachmentCount; ++j) {
-                    if (subpass.pInputAttachments[j].attachment == attachment)
-                        referencedBySubpass = true;
+                    if (subpass.pInputAttachments[j].attachment == attachment) referencedBySubpass = true;
                 }
                 for (uint32_t j = 0; j < subpass.colorAttachmentCount; ++j) {
-                    if (subpass.pColorAttachments[j].attachment == attachment)
-                        referencedBySubpass = true;
+                    if (subpass.pColorAttachments[j].attachment == attachment) referencedBySubpass = true;
                 }
                 if (subpass.pDepthStencilAttachment) {
-                    if (subpass.pDepthStencilAttachment->attachment == attachment)
-                        referencedBySubpass = true;
+                    if (subpass.pDepthStencilAttachment->attachment == attachment) referencedBySubpass = true;
                 }
             }
             if (referencedBySubpass) {
