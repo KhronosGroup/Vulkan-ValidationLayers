@@ -1805,9 +1805,9 @@ bool ValidateAndCapturePipelineShaderState(layer_data *dev_data, PIPELINE_STATE 
     int fragment_stage = GetShaderStageId(VK_SHADER_STAGE_FRAGMENT_BIT);
     auto report_data = GetReportData(dev_data);
 
-    shader_module const *shaders[5];
+    shader_module const *shaders[32];
     memset(shaders, 0, sizeof(shaders));
-    spirv_inst_iter entrypoints[5];
+    spirv_inst_iter entrypoints[32];
     memset(entrypoints, 0, sizeof(entrypoints));
     bool skip = false;
 
