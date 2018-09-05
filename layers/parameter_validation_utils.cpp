@@ -223,7 +223,7 @@ static bool validate_extension_reqs(const instance_layer_data *instance_data, co
         return skip;  // Unknown extensions cannot be checked so report OK
     }
 
-    // Check agains the reqs list in the info
+    // Check against the required list in the info
     std::vector<const char *> missing;
     for (const auto &req : info.requires) {
         if (!(extensions.*(req.enabled))) {
@@ -235,8 +235,8 @@ static bool validate_extension_reqs(const instance_layer_data *instance_data, co
     if (missing.size()) {
         std::string missing_joined_list = string_join(", ", missing);
         skip |= log_msg(instance_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_INSTANCE_EXT,
-                        HandleToUint64(instance_data->instance), vuid, "Missing required extensions for %s extension %s, %s.",
-                        extension_type, extension_name, missing_joined_list.c_str());
+                        HandleToUint64(instance_data->instance), vuid, "Missing extension%s required by the %s extension %s: %s.",
+                        ((missing.size() > 1) ? "s" : ""), extension_type, extension_name, missing_joined_list.c_str());
     }
     return skip;
 }
