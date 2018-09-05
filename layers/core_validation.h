@@ -19,6 +19,7 @@
  * Author: Tobin Ehlis <tobine@google.com>
  * Author: Chris Forbes <chrisf@ijw.co.nz>
  * Author: Mark Lobodzinski <mark@lunarg.com>
+ * Author: Dave Houlton <daveh@lunarg.com>
  */
 
 #pragma once
@@ -27,6 +28,7 @@
 #include "descriptor_sets.h"
 #include "vk_layer_logging.h"
 #include "vulkan/vk_layer.h"
+#include "vk_typemap_helper.h"
 #include <atomic>
 #include <functional>
 #include <memory>

@@ -19,6 +19,7 @@
  * Author: Tobin Ehlis <tobine@google.com>
  * Author: Chris Forbes <chrisf@ijw.co.nz>
  * Author: Mark Lobodzinski <mark@lunarg.com>
+ * Author: Dave Houlton <daveh@lunarg.com>
  */
 #ifndef CORE_VALIDATION_TYPES_H_
 #define CORE_VALIDATION_TYPES_H_
@@ -32,13 +33,18 @@
 #include "convert_to_renderpass2.h"
 #include <atomic>
 #include <functional>
+#include <list>
 #include <map>
+#include <memory>
+#include <set>
 #include <string.h>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
-#include <memory>
-#include <list>
+
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
+#include "android_ndk_types.h"
+#endif  // VK_USE_PLATFORM_ANDROID_KHR
 
 // Fwd declarations -- including descriptor_set.h creates an ugly include loop
 namespace cvdescriptorset {
@@ -287,6 +293,7 @@ class IMAGE_STATE : public BINDABLE {
     bool get_sparse_reqs_called;  // Track if GetImageSparseMemoryRequirements() has been called for this image
     bool sparse_metadata_required;  // Track if sparse metadata aspect is required for this image
     bool sparse_metadata_bound;     // Track if sparse metadata aspect is bound to this image
+    bool imported_ahb;              // True if image was imported from an Android Hardware Buffer
     std::vector<VkSparseImageMemoryRequirements> sparse_requirements;
     IMAGE_STATE(VkImage img, const VkImageCreateInfo *pCreateInfo)
         : image(img),
@@ -298,6 +305,7 @@ class IMAGE_STATE : public BINDABLE {
           get_sparse_reqs_called(false),
           sparse_metadata_required(false),
           sparse_metadata_bound(false),
+          imported_ahb(false),
           sparse_requirements{} {
         if ((createInfo.sharingMode == VK_SHARING_MODE_CONCURRENT) && (createInfo.queueFamilyIndexCount > 0)) {
             uint32_t *pQueueFamilyIndices = new uint32_t[createInfo.queueFamilyIndexCount];
@@ -355,6 +363,8 @@ struct DEVICE_MEM_INFO : public BASE_NODE {
     bool is_dedicated;
     VkBuffer dedicated_buffer;
     VkImage dedicated_image;
+    bool is_export;
+    VkExternalMemoryHandleTypeFlags export_handle_type_flags;
     std::unordered_set<VK_OBJECT> obj_bindings;               // objects bound to this memory
     std::unordered_map<uint64_t, MEMORY_RANGE> bound_ranges;  // Map of object to its binding range
     // Convenience vectors image/buff handles to speed up iterating over images or buffers independently
@@ -375,6 +385,8 @@ struct DEVICE_MEM_INFO : public BASE_NODE {
           is_dedicated(false),
           dedicated_buffer(VK_NULL_HANDLE),
           dedicated_image(VK_NULL_HANDLE),
+          is_export(false),
+          export_handle_type_flags(0),
           mem_range{},
           shadow_copy_base(0),
           shadow_copy(0),
@@ -1165,9 +1177,10 @@ bool ValidateCmdSubpassState(const layer_data *dev_data, const GLOBAL_CB_NODE *p
 bool ValidateCmd(layer_data *dev_data, const GLOBAL_CB_NODE *cb_state, const CMD_TYPE cmd, const char *caller_name);
 
 // Prototypes for layer_data accessor functions.  These should be in their own header file at some point
-VkFormatProperties GetFormatProperties(const core_validation::layer_data *device_data, const VkFormat format);
-VkResult GetImageFormatProperties(core_validation::layer_data *device_data, const VkImageCreateInfo *image_ci,
-                                  VkImageFormatProperties *image_format_properties);
+VkFormatProperties GetPDFormatProperties(const core_validation::layer_data *device_data, const VkFormat format);
+VkResult GetPDImageFormatProperties(core_validation::layer_data *, const VkImageCreateInfo *, VkImageFormatProperties *);
+VkResult GetPDImageFormatProperties2(core_validation::layer_data *, const VkPhysicalDeviceImageFormatInfo2 *,
+                                     VkImageFormatProperties2 *);
 const debug_report_data *GetReportData(const layer_data *);
 const VkPhysicalDeviceProperties *GetPhysicalDeviceProperties(const layer_data *);
 const CHECK_DISABLED *GetDisables(layer_data *);
@@ -1178,6 +1191,9 @@ std::unordered_map<ImageSubresourcePair, IMAGE_LAYOUT_NODE> const *GetImageLayou
 std::unordered_map<VkBuffer, std::unique_ptr<BUFFER_STATE>> *GetBufferMap(layer_data *device_data);
 std::unordered_map<VkBufferView, std::unique_ptr<BUFFER_VIEW_STATE>> *GetBufferViewMap(layer_data *device_data);
 std::unordered_map<VkImageView, std::unique_ptr<IMAGE_VIEW_STATE>> *GetImageViewMap(layer_data *device_data);
+std::unordered_map<VkSamplerYcbcrConversion, uint64_t> *GetYcbcrConversionFormatMap(layer_data *);
+std::unordered_set<uint64_t> *GetAHBExternalFormatsSet(layer_data *);
+
 const DeviceExtensions *GetDeviceExtensions(const layer_data *);
 uint32_t GetApiVersion(const layer_data *);
 
