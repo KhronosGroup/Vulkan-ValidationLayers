@@ -760,6 +760,7 @@ struct LAST_BOUND_STATE {
         boundDescriptorSets.clear();
         push_descriptor_set = nullptr;
         dynamicOffsets.clear();
+        compat_id_for_set.clear();
     }
 };
 
