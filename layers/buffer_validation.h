@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2017 The Khronos Group Inc.
- * Copyright (c) 2015-2017 Valve Corporation
- * Copyright (c) 2015-2017 LunarG, Inc.
- * Copyright (C) 2015-2017 Google Inc.
+/* Copyright (c) 2015-2018 The Khronos Group Inc.
+ * Copyright (c) 2015-2018 Valve Corporation
+ * Copyright (c) 2015-2018 LunarG, Inc.
+ * Copyright (C) 2015-2018 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,12 @@
  * limitations under the License.
  *
  * Mark Lobodzinski <mark@lunarg.com>
+ * Dave Houlton <daveh@lunarg.com>
  */
 #ifndef CORE_VALIDATION_BUFFER_VALIDATION_H_
 #define CORE_VALIDATION_BUFFER_VALIDATION_H_
 
-#include "core_validation_types.h"
-#include "core_validation_error_enums.h"
+#include "core_validation.h"
 #include "descriptor_sets.h"
 #include "vulkan/vk_layer.h"
 #include <limits.h>
