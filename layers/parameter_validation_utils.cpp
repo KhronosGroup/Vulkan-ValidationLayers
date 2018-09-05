@@ -324,11 +324,11 @@ VKAPI_ATTR VkResult VKAPI_CALL vkCreateInstance(const VkInstanceCreateInfo *pCre
                                    ? pCreateInfo->pApplicationInfo->apiVersion
                                    : VK_API_VERSION_1_0;
 
-        uint32_t effective_api_version = my_instance_data->extensions.InitFromInstanceCreateInfo(api_version, pCreateInfo);
+        my_instance_data->api_version = my_instance_data->extensions.InitFromInstanceCreateInfo(api_version, pCreateInfo);
 
         // Ordinarily we'd check these before calling down the chain, but none of the layer support is in place until now, if we
         // survive we can report the issue now.
-        validate_api_version(my_instance_data, api_version, effective_api_version);
+        validate_api_version(my_instance_data, api_version, my_instance_data->api_version);
         validate_instance_extensions(my_instance_data, pCreateInfo);
 
         parameter_validation_vkCreateInstance(*pInstance, pCreateInfo, pAllocator, pInstance);
@@ -588,10 +588,10 @@ VKAPI_ATTR VkResult VKAPI_CALL vkCreateDevice(VkPhysicalDevice physicalDevice, c
     VkPhysicalDeviceProperties device_properties = {};
     my_instance_data->dispatch_table.GetPhysicalDeviceProperties(physicalDevice, &device_properties);
 
-    // Set up the extension structure also for validation.
+    // Setup the validation tables based on the application API version from the instance and the capabilities of the device driver.
+    uint32_t effective_api_version = std::min(device_properties.apiVersion, my_instance_data->api_version);
     DeviceExtensions extensions;
-    uint32_t api_version =
-        extensions.InitFromDeviceCreateInfo(&my_instance_data->extensions, device_properties.apiVersion, pCreateInfo);
+    uint32_t api_version = extensions.InitFromDeviceCreateInfo(&my_instance_data->extensions, effective_api_version, pCreateInfo);
 
     std::unique_lock<std::mutex> lock(global_lock);
 
