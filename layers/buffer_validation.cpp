@@ -1031,13 +1031,6 @@ bool PreCallValidateCreateImage(layer_data *device_data, const VkImageCreateInfo
         }
     }
 
-    // NOTE: As of 1/30/2018 the spec VU language is as in the commented code below. I believe this is an
-    // error in the spec, and have submitted Gitlab Vulkan issue #1151 to have it changed to match the
-    // implementation shown.  DJH
-    //
-    // if ((pCreateInfo->mipLevels > format_limits.maxMipLevels) &&
-    //    (std::max({ pCreateInfo->extent.width, pCreateInfo->extent.height, pCreateInfo->extent.depth }) >
-    //        device_limits->maxImageDimension3D)) {
     if (pCreateInfo->mipLevels > format_limits.maxMipLevels) {
         std::stringstream ss;
         ss << "vkCreateImage: Image mip levels exceed image format maxMipLevels for format " << format_string;
