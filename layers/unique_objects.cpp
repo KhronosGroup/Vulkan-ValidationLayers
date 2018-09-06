@@ -411,7 +411,8 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateGraphicsPipelines(VkDevice device, VkPipeli
     return result;
 }
 
-static void PostCallCreateRenderPass(layer_data *dev_data, const VkRenderPassCreateInfo *pCreateInfo, VkRenderPass renderPass) {
+template <typename T>
+static void PostCallCreateRenderPass(layer_data *dev_data, const T *pCreateInfo, VkRenderPass renderPass) {
     auto &renderpass_state = dev_data->renderpasses_states[renderPass];
 
     for (uint32_t subpass = 0; subpass < pCreateInfo->subpassCount; ++subpass) {
@@ -433,6 +434,20 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateRenderPass(VkDevice device, const VkRenderP
                                                 const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass) {
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     VkResult result = dev_data->dispatch_table.CreateRenderPass(device, pCreateInfo, pAllocator, pRenderPass);
+    if (VK_SUCCESS == result) {
+        std::lock_guard<std::mutex> lock(global_lock);
+
+        PostCallCreateRenderPass(dev_data, pCreateInfo, *pRenderPass);
+
+        *pRenderPass = WrapNew(*pRenderPass);
+    }
+    return result;
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL CreateRenderPass2KHR(VkDevice device, const VkRenderPassCreateInfo2KHR *pCreateInfo,
+                                                    const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass) {
+    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    VkResult result = dev_data->dispatch_table.CreateRenderPass2KHR(device, pCreateInfo, pAllocator, pRenderPass);
     if (VK_SUCCESS == result) {
         std::lock_guard<std::mutex> lock(global_lock);
 
