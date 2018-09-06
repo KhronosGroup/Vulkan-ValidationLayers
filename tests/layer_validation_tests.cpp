@@ -23823,15 +23823,25 @@ TEST_F(VkLayerTest, ExecuteSecondaryCBWithLayoutMismatch) {
 TEST_F(VkLayerTest, ExtensionNotEnabled) {
     TEST_DESCRIPTION("Validate that using an API from an unenabled extension returns an error");
 
+    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    } else {
+        printf("%s Did not find required instance extension %s; skipped.\n", kSkipPrefix,
+               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
     ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
 
-    // Do NOT enable prerequesite extensions for YCBCR...
-    // Do NOT enable VK_KHR_maintenance1
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
-    } else {
-        printf("%s test requires KHR YCBR conversion extension, not available.  Skipping.\n", kSkipPrefix);
-        return;
+    // Required extensions except VK_KHR_GET_MEMORY_REQUIREMENTS_2 -- to create the needed error
+    std::vector<const char *> required_device_extensions = {VK_KHR_MAINTENANCE1_EXTENSION_NAME, VK_KHR_BIND_MEMORY_2_EXTENSION_NAME,
+                                                            VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME};
+    for (auto dev_ext : required_device_extensions) {
+        if (DeviceExtensionSupported(gpu(), nullptr, dev_ext)) {
+            m_device_extension_names.push_back(dev_ext);
+        } else {
+            printf("%s Did not find required device extension %s; skipped.\n", kSkipPrefix, dev_ext);
+            break;
+        }
     }
 
     // Need to ignore this error to get to the one we're testing
