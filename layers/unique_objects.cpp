@@ -443,6 +443,39 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateRenderPass(VkDevice device, const VkRenderP
     return result;
 }
 
+static void PostCallCreateRenderPass2KHR(layer_data *dev_data, const VkRenderPassCreateInfo2KHR *pCreateInfo, 
+                                         VkRenderPass renderPass) {
+    auto &renderpass_state = dev_data->renderpasses_states[renderPass];
+
+    for (uint32_t subpass = 0; subpass < pCreateInfo->subpassCount; ++subpass) {
+        bool uses_color = false;
+        for (uint32_t i = 0; i < pCreateInfo->pSubpasses[subpass].colorAttachmentCount && !uses_color; ++i)
+            if (pCreateInfo->pSubpasses[subpass].pColorAttachments[i].attachment != VK_ATTACHMENT_UNUSED) uses_color = true;
+
+        bool uses_depthstencil = false;
+        if (pCreateInfo->pSubpasses[subpass].pDepthStencilAttachment)
+            if (pCreateInfo->pSubpasses[subpass].pDepthStencilAttachment->attachment != VK_ATTACHMENT_UNUSED)
+                uses_depthstencil = true;
+
+        if (uses_color) renderpass_state.subpasses_using_color_attachment.insert(subpass);
+        if (uses_depthstencil) renderpass_state.subpasses_using_depthstencil_attachment.insert(subpass);
+    }
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL CreateRenderPass2KHR(VkDevice device, const VkRenderPassCreateInfo2KHR *pCreateInfo,
+                                                    const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass) {
+    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    VkResult result = dev_data->dispatch_table.CreateRenderPass2KHR(device, pCreateInfo, pAllocator, pRenderPass);
+    if (VK_SUCCESS == result) {
+        std::lock_guard<std::mutex> lock(global_lock);
+
+        PostCallCreateRenderPass2KHR(dev_data, pCreateInfo, *pRenderPass);
+
+        *pRenderPass = WrapNew(*pRenderPass);
+    }
+    return result;
+}
+
 static void PostCallDestroyRenderPass(layer_data *dev_data, VkRenderPass renderPass) {
     dev_data->renderpasses_states.erase(renderPass);
 }
