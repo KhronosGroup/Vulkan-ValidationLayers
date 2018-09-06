@@ -32140,7 +32140,7 @@ TEST_F(VkLayerTest, ShadingRateImageNV) {
     vkCmdSetViewportShadingRatePaletteNV(m_commandBuffer->handle(), 0, 1, palettes);
     m_errorMonitor->VerifyFound();
 
-    VkCoarseSampleLocationNV locations[32] = {
+    VkCoarseSampleLocationNV locations[100] = {
         {0, 0, 0},
         {0, 0, 1},
         {0, 1, 0},
@@ -32158,6 +32158,7 @@ TEST_F(VkLayerTest, ShadingRateImageNV) {
         VkCoarseSampleOrderCustomNV sampOrdBadSampleLocationCount = { VK_SHADING_RATE_PALETTE_ENTRY_1_INVOCATION_PER_1X2_PIXELS_NV, 2, 2, locations };
         VkCoarseSampleOrderCustomNV sampOrdDuplicateLocations = { VK_SHADING_RATE_PALETTE_ENTRY_1_INVOCATION_PER_1X2_PIXELS_NV, 2, 1*2*2, &locations[1] };
         VkCoarseSampleOrderCustomNV sampOrdOutOfRangeLocations = { VK_SHADING_RATE_PALETTE_ENTRY_1_INVOCATION_PER_1X2_PIXELS_NV, 2, 1*2*2, &locations[4] };
+        VkCoarseSampleOrderCustomNV sampOrdTooLargeSampleLocationCount = { VK_SHADING_RATE_PALETTE_ENTRY_1_INVOCATION_PER_4X4_PIXELS_NV, 4, 64, &locations[8] };
         VkCoarseSampleOrderCustomNV sampOrdGood = { VK_SHADING_RATE_PALETTE_ENTRY_1_INVOCATION_PER_1X2_PIXELS_NV, 2, 1*2*2, &locations[0] };
 
         VkPipelineViewportCoarseSampleOrderStateCreateInfoNV csosci = { VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_COARSE_SAMPLE_ORDER_STATE_CREATE_INFO_NV };
@@ -32180,6 +32181,8 @@ TEST_F(VkLayerTest, ShadingRateImageNV) {
                                              "VUID-VkCoarseSampleLocationNV-pixelX-02078",
                                              "VUID-VkCoarseSampleLocationNV-pixelY-02079",
                                              "VUID-VkCoarseSampleLocationNV-sample-02080"}},
+            {&sampOrdTooLargeSampleLocationCount, {"VUID-VkCoarseSampleOrderCustomNV-sampleLocationCount-02076",
+                                                   "VUID-VkCoarseSampleOrderCustomNV-pSampleLocations-02077"}},
             {&sampOrdGood,                  {}},
         };
 
