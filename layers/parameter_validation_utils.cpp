@@ -642,6 +642,14 @@ VKAPI_ATTR VkResult VKAPI_CALL vkCreateDevice(VkPhysicalDevice physicalDevice, c
             my_device_data->physical_device = physicalDevice;
             my_device_data->device = *pDevice;
 
+            if (my_device_data->extensions.vk_nv_shading_rate_image) {
+                // Get the needed shading rate image limits
+                auto shading_rate_image_props = lvl_init_struct<VkPhysicalDeviceShadingRateImagePropertiesNV>();
+                auto prop2 = lvl_init_struct<VkPhysicalDeviceProperties2KHR>(&shading_rate_image_props);
+                my_instance_data->dispatch_table.GetPhysicalDeviceProperties2KHR(physicalDevice, &prop2);
+                my_device_data->phys_dev_ext_props.shading_rate_image_props = shading_rate_image_props;
+            }
+
             // Save app-enabled features in this device's layer_data structure
             // The enabled features can come from either pEnabledFeatures, or from the pNext chain
             const VkPhysicalDeviceFeatures *enabled_features_found = pCreateInfo->pEnabledFeatures;
@@ -1428,12 +1436,13 @@ bool ValidateCoarseSampleOrderCustomNV(layer_data *device_data, const VkCoarseSa
                         order->sampleLocationCount, order->sampleCount, sampleOrderInfo->width, sampleOrderInfo->height);
     }
 
-    // XXX TODO don't have access to extended limits in this layer right now
-#if 0
-    if (order->sampleLocationCount > shadingRateMaxCoarseSamples) {
-        "VUID-VkCoarseSampleOrderCustomNV-sampleLocationCount-02076";
+    if (order->sampleLocationCount > device_data->phys_dev_ext_props.shading_rate_image_props.shadingRateMaxCoarseSamples) {
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                        "VUID-VkCoarseSampleOrderCustomNV-sampleLocationCount-02076",
+                        "VkCoarseSampleOrderCustomNV sampleLocationCount (=%" PRIu32 ") must "
+                        "be less than or equal to VkPhysicalDeviceShadingRateImagePropertiesNV shadingRateMaxCoarseSamples (=%" PRIu32 ").",
+                        order->sampleLocationCount, device_data->phys_dev_ext_props.shading_rate_image_props.shadingRateMaxCoarseSamples);
     }
-#endif
 
     // Accumulate a bitmask tracking which (x,y,sample) tuples are seen. Expect
     // the first width*height*sampleCount bits to all be set

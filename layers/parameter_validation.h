@@ -90,6 +90,12 @@ struct layer_data {
     DeviceExtensions extensions;
     uint32_t api_version;
 
+    // Device extension properties -- storing properties gathered from VkPhysicalDeviceProperties2KHR::pNext chain
+    struct DeviceExtensionProperties {
+        VkPhysicalDeviceShadingRateImagePropertiesNV shading_rate_image_props;
+    };
+    DeviceExtensionProperties phys_dev_ext_props = {};
+
     struct SubpassesUsageStates {
         std::unordered_set<uint32_t> subpasses_using_color_attachment;
         std::unordered_set<uint32_t> subpasses_using_depthstencil_attachment;
