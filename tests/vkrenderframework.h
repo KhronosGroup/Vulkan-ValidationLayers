@@ -98,6 +98,7 @@ class VkRenderFramework : public VkTestFramework {
 
     void ShutdownFramework();
     void GetPhysicalDeviceFeatures(VkPhysicalDeviceFeatures *features);
+    void GetPhysicalDeviceProperties(VkPhysicalDeviceProperties *props);
     void InitState(VkPhysicalDeviceFeatures *features = nullptr, VkPhysicalDeviceFeatures2 *features2 = nullptr,
                    const VkCommandPoolCreateFlags flags = 0);
 

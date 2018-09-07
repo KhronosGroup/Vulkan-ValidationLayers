@@ -434,6 +434,8 @@ class VkLayerTest : public VkRenderFramework {
 
    protected:
     ErrorMonitor *m_errorMonitor;
+    uint32_t m_instance_api_version = 0;
+    uint32_t m_target_api_version = 0;
 
    public:
     ErrorMonitor *Monitor() { return m_errorMonitor; }
@@ -498,6 +500,31 @@ class VkLayerTest : public VkRenderFramework {
         this->app_info.apiVersion = VK_API_VERSION_1_0;
 
         m_errorMonitor = new ErrorMonitor;
+
+        // Find out what version the instance supports and record the default target instance
+        auto enumerateInstanceVersion =
+            (PFN_vkEnumerateInstanceVersion)vkGetInstanceProcAddr(nullptr, "vkEnumerateInstanceVersion");
+        if (enumerateInstanceVersion) {
+            enumerateInstanceVersion(&m_instance_api_version);
+        } else {
+            m_instance_api_version = VK_API_VERSION_1_0;
+        }
+        m_target_api_version = app_info.apiVersion;
+    }
+
+    uint32_t SetTargetApiVersion(uint32_t target_api_version) {
+        if (target_api_version == 0) target_api_version = VK_API_VERSION_1_0;
+        if (target_api_version <= m_instance_api_version) {
+            m_target_api_version = target_api_version;
+            app_info.apiVersion = m_target_api_version;
+        }
+        return m_target_api_version;
+    }
+    uint32_t DeviceValidationVersion() {
+        // The validation layers, assume the version we are validating to is the apiVersion unless the device apiVersion is lower
+        VkPhysicalDeviceProperties props;
+        GetPhysicalDeviceProperties(&props);
+        return std::min(m_target_api_version, props.apiVersion);
     }
 
     bool LoadDeviceProfileLayer(
