@@ -294,6 +294,10 @@ void VkRenderFramework::GetPhysicalDeviceFeatures(VkPhysicalDeviceFeatures *feat
     }
 }
 
+void VkRenderFramework::GetPhysicalDeviceProperties(VkPhysicalDeviceProperties *props) {
+    *props = vk_testing::PhysicalDevice(gpu()).properties();
+}
+
 void VkRenderFramework::InitState(VkPhysicalDeviceFeatures *features, VkPhysicalDeviceFeatures2 *features2,
                                   const VkCommandPoolCreateFlags flags) {
     // Remove any unsupported device extension names from list
