@@ -22080,7 +22080,7 @@ TEST_F(VkLayerTest, CopyImageTypeExtentMismatchMaintenance1) {
 
 TEST_F(VkLayerTest, CopyImageCompressedBlockAlignment) {
     // Image copy tests on compressed images with block alignment errors
-
+    SetTargetApiVersion(VK_API_VERSION_1_1);
     ASSERT_NO_FATAL_FAILURE(Init());
 
     // Select a compressed format and verify support
@@ -22151,7 +22151,7 @@ TEST_F(VkLayerTest, CopyImageCompressedBlockAlignment) {
 
     std::string vuid;
     bool ycbcr = (DeviceExtensionEnabled(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME) ||
-                  (m_device->props.apiVersion >= VK_API_VERSION_1_1));
+                  (DeviceValidationVersion() >= VK_API_VERSION_1_1));
 
     // Src, Dest offsets must be multiples of compressed block sizes {4, 4, 1}
     // Image transfer granularity gets set to compressed block size, so an ITG error is also (unavoidably) triggered.
@@ -22876,6 +22876,7 @@ TEST_F(VkLayerTest, CopyImageSampleCountMismatch) {
 
 TEST_F(VkLayerTest, CopyImageAspectMismatch) {
     TEST_DESCRIPTION("Image copies with aspect mask errors");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
     ASSERT_NO_FATAL_FAILURE(Init());
     auto ds_format = FindSupportedDepthStencilFormat(gpu());
     if (!ds_format) {
@@ -22924,7 +22925,7 @@ TEST_F(VkLayerTest, CopyImageAspectMismatch) {
     // Src and dest aspect masks don't match
     copyRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
     bool ycbcr = (DeviceExtensionEnabled(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME) ||
-                  (m_device->props.apiVersion >= VK_API_VERSION_1_1));
+                  (DeviceValidationVersion() >= VK_API_VERSION_1_1));
     std::string vuid = (ycbcr ? "VUID-VkImageCopy-srcImage-01551" : "VUID-VkImageCopy-aspectMask-00137");
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, vuid);
     vkCmdCopyImage(m_commandBuffer->handle(), ds_image.handle(), VK_IMAGE_LAYOUT_GENERAL, ds_image.handle(),
@@ -23959,6 +23960,7 @@ TEST_F(VkLayerTest, InvalidCreateBufferSize) {
 TEST_F(VkLayerTest, SetDynViewportParamTests) {
     TEST_DESCRIPTION("Test parameters of vkCmdSetViewport without multiViewport feature");
 
+    SetTargetApiVersion(VK_API_VERSION_1_1);
     VkPhysicalDeviceFeatures features{};
     ASSERT_NO_FATAL_FAILURE(Init(&features));
 
@@ -24033,7 +24035,7 @@ TEST_F(VkLayerTest, SetDynViewportParamTests) {
         {{0.0, 0.0, 64.0, 64.0, 0.0, NAN}, "VUID-VkViewport-maxDepth-01235"},
     };
 
-    if (m_device->props.apiVersion < VK_API_VERSION_1_1) {
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
         test_cases.push_back({{0.0, 0.0, 64.0, 0.0, 0.0, 1.0}, "VUID-VkViewport-height-01772"});
         test_cases.push_back({{0.0, 0.0, 64.0, NAN, 0.0, 1.0}, "VUID-VkViewport-height-01772"});
     } else {
