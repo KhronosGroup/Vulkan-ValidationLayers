@@ -359,7 +359,9 @@ cvdescriptorset::DescriptorSetLayout::DescriptorSetLayout(const VkDescriptorSetL
 bool cvdescriptorset::DescriptorSetLayout::ValidateCreateInfo(
     const debug_report_data *report_data, const VkDescriptorSetLayoutCreateInfo *create_info, const bool push_descriptor_ext,
     const uint32_t max_push_descriptors, const bool descriptor_indexing_ext,
-    const VkPhysicalDeviceDescriptorIndexingFeaturesEXT *descriptor_indexing_features) {
+    const VkPhysicalDeviceDescriptorIndexingFeaturesEXT *descriptor_indexing_features,
+    const VkPhysicalDeviceInlineUniformBlockFeaturesEXT *inline_uniform_block_features,
+    const VkPhysicalDeviceInlineUniformBlockPropertiesEXT *inline_uniform_block_props) {
     bool skip = false;
     std::unordered_set<uint32_t> bindings;
     uint64_t total_descriptors = 0;
@@ -386,7 +388,9 @@ bool cvdescriptorset::DescriptorSetLayout::ValidateCreateInfo(
 
     auto valid_type = [push_descriptor_set](const VkDescriptorType type) {
         return !push_descriptor_set ||
-               ((type != VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC) && (type != VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC));
+               ((type != VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC) && 
+                (type != VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC) &&
+                (type != VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT));
     };
 
     uint32_t max_binding = 0;
@@ -402,10 +406,28 @@ bool cvdescriptorset::DescriptorSetLayout::ValidateCreateInfo(
         }
         if (!valid_type(binding_info.descriptorType)) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                            "VUID-VkDescriptorSetLayoutCreateInfo-flags-00280",
+                            (binding_info.descriptorType == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT) ? 
+                                "VUID-VkDescriptorSetLayoutCreateInfo-flags-02208" :
+                                "VUID-VkDescriptorSetLayoutCreateInfo-flags-00280",
                             "invalid type %s ,for push descriptors in VkDescriptorSetLayoutBinding entry %" PRIu32 ".",
                             string_VkDescriptorType(binding_info.descriptorType), i);
         }
+
+        if (binding_info.descriptorType == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT) {
+            if ((binding_info.descriptorCount % 4) != 0) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                "VUID-VkDescriptorSetLayoutBinding-descriptorType-02209",
+                                "descriptorCount =(%" PRIu32 ") must be a multiple of 4",
+                                binding_info.descriptorCount);
+            }
+            if (binding_info.descriptorCount > inline_uniform_block_props->maxInlineUniformBlockSize) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                "VUID-VkDescriptorSetLayoutBinding-descriptorType-02210",
+                                "descriptorCount =(%" PRIu32 ") must be less than or equal to maxInlineUniformBlockSize",
+                                binding_info.descriptorCount);
+            }
+        }
+
         total_descriptors += binding_info.descriptorCount;
     }
 
@@ -478,6 +500,13 @@ bool cvdescriptorset::DescriptorSetLayout::ValidateCreateInfo(
                          binding_info.descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC)) {
                         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                                         "VUID-VkDescriptorSetLayoutBindingFlagsCreateInfoEXT-None-03011",
+                                        "Invalid flags for VkDescriptorSetLayoutBinding entry %" PRIu32, i);
+                    }
+
+                    if (binding_info.descriptorType == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT &&
+                        !inline_uniform_block_features->descriptorBindingInlineUniformBlockUpdateAfterBind) {
+                        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                        "VUID-VkDescriptorSetLayoutBindingFlagsCreateInfoEXT-descriptorBindingInlineUniformBlockUpdateAfterBind-02211",
                                         "Invalid flags for VkDescriptorSetLayoutBinding entry %" PRIu32, i);
                     }
                 }
@@ -605,6 +634,10 @@ cvdescriptorset::DescriptorSet::DescriptorSet(const VkDescriptorSet set, const V
                 for (uint32_t di = 0; di < p_layout_->GetDescriptorCountFromIndex(i); ++di)
                     descriptors_.emplace_back(new BufferDescriptor(type));
                 break;
+            case VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT:
+                for (uint32_t di = 0; di < p_layout_->GetDescriptorCountFromIndex(i); ++di)
+                    descriptors_.emplace_back(new InlineUniformDescriptor(type));
+                break;
             default:
                 assert(0);  // Bad descriptor type specified
                 break;
@@ -674,7 +707,8 @@ bool cvdescriptorset::DescriptorSet::ValidateDrawState(const std::map<uint32_t, 
         }
 
         for (uint32_t i = index_range.start; i < index_range.end; ++i, ++array_idx) {
-            if (p_layout_->GetDescriptorBindingFlagsFromBinding(binding) & VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT) {
+            if ((p_layout_->GetDescriptorBindingFlagsFromBinding(binding) & VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT) ||
+                descriptors_[i]->GetClass() == InlineUniform) {
                 // Can't validate the descriptor because it may not have been updated,
                 // or the view could have been destroyed
                 continue;
@@ -1071,6 +1105,33 @@ bool cvdescriptorset::DescriptorSet::ValidateCopyUpdate(const debug_report_data 
                      "also have been created without the ename:VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT flag set";
         *error_msg = error_str.str();
         return false;
+    }
+
+    if (src_type == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT) {
+        if ((update->srcArrayElement % 4) != 0) {
+            *error_code = "VUID-VkCopyDescriptorSet-srcBinding-02223";
+            std::stringstream error_str;
+            error_str << "Attempting copy update to VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT binding with "
+                      << "srcArrayElement " << update->srcArrayElement << " not a multiple of 4";
+            *error_msg = error_str.str();
+            return false;
+        }
+        if ((update->dstArrayElement % 4) != 0) {
+            *error_code = "VUID-VkCopyDescriptorSet-dstBinding-02224";
+            std::stringstream error_str;
+            error_str << "Attempting copy update to VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT binding with "
+                      << "dstArrayElement " << update->dstArrayElement << " not a multiple of 4";
+            *error_msg = error_str.str();
+            return false;
+        }
+        if ((update->descriptorCount % 4) != 0) {
+            *error_code = "VUID-VkCopyDescriptorSet-srcBinding-02225";
+            std::stringstream error_str;
+            error_str << "Attempting copy update to VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT binding with "
+                      << "descriptorCount " << update->descriptorCount << " not a multiple of 4";
+            *error_msg = error_str.str();
+            return false;
+        }
     }
 
     // Update parameters all look good and descriptor updated so verify update contents
@@ -1653,6 +1714,7 @@ void cvdescriptorset::PerformUpdateDescriptorSetsWithTemplateKHR(layer_data *dev
 
     // Create a vector of write structs
     std::vector<VkWriteDescriptorSet> desc_writes;
+    std::vector<VkWriteDescriptorSetInlineUniformBlockEXT> inline_infos(create_info.descriptorUpdateEntryCount);
     auto layout_obj = GetDescriptorSetLayout(device_data, create_info.descriptorSetLayout);
 
     // Create a WriteDescriptorSet struct for each template update entry
@@ -1702,6 +1764,18 @@ void cvdescriptorset::PerformUpdateDescriptorSetsWithTemplateKHR(layer_data *dev
                 case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:
                     write_entry.pTexelBufferView = reinterpret_cast<VkBufferView *>(update_entry);
                     break;
+                case VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT:
+                    {
+                        VkWriteDescriptorSetInlineUniformBlockEXT *inline_info = &inline_infos[i];
+                        inline_info->sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_INLINE_UNIFORM_BLOCK_EXT;
+                        inline_info->pNext = nullptr;
+                        inline_info->dataSize = create_info.pDescriptorUpdateEntries[i].descriptorCount;
+                        inline_info->pData = update_entry;
+                        write_entry.pNext = inline_info;
+                        // skip the rest of the array, they just represent bytes in the update
+                        j = create_info.pDescriptorUpdateEntries[i].descriptorCount;
+                        break;
+                    }
                 default:
                     assert(0);
                     break;
@@ -1774,6 +1848,48 @@ bool cvdescriptorset::DescriptorSet::ValidateWriteUpdate(const debug_report_data
                   << update->dstArrayElement << " oversteps the available number of consecutive descriptors";
         *error_msg = error_str.str();
         return false;
+    }
+    if (type == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT) {
+        if ((update->dstArrayElement % 4) != 0) {
+            *error_code = "VUID-VkWriteDescriptorSet-descriptorType-02219";
+            std::stringstream error_str;
+            error_str << "Attempting write update to descriptor set " << set_ << " binding #" << update->dstBinding << " with "
+                      << "dstArrayElement " << update->dstArrayElement << " not a multiple of 4";
+            *error_msg = error_str.str();
+            return false;
+        }
+        if ((update->descriptorCount % 4) != 0) {
+            *error_code = "VUID-VkWriteDescriptorSet-descriptorType-02220";
+            std::stringstream error_str;
+            error_str << "Attempting write update to descriptor set " << set_ << " binding #" << update->dstBinding << " with "
+                      << "descriptorCount  " << update->descriptorCount << " not a multiple of 4";
+            *error_msg = error_str.str();
+            return false;
+        }
+        const auto *write_inline_info = lvl_find_in_chain<VkWriteDescriptorSetInlineUniformBlockEXT>(update->pNext);
+        if (!write_inline_info || write_inline_info->dataSize != update->descriptorCount) {
+            *error_code = "VUID-VkWriteDescriptorSet-descriptorType-02221";
+            std::stringstream error_str;
+            if (!write_inline_info) {
+                error_str << "Attempting write update to descriptor set " << set_ << " binding #" << update->dstBinding << " with "
+                          << "VkWriteDescriptorSetInlineUniformBlockEXT missing";
+            } else {
+                error_str << "Attempting write update to descriptor set " << set_ << " binding #" << update->dstBinding << " with "
+                          << "VkWriteDescriptorSetInlineUniformBlockEXT dataSize " << write_inline_info->dataSize << " not equal to "
+                          << "VkWriteDescriptorSet descriptorCount " << update->descriptorCount;
+            }
+            *error_msg = error_str.str();
+            return false;
+        }
+        // This error is probably unreachable due to the previous two errors
+        if (write_inline_info && (write_inline_info->dataSize % 4) != 0) {
+            *error_code = "VUID-VkWriteDescriptorSetInlineUniformBlockEXT-dataSize-02222";
+            std::stringstream error_str;
+            error_str << "Attempting write update to descriptor set " << set_ << " binding #" << update->dstBinding << " with "
+                      << "VkWriteDescriptorSetInlineUniformBlockEXT dataSize " << write_inline_info->dataSize << " not a multiple of 4";
+            *error_msg = error_str.str();
+            return false;
+        }
     }
     // Verify consecutive bindings match (if needed)
     if (!p_layout_->VerifyUpdateConsistency(update->dstBinding, update->dstArrayElement, update->descriptorCount, "write update to",
@@ -2029,6 +2145,8 @@ bool cvdescriptorset::DescriptorSet::VerifyWriteUpdateContents(const VkWriteDesc
             }
             break;
         }
+        case VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT:
+            break;
         default:
             assert(0);  // We've already verified update type so should never get here
             break;
@@ -2145,6 +2263,8 @@ bool cvdescriptorset::DescriptorSet::VerifyCopyUpdateContents(const VkCopyDescri
             }
             break;
         }
+        case InlineUniform:
+            break;
         default:
             assert(0);  // We've already verified update type so should never get here
             break;
@@ -2206,14 +2326,14 @@ bool cvdescriptorset::ValidateAllocateDescriptorSets(const core_validation::laye
                             p_alloc_info->descriptorSetCount, HandleToUint64(pool_state->pool), pool_state->availableSets);
         }
         // Determine whether descriptor counts are satisfiable
-        for (uint32_t i = 0; i < VK_DESCRIPTOR_TYPE_RANGE_SIZE; i++) {
-            if (ds_data->required_descriptors_by_type[i] > pool_state->availableDescriptorTypeCount[i]) {
+        for (auto it = ds_data->required_descriptors_by_type.begin(); it != ds_data->required_descriptors_by_type.end(); ++it) {
+            if (ds_data->required_descriptors_by_type.at(it->first) > pool_state->availableDescriptorTypeCount[it->first]) {
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_POOL_EXT,
                                 HandleToUint64(pool_state->pool), "VUID-VkDescriptorSetAllocateInfo-descriptorPool-00307",
                                 "Unable to allocate %u descriptors of type %s from pool 0x%" PRIxLEAST64
                                 ". This pool only has %d descriptors of this type remaining.",
-                                ds_data->required_descriptors_by_type[i], string_VkDescriptorType(VkDescriptorType(i)),
-                                HandleToUint64(pool_state->pool), pool_state->availableDescriptorTypeCount[i]);
+                                ds_data->required_descriptors_by_type.at(it->first), string_VkDescriptorType(VkDescriptorType(it->first)),
+                                HandleToUint64(pool_state->pool), pool_state->availableDescriptorTypeCount[it->first]);
             }
         }
     }
@@ -2255,8 +2375,8 @@ void cvdescriptorset::PerformAllocateDescriptorSets(const VkDescriptorSetAllocat
     auto pool_state = (*pool_map)[p_alloc_info->descriptorPool];
     // Account for sets and individual descriptors allocated from pool
     pool_state->availableSets -= p_alloc_info->descriptorSetCount;
-    for (uint32_t i = 0; i < VK_DESCRIPTOR_TYPE_RANGE_SIZE; i++) {
-        pool_state->availableDescriptorTypeCount[i] -= ds_data->required_descriptors_by_type[i];
+    for (auto it = ds_data->required_descriptors_by_type.begin(); it != ds_data->required_descriptors_by_type.end(); ++it) {
+        pool_state->availableDescriptorTypeCount[it->first] -= ds_data->required_descriptors_by_type.at(it->first);
     }
 
     const auto *variable_count_info = lvl_find_in_chain<VkDescriptorSetVariableDescriptorCountAllocateInfoEXT>(p_alloc_info->pNext);

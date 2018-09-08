@@ -212,6 +212,7 @@ struct layer_data {
         VkPhysicalDeviceDescriptorIndexingPropertiesEXT descriptor_indexing_props;
         VkPhysicalDeviceShadingRateImagePropertiesNV shading_rate_image_props;
         VkPhysicalDeviceMeshShaderPropertiesNV mesh_shader_props;
+        VkPhysicalDeviceInlineUniformBlockPropertiesEXT inline_uniform_block_props;
     };
     DeviceExtensionProperties phys_dev_ext_props = {};
     bool external_sync_warning = false;
@@ -2375,6 +2376,11 @@ static void PostCallRecordCreateDevice(instance_layer_data *instance_data, const
         device_data->enabled_features.mesh_shader = *mesh_shader_features;
     }
 
+    const auto *inline_uniform_block_features = lvl_find_in_chain<VkPhysicalDeviceInlineUniformBlockFeaturesEXT>(pCreateInfo->pNext);
+    if (inline_uniform_block_features) {
+        device_data->enabled_features.inline_uniform_block = *inline_uniform_block_features;
+    }
+
     // Store physical device properties and physical device mem limits into device layer_data structs
     instance_data->dispatch_table.GetPhysicalDeviceMemoryProperties(gpu, &device_data->phys_dev_mem_props);
     instance_data->dispatch_table.GetPhysicalDeviceProperties(gpu, &device_data->phys_dev_props);
@@ -2406,6 +2412,13 @@ static void PostCallRecordCreateDevice(instance_layer_data *instance_data, const
         auto prop2 = lvl_init_struct<VkPhysicalDeviceProperties2KHR>(&mesh_shader_props);
         instance_data->dispatch_table.GetPhysicalDeviceProperties2KHR(gpu, &prop2);
         device_data->phys_dev_ext_props.mesh_shader_props = mesh_shader_props;
+    }
+    if (device_data->extensions.vk_ext_inline_uniform_block) {
+        // Get the needed inline uniform block limits
+        auto inline_uniform_block_props = lvl_init_struct<VkPhysicalDeviceInlineUniformBlockPropertiesEXT>();
+        auto prop2 = lvl_init_struct<VkPhysicalDeviceProperties2KHR>(&inline_uniform_block_props);
+        instance_data->dispatch_table.GetPhysicalDeviceProperties2KHR(gpu, &prop2);
+        device_data->phys_dev_ext_props.inline_uniform_block_props = inline_uniform_block_props;
     }
 }
 
@@ -5146,7 +5159,9 @@ static bool PreCallValidateCreateDescriptorSetLayout(layer_data *dev_data, const
     return cvdescriptorset::DescriptorSetLayout::ValidateCreateInfo(
         dev_data->report_data, create_info, dev_data->extensions.vk_khr_push_descriptor,
         dev_data->phys_dev_ext_props.max_push_descriptors, dev_data->extensions.vk_ext_descriptor_indexing,
-        &dev_data->enabled_features.descriptor_indexing);
+        &dev_data->enabled_features.descriptor_indexing,
+        &dev_data->enabled_features.inline_uniform_block,
+        &dev_data->phys_dev_ext_props.inline_uniform_block_props);
 }
 
 static void PostCallRecordCreateDescriptorSetLayout(layer_data *dev_data, const VkDescriptorSetLayoutCreateInfo *create_info,
@@ -5277,6 +5292,7 @@ enum DSL_DESCRIPTOR_GROUPS {
     DSL_TYPE_SAMPLED_IMAGES,
     DSL_TYPE_STORAGE_IMAGES,
     DSL_TYPE_INPUT_ATTACHMENTS,
+    DSL_TYPE_INLINE_UNIFORM_BLOCK,
     DSL_NUM_DESCRIPTOR_GROUPS
 };
 
@@ -5298,7 +5314,8 @@ std::valarray<uint32_t> GetDescriptorCountMaxPerStage(
 
     // Allow iteration over enum values
     std::vector<DSL_DESCRIPTOR_GROUPS> dsl_groups = {DSL_TYPE_SAMPLERS,       DSL_TYPE_UNIFORM_BUFFERS, DSL_TYPE_STORAGE_BUFFERS,
-                                                     DSL_TYPE_SAMPLED_IMAGES, DSL_TYPE_STORAGE_IMAGES,  DSL_TYPE_INPUT_ATTACHMENTS};
+                                                     DSL_TYPE_SAMPLED_IMAGES, DSL_TYPE_STORAGE_IMAGES,  DSL_TYPE_INPUT_ATTACHMENTS,
+                                                     DSL_TYPE_INLINE_UNIFORM_BLOCK};
 
     // Sum by layouts per stage, then pick max of stages per type
     std::valarray<uint32_t> max_sum(0U, DSL_NUM_DESCRIPTOR_GROUPS);  // max descriptor sum among all pipeline stages
@@ -5340,6 +5357,10 @@ std::valarray<uint32_t> GetDescriptorCountMaxPerStage(
                         case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:
                             stage_sum[DSL_TYPE_INPUT_ATTACHMENTS] += binding->descriptorCount;
                             break;
+                        case VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT:
+                            // count one block per binding. descriptorCount is number of bytes
+                            stage_sum[DSL_TYPE_INLINE_UNIFORM_BLOCK]++;
+                            break;
                         default:
                             break;
                     }
@@ -5354,12 +5375,12 @@ std::valarray<uint32_t> GetDescriptorCountMaxPerStage(
 }
 
 // Used by PreCallValidateCreatePipelineLayout.
-// Returns an array of size VK_DESCRIPTOR_TYPE_RANGE_SIZE of the summed descriptors by type.
+// Returns a map indexed by VK_DESCRIPTOR_TYPE_* enum of the summed descriptors by type.
 // Note: descriptors only count against the limit once even if used by multiple stages.
-std::valarray<uint32_t> GetDescriptorSum(
+std::map<uint32_t, uint32_t> GetDescriptorSum(
     const layer_data *dev_data, const std::vector<std::shared_ptr<cvdescriptorset::DescriptorSetLayout const>> &set_layouts,
     bool skip_update_after_bind) {
-    std::valarray<uint32_t> sum_by_type(0U, VK_DESCRIPTOR_TYPE_RANGE_SIZE);
+    std::map<uint32_t, uint32_t> sum_by_type;
     for (auto dsl : set_layouts) {
         if (skip_update_after_bind && (dsl->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT)) {
             continue;
@@ -5367,7 +5388,12 @@ std::valarray<uint32_t> GetDescriptorSum(
 
         for (uint32_t binding_idx = 0; binding_idx < dsl->GetBindingCount(); binding_idx++) {
             const VkDescriptorSetLayoutBinding *binding = dsl->GetDescriptorSetLayoutBindingPtrFromIndex(binding_idx);
-            sum_by_type[binding->descriptorType] += binding->descriptorCount;
+            if (binding->descriptorType == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT) {
+                // count one block per binding. descriptorCount is number of bytes
+                sum_by_type[binding->descriptorType]++; 
+            } else {
+                sum_by_type[binding->descriptorType] += binding->descriptorCount;
+            }
         }
     }
     return sum_by_type;
@@ -5489,9 +5515,20 @@ static bool PreCallValiateCreatePipelineLayout(const layer_data *dev_data, const
                         dev_data->phys_dev_props.limits.maxPerStageDescriptorInputAttachments);
     }
 
+    // Inline uniform blocks
+    if (max_descriptors_per_stage[DSL_TYPE_INLINE_UNIFORM_BLOCK] >
+        dev_data->phys_dev_ext_props.inline_uniform_block_props.maxPerStageDescriptorInlineUniformBlocks) {
+        skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                        "VUID-VkPipelineLayoutCreateInfo-descriptorType-02212",
+                        "vkCreatePipelineLayout(): max per-stage inline uniform block bindings count (%d) exceeds device "
+                        "maxPerStageDescriptorInlineUniformBlocks limit (%d).",
+                        max_descriptors_per_stage[DSL_TYPE_INLINE_UNIFORM_BLOCK],
+                        dev_data->phys_dev_ext_props.inline_uniform_block_props.maxPerStageDescriptorInlineUniformBlocks);
+    }
+
     // Total descriptors by type
     //
-    std::valarray<uint32_t> sum_all_stages = GetDescriptorSum(dev_data, set_layouts, true);
+    std::map<uint32_t, uint32_t> sum_all_stages = GetDescriptorSum(dev_data, set_layouts, true);
     // Samplers
     uint32_t sum = sum_all_stages[VK_DESCRIPTOR_TYPE_SAMPLER] + sum_all_stages[VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER];
     if (sum > dev_data->phys_dev_props.limits.maxDescriptorSetSamplers) {
@@ -5575,6 +5612,16 @@ static bool PreCallValiateCreatePipelineLayout(const layer_data *dev_data, const
                         dev_data->phys_dev_props.limits.maxDescriptorSetInputAttachments);
     }
 
+    // Inline uniform blocks
+    if (sum_all_stages[VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT] > dev_data->phys_dev_ext_props.inline_uniform_block_props.maxDescriptorSetInlineUniformBlocks) {
+        skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                        "VUID-VkPipelineLayoutCreateInfo-descriptorType-02213",
+                        "vkCreatePipelineLayout(): sum of inline uniform block bindings among all stages (%d) exceeds device "
+                        "maxDescriptorSetInlineUniformBlocks limit (%d).",
+                        sum_all_stages[VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT],
+                        dev_data->phys_dev_ext_props.inline_uniform_block_props.maxDescriptorSetInlineUniformBlocks);
+    }
+
     if (dev_data->extensions.vk_ext_descriptor_indexing) {
         // XXX TODO: replace with correct VU messages
 
@@ -5652,9 +5699,21 @@ static bool PreCallValiateCreatePipelineLayout(const layer_data *dev_data, const
                 dev_data->phys_dev_ext_props.descriptor_indexing_props.maxPerStageDescriptorUpdateAfterBindInputAttachments);
         }
 
+        // Inline uniform blocks
+        if (max_descriptors_per_stage_update_after_bind[DSL_TYPE_INLINE_UNIFORM_BLOCK] >
+            dev_data->phys_dev_ext_props.inline_uniform_block_props.maxPerStageDescriptorUpdateAfterBindInlineUniformBlocks) {
+            skip |= log_msg(
+                dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                "VUID-VkPipelineLayoutCreateInfo-descriptorType-02215",
+                "vkCreatePipelineLayout(): max per-stage inline uniform block bindings count (%d) exceeds device "
+                "maxPerStageDescriptorUpdateAfterBindInlineUniformBlocks limit (%d).",
+                max_descriptors_per_stage_update_after_bind[DSL_TYPE_INLINE_UNIFORM_BLOCK],
+                dev_data->phys_dev_ext_props.inline_uniform_block_props.maxPerStageDescriptorUpdateAfterBindInlineUniformBlocks);
+        }
+
         // Total descriptors by type, summed across all pipeline stages
         //
-        std::valarray<uint32_t> sum_all_stages_update_after_bind = GetDescriptorSum(dev_data, set_layouts, false);
+        std::map<uint32_t, uint32_t> sum_all_stages_update_after_bind = GetDescriptorSum(dev_data, set_layouts, false);
         // Samplers
         sum = sum_all_stages_update_after_bind[VK_DESCRIPTOR_TYPE_SAMPLER] +
               sum_all_stages_update_after_bind[VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER];
@@ -5746,6 +5805,17 @@ static bool PreCallValiateCreatePipelineLayout(const layer_data *dev_data, const
                             "maxDescriptorSetUpdateAfterBindInputAttachments limit (%d).",
                             sum_all_stages_update_after_bind[VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT],
                             dev_data->phys_dev_ext_props.descriptor_indexing_props.maxDescriptorSetUpdateAfterBindInputAttachments);
+        }
+
+        // Inline uniform blocks
+        if (sum_all_stages_update_after_bind[VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT] >
+            dev_data->phys_dev_ext_props.inline_uniform_block_props.maxDescriptorSetUpdateAfterBindInlineUniformBlocks) {
+            skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                            "VUID-VkPipelineLayoutCreateInfo-descriptorType-02217",
+                            "vkCreatePipelineLayout(): sum of inline uniform block bindings among all stages (%d) exceeds device "
+                            "maxDescriptorSetUpdateAfterBindInlineUniformBlocks limit (%d).",
+                            sum_all_stages_update_after_bind[VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT],
+                            dev_data->phys_dev_ext_props.inline_uniform_block_props.maxDescriptorSetUpdateAfterBindInlineUniformBlocks);
         }
     }
     return skip;
@@ -5901,8 +5971,8 @@ static void PostCallRecordResetDescriptorPool(layer_data *dev_data, VkDevice dev
     }
     pPool->sets.clear();
     // Reset available count for each type and available sets for this pool
-    for (uint32_t i = 0; i < pPool->availableDescriptorTypeCount.size(); ++i) {
-        pPool->availableDescriptorTypeCount[i] = pPool->maxDescriptorTypeCount[i];
+    for (auto it = pPool->availableDescriptorTypeCount.begin(); it != pPool->availableDescriptorTypeCount.end(); ++it) {
+        pPool->availableDescriptorTypeCount[it->first] = pPool->maxDescriptorTypeCount[it->first];
     }
     pPool->availableSets = pPool->maxSets;
 }

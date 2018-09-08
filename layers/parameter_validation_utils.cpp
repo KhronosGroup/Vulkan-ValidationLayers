@@ -3251,6 +3251,14 @@ bool pv_vkCreateDescriptorPool(VkDevice device, const VkDescriptorPoolCreateInfo
                         VK_NULL_HANDLE, "VUID-VkDescriptorPoolSize-descriptorCount-00302",
                         "vkCreateDescriptorPool(): pCreateInfo->pPoolSizes[%" PRIu32 "].descriptorCount is not greater than 0.", i);
                 }
+                if (pCreateInfo->pPoolSizes[i].type == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT &&
+                    (pCreateInfo->pPoolSizes[i].descriptorCount % 4) != 0) {
+                    skip |= log_msg(
+                        device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_POOL_EXT,
+                        VK_NULL_HANDLE, "VUID-VkDescriptorPoolSize-type-02218",
+                        "vkCreateDescriptorPool(): pCreateInfo->pPoolSizes[%" PRIu32 "].type is VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT "
+                        " and pCreateInfo->pPoolSizes[%" PRIu32 "].descriptorCount is not a multiple of 4.", i, i);
+                }
             }
         }
     }

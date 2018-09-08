@@ -717,6 +717,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
         value = value.replace('Features2', 'FEATURES_2')
         value = value.replace('e16_Bit', 'E_16BIT')
         value = value.replace('e8_Bit', 'E_8BIT')
+        value = value.replace('ASTCDecode', 'ASTC_Decode')
         # Change to uppercase
         value = value.upper()
         # Add STRUCTURE_TYPE_

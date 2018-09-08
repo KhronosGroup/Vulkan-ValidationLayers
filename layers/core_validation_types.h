@@ -146,16 +146,16 @@ struct DESCRIPTOR_POOL_STATE : BASE_NODE {
 
     safe_VkDescriptorPoolCreateInfo createInfo;
     std::unordered_set<cvdescriptorset::DescriptorSet *> sets;  // Collection of all sets in this pool
-    std::vector<uint32_t> maxDescriptorTypeCount;               // Max # of descriptors of each type in this pool
-    std::vector<uint32_t> availableDescriptorTypeCount;         // Available # of descriptors of each type in this pool
+    std::map<uint32_t, uint32_t> maxDescriptorTypeCount;               // Max # of descriptors of each type in this pool
+    std::map<uint32_t, uint32_t> availableDescriptorTypeCount;         // Available # of descriptors of each type in this pool
 
     DESCRIPTOR_POOL_STATE(const VkDescriptorPool pool, const VkDescriptorPoolCreateInfo *pCreateInfo)
         : pool(pool),
           maxSets(pCreateInfo->maxSets),
           availableSets(pCreateInfo->maxSets),
           createInfo(pCreateInfo),
-          maxDescriptorTypeCount(VK_DESCRIPTOR_TYPE_RANGE_SIZE, 0),
-          availableDescriptorTypeCount(VK_DESCRIPTOR_TYPE_RANGE_SIZE, 0) {
+          maxDescriptorTypeCount(),
+          availableDescriptorTypeCount() {
         // Collect maximums per descriptor type.
         for (uint32_t i = 0; i < createInfo.poolSizeCount; ++i) {
             uint32_t typeIndex = static_cast<uint32_t>(createInfo.pPoolSizes[i].type);
@@ -1060,6 +1060,7 @@ struct DeviceFeatures {
     VkPhysicalDeviceExclusiveScissorFeaturesNV exclusive_scissor;
     VkPhysicalDeviceShadingRateImageFeaturesNV shading_rate_image;
     VkPhysicalDeviceMeshShaderFeaturesNV mesh_shader;
+    VkPhysicalDeviceInlineUniformBlockFeaturesEXT inline_uniform_block;
 };
 
 // Fwd declarations of layer_data and helpers to look-up/validate state from layer_data maps

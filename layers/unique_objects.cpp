@@ -703,7 +703,7 @@ void *BuildUnwrappedUpdateTemplateBuffer(layer_data *dev_data, uint64_t descript
     }
     auto const &create_info = template_map_entry->second->create_info;
     size_t allocation_size = 0;
-    std::vector<std::tuple<size_t, VulkanObjectType, void *>> template_entries;
+    std::vector<std::tuple<size_t, VulkanObjectType, void *, size_t>> template_entries;
 
     for (uint32_t i = 0; i < create_info.descriptorUpdateEntryCount; i++) {
         for (uint32_t j = 0; j < create_info.pDescriptorUpdateEntries[i].descriptorCount; j++) {
@@ -722,7 +722,7 @@ void *BuildUnwrappedUpdateTemplateBuffer(layer_data *dev_data, uint64_t descript
                     VkDescriptorImageInfo *wrapped_entry = new VkDescriptorImageInfo(*image_entry);
                     wrapped_entry->sampler = Unwrap(image_entry->sampler);
                     wrapped_entry->imageView = Unwrap(image_entry->imageView);
-                    template_entries.emplace_back(offset, kVulkanObjectTypeImage, reinterpret_cast<void *>(wrapped_entry));
+                    template_entries.emplace_back(offset, kVulkanObjectTypeImage, reinterpret_cast<void *>(wrapped_entry), 0);
                 } break;
 
                 case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
@@ -734,7 +734,7 @@ void *BuildUnwrappedUpdateTemplateBuffer(layer_data *dev_data, uint64_t descript
 
                     VkDescriptorBufferInfo *wrapped_entry = new VkDescriptorBufferInfo(*buffer_entry);
                     wrapped_entry->buffer = Unwrap(buffer_entry->buffer);
-                    template_entries.emplace_back(offset, kVulkanObjectTypeBuffer, reinterpret_cast<void *>(wrapped_entry));
+                    template_entries.emplace_back(offset, kVulkanObjectTypeBuffer, reinterpret_cast<void *>(wrapped_entry), 0);
                 } break;
 
                 case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
@@ -743,7 +743,15 @@ void *BuildUnwrappedUpdateTemplateBuffer(layer_data *dev_data, uint64_t descript
                     allocation_size = std::max(allocation_size, offset + sizeof(VkBufferView));
 
                     VkBufferView wrapped_entry = Unwrap(*buffer_view_handle);
-                    template_entries.emplace_back(offset, kVulkanObjectTypeBufferView, reinterpret_cast<void *>(wrapped_entry));
+                    template_entries.emplace_back(offset, kVulkanObjectTypeBufferView, reinterpret_cast<void *>(wrapped_entry), 0);
+                } break;
+                case VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT: {
+                    size_t numBytes = create_info.pDescriptorUpdateEntries[i].descriptorCount;
+                    allocation_size = std::max(allocation_size, offset + numBytes);
+                    // nothing to unwrap, just plain data
+                    template_entries.emplace_back(offset, kVulkanObjectTypeUnknown, reinterpret_cast<void *>(update_entry), numBytes);
+                    // to break out of the loop
+                    j = create_info.pDescriptorUpdateEntries[i].descriptorCount;
                 } break;
                 default:
                     assert(0);
@@ -757,22 +765,27 @@ void *BuildUnwrappedUpdateTemplateBuffer(layer_data *dev_data, uint64_t descript
         VulkanObjectType type = std::get<1>(this_entry);
         void *destination = (char *)unwrapped_data + std::get<0>(this_entry);
         void *source = (char *)std::get<2>(this_entry);
+        size_t size = std::get<3>(this_entry);
 
-        switch (type) {
-            case kVulkanObjectTypeImage:
-                *(reinterpret_cast<VkDescriptorImageInfo *>(destination)) = *(reinterpret_cast<VkDescriptorImageInfo *>(source));
-                delete reinterpret_cast<VkDescriptorImageInfo *>(source);
-                break;
-            case kVulkanObjectTypeBuffer:
-                *(reinterpret_cast<VkDescriptorBufferInfo *>(destination)) = *(reinterpret_cast<VkDescriptorBufferInfo *>(source));
-                delete reinterpret_cast<VkDescriptorBufferInfo *>(source);
-                break;
-            case kVulkanObjectTypeBufferView:
-                *(reinterpret_cast<VkBufferView *>(destination)) = reinterpret_cast<VkBufferView>(source);
-                break;
-            default:
-                assert(0);
-                break;
+        if (size != 0) {
+            memcpy(destination, source, size);
+        } else {
+            switch (type) {
+                case kVulkanObjectTypeImage:
+                    *(reinterpret_cast<VkDescriptorImageInfo *>(destination)) = *(reinterpret_cast<VkDescriptorImageInfo *>(source));
+                    delete reinterpret_cast<VkDescriptorImageInfo *>(source);
+                    break;
+                case kVulkanObjectTypeBuffer:
+                    *(reinterpret_cast<VkDescriptorBufferInfo *>(destination)) = *(reinterpret_cast<VkDescriptorBufferInfo *>(source));
+                    delete reinterpret_cast<VkDescriptorBufferInfo *>(source);
+                    break;
+                case kVulkanObjectTypeBufferView:
+                    *(reinterpret_cast<VkBufferView *>(destination)) = reinterpret_cast<VkBufferView>(source);
+                    break;
+                default:
+                    assert(0);
+                    break;
+            }
         }
     }
     return (void *)unwrapped_data;
