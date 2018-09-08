@@ -1166,10 +1166,11 @@ static bool ValidateSpecializationOffsets(debug_report_data const *report_data, 
     return skip;
 }
 
-static uint32_t TypeToDescriptorTypeBits(shader_module const *module, uint32_t type_id, unsigned &descriptor_count) {
+static std::set<uint32_t> TypeToDescriptorTypeSet(shader_module const *module, uint32_t type_id, unsigned &descriptor_count) {
     auto type = module->get_def(type_id);
     bool is_storage_buffer = false;
     descriptor_count = 1;
+    std::set<uint32_t> ret;
 
     // Strip off any array or ptrs. Where we remove array levels, adjust the  descriptor count for each dimension.
     while (type.opcode() == spv::OpTypeArray || type.opcode() == spv::OpTypePointer || type.opcode() == spv::OpTypeRuntimeArray) {
@@ -1193,22 +1194,31 @@ static uint32_t TypeToDescriptorTypeBits(shader_module const *module, uint32_t t
                 if (insn.opcode() == spv::OpDecorate && insn.word(1) == type.word(1)) {
                     if (insn.word(2) == spv::DecorationBlock) {
                         if (is_storage_buffer) {
-                            return (1 << VK_DESCRIPTOR_TYPE_STORAGE_BUFFER) | (1 << VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC);
+                            ret.insert(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+                            ret.insert(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC);
+                            return ret;
                         } else {
-                            return (1 << VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) | (1 << VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC);
+                            ret.insert(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+                            ret.insert(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC);
+                            ret.insert(VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT);
+                            return ret;
                         }
                     } else if (insn.word(2) == spv::DecorationBufferBlock) {
-                        return (1 << VK_DESCRIPTOR_TYPE_STORAGE_BUFFER) | (1 << VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC);
+                        ret.insert(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+                        ret.insert(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC);
+                        return ret;
                     }
                 }
             }
 
             // Invalid
-            return 0;
+            return ret;
         }
 
         case spv::OpTypeSampler:
-            return (1 << VK_DESCRIPTOR_TYPE_SAMPLER) | (1 << VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+            ret.insert(VK_DESCRIPTOR_TYPE_SAMPLER);
+            ret.insert(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+            return ret;
 
         case spv::OpTypeSampledImage: {
             // Slight relaxation for some GLSL historical madness: samplerBuffer doesn't really have a sampler, and a texel
@@ -1217,10 +1227,12 @@ static uint32_t TypeToDescriptorTypeBits(shader_module const *module, uint32_t t
             auto dim = image_type.word(3);
             auto sampled = image_type.word(7);
             if (dim == spv::DimBuffer && sampled == 1) {
-                return 1 << VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER;
+                ret.insert(VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER);
+                return ret;
             }
         }
-            return 1 << VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+            ret.insert(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+            return ret;
 
         case spv::OpTypeImage: {
             // Many descriptor types backing image types-- depends on dimension and whether the image will be used with a sampler.
@@ -1229,33 +1241,37 @@ static uint32_t TypeToDescriptorTypeBits(shader_module const *module, uint32_t t
             auto sampled = type.word(7);
 
             if (dim == spv::DimSubpassData) {
-                return 1 << VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
+                ret.insert(VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT);
+                return ret;
             } else if (dim == spv::DimBuffer) {
                 if (sampled == 1) {
-                    return 1 << VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER;
+                    ret.insert(VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER);
+                    return ret;
                 } else {
-                    return 1 << VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER;
+                    ret.insert(VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER);
+                    return ret;
                 }
             } else if (sampled == 1) {
-                return (1 << VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE) | (1 << VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+                ret.insert(VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+                ret.insert(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+                return ret;
             } else {
-                return 1 << VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+                ret.insert(VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
+                return ret;
             }
         }
 
             // We shouldn't really see any other junk types -- but if we do, they're a mismatch.
         default:
-            return 0;  // Matches nothing
+            return ret;  // Matches nothing
     }
 }
 
-static std::string string_descriptorTypeBits(uint32_t bits) {
+static std::string string_descriptorTypes(const std::set<uint32_t> &descriptor_types) {
     std::stringstream ss;
-    for (int i = 0; i < 32; i++) {
-        if (bits & (1 << i)) {
-            if (ss.tellp()) ss << ", ";
-            ss << string_VkDescriptorType(VkDescriptorType(i));
-        }
+    for (auto it = descriptor_types.begin(); it != descriptor_types.end(); ++it) {
+        if (ss.tellp()) ss << ", ";
+        ss << string_VkDescriptorType(VkDescriptorType(*it));
     }
     return ss.str();
 }
@@ -1643,7 +1659,7 @@ static bool ValidatePipelineShaderStage(layer_data *dev_data, VkPipelineShaderSt
     skip |= ValidateSpecializationOffsets(report_data, pStage);
     skip |= ValidatePushConstantUsage(report_data, pipeline->pipeline_layout.push_constant_ranges.get(), module, accessible_ids,
                                       pStage->stage);
-    if (check_point_size) {
+    if (check_point_size && !pipeline->graphicsPipelineCI.pRasterizationState->rasterizerDiscardEnable) {
         skip |= ValidatePointListShaderState(dev_data, pipeline, module, entrypoint, pStage->stage);
     }
 
@@ -1656,23 +1672,23 @@ static bool ValidatePipelineShaderStage(layer_data *dev_data, VkPipelineShaderSt
         // Verify given pipelineLayout has requested setLayout with requested binding
         const auto &binding = GetDescriptorBinding(&pipeline->pipeline_layout, use.first);
         unsigned required_descriptor_count;
-        uint32_t descriptor_type_bits = TypeToDescriptorTypeBits(module, use.second.type_id, required_descriptor_count);
+        std::set<uint32_t> descriptor_types = TypeToDescriptorTypeSet(module, use.second.type_id, required_descriptor_count);
 
         if (!binding) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                             kVUID_Core_Shader_MissingDescriptor,
                             "Shader uses descriptor slot %u.%u (expected `%s`) but not declared in pipeline layout",
-                            use.first.first, use.first.second, string_descriptorTypeBits(descriptor_type_bits).c_str());
+                            use.first.first, use.first.second, string_descriptorTypes(descriptor_types).c_str());
         } else if (~binding->stageFlags & pStage->stage) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, 0,
                             kVUID_Core_Shader_DescriptorNotAccessibleFromStage,
                             "Shader uses descriptor slot %u.%u but descriptor not accessible from stage %s", use.first.first,
                             use.first.second, string_VkShaderStageFlagBits(pStage->stage));
-        } else if (!(descriptor_type_bits & (1 << binding->descriptorType))) {
+        } else if (descriptor_types.find(binding->descriptorType) == descriptor_types.end()) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                             kVUID_Core_Shader_DescriptorTypeMismatch,
                             "Type mismatch on descriptor slot %u.%u (expected `%s`) but descriptor of type %s", use.first.first,
-                            use.first.second, string_descriptorTypeBits(descriptor_type_bits).c_str(),
+                            use.first.second, string_descriptorTypes(descriptor_types).c_str(),
                             string_VkDescriptorType(binding->descriptorType));
         } else if (binding->descriptorCount < required_descriptor_count) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
