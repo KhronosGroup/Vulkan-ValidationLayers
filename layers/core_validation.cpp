@@ -7055,7 +7055,9 @@ static void UpdateStateCmdDrawType(layer_data *dev_data, GLOBAL_CB_NODE *cb_stat
     // Add descriptor image/CIS layouts to CB layout map
     auto &desc_sets = cb_state->lastBound->boundDescriptorSets;
     for (auto &desc : desc_sets) {
-        desc->UpdateDSImageLayoutState(cb_state);
+        if (desc) {
+            desc->UpdateDSImageLayoutState(cb_state);
+        }
     }
 }
 

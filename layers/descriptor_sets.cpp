@@ -1126,7 +1126,7 @@ void cvdescriptorset::DescriptorSet::BindCommandBuffer(GLOBAL_CB_NODE *cb_node,
 // Update CB layout map with any image/imagesampler descriptor image layouts
 void cvdescriptorset::DescriptorSet::UpdateDSImageLayoutState(GLOBAL_CB_NODE *cb_state) {
     for (auto const &desc : descriptors_) {
-        if (desc->descriptor_class == ImageSampler || desc->descriptor_class == Image) {
+        if (desc->updated && (desc->descriptor_class == ImageSampler || desc->descriptor_class == Image)) {
             VkImageView image_view;
             VkImageLayout image_layout;
             if (desc->descriptor_class == ImageSampler) {
