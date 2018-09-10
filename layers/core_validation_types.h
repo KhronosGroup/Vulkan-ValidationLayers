@@ -92,7 +92,7 @@ static bool IsAcquireOp(const COMMAND_POOL_NODE *pool, const Barrier *barrier) {
     return (assume_transfer || IsTransferOp(barrier)) && (pool->queueFamilyIndex == barrier->dstQueueFamilyIndex);
 }
 
-inline const bool IsSpecial(const uint32_t queue_family_index) {
+inline bool IsSpecial(const uint32_t queue_family_index) {
     return (queue_family_index == VK_QUEUE_FAMILY_EXTERNAL_KHR) || (queue_family_index == VK_QUEUE_FAMILY_FOREIGN_EXT);
 }
 
