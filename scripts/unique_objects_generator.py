@@ -153,6 +153,7 @@ class UniqueObjectsOutputGenerator(OutputGenerator):
             'vkDebugMarkerSetObjectTagEXT',
             'vkDebugMarkerSetObjectNameEXT',
             'vkCreateRenderPass',
+            'vkCreateRenderPass2KHR',
             'vkDestroyRenderPass',
             'vkSetDebugUtilsObjectNameEXT',
             'vkSetDebugUtilsObjectTagEXT',
