@@ -711,6 +711,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
         # Add underscore between lowercase then uppercase
         value = re.sub('([a-z0-9])([A-Z])', r'\1_\2', typename)
         value = value.replace('D3_D12', 'D3D12')
+        value = value.replace('ASTCDecode', 'ASTC_Decode')
         value = value.replace('Device_IDProp', 'Device_ID_Prop')
         value = value.replace('LODGather', 'LOD_Gather')
         value = value.replace('Features2', 'FEATURES_2')
