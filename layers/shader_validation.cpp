@@ -915,7 +915,9 @@ static bool IsPointSizeWritten(shader_module const *src, spirv_inst_iter builtin
         }
     }
 
-    bool found_write = !init_complete && (type == spv::OpMemberDecorate);
+    if (!init_complete && (type == spv::OpMemberDecorate)) return false;
+
+    bool found_write = false;
     std::unordered_set<uint32_t> worklist;
     worklist.insert(entrypoint.word(2));
 
