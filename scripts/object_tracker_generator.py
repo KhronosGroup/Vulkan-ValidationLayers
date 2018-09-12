@@ -740,7 +740,6 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
     #
     # Output validation for a single object (obj_count is NULL) or a counted list of objects
     def outputObjects(self, obj_type, obj_name, obj_count, prefix, index, indent, destroy_func, destroy_array, disp_name, parent_name, null_allowed, top_level):
-        decl_code = ''
         pre_call_code = ''
         post_call_code = ''
         param_suffix = '%s-parameter' % (obj_name)
@@ -759,14 +758,13 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
             pre_call_code += '%s    }\n' % indent
         else:
             pre_call_code += '%s    skip |= ValidateObject(%s, %s%s, %s, %s, %s, %s);\n' % (indent, disp_name, prefix, obj_name, self.GetVulkanObjType(obj_type), null_allowed, param_vuid, parent_vuid)
-        return decl_code, pre_call_code, post_call_code
+        return pre_call_code, post_call_code
     #
     # first_level_param indicates if elements are passed directly into the function else they're below a ptr/struct
     # create_func means that this is API creates or allocates objects
     # destroy_func indicates that this API destroys or frees objects
     # destroy_array means that the destroy_func operated on an array of objects
     def validate_objects(self, members, indent, prefix, array_index, create_func, destroy_func, destroy_array, disp_name, parent_name, first_level_param):
-        decls = ''
         pre_code = ''
         post_code = ''
         index = 'index%s' % str(array_index)
@@ -781,8 +779,7 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
                 if (count_name is not None):
                     count_name = '%s%s' % (prefix, member.len)
                 null_allowed = member.isoptional
-                (tmp_decl, tmp_pre, tmp_post) = self.outputObjects(member.type, member.name, count_name, prefix, index, indent, destroy_func, destroy_array, disp_name, parent_name, str(null_allowed).lower(), first_level_param)
-                decls += tmp_decl
+                (tmp_pre, tmp_post) = self.outputObjects(member.type, member.name, count_name, prefix, index, indent, destroy_func, destroy_array, disp_name, parent_name, str(null_allowed).lower(), first_level_param)
                 pre_code += tmp_pre
                 post_code += tmp_post
             # Handle Structs that contain objects at some level
@@ -802,8 +799,7 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
                         indent = self.incIndent(indent)
                         local_prefix = '%s[%s].' % (new_prefix, index)
                         # Process sub-structs in this struct
-                        (tmp_decl, tmp_pre, tmp_post) = self.validate_objects(struct_info, indent, local_prefix, array_index, create_func, destroy_func, destroy_array, disp_name, member.type, False)
-                        decls += tmp_decl
+                        (tmp_pre, tmp_post) = self.validate_objects(struct_info, indent, local_prefix, array_index, create_func, destroy_func, destroy_array, disp_name, member.type, False)
                         pre_code += tmp_pre
                         post_code += tmp_post
                         indent = self.decIndent(indent)
@@ -818,22 +814,12 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
                         pre_code += '%s    if (%s%s) {\n' % (indent, prefix, member.name)
                         indent = self.incIndent(indent)
                         # Process sub-structs in this struct
-                        (tmp_decl, tmp_pre, tmp_post) = self.validate_objects(struct_info, indent, new_prefix, array_index, create_func, destroy_func, destroy_array, disp_name, member.type, False)
-                        decls += tmp_decl
+                        (tmp_pre, tmp_post) = self.validate_objects(struct_info, indent, new_prefix, array_index, create_func, destroy_func, destroy_array, disp_name, member.type, False)
                         pre_code += tmp_pre
                         post_code += tmp_post
                         indent = self.decIndent(indent)
                         pre_code += '%s    }\n' % indent
-                    else:
-                        # Update struct prefix
-                        new_prefix = '%s%s.' % (prefix, member.name)
-                        # Declare safe_VarType for struct
-                        # Process sub-structs in this struct
-                        (tmp_decl, tmp_pre, tmp_post) = self.validate_objects(struct_info, indent, new_prefix, array_index, create_func, destroy_func, destroy_array, disp_name, member.type, False)
-                        decls += tmp_decl
-                        pre_code += tmp_pre
-                        post_code += tmp_post
-        return decls, pre_code, post_code
+        return pre_code, post_code
     #
     # For a particular API, generate the object handling code
     def generate_wrapping_code(self, cmd):
@@ -855,12 +841,11 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
             else:
                 destroy_array = False
                 destroy_object_code = ''
-            paramdecl = ''
             param_pre_code = ''
             param_post_code = ''
             create_func = True if create_obj_code else False
             destroy_func = True if destroy_object_code else False
-            (paramdecl, param_pre_code, param_post_code) = self.validate_objects(cmd_info, indent, '', 0, create_func, destroy_func, destroy_array, disp_name, proto.text, True)
+            (param_pre_code, param_post_code) = self.validate_objects(cmd_info, indent, '', 0, create_func, destroy_func, destroy_array, disp_name, proto.text, True)
             param_post_code += create_obj_code
             if destroy_object_code:
                 if destroy_array == True:
@@ -870,7 +855,8 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
             if param_pre_code:
                 if (not destroy_func) or (destroy_array):
                     param_pre_code = '%s{\n%s%s%s%s}\n' % ('    ', indent, self.lock_guard(indent), param_pre_code, indent)
-        return paramdecl, param_pre_code, param_post_code
+
+        return param_pre_code, param_post_code
     #
     # Capture command parameter info needed to create, destroy, and validate objects
     def genCmd(self, cmdinfo, cmdname, alias):
@@ -947,9 +933,9 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
                 self.intercepts += [ '    {"%s", (void *)%s},' % (cmdname,cmdname[2:]) ]
                 continue
             # Generate object handling code
-            (api_decls, api_pre, api_post) = self.generate_wrapping_code(cmdinfo.elem)
+            (api_pre, api_post) = self.generate_wrapping_code(cmdinfo.elem)
             # If API doesn't contain any object handles, don't fool with it
-            if not api_decls and not api_pre and not api_post:
+            if not api_pre and not api_post:
                 continue
             feature_extra_protect = cmddata.extra_protect
             if (feature_extra_protect != None):
@@ -971,9 +957,7 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
                 assignresult = resulttype.text + ' result = '
             else:
                 assignresult = ''
-            # Pre-pend declarations and pre-api-call codegen
-            if api_decls:
-                self.appendSection('command', "\n".join(str(api_decls).rstrip().split("\n")))
+            # Pre-pend pre-api-call codegen
             if api_pre:
                 self.appendSection('command', "\n".join(str(api_pre).rstrip().split("\n")))
             # Generate the API call itself
