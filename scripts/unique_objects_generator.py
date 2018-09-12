@@ -688,6 +688,7 @@ class UniqueObjectsOutputGenerator(OutputGenerator):
                 # Structs at first level will have an NDO, OR, we need a safe_struct for the pnext chain
                 if self.struct_contains_ndo(member.type) == True or process_pnext:
                     struct_info = self.struct_member_dict[member.type]
+                    ispointer = '*' in member.cdecl;
                     # Struct Array
                     if member.len is not None:
                         # Update struct prefix
@@ -720,7 +721,7 @@ class UniqueObjectsOutputGenerator(OutputGenerator):
                         if first_level_param == True:
                             post_code += self.cleanUpLocalDeclarations(indent, prefix, member.name, member.len, index, process_pnext)
                     # Single Struct
-                    else:
+                    elif ispointer:
                         # Update struct prefix
                         if first_level_param == True:
                             new_prefix = 'local_%s->' % member.name
@@ -741,6 +742,25 @@ class UniqueObjectsOutputGenerator(OutputGenerator):
                             pre_code += '%s    local_%s%s->pNext = CreateUnwrappedExtensionStructs(local_%s%s->pNext);\n' % (indent, prefix, member.name, prefix, member.name)
                         indent = self.decIndent(indent)
                         pre_code += '%s    }\n' % indent
+                        if first_level_param == True:
+                            post_code += self.cleanUpLocalDeclarations(indent, prefix, member.name, member.len, index, process_pnext)
+                    else:
+                        # Update struct prefix
+                        if first_level_param == True:
+                            new_prefix = 'local_%s.' % member.name
+                            decls += '%ssafe_%s *local_%s%s = NULL;\n' % (indent, member.type, prefix, member.name)
+                        else:
+                            new_prefix = '%s%s.' % (prefix, member.name)
+                        # Declare safe_VarType for struct
+                        if first_level_param == True:
+                            pre_code += '%s    local_%s%s = new safe_%s(%s);\n' % (indent, prefix, member.name, member.type, member.name)
+                        # Process sub-structs in this struct
+                        (tmp_decl, tmp_pre, tmp_post) = self.uniquify_members(struct_info, indent, new_prefix, array_index, create_func, destroy_func, destroy_array, False)
+                        decls += tmp_decl
+                        pre_code += tmp_pre
+                        post_code += tmp_post
+                        if process_pnext:
+                            pre_code += '%s    local_%s%s.pNext = CreateUnwrappedExtensionStructs(local_%s%s.pNext);\n' % (indent, prefix, member.name, prefix, member.name)
                         if first_level_param == True:
                             post_code += self.cleanUpLocalDeclarations(indent, prefix, member.name, member.len, index, process_pnext)
         return decls, pre_code, post_code
