@@ -790,6 +790,7 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
                 # Structs at first level will have an object
                 if self.struct_contains_object(member.type) == True:
                     struct_info = self.struct_member_dict[member.type]
+                    ispointer = '*' in member.cdecl;
                     # Struct Array
                     if member.len is not None:
                         # Update struct prefix
@@ -809,7 +810,7 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
                         indent = self.decIndent(indent)
                         pre_code += '%s    }\n' % indent
                     # Single Struct
-                    else:
+                    elif ispointer:
                         # Update struct prefix
                         new_prefix = '%s%s->' % (prefix, member.name)
                         # Declare safe_VarType for struct
@@ -822,6 +823,15 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
                         post_code += tmp_post
                         indent = self.decIndent(indent)
                         pre_code += '%s    }\n' % indent
+                    else:
+                        # Update struct prefix
+                        new_prefix = '%s%s.' % (prefix, member.name)
+                        # Declare safe_VarType for struct
+                        # Process sub-structs in this struct
+                        (tmp_decl, tmp_pre, tmp_post) = self.validate_objects(struct_info, indent, new_prefix, array_index, create_func, destroy_func, destroy_array, disp_name, member.type, False)
+                        decls += tmp_decl
+                        pre_code += tmp_pre
+                        post_code += tmp_post
         return decls, pre_code, post_code
     #
     # For a particular API, generate the object handling code
