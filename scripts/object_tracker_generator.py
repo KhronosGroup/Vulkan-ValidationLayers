@@ -326,11 +326,13 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
     # Generate the object tracker undestroyed object validation function
     def GenReportFunc(self):
         output_func = ''
-        output_func += 'void ReportUndestroyedObjects(VkDevice device, const std::string& error_code) {\n'
-        output_func += '    DeviceReportUndestroyedObjects(device, kVulkanObjectTypeCommandBuffer, error_code);\n'
+        output_func += 'bool ReportUndestroyedObjects(VkDevice device, const std::string& error_code) {\n'
+        output_func += '    bool skip = false;\n'
+        output_func += '    skip |= DeviceReportUndestroyedObjects(device, kVulkanObjectTypeCommandBuffer, error_code);\n'
         for handle in self.object_types:
             if self.isHandleTypeNonDispatchable(handle):
-                output_func += '    DeviceReportUndestroyedObjects(device, %s, error_code);\n' % (self.GetVulkanObjType(handle))
+                output_func += '    skip |= DeviceReportUndestroyedObjects(device, %s, error_code);\n' % (self.GetVulkanObjType(handle))
+        output_func += '    return skip;\n'
         output_func += '}\n'
         return output_func
 

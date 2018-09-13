@@ -147,7 +147,7 @@ extern uint64_t object_track_index;
 extern uint32_t loader_layer_if_version;
 extern const std::unordered_map<std::string, void *> name_to_funcptr_map;
 
-void DeviceReportUndestroyedObjects(VkDevice device, VulkanObjectType object_type, const std::string &error_code);
+bool DeviceReportUndestroyedObjects(VkDevice device, VulkanObjectType object_type, const std::string &error_code);
 void DeviceDestroyUndestroyedObjects(VkDevice device, VulkanObjectType object_type);
 void CreateQueue(VkDevice device, VkQueue vkObj);
 void AddQueueInfo(VkDevice device, uint32_t queue_node_index, VkQueue queue);
@@ -156,7 +156,7 @@ void AllocateCommandBuffer(VkDevice device, const VkCommandPool command_pool, co
                            VkCommandBufferLevel level);
 void AllocateDescriptorSet(VkDevice device, VkDescriptorPool descriptor_pool, VkDescriptorSet descriptor_set);
 void CreateSwapchainImageObject(VkDevice dispatchable_object, VkImage swapchain_image, VkSwapchainKHR swapchain);
-void ReportUndestroyedObjects(VkDevice device, const std::string &error_code);
+bool ReportUndestroyedObjects(VkDevice device, const std::string &error_code);
 void DestroyUndestroyedObjects(VkDevice device);
 bool ValidateDeviceObject(uint64_t device_handle, const std::string &invalid_handle_code, const std::string &wrong_device_code);
 
