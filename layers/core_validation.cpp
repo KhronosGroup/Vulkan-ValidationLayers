@@ -5139,6 +5139,53 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateComputePipelines(VkDevice device, VkPipelin
     return result;
 }
 
+VKAPI_ATTR VkResult VKAPI_CALL CreateRaytracingPipelinesNVX(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
+                                                            const VkRaytracingPipelineCreateInfoNVX *pCreateInfos,
+                                                            const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines) {
+    // The order of operations here is a little convoluted but gets the job done
+    //  1. Pipeline create state is first shadowed into PIPELINE_STATE struct
+    //  2. Create state is then validated (which uses flags setup during shadowing)
+    //  3. If everything looks good, we'll then create the pipeline and add NODE to pipelineMap
+    bool skip = false;
+    vector<std::unique_ptr<PIPELINE_STATE>> pPipeState;
+    pPipeState.reserve(count);
+    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+
+    uint32_t i = 0;
+    unique_lock_t lock(global_lock);
+
+    for (i = 0; i < count; i++) {
+        pPipeState.push_back(std::unique_ptr<PIPELINE_STATE>(new PIPELINE_STATE));
+        pPipeState[i]->initRaytracingPipelineNVX(&pCreateInfos[i]);
+        pPipeState[i]->pipeline_layout = *GetPipelineLayout(dev_data, pCreateInfos[i].layout);
+    }
+
+    for (i = 0; i < count; i++) {
+        skip |= ValidateRaytracingPipelineNVX(dev_data, pPipeState[i].get());
+    }
+
+    lock.unlock();
+
+    if (skip) {
+        for (i = 0; i < count; i++) {
+            pPipelines[i] = VK_NULL_HANDLE;
+        }
+        return VK_ERROR_VALIDATION_FAILED_EXT;
+    }
+
+    auto result =
+        dev_data->dispatch_table.CreateRaytracingPipelinesNVX(device, pipelineCache, count, pCreateInfos, pAllocator, pPipelines);
+    lock.lock();
+    for (i = 0; i < count; i++) {
+        if (pPipelines[i] != VK_NULL_HANDLE) {
+            pPipeState[i]->pipeline = pPipelines[i];
+            dev_data->pipelineMap[pPipelines[i]] = std::move(pPipeState[i]);
+        }
+    }
+
+    return result;
+}
+
 static void PostCallRecordCreateSampler(layer_data *dev_data, const VkSamplerCreateInfo *pCreateInfo, VkSampler *pSampler) {
     dev_data->samplerMap[*pSampler] = unique_ptr<SAMPLER_STATE>(new SAMPLER_STATE(pSampler, pCreateInfo));
 }
@@ -7403,7 +7450,7 @@ static void UpdateStateCmdDrawType(layer_data *dev_data, GLOBAL_CB_NODE *cb_stat
     cb_state->hasDrawCmd = true;
 
     // Add descriptor image/CIS layouts to CB layout map
-    auto &desc_sets = cb_state->lastBound->boundDescriptorSets;
+    auto &desc_sets = cb_state->lastBound[VK_PIPELINE_BIND_POINT_GRAPHICS].boundDescriptorSets;
     for (auto &desc : desc_sets) {
         if (desc) {
             desc->UpdateDSImageLayoutState(cb_state);
@@ -8248,7 +8295,7 @@ static bool ValidateRenderPassPipelineBarriers(layer_data *device_data, const ch
 
 // Array to mask individual accessMask to corresponding stageMask
 //  accessMask active bit position (0-31) maps to index
-const static VkPipelineStageFlags AccessMaskToPipeStage[20] = {
+const static VkPipelineStageFlags AccessMaskToPipeStage[24] = {
     // VK_ACCESS_INDIRECT_COMMAND_READ_BIT = 0
     VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT,
     // VK_ACCESS_INDEX_READ_BIT = 1
@@ -8258,17 +8305,17 @@ const static VkPipelineStageFlags AccessMaskToPipeStage[20] = {
     // VK_ACCESS_UNIFORM_READ_BIT = 3
     VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT |
         VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT | VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT |
-        VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+        VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_RAYTRACING_BIT_NVX,
     // VK_ACCESS_INPUT_ATTACHMENT_READ_BIT = 4
     VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
     // VK_ACCESS_SHADER_READ_BIT = 5
     VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT |
         VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT | VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT |
-        VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+        VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_RAYTRACING_BIT_NVX,
     // VK_ACCESS_SHADER_WRITE_BIT = 6
     VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT |
         VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT | VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT |
-        VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+        VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_RAYTRACING_BIT_NVX,
     // VK_ACCESS_COLOR_ATTACHMENT_READ_BIT = 7
     VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
     // VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT = 8
@@ -8293,6 +8340,17 @@ const static VkPipelineStageFlags AccessMaskToPipeStage[20] = {
     VK_PIPELINE_STAGE_COMMAND_PROCESS_BIT_NVX,
     // VK_ACCESS_COMMAND_PROCESS_WRITE_BIT_NVX = 18
     VK_PIPELINE_STAGE_COMMAND_PROCESS_BIT_NVX,
+    // 19
+    0,
+    // 20
+    0,
+    // VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_NVX = 21
+    VK_PIPELINE_STAGE_RAYTRACING_BIT_NVX,
+    // VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_NVX = 22
+    VK_PIPELINE_STAGE_RAYTRACING_BIT_NVX,
+    // VK_ACCESS_SHADING_RATE_IMAGE_READ_BIT_NV = 23
+    VK_PIPELINE_STAGE_SHADING_RATE_IMAGE_BIT_NV,
+    
 };
 
 // Verify that all bits of access_mask are supported by the src_stage_mask
@@ -14402,6 +14460,7 @@ static const std::unordered_map<std::string, void *> name_to_funcptr_map = {
     {"vkCmdDrawMeshTasksNV", (void *)CmdDrawMeshTasksNV},
     {"vkCmdDrawMeshTasksIndirectNV", (void *)CmdDrawMeshTasksIndirectNV},
     {"vkCmdDrawMeshTasksIndirectCountNV", (void *)CmdDrawMeshTasksIndirectCountNV},
+    {"vkCreateRaytracingPipelinesNVX", (void *)CreateRaytracingPipelinesNVX},
 };
 
 VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetDeviceProcAddr(VkDevice device, const char *funcName) {

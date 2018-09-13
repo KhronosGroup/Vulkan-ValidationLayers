@@ -639,6 +639,7 @@ class PIPELINE_STATE : public BASE_NODE {
     // Hold shared ptr to RP in case RP itself is destroyed
     std::shared_ptr<RENDER_PASS_STATE> rp_state;
     safe_VkComputePipelineCreateInfo computePipelineCI;
+    safe_VkRaytracingPipelineCreateInfoNVX raytracingPipelineCI;
     // Flag of which shader stages are active for this pipeline
     uint32_t active_shaders;
     uint32_t duplicate_shaders;
@@ -659,6 +660,7 @@ class PIPELINE_STATE : public BASE_NODE {
           graphicsPipelineCI{},
           rp_state(nullptr),
           computePipelineCI{},
+          raytracingPipelineCI{},
           active_shaders(0),
           duplicate_shaders(0),
           active_slots(),
@@ -738,6 +740,37 @@ class PIPELINE_STATE : public BASE_NODE {
             default:
                 // TODO : Flag error
                 break;
+        }
+    }
+    void initRaytracingPipelineNVX(const VkRaytracingPipelineCreateInfoNVX *pCreateInfo) {
+        raytracingPipelineCI.initialize(pCreateInfo);
+        // Make sure gfx and compute pipeline is null
+        VkGraphicsPipelineCreateInfo emptyGraphicsCI = {};
+        VkComputePipelineCreateInfo emptyComputeCI = {};
+        computePipelineCI.initialize(&emptyComputeCI);
+        graphicsPipelineCI.initialize(&emptyGraphicsCI, false, false);
+        switch (raytracingPipelineCI.pStages->stage) {
+        case VK_SHADER_STAGE_RAYGEN_BIT_NVX:
+            this->active_shaders |= VK_SHADER_STAGE_RAYGEN_BIT_NVX;
+            break;
+        case VK_SHADER_STAGE_ANY_HIT_BIT_NVX:
+            this->active_shaders |= VK_SHADER_STAGE_ANY_HIT_BIT_NVX;
+            break;
+        case VK_SHADER_STAGE_CLOSEST_HIT_BIT_NVX:
+            this->active_shaders |= VK_SHADER_STAGE_CLOSEST_HIT_BIT_NVX;
+            break;
+        case VK_SHADER_STAGE_MISS_BIT_NVX:
+            this->active_shaders = VK_SHADER_STAGE_MISS_BIT_NVX;
+            break;
+        case VK_SHADER_STAGE_INTERSECTION_BIT_NVX:
+            this->active_shaders = VK_SHADER_STAGE_INTERSECTION_BIT_NVX;
+            break;
+        case VK_SHADER_STAGE_CALLABLE_BIT_NVX:
+            this->active_shaders |= VK_SHADER_STAGE_CALLABLE_BIT_NVX;
+            break;
+        default:
+            // TODO : Flag error
+            break;
         }
     }
 };
@@ -911,7 +944,7 @@ struct GLOBAL_CB_NODE : public BASE_NODE {
     //  long-term may want to create caches of "lastBound" states and could have
     //  each individual CMD_NODE referencing its own "lastBound" state
     // Store last bound state for Gfx & Compute pipeline bind points
-    LAST_BOUND_STATE lastBound[VK_PIPELINE_BIND_POINT_RANGE_SIZE];
+    std::map<uint32_t, LAST_BOUND_STATE> lastBound;
 
     uint32_t viewportMask;
     uint32_t scissorMask;

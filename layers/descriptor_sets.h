@@ -293,7 +293,7 @@ class DescriptorSetLayout {
  */
 
 // Slightly broader than type, each c++ "class" will has a corresponding "DescriptorClass"
-enum DescriptorClass { PlainSampler, ImageSampler, Image, TexelBuffer, GeneralBuffer, InlineUniform };
+enum DescriptorClass { PlainSampler, ImageSampler, Image, TexelBuffer, GeneralBuffer, InlineUniform, AccelerationStructure };
 
 class Descriptor {
    public:
@@ -404,6 +404,14 @@ class BufferDescriptor : public Descriptor {
 class InlineUniformDescriptor : public Descriptor {
    public:
     InlineUniformDescriptor(const VkDescriptorType) { updated = false; descriptor_class = InlineUniform; }
+    void WriteUpdate(const VkWriteDescriptorSet *, const uint32_t) override { updated = true; }
+    void CopyUpdate(const Descriptor *) override  { updated = true; }
+    void BindCommandBuffer(const core_validation::layer_data *, GLOBAL_CB_NODE *) override {}
+};
+
+class AccelerationStructureDescriptor : public Descriptor {
+   public:
+    AccelerationStructureDescriptor(const VkDescriptorType) { updated = false; descriptor_class = AccelerationStructure; }
     void WriteUpdate(const VkWriteDescriptorSet *, const uint32_t) override { updated = true; }
     void CopyUpdate(const Descriptor *) override  { updated = true; }
     void BindCommandBuffer(const core_validation::layer_data *, GLOBAL_CB_NODE *) override {}

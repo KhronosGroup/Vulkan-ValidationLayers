@@ -638,6 +638,10 @@ cvdescriptorset::DescriptorSet::DescriptorSet(const VkDescriptorSet set, const V
                 for (uint32_t di = 0; di < p_layout_->GetDescriptorCountFromIndex(i); ++di)
                     descriptors_.emplace_back(new InlineUniformDescriptor(type));
                 break;
+            case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NVX:
+                for (uint32_t di = 0; di < p_layout_->GetDescriptorCountFromIndex(i); ++di)
+                    descriptors_.emplace_back(new AccelerationStructureDescriptor(type));
+                break;
             default:
                 assert(0);  // Bad descriptor type specified
                 break;
@@ -2147,6 +2151,9 @@ bool cvdescriptorset::DescriptorSet::VerifyWriteUpdateContents(const VkWriteDesc
         }
         case VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT:
             break;
+        case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NVX:
+            // XXX TODO
+            break;
         default:
             assert(0);  // We've already verified update type so should never get here
             break;
@@ -2264,6 +2271,7 @@ bool cvdescriptorset::DescriptorSet::VerifyCopyUpdateContents(const VkCopyDescri
             break;
         }
         case InlineUniform:
+        case AccelerationStructure:
             break;
         default:
             assert(0);  // We've already verified update type so should never get here
