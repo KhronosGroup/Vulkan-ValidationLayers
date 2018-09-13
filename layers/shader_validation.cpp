@@ -1887,6 +1887,15 @@ bool ValidateComputePipeline(layer_data *dev_data, PIPELINE_STATE *pipeline) {
     return ValidatePipelineShaderStage(dev_data, &pCreateInfo->stage, pipeline, &module, &entrypoint, false);
 }
 
+bool ValidateRaytracingPipelineNVX(layer_data *dev_data, PIPELINE_STATE *pipeline) {
+    auto pCreateInfo = pipeline->raytracingPipelineCI.ptr();
+
+    shader_module const *module;
+    spirv_inst_iter entrypoint;
+
+    return ValidatePipelineShaderStage(dev_data, pCreateInfo->pStages, pipeline, &module, &entrypoint, false);
+}
+
 uint32_t ValidationCache::MakeShaderHash(VkShaderModuleCreateInfo const *smci) { return XXH32(smci->pCode, smci->codeSize, 0); }
 
 static ValidationCache *GetValidationCacheInfo(VkShaderModuleCreateInfo const *pCreateInfo) {
