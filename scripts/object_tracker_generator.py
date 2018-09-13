@@ -734,7 +734,8 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
                     destroy_obj_code += '%sif (skip) return;\n' % indent
                     destroy_obj_code += '%s{\n' % indent
                     destroy_obj_code += '%s    std::lock_guard<std::mutex> lock(global_lock);\n' % indent
-                    destroy_obj_code += '%s    DestroyObject(%s, %s, %s, pAllocator, %s, %s);\n' % (indent, cmd_info[0].name, cmd_info[param].name, self.GetVulkanObjType(cmd_info[param].type), compatalloc_vuid, nullalloc_vuid)
+                    destroy_obj_code += '%s    ValidateDestroyObject(%s, %s, %s, pAllocator, %s, %s);\n' % (indent, cmd_info[0].name, cmd_info[param].name, self.GetVulkanObjType(cmd_info[param].type), compatalloc_vuid, nullalloc_vuid)
+                    destroy_obj_code += '%s    RecordDestroyObject(%s, %s, %s);\n' % (indent, cmd_info[0].name, cmd_info[param].name, self.GetVulkanObjType(cmd_info[param].type))
                     destroy_obj_code += '%s}\n' % indent
         return object_array, destroy_obj_code
     #

@@ -348,7 +348,8 @@ VKAPI_ATTR void VKAPI_CALL DestroyInstance(VkInstance instance, const VkAllocati
         ObjTrackState *pNode = iit->second;
         VkPhysicalDevice physical_device = reinterpret_cast<VkPhysicalDevice>(pNode->handle);
 
-        DestroyObject(instance, physical_device, kVulkanObjectTypePhysicalDevice, nullptr, kVUIDUndefined, kVUIDUndefined);
+        ValidateDestroyObject(instance, physical_device, kVulkanObjectTypePhysicalDevice, nullptr, kVUIDUndefined, kVUIDUndefined);
+        RecordDestroyObject(instance, physical_device, kVulkanObjectTypePhysicalDevice);
         iit = instance_data->object_map[kVulkanObjectTypePhysicalDevice].begin();
     }
 
@@ -368,8 +369,9 @@ VKAPI_ATTR void VKAPI_CALL DestroyInstance(VkInstance instance, const VkAllocati
         ReportUndestroyedObjects(device, "VUID-vkDestroyInstance-instance-00629");
         DestroyUndestroyedObjects(device);
 
-        DestroyObject(instance, device, kVulkanObjectTypeDevice, pAllocator, "VUID-vkDestroyInstance-instance-00630",
-                      "VUID-vkDestroyInstance-instance-00631");
+        ValidateDestroyObject(instance, device, kVulkanObjectTypeDevice, pAllocator, "VUID-vkDestroyInstance-instance-00630",
+                              "VUID-vkDestroyInstance-instance-00631");
+        RecordDestroyObject(instance, device, kVulkanObjectTypeDevice);
         iit = instance_data->object_map[kVulkanObjectTypeDevice].begin();
     }
 
@@ -402,8 +404,9 @@ VKAPI_ATTR void VKAPI_CALL DestroyInstance(VkInstance instance, const VkAllocati
         instance_data->logging_callback.pop_back();
     }
 
-    DestroyObject(instance, instance, kVulkanObjectTypeInstance, pAllocator, "VUID-vkDestroyInstance-instance-00630",
-                  "VUID-vkDestroyInstance-instance-00631");
+    ValidateDestroyObject(instance, instance, kVulkanObjectTypeInstance, pAllocator, "VUID-vkDestroyInstance-instance-00630",
+                          "VUID-vkDestroyInstance-instance-00631");
+    RecordDestroyObject(instance, instance, kVulkanObjectTypeInstance);
 
     layer_debug_utils_destroy_instance(instance_data->report_data);
     FreeLayerDataPtr(key, layer_data_map);
@@ -415,8 +418,9 @@ VKAPI_ATTR void VKAPI_CALL DestroyDevice(VkDevice device, const VkAllocationCall
     std::unique_lock<std::mutex> lock(global_lock);
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     ValidateObject(device, device, kVulkanObjectTypeDevice, true, "VUID-vkDestroyDevice-device-parameter", kVUIDUndefined);
-    DestroyObject(device_data->instance, device, kVulkanObjectTypeDevice, pAllocator, "VUID-vkDestroyDevice-device-00379",
-                  "VUID-vkDestroyDevice-device-00380");
+    ValidateDestroyObject(device_data->instance, device, kVulkanObjectTypeDevice, pAllocator, "VUID-vkDestroyDevice-device-00379",
+                          "VUID-vkDestroyDevice-device-00380");
+    RecordDestroyObject(device_data->instance, device, kVulkanObjectTypeDevice);
 
     // Report any remaining objects associated with this VkDevice object in LL
     ReportUndestroyedObjects(device, "VUID-vkDestroyDevice-device-00378");
@@ -564,8 +568,9 @@ VKAPI_ATTR VkResult VKAPI_CALL ResetDescriptorPool(VkDevice device, VkDescriptor
         ObjTrackState *pNode = (*itr).second;
         auto del_itr = itr++;
         if (pNode->parent_object == HandleToUint64(descriptorPool)) {
-            DestroyObject(device, (VkDescriptorSet)((*del_itr).first), kVulkanObjectTypeDescriptorSet, nullptr, kVUIDUndefined,
-                          kVUIDUndefined);
+            ValidateDestroyObject(device, (VkDescriptorSet)((*del_itr).first), kVulkanObjectTypeDescriptorSet, nullptr,
+                                  kVUIDUndefined, kVUIDUndefined);
+            RecordDestroyObject(device, (VkDescriptorSet)((*del_itr).first), kVulkanObjectTypeDescriptorSet);
         }
     }
     lock.unlock();
@@ -619,8 +624,10 @@ VKAPI_ATTR void VKAPI_CALL DestroyDebugReportCallbackEXT(VkInstance instance, Vk
     auto instance_data = GetLayerDataPtr(get_dispatch_key(instance), layer_data_map);
     instance_data->instance_dispatch_table.DestroyDebugReportCallbackEXT(instance, msgCallback, pAllocator);
     layer_destroy_report_callback(instance_data->report_data, msgCallback, pAllocator);
-    DestroyObject(instance, msgCallback, kVulkanObjectTypeDebugReportCallbackEXT, pAllocator,
-                  "VUID-vkDestroyDebugReportCallbackEXT-instance-01242", "VUID-vkDestroyDebugReportCallbackEXT-instance-01243");
+    ValidateDestroyObject(instance, msgCallback, kVulkanObjectTypeDebugReportCallbackEXT, pAllocator,
+                          "VUID-vkDestroyDebugReportCallbackEXT-instance-01242",
+                          "VUID-vkDestroyDebugReportCallbackEXT-instance-01243");
+    RecordDestroyObject(instance, msgCallback, kVulkanObjectTypeDebugReportCallbackEXT);
 }
 
 VKAPI_ATTR void VKAPI_CALL DebugReportMessageEXT(VkInstance instance, VkDebugReportFlagsEXT flags,
@@ -771,7 +778,8 @@ VKAPI_ATTR void VKAPI_CALL DestroyDebugUtilsMessengerEXT(VkInstance instance, Vk
     auto instance_data = GetLayerDataPtr(get_dispatch_key(instance), layer_data_map);
     instance_data->instance_dispatch_table.DestroyDebugUtilsMessengerEXT(instance, messenger, pAllocator);
     layer_destroy_messenger_callback(instance_data->report_data, messenger, pAllocator);
-    DestroyObject(instance, messenger, kVulkanObjectTypeDebugUtilsMessengerEXT, pAllocator, kVUIDUndefined, kVUIDUndefined);
+    ValidateDestroyObject(instance, messenger, kVulkanObjectTypeDebugUtilsMessengerEXT, pAllocator, kVUIDUndefined, kVUIDUndefined);
+    RecordDestroyObject(instance, messenger, kVulkanObjectTypeDebugUtilsMessengerEXT);
 }
 
 VKAPI_ATTR void VKAPI_CALL SubmitDebugUtilsMessageEXT(VkInstance instance, VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
@@ -1131,7 +1139,8 @@ VKAPI_ATTR void VKAPI_CALL FreeCommandBuffers(VkDevice device, VkCommandPool com
     }
 
     for (uint32_t i = 0; i < commandBufferCount; i++) {
-        DestroyObject(device, pCommandBuffers[i], kVulkanObjectTypeCommandBuffer, nullptr, kVUIDUndefined, kVUIDUndefined);
+        ValidateDestroyObject(device, pCommandBuffers[i], kVulkanObjectTypeCommandBuffer, nullptr, kVUIDUndefined, kVUIDUndefined);
+        RecordDestroyObject(device, pCommandBuffers[i], kVulkanObjectTypeCommandBuffer);
     }
 
     lock.unlock();
@@ -1157,8 +1166,9 @@ VKAPI_ATTR void VKAPI_CALL DestroySwapchainKHR(VkDevice device, VkSwapchainKHR s
             ++itr;
         }
     }
-    DestroyObject(device, swapchain, kVulkanObjectTypeSwapchainKHR, pAllocator, "VUID-vkDestroySwapchainKHR-swapchain-01283",
-                  "VUID-vkDestroySwapchainKHR-swapchain-01284");
+    ValidateDestroyObject(device, swapchain, kVulkanObjectTypeSwapchainKHR, pAllocator,
+                          "VUID-vkDestroySwapchainKHR-swapchain-01283", "VUID-vkDestroySwapchainKHR-swapchain-01284");
+    RecordDestroyObject(device, swapchain, kVulkanObjectTypeSwapchainKHR);
     lock.unlock();
 
     device_data->device_dispatch_table.DestroySwapchainKHR(device, swapchain, pAllocator);
@@ -1180,7 +1190,8 @@ VKAPI_ATTR VkResult VKAPI_CALL FreeDescriptorSets(VkDevice device, VkDescriptorP
     }
 
     for (uint32_t i = 0; i < descriptorSetCount; i++) {
-        DestroyObject(device, pDescriptorSets[i], kVulkanObjectTypeDescriptorSet, nullptr, kVUIDUndefined, kVUIDUndefined);
+        ValidateDestroyObject(device, pDescriptorSets[i], kVulkanObjectTypeDescriptorSet, nullptr, kVUIDUndefined, kVUIDUndefined);
+        RecordDestroyObject(device, pDescriptorSets[i], kVulkanObjectTypeDescriptorSet);
     }
 
     lock.unlock();
@@ -1213,12 +1224,14 @@ VKAPI_ATTR void VKAPI_CALL DestroyDescriptorPool(VkDevice device, VkDescriptorPo
         ObjTrackState *pNode = (*itr).second;
         auto del_itr = itr++;
         if (pNode->parent_object == HandleToUint64(descriptorPool)) {
-            DestroyObject(device, (VkDescriptorSet)((*del_itr).first), kVulkanObjectTypeDescriptorSet, nullptr, kVUIDUndefined,
-                          kVUIDUndefined);
+            ValidateDestroyObject(device, (VkDescriptorSet)((*del_itr).first), kVulkanObjectTypeDescriptorSet, nullptr,
+                                  kVUIDUndefined, kVUIDUndefined);
+            RecordDestroyObject(device, (VkDescriptorSet)((*del_itr).first), kVulkanObjectTypeDescriptorSet);
         }
     }
-    DestroyObject(device, descriptorPool, kVulkanObjectTypeDescriptorPool, pAllocator,
-                  "VUID-vkDestroyDescriptorPool-descriptorPool-00304", "VUID-vkDestroyDescriptorPool-descriptorPool-00305");
+    ValidateDestroyObject(device, descriptorPool, kVulkanObjectTypeDescriptorPool, pAllocator,
+                          "VUID-vkDestroyDescriptorPool-descriptorPool-00304", "VUID-vkDestroyDescriptorPool-descriptorPool-00305");
+    RecordDestroyObject(device, descriptorPool, kVulkanObjectTypeDescriptorPool);
     lock.unlock();
     device_data->device_dispatch_table.DestroyDescriptorPool(device, descriptorPool, pAllocator);
 }
@@ -1245,12 +1258,14 @@ VKAPI_ATTR void VKAPI_CALL DestroyCommandPool(VkDevice device, VkCommandPool com
         del_itr = itr++;
         if (pNode->parent_object == HandleToUint64(commandPool)) {
             skip |= ValidateCommandBuffer(device, commandPool, reinterpret_cast<VkCommandBuffer>((*del_itr).first));
-            DestroyObject(device, reinterpret_cast<VkCommandBuffer>((*del_itr).first), kVulkanObjectTypeCommandBuffer, nullptr,
-                          kVUIDUndefined, kVUIDUndefined);
+            ValidateDestroyObject(device, reinterpret_cast<VkCommandBuffer>((*del_itr).first), kVulkanObjectTypeCommandBuffer,
+                                  nullptr, kVUIDUndefined, kVUIDUndefined);
+            RecordDestroyObject(device, reinterpret_cast<VkCommandBuffer>((*del_itr).first), kVulkanObjectTypeCommandBuffer);
         }
     }
-    DestroyObject(device, commandPool, kVulkanObjectTypeCommandPool, pAllocator, "VUID-vkDestroyCommandPool-commandPool-00042",
-                  "VUID-vkDestroyCommandPool-commandPool-00043");
+    ValidateDestroyObject(device, commandPool, kVulkanObjectTypeCommandPool, pAllocator,
+                          "VUID-vkDestroyCommandPool-commandPool-00042", "VUID-vkDestroyCommandPool-commandPool-00043");
+    RecordDestroyObject(device, commandPool, kVulkanObjectTypeCommandPool);
     lock.unlock();
     device_data->device_dispatch_table.DestroyCommandPool(device, commandPool, pAllocator);
 }
