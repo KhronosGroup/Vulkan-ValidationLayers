@@ -302,14 +302,17 @@ void CreateSwapchainImageObject(VkDevice dispatchable_object, VkImage swapchain_
     device_data->swapchainImageMap[HandleToUint64(swapchain_image)] = pNewObjNode;
 }
 
-void DeviceReportUndestroyedObjects(VkDevice device, VulkanObjectType object_type, const std::string &error_code) {
+bool DeviceReportUndestroyedObjects(VkDevice device, VulkanObjectType object_type, const std::string &error_code) {
+    bool skip = false;
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     for (const auto &item : device_data->object_map[object_type]) {
         const ObjTrackState *object_info = item.second;
-        log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, get_debug_report_enum[object_type], object_info->handle,
-                error_code, "OBJ ERROR : For device 0x%" PRIxLEAST64 ", %s object 0x%" PRIxLEAST64 " has not been destroyed.",
-                HandleToUint64(device), object_string[object_type], object_info->handle);
+        skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, get_debug_report_enum[object_type],
+                        object_info->handle, error_code,
+                        "OBJ ERROR : For device 0x%" PRIxLEAST64 ", %s object 0x%" PRIxLEAST64 " has not been destroyed.",
+                        HandleToUint64(device), object_string[object_type], object_info->handle);
     }
+    return skip;
 }
 
 void DeviceDestroyUndestroyedObjects(VkDevice device, VulkanObjectType object_type) {
