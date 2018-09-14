@@ -243,24 +243,32 @@ static bool ValidateDescriptorWrite(DispObj disp, VkWriteDescriptorSet const *de
     return skip;
 }
 
+static bool PreCallValidateCmdPushDescriptorSetKHR(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
+                                                   VkPipelineLayout layout, uint32_t set, uint32_t descriptorWriteCount,
+                                                   const VkWriteDescriptorSet *pDescriptorWrites) {
+    bool skip = false;
+    skip |= ValidateObject(commandBuffer, commandBuffer, kVulkanObjectTypeCommandBuffer, false,
+                           "VUID-vkCmdPushDescriptorSetKHR-commandBuffer-parameter", "VUID-vkCmdPushDescriptorSetKHR-commonparent");
+    skip |= ValidateObject(commandBuffer, layout, kVulkanObjectTypePipelineLayout, false,
+                           "VUID-vkCmdPushDescriptorSetKHR-layout-parameter", "VUID-vkCmdPushDescriptorSetKHR-commonparent");
+    if (pDescriptorWrites) {
+        for (uint32_t index0 = 0; index0 < descriptorWriteCount; ++index0) {
+            skip |= ValidateDescriptorWrite(commandBuffer, &pDescriptorWrites[index0], true);
+        }
+    }
+    return skip;
+}
+
 VKAPI_ATTR void VKAPI_CALL CmdPushDescriptorSetKHR(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
                                                    VkPipelineLayout layout, uint32_t set, uint32_t descriptorWriteCount,
                                                    const VkWriteDescriptorSet *pDescriptorWrites) {
     bool skip = false;
     {
         std::lock_guard<std::mutex> lock(global_lock);
-        skip |=
-            ValidateObject(commandBuffer, commandBuffer, kVulkanObjectTypeCommandBuffer, false,
-                           "VUID-vkCmdPushDescriptorSetKHR-commandBuffer-parameter", "VUID-vkCmdPushDescriptorSetKHR-commonparent");
-        skip |= ValidateObject(commandBuffer, layout, kVulkanObjectTypePipelineLayout, false,
-                               "VUID-vkCmdPushDescriptorSetKHR-layout-parameter", "VUID-vkCmdPushDescriptorSetKHR-commonparent");
-        if (pDescriptorWrites) {
-            for (uint32_t index0 = 0; index0 < descriptorWriteCount; ++index0) {
-                skip |= ValidateDescriptorWrite(commandBuffer, &pDescriptorWrites[index0], true);
-            }
-        }
+        skip |= PreCallValidateCmdPushDescriptorSetKHR(commandBuffer, pipelineBindPoint, layout, set, descriptorWriteCount,
+                                                       pDescriptorWrites);
+        if (skip) return;
     }
-    if (skip) return;
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     device_data->device_dispatch_table.CmdPushDescriptorSetKHR(commandBuffer, pipelineBindPoint, layout, set, descriptorWriteCount,
                                                                pDescriptorWrites);
@@ -325,9 +333,40 @@ void DeviceDestroyUndestroyedObjects(VkDevice device, VulkanObjectType object_ty
     }
 }
 
-VKAPI_ATTR void VKAPI_CALL DestroyInstance(VkInstance instance, const VkAllocationCallbacks *pAllocator) {
-    std::unique_lock<std::mutex> lock(global_lock);
+static bool PreCallValidateDestroyInstance(VkInstance instance, const VkAllocationCallbacks *pAllocator) {
+    dispatch_key key = get_dispatch_key(instance);
+    layer_data *instance_data = GetLayerDataPtr(key, layer_data_map);
+    bool skip = false;
 
+    // We validate here for coverage, though we'd not have made it this for with a bad instance.
+    skip |= ValidateObject(instance, instance, kVulkanObjectTypeInstance, true, "VUID-vkDestroyInstance-instance-parameter",
+                           kVUIDUndefined);
+
+    // Destroy child devices
+    for (const auto &iit : instance_data->object_map[kVulkanObjectTypeDevice]) {
+        ObjTrackState *pNode = iit.second;
+
+        VkDevice device = reinterpret_cast<VkDevice>(pNode->handle);
+        VkDebugReportObjectTypeEXT debug_object_type = get_debug_report_enum[pNode->object_type];
+
+        skip |= log_msg(instance_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, debug_object_type, pNode->handle,
+                        kVUID_ObjectTracker_ObjectLeak, "OBJ ERROR : %s object 0x%" PRIxLEAST64 " has not been destroyed.",
+                        string_VkDebugReportObjectTypeEXT(debug_object_type), pNode->handle);
+
+        // Report any remaining objects in LL
+        skip |= ReportUndestroyedObjects(device, "VUID-vkDestroyInstance-instance-00629");
+
+        skip |= ValidateDestroyObject(instance, device, kVulkanObjectTypeDevice, pAllocator,
+                                      "VUID-vkDestroyInstance-instance-00630", "VUID-vkDestroyInstance-instance-00631");
+    }
+
+    ValidateDestroyObject(instance, instance, kVulkanObjectTypeInstance, pAllocator, "VUID-vkDestroyInstance-instance-00630",
+                          "VUID-vkDestroyInstance-instance-00631");
+
+    return skip;
+}
+
+static void PreCallRecordDestroyInstance(VkInstance instance, const VkAllocationCallbacks *pAllocator) {
     dispatch_key key = get_dispatch_key(instance);
     layer_data *instance_data = GetLayerDataPtr(key, layer_data_map);
 
@@ -341,17 +380,11 @@ VKAPI_ATTR void VKAPI_CALL DestroyInstance(VkInstance instance, const VkAllocati
                                           instance_data->tmp_report_create_infos, instance_data->tmp_report_callbacks);
     }
 
-    // TODO: The instance handle can not be validated here. The loader will likely have to validate it.
-    ValidateObject(instance, instance, kVulkanObjectTypeInstance, true, "VUID-vkDestroyInstance-instance-parameter",
-                   kVUIDUndefined);
-
     // Destroy physical devices
     for (auto iit = instance_data->object_map[kVulkanObjectTypePhysicalDevice].begin();
          iit != instance_data->object_map[kVulkanObjectTypePhysicalDevice].end();) {
         ObjTrackState *pNode = iit->second;
         VkPhysicalDevice physical_device = reinterpret_cast<VkPhysicalDevice>(pNode->handle);
-
-        ValidateDestroyObject(instance, physical_device, kVulkanObjectTypePhysicalDevice, nullptr, kVUIDUndefined, kVUIDUndefined);
         RecordDestroyObject(instance, physical_device, kVulkanObjectTypePhysicalDevice);
         iit = instance_data->object_map[kVulkanObjectTypePhysicalDevice].begin();
     }
@@ -360,26 +393,19 @@ VKAPI_ATTR void VKAPI_CALL DestroyInstance(VkInstance instance, const VkAllocati
     for (auto iit = instance_data->object_map[kVulkanObjectTypeDevice].begin();
          iit != instance_data->object_map[kVulkanObjectTypeDevice].end();) {
         ObjTrackState *pNode = iit->second;
-
         VkDevice device = reinterpret_cast<VkDevice>(pNode->handle);
-        VkDebugReportObjectTypeEXT debug_object_type = get_debug_report_enum[pNode->object_type];
-
-        log_msg(instance_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, debug_object_type, pNode->handle,
-                kVUID_ObjectTracker_ObjectLeak, "OBJ ERROR : %s object 0x%" PRIxLEAST64 " has not been destroyed.",
-                string_VkDebugReportObjectTypeEXT(debug_object_type), pNode->handle);
-
-        // Report any remaining objects in LL
-        ReportUndestroyedObjects(device, "VUID-vkDestroyInstance-instance-00629");
         DestroyUndestroyedObjects(device);
 
-        ValidateDestroyObject(instance, device, kVulkanObjectTypeDevice, pAllocator, "VUID-vkDestroyInstance-instance-00630",
-                              "VUID-vkDestroyInstance-instance-00631");
         RecordDestroyObject(instance, device, kVulkanObjectTypeDevice);
         iit = instance_data->object_map[kVulkanObjectTypeDevice].begin();
     }
 
     instance_data->object_map[kVulkanObjectTypeDevice].clear();
-    instance_data->instance_dispatch_table.DestroyInstance(instance, pAllocator);
+}
+
+static void PostCallRecordDestroyInstance(VkInstance instance, const VkAllocationCallbacks *pAllocator) {
+    dispatch_key key = get_dispatch_key(instance);
+    layer_data *instance_data = GetLayerDataPtr(key, layer_data_map);
 
     // Disable and cleanup the temporary callback(s):
     layer_disable_tmp_debug_messengers(instance_data->report_data, instance_data->num_tmp_debug_messengers,
@@ -407,14 +433,26 @@ VKAPI_ATTR void VKAPI_CALL DestroyInstance(VkInstance instance, const VkAllocati
         instance_data->logging_callback.pop_back();
     }
 
-    ValidateDestroyObject(instance, instance, kVulkanObjectTypeInstance, pAllocator, "VUID-vkDestroyInstance-instance-00630",
-                          "VUID-vkDestroyInstance-instance-00631");
     RecordDestroyObject(instance, instance, kVulkanObjectTypeInstance);
 
     layer_debug_utils_destroy_instance(instance_data->report_data);
     FreeLayerDataPtr(key, layer_data_map);
+}
 
-    lock.unlock();
+VKAPI_ATTR void VKAPI_CALL DestroyInstance(VkInstance instance, const VkAllocationCallbacks *pAllocator) {
+    dispatch_key key = get_dispatch_key(instance);
+    layer_data *instance_data = GetLayerDataPtr(key, layer_data_map);
+    {
+        std::lock_guard<std::mutex> lock(global_lock);
+        bool skip = PreCallValidateDestroyInstance(instance, pAllocator);
+        if (skip) return;
+        PreCallRecordDestroyInstance(instance, pAllocator);
+    }
+    instance_data->instance_dispatch_table.DestroyInstance(instance, pAllocator);
+    {
+        std::lock_guard<std::mutex> lock(global_lock);
+        PostCallRecordDestroyInstance(instance, pAllocator);
+    }
 }
 
 VKAPI_ATTR void VKAPI_CALL DestroyDevice(VkDevice device, const VkAllocationCallbacks *pAllocator) {
