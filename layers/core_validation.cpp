@@ -2948,7 +2948,8 @@ static bool PreCallValidateQueueSubmit(layer_data *dev_data, VkQueue queue, uint
                     skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SEMAPHORE_EXT,
                                     HandleToUint64(semaphore), kVUID_Core_DrawState_QueueForwardProgress,
                                     "Queue 0x%" PRIx64 " is signaling semaphore 0x%" PRIx64
-                                    " that has already been signaled but not waited on by queue 0x%" PRIx64 ".",
+                                    " that was previously signaled by queue 0x%" PRIx64
+                                    " but has not since been waited on by any queue.",
                                     HandleToUint64(queue), HandleToUint64(semaphore), HandleToUint64(pSemaphore->signaler.first));
                 } else {
                     unsignaled_semaphores.erase(semaphore);
@@ -10579,7 +10580,8 @@ static bool PreCallValidateQueueBindSparse(layer_data *dev_data, VkQueue queue, 
                     skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SEMAPHORE_EXT,
                                     HandleToUint64(semaphore), kVUID_Core_DrawState_QueueForwardProgress,
                                     "Queue 0x%" PRIx64 " is signaling semaphore 0x%" PRIx64
-                                    " that has already been signaled but not waited on by queue 0x%" PRIx64 ".",
+                                    " that was previously signaled by queue 0x%" PRIx64
+                                    " but has not since been waited on by any queue.",
                                     HandleToUint64(queue), HandleToUint64(semaphore), HandleToUint64(pSemaphore->signaler.first));
                 } else {
                     unsignaled_semaphores.erase(semaphore);
