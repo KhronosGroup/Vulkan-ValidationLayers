@@ -110,6 +110,10 @@
           "repo_name" : "Vulkan-Loader"
         },
         {
+          "var_name" : "GLSLANG_INSTALL_DIR",
+          "repo_name" : "glslang"
+        },
+        {
           "var_name" : "MOLTENVK_REPO_ROOT",
           "repo_name" : "MoltenVK"
         }
