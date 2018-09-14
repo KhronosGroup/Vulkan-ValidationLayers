@@ -17089,7 +17089,7 @@ TEST_F(VkLayerTest, QueueForwardProgressFenceWait) {
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    const char *queue_forward_progress_message = " that has already been signaled but not waited on by queue 0x";
+    const char *queue_forward_progress_message = " that was previously signaled by queue 0x";
     const char *invalid_fence_wait_message = " which has not been submitted on a Queue or during acquire next image.";
 
     VkCommandBufferObj cb1(m_device, m_commandPool);
