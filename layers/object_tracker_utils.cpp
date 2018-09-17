@@ -1281,8 +1281,8 @@ static bool PreCallValidateGetPhysicalDeviceQueueFamilyProperties(VkPhysicalDevi
     return skip;
 }
 static void PostCallRecordGetPhysicalDeviceQueueFamilyProperties(VkPhysicalDevice physicalDevice,
-                                                                  uint32_t *pQueueFamilyPropertyCount,
-                                                                  VkQueueFamilyProperties *pQueueFamilyProperties) {
+                                                                 uint32_t *pQueueFamilyPropertyCount,
+                                                                 VkQueueFamilyProperties *pQueueFamilyProperties) {
     if (pQueueFamilyProperties != NULL) {
         auto instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), layer_data_map);
         if (instance_data->queue_family_properties.size() < *pQueueFamilyPropertyCount) {
@@ -1542,7 +1542,7 @@ VKAPI_ATTR void VKAPI_CALL DestroySwapchainKHR(VkDevice device, VkSwapchainKHR s
 }
 
 static bool PreCallValidateFreeDescriptorSets(VkDevice device, VkDescriptorPool descriptorPool, uint32_t descriptorSetCount,
-    const VkDescriptorSet *pDescriptorSets) {
+                                              const VkDescriptorSet *pDescriptorSets) {
     bool skip = false;
     skip |= ValidateObject(device, device, kVulkanObjectTypeDevice, false, "VUID-vkFreeDescriptorSets-device-parameter",
                            kVUIDUndefined);
@@ -1551,13 +1551,14 @@ static bool PreCallValidateFreeDescriptorSets(VkDevice device, VkDescriptorPool 
     for (uint32_t i = 0; i < descriptorSetCount; i++) {
         if (pDescriptorSets[i] != VK_NULL_HANDLE) {
             skip |= ValidateDescriptorSet(device, descriptorPool, pDescriptorSets[i]);
-            skip |= ValidateDestroyObject(device, pDescriptorSets[i], kVulkanObjectTypeDescriptorSet, nullptr, kVUIDUndefined, kVUIDUndefined);
+            skip |= ValidateDestroyObject(device, pDescriptorSets[i], kVulkanObjectTypeDescriptorSet, nullptr, kVUIDUndefined,
+                                          kVUIDUndefined);
         }
     }
     return skip;
 }
 static void PreCallRecordFreeDescriptorSets(VkDevice device, VkDescriptorPool descriptorPool, uint32_t descriptorSetCount,
-    const VkDescriptorSet *pDescriptorSets) {
+                                            const VkDescriptorSet *pDescriptorSets) {
     for (uint32_t i = 0; i < descriptorSetCount; i++) {
         RecordDestroyObject(device, pDescriptorSets[i], kVulkanObjectTypeDescriptorSet);
     }
@@ -1576,55 +1577,63 @@ VKAPI_ATTR VkResult VKAPI_CALL FreeDescriptorSets(VkDevice device, VkDescriptorP
     return device_data->device_dispatch_table.FreeDescriptorSets(device, descriptorPool, descriptorSetCount, pDescriptorSets);
 }
 
-VKAPI_ATTR void VKAPI_CALL DestroyDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool,
+static bool PreCallValidateDestroyDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool,
                                                  const VkAllocationCallbacks *pAllocator) {
-    bool skip = VK_FALSE;
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    std::unique_lock<std::mutex> lock(global_lock);
+    bool skip = false;
     skip |= ValidateObject(device, device, kVulkanObjectTypeDevice, false, "VUID-vkDestroyDescriptorPool-device-parameter",
                            kVUIDUndefined);
     skip |= ValidateObject(device, descriptorPool, kVulkanObjectTypeDescriptorPool, true,
                            "VUID-vkDestroyDescriptorPool-descriptorPool-parameter",
                            "VUID-vkDestroyDescriptorPool-descriptorPool-parent");
-    lock.unlock();
-    if (skip) {
-        return;
-    }
-    // A DescriptorPool's descriptor sets are implicitly deleted when the pool is deleted.
-    // Remove this pool's descriptor sets from our descriptorSet map.
-    lock.lock();
     std::unordered_map<uint64_t, ObjTrackState *>::iterator itr = device_data->object_map[kVulkanObjectTypeDescriptorSet].begin();
     while (itr != device_data->object_map[kVulkanObjectTypeDescriptorSet].end()) {
         ObjTrackState *pNode = (*itr).second;
         auto del_itr = itr++;
         if (pNode->parent_object == HandleToUint64(descriptorPool)) {
-            ValidateDestroyObject(device, (VkDescriptorSet)((*del_itr).first), kVulkanObjectTypeDescriptorSet, nullptr,
-                                  kVUIDUndefined, kVUIDUndefined);
+            skip |= ValidateDestroyObject(device, (VkDescriptorSet)((*del_itr).first), kVulkanObjectTypeDescriptorSet, nullptr,
+                                          kVUIDUndefined, kVUIDUndefined);
+        }
+    }
+    skip |= ValidateDestroyObject(device, descriptorPool, kVulkanObjectTypeDescriptorPool, pAllocator,
+                                  "VUID-vkDestroyDescriptorPool-descriptorPool-00304",
+                                  "VUID-vkDestroyDescriptorPool-descriptorPool-00305");
+    return skip;
+}
+static void PreCallRecordDestroyDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool,
+                                               const VkAllocationCallbacks *pAllocator) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    std::unordered_map<uint64_t, ObjTrackState *>::iterator itr = device_data->object_map[kVulkanObjectTypeDescriptorSet].begin();
+    while (itr != device_data->object_map[kVulkanObjectTypeDescriptorSet].end()) {
+        ObjTrackState *pNode = (*itr).second;
+        auto del_itr = itr++;
+        if (pNode->parent_object == HandleToUint64(descriptorPool)) {
             RecordDestroyObject(device, (VkDescriptorSet)((*del_itr).first), kVulkanObjectTypeDescriptorSet);
         }
     }
-    ValidateDestroyObject(device, descriptorPool, kVulkanObjectTypeDescriptorPool, pAllocator,
-                          "VUID-vkDestroyDescriptorPool-descriptorPool-00304", "VUID-vkDestroyDescriptorPool-descriptorPool-00305");
     RecordDestroyObject(device, descriptorPool, kVulkanObjectTypeDescriptorPool);
-    lock.unlock();
+}
+
+VKAPI_ATTR void VKAPI_CALL DestroyDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool,
+                                                 const VkAllocationCallbacks *pAllocator) {
+    bool skip = false;
+    {
+        std::unique_lock<std::mutex> lock(global_lock);
+        skip = PreCallValidateDestroyDescriptorPool(device, descriptorPool, pAllocator);
+        if (skip) return;
+        PreCallRecordDestroyDescriptorPool(device, descriptorPool, pAllocator);
+    }
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     device_data->device_dispatch_table.DestroyDescriptorPool(device, descriptorPool, pAllocator);
 }
 
-VKAPI_ATTR void VKAPI_CALL DestroyCommandPool(VkDevice device, VkCommandPool commandPool, const VkAllocationCallbacks *pAllocator) {
+static bool PreCallValidateDestroyCommandPool(VkDevice device, VkCommandPool commandPool, const VkAllocationCallbacks *pAllocator) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
-    std::unique_lock<std::mutex> lock(global_lock);
     skip |= ValidateObject(device, device, kVulkanObjectTypeDevice, false, "VUID-vkDestroyCommandPool-device-parameter",
                            kVUIDUndefined);
     skip |= ValidateObject(device, commandPool, kVulkanObjectTypeCommandPool, true,
                            "VUID-vkDestroyCommandPool-commandPool-parameter", "VUID-vkDestroyCommandPool-commandPool-parent");
-    lock.unlock();
-    if (skip) {
-        return;
-    }
-    lock.lock();
-    // A CommandPool's command buffers are implicitly deleted when the pool is deleted.
-    // Remove this pool's cmdBuffers from our cmd buffer map.
     auto itr = device_data->object_map[kVulkanObjectTypeCommandBuffer].begin();
     auto del_itr = itr;
     while (itr != device_data->object_map[kVulkanObjectTypeCommandBuffer].end()) {
@@ -1632,68 +1641,111 @@ VKAPI_ATTR void VKAPI_CALL DestroyCommandPool(VkDevice device, VkCommandPool com
         del_itr = itr++;
         if (pNode->parent_object == HandleToUint64(commandPool)) {
             skip |= ValidateCommandBuffer(device, commandPool, reinterpret_cast<VkCommandBuffer>((*del_itr).first));
-            ValidateDestroyObject(device, reinterpret_cast<VkCommandBuffer>((*del_itr).first), kVulkanObjectTypeCommandBuffer,
-                                  nullptr, kVUIDUndefined, kVUIDUndefined);
+            skip |= ValidateDestroyObject(device, reinterpret_cast<VkCommandBuffer>((*del_itr).first),
+                                          kVulkanObjectTypeCommandBuffer, nullptr, kVUIDUndefined, kVUIDUndefined);
+        }
+    }
+    skip |= ValidateDestroyObject(device, commandPool, kVulkanObjectTypeCommandPool, pAllocator,
+                                  "VUID-vkDestroyCommandPool-commandPool-00042", "VUID-vkDestroyCommandPool-commandPool-00043");
+    return skip;
+}
+
+static void PreCallRecordDestroyCommandPool(VkDevice device, VkCommandPool commandPool, const VkAllocationCallbacks *pAllocator) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    auto itr = device_data->object_map[kVulkanObjectTypeCommandBuffer].begin();
+    auto del_itr = itr;
+    // A CommandPool's cmd buffers are implicitly deleted when pool is deleted. Remove this pool's cmdBuffers from cmd buffer map.
+    while (itr != device_data->object_map[kVulkanObjectTypeCommandBuffer].end()) {
+        ObjTrackState *pNode = (*itr).second;
+        del_itr = itr++;
+        if (pNode->parent_object == HandleToUint64(commandPool)) {
             RecordDestroyObject(device, reinterpret_cast<VkCommandBuffer>((*del_itr).first), kVulkanObjectTypeCommandBuffer);
         }
     }
-    ValidateDestroyObject(device, commandPool, kVulkanObjectTypeCommandPool, pAllocator,
-                          "VUID-vkDestroyCommandPool-commandPool-00042", "VUID-vkDestroyCommandPool-commandPool-00043");
     RecordDestroyObject(device, commandPool, kVulkanObjectTypeCommandPool);
-    lock.unlock();
+}
+
+VKAPI_ATTR void VKAPI_CALL DestroyCommandPool(VkDevice device, VkCommandPool commandPool, const VkAllocationCallbacks *pAllocator) {
+    bool skip = false;
+    {
+        std::unique_lock<std::mutex> lock(global_lock);
+        skip = PreCallValidateDestroyCommandPool(device, commandPool, pAllocator);
+        if (skip) return;
+        PreCallRecordDestroyCommandPool(device, commandPool, pAllocator);
+    }
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     device_data->device_dispatch_table.DestroyCommandPool(device, commandPool, pAllocator);
 }
 
-// Note: This is the core version of this routine.  The extension version is below.
+static bool PreCallValidateGetPhysicalDeviceQueueFamilyProperties2(VkPhysicalDevice physicalDevice,
+                                                                   uint32_t *pQueueFamilyPropertyCount,
+                                                                   VkQueueFamilyProperties2KHR *pQueueFamilyProperties) {
+    bool skip = ValidateObject(physicalDevice, physicalDevice, kVulkanObjectTypePhysicalDevice, false,
+                               "VUID-vkGetPhysicalDeviceQueueFamilyProperties2-physicalDevice-parameter", kVUIDUndefined);
+    return skip;
+}
+
+static void PostCallRecordGetPhysicalDeviceQueueFamilyProperties2(VkPhysicalDevice physicalDevice,
+                                                                  uint32_t *pQueueFamilyPropertyCount,
+                                                                  VkQueueFamilyProperties2KHR *pQueueFamilyProperties) {
+    layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), layer_data_map);
+    if (pQueueFamilyProperties != NULL) {
+        if (instance_data->queue_family_properties.size() < *pQueueFamilyPropertyCount) {
+            instance_data->queue_family_properties.resize(*pQueueFamilyPropertyCount);
+        }
+        for (uint32_t i = 0; i < *pQueueFamilyPropertyCount; i++) {
+            instance_data->queue_family_properties[i] = pQueueFamilyProperties[i].queueFamilyProperties;
+        }
+    }
+}
+
 VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceQueueFamilyProperties2(VkPhysicalDevice physicalDevice,
                                                                    uint32_t *pQueueFamilyPropertyCount,
                                                                    VkQueueFamilyProperties2KHR *pQueueFamilyProperties) {
     bool skip = false;
     {
         std::lock_guard<std::mutex> lock(global_lock);
-        skip |=
-            ValidateObject(physicalDevice, physicalDevice, kVulkanObjectTypePhysicalDevice, false, kVUIDUndefined, kVUIDUndefined);
+        skip |= PreCallValidateGetPhysicalDeviceQueueFamilyProperties2(physicalDevice, pQueueFamilyPropertyCount,
+                                                                       pQueueFamilyProperties);
     }
-    if (skip) {
-        return;
-    }
+    if (skip) return;
     layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), layer_data_map);
     instance_data->instance_dispatch_table.GetPhysicalDeviceQueueFamilyProperties2(physicalDevice, pQueueFamilyPropertyCount,
                                                                                    pQueueFamilyProperties);
     std::lock_guard<std::mutex> lock(global_lock);
-    if (pQueueFamilyProperties != NULL) {
-        if (instance_data->queue_family_properties.size() < *pQueueFamilyPropertyCount) {
-            instance_data->queue_family_properties.resize(*pQueueFamilyPropertyCount);
-        }
-        for (uint32_t i = 0; i < *pQueueFamilyPropertyCount; i++) {
-            instance_data->queue_family_properties[i] = pQueueFamilyProperties[i].queueFamilyProperties;
-        }
-    }
+    PostCallRecordGetPhysicalDeviceQueueFamilyProperties2(physicalDevice, pQueueFamilyPropertyCount, pQueueFamilyProperties);
 }
 
-// Note: This is the extension version of this routine.  The core version is above.
 VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceQueueFamilyProperties2KHR(VkPhysicalDevice physicalDevice,
                                                                       uint32_t *pQueueFamilyPropertyCount,
                                                                       VkQueueFamilyProperties2KHR *pQueueFamilyProperties) {
+
     bool skip = false;
     {
         std::lock_guard<std::mutex> lock(global_lock);
-        skip |=
-            ValidateObject(physicalDevice, physicalDevice, kVulkanObjectTypePhysicalDevice, false, kVUIDUndefined, kVUIDUndefined);
+        skip |= PreCallValidateGetPhysicalDeviceQueueFamilyProperties2(physicalDevice, pQueueFamilyPropertyCount,
+            pQueueFamilyProperties);
     }
-    if (skip) {
-        return;
-    }
+    if (skip) return;
     layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), layer_data_map);
-    instance_data->instance_dispatch_table.GetPhysicalDeviceQueueFamilyProperties2KHR(physicalDevice, pQueueFamilyPropertyCount,
-                                                                                      pQueueFamilyProperties);
+    instance_data->instance_dispatch_table.GetPhysicalDeviceQueueFamilyProperties2(physicalDevice, pQueueFamilyPropertyCount,
+        pQueueFamilyProperties);
     std::lock_guard<std::mutex> lock(global_lock);
-    if (pQueueFamilyProperties != NULL) {
-        if (instance_data->queue_family_properties.size() < *pQueueFamilyPropertyCount) {
-            instance_data->queue_family_properties.resize(*pQueueFamilyPropertyCount);
-        }
-        for (uint32_t i = 0; i < *pQueueFamilyPropertyCount; i++) {
-            instance_data->queue_family_properties[i] = pQueueFamilyProperties[i].queueFamilyProperties;
+    PostCallRecordGetPhysicalDeviceQueueFamilyProperties2(physicalDevice, pQueueFamilyPropertyCount, pQueueFamilyProperties);
+}
+
+static bool PreCallValidateGetPhysicalDeviceDisplayPropertiesKHR(VkPhysicalDevice physicalDevice, uint32_t *pPropertyCount,
+                                                                 VkDisplayPropertiesKHR *pProperties) {
+    bool skip = ValidateObject(physicalDevice, physicalDevice, kVulkanObjectTypePhysicalDevice, false,
+                               "VUID-vkGetPhysicalDeviceDisplayPropertiesKHR-physicalDevice-parameter", kVUIDUndefined);
+    return skip;
+}
+
+static void PostCallRecordGetPhysicalDeviceDisplayPropertiesKHR(VkPhysicalDevice physicalDevice, uint32_t *pPropertyCount,
+                                                                VkDisplayPropertiesKHR *pProperties) {
+    if (pProperties) {
+        for (uint32_t i = 0; i < *pPropertyCount; ++i) {
+            CreateObject(physicalDevice, pProperties[i].display, kVulkanObjectTypeDisplayKHR, nullptr);
         }
     }
 }
@@ -1701,83 +1753,91 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceQueueFamilyProperties2KHR(VkPhysical
 VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceDisplayPropertiesKHR(VkPhysicalDevice physicalDevice, uint32_t *pPropertyCount,
                                                                      VkDisplayPropertiesKHR *pProperties) {
     bool skip = false;
-    std::unique_lock<std::mutex> lock(global_lock);
-    skip |= ValidateObject(physicalDevice, physicalDevice, kVulkanObjectTypePhysicalDevice, false,
-                           "VUID-vkGetPhysicalDeviceDisplayPropertiesKHR-physicalDevice-parameter", kVUIDUndefined);
-    lock.unlock();
-
-    if (skip) {
-        return VK_ERROR_VALIDATION_FAILED_EXT;
+    {
+        std::lock_guard<std::mutex> lock(global_lock);
+        skip |= PreCallValidateGetPhysicalDeviceDisplayPropertiesKHR(physicalDevice, pPropertyCount, pProperties);
     }
+    if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+
     layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), layer_data_map);
     VkResult result =
         instance_data->instance_dispatch_table.GetPhysicalDeviceDisplayPropertiesKHR(physicalDevice, pPropertyCount, pProperties);
 
-    lock.lock();
     if (result == VK_SUCCESS) {
-        if (pProperties) {
-            for (uint32_t i = 0; i < *pPropertyCount; ++i) {
-                CreateObject(physicalDevice, pProperties[i].display, kVulkanObjectTypeDisplayKHR, nullptr);
-            }
+        std::lock_guard<std::mutex> lock(global_lock);
+        PostCallRecordGetPhysicalDeviceDisplayPropertiesKHR(physicalDevice, pPropertyCount, pProperties);
+    }
+    return result;
+}
+
+static bool PreCallValidateGetDisplayModePropertiesKHR(VkPhysicalDevice physicalDevice, VkDisplayKHR display,
+                                                       uint32_t *pPropertyCount, VkDisplayModePropertiesKHR *pProperties) {
+    bool skip = false;
+    skip |= ValidateObject(physicalDevice, physicalDevice, kVulkanObjectTypePhysicalDevice, false,
+                           "VUID-vkGetDisplayModePropertiesKHR-physicalDevice-parameter", kVUIDUndefined);
+    skip |= ValidateObject(physicalDevice, display, kVulkanObjectTypeDisplayKHR, false,
+                           "VUID-vkGetDisplayModePropertiesKHR-display-parameter", kVUIDUndefined);
+
+    return skip;
+}
+
+static void PostCallRecordGetDisplayModePropertiesKHR(VkPhysicalDevice physicalDevice, VkDisplayKHR display,
+                                                      uint32_t *pPropertyCount, VkDisplayModePropertiesKHR *pProperties) {
+    if (pProperties) {
+        for (uint32_t i = 0; i < *pPropertyCount; ++i) {
+            CreateObject(physicalDevice, pProperties[i].displayMode, kVulkanObjectTypeDisplayModeKHR, nullptr);
         }
     }
-    lock.unlock();
-
-    return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetDisplayModePropertiesKHR(VkPhysicalDevice physicalDevice, VkDisplayKHR display,
                                                            uint32_t *pPropertyCount, VkDisplayModePropertiesKHR *pProperties) {
     bool skip = false;
-    std::unique_lock<std::mutex> lock(global_lock);
-    skip |= ValidateObject(physicalDevice, physicalDevice, kVulkanObjectTypePhysicalDevice, false,
-                           "VUID-vkGetDisplayModePropertiesKHR-physicalDevice-parameter", kVUIDUndefined);
-    skip |= ValidateObject(physicalDevice, display, kVulkanObjectTypeDisplayKHR, false,
-                           "VUID-vkGetDisplayModePropertiesKHR-display-parameter", kVUIDUndefined);
-    lock.unlock();
-
-    if (skip) {
-        return VK_ERROR_VALIDATION_FAILED_EXT;
+    {
+        std::unique_lock<std::mutex> lock(global_lock);
+        skip |= PreCallValidateGetDisplayModePropertiesKHR(physicalDevice, display, pPropertyCount, pProperties);
     }
+    if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+
     layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), layer_data_map);
     VkResult result =
         instance_data->instance_dispatch_table.GetDisplayModePropertiesKHR(physicalDevice, display, pPropertyCount, pProperties);
 
-    lock.lock();
     if (result == VK_SUCCESS) {
         if (pProperties) {
-            for (uint32_t i = 0; i < *pPropertyCount; ++i) {
-                CreateObject(physicalDevice, pProperties[i].displayMode, kVulkanObjectTypeDisplayModeKHR, nullptr);
-            }
+            std::unique_lock<std::mutex> lock(global_lock);
+            PostCallRecordGetDisplayModePropertiesKHR(physicalDevice, display, pPropertyCount, pProperties);
         }
     }
-    lock.unlock();
-
     return result;
+}
+
+static bool PreCallValidateDebugMarkerSetObjectNameEXT(VkDevice device, const VkDebugMarkerObjectNameInfoEXT *pNameInfo) {
+    bool skip = ValidateObject(device, device, kVulkanObjectTypeDevice, false,
+                               "VUID-vkDebugMarkerSetObjectNameEXT-device-parameter", kVUIDUndefined);
+    return skip;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL DebugMarkerSetObjectNameEXT(VkDevice device, const VkDebugMarkerObjectNameInfoEXT *pNameInfo) {
     bool skip = VK_FALSE;
-    std::unique_lock<std::mutex> lock(global_lock);
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    if (pNameInfo->pObjectName) {
-        dev_data->report_data->debugObjectNameMap->insert(
-            std::make_pair<uint64_t, std::string>((uint64_t &&) pNameInfo->object, pNameInfo->pObjectName));
-    } else {
-        dev_data->report_data->debugObjectNameMap->erase(pNameInfo->object);
-    }
-    skip |= ValidateObject(device, device, kVulkanObjectTypeDevice, false, "VUID-vkDebugMarkerSetObjectNameEXT-device-parameter",
-                           kVUIDUndefined);
-    lock.unlock();
-    if (skip) {
-        return VK_ERROR_VALIDATION_FAILED_EXT;
+    {
+        std::unique_lock<std::mutex> lock(global_lock);
+        skip |= PreCallValidateDebugMarkerSetObjectNameEXT(device, pNameInfo);
+        if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+        if (pNameInfo->pObjectName) {
+            dev_data->report_data->debugObjectNameMap->insert(
+                std::make_pair<uint64_t, std::string>((uint64_t &&) pNameInfo->object, pNameInfo->pObjectName));
+        } else {
+            dev_data->report_data->debugObjectNameMap->erase(pNameInfo->object);
+        }
     }
     VkResult result = dev_data->device_dispatch_table.DebugMarkerSetObjectNameEXT(device, pNameInfo);
     return result;
 }
 
+// This is not a Vulkan API, but is part of the loader-layer interface.
 VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetPhysicalDeviceProcAddr(VkInstance instance, const char *funcName) {
-    assert(instance);
     layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(instance), layer_data_map);
     if (instance_data->instance_dispatch_table.GetPhysicalDeviceProcAddr == NULL) {
         return NULL;
@@ -1785,7 +1845,19 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetPhysicalDeviceProcAddr(VkInstance in
     return instance_data->instance_dispatch_table.GetPhysicalDeviceProcAddr(instance, funcName);
 }
 
+
+static bool PreCallValidateGetDeviceProcAddr(VkDevice device, const char *funcName) {
+    bool skip = ValidateObject(device, device, kVulkanObjectTypeDevice, false,
+        "VUID-vkGetDeviceProcAddr-device-parameter", kVUIDUndefined);
+    return skip;
+}
+
 VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetDeviceProcAddr(VkDevice device, const char *funcName) {
+    {
+        std::unique_lock<std::mutex> lock(global_lock);
+        bool skip = PreCallValidateGetDeviceProcAddr(device, funcName);
+        if (skip) return nullptr;
+    }
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!ApiParentExtensionEnabled(funcName, device_data->device_extension_set)) {
         return nullptr;
@@ -1798,7 +1870,18 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetDeviceProcAddr(VkDevice device, cons
     return device_data->device_dispatch_table.GetDeviceProcAddr(device, funcName);
 }
 
+static bool PreCallValidateGetInstanceProcAddr(VkInstance instance, const char *funcName) {
+    bool skip = ValidateObject(instance, instance, kVulkanObjectTypeInstance, false,
+                               "VUID-vkGetInstanceProcAddr-instance-parameter", kVUIDUndefined);
+    return skip;
+}
+
 VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetInstanceProcAddr(VkInstance instance, const char *funcName) {
+    if (instance != nullptr) {
+        std::unique_lock<std::mutex> lock(global_lock);
+        bool skip = PreCallValidateGetInstanceProcAddr(instance, funcName);
+        if (skip) return nullptr;
+    }
     const auto item = name_to_funcptr_map.find(funcName);
     if (item != name_to_funcptr_map.end()) {
         return reinterpret_cast<PFN_vkVoidFunction>(item->second);
@@ -1808,71 +1891,101 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetInstanceProcAddr(VkInstance instance
     return instance_data->instance_dispatch_table.GetInstanceProcAddr(instance, funcName);
 }
 
+static bool PreCallValidateGetPhysicalDeviceDisplayProperties2KHR(VkPhysicalDevice physicalDevice, uint32_t *pPropertyCount,
+                                                                  VkDisplayProperties2KHR *pProperties) {
+    bool skip = ValidateObject(physicalDevice, physicalDevice, kVulkanObjectTypePhysicalDevice, false,
+                               "VUID-vkGetPhysicalDeviceDisplayProperties2KHR-physicalDevice-parameter", kVUIDUndefined);
+    return skip;
+}
+
+static void PostCallRecordGetPhysicalDeviceDisplayProperties2KHR(VkPhysicalDevice physicalDevice, uint32_t *pPropertyCount,
+                                                                 VkDisplayProperties2KHR *pProperties) {
+    for (uint32_t index = 0; index < *pPropertyCount; ++index) {
+        CreateObject(physicalDevice, pProperties[index].displayProperties.display, kVulkanObjectTypeDisplayKHR, nullptr);
+    }
+}
+
 VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceDisplayProperties2KHR(VkPhysicalDevice physicalDevice, uint32_t *pPropertyCount,
                                                                       VkDisplayProperties2KHR *pProperties) {
-    bool skip = false;
     {
         std::lock_guard<std::mutex> lock(global_lock);
-        skip |=
-            ValidateObject(physicalDevice, physicalDevice, kVulkanObjectTypePhysicalDevice, false, kVUIDUndefined, kVUIDUndefined);
+        bool skip = PreCallValidateGetPhysicalDeviceDisplayProperties2KHR(physicalDevice, pPropertyCount, pProperties);
+        if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
-    if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), layer_data_map);
     VkResult result =
         instance_data->instance_dispatch_table.GetPhysicalDeviceDisplayProperties2KHR(physicalDevice, pPropertyCount, pProperties);
     if (pProperties && (VK_SUCCESS == result || VK_INCOMPLETE == result)) {
         std::lock_guard<std::mutex> lock(global_lock);
-        for (uint32_t index = 0; index < *pPropertyCount; ++index) {
-            CreateObject(physicalDevice, pProperties[index].displayProperties.display, kVulkanObjectTypeDisplayKHR, nullptr);
-        }
+        PostCallRecordGetPhysicalDeviceDisplayProperties2KHR(physicalDevice, pPropertyCount, pProperties);
     }
 
     return result;
 }
 
+static bool PreCallValidateGetDisplayPlaneSupportedDisplaysKHR(VkPhysicalDevice physicalDevice, uint32_t planeIndex,
+                                                               uint32_t *pDisplayCount, VkDisplayKHR *pDisplays) {
+    bool skip = ValidateObject(physicalDevice, physicalDevice, kVulkanObjectTypePhysicalDevice, false,
+                               "VUID-vkGetDisplayPlaneSupportedDisplaysKHR-physicalDevice-parameter", kVUIDUndefined);
+    return skip;
+}
+
+static void PostCallRecordGetDisplayPlaneSupportedDisplaysKHR(VkPhysicalDevice physicalDevice, uint32_t planeIndex,
+                                                              uint32_t *pDisplayCount, VkDisplayKHR *pDisplays) {
+    for (uint32_t index = 0; index < *pDisplayCount; ++index) {
+        CreateObject(physicalDevice, pDisplays[index], kVulkanObjectTypeDisplayKHR, nullptr);
+    }
+}
+
 VKAPI_ATTR VkResult VKAPI_CALL GetDisplayPlaneSupportedDisplaysKHR(VkPhysicalDevice physicalDevice, uint32_t planeIndex,
                                                                    uint32_t *pDisplayCount, VkDisplayKHR *pDisplays) {
-    bool skip = false;
     {
         std::lock_guard<std::mutex> lock(global_lock);
-        skip |= ValidateObject(physicalDevice, physicalDevice, kVulkanObjectTypePhysicalDevice, false,
-                               "VUID-vkGetDisplayPlaneSupportedDisplaysKHR-physicalDevice-parameter", kVUIDUndefined);
+        bool skip = PreCallValidateGetDisplayPlaneSupportedDisplaysKHR(physicalDevice, planeIndex, pDisplayCount, pDisplays);
+        if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
-    if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), layer_data_map);
     VkResult result = instance_data->instance_dispatch_table.GetDisplayPlaneSupportedDisplaysKHR(physicalDevice, planeIndex,
                                                                                                  pDisplayCount, pDisplays);
     if (pDisplays && (VK_SUCCESS == result || VK_INCOMPLETE == result)) {
         std::lock_guard<std::mutex> lock(global_lock);
-        for (uint32_t index = 0; index < *pDisplayCount; ++index) {
-            CreateObject(physicalDevice, pDisplays[index], kVulkanObjectTypeDisplayKHR, nullptr);
-        }
+        PostCallRecordGetDisplayPlaneSupportedDisplaysKHR(physicalDevice, planeIndex, pDisplayCount, pDisplays);
     }
-
     return result;
+}
+
+static bool PreCallValidateGetDisplayModeProperties2KHR(VkPhysicalDevice physicalDevice, VkDisplayKHR display,
+                                                        uint32_t *pPropertyCount, VkDisplayModeProperties2KHR *pProperties) {
+    bool skip = false;
+    skip |= ValidateObject(physicalDevice, physicalDevice, kVulkanObjectTypePhysicalDevice, false,
+                           "VUID-vkGetDisplayModeProperties2KHR-physicalDevice-parameter", kVUIDUndefined);
+    skip |= ValidateObject(physicalDevice, display, kVulkanObjectTypeDisplayKHR, false,
+                           "VUID-vkGetDisplayModeProperties2KHR-display-parameter", kVUIDUndefined);
+    return skip;
+}
+
+static void PostCallRecordGetDisplayModeProperties2KHR(VkPhysicalDevice physicalDevice, VkDisplayKHR display,
+                                                       uint32_t *pPropertyCount, VkDisplayModeProperties2KHR *pProperties) {
+    for (uint32_t index = 0; index < *pPropertyCount; ++index) {
+        CreateObject(physicalDevice, pProperties[index].displayModeProperties.displayMode, kVulkanObjectTypeDisplayModeKHR,
+                     nullptr);
+    }
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetDisplayModeProperties2KHR(VkPhysicalDevice physicalDevice, VkDisplayKHR display,
                                                             uint32_t *pPropertyCount, VkDisplayModeProperties2KHR *pProperties) {
-    bool skip = false;
     {
         std::lock_guard<std::mutex> lock(global_lock);
-        skip |=
-            ValidateObject(physicalDevice, physicalDevice, kVulkanObjectTypePhysicalDevice, false, kVUIDUndefined, kVUIDUndefined);
-        skip |= ValidateObject(physicalDevice, display, kVulkanObjectTypeDisplayKHR, false, kVUIDUndefined, kVUIDUndefined);
+        bool skip = PreCallValidateGetDisplayModeProperties2KHR(physicalDevice, display, pPropertyCount, pProperties);
+        if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
-    if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), layer_data_map);
     VkResult result =
         instance_data->instance_dispatch_table.GetDisplayModeProperties2KHR(physicalDevice, display, pPropertyCount, pProperties);
     if (pProperties && (VK_SUCCESS == result || VK_INCOMPLETE == result)) {
         std::lock_guard<std::mutex> lock(global_lock);
-        for (uint32_t index = 0; index < *pPropertyCount; ++index) {
-            CreateObject(physicalDevice, pProperties[index].displayModeProperties.displayMode, kVulkanObjectTypeDisplayModeKHR,
-                         nullptr);
-        }
+        PostCallRecordGetDisplayModeProperties2KHR(physicalDevice, display, pPropertyCount, pProperties);
     }
-
     return result;
 }
 
