@@ -14719,6 +14719,40 @@ TEST_F(VkLayerTest, NumBlendAttachMismatch) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(VkLayerTest, Bad2DArrayImageType) {
+    TEST_DESCRIPTION("Create an image with a flag specifying 2D_ARRAY_COMPATIBLE but not of imageType 3D.");
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE1_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+    } else {
+        printf("%s %s is not supported; skipping\n", kSkipPrefix, VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    // Trigger check by setting imagecreateflags to 2d_array_compat and imageType to 2D
+    VkImageCreateInfo ici = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+                             nullptr,
+                             VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT_KHR,
+                             VK_IMAGE_TYPE_2D,
+                             VK_FORMAT_R8G8B8A8_UNORM,
+                             {32, 32, 1},
+                             1,
+                             1,
+                             VK_SAMPLE_COUNT_1_BIT,
+                             VK_IMAGE_TILING_OPTIMAL,
+                             VK_IMAGE_USAGE_SAMPLED_BIT,
+                             VK_SHARING_MODE_EXCLUSIVE,
+                             0,
+                             nullptr,
+                             VK_IMAGE_LAYOUT_UNDEFINED};
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkImageCreateInfo-flags-00950");
+    VkImage image;
+    vkCreateImage(m_device->device(), &ici, NULL, &image);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(VkLayerTest, Maint1BindingSliceOf3DImage) {
     TEST_DESCRIPTION(
         "Attempt to bind a slice of a 3D texture in a descriptor set. This is explicitly disallowed by KHR_maintenance1 to keep "
