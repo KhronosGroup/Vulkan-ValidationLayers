@@ -1455,7 +1455,10 @@ static bool ValidatePipelineUnlocked(layer_data *dev_data, std::vector<std::uniq
         }
         // Can't mix mesh and VTG
         if ((pPipeline->active_shaders & (VK_SHADER_STAGE_MESH_BIT_NV | VK_SHADER_STAGE_TASK_BIT_NV)) &&
-            (pPipeline->active_shaders & (VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT | VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT))) {
+            (pPipeline->active_shaders & (VK_SHADER_STAGE_VERTEX_BIT |
+                                          VK_SHADER_STAGE_GEOMETRY_BIT |
+                                          VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT |
+                                          VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT))) {
             skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
                             HandleToUint64(pPipeline->pipeline), "VUID-VkGraphicsPipelineCreateInfo-pStages-02095",
                             "Invalid Pipeline CreateInfo State: Geometric shader stages must either be all mesh (mesh | task) "
@@ -6653,10 +6656,13 @@ static bool PreCallValidateCmdBindShadingRateImageNV(layer_data *dev_data, GLOBA
             VkImageSubresourceRange &range = view_state->create_info.subresourceRange;
             VkImageSubresourceLayers subresource = { range.aspectMask, range.baseMipLevel, range.baseArrayLayer, range.layerCount };
 
-            skip |= VerifyImageLayout(dev_data, cb_state, image_state, subresource, imageLayout,
-                                      VK_IMAGE_LAYOUT_SHADING_RATE_OPTIMAL_NV, "vkCmdCopyImage()", 
-                                      "VUID-vkCmdBindShadingRateImageNV-imageLayout-02063",
-                                      "VUID-vkCmdBindShadingRateImageNV-imageView-02062", &hit_error);
+            if (image_state) {
+                skip |= VerifyImageLayout(dev_data, cb_state, image_state, subresource, imageLayout,
+                                          VK_IMAGE_LAYOUT_SHADING_RATE_OPTIMAL_NV, "vkCmdCopyImage()", 
+                                          "VUID-vkCmdBindShadingRateImageNV-imageLayout-02063",
+                                          "VUID-vkCmdBindShadingRateImageNV-imageView-02062", &hit_error);
+                AddCommandBufferBindingImageView(dev_data, cb_state, view_state);
+            }
         }
     }
 
