@@ -93,6 +93,7 @@ struct layer_data {
     // Device extension properties -- storing properties gathered from VkPhysicalDeviceProperties2KHR::pNext chain
     struct DeviceExtensionProperties {
         VkPhysicalDeviceShadingRateImagePropertiesNV shading_rate_image_props;
+        VkPhysicalDeviceMeshShaderPropertiesNV mesh_shader_props;
     };
     DeviceExtensionProperties phys_dev_ext_props = {};
 

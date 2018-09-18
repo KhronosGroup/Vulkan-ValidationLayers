@@ -5142,35 +5142,56 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateComputePipelines(VkDevice device, VkPipelin
     return result;
 }
 
-VKAPI_ATTR VkResult VKAPI_CALL CreateRaytracingPipelinesNVX(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
-                                                            const VkRaytracingPipelineCreateInfoNVX *pCreateInfos,
-                                                            const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines) {
+static bool PreCallValidateCreateRaytracingPipelinesNVX(layer_data *dev_data, uint32_t count,
+                                                        const VkRaytracingPipelineCreateInfoNVX *pCreateInfos,
+                                                        vector<std::unique_ptr<PIPELINE_STATE>> &pipe_state) {
+    bool skip = false;
+
     // The order of operations here is a little convoluted but gets the job done
     //  1. Pipeline create state is first shadowed into PIPELINE_STATE struct
     //  2. Create state is then validated (which uses flags setup during shadowing)
     //  3. If everything looks good, we'll then create the pipeline and add NODE to pipelineMap
+    uint32_t i = 0;
+    for (i = 0; i < count; i++) {
+        pipe_state.push_back(std::unique_ptr<PIPELINE_STATE>(new PIPELINE_STATE));
+        pipe_state[i]->initRaytracingPipelineNVX(&pCreateInfos[i]);
+        pipe_state[i]->pipeline_layout = *GetPipelineLayout(dev_data, pCreateInfos[i].layout);
+    }
+
+    for (i = 0; i < count; i++) {
+        skip |= ValidateRaytracingPipelineNVX(dev_data, pipe_state[i].get());
+    }
+
+    return skip;
+}
+
+static void PostCallRecordCreateRaytracingPipelinesNVX(layer_data *dev_data, uint32_t count,
+                                                       vector<std::unique_ptr<PIPELINE_STATE>> &pipe_state,
+                                                       VkPipeline *pPipelines) {
+    for (uint32_t i = 0; i < count; i++) {
+        if (pPipelines[i] != VK_NULL_HANDLE) {
+            pipe_state[i]->pipeline = pPipelines[i];
+            dev_data->pipelineMap[pPipelines[i]] = std::move(pipe_state[i]);
+        }
+    }
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL CreateRaytracingPipelinesNVX(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
+                                                            const VkRaytracingPipelineCreateInfoNVX *pCreateInfos,
+                                                            const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines) {
     bool skip = false;
-    vector<std::unique_ptr<PIPELINE_STATE>> pPipeState;
-    pPipeState.reserve(count);
+    vector<std::unique_ptr<PIPELINE_STATE>> pipe_state;
+    pipe_state.reserve(count);
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
 
-    uint32_t i = 0;
     unique_lock_t lock(global_lock);
 
-    for (i = 0; i < count; i++) {
-        pPipeState.push_back(std::unique_ptr<PIPELINE_STATE>(new PIPELINE_STATE));
-        pPipeState[i]->initRaytracingPipelineNVX(&pCreateInfos[i]);
-        pPipeState[i]->pipeline_layout = *GetPipelineLayout(dev_data, pCreateInfos[i].layout);
-    }
-
-    for (i = 0; i < count; i++) {
-        skip |= ValidateRaytracingPipelineNVX(dev_data, pPipeState[i].get());
-    }
+    skip |= PreCallValidateCreateRaytracingPipelinesNVX(dev_data, count, pCreateInfos, pipe_state);
 
     lock.unlock();
 
     if (skip) {
-        for (i = 0; i < count; i++) {
+        for (uint32_t i = 0; i < count; i++) {
             pPipelines[i] = VK_NULL_HANDLE;
         }
         return VK_ERROR_VALIDATION_FAILED_EXT;
@@ -5179,12 +5200,8 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateRaytracingPipelinesNVX(VkDevice device, VkP
     auto result =
         dev_data->dispatch_table.CreateRaytracingPipelinesNVX(device, pipelineCache, count, pCreateInfos, pAllocator, pPipelines);
     lock.lock();
-    for (i = 0; i < count; i++) {
-        if (pPipelines[i] != VK_NULL_HANDLE) {
-            pPipeState[i]->pipeline = pPipelines[i];
-            dev_data->pipelineMap[pPipelines[i]] = std::move(pPipeState[i]);
-        }
-    }
+
+    PostCallRecordCreateRaytracingPipelinesNVX(dev_data, count, pipe_state, pPipelines);
 
     return result;
 }
@@ -6661,7 +6678,6 @@ static bool PreCallValidateCmdBindShadingRateImageNV(layer_data *dev_data, GLOBA
                                           VK_IMAGE_LAYOUT_SHADING_RATE_OPTIMAL_NV, "vkCmdCopyImage()", 
                                           "VUID-vkCmdBindShadingRateImageNV-imageLayout-02063",
                                           "VUID-vkCmdBindShadingRateImageNV-imageView-02062", &hit_error);
-                AddCommandBufferBindingImageView(dev_data, cb_state, view_state);
             }
         }
     }
@@ -6669,7 +6685,12 @@ static bool PreCallValidateCmdBindShadingRateImageNV(layer_data *dev_data, GLOBA
     return skip;
 }
 
-static void PreCallRecordCmdBindShadingRateImageNV(GLOBAL_CB_NODE *cb_state, VkImageView imageView, VkImageLayout imageLayout) { }
+static void PreCallRecordCmdBindShadingRateImageNV(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, VkImageView imageView) {
+    if (imageView != VK_NULL_HANDLE) {
+        auto view_state = GetImageViewState(dev_data, imageView);
+        AddCommandBufferBindingImageView(dev_data, cb_state, view_state);
+    }
+}
 
 VKAPI_ATTR void VKAPI_CALL CmdBindShadingRateImageNV(VkCommandBuffer                             commandBuffer,
                                                      VkImageView                                 imageView,
@@ -6681,7 +6702,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBindShadingRateImageNV(VkCommandBuffer            
     if (pCB) {
         skip |= PreCallValidateCmdBindShadingRateImageNV(dev_data, pCB, commandBuffer, imageView, imageLayout);
         if (!skip) {
-            PreCallRecordCmdBindShadingRateImageNV(pCB, imageView, imageLayout);
+            PreCallRecordCmdBindShadingRateImageNV(dev_data, pCB, imageView);
         }
     }
     lock.unlock();
@@ -14073,14 +14094,6 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawMeshTasksNV(VkCommandBuffer commandBuffer, uin
     GLOBAL_CB_NODE *cb_state = nullptr;
     bool skip = false;
 
-    if (taskCount > dev_data->phys_dev_ext_props.mesh_shader_props.maxDrawMeshTasksCount) {
-        skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                        HandleToUint64(commandBuffer), "VUID-vkCmdDrawMeshTasksNV-taskCount-02119",
-                        "vkCmdDrawMeshTasksNV() parameter, uint32_t taskCount (0x%" PRIxLEAST32
-                        "), must be less than or equal to VkPhysicalDeviceMeshShaderPropertiesNV::maxDrawMeshTasksCount (0x%" PRIxLEAST32").",
-                        taskCount, dev_data->phys_dev_ext_props.mesh_shader_props.maxDrawMeshTasksCount);
-    }
-
     unique_lock_t lock(global_lock);
     skip |= PreCallValidateCmdDrawMeshTasksNV(dev_data, commandBuffer, true,
                                               VK_PIPELINE_BIND_POINT_GRAPHICS, &cb_state, "vkCmdDrawMeshTasksNV()");
@@ -14109,7 +14122,9 @@ static bool PreCallValidateCmdDrawMeshTasksIndirectNV(layer_data *dev_data, VkCo
 static void PreCallRecordCmdDrawMeshTasksIndirectNV(layer_data *dev_data, GLOBAL_CB_NODE *cb_state,
                                                     VkPipelineBindPoint bind_point, BUFFER_STATE *buffer_state) {
     UpdateStateCmdDrawType(dev_data, cb_state, bind_point);
-    AddCommandBufferBindingBuffer(dev_data, cb_state, buffer_state);
+    if (buffer_state) {
+        AddCommandBufferBindingBuffer(dev_data, cb_state, buffer_state);
+    }
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdDrawMeshTasksIndirectNV(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
@@ -14118,22 +14133,6 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawMeshTasksIndirectNV(VkCommandBuffer commandBuf
     GLOBAL_CB_NODE *cb_state = nullptr;
     BUFFER_STATE *buffer_state = nullptr;
     bool skip = false;
-
-    if (offset & 3) {
-        skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                        HandleToUint64(commandBuffer), "VUID-vkCmdDrawMeshTasksIndirectNV-offset-02145",
-                        "vkCmdDrawMeshTasksIndirectNV() parameter, VkDeviceSize offset (0x%" PRIxLEAST64
-                        "), is not a multiple of 4.",
-                        offset);
-    }
-
-    if (drawCount > 1 && ((stride & 3) || stride < sizeof(VkDrawMeshTasksIndirectCommandNV))) {
-        skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                        HandleToUint64(commandBuffer), "VUID-vkCmdDrawMeshTasksIndirectNV-drawCount-02146",
-                        "vkCmdDrawMeshTasksIndirectNV() parameter, uint32_t stride (0x%" PRIxLEAST32
-                        "), is not a multiple of 4 or smaller than sizeof (VkDrawMeshTasksIndirectCommandNV).",
-                        stride);
-    }
 
     unique_lock_t lock(global_lock);
     skip |= PreCallValidateCmdDrawMeshTasksIndirectNV(dev_data, commandBuffer, buffer, true,
@@ -14168,8 +14167,12 @@ static void PreCallRecordCmdDrawMeshTasksIndirectCountNV(layer_data *dev_data, G
                                                          VkPipelineBindPoint bind_point, BUFFER_STATE *buffer_state,
                                                          BUFFER_STATE *count_buffer_state) {
     UpdateStateCmdDrawType(dev_data, cb_state, bind_point);
-    AddCommandBufferBindingBuffer(dev_data, cb_state, buffer_state);
-    AddCommandBufferBindingBuffer(dev_data, cb_state, count_buffer_state);
+    if (buffer_state) {
+        AddCommandBufferBindingBuffer(dev_data, cb_state, buffer_state);
+    }
+    if (count_buffer_state) {
+        AddCommandBufferBindingBuffer(dev_data, cb_state, count_buffer_state);
+    }
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdDrawMeshTasksIndirectCountNV(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
@@ -14180,30 +14183,6 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawMeshTasksIndirectCountNV(VkCommandBuffer comma
     BUFFER_STATE *buffer_state = nullptr;
     BUFFER_STATE *count_buffer_state = nullptr;
     bool skip = false;
-
-    if (offset & 3) {
-        skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                        HandleToUint64(commandBuffer), "VUID-vkCmdDrawMeshTasksIndirectCountNV-offset-02180",
-                        "vkCmdDrawMeshTasksIndirectCountNV() parameter, VkDeviceSize offset (0x%" PRIxLEAST64
-                        "), is not a multiple of 4.",
-                        offset);
-    }
-
-    if (countBufferOffset & 3) {
-        skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                        HandleToUint64(commandBuffer), "VUID-vkCmdDrawMeshTasksIndirectCountNV-countBufferOffset-02181",
-                        "vkCmdDrawMeshTasksIndirectCountNV() parameter, VkDeviceSize countBufferOffset (0x%" PRIxLEAST64
-                        "), is not a multiple of 4.",
-                        countBufferOffset);
-    }
-
-    if ((stride & 3) || stride < sizeof(VkDrawMeshTasksIndirectCommandNV)) {
-        skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                        HandleToUint64(commandBuffer), "VUID-vkCmdDrawMeshTasksIndirectCountNV-stride-02182",
-                        "vkCmdDrawMeshTasksIndirectCountNV() parameter, uint32_t stride (0x%" PRIxLEAST32
-                        "), is not a multiple of 4 or smaller than sizeof (VkDrawMeshTasksIndirectCommandNV).",
-                        stride);
-    }
 
     unique_lock_t lock(global_lock);
     skip |= PreCallValidateCmdDrawMeshTasksIndirectCountNV(dev_data, commandBuffer, buffer, countBuffer, true,

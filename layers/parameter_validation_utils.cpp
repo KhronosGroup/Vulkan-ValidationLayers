@@ -650,6 +650,14 @@ VKAPI_ATTR VkResult VKAPI_CALL vkCreateDevice(VkPhysicalDevice physicalDevice, c
                 my_device_data->phys_dev_ext_props.shading_rate_image_props = shading_rate_image_props;
             }
 
+            if (my_device_data->extensions.vk_nv_mesh_shader) {
+                // Get the needed mesh shader limits
+                auto mesh_shader_props = lvl_init_struct<VkPhysicalDeviceMeshShaderPropertiesNV>();
+                auto prop2 = lvl_init_struct<VkPhysicalDeviceProperties2KHR>(&mesh_shader_props);
+                my_instance_data->dispatch_table.GetPhysicalDeviceProperties2KHR(physicalDevice, &prop2);
+                my_device_data->phys_dev_ext_props.mesh_shader_props = mesh_shader_props;
+            }
+
             // Save app-enabled features in this device's layer_data structure
             // The enabled features can come from either pEnabledFeatures, or from the pNext chain
             const VkPhysicalDeviceFeatures *enabled_features_found = pCreateInfo->pEnabledFeatures;
@@ -1397,9 +1405,9 @@ bool ValidateCoarseSampleOrderCustomNV(layer_data *device_data, const VkCoarseSa
     bool skip = false;
     debug_report_data *report_data = device_data->report_data;
 
-    SampleOrderInfo *sampleOrderInfo = nullptr;
+    SampleOrderInfo *sampleOrderInfo;
     uint32_t infoIdx = 0;
-    for (; infoIdx < ARRAY_SIZE(sampleOrderInfos); ++infoIdx) {
+    for (sampleOrderInfo = nullptr; infoIdx < ARRAY_SIZE(sampleOrderInfos); ++infoIdx) {
         if (sampleOrderInfos[infoIdx].shadingRate == order->shadingRate) {
             sampleOrderInfo = &sampleOrderInfos[infoIdx];
             break;
@@ -1446,6 +1454,7 @@ bool ValidateCoarseSampleOrderCustomNV(layer_data *device_data, const VkCoarseSa
     // the first width*height*sampleCount bits to all be set. Note: There is no
     // guarantee that 64 bits is enough, but practically it's unlikely for an
     // implementation to support more than 32 bits for samplemask.
+    assert(device_data->phys_dev_ext_props.shading_rate_image_props.shadingRateMaxCoarseSamples <= 64);
     uint64_t sampleLocationsMask = 0;
     for (uint32_t i = 0; i < order->sampleLocationCount; ++i) {
         const VkCoarseSampleLocationNV *sampleLoc = &order->pSampleLocations[i];
@@ -3508,6 +3517,99 @@ bool pv_vkCmdSetCoarseSampleOrderNV(
 }
 
 
+bool pv_vkCmdDrawMeshTasksNV(
+    VkCommandBuffer                             commandBuffer,
+    uint32_t                                    taskCount,
+    uint32_t                                    firstTask)
+{
+    bool skip = false;
+
+    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+
+    if (taskCount > dev_data->phys_dev_ext_props.mesh_shader_props.maxDrawMeshTasksCount) {
+        skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                        HandleToUint64(commandBuffer), "VUID-vkCmdDrawMeshTasksNV-taskCount-02119",
+                        "vkCmdDrawMeshTasksNV() parameter, uint32_t taskCount (0x%" PRIxLEAST32
+                        "), must be less than or equal to VkPhysicalDeviceMeshShaderPropertiesNV::maxDrawMeshTasksCount (0x%" PRIxLEAST32").",
+                        taskCount, dev_data->phys_dev_ext_props.mesh_shader_props.maxDrawMeshTasksCount);
+    }
+
+    return skip;
+}
+
+
+bool pv_vkCmdDrawMeshTasksIndirectNV(
+    VkCommandBuffer                             commandBuffer,
+    VkBuffer                                    buffer,
+    VkDeviceSize                                offset,
+    uint32_t                                    drawCount,
+    uint32_t                                    stride)
+{
+    bool skip = false;
+
+    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    debug_report_data *report_data = dev_data->report_data;
+
+    if (offset & 3) {
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                        HandleToUint64(commandBuffer), "VUID-vkCmdDrawMeshTasksIndirectNV-offset-02145",
+                        "vkCmdDrawMeshTasksIndirectNV() parameter, VkDeviceSize offset (0x%" PRIxLEAST64
+                        "), is not a multiple of 4.",
+                        offset);
+    }
+
+    if (drawCount > 1 && ((stride & 3) || stride < sizeof(VkDrawMeshTasksIndirectCommandNV))) {
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                        HandleToUint64(commandBuffer), "VUID-vkCmdDrawMeshTasksIndirectNV-drawCount-02146",
+                        "vkCmdDrawMeshTasksIndirectNV() parameter, uint32_t stride (0x%" PRIxLEAST32
+                        "), is not a multiple of 4 or smaller than sizeof (VkDrawMeshTasksIndirectCommandNV).",
+                        stride);
+    }
+
+    return skip;
+}
+
+bool pv_vkCmdDrawMeshTasksIndirectCountNV(
+    VkCommandBuffer                             commandBuffer,
+    VkBuffer                                    buffer,
+    VkDeviceSize                                offset,
+    VkBuffer                                    countBuffer,
+    VkDeviceSize                                countBufferOffset,
+    uint32_t                                    maxDrawCount,
+    uint32_t                                    stride)
+{
+    bool skip = false;
+
+    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+
+    if (offset & 3) {
+        skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                        HandleToUint64(commandBuffer), "VUID-vkCmdDrawMeshTasksIndirectCountNV-offset-02180",
+                        "vkCmdDrawMeshTasksIndirectCountNV() parameter, VkDeviceSize offset (0x%" PRIxLEAST64
+                        "), is not a multiple of 4.",
+                        offset);
+    }
+
+    if (countBufferOffset & 3) {
+        skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                        HandleToUint64(commandBuffer), "VUID-vkCmdDrawMeshTasksIndirectCountNV-countBufferOffset-02181",
+                        "vkCmdDrawMeshTasksIndirectCountNV() parameter, VkDeviceSize countBufferOffset (0x%" PRIxLEAST64
+                        "), is not a multiple of 4.",
+                        countBufferOffset);
+    }
+
+    if ((stride & 3) || stride < sizeof(VkDrawMeshTasksIndirectCommandNV)) {
+        skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                        HandleToUint64(commandBuffer), "VUID-vkCmdDrawMeshTasksIndirectCountNV-stride-02182",
+                        "vkCmdDrawMeshTasksIndirectCountNV() parameter, uint32_t stride (0x%" PRIxLEAST32
+                        "), is not a multiple of 4 or smaller than sizeof (VkDrawMeshTasksIndirectCommandNV).",
+                        stride);
+    }
+
+    return skip;
+}
+
+
 VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vkGetDeviceProcAddr(VkDevice device, const char *funcName) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!ApiParentExtensionEnabled(funcName, device_data->extensions.device_extension_set)) {
@@ -3577,6 +3679,9 @@ void InitializeManualParameterValidationFunctionPointers() {
     custom_functions["vkCmdSetExclusiveScissorNV"] = (void *)pv_vkCmdSetExclusiveScissorNV;
     custom_functions["vkCmdSetViewportShadingRatePaletteNV"] = (void *)pv_vkCmdSetViewportShadingRatePaletteNV;
     custom_functions["vkCmdSetCoarseSampleOrderNV"] = (void *)pv_vkCmdSetCoarseSampleOrderNV;
+    custom_functions["vkCmdDrawMeshTasksNV"] = (void *)pv_vkCmdDrawMeshTasksNV;
+    custom_functions["vkCmdDrawMeshTasksIndirectNV"] = (void *)pv_vkCmdDrawMeshTasksIndirectNV;
+    custom_functions["vkCmdDrawMeshTasksIndirectCountNV"] = (void *)pv_vkCmdDrawMeshTasksIndirectCountNV;
 }
 
 }  // namespace parameter_validation
