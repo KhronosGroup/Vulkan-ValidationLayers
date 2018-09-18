@@ -1174,9 +1174,7 @@ bool pv_vkCreateImage(VkDevice device, const VkImageCreateInfo *pCreateInfo, con
                                 "vkCreateImage: If flags contains VK_IMAGE_CREATE_CORNER_SAMPLED_BIT_NV and "
                                 "imageType is VK_IMAGE_TYPE_2D, extent.width and extent.height must be "
                                 "greater than 1.");
-            }
-
-            if (pCreateInfo->imageType == VK_IMAGE_TYPE_3D &&
+            } else if (pCreateInfo->imageType == VK_IMAGE_TYPE_3D &&
                 (pCreateInfo->extent.width == 1 || pCreateInfo->extent.height == 1 || pCreateInfo->extent.depth == 1)) {
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                                 "VUID-VkImageCreateInfo-flags-02053",
@@ -1399,14 +1397,16 @@ bool ValidateCoarseSampleOrderCustomNV(layer_data *device_data, const VkCoarseSa
     bool skip = false;
     debug_report_data *report_data = device_data->report_data;
 
+    SampleOrderInfo *sampleOrderInfo = nullptr;
     uint32_t infoIdx = 0;
     for (; infoIdx < ARRAY_SIZE(sampleOrderInfos); ++infoIdx) {
         if (sampleOrderInfos[infoIdx].shadingRate == order->shadingRate) {
+            sampleOrderInfo = &sampleOrderInfos[infoIdx];
             break;
         }
     }
 
-    if (infoIdx == ARRAY_SIZE(sampleOrderInfos)) {
+    if (sampleOrderInfo == nullptr) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                         "VUID-VkCoarseSampleOrderCustomNV-shadingRate-02073",
                         "VkCoarseSampleOrderCustomNV shadingRate must be a shading rate "
@@ -1424,8 +1424,6 @@ bool ValidateCoarseSampleOrderCustomNV(layer_data *device_data, const VkCoarseSa
                         "is set in framebufferNoAttachmentsSampleCounts.",
                         order->sampleCount);
     }
-
-    SampleOrderInfo *sampleOrderInfo = &sampleOrderInfos[infoIdx];
 
     if (order->sampleLocationCount != order->sampleCount * sampleOrderInfo->width * sampleOrderInfo->height) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
@@ -1445,7 +1443,9 @@ bool ValidateCoarseSampleOrderCustomNV(layer_data *device_data, const VkCoarseSa
     }
 
     // Accumulate a bitmask tracking which (x,y,sample) tuples are seen. Expect
-    // the first width*height*sampleCount bits to all be set
+    // the first width*height*sampleCount bits to all be set. Note: There is no
+    // guarantee that 64 bits is enough, but practically it's unlikely for an
+    // implementation to support more than 32 bits for samplemask.
     uint64_t sampleLocationsMask = 0;
     for (uint32_t i = 0; i < order->sampleLocationCount; ++i) {
         const VkCoarseSampleLocationNV *sampleLoc = &order->pSampleLocations[i];
@@ -1712,7 +1712,8 @@ bool pv_vkCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache
                         report_data, "vkCreateGraphicsPipelines",
                         ParameterName("pCreateInfos[%i].pViewportState->pNext", ParameterName::IndexVector{i}),
                         "VkPipelineViewportSwizzleStateCreateInfoNV, VkPipelineViewportWScalingStateCreateInfoNV, "
-                        "VkPipelineViewportExclusiveScissorStateCreateInfoNV, VkPipelineViewportShadingRateImageStateCreateInfoNV, VkPipelineViewportCoarseSampleOrderStateCreateInfoNV",
+                        "VkPipelineViewportExclusiveScissorStateCreateInfoNV, VkPipelineViewportShadingRateImageStateCreateInfoNV, "
+                        "VkPipelineViewportCoarseSampleOrderStateCreateInfoNV",
                         viewport_state.pNext, ARRAY_SIZE(allowed_structs_VkPipelineViewportStateCreateInfo),
                         allowed_structs_VkPipelineViewportStateCreateInfo, 65,
                         "VUID-VkPipelineViewportStateCreateInfo-pNext-pNext");
@@ -1762,7 +1763,7 @@ bool pv_vkCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache
                                             VK_NULL_HANDLE, "VUID-VkPipelineViewportShadingRateImageStateCreateInfoNV-viewportCount-02054",
                                             "vkCreateGraphicsPipelines: The VkPhysicalDeviceFeatures::multiViewport feature is "
                                             "disabled, but pCreateInfos[%" PRIu32 "] VkPipelineViewportShadingRateImageStateCreateInfoNV::viewportCount (=%" PRIu32
-                                            ") is not 1.",
+                                            ") is neither 0 nor 1.",
                                             i, shading_rate_image_struct->viewportCount);
 
                         }
