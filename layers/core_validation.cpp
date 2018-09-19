@@ -2206,39 +2206,6 @@ static bool ValidateDeviceQueueCreateInfos(instance_layer_data *instance_data, c
     return skip;
 }
 
-// Verify that features have been queried and that they are available
-static bool ValidateRequestedFeatures(instance_layer_data *instance_data, const PHYSICAL_DEVICE_STATE *pd_state,
-                                      const VkPhysicalDeviceFeatures *requested_features) {
-    bool skip = false;
-
-    const VkBool32 *actual = reinterpret_cast<const VkBool32 *>(&pd_state->features2.features.robustBufferAccess);
-    const VkBool32 *requested = reinterpret_cast<const VkBool32 *>(requested_features);
-    // TODO : This is a nice, compact way to loop through struct, but a bad way to report issues
-    //  Need to provide the struct member name with the issue. To do that seems like we'll
-    //  have to loop through each struct member which should be done w/ codegen to keep in synch.
-    uint32_t errors = 0;
-    uint32_t total_bools = sizeof(VkPhysicalDeviceFeatures) / sizeof(VkBool32);
-    for (uint32_t i = 0; i < total_bools; i++) {
-        if (requested[i] > actual[i]) {
-            skip |= log_msg(instance_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                            VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT, 0, kVUID_Core_DevLimit_InvalidFeatureRequested,
-                            "While calling vkCreateDevice(), requesting feature '%s' in VkPhysicalDeviceFeatures struct, which is "
-                            "not available on this device.",
-                            GetPhysDevFeatureString(i));
-            errors++;
-        }
-    }
-    if (errors && (UNCALLED == pd_state->vkGetPhysicalDeviceFeaturesState)) {
-        // If user didn't request features, notify them that they should
-        // TODO: Verify this against the spec. I believe this is an invalid use of the API and should return an error
-        skip |= log_msg(instance_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT,
-                        0, kVUID_Core_DevLimit_InvalidFeatureRequested,
-                        "You requested features that are unavailable on this device. You should first query feature availability "
-                        "by calling vkGetPhysicalDeviceFeatures().");
-    }
-    return skip;
-}
-
 VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo *pCreateInfo,
                                             const VkAllocationCallbacks *pAllocator, VkDevice *pDevice) {
     bool skip = false;
@@ -2255,7 +2222,6 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
                         "Invalid call to vkCreateDevice() w/o first calling vkEnumeratePhysicalDevices().");
     }
 
-    // Check that any requested features are available
     // The enabled features can come from either pEnabledFeatures, or from the pNext chain
     // TODO: Validate "VUID-VkDeviceCreateInfo-pNext-00373" here, can't have non-null pEnabledFeatures & GPDF2 in pNext chain
     const VkPhysicalDeviceFeatures *enabled_features_found = pCreateInfo->pEnabledFeatures;
@@ -2264,10 +2230,6 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
         if (features2) {
             enabled_features_found = &(features2->features);
         }
-    }
-
-    if (enabled_features_found) {
-        skip |= ValidateRequestedFeatures(instance_data, pd_state, enabled_features_found);
     }
 
     skip |=

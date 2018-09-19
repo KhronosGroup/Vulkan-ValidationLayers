@@ -14968,67 +14968,6 @@ TEST_F(VkLayerTest, VtxBufferBadIndex) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, MismatchCountQueueCreateRequestedFeature) {
-    TEST_DESCRIPTION("Use an invalid count in a vkEnumeratePhysicalDevices call.Use invalid Queue Family Index in vkCreateDevice");
-    ASSERT_NO_FATAL_FAILURE(Init());
-
-    // The following test fails with recent NVidia drivers.
-    // By the time core_validation is reached, the NVidia
-    // driver has sanitized the invalid condition and core_validation
-    // is not introduced to the failure condition. This is not the case
-    // with AMD and Mesa drivers. Further investigation is required
-    //    uint32_t count = static_cast<uint32_t>(~0);
-    //    VkPhysicalDevice physical_device;
-    //    vkEnumeratePhysicalDevices(instance(), &count, &physical_device);
-    //    m_errorMonitor->VerifyFound();
-
-    float queue_priority = 0.0;
-    VkDeviceQueueCreateInfo queue_create_info = {};
-    queue_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-    queue_create_info.queueCount = 1;
-    queue_create_info.pQueuePriorities = &queue_priority;
-    queue_create_info.queueFamilyIndex = static_cast<uint32_t>(~0);
-
-    VkPhysicalDeviceFeatures features = m_device->phy().features();
-    VkDevice testDevice;
-    VkDeviceCreateInfo device_create_info = {};
-    device_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-    device_create_info.queueCreateInfoCount = 1;
-    device_create_info.pQueueCreateInfos = &queue_create_info;
-    device_create_info.pEnabledFeatures = &features;
-
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkDeviceQueueCreateInfo-queueFamilyIndex-00381");
-    // The following unexpected error is coming from the LunarG loader. Do not make it a desired message because platforms that do
-    // not use the LunarG loader (e.g. Android) will not see the message and the test will fail.
-    m_errorMonitor->SetUnexpectedError("Failed to create device chain.");
-    vkCreateDevice(gpu(), &device_create_info, nullptr, &testDevice);
-    m_errorMonitor->VerifyFound();
-
-    vk_testing::QueueCreateInfoArray queue_info_obj(m_device->queue_props);
-    device_create_info.queueCreateInfoCount = queue_info_obj.size();
-    device_create_info.pQueueCreateInfos = queue_info_obj.data();
-
-    unsigned feature_count = sizeof(VkPhysicalDeviceFeatures) / sizeof(VkBool32);
-    VkBool32 *feature_array = reinterpret_cast<VkBool32 *>(&features);
-    for (unsigned i = 0; i < feature_count; i++) {
-        if (VK_FALSE == feature_array[i]) {
-            feature_array[i] = VK_TRUE;
-            device_create_info.pEnabledFeatures = &features;
-            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                                 "While calling vkCreateDevice(), requesting feature");
-            // The following unexpected error is coming from the LunarG loader. Do not make it a desired message because platforms
-            // that do not use the LunarG loader (e.g. Android) will not see the message and the test will fail.
-            m_errorMonitor->SetUnexpectedError("Failed to create device chain.");
-            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                                 "You requested features that are unavailable on this device. You should first "
-                                                 "query feature availability by calling vkGetPhysicalDeviceFeatures().");
-            vkCreateDevice(gpu(), &device_create_info, nullptr, &testDevice);
-            m_errorMonitor->VerifyFound();
-            break;
-        }
-    }
-}
-
 TEST_F(VkLayerTest, InvalidQueryPoolCreate) {
     TEST_DESCRIPTION("Attempt to create a query pool for PIPELINE_STATISTICS without enabling pipeline stats for the device.");
 
