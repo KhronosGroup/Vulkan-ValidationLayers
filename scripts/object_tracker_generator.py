@@ -790,6 +790,7 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
                 # Structs at first level will have an object
                 if self.struct_contains_object(member.type) == True:
                     struct_info = self.struct_member_dict[member.type]
+                    # TODO (jbolz): Can this use paramIsPointer?
                     ispointer = '*' in member.cdecl;
                     # Struct Array
                     if member.len is not None:
