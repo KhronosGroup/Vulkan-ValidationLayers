@@ -507,7 +507,8 @@ bool cvdescriptorset::DescriptorSetLayout::ValidateCreateInfo(
                         !inline_uniform_block_features->descriptorBindingInlineUniformBlockUpdateAfterBind) {
                         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                                         "VUID-VkDescriptorSetLayoutBindingFlagsCreateInfoEXT-descriptorBindingInlineUniformBlockUpdateAfterBind-02211",
-                                        "Invalid flags for VkDescriptorSetLayoutBinding entry %" PRIu32, i);
+                                        "Invalid flags (VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT) for VkDescriptorSetLayoutBinding entry %" PRIu32
+                                        " with descriptorBindingInlineUniformBlockUpdateAfterBind not enabled", i);
                     }
                 }
 
