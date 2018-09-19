@@ -688,6 +688,7 @@ class UniqueObjectsOutputGenerator(OutputGenerator):
                 # Structs at first level will have an NDO, OR, we need a safe_struct for the pnext chain
                 if self.struct_contains_ndo(member.type) == True or process_pnext:
                     struct_info = self.struct_member_dict[member.type]
+                    # TODO (jbolz): Can this use paramIsPointer?
                     ispointer = '*' in member.cdecl;
                     # Struct Array
                     if member.len is not None:

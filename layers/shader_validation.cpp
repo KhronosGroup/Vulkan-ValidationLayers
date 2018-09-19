@@ -1166,6 +1166,7 @@ static bool ValidateSpecializationOffsets(debug_report_data const *report_data, 
     return skip;
 }
 
+// TODO (jbolz): Can this return a const reference?
 static std::set<uint32_t> TypeToDescriptorTypeSet(shader_module const *module, uint32_t type_id, unsigned &descriptor_count) {
     auto type = module->get_def(type_id);
     bool is_storage_buffer = false;

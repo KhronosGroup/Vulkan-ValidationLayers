@@ -768,6 +768,7 @@ void *BuildUnwrappedUpdateTemplateBuffer(layer_data *dev_data, uint64_t descript
         size_t size = std::get<3>(this_entry);
 
         if (size != 0) {
+            assert(type == kVulkanObjectTypeUnknown);
             memcpy(destination, source, size);
         } else {
             switch (type) {
