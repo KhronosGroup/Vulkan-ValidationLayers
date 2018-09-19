@@ -2503,24 +2503,6 @@ static bool VerifyQueueStateToSeq(layer_data *dev_data, QUEUE_STATE *initial_que
                     worklist.push_back(other_queue);
                 }
             }
-
-            for (auto cb : sub_it->cbs) {
-                auto cb_node = GetCBNode(dev_data, cb);
-                if (cb_node) {
-                    for (auto queryEventsPair : cb_node->waitedEventsBeforeQueryReset) {
-                        for (auto event : queryEventsPair.second) {
-                            if (dev_data->eventMap[event].needsSignaled) {
-                                skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                                VK_DEBUG_REPORT_OBJECT_TYPE_QUERY_POOL_EXT, 0, kVUID_Core_DrawState_InvalidQuery,
-                                                "Cannot get query results on queryPool 0x%" PRIx64
-                                                " with index %d which was guarded by unsignaled event 0x%" PRIx64 ".",
-                                                HandleToUint64(queryEventsPair.first.pool), queryEventsPair.first.index,
-                                                HandleToUint64(event));
-                            }
-                        }
-                    }
-                }
-            }
         }
 
         // finally mark the point we've now validated this queue to.
@@ -3594,40 +3576,6 @@ static bool PreCallValidateGetQueryPoolResults(layer_data *dev_data, VkQueryPool
         }
     }
 
-    if (dev_data->instance_data->disabled.get_query_pool_results) return false;
-    for (uint32_t i = 0; i < query_count; ++i) {
-        QueryObject query = {query_pool, first_query + i};
-        auto qif_pair = queries_in_flight->find(query);
-        auto query_state_pair = dev_data->queryToStateMap.find(query);
-        if (query_state_pair != dev_data->queryToStateMap.end()) {
-            // Available and in flight
-            if (qif_pair != queries_in_flight->end()) {
-                if (query_state_pair->second) {
-                    for (auto cmd_buffer : qif_pair->second) {
-                        auto cb = GetCBNode(dev_data, cmd_buffer);
-                        auto query_event_pair = cb->waitedEventsBeforeQueryReset.find(query);
-                        if (query_event_pair == cb->waitedEventsBeforeQueryReset.end()) {
-                            skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                            VK_DEBUG_REPORT_OBJECT_TYPE_QUERY_POOL_EXT, 0, kVUID_Core_DrawState_InvalidQuery,
-                                            "Cannot get query results on queryPool 0x%" PRIx64 " with index %d which is in flight.",
-                                            HandleToUint64(query_pool), first_query + i);
-                        }
-                    }
-                }
-            } else if (!query_state_pair->second) {  // Unavailable and Not in flight
-                skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_QUERY_POOL_EXT, 0,
-                                kVUID_Core_DrawState_InvalidQuery,
-                                "Cannot get query results on queryPool 0x%" PRIx64 " with index %d which is unavailable.",
-                                HandleToUint64(query_pool), first_query + i);
-            }
-        } else {  // Uninitialized
-            skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_QUERY_POOL_EXT, 0,
-                            kVUID_Core_DrawState_InvalidQuery,
-                            "Cannot get query results on queryPool 0x%" PRIx64
-                            " with index %d as data has not been collected for this index.",
-                            HandleToUint64(query_pool), first_query + i);
-        }
-    }
     return skip;
 }
 
