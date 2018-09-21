@@ -263,6 +263,17 @@ GlobalQFOTransferBarrierMap<VkBufferMemoryBarrier> &GetGlobalQFOReleaseBarrierMa
     return dev_data->qfo_release_buffer_barrier_map;
 }
 
+// Get the image viewstate for a given framebuffer attachment
+IMAGE_VIEW_STATE *GetAttachmentImageViewState(layer_data *dev_data, FRAMEBUFFER_STATE *framebuffer, uint32_t index) {
+    assert(framebuffer && (index < framebuffer->createInfo.attachmentCount));
+#ifdef FRAMEBUFFER_ATTACHMENT_STATE_CACHE
+    return framebuffer->attachments[index].view_state;
+#else
+    const VkImageView &image_view = framebuffer->createInfo.pAttachments[index];
+    return GetImageViewState(dev_data, image_view);
+#endif
+}
+
 // Return IMAGE_VIEW_STATE ptr for specified imageView or else NULL
 IMAGE_VIEW_STATE *GetImageViewState(const layer_data *dev_data, VkImageView image_view) {
     auto iv_it = dev_data->imageViewMap.find(image_view);
@@ -6244,8 +6255,10 @@ VKAPI_ATTR VkResult VKAPI_CALL AllocateCommandBuffers(VkDevice device, const VkC
 static void AddFramebufferBinding(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, FRAMEBUFFER_STATE *fb_state) {
     AddCommandBufferBinding(&fb_state->cb_bindings, {HandleToUint64(fb_state->framebuffer), kVulkanObjectTypeFramebuffer},
                             cb_state);
-    for (auto attachment : fb_state->attachments) {
-        auto view_state = attachment.view_state;
+
+    const uint32_t attachmentCount = fb_state->createInfo.attachmentCount;
+    for (uint32_t attachment = 0; attachment < attachmentCount; ++attachment) {
+        auto view_state = GetAttachmentImageViewState(dev_data, fb_state, attachment);
         if (view_state) {
             AddCommandBufferBindingImageView(dev_data, cb_state, view_state);
         }
@@ -8084,15 +8097,15 @@ static bool ValidateImageBarrierImage(layer_data *device_data, const char *funcN
     bool sub_image_found = false;  // Do we find a corresponding subpass description
     VkImageLayout sub_image_layout = VK_IMAGE_LAYOUT_UNDEFINED;
     uint32_t attach_index = 0;
-    uint32_t index_count = 0;
     // Verify that a framebuffer image matches barrier image
-    for (const auto &fb_attach : fb_state->attachments) {
-        if (img_bar_image == fb_attach.image) {
+    const auto attachmentCount = fb_state->createInfo.attachmentCount;
+    for (uint32_t attachment = 0; attachment < attachmentCount; ++attachment) {
+        auto view_state = GetAttachmentImageViewState(device_data, fb_state, attachment);
+        if (view_state && (img_bar_image == view_state->create_info.image)) {
             image_match = true;
-            attach_index = index_count;
+            attach_index = attachment;
             break;
         }
-        index_count++;
     }
     if (image_match) {  // Make sure subpass is referring to matching attachment
         if (sub_desc.pDepthStencilAttachment && sub_desc.pDepthStencilAttachment->attachment == attach_index) {
@@ -9570,10 +9583,12 @@ static void PostCallRecordCreateFramebuffer(layer_data *dev_data, const VkFrameb
         if (!view_state) {
             continue;
         }
+#ifdef FRAMEBUFFER_ATTACHMENT_STATE_CACHE
         MT_FB_ATTACHMENT_INFO fb_info;
         fb_info.view_state = view_state;
         fb_info.image = view_state->create_info.image;
         fb_state->attachments.push_back(fb_info);
+#endif
     }
     dev_data->frameBufferMap[fb] = std::move(fb_state);
 }
@@ -10309,7 +10324,9 @@ VKAPI_ATTR void VKAPI_CALL CmdBeginRenderPass(VkCommandBuffer commandBuffer, con
     auto framebuffer = pRenderPassBegin ? GetFramebufferState(dev_data, pRenderPassBegin->framebuffer) : nullptr;
     if (cb_state) {
         skip |= PreCallValidateCmdBeginRenderPass(dev_data, render_pass_state, cb_state, framebuffer, pRenderPassBegin);
-        PreCallRecordCmdBeginRenderPass(dev_data, cb_state, framebuffer, render_pass_state, pRenderPassBegin, contents);
+        if (!skip) {
+            PreCallRecordCmdBeginRenderPass(dev_data, cb_state, framebuffer, render_pass_state, pRenderPassBegin, contents);
+        }
     }
     lock.unlock();
     if (!skip) {
