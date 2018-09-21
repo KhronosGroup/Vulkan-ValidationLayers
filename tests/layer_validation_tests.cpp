@@ -17193,6 +17193,75 @@ TEST_F(VkLayerTest, FramebufferIncompatible) {
     vkDestroyFramebuffer(m_device->device(), fb, NULL);
 }
 
+TEST_F(VkLayerTest, RenderPassMissingAttachment) {
+    TEST_DESCRIPTION("Begin render pass with missing framebuffer attachment");
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    // Create a renderPass with a single color attachment
+    VkAttachmentReference attach = {};
+    attach.layout = VK_IMAGE_LAYOUT_GENERAL;
+    VkSubpassDescription subpass = {};
+    subpass.pColorAttachments = &attach;
+    VkRenderPassCreateInfo rpci = {};
+    rpci.subpassCount = 1;
+    rpci.pSubpasses = &subpass;
+    rpci.attachmentCount = 1;
+    VkAttachmentDescription attach_desc = {};
+    attach_desc.format = VK_FORMAT_B8G8R8A8_UNORM;
+    attach_desc.samples = VK_SAMPLE_COUNT_1_BIT;
+    attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+    rpci.pAttachments = &attach_desc;
+    rpci.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+    VkRenderPass rp;
+    VkResult err = vkCreateRenderPass(m_device->device(), &rpci, NULL, &rp);
+    ASSERT_VK_SUCCESS(err);
+
+    auto createView = lvl_init_struct<VkImageViewCreateInfo>();
+    createView.image = m_renderTargets[0]->handle();
+    createView.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    createView.format = VK_FORMAT_B8G8R8A8_UNORM;
+    createView.components.r = VK_COMPONENT_SWIZZLE_R;
+    createView.components.g = VK_COMPONENT_SWIZZLE_G;
+    createView.components.b = VK_COMPONENT_SWIZZLE_B;
+    createView.components.a = VK_COMPONENT_SWIZZLE_A;
+    createView.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    createView.flags = 0;
+
+    VkImageView iv;
+    vkCreateImageView(m_device->handle(), &createView, nullptr, &iv);
+
+    auto fb_info = lvl_init_struct<VkFramebufferCreateInfo>();
+    fb_info.renderPass = rp;
+    fb_info.attachmentCount = 1;
+    fb_info.pAttachments = &iv;
+    fb_info.width = 100;
+    fb_info.height = 100;
+    fb_info.layers = 1;
+
+    // Create the framebuffer then destory the view it uses.
+    VkFramebuffer fb;
+    err = vkCreateFramebuffer(device(), &fb_info, NULL, &fb);
+    vkDestroyImageView(device(), iv, NULL);
+    ASSERT_VK_SUCCESS(err);
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkRenderPassBeginInfo-framebuffer-parameter");
+
+    auto rpbi = lvl_init_struct<VkRenderPassBeginInfo>();
+    rpbi.renderPass = rp;
+    rpbi.framebuffer = fb;
+    rpbi.renderArea = {{0, 0}, {32, 32}};
+
+    m_commandBuffer->begin();
+    vkCmdBeginRenderPass(m_commandBuffer->handle(), &rpbi, VK_SUBPASS_CONTENTS_INLINE);
+    // Don't call vkCmdEndRenderPass; as the begin has been "skipped" based on the error condition
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+
+    vkDestroyFramebuffer(m_device->device(), fb, NULL);
+    vkDestroyRenderPass(m_device->device(), rp, NULL);
+}
+
 TEST_F(VkLayerTest, ColorBlendInvalidLogicOp) {
     TEST_DESCRIPTION("Attempt to use invalid VkPipelineColorBlendStateCreateInfo::logicOp value.");
 
