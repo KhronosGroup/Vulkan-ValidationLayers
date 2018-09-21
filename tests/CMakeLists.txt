@@ -17,6 +17,9 @@
 
 set(GTEST_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/../external/googletest)
 
+# Needed to make structure definitions match with glslang libraries
+add_definitions(-DNV_EXTENSIONS -DAMD_EXTENSIONS)
+
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     add_definitions(-DVK_USE_PLATFORM_WIN32_KHR -DWIN32_LEAN_AND_MEAN)
     # Workaround for TR1 deprecation in Visual Studio 15.5 until Google Test is updated
