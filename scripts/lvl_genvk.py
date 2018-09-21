@@ -180,11 +180,35 @@ def makeGenOpts(args):
             expandEnumerants = False)
         ]
 
-    # Options for object_tracker layer
-    genOpts['object_tracker.cpp'] = [
+    # Options for object_tracker validation routines
+    genOpts['object_tracker_utils_auto.cpp'] = [
           ObjectTrackerOutputGenerator,
           ObjectTrackerGeneratorOptions(
-            filename          = 'object_tracker.cpp',
+            filename          = 'object_tracker_utils_auto.cpp',
+            directory         = directory,
+            apiname           = 'vulkan',
+            profile           = None,
+            versions          = featuresPat,
+            emitversions      = featuresPat,
+            defaultExtensions = 'vulkan',
+            addExtensions     = addExtensionsPat,
+            removeExtensions  = removeExtensionsPat,
+            emitExtensions    = emitExtensionsPat,
+            prefixText        = prefixStrings + vkPrefixStrings,
+            protectFeature    = False,
+            apicall           = 'VKAPI_ATTR ',
+            apientry          = 'VKAPI_CALL ',
+            apientryp         = 'VKAPI_PTR *',
+            alignFuncParam    = 48,
+            expandEnumerants  = False,
+            valid_usage_path  = args.scripts)
+        ]
+
+    # Options for object_tracker core routines
+    genOpts['object_tracker_core_auto.cpp'] = [
+          ObjectTrackerOutputGenerator,
+          ObjectTrackerGeneratorOptions(
+            filename          = 'object_tracker_core_auto.cpp',
             directory         = directory,
             apiname           = 'vulkan',
             profile           = None,
