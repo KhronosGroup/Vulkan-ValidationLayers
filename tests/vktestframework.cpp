@@ -315,6 +315,15 @@ static const char *DefaultConfig =
     "MaxCullDistances 8\n"
     "MaxCombinedClipAndCullDistances 8\n"
     "MaxSamples 4\n"
+    "MaxMeshOutputVerticesNV 256\n"
+    "MaxMeshOutputPrimitivesNV 512\n"
+    "MaxMeshWorkGroupSizeX_NV 32\n"
+    "MaxMeshWorkGroupSizeY_NV 1\n"
+    "MaxMeshWorkGroupSizeZ_NV 1\n"
+    "MaxTaskWorkGroupSizeX_NV 32\n"
+    "MaxTaskWorkGroupSizeY_NV 1\n"
+    "MaxTaskWorkGroupSizeZ_NV 1\n"
+    "MaxMeshViewCountNV 4\n"
 
     "nonInductiveForLoops 1\n"
     "whileLoops 1\n"
@@ -536,6 +545,24 @@ void VkTestFramework::ProcessConfigFile() {
             Resources.maxCombinedClipAndCullDistances = value;
         else if (strcmp(token, "MaxSamples") == 0)
             Resources.maxSamples = value;
+        else if (strcmp(token, "MaxMeshOutputVerticesNV") == 0)
+            Resources.maxMeshOutputVerticesNV = value;
+        else if (strcmp(token, "MaxMeshOutputPrimitivesNV") == 0)
+            Resources.maxMeshOutputPrimitivesNV = value;
+        else if (strcmp(token, "MaxMeshWorkGroupSizeX_NV") == 0)
+            Resources.maxMeshWorkGroupSizeX_NV = value;
+        else if (strcmp(token, "MaxMeshWorkGroupSizeY_NV") == 0)
+            Resources.maxMeshWorkGroupSizeY_NV = value;
+        else if (strcmp(token, "MaxMeshWorkGroupSizeZ_NV") == 0)
+            Resources.maxMeshWorkGroupSizeZ_NV = value;
+        else if (strcmp(token, "MaxTaskWorkGroupSizeX_NV") == 0)
+            Resources.maxTaskWorkGroupSizeX_NV = value;
+        else if (strcmp(token, "MaxTaskWorkGroupSizeY_NV") == 0)
+            Resources.maxTaskWorkGroupSizeY_NV = value;
+        else if (strcmp(token, "MaxTaskWorkGroupSizeZ_NV") == 0)
+            Resources.maxTaskWorkGroupSizeZ_NV = value;
+        else if (strcmp(token, "MaxMeshViewCountNV") == 0)
+            Resources.maxMeshViewCountNV = value;
 
         else if (strcmp(token, "nonInductiveForLoops") == 0)
             Resources.limits.nonInductiveForLoops = (value != 0);
