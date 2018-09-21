@@ -10110,8 +10110,8 @@ static bool PreCallValidateCreateRenderPass(const layer_data *dev_data, VkDevice
         skip |= ValidateStageMaskGsTsEnables(dev_data, dependency.dstStageMask, "vkCreateRenderPass()",
                                              "VUID-VkSubpassDependency-dstStageMask-00861",
                                              "VUID-VkSubpassDependency-dstStageMask-00863",
-                                             "VUID-VkSubpassDependency-srcStageMask-02101",
-                                             "VUID-VkSubpassDependency-srcStageMask-02102");
+                                             "VUID-VkSubpassDependency-dstStageMask-02101",
+                                             "VUID-VkSubpassDependency-dstStageMask-02102");
 
         if (!ValidateAccessMaskPipelineStage(dependency.srcAccessMask, dependency.srcStageMask)) {
             skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
@@ -14158,7 +14158,7 @@ static bool PreCallValidateCmdDrawMeshTasksIndirectCountNV(layer_data *dev_data,
     *count_buffer_state = GetBufferState(dev_data, count_buffer);
     skip |= ValidateMemoryIsBoundToBuffer(dev_data, *buffer_state, caller, "VUID-vkCmdDrawMeshTasksIndirectCountNV-buffer-02176");
     skip |= ValidateMemoryIsBoundToBuffer(dev_data, *count_buffer_state, caller,
-                                          "VUID-vkCmdDrawMeshTasksIndirectNV-countBuffer-02178");
+                                          "VUID-vkCmdDrawMeshTasksIndirectCountNV-countBuffer-02178");
 
     return skip;
 }
