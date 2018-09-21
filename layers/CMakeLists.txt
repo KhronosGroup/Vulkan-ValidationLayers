@@ -175,11 +175,13 @@ GenerateFromVkXml(threading_generator.py thread_check.h)
 GenerateFromVkXml(parameter_validation_generator.py parameter_validation.cpp)
 GenerateFromVkXml(unique_objects_generator.py unique_objects_wrappers.h)
 GenerateFromVkXml(dispatch_table_helper_generator.py vk_dispatch_table_helper.h)
-GenerateFromVkXml(object_tracker_generator.py object_tracker.cpp)
+GenerateFromVkXml(object_tracker_generator.py object_tracker_utils_auto.cpp)
+GenerateFromVkXml(object_tracker_generator.py object_tracker_core_auto.cpp)
+
 
 if(BUILD_LAYERS)
     AddVkLayer(core_validation core_validation.cpp convert_to_renderpass2.cpp descriptor_sets.cpp buffer_validation.cpp shader_validation.cpp xxhash.c)
-    AddVkLayer(object_tracker object_tracker.cpp object_tracker_utils.cpp)
+    AddVkLayer(object_tracker object_tracker_utils_auto.cpp object_tracker_core_auto.cpp object_tracker_utils.cpp object_tracker_core.cpp)
     AddVkLayer(threading threading.cpp thread_check.h)
     AddVkLayer(unique_objects unique_objects.cpp unique_objects_wrappers.h)
     AddVkLayer(parameter_validation

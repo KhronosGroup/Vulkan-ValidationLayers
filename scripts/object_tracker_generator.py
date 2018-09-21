@@ -362,11 +362,25 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
                     for l in v:
                         for s in self.ExtractVUIDs(l):
                             yield s
+    #
+    # Separate content for validation (utils) and core files
+    def otwrite(self, dest, formatstring):
+        if 'core' in self.genOpts.filename and (dest == 'core' or dest == 'both'):
+            write(formatstring, file=self.outFile)
+        elif 'utils' in self.genOpts.filename and (dest == 'util' or dest == 'both'):
+            write(formatstring, file=self.outFile)
 
     #
     # Called at beginning of processing as file is opened
     def beginFile(self, genOpts):
         OutputGenerator.beginFile(self, genOpts)
+
+        core_file = (genOpts.filename == 'object_tracker_utils_auto.cpp')
+        utils_file = (genOpts.filename == 'object_tracker_core_auto.cpp')
+
+        if not core_file and not utils_file:
+            print("Error: Output Filenames have changed, update generator source.\n")
+            sys.exit(1)
 
         self.valid_usage_path = genOpts.valid_usage_path
         vu_json_filename = os.path.join(self.valid_usage_path + os.sep, 'validusage.json')
@@ -385,7 +399,7 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
         # File Comment
         file_comment = '// *** THIS FILE IS GENERATED - DO NOT EDIT ***\n'
         file_comment += '// See object_tracker_generator.py for modifications\n'
-        write(file_comment, file=self.outFile)
+        self.otwrite('both', file_comment)
         # Copyright Statement
         copyright = ''
         copyright += '\n'
@@ -412,12 +426,17 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
         copyright += ' * Author: Dave Houlton <daveh@lunarg.com>\n'
         copyright += ' *\n'
         copyright += ' ****************************************************************************/\n'
-        write(copyright, file=self.outFile)
+        self.otwrite('both', copyright)
         # Namespace
         self.newline()
-        write('#include "object_tracker.h"', file = self.outFile)
-        self.newline()
-        write('namespace object_tracker {', file = self.outFile)
+        self.otwrite('both', '#include "object_tracker.h"')
+        self.otwrite('both', '#include "object_lifetime_validation.h"')
+        self.otwrite('both', '\n')
+        self.otwrite('both', 'namespace object_tracker {')
+        self.otwrite('core', '#include "precall.h"')
+        self.otwrite('core', '#include "postcall.h"')
+        self.otwrite('core', '\n')
+
     #
     # Now that the data is all collected and complete, generate and output the object validation routines
     def endFile(self):
@@ -430,30 +449,33 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
         self.newline()
         # Build undestroyed objects destruction function
         destroy_func = self.GenDestroyFunc()
-        self.newline()
-        write('// ObjectTracker undestroyed objects validation function', file=self.outFile)
-        write('%s' % report_func, file=self.outFile)
-        write('%s' % destroy_func, file=self.outFile)
+        self.otwrite('util', '\n')
+        self.otwrite('util', '// ObjectTracker undestroyed objects validation function')
+        self.otwrite('util', '%s' % report_func)
+        self.otwrite('util', '%s' % destroy_func)
         # Actually write the interface to the output file.
         if (self.emit):
             self.newline()
+            if self.featureExtraProtect is not None:
+                prot = '#ifdef %s' % self.featureExtraProtect
+                self.otwrite('both', '%s' % prot)
+            # Write the object_tracker code to the  file
+            if self.sections['command']:
+                source = ('\n'.join(self.sections['command']))
+                self.otwrite('both', '%s' % source)
             if (self.featureExtraProtect is not None):
-                write('#ifdef', self.featureExtraProtect, file=self.outFile)
-            # Write the object_tracker code to the file
-            if (self.sections['command']):
-                write('\n'.join(self.sections['command']), end=u'', file=self.outFile)
-            if (self.featureExtraProtect is not None):
-                write('\n#endif //', self.featureExtraProtect, file=self.outFile)
+                prot = '\n#endif // %s', self.featureExtraProtect
+                self.otwrite('both', prot)
             else:
-                self.newline()
+                self.otwrite('both', '\n')
 
         # Record intercepted procedures
-        write('// Map of all APIs to be intercepted by this layer', file=self.outFile)
-        write('const std::unordered_map<std::string, void*> name_to_funcptr_map = {', file=self.outFile)
-        write('\n'.join(self.intercepts), file=self.outFile)
-        write('};\n', file=self.outFile)
-        self.newline()
-        write('} // namespace object_tracker', file=self.outFile)
+        self.otwrite('core', '// Map of all APIs to be intercepted by this layer')
+        self.otwrite('core', 'const std::unordered_map<std::string, void*> name_to_funcptr_map = {')
+        intercepts = '\n'.join(self.intercepts)
+        self.otwrite('core', '%s' % intercepts)
+        self.otwrite('core', '};\n\n')
+        self.otwrite('both', '} // namespace object_tracker')
         # Finish processing in superclass
         OutputGenerator.endFile(self)
     #
@@ -741,8 +763,8 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
                     if dispobj == 'VkInstance' or dispobj == 'VkPhysicalDevice':
                         calltype = 'Instance'
                     # Call Destroy a single time
-                    validate_code += '%s    skip |= %sValidateDestroyObject(%s, %s, %s, pAllocator, %s, %s);\n' % (indent, calltype, cmd_info[0].name, cmd_info[param].name, self.GetVulkanObjType(cmd_info[param].type), compatalloc_vuid, nullalloc_vuid)
-                    record_code += '%s    %sRecordDestroyObject(%s, %s, %s);\n' % (indent, calltype, cmd_info[0].name, cmd_info[param].name, self.GetVulkanObjType(cmd_info[param].type))
+                    validate_code += '%sskip |= %sValidateDestroyObject(%s, %s, %s, pAllocator, %s, %s);\n' % (indent, calltype, cmd_info[0].name, cmd_info[param].name, self.GetVulkanObjType(cmd_info[param].type), compatalloc_vuid, nullalloc_vuid)
+                    record_code += '%s%sRecordDestroyObject(%s, %s, %s);\n' % (indent, calltype, cmd_info[0].name, cmd_info[param].name, self.GetVulkanObjType(cmd_info[param].type))
         return object_array, validate_code, record_code
     #
     # Output validation for a single object (obj_count is NULL) or a counted list of objects
@@ -760,13 +782,13 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
         if disp_name == 'instance' or disp_name == 'physicalDevice':
             calltype = 'Instance'
         if obj_count is not None:
-            pre_call_code += '%s    for (uint32_t %s = 0; %s < %s; ++%s) {\n' % (indent, index, index, obj_count, index)
+            pre_call_code += '%sfor (uint32_t %s = 0; %s < %s; ++%s) {\n' % (indent, index, index, obj_count, index)
             indent = self.incIndent(indent)
-            pre_call_code += '%s    skip |= %sValidateObject(%s, %s%s[%s], %s, %s, %s, %s);\n' % (indent, calltype, disp_name, prefix, obj_name, index, self.GetVulkanObjType(obj_type), null_allowed, param_vuid, parent_vuid)
+            pre_call_code += '%sskip |= %sValidateObject(%s, %s%s[%s], %s, %s, %s, %s);\n' % (indent, calltype, disp_name, prefix, obj_name, index, self.GetVulkanObjType(obj_type), null_allowed, param_vuid, parent_vuid)
             indent = self.decIndent(indent)
-            pre_call_code += '%s    }\n' % indent
+            pre_call_code += '%s}\n' % indent
         else:
-            pre_call_code += '%s    skip |= %sValidateObject(%s, %s%s, %s, %s, %s, %s);\n' % (indent, calltype, disp_name, prefix, obj_name, self.GetVulkanObjType(obj_type), null_allowed, param_vuid, parent_vuid)
+            pre_call_code += '%sskip |= %sValidateObject(%s, %s%s, %s, %s, %s, %s);\n' % (indent, calltype, disp_name, prefix, obj_name, self.GetVulkanObjType(obj_type), null_allowed, param_vuid, parent_vuid)
         return pre_call_code
     #
     # first_level_param indicates if elements are passed directly into the function else they're below a ptr/struct
@@ -797,35 +819,35 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
                     if member.len is not None:
                         # Update struct prefix
                         new_prefix = '%s%s' % (prefix, member.name)
-                        pre_code += '%s    if (%s%s) {\n' % (indent, prefix, member.name)
+                        pre_code += '%sif (%s%s) {\n' % (indent, prefix, member.name)
                         indent = self.incIndent(indent)
-                        pre_code += '%s    for (uint32_t %s = 0; %s < %s%s; ++%s) {\n' % (indent, index, index, prefix, member.len, index)
+                        pre_code += '%sfor (uint32_t %s = 0; %s < %s%s; ++%s) {\n' % (indent, index, index, prefix, member.len, index)
                         indent = self.incIndent(indent)
                         local_prefix = '%s[%s].' % (new_prefix, index)
                         # Process sub-structs in this struct
                         tmp_pre = self.validate_objects(struct_info, indent, local_prefix, array_index, disp_name, member.type, False)
                         pre_code += tmp_pre
                         indent = self.decIndent(indent)
-                        pre_code += '%s    }\n' % indent
+                        pre_code += '%s}\n' % indent
                         indent = self.decIndent(indent)
-                        pre_code += '%s    }\n' % indent
+                        pre_code += '%s}\n' % indent
                     # Single Struct
                     elif ispointer:
                         # Update struct prefix
                         new_prefix = '%s%s->' % (prefix, member.name)
                         # Declare safe_VarType for struct
-                        pre_code += '%s    if (%s%s) {\n' % (indent, prefix, member.name)
+                        pre_code += '%sif (%s%s) {\n' % (indent, prefix, member.name)
                         indent = self.incIndent(indent)
                         # Process sub-structs in this struct
                         tmp_pre = self.validate_objects(struct_info, indent, new_prefix, array_index, disp_name, member.type, False)
                         pre_code += tmp_pre
                         indent = self.decIndent(indent)
-                        pre_code += '%s    }\n' % indent
+                        pre_code += '%s}\n' % indent
         return pre_code
     #
     # For a particular API, generate the object handling code
     def generate_wrapping_code(self, cmd):
-        indent = ''
+        indent = '    '
         pre_call_validate = ''
         pre_call_record = ''
         post_call_record = ''
@@ -921,11 +943,12 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
             if cmdname in self.interface_functions:
                 continue
             if cmdname in self.no_autogen_list:
-                decls = self.makeCDecls(cmdinfo.elem)
-                self.appendSection('command', '')
-                self.appendSection('command', '// Declare only')
-                self.appendSection('command', decls[0])
-                self.intercepts += [ '    {"%s", (void *)%s},' % (cmdname,cmdname[2:]) ]
+                if 'core' in self.genOpts.filename:
+                    decls = self.makeCDecls(cmdinfo.elem)
+                    self.appendSection('command', '')
+                    self.appendSection('command', '// Declare only')
+                    self.appendSection('command', decls[0])
+                    self.intercepts += [ '    {"%s", (void *)%s},' % (cmdname,cmdname[2:]) ]
                 continue
             # Generate object handling code
             (pre_call_validate, pre_call_record, post_call_record) = self.generate_wrapping_code(cmdinfo.elem)
@@ -955,103 +978,105 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
             func_decl_template = decls[0][:-1].split('VKAPI_CALL ')
             func_decl_template = func_decl_template[1] + ' {'
 
-            # Output PreCallValidateAPI function if necessary
-            if pre_call_validate:
-                pre_cv_func_decl = 'static bool PreCallValidate' + func_decl_template
+            if 'utils' in self.genOpts.filename:
+                # Output PreCallValidateAPI function if necessary
+                if pre_call_validate:
+                    pre_cv_func_decl = 'bool PreCallValidate' + func_decl_template
+                    self.appendSection('command', '')
+                    self.appendSection('command', pre_cv_func_decl)
+                    self.appendSection('command', '    bool skip = false;')
+                    self.appendSection('command', pre_call_validate)
+                    self.appendSection('command', '    return skip;')
+                    self.appendSection('command', '}')
+
+                # Output PreCallRecordAPI function if necessary
+                if pre_call_record:
+                    pre_cr_func_decl = 'void PreCallRecord' + func_decl_template
+                    self.appendSection('command', '')
+                    self.appendSection('command', pre_cr_func_decl)
+                    self.appendSection('command', pre_call_record)
+                    self.appendSection('command', '}')
+
+                # Output PosCallRecordAPI function if necessary
+                if post_call_record:
+                    post_cr_func_decl = 'void PostCallRecord' + func_decl_template
+                    self.appendSection('command', '')
+                    self.appendSection('command', post_cr_func_decl)
+                    self.appendSection('command', post_call_record)
+                    self.appendSection('command', '}')
+
+            if 'core' in self.genOpts.filename:
+                # Output API function:
                 self.appendSection('command', '')
-                self.appendSection('command', pre_cv_func_decl)
-                self.appendSection('command', '    bool skip = false;')
-                self.appendSection('command', pre_call_validate)
-                self.appendSection('command', '    return skip;')
-                self.appendSection('command', '}')
+                self.appendSection('command', decls[0][:-1])
+                self.appendSection('command', '{')
 
-            # Output PreCallRecordAPI function if necessary
-            if pre_call_record:
-                pre_cr_func_decl = 'static void PreCallRecord' + func_decl_template
-                self.appendSection('command', '')
-                self.appendSection('command', pre_cr_func_decl)
-                self.appendSection('command', pre_call_record)
-                self.appendSection('command', '}')
-
-            # Output PosCallRecordAPI function if necessary
-            if post_call_record:
-                post_cr_func_decl = 'static void PostCallRecord' + func_decl_template
-                self.appendSection('command', '')
-                self.appendSection('command', post_cr_func_decl)
-                self.appendSection('command', post_call_record)
-                self.appendSection('command', '}')
-
-            # Output API function:
-            self.appendSection('command', '')
-            self.appendSection('command', decls[0][:-1])
-            self.appendSection('command', '{')
-
-            # Handle return values, if any
-            resulttype = cmdinfo.elem.find('proto/type')
-            if (resulttype is not None and resulttype.text == 'void'):
-              resulttype = None
-            if (resulttype is not None):
-                assignresult = resulttype.text + ' result = '
-            else:
-                assignresult = ''
-
-            # Output all pre-API-call source
-            if pre_call_validate:
-                self.appendSection('command', '    bool skip = false;')
-            if pre_call_validate or pre_call_record:
-                self.appendSection('command', '    {')
-                self.appendSection('command', '        std::lock_guard<std::mutex> lock(global_lock);')
-            # If necessary, add call to PreCallValidateApi(...);
-            if pre_call_validate:
-                pcv_call = fcn_call.replace('TOKEN', '        skip |= PreCallValidate', 1)
-                self.appendSection('command', pcv_call)
-                if assignresult != '':
-                    if resulttype.text == 'VkResult':
-                        self.appendSection('command', '        if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;')
-                    elif resulttype.text == 'VkBool32':
-                        self.appendSection('command', '        if (skip) return VK_FALSE;')
-                    else:
-                        raise Exception('Unknown result type ' + resulttype.text)
+                # Handle return values, if any
+                resulttype = cmdinfo.elem.find('proto/type')
+                if (resulttype is not None and resulttype.text == 'void'):
+                  resulttype = None
+                if (resulttype is not None):
+                    assignresult = resulttype.text + ' result = '
                 else:
-                    self.appendSection('command', '        if (skip) return;')
-            # If necessary, add call to PreCallRecordApi(...);
-            if pre_call_record:
-                pre_cr_call = fcn_call.replace('TOKEN', '        PreCallRecord', 1)
-                self.appendSection('command', pre_cr_call)
+                    assignresult = ''
 
-            if pre_call_validate or pre_call_record:
-                self.appendSection('command', '    }')
+                # Output all pre-API-call source
+                if pre_call_validate:
+                    self.appendSection('command', '    bool skip = false;')
+                if pre_call_validate or pre_call_record:
+                    self.appendSection('command', '    {')
+                    self.appendSection('command', '        std::lock_guard<std::mutex> lock(global_lock);')
+                # If necessary, add call to PreCallValidateApi(...);
+                if pre_call_validate:
+                    pcv_call = fcn_call.replace('TOKEN', '        skip |= PreCallValidate', 1)
+                    self.appendSection('command', pcv_call)
+                    if assignresult != '':
+                        if resulttype.text == 'VkResult':
+                            self.appendSection('command', '        if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;')
+                        elif resulttype.text == 'VkBool32':
+                            self.appendSection('command', '        if (skip) return VK_FALSE;')
+                        else:
+                            raise Exception('Unknown result type ' + resulttype.text)
+                    else:
+                        self.appendSection('command', '        if (skip) return;')
+                # If necessary, add call to PreCallRecordApi(...);
+                if pre_call_record:
+                    pre_cr_call = fcn_call.replace('TOKEN', '        PreCallRecord', 1)
+                    self.appendSection('command', pre_cr_call)
 
-            # Build down-chain call strings and output source
-            # Use correct dispatch table
-            disp_name = cmdinfo.elem.find('param/name').text
-            disp_type = cmdinfo.elem.find('param/type').text
-            map_type = ''
-            if disp_type in ["VkInstance", "VkPhysicalDevice"] or cmdname == 'vkCreateInstance':
-                object_type = 'instance'
-                map_type = 'instance_'
-            else:
-                object_type = 'device'
-            dispatch_table = 'GetLayerDataPtr(get_dispatch_key(%s), %slayer_data_map)->%s_dispatch_table.' % (disp_name, map_type, object_type)
-            down_chain_call = fcn_call.replace('TOKEN', dispatch_table, 1)
-            self.appendSection('command', '    ' + assignresult + down_chain_call)
+                if pre_call_validate or pre_call_record:
+                    self.appendSection('command', '    }')
 
-            # If necessary, add call to PostCallRecordApi(...);
-            if post_call_record:
-                if assignresult:
-                    if resulttype.text == 'VkResult':
-                        self.appendSection('command', '    if (VK_SUCCESS == result) {')
-                    elif resulttype.text == 'VkBool32':
-                        self.appendSection('command', '    if (VK_TRUE == result) {')
-                self.appendSection('command', '        std::lock_guard<std::mutex> lock(global_lock);')
-                post_cr_call = fcn_call.replace('TOKEN', '        PostCallRecord', 1)
-                self.appendSection('command', post_cr_call)
-                self.appendSection('command', '    }')
+                # Build down-chain call strings and output source
+                # Use correct dispatch table
+                disp_name = cmdinfo.elem.find('param/name').text
+                disp_type = cmdinfo.elem.find('param/type').text
+                map_type = ''
+                if disp_type in ["VkInstance", "VkPhysicalDevice"] or cmdname == 'vkCreateInstance':
+                    object_type = 'instance'
+                    map_type = 'instance_'
+                else:
+                    object_type = 'device'
+                dispatch_table = 'GetLayerDataPtr(get_dispatch_key(%s), %slayer_data_map)->%s_dispatch_table.' % (disp_name, map_type, object_type)
+                down_chain_call = fcn_call.replace('TOKEN', dispatch_table, 1)
+                self.appendSection('command', '    ' + assignresult + down_chain_call)
 
-            # Handle the return result variable, if any
-            if (resulttype is not None):
-                self.appendSection('command', '    return result;')
-            self.appendSection('command', '}')
+                # If necessary, add call to PostCallRecordApi(...);
+                if post_call_record:
+                    if assignresult:
+                        if resulttype.text == 'VkResult':
+                            self.appendSection('command', '    if (VK_SUCCESS == result) {')
+                        elif resulttype.text == 'VkBool32':
+                            self.appendSection('command', '    if (VK_TRUE == result) {')
+                    self.appendSection('command', '        std::lock_guard<std::mutex> lock(global_lock);')
+                    post_cr_call = fcn_call.replace('TOKEN', '        PostCallRecord', 1)
+                    self.appendSection('command', post_cr_call)
+                    self.appendSection('command', '    }')
+
+                # Handle the return result variable, if any
+                if (resulttype is not None):
+                    self.appendSection('command', '    return result;')
+                self.appendSection('command', '}')
             if (feature_extra_protect is not None):
                 self.appendSection('command', '#endif // '+ feature_extra_protect)
                 self.intercepts += [ '#endif' ]
