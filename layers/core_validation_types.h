@@ -1036,7 +1036,12 @@ class FRAMEBUFFER_STATE : public BASE_NODE {
     VkFramebuffer framebuffer;
     safe_VkFramebufferCreateInfo createInfo;
     std::shared_ptr<RENDER_PASS_STATE> rp_state;
+#ifdef FRAMEBUFFER_ATTACHMENT_STATE_CACHE
+    // TODO Re-enable attachment state cache once staleness protection is implemented
+    //      For staleness protection destoryed images and image view must invalidate the cached data and tag the framebuffer object
+    //      as no longer valid
     std::vector<MT_FB_ATTACHMENT_INFO> attachments;
+#endif
     FRAMEBUFFER_STATE(VkFramebuffer fb, const VkFramebufferCreateInfo *pCreateInfo, std::shared_ptr<RENDER_PASS_STATE> &&rpstate)
         : framebuffer(fb), createInfo(pCreateInfo), rp_state(rpstate){};
 };
@@ -1061,6 +1066,7 @@ IMAGE_STATE *GetImageState(const layer_data *, VkImage);
 DEVICE_MEM_INFO *GetMemObjInfo(const layer_data *, VkDeviceMemory);
 BUFFER_VIEW_STATE *GetBufferViewState(const layer_data *, VkBufferView);
 SAMPLER_STATE *GetSamplerState(const layer_data *, VkSampler);
+IMAGE_VIEW_STATE *GetAttachmentImageViewState(layer_data *dev_data, FRAMEBUFFER_STATE *framebuffer, uint32_t index);
 IMAGE_VIEW_STATE *GetImageViewState(const layer_data *, VkImageView);
 SWAPCHAIN_NODE *GetSwapchainNode(const layer_data *, VkSwapchainKHR);
 GLOBAL_CB_NODE *GetCBNode(layer_data const *my_data, const VkCommandBuffer cb);

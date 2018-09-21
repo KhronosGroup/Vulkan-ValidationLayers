@@ -334,7 +334,16 @@ bool VerifyFramebufferAndRenderPassLayouts(layer_data *device_data, GLOBAL_CB_NO
     for (uint32_t i = 0; i < pRenderPassInfo->attachmentCount; ++i) {
         const VkImageView &image_view = framebufferInfo.pAttachments[i];
         auto view_state = GetImageViewState(device_data, image_view);
-        assert(view_state);
+
+        if (!view_state) {
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT,
+                            HandleToUint64(pRenderPassBegin->renderPass), "VUID-VkRenderPassBeginInfo-framebuffer-parameter",
+                            "vkCmdBeginRenderPass() :framebuffer 0x%" PRIx64 " pAttachments[%" PRIu32 "] = 0x%" PRIx64
+                            " is not a valid VkImageView handle",
+                            HandleToUint64(framebuffer_state->framebuffer), i, HandleToUint64(image_view));
+            continue;
+        }
+
         const VkImage &image = view_state->create_info.image;
         const VkImageSubresourceRange &subRange = view_state->create_info.subresourceRange;
         auto initial_layout = pRenderPassInfo->pAttachments[i].initialLayout;
@@ -366,8 +375,10 @@ bool VerifyFramebufferAndRenderPassLayouts(layer_data *device_data, GLOBAL_CB_NO
 void TransitionAttachmentRefLayout(layer_data *device_data, GLOBAL_CB_NODE *pCB, FRAMEBUFFER_STATE *pFramebuffer,
                                    VkAttachmentReference ref) {
     if (ref.attachment != VK_ATTACHMENT_UNUSED) {
-        auto image_view = pFramebuffer->createInfo.pAttachments[ref.attachment];
-        SetImageViewLayout(device_data, pCB, image_view, ref.layout);
+        auto image_view = GetAttachmentImageViewState(device_data, pFramebuffer, ref.attachment);
+        if (image_view) {
+            SetImageViewLayout(device_data, pCB, image_view, ref.layout);
+        }
     }
 }
 
@@ -422,8 +433,10 @@ void TransitionBeginRenderPassLayouts(layer_data *device_data, GLOBAL_CB_NODE *c
     // First transition into initialLayout
     auto const rpci = render_pass_state->createInfo.ptr();
     for (uint32_t i = 0; i < rpci->attachmentCount; ++i) {
-        VkImageView image_view = framebuffer_state->createInfo.pAttachments[i];
-        SetImageViewLayout(device_data, cb_state, image_view, rpci->pAttachments[i].initialLayout);
+        auto view_state = GetAttachmentImageViewState(device_data, framebuffer_state, i);
+        if (view_state) {
+            SetImageViewLayout(device_data, cb_state, view_state, rpci->pAttachments[i].initialLayout);
+        }
     }
     // Now transition for first subpass (index 0)
     TransitionSubpassLayouts(device_data, cb_state, render_pass_state, 0, framebuffer_state);
@@ -955,8 +968,10 @@ void TransitionFinalSubpassLayouts(layer_data *device_data, GLOBAL_CB_NODE *pCB,
     const VkRenderPassCreateInfo *pRenderPassInfo = renderPass->createInfo.ptr();
     if (framebuffer_state) {
         for (uint32_t i = 0; i < pRenderPassInfo->attachmentCount; ++i) {
-            auto image_view = framebuffer_state->createInfo.pAttachments[i];
-            SetImageViewLayout(device_data, pCB, image_view, pRenderPassInfo->pAttachments[i].finalLayout);
+            auto view_state = GetAttachmentImageViewState(device_data, framebuffer_state, i);
+            if (view_state) {
+                SetImageViewLayout(device_data, pCB, view_state, pRenderPassInfo->pAttachments[i].finalLayout);
+            }
         }
     }
 }
