@@ -297,8 +297,8 @@ void SetImageLayout(layer_data *device_data, GLOBAL_CB_NODE *cb_node, const IMAG
 }
 
 // Set image layout for all slices of an image view
-void SetImageViewLayout(layer_data *device_data, GLOBAL_CB_NODE *cb_node, VkImageView imageView, const VkImageLayout &layout) {
-    auto view_state = GetImageViewState(device_data, imageView);
+void SetImageViewLayout(layer_data *device_data, GLOBAL_CB_NODE *cb_node, IMAGE_VIEW_STATE *view_state,
+                        const VkImageLayout &layout) {
     assert(view_state);
 
     IMAGE_STATE *image_state = GetImageState(device_data, view_state->create_info.image);
@@ -312,6 +312,11 @@ void SetImageViewLayout(layer_data *device_data, GLOBAL_CB_NODE *cb_node, VkImag
     }
 
     SetImageLayout(device_data, cb_node, image_state, sub_range, layout);
+}
+
+void SetImageViewLayout(layer_data *device_data, GLOBAL_CB_NODE *cb_node, VkImageView imageView, const VkImageLayout &layout) {
+    auto view_state = GetImageViewState(device_data, imageView);
+    SetImageViewLayout(device_data, cb_node, view_state, layout);
 }
 
 bool VerifyFramebufferAndRenderPassLayouts(layer_data *device_data, GLOBAL_CB_NODE *pCB,

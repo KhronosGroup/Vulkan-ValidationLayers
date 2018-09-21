@@ -99,6 +99,8 @@ void SetLayout(std::unordered_map<ImageSubresourcePair, IMAGE_LAYOUT_NODE> &imag
                VkImageLayout layout);
 
 void SetImageViewLayout(layer_data *device_data, GLOBAL_CB_NODE *pCB, VkImageView imageView, const VkImageLayout &layout);
+void SetImageViewLayout(layer_data *device_data, GLOBAL_CB_NODE *cb_node, IMAGE_VIEW_STATE *view_state,
+                        const VkImageLayout &layout);
 
 bool VerifyFramebufferAndRenderPassLayouts(layer_data *dev_data, GLOBAL_CB_NODE *pCB, const VkRenderPassBeginInfo *pRenderPassBegin,
                                            const FRAMEBUFFER_STATE *framebuffer_state);
