@@ -5421,7 +5421,8 @@ std::valarray<uint32_t> GetDescriptorCountMaxPerStage(
 
             for (uint32_t binding_idx = 0; binding_idx < dsl->GetBindingCount(); binding_idx++) {
                 const VkDescriptorSetLayoutBinding *binding = dsl->GetDescriptorSetLayoutBindingPtrFromIndex(binding_idx);
-                if (0 != (stage & binding->stageFlags)) {
+                // Bindings with a descriptorCount of 0 are "reserved" and should be skipped
+                if (0 != (stage & binding->stageFlags) && binding->descriptorCount > 0) {
                     switch (binding->descriptorType) {
                         case VK_DESCRIPTOR_TYPE_SAMPLER:
                             stage_sum[DSL_TYPE_SAMPLERS] += binding->descriptorCount;
@@ -5480,11 +5481,14 @@ std::map<uint32_t, uint32_t> GetDescriptorSum(
 
         for (uint32_t binding_idx = 0; binding_idx < dsl->GetBindingCount(); binding_idx++) {
             const VkDescriptorSetLayoutBinding *binding = dsl->GetDescriptorSetLayoutBindingPtrFromIndex(binding_idx);
-            if (binding->descriptorType == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT) {
-                // count one block per binding. descriptorCount is number of bytes
-                sum_by_type[binding->descriptorType]++;
-            } else {
-                sum_by_type[binding->descriptorType] += binding->descriptorCount;
+            // Bindings with a descriptorCount of 0 are "reserved" and should be skipped
+            if (binding->descriptorCount > 0) {
+                if (binding->descriptorType == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT) {
+                    // count one block per binding. descriptorCount is number of bytes
+                    sum_by_type[binding->descriptorType]++;
+                } else {
+                    sum_by_type[binding->descriptorType] += binding->descriptorCount;
+                }
             }
         }
     }
