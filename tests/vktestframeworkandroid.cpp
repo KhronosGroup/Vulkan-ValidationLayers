@@ -83,7 +83,8 @@ bool VkTestFramework::GLSLtoSPV(const VkShaderStageFlagBits shader_type, const c
     shaderc::SpvCompilationResult result =
         compiler.CompileGlslToSpv(pshader, strlen(pshader), MapShadercType(shader_type), "shader");
     if (result.GetCompilationStatus() != shaderc_compilation_status_success) {
-        __android_log_print(ANDROID_LOG_ERROR, "VkLayerValidationTest", "GLSLtoSPV compilation failed");
+        __android_log_print(ANDROID_LOG_ERROR, "VkLayerValidationTest", "GLSLtoSPV compilation failed: %s",
+                            result.GetErrorMessage().c_str());
         return false;
     }
 
