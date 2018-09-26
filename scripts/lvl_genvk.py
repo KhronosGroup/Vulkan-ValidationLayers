@@ -411,6 +411,54 @@ def makeGenOpts(args):
             helper_file_type  = 'typemap_helper_header')
         ]
 
+    # uber_layer related generation structs
+    # Options for uber layer header
+    genOpts['uber_layer.h'] = [
+          UberLayerOutputGenerator,
+          UberLayerGeneratorOptions(
+            filename          = 'uber_layer.h',
+            directory         = directory,
+            apiname           = 'vulkan',
+            profile           = None,
+            versions          = featuresPat,
+            emitversions      = featuresPat,
+            defaultExtensions = 'vulkan',
+            addExtensions     = addExtensionsPat,
+            removeExtensions  = removeExtensionsPat,
+            emitExtensions    = emitExtensionsPat,
+            prefixText        = prefixStrings + vkPrefixStrings,
+            apicall           = 'VKAPI_ATTR ',
+            apientry          = 'VKAPI_CALL ',
+            apientryp         = 'VKAPI_PTR *',
+            alignFuncParam    = 48,
+            helper_file_type  = 'uber_layer_header',
+            expandEnumerants = False)
+        ]
+
+    # Options for uber layer source file
+    genOpts['uber_layer.cpp'] = [
+          UberLayerOutputGenerator,
+          UberLayerGeneratorOptions(
+            filename          = 'uber_layer.cpp',
+            directory         = directory,
+            apiname           = 'vulkan',
+            profile           = None,
+            versions          = featuresPat,
+            emitversions      = featuresPat,
+            defaultExtensions = 'vulkan',
+            addExtensions     = addExtensionsPat,
+            removeExtensions  = removeExtensionsPat,
+            emitExtensions    = emitExtensionsPat,
+            prefixText        = prefixStrings + vkPrefixStrings,
+            apicall           = 'VKAPI_ATTR ',
+            apientry          = 'VKAPI_CALL ',
+            apientryp         = 'VKAPI_PTR *',
+            alignFuncParam    = 48,
+            helper_file_type  = 'uber_layer_source',
+            expandEnumerants = False)
+        ]
+
+
 # Generate a target based on the options in the matching genOpts{} object.
 # This is encapsulated in a function so it can be profiled and/or timed.
 # The args parameter is an parsed argument object containing the following
@@ -528,6 +576,7 @@ if __name__ == '__main__':
     from dispatch_table_helper_generator import DispatchTableHelperOutputGenerator, DispatchTableHelperOutputGeneratorOptions
     from helper_file_generator import HelperFileOutputGenerator, HelperFileOutputGeneratorOptions
     from loader_extension_generator import LoaderExtensionOutputGenerator, LoaderExtensionGeneratorOptions
+    from uber_layer_generator import UberLayerOutputGenerator, UberLayerGeneratorOptions
 
     # This splits arguments which are space-separated lists
     args.feature = [name for arg in args.feature for name in arg.split()]
