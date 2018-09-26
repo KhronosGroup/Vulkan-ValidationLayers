@@ -4,7 +4,7 @@
       "name" : "shaderc",
       "url" : "https://github.com/google/shaderc.git",
       "sub_dir" : "shaderc",
-      "commit" : "9340ae565aceeb9ef8440fb38f8a98346df5a417"
+      "commit" : "38fbaeda7b34543042367547bc3cb025c9b84a9f"
     },
     {
       "name" : "glslang",
