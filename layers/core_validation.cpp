@@ -2237,7 +2237,7 @@ static bool ValidatePhysicalDeviceQueueFamily(instance_layer_data *instance_data
     bool skip = false;
 
     const char *conditional_ext_cmd = instance_data->extensions.vk_khr_get_physical_device_properties_2
-                                          ? "or vkGetPhysicalDeviceQueueFamilyProperties2[KHR]"
+                                          ? " or vkGetPhysicalDeviceQueueFamilyProperties2[KHR]"
                                           : "";
 
     std::string count_note = (UNCALLED == pd_state->vkGetPhysicalDeviceQueueFamilyPropertiesState)
@@ -2275,7 +2275,7 @@ static bool ValidateDeviceQueueCreateInfos(instance_layer_data *instance_data, c
             const auto queue_family_props_count = pd_state->queue_family_properties.size();
             const bool queue_family_has_props = requested_queue_family < queue_family_props_count;
             const char *conditional_ext_cmd = instance_data->extensions.vk_khr_get_physical_device_properties_2
-                                                  ? "or vkGetPhysicalDeviceQueueFamilyProperties2[KHR]"
+                                                  ? " or vkGetPhysicalDeviceQueueFamilyProperties2[KHR]"
                                                   : "";
             std::string count_note =
                 !queue_family_has_props
