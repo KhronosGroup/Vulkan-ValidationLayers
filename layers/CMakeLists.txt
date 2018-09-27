@@ -163,7 +163,7 @@ if(WIN32)
     # Applies to all configurations
     add_definitions(-D_CRT_SECURE_NO_WARNINGS)
     # Avoid: fatal error C1128: number of sections exceeded object file format limit: compile with /bigobj
-    set_source_files_properties(core_validation.cpp threading.cpp parameter_validation_utils.cpp unique_objects.cpp PROPERTIES COMPILE_FLAGS "/bigobj")
+    set_source_files_properties(core_validation.cpp threading.cpp parameter_validation_utils.cpp unique_objects.cpp uber_layer.cpp PROPERTIES COMPILE_FLAGS "/bigobj")
     # Turn off transitional "changed behavior" warning message for Visual Studio versions prior to 2015. The changed behavior is
     # that constructor initializers are now fixed to clear the struct members.
     add_compile_options("$<$<AND:$<CXX_COMPILER_ID:MSVC>,$<VERSION_LESS:$<CXX_COMPILER_VERSION>,19>>:/wd4351>")
@@ -181,15 +181,14 @@ run_vk_xml_generate(threading_generator.py thread_check.h)
 run_vk_xml_generate(parameter_validation_generator.py parameter_validation.cpp)
 run_vk_xml_generate(unique_objects_generator.py unique_objects_wrappers.h)
 run_vk_xml_generate(dispatch_table_helper_generator.py vk_dispatch_table_helper.h)
-run_vk_xml_generate(object_tracker_generator.py object_tracker_utils_auto.cpp)
-run_vk_xml_generate(object_tracker_generator.py object_tracker_core_auto.cpp)
+run_vk_xml_generate(object_tracker_generator.py object_tracker.cpp)
+run_vk_xml_generate(object_tracker_generator.py object_tracker.h)
 run_vk_xml_generate(uber_layer_generator.py uber_layer.cpp)
 run_vk_xml_generate(uber_layer_generator.py uber_layer.h)
 
 if(BUILD_LAYERS)
     add_vk_layer(core_validation core_validation.cpp descriptor_sets.cpp buffer_validation.cpp shader_validation.cpp xxhash.c)
-    #add_vk_layer(object_tracker object_tracker_utils_auto.cpp object_tracker_core_auto.cpp object_tracker_utils.cpp object_tracker_core.cpp)
-    add_vk_layer(object_lifetimes object_tracker_utils_auto.cpp object_tracker_utils.cpp uber_layer.cpp uber_layer.h)
+    add_vk_layer(object_lifetimes object_tracker.cpp object_tracker.h object_tracker_utils.cpp uber_layer.cpp uber_layer.h)
     add_vk_layer(threading threading.cpp thread_check.h)
     add_vk_layer(unique_objects unique_objects.cpp unique_objects_wrappers.h)
     add_vk_layer(parameter_validation

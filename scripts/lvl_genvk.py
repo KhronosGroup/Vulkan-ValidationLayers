@@ -180,11 +180,11 @@ def makeGenOpts(args):
             expandEnumerants = False)
         ]
 
-    # Options for object_tracker validation routines
-    genOpts['object_tracker_utils_auto.cpp'] = [
+    # Options for object_tracker code-generated validation routines
+    genOpts['object_tracker.cpp'] = [
           ObjectTrackerOutputGenerator,
           ObjectTrackerGeneratorOptions(
-            filename          = 'object_tracker_utils_auto.cpp',
+            filename          = 'object_tracker.cpp',
             directory         = directory,
             apiname           = 'vulkan',
             profile           = None,
@@ -204,11 +204,11 @@ def makeGenOpts(args):
             valid_usage_path  = args.scripts)
         ]
 
-    # Options for object_tracker core routines
-    genOpts['object_tracker_core_auto.cpp'] = [
+    # Options for object_tracker code-generated prototypes
+    genOpts['object_tracker.h'] = [
           ObjectTrackerOutputGenerator,
           ObjectTrackerGeneratorOptions(
-            filename          = 'object_tracker_core_auto.cpp',
+            filename          = 'object_tracker.h',
             directory         = directory,
             apiname           = 'vulkan',
             profile           = None,

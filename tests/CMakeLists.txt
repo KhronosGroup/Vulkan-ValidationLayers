@@ -120,7 +120,7 @@ add_dependencies(vk_layer_validation_tests
                  VkLayer_utils
                  VkLayer_core_validation-json
                  VkLayer_device_profile_api-json
-                 VkLayer_object_tracker-json
+                 VkLayer_object_lifetimes-json
                  VkLayer_parameter_validation-json
                  VkLayer_standard_validation-json
                  VkLayer_threading-json

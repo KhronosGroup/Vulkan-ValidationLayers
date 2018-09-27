@@ -155,43 +155,19 @@ class UberLayerOutputGenerator(OutputGenerator):
 
 #define VALIDATION_ERROR_MAP_IMPL
 
-#include "vk_loader_platform.h"
-#include "vk_dispatch_table_helper.h"
-#include "vk_layer_data.h"
-#include "vk_layer_extension_utils.h"
-#include "vk_layer_logging.h"
-#include "vk_extension_helper.h"
-#include "vk_layer_utils.h"
+#include "uber_layer.h"
 
 class uber_layer;
 
 std::vector<uber_layer *> global_interceptor_list;
 debug_report_data *report_data = VK_NULL_HANDLE;
 
-#include "uber_layer.h"
+std::unordered_map<void *, layer_data *> layer_data_map;
+std::unordered_map<void *, instance_layer_data *> instance_layer_data_map;
 
-struct instance_layer_data {
-    VkLayerInstanceDispatchTable dispatch_table;
-    VkInstance instance = VK_NULL_HANDLE;
-    debug_report_data *report_data = nullptr;
-    std::vector<VkDebugReportCallbackEXT> logging_callback;
-    std::vector<VkDebugUtilsMessengerEXT> logging_messenger;
-    InstanceExtensions extensions;
-};
-
-struct layer_data {
-    debug_report_data *report_data = nullptr;
-    VkLayerDispatchTable dispatch_table;
-    DeviceExtensions extensions = {};
-    VkDevice device = VK_NULL_HANDLE;
-    VkPhysicalDevice physical_device = VK_NULL_HANDLE;
-    instance_layer_data *instance_data = nullptr;
-};
-
-static std::unordered_map<void *, layer_data *> layer_data_map;
-static std::unordered_map<void *, instance_layer_data *> instance_layer_data_map;
-
+// Create an object_lifetime object and add it to the global_interceptor_list
 #include "interceptor_objects.h"
+ObjectLifetimes object_tracker_object;
 
 using mutex_t = std::mutex;
 using lock_guard_t = std::lock_guard<mutex_t>;
@@ -298,8 +274,8 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
     instance_data->report_data = debug_utils_create_instance(
         &instance_data->dispatch_table, *pInstance, pCreateInfo->enabledExtensionCount, pCreateInfo->ppEnabledExtensionNames);
     instance_data->extensions.InitFromInstanceCreateInfo((pCreateInfo->pApplicationInfo ? pCreateInfo->pApplicationInfo->apiVersion : VK_API_VERSION_1_0), pCreateInfo);
-    layer_debug_report_actions(instance_data->report_data, instance_data->logging_callback, pAllocator, "lunarg_uber_layer");
-    layer_debug_messenger_actions(instance_data->report_data, instance_data->logging_messenger, pAllocator, "lunarg_uber_layer");
+    layer_debug_report_actions(instance_data->report_data, instance_data->logging_callback, pAllocator, "lunarg_object_tracker");
+    layer_debug_messenger_actions(instance_data->report_data, instance_data->logging_messenger, pAllocator, "lunarg_object_tracker");
     report_data = instance_data->report_data;
 
     for (auto intercept : global_interceptor_list) {
@@ -552,8 +528,62 @@ VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkNegotiateLoaderLayerInterfaceVe
             if (genOpts.prefixText):
                 for s in genOpts.prefixText:
                     write(s, file=self.outFile)
+            write('#include <mutex>', file=self.outFile)
+            write('#include <cinttypes>', file=self.outFile)
+            write('#include <stdio.h>', file=self.outFile)
+            write('#include <stdlib.h>', file=self.outFile)
+            write('#include <string.h>', file=self.outFile)
+            write('#include <unordered_map>', file=self.outFile)
+            write('#include <unordered_set>', file=self.outFile)
+
+            write('#include "vk_loader_platform.h"', file=self.outFile)
+            write('#include "vulkan/vulkan.h"', file=self.outFile)
+            write('#include "vk_layer_config.h"', file=self.outFile)
+            write('#include "vk_layer_data.h"', file=self.outFile)
+            write('#include "vk_layer_logging.h"', file=self.outFile)
+            write('#include "vk_object_types.h"', file=self.outFile)
             write('#include "vulkan/vk_layer.h"', file=self.outFile)
-            write('#include <unordered_map>\n', file=self.outFile)
+            write('#include "vk_enum_string_helper.h"', file=self.outFile)
+            write('#include "vk_layer_extension_utils.h"', file=self.outFile)
+            write('#include "vk_layer_utils.h"', file=self.outFile)
+            write('#include "vulkan/vk_layer.h"', file=self.outFile)
+            write('#include "vk_dispatch_table_helper.h"', file=self.outFile)
+            write('#include "vk_validation_error_messages.h"', file=self.outFile)
+            write('#include "vk_extension_helper.h"', file=self.outFile)
+            write('', file=self.outFile)
+
+
+            # TODO: Need some ifdef code here for which layer is being built!
+            write('#include "object_lifetimes.h"', file=self.outFile)
+            write('', file=self.outFile)
+
+            write('struct instance_layer_data {', file=self.outFile)
+            write('    VkLayerInstanceDispatchTable dispatch_table;', file=self.outFile)
+            write('    VkInstance instance = VK_NULL_HANDLE;', file=self.outFile)
+            write('    debug_report_data *report_data = nullptr;', file=self.outFile)
+            write('    std::vector<VkDebugReportCallbackEXT> logging_callback;', file=self.outFile)
+            write('    std::vector<VkDebugUtilsMessengerEXT> logging_messenger;', file=self.outFile)
+            write('    InstanceExtensions extensions;', file=self.outFile)
+            write('', file=self.outFile)
+            # TODO: Need some ifdef code here for which layer is being built!
+            write('    object_lifetime objdata;', file=self.outFile)
+            write('};', file=self.outFile)
+            write('', file=self.outFile)
+            write('struct layer_data {', file=self.outFile)
+            write('    debug_report_data *report_data = nullptr;', file=self.outFile)
+            write('    VkLayerDispatchTable dispatch_table;', file=self.outFile)
+            write('    DeviceExtensions extensions = {};', file=self.outFile)
+            write('    VkDevice device = VK_NULL_HANDLE;', file=self.outFile)
+            write('    VkPhysicalDevice physical_device = VK_NULL_HANDLE;', file=self.outFile)
+            write('    instance_layer_data *instance_data = nullptr;', file=self.outFile)
+            write('', file=self.outFile)
+            # TODO: Need some ifdef code here for which layer is being built!
+            write('    object_lifetime objdata;', file=self.outFile)
+            write('};', file=self.outFile)
+            write('', file=self.outFile)
+            write('extern std::unordered_map<void *, layer_data *> layer_data_map;', file=self.outFile)
+            write('extern std::unordered_map<void *, instance_layer_data *> instance_layer_data_map;', file=self.outFile)
+            write('', file=self.outFile)
             write('class uber_layer;', file=self.outFile)
             write('extern std::vector<uber_layer *> global_interceptor_list;', file=self.outFile)
             write('extern debug_report_data *report_data;\n', file=self.outFile)
@@ -620,7 +650,7 @@ VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkNegotiateLoaderLayerInterfaceVe
                 write('\n'.join(self.sections['command']), end=u'', file=self.outFile)
                 self.newline()
             if (self.featureExtraProtect != None):
-                write('#endif /*', self.featureExtraProtect, '*/', file=self.outFile)
+                write('#endif //', self.featureExtraProtect, file=self.outFile)
         # Finish processing in superclass
         OutputGenerator.endFeature(self)
     #
@@ -662,9 +692,6 @@ VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkNegotiateLoaderLayerInterfaceVe
         prototype = raw.split("VKAPI_PTR *PFN_vk")[1]
         prototype = prototype.replace(")", "", 1)
         prototype = prototype.replace(";", " {};")
-
-        if 'GetPhysicalDeviceMemoryProperties' in prototype:
-            stop = 'here'
 
         # Build up pre/post call virtual function declarations
         pre_call_validate = 'virtual bool PreCallValidate' + prototype
@@ -777,7 +804,10 @@ VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkNegotiateLoaderLayerInterfaceVe
         self.appendSection('command', '    ' + assignresult + API + '(' + paramstext + ');')
 
         # Generate post-call object processing source code
-        self.appendSection('command', '    {')
+        return_check = ''
+        if (resulttype.text == 'VkResult'):
+            return_check = 'if (VK_SUCCESS == result) '
+        self.appendSection('command', '    %s{' % return_check)
         self.appendSection('command', '        std::lock_guard<std::mutex> lock(global_lock);')
         self.appendSection('command', '        for (auto intercept : global_interceptor_list) {')
         self.appendSection('command', '            intercept->PostCallRecord%s(%s);' % (api_function_name[2:], paramstext))
