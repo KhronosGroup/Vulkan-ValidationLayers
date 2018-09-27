@@ -25,8 +25,6 @@
 #include "vulkan/vulkan.h"
 #include "vk_object_types.h"
 
-namespace object_tracker {
-
 // Object Status -- used to track state of individual objects
 typedef VkFlags ObjectStatusFlags;
 enum ObjectStatusFlagBits {
@@ -73,5 +71,3 @@ struct object_lifetime {
     // Default constructor
     object_lifetime() : num_objects{}, num_total_objects(0), object_map{} { object_map.resize(kVulkanObjectTypeMax + 1); }
 };
-
-}  // namespace object_tracker

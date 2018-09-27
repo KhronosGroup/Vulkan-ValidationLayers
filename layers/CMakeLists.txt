@@ -85,7 +85,8 @@ install(FILES ${LAYER_UTIL_FILES} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
 set(TARGET_NAMES
     VkLayer_core_validation
-    VkLayer_object_tracker
+    # VkLayer_object_tracker
+    VkLayer_object_lifetimes
     VkLayer_unique_objects
     VkLayer_parameter_validation
     VkLayer_standard_validation
@@ -155,6 +156,7 @@ if(WIN32)
                                 threading.cpp
                                 parameter_validation_utils.cpp
                                 unique_objects.cpp
+                                chassis.cpp
                                 PROPERTIES
                                 COMPILE_FLAGS
                                 "/bigobj")
@@ -175,13 +177,14 @@ GenerateFromVkXml(threading_generator.py thread_check.h)
 GenerateFromVkXml(parameter_validation_generator.py parameter_validation.cpp)
 GenerateFromVkXml(unique_objects_generator.py unique_objects_wrappers.h)
 GenerateFromVkXml(dispatch_table_helper_generator.py vk_dispatch_table_helper.h)
-GenerateFromVkXml(object_tracker_generator.py object_tracker_utils_auto.cpp)
-GenerateFromVkXml(object_tracker_generator.py object_tracker_core_auto.cpp)
-
+GenerateFromVkXml(object_tracker_generator.py object_tracker.cpp)
+GenerateFromVkXml(object_tracker_generator.py object_tracker.h)
+GenerateFromVkXml(layer_chassis_generator.py chassis.cpp)
+GenerateFromVkXml(layer_chassis_generator.py chassis.h)
 
 if(BUILD_LAYERS)
     AddVkLayer(core_validation core_validation.cpp convert_to_renderpass2.cpp descriptor_sets.cpp buffer_validation.cpp shader_validation.cpp xxhash.c)
-    AddVkLayer(object_tracker object_tracker_utils_auto.cpp object_tracker_core_auto.cpp object_tracker_utils.cpp object_tracker_core.cpp)
+    AddVkLayer(object_lifetimes object_tracker.cpp object_tracker.h object_tracker_utils.cpp chassis.cpp chassis.h)
     AddVkLayer(threading threading.cpp thread_check.h)
     AddVkLayer(unique_objects unique_objects.cpp unique_objects_wrappers.h)
     AddVkLayer(parameter_validation
