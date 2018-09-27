@@ -97,7 +97,8 @@ install(FILES ${LAYER_UTIL_FILES} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
 set(TARGET_NAMES
     VkLayer_core_validation
-    VkLayer_object_tracker
+    # VkLayer_object_tracker
+    VkLayer_object_lifetimes
     VkLayer_unique_objects
     VkLayer_parameter_validation
     VkLayer_standard_validation
@@ -182,10 +183,13 @@ run_vk_xml_generate(unique_objects_generator.py unique_objects_wrappers.h)
 run_vk_xml_generate(dispatch_table_helper_generator.py vk_dispatch_table_helper.h)
 run_vk_xml_generate(object_tracker_generator.py object_tracker_utils_auto.cpp)
 run_vk_xml_generate(object_tracker_generator.py object_tracker_core_auto.cpp)
+run_vk_xml_generate(uber_layer_generator.py uber_layer.cpp)
+run_vk_xml_generate(uber_layer_generator.py uber_layer.h)
 
 if(BUILD_LAYERS)
     add_vk_layer(core_validation core_validation.cpp descriptor_sets.cpp buffer_validation.cpp shader_validation.cpp xxhash.c)
-    add_vk_layer(object_tracker object_tracker_utils_auto.cpp object_tracker_core_auto.cpp object_tracker_utils.cpp object_tracker_core.cpp)
+    #add_vk_layer(object_tracker object_tracker_utils_auto.cpp object_tracker_core_auto.cpp object_tracker_utils.cpp object_tracker_core.cpp)
+    add_vk_layer(object_lifetimes object_tracker_utils_auto.cpp object_tracker_utils.cpp uber_layer.cpp uber_layer.h)
     add_vk_layer(threading threading.cpp thread_check.h)
     add_vk_layer(unique_objects unique_objects.cpp unique_objects_wrappers.h)
     add_vk_layer(parameter_validation
