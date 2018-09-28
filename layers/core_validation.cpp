@@ -13137,6 +13137,51 @@ static bool PreCallValidateCreateSwapchainKHR(layer_data *dev_data, const char *
         }
     }
 
+    if (pCreateInfo->flags & VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR) {
+        if (!dev_data->extensions.vk_khr_swapchain_mutable_format) {
+            if (log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
+                        HandleToUint64(dev_data->device), kVUID_Core_DrawState_ExtensionNotEnabled,
+                        "%s: pCreateInfo->flags contains VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR which requires the "
+                        "VK_KHR_swapchain_mutable_format extension, which has not been enabled.",
+                        func_name))
+                return true;
+        } else {
+            const auto *image_format_list = lvl_find_in_chain<VkImageFormatListCreateInfoKHR>(pCreateInfo->pNext);
+            if (image_format_list == nullptr) {
+                if (log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
+                            HandleToUint64(dev_data->device), "VUID-VkSwapchainCreateInfoKHR-flags-03168",
+                            "%s: pCreateInfo->flags contains VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR but the pNext chain of "
+                            "pCreateInfo does not contain an instance of VkImageFormatListCreateInfoKHR.",
+                            func_name))
+                    return true;
+            } else if (image_format_list->viewFormatCount == 0) {
+                if (log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
+                            HandleToUint64(dev_data->device), "VUID-VkSwapchainCreateInfoKHR-flags-03168",
+                            "%s: pCreateInfo->flags contains VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR but the viewFormatCount "
+                            "member of VkImageFormatListCreateInfoKHR in the pNext chain is zero.",
+                            func_name))
+                    return true;
+            } else {
+                bool found_base_format = false;
+                for (uint32_t i = 0; i < image_format_list->viewFormatCount; ++i) {
+                    if (image_format_list->pViewFormats[i] == pCreateInfo->imageFormat) {
+                        found_base_format = true;
+                        break;
+                    }
+                }
+                if (!found_base_format) {
+                    if (log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
+                                HandleToUint64(dev_data->device), "VUID-VkSwapchainCreateInfoKHR-flags-03168",
+                                "%s: pCreateInfo->flags contains VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR but none of the "
+                                "elements of the pViewFormats member of VkImageFormatListCreateInfoKHR match "
+                                "pCreateInfo->imageFormat.",
+                                func_name))
+                        return true;
+                }
+            }
+        }
+    }
+
     return false;
 }
 
