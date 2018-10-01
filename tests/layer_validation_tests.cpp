@@ -22679,7 +22679,8 @@ TEST_F(VkLayerTest, CopyImageFormatSizeMismatch) {
     // Create color images with different format sizes and try to copy between them
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdCopyImage-srcImage-00135");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    ASSERT_NO_FATAL_FAILURE(Init(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     // Create two images of different types and try to copy between them
     VkImage srcImage;
@@ -22770,10 +22771,53 @@ TEST_F(VkLayerTest, CopyImageFormatSizeMismatch) {
 
     m_errorMonitor->VerifyFound();
 
-    vkDestroyImage(m_device->device(), srcImage, NULL);
     vkDestroyImage(m_device->device(), dstImage, NULL);
-    vkFreeMemory(m_device->device(), srcMem, NULL);
     vkFreeMemory(m_device->device(), destMem, NULL);
+
+    // Copy to multiplane image with mismatched sizes
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdCopyImage-srcImage-00135");
+
+    VkImageCreateInfo ci;
+    ci.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    ci.pNext = NULL;
+    ci.flags = 0;
+    ci.imageType = VK_IMAGE_TYPE_2D;
+    ci.format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM;
+    ci.extent = {32, 32, 1};
+    ci.mipLevels = 1;
+    ci.arrayLayers = 1;
+    ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    ci.tiling = VK_IMAGE_TILING_LINEAR;
+    ci.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    ci.queueFamilyIndexCount = 0;
+    ci.pQueueFamilyIndices = NULL;
+    ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+    VkFormatFeatureFlags features = VK_FORMAT_FEATURE_TRANSFER_DST_BIT;
+    bool supported = ImageFormatAndFeaturesSupported(instance(), gpu(), ci, features);
+    bool ycbcr = (DeviceExtensionEnabled(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME) ||
+                  (DeviceValidationVersion() >= VK_API_VERSION_1_1));
+    if (!supported || !ycbcr) {
+        printf("%s Image format not supported; skipped multiplanar copy test.\n", kSkipPrefix);
+        vkDestroyImage(m_device->device(), srcImage, NULL);
+        vkFreeMemory(m_device->device(), srcMem, NULL);
+        return;
+    }
+
+    VkImageObj mpImage(m_device);
+    mpImage.init(&ci);
+    ASSERT_TRUE(mpImage.initialized());
+    copyRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_PLANE_0_BIT;
+    vkResetCommandBuffer(m_commandBuffer->handle(), 0);
+    m_commandBuffer->begin();
+    m_commandBuffer->CopyImage(srcImage, VK_IMAGE_LAYOUT_GENERAL, mpImage.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &copyRegion);
+    m_commandBuffer->end();
+
+    m_errorMonitor->VerifyFound();
+
+    vkDestroyImage(m_device->device(), srcImage, NULL);
+    vkFreeMemory(m_device->device(), srcMem, NULL);
 }
 
 TEST_F(VkLayerTest, CopyImageDepthStencilFormatMismatch) {

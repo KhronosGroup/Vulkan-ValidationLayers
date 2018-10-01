@@ -233,9 +233,13 @@ const std::map<VkFormat, VULKAN_FORMAT_INFO> vk_format_table = {
     /* KHR_sampler_YCbCr_conversion */
     {VK_FORMAT_G8B8G8R8_422_UNORM_KHR,                          {4, 4, VK_FORMAT_COMPATIBILITY_CLASS_32BIT_G8B8G8R8}},
     {VK_FORMAT_B8G8R8G8_422_UNORM_KHR,                          {4, 4, VK_FORMAT_COMPATIBILITY_CLASS_32BIT_B8G8R8G8}},
+    {VK_FORMAT_R10X6_UNORM_PACK16_KHR,                          {2, 1, VK_FORMAT_COMPATIBILITY_CLASS_16_BIT}},
+    {VK_FORMAT_R10X6G10X6_UNORM_2PACK16_KHR,                    {4, 2, VK_FORMAT_COMPATIBILITY_CLASS_32_BIT}},
     {VK_FORMAT_R10X6G10X6B10X6A10X6_UNORM_4PACK16_KHR,          {8, 4, VK_FORMAT_COMPATIBILITY_CLASS_64BIT_R10G10B10A10}},
     {VK_FORMAT_G10X6B10X6G10X6R10X6_422_UNORM_4PACK16_KHR,      {8, 4, VK_FORMAT_COMPATIBILITY_CLASS_64BIT_G10B10G10R10}},
     {VK_FORMAT_B10X6G10X6R10X6G10X6_422_UNORM_4PACK16_KHR,      {8, 4, VK_FORMAT_COMPATIBILITY_CLASS_64BIT_B10G10R10G10}},
+    {VK_FORMAT_R12X4_UNORM_PACK16,                              {2, 1, VK_FORMAT_COMPATIBILITY_CLASS_16_BIT}},
+    {VK_FORMAT_R12X4G12X4_UNORM_2PACK16,                        {4, 2, VK_FORMAT_COMPATIBILITY_CLASS_16_BIT}},
     {VK_FORMAT_R12X4G12X4B12X4A12X4_UNORM_4PACK16_KHR,          {8, 4, VK_FORMAT_COMPATIBILITY_CLASS_64BIT_R12G12B12A12}},
     {VK_FORMAT_G12X4B12X4G12X4R12X4_422_UNORM_4PACK16_KHR,      {8, 4, VK_FORMAT_COMPATIBILITY_CLASS_64BIT_G12B12G12R12}},
     {VK_FORMAT_B12X4G12X4R12X4G12X4_422_UNORM_4PACK16_KHR,      {8, 4, VK_FORMAT_COMPATIBILITY_CLASS_64BIT_B12G12R12G12}},
@@ -1131,5 +1135,52 @@ VK_LAYER_EXPORT size_t FormatAlignment(VkFormat format) {
         return FormatSize(format);
     } else {
         return FormatSize(format) / FormatChannelCount(format);
+    }
+}
+
+uint32_t GetPlaneSizeIndex(VkImageAspectFlags aspect) {
+    switch (aspect) {
+        case VK_IMAGE_ASPECT_PLANE_0_BIT:
+            return 0;
+            break;
+        case VK_IMAGE_ASPECT_PLANE_1_BIT:
+            return 1;
+            break;
+        case VK_IMAGE_ASPECT_PLANE_2_BIT:
+            return 2;
+            break;
+        default:
+            return 0;
+            break;
+    }
+}
+
+VK_LAYER_EXPORT bool FormatSizesAreEqual(VkFormat srcFormat, VkFormat dstFormat, uint32_t region_count,
+                                         const VkImageCopy *regions) {
+    size_t srcSize = 0, dstSize = 0;
+
+    if (FormatIsMultiplane(srcFormat) || FormatIsMultiplane(dstFormat)) {
+        for (uint32_t i = 0; i < region_count; i++) {
+            if (FormatIsMultiplane(srcFormat)) {
+                VkFormat planeFormat =
+                    FindMultiplaneCompatibleFormat(srcFormat, GetPlaneSizeIndex(regions[i].srcSubresource.aspectMask));
+                srcSize = FormatSize(planeFormat);
+            } else {
+                srcSize = FormatSize(srcFormat);
+            }
+            if (FormatIsMultiplane(dstFormat)) {
+                VkFormat planeFormat =
+                    FindMultiplaneCompatibleFormat(dstFormat, GetPlaneSizeIndex(regions[i].dstSubresource.aspectMask));
+                dstSize = FormatSize(planeFormat);
+            } else {
+                dstSize = FormatSize(dstFormat);
+            }
+            if (dstSize != srcSize) return false;
+        }
+        return true;
+    } else {
+        srcSize = FormatSize(srcFormat);
+        dstSize = FormatSize(dstFormat);
+        return (dstSize == srcSize);
     }
 }
