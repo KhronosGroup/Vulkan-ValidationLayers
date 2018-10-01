@@ -2283,9 +2283,7 @@ bool PreCallValidateCmdCopyImage(layer_data *device_data, GLOBAL_CB_NODE *cb_nod
                             HandleToUint64(command_buffer), kVUID_Core_DrawState_MismatchedImageFormat, str);
         }
     } else {
-        size_t srcSize = FormatSize(src_image_state->createInfo.format);
-        size_t destSize = FormatSize(dst_image_state->createInfo.format);
-        if (srcSize != destSize) {
+        if (!FormatSizesAreEqual(src_image_state->createInfo.format, dst_image_state->createInfo.format, region_count, regions)) {
             char const str[] = "vkCmdCopyImage called with unmatched source and dest image format sizes.";
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                             HandleToUint64(command_buffer), "VUID-vkCmdCopyImage-srcImage-00135", "%s.", str);

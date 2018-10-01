@@ -145,6 +145,7 @@ VK_LAYER_EXPORT bool FormatIsUScaled(VkFormat format);
 VK_LAYER_EXPORT bool FormatIsSScaled(VkFormat format);
 VK_LAYER_EXPORT bool FormatIsCompressed(VkFormat format);
 VK_LAYER_EXPORT bool FormatIsPacked(VkFormat format);
+VK_LAYER_EXPORT bool FormatSizesAreEqual(VkFormat srcFormat, VkFormat dstFormat, uint32_t region_count, const VkImageCopy *regions);
 
 VK_LAYER_EXPORT uint32_t FormatPlaneCount(VkFormat format);
 VK_LAYER_EXPORT uint32_t FormatChannelCount(VkFormat format);
