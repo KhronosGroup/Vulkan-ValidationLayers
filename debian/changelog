@@ -1,4 +1,10 @@
-vulkan-validationlayers (1.1.82.0-2) UNRELEASED; urgency=medium
+vulkan-validationlayers (1.1.85.0-1) UNRELEASED; urgency=medium
+
+  * New upstream version
+
+ -- Brett Johnson <brett@linuxturtle.net>  Tue, 02 Oct 2018 12:29:21 -0600
+
+vulkan-validationlayers (1.1.82.0-2) unstable; urgency=medium
 
   [ Timo Aaltonen ]
   * Initial packaging.
@@ -6,4 +12,4 @@ vulkan-validationlayers (1.1.82.0-2) UNRELEASED; urgency=medium
   [ Brett Johnson ]
   * Backport for LunarG
 
- -- Brett Johnson <brett@linuxturtle.net>  Mon, 27 Aug 2018 16:09:02 -0600
+ -- Brett Johnson <brett@linuxturtle.net>  Tue, 02 Oct 2018 12:29:21 -0600
