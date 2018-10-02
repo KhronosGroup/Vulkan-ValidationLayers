@@ -3,8 +3,8 @@ Priority: optional
 Maintainer: Debian X Strike Force <debian-x@lists.debian.org>
 Uploaders: Timo Aaltonen <tjaalton@debian.org>
 Build-Depends: debhelper (>= 9),
- vulkan-headers (>=1.1.82), vulkan-headers (<<1.1.83),
- libvulkan-dev (>=1.1.82), libvulkan-dev (<<1.1.83),
+ vulkan-headers (>=1.1.85), vulkan-headers (<<1.1.86),
+ libvulkan-dev (>=1.1.85), libvulkan-dev (<<1.1.86),
  cmake,
  python3,
  libwayland-dev,
