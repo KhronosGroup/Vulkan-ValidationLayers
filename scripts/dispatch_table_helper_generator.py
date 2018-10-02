@@ -238,7 +238,16 @@ class DispatchTableHelperOutputGenerator(OutputGenerator):
         table = ''
         if table_type == 'device':
             entries = self.device_dispatch_list
-            table += 'static inline void layer_init_device_dispatch_table(VkDevice device, VkLayerDispatchTable *table, PFN_vkGetDeviceProcAddr gpa) {\n'
+            table += 'static inline void layer_init_device_dispatch_table(VkDevice device, VkLayerDispatchTable *table, PFN_vkGetDeviceProcAddr gpa_func,\n'
+            table += '                                                    std::unordered_map<std::string, void *> *layer_entrypoint_map = nullptr) {\n'
+            table += '    // Wrap the gpa function to update the supplied map\n'
+            table += '    auto gpa = [gpa_func, layer_entrypoint_map] (VkDevice device, const char *entry_point) {\n'
+            table += '        PFN_vkVoidFunction proc_addr = gpa_func(device, entry_point);\n'
+            table += '        if (!proc_addr && layer_entrypoint_map) {\n'
+            table += '            (*layer_entrypoint_map)[entry_point] = nullptr;\n'
+            table += '        }\n'
+            table += '        return proc_addr;\n'
+            table += '    };\n\n'
             table += '    memset(table, 0, sizeof(*table));\n'
             table += '    // Device function pointers\n'
         else:
@@ -258,7 +267,7 @@ class DispatchTableHelperOutputGenerator(OutputGenerator):
             # If we're looking for the proc we are passing in, just point the table to it.  This fixes the issue where
             # a layer overrides the function name for the loader.
             if ('device' in table_type and base_name == 'GetDeviceProcAddr'):
-                table += '    table->GetDeviceProcAddr = gpa;\n'
+                table += '    table->GetDeviceProcAddr = gpa_func;\n'
             elif ('device' not in table_type and base_name == 'GetInstanceProcAddr'):
                 table += '    table->GetInstanceProcAddr = gpa;\n'
             else:

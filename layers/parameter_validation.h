@@ -42,7 +42,7 @@
 namespace parameter_validation {
 
 extern const uint32_t GeneratedHeaderVersion;
-extern const std::unordered_map<std::string, void *> name_to_funcptr_map;
+extern std::unordered_map<std::string, void *> name_to_funcptr_map;
 
 extern const VkQueryPipelineStatisticFlags AllVkQueryPipelineStatisticFlagBits;
 extern const VkColorComponentFlags AllVkColorComponentFlagBits;
