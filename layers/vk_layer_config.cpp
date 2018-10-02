@@ -26,6 +26,7 @@
 #include <fstream>
 #include <iostream>
 #include <map>
+#include <sstream>
 #include <string.h>
 #include <string>
 #include <sys/stat.h>
@@ -49,6 +50,7 @@ class ConfigFile {
     bool m_fileIsParsed;
     std::map<std::string, std::string> m_valueMap;
 
+    std::string FindSettings();
     void parseFile(const char *filename);
 };
 
@@ -175,19 +177,8 @@ ConfigFile::~ConfigFile() {}
 const char *ConfigFile::getOption(const std::string &_option) {
     std::map<std::string, std::string>::const_iterator it;
     if (!m_fileIsParsed) {
-        std::string envPath = getEnvironment("VK_LAYER_SETTINGS_PATH");
-
-        // If the path exists use it, else use vk_layer_settings
-        struct stat info;
-        if (stat(envPath.c_str(), &info) == 0) {
-            // If this is a directory, look for vk_layer_settings within the directory
-            if (info.st_mode & S_IFDIR) {
-                envPath += "/vk_layer_settings.txt";
-            }
-            parseFile(envPath.c_str());
-        } else {
-            parseFile("vk_layer_settings.txt");
-        }
+        std::string settings_file = FindSettings();
+        parseFile(settings_file.c_str());
     }
 
     if ((it = m_valueMap.find(_option)) == m_valueMap.end())
@@ -198,22 +189,73 @@ const char *ConfigFile::getOption(const std::string &_option) {
 
 void ConfigFile::setOption(const std::string &_option, const std::string &_val) {
     if (!m_fileIsParsed) {
-        std::string envPath = getEnvironment("VK_LAYER_SETTINGS_PATH");
-
-        // If the path exists use it, else use vk_layer_settings
-        struct stat info;
-        if (stat(envPath.c_str(), &info) == 0) {
-            // If this is a directory, look for vk_layer_settings within the directory
-            if (info.st_mode & S_IFDIR) {
-                envPath += "/vk_layer_settings.txt";
-            }
-            parseFile(envPath.c_str());
-        } else {
-            parseFile("vk_layer_settings.txt");
-        }
+        std::string settings_file = FindSettings();
+        parseFile(settings_file.c_str());
     }
 
     m_valueMap[_option] = _val;
+}
+
+std::string ConfigFile::FindSettings() {
+    struct stat info;
+
+#if defined(WIN32)
+    HKEY hive;
+    LSTATUS err = RegOpenKeyEx(HKEY_CURRENT_USER, "Software\\Khronos\\Vulkan\\Settings", 0, KEY_READ, &hive);
+    if (err != ERROR_SUCCESS) {
+        char name[2048];
+        DWORD i = 0, name_size = sizeof(name), type, value, value_size = sizeof(value);
+        while (ERROR_SUCCESS ==
+               RegEnumValue(hive, i++, name, &name_size, nullptr, &type, reinterpret_cast<LPBYTE>(&value), &value_size)) {
+            // Check if the registry entry is a dword with a value of zero
+            if (type != REG_DWORD || value != 0) {
+                continue;
+            }
+
+            // Check if this actually points to a file
+            if ((stat(name, &info) != 0) || (info.st_mode & S_IFREG)) {
+                continue;
+            }
+
+            // Use this file
+            RegCloseKey(hive);
+            return name;
+        }
+
+        RegCloseKey(hive);
+    }
+#else
+    std::string search_path = getEnvironment("XDG_DATA_HOME");
+    if (search_path == "") {
+        search_path = getEnvironment("HOME");
+        if (search_path != "") {
+            search_path += "/.local/share";
+        }
+    }
+
+    // Use the vk_layer_settings.txt file from here, if it is present
+    if (search_path != "") {
+        std::string home_file = search_path + "/vulkan/settings.d/vk_layer_settings.txt";
+        if (stat(home_file.c_str(), &info) == 0) {
+            if (info.st_mode & S_IFREG) {
+                return home_file;
+            }
+        }
+    }
+
+#endif
+
+    std::string env_path = getEnvironment("VK_LAYER_SETTINGS_PATH");
+
+    // If the path exists use it, else use vk_layer_settings
+    if (stat(env_path.c_str(), &info) == 0) {
+        // If this is a directory, look for vk_layer_settings within the directory
+        if (info.st_mode & S_IFDIR) {
+            return env_path + "/vk_layer_settings.txt";
+        }
+        return env_path;
+    }
+    return "vk_layer_settings.txt";
 }
 
 void ConfigFile::parseFile(const char *filename) {
