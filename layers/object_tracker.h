@@ -146,7 +146,7 @@ extern std::unordered_map<void *, layer_data *> layer_data_map;
 extern std::mutex global_lock;
 extern uint64_t object_track_index;
 extern uint32_t loader_layer_if_version;
-extern const std::unordered_map<std::string, void *> name_to_funcptr_map;
+extern std::unordered_map<std::string, void *> name_to_funcptr_map;
 
 void DeviceReportUndestroyedObjects(VkDevice device, VulkanObjectType object_type, const std::string &error_code);
 void DeviceDestroyUndestroyedObjects(VkDevice device, VulkanObjectType object_type);

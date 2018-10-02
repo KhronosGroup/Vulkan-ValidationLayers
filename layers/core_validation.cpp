@@ -2327,6 +2327,7 @@ static bool PreCallValidateCreateDevice(instance_layer_data *instance_data, cons
     return skip;
 }
 
+std::unordered_map<std::string, void *> &GetNameToFuncptrMap();
 static void PreCallRecordCreateDevice(VkLayerDeviceCreateInfo *chain_info) {
     chain_info->u.pLayerInfo = chain_info->u.pLayerInfo->pNext;
 }
@@ -2340,7 +2341,8 @@ static void PostCallRecordCreateDevice(instance_layer_data *instance_data, const
 
     device_data->instance_data = instance_data;
     // Setup device dispatch table
-    layer_init_device_dispatch_table(*pDevice, &device_data->dispatch_table, fpGetDeviceProcAddr);
+    auto &name_to_funcptr_map = GetNameToFuncptrMap();
+    layer_init_device_dispatch_table(*pDevice, &device_data->dispatch_table, fpGetDeviceProcAddr, &name_to_funcptr_map);
     device_data->device = *pDevice;
     // Save PhysicalDevice handle
     device_data->physical_device = gpu;
@@ -14228,7 +14230,7 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetPhysicalDeviceProcAddr(VkInstance in
 VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetInstanceProcAddr(VkInstance instance, const char *funcName);
 
 // Map of all APIs to be intercepted by this layer
-static const std::unordered_map<std::string, void *> name_to_funcptr_map = {
+static std::unordered_map<std::string, void *> name_to_funcptr_map = {
     {"vkGetInstanceProcAddr", (void *)GetInstanceProcAddr},
     {"vk_layerGetPhysicalDeviceProcAddr", (void *)GetPhysicalDeviceProcAddr},
     {"vkGetDeviceProcAddr", (void *)GetDeviceProcAddr},
@@ -14475,6 +14477,7 @@ static const std::unordered_map<std::string, void *> name_to_funcptr_map = {
     {"vkCmdDrawMeshTasksIndirectCountNV", (void *)CmdDrawMeshTasksIndirectCountNV},
     {"vkCreateRaytracingPipelinesNVX", (void *)CreateRaytracingPipelinesNVX},
 };
+std::unordered_map<std::string, void *> &GetNameToFuncptrMap() { return name_to_funcptr_map; }
 
 VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetDeviceProcAddr(VkDevice device, const char *funcName) {
     assert(device);
