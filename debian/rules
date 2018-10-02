@@ -22,3 +22,10 @@ override_dh_auto_install:
 
 override_dh_missing:
 	dh_missing --fail-missing
+
+gentarball: SOURCE=vulkan-validationlayers
+gentarball: UV=$(shell dpkg-parsechangelog|awk '/^Version:/ {print $$2}'|sed 's/-.*$$//')
+gentarball:
+	tar --transform 's,^,$(SOURCE)-$(UV)/,' \
+		--exclude 'debian' --exclude-vcs \
+		-cJf ../$(SOURCE)_$(UV).orig.tar.xz .
