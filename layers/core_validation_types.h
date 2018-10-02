@@ -777,6 +777,7 @@ class PIPELINE_STATE : public BASE_NODE {
 
 // Track last states that are bound per pipeline bind point (Gfx & Compute)
 struct LAST_BOUND_STATE {
+    LAST_BOUND_STATE() { reset(); }  // must define default constructor for portability reasons
     PIPELINE_STATE *pipeline_state;
     VkPipelineLayout pipeline_layout;
     // Track each set that has been bound
