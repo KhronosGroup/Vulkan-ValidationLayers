@@ -88,25 +88,27 @@ static inline void DebugReportFlagsToAnnotFlags(VkDebugReportFlagsEXT dr_flags, 
                                                 VkDebugUtilsMessageSeverityFlagsEXT *da_severity,
                                                 VkDebugUtilsMessageTypeFlagsEXT *da_type) {
     *da_severity = 0;
+    *da_type = 0;
     // If it's explicitly listed as a performance warning, treat it as a performance message.
     // Otherwise, treat it as a validation issue.
     if ((dr_flags & VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT) != 0) {
-        *da_type = VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-    } else {
-        *da_type = VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT;
+        *da_type |= VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+        *da_severity |= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT;
     }
     if ((dr_flags & VK_DEBUG_REPORT_DEBUG_BIT_EXT) != 0) {
+        *da_type |= VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT;
         *da_severity |= VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT;
-        // If this is a debug message, it's really intended for the general messages
-        *da_type = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT;
     }
     if ((dr_flags & VK_DEBUG_REPORT_INFORMATION_BIT_EXT) != 0) {
+        *da_type |= VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT;
         *da_severity |= VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT;
     }
-    if ((dr_flags & VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT) != 0 || (dr_flags & VK_DEBUG_REPORT_WARNING_BIT_EXT) != 0) {
+    if ((dr_flags & VK_DEBUG_REPORT_WARNING_BIT_EXT) != 0) {
+        *da_type |= VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT;
         *da_severity |= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT;
     }
     if ((dr_flags & VK_DEBUG_REPORT_ERROR_BIT_EXT) != 0) {
+        *da_type |= VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT;
         *da_severity |= VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
     }
 }
@@ -127,30 +129,50 @@ static inline void AddDebugCallbackNode(debug_report_data *debug_data, VkLayerDb
 static inline void RemoveDebugUtilsMessenger(debug_report_data *debug_data, VkLayerDbgFunctionNode **list_head,
                                              VkDebugUtilsMessengerEXT messenger) {
     VkLayerDbgFunctionNode *cur_callback = *list_head;
-    VkLayerDbgFunctionNode *prev_callback = cur_callback;
+    VkLayerDbgFunctionNode *prev_callback = nullptr;
     bool matched = false;
     VkFlags local_severities = 0;
     VkFlags local_types = 0;
 
     while (cur_callback) {
-        if (cur_callback->is_messenger && cur_callback->messenger.messenger == messenger) {
-            matched = true;
-            prev_callback->pNext = cur_callback->pNext;
-            if (*list_head == cur_callback) {
-                *list_head = cur_callback->pNext;
+        if (cur_callback->is_messenger) {
+            // If it's actually a messenger, then set it up for deletion.
+            if (cur_callback->messenger.messenger == messenger) {
+                matched = true;
+                if (*list_head == cur_callback) {
+                    *list_head = cur_callback->pNext;
+                } else {
+                    assert(nullptr != prev_callback);
+                    prev_callback->pNext = cur_callback->pNext;
+                }
+                debug_log_msg(debug_data, VK_DEBUG_REPORT_DEBUG_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEBUG_REPORT_EXT,
+                              reinterpret_cast<uint64_t &>(cur_callback->messenger.messenger), 0, "DebugUtilsMessenger",
+                              "Destroyed messenger\n", kVUIDUndefined);
+            } else {
+                // If it's not the one we're looking for, just keep the types/severities
+                local_severities |= cur_callback->messenger.messageSeverity;
+                local_types |= cur_callback->messenger.messageType;
             }
-            debug_log_msg(debug_data, VK_DEBUG_REPORT_DEBUG_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEBUG_REPORT_EXT,
-                          reinterpret_cast<uint64_t &>(cur_callback->messenger.messenger), 0, "DebugUtilsMessenger",
-                          "Destroyed messenger\n", kVUIDUndefined);
         } else {
-            matched = false;
-            local_severities |= cur_callback->messenger.messageSeverity;
-            local_types |= cur_callback->messenger.messageType;
+            // If it's not a messenger, just keep the types/severities
+            VkFlags this_severities = 0;
+            VkFlags this_types = 0;
+            DebugReportFlagsToAnnotFlags(cur_callback->report.msgFlags, true, &this_severities, &this_types);
+            local_severities |= this_severities;
+            local_types |= this_types;
         }
-        prev_callback = cur_callback;
-        cur_callback = cur_callback->pNext;
         if (matched) {
-            free(prev_callback);
+            free(cur_callback);
+            matched = false;
+            // Intentionally keep the last prev_callback, but select the proper cur_callback
+            if (nullptr != prev_callback) {
+                cur_callback = prev_callback->pNext;
+            } else {
+                cur_callback = *list_head;
+            }
+        } else {
+            prev_callback = cur_callback;
+            cur_callback = cur_callback->pNext;
         }
     }
     debug_data->active_severities = local_severities;
@@ -161,33 +183,50 @@ static inline void RemoveDebugUtilsMessenger(debug_report_data *debug_data, VkLa
 static inline void RemoveDebugUtilsMessageCallback(debug_report_data *debug_data, VkLayerDbgFunctionNode **list_head,
                                                    VkDebugReportCallbackEXT callback) {
     VkLayerDbgFunctionNode *cur_callback = *list_head;
-    VkLayerDbgFunctionNode *prev_callback = cur_callback;
+    VkLayerDbgFunctionNode *prev_callback = nullptr;
     bool matched = false;
     VkFlags local_severities = 0;
     VkFlags local_types = 0;
 
     while (cur_callback) {
-        if (!cur_callback->is_messenger && cur_callback->report.msgCallback == callback) {
-            matched = true;
-            prev_callback->pNext = cur_callback->pNext;
-            if (*list_head == cur_callback) {
-                *list_head = cur_callback->pNext;
+        if (!cur_callback->is_messenger) {
+            // If it's actually a callback, then set it up for deletion.
+            if (cur_callback->report.msgCallback == callback) {
+                matched = true;
+                if (*list_head == cur_callback) {
+                    *list_head = cur_callback->pNext;
+                } else {
+                    assert(nullptr != prev_callback);
+                    prev_callback->pNext = cur_callback->pNext;
+                }
+                debug_log_msg(debug_data, VK_DEBUG_REPORT_DEBUG_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEBUG_REPORT_EXT,
+                              reinterpret_cast<uint64_t &>(cur_callback->report.msgCallback), 0, "DebugReport",
+                              "Destroyed callback\n", kVUIDUndefined);
+            } else {
+                // If it's not the one we're looking for, just keep the types/severities
+                VkFlags this_severities = 0;
+                VkFlags this_types = 0;
+                DebugReportFlagsToAnnotFlags(cur_callback->report.msgFlags, true, &this_severities, &this_types);
+                local_severities |= this_severities;
+                local_types |= this_types;
             }
-            debug_log_msg(debug_data, VK_DEBUG_REPORT_DEBUG_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEBUG_REPORT_EXT,
-                          reinterpret_cast<uint64_t &>(cur_callback->report.msgCallback), 0, "DebugReport", "Destroyed callback\n",
-                          kVUIDUndefined);
         } else {
-            matched = false;
-            VkFlags this_severities = 0;
-            VkFlags this_types = 0;
-            DebugReportFlagsToAnnotFlags(cur_callback->report.msgFlags, true, &this_severities, &this_types);
-            local_severities |= this_severities;
-            local_types |= this_types;
+            // If it's not a callback, just keep the types/severities
+            local_severities |= cur_callback->messenger.messageSeverity;
+            local_types |= cur_callback->messenger.messageType;
         }
-        prev_callback = cur_callback;
-        cur_callback = cur_callback->pNext;
         if (matched) {
-            free(prev_callback);
+            free(cur_callback);
+            matched = false;
+            // Intentionally keep the last prev_callback, but select the proper cur_callback
+            if (nullptr != prev_callback) {
+                cur_callback = prev_callback->pNext;
+            } else {
+                cur_callback = *list_head;
+            }
+        } else {
+            prev_callback = cur_callback;
+            cur_callback = cur_callback->pNext;
         }
     }
     debug_data->active_severities = local_severities;
