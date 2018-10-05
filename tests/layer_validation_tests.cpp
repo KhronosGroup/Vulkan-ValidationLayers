@@ -19058,7 +19058,7 @@ TEST_F(VkLayerTest, CreatePipelineFragmentOutputNotWritten) {
     TEST_DESCRIPTION(
         "Test that an error is produced for a fragment shader which does not provide an output for one of the pipeline's color "
         "attachments");
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "Attachment 0 not written by fragment shader");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_WARNING_BIT_EXT, "Attachment 0 not written by fragment shader");
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
@@ -19183,7 +19183,7 @@ TEST_F(VkLayerTest, CreatePipelineFragmentOutputTypeMismatch) {
     TEST_DESCRIPTION(
         "Test that an error is produced for a mismatch between the fundamental type of an fragment shader output variable, and the "
         "format of the corresponding attachment");
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "does not match fragment shader output type");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_WARNING_BIT_EXT, "does not match fragment shader output type");
 
     ASSERT_NO_FATAL_FAILURE(Init());
 

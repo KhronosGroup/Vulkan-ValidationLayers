@@ -899,9 +899,10 @@ static bool ValidateFsOutputsAgainstRenderPass(debug_report_data const *report_d
             // shader to not produce a matching output.
             if (!used) {
                 if (pipeline->attachments[it_b->first].colorWriteMask != 0) {
-                    skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SHADER_MODULE_EXT,
+                    skip |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SHADER_MODULE_EXT,
                                     HandleToUint64(fs->vk_shader_module), kVUID_Core_Shader_InputNotProduced,
-                                    "Attachment %d not written by fragment shader", it_b->first);
+                                    "Attachment %d not written by fragment shader; undefined values will be written to attachment",
+                                    it_b->first);
                 }
             }
             used = false;
@@ -912,10 +913,11 @@ static bool ValidateFsOutputsAgainstRenderPass(debug_report_data const *report_d
 
             // Type checking
             if (!(output_type & att_type)) {
-                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SHADER_MODULE_EXT,
-                                HandleToUint64(fs->vk_shader_module), kVUID_Core_Shader_InterfaceTypeMismatch,
-                                "Attachment %d of type `%s` does not match fragment shader output type of `%s`", it_b->first,
-                                string_VkFormat(it_b->second), DescribeType(fs, it_a->second.type_id).c_str());
+                skip |= log_msg(
+                    report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SHADER_MODULE_EXT,
+                    HandleToUint64(fs->vk_shader_module), kVUID_Core_Shader_InterfaceTypeMismatch,
+                    "Attachment %d of type `%s` does not match fragment shader output type of `%s`; resulting values are undefined",
+                    it_b->first, string_VkFormat(it_b->second), DescribeType(fs, it_a->second.type_id).c_str());
             }
 
             // OK!
