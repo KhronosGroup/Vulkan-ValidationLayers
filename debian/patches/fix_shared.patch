@@ -1,0 +1,12 @@
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -300,7 +300,7 @@
+     add_library(VkLayer_utils STATIC ${VALIDATION_LAYER_UTILS_SOURCES})
+     target_compile_definitions(VkLayer_utils PUBLIC _CRT_SECURE_NO_WARNINGS)
+ else()
+-    add_library(VkLayer_utils STATIC ${VALIDATION_LAYER_UTILS_SOURCES})
++    add_library(VkLayer_utils SHARED ${VALIDATION_LAYER_UTILS_SOURCES})
+ endif()
+ install(TARGETS VkLayer_utils DESTINATION ${CMAKE_INSTALL_LIBDIR})
+ set_target_properties(VkLayer_utils PROPERTIES LINKER_LANGUAGE CXX)
+
