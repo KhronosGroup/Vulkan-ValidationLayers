@@ -1,8 +1,14 @@
-vulkan-validationlayers (1.1.85.0-1) UNRELEASED; urgency=medium
+vulkan-validationlayers (1.1.85.0.1-1) UNRELEASED; urgency=medium
 
   * New upstream version
 
- -- Brett Johnson <brett@linuxturtle.net>  Tue, 02 Oct 2018 12:29:21 -0600
+ -- Brett Johnson <brett@linuxturtle.net>  Fri, 05 Oct 2018 15:51:16 -0600
+
+vulkan-validationlayers (1.1.85.0-1) unstable; urgency=medium
+
+  * New upstream version
+
+ -- Brett Johnson <brett@linuxturtle.net>  Fri, 05 Oct 2018 15:51:16 -0600
 
 vulkan-validationlayers (1.1.82.0-2) unstable; urgency=medium
 
