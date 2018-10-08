@@ -226,6 +226,9 @@ foreach(TARGET_NAME ${TARGET_NAMES})
     endif()
     add_custom_target(${TARGET_NAME}-json ALL
                       COMMAND ${CMAKE_COMMAND} ${CONFIG_DEFINES} -P "${CMAKE_CURRENT_BINARY_DIR}/generator.cmake")
+    if(CMAKE_GENERATOR MATCHES "^Visual Studio.*")
+        set_target_properties(${TARGET_NAME}-json PROPERTIES FOLDER ${LAYERS_HELPER_FOLDER})
+    endif()
 endforeach()
 
 # For UNIX-based systems, `library_path` should not contain a relative path (indicated by "./") before installing to system
