@@ -49,6 +49,7 @@ prefixStrings = [
 
 platform_dict = {
     'android' : 'VK_USE_PLATFORM_ANDROID_KHR',
+    'fuchsia' : 'VK_USE_PLATFORM_FUCHSIA',
     'ios' : 'VK_USE_PLATFORM_IOS_MVK',
     'macos' : 'VK_USE_PLATFORM_MACOS_MVK',
     'mir' : 'VK_USE_PLATFORM_MIR_KHR',
