@@ -31404,7 +31404,7 @@ TEST_F(VkPositiveLayerTest, MultiplaneImageTests) {
         printf("%s test requires KHR multiplane extensions, not available.  Skipping.\n", kSkipPrefix);
         return;
     }
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     VkImageCreateInfo ci = {};
     ci.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -31512,6 +31512,30 @@ TEST_F(VkPositiveLayerTest, MultiplaneImageTests) {
 
     vkFreeMemory(device(), mem_obj, NULL);
     vkDestroyImage(device(), image, NULL);
+
+    // Test that changing the layout of ASPECT_COLOR also changes the layout of the individual planes
+    VkBufferObj buffer;
+    VkMemoryPropertyFlags reqs = 0;
+    buffer.init_as_src(*m_device, (VkDeviceSize)128 * 128 * 3, reqs);
+    VkImageObj mpimage(m_device);
+    mpimage.Init(256, 256, 1, VK_FORMAT_G8_B8_R8_3PLANE_422_UNORM_KHR, VK_IMAGE_USAGE_TRANSFER_DST_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    VkBufferImageCopy copy_region = {};
+    copy_region.bufferRowLength = 128;
+    copy_region.bufferImageHeight = 128;
+    copy_region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_PLANE_1_BIT_KHR;
+    copy_region.imageSubresource.layerCount = 1;
+    copy_region.imageExtent.height = 64;
+    copy_region.imageExtent.width = 64;
+    copy_region.imageExtent.depth = 1;
+
+    vkResetCommandBuffer(m_commandBuffer->handle(), 0);
+    m_commandBuffer->begin();
+    mpimage.ImageMemoryBarrier(m_commandBuffer, VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+    vkCmdCopyBufferToImage(m_commandBuffer->handle(), buffer.handle(), mpimage.handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1,
+                           &copy_region);
+    m_commandBuffer->end();
+    m_commandBuffer->QueueCommandBuffer(false);
+    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, ApiVersionZero) {
