@@ -843,7 +843,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice physicalDevice, con
 
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(*pDevice), layer_data_map);
     device_data->report_data = layer_debug_utils_create_device(phy_dev_data->report_data, *pDevice);
-    layer_init_device_dispatch_table(*pDevice, &device_data->device_dispatch_table, fpGetDeviceProcAddr, &name_to_funcptr_map);
+    layer_init_device_dispatch_table(*pDevice, &device_data->device_dispatch_table, fpGetDeviceProcAddr);
 
     // Save pCreateInfo device extension list for GetDeviceProcAddr()
     for (uint32_t extn = 0; extn < pCreateInfo->enabledExtensionCount; extn++) {
