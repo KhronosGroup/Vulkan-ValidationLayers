@@ -443,8 +443,8 @@ void TransitionBeginRenderPassLayouts(layer_data *device_data, GLOBAL_CB_NODE *c
 }
 
 void TransitionImageAspectLayout(layer_data *device_data, GLOBAL_CB_NODE *pCB, const VkImageMemoryBarrier *mem_barrier,
-                                 uint32_t level, uint32_t layer, VkImageAspectFlags aspect) {
-    if (!(mem_barrier->subresourceRange.aspectMask & aspect)) {
+                                 uint32_t level, uint32_t layer, VkImageAspectFlags aspect_mask, VkImageAspectFlags aspect) {
+    if (!(aspect_mask & aspect)) {
         return;
     }
     VkImageSubresource sub = {aspect, level, layer};
@@ -892,18 +892,39 @@ void TransitionImageLayouts(layer_data *device_data, GLOBAL_CB_NODE *cb_state, u
             layer_count = image_create_info->extent.depth;  // Treat each depth slice as a layer subresource
         }
 
+        // For multiplanar formats, IMAGE_ASPECT_COLOR is equivalent to adding the aspect of the individual planes
+        VkImageAspectFlags aspect_mask = mem_barrier->subresourceRange.aspectMask;
+        if (GetDeviceExtensions(device_data)->vk_khr_sampler_ycbcr_conversion) {
+            if (FormatIsMultiplane(image_create_info->format)) {
+                if (aspect_mask & VK_IMAGE_ASPECT_COLOR_BIT) {
+                    aspect_mask &= ~VK_IMAGE_ASPECT_COLOR_BIT;
+                    aspect_mask |= (VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT);
+                    if (FormatPlaneCount(image_create_info->format) > 2) {
+                        aspect_mask |= VK_IMAGE_ASPECT_PLANE_2_BIT;
+                    }
+                }
+            }
+        }
+
         for (uint32_t j = 0; j < level_count; j++) {
             uint32_t level = mem_barrier->subresourceRange.baseMipLevel + j;
             for (uint32_t k = 0; k < layer_count; k++) {
                 uint32_t layer = mem_barrier->subresourceRange.baseArrayLayer + k;
-                TransitionImageAspectLayout(device_data, cb_state, mem_barrier, level, layer, VK_IMAGE_ASPECT_COLOR_BIT);
-                TransitionImageAspectLayout(device_data, cb_state, mem_barrier, level, layer, VK_IMAGE_ASPECT_DEPTH_BIT);
-                TransitionImageAspectLayout(device_data, cb_state, mem_barrier, level, layer, VK_IMAGE_ASPECT_STENCIL_BIT);
-                TransitionImageAspectLayout(device_data, cb_state, mem_barrier, level, layer, VK_IMAGE_ASPECT_METADATA_BIT);
+                TransitionImageAspectLayout(device_data, cb_state, mem_barrier, level, layer, aspect_mask,
+                                            VK_IMAGE_ASPECT_COLOR_BIT);
+                TransitionImageAspectLayout(device_data, cb_state, mem_barrier, level, layer, aspect_mask,
+                                            VK_IMAGE_ASPECT_DEPTH_BIT);
+                TransitionImageAspectLayout(device_data, cb_state, mem_barrier, level, layer, aspect_mask,
+                                            VK_IMAGE_ASPECT_STENCIL_BIT);
+                TransitionImageAspectLayout(device_data, cb_state, mem_barrier, level, layer, aspect_mask,
+                                            VK_IMAGE_ASPECT_METADATA_BIT);
                 if (GetDeviceExtensions(device_data)->vk_khr_sampler_ycbcr_conversion) {
-                    TransitionImageAspectLayout(device_data, cb_state, mem_barrier, level, layer, VK_IMAGE_ASPECT_PLANE_0_BIT_KHR);
-                    TransitionImageAspectLayout(device_data, cb_state, mem_barrier, level, layer, VK_IMAGE_ASPECT_PLANE_1_BIT_KHR);
-                    TransitionImageAspectLayout(device_data, cb_state, mem_barrier, level, layer, VK_IMAGE_ASPECT_PLANE_2_BIT_KHR);
+                    TransitionImageAspectLayout(device_data, cb_state, mem_barrier, level, layer, aspect_mask,
+                                                VK_IMAGE_ASPECT_PLANE_0_BIT_KHR);
+                    TransitionImageAspectLayout(device_data, cb_state, mem_barrier, level, layer, aspect_mask,
+                                                VK_IMAGE_ASPECT_PLANE_1_BIT_KHR);
+                    TransitionImageAspectLayout(device_data, cb_state, mem_barrier, level, layer, aspect_mask,
+                                                VK_IMAGE_ASPECT_PLANE_2_BIT_KHR);
                 }
             }
         }
