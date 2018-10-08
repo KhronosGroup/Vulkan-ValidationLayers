@@ -250,7 +250,7 @@ class UniqueObjectsOutputGenerator(OutputGenerator):
 
         # Record intercepted procedures
         write('// Map of all APIs to be intercepted by this layer', file=self.outFile)
-        write('static std::unordered_map<std::string, void*> name_to_funcptr_map = {', file=self.outFile)
+        write('static const std::unordered_map<std::string, void*> name_to_funcptr_map = {', file=self.outFile)
         write('\n'.join(self.intercepts), file=self.outFile)
         write('};\n', file=self.outFile)
         self.newline()

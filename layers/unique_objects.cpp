@@ -214,7 +214,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
     my_device_data->report_data = layer_debug_utils_create_device(my_instance_data->report_data, *pDevice);
 
     // Setup layer's device dispatch table
-    layer_init_device_dispatch_table(*pDevice, &my_device_data->dispatch_table, fpGetDeviceProcAddr, &name_to_funcptr_map);
+    layer_init_device_dispatch_table(*pDevice, &my_device_data->dispatch_table, fpGetDeviceProcAddr);
     // Save pCreateInfo device extension list for GetDeviceProcAddr()
     for (uint32_t extn = 0; extn < pCreateInfo->enabledExtensionCount; extn++) {
         my_device_data->device_extension_set.insert(pCreateInfo->ppEnabledExtensionNames[extn]);
