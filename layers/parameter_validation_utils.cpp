@@ -889,32 +889,6 @@ bool pv_vkCreateImage(VkDevice device, const VkImageCreateInfo *pCreateInfo, con
     const LogMiscParams log_misc{report_data, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, VK_NULL_HANDLE, "vkCreateImage"};
 
     if (pCreateInfo != nullptr) {
-        if ((device_data->physical_device_features.textureCompressionETC2 == false) &&
-            FormatIsCompressed_ETC2_EAC(pCreateInfo->format)) {
-            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                            kVUID_PVError_DeviceFeature,
-                            "vkCreateImage(): Attempting to create VkImage with format %s. The textureCompressionETC2 feature is "
-                            "not enabled: neither ETC2 nor EAC formats can be used to create images.",
-                            string_VkFormat(pCreateInfo->format));
-        }
-
-        if ((device_data->physical_device_features.textureCompressionASTC_LDR == false) &&
-            FormatIsCompressed_ASTC_LDR(pCreateInfo->format)) {
-            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                            kVUID_PVError_DeviceFeature,
-                            "vkCreateImage(): Attempting to create VkImage with format %s. The textureCompressionASTC_LDR feature "
-                            "is not enabled: ASTC formats cannot be used to create images.",
-                            string_VkFormat(pCreateInfo->format));
-        }
-
-        if ((device_data->physical_device_features.textureCompressionBC == false) && FormatIsCompressed_BC(pCreateInfo->format)) {
-            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                            kVUID_PVError_DeviceFeature,
-                            "vkCreateImage(): Attempting to create VkImage with format %s. The textureCompressionBC feature is not "
-                            "enabled: BC compressed formats cannot be used to create images.",
-                            string_VkFormat(pCreateInfo->format));
-        }
-
         // Validation for parameters excluded from the generated validation code due to a 'noautovalidity' tag in vk.xml
         if (pCreateInfo->sharingMode == VK_SHARING_MODE_CONCURRENT) {
             // If sharingMode is VK_SHARING_MODE_CONCURRENT, queueFamilyIndexCount must be greater than 1
@@ -3120,33 +3094,6 @@ bool pv_vkCreateSwapchainKHR(VkDevice device, const VkSwapchainCreateInfoKHR *pC
                                  "vkCreateSwapchainKHR"};
 
     if (pCreateInfo != nullptr) {
-        if ((device_data->physical_device_features.textureCompressionETC2 == false) &&
-            FormatIsCompressed_ETC2_EAC(pCreateInfo->imageFormat)) {
-            skip |= log_msg(
-                report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, kVUID_PVError_DeviceFeature,
-                "vkCreateSwapchainKHR(): Attempting to create swapchain VkImage with format %s. The textureCompressionETC2 "
-                "feature is not enabled: neither ETC2 nor EAC formats can be used to create images.",
-                string_VkFormat(pCreateInfo->imageFormat));
-        }
-
-        if ((device_data->physical_device_features.textureCompressionASTC_LDR == false) &&
-            FormatIsCompressed_ASTC_LDR(pCreateInfo->imageFormat)) {
-            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                            kVUID_PVError_DeviceFeature,
-                            "vkCreateSwapchainKHR(): Attempting to create swapchain VkImage with format %s. The "
-                            "textureCompressionASTC_LDR feature is not enabled: ASTC formats cannot be used to create images.",
-                            string_VkFormat(pCreateInfo->imageFormat));
-        }
-
-        if ((device_data->physical_device_features.textureCompressionBC == false) &&
-            FormatIsCompressed_BC(pCreateInfo->imageFormat)) {
-            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                            kVUID_PVError_DeviceFeature,
-                            "vkCreateSwapchainKHR(): Attempting to create swapchain VkImage with format %s. The "
-                            "textureCompressionBC feature is not enabled: BC compressed formats cannot be used to create images.",
-                            string_VkFormat(pCreateInfo->imageFormat));
-        }
-
         // Validation for parameters excluded from the generated validation code due to a 'noautovalidity' tag in vk.xml
         if (pCreateInfo->imageSharingMode == VK_SHARING_MODE_CONCURRENT) {
             // If imageSharingMode is VK_SHARING_MODE_CONCURRENT, queueFamilyIndexCount must be greater than 1
