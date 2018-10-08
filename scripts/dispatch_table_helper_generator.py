@@ -72,6 +72,7 @@ class DispatchTableHelperOutputGenerator(OutputGenerator):
         self.device_dispatch_list = []        # List of entries for device dispatch list
         self.dev_ext_stub_list = []           # List of stub functions for device extension functions
         self.device_extension_list = []       # List of device extension functions
+        self.device_stub_list = []            # List of device functions with stubs (promoted or extensions)
         self.extension_type = ''
     #
     # Called once at the beginning of each run
@@ -171,8 +172,12 @@ class DispatchTableHelperOutputGenerator(OutputGenerator):
             return
         if handle_type != 'VkInstance' and handle_type != 'VkPhysicalDevice' and name != 'vkGetInstanceProcAddr':
             self.device_dispatch_list.append((name, self.featureExtraProtect))
-            if "VK_VERSION" not in self.featureName and self.extension_type == 'device':
-                self.device_extension_list.append([name, self.featureName])
+            extension = "VK_VERSION" not in self.featureName
+            promoted = not extension and "VK_VERSION_1_0" != self.featureName
+            if promoted or (extension and self.extension_type == 'device'):
+                self.device_stub_list.append([name, self.featureName])
+                if extension:
+                    self.device_extension_list.append([name, self.featureName])
                 # Build up stub function
                 return_type = ''
                 decl = self.makeCDecls(cmdinfo.elem)[1]
@@ -247,7 +252,7 @@ class DispatchTableHelperOutputGenerator(OutputGenerator):
             table += '    memset(table, 0, sizeof(*table));\n'
             table += '    // Instance function pointers\n'
 
-        extension_functions = dict(self.device_extension_list)
+        stubbed_functions = dict(self.device_stub_list)
         for item in entries:
             # Remove 'vk' from proto name
             base_name = item[0][2:]
@@ -263,7 +268,7 @@ class DispatchTableHelperOutputGenerator(OutputGenerator):
                 table += '    table->GetInstanceProcAddr = gpa;\n'
             else:
                 table += '    table->%s = (PFN_%s) gpa(%s, "%s");\n' % (base_name, item[0], table_type, item[0])
-                if 'device' in table_type and item[0] in extension_functions:
+                if 'device' in table_type and item[0] in stubbed_functions:
                     stub_check = '    if (table->%s == nullptr) { table->%s = (PFN_%s)Stub%s; }\n' % (base_name, base_name, item[0], base_name)
                     table += stub_check
             if item[1] is not None:
