@@ -3123,6 +3123,14 @@ bool ValidateLayouts(const core_validation::layer_data *device_data, VkDevice de
                                     "Layout for input attachment is GENERAL but should be READ_ONLY_OPTIMAL.");
                     break;
 
+                case VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL_KHR:
+                case VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL_KHR:
+                    if (GetDeviceExtensions(device_data)->vk_khr_maintenance2) {
+                        break;
+                    } else {
+                        // Intentionally fall through to generic error message
+                    }
+                    // fall through
                 default:
                     // No other layouts are acceptable
                     skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
