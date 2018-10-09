@@ -688,19 +688,15 @@ static std::vector<std::pair<uint32_t, interface_var>> CollectInterfaceByInputAt
     return out;
 }
 
-static bool IsWritableDescriptorType(shader_module const *module, uint32_t type_id) {
+static bool IsWritableDescriptorType(shader_module const *module, uint32_t type_id, bool is_storage_buffer) {
     auto type = module->get_def(type_id);
 
     // Strip off any array or ptrs. Where we remove array levels, adjust the  descriptor count for each dimension.
     while (type.opcode() == spv::OpTypeArray || type.opcode() == spv::OpTypePointer || type.opcode() == spv::OpTypeRuntimeArray) {
         if (type.opcode() == spv::OpTypeArray || type.opcode() == spv::OpTypeRuntimeArray) {
-            // Element type
-            type = module->get_def(type.word(2));
+            type = module->get_def(type.word(2));  // Element type
         } else {
-            if (type.word(2) == spv::StorageClassStorageBuffer) {
-                return true;
-            }
-            type = module->get_def(type.word(3));
+            type = module->get_def(type.word(3));  // Pointee type
         }
     }
 
@@ -711,14 +707,25 @@ static bool IsWritableDescriptorType(shader_module const *module, uint32_t type_
             return sampled == 2 && dim != spv::DimSubpassData;
         }
 
-        case spv::OpTypeStruct:
+        case spv::OpTypeStruct: {
+            std::unordered_set<unsigned> nonwritable_members;
             for (auto insn : *module) {
                 if (insn.opcode() == spv::OpDecorate && insn.word(1) == type.word(1)) {
                     if (insn.word(2) == spv::DecorationBufferBlock) {
-                        return true;
+                        // Legacy storage block in the Uniform storage class
+                        // has its struct type decorated with BufferBlock.
+                        is_storage_buffer = true;
                     }
+                } else if (insn.opcode() == spv::OpMemberDecorate && insn.word(1) == type.word(1) &&
+                           insn.word(3) == spv::DecorationNonWritable) {
+                    nonwritable_members.insert(insn.word(2));
                 }
             }
+
+            // A buffer is writable if it's either flavor of storage buffer, and has any member not decorated
+            // as nonwritable.
+            return is_storage_buffer && nonwritable_members.size() != type.len() - 2;
+        }
     }
 
     return false;
@@ -743,6 +750,8 @@ static std::vector<std::pair<descriptor_slot_t, interface_var>> CollectInterface
                 var_bindings[insn.word(1)] = insn.word(3);
             }
 
+            // Note: do toplevel DecorationNonWritable out here; it applies to
+            // the OpVariable rather than the type.
             if (insn.word(2) == spv::DecorationNonWritable) {
                 var_nonwritable[insn.word(1)] = 1;
             }
@@ -766,7 +775,8 @@ static std::vector<std::pair<descriptor_slot_t, interface_var>> CollectInterface
             v.type_id = insn.word(1);
             out.emplace_back(std::make_pair(set, binding), v);
 
-            if (var_nonwritable.find(id) == var_nonwritable.end() && IsWritableDescriptorType(src, insn.word(1))) {
+            if (var_nonwritable.find(id) == var_nonwritable.end() &&
+                IsWritableDescriptorType(src, insn.word(1), insn.word(3) == spv::StorageClassStorageBuffer)) {
                 *has_writable_descriptor = true;
             }
         }
