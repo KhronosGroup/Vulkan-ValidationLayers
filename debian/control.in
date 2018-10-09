@@ -25,7 +25,7 @@ Vcs-Browser: https://salsa.debian.org/xorg-team/vulkan/vulkan-validationlayers
 Package: vulkan-validationlayers
 Architecture: linux-any
 Depends: ${shlibs:Depends}, ${misc:Depends},
- libvulkan1 (>=__VKAPIVERSION_)
+ libvulkan1 (>=__VKAPIVERSION__)
 Breaks: vulkan-loader,
  libvulkan1 (<< 1.1.82.0),
 Replaces: vulkan-loader,
