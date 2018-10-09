@@ -123,7 +123,9 @@ class LayerChassisOutputGenerator(OutputGenerator):
                      'group', 'bitmask', 'funcpointer', 'struct']
     ALL_SECTIONS = TYPE_SECTIONS + ['command']
 
-
+    precallvalidate_loop = "for (auto intercept : layer_data->object_dispatch) {"
+    precallrecord_loop = precallvalidate_loop
+    postcallrecord_loop = "for (auto intercept : layer_data->object_dispatch) {"
 
 
     inline_custom_source_preamble = """
@@ -157,17 +159,10 @@ class LayerChassisOutputGenerator(OutputGenerator):
 
 #include "chassis.h"
 
-class layer_chassis;
+std::unordered_map<void*, ValidationObject*> layer_data_map;
 
-std::vector<layer_chassis *> global_interceptor_list;
-debug_report_data *report_data = VK_NULL_HANDLE;
-
-std::unordered_map<void *, layer_data *> layer_data_map;
-std::unordered_map<void *, instance_layer_data *> instance_layer_data_map;
-
-// Create an object_lifetime object and add it to the global_interceptor_list
-#include "interceptor_objects.h"
-ObjectLifetimes object_tracker_object;
+// Include child object (layer) definitions
+#include "object_lifetime_validation.h"
 
 namespace vulkan_layer_chassis {
 
@@ -185,32 +180,30 @@ extern const std::unordered_map<std::string, void*> name_to_funcptr_map;
 // Manually written functions
 
 VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetDeviceProcAddr(VkDevice device, const char *funcName) {
-    assert(device);
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     const auto &item = name_to_funcptr_map.find(funcName);
     if (item != name_to_funcptr_map.end()) {
         return reinterpret_cast<PFN_vkVoidFunction>(item->second);
     }
-    auto &table = device_data->dispatch_table;
+    auto &table = layer_data->device_dispatch_table;
     if (!table.GetDeviceProcAddr) return nullptr;
     return table.GetDeviceProcAddr(device, funcName);
 }
 
 VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetInstanceProcAddr(VkInstance instance, const char *funcName) {
-    instance_layer_data *instance_data;
     const auto &item = name_to_funcptr_map.find(funcName);
     if (item != name_to_funcptr_map.end()) {
         return reinterpret_cast<PFN_vkVoidFunction>(item->second);
     }
-    instance_data = GetLayerDataPtr(get_dispatch_key(instance), instance_layer_data_map);
-    auto &table = instance_data->dispatch_table;
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(instance), layer_data_map);
+    auto &table = layer_data->instance_dispatch_table;
     if (!table.GetInstanceProcAddr) return nullptr;
     return table.GetInstanceProcAddr(instance, funcName);
 }
 
 VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetPhysicalDeviceProcAddr(VkInstance instance, const char *funcName) {
-    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(instance), instance_layer_data_map);
-    auto &table = instance_data->dispatch_table;
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(instance), layer_data_map);
+    auto &table = layer_data->instance_dispatch_table;
     if (!table.GetPhysicalDeviceProcAddr) return nullptr;
     return table.GetPhysicalDeviceProcAddr(instance, funcName);
 }
@@ -235,16 +228,14 @@ VKAPI_ATTR VkResult VKAPI_CALL EnumerateInstanceExtensionProperties(const char *
 VKAPI_ATTR VkResult VKAPI_CALL EnumerateDeviceExtensionProperties(VkPhysicalDevice physicalDevice, const char *pLayerName,
                                                                   uint32_t *pCount, VkExtensionProperties *pProperties) {
     if (pLayerName && !strcmp(pLayerName, global_layer.layerName)) return util_GetExtensionProperties(0, NULL, pCount, pProperties);
-
     assert(physicalDevice);
-
-    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), instance_layer_data_map);
-    return instance_data->dispatch_table.EnumerateDeviceExtensionProperties(physicalDevice, NULL, pCount, pProperties);
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), layer_data_map);
+    return layer_data->instance_dispatch_table.EnumerateDeviceExtensionProperties(physicalDevice, NULL, pCount, pProperties);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator,
                                               VkInstance *pInstance) {
-    VkLayerInstanceCreateInfo *chain_info = get_chain_info(pCreateInfo, VK_LAYER_LINK_INFO);
+    VkLayerInstanceCreateInfo* chain_info = get_chain_info(pCreateInfo, VK_LAYER_LINK_INFO);
 
     assert(chain_info->u.pLayerInfo);
     PFN_vkGetInstanceProcAddr fpGetInstanceProcAddr = chain_info->u.pLayerInfo->pfnNextGetInstanceProcAddr;
@@ -252,26 +243,37 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
     if (fpCreateInstance == NULL) return VK_ERROR_INITIALIZATION_FAILED;
     chain_info->u.pLayerInfo = chain_info->u.pLayerInfo->pNext;
 
+    // Create temporary dispatch vector for pre-calls until instance is created
+    std::vector<ValidationObject*> local_object_dispatch;
+    auto object_tracker = new ObjectLifetimes;
+    local_object_dispatch.emplace_back(object_tracker);
+    object_tracker->container_type = LayerObjectTypeObjectTracker;
+
+
     // Init dispatch array and call registration functions
-    for (auto intercept : global_interceptor_list) {
+    for (auto intercept : local_object_dispatch) {
         intercept->PreCallValidateCreateInstance(pCreateInfo, pAllocator, pInstance);
     }
-    for (auto intercept : global_interceptor_list) {
+    for (auto intercept : local_object_dispatch) {
         intercept->PreCallRecordCreateInstance(pCreateInfo, pAllocator, pInstance);
     }
 
     VkResult result = fpCreateInstance(pCreateInfo, pAllocator, pInstance);
+    if (result != VK_SUCCESS) return result;
 
-    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(*pInstance), instance_layer_data_map);
-    instance_data->instance = *pInstance;
-    layer_init_instance_dispatch_table(*pInstance, &instance_data->dispatch_table, fpGetInstanceProcAddr);
-    instance_data->report_data = debug_utils_create_instance(
-        &instance_data->dispatch_table, *pInstance, pCreateInfo->enabledExtensionCount, pCreateInfo->ppEnabledExtensionNames);
-    instance_data->extensions.InitFromInstanceCreateInfo((pCreateInfo->pApplicationInfo ? pCreateInfo->pApplicationInfo->apiVersion : VK_API_VERSION_1_0), pCreateInfo);
-    layer_debug_messenger_actions(instance_data->report_data, instance_data->logging_messenger, pAllocator, "lunarg_object_tracker");
-    report_data = instance_data->report_data;
+    auto framework = GetLayerDataPtr(get_dispatch_key(*pInstance), layer_data_map);
 
-    for (auto intercept : global_interceptor_list) {
+    framework->object_dispatch = local_object_dispatch;
+
+    framework->instance = *pInstance;
+    layer_init_instance_dispatch_table(*pInstance, &framework->instance_dispatch_table, fpGetInstanceProcAddr);
+    framework->report_data = debug_utils_create_instance(&framework->instance_dispatch_table, *pInstance, pCreateInfo->enabledExtensionCount,
+                                                         pCreateInfo->ppEnabledExtensionNames);
+    framework->api_version = framework->instance_extensions.InitFromInstanceCreateInfo(
+        (pCreateInfo->pApplicationInfo ? pCreateInfo->pApplicationInfo->apiVersion : VK_API_VERSION_1_0), pCreateInfo);
+    layer_debug_messenger_actions(framework->report_data, framework->logging_messenger, pAllocator, "lunarg_object_tracker");
+
+    for (auto intercept : framework->object_dispatch) {
         intercept->PostCallRecordCreateInstance(pCreateInfo, pAllocator, pInstance);
     }
 
@@ -280,95 +282,109 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
 
 VKAPI_ATTR void VKAPI_CALL DestroyInstance(VkInstance instance, const VkAllocationCallbacks *pAllocator) {
     dispatch_key key = get_dispatch_key(instance);
-    instance_layer_data *instance_data = GetLayerDataPtr(key, instance_layer_data_map);
-    for (auto intercept : global_interceptor_list) {
+    auto layer_data = GetLayerDataPtr(key, layer_data_map);
+    """ + precallvalidate_loop + """
         std::lock_guard<std::mutex> lock(intercept->layer_mutex);
         intercept->PreCallValidateDestroyInstance(instance, pAllocator);
     }
-    for (auto intercept : global_interceptor_list) {
+    """ + precallrecord_loop + """
         std::lock_guard<std::mutex> lock(intercept->layer_mutex);
         intercept->PreCallRecordDestroyInstance(instance, pAllocator);
     }
 
-    instance_data->dispatch_table.DestroyInstance(instance, pAllocator);
+    layer_data->instance_dispatch_table.DestroyInstance(instance, pAllocator);
 
-    for (auto intercept : global_interceptor_list) {
+    """ + postcallrecord_loop + """
         std::lock_guard<std::mutex> lock(intercept->layer_mutex);
         intercept->PostCallRecordDestroyInstance(instance, pAllocator);
     }
     // Clean up logging callback, if any
-    while (instance_data->logging_messenger.size() > 0) {
-        VkDebugUtilsMessengerEXT messenger = instance_data->logging_messenger.back();
-        layer_destroy_messenger_callback(instance_data->report_data, messenger, pAllocator);
-        instance_data->logging_messenger.pop_back();
+    while (layer_data->logging_messenger.size() > 0) {
+        VkDebugUtilsMessengerEXT messenger = layer_data->logging_messenger.back();
+        layer_destroy_messenger_callback(layer_data->report_data, messenger, pAllocator);
+        layer_data->logging_messenger.pop_back();
     }
-    while (instance_data->logging_callback.size() > 0) {
-        VkDebugReportCallbackEXT callback = instance_data->logging_callback.back();
-        layer_destroy_report_callback(instance_data->report_data, callback, pAllocator);
-        instance_data->logging_callback.pop_back();
+    while (layer_data->logging_callback.size() > 0) {
+        VkDebugReportCallbackEXT callback = layer_data->logging_callback.back();
+        layer_destroy_report_callback(layer_data->report_data, callback, pAllocator);
+        layer_data->logging_callback.pop_back();
     }
-    for (auto intercept : global_interceptor_list) {
-        intercept->PostCallRecordDestroyInstance(instance, pAllocator);
-    }
-    layer_debug_utils_destroy_instance(instance_data->report_data);
-    FreeLayerDataPtr(key, instance_layer_data_map);
+
+    layer_debug_utils_destroy_instance(layer_data->report_data);
+
+    FreeLayerDataPtr(key, layer_data_map);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo *pCreateInfo,
                                             const VkAllocationCallbacks *pAllocator, VkDevice *pDevice) {
-    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(gpu), instance_layer_data_map);
-
     VkLayerDeviceCreateInfo *chain_info = get_chain_info(pCreateInfo, VK_LAYER_LINK_INFO);
+
+    auto instance_interceptor = GetLayerDataPtr(get_dispatch_key(gpu), layer_data_map);
+
     PFN_vkGetInstanceProcAddr fpGetInstanceProcAddr = chain_info->u.pLayerInfo->pfnNextGetInstanceProcAddr;
     PFN_vkGetDeviceProcAddr fpGetDeviceProcAddr = chain_info->u.pLayerInfo->pfnNextGetDeviceProcAddr;
-    PFN_vkCreateDevice fpCreateDevice = (PFN_vkCreateDevice)fpGetInstanceProcAddr(instance_data->instance, "vkCreateDevice");
+    PFN_vkCreateDevice fpCreateDevice = (PFN_vkCreateDevice)fpGetInstanceProcAddr(instance_interceptor->instance, "vkCreateDevice");
+    if (fpCreateDevice == NULL) {
+        return VK_ERROR_INITIALIZATION_FAILED;
+    }
     chain_info->u.pLayerInfo = chain_info->u.pLayerInfo->pNext;
 
-    for (auto intercept : global_interceptor_list) {
+    for (auto intercept : instance_interceptor->object_dispatch) {
         std::lock_guard<std::mutex> lock(intercept->layer_mutex);
         intercept->PreCallValidateCreateDevice(gpu, pCreateInfo, pAllocator, pDevice);
     }
-    for (auto intercept : global_interceptor_list) {
+    for (auto intercept : instance_interceptor->object_dispatch) {
         std::lock_guard<std::mutex> lock(intercept->layer_mutex);
         intercept->PreCallRecordCreateDevice(gpu, pCreateInfo, pAllocator, pDevice);
     }
 
     VkResult result = fpCreateDevice(gpu, pCreateInfo, pAllocator, pDevice);
+    if (result != VK_SUCCESS) {
+        return result;
+    }
 
-    for (auto intercept : global_interceptor_list) {
+    auto device_interceptor = GetLayerDataPtr(get_dispatch_key(*pDevice), layer_data_map);
+    layer_init_device_dispatch_table(*pDevice, &device_interceptor->device_dispatch_table, fpGetDeviceProcAddr);
+    device_interceptor->device = *pDevice;
+    device_interceptor->physical_device = gpu;
+    device_interceptor->instance = instance_interceptor->instance;
+    device_interceptor->report_data = layer_debug_utils_create_device(instance_interceptor->report_data, *pDevice);
+    device_interceptor->api_version = instance_interceptor->api_version;
+
+    // Create child layer objects for this key and add to dispatch vector
+    auto object_tracker = new ObjectLifetimes;
+    // TODO:  Initialize child objects with parent info thru constuctor taking a parent object
+    object_tracker->container_type = LayerObjectTypeObjectTracker;
+    object_tracker->physical_device = gpu;
+    object_tracker->instance = instance_interceptor->instance;
+    object_tracker->report_data = device_interceptor->report_data;
+    object_tracker->device_dispatch_table = device_interceptor->device_dispatch_table;
+    device_interceptor->object_dispatch.emplace_back(object_tracker);
+
+    for (auto intercept : instance_interceptor->object_dispatch) {
         std::lock_guard<std::mutex> lock(intercept->layer_mutex);
         intercept->PostCallRecordCreateDevice(gpu, pCreateInfo, pAllocator, pDevice);
     }
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(*pDevice), layer_data_map);
-    device_data->instance_data = instance_data;
-    layer_init_device_dispatch_table(*pDevice, &device_data->dispatch_table, fpGetDeviceProcAddr);
-    device_data->device = *pDevice;
-    device_data->physical_device = gpu;
-    device_data->report_data = layer_debug_utils_create_device(instance_data->report_data, *pDevice);
-    VkPhysicalDeviceProperties physical_device_properties{};
-    instance_data->dispatch_table.GetPhysicalDeviceProperties(gpu, &physical_device_properties);
-    device_data->extensions.InitFromDeviceCreateInfo(&instance_data->extensions, physical_device_properties.apiVersion, pCreateInfo);
 
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL DestroyDevice(VkDevice device, const VkAllocationCallbacks *pAllocator) {
     dispatch_key key = get_dispatch_key(device);
-    layer_data *device_data = GetLayerDataPtr(key, layer_data_map);
-
-    for (auto intercept : global_interceptor_list) {
+    auto layer_data = GetLayerDataPtr(key, layer_data_map);
+    """ + precallvalidate_loop + """
         std::lock_guard<std::mutex> lock(intercept->layer_mutex);
         intercept->PreCallValidateDestroyDevice(device, pAllocator);
     }
-    for (auto intercept : global_interceptor_list) {
+    """ + precallrecord_loop + """
         std::lock_guard<std::mutex> lock(intercept->layer_mutex);
         intercept->PreCallRecordDestroyDevice(device, pAllocator);
     }
     layer_debug_utils_destroy_device(device);
 
-    device_data->dispatch_table.DestroyDevice(device, pAllocator);
+    layer_data->device_dispatch_table.DestroyDevice(device, pAllocator);
 
-    for (auto intercept : global_interceptor_list) {
+    """ + postcallrecord_loop + """
         std::lock_guard<std::mutex> lock(intercept->layer_mutex);
         intercept->PostCallRecordDestroyDevice(device, pAllocator);
     }
@@ -380,18 +396,18 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDebugReportCallbackEXT(VkInstance instance,
                                                             const VkDebugReportCallbackCreateInfoEXT *pCreateInfo,
                                                             const VkAllocationCallbacks *pAllocator,
                                                             VkDebugReportCallbackEXT *pCallback) {
-    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(instance), instance_layer_data_map);
-    for (auto intercept : global_interceptor_list) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(instance), layer_data_map);
+    """ + precallvalidate_loop + """
         std::lock_guard<std::mutex> lock(intercept->layer_mutex);
         intercept->PreCallValidateCreateDebugReportCallbackEXT(instance, pCreateInfo, pAllocator, pCallback);
     }
-    for (auto intercept : global_interceptor_list) {
+    """ + precallrecord_loop + """
         std::lock_guard<std::mutex> lock(intercept->layer_mutex);
         intercept->PreCallRecordCreateDebugReportCallbackEXT(instance, pCreateInfo, pAllocator, pCallback);
     }
-    VkResult result = instance_data->dispatch_table.CreateDebugReportCallbackEXT(instance, pCreateInfo, pAllocator, pCallback);
-    result = layer_create_report_callback(instance_data->report_data, false, pCreateInfo, pAllocator, pCallback);
-    for (auto intercept : global_interceptor_list) {
+    VkResult result = layer_data->instance_dispatch_table.CreateDebugReportCallbackEXT(instance, pCreateInfo, pAllocator, pCallback);
+    result = layer_create_report_callback(layer_data->report_data, false, pCreateInfo, pAllocator, pCallback);
+    """ + postcallrecord_loop + """
         std::lock_guard<std::mutex> lock(intercept->layer_mutex);
         intercept->PostCallRecordCreateDebugReportCallbackEXT(instance, pCreateInfo, pAllocator, pCallback);
     }
@@ -400,18 +416,18 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDebugReportCallbackEXT(VkInstance instance,
 
 VKAPI_ATTR void VKAPI_CALL DestroyDebugReportCallbackEXT(VkInstance instance, VkDebugReportCallbackEXT callback,
                                                          const VkAllocationCallbacks *pAllocator) {
-    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(instance), instance_layer_data_map);
-    for (auto intercept : global_interceptor_list) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(instance), layer_data_map);
+    """ + precallvalidate_loop + """
         std::lock_guard<std::mutex> lock(intercept->layer_mutex);
         intercept->PreCallValidateDestroyDebugReportCallbackEXT(instance, callback, pAllocator);
     }
-    for (auto intercept : global_interceptor_list) {
+    """ + precallrecord_loop + """
         std::lock_guard<std::mutex> lock(intercept->layer_mutex);
         intercept->PreCallRecordDestroyDebugReportCallbackEXT(instance, callback, pAllocator);
     }
-    instance_data->dispatch_table.DestroyDebugReportCallbackEXT(instance, callback, pAllocator);
-    layer_destroy_report_callback(instance_data->report_data, callback, pAllocator);
-    for (auto intercept : global_interceptor_list) {
+    layer_data->instance_dispatch_table.DestroyDebugReportCallbackEXT(instance, callback, pAllocator);
+    layer_destroy_report_callback(layer_data->report_data, callback, pAllocator);
+    """ + postcallrecord_loop + """
         std::lock_guard<std::mutex> lock(intercept->layer_mutex);
         intercept->PostCallRecordDestroyDebugReportCallbackEXT(instance, callback, pAllocator);
     }
@@ -528,6 +544,7 @@ VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkNegotiateLoaderLayerInterfaceVe
             if (genOpts.prefixText):
                 for s in genOpts.prefixText:
                     write(s, file=self.outFile)
+            write('#define NOMINMAX', file=self.outFile)
             write('#include <mutex>', file=self.outFile)
             write('#include <cinttypes>', file=self.outFile)
             write('#include <stdio.h>', file=self.outFile)
@@ -535,6 +552,7 @@ VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkNegotiateLoaderLayerInterfaceVe
             write('#include <string.h>', file=self.outFile)
             write('#include <unordered_map>', file=self.outFile)
             write('#include <unordered_set>', file=self.outFile)
+            write('#include <algorithm>', file=self.outFile)
 
             write('#include "vk_loader_platform.h"', file=self.outFile)
             write('#include "vulkan/vulkan.h"', file=self.outFile)
@@ -551,59 +569,52 @@ VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkNegotiateLoaderLayerInterfaceVe
             write('#include "vk_validation_error_messages.h"', file=self.outFile)
             write('#include "vk_extension_helper.h"', file=self.outFile)
             write('', file=self.outFile)
-
-
-            # TODO: Need some ifdef code here for which layer is being built!
-            write('#include "object_lifetimes.h"', file=self.outFile)
-            write('', file=self.outFile)
-
-            write('struct instance_layer_data {', file=self.outFile)
-            write('    VkLayerInstanceDispatchTable dispatch_table;', file=self.outFile)
-            write('    VkInstance instance = VK_NULL_HANDLE;', file=self.outFile)
-            write('    debug_report_data *report_data = nullptr;', file=self.outFile)
-            write('    std::vector<VkDebugReportCallbackEXT> logging_callback;', file=self.outFile)
-            write('    std::vector<VkDebugUtilsMessengerEXT> logging_messenger;', file=self.outFile)
-            write('    InstanceExtensions extensions;', file=self.outFile)
-            write('', file=self.outFile)
-            # TODO: Need some ifdef code here for which layer is being built!
-            write('    object_lifetime objdata;', file=self.outFile)
-            write('};', file=self.outFile)
-            write('', file=self.outFile)
-            write('struct layer_data {', file=self.outFile)
-            write('    debug_report_data *report_data = nullptr;', file=self.outFile)
-            write('    VkLayerDispatchTable dispatch_table;', file=self.outFile)
-            write('    DeviceExtensions extensions = {};', file=self.outFile)
-            write('    VkDevice device = VK_NULL_HANDLE;', file=self.outFile)
-            write('    VkPhysicalDevice physical_device = VK_NULL_HANDLE;', file=self.outFile)
-            write('    instance_layer_data *instance_data = nullptr;', file=self.outFile)
-            write('', file=self.outFile)
-            # TODO: Need some ifdef code here for which layer is being built!
-            write('    object_lifetime objdata;', file=self.outFile)
-            write('};', file=self.outFile)
-            write('', file=self.outFile)
-            write('extern std::unordered_map<void *, layer_data *> layer_data_map;', file=self.outFile)
-            write('extern std::unordered_map<void *, instance_layer_data *> instance_layer_data_map;', file=self.outFile)
-            write('', file=self.outFile)
-            write('class layer_chassis;', file=self.outFile)
-            write('extern std::vector<layer_chassis *> global_interceptor_list;', file=self.outFile)
-            write('extern debug_report_data *report_data;\n', file=self.outFile)
-            write('namespace vulkan_layer_chassis {\n', file=self.outFile)
         else:
             write(self.inline_custom_source_preamble, file=self.outFile)
 
-        # Initialize Enum Section
-        self.layer_factory += '// Layer Factory base class definition\n'
-        self.layer_factory += 'class layer_chassis {\n'
+        # Define some useful types
+        self.layer_factory += '// Layer object type identifiers\n'
+        self.layer_factory += 'enum LayerObjectTypeId {\n'
+        self.layer_factory += '    LayerObjectTypeThreading,\n'
+        self.layer_factory += '    LayerObjectTypeParameterValidation,\n'
+        self.layer_factory += '    LayerObjectTypeObjectTracker,\n'
+        self.layer_factory += '    LayerObjectTypeCoreValidation,\n'
+        self.layer_factory += '    LayerObjectTypeUniqueObjects,\n'
+        self.layer_factory += '};\n\n'
+
+        # Define base class
+        self.layer_factory += '// Uber Layer validation object base class definition\n'
+        self.layer_factory += 'class ValidationObject {\n'
         self.layer_factory += '    public:\n'
-        self.layer_factory += '        layer_chassis() {\n'
-        self.layer_factory += '            global_interceptor_list.emplace_back(this);\n'
-        self.layer_factory += '        };\n'
+        self.layer_factory += '        uint32_t api_version;\n'
+        self.layer_factory += '        debug_report_data* report_data = nullptr;\n'
+        self.layer_factory += '        std::vector<VkDebugReportCallbackEXT> logging_callback;\n'
+        self.layer_factory += '        std::vector<VkDebugUtilsMessengerEXT> logging_messenger;\n'
+        self.layer_factory += '\n'
+        self.layer_factory += '        VkLayerInstanceDispatchTable instance_dispatch_table;\n'
+        self.layer_factory += '        VkLayerDispatchTable device_dispatch_table;\n'
+        self.layer_factory += '\n'
+        self.layer_factory += '        InstanceExtensions instance_extensions;\n'
+        self.layer_factory += '        DeviceExtensions device_extensions = {};\n'
+        self.layer_factory += '\n'
+        self.layer_factory += '        VkInstance instance = VK_NULL_HANDLE;\n'
+        self.layer_factory += '        VkPhysicalDevice physical_device = VK_NULL_HANDLE;\n'
+        self.layer_factory += '        VkDevice device = VK_NULL_HANDLE;\n'
+        self.layer_factory += '\n'
+        self.layer_factory += '        std::vector<ValidationObject*> object_dispatch;\n'
+        self.layer_factory += '        LayerObjectTypeId container_type;\n'
+        self.layer_factory += '\n'
+        self.layer_factory += '        // Constructor\n'
+        self.layer_factory += '        ValidationObject(){};\n'
+        self.layer_factory += '        // Destructor\n'
+        self.layer_factory += '        virtual ~ValidationObject() {};\n'
         self.layer_factory += '\n'
         self.layer_factory += '        std::mutex layer_mutex;\n'
         self.layer_factory += '\n'
         self.layer_factory += '        std::string layer_name = "CHASSIS";\n'
         self.layer_factory += '\n'
         self.layer_factory += '        // Pre/post hook point declarations\n'
+
     #
     def endFile(self):
         # Finish C++ namespace and multiple inclusion protection
@@ -615,11 +626,12 @@ VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkNegotiateLoaderLayerInterfaceVe
             write('\n'.join(self.intercepts), file=self.outFile)
             write('};\n', file=self.outFile)
             self.newline()
-        write('} // namespace vulkan_layer_chassis', file=self.outFile)
+            write('} // namespace vulkan_layer_chassis', file=self.outFile)
         if self.header:
             self.newline()
             # Output Layer Factory Class Definitions
-            self.layer_factory += '};\n'
+            self.layer_factory += '};\n\n'
+            self.layer_factory += 'extern std::unordered_map<void*, ValidationObject*> layer_data_map;'
             write(self.layer_factory, file=self.outFile)
         else:
             write(self.inline_custom_source_postamble, file=self.outFile)
@@ -761,18 +773,16 @@ VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkNegotiateLoaderLayerInterfaceVe
         dispatchable_name = cmdinfo.elem.find('param/name').text
         # Default to device
         device_or_instance = 'device'
-        map_name = 'layer_data'
         dispatch_table_name = 'VkLayerDispatchTable'
         # Set to instance as necessary
         if dispatchable_type in ["VkPhysicalDevice", "VkInstance"] or name == 'vkCreateInstance':
             device_or_instance = 'instance'
             dispatch_table_name = 'VkLayerInstanceDispatchTable'
-            map_name = 'instance_layer_data'
-        self.appendSection('command', '    %s *%s_data = GetLayerDataPtr(get_dispatch_key(%s), %s_map);' % (map_name, device_or_instance, dispatchable_name, map_name))
+        self.appendSection('command', '    auto layer_data = GetLayerDataPtr(get_dispatch_key(%s), layer_data_map);' % (dispatchable_name))
         api_function_name = cmdinfo.elem.attrib.get('name')
         params = cmdinfo.elem.findall('param/name')
         paramstext = ', '.join([str(param.text) for param in params])
-        API = api_function_name.replace('vk','%s_data->dispatch_table.' % (device_or_instance),1)
+        API = api_function_name.replace('vk','layer_data->%s_dispatch_table.' % (device_or_instance),1)
 
         # Declare result variable, if any.
         return_map = {
@@ -790,14 +800,14 @@ VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkNegotiateLoaderLayerInterfaceVe
         self.appendSection('command', '    bool skip = false;')
 
         # Generate pre-call validation source code
-        self.appendSection('command', '    for (auto intercept : global_interceptor_list) {')
+        self.appendSection('command', '    %s' % self.precallvalidate_loop)
         self.appendSection('command', '        std::lock_guard<std::mutex> lock(intercept->layer_mutex);')
         self.appendSection('command', '        skip |= intercept->PreCallValidate%s(%s);' % (api_function_name[2:], paramstext))
         self.appendSection('command', '        if (skip) %s' % return_map[resulttype.text])
         self.appendSection('command', '    }')
 
         # Generate pre-call state recording source code
-        self.appendSection('command', '    for (auto intercept : global_interceptor_list) {')
+        self.appendSection('command', '    %s' % self.precallrecord_loop)
         self.appendSection('command', '        std::lock_guard<std::mutex> lock(intercept->layer_mutex);')
         self.appendSection('command', '        intercept->PreCallRecord%s(%s);' % (api_function_name[2:], paramstext))
         self.appendSection('command', '    }')
@@ -836,7 +846,8 @@ VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkNegotiateLoaderLayerInterfaceVe
                 self.appendSection('command', '    if ((VK_SUCCESS == result) || (VK_INCOMPLETE == result)) {')
             else:
                 self.appendSection('command', '    if (VK_SUCCESS == result) {')
-        self.appendSection('command', '%s    for (auto intercept : global_interceptor_list) {' % return_type_indent)
+
+        self.appendSection('command', '%s    %s' % (return_type_indent, self.postcallrecord_loop))
         self.appendSection('command', '%s        std::lock_guard<std::mutex> lock(intercept->layer_mutex);' % return_type_indent)
         self.appendSection('command', '%s        intercept->PostCallRecord%s(%s);' % (return_type_indent,api_function_name[2:], paramstext))
         self.appendSection('command', '%s    }' % return_type_indent)

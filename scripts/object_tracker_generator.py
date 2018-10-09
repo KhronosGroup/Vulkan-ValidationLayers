@@ -397,7 +397,6 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
         self.newline()
         self.otwrite('cpp', '#include "chassis.h"')
         self.otwrite('cpp', '#include "object_lifetime_validation.h"')
-        self.otwrite('cpp', '\n')
 
     #
     # Now that the data is all collected and complete, generate and output the object validation routines
@@ -696,11 +695,7 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
                 object_dest = '%s[index]' % cmd_info[-1].name
 
             dispobj = params[0].find('type').text
-            calltype = 'Device'
-            if dispobj == 'VkInstance' or dispobj == 'VkPhysicalDevice':
-                calltype = 'Instance'
-
-            create_obj_code += '%s%sCreateObject(%s, %s, %s, %s);\n' % (indent, calltype, params[0].find('name').text, object_dest, self.GetVulkanObjType(cmd_info[-1].type), allocator)
+            create_obj_code += '%sCreateObject(%s, %s, %s, %s);\n' % (indent, params[0].find('name').text, object_dest, self.GetVulkanObjType(cmd_info[-1].type), allocator)
             if object_array == True:
                 indent = self.decIndent(indent)
                 create_obj_code += '%s}\n' % indent
@@ -729,12 +724,9 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
                     validate_code += 'HEY, NEED TO DESTROY AN ARRAY\n'
                 else:
                     dispobj = cmd_info[0].type
-                    calltype = 'Device'
-                    if dispobj == 'VkInstance' or dispobj == 'VkPhysicalDevice':
-                        calltype = 'Instance'
                     # Call Destroy a single time
-                    validate_code += '%sskip |= %sValidateDestroyObject(%s, %s, %s, pAllocator, %s, %s);\n' % (indent, calltype, cmd_info[0].name, cmd_info[param].name, self.GetVulkanObjType(cmd_info[param].type), compatalloc_vuid, nullalloc_vuid)
-                    record_code += '%s%sRecordDestroyObject(%s, %s, %s);\n' % (indent, calltype, cmd_info[0].name, cmd_info[param].name, self.GetVulkanObjType(cmd_info[param].type))
+                    validate_code += '%sskip |= ValidateDestroyObject(%s, %s, %s, pAllocator, %s, %s);\n' % (indent, cmd_info[0].name, cmd_info[param].name, self.GetVulkanObjType(cmd_info[param].type), compatalloc_vuid, nullalloc_vuid)
+                    record_code += '%sRecordDestroyObject(%s, %s, %s);\n' % (indent, cmd_info[0].name, cmd_info[param].name, self.GetVulkanObjType(cmd_info[param].type))
         return object_array, validate_code, record_code
     #
     # Output validation for a single object (obj_count is NULL) or a counted list of objects
@@ -748,17 +740,14 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
         # If no parent VUID for this member, look for a commonparent VUID
         if parent_vuid == 'kVUIDUndefined':
             parent_vuid = self.GetVuid(parent_name, 'commonparent')
-        calltype = 'Device'
-        if disp_name == 'instance' or disp_name == 'physicalDevice':
-            calltype = 'Instance'
         if obj_count is not None:
             pre_call_code += '%sfor (uint32_t %s = 0; %s < %s; ++%s) {\n' % (indent, index, index, obj_count, index)
             indent = self.incIndent(indent)
-            pre_call_code += '%sskip |= %sValidateObject(%s, %s%s[%s], %s, %s, %s, %s);\n' % (indent, calltype, disp_name, prefix, obj_name, index, self.GetVulkanObjType(obj_type), null_allowed, param_vuid, parent_vuid)
+            pre_call_code += '%sskip |= ValidateObject(%s, %s%s[%s], %s, %s, %s, %s);\n' % (indent, disp_name, prefix, obj_name, index, self.GetVulkanObjType(obj_type), null_allowed, param_vuid, parent_vuid)
             indent = self.decIndent(indent)
             pre_call_code += '%s}\n' % indent
         else:
-            pre_call_code += '%sskip |= %sValidateObject(%s, %s%s, %s, %s, %s, %s);\n' % (indent, calltype, disp_name, prefix, obj_name, self.GetVulkanObjType(obj_type), null_allowed, param_vuid, parent_vuid)
+            pre_call_code += '%sskip |= ValidateObject(%s, %s%s, %s, %s, %s, %s);\n' % (indent, disp_name, prefix, obj_name, self.GetVulkanObjType(obj_type), null_allowed, param_vuid, parent_vuid)
         return pre_call_code
     #
     # first_level_param indicates if elements are passed directly into the function else they're below a ptr/struct
