@@ -86,6 +86,9 @@ script:
       # Fetch googletest component to build validation layer tests
       echo Fetching googletest external dependencies for building validation layer tests
       git clone https://github.com/google/googletest.git ${TRAVIS_BUILD_DIR}/external/googletest
+      pushd ${TRAVIS_BUILD_DIR}/external/googletest
+      git checkout tags/release-1.8.1
+      popd
     fi
   - |
     if [[ "$VULKAN_BUILD_TARGET" == "LINUX" ]]; then

@@ -30,6 +30,9 @@ before_build:
   - echo Fetching googletest external dependencies for building validation layer tests
   - cd %APPVEYOR_BUILD_FOLDER%
   - git clone https://github.com/google/googletest.git external/googletest
+  - cd %APPVEYOR_BUILD_FOLDER%/external/googletest
+  - git checkout tags/release-1.8.1
+  - cd %APPVEYOR_BUILD_FOLDER%
   - python scripts/update_deps.py --dir=external --arch=%PLATFORM% --config=%CONFIGURATION% 
   - echo Generating Vulkan-ValidationLayers CMake files for %PLATFORM% %CONFIGURATION%
   - mkdir build
