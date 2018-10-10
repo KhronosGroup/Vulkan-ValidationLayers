@@ -100,6 +100,8 @@ To obtain the framework, change your current directory to the top of your
 Vulkan-ValidationLayers repository and run:
 
     git clone https://github.com/google/googletest.git external/googletest
+    cd external/googletest
+    git checkout tags/release-1.8.1
 
 before configuring your build with CMake.
 
