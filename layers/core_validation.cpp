@@ -8164,7 +8164,7 @@ static bool ValidateImageBarrierImage(layer_data *device_data, const char *funcN
                             ") is referenced by the VkSubpassDescription for active subpass (%d) of current renderPass (0x%" PRIx64
                             ") as having layout %s, but image barrier has layout %s.",
                             funcName, img_index, HandleToUint64(img_bar_image), active_subpass, rp_handle,
-                            string_VkImageLayout(img_barrier.oldLayout), string_VkImageLayout(sub_image_layout));
+                            string_VkImageLayout(sub_image_layout), string_VkImageLayout(img_barrier.oldLayout));
         }
     }
     return skip;
