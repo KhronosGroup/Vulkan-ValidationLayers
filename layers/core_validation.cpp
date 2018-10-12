@@ -9108,9 +9108,27 @@ static bool SetQueryState(VkQueue queue, VkCommandBuffer commandBuffer, QueryObj
     return false;
 }
 
-static bool PreCallValidateCmdBeginQuery(layer_data *dev_data, GLOBAL_CB_NODE *pCB) {
+static bool PreCallValidateCmdBeginQuery(layer_data *dev_data, GLOBAL_CB_NODE *pCB, VkQueryPool queryPool, VkFlags flags) {
     bool skip = ValidateCmdQueueFlags(dev_data, pCB, "vkCmdBeginQuery()", VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
                                       "VUID-vkCmdBeginQuery-commandBuffer-cmdpool");
+    auto queryType = GetQueryPoolNode(dev_data, queryPool)->createInfo.queryType;
+
+    if (flags & VK_QUERY_CONTROL_PRECISE_BIT) {
+        if (!dev_data->enabled_features.core.occlusionQueryPrecise) {
+            skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                            HandleToUint64(pCB->commandBuffer), "VUID-vkCmdBeginQuery-queryType-00800",
+                            "VK_QUERY_CONTROL_PRECISE_BIT provided to vkCmdBeginQuery, but precise occlusion queries not enabled "
+                            "on the device.");
+        }
+
+        if (queryType != VK_QUERY_TYPE_OCCLUSION) {
+            skip |= log_msg(
+                dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                HandleToUint64(pCB->commandBuffer), "VUID-vkCmdBeginQuery-queryType-00800",
+                "VK_QUERY_CONTROL_PRECISE_BIT provided to vkCmdBeginQuery, but pool query type is not VK_QUERY_TYPE_OCCLUSION");
+        }
+    }
+
     skip |= ValidateCmd(dev_data, pCB, CMD_BEGINQUERY, "vkCmdBeginQuery()");
     return skip;
 }
@@ -9129,7 +9147,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBeginQuery(VkCommandBuffer commandBuffer, VkQueryP
     unique_lock_t lock(global_lock);
     GLOBAL_CB_NODE *pCB = GetCBNode(dev_data, commandBuffer);
     if (pCB) {
-        PreCallValidateCmdBeginQuery(dev_data, pCB);
+        PreCallValidateCmdBeginQuery(dev_data, pCB, queryPool, flags);
     }
     lock.unlock();
 
