@@ -13683,6 +13683,7 @@ VKAPI_ATTR void VKAPI_CALL UpdateDescriptorSetWithTemplate(VkDevice device, VkDe
                                                            const void *pData) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     device_data->dispatch_table.UpdateDescriptorSetWithTemplate(device, descriptorSet, descriptorUpdateTemplate, pData);
+    unique_lock_t lock(global_lock);
 
     PostCallRecordUpdateDescriptorSetWithTemplate(device_data, descriptorSet, descriptorUpdateTemplate, pData);
 }
@@ -13692,6 +13693,7 @@ VKAPI_ATTR void VKAPI_CALL UpdateDescriptorSetWithTemplateKHR(VkDevice device, V
                                                               const void *pData) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     device_data->dispatch_table.UpdateDescriptorSetWithTemplateKHR(device, descriptorSet, descriptorUpdateTemplate, pData);
+    unique_lock_t lock(global_lock);
 
     PostCallRecordUpdateDescriptorSetWithTemplate(device_data, descriptorSet, descriptorUpdateTemplate, pData);
 }
