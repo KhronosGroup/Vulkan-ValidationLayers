@@ -1026,62 +1026,13 @@ bool PreCallValidateCreateImage(layer_data *device_data, const VkImageCreateInfo
 
     const VkPhysicalDeviceLimits *device_limits = &(GetPhysicalDeviceProperties(device_data)->limits);
     VkImageFormatProperties format_limits;  // Format limits may exceed general device limits
-    VkResult err = GetImageFormatProperties(device_data, pCreateInfo, &format_limits);
-    if (VK_SUCCESS != err) {
-        std::stringstream ss;
-        ss << "vkCreateImage: The combination of format, type, tiling, usage and flags supplied in the VkImageCreateInfo struct is "
-              "reported by vkGetPhysicalDeviceImageFormatProperties() as unsupported";
-        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                        "VUID-VkImageCreateInfo-format-00940", "%s.", ss.str().c_str());
-        return skip;
-    }
-
-    if ((VK_IMAGE_TYPE_1D == pCreateInfo->imageType) &&
-        (pCreateInfo->extent.width > std::max(device_limits->maxImageDimension1D, format_limits.maxExtent.width))) {
-        std::stringstream ss;
-        ss << "vkCreateImage: 1D image width exceeds maximum supported width for format " << format_string;
-        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                        "VUID-VkImageCreateInfo-imageType-00951", "%s.", ss.str().c_str());
-    }
-
-    if (VK_IMAGE_TYPE_2D == pCreateInfo->imageType) {
-        if (0 == (pCreateInfo->flags & VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT)) {
-            if (pCreateInfo->extent.width > std::max(device_limits->maxImageDimension2D, format_limits.maxExtent.width) ||
-                pCreateInfo->extent.height > std::max(device_limits->maxImageDimension2D, format_limits.maxExtent.height)) {
-                std::stringstream ss;
-                ss << "vkCreateImage: 2D image extent exceeds maximum supported width or height for format " << format_string;
-                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                "VUID-VkImageCreateInfo-imageType-00952", "%s.", ss.str().c_str());
-            }
-        } else {
-            if (pCreateInfo->extent.width > std::max(device_limits->maxImageDimensionCube, format_limits.maxExtent.width) ||
-                pCreateInfo->extent.height > std::max(device_limits->maxImageDimensionCube, format_limits.maxExtent.height)) {
-                std::stringstream ss;
-                ss << "vkCreateImage: 2D image extent exceeds maximum supported width or height for cube-compatible images with "
-                      "format "
-                   << format_string;
-                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                "VUID-VkImageCreateInfo-imageType-00953", "%s.", ss.str().c_str());
-            }
-        }
-    }
-
-    if (VK_IMAGE_TYPE_3D == pCreateInfo->imageType) {
-        if ((pCreateInfo->extent.width > std::max(device_limits->maxImageDimension3D, format_limits.maxExtent.width)) ||
-            (pCreateInfo->extent.height > std::max(device_limits->maxImageDimension3D, format_limits.maxExtent.height)) ||
-            (pCreateInfo->extent.depth > std::max(device_limits->maxImageDimension3D, format_limits.maxExtent.depth))) {
-            std::stringstream ss;
-            ss << "vkCreateImage: 3D image extent exceeds maximum supported width, height, or depth for format " << format_string;
-            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                            "VUID-VkImageCreateInfo-imageType-00955", "%s.", ss.str().c_str());
-        }
-    }
+    GetImageFormatProperties(device_data, pCreateInfo, &format_limits);
 
     if (pCreateInfo->mipLevels > format_limits.maxMipLevels) {
         std::stringstream ss;
         ss << "vkCreateImage: Image mip levels exceed image format maxMipLevels for format " << format_string;
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                        "VUID-VkImageCreateInfo-extent-00959", "%s.", ss.str().c_str());
+                        "VUID-VkImageCreateInfo-mipLevels-02255", "%s.", ss.str().c_str());
     }
 
     VkImageUsageFlags attach_flags = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT |
@@ -1121,14 +1072,14 @@ bool PreCallValidateCreateImage(layer_data *device_data, const VkImageCreateInfo
 
     if (pCreateInfo->arrayLayers > format_limits.maxArrayLayers) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, 0,
-                        "VUID-VkImageCreateInfo-arrayLayers-00960",
+                        "VUID-VkImageCreateInfo-arrayLayers-02256",
                         "CreateImage arrayLayers=%d exceeds allowable maximum supported by format of %d.", pCreateInfo->arrayLayers,
                         format_limits.maxArrayLayers);
     }
 
     if ((pCreateInfo->samples & format_limits.sampleCounts) == 0) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, 0,
-                        "VUID-VkImageCreateInfo-samples-00967", "CreateImage samples %s is not supported by format 0x%.8X.",
+                        "VUID-VkImageCreateInfo-samples-02258", "CreateImage samples %s is not supported by format 0x%.8X.",
                         string_VkSampleCountFlagBits(pCreateInfo->samples), format_limits.sampleCounts);
     }
 
@@ -3920,56 +3871,43 @@ bool PreCallValidateCreateImageView(layer_data *device_data, const VkImageViewCr
         VkFormatProperties format_properties = GetFormatProperties(device_data, view_format);
         bool check_tiling_features = false;
         VkFormatFeatureFlags tiling_features = 0;
-        std::string linear_error_codes[] = {
-            "VUID-VkImageViewCreateInfo-image-01006", "VUID-VkImageViewCreateInfo-image-01008",
-            "VUID-VkImageViewCreateInfo-image-01009", "VUID-VkImageViewCreateInfo-image-01010",
-            "VUID-VkImageViewCreateInfo-image-01011",
-        };
-        std::string optimal_error_codes[] = {
-            "VUID-VkImageViewCreateInfo-image-01012", "VUID-VkImageViewCreateInfo-image-01013",
-            "VUID-VkImageViewCreateInfo-image-01014", "VUID-VkImageViewCreateInfo-image-01015",
-            "VUID-VkImageViewCreateInfo-image-01016",
-        };
-        std::string *error_codes = nullptr;
         if (image_tiling == VK_IMAGE_TILING_LINEAR) {
             tiling_features = format_properties.linearTilingFeatures;
-            error_codes = linear_error_codes;
             check_tiling_features = true;
         } else if (image_tiling == VK_IMAGE_TILING_OPTIMAL) {
             tiling_features = format_properties.optimalTilingFeatures;
-            error_codes = optimal_error_codes;
             check_tiling_features = true;
         }
 
         if (check_tiling_features) {
             if (tiling_features == 0) {
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
-                                HandleToUint64(create_info->image), error_codes[0],
+                                HandleToUint64(create_info->image), "VUID-VkImageViewCreateInfo-None-02273",
                                 "vkCreateImageView() pCreateInfo->format %s cannot be used with an image having the %s flag set.",
                                 string_VkFormat(view_format), string_VkImageTiling(image_tiling));
             } else if ((image_usage & VK_IMAGE_USAGE_SAMPLED_BIT) && !(tiling_features & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT)) {
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
-                                HandleToUint64(create_info->image), error_codes[1],
+                                HandleToUint64(create_info->image), "VUID-VkImageViewCreateInfo-usage-02274",
                                 "vkCreateImageView() pCreateInfo->format %s cannot be used with an image having the %s and "
                                 "VK_IMAGE_USAGE_SAMPLED_BIT flags set.",
                                 string_VkFormat(view_format), string_VkImageTiling(image_tiling));
             } else if ((image_usage & VK_IMAGE_USAGE_STORAGE_BIT) && !(tiling_features & VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT)) {
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
-                                HandleToUint64(create_info->image), error_codes[2],
+                                HandleToUint64(create_info->image), "VUID-VkImageViewCreateInfo-usage-02275",
                                 "vkCreateImageView() pCreateInfo->format %s cannot be used with an image having the %s and "
                                 "VK_IMAGE_USAGE_STORAGE_BIT flags set.",
                                 string_VkFormat(view_format), string_VkImageTiling(image_tiling));
             } else if ((image_usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) &&
                        !(tiling_features & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT)) {
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
-                                HandleToUint64(create_info->image), error_codes[3],
+                                HandleToUint64(create_info->image), "VUID-VkImageViewCreateInfo-usage-02276",
                                 "vkCreateImageView() pCreateInfo->format %s cannot be used with an image having the %s and "
                                 "VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT flags set.",
                                 string_VkFormat(view_format), string_VkImageTiling(image_tiling));
             } else if ((image_usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) &&
                        !(tiling_features & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT)) {
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
-                                HandleToUint64(create_info->image), error_codes[4],
+                                HandleToUint64(create_info->image), "VUID-VkImageViewCreateInfo-usage-02277",
                                 "vkCreateImageView() pCreateInfo->format %s cannot be used with an image having the %s and "
                                 "VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT flags set.",
                                 string_VkFormat(view_format), string_VkImageTiling(image_tiling));

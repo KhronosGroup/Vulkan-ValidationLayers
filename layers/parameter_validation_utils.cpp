@@ -983,9 +983,9 @@ bool pv_vkCreateImage(VkDevice device, const VkImageCreateInfo *pCreateInfo, con
         // If multi-sample, validate type, usage, tiling and mip levels.
         if ((pCreateInfo->samples != VK_SAMPLE_COUNT_1_BIT) &&
             ((pCreateInfo->imageType != VK_IMAGE_TYPE_2D) || (pCreateInfo->flags & VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT) ||
-             (pCreateInfo->tiling != VK_IMAGE_TILING_OPTIMAL) || (pCreateInfo->mipLevels != 1))) {
+             (pCreateInfo->mipLevels != 1) || (pCreateInfo->tiling != VK_IMAGE_TILING_OPTIMAL))) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                            "VUID-VkImageCreateInfo-samples-00962",
+                            "VUID-VkImageCreateInfo-samples-02257",
                             "vkCreateImage(): Multi-sample image with incompatible type, usage, tiling, or mips.");
         }
 

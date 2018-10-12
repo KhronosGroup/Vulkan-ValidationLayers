@@ -8194,13 +8194,13 @@ static bool ValidateRenderPassImageBarriers(layer_data *device_data, const char 
             std::stringstream self_dep_ss;
             stream_join(self_dep_ss, ", ", self_dependencies);
             skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT,
-                            rp_handle, "VUID-vkCmdPipelineBarrier-pDependencies-02024",
+                            rp_handle, "VUID-vkCmdPipelineBarrier-pDependencies-02285",
                             "%s: Barrier pImageMemoryBarriers[%d].srcAccessMask(0x%X) is not a subset of VkSubpassDependency "
                             "srcAccessMask of subpass %d of renderPass 0x%" PRIx64
                             ". Candidate VkSubpassDependency are pDependencies entries [%s].",
                             funcName, i, img_src_access_mask, active_subpass, rp_handle, self_dep_ss.str().c_str());
             skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT,
-                            rp_handle, "VUID-vkCmdPipelineBarrier-pDependencies-02024",
+                            rp_handle, "VUID-vkCmdPipelineBarrier-pDependencies-02285",
                             "%s: Barrier pImageMemoryBarriers[%d].dstAccessMask(0x%X) is not a subset of VkSubpassDependency "
                             "dstAccessMask of subpass %d of renderPass 0x%" PRIx64
                             ". Candidate VkSubpassDependency are pDependencies entries [%s].",
@@ -8247,7 +8247,7 @@ static bool ValidateRenderPassPipelineBarriers(layer_data *device_data, const ch
     if (self_dependencies.size() == 0) {
         skip |=
             log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT, rp_handle,
-                    "VUID-vkCmdPipelineBarrier-pDependencies-02024",
+                    "VUID-vkCmdPipelineBarrier-pDependencies-02285",
                     "%s: Barriers cannot be set during subpass %d of renderPass 0x%" PRIx64 " with no self-dependency specified.",
                     funcName, active_subpass, rp_handle);
     } else {
@@ -8269,14 +8269,14 @@ static bool ValidateRenderPassPipelineBarriers(layer_data *device_data, const ch
             std::stringstream self_dep_ss;
             stream_join(self_dep_ss, ", ", self_dependencies);
             skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT,
-                            rp_handle, "VUID-vkCmdPipelineBarrier-pDependencies-02024",
+                            rp_handle, "VUID-vkCmdPipelineBarrier-pDependencies-02285",
                             "%s: Barrier srcStageMask(0x%X) is not a subset of VkSubpassDependency srcStageMask of any "
                             "self-dependency of subpass %d of renderPass 0x%" PRIx64
                             " for which dstStageMask is also a subset. "
                             "Candidate VkSubpassDependency are pDependencies entries [%s].",
                             funcName, src_stage_mask, active_subpass, rp_handle, self_dep_ss.str().c_str());
             skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT,
-                            rp_handle, "VUID-vkCmdPipelineBarrier-pDependencies-02024",
+                            rp_handle, "VUID-vkCmdPipelineBarrier-pDependencies-02285",
                             "%s: Barrier dstStageMask(0x%X) is not a subset of VkSubpassDependency dstStageMask of any "
                             "self-dependency of subpass %d of renderPass 0x%" PRIx64
                             " for which srcStageMask is also a subset. "
@@ -8306,7 +8306,7 @@ static bool ValidateRenderPassPipelineBarriers(layer_data *device_data, const ch
                 stream_join(self_dep_ss, ", ", self_dependencies);
                 skip |= log_msg(
                     device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT, rp_handle,
-                    "VUID-vkCmdPipelineBarrier-pDependencies-02024",
+                    "VUID-vkCmdPipelineBarrier-pDependencies-02285",
                     "%s: Barrier pMemoryBarriers[%d].srcAccessMask(0x%X) is not a subset of VkSubpassDependency srcAccessMask "
                     "for any self-dependency of subpass %d of renderPass 0x%" PRIx64
                     " for which dstAccessMask is also a subset. "
@@ -8314,7 +8314,7 @@ static bool ValidateRenderPassPipelineBarriers(layer_data *device_data, const ch
                     funcName, i, mb_src_access_mask, active_subpass, rp_handle, self_dep_ss.str().c_str());
                 skip |= log_msg(
                     device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT, rp_handle,
-                    "VUID-vkCmdPipelineBarrier-pDependencies-02024",
+                    "VUID-vkCmdPipelineBarrier-pDependencies-02285",
                     "%s: Barrier pMemoryBarriers[%d].dstAccessMask(0x%X) is not a subset of VkSubpassDependency dstAccessMask "
                     "for any self-dependency of subpass %d of renderPass 0x%" PRIx64
                     " for which srcAccessMask is also a subset. "
@@ -8336,7 +8336,7 @@ static bool ValidateRenderPassPipelineBarriers(layer_data *device_data, const ch
             std::stringstream self_dep_ss;
             stream_join(self_dep_ss, ", ", self_dependencies);
             skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT,
-                            rp_handle, "VUID-vkCmdPipelineBarrier-pDependencies-02024",
+                            rp_handle, "VUID-vkCmdPipelineBarrier-pDependencies-02285",
                             "%s: dependencyFlags param (0x%X) does not equal VkSubpassDependency dependencyFlags value for any "
                             "self-dependency of subpass %d of renderPass 0x%" PRIx64
                             ". Candidate VkSubpassDependency are pDependencies entries [%s].",
