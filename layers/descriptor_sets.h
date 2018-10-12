@@ -314,8 +314,8 @@ class Descriptor {
 // Shared helper functions - These are useful because the shared sampler image descriptor type
 //  performs common functions with both sampler and image descriptors so they can share their common functions
 bool ValidateSampler(const VkSampler, const core_validation::layer_data *);
-bool ValidateImageUpdate(VkImageView, VkImageLayout, VkDescriptorType, const core_validation::layer_data *, std::string *,
-                         std::string *);
+bool ValidateImageUpdate(VkImageView, VkImageLayout, VkDescriptorType, const core_validation::layer_data *, const char *func_name,
+                         std::string *, std::string *);
 
 class SamplerDescriptor : public Descriptor {
    public:
@@ -431,7 +431,7 @@ struct AllocateDescriptorSetsData {
 // Helper functions for descriptor set functions that cross multiple sets
 // "Validate" will make sure an update is ok without actually performing it
 bool ValidateUpdateDescriptorSets(const debug_report_data *, const core_validation::layer_data *, uint32_t,
-                                  const VkWriteDescriptorSet *, uint32_t, const VkCopyDescriptorSet *);
+                                  const VkWriteDescriptorSet *, uint32_t, const VkCopyDescriptorSet *, const char *func_name);
 // "Perform" does the update with the assumption that ValidateUpdateDescriptorSets() has passed for the given update
 void PerformUpdateDescriptorSets(const core_validation::layer_data *, uint32_t, const VkWriteDescriptorSet *, uint32_t,
                                  const VkCopyDescriptorSet *);
@@ -443,9 +443,11 @@ struct DecodedTemplateUpdate {
     DecodedTemplateUpdate(layer_data *device_data, VkDescriptorSet descriptorSet, const TEMPLATE_STATE *template_state,
                           const void *pData);
 };
-// Similar to PerformUpdateDescriptorSets, this function will do the same for updating via templates
-void PerformUpdateDescriptorSetsWithTemplateKHR(layer_data *, VkDescriptorSet, std::unique_ptr<TEMPLATE_STATE> const &,
-                                                const void *);
+// Helper wrapping ValidateUpdateDescriptorSets, updating via templates
+bool ValidateUpdateDescriptorSetsWithTemplateKHR(layer_data *device_data, VkDescriptorSet descriptorSet,
+                                                 const TEMPLATE_STATE *template_state, const void *pData);
+// Helper wrapping PerformUpdateDescriptorSets, updating via templates
+void PerformUpdateDescriptorSetsWithTemplateKHR(layer_data *, VkDescriptorSet, const TEMPLATE_STATE *, const void *);
 // Update the common AllocateDescriptorSetsData struct which can then be shared between Validate* and Perform* funcs below
 void UpdateAllocateDescriptorSetsData(const layer_data *dev_data, const VkDescriptorSetAllocateInfo *,
                                       AllocateDescriptorSetsData *);
@@ -510,12 +512,12 @@ class DescriptorSet : public BASE_NODE {
 
     // Descriptor Update functions. These functions validate state and perform update separately
     // Validate contents of a WriteUpdate
-    bool ValidateWriteUpdate(const debug_report_data *, const VkWriteDescriptorSet *, std::string *, std::string *);
+    bool ValidateWriteUpdate(const debug_report_data *, const VkWriteDescriptorSet *, const char *, std::string *, std::string *);
     // Perform a WriteUpdate whose contents were just validated using ValidateWriteUpdate
     void PerformWriteUpdate(const VkWriteDescriptorSet *);
     // Validate contents of a CopyUpdate
-    bool ValidateCopyUpdate(const debug_report_data *, const VkCopyDescriptorSet *, const DescriptorSet *, std::string *,
-                            std::string *);
+    bool ValidateCopyUpdate(const debug_report_data *, const VkCopyDescriptorSet *, const DescriptorSet *, const char *func_name,
+                            std::string *, std::string *);
     // Perform a CopyUpdate whose contents were just validated using ValidateCopyUpdate
     void PerformCopyUpdate(const VkCopyDescriptorSet *, const DescriptorSet *);
 
@@ -561,11 +563,11 @@ class DescriptorSet : public BASE_NODE {
     DESCRIPTOR_POOL_STATE *GetPoolState() const { return pool_state_; }
 
    private:
-    bool VerifyWriteUpdateContents(const VkWriteDescriptorSet *, const uint32_t, std::string *, std::string *) const;
-    bool VerifyCopyUpdateContents(const VkCopyDescriptorSet *, const DescriptorSet *, VkDescriptorType, uint32_t, std::string *,
-                                  std::string *) const;
+    bool VerifyWriteUpdateContents(const VkWriteDescriptorSet *, const uint32_t, const char *, std::string *, std::string *) const;
+    bool VerifyCopyUpdateContents(const VkCopyDescriptorSet *, const DescriptorSet *, VkDescriptorType, uint32_t, const char *,
+                                  std::string *, std::string *) const;
     bool ValidateBufferUsage(BUFFER_STATE const *, VkDescriptorType, std::string *, std::string *) const;
-    bool ValidateBufferUpdate(VkDescriptorBufferInfo const *, VkDescriptorType, std::string *, std::string *) const;
+    bool ValidateBufferUpdate(VkDescriptorBufferInfo const *, VkDescriptorType, const char *, std::string *, std::string *) const;
     // Private helper to set all bound cmd buffers to INVALID state
     void InvalidateBoundCmdBuffers();
     bool some_update_;  // has any part of the set ever been updated?

@@ -6214,7 +6214,7 @@ static bool PreCallValidateUpdateDescriptorSets(layer_data *dev_data, uint32_t d
     // Note, here DescriptorSets is unique in that we don't yet have an instance. Using a helper function in the
     //  namespace which will parse params and make calls into specific class instances
     return cvdescriptorset::ValidateUpdateDescriptorSets(dev_data->report_data, dev_data, descriptorWriteCount, pDescriptorWrites,
-                                                         descriptorCopyCount, pDescriptorCopies);
+                                                         descriptorCopyCount, pDescriptorCopies, "vkUpdateDescriptorSets()");
 }
 // PostCallRecord* handles recording state updates following call down chain to UpdateDescriptorSets()
 static void PreCallRecordUpdateDescriptorSets(layer_data *dev_data, uint32_t descriptorWriteCount,
@@ -14155,36 +14155,70 @@ VKAPI_ATTR void VKAPI_CALL DestroyDescriptorUpdateTemplateKHR(VkDevice device,
     device_data->dispatch_table.DestroyDescriptorUpdateTemplateKHR(device, descriptorUpdateTemplate, pAllocator);
 }
 
-// PostCallRecord* handles recording state updates following call down chain to UpdateDescriptorSetsWithTemplate()
-static void PostCallRecordUpdateDescriptorSetWithTemplate(layer_data *device_data, VkDescriptorSet descriptorSet,
-                                                          VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate,
-                                                          const void *pData) {
+static bool PreCallValidateUpdateDescriptorSetWithTemplate(layer_data *device_data, VkDescriptorSet descriptorSet,
+                                                           VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate,
+                                                           const void *pData) {
+    bool skip = false;
     auto const template_map_entry = device_data->desc_template_map.find(descriptorUpdateTemplate);
-    if (template_map_entry == device_data->desc_template_map.end()) {
+    if ((template_map_entry == device_data->desc_template_map.end()) || (template_map_entry->second.get() == nullptr)) {
+        // Object tracker will report errors for invalid descriptorUpdateTemplate values, avoiding a crash in release builds
+        // but retaining the assert as template support is new enough to want to investigate these in debug builds.
         assert(0);
+    } else {
+        const TEMPLATE_STATE *template_state = template_map_entry->second.get();
+        // TODO: Validate template push descriptor updates
+        if (template_state->create_info.templateType == VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET) {
+            skip = cvdescriptorset::ValidateUpdateDescriptorSetsWithTemplateKHR(device_data, descriptorSet, template_state, pData);
+        }
     }
+    return skip;
+}
 
-    cvdescriptorset::PerformUpdateDescriptorSetsWithTemplateKHR(device_data, descriptorSet, template_map_entry->second, pData);
+static void PreCallRecordUpdateDescriptorSetWithTemplate(layer_data *device_data, VkDescriptorSet descriptorSet,
+                                                         VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate,
+                                                         const void *pData) {
+    auto const template_map_entry = device_data->desc_template_map.find(descriptorUpdateTemplate);
+    if ((template_map_entry == device_data->desc_template_map.end()) || (template_map_entry->second.get() == nullptr)) {
+        assert(0);
+    } else {
+        const TEMPLATE_STATE *template_state = template_map_entry->second.get();
+        // TODO: Record template push descriptor updates
+        if (template_state->create_info.templateType == VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET) {
+            cvdescriptorset::PerformUpdateDescriptorSetsWithTemplateKHR(device_data, descriptorSet, template_state, pData);
+        }
+    }
 }
 
 VKAPI_ATTR void VKAPI_CALL UpdateDescriptorSetWithTemplate(VkDevice device, VkDescriptorSet descriptorSet,
                                                            VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate,
                                                            const void *pData) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    device_data->dispatch_table.UpdateDescriptorSetWithTemplate(device, descriptorSet, descriptorUpdateTemplate, pData);
-    unique_lock_t lock(global_lock);
 
-    PostCallRecordUpdateDescriptorSetWithTemplate(device_data, descriptorSet, descriptorUpdateTemplate, pData);
+    unique_lock_t lock(global_lock);
+    bool skip = false;
+    skip = PreCallValidateUpdateDescriptorSetWithTemplate(device_data, descriptorSet, descriptorUpdateTemplate, pData);
+
+    if (!skip) {
+        PreCallRecordUpdateDescriptorSetWithTemplate(device_data, descriptorSet, descriptorUpdateTemplate, pData);
+        lock.unlock();
+        device_data->dispatch_table.UpdateDescriptorSetWithTemplate(device, descriptorSet, descriptorUpdateTemplate, pData);
+    }
 }
 
 VKAPI_ATTR void VKAPI_CALL UpdateDescriptorSetWithTemplateKHR(VkDevice device, VkDescriptorSet descriptorSet,
                                                               VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate,
                                                               const void *pData) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    device_data->dispatch_table.UpdateDescriptorSetWithTemplateKHR(device, descriptorSet, descriptorUpdateTemplate, pData);
-    unique_lock_t lock(global_lock);
 
-    PostCallRecordUpdateDescriptorSetWithTemplate(device_data, descriptorSet, descriptorUpdateTemplate, pData);
+    unique_lock_t lock(global_lock);
+    bool skip = false;
+    skip = PreCallValidateUpdateDescriptorSetWithTemplate(device_data, descriptorSet, descriptorUpdateTemplate, pData);
+
+    if (!skip) {
+        PreCallRecordUpdateDescriptorSetWithTemplate(device_data, descriptorSet, descriptorUpdateTemplate, pData);
+        lock.unlock();
+        device_data->dispatch_table.UpdateDescriptorSetWithTemplateKHR(device, descriptorSet, descriptorUpdateTemplate, pData);
+    }
 }
 
 static bool PreCallValidateCmdPushDescriptorSetWithTemplateKHR(layer_data *dev_data, GLOBAL_CB_NODE *cb_state) {
