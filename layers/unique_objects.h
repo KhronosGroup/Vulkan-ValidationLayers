@@ -36,7 +36,8 @@ namespace unique_objects {
 
 // All increments must be guarded by global_lock
 static uint64_t global_unique_id = 1;
-static std::unordered_map<uint64_t, uint64_t> unique_id_mapping;  // Map uniqueID to actual object handle
+static std::unordered_map<uint64_t, uint64_t> unique_id_mapping;               // Map uniqueID to actual object handle
+static std::unordered_map<VkDisplayKHR, uint64_t> display_id_reverse_mapping;  // Reverse map display handles
 
 struct TEMPLATE_STATE {
     VkDescriptorUpdateTemplateKHR desc_update_template;
@@ -47,7 +48,6 @@ struct TEMPLATE_STATE {
 };
 
 struct instance_layer_data {
-
     VkInstance instance;
 
     debug_report_data *report_data;
@@ -132,6 +132,27 @@ HandleType WrapNew(HandleType newlyCreatedHandle) {
     auto unique_id = global_unique_id++;
     unique_id_mapping[unique_id] = reinterpret_cast<uint64_t const &>(newlyCreatedHandle);
     return (HandleType)unique_id;
+}
+
+// Specialized handling for VkDisplayKHR. Adds an entry to enable reverse-lookup.
+// must hold lock!
+VkDisplayKHR WrapNew(VkDisplayKHR newlyCreatedHandle) {
+    auto unique_id = global_unique_id++;
+    unique_id_mapping[unique_id] = reinterpret_cast<uint64_t const &>(newlyCreatedHandle);
+    display_id_reverse_mapping[newlyCreatedHandle] = unique_id;
+    return (VkDisplayKHR)unique_id;
+}
+
+// VkDisplayKHR objects don't have a single point of creation, so we need to see
+// if one already exists in the map before creating another.
+// must hold lock!
+VkDisplayKHR MaybeWrapNew(VkDisplayKHR handle) {
+    // See if this display is already known
+    auto it = display_id_reverse_mapping.find(handle);
+    if (it != display_id_reverse_mapping.end()) return (VkDisplayKHR)it->second;
+
+    // Unknown, so wrap
+    return WrapNew(handle);
 }
 
 }  // namespace unique_objects
