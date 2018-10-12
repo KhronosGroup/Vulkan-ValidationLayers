@@ -435,6 +435,14 @@ bool ValidateUpdateDescriptorSets(const debug_report_data *, const core_validati
 // "Perform" does the update with the assumption that ValidateUpdateDescriptorSets() has passed for the given update
 void PerformUpdateDescriptorSets(const core_validation::layer_data *, uint32_t, const VkWriteDescriptorSet *, uint32_t,
                                  const VkCopyDescriptorSet *);
+
+// Helper class to encapsulate the descriptor update template decoding logic
+struct DecodedTemplateUpdate {
+    std::vector<VkWriteDescriptorSet> desc_writes;
+    std::vector<VkWriteDescriptorSetInlineUniformBlockEXT> inline_infos;
+    DecodedTemplateUpdate(layer_data *device_data, VkDescriptorSet descriptorSet, const TEMPLATE_STATE *template_state,
+                          const void *pData);
+};
 // Similar to PerformUpdateDescriptorSets, this function will do the same for updating via templates
 void PerformUpdateDescriptorSetsWithTemplateKHR(layer_data *, VkDescriptorSet, std::unique_ptr<TEMPLATE_STATE> const &,
                                                 const void *);

@@ -1699,16 +1699,12 @@ void cvdescriptorset::PerformUpdateDescriptorSets(const layer_data *dev_data, ui
         }
     }
 }
-// This helper function carries out the state updates for descriptor updates peformed via update templates. It basically collects
-// data and leverages the PerformUpdateDescriptor helper functions to do this.
-void cvdescriptorset::PerformUpdateDescriptorSetsWithTemplateKHR(layer_data *device_data, VkDescriptorSet descriptorSet,
-                                                                 std::unique_ptr<TEMPLATE_STATE> const &template_state,
-                                                                 const void *pData) {
-    auto const &create_info = template_state->create_info;
 
-    // Create a vector of write structs
-    std::vector<VkWriteDescriptorSet> desc_writes;
-    std::vector<VkWriteDescriptorSetInlineUniformBlockEXT> inline_infos(create_info.descriptorUpdateEntryCount);
+cvdescriptorset::DecodedTemplateUpdate::DecodedTemplateUpdate(layer_data *device_data, VkDescriptorSet descriptorSet,
+                                                              const TEMPLATE_STATE *template_state, const void *pData) {
+    auto const &create_info = template_state->create_info;
+    inline_infos.resize(create_info.descriptorUpdateEntryCount);  // Make sure we have one if we need it
+    desc_writes.reserve(create_info.descriptorUpdateEntryCount);  // emplaced, so reserved without initialization
     auto layout_obj = GetDescriptorSetLayout(device_data, create_info.descriptorSetLayout);
 
     // Create a WriteDescriptorSet struct for each template update entry
@@ -1776,7 +1772,17 @@ void cvdescriptorset::PerformUpdateDescriptorSetsWithTemplateKHR(layer_data *dev
             dst_array_element++;
         }
     }
-    PerformUpdateDescriptorSets(device_data, static_cast<uint32_t>(desc_writes.size()), desc_writes.data(), 0, NULL);
+}
+
+// This helper function carries out the state updates for descriptor updates peformed via update templates. It basically collects
+// data and leverages the PerformUpdateDescriptor helper functions to do this.
+void cvdescriptorset::PerformUpdateDescriptorSetsWithTemplateKHR(layer_data *device_data, VkDescriptorSet descriptorSet,
+                                                                 std::unique_ptr<TEMPLATE_STATE> const &template_state,
+                                                                 const void *pData) {
+    // Create a vector of write structs
+    DecodedTemplateUpdate decoded_update(device_data, descriptorSet, template_state.get(), pData);
+    PerformUpdateDescriptorSets(device_data, static_cast<uint32_t>(decoded_update.desc_writes.size()),
+                                decoded_update.desc_writes.data(), 0, NULL);
 }
 // Validate the state for a given write update but don't actually perform the update
 //  If an error would occur for this update, return false and fill in details in error_msg string
