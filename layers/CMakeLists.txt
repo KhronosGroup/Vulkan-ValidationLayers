@@ -120,14 +120,14 @@ if(WIN32)
 
         add_library(VkLayer_${target} SHARED ${ARGN} VkLayer_${target}.def)
         target_link_libraries(VkLayer_${target} PRIVATE VkLayer_utils)
-        add_dependencies(VkLayer_${target} generate_helper_files VkLayer_utils)
+        add_dependencies(VkLayer_${target} VulkanVL_generate_helper_files VkLayer_utils)
         install(TARGETS VkLayer_${target} DESTINATION ${CMAKE_INSTALL_LIBDIR})
     endmacro()
 elseif(APPLE)
     macro(AddVkLayer target)
         add_library(VkLayer_${target} SHARED ${ARGN})
         target_link_libraries(VkLayer_${target} PRIVATE VkLayer_utils)
-        add_dependencies(VkLayer_${target} generate_helper_files VkLayer_utils)
+        add_dependencies(VkLayer_${target} VulkanVL_generate_helper_files VkLayer_utils)
         set_target_properties(VkLayer_${target}
                               PROPERTIES LINK_FLAGS
                                          "-Wl"
@@ -139,7 +139,7 @@ else(UNIX AND NOT APPLE) # i.e.: Linux
     macro(AddVkLayer target)
         add_library(VkLayer_${target} SHARED ${ARGN})
         target_link_libraries(VkLayer_${target} PRIVATE VkLayer_utils)
-        add_dependencies(VkLayer_${target} generate_helper_files VkLayer_utils)
+        add_dependencies(VkLayer_${target} VulkanVL_generate_helper_files VkLayer_utils)
         set_target_properties(VkLayer_${target} PROPERTIES LINK_FLAGS "-Wl,-Bsymbolic,--exclude-libs,ALL")
         install(TARGETS VkLayer_${target} DESTINATION ${CMAKE_INSTALL_LIBDIR})
     endmacro()
