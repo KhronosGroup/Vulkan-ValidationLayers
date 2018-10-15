@@ -4383,7 +4383,7 @@ static inline bool ValidateBufferBounds(const debug_report_data *report_data, IM
             }
         }
 
-        if (FormatIsCompressed(image_state->createInfo.format)) {
+        if (FormatIsCompressed(image_state->createInfo.format) || FormatIsSinglePlane_422(image_state->createInfo.format)) {
             // Switch to texel block units, rounding up for any partially-used blocks
             auto block_dim = FormatCompressedTexelBlockExtent(image_state->createInfo.format);
             buffer_width = (buffer_width + block_dim.width - 1) / block_dim.width;
