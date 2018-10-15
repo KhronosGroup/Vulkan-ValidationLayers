@@ -12171,9 +12171,13 @@ static void PostCallRecordQueuePresentKHR(layer_data *dev_data, const VkPresentI
 
         // Mark the image as having been released to the WSI
         auto swapchain_data = GetSwapchainNode(dev_data, pPresentInfo->pSwapchains[i]);
-        auto image = swapchain_data->images[pPresentInfo->pImageIndices[i]];
-        auto image_state = GetImageState(dev_data, image);
-        image_state->acquired = false;
+        if (swapchain_data && (swapchain_data->images.size() > pPresentInfo->pImageIndices[i])) {
+            auto image = swapchain_data->images[pPresentInfo->pImageIndices[i]];
+            auto image_state = GetImageState(dev_data, image);
+            if (image_state) {
+                image_state->acquired = false;
+            }
+        }
     }
 
     // Note: even though presentation is directed to a queue, there is no direct ordering between QP and subsequent work, so QP (and
@@ -12267,21 +12271,21 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateSharedSwapchainsKHR(VkDevice device, uint32
 
 static bool PreCallValidateCommonAcquireNextImage(layer_data *dev_data, VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout,
                                                   VkSemaphore semaphore, VkFence fence, uint32_t *pImageIndex,
-                                                  const char *caller_name) {
+                                                  const char *func_name) {
     bool skip = false;
     if (fence == VK_NULL_HANDLE && semaphore == VK_NULL_HANDLE) {
         skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
                         HandleToUint64(device), "VUID-vkAcquireNextImageKHR-semaphore-01780",
                         "%s: Semaphore and fence cannot both be VK_NULL_HANDLE. There would be no way to "
                         "determine the completion of this operation.",
-                        caller_name);
+                        func_name);
     }
 
     auto pSemaphore = GetSemaphoreNode(dev_data, semaphore);
     if (pSemaphore && pSemaphore->scope == kSyncScopeInternal && pSemaphore->signaled) {
         skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SEMAPHORE_EXT,
                         HandleToUint64(semaphore), "VUID-vkAcquireNextImageKHR-semaphore-01286",
-                        "%s: Semaphore must not be currently signaled or in a wait state.", caller_name);
+                        "%s: Semaphore must not be currently signaled or in a wait state.", func_name);
     }
 
     auto pFence = GetFenceNode(dev_data, fence);
@@ -12290,12 +12294,12 @@ static bool PreCallValidateCommonAcquireNextImage(layer_data *dev_data, VkDevice
     }
 
     auto swapchain_data = GetSwapchainNode(dev_data, swapchain);
-    if (swapchain_data->replaced) {
+    if (swapchain_data && swapchain_data->replaced) {
         skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SWAPCHAIN_KHR_EXT,
                         HandleToUint64(swapchain), "VUID-vkAcquireNextImageKHR-swapchain-01285",
                         "%s: This swapchain has been retired. The application can still present any images it "
                         "has acquired, but cannot acquire any more.",
-                        caller_name);
+                        func_name);
     }
 
     auto physical_device_state = GetPhysicalDeviceState(dev_data->instance_data, dev_data->physical_device);
@@ -12305,17 +12309,17 @@ static bool PreCallValidateCommonAcquireNextImage(layer_data *dev_data, VkDevice
         if (acquired_images > swapchain_data->images.size() - physical_device_state->surfaceCapabilities.minImageCount) {
             skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SWAPCHAIN_KHR_EXT,
                             HandleToUint64(swapchain), kVUID_Core_DrawState_SwapchainTooManyImages,
-                            "%s: Application has already acquired the maximum number of images (0x%" PRIxLEAST64 ")", caller_name,
+                            "%s: Application has already acquired the maximum number of images (0x%" PRIxLEAST64 ")", func_name,
                             acquired_images);
         }
     }
 
-    if (swapchain_data->images.size() == 0) {
+    if (swapchain_data && swapchain_data->images.size() == 0) {
         skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SWAPCHAIN_KHR_EXT,
                         HandleToUint64(swapchain), kVUID_Core_DrawState_SwapchainImagesNotFound,
                         "%s: No images found to acquire from. Application probably did not call "
                         "vkGetSwapchainImagesKHR after swapchain creation.",
-                        caller_name);
+                        func_name);
     }
     return skip;
 }
@@ -12340,10 +12344,14 @@ static void PostCallRecordCommonAcquireNextImage(layer_data *dev_data, VkDevice 
 
     // Mark the image as acquired.
     auto swapchain_data = GetSwapchainNode(dev_data, swapchain);
-    auto image = swapchain_data->images[*pImageIndex];
-    auto image_state = GetImageState(dev_data, image);
-    image_state->acquired = true;
-    image_state->shared_presentable = swapchain_data->shared_presentable;
+    if (swapchain_data && (swapchain_data->images.size() > *pImageIndex)) {
+        auto image = swapchain_data->images[*pImageIndex];
+        auto image_state = GetImageState(dev_data, image);
+        if (image_state) {
+            image_state->acquired = true;
+            image_state->shared_presentable = swapchain_data->shared_presentable;
+        }
+    }
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL AcquireNextImageKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout,
