@@ -678,7 +678,7 @@ class UniqueObjectsOutputGenerator(OutputGenerator):
                     if first_level_param == False:
                         count_name = '%s%s' % (prefix, member.len)
 
-                if (first_level_param == False) or (create_func == False):
+                if (first_level_param == False) or (create_func == False) or (not '*' in member.cdecl):
                     (tmp_decl, tmp_pre, tmp_post) = self.outputNDOs(member.type, member.name, count_name, prefix, index, indent, destroy_func, destroy_array, first_level_param)
                     decls += tmp_decl
                     pre_code += tmp_pre
