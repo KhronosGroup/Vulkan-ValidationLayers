@@ -388,8 +388,7 @@ bool cvdescriptorset::DescriptorSetLayout::ValidateCreateInfo(
 
     auto valid_type = [push_descriptor_set](const VkDescriptorType type) {
         return !push_descriptor_set ||
-               ((type != VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC) && 
-                (type != VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC) &&
+               ((type != VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC) && (type != VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC) &&
                 (type != VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT));
     };
 
@@ -406,9 +405,9 @@ bool cvdescriptorset::DescriptorSetLayout::ValidateCreateInfo(
         }
         if (!valid_type(binding_info.descriptorType)) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                            (binding_info.descriptorType == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT) ? 
-                                "VUID-VkDescriptorSetLayoutCreateInfo-flags-02208" :
-                                "VUID-VkDescriptorSetLayoutCreateInfo-flags-00280",
+                            (binding_info.descriptorType == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT)
+                                ? "VUID-VkDescriptorSetLayoutCreateInfo-flags-02208"
+                                : "VUID-VkDescriptorSetLayoutCreateInfo-flags-00280",
                             "invalid type %s ,for push descriptors in VkDescriptorSetLayoutBinding entry %" PRIu32 ".",
                             string_VkDescriptorType(binding_info.descriptorType), i);
         }
@@ -417,8 +416,7 @@ bool cvdescriptorset::DescriptorSetLayout::ValidateCreateInfo(
             if ((binding_info.descriptorCount % 4) != 0) {
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                                 "VUID-VkDescriptorSetLayoutBinding-descriptorType-02209",
-                                "descriptorCount =(%" PRIu32 ") must be a multiple of 4",
-                                binding_info.descriptorCount);
+                                "descriptorCount =(%" PRIu32 ") must be a multiple of 4", binding_info.descriptorCount);
             }
             if (binding_info.descriptorCount > inline_uniform_block_props->maxInlineUniformBlockSize) {
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
@@ -506,9 +504,12 @@ bool cvdescriptorset::DescriptorSetLayout::ValidateCreateInfo(
                     if (binding_info.descriptorType == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT &&
                         !inline_uniform_block_features->descriptorBindingInlineUniformBlockUpdateAfterBind) {
                         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                        "VUID-VkDescriptorSetLayoutBindingFlagsCreateInfoEXT-descriptorBindingInlineUniformBlockUpdateAfterBind-02211",
-                                        "Invalid flags (VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT) for VkDescriptorSetLayoutBinding entry %" PRIu32
-                                        " with descriptorBindingInlineUniformBlockUpdateAfterBind not enabled", i);
+                                        "VUID-VkDescriptorSetLayoutBindingFlagsCreateInfoEXT-"
+                                        "descriptorBindingInlineUniformBlockUpdateAfterBind-02211",
+                                        "Invalid flags (VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT) for "
+                                        "VkDescriptorSetLayoutBinding entry %" PRIu32
+                                        " with descriptorBindingInlineUniformBlockUpdateAfterBind not enabled",
+                                        i);
                     }
                 }
 
@@ -1769,18 +1770,17 @@ void cvdescriptorset::PerformUpdateDescriptorSetsWithTemplateKHR(layer_data *dev
                 case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:
                     write_entry.pTexelBufferView = reinterpret_cast<VkBufferView *>(update_entry);
                     break;
-                case VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT:
-                    {
-                        VkWriteDescriptorSetInlineUniformBlockEXT *inline_info = &inline_infos[i];
-                        inline_info->sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_INLINE_UNIFORM_BLOCK_EXT;
-                        inline_info->pNext = nullptr;
-                        inline_info->dataSize = create_info.pDescriptorUpdateEntries[i].descriptorCount;
-                        inline_info->pData = update_entry;
-                        write_entry.pNext = inline_info;
-                        // skip the rest of the array, they just represent bytes in the update
-                        j = create_info.pDescriptorUpdateEntries[i].descriptorCount;
-                        break;
-                    }
+                case VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT: {
+                    VkWriteDescriptorSetInlineUniformBlockEXT *inline_info = &inline_infos[i];
+                    inline_info->sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_INLINE_UNIFORM_BLOCK_EXT;
+                    inline_info->pNext = nullptr;
+                    inline_info->dataSize = create_info.pDescriptorUpdateEntries[i].descriptorCount;
+                    inline_info->pData = update_entry;
+                    write_entry.pNext = inline_info;
+                    // skip the rest of the array, they just represent bytes in the update
+                    j = create_info.pDescriptorUpdateEntries[i].descriptorCount;
+                    break;
+                }
                 default:
                     assert(0);
                     break;
@@ -1880,7 +1880,8 @@ bool cvdescriptorset::DescriptorSet::ValidateWriteUpdate(const debug_report_data
                           << "VkWriteDescriptorSetInlineUniformBlockEXT missing";
             } else {
                 error_str << "Attempting write update to descriptor set " << set_ << " binding #" << update->dstBinding << " with "
-                          << "VkWriteDescriptorSetInlineUniformBlockEXT dataSize " << write_inline_info->dataSize << " not equal to "
+                          << "VkWriteDescriptorSetInlineUniformBlockEXT dataSize " << write_inline_info->dataSize
+                          << " not equal to "
                           << "VkWriteDescriptorSet descriptorCount " << update->descriptorCount;
             }
             *error_msg = error_str.str();
@@ -1891,7 +1892,8 @@ bool cvdescriptorset::DescriptorSet::ValidateWriteUpdate(const debug_report_data
             *error_code = "VUID-VkWriteDescriptorSetInlineUniformBlockEXT-dataSize-02222";
             std::stringstream error_str;
             error_str << "Attempting write update to descriptor set " << set_ << " binding #" << update->dstBinding << " with "
-                      << "VkWriteDescriptorSetInlineUniformBlockEXT dataSize " << write_inline_info->dataSize << " not a multiple of 4";
+                      << "VkWriteDescriptorSetInlineUniformBlockEXT dataSize " << write_inline_info->dataSize
+                      << " not a multiple of 4";
             *error_msg = error_str.str();
             return false;
         }
@@ -2341,8 +2343,9 @@ bool cvdescriptorset::ValidateAllocateDescriptorSets(const core_validation::laye
                                 HandleToUint64(pool_state->pool), "VUID-VkDescriptorSetAllocateInfo-descriptorPool-00307",
                                 "Unable to allocate %u descriptors of type %s from pool 0x%" PRIxLEAST64
                                 ". This pool only has %d descriptors of this type remaining.",
-                                ds_data->required_descriptors_by_type.at(it->first), string_VkDescriptorType(VkDescriptorType(it->first)),
-                                HandleToUint64(pool_state->pool), pool_state->availableDescriptorTypeCount[it->first]);
+                                ds_data->required_descriptors_by_type.at(it->first),
+                                string_VkDescriptorType(VkDescriptorType(it->first)), HandleToUint64(pool_state->pool),
+                                pool_state->availableDescriptorTypeCount[it->first]);
             }
         }
     }

@@ -146,8 +146,8 @@ struct DESCRIPTOR_POOL_STATE : BASE_NODE {
 
     safe_VkDescriptorPoolCreateInfo createInfo;
     std::unordered_set<cvdescriptorset::DescriptorSet *> sets;  // Collection of all sets in this pool
-    std::map<uint32_t, uint32_t> maxDescriptorTypeCount;               // Max # of descriptors of each type in this pool
-    std::map<uint32_t, uint32_t> availableDescriptorTypeCount;         // Available # of descriptors of each type in this pool
+    std::map<uint32_t, uint32_t> maxDescriptorTypeCount;        // Max # of descriptors of each type in this pool
+    std::map<uint32_t, uint32_t> availableDescriptorTypeCount;  // Available # of descriptors of each type in this pool
 
     DESCRIPTOR_POOL_STATE(const VkDescriptorPool pool, const VkDescriptorPoolCreateInfo *pCreateInfo)
         : pool(pool),
@@ -750,27 +750,27 @@ class PIPELINE_STATE : public BASE_NODE {
         computePipelineCI.initialize(&emptyComputeCI);
         graphicsPipelineCI.initialize(&emptyGraphicsCI, false, false);
         switch (raytracingPipelineCI.pStages->stage) {
-        case VK_SHADER_STAGE_RAYGEN_BIT_NVX:
-            this->active_shaders |= VK_SHADER_STAGE_RAYGEN_BIT_NVX;
-            break;
-        case VK_SHADER_STAGE_ANY_HIT_BIT_NVX:
-            this->active_shaders |= VK_SHADER_STAGE_ANY_HIT_BIT_NVX;
-            break;
-        case VK_SHADER_STAGE_CLOSEST_HIT_BIT_NVX:
-            this->active_shaders |= VK_SHADER_STAGE_CLOSEST_HIT_BIT_NVX;
-            break;
-        case VK_SHADER_STAGE_MISS_BIT_NVX:
-            this->active_shaders = VK_SHADER_STAGE_MISS_BIT_NVX;
-            break;
-        case VK_SHADER_STAGE_INTERSECTION_BIT_NVX:
-            this->active_shaders = VK_SHADER_STAGE_INTERSECTION_BIT_NVX;
-            break;
-        case VK_SHADER_STAGE_CALLABLE_BIT_NVX:
-            this->active_shaders |= VK_SHADER_STAGE_CALLABLE_BIT_NVX;
-            break;
-        default:
-            // TODO : Flag error
-            break;
+            case VK_SHADER_STAGE_RAYGEN_BIT_NVX:
+                this->active_shaders |= VK_SHADER_STAGE_RAYGEN_BIT_NVX;
+                break;
+            case VK_SHADER_STAGE_ANY_HIT_BIT_NVX:
+                this->active_shaders |= VK_SHADER_STAGE_ANY_HIT_BIT_NVX;
+                break;
+            case VK_SHADER_STAGE_CLOSEST_HIT_BIT_NVX:
+                this->active_shaders |= VK_SHADER_STAGE_CLOSEST_HIT_BIT_NVX;
+                break;
+            case VK_SHADER_STAGE_MISS_BIT_NVX:
+                this->active_shaders = VK_SHADER_STAGE_MISS_BIT_NVX;
+                break;
+            case VK_SHADER_STAGE_INTERSECTION_BIT_NVX:
+                this->active_shaders = VK_SHADER_STAGE_INTERSECTION_BIT_NVX;
+                break;
+            case VK_SHADER_STAGE_CALLABLE_BIT_NVX:
+                this->active_shaders |= VK_SHADER_STAGE_CALLABLE_BIT_NVX;
+                break;
+            default:
+                // TODO : Flag error
+                break;
         }
     }
 };

@@ -749,7 +749,8 @@ void *BuildUnwrappedUpdateTemplateBuffer(layer_data *dev_data, uint64_t descript
                     size_t numBytes = create_info.pDescriptorUpdateEntries[i].descriptorCount;
                     allocation_size = std::max(allocation_size, offset + numBytes);
                     // nothing to unwrap, just plain data
-                    template_entries.emplace_back(offset, kVulkanObjectTypeUnknown, reinterpret_cast<void *>(update_entry), numBytes);
+                    template_entries.emplace_back(offset, kVulkanObjectTypeUnknown, reinterpret_cast<void *>(update_entry),
+                                                  numBytes);
                     // to break out of the loop
                     j = create_info.pDescriptorUpdateEntries[i].descriptorCount;
                 } break;
@@ -773,11 +774,13 @@ void *BuildUnwrappedUpdateTemplateBuffer(layer_data *dev_data, uint64_t descript
         } else {
             switch (type) {
                 case kVulkanObjectTypeImage:
-                    *(reinterpret_cast<VkDescriptorImageInfo *>(destination)) = *(reinterpret_cast<VkDescriptorImageInfo *>(source));
+                    *(reinterpret_cast<VkDescriptorImageInfo *>(destination)) =
+                        *(reinterpret_cast<VkDescriptorImageInfo *>(source));
                     delete reinterpret_cast<VkDescriptorImageInfo *>(source);
                     break;
                 case kVulkanObjectTypeBuffer:
-                    *(reinterpret_cast<VkDescriptorBufferInfo *>(destination)) = *(reinterpret_cast<VkDescriptorBufferInfo *>(source));
+                    *(reinterpret_cast<VkDescriptorBufferInfo *>(destination)) =
+                        *(reinterpret_cast<VkDescriptorBufferInfo *>(source));
                     delete reinterpret_cast<VkDescriptorBufferInfo *>(source);
                     break;
                 case kVulkanObjectTypeBufferView:
