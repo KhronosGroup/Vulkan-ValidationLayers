@@ -1010,9 +1010,8 @@ bool pv_vkCreateImage(VkDevice device, const VkImageCreateInfo *pCreateInfo, con
         // mipLevels must be less than or equal to the number of levels in the complete mipmap chain
         uint32_t maxDim = std::max(std::max(pCreateInfo->extent.width, pCreateInfo->extent.height), pCreateInfo->extent.depth);
         // Max mip levels is different for corner-sampled images vs normal images.
-        uint32_t maxMipLevels = (pCreateInfo->flags & VK_IMAGE_CREATE_CORNER_SAMPLED_BIT_NV)
-                                ? (uint32_t)(ceil(log2(maxDim)))
-                                : (uint32_t)(floor(log2(maxDim)) + 1);
+        uint32_t maxMipLevels = (pCreateInfo->flags & VK_IMAGE_CREATE_CORNER_SAMPLED_BIT_NV) ? (uint32_t)(ceil(log2(maxDim)))
+                                                                                             : (uint32_t)(floor(log2(maxDim)) + 1);
         if (maxDim > 0 && pCreateInfo->mipLevels > maxMipLevels) {
             skip |=
                 log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
@@ -1132,16 +1131,14 @@ bool pv_vkCreateImage(VkDevice device, const VkImageCreateInfo *pCreateInfo, con
         }
 
         if (pCreateInfo->flags & VK_IMAGE_CREATE_CORNER_SAMPLED_BIT_NV) {
-            if (pCreateInfo->imageType != VK_IMAGE_TYPE_2D &&
-                pCreateInfo->imageType != VK_IMAGE_TYPE_3D) {
+            if (pCreateInfo->imageType != VK_IMAGE_TYPE_2D && pCreateInfo->imageType != VK_IMAGE_TYPE_3D) {
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                                 "VUID-VkImageCreateInfo-flags-02050",
                                 "vkCreateImage: If flags contains VK_IMAGE_CREATE_CORNER_SAMPLED_BIT_NV, "
                                 "imageType must be VK_IMAGE_TYPE_2D or VK_IMAGE_TYPE_3D.");
             }
 
-            if ((pCreateInfo->flags & VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT) ||
-                FormatIsDepthOrStencil(pCreateInfo->format)) {
+            if ((pCreateInfo->flags & VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT) || FormatIsDepthOrStencil(pCreateInfo->format)) {
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                                 "VUID-VkImageCreateInfo-flags-02051",
                                 "vkCreateImage: If flags contains VK_IMAGE_CREATE_CORNER_SAMPLED_BIT_NV, "
@@ -1149,21 +1146,19 @@ bool pv_vkCreateImage(VkDevice device, const VkImageCreateInfo *pCreateInfo, con
                                 "not be a depth/stencil format.");
             }
 
-            if (pCreateInfo->imageType == VK_IMAGE_TYPE_2D &&
-                (pCreateInfo->extent.width == 1 || pCreateInfo->extent.height == 1)) {
+            if (pCreateInfo->imageType == VK_IMAGE_TYPE_2D && (pCreateInfo->extent.width == 1 || pCreateInfo->extent.height == 1)) {
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                                 "VUID-VkImageCreateInfo-flags-02052",
                                 "vkCreateImage: If flags contains VK_IMAGE_CREATE_CORNER_SAMPLED_BIT_NV and "
                                 "imageType is VK_IMAGE_TYPE_2D, extent.width and extent.height must be "
                                 "greater than 1.");
             } else if (pCreateInfo->imageType == VK_IMAGE_TYPE_3D &&
-                (pCreateInfo->extent.width == 1 || pCreateInfo->extent.height == 1 || pCreateInfo->extent.depth == 1)) {
+                       (pCreateInfo->extent.width == 1 || pCreateInfo->extent.height == 1 || pCreateInfo->extent.depth == 1)) {
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                                 "VUID-VkImageCreateInfo-flags-02053",
                                 "vkCreateImage: If flags contains VK_IMAGE_CREATE_CORNER_SAMPLED_BIT_NV and "
                                 "imageType is VK_IMAGE_TYPE_3D, extent.width, extent.height, and extent.depth "
                                 "must be greater than 1.");
-
             }
         }
     }
@@ -1356,26 +1351,23 @@ bool pv_VkViewport(const layer_data *device_data, const VkViewport &viewport, co
     return skip;
 }
 
-struct SampleOrderInfo
-{
+struct SampleOrderInfo {
     VkShadingRatePaletteEntryNV shadingRate;
     uint32_t width;
     uint32_t height;
 };
 
 // All palette entries with more than one pixel per fragment
-static SampleOrderInfo sampleOrderInfos[] = 
-{
-    { VK_SHADING_RATE_PALETTE_ENTRY_1_INVOCATION_PER_1X2_PIXELS_NV, 1, 2},
-    { VK_SHADING_RATE_PALETTE_ENTRY_1_INVOCATION_PER_2X1_PIXELS_NV, 2, 1},
-    { VK_SHADING_RATE_PALETTE_ENTRY_1_INVOCATION_PER_2X2_PIXELS_NV, 2, 2},
-    { VK_SHADING_RATE_PALETTE_ENTRY_1_INVOCATION_PER_4X2_PIXELS_NV, 4, 2},
-    { VK_SHADING_RATE_PALETTE_ENTRY_1_INVOCATION_PER_2X4_PIXELS_NV, 2, 4},
-    { VK_SHADING_RATE_PALETTE_ENTRY_1_INVOCATION_PER_4X4_PIXELS_NV, 4, 4},
+static SampleOrderInfo sampleOrderInfos[] = {
+    {VK_SHADING_RATE_PALETTE_ENTRY_1_INVOCATION_PER_1X2_PIXELS_NV, 1, 2},
+    {VK_SHADING_RATE_PALETTE_ENTRY_1_INVOCATION_PER_2X1_PIXELS_NV, 2, 1},
+    {VK_SHADING_RATE_PALETTE_ENTRY_1_INVOCATION_PER_2X2_PIXELS_NV, 2, 2},
+    {VK_SHADING_RATE_PALETTE_ENTRY_1_INVOCATION_PER_4X2_PIXELS_NV, 4, 2},
+    {VK_SHADING_RATE_PALETTE_ENTRY_1_INVOCATION_PER_2X4_PIXELS_NV, 2, 4},
+    {VK_SHADING_RATE_PALETTE_ENTRY_1_INVOCATION_PER_4X4_PIXELS_NV, 4, 4},
 };
 
-bool ValidateCoarseSampleOrderCustomNV(layer_data *device_data, const VkCoarseSampleOrderCustomNV *order)
-{
+bool ValidateCoarseSampleOrderCustomNV(layer_data *device_data, const VkCoarseSampleOrderCustomNV *order) {
     bool skip = false;
     debug_report_data *report_data = device_data->report_data;
 
@@ -1396,12 +1388,12 @@ bool ValidateCoarseSampleOrderCustomNV(layer_data *device_data, const VkCoarseSa
         return skip;
     }
 
-    if (order->sampleCount == 0 ||
-        (order->sampleCount & (order->sampleCount - 1)) ||
+    if (order->sampleCount == 0 || (order->sampleCount & (order->sampleCount - 1)) ||
         !(order->sampleCount & device_data->device_limits.framebufferNoAttachmentsSampleCounts)) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                         "VUID-VkCoarseSampleOrderCustomNV-sampleCount-02074",
-                        "VkCoarseSampleOrderCustomNV sampleCount (=%" PRIu32 ") must "
+                        "VkCoarseSampleOrderCustomNV sampleCount (=%" PRIu32
+                        ") must "
                         "correspond to a sample count enumerated in VkSampleCountFlags whose corresponding bit "
                         "is set in framebufferNoAttachmentsSampleCounts.",
                         order->sampleCount);
@@ -1410,18 +1402,22 @@ bool ValidateCoarseSampleOrderCustomNV(layer_data *device_data, const VkCoarseSa
     if (order->sampleLocationCount != order->sampleCount * sampleOrderInfo->width * sampleOrderInfo->height) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                         "VUID-VkCoarseSampleOrderCustomNV-sampleLocationCount-02075",
-                        "VkCoarseSampleOrderCustomNV sampleLocationCount (=%" PRIu32 ") must "
-                        "be equal to the product of sampleCount (=%" PRIu32 "), the fragment width for shadingRate "
+                        "VkCoarseSampleOrderCustomNV sampleLocationCount (=%" PRIu32
+                        ") must "
+                        "be equal to the product of sampleCount (=%" PRIu32
+                        "), the fragment width for shadingRate "
                         "(=%" PRIu32 "), and the fragment height for shadingRate (=%" PRIu32 ").",
                         order->sampleLocationCount, order->sampleCount, sampleOrderInfo->width, sampleOrderInfo->height);
     }
 
     if (order->sampleLocationCount > device_data->phys_dev_ext_props.shading_rate_image_props.shadingRateMaxCoarseSamples) {
-        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                        "VUID-VkCoarseSampleOrderCustomNV-sampleLocationCount-02076",
-                        "VkCoarseSampleOrderCustomNV sampleLocationCount (=%" PRIu32 ") must "
-                        "be less than or equal to VkPhysicalDeviceShadingRateImagePropertiesNV shadingRateMaxCoarseSamples (=%" PRIu32 ").",
-                        order->sampleLocationCount, device_data->phys_dev_ext_props.shading_rate_image_props.shadingRateMaxCoarseSamples);
+        skip |= log_msg(
+            report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+            "VUID-VkCoarseSampleOrderCustomNV-sampleLocationCount-02076",
+            "VkCoarseSampleOrderCustomNV sampleLocationCount (=%" PRIu32
+            ") must "
+            "be less than or equal to VkPhysicalDeviceShadingRateImagePropertiesNV shadingRateMaxCoarseSamples (=%" PRIu32 ").",
+            order->sampleLocationCount, device_data->phys_dev_ext_props.shading_rate_image_props.shadingRateMaxCoarseSamples);
     }
 
     // Accumulate a bitmask tracking which (x,y,sample) tuples are seen. Expect
@@ -1453,10 +1449,11 @@ bool ValidateCoarseSampleOrderCustomNV(layer_data *device_data, const VkCoarseSa
 
     uint64_t expectedMask = (order->sampleLocationCount == 64) ? ~0ULL : ((1ULL << order->sampleLocationCount) - 1);
     if (sampleLocationsMask != expectedMask) {
-        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                        "VUID-VkCoarseSampleOrderCustomNV-pSampleLocations-02077",
-                        "The array pSampleLocations must contain exactly one entry for "
-                        "every combination of valid values for pixelX, pixelY, and sample in the structure VkCoarseSampleOrderCustomNV.");
+        skip |= log_msg(
+            report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+            "VUID-VkCoarseSampleOrderCustomNV-pSampleLocations-02077",
+            "The array pSampleLocations must contain exactly one entry for "
+            "every combination of valid values for pixelX, pixelY, and sample in the structure VkCoarseSampleOrderCustomNV.");
     }
 
     return skip;
@@ -1490,7 +1487,8 @@ bool pv_vkCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache
                     if (dynamic_state == VK_DYNAMIC_STATE_DISCARD_RECTANGLE_EXT) has_dynamic_discard_rectangle_ext = true;
                     if (dynamic_state == VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT) has_dynamic_sample_locations_ext = true;
                     if (dynamic_state == VK_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_NV) has_dynamic_exclusive_scissor_nv = true;
-                    if (dynamic_state == VK_DYNAMIC_STATE_VIEWPORT_SHADING_RATE_PALETTE_NV) has_dynamic_shading_rate_palette_nv = true;
+                    if (dynamic_state == VK_DYNAMIC_STATE_VIEWPORT_SHADING_RATE_PALETTE_NV)
+                        has_dynamic_shading_rate_palette_nv = true;
                 }
             }
 
@@ -1706,9 +1704,12 @@ bool pv_vkCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache
                         ParameterName("pCreateInfos[%i].pViewportState->flags", ParameterName::IndexVector{i}),
                         viewport_state.flags, "VUID-VkPipelineViewportStateCreateInfo-flags-zerobitmask");
 
-                    auto exclusive_scissor_struct = lvl_find_in_chain<VkPipelineViewportExclusiveScissorStateCreateInfoNV>(pCreateInfos[i].pViewportState->pNext);
-                    auto shading_rate_image_struct = lvl_find_in_chain<VkPipelineViewportShadingRateImageStateCreateInfoNV>(pCreateInfos[i].pViewportState->pNext);
-                    auto coarse_sample_order_struct = lvl_find_in_chain<VkPipelineViewportCoarseSampleOrderStateCreateInfoNV>(pCreateInfos[i].pViewportState->pNext);
+                    auto exclusive_scissor_struct = lvl_find_in_chain<VkPipelineViewportExclusiveScissorStateCreateInfoNV>(
+                        pCreateInfos[i].pViewportState->pNext);
+                    auto shading_rate_image_struct = lvl_find_in_chain<VkPipelineViewportShadingRateImageStateCreateInfoNV>(
+                        pCreateInfos[i].pViewportState->pNext);
+                    auto coarse_sample_order_struct = lvl_find_in_chain<VkPipelineViewportCoarseSampleOrderStateCreateInfoNV>(
+                        pCreateInfos[i].pViewportState->pNext);
 
                     if (!device_data->physical_device_features.multiViewport) {
                         if (viewport_state.viewportCount != 1) {
@@ -1729,26 +1730,29 @@ bool pv_vkCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache
                                             i, viewport_state.scissorCount);
                         }
 
-                        if (exclusive_scissor_struct &&
-                            (exclusive_scissor_struct->exclusiveScissorCount != 0 && exclusive_scissor_struct->exclusiveScissorCount != 1)) {
-                            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
-                                            VK_NULL_HANDLE, "VUID-VkPipelineViewportExclusiveScissorStateCreateInfoNV-exclusiveScissorCount-02027",
-                                            "vkCreateGraphicsPipelines: The VkPhysicalDeviceFeatures::multiViewport feature is "
-                                            "disabled, but pCreateInfos[%" PRIu32 "] VkPipelineViewportExclusiveScissorStateCreateInfoNV::exclusiveScissorCount (=%" PRIu32
-                                            ") is not 1.",
-                                            i, exclusive_scissor_struct->exclusiveScissorCount);
-
+                        if (exclusive_scissor_struct && (exclusive_scissor_struct->exclusiveScissorCount != 0 &&
+                                                         exclusive_scissor_struct->exclusiveScissorCount != 1)) {
+                            skip |=
+                                log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
+                                        VK_NULL_HANDLE,
+                                        "VUID-VkPipelineViewportExclusiveScissorStateCreateInfoNV-exclusiveScissorCount-02027",
+                                        "vkCreateGraphicsPipelines: The VkPhysicalDeviceFeatures::multiViewport feature is "
+                                        "disabled, but pCreateInfos[%" PRIu32
+                                        "] VkPipelineViewportExclusiveScissorStateCreateInfoNV::exclusiveScissorCount (=%" PRIu32
+                                        ") is not 1.",
+                                        i, exclusive_scissor_struct->exclusiveScissorCount);
                         }
 
                         if (shading_rate_image_struct &&
                             (shading_rate_image_struct->viewportCount != 0 && shading_rate_image_struct->viewportCount != 1)) {
                             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
-                                            VK_NULL_HANDLE, "VUID-VkPipelineViewportShadingRateImageStateCreateInfoNV-viewportCount-02054",
+                                            VK_NULL_HANDLE,
+                                            "VUID-VkPipelineViewportShadingRateImageStateCreateInfoNV-viewportCount-02054",
                                             "vkCreateGraphicsPipelines: The VkPhysicalDeviceFeatures::multiViewport feature is "
-                                            "disabled, but pCreateInfos[%" PRIu32 "] VkPipelineViewportShadingRateImageStateCreateInfoNV::viewportCount (=%" PRIu32
+                                            "disabled, but pCreateInfos[%" PRIu32
+                                            "] VkPipelineViewportShadingRateImageStateCreateInfoNV::viewportCount (=%" PRIu32
                                             ") is neither 0 nor 1.",
                                             i, shading_rate_image_struct->viewportCount);
-
                         }
 
                     } else {  // multiViewport enabled
@@ -1783,22 +1787,23 @@ bool pv_vkCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache
 
                     if (exclusive_scissor_struct &&
                         exclusive_scissor_struct->exclusiveScissorCount > device_data->device_limits.maxViewports) {
-                        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
-                                        VK_NULL_HANDLE, "VUID-VkPipelineViewportExclusiveScissorStateCreateInfoNV-exclusiveScissorCount-02028",
-                                        "vkCreateGraphicsPipelines: pCreateInfos[%" PRIu32
-                                        "] exclusiveScissorCount (=%" PRIu32
-                                        ") is greater than VkPhysicalDeviceLimits::maxViewports (=%" PRIu32 ").",
-                                        i, exclusive_scissor_struct->exclusiveScissorCount, device_data->device_limits.maxViewports);
+                        skip |= log_msg(
+                            report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT, VK_NULL_HANDLE,
+                            "VUID-VkPipelineViewportExclusiveScissorStateCreateInfoNV-exclusiveScissorCount-02028",
+                            "vkCreateGraphicsPipelines: pCreateInfos[%" PRIu32 "] exclusiveScissorCount (=%" PRIu32
+                            ") is greater than VkPhysicalDeviceLimits::maxViewports (=%" PRIu32 ").",
+                            i, exclusive_scissor_struct->exclusiveScissorCount, device_data->device_limits.maxViewports);
                     }
 
                     if (shading_rate_image_struct &&
                         shading_rate_image_struct->viewportCount > device_data->device_limits.maxViewports) {
-                        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
-                                        VK_NULL_HANDLE, "VUID-VkPipelineViewportShadingRateImageStateCreateInfoNV-viewportCount-02055",
-                                        "vkCreateGraphicsPipelines: pCreateInfos[%" PRIu32
-                                        "] VkPipelineViewportShadingRateImageStateCreateInfoNV viewportCount (=%" PRIu32
-                                        ") is greater than VkPhysicalDeviceLimits::maxViewports (=%" PRIu32 ").",
-                                        i, shading_rate_image_struct->viewportCount, device_data->device_limits.maxViewports);
+                        skip |=
+                            log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
+                                    VK_NULL_HANDLE, "VUID-VkPipelineViewportShadingRateImageStateCreateInfoNV-viewportCount-02055",
+                                    "vkCreateGraphicsPipelines: pCreateInfos[%" PRIu32
+                                    "] VkPipelineViewportShadingRateImageStateCreateInfoNV viewportCount (=%" PRIu32
+                                    ") is greater than VkPhysicalDeviceLimits::maxViewports (=%" PRIu32 ").",
+                                    i, shading_rate_image_struct->viewportCount, device_data->device_limits.maxViewports);
                     }
 
                     if (viewport_state.scissorCount != viewport_state.viewportCount) {
@@ -1810,27 +1815,27 @@ bool pv_vkCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache
                                     i, viewport_state.scissorCount, i, viewport_state.viewportCount);
                     }
 
-                    if (exclusive_scissor_struct &&
-                        exclusive_scissor_struct->exclusiveScissorCount != 0 &&
+                    if (exclusive_scissor_struct && exclusive_scissor_struct->exclusiveScissorCount != 0 &&
                         exclusive_scissor_struct->exclusiveScissorCount != viewport_state.viewportCount) {
-                        skip |=
-                            log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
-                                    VK_NULL_HANDLE, "VUID-VkPipelineViewportExclusiveScissorStateCreateInfoNV-exclusiveScissorCount-02029",
-                                    "vkCreateGraphicsPipelines: pCreateInfos[%" PRIu32 "] exclusiveScissorCount (=%" PRIu32
-                                    ") must be zero or identical to pCreateInfos[%" PRIu32 "].pViewportState->viewportCount (=%" PRIu32 ").",
-                                    i, exclusive_scissor_struct->exclusiveScissorCount, i, viewport_state.viewportCount);
+                        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
+                                        VK_NULL_HANDLE,
+                                        "VUID-VkPipelineViewportExclusiveScissorStateCreateInfoNV-exclusiveScissorCount-02029",
+                                        "vkCreateGraphicsPipelines: pCreateInfos[%" PRIu32 "] exclusiveScissorCount (=%" PRIu32
+                                        ") must be zero or identical to pCreateInfos[%" PRIu32
+                                        "].pViewportState->viewportCount (=%" PRIu32 ").",
+                                        i, exclusive_scissor_struct->exclusiveScissorCount, i, viewport_state.viewportCount);
                     }
 
-                    if (shading_rate_image_struct &&
-                        shading_rate_image_struct->shadingRateImageEnable &&
+                    if (shading_rate_image_struct && shading_rate_image_struct->shadingRateImageEnable &&
                         shading_rate_image_struct->viewportCount != viewport_state.viewportCount) {
-                        skip |=
-                            log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
-                                    VK_NULL_HANDLE, "VUID-VkPipelineViewportShadingRateImageStateCreateInfoNV-shadingRateImageEnable-02056",
-                                    "vkCreateGraphicsPipelines: If shadingRateImageEnable is enabled, pCreateInfos[%" PRIu32 "] "
-                                    "VkPipelineViewportShadingRateImageStateCreateInfoNV viewportCount (=%" PRIu32
-                                    ") must identical to pCreateInfos[%" PRIu32 "].pViewportState->viewportCount (=%" PRIu32 ").",
-                                    i, shading_rate_image_struct->viewportCount, i, viewport_state.viewportCount);
+                        skip |= log_msg(
+                            report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT, VK_NULL_HANDLE,
+                            "VUID-VkPipelineViewportShadingRateImageStateCreateInfoNV-shadingRateImageEnable-02056",
+                            "vkCreateGraphicsPipelines: If shadingRateImageEnable is enabled, pCreateInfos[%" PRIu32
+                            "] "
+                            "VkPipelineViewportShadingRateImageStateCreateInfoNV viewportCount (=%" PRIu32
+                            ") must identical to pCreateInfos[%" PRIu32 "].pViewportState->viewportCount (=%" PRIu32 ").",
+                            i, shading_rate_image_struct->viewportCount, i, viewport_state.viewportCount);
                     }
 
                     if (!has_dynamic_viewport && viewport_state.viewportCount > 0 && viewport_state.pViewports == nullptr) {
@@ -1854,24 +1859,26 @@ bool pv_vkCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache
                     }
 
                     if (!has_dynamic_exclusive_scissor_nv && exclusive_scissor_struct &&
-                        exclusive_scissor_struct->exclusiveScissorCount > 0 && exclusive_scissor_struct->pExclusiveScissors == nullptr) {
-                        skip |= log_msg(
-                            report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT, VK_NULL_HANDLE,
-                            "VUID-VkPipelineViewportExclusiveScissorStateCreateInfoNV-pDynamicStates-02030",
-                            "vkCreateGraphicsPipelines: The exclusive scissor state is static (pCreateInfos[%" PRIu32
-                            "].pDynamicState->pDynamicStates does not contain VK_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_NV), but pCreateInfos[%" PRIu32
-                            "] pExclusiveScissors (=NULL) is an invalid pointer.",
-                            i, i);
+                        exclusive_scissor_struct->exclusiveScissorCount > 0 &&
+                        exclusive_scissor_struct->pExclusiveScissors == nullptr) {
+                        skip |=
+                            log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
+                                    VK_NULL_HANDLE, "VUID-VkPipelineViewportExclusiveScissorStateCreateInfoNV-pDynamicStates-02030",
+                                    "vkCreateGraphicsPipelines: The exclusive scissor state is static (pCreateInfos[%" PRIu32
+                                    "].pDynamicState->pDynamicStates does not contain VK_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_NV), but "
+                                    "pCreateInfos[%" PRIu32 "] pExclusiveScissors (=NULL) is an invalid pointer.",
+                                    i, i);
                     }
 
                     if (!has_dynamic_shading_rate_palette_nv && shading_rate_image_struct &&
-                        shading_rate_image_struct->viewportCount > 0 && shading_rate_image_struct->pShadingRatePalettes == nullptr) {
+                        shading_rate_image_struct->viewportCount > 0 &&
+                        shading_rate_image_struct->pShadingRatePalettes == nullptr) {
                         skip |= log_msg(
                             report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT, VK_NULL_HANDLE,
                             "VUID-VkPipelineViewportShadingRateImageStateCreateInfoNV-pDynamicStates-02057",
                             "vkCreateGraphicsPipelines: The shading rate palette state is static (pCreateInfos[%" PRIu32
-                            "].pDynamicState->pDynamicStates does not contain VK_DYNAMIC_STATE_VIEWPORT_SHADING_RATE_PALETTE_NV), but pCreateInfos[%" PRIu32
-                            "] pShadingRatePalettes (=NULL) is an invalid pointer.",
+                            "].pDynamicState->pDynamicStates does not contain VK_DYNAMIC_STATE_VIEWPORT_SHADING_RATE_PALETTE_NV), "
+                            "but pCreateInfos[%" PRIu32 "] pShadingRatePalettes (=NULL) is an invalid pointer.",
                             i, i);
                     }
 
@@ -1926,18 +1933,20 @@ bool pv_vkCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache
                     if (coarse_sample_order_struct &&
                         coarse_sample_order_struct->sampleOrderType != VK_COARSE_SAMPLE_ORDER_TYPE_CUSTOM_NV &&
                         coarse_sample_order_struct->customSampleOrderCount != 0) {
-                        skip |=
-                            log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
-                                    VK_NULL_HANDLE, "VUID-VkPipelineViewportCoarseSampleOrderStateCreateInfoNV-sampleOrderType-02072",
-                                    "vkCreateGraphicsPipelines: pCreateInfos[%" PRIu32 "] "
-                                    "VkPipelineViewportCoarseSampleOrderStateCreateInfoNV sampleOrderType is not "
-                                    "VK_COARSE_SAMPLE_ORDER_TYPE_CUSTOM_NV and customSampleOrderCount is not 0.",
-                                    i);
+                        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
+                                        VK_NULL_HANDLE,
+                                        "VUID-VkPipelineViewportCoarseSampleOrderStateCreateInfoNV-sampleOrderType-02072",
+                                        "vkCreateGraphicsPipelines: pCreateInfos[%" PRIu32
+                                        "] "
+                                        "VkPipelineViewportCoarseSampleOrderStateCreateInfoNV sampleOrderType is not "
+                                        "VK_COARSE_SAMPLE_ORDER_TYPE_CUSTOM_NV and customSampleOrderCount is not 0.",
+                                        i);
                     }
 
                     if (coarse_sample_order_struct) {
                         for (uint32_t order_i = 0; order_i < coarse_sample_order_struct->customSampleOrderCount; ++order_i) {
-                            skip |= ValidateCoarseSampleOrderCustomNV(device_data, &coarse_sample_order_struct->pCustomSampleOrders[order_i]);
+                            skip |= ValidateCoarseSampleOrderCustomNV(device_data,
+                                                                      &coarse_sample_order_struct->pCustomSampleOrders[order_i]);
                         }
                     }
                 }
@@ -3210,11 +3219,13 @@ bool pv_vkCreateDescriptorPool(VkDevice device, const VkDescriptorPoolCreateInfo
                 }
                 if (pCreateInfo->pPoolSizes[i].type == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT &&
                     (pCreateInfo->pPoolSizes[i].descriptorCount % 4) != 0) {
-                    skip |= log_msg(
-                        device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_POOL_EXT,
-                        VK_NULL_HANDLE, "VUID-VkDescriptorPoolSize-type-02218",
-                        "vkCreateDescriptorPool(): pCreateInfo->pPoolSizes[%" PRIu32 "].type is VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT "
-                        " and pCreateInfo->pPoolSizes[%" PRIu32 "].descriptorCount is not a multiple of 4.", i, i);
+                    skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                    VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_POOL_EXT, VK_NULL_HANDLE,
+                                    "VUID-VkDescriptorPoolSize-type-02218",
+                                    "vkCreateDescriptorPool(): pCreateInfo->pPoolSizes[%" PRIu32
+                                    "].type is VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT "
+                                    " and pCreateInfo->pPoolSizes[%" PRIu32 "].descriptorCount is not a multiple of 4.",
+                                    i, i);
                 }
             }
         }
@@ -3308,12 +3319,8 @@ bool pv_vkCmdDispatchBaseKHR(VkCommandBuffer commandBuffer, uint32_t baseGroupX,
     return skip;
 }
 
-bool pv_vkCmdSetExclusiveScissorNV(
-    VkCommandBuffer                             commandBuffer,
-    uint32_t                                    firstExclusiveScissor,
-    uint32_t                                    exclusiveScissorCount,
-    const VkRect2D*                             pExclusiveScissors)
-{
+bool pv_vkCmdSetExclusiveScissorNV(VkCommandBuffer commandBuffer, uint32_t firstExclusiveScissor, uint32_t exclusiveScissorCount,
+                                   const VkRect2D *pExclusiveScissors) {
     bool skip = false;
 
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
@@ -3321,24 +3328,28 @@ bool pv_vkCmdSetExclusiveScissorNV(
 
     if (!device_data->physical_device_features.multiViewport) {
         if (firstExclusiveScissor != 0) {
-            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                            HandleToUint64(commandBuffer), "VUID-vkCmdSetExclusiveScissorNV-firstExclusiveScissor-02035",
-                            "vkCmdSetExclusiveScissorNV: The multiViewport feature is disabled, but firstExclusiveScissor (=%" PRIu32 ") is not 0.",
-                            firstExclusiveScissor);
+            skip |=
+                log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                        HandleToUint64(commandBuffer), "VUID-vkCmdSetExclusiveScissorNV-firstExclusiveScissor-02035",
+                        "vkCmdSetExclusiveScissorNV: The multiViewport feature is disabled, but firstExclusiveScissor (=%" PRIu32
+                        ") is not 0.",
+                        firstExclusiveScissor);
         }
         if (exclusiveScissorCount > 1) {
-            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                            HandleToUint64(commandBuffer), "VUID-vkCmdSetExclusiveScissorNV-exclusiveScissorCount-02036",
-                            "vkCmdSetExclusiveScissorNV: The multiViewport feature is disabled, but exclusiveScissorCount (=%" PRIu32 ") is not 1.",
-                            exclusiveScissorCount);
+            skip |=
+                log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                        HandleToUint64(commandBuffer), "VUID-vkCmdSetExclusiveScissorNV-exclusiveScissorCount-02036",
+                        "vkCmdSetExclusiveScissorNV: The multiViewport feature is disabled, but exclusiveScissorCount (=%" PRIu32
+                        ") is not 1.",
+                        exclusiveScissorCount);
         }
     } else {  // multiViewport enabled
         const uint64_t sum = static_cast<uint64_t>(firstExclusiveScissor) + static_cast<uint64_t>(exclusiveScissorCount);
         if (sum > device_data->device_limits.maxViewports) {
             skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                             HandleToUint64(commandBuffer), "VUID-vkCmdSetExclusiveScissorNV-firstExclusiveScissor-02034",
-                            "vkCmdSetExclusiveScissorNV: firstExclusiveScissor + exclusiveScissorCount (=%" PRIu32 " + %" PRIu32 " = %" PRIu64
-                            ") is greater than VkPhysicalDeviceLimits::maxViewports (=%" PRIu32 ").",
+                            "vkCmdSetExclusiveScissorNV: firstExclusiveScissor + exclusiveScissorCount (=%" PRIu32 " + %" PRIu32
+                            " = %" PRIu64 ") is greater than VkPhysicalDeviceLimits::maxViewports (=%" PRIu32 ").",
                             firstExclusiveScissor, exclusiveScissorCount, sum, device_data->device_limits.maxViewports);
         }
     }
@@ -3346,7 +3357,8 @@ bool pv_vkCmdSetExclusiveScissorNV(
     if (firstExclusiveScissor >= device_data->device_limits.maxViewports) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                         HandleToUint64(commandBuffer), "VUID-vkCmdSetExclusiveScissorNV-firstExclusiveScissor-02033",
-                        "vkCmdSetExclusiveScissorNV: firstExclusiveScissor (=%" PRIu32 ") must be less than maxViewports (=%" PRIu32 ").",
+                        "vkCmdSetExclusiveScissorNV: firstExclusiveScissor (=%" PRIu32 ") must be less than maxViewports (=%" PRIu32
+                        ").",
                         firstExclusiveScissor, device_data->device_limits.maxViewports);
     }
 
@@ -3357,15 +3369,15 @@ bool pv_vkCmdSetExclusiveScissorNV(
             if (scissor.offset.x < 0) {
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                                 HandleToUint64(commandBuffer), "VUID-vkCmdSetExclusiveScissorNV-x-02037",
-                                "vkCmdSetExclusiveScissorNV: pScissors[%" PRIu32 "].offset.x (=%" PRIi32 ") is negative.", scissor_i,
-                                scissor.offset.x);
+                                "vkCmdSetExclusiveScissorNV: pScissors[%" PRIu32 "].offset.x (=%" PRIi32 ") is negative.",
+                                scissor_i, scissor.offset.x);
             }
 
             if (scissor.offset.y < 0) {
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                                 HandleToUint64(commandBuffer), "VUID-vkCmdSetExclusiveScissorNV-x-02037",
-                                "vkCmdSetExclusiveScissorNV: pScissors[%" PRIu32 "].offset.y (=%" PRIi32 ") is negative.", scissor_i,
-                                scissor.offset.y);
+                                "vkCmdSetExclusiveScissorNV: pScissors[%" PRIu32 "].offset.y (=%" PRIi32 ") is negative.",
+                                scissor_i, scissor.offset.y);
             }
 
             const int64_t x_sum = static_cast<int64_t>(scissor.offset.x) + static_cast<int64_t>(scissor.extent.width);
@@ -3391,12 +3403,8 @@ bool pv_vkCmdSetExclusiveScissorNV(
     return skip;
 }
 
-bool pv_vkCmdSetViewportShadingRatePaletteNV(
-    VkCommandBuffer                             commandBuffer,
-    uint32_t                                    firstViewport,
-    uint32_t                                    viewportCount,
-    const VkShadingRatePaletteNV*               pShadingRatePalettes)
-{
+bool pv_vkCmdSetViewportShadingRatePaletteNV(VkCommandBuffer commandBuffer, uint32_t firstViewport, uint32_t viewportCount,
+                                             const VkShadingRatePaletteNV *pShadingRatePalettes) {
     bool skip = false;
 
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
@@ -3404,23 +3412,28 @@ bool pv_vkCmdSetViewportShadingRatePaletteNV(
 
     if (!device_data->physical_device_features.multiViewport) {
         if (firstViewport != 0) {
-            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                            HandleToUint64(commandBuffer), "VUID-vkCmdSetViewportShadingRatePaletteNV-firstViewport-02068",
-                            "vkCmdSetViewportShadingRatePaletteNV: The multiViewport feature is disabled, but firstViewport (=%" PRIu32 ") is not 0.",
-                            firstViewport);
+            skip |=
+                log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                        HandleToUint64(commandBuffer), "VUID-vkCmdSetViewportShadingRatePaletteNV-firstViewport-02068",
+                        "vkCmdSetViewportShadingRatePaletteNV: The multiViewport feature is disabled, but firstViewport (=%" PRIu32
+                        ") is not 0.",
+                        firstViewport);
         }
         if (viewportCount > 1) {
-            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                            HandleToUint64(commandBuffer), "VUID-vkCmdSetViewportShadingRatePaletteNV-viewportCount-02069",
-                            "vkCmdSetViewportShadingRatePaletteNV: The multiViewport feature is disabled, but viewportCount (=%" PRIu32 ") is not 1.",
-                            viewportCount);
+            skip |=
+                log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                        HandleToUint64(commandBuffer), "VUID-vkCmdSetViewportShadingRatePaletteNV-viewportCount-02069",
+                        "vkCmdSetViewportShadingRatePaletteNV: The multiViewport feature is disabled, but viewportCount (=%" PRIu32
+                        ") is not 1.",
+                        viewportCount);
         }
     }
 
     if (firstViewport >= device_data->device_limits.maxViewports) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                         HandleToUint64(commandBuffer), "VUID-vkCmdSetViewportShadingRatePaletteNV-firstViewport-02066",
-                        "vkCmdSetViewportShadingRatePaletteNV: firstViewport (=%" PRIu32 ") must be less than maxViewports (=%" PRIu32 ").",
+                        "vkCmdSetViewportShadingRatePaletteNV: firstViewport (=%" PRIu32
+                        ") must be less than maxViewports (=%" PRIu32 ").",
                         firstViewport, device_data->device_limits.maxViewports);
     }
 
@@ -3436,20 +3449,14 @@ bool pv_vkCmdSetViewportShadingRatePaletteNV(
     return skip;
 }
 
-
-bool pv_vkCmdSetCoarseSampleOrderNV(
-    VkCommandBuffer                             commandBuffer,
-    VkCoarseSampleOrderTypeNV                   sampleOrderType,
-    uint32_t                                    customSampleOrderCount,
-    const VkCoarseSampleOrderCustomNV*          pCustomSampleOrders)
-{
+bool pv_vkCmdSetCoarseSampleOrderNV(VkCommandBuffer commandBuffer, VkCoarseSampleOrderTypeNV sampleOrderType,
+                                    uint32_t customSampleOrderCount, const VkCoarseSampleOrderCustomNV *pCustomSampleOrders) {
     bool skip = false;
 
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     debug_report_data *report_data = device_data->report_data;
 
-    if (sampleOrderType != VK_COARSE_SAMPLE_ORDER_TYPE_CUSTOM_NV &&
-        customSampleOrderCount != 0) {
+    if (sampleOrderType != VK_COARSE_SAMPLE_ORDER_TYPE_CUSTOM_NV && customSampleOrderCount != 0) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                         HandleToUint64(commandBuffer), "VUID-vkCmdSetCoarseSampleOrderNV-sampleOrderType-02081",
                         "vkCmdSetCoarseSampleOrderNV: If sampleOrderType is not VK_COARSE_SAMPLE_ORDER_TYPE_CUSTOM_NV, "
@@ -3463,46 +3470,35 @@ bool pv_vkCmdSetCoarseSampleOrderNV(
     return skip;
 }
 
-
-bool pv_vkCmdDrawMeshTasksNV(
-    VkCommandBuffer                             commandBuffer,
-    uint32_t                                    taskCount,
-    uint32_t                                    firstTask)
-{
+bool pv_vkCmdDrawMeshTasksNV(VkCommandBuffer commandBuffer, uint32_t taskCount, uint32_t firstTask) {
     bool skip = false;
 
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
 
     if (taskCount > dev_data->phys_dev_ext_props.mesh_shader_props.maxDrawMeshTasksCount) {
-        skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                        HandleToUint64(commandBuffer), "VUID-vkCmdDrawMeshTasksNV-taskCount-02119",
-                        "vkCmdDrawMeshTasksNV() parameter, uint32_t taskCount (0x%" PRIxLEAST32
-                        "), must be less than or equal to VkPhysicalDeviceMeshShaderPropertiesNV::maxDrawMeshTasksCount (0x%" PRIxLEAST32").",
-                        taskCount, dev_data->phys_dev_ext_props.mesh_shader_props.maxDrawMeshTasksCount);
+        skip |= log_msg(
+            dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+            HandleToUint64(commandBuffer), "VUID-vkCmdDrawMeshTasksNV-taskCount-02119",
+            "vkCmdDrawMeshTasksNV() parameter, uint32_t taskCount (0x%" PRIxLEAST32
+            "), must be less than or equal to VkPhysicalDeviceMeshShaderPropertiesNV::maxDrawMeshTasksCount (0x%" PRIxLEAST32 ").",
+            taskCount, dev_data->phys_dev_ext_props.mesh_shader_props.maxDrawMeshTasksCount);
     }
 
     return skip;
 }
 
-
-bool pv_vkCmdDrawMeshTasksIndirectNV(
-    VkCommandBuffer                             commandBuffer,
-    VkBuffer                                    buffer,
-    VkDeviceSize                                offset,
-    uint32_t                                    drawCount,
-    uint32_t                                    stride)
-{
+bool pv_vkCmdDrawMeshTasksIndirectNV(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, uint32_t drawCount,
+                                     uint32_t stride) {
     bool skip = false;
 
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     debug_report_data *report_data = dev_data->report_data;
 
     if (offset & 3) {
-        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                        HandleToUint64(commandBuffer), "VUID-vkCmdDrawMeshTasksIndirectNV-offset-02145",
-                        "vkCmdDrawMeshTasksIndirectNV() parameter, VkDeviceSize offset (0x%" PRIxLEAST64
-                        "), is not a multiple of 4.",
-                        offset);
+        skip |= log_msg(
+            report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+            HandleToUint64(commandBuffer), "VUID-vkCmdDrawMeshTasksIndirectNV-offset-02145",
+            "vkCmdDrawMeshTasksIndirectNV() parameter, VkDeviceSize offset (0x%" PRIxLEAST64 "), is not a multiple of 4.", offset);
     }
 
     if (drawCount > 1 && ((stride & 3) || stride < sizeof(VkDrawMeshTasksIndirectCommandNV))) {
@@ -3516,15 +3512,8 @@ bool pv_vkCmdDrawMeshTasksIndirectNV(
     return skip;
 }
 
-bool pv_vkCmdDrawMeshTasksIndirectCountNV(
-    VkCommandBuffer                             commandBuffer,
-    VkBuffer                                    buffer,
-    VkDeviceSize                                offset,
-    VkBuffer                                    countBuffer,
-    VkDeviceSize                                countBufferOffset,
-    uint32_t                                    maxDrawCount,
-    uint32_t                                    stride)
-{
+bool pv_vkCmdDrawMeshTasksIndirectCountNV(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkBuffer countBuffer,
+                                          VkDeviceSize countBufferOffset, uint32_t maxDrawCount, uint32_t stride) {
     bool skip = false;
 
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
@@ -3555,7 +3544,6 @@ bool pv_vkCmdDrawMeshTasksIndirectCountNV(
 
     return skip;
 }
-
 
 VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vkGetDeviceProcAddr(VkDevice device, const char *funcName) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);

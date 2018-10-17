@@ -517,7 +517,7 @@ bool ValidateBarrierLayoutToImageUsage(layer_data *device_data, const VkImageMem
                 msg_code = "VUID-VkImageMemoryBarrier-oldLayout-01213";
             }
             break;
-        case VK_IMAGE_LAYOUT_SHADING_RATE_OPTIMAL_NV :
+        case VK_IMAGE_LAYOUT_SHADING_RATE_OPTIMAL_NV:
             if ((usage_flags & VK_IMAGE_USAGE_SHADING_RATE_IMAGE_BIT_NV) == 0) {
                 msg_code = "VUID-VkImageMemoryBarrier-oldLayout-02088";
             }
@@ -1552,7 +1552,7 @@ static inline VkExtent3D GetImageSubresourceExtent(const IMAGE_STATE *img, const
 
     if (img->createInfo.flags & VK_IMAGE_CREATE_CORNER_SAMPLED_BIT_NV) {
         extent.width = (0 == extent.width ? 0 : std::max(2U, 1 + ((extent.width - 1) >> mip)));
-        extent.height = (0 == extent.height ? 0 : std::max(2U, 1 + ((extent.height - 1)>> mip)));
+        extent.height = (0 == extent.height ? 0 : std::max(2U, 1 + ((extent.height - 1) >> mip)));
         extent.depth = (0 == extent.depth ? 0 : std::max(2U, 1 + ((extent.depth - 1) >> mip)));
     } else {
         extent.width = (0 == extent.width ? 0 : std::max(1U, extent.width >> mip));
@@ -3752,7 +3752,8 @@ bool PreCallValidateCreateImageView(layer_data *device_data, const VkImageViewCr
         skip |= ValidateImageUsageFlags(
             device_data, image_state,
             VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT |
-                VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SHADING_RATE_IMAGE_BIT_NV,
+                VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
+                VK_IMAGE_USAGE_SHADING_RATE_IMAGE_BIT_NV,
             false, kVUIDUndefined, "vkCreateImageView()",
             "VK_IMAGE_USAGE_[SAMPLED|STORAGE|COLOR_ATTACHMENT|DEPTH_STENCIL_ATTACHMENT|INPUT_ATTACHMENT|SHADING_RATE_IMAGE]_BIT");
         // If this isn't a sparse image, it needs to have memory backing it at CreateImageView time
