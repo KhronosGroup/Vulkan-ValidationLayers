@@ -15,6 +15,9 @@
 # limitations under the License.
 # ~~~
 
+# CMake project initialization ---------------------------------------------------------------------------------------------------
+# This section contains pre-project() initialization, and ends with the project() command.
+
 cmake_minimum_required(VERSION 3.4)
 
 # Apple: Must be set before enable_language() or project() as it may influence configuration of the toolchain and flags.
@@ -22,11 +25,14 @@ set(CMAKE_OSX_DEPLOYMENT_TARGET "10.12" CACHE STRING "Minimum OS X deployment ve
 
 project(Vulkan-ValidationLayers)
 
-# The API_NAME allows renaming builds to avoid conflicts with installed SDKs. The MAJOR number of the version we're building, used
-# in naming <api-name>-<major>.dll (and other files).
+# User-interface declarations ----------------------------------------------------------------------------------------------------
+# This section contains variables that affect development GUIs (e.g. CMake GUI and IDEs), such as option(), folders, and variables
+# with the CACHE property.
+
+# API_NAME allows renaming builds to avoid conflicts with installed SDKs.  It is referenced by layers/vk_loader_platform.h
 set(API_NAME "Vulkan" CACHE STRING "API name to use when building")
-set(MAJOR "1")
 string(TOLOWER ${API_NAME} API_LOWERCASE)
+add_definitions(-DAPI_NAME="${API_NAME}")
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
@@ -63,7 +69,8 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 # "Helper" targets that don't have interesting source code should set their FOLDER property to this
 set(LAYERS_HELPER_FOLDER "Helper Targets")
 
-if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+# Options for Linux only
+if(UNIX AND NOT APPLE) # i.e. Linux
     include(FindPkgConfig)
     option(BUILD_WSI_XCB_SUPPORT "Build XCB WSI support" ON)
     option(BUILD_WSI_XLIB_SUPPORT "Build Xlib WSI support" ON)
@@ -89,29 +96,25 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     endif()
 endif()
 
+# Platform-specific compiler switches
 if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID MATCHES "Clang")
-    set(COMMON_COMPILE_FLAGS "-Wall -Wextra -Wno-unused-parameter -Wno-missing-field-initializers")
-    set(COMMON_COMPILE_FLAGS "${COMMON_COMPILE_FLAGS} -fno-strict-aliasing -fno-builtin-memcmp")
+    add_compile_options(-Wall
+                        -Wextra
+                        -Wno-unused-parameter
+                        -Wno-missing-field-initializers
+                        -fno-strict-aliasing
+                        -fno-builtin-memcmp
+                        -fvisibility=hidden)
+    set(CMAKE_C_STANDARD 99)
+    set(CMAKE_CXX_STANDARD 11)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-rtti")
 
     # For GCC version 7.1 or greater, we need to disable the implicit fallthrough warning since there's no consistent way to satisfy
     # all compilers until they all accept the C++17 standard.
     if(CMAKE_COMPILER_IS_GNUCC AND NOT (CMAKE_CXX_COMPILER_VERSION LESS 7.1))
-        set(COMMON_COMPILE_FLAGS "${COMMON_COMPILE_FLAGS} -Wimplicit-fallthrough=0")
+        add_compile_options(-Wimplicit-fallthrough=0)
     endif()
-
-    if(APPLE)
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${COMMON_COMPILE_FLAGS}")
-    else()
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 ${COMMON_COMPILE_FLAGS}")
-    endif()
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COMMON_COMPILE_FLAGS} -std=c++11 -fno-rtti")
-    if(UNIX)
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fvisibility=hidden")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fvisibility=hidden")
-    endif()
-endif()
-
-if(MSVC)
+elseif(MSVC)
     # Treat warnings as errors
     add_compile_options("/WX")
     # Disable RTTI
@@ -132,6 +135,7 @@ if(IS_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/external/googletest)
 else()
     option(BUILD_TESTS "Build tests" OFF)
 endif()
+
 option(INSTALL_TESTS "Install tests" OFF)
 option(BUILD_LAYERS "Build layers" ON)
 option(BUILD_LAYER_SUPPORT_FILES "Generate layer files" OFF) # For generating files when not building layers
@@ -141,7 +145,7 @@ if(NOT GLSLANG_INSTALL_DIR AND NOT DEFINED ENV{GLSLANG_INSTALL_DIR})
     message(FATAL_ERROR "Must define location of glslang binaries -- see BUILD.md")
 endif()
 
-# Cmake command line option overrides environment variable
+# CMake command line option overrides environment variable
 if(NOT GLSLANG_INSTALL_DIR)
     set(GLSLANG_INSTALL_DIR $ENV{GLSLANG_INSTALL_DIR})
 endif()
@@ -251,10 +255,12 @@ else()
         ${SPIRV_TOOLS_LIBRARIES})
 endif()
 
-# Generate dependent helper files
+# Generate dependent helper files ------------------------------------------------------------------------------------------------
+
 set(SCRIPTS_DIR "${PROJECT_SOURCE_DIR}/scripts")
-# Define macro used for building vkxml generated files
-macro(run_vk_xml_generate dependency output)
+
+# Generate a source file from vk.xml
+macro(GenerateFromVkXml dependency output)
     add_custom_command(OUTPUT ${output}
                        COMMAND ${PYTHON_EXECUTABLE} ${SCRIPTS_DIR}/lvl_genvk.py -registry ${VulkanRegistry_DIR}/vk.xml -scripts
                                ${VulkanRegistry_DIR} ${output}
@@ -264,6 +270,18 @@ macro(run_vk_xml_generate dependency output)
                                ${SCRIPTS_DIR}/lvl_genvk.py
                                ${VulkanRegistry_DIR}/reg.py)
 endmacro()
+
+# Add rules to generate XML-derived source files.
+GenerateFromVkXml(loader_extension_generator.py vk_layer_dispatch_table.h)
+GenerateFromVkXml(dispatch_table_helper_generator.py vk_dispatch_table_helper.h)
+GenerateFromVkXml(helper_file_generator.py vk_safe_struct.h)
+GenerateFromVkXml(helper_file_generator.py vk_safe_struct.cpp)
+GenerateFromVkXml(helper_file_generator.py vk_enum_string_helper.h)
+GenerateFromVkXml(helper_file_generator.py vk_object_types.h)
+GenerateFromVkXml(helper_file_generator.py vk_extension_helper.h)
+GenerateFromVkXml(helper_file_generator.py vk_typemap_helper.h)
+
+# This target causes the source files to be generated.
 add_custom_target(generate_helper_files
                   DEPENDS vk_enum_string_helper.h
                           vk_safe_struct.h
@@ -274,32 +292,20 @@ add_custom_target(generate_helper_files
                           vk_extension_helper.h
                           vk_typemap_helper.h)
 set_target_properties(generate_helper_files PROPERTIES FOLDER ${LAYERS_HELPER_FOLDER})
-# Rules to build generated helper files
-run_vk_xml_generate(loader_extension_generator.py vk_layer_dispatch_table.h)
-run_vk_xml_generate(dispatch_table_helper_generator.py vk_dispatch_table_helper.h)
-run_vk_xml_generate(helper_file_generator.py vk_safe_struct.h)
-run_vk_xml_generate(helper_file_generator.py vk_safe_struct.cpp)
-run_vk_xml_generate(helper_file_generator.py vk_enum_string_helper.h)
-run_vk_xml_generate(helper_file_generator.py vk_object_types.h)
-run_vk_xml_generate(helper_file_generator.py vk_extension_helper.h)
-run_vk_xml_generate(helper_file_generator.py vk_typemap_helper.h)
 
-# ~~~
-# Layer Utils Library.
-# For Windows, we use a static lib because the Windows loader has a fairly restrictive loader search
-# path that can't be easily modified to point it to the same directory that contains the layers.
-# TODO: This should not be a library -- in future, include files directly in layers.
-# ~~~
-set(VALIDATION_LAYER_UTILS_SOURCES
-    layers/vk_layer_config.cpp
-    layers/vk_layer_extension_utils.cpp
-    layers/vk_layer_utils.cpp
-    layers/vk_format_utils.cpp)
+# VkLayer_utils library ----------------------------------------------------------------------------------------------------------
+# For Windows, we use a static lib because the Windows loader has a fairly restrictive loader search path that can't be easily
+# modified to point it to the same directory that contains the layers. TODO: This should not be a library -- in future, include
+# files directly in layers.
+
+add_library(VkLayer_utils
+            STATIC
+            layers/vk_layer_config.cpp
+            layers/vk_layer_extension_utils.cpp
+            layers/vk_layer_utils.cpp
+            layers/vk_format_utils.cpp)
 if(WIN32)
-    add_library(VkLayer_utils STATIC ${VALIDATION_LAYER_UTILS_SOURCES})
     target_compile_definitions(VkLayer_utils PUBLIC _CRT_SECURE_NO_WARNINGS)
-else()
-    add_library(VkLayer_utils STATIC ${VALIDATION_LAYER_UTILS_SOURCES})
 endif()
 install(TARGETS VkLayer_utils DESTINATION ${CMAKE_INSTALL_LIBDIR})
 set_target_properties(VkLayer_utils PROPERTIES LINKER_LANGUAGE CXX)
@@ -310,7 +316,7 @@ target_include_directories(VkLayer_utils
                                   ${CMAKE_CURRENT_BINARY_DIR}/layers
                                   ${PROJECT_BINARY_DIR})
 
-# uninstall target
+# uninstall target ---------------------------------------------------------------------------------------------------------------
 if(NOT TARGET uninstall)
     configure_file("${CMAKE_CURRENT_SOURCE_DIR}/cmake/cmake_uninstall.cmake.in"
                    "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
@@ -320,9 +326,7 @@ if(NOT TARGET uninstall)
     set_target_properties(uninstall PROPERTIES FOLDER ${LAYERS_HELPER_FOLDER})
 endif()
 
-add_definitions(-DAPI_NAME="${API_NAME}")
-
-# Fetch header version from vulkan_core.h
+# Fetch header version from vulkan_core.h ----------------------------------------------------------------------------------------
 file(STRINGS "${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan_core.h" lines REGEX "^#define VK_HEADER_VERSION [0-9]+")
 list(LENGTH lines len)
 if(${len} EQUAL 1)
@@ -333,6 +337,8 @@ if(${len} EQUAL 1)
 else()
     message(FATAL_ERROR "Unable to fetch version from vulkan_core.h")
 endif()
+
+# Add subprojects ----------------------------------------------------------------------------------------------------------------
 
 add_subdirectory(external)
 if(BUILD_TESTS)

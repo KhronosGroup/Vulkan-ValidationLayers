@@ -21,8 +21,10 @@
 if(BUILD_TESTS)
     # Attempt to enable googletest if available.
 
-    # Suppress all warnings from external projects.
-    set_property(DIRECTORY APPEND PROPERTY COMPILE_OPTIONS -w)
+    # Suppress all warnings from external projects (i.e.: in this directory's scope).
+    if(CMAKE_CXX_COMPILER_ID MATCHES "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+        set_property(DIRECTORY APPEND PROPERTY COMPILE_OPTIONS "-w")
+    endif()
 
     if(TARGET gtest_main)
         # Already enabled as a target (perhaps by a project enclosing this one)

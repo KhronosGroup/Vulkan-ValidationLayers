@@ -15,16 +15,20 @@
 # limitations under the License.
 # ~~~
 
-cmake_minimum_required(VERSION 2.8.11)
-
-if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+if(WIN32)
     add_definitions(-DVK_USE_PLATFORM_WIN32_KHR -DVK_USE_PLATFORM_WIN32_KHX -DWIN32_LEAN_AND_MEAN)
     add_custom_target(mk_layer_config_dir ALL
                       COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>)
     set_target_properties(mk_layer_config_dir PROPERTIES FOLDER ${LAYERS_HELPER_FOLDER})
-elseif(CMAKE_SYSTEM_NAME STREQUAL "Android")
+elseif(ANDROID)
     add_definitions(-DVK_USE_PLATFORM_ANDROID_KHR -DVK_USE_PLATFORM_ANDROID_KHX)
-elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+elseif(APPLE)
+    add_definitions(-DVK_USE_PLATFORM_MACOS_MVK)
+    if(CMAKE_GENERATOR MATCHES "^Xcode.*")
+        add_custom_target(mk_layer_config_dir ALL
+                          COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>)
+    endif()
+elseif(UNIX AND NOT APPLE) # i.e. Linux
     if(BUILD_WSI_XCB_SUPPORT)
         add_definitions(-DVK_USE_PLATFORM_XCB_KHR -DVK_USE_PLATFORM_XCB_KHX)
     endif()
@@ -41,31 +45,20 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
         add_definitions(-DVK_USE_PLATFORM_MIR_KHR -DVK_USE_PLATFORM_MIR_KHX)
         include_directories(${MIR_INCLUDE_DIR})
     endif()
-elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-    add_definitions(-DVK_USE_PLATFORM_MACOS_MVK)
-    if(CMAKE_GENERATOR MATCHES "^Xcode.*")
-        add_custom_target(mk_layer_config_dir ALL
-                          COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>)
-    endif()
 else()
     message(FATAL_ERROR "Unsupported Platform!")
 endif()
 
-# Define macro used for generating header files containing commit IDs for external dependencies
-macro(run_external_revision_generate symbol_name output)
-    add_custom_command(OUTPUT ${output}
-                       COMMAND ${PYTHON_EXECUTABLE} ${SCRIPTS_DIR}/external_revision_generator.py
-                               --from_uuid -s ${symbol_name} -o ${output}
-                       DEPENDS ${SCRIPTS_DIR}/external_revision_generator.py)
-endmacro()
-
 # Custom targets for generated validation layer helper file dependencies
 add_custom_target(spirv_tools_revision_file DEPENDS spirv_tools_commit_id.h)
-
 set_target_properties(spirv_tools_revision_file PROPERTIES FOLDER ${LAYERS_HELPER_FOLDER})
 
 if(BUILD_LAYERS)
-    run_external_revision_generate(SPIRV_TOOLS_COMMIT_ID spirv_tools_commit_id.h)
+    # generate header file containing commit IDs of external dependencies
+    add_custom_command(OUTPUT spirv_tools_commit_id.h
+                       COMMAND ${PYTHON_EXECUTABLE} ${SCRIPTS_DIR}/external_revision_generator.py
+                               --from_uuid -s SPIRV_TOOLS_COMMIT_ID -o spirv_tools_commit_id.h
+                       DEPENDS ${SCRIPTS_DIR}/external_revision_generator.py)
 endif()
 
 # Configure installation of source files that are dependencies of other repos.
@@ -121,23 +114,24 @@ elseif(UNIX) # UNIX includes APPLE
     endforeach()
 endif()
 
+# System-specific macros to create a library target.
 if(WIN32)
-    macro(add_vk_layer target)
+    macro(AddVkLayer target)
         file(TO_NATIVE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/VkLayer_${target}.def DEF_FILE)
         add_custom_target(copy-${target}-def-file ALL
                           COMMAND ${CMAKE_COMMAND} -E copy_if_different ${DEF_FILE} VkLayer_${target}.def
                           VERBATIM)
         set_target_properties(copy-${target}-def-file PROPERTIES FOLDER ${LAYERS_HELPER_FOLDER})
+
         add_library(VkLayer_${target} SHARED ${ARGN} VkLayer_${target}.def)
-        add_dependencies(VkLayer_${target} generate_helper_files)
-        target_link_libraries(VkLayer_${target} VkLayer_utils)
+        target_link_libraries(VkLayer_${target} PRIVATE VkLayer_utils)
         add_dependencies(VkLayer_${target} generate_helper_files VkLayer_utils)
         install(TARGETS VkLayer_${target} DESTINATION ${CMAKE_INSTALL_LIBDIR})
     endmacro()
 elseif(APPLE)
-    macro(add_vk_layer target)
+    macro(AddVkLayer target)
         add_library(VkLayer_${target} SHARED ${ARGN})
-        target_link_libraries(VkLayer_${target} VkLayer_utils)
+        target_link_libraries(VkLayer_${target} PRIVATE VkLayer_utils)
         add_dependencies(VkLayer_${target} generate_helper_files VkLayer_utils)
         set_target_properties(VkLayer_${target}
                               PROPERTIES LINK_FLAGS
@@ -146,10 +140,10 @@ elseif(APPLE)
                                          "@loader_path/")
         install(TARGETS VkLayer_${target} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
     endmacro()
-else()
-    macro(add_vk_layer target)
+else(UNIX AND NOT APPLE) # i.e.: Linux
+    macro(AddVkLayer target)
         add_library(VkLayer_${target} SHARED ${ARGN})
-        target_link_libraries(VkLayer_${target} VkLayer_utils)
+        target_link_libraries(VkLayer_${target} PRIVATE VkLayer_utils)
         add_dependencies(VkLayer_${target} generate_helper_files VkLayer_utils)
         set_target_properties(VkLayer_${target} PROPERTIES LINK_FLAGS "-Wl,-Bsymbolic,--exclude-libs,ALL")
         install(TARGETS VkLayer_${target} DESTINATION ${CMAKE_INSTALL_LIBDIR})
@@ -162,7 +156,13 @@ if(WIN32)
     # Applies to all configurations
     add_definitions(-D_CRT_SECURE_NO_WARNINGS)
     # Avoid: fatal error C1128: number of sections exceeded object file format limit: compile with /bigobj
-    set_source_files_properties(core_validation.cpp threading.cpp parameter_validation_utils.cpp unique_objects.cpp PROPERTIES COMPILE_FLAGS "/bigobj")
+    set_source_files_properties(core_validation.cpp
+                                threading.cpp
+                                parameter_validation_utils.cpp
+                                unique_objects.cpp
+                                PROPERTIES
+                                COMPILE_FLAGS
+                                "/bigobj")
     # Turn off transitional "changed behavior" warning message for Visual Studio versions prior to 2015. The changed behavior is
     # that constructor initializers are now fixed to clear the struct members.
     add_compile_options("$<$<AND:$<CXX_COMPILER_ID:MSVC>,$<VERSION_LESS:$<CXX_COMPILER_VERSION>,19>>:/wd4351>")
@@ -176,27 +176,27 @@ if(CMAKE_C_COMPILER_ID MATCHES "Clang")
     set_source_files_properties(parameter_validation.cpp PROPERTIES COMPILE_FLAGS "-Wno-unused-const-variable")
 endif()
 
-run_vk_xml_generate(threading_generator.py thread_check.h)
-run_vk_xml_generate(parameter_validation_generator.py parameter_validation.cpp)
-run_vk_xml_generate(unique_objects_generator.py unique_objects_wrappers.h)
-run_vk_xml_generate(dispatch_table_helper_generator.py vk_dispatch_table_helper.h)
-run_vk_xml_generate(object_tracker_generator.py object_tracker.cpp)
+GenerateFromVkXml(threading_generator.py thread_check.h)
+GenerateFromVkXml(parameter_validation_generator.py parameter_validation.cpp)
+GenerateFromVkXml(unique_objects_generator.py unique_objects_wrappers.h)
+GenerateFromVkXml(dispatch_table_helper_generator.py vk_dispatch_table_helper.h)
+GenerateFromVkXml(object_tracker_generator.py object_tracker.cpp)
 
 if(BUILD_LAYERS)
-    add_vk_layer(core_validation core_validation.cpp descriptor_sets.cpp buffer_validation.cpp shader_validation.cpp xxhash.c)
-    add_vk_layer(object_tracker object_tracker.cpp object_tracker_utils.cpp)
-    add_vk_layer(threading threading.cpp thread_check.h)
-    add_vk_layer(unique_objects unique_objects.cpp unique_objects_wrappers.h)
-    add_vk_layer(parameter_validation
-                 parameter_validation.cpp
-                 parameter_validation_utils.cpp
-                 parameter_validation.h
-                 vk_validation_error_messages.h)
+    AddVkLayer(core_validation core_validation.cpp descriptor_sets.cpp buffer_validation.cpp shader_validation.cpp xxhash.c)
+    AddVkLayer(object_tracker object_tracker.cpp object_tracker_utils.cpp)
+    AddVkLayer(threading threading.cpp thread_check.h)
+    AddVkLayer(unique_objects unique_objects.cpp unique_objects_wrappers.h)
+    AddVkLayer(parameter_validation
+               parameter_validation.cpp
+               parameter_validation_utils.cpp
+               parameter_validation.h
+               vk_validation_error_messages.h)
 
     # Core validation has additional dependencies
     target_include_directories(VkLayer_core_validation PRIVATE ${GLSLANG_SPIRV_INCLUDE_DIR})
     target_include_directories(VkLayer_core_validation PRIVATE ${SPIRV_TOOLS_INCLUDE_DIR})
-    target_link_libraries(VkLayer_core_validation ${SPIRV_TOOLS_LIBRARIES})
+    target_link_libraries(VkLayer_core_validation PRIVATE ${SPIRV_TOOLS_LIBRARIES})
     add_dependencies(VkLayer_core_validation spirv_tools_revision_file)
 endif()
 
