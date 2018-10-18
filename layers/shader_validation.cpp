@@ -91,6 +91,7 @@ void shader_module::BuildDefIndex() {
             case spv::OpTypeReserveId:
             case spv::OpTypeQueue:
             case spv::OpTypePipe:
+            case spv::OpTypeAccelerationStructureNVX:
                 def_index[insn.word(1)] = insn.offset();
                 break;
 
@@ -130,11 +131,47 @@ void shader_module::BuildDefIndex() {
     }
 }
 
+unsigned ExecutionModelToShaderStageFlagBits(unsigned mode) {
+    switch (mode) {
+        case spv::ExecutionModelVertex:
+            return VK_SHADER_STAGE_VERTEX_BIT;
+        case spv::ExecutionModelTessellationControl:
+            return VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
+        case spv::ExecutionModelTessellationEvaluation:
+            return VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
+        case spv::ExecutionModelGeometry:
+            return VK_SHADER_STAGE_GEOMETRY_BIT;
+        case spv::ExecutionModelFragment:
+            return VK_SHADER_STAGE_FRAGMENT_BIT;
+        case spv::ExecutionModelGLCompute:
+            return VK_SHADER_STAGE_COMPUTE_BIT;
+        case spv::ExecutionModelRayGenerationNVX:
+            return VK_SHADER_STAGE_RAYGEN_BIT_NVX;
+        case spv::ExecutionModelAnyHitNVX:
+            return VK_SHADER_STAGE_ANY_HIT_BIT_NVX;
+        case spv::ExecutionModelClosestHitNVX:
+            return VK_SHADER_STAGE_CLOSEST_HIT_BIT_NVX;
+        case spv::ExecutionModelMissNVX:
+            return VK_SHADER_STAGE_MISS_BIT_NVX;
+        case spv::ExecutionModelIntersectionNVX:
+            return VK_SHADER_STAGE_INTERSECTION_BIT_NVX;
+        case spv::ExecutionModelCallableNVX:
+            return VK_SHADER_STAGE_CALLABLE_BIT_NVX;
+        case spv::ExecutionModelTaskNV:
+            return VK_SHADER_STAGE_TASK_BIT_NV;
+        case spv::ExecutionModelMeshNV:
+            return VK_SHADER_STAGE_MESH_BIT_NV;
+        default:
+            return 0;
+    }
+}
+
 static spirv_inst_iter FindEntrypoint(shader_module const *src, char const *name, VkShaderStageFlagBits stageBits) {
     for (auto insn : *src) {
         if (insn.opcode() == spv::OpEntryPoint) {
             auto entrypointName = (char const *)&insn.word(3);
-            auto entrypointStageBits = 1u << insn.word(1);
+            auto executionModel = insn.word(1);
+            auto entrypointStageBits = ExecutionModelToShaderStageFlagBits(executionModel);
 
             if (!strcmp(entrypointName, name) && (entrypointStageBits & stageBits)) {
                 return insn;
@@ -247,6 +284,9 @@ static void DescribeTypeInner(std::ostringstream &ss, shader_module const *src, 
             break;
         case spv::OpTypeImage:
             ss << "image(dim=" << insn.word(3) << ", sampled=" << insn.word(7) << ")";
+            break;
+        case spv::OpTypeAccelerationStructureNVX:
+            ss << "accelerationStruture";
             break;
         default:
             ss << "oddtype";
@@ -1261,6 +1301,9 @@ static std::set<uint32_t> TypeToDescriptorTypeSet(shader_module const *module, u
                 return ret;
             }
         }
+        case spv::OpTypeAccelerationStructureNVX:
+            ret.insert(VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NVX);
+            return ret;
 
             // We shouldn't really see any other junk types -- but if we do, they're a mismatch.
         default:
@@ -1540,7 +1583,7 @@ static VkDescriptorSetLayoutBinding const *GetDescriptorBinding(PIPELINE_LAYOUT_
 }
 
 static void ProcessExecutionModes(shader_module const *src, spirv_inst_iter entrypoint, PIPELINE_STATE *pipeline) {
-    auto entrypoint_id = entrypoint.word(1);
+    auto entrypoint_id = entrypoint.word(2);
     bool is_point_mode = false;
 
     for (auto insn : *src) {
@@ -1803,7 +1846,9 @@ static inline uint32_t DetermineFinalGeomStage(PIPELINE_STATE *pipeline, VkGraph
             stage_mask |= pCreateInfo->pStages[i].stage;
         }
         // Determine which shader in which PointSize should be written (the final geometry stage)
-        if (stage_mask & VK_SHADER_STAGE_GEOMETRY_BIT) {
+        if (stage_mask & VK_SHADER_STAGE_MESH_BIT_NV) {
+            stage_mask = VK_SHADER_STAGE_MESH_BIT_NV;
+        } else if (stage_mask & VK_SHADER_STAGE_GEOMETRY_BIT) {
             stage_mask = VK_SHADER_STAGE_GEOMETRY_BIT;
         } else if (stage_mask & VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT) {
             stage_mask = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;

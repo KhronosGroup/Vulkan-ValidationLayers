@@ -1997,8 +1997,8 @@ static void ResetCommandBufferState(layer_data *dev_data, const VkCommandBuffer 
         pCB->viewportMask = 0;
         pCB->scissorMask = 0;
 
-        for (uint32_t i = 0; i < VK_PIPELINE_BIND_POINT_RANGE_SIZE; ++i) {
-            pCB->lastBound[i].reset();
+        for (auto &item : pCB->lastBound) {
+            item.second.reset();
         }
 
         memset(&pCB->activeRenderPassBeginInfo, 0, sizeof(pCB->activeRenderPassBeginInfo));
@@ -7246,16 +7246,19 @@ VKAPI_ATTR void VKAPI_CALL CmdBindDescriptorSets(VkCommandBuffer commandBuffer, 
 // Takes array of error codes as some of the VUID's (e.g. vkCmdBindPipeline) are written per bindpoint
 // TODO add vkCmdBindPipeline bind_point validation using this call.
 bool ValidatePipelineBindPoint(layer_data *device_data, GLOBAL_CB_NODE *cb_state, VkPipelineBindPoint bind_point,
-                               const char *func_name,
-                               const std::array<std::string, VK_PIPELINE_BIND_POINT_RANGE_SIZE> &bind_errors) {
+                               const char *func_name, const std::map<VkPipelineBindPoint, std::string> &bind_errors) {
     bool skip = false;
     auto pool = GetCommandPoolNode(device_data, cb_state->createInfo.commandPool);
     if (pool) {  // The loss of a pool in a recording cmd is reported in DestroyCommandPool
-        static const VkQueueFlags flag_mask[VK_PIPELINE_BIND_POINT_RANGE_SIZE] = {VK_QUEUE_GRAPHICS_BIT, VK_QUEUE_COMPUTE_BIT};
-        const auto bind_point_index = bind_point - VK_PIPELINE_BIND_POINT_BEGIN_RANGE;  // typeof enum is not defined, use auto
+        static const std::map<VkPipelineBindPoint, VkQueueFlags> flag_mask = {
+            std::make_pair(VK_PIPELINE_BIND_POINT_GRAPHICS, static_cast<VkQueueFlags>(VK_QUEUE_GRAPHICS_BIT)),
+            std::make_pair(VK_PIPELINE_BIND_POINT_COMPUTE, static_cast<VkQueueFlags>(VK_QUEUE_COMPUTE_BIT)),
+            std::make_pair(VK_PIPELINE_BIND_POINT_RAYTRACING_NVX,
+                           static_cast<VkQueueFlags>(VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT)),
+        };
         const auto &qfp = GetPhysDevProperties(device_data)->queue_family_properties[pool->queueFamilyIndex];
-        if (0 == (qfp.queueFlags & flag_mask[bind_point_index])) {
-            const std::string error = bind_errors[bind_point_index];
+        if (0 == (qfp.queueFlags & flag_mask.at(bind_point))) {
+            const std::string error = bind_errors.at(bind_point);
             auto cb_u64 = HandleToUint64(cb_state->commandBuffer);
             auto cp_u64 = HandleToUint64(cb_state->createInfo.commandPool);
             skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
@@ -7276,9 +7279,13 @@ static bool PreCallValidateCmdPushDescriptorSetKHR(layer_data *device_data, GLOB
     skip |= ValidateCmd(device_data, cb_state, CMD_PUSHDESCRIPTORSETKHR, func_name);
     skip |= ValidateCmdQueueFlags(device_data, cb_state, func_name, (VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT),
                                   "VUID-vkCmdPushDescriptorSetKHR-commandBuffer-cmdpool");
-    skip |= ValidatePipelineBindPoint(
-        device_data, cb_state, bind_point, func_name,
-        {{"VUID-vkCmdPushDescriptorSetKHR-pipelineBindPoint-00363", "VUID-vkCmdPushDescriptorSetKHR-pipelineBindPoint-00363"}});
+
+    static const std::map<VkPipelineBindPoint, std::string> bind_errors = {
+        std::make_pair(VK_PIPELINE_BIND_POINT_GRAPHICS, "VUID-vkCmdPushDescriptorSetKHR-pipelineBindPoint-00363"),
+        std::make_pair(VK_PIPELINE_BIND_POINT_COMPUTE, "VUID-vkCmdPushDescriptorSetKHR-pipelineBindPoint-00363"),
+        std::make_pair(VK_PIPELINE_BIND_POINT_RAYTRACING_NVX, "VUID-vkCmdPushDescriptorSetKHR-pipelineBindPoint-00363")};
+
+    skip |= ValidatePipelineBindPoint(device_data, cb_state, bind_point, func_name, bind_errors);
     auto layout_data = GetPipelineLayout(device_data, layout);
 
     // Validate the set index points to a push descriptor set and is in range
@@ -14112,8 +14119,8 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawMeshTasksNV(VkCommandBuffer commandBuffer, uin
     bool skip = false;
 
     unique_lock_t lock(global_lock);
-    skip |= PreCallValidateCmdDrawMeshTasksNV(dev_data, commandBuffer, true,
-                                              VK_PIPELINE_BIND_POINT_GRAPHICS, &cb_state, "vkCmdDrawMeshTasksNV()");
+    skip |= PreCallValidateCmdDrawMeshTasksNV(dev_data, commandBuffer, /* indexed */ false, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                              &cb_state, "vkCmdDrawMeshTasksNV()");
 
     if (!skip) {
         PreCallRecordCmdDrawMeshTasksNV(dev_data, cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS);
@@ -14152,7 +14159,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawMeshTasksIndirectNV(VkCommandBuffer commandBuf
     bool skip = false;
 
     unique_lock_t lock(global_lock);
-    skip |= PreCallValidateCmdDrawMeshTasksIndirectNV(dev_data, commandBuffer, buffer, true,
+    skip |= PreCallValidateCmdDrawMeshTasksIndirectNV(dev_data, commandBuffer, buffer, /* indexed */ false,
                                                       VK_PIPELINE_BIND_POINT_GRAPHICS, &cb_state, &buffer_state,
                                                       "vkCmdDrawMeshTasksIndirectNV()");
 
@@ -14202,7 +14209,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawMeshTasksIndirectCountNV(VkCommandBuffer comma
     bool skip = false;
 
     unique_lock_t lock(global_lock);
-    skip |= PreCallValidateCmdDrawMeshTasksIndirectCountNV(dev_data, commandBuffer, buffer, countBuffer, true,
+    skip |= PreCallValidateCmdDrawMeshTasksIndirectCountNV(dev_data, commandBuffer, buffer, countBuffer, /* indexed */ false,
                                                            VK_PIPELINE_BIND_POINT_GRAPHICS, &cb_state, &buffer_state,
                                                            &count_buffer_state, "vkCmdDrawMeshTasksIndirectCountNV()");
 
