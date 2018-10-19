@@ -754,7 +754,8 @@ EShLanguage VkTestFramework::FindLanguage(const VkShaderStageFlagBits shader_typ
 // Compile a given string containing GLSL into SPV for use by VK
 // Return value of false means an error was encountered.
 //
-bool VkTestFramework::GLSLtoSPV(const VkShaderStageFlagBits shader_type, const char *pshader, std::vector<unsigned int> &spirv) {
+bool VkTestFramework::GLSLtoSPV(const VkShaderStageFlagBits shader_type, const char *pshader, std::vector<unsigned int> &spirv,
+                                bool debug) {
     glslang::TProgram program;
     const char *shaderStrings[1];
 
@@ -767,6 +768,9 @@ bool VkTestFramework::GLSLtoSPV(const VkShaderStageFlagBits shader_type, const c
     EShMessages messages = EShMsgDefault;
     SetMessageOptions(messages);
     messages = static_cast<EShMessages>(messages | EShMsgSpvRules | EShMsgVulkanRules);
+    if (debug) {
+        messages = static_cast<EShMessages>(messages | EShMsgDebugInfo);
+    }
 
     EShLanguage stage = FindLanguage(shader_type);
     glslang::TShader *shader = new glslang::TShader(stage);
@@ -803,7 +807,11 @@ bool VkTestFramework::GLSLtoSPV(const VkShaderStageFlagBits shader_type, const c
         program.dumpReflection();
     }
 
-    glslang::GlslangToSpv(*program.getIntermediate(stage), spirv);
+    glslang::SpvOptions spv_options;
+    if (debug) {
+        spv_options.generateDebugInfo = true;
+    }
+    glslang::GlslangToSpv(*program.getIntermediate(stage), spirv, &spv_options);
 
     //
     // Test the different modes of SPIR-V modification
