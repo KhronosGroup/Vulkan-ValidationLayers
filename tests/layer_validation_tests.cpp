@@ -474,9 +474,6 @@ class VkLayerTest : public VkRenderFramework {
 #if defined(VK_USE_PLATFORM_ANDROID_KHR)
             m_instance_extension_names.push_back(VK_KHR_ANDROID_SURFACE_EXTENSION_NAME);
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
-#if defined(VK_USE_PLATFORM_MIR_KHR)
-            m_instance_extension_names.push_back(VK_KHR_MIR_SURFACE_EXTENSION_NAME);
-#endif  // VK_USE_PLATFORM_MIR_KHR
 #if defined(VK_USE_PLATFORM_WAYLAND_KHR)
             m_instance_extension_names.push_back(VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME);
 #endif  // VK_USE_PLATFORM_WAYLAND_KHR

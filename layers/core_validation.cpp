@@ -12679,38 +12679,6 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateMacOSSurfaceMVK(VkInstance instance, const 
 }
 #endif  // VK_USE_PLATFORM_MACOS_MVK
 
-#ifdef VK_USE_PLATFORM_MIR_KHR
-VKAPI_ATTR VkResult VKAPI_CALL CreateMirSurfaceKHR(VkInstance instance, const VkMirSurfaceCreateInfoKHR *pCreateInfo,
-                                                   const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface) {
-    return CreateSurface(instance, pCreateInfo, pAllocator, pSurface, &VkLayerInstanceDispatchTable::CreateMirSurfaceKHR);
-}
-
-static bool PreCallValidateGetPhysicalDeviceMirPresentationSupportKHR(instance_layer_data *instance_data,
-                                                                      VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex) {
-    const auto pd_state = GetPhysicalDeviceState(instance_data, physicalDevice);
-    return ValidatePhysicalDeviceQueueFamily(instance_data, pd_state, queueFamilyIndex,
-                                             "VUID-vkGetPhysicalDeviceMirPresentationSupportKHR-queueFamilyIndex-01265",
-                                             "vkGetPhysicalDeviceMirPresentationSupportKHR", "queueFamilyIndex");
-}
-
-VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceMirPresentationSupportKHR(VkPhysicalDevice physicalDevice,
-                                                                          uint32_t queueFamilyIndex, MirConnection *connection) {
-    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), instance_layer_data_map);
-
-    unique_lock_t lock(global_lock);
-    bool skip = PreCallValidateGetPhysicalDeviceMirPresentationSupportKHR(instance_data, physicalDevice, queueFamilyIndex);
-    lock.unlock();
-
-    if (skip) return VK_FALSE;
-
-    // Call down the call chain:
-    VkBool32 result =
-        instance_data->dispatch_table.GetPhysicalDeviceMirPresentationSupportKHR(physicalDevice, queueFamilyIndex, connection);
-
-    return result;
-}
-#endif  // VK_USE_PLATFORM_MIR_KHR
-
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
 VKAPI_ATTR VkResult VKAPI_CALL CreateWaylandSurfaceKHR(VkInstance instance, const VkWaylandSurfaceCreateInfoKHR *pCreateInfo,
                                                        const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface) {
@@ -14321,10 +14289,6 @@ static const std::unordered_map<std::string, void *> name_to_funcptr_map = {
     {"vkCreateEvent", (void *)CreateEvent},
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
     {"vkCreateAndroidSurfaceKHR", (void *)CreateAndroidSurfaceKHR},
-#endif
-#ifdef VK_USE_PLATFORM_MIR_KHR
-    {"vkCreateMirSurfaceKHR", (void *)CreateMirSurfaceKHR},
-    {"vkGetPhysicalDeviceMirPresentationSupportKHR", (void *)GetPhysicalDeviceMirPresentationSupportKHR},
 #endif
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
     {"vkCreateWaylandSurfaceKHR", (void *)CreateWaylandSurfaceKHR},

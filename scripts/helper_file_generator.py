@@ -791,7 +791,6 @@ class HelperFileOutputGenerator(OutputGenerator):
         wsi_structs = ['VkXlibSurfaceCreateInfoKHR',
                        'VkXcbSurfaceCreateInfoKHR',
                        'VkWaylandSurfaceCreateInfoKHR',
-                       'VkMirSurfaceCreateInfoKHR',
                        'VkAndroidSurfaceCreateInfoKHR',
                        'VkWin32SurfaceCreateInfoKHR'
                        ]
