@@ -7498,10 +7498,13 @@ static void UpdateStateCmdDrawType(layer_data *dev_data, GLOBAL_CB_NODE *cb_stat
     cb_state->hasDrawCmd = true;
 
     // Add descriptor image/CIS layouts to CB layout map
-    auto &desc_sets = cb_state->lastBound[VK_PIPELINE_BIND_POINT_GRAPHICS].boundDescriptorSets;
-    for (auto &desc : desc_sets) {
-        if (desc) {
-            desc->UpdateDSImageLayoutState(cb_state);
+    PIPELINE_STATE *pPipe = cb_state->lastBound[VK_PIPELINE_BIND_POINT_GRAPHICS].pipeline_state;
+
+    for (const auto &set_binding_pair : pPipe->active_slots) {
+        uint32_t setIndex = set_binding_pair.first;
+        auto &desc_set = cb_state->lastBound[VK_PIPELINE_BIND_POINT_GRAPHICS].boundDescriptorSets[setIndex];
+        if (desc_set) {
+            desc_set->UpdateDSImageLayoutState(cb_state);
         }
     }
 }
