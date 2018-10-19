@@ -432,8 +432,8 @@ class VkLayerTest : public VkRenderFramework {
                                 BsoFailSelect failCase);
 
     void Init(VkPhysicalDeviceFeatures *features = nullptr, VkPhysicalDeviceFeatures2 *features2 = nullptr,
-              const VkCommandPoolCreateFlags flags = 0) {
-        InitFramework(myDbgFunc, m_errorMonitor);
+              const VkCommandPoolCreateFlags flags = 0, void *instance_pnext = nullptr) {
+        InitFramework(myDbgFunc, m_errorMonitor, instance_pnext);
         InitState(features, features2, flags);
     }
 
@@ -2192,6 +2192,174 @@ TEST_F(VkLayerTest, SparseResidencyImageCreateUnsupportedSamples) {
         vkDestroyImage(m_device->device(), image, NULL);
         image = VK_NULL_HANDLE;
     }
+}
+
+TEST_F(VkLayerTest, GpuValidationArrayOOB) {
+    TEST_DESCRIPTION("GPU validation: Verify detection of out-of-bounds descriptor array indexing.");
+    if (!VkRenderFramework::DeviceCanDraw()) {
+        printf("%s GPU-Assisted validation test requires a driver that can draw. Test skipped.\n", kSkipPrefix);
+        return;
+    }
+    VkValidationFeatureEnableEXT enables[] = {VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT};
+    VkValidationFeaturesEXT features = {};
+    features.sType = VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT;
+    features.enabledValidationFeatureCount = 1;
+    features.pEnabledValidationFeatures = enables;
+    VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+    ASSERT_NO_FATAL_FAILURE(Init(nullptr, nullptr, pool_flags, &features));
+    ASSERT_NO_FATAL_FAILURE(InitViewport());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    // Make a uniform buffer to be passed to the shader that contains the invalid array index.
+    uint32_t qfi = 0;
+    VkBufferCreateInfo bci = {};
+    bci.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    bci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+    bci.size = 1024;
+    bci.queueFamilyIndexCount = 1;
+    bci.pQueueFamilyIndices = &qfi;
+    VkBufferObj buffer0;
+    VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+    buffer0.init(*m_device, bci, mem_props);
+    uint32_t *data = (uint32_t *)buffer0.memory().map();
+    data[0] = 25;
+    buffer0.memory().unmap();
+
+    // Prepare descriptors
+    OneOffDescriptorSet ds(m_device, {
+                                         {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                         {1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 6, VK_SHADER_STAGE_ALL, nullptr},
+                                     });
+
+    const VkPipelineLayoutObj pipeline_layout(m_device, {&ds.layout_});
+    VkTextureObj texture(m_device, nullptr);
+    VkSamplerObj sampler(m_device);
+
+    VkDescriptorBufferInfo buffer_info[1] = {};
+    buffer_info[0].buffer = buffer0.handle();
+    buffer_info[0].offset = 0;
+    buffer_info[0].range = sizeof(uint32_t);
+
+    VkDescriptorImageInfo image_info[6] = {};
+    for (int i = 0; i < 6; i++) {
+        image_info[i] = texture.m_imageInfo;
+        image_info[i].sampler = sampler.handle();
+        image_info[i].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    }
+
+    VkWriteDescriptorSet descriptor_writes[2] = {};
+    descriptor_writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    descriptor_writes[0].dstSet = ds.set_;  // descriptor_set;
+    descriptor_writes[0].dstBinding = 0;
+    descriptor_writes[0].descriptorCount = 1;
+    descriptor_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    descriptor_writes[0].pBufferInfo = buffer_info;
+    descriptor_writes[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    descriptor_writes[1].dstSet = ds.set_;  // descriptor_set;
+    descriptor_writes[1].dstBinding = 1;
+    descriptor_writes[1].descriptorCount = 6;
+    descriptor_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    descriptor_writes[1].pImageInfo = image_info;
+    vkUpdateDescriptorSets(m_device->device(), 2, descriptor_writes, 0, NULL);
+
+    // Shader programs for array OOB test in vertex stage:
+    // - The vertex shader fetches the invalid index from the uniform buffer and uses it to make an invalid index into another
+    // array.
+    char const *vsSource_vert =
+        "#version 450\n"
+        "\n"
+        "layout(std140, set = 0, binding = 0) uniform foo { uint tex_index[1]; } uniform_index_buffer;\n"
+        "layout(set = 0, binding = 1) uniform sampler2D tex[6];\n"
+        "vec2 vertices[3];\n"
+        "void main(){\n"
+        "      vertices[0] = vec2(-1.0, -1.0);\n"
+        "      vertices[1] = vec2( 1.0, -1.0);\n"
+        "      vertices[2] = vec2( 0.0,  1.0);\n"
+        "   gl_Position = vec4(vertices[gl_VertexIndex % 3], 0.0, 1.0);\n"
+        "   gl_Position += 1e-30 * texture(tex[uniform_index_buffer.tex_index[0]], vec2(0, 0));\n"
+        "}\n";
+    char const *fsSource_vert =
+        "#version 450\n"
+        "\n"
+        "layout(set = 0, binding = 1) uniform sampler2D tex[6];\n"
+        "layout(location = 0) out vec4 uFragColor;\n"
+        "void main(){\n"
+        "   uFragColor = texture(tex[0], vec2(0, 0));\n"
+        "}\n";
+
+    // Shader programs for array OOB test in fragment stage:
+    // - The vertex shader fetches the invalid index from the uniform buffer and passes it to the fragment shader.
+    // - The fragment shader makes the invalid array access.
+    char const *vsSource_frag =
+        "#version 450\n"
+        "\n"
+        "layout(std140, binding = 0) uniform foo { uint tex_index[1]; } uniform_index_buffer;\n"
+        "layout(location = 0) out flat uint tex_ind;\n"
+        "vec2 vertices[3];\n"
+        "void main(){\n"
+        "      vertices[0] = vec2(-1.0, -1.0);\n"
+        "      vertices[1] = vec2( 1.0, -1.0);\n"
+        "      vertices[2] = vec2( 0.0,  1.0);\n"
+        "   gl_Position = vec4(vertices[gl_VertexIndex % 3], 0.0, 1.0);\n"
+        "   tex_ind = uniform_index_buffer.tex_index[0];\n"
+        "}\n";
+    char const *fsSource_frag =
+        "#version 450\n"
+        "\n"
+        "layout(set = 0, binding = 1) uniform sampler2D tex[6];\n"
+        "layout(location = 0) out vec4 uFragColor;\n"
+        "layout(location = 0) in flat uint tex_ind;\n"
+        "void main(){\n"
+        "   uFragColor = texture(tex[tex_ind], vec2(0, 0));\n"
+        "}\n";
+
+    struct TestCase {
+        char const *vertex_source;
+        char const *fragment_source;
+        bool debug;
+        char const *expected_error;
+    };
+
+    const std::array<TestCase, 4> tests = {{
+        {vsSource_vert, fsSource_vert, false, "Index of 25 used to index descriptor array of length 6."},
+        {vsSource_frag, fsSource_frag, false, "Index of 25 used to index descriptor array of length 6."},
+        {vsSource_vert, fsSource_vert, true, "gl_Position += 1e-30 * texture(tex[uniform_index_buffer.tex_index[0]], vec2(0, 0));"},
+        {vsSource_frag, fsSource_frag, true, "uFragColor = texture(tex[tex_ind], vec2(0, 0));"},
+    }};
+
+    VkViewport viewport = m_viewports[0];
+    VkRect2D scissors = m_scissors[0];
+
+    VkSubmitInfo submit_info = {};
+    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers = &m_commandBuffer->handle();
+
+    for (const auto &iter : tests) {
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, iter.expected_error);
+        VkShaderObj vs(m_device, iter.vertex_source, VK_SHADER_STAGE_VERTEX_BIT, this, "main", iter.debug);
+        VkShaderObj fs(m_device, iter.fragment_source, VK_SHADER_STAGE_FRAGMENT_BIT, this, "main", iter.debug);
+        VkPipelineObj pipe(m_device);
+        pipe.AddShader(&vs);
+        pipe.AddShader(&fs);
+        pipe.AddDefaultColorAttachment();
+        VkResult err = pipe.CreateVKPipeline(pipeline_layout.handle(), renderPass());
+        ASSERT_VK_SUCCESS(err);
+        m_commandBuffer->begin();
+        m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+        vkCmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
+        vkCmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
+                                &ds.set_, 0, nullptr);
+        vkCmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
+        vkCmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissors);
+        vkCmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+        vkCmdEndRenderPass(m_commandBuffer->handle());
+        m_commandBuffer->end();
+        vkQueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+        vkQueueWaitIdle(m_device->m_queue);
+        m_errorMonitor->VerifyFound();
+    }
+    return;
 }
 
 TEST_F(VkLayerTest, InvalidMemoryAliasing) {
