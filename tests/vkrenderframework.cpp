@@ -264,7 +264,7 @@ bool VkRenderFramework::DeviceCanDraw() {
     return pixels[0][0] == 0x20202020;
 }
 
-void VkRenderFramework::InitFramework(PFN_vkDebugReportCallbackEXT dbgFunction, void *userData) {
+void VkRenderFramework::InitFramework(PFN_vkDebugReportCallbackEXT dbgFunction, void *userData, void *instance_pnext) {
     // Only enable device profile layer by default if devsim is not enabled
     if (!VkTestFramework::m_devsim_layer && InstanceLayerSupported("VK_LAYER_LUNARG_device_profile_api")) {
         m_instance_layer_names.push_back("VK_LAYER_LUNARG_device_profile_api");
@@ -297,7 +297,7 @@ void VkRenderFramework::InitFramework(PFN_vkDebugReportCallbackEXT dbgFunction, 
     VkResult U_ASSERT_ONLY err;
 
     instInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-    instInfo.pNext = NULL;
+    instInfo.pNext = instance_pnext;
     instInfo.pApplicationInfo = &app_info;
     instInfo.enabledLayerCount = m_instance_layer_names.size();
     instInfo.ppEnabledLayerNames = m_instance_layer_names.data();
@@ -1352,7 +1352,7 @@ VkConstantBufferObj::VkConstantBufferObj(VkDeviceObj *device, VkDeviceSize alloc
 VkPipelineShaderStageCreateInfo const &VkShaderObj::GetStageCreateInfo() const { return m_stage_info; }
 
 VkShaderObj::VkShaderObj(VkDeviceObj *device, const char *shader_code, VkShaderStageFlagBits stage, VkRenderFramework *framework,
-                         char const *name) {
+                         char const *name, bool debug) {
     VkResult U_ASSERT_ONLY err = VK_SUCCESS;
     std::vector<unsigned int> spv;
     VkShaderModuleCreateInfo moduleCreateInfo;
@@ -1369,7 +1369,7 @@ VkShaderObj::VkShaderObj(VkDeviceObj *device, const char *shader_code, VkShaderS
     moduleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
     moduleCreateInfo.pNext = nullptr;
 
-    framework->GLSLtoSPV(stage, shader_code, spv);
+    framework->GLSLtoSPV(stage, shader_code, spv, debug);
     moduleCreateInfo.pCode = spv.data();
     moduleCreateInfo.codeSize = spv.size() * sizeof(unsigned int);
     moduleCreateInfo.flags = 0;

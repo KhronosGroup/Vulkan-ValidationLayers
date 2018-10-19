@@ -67,7 +67,8 @@ class VkTestFramework : public ::testing::Test {
     static void InitArgs(int *argc, char *argv[]);
     static void Finish();
 
-    bool GLSLtoSPV(const VkShaderStageFlagBits shader_type, const char *pshader, std::vector<unsigned int> &spv);
+    bool GLSLtoSPV(const VkShaderStageFlagBits shader_type, const char *pshader, std::vector<unsigned int> &spv,
+                   bool debug = false);
     bool ASMtoSPV(const spv_target_env target_env, const uint32_t options, const char *pasm, std::vector<unsigned int> &spv);
     static bool m_canonicalize_spv;
     static bool m_strip_spv;

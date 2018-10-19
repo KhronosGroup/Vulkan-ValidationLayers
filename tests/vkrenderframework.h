@@ -94,7 +94,7 @@ class VkRenderFramework : public VkTestFramework {
     void InitRenderTarget(VkImageView *dsBinding);
     void InitRenderTarget(uint32_t targets, VkImageView *dsBinding);
     void DestroyRenderTarget();
-    void InitFramework(PFN_vkDebugReportCallbackEXT = NULL, void *userData = NULL);
+    void InitFramework(PFN_vkDebugReportCallbackEXT = NULL, void *userData = NULL, void *instance_pnext = NULL);
 
     void ShutdownFramework();
     void GetPhysicalDeviceFeatures(VkPhysicalDeviceFeatures *features);
@@ -404,7 +404,7 @@ class VkDescriptorSetObj : public vk_testing::DescriptorPool {
 class VkShaderObj : public vk_testing::ShaderModule {
    public:
     VkShaderObj(VkDeviceObj *device, const char *shaderText, VkShaderStageFlagBits stage, VkRenderFramework *framework,
-                char const *name = "main");
+                char const *name = "main", bool debug = false);
     VkShaderObj(VkDeviceObj *device, const std::string spv_source, VkShaderStageFlagBits stage, VkRenderFramework *framework,
                 char const *name = "main");
     VkPipelineShaderStageCreateInfo const &GetStageCreateInfo() const;
