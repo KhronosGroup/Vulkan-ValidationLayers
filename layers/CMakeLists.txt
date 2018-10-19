@@ -40,11 +40,6 @@ elseif(UNIX AND NOT APPLE) # i.e. Linux
     if(BUILD_WSI_WAYLAND_SUPPORT)
         add_definitions(-DVK_USE_PLATFORM_WAYLAND_KHR -DVK_USE_PLATFORM_WAYLAND_KHX)
     endif()
-
-    if(BUILD_WSI_MIR_SUPPORT)
-        add_definitions(-DVK_USE_PLATFORM_MIR_KHR -DVK_USE_PLATFORM_MIR_KHX)
-        include_directories(${MIR_INCLUDE_DIR})
-    endif()
 else()
     message(FATAL_ERROR "Unsupported Platform!")
 endif()
