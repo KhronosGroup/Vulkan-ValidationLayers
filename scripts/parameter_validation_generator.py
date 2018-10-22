@@ -710,14 +710,14 @@ class ParameterValidationOutputGenerator(OutputGenerator):
     def genVkStructureType(self, typename):
         # Add underscore between lowercase then uppercase
         value = re.sub('([a-z0-9])([A-Z])', r'\1_\2', typename)
+        value = value.replace('ASTCDecode', 'ASTC_Decode')
         value = value.replace('D3_D12', 'D3D12')
-        value = value.replace('ASTCDecode', 'ASTC_Decode')
         value = value.replace('Device_IDProp', 'Device_ID_Prop')
-        value = value.replace('LODGather', 'LOD_Gather')
-        value = value.replace('Features2', 'FEATURES_2')
-        value = value.replace('e16_Bit', 'E_16BIT')
         value = value.replace('e8_Bit', 'E_8BIT')
-        value = value.replace('ASTCDecode', 'ASTC_Decode')
+        value = value.replace('e16_Bit', 'E_16BIT')
+        value = value.replace('Features2', 'FEATURES_2')
+        value = value.replace('LODGather', 'LOD_Gather')
+        value = value.replace('PCIBus', 'PCI_Bus')
         # Change to uppercase
         value = value.upper()
         # Add STRUCTURE_TYPE_
