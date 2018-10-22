@@ -4875,9 +4875,9 @@ TEST_F(VkLayerTest, InvalidSecondaryCommandBufferBarrier) {
     };
     VkSubpassDependency dep = {0,
                                0,
-                               VK_PIPELINE_STAGE_HOST_BIT,
                                VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-                               VK_ACCESS_HOST_WRITE_BIT,
+                               VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                               VK_ACCESS_SHADER_WRITE_BIT,
                                VK_ACCESS_SHADER_WRITE_BIT,
                                VK_DEPENDENCY_BY_REGION_BIT};
     VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 1, attach, 1, subpasses, 1, &dep};
@@ -4931,7 +4931,7 @@ TEST_F(VkLayerTest, InvalidSecondaryCommandBufferBarrier) {
     vkBeginCommandBuffer(secondary.handle(), &cbbi);
     VkImageMemoryBarrier img_barrier = {};
     img_barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-    img_barrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT;
+    img_barrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
     img_barrier.dstAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
     img_barrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     img_barrier.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -4943,7 +4943,7 @@ TEST_F(VkLayerTest, InvalidSecondaryCommandBufferBarrier) {
     img_barrier.subresourceRange.baseMipLevel = 0;
     img_barrier.subresourceRange.layerCount = 1;
     img_barrier.subresourceRange.levelCount = 1;
-    vkCmdPipelineBarrier(secondary.handle(), VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+    vkCmdPipelineBarrier(secondary.handle(), VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
                          VK_DEPENDENCY_BY_REGION_BIT, 0, nullptr, 0, nullptr, 1, &img_barrier);
     secondary.end();
 
@@ -5303,9 +5303,9 @@ TEST_F(VkPositiveLayerTest, SecondaryCommandBufferBarrier) {
     };
     VkSubpassDependency dep = {0,
                                0,
-                               VK_PIPELINE_STAGE_HOST_BIT,
                                VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-                               VK_ACCESS_HOST_WRITE_BIT,
+                               VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                               VK_ACCESS_SHADER_WRITE_BIT,
                                VK_ACCESS_SHADER_WRITE_BIT,
                                VK_DEPENDENCY_BY_REGION_BIT};
     VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 1, attach, 1, subpasses, 1, &dep};
@@ -5357,13 +5357,13 @@ TEST_F(VkPositiveLayerTest, SecondaryCommandBufferBarrier) {
     VkMemoryBarrier mem_barrier = {};
     mem_barrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
     mem_barrier.pNext = NULL;
-    mem_barrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT;
+    mem_barrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
     mem_barrier.dstAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
-    vkCmdPipelineBarrier(secondary.handle(), VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+    vkCmdPipelineBarrier(secondary.handle(), VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
                          VK_DEPENDENCY_BY_REGION_BIT, 1, &mem_barrier, 0, nullptr, 0, nullptr);
     VkImageMemoryBarrier img_barrier = {};
     img_barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-    img_barrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT;
+    img_barrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
     img_barrier.dstAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
     img_barrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     img_barrier.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -5375,7 +5375,7 @@ TEST_F(VkPositiveLayerTest, SecondaryCommandBufferBarrier) {
     img_barrier.subresourceRange.baseMipLevel = 0;
     img_barrier.subresourceRange.layerCount = 1;
     img_barrier.subresourceRange.levelCount = 1;
-    vkCmdPipelineBarrier(secondary.handle(), VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+    vkCmdPipelineBarrier(secondary.handle(), VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
                          VK_DEPENDENCY_BY_REGION_BIT, 0, nullptr, 0, nullptr, 1, &img_barrier);
     secondary.end();
 
@@ -5591,18 +5591,20 @@ TEST_F(VkLayerTest, CreateRenderPassAttachments) {
     }
     // Test sample count mismatch between color buffers
     attachments[subpass.pColorAttachments[1].attachment].samples = VK_SAMPLE_COUNT_8_BIT;
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkAttachmentDescription-samples-parameter");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkSubpassDescription-pColorAttachments-01417");
     err = vkCreateRenderPass(m_device->device(), &rpci, nullptr, &rp);
     m_errorMonitor->VerifyFound();
     if (err == VK_SUCCESS) vkDestroyRenderPass(m_device->device(), rp, nullptr);
     attachments[subpass.pColorAttachments[1].attachment].samples = attachments[subpass.pColorAttachments[0].attachment].samples;
     // Test sample count mismatch between color buffers and depth buffer
     attachments[subpass.pDepthStencilAttachment->attachment].samples = VK_SAMPLE_COUNT_8_BIT;
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkAttachmentDescription-samples-parameter");
+	subpass.colorAttachmentCount = 1;
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkSubpassDescription-pDepthStencilAttachment-01418");
     err = vkCreateRenderPass(m_device->device(), &rpci, nullptr, &rp);
     m_errorMonitor->VerifyFound();
     if (err == VK_SUCCESS) vkDestroyRenderPass(m_device->device(), rp, nullptr);
     attachments[subpass.pDepthStencilAttachment->attachment].samples = attachments[subpass.pColorAttachments[0].attachment].samples;
+	subpass.colorAttachmentCount = (uint32_t)color.size();
     // Test resolve attachment with UNUSED color attachment
     color[0].attachment = VK_ATTACHMENT_UNUSED;
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkSubpassDescription-pResolveAttachments-00847");
@@ -5612,13 +5614,15 @@ TEST_F(VkLayerTest, CreateRenderPassAttachments) {
     color[0].attachment = 1;
     // Test resolve from a single-sampled color attachment
     attachments[subpass.pColorAttachments[0].attachment].samples = VK_SAMPLE_COUNT_1_BIT;
-    attachments[subpass.pColorAttachments[1].attachment].samples = VK_SAMPLE_COUNT_1_BIT;  // avoid mismatch (00337)
+	subpass.colorAttachmentCount = 1;           // avoid mismatch (00337), and avoid double report
+	subpass.pDepthStencilAttachment = nullptr;  // avoid mismatch (01418)
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkSubpassDescription-pResolveAttachments-00848");
     err = vkCreateRenderPass(m_device->device(), &rpci, nullptr, &rp);
     m_errorMonitor->VerifyFound();
     if (err == VK_SUCCESS) vkDestroyRenderPass(m_device->device(), rp, nullptr);
     attachments[subpass.pColorAttachments[0].attachment].samples = VK_SAMPLE_COUNT_4_BIT;
-    attachments[subpass.pColorAttachments[1].attachment].samples = VK_SAMPLE_COUNT_4_BIT;
+	subpass.colorAttachmentCount = (uint32_t)color.size();  // avoid mismatch (00337), and avoid double report
+	subpass.pDepthStencilAttachment = &depth;
     // Test resolve to a multi-sampled resolve attachment
     attachments[subpass.pResolveAttachments[0].attachment].samples = VK_SAMPLE_COUNT_4_BIT;
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkSubpassDescription-pResolveAttachments-00849");

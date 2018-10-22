@@ -62,6 +62,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVK_USE_PLATFORM_ANDROID_KHR \
                      -fvisibility=hidden")
 add_library(VkLayer_core_validation SHARED
         ${SRC_DIR}/layers/core_validation.cpp
+        ${SRC_DIR}/layers/convert_to_renderpass2.cpp
         ${SRC_DIR}/layers/descriptor_sets.cpp
         ${SRC_DIR}/layers/buffer_validation.cpp
         ${SRC_DIR}/layers/shader_validation.cpp
