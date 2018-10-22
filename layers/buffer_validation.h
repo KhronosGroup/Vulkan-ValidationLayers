@@ -102,11 +102,12 @@ void SetImageViewLayout(layer_data *device_data, GLOBAL_CB_NODE *pCB, VkImageVie
 void SetImageViewLayout(layer_data *device_data, GLOBAL_CB_NODE *cb_node, IMAGE_VIEW_STATE *view_state,
                         const VkImageLayout &layout);
 
-bool VerifyFramebufferAndRenderPassLayouts(layer_data *dev_data, GLOBAL_CB_NODE *pCB, const VkRenderPassBeginInfo *pRenderPassBegin,
+bool VerifyFramebufferAndRenderPassLayouts(layer_data *dev_data, RenderPassCreateVersion rp_version, GLOBAL_CB_NODE *pCB,
+                                           const VkRenderPassBeginInfo *pRenderPassBegin,
                                            const FRAMEBUFFER_STATE *framebuffer_state);
 
 void TransitionAttachmentRefLayout(layer_data *dev_data, GLOBAL_CB_NODE *pCB, FRAMEBUFFER_STATE *pFramebuffer,
-                                   VkAttachmentReference ref);
+                                   const safe_VkAttachmentReference2KHR &ref);
 
 void TransitionSubpassLayouts(layer_data *, GLOBAL_CB_NODE *, const RENDER_PASS_STATE *, const int, FRAMEBUFFER_STATE *);
 
@@ -182,10 +183,12 @@ void UpdateCmdBufImageLayouts(layer_data *device_data, GLOBAL_CB_NODE *pCB);
 bool ValidateMaskBitsFromLayouts(core_validation::layer_data *device_data, VkCommandBuffer cmdBuffer,
                                  const VkAccessFlags &accessMask, const VkImageLayout &layout, const char *type);
 
-bool ValidateLayoutVsAttachmentDescription(const debug_report_data *report_data, const VkImageLayout first_layout,
-                                           const uint32_t attachment, const VkAttachmentDescription &attachment_description);
+bool ValidateLayoutVsAttachmentDescription(const debug_report_data *report_data, RenderPassCreateVersion rp_version,
+                                           const VkImageLayout first_layout, const uint32_t attachment,
+                                           const VkAttachmentDescription2KHR &attachment_description);
 
-bool ValidateLayouts(const core_validation::layer_data *dev_data, VkDevice device, const VkRenderPassCreateInfo *pCreateInfo);
+bool ValidateLayouts(const core_validation::layer_data *dev_data, RenderPassCreateVersion rp_version, VkDevice device,
+                     const VkRenderPassCreateInfo2KHR *pCreateInfo);
 
 bool ValidateMapImageLayouts(core_validation::layer_data *dev_data, VkDevice device, DEVICE_MEM_INFO const *mem_info,
                              VkDeviceSize offset, VkDeviceSize end_offset);
@@ -211,8 +214,8 @@ bool PreCallValidateCreateBufferView(const layer_data *dev_data, const VkBufferV
 
 void PostCallRecordCreateBufferView(layer_data *device_data, const VkBufferViewCreateInfo *pCreateInfo, VkBufferView *pView);
 
-bool ValidateImageAspectMask(layer_data *device_data, VkImage image, VkFormat format, VkImageAspectFlags aspect_mask,
-                             const char *func_name);
+bool ValidateImageAspectMask(const layer_data *device_data, VkImage image, VkFormat format, VkImageAspectFlags aspect_mask,
+                             const char *func_name, const char *vuid = "VUID-VkImageSubresource-aspectMask-parameter");
 
 bool ValidateCreateImageViewSubresourceRange(const layer_data *device_data, const IMAGE_STATE *image_state,
                                              bool is_imageview_2d_type, const VkImageSubresourceRange &subresourceRange);

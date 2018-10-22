@@ -29,6 +29,7 @@
 #include "vk_layer_logging.h"
 #include "vk_object_types.h"
 #include "vk_extension_helper.h"
+#include "convert_to_renderpass2.h"
 #include <atomic>
 #include <functional>
 #include <map>
@@ -413,12 +414,13 @@ struct DAGNode {
 
 struct RENDER_PASS_STATE : public BASE_NODE {
     VkRenderPass renderPass;
-    safe_VkRenderPassCreateInfo createInfo;
+    safe_VkRenderPassCreateInfo2KHR createInfo;
     std::vector<std::vector<uint32_t>> self_dependencies;
     std::vector<DAGNode> subpassToNode;
     std::unordered_map<uint32_t, bool> attachment_first_read;
 
-    RENDER_PASS_STATE(VkRenderPassCreateInfo const *pCreateInfo) : createInfo(pCreateInfo) {}
+    RENDER_PASS_STATE(VkRenderPassCreateInfo2KHR const *pCreateInfo) : createInfo(pCreateInfo) {}
+    RENDER_PASS_STATE(VkRenderPassCreateInfo const *pCreateInfo) { ConvertVkRenderPassCreateInfoToV2KHR(pCreateInfo, &createInfo); }
 };
 
 // vkCmd tracking -- complete as of header 1.0.68
@@ -429,6 +431,7 @@ enum CMD_TYPE {
     CMD_NONE,
     CMD_BEGINQUERY,
     CMD_BEGINRENDERPASS,
+    CMD_BEGINRENDERPASS2KHR,
     CMD_BINDDESCRIPTORSETS,
     CMD_BINDINDEXBUFFER,
     CMD_BINDPIPELINE,
@@ -463,9 +466,11 @@ enum CMD_TYPE {
     CMD_ENDCOMMANDBUFFER,  // Should be the last command in any RECORDED cmd buffer
     CMD_ENDQUERY,
     CMD_ENDRENDERPASS,
+    CMD_ENDRENDERPASS2KHR,
     CMD_EXECUTECOMMANDS,
     CMD_FILLBUFFER,
     CMD_NEXTSUBPASS,
+    CMD_NEXTSUBPASS2KHR,
     CMD_PIPELINEBARRIER,
     CMD_PROCESSCOMMANDSNVX,
     CMD_PUSHCONSTANTS,
@@ -1100,6 +1105,8 @@ struct DeviceFeatures {
     VkPhysicalDeviceMeshShaderFeaturesNV mesh_shader;
     VkPhysicalDeviceInlineUniformBlockFeaturesEXT inline_uniform_block;
 };
+
+enum RenderPassCreateVersion { RENDER_PASS_VERSION_1 = 0, RENDER_PASS_VERSION_2 = 1 };
 
 // Fwd declarations of layer_data and helpers to look-up/validate state from layer_data maps
 namespace core_validation {
