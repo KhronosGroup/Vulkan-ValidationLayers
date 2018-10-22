@@ -11758,13 +11758,9 @@ static bool PreCallValidateQueueBindSparse(layer_data *dev_data, VkQueue queue, 
                                " without first calling vkGetImageSparseMemoryRequirements[2KHR]() to retrieve requirements.",
                                HandleToUint64(image_state->image));
             }
-            for (uint32_t j = 0; j < image_bind.bindCount; ++j) {
-                if (image_bind.pBinds[j].flags & VK_IMAGE_ASPECT_METADATA_BIT) {
-                    image_state->sparse_metadata_bound = true;
-                }
-            }
         }
         for (uint32_t i = 0; i < bindInfo.imageOpaqueBindCount; ++i) {
+            const auto &image_opaque_bind = bindInfo.pImageOpaqueBinds[i];
             auto image_state = GetImageState(dev_data, bindInfo.pImageOpaqueBinds[i].image);
             if (!image_state)
                 continue;  // Param/Object validation should report image_bind.image handles being invalid, so just skip here.
@@ -11777,15 +11773,21 @@ static bool PreCallValidateQueueBindSparse(layer_data *dev_data, VkQueue queue, 
                                " without first calling vkGetImageSparseMemoryRequirements[2KHR]() to retrieve requirements.",
                                HandleToUint64(image_state->image));
             }
+            for (uint32_t j = 0; j < image_opaque_bind.bindCount; ++j) {
+                if (image_opaque_bind.pBinds[j].flags & VK_SPARSE_MEMORY_BIND_METADATA_BIT) {
+                    image_state->sparse_metadata_bound = true;
+                }
+            }
         }
         for (const auto &sparse_image_state : sparse_images) {
             if (sparse_image_state->sparse_metadata_required && !sparse_image_state->sparse_metadata_bound) {
                 // Warn if sparse image binding metadata required for image with sparse binding, but metadata not bound
-                return log_msg(dev_data->report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
-                               HandleToUint64(sparse_image_state->image), kVUID_Core_MemTrack_InvalidState,
-                               "vkQueueBindSparse(): Binding sparse memory to image 0x%" PRIx64
-                               " which requires a metadata aspect but no binding with VK_IMAGE_ASPECT_METADATA_BIT set was made.",
-                               HandleToUint64(sparse_image_state->image));
+                return log_msg(
+                    dev_data->report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
+                    HandleToUint64(sparse_image_state->image), kVUID_Core_MemTrack_InvalidState,
+                    "vkQueueBindSparse(): Binding sparse memory to image 0x%" PRIx64
+                    " which requires a metadata aspect but no binding with VK_SPARSE_MEMORY_BIND_METADATA_BIT set was made.",
+                    HandleToUint64(sparse_image_state->image));
             }
         }
     }
