@@ -146,6 +146,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             'vkDestroyDebugReportCallbackEXT',
             'vkCreateCommandPool',
             'vkCreateRenderPass',
+            'vkCreateRenderPass2KHR',
             'vkDestroyRenderPass',
             'vkCreateDebugUtilsMessengerEXT',
             'vkDestroyDebugUtilsMessengerEXT',
