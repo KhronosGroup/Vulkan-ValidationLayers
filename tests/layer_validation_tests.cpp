@@ -15827,9 +15827,6 @@ TEST_F(VkLayerTest, DSBufferInfoErrors) {
 
     VkDescriptorBufferInfo buff_info = {};
     buff_info.buffer = buffer;
-    // Cause error due to offset out of range
-    buff_info.offset = buff_ci.size;
-    buff_info.range = VK_WHOLE_SIZE;
     VkWriteDescriptorSet descriptor_write = {};
     descriptor_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
     descriptor_write.dstBinding = 0;
@@ -15840,27 +15837,28 @@ TEST_F(VkLayerTest, DSBufferInfoErrors) {
 
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     descriptor_write.dstSet = ds.set_;
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkDescriptorBufferInfo-offset-00340");
 
-    vkUpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+    auto do_test = [&](const char *desired_failure) {
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, desired_failure);
+        vkUpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+        m_errorMonitor->VerifyFound();
+    };
 
-    m_errorMonitor->VerifyFound();
+    // Cause error due to offset out of range
+    buff_info.offset = buff_ci.size;
+    buff_info.range = VK_WHOLE_SIZE;
+    do_test("VUID-VkDescriptorBufferInfo-offset-00340");
+
     // Now cause error due to range of 0
     buff_info.offset = 0;
     buff_info.range = 0;
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkDescriptorBufferInfo-range-00341");
+    do_test("VUID-VkDescriptorBufferInfo-range-00341");
 
-    vkUpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
-
-    m_errorMonitor->VerifyFound();
     // Now cause error due to range exceeding buffer size - offset
     buff_info.offset = 0;
     buff_info.range = buff_ci.size + 1;
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkDescriptorBufferInfo-range-00342");
+    do_test("VUID-VkDescriptorBufferInfo-range-00342");
 
-    vkUpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
-
-    m_errorMonitor->VerifyFound();
     vkFreeMemory(m_device->device(), mem, NULL);
     vkDestroyBuffer(m_device->device(), buffer, NULL);
 }
