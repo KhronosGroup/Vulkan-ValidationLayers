@@ -1100,6 +1100,7 @@ struct DeviceFeatures {
     VkPhysicalDeviceShadingRateImageFeaturesNV shading_rate_image;
     VkPhysicalDeviceMeshShaderFeaturesNV mesh_shader;
     VkPhysicalDeviceInlineUniformBlockFeaturesEXT inline_uniform_block;
+    VkPhysicalDeviceTransformFeedbackFeaturesEXT transform_feedback_features;
 };
 
 // Fwd declarations of layer_data and helpers to look-up/validate state from layer_data maps
