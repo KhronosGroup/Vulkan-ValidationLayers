@@ -135,7 +135,7 @@ script:
       pushd build-android
       ./update_external_sources_android.sh --abi $ANDROID_ABI --no-build
       ./android-generate.sh
-      USE_CCACHE=1 NDK_CCACHE=ccache ndk-build APP_ABI=$ANDROID_ABI -j $core_count
+      USE_CCACHE=1 NDK_CCACHE=ccache travis_wait 30 ndk-build APP_ABI=$ANDROID_ABI -j $core_count
       popd
     fi
   - |
