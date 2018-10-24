@@ -266,6 +266,8 @@ struct layer_data {
     counter<VkInstance> c_VkInstance;
     counter<VkQueue> c_VkQueue;
 #ifdef DISTINCT_NONDISPATCHABLE_HANDLES
+    // Special entry to allow tracking of command pool Reset and Destroy
+    counter<VkCommandPool> c_VkCommandPoolContents;
     counter<VkBuffer> c_VkBuffer;
     counter<VkBufferView> c_VkBufferView;
     counter<VkCommandPool> c_VkCommandPool;
@@ -299,6 +301,9 @@ struct layer_data {
     counter<VkDebugUtilsMessengerEXT> c_VkDebugUtilsMessengerEXT;
     counter<VkAccelerationStructureNVX> c_VkAccelerationStructureNVX;
 #else   // DISTINCT_NONDISPATCHABLE_HANDLES
+    // Special entry to allow tracking of command pool Reset and Destroy
+    counter<uint64_t> c_VkCommandPoolContents;
+
     counter<uint64_t> c_uint64_t;
 #endif  // DISTINCT_NONDISPATCHABLE_HANDLES
 
@@ -314,6 +319,7 @@ struct layer_data {
           c_VkDevice("VkDevice", VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT),
           c_VkInstance("VkInstance", VK_DEBUG_REPORT_OBJECT_TYPE_INSTANCE_EXT),
           c_VkQueue("VkQueue", VK_DEBUG_REPORT_OBJECT_TYPE_QUEUE_EXT),
+          c_VkCommandPoolContents("VkCommandPool", VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_POOL_EXT),
 #ifdef DISTINCT_NONDISPATCHABLE_HANDLES
           c_VkBuffer("VkBuffer", VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT),
           c_VkBufferView("VkBufferView", VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_VIEW_EXT),
@@ -432,7 +438,10 @@ static void startReadObject(struct layer_data *my_data, VkCommandBuffer object) 
     std::unique_lock<std::mutex> lock(command_pool_lock);
     VkCommandPool pool = command_pool_map[object];
     lock.unlock();
-    startReadObject(my_data, pool);
+    // We set up a read guard against the "Contents" counter to catch conflict vs. vkResetCommandPool and vkDestroyCommandPool
+    // while *not* establishing a read guard against the command pool counter itself to avoid false postives for
+    // non-externally sync'd command buffers
+    my_data->c_VkCommandPoolContents.startRead(my_data->report_data, pool);
     my_data->c_VkCommandBuffer.startRead(my_data->report_data, object);
 }
 static void finishReadObject(struct layer_data *my_data, VkCommandBuffer object) {
@@ -440,6 +449,6 @@ static void finishReadObject(struct layer_data *my_data, VkCommandBuffer object)
     std::unique_lock<std::mutex> lock(command_pool_lock);
     VkCommandPool pool = command_pool_map[object];
     lock.unlock();
-    finishReadObject(my_data, pool);
+    my_data->c_VkCommandPoolContents.finishRead(pool);
 }
 #endif  // THREADING_H

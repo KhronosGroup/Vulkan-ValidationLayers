@@ -376,6 +376,8 @@ class ThreadOutputGenerator(OutputGenerator):
             'vkDestroyInstance',
             'vkAllocateCommandBuffers',
             'vkFreeCommandBuffers',
+            'vkResetCommandPool',
+            'vkDestroyCommandPool',
             'vkCreateDebugReportCallbackEXT',
             'vkDestroyDebugReportCallbackEXT',
             'vkAllocateDescriptorSets',
