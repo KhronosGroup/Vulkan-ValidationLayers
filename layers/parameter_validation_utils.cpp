@@ -2131,11 +2131,16 @@ bool pv_vkCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache
                     }
                 }
 
+                const VkStructureType allowed_structs_VkPipelineColorBlendStateCreateInfo[] = {
+                    VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_ADVANCED_STATE_CREATE_INFO_EXT};
+
                 if (pCreateInfos[i].pColorBlendState != nullptr && uses_color_attachment) {
                     skip |= validate_struct_pnext(
                         report_data, "vkCreateGraphicsPipelines",
-                        ParameterName("pCreateInfos[%i].pColorBlendState->pNext", ParameterName::IndexVector{i}), NULL,
-                        pCreateInfos[i].pColorBlendState->pNext, 0, NULL, GeneratedHeaderVersion,
+                        ParameterName("pCreateInfos[%i].pColorBlendState->pNext", ParameterName::IndexVector{i}),
+                        "VkPipelineColorBlendAdvancedStateCreateInfoEXT", pCreateInfos[i].pColorBlendState->pNext,
+                        ARRAY_SIZE(allowed_structs_VkPipelineColorBlendStateCreateInfo),
+                        allowed_structs_VkPipelineColorBlendStateCreateInfo, GeneratedHeaderVersion,
                         "VUID-VkPipelineColorBlendStateCreateInfo-pNext-pNext");
 
                     skip |= validate_reserved_flags(
