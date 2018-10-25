@@ -20,8 +20,6 @@
  * Author: Tobin Ehlis <tobin@lunarg.com>
  */
 
-#define VALIDATION_ERROR_MAP_IMPL
-
 #include "object_tracker.h"
 
 namespace object_tracker {

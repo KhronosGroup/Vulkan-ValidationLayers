@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2017 The Khronos Group Inc.
- * Copyright (c) 2015-2017 Valve Corporation
- * Copyright (c) 2015-2017 LunarG, Inc.
+/* Copyright (c) 2015-2018 The Khronos Group Inc.
+ * Copyright (c) 2015-2018 Valve Corporation
+ * Copyright (c) 2015-2018 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
  * Author: Courtney Goeltzenleuchter <courtney@LunarG.com>
  * Author: Tobin Ehlis <tobin@lunarg.com>
  * Author: Mark Young <marky@lunarg.com>
+ * Author: Dave Houlton <daveh@lunarg.com>
  *
  */
 
@@ -898,13 +899,24 @@ static inline bool log_msg(const debug_report_data *debug_data, VkFlags msg_flag
 
     // Append the spec error text to the error message, unless it's an UNASSIGNED or UNDEFINED vuid
     if ((vuid_text.find("UNASSIGNED-") == std::string::npos) && (vuid_text.find(kVUIDUndefined) == std::string::npos)) {
-        if (vuid_to_error_text_map.find(vuid_text) == vuid_to_error_text_map.end()) {
+        // Linear search makes no assumptions about the layout of the string table
+        // This is not fast, but it does not need to be at this point in the error reporting path
+        uint32_t num_vuids = sizeof(vuid_spec_text) / sizeof(vuid_spec_text_pair);
+        const char *spec_text = nullptr;
+        for (uint32_t i = 0; i < num_vuids; i++) {
+            if (0 == strcmp(vuid_text.c_str(), vuid_spec_text[i].vuid)) {
+                spec_text = vuid_spec_text[i].spec_text;
+                break;
+            }
+        }
+
+        if (nullptr == spec_text) {
             // If this happens, you've hit a VUID string that isn't defined in the spec's json file
             // Try running 'vk_validation_stats -c' to look for invalid VUID strings in the repo code
             assert(0);
         } else {
             str_plus_spec_text += " The Vulkan spec states: ";
-            str_plus_spec_text += vuid_to_error_text_map[vuid_text];
+            str_plus_spec_text += spec_text;
         }
     }
 

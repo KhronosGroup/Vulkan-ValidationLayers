@@ -1,8 +1,7 @@
-/*
- * Vulkan
- *
- * Copyright (C) 2015 Valve, Inc.
- * Copyright (C) 2016 Google, Inc.
+/* Copyright (c) 2015-2018 The Khronos Group Inc.
+ * Copyright (c) 2015-2018 Valve Corporation
+ * Copyright (c) 2015-2018 LunarG, Inc.
+ * Copyright (C) 2015-2018 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,8 +20,6 @@
 #include <string.h>
 #include <unordered_map>
 #include <list>
-
-#define VALIDATION_ERROR_MAP_IMPL
 
 #include "vk_loader_platform.h"
 #include "vulkan/vk_layer.h"

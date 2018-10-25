@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2016 The Khronos Group Inc.
- * Copyright (c) 2015-2016 Valve Corporation
- * Copyright (c) 2015-2016 LunarG, Inc.
- * Copyright (C) 2015-2016 Google Inc.
+/* Copyright (c) 2015-2018 The Khronos Group Inc.
+ * Copyright (c) 2015-2018 Valve Corporation
+ * Copyright (c) 2015-2018 LunarG, Inc.
+ * Copyright (C) 2015-2018 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,6 @@
 #include "hash_vk_types.h"
 #include "vk_safe_struct.h"
 #include "vulkan/vulkan.h"
-#include "vk_validation_error_messages.h"
 #include "vk_layer_logging.h"
 #include "vk_object_types.h"
 #include "vk_extension_helper.h"
