@@ -3059,9 +3059,7 @@ void PreCallRecordCmdBlitImage(layer_data *device_data, GLOBAL_CB_NODE *cb_node,
     AddCommandBufferBindingImage(device_data, cb_node, dst_image_state);
 }
 
-// This validates that the initial layout specified in the command buffer for
-// the IMAGE is the same
-// as the global IMAGE layout
+// This validates that the initial layout specified in the command buffer for the IMAGE is the same as the global IMAGE layout
 bool ValidateCmdBufImageLayouts(layer_data *device_data, GLOBAL_CB_NODE *pCB,
                                 std::unordered_map<ImageSubresourcePair, IMAGE_LAYOUT_NODE> const &globalImageLayoutMap,
                                 std::unordered_map<ImageSubresourcePair, IMAGE_LAYOUT_NODE> &overlayLayoutMap) {
@@ -3079,17 +3077,21 @@ bool ValidateCmdBufImageLayouts(layer_data *device_data, GLOBAL_CB_NODE *pCB,
                     skip |= log_msg(
                         report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                         HandleToUint64(pCB->commandBuffer), kVUID_Core_DrawState_InvalidImageLayout,
-                        "Cannot submit cmd buffer using image (0x%" PRIx64
-                        ") [sub-resource: aspectMask 0x%X array layer %u, mip level %u], with layout %s when first use is %s.",
+                        "Submitted command buffer expects image 0x%" PRIx64
+                        " (subresource: aspectMask 0x%X array layer %u, mip level %u) to be in layout %s--instead, image 0x%" PRIx64
+                        "'s current layout is %s.",
                         HandleToUint64(cb_image_data.first.image), cb_image_data.first.subresource.aspectMask,
                         cb_image_data.first.subresource.arrayLayer, cb_image_data.first.subresource.mipLevel,
-                        string_VkImageLayout(imageLayout), string_VkImageLayout(cb_image_data.second.initialLayout));
+                        string_VkImageLayout(cb_image_data.second.initialLayout), HandleToUint64(cb_image_data.first.image),
+                        string_VkImageLayout(imageLayout));
                 } else {
-                    skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                                    HandleToUint64(pCB->commandBuffer), kVUID_Core_DrawState_InvalidImageLayout,
-                                    "Cannot submit cmd buffer using image (0x%" PRIx64 ") with layout %s when first use is %s.",
-                                    HandleToUint64(cb_image_data.first.image), string_VkImageLayout(imageLayout),
-                                    string_VkImageLayout(cb_image_data.second.initialLayout));
+                    skip |=
+                        log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                                HandleToUint64(pCB->commandBuffer), kVUID_Core_DrawState_InvalidImageLayout,
+                                "Submitted command buffer expects image 0x%" PRIx64 " to be in layout %s--instead, image 0x%" PRIx64
+                                "'s current layout is %s.",
+                                HandleToUint64(cb_image_data.first.image), string_VkImageLayout(cb_image_data.second.initialLayout),
+                                HandleToUint64(cb_image_data.first.image), string_VkImageLayout(imageLayout));
                 }
             }
             SetLayout(overlayLayoutMap, cb_image_data.first, cb_image_data.second.layout);

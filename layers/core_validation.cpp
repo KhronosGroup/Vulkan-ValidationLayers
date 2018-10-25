@@ -11157,7 +11157,7 @@ static bool PreCallValidateCmdExecuteCommands(layer_data *dev_data, GLOBAL_CB_NO
         }
         // Propagate layout transitions to the primary cmd buffer
         // Novel Valid usage: "UNASSIGNED-vkCmdExecuteCommands-commandBuffer-00001"
-        //  initial layout usage of secondary command buffers resources must match parent command buffer
+        // initial layout usage of secondary command buffers resources must match parent command buffer
         for (const auto &ilm_entry : sub_cb_state->imageLayoutMap) {
             auto cb_entry = cb_state->imageLayoutMap.find(ilm_entry.first);
             if (cb_entry != cb_state->imageLayoutMap.end()) {
@@ -11167,12 +11167,12 @@ static bool PreCallValidateCmdExecuteCommands(layer_data *dev_data, GLOBAL_CB_NO
                     const VkImageSubresource &subresource = ilm_entry.first.subresource;
                     log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                             HandleToUint64(pCommandBuffers[i]), "UNASSIGNED-vkCmdExecuteCommands-commandBuffer-00001",
-                            "%s: Cannot execute cmd buffer using image (0x%" PRIx64
-                            ") [sub-resource: aspectMask 0x%X "
-                            "array layer %u, mip level %u], with current layout %s when first use is %s.",
+                            "%s: Executed secondary command buffer using image 0x%" PRIx64
+                            " (subresource: aspectMask 0x%X array layer %u, mip level %u) which expects layout %s--instead, image "
+                            "0x%" PRIx64 "'s current layout is %s.",
                             "vkCmdExecuteCommands():", HandleToUint64(ilm_entry.first.image), subresource.aspectMask,
-                            subresource.arrayLayer, subresource.mipLevel, string_VkImageLayout(cb_entry->second.layout),
-                            string_VkImageLayout(ilm_entry.second.initialLayout));
+                            subresource.arrayLayer, subresource.mipLevel, string_VkImageLayout(ilm_entry.second.initialLayout),
+                            HandleToUint64(ilm_entry.first.image), string_VkImageLayout(cb_entry->second.layout));
                 }
             } else {
                 // Look for partial matches (in aspectMask), and update or create parent map entry in SetLayout
@@ -11185,12 +11185,12 @@ static bool PreCallValidateCmdExecuteCommands(layer_data *dev_data, GLOBAL_CB_NO
                         log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT,
                                 VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT, HandleToUint64(pCommandBuffers[i]),
                                 "UNASSIGNED-vkCmdExecuteCommands-commandBuffer-00001",
-                                "%s: Cannot execute cmd buffer using image (0x%" PRIx64
-                                ") [sub-resource: aspectMask 0x%X "
-                                "array layer %u, mip level %u], with current layout %s when first use is %s.",
+                                "%s: Executed secondary command buffer using image 0x%" PRIx64
+                                " (subresource: aspectMask 0x%X array layer %u, mip level %u) which expects layout %s--instead, "
+                                "image 0x%" PRIx64 "'s current layout is %s.",
                                 "vkCmdExecuteCommands():", HandleToUint64(ilm_entry.first.image), subresource.aspectMask,
-                                subresource.arrayLayer, subresource.mipLevel, string_VkImageLayout(node.layout),
-                                string_VkImageLayout(ilm_entry.second.initialLayout));
+                                subresource.arrayLayer, subresource.mipLevel, string_VkImageLayout(ilm_entry.second.initialLayout),
+                                HandleToUint64(ilm_entry.first.image), string_VkImageLayout(node.layout));
                     }
                 }
             }
