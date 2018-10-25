@@ -40,7 +40,6 @@
 #include "vk_layer_utils.h"
 #include "vulkan/vk_layer.h"
 #include "vk_dispatch_table_helper.h"
-#include "vk_validation_error_messages.h"
 #include "vk_extension_helper.h"
 
 namespace object_tracker {

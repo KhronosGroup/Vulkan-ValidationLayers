@@ -493,17 +493,16 @@ class OutputDatabase:
 // Disable auto-formatting for generated file
 // clang-format off
             
-#include <string>
-#include <unordered_map>
-            
 // Mapping from VUID string to the corresponding spec text
-#ifdef VALIDATION_ERROR_MAP_IMPL
-std::unordered_map<std::string, std::string> vuid_to_error_text_map {
+typedef struct _vuid_spec_text_pair {
+    const char * vuid;
+    const char * spec_text;
+} vuid_spec_text_pair;
+
+static const vuid_spec_text_pair vuid_spec_text[] = {
 """
         self.header_postamble = """};
-#else
-extern std::unordered_map<std::string, std::string> vuid_to_error_text_map;
-#endif"""
+"""
         self.spec_url = "https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html"
     
     def dump_txt(self):

@@ -1,7 +1,8 @@
 /*
- *
- * Copyright (C) 2017 Valve Corporation
- * Copyright (C) 2017 LunarG, Inc.
+ * Copyright (c) 2015-2018 The Khronos Group Inc.
+ * Copyright (c) 2015-2018 Valve Corporation
+ * Copyright (c) 2015-2018 LunarG, Inc.
+ * Copyright (C) 2015-2018 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,8 +25,6 @@
 #include <assert.h>
 #include <unordered_map>
 #include <mutex>
-
-#define VALIDATION_ERROR_MAP_IMPL
 
 #include "vk_layer_data.h"
 #include "vk_dispatch_table_helper.h"
