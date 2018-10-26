@@ -53,6 +53,7 @@ struct instance_layer_data {
     std::vector<VkDebugReportCallbackEXT> logging_callback;
     std::vector<VkDebugUtilsMessengerEXT> logging_messenger;
     VkLayerInstanceDispatchTable dispatch_table = {};
+    std::unordered_map<VkDisplayKHR, uint64_t> display_id_reverse_mapping;  // Reverse map display handles
 
     // The following are for keeping track of the temporary callbacks that can
     // be used in vkCreateInstance and vkDestroyInstance:
@@ -131,6 +132,26 @@ HandleType WrapNew(HandleType newlyCreatedHandle) {
     auto unique_id = global_unique_id++;
     unique_id_mapping[unique_id] = reinterpret_cast<uint64_t const &>(newlyCreatedHandle);
     return (HandleType)unique_id;
+}
+
+// Specialized handling for VkDisplayKHR. Adds an entry to enable reverse-lookup.
+// must hold lock!
+VkDisplayKHR WrapDisplay(VkDisplayKHR newlyCreatedHandle, instance_layer_data *map_data) {
+    auto unique_id = global_unique_id++;
+    unique_id_mapping[unique_id] = reinterpret_cast<uint64_t const &>(newlyCreatedHandle);
+    map_data->display_id_reverse_mapping[newlyCreatedHandle] = unique_id;
+    return (VkDisplayKHR)unique_id;
+}
+
+// VkDisplayKHR objects don't have a single point of creation, so we need to see
+// if one already exists in the map before creating another.
+// must hold lock!
+VkDisplayKHR MaybeWrapDisplay(VkDisplayKHR handle, instance_layer_data *map_data) {
+    // See if this display is already known
+    auto it = map_data->display_id_reverse_mapping.find(handle);
+    if (it != map_data->display_id_reverse_mapping.end()) return (VkDisplayKHR)it->second;
+    // Unknown, so wrap
+    return WrapDisplay(handle, map_data);
 }
 
 }  // namespace unique_objects
