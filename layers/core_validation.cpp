@@ -1214,6 +1214,14 @@ static bool ValidateCmdBufDrawState(layer_data *dev_data, GLOBAL_CB_NODE *cb_nod
 
     for (const auto &set_binding_pair : pPipe->active_slots) {
         uint32_t setIndex = set_binding_pair.first;
+
+        // TODO -- remove this continue path when CmdPushDescriptorSet is implemented, for now it prevents a false positive
+        if ((setIndex < pipeline_layout.set_layouts.size()) && pipeline_layout.set_layouts[setIndex] &&
+            pipeline_layout.set_layouts[setIndex]->IsPushDescriptor()) {
+            // Push descriptors currently don't record required state for this validation
+            continue;
+        }
+
         // If valid set is not bound throw an error
         if ((state.boundDescriptorSets.size() <= setIndex) || (!state.boundDescriptorSets[setIndex])) {
             result |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
