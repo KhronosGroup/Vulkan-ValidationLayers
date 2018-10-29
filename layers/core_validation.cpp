@@ -1276,7 +1276,7 @@ static void UpdateDrawState(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, cons
                 const auto &binding_req_map = reduced_map.Map();
 
                 // Bind this set and its active descriptor resources to the command buffer
-                descriptor_set->BindCommandBuffer(cb_state, binding_req_map);
+                descriptor_set->UpdateDrawState(cb_state, binding_req_map);
                 // For given active slots record updated images & buffers
                 descriptor_set->GetStorageUpdates(binding_req_map, &cb_state->updateBuffers, &cb_state->updateImages);
             }
@@ -7508,14 +7508,6 @@ static void UpdateStateCmdDrawType(layer_data *dev_data, GLOBAL_CB_NODE *cb_stat
     UpdateStateCmdDrawDispatchType(dev_data, cb_state, bind_point);
     UpdateResourceTrackingOnDraw(cb_state);
     cb_state->hasDrawCmd = true;
-
-    // Add descriptor image/CIS layouts to CB layout map
-    auto &desc_sets = cb_state->lastBound[VK_PIPELINE_BIND_POINT_GRAPHICS].boundDescriptorSets;
-    for (auto &desc : desc_sets) {
-        if (desc) {
-            desc->UpdateDSImageLayoutState(cb_state);
-        }
-    }
 }
 
 static bool PreCallValidateCmdDraw(layer_data *dev_data, VkCommandBuffer cmd_buffer, bool indexed, VkPipelineBindPoint bind_point,
