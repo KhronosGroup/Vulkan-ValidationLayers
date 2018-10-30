@@ -10454,12 +10454,12 @@ static bool ValidateCreateRenderPass(const layer_data *dev_data, VkDevice device
         if (rp_version == RENDER_PASS_VERSION_2) {
             skip |= ValidateStageMaskGsTsEnables(
                 dev_data, dependency.srcStageMask, function_name, "VUID-VkSubpassDependency2KHR-srcStageMask-03080",
-                "VUID-VkSubpassDependency2KHR-srcStageMask-03082", "VUID-VkSubpassDependency-srcStageMask-02103",
-                "VUID-VkSubpassDependency-srcStageMask-02104");
+                "VUID-VkSubpassDependency2KHR-srcStageMask-03082", "VUID-VkSubpassDependency2KHR-srcStageMask-02103",
+                "VUID-VkSubpassDependency2KHR-srcStageMask-02104");
             skip |= ValidateStageMaskGsTsEnables(
                 dev_data, dependency.dstStageMask, function_name, "VUID-VkSubpassDependency2KHR-dstStageMask-03081",
-                "VUID-VkSubpassDependency2KHR-dstStageMask-03083", "VUID-VkSubpassDependency-srcStageMask-02105",
-                "VUID-VkSubpassDependency-srcStageMask-02106");
+                "VUID-VkSubpassDependency2KHR-dstStageMask-03083", "VUID-VkSubpassDependency2KHR-dstStageMask-02105",
+                "VUID-VkSubpassDependency2KHR-dstStageMask-02106");
         } else {
             skip |= ValidateStageMaskGsTsEnables(
                 dev_data, dependency.srcStageMask, function_name, "VUID-VkSubpassDependency-srcStageMask-00860",
