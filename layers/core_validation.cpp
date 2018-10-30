@@ -1656,7 +1656,7 @@ static bool ValidatePipelineUnlocked(layer_data *dev_data, std::vector<std::uniq
             subpass_num_samples |= static_cast<uint32_t>(pPipeline->rp_state->createInfo.pAttachments[attachment].samples);
         }
 
-        if (!(IsPowerOfTwo(subpass_num_samples) && subpass_num_samples == raster_samples)) {
+        if (IsPowerOfTwo(subpass_num_samples) && subpass_num_samples != raster_samples) {
             skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
                             HandleToUint64(pPipeline->pipeline), "VUID-VkGraphicsPipelineCreateInfo-subpass-00757",
                             "vkCreateGraphicsPipelines: pCreateInfo[%d].pMultisampleState->rasterizationSamples (%u) "
@@ -1704,7 +1704,8 @@ static bool ValidatePipelineUnlocked(layer_data *dev_data, std::vector<std::uniq
 
         if (subpass_desc->pDepthStencilAttachment && subpass_desc->pDepthStencilAttachment->attachment != VK_ATTACHMENT_UNUSED) {
             const auto attachment = subpass_desc->pDepthStencilAttachment->attachment;
-            const uint32_t subpass_depth_samples = static_cast<uint32_t>(pPipeline->rp_state->createInfo.pAttachments[attachment].samples);
+            const uint32_t subpass_depth_samples =
+                static_cast<uint32_t>(pPipeline->rp_state->createInfo.pAttachments[attachment].samples);
 
             if (pPipeline->graphicsPipelineCI.pDepthStencilState) {
                 const bool ds_test_enabled = (pPipeline->graphicsPipelineCI.pDepthStencilState->depthTestEnable == VK_TRUE) ||
@@ -1712,39 +1713,41 @@ static bool ValidatePipelineUnlocked(layer_data *dev_data, std::vector<std::uniq
                                              (pPipeline->graphicsPipelineCI.pDepthStencilState->stencilTestEnable == VK_TRUE);
 
                 if (ds_test_enabled && (raster_samples != subpass_depth_samples)) {
-                        skip |=  log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
-                                        HandleToUint64(pPipeline->pipeline),"VUID-VkGraphicsPipelineCreateInfo-subpass-01411",
-                                        "vkCreateGraphicsPipelines: pCreateInfo[%d].pMultisampleState->rasterizationSamples (%u) "
-                                        "does not match the number of samples of the RenderPass depth attachment (%u).",
-                                        pipelineIndex, raster_samples, subpass_depth_samples);
+                    skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
+                                    HandleToUint64(pPipeline->pipeline), "VUID-VkGraphicsPipelineCreateInfo-subpass-01411",
+                                    "vkCreateGraphicsPipelines: pCreateInfo[%d].pMultisampleState->rasterizationSamples (%u) "
+                                    "does not match the number of samples of the RenderPass depth attachment (%u).",
+                                    pipelineIndex, raster_samples, subpass_depth_samples);
                 }
             }
         }
 
         if (IsPowerOfTwo(subpass_color_samples)) {
             if (raster_samples < subpass_color_samples) {
-                skip |=  log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
-                                HandleToUint64(pPipeline->pipeline),"VUID-VkGraphicsPipelineCreateInfo-subpass-01412",
+                skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
+                                HandleToUint64(pPipeline->pipeline), "VUID-VkGraphicsPipelineCreateInfo-subpass-01412",
                                 "vkCreateGraphicsPipelines: pCreateInfo[%d].pMultisampleState->rasterizationSamples (%u) "
                                 "is not greater or equal to the number of samples of the RenderPass color attachment (%u).",
                                 pipelineIndex, raster_samples, subpass_color_samples);
             }
 
             if (pPipeline->graphicsPipelineCI.pMultisampleState) {
-                if ((raster_samples > subpass_color_samples) && (pPipeline->graphicsPipelineCI.pMultisampleState->sampleShadingEnable == VK_TRUE)) {
-                    skip |=  log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
-                                     HandleToUint64(pPipeline->pipeline),"VUID-VkPipelineMultisampleStateCreateInfo-rasterizationSamples-01415",
-                                     "vkCreateGraphicsPipelines: pCreateInfo[%d].pMultisampleState->sampleShadingEnable must be VK_FALSE.",
-                                     pipelineIndex);
+                if ((raster_samples > subpass_color_samples) &&
+                    (pPipeline->graphicsPipelineCI.pMultisampleState->sampleShadingEnable == VK_TRUE)) {
+                    skip |= log_msg(
+                        dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
+                        HandleToUint64(pPipeline->pipeline), "VUID-VkPipelineMultisampleStateCreateInfo-rasterizationSamples-01415",
+                        "vkCreateGraphicsPipelines: pCreateInfo[%d].pMultisampleState->sampleShadingEnable must be VK_FALSE.",
+                        pipelineIndex);
                 }
 
-                const auto *coverage_modulation_state =
-                    lvl_find_in_chain<VkPipelineCoverageModulationStateCreateInfoNV>(pPipeline->graphicsPipelineCI.pMultisampleState->pNext);
+                const auto *coverage_modulation_state = lvl_find_in_chain<VkPipelineCoverageModulationStateCreateInfoNV>(
+                    pPipeline->graphicsPipelineCI.pMultisampleState->pNext);
 
                 if (coverage_modulation_state && (coverage_modulation_state->coverageModulationTableEnable == VK_TRUE)) {
                     if (coverage_modulation_state->coverageModulationTableCount != (raster_samples / subpass_color_samples)) {
-                        skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
-                                        HandleToUint64(pPipeline->pipeline),
+                        skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                        VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT, HandleToUint64(pPipeline->pipeline),
                                         "VUID-VkPipelineCoverageModulationStateCreateInfoNV-coverageModulationTableEnable-01405",
                                         "vkCreateGraphicsPipelines: pCreateInfos[%d] VkPipelineCoverageModulationStateCreateInfoNV "
                                         "coverageModulationTableCount of %u is invalid.",
