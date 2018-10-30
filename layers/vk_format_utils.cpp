@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2016 The Khronos Group Inc.
- * Copyright (c) 2015-2016 Valve Corporation
- * Copyright (c) 2015-2016 LunarG, Inc.
+/* Copyright (c) 2015-2019 The Khronos Group Inc.
+ * Copyright (c) 2015-2019 Valve Corporation
+ * Copyright (c) 2015-2019 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -974,6 +974,80 @@ VK_LAYER_EXPORT VkExtent3D FormatCompressedTexelBlockExtent(VkFormat format) {
             break;
     }
     return block_size;
+}
+
+VK_LAYER_EXPORT uint32_t FormatDepthSize(VkFormat format) {
+    uint32_t depth_size = 0;
+    switch (format) {
+        case VK_FORMAT_D16_UNORM:
+        case VK_FORMAT_D16_UNORM_S8_UINT:
+            depth_size = 16;
+            break;
+        case VK_FORMAT_X8_D24_UNORM_PACK32:
+        case VK_FORMAT_D24_UNORM_S8_UINT:
+            depth_size = 24;
+            break;
+        case VK_FORMAT_D32_SFLOAT:
+        case VK_FORMAT_D32_SFLOAT_S8_UINT:
+            depth_size = 32;
+            break;
+
+        default:
+            break;
+    }
+    return depth_size;
+}
+
+VK_LAYER_EXPORT VkFormatNumericalType FormatDepthNumericalType(VkFormat format) {
+    VkFormatNumericalType numerical_type = VK_FORMAT_NUMERICAL_TYPE_NONE;
+    switch (format) {
+        case VK_FORMAT_D16_UNORM:
+        case VK_FORMAT_D16_UNORM_S8_UINT:
+        case VK_FORMAT_X8_D24_UNORM_PACK32:
+        case VK_FORMAT_D24_UNORM_S8_UINT:
+            numerical_type = VK_FORMAT_NUMERICAL_TYPE_UNORM;
+            break;
+        case VK_FORMAT_D32_SFLOAT:
+        case VK_FORMAT_D32_SFLOAT_S8_UINT:
+            numerical_type = VK_FORMAT_NUMERICAL_TYPE_SFLOAT;
+            break;
+
+        default:
+            break;
+    }
+    return numerical_type;
+}
+
+VK_LAYER_EXPORT uint32_t FormatStencilSize(VkFormat format) {
+    uint32_t stencil_size = 0;
+    switch (format) {
+        case VK_FORMAT_S8_UINT:
+        case VK_FORMAT_D16_UNORM_S8_UINT:
+        case VK_FORMAT_D24_UNORM_S8_UINT:
+        case VK_FORMAT_D32_SFLOAT_S8_UINT:
+            stencil_size = 8;
+            break;
+
+        default:
+            break;
+    }
+    return stencil_size;
+}
+
+VK_LAYER_EXPORT VkFormatNumericalType FormatStencilNumericalType(VkFormat format) {
+    VkFormatNumericalType numerical_type = VK_FORMAT_NUMERICAL_TYPE_NONE;
+    switch (format) {
+        case VK_FORMAT_S8_UINT:
+        case VK_FORMAT_D16_UNORM_S8_UINT:
+        case VK_FORMAT_D24_UNORM_S8_UINT:
+        case VK_FORMAT_D32_SFLOAT_S8_UINT:
+            numerical_type = VK_FORMAT_NUMERICAL_TYPE_UINT;
+            break;
+
+        default:
+            break;
+    }
+    return numerical_type;
 }
 
 VK_LAYER_EXPORT uint32_t FormatPlaneCount(VkFormat format) {
