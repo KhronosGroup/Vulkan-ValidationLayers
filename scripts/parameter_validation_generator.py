@@ -417,7 +417,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             # If type declarations are needed by other features based on this one, it may be necessary to suppress the ExtraProtect,
             # or move it below the 'for section...' loop.
             ifdef = ''
-            if (self.featureExtraProtect != None):
+            if (self.featureExtraProtect is not None):
                 ifdef = '#ifdef %s\n' % self.featureExtraProtect
                 self.validation.append(ifdef)
             # Generate the struct member checking code from the captured data
@@ -439,7 +439,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                     decl += ';'
                     write(decl, file=self.outFile)
             endif = '\n'
-            if (self.featureExtraProtect != None):
+            if (self.featureExtraProtect is not None):
                 endif = '#endif // %s\n' % self.featureExtraProtect
             self.validation.append(endif)
         # Finish processing in superclass
@@ -448,7 +448,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
     # Type generation
     def genType(self, typeinfo, name, alias):
         # record the name/alias pair
-        if alias != None:
+        if alias is not None:
             self.alias_dict[name]=alias
         OutputGenerator.genType(self, typeinfo, name, alias)
         typeElem = typeinfo.elem
@@ -549,7 +549,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
     # These are concatenated together with other types.
     def genGroup(self, groupinfo, groupName, alias):
         # record the name/alias pair
-        if alias != None:
+        if alias is not None:
             self.alias_dict[groupName]=alias
         OutputGenerator.genGroup(self, groupinfo, groupName, alias)
         groupElem = groupinfo.elem
@@ -589,14 +589,14 @@ class ParameterValidationOutputGenerator(OutputGenerator):
     # Capture command parameter info to be used for param check code generation.
     def genCmd(self, cmdinfo, name, alias):
         # record the name/alias pair
-        if alias != None:
+        if alias is not None:
             self.alias_dict[name]=alias
         OutputGenerator.genCmd(self, cmdinfo, name, alias)
         decls = self.makeCDecls(cmdinfo.elem)
         typedef = decls[1]
         typedef = typedef.split(')',1)[1]
         if name not in self.blacklist:
-            if (self.featureExtraProtect != None):
+            if (self.featureExtraProtect is not None):
                 self.declarations += [ '#ifdef %s' % self.featureExtraProtect ]
                 self.intercepts += [ '#ifdef %s' % self.featureExtraProtect ]
                 if (name not in self.validate_only):
@@ -608,7 +608,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             self.intercepts += [ '    {"%s", (void*)%s},' % (name,name) ]
             # Strip off 'vk' from API name
             self.declarations += [ '%s' % decls[0].replace("VKAPI_CALL vk", "VKAPI_CALL ") ]
-            if (self.featureExtraProtect != None):
+            if (self.featureExtraProtect is not None):
                 self.intercepts += [ '#endif' ]
                 self.declarations += [ '#endif' ]
                 if (name not in self.validate_only):
@@ -647,7 +647,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             # Save return value information, if any
             result_type = ''
             resultinfo = cmdinfo.elem.find('proto/type')
-            if (resultinfo != None and resultinfo.text != 'void'):
+            if (resultinfo is not None and resultinfo.text != 'void'):
                 result_type = resultinfo.text
             self.commands.append(self.CommandData(name=name, params=paramsInfo, cdecl=self.makeCDecls(cmdinfo.elem)[0], extension_type=self.extension_type, result=result_type))
     #

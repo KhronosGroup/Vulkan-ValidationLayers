@@ -109,18 +109,18 @@ class OutputStats(object):
         return did_fail
 
     def new_profile_match(self, line):
-        if re.search(r'Testing with profile .*/(.*)', line) != None:
+        if re.search(r'Testing with profile .*/(.*)', line) is not None:
             self.current_profile = re.search(r'Testing with profile .*/(.*)', line).group(1)
 
     def test_suite_end_match(self, line):
-        if re.search(r'\[-*\]', line) != None:
+        if re.search(r'\[-*\]', line) is not None:
             if self.current_test != "":
                 # Here we see a message that starts [----------] before another test
                 # finished running. This should mean that that other test died.
                 self.test_died()
 
     def start_test_match(self, line):
-        if re.search(r'\[ RUN\s*\]', line) != None:
+        if re.search(r'\[ RUN\s*\]', line) is not None:
             # This parser doesn't handle the case where one test's start comes between another
             # test's start and result.
             assert self.current_test == ""
@@ -128,23 +128,23 @@ class OutputStats(object):
             self.current_test_output = ""
 
     def skip_test_match(self, line):
-        if re.search(r'TEST SKIPPED', line) != None:
+        if re.search(r'TEST SKIPPED', line) is not None:
             self.test_results[self.current_test][self.current_profile] = "skip"
 
     def pass_test_match(self, line):
-        if re.search(r'\[\s*OK \]', line) != None:
+        if re.search(r'\[\s*OK \]', line) is not None:
             # If gtest says the test passed, check if it was skipped before marking it passed
             if self.test_results.get(self.current_test, {}).get(self.current_profile, "") != "skip":
                     self.test_results[self.current_test][self.current_profile] = "pass"
             self.current_test = ""
 
     def fail_test_match(self, line):
-        if re.search(r'\[\s*FAILED\s*\]', line) != None and self.current_test != "":
+        if re.search(r'\[\s*FAILED\s*\]', line) is not None and self.current_test != "":
             self.test_results[self.current_test][self.current_profile] = "fail"
             self.current_test = ""
 
     def unexpected_error_match(self, line):
-        if re.search(r'^Unexpected: ', line) != None:
+        if re.search(r'^Unexpected: ', line) is not None:
             self.unexpected_errors[self.current_test][self.current_profile] = "true"
 
     def test_died(self):
