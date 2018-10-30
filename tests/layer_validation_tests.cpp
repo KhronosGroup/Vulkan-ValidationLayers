@@ -6818,19 +6818,6 @@ TEST_F(VkLayerTest, RenderPassBeginClearOpMismatch) {
     VkRenderPass rp;
     vkCreateRenderPass(m_device->device(), &rpci, NULL, &rp);
 
-    VkCommandBufferInheritanceInfo hinfo = {};
-    hinfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO;
-    hinfo.renderPass = VK_NULL_HANDLE;
-    hinfo.subpass = 0;
-    hinfo.framebuffer = VK_NULL_HANDLE;
-    hinfo.occlusionQueryEnable = VK_FALSE;
-    hinfo.queryFlags = 0;
-    hinfo.pipelineStatistics = 0;
-    VkCommandBufferBeginInfo info = {};
-    info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-    info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    info.pInheritanceInfo = &hinfo;
-
     VkRenderPassBeginInfo rp_begin = {};
     rp_begin.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
     rp_begin.pNext = NULL;
