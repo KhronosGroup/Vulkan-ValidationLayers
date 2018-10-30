@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2017 The Khronos Group Inc.
- * Copyright (c) 2015-2017 Valve Corporation
- * Copyright (c) 2015-2017 LunarG, Inc.
+/* Copyright (c) 2015-2019 The Khronos Group Inc.
+ * Copyright (c) 2015-2019 Valve Corporation
+ * Copyright (c) 2015-2019 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -124,6 +124,19 @@ typedef enum VkFormatCompatibilityClass {
     VK_FORMAT_COMPATIBILITY_CLASS_MAX_ENUM = 79
 } VkFormatCompatibilityClass;
 
+typedef enum VkFormatNumericalType {
+    VK_FORMAT_NUMERICAL_TYPE_NONE,
+    VK_FORMAT_NUMERICAL_TYPE_UINT,
+    VK_FORMAT_NUMERICAL_TYPE_SINT,
+    VK_FORMAT_NUMERICAL_TYPE_UNORM,
+    VK_FORMAT_NUMERICAL_TYPE_SNORM,
+    VK_FORMAT_NUMERICAL_TYPE_USCALED,
+    VK_FORMAT_NUMERICAL_TYPE_SSCALED,
+    VK_FORMAT_NUMERICAL_TYPE_UFLOAT,
+    VK_FORMAT_NUMERICAL_TYPE_SFLOAT,
+    VK_FORMAT_NUMERICAL_TYPE_SRGB
+} VkFormatNumericalType;
+
 VK_LAYER_EXPORT bool FormatIsDepthOrStencil(VkFormat format);
 VK_LAYER_EXPORT bool FormatIsDepthAndStencil(VkFormat format);
 VK_LAYER_EXPORT bool FormatIsDepthOnly(VkFormat format);
@@ -147,6 +160,10 @@ VK_LAYER_EXPORT bool FormatIsCompressed(VkFormat format);
 VK_LAYER_EXPORT bool FormatIsPacked(VkFormat format);
 VK_LAYER_EXPORT bool FormatSizesAreEqual(VkFormat srcFormat, VkFormat dstFormat, uint32_t region_count, const VkImageCopy *regions);
 
+VK_LAYER_EXPORT uint32_t FormatDepthSize(VkFormat format);
+VK_LAYER_EXPORT VkFormatNumericalType FormatDepthNumericalType(VkFormat format);
+VK_LAYER_EXPORT uint32_t FormatStencilSize(VkFormat format);
+VK_LAYER_EXPORT VkFormatNumericalType FormatStencilNumericalType(VkFormat format);
 VK_LAYER_EXPORT uint32_t FormatPlaneCount(VkFormat format);
 VK_LAYER_EXPORT uint32_t FormatChannelCount(VkFormat format);
 VK_LAYER_EXPORT VkExtent3D FormatCompressedTexelBlockExtent(VkFormat format);
