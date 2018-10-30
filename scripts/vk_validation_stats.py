@@ -265,7 +265,7 @@ class ValidationSource:
                     if True in [line.strip().startswith(comment) for comment in ['//', '/*']]:
                         continue
                     # Find vuid strings
-                    if prepend != None:
+                    if prepend is not None:
                         line = prepend[:-2] + line.lstrip().lstrip('"') # join lines skipping CR, whitespace and trailing/leading quote char
                         prepend = None
                     if any(prefix in line for prefix in vuid_prefixes):
@@ -333,7 +333,7 @@ class ValidationTests:
                         continue
 
                     # if line ends in a broken VUID string, fix that before proceeding
-                    if prepend != None:
+                    if prepend is not None:
                         line = prepend[:-2] + line.lstrip().lstrip('"') # join lines skipping CR, whitespace and trailing/leading quote char
                         prepend = None
                     if any(prefix in line for prefix in vuid_prefixes):

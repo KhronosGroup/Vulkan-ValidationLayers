@@ -298,7 +298,7 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
         handle = self.registry.tree.find("types/type/[name='" + handle_type + "'][@category='handle']")
 
         return_type =  cmdinfo.elem.find('proto/type')
-        if (return_type != None and return_type.text == 'void'):
+        if (return_type is not None and return_type.text == 'void'):
            return_type = None
 
         cmd_params = []
@@ -320,7 +320,7 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
             cmd_params.append(self.CommandParam(type=param_type, name=param_name,
                                                 cdecl=param_cdecl))
 
-        if handle != None and handle_type != 'VkInstance' and handle_type != 'VkPhysicalDevice':
+        if handle is not None and handle_type != 'VkInstance' and handle_type != 'VkPhysicalDevice':
             # The Core Vulkan code will be wrapped in a feature called VK_VERSION_#_#
             # For example: VK_VERSION_1_0 wraps the core 1.0 Vulkan functionality
             if 'VK_VERSION_' in extension_name:
@@ -691,13 +691,13 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
                 if cur_cmd.name in PRE_INSTANCE_FUNCTIONS:
                     mod_string = mod_string.replace(cur_cmd.name[2:] + '(\n', cur_cmd.name[2:] + '(\n    const Vk' + cur_cmd.name[2:] + 'Chain* chain,\n')
 
-                if (cur_cmd.protect != None):
+                if (cur_cmd.protect is not None):
                     terminators += '#ifdef %s\n' % cur_cmd.protect
 
                 terminators += mod_string
                 terminators += '\n'
 
-                if (cur_cmd.protect != None):
+                if (cur_cmd.protect is not None):
                     terminators += '#endif // %s\n' % cur_cmd.protect
 
         terminators += '\n'
@@ -950,7 +950,7 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
                     physdev_type_to_replace = 'VkPhysicalDevice'
                     physdev_name_replacement = 'phys_dev_term->phys_dev'
 
-            if (ext_cmd.return_type != None):
+            if (ext_cmd.return_type is not None):
                 return_prefix += 'return '
                 has_return_type = True
 
