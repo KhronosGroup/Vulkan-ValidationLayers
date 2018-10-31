@@ -12971,7 +12971,7 @@ static void PostCallRecordEnumeratePhysicalDevices(instance_layer_data *instance
                                                    uint32_t *pPhysicalDeviceCount, VkPhysicalDevice *pPhysicalDevices) {
     if (NULL == pPhysicalDevices) {
         instance_data->physical_devices_count = *pPhysicalDeviceCount;
-    } else if (result == VK_SUCCESS) {  // Save physical devices
+    } else if (result == VK_SUCCESS || result == VK_INCOMPLETE) {  // Save physical devices
         for (uint32_t i = 0; i < *pPhysicalDeviceCount; i++) {
             auto &phys_device_state = instance_data->physical_device_map[pPhysicalDevices[i]];
             phys_device_state.phys_device = pPhysicalDevices[i];
@@ -13960,7 +13960,7 @@ VKAPI_ATTR VkResult VKAPI_CALL EnumeratePhysicalDeviceGroups(VkInstance instance
     PreCallRecordEnumeratePhysicalDeviceGroups(instance_data, pPhysicalDeviceGroupProperties);
     VkResult result = instance_data->dispatch_table.EnumeratePhysicalDeviceGroups(instance, pPhysicalDeviceGroupCount,
                                                                                   pPhysicalDeviceGroupProperties);
-    if (result == VK_SUCCESS) {
+    if (result == VK_SUCCESS || result == VK_INCOMPLETE) {
         PostCallRecordEnumeratePhysicalDeviceGroups(instance_data, pPhysicalDeviceGroupCount, pPhysicalDeviceGroupProperties);
     }
     return result;
