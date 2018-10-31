@@ -15789,7 +15789,15 @@ TEST_F(VkLayerTest, DSBufferInfoErrors) {
         "3. range value greater than buffer (size - offset)");
     VkResult err;
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    bool update_template_support = DeviceExtensionSupported(gpu(), nullptr, VK_KHR_DESCRIPTOR_UPDATE_TEMPLATE_EXTENSION_NAME);
+    if (update_template_support) {
+        m_device_extension_names.push_back(VK_KHR_DESCRIPTOR_UPDATE_TEMPLATE_EXTENSION_NAME);
+    } else {
+        printf("%s Descriptor Update Template Extensions not supported, template cases skipped.\n", kSkipPrefix);
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
     OneOffDescriptorSet ds(m_device, {
                                          {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
                                      });
@@ -15838,10 +15846,59 @@ TEST_F(VkLayerTest, DSBufferInfoErrors) {
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     descriptor_write.dstSet = ds.set_;
 
+    // Relying on the "return nullptr for non-enabled extensions
+    auto vkCreateDescriptorUpdateTemplateKHR =
+        (PFN_vkCreateDescriptorUpdateTemplateKHR)vkGetDeviceProcAddr(m_device->device(), "vkCreateDescriptorUpdateTemplateKHR");
+    auto vkDestroyDescriptorUpdateTemplateKHR =
+        (PFN_vkDestroyDescriptorUpdateTemplateKHR)vkGetDeviceProcAddr(m_device->device(), "vkDestroyDescriptorUpdateTemplateKHR");
+    auto vkUpdateDescriptorSetWithTemplateKHR =
+        (PFN_vkUpdateDescriptorSetWithTemplateKHR)vkGetDeviceProcAddr(m_device->device(), "vkUpdateDescriptorSetWithTemplateKHR");
+
+    if (update_template_support) {
+        ASSERT_NE(vkCreateDescriptorUpdateTemplateKHR, nullptr);
+        ASSERT_NE(vkDestroyDescriptorUpdateTemplateKHR, nullptr);
+        ASSERT_NE(vkUpdateDescriptorSetWithTemplateKHR, nullptr);
+    }
+
+    // Setup for update w/ template tests
+    // Create a template of descriptor set updates
+    struct SimpleTemplateData {
+        uint8_t padding[7];
+        VkDescriptorBufferInfo buff_info;
+        uint32_t other_padding[4];
+    };
+    SimpleTemplateData update_template_data = {};
+
+    VkDescriptorUpdateTemplateEntry update_template_entry = {};
+    update_template_entry.dstBinding = 0;
+    update_template_entry.dstArrayElement = 0;
+    update_template_entry.descriptorCount = 1;
+    update_template_entry.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    update_template_entry.offset = offsetof(SimpleTemplateData, buff_info);
+    update_template_entry.stride = sizeof(SimpleTemplateData);
+
+    auto update_template_ci = lvl_init_struct<VkDescriptorUpdateTemplateCreateInfoKHR>();
+    update_template_ci.descriptorUpdateEntryCount = 1;
+    update_template_ci.pDescriptorUpdateEntries = &update_template_entry;
+    update_template_ci.templateType = VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET;
+    update_template_ci.descriptorSetLayout = ds.layout_.handle();
+
+    VkDescriptorUpdateTemplate update_template = VK_NULL_HANDLE;
+    if (update_template_support) {
+        auto result = vkCreateDescriptorUpdateTemplateKHR(m_device->device(), &update_template_ci, nullptr, &update_template);
+        ASSERT_VK_SUCCESS(result);
+    }
+
     auto do_test = [&](const char *desired_failure) {
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, desired_failure);
         vkUpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
         m_errorMonitor->VerifyFound();
+        if (update_template_support) {
+            update_template_data.buff_info = buff_info;  // copy the test case information into our "pData"
+            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, desired_failure);
+            vkUpdateDescriptorSetWithTemplateKHR(m_device->device(), ds.set_, update_template, &update_template_data);
+            m_errorMonitor->VerifyFound();
+        }
     };
 
     // Cause error due to offset out of range
@@ -15859,6 +15916,9 @@ TEST_F(VkLayerTest, DSBufferInfoErrors) {
     buff_info.range = buff_ci.size + 1;
     do_test("VUID-VkDescriptorBufferInfo-range-00342");
 
+    if (update_template_support) {
+        vkDestroyDescriptorUpdateTemplateKHR(m_device->device(), update_template, nullptr);
+    }
     vkFreeMemory(m_device->device(), mem, NULL);
     vkDestroyBuffer(m_device->device(), buffer, NULL);
 }
