@@ -643,7 +643,7 @@ class PIPELINE_STATE : public BASE_NODE {
     // Hold shared ptr to RP in case RP itself is destroyed
     std::shared_ptr<RENDER_PASS_STATE> rp_state;
     safe_VkComputePipelineCreateInfo computePipelineCI;
-    safe_VkRaytracingPipelineCreateInfoNVX raytracingPipelineCI;
+    safe_VkRayTracingPipelineCreateInfoNV raytracingPipelineCI;
     // Flag of which shader stages are active for this pipeline
     uint32_t active_shaders;
     uint32_t duplicate_shaders;
@@ -746,7 +746,7 @@ class PIPELINE_STATE : public BASE_NODE {
                 break;
         }
     }
-    void initRaytracingPipelineNVX(const VkRaytracingPipelineCreateInfoNVX *pCreateInfo) {
+    void initRayTracingPipelineNV(const VkRayTracingPipelineCreateInfoNV *pCreateInfo) {
         raytracingPipelineCI.initialize(pCreateInfo);
         // Make sure gfx and compute pipeline is null
         VkGraphicsPipelineCreateInfo emptyGraphicsCI = {};
@@ -754,23 +754,23 @@ class PIPELINE_STATE : public BASE_NODE {
         computePipelineCI.initialize(&emptyComputeCI);
         graphicsPipelineCI.initialize(&emptyGraphicsCI, false, false);
         switch (raytracingPipelineCI.pStages->stage) {
-            case VK_SHADER_STAGE_RAYGEN_BIT_NVX:
-                this->active_shaders |= VK_SHADER_STAGE_RAYGEN_BIT_NVX;
+            case VK_SHADER_STAGE_RAYGEN_BIT_NV:
+                this->active_shaders |= VK_SHADER_STAGE_RAYGEN_BIT_NV;
                 break;
-            case VK_SHADER_STAGE_ANY_HIT_BIT_NVX:
-                this->active_shaders |= VK_SHADER_STAGE_ANY_HIT_BIT_NVX;
+            case VK_SHADER_STAGE_ANY_HIT_BIT_NV:
+                this->active_shaders |= VK_SHADER_STAGE_ANY_HIT_BIT_NV;
                 break;
-            case VK_SHADER_STAGE_CLOSEST_HIT_BIT_NVX:
-                this->active_shaders |= VK_SHADER_STAGE_CLOSEST_HIT_BIT_NVX;
+            case VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV:
+                this->active_shaders |= VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV;
                 break;
-            case VK_SHADER_STAGE_MISS_BIT_NVX:
-                this->active_shaders = VK_SHADER_STAGE_MISS_BIT_NVX;
+            case VK_SHADER_STAGE_MISS_BIT_NV:
+                this->active_shaders = VK_SHADER_STAGE_MISS_BIT_NV;
                 break;
-            case VK_SHADER_STAGE_INTERSECTION_BIT_NVX:
-                this->active_shaders = VK_SHADER_STAGE_INTERSECTION_BIT_NVX;
+            case VK_SHADER_STAGE_INTERSECTION_BIT_NV:
+                this->active_shaders = VK_SHADER_STAGE_INTERSECTION_BIT_NV;
                 break;
-            case VK_SHADER_STAGE_CALLABLE_BIT_NVX:
-                this->active_shaders |= VK_SHADER_STAGE_CALLABLE_BIT_NVX;
+            case VK_SHADER_STAGE_CALLABLE_BIT_NV:
+                this->active_shaders |= VK_SHADER_STAGE_CALLABLE_BIT_NV;
                 break;
             default:
                 // TODO : Flag error

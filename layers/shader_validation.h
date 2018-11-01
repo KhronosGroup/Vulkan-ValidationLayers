@@ -196,7 +196,7 @@ class ValidationCache {
 
 bool ValidateAndCapturePipelineShaderState(layer_data *dev_data, PIPELINE_STATE *pPipeline);
 bool ValidateComputePipeline(layer_data *dev_data, PIPELINE_STATE *pPipeline);
-bool ValidateRaytracingPipelineNVX(layer_data *dev_data, PIPELINE_STATE *pipeline);
+bool ValidateRayTracingPipelineNV(layer_data *dev_data, PIPELINE_STATE *pipeline);
 typedef std::pair<unsigned, unsigned> descriptor_slot_t;
 bool PreCallValidateCreateShaderModule(layer_data *dev_data, VkShaderModuleCreateInfo const *pCreateInfo, bool *spirv_valid);
 
