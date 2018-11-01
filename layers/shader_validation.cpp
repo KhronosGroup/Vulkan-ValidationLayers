@@ -91,7 +91,7 @@ void shader_module::BuildDefIndex() {
             case spv::OpTypeReserveId:
             case spv::OpTypeQueue:
             case spv::OpTypePipe:
-            case spv::OpTypeAccelerationStructureNVX:
+            case spv::OpTypeAccelerationStructureNV:
                 def_index[insn.word(1)] = insn.offset();
                 break;
 
@@ -145,17 +145,17 @@ unsigned ExecutionModelToShaderStageFlagBits(unsigned mode) {
             return VK_SHADER_STAGE_FRAGMENT_BIT;
         case spv::ExecutionModelGLCompute:
             return VK_SHADER_STAGE_COMPUTE_BIT;
-        case spv::ExecutionModelRayGenerationNVX:
+        case spv::ExecutionModelRayGenerationNV:
             return VK_SHADER_STAGE_RAYGEN_BIT_NVX;
-        case spv::ExecutionModelAnyHitNVX:
+        case spv::ExecutionModelAnyHitNV:
             return VK_SHADER_STAGE_ANY_HIT_BIT_NVX;
-        case spv::ExecutionModelClosestHitNVX:
+        case spv::ExecutionModelClosestHitNV:
             return VK_SHADER_STAGE_CLOSEST_HIT_BIT_NVX;
-        case spv::ExecutionModelMissNVX:
+        case spv::ExecutionModelMissNV:
             return VK_SHADER_STAGE_MISS_BIT_NVX;
-        case spv::ExecutionModelIntersectionNVX:
+        case spv::ExecutionModelIntersectionNV:
             return VK_SHADER_STAGE_INTERSECTION_BIT_NVX;
-        case spv::ExecutionModelCallableNVX:
+        case spv::ExecutionModelCallableNV:
             return VK_SHADER_STAGE_CALLABLE_BIT_NVX;
         case spv::ExecutionModelTaskNV:
             return VK_SHADER_STAGE_TASK_BIT_NV;
@@ -285,7 +285,7 @@ static void DescribeTypeInner(std::ostringstream &ss, shader_module const *src, 
         case spv::OpTypeImage:
             ss << "image(dim=" << insn.word(3) << ", sampled=" << insn.word(7) << ")";
             break;
-        case spv::OpTypeAccelerationStructureNVX:
+        case spv::OpTypeAccelerationStructureNV:
             ss << "accelerationStruture";
             break;
         default:
@@ -1313,7 +1313,7 @@ static std::set<uint32_t> TypeToDescriptorTypeSet(shader_module const *module, u
                 return ret;
             }
         }
-        case spv::OpTypeAccelerationStructureNVX:
+        case spv::OpTypeAccelerationStructureNV:
             ret.insert(VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NVX);
             return ret;
 
