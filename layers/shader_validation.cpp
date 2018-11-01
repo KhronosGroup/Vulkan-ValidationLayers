@@ -146,17 +146,17 @@ unsigned ExecutionModelToShaderStageFlagBits(unsigned mode) {
         case spv::ExecutionModelGLCompute:
             return VK_SHADER_STAGE_COMPUTE_BIT;
         case spv::ExecutionModelRayGenerationNV:
-            return VK_SHADER_STAGE_RAYGEN_BIT_NVX;
+            return VK_SHADER_STAGE_RAYGEN_BIT_NV;
         case spv::ExecutionModelAnyHitNV:
-            return VK_SHADER_STAGE_ANY_HIT_BIT_NVX;
+            return VK_SHADER_STAGE_ANY_HIT_BIT_NV;
         case spv::ExecutionModelClosestHitNV:
-            return VK_SHADER_STAGE_CLOSEST_HIT_BIT_NVX;
+            return VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV;
         case spv::ExecutionModelMissNV:
-            return VK_SHADER_STAGE_MISS_BIT_NVX;
+            return VK_SHADER_STAGE_MISS_BIT_NV;
         case spv::ExecutionModelIntersectionNV:
-            return VK_SHADER_STAGE_INTERSECTION_BIT_NVX;
+            return VK_SHADER_STAGE_INTERSECTION_BIT_NV;
         case spv::ExecutionModelCallableNV:
-            return VK_SHADER_STAGE_CALLABLE_BIT_NVX;
+            return VK_SHADER_STAGE_CALLABLE_BIT_NV;
         case spv::ExecutionModelTaskNV:
             return VK_SHADER_STAGE_TASK_BIT_NV;
         case spv::ExecutionModelMeshNV:
@@ -1314,7 +1314,7 @@ static std::set<uint32_t> TypeToDescriptorTypeSet(shader_module const *module, u
             }
         }
         case spv::OpTypeAccelerationStructureNV:
-            ret.insert(VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NVX);
+            ret.insert(VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV);
             return ret;
 
             // We shouldn't really see any other junk types -- but if we do, they're a mismatch.
@@ -1951,7 +1951,7 @@ bool ValidateComputePipeline(layer_data *dev_data, PIPELINE_STATE *pipeline) {
     return ValidatePipelineShaderStage(dev_data, &pCreateInfo->stage, pipeline, &module, &entrypoint, false);
 }
 
-bool ValidateRaytracingPipelineNVX(layer_data *dev_data, PIPELINE_STATE *pipeline) {
+bool ValidateRayTracingPipelineNV(layer_data *dev_data, PIPELINE_STATE *pipeline) {
     auto pCreateInfo = pipeline->raytracingPipelineCI.ptr();
 
     shader_module const *module;

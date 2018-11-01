@@ -1591,16 +1591,23 @@ TEST_F(VkLayerTest, UnrecognizedValueBadFlag) {
 
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "contains flag bits that are not recognized members of");
     // Specify an invalid VkFlags array entry
-    // Expected to trigger an error with
-    // parameter_validation::validate_flags_array
-    VkSemaphore semaphore = VK_NULL_HANDLE;
-    VkPipelineStageFlags stage_flags = static_cast<VkPipelineStageFlags>(1 << 25);
+    // Expected to trigger an error with parameter_validation::validate_flags_array
+    VkSemaphore semaphore;
+    VkSemaphoreCreateInfo semaphore_create_info{};
+    semaphore_create_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+    vkCreateSemaphore(m_device->device(), &semaphore_create_info, nullptr, &semaphore);
+    // `stage_flags` is set to a value which, currently, is not a defined stage flag
+    // `VK_IMAGE_ASPECT_FLAG_BITS_MAX_ENUM` works well for this
+    VkPipelineStageFlags stage_flags = VK_IMAGE_ASPECT_FLAG_BITS_MAX_ENUM;
+    // `waitSemaphoreCount` *must* be greater than 0 to perform this check
     VkSubmitInfo submit_info = {};
     submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
     submit_info.waitSemaphoreCount = 1;
     submit_info.pWaitSemaphores = &semaphore;
     submit_info.pWaitDstStageMask = &stage_flags;
     vkQueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vkDestroySemaphore(m_device->device(), semaphore, nullptr);
+
     m_errorMonitor->VerifyFound();
 }
 

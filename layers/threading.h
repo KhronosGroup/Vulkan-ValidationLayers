@@ -299,7 +299,7 @@ struct layer_data {
     counter<VkValidationCacheEXT> c_VkValidationCacheEXT;
     counter<VkSamplerYcbcrConversionKHR> c_VkSamplerYcbcrConversionKHR;
     counter<VkDebugUtilsMessengerEXT> c_VkDebugUtilsMessengerEXT;
-    counter<VkAccelerationStructureNVX> c_VkAccelerationStructureNVX;
+    counter<VkAccelerationStructureNV> c_VkAccelerationStructureNV;
 #else   // DISTINCT_NONDISPATCHABLE_HANDLES
     // Special entry to allow tracking of command pool Reset and Destroy
     counter<uint64_t> c_VkCommandPoolContents;
@@ -354,7 +354,7 @@ struct layer_data {
           c_VkSamplerYcbcrConversionKHR("VkSamplerYcbcrConversionKHR",
                                         VK_DEBUG_REPORT_OBJECT_TYPE_SAMPLER_YCBCR_CONVERSION_KHR_EXT),
           c_VkDebugUtilsMessengerEXT("VkDebugUtilsMessengerEXT", VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT),
-          c_VkAccelerationStructureNVX("VkAccelerationStructureNVX", VK_DEBUG_REPORT_OBJECT_TYPE_ACCELERATION_STRUCTURE_NVX_EXT)
+          c_VkAccelerationStructureNV("VkAccelerationStructureNV", VK_DEBUG_REPORT_OBJECT_TYPE_ACCELERATION_STRUCTURE_NV_EXT)
 #else   // DISTINCT_NONDISPATCHABLE_HANDLES
           c_uint64_t("NON_DISPATCHABLE_HANDLE", VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT)
 #endif  // DISTINCT_NONDISPATCHABLE_HANDLES
@@ -406,7 +406,7 @@ WRAPPER(VkDescriptorUpdateTemplateKHR)
 WRAPPER(VkValidationCacheEXT)
 WRAPPER(VkSamplerYcbcrConversionKHR)
 WRAPPER(VkDebugUtilsMessengerEXT)
-WRAPPER(VkAccelerationStructureNVX)
+WRAPPER(VkAccelerationStructureNV)
 #else   // DISTINCT_NONDISPATCHABLE_HANDLES
 WRAPPER(uint64_t)
 #endif  // DISTINCT_NONDISPATCHABLE_HANDLES
