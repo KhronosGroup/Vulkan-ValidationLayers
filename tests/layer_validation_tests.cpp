@@ -28693,6 +28693,101 @@ TEST_F(VkPositiveLayerTest, BindSparse) {
     m_errorMonitor->VerifyNotFound();
 }
 
+TEST_F(VkPositiveLayerTest, BindSparseMetadata) {
+    TEST_DESCRIPTION("Bind memory for the metadata aspect of a sparse image");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    auto index = m_device->graphics_queue_node_index_;
+    if (!(m_device->queue_props[index].queueFlags & VK_QUEUE_SPARSE_BINDING_BIT)) {
+        printf("%s Graphics queue does not have sparse binding bit.\n", kSkipPrefix);
+        return;
+    }
+    if (!m_device->phy().features().sparseResidencyImage2D) {
+        printf("%s Device does not support sparse residency for images.\n", kSkipPrefix);
+        return;
+    }
+
+    m_errorMonitor->ExpectSuccess(VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT);
+
+    // Create a sparse image
+    VkImage image;
+    VkImageCreateInfo image_create_info = {};
+    image_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    image_create_info.pNext = NULL;
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.format = VK_FORMAT_B8G8R8A8_UNORM;
+    image_create_info.extent.width = 64;
+    image_create_info.extent.height = 64;
+    image_create_info.extent.depth = 1;
+    image_create_info.mipLevels = 1;
+    image_create_info.arrayLayers = 1;
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    image_create_info.flags = VK_IMAGE_CREATE_SPARSE_BINDING_BIT | VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT;
+    VkResult err = vkCreateImage(m_device->device(), &image_create_info, NULL, &image);
+    ASSERT_VK_SUCCESS(err);
+
+    // Query image memory requirements
+    VkMemoryRequirements memory_reqs;
+    vkGetImageMemoryRequirements(m_device->device(), image, &memory_reqs);
+
+    // Query sparse memory requirements
+    uint32_t sparse_reqs_count = 0;
+    vkGetImageSparseMemoryRequirements(m_device->device(), image, &sparse_reqs_count, nullptr);
+    std::vector<VkSparseImageMemoryRequirements> sparse_reqs(sparse_reqs_count);
+    vkGetImageSparseMemoryRequirements(m_device->device(), image, &sparse_reqs_count, sparse_reqs.data());
+
+    // Find requirements for metadata aspect
+    const VkSparseImageMemoryRequirements *metadata_reqs = nullptr;
+    for (auto const &aspect_sparse_reqs : sparse_reqs) {
+        if (aspect_sparse_reqs.formatProperties.aspectMask == VK_IMAGE_ASPECT_METADATA_BIT) {
+            metadata_reqs = &aspect_sparse_reqs;
+        }
+    }
+
+    if (!metadata_reqs) {
+        printf("%s Sparse image does not require memory for metadata.\n", kSkipPrefix);
+    } else {
+        // Allocate memory for the metadata
+        VkDeviceMemory metadata_memory = VK_NULL_HANDLE;
+        VkMemoryAllocateInfo metadata_memory_info = {};
+        metadata_memory_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        metadata_memory_info.allocationSize = metadata_reqs->imageMipTailSize;
+        m_device->phy().set_memory_type(memory_reqs.memoryTypeBits, &metadata_memory_info, 0);
+        err = vkAllocateMemory(m_device->device(), &metadata_memory_info, NULL, &metadata_memory);
+        ASSERT_VK_SUCCESS(err);
+
+        // Bind metadata
+        VkSparseMemoryBind sparse_bind = {};
+        sparse_bind.resourceOffset = metadata_reqs->imageMipTailOffset;
+        sparse_bind.size = metadata_reqs->imageMipTailSize;
+        sparse_bind.memory = metadata_memory;
+        sparse_bind.memoryOffset = 0;
+        sparse_bind.flags = VK_SPARSE_MEMORY_BIND_METADATA_BIT;
+
+        VkSparseImageOpaqueMemoryBindInfo opaque_bind_info = {};
+        opaque_bind_info.image = image;
+        opaque_bind_info.bindCount = 1;
+        opaque_bind_info.pBinds = &sparse_bind;
+
+        VkBindSparseInfo bind_info = {};
+        bind_info.sType = VK_STRUCTURE_TYPE_BIND_SPARSE_INFO;
+        bind_info.imageOpaqueBindCount = 1;
+        bind_info.pImageOpaqueBinds = &opaque_bind_info;
+
+        vkQueueBindSparse(m_device->m_queue, 1, &bind_info, VK_NULL_HANDLE);
+        m_errorMonitor->VerifyNotFound();
+
+        // Cleanup
+        vkQueueWaitIdle(m_device->m_queue);
+        vkFreeMemory(m_device->device(), metadata_memory, NULL);
+    }
+
+    vkDestroyImage(m_device->device(), image, NULL);
+}
+
 TEST_F(VkPositiveLayerTest, FramebufferBindingDestroyCommandPool) {
     TEST_DESCRIPTION(
         "This test should pass. Create a Framebuffer and command buffer, bind them together, then destroy command pool and "
