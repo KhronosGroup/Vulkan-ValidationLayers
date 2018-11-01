@@ -18,6 +18,8 @@ SRC_DIR := ../..
 LAYER_DIR := ../generated
 THIRD_PARTY := ../third_party
 
+NATIVE_LIBS := -landroid -llog -lnativewindow
+
 VULKAN_INCLUDE := $(LOCAL_PATH)/$(THIRD_PARTY)/Vulkan-Headers/include
 
 include $(CLEAR_VARS)
@@ -47,7 +49,7 @@ LOCAL_C_INCLUDES += $(VULKAN_INCLUDE) \
 LOCAL_STATIC_LIBRARIES += layer_utils glslang SPIRV-Tools
 LOCAL_CPPFLAGS += -std=c++11 -Wall -Werror -Wno-unused-function -Wno-unused-const-variable
 LOCAL_CPPFLAGS += -DVK_USE_PLATFORM_ANDROID_KHR -DVK_PROTOTYPES -fvisibility=hidden
-LOCAL_LDLIBS    := -llog
+LOCAL_LDLIBS    := $(NATIVE_LIBS)
 LOCAL_LDFLAGS   += -Wl,-Bsymbolic
 LOCAL_LDFLAGS   += -Wl,--exclude-libs,ALL
 include $(BUILD_SHARED_LIBRARY)
@@ -62,7 +64,7 @@ LOCAL_C_INCLUDES += $(VULKAN_INCLUDE) \
 LOCAL_STATIC_LIBRARIES += layer_utils
 LOCAL_CPPFLAGS += -std=c++11 -DVK_PROTOTYPES -Wall -Werror -Wno-unused-function -Wno-unused-const-variable
 LOCAL_CPPFLAGS += -DVK_USE_PLATFORM_ANDROID_KHR -fvisibility=hidden
-LOCAL_LDLIBS    := -llog
+LOCAL_LDLIBS    := $(NATIVE_LIBS)
 LOCAL_LDFLAGS   += -Wl,-Bsymbolic
 LOCAL_LDFLAGS   += -Wl,--exclude-libs,ALL
 include $(BUILD_SHARED_LIBRARY)
@@ -77,7 +79,7 @@ LOCAL_C_INCLUDES += $(VULKAN_INCLUDE) \
 LOCAL_STATIC_LIBRARIES += layer_utils
 LOCAL_CPPFLAGS += -std=c++11 -DVK_PROTOTYPES -Wall -Werror -Wno-unused-function -Wno-unused-const-variable
 LOCAL_CPPFLAGS += -DVK_USE_PLATFORM_ANDROID_KHR -fvisibility=hidden
-LOCAL_LDLIBS    := -llog
+LOCAL_LDLIBS    := $(NATIVE_LIBS)
 LOCAL_LDFLAGS   += -Wl,-Bsymbolic
 LOCAL_LDFLAGS   += -Wl,--exclude-libs,ALL
 include $(BUILD_SHARED_LIBRARY)
@@ -91,7 +93,7 @@ LOCAL_C_INCLUDES += $(VULKAN_INCLUDE) \
 LOCAL_STATIC_LIBRARIES += layer_utils
 LOCAL_CPPFLAGS += -std=c++11 -DVK_PROTOTYPES -Wall -Werror -Wno-unused-function -Wno-unused-const-variable
 LOCAL_CPPFLAGS += -DVK_USE_PLATFORM_ANDROID_KHR -fvisibility=hidden
-LOCAL_LDLIBS    := -llog
+LOCAL_LDLIBS    := $(NATIVE_LIBS)
 LOCAL_LDFLAGS   += -Wl,-Bsymbolic
 LOCAL_LDFLAGS   += -Wl,--exclude-libs,ALL
 include $(BUILD_SHARED_LIBRARY)
@@ -105,7 +107,7 @@ LOCAL_C_INCLUDES += $(VULKAN_INCLUDE) \
 LOCAL_STATIC_LIBRARIES += layer_utils
 LOCAL_CPPFLAGS += -std=c++11 -Wall -Werror -Wno-unused-function -Wno-unused-const-variable
 LOCAL_CPPFLAGS += -DVK_USE_PLATFORM_ANDROID_KHR -DVK_PROTOTYPES -fvisibility=hidden
-LOCAL_LDLIBS    := -llog
+LOCAL_LDLIBS    := $(NATIVE_LIBS)
 LOCAL_LDFLAGS   += -Wl,-Bsymbolic
 LOCAL_LDFLAGS   += -Wl,--exclude-libs,ALL
 include $(BUILD_SHARED_LIBRARY)
@@ -128,7 +130,7 @@ LOCAL_C_INCLUDES += $(VULKAN_INCLUDE) \
 LOCAL_STATIC_LIBRARIES := googletest_main layer_utils shaderc
 LOCAL_CPPFLAGS += -std=c++11 -DVK_PROTOTYPES -Wall -Werror -Wno-unused-function -Wno-unused-const-variable
 LOCAL_CPPFLAGS += -DVK_USE_PLATFORM_ANDROID_KHR -DNV_EXTENSIONS -DAMD_EXTENSIONS -fvisibility=hidden --include=$(THIRD_PARTY)/Vulkan-Tools/common/vulkan_wrapper.h
-LOCAL_LDLIBS := -llog
+LOCAL_LDLIBS := $(NATIVE_LIBS)
 LOCAL_LDFLAGS   += -Wl,-Bsymbolic
 LOCAL_LDFLAGS   += -Wl,--exclude-libs,ALL
 include $(BUILD_EXECUTABLE)
@@ -153,7 +155,7 @@ LOCAL_STATIC_LIBRARIES := googletest_main layer_utils shaderc
 LOCAL_CPPFLAGS += -std=c++11 -DVK_PROTOTYPES -Wall -Werror -Wno-unused-function -Wno-unused-const-variable
 LOCAL_CPPFLAGS += -DVK_USE_PLATFORM_ANDROID_KHR -DNV_EXTENSIONS -DAMD_EXTENSIONS -fvisibility=hidden -DVALIDATION_APK --include=$(THIRD_PARTY)/Vulkan-Tools/common/vulkan_wrapper.h
 LOCAL_WHOLE_STATIC_LIBRARIES += android_native_app_glue
-LOCAL_LDLIBS := -llog -landroid
+LOCAL_LDLIBS := $(NATIVE_LIBS)
 LOCAL_LDFLAGS := -u ANativeActivity_onCreate
 include $(BUILD_SHARED_LIBRARY)
 
