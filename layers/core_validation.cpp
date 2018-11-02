@@ -11757,12 +11757,22 @@ static bool PreCallValidateQueueBindSparse(layer_data *dev_data, VkQueue queue, 
             if (!image_state)
                 continue;  // Param/Object validation should report image_bind.image handles being invalid, so just skip here.
             sparse_images.insert(image_state);
-            if (!image_state->get_sparse_reqs_called || image_state->sparse_requirements.empty()) {
+            if (image_state->createInfo.flags & VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT) {
+                if (!image_state->get_sparse_reqs_called || image_state->sparse_requirements.empty()) {
+                    // For now just warning if sparse image binding occurs without calling to get reqs first
+                    return log_msg(dev_data->report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
+                                   HandleToUint64(image_state->image), kVUID_Core_MemTrack_InvalidState,
+                                   "vkQueueBindSparse(): Binding sparse memory to image 0x%" PRIx64
+                                   " without first calling vkGetImageSparseMemoryRequirements[2KHR]() to retrieve requirements.",
+                                   HandleToUint64(image_state->image));
+                }
+            }
+            if (!image_state->memory_requirements_checked) {
                 // For now just warning if sparse image binding occurs without calling to get reqs first
                 return log_msg(dev_data->report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
                                HandleToUint64(image_state->image), kVUID_Core_MemTrack_InvalidState,
                                "vkQueueBindSparse(): Binding sparse memory to image 0x%" PRIx64
-                               " without first calling vkGetImageSparseMemoryRequirements[2KHR]() to retrieve requirements.",
+                               " without first calling vkGetImageMemoryRequirements() to retrieve requirements.",
                                HandleToUint64(image_state->image));
             }
             for (uint32_t j = 0; j < image_bind.bindCount; ++j) {
@@ -11776,12 +11786,22 @@ static bool PreCallValidateQueueBindSparse(layer_data *dev_data, VkQueue queue, 
             if (!image_state)
                 continue;  // Param/Object validation should report image_bind.image handles being invalid, so just skip here.
             sparse_images.insert(image_state);
-            if (!image_state->get_sparse_reqs_called || image_state->sparse_requirements.empty()) {
+            if (image_state->createInfo.flags & VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT) {
+                if (!image_state->get_sparse_reqs_called || image_state->sparse_requirements.empty()) {
+                    // For now just warning if sparse image binding occurs without calling to get reqs first
+                    return log_msg(dev_data->report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
+                                   HandleToUint64(image_state->image), kVUID_Core_MemTrack_InvalidState,
+                                   "vkQueueBindSparse(): Binding opaque sparse memory to image 0x%" PRIx64
+                                   " without first calling vkGetImageSparseMemoryRequirements[2KHR]() to retrieve requirements.",
+                                   HandleToUint64(image_state->image));
+                }
+            }
+            if (!image_state->memory_requirements_checked) {
                 // For now just warning if sparse image binding occurs without calling to get reqs first
                 return log_msg(dev_data->report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
                                HandleToUint64(image_state->image), kVUID_Core_MemTrack_InvalidState,
                                "vkQueueBindSparse(): Binding opaque sparse memory to image 0x%" PRIx64
-                               " without first calling vkGetImageSparseMemoryRequirements[2KHR]() to retrieve requirements.",
+                               " without first calling vkGetImageMemoryRequirements() to retrieve requirements.",
                                HandleToUint64(image_state->image));
             }
         }
