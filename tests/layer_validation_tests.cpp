@@ -19852,6 +19852,203 @@ TEST_F(VkPositiveLayerTest, ShaderRelaxedBlockLayout) {
     }
 }
 
+TEST_F(VkPositiveLayerTest, SpirvGroupDecorations) {
+    TEST_DESCRIPTION("Test shader validation support for group decorations.");
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    const std::string spv_source = R"(
+              OpCapability Shader
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %gl_GlobalInvocationID
+               OpExecutionMode %main LocalSize 1 1 1
+               OpSource GLSL 430
+               OpName %main "main"
+               OpName %gl_GlobalInvocationID "gl_GlobalInvocationID"
+               OpDecorate %gl_GlobalInvocationID BuiltIn GlobalInvocationId
+               OpDecorate %_runtimearr_float ArrayStride 4
+               OpDecorate %4 BufferBlock
+               OpDecorate %5 Offset 0
+          %4 = OpDecorationGroup
+          %5 = OpDecorationGroup
+               OpGroupDecorate %4 %_struct_6 %_struct_7 %_struct_8 %_struct_9 %_struct_10 %_struct_11
+               OpGroupMemberDecorate %5 %_struct_6 0 %_struct_7 0 %_struct_8 0 %_struct_9 0 %_struct_10 0 %_struct_11 0
+               OpDecorate %12 DescriptorSet 0
+               OpDecorate %13 DescriptorSet 0
+               OpDecorate %13 NonWritable
+               OpDecorate %13 Restrict
+         %14 = OpDecorationGroup
+         %12 = OpDecorationGroup
+         %13 = OpDecorationGroup
+               OpGroupDecorate %12 %15
+               OpGroupDecorate %12 %15
+               OpGroupDecorate %12 %15
+               OpDecorate %15 DescriptorSet 0
+               OpDecorate %15 Binding 5
+               OpGroupDecorate %14 %16
+               OpDecorate %16 DescriptorSet 0
+               OpDecorate %16 Binding 0
+               OpGroupDecorate %12 %17
+               OpDecorate %17 Binding 1
+               OpGroupDecorate %13 %18 %19
+               OpDecorate %18 Binding 2
+               OpDecorate %19 Binding 3
+               OpGroupDecorate %14 %20
+               OpGroupDecorate %12 %20
+               OpGroupDecorate %13 %20
+               OpDecorate %20 Binding 4
+       %bool = OpTypeBool
+       %void = OpTypeVoid
+         %23 = OpTypeFunction %void
+       %uint = OpTypeInt 32 0
+        %int = OpTypeInt 32 1
+      %float = OpTypeFloat 32
+     %v3uint = OpTypeVector %uint 3
+    %v3float = OpTypeVector %float 3
+%_ptr_Input_v3uint = OpTypePointer Input %v3uint
+%_ptr_Uniform_int = OpTypePointer Uniform %int
+%_ptr_Uniform_float = OpTypePointer Uniform %float
+%_runtimearr_int = OpTypeRuntimeArray %int
+%_runtimearr_float = OpTypeRuntimeArray %float
+%gl_GlobalInvocationID = OpVariable %_ptr_Input_v3uint Input
+      %int_0 = OpConstant %int 0
+  %_struct_6 = OpTypeStruct %_runtimearr_float
+%_ptr_Uniform__struct_6 = OpTypePointer Uniform %_struct_6
+         %15 = OpVariable %_ptr_Uniform__struct_6 Uniform
+  %_struct_7 = OpTypeStruct %_runtimearr_float
+%_ptr_Uniform__struct_7 = OpTypePointer Uniform %_struct_7
+         %16 = OpVariable %_ptr_Uniform__struct_7 Uniform
+  %_struct_8 = OpTypeStruct %_runtimearr_float
+%_ptr_Uniform__struct_8 = OpTypePointer Uniform %_struct_8
+         %17 = OpVariable %_ptr_Uniform__struct_8 Uniform
+  %_struct_9 = OpTypeStruct %_runtimearr_float
+%_ptr_Uniform__struct_9 = OpTypePointer Uniform %_struct_9
+         %18 = OpVariable %_ptr_Uniform__struct_9 Uniform
+ %_struct_10 = OpTypeStruct %_runtimearr_float
+%_ptr_Uniform__struct_10 = OpTypePointer Uniform %_struct_10
+         %19 = OpVariable %_ptr_Uniform__struct_10 Uniform
+ %_struct_11 = OpTypeStruct %_runtimearr_float
+%_ptr_Uniform__struct_11 = OpTypePointer Uniform %_struct_11
+         %20 = OpVariable %_ptr_Uniform__struct_11 Uniform
+       %main = OpFunction %void None %23
+         %40 = OpLabel
+         %41 = OpLoad %v3uint %gl_GlobalInvocationID
+         %42 = OpCompositeExtract %uint %41 0
+         %43 = OpAccessChain %_ptr_Uniform_float %16 %int_0 %42
+         %44 = OpAccessChain %_ptr_Uniform_float %17 %int_0 %42
+         %45 = OpAccessChain %_ptr_Uniform_float %18 %int_0 %42
+         %46 = OpAccessChain %_ptr_Uniform_float %19 %int_0 %42
+         %47 = OpAccessChain %_ptr_Uniform_float %20 %int_0 %42
+         %48 = OpAccessChain %_ptr_Uniform_float %15 %int_0 %42
+         %49 = OpLoad %float %43
+         %50 = OpLoad %float %44
+         %51 = OpLoad %float %45
+         %52 = OpLoad %float %46
+         %53 = OpLoad %float %47
+         %54 = OpFAdd %float %49 %50
+         %55 = OpFAdd %float %54 %51
+         %56 = OpFAdd %float %55 %52
+         %57 = OpFAdd %float %56 %53
+               OpStore %48 %57
+               OpReturn
+               OpFunctionEnd
+)";
+
+    // CreateDescriptorSetLayout
+    VkDescriptorSetLayoutBinding dslb = {};
+    dslb.binding = 0;
+    dslb.descriptorCount = 1;
+    dslb.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    dslb.pImmutableSamplers = NULL;
+    dslb.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT | VK_SHADER_STAGE_ALL;
+
+    VkDescriptorSetLayoutCreateInfo ds_layout_ci = {};
+    ds_layout_ci.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    ds_layout_ci.flags = 0;
+    ds_layout_ci.bindingCount = 1;
+    ds_layout_ci.pBindings = &dslb;
+
+    VkDescriptorSetLayout ds_layout = {};
+    vkCreateDescriptorSetLayout(m_device->device(), &ds_layout_ci, NULL, &ds_layout);
+
+    // CreatePipelineLayout
+    VkPipelineLayoutCreateInfo pipeline_layout_ci = {};
+    pipeline_layout_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+    pipeline_layout_ci.pNext = NULL;
+    pipeline_layout_ci.flags = 0;
+    pipeline_layout_ci.setLayoutCount = 1;
+    pipeline_layout_ci.pSetLayouts = &ds_layout;
+    VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
+    vkCreatePipelineLayout(m_device->device(), &pipeline_layout_ci, NULL, &pipeline_layout);
+
+    // Create DescriptorPool
+    VkDescriptorPoolSize ds_type_count = {};
+    ds_type_count.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    ds_type_count.descriptorCount = 1;
+
+    VkDescriptorPoolCreateInfo ds_pool_ci = {};
+    ds_pool_ci.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    ds_pool_ci.pNext = NULL;
+    ds_pool_ci.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+    ds_pool_ci.maxSets = 1;
+    ds_pool_ci.poolSizeCount = 1;
+    ds_pool_ci.pPoolSizes = &ds_type_count;
+
+    VkDescriptorPool ds_pool = VK_NULL_HANDLE;
+    vkCreateDescriptorPool(m_device->device(), &ds_pool_ci, NULL, &ds_pool);
+
+    // AllocateDescriptorSets
+    VkDescriptorSetAllocateInfo ds_alloc_info = {};
+    ds_alloc_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    ds_alloc_info.descriptorSetCount = 1;
+    ds_alloc_info.descriptorPool = ds_pool;
+    ds_alloc_info.pSetLayouts = &ds_layout;
+
+    VkDescriptorSet descriptorSet;
+    vkAllocateDescriptorSets(m_device->device(), &ds_alloc_info, &descriptorSet);
+
+    // CreateShaderModule
+    std::vector<unsigned int> spv;
+    VkShaderModuleCreateInfo module_create_info;
+    VkShaderModule shader_module;
+    module_create_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+    module_create_info.pNext = NULL;
+    ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, spv_source.data(), spv);
+    module_create_info.pCode = spv.data();
+    module_create_info.codeSize = spv.size() * sizeof(unsigned int);
+    module_create_info.flags = 0;
+    vkCreateShaderModule(m_device->handle(), &module_create_info, NULL, &shader_module);
+
+    // CreateComputePipelines
+    VkComputePipelineCreateInfo pipeline_info = {};
+    pipeline_info.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
+    pipeline_info.pNext = nullptr;
+    pipeline_info.flags = 0;
+    pipeline_info.layout = pipeline_layout;
+    pipeline_info.basePipelineHandle = VK_NULL_HANDLE;
+    pipeline_info.basePipelineIndex = -1;
+    pipeline_info.stage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    pipeline_info.stage.pNext = nullptr;
+    pipeline_info.stage.flags = 0;
+    pipeline_info.stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;
+    pipeline_info.stage.module = shader_module;
+    pipeline_info.stage.pName = "main";
+    pipeline_info.stage.pSpecializationInfo = nullptr;
+    VkPipeline cs_pipeline;
+
+    m_errorMonitor->ExpectSuccess();
+    m_errorMonitor->SetUnexpectedError("UNASSIGNED-CoreValidation-Shader-MissingDescriptor");
+    vkCreateComputePipelines(device(), VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &cs_pipeline);
+    m_errorMonitor->VerifyNotFound();
+
+    vkDestroyPipeline(device(), cs_pipeline, nullptr);
+    vkDestroyShaderModule(device(), shader_module, nullptr);
+    vkDestroyDescriptorPool(device(), ds_pool, nullptr);
+    vkDestroyPipelineLayout(device(), pipeline_layout, nullptr);
+    vkDestroyDescriptorSetLayout(device(), ds_layout, nullptr);
+}
+
 TEST_F(VkPositiveLayerTest, CreatePipelineCheckShaderCapabilityExtension1of2) {
     // This is a positive test, no errors expected
     // Verifies the ability to deal with a shader that declares a non-unique SPIRV capability ID
