@@ -44,7 +44,7 @@ LOCAL_SRC_FILES += $(SRC_DIR)/layers/xxhash.c
 LOCAL_C_INCLUDES += $(VULKAN_INCLUDE) \
                     $(LOCAL_PATH)/$(SRC_DIR)/layers \
                     $(LOCAL_PATH)/$(LAYER_DIR)/include
-LOCAL_STATIC_LIBRARIES += layer_utils glslang SPIRV-Tools
+LOCAL_STATIC_LIBRARIES += layer_utils glslang SPIRV-Tools SPIRV-Tools-opt
 LOCAL_CPPFLAGS += -std=c++11 -Wall -Werror -Wno-unused-function -Wno-unused-const-variable
 LOCAL_CPPFLAGS += -DVK_USE_PLATFORM_ANDROID_KHR -DVK_PROTOTYPES -fvisibility=hidden
 LOCAL_LDLIBS    := -llog
