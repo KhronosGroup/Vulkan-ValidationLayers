@@ -513,6 +513,7 @@ class DescriptorSet : public BASE_NODE {
     uint32_t GetStorageUpdates(const std::map<uint32_t, descriptor_req> &, std::unordered_set<VkBuffer> *,
                                std::unordered_set<VkImageView> *) const;
 
+    std::string StringifySetAndLayout() const;
     // Descriptor Update functions. These functions validate state and perform update separately
     // Validate contents of a WriteUpdate
     bool ValidateWriteUpdate(const debug_report_data *, const VkWriteDescriptorSet *, const char *, std::string *, std::string *);

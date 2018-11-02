@@ -336,8 +336,13 @@ bool cvdescriptorset::DescriptorSetLayoutDef::VerifyUpdateConsistency(uint32_t c
         // Verify next consecutive binding matches type, stage flags & immutable sampler use
         if (!IsNextBindingConsistent(current_binding++)) {
             std::stringstream error_str;
-            error_str << "Attempting " << type << " descriptor set " << set << " binding #" << orig_binding << " with #"
-                      << update_count
+            error_str << "Attempting " << type;
+            if (IsPushDescriptor()) {
+                error_str << " push descriptors";
+            } else {
+                error_str << " descriptor set " << set;
+            }
+            error_str << " binding #" << orig_binding << " with #" << update_count
                       << " descriptors being updated but this update oversteps the bounds of this binding and the next binding is "
                          "not consistent with current binding so this update is invalid.";
             *error_msg = error_str.str();
@@ -1791,6 +1796,20 @@ void cvdescriptorset::PerformUpdateDescriptorSetsWithTemplateKHR(layer_data *dev
     PerformUpdateDescriptorSets(device_data, static_cast<uint32_t>(decoded_update.desc_writes.size()),
                                 decoded_update.desc_writes.data(), 0, NULL);
 }
+
+std::string cvdescriptorset::DescriptorSet::StringifySetAndLayout() const {
+    std::string out;
+    uint64_t layout_handle = HandleToUint64(p_layout_->GetDescriptorSetLayout());
+    if (IsPushDescriptor()) {
+        string_sprintf(&out, "Push Descriptors defined with VkDescriptorSetLayout 0x%" PRIxLEAST64, layout_handle);
+        out = "<push descriptors>";
+    } else {
+        string_sprintf(&out, "VkDescriptorSet 0x%" PRIxLEAST64 "allocated with VkDescriptorSetLayout 0x%" PRIxLEAST64,
+                       HandleToUint64(set_), layout_handle);
+    }
+    return out;
+};
+
 // Validate the state for a given write update but don't actually perform the update
 //  If an error would occur for this update, return false and fill in details in error_msg string
 bool cvdescriptorset::DescriptorSet::ValidateWriteUpdate(const debug_report_data *report_data, const VkWriteDescriptorSet *update,
@@ -1798,17 +1817,15 @@ bool cvdescriptorset::DescriptorSet::ValidateWriteUpdate(const debug_report_data
     // Verify dst layout still valid
     if (p_layout_->IsDestroyed()) {
         *error_code = "VUID-VkWriteDescriptorSet-dstSet-00320";
-        string_sprintf(error_msg,
-                       "Cannot call %s to perform write update on descriptor set 0x%" PRIxLEAST64
-                       " created with destroyed VkDescriptorSetLayout 0x%" PRIxLEAST64,
-                       func_name, HandleToUint64(set_), HandleToUint64(p_layout_->GetDescriptorSetLayout()));
+        string_sprintf(error_msg, "Cannot call %s to perform write update on %s which has been destroyed", func_name,
+                       StringifySetAndLayout().c_str());
         return false;
     }
     // Verify dst binding exists
     if (!p_layout_->HasBinding(update->dstBinding)) {
         *error_code = "VUID-VkWriteDescriptorSet-dstBinding-00315";
         std::stringstream error_str;
-        error_str << "DescriptorSet " << set_ << " does not have binding " << update->dstBinding;
+        error_str << StringifySetAndLayout() << " does not have binding " << update->dstBinding;
         *error_msg = error_str.str();
         return false;
     } else {
@@ -1816,7 +1833,7 @@ bool cvdescriptorset::DescriptorSet::ValidateWriteUpdate(const debug_report_data
         if (0 == p_layout_->GetDescriptorCountFromBinding(update->dstBinding)) {
             *error_code = "VUID-VkWriteDescriptorSet-dstBinding-00316";
             std::stringstream error_str;
-            error_str << "DescriptorSet " << set_ << " cannot updated binding " << update->dstBinding << " that has 0 descriptors";
+            error_str << StringifySetAndLayout() << " cannot updated binding " << update->dstBinding << " that has 0 descriptors";
             *error_msg = error_str.str();
             return false;
         }
@@ -1828,7 +1845,7 @@ bool cvdescriptorset::DescriptorSet::ValidateWriteUpdate(const debug_report_data
         // TODO : Re-using Free Idle error code, need write update idle error code
         *error_code = "VUID-vkFreeDescriptorSets-pDescriptorSets-00309";
         std::stringstream error_str;
-        error_str << "Cannot call " << func_name << " to perform write update on descriptor set " << set_
+        error_str << "Cannot call " << func_name << " to perform write update on " << StringifySetAndLayout()
                   << " that is in use by a command buffer";
         *error_msg = error_str.str();
         return false;
@@ -1839,7 +1856,7 @@ bool cvdescriptorset::DescriptorSet::ValidateWriteUpdate(const debug_report_data
     if (type != update->descriptorType) {
         *error_code = "VUID-VkWriteDescriptorSet-descriptorType-00319";
         std::stringstream error_str;
-        error_str << "Attempting write update to descriptor set " << set_ << " binding #" << update->dstBinding << " with type "
+        error_str << "Attempting write update to " << StringifySetAndLayout() << " binding #" << update->dstBinding << " with type "
                   << string_VkDescriptorType(type) << " but update type is " << string_VkDescriptorType(update->descriptorType);
         *error_msg = error_str.str();
         return false;
@@ -1847,7 +1864,7 @@ bool cvdescriptorset::DescriptorSet::ValidateWriteUpdate(const debug_report_data
     if (update->descriptorCount > (descriptors_.size() - start_idx)) {
         *error_code = "VUID-VkWriteDescriptorSet-dstArrayElement-00321";
         std::stringstream error_str;
-        error_str << "Attempting write update to descriptor set " << set_ << " binding #" << update->dstBinding << " with "
+        error_str << "Attempting write update to " << StringifySetAndLayout() << " binding #" << update->dstBinding << " with "
                   << descriptors_.size() - start_idx
                   << " descriptors in that binding and all successive bindings of the set, but update of "
                   << update->descriptorCount << " descriptors combined with update array element offset of "
@@ -1859,7 +1876,7 @@ bool cvdescriptorset::DescriptorSet::ValidateWriteUpdate(const debug_report_data
         if ((update->dstArrayElement % 4) != 0) {
             *error_code = "VUID-VkWriteDescriptorSet-descriptorType-02219";
             std::stringstream error_str;
-            error_str << "Attempting write update to descriptor set " << set_ << " binding #" << update->dstBinding << " with "
+            error_str << "Attempting write update to " << StringifySetAndLayout() << " binding #" << update->dstBinding << " with "
                       << "dstArrayElement " << update->dstArrayElement << " not a multiple of 4";
             *error_msg = error_str.str();
             return false;
@@ -1867,7 +1884,7 @@ bool cvdescriptorset::DescriptorSet::ValidateWriteUpdate(const debug_report_data
         if ((update->descriptorCount % 4) != 0) {
             *error_code = "VUID-VkWriteDescriptorSet-descriptorType-02220";
             std::stringstream error_str;
-            error_str << "Attempting write update to descriptor set " << set_ << " binding #" << update->dstBinding << " with "
+            error_str << "Attempting write update to " << StringifySetAndLayout() << " binding #" << update->dstBinding << " with "
                       << "descriptorCount  " << update->descriptorCount << " not a multiple of 4";
             *error_msg = error_str.str();
             return false;
@@ -1877,10 +1894,12 @@ bool cvdescriptorset::DescriptorSet::ValidateWriteUpdate(const debug_report_data
             *error_code = "VUID-VkWriteDescriptorSet-descriptorType-02221";
             std::stringstream error_str;
             if (!write_inline_info) {
-                error_str << "Attempting write update to descriptor set " << set_ << " binding #" << update->dstBinding << " with "
+                error_str << "Attempting write update to " << StringifySetAndLayout() << " binding #" << update->dstBinding
+                          << " with "
                           << "VkWriteDescriptorSetInlineUniformBlockEXT missing";
             } else {
-                error_str << "Attempting write update to descriptor set " << set_ << " binding #" << update->dstBinding << " with "
+                error_str << "Attempting write update to " << StringifySetAndLayout() << " binding #" << update->dstBinding
+                          << " with "
                           << "VkWriteDescriptorSetInlineUniformBlockEXT dataSize " << write_inline_info->dataSize
                           << " not equal to "
                           << "VkWriteDescriptorSet descriptorCount " << update->descriptorCount;
@@ -1892,7 +1911,7 @@ bool cvdescriptorset::DescriptorSet::ValidateWriteUpdate(const debug_report_data
         if (write_inline_info && (write_inline_info->dataSize % 4) != 0) {
             *error_code = "VUID-VkWriteDescriptorSetInlineUniformBlockEXT-dataSize-02222";
             std::stringstream error_str;
-            error_str << "Attempting write update to descriptor set " << set_ << " binding #" << update->dstBinding << " with "
+            error_str << "Attempting write update to " << StringifySetAndLayout() << " binding #" << update->dstBinding << " with "
                       << "VkWriteDescriptorSetInlineUniformBlockEXT dataSize " << write_inline_info->dataSize
                       << " not a multiple of 4";
             *error_msg = error_str.str();
@@ -1909,7 +1928,7 @@ bool cvdescriptorset::DescriptorSet::ValidateWriteUpdate(const debug_report_data
     // Update is within bounds and consistent so last step is to validate update contents
     if (!VerifyWriteUpdateContents(update, start_idx, func_name, error_code, error_msg)) {
         std::stringstream error_str;
-        error_str << "Write update to descriptor in set " << set_ << " binding #" << update->dstBinding
+        error_str << "Write update to " << StringifySetAndLayout() << " binding #" << update->dstBinding
                   << " failed with error message: " << error_msg->c_str();
         *error_msg = error_str.str();
         return false;
