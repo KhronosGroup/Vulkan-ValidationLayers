@@ -76,6 +76,15 @@ target_include_directories(VkLayer_core_validation PRIVATE
         ${EXTERNAL_DIR}/spirv-tools/include)
 target_link_libraries(VkLayer_core_validation PRIVATE
         log layer_utils SPIRV-Tools-prebuilt)
+if (NOT BUILD_IN_NDK)
+    set(SPIRV_OPT_LIB
+        "${SRC_DIR}/build-android/third_party/shaderc/android_test/obj/local/${ANDROID_ABI}/libSPIRV-Tools-opt.a")
+    add_library(SPIRV-Tools-opt-prebuilt STATIC IMPORTED)
+    set_target_properties(SPIRV-Tools-opt-prebuilt PROPERTIES IMPORTED_LOCATION
+        ${SPIRV_OPT_LIB})
+    target_link_libraries(VkLayer_core_validation PRIVATE
+        SPIRV-Tools-opt-prebuilt)
+endif()
 
 add_library(VkLayer_parameter_validation SHARED
         ${COMMON_DIR}/include/parameter_validation.cpp

@@ -21,6 +21,7 @@
 #define VULKAN_SHADER_VALIDATION_H
 
 #include <spirv_tools_commit_id.h>
+#include "spirv-tools/optimizer.hpp"
 
 // A forward iterator over spirv instructions. Provides easy access to len, opcode, and content words
 // without the caller needing to care too much about the physical SPIRV module layout.
@@ -76,8 +77,16 @@ struct shader_module {
     bool has_valid_spirv;
     VkShaderModule vk_shader_module;
 
-    shader_module(VkShaderModuleCreateInfo const *pCreateInfo, VkShaderModule shaderModule)
-        : words((uint32_t *)pCreateInfo->pCode, (uint32_t *)pCreateInfo->pCode + pCreateInfo->codeSize / sizeof(uint32_t)),
+    std::vector<uint32_t> PreprocessShaderBinary(uint32_t *src_binary, size_t binary_size, spv_target_env env) {
+        spvtools::Optimizer optimizer(env);
+        optimizer.RegisterPass(spvtools::CreateFlattenDecorationPass());
+        std::vector<uint32_t> optimized_binary;
+        auto result = optimizer.Run(src_binary, binary_size / sizeof(uint32_t), &optimized_binary);
+        return (result ? optimized_binary : std::vector<uint32_t>(src_binary, src_binary + binary_size / sizeof(uint32_t)));
+    }
+
+    shader_module(VkShaderModuleCreateInfo const *pCreateInfo, VkShaderModule shaderModule, spv_target_env env)
+        : words(PreprocessShaderBinary((uint32_t *)pCreateInfo->pCode, pCreateInfo->codeSize, env)),
           def_index(),
           has_valid_spirv(true),
           vk_shader_module(shaderModule) {
