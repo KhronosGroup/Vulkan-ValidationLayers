@@ -28612,7 +28612,7 @@ TEST_F(VkPositiveLayerTest, BindSparse) {
         return;
     }
 
-    m_errorMonitor->ExpectSuccess();
+    m_errorMonitor->ExpectSuccess(VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT);
 
     VkImage image;
     VkImageCreateInfo image_create_info = {};
