@@ -31,6 +31,7 @@
  * Author: Mike Schuchardt <mikes@lunarg.com>
  * Author: Mike Weiblen <mikew@lunarg.com>
  * Author: Tony Barbour <tony@LunarG.com>
+ * Author: John Zulauf <jzulauf@lunarg.com>
  */
 
 // Allow use of STL min and max functions in Windows
@@ -772,6 +773,15 @@ shader_module const *GetShaderModuleState(layer_data const *dev_data, VkShaderMo
     return it->second.get();
 }
 
+const TEMPLATE_STATE *GetDescriptorTemplateState(const layer_data *dev_data,
+                                                 VkDescriptorUpdateTemplateKHR descriptor_update_template) {
+    const auto it = dev_data->desc_template_map.find(descriptor_update_template);
+    if (it == dev_data->desc_template_map.cend()) {
+        return nullptr;
+    }
+    return it->second.get();
+}
+
 // Return true if for a given PSO, the given state enum is dynamic, else return false
 static bool IsDynamic(const PIPELINE_STATE *pPipeline, const VkDynamicState state) {
     if (pPipeline && pPipeline->graphicsPipelineCI.pDynamicState) {
@@ -1230,14 +1240,6 @@ static bool ValidateCmdBufDrawState(layer_data *dev_data, GLOBAL_CB_NODE *cb_nod
 
     for (const auto &set_binding_pair : pPipe->active_slots) {
         uint32_t setIndex = set_binding_pair.first;
-
-        // TODO -- remove this continue path when CmdPushDescriptorSet is implemented, for now it prevents a false positive
-        if ((setIndex < pipeline_layout.set_layouts.size()) && pipeline_layout.set_layouts[setIndex] &&
-            pipeline_layout.set_layouts[setIndex]->IsPushDescriptor()) {
-            // Push descriptors currently don't record required state for this validation
-            continue;
-        }
-
         // If valid set is not bound throw an error
         if ((state.boundDescriptorSets.size() <= setIndex) || (!state.boundDescriptorSets[setIndex])) {
             result |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
@@ -7771,7 +7773,10 @@ static void UpdateLastBoundDescriptorSets(layer_data *device_data, GLOBAL_CB_NOD
         cvdescriptorset::DescriptorSet *descriptor_set = descriptor_sets[input_idx];
 
         // Record binding (or push)
-        push_descriptor_cleanup(bound_sets[set_idx]);
+        if (descriptor_set != last_bound.push_descriptor_set.get()) {
+            // Only cleanup the push descriptors if they aren't the currently used set.
+            push_descriptor_cleanup(bound_sets[set_idx]);
+        }
         bound_sets[set_idx] = descriptor_set;
         bound_compat_ids[set_idx] = pipe_compat_ids[set_idx];  // compat ids are canonical *per* set index
 
@@ -7995,14 +8000,23 @@ static bool PreCallValidateCmdPushDescriptorSetKHR(layer_data *device_data, GLOB
         const auto &set_layouts = layout_data->set_layouts;
         const auto layout_u64 = HandleToUint64(layout);
         if (set < set_layouts.size()) {
-            const auto *dsl = set_layouts[set].get();
-            if (dsl && (0 == (dsl->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR))) {
-                skip =
-                    log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                            VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_LAYOUT_EXT, layout_u64, "VUID-vkCmdPushDescriptorSetKHR-set-00365",
-                            "%s: Set index %" PRIu32
-                            " does not match push descriptor set layout index for VkPipelineLayout 0x%" PRIxLEAST64 ".",
-                            func_name, set, layout_u64);
+            const auto dsl = set_layouts[set];
+            if (dsl) {
+                if (!dsl->IsPushDescriptor()) {
+                    skip = log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                   VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_LAYOUT_EXT, layout_u64,
+                                   "VUID-vkCmdPushDescriptorSetKHR-set-00365",
+                                   "%s: Set index %" PRIu32
+                                   " does not match push descriptor set layout index for VkPipelineLayout 0x%" PRIxLEAST64 ".",
+                                   func_name, set, layout_u64);
+                } else {
+                    // Create an empty proxy in order to use the existing descriptor set update validation
+                    // TODO move the validation (like this) that doesn't need descriptor set state to the DSL object so we
+                    // don't have to do this.
+                    cvdescriptorset::DescriptorSet proxy_ds(VK_NULL_HANDLE, VK_NULL_HANDLE, dsl, 0, device_data);
+                    skip |= proxy_ds.ValidatePushDescriptorsUpdate(device_data->report_data, descriptor_write_count,
+                                                                   descriptor_writes, func_name);
+                }
             }
         } else {
             skip = log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_LAYOUT_EXT,
@@ -8019,14 +8033,26 @@ static void PreCallRecordCmdPushDescriptorSetKHR(layer_data *device_data, GLOBAL
                                                  VkPipelineBindPoint pipelineBindPoint, VkPipelineLayout layout, uint32_t set,
                                                  uint32_t descriptorWriteCount, const VkWriteDescriptorSet *pDescriptorWrites) {
     const auto &pipeline_layout = GetPipelineLayout(device_data, layout);
-    if (!pipeline_layout) return;
-    std::unique_ptr<cvdescriptorset::DescriptorSet> new_desc{
-        new cvdescriptorset::DescriptorSet(0, 0, pipeline_layout->set_layouts[set], 0, device_data)};
+    // Short circuit invalid updates
+    if (!pipeline_layout || (set >= pipeline_layout->set_layouts.size()) || !pipeline_layout->set_layouts[set] ||
+        !pipeline_layout->set_layouts[set]->IsPushDescriptor())
+        return;
 
-    std::vector<cvdescriptorset::DescriptorSet *> descriptor_sets = {new_desc.get()};
+    // We need a descriptor set to update the bindings with, compatible with the passed layout
+    const auto dsl = pipeline_layout->set_layouts[set];
+    auto &last_bound = cb_state->lastBound[pipelineBindPoint];
+    auto &push_descriptor_set = last_bound.push_descriptor_set;
+    // if we are disturbing the current push_desriptor_set clear it
+    if (!push_descriptor_set || !CompatForSet(set, last_bound.compat_id_for_set, pipeline_layout->compat_for_set)) {
+        push_descriptor_set.reset(new cvdescriptorset::DescriptorSet(0, 0, dsl, 0, device_data));
+    }
+
+    std::vector<cvdescriptorset::DescriptorSet *> descriptor_sets = {push_descriptor_set.get()};
     UpdateLastBoundDescriptorSets(device_data, cb_state, pipelineBindPoint, pipeline_layout, set, 1, descriptor_sets, 0, nullptr);
-    cb_state->lastBound[pipelineBindPoint].push_descriptor_set = std::move(new_desc);
-    cb_state->lastBound[pipelineBindPoint].pipeline_layout = layout;
+    last_bound.pipeline_layout = layout;
+
+    // Now that we have either the new or extant push_descriptor set ... do the write updates against it
+    push_descriptor_set->PerformPushDescriptorsUpdate(descriptorWriteCount, pDescriptorWrites);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdPushDescriptorSetKHR(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
@@ -8034,13 +8060,19 @@ VKAPI_ATTR void VKAPI_CALL CmdPushDescriptorSetKHR(VkCommandBuffer commandBuffer
                                                    const VkWriteDescriptorSet *pDescriptorWrites) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     unique_lock_t lock(global_lock);
+    bool skip = false;
     auto cb_state = GetCBNode(device_data, commandBuffer);
-    bool skip = PreCallValidateCmdPushDescriptorSetKHR(device_data, cb_state, pipelineBindPoint, layout, set, descriptorWriteCount,
-                                                       pDescriptorWrites, "vkCmdPushDescriptorSetKHR()");
+    if (cb_state) {
+        skip = PreCallValidateCmdPushDescriptorSetKHR(device_data, cb_state, pipelineBindPoint, layout, set, descriptorWriteCount,
+                                                      pDescriptorWrites, "vkCmdPushDescriptorSetKHR()");
+        if (!skip) {
+            PreCallRecordCmdPushDescriptorSetKHR(device_data, cb_state, pipelineBindPoint, layout, set, descriptorWriteCount,
+                                                 pDescriptorWrites);
+        }
+    }
+    lock.unlock();
+
     if (!skip) {
-        PreCallRecordCmdPushDescriptorSetKHR(device_data, cb_state, pipelineBindPoint, layout, set, descriptorWriteCount,
-                                             pDescriptorWrites);
-        lock.unlock();
         device_data->dispatch_table.CmdPushDescriptorSetKHR(commandBuffer, pipelineBindPoint, layout, set, descriptorWriteCount,
                                                             pDescriptorWrites);
     }
@@ -14909,9 +14941,108 @@ VKAPI_ATTR void VKAPI_CALL UpdateDescriptorSetWithTemplateKHR(VkDevice device, V
         device_data->dispatch_table.UpdateDescriptorSetWithTemplateKHR(device, descriptorSet, descriptorUpdateTemplate, pData);
     }
 }
+static std::shared_ptr<cvdescriptorset::DescriptorSetLayout const> GetDslFromPipelineLayout(PIPELINE_LAYOUT_NODE const *layout_data,
+                                                                                            uint32_t set) {
+    std::shared_ptr<cvdescriptorset::DescriptorSetLayout const> dsl = nullptr;
+    if (layout_data && (set < layout_data->set_layouts.size())) {
+        dsl = layout_data->set_layouts[set];
+    }
+    return dsl;
+}
 
-static bool PreCallValidateCmdPushDescriptorSetWithTemplateKHR(layer_data *dev_data, GLOBAL_CB_NODE *cb_state) {
-    return ValidateCmd(dev_data, cb_state, CMD_PUSHDESCRIPTORSETWITHTEMPLATEKHR, "vkCmdPushDescriptorSetWithTemplateKHR()");
+static bool PreCallValidateCmdPushDescriptorSetWithTemplateKHR(layer_data *device_data, GLOBAL_CB_NODE *cb_state,
+                                                               VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate,
+                                                               VkPipelineLayout layout, uint32_t set, const void *pData) {
+    const char *const func_name = "vkPushDescriptorSetWithTemplateKHR()";
+    bool skip = false;
+    skip |= ValidateCmd(device_data, cb_state, CMD_PUSHDESCRIPTORSETWITHTEMPLATEKHR, func_name);
+
+    auto layout_data = GetPipelineLayout(device_data, layout);
+    auto dsl = GetDslFromPipelineLayout(layout_data, set);
+    const auto layout_u64 = HandleToUint64(layout);
+
+    // Validate the set index points to a push descriptor set and is in range
+    if (dsl) {
+        if (!dsl->IsPushDescriptor()) {
+            skip = log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_LAYOUT_EXT,
+                           layout_u64, "VUID-vkCmdPushDescriptorSetKHR-set-00365",
+                           "%s: Set index %" PRIu32
+                           " does not match push descriptor set layout index for VkPipelineLayout 0x%" PRIxLEAST64 ".",
+                           func_name, set, layout_u64);
+        }
+    } else if (layout_data && (set >= layout_data->set_layouts.size())) {
+        skip = log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_LAYOUT_EXT,
+                       layout_u64, "VUID-vkCmdPushDescriptorSetKHR-set-00364",
+                       "%s: Set index %" PRIu32 " is outside of range for VkPipelineLayout 0x%" PRIxLEAST64 " (set < %" PRIu32 ").",
+                       func_name, set, layout_u64, static_cast<uint32_t>(layout_data->set_layouts.size()));
+    }
+
+    const auto template_state = GetDescriptorTemplateState(device_data, descriptorUpdateTemplate);
+    if (template_state) {
+        const auto &template_ci = template_state->create_info;
+        static const std::map<VkPipelineBindPoint, std::string> bind_errors = {
+            std::make_pair(VK_PIPELINE_BIND_POINT_GRAPHICS, "VUID-vkCmdPushDescriptorSetWithTemplateKHR-commandBuffer-00366"),
+            std::make_pair(VK_PIPELINE_BIND_POINT_COMPUTE, "VUID-vkCmdPushDescriptorSetWithTemplateKHR-commandBuffer-00366"),
+            std::make_pair(VK_PIPELINE_BIND_POINT_RAY_TRACING_NV,
+                           "VUID-vkCmdPushDescriptorSetWithTemplateKHR-commandBuffer-00366")};
+        skip |= ValidatePipelineBindPoint(device_data, cb_state, template_ci.pipelineBindPoint, func_name, bind_errors);
+
+        if (template_ci.templateType != VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS_KHR) {
+            skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                            HandleToUint64(cb_state->commandBuffer), kVUID_Core_PushDescriptorUpdate_TemplateType,
+                            "%s: descriptorUpdateTemplate 0x%" PRIxLEAST64
+                            " was not created with flag VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS_KHR.",
+                            func_name, HandleToUint64(descriptorUpdateTemplate));
+        }
+        if (template_ci.set != set) {
+            skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                            HandleToUint64(cb_state->commandBuffer), kVUID_Core_PushDescriptorUpdate_Template_SetMismatched,
+                            "%s: descriptorUpdateTemplate 0x%" PRIxLEAST64 " created with set %" PRIu32
+                            " does not match command parameter set %" PRIu32 ".",
+                            func_name, HandleToUint64(descriptorUpdateTemplate), template_ci.set, set);
+        }
+        if (!CompatForSet(set, layout_data, GetPipelineLayout(device_data, template_ci.pipelineLayout))) {
+            skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                            HandleToUint64(cb_state->commandBuffer), kVUID_Core_PushDescriptorUpdate_Template_LayoutMismatched,
+                            "%s: descriptorUpdateTemplate 0x%" PRIxLEAST64 " created with pipelineLayout 0x%" PRIxLEAST64
+                            " is incompatible with command parameter layout 0x%" PRIxLEAST64 " for set %" PRIu32,
+                            func_name, HandleToUint64(descriptorUpdateTemplate), HandleToUint64(template_ci.pipelineLayout),
+                            HandleToUint64(layout), set);
+        }
+    }
+
+    if (dsl && template_state) {
+        // Create an empty proxy in order to use the existing descriptor set update validation
+        cvdescriptorset::DescriptorSet proxy_ds(VK_NULL_HANDLE, VK_NULL_HANDLE, dsl, 0, device_data);
+        // Decode the template into a set of write updates
+        cvdescriptorset::DecodedTemplateUpdate decoded_template(device_data, VK_NULL_HANDLE, template_state, pData,
+                                                                dsl->GetDescriptorSetLayout());
+        // Validate the decoded update against the proxy_ds
+        skip |= proxy_ds.ValidatePushDescriptorsUpdate(device_data->report_data,
+                                                       static_cast<uint32_t>(decoded_template.desc_writes.size()),
+                                                       decoded_template.desc_writes.data(), func_name);
+    }
+
+    return skip;
+}
+
+void PreCallRecordCmdPushDescriptorSetWithTemplateKHR(layer_data *device_data, GLOBAL_CB_NODE *cb_state,
+                                                      VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate,
+                                                      VkPipelineLayout layout, uint32_t set, const void *pData) {
+    const auto template_state = GetDescriptorTemplateState(device_data, descriptorUpdateTemplate);
+    if (template_state) {
+        auto layout_data = GetPipelineLayout(device_data, layout);
+        auto dsl = GetDslFromPipelineLayout(layout_data, set);
+        const auto &template_ci = template_state->create_info;
+        if (dsl && !dsl->IsDestroyed()) {
+            // Decode the template into a set of write updates
+            cvdescriptorset::DecodedTemplateUpdate decoded_template(device_data, VK_NULL_HANDLE, template_state, pData,
+                                                                    dsl->GetDescriptorSetLayout());
+            PreCallRecordCmdPushDescriptorSetKHR(device_data, cb_state, template_ci.pipelineBindPoint, layout, set,
+                                                 static_cast<uint32_t>(decoded_template.desc_writes.size()),
+                                                 decoded_template.desc_writes.data());
+        }
+    }
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdPushDescriptorSetWithTemplateKHR(VkCommandBuffer commandBuffer,
@@ -14921,9 +15052,12 @@ VKAPI_ATTR void VKAPI_CALL CmdPushDescriptorSetWithTemplateKHR(VkCommandBuffer c
     unique_lock_t lock(global_lock);
     bool skip = false;
     GLOBAL_CB_NODE *cb_state = GetCBNode(dev_data, commandBuffer);
-    // Minimal validation for command buffer state
     if (cb_state) {
-        skip |= PreCallValidateCmdPushDescriptorSetWithTemplateKHR(dev_data, cb_state);
+        skip |=
+            PreCallValidateCmdPushDescriptorSetWithTemplateKHR(dev_data, cb_state, descriptorUpdateTemplate, layout, set, pData);
+        if (!skip) {
+            PreCallRecordCmdPushDescriptorSetWithTemplateKHR(dev_data, cb_state, descriptorUpdateTemplate, layout, set, pData);
+        }
     }
     lock.unlock();
 
