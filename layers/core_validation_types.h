@@ -648,6 +648,18 @@ struct PIPELINE_LAYOUT_NODE {
     }
 };
 
+static inline bool CompatForSet(uint32_t set, const std::vector<PipelineLayoutCompatId> &a,
+                                const std::vector<PipelineLayoutCompatId> &b) {
+    bool result = (set < a.size()) && (set < b.size()) && (a[set] == b[set]);
+    return result;
+}
+
+static inline bool CompatForSet(uint32_t set, const PIPELINE_LAYOUT_NODE *a, const PIPELINE_LAYOUT_NODE *b) {
+    // Intentionally have a result variable to simplify debugging
+    bool result = a && b && CompatForSet(set, a->compat_for_set, b->compat_for_set);
+    return result;
+}
+
 class PIPELINE_STATE : public BASE_NODE {
    public:
     VkPipeline pipeline;

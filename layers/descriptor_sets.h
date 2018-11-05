@@ -444,7 +444,7 @@ struct DecodedTemplateUpdate {
     std::vector<VkWriteDescriptorSet> desc_writes;
     std::vector<VkWriteDescriptorSetInlineUniformBlockEXT> inline_infos;
     DecodedTemplateUpdate(layer_data *device_data, VkDescriptorSet descriptorSet, const TEMPLATE_STATE *template_state,
-                          const void *pData);
+                          const void *pData, VkDescriptorSetLayout push_layout = VK_NULL_HANDLE);
 };
 // Helper wrapping ValidateUpdateDescriptorSets, updating via templates
 bool ValidateUpdateDescriptorSetsWithTemplateKHR(layer_data *device_data, VkDescriptorSet descriptorSet,
@@ -515,6 +515,11 @@ class DescriptorSet : public BASE_NODE {
 
     std::string StringifySetAndLayout() const;
     // Descriptor Update functions. These functions validate state and perform update separately
+    // Validate contents of a push descriptor update
+    bool ValidatePushDescriptorsUpdate(const debug_report_data *report_data, uint32_t write_count,
+                                       const VkWriteDescriptorSet *p_wds, const char *func_name);
+    // Perform a push update whose contents were just validated using ValidatePushDescriptorsUpdate
+    void PerformPushDescriptorsUpdate(uint32_t write_count, const VkWriteDescriptorSet *p_wds);
     // Validate contents of a WriteUpdate
     bool ValidateWriteUpdate(const debug_report_data *, const VkWriteDescriptorSet *, const char *, std::string *, std::string *);
     // Perform a WriteUpdate whose contents were just validated using ValidateWriteUpdate

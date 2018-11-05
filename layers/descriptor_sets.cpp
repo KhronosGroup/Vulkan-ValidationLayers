@@ -843,7 +843,7 @@ bool cvdescriptorset::DescriptorSet::ValidateDrawState(const std::map<uint32_t, 
                                           caller, kVUIDUndefined, "VUID-VkDescriptorImageInfo-imageLayout-00344", &hit_error);
                         if (hit_error) {
                             *error =
-                                "Image layout specified at vkUpdateDescriptorSets() or vkUpdateDescriptorSetWithTemplate() time "
+                                "Image layout specified at vkUpdateDescriptorSet* or vkCmdPushDescriptorSet* time "
                                 "doesn't match actual image layout at time descriptor is used. See previous error callback for "
                                 "specific details.";
                             return false;
@@ -935,6 +935,15 @@ uint32_t cvdescriptorset::DescriptorSet::GetStorageUpdates(const std::map<uint32
 void cvdescriptorset::DescriptorSet::InvalidateBoundCmdBuffers() {
     core_validation::InvalidateCommandBuffers(device_data_, cb_bindings, {HandleToUint64(set_), kVulkanObjectTypeDescriptorSet});
 }
+
+// Loop through the write updates to do for a push descriptor set, ignoring dstSet
+void cvdescriptorset::DescriptorSet::PerformPushDescriptorsUpdate(uint32_t write_count, const VkWriteDescriptorSet *p_wds) {
+    assert(IsPushDescriptor());
+    for (uint32_t i = 0; i < write_count; i++) {
+        PerformWriteUpdate(&p_wds[i]);
+    }
+}
+
 // Perform write update in given update struct
 void cvdescriptorset::DescriptorSet::PerformWriteUpdate(const VkWriteDescriptorSet *update) {
     // Perform update on a per-binding basis as consecutive updates roll over to next binding
@@ -1706,11 +1715,15 @@ void cvdescriptorset::PerformUpdateDescriptorSets(const layer_data *dev_data, ui
 }
 
 cvdescriptorset::DecodedTemplateUpdate::DecodedTemplateUpdate(layer_data *device_data, VkDescriptorSet descriptorSet,
-                                                              const TEMPLATE_STATE *template_state, const void *pData) {
+                                                              const TEMPLATE_STATE *template_state, const void *pData,
+                                                              VkDescriptorSetLayout push_layout) {
     auto const &create_info = template_state->create_info;
     inline_infos.resize(create_info.descriptorUpdateEntryCount);  // Make sure we have one if we need it
     desc_writes.reserve(create_info.descriptorUpdateEntryCount);  // emplaced, so reserved without initialization
-    auto layout_obj = GetDescriptorSetLayout(device_data, create_info.descriptorSetLayout);
+    VkDescriptorSetLayout effective_dsl = create_info.templateType == VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET
+                                              ? create_info.descriptorSetLayout
+                                              : push_layout;
+    auto layout_obj = GetDescriptorSetLayout(device_data, effective_dsl);
 
     // Create a WriteDescriptorSet struct for each template update entry
     for (uint32_t i = 0; i < create_info.descriptorUpdateEntryCount; i++) {
@@ -1802,13 +1815,29 @@ std::string cvdescriptorset::DescriptorSet::StringifySetAndLayout() const {
     uint64_t layout_handle = HandleToUint64(p_layout_->GetDescriptorSetLayout());
     if (IsPushDescriptor()) {
         string_sprintf(&out, "Push Descriptors defined with VkDescriptorSetLayout 0x%" PRIxLEAST64, layout_handle);
-        out = "<push descriptors>";
     } else {
         string_sprintf(&out, "VkDescriptorSet 0x%" PRIxLEAST64 "allocated with VkDescriptorSetLayout 0x%" PRIxLEAST64,
                        HandleToUint64(set_), layout_handle);
     }
     return out;
 };
+
+// Loop through the write updates to validate for a push descriptor set, ignoring dstSet
+bool cvdescriptorset::DescriptorSet::ValidatePushDescriptorsUpdate(const debug_report_data *report_data, uint32_t write_count,
+                                                                   const VkWriteDescriptorSet *p_wds, const char *func_name) {
+    assert(IsPushDescriptor());
+    bool skip = false;
+    for (uint32_t i = 0; i < write_count; i++) {
+        std::string error_code;
+        std::string error_str;
+        if (!ValidateWriteUpdate(report_data, &p_wds[i], func_name, &error_code, &error_str)) {
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT_EXT,
+                            HandleToUint64(p_layout_->GetDescriptorSetLayout()), error_code, "%s failed update validation: %s.",
+                            func_name, error_str.c_str());
+        }
+    }
+    return skip;
+}
 
 // Validate the state for a given write update but don't actually perform the update
 //  If an error would occur for this update, return false and fill in details in error_msg string
@@ -2334,7 +2363,7 @@ bool cvdescriptorset::ValidateAllocateDescriptorSets(const core_validation::laye
     for (uint32_t i = 0; i < p_alloc_info->descriptorSetCount; i++) {
         auto layout = GetDescriptorSetLayout(dev_data, p_alloc_info->pSetLayouts[i]);
         if (layout) {  // nullptr layout indicates no valid layout handle for this device, validated/logged in object_tracker
-            if (layout->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR) {
+            if (layout->IsPushDescriptor()) {
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT_EXT,
                                 HandleToUint64(p_alloc_info->pSetLayouts[i]), "VUID-VkDescriptorSetAllocateInfo-pSetLayouts-00308",
                                 "Layout 0x%" PRIxLEAST64 " specified at pSetLayouts[%" PRIu32
