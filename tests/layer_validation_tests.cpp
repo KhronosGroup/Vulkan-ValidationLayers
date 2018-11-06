@@ -28541,7 +28541,7 @@ TEST_F(VkPositiveLayerTest, PushDescriptorNullDstSetTest) {
     const VkPipelineLayoutObj pipeline_layout(m_device, {&ds_layout});
 
     static const float vbo_data[3] = {1.f, 0.f, 1.f};
-    VkConstantBufferObj vbo(m_device, sizeof(vbo_data), (const void *)&vbo_data);
+    VkConstantBufferObj vbo(m_device, sizeof(vbo_data), (const void *)&vbo_data, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 
     VkDescriptorBufferInfo buff_info;
     buff_info.buffer = vbo.handle();
