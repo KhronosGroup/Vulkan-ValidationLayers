@@ -458,6 +458,52 @@ def makeGenOpts(args):
             expandEnumerants = False)
         ]
 
+    # Options for layer chassis dispatch source file
+    genOpts['layer_chassis_dispatch.cpp'] = [
+          LayerChassisDispatchOutputGenerator,
+          LayerChassisDispatchGeneratorOptions(
+            filename          = 'layer_chassis_dispatch.cpp',
+            directory         = directory,
+            apiname           = 'vulkan',
+            profile           = None,
+            versions          = featuresPat,
+            emitversions      = featuresPat,
+            defaultExtensions = 'vulkan',
+            addExtensions     = addExtensionsPat,
+            removeExtensions  = removeExtensionsPat,
+            emitExtensions    = emitExtensionsPat,
+            prefixText        = prefixStrings + vkPrefixStrings,
+            protectFeature    = False,
+            apicall           = 'VKAPI_ATTR ',
+            apientry          = 'VKAPI_CALL ',
+            apientryp         = 'VKAPI_PTR *',
+            alignFuncParam    = 48,
+            expandEnumerants = False)
+        ]
+
+    # Options for layer chassis dispatch header file
+    genOpts['layer_chassis_dispatch.h'] = [
+          LayerChassisDispatchOutputGenerator,
+          LayerChassisDispatchGeneratorOptions(
+            filename          = 'layer_chassis_dispatch.h',
+            directory         = directory,
+            apiname           = 'vulkan',
+            profile           = None,
+            versions          = featuresPat,
+            emitversions      = featuresPat,
+            defaultExtensions = 'vulkan',
+            addExtensions     = addExtensionsPat,
+            removeExtensions  = removeExtensionsPat,
+            emitExtensions    = emitExtensionsPat,
+            prefixText        = prefixStrings + vkPrefixStrings,
+            protectFeature    = False,
+            apicall           = 'VKAPI_ATTR ',
+            apientry          = 'VKAPI_CALL ',
+            apientryp         = 'VKAPI_PTR *',
+            alignFuncParam    = 48,
+            expandEnumerants = False)
+        ]
+
 
 # Generate a target based on the options in the matching genOpts{} object.
 # This is encapsulated in a function so it can be profiled and/or timed.
@@ -577,6 +623,7 @@ if __name__ == '__main__':
     from helper_file_generator import HelperFileOutputGenerator, HelperFileOutputGeneratorOptions
     from layer_dispatch_table_generator import LayerDispatchTableOutputGenerator, LayerDispatchTableGeneratorOptions
     from layer_chassis_generator import LayerChassisOutputGenerator, LayerChassisGeneratorOptions
+    from layer_chassis_dispatch_generator import LayerChassisDispatchOutputGenerator, LayerChassisDispatchGeneratorOptions
 
     # This splits arguments which are space-separated lists
     args.feature = [name for arg in args.feature for name in arg.split()]
