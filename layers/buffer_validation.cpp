@@ -4135,6 +4135,12 @@ bool PreCallValidateCreateImageView(layer_data *device_data, const VkImageViewCr
             }
         }
     }
+	else
+	{
+		skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
+                                HandleToUint64(create_info->image), "VUID-VkImageViewCreateInfo-image-parameter",
+                                "vkCreateImageView() image handle is VK_NULL_HANDLE. Image is either not created or it is destroyed at this point.");
+	}
     return skip;
 }
 
