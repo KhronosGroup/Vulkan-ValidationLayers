@@ -1157,7 +1157,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                     elif value.israngedenum and value.isconst:
                         enum_value_list = 'All%sEnums' % value.type
                         usedLines.append('skip |= validate_ranged_enum_array(local_data->report_data, "{}", {ppp}"{}"{pps}, {ppp}"{}"{pps}, "{}", {}, {pf}{}, {pf}{}, {}, {});\n'.format(funcName, lenDisplayName, valueDisplayName, value.type, enum_value_list, lenParam.name, value.name, cvReq, req, pf=valuePrefix, **postProcSpec))
-                    elif value.name == 'pNext':
+                    elif value.name == 'pNext' and value.isconst:
                         usedLines += self.makeStructNextCheck(valuePrefix, value, funcName, valueDisplayName, postProcSpec, structTypeName)
                     else:
                         usedLines += self.makePointerCheck(valuePrefix, value, lenParam, req, cvReq, cpReq, funcName, lenDisplayName, valueDisplayName, postProcSpec, structTypeName)
