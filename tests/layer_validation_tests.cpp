@@ -33872,11 +33872,23 @@ TEST_F(VkLayerTest, MeshShaderNV) {
     auto mesh_shader_features = lvl_init_struct<VkPhysicalDeviceMeshShaderFeaturesNV>();
     auto features2 = lvl_init_struct<VkPhysicalDeviceFeatures2KHR>(&mesh_shader_features);
     vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
+    features2.features.multiDrawIndirect = VK_FALSE;
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VkShaderObj vs(m_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
+    static const char vertShaderText[] =
+        "#version 450\n"
+        "vec2 vertices[3];\n"
+        "void main() {\n"
+        "      vertices[0] = vec2(-1.0, -1.0);\n"
+        "      vertices[1] = vec2( 1.0, -1.0);\n"
+        "      vertices[2] = vec2( 0.0,  1.0);\n"
+        "   gl_Position = vec4(vertices[gl_VertexIndex % 3], 0.0, 1.0);\n"
+        "   gl_PointSize = 1.0f;\n"
+        "}\n";
+
+    VkShaderObj vs(m_device, vertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
     VkShaderObj fs(m_device, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this);
 
     VkPipelineShaderStageCreateInfo meshStage = { VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO };
@@ -33910,6 +33922,27 @@ TEST_F(VkLayerTest, MeshShaderNV) {
             vector<std::string>({"VUID-VkGraphicsPipelineCreateInfo-pStages-02097",
                                  "VUID-VkGraphicsPipelineCreateInfo-pStages-02098"}));
     }
+
+    PFN_vkCmdDrawMeshTasksIndirectNV vkCmdDrawMeshTasksIndirectNV =
+        (PFN_vkCmdDrawMeshTasksIndirectNV)vkGetInstanceProcAddr(instance(), "vkCmdDrawMeshTasksIndirectNV");
+
+    VkBufferCreateInfo buffer_create_info = {VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
+    buffer_create_info.size = sizeof(uint32_t);
+    buffer_create_info.usage = VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
+    VkBuffer buffer;
+    VkResult result = vkCreateBuffer(m_device->device(), &buffer_create_info, nullptr, &buffer);
+    ASSERT_VK_SUCCESS(result);
+
+    m_commandBuffer->begin();
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDrawMeshTasksIndirectNV-drawCount-02146");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDrawMeshTasksIndirectNV-drawCount-02147");
+    vkCmdDrawMeshTasksIndirectNV(m_commandBuffer->handle(), buffer, 0, 2, 0);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->end();
+
+    vkDestroyBuffer(m_device->device(), buffer, 0);
 }
 
 
