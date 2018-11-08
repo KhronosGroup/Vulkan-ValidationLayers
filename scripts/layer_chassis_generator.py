@@ -127,6 +127,137 @@ class LayerChassisOutputGenerator(OutputGenerator):
     precallrecord_loop = precallvalidate_loop
     postcallrecord_loop = "for (auto intercept : layer_data->object_dispatch) {"
 
+    inline_custom_header_preamble = """
+#define NOMINMAX
+#include <mutex>
+#include <cinttypes>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unordered_map>
+#include <unordered_set>
+#include <algorithm>
+#include <memory>
+
+#include "vk_loader_platform.h"
+#include "vulkan/vulkan.h"
+#include "vk_layer_config.h"
+#include "vk_layer_data.h"
+#include "vk_layer_logging.h"
+#include "vk_object_types.h"
+#include "vulkan/vk_layer.h"
+#include "vk_enum_string_helper.h"
+#include "vk_layer_extension_utils.h"
+#include "vk_layer_utils.h"
+#include "vulkan/vk_layer.h"
+#include "vk_dispatch_table_helper.h"
+#include "vk_validation_error_messages.h"
+#include "vk_extension_helper.h"
+#include "vk_safe_struct.h"
+
+extern uint64_t global_unique_id;
+extern std::unordered_map<uint64_t, uint64_t> unique_id_mapping;
+"""
+
+    inline_custom_header_class_definition = """
+
+// Layer object type identifiers
+enum LayerObjectTypeId {
+    LayerObjectTypeThreading,
+    LayerObjectTypeParameterValidation,
+    LayerObjectTypeObjectTracker,
+    LayerObjectTypeCoreValidation,
+};
+
+struct TEMPLATE_STATE {
+    VkDescriptorUpdateTemplateKHR desc_update_template;
+    safe_VkDescriptorUpdateTemplateCreateInfo create_info;
+
+    TEMPLATE_STATE(VkDescriptorUpdateTemplateKHR update_template, safe_VkDescriptorUpdateTemplateCreateInfo *pCreateInfo)
+        : desc_update_template(update_template), create_info(*pCreateInfo) {}
+};
+
+// Layer chassis validation object base class definition
+class ValidationObject {
+    public:
+        uint32_t api_version;
+        debug_report_data* report_data = nullptr;
+        std::vector<VkDebugReportCallbackEXT> logging_callback;
+        std::vector<VkDebugUtilsMessengerEXT> logging_messenger;
+
+        VkLayerInstanceDispatchTable instance_dispatch_table;
+        VkLayerDispatchTable device_dispatch_table;
+
+        InstanceExtensions instance_extensions;
+        DeviceExtensions device_extensions = {};
+
+        VkInstance instance = VK_NULL_HANDLE;
+        VkPhysicalDevice physical_device = VK_NULL_HANDLE;
+        VkDevice device = VK_NULL_HANDLE;
+
+        std::vector<ValidationObject*> object_dispatch;
+        LayerObjectTypeId container_type;
+
+        // Constructor
+        ValidationObject(){};
+        // Destructor
+        virtual ~ValidationObject() {};
+
+        std::mutex layer_mutex;
+
+        std::string layer_name = "CHASSIS";
+
+        // Handle Wrapping Data
+        // Reverse map display handles
+        std::unordered_map<VkDisplayKHR, uint64_t> display_id_reverse_mapping;
+        std::unordered_map<uint64_t, std::unique_ptr<TEMPLATE_STATE>> desc_template_map;
+        std::unordered_set<std::string> device_extension_set;
+        struct SubpassesUsageStates {
+            std::unordered_set<uint32_t> subpasses_using_color_attachment;
+            std::unordered_set<uint32_t> subpasses_using_depthstencil_attachment;
+        };
+        // Uses unwrapped handles
+        std::unordered_map<VkRenderPass, SubpassesUsageStates> renderpasses_states;
+        // Map of wrapped swapchain handles to arrays of wrapped swapchain image IDs
+        // Each swapchain has an immutable list of wrapped swapchain image IDs -- always return these IDs if they exist
+        std::unordered_map<VkSwapchainKHR, std::vector<VkImage>> swapchain_wrapped_image_handle_map;
+
+
+        // Unwrap a handle.  Must hold lock.
+        template <typename HandleType>
+        HandleType Unwrap(HandleType wrappedHandle) {
+            // TODO: don't use operator[] here.
+            return (HandleType)unique_id_mapping[reinterpret_cast<uint64_t const &>(wrappedHandle)];
+        }
+
+        // Wrap a newly created handle with a new unique ID, and return the new ID -- must hold lock.
+        template <typename HandleType>
+        HandleType WrapNew(HandleType newlyCreatedHandle) {
+            auto unique_id = global_unique_id++;
+            unique_id_mapping[unique_id] = reinterpret_cast<uint64_t const &>(newlyCreatedHandle);
+            return (HandleType)unique_id;
+        }
+
+        // Specialized handling for VkDisplayKHR. Adds an entry to enable reverse-lookup. Must hold lock.
+        VkDisplayKHR WrapDisplay(VkDisplayKHR newlyCreatedHandle, ValidationObject *map_data) {
+            auto unique_id = global_unique_id++;
+            unique_id_mapping[unique_id] = reinterpret_cast<uint64_t const &>(newlyCreatedHandle);
+            map_data->display_id_reverse_mapping[newlyCreatedHandle] = unique_id;
+            return (VkDisplayKHR)unique_id;
+        }
+
+        // VkDisplayKHR objects don't have a single point of creation, so we need to see if one already exists in the map before
+        // creating another. Must hold lock.
+        VkDisplayKHR MaybeWrapDisplay(VkDisplayKHR handle, ValidationObject *map_data) {
+            // See if this display is already known
+            auto it = map_data->display_id_reverse_mapping.find(handle);
+            if (it != map_data->display_id_reverse_mapping.end()) return (VkDisplayKHR)it->second;
+            // Unknown, so wrap
+            return WrapDisplay(handle, map_data);
+        }
+
+        // Pre/post hook point declarations
+"""
 
     inline_custom_source_preamble = """
 // This file is ***GENERATED***.  Do Not Edit.
@@ -158,18 +289,43 @@ class LayerChassisOutputGenerator(OutputGenerator):
 #define VALIDATION_ERROR_MAP_IMPL
 
 #include "chassis.h"
+#include "layer_chassis_dispatch.h"
 
 std::unordered_map<void*, ValidationObject*> layer_data_map;
 
+// Global unique object identifier.  All increments must be guarded by a lock.
+uint64_t global_unique_id = 1;
+// Map uniqueID to actual object handle
+std::unordered_map<uint64_t, uint64_t> unique_id_mapping;
+
+// TODO: This variable controls handle wrapping -- in the future it should be hooked
+//       up to the new VALIDATION_FEATURES extension. Temporarily, control with a compile-time flag.
+#if defined(LAYER_CHASSIS_CAN_WRAP_HANDLES)
+bool wrap_handles = true;
+#else
+const bool wrap_handles = false;
+#endif
+
 // Include child object (layer) definitions
+#if BUILD_OBJECT_TRACKER
 #include "object_lifetime_validation.h"
+#define OBJECT_LAYER_NAME "VK_LAYER_LUNARG_object_tracker"
+#elif BUILD_THREAD_CHECKER
+#define OBJECT_LAYER_NAME "VK_LAYER_GOOGLE_threading"
+#elif BUILD_PARAMETER_VALIDATION
+#define OBJECT_LAYER_NAME "VK_LAYER_LUNARG_parameter_validation"
+#elif BUILD_CORE_VALIDATION
+#define OBJECT_LAYER_NAME "VK_LAYER_LUNARG_core_validation"
+#else
+#define OBJECT_LAYER_NAME "VK_LAYER_GOOGLE_unique_objects"
+#endif
 
 namespace vulkan_layer_chassis {
 
 using std::unordered_map;
 
 static const VkLayerProperties global_layer = {
-    "VK_LAYER_LUNARG_object_tracker", VK_LAYER_API_VERSION, 1, "LunarG validation Layer",
+    OBJECT_LAYER_NAME, VK_LAYER_API_VERSION, 1, "LunarG validation Layer",
 };
 
 static const VkExtensionProperties instance_extensions[] = {{VK_EXT_DEBUG_REPORT_EXTENSION_NAME, VK_EXT_DEBUG_REPORT_SPEC_VERSION}};
@@ -178,6 +334,34 @@ extern const std::unordered_map<std::string, void*> name_to_funcptr_map;
 
 
 // Manually written functions
+
+// Check enabled instance extensions against supported instance extension whitelist
+static void InstanceExtensionWhitelist(ValidationObject *layer_data, const VkInstanceCreateInfo *pCreateInfo, VkInstance instance) {
+    for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
+        // Check for recognized instance extensions
+        if (!white_list(pCreateInfo->ppEnabledExtensionNames[i], kInstanceExtensionNames)) {
+            log_msg(layer_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                    kVUIDUndefined,
+                    "Instance Extension %s is not supported by this layer.  Using this extension may adversely affect validation "
+                    "results and/or produce undefined behavior.",
+                    pCreateInfo->ppEnabledExtensionNames[i]);
+        }
+    }
+}
+
+// Check enabled device extensions against supported device extension whitelist
+static void DeviceExtensionWhitelist(ValidationObject *layer_data, const VkDeviceCreateInfo *pCreateInfo, VkDevice device) {
+    for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
+        // Check for recognized device extensions
+        if (!white_list(pCreateInfo->ppEnabledExtensionNames[i], kDeviceExtensionNames)) {
+            log_msg(layer_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                    kVUIDUndefined,
+                    "Device Extension %s is not supported by this layer.  Using this extension may adversely affect validation "
+                    "results and/or produce undefined behavior.",
+                    pCreateInfo->ppEnabledExtensionNames[i]);
+        }
+    }
+}
 
 VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetDeviceProcAddr(VkDevice device, const char *funcName) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
@@ -245,9 +429,11 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
 
     // Create temporary dispatch vector for pre-calls until instance is created
     std::vector<ValidationObject*> local_object_dispatch;
+#if BUILD_OBJECT_TRACKER
     auto object_tracker = new ObjectLifetimes;
     local_object_dispatch.emplace_back(object_tracker);
     object_tracker->container_type = LayerObjectTypeObjectTracker;
+#endif
 
 
     // Init dispatch array and call registration functions
@@ -271,11 +457,17 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
                                                          pCreateInfo->ppEnabledExtensionNames);
     framework->api_version = framework->instance_extensions.InitFromInstanceCreateInfo(
         (pCreateInfo->pApplicationInfo ? pCreateInfo->pApplicationInfo->apiVersion : VK_API_VERSION_1_0), pCreateInfo);
+#if BUILD_OBJECT_TRACKER
     layer_debug_messenger_actions(framework->report_data, framework->logging_messenger, pAllocator, "lunarg_object_tracker");
+#else
+    layer_debug_messenger_actions(framework->report_data, framework->logging_messenger, pAllocator, "lunarg_unique_objects");
+#endif
 
     for (auto intercept : framework->object_dispatch) {
         intercept->PostCallRecordCreateInstance(pCreateInfo, pAllocator, pInstance);
     }
+
+    InstanceExtensionWhitelist(framework, pCreateInfo, *pInstance);
 
     return result;
 }
@@ -351,6 +543,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
     device_interceptor->report_data = layer_debug_utils_create_device(instance_interceptor->report_data, *pDevice);
     device_interceptor->api_version = instance_interceptor->api_version;
 
+#if BUILD_OBJECT_TRACKER
     // Create child layer objects for this key and add to dispatch vector
     auto object_tracker = new ObjectLifetimes;
     // TODO:  Initialize child objects with parent info thru constuctor taking a parent object
@@ -360,11 +553,14 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
     object_tracker->report_data = device_interceptor->report_data;
     object_tracker->device_dispatch_table = device_interceptor->device_dispatch_table;
     device_interceptor->object_dispatch.emplace_back(object_tracker);
+#endif
 
     for (auto intercept : instance_interceptor->object_dispatch) {
         std::lock_guard<std::mutex> lock(intercept->layer_mutex);
         intercept->PostCallRecordCreateDevice(gpu, pCreateInfo, pAllocator, pDevice);
     }
+
+    DeviceExtensionWhitelist(device_interceptor, pCreateInfo, *pDevice);
 
     return result;
 }
@@ -405,7 +601,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDebugReportCallbackEXT(VkInstance instance,
         std::lock_guard<std::mutex> lock(intercept->layer_mutex);
         intercept->PreCallRecordCreateDebugReportCallbackEXT(instance, pCreateInfo, pAllocator, pCallback);
     }
-    VkResult result = layer_data->instance_dispatch_table.CreateDebugReportCallbackEXT(instance, pCreateInfo, pAllocator, pCallback);
+    VkResult result = DispatchCreateDebugReportCallbackEXT(layer_data, instance, pCreateInfo, pAllocator, pCallback);
     result = layer_create_report_callback(layer_data->report_data, false, pCreateInfo, pAllocator, pCallback);
     """ + postcallrecord_loop + """
         std::lock_guard<std::mutex> lock(intercept->layer_mutex);
@@ -425,7 +621,7 @@ VKAPI_ATTR void VKAPI_CALL DestroyDebugReportCallbackEXT(VkInstance instance, Vk
         std::lock_guard<std::mutex> lock(intercept->layer_mutex);
         intercept->PreCallRecordDestroyDebugReportCallbackEXT(instance, callback, pAllocator);
     }
-    layer_data->instance_dispatch_table.DestroyDebugReportCallbackEXT(instance, callback, pAllocator);
+    DispatchDestroyDebugReportCallbackEXT(layer_data, instance, callback, pAllocator);
     layer_destroy_report_callback(layer_data->report_data, callback, pAllocator);
     """ + postcallrecord_loop + """
         std::lock_guard<std::mutex> lock(intercept->layer_mutex);
@@ -490,9 +686,6 @@ VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkNegotiateLoaderLayerInterfaceVe
 }"""
 
 
-
-
-
     def __init__(self,
                  errFile = sys.stderr,
                  warnFile = sys.stderr,
@@ -544,76 +737,10 @@ VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkNegotiateLoaderLayerInterfaceVe
             if (genOpts.prefixText):
                 for s in genOpts.prefixText:
                     write(s, file=self.outFile)
-            write('#define NOMINMAX', file=self.outFile)
-            write('#include <mutex>', file=self.outFile)
-            write('#include <cinttypes>', file=self.outFile)
-            write('#include <stdio.h>', file=self.outFile)
-            write('#include <stdlib.h>', file=self.outFile)
-            write('#include <string.h>', file=self.outFile)
-            write('#include <unordered_map>', file=self.outFile)
-            write('#include <unordered_set>', file=self.outFile)
-            write('#include <algorithm>', file=self.outFile)
-
-            write('#include "vk_loader_platform.h"', file=self.outFile)
-            write('#include "vulkan/vulkan.h"', file=self.outFile)
-            write('#include "vk_layer_config.h"', file=self.outFile)
-            write('#include "vk_layer_data.h"', file=self.outFile)
-            write('#include "vk_layer_logging.h"', file=self.outFile)
-            write('#include "vk_object_types.h"', file=self.outFile)
-            write('#include "vulkan/vk_layer.h"', file=self.outFile)
-            write('#include "vk_enum_string_helper.h"', file=self.outFile)
-            write('#include "vk_layer_extension_utils.h"', file=self.outFile)
-            write('#include "vk_layer_utils.h"', file=self.outFile)
-            write('#include "vulkan/vk_layer.h"', file=self.outFile)
-            write('#include "vk_dispatch_table_helper.h"', file=self.outFile)
-            write('#include "vk_validation_error_messages.h"', file=self.outFile)
-            write('#include "vk_extension_helper.h"', file=self.outFile)
-            write('', file=self.outFile)
+            write(self.inline_custom_header_preamble, file=self.outFile)
         else:
             write(self.inline_custom_source_preamble, file=self.outFile)
-
-        # Define some useful types
-        self.layer_factory += '// Layer object type identifiers\n'
-        self.layer_factory += 'enum LayerObjectTypeId {\n'
-        self.layer_factory += '    LayerObjectTypeThreading,\n'
-        self.layer_factory += '    LayerObjectTypeParameterValidation,\n'
-        self.layer_factory += '    LayerObjectTypeObjectTracker,\n'
-        self.layer_factory += '    LayerObjectTypeCoreValidation,\n'
-        self.layer_factory += '    LayerObjectTypeUniqueObjects,\n'
-        self.layer_factory += '};\n\n'
-
-        # Define base class
-        self.layer_factory += '// Uber Layer validation object base class definition\n'
-        self.layer_factory += 'class ValidationObject {\n'
-        self.layer_factory += '    public:\n'
-        self.layer_factory += '        uint32_t api_version;\n'
-        self.layer_factory += '        debug_report_data* report_data = nullptr;\n'
-        self.layer_factory += '        std::vector<VkDebugReportCallbackEXT> logging_callback;\n'
-        self.layer_factory += '        std::vector<VkDebugUtilsMessengerEXT> logging_messenger;\n'
-        self.layer_factory += '\n'
-        self.layer_factory += '        VkLayerInstanceDispatchTable instance_dispatch_table;\n'
-        self.layer_factory += '        VkLayerDispatchTable device_dispatch_table;\n'
-        self.layer_factory += '\n'
-        self.layer_factory += '        InstanceExtensions instance_extensions;\n'
-        self.layer_factory += '        DeviceExtensions device_extensions = {};\n'
-        self.layer_factory += '\n'
-        self.layer_factory += '        VkInstance instance = VK_NULL_HANDLE;\n'
-        self.layer_factory += '        VkPhysicalDevice physical_device = VK_NULL_HANDLE;\n'
-        self.layer_factory += '        VkDevice device = VK_NULL_HANDLE;\n'
-        self.layer_factory += '\n'
-        self.layer_factory += '        std::vector<ValidationObject*> object_dispatch;\n'
-        self.layer_factory += '        LayerObjectTypeId container_type;\n'
-        self.layer_factory += '\n'
-        self.layer_factory += '        // Constructor\n'
-        self.layer_factory += '        ValidationObject(){};\n'
-        self.layer_factory += '        // Destructor\n'
-        self.layer_factory += '        virtual ~ValidationObject() {};\n'
-        self.layer_factory += '\n'
-        self.layer_factory += '        std::mutex layer_mutex;\n'
-        self.layer_factory += '\n'
-        self.layer_factory += '        std::string layer_name = "CHASSIS";\n'
-        self.layer_factory += '\n'
-        self.layer_factory += '        // Pre/post hook point declarations\n'
+        self.layer_factory += self.inline_custom_header_class_definition
 
     #
     def endFile(self):
@@ -782,7 +909,7 @@ VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkNegotiateLoaderLayerInterfaceVe
         api_function_name = cmdinfo.elem.attrib.get('name')
         params = cmdinfo.elem.findall('param/name')
         paramstext = ', '.join([str(param.text) for param in params])
-        API = api_function_name.replace('vk','layer_data->%s_dispatch_table.' % (device_or_instance),1)
+        API = api_function_name.replace('vk','Dispatch') + '(layer_data, '
 
         # Declare result variable, if any.
         return_map = {
@@ -812,7 +939,7 @@ VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkNegotiateLoaderLayerInterfaceVe
         self.appendSection('command', '        intercept->PreCallRecord%s(%s);' % (api_function_name[2:], paramstext))
         self.appendSection('command', '    }')
 
-        self.appendSection('command', '    ' + assignresult + API + '(' + paramstext + ');')
+        self.appendSection('command', '    ' + assignresult + API + paramstext + ');')
 
         # Generate post-call object processing source code
         alt_ret_codes = [
