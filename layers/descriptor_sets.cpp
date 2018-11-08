@@ -239,7 +239,7 @@ bool cvdescriptorset::DescriptorSetLayout::IsCompatible(DescriptorSetLayout cons
     bool detailed_compat_check =
         GetLayoutDef()->IsCompatible(layout_, rh_ds_layout->GetDescriptorSetLayout(), rh_ds_layout->GetLayoutDef(), error_msg);
     // The detailed check should never tell us mismatching DSL are compatible
-    assert(!detailed_compat_check);
+    assert(detailed_compat_check);
     return detailed_compat_check;
 }
 
