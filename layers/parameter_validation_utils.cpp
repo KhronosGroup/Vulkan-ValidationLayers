@@ -3571,6 +3571,13 @@ bool pv_vkCmdDrawMeshTasksIndirectNV(VkCommandBuffer commandBuffer, VkBuffer buf
                         stride);
     }
 
+    if (!dev_data->physical_device_features.multiDrawIndirect && ((drawCount > 1))) {
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                        HandleToUint64(commandBuffer), "VUID-vkCmdDrawMeshTasksIndirectNV-drawCount-02147",
+                        "vkCmdDrawMeshTasksIndirectNV(): Device feature multiDrawIndirect disabled: count must be 0 or 1 but is %d",
+                        drawCount);
+    }
+
     return skip;
 }
 
