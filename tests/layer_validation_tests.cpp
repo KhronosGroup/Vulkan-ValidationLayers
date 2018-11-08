@@ -19851,7 +19851,9 @@ TEST_F(VkPositiveLayerTest, ShaderRelaxedBlockLayout) {
         vkDestroyShaderModule(m_device->handle(), shader_module, NULL);
     }
 }
-
+#ifdef DONT_RUN_THIS
+// This test has problems that cause some Linux Nvidia drivers to report errors
+// Removing it until errors can be addressed
 TEST_F(VkPositiveLayerTest, SpirvGroupDecorations) {
     TEST_DESCRIPTION("Test shader validation support for group decorations.");
     ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
@@ -20048,6 +20050,7 @@ TEST_F(VkPositiveLayerTest, SpirvGroupDecorations) {
     vkDestroyPipelineLayout(device(), pipeline_layout, nullptr);
     vkDestroyDescriptorSetLayout(device(), ds_layout, nullptr);
 }
+#endif  // DONT_RUN_THIS
 
 TEST_F(VkPositiveLayerTest, CreatePipelineCheckShaderCapabilityExtension1of2) {
     // This is a positive test, no errors expected
