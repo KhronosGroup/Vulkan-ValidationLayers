@@ -19956,18 +19956,20 @@ TEST_F(VkPositiveLayerTest, SpirvGroupDecorations) {
 )";
 
     // CreateDescriptorSetLayout
-    VkDescriptorSetLayoutBinding dslb = {};
-    dslb.binding = 0;
-    dslb.descriptorCount = 1;
-    dslb.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-    dslb.pImmutableSamplers = NULL;
-    dslb.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT | VK_SHADER_STAGE_ALL;
+    VkDescriptorSetLayoutBinding dslb[6] = {};
+    for (auto i = 0; i < 6; i++) {
+        dslb[i].binding = i;
+        dslb[i].descriptorCount = 1;
+        dslb[i].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+        dslb[i].pImmutableSamplers = NULL;
+        dslb[i].stageFlags = VK_SHADER_STAGE_COMPUTE_BIT | VK_SHADER_STAGE_ALL;
+    }
 
     VkDescriptorSetLayoutCreateInfo ds_layout_ci = {};
     ds_layout_ci.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
     ds_layout_ci.flags = 0;
-    ds_layout_ci.bindingCount = 1;
-    ds_layout_ci.pBindings = &dslb;
+    ds_layout_ci.bindingCount = 6;
+    ds_layout_ci.pBindings = dslb;
 
     VkDescriptorSetLayout ds_layout = {};
     vkCreateDescriptorSetLayout(m_device->device(), &ds_layout_ci, NULL, &ds_layout);
@@ -19985,7 +19987,7 @@ TEST_F(VkPositiveLayerTest, SpirvGroupDecorations) {
     // Create DescriptorPool
     VkDescriptorPoolSize ds_type_count = {};
     ds_type_count.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-    ds_type_count.descriptorCount = 1;
+    ds_type_count.descriptorCount = 6;
 
     VkDescriptorPoolCreateInfo ds_pool_ci = {};
     ds_pool_ci.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -20038,7 +20040,6 @@ TEST_F(VkPositiveLayerTest, SpirvGroupDecorations) {
     VkPipeline cs_pipeline;
 
     m_errorMonitor->ExpectSuccess();
-    m_errorMonitor->SetUnexpectedError("UNASSIGNED-CoreValidation-Shader-MissingDescriptor");
     vkCreateComputePipelines(device(), VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &cs_pipeline);
     m_errorMonitor->VerifyNotFound();
 
