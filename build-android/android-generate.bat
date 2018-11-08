@@ -36,6 +36,8 @@ py -3 ../../../scripts/lvl_genvk.py -registry %HEADERS_REGISTRY_PATH%/vk.xml -sc
 
 py -3 ../../../scripts/lvl_genvk.py -registry %HEADERS_REGISTRY_PATH%/vk.xml -scripts %HEADERS_REGISTRY_PATH% object_tracker.cpp
 py -3 ../../../scripts/lvl_genvk.py -registry %HEADERS_REGISTRY_PATH%/vk.xml -scripts %HEADERS_REGISTRY_PATH% object_tracker.h
+py -3 ../../../scripts/lvl_genvk.py -registry %HEADERS_REGISTRY_PATH%/vk.xml -scripts %HEADERS_REGISTRY_PATH% layer_chassis_dispatch.cpp
+py -3 ../../../scripts/lvl_genvk.py -registry %HEADERS_REGISTRY_PATH%/vk.xml -scripts %HEADERS_REGISTRY_PATH% layer_chassis_dispatch.h
 py -3 ../../../scripts/lvl_genvk.py -registry %HEADERS_REGISTRY_PATH%/vk.xml -scripts %HEADERS_REGISTRY_PATH% chassis.cpp
 py -3 ../../../scripts/lvl_genvk.py -registry %HEADERS_REGISTRY_PATH%/vk.xml -scripts %HEADERS_REGISTRY_PATH% chassis.h
 

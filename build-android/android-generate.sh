@@ -36,6 +36,8 @@ echo HEADERS_REGISTRY_PATH defined as $HEADERS_REGISTRY_PATH
 ( cd generated/include; python3 ../../../scripts/lvl_genvk.py -registry $HEADERS_REGISTRY_PATH/vk.xml -scripts $HEADERS_REGISTRY_PATH vk_typemap_helper.h )
 ( cd generated/include; python3 ../../../scripts/lvl_genvk.py -registry $HEADERS_REGISTRY_PATH/vk.xml -scripts $HEADERS_REGISTRY_PATH object_tracker.cpp )
 ( cd generated/include; python3 ../../../scripts/lvl_genvk.py -registry $HEADERS_REGISTRY_PATH/vk.xml -scripts $HEADERS_REGISTRY_PATH object_tracker.h )
+( cd generated/include; python3 ../../../scripts/lvl_genvk.py -registry $HEADERS_REGISTRY_PATH/vk.xml -scripts $HEADERS_REGISTRY_PATH layer_chassis_dispatch.cpp )
+( cd generated/include; python3 ../../../scripts/lvl_genvk.py -registry $HEADERS_REGISTRY_PATH/vk.xml -scripts $HEADERS_REGISTRY_PATH layer_chassis_dispatch.h )
 ( cd generated/include; python3 ../../../scripts/lvl_genvk.py -registry $HEADERS_REGISTRY_PATH/vk.xml -scripts $HEADERS_REGISTRY_PATH chassis.cpp )
 ( cd generated/include; python3 ../../../scripts/lvl_genvk.py -registry $HEADERS_REGISTRY_PATH/vk.xml -scripts $HEADERS_REGISTRY_PATH chassis.h )
 
