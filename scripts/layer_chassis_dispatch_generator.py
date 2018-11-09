@@ -997,11 +997,6 @@ VkResult DispatchSetDebugUtilsObjectNameEXT(ValidationObject *layer_data,
             self.newline()
             write('std::mutex dispatch_lock;', file=self.outFile)
             self.newline()
-            write('struct GenericHeader {\n', file=self.outFile)
-            write('    VkStructureType sType;\n', file=self.outFile)
-            write('    void *pNext;\n', file=self.outFile)
-            write('};\n\n', file=self.outFile)
-            self.newline()
             write('// Unique Objects pNext extension handling function', file=self.outFile)
             write('%s' % extension_proc, file=self.outFile)
             self.newline()
@@ -1240,7 +1235,7 @@ VkResult DispatchSetDebugUtilsObjectNameEXT(ValidationObject *layer_data,
         pnext_proc += '    void *prev_ext_struct = NULL;\n'
         pnext_proc += '    void *cur_ext_struct = NULL;\n\n'
         pnext_proc += '    while (cur_pnext != NULL) {\n'
-        pnext_proc += '        GenericHeader *header = reinterpret_cast<GenericHeader *>(cur_pnext);\n\n'
+        pnext_proc += '        VkBaseOutStructure *header = reinterpret_cast<VkBaseOutStructure *>(cur_pnext);\n\n'
         pnext_proc += '        switch (header->sType) {\n'
         for item in self.extension_structs:
             struct_info = self.struct_member_dict[item]
@@ -1265,20 +1260,20 @@ VkResult DispatchSetDebugUtilsObjectNameEXT(ValidationObject *layer_data,
         pnext_proc += '        head_pnext = (head_pnext ? head_pnext : cur_ext_struct);\n\n'
         pnext_proc += '        // For any extension structure but the first, link the last struct\'s pNext to the current ext struct\n'
         pnext_proc += '        if (prev_ext_struct) {\n'
-        pnext_proc += '            (reinterpret_cast<GenericHeader *>(prev_ext_struct))->pNext = cur_ext_struct;\n'
+        pnext_proc += '                reinterpret_cast<VkBaseOutStructure *>(prev_ext_struct)->pNext = reinterpret_cast<VkBaseOutStructure *>(cur_ext_struct);\n'
         pnext_proc += '        }\n'
         pnext_proc += '        prev_ext_struct = cur_ext_struct;\n\n'
         pnext_proc += '        // Process the next structure in the chain\n'
-        pnext_proc += '        cur_pnext = const_cast<void *>(header->pNext);\n'
+        pnext_proc += '        cur_pnext = header->pNext;\n'
         pnext_proc += '    }\n'
         pnext_proc += '    return head_pnext;\n'
         pnext_proc += '}\n\n'
         pnext_proc += '// Free a pNext extension chain\n'
         pnext_proc += 'void FreeUnwrappedExtensionStructs(void *head) {\n'
-        pnext_proc += '    GenericHeader *curr_ptr = reinterpret_cast<GenericHeader *>(head);\n'
+        pnext_proc += '    VkBaseOutStructure *curr_ptr = reinterpret_cast<VkBaseOutStructure *>(head);\n'
         pnext_proc += '    while (curr_ptr) {\n'
-        pnext_proc += '        GenericHeader *header = curr_ptr;\n'
-        pnext_proc += '        curr_ptr = reinterpret_cast<GenericHeader *>(header->pNext);\n\n'
+        pnext_proc += '        VkBaseOutStructure *header = curr_ptr;\n'
+        pnext_proc += '        curr_ptr = reinterpret_cast<VkBaseOutStructure *>(header->pNext);\n\n'
         pnext_proc += '        switch (header->sType) {\n';
         for item in self.extension_structs:
             struct_info = self.struct_member_dict[item]
