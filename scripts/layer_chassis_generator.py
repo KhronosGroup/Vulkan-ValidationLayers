@@ -259,7 +259,7 @@ class ValidationObject {
         // Pre/post hook point declarations
 """
 
-    inline_custom_source_preamble = """
+    inline_copyright_message = """
 // This file is ***GENERATED***.  Do Not Edit.
 // See layer_chassis_generator.py for modifications.
 
@@ -281,7 +281,9 @@ class ValidationObject {
  * limitations under the License.
  *
  * Author: Mark Lobodzinski <mark@lunarg.com>
- */
+ */"""
+
+    inline_custom_source_preamble = """
 
 #include <string.h>
 #include <mutex>
@@ -723,25 +725,24 @@ VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkNegotiateLoaderLayerInterfaceVe
             return True
         else:
             return False
-
+    #
+    #
     def beginFile(self, genOpts):
         OutputGenerator.beginFile(self, genOpts)
-        # Multiple inclusion protection & C++ namespace.
+        # Output Copyright
+        write(self.inline_copyright_message, file=self.outFile)
+        # Multiple inclusion protection
         self.header = False
         if (self.genOpts.filename and 'h' == self.genOpts.filename[-1]):
             self.header = True
             write('#pragma once', file=self.outFile)
             self.newline()
-        # User-supplied prefix text, if any (list of strings)
         if self.header:
-            if (genOpts.prefixText):
-                for s in genOpts.prefixText:
-                    write(s, file=self.outFile)
             write(self.inline_custom_header_preamble, file=self.outFile)
         else:
             write(self.inline_custom_source_preamble, file=self.outFile)
         self.layer_factory += self.inline_custom_header_class_definition
-
+    #
     #
     def endFile(self):
         # Finish C++ namespace and multiple inclusion protection
