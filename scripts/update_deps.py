@@ -306,9 +306,9 @@ class GoodRepo(object):
         self.build_dir = None
         self.install_dir = None
         if json.get('build_dir'):
-            self.build_dir = json['build_dir']
+            self.build_dir = os.path.normpath(json['build_dir'])
         if json.get('install_dir'):
-            self.install_dir = json['install_dir']
+            self.install_dir = os.path.normpath(json['install_dir'])
         self.deps = json['deps'] if ('deps' in json) else []
         self.prebuild = json['prebuild'] if ('prebuild' in json) else []
         self.prebuild_linux = json['prebuild_linux'] if (
@@ -520,6 +520,8 @@ def CreateHelper(args, repos, filename):
     This information is baked into the CMake files of the home repo and so
     this dictionary is kept with the repo via the json file.
     """
+    def escape(path):
+        return path.replace('\\', '\\\\')
     install_names = GetInstallNames(args)
     with open(filename, 'w') as helper_file:
         for repo in repos:
@@ -527,7 +529,7 @@ def CreateHelper(args, repos, filename):
                 helper_file.write('set({var} "{dir}" CACHE STRING "" FORCE)\n'
                                   .format(
                                       var=install_names[repo.name],
-                                      dir=repo.install_dir))
+                                      dir=escape(repo.install_dir)))
 
 
 def main():
