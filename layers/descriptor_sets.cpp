@@ -136,6 +136,7 @@ size_t cvdescriptorset::DescriptorSetLayoutDef::hash() const {
     hash_util::HashCombiner hc;
     hc << flags_;
     hc.Combine(bindings_);
+    hc.Combine(binding_flags_);
     return hc.Value();
 }
 //

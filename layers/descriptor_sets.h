@@ -116,6 +116,7 @@ class DescriptorSetLayoutDef {
         return GetDescriptorSetLayoutBindingPtrFromIndex(GetIndexFromBinding(binding));
     }
     const std::vector<safe_VkDescriptorSetLayoutBinding> &GetBindings() const { return bindings_; }
+    const std::vector<VkDescriptorBindingFlagsEXT> &GetBindingFlags() const { return binding_flags_; }
     uint32_t GetDescriptorCountFromIndex(const uint32_t) const;
     uint32_t GetDescriptorCountFromBinding(const uint32_t binding) const {
         return GetDescriptorCountFromIndex(GetIndexFromBinding(binding));
@@ -164,8 +165,8 @@ class DescriptorSetLayoutDef {
     const BindingTypeStats &GetBindingTypeStats() const { return binding_type_stats_; }
 
    private:
-    // Only the first two data members are used for hash and equality checks, the other members are derived from them, and are used
-    // to speed up the various lookups/queries/validations
+    // Only the first three data members are used for hash and equality checks, the other members are derived from them, and are
+    // used to speed up the various lookups/queries/validations
     VkDescriptorSetLayoutCreateFlags flags_;
     std::vector<safe_VkDescriptorSetLayoutBinding> bindings_;
     std::vector<VkDescriptorBindingFlagsEXT> binding_flags_;
@@ -186,7 +187,9 @@ class DescriptorSetLayoutDef {
 };
 
 static bool operator==(const DescriptorSetLayoutDef &lhs, const DescriptorSetLayoutDef &rhs) {
-    return (lhs.GetCreateFlags() == rhs.GetCreateFlags()) && (lhs.GetBindings() == rhs.GetBindings());
+    bool result = (lhs.GetCreateFlags() == rhs.GetCreateFlags()) && (lhs.GetBindings() == rhs.GetBindings()) &&
+                  (lhs.GetBindingFlags() == rhs.GetBindingFlags());
+    return result;
 }
 
 // Canonical dictionary of DSL definitions -- independent of device or handle
