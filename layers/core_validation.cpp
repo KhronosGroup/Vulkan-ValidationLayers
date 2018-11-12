@@ -10706,8 +10706,6 @@ static bool ValidateAttachmentIndex(const layer_data *dev_data, RenderPassCreate
     return skip;
 }
 
-static bool IsPowerOfTwo(unsigned x) { return x && !(x & (x - 1)); }
-
 enum AttachmentType {
     ATTACHMENT_COLOR = 1,
     ATTACHMENT_DEPTH = 2,
