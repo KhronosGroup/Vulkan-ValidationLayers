@@ -30,7 +30,6 @@ echo HEADERS_REGISTRY_PATH defined as $HEADERS_REGISTRY_PATH
 ( cd generated/include; python3 ../../../scripts/lvl_genvk.py -registry $HEADERS_REGISTRY_PATH/vk.xml -scripts $HEADERS_REGISTRY_PATH vk_dispatch_table_helper.h )
 ( cd generated/include; python3 ../../../scripts/lvl_genvk.py -registry $HEADERS_REGISTRY_PATH/vk.xml -scripts $HEADERS_REGISTRY_PATH thread_check.h )
 ( cd generated/include; python3 ../../../scripts/lvl_genvk.py -registry $HEADERS_REGISTRY_PATH/vk.xml -scripts $HEADERS_REGISTRY_PATH parameter_validation.cpp )
-( cd generated/include; python3 ../../../scripts/lvl_genvk.py -registry $HEADERS_REGISTRY_PATH/vk.xml -scripts $HEADERS_REGISTRY_PATH unique_objects_wrappers.h )
 ( cd generated/include; python3 ../../../scripts/lvl_genvk.py -registry $HEADERS_REGISTRY_PATH/vk.xml -scripts $HEADERS_REGISTRY_PATH vk_layer_dispatch_table.h )
 ( cd generated/include; python3 ../../../scripts/lvl_genvk.py -registry $HEADERS_REGISTRY_PATH/vk.xml -scripts $HEADERS_REGISTRY_PATH vk_extension_helper.h )
 ( cd generated/include; python3 ../../../scripts/lvl_genvk.py -registry $HEADERS_REGISTRY_PATH/vk.xml -scripts $HEADERS_REGISTRY_PATH vk_typemap_helper.h )
