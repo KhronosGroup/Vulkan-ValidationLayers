@@ -2540,17 +2540,13 @@ bool PreCallValidateCmdClearAttachments(layer_data *device_data, VkCommandBuffer
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                                 HandleToUint64(commandBuffer), "VUID-VkClearAttachment-aspectMask-00020", " ");
             } else if (clear_desc->aspectMask & VK_IMAGE_ASPECT_COLOR_BIT) {
-                if (clear_desc->colorAttachment >= subpass_desc->colorAttachmentCount) {
+                if ((subpass_desc->pColorAttachments[clear_desc->colorAttachment].attachment != VK_ATTACHMENT_UNUSED) &&
+                    (clear_desc->colorAttachment >= subpass_desc->colorAttachmentCount)) {
                     skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                                    HandleToUint64(commandBuffer), "VUID-vkCmdClearAttachments-aspectMask-00015",
-                                    "vkCmdClearAttachments() color attachment index %d out of range for active subpass %d.",
+                                    HandleToUint64(commandBuffer), "VUID-vkCmdClearAttachments-aspectMask-02501",
+                                    "vkCmdClearAttachments() color attachment index %d is not VK_ATTACHMENT_UNUSED and is out of "
+                                    "range for active subpass %d.",
                                     clear_desc->colorAttachment, cb_node->activeSubpass);
-                } else if (subpass_desc->pColorAttachments[clear_desc->colorAttachment].attachment == VK_ATTACHMENT_UNUSED) {
-                    skip |= log_msg(report_data, VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
-                                    VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT, HandleToUint64(commandBuffer),
-                                    kVUID_Core_DrawState_MissingAttachmentReference,
-                                    "vkCmdClearAttachments() color attachment index %d is VK_ATTACHMENT_UNUSED; ignored.",
-                                    clear_desc->colorAttachment);
                 } else {
                     image_view = framebuffer->createInfo
                                      .pAttachments[subpass_desc->pColorAttachments[clear_desc->colorAttachment].attachment];
