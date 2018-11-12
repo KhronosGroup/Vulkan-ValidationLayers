@@ -101,6 +101,7 @@ add_library(VkLayer_object_tracker SHARED
         ${COMMON_DIR}/include/layer_chassis_dispatch.cpp
         ${COMMON_DIR}/include/chassis.cpp
         ${SRC_DIR}/layers/object_tracker_utils.cpp)
+target_compile_definitions(VkLayer_object_tracker PUBLIC "BUILD_OBJECT_TRACKER")
 target_include_directories(VkLayer_object_tracker PRIVATE
         ${SRC_DIR}/include
         ${SRC_DIR}/layers
@@ -118,7 +119,9 @@ target_include_directories(VkLayer_threading PRIVATE
 target_link_libraries(VkLayer_threading PRIVATE log layer_utils)
 
 add_library(VkLayer_unique_objects SHARED
-        ${SRC_DIR}/layers/unique_objects.cpp)
+        ${COMMON_DIR}/include/layer_chassis_dispatch.cpp)
+        ${COMMON_DIR}/include/chassis.cpp)
+target_compile_definitions(VkLayer_object_tracker PUBLIC "LAYER_CHASSIS_CAN_WRAP_HANDLES")
 target_include_directories(VkLayer_unique_objects PRIVATE
         ${SRC_DIR}/include
         ${SRC_DIR}/layers
