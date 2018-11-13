@@ -267,7 +267,7 @@ macro(GenerateFromVkXml dependency output)
 endmacro()
 
 # Add rules to generate XML-derived source files.
-GenerateFromVkXml(loader_extension_generator.py vk_layer_dispatch_table.h)
+GenerateFromVkXml(layer_dispatch_table_generator.py vk_layer_dispatch_table.h)
 GenerateFromVkXml(dispatch_table_helper_generator.py vk_dispatch_table_helper.h)
 GenerateFromVkXml(helper_file_generator.py vk_safe_struct.h)
 GenerateFromVkXml(helper_file_generator.py vk_safe_struct.cpp)

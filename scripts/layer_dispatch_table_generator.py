@@ -32,8 +32,8 @@ ADD_INST_CMDS = ['vkCreateInstance',
                  'vkEnumerateInstanceVersion']
 
 #
-# LoaderExtensionGeneratorOptions - subclass of GeneratorOptions.
-class LoaderExtensionGeneratorOptions(GeneratorOptions):
+# LayerDispatchTableGeneratorOptions - subclass of GeneratorOptions.
+class LayerDispatchTableGeneratorOptions(GeneratorOptions):
     def __init__(self,
                  filename = None,
                  directory = '.',
@@ -69,10 +69,10 @@ class LoaderExtensionGeneratorOptions(GeneratorOptions):
         self.expandEnumerants = expandEnumerants
 
 #
-# LoaderExtensionOutputGenerator - subclass of OutputGenerator.
+# LayerDispatchTableOutputGenerator - subclass of OutputGenerator.
 # Generates dispatch table helper header files for LVL
-class LoaderExtensionOutputGenerator(OutputGenerator):
-    """Generate dispatch table helper header based on XML element attributes"""
+class LayerDispatchTableOutputGenerator(OutputGenerator):
+    """Generate dispatch tables header based on XML element attributes"""
     def __init__(self,
                  errFile = sys.stderr,
                  warnFile = sys.stderr,
@@ -99,7 +99,7 @@ class LoaderExtensionOutputGenerator(OutputGenerator):
 
         # File Comment
         file_comment = '// *** THIS FILE IS GENERATED - DO NOT EDIT ***\n'
-        file_comment += '// See loader_extension_generator.py for modifications\n'
+        file_comment += '// See layer_dispatch_table_generator.py for modifications\n'
         write(file_comment, file=self.outFile)
 
         # Copyright Notice

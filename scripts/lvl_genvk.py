@@ -228,8 +228,8 @@ def makeGenOpts(args):
 
     # Options for Layer dispatch table generator
     genOpts['vk_layer_dispatch_table.h'] = [
-          LoaderExtensionOutputGenerator,
-          LoaderExtensionGeneratorOptions(
+          LayerDispatchTableOutputGenerator,
+          LayerDispatchTableGeneratorOptions(
             filename          = 'vk_layer_dispatch_table.h',
             directory         = directory,
             apiname           = 'vulkan',
@@ -503,7 +503,7 @@ if __name__ == '__main__':
     from object_tracker_generator import ObjectTrackerGeneratorOptions, ObjectTrackerOutputGenerator
     from dispatch_table_helper_generator import DispatchTableHelperOutputGenerator, DispatchTableHelperOutputGeneratorOptions
     from helper_file_generator import HelperFileOutputGenerator, HelperFileOutputGeneratorOptions
-    from loader_extension_generator import LoaderExtensionOutputGenerator, LoaderExtensionGeneratorOptions
+    from layer_dispatch_table_generator import LayerDispatchTableOutputGenerator, LayerDispatchTableGeneratorOptions
 
     # This splits arguments which are space-separated lists
     args.feature = [name for arg in args.feature for name in arg.split()]
