@@ -16971,6 +16971,91 @@ TEST_F(VkLayerTest, UnclosedQuery) {
     vkDestroyEvent(m_device->device(), event, nullptr);
 }
 
+TEST_F(VkLayerTest, QueryPreciseBit) {
+    TEST_DESCRIPTION("Check for correct Query Precise Bit circumstances.");
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    std::vector<const char *> device_extension_names;
+    auto features = m_device->phy().features();
+
+    // Test for precise bit when query type is not OCCLUSION
+    if (features.occlusionQueryPrecise) {
+        VkEvent event;
+        VkEventCreateInfo event_create_info{};
+        event_create_info.sType = VK_STRUCTURE_TYPE_EVENT_CREATE_INFO;
+        vkCreateEvent(m_device->handle(), &event_create_info, nullptr, &event);
+
+        m_commandBuffer->begin();
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdBeginQuery-queryType-00800");
+
+        VkQueryPool query_pool;
+        VkQueryPoolCreateInfo query_pool_create_info = {};
+        query_pool_create_info.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
+        query_pool_create_info.queryType = VK_QUERY_TYPE_PIPELINE_STATISTICS;
+        query_pool_create_info.queryCount = 1;
+        vkCreateQueryPool(m_device->handle(), &query_pool_create_info, nullptr, &query_pool);
+
+        vkCmdResetQueryPool(m_commandBuffer->handle(), query_pool, 0, 1);
+        vkCmdBeginQuery(m_commandBuffer->handle(), query_pool, 0, VK_QUERY_CONTROL_PRECISE_BIT);
+        vkCmdEndQuery(m_commandBuffer->handle(), query_pool, 0);
+        m_errorMonitor->VerifyFound();
+
+        m_commandBuffer->end();
+        vkDestroyQueryPool(m_device->handle(), query_pool, nullptr);
+        vkDestroyEvent(m_device->handle(), event, nullptr);
+    }
+
+    // Test for precise bit when precise feature is not available
+    features.occlusionQueryPrecise = false;
+    VkDeviceObj test_device(0, gpu(), device_extension_names, &features);
+
+    VkCommandPoolCreateInfo pool_create_info{};
+    pool_create_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    pool_create_info.queueFamilyIndex = test_device.graphics_queue_node_index_;
+
+    VkCommandPool command_pool;
+    vkCreateCommandPool(test_device.handle(), &pool_create_info, nullptr, &command_pool);
+
+    VkCommandBufferAllocateInfo cmd = {};
+    cmd.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    cmd.pNext = NULL;
+    cmd.commandPool = command_pool;
+    cmd.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    cmd.commandBufferCount = 1;
+
+    VkCommandBuffer cmd_buffer;
+    VkResult err = vkAllocateCommandBuffers(test_device.handle(), &cmd, &cmd_buffer);
+    ASSERT_VK_SUCCESS(err);
+
+    VkEvent event;
+    VkEventCreateInfo event_create_info{};
+    event_create_info.sType = VK_STRUCTURE_TYPE_EVENT_CREATE_INFO;
+    vkCreateEvent(test_device.handle(), &event_create_info, nullptr, &event);
+
+    VkCommandBufferBeginInfo begin_info = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, nullptr,
+                                           VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, nullptr};
+
+    vkBeginCommandBuffer(cmd_buffer, &begin_info);
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdBeginQuery-queryType-00800");
+
+    VkQueryPool query_pool;
+    VkQueryPoolCreateInfo query_pool_create_info = {};
+    query_pool_create_info.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
+    query_pool_create_info.queryType = VK_QUERY_TYPE_OCCLUSION;
+    query_pool_create_info.queryCount = 1;
+    vkCreateQueryPool(test_device.handle(), &query_pool_create_info, nullptr, &query_pool);
+
+    vkCmdResetQueryPool(cmd_buffer, query_pool, 0, 1);
+    vkCmdBeginQuery(cmd_buffer, query_pool, 0, VK_QUERY_CONTROL_PRECISE_BIT);
+    vkCmdEndQuery(cmd_buffer, query_pool, 0);
+    m_errorMonitor->VerifyFound();
+
+    vkEndCommandBuffer(cmd_buffer);
+    vkDestroyQueryPool(test_device.handle(), query_pool, nullptr);
+    vkDestroyEvent(test_device.handle(), event, nullptr);
+    vkDestroyCommandPool(test_device.handle(), command_pool, nullptr);
+}
+
 TEST_F(VkLayerTest, VertexBufferInvalid) {
     TEST_DESCRIPTION(
         "Submit a command buffer using deleted vertex buffer, delete a buffer twice, use an invalid offset for each buffer type, "
