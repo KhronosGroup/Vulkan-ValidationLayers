@@ -41,4 +41,4 @@ A special error checking case invoked when the FS stage writes a built-in corres
 These extra checks are to ensure that the legacy broadcast of `gl_FragColor` to all bound color attachments is well-defined.
 
 ## Swapchain validation functionality
-This area of functionality validates the use of the WSI (Window System Integration) "swapchain" extensions (i.e., `VK_EXT_KHR_swapchain` and `VK_EXT_KHR_device_swapchain`).
+This area of functionality validates the use of the WSI (Window System Integration) "swapchain" extensions (e.g., `VK_EXT_KHR_swapchain` and `VK_EXT_KHR_device_swapchain`).
