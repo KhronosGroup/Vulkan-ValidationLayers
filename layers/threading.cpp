@@ -98,16 +98,9 @@ VKAPI_ATTR void VKAPI_CALL DestroyInstance(VkInstance instance, const VkAllocati
         }
     }
 
-    bool threadChecks = startMultiThread();
-    if (threadChecks) {
-        startWriteObject(my_data, instance);
-    }
+    startWriteObject(my_data, instance);
     pTable->DestroyInstance(instance, pAllocator);
-    if (threadChecks) {
-        finishWriteObject(my_data, instance);
-    } else {
-        finishMultiThread();
-    }
+    finishWriteObject(my_data, instance);
 
     // Disable and cleanup the temporary callback(s):
     if (callback_setup) {
@@ -178,16 +171,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
 VKAPI_ATTR void VKAPI_CALL DestroyDevice(VkDevice device, const VkAllocationCallbacks *pAllocator) {
     dispatch_key key = get_dispatch_key(device);
     layer_data *dev_data = GetLayerDataPtr(key, layer_data_map);
-    bool threadChecks = startMultiThread();
-    if (threadChecks) {
-        startWriteObject(dev_data, device);
-    }
+    startWriteObject(dev_data, device);
     dev_data->device_dispatch_table->DestroyDevice(device, pAllocator);
-    if (threadChecks) {
-        finishWriteObject(dev_data, device);
-    } else {
-        finishMultiThread();
-    }
+    finishWriteObject(dev_data, device);
 
     delete dev_data->device_dispatch_table;
     FreeLayerDataPtr(key, layer_data_map);
@@ -199,18 +185,11 @@ VKAPI_ATTR VkResult VKAPI_CALL GetSwapchainImagesKHR(VkDevice device, VkSwapchai
     layer_data *my_data = GetLayerDataPtr(key, layer_data_map);
     VkLayerDispatchTable *pTable = my_data->device_dispatch_table;
     VkResult result;
-    bool threadChecks = startMultiThread();
-    if (threadChecks) {
-        startReadObject(my_data, device);
-        startReadObject(my_data, swapchain);
-    }
+    startReadObject(my_data, device);
+    startReadObject(my_data, swapchain);
     result = pTable->GetSwapchainImagesKHR(device, swapchain, pSwapchainImageCount, pSwapchainImages);
-    if (threadChecks) {
-        finishReadObject(my_data, device);
-        finishReadObject(my_data, swapchain);
-    } else {
-        finishMultiThread();
-    }
+    finishReadObject(my_data, device);
+    finishReadObject(my_data, swapchain);
     return result;
 }
 
@@ -300,10 +279,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDebugUtilsMessengerEXT(VkInstance instance,
                                                             const VkAllocationCallbacks *pAllocator,
                                                             VkDebugUtilsMessengerEXT *pMessenger) {
     layer_data *my_data = GetLayerDataPtr(get_dispatch_key(instance), layer_data_map);
-    bool threadChecks = startMultiThread();
-    if (threadChecks) {
-        startReadObject(my_data, instance);
-    }
+    startReadObject(my_data, instance);
     VkResult result = my_data->instance_dispatch_table->CreateDebugUtilsMessengerEXT(instance, pCreateInfo, pAllocator, pMessenger);
 
     if (VK_SUCCESS == result) {
@@ -313,30 +289,19 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDebugUtilsMessengerEXT(VkInstance instance,
             my_data->instance_dispatch_table->DestroyDebugUtilsMessengerEXT(instance, *pMessenger, pAllocator);
         }
     }
-    if (threadChecks) {
-        finishReadObject(my_data, instance);
-    } else {
-        finishMultiThread();
-    }
+    finishReadObject(my_data, instance);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT messenger,
                                                          const VkAllocationCallbacks *pAllocator) {
     layer_data *my_data = GetLayerDataPtr(get_dispatch_key(instance), layer_data_map);
-    bool threadChecks = startMultiThread();
-    if (threadChecks) {
-        startReadObject(my_data, instance);
-        startWriteObject(my_data, messenger);
-    }
+    startReadObject(my_data, instance);
+    startWriteObject(my_data, messenger);
     my_data->instance_dispatch_table->DestroyDebugUtilsMessengerEXT(instance, messenger, pAllocator);
     layer_destroy_messenger_callback(my_data->report_data, messenger, pAllocator);
-    if (threadChecks) {
-        finishReadObject(my_data, instance);
-        finishWriteObject(my_data, messenger);
-    } else {
-        finishMultiThread();
-    }
+    finishReadObject(my_data, instance);
+    finishWriteObject(my_data, messenger);
 }
 
 // VK_EXT_debug_report commands
@@ -345,10 +310,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDebugReportCallbackEXT(VkInstance instance,
                                                             const VkAllocationCallbacks *pAllocator,
                                                             VkDebugReportCallbackEXT *pMsgCallback) {
     layer_data *my_data = GetLayerDataPtr(get_dispatch_key(instance), layer_data_map);
-    bool threadChecks = startMultiThread();
-    if (threadChecks) {
-        startReadObject(my_data, instance);
-    }
+    startReadObject(my_data, instance);
     VkResult result =
         my_data->instance_dispatch_table->CreateDebugReportCallbackEXT(instance, pCreateInfo, pAllocator, pMsgCallback);
     if (VK_SUCCESS == result) {
@@ -358,30 +320,19 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDebugReportCallbackEXT(VkInstance instance,
             my_data->instance_dispatch_table->DestroyDebugReportCallbackEXT(instance, *pMsgCallback, pAllocator);
         }
     }
-    if (threadChecks) {
-        finishReadObject(my_data, instance);
-    } else {
-        finishMultiThread();
-    }
+    finishReadObject(my_data, instance);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL DestroyDebugReportCallbackEXT(VkInstance instance, VkDebugReportCallbackEXT callback,
                                                          const VkAllocationCallbacks *pAllocator) {
     layer_data *my_data = GetLayerDataPtr(get_dispatch_key(instance), layer_data_map);
-    bool threadChecks = startMultiThread();
-    if (threadChecks) {
-        startReadObject(my_data, instance);
-        startWriteObject(my_data, callback);
-    }
+    startReadObject(my_data, instance);
+    startWriteObject(my_data, callback);
     my_data->instance_dispatch_table->DestroyDebugReportCallbackEXT(instance, callback, pAllocator);
     layer_destroy_report_callback(my_data->report_data, callback, pAllocator);
-    if (threadChecks) {
-        finishReadObject(my_data, instance);
-        finishWriteObject(my_data, callback);
-    } else {
-        finishMultiThread();
-    }
+    finishReadObject(my_data, instance);
+    finishWriteObject(my_data, callback);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL AllocateCommandBuffers(VkDevice device, const VkCommandBufferAllocateInfo *pAllocateInfo,
@@ -390,19 +341,12 @@ VKAPI_ATTR VkResult VKAPI_CALL AllocateCommandBuffers(VkDevice device, const VkC
     layer_data *my_data = GetLayerDataPtr(key, layer_data_map);
     VkLayerDispatchTable *pTable = my_data->device_dispatch_table;
     VkResult result;
-    bool threadChecks = startMultiThread();
-    if (threadChecks) {
-        startReadObject(my_data, device);
-        startWriteObject(my_data, pAllocateInfo->commandPool);
-    }
+    startReadObject(my_data, device);
+    startWriteObject(my_data, pAllocateInfo->commandPool);
 
     result = pTable->AllocateCommandBuffers(device, pAllocateInfo, pCommandBuffers);
-    if (threadChecks) {
-        finishReadObject(my_data, device);
-        finishWriteObject(my_data, pAllocateInfo->commandPool);
-    } else {
-        finishMultiThread();
-    }
+    finishReadObject(my_data, device);
+    finishWriteObject(my_data, pAllocateInfo->commandPool);
 
     // Record mapping from command buffer to command pool
     if (VK_SUCCESS == result) {
@@ -421,20 +365,13 @@ VKAPI_ATTR VkResult VKAPI_CALL AllocateDescriptorSets(VkDevice device, const VkD
     layer_data *my_data = GetLayerDataPtr(key, layer_data_map);
     VkLayerDispatchTable *pTable = my_data->device_dispatch_table;
     VkResult result;
-    bool threadChecks = startMultiThread();
-    if (threadChecks) {
-        startReadObject(my_data, device);
-        startWriteObject(my_data, pAllocateInfo->descriptorPool);
-        // Host access to pAllocateInfo::descriptorPool must be externally synchronized
-    }
+    startReadObject(my_data, device);
+    startWriteObject(my_data, pAllocateInfo->descriptorPool);
+    // Host access to pAllocateInfo::descriptorPool must be externally synchronized
     result = pTable->AllocateDescriptorSets(device, pAllocateInfo, pDescriptorSets);
-    if (threadChecks) {
-        finishReadObject(my_data, device);
-        finishWriteObject(my_data, pAllocateInfo->descriptorPool);
-        // Host access to pAllocateInfo::descriptorPool must be externally synchronized
-    } else {
-        finishMultiThread();
-    }
+    finishReadObject(my_data, device);
+    finishWriteObject(my_data, pAllocateInfo->descriptorPool);
+    // Host access to pAllocateInfo::descriptorPool must be externally synchronized
     return result;
 }
 
@@ -444,53 +381,39 @@ VKAPI_ATTR void VKAPI_CALL FreeCommandBuffers(VkDevice device, VkCommandPool com
     layer_data *my_data = GetLayerDataPtr(key, layer_data_map);
     VkLayerDispatchTable *pTable = my_data->device_dispatch_table;
     const bool lockCommandPool = false;  // pool is already directly locked
-    bool threadChecks = startMultiThread();
-    if (threadChecks) {
-        startReadObject(my_data, device);
-        startWriteObject(my_data, commandPool);
-        for (uint32_t index = 0; index < commandBufferCount; index++) {
-            startWriteObject(my_data, pCommandBuffers[index], lockCommandPool);
-        }
-        // The driver may immediately reuse command buffers in another thread.
-        // These updates need to be done before calling down to the driver.
-        for (uint32_t index = 0; index < commandBufferCount; index++) {
-            finishWriteObject(my_data, pCommandBuffers[index], lockCommandPool);
-            std::lock_guard<std::mutex> lock(command_pool_lock);
-            command_pool_map.erase(pCommandBuffers[index]);
-        }
+    startReadObject(my_data, device);
+    startWriteObject(my_data, commandPool);
+    for (uint32_t index = 0; index < commandBufferCount; index++) {
+        startWriteObject(my_data, pCommandBuffers[index], lockCommandPool);
+    }
+    // The driver may immediately reuse command buffers in another thread.
+    // These updates need to be done before calling down to the driver.
+    for (uint32_t index = 0; index < commandBufferCount; index++) {
+        finishWriteObject(my_data, pCommandBuffers[index], lockCommandPool);
+        std::lock_guard<std::mutex> lock(command_pool_lock);
+        command_pool_map.erase(pCommandBuffers[index]);
     }
 
     pTable->FreeCommandBuffers(device, commandPool, commandBufferCount, pCommandBuffers);
-    if (threadChecks) {
-        finishReadObject(my_data, device);
-        finishWriteObject(my_data, commandPool);
-    } else {
-        finishMultiThread();
-    }
-}
+    finishReadObject(my_data, device);
+    finishWriteObject(my_data, commandPool);
+}  // namespace threading
 
 VKAPI_ATTR VkResult VKAPI_CALL ResetCommandPool(VkDevice device, VkCommandPool commandPool, VkCommandPoolResetFlags flags) {
     dispatch_key key = get_dispatch_key(device);
     layer_data *my_data = GetLayerDataPtr(key, layer_data_map);
     VkLayerDispatchTable *pTable = my_data->device_dispatch_table;
     VkResult result;
-    bool threadChecks = startMultiThread();
-    if (threadChecks) {
-        startReadObject(my_data, device);
-        startWriteObject(my_data, commandPool);
-        // Check for any uses of non-externally sync'd command buffers (for example from vkCmdExecuteCommands)
-        my_data->c_VkCommandPoolContents.startWrite(my_data->report_data, commandPool);
-        // Host access to commandPool must be externally synchronized
-    }
+    startReadObject(my_data, device);
+    startWriteObject(my_data, commandPool);
+    // Check for any uses of non-externally sync'd command buffers (for example from vkCmdExecuteCommands)
+    my_data->c_VkCommandPoolContents.startWrite(my_data->report_data, commandPool);
+    // Host access to commandPool must be externally synchronized
     result = pTable->ResetCommandPool(device, commandPool, flags);
-    if (threadChecks) {
-        finishReadObject(my_data, device);
-        finishWriteObject(my_data, commandPool);
-        my_data->c_VkCommandPoolContents.finishWrite(commandPool);
-        // Host access to commandPool must be externally synchronized
-    } else {
-        finishMultiThread();
-    }
+    finishReadObject(my_data, device);
+    finishWriteObject(my_data, commandPool);
+    my_data->c_VkCommandPoolContents.finishWrite(commandPool);
+    // Host access to commandPool must be externally synchronized
     return result;
 }
 
@@ -498,23 +421,16 @@ VKAPI_ATTR void VKAPI_CALL DestroyCommandPool(VkDevice device, VkCommandPool com
     dispatch_key key = get_dispatch_key(device);
     layer_data *my_data = GetLayerDataPtr(key, layer_data_map);
     VkLayerDispatchTable *pTable = my_data->device_dispatch_table;
-    bool threadChecks = startMultiThread();
-    if (threadChecks) {
-        startReadObject(my_data, device);
-        startWriteObject(my_data, commandPool);
-        // Check for any uses of non-externally sync'd command buffers (for example from vkCmdExecuteCommands)
-        my_data->c_VkCommandPoolContents.startWrite(my_data->report_data, commandPool);
-        // Host access to commandPool must be externally synchronized
-    }
+    startReadObject(my_data, device);
+    startWriteObject(my_data, commandPool);
+    // Check for any uses of non-externally sync'd command buffers (for example from vkCmdExecuteCommands)
+    my_data->c_VkCommandPoolContents.startWrite(my_data->report_data, commandPool);
+    // Host access to commandPool must be externally synchronized
     pTable->DestroyCommandPool(device, commandPool, pAllocator);
-    if (threadChecks) {
-        finishReadObject(my_data, device);
-        finishWriteObject(my_data, commandPool);
-        my_data->c_VkCommandPoolContents.finishWrite(commandPool);
-        // Host access to commandPool must be externally synchronized
-    } else {
-        finishMultiThread();
-    }
+    finishReadObject(my_data, device);
+    finishWriteObject(my_data, commandPool);
+    my_data->c_VkCommandPoolContents.finishWrite(commandPool);
+    // Host access to commandPool must be externally synchronized
 }
 }  // namespace threading
 
