@@ -169,15 +169,16 @@ class ThreadOutputGenerator(OutputGenerator):
                 externsync = param.attrib.get('externsync')
                 if externsync == 'true':
                     if self.paramIsArray(param):
-                        paramdecl += '    for (uint32_t index=0;index<' + param.attrib.get('len') + ';index++) {\n'
-                        paramdecl += '        ' + functionprefix + 'WriteObject(my_data, ' + paramname.text + '[index]);\n'
-                        paramdecl += '    }\n'
+                        paramdecl += 'for (uint32_t index=0;index<' + param.attrib.get('len') + ';index++) {\n'
+                        paramdecl += '    ' + functionprefix + 'WriteObject(my_data, ' + paramname.text + '[index]);\n'
+                        paramdecl += '}\n'
                     else:
-                        paramdecl += '    ' + functionprefix + 'WriteObject(my_data, ' + paramname.text + ');\n'
+                        paramdecl += functionprefix + 'WriteObject(my_data, ' + paramname.text + ');\n'
                 elif (param.attrib.get('externsync')):
                     if self.paramIsArray(param):
                         # Externsync can list pointers to arrays of members to synchronize
-                        paramdecl += '    for (uint32_t index=0;index<' + param.attrib.get('len') + ';index++) {\n'
+                        paramdecl += 'for (uint32_t index=0;index<' + param.attrib.get('len') + ';index++) {\n'
+                        second_indent = ''
                         for member in externsync.split(","):
                             # Replace first empty [] in member name with index
                             element = member.replace('[]','[index]',1)
@@ -190,10 +191,11 @@ class ThreadOutputGenerator(OutputGenerator):
                                 limit = element[0:element.find('s[]')] + 'Count'
                                 dotp = limit.rfind('.p')
                                 limit = limit[0:dotp+1] + limit[dotp+2:dotp+3].lower() + limit[dotp+3:]
-                                paramdecl += '        for(uint32_t index2=0;index2<'+limit+';index2++)\n'
+                                paramdecl += '    for(uint32_t index2=0;index2<'+limit+';index2++)\n'
                                 element = element.replace('[]','[index2]')
-                            paramdecl += '            ' + functionprefix + 'WriteObject(my_data, ' + element + ');\n'
-                        paramdecl += '    }\n'
+                                second_indent = '   '
+                            paramdecl += '    ' + second_indent + functionprefix + 'WriteObject(my_data, ' + element + ');\n'
+                        paramdecl += '}\n'
                     else:
                         # externsync can list members to synchronize
                         for member in externsync.split(","):
@@ -215,19 +217,19 @@ class ThreadOutputGenerator(OutputGenerator):
                                     if self.paramIsPointer(candidate):
                                         dereference = '*'
                             param_len = str(param.attrib.get('len')).replace("::", "->")
-                            paramdecl += '    for (uint32_t index = 0; index < ' + dereference + param_len + '; index++) {\n'
-                            paramdecl += '        ' + functionprefix + 'ReadObject(my_data, ' + paramname.text + '[index]);\n'
-                            paramdecl += '    }\n'
+                            paramdecl += 'for (uint32_t index = 0; index < ' + dereference + param_len + '; index++) {\n'
+                            paramdecl += '    ' + functionprefix + 'ReadObject(my_data, ' + paramname.text + '[index]);\n'
+                            paramdecl += '}\n'
                         elif not self.paramIsPointer(param):
                             # Pointer params are often being created.
                             # They are not being read from.
-                            paramdecl += '    ' + functionprefix + 'ReadObject(my_data, ' + paramname.text + ');\n'
+                            paramdecl += functionprefix + 'ReadObject(my_data, ' + paramname.text + ');\n'
         explicitexternsyncparams = cmd.findall("param[@externsync]")
         if (explicitexternsyncparams is not None):
             for param in explicitexternsyncparams:
                 externsyncattrib = param.attrib.get('externsync')
                 paramname = param.find('name')
-                paramdecl += '    // Host access to '
+                paramdecl += '// Host access to '
                 if externsyncattrib == 'true':
                     if self.paramIsArray(param):
                         paramdecl += 'each member of ' + paramname.text
@@ -243,7 +245,7 @@ class ThreadOutputGenerator(OutputGenerator):
         implicitexternsyncparams = cmd.find('implicitexternsyncparams')
         if (implicitexternsyncparams is not None):
             for elem in implicitexternsyncparams:
-                paramdecl += '    // '
+                paramdecl += '// '
                 paramdecl += elem.text
                 paramdecl += ' must be externally synchronized between host accesses\n'
 
@@ -436,20 +438,12 @@ class ThreadOutputGenerator(OutputGenerator):
             assignresult = 'result = '
         else:
             assignresult = ''
-
-        self.appendSection('command', '    bool threadChecks = startMultiThread();')
-        self.appendSection('command', '    if (threadChecks) {')
-        self.appendSection('command', "    "+"\n    ".join(str(startthreadsafety).rstrip().split("\n")))
-        self.appendSection('command', '    }')
+        self.appendSection('command', "    " + "\n    ".join(str(startthreadsafety).rstrip().split("\n")))
         params = cmdinfo.elem.findall('param/name')
         paramstext = ','.join([str(param.text) for param in params])
         API = cmdinfo.elem.attrib.get('name').replace('vk','pTable->',1)
         self.appendSection('command', '    ' + assignresult + API + '(' + paramstext + ');')
-        self.appendSection('command', '    if (threadChecks) {')
-        self.appendSection('command', "    "+"\n    ".join(str(finishthreadsafety).rstrip().split("\n")))
-        self.appendSection('command', '    } else {')
-        self.appendSection('command', '        finishMultiThread();')
-        self.appendSection('command', '    }')
+        self.appendSection('command', "    " + "\n    ".join(str(finishthreadsafety).rstrip().split("\n")))
         # Return result variable, if any.
         if (resulttype is not None):
             self.appendSection('command', '    return result;')
