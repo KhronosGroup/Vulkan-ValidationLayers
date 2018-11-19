@@ -28,6 +28,7 @@ import json
 import re
 import csv
 import html
+import time
 from collections import defaultdict
 
 verbose_mode = False
@@ -465,8 +466,10 @@ class OutputDatabase:
         self.vj = val_json
         self.vs = val_source
         self.vt = val_tests
-        self.header_preamble = """/* THIS FILE IS GENERATED.  DO NOT EDIT. */
-/* (scripts/vk_validation_stats.py) */
+        self.header_version = "/* THIS FILE IS GENERATED - DO NOT EDIT (scripts/vk_validation_stats.py) */"
+        self.header_version += "\n/* Vulkan specification version: %s */" % val_json.apiversion
+        self.header_version += "\n/* Header generated: %s */\n" % time.strftime('%Y-%m-%d %H:%M:%S') 
+        self.header_preamble = """
 /*
  * Vulkan
  *
@@ -584,6 +587,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     def export_header(self):
         print("\n Exporting header file to: %s" % header_filename)
         with open (header_filename, 'w') as hfile:
+            hfile.write(self.header_version)
             hfile.write(self.header_preamble)
             vuid_list = list(self.vj.all_vuids)
             vuid_list.sort()
