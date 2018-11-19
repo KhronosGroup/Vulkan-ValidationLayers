@@ -997,28 +997,27 @@ static inline VKAPI_ATTR VkBool32 VKAPI_CALL messenger_win32_debug_output_msg(
     VkDebugUtilsMessageSeverityFlagBitsEXT message_severity, VkDebugUtilsMessageTypeFlagsEXT message_type,
     const VkDebugUtilsMessengerCallbackDataEXT *callback_data, void *user_data) {
 #ifdef WIN32
-    char buf[2048];
+    std::ostringstream msg_buffer;
     char msg_severity[30];
     char msg_type[30];
 
     PrintMessageSeverity(message_severity, msg_severity);
     PrintMessageType(message_type, msg_type);
 
-    size_t buffer_space = sizeof(buf) - 1;
-    size_t remaining_space = buffer_space;
-    _snprintf(buf, sizeof(buf) - 1, "%s(%s / %s): msgNum: %d - %s\n", callback_data->pMessageIdName, msg_severity, msg_type,
-              callback_data->messageIdNumber, callback_data->pMessage);
-    remaining_space = buffer_space - strlen(buf);
-    _snprintf(buf, remaining_space, "    Objects: %d\n", callback_data->objectCount);
+    msg_buffer << callback_data->pMessageIdName << "(" << msg_severity << " / " << msg_type
+               << "): msgNum: " << callback_data->messageIdNumber << " - " << callback_data->pMessage << "\n";
+    msg_buffer << "    Objects: " << callback_data->objectCount << "\n";
+
     for (uint32_t obj = 0; obj < callback_data->objectCount; ++obj) {
-        remaining_space = buffer_space - strlen(buf);
-        if (remaining_space > 0) {
-            _snprintf(buf, remaining_space, "       [%d] 0x%" PRIx64 ", type: %d, name: %s\n", obj,
-                      callback_data->pObjects[obj].objectHandle, callback_data->pObjects[obj].objectType,
-                      callback_data->pObjects[obj].pObjectName);
-        }
+        msg_buffer << "       [" << obj << "]  " << std::hex << std::showbase
+                   << HandleToUint64(callback_data->pObjects[obj].objectHandle) << ", type: " << std::dec << std::noshowbase
+                   << callback_data->pObjects[obj].objectType
+                   << ", name: " << (callback_data->pObjects[obj].pObjectName ? callback_data->pObjects[obj].pObjectName : "NULL")
+                   << "\n";
     }
-    OutputDebugString(buf);
+    const std::string tmp = msg_buffer.str();
+    const char *cstr = tmp.c_str();
+    OutputDebugString(cstr);
 #endif
 
     return false;
