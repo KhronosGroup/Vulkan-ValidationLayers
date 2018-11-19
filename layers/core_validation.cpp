@@ -2143,7 +2143,6 @@ bool OutsideRenderPass(const layer_data *dev_data, GLOBAL_CB_NODE *pCB, const ch
 }
 
 static void InitCoreValidation(instance_layer_data *instance_data, const VkAllocationCallbacks *pAllocator) {
-    layer_debug_report_actions(instance_data->report_data, instance_data->logging_callback, pAllocator, "lunarg_core_validation");
     layer_debug_messenger_actions(instance_data->report_data, instance_data->logging_messenger, pAllocator,
                                   "lunarg_core_validation");
 }

@@ -103,8 +103,6 @@ std::unordered_map<void *, instance_layer_data *> instance_layer_data_map;
 void InitializeManualParameterValidationFunctionPointers(void);
 
 static void init_parameter_validation(instance_layer_data *instance_data, const VkAllocationCallbacks *pAllocator) {
-    layer_debug_report_actions(instance_data->report_data, instance_data->logging_callback, pAllocator,
-                               "lunarg_parameter_validation");
     layer_debug_messenger_actions(instance_data->report_data, instance_data->logging_messenger, pAllocator,
                                   "lunarg_parameter_validation");
 }

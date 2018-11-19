@@ -30,7 +30,6 @@ uint64_t object_track_index = 0;
 uint32_t loader_layer_if_version = CURRENT_LOADER_LAYER_INTERFACE_VERSION;
 
 void InitObjectTracker(layer_data *my_data, const VkAllocationCallbacks *pAllocator) {
-    layer_debug_report_actions(my_data->report_data, my_data->logging_callback, pAllocator, "lunarg_object_tracker");
     layer_debug_messenger_actions(my_data->report_data, my_data->logging_messenger, pAllocator, "lunarg_object_tracker");
 }
 
