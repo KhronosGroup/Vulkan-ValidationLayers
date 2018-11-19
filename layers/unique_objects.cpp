@@ -59,7 +59,6 @@ namespace unique_objects {
 static uint32_t loader_layer_if_version = CURRENT_LOADER_LAYER_INTERFACE_VERSION;
 
 static void initUniqueObjects(instance_layer_data *instance_data, const VkAllocationCallbacks *pAllocator) {
-    layer_debug_report_actions(instance_data->report_data, instance_data->logging_callback, pAllocator, "google_unique_objects");
     layer_debug_messenger_actions(instance_data->report_data, instance_data->logging_messenger, pAllocator,
                                   "google_unique_objects");
 }
