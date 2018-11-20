@@ -1282,7 +1282,6 @@ bool cvdescriptorset::ValidateSampler(const VkSampler sampler, const layer_data 
 bool cvdescriptorset::ValidateImageUpdate(VkImageView image_view, VkImageLayout image_layout, VkDescriptorType type,
                                           const layer_data *dev_data, const char *func_name, std::string *error_code,
                                           std::string *error_msg) {
-    // TODO : Defaulting to 00943 for all cases here. Need to create new error codes for various cases.
     *error_code = "VUID-VkWriteDescriptorSet-descriptorType-00326";
     auto iv_state = GetImageViewState(dev_data, image_view);
     if (!iv_state) {
