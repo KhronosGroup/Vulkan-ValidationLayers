@@ -3193,11 +3193,28 @@ VKAPI_ATTR VkResult VKAPI_CALL QueueSubmit(VkQueue queue, uint32_t submitCount, 
 // This chunk could move into a seperate core_validation_android.cpp file... ?
 
 // clang-format off
-// Map external format and usage flags to equivalent Vulkan flags
+
+// Map external format and usage flags to/from equivalent Vulkan flags
+// (Tables as of v1.1.92)
+
+// AHardwareBuffer Format                       Vulkan Format
+// ======================                       =============
+// AHARDWAREBUFFER_FORMAT_R8G8B8A8_UNORM        VK_FORMAT_R8G8B8A8_UNORM
+// AHARDWAREBUFFER_FORMAT_R8G8B8X8_UNORM        VK_FORMAT_R8G8B8A8_UNORM
+// AHARDWAREBUFFER_FORMAT_R8G8B8_UNORM          VK_FORMAT_R8G8B8_UNORM
+// AHARDWAREBUFFER_FORMAT_R5G6B5_UNORM          VK_FORMAT_R5G6B5_UNORM_PACK16
+// AHARDWAREBUFFER_FORMAT_R16G16B16A16_FLOAT    VK_FORMAT_R16G16B16A16_SFLOAT
+// AHARDWAREBUFFER_FORMAT_R10G10B10A2_UNORM     VK_FORMAT_A2B10G10R10_UNORM_PACK32
+// AHARDWAREBUFFER_FORMAT_D16_UNORM             VK_FORMAT_D16_UNORM
+// AHARDWAREBUFFER_FORMAT_D24_UNORM             VK_FORMAT_X8_D24_UNORM_PACK32
+// AHARDWAREBUFFER_FORMAT_D24_UNORM_S8_UINT     VK_FORMAT_D24_UNORM_S8_UINT
+// AHARDWAREBUFFER_FORMAT_D32_FLOAT             VK_FORMAT_D32_SFLOAT
+// AHARDWAREBUFFER_FORMAT_D32_FLOAT_S8_UINT     VK_FORMAT_D32_SFLOAT_S8_UINT
+// AHARDWAREBUFFER_FORMAT_S8_UINT               VK_FORMAT_S8_UINT
 
 // The AHARDWAREBUFFER_FORMAT_* are an enum in the NDK headers, but get passed in to Vulkan
 // as uint32_t. Casting the enums here avoids scattering casts around in the code.
-std::map<uint32_t, VkFormat> ahb_format_map = {
+std::map<uint32_t, VkFormat> ahb_format_map_a2v = {
     { (uint32_t)AHARDWAREBUFFER_FORMAT_R8G8B8A8_UNORM,        VK_FORMAT_R8G8B8A8_UNORM },
     { (uint32_t)AHARDWAREBUFFER_FORMAT_R8G8B8X8_UNORM,        VK_FORMAT_R8G8B8A8_UNORM },
     { (uint32_t)AHARDWAREBUFFER_FORMAT_R8G8B8_UNORM,          VK_FORMAT_R8G8B8_UNORM },
@@ -3212,18 +3229,43 @@ std::map<uint32_t, VkFormat> ahb_format_map = {
     { (uint32_t)AHARDWAREBUFFER_FORMAT_S8_UINT,               VK_FORMAT_S8_UINT }
 };
 
-// Same casting rationale 
-std::map<uint64_t, VkImageUsageFlags> ahb_usage_map = {
-    { (uint64_t)AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE,  (VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT) },
-    { (uint64_t)AHARDWAREBUFFER_USAGE_GPU_COLOR_OUTPUT,   VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT },
-    { (uint64_t)AHARDWAREBUFFER_USAGE_GPU_CUBE_MAP,       VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT },
-    { (uint64_t)AHARDWAREBUFFER_USAGE_PROTECTED_CONTENT,  VK_IMAGE_CREATE_PROTECTED_BIT },
-    { (uint64_t)AHARDWAREBUFFER_USAGE_GPU_MIPMAP_COMPLETE, 0 },   // No equivalent 
-    //{ None,   VK_IMAGE_USAGE_TRANSFER_SRC_BIT },
-    //{ None,   VK_IMAGE_USAGE_TRANSFER_DST_BIT },
-    //{ None,   VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT },
-    //{ None,   VK_IMAGE_CREATE_EXTENDED_USAGE_BIT }
+// AHardwareBuffer Usage                        Vulkan Usage or Creation Flag (Intermixed - Aargh!)
+// =====================                        =================================================== 
+// None                                         VK_IMAGE_USAGE_TRANSFER_SRC_BIT
+// None                                         VK_IMAGE_USAGE_TRANSFER_DST_BIT
+// AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE      VK_IMAGE_USAGE_SAMPLED_BIT
+// AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE      VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT
+// AHARDWAREBUFFER_USAGE_GPU_COLOR_OUTPUT       VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT
+// AHARDWAREBUFFER_USAGE_GPU_CUBE_MAP           VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT
+// AHARDWAREBUFFER_USAGE_GPU_MIPMAP_COMPLETE    None 
+// AHARDWAREBUFFER_USAGE_PROTECTED_CONTENT      VK_IMAGE_CREATE_PROTECTED_BIT
+// None                                         VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT
+// None                                         VK_IMAGE_CREATE_EXTENDED_USAGE_BIT
+
+// Same casting rationale. De-mixing the table to prevent type confusion and aliasing 
+std::map<uint64_t, VkImageUsageFlags> ahb_usage_map_a2v = {
+    { (uint64_t)AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE,    (VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT) },
+    { (uint64_t)AHARDWAREBUFFER_USAGE_GPU_COLOR_OUTPUT,     VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT },
+    { (uint64_t)AHARDWAREBUFFER_USAGE_GPU_MIPMAP_COMPLETE,  0 },   // No equivalent 
 };
+
+std::map<uint64_t, VkImageCreateFlags> ahb_create_map_a2v = {
+    { (uint64_t)AHARDWAREBUFFER_USAGE_GPU_CUBE_MAP,         VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT },
+    { (uint64_t)AHARDWAREBUFFER_USAGE_PROTECTED_CONTENT,    VK_IMAGE_CREATE_PROTECTED_BIT },
+    { (uint64_t)AHARDWAREBUFFER_USAGE_GPU_MIPMAP_COMPLETE,  0 },   // No equivalent 
+};
+
+std::map<VkImageUsageFlags, uint64_t> ahb_usage_map_v2a = {
+    { VK_IMAGE_USAGE_SAMPLED_BIT,           (uint64_t)AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE },
+    { VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT,  (uint64_t)AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE },
+    { VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,  (uint64_t)AHARDWAREBUFFER_USAGE_GPU_COLOR_OUTPUT  },
+};
+
+std::map<VkImageCreateFlags, uint64_t> ahb_create_map_v2a = {
+    { VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT,  (uint64_t)AHARDWAREBUFFER_USAGE_GPU_CUBE_MAP },
+    { VK_IMAGE_CREATE_PROTECTED_BIT,        (uint64_t)AHARDWAREBUFFER_USAGE_PROTECTED_CONTENT },
+};
+
 // clang-format on
 
 //
@@ -3343,8 +3385,8 @@ static bool ValidateAllocateMemoryANDROID(layer_data *dev_data, const VkMemoryAl
             GetPhysDevExtBufProps(dev_data->physical_device, &pdebi, &ebp);
         }
 
-        // (VU 01881) If buffer is not NULL, it must be a valid Android hardware buffer object with format and usage compatible with
-        // Vulkan as described by VkExternalMemoryHandleTypeFlagBits.
+        //  If buffer is not NULL, it must be a valid Android hardware buffer object with AHardwareBuffer_Desc::format and
+        //  AHardwareBuffer_Desc::usage compatible with Vulkan as described in Android Hardware Buffers.
         if (pdebi.handleType != (pdebi.handleType & ebp.externalMemoryProperties.compatibleHandleTypes)) {
             skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
                             HandleToUint64(dev_data->device), "VUID-VkImportAndroidHardwareBufferInfoANDROID-buffer-01881",
@@ -3360,10 +3402,11 @@ static bool ValidateAllocateMemoryANDROID(layer_data *dev_data, const VkMemoryAl
         VkPhysicalDeviceImageFormatInfo2 pdifi2 = {};
         pdifi2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_FORMAT_INFO_2;
         pdifi2.pNext = &pdeifi;
-        if (0 < ahb_format_map.count(ahb_desc.format)) pdifi2.format = ahb_format_map[ahb_desc.format];
+        if (0 < ahb_format_map_a2v.count(ahb_desc.format)) pdifi2.format = ahb_format_map_a2v[ahb_desc.format];
         pdifi2.type = VK_IMAGE_TYPE_2D;           // Seems likely
         pdifi2.tiling = VK_IMAGE_TILING_OPTIMAL;  // Ditto
-        if (0 < ahb_usage_map.count(ahb_desc.usage)) pdifi2.usage = ahb_usage_map[ahb_desc.usage];
+        if (0 < ahb_usage_map_a2v.count(ahb_desc.usage)) pdifi2.usage = ahb_usage_map_a2v[ahb_desc.usage];
+        if (0 < ahb_create_map_a2v.count(ahb_desc.usage)) pdifi2.flags = ahb_usage_map_a2v[ahb_desc.usage];
 
         VkExternalImageFormatProperties eifp = {};
         eifp.sType = VK_STRUCTURE_TYPE_EXTERNAL_IMAGE_FORMAT_PROPERTIES;
@@ -3373,7 +3416,7 @@ static bool ValidateAllocateMemoryANDROID(layer_data *dev_data, const VkMemoryAl
 
         VkResult fmt_lookup_result = GetPDImageFormatProperties2(dev_data, &pdifi2, &ifp2);
 
-        //  (VU 01880) If buffer is not NULL, Android hardware buffers must be supported for import, as reported by
+        //  If buffer is not NULL, Android hardware buffers must be supported for import, as reported by
         //  VkExternalImageFormatProperties or VkExternalBufferProperties.
         if (0 == (ebp.externalMemoryProperties.externalMemoryFeatures & VK_EXTERNAL_MEMORY_FEATURE_IMPORTABLE_BIT)) {
             if ((VK_SUCCESS != fmt_lookup_result) ||
@@ -3385,109 +3428,145 @@ static bool ValidateAllocateMemoryANDROID(layer_data *dev_data, const VkMemoryAl
             }
         }
 
+        // Retrieve buffer and format properties of the provided AHardwareBuffer
         VkAndroidHardwareBufferFormatPropertiesANDROID ahb_format_props = {};
         ahb_format_props.sType = VK_STRUCTURE_TYPE_ANDROID_HARDWARE_BUFFER_FORMAT_PROPERTIES_ANDROID;
         VkAndroidHardwareBufferPropertiesANDROID ahb_props = {};
         ahb_props.sType = VK_STRUCTURE_TYPE_ANDROID_HARDWARE_BUFFER_PROPERTIES_ANDROID;
         ahb_props.pNext = &ahb_format_props;
+        GetAndroidHardwareBufferPropertiesANDROID(dev_data->device, import_ahb_info->buffer, &ahb_props);
 
-        bool props_lookup_ok =
-            (VK_SUCCESS == GetAndroidHardwareBufferPropertiesANDROID(dev_data->device, import_ahb_info->buffer, &ahb_props));
-
-        // do-while(0)-break pattern to deal with multi-bullet-point VU.
-        // Issue https://gitlab.khronos.org/vulkan/vulkan/issues/1382 will remove these, and
-        // will require revisiting this code when resolved.
-        bool failed_01873 = true;
-        do {
-            // allocationSize must be the size returned by vkGetAndroidHardwareBufferPropertiesANDROID
-            // for the Android hardware buffer
-            if (!props_lookup_ok) break;
-            if (alloc_info->allocationSize != ahb_props.allocationSize) break;
-
-            // memoryTypeIndex must be one of those returned by vkGetAndroidHardwareBufferPropertiesANDROID
-            // for the Android hardware buffer
-            if (alloc_info->memoryTypeIndex >= 32) break;
-            uint32_t mem_type_bitmask = 1 << alloc_info->memoryTypeIndex;
-            if (0 == (mem_type_bitmask & ahb_props.memoryTypeBits)) break;
-
-            // If the pNext chain does not contain an instance of VkMemoryDedicatedAllocateInfo or
-            // VkMemoryDedicatedAllocateInfo::image is VK_NULL_HANDLE, the Android hardware buffer must have a format
-            // of AHARDWAREBUFFER_FORMAT_BLOB and a usage that includes AHARDWAREBUFFER_USAGE_GPU_DATA_BUFFER
-            if (!mem_ded_alloc_info || (VK_NULL_HANDLE == mem_ded_alloc_info->image)) {
-                if ((uint64_t)AHARDWAREBUFFER_FORMAT_BLOB != ahb_format_props.externalFormat) break;
-                if (0 == (ahb_desc.usage & AHARDWAREBUFFER_USAGE_GPU_DATA_BUFFER)) break;
-            }
-            failed_01873 = false;  // Phew! If we made it here, no 01873 error.
-        } while (false);
-        if (failed_01873) {
+        // allocationSize must be the size returned by vkGetAndroidHardwareBufferPropertiesANDROID for the Android hardware buffer
+        if (alloc_info->allocationSize != ahb_props.allocationSize) {
             skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
-                            HandleToUint64(dev_data->device), "VUID-VkMemoryAllocateInfo-None-01873",
+                            HandleToUint64(dev_data->device), "VUID-VkMemoryAllocateInfo-allocationSize-02383",
                             "vkAllocateMemory: VkMemoryAllocateInfo struct with chained VkImportAndroidHardwareBufferInfoANDROID "
-                            "struct contains a conflicting size, memoryType, format, or usage.");
+                            "struct, allocationSize (%" PRId64
+                            ") does not match the AHardwareBuffer's reported allocationSize (%" PRId64 ").",
+                            alloc_info->allocationSize, ahb_props.allocationSize);
         }
 
-        if ((mem_ded_alloc_info) && (VK_NULL_HANDLE != mem_ded_alloc_info->image)) {
-            // This is an import with a dedicated allocation requirement
+        // memoryTypeIndex must be one of those returned by vkGetAndroidHardwareBufferPropertiesANDROID for the AHardwareBuffer
+        // Note: memoryTypeIndex is an index, memoryTypeBits is a bitmask
+        uint32_t mem_type_bitmask = 1 << alloc_info->memoryTypeIndex;
+        if (0 == (mem_type_bitmask & ahb_props.memoryTypeBits)) {
+            skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
+                            HandleToUint64(dev_data->device), "VUID-VkMemoryAllocateInfo-memoryTypeIndex-02385",
+                            "vkAllocateMemory: VkMemoryAllocateInfo struct with chained VkImportAndroidHardwareBufferInfoANDROID "
+                            "struct, memoryTypeIndex (%" PRId32
+                            ") does not correspond to a bit set in AHardwareBuffer's reported "
+                            "memoryTypeBits bitmask (0x%" PRIx32 ").",
+                            alloc_info->memoryTypeIndex, ahb_props.memoryTypeBits);
+        }
 
+        // Checks for allocations without a dedicated allocation requirement
+        if ((nullptr == mem_ded_alloc_info) || (VK_NULL_HANDLE == mem_ded_alloc_info->image)) {
+            // the Android hardware buffer must have a format of AHARDWAREBUFFER_FORMAT_BLOB and a usage that includes
+            // AHARDWAREBUFFER_USAGE_GPU_DATA_BUFFER
+            if (((uint64_t)AHARDWAREBUFFER_FORMAT_BLOB != ahb_format_props.externalFormat) ||
+                (0 == (ahb_desc.usage & AHARDWAREBUFFER_USAGE_GPU_DATA_BUFFER))) {
+                skip |= log_msg(
+                    dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
+                    HandleToUint64(dev_data->device), "VUID-VkMemoryAllocateInfo-pNext-02384",
+                    "vkAllocateMemory: VkMemoryAllocateInfo struct with chained VkImportAndroidHardwareBufferInfoANDROID "
+                    "struct without a dedicated allocation requirement, while the AHardwareBuffer's external format (0x%" PRIx64
+                    ") is not AHARDWAREBUFFER_FORMAT_BLOB or usage (0x%" PRIx64
+                    ") does not include AHARDWAREBUFFER_USAGE_GPU_DATA_BUFFER.",
+                    ahb_format_props.externalFormat, ahb_desc.usage);
+            }
+        } else {  // Checks specific to import with a dedicated allocation requirement
             VkImageCreateInfo *ici = &(GetImageState(dev_data, mem_ded_alloc_info->image)->createInfo);
 
-            // do-while(0)-break pattern to deal with multi-bullet-point VU.
-            // Issue https://gitlab.khronos.org/vulkan/vulkan/issues/1382 will remove these, and
-            // will require revisiting this code when resolved.
-            bool failed_01875 = true;
-            do {
-                // The Android hardware buffer’s usage must include at least one of AHARDWAREBUFFER_USAGE_GPU_COLOR_OUTPUT or
-                // AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE
-                if (0 == (ahb_desc.usage & (AHARDWAREBUFFER_USAGE_GPU_COLOR_OUTPUT | AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE)))
-                    break;
+            // The Android hardware buffer’s usage must include at least one of AHARDWAREBUFFER_USAGE_GPU_COLOR_OUTPUT or
+            // AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE
+            if (0 == (ahb_desc.usage & (AHARDWAREBUFFER_USAGE_GPU_COLOR_OUTPUT | AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE))) {
+                skip |= log_msg(
+                    dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
+                    HandleToUint64(dev_data->device), "VUID-VkMemoryAllocateInfo-pNext-02386",
+                    "vkAllocateMemory: VkMemoryAllocateInfo struct with chained VkImportAndroidHardwareBufferInfoANDROID and a "
+                    "dedicated allocation requirement, while the AHardwareBuffer's usage (0x%" PRIx64
+                    ") contains neither AHARDWAREBUFFER_USAGE_GPU_COLOR_OUTPUT nor AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE.",
+                    ahb_desc.usage);
+            }
 
-                // The format of image must be VK_FORMAT_UNDEFINED or the format returned by
-                // vkGetAndroidHardwareBufferPropertiesANDROID in VkAndroidHardwareBufferFormatPropertiesANDROID::format for the
-                // Android hardware buffer.
-                if (!props_lookup_ok) break;
-                if ((ici->format != ahb_format_props.format) && (VK_FORMAT_UNDEFINED != ici->format)) break;
+            //  the format of image must be VK_FORMAT_UNDEFINED or the format returned by
+            //  vkGetAndroidHardwareBufferPropertiesANDROID
+            if ((ici->format != ahb_format_props.format) && (VK_FORMAT_UNDEFINED != ici->format)) {
+                skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
+                                HandleToUint64(dev_data->device), "VUID-VkMemoryAllocateInfo-pNext-02387",
+                                "vkAllocateMemory: VkMemoryAllocateInfo struct with chained "
+                                "VkImportAndroidHardwareBufferInfoANDROID, the dedicated allocation image's "
+                                "format (%s) is not VK_FORMAT_UNDEFINED and does not match the AHardwareBuffer's format (%s).",
+                                string_VkFormat(ici->format), string_VkFormat(ahb_format_props.format));
+            }
 
-                // The width, height, and array layer dimensions of image and the Android hardwarebuffer must be identical
-                if ((ici->extent.width != ahb_desc.width) || (ici->extent.height != ahb_desc.height) ||
-                    (ici->arrayLayers != ahb_desc.layers))
-                    break;
+            // The width, height, and array layer dimensions of image and the Android hardwarebuffer must be identical
+            if ((ici->extent.width != ahb_desc.width) || (ici->extent.height != ahb_desc.height) ||
+                (ici->arrayLayers != ahb_desc.layers)) {
+                skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
+                                HandleToUint64(dev_data->device), "VUID-VkMemoryAllocateInfo-pNext-02388",
+                                "vkAllocateMemory: VkMemoryAllocateInfo struct with chained "
+                                "VkImportAndroidHardwareBufferInfoANDROID, the dedicated allocation image's "
+                                "width, height, and arrayLayers (%" PRId32 " %" PRId32 " %" PRId32
+                                ") do not match those of the AHardwareBuffer (%" PRId32 " %" PRId32 " %" PRId32 ").",
+                                ici->extent.width, ici->extent.height, ici->arrayLayers, ahb_desc.width, ahb_desc.height,
+                                ahb_desc.layers);
+            }
 
-                // If the Android hardware buffer’s usage includes AHARDWAREBUFFER_USAGE_GPU_MIPMAP_COMPLETE, the image must
-                // have log2 (max(width, height)) + 1 mip levels, otherwise it must have exactly 1 mip level.
-                if (ahb_desc.usage & AHARDWAREBUFFER_USAGE_GPU_MIPMAP_COMPLETE) {
-                    uint32_t full_mip_depth = 1 + (uint32_t)log2(std::max(ici->extent.height, ici->extent.width));
-                    if (ici->mipLevels != full_mip_depth) break;
-                } else {
-                    if (ici->mipLevels != 1) break;
-                }
-
-                // Each bit set in the usage of image must be listed in AHardwareBuffer Usage Equivalence, and if there is a
-                // corresponding AHARDWAREBUFFER_USAGE bit listed that bit must be included in the Android hardware buffer’s
-                // usage
-                VkImageUsageFlags legalUsageBits = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT |
-                                                   VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
-                                                   VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-                if (ici->usage & ~legalUsageBits) break;
-
-                if ((0 == (ahb_desc.usage & AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE)) &&
-                    (0 != (ici->usage & ahb_usage_map[AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE])))
-                    break;
-                if ((0 == (ahb_desc.usage & AHARDWAREBUFFER_USAGE_GPU_COLOR_OUTPUT)) &&
-                    (0 != (ici->usage & ahb_usage_map[AHARDWAREBUFFER_USAGE_GPU_COLOR_OUTPUT])))
-                    break;
-
-                failed_01875 = false;  // No 01875 error
-            } while (false);
-            if (failed_01875) {
+            // If the Android hardware buffer’s usage includes AHARDWAREBUFFER_USAGE_GPU_MIPMAP_COMPLETE, the image must
+            // have either a full mipmap chain or exactly 1 mip level.
+            //
+            // NOTE! The language of this VUID contradicts the language in the spec (1.1.93), which says "The
+            // AHARDWAREBUFFER_USAGE_GPU_MIPMAP_COMPLETE flag does not correspond to a Vulkan image usage or creation flag. Instead,
+            // its presence indicates that the Android hardware buffer contains a complete mipmap chain, and its absence indicates
+            // that the Android hardware buffer contains only a single mip level."
+            //
+            // TODO: This code implements the VUID's meaning, but it seems likely that the spec text is actually correct.
+            // Clarification requested.
+            if ((ahb_desc.usage & AHARDWAREBUFFER_USAGE_GPU_MIPMAP_COMPLETE) && (ici->mipLevels != 1) &&
+                (ici->mipLevels != FullMipChainLevels(ici->extent))) {
                 skip |=
                     log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
-                            HandleToUint64(dev_data->device), "VUID-VkMemoryAllocateInfo-pNext-01875",
-                            "vkAllocateMemory: VkMemoryAllocateInfo struct with chained VkImportAndroidHardwareBufferInfoANDROID "
-                            "and VkMemoryDedicatedAllocateInfo structs, with conflicts.");
+                            HandleToUint64(dev_data->device), "VUID-VkMemoryAllocateInfo-pNext-02389",
+                            "vkAllocateMemory: VkMemoryAllocateInfo struct with chained VkImportAndroidHardwareBufferInfoANDROID, "
+                            "usage includes AHARDWAREBUFFER_USAGE_GPU_MIPMAP_COMPLETE but mipLevels (%" PRId32
+                            ") is neither 1 nor full mip "
+                            "chain levels (%" PRId32 ").",
+                            ici->mipLevels, FullMipChainLevels(ici->extent));
+            }
+
+            // each bit set in the usage of image must be listed in AHardwareBuffer Usage Equivalence, and if there is a
+            // corresponding AHARDWAREBUFFER_USAGE bit listed that bit must be included in the Android hardware buffer's
+            // AHardwareBuffer_Desc::usage
+            if (ici->usage &
+                ~(VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
+                  VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT)) {
+                skip |=
+                    log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
+                            HandleToUint64(dev_data->device), "VUID-VkMemoryAllocateInfo-pNext-02390",
+                            "vkAllocateMemory: VkMemoryAllocateInfo struct with chained VkImportAndroidHardwareBufferInfoANDROID, "
+                            "dedicated image usage bits include one or more with no AHardwareBuffer equivalent.");
+            }
+
+            bool illegal_usage = false;
+            std::vector<VkImageUsageFlags> usages = {VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT,
+                                                     VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
+                                                     VK_IMAGE_USAGE_TRANSFER_DST_BIT};
+            for (VkImageUsageFlags ubit : usages) {
+                if (0 < ahb_usage_map_v2a.count(ubit)) {
+                    uint64_t ahb_usage = ahb_usage_map_v2a[ubit];
+                    if (0 == (ahb_usage & ahb_desc.usage)) illegal_usage = true;
+                }
+            }
+            if (illegal_usage) {
+                skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
+                                HandleToUint64(dev_data->device), "VUID-VkMemoryAllocateInfo-pNext-02390",
+                                "vkAllocateMemory: VkMemoryAllocateInfo struct with chained "
+                                "VkImportAndroidHardwareBufferInfoANDROID, one or more AHardwareBuffer usage bits equivalent to "
+                                "the provided image's usage bits are missing from AHardwareBuffer_Desc.usage.");
             }
         }
-
-    } else {
+    } else {  // Not an import
         if ((exp_mem_alloc_info) && (mem_ded_alloc_info) &&
             (0 != (VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID & exp_mem_alloc_info->handleTypes)) &&
             (VK_NULL_HANDLE != mem_ded_alloc_info->image)) {
@@ -3499,11 +3578,11 @@ static bool ValidateAllocateMemoryANDROID(layer_data *dev_data, const VkMemoryAl
                                 "but allocationSize is non-zero.");
             }
         } else {
-            // Neither import nor export
             if (0 == alloc_info->allocationSize) {
-                skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
-                                HandleToUint64(dev_data->device), "VUID-VkMemoryAllocateInfo-pNext-01874",
-                                "vkAllocateMemory: pNext chain does not indicate an export allocation, but allocationSize is 0.");
+                skip |= log_msg(
+                    dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
+                    HandleToUint64(dev_data->device), "VUID-VkMemoryAllocateInfo-pNext-01874",
+                    "vkAllocateMemory: pNext chain does not indicate a dedicated export allocation, but allocationSize is 0.");
             };
         }
     }
