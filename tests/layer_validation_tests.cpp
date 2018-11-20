@@ -22171,8 +22171,7 @@ TEST_F(VkLayerTest, ImageLayerUnsupportedFormat) {
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
 
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                         "vkCreateImage: VkFormat for image must not be VK_FORMAT_UNDEFINED");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkImageCreateInfo-format-00943");
 
     VkImage image;
     vkCreateImage(m_device->handle(), &image_create_info, NULL, &image);
