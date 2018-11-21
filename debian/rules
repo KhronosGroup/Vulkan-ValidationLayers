@@ -1,0 +1,37 @@
+#!/usr/bin/make -f
+
+# see EXAMPLES in dpkg-buildflags(1) and read /usr/share/dpkg/*
+DPKG_EXPORT_BUILDFLAGS = 1
+include /usr/share/dpkg/default.mk
+
+%:
+	dh $@ --parallel --builddirectory=build/
+
+override_dh_clean:
+	dh_clean
+	rm -rf scripts/__pycache__
+
+override_dh_auto_configure:
+	dh_auto_configure -- \
+	-DCMAKE_BUILD_TYPE=Release \
+	-DGLSLANG_INSTALL_DIR=/usr/bin \
+        -DCMAKE_INSTALL_INCLUDEDIR=/usr/include/vulkan/
+
+override_dh_auto_install:
+	dh_auto_install --destdir=debian/tmp
+
+override_dh_missing:
+	dh_missing --fail-missing
+
+.PHONY: debian/control
+debian/control: vk-api-vers = $(shell dpkg-parsechangelog -SVersion | sed 's/\.[^.]*-.*$$//')
+debian/control:
+	sed -e 's/__VKAPIVERSION__/$(vk-api-vers)/g' \
+	    < debian/control.in > debian/control
+
+gentarball: SOURCE = $(shell dpkg-parsechangelog -SSource)
+gentarball: UV=$(shell dpkg-parsechangelog -SVersion |sed 's/-.*$$//')
+gentarball:
+	tar --transform 's,^,$(SOURCE)-$(UV)/,' \
+		--exclude 'debian' --exclude-vcs \
+		-cJf ../$(SOURCE)_$(UV).orig.tar.xz .

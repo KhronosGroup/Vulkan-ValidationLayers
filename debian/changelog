@@ -1,0 +1,27 @@
+vulkan-validationlayers (1.1.92.0~rc1-1lunarg16.04.1.1) xenial; urgency=medium
+
+  * new upstream version
+
+ -- Jeremy Hayes <jeremy@centaurus>  Wed, 14 Nov 2018 14:56:13 -0700
+
+vulkan-validationlayers (1.1.85.0.1-1xenial~lunarg1.1) xenial; urgency=medium
+
+  * New upstream version
+
+ -- Brett Johnson <brett@linuxturtle.net>  Fri, 05 Oct 2018 15:58:28 -0600
+
+vulkan-validationlayers (1.1.85.0-1) unstable; urgency=medium
+
+  * New upstream version
+
+ -- Brett Johnson <brett@linuxturtle.net>  Fri, 05 Oct 2018 15:51:16 -0600
+
+vulkan-validationlayers (1.1.82.0-2) unstable; urgency=medium
+
+  [ Timo Aaltonen ]
+  * Initial packaging.
+
+  [ Brett Johnson ]
+  * Backport for LunarG
+
+ -- Brett Johnson <brett@linuxturtle.net>  Tue, 02 Oct 2018 12:29:21 -0600

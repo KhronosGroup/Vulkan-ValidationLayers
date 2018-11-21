@@ -1,0 +1,18 @@
+Description: use -mxgot flag on mips64
+Author: Dejan Latinovic <Dejan.Latinovic@imgtec.com>
+
+--- a/layers/CMakeLists.txt
++++ b/layers/CMakeLists.txt
+@@ -211,6 +211,12 @@ if (CMAKE_C_COMPILER_ID MATCHES "Clang")
+         COMPILE_FLAGS "-Wno-unused-const-variable")
+ endif()
+ 
++if (${CMAKE_SYSTEM_PROCESSOR} STREQUAL "mips64")
++    if("${CMAKE_SIZEOF_VOID_P}" EQUAL "8")
++        set_source_files_properties(core_validation.cpp PROPERTIES COMPILE_FLAGS -mxgot)
++    endif()
++endif()
++
+ run_vk_xml_generate(threading_generator.py thread_check.h)
+ run_vk_xml_generate(parameter_validation_generator.py parameter_validation.cpp)
+ run_vk_xml_generate(unique_objects_generator.py unique_objects_wrappers.h)
