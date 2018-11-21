@@ -202,7 +202,7 @@ std::string ConfigFile::FindSettings() {
 #if defined(WIN32)
     HKEY hive;
     LSTATUS err = RegOpenKeyEx(HKEY_CURRENT_USER, "Software\\Khronos\\Vulkan\\Settings", 0, KEY_READ, &hive);
-    if (err != ERROR_SUCCESS) {
+    if (err == ERROR_SUCCESS) {
         char name[2048];
         DWORD i = 0, name_size = sizeof(name), type, value, value_size = sizeof(value);
         while (ERROR_SUCCESS ==
@@ -213,7 +213,7 @@ std::string ConfigFile::FindSettings() {
             }
 
             // Check if this actually points to a file
-            if ((stat(name, &info) != 0) || (info.st_mode & S_IFREG)) {
+            if ((stat(name, &info) != 0) || !(info.st_mode & S_IFREG)) {
                 continue;
             }
 
