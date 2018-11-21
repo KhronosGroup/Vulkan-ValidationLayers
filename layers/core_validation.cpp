@@ -12205,6 +12205,35 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateEvent(VkDevice device, const VkEventCreateI
     return result;
 }
 
+static VkImageCreateInfo GetSwapchainImpliedImageCreateInfo(VkSwapchainCreateInfoKHR const *pCreateInfo) {
+    VkImageCreateInfo result = {};
+    result.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    result.pNext = nullptr;
+
+    if (pCreateInfo->flags & VK_SWAPCHAIN_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT_KHR)
+        result.flags |= VK_IMAGE_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT;
+    if (pCreateInfo->flags & VK_SWAPCHAIN_CREATE_PROTECTED_BIT_KHR) result.flags |= VK_IMAGE_CREATE_PROTECTED_BIT;
+    if (pCreateInfo->flags & VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR)
+        result.flags |= VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT | VK_IMAGE_CREATE_EXTENDED_USAGE_BIT;
+
+    result.imageType = VK_IMAGE_TYPE_2D;
+    result.format = pCreateInfo->imageFormat;
+    result.extent.width = pCreateInfo->imageExtent.width;
+    result.extent.height = pCreateInfo->imageExtent.height;
+    result.extent.depth = 1;
+    result.mipLevels = 1;
+    result.arrayLayers = pCreateInfo->imageArrayLayers;
+    result.samples = VK_SAMPLE_COUNT_1_BIT;
+    result.tiling = VK_IMAGE_TILING_OPTIMAL;
+    result.usage = pCreateInfo->imageUsage;
+    result.sharingMode = pCreateInfo->imageSharingMode;
+    result.queueFamilyIndexCount = pCreateInfo->queueFamilyIndexCount;
+    result.pQueueFamilyIndices = pCreateInfo->pQueueFamilyIndices;
+    result.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+    return result;
+}
+
 static bool PreCallValidateCreateSwapchainKHR(layer_data *dev_data, const char *func_name,
                                               VkSwapchainCreateInfoKHR const *pCreateInfo, SURFACE_STATE *surface_state,
                                               SWAPCHAIN_NODE *old_swapchain_state) {
@@ -12408,6 +12437,43 @@ static bool PreCallValidateCreateSwapchainKHR(layer_data *dev_data, const char *
                             pCreateInfo->imageColorSpace))
                     return true;
             }
+        }
+    }
+
+    // Validate implied image creation parameters:
+    {
+        const VkImageCreateInfo image_create_info = GetSwapchainImpliedImageCreateInfo(pCreateInfo);
+
+        VkImageFormatProperties image_format_properties;
+        VkResult result = dev_data->instance_data->dispatch_table.GetPhysicalDeviceImageFormatProperties(
+            dev_data->physical_device, image_create_info.format, image_create_info.imageType, image_create_info.tiling,
+            image_create_info.usage, image_create_info.flags, &image_format_properties);
+
+        bool supported = true;
+
+        if (result == VK_SUCCESS) {
+            if (pCreateInfo->imageExtent.width > image_format_properties.maxExtent.width ||
+                pCreateInfo->imageExtent.height > image_format_properties.maxExtent.height ||
+                pCreateInfo->imageArrayLayers > image_format_properties.maxArrayLayers)
+                supported = false;
+        } else if (result == VK_ERROR_FORMAT_NOT_SUPPORTED) {
+            supported = false;
+        } else {
+            if (log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
+                        HandleToUint64(dev_data->device), "VUID-VkSwapchainCreateInfoKHR-imageFormat-01778",
+                        "%s called with implied image creation parameters that caused an unexpected error %s in "
+                        "vkGetPhysicalDeviceImageFormatProperties()",
+                        func_name, string_VkResult(result)))
+                return true;
+        }
+
+        if (!supported) {
+            if (log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
+                        HandleToUint64(dev_data->device), "VUID-VkSwapchainCreateInfoKHR-imageFormat-01778",
+                        "%s called with implied image creation parameters that aren't supported as reported by "
+                        "vkGetPhysicalDeviceImageFormatProperties()",
+                        func_name))
+                return true;
         }
     }
 
