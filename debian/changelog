@@ -1,8 +1,14 @@
+vulkan-validationlayers (1.1.92.0~rc3-1) UNRELEASED; urgency=medium
+
+  * new upstream version
+
+ -- Jeremy Hayes <jeremy@centaurus>  Wed, 21 Nov 2018 13:18:41 -0700
+
 vulkan-validationlayers (1.1.92.0~rc1-1lunarg16.04.1.1) xenial; urgency=medium
 
   * new upstream version
 
- -- Jeremy Hayes <jeremy@centaurus>  Wed, 14 Nov 2018 14:56:13 -0700
+ -- Jeremy Hayes <jeremy@centaurus>  Wed, 21 Nov 2018 13:18:41 -0700
 
 vulkan-validationlayers (1.1.85.0.1-1xenial~lunarg1.1) xenial; urgency=medium
 
