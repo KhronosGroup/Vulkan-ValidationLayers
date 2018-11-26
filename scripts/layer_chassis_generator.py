@@ -169,15 +169,11 @@ std::unordered_map<void *, instance_layer_data *> instance_layer_data_map;
 #include "interceptor_objects.h"
 ObjectLifetimes object_tracker_object;
 
-using mutex_t = std::mutex;
-using lock_guard_t = std::lock_guard<mutex_t>;
-using unique_lock_t = std::unique_lock<mutex_t>;
-
 namespace vulkan_layer_chassis {
 
 using std::unordered_map;
 
-static mutex_t global_lock;
+static std::mutex global_lock;
 
 static const VkLayerProperties global_layer = {
     "VK_LAYER_KHRONOS_validation", VK_LAYER_API_VERSION, 1, "LunarG validation Layer",
@@ -296,7 +292,7 @@ VKAPI_ATTR void VKAPI_CALL DestroyInstance(VkInstance instance, const VkAllocati
 
     instance_data->dispatch_table.DestroyInstance(instance, pAllocator);
 
-    lock_guard_t lock(global_lock);
+    std::lock_guard<std::mutex> lock(global_lock);
     for (auto intercept : global_interceptor_list) {
         intercept->PostCallRecordDestroyInstance(instance, pAllocator);
     }
@@ -322,7 +318,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
                                             const VkAllocationCallbacks *pAllocator, VkDevice *pDevice) {
     instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(gpu), instance_layer_data_map);
 
-    unique_lock_t lock(global_lock);
+    std::unique_lock <std::mutex> lock(global_lock);
     VkLayerDeviceCreateInfo *chain_info = get_chain_info(pCreateInfo, VK_LAYER_LINK_INFO);
     PFN_vkGetInstanceProcAddr fpGetInstanceProcAddr = chain_info->u.pLayerInfo->pfnNextGetInstanceProcAddr;
     PFN_vkGetDeviceProcAddr fpGetDeviceProcAddr = chain_info->u.pLayerInfo->pfnNextGetDeviceProcAddr;
@@ -361,7 +357,7 @@ VKAPI_ATTR void VKAPI_CALL DestroyDevice(VkDevice device, const VkAllocationCall
     dispatch_key key = get_dispatch_key(device);
     layer_data *device_data = GetLayerDataPtr(key, layer_data_map);
 
-    unique_lock_t lock(global_lock);
+    std::unique_lock <std::mutex> lock(global_lock);
     for (auto intercept : global_interceptor_list) {
         intercept->PreCallValidateDestroyDevice(device, pAllocator);
     }
