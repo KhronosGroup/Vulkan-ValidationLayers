@@ -805,10 +805,37 @@ VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkNegotiateLoaderLayerInterfaceVe
         self.appendSection('command', '    ' + assignresult + API + '(' + paramstext + ');')
 
         # Generate post-call object processing source code
+        alt_ret_codes = [
+            # Include functions here which must tolerate VK_INCOMPLETE as a return code
+            'vkEnumeratePhysicalDevices',
+            'vkEnumeratePhysicalDeviceGroupsKHR',
+            'vkGetValidationCacheDataEXT',
+            'vkGetPipelineCacheData',
+            'vkGetShaderInfoAMD',
+            'vkGetPhysicalDeviceDisplayPropertiesKHR',
+            'vkGetPhysicalDeviceDisplayProperties2KHR',
+            'vkGetPhysicalDeviceDisplayPlanePropertiesKHR',
+            'vkGetDisplayPlaneSupportedDisplaysKHR',
+            'vkGetDisplayModePropertiesKHR',
+            'vkGetDisplayModeProperties2KHR',
+            'vkGetPhysicalDeviceSurfaceFormatsKHR',
+            'vkGetPhysicalDeviceSurfacePresentModesKHR',
+            'vkGetPhysicalDevicePresentRectanglesKHR',
+            'vkGetPastPresentationTimingGOOGLE',
+            'vkGetSwapchainImagesKHR',
+            'vkEnumerateInstanceLayerProperties',
+            'vkEnumerateDeviceLayerProperties',
+            'vkEnumerateInstanceExtensionProperties',
+            'vkEnumerateDeviceExtensionProperties',
+            'vkGetPhysicalDeviceCalibrateableTimeDomainsEXT',
+        ]
         return_type_indent = ''
         if (resulttype.text == 'VkResult'):
             return_type_indent = '    '
-            self.appendSection('command', '    if (VK_SUCCESS == result) {')
+            if name in alt_ret_codes:
+                self.appendSection('command', '    if ((VK_SUCCESS == result) || (VK_INCOMPLETE == result)) {')
+            else:
+                self.appendSection('command', '    if (VK_SUCCESS == result) {')
         self.appendSection('command', '%s    for (auto intercept : global_interceptor_list) {' % return_type_indent)
         self.appendSection('command', '%s        std::lock_guard<std::mutex> lock(intercept->layer_mutex);' % return_type_indent)
         self.appendSection('command', '%s        intercept->PostCallRecord%s(%s);' % (return_type_indent,api_function_name[2:], paramstext))
