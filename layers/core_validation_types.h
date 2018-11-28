@@ -294,6 +294,8 @@ class IMAGE_STATE : public BINDABLE {
     bool sparse_metadata_required;  // Track if sparse metadata aspect is required for this image
     bool sparse_metadata_bound;     // Track if sparse metadata aspect is bound to this image
     bool imported_ahb;              // True if image was imported from an Android Hardware Buffer
+    bool has_ahb_format;            // True if image was created with an external Android format
+    uint64_t ahb_format;            // External Android format, if provided
     std::vector<VkSparseImageMemoryRequirements> sparse_requirements;
     IMAGE_STATE(VkImage img, const VkImageCreateInfo *pCreateInfo)
         : image(img),
@@ -306,6 +308,8 @@ class IMAGE_STATE : public BINDABLE {
           sparse_metadata_required(false),
           sparse_metadata_bound(false),
           imported_ahb(false),
+          has_ahb_format(false),
+          ahb_format(0),
           sparse_requirements{} {
         if ((createInfo.sharingMode == VK_SHARING_MODE_CONCURRENT) && (createInfo.queueFamilyIndexCount > 0)) {
             uint32_t *pQueueFamilyIndices = new uint32_t[createInfo.queueFamilyIndexCount];

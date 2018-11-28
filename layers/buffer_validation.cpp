@@ -1281,13 +1281,19 @@ void RecordCreateImageANDROID(const VkImageCreateInfo *create_info, IMAGE_STATE 
     if (emici && (emici->handleTypes & VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID)) {
         is_node->imported_ahb = true;
     }
+    const VkExternalFormatANDROID *ext_fmt_android = lvl_find_in_chain<VkExternalFormatANDROID>(create_info->pNext);
+    if (ext_fmt_android) {
+        is_node->has_ahb_format = true;
+        is_node->ahb_format = ext_fmt_android->externalFormat;
+    }
 }
 
 bool ValidateCreateImageViewANDROID(layer_data *device_data, const VkImageViewCreateInfo *create_info) {
     bool skip = false;
     const debug_report_data *report_data = core_validation::GetReportData(device_data);
-    const VkExternalFormatANDROID *ext_format_android = lvl_find_in_chain<VkExternalFormatANDROID>(create_info->pNext);
-    if (ext_format_android) {
+    IMAGE_STATE *image_state = GetImageState(device_data, create_info->image);
+
+    if (image_state->has_ahb_format) {
         if (VK_FORMAT_UNDEFINED != create_info->format) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
                             HandleToUint64(create_info->image), "VUID-VkImageViewCreateInfo-image-02399",
@@ -1308,7 +1314,7 @@ bool ValidateCreateImageViewANDROID(layer_data *device_data, const VkImageViewCr
                 external_format = fmap->at(conv_handle);
             }
         }
-        if ((!conv_found) || (external_format != ext_format_android->externalFormat)) {
+        if ((!conv_found) || (external_format != image_state->ahb_format)) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
                             HandleToUint64(create_info->image), "VUID-VkImageViewCreateInfo-image-02400",
                             "vkCreateImageView(): VkImageViewCreateInfo struct has a chained VkExternalFormatANDROID struct, but "
