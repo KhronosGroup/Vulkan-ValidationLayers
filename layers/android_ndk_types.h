@@ -31,6 +31,7 @@
 
 // For convenience, define the minimal set of NDK enums and structs needed to compile
 // VK_ANDROID_external_memory_android_hardware_buffer validation without an NDK present
+struct AHardwareBuffer {};
 
 // Enumerations of format and usage flags for Android opaque external memory blobs
 typedef enum AHardwareBufferFormat {
@@ -76,6 +77,10 @@ static inline int AHardwareBuffer_allocate(const AHardwareBuffer_Desc *ahbDesc, 
     *buffer = (AHardwareBuffer *)malloc(size);
     memcpy((void *)(*buffer), (void *)ahbDesc, sizeof(AHardwareBuffer_Desc));
     return 0;
+}
+
+static inline void AHardwareBuffer_release(AHardwareBuffer *buffer) {
+    if (buffer) free(buffer);
 }
 
 static inline void AHardwareBuffer_describe(const AHardwareBuffer *buffer, AHardwareBuffer_Desc *outDesc) {

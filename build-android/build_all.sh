@@ -50,7 +50,7 @@ echo LAYER_BUILD_DIR="${LAYER_BUILD_DIR}"
 echo DEMO_BUILD_DIR="${DEMO_BUILD_DIR}"
 
 function create_APK() {
-    aapt package -f -M AndroidManifest.xml -I "$ANDROID_SDK_HOME/platforms/android-24/android.jar" -S res -F bin/$1-unaligned.apk bin/libs
+    aapt package -f -M AndroidManifest.xml -I "$ANDROID_SDK_HOME/platforms/android-26/android.jar" -S res -F bin/$1-unaligned.apk bin/libs
     # update this logic to detect if key is already there.  If so, use it, otherwise create it.
     jarsigner -verbose -keystore ~/.android/debug.keystore -storepass android -keypass android  bin/$1-unaligned.apk androiddebugkey
     zipalign -f 4 bin/$1-unaligned.apk bin/$1.apk

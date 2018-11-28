@@ -33983,8 +33983,7 @@ TEST_F(VkLayerTest, ExclusiveScissorNV) {
         return;
     }
     ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
-    std::array<const char *, 1> required_device_extensions = {
-        {VK_NV_SCISSOR_EXCLUSIVE_EXTENSION_NAME}};
+    std::array<const char *, 1> required_device_extensions = {{VK_NV_SCISSOR_EXCLUSIVE_EXTENSION_NAME}};
     for (auto device_extension : required_device_extensions) {
         if (DeviceExtensionSupported(gpu(), nullptr, device_extension)) {
             m_device_extension_names.push_back(device_extension);
@@ -34055,8 +34054,8 @@ TEST_F(VkLayerTest, ExclusiveScissorNV) {
         };
 
         for (const auto &test_case : test_cases) {
-
-            VkPipelineViewportExclusiveScissorStateCreateInfoNV exc = { VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_EXCLUSIVE_SCISSOR_STATE_CREATE_INFO_NV };
+            VkPipelineViewportExclusiveScissorStateCreateInfoNV exc = {
+                VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_EXCLUSIVE_SCISSOR_STATE_CREATE_INFO_NV};
 
             const auto break_vp = [&test_case, &exc](CreatePipelineHelper &helper) {
                 helper.vp_state_ci_.viewportCount = test_case.viewport_count;
@@ -34082,29 +34081,37 @@ TEST_F(VkLayerTest, ExclusiveScissorNV) {
 
         m_commandBuffer->begin();
 
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdSetExclusiveScissorNV-firstExclusiveScissor-02035");
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                             "VUID-vkCmdSetExclusiveScissorNV-firstExclusiveScissor-02035");
         vkCmdSetExclusiveScissorNV(m_commandBuffer->handle(), 1, 1, scissors);
         m_errorMonitor->VerifyFound();
 
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "vkCmdSetExclusiveScissorNV: parameter exclusiveScissorCount must be greater than 0");
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                             "vkCmdSetExclusiveScissorNV: parameter exclusiveScissorCount must be greater than 0");
         vkCmdSetExclusiveScissorNV(m_commandBuffer->handle(), 0, 0, nullptr);
         m_errorMonitor->VerifyFound();
 
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdSetExclusiveScissorNV-exclusiveScissorCount-02036");
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                             "VUID-vkCmdSetExclusiveScissorNV-exclusiveScissorCount-02036");
         vkCmdSetExclusiveScissorNV(m_commandBuffer->handle(), 0, 2, scissors);
         m_errorMonitor->VerifyFound();
 
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "vkCmdSetExclusiveScissorNV: parameter exclusiveScissorCount must be greater than 0");
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdSetExclusiveScissorNV-firstExclusiveScissor-02035");
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                             "vkCmdSetExclusiveScissorNV: parameter exclusiveScissorCount must be greater than 0");
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                             "VUID-vkCmdSetExclusiveScissorNV-firstExclusiveScissor-02035");
         vkCmdSetExclusiveScissorNV(m_commandBuffer->handle(), 1, 0, scissors);
         m_errorMonitor->VerifyFound();
 
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdSetExclusiveScissorNV-firstExclusiveScissor-02035");
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdSetExclusiveScissorNV-exclusiveScissorCount-02036");
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                             "VUID-vkCmdSetExclusiveScissorNV-firstExclusiveScissor-02035");
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                             "VUID-vkCmdSetExclusiveScissorNV-exclusiveScissorCount-02036");
         vkCmdSetExclusiveScissorNV(m_commandBuffer->handle(), 1, 2, scissors);
         m_errorMonitor->VerifyFound();
 
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "vkCmdSetExclusiveScissorNV: required parameter pExclusiveScissors specified as NULL");
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                             "vkCmdSetExclusiveScissorNV: required parameter pExclusiveScissors specified as NULL");
         vkCmdSetExclusiveScissorNV(m_commandBuffer->handle(), 0, 1, nullptr);
         m_errorMonitor->VerifyFound();
 
@@ -34113,14 +34120,15 @@ TEST_F(VkLayerTest, ExclusiveScissorNV) {
             std::string vuid;
         };
 
-        std::vector<TestCase> test_cases = {{{{-1, 0}, {16, 16}}, "VUID-vkCmdSetExclusiveScissorNV-x-02037"},
-                                            {{{0, -1}, {16, 16}}, "VUID-vkCmdSetExclusiveScissorNV-x-02037"},
-                                            {{{1, 0}, {INT32_MAX, 16}}, "VUID-vkCmdSetExclusiveScissorNV-offset-02038"},
-                                            {{{INT32_MAX, 0}, {1, 16}}, "VUID-vkCmdSetExclusiveScissorNV-offset-02038"},
-                                            {{{0, 0}, {uint32_t{INT32_MAX} + 1, 16}}, "VUID-vkCmdSetExclusiveScissorNV-offset-02038"},
-                                            {{{0, 1}, {16, INT32_MAX}}, "VUID-vkCmdSetExclusiveScissorNV-offset-02039"},
-                                            {{{0, INT32_MAX}, {16, 1}}, "VUID-vkCmdSetExclusiveScissorNV-offset-02039"},
-                                            {{{0, 0}, {16, uint32_t{INT32_MAX} + 1}}, "VUID-vkCmdSetExclusiveScissorNV-offset-02039"}};
+        std::vector<TestCase> test_cases = {
+            {{{-1, 0}, {16, 16}}, "VUID-vkCmdSetExclusiveScissorNV-x-02037"},
+            {{{0, -1}, {16, 16}}, "VUID-vkCmdSetExclusiveScissorNV-x-02037"},
+            {{{1, 0}, {INT32_MAX, 16}}, "VUID-vkCmdSetExclusiveScissorNV-offset-02038"},
+            {{{INT32_MAX, 0}, {1, 16}}, "VUID-vkCmdSetExclusiveScissorNV-offset-02038"},
+            {{{0, 0}, {uint32_t{INT32_MAX} + 1, 16}}, "VUID-vkCmdSetExclusiveScissorNV-offset-02038"},
+            {{{0, 1}, {16, INT32_MAX}}, "VUID-vkCmdSetExclusiveScissorNV-offset-02039"},
+            {{{0, INT32_MAX}, {16, 1}}, "VUID-vkCmdSetExclusiveScissorNV-offset-02039"},
+            {{{0, 0}, {16, uint32_t{INT32_MAX} + 1}}, "VUID-vkCmdSetExclusiveScissorNV-offset-02039"}};
 
         for (const auto &test_case : test_cases) {
             m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, test_case.vuid);
@@ -34143,8 +34151,7 @@ TEST_F(VkLayerTest, ShadingRateImageNV) {
         return;
     }
     ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
-    std::array<const char *, 1> required_device_extensions = {
-        {VK_NV_SHADING_RATE_IMAGE_EXTENSION_NAME}};
+    std::array<const char *, 1> required_device_extensions = {{VK_NV_SHADING_RATE_IMAGE_EXTENSION_NAME}};
     for (auto device_extension : required_device_extensions) {
         if (DeviceExtensionSupported(gpu(), nullptr, device_extension)) {
             m_device_extension_names.push_back(device_extension);
@@ -34167,7 +34174,6 @@ TEST_F(VkLayerTest, ShadingRateImageNV) {
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-
 
     // Test shading rate image creation
     VkImage image = VK_NULL_HANDLE;
@@ -34228,7 +34234,6 @@ TEST_F(VkLayerTest, ShadingRateImageNV) {
     result = vkCreateImage(m_device->device(), &image_create_info, NULL, &image);
     m_errorMonitor->VerifyNotFound();
 
-
     // bind memory to the image
     VkMemoryRequirements memory_reqs;
     VkDeviceMemory image_memory;
@@ -34246,7 +34251,6 @@ TEST_F(VkLayerTest, ShadingRateImageNV) {
     ASSERT_VK_SUCCESS(result);
     result = vkBindImageMemory(m_device->device(), image, image_memory, 0);
     ASSERT_VK_SUCCESS(result);
-
 
     // Test image view creation
     VkImageView view;
@@ -34285,17 +34289,17 @@ TEST_F(VkLayerTest, ShadingRateImageNV) {
 
     vkCreateImageView(m_device->device(), &ivci, nullptr, &view);
     m_errorMonitor->VerifyNotFound();
-    
 
     // Test pipeline creation
-    VkPipelineViewportShadingRateImageStateCreateInfoNV vsrisci = { VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_SHADING_RATE_IMAGE_STATE_CREATE_INFO_NV };
+    VkPipelineViewportShadingRateImageStateCreateInfoNV vsrisci = {
+        VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_SHADING_RATE_IMAGE_STATE_CREATE_INFO_NV};
 
     VkViewport viewport = {0.0f, 0.0f, 64.0f, 64.0f, 0.0f, 1.0f};
     VkViewport viewports[20] = {viewport, viewport};
     VkRect2D scissor = {{0, 0}, {64, 64}};
     VkRect2D scissors[20] = {scissor, scissor};
     VkDynamicState dynPalette = VK_DYNAMIC_STATE_VIEWPORT_SHADING_RATE_PALETTE_NV;
-    VkPipelineDynamicStateCreateInfo dyn = { VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO, nullptr, 0, 1, &dynPalette };
+    VkPipelineDynamicStateCreateInfo dyn = {VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO, nullptr, 0, 1, &dynPalette};
 
     // viewportCount must be 0 or 1 when multiViewport is disabled
     {
@@ -34310,7 +34314,8 @@ TEST_F(VkLayerTest, ShadingRateImageNV) {
             vsrisci.shadingRateImageEnable = VK_TRUE;
             vsrisci.viewportCount = 2;
         };
-        CreatePipelineHelper::OneshotTest(*this, break_vp, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+        CreatePipelineHelper::OneshotTest(
+            *this, break_vp, VK_DEBUG_REPORT_ERROR_BIT_EXT,
             vector<std::string>({"VUID-VkPipelineViewportShadingRateImageStateCreateInfoNV-viewportCount-02054",
                                  "VUID-VkPipelineViewportStateCreateInfo-viewportCount-01216",
                                  "VUID-VkPipelineViewportStateCreateInfo-scissorCount-01217"}));
@@ -34329,7 +34334,8 @@ TEST_F(VkLayerTest, ShadingRateImageNV) {
             vsrisci.shadingRateImageEnable = VK_TRUE;
             vsrisci.viewportCount = 0;
         };
-        CreatePipelineHelper::OneshotTest(*this, break_vp, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+        CreatePipelineHelper::OneshotTest(
+            *this, break_vp, VK_DEBUG_REPORT_ERROR_BIT_EXT,
             vector<std::string>({"VUID-VkPipelineViewportShadingRateImageStateCreateInfoNV-shadingRateImageEnable-02056"}));
     }
 
@@ -34345,10 +34351,11 @@ TEST_F(VkLayerTest, ShadingRateImageNV) {
             vsrisci.shadingRateImageEnable = VK_TRUE;
             vsrisci.viewportCount = 1;
         };
-        CreatePipelineHelper::OneshotTest(*this, break_vp, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+        CreatePipelineHelper::OneshotTest(
+            *this, break_vp, VK_DEBUG_REPORT_ERROR_BIT_EXT,
             vector<std::string>({"VUID-VkPipelineViewportShadingRateImageStateCreateInfoNV-pDynamicStates-02057"}));
     }
-    
+
     // Create an image without the SRI bit
     VkImageObj nonSRIimage(m_device);
     nonSRIimage.Init(256, 256, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
@@ -34386,7 +34393,6 @@ TEST_F(VkLayerTest, ShadingRateImageNV) {
                          nullptr, 0, nullptr, 1, &img_barrier);
     m_errorMonitor->VerifyNotFound();
 
-
     // Test vkCmdBindShadingRateImageNV errors
     auto vkCmdBindShadingRateImageNV =
         (PFN_vkCmdBindShadingRateImageNV)vkGetDeviceProcAddr(m_device->device(), "vkCmdBindShadingRateImageNV");
@@ -34399,50 +34405,58 @@ TEST_F(VkLayerTest, ShadingRateImageNV) {
     vkCmdBindShadingRateImageNV(m_commandBuffer->handle(), nonSRIview, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
     m_errorMonitor->VerifyFound();
 
-
     // Test vkCmdSetViewportShadingRatePaletteNV errors
     auto vkCmdSetViewportShadingRatePaletteNV =
         (PFN_vkCmdSetViewportShadingRatePaletteNV)vkGetDeviceProcAddr(m_device->device(), "vkCmdSetViewportShadingRatePaletteNV");
 
     VkShadingRatePaletteEntryNV paletteEntries[100] = {};
-    VkShadingRatePaletteNV palette = { 100, paletteEntries };
-    VkShadingRatePaletteNV palettes[] = { palette, palette };
+    VkShadingRatePaletteNV palette = {100, paletteEntries};
+    VkShadingRatePaletteNV palettes[] = {palette, palette};
 
     // errors on firstViewport/viewportCount
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdSetViewportShadingRatePaletteNV-firstViewport-02066");
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdSetViewportShadingRatePaletteNV-firstViewport-02067");
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdSetViewportShadingRatePaletteNV-firstViewport-02068");
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdSetViewportShadingRatePaletteNV-viewportCount-02069");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                         "VUID-vkCmdSetViewportShadingRatePaletteNV-firstViewport-02066");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                         "VUID-vkCmdSetViewportShadingRatePaletteNV-firstViewport-02067");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                         "VUID-vkCmdSetViewportShadingRatePaletteNV-firstViewport-02068");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                         "VUID-vkCmdSetViewportShadingRatePaletteNV-viewportCount-02069");
     vkCmdSetViewportShadingRatePaletteNV(m_commandBuffer->handle(), 20, 2, palettes);
     m_errorMonitor->VerifyFound();
 
     // shadingRatePaletteEntryCount must be in range
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkShadingRatePaletteNV-shadingRatePaletteEntryCount-02071");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                         "VUID-VkShadingRatePaletteNV-shadingRatePaletteEntryCount-02071");
     vkCmdSetViewportShadingRatePaletteNV(m_commandBuffer->handle(), 0, 1, palettes);
     m_errorMonitor->VerifyFound();
 
     VkCoarseSampleLocationNV locations[100] = {
-        {0, 0, 0},
-        {0, 0, 1},
-        {0, 1, 0},
-        {0, 1, 1},
-        {0, 1, 1}, // duplicate
-        {1000, 0, 0}, // pixelX too large
-        {0, 1000, 0}, // pixelY too large
-        {0, 0, 1000}, // sample too large
+        {0, 0, 0},    {0, 0, 1}, {0, 1, 0}, {0, 1, 1}, {0, 1, 1},  // duplicate
+        {1000, 0, 0},                                              // pixelX too large
+        {0, 1000, 0},                                              // pixelY too large
+        {0, 0, 1000},                                              // sample too large
     };
 
     // Test custom sample orders, both via pipeline state and via dynamic state
     {
-        VkCoarseSampleOrderCustomNV sampOrdBadShadingRate = { VK_SHADING_RATE_PALETTE_ENTRY_1_INVOCATION_PER_PIXEL_NV, 1, 1, locations };
-        VkCoarseSampleOrderCustomNV sampOrdBadSampleCount = { VK_SHADING_RATE_PALETTE_ENTRY_1_INVOCATION_PER_1X2_PIXELS_NV, 3, 1, locations };
-        VkCoarseSampleOrderCustomNV sampOrdBadSampleLocationCount = { VK_SHADING_RATE_PALETTE_ENTRY_1_INVOCATION_PER_1X2_PIXELS_NV, 2, 2, locations };
-        VkCoarseSampleOrderCustomNV sampOrdDuplicateLocations = { VK_SHADING_RATE_PALETTE_ENTRY_1_INVOCATION_PER_1X2_PIXELS_NV, 2, 1*2*2, &locations[1] };
-        VkCoarseSampleOrderCustomNV sampOrdOutOfRangeLocations = { VK_SHADING_RATE_PALETTE_ENTRY_1_INVOCATION_PER_1X2_PIXELS_NV, 2, 1*2*2, &locations[4] };
-        VkCoarseSampleOrderCustomNV sampOrdTooLargeSampleLocationCount = { VK_SHADING_RATE_PALETTE_ENTRY_1_INVOCATION_PER_4X4_PIXELS_NV, 4, 64, &locations[8] };
-        VkCoarseSampleOrderCustomNV sampOrdGood = { VK_SHADING_RATE_PALETTE_ENTRY_1_INVOCATION_PER_1X2_PIXELS_NV, 2, 1*2*2, &locations[0] };
+        VkCoarseSampleOrderCustomNV sampOrdBadShadingRate = {VK_SHADING_RATE_PALETTE_ENTRY_1_INVOCATION_PER_PIXEL_NV, 1, 1,
+                                                             locations};
+        VkCoarseSampleOrderCustomNV sampOrdBadSampleCount = {VK_SHADING_RATE_PALETTE_ENTRY_1_INVOCATION_PER_1X2_PIXELS_NV, 3, 1,
+                                                             locations};
+        VkCoarseSampleOrderCustomNV sampOrdBadSampleLocationCount = {VK_SHADING_RATE_PALETTE_ENTRY_1_INVOCATION_PER_1X2_PIXELS_NV,
+                                                                     2, 2, locations};
+        VkCoarseSampleOrderCustomNV sampOrdDuplicateLocations = {VK_SHADING_RATE_PALETTE_ENTRY_1_INVOCATION_PER_1X2_PIXELS_NV, 2,
+                                                                 1 * 2 * 2, &locations[1]};
+        VkCoarseSampleOrderCustomNV sampOrdOutOfRangeLocations = {VK_SHADING_RATE_PALETTE_ENTRY_1_INVOCATION_PER_1X2_PIXELS_NV, 2,
+                                                                  1 * 2 * 2, &locations[4]};
+        VkCoarseSampleOrderCustomNV sampOrdTooLargeSampleLocationCount = {
+            VK_SHADING_RATE_PALETTE_ENTRY_1_INVOCATION_PER_4X4_PIXELS_NV, 4, 64, &locations[8]};
+        VkCoarseSampleOrderCustomNV sampOrdGood = {VK_SHADING_RATE_PALETTE_ENTRY_1_INVOCATION_PER_1X2_PIXELS_NV, 2, 1 * 2 * 2,
+                                                   &locations[0]};
 
-        VkPipelineViewportCoarseSampleOrderStateCreateInfoNV csosci = { VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_COARSE_SAMPLE_ORDER_STATE_CREATE_INFO_NV };
+        VkPipelineViewportCoarseSampleOrderStateCreateInfoNV csosci = {
+            VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_COARSE_SAMPLE_ORDER_STATE_CREATE_INFO_NV};
         csosci.sampleOrderType = VK_COARSE_SAMPLE_ORDER_TYPE_CUSTOM_NV;
         csosci.customSampleOrderCount = 1;
 
@@ -34453,18 +34467,18 @@ TEST_F(VkLayerTest, ShadingRateImageNV) {
         };
 
         vector<TestCase> test_cases = {
-            {&sampOrdBadShadingRate,        {"VUID-VkCoarseSampleOrderCustomNV-shadingRate-02073"}},
-            {&sampOrdBadSampleCount,        {"VUID-VkCoarseSampleOrderCustomNV-sampleCount-02074",
-                                             "VUID-VkCoarseSampleOrderCustomNV-sampleLocationCount-02075"}},
-            {&sampOrdBadSampleLocationCount,{"VUID-VkCoarseSampleOrderCustomNV-sampleLocationCount-02075"}},
-            {&sampOrdDuplicateLocations,    {"VUID-VkCoarseSampleOrderCustomNV-pSampleLocations-02077"}},
-            {&sampOrdOutOfRangeLocations,   {"VUID-VkCoarseSampleOrderCustomNV-pSampleLocations-02077",
-                                             "VUID-VkCoarseSampleLocationNV-pixelX-02078",
-                                             "VUID-VkCoarseSampleLocationNV-pixelY-02079",
-                                             "VUID-VkCoarseSampleLocationNV-sample-02080"}},
-            {&sampOrdTooLargeSampleLocationCount, {"VUID-VkCoarseSampleOrderCustomNV-sampleLocationCount-02076",
-                                                   "VUID-VkCoarseSampleOrderCustomNV-pSampleLocations-02077"}},
-            {&sampOrdGood,                  {}},
+            {&sampOrdBadShadingRate, {"VUID-VkCoarseSampleOrderCustomNV-shadingRate-02073"}},
+            {&sampOrdBadSampleCount,
+             {"VUID-VkCoarseSampleOrderCustomNV-sampleCount-02074", "VUID-VkCoarseSampleOrderCustomNV-sampleLocationCount-02075"}},
+            {&sampOrdBadSampleLocationCount, {"VUID-VkCoarseSampleOrderCustomNV-sampleLocationCount-02075"}},
+            {&sampOrdDuplicateLocations, {"VUID-VkCoarseSampleOrderCustomNV-pSampleLocations-02077"}},
+            {&sampOrdOutOfRangeLocations,
+             {"VUID-VkCoarseSampleOrderCustomNV-pSampleLocations-02077", "VUID-VkCoarseSampleLocationNV-pixelX-02078",
+              "VUID-VkCoarseSampleLocationNV-pixelY-02079", "VUID-VkCoarseSampleLocationNV-sample-02080"}},
+            {&sampOrdTooLargeSampleLocationCount,
+             {"VUID-VkCoarseSampleOrderCustomNV-sampleLocationCount-02076",
+              "VUID-VkCoarseSampleOrderCustomNV-pSampleLocations-02077"}},
+            {&sampOrdGood, {}},
         };
 
         for (const auto &test_case : test_cases) {
@@ -34491,13 +34505,13 @@ TEST_F(VkLayerTest, ShadingRateImageNV) {
             }
         }
 
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdSetCoarseSampleOrderNV-sampleOrderType-02081");
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                             "VUID-vkCmdSetCoarseSampleOrderNV-sampleOrderType-02081");
         vkCmdSetCoarseSampleOrderNV(m_commandBuffer->handle(), VK_COARSE_SAMPLE_ORDER_TYPE_PIXEL_MAJOR_NV, 1, &sampOrdGood);
         m_errorMonitor->VerifyFound();
     }
 
     m_commandBuffer->end();
-
 
     vkDestroyImageView(m_device->device(), view, NULL);
     vkDestroyImage(m_device->device(), image, NULL);
@@ -34515,8 +34529,7 @@ TEST_F(VkLayerTest, CornerSampledImageNV) {
         return;
     }
     ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
-    std::array<const char *, 1> required_device_extensions = {
-        {VK_NV_CORNER_SAMPLED_IMAGE_EXTENSION_NAME}};
+    std::array<const char *, 1> required_device_extensions = {{VK_NV_CORNER_SAMPLED_IMAGE_EXTENSION_NAME}};
     for (auto device_extension : required_device_extensions) {
         if (DeviceExtensionSupported(gpu(), nullptr, device_extension)) {
             m_device_extension_names.push_back(device_extension);
@@ -34643,7 +34656,6 @@ TEST_F(VkLayerTest, CornerSampledImageNV) {
     }
 }
 
-
 TEST_F(VkLayerTest, MeshShaderNV) {
     TEST_DESCRIPTION("Test VK_NV_mesh_shader.");
 
@@ -34655,8 +34667,7 @@ TEST_F(VkLayerTest, MeshShaderNV) {
         return;
     }
     ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
-    std::array<const char *, 1> required_device_extensions = {
-        {VK_NV_MESH_SHADER_EXTENSION_NAME}};
+    std::array<const char *, 1> required_device_extensions = {{VK_NV_MESH_SHADER_EXTENSION_NAME}};
     for (auto device_extension : required_device_extensions) {
         if (DeviceExtensionSupported(gpu(), nullptr, device_extension)) {
             m_device_extension_names.push_back(device_extension);
@@ -34721,21 +34732,19 @@ TEST_F(VkLayerTest, MeshShaderNV) {
                                           vector<std::string>({"VUID-VkGraphicsPipelineCreateInfo-pStages-02095"}));
 
         // vertex or mesh must be present
-        const auto break_vp2 = [&](CreatePipelineHelper &helper) {
-            helper.shader_stages_ = { fs.GetStageCreateInfo() };
-        };
+        const auto break_vp2 = [&](CreatePipelineHelper &helper) { helper.shader_stages_ = {fs.GetStageCreateInfo()}; };
         CreatePipelineHelper::OneshotTest(*this, break_vp2, VK_DEBUG_REPORT_ERROR_BIT_EXT,
-            vector<std::string>({"VUID-VkGraphicsPipelineCreateInfo-stage-02096"}));
+                                          vector<std::string>({"VUID-VkGraphicsPipelineCreateInfo-stage-02096"}));
 
         // vertexinput and inputassembly must be valid when vertex stage is present
         const auto break_vp3 = [&](CreatePipelineHelper &helper) {
-            helper.shader_stages_ = { vs.GetStageCreateInfo(), fs.GetStageCreateInfo() };
+            helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
             helper.gp_ci_.pVertexInputState = nullptr;
             helper.gp_ci_.pInputAssemblyState = nullptr;
         };
         CreatePipelineHelper::OneshotTest(*this, break_vp3, VK_DEBUG_REPORT_ERROR_BIT_EXT,
-            vector<std::string>({"VUID-VkGraphicsPipelineCreateInfo-pStages-02097",
-                                 "VUID-VkGraphicsPipelineCreateInfo-pStages-02098"}));
+                                          vector<std::string>({"VUID-VkGraphicsPipelineCreateInfo-pStages-02097",
+                                                               "VUID-VkGraphicsPipelineCreateInfo-pStages-02098"}));
     }
 
     PFN_vkCmdDrawMeshTasksIndirectNV vkCmdDrawMeshTasksIndirectNV =
@@ -34760,7 +34769,6 @@ TEST_F(VkLayerTest, MeshShaderNV) {
     vkDestroyBuffer(m_device->device(), buffer, 0);
 }
 
-
 TEST_F(VkLayerTest, MeshShaderDisabledNV) {
     TEST_DESCRIPTION("Test VK_NV_mesh_shader VUs with NV_mesh_shader disabled.");
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -34781,7 +34789,6 @@ TEST_F(VkLayerTest, MeshShaderDisabledNV) {
     vkCmdSetEvent(m_commandBuffer->handle(), event, VK_PIPELINE_STAGE_TASK_SHADER_BIT_NV);
     m_errorMonitor->VerifyFound();
 
-
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdResetEvent-stageMask-02109");
     vkCmdResetEvent(m_commandBuffer->handle(), event, VK_PIPELINE_STAGE_MESH_SHADER_BIT_NV);
     m_errorMonitor->VerifyFound();
@@ -34790,26 +34797,28 @@ TEST_F(VkLayerTest, MeshShaderDisabledNV) {
     vkCmdResetEvent(m_commandBuffer->handle(), event, VK_PIPELINE_STAGE_TASK_SHADER_BIT_NV);
     m_errorMonitor->VerifyFound();
 
-
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdWaitEvents-srcStageMask-02111");
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdWaitEvents-dstStageMask-02113");
-    vkCmdWaitEvents(m_commandBuffer->handle(), 1, &event, VK_PIPELINE_STAGE_MESH_SHADER_BIT_NV, VK_PIPELINE_STAGE_MESH_SHADER_BIT_NV, 0, nullptr, 0, nullptr, 0, nullptr);
+    vkCmdWaitEvents(m_commandBuffer->handle(), 1, &event, VK_PIPELINE_STAGE_MESH_SHADER_BIT_NV,
+                    VK_PIPELINE_STAGE_MESH_SHADER_BIT_NV, 0, nullptr, 0, nullptr, 0, nullptr);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdWaitEvents-srcStageMask-02112");
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdWaitEvents-dstStageMask-02114");
-    vkCmdWaitEvents(m_commandBuffer->handle(), 1, &event, VK_PIPELINE_STAGE_TASK_SHADER_BIT_NV, VK_PIPELINE_STAGE_TASK_SHADER_BIT_NV, 0, nullptr, 0, nullptr, 0, nullptr);
+    vkCmdWaitEvents(m_commandBuffer->handle(), 1, &event, VK_PIPELINE_STAGE_TASK_SHADER_BIT_NV,
+                    VK_PIPELINE_STAGE_TASK_SHADER_BIT_NV, 0, nullptr, 0, nullptr, 0, nullptr);
     m_errorMonitor->VerifyFound();
-
 
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdPipelineBarrier-srcStageMask-02115");
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdPipelineBarrier-dstStageMask-02117");
-    vkCmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_MESH_SHADER_BIT_NV, VK_PIPELINE_STAGE_MESH_SHADER_BIT_NV, 0, 0, nullptr, 0, nullptr, 0, nullptr);
+    vkCmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_MESH_SHADER_BIT_NV, VK_PIPELINE_STAGE_MESH_SHADER_BIT_NV, 0,
+                         0, nullptr, 0, nullptr, 0, nullptr);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdPipelineBarrier-srcStageMask-02116");
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdPipelineBarrier-dstStageMask-02118");
-    vkCmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_TASK_SHADER_BIT_NV, VK_PIPELINE_STAGE_TASK_SHADER_BIT_NV, 0, 0, nullptr, 0, nullptr, 0, nullptr);
+    vkCmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_TASK_SHADER_BIT_NV, VK_PIPELINE_STAGE_TASK_SHADER_BIT_NV, 0,
+                         0, nullptr, 0, nullptr, 0, nullptr);
     m_errorMonitor->VerifyFound();
 
     m_commandBuffer->end();
@@ -34843,29 +34852,27 @@ TEST_F(VkLayerTest, MeshShaderDisabledNV) {
 
     vkQueueWaitIdle(m_device->m_queue);
 
-
     VkShaderObj vs(m_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
-    VkPipelineShaderStageCreateInfo meshStage = { VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO };
+    VkPipelineShaderStageCreateInfo meshStage = {VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO};
     meshStage = vs.GetStageCreateInfo();
     meshStage.stage = VK_SHADER_STAGE_MESH_BIT_NV;
-    VkPipelineShaderStageCreateInfo taskStage = { VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO };
+    VkPipelineShaderStageCreateInfo taskStage = {VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO};
     taskStage = vs.GetStageCreateInfo();
     taskStage.stage = VK_SHADER_STAGE_TASK_BIT_NV;
 
     // mesh and task shaders not supported
     const auto break_vp = [&](CreatePipelineHelper &helper) {
-        helper.shader_stages_ = { meshStage, taskStage, vs.GetStageCreateInfo() };
+        helper.shader_stages_ = {meshStage, taskStage, vs.GetStageCreateInfo()};
     };
-    CreatePipelineHelper::OneshotTest(*this, break_vp, VK_DEBUG_REPORT_ERROR_BIT_EXT,
-        vector<std::string>({"VUID-VkPipelineShaderStageCreateInfo-pName-00707",
-                             "VUID-VkPipelineShaderStageCreateInfo-pName-00707",
+    CreatePipelineHelper::OneshotTest(
+        *this, break_vp, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+        vector<std::string>({"VUID-VkPipelineShaderStageCreateInfo-pName-00707", "VUID-VkPipelineShaderStageCreateInfo-pName-00707",
                              "VUID-VkPipelineShaderStageCreateInfo-stage-02091",
                              "VUID-VkPipelineShaderStageCreateInfo-stage-02092"}));
 
     vkDestroyEvent(m_device->device(), event, nullptr);
     vkDestroySemaphore(m_device->device(), semaphore, nullptr);
 }
-
 
 TEST_F(VkLayerTest, InlineUniformBlockEXT) {
     TEST_DESCRIPTION("Test VK_EXT_inline_uniform_block.");
@@ -34878,8 +34885,7 @@ TEST_F(VkLayerTest, InlineUniformBlockEXT) {
         return;
     }
     ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
-    std::array<const char *, 1> required_device_extensions = {
-        {VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME}};
+    std::array<const char *, 1> required_device_extensions = {{VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME}};
     for (auto device_extension : required_device_extensions) {
         if (DeviceExtensionSupported(gpu(), nullptr, device_extension)) {
             m_device_extension_names.push_back(device_extension);
@@ -35045,20 +35051,20 @@ TEST_F(VkLayerTest, InlineUniformBlockEXT) {
 
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkWriteDescriptorSet-descriptorType-02220");
     vkUpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
-    m_errorMonitor->VerifyFound();    
+    m_errorMonitor->VerifyFound();
 
     descriptor_write.dstArrayElement = 1;
     descriptor_write.descriptorCount = 4;
     write_inline_uniform.dataSize = 4;
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkWriteDescriptorSet-descriptorType-02219");
     vkUpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
-    m_errorMonitor->VerifyFound();    
+    m_errorMonitor->VerifyFound();
 
     descriptor_write.pNext = nullptr;
     descriptor_write.dstArrayElement = 0;
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkWriteDescriptorSet-descriptorType-02221");
     vkUpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
-    m_errorMonitor->VerifyFound();    
+    m_errorMonitor->VerifyFound();
 
     descriptor_write.pNext = &write_inline_uniform;
     vkUpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
@@ -35068,33 +35074,33 @@ TEST_F(VkLayerTest, InlineUniformBlockEXT) {
     VkCopyDescriptorSet copy_ds_update = {};
     copy_ds_update.sType = VK_STRUCTURE_TYPE_COPY_DESCRIPTOR_SET;
     copy_ds_update.srcSet = descriptor_sets[0];
-    copy_ds_update.srcBinding = 0; 
+    copy_ds_update.srcBinding = 0;
     copy_ds_update.srcArrayElement = 0;
     copy_ds_update.dstSet = descriptor_sets[1];
     copy_ds_update.dstBinding = 0;
-    copy_ds_update.dstArrayElement = 0; 
+    copy_ds_update.dstArrayElement = 0;
     copy_ds_update.descriptorCount = 4;
-    
+
     copy_ds_update.srcArrayElement = 1;
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkCopyDescriptorSet-srcBinding-02223");
     vkUpdateDescriptorSets(m_device->device(), 0, NULL, 1, &copy_ds_update);
-    m_errorMonitor->VerifyFound();    
+    m_errorMonitor->VerifyFound();
 
     copy_ds_update.srcArrayElement = 0;
     copy_ds_update.dstArrayElement = 1;
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkCopyDescriptorSet-dstBinding-02224");
     vkUpdateDescriptorSets(m_device->device(), 0, NULL, 1, &copy_ds_update);
-    m_errorMonitor->VerifyFound();    
+    m_errorMonitor->VerifyFound();
 
     copy_ds_update.dstArrayElement = 0;
     copy_ds_update.descriptorCount = 5;
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkCopyDescriptorSet-srcBinding-02225");
     vkUpdateDescriptorSets(m_device->device(), 0, NULL, 1, &copy_ds_update);
-    m_errorMonitor->VerifyFound();    
+    m_errorMonitor->VerifyFound();
 
     copy_ds_update.descriptorCount = 4;
     vkUpdateDescriptorSets(m_device->device(), 0, NULL, 1, &copy_ds_update);
-    m_errorMonitor->VerifyNotFound();    
+    m_errorMonitor->VerifyNotFound();
 
     vkDestroyDescriptorPool(m_device->handle(), ds_pool, nullptr);
     vkDestroyDescriptorSetLayout(m_device->device(), ds_layout, nullptr);
@@ -35551,6 +35557,937 @@ TEST_F(VkPositiveLayerTest, RayTracingPipelineNV) {
     vkDestroyDescriptorSetLayout(m_device->device(), descriptorSetLayout, 0);
     m_errorMonitor->VerifyNotFound();
 }
+
+TEST_F(VkLayerTest, CreateYCbCrSampler) {
+    TEST_DESCRIPTION("Verify YCbCr sampler creation.");
+
+    // Test requires API 1.1 or (API 1.0 + SamplerYCbCr extension). Request API 1.1
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+
+    // In case we don't have API 1.1+, try enabling the extension directly (and it's dependencies)
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    VkDevice dev = m_device->device();
+
+    // Verify we have the requested support
+    bool ycbcr_support = (DeviceExtensionEnabled(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME) ||
+                          (DeviceValidationVersion() >= VK_API_VERSION_1_1));
+    if (!ycbcr_support) {
+        printf("%s Did not find required device extension %s; test skipped.\n", kSkipPrefix,
+               VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+        return;
+    }
+
+    VkSamplerYcbcrConversion ycbcr_conv = VK_NULL_HANDLE;
+    VkSamplerYcbcrConversionCreateInfo sycci = {};
+    sycci.sType = VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_CREATE_INFO;
+    sycci.format = VK_FORMAT_UNDEFINED;
+    sycci.ycbcrModel = VK_SAMPLER_YCBCR_MODEL_CONVERSION_RGB_IDENTITY;
+    sycci.ycbcrRange = VK_SAMPLER_YCBCR_RANGE_ITU_FULL;
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkSamplerYcbcrConversionCreateInfo-format-01649");
+    vkCreateSamplerYcbcrConversion(dev, &sycci, NULL, &ycbcr_conv);
+    m_errorMonitor->VerifyFound();
+}
+
+#ifdef VK_USE_PLATFORM_ANDROID_KHR  // or ifdef ANDROID?
+#include "android_ndk_types.h"
+
+TEST_F(VkLayerTest, AndroidHardwareBufferImageCreate) {
+    TEST_DESCRIPTION("Verify AndroidHardwareBuffer image create info.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+
+    if ((DeviceExtensionSupported(gpu(), nullptr, VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME)) &&
+        // Also skip on devices that advertise AHB, but not the pre-requisite foreign_queue extension
+        (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_QUEUE_FAMILY_FOREIGN_EXTENSION_NAME))) {
+        m_device_extension_names.push_back(VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_EXT_QUEUE_FAMILY_FOREIGN_EXTENSION_NAME);
+    } else {
+        printf("%s %s extension not supported, skipping tests\n", kSkipPrefix,
+               VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    VkDevice dev = m_device->device();
+
+    VkImage img = VK_NULL_HANDLE;
+    auto reset_img = [&img, dev]() {
+        if (VK_NULL_HANDLE != img) vkDestroyImage(dev, img, NULL);
+        img = VK_NULL_HANDLE;
+    };
+
+    VkImageCreateInfo ici = {};
+    ici.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    ici.pNext = nullptr;
+    ici.imageType = VK_IMAGE_TYPE_2D;
+    ici.arrayLayers = 1;
+    ici.extent = {64, 64, 1};
+    ici.format = VK_FORMAT_UNDEFINED;
+    ici.mipLevels = 1;
+    ici.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    ici.samples = VK_SAMPLE_COUNT_1_BIT;
+    ici.tiling = VK_IMAGE_TILING_OPTIMAL;
+    ici.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+
+    // undefined format
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkImageCreateInfo-pNext-01975");
+    vkCreateImage(dev, &ici, NULL, &img);
+    m_errorMonitor->VerifyFound();
+    reset_img();
+
+    // also undefined format
+    VkExternalFormatANDROID efa = {};
+    efa.sType = VK_STRUCTURE_TYPE_EXTERNAL_FORMAT_ANDROID;
+    efa.externalFormat = 0;
+    ici.pNext = &efa;
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkImageCreateInfo-pNext-01975");
+    vkCreateImage(dev, &ici, NULL, &img);
+    m_errorMonitor->VerifyFound();
+    reset_img();
+
+    // undefined format with an unknown external format
+    efa.externalFormat = 0xBADC0DE;
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkExternalFormatANDROID-externalFormat-01894");
+    vkCreateImage(dev, &ici, NULL, &img);
+    m_errorMonitor->VerifyFound();
+    reset_img();
+
+    AHardwareBuffer *ahb;
+    AHardwareBuffer_Desc ahb_desc = {};
+    ahb_desc.format = AHARDWAREBUFFER_FORMAT_R8G8B8X8_UNORM;
+    ahb_desc.usage = AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE;
+    ahb_desc.width = 64;
+    ahb_desc.height = 64;
+    ahb_desc.layers = 1;
+    // Allocate an AHardwareBuffer
+    AHardwareBuffer_allocate(&ahb_desc, &ahb);
+
+    // Retrieve it's properties to make it's external format 'known' (AHARDWAREBUFFER_FORMAT_R8G8B8X8_UNORM)
+    VkAndroidHardwareBufferFormatPropertiesANDROID ahb_fmt_props = {};
+    ahb_fmt_props.sType = VK_STRUCTURE_TYPE_ANDROID_HARDWARE_BUFFER_FORMAT_PROPERTIES_ANDROID;
+    VkAndroidHardwareBufferPropertiesANDROID ahb_props = {};
+    ahb_props.sType = VK_STRUCTURE_TYPE_ANDROID_HARDWARE_BUFFER_PROPERTIES_ANDROID;
+    ahb_props.pNext = &ahb_fmt_props;
+    PFN_vkGetAndroidHardwareBufferPropertiesANDROID pfn_GetAHBProps =
+        (PFN_vkGetAndroidHardwareBufferPropertiesANDROID)vkGetDeviceProcAddr(dev, "vkGetAndroidHardwareBufferPropertiesANDROID");
+    ASSERT_TRUE(pfn_GetAHBProps != nullptr);
+    pfn_GetAHBProps(dev, ahb, &ahb_props);
+
+    // a defined image format with a non-zero external format
+    ici.format = VK_FORMAT_R8G8B8A8_UNORM;
+    efa.externalFormat = AHARDWAREBUFFER_FORMAT_R8G8B8X8_UNORM;
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkImageCreateInfo-pNext-01974");
+    vkCreateImage(dev, &ici, NULL, &img);
+    m_errorMonitor->VerifyFound();
+    reset_img();
+    ici.format = VK_FORMAT_UNDEFINED;
+
+    // external format while MUTABLE
+    ici.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkImageCreateInfo-pNext-02396");
+    vkCreateImage(dev, &ici, NULL, &img);
+    m_errorMonitor->VerifyFound();
+    reset_img();
+    ici.flags = 0;
+
+    // external format while usage other than SAMPLED
+    ici.usage |= VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkImageCreateInfo-pNext-02397");
+    vkCreateImage(dev, &ici, NULL, &img);
+    m_errorMonitor->VerifyFound();
+    reset_img();
+    ici.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+
+    // external format while tiline other than OPTIMAL
+    ici.tiling = VK_IMAGE_TILING_LINEAR;
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkImageCreateInfo-pNext-02398");
+    vkCreateImage(dev, &ici, NULL, &img);
+    m_errorMonitor->VerifyFound();
+    reset_img();
+    ici.tiling = VK_IMAGE_TILING_OPTIMAL;
+
+    // imageType
+    VkExternalMemoryImageCreateInfo emici = {};
+    emici.sType = VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO;
+    emici.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID;
+    ici.pNext = &emici;  // remove efa from chain, insert emici
+    ici.format = VK_FORMAT_R8G8B8A8_UNORM;
+    ici.imageType = VK_IMAGE_TYPE_3D;
+    ici.extent = {64, 64, 64};
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkImageCreateInfo-pNext-02393");
+    vkCreateImage(dev, &ici, NULL, &img);
+    m_errorMonitor->VerifyFound();
+    reset_img();
+
+    // wrong mipLevels
+    ici.imageType = VK_IMAGE_TYPE_2D;
+    ici.extent = {64, 64, 1};
+    ici.mipLevels = 6;  // should be 7
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkImageCreateInfo-pNext-02394");
+    vkCreateImage(dev, &ici, NULL, &img);
+    m_errorMonitor->VerifyFound();
+    reset_img();
+}
+
+TEST_F(VkLayerTest, AndroidHardwareBufferFetchUnboundImageInfo) {
+    TEST_DESCRIPTION("Verify AndroidHardwareBuffer retreive image properties while memory unbound.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+
+    if ((DeviceExtensionSupported(gpu(), nullptr, VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME)) &&
+        // Also skip on devices that advertise AHB, but not the pre-requisite foreign_queue extension
+        (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_QUEUE_FAMILY_FOREIGN_EXTENSION_NAME))) {
+        m_device_extension_names.push_back(VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_EXT_QUEUE_FAMILY_FOREIGN_EXTENSION_NAME);
+    } else {
+        printf("%s %s extension not supported, skipping tests\n", kSkipPrefix,
+               VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    VkDevice dev = m_device->device();
+
+    VkImage img = VK_NULL_HANDLE;
+    auto reset_img = [&img, dev]() {
+        if (VK_NULL_HANDLE != img) vkDestroyImage(dev, img, NULL);
+        img = VK_NULL_HANDLE;
+    };
+
+    VkImageCreateInfo ici = {};
+    ici.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    ici.pNext = nullptr;
+    ici.imageType = VK_IMAGE_TYPE_2D;
+    ici.arrayLayers = 1;
+    ici.extent = {64, 64, 1};
+    ici.format = VK_FORMAT_R8G8B8A8_UNORM;
+    ici.mipLevels = 1;
+    ici.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    ici.samples = VK_SAMPLE_COUNT_1_BIT;
+    ici.tiling = VK_IMAGE_TILING_LINEAR;
+    ici.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+
+    VkExternalMemoryImageCreateInfo emici = {};
+    emici.sType = VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO;
+    emici.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID;
+    ici.pNext = &emici;
+
+    m_errorMonitor->ExpectSuccess();
+    vkCreateImage(dev, &ici, NULL, &img);
+    m_errorMonitor->VerifyNotFound();
+
+    // attempt to fetch layout from unbound image
+    VkImageSubresource sub_rsrc = {};
+    sub_rsrc.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    VkSubresourceLayout sub_layout = {};
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkGetImageSubresourceLayout-image-01895");
+    vkGetImageSubresourceLayout(dev, img, &sub_rsrc, &sub_layout);
+    m_errorMonitor->VerifyFound();
+
+    // attempt to get memory reqs from unbound image
+    VkImageMemoryRequirementsInfo2 imri = {};
+    imri.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_REQUIREMENTS_INFO_2;
+    imri.image = img;
+    VkMemoryRequirements2 mem_reqs = {};
+    mem_reqs.sType = VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2;
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkImageMemoryRequirementsInfo2-image-01897");
+    vkGetImageMemoryRequirements2(dev, &imri, &mem_reqs);
+    m_errorMonitor->VerifyFound();
+
+    reset_img();
+}
+
+TEST_F(VkLayerTest, AndroidHardwareBufferMemoryAllocation) {
+    TEST_DESCRIPTION("Verify AndroidHardwareBuffer memory allocation.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+
+    if ((DeviceExtensionSupported(gpu(), nullptr, VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME)) &&
+        // Also skip on devices that advertise AHB, but not the pre-requisite foreign_queue extension
+        (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_QUEUE_FAMILY_FOREIGN_EXTENSION_NAME))) {
+        m_device_extension_names.push_back(VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_EXT_QUEUE_FAMILY_FOREIGN_EXTENSION_NAME);
+    } else {
+        printf("%s %s extension not supported, skipping tests\n", kSkipPrefix,
+               VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    VkDevice dev = m_device->device();
+
+    VkImage img = VK_NULL_HANDLE;
+    auto reset_img = [&img, dev]() {
+        if (VK_NULL_HANDLE != img) vkDestroyImage(dev, img, NULL);
+        img = VK_NULL_HANDLE;
+    };
+    VkDeviceMemory mem_handle = VK_NULL_HANDLE;
+    auto reset_mem = [&mem_handle, dev]() {
+        if (VK_NULL_HANDLE != mem_handle) vkFreeMemory(dev, mem_handle, NULL);
+        mem_handle = VK_NULL_HANDLE;
+    };
+
+    PFN_vkGetAndroidHardwareBufferPropertiesANDROID pfn_GetAHBProps =
+        (PFN_vkGetAndroidHardwareBufferPropertiesANDROID)vkGetDeviceProcAddr(dev, "vkGetAndroidHardwareBufferPropertiesANDROID");
+    ASSERT_TRUE(pfn_GetAHBProps != nullptr);
+
+    // AHB structs
+    AHardwareBuffer *ahb = nullptr;
+    AHardwareBuffer_Desc ahb_desc = {};
+    VkAndroidHardwareBufferFormatPropertiesANDROID ahb_fmt_props = {};
+    ahb_fmt_props.sType = VK_STRUCTURE_TYPE_ANDROID_HARDWARE_BUFFER_FORMAT_PROPERTIES_ANDROID;
+    VkAndroidHardwareBufferPropertiesANDROID ahb_props = {};
+    ahb_props.sType = VK_STRUCTURE_TYPE_ANDROID_HARDWARE_BUFFER_PROPERTIES_ANDROID;
+    ahb_props.pNext = &ahb_fmt_props;
+    VkImportAndroidHardwareBufferInfoANDROID iahbi = {};
+    iahbi.sType = VK_STRUCTURE_TYPE_IMPORT_ANDROID_HARDWARE_BUFFER_INFO_ANDROID;
+
+    // destroy and re-acquire an AHB, and fetch it's properties
+    auto recreate_ahb = [&ahb, &iahbi, &ahb_desc, &ahb_props, dev, pfn_GetAHBProps]() {
+        if (ahb) AHardwareBuffer_release(ahb);
+        ahb = nullptr;
+        AHardwareBuffer_allocate(&ahb_desc, &ahb);
+        pfn_GetAHBProps(dev, ahb, &ahb_props);
+        iahbi.buffer = ahb;
+    };
+
+    // Allocate an AHardwareBuffer
+    ahb_desc.format = AHARDWAREBUFFER_FORMAT_R8G8B8X8_UNORM;
+    ahb_desc.usage = AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE;
+    ahb_desc.width = 64;
+    ahb_desc.height = 64;
+    ahb_desc.layers = 1;
+    recreate_ahb();
+
+    // Create an image w/ external format
+    VkExternalFormatANDROID efa = {};
+    efa.sType = VK_STRUCTURE_TYPE_EXTERNAL_FORMAT_ANDROID;
+    efa.externalFormat = AHARDWAREBUFFER_FORMAT_R8G8B8X8_UNORM;
+
+    VkImageCreateInfo ici = {};
+    ici.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    ici.pNext = &efa;
+    ici.imageType = VK_IMAGE_TYPE_2D;
+    ici.arrayLayers = 1;
+    ici.extent = {64, 64, 1};
+    ici.format = VK_FORMAT_UNDEFINED;
+    ici.mipLevels = 1;
+    ici.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    ici.mipLevels = 1;
+    ici.samples = VK_SAMPLE_COUNT_1_BIT;
+    ici.tiling = VK_IMAGE_TILING_OPTIMAL;
+    ici.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+    VkResult res = vkCreateImage(dev, &ici, NULL, &img);
+    ASSERT_VK_SUCCESS(res);
+
+    VkMemoryAllocateInfo mai = {};
+    mai.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    mai.pNext = &iahbi;  // Chained import struct
+    mai.allocationSize = ahb_props.allocationSize;
+    mai.memoryTypeIndex = 32;
+    // Set index to match one of the bits in ahb_props
+    for (int i = 0; i < 32; i++) {
+        if (ahb_props.memoryTypeBits & (1 << i)) {
+            mai.memoryTypeIndex = i;
+            break;
+        }
+    }
+    ASSERT_NE(32, mai.memoryTypeIndex);
+
+    // Import w/ non-dedicated memory allocation
+
+    // Import requires format AHB_FMT_BLOB and usage AHB_USAGE_GPU_DATA_BUFFER
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkMemoryAllocateInfo-pNext-02384");
+    vkAllocateMemory(dev, &mai, NULL, &mem_handle);
+    m_errorMonitor->VerifyFound();
+    reset_mem();
+
+    // Allocation size mismatch
+    ahb_desc.format = AHARDWAREBUFFER_FORMAT_BLOB;
+    ahb_desc.usage = AHARDWAREBUFFER_USAGE_GPU_DATA_BUFFER | AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE;
+    recreate_ahb();
+    mai.allocationSize = ahb_props.allocationSize + 1;
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkMemoryAllocateInfo-allocationSize-02383");
+    vkAllocateMemory(dev, &mai, NULL, &mem_handle);
+    m_errorMonitor->VerifyFound();
+    mai.allocationSize = ahb_props.allocationSize;
+    reset_mem();
+
+    // memoryTypeIndex mismatch
+    mai.memoryTypeIndex++;
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkMemoryAllocateInfo-memoryTypeIndex-02385");
+    vkAllocateMemory(dev, &mai, NULL, &mem_handle);
+    m_errorMonitor->VerifyFound();
+    mai.memoryTypeIndex--;
+    reset_mem();
+
+    // Insert dedicated image memory allocation to mai chain
+    VkMemoryDedicatedAllocateInfo mdai = {};
+    mdai.sType = VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO;
+    mdai.image = img;
+    mdai.buffer = VK_NULL_HANDLE;
+    mdai.pNext = mai.pNext;
+    mai.pNext = &mdai;
+
+    // Dedicated allocation with unmatched usage bits
+    ahb_desc.format = AHARDWAREBUFFER_FORMAT_R8G8B8A8_UNORM;
+    ahb_desc.usage = AHARDWAREBUFFER_USAGE_GPU_COLOR_OUTPUT;
+    recreate_ahb();
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkMemoryAllocateInfo-pNext-02390");
+    vkAllocateMemory(dev, &mai, NULL, &mem_handle);
+    m_errorMonitor->VerifyFound();
+    reset_mem();
+
+    // Dedicated allocation with incomplete mip chain
+    reset_img();
+    ici.mipLevels = 2;
+    vkCreateImage(dev, &ici, NULL, &img);
+    mdai.image = img;
+    ahb_desc.usage = AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE | AHARDWAREBUFFER_USAGE_GPU_MIPMAP_COMPLETE;
+    recreate_ahb();
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkMemoryAllocateInfo-pNext-02389");
+    vkAllocateMemory(dev, &mai, NULL, &mem_handle);
+    m_errorMonitor->VerifyFound();
+    reset_mem();
+
+    // Dedicated allocation with mis-matched dimension
+    ahb_desc.usage = AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE;
+    ahb_desc.height = 32;
+    ahb_desc.width = 128;
+    recreate_ahb();
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkMemoryAllocateInfo-pNext-02388");
+    vkAllocateMemory(dev, &mai, NULL, &mem_handle);
+    m_errorMonitor->VerifyFound();
+    reset_mem();
+
+    // Dedicated allocation with mis-matched VkFormat
+    ahb_desc.usage = AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE;
+    ahb_desc.height = 64;
+    ahb_desc.width = 64;
+    recreate_ahb();
+    ici.mipLevels = 1;
+    ici.format = VK_FORMAT_B8G8R8A8_UNORM;
+    ici.pNext = NULL;
+    VkImage img2;
+    vkCreateImage(dev, &ici, NULL, &img2);
+    mdai.image = img2;
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkMemoryAllocateInfo-pNext-02387");
+    vkAllocateMemory(dev, &mai, NULL, &mem_handle);
+    m_errorMonitor->VerifyFound();
+    vkDestroyImage(dev, img2, NULL);
+    mdai.image = img;
+    reset_mem();
+
+    // Missing required ahb usage
+    ahb_desc.usage = AHARDWAREBUFFER_USAGE_PROTECTED_CONTENT;
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                         "VUID-vkGetAndroidHardwareBufferPropertiesANDROID-buffer-01884");
+    recreate_ahb();
+    m_errorMonitor->VerifyFound();
+
+    // Dedicated allocation with missing usage bits
+    // Setting up this test also triggers a slew of others
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkMemoryAllocateInfo-pNext-02390");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkMemoryAllocateInfo-memoryTypeIndex-02385");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkMemoryAllocateInfo-allocationSize-02383");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                         "VUID-vkGetAndroidHardwareBufferPropertiesANDROID-buffer-01884");
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkMemoryAllocateInfo-pNext-02386");
+    vkAllocateMemory(dev, &mai, NULL, &mem_handle);
+    m_errorMonitor->VerifyFound();
+    reset_mem();
+
+    // Non-import allocation - replace import struct in chain with export struct
+    VkExportMemoryAllocateInfo emai = {};
+    emai.sType = VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO;
+    emai.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID;
+    mai.pNext = &emai;
+    emai.pNext = &mdai;  // still dedicated
+    mdai.pNext = nullptr;
+
+    // Export with allocation size non-zero
+    ahb_desc.usage = AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE;
+    recreate_ahb();
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkMemoryAllocateInfo-pNext-01874");
+    vkAllocateMemory(dev, &mai, NULL, &mem_handle);
+    m_errorMonitor->VerifyFound();
+    reset_mem();
+
+    AHardwareBuffer_release(ahb);
+    reset_mem();
+    reset_img();
+}
+
+TEST_F(VkLayerTest, AndroidHardwareBufferCreateYCbCrSampler) {
+    TEST_DESCRIPTION("Verify AndroidHardwareBuffer YCbCr sampler creation.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+
+    if ((DeviceExtensionSupported(gpu(), nullptr, VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME)) &&
+        // Also skip on devices that advertise AHB, but not the pre-requisite foreign_queue extension
+        (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_QUEUE_FAMILY_FOREIGN_EXTENSION_NAME))) {
+        m_device_extension_names.push_back(VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_EXT_QUEUE_FAMILY_FOREIGN_EXTENSION_NAME);
+    } else {
+        printf("%s %s extension not supported, skipping tests\n", kSkipPrefix,
+               VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    VkDevice dev = m_device->device();
+
+    VkSamplerYcbcrConversion ycbcr_conv = VK_NULL_HANDLE;
+    VkSamplerYcbcrConversionCreateInfo sycci = {};
+    sycci.sType = VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_CREATE_INFO;
+    sycci.format = VK_FORMAT_UNDEFINED;
+    sycci.ycbcrModel = VK_SAMPLER_YCBCR_MODEL_CONVERSION_RGB_IDENTITY;
+    sycci.ycbcrRange = VK_SAMPLER_YCBCR_RANGE_ITU_FULL;
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkSamplerYcbcrConversionCreateInfo-format-01904");
+    vkCreateSamplerYcbcrConversion(dev, &sycci, NULL, &ycbcr_conv);
+    m_errorMonitor->VerifyFound();
+
+    VkExternalFormatANDROID efa = {};
+    efa.sType = VK_STRUCTURE_TYPE_EXTERNAL_FORMAT_ANDROID;
+    efa.externalFormat = AHARDWAREBUFFER_FORMAT_R8G8B8X8_UNORM;
+    sycci.format = VK_FORMAT_R8G8B8A8_UNORM;
+    sycci.pNext = &efa;
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkSamplerYcbcrConversionCreateInfo-format-01904");
+    vkCreateSamplerYcbcrConversion(dev, &sycci, NULL, &ycbcr_conv);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkLayerTest, AndroidHardwareBufferPhysDevImageFormatProp2) {
+    TEST_DESCRIPTION("Verify AndroidHardwareBuffer GetPhysicalDeviceImageFormatProperties.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+
+    if ((DeviceExtensionSupported(gpu(), nullptr, VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME)) &&
+        // Also skip on devices that advertise AHB, but not the pre-requisite foreign_queue extension
+        (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_QUEUE_FAMILY_FOREIGN_EXTENSION_NAME))) {
+        m_device_extension_names.push_back(VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_EXT_QUEUE_FAMILY_FOREIGN_EXTENSION_NAME);
+    } else {
+        printf("%s %s extension not supported, skipping test\n", kSkipPrefix,
+               VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    if ((m_instance_api_version < VK_API_VERSION_1_1) &&
+        !InstanceExtensionEnabled(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        printf("%s %s extension not supported, skipping test\n", kSkipPrefix,
+               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
+
+    VkImageFormatProperties2 ifp = {};
+    ifp.sType = VK_STRUCTURE_TYPE_IMAGE_FORMAT_PROPERTIES_2;
+    VkPhysicalDeviceImageFormatInfo2 pdifi = {};
+    pdifi.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_FORMAT_INFO_2;
+    pdifi.format = VK_FORMAT_R8G8B8A8_UNORM;
+    pdifi.tiling = VK_IMAGE_TILING_OPTIMAL;
+    pdifi.type = VK_IMAGE_TYPE_2D;
+    pdifi.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    VkAndroidHardwareBufferUsageANDROID ahbu = {};
+    ahbu.sType = VK_STRUCTURE_TYPE_ANDROID_HARDWARE_BUFFER_USAGE_ANDROID;
+    ahbu.androidHardwareBufferUsage = AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE;
+    ifp.pNext = &ahbu;
+
+    // AHB_usage chained to input without a matching external image format struc chained to output
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                         "VUID-vkGetPhysicalDeviceImageFormatProperties2-pNext-01868");
+    vkGetPhysicalDeviceImageFormatProperties2(m_device->phy().handle(), &pdifi, &ifp);
+    m_errorMonitor->VerifyFound();
+
+    // output struct chained, but does not include VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID usage
+    VkPhysicalDeviceExternalImageFormatInfo pdeifi = {};
+    pdeifi.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_IMAGE_FORMAT_INFO;
+    pdeifi.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_HOST_ALLOCATION_BIT_EXT;
+    pdifi.pNext = &pdeifi;
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                         "VUID-vkGetPhysicalDeviceImageFormatProperties2-pNext-01868");
+    vkGetPhysicalDeviceImageFormatProperties2(m_device->phy().handle(), &pdifi, &ifp);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkLayerTest, AndroidHardwareBufferCreateImageView) {
+    TEST_DESCRIPTION("Verify AndroidHardwareBuffer image view creation.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+
+    if ((DeviceExtensionSupported(gpu(), nullptr, VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME)) &&
+        // Also skip on devices that advertise AHB, but not the pre-requisite foreign_queue extension
+        (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_QUEUE_FAMILY_FOREIGN_EXTENSION_NAME))) {
+        m_device_extension_names.push_back(VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_EXT_QUEUE_FAMILY_FOREIGN_EXTENSION_NAME);
+    } else {
+        printf("%s %s extension not supported, skipping tests\n", kSkipPrefix,
+               VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    VkDevice dev = m_device->device();
+
+    // Expect no validation errors during setup
+    m_errorMonitor->ExpectSuccess();
+
+    // Allocate an AHB and fetch its properties
+    AHardwareBuffer *ahb = nullptr;
+    AHardwareBuffer_Desc ahb_desc = {};
+    ahb_desc.format = AHARDWAREBUFFER_FORMAT_R5G6B5_UNORM;
+    ahb_desc.usage = AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE;
+    ahb_desc.width = 64;
+    ahb_desc.height = 64;
+    ahb_desc.layers = 1;
+    AHardwareBuffer_allocate(&ahb_desc, &ahb);
+
+    // Retrieve AHB properties to make it's external format 'known'
+    VkAndroidHardwareBufferFormatPropertiesANDROID ahb_fmt_props = {};
+    ahb_fmt_props.sType = VK_STRUCTURE_TYPE_ANDROID_HARDWARE_BUFFER_FORMAT_PROPERTIES_ANDROID;
+    VkAndroidHardwareBufferPropertiesANDROID ahb_props = {};
+    ahb_props.sType = VK_STRUCTURE_TYPE_ANDROID_HARDWARE_BUFFER_PROPERTIES_ANDROID;
+    ahb_props.pNext = &ahb_fmt_props;
+    PFN_vkGetAndroidHardwareBufferPropertiesANDROID pfn_GetAHBProps =
+        (PFN_vkGetAndroidHardwareBufferPropertiesANDROID)vkGetDeviceProcAddr(dev, "vkGetAndroidHardwareBufferPropertiesANDROID");
+    ASSERT_TRUE(pfn_GetAHBProps != nullptr);
+    pfn_GetAHBProps(dev, ahb, &ahb_props);
+    AHardwareBuffer_release(ahb);
+
+    // Give image an external format
+    VkExternalFormatANDROID efa = {};
+    efa.sType = VK_STRUCTURE_TYPE_EXTERNAL_FORMAT_ANDROID;
+    efa.externalFormat = AHARDWAREBUFFER_FORMAT_R5G6B5_UNORM;
+
+    // Create the image
+    VkImage img = VK_NULL_HANDLE;
+    VkImageCreateInfo ici = {};
+    ici.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    ici.pNext = &efa;
+    ici.imageType = VK_IMAGE_TYPE_2D;
+    ici.arrayLayers = 1;
+    ici.extent = {64, 64, 1};
+    ici.format = VK_FORMAT_UNDEFINED;
+    ici.mipLevels = 1;
+    ici.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    ici.samples = VK_SAMPLE_COUNT_1_BIT;
+    ici.tiling = VK_IMAGE_TILING_OPTIMAL;
+    ici.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+    vkCreateImage(dev, &ici, NULL, &img);
+
+    // Set up memory allocation
+    VkDeviceMemory img_mem = VK_NULL_HANDLE;
+    VkMemoryAllocateInfo mai = {};
+    mai.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    mai.allocationSize = 64 * 64 * 4;
+    mai.memoryTypeIndex = 0;
+    vkAllocateMemory(dev, &mai, NULL, &img_mem);
+
+    // Bind image to memory
+    vkBindImageMemory(dev, img, img_mem, 0);
+
+    // Create a YCbCr conversion, with different external format, chain to view
+    VkSamplerYcbcrConversion ycbcr_conv = VK_NULL_HANDLE;
+    VkSamplerYcbcrConversionCreateInfo sycci = {};
+    efa.externalFormat = AHARDWAREBUFFER_FORMAT_R8G8B8X8_UNORM;
+    sycci.sType = VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_CREATE_INFO;
+    sycci.pNext = &efa;
+    sycci.format = VK_FORMAT_UNDEFINED;
+    sycci.ycbcrModel = VK_SAMPLER_YCBCR_MODEL_CONVERSION_RGB_IDENTITY;
+    sycci.ycbcrRange = VK_SAMPLER_YCBCR_RANGE_ITU_FULL;
+    vkCreateSamplerYcbcrConversion(dev, &sycci, NULL, &ycbcr_conv);
+    VkSamplerYcbcrConversionInfo syci = {};
+    syci.sType = VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_INFO;
+    syci.conversion = ycbcr_conv;
+
+    // Create a view
+    VkImageView image_view = VK_NULL_HANDLE;
+    VkImageViewCreateInfo ivci = {};
+    ivci.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    ivci.pNext = &syci;
+    ivci.image = img;
+    ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    ivci.format = VK_FORMAT_UNDEFINED;
+    ivci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+
+    auto reset_view = [&image_view, dev]() {
+        if (VK_NULL_HANDLE != image_view) vkDestroyImageView(dev, image_view, NULL);
+        image_view = VK_NULL_HANDLE;
+    };
+
+    // Up to this point, no errors expected
+    m_errorMonitor->VerifyNotFound();
+
+    // Chained ycbcr conversion has different (external) format than image
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkImageViewCreateInfo-image-02400");
+    // Also causes "unsupported format" - should be removed in future spec update
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkImageViewCreateInfo-None-02273");
+    vkCreateImageView(dev, &ivci, NULL, &image_view);
+    m_errorMonitor->VerifyFound();
+
+    reset_view();
+    vkDestroySamplerYcbcrConversion(dev, ycbcr_conv, NULL);
+    efa.externalFormat = AHARDWAREBUFFER_FORMAT_R5G6B5_UNORM;
+    vkCreateSamplerYcbcrConversion(dev, &sycci, NULL, &ycbcr_conv);
+    syci.conversion = ycbcr_conv;
+
+    // View component swizzle not IDENTITY
+    ivci.components.r = VK_COMPONENT_SWIZZLE_B;
+    ivci.components.b = VK_COMPONENT_SWIZZLE_R;
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkImageViewCreateInfo-image-02401");
+    // Also causes "unsupported format" - should be removed in future spec update
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkImageViewCreateInfo-None-02273");
+    vkCreateImageView(dev, &ivci, NULL, &image_view);
+    m_errorMonitor->VerifyFound();
+
+    reset_view();
+    ivci.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+    ivci.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+
+    // View with external format, when format is not UNDEFINED
+    ivci.format = VK_FORMAT_R5G6B5_UNORM_PACK16;
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkImageViewCreateInfo-image-02399");
+    // Also causes "view format different from image format"
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkImageViewCreateInfo-image-01019");
+    vkCreateImageView(dev, &ivci, NULL, &image_view);
+    m_errorMonitor->VerifyFound();
+
+    reset_view();
+    vkDestroySamplerYcbcrConversion(dev, ycbcr_conv, NULL);
+    vkDestroyImageView(dev, image_view, NULL);
+    vkDestroyImage(dev, img, NULL);
+    vkFreeMemory(dev, img_mem, NULL);
+}
+
+TEST_F(VkLayerTest, AndroidHardwareBufferImportBuffer) {
+    TEST_DESCRIPTION("Verify AndroidHardwareBuffer import as buffer.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+
+    if ((DeviceExtensionSupported(gpu(), nullptr, VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME)) &&
+        // Also skip on devices that advertise AHB, but not the pre-requisite foreign_queue extension
+        (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_QUEUE_FAMILY_FOREIGN_EXTENSION_NAME))) {
+        m_device_extension_names.push_back(VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_EXT_QUEUE_FAMILY_FOREIGN_EXTENSION_NAME);
+    } else {
+        printf("%s %s extension not supported, skipping tests\n", kSkipPrefix,
+               VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    VkDevice dev = m_device->device();
+
+    VkDeviceMemory mem_handle = VK_NULL_HANDLE;
+    auto reset_mem = [&mem_handle, dev]() {
+        if (VK_NULL_HANDLE != mem_handle) vkFreeMemory(dev, mem_handle, NULL);
+        mem_handle = VK_NULL_HANDLE;
+    };
+
+    PFN_vkGetAndroidHardwareBufferPropertiesANDROID pfn_GetAHBProps =
+        (PFN_vkGetAndroidHardwareBufferPropertiesANDROID)vkGetDeviceProcAddr(dev, "vkGetAndroidHardwareBufferPropertiesANDROID");
+    ASSERT_TRUE(pfn_GetAHBProps != nullptr);
+
+    // AHB structs
+    AHardwareBuffer *ahb = nullptr;
+    AHardwareBuffer_Desc ahb_desc = {};
+    VkAndroidHardwareBufferPropertiesANDROID ahb_props = {};
+    ahb_props.sType = VK_STRUCTURE_TYPE_ANDROID_HARDWARE_BUFFER_PROPERTIES_ANDROID;
+    VkImportAndroidHardwareBufferInfoANDROID iahbi = {};
+    iahbi.sType = VK_STRUCTURE_TYPE_IMPORT_ANDROID_HARDWARE_BUFFER_INFO_ANDROID;
+
+    // Allocate an AHardwareBuffer
+    ahb_desc.format = AHARDWAREBUFFER_FORMAT_BLOB;
+    ahb_desc.usage = AHARDWAREBUFFER_USAGE_GPU_MIPMAP_COMPLETE;
+    ahb_desc.width = 512;
+    ahb_desc.height = 1;
+    ahb_desc.layers = 1;
+    AHardwareBuffer_allocate(&ahb_desc, &ahb);
+    pfn_GetAHBProps(dev, ahb, &ahb_props);
+    iahbi.buffer = ahb;
+
+    // Create export and import buffers
+    VkExternalMemoryBufferCreateInfo ext_buf_info = {};
+    ext_buf_info.sType = VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_BUFFER_CREATE_INFO_KHR;
+    ext_buf_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_HOST_ALLOCATION_BIT_EXT;
+
+    VkBufferCreateInfo bci = {};
+    bci.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    bci.pNext = &ext_buf_info;
+    bci.size = ahb_props.allocationSize;
+    bci.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+
+    VkBuffer buf = VK_NULL_HANDLE;
+    vkCreateBuffer(dev, &bci, NULL, &buf);
+    VkMemoryRequirements mem_reqs;
+    vkGetBufferMemoryRequirements(dev, buf, &mem_reqs);
+
+    // Allocation info
+    VkMemoryAllocateInfo mai = vk_testing::DeviceMemory::get_resource_alloc_info(*m_device, mem_reqs, 0);
+    mai.pNext = &iahbi;  // Chained import struct
+
+    // Import as buffer requires format AHB_FMT_BLOB and usage AHB_USAGE_GPU_DATA_BUFFER
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                         "VUID-VkImportAndroidHardwareBufferInfoANDROID-buffer-01881");
+    // Also causes "non-dedicated allocation format/usage" error
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkMemoryAllocateInfo-pNext-02384");
+    vkAllocateMemory(dev, &mai, NULL, &mem_handle);
+    m_errorMonitor->VerifyFound();
+
+    AHardwareBuffer_release(ahb);
+    reset_mem();
+    vkDestroyBuffer(dev, buf, NULL);
+}
+
+TEST_F(VkLayerTest, AndroidHardwareBufferExporttBuffer) {
+    TEST_DESCRIPTION("Verify AndroidHardwareBuffer export memory as AHB.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+
+    if ((DeviceExtensionSupported(gpu(), nullptr, VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME)) &&
+        // Also skip on devices that advertise AHB, but not the pre-requisite foreign_queue extension
+        (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_QUEUE_FAMILY_FOREIGN_EXTENSION_NAME))) {
+        m_device_extension_names.push_back(VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_EXT_QUEUE_FAMILY_FOREIGN_EXTENSION_NAME);
+    } else {
+        printf("%s %s extension not supported, skipping tests\n", kSkipPrefix,
+               VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    VkDevice dev = m_device->device();
+
+    VkDeviceMemory mem_handle = VK_NULL_HANDLE;
+
+    // Allocate device memory, no linked export struct indicating AHB handle type
+    VkMemoryAllocateInfo mai = {};
+    mai.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    mai.allocationSize = 65536;
+    mai.memoryTypeIndex = 0;
+    vkAllocateMemory(dev, &mai, NULL, &mem_handle);
+
+    PFN_vkGetMemoryAndroidHardwareBufferANDROID pfn_GetMemAHB =
+        (PFN_vkGetMemoryAndroidHardwareBufferANDROID)vkGetDeviceProcAddr(dev, "vkGetMemoryAndroidHardwareBufferANDROID");
+    ASSERT_TRUE(pfn_GetMemAHB != nullptr);
+
+    VkMemoryGetAndroidHardwareBufferInfoANDROID mgahbi = {};
+    mgahbi.sType = VK_STRUCTURE_TYPE_MEMORY_GET_ANDROID_HARDWARE_BUFFER_INFO_ANDROID;
+    mgahbi.memory = mem_handle;
+    AHardwareBuffer *ahb = nullptr;
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                         "VUID-VkMemoryGetAndroidHardwareBufferInfoANDROID-handleTypes-01882");
+    pfn_GetMemAHB(dev, &mgahbi, &ahb);
+    m_errorMonitor->VerifyFound();
+
+    if (ahb) AHardwareBuffer_release(ahb);
+    ahb = nullptr;
+    if (VK_NULL_HANDLE != mem_handle) vkFreeMemory(dev, mem_handle, NULL);
+    mem_handle = VK_NULL_HANDLE;
+
+    // Add an export struct with AHB handle type to allocation info
+    VkExportMemoryAllocateInfo emai = {};
+    emai.sType = VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO;
+    emai.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID;
+    mai.pNext = &emai;
+
+    // Create an image, do not bind memory
+    VkImage img = VK_NULL_HANDLE;
+    VkImageCreateInfo ici = {};
+    ici.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    ici.imageType = VK_IMAGE_TYPE_2D;
+    ici.arrayLayers = 1;
+    ici.extent = {128, 128, 1};
+    ici.format = VK_FORMAT_R8G8B8A8_UNORM;
+    ici.mipLevels = 1;
+    ici.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    ici.samples = VK_SAMPLE_COUNT_1_BIT;
+    ici.tiling = VK_IMAGE_TILING_OPTIMAL;
+    ici.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+    vkCreateImage(dev, &ici, NULL, &img);
+    ASSERT_TRUE(VK_NULL_HANDLE != img);
+
+    // Add image to allocation chain as dedicated info, re-allocate
+    VkMemoryDedicatedAllocateInfo mdai = {VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO};
+    mdai.image = img;
+    emai.pNext = &mdai;
+    mai.allocationSize = 0;
+    vkAllocateMemory(dev, &mai, NULL, &mem_handle);
+    mgahbi.memory = mem_handle;
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                         "VUID-VkMemoryGetAndroidHardwareBufferInfoANDROID-pNext-01883");
+    pfn_GetMemAHB(dev, &mgahbi, &ahb);
+    m_errorMonitor->VerifyFound();
+
+    if (ahb) AHardwareBuffer_release(ahb);
+    if (VK_NULL_HANDLE != mem_handle) vkFreeMemory(dev, mem_handle, NULL);
+    vkDestroyImage(dev, img, NULL);
+}
+
+#endif
 
 #if defined(ANDROID) && defined(VALIDATION_APK)
 const char *appTag = "VulkanLayerValidationTests";
