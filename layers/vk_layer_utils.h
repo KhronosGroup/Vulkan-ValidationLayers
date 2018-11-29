@@ -114,7 +114,7 @@ static inline dispatch_key get_dispatch_key(const void *object) { return (dispat
 VK_LAYER_EXPORT VkLayerInstanceCreateInfo *get_chain_info(const VkInstanceCreateInfo *pCreateInfo, VkLayerFunction func);
 VK_LAYER_EXPORT VkLayerDeviceCreateInfo *get_chain_info(const VkDeviceCreateInfo *pCreateInfo, VkLayerFunction func);
 
-static bool IsPowerOfTwo(unsigned x) { return x && !(x & (x - 1)); }
+static inline bool IsPowerOfTwo(unsigned x) { return x && !(x & (x - 1)); }
 
 extern "C" {
 #endif
