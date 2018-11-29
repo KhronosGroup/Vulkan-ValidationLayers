@@ -16,6 +16,7 @@
  * limitations under the License.
  *
  * Author: Mark Lobodzinski <mark@LunarG.com>
+ * Author: John Zulauf <jzulauf@lunarg.com>
  */
 
 #define NOMINMAX
@@ -3324,6 +3325,17 @@ bool pv_vkCmdDispatch(VkCommandBuffer commandBuffer, uint32_t groupCountX, uint3
 
     return skip;
 }
+bool pv_vkCmdDispatchIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset) {
+    bool skip = false;
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+
+    if ((offset % 4) != 0) {
+        skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                        HandleToUint64(commandBuffer), "VUID-vkCmdDispatchIndirect-offset-00406",
+                        "vkCmdDispatchIndirect(): offset (%" PRIu64 ") must be a multiple of 4.", offset);
+    }
+    return skip;
+}
 
 bool pv_vkCmdDispatchBaseKHR(VkCommandBuffer commandBuffer, uint32_t baseGroupX, uint32_t baseGroupY, uint32_t baseGroupZ,
                              uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) {
@@ -3678,6 +3690,7 @@ void InitializeManualParameterValidationFunctionPointers() {
     custom_functions["vkQueuePresentKHR"] = (void *)pv_vkQueuePresentKHR;
     custom_functions["vkCreateDescriptorPool"] = (void *)pv_vkCreateDescriptorPool;
     custom_functions["vkCmdDispatch"] = (void *)pv_vkCmdDispatch;
+    custom_functions["vkCmdDispatchIndirect"] = (void *)pv_vkCmdDispatchIndirect;
     custom_functions["vkCmdDispatchBaseKHR"] = (void *)pv_vkCmdDispatchBaseKHR;
     custom_functions["vkCmdSetExclusiveScissorNV"] = (void *)pv_vkCmdSetExclusiveScissorNV;
     custom_functions["vkCmdSetViewportShadingRatePaletteNV"] = (void *)pv_vkCmdSetViewportShadingRatePaletteNV;
