@@ -1786,6 +1786,58 @@ static bool ValidatePipelineUnlocked(layer_data *dev_data, std::vector<std::uniq
         }
     }
 
+    if (dev_data->extensions.vk_nv_fragment_coverage_to_color) {
+        const auto coverage_to_color_state =
+            lvl_find_in_chain<VkPipelineCoverageToColorStateCreateInfoNV>(pPipeline->graphicsPipelineCI.pMultisampleState);
+
+        if (coverage_to_color_state && coverage_to_color_state->coverageToColorEnable == VK_TRUE) {
+            bool attachment_is_valid = false;
+            std::string error_detail;
+
+            if (coverage_to_color_state->coverageToColorLocation < subpass_desc->colorAttachmentCount) {
+                const auto color_attachment_ref = subpass_desc->pColorAttachments[coverage_to_color_state->coverageToColorLocation];
+                if (color_attachment_ref.attachment != VK_ATTACHMENT_UNUSED) {
+                    const auto color_attachment = pPipeline->rp_state->createInfo.pAttachments[color_attachment_ref.attachment];
+
+                    switch (color_attachment.format) {
+                        case VK_FORMAT_R8_UINT:
+                        case VK_FORMAT_R8_SINT:
+                        case VK_FORMAT_R16_UINT:
+                        case VK_FORMAT_R16_SINT:
+                        case VK_FORMAT_R32_UINT:
+                        case VK_FORMAT_R32_SINT:
+                            attachment_is_valid = true;
+                            break;
+                        default:
+                            string_sprintf(&error_detail, "references an attachment with an invalid format (%s).",
+                                           string_VkFormat(color_attachment.format));
+                            break;
+                    }
+                } else {
+                    string_sprintf(&error_detail,
+                                   "references an invalid attachment. The subpass pColorAttachments[%" PRIu32
+                                   "].attachment has the value "
+                                   "VK_ATTACHMENT_UNUSED.",
+                                   coverage_to_color_state->coverageToColorLocation);
+                }
+            } else {
+                string_sprintf(&error_detail,
+                               "references an non-existing attachment since the subpass colorAttachmentCount is %" PRIu32 ".",
+                               subpass_desc->colorAttachmentCount);
+            }
+
+            if (!attachment_is_valid) {
+                skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
+                                HandleToUint64(pPipeline->pipeline),
+                                "VUID-VkPipelineCoverageToColorStateCreateInfoNV-coverageToColorEnable-01404",
+                                "vkCreateGraphicsPipelines: pCreateInfos[%" PRId32
+                                "].pMultisampleState VkPipelineCoverageToColorStateCreateInfoNV "
+                                "coverageToColorLocation = %" PRIu32 " %s",
+                                pipelineIndex, coverage_to_color_state->coverageToColorLocation, error_detail.c_str());
+            }
+        }
+    }
+
     return skip;
 }
 
