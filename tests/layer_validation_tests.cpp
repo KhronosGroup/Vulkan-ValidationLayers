@@ -35180,6 +35180,100 @@ TEST_F(VkLayerTest, FramebufferMixedSamples) {
     }
 }
 
+TEST_F(VkLayerTest, FragmentCoverageToColorNV) {
+    TEST_DESCRIPTION("Verify VK_NV_fragment_coverage_to_color.");
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_NV_FRAGMENT_COVERAGE_TO_COLOR_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_NV_FRAGMENT_COVERAGE_TO_COLOR_EXTENSION_NAME);
+    } else {
+        printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, VK_NV_FRAGMENT_COVERAGE_TO_COLOR_EXTENSION_NAME);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    struct TestCase {
+        VkFormat format;
+        VkBool32 enabled;
+        uint32_t location;
+        bool positive;
+    };
+
+    const std::array<TestCase, 9> test_cases = {{
+        {VK_FORMAT_R8G8B8A8_UNORM, VK_FALSE, 0, true},
+        {VK_FORMAT_R8_UINT, VK_TRUE, 1, true},
+        {VK_FORMAT_R16_UINT, VK_TRUE, 1, true},
+        {VK_FORMAT_R16_SINT, VK_TRUE, 1, true},
+        {VK_FORMAT_R32_UINT, VK_TRUE, 1, true},
+        {VK_FORMAT_R32_SINT, VK_TRUE, 1, true},
+        {VK_FORMAT_R32_SINT, VK_TRUE, 2, false},
+        {VK_FORMAT_R8_SINT, VK_TRUE, 3, false},
+        {VK_FORMAT_R8G8B8A8_UNORM, VK_TRUE, 1, false},
+    }};
+
+    for (const auto &test_case : test_cases) {
+        std::array<VkAttachmentDescription, 2> att = {{{}, {}}};
+        att[0].format = VK_FORMAT_R8G8B8A8_UNORM;
+        att[0].samples = VK_SAMPLE_COUNT_1_BIT;
+        att[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        att[0].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+        att[1].format = VK_FORMAT_R8G8B8A8_UNORM;
+        att[1].samples = VK_SAMPLE_COUNT_1_BIT;
+        att[1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        att[1].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+        if (test_case.location < att.size()) {
+            att[test_case.location].format = test_case.format;
+        }
+
+        const std::array<VkAttachmentReference, 3> cr = {{{0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL},
+                                                          {1, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL},
+                                                          {VK_ATTACHMENT_UNUSED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL}}};
+
+        VkSubpassDescription sp = {};
+        sp.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+        sp.colorAttachmentCount = cr.size();
+        sp.pColorAttachments = cr.data();
+
+        VkRenderPassCreateInfo rpi = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO};
+        rpi.attachmentCount = att.size();
+        rpi.pAttachments = att.data();
+        rpi.subpassCount = 1;
+        rpi.pSubpasses = &sp;
+
+        const std::array<VkPipelineColorBlendAttachmentState, 3> cba = {{{}, {}, {}}};
+
+        VkPipelineColorBlendStateCreateInfo cbi = {VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO};
+        cbi.attachmentCount = cba.size();
+        cbi.pAttachments = cba.data();
+
+        VkRenderPass rp;
+        VkResult err = vkCreateRenderPass(m_device->device(), &rpi, nullptr, &rp);
+        ASSERT_VK_SUCCESS(err);
+
+        VkPipelineCoverageToColorStateCreateInfoNV cci = {VK_STRUCTURE_TYPE_PIPELINE_COVERAGE_TO_COLOR_STATE_CREATE_INFO_NV};
+
+        const auto break_samples = [&cci, &cbi, &rp, &test_case](CreatePipelineHelper &helper) {
+            cci.coverageToColorEnable = test_case.enabled;
+            cci.coverageToColorLocation = test_case.location;
+
+            helper.pipe_ms_state_ci_.pNext = &cci;
+            helper.gp_ci_.renderPass = rp;
+            helper.gp_ci_.pColorBlendState = &cbi;
+        };
+
+        CreatePipelineHelper::OneshotTest(*this, break_samples, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                          "VUID-VkPipelineCoverageToColorStateCreateInfoNV-coverageToColorEnable-01404",
+                                          test_case.positive);
+
+        vkDestroyRenderPass(m_device->device(), rp, nullptr);
+    }
+}
+
 #if defined(ANDROID) && defined(VALIDATION_APK)
 const char *appTag = "VulkanLayerValidationTests";
 static bool initialized = false;
