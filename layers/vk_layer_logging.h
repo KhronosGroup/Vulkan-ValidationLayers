@@ -349,18 +349,18 @@ static inline bool debug_log_msg(const debug_report_data *debug_data, VkFlags ms
             }
         }
         // Look for any debug utils or marker names to use for this object
-        callback_data.pObjects[0].pObjectName = NULL;
+        object_name_info.pObjectName = NULL;
         auto utils_name_iter = debug_data->debugUtilsObjectNameMap->find(src_object);
         if (utils_name_iter != debug_data->debugUtilsObjectNameMap->end()) {
-            callback_data.pObjects[0].pObjectName = utils_name_iter->second.c_str();
+            object_name_info.pObjectName = utils_name_iter->second.c_str();
         } else {
             auto marker_name_iter = debug_data->debugObjectNameMap->find(src_object);
             if (marker_name_iter != debug_data->debugObjectNameMap->end()) {
-                callback_data.pObjects[0].pObjectName = marker_name_iter->second.c_str();
+                object_name_info.pObjectName = marker_name_iter->second.c_str();
             }
         }
-        if (NULL != callback_data.pObjects[0].pObjectName) {
-            oss << " (Name = " << callback_data.pObjects[0].pObjectName << " : Type = ";
+        if (NULL != object_name_info.pObjectName) {
+            oss << " (Name = " << object_name_info.pObjectName << " : Type = ";
         } else {
             oss << " (Type = ";
         }
@@ -429,7 +429,8 @@ static inline void DebugAnnotFlagsToReportFlags(VkDebugUtilsMessageSeverityFlagB
 static inline bool debug_messenger_log_msg(const debug_report_data *debug_data,
                                            VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
                                            VkDebugUtilsMessageTypeFlagsEXT message_type,
-                                           VkDebugUtilsMessengerCallbackDataEXT *callback_data) {
+                                           VkDebugUtilsMessengerCallbackDataEXT *callback_data,
+                                           const VkDebugUtilsMessengerEXT *messenger) {
     bool bail = false;
     VkLayerDbgFunctionNode *layer_dbg_node = NULL;
 
@@ -443,16 +444,21 @@ static inline bool debug_messenger_log_msg(const debug_report_data *debug_data,
 
     DebugAnnotFlagsToReportFlags(message_severity, message_type, &object_flags);
 
+    VkDebugUtilsObjectNameInfoEXT object_name_info;
+    object_name_info.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
+    object_name_info.pNext = NULL;
+    object_name_info.objectType = VK_OBJECT_TYPE_DEBUG_UTILS_MESSENGER_EXT;
+    object_name_info.objectHandle = HandleToUint64(*messenger);
+    object_name_info.pObjectName = NULL;
+    callback_data->pObjects = &object_name_info;
+    callback_data->objectCount = 1;
+
     while (layer_dbg_node) {
         if (layer_dbg_node->is_messenger && (layer_dbg_node->messenger.messageSeverity & message_severity) &&
             (layer_dbg_node->messenger.messageType & message_type)) {
-            // Loop through each object and give it the proper name if it was set.
-            for (uint32_t obj = 0; obj < callback_data->objectCount; obj++) {
-                auto it = debug_data->debugUtilsObjectNameMap->find(callback_data->pObjects[obj].objectHandle);
-                if (it == debug_data->debugUtilsObjectNameMap->end()) {
-                    continue;
-                }
-                callback_data->pObjects[obj].pObjectName = it->second.c_str();
+            auto it = debug_data->debugUtilsObjectNameMap->find(object_name_info.objectHandle);
+            if (it != debug_data->debugUtilsObjectNameMap->end()) {
+                object_name_info.pObjectName = it->second.c_str();
             }
             if (layer_dbg_node->messenger.pfnUserCallback(message_severity, message_type, callback_data,
                                                           layer_dbg_node->pUserData)) {
@@ -564,7 +570,6 @@ static inline VkResult layer_create_messenger_callback(debug_report_data *debug_
     }
 
     VkDebugUtilsMessengerCallbackDataEXT callback_data = {};
-    VkDebugUtilsObjectNameInfoEXT blank_object = {};
     callback_data.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CALLBACK_DATA_EXT;
     callback_data.pNext = NULL;
     callback_data.flags = 0;
@@ -575,15 +580,10 @@ static inline VkResult layer_create_messenger_callback(debug_report_data *debug_
     callback_data.pQueueLabels = NULL;
     callback_data.cmdBufLabelCount = 0;
     callback_data.pCmdBufLabels = NULL;
-    callback_data.objectCount = 1;
-    callback_data.pObjects = &blank_object;
-    blank_object.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
-    blank_object.pNext = NULL;
-    blank_object.objectType = VK_OBJECT_TYPE_DEBUG_UTILS_MESSENGER_EXT;
-    blank_object.objectHandle = HandleToUint64(*messenger);
-    blank_object.pObjectName = NULL;
+    callback_data.objectCount = 0;
+    callback_data.pObjects = NULL;
     debug_messenger_log_msg(debug_data, VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT,
-                            VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT, &callback_data);
+                            VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT, &callback_data, messenger);
     return VK_SUCCESS;
 }
 
