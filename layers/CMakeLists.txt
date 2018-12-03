@@ -85,7 +85,6 @@ install(FILES ${LAYER_UTIL_FILES} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
 set(TARGET_NAMES
     VkLayer_core_validation
-    # VkLayer_object_tracker
     VkLayer_object_lifetimes
     VkLayer_unique_objects
     VkLayer_parameter_validation
@@ -122,7 +121,7 @@ if(WIN32)
         add_library(VkLayer_${target} SHARED ${ARGN} VkLayer_${target}.def)
         target_compile_definitions(VkLayer_${target} PUBLIC ${LAYER_COMPILE_DEFINITIONS})
         target_link_libraries(VkLayer_${target} PRIVATE VkLayer_utils)
-        add_dependencies(VkLayer_${target} VulkanVL_generate_helper_files VkLayer_utils)
+        add_dependencies(VkLayer_${target} VulkanVL_generate_helper_files VulkanVL_generate_chassis_files VkLayer_utils)
         install(TARGETS VkLayer_${target} DESTINATION ${CMAKE_INSTALL_LIBDIR})
     endmacro()
 elseif(APPLE)
@@ -130,7 +129,7 @@ elseif(APPLE)
         add_library(VkLayer_${target} SHARED ${ARGN})
         target_compile_definitions(VkLayer_${target} PUBLIC ${LAYER_COMPILE_DEFINITIONS})
         target_link_libraries(VkLayer_${target} PRIVATE VkLayer_utils)
-        add_dependencies(VkLayer_${target} VulkanVL_generate_helper_files VkLayer_utils)
+        add_dependencies(VkLayer_${target} VulkanVL_generate_helper_files VulkanVL_generate_chassis_files VkLayer_utils)
         set_target_properties(VkLayer_${target}
                               PROPERTIES LINK_FLAGS
                                          "-Wl"
@@ -143,7 +142,7 @@ else(UNIX AND NOT APPLE) # i.e.: Linux
         add_library(VkLayer_${target} SHARED ${ARGN})
         target_compile_definitions(VkLayer_${target} PUBLIC ${LAYER_COMPILE_DEFINITIONS})
         target_link_libraries(VkLayer_${target} PRIVATE VkLayer_utils)
-        add_dependencies(VkLayer_${target} VulkanVL_generate_helper_files VkLayer_utils)
+        add_dependencies(VkLayer_${target} VulkanVL_generate_helper_files VulkanVL_generate_chassis_files VkLayer_utils)
         set_target_properties(VkLayer_${target} PROPERTIES LINK_FLAGS "-Wl,-Bsymbolic,--exclude-libs,ALL")
         install(TARGETS VkLayer_${target} DESTINATION ${CMAKE_INSTALL_LIBDIR})
     endmacro()
@@ -187,12 +186,19 @@ GenerateFromVkXml(layer_chassis_generator.py chassis.h)
 GenerateFromVkXml(layer_chassis_dispatch_generator.py layer_chassis_dispatch.h)
 GenerateFromVkXml(layer_chassis_dispatch_generator.py layer_chassis_dispatch.cpp)
 
+# This target causes the chassis source files to be generated.
+add_custom_target(VulkanVL_generate_chassis_files
+                  DEPENDS chassis.cpp
+                          chassis.h
+                          layer_chassis_dispatch.h
+                          layer_chassis_dispatch.cpp)
+set_target_properties(VulkanVL_generate_chassis_files PROPERTIES FOLDER ${LAYERS_HELPER_FOLDER})
 
 if(BUILD_LAYERS)
     AddVkLayer(core_validation "" core_validation.cpp convert_to_renderpass2.cpp descriptor_sets.cpp buffer_validation.cpp shader_validation.cpp xxhash.c)
-    AddVkLayer(object_lifetimes "BUILD_OBJECT_TRACKER" object_tracker.cpp object_tracker.h object_tracker_utils.cpp chassis.cpp chassis.h layer_chassis_dispatch.cpp layer_chassis_dispatch.h)
+    AddVkLayer(object_lifetimes "BUILD_OBJECT_TRACKER" object_tracker.cpp object_tracker.h object_tracker_utils.cpp chassis.cpp layer_chassis_dispatch.cpp)
     AddVkLayer(threading "" threading.cpp thread_check.h)
-    AddVkLayer(unique_objects "LAYER_CHASSIS_CAN_WRAP_HANDLES" chassis.cpp layer_chassis_dispatch.cpp chassis.h layer_chassis_dispatch.h)
+    AddVkLayer(unique_objects "LAYER_CHASSIS_CAN_WRAP_HANDLES" chassis.cpp layer_chassis_dispatch.cpp)
     AddVkLayer(parameter_validation "" parameter_validation.cpp parameter_validation_utils.cpp parameter_validation.h vk_validation_error_messages.h)
 
     # Core validation has additional dependencies
