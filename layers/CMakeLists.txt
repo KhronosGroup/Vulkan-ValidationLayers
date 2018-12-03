@@ -177,7 +177,6 @@ endif()
 
 GenerateFromVkXml(threading_generator.py thread_check.h)
 GenerateFromVkXml(parameter_validation_generator.py parameter_validation.cpp)
-GenerateFromVkXml(unique_objects_generator.py unique_objects_wrappers.h)
 GenerateFromVkXml(dispatch_table_helper_generator.py vk_dispatch_table_helper.h)
 GenerateFromVkXml(object_tracker_generator.py object_tracker.cpp)
 GenerateFromVkXml(object_tracker_generator.py object_tracker.h)

@@ -157,29 +157,6 @@ def makeGenOpts(args):
             valid_usage_path  = args.scripts)
           ]
 
-    # Options for unique objects layer
-    genOpts['unique_objects_wrappers.h'] = [
-          UniqueObjectsOutputGenerator,
-          UniqueObjectsGeneratorOptions(
-            filename          = 'unique_objects_wrappers.h',
-            directory         = directory,
-            apiname           = 'vulkan',
-            profile           = None,
-            versions          = featuresPat,
-            emitversions      = featuresPat,
-            defaultExtensions = 'vulkan',
-            addExtensions     = addExtensionsPat,
-            removeExtensions  = removeExtensionsPat,
-            emitExtensions    = emitExtensionsPat,
-            prefixText        = prefixStrings + vkPrefixStrings,
-            protectFeature    = False,
-            apicall           = 'VKAPI_ATTR ',
-            apientry          = 'VKAPI_CALL ',
-            apientryp         = 'VKAPI_PTR *',
-            alignFuncParam    = 48,
-            expandEnumerants = False)
-        ]
-
     # Options for object_tracker code-generated validation routines
     genOpts['object_tracker.cpp'] = [
           ObjectTrackerOutputGenerator,
@@ -617,7 +594,6 @@ if __name__ == '__main__':
     # ValidationLayer Generator Modifications
     from threading_generator import  ThreadGeneratorOptions, ThreadOutputGenerator
     from parameter_validation_generator import ParameterValidationGeneratorOptions, ParameterValidationOutputGenerator
-    from unique_objects_generator import UniqueObjectsGeneratorOptions, UniqueObjectsOutputGenerator
     from object_tracker_generator import ObjectTrackerGeneratorOptions, ObjectTrackerOutputGenerator
     from dispatch_table_helper_generator import DispatchTableHelperOutputGenerator, DispatchTableHelperOutputGeneratorOptions
     from helper_file_generator import HelperFileOutputGenerator, HelperFileOutputGeneratorOptions
