@@ -3573,7 +3573,7 @@ static bool ValidateAllocateMemoryANDROID(layer_data *dev_data, const VkMemoryAl
         } else {  // Checks specific to import with a dedicated allocation requirement
             VkImageCreateInfo *ici = &(GetImageState(dev_data, mem_ded_alloc_info->image)->createInfo);
 
-            // The Android hardware buffer’s usage must include at least one of AHARDWAREBUFFER_USAGE_GPU_COLOR_OUTPUT or
+            // The Android hardware buffer's usage must include at least one of AHARDWAREBUFFER_USAGE_GPU_COLOR_OUTPUT or
             // AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE
             if (0 == (ahb_desc.usage & (AHARDWAREBUFFER_USAGE_GPU_COLOR_OUTPUT | AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE))) {
                 skip |= log_msg(
@@ -3609,7 +3609,7 @@ static bool ValidateAllocateMemoryANDROID(layer_data *dev_data, const VkMemoryAl
                                 ahb_desc.layers);
             }
 
-            // If the Android hardware buffer’s usage includes AHARDWAREBUFFER_USAGE_GPU_MIPMAP_COMPLETE, the image must
+            // If the Android hardware buffer's usage includes AHARDWAREBUFFER_USAGE_GPU_MIPMAP_COMPLETE, the image must
             // have either a full mipmap chain or exactly 1 mip level.
             //
             // NOTE! The language of this VUID contradicts the language in the spec (1.1.93), which says "The
