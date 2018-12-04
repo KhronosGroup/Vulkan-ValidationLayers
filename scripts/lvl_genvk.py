@@ -111,11 +111,34 @@ def makeGenOpts(args):
     protectFeature = protect
 
     # ValidationLayer Generators
-    # Options for threading layer
-    genOpts['thread_check.h'] = [
+    # Options for thread safety header code-generation
+    genOpts['thread_safety.h'] = [
           ThreadOutputGenerator,
           ThreadGeneratorOptions(
-            filename          = 'thread_check.h',
+            filename          = 'thread_safety.h',
+            directory         = directory,
+            apiname           = 'vulkan',
+            profile           = None,
+            versions          = featuresPat,
+            emitversions      = featuresPat,
+            defaultExtensions = 'vulkan',
+            addExtensions     = addExtensionsPat,
+            removeExtensions  = removeExtensionsPat,
+            emitExtensions    = emitExtensionsPat,
+            prefixText        = prefixStrings + vkPrefixStrings,
+            protectFeature    = False,
+            apicall           = 'VKAPI_ATTR ',
+            apientry          = 'VKAPI_CALL ',
+            apientryp         = 'VKAPI_PTR *',
+            alignFuncParam    = 48,
+            expandEnumerants = False)
+        ]
+
+    # Options for thread safety source code-generation
+    genOpts['thread_safety.cpp'] = [
+          ThreadOutputGenerator,
+          ThreadGeneratorOptions(
+            filename          = 'thread_safety.cpp',
             directory         = directory,
             apiname           = 'vulkan',
             profile           = None,
@@ -592,7 +615,7 @@ if __name__ == '__main__':
     from cgenerator import CGeneratorOptions, COutputGenerator
 
     # ValidationLayer Generator Modifications
-    from threading_generator import  ThreadGeneratorOptions, ThreadOutputGenerator
+    from thread_safety_generator import  ThreadGeneratorOptions, ThreadOutputGenerator
     from parameter_validation_generator import ParameterValidationGeneratorOptions, ParameterValidationOutputGenerator
     from object_tracker_generator import ObjectTrackerGeneratorOptions, ObjectTrackerOutputGenerator
     from dispatch_table_helper_generator import DispatchTableHelperOutputGenerator, DispatchTableHelperOutputGeneratorOptions

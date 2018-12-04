@@ -89,7 +89,7 @@ set(TARGET_NAMES
     VkLayer_unique_objects
     VkLayer_parameter_validation
     VkLayer_standard_validation
-    VkLayer_threading)
+    VkLayer_thread_safety)
 
 # Install the layer json files
 if(WIN32)
@@ -155,7 +155,7 @@ if(WIN32)
     add_definitions(-D_CRT_SECURE_NO_WARNINGS)
     # Avoid: fatal error C1128: number of sections exceeded object file format limit: compile with /bigobj
     set_source_files_properties(core_validation.cpp
-                                threading.cpp
+                                thread_safety.cpp
                                 parameter_validation_utils.cpp
                                 unique_objects.cpp
                                 chassis.cpp
@@ -175,7 +175,8 @@ if(CMAKE_C_COMPILER_ID MATCHES "Clang")
     set_source_files_properties(parameter_validation.cpp PROPERTIES COMPILE_FLAGS "-Wno-unused-const-variable")
 endif()
 
-GenerateFromVkXml(threading_generator.py thread_check.h)
+GenerateFromVkXml(thread_safety_generator.py thread_safety.h)
+GenerateFromVkXml(thread_safety_generator.py thread_safety.cpp)
 GenerateFromVkXml(parameter_validation_generator.py parameter_validation.cpp)
 GenerateFromVkXml(dispatch_table_helper_generator.py vk_dispatch_table_helper.h)
 GenerateFromVkXml(object_tracker_generator.py object_tracker.cpp)
@@ -196,7 +197,7 @@ set_target_properties(VulkanVL_generate_chassis_files PROPERTIES FOLDER ${LAYERS
 if(BUILD_LAYERS)
     AddVkLayer(core_validation "" core_validation.cpp convert_to_renderpass2.cpp descriptor_sets.cpp buffer_validation.cpp shader_validation.cpp xxhash.c)
     AddVkLayer(object_lifetimes "BUILD_OBJECT_TRACKER" object_tracker.cpp object_tracker.h object_tracker_utils.cpp chassis.cpp layer_chassis_dispatch.cpp)
-    AddVkLayer(threading "" threading.cpp thread_check.h)
+    AddVkLayer(thread_safety "BUILD_THREAD_SAFETY" thread_safety.cpp thread_safety.h chassis.cpp layer_chassis_dispatch.cpp)
     AddVkLayer(unique_objects "LAYER_CHASSIS_CAN_WRAP_HANDLES" chassis.cpp layer_chassis_dispatch.cpp)
     AddVkLayer(parameter_validation "" parameter_validation.cpp parameter_validation_utils.cpp parameter_validation.h vk_validation_error_messages.h)
 
