@@ -19972,29 +19972,31 @@ TEST_F(VkLayerTest, CreateShaderModuleCheckBadCapability) {
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    char const *vsSource =
-        "#version 450\n"
-        "\n"
-        "layout(xfb_buffer = 1) out;\n"
-        "void main(){\n"
-        "   gl_Position = vec4(1);\n"
-        "}\n";
+    const std::string spv_source = R"(
+                  OpCapability ImageRect
+                  OpEntryPoint Vertex %main "main"
+          %main = OpFunction %void None %3
+                  OpReturn
+                  OpFunctionEnd
+        )";
 
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "Capability TransformFeedback is not allowed by Vulkan");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "Capability ImageRect is not allowed by Vulkan");
 
     std::vector<unsigned int> spv;
     VkShaderModuleCreateInfo module_create_info;
     VkShaderModule shader_module;
     module_create_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
     module_create_info.pNext = NULL;
-    this->GLSLtoSPV(VK_SHADER_STAGE_VERTEX_BIT, vsSource, spv);
+    ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, spv_source.data(), spv);
     module_create_info.pCode = spv.data();
     module_create_info.codeSize = spv.size() * sizeof(unsigned int);
     module_create_info.flags = 0;
 
-    vkCreateShaderModule(m_device->handle(), &module_create_info, NULL, &shader_module);
-
+    VkResult err = vkCreateShaderModule(m_device->handle(), &module_create_info, NULL, &shader_module);
     m_errorMonitor->VerifyFound();
+    if (err == VK_SUCCESS) {
+        vkDestroyShaderModule(m_device->handle(), shader_module, NULL);
+    }
 }
 
 TEST_F(VkPositiveLayerTest, ShaderRelaxedBlockLayout) {
