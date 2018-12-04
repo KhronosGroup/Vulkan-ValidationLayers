@@ -127,7 +127,7 @@ add_dependencies(vk_layer_validation_tests
                  VkLayer_object_lifetimes-json
                  VkLayer_parameter_validation-json
                  VkLayer_standard_validation-json
-                 VkLayer_threading-json
+                 VkLayer_thread_safety-json
                  VkLayer_unique_objects-json)
 
 # Specify target_link_libraries

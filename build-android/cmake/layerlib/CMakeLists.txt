@@ -110,7 +110,10 @@ target_include_directories(VkLayer_object_tracker PRIVATE
 target_link_libraries(VkLayer_object_tracker PRIVATE log layer_utils)
 
 add_library(VkLayer_threading SHARED
-        ${SRC_DIR}/layers/threading.cpp)
+        ${COMMON_DIR}/include/thread_safety.cpp
+        ${COMMON_DIR}/include/layer_chassis_dispatch.cpp
+        ${COMMON_DIR}/include/chassis.cpp
+target_compile_definitions(VkLayer_threading PUBLIC "BUILD_THREAD_SAFETY")
 target_include_directories(VkLayer_threading PRIVATE
         ${SRC_DIR}/include
         ${SRC_DIR}/layers

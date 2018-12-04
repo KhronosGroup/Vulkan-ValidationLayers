@@ -259,7 +259,9 @@ class ValidationObject {
         // Destructor
         virtual ~ValidationObject() {};
 
-        std::mutex layer_mutex;
+        std::mutex validation_object_mutex;
+        virtual void write_lock() { validation_object_mutex.lock(); }
+        virtual void write_unlock() { validation_object_mutex.unlock(); }
 
         std::string layer_name = "CHASSIS";
 
@@ -370,7 +372,8 @@ const bool wrap_handles = false;
 #if BUILD_OBJECT_TRACKER
 #include "object_lifetime_validation.h"
 #define OBJECT_LAYER_NAME "VK_LAYER_LUNARG_object_tracker"
-#elif BUILD_THREAD_CHECKER
+#elif BUILD_THREAD_SAFETY
+#include "thread_safety_validation.h"
 #define OBJECT_LAYER_NAME "VK_LAYER_GOOGLE_threading"
 #elif BUILD_PARAMETER_VALIDATION
 #define OBJECT_LAYER_NAME "VK_LAYER_LUNARG_parameter_validation"
@@ -496,6 +499,10 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
     auto object_tracker = new ObjectLifetimes;
     local_object_dispatch.emplace_back(object_tracker);
     object_tracker->container_type = LayerObjectTypeObjectTracker;
+#elif BUILD_THREAD_SAFETY
+    auto thread_checker = new ThreadSafety;
+    local_object_dispatch.emplace_back(thread_checker);
+    thread_checker->container_type = LayerObjectTypeThreading;
 #endif
 
 
@@ -522,6 +529,8 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
         (pCreateInfo->pApplicationInfo ? pCreateInfo->pApplicationInfo->apiVersion : VK_API_VERSION_1_0), pCreateInfo);
 #if BUILD_OBJECT_TRACKER
     layer_debug_messenger_actions(framework->report_data, framework->logging_messenger, pAllocator, "lunarg_object_tracker");
+#elif BUILD_THREAD_SAFETY
+    layer_debug_messenger_actions(framework->report_data, framework->logging_messenger, pAllocator, "google_thread_checker");
 #else
     layer_debug_messenger_actions(framework->report_data, framework->logging_messenger, pAllocator, "lunarg_unique_objects");
 #endif
@@ -539,19 +548,22 @@ VKAPI_ATTR void VKAPI_CALL DestroyInstance(VkInstance instance, const VkAllocati
     dispatch_key key = get_dispatch_key(instance);
     auto layer_data = GetLayerDataPtr(key, layer_data_map);
     """ + precallvalidate_loop + """
-        std::lock_guard<std::mutex> lock(intercept->layer_mutex);
+        intercept->write_lock();
         intercept->PreCallValidateDestroyInstance(instance, pAllocator);
+        intercept->write_unlock();
     }
     """ + precallrecord_loop + """
-        std::lock_guard<std::mutex> lock(intercept->layer_mutex);
+        intercept->write_lock();
         intercept->PreCallRecordDestroyInstance(instance, pAllocator);
+        intercept->write_unlock();
     }
 
     layer_data->instance_dispatch_table.DestroyInstance(instance, pAllocator);
 
     """ + postcallrecord_loop + """
-        std::lock_guard<std::mutex> lock(intercept->layer_mutex);
+        intercept->write_lock();
         intercept->PostCallRecordDestroyInstance(instance, pAllocator);
+        intercept->write_unlock();
     }
     // Clean up logging callback, if any
     while (layer_data->logging_messenger.size() > 0) {
@@ -585,12 +597,15 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
     chain_info->u.pLayerInfo = chain_info->u.pLayerInfo->pNext;
 
     for (auto intercept : instance_interceptor->object_dispatch) {
-        std::lock_guard<std::mutex> lock(intercept->layer_mutex);
+        intercept->write_lock();
         intercept->PreCallValidateCreateDevice(gpu, pCreateInfo, pAllocator, pDevice);
+        intercept->write_unlock();
+
     }
     for (auto intercept : instance_interceptor->object_dispatch) {
-        std::lock_guard<std::mutex> lock(intercept->layer_mutex);
+        intercept->write_lock();
         intercept->PreCallRecordCreateDevice(gpu, pCreateInfo, pAllocator, pDevice);
+        intercept->write_unlock();
     }
 
     VkResult result = fpCreateDevice(gpu, pCreateInfo, pAllocator, pDevice);
@@ -620,11 +635,21 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
     object_tracker->report_data = device_interceptor->report_data;
     object_tracker->device_dispatch_table = device_interceptor->device_dispatch_table;
     device_interceptor->object_dispatch.emplace_back(object_tracker);
+#elif BUILD_THREAD_SAFETY
+    auto thread_safety = new ThreadSafety;
+    // TODO:  Initialize child objects with parent info thru constuctor taking a parent object
+    thread_safety->container_type = LayerObjectTypeThreading;
+    thread_safety->physical_device = gpu;
+    thread_safety->instance = instance_interceptor->instance;
+    thread_safety->report_data = device_interceptor->report_data;
+    thread_safety->device_dispatch_table = device_interceptor->device_dispatch_table;
+    device_interceptor->object_dispatch.emplace_back(thread_safety);
 #endif
 
     for (auto intercept : instance_interceptor->object_dispatch) {
-        std::lock_guard<std::mutex> lock(intercept->layer_mutex);
+        intercept->write_lock();
         intercept->PostCallRecordCreateDevice(gpu, pCreateInfo, pAllocator, pDevice);
+        intercept->write_unlock();
     }
 
     DeviceExtensionWhitelist(device_interceptor, pCreateInfo, *pDevice);
@@ -636,20 +661,23 @@ VKAPI_ATTR void VKAPI_CALL DestroyDevice(VkDevice device, const VkAllocationCall
     dispatch_key key = get_dispatch_key(device);
     auto layer_data = GetLayerDataPtr(key, layer_data_map);
     """ + precallvalidate_loop + """
-        std::lock_guard<std::mutex> lock(intercept->layer_mutex);
+        intercept->write_lock();
         intercept->PreCallValidateDestroyDevice(device, pAllocator);
+        intercept->write_unlock();
     }
     """ + precallrecord_loop + """
-        std::lock_guard<std::mutex> lock(intercept->layer_mutex);
+        intercept->write_lock();
         intercept->PreCallRecordDestroyDevice(device, pAllocator);
+        intercept->write_unlock();
     }
     layer_debug_utils_destroy_device(device);
 
     layer_data->device_dispatch_table.DestroyDevice(device, pAllocator);
 
     """ + postcallrecord_loop + """
-        std::lock_guard<std::mutex> lock(intercept->layer_mutex);
+        intercept->write_lock();
         intercept->PostCallRecordDestroyDevice(device, pAllocator);
+        intercept->write_unlock();
     }
 
     FreeLayerDataPtr(key, layer_data_map);
@@ -661,18 +689,21 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDebugReportCallbackEXT(VkInstance instance,
                                                             VkDebugReportCallbackEXT *pCallback) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(instance), layer_data_map);
     """ + precallvalidate_loop + """
-        std::lock_guard<std::mutex> lock(intercept->layer_mutex);
+        intercept->write_lock();
         intercept->PreCallValidateCreateDebugReportCallbackEXT(instance, pCreateInfo, pAllocator, pCallback);
+        intercept->write_unlock();
     }
     """ + precallrecord_loop + """
-        std::lock_guard<std::mutex> lock(intercept->layer_mutex);
+        intercept->write_lock();
         intercept->PreCallRecordCreateDebugReportCallbackEXT(instance, pCreateInfo, pAllocator, pCallback);
+        intercept->write_unlock();
     }
     VkResult result = DispatchCreateDebugReportCallbackEXT(layer_data, instance, pCreateInfo, pAllocator, pCallback);
     result = layer_create_report_callback(layer_data->report_data, false, pCreateInfo, pAllocator, pCallback);
     """ + postcallrecord_loop + """
-        std::lock_guard<std::mutex> lock(intercept->layer_mutex);
+        intercept->write_lock();
         intercept->PostCallRecordCreateDebugReportCallbackEXT(instance, pCreateInfo, pAllocator, pCallback);
+        intercept->write_unlock();
     }
     return result;
 }
@@ -681,18 +712,21 @@ VKAPI_ATTR void VKAPI_CALL DestroyDebugReportCallbackEXT(VkInstance instance, Vk
                                                          const VkAllocationCallbacks *pAllocator) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(instance), layer_data_map);
     """ + precallvalidate_loop + """
-        std::lock_guard<std::mutex> lock(intercept->layer_mutex);
+        intercept->write_lock();
         intercept->PreCallValidateDestroyDebugReportCallbackEXT(instance, callback, pAllocator);
+        intercept->write_unlock();
     }
     """ + precallrecord_loop + """
-        std::lock_guard<std::mutex> lock(intercept->layer_mutex);
+        intercept->write_lock();
         intercept->PreCallRecordDestroyDebugReportCallbackEXT(instance, callback, pAllocator);
+        intercept->write_unlock();
     }
     DispatchDestroyDebugReportCallbackEXT(layer_data, instance, callback, pAllocator);
     layer_destroy_report_callback(layer_data->report_data, callback, pAllocator);
     """ + postcallrecord_loop + """
-        std::lock_guard<std::mutex> lock(intercept->layer_mutex);
+        intercept->write_lock();
         intercept->PostCallRecordDestroyDebugReportCallbackEXT(instance, callback, pAllocator);
+        intercept->write_unlock();
     }
 }"""
 
@@ -977,21 +1011,23 @@ VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkNegotiateLoaderLayerInterfaceVe
 
         # Generate pre-call validation source code
         self.appendSection('command', '    %s' % self.precallvalidate_loop)
-        self.appendSection('command', '        std::lock_guard<std::mutex> lock(intercept->layer_mutex);')
+        self.appendSection('command', '        intercept->write_lock();')
         self.appendSection('command', '        skip |= intercept->PreCallValidate%s(%s);' % (api_function_name[2:], paramstext))
+        self.appendSection('command', '        intercept->write_unlock();')
         self.appendSection('command', '        if (skip) %s' % return_map[resulttype.text])
         self.appendSection('command', '    }')
 
         # Generate pre-call state recording source code
         self.appendSection('command', '    %s' % self.precallrecord_loop)
-        self.appendSection('command', '        std::lock_guard<std::mutex> lock(intercept->layer_mutex);')
+        self.appendSection('command', '        intercept->write_lock();')
         self.appendSection('command', '        intercept->PreCallRecord%s(%s);' % (api_function_name[2:], paramstext))
+        self.appendSection('command', '        intercept->write_unlock();')
         self.appendSection('command', '    }')
 
         # Insert pre-dispatch debug utils function call
         if name in self.pre_dispatch_debug_utils_functions:
             self.appendSection('command', '    {')
-            self.appendSection('command', '        std::lock_guard<std::mutex> lock(layer_data->layer_mutex);')
+            self.appendSection('command', '        std::lock_guard<std::mutex> lock(layer_data->validation_object_mutex);')
             self.appendSection('command', '        %s' % self.pre_dispatch_debug_utils_functions[name])
             self.appendSection('command', '    }')
 
@@ -1001,7 +1037,7 @@ VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkNegotiateLoaderLayerInterfaceVe
         # Insert post-dispatch debug utils function call
         if name in self.post_dispatch_debug_utils_functions:
             self.appendSection('command', '    {')
-            self.appendSection('command', '        std::lock_guard<std::mutex> lock(layer_data->layer_mutex);')
+            self.appendSection('command', '        std::lock_guard<std::mutex> lock(layer_data->validation_object_mutex);')
             self.appendSection('command', '        %s' % self.post_dispatch_debug_utils_functions[name])
             self.appendSection('command', '    }')
 
@@ -1015,8 +1051,9 @@ VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkNegotiateLoaderLayerInterfaceVe
                 self.appendSection('command', '    if (VK_SUCCESS == result) {')
 
         self.appendSection('command', '%s    %s' % (return_type_indent, self.postcallrecord_loop))
-        self.appendSection('command', '%s        std::lock_guard<std::mutex> lock(intercept->layer_mutex);' % return_type_indent)
+        self.appendSection('command', '%s        intercept->write_lock();' % return_type_indent)
         self.appendSection('command', '%s        intercept->PostCallRecord%s(%s);' % (return_type_indent,api_function_name[2:], paramstext))
+        self.appendSection('command', '%s        intercept->write_unlock();' % return_type_indent)
         self.appendSection('command', '%s    }' % return_type_indent)
         if (resulttype.text == 'VkResult'):
             self.appendSection('command', '    }')

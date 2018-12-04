@@ -115,6 +115,119 @@ class ThreadGeneratorOptions(GeneratorOptions):
 # genCmd(cmdinfo)
 class ThreadOutputGenerator(OutputGenerator):
     """Generate specified API interfaces in a specific style, such as a C header"""
+
+    inline_copyright_message = """
+// This file is ***GENERATED***.  Do Not Edit.
+// See layer_chassis_dispatch_generator.py for modifications.
+
+/* Copyright (c) 2015-2018 The Khronos Group Inc.
+ * Copyright (c) 2015-2018 Valve Corporation
+ * Copyright (c) 2015-2018 LunarG, Inc.
+ * Copyright (c) 2015-2018 Google Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * Author: Mark Lobodzinski <mark@lunarg.com>
+ */"""
+
+    inline_custom_source_preamble = """
+void ThreadSafety::PreCallRecordAllocateCommandBuffers(VkDevice device, const VkCommandBufferAllocateInfo *pAllocateInfo,
+                                                       VkCommandBuffer *pCommandBuffers) {
+    StartReadObject(device);
+    StartWriteObject(pAllocateInfo->commandPool);
+}
+
+void ThreadSafety::PostCallRecordAllocateCommandBuffers(VkDevice device, const VkCommandBufferAllocateInfo *pAllocateInfo,
+                                                        VkCommandBuffer *pCommandBuffers) {
+    FinishReadObject(device);
+    FinishWriteObject(pAllocateInfo->commandPool);
+
+    // Record mapping from command buffer to command pool
+    for (uint32_t index = 0; index < pAllocateInfo->commandBufferCount; index++) {
+        std::lock_guard<std::mutex> lock(command_pool_lock);
+        command_pool_map[pCommandBuffers[index]] = pAllocateInfo->commandPool;
+    }
+}
+
+void ThreadSafety::PreCallRecordAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo *pAllocateInfo,
+                                                       VkDescriptorSet *pDescriptorSets) {
+    StartReadObject(device);
+    StartWriteObject(pAllocateInfo->descriptorPool);
+    // Host access to pAllocateInfo::descriptorPool must be externally synchronized
+}
+
+void ThreadSafety::PostCallRecordAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo *pAllocateInfo,
+                                                        VkDescriptorSet *pDescriptorSets) {
+    FinishReadObject(device);
+    FinishWriteObject(pAllocateInfo->descriptorPool);
+    // Host access to pAllocateInfo::descriptorPool must be externally synchronized
+}
+
+void ThreadSafety::PreCallRecordFreeCommandBuffers(VkDevice device, VkCommandPool commandPool, uint32_t commandBufferCount,
+                                                   const VkCommandBuffer *pCommandBuffers) {
+    const bool lockCommandPool = false;  // pool is already directly locked
+    StartReadObject(device);
+    StartWriteObject(commandPool);
+    for (uint32_t index = 0; index < commandBufferCount; index++) {
+        StartWriteObject(pCommandBuffers[index], lockCommandPool);
+    }
+    // The driver may immediately reuse command buffers in another thread.
+    // These updates need to be done before calling down to the driver.
+    for (uint32_t index = 0; index < commandBufferCount; index++) {
+        FinishWriteObject(pCommandBuffers[index], lockCommandPool);
+        std::lock_guard<std::mutex> lock(command_pool_lock);
+        command_pool_map.erase(pCommandBuffers[index]);
+    }
+}
+
+void ThreadSafety::PostCallRecordFreeCommandBuffers(VkDevice device, VkCommandPool commandPool, uint32_t commandBufferCount,
+                                                    const VkCommandBuffer *pCommandBuffers) {
+    FinishReadObject(device);
+    FinishWriteObject(commandPool);
+}
+
+void ThreadSafety::PreCallRecordResetCommandPool(VkDevice device, VkCommandPool commandPool, VkCommandPoolResetFlags flags) {
+    StartReadObject(device);
+    StartWriteObject(commandPool);
+    // Check for any uses of non-externally sync'd command buffers (for example from vkCmdExecuteCommands)
+    c_VkCommandPoolContents.StartWrite(commandPool);
+    // Host access to commandPool must be externally synchronized
+}
+
+void ThreadSafety::PostCallRecordResetCommandPool(VkDevice device, VkCommandPool commandPool, VkCommandPoolResetFlags flags) {
+    FinishReadObject(device);
+    FinishWriteObject(commandPool);
+    c_VkCommandPoolContents.FinishWrite(commandPool);
+    // Host access to commandPool must be externally synchronized
+}
+
+void ThreadSafety::PreCallRecordDestroyCommandPool(VkDevice device, VkCommandPool commandPool, const VkAllocationCallbacks *pAllocator) {
+    StartReadObject(device);
+    StartWriteObject(commandPool);
+    // Check for any uses of non-externally sync'd command buffers (for example from vkCmdExecuteCommands)
+    c_VkCommandPoolContents.StartWrite(commandPool);
+    // Host access to commandPool must be externally synchronized
+}
+
+void ThreadSafety::PostCallRecordDestroyCommandPool(VkDevice device, VkCommandPool commandPool, const VkAllocationCallbacks *pAllocator) {
+    FinishReadObject(device);
+    FinishWriteObject(commandPool);
+    c_VkCommandPoolContents.FinishWrite(commandPool);
+}
+
+"""
+
+
     # This is an ordered list of sections in the header file.
     TYPE_SECTIONS = ['include', 'define', 'basetype', 'handle', 'enum',
                      'group', 'bitmask', 'funcpointer', 'struct']
@@ -126,7 +239,6 @@ class ThreadOutputGenerator(OutputGenerator):
         OutputGenerator.__init__(self, errFile, warnFile, diagFile)
         # Internal state - accumulators for different inner block text
         self.sections = dict([(section, []) for section in self.ALL_SECTIONS])
-        self.intercepts = []
 
     # Check if the parameter passed in is a pointer to an array
     def paramIsArray(self, param):
@@ -170,10 +282,10 @@ class ThreadOutputGenerator(OutputGenerator):
                 if externsync == 'true':
                     if self.paramIsArray(param):
                         paramdecl += 'for (uint32_t index=0;index<' + param.attrib.get('len') + ';index++) {\n'
-                        paramdecl += '    ' + functionprefix + 'WriteObject(my_data, ' + paramname.text + '[index]);\n'
+                        paramdecl += '    ' + functionprefix + 'WriteObject(' + paramname.text + '[index]);\n'
                         paramdecl += '}\n'
                     else:
-                        paramdecl += functionprefix + 'WriteObject(my_data, ' + paramname.text + ');\n'
+                        paramdecl += functionprefix + 'WriteObject(' + paramname.text + ');\n'
                 elif (param.attrib.get('externsync')):
                     if self.paramIsArray(param):
                         # Externsync can list pointers to arrays of members to synchronize
@@ -194,14 +306,14 @@ class ThreadOutputGenerator(OutputGenerator):
                                 paramdecl += '    for(uint32_t index2=0;index2<'+limit+';index2++)\n'
                                 element = element.replace('[]','[index2]')
                                 second_indent = '   '
-                            paramdecl += '    ' + second_indent + functionprefix + 'WriteObject(my_data, ' + element + ');\n'
+                            paramdecl += '    ' + second_indent + functionprefix + 'WriteObject(' + element + ');\n'
                         paramdecl += '}\n'
                     else:
                         # externsync can list members to synchronize
                         for member in externsync.split(","):
                             member = str(member).replace("::", "->")
                             member = str(member).replace(".", "->")
-                            paramdecl += '    ' + functionprefix + 'WriteObject(my_data, ' + member + ');\n'
+                            paramdecl += '    ' + functionprefix + 'WriteObject(' + member + ');\n'
                 else:
                     paramtype = param.find('type')
                     if paramtype is not None:
@@ -218,12 +330,12 @@ class ThreadOutputGenerator(OutputGenerator):
                                         dereference = '*'
                             param_len = str(param.attrib.get('len')).replace("::", "->")
                             paramdecl += 'for (uint32_t index = 0; index < ' + dereference + param_len + '; index++) {\n'
-                            paramdecl += '    ' + functionprefix + 'ReadObject(my_data, ' + paramname.text + '[index]);\n'
+                            paramdecl += '    ' + functionprefix + 'ReadObject(' + paramname.text + '[index]);\n'
                             paramdecl += '}\n'
                         elif not self.paramIsPointer(param):
                             # Pointer params are often being created.
                             # They are not being read from.
-                            paramdecl += functionprefix + 'ReadObject(my_data, ' + paramname.text + ');\n'
+                            paramdecl += functionprefix + 'ReadObject(' + paramname.text + ');\n'
         explicitexternsyncparams = cmd.findall("param[@externsync]")
         if (explicitexternsyncparams is not None):
             for param in explicitexternsyncparams:
@@ -255,35 +367,27 @@ class ThreadOutputGenerator(OutputGenerator):
             return paramdecl
     def beginFile(self, genOpts):
         OutputGenerator.beginFile(self, genOpts)
-        # C-specific
         #
-        # Multiple inclusion protection & C++ namespace.
-        if (genOpts.protectFile and self.genOpts.filename):
-            headerSym = '__' + re.sub('\.h', '_h_', os.path.basename(self.genOpts.filename))
-            write('#ifndef', headerSym, file=self.outFile)
-            write('#define', headerSym, '1', file=self.outFile)
-            self.newline()
-        write('namespace threading {', file=self.outFile)
-        self.newline()
-        #
+        # TODO: LUGMAL -- remove this and add our copyright
         # User-supplied prefix text, if any (list of strings)
         if (genOpts.prefixText):
             for s in genOpts.prefixText:
                 write(s, file=self.outFile)
-    def endFile(self):
-        # C-specific
-        # Finish C++ namespace and multiple inclusion protection
-        self.newline()
-        # record intercepted procedures
-        write('// Map of all APIs to be intercepted by this layer', file=self.outFile)
-        write('static const std::unordered_map<std::string, void*> name_to_funcptr_map = {', file=self.outFile)
-        write('\n'.join(self.intercepts), file=self.outFile)
-        write('};\n', file=self.outFile)
-        self.newline()
-        write('} // namespace threading', file=self.outFile)
-        if (self.genOpts.protectFile and self.genOpts.filename):
+
+        self.header_file = (genOpts.filename == 'thread_safety.h')
+        self.source_file = (genOpts.filename == 'thread_safety.cpp')
+
+        if not self.header_file and not self.source_file:
+            print("Error: Output Filenames have changed, update generator source.\n")
+            sys.exit(1)
+
+        if self.source_file:
+            write('#include "chassis.h"', file=self.outFile)
+            write('#include "thread_safety_validation.h"', file=self.outFile)
             self.newline()
-            write('#endif', file=self.outFile)
+            write(self.inline_custom_source_preamble, file=self.outFile)
+
+    def endFile(self):
         # Finish processing in superclass
         OutputGenerator.endFile(self)
     def beginFeature(self, interface, emit):
@@ -369,85 +473,73 @@ class ThreadOutputGenerator(OutputGenerator):
     # Command generation
     def genCmd(self, cmdinfo, name, alias):
         # Commands shadowed by interface functions and are not implemented
+        # TODO:  Many of these no longer need to be manually written routines.  Winnow list.
         special_functions = [
-            'vkGetDeviceProcAddr',
-            'vkGetInstanceProcAddr',
             'vkCreateDevice',
-            'vkDestroyDevice',
             'vkCreateInstance',
-            'vkDestroyInstance',
             'vkAllocateCommandBuffers',
             'vkFreeCommandBuffers',
             'vkResetCommandPool',
             'vkDestroyCommandPool',
-            'vkCreateDebugReportCallbackEXT',
-            'vkDestroyDebugReportCallbackEXT',
             'vkAllocateDescriptorSets',
-            'vkGetSwapchainImagesKHR',
-            'vkEnumerateInstanceLayerProperties',
-            'vkEnumerateInstanceExtensionProperties',
-            'vkEnumerateDeviceLayerProperties',
-            'vkEnumerateDeviceExtensionProperties',
-            'vkCreateDebugUtilsMessengerEXT',
-            'vkDestroyDebugUtilsMessengerEXT',
+            'vkQueuePresentKHR',
         ]
-        if name in special_functions:
-            decls = self.makeCDecls(cmdinfo.elem)
-            self.appendSection('command', '')
-            self.appendSection('command', '// declare only')
-            self.appendSection('command', decls[0])
-            self.intercepts += [ '    {"%s", (void*)%s},' % (name,name[2:]) ]
+        if name == 'vkQueuePresentKHR' or (name in special_functions and self.source_file):
             return
-        if "QueuePresentKHR" in name or (("DebugMarker" in name or "DebugUtilsObject" in name) and "EXT" in name):
+
+        if (("DebugMarker" in name or "DebugUtilsObject" in name) and "EXT" in name):
             self.appendSection('command', '// TODO - not wrapping EXT function ' + name)
             return
+
         # Determine first if this function needs to be intercepted
-        startthreadsafety = self.makeThreadUseBlock(cmdinfo.elem, 'start')
+        startthreadsafety = self.makeThreadUseBlock(cmdinfo.elem, 'Start')
         if startthreadsafety is None:
             return
-        finishthreadsafety = self.makeThreadUseBlock(cmdinfo.elem, 'finish')
-        # record that the function will be intercepted
-        if (self.featureExtraProtect is not None):
-            self.intercepts += [ '#ifdef %s' % self.featureExtraProtect ]
-        self.intercepts += [ '    {"%s", (void*)%s},' % (name,name[2:]) ]
-        if (self.featureExtraProtect is not None):
-            self.intercepts += [ '#endif' ]
+        finishthreadsafety = self.makeThreadUseBlock(cmdinfo.elem, 'Finish')
 
         OutputGenerator.genCmd(self, cmdinfo, name, alias)
-        #
-        decls = self.makeCDecls(cmdinfo.elem)
-        self.appendSection('command', '')
-        self.appendSection('command', decls[0][:-1])
-        self.appendSection('command', '{')
+
         # setup common to call wrappers
         # first parameter is always dispatchable
         dispatchable_type = cmdinfo.elem.find('param/type').text
         dispatchable_name = cmdinfo.elem.find('param/name').text
-        self.appendSection('command', '    dispatch_key key = get_dispatch_key('+dispatchable_name+');')
-        self.appendSection('command', '    layer_data *my_data = GetLayerDataPtr(key, layer_data_map);')
-        if dispatchable_type in ["VkPhysicalDevice", "VkInstance"]:
-            self.appendSection('command', '    VkLayerInstanceDispatchTable *pTable = my_data->instance_dispatch_table;')
-        else:
-            self.appendSection('command', '    VkLayerDispatchTable *pTable = my_data->device_dispatch_table;')
-        # Declare result variable, if any.
-        resulttype = cmdinfo.elem.find('proto/type')
-        if (resulttype is not None and resulttype.text == 'void'):
-          resulttype = None
-        if (resulttype is not None):
-            self.appendSection('command', '    ' + resulttype.text + ' result;')
-            assignresult = 'result = '
-        else:
-            assignresult = ''
-        self.appendSection('command', "    " + "\n    ".join(str(startthreadsafety).rstrip().split("\n")))
-        params = cmdinfo.elem.findall('param/name')
-        paramstext = ','.join([str(param.text) for param in params])
-        API = cmdinfo.elem.attrib.get('name').replace('vk','pTable->',1)
-        self.appendSection('command', '    ' + assignresult + API + '(' + paramstext + ');')
-        self.appendSection('command', "    " + "\n    ".join(str(finishthreadsafety).rstrip().split("\n")))
-        # Return result variable, if any.
-        if (resulttype is not None):
-            self.appendSection('command', '    return result;')
-        self.appendSection('command', '}')
+
+        decls = self.makeCDecls(cmdinfo.elem)
+
+        if self.source_file:
+            pre_decl = decls[0][:-1]
+            pre_decl = pre_decl.split("VKAPI_CALL ")[1]
+            pre_decl = 'void ThreadSafety::PreCallRecord' + pre_decl + ' {'
+
+            # PreCallRecord
+            self.appendSection('command', '')
+            self.appendSection('command', pre_decl)
+            self.appendSection('command', "    " + "\n    ".join(str(startthreadsafety).rstrip().split("\n")))
+            self.appendSection('command', '}')
+
+            post_decl = pre_decl.replace('PreCallRecord', 'PostCallRecord')
+
+            # PostCallRecord
+            self.appendSection('command', '')
+            self.appendSection('command', post_decl)
+            self.appendSection('command', "    " + "\n    ".join(str(finishthreadsafety).rstrip().split("\n")))
+            self.appendSection('command', '}')
+
+        if self.header_file:
+            pre_decl = decls[0][:-1]
+            pre_decl = pre_decl.split("VKAPI_CALL ")[1]
+            pre_decl = 'void PreCallRecord' + pre_decl + ';'
+
+            # PreCallRecord
+            self.appendSection('command', '')
+            self.appendSection('command', pre_decl)
+
+            post_decl = pre_decl.replace('PreCallRecord', 'PostCallRecord')
+
+            # PostCallRecord
+            self.appendSection('command', '')
+            self.appendSection('command', post_decl)
+
     #
     # override makeProtoName to drop the "vk" prefix
     def makeProtoName(self, name, tail):
