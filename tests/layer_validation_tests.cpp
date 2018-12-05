@@ -5398,7 +5398,7 @@ TEST_F(VkLayerTest, RenderPassCreateAttachmentReadOnlyButCleared) {
 
     // VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL but depth cleared
     TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, vkCreateRenderPass2KHR,
-                         "VUID-VkRenderPassCreateInfo-pAttachments-00836", "VUID-VkRenderPassCreateInfo2KHR-pAttachments-03053");
+                         "VUID-VkRenderPassCreateInfo-pAttachments-00836", "VUID-VkRenderPassCreateInfo2KHR-pAttachments-02522");
 
     if (maintenance2Supported) {
         // VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL but depth cleared
@@ -5696,24 +5696,6 @@ TEST_F(VkLayerTest, RenderPassCreateAttachmentsMisc) {
                          "VUID-VkSubpassDescription2KHR-pPreserveAttachments-03074");
 
     color[0].attachment = 1;
-
-    // Test for layout mismatch between input attachment and color attachment
-    input[0].attachment = color[0].attachment;
-    input[0].layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, vkCreateRenderPass2KHR,
-                         "VUID-VkSubpassDescription-layout-00855", "VUID-VkSubpassDescription2KHR-layout-03075");
-
-    input[0].attachment = 0;
-    input[0].layout = VK_IMAGE_LAYOUT_GENERAL;
-
-    // Test for layout mismatch between input attachment and depth attachment
-    input[0].attachment = depth.attachment;
-    input[0].layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, vkCreateRenderPass2KHR,
-                         "VUID-VkSubpassDescription-layout-00855", "VUID-VkSubpassDescription2KHR-layout-03075");
-
     input[0].attachment = 0;
     input[0].layout = VK_IMAGE_LAYOUT_GENERAL;
 
@@ -6230,8 +6212,8 @@ TEST_F(VkLayerTest, RenderPassCreateInvalidSubpassDependencies) {
         dependency = {0, 1, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
                       0, 0, VK_DEPENDENCY_VIEW_LOCAL_BIT};
 
-        TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, vkCreateRenderPass2KHR,
-                             "VUID-VkSubpassDependency-dependencyFlags-00871", "VUID-VkRenderPassCreateInfo2KHR-viewMask-03059");
+        TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, vkCreateRenderPass2KHR, nullptr,
+                             "VUID-VkRenderPassCreateInfo2KHR-viewMask-03059");
 
         // Enable multiview
         uint32_t pViewMasks[2] = {0x3u, 0x3u};
@@ -6284,7 +6266,7 @@ TEST_F(VkLayerTest, RenderPassCreateInvalidSubpassDependencies) {
                       VK_DEPENDENCY_VIEW_LOCAL_BIT};
 
         TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, vkCreateRenderPass2KHR,
-                             "VUID-VkSubpassDependency-dependencyFlags-00870",
+                             "VUID-VkSubpassDependency-dependencyFlags-02520",
                              "VUID-VkSubpassDependency2KHR-dependencyFlags-03090");
 
         // EXTERNAL subpass with VIEW_LOCAL_BIT - destination subpass
@@ -6292,7 +6274,7 @@ TEST_F(VkLayerTest, RenderPassCreateInvalidSubpassDependencies) {
                       0, VK_DEPENDENCY_VIEW_LOCAL_BIT};
 
         TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, vkCreateRenderPass2KHR,
-                             "VUID-VkSubpassDependency-dependencyFlags-00870",
+                             "VUID-VkSubpassDependency-dependencyFlags-02521",
                              "VUID-VkSubpassDependency2KHR-dependencyFlags-03091");
 
         // Multiple views but no view local bit in self-dependency

@@ -785,7 +785,7 @@ bool ObjectLifetimes::PreCallValidateGetPhysicalDeviceQueueFamilyProperties2KHR(
                                                                                 uint32_t *pQueueFamilyPropertyCount,
                                                                                 VkQueueFamilyProperties2 *pQueueFamilyProperties) {
     return ValidateObject(physicalDevice, physicalDevice, kVulkanObjectTypePhysicalDevice, false,
-                          "VUID-vkGetPhysicalDeviceQueueFamilyProperties2KHR-physicalDevice-parameter", kVUIDUndefined);
+                          "VUID-vkGetPhysicalDeviceQueueFamilyProperties2-physicalDevice-parameter", kVUIDUndefined);
 }
 
 void ObjectLifetimes::PostCallRecordGetPhysicalDeviceQueueFamilyProperties2(VkPhysicalDevice physicalDevice,

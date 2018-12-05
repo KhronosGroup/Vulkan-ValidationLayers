@@ -17,6 +17,7 @@
  *
  * Author: Mark Lobodzinski <mark@lunarg.com>
  * Author: Dave Houlton <daveh@lunarg.com>
+ * Shannon McPherson <shannon@lunarg.com>
  */
 
 // Allow use of STL min and max functions in Windows
@@ -3383,12 +3384,18 @@ bool ValidateLayoutVsAttachmentDescription(const debug_report_data *report_data,
 
     // Verify that initial loadOp on READ_ONLY attachments is not CLEAR
     if (attachment_description.loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR) {
-        if ((first_layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL) ||
-            (first_layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)) {
-            vuid =
-                use_rp2 ? "VUID-VkRenderPassCreateInfo2KHR-pAttachments-03053" : "VUID-VkRenderPassCreateInfo-pAttachments-00836";
+        if (use_rp2 && ((first_layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL) ||
+                        (first_layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) ||
+                        (first_layout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL))) {
             skip |=
-                log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, vuid,
+                log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                        "VUID-VkRenderPassCreateInfo2KHR-pAttachments-02522",
+                        "Cannot clear attachment %d with invalid first layout %s.", attachment, string_VkImageLayout(first_layout));
+        } else if (!use_rp2 && ((first_layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL) ||
+                                (first_layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL))) {
+            skip |=
+                log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                        "VUID-VkRenderPassCreateInfo-pAttachments-00836",
                         "Cannot clear attachment %d with invalid first layout %s.", attachment, string_VkImageLayout(first_layout));
         }
     }

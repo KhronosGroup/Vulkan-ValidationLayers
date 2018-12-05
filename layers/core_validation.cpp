@@ -32,6 +32,7 @@
  * Author: Mike Weiblen <mikew@lunarg.com>
  * Author: Tony Barbour <tony@LunarG.com>
  * Author: John Zulauf <jzulauf@lunarg.com>
+ * Author: Shannon McPherson <shannon@lunarg.com>
  */
 
 // Allow use of STL min and max functions in Windows
@@ -10567,23 +10568,6 @@ static bool ValidateDependencies(const layer_data *dev_data, FRAMEBUFFER_STATE c
             }
         }
     }
-    for (uint32_t i = 0; i < overlapping_attachments.size(); ++i) {
-        uint32_t attachment = i;
-        for (auto other_attachment : overlapping_attachments[i]) {
-            if (!(pCreateInfo->pAttachments[attachment].flags & VK_ATTACHMENT_DESCRIPTION_MAY_ALIAS_BIT)) {
-                skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_FRAMEBUFFER_EXT,
-                                HandleToUint64(framebuffer->framebuffer), "VUID-VkRenderPassCreateInfo-attachment-00833",
-                                "Attachment %d aliases attachment %d but doesn't set VK_ATTACHMENT_DESCRIPTION_MAY_ALIAS_BIT.",
-                                attachment, other_attachment);
-            }
-            if (!(pCreateInfo->pAttachments[other_attachment].flags & VK_ATTACHMENT_DESCRIPTION_MAY_ALIAS_BIT)) {
-                skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_FRAMEBUFFER_EXT,
-                                HandleToUint64(framebuffer->framebuffer), "VUID-VkRenderPassCreateInfo-attachment-00833",
-                                "Attachment %d aliases attachment %d but doesn't set VK_ATTACHMENT_DESCRIPTION_MAY_ALIAS_BIT.",
-                                other_attachment, attachment);
-            }
-        }
-    }
     // Find for each attachment the subpasses that use them.
     unordered_set<uint32_t> attachmentIndices;
     for (uint32_t i = 0; i < pCreateInfo->subpassCount; ++i) {
@@ -10723,10 +10707,11 @@ static bool CreatePassDAG(const layer_data *dev_data, RenderPassCreateVersion rp
         }
         // The first subpass here serves as a good proxy for "is multiview enabled" - since all view masks need to be non-zero if
         // any are, which enables multiview.
-        else if (dependency.dependencyFlags & VK_DEPENDENCY_VIEW_LOCAL_BIT && pCreateInfo->pSubpasses[0].viewMask == 0) {
-            vuid = use_rp2 ? "VUID-VkRenderPassCreateInfo2KHR-viewMask-03059" : "VUID-VkSubpassDependency-dependencyFlags-00871";
+        else if (use_rp2 && (dependency.dependencyFlags & VK_DEPENDENCY_VIEW_LOCAL_BIT) &&
+                 (pCreateInfo->pSubpasses[0].viewMask == 0)) {
             skip |= log_msg(
-                dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, vuid,
+                dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                "VUID-VkRenderPassCreateInfo2KHR-viewMask-03059",
                 "Dependency %u specifies the VK_DEPENDENCY_VIEW_LOCAL_BIT, but multiview is not enabled for this render pass.", i);
         } else if (use_rp2 && !(dependency.dependencyFlags & VK_DEPENDENCY_VIEW_LOCAL_BIT) && dependency.viewOffset != 0) {
             skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
@@ -10739,7 +10724,11 @@ static bool CreatePassDAG(const layer_data *dev_data, RenderPassCreateVersion rp
                 skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                                 vuid, "The src and dst subpasses in dependency %u are both external.", i);
             } else if (dependency.dependencyFlags & VK_DEPENDENCY_VIEW_LOCAL_BIT) {
-                vuid = "VUID-VkSubpassDependency-dependencyFlags-00870";
+                if (dependency.srcSubpass == VK_SUBPASS_EXTERNAL) {
+                    vuid = "VUID-VkSubpassDependency-dependencyFlags-02520";
+                } else {  // dependency.dstSubpass == VK_SUBPASS_EXTERNAL
+                    vuid = "VUID-VkSubpassDependency-dependencyFlags-02521";
+                }
                 if (use_rp2) {
                     // Create render pass 2 distinguishes between source and destination external dependencies.
                     if (dependency.srcSubpass == VK_SUBPASS_EXTERNAL) {
@@ -10880,13 +10869,6 @@ static bool AddAttachmentUse(const layer_data *dev_data, RenderPassCreateVersion
         skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, vuid,
                         "%s: subpass %u uses attachment %u as both %s and %s attachment.", function_name, subpass, attachment,
                         StringAttachmentType(uses), StringAttachmentType(new_use));
-    } else if (uses && attachment_layouts[attachment] != new_layout) {
-        vuid = use_rp2 ? "VUID-VkSubpassDescription2KHR-layout-03075" : "VUID-VkSubpassDescription-layout-00855";
-        skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, vuid,
-                        "%s: subpass %u uses attachment %u with conflicting layouts: input uses %s, but %s "
-                        "attachment uses %s.",
-                        function_name, subpass, attachment, string_VkImageLayout(attachment_layouts[attachment]),
-                        StringAttachmentType(new_use), string_VkImageLayout(new_layout));
     } else {
         attachment_layouts[attachment] = new_layout;
         uses |= new_use;

@@ -18,6 +18,7 @@
 #
 # Author: Tobin Ehlis <tobine@google.com>
 # Author: Dave Houlton <daveh@lunarg.com>
+# Author: Shannon McPherson <shannon@lunarg.com>
 
 import argparse
 import os
@@ -179,6 +180,10 @@ class ValidationJSON:
         self.regex_dict = {}
         self.regex_dict[re.compile('<.*?>|&(amp;)+lt;|&(amp;)+gt;')] = ""
         self.regex_dict[re.compile(r'\\\(codeSize \\over 4\\\)')] = "(codeSize/4)"
+        self.regex_dict[re.compile(r'\\\(\\lceil{\\frac{height}{maxFragmentDensityTexelSize_{height}}}\\rceil\\\)')] = "the ceiling of height/maxFragmentDensityTexelSize.height"
+        self.regex_dict[re.compile(r'\\\(\\lceil{\\frac{width}{maxFragmentDensityTexelSize_{width}}}\\rceil\\\)')] = "the ceiling of width/maxFragmentDensityTexelSize.width"
+        self.regex_dict[re.compile(r'\\\(\\lceil{\\frac{maxFramebufferHeight}{minFragmentDensityTexelSize_{height}}}\\rceil\\\)')] = "the ceiling of maxFramebufferHeight/minFragmentDensityTexelSize.height"
+        self.regex_dict[re.compile(r'\\\(\\lceil{\\frac{maxFramebufferWidth}{minFragmentDensityTexelSize_{width}}}\\rceil\\\)')] = "the ceiling of maxFramebufferWidth/minFragmentDensityTexelSize.width"
         self.regex_dict[re.compile(r'\\\(\\lceil\{\\mathit\{rasterizationSamples} \\over 32}\\rceil\\\)')] = "(rasterizationSamples/32)"
         self.regex_dict[re.compile(r'\\\(\\textrm\{codeSize} \\over 4\\\)')] = "(codeSize/4)"
         # Some fancy punctuation chars that break the Android build...
