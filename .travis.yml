@@ -1,7 +1,7 @@
 # Build Configuration for Travis CI
 # https://travis-ci.org
 
-dist: trusty
+dist: xenial
 sudo: required
 language: cpp
 
@@ -46,7 +46,8 @@ before_install:
       # Install the appropriate Linux packages.
       sudo apt-get -qq update
       sudo apt-get -y install libxkbcommon-dev libwayland-dev libmirclient-dev libxrandr-dev \
-                              libx11-xcb-dev libxcb-keysyms1 libxcb-keysyms1-dev libxcb-ewmh-dev
+                              libx11-xcb-dev libxcb-keysyms1 libxcb-keysyms1-dev libxcb-ewmh-dev \
+                              libxcb-randr0-dev
     fi
   - |
     if [[ "$VULKAN_BUILD_TARGET" == "ANDROID" ]]; then
