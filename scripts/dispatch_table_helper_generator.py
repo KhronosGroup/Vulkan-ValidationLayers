@@ -174,7 +174,7 @@ class DispatchTableHelperOutputGenerator(OutputGenerator):
             self.device_dispatch_list.append((name, self.featureExtraProtect))
             extension = "VK_VERSION" not in self.featureName
             promoted = not extension and "VK_VERSION_1_0" != self.featureName
-            if promoted or (extension and self.extension_type == 'device'):
+            if promoted or extension:
                 self.device_stub_list.append([name, self.featureName])
                 if extension:
                     self.device_extension_list.append([name, self.featureName])
