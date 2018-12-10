@@ -1434,6 +1434,8 @@ static bool ValidateShaderCapabilities(layer_data *dev_data, shader_module const
             : IsEnabled([=](const DeviceFeatures &features) { return features.transform_feedback_features.*ptr; }) {}
         FeaturePointer(VkBool32 VkPhysicalDeviceFloat16Int8FeaturesKHR::*ptr)
             : IsEnabled([=](const DeviceFeatures &features) { return features.float16_int8.*ptr; }) {}
+        FeaturePointer(VkBool32 VkPhysicalDeviceScalarBlockLayoutFeaturesEXT::*ptr)
+            : IsEnabled([=](const DeviceFeatures &features) { return features.scalar_block_layout_features.*ptr; }) {}
     };
 
     struct CapabilityInfo {
@@ -2294,6 +2296,10 @@ bool PreCallValidateCreateShaderModule(layer_data *dev_data, VkShaderModuleCreat
         spv_validator_options options = spvValidatorOptionsCreate();
         if (GetDeviceExtensions(dev_data)->vk_khr_relaxed_block_layout) {
             spvValidatorOptionsSetRelaxBlockLayout(options, true);
+        }
+        if (GetDeviceExtensions(dev_data)->vk_ext_scalar_block_layout &&
+            GetEnabledFeatures(dev_data)->scalar_block_layout_features.scalarBlockLayout == VK_TRUE) {
+            spvValidatorOptionsSetScalarBlockLayout(options, true);
         }
         spv_valid = spvValidateWithOptions(ctx, options, &binary, &diag);
         if (spv_valid != SPV_SUCCESS) {
