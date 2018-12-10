@@ -19984,6 +19984,86 @@ TEST_F(VkPositiveLayerTest, ShaderRelaxedBlockLayout) {
     }
 }
 
+TEST_F(VkPositiveLayerTest, ShaderScalarBlockLayout) {
+    // This is a positive test, no errors expected
+    // Verifies the ability to scalar block layout rules with a shader that requires them to be relaxed
+    TEST_DESCRIPTION("Create a shader that requires scalar block layout.");
+    // Enable req'd extensions
+    if (!InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        printf("%s Extension %s not supported, skipping this pass. \n", kSkipPrefix,
+               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
+    m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+
+    // Check for the Scalar Block Layout extension and turn it on if it's available
+    if (!DeviceExtensionSupported(gpu(), nullptr, VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME)) {
+        printf("%s Extension %s not supported, skipping this pass. \n", kSkipPrefix, VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME);
+        return;
+    }
+    m_device_extension_names.push_back(VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME);
+
+    PFN_vkGetPhysicalDeviceFeatures2 vkGetPhysicalDeviceFeatures2 =
+        (PFN_vkGetPhysicalDeviceFeatures2)vkGetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+
+    auto scalar_block_features = lvl_init_struct<VkPhysicalDeviceScalarBlockLayoutFeaturesEXT>(NULL);
+    scalar_block_features.scalarBlockLayout = VK_TRUE;
+    auto query_features2 = lvl_init_struct<VkPhysicalDeviceFeatures2>(&scalar_block_features);
+    vkGetPhysicalDeviceFeatures2(gpu(), &query_features2);
+
+    auto set_features2 = lvl_init_struct<VkPhysicalDeviceFeatures2>(&scalar_block_features);
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &set_features2));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    // Vertex shader requiring scalar layout.
+    // Without scalar layout, we would expect a message like:
+    // "Structure id 2 decorated as Block for variable in Uniform storage class
+    // must follow standard uniform buffer layout rules: member 1 at offset 4 is not aligned to 16"
+
+    const std::string spv_source = R"(
+                  OpCapability Shader
+                  OpMemoryModel Logical GLSL450
+                  OpEntryPoint Vertex %main "main"
+                  OpSource GLSL 450
+                  OpMemberDecorate %S 0 Offset 0
+                  OpMemberDecorate %S 1 Offset 4
+                  OpMemberDecorate %S 2 Offset 8
+                  OpDecorate %S Block
+                  OpDecorate %B DescriptorSet 0
+                  OpDecorate %B Binding 0
+          %void = OpTypeVoid
+             %3 = OpTypeFunction %void
+         %float = OpTypeFloat 32
+       %v3float = OpTypeVector %float 3
+             %S = OpTypeStruct %float %float %v3float
+%_ptr_Uniform_S = OpTypePointer Uniform %S
+             %B = OpVariable %_ptr_Uniform_S Uniform
+          %main = OpFunction %void None %3
+             %5 = OpLabel
+                  OpReturn
+                  OpFunctionEnd
+        )";
+
+    std::vector<unsigned int> spv;
+    VkShaderModuleCreateInfo module_create_info;
+    VkShaderModule shader_module;
+    module_create_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+    module_create_info.pNext = NULL;
+    ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, spv_source.data(), spv);
+    module_create_info.pCode = spv.data();
+    module_create_info.codeSize = spv.size() * sizeof(unsigned int);
+    module_create_info.flags = 0;
+
+    m_errorMonitor->ExpectSuccess();
+    VkResult err = vkCreateShaderModule(m_device->handle(), &module_create_info, NULL, &shader_module);
+    m_errorMonitor->VerifyNotFound();
+    if (err == VK_SUCCESS) {
+        vkDestroyShaderModule(m_device->handle(), shader_module, NULL);
+    }
+}
+
 TEST_F(VkPositiveLayerTest, SpirvGroupDecorations) {
     TEST_DESCRIPTION("Test shader validation support for group decorations.");
     ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
