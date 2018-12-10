@@ -1130,6 +1130,7 @@ struct DeviceFeatures {
     VkPhysicalDeviceInlineUniformBlockFeaturesEXT inline_uniform_block;
     VkPhysicalDeviceTransformFeedbackFeaturesEXT transform_feedback_features;
     VkPhysicalDeviceFloat16Int8FeaturesKHR float16_int8;
+    VkPhysicalDeviceScalarBlockLayoutFeaturesEXT scalar_block_layout_features;
 };
 
 enum RenderPassCreateVersion { RENDER_PASS_VERSION_1 = 0, RENDER_PASS_VERSION_2 = 1 };
