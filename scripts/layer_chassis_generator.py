@@ -221,6 +221,8 @@ class ValidationObject {
         // Map of wrapped swapchain handles to arrays of wrapped swapchain image IDs
         // Each swapchain has an immutable list of wrapped swapchain image IDs -- always return these IDs if they exist
         std::unordered_map<VkSwapchainKHR, std::vector<VkImage>> swapchain_wrapped_image_handle_map;
+        // Map of wrapped descriptor pools to set of wrapped descriptor sets allocated from each pool
+        std::unordered_map<VkDescriptorPool, std::unordered_set<VkDescriptorSet>> pool_descriptor_sets_map;
 
 
         // Unwrap a handle.  Must hold lock.
