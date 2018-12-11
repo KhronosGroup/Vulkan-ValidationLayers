@@ -140,6 +140,11 @@ class ThreadOutputGenerator(OutputGenerator):
  * Author: Mark Lobodzinski <mark@lunarg.com>
  */"""
 
+ # Note that the inline_custom_header_preamble template below contains three embedded template expansion identifiers.
+ # These get replaced with generated code sections, and are labeled:
+ #  o COUNTER_CLASS_DEFINITIONS_TEMPLATE
+ #  o COUNTER_CLASS_INSTANCES_TEMPLATE
+ #  o COUNTER_CLASS_BODIES_TEMPLATE
     inline_custom_header_preamble = """
 #pragma once
 
@@ -365,38 +370,7 @@ public:
 
     // Special entry to allow tracking of command pool Reset and Destroy
     counter<VkCommandPool> c_VkCommandPoolContents;
-    counter<VkBuffer> c_VkBuffer;
-    counter<VkBufferView> c_VkBufferView;
-    counter<VkCommandPool> c_VkCommandPool;
-    counter<VkDescriptorPool> c_VkDescriptorPool;
-    counter<VkDescriptorSet> c_VkDescriptorSet;
-    counter<VkDescriptorSetLayout> c_VkDescriptorSetLayout;
-    counter<VkDeviceMemory> c_VkDeviceMemory;
-    counter<VkEvent> c_VkEvent;
-    counter<VkFence> c_VkFence;
-    counter<VkFramebuffer> c_VkFramebuffer;
-    counter<VkImage> c_VkImage;
-    counter<VkImageView> c_VkImageView;
-    counter<VkPipeline> c_VkPipeline;
-    counter<VkPipelineCache> c_VkPipelineCache;
-    counter<VkPipelineLayout> c_VkPipelineLayout;
-    counter<VkQueryPool> c_VkQueryPool;
-    counter<VkRenderPass> c_VkRenderPass;
-    counter<VkSampler> c_VkSampler;
-    counter<VkSemaphore> c_VkSemaphore;
-    counter<VkShaderModule> c_VkShaderModule;
-    counter<VkDebugReportCallbackEXT> c_VkDebugReportCallbackEXT;
-    counter<VkObjectTableNVX> c_VkObjectTableNVX;
-    counter<VkIndirectCommandsLayoutNVX> c_VkIndirectCommandsLayoutNVX;
-    counter<VkDisplayKHR> c_VkDisplayKHR;
-    counter<VkDisplayModeKHR> c_VkDisplayModeKHR;
-    counter<VkSurfaceKHR> c_VkSurfaceKHR;
-    counter<VkSwapchainKHR> c_VkSwapchainKHR;
-    counter<VkDescriptorUpdateTemplateKHR> c_VkDescriptorUpdateTemplateKHR;
-    counter<VkValidationCacheEXT> c_VkValidationCacheEXT;
-    counter<VkSamplerYcbcrConversionKHR> c_VkSamplerYcbcrConversionKHR;
-    counter<VkDebugUtilsMessengerEXT> c_VkDebugUtilsMessengerEXT;
-    counter<VkAccelerationStructureNV> c_VkAccelerationStructureNV;
+COUNTER_CLASS_DEFINITIONS_TEMPLATE
 
 #else   // DISTINCT_NONDISPATCHABLE_HANDLES
     // Special entry to allow tracking of command pool Reset and Destroy
@@ -413,40 +387,8 @@ public:
           c_VkCommandPoolContents("VkCommandPool", VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_POOL_EXT, &report_data),
 
 #ifdef DISTINCT_NONDISPATCHABLE_HANDLES
-          c_VkBuffer("VkBuffer", VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT, &report_data),
-          c_VkBufferView("VkBufferView", VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_VIEW_EXT, &report_data),
-          c_VkCommandPool("VkCommandPool", VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_POOL_EXT, &report_data),
-          c_VkDescriptorPool("VkDescriptorPool", VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_POOL_EXT, &report_data),
-          c_VkDescriptorSet("VkDescriptorSet", VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_EXT, &report_data),
-          c_VkDescriptorSetLayout("VkDescriptorSetLayout", VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT_EXT, &report_data),
-          c_VkDeviceMemory("VkDeviceMemory", VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_MEMORY_EXT, &report_data),
-          c_VkEvent("VkEvent", VK_DEBUG_REPORT_OBJECT_TYPE_EVENT_EXT, &report_data),
-          c_VkFence("VkFence", VK_DEBUG_REPORT_OBJECT_TYPE_FENCE_EXT, &report_data),
-          c_VkFramebuffer("VkFramebuffer", VK_DEBUG_REPORT_OBJECT_TYPE_FRAMEBUFFER_EXT, &report_data),
-          c_VkImage("VkImage", VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, &report_data),
-          c_VkImageView("VkImageView", VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_VIEW_EXT, &report_data),
-          c_VkPipeline("VkPipeline", VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT, &report_data),
-          c_VkPipelineCache("VkPipelineCache", VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_CACHE_EXT, &report_data),
-          c_VkPipelineLayout("VkPipelineLayout", VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_LAYOUT_EXT, &report_data),
-          c_VkQueryPool("VkQueryPool", VK_DEBUG_REPORT_OBJECT_TYPE_QUERY_POOL_EXT, &report_data),
-          c_VkRenderPass("VkRenderPass", VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT, &report_data),
-          c_VkSampler("VkSampler", VK_DEBUG_REPORT_OBJECT_TYPE_SAMPLER_EXT, &report_data),
-          c_VkSemaphore("VkSemaphore", VK_DEBUG_REPORT_OBJECT_TYPE_SEMAPHORE_EXT, &report_data),
-          c_VkShaderModule("VkShaderModule", VK_DEBUG_REPORT_OBJECT_TYPE_SHADER_MODULE_EXT, &report_data),
-          c_VkDebugReportCallbackEXT("VkDebugReportCallbackEXT", VK_DEBUG_REPORT_OBJECT_TYPE_DEBUG_REPORT_EXT, &report_data),
-          c_VkObjectTableNVX("VkObjectTableNVX", VK_DEBUG_REPORT_OBJECT_TYPE_OBJECT_TABLE_NVX_EXT, &report_data),
-          c_VkIndirectCommandsLayoutNVX("VkIndirectCommandsLayoutNVX",
-                                        VK_DEBUG_REPORT_OBJECT_TYPE_INDIRECT_COMMANDS_LAYOUT_NVX_EXT, &report_data),
-          c_VkDisplayKHR("VkDisplayKHR", VK_DEBUG_REPORT_OBJECT_TYPE_DISPLAY_KHR_EXT, &report_data),
-          c_VkDisplayModeKHR("VkDisplayModeKHR", VK_DEBUG_REPORT_OBJECT_TYPE_DISPLAY_MODE_KHR_EXT, &report_data),
-          c_VkSurfaceKHR("VkSurfaceKHR", VK_DEBUG_REPORT_OBJECT_TYPE_SURFACE_KHR_EXT, &report_data),
-          c_VkSwapchainKHR("VkSwapchainKHR", VK_DEBUG_REPORT_OBJECT_TYPE_SWAPCHAIN_KHR_EXT, &report_data),
-          c_VkDescriptorUpdateTemplateKHR("VkDescriptorUpdateTemplateKHR",
-                                          VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_UPDATE_TEMPLATE_KHR_EXT, &report_data),
-          c_VkSamplerYcbcrConversionKHR("VkSamplerYcbcrConversionKHR",
-                                        VK_DEBUG_REPORT_OBJECT_TYPE_SAMPLER_YCBCR_CONVERSION_KHR_EXT, &report_data),
-          c_VkDebugUtilsMessengerEXT("VkDebugUtilsMessengerEXT", VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, &report_data),
-          c_VkAccelerationStructureNV("VkAccelerationStructureNV", VK_DEBUG_REPORT_OBJECT_TYPE_ACCELERATION_STRUCTURE_NV_EXT, &report_data)
+COUNTER_CLASS_INSTANCES_TEMPLATE
+
 
 #else   // DISTINCT_NONDISPATCHABLE_HANDLES
           c_uint64_t("NON_DISPATCHABLE_HANDLE", VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, &report_data)
@@ -471,39 +413,7 @@ WRAPPER(VkDevice)
 WRAPPER(VkInstance)
 WRAPPER(VkQueue)
 #ifdef DISTINCT_NONDISPATCHABLE_HANDLES
-
-WRAPPER(VkBuffer)
-WRAPPER(VkBufferView)
-WRAPPER(VkCommandPool)
-WRAPPER(VkDescriptorPool)
-WRAPPER(VkDescriptorSet)
-WRAPPER(VkDescriptorSetLayout)
-WRAPPER(VkDeviceMemory)
-WRAPPER(VkEvent)
-WRAPPER(VkFence)
-WRAPPER(VkFramebuffer)
-WRAPPER(VkImage)
-WRAPPER(VkImageView)
-WRAPPER(VkPipeline)
-WRAPPER(VkPipelineCache)
-WRAPPER(VkPipelineLayout)
-WRAPPER(VkQueryPool)
-WRAPPER(VkRenderPass)
-WRAPPER(VkSampler)
-WRAPPER(VkSemaphore)
-WRAPPER(VkShaderModule)
-WRAPPER(VkDebugReportCallbackEXT)
-WRAPPER(VkObjectTableNVX)
-WRAPPER(VkIndirectCommandsLayoutNVX)
-WRAPPER(VkDisplayKHR)
-WRAPPER(VkDisplayModeKHR)
-WRAPPER(VkSurfaceKHR)
-WRAPPER(VkSwapchainKHR)
-WRAPPER(VkDescriptorUpdateTemplateKHR)
-WRAPPER(VkValidationCacheEXT)
-WRAPPER(VkSamplerYcbcrConversionKHR)
-WRAPPER(VkDebugUtilsMessengerEXT)
-WRAPPER(VkAccelerationStructureNV)
+COUNTER_CLASS_BODIES_TEMPLATE
 
 #else   // DISTINCT_NONDISPATCHABLE_HANDLES
 WRAPPER(uint64_t)
@@ -544,7 +454,7 @@ WRAPPER(uint64_t)
         VkCommandPool pool = command_pool_map[object];
         lock.unlock();
         c_VkCommandPoolContents.FinishRead(pool);
-    }"""
+    } """
 
 
     inline_custom_source_preamble = """
@@ -636,9 +546,7 @@ void ThreadSafety::PostCallRecordDestroyCommandPool(VkDevice device, VkCommandPo
 
 
     # This is an ordered list of sections in the header file.
-    TYPE_SECTIONS = ['include', 'define', 'basetype', 'handle', 'enum',
-                     'group', 'bitmask', 'funcpointer', 'struct']
-    ALL_SECTIONS = TYPE_SECTIONS + ['command']
+    ALL_SECTIONS = ['command']
     def __init__(self,
                  errFile = sys.stderr,
                  warnFile = sys.stderr,
@@ -646,6 +554,44 @@ void ThreadSafety::PostCallRecordDestroyCommandPool(VkDevice device, VkCommandPo
         OutputGenerator.__init__(self, errFile, warnFile, diagFile)
         # Internal state - accumulators for different inner block text
         self.sections = dict([(section, []) for section in self.ALL_SECTIONS])
+        self.non_dispatchable_types = set()
+        self.object_to_debug_report_type = {
+            'VkInstance' : 'VK_DEBUG_REPORT_OBJECT_TYPE_INSTANCE_EXT',
+            'VkPhysicalDevice' : 'VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT',
+            'VkDevice' : 'VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT',
+            'VkQueue' : 'VK_DEBUG_REPORT_OBJECT_TYPE_QUEUE_EXT',
+            'VkSemaphore' : 'VK_DEBUG_REPORT_OBJECT_TYPE_SEMAPHORE_EXT',
+            'VkCommandBuffer' : 'VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT',
+            'VkFence' : 'VK_DEBUG_REPORT_OBJECT_TYPE_FENCE_EXT',
+            'VkDeviceMemory' : 'VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_MEMORY_EXT',
+            'VkBuffer' : 'VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT',
+            'VkImage' : 'VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT',
+            'VkEvent' : 'VK_DEBUG_REPORT_OBJECT_TYPE_EVENT_EXT',
+            'VkQueryPool' : 'VK_DEBUG_REPORT_OBJECT_TYPE_QUERY_POOL_EXT',
+            'VkBufferView' : 'VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_VIEW_EXT',
+            'VkImageView' : 'VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_VIEW_EXT',
+            'VkShaderModule' : 'VK_DEBUG_REPORT_OBJECT_TYPE_SHADER_MODULE_EXT',
+            'VkPipelineCache' : 'VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_CACHE_EXT',
+            'VkPipelineLayout' : 'VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_LAYOUT_EXT',
+            'VkRenderPass' : 'VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT',
+            'VkPipeline' : 'VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT',
+            'VkDescriptorSetLayout' : 'VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT_EXT',
+            'VkSampler' : 'VK_DEBUG_REPORT_OBJECT_TYPE_SAMPLER_EXT',
+            'VkDescriptorPool' : 'VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_POOL_EXT',
+            'VkDescriptorSet' : 'VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_EXT',
+            'VkFramebuffer' : 'VK_DEBUG_REPORT_OBJECT_TYPE_FRAMEBUFFER_EXT',
+            'VkCommandPool' : 'VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_POOL_EXT',
+            'VkSurfaceKHR' : 'VK_DEBUG_REPORT_OBJECT_TYPE_SURFACE_KHR_EXT',
+            'VkSwapchainKHR' : 'VK_DEBUG_REPORT_OBJECT_TYPE_SWAPCHAIN_KHR_EXT',
+            'VkDisplayKHR' : 'VK_DEBUG_REPORT_OBJECT_TYPE_DISPLAY_KHR_EXT',
+            'VkDisplayModeKHR' : 'VK_DEBUG_REPORT_OBJECT_TYPE_DISPLAY_MODE_KHR_EXT',
+            'VkObjectTableNVX' : 'VK_DEBUG_REPORT_OBJECT_TYPE_OBJECT_TABLE_NVX_EXT',
+            'VkIndirectCommandsLayoutNVX' : 'VK_DEBUG_REPORT_OBJECT_TYPE_INDIRECT_COMMANDS_LAYOUT_NVX_EXT',
+            'VkSamplerYcbcrConversion' : 'VK_DEBUG_REPORT_OBJECT_TYPE_SAMPLER_YCBCR_CONVERSION_EXT',
+            'VkDescriptorUpdateTemplate' : 'VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_UPDATE_TEMPLATE_EXT',
+            'VkAccelerationStructureNV' : 'VK_DEBUG_REPORT_OBJECT_TYPE_ACCELERATION_STRUCTURE_NV_EXT',
+            'VkDebugReportCallbackEXT' : 'VK_DEBUG_REPORT_OBJECT_TYPE_DEBUG_REPORT_EXT',
+            'VkValidationCacheEXT' : 'VK_DEBUG_REPORT_OBJECT_TYPE_VALIDATION_CACHE_EXT' }
 
     # Check if the parameter passed in is a pointer to an array
     def paramIsArray(self, param):
@@ -791,11 +737,29 @@ void ThreadSafety::PostCallRecordDestroyCommandPool(VkDevice device, VkCommandPo
             write('#include "thread_safety.h"', file=self.outFile)
             self.newline()
             write(self.inline_custom_source_preamble, file=self.outFile)
-        else:
-            write(self.inline_custom_header_preamble, file=self.outFile)
 
 
     def endFile(self):
+
+        # Create class definitions
+        counter_class_defs = ''
+        counter_class_instances = ''
+        counter_class_bodies = ''
+
+        for obj in self.non_dispatchable_types:
+            counter_class_defs += '    counter<%s> c_%s;\n' % (obj, obj)
+            if obj in self.object_to_debug_report_type:
+                obj_type = self.object_to_debug_report_type[obj]
+            else:
+                obj_type = 'VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT'
+            counter_class_instances += '          c_%s("%s", %s, &report_data),\n' % (obj, obj, obj_type)
+            counter_class_bodies += 'WRAPPER(%s)\n' % obj
+        if self.header_file:
+            class_def = self.inline_custom_header_preamble.replace('COUNTER_CLASS_DEFINITIONS_TEMPLATE', counter_class_defs)
+            class_def = class_def.replace('COUNTER_CLASS_INSTANCES_TEMPLATE', counter_class_instances[:-2]) # Kill last comma
+            class_def = class_def.replace('COUNTER_CLASS_BODIES_TEMPLATE', counter_class_bodies)
+            write(class_def, file=self.outFile)
+        write('\n'.join(self.sections['command']), file=self.outFile)
         if self.header_file:
             write('};', file=self.outFile)
 
@@ -811,49 +775,30 @@ void ThreadSafety::PostCallRecordDestroyCommandPool(VkDevice device, VkCommandPo
         # end function prototypes separately for this feature. They're only
         # printed in endFeature().
         self.featureExtraProtect = GetFeatureProtect(interface)
-        self.sections = dict([(section, []) for section in self.ALL_SECTIONS])
+        if (self.featureExtraProtect is not None):
+            self.appendSection('command', '\n#ifdef %s' % self.featureExtraProtect)
+
         #write('// ending beginFeature', file=self.outFile)
     def endFeature(self):
         # C-specific
-        # Actually write the interface to the output file.
-        #write('// starting endFeature', file=self.outFile)
         if (self.emit):
-            self.newline()
-            if (self.genOpts.protectFeature):
-                write('#ifndef', self.featureName, file=self.outFile)
-            # If type declarations are needed by other features based on
-            # this one, it may be necessary to suppress the ExtraProtect,
-            # or move it below the 'for section...' loop.
-            #write('// endFeature looking at self.featureExtraProtect', file=self.outFile)
             if (self.featureExtraProtect is not None):
-                write('#ifdef', self.featureExtraProtect, file=self.outFile)
-            #write('#define', self.featureName, '1', file=self.outFile)
-            for section in self.TYPE_SECTIONS:
-                #write('// endFeature writing section'+section, file=self.outFile)
-                contents = self.sections[section]
-                if contents:
-                    write('\n'.join(contents), file=self.outFile)
-                    self.newline()
-            #write('// endFeature looking at self.sections[command]', file=self.outFile)
-            if (self.sections['command']):
-                write('\n'.join(self.sections['command']), end=u'', file=self.outFile)
-                self.newline()
-            if (self.featureExtraProtect is not None):
-                write('#endif /*', self.featureExtraProtect, '*/', file=self.outFile)
-            if (self.genOpts.protectFeature):
-                write('#endif /*', self.featureName, '*/', file=self.outFile)
+                self.appendSection('command', '#endif // %s' % self.featureExtraProtect)
         # Finish processing in superclass
         OutputGenerator.endFeature(self)
-        #write('// ending endFeature', file=self.outFile)
     #
     # Append a definition to the specified section
     def appendSection(self, section, text):
-        # self.sections[section].append('SECTION: ' + section + '\n')
         self.sections[section].append(text)
     #
     # Type generation
     def genType(self, typeinfo, name, alias):
-        pass
+        OutputGenerator.genType(self, typeinfo, name, alias)
+        type_elem = typeinfo.elem
+        category = type_elem.get('category')
+        if category == 'handle':
+            if self.isHandleTypeNonDispatchable(name):
+                self.non_dispatchable_types.add(name)
     #
     # Struct (e.g. C "struct" type) generation.
     # This is a special case of the <type> tag where the contents are
