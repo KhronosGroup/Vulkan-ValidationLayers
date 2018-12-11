@@ -1190,6 +1190,8 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                         pCreateInfos[i].pViewportState->pNext);
                     auto coarse_sample_order_struct = lvl_find_in_chain<VkPipelineViewportCoarseSampleOrderStateCreateInfoNV>(
                         pCreateInfos[i].pViewportState->pNext);
+                    const auto vp_swizzle_struct =
+                        lvl_find_in_chain<VkPipelineViewportSwizzleStateCreateInfoNV>(pCreateInfos[i].pViewportState->pNext);
 
                     if (!physical_device_features.multiViewport) {
                         if (viewport_state.viewportCount != 1) {
@@ -1358,6 +1360,17 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                             "].pDynamicState->pDynamicStates does not contain VK_DYNAMIC_STATE_VIEWPORT_SHADING_RATE_PALETTE_NV), "
                             "but pCreateInfos[%" PRIu32 "] pShadingRatePalettes (=NULL) is an invalid pointer.",
                             i, i);
+                    }
+
+                    if (vp_swizzle_struct) {
+                        if (vp_swizzle_struct->viewportCount != viewport_state.viewportCount) {
+                            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
+                                            VK_NULL_HANDLE, "VUID-VkPipelineViewportSwizzleStateCreateInfoNV-viewportCount-01215",
+                                            "vkCreateGraphicsPipelines: The viewport swizzle state vieport count of %" PRIu32
+                                            " does "
+                                            "not match the viewport count of %" PRIu32 " in VkPipelineViewportStateCreateInfo.",
+                                            vp_swizzle_struct->viewportCount, viewport_state.viewportCount);
+                        }
                     }
 
                     // validate the VkViewports
