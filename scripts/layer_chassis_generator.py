@@ -373,7 +373,7 @@ const bool wrap_handles = false;
 #include "object_lifetime_validation.h"
 #define OBJECT_LAYER_NAME "VK_LAYER_LUNARG_object_tracker"
 #elif BUILD_THREAD_SAFETY
-#include "thread_safety_validation.h"
+#include "thread_safety.h"
 #define OBJECT_LAYER_NAME "VK_LAYER_GOOGLE_threading"
 #elif BUILD_PARAMETER_VALIDATION
 #define OBJECT_LAYER_NAME "VK_LAYER_LUNARG_parameter_validation"
