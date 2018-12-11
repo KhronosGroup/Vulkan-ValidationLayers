@@ -442,6 +442,13 @@ void DispatchDestroyDescriptorPool(ValidationObject *layer_data, VkDevice device
                                    const VkAllocationCallbacks *pAllocator) {
     if (!wrap_handles) return layer_data->device_dispatch_table.DestroyDescriptorPool(device, descriptorPool, pAllocator);
     std::unique_lock<std::mutex> lock(dispatch_lock);
+
+    // remove references to implicitly freed descriptor sets
+    for(auto descriptor_set : layer_data->pool_descriptor_sets_map[descriptorPool]) {
+        unique_id_mapping.erase(reinterpret_cast<uint64_t &>(descriptor_set));
+    }
+    layer_data->pool_descriptor_sets_map.erase(descriptorPool);
+
     uint64_t descriptorPool_id = reinterpret_cast<uint64_t &>(descriptorPool);
     descriptorPool = (VkDescriptorPool)unique_id_mapping[descriptorPool_id];
     unique_id_mapping.erase(descriptorPool_id);
@@ -452,11 +459,20 @@ void DispatchDestroyDescriptorPool(ValidationObject *layer_data, VkDevice device
 VkResult DispatchResetDescriptorPool(ValidationObject *layer_data, VkDevice device, VkDescriptorPool descriptorPool,
                                      VkDescriptorPoolResetFlags flags) {
     if (!wrap_handles) return layer_data->device_dispatch_table.ResetDescriptorPool(device, descriptorPool, flags);
+    VkDescriptorPool local_descriptor_pool = VK_NULL_HANDLE;
     {
         std::lock_guard<std::mutex> lock(dispatch_lock);
-        descriptorPool = layer_data->Unwrap(descriptorPool);
+        local_descriptor_pool = layer_data->Unwrap(descriptorPool);
     }
-    VkResult result = layer_data->device_dispatch_table.ResetDescriptorPool(device, descriptorPool, flags);
+    VkResult result = layer_data->device_dispatch_table.ResetDescriptorPool(device, local_descriptor_pool, flags);
+    if (VK_SUCCESS == result) {
+        std::lock_guard<std::mutex> lock(dispatch_lock);
+        // remove references to implicitly freed descriptor sets
+        for(auto descriptor_set : layer_data->pool_descriptor_sets_map[descriptorPool]) {
+            unique_id_mapping.erase(reinterpret_cast<uint64_t &>(descriptor_set));
+        }
+        layer_data->pool_descriptor_sets_map[descriptorPool].clear();
+    }
 
     return result;
 }
@@ -486,8 +502,10 @@ VkResult DispatchAllocateDescriptorSets(ValidationObject *layer_data, VkDevice d
     }
     if (VK_SUCCESS == result) {
         std::lock_guard<std::mutex> lock(dispatch_lock);
+        auto &pool_descriptor_sets = layer_data->pool_descriptor_sets_map[pAllocateInfo->descriptorPool];
         for (uint32_t index0 = 0; index0 < pAllocateInfo->descriptorSetCount; index0++) {
             pDescriptorSets[index0] = layer_data->WrapNew(pDescriptorSets[index0]);
+            pool_descriptor_sets.insert(pDescriptorSets[index0]);
         }
     }
     return result;
@@ -498,9 +516,10 @@ VkResult DispatchFreeDescriptorSets(ValidationObject *layer_data, VkDevice devic
     if (!wrap_handles)
         return layer_data->device_dispatch_table.FreeDescriptorSets(device, descriptorPool, descriptorSetCount, pDescriptorSets);
     VkDescriptorSet *local_pDescriptorSets = NULL;
+    VkDescriptorPool local_descriptor_pool = VK_NULL_HANDLE;
     {
         std::lock_guard<std::mutex> lock(dispatch_lock);
-        descriptorPool = layer_data->Unwrap(descriptorPool);
+        local_descriptor_pool = layer_data->Unwrap(descriptorPool);
         if (pDescriptorSets) {
             local_pDescriptorSets = new VkDescriptorSet[descriptorSetCount];
             for (uint32_t index0 = 0; index0 < descriptorSetCount; ++index0) {
@@ -508,13 +527,15 @@ VkResult DispatchFreeDescriptorSets(ValidationObject *layer_data, VkDevice devic
             }
         }
     }
-    VkResult result = layer_data->device_dispatch_table.FreeDescriptorSets(device, descriptorPool, descriptorSetCount,
+    VkResult result = layer_data->device_dispatch_table.FreeDescriptorSets(device, local_descriptor_pool, descriptorSetCount,
                                                                            (const VkDescriptorSet *)local_pDescriptorSets);
     if (local_pDescriptorSets) delete[] local_pDescriptorSets;
     if ((VK_SUCCESS == result) && (pDescriptorSets)) {
         std::unique_lock<std::mutex> lock(dispatch_lock);
+        auto &pool_descriptor_sets = layer_data->pool_descriptor_sets_map[descriptorPool];
         for (uint32_t index0 = 0; index0 < descriptorSetCount; index0++) {
             VkDescriptorSet handle = pDescriptorSets[index0];
+            pool_descriptor_sets.erase(handle);
             uint64_t unique_id = reinterpret_cast<uint64_t &>(handle);
             unique_id_mapping.erase(unique_id);
         }
