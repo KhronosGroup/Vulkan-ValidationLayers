@@ -425,6 +425,9 @@ static void DeviceExtensionWhitelist(ValidationObject *layer_data, const VkDevic
 
 VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetDeviceProcAddr(VkDevice device, const char *funcName) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!ApiParentExtensionEnabled(funcName, layer_data->device_extension_set)) {
+        return nullptr;
+    }
     const auto &item = name_to_funcptr_map.find(funcName);
     if (item != name_to_funcptr_map.end()) {
         return reinterpret_cast<PFN_vkVoidFunction>(item->second);
@@ -597,6 +600,10 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
 
     auto device_interceptor = GetLayerDataPtr(get_dispatch_key(*pDevice), layer_data_map);
     layer_init_device_dispatch_table(*pDevice, &device_interceptor->device_dispatch_table, fpGetDeviceProcAddr);
+    // Save pCreateInfo device extension list for GetDeviceProcAddr()
+    for (uint32_t extn = 0; extn < pCreateInfo->enabledExtensionCount; extn++) {
+        device_interceptor->device_extension_set.insert(pCreateInfo->ppEnabledExtensionNames[extn]);
+    }
     device_interceptor->device = *pDevice;
     device_interceptor->physical_device = gpu;
     device_interceptor->instance = instance_interceptor->instance;
