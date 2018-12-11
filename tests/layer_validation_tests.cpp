@@ -36548,6 +36548,75 @@ TEST_F(VkLayerTest, AndroidHardwareBufferExporttBuffer) {
 
 #endif
 
+TEST_F(VkLayerTest, ViewportSwizzleNV) {
+    TEST_DESCRIPTION("Verify VK_NV_viewprot_swizzle.");
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_NV_VIEWPORT_SWIZZLE_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_NV_VIEWPORT_SWIZZLE_EXTENSION_NAME);
+    } else {
+        printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, VK_NV_VIEWPORT_SWIZZLE_EXTENSION_NAME);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkViewportSwizzleNV invalid_swizzles = {
+        VkViewportCoordinateSwizzleNV(-1),
+        VkViewportCoordinateSwizzleNV(-1),
+        VkViewportCoordinateSwizzleNV(-1),
+        VkViewportCoordinateSwizzleNV(-1),
+    };
+
+    VkPipelineViewportSwizzleStateCreateInfoNV vp_swizzle_state = {
+        VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_SWIZZLE_STATE_CREATE_INFO_NV};
+    vp_swizzle_state.viewportCount = 1;
+    vp_swizzle_state.pViewportSwizzles = &invalid_swizzles;
+
+    const std::vector<std::string> expected_vuids = {"VUID-VkViewportSwizzleNV-x-parameter", "VUID-VkViewportSwizzleNV-y-parameter",
+                                                     "VUID-VkViewportSwizzleNV-z-parameter",
+                                                     "VUID-VkViewportSwizzleNV-w-parameter"};
+
+    auto break_swizzles = [&vp_swizzle_state](CreatePipelineHelper &helper) { helper.vp_state_ci_.pNext = &vp_swizzle_state; };
+
+    CreatePipelineHelper::OneshotTest(*this, break_swizzles, VK_DEBUG_REPORT_ERROR_BIT_EXT, expected_vuids);
+
+    struct TestCase {
+        VkBool32 rasterizerDiscardEnable;
+        uint32_t vp_count;
+        uint32_t swizzel_vp_count;
+        bool positive;
+    };
+
+    const std::array<TestCase, 3> test_cases = {{{VK_TRUE, 1, 2, true}, {VK_FALSE, 1, 1, true}, {VK_FALSE, 1, 2, false}}};
+
+    std::array<VkViewportSwizzleNV, 2> swizzles = {
+        {{VK_VIEWPORT_COORDINATE_SWIZZLE_POSITIVE_X_NV, VK_VIEWPORT_COORDINATE_SWIZZLE_POSITIVE_Y_NV,
+          VK_VIEWPORT_COORDINATE_SWIZZLE_POSITIVE_Z_NV, VK_VIEWPORT_COORDINATE_SWIZZLE_POSITIVE_W_NV},
+         {VK_VIEWPORT_COORDINATE_SWIZZLE_POSITIVE_X_NV, VK_VIEWPORT_COORDINATE_SWIZZLE_POSITIVE_Y_NV,
+          VK_VIEWPORT_COORDINATE_SWIZZLE_POSITIVE_Z_NV, VK_VIEWPORT_COORDINATE_SWIZZLE_POSITIVE_W_NV}}};
+
+    for (const auto &test_case : test_cases) {
+        assert(test_case.vp_count <= swizzles.size());
+
+        vp_swizzle_state.viewportCount = test_case.swizzel_vp_count;
+        vp_swizzle_state.pViewportSwizzles = swizzles.data();
+
+        auto break_vp_count = [&vp_swizzle_state, &test_case](CreatePipelineHelper &helper) {
+            helper.rs_state_ci_.rasterizerDiscardEnable = test_case.rasterizerDiscardEnable;
+            helper.vp_state_ci_.viewportCount = test_case.vp_count;
+
+            helper.vp_state_ci_.pNext = &vp_swizzle_state;
+        };
+
+        CreatePipelineHelper::OneshotTest(*this, break_vp_count, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                          "VUID-VkPipelineViewportSwizzleStateCreateInfoNV-viewportCount-01215",
+                                          test_case.positive);
+    }
+}
+
 #if defined(ANDROID) && defined(VALIDATION_APK)
 const char *appTag = "VulkanLayerValidationTests";
 static bool initialized = false;
