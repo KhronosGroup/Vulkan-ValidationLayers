@@ -438,6 +438,91 @@ VkResult DispatchQueuePresentKHR(ValidationObject *layer_data,
     return result;
 }
 
+void DispatchDestroyDescriptorPool(ValidationObject *layer_data, VkDevice device, VkDescriptorPool descriptorPool,
+                                   const VkAllocationCallbacks *pAllocator) {
+    if (!wrap_handles) return layer_data->device_dispatch_table.DestroyDescriptorPool(device, descriptorPool, pAllocator);
+    std::unique_lock<std::mutex> lock(dispatch_lock);
+    uint64_t descriptorPool_id = reinterpret_cast<uint64_t &>(descriptorPool);
+    descriptorPool = (VkDescriptorPool)unique_id_mapping[descriptorPool_id];
+    unique_id_mapping.erase(descriptorPool_id);
+    lock.unlock();
+    layer_data->device_dispatch_table.DestroyDescriptorPool(device, descriptorPool, pAllocator);
+}
+
+VkResult DispatchResetDescriptorPool(ValidationObject *layer_data, VkDevice device, VkDescriptorPool descriptorPool,
+                                     VkDescriptorPoolResetFlags flags) {
+    if (!wrap_handles) return layer_data->device_dispatch_table.ResetDescriptorPool(device, descriptorPool, flags);
+    {
+        std::lock_guard<std::mutex> lock(dispatch_lock);
+        descriptorPool = layer_data->Unwrap(descriptorPool);
+    }
+    VkResult result = layer_data->device_dispatch_table.ResetDescriptorPool(device, descriptorPool, flags);
+
+    return result;
+}
+
+VkResult DispatchAllocateDescriptorSets(ValidationObject *layer_data, VkDevice device,
+                                        const VkDescriptorSetAllocateInfo *pAllocateInfo, VkDescriptorSet *pDescriptorSets) {
+    if (!wrap_handles) return layer_data->device_dispatch_table.AllocateDescriptorSets(device, pAllocateInfo, pDescriptorSets);
+    safe_VkDescriptorSetAllocateInfo *local_pAllocateInfo = NULL;
+    {
+        std::lock_guard<std::mutex> lock(dispatch_lock);
+        if (pAllocateInfo) {
+            local_pAllocateInfo = new safe_VkDescriptorSetAllocateInfo(pAllocateInfo);
+            if (pAllocateInfo->descriptorPool) {
+                local_pAllocateInfo->descriptorPool = layer_data->Unwrap(pAllocateInfo->descriptorPool);
+            }
+            if (local_pAllocateInfo->pSetLayouts) {
+                for (uint32_t index1 = 0; index1 < local_pAllocateInfo->descriptorSetCount; ++index1) {
+                    local_pAllocateInfo->pSetLayouts[index1] = layer_data->Unwrap(local_pAllocateInfo->pSetLayouts[index1]);
+                }
+            }
+        }
+    }
+    VkResult result = layer_data->device_dispatch_table.AllocateDescriptorSets(
+        device, (const VkDescriptorSetAllocateInfo *)local_pAllocateInfo, pDescriptorSets);
+    if (local_pAllocateInfo) {
+        delete local_pAllocateInfo;
+    }
+    if (VK_SUCCESS == result) {
+        std::lock_guard<std::mutex> lock(dispatch_lock);
+        for (uint32_t index0 = 0; index0 < pAllocateInfo->descriptorSetCount; index0++) {
+            pDescriptorSets[index0] = layer_data->WrapNew(pDescriptorSets[index0]);
+        }
+    }
+    return result;
+}
+
+VkResult DispatchFreeDescriptorSets(ValidationObject *layer_data, VkDevice device, VkDescriptorPool descriptorPool,
+                                    uint32_t descriptorSetCount, const VkDescriptorSet *pDescriptorSets) {
+    if (!wrap_handles)
+        return layer_data->device_dispatch_table.FreeDescriptorSets(device, descriptorPool, descriptorSetCount, pDescriptorSets);
+    VkDescriptorSet *local_pDescriptorSets = NULL;
+    {
+        std::lock_guard<std::mutex> lock(dispatch_lock);
+        descriptorPool = layer_data->Unwrap(descriptorPool);
+        if (pDescriptorSets) {
+            local_pDescriptorSets = new VkDescriptorSet[descriptorSetCount];
+            for (uint32_t index0 = 0; index0 < descriptorSetCount; ++index0) {
+                local_pDescriptorSets[index0] = layer_data->Unwrap(pDescriptorSets[index0]);
+            }
+        }
+    }
+    VkResult result = layer_data->device_dispatch_table.FreeDescriptorSets(device, descriptorPool, descriptorSetCount,
+                                                                           (const VkDescriptorSet *)local_pDescriptorSets);
+    if (local_pDescriptorSets) delete[] local_pDescriptorSets;
+    if ((VK_SUCCESS == result) && (pDescriptorSets)) {
+        std::unique_lock<std::mutex> lock(dispatch_lock);
+        for (uint32_t index0 = 0; index0 < descriptorSetCount; index0++) {
+            VkDescriptorSet handle = pDescriptorSets[index0];
+            uint64_t unique_id = reinterpret_cast<uint64_t &>(handle);
+            unique_id_mapping.erase(unique_id);
+        }
+    }
+    return result;
+}
+
+
 // This is the core version of this routine.  The extension version is below.
 VkResult DispatchCreateDescriptorUpdateTemplate(ValidationObject *layer_data,
                                                 VkDevice device,
@@ -893,6 +978,10 @@ VkResult DispatchSetDebugUtilsObjectNameEXT(ValidationObject *layer_data,
             'vkGetSwapchainImagesKHR',
             'vkDestroySwapchainKHR',
             'vkQueuePresentKHR',
+            'vkResetDescriptorPool',
+            'vkDestroyDescriptorPool',
+            'vkAllocateDescriptorSets',
+            'vkFreeDescriptorSets',
             'vkCreateDescriptorUpdateTemplate',
             'vkCreateDescriptorUpdateTemplateKHR',
             'vkDestroyDescriptorUpdateTemplate',
@@ -1688,7 +1777,7 @@ VkResult DispatchSetDebugUtilsObjectNameEXT(ValidationObject *layer_data,
 
             # Put all this together for the final down-chain call
             if not down_chain_call_only:
-                unwrapped_dispatch_call = api_func + '(' + paramstext + ');'
+                unwrapped_dispatch_call = api_func + '(' + paramstext + ')'
                 self.appendSection('source_file', '    if (!wrap_handles) return %s;' % unwrapped_dispatch_call)
 
             # Handle return values, if any
