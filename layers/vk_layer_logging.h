@@ -846,11 +846,13 @@ static inline int string_sprintf(std::string *output, const char *fmt, ...) {
     va_start(argptr, fmt);
     int reserve = vsnprintf(nullptr, 0, fmt, argptr);
     va_end(argptr);
-    formatted.reserve(reserve + 1);
+    formatted.reserve(reserve + 1);  // Set the storage length long enough to hold the output + null
+    formatted.resize(reserve);       // Set the *logical* length to be what vsprintf will write
     va_start(argptr, fmt);
     int result = vsnprintf((char *)formatted.data(), formatted.capacity(), fmt, argptr);
     va_end(argptr);
     assert(result == reserve);
+    assert((formatted.size() == strlen(formatted.c_str())));
     return result;
 }
 
