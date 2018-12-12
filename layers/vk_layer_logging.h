@@ -49,6 +49,17 @@
 #define DECORATE_UNUSED
 #endif
 
+#if defined __ANDROID__
+#include <android/log.h>
+#define LOGCONSOLE(...) ((void)__android_log_print(ANDROID_LOG_INFO, "VALIDATION", __VA_ARGS__))
+#else
+#define LOGCONSOLE(...)      \
+    {                        \
+        printf(__VA_ARGS__); \
+        printf("\n");        \
+    }
+#endif
+
 static const char DECORATE_UNUSED *kVUIDUndefined = "VUID_Undefined";
 
 #undef DECORATE_UNUSED
@@ -931,12 +942,21 @@ static inline bool log_msg(const debug_report_data *debug_data, VkFlags msg_flag
 static inline VKAPI_ATTR VkBool32 VKAPI_CALL report_log_callback(VkFlags msg_flags, VkDebugReportObjectTypeEXT obj_type,
                                                                  uint64_t src_object, size_t location, int32_t msg_code,
                                                                  const char *layer_prefix, const char *message, void *user_data) {
+    std::ostringstream msg_buffer;
     char msg_flag_string[30];
 
     PrintMessageFlags(msg_flags, msg_flag_string);
 
-    fprintf((FILE *)user_data, "%s(%s): msg_code: %d: %s\n", layer_prefix, msg_flag_string, msg_code, message);
+    msg_buffer << layer_prefix << "(" << msg_flag_string << "): msg_code: " << msg_code << ": " << message << "\n";
+    const std::string tmp = msg_buffer.str();
+    const char *cstr = tmp.c_str();
+
+    fprintf((FILE *)user_data, "%s", cstr);
     fflush((FILE *)user_data);
+
+#if defined __ANDROID__
+    LOGCONSOLE("%s", cstr);
+#endif
 
     return false;
 }
@@ -974,21 +994,31 @@ static inline VKAPI_ATTR VkBool32 VKAPI_CALL messenger_log_callback(VkDebugUtils
                                                                     VkDebugUtilsMessageTypeFlagsEXT message_type,
                                                                     const VkDebugUtilsMessengerCallbackDataEXT *callback_data,
                                                                     void *user_data) {
+    std::ostringstream msg_buffer;
     char msg_severity[30];
     char msg_type[30];
 
     PrintMessageSeverity(message_severity, msg_severity);
     PrintMessageType(message_type, msg_type);
 
-    fprintf((FILE *)user_data, "%s(%s / %s): msgNum: %d - %s\n", callback_data->pMessageIdName, msg_severity, msg_type,
-            callback_data->messageIdNumber, callback_data->pMessage);
-    fprintf((FILE *)user_data, "    Objects: %d\n", callback_data->objectCount);
+    msg_buffer << callback_data->pMessageIdName << "(" << msg_severity << " / " << msg_type
+               << "): msgNum: " << callback_data->messageIdNumber << " - " << callback_data->pMessage << "\n";
+    msg_buffer << "    Objects: " << callback_data->objectCount << "\n";
     for (uint32_t obj = 0; obj < callback_data->objectCount; ++obj) {
-        fprintf((FILE *)user_data, "       [%d] 0x%" PRIx64 ", type: %d, name: %s\n", obj,
-                callback_data->pObjects[obj].objectHandle, callback_data->pObjects[obj].objectType,
-                callback_data->pObjects[obj].pObjectName);
+        msg_buffer << "        [" << obj << "] " << std::hex << std::showbase
+                   << HandleToUint64(callback_data->pObjects[obj].objectHandle) << ", type: " << std::dec << std::noshowbase
+                   << callback_data->pObjects[obj].objectType
+                   << ", name: " << (callback_data->pObjects[obj].pObjectName ? callback_data->pObjects[obj].pObjectName : "NULL")
+                   << "\n";
     }
+    const std::string tmp = msg_buffer.str();
+    const char *cstr = tmp.c_str();
+    fprintf((FILE *)user_data, "%s", cstr);
     fflush((FILE *)user_data);
+
+#if defined __ANDROID__
+    LOGCONSOLE("%s", cstr);
+#endif
 
     return false;
 }
