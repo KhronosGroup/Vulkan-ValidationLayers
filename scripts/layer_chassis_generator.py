@@ -165,6 +165,20 @@ class LayerChassisOutputGenerator(OutputGenerator):
         'vkGetPhysicalDeviceCalibrateableTimeDomainsEXT',
     ]
 
+    pre_dispatch_debug_utils_functions = {
+        'vkSetDebugUtilsObjectNameEXT' : 'layer_data->report_data->debugUtilsObjectNameMap->insert(std::make_pair<uint64_t, std::string>((uint64_t &&) pNameInfo->objectHandle, pNameInfo->pObjectName));',
+        'vkQueueBeginDebugUtilsLabelEXT' : 'BeginQueueDebugUtilsLabel(layer_data->report_data, queue, pLabelInfo);',
+        'vkQueueInsertDebugUtilsLabelEXT' : 'InsertQueueDebugUtilsLabel(layer_data->report_data, queue, pLabelInfo);',
+        'vkCmdBeginDebugUtilsLabelEXT' : 'BeginCmdDebugUtilsLabel(layer_data->report_data, commandBuffer, pLabelInfo);',
+        'vkCmdInsertDebugUtilsLabelEXT' : 'InsertCmdDebugUtilsLabel(layer_data->report_data, commandBuffer, pLabelInfo);'
+        }
+
+    post_dispatch_debug_utils_functions = {
+        'vkQueueEndDebugUtilsLabelEXT' : 'EndQueueDebugUtilsLabel(layer_data->report_data, queue);',
+        'vkCmdEndDebugUtilsLabelEXT' : 'EndCmdDebugUtilsLabel(layer_data->report_data, commandBuffer);',
+        'vkCmdInsertDebugUtilsLabelEXT' : 'InsertCmdDebugUtilsLabel(layer_data->report_data, commandBuffer, pLabelInfo);'
+        }
+
     precallvalidate_loop = "for (auto intercept : layer_data->object_dispatch) {"
     precallrecord_loop = precallvalidate_loop
     postcallrecord_loop = "for (auto intercept : layer_data->object_dispatch) {"
@@ -673,8 +687,7 @@ VKAPI_ATTR void VKAPI_CALL DestroyDebugReportCallbackEXT(VkInstance instance, Vk
         std::lock_guard<std::mutex> lock(intercept->layer_mutex);
         intercept->PostCallRecordDestroyDebugReportCallbackEXT(instance, callback, pAllocator);
     }
-}
-"""
+}"""
 
     inline_custom_source_postamble = """
 // loader-layer interface v0, just wrappers since there is only a layer
@@ -968,7 +981,22 @@ VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkNegotiateLoaderLayerInterfaceVe
         self.appendSection('command', '        intercept->PreCallRecord%s(%s);' % (api_function_name[2:], paramstext))
         self.appendSection('command', '    }')
 
+        # Insert pre-dispatch debug utils function call
+        if name in self.pre_dispatch_debug_utils_functions:
+            self.appendSection('command', '    {')
+            self.appendSection('command', '        std::lock_guard<std::mutex> lock(layer_data->layer_mutex);')
+            self.appendSection('command', '        %s' % self.pre_dispatch_debug_utils_functions[name])
+            self.appendSection('command', '    }')
+
+        # Output dispatch (down-chain) function call
         self.appendSection('command', '    ' + assignresult + API + paramstext + ');')
+
+        # Insert post-dispatch debug utils function call
+        if name in self.post_dispatch_debug_utils_functions:
+            self.appendSection('command', '    {')
+            self.appendSection('command', '        std::lock_guard<std::mutex> lock(layer_data->layer_mutex);')
+            self.appendSection('command', '        %s' % self.post_dispatch_debug_utils_functions[name])
+            self.appendSection('command', '    }')
 
         # Generate post-call object processing source code
         return_type_indent = ''
