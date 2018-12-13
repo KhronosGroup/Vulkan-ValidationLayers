@@ -719,7 +719,8 @@ bool cvdescriptorset::DescriptorSet::ValidateDrawState(const std::map<uint32_t, 
         }
 
         for (uint32_t i = index_range.start; i < index_range.end; ++i, ++array_idx) {
-            if ((p_layout_->GetDescriptorBindingFlagsFromBinding(binding) & VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT) ||
+            if ((p_layout_->GetDescriptorBindingFlagsFromBinding(binding) &
+                 (VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT)) ||
                 descriptors_[i]->GetClass() == InlineUniform) {
                 // Can't validate the descriptor because it may not have been updated,
                 // or the view could have been destroyed
