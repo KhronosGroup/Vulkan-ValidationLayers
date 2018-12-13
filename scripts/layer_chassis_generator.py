@@ -123,6 +123,48 @@ class LayerChassisOutputGenerator(OutputGenerator):
                      'group', 'bitmask', 'funcpointer', 'struct']
     ALL_SECTIONS = TYPE_SECTIONS + ['command']
 
+    manual_functions = [
+        # Include functions here to be interecpted w/ manually implemented function bodies
+        'vkGetDeviceProcAddr',
+        'vkGetInstanceProcAddr',
+        'vkGetPhysicalDeviceProcAddr',
+        'vkCreateDevice',
+        'vkDestroyDevice',
+        'vkCreateInstance',
+        'vkDestroyInstance',
+        'vkCreateDebugReportCallbackEXT',
+        'vkDestroyDebugReportCallbackEXT',
+        'vkEnumerateInstanceLayerProperties',
+        'vkEnumerateInstanceExtensionProperties',
+        'vkEnumerateDeviceLayerProperties',
+        'vkEnumerateDeviceExtensionProperties',
+        ]
+
+    alt_ret_codes = [
+        # Include functions here which must tolerate VK_INCOMPLETE as a return code
+        'vkEnumeratePhysicalDevices',
+        'vkEnumeratePhysicalDeviceGroupsKHR',
+        'vkGetValidationCacheDataEXT',
+        'vkGetPipelineCacheData',
+        'vkGetShaderInfoAMD',
+        'vkGetPhysicalDeviceDisplayPropertiesKHR',
+        'vkGetPhysicalDeviceDisplayProperties2KHR',
+        'vkGetPhysicalDeviceDisplayPlanePropertiesKHR',
+        'vkGetDisplayPlaneSupportedDisplaysKHR',
+        'vkGetDisplayModePropertiesKHR',
+        'vkGetDisplayModeProperties2KHR',
+        'vkGetPhysicalDeviceSurfaceFormatsKHR',
+        'vkGetPhysicalDeviceSurfacePresentModesKHR',
+        'vkGetPhysicalDevicePresentRectanglesKHR',
+        'vkGetPastPresentationTimingGOOGLE',
+        'vkGetSwapchainImagesKHR',
+        'vkEnumerateInstanceLayerProperties',
+        'vkEnumerateDeviceLayerProperties',
+        'vkEnumerateInstanceExtensionProperties',
+        'vkEnumerateDeviceExtensionProperties',
+        'vkGetPhysicalDeviceCalibrateableTimeDomainsEXT',
+    ]
+
     precallvalidate_loop = "for (auto intercept : layer_data->object_dispatch) {"
     precallrecord_loop = precallvalidate_loop
     postcallrecord_loop = "for (auto intercept : layer_data->object_dispatch) {"
@@ -868,23 +910,7 @@ VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkNegotiateLoaderLayerInterfaceVe
                 self.layer_factory += '#endif\n'
             return
 
-        manual_functions = [
-            # Include functions here to be interecpted w/ manually implemented function bodies
-            'vkGetDeviceProcAddr',
-            'vkGetInstanceProcAddr',
-            'vkGetPhysicalDeviceProcAddr',
-            'vkCreateDevice',
-            'vkDestroyDevice',
-            'vkCreateInstance',
-            'vkDestroyInstance',
-            'vkCreateDebugReportCallbackEXT',
-            'vkDestroyDebugReportCallbackEXT',
-            'vkEnumerateInstanceLayerProperties',
-            'vkEnumerateInstanceExtensionProperties',
-            'vkEnumerateDeviceLayerProperties',
-            'vkEnumerateDeviceExtensionProperties',
-        ]
-        if name in manual_functions:
+        if name in self.manual_functions:
             self.intercepts += [ '    {"%s", (void*)%s},' % (name,name[2:]) ]
             return
         # Record that the function will be intercepted
@@ -945,34 +971,10 @@ VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkNegotiateLoaderLayerInterfaceVe
         self.appendSection('command', '    ' + assignresult + API + paramstext + ');')
 
         # Generate post-call object processing source code
-        alt_ret_codes = [
-            # Include functions here which must tolerate VK_INCOMPLETE as a return code
-            'vkEnumeratePhysicalDevices',
-            'vkEnumeratePhysicalDeviceGroupsKHR',
-            'vkGetValidationCacheDataEXT',
-            'vkGetPipelineCacheData',
-            'vkGetShaderInfoAMD',
-            'vkGetPhysicalDeviceDisplayPropertiesKHR',
-            'vkGetPhysicalDeviceDisplayProperties2KHR',
-            'vkGetPhysicalDeviceDisplayPlanePropertiesKHR',
-            'vkGetDisplayPlaneSupportedDisplaysKHR',
-            'vkGetDisplayModePropertiesKHR',
-            'vkGetDisplayModeProperties2KHR',
-            'vkGetPhysicalDeviceSurfaceFormatsKHR',
-            'vkGetPhysicalDeviceSurfacePresentModesKHR',
-            'vkGetPhysicalDevicePresentRectanglesKHR',
-            'vkGetPastPresentationTimingGOOGLE',
-            'vkGetSwapchainImagesKHR',
-            'vkEnumerateInstanceLayerProperties',
-            'vkEnumerateDeviceLayerProperties',
-            'vkEnumerateInstanceExtensionProperties',
-            'vkEnumerateDeviceExtensionProperties',
-            'vkGetPhysicalDeviceCalibrateableTimeDomainsEXT',
-        ]
         return_type_indent = ''
         if (resulttype.text == 'VkResult'):
             return_type_indent = '    '
-            if name in alt_ret_codes:
+            if name in self.alt_ret_codes:
                 self.appendSection('command', '    if ((VK_SUCCESS == result) || (VK_INCOMPLETE == result)) {')
             else:
                 self.appendSection('command', '    if (VK_SUCCESS == result) {')
