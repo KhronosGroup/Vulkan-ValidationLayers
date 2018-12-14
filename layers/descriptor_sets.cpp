@@ -1543,7 +1543,9 @@ void cvdescriptorset::ImageSamplerDescriptor::UpdateDrawState(layer_data *dev_da
     if (iv_state) {
         core_validation::AddCommandBufferBindingImageView(dev_data, cb_node, iv_state);
     }
-    SetImageViewLayout(dev_data, cb_node, image_view_, image_layout_);
+    if (image_view_) {
+        SetImageViewLayout(dev_data, cb_node, image_view_, image_layout_);
+    }
 }
 
 cvdescriptorset::ImageDescriptor::ImageDescriptor(const VkDescriptorType type)
@@ -1574,7 +1576,9 @@ void cvdescriptorset::ImageDescriptor::UpdateDrawState(layer_data *dev_data, GLO
     if (iv_state) {
         core_validation::AddCommandBufferBindingImageView(dev_data, cb_node, iv_state);
     }
-    SetImageViewLayout(dev_data, cb_node, image_view_, image_layout_);
+    if (image_view_) {
+        SetImageViewLayout(dev_data, cb_node, image_view_, image_layout_);
+    }
 }
 
 cvdescriptorset::BufferDescriptor::BufferDescriptor(const VkDescriptorType type)
