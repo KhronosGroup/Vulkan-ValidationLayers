@@ -1567,8 +1567,16 @@ static bool ValidateShaderCapabilities(layer_data *dev_data, shader_module const
     if (has_writable_descriptor) {
         switch (stage) {
             case VK_SHADER_STAGE_COMPUTE_BIT:
+            case VK_SHADER_STAGE_RAYGEN_BIT_NV:
+            case VK_SHADER_STAGE_ANY_HIT_BIT_NV:
+            case VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV:
+            case VK_SHADER_STAGE_MISS_BIT_NV:
+            case VK_SHADER_STAGE_INTERSECTION_BIT_NV:
+            case VK_SHADER_STAGE_CALLABLE_BIT_NV:
+            case VK_SHADER_STAGE_TASK_BIT_NV:
+            case VK_SHADER_STAGE_MESH_BIT_NV:
                 /* No feature requirements for writes and atomics from compute
-                 * stage */
+                 * raytracing, or mesh stages */
                 break;
             case VK_SHADER_STAGE_FRAGMENT_BIT:
                 skip |= RequireFeature(report_data, features->core.fragmentStoresAndAtomics, "fragmentStoresAndAtomics");
@@ -1791,6 +1799,16 @@ static bool ValidateShaderStageInputOutputLimits(layer_data *dev_data, shader_mo
                                 properties->properties.limits.maxFragmentInputComponents,
                                 numCompIn - properties->properties.limits.maxFragmentInputComponents);
             }
+            break;
+
+        case VK_SHADER_STAGE_RAYGEN_BIT_NV:
+        case VK_SHADER_STAGE_ANY_HIT_BIT_NV:
+        case VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV:
+        case VK_SHADER_STAGE_MISS_BIT_NV:
+        case VK_SHADER_STAGE_INTERSECTION_BIT_NV:
+        case VK_SHADER_STAGE_CALLABLE_BIT_NV:
+        case VK_SHADER_STAGE_TASK_BIT_NV:
+        case VK_SHADER_STAGE_MESH_BIT_NV:
             break;
 
         default:
