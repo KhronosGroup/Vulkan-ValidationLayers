@@ -537,10 +537,11 @@ class HelperFileOutputGenerator(OutputGenerator):
             struct  = [struct_decl]
             struct.extend([ '    bool %s{false};' % field_name[ext_name] for ext_name, info in extension_items])
 
-            # Create struct entries for saving extension count and extension list from DeviceCreateInfo
-            struct.extend([
-                '',
-                '    std::unordered_set<std::string> device_extension_set;'])
+            # Create struct entries for saving extension count and extension list from Instance, DeviceCreateInfo
+            if type == 'Instance':
+                struct.extend([
+                    '',
+                    '    std::unordered_set<std::string> device_extension_set;'])
 
             # Construct the extension information map -- mapping name to data member (field), and required extensions
             # The map is contained within a static function member for portability reasons.
@@ -605,13 +606,13 @@ class HelperFileOutputGenerator(OutputGenerator):
                     '        // Initialize: this to defaults,  base class fields to input.',
                     '        assert(instance_extensions);',
                     '        *this = %s(*instance_extensions);' % struct_type,
+                    '']),
+            struct.extend([
                     '',
                     '        // Save pCreateInfo device extension list',
                     '        for (uint32_t extn = 0; extn < pCreateInfo->enabledExtensionCount; extn++) {',
                     '           device_extension_set.insert(pCreateInfo->ppEnabledExtensionNames[extn]);',
-                    '        }']),
-
-            struct.extend([
+                    '        }',
                 '',
                 '        static const std::vector<const char *> V_1_0_promoted_%s_extensions = {' % type.lower() ])
             struct.extend(['            %s_EXTENSION_NAME,' % ext_name.upper() for ext_name in promoted_ext_list])
