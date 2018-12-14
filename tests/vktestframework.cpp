@@ -721,6 +721,30 @@ EShLanguage VkTestFramework::FindLanguage(const VkShaderStageFlagBits shader_typ
         case VK_SHADER_STAGE_COMPUTE_BIT:
             return EShLangCompute;
 
+        case VK_SHADER_STAGE_RAYGEN_BIT_NV:
+            return EShLangRayGenNV;
+
+        case VK_SHADER_STAGE_ANY_HIT_BIT_NV:
+            return EShLangAnyHitNV;
+
+        case VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV:
+            return EShLangClosestHitNV;
+
+        case VK_SHADER_STAGE_MISS_BIT_NV:
+            return EShLangMissNV;
+
+        case VK_SHADER_STAGE_INTERSECTION_BIT_NV:
+            return EShLangIntersectNV;
+
+        case VK_SHADER_STAGE_CALLABLE_BIT_NV:
+            return EShLangCallableNV;
+
+        case VK_SHADER_STAGE_TASK_BIT_NV:
+            return EShLangTaskNV;
+
+        case VK_SHADER_STAGE_MESH_BIT_NV:
+            return EShLangMeshNV;
+
         default:
             return EShLangVertex;
     }
