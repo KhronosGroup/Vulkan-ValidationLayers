@@ -14500,7 +14500,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfaceFormats2KHR(VkPhysicalDev
 }
 
 // VK_EXT_debug_utils commands
-static void PreCallRecordSetDebugUtilsObectNameEXT(layer_data *dev_data, const VkDebugUtilsObjectNameInfoEXT *pNameInfo) {
+static void PreCallRecordSetDebugUtilsObjectNameEXT(layer_data *dev_data, const VkDebugUtilsObjectNameInfoEXT *pNameInfo) {
     if (pNameInfo->pObjectName) {
         lock_guard_t lock(global_lock);
         dev_data->report_data->debugUtilsObjectNameMap->insert(
@@ -14515,7 +14515,7 @@ VKAPI_ATTR VkResult VKAPI_CALL SetDebugUtilsObjectNameEXT(VkDevice device, const
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     VkResult result = VK_SUCCESS;
 
-    PreCallRecordSetDebugUtilsObectNameEXT(dev_data, pNameInfo);
+    PreCallRecordSetDebugUtilsObjectNameEXT(dev_data, pNameInfo);
 
     if (nullptr != dev_data->dispatch_table.SetDebugUtilsObjectNameEXT) {
         result = dev_data->dispatch_table.SetDebugUtilsObjectNameEXT(device, pNameInfo);
