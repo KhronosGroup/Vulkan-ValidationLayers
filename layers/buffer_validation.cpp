@@ -1271,16 +1271,6 @@ bool ValidateCreateImageANDROID(layer_data *device_data, const debug_report_data
                             "specifies mipLevels = %" PRId32 " (full chain mipLevels are %" PRId32 ").",
                             create_info->mipLevels, FullMipChainLevels(create_info->extent));
         }
-
-        if (create_info->format == VK_FORMAT_UNDEFINED) {
-            if ((nullptr == ext_fmt_android) || (0 == ext_fmt_android->externalFormat)) {
-                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                "VUID-VkImageCreateInfo-pNext-02395",
-                                "vkCreateImage(): VkImageCreateInfo struct with chained VkExternalMemoryImageCreateInfo struct of "
-                                "handleType VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID does not include "
-                                "a chained VkExternalFormatANDROID struct, or the externalFormat member is non-zero.");
-            }
-        }
     }
 
     return skip;

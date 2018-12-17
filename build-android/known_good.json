@@ -16,13 +16,13 @@
       "name" : "Vulkan-Headers",
       "url" : "https://github.com/KhronosGroup/Vulkan-Headers.git",
       "sub_dir" : "Vulkan-Headers",
-      "commit" : "add65b83415824f59041486d4903ee1909dc6ee2"
+      "commit" : "v1.1.96"
     },
     {
       "name" : "Vulkan-Tools",
       "url" : "https://github.com/KhronosGroup/Vulkan-Tools.git",
       "sub_dir" : "Vulkan-Tools",
-      "commit" : "f8ba41796e866b1fdd49c540bd300ab06cd6459e"
+      "commit" : "v1.1.96"
     },
     {
       "name" : "SPIRV-Tools",
