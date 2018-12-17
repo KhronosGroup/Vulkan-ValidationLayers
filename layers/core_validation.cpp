@@ -14315,39 +14315,13 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfaceSupportKHR(VkPhysicalDevi
     return result;
 }
 
-static bool PreCallValidateGetPhysicalDeviceSurfacePresentModesKHR(instance_layer_data *instance_data,
-                                                                   PHYSICAL_DEVICE_STATE *physical_device_state,
-                                                                   CALL_STATE &call_state, VkPhysicalDevice physicalDevice,
-                                                                   uint32_t *pPresentModeCount) {
-    // Compare the preliminary value of *pPresentModeCount with the value this time:
-    auto prev_mode_count = (uint32_t)physical_device_state->present_modes.size();
-    bool skip = false;
-    switch (call_state) {
-        case UNCALLED:
-            skip |= log_msg(instance_data->report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT,
-                            VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT, HandleToUint64(physicalDevice),
-                            kVUID_Core_DevLimit_MustQueryCount,
-                            "vkGetPhysicalDeviceSurfacePresentModesKHR() called with non-NULL pPresentModeCount; but no prior "
-                            "positive value has been seen for pPresentModeCount.");
-            break;
-        default:
-            // both query count and query details
-            if (*pPresentModeCount != prev_mode_count) {
-                skip |= log_msg(instance_data->report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT,
-                                VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT, HandleToUint64(physicalDevice),
-                                kVUID_Core_DevLimit_CountMismatch,
-                                "vkGetPhysicalDeviceSurfacePresentModesKHR() called with *pPresentModeCount (%u) that differs "
-                                "from the value (%u) that was returned when pPresentModes was NULL.",
-                                *pPresentModeCount, prev_mode_count);
-            }
-            break;
-    }
-    return skip;
-}
-
-static void PostCallRecordGetPhysicalDeviceSurfacePresentModesKHR(PHYSICAL_DEVICE_STATE *physical_device_state,
-                                                                  CALL_STATE &call_state, uint32_t *pPresentModeCount,
+static void PostCallRecordGetPhysicalDeviceSurfacePresentModesKHR(instance_layer_data *instance_data,
+                                                                  VkPhysicalDevice physical_device, uint32_t *pPresentModeCount,
                                                                   VkPresentModeKHR *pPresentModes) {
+    // TODO: this isn't quite right. available modes may differ by surface AND physical device.
+    auto physical_device_state = GetPhysicalDeviceState(instance_data, physical_device);
+    auto &call_state = physical_device_state->vkGetPhysicalDeviceSurfacePresentModesKHRState;
+
     if (*pPresentModeCount) {
         if (call_state < QUERY_COUNT) call_state = QUERY_COUNT;
         if (*pPresentModeCount > physical_device_state->present_modes.size())
@@ -14364,27 +14338,14 @@ static void PostCallRecordGetPhysicalDeviceSurfacePresentModesKHR(PHYSICAL_DEVIC
 VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfacePresentModesKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
                                                                        uint32_t *pPresentModeCount,
                                                                        VkPresentModeKHR *pPresentModes) {
-    bool skip = false;
     auto instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), instance_layer_data_map);
-    unique_lock_t lock(global_lock);
-    // TODO: this isn't quite right. available modes may differ by surface AND physical device.
-    auto physical_device_state = GetPhysicalDeviceState(instance_data, physicalDevice);
-    auto &call_state = physical_device_state->vkGetPhysicalDeviceSurfacePresentModesKHRState;
-
-    if (pPresentModes) {
-        skip |= PreCallValidateGetPhysicalDeviceSurfacePresentModesKHR(instance_data, physical_device_state, call_state,
-                                                                       physicalDevice, pPresentModeCount);
-    }
-    lock.unlock();
-
-    if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
 
     auto result = instance_data->dispatch_table.GetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, pPresentModeCount,
                                                                                         pPresentModes);
 
     if (result == VK_SUCCESS || result == VK_INCOMPLETE) {
-        lock.lock();
-        PostCallRecordGetPhysicalDeviceSurfacePresentModesKHR(physical_device_state, call_state, pPresentModeCount, pPresentModes);
+        unique_lock_t lock(global_lock);
+        PostCallRecordGetPhysicalDeviceSurfacePresentModesKHR(instance_data, physicalDevice, pPresentModeCount, pPresentModes);
     }
 
     return result;
