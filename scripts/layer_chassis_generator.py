@@ -579,6 +579,9 @@ VKAPI_ATTR void VKAPI_CALL DestroyInstance(VkInstance instance, const VkAllocati
 
     layer_debug_utils_destroy_instance(layer_data->report_data);
 
+    for (auto item = layer_data->object_dispatch.begin(); item != layer_data->object_dispatch.end(); item++) {
+        delete *item;
+    }
     FreeLayerDataPtr(key, layer_data_map);
 }
 
@@ -680,6 +683,9 @@ VKAPI_ATTR void VKAPI_CALL DestroyDevice(VkDevice device, const VkAllocationCall
         intercept->write_unlock();
     }
 
+    for (auto item = layer_data->object_dispatch.begin(); item != layer_data->object_dispatch.end(); item++) {
+        delete *item;
+    }
     FreeLayerDataPtr(key, layer_data_map);
 }
 
