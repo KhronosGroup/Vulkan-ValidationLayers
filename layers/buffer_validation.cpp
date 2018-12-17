@@ -970,7 +970,7 @@ static bool ValidateQueuedQFOTransferBarriers(layer_data *device_data, GLOBAL_CB
         if (!matching_release_found) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                             HandleToUint64(cb_state->commandBuffer), BarrierRecord::ErrMsgMissingQFOReleaseInSubmit(),
-                            "%s: in submitted command buffer %s aquiring ownership of %s (0x%" PRIx64
+                            "%s: in submitted command buffer %s acquiring ownership of %s (0x%" PRIx64
                             "), from srcQueueFamilyIndex %" PRIu32 " to dstQueueFamilyIndex %" PRIu32
                             " has no matching release barrier queued for execution.",
                             "vkQueueSubmit()", barrier_name, handle_name, HandleToUint64(acquire.handle),
