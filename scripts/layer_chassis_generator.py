@@ -233,6 +233,12 @@ struct TEMPLATE_STATE {
         : desc_update_template(update_template), create_info(*pCreateInfo) {}
 };
 
+class LAYER_PHYS_DEV_PROPERTIES {
+public:
+    VkPhysicalDeviceProperties properties;
+    std::vector<VkQueueFamilyProperties> queue_family_properties;
+};
+
 // Layer chassis validation object base class definition
 class ValidationObject {
     public:
@@ -250,6 +256,7 @@ class ValidationObject {
         VkInstance instance = VK_NULL_HANDLE;
         VkPhysicalDevice physical_device = VK_NULL_HANDLE;
         VkDevice device = VK_NULL_HANDLE;
+        LAYER_PHYS_DEV_PROPERTIES phys_dev_properties = {};
 
         std::vector<ValidationObject*> object_dispatch;
         LayerObjectTypeId container_type;
@@ -269,7 +276,6 @@ class ValidationObject {
         // Reverse map display handles
         std::unordered_map<VkDisplayKHR, uint64_t> display_id_reverse_mapping;
         std::unordered_map<uint64_t, std::unique_ptr<TEMPLATE_STATE>> desc_template_map;
-        std::unordered_set<std::string> device_extension_set;
         struct SubpassesUsageStates {
             std::unordered_set<uint32_t> subpasses_using_color_attachment;
             std::unordered_set<uint32_t> subpasses_using_depthstencil_attachment;
@@ -428,7 +434,7 @@ static void DeviceExtensionWhitelist(ValidationObject *layer_data, const VkDevic
 
 VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetDeviceProcAddr(VkDevice device, const char *funcName) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    if (!ApiParentExtensionEnabled(funcName, layer_data->device_extension_set)) {
+    if (!ApiParentExtensionEnabled(funcName, layer_data->device_extensions.device_extension_set)) {
         return nullptr;
     }
     const auto &item = name_to_funcptr_map.find(funcName);
@@ -617,11 +623,18 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
     }
 
     auto device_interceptor = GetLayerDataPtr(get_dispatch_key(*pDevice), layer_data_map);
+
+    // Get physical device limits for device
+    instance_interceptor->instance_dispatch_table.GetPhysicalDeviceProperties(
+        gpu, &(device_interceptor->phys_dev_properties.properties));
+
+    // Setup the validation tables based on the application API version from the instance and the capabilities of the device driver
+    uint32_t effective_api_version = std::min(device_interceptor->api_version, instance_interceptor->api_version);
+    device_interceptor->api_version = device_interceptor->device_extensions.InitFromDeviceCreateInfo(
+        &instance_interceptor->instance_extensions, effective_api_version, pCreateInfo);
+
     layer_init_device_dispatch_table(*pDevice, &device_interceptor->device_dispatch_table, fpGetDeviceProcAddr);
-    // Save pCreateInfo device extension list for GetDeviceProcAddr()
-    for (uint32_t extn = 0; extn < pCreateInfo->enabledExtensionCount; extn++) {
-        device_interceptor->device_extension_set.insert(pCreateInfo->ppEnabledExtensionNames[extn]);
-    }
+
     device_interceptor->device = *pDevice;
     device_interceptor->physical_device = gpu;
     device_interceptor->instance = instance_interceptor->instance;
