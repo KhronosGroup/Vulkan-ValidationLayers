@@ -88,7 +88,10 @@ endif()
 
 add_library(VkLayer_parameter_validation SHARED
         ${COMMON_DIR}/include/parameter_validation.cpp
+        ${COMMON_DIR}/include/layer_chassis_dispatch.cpp
+        ${COMMON_DIR}/include/chassis.cpp
         ${SRC_DIR}/layers/parameter_validation_utils.cpp)
+target_compile_definitions(VkLayer_parameter_validation PUBLIC "BUILD_PARAMETER_VALIDATION")
 target_include_directories(VkLayer_parameter_validation PRIVATE
         ${SRC_DIR}/include
         ${COMMON_DIR}/include

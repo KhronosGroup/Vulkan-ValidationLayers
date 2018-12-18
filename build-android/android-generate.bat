@@ -30,6 +30,7 @@ py -3 ../../../scripts/lvl_genvk.py -registry %HEADERS_REGISTRY_PATH%/vk.xml -sc
 py -3 ../../../scripts/lvl_genvk.py -registry %HEADERS_REGISTRY_PATH%/vk.xml -scripts %HEADERS_REGISTRY_PATH% thread_safety.cpp
 py -3 ../../../scripts/lvl_genvk.py -registry %HEADERS_REGISTRY_PATH%/vk.xml -scripts %HEADERS_REGISTRY_PATH% thread_safety.h
 py -3 ../../../scripts/lvl_genvk.py -registry %HEADERS_REGISTRY_PATH%/vk.xml -scripts %HEADERS_REGISTRY_PATH% parameter_validation.cpp
+py -3 ../../../scripts/lvl_genvk.py -registry %HEADERS_REGISTRY_PATH%/vk.xml -scripts %HEADERS_REGISTRY_PATH% parameter_validation.h
 py -3 ../../../scripts/lvl_genvk.py -registry %HEADERS_REGISTRY_PATH%/vk.xml -scripts %HEADERS_REGISTRY_PATH% vk_layer_dispatch_table.h
 py -3 ../../../scripts/lvl_genvk.py -registry %HEADERS_REGISTRY_PATH%/vk.xml -scripts %HEADERS_REGISTRY_PATH% vk_extension_helper.h
 py -3 ../../../scripts/lvl_genvk.py -registry %HEADERS_REGISTRY_PATH%/vk.xml -scripts %HEADERS_REGISTRY_PATH% vk_typemap_helper.h

@@ -157,11 +157,34 @@ def makeGenOpts(args):
             expandEnumerants = False)
         ]
 
-    # Options for parameter validation layer
+    # Options for stateless validation source file
     genOpts['parameter_validation.cpp'] = [
           ParameterValidationOutputGenerator,
           ParameterValidationGeneratorOptions(
             filename          = 'parameter_validation.cpp',
+            directory         = directory,
+            apiname           = 'vulkan',
+            profile           = None,
+            versions          = featuresPat,
+            emitversions      = featuresPat,
+            defaultExtensions = 'vulkan',
+            addExtensions     = addExtensionsPat,
+            removeExtensions  = removeExtensionsPat,
+            emitExtensions    = emitExtensionsPat,
+            prefixText        = prefixStrings + vkPrefixStrings,
+            apicall           = 'VKAPI_ATTR ',
+            apientry          = 'VKAPI_CALL ',
+            apientryp         = 'VKAPI_PTR *',
+            alignFuncParam    = 48,
+            expandEnumerants  = False,
+            valid_usage_path  = args.scripts)
+          ]
+
+    # Options for stateless validation source file
+    genOpts['parameter_validation.h'] = [
+          ParameterValidationOutputGenerator,
+          ParameterValidationGeneratorOptions(
+            filename          = 'parameter_validation.h',
             directory         = directory,
             apiname           = 'vulkan',
             profile           = None,
