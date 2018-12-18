@@ -542,6 +542,20 @@ void ThreadSafety::PostCallRecordDestroyCommandPool(VkDevice device, VkCommandPo
     c_VkCommandPoolContents.FinishWrite(commandPool);
 }
 
+// GetSwapchainImages can return a non-zero count with a NULL pSwapchainImages pointer.  Let's avoid crashes by ignoring
+// pSwapchainImages.
+void ThreadSafety::PreCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain, uint32_t *pSwapchainImageCount,
+                                                      VkImage *pSwapchainImages) {
+    StartReadObject(device);
+    StartReadObject(swapchain);
+}
+
+void ThreadSafety::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain, uint32_t *pSwapchainImageCount,
+                                                       VkImage *pSwapchainImages) {
+    FinishReadObject(device);
+    FinishReadObject(swapchain);
+}
+
 """
 
 
@@ -830,7 +844,6 @@ void ThreadSafety::PostCallRecordDestroyCommandPool(VkDevice device, VkCommandPo
     # Command generation
     def genCmd(self, cmdinfo, name, alias):
         # Commands shadowed by interface functions and are not implemented
-        # TODO:  Many of these no longer need to be manually written routines.  Winnow list.
         special_functions = [
             'vkCreateDevice',
             'vkCreateInstance',
@@ -840,6 +853,7 @@ void ThreadSafety::PostCallRecordDestroyCommandPool(VkDevice device, VkCommandPo
             'vkDestroyCommandPool',
             'vkAllocateDescriptorSets',
             'vkQueuePresentKHR',
+            'vkGetSwapchainImagesKHR',
         ]
         if name == 'vkQueuePresentKHR' or (name in special_functions and self.source_file):
             return
