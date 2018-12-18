@@ -291,6 +291,18 @@ void SetImageLayout(layer_data *device_data, GLOBAL_CB_NODE *cb_node, const IMAG
                     sub.aspectMask |= (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
                 }
             }
+            // For multiplane images, IMAGE_ASPECT_COLOR is an alias for all of the plane bits
+            if (GetDeviceExtensions(device_data)->vk_khr_sampler_ycbcr_conversion) {
+                if (FormatIsMultiplane(image_state->createInfo.format)) {
+                    if (sub.aspectMask & VK_IMAGE_ASPECT_COLOR_BIT) {
+                        sub.aspectMask &= ~VK_IMAGE_ASPECT_COLOR_BIT;
+                        sub.aspectMask |= VK_IMAGE_ASPECT_PLANE_0_BIT_KHR | VK_IMAGE_ASPECT_PLANE_1_BIT_KHR;
+                        if (FormatPlaneCount(image_state->createInfo.format) > 2) {
+                            sub.aspectMask |= VK_IMAGE_ASPECT_PLANE_2_BIT_KHR;
+                        }
+                    }
+                }
+            }
             SetLayout(device_data, cb_node, image_state->image, sub, layout);
         }
     }
