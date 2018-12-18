@@ -87,7 +87,7 @@ set(TARGET_NAMES
     VkLayer_core_validation
     VkLayer_object_lifetimes
     VkLayer_unique_objects
-    VkLayer_parameter_validation
+    VkLayer_stateless_validation
     VkLayer_standard_validation
     VkLayer_thread_safety)
 
@@ -178,6 +178,7 @@ endif()
 GenerateFromVkXml(thread_safety_generator.py thread_safety.h)
 GenerateFromVkXml(thread_safety_generator.py thread_safety.cpp)
 GenerateFromVkXml(parameter_validation_generator.py parameter_validation.cpp)
+GenerateFromVkXml(parameter_validation_generator.py parameter_validation.h)
 GenerateFromVkXml(dispatch_table_helper_generator.py vk_dispatch_table_helper.h)
 GenerateFromVkXml(object_tracker_generator.py object_tracker.cpp)
 GenerateFromVkXml(object_tracker_generator.py object_tracker.h)
@@ -199,7 +200,7 @@ if(BUILD_LAYERS)
     AddVkLayer(object_lifetimes "BUILD_OBJECT_TRACKER" object_tracker.cpp object_tracker.h object_tracker_utils.cpp chassis.cpp layer_chassis_dispatch.cpp)
     AddVkLayer(thread_safety "BUILD_THREAD_SAFETY" thread_safety.cpp thread_safety.h chassis.cpp layer_chassis_dispatch.cpp)
     AddVkLayer(unique_objects "LAYER_CHASSIS_CAN_WRAP_HANDLES" chassis.cpp layer_chassis_dispatch.cpp)
-    AddVkLayer(parameter_validation "" parameter_validation.cpp parameter_validation_utils.cpp parameter_validation.h vk_validation_error_messages.h)
+    AddVkLayer(stateless_validation "BUILD_PARAMETER_VALIDATION" parameter_validation.cpp parameter_validation.h parameter_validation_utils.cpp chassis.cpp layer_chassis_dispatch.cpp)
 
     # Core validation has additional dependencies
     target_include_directories(VkLayer_core_validation PRIVATE ${GLSLANG_SPIRV_INCLUDE_DIR})

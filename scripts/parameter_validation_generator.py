@@ -123,8 +123,60 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                  diagFile = sys.stdout):
         OutputGenerator.__init__(self, errFile, warnFile, diagFile)
         self.INDENT_SPACES = 4
-        self.intercepts = []
         self.declarations = []
+
+        inline_custom_source_preamble = """
+"""
+
+        # These functions have additional, custome-written checks in the utils cpp file. CodeGen will automatically add a call
+        # to those functions of the form 'bool manual_PreCallValidateAPIName', where the 'vk' is dropped.
+        # see 'manual_PreCallValidateCreateGraphicsPipelines' as an example.
+        self.functions_with_manual_checks = [
+            'vkCreateInstance',
+            'vkCreateDevice',
+            'vkCreateQueryPool'
+            'vkCreateCommandPool',
+            'vkCreateRenderPass',
+            'vkCreateRenderPass2KHR',
+            'vkGetDeviceQueue',
+            'vkCreateBuffer',
+            'vkCreateImage',
+            'vkCreateImageView',
+            'vkCreateGraphicsPipelines',
+            'vkCreateComputePipelines',
+            'vkCreateSampler',
+            'vkCreateDescriptorSetLayout',
+            'vkFreeDescriptorSets',
+            'vkUpdateDescriptorSets',
+            'vkCreateRenderPass',
+            'vkCreateRenderPass2KHR',
+            'vkBeginCommandBuffer',
+            'vkCmdSetViewport',
+            'vkCmdSetScissor',
+            'vkCmdSetLineWidth',
+            'vkCmdDraw',
+            'vkCmdDrawIndirect',
+            'vkCmdDrawIndexedIndirect',
+            'vkCmdCopyImage',
+            'vkCmdBlitImage',
+            'vkCmdCopyBufferToImage',
+            'vkCmdCopyImageToBuffer',
+            'vkCmdUpdateBuffer',
+            'vkCmdFillBuffer',
+            'vkCreateSwapchainKHR',
+            'vkQueuePresentKHR',
+            'vkCreateDescriptorPool',
+            'vkCmdDispatch',
+            'vkCmdDispatchIndirect',
+            'vkCmdDispatchBaseKHR',
+            'vkCmdSetExclusiveScissorNV',
+            'vkCmdSetViewportShadingRatePaletteNV',
+            'vkCmdSetCoarseSampleOrderNV',
+            'vkCmdDrawMeshTasksNV',
+            'vkCmdDrawMeshTasksIndirectNV',
+            'vkCmdDrawMeshTasksIndirectCountNV',
+            ]
+
         # Commands to ignore
         self.blacklist = [
             'vkGetInstanceProcAddr',
@@ -134,23 +186,8 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             'vkEnumerateInstanceExtensionProperties',
             'vkEnumerateDeviceLayerProperties',
             'vkEnumerateDeviceExtensionProperties',
-            'vkCmdDebugMarkerEndEXT',
             ]
-        self.validate_only = [
-            'vkCreateInstance',
-            'vkDestroyInstance',
-            'vkCreateDevice',
-            'vkDestroyDevice',
-            'vkCreateQueryPool',
-            'vkCreateDebugReportCallbackEXT',
-            'vkDestroyDebugReportCallbackEXT',
-            'vkCreateCommandPool',
-            'vkCreateRenderPass',
-            'vkCreateRenderPass2KHR',
-            'vkDestroyRenderPass',
-            'vkCreateDebugUtilsMessengerEXT',
-            'vkDestroyDebugUtilsMessengerEXT',
-            ]
+
         # Structure fields to ignore
         self.structMemberBlacklist = { 'VkWriteDescriptorSet' : ['dstSet'] }
         # Validation conditions for some special case struct members that are conditionally validated
@@ -167,8 +204,6 @@ class ParameterValidationOutputGenerator(OutputGenerator):
         self.validatedStructs = dict()                    # Map of structs type names to generated validation code for that struct type
         self.enumRanges = dict()                          # Map of enum name to BEGIN/END range values
         self.enumValueLists = ''                          # String containing enumerated type map definitions
-        self.func_pointers = ''                           # String containing function pointers for manual PV functions
-        self.typedefs = ''                                # String containing function pointer typedefs
         self.flags = set()                                # Map of flags typenames
         self.flagBits = dict()                            # Map of flag bits typename to list of values
         self.newFlags = set()                             # Map of flags typenames /defined in the current feature/
@@ -180,6 +215,8 @@ class ParameterValidationOutputGenerator(OutputGenerator):
         self.valid_vuids = set()                          # Set of all valid VUIDs
         self.vuid_dict = dict()                           # VUID dictionary (from JSON)
         self.alias_dict = dict()                          # Dict of cmd|struct aliases
+        self.header_file = False                          # Header file generation flag
+        self.source_file = False                          # Source file generation flag
         self.returnedonly_structs = []
         # Named tuples to store struct and command data
         self.CommandParam = namedtuple('CommandParam', ['type', 'name', 'ispointer', 'isstaticarray', 'isbool', 'israngedenum',
@@ -246,6 +283,20 @@ class ParameterValidationOutputGenerator(OutputGenerator):
     # Called at file creation time
     def beginFile(self, genOpts):
         OutputGenerator.beginFile(self, genOpts)
+        self.header_file = (genOpts.filename == 'parameter_validation.h')
+        self.source_file = (genOpts.filename == 'parameter_validation.cpp')
+
+        if not self.header_file and not self.source_file:
+            print("Error: Output Filenames have changed, update generator source.\n")
+            sys.exit(1)
+
+        if self.source_file or self.header_file:
+            # Output Copyright text
+            s = self.GenerateCopyright()
+            write(s, file=self.outFile)
+
+        if self.header_file:
+            return
 
         # Build map of structure type names to VkStructureType enum values
         # Find all types of category "struct"
@@ -265,115 +316,77 @@ class ParameterValidationOutputGenerator(OutputGenerator):
         if len(self.vuid_dict) == 0:
             print("Error: Could not find, or error loading %s/validusage.json\n", vu_json_filename)
             sys.exit(1)
-
-        # C-specific
         #
         # Build a set of all vuid text strings found in validusage.json
         for json_vuid_string in self.ExtractVUIDs(self.vuid_dict):
             self.valid_vuids.add(json_vuid_string)
         #
-        # User-supplied prefix text, if any (list of strings)
-        s = self.GenerateCopyright()
-        write(s, file=self.outFile)
-        #
         # Headers
-        write('#include <string>', file=self.outFile)
+        write('#include "chassis.h"', file=self.outFile)
         self.newline()
-        write('#include "vk_loader_platform.h"', file=self.outFile)
-        write('#include "vulkan/vulkan.h"', file=self.outFile)
-        write('#include "vk_layer_extension_utils.h"', file=self.outFile)
-        write('#include "parameter_validation.h"', file=self.outFile)
-        #
-        # Macros
+        write('#include "stateless_validation.h"', file=self.outFile)
         self.newline()
-        write('#ifndef UNUSED_PARAMETER', file=self.outFile)
-        write('#define UNUSED_PARAMETER(x) (void)(x)', file=self.outFile)
-        write('#endif // UNUSED_PARAMETER', file=self.outFile)
-        #
-        # Namespace
-        self.newline()
-        write('namespace parameter_validation {', file = self.outFile)
-        self.newline()
-        write('extern std::mutex global_lock;', file = self.outFile)
-        write('extern std::unordered_map<void *, layer_data *> layer_data_map;', file = self.outFile)
-        write('extern std::unordered_map<void *, instance_layer_data *> instance_layer_data_map;', file = self.outFile)
-        self.newline()
-        #
-        # FuncPtrMap
-        self.func_pointers += 'std::unordered_map<std::string, void *> custom_functions = {\n'
     #
     # Called at end-time for final content output
     def endFile(self):
-        # C-specific
-        self.newline()
-        write(self.enumValueLists, file=self.outFile)
-        self.newline()
-        write(self.typedefs, file=self.outFile)
-        self.newline()
-        self.func_pointers += '};\n'
-        write(self.func_pointers, file=self.outFile)
-        self.newline()
+        if self.source_file:
+            # C-specific
+            self.newline()
+            write(self.enumValueLists, file=self.outFile)
+            self.newline()
 
-        pnext_handler  = 'bool ValidatePnextStructContents(debug_report_data *report_data, const char *api_name, const ParameterName &parameter_name, const GenericHeader* header) {\n'
-        pnext_handler += '    bool skip = false;\n'
-        pnext_handler += '    switch(header->sType) {\n'
+            pnext_handler  = 'bool StatelessValidation::ValidatePnextStructContents(const char *api_name, const ParameterName &parameter_name, const GenericHeader* header) {\n'
+            pnext_handler += '    bool skip = false;\n'
+            pnext_handler += '    switch(header->sType) {\n'
 
-        # Do some processing here to extract data from validatedstructs...
-        for item in self.structextends_list:
-            postProcSpec = {}
-            postProcSpec['ppp'] = '' if not item else '{postProcPrefix}'
-            postProcSpec['pps'] = '' if not item else '{postProcSuffix}'
-            postProcSpec['ppi'] = '' if not item else '{postProcInsert}'
+            # Do some processing here to extract data from validatedstructs...
+            for item in self.structextends_list:
+                postProcSpec = {}
+                postProcSpec['ppp'] = '' if not item else '{postProcPrefix}'
+                postProcSpec['pps'] = '' if not item else '{postProcSuffix}'
+                postProcSpec['ppi'] = '' if not item else '{postProcInsert}'
 
-            pnext_case = '\n'
-            protect = ''
-            # Guard struct cases with feature ifdefs, if necessary
-            if item in self.struct_feature_protect.keys():
-                protect = self.struct_feature_protect[item]
-                pnext_case += '#ifdef %s\n' % protect
-            pnext_case += '        // Validation code for %s structure members\n' % item
-            pnext_case += '        case %s: {\n' % self.structTypes[item]
-            pnext_case += '            %s *structure = (%s *) header;\n' % (item, item)
-            expr = self.expandStructCode(item, item, 'structure->', '', '            ', [], postProcSpec)
-            struct_validation_source = self.ScrubStructCode(expr)
-            pnext_case += '%s' % struct_validation_source
-            pnext_case += '        } break;\n'
-            if protect is not '':
-                pnext_case += '#endif // %s\n' % protect
-            # Skip functions containing no validation
-            if struct_validation_source != '':
-                pnext_handler += pnext_case;
-        pnext_handler += '        default:\n'
-        pnext_handler += '            skip = false;\n'
-        pnext_handler += '    }\n'
-        pnext_handler += '    return skip;\n'
-        pnext_handler += '}\n'
-        write(pnext_handler, file=self.outFile)
-        self.newline()
+                pnext_case = '\n'
+                protect = ''
+                # Guard struct cases with feature ifdefs, if necessary
+                if item in self.struct_feature_protect.keys():
+                    protect = self.struct_feature_protect[item]
+                    pnext_case += '#ifdef %s\n' % protect
+                pnext_case += '        // Validation code for %s structure members\n' % item
+                pnext_case += '        case %s: {\n' % self.structTypes[item]
+                pnext_case += '            %s *structure = (%s *) header;\n' % (item, item)
+                expr = self.expandStructCode(item, item, 'structure->', '', '            ', [], postProcSpec)
+                struct_validation_source = self.ScrubStructCode(expr)
+                pnext_case += '%s' % struct_validation_source
+                pnext_case += '        } break;\n'
+                if protect is not '':
+                    pnext_case += '#endif // %s\n' % protect
+                # Skip functions containing no validation
+                if struct_validation_source != '':
+                    pnext_handler += pnext_case;
+            pnext_handler += '        default:\n'
+            pnext_handler += '            skip = false;\n'
+            pnext_handler += '    }\n'
+            pnext_handler += '    return skip;\n'
+            pnext_handler += '}\n'
+            write(pnext_handler, file=self.outFile)
+            self.newline()
 
-        ext_template  = 'template <typename T>\n'
-        ext_template += 'bool OutputExtensionError(const T *layer_data, const std::string &api_name, const std::string &extension_name) {\n'
-        ext_template += '    return log_msg(layer_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,\n'
-        ext_template += '                   kVUID_PVError_ExtensionNotEnabled, "Attemped to call %s() but its required extension %s has not been enabled\\n",\n'
-        ext_template += '                   api_name.c_str(), extension_name.c_str());\n'
-        ext_template += '}\n'
-        write(ext_template, file=self.outFile)
-        self.newline()
-        commands_text = '\n'.join(self.validation)
-        write(commands_text, file=self.outFile)
-        self.newline()
-        # Output declarations and record intercepted procedures
-        write('// Declarations', file=self.outFile)
-        write('\n'.join(self.declarations), file=self.outFile)
-        write('// Map of all APIs to be intercepted by this layer', file=self.outFile)
-        write('const std::unordered_map<std::string, void*> name_to_funcptr_map = {', file=self.outFile)
-        write('\n'.join(self.intercepts), file=self.outFile)
-        write('};\n', file=self.outFile)
-        self.newline()
-        # Namespace
-        write('} // namespace parameter_validation', file = self.outFile)
-        # Finish processing in superclass
-        OutputGenerator.endFile(self)
+            ext_template  = 'bool StatelessValidation::OutputExtensionError(const std::string &api_name, const std::string &extension_name) {\n'
+            ext_template += '    return log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,\n'
+            ext_template += '                   kVUID_PVError_ExtensionNotEnabled, "Attemped to call %s() but its required extension %s has not been enabled\\n",\n'
+            ext_template += '                   api_name.c_str(), extension_name.c_str());\n'
+            ext_template += '}\n'
+            write(ext_template, file=self.outFile)
+            self.newline()
+            commands_text = '\n'.join(self.validation)
+            write(commands_text, file=self.outFile)
+            self.newline()
+        if self.header_file:
+            # Output declarations and record intercepted procedures
+            write('\n'.join(self.declarations), file=self.outFile)
+            # Finish processing in superclass
+            OutputGenerator.endFile(self)
     #
     # Processing at beginning of each feature or extension
     def beginFeature(self, interface, emit):
@@ -419,6 +432,8 @@ class ParameterValidationOutputGenerator(OutputGenerator):
     #
     # Called at the end of each extension (feature)
     def endFeature(self):
+        if self.header_file:
+            return
         # C-specific
         # Actually write the interface to the output file.
         if (self.emit):
@@ -434,7 +449,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             self.processCmdData()
             # Write the declaration for the HeaderVersion
             if self.headerVersion:
-                write('const uint32_t GeneratedHeaderVersion = {};'.format(self.headerVersion), file=self.outFile)
+                write('const uint32_t GeneratedVulkanHeaderVersion = {};'.format(self.headerVersion), file=self.outFile)
                 self.newline()
             # Write the declarations for the VkFlags values combining all flag bits
             for flag in sorted(self.newFlags):
@@ -479,6 +494,8 @@ class ParameterValidationOutputGenerator(OutputGenerator):
     # type declarations. The <member> tags are just like <param> tags - they are a declaration of a struct or union member.
     # Only simple member declarations are supported (no nested structs etc.)
     def genStruct(self, typeinfo, typeName, alias):
+        if not self.source_file:
+            return
         # alias has already been recorded in genType, above
         OutputGenerator.genStruct(self, typeinfo, typeName, alias)
         conditions = self.structMemberValidationConditions[typeName] if typeName in self.structMemberValidationConditions else None
@@ -544,6 +561,8 @@ class ParameterValidationOutputGenerator(OutputGenerator):
     # Capture group (e.g. C "enum" type) info to be used for param check code generation.
     # These are concatenated together with other types.
     def genGroup(self, groupinfo, groupName, alias):
+        if not self.source_file:
+            return
         # record the name/alias pair
         if alias is not None:
             self.alias_dict[groupName]=alias
@@ -591,61 +610,51 @@ class ParameterValidationOutputGenerator(OutputGenerator):
         decls = self.makeCDecls(cmdinfo.elem)
         typedef = decls[1]
         typedef = typedef.split(')',1)[1]
-        if name not in self.blacklist:
-            if (self.featureExtraProtect is not None):
-                self.declarations += [ '#ifdef %s' % self.featureExtraProtect ]
-                self.intercepts += [ '#ifdef %s' % self.featureExtraProtect ]
-                if (name not in self.validate_only):
-                    self.func_pointers += '#ifdef %s\n' % self.featureExtraProtect
-                    self.typedefs += '#ifdef %s\n' % self.featureExtraProtect
-            if (name not in self.validate_only):
-                self.typedefs += 'typedef bool (*PFN_manual_%s)%s\n' % (name, typedef)
-                self.func_pointers += '    {"%s", nullptr},\n' % name
-            self.intercepts += [ '    {"%s", (void*)%s},' % (name,name) ]
-            # Strip off 'vk' from API name
-            self.declarations += [ '%s' % decls[0].replace("VKAPI_CALL vk", "VKAPI_CALL ") ]
-            if (self.featureExtraProtect is not None):
-                self.intercepts += [ '#endif' ]
-                self.declarations += [ '#endif' ]
-                if (name not in self.validate_only):
-                    self.func_pointers += '#endif\n'
-                    self.typedefs += '#endif\n'
-        if name not in self.blacklist:
-            params = cmdinfo.elem.findall('param')
-            # Get list of array lengths
-            lens = set()
-            for param in params:
-                len = self.getLen(param)
-                if len:
-                    lens.add(len)
-            # Get param info
-            paramsInfo = []
-            for param in params:
-                paramInfo = self.getTypeNameTuple(param)
-                cdecl = self.makeCParamDecl(param, 0)
-                # Check for parameter name in lens set
-                iscount = False
-                if paramInfo[1] in lens:
-                    iscount = True
-                paramsInfo.append(self.CommandParam(type=paramInfo[0], name=paramInfo[1],
-                                                    ispointer=self.paramIsPointer(param),
-                                                    isstaticarray=self.paramIsStaticArray(param),
-                                                    isbool=True if paramInfo[0] == 'VkBool32' else False,
-                                                    israngedenum=True if paramInfo[0] in self.enumRanges else False,
-                                                    isconst=True if 'const' in cdecl else False,
-                                                    isoptional=self.paramIsOptional(param),
-                                                    iscount=iscount,
-                                                    noautovalidity=True if param.attrib.get('noautovalidity') is not None else False,
-                                                    len=self.getLen(param),
-                                                    extstructs=None,
-                                                    condition=None,
-                                                    cdecl=cdecl))
-            # Save return value information, if any
-            result_type = ''
-            resultinfo = cmdinfo.elem.find('proto/type')
-            if (resultinfo is not None and resultinfo.text != 'void'):
-                result_type = resultinfo.text
-            self.commands.append(self.CommandData(name=name, params=paramsInfo, cdecl=self.makeCDecls(cmdinfo.elem)[0], extension_type=self.extension_type, result=result_type))
+        if self.header_file:
+            if name not in self.blacklist:
+                if (self.featureExtraProtect is not None):
+                    self.declarations += [ '#ifdef %s' % self.featureExtraProtect ]
+                # Strip off 'vk' from API name
+                self.declarations += [ '%s%s' % ('bool PreCallValidate', decls[0].split("VKAPI_CALL vk")[1])]
+                if (self.featureExtraProtect is not None):
+                    self.declarations += [ '#endif' ]
+        if self.source_file:
+            if name not in self.blacklist:
+                params = cmdinfo.elem.findall('param')
+                # Get list of array lengths
+                lens = set()
+                for param in params:
+                    len = self.getLen(param)
+                    if len:
+                        lens.add(len)
+                # Get param info
+                paramsInfo = []
+                for param in params:
+                    paramInfo = self.getTypeNameTuple(param)
+                    cdecl = self.makeCParamDecl(param, 0)
+                    # Check for parameter name in lens set
+                    iscount = False
+                    if paramInfo[1] in lens:
+                        iscount = True
+                    paramsInfo.append(self.CommandParam(type=paramInfo[0], name=paramInfo[1],
+                                                        ispointer=self.paramIsPointer(param),
+                                                        isstaticarray=self.paramIsStaticArray(param),
+                                                        isbool=True if paramInfo[0] == 'VkBool32' else False,
+                                                        israngedenum=True if paramInfo[0] in self.enumRanges else False,
+                                                        isconst=True if 'const' in cdecl else False,
+                                                        isoptional=self.paramIsOptional(param),
+                                                        iscount=iscount,
+                                                        noautovalidity=True if param.attrib.get('noautovalidity') is not None else False,
+                                                        len=self.getLen(param),
+                                                        extstructs=None,
+                                                        condition=None,
+                                                        cdecl=cdecl))
+                # Save return value information, if any
+                result_type = ''
+                resultinfo = cmdinfo.elem.find('proto/type')
+                if (resultinfo is not None and resultinfo.text != 'void'):
+                    result_type = resultinfo.text
+                self.commands.append(self.CommandData(name=name, params=paramsInfo, cdecl=self.makeCDecls(cmdinfo.elem)[0], extension_type=self.extension_type, result=result_type))
     #
     # Check if the parameter passed in is a pointer
     def paramIsPointer(self, param):
@@ -841,15 +850,15 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             # This is an array with a pointer to a count value
             if lenValue.ispointer:
                 # When the length parameter is a pointer, there is an extra Boolean parameter in the function call to indicate if it is required
-                checkExpr.append('skip |= validate_struct_type_array(local_data->report_data, "{}", {ppp}"{ldn}"{pps}, {ppp}"{dn}"{pps}, "{sv}", {pf}{ln}, {pf}{vn}, {sv}, {}, {}, {}, {}, {});\n'.format(
+                checkExpr.append('skip |= validate_struct_type_array("{}", {ppp}"{ldn}"{pps}, {ppp}"{dn}"{pps}, "{sv}", {pf}{ln}, {pf}{vn}, {sv}, {}, {}, {}, {}, {});\n'.format(
                     funcPrintName, lenPtrRequired, lenValueRequired, valueRequired, stype_vuid, param_vuid, ln=lenValue.name, ldn=lenPrintName, dn=valuePrintName, vn=value.name, sv=stype, pf=prefix, **postProcSpec))
             # This is an array with an integer count value
             else:
-                checkExpr.append('skip |= validate_struct_type_array(local_data->report_data, "{}", {ppp}"{ldn}"{pps}, {ppp}"{dn}"{pps}, "{sv}", {pf}{ln}, {pf}{vn}, {sv}, {}, {}, {}, {});\n'.format(
+                checkExpr.append('skip |= validate_struct_type_array("{}", {ppp}"{ldn}"{pps}, {ppp}"{dn}"{pps}, "{sv}", {pf}{ln}, {pf}{vn}, {sv}, {}, {}, {}, {});\n'.format(
                     funcPrintName, lenValueRequired, valueRequired, stype_vuid, param_vuid, ln=lenValue.name, ldn=lenPrintName, dn=valuePrintName, vn=value.name, sv=stype, pf=prefix, **postProcSpec))
         # This is an individual struct
         else:
-            checkExpr.append('skip |= validate_struct_type(local_data->report_data, "{}", {ppp}"{}"{pps}, "{sv}", {}{vn}, {sv}, {}, {}, {});\n'.format(
+            checkExpr.append('skip |= validate_struct_type("{}", {ppp}"{}"{pps}, "{sv}", {}{vn}, {sv}, {}, {}, {});\n'.format(
                 funcPrintName, valuePrintName, prefix, valueRequired, param_vuid, stype_vuid, vn=value.name, sv=stype, vt=value.type, **postProcSpec))
         return checkExpr
     #
@@ -862,7 +871,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                 raise('Unsupported parameter validation case: Output handle array elements are not NULL checked')
             else:
                 # This is an array with an integer count value
-                checkExpr.append('skip |= validate_handle_array(local_data->report_data, "{}", {ppp}"{ldn}"{pps}, {ppp}"{dn}"{pps}, {pf}{ln}, {pf}{vn}, {}, {});\n'.format(
+                checkExpr.append('skip |= validate_handle_array("{}", {ppp}"{ldn}"{pps}, {ppp}"{dn}"{pps}, {pf}{ln}, {pf}{vn}, {}, {});\n'.format(
                     funcPrintName, lenValueRequired, valueRequired, ln=lenValue.name, ldn=lenPrintName, dn=valuePrintName, vn=value.name, pf=prefix, **postProcSpec))
         else:
             # This is assumed to be an output handle pointer
@@ -877,7 +886,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             raise('Unsupported parameter validation case: array of reserved VkFlags')
         else:
             allFlags = 'All' + flagBitsName
-            checkExpr.append('skip |= validate_flags_array(local_data->report_data, "{}", {ppp}"{}"{pps}, {ppp}"{}"{pps}, "{}", {}, {pf}{}, {pf}{}, {}, {});\n'.format(funcPrintName, lenPrintName, valuePrintName, flagBitsName, allFlags, lenValue.name, value.name, lenValueRequired, valueRequired, pf=prefix, **postProcSpec))
+            checkExpr.append('skip |= validate_flags_array("{}", {ppp}"{}"{pps}, {ppp}"{}"{pps}, "{}", {}, {pf}{}, {pf}{}, {}, {});\n'.format(funcPrintName, lenPrintName, valuePrintName, flagBitsName, allFlags, lenValue.name, value.name, lenValueRequired, valueRequired, pf=prefix, **postProcSpec))
         return checkExpr
     #
     # Generate pNext check string
@@ -893,7 +902,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             extStructCount = 'ARRAY_SIZE({})'.format(extStructVar)
             extStructNames = '"' + ', '.join(value.extstructs) + '"'
             checkExpr.append('const VkStructureType {}[] = {{ {} }};\n'.format(extStructVar, ', '.join([self.structTypes[s] for s in value.extstructs])))
-        checkExpr.append('skip |= validate_struct_pnext(local_data->report_data, "{}", {ppp}"{}"{pps}, {}, {}{}, {}, {}, GeneratedHeaderVersion, {});\n'.format(
+        checkExpr.append('skip |= validate_struct_pnext("{}", {ppp}"{}"{pps}, {}, {}{}, {}, {}, GeneratedVulkanHeaderVersion, {});\n'.format(
             funcPrintName, valuePrintName, extStructNames, prefix, value.name, extStructCount, extStructVar, vuid, **postProcSpec))
         return checkExpr
     #
@@ -909,18 +918,18 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                 # If count and array parameters are optional, there will be no validation
                 if valueRequired == 'true' or lenPtrRequired == 'true' or lenValueRequired == 'true':
                     # When the length parameter is a pointer, there is an extra Boolean parameter in the function call to indicate if it is required
-                    checkExpr.append('skip |= validate_array(local_data->report_data, "{}", {ppp}"{ldn}"{pps}, {ppp}"{dn}"{pps}, {pf}{ln}, &{pf}{vn}, {}, {}, {}, {}, {});\n'.format(
+                    checkExpr.append('skip |= validate_array("{}", {ppp}"{ldn}"{pps}, {ppp}"{dn}"{pps}, {pf}{ln}, &{pf}{vn}, {}, {}, {}, {}, {});\n'.format(
                         funcPrintName, lenPtrRequired, lenValueRequired, valueRequired, count_required_vuid, array_required_vuid, ln=lenValue.name, ldn=lenPrintName, dn=valuePrintName, vn=value.name, pf=prefix, **postProcSpec))
             # This is an array with an integer count value
             else:
                 # If count and array parameters are optional, there will be no validation
                 if valueRequired == 'true' or lenValueRequired == 'true':
                     if value.type != 'char':
-                        checkExpr.append('skip |= validate_array(local_data->report_data, "{}", {ppp}"{ldn}"{pps}, {ppp}"{dn}"{pps}, {pf}{ln}, &{pf}{vn}, {}, {}, {}, {});\n'.format(
+                        checkExpr.append('skip |= validate_array("{}", {ppp}"{ldn}"{pps}, {ppp}"{dn}"{pps}, {pf}{ln}, &{pf}{vn}, {}, {}, {}, {});\n'.format(
                             funcPrintName, lenValueRequired, valueRequired, count_required_vuid, array_required_vuid, ln=lenValue.name, ldn=lenPrintName, dn=valuePrintName, vn=value.name, pf=prefix, **postProcSpec))
                     else:
                         # Arrays of strings receive special processing
-                        checkExpr.append('skip |= validate_string_array(local_data->report_data, "{}", {ppp}"{ldn}"{pps}, {ppp}"{dn}"{pps}, {pf}{ln}, {pf}{vn}, {}, {}, {}, {});\n'.format(
+                        checkExpr.append('skip |= validate_string_array("{}", {ppp}"{ldn}"{pps}, {ppp}"{dn}"{pps}, {pf}{ln}, {pf}{vn}, {}, {}, {}, {});\n'.format(
                             funcPrintName, lenValueRequired, valueRequired, count_required_vuid, array_required_vuid, ln=lenValue.name, ldn=lenPrintName, dn=valuePrintName, vn=value.name, pf=prefix, **postProcSpec))
             if checkExpr:
                 if lenValue and ('->' in lenValue.name):
@@ -939,9 +948,9 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                 vuid = allocator_dict.get(value.name)
                 if vuid is not None:
                     ptr_required_vuid = vuid
-                checkExpr.append('skip |= validate_required_pointer(local_data->report_data, "{}", {ppp}"{}"{pps}, reinterpret_cast<const void*>({}{}), {});\n'.format(funcPrintName, valuePrintName, prefix, value.name, ptr_required_vuid, **postProcSpec))
+                checkExpr.append('skip |= validate_required_pointer("{}", {ppp}"{}"{pps}, reinterpret_cast<const void*>({}{}), {});\n'.format(funcPrintName, valuePrintName, prefix, value.name, ptr_required_vuid, **postProcSpec))
             else:
-                checkExpr.append('skip |= validate_required_pointer(local_data->report_data, "{}", {ppp}"{}"{pps}, {}{}, {});\n'.format(funcPrintName, valuePrintName, prefix, value.name, ptr_required_vuid, **postProcSpec))
+                checkExpr.append('skip |= validate_required_pointer("{}", {ppp}"{}"{pps}, {}{}, {});\n'.format(funcPrintName, valuePrintName, prefix, value.name, ptr_required_vuid, **postProcSpec))
         return checkExpr
     #
     # Process struct member validation code, performing name substitution if required
@@ -1119,10 +1128,10 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                     elif value.type in self.flags and value.isconst:
                         usedLines += self.makeFlagsArrayCheck(valuePrefix, value, lenParam, req, cvReq, funcName, lenDisplayName, valueDisplayName, postProcSpec)
                     elif value.isbool and value.isconst:
-                        usedLines.append('skip |= validate_bool32_array(local_data->report_data, "{}", {ppp}"{}"{pps}, {ppp}"{}"{pps}, {pf}{}, {pf}{}, {}, {});\n'.format(funcName, lenDisplayName, valueDisplayName, lenParam.name, value.name, cvReq, req, pf=valuePrefix, **postProcSpec))
+                        usedLines.append('skip |= validate_bool32_array("{}", {ppp}"{}"{pps}, {ppp}"{}"{pps}, {pf}{}, {pf}{}, {}, {});\n'.format(funcName, lenDisplayName, valueDisplayName, lenParam.name, value.name, cvReq, req, pf=valuePrefix, **postProcSpec))
                     elif value.israngedenum and value.isconst:
                         enum_value_list = 'All%sEnums' % value.type
-                        usedLines.append('skip |= validate_ranged_enum_array(local_data->report_data, "{}", {ppp}"{}"{pps}, {ppp}"{}"{pps}, "{}", {}, {pf}{}, {pf}{}, {}, {});\n'.format(funcName, lenDisplayName, valueDisplayName, value.type, enum_value_list, lenParam.name, value.name, cvReq, req, pf=valuePrefix, **postProcSpec))
+                        usedLines.append('skip |= validate_ranged_enum_array("{}", {ppp}"{}"{pps}, {ppp}"{}"{pps}, "{}", {}, {pf}{}, {pf}{}, {}, {});\n'.format(funcName, lenDisplayName, valueDisplayName, value.type, enum_value_list, lenParam.name, value.name, cvReq, req, pf=valuePrefix, **postProcSpec))
                     elif value.name == 'pNext' and value.isconst:
                         usedLines += self.makeStructNextCheck(valuePrefix, value, funcName, valueDisplayName, postProcSpec, structTypeName)
                     else:
@@ -1147,16 +1156,16 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                         stype = self.structTypes[value.type]
                         vuid = self.GetVuid(value.type, "sType-sType")
                         undefined_vuid = '"kVUIDUndefined"'
-                        usedLines.append('skip |= validate_struct_type(local_data->report_data, "{}", {ppp}"{}"{pps}, "{sv}", &({}{vn}), {sv}, false, kVUIDUndefined, {});\n'.format(
+                        usedLines.append('skip |= validate_struct_type("{}", {ppp}"{}"{pps}, "{sv}", &({}{vn}), {sv}, false, kVUIDUndefined, {});\n'.format(
                             funcName, valueDisplayName, valuePrefix, vuid, vn=value.name, sv=stype, vt=value.type, **postProcSpec))
                     elif value.type in self.handleTypes:
                         if not self.isHandleOptional(value, None):
-                            usedLines.append('skip |= validate_required_handle(local_data->report_data, "{}", {ppp}"{}"{pps}, {}{});\n'.format(funcName, valueDisplayName, valuePrefix, value.name, **postProcSpec))
+                            usedLines.append('skip |= validate_required_handle("{}", {ppp}"{}"{pps}, {}{});\n'.format(funcName, valueDisplayName, valuePrefix, value.name, **postProcSpec))
                     elif value.type in self.flags:
                         flagBitsName = value.type.replace('Flags', 'FlagBits')
                         if not flagBitsName in self.flagBits:
                             vuid = self.GetVuid(vuid_name_tag, "%s-zerobitmask" % (value.name))
-                            usedLines.append('skip |= validate_reserved_flags(local_data->report_data, "{}", {ppp}"{}"{pps}, {pf}{}, {});\n'.format(funcName, valueDisplayName, value.name, vuid, pf=valuePrefix, **postProcSpec))
+                            usedLines.append('skip |= validate_reserved_flags("{}", {ppp}"{}"{pps}, {pf}{}, {});\n'.format(funcName, valueDisplayName, value.name, vuid, pf=valuePrefix, **postProcSpec))
                         else:
                             if value.isoptional:
                                 flagsRequired = 'false'
@@ -1165,18 +1174,18 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                                 flagsRequired = 'true'
                                 vuid = self.GetVuid(vuid_name_tag, "%s-requiredbitmask" % (value.name))
                             allFlagsName = 'All' + flagBitsName
-                            usedLines.append('skip |= validate_flags(local_data->report_data, "{}", {ppp}"{}"{pps}, "{}", {}, {pf}{}, {}, false, {});\n'.format(funcName, valueDisplayName, flagBitsName, allFlagsName, value.name, flagsRequired, vuid, pf=valuePrefix, **postProcSpec))
+                            usedLines.append('skip |= validate_flags("{}", {ppp}"{}"{pps}, "{}", {}, {pf}{}, {}, false, {});\n'.format(funcName, valueDisplayName, flagBitsName, allFlagsName, value.name, flagsRequired, vuid, pf=valuePrefix, **postProcSpec))
                     elif value.type in self.flagBits:
                         flagsRequired = 'false' if value.isoptional else 'true'
                         allFlagsName = 'All' + value.type
                         vuid = self.GetVuid(vuid_name_tag, "%s-parameter" % (value.name))
-                        usedLines.append('skip |= validate_flags(local_data->report_data, "{}", {ppp}"{}"{pps}, "{}", {}, {pf}{}, {}, true, {});\n'.format(funcName, valueDisplayName, value.type, allFlagsName, value.name, flagsRequired, vuid, pf=valuePrefix, **postProcSpec))
+                        usedLines.append('skip |= validate_flags("{}", {ppp}"{}"{pps}, "{}", {}, {pf}{}, {}, true, {});\n'.format(funcName, valueDisplayName, value.type, allFlagsName, value.name, flagsRequired, vuid, pf=valuePrefix, **postProcSpec))
                     elif value.isbool:
-                        usedLines.append('skip |= validate_bool32(local_data->report_data, "{}", {ppp}"{}"{pps}, {}{});\n'.format(funcName, valueDisplayName, valuePrefix, value.name, **postProcSpec))
+                        usedLines.append('skip |= validate_bool32("{}", {ppp}"{}"{pps}, {}{});\n'.format(funcName, valueDisplayName, valuePrefix, value.name, **postProcSpec))
                     elif value.israngedenum:
                         vuid = self.GetVuid(vuid_name_tag, "%s-parameter" % (value.name))
                         enum_value_list = 'All%sEnums' % value.type
-                        usedLines.append('skip |= validate_ranged_enum(local_data->report_data, "{}", {ppp}"{}"{pps}, "{}", {}, {}{}, {});\n'.format(funcName, valueDisplayName, value.type, enum_value_list, valuePrefix, value.name, vuid, **postProcSpec))
+                        usedLines.append('skip |= validate_ranged_enum("{}", {ppp}"{}"{pps}, "{}", {}, {}{}, {});\n'.format(funcName, valueDisplayName, value.type, enum_value_list, valuePrefix, value.name, vuid, **postProcSpec))
                     # If this is a struct, see if it contains members that need to be checked
                     if value.type in self.validatedStructs:
                         memberNamePrefix = '{}{}.'.format(valuePrefix, value.name)
@@ -1210,15 +1219,16 @@ class ParameterValidationOutputGenerator(OutputGenerator):
     def processCmdData(self):
         indent = self.incIndent(None)
         for command in self.commands:
-            just_validate = False
-            if command.name in self.validate_only:
-                just_validate = True
             # Skip first parameter if it is a dispatch handle (everything except vkCreateInstance)
             startIndex = 0 if command.name == 'vkCreateInstance' else 1
             lines, unused = self.genFuncBody(command.name, command.params[startIndex:], '', '', None)
             # Cannot validate extension dependencies for device extension APIs having a physical device as their dispatchable object
             if (command.name in self.required_extensions) and (self.extension_type != 'device' or command.params[0].type != 'VkPhysicalDevice'):
                 ext_test = ''
+                if command.params[0].type in ["VkInstance", "VkPhysicalDevice"] or command.name == 'vkCreateInstance':
+                    ext_table_type = 'instance'
+                else:
+                    ext_table_type = 'device'
                 for ext in self.required_extensions[command.name]:
                     ext_name_define = ''
                     ext_enable_name = ''
@@ -1228,77 +1238,27 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                             ext_enable_name = ext_name_define.lower()
                             ext_enable_name = re.sub('_extension_name', '', ext_enable_name)
                             break
-                    ext_test = 'if (!local_data->extensions.%s) skip |= OutputExtensionError(local_data, "%s", %s);\n' % (ext_enable_name, command.name, ext_name_define)
+                    ext_test = 'if (!%s_extensions.%s) skip |= OutputExtensionError("%s", %s);\n' % (ext_table_type, ext_enable_name, command.name, ext_name_define)
                     lines.insert(0, ext_test)
             if lines:
-                cmdDef = self.getCmdDef(command) + '\n'
-                # For a validation-only routine, change the function declaration
-                if just_validate:
-                    jv_def = '// Generated function handles validation only -- API definition is in non-generated source\n'
-                    jv_def += 'extern %s\n\n' % command.cdecl
-                    cmdDef = 'bool parameter_validation_' + cmdDef.split('VKAPI_CALL ',1)[1]
-                    if command.name == 'vkCreateInstance':
-                        cmdDef = cmdDef.replace('(\n', '(\n    VkInstance instance,\n')
-                    cmdDef = jv_def + cmdDef
-                cmdDef += '{\n'
-
-                # Add list of commands to skip -- just generate the routine signature and put the manual source in parameter_validation_utils.cpp
-                if command.params[0].type in ["VkInstance", "VkPhysicalDevice"] or command.name == 'vkCreateInstance':
-                    map_name = 'instance_layer_data_map'
-                    map_type = 'instance_layer_data'
-                else:
-                    map_name = 'layer_data_map'
-                    map_type = 'layer_data'
-                instance_param = command.params[0].name
-                if command.name == 'vkCreateInstance':
-                    instance_param = 'instance'
-                layer_data = '    %s *local_data = GetLayerDataPtr(get_dispatch_key(%s), %s);\n' % (map_type, instance_param, map_name)
-                cmdDef += layer_data
+                func_sig = self.getCmdDef(command) + ' {\n'
+                func_sig = func_sig.split('VKAPI_CALL vk')[1]
+                cmdDef = 'bool StatelessValidation::PreCallValidate' + func_sig
                 cmdDef += '%sbool skip = false;\n' % indent
-                if not just_validate:
-                    if command.result != '':
-                        if command.result == "VkResult":
-                            cmdDef += indent + '%s result = VK_ERROR_VALIDATION_FAILED_EXT;\n' % command.result
-                        elif command.result == "VkBool32":
-                            cmdDef += indent + '%s result = VK_FALSE;\n' % command.result
-                        else:
-                            raise Exception("Unknown result type: " + command.result)
-
-                    cmdDef += '%sstd::unique_lock<std::mutex> lock(global_lock);\n' % indent
+                # Insert call to custom-written function if present
+                if command.name in self.functions_with_manual_checks:
+                    # Generate parameter list for manual fcn and down-chain calls
+                    params_text = ''
+                    for param in command.params:
+                        params_text += '%s, ' % param.name
+                    params_text = params_text[:-2] + ');\n'
+                    cmdDef += '    skip |= manual_PreCallValidate'+ command.name[2:] + '(' + params_text
                 for line in lines:
-                    cmdDef += '\n'
                     if type(line) is list:
                         for sub in line:
                             cmdDef += indent + sub
                     else:
                         cmdDef += indent + line
-                cmdDef += '\n'
-                if not just_validate:
-                    # Generate parameter list for manual fcn and down-chain calls
-                    params_text = ''
-                    for param in command.params:
-                        params_text += '%s, ' % param.name
-                    params_text = params_text[:-2]
-                    # Generate call to manual function if its function pointer is non-null
-                    cmdDef += '%sPFN_manual_%s custom_func = (PFN_manual_%s)custom_functions["%s"];\n' % (indent, command.name, command.name, command.name)
-                    cmdDef += '%sif (custom_func != nullptr) {\n' % indent
-                    cmdDef += '    %sskip |= custom_func(%s);\n' % (indent, params_text)
-                    cmdDef += '%s}\n\n' % indent
-                    # Release the validation lock
-                    cmdDef += '%slock.unlock();\n' % indent
-                    # Generate skip check and down-chain call
-                    cmdDef += '%sif (!skip) {\n'  % indent
-                    down_chain_call = '    %s' % indent
-                    if command.result != '':
-                        down_chain_call += '    result = '
-                    # Generate down-chain API call
-                    api_call = '%s(%s);' % (command.name, params_text)
-                    down_chain_call += 'local_data->dispatch_table.%s\n' % api_call[2:]
-                    cmdDef += down_chain_call
-                    cmdDef += '%s}\n' % indent
-                    if command.result != '':
-                        cmdDef += '%sreturn result;\n' % indent
-                else:
-                    cmdDef += '%sreturn skip;\n' % indent
+                cmdDef += '%sreturn skip;\n' % indent
                 cmdDef += '}\n'
                 self.validation.append(cmdDef)

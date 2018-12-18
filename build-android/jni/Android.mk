@@ -55,13 +55,15 @@ include $(BUILD_SHARED_LIBRARY)
 include $(CLEAR_VARS)
 LOCAL_MODULE := VkLayer_parameter_validation
 LOCAL_SRC_FILES += $(LAYER_DIR)/include/parameter_validation.cpp
+LOCAL_SRC_FILES += $(LAYER_DIR)/include/layer_chassis_dispatch.cpp
+LOCAL_SRC_FILES += $(LAYER_DIR)/include/chassis.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/parameter_validation_utils.cpp
 LOCAL_C_INCLUDES += $(VULKAN_INCLUDE) \
                     $(LOCAL_PATH)/$(LAYER_DIR)/include \
                     $(LOCAL_PATH)/$(SRC_DIR)/layers
 LOCAL_STATIC_LIBRARIES += layer_utils
 LOCAL_CPPFLAGS += -std=c++11 -DVK_PROTOTYPES -Wall -Werror -Wno-unused-function -Wno-unused-const-variable
-LOCAL_CPPFLAGS += -DVK_USE_PLATFORM_ANDROID_KHR -fvisibility=hidden
+LOCAL_CPPFLAGS += -DVK_USE_PLATFORM_ANDROID_KHR -fvisibility=hidden -DBUILD_PARAMETER_VALIDATION
 LOCAL_LDLIBS    := -llog
 LOCAL_LDFLAGS   += -Wl,-Bsymbolic
 LOCAL_LDFLAGS   += -Wl,--exclude-libs,ALL

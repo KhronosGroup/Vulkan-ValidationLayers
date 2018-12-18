@@ -391,6 +391,7 @@ const bool wrap_handles = false;
 #include "thread_safety.h"
 #define OBJECT_LAYER_NAME "VK_LAYER_GOOGLE_threading"
 #elif BUILD_PARAMETER_VALIDATION
+#include "stateless_validation.h"
 #define OBJECT_LAYER_NAME "VK_LAYER_LUNARG_parameter_validation"
 #elif BUILD_CORE_VALIDATION
 #define OBJECT_LAYER_NAME "VK_LAYER_LUNARG_core_validation"
@@ -518,6 +519,10 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
     auto thread_checker = new ThreadSafety;
     local_object_dispatch.emplace_back(thread_checker);
     thread_checker->container_type = LayerObjectTypeThreading;
+#elif BUILD_PARAMETER_VALIDATION
+    auto parameter_validation = new StatelessValidation;
+    local_object_dispatch.emplace_back(parameter_validation);
+    parameter_validation->container_type = LayerObjectTypeParameterValidation;
 #endif
 
 
@@ -544,8 +549,16 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
         (pCreateInfo->pApplicationInfo ? pCreateInfo->pApplicationInfo->apiVersion : VK_API_VERSION_1_0), pCreateInfo);
 #if BUILD_OBJECT_TRACKER
     layer_debug_messenger_actions(framework->report_data, framework->logging_messenger, pAllocator, "lunarg_object_tracker");
+    object_tracker->report_data = framework->report_data;
+    object_tracker->api_version = framework->api_version;
 #elif BUILD_THREAD_SAFETY
     layer_debug_messenger_actions(framework->report_data, framework->logging_messenger, pAllocator, "google_thread_checker");
+    thread_checker->report_data = framework->report_data;
+    thread_checker->api_version = framework->api_version;
+#elif BUILD_PARAMETER_VALIDATION
+    layer_debug_messenger_actions(framework->report_data, framework->logging_messenger, pAllocator, "lunarg_parameter_validation");
+    parameter_validation->report_data = framework->report_data;
+    parameter_validation->api_version = framework->api_version;
 #else
     layer_debug_messenger_actions(framework->report_data, framework->logging_messenger, pAllocator, "lunarg_unique_objects");
 #endif
@@ -659,7 +672,6 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
     device_interceptor->physical_device = gpu;
     device_interceptor->instance = instance_interceptor->instance;
     device_interceptor->report_data = layer_debug_utils_create_device(instance_interceptor->report_data, *pDevice);
-    device_interceptor->api_version = instance_interceptor->api_version;
 
 #if BUILD_OBJECT_TRACKER
     // Create child layer objects for this key and add to dispatch vector
@@ -670,6 +682,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
     object_tracker->instance = instance_interceptor->instance;
     object_tracker->report_data = device_interceptor->report_data;
     object_tracker->device_dispatch_table = device_interceptor->device_dispatch_table;
+    object_tracker->api_version = device_interceptor->api_version;
     device_interceptor->object_dispatch.emplace_back(object_tracker);
 #elif BUILD_THREAD_SAFETY
     auto thread_safety = new ThreadSafety;
@@ -679,7 +692,18 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
     thread_safety->instance = instance_interceptor->instance;
     thread_safety->report_data = device_interceptor->report_data;
     thread_safety->device_dispatch_table = device_interceptor->device_dispatch_table;
+    thread_safety->api_version = device_interceptor->api_version;
     device_interceptor->object_dispatch.emplace_back(thread_safety);
+#elif BUILD_PARAMETER_VALIDATION
+    auto stateless_validation = new StatelessValidation;
+    // TODO:  Initialize child objects with parent info thru constuctor taking a parent object
+    stateless_validation->container_type = LayerObjectTypeParameterValidation;
+    stateless_validation->physical_device = gpu;
+    stateless_validation->instance = instance_interceptor->instance;
+    stateless_validation->report_data = device_interceptor->report_data;
+    stateless_validation->device_dispatch_table = device_interceptor->device_dispatch_table;
+    stateless_validation->api_version = device_interceptor->api_version;
+    device_interceptor->object_dispatch.emplace_back(stateless_validation);
 #endif
 
     for (auto intercept : instance_interceptor->object_dispatch) {
