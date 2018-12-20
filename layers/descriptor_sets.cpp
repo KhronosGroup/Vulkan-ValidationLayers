@@ -1205,6 +1205,11 @@ void cvdescriptorset::DescriptorSet::UpdateDrawState(GLOBAL_CB_NODE *cb_node,
     // resources
     for (auto binding_req_pair : binding_req_map) {
         auto binding = binding_req_pair.first;
+        // We aren't validating descriptors created with PARTIALLY_BOUND or UPDATE_AFTER_BIND, so don't record state
+        if (p_layout_->GetDescriptorBindingFlagsFromBinding(binding) &
+            (VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT)) {
+            continue;
+        }
         auto range = p_layout_->GetGlobalIndexRangeFromBinding(binding);
         for (uint32_t i = range.start; i < range.end; ++i) {
             descriptors_[i]->UpdateDrawState(device_data_, cb_node);
