@@ -270,6 +270,15 @@ class ValidationObject {
         virtual void write_lock() { validation_object_mutex.lock(); }
         virtual void write_unlock() { validation_object_mutex.unlock(); }
 
+        ValidationObject* GetValidationObject(std::vector<ValidationObject*>& object_dispatch, LayerObjectTypeId object_type) {
+            for (auto validation_object : object_dispatch) {
+                if (validation_object->container_type == object_type) {
+                    return validation_object;
+                }
+            }
+            return nullptr;
+        };
+
         std::string layer_name = "CHASSIS";
 
         // Handle Wrapping Data
