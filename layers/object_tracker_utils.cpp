@@ -372,7 +372,10 @@ bool ObjectLifetimes::PreCallValidateDestroyDevice(VkDevice device, const VkAllo
 }
 
 void ObjectLifetimes::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks *pAllocator) {
-    RecordDestroyObject(physical_device, device, kVulkanObjectTypeDevice);
+    auto instance_data = GetLayerDataPtr(get_dispatch_key(physical_device), layer_data_map);
+    ValidationObject *validation_data = GetValidationObject(instance_data->object_dispatch, LayerObjectTypeObjectTracker);
+    ObjectLifetimes *object_lifetimes = static_cast<ObjectLifetimes *>(validation_data);
+    object_lifetimes->RecordDestroyObject(physical_device, device, kVulkanObjectTypeDevice);
     DestroyUndestroyedObjects(device);
 
     // Clean up Queue's MemRef Linked Lists
