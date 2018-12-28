@@ -614,11 +614,25 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
     }
     chain_info->u.pLayerInfo = chain_info->u.pLayerInfo->pNext;
 
+    // Get physical device limits for device
+    VkPhysicalDeviceProperties device_properties = {};
+    instance_interceptor->instance_dispatch_table.GetPhysicalDeviceProperties(gpu, &device_properties);
+
+    // Setup the validation tables based on the application API version from the instance and the capabilities of the device driver
+    uint32_t effective_api_version = std::min(device_properties.apiVersion, instance_interceptor->api_version);
+
+    DeviceExtensions device_extensions = {};
+    device_extensions.InitFromDeviceCreateInfo(&instance_interceptor->instance_extensions, effective_api_version, pCreateInfo);
+    for (auto item : instance_interceptor->object_dispatch) {
+        item->device_extensions = device_extensions;
+    }
+
+    bool skip = false;
     for (auto intercept : instance_interceptor->object_dispatch) {
         intercept->write_lock();
-        intercept->PreCallValidateCreateDevice(gpu, pCreateInfo, pAllocator, pDevice);
+        skip |= intercept->PreCallValidateCreateDevice(gpu, pCreateInfo, pAllocator, pDevice);
         intercept->write_unlock();
-
+        if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
     for (auto intercept : instance_interceptor->object_dispatch) {
         intercept->write_lock();
@@ -633,14 +647,11 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
 
     auto device_interceptor = GetLayerDataPtr(get_dispatch_key(*pDevice), layer_data_map);
 
-    // Get physical device limits for device
-    instance_interceptor->instance_dispatch_table.GetPhysicalDeviceProperties(
-        gpu, &(device_interceptor->phys_dev_properties.properties));
-
-    // Setup the validation tables based on the application API version from the instance and the capabilities of the device driver
-    uint32_t effective_api_version = std::min(device_interceptor->api_version, instance_interceptor->api_version);
+    // Save local info in device object
+    device_interceptor->phys_dev_properties.properties = device_properties;
     device_interceptor->api_version = device_interceptor->device_extensions.InitFromDeviceCreateInfo(
         &instance_interceptor->instance_extensions, effective_api_version, pCreateInfo);
+    device_interceptor->device_extensions = device_extensions;
 
     layer_init_device_dispatch_table(*pDevice, &device_interceptor->device_dispatch_table, fpGetDeviceProcAddr);
 
