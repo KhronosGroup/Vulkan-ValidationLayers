@@ -1040,6 +1040,7 @@ VkResult DispatchSetDebugUtilsObjectNameEXT(ValidationObject *layer_data,
         self.structMembers = []        # List of StructMemberData records for all Vulkan structs
         self.extension_structs = []    # List of all structs or sister-structs containing handles
                                        # A sister-struct may contain no handles but shares a structextends attribute with one that does
+        self.pnext_extension_structs = []    # List of all structs which can be extended by a pnext chain
         self.structTypes = dict()      # Map of Vulkan struct typename to required VkStructureType
         self.struct_member_dict = dict()
         # Named tuples to store struct and command data
@@ -1318,6 +1319,8 @@ VkResult DispatchSetDebugUtilsObjectNameEXT(ValidationObject *layer_data,
             if (len(struct.members) > 1) and struct.members[1].extstructs is not None:
                 found = False;
                 for item in struct.members[1].extstructs:
+                    if item != '' and item not in self.pnext_extension_structs:
+                        self.pnext_extension_structs.append(item)
                     if item != '' and self.struct_contains_ndo(item) == True:
                         found = True
                 if found == True:
@@ -1347,7 +1350,7 @@ VkResult DispatchSetDebugUtilsObjectNameEXT(ValidationObject *layer_data,
         pnext_proc += '    while (cur_pnext != NULL) {\n'
         pnext_proc += '        VkBaseOutStructure *header = reinterpret_cast<VkBaseOutStructure *>(cur_pnext);\n\n'
         pnext_proc += '        switch (header->sType) {\n'
-        for item in self.extension_structs:
+        for item in self.pnext_extension_structs:
             struct_info = self.struct_member_dict[item]
             if struct_info[0].feature_protect is not None:
                 pnext_proc += '#ifdef %s \n' % struct_info[0].feature_protect
@@ -1385,7 +1388,7 @@ VkResult DispatchSetDebugUtilsObjectNameEXT(ValidationObject *layer_data,
         pnext_proc += '        VkBaseOutStructure *header = curr_ptr;\n'
         pnext_proc += '        curr_ptr = reinterpret_cast<VkBaseOutStructure *>(header->pNext);\n\n'
         pnext_proc += '        switch (header->sType) {\n';
-        for item in self.extension_structs:
+        for item in self.pnext_extension_structs:
             struct_info = self.struct_member_dict[item]
             if struct_info[0].feature_protect is not None:
                 pnext_proc += '#ifdef %s \n' % struct_info[0].feature_protect
@@ -1677,7 +1680,6 @@ VkResult DispatchSetDebugUtilsObjectNameEXT(ValidationObject *layer_data,
         struct_member_dict = dict(self.structMembers)
         # Generate member info
         membersInfo = []
-        constains_extension_structs = False
         for member in members:
             # Get type and name of member
             info = self.getTypeNameTuple(member)
