@@ -2133,6 +2133,24 @@ bool cvdescriptorset::DescriptorSet::VerifyWriteUpdateContents(const VkWriteDesc
                     *error_msg = error_str.str();
                     return false;
                 }
+                if (GetDeviceExtensions(device_data_)->vk_khr_sampler_ycbcr_conversion) {
+                    ImageSamplerDescriptor *desc = (ImageSamplerDescriptor *)descriptors_[index].get();
+                    if (desc->IsImmutableSampler()) {
+                        auto sampler_state = GetSamplerState(device_data_, desc->GetSampler());
+                        auto iv_state = GetImageViewState(device_data_, image_view);
+                        if (iv_state && sampler_state) {
+                            if (iv_state->samplerConversion != sampler_state->samplerConversion) {
+                                *error_code = "VUID-VkWriteDescriptorSet-descriptorType-01948";
+                                std::stringstream error_str;
+                                error_str << "Attempted write update and image view and sampler ycbcr conversions are not "
+                                             "identical, sampler: "
+                                          << desc->GetSampler() << " image view: " << iv_state->image_view << ".";
+                                *error_msg = error_str.str();
+                                return false;
+                            }
+                        }
+                    }
+                }
             }
         }
         // fall through

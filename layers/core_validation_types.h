@@ -30,6 +30,7 @@
 #include "vk_layer_logging.h"
 #include "vk_object_types.h"
 #include "vk_extension_helper.h"
+#include "vk_typemap_helper.h"
 #include "convert_to_renderpass2.h"
 #include <atomic>
 #include <functional>
@@ -278,8 +279,12 @@ class BUFFER_VIEW_STATE : public BASE_NODE {
 struct SAMPLER_STATE : public BASE_NODE {
     VkSampler sampler;
     VkSamplerCreateInfo createInfo;
+    VkSamplerYcbcrConversion samplerConversion = VK_NULL_HANDLE;
 
-    SAMPLER_STATE(const VkSampler *ps, const VkSamplerCreateInfo *pci) : sampler(*ps), createInfo(*pci){};
+    SAMPLER_STATE(const VkSampler *ps, const VkSamplerCreateInfo *pci) : sampler(*ps), createInfo(*pci) {
+        auto *conversionInfo = lvl_find_in_chain<VkSamplerYcbcrConversionInfo>(pci->pNext);
+        if (conversionInfo) samplerConversion = conversionInfo->conversion;
+    }
 };
 
 class IMAGE_STATE : public BINDABLE {
@@ -334,7 +339,12 @@ class IMAGE_VIEW_STATE : public BASE_NODE {
    public:
     VkImageView image_view;
     VkImageViewCreateInfo create_info;
-    IMAGE_VIEW_STATE(VkImageView iv, const VkImageViewCreateInfo *ci) : image_view(iv), create_info(*ci){};
+    VkSamplerYcbcrConversion samplerConversion;  // Handle of the ycbcr sampler conversion the image was create with, if any
+    IMAGE_VIEW_STATE(VkImageView iv, const VkImageViewCreateInfo *ci)
+        : image_view(iv), create_info(*ci), samplerConversion(VK_NULL_HANDLE) {
+        auto *conversionInfo = lvl_find_in_chain<VkSamplerYcbcrConversionInfo>(create_info.pNext);
+        if (conversionInfo) samplerConversion = conversionInfo->conversion;
+    };
     IMAGE_VIEW_STATE(const IMAGE_VIEW_STATE &rh_obj) = delete;
 };
 
