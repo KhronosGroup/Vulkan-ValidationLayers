@@ -35,6 +35,7 @@ include $(BUILD_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := VkLayer_core_validation
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/core_dispatch.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/core_validation.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/descriptor_sets.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/buffer_validation.cpp
