@@ -298,7 +298,7 @@ void VkRenderFramework::GetPhysicalDeviceProperties(VkPhysicalDeviceProperties *
     *props = vk_testing::PhysicalDevice(gpu()).properties();
 }
 
-void VkRenderFramework::InitState(VkPhysicalDeviceFeatures *features, VkPhysicalDeviceFeatures2 *features2,
+void VkRenderFramework::InitState(VkPhysicalDeviceFeatures *features, void *create_device_pnext,
                                   const VkCommandPoolCreateFlags flags) {
     // Remove any unsupported device extension names from list
     for (auto ext = m_device_extension_names.begin(); ext != m_device_extension_names.end();) {
@@ -321,7 +321,7 @@ void VkRenderFramework::InitState(VkPhysicalDeviceFeatures *features, VkPhysical
         }
     }
 
-    m_device = new VkDeviceObj(0, objs[0], m_device_extension_names, features, features2);
+    m_device = new VkDeviceObj(0, objs[0], m_device_extension_names, features, create_device_pnext);
     m_device->SetDeviceQueue();
 
     m_depthStencil = new VkDepthStencilObj(m_device);
@@ -542,9 +542,9 @@ VkDeviceObj::VkDeviceObj(uint32_t id, VkPhysicalDevice obj) : vk_testing::Device
 }
 
 VkDeviceObj::VkDeviceObj(uint32_t id, VkPhysicalDevice obj, std::vector<const char *> &extension_names,
-                         VkPhysicalDeviceFeatures *features, VkPhysicalDeviceFeatures2 *features2)
+                         VkPhysicalDeviceFeatures *features, void *create_device_pnext)
     : vk_testing::Device(obj), id(id) {
-    init(extension_names, features, features2);
+    init(extension_names, features, create_device_pnext);
 
     props = phy().properties();
     queue_props = phy().queue_properties();
