@@ -21,6 +21,7 @@
 
 #include "test_common.h"    // NOEXCEPT macro (must precede vktestbinding.h)
 #include "vktestbinding.h"  // Left for clarity, no harm, already included via test_common.h
+#include "vk_typemap_helper.h"
 #include <algorithm>
 #include <assert.h>
 #include <iostream>
@@ -242,7 +243,7 @@ Device::~Device() {
     vkDestroyDevice(handle(), NULL);
 }
 
-void Device::init(std::vector<const char *> &extensions, VkPhysicalDeviceFeatures *features, VkPhysicalDeviceFeatures2 *features2) {
+void Device::init(std::vector<const char *> &extensions, VkPhysicalDeviceFeatures *features, void *create_device_pnext) {
     // request all queues
     const std::vector<VkQueueFamilyProperties> queue_props = phy_.queue_properties();
     QueueCreateInfoArray queue_info(phy_.queue_properties());
@@ -265,7 +266,7 @@ void Device::init(std::vector<const char *> &extensions, VkPhysicalDeviceFeature
 
     VkDeviceCreateInfo dev_info = {};
     dev_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-    dev_info.pNext = NULL;
+    dev_info.pNext = create_device_pnext;
     dev_info.queueCreateInfoCount = create_queue_infos.size();
     dev_info.pQueueCreateInfos = create_queue_infos.data();
     dev_info.enabledLayerCount = 0;
@@ -276,14 +277,15 @@ void Device::init(std::vector<const char *> &extensions, VkPhysicalDeviceFeature
     VkPhysicalDeviceFeatures all_features;
     // Let VkPhysicalDeviceFeatures2 take priority over VkPhysicalDeviceFeatures,
     // since it supports extensions
-    if (features2) {
-        dev_info.pNext = features2;
-    } else if (features) {
-        dev_info.pEnabledFeatures = features;
-    } else {
-        // request all supportable features enabled
-        all_features = phy().features();
-        dev_info.pEnabledFeatures = &all_features;
+
+    if (!(lvl_find_in_chain<VkPhysicalDeviceFeatures2>(dev_info.pNext))) {
+        if (features) {
+            dev_info.pEnabledFeatures = features;
+        } else {
+            // request all supportable features enabled
+            all_features = phy().features();
+            dev_info.pEnabledFeatures = &all_features;
+        }
     }
 
     init(dev_info);
