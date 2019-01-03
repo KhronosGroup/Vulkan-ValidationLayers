@@ -1,5 +1,6 @@
 #!/bin/bash
-# Copyright (c) 2017 Google Inc.
+# Copyright (c) 2017-2019 Google Inc.
+# Copyright (c) 2019 LunarG, Inc.
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,21 +22,44 @@
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 NC='\033[0m' # No Color
+FOUND_ERROR=0
 
 FILES_TO_CHECK=$(git diff --name-only master | grep -v -E "^include/vulkan" | grep -E ".*\.(cpp|cc|c\+\+|cxx|c|h|hpp)$")
+COPYRIGHTED_FILES_TO_CHECK=$(git diff --name-only master | grep -v -E "^include/vulkan")
 
 if [ -z "${FILES_TO_CHECK}" ]; then
   echo -e "${GREEN}No source code to check for formatting.${NC}"
-  exit 0
+else
+  # Check source files in PR for clang-format errors
+  FORMAT_DIFF=$(git diff -U0 master -- ${FILES_TO_CHECK} | python ./scripts/clang-format-diff.py -p1 -style=file)
+
+  if [ ! -z "${FORMAT_DIFF}" ]; then
+    echo -e "${RED}Found formatting errors!${NC}"
+    echo "${FORMAT_DIFF}"
+    FOUND_ERROR=1
+  fi
+
+  # Check files in PR out-of-date copyright notices
+  if [ -z "${COPYRIGHTED_FILES_TO_CHECK}" ]; then
+    echo -e "${GREEN}No source code to check for copyright dates.${NC}"
+  else
+    THISYEAR=$(date +"%Y")
+    # Look for current year in copyright lines
+    for AFILE in ${COPYRIGHTED_FILES_TO_CHECK}
+    do
+      COPYRIGHT_INFO=$(cat ../${AFILE} | grep -E "Copyright (.)*LunarG")
+      COPYRIGHT_DATES=$(echo "$COPYRIGHT_INFO" | grep "$THISYEAR")
+      if [ -z "${COPYRIGHT_DATES}" ]; then
+        echo -e "${RED} "$AFILE" has an out-of-date copyright notice.${NC}"
+        FOUND_ERROR=1
+      fi
+    done
+  fi
 fi
 
-FORMAT_DIFF=$(git diff -U0 master -- ${FILES_TO_CHECK} | python ./scripts/clang-format-diff.py -p1 -style=file)
-
-if [ -z "${FORMAT_DIFF}" ]; then
+if [ $FOUND_ERROR  -gt 0 ]; then
+  exit 1
+else
   echo -e "${GREEN}All source code in PR properly formatted.${NC}"
   exit 0
-else
-  echo -e "${RED}Found formatting errors!${NC}"
-  echo "${FORMAT_DIFF}"
-  exit 1
 fi
