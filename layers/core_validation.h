@@ -1411,6 +1411,52 @@ bool PreCallValidateBindBufferMemory(layer_data* dev_data, VkBuffer buffer, BUFF
                                      VkDeviceSize memoryOffset, const char* api_name);
 void PostCallRecordBindBufferMemory(layer_data* dev_data, VkBuffer buffer, BUFFER_STATE* buffer_state, VkDeviceMemory mem,
                                     VkDeviceSize memoryOffset, const char* api_name);
+void PostCallRecordGetBufferMemoryRequirements(layer_data* dev_data, VkBuffer buffer, VkMemoryRequirements* pMemoryRequirements);
+bool PreCallValidateGetImageMemoryRequirements2(layer_data* dev_data, const VkImageMemoryRequirementsInfo2* pInfo);
+void PostCallRecordGetImageMemoryRequirements(layer_data* dev_data, VkImage image, VkMemoryRequirements* pMemoryRequirements);
+void PostCallRecordGetImageSparseMemoryRequirements2(IMAGE_STATE* image_state, uint32_t req_count,
+                                                     VkSparseImageMemoryRequirements2KHR* reqs);
+void PostCallRecordGetImageSparseMemoryRequirements(IMAGE_STATE* image_state, uint32_t req_count,
+                                                    VkSparseImageMemoryRequirements* reqs);
+bool PreCallValidateGetPhysicalDeviceImageFormatProperties2(const debug_report_data* report_data,
+                                                            const VkPhysicalDeviceImageFormatInfo2* pImageFormatInfo,
+                                                            const VkImageFormatProperties2* pImageFormatProperties);
+void PreCallRecordDestroyShaderModule(layer_data* dev_data, VkShaderModule shaderModule);
+bool PreCallValidateDestroyPipeline(layer_data* dev_data, VkPipeline pipeline, PIPELINE_STATE** pipeline_state,
+                                    VK_OBJECT* obj_struct);
+void PreCallRecordDestroyPipeline(layer_data* dev_data, VkPipeline pipeline, PIPELINE_STATE* pipeline_state, VK_OBJECT obj_struct);
+void PreCallRecordDestroyPipelineLayout(layer_data* dev_data, VkPipelineLayout pipelineLayout);
+bool PreCallValidateDestroySampler(layer_data* dev_data, VkSampler sampler, SAMPLER_STATE** sampler_state, VK_OBJECT* obj_struct);
+void PreCallRecordDestroySampler(layer_data* dev_data, VkSampler sampler, SAMPLER_STATE* sampler_state, VK_OBJECT obj_struct);
+void PreCallRecordDestroyDescriptorSetLayout(layer_data* dev_data, VkDescriptorSetLayout ds_layout);
+bool PreCallValidateDestroyDescriptorPool(layer_data* dev_data, VkDescriptorPool pool, DESCRIPTOR_POOL_STATE** desc_pool_state,
+                                          VK_OBJECT* obj_struct);
+void PreCallRecordDestroyDescriptorPool(layer_data* dev_data, VkDescriptorPool descriptorPool,
+                                        DESCRIPTOR_POOL_STATE* desc_pool_state, VK_OBJECT obj_struct);
+bool PreCallValidateFreeCommandBuffers(layer_data* dev_data, uint32_t commandBufferCount, const VkCommandBuffer* pCommandBuffers);
+void PreCallRecordFreeCommandBuffers(layer_data* dev_data, VkCommandPool commandPool, uint32_t commandBufferCount,
+                                     const VkCommandBuffer* pCommandBuffers);
+void PostCallRecordCreateCommandPool(layer_data* dev_data, const VkCommandPoolCreateInfo* pCreateInfo, VkCommandPool* pCommandPool);
+bool PreCallValidateCreateQueryPool(layer_data* dev_data, const VkQueryPoolCreateInfo* pCreateInfo);
+void PostCallRecordCreateQueryPool(layer_data* dev_data, const VkQueryPoolCreateInfo* pCreateInfo, VkQueryPool* pQueryPool);
+bool PreCallValidateDestroyCommandPool(layer_data* dev_data, VkCommandPool pool);
+void PreCallRecordDestroyCommandPool(layer_data* dev_data, VkCommandPool pool);
+bool PreCallValidateResetCommandPool(layer_data* dev_data, COMMAND_POOL_NODE* pPool);
+void PostCallRecordResetCommandPool(layer_data* dev_data, COMMAND_POOL_NODE* pPool);
+bool PreCallValidateResetFences(layer_data* dev_data, uint32_t fenceCount, const VkFence* pFences);
+void PostCallRecordResetFences(layer_data* dev_data, uint32_t fenceCount, const VkFence* pFences);
+bool PreCallValidateDestroyFramebuffer(layer_data* dev_data, VkFramebuffer framebuffer, FRAMEBUFFER_STATE** framebuffer_state,
+                                       VK_OBJECT* obj_struct);
+void PreCallRecordDestroyFramebuffer(layer_data* dev_data, VkFramebuffer framebuffer, FRAMEBUFFER_STATE* framebuffer_state,
+                                     VK_OBJECT obj_struct);
+bool PreCallValidateDestroyRenderPass(layer_data* dev_data, VkRenderPass render_pass, RENDER_PASS_STATE** rp_state,
+                                      VK_OBJECT* obj_struct);
+void PreCallRecordDestroyRenderPass(layer_data* dev_data, VkRenderPass render_pass, RENDER_PASS_STATE* rp_state,
+                                    VK_OBJECT obj_struct);
+bool PreCallValidateCreateGraphicsPipelines(layer_data* dev_data, std::vector<std::unique_ptr<PIPELINE_STATE>>* pipe_state,
+                                            const uint32_t count, const VkGraphicsPipelineCreateInfo* pCreateInfos);
+void PostCallRecordCreateGraphicsPipelines(layer_data* dev_data, std::vector<std::unique_ptr<PIPELINE_STATE>>* pipe_state,
+                                           const uint32_t count, VkPipeline* pPipelines);
 
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
 bool PreCallValidateGetAndroidHardwareBufferProperties(const layer_data* dev_data, const AHardwareBuffer* ahb);
