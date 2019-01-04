@@ -1048,11 +1048,11 @@ struct GLOBAL_CB_NODE : public BASE_NODE {
     VkDescriptorPool gpu_buffer_desc_pool;
 };
 
-static QFOTransferBarrierSets<VkImageMemoryBarrier> &GetQFOBarrierSets(
+static inline QFOTransferBarrierSets<VkImageMemoryBarrier> &GetQFOBarrierSets(
     GLOBAL_CB_NODE *cb, const QFOTransferBarrier<VkImageMemoryBarrier>::Tag &type_tag) {
     return cb->qfo_transfer_image_barriers;
 }
-static QFOTransferBarrierSets<VkBufferMemoryBarrier> &GetQFOBarrierSets(
+static inline QFOTransferBarrierSets<VkBufferMemoryBarrier> &GetQFOBarrierSets(
     GLOBAL_CB_NODE *cb, const QFOTransferBarrier<VkBufferMemoryBarrier>::Tag &type_tag) {
     return cb->qfo_transfer_buffer_barriers;
 }
