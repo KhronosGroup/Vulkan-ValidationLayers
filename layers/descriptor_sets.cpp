@@ -2142,8 +2142,8 @@ bool cvdescriptorset::DescriptorSet::VerifyWriteUpdateContents(const VkWriteDesc
                             if (iv_state->samplerConversion != sampler_state->samplerConversion) {
                                 *error_code = "VUID-VkWriteDescriptorSet-descriptorType-01948";
                                 std::stringstream error_str;
-                                error_str << "Attempted write update and image view and sampler ycbcr conversions are not "
-                                             "identical, sampler: "
+                                error_str << "Attempted write update to combined image sampler and image view and sampler ycbcr "
+                                             "conversions are not identical, sampler: "
                                           << desc->GetSampler() << " image view: " << iv_state->image_view << ".";
                                 *error_msg = error_str.str();
                                 return false;

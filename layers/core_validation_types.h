@@ -339,7 +339,7 @@ class IMAGE_VIEW_STATE : public BASE_NODE {
    public:
     VkImageView image_view;
     VkImageViewCreateInfo create_info;
-    VkSamplerYcbcrConversion samplerConversion;  // Handle of the ycbcr sampler conversion the image was create with, if any
+    VkSamplerYcbcrConversion samplerConversion;  // Handle of the ycbcr sampler conversion the image was created with, if any
     IMAGE_VIEW_STATE(VkImageView iv, const VkImageViewCreateInfo *ci)
         : image_view(iv), create_info(*ci), samplerConversion(VK_NULL_HANDLE) {
         auto *conversionInfo = lvl_find_in_chain<VkSamplerYcbcrConversionInfo>(create_info.pNext);
