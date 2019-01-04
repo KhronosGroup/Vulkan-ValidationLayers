@@ -1120,15 +1120,6 @@ const std::map<VkFormat, VULKAN_MULTIPLANE_COMPATIBILITY> vk_multiplane_compatib
 };
 // clang-format on
 
-VK_LAYER_EXPORT VkFormat FindMultiplaneCompatibleFormat(VkFormat mp_fmt, uint32_t plane) {
-    auto it = vk_multiplane_compatibility_map.find(mp_fmt);
-    if ((it == vk_multiplane_compatibility_map.end()) || (plane >= VK_MULTIPLANE_FORMAT_MAX_PLANES)) {
-        return VK_FORMAT_UNDEFINED;
-    }
-
-    return it->second.per_plane[plane].compatible_format;
-}
-
 // Return alignment, in bytes, of a data for the specified format
 VK_LAYER_EXPORT size_t FormatAlignment(VkFormat format) {
     if (FormatIsPacked(format)) {
@@ -1138,7 +1129,7 @@ VK_LAYER_EXPORT size_t FormatAlignment(VkFormat format) {
     }
 }
 
-uint32_t GetPlaneSizeIndex(VkImageAspectFlags aspect) {
+uint32_t GetPlaneIndex(VkImageAspectFlags aspect) {
     switch (aspect) {
         case VK_IMAGE_ASPECT_PLANE_0_BIT:
             return 0;
@@ -1155,6 +1146,29 @@ uint32_t GetPlaneSizeIndex(VkImageAspectFlags aspect) {
     }
 }
 
+VK_LAYER_EXPORT VkFormat FindMultiplaneCompatibleFormat(VkFormat mp_fmt, VkImageAspectFlags plane_aspect) {
+    uint32_t plane_idx = GetPlaneIndex(plane_aspect);
+    auto it = vk_multiplane_compatibility_map.find(mp_fmt);
+    if ((it == vk_multiplane_compatibility_map.end()) || (plane_idx >= VK_MULTIPLANE_FORMAT_MAX_PLANES)) {
+        return VK_FORMAT_UNDEFINED;
+    }
+
+    return it->second.per_plane[plane_idx].compatible_format;
+}
+
+VK_LAYER_EXPORT VkExtent2D FindMultiplaneExtentDivisors(VkFormat mp_fmt, VkImageAspectFlags plane_aspect) {
+    VkExtent2D divisors = {1, 1};
+    uint32_t plane_idx = GetPlaneIndex(plane_aspect);
+    auto it = vk_multiplane_compatibility_map.find(mp_fmt);
+    if ((it == vk_multiplane_compatibility_map.end()) || (plane_idx >= VK_MULTIPLANE_FORMAT_MAX_PLANES)) {
+        return divisors;
+    }
+
+    divisors.width = it->second.per_plane[plane_idx].width_divisor;
+    divisors.height = it->second.per_plane[plane_idx].height_divisor;
+    return divisors;
+}
+
 VK_LAYER_EXPORT bool FormatSizesAreEqual(VkFormat srcFormat, VkFormat dstFormat, uint32_t region_count,
                                          const VkImageCopy *regions) {
     size_t srcSize = 0, dstSize = 0;
@@ -1162,15 +1176,13 @@ VK_LAYER_EXPORT bool FormatSizesAreEqual(VkFormat srcFormat, VkFormat dstFormat,
     if (FormatIsMultiplane(srcFormat) || FormatIsMultiplane(dstFormat)) {
         for (uint32_t i = 0; i < region_count; i++) {
             if (FormatIsMultiplane(srcFormat)) {
-                VkFormat planeFormat =
-                    FindMultiplaneCompatibleFormat(srcFormat, GetPlaneSizeIndex(regions[i].srcSubresource.aspectMask));
+                VkFormat planeFormat = FindMultiplaneCompatibleFormat(srcFormat, regions[i].srcSubresource.aspectMask);
                 srcSize = FormatSize(planeFormat);
             } else {
                 srcSize = FormatSize(srcFormat);
             }
             if (FormatIsMultiplane(dstFormat)) {
-                VkFormat planeFormat =
-                    FindMultiplaneCompatibleFormat(dstFormat, GetPlaneSizeIndex(regions[i].dstSubresource.aspectMask));
+                VkFormat planeFormat = FindMultiplaneCompatibleFormat(dstFormat, regions[i].dstSubresource.aspectMask);
                 dstSize = FormatSize(planeFormat);
             } else {
                 dstSize = FormatSize(dstFormat);

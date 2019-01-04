@@ -33447,7 +33447,7 @@ TEST_F(VkPositiveLayerTest, MultiplaneImageTests) {
     ci.pNext = NULL;
     ci.flags = 0;
     ci.imageType = VK_IMAGE_TYPE_2D;
-    ci.format = VK_FORMAT_G8_B8_R8_3PLANE_422_UNORM_KHR;
+    ci.format = VK_FORMAT_G8_B8_R8_3PLANE_444_UNORM_KHR;  // All planes of equal extent
     ci.tiling = VK_IMAGE_TILING_OPTIMAL;
     ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
     ci.extent = {128, 128, 1};

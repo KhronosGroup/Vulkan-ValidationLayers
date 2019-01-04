@@ -1868,6 +1868,13 @@ static inline VkExtent3D GetImageSubresourceExtent(const IMAGE_STATE *img, const
     // Don't allow mip adjustment to create 0 dim, but pass along a 0 if that's what subresource specified
     VkExtent3D extent = img->createInfo.extent;
 
+    // If multi-plane, adjust per-plane extent
+    if (FormatIsMultiplane(img->createInfo.format)) {
+        VkExtent2D divisors = FindMultiplaneExtentDivisors(img->createInfo.format, subresource->aspectMask);
+        extent.width /= divisors.width;
+        extent.height /= divisors.height;
+    }
+
     if (img->createInfo.flags & VK_IMAGE_CREATE_CORNER_SAMPLED_BIT_NV) {
         extent.width = (0 == extent.width ? 0 : std::max(2U, 1 + ((extent.width - 1) >> mip)));
         extent.height = (0 == extent.height ? 0 : std::max(2U, 1 + ((extent.height - 1) >> mip)));

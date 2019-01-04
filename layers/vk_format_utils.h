@@ -153,7 +153,8 @@ VK_LAYER_EXPORT VkExtent3D FormatCompressedTexelBlockExtent(VkFormat format);
 VK_LAYER_EXPORT size_t FormatSize(VkFormat format);
 VK_LAYER_EXPORT VkFormatCompatibilityClass FormatCompatibilityClass(VkFormat format);
 VK_LAYER_EXPORT VkDeviceSize SafeModulo(VkDeviceSize dividend, VkDeviceSize divisor);
-VK_LAYER_EXPORT VkFormat FindMultiplaneCompatibleFormat(VkFormat fmt, uint32_t plane);
+VK_LAYER_EXPORT VkFormat FindMultiplaneCompatibleFormat(VkFormat fmt, VkImageAspectFlags plane_aspect);
+VK_LAYER_EXPORT VkExtent2D FindMultiplaneExtentDivisors(VkFormat mp_fmt, VkImageAspectFlags plane_aspect);
 VK_LAYER_EXPORT size_t FormatAlignment(VkFormat format);
 
 static inline bool FormatIsUndef(VkFormat format) { return (format == VK_FORMAT_UNDEFINED); }
