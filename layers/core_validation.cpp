@@ -7099,7 +7099,7 @@ static VkPipelineStageFlagBits GetLogicallyEarliestGraphicsPipelineStage(VkPipel
     VkPipelineStageFlagBits earliest_bit = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
     int earliest_bit_order = GetGraphicsPipelineStageLogicalOrdinal(earliest_bit);
 
-    for (int i = 0; i < sizeof(VkPipelineStageFlagBits); ++i) {
+    for (std::size_t i = 0; i < sizeof(VkPipelineStageFlagBits); ++i) {
         VkPipelineStageFlagBits current_flag = (VkPipelineStageFlagBits)((inflags & 0x1u) << i);
         if (current_flag) {
             int new_order = GetGraphicsPipelineStageLogicalOrdinal(current_flag);
@@ -7117,7 +7117,7 @@ static VkPipelineStageFlagBits GetLogicallyLatestGraphicsPipelineStage(VkPipelin
     VkPipelineStageFlagBits latest_bit = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
     int latest_bit_order = GetGraphicsPipelineStageLogicalOrdinal(latest_bit);
 
-    for (int i = 0; i < sizeof(VkPipelineStageFlagBits); ++i) {
+    for (std::size_t i = 0; i < sizeof(VkPipelineStageFlagBits); ++i) {
         if (inflags & 0x1u) {
             int new_order = GetGraphicsPipelineStageLogicalOrdinal((VkPipelineStageFlagBits)((inflags & 0x1u) << i));
             if (new_order != -1 && new_order > latest_bit_order) {
