@@ -4275,7 +4275,7 @@ static bool ValidateMemoryTypes(const layer_data *dev_data, const DEVICE_MEM_INF
 }
 
 bool PreCallValidateBindBufferMemory(layer_data *dev_data, VkBuffer buffer, BUFFER_STATE *buffer_state, VkDeviceMemory mem,
-                                            VkDeviceSize memoryOffset, const char *api_name) {
+                                     VkDeviceSize memoryOffset, const char *api_name) {
     bool skip = false;
     if (buffer_state) {
         unique_lock_t lock(global_lock);
@@ -4347,7 +4347,7 @@ bool PreCallValidateBindBufferMemory(layer_data *dev_data, VkBuffer buffer, BUFF
 }
 
 void PostCallRecordBindBufferMemory(layer_data *dev_data, VkBuffer buffer, BUFFER_STATE *buffer_state, VkDeviceMemory mem,
-                                           VkDeviceSize memoryOffset, const char *api_name) {
+                                    VkDeviceSize memoryOffset, const char *api_name) {
     if (buffer_state) {
         unique_lock_t lock(global_lock);
         // Track bound memory range information
@@ -4388,8 +4388,7 @@ void PostCallRecordBindBufferMemory2(layer_data *dev_data, const std::vector<BUF
     }
 }
 
-static void PostCallRecordGetBufferMemoryRequirements(layer_data *dev_data, VkBuffer buffer,
-                                                      VkMemoryRequirements *pMemoryRequirements) {
+void PostCallRecordGetBufferMemoryRequirements(layer_data *dev_data, VkBuffer buffer, VkMemoryRequirements *pMemoryRequirements) {
     BUFFER_STATE *buffer_state;
     {
         unique_lock_t lock(global_lock);
@@ -4401,28 +4400,7 @@ static void PostCallRecordGetBufferMemoryRequirements(layer_data *dev_data, VkBu
     }
 }
 
-VKAPI_ATTR void VKAPI_CALL GetBufferMemoryRequirements(VkDevice device, VkBuffer buffer,
-                                                       VkMemoryRequirements *pMemoryRequirements) {
-    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    dev_data->dispatch_table.GetBufferMemoryRequirements(device, buffer, pMemoryRequirements);
-    PostCallRecordGetBufferMemoryRequirements(dev_data, buffer, pMemoryRequirements);
-}
-
-VKAPI_ATTR void VKAPI_CALL GetBufferMemoryRequirements2(VkDevice device, const VkBufferMemoryRequirementsInfo2KHR *pInfo,
-                                                        VkMemoryRequirements2KHR *pMemoryRequirements) {
-    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    dev_data->dispatch_table.GetBufferMemoryRequirements2(device, pInfo, pMemoryRequirements);
-    PostCallRecordGetBufferMemoryRequirements(dev_data, pInfo->buffer, &pMemoryRequirements->memoryRequirements);
-}
-
-VKAPI_ATTR void VKAPI_CALL GetBufferMemoryRequirements2KHR(VkDevice device, const VkBufferMemoryRequirementsInfo2KHR *pInfo,
-                                                           VkMemoryRequirements2KHR *pMemoryRequirements) {
-    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    dev_data->dispatch_table.GetBufferMemoryRequirements2KHR(device, pInfo, pMemoryRequirements);
-    PostCallRecordGetBufferMemoryRequirements(dev_data, pInfo->buffer, &pMemoryRequirements->memoryRequirements);
-}
-
-static bool PreCallValidateGetImageMemoryRequirements2(layer_data *dev_data, const VkImageMemoryRequirementsInfo2 *pInfo) {
+bool PreCallValidateGetImageMemoryRequirements2(layer_data *dev_data, const VkImageMemoryRequirementsInfo2 *pInfo) {
     bool skip = false;
     if (GetDeviceExtensions(dev_data)->vk_android_external_memory_android_hardware_buffer) {
         skip |= ValidateGetImageMemoryRequirements2ANDROID(dev_data, pInfo->image);
@@ -4430,8 +4408,7 @@ static bool PreCallValidateGetImageMemoryRequirements2(layer_data *dev_data, con
     return skip;
 }
 
-static void PostCallRecordGetImageMemoryRequirements(layer_data *dev_data, VkImage image,
-                                                     VkMemoryRequirements *pMemoryRequirements) {
+void PostCallRecordGetImageMemoryRequirements(layer_data *dev_data, VkImage image, VkMemoryRequirements *pMemoryRequirements) {
     IMAGE_STATE *image_state;
     {
         unique_lock_t lock(global_lock);
@@ -4443,32 +4420,8 @@ static void PostCallRecordGetImageMemoryRequirements(layer_data *dev_data, VkIma
     }
 }
 
-VKAPI_ATTR void VKAPI_CALL GetImageMemoryRequirements(VkDevice device, VkImage image, VkMemoryRequirements *pMemoryRequirements) {
-    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    dev_data->dispatch_table.GetImageMemoryRequirements(device, image, pMemoryRequirements);
-    PostCallRecordGetImageMemoryRequirements(dev_data, image, pMemoryRequirements);
-}
-
-VKAPI_ATTR void VKAPI_CALL GetImageMemoryRequirements2(VkDevice device, const VkImageMemoryRequirementsInfo2 *pInfo,
-                                                       VkMemoryRequirements2 *pMemoryRequirements) {
-    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    bool skip = PreCallValidateGetImageMemoryRequirements2(dev_data, pInfo);
-    if (skip) return;
-    dev_data->dispatch_table.GetImageMemoryRequirements2(device, pInfo, pMemoryRequirements);
-    PostCallRecordGetImageMemoryRequirements(dev_data, pInfo->image, &pMemoryRequirements->memoryRequirements);
-}
-
-VKAPI_ATTR void VKAPI_CALL GetImageMemoryRequirements2KHR(VkDevice device, const VkImageMemoryRequirementsInfo2 *pInfo,
-                                                          VkMemoryRequirements2 *pMemoryRequirements) {
-    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    bool skip = PreCallValidateGetImageMemoryRequirements2(dev_data, pInfo);
-    if (skip) return;
-    dev_data->dispatch_table.GetImageMemoryRequirements2KHR(device, pInfo, pMemoryRequirements);
-    PostCallRecordGetImageMemoryRequirements(dev_data, pInfo->image, &pMemoryRequirements->memoryRequirements);
-}
-
-static void PostCallRecordGetImageSparseMemoryRequirements(IMAGE_STATE *image_state, uint32_t req_count,
-                                                           VkSparseImageMemoryRequirements *reqs) {
+void PostCallRecordGetImageSparseMemoryRequirements(IMAGE_STATE *image_state, uint32_t req_count,
+                                                    VkSparseImageMemoryRequirements *reqs) {
     image_state->get_sparse_reqs_called = true;
     image_state->sparse_requirements.resize(req_count);
     if (reqs) {
@@ -4481,19 +4434,8 @@ static void PostCallRecordGetImageSparseMemoryRequirements(IMAGE_STATE *image_st
     }
 }
 
-VKAPI_ATTR void VKAPI_CALL GetImageSparseMemoryRequirements(VkDevice device, VkImage image, uint32_t *pSparseMemoryRequirementCount,
-                                                            VkSparseImageMemoryRequirements *pSparseMemoryRequirements) {
-    // TODO : Implement tracking here, just passthrough initially
-    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    dev_data->dispatch_table.GetImageSparseMemoryRequirements(device, image, pSparseMemoryRequirementCount,
-                                                              pSparseMemoryRequirements);
-    unique_lock_t lock(global_lock);
-    auto image_state = GetImageState(dev_data, image);
-    PostCallRecordGetImageSparseMemoryRequirements(image_state, *pSparseMemoryRequirementCount, pSparseMemoryRequirements);
-}
-
-static void PostCallRecordGetImageSparseMemoryRequirements2(IMAGE_STATE *image_state, uint32_t req_count,
-                                                            VkSparseImageMemoryRequirements2KHR *reqs) {
+void PostCallRecordGetImageSparseMemoryRequirements2(IMAGE_STATE *image_state, uint32_t req_count,
+                                                     VkSparseImageMemoryRequirements2KHR *reqs) {
     // reqs is empty, so there is nothing to loop over and read.
     if (reqs == nullptr) {
         return;
@@ -4507,132 +4449,21 @@ static void PostCallRecordGetImageSparseMemoryRequirements2(IMAGE_STATE *image_s
     PostCallRecordGetImageSparseMemoryRequirements(image_state, req_count, sparse_reqs.data());
 }
 
-VKAPI_ATTR void VKAPI_CALL GetImageSparseMemoryRequirements2(VkDevice device, const VkImageSparseMemoryRequirementsInfo2KHR *pInfo,
-                                                             uint32_t *pSparseMemoryRequirementCount,
-                                                             VkSparseImageMemoryRequirements2KHR *pSparseMemoryRequirements) {
-    // TODO : Implement tracking here, just passthrough initially
-    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    dev_data->dispatch_table.GetImageSparseMemoryRequirements2(device, pInfo, pSparseMemoryRequirementCount,
-                                                               pSparseMemoryRequirements);
-    unique_lock_t lock(global_lock);
-    auto image_state = GetImageState(dev_data, pInfo->image);
-    PostCallRecordGetImageSparseMemoryRequirements2(image_state, *pSparseMemoryRequirementCount, pSparseMemoryRequirements);
-}
-
-VKAPI_ATTR void VKAPI_CALL GetImageSparseMemoryRequirements2KHR(VkDevice device,
-                                                                const VkImageSparseMemoryRequirementsInfo2KHR *pInfo,
-                                                                uint32_t *pSparseMemoryRequirementCount,
-                                                                VkSparseImageMemoryRequirements2KHR *pSparseMemoryRequirements) {
-    // TODO : Implement tracking here, just passthrough initially
-    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    dev_data->dispatch_table.GetImageSparseMemoryRequirements2KHR(device, pInfo, pSparseMemoryRequirementCount,
-                                                                  pSparseMemoryRequirements);
-    unique_lock_t lock(global_lock);
-    auto image_state = GetImageState(dev_data, pInfo->image);
-    PostCallRecordGetImageSparseMemoryRequirements2(image_state, *pSparseMemoryRequirementCount, pSparseMemoryRequirements);
-}
-
-VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceSparseImageFormatProperties(VkPhysicalDevice physicalDevice, VkFormat format,
-                                                                        VkImageType type, VkSampleCountFlagBits samples,
-                                                                        VkImageUsageFlags usage, VkImageTiling tiling,
-                                                                        uint32_t *pPropertyCount,
-                                                                        VkSparseImageFormatProperties *pProperties) {
-    // TODO : Implement this intercept, track sparse image format properties and make sure they are obeyed.
-    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), instance_layer_data_map);
-    instance_data->dispatch_table.GetPhysicalDeviceSparseImageFormatProperties(physicalDevice, format, type, samples, usage, tiling,
-                                                                               pPropertyCount, pProperties);
-}
-
-static bool PreCallValidateGetPhysicalDeviceImageFormatProperties2(const debug_report_data *report_data,
-                                                                   const VkPhysicalDeviceImageFormatInfo2 *pImageFormatInfo,
-                                                                   const VkImageFormatProperties2 *pImageFormatProperties) {
+bool PreCallValidateGetPhysicalDeviceImageFormatProperties2(const debug_report_data *report_data,
+                                                            const VkPhysicalDeviceImageFormatInfo2 *pImageFormatInfo,
+                                                            const VkImageFormatProperties2 *pImageFormatProperties) {
     // Can't wrap AHB-specific validation in a device extension check here, but no harm
     bool skip = ValidateGetPhysicalDeviceImageFormatProperties2ANDROID(report_data, pImageFormatInfo, pImageFormatProperties);
 
     return skip;
 }
 
-VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceImageFormatProperties2(VkPhysicalDevice physicalDevice,
-                                                                       const VkPhysicalDeviceImageFormatInfo2 *pImageFormatInfo,
-                                                                       VkImageFormatProperties2 *pImageFormatProperties) {
-    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), instance_layer_data_map);
-    bool skip = PreCallValidateGetPhysicalDeviceImageFormatProperties2(instance_data->report_data, pImageFormatInfo,
-                                                                       pImageFormatProperties);
-    if (skip) {
-        return VK_ERROR_VALIDATION_FAILED_EXT;
-    } else {
-        return instance_data->dispatch_table.GetPhysicalDeviceImageFormatProperties2(physicalDevice, pImageFormatInfo,
-                                                                                     pImageFormatProperties);
-    }
-}
-
-VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceImageFormatProperties2KHR(VkPhysicalDevice physicalDevice,
-                                                                          const VkPhysicalDeviceImageFormatInfo2 *pImageFormatInfo,
-                                                                          VkImageFormatProperties2 *pImageFormatProperties) {
-    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), instance_layer_data_map);
-    bool skip = PreCallValidateGetPhysicalDeviceImageFormatProperties2(instance_data->report_data, pImageFormatInfo,
-                                                                       pImageFormatProperties);
-    if (skip) {
-        return VK_ERROR_VALIDATION_FAILED_EXT;
-    } else {
-        return instance_data->dispatch_table.GetPhysicalDeviceImageFormatProperties2KHR(physicalDevice, pImageFormatInfo,
-                                                                                        pImageFormatProperties);
-    }
-}
-
-VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceSparseImageFormatProperties2(
-    VkPhysicalDevice physicalDevice, const VkPhysicalDeviceSparseImageFormatInfo2KHR *pFormatInfo, uint32_t *pPropertyCount,
-    VkSparseImageFormatProperties2KHR *pProperties) {
-    // TODO : Implement this intercept, track sparse image format properties and make sure they are obeyed.
-    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), instance_layer_data_map);
-    instance_data->dispatch_table.GetPhysicalDeviceSparseImageFormatProperties2(physicalDevice, pFormatInfo, pPropertyCount,
-                                                                                pProperties);
-}
-
-VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceSparseImageFormatProperties2KHR(
-    VkPhysicalDevice physicalDevice, const VkPhysicalDeviceSparseImageFormatInfo2KHR *pFormatInfo, uint32_t *pPropertyCount,
-    VkSparseImageFormatProperties2KHR *pProperties) {
-    // TODO : Implement this intercept, track sparse image format properties and make sure they are obeyed.
-    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), instance_layer_data_map);
-    instance_data->dispatch_table.GetPhysicalDeviceSparseImageFormatProperties2KHR(physicalDevice, pFormatInfo, pPropertyCount,
-                                                                                   pProperties);
-}
-
-VKAPI_ATTR void VKAPI_CALL DestroyImageView(VkDevice device, VkImageView imageView, const VkAllocationCallbacks *pAllocator) {
-    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    // Common data objects used pre & post call
-    IMAGE_VIEW_STATE *image_view_state = nullptr;
-    VK_OBJECT obj_struct;
-    unique_lock_t lock(global_lock);
-    bool skip = PreCallValidateDestroyImageView(dev_data, imageView, &image_view_state, &obj_struct);
-    if (!skip) {
-        if (imageView != VK_NULL_HANDLE) {
-            // Pre-record to avoid Destroy/Create race
-            PreCallRecordDestroyImageView(dev_data, imageView, image_view_state, obj_struct);
-        }
-        lock.unlock();
-        dev_data->dispatch_table.DestroyImageView(device, imageView, pAllocator);
-    }
-}
-
-static void PreCallRecordDestroyShaderModule(layer_data *dev_data, VkShaderModule shaderModule) {
+void PreCallRecordDestroyShaderModule(layer_data *dev_data, VkShaderModule shaderModule) {
     dev_data->shaderModuleMap.erase(shaderModule);
 }
 
-VKAPI_ATTR void VKAPI_CALL DestroyShaderModule(VkDevice device, VkShaderModule shaderModule,
-                                               const VkAllocationCallbacks *pAllocator) {
-    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-
-    unique_lock_t lock(global_lock);
-    // Pre-record to avoid Destroy/Create race
-    PreCallRecordDestroyShaderModule(dev_data, shaderModule);
-    lock.unlock();
-
-    dev_data->dispatch_table.DestroyShaderModule(device, shaderModule, pAllocator);
-}
-
-static bool PreCallValidateDestroyPipeline(layer_data *dev_data, VkPipeline pipeline, PIPELINE_STATE **pipeline_state,
-                                           VK_OBJECT *obj_struct) {
+bool PreCallValidateDestroyPipeline(layer_data *dev_data, VkPipeline pipeline, PIPELINE_STATE **pipeline_state,
+                                    VK_OBJECT *obj_struct) {
     *pipeline_state = GetPipelineState(dev_data, pipeline);
     *obj_struct = {HandleToUint64(pipeline), kVulkanObjectTypePipeline};
     if (dev_data->instance_data->disabled.destroy_pipeline) return false;
@@ -4644,8 +4475,7 @@ static bool PreCallValidateDestroyPipeline(layer_data *dev_data, VkPipeline pipe
     return skip;
 }
 
-static void PreCallRecordDestroyPipeline(layer_data *dev_data, VkPipeline pipeline, PIPELINE_STATE *pipeline_state,
-                                         VK_OBJECT obj_struct) {
+void PreCallRecordDestroyPipeline(layer_data *dev_data, VkPipeline pipeline, PIPELINE_STATE *pipeline_state, VK_OBJECT obj_struct) {
     // Any bound cmd buffers are now invalid
     InvalidateCommandBuffers(dev_data, pipeline_state->cb_bindings, obj_struct);
     if (GetEnables(dev_data)->gpu_validation) {
@@ -4654,39 +4484,11 @@ static void PreCallRecordDestroyPipeline(layer_data *dev_data, VkPipeline pipeli
     dev_data->pipelineMap.erase(pipeline);
 }
 
-VKAPI_ATTR void VKAPI_CALL DestroyPipeline(VkDevice device, VkPipeline pipeline, const VkAllocationCallbacks *pAllocator) {
-    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    PIPELINE_STATE *pipeline_state = nullptr;
-    VK_OBJECT obj_struct;
-    unique_lock_t lock(global_lock);
-    bool skip = PreCallValidateDestroyPipeline(dev_data, pipeline, &pipeline_state, &obj_struct);
-    if (!skip) {
-        if (pipeline != VK_NULL_HANDLE) {
-            // Pre-record to avoid Destroy/Create race
-            PreCallRecordDestroyPipeline(dev_data, pipeline, pipeline_state, obj_struct);
-        }
-        lock.unlock();
-        dev_data->dispatch_table.DestroyPipeline(device, pipeline, pAllocator);
-    }
-}
-
-static void PreCallRecordDestroyPipelineLayout(layer_data *dev_data, VkPipelineLayout pipelineLayout) {
+void PreCallRecordDestroyPipelineLayout(layer_data *dev_data, VkPipelineLayout pipelineLayout) {
     dev_data->pipelineLayoutMap.erase(pipelineLayout);
 }
 
-VKAPI_ATTR void VKAPI_CALL DestroyPipelineLayout(VkDevice device, VkPipelineLayout pipelineLayout,
-                                                 const VkAllocationCallbacks *pAllocator) {
-    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    unique_lock_t lock(global_lock);
-    // Pre-record to avoid Destroy/Create race
-    PreCallRecordDestroyPipelineLayout(dev_data, pipelineLayout);
-    lock.unlock();
-
-    dev_data->dispatch_table.DestroyPipelineLayout(device, pipelineLayout, pAllocator);
-}
-
-static bool PreCallValidateDestroySampler(layer_data *dev_data, VkSampler sampler, SAMPLER_STATE **sampler_state,
-                                          VK_OBJECT *obj_struct) {
+bool PreCallValidateDestroySampler(layer_data *dev_data, VkSampler sampler, SAMPLER_STATE **sampler_state, VK_OBJECT *obj_struct) {
     *sampler_state = GetSamplerState(dev_data, sampler);
     *obj_struct = {HandleToUint64(sampler), kVulkanObjectTypeSampler};
     if (dev_data->instance_data->disabled.destroy_sampler) return false;
@@ -4698,30 +4500,13 @@ static bool PreCallValidateDestroySampler(layer_data *dev_data, VkSampler sample
     return skip;
 }
 
-static void PreCallRecordDestroySampler(layer_data *dev_data, VkSampler sampler, SAMPLER_STATE *sampler_state,
-                                        VK_OBJECT obj_struct) {
+void PreCallRecordDestroySampler(layer_data *dev_data, VkSampler sampler, SAMPLER_STATE *sampler_state, VK_OBJECT obj_struct) {
     // Any bound cmd buffers are now invalid
     if (sampler_state) InvalidateCommandBuffers(dev_data, sampler_state->cb_bindings, obj_struct);
     dev_data->samplerMap.erase(sampler);
 }
 
-VKAPI_ATTR void VKAPI_CALL DestroySampler(VkDevice device, VkSampler sampler, const VkAllocationCallbacks *pAllocator) {
-    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    SAMPLER_STATE *sampler_state = nullptr;
-    VK_OBJECT obj_struct;
-    unique_lock_t lock(global_lock);
-    bool skip = PreCallValidateDestroySampler(dev_data, sampler, &sampler_state, &obj_struct);
-    if (!skip) {
-        if (sampler != VK_NULL_HANDLE) {
-            // Pre-record to avoid Destroy/Create race
-            PreCallRecordDestroySampler(dev_data, sampler, sampler_state, obj_struct);
-        }
-        lock.unlock();
-        dev_data->dispatch_table.DestroySampler(device, sampler, pAllocator);
-    }
-}
-
-static void PreCallRecordDestroyDescriptorSetLayout(layer_data *dev_data, VkDescriptorSetLayout ds_layout) {
+void PreCallRecordDestroyDescriptorSetLayout(layer_data *dev_data, VkDescriptorSetLayout ds_layout) {
     auto layout_it = dev_data->descriptorSetLayoutMap.find(ds_layout);
     if (layout_it != dev_data->descriptorSetLayoutMap.end()) {
         layout_it->second.get()->MarkDestroyed();
@@ -4729,19 +4514,8 @@ static void PreCallRecordDestroyDescriptorSetLayout(layer_data *dev_data, VkDesc
     }
 }
 
-VKAPI_ATTR void VKAPI_CALL DestroyDescriptorSetLayout(VkDevice device, VkDescriptorSetLayout descriptorSetLayout,
-                                                      const VkAllocationCallbacks *pAllocator) {
-    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    {
-        lock_guard_t lock(global_lock);
-        // Pre-record to avoid Destroy/Create race
-        PreCallRecordDestroyDescriptorSetLayout(dev_data, descriptorSetLayout);
-    }
-    dev_data->dispatch_table.DestroyDescriptorSetLayout(device, descriptorSetLayout, pAllocator);
-}
-
-static bool PreCallValidateDestroyDescriptorPool(layer_data *dev_data, VkDescriptorPool pool,
-                                                 DESCRIPTOR_POOL_STATE **desc_pool_state, VK_OBJECT *obj_struct) {
+bool PreCallValidateDestroyDescriptorPool(layer_data *dev_data, VkDescriptorPool pool, DESCRIPTOR_POOL_STATE **desc_pool_state,
+                                          VK_OBJECT *obj_struct) {
     *desc_pool_state = GetDescriptorPoolState(dev_data, pool);
     *obj_struct = {HandleToUint64(pool), kVulkanObjectTypeDescriptorPool};
     if (dev_data->instance_data->disabled.destroy_descriptor_pool) return false;
@@ -4753,8 +4527,8 @@ static bool PreCallValidateDestroyDescriptorPool(layer_data *dev_data, VkDescrip
     return skip;
 }
 
-static void PreCallRecordDestroyDescriptorPool(layer_data *dev_data, VkDescriptorPool descriptorPool,
-                                               DESCRIPTOR_POOL_STATE *desc_pool_state, VK_OBJECT obj_struct) {
+void PreCallRecordDestroyDescriptorPool(layer_data *dev_data, VkDescriptorPool descriptorPool,
+                                        DESCRIPTOR_POOL_STATE *desc_pool_state, VK_OBJECT obj_struct) {
     if (desc_pool_state) {
         // Any bound cmd buffers are now invalid
         InvalidateCommandBuffers(dev_data, desc_pool_state->cb_bindings, obj_struct);
@@ -4764,21 +4538,6 @@ static void PreCallRecordDestroyDescriptorPool(layer_data *dev_data, VkDescripto
         }
         dev_data->descriptorPoolMap.erase(descriptorPool);
         delete desc_pool_state;
-    }
-}
-
-VKAPI_ATTR void VKAPI_CALL DestroyDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool,
-                                                 const VkAllocationCallbacks *pAllocator) {
-    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    DESCRIPTOR_POOL_STATE *desc_pool_state = nullptr;
-    VK_OBJECT obj_struct;
-    unique_lock_t lock(global_lock);
-    bool skip = PreCallValidateDestroyDescriptorPool(dev_data, descriptorPool, &desc_pool_state, &obj_struct);
-    if (!skip) {
-        // Pre-record to avoid Destroy/Create race
-        PreCallRecordDestroyDescriptorPool(dev_data, descriptorPool, desc_pool_state, obj_struct);
-        lock.unlock();
-        dev_data->dispatch_table.DestroyDescriptorPool(device, descriptorPool, pAllocator);
     }
 }
 
@@ -4829,8 +4588,7 @@ static void FreeCommandBufferStates(layer_data *dev_data, COMMAND_POOL_NODE *poo
     }
 }
 
-static bool PreCallValidateFreeCommandBuffers(layer_data *dev_data, uint32_t commandBufferCount,
-                                              const VkCommandBuffer *pCommandBuffers) {
+bool PreCallValidateFreeCommandBuffers(layer_data *dev_data, uint32_t commandBufferCount, const VkCommandBuffer *pCommandBuffers) {
     bool skip = false;
     for (uint32_t i = 0; i < commandBufferCount; i++) {
         auto cb_node = GetCBNode(dev_data, pCommandBuffers[i]);
@@ -4842,45 +4600,19 @@ static bool PreCallValidateFreeCommandBuffers(layer_data *dev_data, uint32_t com
     return skip;
 }
 
-static void PreCallRecordFreeCommandBuffers(layer_data *dev_data, VkCommandPool commandPool, uint32_t commandBufferCount,
-                                            const VkCommandBuffer *pCommandBuffers) {
+void PreCallRecordFreeCommandBuffers(layer_data *dev_data, VkCommandPool commandPool, uint32_t commandBufferCount,
+                                     const VkCommandBuffer *pCommandBuffers) {
     auto pPool = GetCommandPoolNode(dev_data, commandPool);
     FreeCommandBufferStates(dev_data, pPool, commandBufferCount, pCommandBuffers);
 }
 
-VKAPI_ATTR void VKAPI_CALL FreeCommandBuffers(VkDevice device, VkCommandPool commandPool, uint32_t commandBufferCount,
-                                              const VkCommandBuffer *pCommandBuffers) {
-    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    unique_lock_t lock(global_lock);
-
-    bool skip = PreCallValidateFreeCommandBuffers(dev_data, commandBufferCount, pCommandBuffers);
-    if (skip) return;
-    PreCallRecordFreeCommandBuffers(dev_data, commandPool, commandBufferCount, pCommandBuffers);
-    lock.unlock();
-
-    dev_data->dispatch_table.FreeCommandBuffers(device, commandPool, commandBufferCount, pCommandBuffers);
-}
-
-static void PostCallRecordCreateCommandPool(layer_data *dev_data, const VkCommandPoolCreateInfo *pCreateInfo,
-                                            VkCommandPool *pCommandPool) {
+void PostCallRecordCreateCommandPool(layer_data *dev_data, const VkCommandPoolCreateInfo *pCreateInfo,
+                                     VkCommandPool *pCommandPool) {
     dev_data->commandPoolMap[*pCommandPool].createFlags = pCreateInfo->flags;
     dev_data->commandPoolMap[*pCommandPool].queueFamilyIndex = pCreateInfo->queueFamilyIndex;
 }
 
-VKAPI_ATTR VkResult VKAPI_CALL CreateCommandPool(VkDevice device, const VkCommandPoolCreateInfo *pCreateInfo,
-                                                 const VkAllocationCallbacks *pAllocator, VkCommandPool *pCommandPool) {
-    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-
-    VkResult result = dev_data->dispatch_table.CreateCommandPool(device, pCreateInfo, pAllocator, pCommandPool);
-
-    if (VK_SUCCESS == result) {
-        lock_guard_t lock(global_lock);
-        PostCallRecordCreateCommandPool(dev_data, pCreateInfo, pCommandPool);
-    }
-    return result;
-}
-
-static bool PreCallValidateCreateQueryPool(layer_data *dev_data, const VkQueryPoolCreateInfo *pCreateInfo) {
+bool PreCallValidateCreateQueryPool(layer_data *dev_data, const VkQueryPoolCreateInfo *pCreateInfo) {
     bool skip = false;
     if (pCreateInfo && pCreateInfo->queryType == VK_QUERY_TYPE_PIPELINE_STATISTICS) {
         if (!dev_data->enabled_features.core.pipelineStatisticsQuery) {
@@ -4893,30 +4625,12 @@ static bool PreCallValidateCreateQueryPool(layer_data *dev_data, const VkQueryPo
     return skip;
 }
 
-static void PostCallRecordCreateQueryPool(layer_data *dev_data, const VkQueryPoolCreateInfo *pCreateInfo, VkQueryPool *pQueryPool) {
+void PostCallRecordCreateQueryPool(layer_data *dev_data, const VkQueryPoolCreateInfo *pCreateInfo, VkQueryPool *pQueryPool) {
     QUERY_POOL_NODE *qp_node = &dev_data->queryPoolMap[*pQueryPool];
     qp_node->createInfo = *pCreateInfo;
 }
 
-VKAPI_ATTR VkResult VKAPI_CALL CreateQueryPool(VkDevice device, const VkQueryPoolCreateInfo *pCreateInfo,
-                                               const VkAllocationCallbacks *pAllocator, VkQueryPool *pQueryPool) {
-    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    unique_lock_t lock(global_lock);
-    bool skip = PreCallValidateCreateQueryPool(dev_data, pCreateInfo);
-    lock.unlock();
-
-    VkResult result = VK_ERROR_VALIDATION_FAILED_EXT;
-    if (!skip) {
-        result = dev_data->dispatch_table.CreateQueryPool(device, pCreateInfo, pAllocator, pQueryPool);
-    }
-    if (result == VK_SUCCESS) {
-        lock.lock();
-        PostCallRecordCreateQueryPool(dev_data, pCreateInfo, pQueryPool);
-    }
-    return result;
-}
-
-static bool PreCallValidateDestroyCommandPool(layer_data *dev_data, VkCommandPool pool) {
+bool PreCallValidateDestroyCommandPool(layer_data *dev_data, VkCommandPool pool) {
     COMMAND_POOL_NODE *cp_state = GetCommandPoolNode(dev_data, pool);
     if (dev_data->instance_data->disabled.destroy_command_pool) return false;
     bool skip = false;
@@ -4928,7 +4642,7 @@ static bool PreCallValidateDestroyCommandPool(layer_data *dev_data, VkCommandPoo
     return skip;
 }
 
-static void PreCallRecordDestroyCommandPool(layer_data *dev_data, VkCommandPool pool) {
+void PreCallRecordDestroyCommandPool(layer_data *dev_data, VkCommandPool pool) {
     COMMAND_POOL_NODE *cp_state = GetCommandPoolNode(dev_data, pool);
     // Remove cmdpool from cmdpoolmap, after freeing layer data for the command buffers
     // "When a pool is destroyed, all command buffers allocated from the pool are freed."
@@ -4940,50 +4654,17 @@ static void PreCallRecordDestroyCommandPool(layer_data *dev_data, VkCommandPool 
     }
 }
 
-// Destroy commandPool along with all of the commandBuffers allocated from that pool
-VKAPI_ATTR void VKAPI_CALL DestroyCommandPool(VkDevice device, VkCommandPool commandPool, const VkAllocationCallbacks *pAllocator) {
-    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    unique_lock_t lock(global_lock);
-    bool skip = PreCallValidateDestroyCommandPool(dev_data, commandPool);
-    if (!skip) {
-        // Pre-record to avoid Destroy/Create race
-        PreCallRecordDestroyCommandPool(dev_data, commandPool);
-        lock.unlock();
-        dev_data->dispatch_table.DestroyCommandPool(device, commandPool, pAllocator);
-    }
-}
-
-static bool PreCallValidateResetCommandPool(layer_data *dev_data, COMMAND_POOL_NODE *pPool) {
+bool PreCallValidateResetCommandPool(layer_data *dev_data, COMMAND_POOL_NODE *pPool) {
     return CheckCommandBuffersInFlight(dev_data, pPool, "reset command pool with", "VUID-vkResetCommandPool-commandPool-00040");
 }
 
-static void PostCallRecordResetCommandPool(layer_data *dev_data, COMMAND_POOL_NODE *pPool) {
+void PostCallRecordResetCommandPool(layer_data *dev_data, COMMAND_POOL_NODE *pPool) {
     for (auto cmdBuffer : pPool->commandBuffers) {
         ResetCommandBufferState(dev_data, cmdBuffer);
     }
 }
 
-VKAPI_ATTR VkResult VKAPI_CALL ResetCommandPool(VkDevice device, VkCommandPool commandPool, VkCommandPoolResetFlags flags) {
-    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    unique_lock_t lock(global_lock);
-    auto pPool = GetCommandPoolNode(dev_data, commandPool);
-    bool skip = PreCallValidateResetCommandPool(dev_data, pPool);
-    lock.unlock();
-
-    if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
-
-    VkResult result = dev_data->dispatch_table.ResetCommandPool(device, commandPool, flags);
-
-    // Reset all of the CBs allocated from this pool
-    if (VK_SUCCESS == result) {
-        lock.lock();
-        PostCallRecordResetCommandPool(dev_data, pPool);
-        lock.unlock();
-    }
-    return result;
-}
-
-static bool PreCallValidateResetFences(layer_data *dev_data, uint32_t fenceCount, const VkFence *pFences) {
+bool PreCallValidateResetFences(layer_data *dev_data, uint32_t fenceCount, const VkFence *pFences) {
     bool skip = false;
     for (uint32_t i = 0; i < fenceCount; ++i) {
         auto pFence = GetFenceNode(dev_data, pFences[i]);
@@ -4996,7 +4677,7 @@ static bool PreCallValidateResetFences(layer_data *dev_data, uint32_t fenceCount
     return skip;
 }
 
-static void PostCallRecordResetFences(layer_data *dev_data, uint32_t fenceCount, const VkFence *pFences) {
+void PostCallRecordResetFences(layer_data *dev_data, uint32_t fenceCount, const VkFence *pFences) {
     for (uint32_t i = 0; i < fenceCount; ++i) {
         auto pFence = GetFenceNode(dev_data, pFences[i]);
         if (pFence) {
@@ -5007,25 +4688,6 @@ static void PostCallRecordResetFences(layer_data *dev_data, uint32_t fenceCount,
             }
         }
     }
-}
-
-VKAPI_ATTR VkResult VKAPI_CALL ResetFences(VkDevice device, uint32_t fenceCount, const VkFence *pFences) {
-    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    unique_lock_t lock(global_lock);
-    bool skip = PreCallValidateResetFences(dev_data, fenceCount, pFences);
-    lock.unlock();
-
-    if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
-
-    VkResult result = dev_data->dispatch_table.ResetFences(device, fenceCount, pFences);
-
-    if (result == VK_SUCCESS) {
-        lock.lock();
-        PostCallRecordResetFences(dev_data, fenceCount, pFences);
-        lock.unlock();
-    }
-
-    return result;
 }
 
 // For given cb_nodes, invalidate them and track object causing invalidation
@@ -5049,8 +4711,8 @@ void InvalidateCommandBuffers(const layer_data *dev_data, std::unordered_set<GLO
     }
 }
 
-static bool PreCallValidateDestroyFramebuffer(layer_data *dev_data, VkFramebuffer framebuffer,
-                                              FRAMEBUFFER_STATE **framebuffer_state, VK_OBJECT *obj_struct) {
+bool PreCallValidateDestroyFramebuffer(layer_data *dev_data, VkFramebuffer framebuffer, FRAMEBUFFER_STATE **framebuffer_state,
+                                       VK_OBJECT *obj_struct) {
     *framebuffer_state = GetFramebufferState(dev_data, framebuffer);
     *obj_struct = {HandleToUint64(framebuffer), kVulkanObjectTypeFramebuffer};
     if (dev_data->instance_data->disabled.destroy_framebuffer) return false;
@@ -5062,30 +4724,14 @@ static bool PreCallValidateDestroyFramebuffer(layer_data *dev_data, VkFramebuffe
     return skip;
 }
 
-static void PreCallRecordDestroyFramebuffer(layer_data *dev_data, VkFramebuffer framebuffer, FRAMEBUFFER_STATE *framebuffer_state,
-                                            VK_OBJECT obj_struct) {
+void PreCallRecordDestroyFramebuffer(layer_data *dev_data, VkFramebuffer framebuffer, FRAMEBUFFER_STATE *framebuffer_state,
+                                     VK_OBJECT obj_struct) {
     InvalidateCommandBuffers(dev_data, framebuffer_state->cb_bindings, obj_struct);
     dev_data->frameBufferMap.erase(framebuffer);
 }
 
-VKAPI_ATTR void VKAPI_CALL DestroyFramebuffer(VkDevice device, VkFramebuffer framebuffer, const VkAllocationCallbacks *pAllocator) {
-    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    FRAMEBUFFER_STATE *framebuffer_state = nullptr;
-    VK_OBJECT obj_struct;
-    unique_lock_t lock(global_lock);
-    bool skip = PreCallValidateDestroyFramebuffer(dev_data, framebuffer, &framebuffer_state, &obj_struct);
-    if (!skip) {
-        if (framebuffer != VK_NULL_HANDLE) {
-            // Pre-record to avoid Destroy/Create race
-            PreCallRecordDestroyFramebuffer(dev_data, framebuffer, framebuffer_state, obj_struct);
-        }
-        lock.unlock();
-        dev_data->dispatch_table.DestroyFramebuffer(device, framebuffer, pAllocator);
-    }
-}
-
-static bool PreCallValidateDestroyRenderPass(layer_data *dev_data, VkRenderPass render_pass, RENDER_PASS_STATE **rp_state,
-                                             VK_OBJECT *obj_struct) {
+bool PreCallValidateDestroyRenderPass(layer_data *dev_data, VkRenderPass render_pass, RENDER_PASS_STATE **rp_state,
+                                      VK_OBJECT *obj_struct) {
     *rp_state = GetRenderPassState(dev_data, render_pass);
     *obj_struct = {HandleToUint64(render_pass), kVulkanObjectTypeRenderPass};
     if (dev_data->instance_data->disabled.destroy_renderpass) return false;
@@ -5097,60 +4743,10 @@ static bool PreCallValidateDestroyRenderPass(layer_data *dev_data, VkRenderPass 
     return skip;
 }
 
-static void PreCallRecordDestroyRenderPass(layer_data *dev_data, VkRenderPass render_pass, RENDER_PASS_STATE *rp_state,
-                                           VK_OBJECT obj_struct) {
+void PreCallRecordDestroyRenderPass(layer_data *dev_data, VkRenderPass render_pass, RENDER_PASS_STATE *rp_state,
+                                    VK_OBJECT obj_struct) {
     InvalidateCommandBuffers(dev_data, rp_state->cb_bindings, obj_struct);
     dev_data->renderPassMap.erase(render_pass);
-}
-
-VKAPI_ATTR void VKAPI_CALL DestroyRenderPass(VkDevice device, VkRenderPass renderPass, const VkAllocationCallbacks *pAllocator) {
-    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    RENDER_PASS_STATE *rp_state = nullptr;
-    VK_OBJECT obj_struct;
-    unique_lock_t lock(global_lock);
-    bool skip = PreCallValidateDestroyRenderPass(dev_data, renderPass, &rp_state, &obj_struct);
-    if (!skip) {
-        if (renderPass != VK_NULL_HANDLE) {
-            // Pre-record to avoid Destroy/Create race
-            PreCallRecordDestroyRenderPass(dev_data, renderPass, rp_state, obj_struct);
-        }
-        lock.unlock();
-        dev_data->dispatch_table.DestroyRenderPass(device, renderPass, pAllocator);
-    }
-}
-
-VKAPI_ATTR VkResult VKAPI_CALL CreateBuffer(VkDevice device, const VkBufferCreateInfo *pCreateInfo,
-                                            const VkAllocationCallbacks *pAllocator, VkBuffer *pBuffer) {
-    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    unique_lock_t lock(global_lock);
-    bool skip = PreCallValidateCreateBuffer(dev_data, pCreateInfo);
-    lock.unlock();
-
-    if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
-    VkResult result = dev_data->dispatch_table.CreateBuffer(device, pCreateInfo, pAllocator, pBuffer);
-
-    if (VK_SUCCESS == result) {
-        lock.lock();
-        PostCallRecordCreateBuffer(dev_data, pCreateInfo, pBuffer);
-        lock.unlock();
-    }
-    return result;
-}
-
-VKAPI_ATTR VkResult VKAPI_CALL CreateBufferView(VkDevice device, const VkBufferViewCreateInfo *pCreateInfo,
-                                                const VkAllocationCallbacks *pAllocator, VkBufferView *pView) {
-    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    unique_lock_t lock(global_lock);
-    bool skip = PreCallValidateCreateBufferView(dev_data, pCreateInfo);
-    lock.unlock();
-    if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
-    VkResult result = dev_data->dispatch_table.CreateBufferView(device, pCreateInfo, pAllocator, pView);
-    if (VK_SUCCESS == result) {
-        lock.lock();
-        PostCallRecordCreateBufferView(dev_data, pCreateInfo, pView);
-        lock.unlock();
-    }
-    return result;
 }
 
 // Access helper functions for external modules
@@ -5240,38 +4836,6 @@ VkDevice GetDevice(const layer_data *device_data) { return device_data->device; 
 
 uint32_t GetApiVersion(const layer_data *device_data) { return device_data->api_version; }
 
-VKAPI_ATTR VkResult VKAPI_CALL CreateImage(VkDevice device, const VkImageCreateInfo *pCreateInfo,
-                                           const VkAllocationCallbacks *pAllocator, VkImage *pImage) {
-    VkResult result = VK_ERROR_VALIDATION_FAILED_EXT;
-    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    bool skip = PreCallValidateCreateImage(dev_data, pCreateInfo, pAllocator, pImage);
-    if (!skip) {
-        result = dev_data->dispatch_table.CreateImage(device, pCreateInfo, pAllocator, pImage);
-    }
-    if (VK_SUCCESS == result) {
-        lock_guard_t lock(global_lock);
-        PostCallRecordCreateImage(dev_data, pCreateInfo, pImage);
-    }
-    return result;
-}
-
-VKAPI_ATTR VkResult VKAPI_CALL CreateImageView(VkDevice device, const VkImageViewCreateInfo *pCreateInfo,
-                                               const VkAllocationCallbacks *pAllocator, VkImageView *pView) {
-    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    unique_lock_t lock(global_lock);
-    bool skip = PreCallValidateCreateImageView(dev_data, pCreateInfo);
-    lock.unlock();
-    if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
-    VkResult result = dev_data->dispatch_table.CreateImageView(device, pCreateInfo, pAllocator, pView);
-    if (VK_SUCCESS == result) {
-        lock.lock();
-        PostCallRecordCreateImageView(dev_data, pCreateInfo, *pView);
-        lock.unlock();
-    }
-
-    return result;
-}
-
 void PostCallRecordCreateFence(layer_data *dev_data, const VkFenceCreateInfo *pCreateInfo, VkFence *pFence) {
     auto &fence_node = dev_data->fenceMap[*pFence];
     fence_node.fence = *pFence;
@@ -5281,48 +4845,6 @@ void PostCallRecordCreateFence(layer_data *dev_data, const VkFenceCreateInfo *pC
 
 // Validation cache:
 // CV is the bottommost implementor of this extension. Don't pass calls down.
-VKAPI_ATTR VkResult VKAPI_CALL CreateValidationCacheEXT(VkDevice device, const VkValidationCacheCreateInfoEXT *pCreateInfo,
-                                                        const VkAllocationCallbacks *pAllocator,
-                                                        VkValidationCacheEXT *pValidationCache) {
-    *pValidationCache = ValidationCache::Create(pCreateInfo);
-    return *pValidationCache ? VK_SUCCESS : VK_ERROR_INITIALIZATION_FAILED;
-}
-
-VKAPI_ATTR void VKAPI_CALL DestroyValidationCacheEXT(VkDevice device, VkValidationCacheEXT validationCache,
-                                                     const VkAllocationCallbacks *pAllocator) {
-    delete (ValidationCache *)validationCache;
-}
-
-VKAPI_ATTR VkResult VKAPI_CALL GetValidationCacheDataEXT(VkDevice device, VkValidationCacheEXT validationCache, size_t *pDataSize,
-                                                         void *pData) {
-    size_t inSize = *pDataSize;
-    ((ValidationCache *)validationCache)->Write(pDataSize, pData);
-    return (pData && *pDataSize != inSize) ? VK_INCOMPLETE : VK_SUCCESS;
-}
-
-VKAPI_ATTR VkResult VKAPI_CALL MergeValidationCachesEXT(VkDevice device, VkValidationCacheEXT dstCache, uint32_t srcCacheCount,
-                                                        const VkValidationCacheEXT *pSrcCaches) {
-    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    bool skip = false;
-    auto dst = (ValidationCache *)dstCache;
-    auto src = (ValidationCache const *const *)pSrcCaches;
-    VkResult result = VK_SUCCESS;
-    for (uint32_t i = 0; i < srcCacheCount; i++) {
-        if (src[i] == dst) {
-            skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_VALIDATION_CACHE_EXT,
-                            0, "VUID-vkMergeValidationCachesEXT-dstCache-01536",
-                            "vkMergeValidationCachesEXT: dstCache (0x%" PRIx64 ") must not appear in pSrcCaches array.",
-                            HandleToUint64(dstCache));
-            result = VK_ERROR_VALIDATION_FAILED_EXT;
-        }
-        if (!skip) {
-            dst->Merge(src[i]);
-        }
-    }
-
-    return result;
-}
-
 // utility function to set collective state for pipeline
 void SetPipelineState(PIPELINE_STATE *pPipe) {
     // If any attachment used by this pipeline has blendEnable, set top-level blendEnable
@@ -5347,7 +4869,7 @@ void SetPipelineState(PIPELINE_STATE *pPipe) {
 static bool ValidatePipelineVertexDivisors(layer_data *dev_data, vector<std::unique_ptr<PIPELINE_STATE>> const &pipe_state_vec,
                                            const uint32_t count, const VkGraphicsPipelineCreateInfo *pipe_cis) {
     bool skip = false;
-    const VkPhysicalDeviceLimits *device_limits = &(GetPhysicalDeviceProperties(dev_data)->limits);
+    const VkPhysicalDeviceLimits *device_limits = &(GetPDProperties(dev_data)->limits);
 
     for (uint32_t i = 0; i < count; i++) {
         auto pvids_ci = lvl_find_in_chain<VkPipelineVertexInputDivisorStateCreateInfoEXT>(pipe_cis[i].pVertexInputState->pNext);
@@ -5418,8 +4940,8 @@ static bool ValidatePipelineVertexDivisors(layer_data *dev_data, vector<std::uni
     return skip;
 }
 
-static bool PreCallValidateCreateGraphicsPipelines(layer_data *dev_data, vector<std::unique_ptr<PIPELINE_STATE>> *pipe_state,
-                                                   const uint32_t count, const VkGraphicsPipelineCreateInfo *pCreateInfos) {
+bool PreCallValidateCreateGraphicsPipelines(layer_data *dev_data, vector<std::unique_ptr<PIPELINE_STATE>> *pipe_state,
+                                            const uint32_t count, const VkGraphicsPipelineCreateInfo *pCreateInfos) {
     bool skip = false;
     pipe_state->reserve(count);
     // TODO - State changes and validation need to be untangled here
@@ -5444,9 +4966,9 @@ static bool PreCallValidateCreateGraphicsPipelines(layer_data *dev_data, vector<
     return skip;
 }
 
-static void PostCallRecordCreateGraphicsPipelines(layer_data *dev_data, vector<std::unique_ptr<PIPELINE_STATE>> *pipe_state,
-                                                  const uint32_t count, const VkGraphicsPipelineCreateInfo *pCreateInfos,
-                                                  const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines) {
+void PostCallRecordCreateGraphicsPipelines(layer_data *dev_data, vector<std::unique_ptr<PIPELINE_STATE>> *pipe_state,
+                                           const uint32_t count, const VkGraphicsPipelineCreateInfo *pCreateInfos,
+                                           const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines) {
     for (uint32_t i = 0; i < count; i++) {
         if (pPipelines[i] != VK_NULL_HANDLE) {
             (*pipe_state)[i]->pipeline = pPipelines[i];
@@ -5465,7 +4987,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateGraphicsPipelines(VkDevice device, VkPipeli
     //  1. Pipeline create state is first shadowed into PIPELINE_STATE struct
     //  2. Create state is then validated (which uses flags setup during shadowing)
     //  3. If everything looks good, we'll then create the pipeline and add NODE to pipelineMap
-    vector<std::unique_ptr<PIPELINE_STATE>> pipe_state;
+    std::vector<std::unique_ptr<PIPELINE_STATE>> pipe_state;
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     unique_lock_t lock(global_lock);
 
