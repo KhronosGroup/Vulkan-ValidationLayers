@@ -1,6 +1,6 @@
-/* Copyright (c) 2018 The Khronos Group Inc.
- * Copyright (c) 2018 Valve Corporation
- * Copyright (c) 2018 LunarG, Inc.
+/* Copyright (c) 2019 The Khronos Group Inc.
+ * Copyright (c) 2019 Valve Corporation
+ * Copyright (c) 2019 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,7 +62,7 @@ struct hash<safe_VkDescriptorSetLayoutBinding> {
 }  // namespace std
 
 // VkPushConstantRange
-static bool operator==(const VkPushConstantRange &lhs, const VkPushConstantRange &rhs) {
+static inline bool operator==(const VkPushConstantRange &lhs, const VkPushConstantRange &rhs) {
     return (lhs.stageFlags == rhs.stageFlags) && (lhs.offset == rhs.offset) && (lhs.size == rhs.size);
 }
 
