@@ -1095,6 +1095,553 @@ VKAPI_ATTR VkResult VKAPI_CALL GetMemoryAndroidHardwareBufferANDROID(VkDevice de
 }
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
 
+VKAPI_ATTR VkResult VKAPI_CALL CreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
+                                                      const VkComputePipelineCreateInfo *pCreateInfos,
+                                                      const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines) {
+    std::vector<std::unique_ptr<PIPELINE_STATE>> pipe_state;
+    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+
+    unique_lock_t lock(global_lock);
+    bool skip = PreCallValidateCreateComputePipelines(dev_data, &pipe_state, count, pCreateInfos);
+    if (skip) {
+        for (uint32_t i = 0; i < count; i++) {
+            pPipelines[i] = VK_NULL_HANDLE;
+        }
+        return VK_ERROR_VALIDATION_FAILED_EXT;
+    }
+    lock.unlock();
+
+    auto result =
+        dev_data->dispatch_table.CreateComputePipelines(device, pipelineCache, count, pCreateInfos, pAllocator, pPipelines);
+
+    lock.lock();
+    PostCallRecordCreateComputePipelines(dev_data, &pipe_state, count, pPipelines);
+
+    return result;
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL CreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
+                                                           const VkRayTracingPipelineCreateInfoNV *pCreateInfos,
+                                                           const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines) {
+    bool skip = false;
+    std::vector<std::unique_ptr<PIPELINE_STATE>> pipe_state;
+    pipe_state.reserve(count);
+    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+
+    unique_lock_t lock(global_lock);
+
+    skip |= PreCallValidateCreateRayTracingPipelinesNV(dev_data, count, pCreateInfos, pipe_state);
+
+    lock.unlock();
+
+    if (skip) {
+        for (uint32_t i = 0; i < count; i++) {
+            pPipelines[i] = VK_NULL_HANDLE;
+        }
+        return VK_ERROR_VALIDATION_FAILED_EXT;
+    }
+
+    auto result =
+        dev_data->dispatch_table.CreateRayTracingPipelinesNV(device, pipelineCache, count, pCreateInfos, pAllocator, pPipelines);
+    lock.lock();
+
+    PostCallRecordCreateRayTracingPipelinesNV(dev_data, count, pipe_state, pPipelines);
+
+    return result;
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL CreateSampler(VkDevice device, const VkSamplerCreateInfo *pCreateInfo,
+                                             const VkAllocationCallbacks *pAllocator, VkSampler *pSampler) {
+    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    VkResult result = dev_data->dispatch_table.CreateSampler(device, pCreateInfo, pAllocator, pSampler);
+    if (VK_SUCCESS == result) {
+        lock_guard_t lock(global_lock);
+        PostCallRecordCreateSampler(dev_data, pCreateInfo, pSampler);
+    }
+    return result;
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL CreateDescriptorSetLayout(VkDevice device, const VkDescriptorSetLayoutCreateInfo *pCreateInfo,
+                                                         const VkAllocationCallbacks *pAllocator,
+                                                         VkDescriptorSetLayout *pSetLayout) {
+    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    VkResult result = VK_ERROR_VALIDATION_FAILED_EXT;
+    unique_lock_t lock(global_lock);
+    bool skip = PreCallValidateCreateDescriptorSetLayout(dev_data, pCreateInfo);
+    if (!skip) {
+        lock.unlock();
+        result = dev_data->dispatch_table.CreateDescriptorSetLayout(device, pCreateInfo, pAllocator, pSetLayout);
+        if (VK_SUCCESS == result) {
+            lock.lock();
+            PostCallRecordCreateDescriptorSetLayout(dev_data, pCreateInfo, *pSetLayout);
+        }
+    }
+    return result;
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL CreateDescriptorPool(VkDevice device, const VkDescriptorPoolCreateInfo *pCreateInfo,
+                                                    const VkAllocationCallbacks *pAllocator, VkDescriptorPool *pDescriptorPool) {
+    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    VkResult result = dev_data->dispatch_table.CreateDescriptorPool(device, pCreateInfo, pAllocator, pDescriptorPool);
+    if (VK_SUCCESS == result) {
+        DESCRIPTOR_POOL_STATE *pNewNode = new DESCRIPTOR_POOL_STATE(*pDescriptorPool, pCreateInfo);
+        lock_guard_t lock(global_lock);
+        if (NULL == pNewNode) {
+            bool skip = PostCallValidateCreateDescriptorPool(dev_data, pDescriptorPool);
+            if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+        } else {
+            PostCallRecordCreateDescriptorPool(dev_data, pNewNode, pDescriptorPool);
+        }
+    } else {
+        // Need to do anything if pool create fails?
+    }
+    return result;
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL ResetDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool,
+                                                   VkDescriptorPoolResetFlags flags) {
+    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+
+    unique_lock_t lock(global_lock);
+    // Make sure sets being destroyed are not currently in-use
+    bool skip = PreCallValidateResetDescriptorPool(dev_data, descriptorPool);
+    lock.unlock();
+
+    if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+
+    VkResult result = dev_data->dispatch_table.ResetDescriptorPool(device, descriptorPool, flags);
+    if (VK_SUCCESS == result) {
+        lock.lock();
+        PostCallRecordResetDescriptorPool(dev_data, device, descriptorPool, flags);
+        lock.unlock();
+    }
+    return result;
+}
+
+// TODO: PostCallRecord routine is dependent on data generated in PreCallValidate -- needs to be moved out
+VKAPI_ATTR VkResult VKAPI_CALL AllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo *pAllocateInfo,
+                                                      VkDescriptorSet *pDescriptorSets) {
+    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    unique_lock_t lock(global_lock);
+    cvdescriptorset::AllocateDescriptorSetsData common_data(pAllocateInfo->descriptorSetCount);
+    bool skip = PreCallValidateAllocateDescriptorSets(dev_data, pAllocateInfo, &common_data);
+    lock.unlock();
+
+    if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+
+    VkResult result = dev_data->dispatch_table.AllocateDescriptorSets(device, pAllocateInfo, pDescriptorSets);
+
+    if (VK_SUCCESS == result) {
+        lock.lock();
+        PostCallRecordAllocateDescriptorSets(dev_data, pAllocateInfo, pDescriptorSets, &common_data);
+        lock.unlock();
+    }
+    return result;
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL FreeDescriptorSets(VkDevice device, VkDescriptorPool descriptorPool, uint32_t count,
+                                                  const VkDescriptorSet *pDescriptorSets) {
+    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    // Make sure that no sets being destroyed are in-flight
+    unique_lock_t lock(global_lock);
+    bool skip = PreCallValidateFreeDescriptorSets(dev_data, descriptorPool, count, pDescriptorSets);
+
+    VkResult result;
+    if (skip) {
+        result = VK_ERROR_VALIDATION_FAILED_EXT;
+    } else {
+        // A race here is invalid (descriptorPool should be externally sync'd), but code defensively against an invalid race
+        PreCallRecordFreeDescriptorSets(dev_data, descriptorPool, count, pDescriptorSets);
+        lock.unlock();
+        result = dev_data->dispatch_table.FreeDescriptorSets(device, descriptorPool, count, pDescriptorSets);
+    }
+    return result;
+}
+
+VKAPI_ATTR void VKAPI_CALL UpdateDescriptorSets(VkDevice device, uint32_t descriptorWriteCount,
+                                                const VkWriteDescriptorSet *pDescriptorWrites, uint32_t descriptorCopyCount,
+                                                const VkCopyDescriptorSet *pDescriptorCopies) {
+    // Only map look-up at top level is for device-level layer_data
+    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    unique_lock_t lock(global_lock);
+    bool skip = PreCallValidateUpdateDescriptorSets(dev_data, descriptorWriteCount, pDescriptorWrites, descriptorCopyCount,
+                                                    pDescriptorCopies);
+    if (!skip) {
+        // Since UpdateDescriptorSets() is void, nothing to check prior to updating state & we can update before call down chain
+        PreCallRecordUpdateDescriptorSets(dev_data, descriptorWriteCount, pDescriptorWrites, descriptorCopyCount,
+                                          pDescriptorCopies);
+        lock.unlock();
+        dev_data->dispatch_table.UpdateDescriptorSets(device, descriptorWriteCount, pDescriptorWrites, descriptorCopyCount,
+                                                      pDescriptorCopies);
+    }
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL AllocateCommandBuffers(VkDevice device, const VkCommandBufferAllocateInfo *pCreateInfo,
+                                                      VkCommandBuffer *pCommandBuffer) {
+    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    VkResult result = dev_data->dispatch_table.AllocateCommandBuffers(device, pCreateInfo, pCommandBuffer);
+    if (VK_SUCCESS == result) {
+        unique_lock_t lock(global_lock);
+        PostCallRecordAllocateCommandBuffers(dev_data, device, pCreateInfo, pCommandBuffer);
+        lock.unlock();
+    }
+    return result;
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL BeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo *pBeginInfo) {
+    bool skip = false;
+    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    unique_lock_t lock(global_lock);
+    // Validate command buffer level
+    GLOBAL_CB_NODE *cb_state = GetCBNode(dev_data, commandBuffer);
+    if (cb_state) {
+        skip |= PreCallValidateBeginCommandBuffer(dev_data, cb_state, commandBuffer, pBeginInfo);
+        PreCallRecordBeginCommandBuffer(dev_data, cb_state, commandBuffer, pBeginInfo);
+    }
+    lock.unlock();
+    if (skip) {
+        return VK_ERROR_VALIDATION_FAILED_EXT;
+    }
+    VkResult result = dev_data->dispatch_table.BeginCommandBuffer(commandBuffer, pBeginInfo);
+
+    return result;
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL EndCommandBuffer(VkCommandBuffer commandBuffer) {
+    bool skip = false;
+    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    unique_lock_t lock(global_lock);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(dev_data, commandBuffer);
+    if (cb_state) {
+        skip |= PreCallValidateEndCommandBuffer(dev_data, cb_state, commandBuffer);
+    }
+    if (!skip) {
+        lock.unlock();
+        auto result = dev_data->dispatch_table.EndCommandBuffer(commandBuffer);
+        lock.lock();
+        if (cb_state) {
+            PostCallRecordEndCommandBuffer(dev_data, cb_state, result);
+        }
+        return result;
+    } else {
+        return VK_ERROR_VALIDATION_FAILED_EXT;
+    }
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL ResetCommandBuffer(VkCommandBuffer commandBuffer, VkCommandBufferResetFlags flags) {
+    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    unique_lock_t lock(global_lock);
+    bool skip = PreCallValidateResetCommandBuffer(dev_data, commandBuffer);
+    lock.unlock();
+
+    if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+
+    VkResult result = dev_data->dispatch_table.ResetCommandBuffer(commandBuffer, flags);
+
+    if (VK_SUCCESS == result) {
+        lock.lock();
+        PostCallRecordResetCommandBuffer(dev_data, commandBuffer);
+        lock.unlock();
+    }
+
+    return result;
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdSetViewport(VkCommandBuffer commandBuffer, uint32_t firstViewport, uint32_t viewportCount,
+                                          const VkViewport *pViewports) {
+    bool skip = false;
+    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    unique_lock_t lock(global_lock);
+    GLOBAL_CB_NODE *pCB = GetCBNode(dev_data, commandBuffer);
+    if (pCB) {
+        skip |= PreCallValidateCmdSetViewport(dev_data, pCB, commandBuffer);
+        if (!skip) {
+            PreCallRecordCmdSetViewport(pCB, firstViewport, viewportCount);
+        }
+    }
+    lock.unlock();
+    if (!skip) dev_data->dispatch_table.CmdSetViewport(commandBuffer, firstViewport, viewportCount, pViewports);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdSetScissor(VkCommandBuffer commandBuffer, uint32_t firstScissor, uint32_t scissorCount,
+                                         const VkRect2D *pScissors) {
+    bool skip = false;
+    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    unique_lock_t lock(global_lock);
+    GLOBAL_CB_NODE *pCB = GetCBNode(dev_data, commandBuffer);
+    if (pCB) {
+        skip |= PreCallValidateCmdSetScissor(dev_data, pCB, commandBuffer);
+        if (!skip) {
+            PreCallRecordCmdSetScissor(pCB, firstScissor, scissorCount);
+        }
+    }
+    lock.unlock();
+    if (!skip) dev_data->dispatch_table.CmdSetScissor(commandBuffer, firstScissor, scissorCount, pScissors);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdSetExclusiveScissorNV(VkCommandBuffer commandBuffer, uint32_t firstExclusiveScissor,
+                                                    uint32_t exclusiveScissorCount, const VkRect2D *pExclusiveScissors) {
+    bool skip = false;
+    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    unique_lock_t lock(global_lock);
+    GLOBAL_CB_NODE *pCB = GetCBNode(dev_data, commandBuffer);
+    if (pCB) {
+        skip |= PreCallValidateCmdSetExclusiveScissorNV(dev_data, pCB, commandBuffer);
+        if (!skip) {
+            PreCallRecordCmdSetExclusiveScissorNV(pCB, firstExclusiveScissor, exclusiveScissorCount);
+        }
+    }
+    lock.unlock();
+    if (!skip)
+        dev_data->dispatch_table.CmdSetExclusiveScissorNV(commandBuffer, firstExclusiveScissor, exclusiveScissorCount,
+                                                          pExclusiveScissors);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdBindShadingRateImageNV(VkCommandBuffer commandBuffer, VkImageView imageView,
+                                                     VkImageLayout imageLayout) {
+    bool skip = false;
+    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    unique_lock_t lock(global_lock);
+    GLOBAL_CB_NODE *pCB = GetCBNode(dev_data, commandBuffer);
+    if (pCB) {
+        skip |= PreCallValidateCmdBindShadingRateImageNV(dev_data, pCB, commandBuffer, imageView, imageLayout);
+        if (!skip) {
+            PreCallRecordCmdBindShadingRateImageNV(dev_data, pCB, imageView);
+        }
+    }
+    lock.unlock();
+    if (!skip) dev_data->dispatch_table.CmdBindShadingRateImageNV(commandBuffer, imageView, imageLayout);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdSetViewportShadingRatePaletteNV(VkCommandBuffer commandBuffer, uint32_t firstViewport,
+                                                              uint32_t viewportCount,
+                                                              const VkShadingRatePaletteNV *pShadingRatePalettes) {
+    bool skip = false;
+    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    unique_lock_t lock(global_lock);
+    GLOBAL_CB_NODE *pCB = GetCBNode(dev_data, commandBuffer);
+    if (pCB) {
+        skip |= PreCallValidateCmdSetViewportShadingRatePaletteNV(dev_data, pCB, commandBuffer, firstViewport, viewportCount,
+                                                                  pShadingRatePalettes);
+        if (!skip) {
+            PreCallRecordCmdSetViewportShadingRatePaletteNV(pCB, firstViewport, viewportCount);
+        }
+    }
+    lock.unlock();
+    if (!skip)
+        dev_data->dispatch_table.CmdSetViewportShadingRatePaletteNV(commandBuffer, firstViewport, viewportCount,
+                                                                    pShadingRatePalettes);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdSetLineWidth(VkCommandBuffer commandBuffer, float lineWidth) {
+    bool skip = false;
+    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    unique_lock_t lock(global_lock);
+    GLOBAL_CB_NODE *pCB = GetCBNode(dev_data, commandBuffer);
+    if (pCB) {
+        skip |= PreCallValidateCmdSetLineWidth(dev_data, pCB, commandBuffer);
+        if (!skip) {
+            PreCallRecordCmdSetLineWidth(pCB);
+        }
+    }
+    lock.unlock();
+    if (!skip) dev_data->dispatch_table.CmdSetLineWidth(commandBuffer, lineWidth);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdSetDepthBias(VkCommandBuffer commandBuffer, float depthBiasConstantFactor, float depthBiasClamp,
+                                           float depthBiasSlopeFactor) {
+    bool skip = false;
+    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    unique_lock_t lock(global_lock);
+    GLOBAL_CB_NODE *pCB = GetCBNode(dev_data, commandBuffer);
+    if (pCB) {
+        skip |= PreCallValidateCmdSetDepthBias(dev_data, pCB, commandBuffer, depthBiasClamp);
+        if (!skip) {
+            PreCallRecordCmdSetDepthBias(pCB);
+        }
+    }
+    lock.unlock();
+    if (!skip) {
+        dev_data->dispatch_table.CmdSetDepthBias(commandBuffer, depthBiasConstantFactor, depthBiasClamp, depthBiasSlopeFactor);
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdSetBlendConstants(VkCommandBuffer commandBuffer, const float blendConstants[4]) {
+    bool skip = false;
+    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    unique_lock_t lock(global_lock);
+    GLOBAL_CB_NODE *pCB = GetCBNode(dev_data, commandBuffer);
+    if (pCB) {
+        skip |= PreCallValidateCmdSetBlendConstants(dev_data, pCB, commandBuffer);
+        if (!skip) {
+            PreCallRecordCmdSetBlendConstants(pCB);
+        }
+    }
+    lock.unlock();
+    if (!skip) dev_data->dispatch_table.CmdSetBlendConstants(commandBuffer, blendConstants);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdSetDepthBounds(VkCommandBuffer commandBuffer, float minDepthBounds, float maxDepthBounds) {
+    bool skip = false;
+    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    unique_lock_t lock(global_lock);
+    GLOBAL_CB_NODE *pCB = GetCBNode(dev_data, commandBuffer);
+    if (pCB) {
+        skip |= PreCallValidateCmdSetDepthBounds(dev_data, pCB, commandBuffer);
+        if (!skip) {
+            PreCallRecordCmdSetDepthBounds(pCB);
+        }
+    }
+    lock.unlock();
+    if (!skip) dev_data->dispatch_table.CmdSetDepthBounds(commandBuffer, minDepthBounds, maxDepthBounds);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdSetStencilCompareMask(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask,
+                                                    uint32_t compareMask) {
+    bool skip = false;
+    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    unique_lock_t lock(global_lock);
+    GLOBAL_CB_NODE *pCB = GetCBNode(dev_data, commandBuffer);
+    if (pCB) {
+        skip |= PreCallValidateCmdSetStencilCompareMask(dev_data, pCB, commandBuffer);
+        if (!skip) {
+            PreCallRecordCmdSetStencilCompareMask(pCB);
+        }
+    }
+    lock.unlock();
+    if (!skip) dev_data->dispatch_table.CmdSetStencilCompareMask(commandBuffer, faceMask, compareMask);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdSetStencilWriteMask(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, uint32_t writeMask) {
+    bool skip = false;
+    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    unique_lock_t lock(global_lock);
+    GLOBAL_CB_NODE *pCB = GetCBNode(dev_data, commandBuffer);
+    if (pCB) {
+        skip |= PreCallValidateCmdSetStencilWriteMask(dev_data, pCB, commandBuffer);
+        if (!skip) {
+            PreCallRecordCmdSetStencilWriteMask(pCB);
+        }
+    }
+    lock.unlock();
+    if (!skip) dev_data->dispatch_table.CmdSetStencilWriteMask(commandBuffer, faceMask, writeMask);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdSetStencilReference(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, uint32_t reference) {
+    bool skip = false;
+    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    unique_lock_t lock(global_lock);
+    GLOBAL_CB_NODE *pCB = GetCBNode(dev_data, commandBuffer);
+    if (pCB) {
+        skip |= PreCallValidateCmdSetStencilReference(dev_data, pCB, commandBuffer);
+        if (!skip) {
+            PreCallRecordCmdSetStencilReference(pCB);
+        }
+    }
+    lock.unlock();
+    if (!skip) dev_data->dispatch_table.CmdSetStencilReference(commandBuffer, faceMask, reference);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdBindDescriptorSets(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
+                                                 VkPipelineLayout layout, uint32_t firstSet, uint32_t setCount,
+                                                 const VkDescriptorSet *pDescriptorSets, uint32_t dynamicOffsetCount,
+                                                 const uint32_t *pDynamicOffsets) {
+    bool skip = false;
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    unique_lock_t lock(global_lock);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    assert(cb_state);
+    skip = PreCallValidateCmdBindDescriptorSets(device_data, cb_state, pipelineBindPoint, layout, firstSet, setCount,
+                                                pDescriptorSets, dynamicOffsetCount, pDynamicOffsets);
+    if (!skip) {
+        PreCallRecordCmdBindDescriptorSets(device_data, cb_state, pipelineBindPoint, layout, firstSet, setCount, pDescriptorSets,
+                                           dynamicOffsetCount, pDynamicOffsets);
+        lock.unlock();
+        device_data->dispatch_table.CmdBindDescriptorSets(commandBuffer, pipelineBindPoint, layout, firstSet, setCount,
+                                                          pDescriptorSets, dynamicOffsetCount, pDynamicOffsets);
+    } else {
+        lock.unlock();
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdPushDescriptorSetKHR(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
+                                                   VkPipelineLayout layout, uint32_t set, uint32_t descriptorWriteCount,
+                                                   const VkWriteDescriptorSet *pDescriptorWrites) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    unique_lock_t lock(global_lock);
+    bool skip = false;
+    auto cb_state = GetCBNode(device_data, commandBuffer);
+    if (cb_state) {
+        skip = PreCallValidateCmdPushDescriptorSetKHR(device_data, cb_state, pipelineBindPoint, layout, set, descriptorWriteCount,
+                                                      pDescriptorWrites, "vkCmdPushDescriptorSetKHR()");
+        if (!skip) {
+            PreCallRecordCmdPushDescriptorSetKHR(device_data, cb_state, pipelineBindPoint, layout, set, descriptorWriteCount,
+                                                 pDescriptorWrites);
+        }
+    }
+    lock.unlock();
+
+    if (!skip) {
+        device_data->dispatch_table.CmdPushDescriptorSetKHR(commandBuffer, pipelineBindPoint, layout, set, descriptorWriteCount,
+                                                            pDescriptorWrites);
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdBindIndexBuffer(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                              VkIndexType indexType) {
+    bool skip = false;
+    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    unique_lock_t lock(global_lock);
+
+    auto buffer_state = GetBufferState(dev_data, buffer);
+    auto cb_node = GetCBNode(dev_data, commandBuffer);
+    assert(cb_node);
+    assert(buffer_state);
+
+    PreCallValidateCmdBindIndexBuffer(dev_data, buffer_state, cb_node, commandBuffer, buffer, offset, indexType);
+
+    if (skip) return;
+
+    PreCallRecordCmdBindIndexBuffer(buffer_state, cb_node, buffer, offset, indexType);
+    lock.unlock();
+
+    dev_data->dispatch_table.CmdBindIndexBuffer(commandBuffer, buffer, offset, indexType);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdBindVertexBuffers(VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount,
+                                                const VkBuffer *pBuffers, const VkDeviceSize *pOffsets) {
+    bool skip = false;
+    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    unique_lock_t lock(global_lock);
+
+    auto cb_node = GetCBNode(dev_data, commandBuffer);
+    assert(cb_node);
+
+    skip |= PreCallValidateCmdBindVertexBuffers(dev_data, cb_node, bindingCount, pBuffers, pOffsets);
+
+    if (skip) return;
+
+    PreCallRecordCmdBindVertexBuffers(cb_node, firstBinding, bindingCount, pBuffers, pOffsets);
+
+    lock.unlock();
+    dev_data->dispatch_table.CmdBindVertexBuffers(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount,
+                                   uint32_t firstVertex, uint32_t firstInstance) {
+    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    GLOBAL_CB_NODE *cb_state = nullptr;
+    unique_lock_t lock(global_lock);
+    bool skip = PreCallValidateCmdDraw(dev_data, commandBuffer, false, VK_PIPELINE_BIND_POINT_GRAPHICS, &cb_state, "vkCmdDraw()");
+    lock.unlock();
+    if (!skip) {
+        dev_data->dispatch_table.CmdDraw(commandBuffer, vertexCount, instanceCount, firstVertex, firstInstance);
+        lock.lock();
+        PostCallRecordCmdDraw(dev_data, cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS);
+        lock.unlock();
+    }
+}
+
 // Map of all APIs to be intercepted by this layer
 static const std::unordered_map<std::string, void *> name_to_funcptr_map = {
     {"vkGetInstanceProcAddr", (void *)GetInstanceProcAddr},
