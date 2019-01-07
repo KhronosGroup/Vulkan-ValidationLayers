@@ -338,10 +338,10 @@ class ValidationObject {
 // This file is ***GENERATED***.  Do Not Edit.
 // See layer_chassis_generator.py for modifications.
 
-/* Copyright (c) 2015-2018 The Khronos Group Inc.
- * Copyright (c) 2015-2018 Valve Corporation
- * Copyright (c) 2015-2018 LunarG, Inc.
- * Copyright (c) 2015-2018 Google Inc.
+/* Copyright (c) 2015-2019 The Khronos Group Inc.
+ * Copyright (c) 2015-2019 Valve Corporation
+ * Copyright (c) 2015-2019 LunarG, Inc.
+ * Copyright (c) 2015-2019 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1059,10 +1059,11 @@ VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkNegotiateLoaderLayerInterfaceVe
 
         # Declare result variable, if any.
         return_map = {
-            'void': 'return;',
-            'VkResult': 'return VK_ERROR_VALIDATION_FAILED_EXT;',
             'PFN_vkVoidFunction': 'return nullptr;',
             'VkBool32': 'return VK_FALSE;',
+            'VkDeviceAddress': 'return 0;',
+            'VkResult': 'return VK_ERROR_VALIDATION_FAILED_EXT;',
+            'void': 'return;',
             }
         resulttype = cmdinfo.elem.find('proto/type')
         assignresult = ''
