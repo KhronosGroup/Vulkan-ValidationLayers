@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-# Copyright (c) 2015-2018 The Khronos Group Inc.
-# Copyright (c) 2015-2018 Valve Corporation
-# Copyright (c) 2015-2018 LunarG, Inc.
-# Copyright (c) 2015-2018 Google Inc.
+# Copyright (c) 2015-2019 The Khronos Group Inc.
+# Copyright (c) 2015-2019 Valve Corporation
+# Copyright (c) 2015-2019 LunarG, Inc.
+# Copyright (c) 2015-2019 Google Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -58,12 +58,13 @@ generated_layer_source_files = [
 'object_tracker.cpp',
 ]
 layer_source_files = [
+'../layers/buffer_validation.cpp',
 '../layers/core_validation.cpp',
 '../layers/descriptor_sets.cpp',
 '../layers/parameter_validation_utils.cpp',
 '../layers/object_tracker_utils.cpp',
 '../layers/shader_validation.cpp',
-'../layers/buffer_validation.cpp',
+'../layers/stateless_validation.h'
 ]
 
 # This needs to be updated as new extensions roll in
