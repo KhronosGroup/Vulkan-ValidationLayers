@@ -1354,6 +1354,8 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateImagePipeSurfaceFUCHSIA(VkInstance instance
                                                              const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface);
 #endif  // VK_USE_PLATFORM_FUCHSIA
 
+using std::vector;
+
 void PreCallRecordCreateInstance(VkLayerInstanceCreateInfo* chain_info);
 void PostCallRecordCreateInstance(instance_layer_data* instance_data, const VkInstanceCreateInfo* pCreateInfo);
 void PostCallRecordDestroyInstance(instance_layer_data* instance_data, const VkAllocationCallbacks* pAllocator, dispatch_key key);
@@ -1465,5 +1467,110 @@ void PostCallRecordGetAndroidHardwareBufferProperties(layer_data* dev_data,
 bool PreCallValidateGetMemoryAndroidHardwareBuffer(const layer_data* dev_data,
                                                    const VkMemoryGetAndroidHardwareBufferInfoANDROID* pInfo);
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
+bool PreCallValidateCreateComputePipelines(layer_data* dev_data, vector<std::unique_ptr<PIPELINE_STATE>>* pipe_state,
+                                           const uint32_t count, const VkComputePipelineCreateInfo* pCreateInfos);
+void PostCallRecordCreateComputePipelines(layer_data* dev_data, vector<std::unique_ptr<PIPELINE_STATE>>* pipe_state,
+                                          const uint32_t count, VkPipeline* pPipelines);
+
+bool PreCallValidateCreateRayTracingPipelinesNV(layer_data* dev_data, uint32_t count,
+                                                const VkRayTracingPipelineCreateInfoNV* pCreateInfos,
+                                                vector<std::unique_ptr<PIPELINE_STATE>>& pipe_state);
+void PostCallRecordCreateRayTracingPipelinesNV(layer_data* dev_data, uint32_t count,
+                                               vector<std::unique_ptr<PIPELINE_STATE>>& pipe_state, VkPipeline* pPipelines);
+void PostCallRecordCreateSampler(layer_data* dev_data, const VkSamplerCreateInfo* pCreateInfo, VkSampler* pSampler);
+bool PreCallValidateCreateDescriptorSetLayout(layer_data* dev_data, const VkDescriptorSetLayoutCreateInfo* create_info);
+void PostCallRecordCreateDescriptorSetLayout(layer_data* dev_data, const VkDescriptorSetLayoutCreateInfo* create_info,
+                                             VkDescriptorSetLayout set_layout);
+bool PreCallValidateCreatePipelineLayout(const layer_data* dev_data, const VkPipelineLayoutCreateInfo* pCreateInfo);
+void PostCallRecordCreatePipelineLayout(layer_data* dev_data, const VkPipelineLayoutCreateInfo* pCreateInfo,
+                                        const VkPipelineLayout* pPipelineLayout);
+bool PostCallValidateCreateDescriptorPool(layer_data* dev_data, VkDescriptorPool* pDescriptorPool);
+void PostCallRecordCreateDescriptorPool(layer_data* dev_data, DESCRIPTOR_POOL_STATE* pNewNode, VkDescriptorPool* pDescriptorPool);
+bool PreCallValidateResetDescriptorPool(layer_data* dev_data, VkDescriptorPool descriptorPool);
+void PostCallRecordResetDescriptorPool(layer_data* dev_data, VkDevice device, VkDescriptorPool descriptorPool,
+                                       VkDescriptorPoolResetFlags flags);
+bool PreCallValidateAllocateDescriptorSets(layer_data* dev_data, const VkDescriptorSetAllocateInfo* pAllocateInfo,
+                                           cvdescriptorset::AllocateDescriptorSetsData* common_data);
+void PostCallRecordAllocateDescriptorSets(layer_data* dev_data, const VkDescriptorSetAllocateInfo* pAllocateInfo,
+                                          VkDescriptorSet* pDescriptorSets,
+                                          const cvdescriptorset::AllocateDescriptorSetsData* common_data);
+bool PreCallValidateFreeDescriptorSets(const layer_data* dev_data, VkDescriptorPool pool, uint32_t count,
+                                       const VkDescriptorSet* descriptor_sets);
+void PreCallRecordFreeDescriptorSets(layer_data* dev_data, VkDescriptorPool pool, uint32_t count,
+                                     const VkDescriptorSet* descriptor_sets);
+bool PreCallValidateUpdateDescriptorSets(layer_data* dev_data, uint32_t descriptorWriteCount,
+                                         const VkWriteDescriptorSet* pDescriptorWrites, uint32_t descriptorCopyCount,
+                                         const VkCopyDescriptorSet* pDescriptorCopies);
+void PreCallRecordUpdateDescriptorSets(layer_data* dev_data, uint32_t descriptorWriteCount,
+                                       const VkWriteDescriptorSet* pDescriptorWrites, uint32_t descriptorCopyCount,
+                                       const VkCopyDescriptorSet* pDescriptorCopies);
+void PostCallRecordAllocateCommandBuffers(layer_data* dev_data, VkDevice device, const VkCommandBufferAllocateInfo* pCreateInfo,
+                                          VkCommandBuffer* pCommandBuffer);
+bool PreCallValidateBeginCommandBuffer(layer_data* dev_data, const GLOBAL_CB_NODE* cb_state, const VkCommandBuffer commandBuffer,
+                                       const VkCommandBufferBeginInfo* pBeginInfo);
+void PreCallRecordBeginCommandBuffer(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, const VkCommandBuffer commandBuffer,
+                                     const VkCommandBufferBeginInfo* pBeginInfo);
+bool PreCallValidateEndCommandBuffer(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, VkCommandBuffer commandBuffer);
+void PostCallRecordEndCommandBuffer(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, const VkResult& result);
+bool PreCallValidateResetCommandBuffer(layer_data* dev_data, VkCommandBuffer commandBuffer);
+void PostCallRecordResetCommandBuffer(layer_data* dev_data, VkCommandBuffer commandBuffer);
+bool PreCallValidateCmdBindPipeline(layer_data* dev_data, GLOBAL_CB_NODE* cb_state);
+void PreCallRecordCmdBindPipeline(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, VkPipelineBindPoint pipelineBindPoint,
+                                  VkPipeline pipeline);
+bool PreCallValidateCmdSetViewport(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, VkCommandBuffer commandBuffer);
+void PreCallRecordCmdSetViewport(GLOBAL_CB_NODE* cb_state, uint32_t firstViewport, uint32_t viewportCount);
+bool PreCallValidateCmdSetScissor(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, VkCommandBuffer commandBuffer);
+void PreCallRecordCmdSetScissor(GLOBAL_CB_NODE* cb_state, uint32_t firstScissor, uint32_t scissorCount);
+bool PreCallValidateCmdSetExclusiveScissorNV(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, VkCommandBuffer commandBuffer);
+void PreCallRecordCmdSetExclusiveScissorNV(GLOBAL_CB_NODE* cb_state, uint32_t firstExclusiveScissor,
+                                           uint32_t exclusiveScissorCount);
+bool PreCallValidateCmdBindShadingRateImageNV(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, VkCommandBuffer commandBuffer,
+                                              VkImageView imageView, VkImageLayout imageLayout);
+void PreCallRecordCmdBindShadingRateImageNV(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, VkImageView imageView);
+bool PreCallValidateCmdSetViewportShadingRatePaletteNV(layer_data* dev_data, GLOBAL_CB_NODE* cb_state,
+                                                       VkCommandBuffer commandBuffer, uint32_t firstViewport,
+                                                       uint32_t viewportCount, const VkShadingRatePaletteNV* pShadingRatePalettes);
+void PreCallRecordCmdSetViewportShadingRatePaletteNV(GLOBAL_CB_NODE* cb_state, uint32_t firstViewport, uint32_t viewportCount);
+bool PreCallValidateCmdSetLineWidth(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, VkCommandBuffer commandBuffer);
+void PreCallRecordCmdSetLineWidth(GLOBAL_CB_NODE* cb_state);
+bool PreCallValidateCmdSetDepthBias(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, VkCommandBuffer commandBuffer,
+                                    float depthBiasClamp);
+void PreCallRecordCmdSetDepthBias(GLOBAL_CB_NODE* cb_state);
+bool PreCallValidateCmdSetBlendConstants(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, VkCommandBuffer commandBuffer);
+void PreCallRecordCmdSetBlendConstants(GLOBAL_CB_NODE* cb_state);
+bool PreCallValidateCmdSetDepthBounds(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, VkCommandBuffer commandBuffer);
+void PreCallRecordCmdSetDepthBounds(GLOBAL_CB_NODE* cb_state);
+bool PreCallValidateCmdSetStencilCompareMask(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, VkCommandBuffer commandBuffer);
+void PreCallRecordCmdSetStencilCompareMask(GLOBAL_CB_NODE* cb_state);
+bool PreCallValidateCmdSetStencilWriteMask(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, VkCommandBuffer commandBuffer);
+void PreCallRecordCmdSetStencilWriteMask(GLOBAL_CB_NODE* cb_state);
+bool PreCallValidateCmdSetStencilReference(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, VkCommandBuffer commandBuffer);
+void PreCallRecordCmdSetStencilReference(GLOBAL_CB_NODE* cb_state);
+bool PreCallValidateCmdBindDescriptorSets(layer_data* device_data, GLOBAL_CB_NODE* cb_state, VkPipelineBindPoint pipelineBindPoint,
+                                          VkPipelineLayout layout, uint32_t firstSet, uint32_t setCount,
+                                          const VkDescriptorSet* pDescriptorSets, uint32_t dynamicOffsetCount,
+                                          const uint32_t* pDynamicOffsets);
+void PreCallRecordCmdBindDescriptorSets(layer_data* device_data, GLOBAL_CB_NODE* cb_state, VkPipelineBindPoint pipelineBindPoint,
+                                        VkPipelineLayout layout, uint32_t firstSet, uint32_t setCount,
+                                        const VkDescriptorSet* pDescriptorSets, uint32_t dynamicOffsetCount,
+                                        const uint32_t* pDynamicOffsets);
+bool PreCallValidateCmdPushDescriptorSetKHR(layer_data* device_data, GLOBAL_CB_NODE* cb_state, const VkPipelineBindPoint bind_point,
+                                            const VkPipelineLayout layout, const uint32_t set,
+                                            const uint32_t descriptor_write_count, const VkWriteDescriptorSet* descriptor_writes,
+                                            const char* func_name);
+void PreCallRecordCmdPushDescriptorSetKHR(layer_data* device_data, GLOBAL_CB_NODE* cb_state, VkPipelineBindPoint pipelineBindPoint,
+                                          VkPipelineLayout layout, uint32_t set, uint32_t descriptorWriteCount,
+                                          const VkWriteDescriptorSet* pDescriptorWrites);
+bool PreCallValidateCmdBindIndexBuffer(layer_data* dev_data, BUFFER_STATE* buffer_state, GLOBAL_CB_NODE* cb_node,
+                                       VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkIndexType indexType);
+void PreCallRecordCmdBindIndexBuffer(BUFFER_STATE* buffer_state, GLOBAL_CB_NODE* cb_node, VkBuffer buffer, VkDeviceSize offset,
+                                     VkIndexType indexType);
+bool PreCallValidateCmdBindVertexBuffers(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, uint32_t bindingCount,
+                                         const VkBuffer* pBuffers, const VkDeviceSize* pOffsets);
+void PreCallRecordCmdBindVertexBuffers(GLOBAL_CB_NODE* pCB, uint32_t firstBinding, uint32_t bindingCount, const VkBuffer* pBuffers,
+                                       const VkDeviceSize* pOffsets);
+bool PreCallValidateCmdDraw(layer_data* dev_data, VkCommandBuffer cmd_buffer, bool indexed, VkPipelineBindPoint bind_point,
+                            GLOBAL_CB_NODE** cb_state, const char* caller);
+void PostCallRecordCmdDraw(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, VkPipelineBindPoint bind_point);
 
 };  // namespace core_validation

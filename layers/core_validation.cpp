@@ -5020,8 +5020,8 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateGraphicsPipelines(VkDevice device, VkPipeli
     return result;
 }
 
-static bool PreCallValidateCreateComputePipelines(layer_data *dev_data, vector<std::unique_ptr<PIPELINE_STATE>> *pipe_state,
-                                                  const uint32_t count, const VkComputePipelineCreateInfo *pCreateInfos) {
+bool PreCallValidateCreateComputePipelines(layer_data *dev_data, vector<std::unique_ptr<PIPELINE_STATE>> *pipe_state,
+                                           const uint32_t count, const VkComputePipelineCreateInfo *pCreateInfos) {
     bool skip = false;
     pipe_state->reserve(count);
     for (uint32_t i = 0; i < count; i++) {
@@ -5036,8 +5036,8 @@ static bool PreCallValidateCreateComputePipelines(layer_data *dev_data, vector<s
     return skip;
 }
 
-static void PostCallRecordCreateComputePipelines(layer_data *dev_data, vector<std::unique_ptr<PIPELINE_STATE>> *pipe_state,
-                                                 const uint32_t count, VkPipeline *pPipelines) {
+void PostCallRecordCreateComputePipelines(layer_data *dev_data, vector<std::unique_ptr<PIPELINE_STATE>> *pipe_state,
+                                          const uint32_t count, VkPipeline *pPipelines) {
     for (uint32_t i = 0; i < count; i++) {
         if (pPipelines[i] != VK_NULL_HANDLE) {
             (*pipe_state)[i]->pipeline = pPipelines[i];
@@ -5046,34 +5046,9 @@ static void PostCallRecordCreateComputePipelines(layer_data *dev_data, vector<st
     }
 }
 
-VKAPI_ATTR VkResult VKAPI_CALL CreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
-                                                      const VkComputePipelineCreateInfo *pCreateInfos,
-                                                      const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines) {
-    vector<std::unique_ptr<PIPELINE_STATE>> pipe_state;
-    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-
-    unique_lock_t lock(global_lock);
-    bool skip = PreCallValidateCreateComputePipelines(dev_data, &pipe_state, count, pCreateInfos);
-    if (skip) {
-        for (uint32_t i = 0; i < count; i++) {
-            pPipelines[i] = VK_NULL_HANDLE;
-        }
-        return VK_ERROR_VALIDATION_FAILED_EXT;
-    }
-    lock.unlock();
-
-    auto result =
-        dev_data->dispatch_table.CreateComputePipelines(device, pipelineCache, count, pCreateInfos, pAllocator, pPipelines);
-
-    lock.lock();
-    PostCallRecordCreateComputePipelines(dev_data, &pipe_state, count, pPipelines);
-
-    return result;
-}
-
-static bool PreCallValidateCreateRayTracingPipelinesNV(layer_data *dev_data, uint32_t count,
-                                                       const VkRayTracingPipelineCreateInfoNV *pCreateInfos,
-                                                       vector<std::unique_ptr<PIPELINE_STATE>> &pipe_state) {
+bool PreCallValidateCreateRayTracingPipelinesNV(layer_data *dev_data, uint32_t count,
+                                                const VkRayTracingPipelineCreateInfoNV *pCreateInfos,
+                                                vector<std::unique_ptr<PIPELINE_STATE>> &pipe_state) {
     bool skip = false;
 
     // The order of operations here is a little convoluted but gets the job done
@@ -5094,8 +5069,8 @@ static bool PreCallValidateCreateRayTracingPipelinesNV(layer_data *dev_data, uin
     return skip;
 }
 
-static void PostCallRecordCreateRayTracingPipelinesNV(layer_data *dev_data, uint32_t count,
-                                                      vector<std::unique_ptr<PIPELINE_STATE>> &pipe_state, VkPipeline *pPipelines) {
+void PostCallRecordCreateRayTracingPipelinesNV(layer_data *dev_data, uint32_t count,
+                                               vector<std::unique_ptr<PIPELINE_STATE>> &pipe_state, VkPipeline *pPipelines) {
     for (uint32_t i = 0; i < count; i++) {
         if (pPipelines[i] != VK_NULL_HANDLE) {
             pipe_state[i]->pipeline = pPipelines[i];
@@ -5104,52 +5079,11 @@ static void PostCallRecordCreateRayTracingPipelinesNV(layer_data *dev_data, uint
     }
 }
 
-VKAPI_ATTR VkResult VKAPI_CALL CreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
-                                                           const VkRayTracingPipelineCreateInfoNV *pCreateInfos,
-                                                           const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines) {
-    bool skip = false;
-    vector<std::unique_ptr<PIPELINE_STATE>> pipe_state;
-    pipe_state.reserve(count);
-    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-
-    unique_lock_t lock(global_lock);
-
-    skip |= PreCallValidateCreateRayTracingPipelinesNV(dev_data, count, pCreateInfos, pipe_state);
-
-    lock.unlock();
-
-    if (skip) {
-        for (uint32_t i = 0; i < count; i++) {
-            pPipelines[i] = VK_NULL_HANDLE;
-        }
-        return VK_ERROR_VALIDATION_FAILED_EXT;
-    }
-
-    auto result =
-        dev_data->dispatch_table.CreateRayTracingPipelinesNV(device, pipelineCache, count, pCreateInfos, pAllocator, pPipelines);
-    lock.lock();
-
-    PostCallRecordCreateRayTracingPipelinesNV(dev_data, count, pipe_state, pPipelines);
-
-    return result;
-}
-
-static void PostCallRecordCreateSampler(layer_data *dev_data, const VkSamplerCreateInfo *pCreateInfo, VkSampler *pSampler) {
+void PostCallRecordCreateSampler(layer_data *dev_data, const VkSamplerCreateInfo *pCreateInfo, VkSampler *pSampler) {
     dev_data->samplerMap[*pSampler] = unique_ptr<SAMPLER_STATE>(new SAMPLER_STATE(pSampler, pCreateInfo));
 }
 
-VKAPI_ATTR VkResult VKAPI_CALL CreateSampler(VkDevice device, const VkSamplerCreateInfo *pCreateInfo,
-                                             const VkAllocationCallbacks *pAllocator, VkSampler *pSampler) {
-    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    VkResult result = dev_data->dispatch_table.CreateSampler(device, pCreateInfo, pAllocator, pSampler);
-    if (VK_SUCCESS == result) {
-        lock_guard_t lock(global_lock);
-        PostCallRecordCreateSampler(dev_data, pCreateInfo, pSampler);
-    }
-    return result;
-}
-
-static bool PreCallValidateCreateDescriptorSetLayout(layer_data *dev_data, const VkDescriptorSetLayoutCreateInfo *create_info) {
+bool PreCallValidateCreateDescriptorSetLayout(layer_data *dev_data, const VkDescriptorSetLayoutCreateInfo *create_info) {
     if (dev_data->instance_data->disabled.create_descriptor_set_layout) return false;
     return cvdescriptorset::DescriptorSetLayout::ValidateCreateInfo(
         dev_data->report_data, create_info, dev_data->extensions.vk_khr_push_descriptor,
@@ -5158,27 +5092,9 @@ static bool PreCallValidateCreateDescriptorSetLayout(layer_data *dev_data, const
         &dev_data->phys_dev_ext_props.inline_uniform_block_props);
 }
 
-static void PostCallRecordCreateDescriptorSetLayout(layer_data *dev_data, const VkDescriptorSetLayoutCreateInfo *create_info,
-                                                    VkDescriptorSetLayout set_layout) {
+void PostCallRecordCreateDescriptorSetLayout(layer_data *dev_data, const VkDescriptorSetLayoutCreateInfo *create_info,
+                                             VkDescriptorSetLayout set_layout) {
     dev_data->descriptorSetLayoutMap[set_layout] = std::make_shared<cvdescriptorset::DescriptorSetLayout>(create_info, set_layout);
-}
-
-VKAPI_ATTR VkResult VKAPI_CALL CreateDescriptorSetLayout(VkDevice device, const VkDescriptorSetLayoutCreateInfo *pCreateInfo,
-                                                         const VkAllocationCallbacks *pAllocator,
-                                                         VkDescriptorSetLayout *pSetLayout) {
-    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    VkResult result = VK_ERROR_VALIDATION_FAILED_EXT;
-    unique_lock_t lock(global_lock);
-    bool skip = PreCallValidateCreateDescriptorSetLayout(dev_data, pCreateInfo);
-    if (!skip) {
-        lock.unlock();
-        result = dev_data->dispatch_table.CreateDescriptorSetLayout(device, pCreateInfo, pAllocator, pSetLayout);
-        if (VK_SUCCESS == result) {
-            lock.lock();
-            PostCallRecordCreateDescriptorSetLayout(dev_data, pCreateInfo, *pSetLayout);
-        }
-    }
-    return result;
 }
 
 // Used by CreatePipelineLayout and CmdPushConstants.
@@ -5290,7 +5206,7 @@ enum DSL_DESCRIPTOR_GROUPS {
     DSL_NUM_DESCRIPTOR_GROUPS
 };
 
-// Used by PreCallValiateCreatePipelineLayout.
+// Used by PreCallValidateCreatePipelineLayout.
 // Returns an array of size DSL_NUM_DESCRIPTOR_GROUPS of the maximum number of descriptors used in any single pipeline stage
 std::valarray<uint32_t> GetDescriptorCountMaxPerStage(
     const layer_data *dev_data, const std::vector<std::shared_ptr<cvdescriptorset::DescriptorSetLayout const>> set_layouts,
@@ -5397,7 +5313,7 @@ std::map<uint32_t, uint32_t> GetDescriptorSum(
     return sum_by_type;
 }
 
-static bool PreCallValiateCreatePipelineLayout(const layer_data *dev_data, const VkPipelineLayoutCreateInfo *pCreateInfo) {
+bool PreCallValidateCreatePipelineLayout(const layer_data *dev_data, const VkPipelineLayoutCreateInfo *pCreateInfo) {
     bool skip = false;
 
     // Validate layout count against device physical limit
@@ -5868,8 +5784,8 @@ static PipelineLayoutCompatId GetCanonicalId(const uint32_t set_index, const Pus
     return pipeline_layout_compat_dict.look_up(PipelineLayoutCompatDef(set_index, pcr_id, set_layouts_id));
 }
 
-static void PostCallRecordCreatePipelineLayout(layer_data *dev_data, const VkPipelineLayoutCreateInfo *pCreateInfo,
-                                               const VkPipelineLayout *pPipelineLayout) {
+void PostCallRecordCreatePipelineLayout(layer_data *dev_data, const VkPipelineLayoutCreateInfo *pCreateInfo,
+                                        const VkPipelineLayout *pPipelineLayout) {
     unique_lock_t lock(global_lock);  // Lock while accessing state
 
     PIPELINE_LAYOUT_NODE &plNode = dev_data->pipelineLayoutMap[*pPipelineLayout];
@@ -5899,7 +5815,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreatePipelineLayout(VkDevice device, const VkPip
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     VkResult result;
 
-    bool skip = PreCallValiateCreatePipelineLayout(dev_data, pCreateInfo);
+    bool skip = PreCallValidateCreatePipelineLayout(dev_data, pCreateInfo);
     if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
 
     if (GetEnables(dev_data)->gpu_validation) {
@@ -5915,41 +5831,21 @@ VKAPI_ATTR VkResult VKAPI_CALL CreatePipelineLayout(VkDevice device, const VkPip
     return result;
 }
 
-static bool PostCallValidateCreateDescriptorPool(layer_data *dev_data, VkDescriptorPool *pDescriptorPool) {
+bool PostCallValidateCreateDescriptorPool(layer_data *dev_data, VkDescriptorPool *pDescriptorPool) {
     return log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_POOL_EXT,
                    HandleToUint64(*pDescriptorPool), kVUID_Core_DrawState_OutOfMemory,
                    "Out of memory while attempting to allocate DESCRIPTOR_POOL_STATE in vkCreateDescriptorPool()");
 }
 
-static void PostCallRecordCreateDescriptorPool(layer_data *dev_data, DESCRIPTOR_POOL_STATE *pNewNode,
-                                               VkDescriptorPool *pDescriptorPool) {
+void PostCallRecordCreateDescriptorPool(layer_data *dev_data, DESCRIPTOR_POOL_STATE *pNewNode, VkDescriptorPool *pDescriptorPool) {
     dev_data->descriptorPoolMap[*pDescriptorPool] = pNewNode;
-}
-
-VKAPI_ATTR VkResult VKAPI_CALL CreateDescriptorPool(VkDevice device, const VkDescriptorPoolCreateInfo *pCreateInfo,
-                                                    const VkAllocationCallbacks *pAllocator, VkDescriptorPool *pDescriptorPool) {
-    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    VkResult result = dev_data->dispatch_table.CreateDescriptorPool(device, pCreateInfo, pAllocator, pDescriptorPool);
-    if (VK_SUCCESS == result) {
-        DESCRIPTOR_POOL_STATE *pNewNode = new DESCRIPTOR_POOL_STATE(*pDescriptorPool, pCreateInfo);
-        lock_guard_t lock(global_lock);
-        if (NULL == pNewNode) {
-            bool skip = PostCallValidateCreateDescriptorPool(dev_data, pDescriptorPool);
-            if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
-        } else {
-            PostCallRecordCreateDescriptorPool(dev_data, pNewNode, pDescriptorPool);
-        }
-    } else {
-        // Need to do anything if pool create fails?
-    }
-    return result;
 }
 
 // Validate that given pool does not store any descriptor sets used by an in-flight CmdBuffer
 // pool stores the descriptor sets to be validated
 // Return false if no errors occur
 // Return true if validation error occurs and callback returns true (to skip upcoming API call down the chain)
-static bool PreCallValidateResetDescriptorPool(layer_data *dev_data, VkDescriptorPool descriptorPool) {
+bool PreCallValidateResetDescriptorPool(layer_data *dev_data, VkDescriptorPool descriptorPool) {
     if (dev_data->instance_data->disabled.idle_descriptor_set) return false;
     bool skip = false;
     DESCRIPTOR_POOL_STATE *pPool = GetDescriptorPoolState(dev_data, descriptorPool);
@@ -5967,8 +5863,8 @@ static bool PreCallValidateResetDescriptorPool(layer_data *dev_data, VkDescripto
     return skip;
 }
 
-static void PostCallRecordResetDescriptorPool(layer_data *dev_data, VkDevice device, VkDescriptorPool descriptorPool,
-                                              VkDescriptorPoolResetFlags flags) {
+void PostCallRecordResetDescriptorPool(layer_data *dev_data, VkDevice device, VkDescriptorPool descriptorPool,
+                                       VkDescriptorPoolResetFlags flags) {
     DESCRIPTOR_POOL_STATE *pPool = GetDescriptorPoolState(dev_data, descriptorPool);
     // TODO: validate flags
     // For every set off of this pool, clear it, remove from setMap, and free cvdescriptorset::DescriptorSet
@@ -5983,31 +5879,11 @@ static void PostCallRecordResetDescriptorPool(layer_data *dev_data, VkDevice dev
     pPool->availableSets = pPool->maxSets;
 }
 
-VKAPI_ATTR VkResult VKAPI_CALL ResetDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool,
-                                                   VkDescriptorPoolResetFlags flags) {
-    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-
-    unique_lock_t lock(global_lock);
-    // Make sure sets being destroyed are not currently in-use
-    bool skip = PreCallValidateResetDescriptorPool(dev_data, descriptorPool);
-    lock.unlock();
-
-    if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
-
-    VkResult result = dev_data->dispatch_table.ResetDescriptorPool(device, descriptorPool, flags);
-    if (VK_SUCCESS == result) {
-        lock.lock();
-        PostCallRecordResetDescriptorPool(dev_data, device, descriptorPool, flags);
-        lock.unlock();
-    }
-    return result;
-}
-
 // Ensure the pool contains enough descriptors and descriptor sets to satisfy
 // an allocation request. Fills common_data with the total number of descriptors of each type required,
 // as well as DescriptorSetLayout ptrs used for later update.
-static bool PreCallValidateAllocateDescriptorSets(layer_data *dev_data, const VkDescriptorSetAllocateInfo *pAllocateInfo,
-                                                  cvdescriptorset::AllocateDescriptorSetsData *common_data) {
+bool PreCallValidateAllocateDescriptorSets(layer_data *dev_data, const VkDescriptorSetAllocateInfo *pAllocateInfo,
+                                           cvdescriptorset::AllocateDescriptorSetsData *common_data) {
     // Always update common data
     cvdescriptorset::UpdateAllocateDescriptorSetsData(dev_data, pAllocateInfo, common_data);
     if (dev_data->instance_data->disabled.allocate_descriptor_sets) return false;
@@ -6015,37 +5891,18 @@ static bool PreCallValidateAllocateDescriptorSets(layer_data *dev_data, const Vk
     return cvdescriptorset::ValidateAllocateDescriptorSets(dev_data, pAllocateInfo, common_data);
 }
 // Allocation state was good and call down chain was made so update state based on allocating descriptor sets
-static void PostCallRecordAllocateDescriptorSets(layer_data *dev_data, const VkDescriptorSetAllocateInfo *pAllocateInfo,
-                                                 VkDescriptorSet *pDescriptorSets,
-                                                 const cvdescriptorset::AllocateDescriptorSetsData *common_data) {
+void PostCallRecordAllocateDescriptorSets(layer_data *dev_data, const VkDescriptorSetAllocateInfo *pAllocateInfo,
+                                          VkDescriptorSet *pDescriptorSets,
+                                          const cvdescriptorset::AllocateDescriptorSetsData *common_data) {
     // All the updates are contained in a single cvdescriptorset function
     cvdescriptorset::PerformAllocateDescriptorSets(pAllocateInfo, pDescriptorSets, common_data, &dev_data->descriptorPoolMap,
                                                    &dev_data->setMap, dev_data);
 }
 
 // TODO: PostCallRecord routine is dependent on data generated in PreCallValidate -- needs to be moved out
-VKAPI_ATTR VkResult VKAPI_CALL AllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo *pAllocateInfo,
-                                                      VkDescriptorSet *pDescriptorSets) {
-    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    unique_lock_t lock(global_lock);
-    cvdescriptorset::AllocateDescriptorSetsData common_data(pAllocateInfo->descriptorSetCount);
-    bool skip = PreCallValidateAllocateDescriptorSets(dev_data, pAllocateInfo, &common_data);
-    lock.unlock();
-
-    if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
-
-    VkResult result = dev_data->dispatch_table.AllocateDescriptorSets(device, pAllocateInfo, pDescriptorSets);
-
-    if (VK_SUCCESS == result) {
-        lock.lock();
-        PostCallRecordAllocateDescriptorSets(dev_data, pAllocateInfo, pDescriptorSets, &common_data);
-        lock.unlock();
-    }
-    return result;
-}
 // Verify state before freeing DescriptorSets
-static bool PreCallValidateFreeDescriptorSets(const layer_data *dev_data, VkDescriptorPool pool, uint32_t count,
-                                              const VkDescriptorSet *descriptor_sets) {
+bool PreCallValidateFreeDescriptorSets(const layer_data *dev_data, VkDescriptorPool pool, uint32_t count,
+                                       const VkDescriptorSet *descriptor_sets) {
     if (dev_data->instance_data->disabled.free_descriptor_sets) return false;
     bool skip = false;
     // First make sure sets being destroyed are not currently in-use
@@ -6066,8 +5923,8 @@ static bool PreCallValidateFreeDescriptorSets(const layer_data *dev_data, VkDesc
     return skip;
 }
 // Sets are being returned to the pool so update the pool state
-static void PreCallRecordFreeDescriptorSets(layer_data *dev_data, VkDescriptorPool pool, uint32_t count,
-                                            const VkDescriptorSet *descriptor_sets) {
+void PreCallRecordFreeDescriptorSets(layer_data *dev_data, VkDescriptorPool pool, uint32_t count,
+                                     const VkDescriptorSet *descriptor_sets) {
     DESCRIPTOR_POOL_STATE *pool_state = GetDescriptorPoolState(dev_data, pool);
     // Update available descriptor sets in pool
     pool_state->availableSets += count;
@@ -6088,31 +5945,13 @@ static void PreCallRecordFreeDescriptorSets(layer_data *dev_data, VkDescriptorPo
     }
 }
 
-VKAPI_ATTR VkResult VKAPI_CALL FreeDescriptorSets(VkDevice device, VkDescriptorPool descriptorPool, uint32_t count,
-                                                  const VkDescriptorSet *pDescriptorSets) {
-    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    // Make sure that no sets being destroyed are in-flight
-    unique_lock_t lock(global_lock);
-    bool skip = PreCallValidateFreeDescriptorSets(dev_data, descriptorPool, count, pDescriptorSets);
-
-    VkResult result;
-    if (skip) {
-        result = VK_ERROR_VALIDATION_FAILED_EXT;
-    } else {
-        // A race here is invalid (descriptorPool should be externally sync'd), but code defensively against an invalid race
-        PreCallRecordFreeDescriptorSets(dev_data, descriptorPool, count, pDescriptorSets);
-        lock.unlock();
-        result = dev_data->dispatch_table.FreeDescriptorSets(device, descriptorPool, count, pDescriptorSets);
-    }
-    return result;
-}
 // TODO : This is a Proof-of-concept for core validation architecture
 //  Really we'll want to break out these functions to separate files but
 //  keeping it all together here to prove out design
 // PreCallValidate* handles validating all of the state prior to calling down chain to UpdateDescriptorSets()
-static bool PreCallValidateUpdateDescriptorSets(layer_data *dev_data, uint32_t descriptorWriteCount,
-                                                const VkWriteDescriptorSet *pDescriptorWrites, uint32_t descriptorCopyCount,
-                                                const VkCopyDescriptorSet *pDescriptorCopies) {
+bool PreCallValidateUpdateDescriptorSets(layer_data *dev_data, uint32_t descriptorWriteCount,
+                                         const VkWriteDescriptorSet *pDescriptorWrites, uint32_t descriptorCopyCount,
+                                         const VkCopyDescriptorSet *pDescriptorCopies) {
     if (dev_data->instance_data->disabled.update_descriptor_sets) return false;
     // First thing to do is perform map look-ups.
     // NOTE : UpdateDescriptorSets is somewhat unique in that it's operating on a number of DescriptorSets
@@ -6125,33 +5964,15 @@ static bool PreCallValidateUpdateDescriptorSets(layer_data *dev_data, uint32_t d
                                                          descriptorCopyCount, pDescriptorCopies, "vkUpdateDescriptorSets()");
 }
 // PostCallRecord* handles recording state updates following call down chain to UpdateDescriptorSets()
-static void PreCallRecordUpdateDescriptorSets(layer_data *dev_data, uint32_t descriptorWriteCount,
-                                              const VkWriteDescriptorSet *pDescriptorWrites, uint32_t descriptorCopyCount,
-                                              const VkCopyDescriptorSet *pDescriptorCopies) {
+void PreCallRecordUpdateDescriptorSets(layer_data *dev_data, uint32_t descriptorWriteCount,
+                                       const VkWriteDescriptorSet *pDescriptorWrites, uint32_t descriptorCopyCount,
+                                       const VkCopyDescriptorSet *pDescriptorCopies) {
     cvdescriptorset::PerformUpdateDescriptorSets(dev_data, descriptorWriteCount, pDescriptorWrites, descriptorCopyCount,
                                                  pDescriptorCopies);
 }
 
-VKAPI_ATTR void VKAPI_CALL UpdateDescriptorSets(VkDevice device, uint32_t descriptorWriteCount,
-                                                const VkWriteDescriptorSet *pDescriptorWrites, uint32_t descriptorCopyCount,
-                                                const VkCopyDescriptorSet *pDescriptorCopies) {
-    // Only map look-up at top level is for device-level layer_data
-    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    unique_lock_t lock(global_lock);
-    bool skip = PreCallValidateUpdateDescriptorSets(dev_data, descriptorWriteCount, pDescriptorWrites, descriptorCopyCount,
-                                                    pDescriptorCopies);
-    if (!skip) {
-        // Since UpdateDescriptorSets() is void, nothing to check prior to updating state & we can update before call down chain
-        PreCallRecordUpdateDescriptorSets(dev_data, descriptorWriteCount, pDescriptorWrites, descriptorCopyCount,
-                                          pDescriptorCopies);
-        lock.unlock();
-        dev_data->dispatch_table.UpdateDescriptorSets(device, descriptorWriteCount, pDescriptorWrites, descriptorCopyCount,
-                                                      pDescriptorCopies);
-    }
-}
-
-static void PostCallRecordAllocateCommandBuffers(layer_data *dev_data, VkDevice device,
-                                                 const VkCommandBufferAllocateInfo *pCreateInfo, VkCommandBuffer *pCommandBuffer) {
+void PostCallRecordAllocateCommandBuffers(layer_data *dev_data, VkDevice device, const VkCommandBufferAllocateInfo *pCreateInfo,
+                                          VkCommandBuffer *pCommandBuffer) {
     auto pPool = GetCommandPoolNode(dev_data, pCreateInfo->commandPool);
     if (pPool) {
         for (uint32_t i = 0; i < pCreateInfo->commandBufferCount; i++) {
@@ -6170,18 +5991,6 @@ static void PostCallRecordAllocateCommandBuffers(layer_data *dev_data, VkDevice 
     }
 }
 
-VKAPI_ATTR VkResult VKAPI_CALL AllocateCommandBuffers(VkDevice device, const VkCommandBufferAllocateInfo *pCreateInfo,
-                                                      VkCommandBuffer *pCommandBuffer) {
-    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    VkResult result = dev_data->dispatch_table.AllocateCommandBuffers(device, pCreateInfo, pCommandBuffer);
-    if (VK_SUCCESS == result) {
-        unique_lock_t lock(global_lock);
-        PostCallRecordAllocateCommandBuffers(dev_data, device, pCreateInfo, pCommandBuffer);
-        lock.unlock();
-    }
-    return result;
-}
-
 // Add bindings between the given cmd buffer & framebuffer and the framebuffer's children
 static void AddFramebufferBinding(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, FRAMEBUFFER_STATE *fb_state) {
     AddCommandBufferBinding(&fb_state->cb_bindings, {HandleToUint64(fb_state->framebuffer), kVulkanObjectTypeFramebuffer},
@@ -6196,8 +6005,8 @@ static void AddFramebufferBinding(layer_data *dev_data, GLOBAL_CB_NODE *cb_state
     }
 }
 
-static bool PreCallValidateBeginCommandBuffer(layer_data *dev_data, const GLOBAL_CB_NODE *cb_state,
-                                              const VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo *pBeginInfo) {
+bool PreCallValidateBeginCommandBuffer(layer_data *dev_data, const GLOBAL_CB_NODE *cb_state, const VkCommandBuffer commandBuffer,
+                                       const VkCommandBufferBeginInfo *pBeginInfo) {
     assert(cb_state);
     bool skip = false;
     if (cb_state->in_use.load()) {
@@ -6276,8 +6085,8 @@ static bool PreCallValidateBeginCommandBuffer(layer_data *dev_data, const GLOBAL
     return skip;
 }
 
-static void PreCallRecordBeginCommandBuffer(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, const VkCommandBuffer commandBuffer,
-                                            const VkCommandBufferBeginInfo *pBeginInfo) {
+void PreCallRecordBeginCommandBuffer(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, const VkCommandBuffer commandBuffer,
+                                     const VkCommandBufferBeginInfo *pBeginInfo) {
     assert(cb_state);
     // This implicitly resets the Cmd Buffer so make sure any fence is done and then clear memory references
     ClearCmdBufAndMemReferences(dev_data, cb_state);
@@ -6315,26 +6124,7 @@ static void PreCallRecordBeginCommandBuffer(layer_data *dev_data, GLOBAL_CB_NODE
     }
 }
 
-VKAPI_ATTR VkResult VKAPI_CALL BeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo *pBeginInfo) {
-    bool skip = false;
-    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    unique_lock_t lock(global_lock);
-    // Validate command buffer level
-    GLOBAL_CB_NODE *cb_state = GetCBNode(dev_data, commandBuffer);
-    if (cb_state) {
-        skip |= PreCallValidateBeginCommandBuffer(dev_data, cb_state, commandBuffer, pBeginInfo);
-        PreCallRecordBeginCommandBuffer(dev_data, cb_state, commandBuffer, pBeginInfo);
-    }
-    lock.unlock();
-    if (skip) {
-        return VK_ERROR_VALIDATION_FAILED_EXT;
-    }
-    VkResult result = dev_data->dispatch_table.BeginCommandBuffer(commandBuffer, pBeginInfo);
-
-    return result;
-}
-
-static bool PreCallValidateEndCommandBuffer(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, VkCommandBuffer commandBuffer) {
+bool PreCallValidateEndCommandBuffer(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, VkCommandBuffer commandBuffer) {
     bool skip = false;
     if ((VK_COMMAND_BUFFER_LEVEL_PRIMARY == cb_state->createInfo.level) ||
         !(cb_state->beginInfo.flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT)) {
@@ -6352,7 +6142,7 @@ static bool PreCallValidateEndCommandBuffer(layer_data *dev_data, GLOBAL_CB_NODE
     return skip;
 }
 
-static void PostCallRecordEndCommandBuffer(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, const VkResult &result) {
+void PostCallRecordEndCommandBuffer(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, const VkResult &result) {
     // Cached validation is specific to a specific recording of a specific command buffer.
     for (auto descriptor_set : cb_state->validated_descriptor_sets) {
         descriptor_set->ClearCachedValidation(cb_state);
@@ -6363,28 +6153,7 @@ static void PostCallRecordEndCommandBuffer(layer_data *dev_data, GLOBAL_CB_NODE 
     }
 }
 
-VKAPI_ATTR VkResult VKAPI_CALL EndCommandBuffer(VkCommandBuffer commandBuffer) {
-    bool skip = false;
-    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    unique_lock_t lock(global_lock);
-    GLOBAL_CB_NODE *cb_state = GetCBNode(dev_data, commandBuffer);
-    if (cb_state) {
-        skip |= PreCallValidateEndCommandBuffer(dev_data, cb_state, commandBuffer);
-    }
-    if (!skip) {
-        lock.unlock();
-        auto result = dev_data->dispatch_table.EndCommandBuffer(commandBuffer);
-        lock.lock();
-        if (cb_state) {
-            PostCallRecordEndCommandBuffer(dev_data, cb_state, result);
-        }
-        return result;
-    } else {
-        return VK_ERROR_VALIDATION_FAILED_EXT;
-    }
-}
-
-static bool PreCallValidateResetCommandBuffer(layer_data *dev_data, VkCommandBuffer commandBuffer) {
+bool PreCallValidateResetCommandBuffer(layer_data *dev_data, VkCommandBuffer commandBuffer) {
     bool skip = false;
     GLOBAL_CB_NODE *pCB = GetCBNode(dev_data, commandBuffer);
     VkCommandPool cmdPool = pCB->createInfo.commandPool;
@@ -6402,30 +6171,11 @@ static bool PreCallValidateResetCommandBuffer(layer_data *dev_data, VkCommandBuf
     return skip;
 }
 
-static void PostCallRecordResetCommandBuffer(layer_data *dev_data, VkCommandBuffer commandBuffer) {
+void PostCallRecordResetCommandBuffer(layer_data *dev_data, VkCommandBuffer commandBuffer) {
     ResetCommandBufferState(dev_data, commandBuffer);
 }
 
-VKAPI_ATTR VkResult VKAPI_CALL ResetCommandBuffer(VkCommandBuffer commandBuffer, VkCommandBufferResetFlags flags) {
-    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    unique_lock_t lock(global_lock);
-    bool skip = PreCallValidateResetCommandBuffer(dev_data, commandBuffer);
-    lock.unlock();
-
-    if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
-
-    VkResult result = dev_data->dispatch_table.ResetCommandBuffer(commandBuffer, flags);
-
-    if (VK_SUCCESS == result) {
-        lock.lock();
-        PostCallRecordResetCommandBuffer(dev_data, commandBuffer);
-        lock.unlock();
-    }
-
-    return result;
-}
-
-static bool PreCallValidateCmdBindPipeline(layer_data *dev_data, GLOBAL_CB_NODE *cb_state) {
+bool PreCallValidateCmdBindPipeline(layer_data *dev_data, GLOBAL_CB_NODE *cb_state) {
     bool skip = ValidateCmdQueueFlags(dev_data, cb_state, "vkCmdBindPipeline()", VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
                                       "VUID-vkCmdBindPipeline-commandBuffer-cmdpool");
     skip |= ValidateCmd(dev_data, cb_state, CMD_BINDPIPELINE, "vkCmdBindPipeline()");
@@ -6434,8 +6184,8 @@ static bool PreCallValidateCmdBindPipeline(layer_data *dev_data, GLOBAL_CB_NODE 
     return skip;
 }
 
-static void PreCallRecordCmdBindPipeline(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, VkPipelineBindPoint pipelineBindPoint,
-                                         VkPipeline pipeline) {
+void PreCallRecordCmdBindPipeline(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, VkPipelineBindPoint pipelineBindPoint,
+                                  VkPipeline pipeline) {
     auto pipe_state = GetPipelineState(dev_data, pipeline);
     if (VK_PIPELINE_BIND_POINT_GRAPHICS == pipelineBindPoint) {
         cb_state->status &= ~cb_state->static_status;
@@ -6467,7 +6217,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBindPipeline(VkCommandBuffer commandBuffer, VkPipe
     }
 }
 
-static bool PreCallValidateCmdSetViewport(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, VkCommandBuffer commandBuffer) {
+bool PreCallValidateCmdSetViewport(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, VkCommandBuffer commandBuffer) {
     bool skip = ValidateCmdQueueFlags(dev_data, cb_state, "vkCmdSetViewport()", VK_QUEUE_GRAPHICS_BIT,
                                       "VUID-vkCmdSetViewport-commandBuffer-cmdpool");
     skip |= ValidateCmd(dev_data, cb_state, CMD_SETVIEWPORT, "vkCmdSetViewport()");
@@ -6479,28 +6229,12 @@ static bool PreCallValidateCmdSetViewport(layer_data *dev_data, GLOBAL_CB_NODE *
     return skip;
 }
 
-static void PreCallRecordCmdSetViewport(GLOBAL_CB_NODE *cb_state, uint32_t firstViewport, uint32_t viewportCount) {
+void PreCallRecordCmdSetViewport(GLOBAL_CB_NODE *cb_state, uint32_t firstViewport, uint32_t viewportCount) {
     cb_state->viewportMask |= ((1u << viewportCount) - 1u) << firstViewport;
     cb_state->status |= CBSTATUS_VIEWPORT_SET;
 }
 
-VKAPI_ATTR void VKAPI_CALL CmdSetViewport(VkCommandBuffer commandBuffer, uint32_t firstViewport, uint32_t viewportCount,
-                                          const VkViewport *pViewports) {
-    bool skip = false;
-    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    unique_lock_t lock(global_lock);
-    GLOBAL_CB_NODE *pCB = GetCBNode(dev_data, commandBuffer);
-    if (pCB) {
-        skip |= PreCallValidateCmdSetViewport(dev_data, pCB, commandBuffer);
-        if (!skip) {
-            PreCallRecordCmdSetViewport(pCB, firstViewport, viewportCount);
-        }
-    }
-    lock.unlock();
-    if (!skip) dev_data->dispatch_table.CmdSetViewport(commandBuffer, firstViewport, viewportCount, pViewports);
-}
-
-static bool PreCallValidateCmdSetScissor(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, VkCommandBuffer commandBuffer) {
+bool PreCallValidateCmdSetScissor(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, VkCommandBuffer commandBuffer) {
     bool skip = ValidateCmdQueueFlags(dev_data, cb_state, "vkCmdSetScissor()", VK_QUEUE_GRAPHICS_BIT,
                                       "VUID-vkCmdSetScissor-commandBuffer-cmdpool");
     skip |= ValidateCmd(dev_data, cb_state, CMD_SETSCISSOR, "vkCmdSetScissor()");
@@ -6512,28 +6246,12 @@ static bool PreCallValidateCmdSetScissor(layer_data *dev_data, GLOBAL_CB_NODE *c
     return skip;
 }
 
-static void PreCallRecordCmdSetScissor(GLOBAL_CB_NODE *cb_state, uint32_t firstScissor, uint32_t scissorCount) {
+void PreCallRecordCmdSetScissor(GLOBAL_CB_NODE *cb_state, uint32_t firstScissor, uint32_t scissorCount) {
     cb_state->scissorMask |= ((1u << scissorCount) - 1u) << firstScissor;
     cb_state->status |= CBSTATUS_SCISSOR_SET;
 }
 
-VKAPI_ATTR void VKAPI_CALL CmdSetScissor(VkCommandBuffer commandBuffer, uint32_t firstScissor, uint32_t scissorCount,
-                                         const VkRect2D *pScissors) {
-    bool skip = false;
-    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    unique_lock_t lock(global_lock);
-    GLOBAL_CB_NODE *pCB = GetCBNode(dev_data, commandBuffer);
-    if (pCB) {
-        skip |= PreCallValidateCmdSetScissor(dev_data, pCB, commandBuffer);
-        if (!skip) {
-            PreCallRecordCmdSetScissor(pCB, firstScissor, scissorCount);
-        }
-    }
-    lock.unlock();
-    if (!skip) dev_data->dispatch_table.CmdSetScissor(commandBuffer, firstScissor, scissorCount, pScissors);
-}
-
-static bool PreCallValidateCmdSetExclusiveScissorNV(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, VkCommandBuffer commandBuffer) {
+bool PreCallValidateCmdSetExclusiveScissorNV(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, VkCommandBuffer commandBuffer) {
     bool skip = ValidateCmdQueueFlags(dev_data, cb_state, "vkCmdSetExclusiveScissorNV()", VK_QUEUE_GRAPHICS_BIT,
                                       "VUID-vkCmdSetExclusiveScissorNV-commandBuffer-cmdpool");
     skip |= ValidateCmd(dev_data, cb_state, CMD_SETEXCLUSIVESCISSOR, "vkCmdSetExclusiveScissorNV()");
@@ -6552,33 +6270,15 @@ static bool PreCallValidateCmdSetExclusiveScissorNV(layer_data *dev_data, GLOBAL
     return skip;
 }
 
-static void PreCallRecordCmdSetExclusiveScissorNV(GLOBAL_CB_NODE *cb_state, uint32_t firstExclusiveScissor,
-                                                  uint32_t exclusiveScissorCount) {
+void PreCallRecordCmdSetExclusiveScissorNV(GLOBAL_CB_NODE *cb_state, uint32_t firstExclusiveScissor,
+                                           uint32_t exclusiveScissorCount) {
     // XXX TODO: We don't have VUIDs for validating that all exclusive scissors have been set.
     // cb_state->exclusiveScissorMask |= ((1u << exclusiveScissorCount) - 1u) << firstExclusiveScissor;
     cb_state->status |= CBSTATUS_EXCLUSIVE_SCISSOR_SET;
 }
 
-VKAPI_ATTR void VKAPI_CALL CmdSetExclusiveScissorNV(VkCommandBuffer commandBuffer, uint32_t firstExclusiveScissor,
-                                                    uint32_t exclusiveScissorCount, const VkRect2D *pExclusiveScissors) {
-    bool skip = false;
-    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    unique_lock_t lock(global_lock);
-    GLOBAL_CB_NODE *pCB = GetCBNode(dev_data, commandBuffer);
-    if (pCB) {
-        skip |= PreCallValidateCmdSetExclusiveScissorNV(dev_data, pCB, commandBuffer);
-        if (!skip) {
-            PreCallRecordCmdSetExclusiveScissorNV(pCB, firstExclusiveScissor, exclusiveScissorCount);
-        }
-    }
-    lock.unlock();
-    if (!skip)
-        dev_data->dispatch_table.CmdSetExclusiveScissorNV(commandBuffer, firstExclusiveScissor, exclusiveScissorCount,
-                                                          pExclusiveScissors);
-}
-
-static bool PreCallValidateCmdBindShadingRateImageNV(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, VkCommandBuffer commandBuffer,
-                                                     VkImageView imageView, VkImageLayout imageLayout) {
+bool PreCallValidateCmdBindShadingRateImageNV(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, VkCommandBuffer commandBuffer,
+                                              VkImageView imageView, VkImageLayout imageLayout) {
     bool skip = ValidateCmdQueueFlags(dev_data, cb_state, "vkCmdBindShadingRateImageNV()", VK_QUEUE_GRAPHICS_BIT,
                                       "VUID-vkCmdBindShadingRateImageNV-commandBuffer-cmdpool");
 
@@ -6638,33 +6338,16 @@ static bool PreCallValidateCmdBindShadingRateImageNV(layer_data *dev_data, GLOBA
     return skip;
 }
 
-static void PreCallRecordCmdBindShadingRateImageNV(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, VkImageView imageView) {
+void PreCallRecordCmdBindShadingRateImageNV(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, VkImageView imageView) {
     if (imageView != VK_NULL_HANDLE) {
         auto view_state = GetImageViewState(dev_data, imageView);
         AddCommandBufferBindingImageView(dev_data, cb_state, view_state);
     }
 }
 
-VKAPI_ATTR void VKAPI_CALL CmdBindShadingRateImageNV(VkCommandBuffer commandBuffer, VkImageView imageView,
-                                                     VkImageLayout imageLayout) {
-    bool skip = false;
-    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    unique_lock_t lock(global_lock);
-    GLOBAL_CB_NODE *pCB = GetCBNode(dev_data, commandBuffer);
-    if (pCB) {
-        skip |= PreCallValidateCmdBindShadingRateImageNV(dev_data, pCB, commandBuffer, imageView, imageLayout);
-        if (!skip) {
-            PreCallRecordCmdBindShadingRateImageNV(dev_data, pCB, imageView);
-        }
-    }
-    lock.unlock();
-    if (!skip) dev_data->dispatch_table.CmdBindShadingRateImageNV(commandBuffer, imageView, imageLayout);
-}
-
-static bool PreCallValidateCmdSetViewportShadingRatePaletteNV(layer_data *dev_data, GLOBAL_CB_NODE *cb_state,
-                                                              VkCommandBuffer commandBuffer, uint32_t firstViewport,
-                                                              uint32_t viewportCount,
-                                                              const VkShadingRatePaletteNV *pShadingRatePalettes) {
+bool PreCallValidateCmdSetViewportShadingRatePaletteNV(layer_data *dev_data, GLOBAL_CB_NODE *cb_state,
+                                                       VkCommandBuffer commandBuffer, uint32_t firstViewport,
+                                                       uint32_t viewportCount, const VkShadingRatePaletteNV *pShadingRatePalettes) {
     bool skip = ValidateCmdQueueFlags(dev_data, cb_state, "vkCmdSetViewportShadingRatePaletteNV()", VK_QUEUE_GRAPHICS_BIT,
                                       "VUID-vkCmdSetViewportShadingRatePaletteNV-commandBuffer-cmdpool");
 
@@ -6697,34 +6380,13 @@ static bool PreCallValidateCmdSetViewportShadingRatePaletteNV(layer_data *dev_da
     return skip;
 }
 
-static void PreCallRecordCmdSetViewportShadingRatePaletteNV(GLOBAL_CB_NODE *cb_state, uint32_t firstViewport,
-                                                            uint32_t viewportCount) {
+void PreCallRecordCmdSetViewportShadingRatePaletteNV(GLOBAL_CB_NODE *cb_state, uint32_t firstViewport, uint32_t viewportCount) {
     // XXX TODO: We don't have VUIDs for validating that all shading rate palettes have been set.
     // cb_state->shadingRatePaletteMask |= ((1u << viewportCount) - 1u) << firstViewport;
     cb_state->status |= CBSTATUS_SHADING_RATE_PALETTE_SET;
 }
 
-VKAPI_ATTR void VKAPI_CALL CmdSetViewportShadingRatePaletteNV(VkCommandBuffer commandBuffer, uint32_t firstViewport,
-                                                              uint32_t viewportCount,
-                                                              const VkShadingRatePaletteNV *pShadingRatePalettes) {
-    bool skip = false;
-    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    unique_lock_t lock(global_lock);
-    GLOBAL_CB_NODE *pCB = GetCBNode(dev_data, commandBuffer);
-    if (pCB) {
-        skip |= PreCallValidateCmdSetViewportShadingRatePaletteNV(dev_data, pCB, commandBuffer, firstViewport, viewportCount,
-                                                                  pShadingRatePalettes);
-        if (!skip) {
-            PreCallRecordCmdSetViewportShadingRatePaletteNV(pCB, firstViewport, viewportCount);
-        }
-    }
-    lock.unlock();
-    if (!skip)
-        dev_data->dispatch_table.CmdSetViewportShadingRatePaletteNV(commandBuffer, firstViewport, viewportCount,
-                                                                    pShadingRatePalettes);
-}
-
-static bool PreCallValidateCmdSetLineWidth(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, VkCommandBuffer commandBuffer) {
+bool PreCallValidateCmdSetLineWidth(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, VkCommandBuffer commandBuffer) {
     bool skip = ValidateCmdQueueFlags(dev_data, cb_state, "vkCmdSetLineWidth()", VK_QUEUE_GRAPHICS_BIT,
                                       "VUID-vkCmdSetLineWidth-commandBuffer-cmdpool");
     skip |= ValidateCmd(dev_data, cb_state, CMD_SETLINEWIDTH, "vkCmdSetLineWidth()");
@@ -6737,25 +6399,10 @@ static bool PreCallValidateCmdSetLineWidth(layer_data *dev_data, GLOBAL_CB_NODE 
     return skip;
 }
 
-static void PreCallRecordCmdSetLineWidth(GLOBAL_CB_NODE *cb_state) { cb_state->status |= CBSTATUS_LINE_WIDTH_SET; }
+void PreCallRecordCmdSetLineWidth(GLOBAL_CB_NODE *cb_state) { cb_state->status |= CBSTATUS_LINE_WIDTH_SET; }
 
-VKAPI_ATTR void VKAPI_CALL CmdSetLineWidth(VkCommandBuffer commandBuffer, float lineWidth) {
-    bool skip = false;
-    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    unique_lock_t lock(global_lock);
-    GLOBAL_CB_NODE *pCB = GetCBNode(dev_data, commandBuffer);
-    if (pCB) {
-        skip |= PreCallValidateCmdSetLineWidth(dev_data, pCB, commandBuffer);
-        if (!skip) {
-            PreCallRecordCmdSetLineWidth(pCB);
-        }
-    }
-    lock.unlock();
-    if (!skip) dev_data->dispatch_table.CmdSetLineWidth(commandBuffer, lineWidth);
-}
-
-static bool PreCallValidateCmdSetDepthBias(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, VkCommandBuffer commandBuffer,
-                                           float depthBiasClamp) {
+bool PreCallValidateCmdSetDepthBias(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, VkCommandBuffer commandBuffer,
+                                    float depthBiasClamp) {
     bool skip = ValidateCmdQueueFlags(dev_data, cb_state, "vkCmdSetDepthBias()", VK_QUEUE_GRAPHICS_BIT,
                                       "VUID-vkCmdSetDepthBias-commandBuffer-cmdpool");
     skip |= ValidateCmd(dev_data, cb_state, CMD_SETDEPTHBIAS, "vkCmdSetDepthBias()");
@@ -6773,27 +6420,9 @@ static bool PreCallValidateCmdSetDepthBias(layer_data *dev_data, GLOBAL_CB_NODE 
     return skip;
 }
 
-static void PreCallRecordCmdSetDepthBias(GLOBAL_CB_NODE *cb_state) { cb_state->status |= CBSTATUS_DEPTH_BIAS_SET; }
+void PreCallRecordCmdSetDepthBias(GLOBAL_CB_NODE *cb_state) { cb_state->status |= CBSTATUS_DEPTH_BIAS_SET; }
 
-VKAPI_ATTR void VKAPI_CALL CmdSetDepthBias(VkCommandBuffer commandBuffer, float depthBiasConstantFactor, float depthBiasClamp,
-                                           float depthBiasSlopeFactor) {
-    bool skip = false;
-    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    unique_lock_t lock(global_lock);
-    GLOBAL_CB_NODE *pCB = GetCBNode(dev_data, commandBuffer);
-    if (pCB) {
-        skip |= PreCallValidateCmdSetDepthBias(dev_data, pCB, commandBuffer, depthBiasClamp);
-        if (!skip) {
-            PreCallRecordCmdSetDepthBias(pCB);
-        }
-    }
-    lock.unlock();
-    if (!skip) {
-        dev_data->dispatch_table.CmdSetDepthBias(commandBuffer, depthBiasConstantFactor, depthBiasClamp, depthBiasSlopeFactor);
-    }
-}
-
-static bool PreCallValidateCmdSetBlendConstants(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, VkCommandBuffer commandBuffer) {
+bool PreCallValidateCmdSetBlendConstants(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, VkCommandBuffer commandBuffer) {
     bool skip = ValidateCmdQueueFlags(dev_data, cb_state, "vkCmdSetBlendConstants()", VK_QUEUE_GRAPHICS_BIT,
                                       "VUID-vkCmdSetBlendConstants-commandBuffer-cmdpool");
     skip |= ValidateCmd(dev_data, cb_state, CMD_SETBLENDCONSTANTS, "vkCmdSetBlendConstants()");
@@ -6805,24 +6434,9 @@ static bool PreCallValidateCmdSetBlendConstants(layer_data *dev_data, GLOBAL_CB_
     return skip;
 }
 
-static void PreCallRecordCmdSetBlendConstants(GLOBAL_CB_NODE *cb_state) { cb_state->status |= CBSTATUS_BLEND_CONSTANTS_SET; }
+void PreCallRecordCmdSetBlendConstants(GLOBAL_CB_NODE *cb_state) { cb_state->status |= CBSTATUS_BLEND_CONSTANTS_SET; }
 
-VKAPI_ATTR void VKAPI_CALL CmdSetBlendConstants(VkCommandBuffer commandBuffer, const float blendConstants[4]) {
-    bool skip = false;
-    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    unique_lock_t lock(global_lock);
-    GLOBAL_CB_NODE *pCB = GetCBNode(dev_data, commandBuffer);
-    if (pCB) {
-        skip |= PreCallValidateCmdSetBlendConstants(dev_data, pCB, commandBuffer);
-        if (!skip) {
-            PreCallRecordCmdSetBlendConstants(pCB);
-        }
-    }
-    lock.unlock();
-    if (!skip) dev_data->dispatch_table.CmdSetBlendConstants(commandBuffer, blendConstants);
-}
-
-static bool PreCallValidateCmdSetDepthBounds(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, VkCommandBuffer commandBuffer) {
+bool PreCallValidateCmdSetDepthBounds(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, VkCommandBuffer commandBuffer) {
     bool skip = ValidateCmdQueueFlags(dev_data, cb_state, "vkCmdSetDepthBounds()", VK_QUEUE_GRAPHICS_BIT,
                                       "VUID-vkCmdSetDepthBounds-commandBuffer-cmdpool");
     skip |= ValidateCmd(dev_data, cb_state, CMD_SETDEPTHBOUNDS, "vkCmdSetDepthBounds()");
@@ -6834,24 +6448,9 @@ static bool PreCallValidateCmdSetDepthBounds(layer_data *dev_data, GLOBAL_CB_NOD
     return skip;
 }
 
-static void PreCallRecordCmdSetDepthBounds(GLOBAL_CB_NODE *cb_state) { cb_state->status |= CBSTATUS_DEPTH_BOUNDS_SET; }
+void PreCallRecordCmdSetDepthBounds(GLOBAL_CB_NODE *cb_state) { cb_state->status |= CBSTATUS_DEPTH_BOUNDS_SET; }
 
-VKAPI_ATTR void VKAPI_CALL CmdSetDepthBounds(VkCommandBuffer commandBuffer, float minDepthBounds, float maxDepthBounds) {
-    bool skip = false;
-    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    unique_lock_t lock(global_lock);
-    GLOBAL_CB_NODE *pCB = GetCBNode(dev_data, commandBuffer);
-    if (pCB) {
-        skip |= PreCallValidateCmdSetDepthBounds(dev_data, pCB, commandBuffer);
-        if (!skip) {
-            PreCallRecordCmdSetDepthBounds(pCB);
-        }
-    }
-    lock.unlock();
-    if (!skip) dev_data->dispatch_table.CmdSetDepthBounds(commandBuffer, minDepthBounds, maxDepthBounds);
-}
-
-static bool PreCallValidateCmdSetStencilCompareMask(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, VkCommandBuffer commandBuffer) {
+bool PreCallValidateCmdSetStencilCompareMask(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, VkCommandBuffer commandBuffer) {
     bool skip = ValidateCmdQueueFlags(dev_data, cb_state, "vkCmdSetStencilCompareMask()", VK_QUEUE_GRAPHICS_BIT,
                                       "VUID-vkCmdSetStencilCompareMask-commandBuffer-cmdpool");
     skip |= ValidateCmd(dev_data, cb_state, CMD_SETSTENCILCOMPAREMASK, "vkCmdSetStencilCompareMask()");
@@ -6863,25 +6462,9 @@ static bool PreCallValidateCmdSetStencilCompareMask(layer_data *dev_data, GLOBAL
     return skip;
 }
 
-static void PreCallRecordCmdSetStencilCompareMask(GLOBAL_CB_NODE *cb_state) { cb_state->status |= CBSTATUS_STENCIL_READ_MASK_SET; }
+void PreCallRecordCmdSetStencilCompareMask(GLOBAL_CB_NODE *cb_state) { cb_state->status |= CBSTATUS_STENCIL_READ_MASK_SET; }
 
-VKAPI_ATTR void VKAPI_CALL CmdSetStencilCompareMask(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask,
-                                                    uint32_t compareMask) {
-    bool skip = false;
-    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    unique_lock_t lock(global_lock);
-    GLOBAL_CB_NODE *pCB = GetCBNode(dev_data, commandBuffer);
-    if (pCB) {
-        skip |= PreCallValidateCmdSetStencilCompareMask(dev_data, pCB, commandBuffer);
-        if (!skip) {
-            PreCallRecordCmdSetStencilCompareMask(pCB);
-        }
-    }
-    lock.unlock();
-    if (!skip) dev_data->dispatch_table.CmdSetStencilCompareMask(commandBuffer, faceMask, compareMask);
-}
-
-static bool PreCallValidateCmdSetStencilWriteMask(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, VkCommandBuffer commandBuffer) {
+bool PreCallValidateCmdSetStencilWriteMask(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, VkCommandBuffer commandBuffer) {
     bool skip = ValidateCmdQueueFlags(dev_data, cb_state, "vkCmdSetStencilWriteMask()", VK_QUEUE_GRAPHICS_BIT,
                                       "VUID-vkCmdSetStencilWriteMask-commandBuffer-cmdpool");
     skip |= ValidateCmd(dev_data, cb_state, CMD_SETSTENCILWRITEMASK, "vkCmdSetStencilWriteMask()");
@@ -6893,24 +6476,9 @@ static bool PreCallValidateCmdSetStencilWriteMask(layer_data *dev_data, GLOBAL_C
     return skip;
 }
 
-static void PreCallRecordCmdSetStencilWriteMask(GLOBAL_CB_NODE *cb_state) { cb_state->status |= CBSTATUS_STENCIL_WRITE_MASK_SET; }
+void PreCallRecordCmdSetStencilWriteMask(GLOBAL_CB_NODE *cb_state) { cb_state->status |= CBSTATUS_STENCIL_WRITE_MASK_SET; }
 
-VKAPI_ATTR void VKAPI_CALL CmdSetStencilWriteMask(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, uint32_t writeMask) {
-    bool skip = false;
-    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    unique_lock_t lock(global_lock);
-    GLOBAL_CB_NODE *pCB = GetCBNode(dev_data, commandBuffer);
-    if (pCB) {
-        skip |= PreCallValidateCmdSetStencilWriteMask(dev_data, pCB, commandBuffer);
-        if (!skip) {
-            PreCallRecordCmdSetStencilWriteMask(pCB);
-        }
-    }
-    lock.unlock();
-    if (!skip) dev_data->dispatch_table.CmdSetStencilWriteMask(commandBuffer, faceMask, writeMask);
-}
-
-static bool PreCallValidateCmdSetStencilReference(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, VkCommandBuffer commandBuffer) {
+bool PreCallValidateCmdSetStencilReference(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, VkCommandBuffer commandBuffer) {
     bool skip = ValidateCmdQueueFlags(dev_data, cb_state, "vkCmdSetStencilReference()", VK_QUEUE_GRAPHICS_BIT,
                                       "VUID-vkCmdSetStencilReference-commandBuffer-cmdpool");
     skip |= ValidateCmd(dev_data, cb_state, CMD_SETSTENCILREFERENCE, "vkCmdSetStencilReference()");
@@ -6922,22 +6490,7 @@ static bool PreCallValidateCmdSetStencilReference(layer_data *dev_data, GLOBAL_C
     return skip;
 }
 
-static void PreCallRecordCmdSetStencilReference(GLOBAL_CB_NODE *cb_state) { cb_state->status |= CBSTATUS_STENCIL_REFERENCE_SET; }
-
-VKAPI_ATTR void VKAPI_CALL CmdSetStencilReference(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, uint32_t reference) {
-    bool skip = false;
-    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    unique_lock_t lock(global_lock);
-    GLOBAL_CB_NODE *pCB = GetCBNode(dev_data, commandBuffer);
-    if (pCB) {
-        skip |= PreCallValidateCmdSetStencilReference(dev_data, pCB, commandBuffer);
-        if (!skip) {
-            PreCallRecordCmdSetStencilReference(pCB);
-        }
-    }
-    lock.unlock();
-    if (!skip) dev_data->dispatch_table.CmdSetStencilReference(commandBuffer, faceMask, reference);
-}
+void PreCallRecordCmdSetStencilReference(GLOBAL_CB_NODE *cb_state) { cb_state->status |= CBSTATUS_STENCIL_REFERENCE_SET; }
 
 // Update pipeline_layout bind points applying the "Pipeline Layout Compatibility" rules
 static void UpdateLastBoundDescriptorSets(layer_data *device_data, GLOBAL_CB_NODE *cb_state,
@@ -7042,10 +6595,10 @@ static void UpdateLastBoundDescriptorSets(layer_data *device_data, GLOBAL_CB_NOD
 }
 
 // Update the bound state for the bind point, including the effects of incompatible pipeline layouts
-static void PreCallRecordCmdBindDescriptorSets(layer_data *device_data, GLOBAL_CB_NODE *cb_state,
-                                               VkPipelineBindPoint pipelineBindPoint, VkPipelineLayout layout, uint32_t firstSet,
-                                               uint32_t setCount, const VkDescriptorSet *pDescriptorSets,
-                                               uint32_t dynamicOffsetCount, const uint32_t *pDynamicOffsets) {
+void PreCallRecordCmdBindDescriptorSets(layer_data *device_data, GLOBAL_CB_NODE *cb_state, VkPipelineBindPoint pipelineBindPoint,
+                                        VkPipelineLayout layout, uint32_t firstSet, uint32_t setCount,
+                                        const VkDescriptorSet *pDescriptorSets, uint32_t dynamicOffsetCount,
+                                        const uint32_t *pDynamicOffsets) {
     auto pipeline_layout = GetPipelineLayout(device_data, layout);
     std::vector<cvdescriptorset::DescriptorSet *> descriptor_sets;
     descriptor_sets.reserve(setCount);
@@ -7064,10 +6617,10 @@ static void PreCallRecordCmdBindDescriptorSets(layer_data *device_data, GLOBAL_C
     }
 }
 
-static bool PreCallValidateCmdBindDescriptorSets(layer_data *device_data, GLOBAL_CB_NODE *cb_state,
-                                                 VkPipelineBindPoint pipelineBindPoint, VkPipelineLayout layout, uint32_t firstSet,
-                                                 uint32_t setCount, const VkDescriptorSet *pDescriptorSets,
-                                                 uint32_t dynamicOffsetCount, const uint32_t *pDynamicOffsets) {
+bool PreCallValidateCmdBindDescriptorSets(layer_data *device_data, GLOBAL_CB_NODE *cb_state, VkPipelineBindPoint pipelineBindPoint,
+                                          VkPipelineLayout layout, uint32_t firstSet, uint32_t setCount,
+                                          const VkDescriptorSet *pDescriptorSets, uint32_t dynamicOffsetCount,
+                                          const uint32_t *pDynamicOffsets) {
     bool skip = false;
     skip |= ValidateCmdQueueFlags(device_data, cb_state, "vkCmdBindDescriptorSets()", VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
                                   "VUID-vkCmdBindDescriptorSets-commandBuffer-cmdpool");
@@ -7162,28 +6715,6 @@ static bool PreCallValidateCmdBindDescriptorSets(layer_data *device_data, GLOBAL
     return skip;
 }
 
-VKAPI_ATTR void VKAPI_CALL CmdBindDescriptorSets(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
-                                                 VkPipelineLayout layout, uint32_t firstSet, uint32_t setCount,
-                                                 const VkDescriptorSet *pDescriptorSets, uint32_t dynamicOffsetCount,
-                                                 const uint32_t *pDynamicOffsets) {
-    bool skip = false;
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    unique_lock_t lock(global_lock);
-    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
-    assert(cb_state);
-    skip = PreCallValidateCmdBindDescriptorSets(device_data, cb_state, pipelineBindPoint, layout, firstSet, setCount,
-                                                pDescriptorSets, dynamicOffsetCount, pDynamicOffsets);
-    if (!skip) {
-        PreCallRecordCmdBindDescriptorSets(device_data, cb_state, pipelineBindPoint, layout, firstSet, setCount, pDescriptorSets,
-                                           dynamicOffsetCount, pDynamicOffsets);
-        lock.unlock();
-        device_data->dispatch_table.CmdBindDescriptorSets(commandBuffer, pipelineBindPoint, layout, firstSet, setCount,
-                                                          pDescriptorSets, dynamicOffsetCount, pDynamicOffsets);
-    } else {
-        lock.unlock();
-    }
-}
-
 // Validates that the supplied bind point is supported for the command buffer (vis. the command pool)
 // Takes array of error codes as some of the VUID's (e.g. vkCmdBindPipeline) are written per bindpoint
 // TODO add vkCmdBindPipeline bind_point validation using this call.
@@ -7213,10 +6744,10 @@ bool ValidatePipelineBindPoint(layer_data *device_data, GLOBAL_CB_NODE *cb_state
     return skip;
 }
 
-static bool PreCallValidateCmdPushDescriptorSetKHR(layer_data *device_data, GLOBAL_CB_NODE *cb_state,
-                                                   const VkPipelineBindPoint bind_point, const VkPipelineLayout layout,
-                                                   const uint32_t set, const uint32_t descriptor_write_count,
-                                                   const VkWriteDescriptorSet *descriptor_writes, const char *func_name) {
+bool PreCallValidateCmdPushDescriptorSetKHR(layer_data *device_data, GLOBAL_CB_NODE *cb_state, const VkPipelineBindPoint bind_point,
+                                            const VkPipelineLayout layout, const uint32_t set,
+                                            const uint32_t descriptor_write_count, const VkWriteDescriptorSet *descriptor_writes,
+                                            const char *func_name) {
     bool skip = false;
     skip |= ValidateCmd(device_data, cb_state, CMD_PUSHDESCRIPTORSETKHR, func_name);
     skip |= ValidateCmdQueueFlags(device_data, cb_state, func_name, (VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT),
@@ -7264,9 +6795,9 @@ static bool PreCallValidateCmdPushDescriptorSetKHR(layer_data *device_data, GLOB
 
     return skip;
 }
-static void PreCallRecordCmdPushDescriptorSetKHR(layer_data *device_data, GLOBAL_CB_NODE *cb_state,
-                                                 VkPipelineBindPoint pipelineBindPoint, VkPipelineLayout layout, uint32_t set,
-                                                 uint32_t descriptorWriteCount, const VkWriteDescriptorSet *pDescriptorWrites) {
+void PreCallRecordCmdPushDescriptorSetKHR(layer_data *device_data, GLOBAL_CB_NODE *cb_state, VkPipelineBindPoint pipelineBindPoint,
+                                          VkPipelineLayout layout, uint32_t set, uint32_t descriptorWriteCount,
+                                          const VkWriteDescriptorSet *pDescriptorWrites) {
     const auto &pipeline_layout = GetPipelineLayout(device_data, layout);
     // Short circuit invalid updates
     if (!pipeline_layout || (set >= pipeline_layout->set_layouts.size()) || !pipeline_layout->set_layouts[set] ||
@@ -7290,29 +6821,6 @@ static void PreCallRecordCmdPushDescriptorSetKHR(layer_data *device_data, GLOBAL
     push_descriptor_set->PerformPushDescriptorsUpdate(descriptorWriteCount, pDescriptorWrites);
 }
 
-VKAPI_ATTR void VKAPI_CALL CmdPushDescriptorSetKHR(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
-                                                   VkPipelineLayout layout, uint32_t set, uint32_t descriptorWriteCount,
-                                                   const VkWriteDescriptorSet *pDescriptorWrites) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    unique_lock_t lock(global_lock);
-    bool skip = false;
-    auto cb_state = GetCBNode(device_data, commandBuffer);
-    if (cb_state) {
-        skip = PreCallValidateCmdPushDescriptorSetKHR(device_data, cb_state, pipelineBindPoint, layout, set, descriptorWriteCount,
-                                                      pDescriptorWrites, "vkCmdPushDescriptorSetKHR()");
-        if (!skip) {
-            PreCallRecordCmdPushDescriptorSetKHR(device_data, cb_state, pipelineBindPoint, layout, set, descriptorWriteCount,
-                                                 pDescriptorWrites);
-        }
-    }
-    lock.unlock();
-
-    if (!skip) {
-        device_data->dispatch_table.CmdPushDescriptorSetKHR(commandBuffer, pipelineBindPoint, layout, set, descriptorWriteCount,
-                                                            pDescriptorWrites);
-    }
-}
-
 static VkDeviceSize GetIndexAlignment(VkIndexType indexType) {
     switch (indexType) {
         case VK_INDEX_TYPE_UINT16:
@@ -7326,9 +6834,8 @@ static VkDeviceSize GetIndexAlignment(VkIndexType indexType) {
     }
 }
 
-static bool PreCallValidateCmdBindIndexBuffer(layer_data *dev_data, BUFFER_STATE *buffer_state, GLOBAL_CB_NODE *cb_node,
-                                              VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                              VkIndexType indexType) {
+bool PreCallValidateCmdBindIndexBuffer(layer_data *dev_data, BUFFER_STATE *buffer_state, GLOBAL_CB_NODE *cb_node,
+                                       VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkIndexType indexType) {
     bool skip = ValidateBufferUsageFlags(dev_data, buffer_state, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, true,
                                          "VUID-vkCmdBindIndexBuffer-buffer-00433", "vkCmdBindIndexBuffer()",
                                          "VK_BUFFER_USAGE_INDEX_BUFFER_BIT");
@@ -7348,8 +6855,8 @@ static bool PreCallValidateCmdBindIndexBuffer(layer_data *dev_data, BUFFER_STATE
     return skip;
 }
 
-static void PreCallRecordCmdBindIndexBuffer(BUFFER_STATE *buffer_state, GLOBAL_CB_NODE *cb_node, VkBuffer buffer,
-                                            VkDeviceSize offset, VkIndexType indexType) {
+void PreCallRecordCmdBindIndexBuffer(BUFFER_STATE *buffer_state, GLOBAL_CB_NODE *cb_node, VkBuffer buffer, VkDeviceSize offset,
+                                     VkIndexType indexType) {
     cb_node->status |= CBSTATUS_INDEX_BUFFER_BOUND;
     cb_node->index_buffer_binding.buffer = buffer;
     cb_node->index_buffer_binding.size = buffer_state->createInfo.size;
@@ -7357,31 +6864,10 @@ static void PreCallRecordCmdBindIndexBuffer(BUFFER_STATE *buffer_state, GLOBAL_C
     cb_node->index_buffer_binding.index_type = indexType;
 }
 
-VKAPI_ATTR void VKAPI_CALL CmdBindIndexBuffer(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                              VkIndexType indexType) {
-    bool skip = false;
-    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    unique_lock_t lock(global_lock);
-
-    auto buffer_state = GetBufferState(dev_data, buffer);
-    auto cb_node = GetCBNode(dev_data, commandBuffer);
-    assert(cb_node);
-    assert(buffer_state);
-
-    PreCallValidateCmdBindIndexBuffer(dev_data, buffer_state, cb_node, commandBuffer, buffer, offset, indexType);
-
-    if (skip) return;
-
-    PreCallRecordCmdBindIndexBuffer(buffer_state, cb_node, buffer, offset, indexType);
-    lock.unlock();
-
-    dev_data->dispatch_table.CmdBindIndexBuffer(commandBuffer, buffer, offset, indexType);
-}
-
 static inline void UpdateResourceTrackingOnDraw(GLOBAL_CB_NODE *pCB) { pCB->draw_data.push_back(pCB->current_draw_data); }
 
-static bool PreCallValidateCmdBindVertexBuffers(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, uint32_t bindingCount,
-                                                const VkBuffer *pBuffers, const VkDeviceSize *pOffsets) {
+bool PreCallValidateCmdBindVertexBuffers(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, uint32_t bindingCount,
+                                         const VkBuffer *pBuffers, const VkDeviceSize *pOffsets) {
     bool skip = ValidateCmdQueueFlags(dev_data, cb_state, "vkCmdBindVertexBuffers()", VK_QUEUE_GRAPHICS_BIT,
                                       "VUID-vkCmdBindVertexBuffers-commandBuffer-cmdpool");
     skip |= ValidateCmd(dev_data, cb_state, CMD_BINDVERTEXBUFFERS, "vkCmdBindVertexBuffers()");
@@ -7402,8 +6888,8 @@ static bool PreCallValidateCmdBindVertexBuffers(layer_data *dev_data, GLOBAL_CB_
     return skip;
 }
 
-static void PreCallRecordCmdBindVertexBuffers(GLOBAL_CB_NODE *pCB, uint32_t firstBinding, uint32_t bindingCount,
-                                              const VkBuffer *pBuffers, const VkDeviceSize *pOffsets) {
+void PreCallRecordCmdBindVertexBuffers(GLOBAL_CB_NODE *pCB, uint32_t firstBinding, uint32_t bindingCount, const VkBuffer *pBuffers,
+                                       const VkDeviceSize *pOffsets) {
     uint32_t end = firstBinding + bindingCount;
     if (pCB->current_draw_data.vertex_buffer_bindings.size() < end) {
         pCB->current_draw_data.vertex_buffer_bindings.resize(end);
@@ -7414,25 +6900,6 @@ static void PreCallRecordCmdBindVertexBuffers(GLOBAL_CB_NODE *pCB, uint32_t firs
         vertex_buffer_binding.buffer = pBuffers[i];
         vertex_buffer_binding.offset = pOffsets[i];
     }
-}
-
-VKAPI_ATTR void VKAPI_CALL CmdBindVertexBuffers(VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount,
-                                                const VkBuffer *pBuffers, const VkDeviceSize *pOffsets) {
-    bool skip = false;
-    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    unique_lock_t lock(global_lock);
-
-    auto cb_node = GetCBNode(dev_data, commandBuffer);
-    assert(cb_node);
-
-    skip |= PreCallValidateCmdBindVertexBuffers(dev_data, cb_node, bindingCount, pBuffers, pOffsets);
-
-    if (skip) return;
-
-    PreCallRecordCmdBindVertexBuffers(cb_node, firstBinding, bindingCount, pBuffers, pOffsets);
-
-    lock.unlock();
-    dev_data->dispatch_table.CmdBindVertexBuffers(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets);
 }
 
 // Generic function to handle validation for all CmdDraw* type functions
@@ -7466,30 +6933,15 @@ static void UpdateStateCmdDrawType(layer_data *dev_data, GLOBAL_CB_NODE *cb_stat
     cb_state->hasDrawCmd = true;
 }
 
-static bool PreCallValidateCmdDraw(layer_data *dev_data, VkCommandBuffer cmd_buffer, bool indexed, VkPipelineBindPoint bind_point,
-                                   GLOBAL_CB_NODE **cb_state, const char *caller) {
+bool PreCallValidateCmdDraw(layer_data *dev_data, VkCommandBuffer cmd_buffer, bool indexed, VkPipelineBindPoint bind_point,
+                            GLOBAL_CB_NODE **cb_state, const char *caller) {
     return ValidateCmdDrawType(dev_data, cmd_buffer, indexed, bind_point, CMD_DRAW, cb_state, caller, VK_QUEUE_GRAPHICS_BIT,
                                "VUID-vkCmdDraw-commandBuffer-cmdpool", "VUID-vkCmdDraw-renderpass", "VUID-vkCmdDraw-None-00442",
                                "VUID-vkCmdDraw-None-00443");
 }
 
-static void PostCallRecordCmdDraw(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, VkPipelineBindPoint bind_point) {
+void PostCallRecordCmdDraw(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, VkPipelineBindPoint bind_point) {
     UpdateStateCmdDrawType(dev_data, cb_state, bind_point);
-}
-
-VKAPI_ATTR void VKAPI_CALL CmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount,
-                                   uint32_t firstVertex, uint32_t firstInstance) {
-    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    GLOBAL_CB_NODE *cb_state = nullptr;
-    unique_lock_t lock(global_lock);
-    bool skip = PreCallValidateCmdDraw(dev_data, commandBuffer, false, VK_PIPELINE_BIND_POINT_GRAPHICS, &cb_state, "vkCmdDraw()");
-    lock.unlock();
-    if (!skip) {
-        dev_data->dispatch_table.CmdDraw(commandBuffer, vertexCount, instanceCount, firstVertex, firstInstance);
-        lock.lock();
-        PostCallRecordCmdDraw(dev_data, cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS);
-        lock.unlock();
-    }
 }
 
 static bool PreCallValidateCmdDrawIndexed(layer_data *dev_data, VkCommandBuffer cmd_buffer, bool indexed,
