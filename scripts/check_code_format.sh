@@ -48,10 +48,11 @@ else
     for AFILE in ${COPYRIGHTED_FILES_TO_CHECK}
     do
       COPYRIGHT_INFO=$(cat ../${AFILE} | grep -E "Copyright (.)*LunarG")
-      COPYRIGHT_DATES=$(echo "$COPYRIGHT_INFO" | grep "$THISYEAR")
-      if [ -z "${COPYRIGHT_DATES}" ]; then
-        echo -e "${RED} "$AFILE" has an out-of-date copyright notice.${NC}"
-        FOUND_ERROR=1
+      if [ ! -z "${COPYRIGHT_INFO}" ]; then
+        if ! echo "$COPYRIGHT_INFO" | grep -q "$THISYEAR" ; then
+          echo -e "${RED} "$AFILE" has an out-of-date copyright notice.${NC}"
+          FOUND_ERROR=1
+        fi
       fi
     done
   fi
