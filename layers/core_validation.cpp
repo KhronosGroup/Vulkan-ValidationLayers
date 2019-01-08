@@ -12780,23 +12780,6 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceQueueFamilyProperties2KHR(VkPhysical
                                                           pQueueFamilyProperties);
 }
 
-template <typename TCreateInfo, typename FPtr>
-static VkResult CreateSurface(VkInstance instance, TCreateInfo const *pCreateInfo, VkAllocationCallbacks const *pAllocator,
-                              VkSurfaceKHR *pSurface, FPtr fptr) {
-    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(instance), instance_layer_data_map);
-
-    // Call down the call chain:
-    VkResult result = (instance_data->dispatch_table.*fptr)(instance, pCreateInfo, pAllocator, pSurface);
-
-    if (result == VK_SUCCESS) {
-        unique_lock_t lock(global_lock);
-        instance_data->surface_map[*pSurface] = SURFACE_STATE(*pSurface);
-        lock.unlock();
-    }
-
-    return result;
-}
-
 static bool PreCallValidateDestroySurfaceKHR(instance_layer_data *instance_data, VkInstance instance, VkSurfaceKHR surface) {
     auto surface_state = GetSurfaceState(instance_data, surface);
     bool skip = false;
@@ -12824,36 +12807,100 @@ VKAPI_ATTR void VKAPI_CALL DestroySurfaceKHR(VkInstance instance, VkSurfaceKHR s
     }
 }
 
+static void RecordVulkanSurface(instance_layer_data* instance_data, VkSurfaceKHR *pSurface) {
+    instance_data->surface_map[*pSurface] = SURFACE_STATE(*pSurface);
+}
+
+void PostCallRecordCreateDisplayPlaneSurfaceKHR(VkInstance instance, const VkDisplaySurfaceCreateInfoKHR *pCreateInfo,
+    const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface) {
+    instance_layer_data* instance_data = GetLayerDataPtr(get_dispatch_key(instance), instance_layer_data_map);
+    RecordVulkanSurface(instance_data, pSurface);
+}
+
 VKAPI_ATTR VkResult VKAPI_CALL CreateDisplayPlaneSurfaceKHR(VkInstance instance, const VkDisplaySurfaceCreateInfoKHR *pCreateInfo,
                                                             const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface) {
-    return CreateSurface(instance, pCreateInfo, pAllocator, pSurface, &VkLayerInstanceDispatchTable::CreateDisplayPlaneSurfaceKHR);
+    instance_layer_data* instance_data = GetLayerDataPtr(get_dispatch_key(instance), instance_layer_data_map);
+    VkResult result = (instance_data->dispatch_table.CreateDisplayPlaneSurfaceKHR)(instance, pCreateInfo, pAllocator, pSurface);
+    if (result == VK_SUCCESS) {
+        unique_lock_t lock(global_lock);
+        PostCallRecordCreateDisplayPlaneSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface);
+    }
+    return result;
 }
 
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
+void PostCallRecordCreateAndroidSurfaceKHR(VkInstance instance, const VkAndroidSurfaceCreateInfoKHR *pCreateInfo,
+    const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface) {
+    instance_layer_data* instance_data = GetLayerDataPtr(get_dispatch_key(instance), instance_layer_data_map);
+    RecordVulkanSurface(instance_data, pSurface);
+}
+
 VKAPI_ATTR VkResult VKAPI_CALL CreateAndroidSurfaceKHR(VkInstance instance, const VkAndroidSurfaceCreateInfoKHR *pCreateInfo,
                                                        const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface) {
-    return CreateSurface(instance, pCreateInfo, pAllocator, pSurface, &VkLayerInstanceDispatchTable::CreateAndroidSurfaceKHR);
+    instance_layer_data* instance_data = GetLayerDataPtr(get_dispatch_key(instance), instance_layer_data_map);
+    VkResult result = (instance_data->dispatch_table.CreateAndroidSurfaceKHR)(instance, pCreateInfo, pAllocator, pSurface);
+    if (result == VK_SUCCESS) {
+        unique_lock_t lock(global_lock);
+        PostCallRecordCreateAndroidSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface);
+    }
+    return result;
 }
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
 
 #ifdef VK_USE_PLATFORM_IOS_MVK
+void PostCallRecordCreateIOSSurfaceMVK(VkInstance instance, const VkIOSSurfaceCreateInfoMVK *pCreateInfo,
+    const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface) {
+    instance_layer_data* instance_data = GetLayerDataPtr(get_dispatch_key(instance), instance_layer_data_map);
+    RecordVulkanSurface(instance_data, pSurface);
+}
+
 VKAPI_ATTR VkResult VKAPI_CALL CreateIOSSurfaceMVK(VkInstance instance, const VkIOSSurfaceCreateInfoMVK *pCreateInfo,
                                                    const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface) {
-    return CreateSurface(instance, pCreateInfo, pAllocator, pSurface, &VkLayerInstanceDispatchTable::CreateIOSSurfaceMVK);
+    instance_layer_data* instance_data = GetLayerDataPtr(get_dispatch_key(instance), instance_layer_data_map);
+    VkResult result = (instance_data->dispatch_table.CreateIOSSurfaceMVK)(instance, pCreateInfo, pAllocator, pSurface);
+    if (result == VK_SUCCESS) {
+        unique_lock_t lock(global_lock);
+        PostCallRecordCreateIOSSurfaceMVK(instance, pCreateInfo, pAllocator, pSurface);
+    }
+    return result;
 }
 #endif  // VK_USE_PLATFORM_IOS_MVK
 
 #ifdef VK_USE_PLATFORM_MACOS_MVK
+void PostCallRecordCreateMacOSSurfaceMVK(VkInstance instance, const VkMacOSSurfaceCreateInfoMVK *pCreateInfo,
+    const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface) {
+    instance_layer_data* instance_data = GetLayerDataPtr(get_dispatch_key(instance), instance_layer_data_map);
+    RecordVulkanSurface(instance_data, pSurface);
+}
+
 VKAPI_ATTR VkResult VKAPI_CALL CreateMacOSSurfaceMVK(VkInstance instance, const VkMacOSSurfaceCreateInfoMVK *pCreateInfo,
                                                      const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface) {
-    return CreateSurface(instance, pCreateInfo, pAllocator, pSurface, &VkLayerInstanceDispatchTable::CreateMacOSSurfaceMVK);
+    instance_layer_data* instance_data = GetLayerDataPtr(get_dispatch_key(instance), instance_layer_data_map);
+    VkResult result = (instance_data->dispatch_table.CreateMacOSSurfaceMVK)(instance, pCreateInfo, pAllocator, pSurface);
+    if (result == VK_SUCCESS) {
+        unique_lock_t lock(global_lock);
+        PostCallRecordCreateMacOSSurfaceMVK(instance, pCreateInfo, pAllocator, pSurface);
+    }
+    return result;
 }
 #endif  // VK_USE_PLATFORM_MACOS_MVK
 
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
+void PostCallRecordCreateWaylandSurfaceKHR(VkInstance instance, const VkWaylandSurfaceCreateInfoKHR *pCreateInfo,
+    const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface) {
+    instance_layer_data* instance_data = GetLayerDataPtr(get_dispatch_key(instance), instance_layer_data_map);
+    RecordVulkanSurface(instance_data, pSurface);
+}
+
 VKAPI_ATTR VkResult VKAPI_CALL CreateWaylandSurfaceKHR(VkInstance instance, const VkWaylandSurfaceCreateInfoKHR *pCreateInfo,
                                                        const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface) {
-    return CreateSurface(instance, pCreateInfo, pAllocator, pSurface, &VkLayerInstanceDispatchTable::CreateWaylandSurfaceKHR);
+    instance_layer_data* instance_data = GetLayerDataPtr(get_dispatch_key(instance), instance_layer_data_map);
+    VkResult result = (instance_data->dispatch_table.CreateWaylandSurfaceKHR)(instance, pCreateInfo, pAllocator, pSurface);
+    if (result == VK_SUCCESS) {
+        unique_lock_t lock(global_lock);
+        PostCallRecordCreateWaylandSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface);
+    }
+    return result;
 }
 
 static bool PreCallValidateGetPhysicalDeviceWaylandPresentationSupportKHR(instance_layer_data *instance_data,
@@ -12885,9 +12932,21 @@ VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceWaylandPresentationSupportKHR(Vk
 #endif  // VK_USE_PLATFORM_WAYLAND_KHR
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
+void PostCallRecordCreateWin32SurfaceKHR(VkInstance instance, const VkWin32SurfaceCreateInfoKHR *pCreateInfo,
+    const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface) {
+    instance_layer_data* instance_data = GetLayerDataPtr(get_dispatch_key(instance), instance_layer_data_map);
+    RecordVulkanSurface(instance_data, pSurface);
+}
+
 VKAPI_ATTR VkResult VKAPI_CALL CreateWin32SurfaceKHR(VkInstance instance, const VkWin32SurfaceCreateInfoKHR *pCreateInfo,
                                                      const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface) {
-    return CreateSurface(instance, pCreateInfo, pAllocator, pSurface, &VkLayerInstanceDispatchTable::CreateWin32SurfaceKHR);
+    instance_layer_data* instance_data = GetLayerDataPtr(get_dispatch_key(instance), instance_layer_data_map);
+    VkResult result = (instance_data->dispatch_table.CreateWin32SurfaceKHR)(instance, pCreateInfo, pAllocator, pSurface);
+    if (result == VK_SUCCESS) {
+        unique_lock_t lock(global_lock);
+        PostCallRecordCreateWin32SurfaceKHR(instance, pCreateInfo, pAllocator, pSurface);
+    }
+    return result;
 }
 
 static bool PreCallValidateGetPhysicalDeviceWin32PresentationSupportKHR(instance_layer_data *instance_data,
@@ -12917,9 +12976,21 @@ VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceWin32PresentationSupportKHR(VkPh
 #endif  // VK_USE_PLATFORM_WIN32_KHR
 
 #ifdef VK_USE_PLATFORM_XCB_KHR
+void PostCallRecordCreateXcbSurfaceKHR(VkInstance instance, const VkXcbSurfaceCreateInfoKHR *pCreateInfo,
+    const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface) {
+    instance_layer_data* instance_data = GetLayerDataPtr(get_dispatch_key(instance), instance_layer_data_map);
+    RecordVulkanSurface(instance_data, pSurface);
+}
+
 VKAPI_ATTR VkResult VKAPI_CALL CreateXcbSurfaceKHR(VkInstance instance, const VkXcbSurfaceCreateInfoKHR *pCreateInfo,
                                                    const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface) {
-    return CreateSurface(instance, pCreateInfo, pAllocator, pSurface, &VkLayerInstanceDispatchTable::CreateXcbSurfaceKHR);
+    instance_layer_data* instance_data = GetLayerDataPtr(get_dispatch_key(instance), instance_layer_data_map);
+    VkResult result = (instance_data->dispatch_table.CreateXcbSurfaceKHR)(instance, pCreateInfo, pAllocator, pSurface);
+    if (result == VK_SUCCESS) {
+        unique_lock_t lock(global_lock);
+        PostCallRecordCreateXcbSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface);
+    }
+    return result;
 }
 
 static bool PreCallValidateGetPhysicalDeviceXcbPresentationSupportKHR(instance_layer_data *instance_data,
@@ -12950,9 +13021,21 @@ VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceXcbPresentationSupportKHR(VkPhys
 #endif  // VK_USE_PLATFORM_XCB_KHR
 
 #ifdef VK_USE_PLATFORM_XLIB_KHR
+void PostCallRecordCreateXlibSurfaceKHR(VkInstance instance, const VkXlibSurfaceCreateInfoKHR *pCreateInfo,
+    const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface) {
+    instance_layer_data* instance_data = GetLayerDataPtr(get_dispatch_key(instance), instance_layer_data_map);
+    RecordVulkanSurface(instance_data, pSurface);
+}
+
 VKAPI_ATTR VkResult VKAPI_CALL CreateXlibSurfaceKHR(VkInstance instance, const VkXlibSurfaceCreateInfoKHR *pCreateInfo,
                                                     const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface) {
-    return CreateSurface(instance, pCreateInfo, pAllocator, pSurface, &VkLayerInstanceDispatchTable::CreateXlibSurfaceKHR);
+    instance_layer_data* instance_data = GetLayerDataPtr(get_dispatch_key(instance), instance_layer_data_map);
+    VkResult result = (instance_data->dispatch_table.CreateXlibSurfaceKHR)(instance, pCreateInfo, pAllocator, pSurface);
+    if (result == VK_SUCCESS) {
+        unique_lock_t lock(global_lock);
+        PostCallRecordCreateXlibSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface);
+    }
+    return result;
 }
 
 static bool PreCallValidateGetPhysicalDeviceXlibPresentationSupportKHR(instance_layer_data *instance_data,
