@@ -1355,6 +1355,8 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateImagePipeSurfaceFUCHSIA(VkInstance instance
 #endif  // VK_USE_PLATFORM_FUCHSIA
 
 using std::vector;
+SURFACE_STATE* GetSurfaceState(instance_layer_data* instance_data, VkSurfaceKHR surface);
+PHYSICAL_DEVICE_STATE* GetPhysicalDeviceState(instance_layer_data* instance_data, VkPhysicalDevice phys);
 
 void PreCallRecordCreateInstance(VkLayerInstanceCreateInfo* chain_info);
 void PostCallRecordCreateInstance(instance_layer_data* instance_data, const VkInstanceCreateInfo* pCreateInfo);
@@ -1467,7 +1469,7 @@ void PostCallRecordGetAndroidHardwareBufferProperties(layer_data* dev_data,
 bool PreCallValidateGetMemoryAndroidHardwareBuffer(const layer_data* dev_data,
                                                    const VkMemoryGetAndroidHardwareBufferInfoANDROID* pInfo);
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
-bool PreCallValidateCreateComputePipelines(layer_data* dev_data, vector<std::unique_ptr<PIPELINE_STATE>>* pipe_state,
+bool PreCallValidateCreateComputePipelines(layer_data* dev_data, std::vector<std::unique_ptr<PIPELINE_STATE>>* pipe_state,
                                            const uint32_t count, const VkComputePipelineCreateInfo* pCreateInfos);
 void PostCallRecordCreateComputePipelines(layer_data* dev_data, vector<std::unique_ptr<PIPELINE_STATE>>* pipe_state,
                                           const uint32_t count, VkPipeline* pPipelines);
@@ -1572,5 +1574,234 @@ void PreCallRecordCmdBindVertexBuffers(GLOBAL_CB_NODE* pCB, uint32_t firstBindin
 bool PreCallValidateCmdDraw(layer_data* dev_data, VkCommandBuffer cmd_buffer, bool indexed, VkPipelineBindPoint bind_point,
                             GLOBAL_CB_NODE** cb_state, const char* caller);
 void PostCallRecordCmdDraw(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, VkPipelineBindPoint bind_point);
+bool PreCallValidateCmdDrawIndexed(layer_data* dev_data, VkCommandBuffer cmd_buffer, bool indexed, VkPipelineBindPoint bind_point,
+                                   GLOBAL_CB_NODE** cb_state, const char* caller, uint32_t indexCount, uint32_t firstIndex);
+void PostCallRecordCmdDrawIndexed(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, VkPipelineBindPoint bind_point);
+bool PreCallValidateCmdDrawIndexedIndirect(layer_data* dev_data, VkCommandBuffer cmd_buffer, VkBuffer buffer, bool indexed,
+                                           VkPipelineBindPoint bind_point, GLOBAL_CB_NODE** cb_state, BUFFER_STATE** buffer_state,
+                                           const char* caller);
+void PostCallRecordCmdDrawIndexedIndirect(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, VkPipelineBindPoint bind_point,
+                                          BUFFER_STATE* buffer_state);
+bool PreCallValidateCmdDrawIndexedIndirectCountKHR(layer_data* dev_data, VkCommandBuffer commandBuffer, VkBuffer buffer,
+                                                   VkDeviceSize offset, VkBuffer countBuffer, VkDeviceSize countBufferOffset,
+                                                   uint32_t stride, GLOBAL_CB_NODE** cb_state, BUFFER_STATE** buffer_state,
+                                                   BUFFER_STATE** count_buffer_state, bool indexed, VkPipelineBindPoint bind_point,
+                                                   const char* caller);
+void PostCallRecordCmdDrawIndexedIndirect(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, VkPipelineBindPoint bind_point,
+                                          BUFFER_STATE* buffer_state);
+bool PreCallValidateCmdDispatch(layer_data* dev_data, VkCommandBuffer cmd_buffer, bool indexed, VkPipelineBindPoint bind_point,
+                                GLOBAL_CB_NODE** cb_state, const char* caller);
+void PostCallRecordCmdDispatch(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, VkPipelineBindPoint bind_point);
+bool PreCallValidateCmdDispatchIndirect(layer_data* dev_data, VkCommandBuffer cmd_buffer, VkBuffer buffer, bool indexed,
+                                        VkPipelineBindPoint bind_point, GLOBAL_CB_NODE** cb_state, BUFFER_STATE** buffer_state,
+                                        const char* caller);
+void PostCallRecordCmdDispatchIndirect(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, VkPipelineBindPoint bind_point,
+                                       BUFFER_STATE* buffer_state);
+bool PreCallValidateCmdDrawIndirect(layer_data* dev_data, VkCommandBuffer cmd_buffer, VkBuffer buffer, bool indexed,
+                                    VkPipelineBindPoint bind_point, GLOBAL_CB_NODE** cb_state, BUFFER_STATE** buffer_state,
+                                    const char* caller);
+void PostCallRecordCmdDrawIndirect(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, VkPipelineBindPoint bind_point,
+                                   BUFFER_STATE* buffer_state);
+bool PreCallValidateCmdSetEvent(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, VkPipelineStageFlags stageMask);
+void PreCallRecordCmdSetEvent(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, VkCommandBuffer commandBuffer, VkEvent event,
+                              VkPipelineStageFlags stageMask);
+bool PreCallValidateCmdResetEvent(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, VkPipelineStageFlags stageMask);
+void PreCallRecordCmdResetEvent(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, VkCommandBuffer commandBuffer, VkEvent event);
+bool PreCallValidateCmdEventCount(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, VkPipelineStageFlags sourceStageMask,
+                                  VkPipelineStageFlags dstStageMask, uint32_t memoryBarrierCount,
+                                  const VkMemoryBarrier* pMemoryBarriers, uint32_t bufferMemoryBarrierCount,
+                                  const VkBufferMemoryBarrier* pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount,
+                                  const VkImageMemoryBarrier* pImageMemoryBarriers);
+void PreCallRecordCmdWaitEvents(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, uint32_t eventCount, const VkEvent* pEvents,
+                                VkPipelineStageFlags sourceStageMask, uint32_t imageMemoryBarrierCount,
+                                const VkImageMemoryBarrier* pImageMemoryBarriers);
+void PostCallRecordCmdWaitEvents(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, uint32_t bufferMemoryBarrierCount,
+                                 const VkBufferMemoryBarrier* pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount,
+                                 const VkImageMemoryBarrier* pImageMemoryBarriers);
+bool PreCallValidateCmdPipelineBarrier(layer_data* device_data, GLOBAL_CB_NODE* cb_state, VkPipelineStageFlags srcStageMask,
+                                       VkPipelineStageFlags dstStageMask, VkDependencyFlags dependencyFlags,
+                                       uint32_t memoryBarrierCount, const VkMemoryBarrier* pMemoryBarriers,
+                                       uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier* pBufferMemoryBarriers,
+                                       uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier* pImageMemoryBarriers);
+void PreCallRecordCmdPipelineBarrier(layer_data* device_data, GLOBAL_CB_NODE* cb_state, VkCommandBuffer commandBuffer,
+                                     uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier* pBufferMemoryBarriers,
+                                     uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier* pImageMemoryBarriers);
+bool PreCallValidateCmdBeginQuery(layer_data* dev_data, GLOBAL_CB_NODE* pCB, VkQueryPool queryPool, VkFlags flags);
+void PostCallRecordCmdBeginQuery(layer_data* dev_data, VkQueryPool queryPool, uint32_t slot, GLOBAL_CB_NODE* pCB);
+bool PreCallValidateCmdEndQuery(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, const QueryObject& query,
+                                VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot);
+void PostCallRecordCmdEndQuery(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, const QueryObject& query,
+                               VkCommandBuffer commandBuffer, VkQueryPool queryPool);
+bool PreCallValidateCmdResetQueryPool(layer_data* dev_data, GLOBAL_CB_NODE* cb_state);
+void PostCallRecordCmdResetQueryPool(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, VkCommandBuffer commandBuffer,
+                                     VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount);
+bool PreCallValidateCmdCopyQueryPoolResults(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, BUFFER_STATE* dst_buff_state);
+void PostCallRecordCmdCopyQueryPoolResults(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, BUFFER_STATE* dst_buff_state,
+                                           VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount);
+bool PreCallValidateCmdPushConstants(layer_data* dev_data, VkCommandBuffer commandBuffer, VkPipelineLayout layout,
+                                     VkShaderStageFlags stageFlags, uint32_t offset, uint32_t size);
+bool PreCallValidateCmdWriteTimestamp(layer_data* dev_data, GLOBAL_CB_NODE* cb_state);
+void PostCallRecordCmdWriteTimestamp(GLOBAL_CB_NODE* cb_state, VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot);
+bool PreCallValidateCreateFramebuffer(layer_data* dev_data, const VkFramebufferCreateInfo* pCreateInfo);
+// CreateFramebuffer state has been validated and call down chain completed so record new framebuffer object
+void PostCallRecordCreateFramebuffer(layer_data* dev_data, const VkFramebufferCreateInfo* pCreateInfo, VkFramebuffer fb);
+bool PreCallValidateCreateRenderPass(const layer_data* dev_data, VkDevice device, const VkRenderPassCreateInfo* pCreateInfo,
+                                     RENDER_PASS_STATE* render_pass);
+void PostCallRecordCreateRenderPass(layer_data* dev_data, const VkRenderPass render_pass_handle,
+                                    std::shared_ptr<RENDER_PASS_STATE>&& render_pass);
+bool PreCallValidateCreateRenderPass2KHR(const layer_data* dev_data, VkDevice device, const VkRenderPassCreateInfo2KHR* pCreateInfo,
+                                         RENDER_PASS_STATE* render_pass);
+bool PreCallValidateCmdBeginRenderPass(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, RenderPassCreateVersion rp_version,
+                                       const VkRenderPassBeginInfo* pRenderPassBegin);
+void PreCallRecordCmdBeginRenderPass(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, const VkRenderPassBeginInfo* pRenderPassBegin,
+                                     const VkSubpassContents contents);
+bool PreCallValidateCmdNextSubpass(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, RenderPassCreateVersion rp_version,
+                                   VkCommandBuffer commandBuffer);
+void PostCallRecordCmdNextSubpass(layer_data* dev_data, GLOBAL_CB_NODE* cb_node, VkSubpassContents contents);
+bool PreCallValidateCmdEndRenderPass(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, RenderPassCreateVersion rp_version,
+                                     VkCommandBuffer commandBuffer);
+void PostCallRecordCmdEndRenderPass(layer_data* dev_data, GLOBAL_CB_NODE* cb_state);
+bool PreCallValidateCmdExecuteCommands(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, VkCommandBuffer commandBuffer,
+                                       uint32_t commandBuffersCount, const VkCommandBuffer* pCommandBuffers);
+void PreCallRecordCmdExecuteCommands(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, uint32_t commandBuffersCount,
+                                     const VkCommandBuffer* pCommandBuffers);
+bool PreCallValidateMapMemory(layer_data* dev_data, VkDevice device, VkDeviceMemory mem, VkDeviceSize offset, VkDeviceSize size);
+void PostCallRecordMapMemory(layer_data* dev_data, VkDeviceMemory mem, VkDeviceSize offset, VkDeviceSize size, void** ppData);
+bool PreCallValidateUnmapMemory(const layer_data* dev_data, DEVICE_MEM_INFO* mem_info, const VkDeviceMemory mem);
+void PreCallRecordUnmapMemory(DEVICE_MEM_INFO* mem_info);
+bool PreCallValidateFlushMappedMemoryRanges(layer_data* dev_data, uint32_t mem_range_count, const VkMappedMemoryRange* mem_ranges);
+bool PreCallValidateInvalidateMappedMemoryRanges(layer_data* dev_data, uint32_t mem_range_count,
+                                                 const VkMappedMemoryRange* mem_ranges);
+void PostCallRecordInvalidateMappedMemoryRanges(layer_data* dev_data, uint32_t mem_range_count,
+                                                const VkMappedMemoryRange* mem_ranges);
+bool PreCallValidateBindImageMemory(layer_data* dev_data, VkImage image, IMAGE_STATE* image_state, VkDeviceMemory mem,
+                                    VkDeviceSize memoryOffset, const char* api_name);
+void PostCallRecordBindImageMemory(layer_data* dev_data, VkImage image, IMAGE_STATE* image_state, VkDeviceMemory mem,
+                                   VkDeviceSize memoryOffset, const char* api_name);
+bool PreCallValidateBindImageMemory2(layer_data* dev_data, std::vector<IMAGE_STATE*>* image_state, uint32_t bindInfoCount,
+                                     const VkBindImageMemoryInfoKHR* pBindInfos);
+void PostCallRecordBindImageMemory2(layer_data* dev_data, const std::vector<IMAGE_STATE*>& image_state, uint32_t bindInfoCount,
+                                    const VkBindImageMemoryInfoKHR* pBindInfos);
+bool PreCallValidateSetEvent(layer_data* dev_data, VkEvent event);
+void PreCallRecordSetEvent(layer_data* dev_data, VkEvent event);
+bool PreCallValidateQueueBindSparse(layer_data* dev_data, VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo* pBindInfo,
+                                    VkFence fence);
+void PostCallRecordQueueBindSparse(layer_data* dev_data, VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo* pBindInfo,
+                                   VkFence fence);
+void PostCallRecordCreateSemaphore(layer_data* dev_data, VkSemaphore* pSemaphore);
+bool PreCallValidateImportSemaphore(layer_data* dev_data, VkSemaphore semaphore, const char* caller_name);
+void PostCallRecordImportSemaphore(layer_data* dev_data, VkSemaphore semaphore,
+                                   VkExternalSemaphoreHandleTypeFlagBitsKHR handle_type, VkSemaphoreImportFlagsKHR flags);
+void PostCallRecordGetSemaphore(layer_data* dev_data, VkSemaphore semaphore, VkExternalSemaphoreHandleTypeFlagBitsKHR handle_type);
+bool PreCallValidateImportFence(layer_data* dev_data, VkFence fence, const char* caller_name);
+void PostCallRecordImportFence(layer_data* dev_data, VkFence fence, VkExternalFenceHandleTypeFlagBitsKHR handle_type,
+                               VkFenceImportFlagsKHR flags);
+void PostCallRecordGetFence(layer_data* dev_data, VkFence fence, VkExternalFenceHandleTypeFlagBitsKHR handle_type);
+void PostCallRecordCreateEvent(layer_data* dev_data, VkEvent* pEvent);
+bool PreCallValidateCreateSwapchainKHR(layer_data* dev_data, const char* func_name, VkSwapchainCreateInfoKHR const* pCreateInfo,
+                                       SURFACE_STATE* surface_state, SWAPCHAIN_NODE* old_swapchain_state);
+void PostCallRecordCreateSwapchainKHR(layer_data* dev_data, VkResult result, const VkSwapchainCreateInfoKHR* pCreateInfo,
+                                      VkSwapchainKHR* pSwapchain, SURFACE_STATE* surface_state,
+                                      SWAPCHAIN_NODE* old_swapchain_state);
+void PreCallRecordDestroySwapchainKHR(layer_data* dev_data, const VkSwapchainKHR swapchain);
+bool PreCallValidateGetSwapchainImagesKHR(layer_data* device_data, SWAPCHAIN_NODE* swapchain_state, VkDevice device,
+                                          uint32_t* pSwapchainImageCount, VkImage* pSwapchainImages);
+void PostCallRecordGetSwapchainImagesKHR(layer_data* device_data, SWAPCHAIN_NODE* swapchain_state, VkDevice device,
+                                         uint32_t* pSwapchainImageCount, VkImage* pSwapchainImages);
+bool PreCallValidateQueuePresentKHR(layer_data* dev_data, VkQueue queue, const VkPresentInfoKHR* pPresentInfo);
+void PostCallRecordQueuePresentKHR(layer_data* dev_data, const VkPresentInfoKHR* pPresentInfo, const VkResult& result);
+bool PreCallValidateCreateSharedSwapchainsKHR(layer_data* dev_data, uint32_t swapchainCount,
+                                              const VkSwapchainCreateInfoKHR* pCreateInfos, VkSwapchainKHR* pSwapchains,
+                                              std::vector<SURFACE_STATE*>& surface_state,
+                                              std::vector<SWAPCHAIN_NODE*>& old_swapchain_state);
+void PostCallRecordCreateSharedSwapchainsKHR(layer_data* dev_data, VkResult result, uint32_t swapchainCount,
+                                             const VkSwapchainCreateInfoKHR* pCreateInfos, VkSwapchainKHR* pSwapchains,
+                                             std::vector<SURFACE_STATE*>& surface_state,
+                                             std::vector<SWAPCHAIN_NODE*>& old_swapchain_state);
+bool PreCallValidateCommonAcquireNextImage(layer_data* dev_data, VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout,
+                                           VkSemaphore semaphore, VkFence fence, uint32_t* pImageIndex, const char* func_name);
+void PostCallRecordCommonAcquireNextImage(layer_data* dev_data, VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout,
+                                          VkSemaphore semaphore, VkFence fence, uint32_t* pImageIndex);
+bool PreCallValidateEnumeratePhysicalDevices(instance_layer_data* instance_data, uint32_t* pPhysicalDeviceCount);
+void PreCallRecordEnumeratePhysicalDevices(instance_layer_data* instance_data);
+void PostCallRecordEnumeratePhysicalDevices(instance_layer_data* instance_data, const VkResult& result,
+                                            uint32_t* pPhysicalDeviceCount, VkPhysicalDevice* pPhysicalDevices);
+bool PreCallValidateGetPhysicalDeviceQueueFamilyProperties(instance_layer_data* instance_data, PHYSICAL_DEVICE_STATE* pd_state,
+                                                           uint32_t* pQueueFamilyPropertyCount,
+                                                           VkQueueFamilyProperties* pQueueFamilyProperties);
+void PostCallRecordGetPhysicalDeviceQueueFamilyProperties(PHYSICAL_DEVICE_STATE* pd_state, uint32_t count,
+                                                          VkQueueFamilyProperties* pQueueFamilyProperties);
+bool PreCallValidateGetPhysicalDeviceQueueFamilyProperties2(instance_layer_data* instance_data, PHYSICAL_DEVICE_STATE* pd_state,
+                                                            uint32_t* pQueueFamilyPropertyCount,
+                                                            VkQueueFamilyProperties2KHR* pQueueFamilyProperties);
+void PostCallRecordGetPhysicalDeviceQueueFamilyProperties2(PHYSICAL_DEVICE_STATE* pd_state, uint32_t count,
+                                                           VkQueueFamilyProperties2KHR* pQueueFamilyProperties);
+bool PreCallValidateDestroySurfaceKHR(instance_layer_data* instance_data, VkInstance instance, VkSurfaceKHR surface);
+void PreCallRecordValidateDestroySurfaceKHR(instance_layer_data* instance_data, VkSurfaceKHR surface);
+#ifdef VK_USE_PLATFORM_WAYLAND_KHR
+bool PreCallValidateGetPhysicalDeviceWaylandPresentationSupportKHR(instance_layer_data* instance_data,
+                                                                   VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex);
+#endif  // VK_USE_PLATFORM_WAYLAND_KHR
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+bool PreCallValidateGetPhysicalDeviceWin32PresentationSupportKHR(instance_layer_data* instance_data,
+                                                                 VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex);
+#endif  // VK_USE_PLATFORM_WIN32_KHR
+#ifdef VK_USE_PLATFORM_XCB_KHR
+bool PreCallValidateGetPhysicalDeviceXcbPresentationSupportKHR(instance_layer_data* instance_data, VkPhysicalDevice physicalDevice,
+                                                               uint32_t queueFamilyIndex);
+#endif  // VK_USE_PLATFORM_XCB_KHR
+#ifdef VK_USE_PLATFORM_XLIB_KHR
+bool PreCallValidateGetPhysicalDeviceXlibPresentationSupportKHR(instance_layer_data* instance_data, VkPhysicalDevice physicalDevice,
+                                                                uint32_t queueFamilyIndex);
+#endif  // VK_USE_PLATFORM_XLIB_KHR
+void PostCallRecordGetPhysicalDeviceSurfaceCapabilitiesKHR(instance_layer_data* instance_data, VkPhysicalDevice physicalDevice,
+                                                           VkSurfaceCapabilitiesKHR* pSurfaceCapabilities);
+void PostCallRecordGetPhysicalDeviceSurfaceCapabilities2KHR(instance_layer_data* instanceData, VkPhysicalDevice physicalDevice,
+                                                            VkSurfaceCapabilities2KHR* pSurfaceCapabilities);
+void PostCallRecordGetPhysicalDeviceSurfaceCapabilities2EXT(instance_layer_data* instanceData, VkPhysicalDevice physicalDevice,
+                                                            VkSurfaceCapabilities2EXT* pSurfaceCapabilities);
+bool PreCallValidateGetPhysicalDeviceSurfaceSupportKHR(instance_layer_data* instance_data,
+                                                       PHYSICAL_DEVICE_STATE* physical_device_state, uint32_t queueFamilyIndex);
+void PostCallRecordGetPhysicalDeviceSurfaceSupportKHR(instance_layer_data* instance_data, VkPhysicalDevice physicalDevice,
+                                                      uint32_t queueFamilyIndex, VkSurfaceKHR surface, VkBool32* pSupported);
+void PostCallRecordGetPhysicalDeviceSurfacePresentModesKHR(instance_layer_data* instance_data, VkPhysicalDevice physical_device,
+                                                           uint32_t* pPresentModeCount, VkPresentModeKHR* pPresentModes);
+bool PreCallValidateGetPhysicalDeviceSurfaceFormatsKHR(instance_layer_data* instance_data,
+                                                       PHYSICAL_DEVICE_STATE* physical_device_state, CALL_STATE& call_state,
+                                                       VkPhysicalDevice physicalDevice, uint32_t* pSurfaceFormatCount);
+void PostCallRecordGetPhysicalDeviceSurfaceFormatsKHR(PHYSICAL_DEVICE_STATE* physical_device_state, CALL_STATE& call_state,
+                                                      uint32_t* pSurfaceFormatCount, VkSurfaceFormatKHR* pSurfaceFormats);
+void PostCallRecordGetPhysicalDeviceSurfaceFormats2KHR(instance_layer_data* instanceData, VkPhysicalDevice physicalDevice,
+                                                       uint32_t* pSurfaceFormatCount, VkSurfaceFormat2KHR* pSurfaceFormats);
+void PostCallRecordCreateDisplayPlaneSurfaceKHR(VkInstance instance, const VkDisplaySurfaceCreateInfoKHR* pCreateInfo,
+                                                const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface);
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
+void PostCallRecordCreateAndroidSurfaceKHR(VkInstance instance, const VkAndroidSurfaceCreateInfoKHR* pCreateInfo,
+                                           const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface);
+#endif  // VK_USE_PLATFORM_ANDROID_KHR
+#ifdef VK_USE_PLATFORM_IOS_MVK
+void PostCallRecordCreateIOSSurfaceMVK(VkInstance instance, const VkIOSSurfaceCreateInfoMVK* pCreateInfo,
+                                       const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface);
+#endif  // VK_USE_PLATFORM_IOS_MVK
+#ifdef VK_USE_PLATFORM_MACOS_MVK
+void PostCallRecordCreateMacOSSurfaceMVK(VkInstance instance, const VkMacOSSurfaceCreateInfoMVK* pCreateInfo,
+                                         const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface);
+#endif  // VK_USE_PLATFORM_MACOS_MVK
+#ifdef VK_USE_PLATFORM_WAYLAND_KHR
+void PostCallRecordCreateWaylandSurfaceKHR(VkInstance instance, const VkWaylandSurfaceCreateInfoKHR* pCreateInfo,
+                                           const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface);
+#endif  // VK_USE_PLATFORM_WAYLAND_KHR
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+void PostCallRecordCreateWin32SurfaceKHR(VkInstance instance, const VkWin32SurfaceCreateInfoKHR* pCreateInfo,
+                                         const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface);
+#endif  // VK_USE_PLATFORM_WIN32_KHR
+#ifdef VK_USE_PLATFORM_XCB_KHR
+void PostCallRecordCreateXcbSurfaceKHR(VkInstance instance, const VkXcbSurfaceCreateInfoKHR* pCreateInfo,
+                                       const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface);
+#endif  // VK_USE_PLATFORM_XCB_KHR
+#ifdef VK_USE_PLATFORM_XLIB_KHR
+void PostCallRecordCreateXlibSurfaceKHR(VkInstance instance, const VkXlibSurfaceCreateInfoKHR* pCreateInfo,
+                                        const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface);
+#endif  // VK_USE_PLATFORM_XLIB_KHR
 
 };  // namespace core_validation
