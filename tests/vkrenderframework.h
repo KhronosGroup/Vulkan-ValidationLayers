@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2015-2017 The Khronos Group Inc.
- * Copyright (c) 2015-2017 Valve Corporation
- * Copyright (c) 2015-2017 LunarG, Inc.
+ * Copyright (c) 2015-2019 The Khronos Group Inc.
+ * Copyright (c) 2015-2019 Valve Corporation
+ * Copyright (c) 2015-2019 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -110,6 +110,8 @@ class VkRenderFramework : public VkTestFramework {
     bool InstanceExtensionEnabled(const char *name);
     bool DeviceExtensionSupported(VkPhysicalDevice dev, const char *layer, const char *name, uint32_t specVersion = 0);
     bool DeviceExtensionEnabled(const char *name);
+    bool DeviceIsMockICD();
+    bool DeviceCanDraw();
 
    protected:
     VkApplicationInfo app_info;
@@ -280,6 +282,10 @@ class VkImageObj : public vk_testing::Image {
                             VkImageLayout image_layout);
 
     VkResult CopyImage(VkImageObj &src_image);
+
+    VkResult CopyImageOut(VkImageObj &dst_image);
+
+    std::array<std::array<uint32_t, 16>, 16> Read();
 
     VkImage image() const { return handle(); }
 
