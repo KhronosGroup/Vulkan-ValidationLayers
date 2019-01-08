@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2017 The Khronos Group Inc.
- * Copyright (c) 2015-2017 Valve Corporation
- * Copyright (c) 2015-2017 LunarG, Inc.
- * Copyright (c) 2015-2017 Google, Inc.
+ * Copyright (c) 2015-2019 The Khronos Group Inc.
+ * Copyright (c) 2015-2019 Valve Corporation
+ * Copyright (c) 2015-2019 LunarG, Inc.
+ * Copyright (c) 2015-2019 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -178,6 +178,92 @@ bool VkRenderFramework::DeviceExtensionEnabled(const char *ext_name) {
     return ext_found;
 }
 
+// WARNING:  The DevSim layer can override the properties that are tested here, making the result of
+// this function dubious when DevSim is active.
+bool VkRenderFramework::DeviceIsMockICD() {
+    VkPhysicalDeviceProperties props = vk_testing::PhysicalDevice(gpu()).properties();
+    if ((props.vendorID == 0xba5eba11) && (props.deviceID == 0xf005ba11) && (0 == strcmp("Vulkan Mock Device", props.deviceName))) {
+        return true;
+    }
+    return false;
+}
+
+// Render into a RenderTarget and read the pixels back to see if the device can really draw.
+// Note: This cannot be called from inside an initialized VkRenderFramework because frameworks cannot be "nested".
+// It is best to call it before "Init()".
+bool VkRenderFramework::DeviceCanDraw() {
+    InitFramework(NULL, NULL);
+    InitState(NULL, NULL, 0);
+    InitViewport();
+    InitRenderTarget();
+
+    // Draw a triangle that covers the entire viewport.
+    char const *vsSource =
+        "#version 450\n"
+        "\n"
+        "vec2 vertices[3];\n"
+        "void main() { \n"
+        "  vertices[0] = vec2(-10.0, -10.0);\n"
+        "  vertices[1] = vec2( 10.0, -10.0);\n"
+        "  vertices[2] = vec2( 0.0,   10.0);\n"
+        "  gl_Position = vec4(vertices[gl_VertexIndex % 3], 0.0, 1.0);\n"
+        "}\n";
+    // Draw with a solid color.
+    char const *fsSource =
+        "#version 450\n"
+        "\n"
+        "layout(location=0) out vec4 color;\n"
+        "void main() {\n"
+        "   color = vec4(32.0/255.0);\n"
+        "}\n";
+    VkShaderObj *vs = new VkShaderObj(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
+    VkShaderObj *fs = new VkShaderObj(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+
+    VkPipelineObj *pipe = new VkPipelineObj(m_device);
+    pipe->AddShader(vs);
+    pipe->AddShader(fs);
+    pipe->AddDefaultColorAttachment();
+
+    VkDescriptorSetObj *descriptorSet = new VkDescriptorSetObj(m_device);
+    descriptorSet->CreateVKDescriptorSet(m_commandBuffer);
+
+    pipe->CreateVKPipeline(descriptorSet->GetPipelineLayout(), renderPass());
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+
+    vkCmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe->handle());
+    m_commandBuffer->BindDescriptorSet(*descriptorSet);
+
+    VkViewport viewport = m_viewports[0];
+    VkRect2D scissors = m_scissors[0];
+
+    vkCmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
+    vkCmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissors);
+
+    vkCmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+
+    VkSubmitInfo submit_info = {};
+    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers = &m_commandBuffer->handle();
+
+    vkQueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vkQueueWaitIdle(m_device->m_queue);
+
+    auto pixels = m_renderTargets[0]->Read();
+
+    delete descriptorSet;
+    delete pipe;
+    delete fs;
+    delete vs;
+    ShutdownFramework();
+    return pixels[0][0] == 0x20202020;
+}
+
 void VkRenderFramework::InitFramework(PFN_vkDebugReportCallbackEXT dbgFunction, void *userData) {
     // Only enable device profile layer by default if devsim is not enabled
     if (!VkTestFramework::m_devsim_layer && InstanceLayerSupported("VK_LAYER_LUNARG_device_profile_api")) {
@@ -267,19 +353,28 @@ void VkRenderFramework::ShutdownFramework() {
     if (!this->inst) return;
 
     delete m_commandBuffer;
+    m_commandBuffer = nullptr;
     delete m_commandPool;
+    m_commandPool = nullptr;
     if (m_framebuffer) vkDestroyFramebuffer(device(), m_framebuffer, NULL);
+    m_framebuffer = VK_NULL_HANDLE;
     if (m_renderPass) vkDestroyRenderPass(device(), m_renderPass, NULL);
+    m_renderPass = VK_NULL_HANDLE;
 
     if (m_globalMsgCallback) m_DestroyDebugReportCallback(this->inst, m_globalMsgCallback, NULL);
+    m_globalMsgCallback = VK_NULL_HANDLE;
     if (m_devMsgCallback) m_DestroyDebugReportCallback(this->inst, m_devMsgCallback, NULL);
+    m_devMsgCallback = VK_NULL_HANDLE;
 
     m_renderTargets.clear();
 
     delete m_depthStencil;
+    m_depthStencil = nullptr;
 
     // reset the driver
     delete m_device;
+    m_device = nullptr;
+
     if (this->inst) vkDestroyInstance(this->inst, NULL);
     this->inst = (VkInstance)0;  // In case we want to re-initialize
 }
@@ -1065,6 +1160,73 @@ VkResult VkImageObj::CopyImage(VkImageObj &src_image) {
     cmd_buf.QueueCommandBuffer();
 
     return VK_SUCCESS;
+}
+
+// Same as CopyImage, but in the opposite direction
+VkResult VkImageObj::CopyImageOut(VkImageObj &dst_image) {
+    VkImageLayout src_image_layout, dest_image_layout;
+
+    VkCommandPoolObj pool(m_device, m_device->graphics_queue_node_index_);
+    VkCommandBufferObj cmd_buf(m_device, &pool);
+
+    cmd_buf.begin();
+
+    src_image_layout = this->Layout();
+    this->SetLayout(&cmd_buf, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+
+    dest_image_layout = (dst_image.Layout() == VK_IMAGE_LAYOUT_UNDEFINED) ? VK_IMAGE_LAYOUT_GENERAL : this->Layout();
+    dst_image.SetLayout(&cmd_buf, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
+    VkImageCopy copy_region = {};
+    copy_region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    copy_region.srcSubresource.baseArrayLayer = 0;
+    copy_region.srcSubresource.mipLevel = 0;
+    copy_region.srcSubresource.layerCount = 1;
+    copy_region.srcOffset.x = 0;
+    copy_region.srcOffset.y = 0;
+    copy_region.srcOffset.z = 0;
+    copy_region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    copy_region.dstSubresource.baseArrayLayer = 0;
+    copy_region.dstSubresource.mipLevel = 0;
+    copy_region.dstSubresource.layerCount = 1;
+    copy_region.dstOffset.x = 0;
+    copy_region.dstOffset.y = 0;
+    copy_region.dstOffset.z = 0;
+    copy_region.extent = dst_image.extent();
+
+    vkCmdCopyImage(cmd_buf.handle(), handle(), Layout(), dst_image.handle(), dst_image.Layout(), 1, &copy_region);
+
+    this->SetLayout(&cmd_buf, VK_IMAGE_ASPECT_COLOR_BIT, src_image_layout);
+
+    dst_image.SetLayout(&cmd_buf, VK_IMAGE_ASPECT_COLOR_BIT, dest_image_layout);
+
+    cmd_buf.end();
+
+    cmd_buf.QueueCommandBuffer();
+
+    return VK_SUCCESS;
+}
+
+// Return 16x16 pixel block
+std::array<std::array<uint32_t, 16>, 16> VkImageObj::Read() {
+    VkImageObj stagingImage(m_device);
+    VkMemoryPropertyFlags reqs = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+
+    stagingImage.Init(16, 16, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
+                      VK_IMAGE_TILING_LINEAR, reqs);
+    stagingImage.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
+    VkSubresourceLayout layout = stagingImage.subresource_layout(subresource(VK_IMAGE_ASPECT_COLOR_BIT, 0, 0));
+    CopyImageOut(stagingImage);
+    void *data = stagingImage.MapMemory();
+    std::array<std::array<uint32_t, 16>, 16> m = {};
+    if (data) {
+        for (uint32_t y = 0; y < stagingImage.extent().height; y++) {
+            uint32_t *row = (uint32_t *)((char *)data + layout.rowPitch * y);
+            for (uint32_t x = 0; x < stagingImage.extent().width; x++) m[y][x] = row[x];
+        }
+    }
+    stagingImage.UnmapMemory();
+    return m;
 }
 
 VkTextureObj::VkTextureObj(VkDeviceObj *device, uint32_t *colors) : VkImageObj(device) {
