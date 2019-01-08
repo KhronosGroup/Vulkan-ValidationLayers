@@ -3143,6 +3143,537 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfaceFormats2KHR(VkPhysicalDev
     return result;
 }
 
+VKAPI_ATTR VkResult VKAPI_CALL SetDebugUtilsObjectNameEXT(VkDevice device, const VkDebugUtilsObjectNameInfoEXT *pNameInfo) {
+    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    VkResult result = VK_SUCCESS;
+
+    PreCallRecordSetDebugUtilsObjectNameEXT(dev_data, pNameInfo);
+
+    if (nullptr != dev_data->dispatch_table.SetDebugUtilsObjectNameEXT) {
+        result = dev_data->dispatch_table.SetDebugUtilsObjectNameEXT(device, pNameInfo);
+    }
+    return result;
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL SetDebugUtilsObjectTagEXT(VkDevice device, const VkDebugUtilsObjectTagInfoEXT *pTagInfo) {
+    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    VkResult result = VK_SUCCESS;
+    if (nullptr != dev_data->dispatch_table.SetDebugUtilsObjectTagEXT) {
+        result = dev_data->dispatch_table.SetDebugUtilsObjectTagEXT(device, pTagInfo);
+    }
+    return result;
+}
+
+VKAPI_ATTR void VKAPI_CALL QueueBeginDebugUtilsLabelEXT(VkQueue queue, const VkDebugUtilsLabelEXT *pLabelInfo) {
+    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(queue), layer_data_map);
+    std::unique_lock<std::mutex> lock(global_lock);
+    PreCallRecordQueueBeginDebugUtilsLabelEXT(dev_data, queue, pLabelInfo);
+    lock.unlock();
+    if (nullptr != dev_data->dispatch_table.QueueBeginDebugUtilsLabelEXT) {
+        dev_data->dispatch_table.QueueBeginDebugUtilsLabelEXT(queue, pLabelInfo);
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL QueueEndDebugUtilsLabelEXT(VkQueue queue) {
+    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(queue), layer_data_map);
+    if (nullptr != dev_data->dispatch_table.QueueEndDebugUtilsLabelEXT) {
+        dev_data->dispatch_table.QueueEndDebugUtilsLabelEXT(queue);
+    }
+    lock_guard_t lock(global_lock);
+    PostCallRecordQueueEndDebugUtilsLabelEXT(dev_data, queue);
+}
+
+VKAPI_ATTR void VKAPI_CALL QueueInsertDebugUtilsLabelEXT(VkQueue queue, const VkDebugUtilsLabelEXT *pLabelInfo) {
+    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(queue), layer_data_map);
+    std::unique_lock<std::mutex> lock(global_lock);
+    PreCallRecordQueueInsertDebugUtilsLabelEXT(dev_data, queue, pLabelInfo);
+    lock.unlock();
+    if (nullptr != dev_data->dispatch_table.QueueInsertDebugUtilsLabelEXT) {
+        dev_data->dispatch_table.QueueInsertDebugUtilsLabelEXT(queue, pLabelInfo);
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdBeginDebugUtilsLabelEXT(VkCommandBuffer commandBuffer, const VkDebugUtilsLabelEXT *pLabelInfo) {
+    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    std::unique_lock<std::mutex> lock(global_lock);
+    PreCallRecordCmdBeginDebugUtilsLabelEXT(dev_data, commandBuffer, pLabelInfo);
+    lock.unlock();
+    if (nullptr != dev_data->dispatch_table.CmdBeginDebugUtilsLabelEXT) {
+        dev_data->dispatch_table.CmdBeginDebugUtilsLabelEXT(commandBuffer, pLabelInfo);
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdEndDebugUtilsLabelEXT(VkCommandBuffer commandBuffer) {
+    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    if (nullptr != dev_data->dispatch_table.CmdEndDebugUtilsLabelEXT) {
+        dev_data->dispatch_table.CmdEndDebugUtilsLabelEXT(commandBuffer);
+    }
+    lock_guard_t lock(global_lock);
+    PostCallRecordCmdEndDebugUtilsLabelEXT(dev_data, commandBuffer);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdInsertDebugUtilsLabelEXT(VkCommandBuffer commandBuffer, const VkDebugUtilsLabelEXT *pLabelInfo) {
+    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    std::unique_lock<std::mutex> lock(global_lock);
+    PreCallRecordCmdInsertDebugUtilsLabelEXT(dev_data, commandBuffer, pLabelInfo);
+    lock.unlock();
+    if (nullptr != dev_data->dispatch_table.CmdInsertDebugUtilsLabelEXT) {
+        dev_data->dispatch_table.CmdInsertDebugUtilsLabelEXT(commandBuffer, pLabelInfo);
+    }
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL CreateDebugUtilsMessengerEXT(VkInstance instance,
+                                                            const VkDebugUtilsMessengerCreateInfoEXT *pCreateInfo,
+                                                            const VkAllocationCallbacks *pAllocator,
+                                                            VkDebugUtilsMessengerEXT *pMessenger) {
+    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(instance), instance_layer_data_map);
+    VkResult result = instance_data->dispatch_table.CreateDebugUtilsMessengerEXT(instance, pCreateInfo, pAllocator, pMessenger);
+
+    if (VK_SUCCESS == result) {
+        PostCallRecordCreateDebugUtilsMessengerEXT(instance_data, pCreateInfo, pAllocator, pMessenger);
+    }
+    return result;
+}
+
+VKAPI_ATTR void VKAPI_CALL DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT messenger,
+                                                         const VkAllocationCallbacks *pAllocator) {
+    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(instance), instance_layer_data_map);
+    instance_data->dispatch_table.DestroyDebugUtilsMessengerEXT(instance, messenger, pAllocator);
+    PostCallRecordDestroyDebugUtilsMessengerEXT(instance_data, messenger, pAllocator);
+}
+
+VKAPI_ATTR void VKAPI_CALL SubmitDebugUtilsMessageEXT(VkInstance instance, VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+                                                      VkDebugUtilsMessageTypeFlagsEXT messageTypes,
+                                                      const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData) {
+    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(instance), instance_layer_data_map);
+    instance_data->dispatch_table.SubmitDebugUtilsMessageEXT(instance, messageSeverity, messageTypes, pCallbackData);
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL CreateDebugReportCallbackEXT(VkInstance instance,
+                                                            const VkDebugReportCallbackCreateInfoEXT *pCreateInfo,
+                                                            const VkAllocationCallbacks *pAllocator,
+                                                            VkDebugReportCallbackEXT *pMsgCallback) {
+    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(instance), instance_layer_data_map);
+    VkResult res = instance_data->dispatch_table.CreateDebugReportCallbackEXT(instance, pCreateInfo, pAllocator, pMsgCallback);
+    if (VK_SUCCESS == res) {
+        lock_guard_t lock(global_lock);
+        PostCallRecordCreateDebugReportCallbackEXT(instance_data, pCreateInfo, pAllocator, pMsgCallback);
+    }
+    return res;
+}
+
+VKAPI_ATTR void VKAPI_CALL DestroyDebugReportCallbackEXT(VkInstance instance, VkDebugReportCallbackEXT msgCallback,
+                                                         const VkAllocationCallbacks *pAllocator) {
+    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(instance), instance_layer_data_map);
+    instance_data->dispatch_table.DestroyDebugReportCallbackEXT(instance, msgCallback, pAllocator);
+    lock_guard_t lock(global_lock);
+    PostCallDestroyDebugReportCallbackEXT(instance_data, msgCallback, pAllocator);
+}
+
+VKAPI_ATTR void VKAPI_CALL DebugReportMessageEXT(VkInstance instance, VkDebugReportFlagsEXT flags,
+                                                 VkDebugReportObjectTypeEXT objType, uint64_t object, size_t location,
+                                                 int32_t msgCode, const char *pLayerPrefix, const char *pMsg) {
+    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(instance), instance_layer_data_map);
+    instance_data->dispatch_table.DebugReportMessageEXT(instance, flags, objType, object, location, msgCode, pLayerPrefix, pMsg);
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL EnumeratePhysicalDeviceGroups(VkInstance instance, uint32_t *pPhysicalDeviceGroupCount,
+                                                             VkPhysicalDeviceGroupPropertiesKHR *pPhysicalDeviceGroupProperties) {
+    bool skip = false;
+    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(instance), instance_layer_data_map);
+
+    skip = PreCallValidateEnumeratePhysicalDeviceGroups(instance, pPhysicalDeviceGroupCount, pPhysicalDeviceGroupProperties);
+    if (skip) {
+        return VK_ERROR_VALIDATION_FAILED_EXT;
+    }
+    PreCallRecordEnumeratePhysicalDeviceGroups(instance_data, pPhysicalDeviceGroupProperties);
+    VkResult result = instance_data->dispatch_table.EnumeratePhysicalDeviceGroups(instance, pPhysicalDeviceGroupCount,
+                                                                                  pPhysicalDeviceGroupProperties);
+    if (result == VK_SUCCESS || result == VK_INCOMPLETE) {
+        PostCallRecordEnumeratePhysicalDeviceGroups(instance_data, pPhysicalDeviceGroupCount, pPhysicalDeviceGroupProperties);
+    }
+    return result;
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL EnumeratePhysicalDeviceGroupsKHR(
+    VkInstance instance, uint32_t *pPhysicalDeviceGroupCount, VkPhysicalDeviceGroupPropertiesKHR *pPhysicalDeviceGroupProperties) {
+    bool skip = false;
+    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(instance), instance_layer_data_map);
+
+    skip = PreCallValidateEnumeratePhysicalDeviceGroups(instance, pPhysicalDeviceGroupCount, pPhysicalDeviceGroupProperties);
+    if (skip) {
+        return VK_ERROR_VALIDATION_FAILED_EXT;
+    }
+    PreCallRecordEnumeratePhysicalDeviceGroups(instance_data, pPhysicalDeviceGroupProperties);
+    VkResult result = instance_data->dispatch_table.EnumeratePhysicalDeviceGroupsKHR(instance, pPhysicalDeviceGroupCount,
+                                                                                     pPhysicalDeviceGroupProperties);
+    if (result == VK_SUCCESS) {
+        PostCallRecordEnumeratePhysicalDeviceGroups(instance_data, pPhysicalDeviceGroupCount, pPhysicalDeviceGroupProperties);
+    }
+    return result;
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL CreateDescriptorUpdateTemplate(VkDevice device,
+                                                              const VkDescriptorUpdateTemplateCreateInfoKHR *pCreateInfo,
+                                                              const VkAllocationCallbacks *pAllocator,
+                                                              VkDescriptorUpdateTemplateKHR *pDescriptorUpdateTemplate) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    unique_lock_t lock(global_lock);
+    bool skip = PreCallValidateCreateDescriptorUpdateTemplate("vkCreateDescriptorUpdateTemplate()", device_data, pCreateInfo,
+                                                              pAllocator, pDescriptorUpdateTemplate);
+
+    VkResult result = VK_ERROR_VALIDATION_FAILED_EXT;
+    if (!skip) {
+        lock.unlock();
+        result =
+            device_data->dispatch_table.CreateDescriptorUpdateTemplate(device, pCreateInfo, pAllocator, pDescriptorUpdateTemplate);
+        if (VK_SUCCESS == result) {
+            lock.lock();
+            PostCallRecordCreateDescriptorUpdateTemplate(device_data, pCreateInfo, pDescriptorUpdateTemplate);
+        }
+    }
+    return result;
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL CreateDescriptorUpdateTemplateKHR(VkDevice device,
+                                                                 const VkDescriptorUpdateTemplateCreateInfoKHR *pCreateInfo,
+                                                                 const VkAllocationCallbacks *pAllocator,
+                                                                 VkDescriptorUpdateTemplateKHR *pDescriptorUpdateTemplate) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    unique_lock_t lock(global_lock);
+    bool skip = PreCallValidateCreateDescriptorUpdateTemplate("vkCreateDescriptorUpdateTemplateKHR()", device_data, pCreateInfo,
+                                                              pAllocator, pDescriptorUpdateTemplate);
+
+    VkResult result = VK_ERROR_VALIDATION_FAILED_EXT;
+    if (!skip) {
+        lock.unlock();
+        result = device_data->dispatch_table.CreateDescriptorUpdateTemplateKHR(device, pCreateInfo, pAllocator,
+                                                                               pDescriptorUpdateTemplate);
+        if (VK_SUCCESS == result) {
+            lock.lock();
+            PostCallRecordCreateDescriptorUpdateTemplate(device_data, pCreateInfo, pDescriptorUpdateTemplate);
+        }
+    }
+    return result;
+}
+
+VKAPI_ATTR void VKAPI_CALL DestroyDescriptorUpdateTemplate(VkDevice device, VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate,
+                                                           const VkAllocationCallbacks *pAllocator) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    unique_lock_t lock(global_lock);
+    // Pre-record to avoid Destroy/Create race
+    PreCallRecordDestroyDescriptorUpdateTemplate(device_data, descriptorUpdateTemplate);
+    lock.unlock();
+    device_data->dispatch_table.DestroyDescriptorUpdateTemplate(device, descriptorUpdateTemplate, pAllocator);
+}
+
+VKAPI_ATTR void VKAPI_CALL DestroyDescriptorUpdateTemplateKHR(VkDevice device,
+                                                              VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate,
+                                                              const VkAllocationCallbacks *pAllocator) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    unique_lock_t lock(global_lock);
+    // Pre-record to avoid Destroy/Create race
+    PreCallRecordDestroyDescriptorUpdateTemplate(device_data, descriptorUpdateTemplate);
+    lock.unlock();
+    device_data->dispatch_table.DestroyDescriptorUpdateTemplateKHR(device, descriptorUpdateTemplate, pAllocator);
+}
+
+VKAPI_ATTR void VKAPI_CALL UpdateDescriptorSetWithTemplate(VkDevice device, VkDescriptorSet descriptorSet,
+                                                           VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate,
+                                                           const void *pData) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+
+    unique_lock_t lock(global_lock);
+    bool skip = false;
+    skip = PreCallValidateUpdateDescriptorSetWithTemplate(device_data, descriptorSet, descriptorUpdateTemplate, pData);
+
+    if (!skip) {
+        PreCallRecordUpdateDescriptorSetWithTemplate(device_data, descriptorSet, descriptorUpdateTemplate, pData);
+        lock.unlock();
+        device_data->dispatch_table.UpdateDescriptorSetWithTemplate(device, descriptorSet, descriptorUpdateTemplate, pData);
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL UpdateDescriptorSetWithTemplateKHR(VkDevice device, VkDescriptorSet descriptorSet,
+                                                              VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate,
+                                                              const void *pData) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+
+    unique_lock_t lock(global_lock);
+    bool skip = false;
+    skip = PreCallValidateUpdateDescriptorSetWithTemplate(device_data, descriptorSet, descriptorUpdateTemplate, pData);
+
+    if (!skip) {
+        PreCallRecordUpdateDescriptorSetWithTemplate(device_data, descriptorSet, descriptorUpdateTemplate, pData);
+        lock.unlock();
+        device_data->dispatch_table.UpdateDescriptorSetWithTemplateKHR(device, descriptorSet, descriptorUpdateTemplate, pData);
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdPushDescriptorSetWithTemplateKHR(VkCommandBuffer commandBuffer,
+                                                               VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate,
+                                                               VkPipelineLayout layout, uint32_t set, const void *pData) {
+    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    unique_lock_t lock(global_lock);
+    bool skip = false;
+    GLOBAL_CB_NODE *cb_state = GetCBNode(dev_data, commandBuffer);
+    if (cb_state) {
+        skip |=
+            PreCallValidateCmdPushDescriptorSetWithTemplateKHR(dev_data, cb_state, descriptorUpdateTemplate, layout, set, pData);
+        if (!skip) {
+            PreCallRecordCmdPushDescriptorSetWithTemplateKHR(dev_data, cb_state, descriptorUpdateTemplate, layout, set, pData);
+        }
+    }
+    lock.unlock();
+
+    if (!skip) {
+        dev_data->dispatch_table.CmdPushDescriptorSetWithTemplateKHR(commandBuffer, descriptorUpdateTemplate, layout, set, pData);
+    }
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceDisplayPlanePropertiesKHR(VkPhysicalDevice physicalDevice, uint32_t *pPropertyCount,
+                                                                          VkDisplayPlanePropertiesKHR *pProperties) {
+    VkResult result = VK_SUCCESS;
+    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), instance_layer_data_map);
+
+    result = instance_data->dispatch_table.GetPhysicalDeviceDisplayPlanePropertiesKHR(physicalDevice, pPropertyCount, pProperties);
+
+    if (result == VK_SUCCESS || result == VK_INCOMPLETE) {
+        PostCallRecordGetPhysicalDeviceDisplayPlanePropertiesKHR(instance_data, physicalDevice, pPropertyCount, pProperties);
+    }
+
+    return result;
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceDisplayPlaneProperties2KHR(VkPhysicalDevice physicalDevice,
+                                                                           uint32_t *pPropertyCount,
+                                                                           VkDisplayPlaneProperties2KHR *pProperties) {
+    VkResult result = VK_SUCCESS;
+    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), instance_layer_data_map);
+
+    result = instance_data->dispatch_table.GetPhysicalDeviceDisplayPlaneProperties2KHR(physicalDevice, pPropertyCount, pProperties);
+
+    if (result == VK_SUCCESS || result == VK_INCOMPLETE) {
+        PostCallRecordGetPhysicalDeviceDisplayPlanePropertiesKHR(instance_data, physicalDevice, pPropertyCount, pProperties);
+    }
+
+    return result;
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL GetDisplayPlaneSupportedDisplaysKHR(VkPhysicalDevice physicalDevice, uint32_t planeIndex,
+                                                                   uint32_t *pDisplayCount, VkDisplayKHR *pDisplays) {
+    VkResult result = VK_ERROR_VALIDATION_FAILED_EXT;
+    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), instance_layer_data_map);
+    bool skip = PreCallValidateGetDisplayPlaneSupportedDisplaysKHR(instance_data, physicalDevice, planeIndex);
+    if (!skip) {
+        result =
+            instance_data->dispatch_table.GetDisplayPlaneSupportedDisplaysKHR(physicalDevice, planeIndex, pDisplayCount, pDisplays);
+    }
+    return result;
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL GetDisplayPlaneCapabilitiesKHR(VkPhysicalDevice physicalDevice, VkDisplayModeKHR mode,
+                                                              uint32_t planeIndex, VkDisplayPlaneCapabilitiesKHR *pCapabilities) {
+    VkResult result = VK_ERROR_VALIDATION_FAILED_EXT;
+    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), instance_layer_data_map);
+    bool skip = PreCallValidateGetDisplayPlaneCapabilitiesKHR(instance_data, physicalDevice, planeIndex);
+
+    if (!skip) {
+        result = instance_data->dispatch_table.GetDisplayPlaneCapabilitiesKHR(physicalDevice, mode, planeIndex, pCapabilities);
+    }
+
+    return result;
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL GetDisplayPlaneCapabilities2KHR(VkPhysicalDevice physicalDevice,
+                                                               const VkDisplayPlaneInfo2KHR *pDisplayPlaneInfo,
+                                                               VkDisplayPlaneCapabilities2KHR *pCapabilities) {
+    VkResult result = VK_ERROR_VALIDATION_FAILED_EXT;
+    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), instance_layer_data_map);
+    bool skip = PreCallValidateGetDisplayPlaneCapabilitiesKHR(instance_data, physicalDevice, pDisplayPlaneInfo->planeIndex);
+
+    if (!skip) {
+        result = instance_data->dispatch_table.GetDisplayPlaneCapabilities2KHR(physicalDevice, pDisplayPlaneInfo, pCapabilities);
+    }
+
+    return result;
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL DebugMarkerSetObjectNameEXT(VkDevice device, const VkDebugMarkerObjectNameInfoEXT *pNameInfo) {
+    unique_lock_t lock(global_lock);
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    PreCallRecordDebugMarkerSetObjectNameEXT(device_data, pNameInfo);
+    lock.unlock();
+    VkResult result = device_data->dispatch_table.DebugMarkerSetObjectNameEXT(device, pNameInfo);
+    return result;
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdDebugMarkerEndEXT(VkCommandBuffer commandBuffer) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    unique_lock_t lock(global_lock);
+    bool skip = false;
+    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    // Minimal validation for command buffer state
+    if (cb_state) {
+        skip |= PreCallValidateCmdDebugMarkerEndEXT(device_data, cb_state);
+    }
+    lock.unlock();
+    if (!skip) {
+        device_data->dispatch_table.CmdDebugMarkerEndEXT(commandBuffer);
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdSetDiscardRectangleEXT(VkCommandBuffer commandBuffer, uint32_t firstDiscardRectangle,
+                                                     uint32_t discardRectangleCount, const VkRect2D *pDiscardRectangles) {
+    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    unique_lock_t lock(global_lock);
+    bool skip = false;
+    GLOBAL_CB_NODE *cb_state = GetCBNode(dev_data, commandBuffer);
+    // Minimal validation for command buffer state
+    if (cb_state) {
+        skip |= PreCallValidateCmdSetDiscardRectangleEXT(dev_data, cb_state);
+    }
+    lock.unlock();
+
+    if (!skip) {
+        dev_data->dispatch_table.CmdSetDiscardRectangleEXT(commandBuffer, firstDiscardRectangle, discardRectangleCount,
+                                                           pDiscardRectangles);
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdSetSampleLocationsEXT(VkCommandBuffer commandBuffer,
+                                                    const VkSampleLocationsInfoEXT *pSampleLocationsInfo) {
+    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    unique_lock_t lock(global_lock);
+    bool skip = false;
+    GLOBAL_CB_NODE *cb_state = GetCBNode(dev_data, commandBuffer);
+    // Minimal validation for command buffer state
+    if (cb_state) {
+        skip |= PreCallValidateCmdSetSampleLocationsEXT(dev_data, cb_state);
+    }
+    lock.unlock();
+
+    if (!skip) {
+        dev_data->dispatch_table.CmdSetSampleLocationsEXT(commandBuffer, pSampleLocationsInfo);
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdDrawIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                   VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
+                                                   uint32_t stride) {
+    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    GLOBAL_CB_NODE *cb_state = nullptr;
+    BUFFER_STATE *buffer_state = nullptr;
+    BUFFER_STATE *count_buffer_state = nullptr;
+
+    unique_lock_t lock(global_lock);
+    bool skip = PreCallValidateCmdDrawIndirectCountKHR(dev_data, commandBuffer, buffer, offset, countBuffer, countBufferOffset,
+                                                       stride, &cb_state, &buffer_state, &count_buffer_state, false,
+                                                       VK_PIPELINE_BIND_POINT_GRAPHICS, "vkCmdDrawIndirectCountKHR()");
+
+    if (!skip) {
+        PreCallRecordCmdDrawIndirectCountKHR(dev_data, cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, buffer_state, count_buffer_state);
+        lock.unlock();
+        dev_data->dispatch_table.CmdDrawIndirectCountKHR(commandBuffer, buffer, offset, countBuffer, countBufferOffset,
+                                                         maxDrawCount, stride);
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdDrawIndexedIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                          VkBuffer countBuffer, VkDeviceSize countBufferOffset,
+                                                          uint32_t maxDrawCount, uint32_t stride) {
+    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    GLOBAL_CB_NODE *cb_state = nullptr;
+    BUFFER_STATE *buffer_state = nullptr;
+    BUFFER_STATE *count_buffer_state = nullptr;
+    unique_lock_t lock(global_lock);
+    bool skip = PreCallValidateCmdDrawIndexedIndirectCountKHR(
+        dev_data, commandBuffer, buffer, offset, countBuffer, countBufferOffset, stride, &cb_state, &buffer_state,
+        &count_buffer_state, true, VK_PIPELINE_BIND_POINT_GRAPHICS, "vkCmdDrawIndexedIndirectCountKHR()");
+
+    if (!skip) {
+        PreCallRecordCmdDrawIndexedIndirectCountKHR(dev_data, cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, buffer_state,
+                                                    count_buffer_state);
+        lock.unlock();
+        dev_data->dispatch_table.CmdDrawIndexedIndirectCountKHR(commandBuffer, buffer, offset, countBuffer, countBufferOffset,
+                                                                maxDrawCount, stride);
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdDrawMeshTasksNV(VkCommandBuffer commandBuffer, uint32_t taskCount, uint32_t firstTask) {
+    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    GLOBAL_CB_NODE *cb_state = nullptr;
+    bool skip = false;
+
+    unique_lock_t lock(global_lock);
+    skip |= PreCallValidateCmdDrawMeshTasksNV(dev_data, commandBuffer, /* indexed */ false, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                              &cb_state, "vkCmdDrawMeshTasksNV()");
+
+    if (!skip) {
+        PreCallRecordCmdDrawMeshTasksNV(dev_data, cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS);
+        lock.unlock();
+        dev_data->dispatch_table.CmdDrawMeshTasksNV(commandBuffer, taskCount, firstTask);
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdDrawMeshTasksIndirectNV(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                      uint32_t drawCount, uint32_t stride) {
+    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    GLOBAL_CB_NODE *cb_state = nullptr;
+    BUFFER_STATE *buffer_state = nullptr;
+    bool skip = false;
+
+    unique_lock_t lock(global_lock);
+    skip |= PreCallValidateCmdDrawMeshTasksIndirectNV(dev_data, commandBuffer, buffer, /* indexed */ false,
+                                                      VK_PIPELINE_BIND_POINT_GRAPHICS, &cb_state, &buffer_state,
+                                                      "vkCmdDrawMeshTasksIndirectNV()");
+
+    if (!skip) {
+        PreCallRecordCmdDrawMeshTasksIndirectNV(dev_data, cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, buffer_state);
+        lock.unlock();
+        dev_data->dispatch_table.CmdDrawMeshTasksIndirectNV(commandBuffer, buffer, offset, drawCount, stride);
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdDrawMeshTasksIndirectCountNV(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                           VkBuffer countBuffer, VkDeviceSize countBufferOffset,
+                                                           uint32_t maxDrawCount, uint32_t stride) {
+    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    GLOBAL_CB_NODE *cb_state = nullptr;
+    BUFFER_STATE *buffer_state = nullptr;
+    BUFFER_STATE *count_buffer_state = nullptr;
+    bool skip = false;
+
+    unique_lock_t lock(global_lock);
+    skip |= PreCallValidateCmdDrawMeshTasksIndirectCountNV(dev_data, commandBuffer, buffer, countBuffer, /* indexed */ false,
+                                                           VK_PIPELINE_BIND_POINT_GRAPHICS, &cb_state, &buffer_state,
+                                                           &count_buffer_state, "vkCmdDrawMeshTasksIndirectCountNV()");
+
+    if (!skip) {
+        PreCallRecordCmdDrawMeshTasksIndirectCountNV(dev_data, cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, buffer_state,
+                                                     count_buffer_state);
+        lock.unlock();
+        dev_data->dispatch_table.CmdDrawMeshTasksIndirectCountNV(commandBuffer, buffer, offset, countBuffer, countBufferOffset,
+                                                                 maxDrawCount, stride);
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL DestroySamplerYcbcrConversion(VkDevice device, VkSamplerYcbcrConversion ycbcrConversion,
+                                                         const VkAllocationCallbacks *pAllocator) {
+    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    dev_data->dispatch_table.DestroySamplerYcbcrConversion(device, ycbcrConversion, pAllocator);
+    unique_lock_t lock(global_lock);
+    PostCallRecordDestroySamplerYcbcrConversion(dev_data, ycbcrConversion);
+};
+
+VKAPI_ATTR void VKAPI_CALL DestroySamplerYcbcrConversionKHR(VkDevice device, VkSamplerYcbcrConversion ycbcrConversion,
+                                                            const VkAllocationCallbacks *pAllocator) {
+    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    dev_data->dispatch_table.DestroySamplerYcbcrConversionKHR(device, ycbcrConversion, pAllocator);
+    unique_lock_t lock(global_lock);
+    PostCallRecordDestroySamplerYcbcrConversion(dev_data, ycbcrConversion);
+};
+
 // Map of all APIs to be intercepted by this layer
 static const std::unordered_map<std::string, void *> name_to_funcptr_map = {
     {"vkGetInstanceProcAddr", (void *)GetInstanceProcAddr},
