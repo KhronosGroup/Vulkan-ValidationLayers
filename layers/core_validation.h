@@ -1803,5 +1803,82 @@ void PostCallRecordCreateXcbSurfaceKHR(VkInstance instance, const VkXcbSurfaceCr
 void PostCallRecordCreateXlibSurfaceKHR(VkInstance instance, const VkXlibSurfaceCreateInfoKHR* pCreateInfo,
                                         const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface);
 #endif  // VK_USE_PLATFORM_XLIB_KHR
+void PreCallRecordSetDebugUtilsObjectNameEXT(layer_data* dev_data, const VkDebugUtilsObjectNameInfoEXT* pNameInfo);
+void PreCallRecordQueueBeginDebugUtilsLabelEXT(layer_data* dev_data, VkQueue queue, const VkDebugUtilsLabelEXT* pLabelInfo);
+void PostCallRecordQueueEndDebugUtilsLabelEXT(layer_data* dev_data, VkQueue queue);
+void PreCallRecordQueueInsertDebugUtilsLabelEXT(layer_data* dev_data, VkQueue queue, const VkDebugUtilsLabelEXT* pLabelInfo);
+void PreCallRecordCmdBeginDebugUtilsLabelEXT(layer_data* dev_data, VkCommandBuffer commandBuffer,
+                                             const VkDebugUtilsLabelEXT* pLabelInfo);
+void PostCallRecordCmdEndDebugUtilsLabelEXT(layer_data* dev_data, VkCommandBuffer commandBuffer);
+void PreCallRecordCmdInsertDebugUtilsLabelEXT(layer_data* dev_data, VkCommandBuffer commandBuffer,
+                                              const VkDebugUtilsLabelEXT* pLabelInfo);
+void PostCallRecordCreateDebugUtilsMessengerEXT(instance_layer_data* instance_data,
+                                                const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
+                                                const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pMessenger);
+void PostCallRecordDestroyDebugUtilsMessengerEXT(instance_layer_data* instance_data, VkDebugUtilsMessengerEXT messenger,
+                                                 const VkAllocationCallbacks* pAllocator);
+void PostCallRecordCreateDebugReportCallbackEXT(instance_layer_data* instance_data,
+                                                const VkDebugReportCallbackCreateInfoEXT* pCreateInfo,
+                                                const VkAllocationCallbacks* pAllocator, VkDebugReportCallbackEXT* pMsgCallback);
+void PostCallDestroyDebugReportCallbackEXT(instance_layer_data* instance_data, VkDebugReportCallbackEXT msgCallback,
+                                           const VkAllocationCallbacks* pAllocator);
+bool PreCallValidateEnumeratePhysicalDeviceGroups(VkInstance instance, uint32_t* pPhysicalDeviceGroupCount,
+                                                  VkPhysicalDeviceGroupPropertiesKHR* pPhysicalDeviceGroupProperties);
+void PreCallRecordEnumeratePhysicalDeviceGroups(instance_layer_data* instance_data,
+                                                VkPhysicalDeviceGroupPropertiesKHR* pPhysicalDeviceGroupProperties);
+void PostCallRecordEnumeratePhysicalDeviceGroups(instance_layer_data* instance_data, uint32_t* pPhysicalDeviceGroupCount,
+                                                 VkPhysicalDeviceGroupPropertiesKHR* pPhysicalDeviceGroupProperties);
+bool PreCallValidateCreateDescriptorUpdateTemplate(const char* func_name, layer_data* device_data,
+                                                   const VkDescriptorUpdateTemplateCreateInfoKHR* pCreateInfo,
+                                                   const VkAllocationCallbacks* pAllocator,
+                                                   VkDescriptorUpdateTemplateKHR* pDescriptorUpdateTemplate);
+void PostCallRecordCreateDescriptorUpdateTemplate(layer_data* device_data,
+                                                  const VkDescriptorUpdateTemplateCreateInfoKHR* pCreateInfo,
+                                                  VkDescriptorUpdateTemplateKHR* pDescriptorUpdateTemplate);
+void PreCallRecordDestroyDescriptorUpdateTemplate(layer_data* device_data, VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate);
+bool PreCallValidateUpdateDescriptorSetWithTemplate(layer_data* device_data, VkDescriptorSet descriptorSet,
+                                                    VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate, const void* pData);
+void PreCallRecordUpdateDescriptorSetWithTemplate(layer_data* device_data, VkDescriptorSet descriptorSet,
+                                                  VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate, const void* pData);
+bool PreCallValidateCmdPushDescriptorSetWithTemplateKHR(layer_data* device_data, GLOBAL_CB_NODE* cb_state,
+                                                        VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate,
+                                                        VkPipelineLayout layout, uint32_t set, const void* pData);
+void PreCallRecordCmdPushDescriptorSetWithTemplateKHR(layer_data* device_data, GLOBAL_CB_NODE* cb_state,
+                                                      VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate,
+                                                      VkPipelineLayout layout, uint32_t set, const void* pData);
+void PostCallRecordGetPhysicalDeviceDisplayPlanePropertiesKHR(instance_layer_data* instanceData, VkPhysicalDevice physicalDevice,
+                                                              uint32_t* pPropertyCount, void* pProperties);
+bool PreCallValidateGetDisplayPlaneSupportedDisplaysKHR(instance_layer_data* instance_data, VkPhysicalDevice physicalDevice,
+                                                        uint32_t planeIndex);
+bool PreCallValidateGetDisplayPlaneCapabilitiesKHR(instance_layer_data* instance_data, VkPhysicalDevice physicalDevice,
+                                                   uint32_t planeIndex);
+void PreCallRecordDebugMarkerSetObjectNameEXT(layer_data* dev_data, const VkDebugMarkerObjectNameInfoEXT* pNameInfo);
+bool PreCallValidateCmdDebugMarkerEndEXT(layer_data* dev_data, GLOBAL_CB_NODE* cb_state);
+bool PreCallValidateCmdSetDiscardRectangleEXT(layer_data* dev_data, GLOBAL_CB_NODE* cb_state);
+bool PreCallValidateCmdSetSampleLocationsEXT(layer_data* dev_data, GLOBAL_CB_NODE* cb_state);
+bool PreCallValidateCmdDrawIndirectCountKHR(layer_data* dev_data, VkCommandBuffer commandBuffer, VkBuffer buffer,
+                                            VkDeviceSize offset, VkBuffer countBuffer, VkDeviceSize countBufferOffset,
+                                            uint32_t stride, GLOBAL_CB_NODE** cb_state, BUFFER_STATE** buffer_state,
+                                            BUFFER_STATE** count_buffer_state, bool indexed, VkPipelineBindPoint bind_point,
+                                            const char* caller);
+void PreCallRecordCmdDrawIndirectCountKHR(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, VkPipelineBindPoint bind_point,
+                                          BUFFER_STATE* buffer_state, BUFFER_STATE* count_buffer_state);
+void PreCallRecordCmdDrawIndexedIndirectCountKHR(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, VkPipelineBindPoint bind_point,
+                                                 BUFFER_STATE* buffer_state, BUFFER_STATE* count_buffer_state);
+bool PreCallValidateCmdDrawMeshTasksNV(layer_data* dev_data, VkCommandBuffer cmd_buffer, bool indexed,
+                                       VkPipelineBindPoint bind_point, GLOBAL_CB_NODE** cb_state, const char* caller);
+void PreCallRecordCmdDrawMeshTasksNV(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, VkPipelineBindPoint bind_point);
+bool PreCallValidateCmdDrawMeshTasksIndirectNV(layer_data* dev_data, VkCommandBuffer cmd_buffer, VkBuffer buffer, bool indexed,
+                                               VkPipelineBindPoint bind_point, GLOBAL_CB_NODE** cb_state,
+                                               BUFFER_STATE** buffer_state, const char* caller);
+void PreCallRecordCmdDrawMeshTasksIndirectNV(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, VkPipelineBindPoint bind_point,
+                                             BUFFER_STATE* buffer_state);
+bool PreCallValidateCmdDrawMeshTasksIndirectCountNV(layer_data* dev_data, VkCommandBuffer cmd_buffer, VkBuffer buffer,
+                                                    VkBuffer count_buffer, bool indexed, VkPipelineBindPoint bind_point,
+                                                    GLOBAL_CB_NODE** cb_state, BUFFER_STATE** buffer_state,
+                                                    BUFFER_STATE** count_buffer_state, const char* caller);
+void PreCallRecordCmdDrawMeshTasksIndirectCountNV(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, VkPipelineBindPoint bind_point,
+                                                  BUFFER_STATE* buffer_state, BUFFER_STATE* count_buffer_state);
+void PostCallRecordDestroySamplerYcbcrConversion(layer_data* dev_data, VkSamplerYcbcrConversion ycbcr_conversion);
 
 };  // namespace core_validation
