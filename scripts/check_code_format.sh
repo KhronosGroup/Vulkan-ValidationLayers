@@ -47,7 +47,7 @@ else
     # Look for current year in copyright lines
     for AFILE in ${COPYRIGHTED_FILES_TO_CHECK}
     do
-      COPYRIGHT_INFO=$(cat ../${AFILE} | grep -E "Copyright (.)*LunarG")
+      COPYRIGHT_INFO=$(cat ${AFILE} | grep -E "Copyright (.)*LunarG")
       if [ ! -z "${COPYRIGHT_INFO}" ]; then
         if ! echo "$COPYRIGHT_INFO" | grep -q "$THISYEAR" ; then
           echo -e "${RED} "$AFILE" has an out-of-date copyright notice.${NC}"
