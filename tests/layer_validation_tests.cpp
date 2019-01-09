@@ -26884,7 +26884,7 @@ TEST_F(VkPositiveLayerTest, PnextOnlyStructWrapping) {
     vkGetPhysicalDeviceProperties2(gpu(), &properties);
     VkPhysicalDeviceExternalImageFormatInfoKHR devExtImgFmtInfo = {
         VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_IMAGE_FORMAT_INFO_KHR};
-    devExtImgFmtInfo.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_D3D11_TEXTURE_KMT_BIT_KHR;
+    devExtImgFmtInfo.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
 
     VkPhysicalDeviceImageFormatInfo2KHR dev_img_fmt_info = {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_FORMAT_INFO_2_KHR,
                                                             &devExtImgFmtInfo};
