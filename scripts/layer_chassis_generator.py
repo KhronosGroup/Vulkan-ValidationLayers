@@ -1,8 +1,8 @@
 #!/usr/bin/python3 -i
 #
-# Copyright (c) 2015-2016 Valve Corporation
-# Copyright (c) 2015-2016 LunarG, Inc.
-# Copyright (c) 2015-2016 Google Inc.
+# Copyright (c) 2015-2019 Valve Corporation
+# Copyright (c) 2015-2019 LunarG, Inc.
+# Copyright (c) 2015-2019 Google Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -1107,14 +1107,16 @@ VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkNegotiateLoaderLayerInterfaceVe
 
         # Generate post-call object processing source code
         return_type_indent = ''
+
+        self.appendSection('command', '    %s' % self.postcallrecord_loop)
         if (resulttype.text == 'VkResult'):
             return_type_indent = '    '
             if name in self.alt_ret_codes:
-                self.appendSection('command', '    if ((VK_SUCCESS == result) || (VK_INCOMPLETE == result)) {')
+                self.appendSection('command', '%s    if (((VK_SUCCESS == result) || (VK_INCOMPLETE == result)) || (intercept->container_type == LayerObjectTypeThreading)) {' % return_type_indent)
             else:
-                self.appendSection('command', '    if (VK_SUCCESS == result) {')
+                self.appendSection('command', '%s    if ((VK_SUCCESS == result)  || (intercept->container_type == LayerObjectTypeThreading)) {' % return_type_indent)
 
-        self.appendSection('command', '%s    %s' % (return_type_indent, self.postcallrecord_loop))
+        #self.appendSection('command', '%s    %s' % (return_type_indent, self.postcallrecord_loop))
         self.appendSection('command', '%s        intercept->write_lock();' % return_type_indent)
         self.appendSection('command', '%s        intercept->PostCallRecord%s(%s);' % (return_type_indent,api_function_name[2:], paramstext))
         self.appendSection('command', '%s        intercept->write_unlock();' % return_type_indent)
