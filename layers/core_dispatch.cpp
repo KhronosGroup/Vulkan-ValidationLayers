@@ -1703,20 +1703,11 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     unique_lock_t lock(global_lock);
 
-    auto cb_node = GetCBNode(device_data, commandBuffer);
-    auto src_buffer_state = GetBufferState(device_data, srcBuffer);
-    auto dst_buffer_state = GetBufferState(device_data, dstBuffer);
-
-    if (cb_node && src_buffer_state && dst_buffer_state) {
-        bool skip = PreCallValidateCmdCopyBuffer(device_data, cb_node, src_buffer_state, dst_buffer_state);
-        if (!skip) {
-            PreCallRecordCmdCopyBuffer(device_data, cb_node, src_buffer_state, dst_buffer_state);
-            lock.unlock();
-            device_data->dispatch_table.CmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, regionCount, pRegions);
-        }
-    } else {
+    bool skip = PreCallValidateCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, regionCount, pRegions);
+    if (!skip) {
+        PreCallRecordCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, regionCount, pRegions);
         lock.unlock();
-        assert(0);
+        device_data->dispatch_table.CmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, regionCount, pRegions);
     }
 }
 
@@ -1726,23 +1717,12 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyImage(VkCommandBuffer commandBuffer, VkImage s
     bool skip = false;
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     unique_lock_t lock(global_lock);
-
-    auto cb_node = GetCBNode(device_data, commandBuffer);
-    auto src_image_state = GetImageState(device_data, srcImage);
-    auto dst_image_state = GetImageState(device_data, dstImage);
-    if (cb_node && src_image_state && dst_image_state) {
-        skip = PreCallValidateCmdCopyImage(device_data, cb_node, src_image_state, dst_image_state, regionCount, pRegions,
-                                           srcImageLayout, dstImageLayout);
-        if (!skip) {
-            PreCallRecordCmdCopyImage(device_data, cb_node, src_image_state, dst_image_state, regionCount, pRegions, srcImageLayout,
-                                      dstImageLayout);
-            lock.unlock();
-            device_data->dispatch_table.CmdCopyImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount,
-                                                     pRegions);
-        }
-    } else {
+    skip = PreCallValidateCmdCopyImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions);
+    if (!skip) {
+        PreCallRecordCmdCopyImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions);
         lock.unlock();
-        assert(0);
+        device_data->dispatch_table.CmdCopyImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount,
+                                                 pRegions);
     }
 }
 
@@ -1791,20 +1771,10 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyBufferToImage(VkCommandBuffer commandBuffer, V
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     unique_lock_t lock(global_lock);
     bool skip = false;
-    auto cb_node = GetCBNode(device_data, commandBuffer);
-    auto src_buffer_state = GetBufferState(device_data, srcBuffer);
-    auto dst_image_state = GetImageState(device_data, dstImage);
-    if (cb_node && src_buffer_state && dst_image_state) {
-        skip = PreCallValidateCmdCopyBufferToImage(device_data, dstImageLayout, cb_node, src_buffer_state, dst_image_state,
-                                                   regionCount, pRegions, "vkCmdCopyBufferToImage()");
-    } else {
-        lock.unlock();
-        assert(0);
-        // TODO: report VU01244 here, or put in object tracker?
-    }
+    skip = PreCallValidateCmdCopyBufferToImage(commandBuffer, srcBuffer, dstImage, dstImageLayout, regionCount, pRegions);
+
     if (!skip) {
-        PreCallRecordCmdCopyBufferToImage(device_data, cb_node, src_buffer_state, dst_image_state, regionCount, pRegions,
-                                          dstImageLayout);
+        PreCallRecordCmdCopyBufferToImage(commandBuffer, srcBuffer, dstImage, dstImageLayout, regionCount, pRegions);
         lock.unlock();
         device_data->dispatch_table.CmdCopyBufferToImage(commandBuffer, srcBuffer, dstImage, dstImageLayout, regionCount, pRegions);
     }
@@ -1816,20 +1786,9 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyImageToBuffer(VkCommandBuffer commandBuffer, V
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     unique_lock_t lock(global_lock);
 
-    auto cb_node = GetCBNode(device_data, commandBuffer);
-    auto src_image_state = GetImageState(device_data, srcImage);
-    auto dst_buffer_state = GetBufferState(device_data, dstBuffer);
-    if (cb_node && src_image_state && dst_buffer_state) {
-        skip = PreCallValidateCmdCopyImageToBuffer(device_data, srcImageLayout, cb_node, src_image_state, dst_buffer_state,
-                                                   regionCount, pRegions, "vkCmdCopyImageToBuffer()");
-    } else {
-        lock.unlock();
-        assert(0);
-        // TODO: report VU01262 here, or put in object tracker?
-    }
+    skip = PreCallValidateCmdCopyImageToBuffer(commandBuffer, srcImage, srcImageLayout, dstBuffer, regionCount, pRegions);
     if (!skip) {
-        PreCallRecordCmdCopyImageToBuffer(device_data, cb_node, src_image_state, dst_buffer_state, regionCount, pRegions,
-                                          srcImageLayout);
+        PreCallRecordCmdCopyImageToBuffer(commandBuffer, srcImage, srcImageLayout, dstBuffer, regionCount, pRegions);
         lock.unlock();
         device_data->dispatch_table.CmdCopyImageToBuffer(commandBuffer, srcImage, srcImageLayout, dstBuffer, regionCount, pRegions);
     }
