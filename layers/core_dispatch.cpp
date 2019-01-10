@@ -539,14 +539,12 @@ VKAPI_ATTR void VKAPI_CALL DestroyBufferView(VkDevice device, VkBufferView buffe
 
 VKAPI_ATTR void VKAPI_CALL DestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks *pAllocator) {
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    IMAGE_STATE *image_state = nullptr;
-    VK_OBJECT obj_struct;
     unique_lock_t lock(global_lock);
-    bool skip = PreCallValidateDestroyImage(dev_data, image, &image_state, &obj_struct);
+    bool skip = PreCallValidateDestroyImage(device, image, pAllocator);
     if (!skip) {
         if (image != VK_NULL_HANDLE) {
             // Pre-record to avoid Destroy/Create race
-            PreCallRecordDestroyImage(dev_data, image, image_state, obj_struct);
+            PreCallRecordDestroyImage(device, image, pAllocator);
         }
         lock.unlock();
         dev_data->dispatch_table.DestroyImage(device, image, pAllocator);
@@ -1000,13 +998,13 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateImage(VkDevice device, const VkImageCreateI
                                            const VkAllocationCallbacks *pAllocator, VkImage *pImage) {
     VkResult result = VK_ERROR_VALIDATION_FAILED_EXT;
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    bool skip = PreCallValidateCreateImage(dev_data, pCreateInfo, pAllocator, pImage);
+    bool skip = PreCallValidateCreateImage(device, pCreateInfo, pAllocator, pImage);
     if (!skip) {
         result = dev_data->dispatch_table.CreateImage(device, pCreateInfo, pAllocator, pImage);
     }
     if (VK_SUCCESS == result) {
         lock_guard_t lock(global_lock);
-        PostCallRecordCreateImage(dev_data, pCreateInfo, pImage);
+        PostCallRecordCreateImage(device, pCreateInfo, pAllocator, pImage);
     }
     return result;
 }
@@ -1929,7 +1927,7 @@ VKAPI_ATTR void VKAPI_CALL GetImageSubresourceLayout(VkDevice device, VkImage im
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     unique_lock_t lock(global_lock);
 
-    bool skip = PreCallValidateGetImageSubresourceLayout(device_data, image, pSubresource);
+    bool skip = PreCallValidateGetImageSubresourceLayout(device, image, pSubresource, pLayout);
     if (!skip) {
         lock.unlock();
         device_data->dispatch_table.GetImageSubresourceLayout(device, image, pSubresource, pLayout);
