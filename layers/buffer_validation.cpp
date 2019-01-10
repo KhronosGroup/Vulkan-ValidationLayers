@@ -2436,17 +2436,21 @@ bool CopyImageMultiplaneValidation(const layer_data *dev_data, VkCommandBuffer c
     return skip;
 }
 
-bool PreCallValidateCmdCopyImage(layer_data *device_data, GLOBAL_CB_NODE *cb_node, IMAGE_STATE *src_image_state,
-                                 IMAGE_STATE *dst_image_state, uint32_t region_count, const VkImageCopy *regions,
-                                 VkImageLayout src_image_layout, VkImageLayout dst_image_layout) {
+bool PreCallValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage,
+                                 VkImageLayout dstImageLayout, uint32_t regionCount, const VkImageCopy *pRegions) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    auto cb_node = GetCBNode(device_data, commandBuffer);
+    auto src_image_state = GetImageState(device_data, srcImage);
+    auto dst_image_state = GetImageState(device_data, dstImage);
     bool skip = false;
-    const debug_report_data *report_data = core_validation::GetReportData(device_data);
-    skip = ValidateImageCopyData(device_data, report_data, region_count, regions, src_image_state, dst_image_state);
+    const debug_report_data *report_data = device_data->report_data;
+
+    skip = ValidateImageCopyData(device_data, report_data, regionCount, pRegions, src_image_state, dst_image_state);
 
     VkCommandBuffer command_buffer = cb_node->commandBuffer;
 
-    for (uint32_t i = 0; i < region_count; i++) {
-        const VkImageCopy region = regions[i];
+    for (uint32_t i = 0; i < regionCount; i++) {
+        const VkImageCopy region = pRegions[i];
 
         // For comp/uncomp copies, the copy extent for the dest image must be adjusted
         VkExtent3D src_copy_extent = region.extent;
@@ -2626,8 +2630,8 @@ bool PreCallValidateCmdCopyImage(layer_data *device_data, GLOBAL_CB_NODE *cb_nod
         // The union of all source regions, and the union of all destination regions, specified by the elements of regions,
         // must not overlap in memory
         if (src_image_state->image == dst_image_state->image) {
-            for (uint32_t j = 0; j < region_count; j++) {
-                if (RegionIntersects(&region, &regions[j], src_image_state->createInfo.imageType,
+            for (uint32_t j = 0; j < regionCount; j++) {
+                if (RegionIntersects(&region, &pRegions[j], src_image_state->createInfo.imageType,
                                      FormatIsMultiplane(src_image_state->createInfo.format))) {
                     std::stringstream ss;
                     ss << "vkCmdCopyImage: pRegions[" << i << "] src overlaps with pRegions[" << j << "].";
@@ -2648,7 +2652,7 @@ bool PreCallValidateCmdCopyImage(layer_data *device_data, GLOBAL_CB_NODE *cb_nod
                             HandleToUint64(command_buffer), kVUID_Core_DrawState_MismatchedImageFormat, str);
         }
     } else {
-        if (!FormatSizesAreEqual(src_image_state->createInfo.format, dst_image_state->createInfo.format, region_count, regions)) {
+        if (!FormatSizesAreEqual(src_image_state->createInfo.format, dst_image_state->createInfo.format, regionCount, pRegions)) {
             char const str[] = "vkCmdCopyImage called with unmatched source and dest image format sizes.";
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                             HandleToUint64(command_buffer), "VUID-vkCmdCopyImage-srcImage-00135", "%s.", str);
@@ -2691,27 +2695,31 @@ bool PreCallValidateCmdCopyImage(layer_data *device_data, GLOBAL_CB_NODE *cb_nod
         (dst_image_state->shared_presentable && core_validation::GetDeviceExtensions(device_data)->vk_khr_shared_presentable_image)
             ? "VUID-vkCmdCopyImage-dstImageLayout-01395"
             : "VUID-vkCmdCopyImage-dstImageLayout-00134";
-    for (uint32_t i = 0; i < region_count; ++i) {
-        skip |= VerifyImageLayout(device_data, cb_node, src_image_state, regions[i].srcSubresource, src_image_layout,
+    for (uint32_t i = 0; i < regionCount; ++i) {
+        skip |= VerifyImageLayout(device_data, cb_node, src_image_state, pRegions[i].srcSubresource, srcImageLayout,
                                   VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, "vkCmdCopyImage()", invalid_src_layout_vuid,
                                   "VUID-vkCmdCopyImage-srcImageLayout-00128", &hit_error);
-        skip |= VerifyImageLayout(device_data, cb_node, dst_image_state, regions[i].dstSubresource, dst_image_layout,
+        skip |= VerifyImageLayout(device_data, cb_node, dst_image_state, pRegions[i].dstSubresource, dstImageLayout,
                                   VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, "vkCmdCopyImage()", invalid_dst_layout_vuid,
                                   "VUID-vkCmdCopyImage-dstImageLayout-00133", &hit_error);
         skip |= ValidateCopyImageTransferGranularityRequirements(device_data, cb_node, src_image_state, dst_image_state,
-                                                                 &regions[i], i, "vkCmdCopyImage()");
+                                                                 &pRegions[i], i, "vkCmdCopyImage()");
     }
 
     return skip;
 }
 
-void PreCallRecordCmdCopyImage(layer_data *device_data, GLOBAL_CB_NODE *cb_node, IMAGE_STATE *src_image_state,
-                               IMAGE_STATE *dst_image_state, uint32_t region_count, const VkImageCopy *regions,
-                               VkImageLayout src_image_layout, VkImageLayout dst_image_layout) {
+void PreCallRecordCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage,
+                               VkImageLayout dstImageLayout, uint32_t regionCount, const VkImageCopy *pRegions) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    auto cb_node = GetCBNode(device_data, commandBuffer);
+    auto src_image_state = GetImageState(device_data, srcImage);
+    auto dst_image_state = GetImageState(device_data, dstImage);
+
     // Make sure that all image slices are updated to correct layout
-    for (uint32_t i = 0; i < region_count; ++i) {
-        SetImageLayout(device_data, cb_node, src_image_state, regions[i].srcSubresource, src_image_layout);
-        SetImageLayout(device_data, cb_node, dst_image_state, regions[i].dstSubresource, dst_image_layout);
+    for (uint32_t i = 0; i < regionCount; ++i) {
+        SetImageLayout(device_data, cb_node, src_image_state, pRegions[i].srcSubresource, srcImageLayout);
+        SetImageLayout(device_data, cb_node, dst_image_state, pRegions[i].dstSubresource, dstImageLayout);
     }
     // Update bindings between images and cmd buffer
     AddCommandBufferBindingImage(device_data, cb_node, src_image_state);
@@ -4412,8 +4420,13 @@ void PostCallRecordCreateImageView(VkDevice device, const VkImageViewCreateInfo 
     sub_res_range.layerCount = ResolveRemainingLayers(&sub_res_range, image_state->createInfo.arrayLayers);
 }
 
-bool PreCallValidateCmdCopyBuffer(layer_data *device_data, GLOBAL_CB_NODE *cb_node, BUFFER_STATE *src_buffer_state,
-                                  BUFFER_STATE *dst_buffer_state) {
+bool PreCallValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer, uint32_t regionCount,
+                                  const VkBufferCopy *pRegions) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    auto cb_node = GetCBNode(device_data, commandBuffer);
+    auto src_buffer_state = GetBufferState(device_data, srcBuffer);
+    auto dst_buffer_state = GetBufferState(device_data, dstBuffer);
+
     bool skip = false;
     skip |=
         ValidateMemoryIsBoundToBuffer(device_data, src_buffer_state, "vkCmdCopyBuffer()", "VUID-vkCmdCopyBuffer-srcBuffer-00119");
@@ -4434,8 +4447,13 @@ bool PreCallValidateCmdCopyBuffer(layer_data *device_data, GLOBAL_CB_NODE *cb_no
     return skip;
 }
 
-void PreCallRecordCmdCopyBuffer(layer_data *device_data, GLOBAL_CB_NODE *cb_node, BUFFER_STATE *src_buffer_state,
-                                BUFFER_STATE *dst_buffer_state) {
+void PreCallRecordCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer, uint32_t regionCount,
+                                const VkBufferCopy *pRegions) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    auto cb_node = GetCBNode(device_data, commandBuffer);
+    auto src_buffer_state = GetBufferState(device_data, srcBuffer);
+    auto dst_buffer_state = GetBufferState(device_data, dstBuffer);
+
     // Update bindings between buffers and cmd buffer
     AddCommandBufferBindingBuffer(device_data, cb_node, src_buffer_state);
     AddCommandBufferBindingBuffer(device_data, cb_node, dst_buffer_state);
@@ -4829,10 +4847,14 @@ static inline bool ValidateBufferBounds(const debug_report_data *report_data, IM
     return skip;
 }
 
-bool PreCallValidateCmdCopyImageToBuffer(layer_data *device_data, VkImageLayout srcImageLayout, GLOBAL_CB_NODE *cb_node,
-                                         IMAGE_STATE *src_image_state, BUFFER_STATE *dst_buffer_state, uint32_t regionCount,
-                                         const VkBufferImageCopy *pRegions, const char *func_name) {
-    const debug_report_data *report_data = core_validation::GetReportData(device_data);
+bool PreCallValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
+                                         VkBuffer dstBuffer, uint32_t regionCount, const VkBufferImageCopy *pRegions) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    auto cb_node = GetCBNode(device_data, commandBuffer);
+    auto src_image_state = GetImageState(device_data, srcImage);
+    auto dst_buffer_state = GetBufferState(device_data, dstBuffer);
+    const debug_report_data *report_data = device_data->report_data;
+
     bool skip = ValidateBufferImageCopyData(report_data, regionCount, pRegions, src_image_state, "vkCmdCopyImageToBuffer");
 
     // Validate command buffer state
@@ -4897,22 +4919,30 @@ bool PreCallValidateCmdCopyImageToBuffer(layer_data *device_data, VkImageLayout 
     return skip;
 }
 
-void PreCallRecordCmdCopyImageToBuffer(layer_data *device_data, GLOBAL_CB_NODE *cb_node, IMAGE_STATE *src_image_state,
-                                       BUFFER_STATE *dst_buffer_state, uint32_t region_count, const VkBufferImageCopy *regions,
-                                       VkImageLayout src_image_layout) {
+void PreCallRecordCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
+                                       VkBuffer dstBuffer, uint32_t regionCount, const VkBufferImageCopy *pRegions) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    auto cb_node = GetCBNode(device_data, commandBuffer);
+    auto src_image_state = GetImageState(device_data, srcImage);
+    auto dst_buffer_state = GetBufferState(device_data, dstBuffer);
+
     // Make sure that all image slices are updated to correct layout
-    for (uint32_t i = 0; i < region_count; ++i) {
-        SetImageLayout(device_data, cb_node, src_image_state, regions[i].imageSubresource, src_image_layout);
+    for (uint32_t i = 0; i < regionCount; ++i) {
+        SetImageLayout(device_data, cb_node, src_image_state, pRegions[i].imageSubresource, srcImageLayout);
     }
     // Update bindings between buffer/image and cmd buffer
     AddCommandBufferBindingImage(device_data, cb_node, src_image_state);
     AddCommandBufferBindingBuffer(device_data, cb_node, dst_buffer_state);
 }
 
-bool PreCallValidateCmdCopyBufferToImage(layer_data *device_data, VkImageLayout dstImageLayout, GLOBAL_CB_NODE *cb_node,
-                                         BUFFER_STATE *src_buffer_state, IMAGE_STATE *dst_image_state, uint32_t regionCount,
-                                         const VkBufferImageCopy *pRegions, const char *func_name) {
-    const debug_report_data *report_data = core_validation::GetReportData(device_data);
+bool PreCallValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
+                                         VkImageLayout dstImageLayout, uint32_t regionCount, const VkBufferImageCopy *pRegions) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    auto cb_node = GetCBNode(device_data, commandBuffer);
+    auto src_buffer_state = GetBufferState(device_data, srcBuffer);
+    auto dst_image_state = GetImageState(device_data, dstImage);
+    const debug_report_data *report_data = device_data->report_data;
+
     bool skip = ValidateBufferImageCopyData(report_data, regionCount, pRegions, dst_image_state, "vkCmdCopyBufferToImage");
 
     // Validate command buffer state
@@ -4973,12 +5003,16 @@ bool PreCallValidateCmdCopyBufferToImage(layer_data *device_data, VkImageLayout 
     return skip;
 }
 
-void PreCallRecordCmdCopyBufferToImage(layer_data *device_data, GLOBAL_CB_NODE *cb_node, BUFFER_STATE *src_buffer_state,
-                                       IMAGE_STATE *dst_image_state, uint32_t region_count, const VkBufferImageCopy *regions,
-                                       VkImageLayout dst_image_layout) {
+void PreCallRecordCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
+                                       VkImageLayout dstImageLayout, uint32_t regionCount, const VkBufferImageCopy *pRegions) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    auto cb_node = GetCBNode(device_data, commandBuffer);
+    auto src_buffer_state = GetBufferState(device_data, srcBuffer);
+    auto dst_image_state = GetImageState(device_data, dstImage);
+
     // Make sure that all image slices are updated to correct layout
-    for (uint32_t i = 0; i < region_count; ++i) {
-        SetImageLayout(device_data, cb_node, dst_image_state, regions[i].imageSubresource, dst_image_layout);
+    for (uint32_t i = 0; i < regionCount; ++i) {
+        SetImageLayout(device_data, cb_node, dst_image_state, pRegions[i].imageSubresource, dstImageLayout);
     }
     AddCommandBufferBindingBuffer(device_data, cb_node, src_buffer_state);
     AddCommandBufferBindingImage(device_data, cb_node, dst_image_state);
