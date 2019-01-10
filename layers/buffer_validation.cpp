@@ -1687,50 +1687,55 @@ void RecordClearImageLayout(layer_data *device_data, GLOBAL_CB_NODE *cb_node, Vk
     }
 }
 
-bool PreCallValidateCmdClearColorImage(layer_data *dev_data, VkCommandBuffer commandBuffer, VkImage image,
-                                       VkImageLayout imageLayout, uint32_t rangeCount, const VkImageSubresourceRange *pRanges) {
+bool PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
+                                       const VkClearColorValue *pColor, uint32_t rangeCount,
+                                       const VkImageSubresourceRange *pRanges) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+
     bool skip = false;
     // TODO : Verify memory is in VK_IMAGE_STATE_CLEAR state
-    auto cb_node = GetCBNode(dev_data, commandBuffer);
-    auto image_state = GetImageState(dev_data, image);
+    auto cb_node = GetCBNode(device_data, commandBuffer);
+    auto image_state = GetImageState(device_data, image);
     if (cb_node && image_state) {
-        skip |=
-            ValidateMemoryIsBoundToImage(dev_data, image_state, "vkCmdClearColorImage()", "VUID-vkCmdClearColorImage-image-00003");
-        skip |= ValidateCmdQueueFlags(dev_data, cb_node, "vkCmdClearColorImage()", VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
+        skip |= ValidateMemoryIsBoundToImage(device_data, image_state, "vkCmdClearColorImage()",
+                                             "VUID-vkCmdClearColorImage-image-00003");
+        skip |= ValidateCmdQueueFlags(device_data, cb_node, "vkCmdClearColorImage()", VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
                                       "VUID-vkCmdClearColorImage-commandBuffer-cmdpool");
-        skip |= ValidateCmd(dev_data, cb_node, CMD_CLEARCOLORIMAGE, "vkCmdClearColorImage()");
-        if (GetApiVersion(dev_data) >= VK_API_VERSION_1_1 || GetDeviceExtensions(dev_data)->vk_khr_maintenance1) {
-            skip |=
-                ValidateImageFormatFeatureFlags(dev_data, image_state, VK_FORMAT_FEATURE_TRANSFER_DST_BIT, "vkCmdClearColorImage",
-                                                "VUID-vkCmdClearColorImage-image-01993", "VUID-vkCmdClearColorImage-image-01993");
+        skip |= ValidateCmd(device_data, cb_node, CMD_CLEARCOLORIMAGE, "vkCmdClearColorImage()");
+        if (GetApiVersion(device_data) >= VK_API_VERSION_1_1 || GetDeviceExtensions(device_data)->vk_khr_maintenance1) {
+            skip |= ValidateImageFormatFeatureFlags(device_data, image_state, VK_FORMAT_FEATURE_TRANSFER_DST_BIT,
+                                                    "vkCmdClearColorImage", "VUID-vkCmdClearColorImage-image-01993",
+                                                    "VUID-vkCmdClearColorImage-image-01993");
         }
-        skip |= InsideRenderPass(dev_data, cb_node, "vkCmdClearColorImage()", "VUID-vkCmdClearColorImage-renderpass");
+        skip |= InsideRenderPass(device_data, cb_node, "vkCmdClearColorImage()", "VUID-vkCmdClearColorImage-renderpass");
         for (uint32_t i = 0; i < rangeCount; ++i) {
             std::string param_name = "pRanges[" + std::to_string(i) + "]";
-            skip |= ValidateCmdClearColorSubresourceRange(dev_data, image_state, pRanges[i], param_name.c_str());
-            skip |= ValidateImageAttributes(dev_data, image_state, pRanges[i]);
-            skip |= VerifyClearImageLayout(dev_data, cb_node, image_state, pRanges[i], imageLayout, "vkCmdClearColorImage()");
+            skip |= ValidateCmdClearColorSubresourceRange(device_data, image_state, pRanges[i], param_name.c_str());
+            skip |= ValidateImageAttributes(device_data, image_state, pRanges[i]);
+            skip |= VerifyClearImageLayout(device_data, cb_node, image_state, pRanges[i], imageLayout, "vkCmdClearColorImage()");
         }
     }
     return skip;
 }
 
-// This state recording routine is shared between ClearColorImage and ClearDepthStencilImage
-void PreCallRecordCmdClearImage(layer_data *dev_data, VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
-                                uint32_t rangeCount, const VkImageSubresourceRange *pRanges) {
-    auto cb_node = GetCBNode(dev_data, commandBuffer);
-    auto image_state = GetImageState(dev_data, image);
+void PreCallRecordCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
+                                     const VkClearColorValue *pColor, uint32_t rangeCount, const VkImageSubresourceRange *pRanges) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+
+    auto cb_node = GetCBNode(device_data, commandBuffer);
+    auto image_state = GetImageState(device_data, image);
     if (cb_node && image_state) {
-        AddCommandBufferBindingImage(dev_data, cb_node, image_state);
+        AddCommandBufferBindingImage(device_data, cb_node, image_state);
         for (uint32_t i = 0; i < rangeCount; ++i) {
-            RecordClearImageLayout(dev_data, cb_node, image, pRanges[i], imageLayout);
+            RecordClearImageLayout(device_data, cb_node, image, pRanges[i], imageLayout);
         }
     }
 }
 
-bool PreCallValidateCmdClearDepthStencilImage(layer_data *device_data, VkCommandBuffer commandBuffer, VkImage image,
-                                              VkImageLayout imageLayout, uint32_t rangeCount,
+bool PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
+                                              const VkClearDepthStencilValue *pDepthStencil, uint32_t rangeCount,
                                               const VkImageSubresourceRange *pRanges) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
     const debug_report_data *report_data = core_validation::GetReportData(device_data);
 
@@ -1779,6 +1784,21 @@ bool PreCallValidateCmdClearDepthStencilImage(layer_data *device_data, VkCommand
         }
     }
     return skip;
+}
+
+void PreCallRecordCmdClearDepthStencilImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
+                                            const VkClearDepthStencilValue *pDepthStencil, uint32_t rangeCount,
+                                            const VkImageSubresourceRange *pRanges) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+
+    auto cb_node = GetCBNode(device_data, commandBuffer);
+    auto image_state = GetImageState(device_data, image);
+    if (cb_node && image_state) {
+        AddCommandBufferBindingImage(device_data, cb_node, image_state);
+        for (uint32_t i = 0; i < rangeCount; ++i) {
+            RecordClearImageLayout(device_data, cb_node, image, pRanges[i], imageLayout);
+        }
+    }
 }
 
 // Returns true if [x, xoffset] and [y, yoffset] overlap
@@ -2859,10 +2879,14 @@ bool PreCallValidateCmdClearAttachments(layer_data *device_data, VkCommandBuffer
     return skip;
 }
 
-bool PreCallValidateCmdResolveImage(layer_data *device_data, GLOBAL_CB_NODE *cb_node, IMAGE_STATE *src_image_state,
-                                    VkImageLayout src_image_layout, IMAGE_STATE *dst_image_state, VkImageLayout dst_image_layout,
-                                    uint32_t regionCount, const VkImageResolve *pRegions) {
-    const debug_report_data *report_data = core_validation::GetReportData(device_data);
+bool PreCallValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage,
+                                    VkImageLayout dstImageLayout, uint32_t regionCount, const VkImageResolve *pRegions) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    auto cb_node = GetCBNode(device_data, commandBuffer);
+    auto src_image_state = GetImageState(device_data, srcImage);
+    auto dst_image_state = GetImageState(device_data, dstImage);
+
+    const debug_report_data *report_data = device_data->report_data;
     bool skip = false;
     if (cb_node && src_image_state && dst_image_state) {
         skip |= ValidateMemoryIsBoundToImage(device_data, src_image_state, "vkCmdResolveImage()",
@@ -2895,10 +2919,10 @@ bool PreCallValidateCmdResolveImage(layer_data *device_data, GLOBAL_CB_NODE *cb_
                                                    "srcSubresource", i);
             skip |= ValidateImageSubresourceLayers(device_data, cb_node, &pRegions[i].dstSubresource, "vkCmdResolveImage()",
                                                    "dstSubresource", i);
-            skip |= VerifyImageLayout(device_data, cb_node, src_image_state, pRegions[i].srcSubresource, src_image_layout,
+            skip |= VerifyImageLayout(device_data, cb_node, src_image_state, pRegions[i].srcSubresource, srcImageLayout,
                                       VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, "vkCmdResolveImage()", invalid_src_layout_vuid,
                                       "VUID-vkCmdResolveImage-srcImageLayout-00260", &hit_error);
-            skip |= VerifyImageLayout(device_data, cb_node, dst_image_state, pRegions[i].dstSubresource, dst_image_layout,
+            skip |= VerifyImageLayout(device_data, cb_node, dst_image_state, pRegions[i].dstSubresource, dstImageLayout,
                                       VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, "vkCmdResolveImage()", invalid_dst_layout_vuid,
                                       "VUID-vkCmdResolveImage-dstImageLayout-00262", &hit_error);
             skip |= ValidateImageMipLevel(device_data, cb_node, src_image_state, pRegions[i].srcSubresource.mipLevel, i,
@@ -2955,17 +2979,25 @@ bool PreCallValidateCmdResolveImage(layer_data *device_data, GLOBAL_CB_NODE *cb_
     return skip;
 }
 
-void PreCallRecordCmdResolveImage(layer_data *device_data, GLOBAL_CB_NODE *cb_node, IMAGE_STATE *src_image_state,
-                                  IMAGE_STATE *dst_image_state) {
+void PreCallRecordCmdResolveImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage,
+                                  VkImageLayout dstImageLayout, uint32_t regionCount, const VkImageResolve *pRegions) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    auto cb_node = GetCBNode(device_data, commandBuffer);
+    auto src_image_state = GetImageState(device_data, srcImage);
+    auto dst_image_state = GetImageState(device_data, dstImage);
+
     // Update bindings between images and cmd buffer
     AddCommandBufferBindingImage(device_data, cb_node, src_image_state);
     AddCommandBufferBindingImage(device_data, cb_node, dst_image_state);
 }
 
-bool PreCallValidateCmdBlitImage(layer_data *device_data, GLOBAL_CB_NODE *cb_node, IMAGE_STATE *src_image_state,
-                                 IMAGE_STATE *dst_image_state, uint32_t region_count, const VkImageBlit *regions,
-                                 VkImageLayout src_image_layout, VkImageLayout dst_image_layout, VkFilter filter) {
-    const debug_report_data *report_data = core_validation::GetReportData(device_data);
+bool PreCallValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage,
+                                 VkImageLayout dstImageLayout, uint32_t regionCount, const VkImageBlit *pRegions, VkFilter filter) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    auto cb_node = GetCBNode(device_data, commandBuffer);
+    auto src_image_state = GetImageState(device_data, srcImage);
+    auto dst_image_state = GetImageState(device_data, dstImage);
+    const debug_report_data *report_data = device_data->report_data;
 
     bool skip = false;
     if (cb_node) {
@@ -3079,13 +3111,13 @@ bool PreCallValidateCmdBlitImage(layer_data *device_data, GLOBAL_CB_NODE *cb_nod
              core_validation::GetDeviceExtensions(device_data)->vk_khr_shared_presentable_image)
                 ? "VUID-vkCmdBlitImage-dstImageLayout-01399"
                 : "VUID-vkCmdBlitImage-dstImageLayout-00227";
-        for (uint32_t i = 0; i < region_count; i++) {
-            const VkImageBlit rgn = regions[i];
+        for (uint32_t i = 0; i < regionCount; i++) {
+            const VkImageBlit rgn = pRegions[i];
             bool hit_error = false;
-            skip |= VerifyImageLayout(device_data, cb_node, src_image_state, rgn.srcSubresource, src_image_layout,
+            skip |= VerifyImageLayout(device_data, cb_node, src_image_state, rgn.srcSubresource, srcImageLayout,
                                       VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, "vkCmdBlitImage()", invalid_src_layout_vuid,
                                       "VUID-vkCmdBlitImage-srcImageLayout-00221", &hit_error);
-            skip |= VerifyImageLayout(device_data, cb_node, dst_image_state, rgn.dstSubresource, dst_image_layout,
+            skip |= VerifyImageLayout(device_data, cb_node, dst_image_state, rgn.dstSubresource, dstImageLayout,
                                       VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, "vkCmdBlitImage()", invalid_dst_layout_vuid,
                                       "VUID-vkCmdBlitImage-dstImageLayout-00226", &hit_error);
             skip |=
@@ -3279,13 +3311,17 @@ bool PreCallValidateCmdBlitImage(layer_data *device_data, GLOBAL_CB_NODE *cb_nod
     return skip;
 }
 
-void PreCallRecordCmdBlitImage(layer_data *device_data, GLOBAL_CB_NODE *cb_node, IMAGE_STATE *src_image_state,
-                               IMAGE_STATE *dst_image_state, uint32_t region_count, const VkImageBlit *regions,
-                               VkImageLayout src_image_layout, VkImageLayout dst_image_layout) {
+void PreCallRecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage,
+                               VkImageLayout dstImageLayout, uint32_t regionCount, const VkImageBlit *pRegions, VkFilter filter) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    auto cb_node = GetCBNode(device_data, commandBuffer);
+    auto src_image_state = GetImageState(device_data, srcImage);
+    auto dst_image_state = GetImageState(device_data, dstImage);
+
     // Make sure that all image slices are updated to correct layout
-    for (uint32_t i = 0; i < region_count; ++i) {
-        SetImageLayout(device_data, cb_node, src_image_state, regions[i].srcSubresource, src_image_layout);
-        SetImageLayout(device_data, cb_node, dst_image_state, regions[i].dstSubresource, dst_image_layout);
+    for (uint32_t i = 0; i < regionCount; ++i) {
+        SetImageLayout(device_data, cb_node, src_image_state, pRegions[i].srcSubresource, srcImageLayout);
+        SetImageLayout(device_data, cb_node, dst_image_state, pRegions[i].dstSubresource, dstImageLayout);
     }
     // Update bindings between images and cmd buffer
     AddCommandBufferBindingImage(device_data, cb_node, src_image_state);
@@ -4545,7 +4581,11 @@ void PreCallRecordDestroyBufferView(layer_data *device_data, VkBufferView buffer
     GetBufferViewMap(device_data)->erase(buffer_view);
 }
 
-bool PreCallValidateCmdFillBuffer(layer_data *device_data, GLOBAL_CB_NODE *cb_node, BUFFER_STATE *buffer_state) {
+bool PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset, VkDeviceSize size,
+                                  uint32_t data) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    auto cb_node = GetCBNode(device_data, commandBuffer);
+    auto buffer_state = GetBufferState(device_data, dstBuffer);
     bool skip = false;
     skip |= ValidateMemoryIsBoundToBuffer(device_data, buffer_state, "vkCmdFillBuffer()", "VUID-vkCmdFillBuffer-dstBuffer-00031");
     skip |= ValidateCmdQueueFlags(device_data, cb_node, "vkCmdFillBuffer()",
@@ -4560,7 +4600,11 @@ bool PreCallValidateCmdFillBuffer(layer_data *device_data, GLOBAL_CB_NODE *cb_no
     return skip;
 }
 
-void PreCallRecordCmdFillBuffer(layer_data *device_data, GLOBAL_CB_NODE *cb_node, BUFFER_STATE *buffer_state) {
+void PreCallRecordCmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset, VkDeviceSize size,
+                                uint32_t data) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    auto cb_node = GetCBNode(device_data, commandBuffer);
+    auto buffer_state = GetBufferState(device_data, dstBuffer);
     // Update bindings between buffer and cmd buffer
     AddCommandBufferBindingBuffer(device_data, cb_node, buffer_state);
 }
