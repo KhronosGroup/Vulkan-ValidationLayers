@@ -4163,10 +4163,12 @@ bool ValidateImageBarrierSubresourceRange(const layer_data *device_data, const I
                                          subresourceRangeErrorCodes);
 }
 
-bool PreCallValidateCreateImageView(layer_data *device_data, const VkImageViewCreateInfo *create_info) {
-    const debug_report_data *report_data = core_validation::GetReportData(device_data);
+bool PreCallValidateCreateImageView(VkDevice device, const VkImageViewCreateInfo *pCreateInfo,
+                                    const VkAllocationCallbacks *pAllocator, VkImageView *pView) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    const debug_report_data *report_data = device_data->report_data;
     bool skip = false;
-    IMAGE_STATE *image_state = GetImageState(device_data, create_info->image);
+    IMAGE_STATE *image_state = GetImageState(device_data, pCreateInfo->image);
     if (image_state) {
         skip |= ValidateImageUsageFlags(
             device_data, image_state,
@@ -4181,20 +4183,20 @@ bool PreCallValidateCreateImageView(layer_data *device_data, const VkImageViewCr
         // Checks imported from image layer
         skip |= ValidateCreateImageViewSubresourceRange(
             device_data, image_state,
-            create_info->viewType == VK_IMAGE_VIEW_TYPE_2D || create_info->viewType == VK_IMAGE_VIEW_TYPE_2D_ARRAY,
-            create_info->subresourceRange);
+            pCreateInfo->viewType == VK_IMAGE_VIEW_TYPE_2D || pCreateInfo->viewType == VK_IMAGE_VIEW_TYPE_2D_ARRAY,
+            pCreateInfo->subresourceRange);
 
         VkImageCreateFlags image_flags = image_state->createInfo.flags;
         VkFormat image_format = image_state->createInfo.format;
         VkImageUsageFlags image_usage = image_state->createInfo.usage;
         VkImageTiling image_tiling = image_state->createInfo.tiling;
-        VkFormat view_format = create_info->format;
-        VkImageAspectFlags aspect_mask = create_info->subresourceRange.aspectMask;
+        VkFormat view_format = pCreateInfo->format;
+        VkImageAspectFlags aspect_mask = pCreateInfo->subresourceRange.aspectMask;
         VkImageType image_type = image_state->createInfo.imageType;
-        VkImageViewType view_type = create_info->viewType;
+        VkImageViewType view_type = pCreateInfo->viewType;
 
         // If there's a chained VkImageViewUsageCreateInfo struct, modify image_usage to match
-        auto chained_ivuci_struct = lvl_find_in_chain<VkImageViewUsageCreateInfoKHR>(create_info->pNext);
+        auto chained_ivuci_struct = lvl_find_in_chain<VkImageViewUsageCreateInfoKHR>(pCreateInfo->pNext);
         if (chained_ivuci_struct) {
             if (chained_ivuci_struct->usage & ~image_usage) {
                 std::stringstream ss;
@@ -4202,7 +4204,7 @@ bool PreCallValidateCreateImageView(layer_data *device_data, const VkImageViewCr
                    << chained_ivuci_struct->usage << ") must not include flags not present in underlying image's usage (0x"
                    << image_usage << ").";
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
-                                HandleToUint64(create_info->image), "VUID-VkImageViewUsageCreateInfo-usage-01587", "%s",
+                                HandleToUint64(pCreateInfo->image), "VUID-VkImageViewUsageCreateInfo-usage-01587", "%s",
                                 ss.str().c_str());
             }
 
@@ -4235,7 +4237,7 @@ bool PreCallValidateCreateImageView(layer_data *device_data, const VkImageViewCr
                        << " is not compatible with plane " << plane << " of underlying image format "
                        << string_VkFormat(image_format) << ", must be " << string_VkFormat(compat_format) << ".";
                     skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
-                                    HandleToUint64(create_info->image), "VUID-VkImageViewCreateInfo-image-01586", "%s",
+                                    HandleToUint64(pCreateInfo->image), "VUID-VkImageViewCreateInfo-image-01586", "%s",
                                     ss.str().c_str());
                 }
             } else {
@@ -4245,12 +4247,12 @@ bool PreCallValidateCreateImageView(layer_data *device_data, const VkImageViewCr
                     if (FormatCompatibilityClass(image_format) != FormatCompatibilityClass(view_format)) {
                         std::stringstream ss;
                         ss << "vkCreateImageView(): ImageView format " << string_VkFormat(view_format)
-                           << " is not in the same format compatibility class as image (" << HandleToUint64(create_info->image)
+                           << " is not in the same format compatibility class as image (" << HandleToUint64(pCreateInfo->image)
                            << ")  format " << string_VkFormat(image_format)
                            << ".  Images created with the VK_IMAGE_CREATE_MUTABLE_FORMAT BIT "
                            << "can support ImageViews with differing formats but they must be in the same compatibility class.";
                         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
-                                        HandleToUint64(create_info->image), "VUID-VkImageViewCreateInfo-image-01018", "%s",
+                                        HandleToUint64(pCreateInfo->image), "VUID-VkImageViewCreateInfo-image-01018", "%s",
                                         ss.str().c_str());
                     }
                 }
@@ -4260,11 +4262,11 @@ bool PreCallValidateCreateImageView(layer_data *device_data, const VkImageViewCr
             if (image_format != view_format) {
                 std::stringstream ss;
                 ss << "vkCreateImageView() format " << string_VkFormat(view_format) << " differs from image "
-                   << HandleToUint64(create_info->image) << " format " << string_VkFormat(image_format)
+                   << HandleToUint64(pCreateInfo->image) << " format " << string_VkFormat(image_format)
                    << ".  Formats MUST be IDENTICAL unless VK_IMAGE_CREATE_MUTABLE_FORMAT BIT was set on image creation.";
                 skip |=
                     log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
-                            HandleToUint64(create_info->image), "VUID-VkImageViewCreateInfo-image-01019", "%s", ss.str().c_str());
+                            HandleToUint64(pCreateInfo->image), "VUID-VkImageViewCreateInfo-image-01019", "%s", ss.str().c_str());
             }
         }
 
@@ -4275,7 +4277,7 @@ bool PreCallValidateCreateImageView(layer_data *device_data, const VkImageViewCr
             case VK_IMAGE_TYPE_1D:
                 if (view_type != VK_IMAGE_VIEW_TYPE_1D && view_type != VK_IMAGE_VIEW_TYPE_1D_ARRAY) {
                     skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
-                                    HandleToUint64(create_info->image), "VUID-VkImageViewCreateInfo-subResourceRange-01021",
+                                    HandleToUint64(pCreateInfo->image), "VUID-VkImageViewCreateInfo-subResourceRange-01021",
                                     "vkCreateImageView(): pCreateInfo->viewType %s is not compatible with image type %s.",
                                     string_VkImageViewType(view_type), string_VkImageType(image_type));
                 }
@@ -4285,12 +4287,12 @@ bool PreCallValidateCreateImageView(layer_data *device_data, const VkImageViewCr
                     if ((view_type == VK_IMAGE_VIEW_TYPE_CUBE || view_type == VK_IMAGE_VIEW_TYPE_CUBE_ARRAY) &&
                         !(image_flags & VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT)) {
                         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
-                                        HandleToUint64(create_info->image), "VUID-VkImageViewCreateInfo-image-01003",
+                                        HandleToUint64(pCreateInfo->image), "VUID-VkImageViewCreateInfo-image-01003",
                                         "vkCreateImageView(): pCreateInfo->viewType %s is not compatible with image type %s.",
                                         string_VkImageViewType(view_type), string_VkImageType(image_type));
                     } else if (view_type != VK_IMAGE_VIEW_TYPE_CUBE && view_type != VK_IMAGE_VIEW_TYPE_CUBE_ARRAY) {
                         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
-                                        HandleToUint64(create_info->image), "VUID-VkImageViewCreateInfo-subResourceRange-01021",
+                                        HandleToUint64(pCreateInfo->image), "VUID-VkImageViewCreateInfo-subResourceRange-01021",
                                         "vkCreateImageView(): pCreateInfo->viewType %s is not compatible with image type %s.",
                                         string_VkImageViewType(view_type), string_VkImageType(image_type));
                     }
@@ -4303,14 +4305,14 @@ bool PreCallValidateCreateImageView(layer_data *device_data, const VkImageViewCr
                             if (!(image_flags & VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT_KHR)) {
                                 skip |=
                                     log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
-                                            HandleToUint64(create_info->image), "VUID-VkImageViewCreateInfo-image-01005",
+                                            HandleToUint64(pCreateInfo->image), "VUID-VkImageViewCreateInfo-image-01005",
                                             "vkCreateImageView(): pCreateInfo->viewType %s is not compatible with image type %s.",
                                             string_VkImageViewType(view_type), string_VkImageType(image_type));
                             } else if ((image_flags & (VK_IMAGE_CREATE_SPARSE_BINDING_BIT | VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT |
                                                        VK_IMAGE_CREATE_SPARSE_ALIASED_BIT))) {
                                 skip |=
                                     log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
-                                            HandleToUint64(create_info->image), "VUID-VkImageViewCreateInfo-subResourceRange-01021",
+                                            HandleToUint64(pCreateInfo->image), "VUID-VkImageViewCreateInfo-subResourceRange-01021",
                                             "vkCreateImageView(): pCreateInfo->viewType %s is not compatible with image type %s "
                                             "when the VK_IMAGE_CREATE_SPARSE_BINDING_BIT, VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT, or "
                                             "VK_IMAGE_CREATE_SPARSE_ALIASED_BIT flags are enabled.",
@@ -4318,7 +4320,7 @@ bool PreCallValidateCreateImageView(layer_data *device_data, const VkImageViewCr
                             }
                         } else {
                             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
-                                            HandleToUint64(create_info->image), "VUID-VkImageViewCreateInfo-subResourceRange-01021",
+                                            HandleToUint64(pCreateInfo->image), "VUID-VkImageViewCreateInfo-subResourceRange-01021",
                                             "vkCreateImageView(): pCreateInfo->viewType %s is not compatible with image type %s.",
                                             string_VkImageViewType(view_type), string_VkImageType(image_type));
                         }
@@ -4326,7 +4328,7 @@ bool PreCallValidateCreateImageView(layer_data *device_data, const VkImageViewCr
                 } else {
                     if (view_type != VK_IMAGE_VIEW_TYPE_3D) {
                         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
-                                        HandleToUint64(create_info->image), "VUID-VkImageViewCreateInfo-subResourceRange-01021",
+                                        HandleToUint64(pCreateInfo->image), "VUID-VkImageViewCreateInfo-subResourceRange-01021",
                                         "vkCreateImageView(): pCreateInfo->viewType %s is not compatible with image type %s.",
                                         string_VkImageViewType(view_type), string_VkImageType(image_type));
                     }
@@ -4338,7 +4340,7 @@ bool PreCallValidateCreateImageView(layer_data *device_data, const VkImageViewCr
 
         // External format checks needed when VK_ANDROID_external_memory_android_hardware_buffer enabled
         if (GetDeviceExtensions(device_data)->vk_android_external_memory_android_hardware_buffer) {
-            skip |= ValidateCreateImageViewANDROID(device_data, create_info);
+            skip |= ValidateCreateImageViewANDROID(device_data, pCreateInfo);
         }
 
         VkFormatProperties format_properties = GetPDFormatProperties(device_data, view_format);
@@ -4347,33 +4349,33 @@ bool PreCallValidateCreateImageView(layer_data *device_data, const VkImageViewCr
 
         if (tiling_features == 0) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
-                            HandleToUint64(create_info->image), "VUID-VkImageViewCreateInfo-None-02273",
+                            HandleToUint64(pCreateInfo->image), "VUID-VkImageViewCreateInfo-None-02273",
                             "vkCreateImageView(): pCreateInfo->format %s with tiling %s has no supported format features on this "
                             "physical device.",
                             string_VkFormat(view_format), string_VkImageTiling(image_tiling));
         } else if ((image_usage & VK_IMAGE_USAGE_SAMPLED_BIT) && !(tiling_features & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT)) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
-                            HandleToUint64(create_info->image), "VUID-VkImageViewCreateInfo-usage-02274",
+                            HandleToUint64(pCreateInfo->image), "VUID-VkImageViewCreateInfo-usage-02274",
                             "vkCreateImageView(): pCreateInfo->format %s with tiling %s does not support usage that includes "
                             "VK_IMAGE_USAGE_SAMPLED_BIT.",
                             string_VkFormat(view_format), string_VkImageTiling(image_tiling));
         } else if ((image_usage & VK_IMAGE_USAGE_STORAGE_BIT) && !(tiling_features & VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT)) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
-                            HandleToUint64(create_info->image), "VUID-VkImageViewCreateInfo-usage-02275",
+                            HandleToUint64(pCreateInfo->image), "VUID-VkImageViewCreateInfo-usage-02275",
                             "vkCreateImageView(): pCreateInfo->format %s with tiling %s does not support usage that includes "
                             "VK_IMAGE_USAGE_STORAGE_BIT.",
                             string_VkFormat(view_format), string_VkImageTiling(image_tiling));
         } else if ((image_usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) &&
                    !(tiling_features & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT)) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
-                            HandleToUint64(create_info->image), "VUID-VkImageViewCreateInfo-usage-02276",
+                            HandleToUint64(pCreateInfo->image), "VUID-VkImageViewCreateInfo-usage-02276",
                             "vkCreateImageView(): pCreateInfo->format %s with tiling %s does not support usage that includes "
                             "VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT.",
                             string_VkFormat(view_format), string_VkImageTiling(image_tiling));
         } else if ((image_usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) &&
                    !(tiling_features & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT)) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
-                            HandleToUint64(create_info->image), "VUID-VkImageViewCreateInfo-usage-02277",
+                            HandleToUint64(pCreateInfo->image), "VUID-VkImageViewCreateInfo-usage-02277",
                             "vkCreateImageView(): pCreateInfo->format %s with tiling %s does not support usage that includes "
                             "VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT.",
                             string_VkFormat(view_format), string_VkImageTiling(image_tiling));
@@ -4382,14 +4384,14 @@ bool PreCallValidateCreateImageView(layer_data *device_data, const VkImageViewCr
         if (image_usage & VK_IMAGE_USAGE_SHADING_RATE_IMAGE_BIT_NV) {
             if (view_type != VK_IMAGE_VIEW_TYPE_2D && view_type != VK_IMAGE_VIEW_TYPE_2D_ARRAY) {
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
-                                HandleToUint64(create_info->image), "VUID-VkImageViewCreateInfo-image-02086",
+                                HandleToUint64(pCreateInfo->image), "VUID-VkImageViewCreateInfo-image-02086",
                                 "vkCreateImageView() If image was created with usage containing "
                                 "VK_IMAGE_USAGE_SHADING_RATE_IMAGE_BIT_NV, viewType must be "
                                 "VK_IMAGE_VIEW_TYPE_2D or VK_IMAGE_VIEW_TYPE_2D_ARRAY.");
             }
             if (view_format != VK_FORMAT_R8_UINT) {
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
-                                HandleToUint64(create_info->image), "VUID-VkImageViewCreateInfo-image-02087",
+                                HandleToUint64(pCreateInfo->image), "VUID-VkImageViewCreateInfo-image-02087",
                                 "vkCreateImageView() If image was created with usage containing "
                                 "VK_IMAGE_USAGE_SHADING_RATE_IMAGE_BIT_NV, format must be VK_FORMAT_R8_UINT.");
             }
@@ -4398,12 +4400,14 @@ bool PreCallValidateCreateImageView(layer_data *device_data, const VkImageViewCr
     return skip;
 }
 
-void PostCallRecordCreateImageView(layer_data *device_data, const VkImageViewCreateInfo *create_info, VkImageView view) {
+void PostCallRecordCreateImageView(VkDevice device, const VkImageViewCreateInfo *pCreateInfo,
+                                   const VkAllocationCallbacks *pAllocator, VkImageView *pView) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     auto image_view_map = GetImageViewMap(device_data);
-    (*image_view_map)[view] = std::unique_ptr<IMAGE_VIEW_STATE>(new IMAGE_VIEW_STATE(view, create_info));
+    (*image_view_map)[*pView] = std::unique_ptr<IMAGE_VIEW_STATE>(new IMAGE_VIEW_STATE(*pView, pCreateInfo));
 
-    auto image_state = GetImageState(device_data, create_info->image);
-    auto &sub_res_range = (*image_view_map)[view].get()->create_info.subresourceRange;
+    auto image_state = GetImageState(device_data, pCreateInfo->image);
+    auto &sub_res_range = (*image_view_map)[*pView].get()->create_info.subresourceRange;
     sub_res_range.levelCount = ResolveRemainingLevels(&sub_res_range, image_state->createInfo.mipLevels);
     sub_res_range.layerCount = ResolveRemainingLayers(&sub_res_range, image_state->createInfo.arrayLayers);
 }
@@ -4455,24 +4459,28 @@ static bool ValidateIdleBuffer(layer_data *device_data, VkBuffer buffer) {
     return skip;
 }
 
-bool PreCallValidateDestroyImageView(layer_data *device_data, VkImageView image_view, IMAGE_VIEW_STATE **image_view_state,
-                                     VK_OBJECT *obj_struct) {
-    *image_view_state = GetImageViewState(device_data, image_view);
-    *obj_struct = {HandleToUint64(image_view), kVulkanObjectTypeImageView};
-    if (GetDisables(device_data)->destroy_image_view) return false;
+bool PreCallValidateDestroyImageView(VkDevice device, VkImageView imageView, const VkAllocationCallbacks *pAllocator) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    IMAGE_VIEW_STATE *image_view_state = GetImageViewState(device_data, imageView);
+    VK_OBJECT obj_struct = {HandleToUint64(imageView), kVulkanObjectTypeImageView};
+
     bool skip = false;
-    if (*image_view_state) {
-        skip |= ValidateObjectNotInUse(device_data, *image_view_state, *obj_struct, "vkDestroyImageView",
+    if (image_view_state) {
+        skip |= ValidateObjectNotInUse(device_data, image_view_state, obj_struct, "vkDestroyImageView",
                                        "VUID-vkDestroyImageView-imageView-01026");
     }
     return skip;
 }
 
-void PreCallRecordDestroyImageView(layer_data *device_data, VkImageView image_view, IMAGE_VIEW_STATE *image_view_state,
-                                   VK_OBJECT obj_struct) {
+void PreCallRecordDestroyImageView(VkDevice device, VkImageView imageView, const VkAllocationCallbacks *pAllocator) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    IMAGE_VIEW_STATE *image_view_state = GetImageViewState(device_data, imageView);
+    if (!image_view_state) return;
+    VK_OBJECT obj_struct = {HandleToUint64(imageView), kVulkanObjectTypeImageView};
+
     // Any bound cmd buffers are now invalid
     InvalidateCommandBuffers(device_data, image_view_state->cb_bindings, obj_struct);
-    (*GetImageViewMap(device_data)).erase(image_view);
+    (*GetImageViewMap(device_data)).erase(imageView);
 }
 
 bool PreCallValidateDestroyBuffer(layer_data *device_data, VkBuffer buffer, BUFFER_STATE **buffer_state, VK_OBJECT *obj_struct) {

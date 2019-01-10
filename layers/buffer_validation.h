@@ -237,9 +237,11 @@ bool ValidateImageBarrierSubresourceRange(const layer_data *device_data, const I
                                           const VkImageSubresourceRange &subresourceRange, const char *cmd_name,
                                           const char *param_name);
 
-bool PreCallValidateCreateImageView(layer_data *device_data, const VkImageViewCreateInfo *create_info);
+bool PreCallValidateCreateImageView(VkDevice device, const VkImageViewCreateInfo *pCreateInfo,
+                                    const VkAllocationCallbacks *pAllocator, VkImageView *pView);
 
-void PostCallRecordCreateImageView(layer_data *device_data, const VkImageViewCreateInfo *create_info, VkImageView view);
+void PostCallRecordCreateImageView(VkDevice device, const VkImageViewCreateInfo *pCreateInfo,
+                                   const VkAllocationCallbacks *pAllocator, VkImageView *pView);
 
 bool ValidateCopyBufferImageTransferGranularityRequirements(layer_data *device_data, const GLOBAL_CB_NODE *cb_node,
                                                             const IMAGE_STATE *img, const VkBufferImageCopy *region,
@@ -262,11 +264,9 @@ bool PreCallValidateCmdCopyBuffer(layer_data *device_data, GLOBAL_CB_NODE *cb_no
 void PreCallRecordCmdCopyBuffer(layer_data *device_data, GLOBAL_CB_NODE *cb_node, BUFFER_STATE *src_buffer_state,
                                 BUFFER_STATE *dst_buffer_state);
 
-bool PreCallValidateDestroyImageView(layer_data *device_data, VkImageView image_view, IMAGE_VIEW_STATE **image_view_state,
-                                     VK_OBJECT *obj_struct);
+bool PreCallValidateDestroyImageView(VkDevice device, VkImageView imageView, const VkAllocationCallbacks *pAllocator);
 
-void PreCallRecordDestroyImageView(layer_data *device_data, VkImageView image_view, IMAGE_VIEW_STATE *image_view_state,
-                                   VK_OBJECT obj_struct);
+void PreCallRecordDestroyImageView(VkDevice device, VkImageView imageView, const VkAllocationCallbacks *pAllocator);
 
 bool PreCallValidateDestroyBuffer(layer_data *device_data, VkBuffer buffer, BUFFER_STATE **buffer_state, VK_OBJECT *obj_struct);
 
