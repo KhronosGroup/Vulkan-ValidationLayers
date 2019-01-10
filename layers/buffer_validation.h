@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2018 The Khronos Group Inc.
- * Copyright (c) 2015-2018 Valve Corporation
- * Copyright (c) 2015-2018 LunarG, Inc.
- * Copyright (C) 2015-2018 Google Inc.
+/* Copyright (c) 2015-2019 The Khronos Group Inc.
+ * Copyright (c) 2015-2019 Valve Corporation
+ * Copyright (c) 2015-2019 LunarG, Inc.
+ * Copyright (C) 2015-2019 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@
 #define CORE_VALIDATION_BUFFER_VALIDATION_H_
 
 #include "core_validation.h"
+#include "shader_validation.h"
 #include "descriptor_sets.h"
 #include "vulkan/vk_layer.h"
 #include <limits.h>
@@ -32,20 +33,22 @@
 #include <algorithm>
 #include <bitset>
 
+using core_validation::instance_layer_data;
 using core_validation::layer_data;
 
 uint32_t FullMipChainLevels(uint32_t height, uint32_t width = 1, uint32_t depth = 1);
 uint32_t FullMipChainLevels(VkExtent3D);
 uint32_t FullMipChainLevels(VkExtent2D);
 
-bool PreCallValidateCreateImage(layer_data *device_data, const VkImageCreateInfo *pCreateInfo,
-                                const VkAllocationCallbacks *pAllocator, VkImage *pImage);
+bool PreCallValidateCreateImage(VkDevice device, const VkImageCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator,
+                                VkImage *pImage);
 
-void PostCallRecordCreateImage(layer_data *device_data, const VkImageCreateInfo *pCreateInfo, VkImage *pImage);
+void PostCallRecordCreateImage(VkDevice device, const VkImageCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator,
+                               VkImage *pImage);
 
-void PreCallRecordDestroyImage(layer_data *device_data, VkImage image, IMAGE_STATE *image_state, VK_OBJECT obj_struct);
+void PreCallRecordDestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks *pAllocator);
 
-bool PreCallValidateDestroyImage(layer_data *device_data, VkImage image, IMAGE_STATE **image_state, VK_OBJECT *obj_struct);
+bool PreCallValidateDestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks *pAllocator);
 
 bool ValidateImageAttributes(layer_data *device_data, IMAGE_STATE *image_state, VkImageSubresourceRange range);
 
@@ -295,6 +298,7 @@ void PreCallRecordCmdCopyBufferToImage(layer_data *device_data, GLOBAL_CB_NODE *
                                        IMAGE_STATE *dst_image_state, uint32_t region_count, const VkBufferImageCopy *regions,
                                        VkImageLayout dst_image_layout);
 
-bool PreCallValidateGetImageSubresourceLayout(layer_data *device_data, VkImage image, const VkImageSubresource *pSubresource);
+bool PreCallValidateGetImageSubresourceLayout(VkDevice device, VkImage image, const VkImageSubresource *pSubresource,
+                                              VkSubresourceLayout *pLayout);
 
 #endif  // CORE_VALIDATION_BUFFER_VALIDATION_H_

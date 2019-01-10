@@ -36,6 +36,14 @@
 
 #include "buffer_validation.h"
 
+namespace core_validation {
+extern unordered_map<void *, layer_data *> layer_data_map;
+extern unordered_map<void *, instance_layer_data *> instance_layer_data_map;
+};  // namespace core_validation
+
+using core_validation::instance_layer_data_map;
+using core_validation::layer_data_map;
+
 uint32_t FullMipChainLevels(uint32_t height, uint32_t width, uint32_t depth) {
     // uint cast applies floor()
     return 1u + (uint32_t)log2(std::max({height, width, depth}));
@@ -1366,10 +1374,11 @@ bool ValidateGetImageSubresourceLayoutANDROID(layer_data *device_data, const VkI
 
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
 
-bool PreCallValidateCreateImage(layer_data *device_data, const VkImageCreateInfo *pCreateInfo,
-                                const VkAllocationCallbacks *pAllocator, VkImage *pImage) {
+bool PreCallValidateCreateImage(VkDevice device, const VkImageCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator,
+                                VkImage *pImage) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), core_validation::layer_data_map);
     bool skip = false;
-    const debug_report_data *report_data = core_validation::GetReportData(device_data);
+    const debug_report_data *report_data = GetReportData(device_data);
 
     if (GetDeviceExtensions(device_data)->vk_android_external_memory_android_hardware_buffer) {
         skip |= ValidateCreateImageANDROID(device_data, report_data, pCreateInfo);
@@ -1484,7 +1493,9 @@ bool PreCallValidateCreateImage(layer_data *device_data, const VkImageCreateInfo
     return skip;
 }
 
-void PostCallRecordCreateImage(layer_data *device_data, const VkImageCreateInfo *pCreateInfo, VkImage *pImage) {
+void PostCallRecordCreateImage(VkDevice device, const VkImageCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator,
+                               VkImage *pImage) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), core_validation::layer_data_map);
     IMAGE_LAYOUT_NODE image_state;
     image_state.layout = pCreateInfo->initialLayout;
     image_state.format = pCreateInfo->format;
@@ -1498,20 +1509,22 @@ void PostCallRecordCreateImage(layer_data *device_data, const VkImageCreateInfo 
     (*core_validation::GetImageLayoutMap(device_data))[subpair] = image_state;
 }
 
-bool PreCallValidateDestroyImage(layer_data *device_data, VkImage image, IMAGE_STATE **image_state, VK_OBJECT *obj_struct) {
-    const CHECK_DISABLED *disabled = core_validation::GetDisables(device_data);
-    *image_state = core_validation::GetImageState(device_data, image);
-    *obj_struct = {HandleToUint64(image), kVulkanObjectTypeImage};
-    if (disabled->destroy_image) return false;
+bool PreCallValidateDestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks *pAllocator) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    IMAGE_STATE *image_state = core_validation::GetImageState(device_data, image);
+    const VK_OBJECT obj_struct = {HandleToUint64(image), kVulkanObjectTypeImage};
     bool skip = false;
-    if (*image_state) {
-        skip |= core_validation::ValidateObjectNotInUse(device_data, *image_state, *obj_struct, "vkDestroyImage",
+    if (image_state) {
+        skip |= core_validation::ValidateObjectNotInUse(device_data, image_state, obj_struct, "vkDestroyImage",
                                                         "VUID-vkDestroyImage-image-01000");
     }
     return skip;
 }
 
-void PreCallRecordDestroyImage(layer_data *device_data, VkImage image, IMAGE_STATE *image_state, VK_OBJECT obj_struct) {
+void PreCallRecordDestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks *pAllocator) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    IMAGE_STATE *image_state = core_validation::GetImageState(device_data, image);
+    VK_OBJECT obj_struct = {HandleToUint64(image), kVulkanObjectTypeImage};
     core_validation::InvalidateCommandBuffers(device_data, image_state->cb_bindings, obj_struct);
     // Clean up memory mapping, bindings and range references for image
     for (auto mem_binding : image_state->GetBoundMemory()) {
@@ -4963,8 +4976,10 @@ void PreCallRecordCmdCopyBufferToImage(layer_data *device_data, GLOBAL_CB_NODE *
     AddCommandBufferBindingImage(device_data, cb_node, dst_image_state);
 }
 
-bool PreCallValidateGetImageSubresourceLayout(layer_data *device_data, VkImage image, const VkImageSubresource *pSubresource) {
-    const auto report_data = core_validation::GetReportData(device_data);
+bool PreCallValidateGetImageSubresourceLayout(VkDevice device, VkImage image, const VkImageSubresource *pSubresource,
+                                              VkSubresourceLayout *pLayout) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    const auto report_data = device_data->report_data;
     bool skip = false;
     const VkImageAspectFlags sub_aspect = pSubresource->aspectMask;
 
