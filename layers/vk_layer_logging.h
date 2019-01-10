@@ -1162,8 +1162,11 @@ static inline void EndCmdDebugUtilsLabel(debug_report_data *report_data, VkComma
             report_data->cmdBufLabelHasInsert = false;
             label_iter->second.pop_back();
         }
-        // Now pop the normal item
-        label_iter->second.pop_back();
+        // Guard against unbalanced markers.
+        if (label_iter->second.size() > 0) {
+            // Now pop the normal item
+            label_iter->second.pop_back();
+        }
     }
 }
 
