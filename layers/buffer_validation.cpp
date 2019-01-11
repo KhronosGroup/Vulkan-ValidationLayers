@@ -2754,10 +2754,12 @@ static inline bool ContainsRect(VkRect2D rect, VkRect2D sub_rect) {
     return true;
 }
 
-bool PreCallValidateCmdClearAttachments(layer_data *device_data, VkCommandBuffer commandBuffer, uint32_t attachmentCount,
+bool PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffer, uint32_t attachmentCount,
                                         const VkClearAttachment *pAttachments, uint32_t rectCount, const VkClearRect *pRects) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+
     GLOBAL_CB_NODE *cb_node = GetCBNode(device_data, commandBuffer);
-    const debug_report_data *report_data = core_validation::GetReportData(device_data);
+    const debug_report_data *report_data = device_data->report_data;
 
     bool skip = false;
     if (cb_node) {
@@ -3900,9 +3902,12 @@ bool ValidateBufferViewBuffer(const layer_data *device_data, const BUFFER_STATE 
     return skip;
 }
 
-bool PreCallValidateCreateBuffer(layer_data *device_data, const VkBufferCreateInfo *pCreateInfo) {
+bool PreCallValidateCreateBuffer(VkDevice device, const VkBufferCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator,
+                                 VkBuffer *pBuffer) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+
     bool skip = false;
-    const debug_report_data *report_data = core_validation::GetReportData(device_data);
+    const debug_report_data *report_data = device_data->report_data;
 
     // TODO: Add check for "VUID-vkCreateBuffer-flags-00911"        (sparse address space accounting)
 
@@ -3960,15 +3965,21 @@ bool PreCallValidateCreateBuffer(layer_data *device_data, const VkBufferCreateIn
     return skip;
 }
 
-void PostCallRecordCreateBuffer(layer_data *device_data, const VkBufferCreateInfo *pCreateInfo, VkBuffer *pBuffer) {
+void PostCallRecordCreateBuffer(VkDevice device, const VkBufferCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator,
+                                VkBuffer *pBuffer) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+
     // TODO : This doesn't create deep copy of pQueueFamilyIndices so need to fix that if/when we want that data to be valid
     GetBufferMap(device_data)
         ->insert(std::make_pair(*pBuffer, std::unique_ptr<BUFFER_STATE>(new BUFFER_STATE(*pBuffer, pCreateInfo))));
 }
 
-bool PreCallValidateCreateBufferView(const layer_data *device_data, const VkBufferViewCreateInfo *pCreateInfo) {
+bool PreCallValidateCreateBufferView(VkDevice device, const VkBufferViewCreateInfo *pCreateInfo,
+                                     const VkAllocationCallbacks *pAllocator, VkBufferView *pView) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+
     bool skip = false;
-    const debug_report_data *report_data = core_validation::GetReportData(device_data);
+    const debug_report_data *report_data = device_data->report_data;
     BUFFER_STATE *buffer_state = GetBufferState(device_data, pCreateInfo->buffer);
     // If this isn't a sparse buffer, it needs to have memory backing it at CreateBufferView time
     if (buffer_state) {
@@ -4007,14 +4018,17 @@ bool PreCallValidateCreateBufferView(const layer_data *device_data, const VkBuff
     return skip;
 }
 
-void PostCallRecordCreateBufferView(layer_data *device_data, const VkBufferViewCreateInfo *pCreateInfo, VkBufferView *pView) {
+void PostCallRecordCreateBufferView(VkDevice device, const VkBufferViewCreateInfo *pCreateInfo,
+                                    const VkAllocationCallbacks *pAllocator, VkBufferView *pView) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+
     (*GetBufferViewMap(device_data))[*pView] = std::unique_ptr<BUFFER_VIEW_STATE>(new BUFFER_VIEW_STATE(*pView, pCreateInfo));
 }
 
 // For the given format verify that the aspect masks make sense
 bool ValidateImageAspectMask(const layer_data *device_data, VkImage image, VkFormat format, VkImageAspectFlags aspect_mask,
                              const char *func_name, const char *vuid) {
-    const debug_report_data *report_data = core_validation::GetReportData(device_data);
+    const debug_report_data *report_data = device_data->report_data;
     bool skip = false;
     VkDebugReportObjectTypeEXT objectType = VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT;
     if (image != VK_NULL_HANDLE) {
@@ -4537,18 +4551,23 @@ void PreCallRecordDestroyImageView(VkDevice device, VkImageView imageView, const
     (*GetImageViewMap(device_data)).erase(imageView);
 }
 
-bool PreCallValidateDestroyBuffer(layer_data *device_data, VkBuffer buffer, BUFFER_STATE **buffer_state, VK_OBJECT *obj_struct) {
-    *buffer_state = GetBufferState(device_data, buffer);
-    *obj_struct = {HandleToUint64(buffer), kVulkanObjectTypeBuffer};
-    if (GetDisables(device_data)->destroy_buffer) return false;
+bool PreCallValidateDestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationCallbacks *pAllocator) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    auto buffer_state = GetBufferState(device_data, buffer);
+
     bool skip = false;
-    if (*buffer_state) {
+    if (buffer_state) {
         skip |= ValidateIdleBuffer(device_data, buffer);
     }
     return skip;
 }
 
-void PreCallRecordDestroyBuffer(layer_data *device_data, VkBuffer buffer, BUFFER_STATE *buffer_state, VK_OBJECT obj_struct) {
+void PreCallRecordDestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationCallbacks *pAllocator) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!buffer) return;
+    auto buffer_state = GetBufferState(device_data, buffer);
+    VK_OBJECT obj_struct = {HandleToUint64(buffer), kVulkanObjectTypeBuffer};
+
     InvalidateCommandBuffers(device_data, buffer_state->cb_bindings, obj_struct);
     for (auto mem_binding : buffer_state->GetBoundMemory()) {
         auto mem_info = GetMemObjInfo(device_data, mem_binding);
@@ -4561,24 +4580,27 @@ void PreCallRecordDestroyBuffer(layer_data *device_data, VkBuffer buffer, BUFFER
     GetBufferMap(device_data)->erase(buffer_state->buffer);
 }
 
-bool PreCallValidateDestroyBufferView(layer_data *device_data, VkBufferView buffer_view, BUFFER_VIEW_STATE **buffer_view_state,
-                                      VK_OBJECT *obj_struct) {
-    *buffer_view_state = GetBufferViewState(device_data, buffer_view);
-    *obj_struct = {HandleToUint64(buffer_view), kVulkanObjectTypeBufferView};
-    if (GetDisables(device_data)->destroy_buffer_view) return false;
+bool PreCallValidateDestroyBufferView(VkDevice device, VkBufferView bufferView, const VkAllocationCallbacks *pAllocator) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    auto buffer_view_state = GetBufferViewState(device_data, bufferView);
+    VK_OBJECT obj_struct = {HandleToUint64(bufferView), kVulkanObjectTypeBufferView};
     bool skip = false;
-    if (*buffer_view_state) {
-        skip |= ValidateObjectNotInUse(device_data, *buffer_view_state, *obj_struct, "vkDestroyBufferView",
+    if (buffer_view_state) {
+        skip |= ValidateObjectNotInUse(device_data, buffer_view_state, obj_struct, "vkDestroyBufferView",
                                        "VUID-vkDestroyBufferView-bufferView-00936");
     }
     return skip;
 }
 
-void PreCallRecordDestroyBufferView(layer_data *device_data, VkBufferView buffer_view, BUFFER_VIEW_STATE *buffer_view_state,
-                                    VK_OBJECT obj_struct) {
+void PreCallRecordDestroyBufferView(VkDevice device, VkBufferView bufferView, const VkAllocationCallbacks *pAllocator) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!bufferView) return;
+    auto buffer_view_state = GetBufferViewState(device_data, bufferView);
+    VK_OBJECT obj_struct = {HandleToUint64(bufferView), kVulkanObjectTypeBufferView};
+
     // Any bound cmd buffers are now invalid
     InvalidateCommandBuffers(device_data, buffer_view_state->cb_bindings, obj_struct);
-    GetBufferViewMap(device_data)->erase(buffer_view);
+    GetBufferViewMap(device_data)->erase(bufferView);
 }
 
 bool PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset, VkDeviceSize size,

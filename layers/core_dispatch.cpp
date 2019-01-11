@@ -505,15 +505,10 @@ VKAPI_ATTR VkResult VKAPI_CALL GetQueryPoolResults(VkDevice device, VkQueryPool 
 
 VKAPI_ATTR void VKAPI_CALL DestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationCallbacks *pAllocator) {
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    BUFFER_STATE *buffer_state = nullptr;
-    VK_OBJECT obj_struct;
     unique_lock_t lock(global_lock);
-    bool skip = PreCallValidateDestroyBuffer(dev_data, buffer, &buffer_state, &obj_struct);
+    bool skip = PreCallValidateDestroyBuffer(device, buffer, pAllocator);
     if (!skip) {
-        if (buffer != VK_NULL_HANDLE) {
-            // Pre-record to avoid Destroy/Create race
-            PreCallRecordDestroyBuffer(dev_data, buffer, buffer_state, obj_struct);
-        }
+        PreCallRecordDestroyBuffer(device, buffer, pAllocator);
         lock.unlock();
         dev_data->dispatch_table.DestroyBuffer(device, buffer, pAllocator);
     }
@@ -521,16 +516,13 @@ VKAPI_ATTR void VKAPI_CALL DestroyBuffer(VkDevice device, VkBuffer buffer, const
 
 VKAPI_ATTR void VKAPI_CALL DestroyBufferView(VkDevice device, VkBufferView bufferView, const VkAllocationCallbacks *pAllocator) {
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    // Common data objects used pre & post call
-    BUFFER_VIEW_STATE *buffer_view_state = nullptr;
-    VK_OBJECT obj_struct;
     unique_lock_t lock(global_lock);
     // Validate state before calling down chain, update common data if we'll be calling down chain
-    bool skip = PreCallValidateDestroyBufferView(dev_data, bufferView, &buffer_view_state, &obj_struct);
+    bool skip = PreCallValidateDestroyBufferView(device, bufferView, pAllocator);
     if (!skip) {
         if (bufferView != VK_NULL_HANDLE) {
             // Pre-record to avoid Destroy/Create race
-            PreCallRecordDestroyBufferView(dev_data, bufferView, buffer_view_state, obj_struct);
+            PreCallRecordDestroyBufferView(device, bufferView, pAllocator);
         }
         lock.unlock();
         dev_data->dispatch_table.DestroyBufferView(device, bufferView, pAllocator);
@@ -958,7 +950,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateBuffer(VkDevice device, const VkBufferCreat
                                             const VkAllocationCallbacks *pAllocator, VkBuffer *pBuffer) {
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     unique_lock_t lock(global_lock);
-    bool skip = PreCallValidateCreateBuffer(dev_data, pCreateInfo);
+    bool skip = PreCallValidateCreateBuffer(device, pCreateInfo, pAllocator, pBuffer);
     lock.unlock();
 
     if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
@@ -966,7 +958,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateBuffer(VkDevice device, const VkBufferCreat
 
     if (VK_SUCCESS == result) {
         lock.lock();
-        PostCallRecordCreateBuffer(dev_data, pCreateInfo, pBuffer);
+        PostCallRecordCreateBuffer(device, pCreateInfo, pAllocator, pBuffer);
         lock.unlock();
     }
     return result;
@@ -976,13 +968,13 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateBufferView(VkDevice device, const VkBufferV
                                                 const VkAllocationCallbacks *pAllocator, VkBufferView *pView) {
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     unique_lock_t lock(global_lock);
-    bool skip = PreCallValidateCreateBufferView(dev_data, pCreateInfo);
+    bool skip = PreCallValidateCreateBufferView(device, pCreateInfo, pAllocator, pView);
     lock.unlock();
     if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     VkResult result = dev_data->dispatch_table.CreateBufferView(device, pCreateInfo, pAllocator, pView);
     if (VK_SUCCESS == result) {
         lock.lock();
-        PostCallRecordCreateBufferView(dev_data, pCreateInfo, pView);
+        PostCallRecordCreateBufferView(device, pCreateInfo, pAllocator, pView);
         lock.unlock();
     }
     return result;
@@ -1809,7 +1801,7 @@ VKAPI_ATTR void VKAPI_CALL CmdClearAttachments(VkCommandBuffer commandBuffer, ui
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     {
         lock_guard_t lock(global_lock);
-        skip = PreCallValidateCmdClearAttachments(dev_data, commandBuffer, attachmentCount, pAttachments, rectCount, pRects);
+        skip = PreCallValidateCmdClearAttachments(commandBuffer, attachmentCount, pAttachments, rectCount, pRects);
     }
     if (!skip) dev_data->dispatch_table.CmdClearAttachments(commandBuffer, attachmentCount, pAttachments, rectCount, pRects);
 }
