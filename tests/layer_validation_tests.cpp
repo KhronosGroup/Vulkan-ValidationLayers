@@ -12928,6 +12928,196 @@ TEST_F(VkLayerTest, InvalidPipelineSamplePNext) {
                                       "VUID-VkPipelineMultisampleStateCreateInfo-pNext-pNext");
 }
 
+TEST_F(VkLayerTest, VertexAttributeDivisorExtension) {
+    TEST_DESCRIPTION("Test VUIDs added with VK_EXT_vertex_attribute_divisor extension.");
+
+    bool inst_ext = InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    if (inst_ext) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    }
+    if (inst_ext && DeviceExtensionSupported(gpu(), nullptr, VK_EXT_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_EXT_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME);
+    } else {
+        printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, VK_EXT_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME);
+        return;
+    }
+
+    VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT vadf = {};
+    vadf.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_ATTRIBUTE_DIVISOR_FEATURES_EXT;
+    vadf.vertexAttributeInstanceRateDivisor = VK_TRUE;
+    vadf.vertexAttributeInstanceRateZeroDivisor = VK_TRUE;
+
+    VkPhysicalDeviceFeatures2 pd_features2 = {};
+    pd_features2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+    pd_features2.pNext = &vadf;
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &pd_features2));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    const VkPhysicalDeviceLimits &dev_limits = m_device->props.limits;
+    VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT pdvad_props = {};
+    pdvad_props.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_ATTRIBUTE_DIVISOR_PROPERTIES_EXT;
+    VkPhysicalDeviceProperties2 pd_props2 = {};
+    pd_props2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+    pd_props2.pNext = &pdvad_props;
+    vkGetPhysicalDeviceProperties2(gpu(), &pd_props2);
+
+    VkVertexInputBindingDivisorDescriptionEXT vibdd = {};
+    VkPipelineVertexInputDivisorStateCreateInfoEXT pvids_ci = {};
+    pvids_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_DIVISOR_STATE_CREATE_INFO_EXT;
+    pvids_ci.vertexBindingDivisorCount = 1;
+    pvids_ci.pVertexBindingDivisors = &vibdd;
+    VkVertexInputBindingDescription vibd = {};
+    vibd.stride = 12;
+    vibd.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+    using std::vector;
+    struct TestCase {
+        uint32_t div_binding;
+        uint32_t div_divisor;
+        uint32_t desc_binding;
+        VkVertexInputRate desc_rate;
+        vector<std::string> vuids;
+    };
+
+    // clang-format off
+    vector<TestCase> test_cases = {
+        {   0, 
+            1, 
+            0, 
+            VK_VERTEX_INPUT_RATE_VERTEX, 
+            {"VUID-VkVertexInputBindingDivisorDescriptionEXT-inputRate-01871"}
+        },
+        {   dev_limits.maxVertexInputBindings + 1,
+            1,
+            0,
+            VK_VERTEX_INPUT_RATE_INSTANCE,
+            {"VUID-VkVertexInputBindingDivisorDescriptionEXT-binding-01869",
+             "VUID-VkVertexInputBindingDivisorDescriptionEXT-inputRate-01871"}
+        }
+    };
+
+    if (UINT32_MAX != pdvad_props.maxVertexAttribDivisor) {  // Can't test overflow if maxVAD is UINT32_MAX
+        test_cases.push_back(
+            {   0,
+                pdvad_props.maxVertexAttribDivisor + 1,
+                0,
+                VK_VERTEX_INPUT_RATE_INSTANCE,
+                {"VUID-VkVertexInputBindingDivisorDescriptionEXT-divisor-01870"}
+            } );
+    }
+    // clang-format on
+
+    for (const auto &test_case : test_cases) {
+        const auto bad_divisor_state = [&test_case, &vibdd, &pvids_ci, &vibd](CreatePipelineHelper &helper) {
+            vibdd.binding = test_case.div_binding;
+            vibdd.divisor = test_case.div_divisor;
+            vibd.binding = test_case.desc_binding;
+            vibd.inputRate = test_case.desc_rate;
+            helper.vi_ci_.pNext = &pvids_ci;
+            helper.vi_ci_.vertexBindingDescriptionCount = 1;
+            helper.vi_ci_.pVertexBindingDescriptions = &vibd;
+        };
+        CreatePipelineHelper::OneshotTest(*this, bad_divisor_state, VK_DEBUG_REPORT_ERROR_BIT_EXT, test_case.vuids);
+    }
+}
+
+TEST_F(VkLayerTest, VertexAttributeDivisorDisabled) {
+    TEST_DESCRIPTION("Test instance divisor feature disabled for VK_EXT_vertex_attribute_divisor extension.");
+
+    bool inst_ext = InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    if (inst_ext) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    }
+    if (inst_ext && DeviceExtensionSupported(gpu(), nullptr, VK_EXT_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_EXT_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME);
+    } else {
+        printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, VK_EXT_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME);
+        return;
+    }
+
+    VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT vadf = {};
+    vadf.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_ATTRIBUTE_DIVISOR_FEATURES_EXT;
+    vadf.vertexAttributeInstanceRateDivisor = VK_FALSE;
+    vadf.vertexAttributeInstanceRateZeroDivisor = VK_FALSE;
+    VkPhysicalDeviceFeatures2 pd_features2 = {};
+    pd_features2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+    pd_features2.pNext = &vadf;
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &pd_features2));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkVertexInputBindingDivisorDescriptionEXT vibdd = {};
+    vibdd.binding = 0;
+    vibdd.divisor = 2;
+    VkPipelineVertexInputDivisorStateCreateInfoEXT pvids_ci = {};
+    pvids_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_DIVISOR_STATE_CREATE_INFO_EXT;
+    pvids_ci.vertexBindingDivisorCount = 1;
+    pvids_ci.pVertexBindingDivisors = &vibdd;
+    VkVertexInputBindingDescription vibd = {};
+    vibd.binding = vibdd.binding;
+    vibd.stride = 12;
+    vibd.inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
+
+    const auto instance_rate = [&pvids_ci, &vibd](CreatePipelineHelper &helper) {
+        helper.vi_ci_.pNext = &pvids_ci;
+        helper.vi_ci_.vertexBindingDescriptionCount = 1;
+        helper.vi_ci_.pVertexBindingDescriptions = &vibd;
+    };
+    CreatePipelineHelper::OneshotTest(*this, instance_rate, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                      "VUID-VkVertexInputBindingDivisorDescriptionEXT-vertexAttributeInstanceRateDivisor-02229");
+}
+
+TEST_F(VkLayerTest, VertexAttributeDivisorInstanceRateZero) {
+    TEST_DESCRIPTION("Test instanceRateZero feature of VK_EXT_vertex_attribute_divisor extension.");
+
+    bool inst_ext = InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    if (inst_ext) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    }
+    if (inst_ext && DeviceExtensionSupported(gpu(), nullptr, VK_EXT_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_EXT_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME);
+    } else {
+        printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, VK_EXT_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME);
+        return;
+    }
+
+    VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT vadf = {};
+    vadf.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_ATTRIBUTE_DIVISOR_FEATURES_EXT;
+    vadf.vertexAttributeInstanceRateDivisor = VK_TRUE;
+    vadf.vertexAttributeInstanceRateZeroDivisor = VK_FALSE;
+    VkPhysicalDeviceFeatures2 pd_features2 = {};
+    pd_features2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+    pd_features2.pNext = &vadf;
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &pd_features2));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkVertexInputBindingDivisorDescriptionEXT vibdd = {};
+    vibdd.binding = 0;
+    vibdd.divisor = 0;
+    VkPipelineVertexInputDivisorStateCreateInfoEXT pvids_ci = {};
+    pvids_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_DIVISOR_STATE_CREATE_INFO_EXT;
+    pvids_ci.vertexBindingDivisorCount = 1;
+    pvids_ci.pVertexBindingDivisors = &vibdd;
+    VkVertexInputBindingDescription vibd = {};
+    vibd.binding = vibdd.binding;
+    vibd.stride = 12;
+    vibd.inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
+
+    const auto instance_rate = [&pvids_ci, &vibd](CreatePipelineHelper &helper) {
+        helper.vi_ci_.pNext = &pvids_ci;
+        helper.vi_ci_.vertexBindingDescriptionCount = 1;
+        helper.vi_ci_.pVertexBindingDescriptions = &vibd;
+    };
+    CreatePipelineHelper::OneshotTest(
+        *this, instance_rate, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+        "VUID-VkVertexInputBindingDivisorDescriptionEXT-vertexAttributeInstanceRateZeroDivisor-02228");
+}
+
 /*// TODO : This test should be good, but needs Tess support in compiler to run
 TEST_F(VkLayerTest, InvalidPatchControlPoints)
 {
