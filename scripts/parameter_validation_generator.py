@@ -1,9 +1,9 @@
 #!/usr/bin/python3 -i
 #
-# Copyright (c) 2015-2018 The Khronos Group Inc.
-# Copyright (c) 2015-2018 Valve Corporation
-# Copyright (c) 2015-2018 LunarG, Inc.
-# Copyright (c) 2015-2018 Google Inc.
+# Copyright (c) 2015-2019 The Khronos Group Inc.
+# Copyright (c) 2015-2019 Valve Corporation
+# Copyright (c) 2015-2019 LunarG, Inc.
+# Copyright (c) 2015-2019 Google Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -303,7 +303,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
         for struct in self.registry.tree.iterfind('types/type[@category="struct"]'):
             # Check if struct has member named "sType" of type "VkStructureType" which has values defined
             stype = struct.find('member[name="sType"][type="VkStructureType"][@values]')
-            if stype:
+            if stype is not None:
                 # Store VkStructureType value for this type
                 self.structTypes[struct.get('name')] = stype.get('values')
 
