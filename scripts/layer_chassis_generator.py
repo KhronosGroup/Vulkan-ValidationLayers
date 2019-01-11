@@ -508,6 +508,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
     PFN_vkCreateInstance fpCreateInstance = (PFN_vkCreateInstance)fpGetInstanceProcAddr(NULL, "vkCreateInstance");
     if (fpCreateInstance == NULL) return VK_ERROR_INITIALIZATION_FAILED;
     chain_info->u.pLayerInfo = chain_info->u.pLayerInfo->pNext;
+    uint32_t specified_version = (pCreateInfo->pApplicationInfo ? pCreateInfo->pApplicationInfo->apiVersion : VK_API_VERSION_1_0);
+    uint32_t api_version = (specified_version < VK_API_VERSION_1_1) ? VK_API_VERSION_1_0 : VK_API_VERSION_1_1;
+
 
     // Create temporary dispatch vector for pre-calls until instance is created
     std::vector<ValidationObject*> local_object_dispatch;
@@ -515,14 +518,17 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
     auto object_tracker = new ObjectLifetimes;
     local_object_dispatch.emplace_back(object_tracker);
     object_tracker->container_type = LayerObjectTypeObjectTracker;
+    object_tracker->api_version = api_version;
 #elif BUILD_THREAD_SAFETY
     auto thread_checker = new ThreadSafety;
     local_object_dispatch.emplace_back(thread_checker);
     thread_checker->container_type = LayerObjectTypeThreading;
+    thread_checker->api_version = api_version;
 #elif BUILD_PARAMETER_VALIDATION
     auto parameter_validation = new StatelessValidation;
     local_object_dispatch.emplace_back(parameter_validation);
     parameter_validation->container_type = LayerObjectTypeParameterValidation;
+    parameter_validation->api_version = api_version;
 #endif
 
 
@@ -545,20 +551,18 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
     layer_init_instance_dispatch_table(*pInstance, &framework->instance_dispatch_table, fpGetInstanceProcAddr);
     framework->report_data = debug_utils_create_instance(&framework->instance_dispatch_table, *pInstance, pCreateInfo->enabledExtensionCount,
                                                          pCreateInfo->ppEnabledExtensionNames);
-    framework->api_version = framework->instance_extensions.InitFromInstanceCreateInfo(
-        (pCreateInfo->pApplicationInfo ? pCreateInfo->pApplicationInfo->apiVersion : VK_API_VERSION_1_0), pCreateInfo);
+    framework->api_version = api_version;
+    framework->instance_extensions.InitFromInstanceCreateInfo(specified_version, pCreateInfo);
+
 #if BUILD_OBJECT_TRACKER
     layer_debug_messenger_actions(framework->report_data, framework->logging_messenger, pAllocator, "lunarg_object_tracker");
     object_tracker->report_data = framework->report_data;
-    object_tracker->api_version = framework->api_version;
 #elif BUILD_THREAD_SAFETY
     layer_debug_messenger_actions(framework->report_data, framework->logging_messenger, pAllocator, "google_thread_checker");
     thread_checker->report_data = framework->report_data;
-    thread_checker->api_version = framework->api_version;
 #elif BUILD_PARAMETER_VALIDATION
     layer_debug_messenger_actions(framework->report_data, framework->logging_messenger, pAllocator, "lunarg_parameter_validation");
     parameter_validation->report_data = framework->report_data;
-    parameter_validation->api_version = framework->api_version;
 #else
     layer_debug_messenger_actions(framework->report_data, framework->logging_messenger, pAllocator, "lunarg_unique_objects");
 #endif
