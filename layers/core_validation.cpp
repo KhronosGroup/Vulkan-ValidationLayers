@@ -208,6 +208,7 @@ struct layer_data {
         VkPhysicalDeviceShadingRateImagePropertiesNV shading_rate_image_props;
         VkPhysicalDeviceMeshShaderPropertiesNV mesh_shader_props;
         VkPhysicalDeviceInlineUniformBlockPropertiesEXT inline_uniform_block_props;
+        VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT vtx_attrib_divisor_props;
         VkPhysicalDeviceDepthStencilResolvePropertiesKHR depth_stencil_resolve_props;
     };
     DeviceExtensionProperties phys_dev_ext_props = {};
@@ -2630,6 +2631,11 @@ static void PostCallRecordCreateDevice(instance_layer_data *instance_data, const
         device_data->enabled_features.float16_int8 = *float16_int8_features;
     }
 
+    const auto *vtx_attrib_div_features = lvl_find_in_chain<VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT>(pCreateInfo->pNext);
+    if (vtx_attrib_div_features) {
+        device_data->enabled_features.vtx_attrib_divisor_features = *vtx_attrib_div_features;
+    }
+
     const auto *scalar_block_layout_features = lvl_find_in_chain<VkPhysicalDeviceScalarBlockLayoutFeaturesEXT>(pCreateInfo->pNext);
     if (scalar_block_layout_features) {
         device_data->enabled_features.scalar_block_layout_features = *scalar_block_layout_features;
@@ -2678,6 +2684,13 @@ static void PostCallRecordCreateDevice(instance_layer_data *instance_data, const
         auto prop2 = lvl_init_struct<VkPhysicalDeviceProperties2KHR>(&inline_uniform_block_props);
         instance_data->dispatch_table.GetPhysicalDeviceProperties2KHR(gpu, &prop2);
         device_data->phys_dev_ext_props.inline_uniform_block_props = inline_uniform_block_props;
+    }
+    if (device_data->extensions.vk_ext_vertex_attribute_divisor) {
+        // Get the needed vertex attribute divisor limits
+        auto vtx_attrib_divisor_props = lvl_init_struct<VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT>();
+        auto prop2 = lvl_init_struct<VkPhysicalDeviceProperties2KHR>(&vtx_attrib_divisor_props);
+        instance_data->dispatch_table.GetPhysicalDeviceProperties2KHR(gpu, &prop2);
+        device_data->phys_dev_ext_props.vtx_attrib_divisor_props = vtx_attrib_divisor_props;
     }
     if (device_data->extensions.vk_khr_depth_stencil_resolve) {
         // Get the needed depth and stencil resolve modes
@@ -5923,6 +5936,80 @@ void SetPipelineState(PIPELINE_STATE *pPipe) {
     }
 }
 
+static bool ValidatePipelineVertexDivisors(layer_data *dev_data, vector<std::unique_ptr<PIPELINE_STATE>> const &pipe_state_vec,
+                                           const uint32_t count, const VkGraphicsPipelineCreateInfo *pipe_cis) {
+    bool skip = false;
+    const VkPhysicalDeviceLimits *device_limits = &(GetPhysicalDeviceProperties(dev_data)->limits);
+
+    for (uint32_t i = 0; i < count; i++) {
+        auto pvids_ci = lvl_find_in_chain<VkPipelineVertexInputDivisorStateCreateInfoEXT>(pipe_cis[i].pVertexInputState->pNext);
+        if (nullptr == pvids_ci) continue;
+
+        const PIPELINE_STATE *pipe_state = pipe_state_vec[i].get();
+        for (uint32_t j = 0; j < pvids_ci->vertexBindingDivisorCount; j++) {
+            const VkVertexInputBindingDivisorDescriptionEXT *vibdd = &(pvids_ci->pVertexBindingDivisors[j]);
+            if (vibdd->binding >= device_limits->maxVertexInputBindings) {
+                skip |= log_msg(
+                    dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
+                    HandleToUint64(pipe_state->pipeline), "VUID-VkVertexInputBindingDivisorDescriptionEXT-binding-01869",
+                    "vkCreateGraphicsPipelines(): Pipeline[%1u] with chained VkPipelineVertexInputDivisorStateCreateInfoEXT, "
+                    "pVertexBindingDivisors[%1u] binding index of (%1u) exceeds device maxVertexInputBindings (%1u).",
+                    i, j, vibdd->binding, device_limits->maxVertexInputBindings);
+            }
+            if (vibdd->divisor > dev_data->phys_dev_ext_props.vtx_attrib_divisor_props.maxVertexAttribDivisor) {
+                skip |= log_msg(
+                    dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
+                    HandleToUint64(pipe_state->pipeline), "VUID-VkVertexInputBindingDivisorDescriptionEXT-divisor-01870",
+                    "vkCreateGraphicsPipelines(): Pipeline[%1u] with chained VkPipelineVertexInputDivisorStateCreateInfoEXT, "
+                    "pVertexBindingDivisors[%1u] divisor of (%1u) exceeds extension maxVertexAttribDivisor (%1u).",
+                    i, j, vibdd->divisor, dev_data->phys_dev_ext_props.vtx_attrib_divisor_props.maxVertexAttribDivisor);
+            }
+            if ((0 == vibdd->divisor) &&
+                !dev_data->enabled_features.vtx_attrib_divisor_features.vertexAttributeInstanceRateZeroDivisor) {
+                skip |= log_msg(
+                    dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
+                    HandleToUint64(pipe_state->pipeline),
+                    "VUID-VkVertexInputBindingDivisorDescriptionEXT-vertexAttributeInstanceRateZeroDivisor-02228",
+                    "vkCreateGraphicsPipelines(): Pipeline[%1u] with chained VkPipelineVertexInputDivisorStateCreateInfoEXT, "
+                    "pVertexBindingDivisors[%1u] divisor must not be 0 when vertexAttributeInstanceRateZeroDivisor feature is not "
+                    "enabled.",
+                    i, j);
+            }
+            if ((1 != vibdd->divisor) &&
+                !dev_data->enabled_features.vtx_attrib_divisor_features.vertexAttributeInstanceRateDivisor) {
+                skip |= log_msg(
+                    dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
+                    HandleToUint64(pipe_state->pipeline),
+                    "VUID-VkVertexInputBindingDivisorDescriptionEXT-vertexAttributeInstanceRateDivisor-02229",
+                    "vkCreateGraphicsPipelines(): Pipeline[%1u] with chained VkPipelineVertexInputDivisorStateCreateInfoEXT, "
+                    "pVertexBindingDivisors[%1u] divisor (%1u) must be 1 when vertexAttributeInstanceRateDivisor feature is not "
+                    "enabled.",
+                    i, j, vibdd->divisor);
+            }
+
+            // Find the corresponding binding description and validate input rate setting
+            bool failed_01871 = true;
+            for (size_t k = 0; k < pipe_state->vertex_binding_descriptions_.size(); k++) {
+                if ((vibdd->binding == pipe_state->vertex_binding_descriptions_[k].binding) &&
+                    (VK_VERTEX_INPUT_RATE_INSTANCE == pipe_state->vertex_binding_descriptions_[k].inputRate)) {
+                    failed_01871 = false;
+                    break;
+                }
+            }
+            if (failed_01871) {  // Description not found, or has incorrect inputRate value
+                skip |= log_msg(
+                    dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
+                    HandleToUint64(pipe_state->pipeline), "VUID-VkVertexInputBindingDivisorDescriptionEXT-inputRate-01871",
+                    "vkCreateGraphicsPipelines(): Pipeline[%1u] with chained VkPipelineVertexInputDivisorStateCreateInfoEXT, "
+                    "pVertexBindingDivisors[%1u] specifies binding index (%1u), but that binding index's "
+                    "VkVertexInputBindingDescription.inputRate member is not VK_VERTEX_INPUT_RATE_INSTANCE.",
+                    i, j, vibdd->binding);
+            }
+        }
+    }
+    return skip;
+}
+
 static bool PreCallValidateCreateGraphicsPipelines(layer_data *dev_data, vector<std::unique_ptr<PIPELINE_STATE>> *pipe_state,
                                                    const uint32_t count, const VkGraphicsPipelineCreateInfo *pCreateInfos) {
     bool skip = false;
@@ -5940,6 +6027,10 @@ static bool PreCallValidateCreateGraphicsPipelines(layer_data *dev_data, vector<
 
     for (uint32_t i = 0; i < count; i++) {
         skip |= ValidatePipelineUnlocked(dev_data, *pipe_state, i);
+    }
+
+    if (dev_data->extensions.vk_ext_vertex_attribute_divisor) {
+        skip |= ValidatePipelineVertexDivisors(dev_data, *pipe_state, count, pCreateInfos);
     }
 
     return skip;
