@@ -128,7 +128,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
         inline_custom_source_preamble = """
 """
 
-        # These functions have additional, custome-written checks in the utils cpp file. CodeGen will automatically add a call
+        # These functions have additional, custom-written checks in the utils cpp file. CodeGen will automatically add a call
         # to those functions of the form 'bool manual_PreCallValidateAPIName', where the 'vk' is dropped.
         # see 'manual_PreCallValidateCreateGraphicsPipelines' as an example.
         self.functions_with_manual_checks = [
@@ -175,6 +175,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             'vkCmdDrawMeshTasksNV',
             'vkCmdDrawMeshTasksIndirectNV',
             'vkCmdDrawMeshTasksIndirectCountNV',
+            'vkAllocateMemory',
             ]
 
         # Commands to ignore
