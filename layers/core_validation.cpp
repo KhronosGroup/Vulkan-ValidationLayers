@@ -214,6 +214,7 @@ struct layer_data {
     bool external_sync_warning = false;
     uint32_t api_version = 0;
     GpuValidationState gpu_validation_state = {};
+    uint32_t physical_device_count;
 };
 
 // TODO : Do we need to guard access to layer_data_map w/ lock?
@@ -2584,6 +2585,10 @@ static void PostCallRecordCreateDevice(instance_layer_data *instance_data, const
         device_data->enabled_features.core = *enabled_features_found;
     }
 
+    const auto *device_group_ci = lvl_find_in_chain<VkDeviceGroupDeviceCreateInfo>(pCreateInfo->pNext);
+    device_data->physical_device_count =
+        device_group_ci && device_group_ci->physicalDeviceCount > 0 ? device_group_ci->physicalDeviceCount : 1;
+
     const auto *descriptor_indexing_features = lvl_find_in_chain<VkPhysicalDeviceDescriptorIndexingFeaturesEXT>(pCreateInfo->pNext);
     if (descriptor_indexing_features) {
         device_data->enabled_features.descriptor_indexing = *descriptor_indexing_features;
@@ -2628,6 +2633,11 @@ static void PostCallRecordCreateDevice(instance_layer_data *instance_data, const
     const auto *scalar_block_layout_features = lvl_find_in_chain<VkPhysicalDeviceScalarBlockLayoutFeaturesEXT>(pCreateInfo->pNext);
     if (scalar_block_layout_features) {
         device_data->enabled_features.scalar_block_layout_features = *scalar_block_layout_features;
+    }
+
+    const auto *buffer_address = lvl_find_in_chain<VkPhysicalDeviceBufferAddressFeaturesEXT>(pCreateInfo->pNext);
+    if (buffer_address) {
+        device_data->enabled_features.buffer_address = *buffer_address;
     }
 
     // Store physical device properties and physical device mem limits into device layer_data structs
@@ -15996,6 +16006,48 @@ VKAPI_ATTR void VKAPI_CALL DestroySamplerYcbcrConversionKHR(VkDevice device, VkS
     PostCallRecordDestroySamplerYcbcrConversion(dev_data, ycbcrConversion);
 };
 
+static bool PreCallValidateGetBufferDeviceAddressEXT(layer_data *dev_data, const VkBufferDeviceAddressInfoEXT *pInfo) {
+    bool skip = false;
+
+    if (!GetEnabledFeatures(dev_data)->buffer_address.bufferDeviceAddress) {
+        skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT,
+                        HandleToUint64(pInfo->buffer), "VUID-vkGetBufferDeviceAddressEXT-None-02598",
+                        "The bufferDeviceAddress feature must: be enabled.");
+    }
+
+    if (dev_data->physical_device_count > 1 && !GetEnabledFeatures(dev_data)->buffer_address.bufferDeviceAddressMultiDevice) {
+        skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT,
+                        HandleToUint64(pInfo->buffer), "VUID-vkGetBufferDeviceAddressEXT-device-02599",
+                        "If device was created with multiple physical devices, then the "
+                        "bufferDeviceAddressMultiDevice feature must: be enabled.");
+    }
+
+    auto buffer_state = GetBufferState(dev_data, pInfo->buffer);
+    if (buffer_state) {
+        if (!(buffer_state->createInfo.flags & VK_BUFFER_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT_EXT)) {
+            skip |= ValidateMemoryIsBoundToBuffer(dev_data, buffer_state, "vkGetBufferDeviceAddressEXT()",
+                                                  "VUID-VkBufferDeviceAddressInfoEXT-buffer-02600");
+        }
+
+        skip |= ValidateBufferUsageFlags(dev_data, buffer_state, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_EXT, true,
+                                         "VUID-VkBufferDeviceAddressInfoEXT-buffer-02601", "vkGetBufferDeviceAddressEXT()",
+                                         "VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_EXT");
+    }
+
+    return skip;
+}
+
+VKAPI_ATTR VkDeviceAddress VKAPI_CALL GetBufferDeviceAddressEXT(VkDevice device, const VkBufferDeviceAddressInfoEXT *pInfo) {
+    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    unique_lock_t lock(global_lock);
+    bool skip = PreCallValidateGetBufferDeviceAddressEXT(dev_data, pInfo);
+    if (!skip) {
+        lock.unlock();
+        return dev_data->dispatch_table.GetBufferDeviceAddressEXT(device, pInfo);
+    }
+    return 0;
+}
+
 VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetDeviceProcAddr(VkDevice device, const char *funcName);
 VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetPhysicalDeviceProcAddr(VkInstance instance, const char *funcName);
 VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetInstanceProcAddr(VkInstance instance, const char *funcName);
@@ -16256,6 +16308,7 @@ static const std::unordered_map<std::string, void *> name_to_funcptr_map = {
     {"vkCmdBeginRenderPass2KHR", (void *)CmdBeginRenderPass2KHR},
     {"vkCmdNextSubpass2KHR", (void *)CmdNextSubpass2KHR},
     {"vkCmdEndRenderPass2KHR", (void *)CmdEndRenderPass2KHR},
+    {"vkGetBufferDeviceAddressEXT", (void *)GetBufferDeviceAddressEXT},
 };
 
 VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetDeviceProcAddr(VkDevice device, const char *funcName) {
