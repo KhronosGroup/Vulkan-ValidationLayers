@@ -3009,3 +3009,18 @@ void StatelessValidation::PostCallRecordDestroyRenderPass(VkDevice device, VkRen
     // Track the state necessary for checking vkCreateGraphicsPipeline (subpass usage of depth and color attachments)
     renderpasses_states.erase(renderPass);
 }
+
+bool StatelessValidation::manual_PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAllocateInfo *pAllocateInfo,
+                                                               const VkAllocationCallbacks *pAllocator, VkDeviceMemory *pMemory) {
+    bool skip = false;
+
+    if (pAllocateInfo) {
+        auto chained_prio_struct = lvl_find_in_chain<VkMemoryPriorityAllocateInfoEXT>(pAllocateInfo->pNext);
+        if (chained_prio_struct && (chained_prio_struct->priority < 0.0f || chained_prio_struct->priority > 1.0f)) {
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                            "VUID-VkMemoryPriorityAllocateInfoEXT-priority-02602",
+                            "priority (=%f) must be between `0` and `1`, inclusive.", chained_prio_struct->priority);
+        }
+    }
+    return skip;
+}
