@@ -1166,6 +1166,7 @@ struct DeviceFeatures {
     VkPhysicalDeviceTransformFeedbackFeaturesEXT transform_feedback_features;
     VkPhysicalDeviceFloat16Int8FeaturesKHR float16_int8;
     VkPhysicalDeviceScalarBlockLayoutFeaturesEXT scalar_block_layout_features;
+    VkPhysicalDeviceBufferAddressFeaturesEXT buffer_address;
 };
 
 enum RenderPassCreateVersion { RENDER_PASS_VERSION_1 = 0, RENDER_PASS_VERSION_2 = 1 };
