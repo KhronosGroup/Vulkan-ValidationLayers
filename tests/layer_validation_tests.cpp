@@ -36865,6 +36865,146 @@ TEST_F(VkLayerTest, ViewportSwizzleNV) {
     }
 }
 
+TEST_F(VkLayerTest, BufferDeviceAddressEXT) {
+    TEST_DESCRIPTION("Test VK_EXT_buffer_device_address.");
+
+    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    } else {
+        printf("%s Did not find required instance extension %s; skipped.\n", kSkipPrefix,
+               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    std::array<const char *, 1> required_device_extensions = {{VK_EXT_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME}};
+    for (auto device_extension : required_device_extensions) {
+        if (DeviceExtensionSupported(gpu(), nullptr, device_extension)) {
+            m_device_extension_names.push_back(device_extension);
+        } else {
+            printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, device_extension);
+            return;
+        }
+    }
+
+    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
+        (PFN_vkGetPhysicalDeviceFeatures2KHR)vkGetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
+
+    // Create a device that enables buffer_device_address
+    auto buffer_device_address_features = lvl_init_struct<VkPhysicalDeviceBufferAddressFeaturesEXT>();
+    auto features2 = lvl_init_struct<VkPhysicalDeviceFeatures2KHR>(&buffer_device_address_features);
+    vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
+    buffer_device_address_features.bufferDeviceAddressCaptureReplay = VK_FALSE;
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    PFN_vkGetBufferDeviceAddressEXT vkGetBufferDeviceAddressEXT =
+        (PFN_vkGetBufferDeviceAddressEXT)vkGetInstanceProcAddr(instance(), "vkGetBufferDeviceAddressEXT");
+
+    VkBufferCreateInfo buffer_create_info = {VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
+    buffer_create_info.size = sizeof(uint32_t);
+    buffer_create_info.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_EXT;
+    buffer_create_info.flags = VK_BUFFER_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT_EXT;
+    VkBuffer buffer;
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkBufferCreateInfo-flags-02605");
+    VkResult result = vkCreateBuffer(m_device->device(), &buffer_create_info, nullptr, &buffer);
+    m_errorMonitor->VerifyFound();
+    if (result == VK_SUCCESS) {
+        vkDestroyBuffer(m_device->device(), buffer, NULL);
+    }
+
+    buffer_create_info.flags = 0;
+    VkBufferDeviceAddressCreateInfoEXT addr_ci = {VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_CREATE_INFO_EXT};
+    addr_ci.deviceAddress = 1;
+    buffer_create_info.pNext = &addr_ci;
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkBufferCreateInfo-deviceAddress-02604");
+    result = vkCreateBuffer(m_device->device(), &buffer_create_info, nullptr, &buffer);
+    m_errorMonitor->VerifyFound();
+    if (result == VK_SUCCESS) {
+        vkDestroyBuffer(m_device->device(), buffer, NULL);
+    }
+
+    buffer_create_info.pNext = nullptr;
+    result = vkCreateBuffer(m_device->device(), &buffer_create_info, nullptr, &buffer);
+    ASSERT_VK_SUCCESS(result);
+
+    VkBufferDeviceAddressInfoEXT info = {VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO_EXT};
+    info.buffer = buffer;
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkBufferDeviceAddressInfoEXT-buffer-02600");
+    vkGetBufferDeviceAddressEXT(m_device->device(), &info);
+    m_errorMonitor->VerifyFound();
+
+    vkDestroyBuffer(m_device->device(), buffer, NULL);
+}
+
+TEST_F(VkLayerTest, BufferDeviceAddressEXTDisabled) {
+    TEST_DESCRIPTION("Test VK_EXT_buffer_device_address.");
+
+    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    } else {
+        printf("%s Did not find required instance extension %s; skipped.\n", kSkipPrefix,
+               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    std::array<const char *, 1> required_device_extensions = {{VK_EXT_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME}};
+    for (auto device_extension : required_device_extensions) {
+        if (DeviceExtensionSupported(gpu(), nullptr, device_extension)) {
+            m_device_extension_names.push_back(device_extension);
+        } else {
+            printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, device_extension);
+            return;
+        }
+    }
+
+    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
+        (PFN_vkGetPhysicalDeviceFeatures2KHR)vkGetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
+
+    // Create a device that disables buffer_device_address
+    auto buffer_device_address_features = lvl_init_struct<VkPhysicalDeviceBufferAddressFeaturesEXT>();
+    auto features2 = lvl_init_struct<VkPhysicalDeviceFeatures2KHR>(&buffer_device_address_features);
+    vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
+    buffer_device_address_features.bufferDeviceAddress = VK_FALSE;
+    buffer_device_address_features.bufferDeviceAddressCaptureReplay = VK_FALSE;
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    PFN_vkGetBufferDeviceAddressEXT vkGetBufferDeviceAddressEXT =
+        (PFN_vkGetBufferDeviceAddressEXT)vkGetInstanceProcAddr(instance(), "vkGetBufferDeviceAddressEXT");
+
+    VkBufferCreateInfo buffer_create_info = {VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
+    buffer_create_info.size = sizeof(uint32_t);
+    buffer_create_info.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_EXT;
+    VkBuffer buffer;
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkBufferCreateInfo-usage-02606");
+    VkResult result = vkCreateBuffer(m_device->device(), &buffer_create_info, nullptr, &buffer);
+    m_errorMonitor->VerifyFound();
+    if (result == VK_SUCCESS) {
+        vkDestroyBuffer(m_device->device(), buffer, NULL);
+    }
+
+    buffer_create_info.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+    result = vkCreateBuffer(m_device->device(), &buffer_create_info, nullptr, &buffer);
+    ASSERT_VK_SUCCESS(result);
+
+    VkBufferDeviceAddressInfoEXT info = {VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO_EXT};
+    info.buffer = buffer;
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkGetBufferDeviceAddressEXT-None-02598");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkBufferDeviceAddressInfoEXT-buffer-02601");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkBufferDeviceAddressInfoEXT-buffer-02600");
+    vkGetBufferDeviceAddressEXT(m_device->device(), &info);
+    m_errorMonitor->VerifyFound();
+
+    vkDestroyBuffer(m_device->device(), buffer, NULL);
+}
+
 #if defined(ANDROID) && defined(VALIDATION_APK)
 const char *appTag = "VulkanLayerValidationTests";
 static bool initialized = false;
