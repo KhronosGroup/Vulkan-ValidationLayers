@@ -1255,7 +1255,7 @@ VkResult GetPDImageFormatProperties2(core_validation::layer_data *, const VkPhys
                                      VkImageFormatProperties2 *);
 const debug_report_data *GetReportData(const layer_data *);
 const VkLayerDispatchTable *GetDispatchTable(const layer_data *);
-const VkPhysicalDeviceProperties *GetPhysicalDeviceProperties(const layer_data *);
+const VkPhysicalDeviceProperties *GetPDProperties(const layer_data *);
 const VkPhysicalDeviceMemoryProperties *GetPhysicalDeviceMemoryProperties(const layer_data *);
 const CHECK_DISABLED *GetDisables(layer_data *);
 const CHECK_ENABLED *GetEnables(layer_data *);

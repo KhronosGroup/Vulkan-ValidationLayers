@@ -30,7 +30,7 @@
 class GpuDeviceMemoryManager {
    public:
     GpuDeviceMemoryManager(layer_data *dev_data, uint32_t data_size) {
-        uint32_t align = static_cast<uint32_t>(GetPhysicalDeviceProperties(dev_data)->limits.minStorageBufferOffsetAlignment);
+        uint32_t align = static_cast<uint32_t>(GetPDProperties(dev_data)->limits.minStorageBufferOffsetAlignment);
         if (0 == align) {
             align = 1;
         }

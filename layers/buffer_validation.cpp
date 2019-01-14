@@ -1388,7 +1388,7 @@ bool PreCallValidateCreateImage(layer_data *device_data, const VkImageCreateInfo
             "vkCreateImage(): Image type must be VK_IMAGE_TYPE_2D when VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT flag bit is set");
     }
 
-    const VkPhysicalDeviceLimits *device_limits = &(GetPhysicalDeviceProperties(device_data)->limits);
+    const VkPhysicalDeviceLimits *device_limits = &(GetPDProperties(device_data)->limits);
     VkImageUsageFlags attach_flags = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT |
                                      VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
     if ((pCreateInfo->usage & attach_flags) && (pCreateInfo->extent.width > device_limits->maxFramebufferWidth)) {
@@ -1425,7 +1425,7 @@ bool PreCallValidateCreateImage(layer_data *device_data, const VkImageCreateInfo
                               (uint64_t)pCreateInfo->samples * (uint64_t)FormatSize(pCreateInfo->format);
 
         // Round up to imageGranularity boundary
-        VkDeviceSize imageGranularity = GetPhysicalDeviceProperties(device_data)->limits.bufferImageGranularity;
+        VkDeviceSize imageGranularity = GetPDProperties(device_data)->limits.bufferImageGranularity;
         uint64_t ig_mask = imageGranularity - 1;
         total_size = (total_size + ig_mask) & ~ig_mask;
 
@@ -3933,7 +3933,7 @@ bool PreCallValidateCreateBufferView(const layer_data *device_data, const VkBuff
                             pCreateInfo->offset, buffer_state->createInfo.size);
         }
 
-        const VkPhysicalDeviceLimits *device_limits = &(GetPhysicalDeviceProperties(device_data)->limits);
+        const VkPhysicalDeviceLimits *device_limits = &(GetPDProperties(device_data)->limits);
         // Buffer view offset must be a multiple of VkPhysicalDeviceLimits::minTexelBufferOffsetAlignment
         if ((pCreateInfo->offset % device_limits->minTexelBufferOffsetAlignment) != 0) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT,
