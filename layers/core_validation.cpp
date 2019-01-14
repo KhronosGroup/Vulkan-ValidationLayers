@@ -5739,7 +5739,7 @@ const VkLayerDispatchTable *GetDispatchTable(const core_validation::layer_data *
     return &device_data->dispatch_table;
 }
 
-const VkPhysicalDeviceProperties *GetPhysicalDeviceProperties(const core_validation::layer_data *device_data) {
+const VkPhysicalDeviceProperties *GetPDProperties(const core_validation::layer_data *device_data) {
     return &device_data->phys_dev_props;
 }
 
@@ -14254,8 +14254,8 @@ VKAPI_ATTR VkResult VKAPI_CALL EnumeratePhysicalDevices(VkInstance instance, uin
     return result;
 }
 
-VKAPI_ATTR void VKAPI_CALL GetPhysicalDevicePropertiesIntercept(VkPhysicalDevice physicalDevice,
-                                                                VkPhysicalDeviceProperties *pPhysicalDeviceProperties) {
+VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceProperties(VkPhysicalDevice physicalDevice,
+                                                       VkPhysicalDeviceProperties *pPhysicalDeviceProperties) {
     instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), instance_layer_data_map);
     instance_data->dispatch_table.GetPhysicalDeviceProperties(physicalDevice, pPhysicalDeviceProperties);
     if (instance_data->enabled.gpu_validation && instance_data->enabled.gpu_validation_reserve_binding_slot) {
@@ -16151,7 +16151,7 @@ static const std::unordered_map<std::string, void *> name_to_funcptr_map = {
     {"vkCreateInstance", (void *)CreateInstance},
     {"vkCreateDevice", (void *)CreateDevice},
     {"vkEnumeratePhysicalDevices", (void *)EnumeratePhysicalDevices},
-    {"vkGetPhysicalDeviceProperties", (void *)GetPhysicalDevicePropertiesIntercept},
+    {"vkGetPhysicalDeviceProperties", (void *)GetPhysicalDeviceProperties},
     {"vkGetPhysicalDeviceQueueFamilyProperties", (void *)GetPhysicalDeviceQueueFamilyProperties},
     {"vkDestroyInstance", (void *)DestroyInstance},
     {"vkEnumerateInstanceLayerProperties", (void *)EnumerateInstanceLayerProperties},

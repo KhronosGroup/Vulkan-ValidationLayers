@@ -285,7 +285,7 @@ void GpuPostCallRecordCreateDevice(layer_data *dev_data) {
     auto gpu_state = GetGpuValidationState(dev_data);
     const auto *dispatch_table = GetDispatchTable(dev_data);
 
-    if (GetPhysicalDeviceProperties(dev_data)->apiVersion < VK_API_VERSION_1_1) {
+    if (GetPDProperties(dev_data)->apiVersion < VK_API_VERSION_1_1) {
         ReportSetupProblem(dev_data, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(GetDevice(dev_data)),
                            "GPU-Assisted validation requires Vulkan 1.1 or later.  GPU-Assisted Validation disabled.");
         gpu_state->aborted = true;
@@ -293,7 +293,7 @@ void GpuPostCallRecordCreateDevice(layer_data *dev_data) {
     }
     // Some devices have extremely high limits here, so set a reasonable max because we have to pad
     // the pipeline layout with dummy descriptor set layouts.
-    gpu_state->adjusted_max_desc_sets = GetPhysicalDeviceProperties(dev_data)->limits.maxBoundDescriptorSets;
+    gpu_state->adjusted_max_desc_sets = GetPDProperties(dev_data)->limits.maxBoundDescriptorSets;
     gpu_state->adjusted_max_desc_sets = std::min(33U, gpu_state->adjusted_max_desc_sets);
 
     // We can't do anything if there is only one.
@@ -1092,8 +1092,7 @@ static void ProcessInstrumentationBuffer(const layer_data *dev_data, VkQueue que
         uint32_t block_offset = cb_node->gpu_output_memory_block.offset;
         uint32_t block_size = gpu_state->memory_manager->GetBlockSize();
         uint32_t offset_to_data = 0;
-        const uint32_t map_align =
-            std::max(1U, static_cast<uint32_t>(GetPhysicalDeviceProperties(dev_data)->limits.minMemoryMapAlignment));
+        const uint32_t map_align = std::max(1U, static_cast<uint32_t>(GetPDProperties(dev_data)->limits.minMemoryMapAlignment));
 
         // Adjust the offset to the alignment required for mapping.
         block_offset = (block_offset / map_align) * map_align;
