@@ -2324,12 +2324,17 @@ TEST_F(VkLayerTest, GpuValidationArrayOOB) {
         char const *expected_error;
     };
 
-    const std::array<TestCase, 4> tests = {{
-        {vsSource_vert, fsSource_vert, false, "Index of 25 used to index descriptor array of length 6."},
-        {vsSource_frag, fsSource_frag, false, "Index of 25 used to index descriptor array of length 6."},
-        {vsSource_vert, fsSource_vert, true, "gl_Position += 1e-30 * texture(tex[uniform_index_buffer.tex_index[0]], vec2(0, 0));"},
-        {vsSource_frag, fsSource_frag, true, "uFragColor = texture(tex[tex_ind], vec2(0, 0));"},
-    }};
+    std::vector<TestCase> tests;
+    tests.push_back({vsSource_vert, fsSource_vert, false, "Index of 25 used to index descriptor array of length 6."});
+    tests.push_back({vsSource_frag, fsSource_frag, false, "Index of 25 used to index descriptor array of length 6."});
+#if !defined(ANDROID)
+    // The Android test framework uses shaderc for online compilations.  Even when configured to compile with debug info,
+    // shaderc seems to drop the OpLine instructions from the shader binary.  This causes the following two tests to fail
+    // on Android platforms.  Skip these tests until the shaderc issue is understood/resolved.
+    tests.push_back({vsSource_vert, fsSource_vert, true,
+                     "gl_Position += 1e-30 * texture(tex[uniform_index_buffer.tex_index[0]], vec2(0, 0));"});
+    tests.push_back({vsSource_frag, fsSource_frag, true, "uFragColor = texture(tex[tex_ind], vec2(0, 0));"});
+#endif
 
     VkViewport viewport = m_viewports[0];
     VkRect2D scissors = m_scissors[0];
