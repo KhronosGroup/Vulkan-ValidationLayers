@@ -268,7 +268,10 @@ std::unique_ptr<safe_VkDeviceCreateInfo> GpuPreCallRecordCreateDevice(VkPhysical
                                                                       VkPhysicalDeviceFeatures *supported_features) {
     std::unique_ptr<safe_VkDeviceCreateInfo> new_info(new safe_VkDeviceCreateInfo(create_info));
     if (supported_features->fragmentStoresAndAtomics || supported_features->vertexPipelineStoresAndAtomics) {
-        VkPhysicalDeviceFeatures new_features = *new_info->pEnabledFeatures;
+        VkPhysicalDeviceFeatures new_features = {};
+        if (new_info->pEnabledFeatures) {
+            new_features = *new_info->pEnabledFeatures;
+        }
         new_features.fragmentStoresAndAtomics = supported_features->fragmentStoresAndAtomics;
         new_features.vertexPipelineStoresAndAtomics = supported_features->vertexPipelineStoresAndAtomics;
         delete new_info->pEnabledFeatures;
