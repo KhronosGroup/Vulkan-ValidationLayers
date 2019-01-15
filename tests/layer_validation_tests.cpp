@@ -2197,7 +2197,7 @@ TEST_F(VkLayerTest, SparseResidencyImageCreateUnsupportedSamples) {
 TEST_F(VkLayerTest, GpuValidationArrayOOB) {
     TEST_DESCRIPTION("GPU validation: Verify detection of out-of-bounds descriptor array indexing.");
     if (!VkRenderFramework::DeviceCanDraw()) {
-        printf("%s GPU-Assisted validation test requires a driver that can draw. Test skipped.\n", kSkipPrefix);
+        printf("%s GPU-Assisted validation test requires a driver that can draw.\n", kSkipPrefix);
         return;
     }
     VkValidationFeatureEnableEXT enables[] = {VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT};
@@ -2207,6 +2207,10 @@ TEST_F(VkLayerTest, GpuValidationArrayOOB) {
     features.pEnabledValidationFeatures = enables;
     VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     ASSERT_NO_FATAL_FAILURE(Init(nullptr, nullptr, pool_flags, &features));
+    if (m_device->props.apiVersion < VK_API_VERSION_1_1) {
+        printf("%s GPU-Assisted validation test requires Vulkan 1.1+.\n", kSkipPrefix);
+        return;
+    }
     ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
