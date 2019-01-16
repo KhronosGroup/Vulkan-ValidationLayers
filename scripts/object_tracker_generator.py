@@ -610,13 +610,28 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
         struct_member_dict = dict(self.structMembers)
         struct_members = struct_member_dict[struct_item]
 
+        # Sometimes, the struct may contain the object by using the generic object
+        # handle type and another corresponding handle value (saved as a generic
+        # uint64 or void* value.  Catch those cases as well.
+        has_generic_object_type = False
+        has_generic_object_handle = False
         for member in struct_members:
+            # Actually found a handle
             if self.isHandleTypeObject(member.type):
                 return True
-            # recurse for member structs, guard against infinite recursion
+            # If member is a struct, recurse for member structs, guard against infinite recursion
             elif member.type in struct_member_dict and member.type != struct_item:
                 if self.struct_contains_object(member.type):
                     return True
+            else:
+                # Catch the generic object type/handle case
+                if member.type == 'VkObjectType':
+                    has_generic_object_type = True
+                elif member.type == 'uint64_t' and "handle" in member.name.lower():
+                    has_generic_object_handle = True
+                if has_generic_object_type and has_generic_object_handle:
+                    return True
+
         return False
     #
     # Return list of struct members which contain, or whose sub-structures contain an obj in a given list of parameters or members
@@ -669,6 +684,10 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
     # Generate VulkanObjectType from object type
     def GetVulkanObjType(self, type):
         return 'kVulkanObjectType%s' % type[2:]
+    #
+    # Generate core Vulkan VkObjectType from object type
+    def GetCoreVulkanObjType(self, type):
+        return 'VK_OBJECT_TYPE_%s' % type[2:].upper()
     #
     # Return correct dispatch table type -- instance or device
     def GetDispType(self, type):
@@ -737,17 +756,27 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
         param_vuid = self.GetVuid(parent_name, param_suffix)
         parent_vuid = self.GetVuid(parent_name, parent_suffix)
 
+        # Determine the object type.  In some cases, we may need to get the actual type from a
+        # parameter and can't generate it inside of the script file.  In those cases, we need to
+        # call a convert function.
+        vulkan_object_type = ''
+        if obj_type.startswith('Vk'):
+            vulkan_object_type = self.GetVulkanObjType(obj_type)
+        else:
+            # If not a direct objectType, convert the core type
+            vulkan_object_type = 'convertCoreObjectTypeToInternalObjectType(%s)' % obj_type
+
         # If no parent VUID for this member, look for a commonparent VUID
         if parent_vuid == 'kVUIDUndefined':
             parent_vuid = self.GetVuid(parent_name, 'commonparent')
         if obj_count is not None:
             pre_call_code += '%sfor (uint32_t %s = 0; %s < %s; ++%s) {\n' % (indent, index, index, obj_count, index)
             indent = self.incIndent(indent)
-            pre_call_code += '%sskip |= ValidateObject(%s, %s%s[%s], %s, %s, %s, %s);\n' % (indent, disp_name, prefix, obj_name, index, self.GetVulkanObjType(obj_type), null_allowed, param_vuid, parent_vuid)
+            pre_call_code += '%sskip |= ValidateObject(%s, %s%s[%s], %s, %s, %s, %s);\n' % (indent, disp_name, prefix, obj_name, index, vulkan_object_type, null_allowed, param_vuid, parent_vuid)
             indent = self.decIndent(indent)
             pre_call_code += '%s}\n' % indent
         else:
-            pre_call_code += '%sskip |= ValidateObject(%s, %s%s, %s, %s, %s, %s);\n' % (indent, disp_name, prefix, obj_name, self.GetVulkanObjType(obj_type), null_allowed, param_vuid, parent_vuid)
+            pre_call_code += '%sskip |= ValidateObject(%s, %s%s, %s, %s, %s, %s);\n' % (indent, disp_name, prefix, obj_name, vulkan_object_type, null_allowed, param_vuid, parent_vuid)
         return pre_call_code
     #
     # first_level_param indicates if elements are passed directly into the function else they're below a ptr/struct
@@ -755,6 +784,10 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
         pre_code = ''
         index = 'index%s' % str(array_index)
         array_index += 1
+        generic_object_type_member = ''
+        generic_object_handle_member = ''
+        generic_object_handle_count = ''
+        generic_object_handle_optional = ''
         # Process any objects in this structure and recurse for any sub-structs in this struct
         for member in members:
             # Handle objects
@@ -767,6 +800,14 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
                 null_allowed = member.isoptional
                 tmp_pre = self.outputObjects(member.type, member.name, count_name, prefix, index, indent, disp_name, parent_name, str(null_allowed).lower(), first_level_param)
                 pre_code += tmp_pre
+            elif member.type == 'VkObjectType':
+                generic_object_type_member = prefix + member.name
+            elif member.type == 'uint64_t' and "handle" in member.name.lower():
+                generic_object_handle_member = member.name
+                generic_object_handle_count = member.len
+                if (generic_object_handle_count is not None):
+                    generic_object_handle_count = '%s%s' % (prefix, member.len)
+                generic_object_handle_optional = member.isoptional
             # Handle Structs that contain objects at some level
             elif member.type in self.struct_member_dict:
                 # Structs at first level will have an object
@@ -802,6 +843,15 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
                         pre_code += tmp_pre
                         indent = self.decIndent(indent)
                         pre_code += '%s}\n' % indent
+            # If we now have enough to generate a generic object handle mapping, do so.
+            if len(generic_object_handle_member) > 0 and len(generic_object_type_member) > 0:
+                tmp_pre = self.outputObjects(generic_object_type_member, generic_object_handle_member, generic_object_handle_count, prefix, index, indent, disp_name, parent_name, str(generic_object_handle_optional).lower(), first_level_param)
+                pre_code += tmp_pre
+                # Clear the values so we don't accidentally do this again unless there's another instance of it.
+                generic_object_type_member = ''
+                generic_object_handle_member = ''
+                generic_object_handle_count = ''
+                generic_object_handle_optional = ''
         return pre_code
     #
     # For a particular API, generate the object handling code

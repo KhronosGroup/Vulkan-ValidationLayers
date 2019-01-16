@@ -725,6 +725,20 @@ class HelperFileOutputGenerator(OutputGenerator):
             object_types_header += '    %s,   // %s\n' % (vk_object_type, object_type)
         object_types_header += '};\n'
 
+        # Create a function to convert from VkObjectType to VulkanObjectType
+        object_types_header += '\n'
+        object_types_header += '// Helper function to convert from VkObjectType to VulkanObjectType\n'
+        object_types_header += 'static inline VulkanObjectType convertCoreObjectTypeToInternalObjectType(VkObjectType core_type){\n'
+        object_types_header += '    switch (core_type) {\n'
+        object_types_header += '        default: return kVulkanObjectTypeUnknown;\n'
+        vko_re = '^VK_OBJECT_TYPE_(.*)'
+        vko_map = {to_key(vko_re, vko) : vko for vko in self.core_object_types}
+        for object_type in type_list:
+            vk_object_type = vko_map[object_type.replace("kVulkanObjectType", "").lower()]
+            object_types_header += '        case %s: return %s;\n' % (vk_object_type, object_type)
+        object_types_header += '    }\n'
+        object_types_header += '}\n'
+
         # Create a function to convert from VkDebugReportObjectTypeEXT to VkObjectType
         object_types_header += '\n'
         object_types_header += '// Helper function to convert from VkDebugReportObjectTypeEXT to VkObjectType\n'
