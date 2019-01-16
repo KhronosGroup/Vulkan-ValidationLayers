@@ -1,18 +1,19 @@
 # GPU-Assisted Validation
 
-GPU-Assisted validation is implemented in the SPIR-V optimizer and the `VK_LAYER_LUNARG_core_validation` layer.
+GPU-Assisted validation is implemented in the SPIR-V Tools optimizer and the `VK_LAYER_LUNARG_core_validation` layer.
 This document covers the design of the layer portion of the implementation.
 
 ## Basic Operation
 
 The basic operation of GPU-Assisted validation is comprised of instrumenting shader code to perform run-time checking in shaders and
-reporting any error conditions to the layer which then reports them to the user via the existing reporting mechanisms.
+reporting any error conditions to the layer.
+The layer then reports the errors to the user via the same reporting mechanisms used by the rest of the validation system.
 
 The layer instruments the shaders by passing the shader's SPIR-V bytecode to the SPIR-V optimizer component and
 instructs the optimizer to perform an instrumentation pass to add the additional instructions to perform the run-time checking.
 The layer then passes the resulting modified SPIR-V bytecode to the driver as part of the process of creating a ShaderModule.
 
-At run-time, the instrumented shader code performs the run-time checks.
+As the shader is executed, the instrumented shader code performs the run-time checks.
 If a check detects an error condition, the instrumentation code writes an error record into the GPU's device memory.
 This record is small and is on the order of a dozen 32-bit words.
 Since multiple shader stages and multiple invocations of a shader can all detect errors, the instrumentation code
@@ -27,7 +28,9 @@ also provides the line of shader source code that provoked the error as part of 
 
 ## GPU-Assisted Validation Checks
 
-The initial release (Jan 2019) of GPU-Assisted Validation includes checking for out-of-bounds descriptor array indexing.
+The initial release (Jan 2019) of GPU-Assisted Validation includes checking for out-of-bounds descriptor array indexing
+for image/texel descriptor types.
+
 Future releases are planned to add checking for other hazards such as proper population of descriptors when using the
 `descriptorBindingPartiallyBound` feature of the `VK_EXT_descriptor_indexing` extension.
 
@@ -65,15 +68,15 @@ Here are the options related to activating GPU-Assisted Validation:
 2. Reserve a Descriptor Set Binding Slot - Modifies the value of the `VkPhysicalDeviceLimits::maxBoundDescriptorSets`
    property to return a value one less than the actual device's value to "reserve" a descriptor set binding slot for use by GPU validation.
 
-   This feature is likely only of interest to applications that dynamically adjust their descriptor set bindings to adjust for
+   This option is likely only of interest to applications that dynamically adjust their descriptor set bindings to adjust for
    the limits of the device.
 
 ## Activating GPU-Assisted Validation
 
 GPU-Assisted Validation is disabled by default because the shader instrumentation may introduce significant
-shader performance degradation.
+shader performance degradation and additional resource consumption.
 GPU-Assisted Validation requires additional resources such as device memory and descriptors.
-It is better for the user to opt-in to this feature because of these requirements.
+It is desirable for the user to opt-in to this feature because of these requirements.
 In addition, there are several limitations that may adversely affect application behavior,
 as described later in this document.
 
@@ -118,7 +121,95 @@ info.pNext = &features;
 
 Use the `VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT` enum to reserve a binding slot.
 
+## GPU-Assisted Validation Limitations
+
+There are several limitations that may impede the operation of GPU-Assisted Validation:
+
+### A Note About the `VK_EXT_buffer_device_address` Extension
+
+With the recent availability of the `VK_EXT_buffer_device_address` extension,
+it is now possible to create an alternate implementation of GPU-Assisted Validation.
+This new approach would use this extension to obtain a GPU machine pointer to a storage
+buffer and pass it to the shader via a specialization constant.
+This technique removes the need to create descriptors, use a descriptor set slot,
+modify pipeline layouts, etc, and would relax some of the limitations listed below.
+
+This alternate implementation is under consideration.
+
+### Vulkan 1.1
+
+Vulkan 1.1 or later is required because the GPU instrumentation code uses SPIR-V 1.3 features.
+Vulkan 1,1 is required to ensure that SPIR-V 1.3 is available.
+
+### Compute Shaders
+
+Compute Shaders are not supported.
+
+### Descriptor Set Binding Limit
+
+This is probably the most important limitation and is related to the
+`VkPhysicalDeviceLimits::maxBoundDescriptorSets` device limit.
+
+When applications use all the available descriptor set binding slots,
+GPU-Assisted Validation cannot be performed because it needs a descriptor set to
+locate the memory for writing the error report record.
+
+This problem is most likely to occur on devices, often mobile, that support only the
+minimum required value for `VkPhysicalDeviceLimits::maxBoundDescriptorSets`, which is 4.
+Some applications may be written to use 4 slots since this is the highest value that
+is guaranteed by the specification.
+When such an application using 4 slots runs on a device with only 4 slots,
+then GPU-Assisted Validation cannot be performed.
+
+In this implementation, this condition is detected and gracefully recovered from by
+building the graphics pipeline with non-instrumented shaders instead of instrumented ones.
+An error message is also displayed informing the user of the condition.
+
+Applications don't have many options in this situation and it is anticipated that
+changing the application to free a slot is difficult.
+
+### Device Memory
+
+GPU-Assisted Validation does allocate device memory for the error report buffers.
+This can lead to a greater chance of memory exhaustion, especially in cases where
+the application is trying to use all of the available memory.
+The extra memory allocations are also not visible to the application, making it
+impossible for the application to account for them.
+
+If GPU-Assisted Validation device memory allocations fail, the device could become
+unstable because some previously-built pipelines may contain instrumented shaders.
+This is a condition that is nearly impossible to recover from, so the layer just
+prints an error message and refrains from any further allocations or instrumentations.
+There is a reasonable chance to recover from these conditions,
+especially if the instrumentation does not write any error records.
+
+### Descriptors
+
+This is roughly the same problem as the device memory problem mentioned above,
+but for descriptors.
+Any failure to allocate a descriptor set means that the instrumented shader code
+won't have a place to write error records, resulting in unpredictable device
+behavior.
+
+### Other Device Limits
+
+This implementation uses additional resources that may count against the following limits,
+and possibly others:
+
+* maxMemoryAllocationCount
+* maxBoundDescriptorSets
+* maxPerStageDescriptorStorageBuffers
+* maxPerStageResources
+* maxDescriptorSetStorageBuffers
+* maxFragmentCombinedOutputResources
+
+The implementation does not take steps to avoid exceeding these limits
+and does not update the tracking performed by other validation functions.
+
 ## GPU-Assisted Validation Internal Design
+
+This section may be of interest to readers who are interested on how GPU-Assisted Validation is implemented.
+It isn't necessarily required for using the feature.
 
 ### General
 
@@ -229,8 +320,9 @@ This doesn't present any particular problem, but it does raise some issues:
   counted towards the maximum number of allocations allowed by a device.
   This could lead to an early allocation failure that is not accompanied by a validation error.
 
-  This shortcoming is left unaddressed in this implementation because it is anticipated that
-  a later implementation of GPU-Assisted Validation will have less of a need to allocate these
+  This shortcoming is left as not addressed in this implementation because it is anticipated that
+  a later implementation of GPU-Assisted Validation using the `VK_EXT_buffer_device_address`
+  extension will have less of a need to allocate these
   tracked resources and it therefore becomes less of an issue.
 
 ### Code Structure and Relationship to the Core Validation Layer
@@ -402,7 +494,53 @@ At that point, it is safe to free the bytecode since the pipeline is never used 
 
 * Find the shader tracker(s) with the graphics pipeline handle and free the tracker, along with any bytecode it has stored in it.
 
-## Shader Instrumentation Error Record Format
+### Shader Instrumentation Scope
+
+The shader instrumentation process performed by the SPIR-V optimizer applies descriptor index bounds checking
+to descriptors of the following types:
+
+    VK_DESCRIPTOR_TYPE_STORAGE_IMAGE
+    VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE
+    VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
+    VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER
+    VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER
+
+Instrumentation is applied to the following SPIR-V operations:
+
+    OpImageSampleImplicitLod
+    OpImageSampleExplicitLod
+    OpImageSampleDrefImplicitLod
+    OpImageSampleDrefExplicitLod
+    OpImageSampleProjImplicitLod
+    OpImageSampleProjExplicitLod
+    OpImageSampleProjDrefImplicitLod
+    OpImageSampleProjDrefExplicitLod
+    OpImageGather
+    OpImageDrefGather
+    OpImageQueryLod
+    OpImageSparseSampleImplicitLod
+    OpImageSparseSampleExplicitLod
+    OpImageSparseSampleDrefImplicitLod
+    OpImageSparseSampleDrefExplicitLod
+    OpImageSparseSampleProjImplicitLod
+    OpImageSparseSampleProjExplicitLod
+    OpImageSparseSampleProjDrefImplicitLod
+    OpImageSparseSampleProjDrefExplicitLod
+    OpImageSparseGather
+    OpImageSparseDrefGather
+    OpImageFetch
+    OpImageRead
+    OpImageQueryFormat
+    OpImageQueryOrder
+    OpImageQuerySizeLod
+    OpImageQuerySize
+    OpImageQueryLevels
+    OpImageQuerySamples
+    OpImageSparseFetch
+    OpImageSparseRead
+    OpImageWrite
+
+### Shader Instrumentation Error Record Format
 
 The instrumented shader code generates "error records" in a specific format.
 
@@ -533,9 +671,9 @@ offsets into the record for locating each item.
 This is a fairly simple process of mapping the debug report buffer associated with
 each command buffer that was just submitted and looking to see if the GPU instrumentation
 code wrote anything.
-The layer clears the buffer to zeroes when it is allocated and after processing any
+The layer clears the buffer to zeros when it is allocated and after processing any
 buffer that was written to.
-The instrumented shader code expects these buffers to be cleared to zeroes before it
+The instrumented shader code expects these buffers to be cleared to zeros before it
 writes to them.
 
 The layer then prepares a "common" validation error message containing:
@@ -545,7 +683,7 @@ The layer then prepares a "common" validation error message containing:
 * pipeline handle - The shader tracker discussed earlier contains this handle
 * shader module handle - The "Shader ID" (Word 1 in the record) is used to lookup
   the shader tracker which is then used to obtain the shader module and pipeline handles
-* instruction index - This is the SPIR-V instruction index where the invalid array access ocurred.
+* instruction index - This is the SPIR-V instruction index where the invalid array access occurred.
   It is not that useful by itself, since the user would have to use it to locate a SPIR-V instruction
   in a SPIR-V disassembly and somehow relate it back to the shader source code.
   But it could still be useful to some and it is easy to report.
@@ -606,93 +744,6 @@ then added to the validation error message.
 For example, if the OpLine line number is 15, and there is a "#line 10" on line 40
 in the OpSource source, then line 45 in the OpSource contains the correct source line.
 
-## GPU-Assisted Validation Limitations
-
-There are several limitations that may impede the operation of GPU-Assisted Validation:
-
-Note that with the recent availablilty of the `VK_EXT_buffer_device_address` extension,
-it is possible to create an alternate implementation of GPU-Assisted Validation.
-This new approach would use this extension to obtain a GPU machine pointer to a storage
-buffer and pass it to the shader via a specialization constant.
-This technique removes the need to create descriptors, use a descriptor set slot,
-modify pipeline layouts, etc, and would relax some of the limitations listed below.
-
-### Vulkan 1.1
-
-Vulkan 1.1 or later is required because the GPU instrumentation code uses SPIR-V 1.3 features.
-Vulkan 1,1 is required to ensure that SPIR-V 1.3 is available.
-
-### Compute Shaders
-
-Compute Shaders are not supported.
-
-### Descriptor Set Binding Limit
-
-This is probably the most important limitation and is related to the
-`VkPhysicalDeviceLimits::maxBoundDescriptorSets` device limit.
-
-Basically, when applications use all the available descriptor set binding slots,
-GPU-Assisted Validation cannot be performed because it needs a descriptor set to
-locate the memory for writing the error report record.
-
-This problem is most likely to occur on devices, often mobile, that support only the
-minimum required value for `VkPhysicalDeviceLimits::maxBoundDescriptorSets`, which is 4.
-Some applications may be written to use 4 slots since this is the highest value that
-is guaranteed by the specification.
-When such an application runs on a device with only 4 slots, then GPU-Assisted Validation
-cannot be performed.
-
-In this implementation, this condition is detected and gracefully recovered from by
-building the graphics pipeline with non-instrumented shaders instead of instrumented ones.
-An error message is also displayed informing the user of the condition.
-
-Applications don't have many options in this situation and it is anticipated that
-changing the application to free a slot is difficult.
-
-This problem can be addressed in the future using the `VK_EXT_buffer_device_address` extension.
-
-### Device Memory
-
-GPU-Assisted Validation does allocate device memory for the error report buffers.
-This can lead to a greater chance of memory exhaustion, especially in cases where
-the application is trying to use all of the available memory.
-The extra memory allocations are also not visible to the application, making it
-impossible for the application to account for them.
-
-If GPU-Assisted Validation device memory allocations fail, the device could become
-unstable because some previously-built pipelines may contain instrumented shaders.
-This is a condition that is nearly impossible to recover from, so the layer just
-prints an error message and refrains from any further allocations or instrumentations.
-There is a reasonable chance to recover from all this, especially if the instrumentation
-does not write any error records.
-
-This problem can be addressed in the future using the `VK_EXT_buffer_device_address` extension.
-
-### Descriptors
-
-This is roughly the same problem as the device memory problem mentioned above,
-but for descriptors.
-Any failure to allocate a descriptor set means that the instrumented shader code
-won't have a place to write error records, resulting in unpredictable device
-behavior.
-
-This problem can be addressed in the future using the `VK_EXT_buffer_device_address` extension.
-
-### Other Device Limits
-
-This implementation uses additional resources that may count against the following limits,
-and possibly others:
-
-* maxMemoryAllocationCount
-* maxBoundDescriptorSets
-* maxPerStageDescriptorStorageBuffers
-* maxPerStageResources
-* maxDescriptorSetStorageBuffers
-* maxFragmentCombinedOutputResources
-
-The implementation does not take steps to avoid exceeding these limits
-and does not update the tracking performed by other validation functions.
-
 ## GPU-Assisted Validation Testing
 
 Validation Layer Tests (VLTs) exist for GPU-Assisted Validation.
@@ -701,7 +752,8 @@ actually execute shaders.
 But they are still useful to run on real devices to check for regressions.
 
 There isn't anything else that remarkable or different about these tests.
-They do need to activate GPU-Assisted Validation programmatically as described earlier.
+They do need to activate GPU-Assisted Validation via the programmatic
+interface as described earlier.
 
 The tests do exercise the extraction of source code information when the shader
 is built with debug info.
