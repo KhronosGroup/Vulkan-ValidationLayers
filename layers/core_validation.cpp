@@ -3187,26 +3187,6 @@ bool PreCallValidateQueueSubmit(layer_data *dev_data, VkQueue queue, uint32_t su
     return skip;
 }
 
-VKAPI_ATTR VkResult VKAPI_CALL QueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits, VkFence fence) {
-    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(queue), layer_data_map);
-    unique_lock_t lock(global_lock);
-
-    bool skip = PreCallValidateQueueSubmit(dev_data, queue, submitCount, pSubmits, fence);
-    lock.unlock();
-
-    if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
-
-    VkResult result = dev_data->dispatch_table.QueueSubmit(queue, submitCount, pSubmits, fence);
-
-    lock.lock();
-    PostCallRecordQueueSubmit(dev_data, queue, submitCount, pSubmits, fence);
-    lock.unlock();
-    if (GetEnables(dev_data)->gpu_validation) {
-        GpuPostCallQueueSubmit(dev_data, queue, submitCount, pSubmits, fence, global_lock);
-    }
-    return result;
-}
-
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
 // Android-specific validation that uses types defined only with VK_USE_PLATFORM_ANDROID_KHR
 // This chunk could move into a seperate core_validation_android.cpp file... ?
@@ -4980,46 +4960,6 @@ void PostCallRecordCreateGraphicsPipelines(layer_data *dev_data, vector<std::uni
     }
 }
 
-VKAPI_ATTR VkResult VKAPI_CALL CreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
-                                                       const VkGraphicsPipelineCreateInfo *pCreateInfos,
-                                                       const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines) {
-    // The order of operations here is a little convoluted but gets the job done
-    //  1. Pipeline create state is first shadowed into PIPELINE_STATE struct
-    //  2. Create state is then validated (which uses flags setup during shadowing)
-    //  3. If everything looks good, we'll then create the pipeline and add NODE to pipelineMap
-    std::vector<std::unique_ptr<PIPELINE_STATE>> pipe_state;
-    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    unique_lock_t lock(global_lock);
-
-    bool skip = PreCallValidateCreateGraphicsPipelines(dev_data, &pipe_state, count, pCreateInfos);
-
-    if (skip) {
-        for (uint32_t i = 0; i < count; i++) {
-            pPipelines[i] = VK_NULL_HANDLE;
-        }
-        return VK_ERROR_VALIDATION_FAILED_EXT;
-    }
-
-    // GPU Validation can possibly replace instrumented shaders with non-instrumented ones, so give it a chance to modify the create
-    // infos.
-    std::vector<safe_VkGraphicsPipelineCreateInfo> gpu_create_infos;
-    if (GetEnables(dev_data)->gpu_validation) {
-        gpu_create_infos = GpuPreCallRecordCreateGraphicsPipelines(dev_data, pipelineCache, count, pCreateInfos, pAllocator,
-                                                                   pPipelines, pipe_state);
-        pCreateInfos = reinterpret_cast<VkGraphicsPipelineCreateInfo *>(gpu_create_infos.data());
-    }
-
-    lock.unlock();
-
-    auto result =
-        dev_data->dispatch_table.CreateGraphicsPipelines(device, pipelineCache, count, pCreateInfos, pAllocator, pPipelines);
-
-    lock.lock();
-    PostCallRecordCreateGraphicsPipelines(dev_data, &pipe_state, count, pCreateInfos, pAllocator, pPipelines);
-
-    return result;
-}
-
 bool PreCallValidateCreateComputePipelines(layer_data *dev_data, vector<std::unique_ptr<PIPELINE_STATE>> *pipe_state,
                                            const uint32_t count, const VkComputePipelineCreateInfo *pCreateInfos) {
     bool skip = false;
@@ -5810,27 +5750,6 @@ void PostCallRecordCreatePipelineLayout(layer_data *dev_data, const VkPipelineLa
     // Implicit unlock
 };
 
-VKAPI_ATTR VkResult VKAPI_CALL CreatePipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo *pCreateInfo,
-                                                    const VkAllocationCallbacks *pAllocator, VkPipelineLayout *pPipelineLayout) {
-    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    VkResult result;
-
-    bool skip = PreCallValidateCreatePipelineLayout(dev_data, pCreateInfo);
-    if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
-
-    if (GetEnables(dev_data)->gpu_validation) {
-        unique_lock_t lock(global_lock);
-        result = GpuOverrideDispatchCreatePipelineLayout(dev_data, pCreateInfo, pAllocator, pPipelineLayout);
-    } else {
-        result = dev_data->dispatch_table.CreatePipelineLayout(device, pCreateInfo, pAllocator, pPipelineLayout);
-    }
-
-    if (VK_SUCCESS == result) {
-        PostCallRecordCreatePipelineLayout(dev_data, pCreateInfo, pPipelineLayout);
-    }
-    return result;
-}
-
 bool PostCallValidateCreateDescriptorPool(layer_data *dev_data, VkDescriptorPool *pDescriptorPool) {
     return log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_POOL_EXT,
                    HandleToUint64(*pDescriptorPool), kVUID_Core_DrawState_OutOfMemory,
@@ -6195,26 +6114,6 @@ void PreCallRecordCmdBindPipeline(layer_data *dev_data, GLOBAL_CB_NODE *cb_state
     cb_state->lastBound[pipelineBindPoint].pipeline_state = pipe_state;
     SetPipelineState(pipe_state);
     AddCommandBufferBinding(&pipe_state->cb_bindings, {HandleToUint64(pipeline), kVulkanObjectTypePipeline}, cb_state);
-}
-
-VKAPI_ATTR void VKAPI_CALL CmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
-                                           VkPipeline pipeline) {
-    bool skip = false;
-    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    unique_lock_t lock(global_lock);
-    GLOBAL_CB_NODE *cb_state = GetCBNode(dev_data, commandBuffer);
-    if (cb_state) {
-        skip |= PreCallValidateCmdBindPipeline(dev_data, cb_state);
-        PreCallRecordCmdBindPipeline(dev_data, cb_state, pipelineBindPoint, pipeline);
-    }
-    lock.unlock();
-    if (!skip) dev_data->dispatch_table.CmdBindPipeline(commandBuffer, pipelineBindPoint, pipeline);
-    if (GetEnables(dev_data)->gpu_validation) {
-        lock.lock();
-        // Bind the debug descriptor set immediately after binding the pipeline.
-        GpuPostCallDispatchCmdBindPipeline(dev_data, commandBuffer, pipelineBindPoint, pipeline);
-        lock.unlock();
-    }
 }
 
 bool PreCallValidateCmdSetViewport(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, VkCommandBuffer commandBuffer) {
@@ -8947,35 +8846,12 @@ static bool CreatePassDAG(const layer_data *dev_data, RenderPassCreateVersion rp
     return skip;
 }
 
-static void PostCallRecordCreateShaderModule(layer_data *dev_data, bool is_spirv, const VkShaderModuleCreateInfo *pCreateInfo,
-                                             VkShaderModule *pShaderModule, uint32_t unique_shader_id) {
+void PostCallRecordCreateShaderModule(layer_data *dev_data, bool is_spirv, const VkShaderModuleCreateInfo *pCreateInfo,
+                                      VkShaderModule *pShaderModule, uint32_t unique_shader_id) {
     spv_target_env spirv_environment = ((GetApiVersion(dev_data) >= VK_API_VERSION_1_1) ? SPV_ENV_VULKAN_1_1 : SPV_ENV_VULKAN_1_0);
     unique_ptr<shader_module> new_shader_module(
         is_spirv ? new shader_module(pCreateInfo, *pShaderModule, spirv_environment, unique_shader_id) : new shader_module());
     dev_data->shaderModuleMap[*pShaderModule] = std::move(new_shader_module);
-}
-
-VKAPI_ATTR VkResult VKAPI_CALL CreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo *pCreateInfo,
-                                                  const VkAllocationCallbacks *pAllocator, VkShaderModule *pShaderModule) {
-    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    bool is_spirv;
-    bool spirv_valid;
-    VkResult result;
-    uint32_t unique_shader_id = 0;
-
-    if (PreCallValidateCreateShaderModule(dev_data, pCreateInfo, &is_spirv, &spirv_valid)) return VK_ERROR_VALIDATION_FAILED_EXT;
-
-    if (GetEnables(dev_data)->gpu_validation) {
-        result = GpuOverrideDispatchCreateShaderModule(dev_data, pCreateInfo, pAllocator, pShaderModule, &unique_shader_id);
-    } else {
-        result = dev_data->dispatch_table.CreateShaderModule(device, pCreateInfo, pAllocator, pShaderModule);
-    }
-
-    if (result == VK_SUCCESS) {
-        lock_guard_t lock(global_lock);
-        PostCallRecordCreateShaderModule(dev_data, is_spirv, pCreateInfo, pShaderModule, unique_shader_id);
-    }
-    return result;
 }
 
 static bool ValidateAttachmentIndex(const layer_data *dev_data, RenderPassCreateVersion rp_version, uint32_t attachment,
@@ -12416,7 +12292,7 @@ void PostCallRecordDestroySamplerYcbcrConversion(layer_data *dev_data, VkSampler
     }
 }
 
-static bool PreCallValidateGetBufferDeviceAddressEXT(layer_data *dev_data, const VkBufferDeviceAddressInfoEXT *pInfo) {
+bool PreCallValidateGetBufferDeviceAddressEXT(layer_data *dev_data, const VkBufferDeviceAddressInfoEXT *pInfo) {
     bool skip = false;
 
     if (!GetEnabledFeatures(dev_data)->buffer_address.bufferDeviceAddress) {
@@ -12445,17 +12321,6 @@ static bool PreCallValidateGetBufferDeviceAddressEXT(layer_data *dev_data, const
     }
 
     return skip;
-}
-
-VKAPI_ATTR VkDeviceAddress VKAPI_CALL GetBufferDeviceAddressEXT(VkDevice device, const VkBufferDeviceAddressInfoEXT *pInfo) {
-    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    unique_lock_t lock(global_lock);
-    bool skip = PreCallValidateGetBufferDeviceAddressEXT(dev_data, pInfo);
-    if (!skip) {
-        lock.unlock();
-        return dev_data->dispatch_table.GetBufferDeviceAddressEXT(device, pInfo);
-    }
-    return 0;
 }
 
 }  // namespace core_validation
