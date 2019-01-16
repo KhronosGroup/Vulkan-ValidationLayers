@@ -1459,8 +1459,9 @@ void PreCallRecordDestroyRenderPass(layer_data* dev_data, VkRenderPass render_pa
                                     VK_OBJECT obj_struct);
 bool PreCallValidateCreateGraphicsPipelines(layer_data* dev_data, std::vector<std::unique_ptr<PIPELINE_STATE>>* pipe_state,
                                             const uint32_t count, const VkGraphicsPipelineCreateInfo* pCreateInfos);
-void PostCallRecordCreateGraphicsPipelines(layer_data* dev_data, std::vector<std::unique_ptr<PIPELINE_STATE>>* pipe_state,
-                                           const uint32_t count, VkPipeline* pPipelines);
+void PostCallRecordCreateGraphicsPipelines(layer_data* dev_data, vector<std::unique_ptr<PIPELINE_STATE>>* pipe_state,
+                                           const uint32_t count, const VkGraphicsPipelineCreateInfo* pCreateInfos,
+                                           const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines);
 bool PreCallValidateCreateComputePipelines(layer_data* dev_data, std::vector<std::unique_ptr<PIPELINE_STATE>>* pipe_state,
                                            const uint32_t count, const VkComputePipelineCreateInfo* pCreateInfos);
 void PostCallRecordCreateComputePipelines(layer_data* dev_data, vector<std::unique_ptr<PIPELINE_STATE>>* pipe_state,
@@ -1828,6 +1829,9 @@ bool PreCallValidateCmdDrawMeshTasksIndirectCountNV(layer_data* dev_data, VkComm
 void PreCallRecordCmdDrawMeshTasksIndirectCountNV(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, VkPipelineBindPoint bind_point,
                                                   BUFFER_STATE* buffer_state, BUFFER_STATE* count_buffer_state);
 void PostCallRecordDestroySamplerYcbcrConversion(layer_data* dev_data, VkSamplerYcbcrConversion ycbcr_conversion);
+void PostCallRecordCreateShaderModule(layer_data* dev_data, bool is_spirv, const VkShaderModuleCreateInfo* pCreateInfo,
+                                      VkShaderModule* pShaderModule, uint32_t unique_shader_id);
+bool PreCallValidateGetBufferDeviceAddressEXT(layer_data* dev_data, const VkBufferDeviceAddressInfoEXT* pInfo);
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
 bool PreCallValidateGetAndroidHardwareBufferProperties(const layer_data* dev_data, const AHardwareBuffer* ahb);
 void PostCallRecordGetAndroidHardwareBufferProperties(layer_data* dev_data,
