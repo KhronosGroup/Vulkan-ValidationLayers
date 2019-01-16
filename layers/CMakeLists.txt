@@ -195,18 +195,21 @@ add_custom_target(VulkanVL_generate_chassis_files
                           layer_chassis_dispatch.cpp)
 set_target_properties(VulkanVL_generate_chassis_files PROPERTIES FOLDER ${LAYERS_HELPER_FOLDER})
 
-# Inter-layer dependencies are temporarily necessary to serialize layer builds which avoids contention for common generated files
 if(BUILD_LAYERS)
     AddVkLayer(core_validation "" core_validation.cpp convert_to_renderpass2.cpp descriptor_sets.cpp buffer_validation.cpp shader_validation.cpp gpu_validation.cpp xxhash.c)
-    add_dependencies(VkLayer_core_validation VulkanVL_generate_chassis_files)
     AddVkLayer(object_lifetimes "BUILD_OBJECT_TRACKER" object_tracker.cpp object_tracker.h object_tracker_utils.cpp chassis.cpp layer_chassis_dispatch.cpp)
-    add_dependencies(VkLayer_object_lifetimes VkLayer_core_validation)
     AddVkLayer(thread_safety "BUILD_THREAD_SAFETY" thread_safety.cpp thread_safety.h chassis.cpp layer_chassis_dispatch.cpp)
-    add_dependencies(VkLayer_thread_safety VkLayer_object_lifetimes)
     AddVkLayer(unique_objects "LAYER_CHASSIS_CAN_WRAP_HANDLES" chassis.cpp layer_chassis_dispatch.cpp)
-    add_dependencies(VkLayer_unique_objects VkLayer_thread_safety)
     AddVkLayer(stateless_validation "BUILD_PARAMETER_VALIDATION" parameter_validation.cpp parameter_validation.h parameter_validation_utils.cpp chassis.cpp layer_chassis_dispatch.cpp)
-    add_dependencies(VkLayer_stateless_validation VkLayer_unique_objects)
+
+    # Inter-layer dependencies are temporarily necessary to serialize layer builds which avoids contention for common generated files
+    if(${CMAKE_VERSION} VERSION_LESS "3.12.0" AND WIN32)
+        add_dependencies(VkLayer_core_validation VulkanVL_generate_chassis_files)
+        add_dependencies(VkLayer_object_lifetimes VkLayer_core_validation)
+        add_dependencies(VkLayer_thread_safety VkLayer_object_lifetimes)
+        add_dependencies(VkLayer_unique_objects VkLayer_thread_safety)
+        add_dependencies(VkLayer_stateless_validation VkLayer_unique_objects)
+    endif()
 
     # Core validation has additional dependencies
     target_include_directories(VkLayer_core_validation PRIVATE ${GLSLANG_SPIRV_INCLUDE_DIR})
