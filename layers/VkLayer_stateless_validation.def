@@ -21,7 +21,7 @@
 ;
 ;;;;  End Copyright Notice ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-LIBRARY VkLayer_parameter_validation
+LIBRARY VkLayer_stateless_validation
 EXPORTS
 vkGetInstanceProcAddr
 vkGetDeviceProcAddr

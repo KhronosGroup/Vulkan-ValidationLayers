@@ -21,7 +21,7 @@
 ;
 ;;;;  End Copyright Notice ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-LIBRARY VkLayer_threading
+LIBRARY VkLayer_thread_safety
 EXPORTS
 vkGetInstanceProcAddr
 vkGetDeviceProcAddr
