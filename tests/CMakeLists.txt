@@ -1,6 +1,6 @@
 # ~~~
-# Copyright (c) 2014-2018 Valve Corporation
-# Copyright (c) 2014-2018 LunarG, Inc.
+# Copyright (c) 2014-2019 Valve Corporation
+# Copyright (c) 2014-2019 LunarG, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -81,6 +81,7 @@ endif()
 
 # ~~~
 # The vulkan loader search is:
+#     Existing vulkan target already present in the build
 #     User-supplied setting of CMAKE_PREFIX_PATH
 #     VULKAN_LOADER_INSTALL_DIR defined via cmake option
 #     VULKAN_LOADER_INSTALL_DIR defined via environment variable
@@ -88,16 +89,18 @@ endif()
 # ~~~
 set(VULKAN_LOADER_INSTALL_DIR "LOADER-NOTFOUND" CACHE PATH "Absolute path to a Vulkan-Loader install directory")
 
-if(VULKAN_LOADER_INSTALL_DIR)
-    message(STATUS "VULKAN_LOADER_INSTALL_DIR specified, using find_package to locate Vulkan")
-elseif(ENV{VULKAN_LOADER_INSTALL_DIR})
-    message(STATUS "VULKAN_LOADER_INSTALL_DIR environment variable specified, using find_package to locate Vulkan")
+if(NOT TARGET vulkan)
+    if(VULKAN_LOADER_INSTALL_DIR)
+        message(STATUS "VULKAN_LOADER_INSTALL_DIR specified, using find_package to locate Vulkan")
+    elseif(ENV{VULKAN_LOADER_INSTALL_DIR})
+        message(STATUS "VULKAN_LOADER_INSTALL_DIR environment variable specified, using find_package to locate Vulkan")
+    endif()
+    set(
+        CMAKE_PREFIX_PATH
+        ${CMAKE_PREFIX_PATH};${VULKAN_LOADER_INSTALL_DIR};${VULKAN_HEADERS_INSTALL_DIR};$ENV{VULKAN_LOADER_INSTALL_DIR};$ENV{VULKAN_HEADERS_INSTALL_DIR}
+        )
+    find_package(Vulkan)
 endif()
-set(
-    CMAKE_PREFIX_PATH
-    ${CMAKE_PREFIX_PATH};${VULKAN_LOADER_INSTALL_DIR};${VULKAN_HEADERS_INSTALL_DIR};$ENV{VULKAN_LOADER_INSTALL_DIR};$ENV{VULKAN_HEADERS_INSTALL_DIR}
-    )
-find_package(Vulkan)
 
 set_source_files_properties(${PROJECT_BINARY_DIR}/vk_safe_struct.cpp PROPERTIES GENERATED TRUE)
 add_executable(vk_layer_validation_tests
@@ -106,12 +109,12 @@ add_executable(vk_layer_validation_tests
                ../layers/convert_to_renderpass2.cpp
                ${PROJECT_BINARY_DIR}/vk_safe_struct.cpp
                ${COMMON_CPP})
-if (NOT GTEST_IS_STATIC_LIB)
+add_dependencies(vk_layer_validation_tests Vulkan::Vulkan)
+if(NOT GTEST_IS_STATIC_LIB)
     set_target_properties(vk_layer_validation_tests PROPERTIES COMPILE_DEFINITIONS "GTEST_LINKED_AS_SHARED_LIBRARY=1")
 endif()
 target_include_directories(vk_layer_validation_tests
-                           PUBLIC ${VulkanHeaders_INCLUDE_DIR}
-                                  ${CMAKE_CURRENT_SOURCE_DIR}
+                           PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
                                   ${GTEST_LOCATION}/googletest/include
                                   ${PROJECT_SOURCE_DIR}/layers
                                   ${GLSLANG_SPIRV_INCLUDE_DIR}
@@ -158,7 +161,7 @@ endif()
 
 if(WIN32)
     # For Windows, copy necessary gtest DLLs to the right spot for the vk_layer_tests...
-    if (NOT GTEST_IS_STATIC_LIB)
+    if(NOT GTEST_IS_STATIC_LIB)
         file(TO_NATIVE_PATH ${PROJECT_BINARY_DIR}/external/googletest/googletest/$<CONFIG>/*.dll SRC_GTEST_DLLS)
         file(TO_NATIVE_PATH ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG> DST_GTEST_DLLS)
         add_custom_command(TARGET vk_layer_validation_tests POST_BUILD
