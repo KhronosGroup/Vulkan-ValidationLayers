@@ -1113,11 +1113,10 @@ static void ProcessInstrumentationBuffer(const layer_data *dev_data, VkQueue que
 // Wait for the queue to complete execution.  Check the debug buffers for all the
 // command buffers that were submitted.
 void GpuPostCallQueueSubmit(const layer_data *dev_data, VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits,
-                            VkFence fence, mutex_t &global_lock) {
+                            VkFence fence) {
     auto gpu_state = GetGpuValidationState(dev_data);
     if (gpu_state->aborted) return;
-    core_validation::QueueWaitIdle(queue);
-    unique_lock_t lock(global_lock);
+    dev_data->dispatch_table.QueueWaitIdle(queue);
     for (uint32_t submit_idx = 0; submit_idx < submitCount; submit_idx++) {
         const VkSubmitInfo *submit = &pSubmits[submit_idx];
         for (uint32_t i = 0; i < submit->commandBufferCount; i++) {
