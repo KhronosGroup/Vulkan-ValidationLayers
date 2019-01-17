@@ -568,7 +568,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
 #endif
 
     for (auto intercept : framework->object_dispatch) {
-        intercept->PostCallRecordCreateInstance(pCreateInfo, pAllocator, pInstance);
+        intercept->PostCallRecordCreateInstance(pCreateInfo, pAllocator, pInstance, result);
     }
 
     InstanceExtensionWhitelist(framework, pCreateInfo, *pInstance);
@@ -712,7 +712,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
 
     for (auto intercept : instance_interceptor->object_dispatch) {
         intercept->write_lock();
-        intercept->PostCallRecordCreateDevice(gpu, pCreateInfo, pAllocator, pDevice);
+        intercept->PostCallRecordCreateDevice(gpu, pCreateInfo, pAllocator, pDevice, result);
         intercept->write_unlock();
     }
 
@@ -769,7 +769,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDebugReportCallbackEXT(VkInstance instance,
     result = layer_create_report_callback(layer_data->report_data, false, pCreateInfo, pAllocator, pCallback);
     """ + postcallrecord_loop + """
         intercept->write_lock();
-        intercept->PostCallRecordCreateDebugReportCallbackEXT(instance, pCreateInfo, pAllocator, pCallback);
+        intercept->PostCallRecordCreateDebugReportCallbackEXT(instance, pCreateInfo, pAllocator, pCallback, result);
         intercept->write_unlock();
     }
     return result;
@@ -1005,6 +1005,9 @@ VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkNegotiateLoaderLayerInterfaceVe
         pre_call_validate = pre_call_validate.replace("{}", " { return false; }")
         pre_call_record = 'virtual void PreCallRecord' + prototype
         post_call_record = 'virtual void PostCallRecord' + prototype
+        resulttype = elem.find('proto/type')
+        if resulttype.text == 'VkResult':
+            post_call_record = post_call_record.replace(')', ', VkResult result)')
         return '        %s\n        %s\n        %s\n' % (pre_call_validate, pre_call_record, post_call_record)
     #
     # Command generation
@@ -1110,24 +1113,14 @@ VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkNegotiateLoaderLayerInterfaceVe
             self.appendSection('command', '    }')
 
         # Generate post-call object processing source code
-        return_type_indent = ''
-
         self.appendSection('command', '    %s' % self.postcallrecord_loop)
+        returnparam = ''
         if (resulttype.text == 'VkResult'):
-            return_type_indent = '    '
-            if name in self.alt_ret_codes:
-                self.appendSection('command', '%s    if (((VK_SUCCESS == result) || (VK_INCOMPLETE == result)) || (intercept->container_type == LayerObjectTypeThreading)) {' % return_type_indent)
-            else:
-                self.appendSection('command', '%s    if ((VK_SUCCESS == result)  || (intercept->container_type == LayerObjectTypeThreading)) {' % return_type_indent)
-
-        #self.appendSection('command', '%s    %s' % (return_type_indent, self.postcallrecord_loop))
-        self.appendSection('command', '%s        intercept->write_lock();' % return_type_indent)
-        self.appendSection('command', '%s        intercept->PostCallRecord%s(%s);' % (return_type_indent,api_function_name[2:], paramstext))
-        self.appendSection('command', '%s        intercept->write_unlock();' % return_type_indent)
-        self.appendSection('command', '%s    }' % return_type_indent)
-        if (resulttype.text == 'VkResult'):
-            self.appendSection('command', '    }')
-
+            returnparam = ', result'
+        self.appendSection('command', '        intercept->write_lock();')
+        self.appendSection('command', '        intercept->PostCallRecord%s(%s%s);' % (api_function_name[2:], paramstext, returnparam))
+        self.appendSection('command', '        intercept->write_unlock();')
+        self.appendSection('command', '    }')
         # Return result variable, if any.
         if (resulttype.text != 'void'):
             self.appendSection('command', '    return result;')

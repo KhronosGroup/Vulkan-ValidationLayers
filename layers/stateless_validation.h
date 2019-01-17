@@ -900,15 +900,15 @@ class StatelessValidation : public ValidationObject {
     bool OutputExtensionError(const std::string &api_name, const std::string &extension_name);
 
     void PostCallRecordCreateRenderPass(VkDevice device, const VkRenderPassCreateInfo *pCreateInfo,
-                                        const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass);
+                                        const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass, VkResult result);
     void PostCallRecordCreateRenderPass2KHR(VkDevice device, const VkRenderPassCreateInfo2KHR *pCreateInfo,
-                                            const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass);
+                                            const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass, VkResult result);
     void PostCallRecordDestroyRenderPass(VkDevice device, VkRenderPass renderPass, const VkAllocationCallbacks *pAllocator);
     void PostCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCreateInfo,
-                                    const VkAllocationCallbacks *pAllocator, VkDevice *pDevice);
+                                    const VkAllocationCallbacks *pAllocator, VkDevice *pDevice, VkResult result);
 
     void PostCallRecordCreateInstance(const VkInstanceCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator,
-                                      VkInstance *pInstance);
+                                      VkInstance *pInstance, VkResult result);
 
     bool manual_PreCallValidateCreateQueryPool(VkDevice device, const VkQueryPoolCreateInfo *pCreateInfo,
                                                const VkAllocationCallbacks *pAllocator, VkQueryPool *pQueryPool);
