@@ -5603,8 +5603,8 @@ TEST_F(VkLayerTest, RenderPassCreateAttachmentReadOnlyButCleared) {
     }
 }
 
-TEST_F(VkLayerTest, RenderPassCreateAttachmentUsedTwiceColor) {
-    TEST_DESCRIPTION("Attachment is used simultaneously as two color attachments. This is usually unintended.");
+TEST_F(VkLayerTest, RenderPassCreateAttachmentMismatchingLayoutsColor) {
+    TEST_DESCRIPTION("Attachment is used simultaneously as two color attachments with different layouts.");
 
     // Check for VK_KHR_get_physical_device_properties2
     if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
@@ -5635,7 +5635,7 @@ TEST_F(VkLayerTest, RenderPassCreateAttachmentUsedTwiceColor) {
     };
     VkAttachmentReference refs[] = {
         {0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL},
-        {0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL},
+        {0, VK_IMAGE_LAYOUT_GENERAL},
     };
     VkSubpassDescription subpasses[] = {
         {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 2, refs, nullptr, nullptr, 0, nullptr},
@@ -5644,8 +5644,8 @@ TEST_F(VkLayerTest, RenderPassCreateAttachmentUsedTwiceColor) {
     VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 1, attach, 1, subpasses, 0, nullptr};
 
     TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, vkCreateRenderPass2KHR,
-                         "subpass 0 already uses attachment 0 as a color attachment",
-                         "subpass 0 already uses attachment 0 as a color attachment");
+                         "subpass 0 already uses attachment 0 with a different image layout",
+                         "subpass 0 already uses attachment 0 with a different image layout");
 }
 
 TEST_F(VkLayerTest, RenderPassCreateAttachmentDescriptionInvalidFinalLayout) {
