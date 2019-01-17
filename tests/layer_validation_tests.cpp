@@ -33741,7 +33741,7 @@ TEST_F(VkPositiveLayerTest, MultiplaneImageTests) {
 
     // Enable KHR multiplane req'd extensions
     bool mp_extensions = InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,
-                                                    VK_KHR_GET_MEMORY_REQUIREMENTS_2_SPEC_VERSION);
+                                                    VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_SPEC_VERSION);
     if (mp_extensions) {
         m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     }
@@ -33836,38 +33836,75 @@ TEST_F(VkPositiveLayerTest, MultiplaneImageTests) {
     m_commandBuffer->end();
     m_errorMonitor->VerifyNotFound();
 
-#if 0
-    // Copy to/from buffer
-    VkBufferCreateInfo bci = {};
-    bci.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    bci.pNext = NULL;
-    bci.size = 128 * 128 * 3;
-    bci.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-    bci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    VkBuffer buffer;
-    ASSERT_VK_SUCCESS(vkCreateBuffer(device(), &bci, NULL, &buffer));
-
-    VkBufferImageCopy copy_region = {};
-    copy_region.bufferRowLength = 128;
-    copy_region.bufferImageHeight = 128;
-    copy_region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_PLANE_1_BIT_KHR;
-    copy_region.imageSubresource.layerCount = 1;
-    copy_region.imageExtent.height = 64;
-    copy_region.imageExtent.width = 64;
-    copy_region.imageExtent.depth = 1;
-
-    m_errorMonitor->ExpectSuccess();
-    vkCmdCopyImageToBuffer(m_commandBuffer->handle(), image,VK_IMAGE_LAYOUT_GENERAL, buffer, 1, &copy_region);
-    m_errorMonitor->VerifyNotFound();
-
-    m_errorMonitor->ExpectSuccess();
-    copy_region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_PLANE_2_BIT_KHR;
-    vkCmdCopyBufferToImage(m_commandBuffer->handle(), buffer, image, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
-    m_errorMonitor->VerifyNotFound();
-#endif
-
     vkFreeMemory(device(), mem_obj, NULL);
     vkDestroyImage(device(), image, NULL);
+
+    // Repeat bind test on a DISJOINT multi-planar image, with per-plane memory objects, using API2 variants
+    //
+    features |= VK_FORMAT_FEATURE_DISJOINT_BIT;
+    ci.flags = VK_IMAGE_CREATE_DISJOINT_BIT;
+    if (ImageFormatAndFeaturesSupported(instance(), gpu(), ci, features)) {
+        ASSERT_VK_SUCCESS(vkCreateImage(device(), &ci, NULL, &image));
+
+        // Allocate & bind memory
+        VkPhysicalDeviceMemoryProperties2 phys_mem_props2 = {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_PROPERTIES_2};
+        vkGetPhysicalDeviceMemoryProperties2(gpu(), &phys_mem_props2);
+        VkImagePlaneMemoryRequirementsInfo image_plane_req = {VK_STRUCTURE_TYPE_IMAGE_PLANE_MEMORY_REQUIREMENTS_INFO};
+        VkImageMemoryRequirementsInfo2 mem_req_info2 = {VK_STRUCTURE_TYPE_IMAGE_MEMORY_REQUIREMENTS_INFO_2};
+        mem_req_info2.pNext = &image_plane_req;
+        mem_req_info2.image = image;
+        VkMemoryRequirements2 mem_reqs2 = {VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2};
+
+        VkDeviceMemory p0_mem, p1_mem, p2_mem;
+        mem_props = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+        VkMemoryAllocateInfo alloc_info = {VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};
+
+        // Plane 0
+        image_plane_req.planeAspect = VK_IMAGE_ASPECT_PLANE_0_BIT;
+        vkGetImageMemoryRequirements2(device(), &mem_req_info2, &mem_reqs2);
+        uint32_t mem_type = 0;
+        for (mem_type = 0; mem_type < phys_mem_props2.memoryProperties.memoryTypeCount; mem_type++) {
+            if ((mem_reqs2.memoryRequirements.memoryTypeBits & (1 << mem_type)) &&
+                ((phys_mem_props2.memoryProperties.memoryTypes[mem_type].propertyFlags & mem_props) == mem_props)) {
+                alloc_info.memoryTypeIndex = mem_type;
+                break;
+            }
+        }
+        alloc_info.allocationSize = mem_reqs2.memoryRequirements.size;
+        ASSERT_VK_SUCCESS(vkAllocateMemory(device(), &alloc_info, NULL, &p0_mem));
+
+        // Plane 1 & 2 use same memory type
+        image_plane_req.planeAspect = VK_IMAGE_ASPECT_PLANE_1_BIT;
+        vkGetImageMemoryRequirements2(device(), &mem_req_info2, &mem_reqs2);
+        alloc_info.allocationSize = mem_reqs2.memoryRequirements.size;
+        ASSERT_VK_SUCCESS(vkAllocateMemory(device(), &alloc_info, NULL, &p1_mem));
+
+        image_plane_req.planeAspect = VK_IMAGE_ASPECT_PLANE_2_BIT;
+        vkGetImageMemoryRequirements2(device(), &mem_req_info2, &mem_reqs2);
+        alloc_info.allocationSize = mem_reqs2.memoryRequirements.size;
+        ASSERT_VK_SUCCESS(vkAllocateMemory(device(), &alloc_info, NULL, &p2_mem));
+
+        // Set up 3-plane binding
+        VkBindImageMemoryInfo bind_info[3];
+        for (int plane = 0; plane < 3; plane++) {
+            bind_info[plane].sType = VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_INFO;
+            bind_info[plane].pNext = nullptr;
+            bind_info[plane].image = image;
+            bind_info[plane].memoryOffset = 0;
+        }
+        bind_info[0].memory = p0_mem;
+        bind_info[1].memory = p1_mem;
+        bind_info[2].memory = p2_mem;
+
+        m_errorMonitor->ExpectSuccess();
+        vkBindImageMemory2(device(), 3, bind_info);
+        m_errorMonitor->VerifyNotFound();
+
+        vkFreeMemory(device(), p0_mem, NULL);
+        vkFreeMemory(device(), p1_mem, NULL);
+        vkFreeMemory(device(), p2_mem, NULL);
+        vkDestroyImage(device(), image, NULL);
+    }
 
     // Test that changing the layout of ASPECT_COLOR also changes the layout of the individual planes
     VkBufferObj buffer;
