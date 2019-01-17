@@ -1,9 +1,9 @@
 #!/usr/bin/python3 -i
 #
-# Copyright (c) 2015-2018 The Khronos Group Inc.
-# Copyright (c) 2015-2018 Valve Corporation
-# Copyright (c) 2015-2018 LunarG, Inc.
-# Copyright (c) 2015-2018 Google Inc.
+# Copyright (c) 2015-2019 The Khronos Group Inc.
+# Copyright (c) 2015-2019 Valve Corporation
+# Copyright (c) 2015-2019 LunarG, Inc.
+# Copyright (c) 2015-2019 Google Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -372,10 +372,10 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
         copyright += '\n'
         copyright += '/***************************************************************************\n'
         copyright += ' *\n'
-        copyright += ' * Copyright (c) 2015-2018 The Khronos Group Inc.\n'
-        copyright += ' * Copyright (c) 2015-2018 Valve Corporation\n'
-        copyright += ' * Copyright (c) 2015-2018 LunarG, Inc.\n'
-        copyright += ' * Copyright (c) 2015-2018 Google Inc.\n'
+        copyright += ' * Copyright (c) 2015-2019 The Khronos Group Inc.\n'
+        copyright += ' * Copyright (c) 2015-2019 Valve Corporation\n'
+        copyright += ' * Copyright (c) 2015-2019 LunarG, Inc.\n'
+        copyright += ' * Copyright (c) 2015-2019 Google Inc.\n'
         copyright += ' *\n'
         copyright += ' * Licensed under the Apache License, Version 2.0 (the "License");\n'
         copyright += ' * you may not use this file except in compliance with the License.\n'
@@ -438,10 +438,10 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
         self.otwrite('hdr', 'void PreCallRecordFreeDescriptorSets(VkDevice device, VkDescriptorPool descriptorPool, uint32_t descriptorSetCount, const VkDescriptorSet *pDescriptorSets);')
         self.otwrite('hdr', 'void PostCallRecordGetPhysicalDeviceQueueFamilyProperties2(VkPhysicalDevice physicalDevice, uint32_t *pQueueFamilyPropertyCount, VkQueueFamilyProperties2KHR *pQueueFamilyProperties);')
         self.otwrite('hdr', 'void PostCallRecordGetPhysicalDeviceQueueFamilyProperties2KHR(VkPhysicalDevice physicalDevice, uint32_t *pQueueFamilyPropertyCount, VkQueueFamilyProperties2KHR *pQueueFamilyProperties);')
-        self.otwrite('hdr', 'void PostCallRecordGetPhysicalDeviceDisplayPropertiesKHR(VkPhysicalDevice physicalDevice, uint32_t *pPropertyCount, VkDisplayPropertiesKHR *pProperties);')
-        self.otwrite('hdr', 'void PostCallRecordGetDisplayModePropertiesKHR(VkPhysicalDevice physicalDevice, VkDisplayKHR display, uint32_t *pPropertyCount, VkDisplayModePropertiesKHR *pProperties);')
-        self.otwrite('hdr', 'void PostCallRecordGetPhysicalDeviceDisplayProperties2KHR(VkPhysicalDevice physicalDevice, uint32_t *pPropertyCount, VkDisplayProperties2KHR *pProperties);')
-        self.otwrite('hdr', 'void PostCallRecordGetDisplayModeProperties2KHR(VkPhysicalDevice physicalDevice, VkDisplayKHR display, uint32_t *pPropertyCount, VkDisplayModeProperties2KHR *pProperties);')
+        self.otwrite('hdr', 'void PostCallRecordGetPhysicalDeviceDisplayPropertiesKHR(VkPhysicalDevice physicalDevice, uint32_t *pPropertyCount, VkDisplayPropertiesKHR *pProperties, VkResult result);')
+        self.otwrite('hdr', 'void PostCallRecordGetDisplayModePropertiesKHR(VkPhysicalDevice physicalDevice, VkDisplayKHR display, uint32_t *pPropertyCount, VkDisplayModePropertiesKHR *pProperties, VkResult result);')
+        self.otwrite('hdr', 'void PostCallRecordGetPhysicalDeviceDisplayProperties2KHR(VkPhysicalDevice physicalDevice, uint32_t *pPropertyCount, VkDisplayProperties2KHR *pProperties, VkResult result);')
+        self.otwrite('hdr', 'void PostCallRecordGetDisplayModeProperties2KHR(VkPhysicalDevice physicalDevice, VkDisplayKHR display, uint32_t *pPropertyCount, VkDisplayModeProperties2KHR *pProperties, VkResult result);')
         OutputGenerator.endFile(self)
     #
     # Processing point at beginning of each extension definition
@@ -929,6 +929,8 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
             func_decl_template = decls[0][:-1].split('VKAPI_CALL ')
             func_decl_template = func_decl_template[1]
 
+            result_type = cmdinfo.elem.find('proto/type')
+
             if 'object_tracker.h' in self.genOpts.filename:
                 # Output PreCallValidateAPI prototype if necessary
                 if pre_call_validate:
@@ -943,6 +945,8 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
                 # Output PosCallRecordAPI prototype if necessary
                 if post_call_record:
                     post_cr_func_decl = 'void PostCallRecord' + func_decl_template + ';'
+                    if result_type.text == 'VkResult':
+                        post_cr_func_decl = post_cr_func_decl.replace(')', ',\n    VkResult                                    result)')
                     self.appendSection('command', post_cr_func_decl)
 
             if 'object_tracker.cpp' in self.genOpts.filename:
@@ -968,7 +972,13 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
                 if post_call_record and not manual:
                     post_cr_func_decl = 'void ObjectLifetimes::PostCallRecord' + func_decl_template + ' {'
                     self.appendSection('command', '')
+
+                    if result_type.text == 'VkResult':
+                        post_cr_func_decl = post_cr_func_decl.replace(')', ',\n    VkResult                                    result)')
+                        post_cr_func_decl = post_cr_func_decl.replace('{', '{\n    if (result != VK_SUCCESS) return;')
                     self.appendSection('command', post_cr_func_decl)
+
+
                     self.appendSection('command', post_call_record)
                     self.appendSection('command', '}')
 

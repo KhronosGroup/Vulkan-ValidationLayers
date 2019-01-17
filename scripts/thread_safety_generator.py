@@ -1,9 +1,9 @@
 #!/usr/bin/python3 -i
 #
-# Copyright (c) 2015-2016 The Khronos Group Inc.
-# Copyright (c) 2015-2016 Valve Corporation
-# Copyright (c) 2015-2016 LunarG, Inc.
-# Copyright (c) 2015-2016 Google Inc.
+# Copyright (c) 2015-2019 The Khronos Group Inc.
+# Copyright (c) 2015-2019 Valve Corporation
+# Copyright (c) 2015-2019 LunarG, Inc.
+# Copyright (c) 2015-2019 Google Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -120,10 +120,10 @@ class ThreadOutputGenerator(OutputGenerator):
 // This file is ***GENERATED***.  Do Not Edit.
 // See layer_chassis_dispatch_generator.py for modifications.
 
-/* Copyright (c) 2015-2018 The Khronos Group Inc.
- * Copyright (c) 2015-2018 Valve Corporation
- * Copyright (c) 2015-2018 LunarG, Inc.
- * Copyright (c) 2015-2018 Google Inc.
+/* Copyright (c) 2015-2019 The Khronos Group Inc.
+ * Copyright (c) 2015-2019 Valve Corporation
+ * Copyright (c) 2015-2019 LunarG, Inc.
+ * Copyright (c) 2015-2019 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -465,7 +465,7 @@ void ThreadSafety::PreCallRecordAllocateCommandBuffers(VkDevice device, const Vk
 }
 
 void ThreadSafety::PostCallRecordAllocateCommandBuffers(VkDevice device, const VkCommandBufferAllocateInfo *pAllocateInfo,
-                                                        VkCommandBuffer *pCommandBuffers) {
+                                                        VkCommandBuffer *pCommandBuffers, VkResult result) {
     FinishReadObject(device);
     FinishWriteObject(pAllocateInfo->commandPool);
 
@@ -484,7 +484,7 @@ void ThreadSafety::PreCallRecordAllocateDescriptorSets(VkDevice device, const Vk
 }
 
 void ThreadSafety::PostCallRecordAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo *pAllocateInfo,
-                                                        VkDescriptorSet *pDescriptorSets) {
+                                                        VkDescriptorSet *pDescriptorSets, VkResult result) {
     FinishReadObject(device);
     FinishWriteObject(pAllocateInfo->descriptorPool);
     // Host access to pAllocateInfo::descriptorPool must be externally synchronized
@@ -521,7 +521,7 @@ void ThreadSafety::PreCallRecordResetCommandPool(VkDevice device, VkCommandPool 
     // Host access to commandPool must be externally synchronized
 }
 
-void ThreadSafety::PostCallRecordResetCommandPool(VkDevice device, VkCommandPool commandPool, VkCommandPoolResetFlags flags) {
+void ThreadSafety::PostCallRecordResetCommandPool(VkDevice device, VkCommandPool commandPool, VkCommandPoolResetFlags flags, VkResult result) {
     FinishReadObject(device);
     FinishWriteObject(commandPool);
     c_VkCommandPoolContents.FinishWrite(commandPool);
@@ -551,7 +551,7 @@ void ThreadSafety::PreCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapcha
 }
 
 void ThreadSafety::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain, uint32_t *pSwapchainImageCount,
-                                                       VkImage *pSwapchainImages) {
+                                                       VkImage *pSwapchainImages, VkResult result) {
     FinishReadObject(device);
     FinishReadObject(swapchain);
 }
@@ -877,6 +877,8 @@ void ThreadSafety::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapch
 
         decls = self.makeCDecls(cmdinfo.elem)
 
+        result_type = cmdinfo.elem.find('proto/type')
+
         if self.source_file:
             pre_decl = decls[0][:-1]
             pre_decl = pre_decl.split("VKAPI_CALL ")[1]
@@ -888,9 +890,10 @@ void ThreadSafety::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapch
             self.appendSection('command', "    " + "\n    ".join(str(startthreadsafety).rstrip().split("\n")))
             self.appendSection('command', '}')
 
-            post_decl = pre_decl.replace('PreCallRecord', 'PostCallRecord')
-
             # PostCallRecord
+            post_decl = pre_decl.replace('PreCallRecord', 'PostCallRecord')
+            if result_type.text == 'VkResult':
+                post_decl = post_decl.replace(')', ',\n    VkResult                                    result)')
             self.appendSection('command', '')
             self.appendSection('command', post_decl)
             self.appendSection('command', "    " + "\n    ".join(str(finishthreadsafety).rstrip().split("\n")))
@@ -905,9 +908,10 @@ void ThreadSafety::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapch
             self.appendSection('command', '')
             self.appendSection('command', pre_decl)
 
-            post_decl = pre_decl.replace('PreCallRecord', 'PostCallRecord')
-
             # PostCallRecord
+            post_decl = pre_decl.replace('PreCallRecord', 'PostCallRecord')
+            if result_type.text == 'VkResult':
+                post_decl = post_decl.replace(')', ',\n    VkResult                                    result)')
             self.appendSection('command', '')
             self.appendSection('command', post_decl)
 

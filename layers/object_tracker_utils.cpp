@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2018 The Khronos Group Inc.
- * Copyright (c) 2015-2018 Valve Corporation
- * Copyright (c) 2015-2018 LunarG, Inc.
- * Copyright (C) 2015-2018 Google Inc.
+/* Copyright (c) 2015-2019 The Khronos Group Inc.
+ * Copyright (c) 2015-2019 Valve Corporation
+ * Copyright (c) 2015-2019 LunarG, Inc.
+ * Copyright (C) 2015-2019 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -325,7 +325,8 @@ bool ObjectLifetimes::PreCallValidateEnumeratePhysicalDevices(VkInstance instanc
 }
 
 void ObjectLifetimes::PostCallRecordEnumeratePhysicalDevices(VkInstance instance, uint32_t *pPhysicalDeviceCount,
-                                                             VkPhysicalDevice *pPhysicalDevices) {
+                                                             VkPhysicalDevice *pPhysicalDevices, VkResult result) {
+    if ((result != VK_SUCCESS) && (result != VK_INCOMPLETE)) return;
     if (pPhysicalDevices) {
         for (uint32_t i = 0; i < *pPhysicalDeviceCount; i++) {
             CreateObject(instance, pPhysicalDevices[i], kVulkanObjectTypePhysicalDevice, nullptr);
@@ -494,7 +495,8 @@ bool ObjectLifetimes::PreCallValidateGetSwapchainImagesKHR(VkDevice device, VkSw
 }
 
 void ObjectLifetimes::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain, uint32_t *pSwapchainImageCount,
-                                                          VkImage *pSwapchainImages) {
+                                                          VkImage *pSwapchainImages, VkResult result) {
+    if ((result != VK_SUCCESS) && (result != VK_INCOMPLETE)) return;
     if (pSwapchainImages != NULL) {
         for (uint32_t i = 0; i < *pSwapchainImageCount; i++) {
             CreateSwapchainImageObject(device, pSwapchainImages[i], swapchain);
@@ -529,7 +531,8 @@ bool ObjectLifetimes::PreCallValidateCreateDescriptorSetLayout(VkDevice device, 
 
 void ObjectLifetimes::PostCallRecordCreateDescriptorSetLayout(VkDevice device, const VkDescriptorSetLayoutCreateInfo *pCreateInfo,
                                                               const VkAllocationCallbacks *pAllocator,
-                                                              VkDescriptorSetLayout *pSetLayout) {
+                                                              VkDescriptorSetLayout *pSetLayout, VkResult result) {
+    if (result != VK_SUCCESS) return;
     CreateObject(device, *pSetLayout, kVulkanObjectTypeDescriptorSetLayout, pAllocator);
 }
 
@@ -591,7 +594,8 @@ void ObjectLifetimes::PostCallRecordGetPhysicalDeviceQueueFamilyProperties(VkPhy
 }
 
 void ObjectLifetimes::PostCallRecordCreateInstance(const VkInstanceCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator,
-                                                   VkInstance *pInstance) {
+                                                   VkInstance *pInstance, VkResult result) {
+    if (result != VK_SUCCESS) return;
     CreateObject(*pInstance, *pInstance, kVulkanObjectTypeInstance, pAllocator);
 }
 
@@ -606,7 +610,8 @@ bool ObjectLifetimes::PreCallValidateAllocateCommandBuffers(VkDevice device, con
 }
 
 void ObjectLifetimes::PostCallRecordAllocateCommandBuffers(VkDevice device, const VkCommandBufferAllocateInfo *pAllocateInfo,
-                                                           VkCommandBuffer *pCommandBuffers) {
+                                                           VkCommandBuffer *pCommandBuffers, VkResult result) {
+    if (result != VK_SUCCESS) return;
     for (uint32_t i = 0; i < pAllocateInfo->commandBufferCount; i++) {
         AllocateCommandBuffer(device, pAllocateInfo->commandPool, pCommandBuffers[i], pAllocateInfo->level);
     }
@@ -629,7 +634,8 @@ bool ObjectLifetimes::PreCallValidateAllocateDescriptorSets(VkDevice device, con
 }
 
 void ObjectLifetimes::PostCallRecordAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo *pAllocateInfo,
-                                                           VkDescriptorSet *pDescriptorSets) {
+                                                           VkDescriptorSet *pDescriptorSets, VkResult result) {
+    if (result != VK_SUCCESS) return;
     for (uint32_t i = 0; i < pAllocateInfo->descriptorSetCount; i++) {
         AllocateDescriptorSet(device, pAllocateInfo->descriptorPool, pDescriptorSets[i]);
     }
@@ -824,7 +830,8 @@ bool ObjectLifetimes::PreCallValidateGetPhysicalDeviceDisplayPropertiesKHR(VkPhy
 }
 
 void ObjectLifetimes::PostCallRecordGetPhysicalDeviceDisplayPropertiesKHR(VkPhysicalDevice physicalDevice, uint32_t *pPropertyCount,
-                                                                          VkDisplayPropertiesKHR *pProperties) {
+                                                                          VkDisplayPropertiesKHR *pProperties, VkResult result) {
+    if ((result != VK_SUCCESS) && (result != VK_INCOMPLETE)) return;
     if (pProperties) {
         for (uint32_t i = 0; i < *pPropertyCount; ++i) {
             CreateObject(physicalDevice, pProperties[i].display, kVulkanObjectTypeDisplayKHR, nullptr);
@@ -845,7 +852,9 @@ bool ObjectLifetimes::PreCallValidateGetDisplayModePropertiesKHR(VkPhysicalDevic
 }
 
 void ObjectLifetimes::PostCallRecordGetDisplayModePropertiesKHR(VkPhysicalDevice physicalDevice, VkDisplayKHR display,
-                                                                uint32_t *pPropertyCount, VkDisplayModePropertiesKHR *pProperties) {
+                                                                uint32_t *pPropertyCount, VkDisplayModePropertiesKHR *pProperties,
+                                                                VkResult result) {
+    if ((result != VK_SUCCESS) && (result != VK_INCOMPLETE)) return;
     if (pProperties) {
         for (uint32_t i = 0; i < *pPropertyCount; ++i) {
             CreateObject(physicalDevice, pProperties[i].displayMode, kVulkanObjectTypeDisplayModeKHR, nullptr);
@@ -862,7 +871,8 @@ bool ObjectLifetimes::PreCallValidateGetPhysicalDeviceDisplayProperties2KHR(VkPh
 
 void ObjectLifetimes::PostCallRecordGetPhysicalDeviceDisplayProperties2KHR(VkPhysicalDevice physicalDevice,
                                                                            uint32_t *pPropertyCount,
-                                                                           VkDisplayProperties2KHR *pProperties) {
+                                                                           VkDisplayProperties2KHR *pProperties, VkResult result) {
+    if ((result != VK_SUCCESS) && (result != VK_INCOMPLETE)) return;
     for (uint32_t index = 0; index < *pPropertyCount; ++index) {
         CreateObject(physicalDevice, pProperties[index].displayProperties.display, kVulkanObjectTypeDisplayKHR, nullptr);
     }
@@ -881,8 +891,9 @@ bool ObjectLifetimes::PreCallValidateGetDisplayModeProperties2KHR(VkPhysicalDevi
 }
 
 void ObjectLifetimes::PostCallRecordGetDisplayModeProperties2KHR(VkPhysicalDevice physicalDevice, VkDisplayKHR display,
-                                                                 uint32_t *pPropertyCount,
-                                                                 VkDisplayModeProperties2KHR *pProperties) {
+                                                                 uint32_t *pPropertyCount, VkDisplayModeProperties2KHR *pProperties,
+                                                                 VkResult result) {
+    if ((result != VK_SUCCESS) && (result != VK_INCOMPLETE)) return;
     for (uint32_t index = 0; index < *pPropertyCount; ++index) {
         CreateObject(physicalDevice, pProperties[index].displayModeProperties.displayMode, kVulkanObjectTypeDisplayModeKHR,
                      nullptr);
