@@ -89,7 +89,7 @@ endif()
 # ~~~
 set(VULKAN_LOADER_INSTALL_DIR "LOADER-NOTFOUND" CACHE PATH "Absolute path to a Vulkan-Loader install directory")
 
-if(NOT TARGET vulkan)
+if (NOT TARGET vulkan)
     if(VULKAN_LOADER_INSTALL_DIR)
         message(STATUS "VULKAN_LOADER_INSTALL_DIR specified, using find_package to locate Vulkan")
     elseif(ENV{VULKAN_LOADER_INSTALL_DIR})
@@ -100,6 +100,18 @@ if(NOT TARGET vulkan)
         ${CMAKE_PREFIX_PATH};${VULKAN_LOADER_INSTALL_DIR};${VULKAN_HEADERS_INSTALL_DIR};$ENV{VULKAN_LOADER_INSTALL_DIR};$ENV{VULKAN_HEADERS_INSTALL_DIR}
         )
     find_package(Vulkan)
+    add_library(vulkan STATIC IMPORTED)
+
+    set_target_properties(vulkan PROPERTIES IMPORTED_LOCATION "${Vulkan_LIBRARY}")
+    target_include_directories(vulkan INTERFACE "${Vulkan_INCLUDE_DIR}")
+endif()
+
+if (NOT TARGET Vulkan::Vulkan)
+    if (TARGET vulkan)
+        add_library(Vulkan::Vulkan ALIAS vulkan)
+    else()
+        message(FATAL_ERROR "Vulkan loader target not found")
+    endif()
 endif()
 
 set_source_files_properties(${PROJECT_BINARY_DIR}/vk_safe_struct.cpp PROPERTIES GENERATED TRUE)
@@ -109,6 +121,7 @@ add_executable(vk_layer_validation_tests
                ../layers/convert_to_renderpass2.cpp
                ${PROJECT_BINARY_DIR}/vk_safe_struct.cpp
                ${COMMON_CPP})
+target_link_libraries(vk_layer_validation_tests PRIVATE Vulkan::Headers)
 add_dependencies(vk_layer_validation_tests Vulkan::Vulkan)
 if(NOT GTEST_IS_STATIC_LIB)
     set_target_properties(vk_layer_validation_tests PROPERTIES COMPILE_DEFINITIONS "GTEST_LINKED_AS_SHARED_LIBRARY=1")
