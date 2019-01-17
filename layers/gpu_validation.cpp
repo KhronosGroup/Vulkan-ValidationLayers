@@ -284,6 +284,9 @@ void GpuPostCallRecordCreateDevice(layer_data *dev_data) {
     auto gpu_state = GetGpuValidationState(dev_data);
     const auto *dispatch_table = GetDispatchTable(dev_data);
 
+    gpu_state->aborted = false;
+    gpu_state->reserve_binding_slot = false;
+
     if (GetPDProperties(dev_data)->apiVersion < VK_API_VERSION_1_1) {
         ReportSetupProblem(dev_data, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(GetDevice(dev_data)),
                            "GPU-Assisted validation requires Vulkan 1.1 or later.  GPU-Assisted Validation disabled.");
