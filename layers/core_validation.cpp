@@ -2992,11 +2992,11 @@ static bool ValidateFenceForSubmit(layer_data *dev_data, FENCE_NODE *pFence) {
     return skip;
 }
 
-void PostCallRecordQueueSubmit(layer_data *dev_data, VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits,
-                               VkFence fence) {
+void PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits, VkFence fence, VkResult result) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(queue), layer_data_map);
     uint64_t early_retire_seq = 0;
-    auto pQueue = GetQueueState(dev_data, queue);
-    auto pFence = GetFenceNode(dev_data, fence);
+    auto pQueue = GetQueueState(device_data, queue);
+    auto pFence = GetFenceNode(device_data, fence);
 
     if (pFence) {
         if (pFence->scope == kSyncScopeInternal) {
@@ -3012,9 +3012,9 @@ void PostCallRecordQueueSubmit(layer_data *dev_data, VkQueue queue, uint32_t sub
         } else {
             // Retire work up until this fence early, we will not see the wait that corresponds to this signal
             early_retire_seq = pQueue->seq + pQueue->submissions.size();
-            if (!dev_data->external_sync_warning) {
-                dev_data->external_sync_warning = true;
-                log_msg(dev_data->report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_FENCE_EXT,
+            if (!device_data->external_sync_warning) {
+                device_data->external_sync_warning = true;
+                log_msg(device_data->report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_FENCE_EXT,
                         HandleToUint64(fence), kVUID_Core_DrawState_QueueForwardProgress,
                         "vkQueueSubmit(): Signaling external fence 0x%" PRIx64 " on queue 0x%" PRIx64
                         " will disable validation of preceding command buffer lifecycle states and the in-use status of associated "
@@ -3033,7 +3033,7 @@ void PostCallRecordQueueSubmit(layer_data *dev_data, VkQueue queue, uint32_t sub
         vector<VkSemaphore> semaphore_externals;
         for (uint32_t i = 0; i < submit->waitSemaphoreCount; ++i) {
             VkSemaphore semaphore = submit->pWaitSemaphores[i];
-            auto pSemaphore = GetSemaphoreNode(dev_data, semaphore);
+            auto pSemaphore = GetSemaphoreNode(device_data, semaphore);
             if (pSemaphore) {
                 if (pSemaphore->scope == kSyncScopeInternal) {
                     if (pSemaphore->signaler.first != VK_NULL_HANDLE) {
@@ -3053,7 +3053,7 @@ void PostCallRecordQueueSubmit(layer_data *dev_data, VkQueue queue, uint32_t sub
         }
         for (uint32_t i = 0; i < submit->signalSemaphoreCount; ++i) {
             VkSemaphore semaphore = submit->pSignalSemaphores[i];
-            auto pSemaphore = GetSemaphoreNode(dev_data, semaphore);
+            auto pSemaphore = GetSemaphoreNode(device_data, semaphore);
             if (pSemaphore) {
                 if (pSemaphore->scope == kSyncScopeInternal) {
                     pSemaphore->signaler.first = queue;
@@ -3064,10 +3064,11 @@ void PostCallRecordQueueSubmit(layer_data *dev_data, VkQueue queue, uint32_t sub
                 } else {
                     // Retire work up until this submit early, we will not see the wait that corresponds to this signal
                     early_retire_seq = std::max(early_retire_seq, pQueue->seq + pQueue->submissions.size() + 1);
-                    if (!dev_data->external_sync_warning) {
-                        dev_data->external_sync_warning = true;
-                        log_msg(dev_data->report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SEMAPHORE_EXT,
-                                HandleToUint64(semaphore), kVUID_Core_DrawState_QueueForwardProgress,
+                    if (!device_data->external_sync_warning) {
+                        device_data->external_sync_warning = true;
+                        log_msg(device_data->report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT,
+                                VK_DEBUG_REPORT_OBJECT_TYPE_SEMAPHORE_EXT, HandleToUint64(semaphore),
+                                kVUID_Core_DrawState_QueueForwardProgress,
                                 "vkQueueSubmit(): Signaling external semaphore 0x%" PRIx64 " on queue 0x%" PRIx64
                                 " will disable validation of preceding command buffer lifecycle states and the in-use status of "
                                 "associated objects.",
@@ -3077,18 +3078,18 @@ void PostCallRecordQueueSubmit(layer_data *dev_data, VkQueue queue, uint32_t sub
             }
         }
         for (uint32_t i = 0; i < submit->commandBufferCount; i++) {
-            auto cb_node = GetCBNode(dev_data, submit->pCommandBuffers[i]);
+            auto cb_node = GetCBNode(device_data, submit->pCommandBuffers[i]);
             if (cb_node) {
                 cbs.push_back(submit->pCommandBuffers[i]);
                 for (auto secondaryCmdBuffer : cb_node->linkedCommandBuffers) {
                     cbs.push_back(secondaryCmdBuffer->commandBuffer);
-                    UpdateCmdBufImageLayouts(dev_data, secondaryCmdBuffer);
-                    IncrementResources(dev_data, secondaryCmdBuffer);
-                    RecordQueuedQFOTransfers(dev_data, secondaryCmdBuffer);
+                    UpdateCmdBufImageLayouts(device_data, secondaryCmdBuffer);
+                    IncrementResources(device_data, secondaryCmdBuffer);
+                    RecordQueuedQFOTransfers(device_data, secondaryCmdBuffer);
                 }
-                UpdateCmdBufImageLayouts(dev_data, cb_node);
-                IncrementResources(dev_data, cb_node);
-                RecordQueuedQFOTransfers(dev_data, cb_node);
+                UpdateCmdBufImageLayouts(device_data, cb_node);
+                IncrementResources(device_data, cb_node);
+                RecordQueuedQFOTransfers(device_data, cb_node);
             }
         }
         pQueue->submissions.emplace_back(cbs, semaphore_waits, semaphore_signals, semaphore_externals,
@@ -3096,14 +3097,18 @@ void PostCallRecordQueueSubmit(layer_data *dev_data, VkQueue queue, uint32_t sub
     }
 
     if (early_retire_seq) {
-        RetireWorkOnQueue(dev_data, pQueue, early_retire_seq);
+        RetireWorkOnQueue(device_data, pQueue, early_retire_seq);
+    }
+
+    if (GetEnables(device_data)->gpu_validation) {
+        GpuPostCallQueueSubmit(device_data, queue, submitCount, pSubmits, fence);
     }
 }
 
-bool PreCallValidateQueueSubmit(layer_data *dev_data, VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits,
-                                VkFence fence) {
-    auto pFence = GetFenceNode(dev_data, fence);
-    bool skip = ValidateFenceForSubmit(dev_data, pFence);
+bool PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits, VkFence fence) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(queue), layer_data_map);
+    auto pFence = GetFenceNode(device_data, fence);
+    bool skip = ValidateFenceForSubmit(device_data, pFence);
     if (skip) {
         return true;
     }
@@ -3118,18 +3123,19 @@ bool PreCallValidateQueueSubmit(layer_data *dev_data, VkQueue queue, uint32_t su
         const VkSubmitInfo *submit = &pSubmits[submit_idx];
         for (uint32_t i = 0; i < submit->waitSemaphoreCount; ++i) {
             skip |= ValidateStageMaskGsTsEnables(
-                dev_data, submit->pWaitDstStageMask[i], "vkQueueSubmit()", "VUID-VkSubmitInfo-pWaitDstStageMask-00076",
+                device_data, submit->pWaitDstStageMask[i], "vkQueueSubmit()", "VUID-VkSubmitInfo-pWaitDstStageMask-00076",
                 "VUID-VkSubmitInfo-pWaitDstStageMask-00077", "VUID-VkSubmitInfo-pWaitDstStageMask-02089",
                 "VUID-VkSubmitInfo-pWaitDstStageMask-02090");
             VkSemaphore semaphore = submit->pWaitSemaphores[i];
-            auto pSemaphore = GetSemaphoreNode(dev_data, semaphore);
+            auto pSemaphore = GetSemaphoreNode(device_data, semaphore);
             if (pSemaphore && (pSemaphore->scope == kSyncScopeInternal || internal_semaphores.count(semaphore))) {
                 if (unsignaled_semaphores.count(semaphore) ||
                     (!(signaled_semaphores.count(semaphore)) && !(pSemaphore->signaled))) {
-                    skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SEMAPHORE_EXT,
-                                    HandleToUint64(semaphore), kVUID_Core_DrawState_QueueForwardProgress,
-                                    "Queue 0x%" PRIx64 " is waiting on semaphore 0x%" PRIx64 " that has no way to be signaled.",
-                                    HandleToUint64(queue), HandleToUint64(semaphore));
+                    skip |=
+                        log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SEMAPHORE_EXT,
+                                HandleToUint64(semaphore), kVUID_Core_DrawState_QueueForwardProgress,
+                                "Queue 0x%" PRIx64 " is waiting on semaphore 0x%" PRIx64 " that has no way to be signaled.",
+                                HandleToUint64(queue), HandleToUint64(semaphore));
                 } else {
                     signaled_semaphores.erase(semaphore);
                     unsignaled_semaphores.insert(semaphore);
@@ -3141,15 +3147,15 @@ bool PreCallValidateQueueSubmit(layer_data *dev_data, VkQueue queue, uint32_t su
         }
         for (uint32_t i = 0; i < submit->signalSemaphoreCount; ++i) {
             VkSemaphore semaphore = submit->pSignalSemaphores[i];
-            auto pSemaphore = GetSemaphoreNode(dev_data, semaphore);
+            auto pSemaphore = GetSemaphoreNode(device_data, semaphore);
             if (pSemaphore && (pSemaphore->scope == kSyncScopeInternal || internal_semaphores.count(semaphore))) {
                 if (signaled_semaphores.count(semaphore) || (!(unsignaled_semaphores.count(semaphore)) && pSemaphore->signaled)) {
-                    skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SEMAPHORE_EXT,
-                                    HandleToUint64(semaphore), kVUID_Core_DrawState_QueueForwardProgress,
-                                    "Queue 0x%" PRIx64 " is signaling semaphore 0x%" PRIx64
-                                    " that was previously signaled by queue 0x%" PRIx64
-                                    " but has not since been waited on by any queue.",
-                                    HandleToUint64(queue), HandleToUint64(semaphore), HandleToUint64(pSemaphore->signaler.first));
+                    skip |= log_msg(
+                        device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SEMAPHORE_EXT,
+                        HandleToUint64(semaphore), kVUID_Core_DrawState_QueueForwardProgress,
+                        "Queue 0x%" PRIx64 " is signaling semaphore 0x%" PRIx64 " that was previously signaled by queue 0x%" PRIx64
+                        " but has not since been waited on by any queue.",
+                        HandleToUint64(queue), HandleToUint64(semaphore), HandleToUint64(pSemaphore->signaler.first));
                 } else {
                     unsignaled_semaphores.erase(semaphore);
                     signaled_semaphores.insert(semaphore);
@@ -3160,14 +3166,14 @@ bool PreCallValidateQueueSubmit(layer_data *dev_data, VkQueue queue, uint32_t su
         QFOTransferCBScoreboards<VkBufferMemoryBarrier> qfo_buffer_scoreboards;
 
         for (uint32_t i = 0; i < submit->commandBufferCount; i++) {
-            auto cb_node = GetCBNode(dev_data, submit->pCommandBuffers[i]);
+            auto cb_node = GetCBNode(device_data, submit->pCommandBuffers[i]);
             if (cb_node) {
-                skip |= ValidateCmdBufImageLayouts(dev_data, cb_node, dev_data->imageLayoutMap, localImageLayoutMap);
+                skip |= ValidateCmdBufImageLayouts(device_data, cb_node, device_data->imageLayoutMap, localImageLayoutMap);
                 current_cmds.push_back(submit->pCommandBuffers[i]);
                 skip |= ValidatePrimaryCommandBufferState(
-                    dev_data, cb_node, (int)std::count(current_cmds.begin(), current_cmds.end(), submit->pCommandBuffers[i]),
+                    device_data, cb_node, (int)std::count(current_cmds.begin(), current_cmds.end(), submit->pCommandBuffers[i]),
                     &qfo_image_scoreboards, &qfo_buffer_scoreboards);
-                skip |= ValidateQueueFamilyIndices(dev_data, cb_node, queue);
+                skip |= ValidateQueueFamilyIndices(device_data, cb_node, queue);
 
                 // Potential early exit here as bad object state may crash in delayed function calls
                 if (skip) {
@@ -3929,14 +3935,18 @@ void PostCallRecordGetDeviceQueue(layer_data *dev_data, uint32_t q_family_index,
     }
 }
 
-bool PreCallValidateQueueWaitIdle(layer_data *dev_data, VkQueue queue, QUEUE_STATE **queue_state) {
-    *queue_state = GetQueueState(dev_data, queue);
-    if (dev_data->instance_data->disabled.queue_wait_idle) return false;
-    return VerifyQueueStateToSeq(dev_data, *queue_state, (*queue_state)->seq + (*queue_state)->submissions.size());
+bool PreCallValidateQueueWaitIdle(VkQueue queue) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(queue), layer_data_map);
+    QUEUE_STATE *queue_state = GetQueueState(device_data, queue);
+    if (device_data->instance_data->disabled.queue_wait_idle) return false;
+    return VerifyQueueStateToSeq(device_data, queue_state, queue_state->seq + queue_state->submissions.size());
 }
 
-void PostCallRecordQueueWaitIdle(layer_data *dev_data, QUEUE_STATE *queue_state) {
-    RetireWorkOnQueue(dev_data, queue_state, queue_state->seq + queue_state->submissions.size());
+void PostCallRecordQueueWaitIdle(VkQueue queue, VkResult result) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(queue), layer_data_map);
+    if (VK_SUCCESS != result) return;
+    QUEUE_STATE *queue_state = GetQueueState(device_data, queue);
+    RetireWorkOnQueue(device_data, queue_state, queue_state->seq + queue_state->submissions.size());
 }
 
 bool PreCallValidateDeviceWaitIdle(layer_data *dev_data) {
@@ -10298,10 +10308,10 @@ void PreCallRecordSetEvent(layer_data *dev_data, VkEvent event) {
     }
 }
 
-bool PreCallValidateQueueBindSparse(layer_data *dev_data, VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo *pBindInfo,
-                                    VkFence fence) {
-    auto pFence = GetFenceNode(dev_data, fence);
-    bool skip = ValidateFenceForSubmit(dev_data, pFence);
+bool PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo *pBindInfo, VkFence fence) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(queue), layer_data_map);
+    auto pFence = GetFenceNode(device_data, fence);
+    bool skip = ValidateFenceForSubmit(device_data, pFence);
     if (skip) {
         return true;
     }
@@ -10316,14 +10326,15 @@ bool PreCallValidateQueueBindSparse(layer_data *dev_data, VkQueue queue, uint32_
         std::vector<VkSemaphore> semaphore_signals;
         for (uint32_t i = 0; i < bindInfo.waitSemaphoreCount; ++i) {
             VkSemaphore semaphore = bindInfo.pWaitSemaphores[i];
-            auto pSemaphore = GetSemaphoreNode(dev_data, semaphore);
+            auto pSemaphore = GetSemaphoreNode(device_data, semaphore);
             if (pSemaphore && (pSemaphore->scope == kSyncScopeInternal || internal_semaphores.count(semaphore))) {
                 if (unsignaled_semaphores.count(semaphore) ||
                     (!(signaled_semaphores.count(semaphore)) && !(pSemaphore->signaled))) {
-                    skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SEMAPHORE_EXT,
-                                    HandleToUint64(semaphore), kVUID_Core_DrawState_QueueForwardProgress,
-                                    "Queue 0x%" PRIx64 " is waiting on semaphore 0x%" PRIx64 " that has no way to be signaled.",
-                                    HandleToUint64(queue), HandleToUint64(semaphore));
+                    skip |=
+                        log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SEMAPHORE_EXT,
+                                HandleToUint64(semaphore), kVUID_Core_DrawState_QueueForwardProgress,
+                                "Queue 0x%" PRIx64 " is waiting on semaphore 0x%" PRIx64 " that has no way to be signaled.",
+                                HandleToUint64(queue), HandleToUint64(semaphore));
                 } else {
                     signaled_semaphores.erase(semaphore);
                     unsignaled_semaphores.insert(semaphore);
@@ -10335,15 +10346,15 @@ bool PreCallValidateQueueBindSparse(layer_data *dev_data, VkQueue queue, uint32_
         }
         for (uint32_t i = 0; i < bindInfo.signalSemaphoreCount; ++i) {
             VkSemaphore semaphore = bindInfo.pSignalSemaphores[i];
-            auto pSemaphore = GetSemaphoreNode(dev_data, semaphore);
+            auto pSemaphore = GetSemaphoreNode(device_data, semaphore);
             if (pSemaphore && pSemaphore->scope == kSyncScopeInternal) {
                 if (signaled_semaphores.count(semaphore) || (!(unsignaled_semaphores.count(semaphore)) && pSemaphore->signaled)) {
-                    skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SEMAPHORE_EXT,
-                                    HandleToUint64(semaphore), kVUID_Core_DrawState_QueueForwardProgress,
-                                    "Queue 0x%" PRIx64 " is signaling semaphore 0x%" PRIx64
-                                    " that was previously signaled by queue 0x%" PRIx64
-                                    " but has not since been waited on by any queue.",
-                                    HandleToUint64(queue), HandleToUint64(semaphore), HandleToUint64(pSemaphore->signaler.first));
+                    skip |= log_msg(
+                        device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SEMAPHORE_EXT,
+                        HandleToUint64(semaphore), kVUID_Core_DrawState_QueueForwardProgress,
+                        "Queue 0x%" PRIx64 " is signaling semaphore 0x%" PRIx64 " that was previously signaled by queue 0x%" PRIx64
+                        " but has not since been waited on by any queue.",
+                        HandleToUint64(queue), HandleToUint64(semaphore), HandleToUint64(pSemaphore->signaler.first));
                 } else {
                     unsignaled_semaphores.erase(semaphore);
                     signaled_semaphores.insert(semaphore);
@@ -10355,14 +10366,14 @@ bool PreCallValidateQueueBindSparse(layer_data *dev_data, VkQueue queue, uint32_
         // If we're binding sparse image memory make sure reqs were queried and note if metadata is required and bound
         for (uint32_t i = 0; i < bindInfo.imageBindCount; ++i) {
             const auto &image_bind = bindInfo.pImageBinds[i];
-            auto image_state = GetImageState(dev_data, image_bind.image);
+            auto image_state = GetImageState(device_data, image_bind.image);
             if (!image_state)
                 continue;  // Param/Object validation should report image_bind.image handles being invalid, so just skip here.
             sparse_images.insert(image_state);
             if (image_state->createInfo.flags & VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT) {
                 if (!image_state->get_sparse_reqs_called || image_state->sparse_requirements.empty()) {
                     // For now just warning if sparse image binding occurs without calling to get reqs first
-                    return log_msg(dev_data->report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
+                    return log_msg(device_data->report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
                                    HandleToUint64(image_state->image), kVUID_Core_MemTrack_InvalidState,
                                    "vkQueueBindSparse(): Binding sparse memory to image 0x%" PRIx64
                                    " without first calling vkGetImageSparseMemoryRequirements[2KHR]() to retrieve requirements.",
@@ -10371,7 +10382,7 @@ bool PreCallValidateQueueBindSparse(layer_data *dev_data, VkQueue queue, uint32_
             }
             if (!image_state->memory_requirements_checked) {
                 // For now just warning if sparse image binding occurs without calling to get reqs first
-                return log_msg(dev_data->report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
+                return log_msg(device_data->report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
                                HandleToUint64(image_state->image), kVUID_Core_MemTrack_InvalidState,
                                "vkQueueBindSparse(): Binding sparse memory to image 0x%" PRIx64
                                " without first calling vkGetImageMemoryRequirements() to retrieve requirements.",
@@ -10380,14 +10391,14 @@ bool PreCallValidateQueueBindSparse(layer_data *dev_data, VkQueue queue, uint32_
         }
         for (uint32_t i = 0; i < bindInfo.imageOpaqueBindCount; ++i) {
             const auto &image_opaque_bind = bindInfo.pImageOpaqueBinds[i];
-            auto image_state = GetImageState(dev_data, bindInfo.pImageOpaqueBinds[i].image);
+            auto image_state = GetImageState(device_data, bindInfo.pImageOpaqueBinds[i].image);
             if (!image_state)
                 continue;  // Param/Object validation should report image_bind.image handles being invalid, so just skip here.
             sparse_images.insert(image_state);
             if (image_state->createInfo.flags & VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT) {
                 if (!image_state->get_sparse_reqs_called || image_state->sparse_requirements.empty()) {
                     // For now just warning if sparse image binding occurs without calling to get reqs first
-                    return log_msg(dev_data->report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
+                    return log_msg(device_data->report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
                                    HandleToUint64(image_state->image), kVUID_Core_MemTrack_InvalidState,
                                    "vkQueueBindSparse(): Binding opaque sparse memory to image 0x%" PRIx64
                                    " without first calling vkGetImageSparseMemoryRequirements[2KHR]() to retrieve requirements.",
@@ -10396,7 +10407,7 @@ bool PreCallValidateQueueBindSparse(layer_data *dev_data, VkQueue queue, uint32_
             }
             if (!image_state->memory_requirements_checked) {
                 // For now just warning if sparse image binding occurs without calling to get reqs first
-                return log_msg(dev_data->report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
+                return log_msg(device_data->report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
                                HandleToUint64(image_state->image), kVUID_Core_MemTrack_InvalidState,
                                "vkQueueBindSparse(): Binding opaque sparse memory to image 0x%" PRIx64
                                " without first calling vkGetImageMemoryRequirements() to retrieve requirements.",
@@ -10412,7 +10423,7 @@ bool PreCallValidateQueueBindSparse(layer_data *dev_data, VkQueue queue, uint32_
             if (sparse_image_state->sparse_metadata_required && !sparse_image_state->sparse_metadata_bound) {
                 // Warn if sparse image binding metadata required for image with sparse binding, but metadata not bound
                 return log_msg(
-                    dev_data->report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
+                    device_data->report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
                     HandleToUint64(sparse_image_state->image), kVUID_Core_MemTrack_InvalidState,
                     "vkQueueBindSparse(): Binding sparse memory to image 0x%" PRIx64
                     " which requires a metadata aspect but no binding with VK_SPARSE_MEMORY_BIND_METADATA_BIT set was made.",
@@ -10423,11 +10434,13 @@ bool PreCallValidateQueueBindSparse(layer_data *dev_data, VkQueue queue, uint32_
 
     return skip;
 }
-void PostCallRecordQueueBindSparse(layer_data *dev_data, VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo *pBindInfo,
-                                   VkFence fence) {
+void PostCallRecordQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo *pBindInfo, VkFence fence,
+                                   VkResult result) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(queue), layer_data_map);
+    if (result != VK_SUCCESS) return;
     uint64_t early_retire_seq = 0;
-    auto pFence = GetFenceNode(dev_data, fence);
-    auto pQueue = GetQueueState(dev_data, queue);
+    auto pFence = GetFenceNode(device_data, fence);
+    auto pQueue = GetQueueState(device_data, queue);
 
     if (pFence) {
         if (pFence->scope == kSyncScopeInternal) {
@@ -10440,9 +10453,9 @@ void PostCallRecordQueueBindSparse(layer_data *dev_data, VkQueue queue, uint32_t
         } else {
             // Retire work up until this fence early, we will not see the wait that corresponds to this signal
             early_retire_seq = pQueue->seq + pQueue->submissions.size();
-            if (!dev_data->external_sync_warning) {
-                dev_data->external_sync_warning = true;
-                log_msg(dev_data->report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_FENCE_EXT,
+            if (!device_data->external_sync_warning) {
+                device_data->external_sync_warning = true;
+                log_msg(device_data->report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_FENCE_EXT,
                         HandleToUint64(fence), kVUID_Core_DrawState_QueueForwardProgress,
                         "vkQueueBindSparse(): Signaling external fence 0x%" PRIx64 " on queue 0x%" PRIx64
                         " will disable validation of preceding command buffer lifecycle states and the in-use status of associated "
@@ -10458,14 +10471,14 @@ void PostCallRecordQueueBindSparse(layer_data *dev_data, VkQueue queue, uint32_t
         for (uint32_t j = 0; j < bindInfo.bufferBindCount; j++) {
             for (uint32_t k = 0; k < bindInfo.pBufferBinds[j].bindCount; k++) {
                 auto sparse_binding = bindInfo.pBufferBinds[j].pBinds[k];
-                SetSparseMemBinding(dev_data, {sparse_binding.memory, sparse_binding.memoryOffset, sparse_binding.size},
+                SetSparseMemBinding(device_data, {sparse_binding.memory, sparse_binding.memoryOffset, sparse_binding.size},
                                     HandleToUint64(bindInfo.pBufferBinds[j].buffer), kVulkanObjectTypeBuffer);
             }
         }
         for (uint32_t j = 0; j < bindInfo.imageOpaqueBindCount; j++) {
             for (uint32_t k = 0; k < bindInfo.pImageOpaqueBinds[j].bindCount; k++) {
                 auto sparse_binding = bindInfo.pImageOpaqueBinds[j].pBinds[k];
-                SetSparseMemBinding(dev_data, {sparse_binding.memory, sparse_binding.memoryOffset, sparse_binding.size},
+                SetSparseMemBinding(device_data, {sparse_binding.memory, sparse_binding.memoryOffset, sparse_binding.size},
                                     HandleToUint64(bindInfo.pImageOpaqueBinds[j].image), kVulkanObjectTypeImage);
             }
         }
@@ -10474,7 +10487,7 @@ void PostCallRecordQueueBindSparse(layer_data *dev_data, VkQueue queue, uint32_t
                 auto sparse_binding = bindInfo.pImageBinds[j].pBinds[k];
                 // TODO: This size is broken for non-opaque bindings, need to update to comprehend full sparse binding data
                 VkDeviceSize size = sparse_binding.extent.depth * sparse_binding.extent.height * sparse_binding.extent.width * 4;
-                SetSparseMemBinding(dev_data, {sparse_binding.memory, sparse_binding.memoryOffset, size},
+                SetSparseMemBinding(device_data, {sparse_binding.memory, sparse_binding.memoryOffset, size},
                                     HandleToUint64(bindInfo.pImageBinds[j].image), kVulkanObjectTypeImage);
             }
         }
@@ -10484,7 +10497,7 @@ void PostCallRecordQueueBindSparse(layer_data *dev_data, VkQueue queue, uint32_t
         std::vector<VkSemaphore> semaphore_externals;
         for (uint32_t i = 0; i < bindInfo.waitSemaphoreCount; ++i) {
             VkSemaphore semaphore = bindInfo.pWaitSemaphores[i];
-            auto pSemaphore = GetSemaphoreNode(dev_data, semaphore);
+            auto pSemaphore = GetSemaphoreNode(device_data, semaphore);
             if (pSemaphore) {
                 if (pSemaphore->scope == kSyncScopeInternal) {
                     if (pSemaphore->signaler.first != VK_NULL_HANDLE) {
@@ -10504,7 +10517,7 @@ void PostCallRecordQueueBindSparse(layer_data *dev_data, VkQueue queue, uint32_t
         }
         for (uint32_t i = 0; i < bindInfo.signalSemaphoreCount; ++i) {
             VkSemaphore semaphore = bindInfo.pSignalSemaphores[i];
-            auto pSemaphore = GetSemaphoreNode(dev_data, semaphore);
+            auto pSemaphore = GetSemaphoreNode(device_data, semaphore);
             if (pSemaphore) {
                 if (pSemaphore->scope == kSyncScopeInternal) {
                     pSemaphore->signaler.first = queue;
@@ -10515,10 +10528,11 @@ void PostCallRecordQueueBindSparse(layer_data *dev_data, VkQueue queue, uint32_t
                 } else {
                     // Retire work up until this submit early, we will not see the wait that corresponds to this signal
                     early_retire_seq = std::max(early_retire_seq, pQueue->seq + pQueue->submissions.size() + 1);
-                    if (!dev_data->external_sync_warning) {
-                        dev_data->external_sync_warning = true;
-                        log_msg(dev_data->report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SEMAPHORE_EXT,
-                                HandleToUint64(semaphore), kVUID_Core_DrawState_QueueForwardProgress,
+                    if (!device_data->external_sync_warning) {
+                        device_data->external_sync_warning = true;
+                        log_msg(device_data->report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT,
+                                VK_DEBUG_REPORT_OBJECT_TYPE_SEMAPHORE_EXT, HandleToUint64(semaphore),
+                                kVUID_Core_DrawState_QueueForwardProgress,
                                 "vkQueueBindSparse(): Signaling external semaphore 0x%" PRIx64 " on queue 0x%" PRIx64
                                 " will disable validation of preceding command buffer lifecycle states and the in-use status of "
                                 "associated objects.",
@@ -10533,7 +10547,7 @@ void PostCallRecordQueueBindSparse(layer_data *dev_data, VkQueue queue, uint32_t
     }
 
     if (early_retire_seq) {
-        RetireWorkOnQueue(dev_data, pQueue, early_retire_seq);
+        RetireWorkOnQueue(device_data, pQueue, early_retire_seq);
     }
 }
 
@@ -11039,34 +11053,33 @@ void PostCallRecordGetSwapchainImagesKHR(layer_data *device_data, SWAPCHAIN_NODE
     }
 }
 
-bool PreCallValidateQueuePresentKHR(layer_data *dev_data, VkQueue queue, const VkPresentInfoKHR *pPresentInfo) {
+bool PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR *pPresentInfo) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(queue), layer_data_map);
     bool skip = false;
-
-    lock_guard_t lock(global_lock);
-    auto queue_state = GetQueueState(dev_data, queue);
+    auto queue_state = GetQueueState(device_data, queue);
 
     for (uint32_t i = 0; i < pPresentInfo->waitSemaphoreCount; ++i) {
-        auto pSemaphore = GetSemaphoreNode(dev_data, pPresentInfo->pWaitSemaphores[i]);
+        auto pSemaphore = GetSemaphoreNode(device_data, pPresentInfo->pWaitSemaphores[i]);
         if (pSemaphore && !pSemaphore->signaled) {
-            skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT, 0,
-                            kVUID_Core_DrawState_QueueForwardProgress,
+            skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                            0, kVUID_Core_DrawState_QueueForwardProgress,
                             "Queue 0x%" PRIx64 " is waiting on semaphore 0x%" PRIx64 " that has no way to be signaled.",
                             HandleToUint64(queue), HandleToUint64(pPresentInfo->pWaitSemaphores[i]));
         }
     }
 
     for (uint32_t i = 0; i < pPresentInfo->swapchainCount; ++i) {
-        auto swapchain_data = GetSwapchainNode(dev_data, pPresentInfo->pSwapchains[i]);
+        auto swapchain_data = GetSwapchainNode(device_data, pPresentInfo->pSwapchains[i]);
         if (swapchain_data) {
             if (pPresentInfo->pImageIndices[i] >= swapchain_data->images.size()) {
                 skip |=
-                    log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SWAPCHAIN_KHR_EXT,
+                    log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SWAPCHAIN_KHR_EXT,
                             HandleToUint64(pPresentInfo->pSwapchains[i]), kVUID_Core_DrawState_SwapchainInvalidImage,
                             "vkQueuePresentKHR: Swapchain image index too large (%u). There are only %u images in this swapchain.",
                             pPresentInfo->pImageIndices[i], (uint32_t)swapchain_data->images.size());
             } else {
                 auto image = swapchain_data->images[pPresentInfo->pImageIndices[i]];
-                auto image_state = GetImageState(dev_data, image);
+                auto image_state = GetImageState(device_data, image);
 
                 if (image_state->shared_presentable) {
                     image_state->layout_locked = true;
@@ -11074,22 +11087,23 @@ bool PreCallValidateQueuePresentKHR(layer_data *dev_data, VkQueue queue, const V
 
                 if (!image_state->acquired) {
                     skip |= log_msg(
-                        dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SWAPCHAIN_KHR_EXT,
+                        device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SWAPCHAIN_KHR_EXT,
                         HandleToUint64(pPresentInfo->pSwapchains[i]), kVUID_Core_DrawState_SwapchainImageNotAcquired,
                         "vkQueuePresentKHR: Swapchain image index %u has not been acquired.", pPresentInfo->pImageIndices[i]);
                 }
 
                 vector<VkImageLayout> layouts;
-                if (FindLayouts(dev_data, image, layouts)) {
+                if (FindLayouts(device_data, image, layouts)) {
                     for (auto layout : layouts) {
-                        if ((layout != VK_IMAGE_LAYOUT_PRESENT_SRC_KHR) && (!dev_data->extensions.vk_khr_shared_presentable_image ||
-                                                                            (layout != VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR))) {
-                            skip |=
-                                log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_QUEUE_EXT,
-                                        HandleToUint64(queue), "VUID-VkPresentInfoKHR-pImageIndices-01296",
-                                        "Images passed to present must be in layout VK_IMAGE_LAYOUT_PRESENT_SRC_KHR or "
-                                        "VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR but is in %s.",
-                                        string_VkImageLayout(layout));
+                        if ((layout != VK_IMAGE_LAYOUT_PRESENT_SRC_KHR) &&
+                            (!device_data->extensions.vk_khr_shared_presentable_image ||
+                             (layout != VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR))) {
+                            skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                            VK_DEBUG_REPORT_OBJECT_TYPE_QUEUE_EXT, HandleToUint64(queue),
+                                            "VUID-VkPresentInfoKHR-pImageIndices-01296",
+                                            "Images passed to present must be in layout VK_IMAGE_LAYOUT_PRESENT_SRC_KHR or "
+                                            "VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR but is in %s.",
+                                            string_VkImageLayout(layout));
                         }
                     }
                 }
@@ -11097,20 +11111,21 @@ bool PreCallValidateQueuePresentKHR(layer_data *dev_data, VkQueue queue, const V
 
             // All physical devices and queue families are required to be able to present to any native window on Android; require
             // the application to have established support on any other platform.
-            if (!dev_data->instance_data->extensions.vk_khr_android_surface) {
-                auto surface_state = GetSurfaceState(dev_data->instance_data, swapchain_data->createInfo.surface);
-                auto support_it = surface_state->gpu_queue_support.find({dev_data->physical_device, queue_state->queueFamilyIndex});
+            if (!device_data->instance_data->extensions.vk_khr_android_surface) {
+                auto surface_state = GetSurfaceState(device_data->instance_data, swapchain_data->createInfo.surface);
+                auto support_it =
+                    surface_state->gpu_queue_support.find({device_data->physical_device, queue_state->queueFamilyIndex});
 
                 if (support_it == surface_state->gpu_queue_support.end()) {
-                    skip |=
-                        log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SWAPCHAIN_KHR_EXT,
-                                HandleToUint64(pPresentInfo->pSwapchains[i]), kVUID_Core_DrawState_SwapchainUnsupportedQueue,
-                                "vkQueuePresentKHR: Presenting image without calling vkGetPhysicalDeviceSurfaceSupportKHR");
+                    skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                    VK_DEBUG_REPORT_OBJECT_TYPE_SWAPCHAIN_KHR_EXT, HandleToUint64(pPresentInfo->pSwapchains[i]),
+                                    kVUID_Core_DrawState_SwapchainUnsupportedQueue,
+                                    "vkQueuePresentKHR: Presenting image without calling vkGetPhysicalDeviceSurfaceSupportKHR");
                 } else if (!support_it->second) {
-                    skip |=
-                        log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SWAPCHAIN_KHR_EXT,
-                                HandleToUint64(pPresentInfo->pSwapchains[i]), "VUID-vkQueuePresentKHR-pSwapchains-01292",
-                                "vkQueuePresentKHR: Presenting image on queue that cannot present to this surface.");
+                    skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                    VK_DEBUG_REPORT_OBJECT_TYPE_SWAPCHAIN_KHR_EXT, HandleToUint64(pPresentInfo->pSwapchains[i]),
+                                    "VUID-vkQueuePresentKHR-pSwapchains-01292",
+                                    "vkQueuePresentKHR: Presenting image on queue that cannot present to this surface.");
                 }
             }
         }
@@ -11120,13 +11135,13 @@ bool PreCallValidateQueuePresentKHR(layer_data *dev_data, VkQueue queue, const V
         const auto *present_regions = lvl_find_in_chain<VkPresentRegionsKHR>(pPresentInfo->pNext);
         if (present_regions) {
             for (uint32_t i = 0; i < present_regions->swapchainCount; ++i) {
-                auto swapchain_data = GetSwapchainNode(dev_data, pPresentInfo->pSwapchains[i]);
+                auto swapchain_data = GetSwapchainNode(device_data, pPresentInfo->pSwapchains[i]);
                 assert(swapchain_data);
                 VkPresentRegionKHR region = present_regions->pRegions[i];
                 for (uint32_t j = 0; j < region.rectangleCount; ++j) {
                     VkRectLayerKHR rect = region.pRectangles[j];
                     if ((rect.offset.x + rect.extent.width) > swapchain_data->createInfo.imageExtent.width) {
-                        skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                        skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT,
                                         VK_DEBUG_REPORT_OBJECT_TYPE_SWAPCHAIN_KHR_EXT, HandleToUint64(pPresentInfo->pSwapchains[i]),
                                         "VUID-VkRectLayerKHR-offset-01261",
                                         "vkQueuePresentKHR(): For VkPresentRegionKHR down pNext chain, "
@@ -11135,7 +11150,7 @@ bool PreCallValidateQueuePresentKHR(layer_data *dev_data, VkQueue queue, const V
                                         i, j, rect.offset.x, rect.extent.width, swapchain_data->createInfo.imageExtent.width);
                     }
                     if ((rect.offset.y + rect.extent.height) > swapchain_data->createInfo.imageExtent.height) {
-                        skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                        skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT,
                                         VK_DEBUG_REPORT_OBJECT_TYPE_SWAPCHAIN_KHR_EXT, HandleToUint64(pPresentInfo->pSwapchains[i]),
                                         "VUID-VkRectLayerKHR-offset-01261",
                                         "vkQueuePresentKHR(): For VkPresentRegionKHR down pNext chain, "
@@ -11145,7 +11160,7 @@ bool PreCallValidateQueuePresentKHR(layer_data *dev_data, VkQueue queue, const V
                     }
                     if (rect.layer > swapchain_data->createInfo.imageArrayLayers) {
                         skip |= log_msg(
-                            dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SWAPCHAIN_KHR_EXT,
+                            device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SWAPCHAIN_KHR_EXT,
                             HandleToUint64(pPresentInfo->pSwapchains[i]), "VUID-VkRectLayerKHR-layer-01262",
                             "vkQueuePresentKHR(): For VkPresentRegionKHR down pNext chain, pRegion[%i].pRectangles[%i], the layer "
                             "(%i) is greater than the corresponding swapchain's imageArrayLayers (%i).",
@@ -11159,7 +11174,7 @@ bool PreCallValidateQueuePresentKHR(layer_data *dev_data, VkQueue queue, const V
         if (present_times_info) {
             if (pPresentInfo->swapchainCount != present_times_info->swapchainCount) {
                 skip |=
-                    log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SWAPCHAIN_KHR_EXT,
+                    log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SWAPCHAIN_KHR_EXT,
                             HandleToUint64(pPresentInfo->pSwapchains[0]), "VUID-VkPresentTimesInfoGOOGLE-swapchainCount-01247",
                             "vkQueuePresentKHR(): VkPresentTimesInfoGOOGLE.swapchainCount is %i but pPresentInfo->swapchainCount "
                             "is %i. For VkPresentTimesInfoGOOGLE down pNext chain of VkPresentInfoKHR, "
@@ -11172,10 +11187,11 @@ bool PreCallValidateQueuePresentKHR(layer_data *dev_data, VkQueue queue, const V
     return skip;
 }
 
-void PostCallRecordQueuePresentKHR(layer_data *dev_data, const VkPresentInfoKHR *pPresentInfo, const VkResult &result) {
+void PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR *pPresentInfo, VkResult result) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(queue), layer_data_map);
     // Semaphore waits occur before error generation, if the call reached the ICD. (Confirm?)
     for (uint32_t i = 0; i < pPresentInfo->waitSemaphoreCount; ++i) {
-        auto pSemaphore = GetSemaphoreNode(dev_data, pPresentInfo->pWaitSemaphores[i]);
+        auto pSemaphore = GetSemaphoreNode(device_data, pPresentInfo->pWaitSemaphores[i]);
         if (pSemaphore) {
             pSemaphore->signaler.first = VK_NULL_HANDLE;
             pSemaphore->signaled = false;
@@ -11186,20 +11202,17 @@ void PostCallRecordQueuePresentKHR(layer_data *dev_data, const VkPresentInfoKHR 
         // Note: this is imperfect, in that we can get confused about what did or didn't succeed-- but if the app does that, it's
         // confused itself just as much.
         auto local_result = pPresentInfo->pResults ? pPresentInfo->pResults[i] : result;
-
         if (local_result != VK_SUCCESS && local_result != VK_SUBOPTIMAL_KHR) continue;  // this present didn't actually happen.
-
         // Mark the image as having been released to the WSI
-        auto swapchain_data = GetSwapchainNode(dev_data, pPresentInfo->pSwapchains[i]);
+        auto swapchain_data = GetSwapchainNode(device_data, pPresentInfo->pSwapchains[i]);
         if (swapchain_data && (swapchain_data->images.size() > pPresentInfo->pImageIndices[i])) {
             auto image = swapchain_data->images[pPresentInfo->pImageIndices[i]];
-            auto image_state = GetImageState(dev_data, image);
+            auto image_state = GetImageState(device_data, image);
             if (image_state) {
                 image_state->acquired = false;
             }
         }
     }
-
     // Note: even though presentation is directed to a queue, there is no direct ordering between QP and subsequent work, so QP (and
     // its semaphore waits) /never/ participate in any completion proof.
 }
@@ -11720,16 +11733,19 @@ void PreCallRecordSetDebugUtilsObjectNameEXT(layer_data *dev_data, const VkDebug
     }
 }
 
-void PreCallRecordQueueBeginDebugUtilsLabelEXT(layer_data *dev_data, VkQueue queue, const VkDebugUtilsLabelEXT *pLabelInfo) {
-    BeginQueueDebugUtilsLabel(dev_data->report_data, queue, pLabelInfo);
+void PreCallRecordQueueBeginDebugUtilsLabelEXT(VkQueue queue, const VkDebugUtilsLabelEXT *pLabelInfo) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(queue), layer_data_map);
+    BeginQueueDebugUtilsLabel(device_data->report_data, queue, pLabelInfo);
 }
 
-void PostCallRecordQueueEndDebugUtilsLabelEXT(layer_data *dev_data, VkQueue queue) {
-    EndQueueDebugUtilsLabel(dev_data->report_data, queue);
+void PostCallRecordQueueEndDebugUtilsLabelEXT(VkQueue queue) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(queue), layer_data_map);
+    EndQueueDebugUtilsLabel(device_data->report_data, queue);
 }
 
-void PreCallRecordQueueInsertDebugUtilsLabelEXT(layer_data *dev_data, VkQueue queue, const VkDebugUtilsLabelEXT *pLabelInfo) {
-    InsertQueueDebugUtilsLabel(dev_data->report_data, queue, pLabelInfo);
+void PreCallRecordQueueInsertDebugUtilsLabelEXT(VkQueue queue, const VkDebugUtilsLabelEXT *pLabelInfo) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(queue), layer_data_map);
+    InsertQueueDebugUtilsLabel(device_data->report_data, queue, pLabelInfo);
 }
 
 void PreCallRecordCmdBeginDebugUtilsLabelEXT(layer_data *dev_data, VkCommandBuffer commandBuffer,

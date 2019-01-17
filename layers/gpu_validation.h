@@ -127,7 +127,7 @@ VkResult GpuOverrideDispatchCreatePipelineLayout(layer_data *dev_data, const VkP
 void GpuPostCallDispatchCmdBindPipeline(layer_data *dev_data, VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
                                         VkPipeline pipeline);
 void GpuPostCallQueueSubmit(const layer_data *dev_data, VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits,
-                            VkFence fence, mutex_t &global_lock);
+                            VkFence fence);
 void GpuPreCallValidateCmdWaitEvents(layer_data *dev_data, VkPipelineStageFlags sourceStageMask);
 std::vector<safe_VkGraphicsPipelineCreateInfo> GpuPreCallRecordCreateGraphicsPipelines(
     layer_data *dev_data, VkPipelineCache pipelineCache, uint32_t count, const VkGraphicsPipelineCreateInfo *pCreateInfos,

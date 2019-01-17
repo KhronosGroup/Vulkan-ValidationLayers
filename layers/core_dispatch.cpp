@@ -396,17 +396,14 @@ VKAPI_ATTR VkResult VKAPI_CALL GetFenceStatus(VkDevice device, VkFence fence) {
 
 VKAPI_ATTR VkResult VKAPI_CALL QueueWaitIdle(VkQueue queue) {
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(queue), layer_data_map);
-    QUEUE_STATE *queue_state = nullptr;
     unique_lock_t lock(global_lock);
-    bool skip = PreCallValidateQueueWaitIdle(dev_data, queue, &queue_state);
+    bool skip = PreCallValidateQueueWaitIdle(queue);
     lock.unlock();
     if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     VkResult result = dev_data->dispatch_table.QueueWaitIdle(queue);
-    if (VK_SUCCESS == result) {
-        lock.lock();
-        PostCallRecordQueueWaitIdle(dev_data, queue_state);
-        lock.unlock();
-    }
+    lock.lock();
+    PostCallRecordQueueWaitIdle(queue, result);
+    lock.unlock();
     return result;
 }
 
@@ -2379,7 +2376,7 @@ VKAPI_ATTR VkResult VKAPI_CALL QueueBindSparse(VkQueue queue, uint32_t bindInfoC
                                                VkFence fence) {
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(queue), layer_data_map);
     unique_lock_t lock(global_lock);
-    bool skip = PreCallValidateQueueBindSparse(dev_data, queue, bindInfoCount, pBindInfo, fence);
+    bool skip = PreCallValidateQueueBindSparse(queue, bindInfoCount, pBindInfo, fence);
     lock.unlock();
 
     if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
@@ -2387,7 +2384,7 @@ VKAPI_ATTR VkResult VKAPI_CALL QueueBindSparse(VkQueue queue, uint32_t bindInfoC
     VkResult result = dev_data->dispatch_table.QueueBindSparse(queue, bindInfoCount, pBindInfo, fence);
 
     lock.lock();
-    PostCallRecordQueueBindSparse(dev_data, queue, bindInfoCount, pBindInfo, fence);
+    PostCallRecordQueueBindSparse(queue, bindInfoCount, pBindInfo, fence, result);
     lock.unlock();
     return result;
 }
@@ -2578,17 +2575,17 @@ VKAPI_ATTR VkResult VKAPI_CALL GetSwapchainImagesKHR(VkDevice device, VkSwapchai
 VKAPI_ATTR VkResult VKAPI_CALL QueuePresentKHR(VkQueue queue, const VkPresentInfoKHR *pPresentInfo) {
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(queue), layer_data_map);
 
-    bool skip = PreCallValidateQueuePresentKHR(dev_data, queue, pPresentInfo);
+    unique_lock_t lock(global_lock);
+    bool skip = PreCallValidateQueuePresentKHR(queue, pPresentInfo);
+    lock.unlock();
 
     if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     VkResult result = dev_data->dispatch_table.QueuePresentKHR(queue, pPresentInfo);
-
-    if (result != VK_ERROR_VALIDATION_FAILED_EXT) {
-        PostCallRecordQueuePresentKHR(dev_data, pPresentInfo, result);
-    }
-
+    lock.lock();
+    PostCallRecordQueuePresentKHR(queue, pPresentInfo, result);
+    lock.unlock();
     return result;
-}
+}  // namespace core_validation
 
 VKAPI_ATTR VkResult VKAPI_CALL CreateSharedSwapchainsKHR(VkDevice device, uint32_t swapchainCount,
                                                          const VkSwapchainCreateInfoKHR *pCreateInfos,
@@ -3088,7 +3085,7 @@ VKAPI_ATTR VkResult VKAPI_CALL SetDebugUtilsObjectTagEXT(VkDevice device, const 
 VKAPI_ATTR void VKAPI_CALL QueueBeginDebugUtilsLabelEXT(VkQueue queue, const VkDebugUtilsLabelEXT *pLabelInfo) {
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(queue), layer_data_map);
     std::unique_lock<std::mutex> lock(global_lock);
-    PreCallRecordQueueBeginDebugUtilsLabelEXT(dev_data, queue, pLabelInfo);
+    PreCallRecordQueueBeginDebugUtilsLabelEXT(queue, pLabelInfo);
     lock.unlock();
     if (nullptr != dev_data->dispatch_table.QueueBeginDebugUtilsLabelEXT) {
         dev_data->dispatch_table.QueueBeginDebugUtilsLabelEXT(queue, pLabelInfo);
@@ -3101,13 +3098,13 @@ VKAPI_ATTR void VKAPI_CALL QueueEndDebugUtilsLabelEXT(VkQueue queue) {
         dev_data->dispatch_table.QueueEndDebugUtilsLabelEXT(queue);
     }
     lock_guard_t lock(global_lock);
-    PostCallRecordQueueEndDebugUtilsLabelEXT(dev_data, queue);
+    PostCallRecordQueueEndDebugUtilsLabelEXT(queue);
 }
 
 VKAPI_ATTR void VKAPI_CALL QueueInsertDebugUtilsLabelEXT(VkQueue queue, const VkDebugUtilsLabelEXT *pLabelInfo) {
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(queue), layer_data_map);
     std::unique_lock<std::mutex> lock(global_lock);
-    PreCallRecordQueueInsertDebugUtilsLabelEXT(dev_data, queue, pLabelInfo);
+    PreCallRecordQueueInsertDebugUtilsLabelEXT(queue, pLabelInfo);
     lock.unlock();
     if (nullptr != dev_data->dispatch_table.QueueInsertDebugUtilsLabelEXT) {
         dev_data->dispatch_table.QueueInsertDebugUtilsLabelEXT(queue, pLabelInfo);
@@ -3714,7 +3711,7 @@ VKAPI_ATTR VkResult VKAPI_CALL QueueSubmit(VkQueue queue, uint32_t submitCount, 
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(queue), layer_data_map);
     unique_lock_t lock(global_lock);
 
-    bool skip = PreCallValidateQueueSubmit(dev_data, queue, submitCount, pSubmits, fence);
+    bool skip = PreCallValidateQueueSubmit(queue, submitCount, pSubmits, fence);
     lock.unlock();
 
     if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
@@ -3722,11 +3719,8 @@ VKAPI_ATTR VkResult VKAPI_CALL QueueSubmit(VkQueue queue, uint32_t submitCount, 
     VkResult result = dev_data->dispatch_table.QueueSubmit(queue, submitCount, pSubmits, fence);
 
     lock.lock();
-    PostCallRecordQueueSubmit(dev_data, queue, submitCount, pSubmits, fence);
+    PostCallRecordQueueSubmit(queue, submitCount, pSubmits, fence, result);
     lock.unlock();
-    if (GetEnables(dev_data)->gpu_validation) {
-        GpuPostCallQueueSubmit(dev_data, queue, submitCount, pSubmits, fence, global_lock);
-    }
     return result;
 }
 
