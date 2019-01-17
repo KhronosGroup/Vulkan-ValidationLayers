@@ -211,6 +211,17 @@ static VkSamplerCreateInfo SafeSaneSamplerCreateInfo() {
     return sampler_create_info;
 }
 
+// Helper for checking createRenderPass2 support and adding related extensions.
+static bool CheckCreateRenderPass2Support(VkRenderFramework *renderFramework, std::vector<const char *> &device_extension_names) {
+    if (renderFramework->DeviceExtensionSupported(renderFramework->gpu(), nullptr, VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME)) {
+        device_extension_names.push_back(VK_KHR_MULTIVIEW_EXTENSION_NAME);
+        device_extension_names.push_back(VK_KHR_MAINTENANCE2_EXTENSION_NAME);
+        device_extension_names.push_back(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
+        return true;
+    }
+    return false;
+}
+
 // Dependent "false" type for the static assert, as GCC will evaluate
 // non-dependent static_asserts even for non-instantiated templates
 template <typename T>
@@ -5293,8 +5304,7 @@ TEST_F(VkPositiveLayerTest, SecondaryCommandBufferBarrier) {
 }
 
 static void TestRenderPassCreate(ErrorMonitor *error_monitor, const VkDevice device, const VkRenderPassCreateInfo *create_info,
-                                 PFN_vkCreateRenderPass2KHR vkCreateRenderPass2KHR, const char *rp1_vuid, const char *rp2_vuid) {
-    // "... must be less than the total number of attachments ..."
+                                 bool rp2Supported, const char *rp1_vuid, const char *rp2_vuid) {
     VkRenderPass render_pass = VK_NULL_HANDLE;
     VkResult err;
 
@@ -5305,7 +5315,9 @@ static void TestRenderPassCreate(ErrorMonitor *error_monitor, const VkDevice dev
         error_monitor->VerifyFound();
     }
 
-    if (vkCreateRenderPass2KHR && rp2_vuid) {
+    if (rp2Supported && rp2_vuid) {
+        PFN_vkCreateRenderPass2KHR vkCreateRenderPass2KHR =
+            (PFN_vkCreateRenderPass2KHR)vkGetDeviceProcAddr(device, "vkCreateRenderPass2KHR");
         safe_VkRenderPassCreateInfo2KHR create_info2;
         ConvertVkRenderPassCreateInfoToV2KHR(create_info, &create_info2);
 
@@ -5323,21 +5335,8 @@ TEST_F(VkLayerTest, RenderPassCreateAttachmentIndexOutOfRange) {
     }
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
-    PFN_vkCreateRenderPass2KHR vkCreateRenderPass2KHR = nullptr;
-    bool rp2Supported = false;
-
-    // Check for VK_KHR_create_renderpass2
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_MULTIVIEW_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_MAINTENANCE2_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
-        rp2Supported = true;
-    }
+    bool rp2Supported = CheckCreateRenderPass2Support(this, m_device_extension_names);
     ASSERT_NO_FATAL_FAILURE(InitState());
-
-    if (rp2Supported) {
-        vkCreateRenderPass2KHR = (PFN_vkCreateRenderPass2KHR)vkGetDeviceProcAddr(m_device->device(), "vkCreateRenderPass2KHR");
-    }
 
     // There are no attachments, but refer to attachment 0.
     VkAttachmentReference ref = {0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
@@ -5348,8 +5347,8 @@ TEST_F(VkLayerTest, RenderPassCreateAttachmentIndexOutOfRange) {
     VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 0, nullptr, 1, subpasses, 0, nullptr};
 
     // "... must be less than the total number of attachments ..."
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, vkCreateRenderPass2KHR,
-                         "VUID-VkRenderPassCreateInfo-attachment-00834", "VUID-VkRenderPassCreateInfo2KHR-attachment-03051");
+    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported, "VUID-VkRenderPassCreateInfo-attachment-00834",
+                         "VUID-VkRenderPassCreateInfo2KHR-attachment-03051");
 }
 
 TEST_F(VkLayerTest, RenderPassCreateAttachmentReadOnlyButCleared) {
@@ -5359,29 +5358,20 @@ TEST_F(VkLayerTest, RenderPassCreateAttachmentReadOnlyButCleared) {
     }
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
-    PFN_vkCreateRenderPass2KHR vkCreateRenderPass2KHR = nullptr;
-    bool rp2Supported = false;
-    bool maintenance2Supported = false;
+
+    bool rp2Supported = CheckCreateRenderPass2Support(this, m_device_extension_names);
+    bool maintenance2Supported = rp2Supported;
 
     // Check for VK_KHR_maintenance2
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE2_EXTENSION_NAME)) {
+    if (!rp2Supported && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE2_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_KHR_MAINTENANCE2_EXTENSION_NAME);
         maintenance2Supported = true;
     }
-    // Check for VK_KHR_create_renderpass2
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_MULTIVIEW_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
-        rp2Supported = true;
-    }
+
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     if (m_device->props.apiVersion < VK_API_VERSION_1_1) {
         maintenance2Supported = true;
-    }
-
-    if (rp2Supported) {
-        vkCreateRenderPass2KHR = (PFN_vkCreateRenderPass2KHR)vkGetDeviceProcAddr(m_device->device(), "vkCreateRenderPass2KHR");
     }
 
     VkAttachmentDescription description = {0,
@@ -5402,20 +5392,20 @@ TEST_F(VkLayerTest, RenderPassCreateAttachmentReadOnlyButCleared) {
     VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 1, &description, 1, &subpass, 0, nullptr};
 
     // VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL but depth cleared
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, vkCreateRenderPass2KHR,
-                         "VUID-VkRenderPassCreateInfo-pAttachments-00836", "VUID-VkRenderPassCreateInfo2KHR-pAttachments-02522");
+    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported, "VUID-VkRenderPassCreateInfo-pAttachments-00836",
+                         "VUID-VkRenderPassCreateInfo2KHR-pAttachments-02522");
 
     if (maintenance2Supported) {
         // VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL but depth cleared
         depth_stencil_ref.layout = VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL;
 
-        TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, vkCreateRenderPass2KHR,
+        TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported,
                              "VUID-VkRenderPassCreateInfo-pAttachments-01566", nullptr);
 
         // VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL but depth cleared
         depth_stencil_ref.layout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL;
 
-        TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, vkCreateRenderPass2KHR,
+        TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported,
                              "VUID-VkRenderPassCreateInfo-pAttachments-01567", nullptr);
     }
 }
@@ -5429,21 +5419,8 @@ TEST_F(VkLayerTest, RenderPassCreateAttachmentMismatchingLayoutsColor) {
     }
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
-    PFN_vkCreateRenderPass2KHR vkCreateRenderPass2KHR = nullptr;
-    bool rp2Supported = false;
-
-    // Check for VK_KHR_create_renderpass2
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_MULTIVIEW_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_MAINTENANCE2_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
-        rp2Supported = true;
-    }
+    bool rp2Supported = CheckCreateRenderPass2Support(this, m_device_extension_names);
     ASSERT_NO_FATAL_FAILURE(InitState());
-
-    if (rp2Supported) {
-        vkCreateRenderPass2KHR = (PFN_vkCreateRenderPass2KHR)vkGetDeviceProcAddr(m_device->device(), "vkCreateRenderPass2KHR");
-    }
 
     VkAttachmentDescription attach[] = {
         {0, VK_FORMAT_R8G8B8A8_UNORM, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE,
@@ -5460,7 +5437,7 @@ TEST_F(VkLayerTest, RenderPassCreateAttachmentMismatchingLayoutsColor) {
 
     VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 1, attach, 1, subpasses, 0, nullptr};
 
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, vkCreateRenderPass2KHR,
+    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported,
                          "subpass 0 already uses attachment 0 with a different image layout",
                          "subpass 0 already uses attachment 0 with a different image layout");
 }
@@ -5474,21 +5451,8 @@ TEST_F(VkLayerTest, RenderPassCreateAttachmentDescriptionInvalidFinalLayout) {
     }
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
-    PFN_vkCreateRenderPass2KHR vkCreateRenderPass2KHR = nullptr;
-    bool rp2Supported = false;
-
-    // Check for VK_KHR_create_renderpass2
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_MULTIVIEW_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_MAINTENANCE2_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
-        rp2Supported = true;
-    }
+    bool rp2Supported = CheckCreateRenderPass2Support(this, m_device_extension_names);
     ASSERT_NO_FATAL_FAILURE(InitState());
-
-    if (rp2Supported) {
-        vkCreateRenderPass2KHR = (PFN_vkCreateRenderPass2KHR)vkGetDeviceProcAddr(m_device->device(), "vkCreateRenderPass2KHR");
-    }
 
     VkAttachmentDescription attach_desc = {};
     attach_desc.format = VK_FORMAT_R8G8B8A8_UNORM;
@@ -5513,12 +5477,12 @@ TEST_F(VkLayerTest, RenderPassCreateAttachmentDescriptionInvalidFinalLayout) {
     rpci.subpassCount = 1;
     rpci.pSubpasses = &subpass;
 
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, vkCreateRenderPass2KHR,
-                         "VUID-VkAttachmentDescription-finalLayout-00843", "VUID-VkAttachmentDescription2KHR-finalLayout-03061");
+    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported, "VUID-VkAttachmentDescription-finalLayout-00843",
+                         "VUID-VkAttachmentDescription2KHR-finalLayout-03061");
 
     attach_desc.finalLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, vkCreateRenderPass2KHR,
-                         "VUID-VkAttachmentDescription-finalLayout-00843", "VUID-VkAttachmentDescription2KHR-finalLayout-03061");
+    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported, "VUID-VkAttachmentDescription-finalLayout-00843",
+                         "VUID-VkAttachmentDescription2KHR-finalLayout-03061");
 }
 
 TEST_F(VkLayerTest, RenderPassCreateAttachmentsMisc) {
@@ -5532,21 +5496,8 @@ TEST_F(VkLayerTest, RenderPassCreateAttachmentsMisc) {
     }
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
-    PFN_vkCreateRenderPass2KHR vkCreateRenderPass2KHR = nullptr;
-    bool rp2Supported = false;
-
-    // Check for VK_KHR_create_renderpass2
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_MULTIVIEW_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_MAINTENANCE2_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
-        rp2Supported = true;
-    }
+    bool rp2Supported = CheckCreateRenderPass2Support(this, m_device_extension_names);
     ASSERT_NO_FATAL_FAILURE(InitState());
-
-    if (rp2Supported) {
-        vkCreateRenderPass2KHR = (PFN_vkCreateRenderPass2KHR)vkGetDeviceProcAddr(m_device->device(), "vkCreateRenderPass2KHR");
-    }
 
     std::vector<VkAttachmentDescription> attachments = {
         // input attachments
@@ -5615,7 +5566,7 @@ TEST_F(VkLayerTest, RenderPassCreateAttachmentsMisc) {
         subpass.pColorAttachments = too_many_colors.data();
         subpass.pResolveAttachments = NULL;
 
-        TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, vkCreateRenderPass2KHR,
+        TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported,
                              "VUID-VkSubpassDescription-colorAttachmentCount-00845",
                              "VUID-VkSubpassDescription2KHR-colorAttachmentCount-03063");
 
@@ -5628,7 +5579,7 @@ TEST_F(VkLayerTest, RenderPassCreateAttachmentsMisc) {
     attachments[subpass.pColorAttachments[1].attachment].samples = VK_SAMPLE_COUNT_8_BIT;
     depth.attachment = VK_ATTACHMENT_UNUSED;  // Avoids triggering 01418
 
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, vkCreateRenderPass2KHR,
+    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported,
                          "VUID-VkSubpassDescription-pColorAttachments-01417",
                          "VUID-VkSubpassDescription2KHR-pColorAttachments-03069");
 
@@ -5639,7 +5590,7 @@ TEST_F(VkLayerTest, RenderPassCreateAttachmentsMisc) {
     attachments[subpass.pDepthStencilAttachment->attachment].samples = VK_SAMPLE_COUNT_8_BIT;
     subpass.colorAttachmentCount = 1;
 
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, vkCreateRenderPass2KHR,
+    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported,
                          "VUID-VkSubpassDescription-pDepthStencilAttachment-01418",
                          "VUID-VkSubpassDescription2KHR-pDepthStencilAttachment-03071");
 
@@ -5649,7 +5600,7 @@ TEST_F(VkLayerTest, RenderPassCreateAttachmentsMisc) {
     // Test resolve attachment with UNUSED color attachment
     color[0].attachment = VK_ATTACHMENT_UNUSED;
 
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, vkCreateRenderPass2KHR,
+    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported,
                          "VUID-VkSubpassDescription-pResolveAttachments-00847",
                          "VUID-VkSubpassDescription2KHR-pResolveAttachments-03065");
 
@@ -5660,7 +5611,7 @@ TEST_F(VkLayerTest, RenderPassCreateAttachmentsMisc) {
     subpass.colorAttachmentCount = 1;           // avoid mismatch (00337), and avoid double report
     subpass.pDepthStencilAttachment = nullptr;  // avoid mismatch (01418)
 
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, vkCreateRenderPass2KHR,
+    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported,
                          "VUID-VkSubpassDescription-pResolveAttachments-00848",
                          "VUID-VkSubpassDescription2KHR-pResolveAttachments-03066");
 
@@ -5671,7 +5622,7 @@ TEST_F(VkLayerTest, RenderPassCreateAttachmentsMisc) {
     // Test resolve to a multi-sampled resolve attachment
     attachments[subpass.pResolveAttachments[0].attachment].samples = VK_SAMPLE_COUNT_4_BIT;
 
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, vkCreateRenderPass2KHR,
+    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported,
                          "VUID-VkSubpassDescription-pResolveAttachments-00849",
                          "VUID-VkSubpassDescription2KHR-pResolveAttachments-03067");
 
@@ -5680,7 +5631,7 @@ TEST_F(VkLayerTest, RenderPassCreateAttachmentsMisc) {
     // Test with color/resolve format mismatch
     attachments[subpass.pColorAttachments[0].attachment].format = VK_FORMAT_R8G8B8A8_SRGB;
 
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, vkCreateRenderPass2KHR,
+    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported,
                          "VUID-VkSubpassDescription-pResolveAttachments-00850",
                          "VUID-VkSubpassDescription2KHR-pResolveAttachments-03068");
 
@@ -5689,14 +5640,14 @@ TEST_F(VkLayerTest, RenderPassCreateAttachmentsMisc) {
     // Test for UNUSED preserve attachments
     preserve[0] = VK_ATTACHMENT_UNUSED;
 
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, vkCreateRenderPass2KHR,
-                         "VUID-VkSubpassDescription-attachment-00853", "VUID-VkSubpassDescription2KHR-attachment-03073");
+    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported, "VUID-VkSubpassDescription-attachment-00853",
+                         "VUID-VkSubpassDescription2KHR-attachment-03073");
 
     preserve[0] = 5;
     // Test for preserve attachments used elsewhere in the subpass
     color[0].attachment = preserve[0];
 
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, vkCreateRenderPass2KHR,
+    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported,
                          "VUID-VkSubpassDescription-pPreserveAttachments-00854",
                          "VUID-VkSubpassDescription2KHR-pPreserveAttachments-03074");
 
@@ -5720,7 +5671,7 @@ TEST_F(VkLayerTest, RenderPassCreateAttachmentsMisc) {
                                                  0,
                                                  nullptr};
 
-        TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci_multipass, vkCreateRenderPass2KHR,
+        TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci_multipass, rp2Supported,
                              "VUID-VkSubpassDescription-loadOp-00846", "VUID-VkSubpassDescription2KHR-loadOp-03064");
 
         attachments[input[0].attachment].loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
@@ -5736,21 +5687,8 @@ TEST_F(VkLayerTest, RenderPassCreateAttachmentReferenceInvalidLayout) {
     }
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
-    PFN_vkCreateRenderPass2KHR vkCreateRenderPass2KHR = nullptr;
-    bool rp2Supported = false;
-
-    // Check for VK_KHR_create_renderpass2
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_MULTIVIEW_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_MAINTENANCE2_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
-        rp2Supported = true;
-    }
+    bool rp2Supported = CheckCreateRenderPass2Support(this, m_device_extension_names);
     ASSERT_NO_FATAL_FAILURE(InitState());
-
-    if (rp2Supported) {
-        vkCreateRenderPass2KHR = (PFN_vkCreateRenderPass2KHR)vkGetDeviceProcAddr(m_device->device(), "vkCreateRenderPass2KHR");
-    }
 
     VkAttachmentDescription attach[] = {
         {0, VK_FORMAT_R8G8B8A8_UNORM, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE,
@@ -5767,13 +5705,13 @@ TEST_F(VkLayerTest, RenderPassCreateAttachmentReferenceInvalidLayout) {
     VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 1, attach, 1, subpasses, 0, nullptr};
 
     // Use UNDEFINED layout
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, vkCreateRenderPass2KHR,
-                         "VUID-VkAttachmentReference-layout-00857", "VUID-VkAttachmentReference2KHR-layout-03077");
+    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported, "VUID-VkAttachmentReference-layout-00857",
+                         "VUID-VkAttachmentReference2KHR-layout-03077");
 
     // Use PREINITIALIZED layout
     refs[0].layout = VK_IMAGE_LAYOUT_PREINITIALIZED;
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, vkCreateRenderPass2KHR,
-                         "VUID-VkAttachmentReference-layout-00857", "VUID-VkAttachmentReference2KHR-layout-03077");
+    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported, "VUID-VkAttachmentReference-layout-00857",
+                         "VUID-VkAttachmentReference2KHR-layout-03077");
 }
 
 TEST_F(VkLayerTest, RenderPassCreateOverlappingCorrelationMasks) {
@@ -5785,27 +5723,18 @@ TEST_F(VkLayerTest, RenderPassCreateOverlappingCorrelationMasks) {
     }
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
-    PFN_vkCreateRenderPass2KHR vkCreateRenderPass2KHR = nullptr;
-    bool rp2Supported = false;
+    bool rp2Supported = CheckCreateRenderPass2Support(this, m_device_extension_names);
 
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MULTIVIEW_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_MULTIVIEW_EXTENSION_NAME);
-    } else {
-        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_KHR_MULTIVIEW_EXTENSION_NAME);
-        return;
+    if (!rp2Supported) {
+        if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MULTIVIEW_EXTENSION_NAME)) {
+            m_device_extension_names.push_back(VK_KHR_MULTIVIEW_EXTENSION_NAME);
+        } else {
+            printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_KHR_MULTIVIEW_EXTENSION_NAME);
+            return;
+        }
     }
 
-    // Check for VK_KHR_create_renderpass2
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_MAINTENANCE2_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
-        rp2Supported = true;
-    }
     ASSERT_NO_FATAL_FAILURE(InitState());
-
-    if (rp2Supported) {
-        vkCreateRenderPass2KHR = (PFN_vkCreateRenderPass2KHR)vkGetDeviceProcAddr(m_device->device(), "vkCreateRenderPass2KHR");
-    }
 
     VkSubpassDescription subpass = {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 0, nullptr, nullptr, nullptr, 0, nullptr};
     uint32_t viewMasks[] = {0x3u};
@@ -5816,12 +5745,15 @@ TEST_F(VkLayerTest, RenderPassCreateOverlappingCorrelationMasks) {
     VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, &rpmvci, 0, 0, nullptr, 1, &subpass, 0, nullptr};
 
     // Correlation masks must not overlap
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, vkCreateRenderPass2KHR,
+    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported,
                          "VUID-VkRenderPassMultiviewCreateInfo-pCorrelationMasks-00841",
                          "VUID-VkRenderPassCreateInfo2KHR-pCorrelatedViewMasks-03056");
 
     // Check for more specific "don't set any correlation masks when multiview is not enabled"
     if (rp2Supported) {
+        PFN_vkCreateRenderPass2KHR vkCreateRenderPass2KHR =
+            (PFN_vkCreateRenderPass2KHR)vkGetDeviceProcAddr(m_device->device(), "vkCreateRenderPass2KHR");
+
         viewMasks[0] = 0;
         correlationMasks[0] = 0;
         correlationMasks[1] = 0;
@@ -5845,27 +5777,18 @@ TEST_F(VkLayerTest, RenderPassCreateInvalidViewMasks) {
     }
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
-    PFN_vkCreateRenderPass2KHR vkCreateRenderPass2KHR = nullptr;
-    bool rp2Supported = false;
+    bool rp2Supported = CheckCreateRenderPass2Support(this, m_device_extension_names);
 
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MULTIVIEW_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_MULTIVIEW_EXTENSION_NAME);
-    } else {
-        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_KHR_MULTIVIEW_EXTENSION_NAME);
-        return;
+    if (!rp2Supported) {
+        if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MULTIVIEW_EXTENSION_NAME)) {
+            m_device_extension_names.push_back(VK_KHR_MULTIVIEW_EXTENSION_NAME);
+        } else {
+            printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_KHR_MULTIVIEW_EXTENSION_NAME);
+            return;
+        }
     }
 
-    // Check for VK_KHR_create_renderpass2
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_MAINTENANCE2_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
-        rp2Supported = true;
-    }
     ASSERT_NO_FATAL_FAILURE(InitState());
-
-    if (rp2Supported) {
-        vkCreateRenderPass2KHR = (PFN_vkCreateRenderPass2KHR)vkGetDeviceProcAddr(m_device->device(), "vkCreateRenderPass2KHR");
-    }
 
     VkSubpassDescription subpasses[] = {
         {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 0, nullptr, nullptr, nullptr, 0, nullptr},
@@ -5878,8 +5801,8 @@ TEST_F(VkLayerTest, RenderPassCreateInvalidViewMasks) {
     VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, &rpmvci, 0, 0, nullptr, 2, subpasses, 0, nullptr};
 
     // Not enough view masks
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, vkCreateRenderPass2KHR,
-                         "VUID-VkRenderPassCreateInfo-pNext-01928", "VUID-VkRenderPassCreateInfo2KHR-viewMask-03058");
+    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported, "VUID-VkRenderPassCreateInfo-pNext-01928",
+                         "VUID-VkRenderPassCreateInfo2KHR-viewMask-03058");
 }
 
 TEST_F(VkLayerTest, RenderPassCreateInvalidInputAttachmentReferences) {
@@ -5917,22 +5840,22 @@ TEST_F(VkLayerTest, RenderPassCreateInvalidInputAttachmentReferences) {
     // Invalid meta data aspect
     m_errorMonitor->SetDesiredFailureMsg(
         VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkRenderPassCreateInfo-pNext-01963");  // Cannot/should not avoid getting this one too
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, nullptr,
-                         "VUID-VkInputAttachmentAspectReference-aspectMask-01964", nullptr);
+    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, false, "VUID-VkInputAttachmentAspectReference-aspectMask-01964",
+                         nullptr);
 
     // Aspect not present
     iaar.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, nullptr, "VUID-VkRenderPassCreateInfo-pNext-01963", nullptr);
+    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, false, "VUID-VkRenderPassCreateInfo-pNext-01963", nullptr);
 
     // Invalid subpass index
     iaar.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     iaar.subpass = 1;
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, nullptr, "VUID-VkRenderPassCreateInfo-pNext-01926", nullptr);
+    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, false, "VUID-VkRenderPassCreateInfo-pNext-01926", nullptr);
     iaar.subpass = 0;
 
     // Invalid input attachment index
     iaar.inputAttachmentIndex = 1;
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, nullptr, "VUID-VkRenderPassCreateInfo-pNext-01927", nullptr);
+    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, false, "VUID-VkRenderPassCreateInfo-pNext-01927", nullptr);
 }
 
 TEST_F(VkLayerTest, RenderPassCreateSubpassNonGraphicsPipeline) {
@@ -5943,21 +5866,8 @@ TEST_F(VkLayerTest, RenderPassCreateSubpassNonGraphicsPipeline) {
     }
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
-    PFN_vkCreateRenderPass2KHR vkCreateRenderPass2KHR = nullptr;
-    bool rp2Supported = false;
-
-    // Check for VK_KHR_create_renderpass2
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_MULTIVIEW_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_MAINTENANCE2_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
-        rp2Supported = true;
-    }
+    bool rp2Supported = CheckCreateRenderPass2Support(this, m_device_extension_names);
     ASSERT_NO_FATAL_FAILURE(InitState());
-
-    if (rp2Supported) {
-        vkCreateRenderPass2KHR = (PFN_vkCreateRenderPass2KHR)vkGetDeviceProcAddr(m_device->device(), "vkCreateRenderPass2KHR");
-    }
 
     VkSubpassDescription subpasses[] = {
         {0, VK_PIPELINE_BIND_POINT_COMPUTE, 0, nullptr, 0, nullptr, nullptr, nullptr, 0, nullptr},
@@ -5965,7 +5875,7 @@ TEST_F(VkLayerTest, RenderPassCreateSubpassNonGraphicsPipeline) {
 
     VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 0, nullptr, 1, subpasses, 0, nullptr};
 
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, vkCreateRenderPass2KHR,
+    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported,
                          "VUID-VkSubpassDescription-pipelineBindPoint-00844",
                          "VUID-VkSubpassDescription2KHR-pipelineBindPoint-03062");
 }
@@ -5982,8 +5892,6 @@ TEST_F(VkLayerTest, RenderPassCreateSubpassMissingAttributesBitMultiviewNVX) {
     }
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
-    PFN_vkCreateRenderPass2KHR vkCreateRenderPass2KHR = nullptr;
-    bool rp2Supported = false;
 
     if (DeviceExtensionSupported(gpu(), nullptr, VK_NVX_MULTIVIEW_PER_VIEW_ATTRIBUTES_EXTENSION_NAME) &&
         DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MULTIVIEW_EXTENSION_NAME)) {
@@ -5994,18 +5902,8 @@ TEST_F(VkLayerTest, RenderPassCreateSubpassMissingAttributesBitMultiviewNVX) {
         return;
     }
 
-    // Check for VK_KHR_create_renderpass2
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME) &&
-        DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE2_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_MAINTENANCE2_EXTENSION_NAME);
-        rp2Supported = true;
-    }
+    bool rp2Supported = CheckCreateRenderPass2Support(this, m_device_extension_names);
     ASSERT_NO_FATAL_FAILURE(InitState());
-
-    if (rp2Supported) {
-        vkCreateRenderPass2KHR = (PFN_vkCreateRenderPass2KHR)vkGetDeviceProcAddr(m_device->device(), "vkCreateRenderPass2KHR");
-    }
 
     VkSubpassDescription subpasses[] = {
         {VK_SUBPASS_DESCRIPTION_PER_VIEW_POSITION_X_ONLY_BIT_NVX, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 0, nullptr, nullptr,
@@ -6014,7 +5912,7 @@ TEST_F(VkLayerTest, RenderPassCreateSubpassMissingAttributesBitMultiviewNVX) {
 
     VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 0, nullptr, 1, subpasses, 0, nullptr};
 
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, vkCreateRenderPass2KHR, "VUID-VkSubpassDescription-flags-00856",
+    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported, "VUID-VkSubpassDescription-flags-00856",
                          "VUID-VkSubpassDescription2KHR-flags-03076");
 }
 
@@ -6031,11 +5929,9 @@ TEST_F(VkLayerTest, RenderPassCreate2SubpassInvalidInputAttachmentParameters) {
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
 
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_MULTIVIEW_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_MAINTENANCE2_EXTENSION_NAME);
-    } else {
+    bool rp2Supported = CheckCreateRenderPass2Support(this, m_device_extension_names);
+
+    if (!rp2Supported) {
         printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
         return;
     }
@@ -6043,7 +5939,7 @@ TEST_F(VkLayerTest, RenderPassCreate2SubpassInvalidInputAttachmentParameters) {
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     PFN_vkCreateRenderPass2KHR vkCreateRenderPass2KHR =
-        (PFN_vkCreateRenderPass2KHR)vkGetDeviceProcAddr(m_device->device(), "vkCreateRenderPass2KHR");
+        rp2Supported ? (PFN_vkCreateRenderPass2KHR)vkGetDeviceProcAddr(m_device->device(), "vkCreateRenderPass2KHR") : nullptr;
 
     VkResult err;
 
@@ -6088,20 +5984,13 @@ TEST_F(VkLayerTest, RenderPassCreateInvalidSubpassDependencies) {
     }
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
-    PFN_vkCreateRenderPass2KHR vkCreateRenderPass2KHR = nullptr;
-    bool rp2Supported = false;
-    bool multiviewSupported = false;
 
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MULTIVIEW_EXTENSION_NAME)) {
+    bool rp2Supported = CheckCreateRenderPass2Support(this, m_device_extension_names);
+    bool multiviewSupported = rp2Supported;
+
+    if (!rp2Supported && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MULTIVIEW_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_KHR_MULTIVIEW_EXTENSION_NAME);
         multiviewSupported = true;
-    }
-
-    // Check for VK_KHR_create_renderpass2
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_MAINTENANCE2_EXTENSION_NAME);
-        rp2Supported = true;
     }
 
     // Add a device features struct enabling NO features
@@ -6110,10 +5999,6 @@ TEST_F(VkLayerTest, RenderPassCreateInvalidSubpassDependencies) {
 
     if (m_device->props.apiVersion >= VK_API_VERSION_1_1) {
         multiviewSupported = true;
-    }
-
-    if (rp2Supported) {
-        vkCreateRenderPass2KHR = (PFN_vkCreateRenderPass2KHR)vkGetDeviceProcAddr(m_device->device(), "vkCreateRenderPass2KHR");
     }
 
     // Create two dummy subpasses
@@ -6129,95 +6014,95 @@ TEST_F(VkLayerTest, RenderPassCreateInvalidSubpassDependencies) {
     // Source subpass is not EXTERNAL, so source stage mask must not include HOST
     dependency = {0, 1, VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0, 0};
 
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, vkCreateRenderPass2KHR,
-                         "VUID-VkSubpassDependency-srcSubpass-00858", "VUID-VkSubpassDependency2KHR-srcSubpass-03078");
+    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported, "VUID-VkSubpassDependency-srcSubpass-00858",
+                         "VUID-VkSubpassDependency2KHR-srcSubpass-03078");
 
     // Destination subpass is not EXTERNAL, so destination stage mask must not include HOST
     dependency = {0, 1, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_HOST_BIT, 0, 0, 0};
 
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, vkCreateRenderPass2KHR,
-                         "VUID-VkSubpassDependency-dstSubpass-00859", "VUID-VkSubpassDependency2KHR-dstSubpass-03079");
+    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported, "VUID-VkSubpassDependency-dstSubpass-00859",
+                         "VUID-VkSubpassDependency2KHR-dstSubpass-03079");
 
     // Geometry shaders not enabled source
     dependency = {0, 1, VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0, 0};
 
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, vkCreateRenderPass2KHR,
-                         "VUID-VkSubpassDependency-srcStageMask-00860", "VUID-VkSubpassDependency2KHR-srcStageMask-03080");
+    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported, "VUID-VkSubpassDependency-srcStageMask-00860",
+                         "VUID-VkSubpassDependency2KHR-srcStageMask-03080");
 
     // Geometry shaders not enabled destination
     dependency = {0, 1, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT, 0, 0, 0};
 
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, vkCreateRenderPass2KHR,
-                         "VUID-VkSubpassDependency-dstStageMask-00861", "VUID-VkSubpassDependency2KHR-dstStageMask-03081");
+    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported, "VUID-VkSubpassDependency-dstStageMask-00861",
+                         "VUID-VkSubpassDependency2KHR-dstStageMask-03081");
 
     // Tessellation not enabled source
     dependency = {0, 1, VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0, 0};
 
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, vkCreateRenderPass2KHR,
-                         "VUID-VkSubpassDependency-srcStageMask-00862", "VUID-VkSubpassDependency2KHR-srcStageMask-03082");
+    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported, "VUID-VkSubpassDependency-srcStageMask-00862",
+                         "VUID-VkSubpassDependency2KHR-srcStageMask-03082");
 
     // Tessellation not enabled destination
     dependency = {0, 1, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT, 0, 0, 0};
 
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, vkCreateRenderPass2KHR,
-                         "VUID-VkSubpassDependency-dstStageMask-00863", "VUID-VkSubpassDependency2KHR-dstStageMask-03083");
+    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported, "VUID-VkSubpassDependency-dstStageMask-00863",
+                         "VUID-VkSubpassDependency2KHR-dstStageMask-03083");
 
     // Potential cyclical dependency
     dependency = {1, 0, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0, 0};
 
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, vkCreateRenderPass2KHR,
-                         "VUID-VkSubpassDependency-srcSubpass-00864", "VUID-VkSubpassDependency2KHR-srcSubpass-03084");
+    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported, "VUID-VkSubpassDependency-srcSubpass-00864",
+                         "VUID-VkSubpassDependency2KHR-srcSubpass-03084");
 
     // EXTERNAL to EXTERNAL dependency
     dependency = {
         VK_SUBPASS_EXTERNAL, VK_SUBPASS_EXTERNAL, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0, 0};
 
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, vkCreateRenderPass2KHR,
-                         "VUID-VkSubpassDependency-srcSubpass-00865", "VUID-VkSubpassDependency2KHR-srcSubpass-03085");
+    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported, "VUID-VkSubpassDependency-srcSubpass-00865",
+                         "VUID-VkSubpassDependency2KHR-srcSubpass-03085");
 
     // Source compute stage not part of subpass 0's GRAPHICS pipeline
     dependency = {0, VK_SUBPASS_EXTERNAL, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 0, 0};
 
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, vkCreateRenderPass2KHR,
-                         "VUID-VkRenderPassCreateInfo-pDependencies-00837", "VUID-VkRenderPassCreateInfo2KHR-pDependencies-03054");
+    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported, "VUID-VkRenderPassCreateInfo-pDependencies-00837",
+                         "VUID-VkRenderPassCreateInfo2KHR-pDependencies-03054");
 
     // Destination compute stage not part of subpass 0's GRAPHICS pipeline
     dependency = {VK_SUBPASS_EXTERNAL, 0, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 0, 0};
 
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, vkCreateRenderPass2KHR,
-                         "VUID-VkRenderPassCreateInfo-pDependencies-00838", "VUID-VkRenderPassCreateInfo2KHR-pDependencies-03055");
+    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported, "VUID-VkRenderPassCreateInfo-pDependencies-00838",
+                         "VUID-VkRenderPassCreateInfo2KHR-pDependencies-03055");
 
     // Non graphics stage in self dependency
     dependency = {0, 0, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 0, 0};
 
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, vkCreateRenderPass2KHR,
-                         "VUID-VkSubpassDependency-srcSubpass-01989", "VUID-VkSubpassDependency2KHR-srcSubpass-02244");
+    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported, "VUID-VkSubpassDependency-srcSubpass-01989",
+                         "VUID-VkSubpassDependency2KHR-srcSubpass-02244");
 
     // Logically later source stages in self dependency
     dependency = {0, 0, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, 0, 0, 0};
 
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, vkCreateRenderPass2KHR,
-                         "VUID-VkSubpassDependency-srcSubpass-00867", "VUID-VkSubpassDependency2KHR-srcSubpass-03087");
+    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported, "VUID-VkSubpassDependency-srcSubpass-00867",
+                         "VUID-VkSubpassDependency2KHR-srcSubpass-03087");
 
     // Source access mask mismatch with source stage mask
     dependency = {0, 1, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_ACCESS_UNIFORM_READ_BIT, 0, 0};
 
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, vkCreateRenderPass2KHR,
-                         "VUID-VkSubpassDependency-srcAccessMask-00868", "VUID-VkSubpassDependency2KHR-srcAccessMask-03088");
+    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported, "VUID-VkSubpassDependency-srcAccessMask-00868",
+                         "VUID-VkSubpassDependency2KHR-srcAccessMask-03088");
 
     // Destination access mask mismatch with destination stage mask
     dependency = {
         0, 1, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, 0};
 
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, vkCreateRenderPass2KHR,
-                         "VUID-VkSubpassDependency-dstAccessMask-00869", "VUID-VkSubpassDependency2KHR-dstAccessMask-03089");
+    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported, "VUID-VkSubpassDependency-dstAccessMask-00869",
+                         "VUID-VkSubpassDependency2KHR-dstAccessMask-03089");
 
     if (multiviewSupported) {
         // VIEW_LOCAL_BIT but multiview is not enabled
         dependency = {0, 1, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
                       0, 0, VK_DEPENDENCY_VIEW_LOCAL_BIT};
 
-        TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, vkCreateRenderPass2KHR, nullptr,
+        TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported, nullptr,
                              "VUID-VkRenderPassCreateInfo2KHR-viewMask-03059");
 
         // Enable multiview
@@ -6233,8 +6118,7 @@ TEST_F(VkLayerTest, RenderPassCreateInvalidSubpassDependencies) {
         rpmvci.pViewOffsets = pViewOffsets;
         rpmvci.dependencyCount = 2;
 
-        TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, nullptr, "VUID-VkRenderPassCreateInfo-pNext-01929",
-                             nullptr);
+        TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, false, "VUID-VkRenderPassCreateInfo-pNext-01929", nullptr);
 
         rpmvci.dependencyCount = 0;
 
@@ -6245,8 +6129,7 @@ TEST_F(VkLayerTest, RenderPassCreateInvalidSubpassDependencies) {
         pViewOffsets[0] = 1;
         rpmvci.dependencyCount = 1;
 
-        TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, nullptr, "VUID-VkRenderPassCreateInfo-pNext-01930",
-                             nullptr);
+        TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, false, "VUID-VkRenderPassCreateInfo-pNext-01930", nullptr);
 
         rpmvci.dependencyCount = 0;
 
@@ -6260,7 +6143,7 @@ TEST_F(VkLayerTest, RenderPassCreateInvalidSubpassDependencies) {
             safe_VkRenderPassCreateInfo2KHR safe_rpci2;
             ConvertVkRenderPassCreateInfoToV2KHR(&rpci, &safe_rpci2);
 
-            TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, vkCreateRenderPass2KHR, nullptr,
+            TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported, nullptr,
                                  "VUID-VkSubpassDependency2KHR-dependencyFlags-03092");
 
             rpmvci.dependencyCount = 0;
@@ -6270,7 +6153,7 @@ TEST_F(VkLayerTest, RenderPassCreateInvalidSubpassDependencies) {
         dependency = {VK_SUBPASS_EXTERNAL,         1, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0,
                       VK_DEPENDENCY_VIEW_LOCAL_BIT};
 
-        TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, vkCreateRenderPass2KHR,
+        TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported,
                              "VUID-VkSubpassDependency-dependencyFlags-02520",
                              "VUID-VkSubpassDependency2KHR-dependencyFlags-03090");
 
@@ -6278,15 +6161,15 @@ TEST_F(VkLayerTest, RenderPassCreateInvalidSubpassDependencies) {
         dependency = {0, VK_SUBPASS_EXTERNAL,         VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0,
                       0, VK_DEPENDENCY_VIEW_LOCAL_BIT};
 
-        TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, vkCreateRenderPass2KHR,
+        TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported,
                              "VUID-VkSubpassDependency-dependencyFlags-02521",
                              "VUID-VkSubpassDependency2KHR-dependencyFlags-03091");
 
         // Multiple views but no view local bit in self-dependency
         dependency = {0, 0, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0, 0};
 
-        TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, vkCreateRenderPass2KHR,
-                             "VUID-VkSubpassDependency-srcSubpass-00872", "VUID-VkRenderPassCreateInfo2KHR-pDependencies-03060");
+        TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported, "VUID-VkSubpassDependency-srcSubpass-00872",
+                             "VUID-VkRenderPassCreateInfo2KHR-pDependencies-03060");
     }
 }
 
@@ -6299,8 +6182,6 @@ TEST_F(VkLayerTest, RenderPassCreateInvalidMixedAttachmentSamplesAMD) {
     }
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
-    PFN_vkCreateRenderPass2KHR vkCreateRenderPass2KHR = nullptr;
-    bool rp2Supported = false;
 
     if (DeviceExtensionSupported(gpu(), nullptr, VK_AMD_MIXED_ATTACHMENT_SAMPLES_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_AMD_MIXED_ATTACHMENT_SAMPLES_EXTENSION_NAME);
@@ -6309,18 +6190,9 @@ TEST_F(VkLayerTest, RenderPassCreateInvalidMixedAttachmentSamplesAMD) {
         return;
     }
 
-    // Check for VK_KHR_create_renderpass2
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_MULTIVIEW_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_MAINTENANCE2_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
-        rp2Supported = true;
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    bool rp2Supported = CheckCreateRenderPass2Support(this, m_device_extension_names);
 
-    if (rp2Supported) {
-        vkCreateRenderPass2KHR = (PFN_vkCreateRenderPass2KHR)vkGetDeviceProcAddr(m_device->device(), "vkCreateRenderPass2KHR");
-    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
 
     std::vector<VkAttachmentDescription> attachments;
 
@@ -6383,16 +6255,14 @@ TEST_F(VkLayerTest, RenderPassCreateInvalidMixedAttachmentSamplesAMD) {
     attachments[0].samples = VK_SAMPLE_COUNT_4_BIT;
     attachments[1].samples = VK_SAMPLE_COUNT_1_BIT;
 
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, vkCreateRenderPass2KHR,
+    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported,
                          "VUID-VkSubpassDescription-pColorAttachments-01506",
                          "VUID-VkSubpassDescription2KHR-pColorAttachments-03070");
 }
 
-static void TestRenderPassBegin(ErrorMonitor *error_monitor, const VkCommandBuffer command_buffer,
-                                const VkRenderPassBeginInfo *begin_info, PFN_vkCmdBeginRenderPass2KHR vkCmdBeginRenderPass2KHR,
-                                const char *rp1_vuid, const char *rp2_vuid) {
-    // "... must be less than the total number of attachments ..."
-
+static void TestRenderPassBegin(ErrorMonitor *error_monitor, const VkDevice device, const VkCommandBuffer command_buffer,
+                                const VkRenderPassBeginInfo *begin_info, bool rp2Supported, const char *rp1_vuid,
+                                const char *rp2_vuid) {
     VkCommandBufferBeginInfo cmd_begin_info = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, nullptr,
                                                VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, nullptr};
 
@@ -6403,7 +6273,9 @@ static void TestRenderPassBegin(ErrorMonitor *error_monitor, const VkCommandBuff
         error_monitor->VerifyFound();
         vkResetCommandBuffer(command_buffer, 0);
     }
-    if (vkCmdBeginRenderPass2KHR && rp2_vuid) {
+    if (rp2Supported && rp2_vuid) {
+        PFN_vkCmdBeginRenderPass2KHR vkCmdBeginRenderPass2KHR =
+            (PFN_vkCmdBeginRenderPass2KHR)vkGetDeviceProcAddr(device, "vkCmdBeginRenderPass2KHR");
         VkSubpassBeginInfoKHR subpass_begin_info = {VK_STRUCTURE_TYPE_SUBPASS_BEGIN_INFO_KHR, nullptr, VK_SUBPASS_CONTENTS_INLINE};
         vkBeginCommandBuffer(command_buffer, &cmd_begin_info);
         error_monitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, rp2_vuid);
@@ -6421,22 +6293,8 @@ TEST_F(VkLayerTest, RenderPassBeginInvalidRenderArea) {
     }
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
-    PFN_vkCmdBeginRenderPass2KHR vkCmdBeginRenderPass2KHR = nullptr;
-    bool rp2Supported = false;
-
-    // Check for VK_KHR_create_renderpass2
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_MULTIVIEW_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_MAINTENANCE2_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
-        rp2Supported = true;
-    }
+    bool rp2Supported = CheckCreateRenderPass2Support(this, m_device_extension_names);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
-
-    if (rp2Supported) {
-        vkCmdBeginRenderPass2KHR =
-            (PFN_vkCmdBeginRenderPass2KHR)vkGetDeviceProcAddr(m_device->device(), "vkCmdBeginRenderPass2KHR");
-    }
 
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
@@ -6444,7 +6302,7 @@ TEST_F(VkLayerTest, RenderPassBeginInvalidRenderArea) {
     m_renderPassBeginInfo.renderArea.extent.width = 257;
     m_renderPassBeginInfo.renderArea.extent.height = 257;
 
-    TestRenderPassBegin(m_errorMonitor, m_commandBuffer->handle(), &m_renderPassBeginInfo, vkCmdBeginRenderPass2KHR,
+    TestRenderPassBegin(m_errorMonitor, m_device->device(), m_commandBuffer->handle(), &m_renderPassBeginInfo, rp2Supported,
                         "Cannot execute a render pass with renderArea not within the bound of the framebuffer.",
                         "Cannot execute a render pass with renderArea not within the bound of the framebuffer.");
 }
@@ -6457,15 +6315,7 @@ TEST_F(VkLayerTest, RenderPassBeginWithinRenderPass) {
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
     PFN_vkCmdBeginRenderPass2KHR vkCmdBeginRenderPass2KHR = nullptr;
-    bool rp2Supported = false;
-
-    // Check for VK_KHR_create_renderpass2
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_MULTIVIEW_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_MAINTENANCE2_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
-        rp2Supported = true;
-    }
+    bool rp2Supported = CheckCreateRenderPass2Support(this, m_device_extension_names);
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     if (rp2Supported) {
@@ -6550,7 +6400,7 @@ TEST_F(VkLayerTest, RenderPassBeginIncompatibleFramebufferRenderPass) {
 
     VkRenderPassBeginInfo rp_begin = {VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO, nullptr, rp2, fb, {{0, 0}, {128, 128}}, 0, nullptr};
 
-    TestRenderPassBegin(m_errorMonitor, m_commandBuffer->handle(), &rp_begin, nullptr,
+    TestRenderPassBegin(m_errorMonitor, m_device->device(), m_commandBuffer->handle(), &rp_begin, false,
                         "VUID-VkRenderPassBeginInfo-renderPass-00904", nullptr);
 
     vkDestroyRenderPass(m_device->device(), rp1, nullptr);
@@ -6569,31 +6419,19 @@ TEST_F(VkLayerTest, RenderPassBeginLayoutsFramebufferImageUsageMismatches) {
     }
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
-    PFN_vkCmdBeginRenderPass2KHR vkCmdBeginRenderPass2KHR = nullptr;
-    bool rp2Supported = false;
-    bool maintenance2Supported = false;
+    bool rp2Supported = CheckCreateRenderPass2Support(this, m_device_extension_names);
+    bool maintenance2Supported = rp2Supported;
 
     // Check for VK_KHR_maintenance2
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE2_EXTENSION_NAME)) {
+    if (!rp2Supported && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE2_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_KHR_MAINTENANCE2_EXTENSION_NAME);
         maintenance2Supported = true;
     }
 
-    // Check for VK_KHR_create_renderpass2
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_MULTIVIEW_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
-        rp2Supported = true;
-    }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     if (m_device->props.apiVersion >= VK_API_VERSION_1_1) {
         maintenance2Supported = true;
-    }
-
-    if (rp2Supported) {
-        vkCmdBeginRenderPass2KHR =
-            (PFN_vkCmdBeginRenderPass2KHR)vkGetDeviceProcAddr(m_device->device(), "vkCmdBeginRenderPass2KHR");
     }
 
     // Create an input attachment view
@@ -6669,7 +6507,7 @@ TEST_F(VkLayerTest, RenderPassBeginLayoutsFramebufferImageUsageMismatches) {
     descriptions[0].initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     vkCreateRenderPass(m_device->device(), &rpci, NULL, &rp_invalid);
     rp_begin.renderPass = rp_invalid;
-    TestRenderPassBegin(m_errorMonitor, m_commandBuffer->handle(), &rp_begin, vkCmdBeginRenderPass2KHR,
+    TestRenderPassBegin(m_errorMonitor, m_device->device(), m_commandBuffer->handle(), &rp_begin, rp2Supported,
                         "VUID-vkCmdBeginRenderPass-initialLayout-00895", "VUID-vkCmdBeginRenderPass2KHR-initialLayout-03094");
 
     vkDestroyRenderPass(m_device->handle(), rp_invalid, nullptr);
@@ -6681,7 +6519,7 @@ TEST_F(VkLayerTest, RenderPassBeginLayoutsFramebufferImageUsageMismatches) {
     vkCreateRenderPass(m_device->device(), &rpci, NULL, &rp_invalid);
     rp_begin.renderPass = rp_invalid;
 
-    TestRenderPassBegin(m_errorMonitor, m_commandBuffer->handle(), &rp_begin, vkCmdBeginRenderPass2KHR,
+    TestRenderPassBegin(m_errorMonitor, m_device->device(), m_commandBuffer->handle(), &rp_begin, rp2Supported,
                         "VUID-vkCmdBeginRenderPass-initialLayout-00897", "VUID-vkCmdBeginRenderPass2KHR-initialLayout-03097");
 
     vkDestroyRenderPass(m_device->handle(), rp_invalid, nullptr);
@@ -6692,7 +6530,7 @@ TEST_F(VkLayerTest, RenderPassBeginLayoutsFramebufferImageUsageMismatches) {
     vkCreateRenderPass(m_device->device(), &rpci, NULL, &rp_invalid);
     rp_begin.renderPass = rp_invalid;
 
-    TestRenderPassBegin(m_errorMonitor, m_commandBuffer->handle(), &rp_begin, vkCmdBeginRenderPass2KHR,
+    TestRenderPassBegin(m_errorMonitor, m_device->device(), m_commandBuffer->handle(), &rp_begin, rp2Supported,
                         "VUID-vkCmdBeginRenderPass-initialLayout-00898", "VUID-vkCmdBeginRenderPass2KHR-initialLayout-03098");
 
     vkDestroyRenderPass(m_device->handle(), rp_invalid, nullptr);
@@ -6702,7 +6540,7 @@ TEST_F(VkLayerTest, RenderPassBeginLayoutsFramebufferImageUsageMismatches) {
     vkCreateRenderPass(m_device->device(), &rpci, NULL, &rp_invalid);
     rp_begin.renderPass = rp_invalid;
 
-    TestRenderPassBegin(m_errorMonitor, m_commandBuffer->handle(), &rp_begin, vkCmdBeginRenderPass2KHR,
+    TestRenderPassBegin(m_errorMonitor, m_device->device(), m_commandBuffer->handle(), &rp_begin, rp2Supported,
                         "VUID-vkCmdBeginRenderPass-initialLayout-00899", "VUID-vkCmdBeginRenderPass2KHR-initialLayout-03099");
 
     vkDestroyRenderPass(m_device->handle(), rp_invalid, nullptr);
@@ -6715,8 +6553,8 @@ TEST_F(VkLayerTest, RenderPassBeginLayoutsFramebufferImageUsageMismatches) {
     const char *initial_layout_vuid_rp1 =
         maintenance2Supported ? "VUID-vkCmdBeginRenderPass-initialLayout-01758" : "VUID-vkCmdBeginRenderPass-initialLayout-00896";
 
-    TestRenderPassBegin(m_errorMonitor, m_commandBuffer->handle(), &rp_begin, vkCmdBeginRenderPass2KHR, initial_layout_vuid_rp1,
-                        "VUID-vkCmdBeginRenderPass2KHR-initialLayout-03096");
+    TestRenderPassBegin(m_errorMonitor, m_device->device(), m_commandBuffer->handle(), &rp_begin, rp2Supported,
+                        initial_layout_vuid_rp1, "VUID-vkCmdBeginRenderPass2KHR-initialLayout-03096");
 
     vkDestroyRenderPass(m_device->handle(), rp_invalid, nullptr);
 
@@ -6726,8 +6564,8 @@ TEST_F(VkLayerTest, RenderPassBeginLayoutsFramebufferImageUsageMismatches) {
     vkCreateRenderPass(m_device->device(), &rpci, NULL, &rp_invalid);
     rp_begin.renderPass = rp_invalid;
 
-    TestRenderPassBegin(m_errorMonitor, m_commandBuffer->handle(), &rp_begin, vkCmdBeginRenderPass2KHR, initial_layout_vuid_rp1,
-                        "VUID-vkCmdBeginRenderPass2KHR-initialLayout-03096");
+    TestRenderPassBegin(m_errorMonitor, m_device->device(), m_commandBuffer->handle(), &rp_begin, rp2Supported,
+                        initial_layout_vuid_rp1, "VUID-vkCmdBeginRenderPass2KHR-initialLayout-03096");
 
     vkDestroyRenderPass(m_device->handle(), rp_invalid, nullptr);
 
@@ -6738,7 +6576,7 @@ TEST_F(VkLayerTest, RenderPassBeginLayoutsFramebufferImageUsageMismatches) {
         vkCreateRenderPass(m_device->device(), &rpci, NULL, &rp_invalid);
         rp_begin.renderPass = rp_invalid;
 
-        TestRenderPassBegin(m_errorMonitor, m_commandBuffer->handle(), &rp_begin, vkCmdBeginRenderPass2KHR,
+        TestRenderPassBegin(m_errorMonitor, m_device->device(), m_commandBuffer->handle(), &rp_begin, rp2Supported,
                             "VUID-vkCmdBeginRenderPass-initialLayout-01758", "VUID-vkCmdBeginRenderPass2KHR-initialLayout-03096");
 
         vkDestroyRenderPass(m_device->handle(), rp_invalid, nullptr);
@@ -6749,7 +6587,7 @@ TEST_F(VkLayerTest, RenderPassBeginLayoutsFramebufferImageUsageMismatches) {
         vkCreateRenderPass(m_device->device(), &rpci, NULL, &rp_invalid);
         rp_begin.renderPass = rp_invalid;
 
-        TestRenderPassBegin(m_errorMonitor, m_commandBuffer->handle(), &rp_begin, vkCmdBeginRenderPass2KHR,
+        TestRenderPassBegin(m_errorMonitor, m_device->device(), m_commandBuffer->handle(), &rp_begin, rp2Supported,
                             "VUID-vkCmdBeginRenderPass-initialLayout-01758", "VUID-vkCmdBeginRenderPass2KHR-initialLayout-03096");
 
         vkDestroyRenderPass(m_device->handle(), rp_invalid, nullptr);
@@ -6772,22 +6610,8 @@ TEST_F(VkLayerTest, RenderPassBeginClearOpMismatch) {
     }
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
-    PFN_vkCmdBeginRenderPass2KHR vkCmdBeginRenderPass2KHR = nullptr;
-    bool rp2Supported = false;
-
-    // Check for VK_KHR_create_renderpass2
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_MULTIVIEW_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_MAINTENANCE2_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
-        rp2Supported = true;
-    }
+    bool rp2Supported = CheckCreateRenderPass2Support(this, m_device_extension_names);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
-
-    if (rp2Supported) {
-        vkCmdBeginRenderPass2KHR =
-            (PFN_vkCmdBeginRenderPass2KHR)vkGetDeviceProcAddr(m_device->device(), "vkCmdBeginRenderPass2KHR");
-    }
 
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
@@ -6819,7 +6643,7 @@ TEST_F(VkLayerTest, RenderPassBeginClearOpMismatch) {
     rp_begin.framebuffer = framebuffer();
     rp_begin.clearValueCount = 0;  // Should be 1
 
-    TestRenderPassBegin(m_errorMonitor, m_commandBuffer->handle(), &rp_begin, vkCmdBeginRenderPass2KHR,
+    TestRenderPassBegin(m_errorMonitor, m_device->device(), m_commandBuffer->handle(), &rp_begin, rp2Supported,
                         "VUID-VkRenderPassBeginInfo-clearValueCount-00902", "VUID-VkRenderPassBeginInfo-clearValueCount-00902");
 
     vkDestroyRenderPass(m_device->device(), rp, NULL);
@@ -6904,12 +6728,12 @@ TEST_F(VkLayerTest, RenderPassBeginSampleLocationsInvalidIndicesEXT) {
         VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO, &rp_sl_begin, rp, fb, {{0, 0}, {128, 128}}, 0, nullptr};
 
     attachment_sample_locations.attachmentIndex = 1;
-    TestRenderPassBegin(m_errorMonitor, m_commandBuffer->handle(), &rp_begin, nullptr,
+    TestRenderPassBegin(m_errorMonitor, m_device->device(), m_commandBuffer->handle(), &rp_begin, false,
                         "VUID-VkAttachmentSampleLocationsEXT-attachmentIndex-01531", nullptr);
     attachment_sample_locations.attachmentIndex = 0;
 
     subpass_sample_locations.subpassIndex = 1;
-    TestRenderPassBegin(m_errorMonitor, m_commandBuffer->handle(), &rp_begin, nullptr,
+    TestRenderPassBegin(m_errorMonitor, m_device->device(), m_commandBuffer->handle(), &rp_begin, false,
                         "VUID-VkSubpassSampleLocationsEXT-subpassIndex-01532", nullptr);
     subpass_sample_locations.subpassIndex = 0;
 
@@ -6928,15 +6752,7 @@ TEST_F(VkLayerTest, RenderPassNextSubpassExcessive) {
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
     PFN_vkCmdNextSubpass2KHR vkCmdNextSubpass2KHR = nullptr;
-    bool rp2Supported = false;
-
-    // Check for VK_KHR_create_renderpass2
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_MULTIVIEW_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_MAINTENANCE2_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
-        rp2Supported = true;
-    }
+    bool rp2Supported = CheckCreateRenderPass2Support(this, m_device_extension_names);
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     if (rp2Supported) {
@@ -6976,15 +6792,7 @@ TEST_F(VkLayerTest, RenderPassEndBeforeFinalSubpass) {
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
     PFN_vkCmdEndRenderPass2KHR vkCmdEndRenderPass2KHR = nullptr;
-    bool rp2Supported = false;
-
-    // Check for VK_KHR_create_renderpass2
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_MULTIVIEW_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_MAINTENANCE2_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
-        rp2Supported = true;
-    }
+    bool rp2Supported = CheckCreateRenderPass2Support(this, m_device_extension_names);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     if (rp2Supported) {
