@@ -2188,10 +2188,7 @@ bool OutsideRenderPass(const layer_data *dev_data, GLOBAL_CB_NODE *pCB, const ch
     return outside;
 }
 
-static void InitCoreValidation(instance_layer_data *instance_data, const VkAllocationCallbacks *pAllocator) {
-    layer_debug_messenger_actions(instance_data->report_data, instance_data->logging_messenger, pAllocator,
-                                  "lunarg_core_validation");
-
+static void InitGpuValidation(instance_layer_data *instance_data) {
     // Process the layer settings file.
     enum CoreValidationGpuFlagBits {
         CORE_VALIDATION_GPU_VALIDATION_ALL_BIT = 0x00000001,
@@ -2272,6 +2269,7 @@ void PostCallRecordCreateInstance(instance_layer_data *instance_data, const VkIn
     if (validation_features_ext) {
         SetValidationFeatures(instance_data, validation_features_ext);
     }
+    InitGpuValidation(instance_data);
 }
 
 void PostCallRecordDestroyInstance(instance_layer_data *instance_data, const VkAllocationCallbacks *pAllocator, dispatch_key key) {
