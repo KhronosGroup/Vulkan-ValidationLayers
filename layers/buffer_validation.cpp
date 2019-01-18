@@ -1429,9 +1429,10 @@ bool PreCallValidateCreateImage(VkDevice device, const VkImageCreateInfo *pCreat
                             pCreateInfo->mipLevels, format_limits.maxMipLevels, format_string);
         }
 
-        uint64_t total_size = (uint64_t)pCreateInfo->extent.width * (uint64_t)pCreateInfo->extent.height *
-                              (uint64_t)pCreateInfo->extent.depth * (uint64_t)pCreateInfo->arrayLayers *
-                              (uint64_t)pCreateInfo->samples * (uint64_t)FormatSize(pCreateInfo->format);
+        uint64_t texel_count = (uint64_t)pCreateInfo->extent.width * (uint64_t)pCreateInfo->extent.height *
+                               (uint64_t)pCreateInfo->extent.depth * (uint64_t)pCreateInfo->arrayLayers *
+                               (uint64_t)pCreateInfo->samples;
+        uint64_t total_size = (uint64_t)std::ceil(FormatTexelSize(pCreateInfo->format) * texel_count);
 
         // Round up to imageGranularity boundary
         VkDeviceSize imageGranularity = GetPDProperties(device_data)->limits.bufferImageGranularity;
@@ -1882,12 +1883,12 @@ static inline bool IsExtentEqual(const VkExtent3D *extent, const VkExtent3D *oth
 VkExtent3D GetAdjustedDestImageExtent(VkFormat src_format, VkFormat dst_format, VkExtent3D extent) {
     VkExtent3D adjusted_extent = extent;
     if ((FormatIsCompressed(src_format) && (!FormatIsCompressed(dst_format)))) {
-        VkExtent3D block_size = FormatCompressedTexelBlockExtent(src_format);
+        VkExtent3D block_size = FormatTexelBlockExtent(src_format);
         adjusted_extent.width /= block_size.width;
         adjusted_extent.height /= block_size.height;
         adjusted_extent.depth /= block_size.depth;
     } else if ((!FormatIsCompressed(src_format) && (FormatIsCompressed(dst_format)))) {
-        VkExtent3D block_size = FormatCompressedTexelBlockExtent(dst_format);
+        VkExtent3D block_size = FormatTexelBlockExtent(dst_format);
         adjusted_extent.width *= block_size.width;
         adjusted_extent.height *= block_size.height;
         adjusted_extent.depth *= block_size.depth;
@@ -1951,7 +1952,7 @@ static inline VkExtent3D GetScaledItg(layer_data *device_data, const GLOBAL_CB_N
         granularity =
             GetPhysDevProperties(device_data)->queue_family_properties[pPool->queueFamilyIndex].minImageTransferGranularity;
         if (FormatIsCompressed(img->createInfo.format)) {
-            auto block_size = FormatCompressedTexelBlockExtent(img->createInfo.format);
+            auto block_size = FormatTexelBlockExtent(img->createInfo.format);
             granularity.width *= block_size.width;
             granularity.height *= block_size.height;
         }
@@ -2215,7 +2216,7 @@ bool ValidateImageCopyData(const layer_data *device_data, const debug_report_dat
         bool ext_ycbcr = GetDeviceExtensions(device_data)->vk_khr_sampler_ycbcr_conversion;
         if (FormatIsCompressed(src_state->createInfo.format) ||
             (ext_ycbcr && FormatIsSinglePlane_422(src_state->createInfo.format))) {
-            const VkExtent3D block_size = FormatCompressedTexelBlockExtent(src_state->createInfo.format);
+            const VkExtent3D block_size = FormatTexelBlockExtent(src_state->createInfo.format);
             //  image offsets must be multiples of block dimensions
             if ((SafeModulo(region.srcOffset.x, block_size.width) != 0) ||
                 (SafeModulo(region.srcOffset.y, block_size.height) != 0) ||
@@ -2331,7 +2332,7 @@ bool ValidateImageCopyData(const layer_data *device_data, const debug_report_dat
         // Dest checks that apply only to compressed images (or to _422 images if ycbcr enabled)
         if (FormatIsCompressed(dst_state->createInfo.format) ||
             (ext_ycbcr && FormatIsSinglePlane_422(dst_state->createInfo.format))) {
-            const VkExtent3D block_size = FormatCompressedTexelBlockExtent(dst_state->createInfo.format);
+            const VkExtent3D block_size = FormatTexelBlockExtent(dst_state->createInfo.format);
 
             //  image offsets must be multiples of block dimensions
             if ((SafeModulo(region.dstOffset.x, block_size.width) != 0) ||
@@ -3848,7 +3849,7 @@ bool ValidateBufferViewRange(const layer_data *device_data, const BUFFER_STATE *
                             range);
         }
         // Range must be a multiple of the element size of format
-        const size_t format_size = FormatSize(pCreateInfo->format);
+        const size_t format_size = FormatElementSize(pCreateInfo->format);
         if (range % format_size != 0) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT,
                             HandleToUint64(buffer_state->buffer), "VUID-VkBufferViewCreateInfo-range-00929",
@@ -4667,14 +4668,14 @@ bool ValidateBufferImageCopyData(const debug_report_data *report_data, uint32_t 
         }
 
         // If the the calling command's VkImage parameter's format is not a depth/stencil format,
-        // then bufferOffset must be a multiple of the calling command's VkImage parameter's texel size
-        auto texel_size = FormatSize(image_state->createInfo.format);
-        if (!FormatIsDepthAndStencil(image_state->createInfo.format) && SafeModulo(pRegions[i].bufferOffset, texel_size) != 0) {
+        // then bufferOffset must be a multiple of the calling command's VkImage parameter's element size
+        uint32_t element_size = FormatElementSize(image_state->createInfo.format);
+        if (!FormatIsDepthAndStencil(image_state->createInfo.format) && SafeModulo(pRegions[i].bufferOffset, element_size) != 0) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
                             HandleToUint64(image_state->image), "VUID-VkBufferImageCopy-bufferOffset-00193",
                             "%s(): pRegion[%d] bufferOffset 0x%" PRIxLEAST64
-                            " must be a multiple of this format's texel size (" PRINTF_SIZE_T_SPECIFIER ").",
-                            function, i, pRegions[i].bufferOffset, texel_size);
+                            " must be a multiple of this format's texel size (%" PRIu32 ").",
+                            function, i, pRegions[i].bufferOffset, element_size);
         }
 
         //  BufferOffset must be a multiple of 4
@@ -4723,7 +4724,7 @@ bool ValidateBufferImageCopyData(const debug_report_data *report_data, uint32_t 
 
         // Checks that apply only to compressed images
         if (FormatIsCompressed(image_state->createInfo.format) || FormatIsSinglePlane_422(image_state->createInfo.format)) {
-            auto block_size = FormatCompressedTexelBlockExtent(image_state->createInfo.format);
+            auto block_size = FormatTexelBlockExtent(image_state->createInfo.format);
 
             //  BufferRowLength must be a multiple of block width
             if (SafeModulo(pRegions[i].bufferRowLength, block_size.width) != 0) {
@@ -4756,12 +4757,12 @@ bool ValidateBufferImageCopyData(const debug_report_data *report_data, uint32_t 
             }
 
             // bufferOffset must be a multiple of block size (linear bytes)
-            size_t block_size_in_bytes = FormatSize(image_state->createInfo.format);
+            uint32_t block_size_in_bytes = FormatElementSize(image_state->createInfo.format);
             if (SafeModulo(pRegions[i].bufferOffset, block_size_in_bytes) != 0) {
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
                                 HandleToUint64(image_state->image), "VUID-VkBufferImageCopy-bufferOffset-00206",
                                 "%s(): pRegion[%d] bufferOffset (0x%" PRIxLEAST64
-                                ") must be a multiple of the compressed image's texel block size (" PRINTF_SIZE_T_SPECIFIER ")..",
+                                ") must be a multiple of the compressed image's texel block size (%" PRIu32 ")..",
                                 function, i, pRegions[i].bufferOffset, block_size_in_bytes);
             }
 
@@ -4825,7 +4826,7 @@ static bool ValidateImageBounds(const debug_report_data *report_data, const IMAG
 
         // If we're using a compressed format, valid extent is rounded up to multiple of block size (per 18.1)
         if (FormatIsCompressed(image_info->format)) {
-            auto block_extent = FormatCompressedTexelBlockExtent(image_info->format);
+            auto block_extent = FormatTexelBlockExtent(image_info->format);
             if (image_extent.width % block_extent.width) {
                 image_extent.width += (block_extent.width - (image_extent.width % block_extent.width));
             }
@@ -4858,18 +4859,18 @@ static inline bool ValidateBufferBounds(const debug_report_data *report_data, IM
 
         VkDeviceSize buffer_width = (0 == pRegions[i].bufferRowLength ? copy_extent.width : pRegions[i].bufferRowLength);
         VkDeviceSize buffer_height = (0 == pRegions[i].bufferImageHeight ? copy_extent.height : pRegions[i].bufferImageHeight);
-        VkDeviceSize unit_size = FormatSize(image_state->createInfo.format);  // size (bytes) of texel or block
+        VkDeviceSize unit_size = FormatElementSize(image_state->createInfo.format);  // size (bytes) of texel or block
 
         // Handle special buffer packing rules for specific depth/stencil formats
         if (pRegions[i].imageSubresource.aspectMask & VK_IMAGE_ASPECT_STENCIL_BIT) {
-            unit_size = FormatSize(VK_FORMAT_S8_UINT);
+            unit_size = FormatElementSize(VK_FORMAT_S8_UINT);
         } else if (pRegions[i].imageSubresource.aspectMask & VK_IMAGE_ASPECT_DEPTH_BIT) {
             switch (image_state->createInfo.format) {
                 case VK_FORMAT_D16_UNORM_S8_UINT:
-                    unit_size = FormatSize(VK_FORMAT_D16_UNORM);
+                    unit_size = FormatElementSize(VK_FORMAT_D16_UNORM);
                     break;
                 case VK_FORMAT_D32_SFLOAT_S8_UINT:
-                    unit_size = FormatSize(VK_FORMAT_D32_SFLOAT);
+                    unit_size = FormatElementSize(VK_FORMAT_D32_SFLOAT);
                     break;
                 case VK_FORMAT_X8_D24_UNORM_PACK32:  // Fall through
                 case VK_FORMAT_D24_UNORM_S8_UINT:
@@ -4882,7 +4883,7 @@ static inline bool ValidateBufferBounds(const debug_report_data *report_data, IM
 
         if (FormatIsCompressed(image_state->createInfo.format) || FormatIsSinglePlane_422(image_state->createInfo.format)) {
             // Switch to texel block units, rounding up for any partially-used blocks
-            auto block_dim = FormatCompressedTexelBlockExtent(image_state->createInfo.format);
+            auto block_dim = FormatTexelBlockExtent(image_state->createInfo.format);
             buffer_width = (buffer_width + block_dim.width - 1) / block_dim.width;
             buffer_height = (buffer_height + block_dim.height - 1) / block_dim.height;
 

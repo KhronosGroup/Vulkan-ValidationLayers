@@ -11763,7 +11763,7 @@ TEST_F(VkLayerTest, InvalidBufferViewCreateInfoEntries) {
     buff_view_ci.range = 0;
     CatchError("VUID-VkBufferViewCreateInfo-range-00928");
 
-    size_t format_size = FormatSize(buff_view_ci.format);
+    uint32_t format_size = FormatElementSize(buff_view_ci.format);
     // Range must be a multiple of the element size of format, so add one to ensure it is not
     buff_view_ci.range = format_size + 1;
     CatchError("VUID-VkBufferViewCreateInfo-range-00929");
