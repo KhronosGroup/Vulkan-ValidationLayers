@@ -52,6 +52,7 @@ generated_layer_source_directories = [
 'build',
 'dbuild',
 'release',
+'../build/Vulkan-ValidationLayers/'
 ]
 generated_layer_source_files = [
 'parameter_validation.cpp',
