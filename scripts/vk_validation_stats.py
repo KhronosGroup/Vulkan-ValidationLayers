@@ -30,6 +30,7 @@ import re
 import csv
 import html
 import time
+import itertools
 from collections import defaultdict
 
 verbose_mode = False
@@ -168,6 +169,17 @@ def printHelp():
     print (" -export_header    export a new VUID error text header file to <%s>" % header_filename)
     print (" -verbose          show your work (to stdout)")
 
+def get_main_ext(ext_expr):
+    # Some heuristics to get a "pretty" main extension.
+    tokens = [re.sub(r'[()]', '', tok) for tok in re.split(r'[+,]', ext_expr)]
+    filt_tokens = [tok for tok in tokens if not tok.startswith(('!', 'VK_VERSION_'))]
+    if filt_tokens:
+        return filt_tokens[0]
+    elif tokens:
+        return tokens[0]
+    else:
+        assert False
+
 class ValidationJSON:
     def __init__(self, filename):
         self.filename = filename
@@ -228,7 +240,8 @@ class ValidationJSON:
                     for regex, replacement in self.regex_dict.items():
                         vuid_text = re.sub(regex, replacement, vuid_text)   # do regex substitution
                     vuid_text = html.unescape(vuid_text)                    # anything missed by the regex
-                    self.vuid_db[vuid_string].append({'api':apiname, 'ext':ext, 'type':vtype, 'text':vuid_text})
+                    main_ext = get_main_ext(ext)
+                    self.vuid_db[vuid_string].append({'vuid':vuid_string, 'api':apiname, 'main_ext':main_ext, 'ext':ext, 'type':vtype, 'text':vuid_text})
         self.all_vuids = self.explicit_vuids | self.implicit_vuids
         self.duplicate_vuids = set({v for v in self.vuid_db if len(self.vuid_db[v]) > 1})
         if len(self.duplicate_vuids) > 0:
@@ -465,6 +478,27 @@ class Consistency:
     # TODO: Explicit checked VUIDs which have no test
     # def explicit_vuids_checked_not_tested(self):
 
+def get_ext_sort_key(db_entry):
+    main_ext = db_entry['main_ext']
+    # Core, then VK_VERSION_*, then everything else
+    if main_ext == 'core':
+        return (0, main_ext, 0)
+    elif main_ext.startswith('VK_VERSION_'):
+        return (1, main_ext, 0)
+    elif main_ext.startswith('!'):
+        return (2, main_ext.lstrip('!'), 1)
+    else:
+        return (2, main_ext, 0)
+
+def get_vuid_sort_key(db_entry):
+    vuid = db_entry['vuid']
+    # Structs, then functions
+    if vuid.startswith('VUID-Vk'):
+        return (0, vuid)
+    elif vuid.startswith('VUID-vk'):
+        return (1, vuid)
+    else:
+        assert False
 
 # Class to output database in various flavors
 #
@@ -596,15 +630,16 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
         with open (header_filename, 'w') as hfile:
             hfile.write(self.header_version)
             hfile.write(self.header_preamble)
-            vuid_list = list(self.vj.all_vuids)
-            vuid_list.sort()
-            for vuid in vuid_list:
-                db_entry = self.vj.vuid_db[vuid][0]
-                hfile.write('    {"%s", "%s (%s#%s)"},\n' % (vuid, db_entry['text'].strip(' '), self.spec_url, vuid))
-                # For multiply-defined VUIDs, include versions with extension appended
-                if len(self.vj.vuid_db[vuid]) > 1:
-                    for db_entry in self.vj.vuid_db[vuid]:
-                        hfile.write('    {"%s[%s]", "%s (%s#%s)"},\n' % (vuid, db_entry['ext'].strip(' '), db_entry['text'].strip(' '), self.spec_url, vuid))
+            # Group VUIDs by extension.
+            sorted_vuids = sorted(itertools.chain(*self.vj.vuid_db.values()), key=get_ext_sort_key)
+            vuids_by_extension = itertools.groupby(sorted_vuids, key=operator.itemgetter('main_ext'))
+            for ext, vuid_list in vuids_by_extension:
+                if ext != 'core':
+                    hfile.write('\n    /* %s */\n' % (ext,))
+
+                for db_entry in sorted(vuid_list, key=get_vuid_sort_key):
+                    vuid = db_entry['vuid']
+                    hfile.write('    {"%s", "%s (%s#%s)"},\n' % (vuid, db_entry['text'].strip(' '), self.spec_url, vuid))
             hfile.write(self.header_postamble)
 
 def main(argv):
