@@ -158,6 +158,7 @@ VK_LAYER_EXPORT bool FormatIsUScaled(VkFormat format);
 VK_LAYER_EXPORT bool FormatIsSScaled(VkFormat format);
 VK_LAYER_EXPORT bool FormatIsCompressed(VkFormat format);
 VK_LAYER_EXPORT bool FormatIsPacked(VkFormat format);
+VK_LAYER_EXPORT bool FormatElementIsTexel(VkFormat format);
 VK_LAYER_EXPORT bool FormatSizesAreEqual(VkFormat srcFormat, VkFormat dstFormat, uint32_t region_count, const VkImageCopy *regions);
 
 VK_LAYER_EXPORT uint32_t FormatDepthSize(VkFormat format);
@@ -166,13 +167,13 @@ VK_LAYER_EXPORT uint32_t FormatStencilSize(VkFormat format);
 VK_LAYER_EXPORT VkFormatNumericalType FormatStencilNumericalType(VkFormat format);
 VK_LAYER_EXPORT uint32_t FormatPlaneCount(VkFormat format);
 VK_LAYER_EXPORT uint32_t FormatChannelCount(VkFormat format);
-VK_LAYER_EXPORT VkExtent3D FormatCompressedTexelBlockExtent(VkFormat format);
-VK_LAYER_EXPORT size_t FormatSize(VkFormat format);
+VK_LAYER_EXPORT VkExtent3D FormatTexelBlockExtent(VkFormat format);
+VK_LAYER_EXPORT uint32_t FormatElementSize(VkFormat format);
+VK_LAYER_EXPORT double FormatTexelSize(VkFormat format);
 VK_LAYER_EXPORT VkFormatCompatibilityClass FormatCompatibilityClass(VkFormat format);
 VK_LAYER_EXPORT VkDeviceSize SafeModulo(VkDeviceSize dividend, VkDeviceSize divisor);
 VK_LAYER_EXPORT VkFormat FindMultiplaneCompatibleFormat(VkFormat fmt, VkImageAspectFlags plane_aspect);
 VK_LAYER_EXPORT VkExtent2D FindMultiplaneExtentDivisors(VkFormat mp_fmt, VkImageAspectFlags plane_aspect);
-VK_LAYER_EXPORT size_t FormatAlignment(VkFormat format);
 
 static inline bool FormatIsUndef(VkFormat format) { return (format == VK_FORMAT_UNDEFINED); }
 static inline bool FormatHasDepth(VkFormat format) { return (FormatIsDepthOnly(format) || FormatIsDepthAndStencil(format)); }
