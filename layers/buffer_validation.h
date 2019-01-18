@@ -44,7 +44,7 @@ bool PreCallValidateCreateImage(VkDevice device, const VkImageCreateInfo *pCreat
                                 VkImage *pImage);
 
 void PostCallRecordCreateImage(VkDevice device, const VkImageCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator,
-                               VkImage *pImage);
+                               VkImage *pImage, VkResult result);
 
 void PreCallRecordDestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks *pAllocator);
 
@@ -218,13 +218,13 @@ bool PreCallValidateCreateBuffer(VkDevice device, const VkBufferCreateInfo *pCre
                                  VkBuffer *pBuffer);
 
 void PostCallRecordCreateBuffer(VkDevice device, const VkBufferCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator,
-                                VkBuffer *pBuffer);
+                                VkBuffer *pBuffer, VkResult result);
 
 bool PreCallValidateCreateBufferView(VkDevice device, const VkBufferViewCreateInfo *pCreateInfo,
                                      const VkAllocationCallbacks *pAllocator, VkBufferView *pView);
 
 void PostCallRecordCreateBufferView(VkDevice device, const VkBufferViewCreateInfo *pCreateInfo,
-                                    const VkAllocationCallbacks *pAllocator, VkBufferView *pView);
+                                    const VkAllocationCallbacks *pAllocator, VkBufferView *pView, VkResult result);
 
 bool ValidateImageAspectMask(const layer_data *device_data, VkImage image, VkFormat format, VkImageAspectFlags aspect_mask,
                              const char *func_name, const char *vuid = "VUID-VkImageSubresource-aspectMask-parameter");
@@ -246,7 +246,7 @@ bool PreCallValidateCreateImageView(VkDevice device, const VkImageViewCreateInfo
                                     const VkAllocationCallbacks *pAllocator, VkImageView *pView);
 
 void PostCallRecordCreateImageView(VkDevice device, const VkImageViewCreateInfo *pCreateInfo,
-                                   const VkAllocationCallbacks *pAllocator, VkImageView *pView);
+                                   const VkAllocationCallbacks *pAllocator, VkImageView *pView, VkResult result);
 
 bool ValidateCopyBufferImageTransferGranularityRequirements(layer_data *device_data, const GLOBAL_CB_NODE *cb_node,
                                                             const IMAGE_STATE *img, const VkBufferImageCopy *region,
