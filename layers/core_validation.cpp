@@ -9325,6 +9325,10 @@ static bool ValidateDepthStencilResolve(const debug_report_data *report_data,
         VkSubpassDescription2KHR subpass = pCreateInfo->pSubpasses[i];
         const auto *resolve = lvl_find_in_chain<VkSubpassDescriptionDepthStencilResolveKHR>(subpass.pNext);
 
+        if (resolve == nullptr) {
+            continue;
+        }
+
         if (resolve->pDepthStencilResolveAttachment != nullptr &&
             resolve->pDepthStencilResolveAttachment->attachment != VK_ATTACHMENT_UNUSED) {
             if (subpass.pDepthStencilAttachment->attachment == VK_ATTACHMENT_UNUSED) {
