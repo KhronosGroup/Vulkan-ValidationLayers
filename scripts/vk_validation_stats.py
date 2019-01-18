@@ -650,6 +650,7 @@ def main(argv):
 
     run_consistency = False
     report_unimplemented = False
+    report_unimplemented_extension = None
     get_vuid_status = ''
     txt_out = False
     csv_out = False
@@ -673,6 +674,9 @@ def main(argv):
             i = i + 1
         elif (arg == '-todo'):
             report_unimplemented = True
+            if i < len(argv) and not argv[i].startswith('-'):
+                report_unimplemented_extension = argv[i]
+                i = i + 1
         elif (arg == '-text'):
             txt_out = True
             # Set filename if supplied, else use default
@@ -796,6 +800,10 @@ def main(argv):
         ulist = list(unim_explicit)
         ulist.sort()
         for vuid in ulist:
+            if report_unimplemented_extension is not None:
+                if not any((report_unimplemented_extension in db_entry['ext']) for db_entry in val_json.vuid_db[vuid]):
+                    continue
+
             print("  => %s" % vuid) 
 
     # Consistency tests
