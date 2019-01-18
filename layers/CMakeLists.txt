@@ -155,9 +155,9 @@ if(WIN32)
     add_definitions(-D_CRT_SECURE_NO_WARNINGS)
     # Avoid: fatal error C1128: number of sections exceeded object file format limit: compile with /bigobj
     set_source_files_properties(core_validation.cpp
+                                core_dispatch.cpp
                                 thread_safety.cpp
                                 parameter_validation_utils.cpp
-                                unique_objects.cpp
                                 chassis.cpp
                                 PROPERTIES
                                 COMPILE_FLAGS
