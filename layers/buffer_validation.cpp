@@ -1494,8 +1494,9 @@ bool PreCallValidateCreateImage(VkDevice device, const VkImageCreateInfo *pCreat
 }
 
 void PostCallRecordCreateImage(VkDevice device, const VkImageCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator,
-                               VkImage *pImage) {
+                               VkImage *pImage, VkResult result) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), core_validation::layer_data_map);
+    if (VK_SUCCESS != result) return;
     IMAGE_LAYOUT_NODE image_state;
     image_state.layout = pCreateInfo->initialLayout;
     image_state.format = pCreateInfo->format;
@@ -3966,9 +3967,9 @@ bool PreCallValidateCreateBuffer(VkDevice device, const VkBufferCreateInfo *pCre
 }
 
 void PostCallRecordCreateBuffer(VkDevice device, const VkBufferCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator,
-                                VkBuffer *pBuffer) {
+                                VkBuffer *pBuffer, VkResult result) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-
+    if (result != VK_SUCCESS) return;
     // TODO : This doesn't create deep copy of pQueueFamilyIndices so need to fix that if/when we want that data to be valid
     GetBufferMap(device_data)
         ->insert(std::make_pair(*pBuffer, std::unique_ptr<BUFFER_STATE>(new BUFFER_STATE(*pBuffer, pCreateInfo))));
@@ -4019,9 +4020,9 @@ bool PreCallValidateCreateBufferView(VkDevice device, const VkBufferViewCreateIn
 }
 
 void PostCallRecordCreateBufferView(VkDevice device, const VkBufferViewCreateInfo *pCreateInfo,
-                                    const VkAllocationCallbacks *pAllocator, VkBufferView *pView) {
+                                    const VkAllocationCallbacks *pAllocator, VkBufferView *pView, VkResult result) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-
+    if (result != VK_SUCCESS) return;
     (*GetBufferViewMap(device_data))[*pView] = std::unique_ptr<BUFFER_VIEW_STATE>(new BUFFER_VIEW_STATE(*pView, pCreateInfo));
 }
 
@@ -4459,8 +4460,9 @@ bool PreCallValidateCreateImageView(VkDevice device, const VkImageViewCreateInfo
 }
 
 void PostCallRecordCreateImageView(VkDevice device, const VkImageViewCreateInfo *pCreateInfo,
-                                   const VkAllocationCallbacks *pAllocator, VkImageView *pView) {
+                                   const VkAllocationCallbacks *pAllocator, VkImageView *pView, VkResult result) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (result != VK_SUCCESS) return;
     auto image_view_map = GetImageViewMap(device_data);
     (*image_view_map)[*pView] = std::unique_ptr<IMAGE_VIEW_STATE>(new IMAGE_VIEW_STATE(*pView, pCreateInfo));
 
