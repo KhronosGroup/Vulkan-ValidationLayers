@@ -65,27 +65,27 @@ ERROR : VALIDATION - Message Id Number: 0 | Message Id Name: UNASSIGNED-Image de
 Here are the options related to activating GPU-Assisted Validation:
 
 1. Enable GPU-Assisted Validation - GPU-Assisted Validation is off by default and must be enabled.
+
+    GPU-Assisted Validation is disabled by default because the shader instrumentation may introduce significant
+    shader performance degradation and additional resource consumption.
+    GPU-Assisted Validation requires additional resources such as device memory and descriptors.
+    It is desirable for the user to opt-in to this feature because of these requirements.
+    In addition, there are several limitations that may adversely affect application behavior,
+    as described later in this document.
+
 2. Reserve a Descriptor Set Binding Slot - Modifies the value of the `VkPhysicalDeviceLimits::maxBoundDescriptorSets`
    property to return a value one less than the actual device's value to "reserve" a descriptor set binding slot for use by GPU validation.
 
    This option is likely only of interest to applications that dynamically adjust their descriptor set bindings to adjust for
    the limits of the device.
 
-## Activating GPU-Assisted Validation
-
-GPU-Assisted Validation is disabled by default because the shader instrumentation may introduce significant
-shader performance degradation and additional resource consumption.
-GPU-Assisted Validation requires additional resources such as device memory and descriptors.
-It is desirable for the user to opt-in to this feature because of these requirements.
-In addition, there are several limitations that may adversely affect application behavior,
-as described later in this document.
-
-### Enabling With a Configuration File
+### Enabling and Specifying Options with a Configuration File
 
 The existing layer configuration file mechanism can be used to enable GPU-Assisted Validation.
 This mechanism is described on the
-[LunarXChange website](https://vulkan.lunarg.com/doc/sdk/latest/windows/layer_configuration.html),
+[LunarXchange website](https://vulkan.lunarg.com/doc/sdk/latest/windows/layer_configuration.html),
 in the "Layers Overview and Configuration" document.
+
 To turn on GPU validation, add the following to your layer settings file, which is often
 named `vk_layer_settings.txt`.
 
@@ -102,7 +102,7 @@ lunarg_core_validation.gpu_validation = all,reserve_binding_slot
 Some platforms do not support configuration of the validation layers with this configuration file.
 Programs running on these platforms must then use the programmatic interface.
 
-### Enabling With the Programmatic Interface
+### Enabling and Specifying Options with the Programmatic Interface
 
 The `VK_EXT_validation_features` extension can be used to enable GPU-Assisted Validation at CreateInstance time.
 
@@ -125,25 +125,15 @@ Use the `VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT` enu
 
 There are several limitations that may impede the operation of GPU-Assisted Validation:
 
-### A Note About the `VK_EXT_buffer_device_address` Extension
-
-With the recent availability of the `VK_EXT_buffer_device_address` extension,
-it is now possible to create an alternate implementation of GPU-Assisted Validation.
-This new approach would use this extension to obtain a GPU machine pointer to a storage
-buffer and pass it to the shader via a specialization constant.
-This technique removes the need to create descriptors, use a descriptor set slot,
-modify pipeline layouts, etc, and would relax some of the limitations listed below.
-
-This alternate implementation is under consideration.
-
 ### Vulkan 1.1
 
 Vulkan 1.1 or later is required because the GPU instrumentation code uses SPIR-V 1.3 features.
 Vulkan 1,1 is required to ensure that SPIR-V 1.3 is available.
 
-### Compute Shaders
+### Descriptor Types
 
-Compute Shaders are not supported.
+The current implementation works with image and texel descriptor types.
+A complete list appears later in this document.
 
 ### Descriptor Set Binding Limit
 
@@ -196,15 +186,26 @@ behavior.
 This implementation uses additional resources that may count against the following limits,
 and possibly others:
 
-* maxMemoryAllocationCount
-* maxBoundDescriptorSets
-* maxPerStageDescriptorStorageBuffers
-* maxPerStageResources
-* maxDescriptorSetStorageBuffers
-* maxFragmentCombinedOutputResources
+* `maxMemoryAllocationCount`
+* `maxBoundDescriptorSets`
+* `maxPerStageDescriptorStorageBuffers`
+* `maxPerStageResources`
+* `maxDescriptorSetStorageBuffers`
+* `maxFragmentCombinedOutputResources`
 
 The implementation does not take steps to avoid exceeding these limits
 and does not update the tracking performed by other validation functions.
+
+### A Note About the `VK_EXT_buffer_device_address` Extension
+
+The recently introduced `VK_EXT_buffer_device_address` extension can be used
+to implement GPU-Assisted Validation without some of the limitations described above.
+This approach would use this extension to obtain a GPU device pointer to a storage
+buffer and make it available to the shader via a specialization constant.
+This technique removes the need to create descriptors, use a descriptor set slot,
+modify pipeline layouts, etc, and would relax some of the limitations listed above.
+
+This alternate implementation is under consideration.
 
 ## GPU-Assisted Validation Internal Design
 
@@ -253,7 +254,7 @@ In general, the implementation does:
     This has the effect of binding the device memory block belonging to this command buffer so that the GPU instrumentation
     writes into this buffer for the duration of the command buffer.
     The end result is that each command buffer has its own device memory block containing GPU instrumentation error
-    records, if any occurred while running that command buffer.
+    records, if any occurred while executing that command buffer.
 
     As was the case with the pipeline layout, don't do this additional binding if the binding slot is already used in the pipeline layout.
 * After calling QueueSubmit, perform a wait on the queue to allow the queue to finish executing.
@@ -286,7 +287,6 @@ This doesn't present any particular problem, but it does raise some issues:
 * The additional API calls are not fully validated
 
   This implies that this additional code may never be checked for validation errors.
-  
   To address this, the code can "just" be written carefully so that it is "valid" Vulkan,
   which is hard to do.
 
@@ -461,7 +461,7 @@ This is another function that replaces the parameters and so can't be called fro
 * Examine the pipelines to see if any use the debug descriptor set binding index
 * For those that do:
   * Create non-instrumented shader modules from the saved original SPIR-V
-  * Modify the CreateInfo data to use these non-instumented shaders.
+  * Modify the CreateInfo data to use these non-instrumented shaders.
     * This prevents instrumented shaders from using the application's descriptor set.
 
 #### GpuPostCallRecordCreateGraphicsPipelines
@@ -724,6 +724,8 @@ matches the id from the OpLine.
 This OpString contains the text string representing the filename.
 This information is added to the validation error message.
 
+For online compilation when there is no "file", only the line number information is reported.
+
 #### OpSource Processing
 
 The SPIR-V built with source-level debug info also contains OpSource instructions that
@@ -731,7 +733,7 @@ have a string containing the source code, delimited by newlines.
 Due to possible pre-processing, the layer just cannot simply use the source file line number
 from the OpLine to index into this set of source code lines.
 
-Instead, the correct source code line is found by locating the "#line" directive in the
+Instead, the correct source code line is found by first locating the "#line" directive in the
 source that specifies a line number closest to and less than the source line number reported
 by the OpLine located in the previous step.
 The correct "#line" directive must also match its filename, if specified,
@@ -752,8 +754,8 @@ actually execute shaders.
 But they are still useful to run on real devices to check for regressions.
 
 There isn't anything else that remarkable or different about these tests.
-They do need to activate GPU-Assisted Validation via the programmatic
+They activate GPU-Assisted Validation via the programmatic
 interface as described earlier.
 
-The tests do exercise the extraction of source code information when the shader
+The tests exercise the extraction of source code information when the shader
 is built with debug info.
