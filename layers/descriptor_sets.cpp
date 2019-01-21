@@ -866,6 +866,22 @@ bool cvdescriptorset::DescriptorSet::ValidateDrawState(const std::map<uint32_t, 
                         *error = error_str.str();
                         return false;
                     }
+                } else if (descriptor_class == TexelBuffer) {
+                    auto texel_buffer = static_cast<TexelDescriptor *>(descriptors_[i].get());
+                    auto buffer_view = GetBufferViewState(device_data_, texel_buffer->GetBufferView());
+
+                    auto reqs = binding_pair.second;
+                    auto format_bits = DescriptorRequirementsBitsFromFormat(buffer_view->create_info.format);
+
+                    if (!(reqs & format_bits)) {
+                        // bad component type
+                        std::stringstream error_str;
+                        error_str << "Descriptor in binding #" << binding << " at global descriptor index " << i << " requires "
+                                  << StringDescriptorReqComponentType(reqs) << " component type, but bound descriptor format is "
+                                  << string_VkFormat(buffer_view->create_info.format) << ".";
+                        *error = error_str.str();
+                        return false;
+                    }
                 }
                 if (descriptor_class == ImageSampler || descriptor_class == PlainSampler) {
                     // Verify Sampler still valid
