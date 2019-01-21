@@ -1435,8 +1435,9 @@ bool PreCallValidateDestroyDescriptorPool(layer_data* dev_data, VkDescriptorPool
                                           VK_OBJECT* obj_struct);
 void PreCallRecordDestroyDescriptorPool(layer_data* dev_data, VkDescriptorPool descriptorPool,
                                         DESCRIPTOR_POOL_STATE* desc_pool_state, VK_OBJECT obj_struct);
-bool PreCallValidateFreeCommandBuffers(layer_data* dev_data, uint32_t commandBufferCount, const VkCommandBuffer* pCommandBuffers);
-void PreCallRecordFreeCommandBuffers(layer_data* dev_data, VkCommandPool commandPool, uint32_t commandBufferCount,
+bool PreCallValidateFreeCommandBuffers(VkDevice device, VkCommandPool commandPool, uint32_t commandBufferCount,
+                                       const VkCommandBuffer* pCommandBuffers);
+void PreCallRecordFreeCommandBuffers(VkDevice device, VkCommandPool commandPool, uint32_t commandBufferCount,
                                      const VkCommandBuffer* pCommandBuffers);
 void PostCallRecordCreateCommandPool(layer_data* dev_data, const VkCommandPoolCreateInfo* pCreateInfo, VkCommandPool* pCommandPool);
 bool PreCallValidateCreateQueryPool(layer_data* dev_data, const VkQueryPoolCreateInfo* pCreateInfo);
@@ -1497,16 +1498,14 @@ bool PreCallValidateUpdateDescriptorSets(layer_data* dev_data, uint32_t descript
 void PreCallRecordUpdateDescriptorSets(layer_data* dev_data, uint32_t descriptorWriteCount,
                                        const VkWriteDescriptorSet* pDescriptorWrites, uint32_t descriptorCopyCount,
                                        const VkCopyDescriptorSet* pDescriptorCopies);
-void PostCallRecordAllocateCommandBuffers(layer_data* dev_data, VkDevice device, const VkCommandBufferAllocateInfo* pCreateInfo,
-                                          VkCommandBuffer* pCommandBuffer);
-bool PreCallValidateBeginCommandBuffer(layer_data* dev_data, const GLOBAL_CB_NODE* cb_state, const VkCommandBuffer commandBuffer,
-                                       const VkCommandBufferBeginInfo* pBeginInfo);
-void PreCallRecordBeginCommandBuffer(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, const VkCommandBuffer commandBuffer,
-                                     const VkCommandBufferBeginInfo* pBeginInfo);
-bool PreCallValidateEndCommandBuffer(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, VkCommandBuffer commandBuffer);
-void PostCallRecordEndCommandBuffer(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, const VkResult& result);
-bool PreCallValidateResetCommandBuffer(layer_data* dev_data, VkCommandBuffer commandBuffer);
-void PostCallRecordResetCommandBuffer(layer_data* dev_data, VkCommandBuffer commandBuffer);
+void PostCallRecordAllocateCommandBuffers(VkDevice device, const VkCommandBufferAllocateInfo* pCreateInfo,
+                                          VkCommandBuffer* pCommandBuffer, VkResult result);
+bool PreCallValidateBeginCommandBuffer(const VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo* pBeginInfo);
+void PreCallRecordBeginCommandBuffer(const VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo* pBeginInfo);
+bool PreCallValidateEndCommandBuffer(VkCommandBuffer commandBuffer);
+void PostCallRecordEndCommandBuffer(VkCommandBuffer commandBuffer, VkResult result);
+bool PreCallValidateResetCommandBuffer(VkCommandBuffer commandBuffer, VkCommandBufferResetFlags flags);
+void PostCallRecordResetCommandBuffer(VkCommandBuffer commandBuffer, VkCommandBufferResetFlags flags, VkResult result);
 bool PreCallValidateCmdBindPipeline(layer_data* dev_data, GLOBAL_CB_NODE* cb_state);
 void PreCallRecordCmdBindPipeline(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, VkPipelineBindPoint pipelineBindPoint,
                                   VkPipeline pipeline);

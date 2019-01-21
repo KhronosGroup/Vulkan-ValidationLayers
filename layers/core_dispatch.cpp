@@ -821,9 +821,9 @@ VKAPI_ATTR void VKAPI_CALL FreeCommandBuffers(VkDevice device, VkCommandPool com
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     unique_lock_t lock(global_lock);
 
-    bool skip = PreCallValidateFreeCommandBuffers(dev_data, commandBufferCount, pCommandBuffers);
+    bool skip = PreCallValidateFreeCommandBuffers(device, commandPool, commandBufferCount, pCommandBuffers);
     if (skip) return;
-    PreCallRecordFreeCommandBuffers(dev_data, commandPool, commandBufferCount, pCommandBuffers);
+    PreCallRecordFreeCommandBuffers(device, commandPool, commandBufferCount, pCommandBuffers);
     lock.unlock();
 
     dev_data->dispatch_table.FreeCommandBuffers(device, commandPool, commandBufferCount, pCommandBuffers);
@@ -1255,11 +1255,9 @@ VKAPI_ATTR VkResult VKAPI_CALL AllocateCommandBuffers(VkDevice device, const VkC
                                                       VkCommandBuffer *pCommandBuffer) {
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     VkResult result = dev_data->dispatch_table.AllocateCommandBuffers(device, pCreateInfo, pCommandBuffer);
-    if (VK_SUCCESS == result) {
-        unique_lock_t lock(global_lock);
-        PostCallRecordAllocateCommandBuffers(dev_data, device, pCreateInfo, pCommandBuffer);
-        lock.unlock();
-    }
+    unique_lock_t lock(global_lock);
+    PostCallRecordAllocateCommandBuffers(device, pCreateInfo, pCommandBuffer, result);
+    lock.unlock();
     return result;
 }
 
@@ -1267,12 +1265,8 @@ VKAPI_ATTR VkResult VKAPI_CALL BeginCommandBuffer(VkCommandBuffer commandBuffer,
     bool skip = false;
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     unique_lock_t lock(global_lock);
-    // Validate command buffer level
-    GLOBAL_CB_NODE *cb_state = GetCBNode(dev_data, commandBuffer);
-    if (cb_state) {
-        skip |= PreCallValidateBeginCommandBuffer(dev_data, cb_state, commandBuffer, pBeginInfo);
-        PreCallRecordBeginCommandBuffer(dev_data, cb_state, commandBuffer, pBeginInfo);
-    }
+    skip |= PreCallValidateBeginCommandBuffer(commandBuffer, pBeginInfo);
+    PreCallRecordBeginCommandBuffer(commandBuffer, pBeginInfo);
     lock.unlock();
     if (skip) {
         return VK_ERROR_VALIDATION_FAILED_EXT;
@@ -1286,39 +1280,29 @@ VKAPI_ATTR VkResult VKAPI_CALL EndCommandBuffer(VkCommandBuffer commandBuffer) {
     bool skip = false;
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     unique_lock_t lock(global_lock);
-    GLOBAL_CB_NODE *cb_state = GetCBNode(dev_data, commandBuffer);
-    if (cb_state) {
-        skip |= PreCallValidateEndCommandBuffer(dev_data, cb_state, commandBuffer);
-    }
+    VkResult result = VK_ERROR_VALIDATION_FAILED_EXT;
+    skip |= PreCallValidateEndCommandBuffer(commandBuffer);
+    lock.unlock();
     if (!skip) {
-        lock.unlock();
-        auto result = dev_data->dispatch_table.EndCommandBuffer(commandBuffer);
+        result = dev_data->dispatch_table.EndCommandBuffer(commandBuffer);
         lock.lock();
-        if (cb_state) {
-            PostCallRecordEndCommandBuffer(dev_data, cb_state, result);
-        }
-        return result;
-    } else {
-        return VK_ERROR_VALIDATION_FAILED_EXT;
+        PostCallRecordEndCommandBuffer(commandBuffer, result);
+        lock.unlock();
     }
+    return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL ResetCommandBuffer(VkCommandBuffer commandBuffer, VkCommandBufferResetFlags flags) {
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    VkResult result = VK_ERROR_VALIDATION_FAILED_EXT;
     unique_lock_t lock(global_lock);
-    bool skip = PreCallValidateResetCommandBuffer(dev_data, commandBuffer);
+    bool skip = PreCallValidateResetCommandBuffer(commandBuffer, flags);
     lock.unlock();
 
-    if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
-
-    VkResult result = dev_data->dispatch_table.ResetCommandBuffer(commandBuffer, flags);
-
-    if (VK_SUCCESS == result) {
-        lock.lock();
-        PostCallRecordResetCommandBuffer(dev_data, commandBuffer);
-        lock.unlock();
-    }
-
+    if (!skip) result = dev_data->dispatch_table.ResetCommandBuffer(commandBuffer, flags);
+    lock.lock();
+    PostCallRecordResetCommandBuffer(commandBuffer, flags, result);
+    lock.unlock();
     return result;
 }
 

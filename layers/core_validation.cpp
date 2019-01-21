@@ -4581,22 +4581,25 @@ static void FreeCommandBufferStates(layer_data *dev_data, COMMAND_POOL_NODE *poo
     }
 }
 
-bool PreCallValidateFreeCommandBuffers(layer_data *dev_data, uint32_t commandBufferCount, const VkCommandBuffer *pCommandBuffers) {
+bool PreCallValidateFreeCommandBuffers(VkDevice device, VkCommandPool commandPool, uint32_t commandBufferCount,
+                                       const VkCommandBuffer *pCommandBuffers) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
     for (uint32_t i = 0; i < commandBufferCount; i++) {
-        auto cb_node = GetCBNode(dev_data, pCommandBuffers[i]);
+        auto cb_node = GetCBNode(device_data, pCommandBuffers[i]);
         // Delete CB information structure, and remove from commandBufferMap
         if (cb_node) {
-            skip |= CheckCommandBufferInFlight(dev_data, cb_node, "free", "VUID-vkFreeCommandBuffers-pCommandBuffers-00047");
+            skip |= CheckCommandBufferInFlight(device_data, cb_node, "free", "VUID-vkFreeCommandBuffers-pCommandBuffers-00047");
         }
     }
     return skip;
 }
 
-void PreCallRecordFreeCommandBuffers(layer_data *dev_data, VkCommandPool commandPool, uint32_t commandBufferCount,
+void PreCallRecordFreeCommandBuffers(VkDevice device, VkCommandPool commandPool, uint32_t commandBufferCount,
                                      const VkCommandBuffer *pCommandBuffers) {
-    auto pPool = GetCommandPoolNode(dev_data, commandPool);
-    FreeCommandBufferStates(dev_data, pPool, commandBufferCount, pCommandBuffers);
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    auto pPool = GetCommandPoolNode(device_data, commandPool);
+    FreeCommandBufferStates(device_data, pPool, commandBufferCount, pCommandBuffers);
 }
 
 void PostCallRecordCreateCommandPool(layer_data *dev_data, const VkCommandPoolCreateInfo *pCreateInfo,
@@ -5903,22 +5906,24 @@ void PreCallRecordUpdateDescriptorSets(layer_data *dev_data, uint32_t descriptor
                                                  pDescriptorCopies);
 }
 
-void PostCallRecordAllocateCommandBuffers(layer_data *dev_data, VkDevice device, const VkCommandBufferAllocateInfo *pCreateInfo,
-                                          VkCommandBuffer *pCommandBuffer) {
-    auto pPool = GetCommandPoolNode(dev_data, pCreateInfo->commandPool);
+void PostCallRecordAllocateCommandBuffers(VkDevice device, const VkCommandBufferAllocateInfo *pCreateInfo,
+                                          VkCommandBuffer *pCommandBuffer, VkResult result) {
+    if (VK_SUCCESS != result) return;
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    auto pPool = GetCommandPoolNode(device_data, pCreateInfo->commandPool);
     if (pPool) {
         for (uint32_t i = 0; i < pCreateInfo->commandBufferCount; i++) {
             // Add command buffer to its commandPool map
             pPool->commandBuffers.insert(pCommandBuffer[i]);
             GLOBAL_CB_NODE *pCB = new GLOBAL_CB_NODE;
             // Add command buffer to map
-            dev_data->commandBufferMap[pCommandBuffer[i]] = pCB;
-            ResetCommandBufferState(dev_data, pCommandBuffer[i]);
+            device_data->commandBufferMap[pCommandBuffer[i]] = pCB;
+            ResetCommandBufferState(device_data, pCommandBuffer[i]);
             pCB->createInfo = *pCreateInfo;
             pCB->device = device;
         }
-        if (GetEnables(dev_data)->gpu_validation) {
-            GpuPostCallRecordAllocateCommandBuffers(dev_data, pCreateInfo, pCommandBuffer);
+        if (GetEnables(device_data)->gpu_validation) {
+            GpuPostCallRecordAllocateCommandBuffers(device_data, pCreateInfo, pCommandBuffer);
         }
     }
 }
@@ -5937,12 +5942,13 @@ static void AddFramebufferBinding(layer_data *dev_data, GLOBAL_CB_NODE *cb_state
     }
 }
 
-bool PreCallValidateBeginCommandBuffer(layer_data *dev_data, const GLOBAL_CB_NODE *cb_state, const VkCommandBuffer commandBuffer,
-                                       const VkCommandBufferBeginInfo *pBeginInfo) {
-    assert(cb_state);
+bool PreCallValidateBeginCommandBuffer(const VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo *pBeginInfo) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    if (!cb_state) return false;
     bool skip = false;
     if (cb_state->in_use.load()) {
-        skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+        skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                         HandleToUint64(commandBuffer), "VUID-vkBeginCommandBuffer-commandBuffer-00049",
                         "Calling vkBeginCommandBuffer() on active command buffer %" PRIx64
                         " before it has completed. You must check command buffer fence before this call.",
@@ -5952,7 +5958,7 @@ bool PreCallValidateBeginCommandBuffer(layer_data *dev_data, const GLOBAL_CB_NOD
         // Secondary Command Buffer
         const VkCommandBufferInheritanceInfo *pInfo = pBeginInfo->pInheritanceInfo;
         if (!pInfo) {
-            skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+            skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                             HandleToUint64(commandBuffer), "VUID-vkBeginCommandBuffer-commandBuffer-00051",
                             "vkBeginCommandBuffer(): Secondary Command Buffer (0x%" PRIx64 ") must have inheritance info.",
                             HandleToUint64(commandBuffer));
@@ -5960,21 +5966,21 @@ bool PreCallValidateBeginCommandBuffer(layer_data *dev_data, const GLOBAL_CB_NOD
             if (pBeginInfo->flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT) {
                 assert(pInfo->renderPass);
                 string errorString = "";
-                auto framebuffer = GetFramebufferState(dev_data, pInfo->framebuffer);
+                auto framebuffer = GetFramebufferState(device_data, pInfo->framebuffer);
                 if (framebuffer) {
                     if (framebuffer->createInfo.renderPass != pInfo->renderPass) {
                         // renderPass that framebuffer was created with must be compatible with local renderPass
                         skip |=
-                            ValidateRenderPassCompatibility(dev_data, "framebuffer", framebuffer->rp_state.get(), "command buffer",
-                                                            GetRenderPassState(dev_data, pInfo->renderPass),
+                            ValidateRenderPassCompatibility(device_data, "framebuffer", framebuffer->rp_state.get(),
+                                                            "command buffer", GetRenderPassState(device_data, pInfo->renderPass),
                                                             "vkBeginCommandBuffer()", "VUID-VkCommandBufferBeginInfo-flags-00055");
                     }
                 }
             }
-            if ((pInfo->occlusionQueryEnable == VK_FALSE || dev_data->enabled_features.core.occlusionQueryPrecise == VK_FALSE) &&
+            if ((pInfo->occlusionQueryEnable == VK_FALSE || device_data->enabled_features.core.occlusionQueryPrecise == VK_FALSE) &&
                 (pInfo->queryFlags & VK_QUERY_CONTROL_PRECISE_BIT)) {
                 skip |=
-                    log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                    log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                             HandleToUint64(commandBuffer), "VUID-vkBeginCommandBuffer-commandBuffer-00052",
                             "vkBeginCommandBuffer(): Secondary Command Buffer (0x%" PRIx64
                             ") must not have VK_QUERY_CONTROL_PRECISE_BIT if occulusionQuery is disabled or the device "
@@ -5983,10 +5989,10 @@ bool PreCallValidateBeginCommandBuffer(layer_data *dev_data, const GLOBAL_CB_NOD
             }
         }
         if (pInfo && pInfo->renderPass != VK_NULL_HANDLE) {
-            auto renderPass = GetRenderPassState(dev_data, pInfo->renderPass);
+            auto renderPass = GetRenderPassState(device_data, pInfo->renderPass);
             if (renderPass) {
                 if (pInfo->subpass >= renderPass->createInfo.subpassCount) {
-                    skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                    skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT,
                                     VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT, HandleToUint64(commandBuffer),
                                     "VUID-VkCommandBufferBeginInfo-flags-00054",
                                     "vkBeginCommandBuffer(): Secondary Command Buffers (0x%" PRIx64
@@ -5997,16 +6003,16 @@ bool PreCallValidateBeginCommandBuffer(layer_data *dev_data, const GLOBAL_CB_NOD
         }
     }
     if (CB_RECORDING == cb_state->state) {
-        skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+        skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                         HandleToUint64(commandBuffer), "VUID-vkBeginCommandBuffer-commandBuffer-00049",
                         "vkBeginCommandBuffer(): Cannot call Begin on command buffer (0x%" PRIx64
                         ") in the RECORDING state. Must first call vkEndCommandBuffer().",
                         HandleToUint64(commandBuffer));
     } else if (CB_RECORDED == cb_state->state || CB_INVALID_COMPLETE == cb_state->state) {
         VkCommandPool cmdPool = cb_state->createInfo.commandPool;
-        auto pPool = GetCommandPoolNode(dev_data, cmdPool);
+        auto pPool = GetCommandPoolNode(device_data, cmdPool);
         if (!(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT & pPool->createFlags)) {
-            skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+            skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                             HandleToUint64(commandBuffer), "VUID-vkBeginCommandBuffer-commandBuffer-00050",
                             "Call to vkBeginCommandBuffer() on command buffer (0x%" PRIx64
                             ") attempts to implicitly reset cmdBuffer created from command pool (0x%" PRIx64
@@ -6017,27 +6023,28 @@ bool PreCallValidateBeginCommandBuffer(layer_data *dev_data, const GLOBAL_CB_NOD
     return skip;
 }
 
-void PreCallRecordBeginCommandBuffer(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, const VkCommandBuffer commandBuffer,
-                                     const VkCommandBufferBeginInfo *pBeginInfo) {
-    assert(cb_state);
+void PreCallRecordBeginCommandBuffer(const VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo *pBeginInfo) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    if (!cb_state) return;
     // This implicitly resets the Cmd Buffer so make sure any fence is done and then clear memory references
-    ClearCmdBufAndMemReferences(dev_data, cb_state);
+    ClearCmdBufAndMemReferences(device_data, cb_state);
     if (cb_state->createInfo.level != VK_COMMAND_BUFFER_LEVEL_PRIMARY) {
         // Secondary Command Buffer
         const VkCommandBufferInheritanceInfo *pInfo = pBeginInfo->pInheritanceInfo;
         if (pInfo) {
             if (pBeginInfo->flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT) {
                 assert(pInfo->renderPass);
-                auto framebuffer = GetFramebufferState(dev_data, pInfo->framebuffer);
+                auto framebuffer = GetFramebufferState(device_data, pInfo->framebuffer);
                 if (framebuffer) {
                     // Connect this framebuffer and its children to this cmdBuffer
-                    AddFramebufferBinding(dev_data, cb_state, framebuffer);
+                    AddFramebufferBinding(device_data, cb_state, framebuffer);
                 }
             }
         }
     }
     if (CB_RECORDED == cb_state->state || CB_INVALID_COMPLETE == cb_state->state) {
-        ResetCommandBufferState(dev_data, commandBuffer);
+        ResetCommandBufferState(device_data, commandBuffer);
     }
     // Set updated state here in case implicit reset occurs above
     cb_state->state = CB_RECORDING;
@@ -6048,7 +6055,7 @@ void PreCallRecordBeginCommandBuffer(layer_data *dev_data, GLOBAL_CB_NODE *cb_st
         // If we are a secondary command-buffer and inheriting.  Update the items we should inherit.
         if ((cb_state->createInfo.level != VK_COMMAND_BUFFER_LEVEL_PRIMARY) &&
             (cb_state->beginInfo.flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT)) {
-            cb_state->activeRenderPass = GetRenderPassState(dev_data, cb_state->beginInfo.pInheritanceInfo->renderPass);
+            cb_state->activeRenderPass = GetRenderPassState(device_data, cb_state->beginInfo.pInheritanceInfo->renderPass);
             cb_state->activeSubpass = cb_state->beginInfo.pInheritanceInfo->subpass;
             cb_state->activeFramebuffer = cb_state->beginInfo.pInheritanceInfo->framebuffer;
             cb_state->framebuffers.insert(cb_state->beginInfo.pInheritanceInfo->framebuffer);
@@ -6056,17 +6063,20 @@ void PreCallRecordBeginCommandBuffer(layer_data *dev_data, GLOBAL_CB_NODE *cb_st
     }
 }
 
-bool PreCallValidateEndCommandBuffer(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, VkCommandBuffer commandBuffer) {
+bool PreCallValidateEndCommandBuffer(VkCommandBuffer commandBuffer) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    if (!cb_state) return false;
     bool skip = false;
     if ((VK_COMMAND_BUFFER_LEVEL_PRIMARY == cb_state->createInfo.level) ||
         !(cb_state->beginInfo.flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT)) {
         // This needs spec clarification to update valid usage, see comments in PR:
         // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/165
-        skip |= InsideRenderPass(dev_data, cb_state, "vkEndCommandBuffer()", "VUID-vkEndCommandBuffer-commandBuffer-00060");
+        skip |= InsideRenderPass(device_data, cb_state, "vkEndCommandBuffer()", "VUID-vkEndCommandBuffer-commandBuffer-00060");
     }
-    skip |= ValidateCmd(dev_data, cb_state, CMD_ENDCOMMANDBUFFER, "vkEndCommandBuffer()");
+    skip |= ValidateCmd(device_data, cb_state, CMD_ENDCOMMANDBUFFER, "vkEndCommandBuffer()");
     for (auto query : cb_state->activeQueries) {
-        skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+        skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                         HandleToUint64(commandBuffer), "VUID-vkEndCommandBuffer-commandBuffer-00061",
                         "Ending command buffer with in progress query: queryPool 0x%" PRIx64 ", index %d.",
                         HandleToUint64(query.pool), query.index);
@@ -6074,7 +6084,10 @@ bool PreCallValidateEndCommandBuffer(layer_data *dev_data, GLOBAL_CB_NODE *cb_st
     return skip;
 }
 
-void PostCallRecordEndCommandBuffer(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, const VkResult &result) {
+void PostCallRecordEndCommandBuffer(VkCommandBuffer commandBuffer, VkResult result) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    if (!cb_state) return;
     // Cached validation is specific to a specific recording of a specific command buffer.
     for (auto descriptor_set : cb_state->validated_descriptor_sets) {
         descriptor_set->ClearCachedValidation(cb_state);
@@ -6085,26 +6098,31 @@ void PostCallRecordEndCommandBuffer(layer_data *dev_data, GLOBAL_CB_NODE *cb_sta
     }
 }
 
-bool PreCallValidateResetCommandBuffer(layer_data *dev_data, VkCommandBuffer commandBuffer) {
+bool PreCallValidateResetCommandBuffer(VkCommandBuffer commandBuffer, VkCommandBufferResetFlags flags) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    GLOBAL_CB_NODE *pCB = GetCBNode(dev_data, commandBuffer);
+    GLOBAL_CB_NODE *pCB = GetCBNode(device_data, commandBuffer);
+    if (!pCB) return false;
     VkCommandPool cmdPool = pCB->createInfo.commandPool;
-    auto pPool = GetCommandPoolNode(dev_data, cmdPool);
+    auto pPool = GetCommandPoolNode(device_data, cmdPool);
 
     if (!(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT & pPool->createFlags)) {
-        skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+        skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                         HandleToUint64(commandBuffer), "VUID-vkResetCommandBuffer-commandBuffer-00046",
                         "Attempt to reset command buffer (0x%" PRIx64 ") created from command pool (0x%" PRIx64
                         ") that does NOT have the VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT bit set.",
                         HandleToUint64(commandBuffer), HandleToUint64(cmdPool));
     }
-    skip |= CheckCommandBufferInFlight(dev_data, pCB, "reset", "VUID-vkResetCommandBuffer-commandBuffer-00045");
+    skip |= CheckCommandBufferInFlight(device_data, pCB, "reset", "VUID-vkResetCommandBuffer-commandBuffer-00045");
 
     return skip;
 }
 
-void PostCallRecordResetCommandBuffer(layer_data *dev_data, VkCommandBuffer commandBuffer) {
-    ResetCommandBufferState(dev_data, commandBuffer);
+void PostCallRecordResetCommandBuffer(VkCommandBuffer commandBuffer, VkCommandBufferResetFlags flags, VkResult result) {
+    if (VK_SUCCESS == result) {
+        layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+        ResetCommandBufferState(device_data, commandBuffer);
+    }
 }
 
 bool PreCallValidateCmdBindPipeline(layer_data *dev_data, GLOBAL_CB_NODE *cb_state) {
