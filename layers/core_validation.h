@@ -1378,10 +1378,12 @@ bool PreCallValidateCmdDebugMarkerBeginEXT(layer_data* dev_data, GLOBAL_CB_NODE*
 void PreCallRecordDestroyDevice(layer_data* dev_data, VkDevice device);
 bool PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits, VkFence fence);
 void PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits, VkFence fence, VkResult result);
-bool PreCallValidateAllocateMemory(layer_data* dev_data, const VkMemoryAllocateInfo* alloc_info);
-void PostCallRecordAllocateMemory(layer_data* dev_data, const VkMemoryAllocateInfo* pAllocateInfo, VkDeviceMemory* pMemory);
-bool PreCallValidateFreeMemory(layer_data* dev_data, VkDeviceMemory mem, DEVICE_MEM_INFO** mem_info, VK_OBJECT* obj_struct);
-void PreCallRecordFreeMemory(layer_data* dev_data, VkDeviceMemory mem, DEVICE_MEM_INFO* mem_info, VK_OBJECT obj_struct);
+bool PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAllocateInfo* pAllocateInfo,
+                                   const VkAllocationCallbacks* pAllocator, VkDeviceMemory* pMemory);
+void PostCallRecordAllocateMemory(VkDevice device, const VkMemoryAllocateInfo* pAllocateInfo,
+                                  const VkAllocationCallbacks* pAllocator, VkDeviceMemory* pMemory, VkResult result);
+bool PreCallValidateFreeMemory(VkDevice device, VkDeviceMemory mem, const VkAllocationCallbacks* pAllocator);
+void PreCallRecordFreeMemory(VkDevice device, VkDeviceMemory mem, const VkAllocationCallbacks* pAllocator);
 bool PreCallValidateWaitForFences(layer_data* dev_data, uint32_t fence_count, const VkFence* fences);
 void PostCallRecordWaitForFences(layer_data* dev_data, uint32_t fence_count, const VkFence* fences, VkBool32 wait_all);
 bool PreCallValidateGetFenceStatus(layer_data* dev_data, VkFence fence);
@@ -1405,14 +1407,15 @@ bool PreCallValidateGetQueryPoolResults(layer_data* dev_data, VkQueryPool query_
                                         unordered_map<QueryObject, std::vector<VkCommandBuffer>>* queries_in_flight);
 void PostCallRecordGetQueryPoolResults(layer_data* dev_data, VkQueryPool query_pool, uint32_t first_query, uint32_t query_count,
                                        unordered_map<QueryObject, std::vector<VkCommandBuffer>>* queries_in_flight);
-bool PreCallValidateBindBufferMemory2(layer_data* dev_data, std::vector<BUFFER_STATE*>* buffer_state, uint32_t bindInfoCount,
-                                      const VkBindBufferMemoryInfoKHR* pBindInfos);
-void PostCallRecordBindBufferMemory2(layer_data* dev_data, const std::vector<BUFFER_STATE*>& buffer_state, uint32_t bindInfoCount,
-                                     const VkBindBufferMemoryInfoKHR* pBindInfos);
-bool PreCallValidateBindBufferMemory(layer_data* dev_data, VkBuffer buffer, BUFFER_STATE* buffer_state, VkDeviceMemory mem,
-                                     VkDeviceSize memoryOffset, const char* api_name);
-void PostCallRecordBindBufferMemory(layer_data* dev_data, VkBuffer buffer, BUFFER_STATE* buffer_state, VkDeviceMemory mem,
-                                    VkDeviceSize memoryOffset, const char* api_name);
+bool PreCallValidateBindBufferMemory2KHR(VkDevice device, uint32_t bindInfoCount, const VkBindBufferMemoryInfoKHR* pBindInfos);
+void PostCallRecordBindBufferMemory2KHR(VkDevice device, uint32_t bindInfoCount, const VkBindBufferMemoryInfoKHR* pBindInfos,
+                                        VkResult result);
+bool PreCallValidateBindBufferMemory2(VkDevice device, uint32_t bindInfoCount, const VkBindBufferMemoryInfoKHR* pBindInfos);
+void PostCallRecordBindBufferMemory2(VkDevice device, uint32_t bindInfoCount, const VkBindBufferMemoryInfoKHR* pBindInfos,
+                                     VkResult result);
+bool PreCallValidateBindBufferMemory(VkDevice device, VkBuffer buffer, VkDeviceMemory mem, VkDeviceSize memoryOffset);
+void PostCallRecordBindBufferMemory(VkDevice device, VkBuffer buffer, VkDeviceMemory mem, VkDeviceSize memoryOffset,
+                                    VkResult result);
 void PostCallRecordGetBufferMemoryRequirements(layer_data* dev_data, VkBuffer buffer, VkMemoryRequirements* pMemoryRequirements);
 bool PreCallValidateGetImageMemoryRequirements2(layer_data* dev_data, const VkImageMemoryRequirementsInfo2* pInfo);
 void PostCallRecordGetImageMemoryRequirements(layer_data* dev_data, VkImage image, VkMemoryRequirements* pMemoryRequirements);
@@ -1664,14 +1667,14 @@ bool PreCallValidateInvalidateMappedMemoryRanges(layer_data* dev_data, uint32_t 
                                                  const VkMappedMemoryRange* mem_ranges);
 void PostCallRecordInvalidateMappedMemoryRanges(layer_data* dev_data, uint32_t mem_range_count,
                                                 const VkMappedMemoryRange* mem_ranges);
-bool PreCallValidateBindImageMemory(layer_data* dev_data, VkImage image, IMAGE_STATE* image_state, VkDeviceMemory mem,
-                                    VkDeviceSize memoryOffset, const char* api_name);
-void PostCallRecordBindImageMemory(layer_data* dev_data, VkImage image, IMAGE_STATE* image_state, VkDeviceMemory mem,
-                                   VkDeviceSize memoryOffset, const char* api_name);
-bool PreCallValidateBindImageMemory2(layer_data* dev_data, std::vector<IMAGE_STATE*>* image_state, uint32_t bindInfoCount,
-                                     const VkBindImageMemoryInfoKHR* pBindInfos);
-void PostCallRecordBindImageMemory2(layer_data* dev_data, const std::vector<IMAGE_STATE*>& image_state, uint32_t bindInfoCount,
-                                    const VkBindImageMemoryInfoKHR* pBindInfos);
+bool PreCallValidateBindImageMemory(VkDevice device, VkImage image, VkDeviceMemory mem, VkDeviceSize memoryOffset);
+void PostCallRecordBindImageMemory(VkDevice device, VkImage image, VkDeviceMemory mem, VkDeviceSize memoryOffset, VkResult result);
+bool PreCallValidateBindImageMemory2(VkDevice device, uint32_t bindInfoCount, const VkBindImageMemoryInfoKHR* pBindInfos);
+void PostCallRecordBindImageMemory2(VkDevice device, uint32_t bindInfoCount, const VkBindImageMemoryInfoKHR* pBindInfos,
+                                    VkResult result);
+bool PreCallValidateBindImageMemory2KHR(VkDevice device, uint32_t bindInfoCount, const VkBindImageMemoryInfoKHR* pBindInfos);
+void PostCallRecordBindImageMemory2KHR(VkDevice device, uint32_t bindInfoCount, const VkBindImageMemoryInfoKHR* pBindInfos,
+                                       VkResult result);
 bool PreCallValidateSetEvent(layer_data* dev_data, VkEvent event);
 void PreCallRecordSetEvent(layer_data* dev_data, VkEvent event);
 bool PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo* pBindInfo, VkFence fence);
