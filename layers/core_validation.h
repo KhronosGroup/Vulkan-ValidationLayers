@@ -1658,15 +1658,16 @@ bool PreCallValidateCmdExecuteCommands(layer_data* dev_data, GLOBAL_CB_NODE* cb_
                                        uint32_t commandBuffersCount, const VkCommandBuffer* pCommandBuffers);
 void PreCallRecordCmdExecuteCommands(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, uint32_t commandBuffersCount,
                                      const VkCommandBuffer* pCommandBuffers);
-bool PreCallValidateMapMemory(layer_data* dev_data, VkDevice device, VkDeviceMemory mem, VkDeviceSize offset, VkDeviceSize size);
-void PostCallRecordMapMemory(layer_data* dev_data, VkDeviceMemory mem, VkDeviceSize offset, VkDeviceSize size, void** ppData);
-bool PreCallValidateUnmapMemory(const layer_data* dev_data, DEVICE_MEM_INFO* mem_info, const VkDeviceMemory mem);
-void PreCallRecordUnmapMemory(DEVICE_MEM_INFO* mem_info);
-bool PreCallValidateFlushMappedMemoryRanges(layer_data* dev_data, uint32_t mem_range_count, const VkMappedMemoryRange* mem_ranges);
-bool PreCallValidateInvalidateMappedMemoryRanges(layer_data* dev_data, uint32_t mem_range_count,
-                                                 const VkMappedMemoryRange* mem_ranges);
-void PostCallRecordInvalidateMappedMemoryRanges(layer_data* dev_data, uint32_t mem_range_count,
-                                                const VkMappedMemoryRange* mem_ranges);
+bool PreCallValidateMapMemory(VkDevice device, VkDeviceMemory mem, VkDeviceSize offset, VkDeviceSize size, VkFlags flags,
+                              void** ppData);
+void PostCallRecordMapMemory(VkDevice device, VkDeviceMemory mem, VkDeviceSize offset, VkDeviceSize size, VkFlags flags,
+                             void** ppData, VkResult result);
+bool PreCallValidateUnmapMemory(VkDevice device, VkDeviceMemory mem);
+void PreCallRecordUnmapMemory(VkDevice device, VkDeviceMemory mem);
+bool PreCallValidateFlushMappedMemoryRanges(VkDevice device, uint32_t memRangeCount, const VkMappedMemoryRange* pMemRanges);
+bool PreCallValidateInvalidateMappedMemoryRanges(VkDevice device, uint32_t memRangeCount, const VkMappedMemoryRange* pMemRanges);
+void PostCallRecordInvalidateMappedMemoryRanges(VkDevice device, uint32_t memRangeCount, const VkMappedMemoryRange* pMemRanges,
+                                                VkResult result);
 bool PreCallValidateBindImageMemory(VkDevice device, VkImage image, VkDeviceMemory mem, VkDeviceSize memoryOffset);
 void PostCallRecordBindImageMemory(VkDevice device, VkImage image, VkDeviceMemory mem, VkDeviceSize memoryOffset, VkResult result);
 bool PreCallValidateBindImageMemory2(VkDevice device, uint32_t bindInfoCount, const VkBindImageMemoryInfoKHR* pBindInfos);

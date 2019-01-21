@@ -10041,42 +10041,51 @@ void PreCallRecordCmdExecuteCommands(layer_data *dev_data, GLOBAL_CB_NODE *cb_st
     }
 }
 
-bool PreCallValidateMapMemory(layer_data *dev_data, VkDevice device, VkDeviceMemory mem, VkDeviceSize offset, VkDeviceSize size) {
+bool PreCallValidateMapMemory(VkDevice device, VkDeviceMemory mem, VkDeviceSize offset, VkDeviceSize size, VkFlags flags,
+                              void **ppData) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
-    DEVICE_MEM_INFO *mem_info = GetMemObjInfo(dev_data, mem);
+    DEVICE_MEM_INFO *mem_info = GetMemObjInfo(device_data, mem);
     if (mem_info) {
         auto end_offset = (VK_WHOLE_SIZE == size) ? mem_info->alloc_info.allocationSize - 1 : offset + size - 1;
-        skip |= ValidateMapImageLayouts(dev_data, device, mem_info, offset, end_offset);
-        if ((dev_data->phys_dev_mem_props.memoryTypes[mem_info->alloc_info.memoryTypeIndex].propertyFlags &
+        skip |= ValidateMapImageLayouts(device_data, device, mem_info, offset, end_offset);
+        if ((device_data->phys_dev_mem_props.memoryTypes[mem_info->alloc_info.memoryTypeIndex].propertyFlags &
              VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) == 0) {
-            skip = log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_MEMORY_EXT,
+            skip = log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_MEMORY_EXT,
                            HandleToUint64(mem), "VUID-vkMapMemory-memory-00682",
                            "Mapping Memory without VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT set: mem obj 0x%" PRIx64 ".",
                            HandleToUint64(mem));
         }
     }
-    skip |= ValidateMapMemRange(dev_data, mem, offset, size);
+    skip |= ValidateMapMemRange(device_data, mem, offset, size);
     return skip;
 }
 
-void PostCallRecordMapMemory(layer_data *dev_data, VkDeviceMemory mem, VkDeviceSize offset, VkDeviceSize size, void **ppData) {
+void PostCallRecordMapMemory(VkDevice device, VkDeviceMemory mem, VkDeviceSize offset, VkDeviceSize size, VkFlags flags,
+                             void **ppData, VkResult result) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (VK_SUCCESS != result) return;
     // TODO : What's the point of this range? See comment on creating new "bound_range" above, which may replace this
-    StoreMemRanges(dev_data, mem, offset, size);
-    InitializeAndTrackMemory(dev_data, mem, offset, size, ppData);
+    StoreMemRanges(device_data, mem, offset, size);
+    InitializeAndTrackMemory(device_data, mem, offset, size, ppData);
 }
 
-bool PreCallValidateUnmapMemory(const layer_data *dev_data, DEVICE_MEM_INFO *mem_info, const VkDeviceMemory mem) {
+bool PreCallValidateUnmapMemory(VkDevice device, VkDeviceMemory mem) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
-    if (!mem_info->mem_range.size) {
+    auto mem_info = GetMemObjInfo(device_data, mem);
+    if (mem_info && !mem_info->mem_range.size) {
         // Valid Usage: memory must currently be mapped
-        skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_MEMORY_EXT,
+        skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_MEMORY_EXT,
                         HandleToUint64(mem), "VUID-vkUnmapMemory-memory-00689",
                         "Unmapping Memory without memory being mapped: mem obj 0x%" PRIx64 ".", HandleToUint64(mem));
     }
     return skip;
 }
 
-void PreCallRecordUnmapMemory(DEVICE_MEM_INFO *mem_info) {
+void PreCallRecordUnmapMemory(VkDevice device, VkDeviceMemory mem) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    auto mem_info = GetMemObjInfo(device_data, mem);
     mem_info->mem_range.size = 0;
     if (mem_info->shadow_copy) {
         free(mem_info->shadow_copy_base);
@@ -10193,29 +10202,30 @@ static bool ValidateMappedMemoryRangeDeviceLimits(layer_data *dev_data, const ch
     return skip;
 }
 
-bool PreCallValidateFlushMappedMemoryRanges(layer_data *dev_data, uint32_t mem_range_count, const VkMappedMemoryRange *mem_ranges) {
+bool PreCallValidateFlushMappedMemoryRanges(VkDevice device, uint32_t memRangeCount, const VkMappedMemoryRange *pMemRanges) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
-    lock_guard_t lock(global_lock);
-    skip |= ValidateMappedMemoryRangeDeviceLimits(dev_data, "vkFlushMappedMemoryRanges", mem_range_count, mem_ranges);
-    skip |= ValidateAndCopyNoncoherentMemoryToDriver(dev_data, mem_range_count, mem_ranges);
-    skip |= ValidateMemoryIsMapped(dev_data, "vkFlushMappedMemoryRanges", mem_range_count, mem_ranges);
+    skip |= ValidateMappedMemoryRangeDeviceLimits(device_data, "vkFlushMappedMemoryRanges", memRangeCount, pMemRanges);
+    skip |= ValidateAndCopyNoncoherentMemoryToDriver(device_data, memRangeCount, pMemRanges);
+    skip |= ValidateMemoryIsMapped(device_data, "vkFlushMappedMemoryRanges", memRangeCount, pMemRanges);
     return skip;
 }
 
-bool PreCallValidateInvalidateMappedMemoryRanges(layer_data *dev_data, uint32_t mem_range_count,
-                                                 const VkMappedMemoryRange *mem_ranges) {
+bool PreCallValidateInvalidateMappedMemoryRanges(VkDevice device, uint32_t memRangeCount, const VkMappedMemoryRange *pMemRanges) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
-    lock_guard_t lock(global_lock);
-    skip |= ValidateMappedMemoryRangeDeviceLimits(dev_data, "vkInvalidateMappedMemoryRanges", mem_range_count, mem_ranges);
-    skip |= ValidateMemoryIsMapped(dev_data, "vkInvalidateMappedMemoryRanges", mem_range_count, mem_ranges);
+    skip |= ValidateMappedMemoryRangeDeviceLimits(device_data, "vkInvalidateMappedMemoryRanges", memRangeCount, pMemRanges);
+    skip |= ValidateMemoryIsMapped(device_data, "vkInvalidateMappedMemoryRanges", memRangeCount, pMemRanges);
     return skip;
 }
 
-void PostCallRecordInvalidateMappedMemoryRanges(layer_data *dev_data, uint32_t mem_range_count,
-                                                const VkMappedMemoryRange *mem_ranges) {
-    lock_guard_t lock(global_lock);
-    // Update our shadow copy with modified driver data
-    CopyNoncoherentMemoryFromDriver(dev_data, mem_range_count, mem_ranges);
+void PostCallRecordInvalidateMappedMemoryRanges(VkDevice device, uint32_t memRangeCount, const VkMappedMemoryRange *pMemRanges,
+                                                VkResult result) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (VK_SUCCESS == result) {
+        // Update our shadow copy with modified driver data
+        CopyNoncoherentMemoryFromDriver(device_data, memRangeCount, pMemRanges);
+    }
 }
 
 bool ValidateBindImageMemory(layer_data *device_data, VkImage image, VkDeviceMemory mem, VkDeviceSize memoryOffset,
