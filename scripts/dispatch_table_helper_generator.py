@@ -181,14 +181,15 @@ class DispatchTableHelperOutputGenerator(OutputGenerator):
                 # Build up stub function
                 return_type = ''
                 decl = self.makeCDecls(cmdinfo.elem)[1]
-                if 'typedef VkResult' in decl:
+                if decl.startswith('typedef VkResult'):
                     return_type = 'return VK_SUCCESS;'
-                decl = decl.split('*PFN_vk')[1]
+                elif decl.startswith('typedef VkDeviceAddress'):
+                    return_type = 'return 0;'
+                pre_decl, decl = decl.split('*PFN_vk')
+                pre_decl = pre_decl.replace('typedef ', '')
+                pre_decl = pre_decl.split(' (')[0]
                 decl = decl.replace(')(', '(')
-                if return_type == '':
-                    decl = 'static VKAPI_ATTR void VKAPI_CALL Stub' + decl
-                else:
-                    decl = 'static VKAPI_ATTR VkResult VKAPI_CALL Stub' + decl
+                decl = 'static VKAPI_ATTR ' + pre_decl + ' VKAPI_CALL Stub' + decl
                 func_body = ' { ' + return_type + ' };'
                 decl = decl.replace (';', func_body)
                 if self.featureExtraProtect is not None:
