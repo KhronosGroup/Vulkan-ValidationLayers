@@ -1190,6 +1190,8 @@ struct GpuValidationState {
     std::unordered_map<uint32_t, ShaderTracker> shader_map;
     std::unique_ptr<GpuDeviceMemoryManager> memory_manager;
     std::unique_ptr<GpuDescriptorSetManager> desc_set_manager;
+    VkCommandPool barrier_command_pool;
+    VkCommandBuffer barrier_command_buffer;
 };
 
 // Fwd declarations of layer_data and helpers to look-up/validate state from layer_data maps
