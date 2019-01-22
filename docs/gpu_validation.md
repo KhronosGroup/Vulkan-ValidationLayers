@@ -448,7 +448,8 @@ This is another function that replaces the parameters and so can't be called fro
 
 #### GpuPostCallQueueSubmit
 
-* The core validation function calls QueueWaitIdle and then this routine at the end of QueueSubmit processing.
+* Submit a command buffer containing a memory barrier to make GPU writes available to the host domain.
+* Call QueueWaitIdle.
 * For each primary and secondary command buffer in the submission:
   * Call a helper function to process the instrumentation debug buffer (described later)
 

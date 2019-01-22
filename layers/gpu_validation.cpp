@@ -361,6 +361,15 @@ void GpuPostCallRecordCreateDevice(layer_data *dev_data) {
 void GpuPreCallRecordDestroyDevice(layer_data *dev_data) {
     auto gpu_state = GetGpuValidationState(dev_data);
 
+    if (gpu_state->barrier_command_buffer) {
+        GetDispatchTable(dev_data)->FreeCommandBuffers(GetDevice(dev_data), gpu_state->barrier_command_pool, 1,
+                                                       &gpu_state->barrier_command_buffer);
+        gpu_state->barrier_command_buffer = VK_NULL_HANDLE;
+    }
+    if (gpu_state->barrier_command_pool) {
+        GetDispatchTable(dev_data)->DestroyCommandPool(GetDevice(dev_data), gpu_state->barrier_command_pool, NULL);
+        gpu_state->barrier_command_pool = VK_NULL_HANDLE;
+    }
     if (gpu_state->debug_desc_layout) {
         GetDispatchTable(dev_data)->DestroyDescriptorSetLayout(GetDevice(dev_data), gpu_state->debug_desc_layout, NULL);
         gpu_state->debug_desc_layout = VK_NULL_HANDLE;
@@ -1110,13 +1119,97 @@ static void ProcessInstrumentationBuffer(const layer_data *dev_data, VkQueue que
     }
 }
 
-// Wait for the queue to complete execution.  Check the debug buffers for all the
-// command buffers that were submitted.
-void GpuPostCallQueueSubmit(const layer_data *dev_data, VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits,
+// Submit a memory barrier on graphics queues.
+// Lazy-create and record the needed command buffer.
+static void SubmitBarrier(layer_data *dev_data, VkQueue queue) {
+    auto gpu_state = GetGpuValidationState(dev_data);
+    const auto *dispatch_table = GetDispatchTable(dev_data);
+    uint32_t queue_family_index = 0;
+
+    auto it = dev_data->queueMap.find(queue);
+    if (it != dev_data->queueMap.end()) {
+        queue_family_index = it->second.queueFamilyIndex;
+    }
+
+    // Pay attention only to queues that support graphics.
+    // This ensures that the command buffer pool is created so that it can be used on a graphics queue.
+    VkQueueFlags queue_flags = dev_data->phys_dev_properties.queue_family_properties[queue_family_index].queueFlags;
+    if (!(queue_flags & VK_QUEUE_GRAPHICS_BIT)) {
+        return;
+    }
+
+    // Lazy-allocate and record the command buffer.
+    if (gpu_state->barrier_command_buffer == VK_NULL_HANDLE) {
+        VkResult result;
+        VkCommandPoolCreateInfo pool_create_info = {};
+        pool_create_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+        pool_create_info.queueFamilyIndex = queue_family_index;
+        result =
+            dispatch_table->CreateCommandPool(GetDevice(dev_data), &pool_create_info, nullptr, &gpu_state->barrier_command_pool);
+        if (result != VK_SUCCESS) {
+            ReportSetupProblem(dev_data, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(GetDevice(dev_data)),
+                               "Unable to create command pool for barrier CB.");
+            gpu_state->barrier_command_pool = VK_NULL_HANDLE;
+            return;
+        }
+
+        VkCommandBufferAllocateInfo command_buffer_alloc_info = {};
+        command_buffer_alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+        command_buffer_alloc_info.commandPool = gpu_state->barrier_command_pool;
+        command_buffer_alloc_info.commandBufferCount = 1;
+        command_buffer_alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+        result = dispatch_table->AllocateCommandBuffers(GetDevice(dev_data), &command_buffer_alloc_info,
+                                                        &gpu_state->barrier_command_buffer);
+        if (result != VK_SUCCESS) {
+            ReportSetupProblem(dev_data, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(GetDevice(dev_data)),
+                               "Unable to create barrier command buffer.");
+            dispatch_table->DestroyCommandPool(GetDevice(dev_data), gpu_state->barrier_command_pool, nullptr);
+            gpu_state->barrier_command_pool = VK_NULL_HANDLE;
+            gpu_state->barrier_command_buffer = VK_NULL_HANDLE;
+            return;
+        }
+
+        // Hook up command buffer dispatch
+        *((const void **)gpu_state->barrier_command_buffer) = *(void **)(GetDevice(dev_data));
+
+        // Record a global memory barrier to force availability of device memory operations to the host domain.
+        VkCommandBufferBeginInfo command_buffer_begin_info = {};
+        command_buffer_begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        result = dispatch_table->BeginCommandBuffer(gpu_state->barrier_command_buffer, &command_buffer_begin_info);
+
+        if (result == VK_SUCCESS) {
+            VkMemoryBarrier memory_barrier = {};
+            memory_barrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
+            memory_barrier.srcAccessMask = VK_ACCESS_MEMORY_WRITE_BIT;
+            memory_barrier.dstAccessMask = VK_ACCESS_HOST_READ_BIT;
+
+            dispatch_table->CmdPipelineBarrier(gpu_state->barrier_command_buffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                                               VK_PIPELINE_STAGE_HOST_BIT, 0, 1, &memory_barrier, 0, nullptr, 0, nullptr);
+            dispatch_table->EndCommandBuffer(gpu_state->barrier_command_buffer);
+        }
+    }
+
+    if (gpu_state->barrier_command_buffer) {
+        VkSubmitInfo submit_info = {};
+        submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        submit_info.commandBufferCount = 1;
+        submit_info.pCommandBuffers = &gpu_state->barrier_command_buffer;
+        dispatch_table->QueueSubmit(queue, 1, &submit_info, VK_NULL_HANDLE);
+    }
+}
+
+// Issue a memory barrier to make GPU-written data available to host.
+// Wait for the queue to complete execution.
+// Check the debug buffers for all the command buffers that were submitted.
+void GpuPostCallQueueSubmit(layer_data *dev_data, VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits,
                             VkFence fence) {
     auto gpu_state = GetGpuValidationState(dev_data);
     if (gpu_state->aborted) return;
+
+    SubmitBarrier(dev_data, queue);
+
     dev_data->dispatch_table.QueueWaitIdle(queue);
+
     for (uint32_t submit_idx = 0; submit_idx < submitCount; submit_idx++) {
         const VkSubmitInfo *submit = &pSubmits[submit_idx];
         for (uint32_t i = 0; i < submit->commandBufferCount; i++) {
