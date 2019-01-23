@@ -828,7 +828,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateQueryPool(VkDevice device, const VkQueryPoo
                                                const VkAllocationCallbacks *pAllocator, VkQueryPool *pQueryPool) {
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     unique_lock_t lock(global_lock);
-    bool skip = PreCallValidateCreateQueryPool(dev_data, pCreateInfo);
+    bool skip = PreCallValidateCreateQueryPool(device, pCreateInfo, pAllocator, pQueryPool);
     lock.unlock();
 
     VkResult result = VK_ERROR_VALIDATION_FAILED_EXT;
@@ -837,7 +837,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateQueryPool(VkDevice device, const VkQueryPoo
     }
     if (result == VK_SUCCESS) {
         lock.lock();
-        PostCallRecordCreateQueryPool(dev_data, pCreateInfo, pQueryPool);
+        PostCallRecordCreateQueryPool(device, pCreateInfo, pAllocator, pQueryPool, result);
     }
     return result;
 }

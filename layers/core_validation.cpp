@@ -4666,11 +4666,13 @@ void PostCallRecordCreateCommandPool(layer_data *dev_data, const VkCommandPoolCr
     dev_data->commandPoolMap[*pCommandPool].queueFamilyIndex = pCreateInfo->queueFamilyIndex;
 }
 
-bool PreCallValidateCreateQueryPool(layer_data *dev_data, const VkQueryPoolCreateInfo *pCreateInfo) {
+bool PreCallValidateCreateQueryPool(VkDevice device, const VkQueryPoolCreateInfo *pCreateInfo,
+                                    const VkAllocationCallbacks *pAllocator, VkQueryPool *pQueryPool) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
     if (pCreateInfo && pCreateInfo->queryType == VK_QUERY_TYPE_PIPELINE_STATISTICS) {
-        if (!dev_data->enabled_features.core.pipelineStatisticsQuery) {
-            skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_QUERY_POOL_EXT, 0,
+        if (!device_data->enabled_features.core.pipelineStatisticsQuery) {
+            skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_QUERY_POOL_EXT, 0,
                             "VUID-VkQueryPoolCreateInfo-queryType-00791",
                             "Query pool with type VK_QUERY_TYPE_PIPELINE_STATISTICS created on a device with "
                             "VkDeviceCreateInfo.pEnabledFeatures.pipelineStatisticsQuery == VK_FALSE.");
@@ -4679,8 +4681,11 @@ bool PreCallValidateCreateQueryPool(layer_data *dev_data, const VkQueryPoolCreat
     return skip;
 }
 
-void PostCallRecordCreateQueryPool(layer_data *dev_data, const VkQueryPoolCreateInfo *pCreateInfo, VkQueryPool *pQueryPool) {
-    QUERY_POOL_NODE *qp_node = &dev_data->queryPoolMap[*pQueryPool];
+void PostCallRecordCreateQueryPool(VkDevice device, const VkQueryPoolCreateInfo *pCreateInfo,
+                                   const VkAllocationCallbacks *pAllocator, VkQueryPool *pQueryPool, VkResult result) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (VK_SUCCESS != result) return;
+    QUERY_POOL_NODE *qp_node = &device_data->queryPoolMap[*pQueryPool];
     qp_node->createInfo = *pCreateInfo;
 }
 
