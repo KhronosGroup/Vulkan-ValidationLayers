@@ -1439,8 +1439,10 @@ bool PreCallValidateFreeCommandBuffers(VkDevice device, VkCommandPool commandPoo
 void PreCallRecordFreeCommandBuffers(VkDevice device, VkCommandPool commandPool, uint32_t commandBufferCount,
                                      const VkCommandBuffer* pCommandBuffers);
 void PostCallRecordCreateCommandPool(layer_data* dev_data, const VkCommandPoolCreateInfo* pCreateInfo, VkCommandPool* pCommandPool);
-bool PreCallValidateCreateQueryPool(layer_data* dev_data, const VkQueryPoolCreateInfo* pCreateInfo);
-void PostCallRecordCreateQueryPool(layer_data* dev_data, const VkQueryPoolCreateInfo* pCreateInfo, VkQueryPool* pQueryPool);
+bool PreCallValidateCreateQueryPool(VkDevice device, const VkQueryPoolCreateInfo* pCreateInfo,
+                                    const VkAllocationCallbacks* pAllocator, VkQueryPool* pQueryPool);
+void PostCallRecordCreateQueryPool(VkDevice device, const VkQueryPoolCreateInfo* pCreateInfo,
+                                   const VkAllocationCallbacks* pAllocator, VkQueryPool* pQueryPool, VkResult result);
 bool PreCallValidateDestroyCommandPool(VkDevice device, VkCommandPool commandPool, const VkAllocationCallbacks* pAllocator);
 void PreCallRecordDestroyCommandPool(VkDevice device, VkCommandPool commandPool, const VkAllocationCallbacks* pAllocator);
 bool PreCallValidateResetCommandPool(layer_data* dev_data, COMMAND_POOL_NODE* pPool);
