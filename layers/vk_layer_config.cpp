@@ -35,6 +35,8 @@
 
 #if defined(_WIN32)
 #include <windows.h>
+#elif defined(__ANDROID__)
+#include <algorithm>
 #endif
 
 #define MAX_CHARS_PER_LINE 4096
@@ -58,9 +60,34 @@ class ConfigFile {
 static ConfigFile g_configFileObj;
 
 std::string getEnvironment(const char *variable) {
-#if !defined(__ANDROID__) && !defined(_WIN32)
-    const char *output = getenv(variable);
-    return output == NULL ? "" : output;
+#if defined(__ANDROID__)
+    // On Android, look for properties that start with
+    // "debug.vulkan.layer_opts." instead of an environment
+    // variable.
+    std::string command = "getprop debug.vulkan.layer_opts.";
+    std::string lower_variable = variable;
+    std::transform(lower_variable.begin(), lower_variable.end(), lower_variable.begin(), ::tolower);
+
+    // Remove any prefix "VK_" for Android properties
+    if (lower_variable.rfind("vk_", 0) == 0) {
+        lower_variable = lower_variable.substr(3);
+    }
+
+    command += lower_variable;
+
+    std::string output;
+    FILE *pipe = popen(command.c_str(), "r");
+    if (pipe != nullptr) {
+        char result[255];
+        result[0] = '\0';
+        fgets(result, 255, pipe);
+        pclose(pipe);
+        size_t count = strcspn(result, "\r\n");
+        if (count > 0) {
+            output = std::string(result, count);
+        }
+    }
+    return output;
 #elif defined(_WIN32)
     int size = GetEnvironmentVariable(variable, NULL, 0);
     if (size == 0) {
@@ -72,7 +99,8 @@ std::string getEnvironment(const char *variable) {
     delete[] buffer;
     return output;
 #else
-    return "";
+    const char *output = getenv(variable);
+    return output == NULL ? "" : output;
 #endif
 }
 
