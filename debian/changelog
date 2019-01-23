@@ -1,3 +1,9 @@
+vulkan-validationlayers (1.1.97.0~rc1-1lunarg16.04.1.1) xenial; urgency=medium
+
+  * new upstream version
+
+ -- John Zupin <john@odin>  Thu, 17 Jan 2019 15:44:33 -0700
+
 vulkan-validationlayers (1.1.92.0~rc3-1lunarg16.04.1.1) xenial; urgency=medium
 
   * new upstream version
