@@ -1360,7 +1360,6 @@ PHYSICAL_DEVICE_STATE* GetPhysicalDeviceState(instance_layer_data* instance_data
 
 void PreCallRecordCreateInstance(VkLayerInstanceCreateInfo* chain_info);
 void PostCallRecordCreateInstance(instance_layer_data* instance_data, const VkInstanceCreateInfo* pCreateInfo);
-void PostCallRecordDestroyInstance(instance_layer_data* instance_data, const VkAllocationCallbacks* pAllocator, dispatch_key key);
 bool PreCallValidateCreateDevice(instance_layer_data* instance_data, const VkPhysicalDeviceFeatures** enabled_features_found,
                                  VkPhysicalDevice gpu, const VkDeviceCreateInfo* pCreateInfo);
 void PostCallRecordCreateDevice(instance_layer_data* instance_data, const VkPhysicalDeviceFeatures* enabled_features_found,
@@ -1375,7 +1374,7 @@ bool PreCallValidateCreateSamplerYcbcrConversion(const layer_data* dev_data, con
 void PostCallRecordCreateSamplerYcbcrConversion(layer_data* dev_data, const VkSamplerYcbcrConversionCreateInfo* create_info,
                                                 VkSamplerYcbcrConversion ycbcr_conversion);
 bool PreCallValidateCmdDebugMarkerBeginEXT(layer_data* dev_data, GLOBAL_CB_NODE* cb_state);
-void PreCallRecordDestroyDevice(layer_data* dev_data, VkDevice device);
+void PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks* pAllocator);
 bool PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits, VkFence fence);
 void PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits, VkFence fence, VkResult result);
 bool PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAllocateInfo* pAllocateInfo,
@@ -1392,16 +1391,14 @@ bool PreCallValidateQueueWaitIdle(VkQueue queue);
 void PostCallRecordQueueWaitIdle(VkQueue queue, VkResult result);
 bool PreCallValidateDeviceWaitIdle(layer_data* dev_data);
 void PostCallRecordDeviceWaitIdle(layer_data* dev_data);
-bool PreCallValidateDestroyFence(layer_data* dev_data, VkFence fence, FENCE_NODE** fence_node, VK_OBJECT* obj_struct);
-void PreCallRecordDestroyFence(layer_data* dev_data, VkFence fence);
-bool PreCallValidateDestroySemaphore(layer_data* dev_data, VkSemaphore semaphore, SEMAPHORE_NODE** sema_node,
-                                     VK_OBJECT* obj_struct);
-void PreCallRecordDestroySemaphore(layer_data* dev_data, VkSemaphore sema);
-bool PreCallValidateDestroyEvent(layer_data* dev_data, VkEvent event, EVENT_STATE** event_state, VK_OBJECT* obj_struct);
-void PreCallRecordDestroyEvent(layer_data* dev_data, VkEvent event, EVENT_STATE* event_state, VK_OBJECT obj_struct);
-bool PreCallValidateDestroyQueryPool(layer_data* dev_data, VkQueryPool query_pool, QUERY_POOL_NODE** qp_state,
-                                     VK_OBJECT* obj_struct);
-void PreCallRecordDestroyQueryPool(layer_data* dev_data, VkQueryPool query_pool, QUERY_POOL_NODE* qp_state, VK_OBJECT obj_struct);
+bool PreCallValidateDestroyFence(VkDevice device, VkFence fence, const VkAllocationCallbacks* pAllocator);
+void PreCallRecordDestroyFence(VkDevice device, VkFence fence, const VkAllocationCallbacks* pAllocator);
+bool PreCallValidateDestroySemaphore(VkDevice device, VkSemaphore semaphore, const VkAllocationCallbacks* pAllocator);
+void PreCallRecordDestroySemaphore(VkDevice device, VkSemaphore semaphore, const VkAllocationCallbacks* pAllocator);
+bool PreCallValidateDestroyEvent(VkDevice device, VkEvent event, const VkAllocationCallbacks* pAllocator);
+void PreCallRecordDestroyEvent(VkDevice device, VkEvent event, const VkAllocationCallbacks* pAllocator);
+bool PreCallValidateDestroyQueryPool(VkDevice device, VkQueryPool queryPool, const VkAllocationCallbacks* pAllocator);
+void PreCallRecordDestroyQueryPool(VkDevice device, VkQueryPool queryPool, const VkAllocationCallbacks* pAllocator);
 bool PreCallValidateGetQueryPoolResults(layer_data* dev_data, VkQueryPool query_pool, uint32_t first_query, uint32_t query_count,
                                         VkQueryResultFlags flags,
                                         unordered_map<QueryObject, std::vector<VkCommandBuffer>>* queries_in_flight);
@@ -1426,18 +1423,17 @@ void PostCallRecordGetImageSparseMemoryRequirements(IMAGE_STATE* image_state, ui
 bool PreCallValidateGetPhysicalDeviceImageFormatProperties2(const debug_report_data* report_data,
                                                             const VkPhysicalDeviceImageFormatInfo2* pImageFormatInfo,
                                                             const VkImageFormatProperties2* pImageFormatProperties);
-void PreCallRecordDestroyShaderModule(layer_data* dev_data, VkShaderModule shaderModule);
-bool PreCallValidateDestroyPipeline(layer_data* dev_data, VkPipeline pipeline, PIPELINE_STATE** pipeline_state,
-                                    VK_OBJECT* obj_struct);
-void PreCallRecordDestroyPipeline(layer_data* dev_data, VkPipeline pipeline, PIPELINE_STATE* pipeline_state, VK_OBJECT obj_struct);
-void PreCallRecordDestroyPipelineLayout(layer_data* dev_data, VkPipelineLayout pipelineLayout);
-bool PreCallValidateDestroySampler(layer_data* dev_data, VkSampler sampler, SAMPLER_STATE** sampler_state, VK_OBJECT* obj_struct);
-void PreCallRecordDestroySampler(layer_data* dev_data, VkSampler sampler, SAMPLER_STATE* sampler_state, VK_OBJECT obj_struct);
-void PreCallRecordDestroyDescriptorSetLayout(layer_data* dev_data, VkDescriptorSetLayout ds_layout);
-bool PreCallValidateDestroyDescriptorPool(layer_data* dev_data, VkDescriptorPool pool, DESCRIPTOR_POOL_STATE** desc_pool_state,
-                                          VK_OBJECT* obj_struct);
-void PreCallRecordDestroyDescriptorPool(layer_data* dev_data, VkDescriptorPool descriptorPool,
-                                        DESCRIPTOR_POOL_STATE* desc_pool_state, VK_OBJECT obj_struct);
+void PreCallRecordDestroyShaderModule(VkDevice device, VkShaderModule shaderModule, const VkAllocationCallbacks* pAllocator);
+bool PreCallValidateDestroyPipeline(VkDevice device, VkPipeline pipeline, const VkAllocationCallbacks* pAllocator);
+void PreCallRecordDestroyPipeline(VkDevice device, VkPipeline pipeline, const VkAllocationCallbacks* pAllocator);
+void PreCallRecordDestroyPipelineLayout(VkDevice device, VkPipelineLayout pipelineLayout, const VkAllocationCallbacks* pAllocator);
+bool PreCallValidateDestroySampler(VkDevice device, VkSampler sampler, const VkAllocationCallbacks* pAllocator);
+void PreCallRecordDestroySampler(VkDevice device, VkSampler sampler, const VkAllocationCallbacks* pAllocator);
+void PreCallRecordDestroyDescriptorSetLayout(VkDevice device, VkDescriptorSetLayout descriptorSetLayout,
+                                             const VkAllocationCallbacks* pAllocator);
+bool PreCallValidateDestroyDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool,
+                                          const VkAllocationCallbacks* pAllocator);
+void PreCallRecordDestroyDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool, const VkAllocationCallbacks* pAllocator);
 bool PreCallValidateFreeCommandBuffers(VkDevice device, VkCommandPool commandPool, uint32_t commandBufferCount,
                                        const VkCommandBuffer* pCommandBuffers);
 void PreCallRecordFreeCommandBuffers(VkDevice device, VkCommandPool commandPool, uint32_t commandBufferCount,
@@ -1445,20 +1441,16 @@ void PreCallRecordFreeCommandBuffers(VkDevice device, VkCommandPool commandPool,
 void PostCallRecordCreateCommandPool(layer_data* dev_data, const VkCommandPoolCreateInfo* pCreateInfo, VkCommandPool* pCommandPool);
 bool PreCallValidateCreateQueryPool(layer_data* dev_data, const VkQueryPoolCreateInfo* pCreateInfo);
 void PostCallRecordCreateQueryPool(layer_data* dev_data, const VkQueryPoolCreateInfo* pCreateInfo, VkQueryPool* pQueryPool);
-bool PreCallValidateDestroyCommandPool(layer_data* dev_data, VkCommandPool pool);
-void PreCallRecordDestroyCommandPool(layer_data* dev_data, VkCommandPool pool);
+bool PreCallValidateDestroyCommandPool(VkDevice device, VkCommandPool commandPool, const VkAllocationCallbacks* pAllocator);
+void PreCallRecordDestroyCommandPool(VkDevice device, VkCommandPool commandPool, const VkAllocationCallbacks* pAllocator);
 bool PreCallValidateResetCommandPool(layer_data* dev_data, COMMAND_POOL_NODE* pPool);
 void PostCallRecordResetCommandPool(layer_data* dev_data, COMMAND_POOL_NODE* pPool);
 bool PreCallValidateResetFences(layer_data* dev_data, uint32_t fenceCount, const VkFence* pFences);
 void PostCallRecordResetFences(layer_data* dev_data, uint32_t fenceCount, const VkFence* pFences);
-bool PreCallValidateDestroyFramebuffer(layer_data* dev_data, VkFramebuffer framebuffer, FRAMEBUFFER_STATE** framebuffer_state,
-                                       VK_OBJECT* obj_struct);
-void PreCallRecordDestroyFramebuffer(layer_data* dev_data, VkFramebuffer framebuffer, FRAMEBUFFER_STATE* framebuffer_state,
-                                     VK_OBJECT obj_struct);
-bool PreCallValidateDestroyRenderPass(layer_data* dev_data, VkRenderPass render_pass, RENDER_PASS_STATE** rp_state,
-                                      VK_OBJECT* obj_struct);
-void PreCallRecordDestroyRenderPass(layer_data* dev_data, VkRenderPass render_pass, RENDER_PASS_STATE* rp_state,
-                                    VK_OBJECT obj_struct);
+bool PreCallValidateDestroyFramebuffer(VkDevice device, VkFramebuffer framebuffer, const VkAllocationCallbacks* pAllocator);
+void PreCallRecordDestroyFramebuffer(VkDevice device, VkFramebuffer framebuffer, const VkAllocationCallbacks* pAllocator);
+bool PreCallValidateDestroyRenderPass(VkDevice device, VkRenderPass renderPass, const VkAllocationCallbacks* pAllocator);
+void PreCallRecordDestroyRenderPass(VkDevice device, VkRenderPass renderPass, const VkAllocationCallbacks* pAllocator);
 bool PreCallValidateCreateGraphicsPipelines(layer_data* dev_data, std::vector<std::unique_ptr<PIPELINE_STATE>>* pipe_state,
                                             const uint32_t count, const VkGraphicsPipelineCreateInfo* pCreateInfos);
 void PostCallRecordCreateGraphicsPipelines(layer_data* dev_data, vector<std::unique_ptr<PIPELINE_STATE>>* pipe_state,
@@ -1696,7 +1688,7 @@ bool PreCallValidateCreateSwapchainKHR(layer_data* dev_data, const char* func_na
 void PostCallRecordCreateSwapchainKHR(layer_data* dev_data, VkResult result, const VkSwapchainCreateInfoKHR* pCreateInfo,
                                       VkSwapchainKHR* pSwapchain, SURFACE_STATE* surface_state,
                                       SWAPCHAIN_NODE* old_swapchain_state);
-void PreCallRecordDestroySwapchainKHR(layer_data* dev_data, const VkSwapchainKHR swapchain);
+void PreCallRecordDestroySwapchainKHR(VkDevice device, VkSwapchainKHR swapchain, const VkAllocationCallbacks* pAllocator);
 bool PreCallValidateGetSwapchainImagesKHR(layer_data* device_data, SWAPCHAIN_NODE* swapchain_state, VkDevice device,
                                           uint32_t* pSwapchainImageCount, VkImage* pSwapchainImages);
 void PostCallRecordGetSwapchainImagesKHR(layer_data* device_data, SWAPCHAIN_NODE* swapchain_state, VkDevice device,
@@ -1729,8 +1721,8 @@ bool PreCallValidateGetPhysicalDeviceQueueFamilyProperties2(instance_layer_data*
                                                             VkQueueFamilyProperties2KHR* pQueueFamilyProperties);
 void PostCallRecordGetPhysicalDeviceQueueFamilyProperties2(PHYSICAL_DEVICE_STATE* pd_state, uint32_t count,
                                                            VkQueueFamilyProperties2KHR* pQueueFamilyProperties);
-bool PreCallValidateDestroySurfaceKHR(instance_layer_data* instance_data, VkInstance instance, VkSurfaceKHR surface);
-void PreCallRecordValidateDestroySurfaceKHR(instance_layer_data* instance_data, VkSurfaceKHR surface);
+bool PreCallValidateDestroySurfaceKHR(VkInstance instance, VkSurfaceKHR surface, const VkAllocationCallbacks* pAllocator);
+void PreCallRecordValidateDestroySurfaceKHR(VkInstance instance, VkSurfaceKHR surface, const VkAllocationCallbacks* pAllocator);
 void PostCallRecordGetPhysicalDeviceSurfaceCapabilitiesKHR(instance_layer_data* instance_data, VkPhysicalDevice physicalDevice,
                                                            VkSurfaceCapabilitiesKHR* pSurfaceCapabilities);
 void PostCallRecordGetPhysicalDeviceSurfaceCapabilities2KHR(instance_layer_data* instanceData, VkPhysicalDevice physicalDevice,
@@ -1764,7 +1756,7 @@ void PreCallRecordCmdInsertDebugUtilsLabelEXT(layer_data* dev_data, VkCommandBuf
 void PostCallRecordCreateDebugUtilsMessengerEXT(instance_layer_data* instance_data,
                                                 const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
                                                 const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pMessenger);
-void PostCallRecordDestroyDebugUtilsMessengerEXT(instance_layer_data* instance_data, VkDebugUtilsMessengerEXT messenger,
+void PostCallRecordDestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT messenger,
                                                  const VkAllocationCallbacks* pAllocator);
 void PostCallRecordCreateDebugReportCallbackEXT(instance_layer_data* instance_data,
                                                 const VkDebugReportCallbackCreateInfoEXT* pCreateInfo,
@@ -1784,7 +1776,11 @@ bool PreCallValidateCreateDescriptorUpdateTemplate(const char* func_name, layer_
 void PostCallRecordCreateDescriptorUpdateTemplate(layer_data* device_data,
                                                   const VkDescriptorUpdateTemplateCreateInfoKHR* pCreateInfo,
                                                   VkDescriptorUpdateTemplateKHR* pDescriptorUpdateTemplate);
-void PreCallRecordDestroyDescriptorUpdateTemplate(layer_data* device_data, VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate);
+void PreCallRecordDestroyDescriptorUpdateTemplate(VkDevice device, VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate,
+                                                  const VkAllocationCallbacks* pAllocator);
+void PreCallRecordDestroyDescriptorUpdateTemplateKHR(VkDevice device, VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate,
+                                                     const VkAllocationCallbacks* pAllocator);
+
 bool PreCallValidateUpdateDescriptorSetWithTemplate(layer_data* device_data, VkDescriptorSet descriptorSet,
                                                     VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate, const void* pData);
 void PreCallRecordUpdateDescriptorSetWithTemplate(layer_data* device_data, VkDescriptorSet descriptorSet,
@@ -1828,7 +1824,10 @@ bool PreCallValidateCmdDrawMeshTasksIndirectCountNV(layer_data* dev_data, VkComm
                                                     BUFFER_STATE** count_buffer_state, const char* caller);
 void PreCallRecordCmdDrawMeshTasksIndirectCountNV(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, VkPipelineBindPoint bind_point,
                                                   BUFFER_STATE* buffer_state, BUFFER_STATE* count_buffer_state);
-void PostCallRecordDestroySamplerYcbcrConversion(layer_data* dev_data, VkSamplerYcbcrConversion ycbcr_conversion);
+void PostCallRecordDestroySamplerYcbcrConversion(VkDevice device, VkSamplerYcbcrConversion ycbcrConversion,
+                                                 const VkAllocationCallbacks* pAllocator);
+void PostCallRecordDestroySamplerYcbcrConversionKHR(VkDevice device, VkSamplerYcbcrConversion ycbcrConversion,
+                                                    const VkAllocationCallbacks* pAllocator);
 void PostCallRecordCreateShaderModule(layer_data* dev_data, bool is_spirv, const VkShaderModuleCreateInfo* pCreateInfo,
                                       VkShaderModule* pShaderModule, uint32_t unique_shader_id);
 bool PreCallValidateGetBufferDeviceAddressEXT(layer_data* dev_data, const VkBufferDeviceAddressInfoEXT* pInfo);
