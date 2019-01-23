@@ -1,7 +1,8 @@
 /**************************************************************************
  *
- * Copyright 2014 Valve Software
- * Copyright 2015 Google Inc.
+ * Copyright (c) 2014-2019 Valve Software
+ * Copyright (c) 2015 Google Inc.
+ * Copyright (c) 2015-2019 LunarG, Inc.
  * All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -223,6 +224,13 @@ std::string ConfigFile::FindSettings() {
         }
 
         RegCloseKey(hive);
+    }
+#elif defined(__ANDROID__)
+    std::string home_file = "/sdcard/Android/data/com.android.gl2jni/files/vk_layer_settings.txt";
+    if (stat(home_file.c_str(), &info) == 0) {
+        if (info.st_mode & S_IFREG) {
+            return home_file;
+        }
     }
 #else
     std::string search_path = getEnvironment("XDG_DATA_HOME");
