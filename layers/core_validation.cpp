@@ -2277,23 +2277,6 @@ void PostCallRecordCreateInstance(instance_layer_data *instance_data, const VkIn
     InitGpuValidation(instance_data);
 }
 
-void PostCallRecordDestroyInstance(instance_layer_data *instance_data, const VkAllocationCallbacks *pAllocator, dispatch_key key) {
-    // Clean up logging callback, if any
-    while (instance_data->logging_messenger.size() > 0) {
-        VkDebugUtilsMessengerEXT messenger = instance_data->logging_messenger.back();
-        layer_destroy_messenger_callback(instance_data->report_data, messenger, pAllocator);
-        instance_data->logging_messenger.pop_back();
-    }
-    while (instance_data->logging_callback.size() > 0) {
-        VkDebugReportCallbackEXT callback = instance_data->logging_callback.back();
-        layer_destroy_report_callback(instance_data->report_data, callback, pAllocator);
-        instance_data->logging_callback.pop_back();
-    }
-
-    layer_debug_utils_destroy_instance(instance_data->report_data);
-    FreeLayerDataPtr(key, instance_layer_data_map);
-}
-
 static bool ValidatePhysicalDeviceQueueFamily(instance_layer_data *instance_data, const PHYSICAL_DEVICE_STATE *pd_state,
                                               uint32_t requested_queue_family, std::string err_code, const char *cmd_name,
                                               const char *queue_family_var_name) {
@@ -2543,30 +2526,31 @@ void PostCallRecordCreateDevice(instance_layer_data *instance_data, const VkPhys
     }
 }
 
-void PreCallRecordDestroyDevice(layer_data *dev_data, VkDevice device) {
-    if (GetEnables(dev_data)->gpu_validation) {
-        GpuPreCallRecordDestroyDevice(dev_data);
+void PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks *pAllocator) {
+    if (!device) return;
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (GetEnables(device_data)->gpu_validation) {
+        GpuPreCallRecordDestroyDevice(device_data);
     }
-    dev_data->pipelineMap.clear();
-    dev_data->renderPassMap.clear();
-    for (auto ii = dev_data->commandBufferMap.begin(); ii != dev_data->commandBufferMap.end(); ++ii) {
+    device_data->pipelineMap.clear();
+    device_data->renderPassMap.clear();
+    for (auto ii = device_data->commandBufferMap.begin(); ii != device_data->commandBufferMap.end(); ++ii) {
         delete (*ii).second;
     }
-    dev_data->commandBufferMap.clear();
+    device_data->commandBufferMap.clear();
     // This will also delete all sets in the pool & remove them from setMap
-    DeletePools(dev_data);
+    DeletePools(device_data);
     // All sets should be removed
-    assert(dev_data->setMap.empty());
-    dev_data->descriptorSetLayoutMap.clear();
-    dev_data->imageViewMap.clear();
-    dev_data->imageMap.clear();
-    dev_data->imageSubresourceMap.clear();
-    dev_data->imageLayoutMap.clear();
-    dev_data->bufferViewMap.clear();
-    dev_data->bufferMap.clear();
+    assert(device_data->setMap.empty());
+    device_data->descriptorSetLayoutMap.clear();
+    device_data->imageViewMap.clear();
+    device_data->imageMap.clear();
+    device_data->imageSubresourceMap.clear();
+    device_data->imageLayoutMap.clear();
+    device_data->bufferViewMap.clear();
+    device_data->bufferMap.clear();
     // Queues persist until device is destroyed
-    dev_data->queueMap.clear();
-    // Report any memory leaks
+    device_data->queueMap.clear();
     layer_debug_utils_destroy_device(device);
 }
 
@@ -3973,14 +3957,13 @@ void PostCallRecordDeviceWaitIdle(layer_data *dev_data) {
     }
 }
 
-bool PreCallValidateDestroyFence(layer_data *dev_data, VkFence fence, FENCE_NODE **fence_node, VK_OBJECT *obj_struct) {
-    *fence_node = GetFenceNode(dev_data, fence);
-    *obj_struct = {HandleToUint64(fence), kVulkanObjectTypeFence};
-    if (dev_data->instance_data->disabled.destroy_fence) return false;
+bool PreCallValidateDestroyFence(VkDevice device, VkFence fence, const VkAllocationCallbacks *pAllocator) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    FENCE_NODE *fence_node = GetFenceNode(device_data, fence);
     bool skip = false;
-    if (*fence_node) {
-        if ((*fence_node)->scope == kSyncScopeInternal && (*fence_node)->state == FENCE_INFLIGHT) {
-            skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_FENCE_EXT,
+    if (fence_node) {
+        if (fence_node->scope == kSyncScopeInternal && fence_node->state == FENCE_INFLIGHT) {
+            skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_FENCE_EXT,
                             HandleToUint64(fence), "VUID-vkDestroyFence-fence-01120", "Fence 0x%" PRIx64 " is in use.",
                             HandleToUint64(fence));
         }
@@ -3988,55 +3971,70 @@ bool PreCallValidateDestroyFence(layer_data *dev_data, VkFence fence, FENCE_NODE
     return skip;
 }
 
-void PreCallRecordDestroyFence(layer_data *dev_data, VkFence fence) { dev_data->fenceMap.erase(fence); }
+void PreCallRecordDestroyFence(VkDevice device, VkFence fence, const VkAllocationCallbacks *pAllocator) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!fence) return;
+    device_data->fenceMap.erase(fence);
+}
 
-bool PreCallValidateDestroySemaphore(layer_data *dev_data, VkSemaphore semaphore, SEMAPHORE_NODE **sema_node,
-                                     VK_OBJECT *obj_struct) {
-    *sema_node = GetSemaphoreNode(dev_data, semaphore);
-    *obj_struct = {HandleToUint64(semaphore), kVulkanObjectTypeSemaphore};
-    if (dev_data->instance_data->disabled.destroy_semaphore) return false;
+bool PreCallValidateDestroySemaphore(VkDevice device, VkSemaphore semaphore, const VkAllocationCallbacks *pAllocator) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    SEMAPHORE_NODE *sema_node = GetSemaphoreNode(device_data, semaphore);
+    VK_OBJECT obj_struct = {HandleToUint64(semaphore), kVulkanObjectTypeSemaphore};
+    if (device_data->instance_data->disabled.destroy_semaphore) return false;
     bool skip = false;
-    if (*sema_node) {
-        skip |= ValidateObjectNotInUse(dev_data, *sema_node, *obj_struct, "vkDestroySemaphore",
+    if (sema_node) {
+        skip |= ValidateObjectNotInUse(device_data, sema_node, obj_struct, "vkDestroySemaphore",
                                        "VUID-vkDestroySemaphore-semaphore-01137");
     }
     return skip;
 }
 
-void PreCallRecordDestroySemaphore(layer_data *dev_data, VkSemaphore sema) { dev_data->semaphoreMap.erase(sema); }
+void PreCallRecordDestroySemaphore(VkDevice device, VkSemaphore semaphore, const VkAllocationCallbacks *pAllocator) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!semaphore) return;
+    device_data->semaphoreMap.erase(semaphore);
+}
 
-bool PreCallValidateDestroyEvent(layer_data *dev_data, VkEvent event, EVENT_STATE **event_state, VK_OBJECT *obj_struct) {
-    *event_state = GetEventNode(dev_data, event);
-    *obj_struct = {HandleToUint64(event), kVulkanObjectTypeEvent};
-    if (dev_data->instance_data->disabled.destroy_event) return false;
+bool PreCallValidateDestroyEvent(VkDevice device, VkEvent event, const VkAllocationCallbacks *pAllocator) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    EVENT_STATE *event_state = GetEventNode(device_data, event);
+    VK_OBJECT obj_struct = {HandleToUint64(event), kVulkanObjectTypeEvent};
     bool skip = false;
-    if (*event_state) {
-        skip |= ValidateObjectNotInUse(dev_data, *event_state, *obj_struct, "vkDestroyEvent", "VUID-vkDestroyEvent-event-01145");
+    if (event_state) {
+        skip |= ValidateObjectNotInUse(device_data, event_state, obj_struct, "vkDestroyEvent", "VUID-vkDestroyEvent-event-01145");
     }
     return skip;
 }
 
-void PreCallRecordDestroyEvent(layer_data *dev_data, VkEvent event, EVENT_STATE *event_state, VK_OBJECT obj_struct) {
-    InvalidateCommandBuffers(dev_data, event_state->cb_bindings, obj_struct);
-    dev_data->eventMap.erase(event);
+void PreCallRecordDestroyEvent(VkDevice device, VkEvent event, const VkAllocationCallbacks *pAllocator) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!event) return;
+    EVENT_STATE *event_state = GetEventNode(device_data, event);
+    VK_OBJECT obj_struct = {HandleToUint64(event), kVulkanObjectTypeEvent};
+    InvalidateCommandBuffers(device_data, event_state->cb_bindings, obj_struct);
+    device_data->eventMap.erase(event);
 }
 
-bool PreCallValidateDestroyQueryPool(layer_data *dev_data, VkQueryPool query_pool, QUERY_POOL_NODE **qp_state,
-                                     VK_OBJECT *obj_struct) {
-    *qp_state = GetQueryPoolNode(dev_data, query_pool);
-    *obj_struct = {HandleToUint64(query_pool), kVulkanObjectTypeQueryPool};
-    if (dev_data->instance_data->disabled.destroy_query_pool) return false;
+bool PreCallValidateDestroyQueryPool(VkDevice device, VkQueryPool queryPool, const VkAllocationCallbacks *pAllocator) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    QUERY_POOL_NODE *qp_state = GetQueryPoolNode(device_data, queryPool);
+    VK_OBJECT obj_struct = {HandleToUint64(queryPool), kVulkanObjectTypeQueryPool};
     bool skip = false;
-    if (*qp_state) {
-        skip |= ValidateObjectNotInUse(dev_data, *qp_state, *obj_struct, "vkDestroyQueryPool",
+    if (qp_state) {
+        skip |= ValidateObjectNotInUse(device_data, qp_state, obj_struct, "vkDestroyQueryPool",
                                        "VUID-vkDestroyQueryPool-queryPool-00793");
     }
     return skip;
 }
 
-void PreCallRecordDestroyQueryPool(layer_data *dev_data, VkQueryPool query_pool, QUERY_POOL_NODE *qp_state, VK_OBJECT obj_struct) {
-    InvalidateCommandBuffers(dev_data, qp_state->cb_bindings, obj_struct);
-    dev_data->queryPoolMap.erase(query_pool);
+void PreCallRecordDestroyQueryPool(VkDevice device, VkQueryPool queryPool, const VkAllocationCallbacks *pAllocator) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!queryPool) return;
+    QUERY_POOL_NODE *qp_state = GetQueryPoolNode(device_data, queryPool);
+    VK_OBJECT obj_struct = {HandleToUint64(queryPool), kVulkanObjectTypeQueryPool};
+    InvalidateCommandBuffers(device_data, qp_state->cb_bindings, obj_struct);
+    device_data->queryPoolMap.erase(queryPool);
 }
 
 bool PreCallValidateGetQueryPoolResults(layer_data *dev_data, VkQueryPool query_pool, uint32_t first_query, uint32_t query_count,
@@ -4487,85 +4485,107 @@ bool PreCallValidateGetPhysicalDeviceImageFormatProperties2(const debug_report_d
     return skip;
 }
 
-void PreCallRecordDestroyShaderModule(layer_data *dev_data, VkShaderModule shaderModule) {
-    dev_data->shaderModuleMap.erase(shaderModule);
+void PreCallRecordDestroyShaderModule(VkDevice device, VkShaderModule shaderModule, const VkAllocationCallbacks *pAllocator) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!shaderModule) return;
+    device_data->shaderModuleMap.erase(shaderModule);
 }
 
-bool PreCallValidateDestroyPipeline(layer_data *dev_data, VkPipeline pipeline, PIPELINE_STATE **pipeline_state,
-                                    VK_OBJECT *obj_struct) {
-    *pipeline_state = GetPipelineState(dev_data, pipeline);
-    *obj_struct = {HandleToUint64(pipeline), kVulkanObjectTypePipeline};
-    if (dev_data->instance_data->disabled.destroy_pipeline) return false;
+bool PreCallValidateDestroyPipeline(VkDevice device, VkPipeline pipeline, const VkAllocationCallbacks *pAllocator) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    PIPELINE_STATE *pipeline_state = GetPipelineState(device_data, pipeline);
+    VK_OBJECT obj_struct = {HandleToUint64(pipeline), kVulkanObjectTypePipeline};
+    if (device_data->instance_data->disabled.destroy_pipeline) return false;
     bool skip = false;
-    if (*pipeline_state) {
-        skip |= ValidateObjectNotInUse(dev_data, *pipeline_state, *obj_struct, "vkDestroyPipeline",
+    if (pipeline_state) {
+        skip |= ValidateObjectNotInUse(device_data, pipeline_state, obj_struct, "vkDestroyPipeline",
                                        "VUID-vkDestroyPipeline-pipeline-00765");
     }
     return skip;
 }
 
-void PreCallRecordDestroyPipeline(layer_data *dev_data, VkPipeline pipeline, PIPELINE_STATE *pipeline_state, VK_OBJECT obj_struct) {
+void PreCallRecordDestroyPipeline(VkDevice device, VkPipeline pipeline, const VkAllocationCallbacks *pAllocator) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!pipeline) return;
+    PIPELINE_STATE *pipeline_state = GetPipelineState(device_data, pipeline);
+    VK_OBJECT obj_struct = {HandleToUint64(pipeline), kVulkanObjectTypePipeline};
     // Any bound cmd buffers are now invalid
-    InvalidateCommandBuffers(dev_data, pipeline_state->cb_bindings, obj_struct);
-    if (GetEnables(dev_data)->gpu_validation) {
-        GpuPreCallRecordDestroyPipeline(dev_data, pipeline);
+    InvalidateCommandBuffers(device_data, pipeline_state->cb_bindings, obj_struct);
+    if (GetEnables(device_data)->gpu_validation) {
+        GpuPreCallRecordDestroyPipeline(device_data, pipeline);
     }
-    dev_data->pipelineMap.erase(pipeline);
+    device_data->pipelineMap.erase(pipeline);
 }
 
-void PreCallRecordDestroyPipelineLayout(layer_data *dev_data, VkPipelineLayout pipelineLayout) {
-    dev_data->pipelineLayoutMap.erase(pipelineLayout);
+void PreCallRecordDestroyPipelineLayout(VkDevice device, VkPipelineLayout pipelineLayout, const VkAllocationCallbacks *pAllocator) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!pipelineLayout) return;
+    device_data->pipelineLayoutMap.erase(pipelineLayout);
 }
 
-bool PreCallValidateDestroySampler(layer_data *dev_data, VkSampler sampler, SAMPLER_STATE **sampler_state, VK_OBJECT *obj_struct) {
-    *sampler_state = GetSamplerState(dev_data, sampler);
-    *obj_struct = {HandleToUint64(sampler), kVulkanObjectTypeSampler};
-    if (dev_data->instance_data->disabled.destroy_sampler) return false;
+bool PreCallValidateDestroySampler(VkDevice device, VkSampler sampler, const VkAllocationCallbacks *pAllocator) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    SAMPLER_STATE *sampler_state = GetSamplerState(device_data, sampler);
+    VK_OBJECT obj_struct = {HandleToUint64(sampler), kVulkanObjectTypeSampler};
+    if (device_data->instance_data->disabled.destroy_sampler) return false;
     bool skip = false;
-    if (*sampler_state) {
-        skip |= ValidateObjectNotInUse(dev_data, *sampler_state, *obj_struct, "vkDestroySampler",
+    if (sampler_state) {
+        skip |= ValidateObjectNotInUse(device_data, sampler_state, obj_struct, "vkDestroySampler",
                                        "VUID-vkDestroySampler-sampler-01082");
     }
     return skip;
 }
 
-void PreCallRecordDestroySampler(layer_data *dev_data, VkSampler sampler, SAMPLER_STATE *sampler_state, VK_OBJECT obj_struct) {
+void PreCallRecordDestroySampler(VkDevice device, VkSampler sampler, const VkAllocationCallbacks *pAllocator) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!sampler) return;
+    SAMPLER_STATE *sampler_state = GetSamplerState(device_data, sampler);
+    VK_OBJECT obj_struct = {HandleToUint64(sampler), kVulkanObjectTypeSampler};
     // Any bound cmd buffers are now invalid
-    if (sampler_state) InvalidateCommandBuffers(dev_data, sampler_state->cb_bindings, obj_struct);
-    dev_data->samplerMap.erase(sampler);
+    if (sampler_state) {
+        InvalidateCommandBuffers(device_data, sampler_state->cb_bindings, obj_struct);
+    }
+    device_data->samplerMap.erase(sampler);
 }
 
-void PreCallRecordDestroyDescriptorSetLayout(layer_data *dev_data, VkDescriptorSetLayout ds_layout) {
-    auto layout_it = dev_data->descriptorSetLayoutMap.find(ds_layout);
-    if (layout_it != dev_data->descriptorSetLayoutMap.end()) {
+void PreCallRecordDestroyDescriptorSetLayout(VkDevice device, VkDescriptorSetLayout descriptorSetLayout,
+                                             const VkAllocationCallbacks *pAllocator) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!descriptorSetLayout) return;
+    auto layout_it = device_data->descriptorSetLayoutMap.find(descriptorSetLayout);
+    if (layout_it != device_data->descriptorSetLayoutMap.end()) {
         layout_it->second.get()->MarkDestroyed();
-        dev_data->descriptorSetLayoutMap.erase(layout_it);
+        device_data->descriptorSetLayoutMap.erase(layout_it);
     }
 }
 
-bool PreCallValidateDestroyDescriptorPool(layer_data *dev_data, VkDescriptorPool pool, DESCRIPTOR_POOL_STATE **desc_pool_state,
-                                          VK_OBJECT *obj_struct) {
-    *desc_pool_state = GetDescriptorPoolState(dev_data, pool);
-    *obj_struct = {HandleToUint64(pool), kVulkanObjectTypeDescriptorPool};
-    if (dev_data->instance_data->disabled.destroy_descriptor_pool) return false;
+bool PreCallValidateDestroyDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool,
+                                          const VkAllocationCallbacks *pAllocator) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    DESCRIPTOR_POOL_STATE *desc_pool_state = GetDescriptorPoolState(device_data, descriptorPool);
+    VK_OBJECT obj_struct = {HandleToUint64(descriptorPool), kVulkanObjectTypeDescriptorPool};
+    if (device_data->instance_data->disabled.destroy_descriptor_pool) return false;
     bool skip = false;
-    if (*desc_pool_state) {
-        skip |= ValidateObjectNotInUse(dev_data, *desc_pool_state, *obj_struct, "vkDestroyDescriptorPool",
+    if (desc_pool_state) {
+        skip |= ValidateObjectNotInUse(device_data, desc_pool_state, obj_struct, "vkDestroyDescriptorPool",
                                        "VUID-vkDestroyDescriptorPool-descriptorPool-00303");
     }
     return skip;
 }
 
-void PreCallRecordDestroyDescriptorPool(layer_data *dev_data, VkDescriptorPool descriptorPool,
-                                        DESCRIPTOR_POOL_STATE *desc_pool_state, VK_OBJECT obj_struct) {
+void PreCallRecordDestroyDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool, const VkAllocationCallbacks *pAllocator) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!descriptorPool) return;
+    DESCRIPTOR_POOL_STATE *desc_pool_state = GetDescriptorPoolState(device_data, descriptorPool);
+    VK_OBJECT obj_struct = {HandleToUint64(descriptorPool), kVulkanObjectTypeDescriptorPool};
     if (desc_pool_state) {
         // Any bound cmd buffers are now invalid
-        InvalidateCommandBuffers(dev_data, desc_pool_state->cb_bindings, obj_struct);
+        InvalidateCommandBuffers(device_data, desc_pool_state->cb_bindings, obj_struct);
         // Free sets that were in this pool
         for (auto ds : desc_pool_state->sets) {
-            FreeDescriptorSet(dev_data, ds);
+            FreeDescriptorSet(device_data, ds);
         }
-        dev_data->descriptorPoolMap.erase(descriptorPool);
+        device_data->descriptorPoolMap.erase(descriptorPool);
         delete desc_pool_state;
     }
 }
@@ -4662,27 +4682,31 @@ void PostCallRecordCreateQueryPool(layer_data *dev_data, const VkQueryPoolCreate
     qp_node->createInfo = *pCreateInfo;
 }
 
-bool PreCallValidateDestroyCommandPool(layer_data *dev_data, VkCommandPool pool) {
-    COMMAND_POOL_NODE *cp_state = GetCommandPoolNode(dev_data, pool);
-    if (dev_data->instance_data->disabled.destroy_command_pool) return false;
+bool PreCallValidateDestroyCommandPool(VkDevice device, VkCommandPool commandPool, const VkAllocationCallbacks *pAllocator) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+
+    COMMAND_POOL_NODE *cp_state = GetCommandPoolNode(device_data, commandPool);
+    if (device_data->instance_data->disabled.destroy_command_pool) return false;
     bool skip = false;
     if (cp_state) {
         // Verify that command buffers in pool are complete (not in-flight)
-        skip |= CheckCommandBuffersInFlight(dev_data, cp_state, "destroy command pool with",
+        skip |= CheckCommandBuffersInFlight(device_data, cp_state, "destroy command pool with",
                                             "VUID-vkDestroyCommandPool-commandPool-00041");
     }
     return skip;
 }
 
-void PreCallRecordDestroyCommandPool(layer_data *dev_data, VkCommandPool pool) {
-    COMMAND_POOL_NODE *cp_state = GetCommandPoolNode(dev_data, pool);
+void PreCallRecordDestroyCommandPool(VkDevice device, VkCommandPool commandPool, const VkAllocationCallbacks *pAllocator) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!commandPool) return;
+    COMMAND_POOL_NODE *cp_state = GetCommandPoolNode(device_data, commandPool);
     // Remove cmdpool from cmdpoolmap, after freeing layer data for the command buffers
     // "When a pool is destroyed, all command buffers allocated from the pool are freed."
     if (cp_state) {
         // Create a vector, as FreeCommandBufferStates deletes from cp_state->commandBuffers during iteration.
         std::vector<VkCommandBuffer> cb_vec{cp_state->commandBuffers.begin(), cp_state->commandBuffers.end()};
-        FreeCommandBufferStates(dev_data, cp_state, static_cast<uint32_t>(cb_vec.size()), cb_vec.data());
-        dev_data->commandPoolMap.erase(pool);
+        FreeCommandBufferStates(device_data, cp_state, static_cast<uint32_t>(cb_vec.size()), cb_vec.data());
+        device_data->commandPoolMap.erase(commandPool);
     }
 }
 
@@ -4743,42 +4767,46 @@ void InvalidateCommandBuffers(const layer_data *dev_data, std::unordered_set<GLO
     }
 }
 
-bool PreCallValidateDestroyFramebuffer(layer_data *dev_data, VkFramebuffer framebuffer, FRAMEBUFFER_STATE **framebuffer_state,
-                                       VK_OBJECT *obj_struct) {
-    *framebuffer_state = GetFramebufferState(dev_data, framebuffer);
-    *obj_struct = {HandleToUint64(framebuffer), kVulkanObjectTypeFramebuffer};
-    if (dev_data->instance_data->disabled.destroy_framebuffer) return false;
+bool PreCallValidateDestroyFramebuffer(VkDevice device, VkFramebuffer framebuffer, const VkAllocationCallbacks *pAllocator) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    FRAMEBUFFER_STATE *framebuffer_state = GetFramebufferState(device_data, framebuffer);
+    VK_OBJECT obj_struct = {HandleToUint64(framebuffer), kVulkanObjectTypeFramebuffer};
     bool skip = false;
-    if (*framebuffer_state) {
-        skip |= ValidateObjectNotInUse(dev_data, *framebuffer_state, *obj_struct, "vkDestroyFramebuffer",
+    if (framebuffer_state) {
+        skip |= ValidateObjectNotInUse(device_data, framebuffer_state, obj_struct, "vkDestroyFramebuffer",
                                        "VUID-vkDestroyFramebuffer-framebuffer-00892");
     }
     return skip;
 }
 
-void PreCallRecordDestroyFramebuffer(layer_data *dev_data, VkFramebuffer framebuffer, FRAMEBUFFER_STATE *framebuffer_state,
-                                     VK_OBJECT obj_struct) {
-    InvalidateCommandBuffers(dev_data, framebuffer_state->cb_bindings, obj_struct);
-    dev_data->frameBufferMap.erase(framebuffer);
+void PreCallRecordDestroyFramebuffer(VkDevice device, VkFramebuffer framebuffer, const VkAllocationCallbacks *pAllocator) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!framebuffer) return;
+    FRAMEBUFFER_STATE *framebuffer_state = GetFramebufferState(device_data, framebuffer);
+    VK_OBJECT obj_struct = {HandleToUint64(framebuffer), kVulkanObjectTypeFramebuffer};
+    InvalidateCommandBuffers(device_data, framebuffer_state->cb_bindings, obj_struct);
+    device_data->frameBufferMap.erase(framebuffer);
 }
 
-bool PreCallValidateDestroyRenderPass(layer_data *dev_data, VkRenderPass render_pass, RENDER_PASS_STATE **rp_state,
-                                      VK_OBJECT *obj_struct) {
-    *rp_state = GetRenderPassState(dev_data, render_pass);
-    *obj_struct = {HandleToUint64(render_pass), kVulkanObjectTypeRenderPass};
-    if (dev_data->instance_data->disabled.destroy_renderpass) return false;
+bool PreCallValidateDestroyRenderPass(VkDevice device, VkRenderPass renderPass, const VkAllocationCallbacks *pAllocator) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    RENDER_PASS_STATE *rp_state = GetRenderPassState(device_data, renderPass);
+    VK_OBJECT obj_struct = {HandleToUint64(renderPass), kVulkanObjectTypeRenderPass};
     bool skip = false;
-    if (*rp_state) {
-        skip |= ValidateObjectNotInUse(dev_data, *rp_state, *obj_struct, "vkDestroyRenderPass",
+    if (rp_state) {
+        skip |= ValidateObjectNotInUse(device_data, rp_state, obj_struct, "vkDestroyRenderPass",
                                        "VUID-vkDestroyRenderPass-renderPass-00873");
     }
     return skip;
 }
 
-void PreCallRecordDestroyRenderPass(layer_data *dev_data, VkRenderPass render_pass, RENDER_PASS_STATE *rp_state,
-                                    VK_OBJECT obj_struct) {
-    InvalidateCommandBuffers(dev_data, rp_state->cb_bindings, obj_struct);
-    dev_data->renderPassMap.erase(render_pass);
+void PreCallRecordDestroyRenderPass(VkDevice device, VkRenderPass renderPass, const VkAllocationCallbacks *pAllocator) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!renderPass) return;
+    RENDER_PASS_STATE *rp_state = GetRenderPassState(device_data, renderPass);
+    VK_OBJECT obj_struct = {HandleToUint64(renderPass), kVulkanObjectTypeRenderPass};
+    InvalidateCommandBuffers(device_data, rp_state->cb_bindings, obj_struct);
+    device_data->renderPassMap.erase(renderPass);
 }
 
 // Access helper functions for external modules
@@ -11038,34 +11066,36 @@ void PostCallRecordCreateSwapchainKHR(layer_data *dev_data, VkResult result, con
     return;
 }
 
-void PreCallRecordDestroySwapchainKHR(layer_data *dev_data, const VkSwapchainKHR swapchain) {
-    auto swapchain_data = GetSwapchainNode(dev_data, swapchain);
+void PreCallRecordDestroySwapchainKHR(VkDevice device, VkSwapchainKHR swapchain, const VkAllocationCallbacks *pAllocator) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!swapchain) return;
+    auto swapchain_data = GetSwapchainNode(device_data, swapchain);
     if (swapchain_data) {
         if (swapchain_data->images.size() > 0) {
             for (auto swapchain_image : swapchain_data->images) {
-                auto image_sub = dev_data->imageSubresourceMap.find(swapchain_image);
-                if (image_sub != dev_data->imageSubresourceMap.end()) {
+                auto image_sub = device_data->imageSubresourceMap.find(swapchain_image);
+                if (image_sub != device_data->imageSubresourceMap.end()) {
                     for (auto imgsubpair : image_sub->second) {
-                        auto image_item = dev_data->imageLayoutMap.find(imgsubpair);
-                        if (image_item != dev_data->imageLayoutMap.end()) {
-                            dev_data->imageLayoutMap.erase(image_item);
+                        auto image_item = device_data->imageLayoutMap.find(imgsubpair);
+                        if (image_item != device_data->imageLayoutMap.end()) {
+                            device_data->imageLayoutMap.erase(image_item);
                         }
                     }
-                    dev_data->imageSubresourceMap.erase(image_sub);
+                    device_data->imageSubresourceMap.erase(image_sub);
                 }
-                ClearMemoryObjectBindings(dev_data, HandleToUint64(swapchain_image), kVulkanObjectTypeSwapchainKHR);
-                EraseQFOImageRelaseBarriers(dev_data, swapchain_image);
-                dev_data->imageMap.erase(swapchain_image);
+                ClearMemoryObjectBindings(device_data, HandleToUint64(swapchain_image), kVulkanObjectTypeSwapchainKHR);
+                EraseQFOImageRelaseBarriers(device_data, swapchain_image);
+                device_data->imageMap.erase(swapchain_image);
             }
         }
 
-        auto surface_state = GetSurfaceState(dev_data->instance_data, swapchain_data->createInfo.surface);
+        auto surface_state = GetSurfaceState(device_data->instance_data, swapchain_data->createInfo.surface);
         if (surface_state) {
             if (surface_state->swapchain == swapchain_data) surface_state->swapchain = nullptr;
             if (surface_state->old_swapchain == swapchain_data) surface_state->old_swapchain = nullptr;
         }
 
-        dev_data->swapchainMap.erase(swapchain);
+        device_data->swapchainMap.erase(swapchain);
     }
 }
 
@@ -11564,7 +11594,8 @@ void PostCallRecordGetPhysicalDeviceQueueFamilyProperties2(PHYSICAL_DEVICE_STATE
     StateUpdateCommonGetPhysicalDeviceQueueFamilyProperties(pd_state, count, pQueueFamilyProperties);
 }
 
-bool PreCallValidateDestroySurfaceKHR(instance_layer_data *instance_data, VkInstance instance, VkSurfaceKHR surface) {
+bool PreCallValidateDestroySurfaceKHR(VkInstance instance, VkSurfaceKHR surface, const VkAllocationCallbacks *pAllocator) {
+    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(instance), instance_layer_data_map);
     auto surface_state = GetSurfaceState(instance_data, surface);
     bool skip = false;
     if ((surface_state) && (surface_state->swapchain)) {
@@ -11575,7 +11606,8 @@ bool PreCallValidateDestroySurfaceKHR(instance_layer_data *instance_data, VkInst
     return skip;
 }
 
-void PreCallRecordValidateDestroySurfaceKHR(instance_layer_data *instance_data, VkSurfaceKHR surface) {
+void PreCallRecordValidateDestroySurfaceKHR(VkInstance instance, VkSurfaceKHR surface, const VkAllocationCallbacks *pAllocator) {
+    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(instance), instance_layer_data_map);
     instance_data->surface_map.erase(surface);
 }
 
@@ -11856,8 +11888,10 @@ void PostCallRecordCreateDebugUtilsMessengerEXT(instance_layer_data *instance_da
     layer_create_messenger_callback(instance_data->report_data, false, pCreateInfo, pAllocator, pMessenger);
 }
 
-void PostCallRecordDestroyDebugUtilsMessengerEXT(instance_layer_data *instance_data, VkDebugUtilsMessengerEXT messenger,
+void PostCallRecordDestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT messenger,
                                                  const VkAllocationCallbacks *pAllocator) {
+    if (!messenger) return;
+    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(instance), instance_layer_data_map);
     layer_destroy_messenger_callback(instance_data->report_data, messenger, pAllocator);
 }
 
@@ -11981,7 +12015,17 @@ bool PreCallValidateCreateDescriptorUpdateTemplate(const char *func_name, layer_
     return skip;
 }
 
-void PreCallRecordDestroyDescriptorUpdateTemplate(layer_data *device_data, VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate) {
+void PreCallRecordDestroyDescriptorUpdateTemplate(VkDevice device, VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate,
+                                                  const VkAllocationCallbacks *pAllocator) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!descriptorUpdateTemplate) return;
+    device_data->desc_template_map.erase(descriptorUpdateTemplate);
+}
+
+void PreCallRecordDestroyDescriptorUpdateTemplateKHR(VkDevice device, VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate,
+                                                     const VkAllocationCallbacks *pAllocator) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!descriptorUpdateTemplate) return;
     device_data->desc_template_map.erase(descriptorUpdateTemplate);
 }
 
@@ -12400,9 +12444,21 @@ void PostCallRecordCreateSamplerYcbcrConversion(layer_data *dev_data, const VkSa
     }
 }
 
-void PostCallRecordDestroySamplerYcbcrConversion(layer_data *dev_data, VkSamplerYcbcrConversion ycbcr_conversion) {
-    if (GetDeviceExtensions(dev_data)->vk_android_external_memory_android_hardware_buffer) {
-        RecordDestroySamplerYcbcrConversionANDROID(dev_data, ycbcr_conversion);
+void PostCallRecordDestroySamplerYcbcrConversion(VkDevice device, VkSamplerYcbcrConversion ycbcrConversion,
+                                                 const VkAllocationCallbacks *pAllocator) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!ycbcrConversion) return;
+    if (GetDeviceExtensions(device_data)->vk_android_external_memory_android_hardware_buffer) {
+        RecordDestroySamplerYcbcrConversionANDROID(device_data, ycbcrConversion);
+    }
+}
+
+void PostCallRecordDestroySamplerYcbcrConversionKHR(VkDevice device, VkSamplerYcbcrConversion ycbcrConversion,
+                                                    const VkAllocationCallbacks *pAllocator) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!ycbcrConversion) return;
+    if (GetDeviceExtensions(device_data)->vk_android_external_memory_android_hardware_buffer) {
+        RecordDestroySamplerYcbcrConversionANDROID(device_data, ycbcrConversion);
     }
 }
 
