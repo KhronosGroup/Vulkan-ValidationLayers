@@ -286,6 +286,8 @@ void GpuPostCallRecordCreateDevice(layer_data *dev_data) {
 
     gpu_state->aborted = false;
     gpu_state->reserve_binding_slot = false;
+    gpu_state->barrier_command_pool = VK_NULL_HANDLE;
+    gpu_state->barrier_command_buffer = VK_NULL_HANDLE;
 
     if (GetPDProperties(dev_data)->apiVersion < VK_API_VERSION_1_1) {
         ReportSetupProblem(dev_data, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(GetDevice(dev_data)),
