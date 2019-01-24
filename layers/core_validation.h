@@ -1703,11 +1703,10 @@ void PostCallRecordImportFence(layer_data* dev_data, VkFence fence, VkExternalFe
 void PostCallRecordGetFence(layer_data* dev_data, VkFence fence, VkExternalFenceHandleTypeFlagBitsKHR handle_type);
 void PostCallRecordCreateEvent(VkDevice device, const VkEventCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                                VkEvent* pEvent, VkResult result);
-bool PreCallValidateCreateSwapchainKHR(layer_data* dev_data, const char* func_name, VkSwapchainCreateInfoKHR const* pCreateInfo,
-                                       SURFACE_STATE* surface_state, SWAPCHAIN_NODE* old_swapchain_state);
-void PostCallRecordCreateSwapchainKHR(layer_data* dev_data, VkResult result, const VkSwapchainCreateInfoKHR* pCreateInfo,
-                                      VkSwapchainKHR* pSwapchain, SURFACE_STATE* surface_state,
-                                      SWAPCHAIN_NODE* old_swapchain_state);
+bool PreCallValidateCreateSwapchainKHR(VkDevice device, const VkSwapchainCreateInfoKHR* pCreateInfo,
+                                       const VkAllocationCallbacks* pAllocator, VkSwapchainKHR* pSwapchain);
+void PostCallRecordCreateSwapchainKHR(VkDevice device, const VkSwapchainCreateInfoKHR* pCreateInfo,
+                                      const VkAllocationCallbacks* pAllocator, VkSwapchainKHR* pSwapchain, VkResult result);
 void PreCallRecordDestroySwapchainKHR(VkDevice device, VkSwapchainKHR swapchain, const VkAllocationCallbacks* pAllocator);
 bool PreCallValidateGetSwapchainImagesKHR(layer_data* device_data, SWAPCHAIN_NODE* swapchain_state, VkDevice device,
                                           uint32_t* pSwapchainImageCount, VkImage* pSwapchainImages);
@@ -1715,14 +1714,11 @@ void PostCallRecordGetSwapchainImagesKHR(layer_data* device_data, SWAPCHAIN_NODE
                                          uint32_t* pSwapchainImageCount, VkImage* pSwapchainImages);
 bool PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR* pPresentInfo);
 void PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR* pPresentInfo, VkResult result);
-bool PreCallValidateCreateSharedSwapchainsKHR(layer_data* dev_data, uint32_t swapchainCount,
-                                              const VkSwapchainCreateInfoKHR* pCreateInfos, VkSwapchainKHR* pSwapchains,
-                                              std::vector<SURFACE_STATE*>& surface_state,
-                                              std::vector<SWAPCHAIN_NODE*>& old_swapchain_state);
-void PostCallRecordCreateSharedSwapchainsKHR(layer_data* dev_data, VkResult result, uint32_t swapchainCount,
-                                             const VkSwapchainCreateInfoKHR* pCreateInfos, VkSwapchainKHR* pSwapchains,
-                                             std::vector<SURFACE_STATE*>& surface_state,
-                                             std::vector<SWAPCHAIN_NODE*>& old_swapchain_state);
+bool PreCallValidateCreateSharedSwapchainsKHR(VkDevice device, uint32_t swapchainCount,
+                                              const VkSwapchainCreateInfoKHR* pCreateInfos, const VkAllocationCallbacks* pAllocator,
+                                              VkSwapchainKHR* pSwapchains);
+void PostCallRecordCreateSharedSwapchainsKHR(VkDevice device, uint32_t swapchainCount, const VkSwapchainCreateInfoKHR* pCreateInfos,
+                                             const VkAllocationCallbacks* pAllocator, VkSwapchainKHR* pSwapchains, VkResult result);
 bool PreCallValidateCommonAcquireNextImage(layer_data* dev_data, VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout,
                                            VkSemaphore semaphore, VkFence fence, uint32_t* pImageIndex, const char* func_name);
 void PostCallRecordCommonAcquireNextImage(layer_data* dev_data, VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout,
@@ -1778,9 +1774,9 @@ void PostCallRecordCreateDebugUtilsMessengerEXT(VkInstance instance, const VkDeb
                                                 VkResult result);
 void PostCallRecordDestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT messenger,
                                                  const VkAllocationCallbacks* pAllocator);
-void PostCallRecordCreateDebugReportCallbackEXT(instance_layer_data* instance_data,
-                                                const VkDebugReportCallbackCreateInfoEXT* pCreateInfo,
-                                                const VkAllocationCallbacks* pAllocator, VkDebugReportCallbackEXT* pMsgCallback);
+void PostCallRecordCreateDebugReportCallbackEXT(VkInstance instance, const VkDebugReportCallbackCreateInfoEXT* pCreateInfo,
+                                                const VkAllocationCallbacks* pAllocator, VkDebugReportCallbackEXT* pMsgCallback,
+                                                VkResult result);
 void PostCallDestroyDebugReportCallbackEXT(instance_layer_data* instance_data, VkDebugReportCallbackEXT msgCallback,
                                            const VkAllocationCallbacks* pAllocator);
 bool PreCallValidateEnumeratePhysicalDeviceGroups(VkInstance instance, uint32_t* pPhysicalDeviceGroupCount,

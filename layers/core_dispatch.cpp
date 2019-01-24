@@ -2461,17 +2461,14 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateEvent(VkDevice device, const VkEventCreateI
 VKAPI_ATTR VkResult VKAPI_CALL CreateSwapchainKHR(VkDevice device, const VkSwapchainCreateInfoKHR *pCreateInfo,
                                                   const VkAllocationCallbacks *pAllocator, VkSwapchainKHR *pSwapchain) {
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    auto surface_state = GetSurfaceState(dev_data->instance_data, pCreateInfo->surface);
-    auto old_swapchain_state = GetSwapchainNode(dev_data, pCreateInfo->oldSwapchain);
-
-    if (PreCallValidateCreateSwapchainKHR(dev_data, "vkCreateSwapChainKHR()", pCreateInfo, surface_state, old_swapchain_state)) {
-        return VK_ERROR_VALIDATION_FAILED_EXT;
-    }
-
+    bool skip = false;
+    unique_lock_t lock(global_lock);
+    skip = PreCallValidateCreateSwapchainKHR(device, pCreateInfo, pAllocator, pSwapchain);
+    if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+    lock.unlock();
     VkResult result = dev_data->dispatch_table.CreateSwapchainKHR(device, pCreateInfo, pAllocator, pSwapchain);
-
-    PostCallRecordCreateSwapchainKHR(dev_data, result, pCreateInfo, pSwapchain, surface_state, old_swapchain_state);
-
+    lock.lock();
+    PostCallRecordCreateSwapchainKHR(device, pCreateInfo, pAllocator, pSwapchain, result);
     return result;
 }
 
@@ -2521,20 +2518,15 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateSharedSwapchainsKHR(VkDevice device, uint32
                                                          const VkSwapchainCreateInfoKHR *pCreateInfos,
                                                          const VkAllocationCallbacks *pAllocator, VkSwapchainKHR *pSwapchains) {
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    std::vector<SURFACE_STATE *> surface_state;
-    std::vector<SWAPCHAIN_NODE *> old_swapchain_state;
-
-    if (PreCallValidateCreateSharedSwapchainsKHR(dev_data, swapchainCount, pCreateInfos, pSwapchains, surface_state,
-                                                 old_swapchain_state)) {
-        return VK_ERROR_VALIDATION_FAILED_EXT;
-    }
-
+    bool skip = false;
+    unique_lock_t lock(global_lock);
+    skip = PreCallValidateCreateSharedSwapchainsKHR(device, swapchainCount, pCreateInfos, pAllocator, pSwapchains);
+    if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+    lock.unlock();
     VkResult result =
         dev_data->dispatch_table.CreateSharedSwapchainsKHR(device, swapchainCount, pCreateInfos, pAllocator, pSwapchains);
-
-    PostCallRecordCreateSharedSwapchainsKHR(dev_data, result, swapchainCount, pCreateInfos, pSwapchains, surface_state,
-                                            old_swapchain_state);
-
+    lock.lock();
+    PostCallRecordCreateSharedSwapchainsKHR(device, swapchainCount, pCreateInfos, pAllocator, pSwapchains, result);
     return result;
 }
 
@@ -3102,12 +3094,10 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDebugReportCallbackEXT(VkInstance instance,
                                                             const VkAllocationCallbacks *pAllocator,
                                                             VkDebugReportCallbackEXT *pMsgCallback) {
     instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(instance), instance_layer_data_map);
-    VkResult res = instance_data->dispatch_table.CreateDebugReportCallbackEXT(instance, pCreateInfo, pAllocator, pMsgCallback);
-    if (VK_SUCCESS == res) {
-        lock_guard_t lock(global_lock);
-        PostCallRecordCreateDebugReportCallbackEXT(instance_data, pCreateInfo, pAllocator, pMsgCallback);
-    }
-    return res;
+    VkResult result = instance_data->dispatch_table.CreateDebugReportCallbackEXT(instance, pCreateInfo, pAllocator, pMsgCallback);
+    lock_guard_t lock(global_lock);
+    PostCallRecordCreateDebugReportCallbackEXT(instance, pCreateInfo, pAllocator, pMsgCallback, result);
+    return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL DestroyDebugReportCallbackEXT(VkInstance instance, VkDebugReportCallbackEXT msgCallback,
