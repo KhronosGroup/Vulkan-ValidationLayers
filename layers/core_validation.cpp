@@ -795,15 +795,17 @@ static bool ValidateSubpassCompatibility(layer_data const *dev_data, const char 
         }
         skip |= ValidateAttachmentCompatibility(dev_data, type1_string, rp1_state, type2_string, rp2_state, primary_color_attach,
                                                 secondary_color_attach, caller, error_code);
-        uint32_t primary_resolve_attach = VK_ATTACHMENT_UNUSED, secondary_resolve_attach = VK_ATTACHMENT_UNUSED;
-        if (i < primary_desc.colorAttachmentCount && primary_desc.pResolveAttachments) {
-            primary_resolve_attach = primary_desc.pResolveAttachments[i].attachment;
+        if (rp1_state->createInfo.subpassCount > 1) {
+            uint32_t primary_resolve_attach = VK_ATTACHMENT_UNUSED, secondary_resolve_attach = VK_ATTACHMENT_UNUSED;
+            if (i < primary_desc.colorAttachmentCount && primary_desc.pResolveAttachments) {
+                primary_resolve_attach = primary_desc.pResolveAttachments[i].attachment;
+            }
+            if (i < secondary_desc.colorAttachmentCount && secondary_desc.pResolveAttachments) {
+                secondary_resolve_attach = secondary_desc.pResolveAttachments[i].attachment;
+            }
+            skip |= ValidateAttachmentCompatibility(dev_data, type1_string, rp1_state, type2_string, rp2_state,
+                                                    primary_resolve_attach, secondary_resolve_attach, caller, error_code);
         }
-        if (i < secondary_desc.colorAttachmentCount && secondary_desc.pResolveAttachments) {
-            secondary_resolve_attach = secondary_desc.pResolveAttachments[i].attachment;
-        }
-        skip |= ValidateAttachmentCompatibility(dev_data, type1_string, rp1_state, type2_string, rp2_state, primary_resolve_attach,
-                                                secondary_resolve_attach, caller, error_code);
     }
     uint32_t primary_depthstencil_attach = VK_ATTACHMENT_UNUSED, secondary_depthstencil_attach = VK_ATTACHMENT_UNUSED;
     if (primary_desc.pDepthStencilAttachment) {
