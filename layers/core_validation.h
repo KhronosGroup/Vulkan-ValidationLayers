@@ -1469,9 +1469,11 @@ bool PreCallValidateCreateRayTracingPipelinesNV(layer_data* dev_data, uint32_t c
 void PostCallRecordCreateRayTracingPipelinesNV(layer_data* dev_data, uint32_t count,
                                                vector<std::unique_ptr<PIPELINE_STATE>>& pipe_state, VkPipeline* pPipelines);
 void PostCallRecordCreateSampler(layer_data* dev_data, const VkSamplerCreateInfo* pCreateInfo, VkSampler* pSampler);
-bool PreCallValidateCreateDescriptorSetLayout(layer_data* dev_data, const VkDescriptorSetLayoutCreateInfo* create_info);
-void PostCallRecordCreateDescriptorSetLayout(layer_data* dev_data, const VkDescriptorSetLayoutCreateInfo* create_info,
-                                             VkDescriptorSetLayout set_layout);
+bool PreCallValidateCreateDescriptorSetLayout(VkDevice device, const VkDescriptorSetLayoutCreateInfo* pCreateInfo,
+                                              const VkAllocationCallbacks* pAllocator, VkDescriptorSetLayout* pSetLayout);
+void PostCallRecordCreateDescriptorSetLayout(VkDevice device, const VkDescriptorSetLayoutCreateInfo* pCreateInfo,
+                                             const VkAllocationCallbacks* pAllocator, VkDescriptorSetLayout* pSetLayout,
+                                             VkResult result);
 bool PreCallValidateCreatePipelineLayout(const layer_data* dev_data, const VkPipelineLayoutCreateInfo* pCreateInfo);
 void PostCallRecordCreatePipelineLayout(layer_data* dev_data, const VkPipelineLayoutCreateInfo* pCreateInfo,
                                         const VkPipelineLayout* pPipelineLayout);
@@ -1629,15 +1631,18 @@ bool PreCallValidateCmdPushConstants(layer_data* dev_data, VkCommandBuffer comma
                                      VkShaderStageFlags stageFlags, uint32_t offset, uint32_t size);
 bool PreCallValidateCmdWriteTimestamp(layer_data* dev_data, GLOBAL_CB_NODE* cb_state);
 void PostCallRecordCmdWriteTimestamp(GLOBAL_CB_NODE* cb_state, VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot);
-bool PreCallValidateCreateFramebuffer(layer_data* dev_data, const VkFramebufferCreateInfo* pCreateInfo);
-// CreateFramebuffer state has been validated and call down chain completed so record new framebuffer object
-void PostCallRecordCreateFramebuffer(layer_data* dev_data, const VkFramebufferCreateInfo* pCreateInfo, VkFramebuffer fb);
-bool PreCallValidateCreateRenderPass(const layer_data* dev_data, VkDevice device, const VkRenderPassCreateInfo* pCreateInfo,
-                                     RENDER_PASS_STATE* render_pass);
-void PostCallRecordCreateRenderPass(layer_data* dev_data, const VkRenderPass render_pass_handle,
-                                    std::shared_ptr<RENDER_PASS_STATE>&& render_pass);
-bool PreCallValidateCreateRenderPass2KHR(const layer_data* dev_data, VkDevice device, const VkRenderPassCreateInfo2KHR* pCreateInfo,
-                                         RENDER_PASS_STATE* render_pass);
+bool PreCallValidateCreateFramebuffer(VkDevice device, const VkFramebufferCreateInfo* pCreateInfo,
+                                      const VkAllocationCallbacks* pAllocator, VkFramebuffer* pFramebuffer);
+void PostCallRecordCreateFramebuffer(VkDevice device, const VkFramebufferCreateInfo* pCreateInfo,
+                                     const VkAllocationCallbacks* pAllocator, VkFramebuffer* pFramebuffer, VkResult result);
+bool PreCallValidateCreateRenderPass(VkDevice device, const VkRenderPassCreateInfo* pCreateInfo,
+                                     const VkAllocationCallbacks* pAllocator, VkRenderPass* pRenderPass);
+void PostCallRecordCreateRenderPass(VkDevice device, const VkRenderPassCreateInfo* pCreateInfo,
+                                    const VkAllocationCallbacks* pAllocator, VkRenderPass* pRenderPass, VkResult result);
+bool PreCallValidateCreateRenderPass2KHR(VkDevice device, const VkRenderPassCreateInfo2KHR* pCreateInfo,
+                                         const VkAllocationCallbacks* pAllocator, VkRenderPass* pRenderPass);
+void PostCallRecordCreateRenderPass2KHR(VkDevice device, const VkRenderPassCreateInfo2KHR* pCreateInfo,
+                                        const VkAllocationCallbacks* pAllocator, VkRenderPass* pRenderPass, VkResult result);
 bool PreCallValidateCmdBeginRenderPass(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, RenderPassCreateVersion rp_version,
                                        const VkRenderPassBeginInfo* pRenderPassBegin);
 void PreCallRecordCmdBeginRenderPass(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, const VkRenderPassBeginInfo* pRenderPassBegin,

@@ -1114,14 +1114,12 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDescriptorSetLayout(VkDevice device, const 
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     VkResult result = VK_ERROR_VALIDATION_FAILED_EXT;
     unique_lock_t lock(global_lock);
-    bool skip = PreCallValidateCreateDescriptorSetLayout(dev_data, pCreateInfo);
+    bool skip = PreCallValidateCreateDescriptorSetLayout(device, pCreateInfo, pAllocator, pSetLayout);
     if (!skip) {
         lock.unlock();
         result = dev_data->dispatch_table.CreateDescriptorSetLayout(device, pCreateInfo, pAllocator, pSetLayout);
-        if (VK_SUCCESS == result) {
-            lock.lock();
-            PostCallRecordCreateDescriptorSetLayout(dev_data, pCreateInfo, *pSetLayout);
-        }
+        lock.lock();
+        PostCallRecordCreateDescriptorSetLayout(device, pCreateInfo, pAllocator, pSetLayout, result);
     }
     return result;
 }
@@ -2010,18 +2008,13 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateFramebuffer(VkDevice device, const VkFrameb
                                                  const VkAllocationCallbacks *pAllocator, VkFramebuffer *pFramebuffer) {
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     unique_lock_t lock(global_lock);
-    bool skip = PreCallValidateCreateFramebuffer(dev_data, pCreateInfo);
+    bool skip = PreCallValidateCreateFramebuffer(device, pCreateInfo, pAllocator, pFramebuffer);
     lock.unlock();
-
     if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
 
     VkResult result = dev_data->dispatch_table.CreateFramebuffer(device, pCreateInfo, pAllocator, pFramebuffer);
-
-    if (VK_SUCCESS == result) {
-        lock.lock();
-        PostCallRecordCreateFramebuffer(dev_data, pCreateInfo, *pFramebuffer);
-        lock.unlock();
-    }
+    lock.lock();
+    PostCallRecordCreateFramebuffer(device, pCreateInfo, pAllocator, pFramebuffer, result);
     return result;
 }
 
@@ -2030,12 +2023,10 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateRenderPass(VkDevice device, const VkRenderP
     bool skip = false;
 
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    // If we fail, this will act like a unique_ptr and auto-cleanup, as we aren't saving it anywhere
-    auto render_pass = std::make_shared<RENDER_PASS_STATE>(pCreateInfo);
 
     unique_lock_t lock(global_lock);
 
-    skip = PreCallValidateCreateRenderPass(dev_data, device, pCreateInfo, render_pass.get());
+    skip = PreCallValidateCreateRenderPass(device, pCreateInfo, pAllocator, pRenderPass);
     lock.unlock();
 
     if (skip) {
@@ -2046,7 +2037,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateRenderPass(VkDevice device, const VkRenderP
 
     if (VK_SUCCESS == result) {
         lock.lock();
-        PostCallRecordCreateRenderPass(dev_data, *pRenderPass, std::move(render_pass));
+        PostCallRecordCreateRenderPass(device, pCreateInfo, pAllocator, pRenderPass, result);
     }
     return result;
 }
@@ -2054,26 +2045,18 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateRenderPass(VkDevice device, const VkRenderP
 VKAPI_ATTR VkResult VKAPI_CALL CreateRenderPass2KHR(VkDevice device, const VkRenderPassCreateInfo2KHR *pCreateInfo,
                                                     const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass) {
     bool skip = false;
-
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    // If we fail, this will act like a unique_ptr and auto-cleanup, as we aren't saving it anywhere
-    auto render_pass = std::make_shared<RENDER_PASS_STATE>(pCreateInfo);
 
     unique_lock_t lock(global_lock);
-
-    skip = PreCallValidateCreateRenderPass2KHR(dev_data, device, pCreateInfo, render_pass.get());
+    skip = PreCallValidateCreateRenderPass2KHR(device, pCreateInfo, pAllocator, pRenderPass);
     lock.unlock();
 
     if (skip) {
         return VK_ERROR_VALIDATION_FAILED_EXT;
     }
-
     VkResult result = dev_data->dispatch_table.CreateRenderPass2KHR(device, pCreateInfo, pAllocator, pRenderPass);
-
-    if (VK_SUCCESS == result) {
-        lock.lock();
-        PostCallRecordCreateRenderPass(dev_data, *pRenderPass, std::move(render_pass));
-    }
+    lock.lock();
+    PostCallRecordCreateRenderPass2KHR(device, pCreateInfo, pAllocator, pRenderPass, result);
     return result;
 }
 
@@ -3596,7 +3579,6 @@ VKAPI_ATTR VkResult VKAPI_CALL CreatePipelineLayout(VkDevice device, const VkPip
                                                     const VkAllocationCallbacks *pAllocator, VkPipelineLayout *pPipelineLayout) {
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     VkResult result;
-
     bool skip = PreCallValidateCreatePipelineLayout(dev_data, pCreateInfo);
     if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
 
