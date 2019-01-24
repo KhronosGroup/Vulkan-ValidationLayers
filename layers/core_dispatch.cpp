@@ -86,7 +86,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
     PFN_vkCreateInstance fpCreateInstance = (PFN_vkCreateInstance)fpGetInstanceProcAddr(NULL, "vkCreateInstance");
     if (fpCreateInstance == NULL) return VK_ERROR_INITIALIZATION_FAILED;
 
-    PreCallRecordCreateInstance(chain_info);
+    chain_info->u.pLayerInfo = chain_info->u.pLayerInfo->pNext;
 
     VkResult result = fpCreateInstance(pCreateInfo, pAllocator, pInstance);
     if (result != VK_SUCCESS) return result;
@@ -104,7 +104,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
                                   "lunarg_core_validation");
 
     ValidateLayerOrdering(*pCreateInfo);
-    PostCallRecordCreateInstance(instance_data, pCreateInfo);
+    PostCallRecordCreateInstance(pCreateInfo, pAllocator, pInstance, result);
 
     return result;
 }
@@ -134,9 +134,8 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
     instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(gpu), instance_layer_data_map);
 
     unique_lock_t lock(global_lock);
-    const VkPhysicalDeviceFeatures *enabled_features_found = pCreateInfo->pEnabledFeatures;
+    bool skip = PreCallValidateCreateDevice(gpu, pCreateInfo, pAllocator, pDevice);
 
-    bool skip = PreCallValidateCreateDevice(instance_data, &enabled_features_found, gpu, pCreateInfo);
     if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
 
     VkLayerDeviceCreateInfo *chain_info = get_chain_info(pCreateInfo, VK_LAYER_LINK_INFO);
@@ -167,7 +166,21 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
     }
 
     lock.lock();
-    PostCallRecordCreateDevice(instance_data, enabled_features_found, fpGetDeviceProcAddr, gpu, pCreateInfo, pDevice);
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(*pDevice), layer_data_map);
+    device_data->instance_data = instance_data;
+    // Setup device dispatch table
+    layer_init_device_dispatch_table(*pDevice, &device_data->dispatch_table, fpGetDeviceProcAddr);
+    device_data->device = *pDevice;
+    // Save PhysicalDevice handle
+    device_data->physical_device = gpu;
+    device_data->report_data = layer_debug_utils_create_device(instance_data->report_data, *pDevice);
+    // Get physical device limits for this device
+    instance_data->dispatch_table.GetPhysicalDeviceProperties(gpu, &(device_data->phys_dev_properties.properties));
+    // Setup the validation tables based on the application API version from the instance and the capabilities of the device driver.
+    uint32_t effective_api_version = std::min(device_data->phys_dev_properties.properties.apiVersion, instance_data->api_version);
+    device_data->api_version =
+        device_data->extensions.InitFromDeviceCreateInfo(&instance_data->extensions, effective_api_version, pCreateInfo);
+    PostCallRecordCreateDevice(gpu, pCreateInfo, pAllocator, pDevice, result);
     ValidateLayerOrdering(*pCreateInfo);
     lock.unlock();
 
@@ -3178,18 +3191,15 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDescriptorUpdateTemplate(VkDevice device,
                                                               VkDescriptorUpdateTemplateKHR *pDescriptorUpdateTemplate) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     unique_lock_t lock(global_lock);
-    bool skip = PreCallValidateCreateDescriptorUpdateTemplate("vkCreateDescriptorUpdateTemplate()", device_data, pCreateInfo,
-                                                              pAllocator, pDescriptorUpdateTemplate);
+    bool skip = PreCallValidateCreateDescriptorUpdateTemplate(device, pCreateInfo, pAllocator, pDescriptorUpdateTemplate);
 
     VkResult result = VK_ERROR_VALIDATION_FAILED_EXT;
     if (!skip) {
         lock.unlock();
         result =
             device_data->dispatch_table.CreateDescriptorUpdateTemplate(device, pCreateInfo, pAllocator, pDescriptorUpdateTemplate);
-        if (VK_SUCCESS == result) {
-            lock.lock();
-            PostCallRecordCreateDescriptorUpdateTemplate(device_data, pCreateInfo, pDescriptorUpdateTemplate);
-        }
+        lock.lock();
+        PostCallRecordCreateDescriptorUpdateTemplate(device, pCreateInfo, pAllocator, pDescriptorUpdateTemplate, result);
     }
     return result;
 }
@@ -3200,18 +3210,15 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDescriptorUpdateTemplateKHR(VkDevice device
                                                                  VkDescriptorUpdateTemplateKHR *pDescriptorUpdateTemplate) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     unique_lock_t lock(global_lock);
-    bool skip = PreCallValidateCreateDescriptorUpdateTemplate("vkCreateDescriptorUpdateTemplateKHR()", device_data, pCreateInfo,
-                                                              pAllocator, pDescriptorUpdateTemplate);
+    bool skip = PreCallValidateCreateDescriptorUpdateTemplate(device, pCreateInfo, pAllocator, pDescriptorUpdateTemplate);
 
     VkResult result = VK_ERROR_VALIDATION_FAILED_EXT;
     if (!skip) {
         lock.unlock();
         result = device_data->dispatch_table.CreateDescriptorUpdateTemplateKHR(device, pCreateInfo, pAllocator,
                                                                                pDescriptorUpdateTemplate);
-        if (VK_SUCCESS == result) {
-            lock.lock();
-            PostCallRecordCreateDescriptorUpdateTemplate(device_data, pCreateInfo, pDescriptorUpdateTemplate);
-        }
+        lock.lock();
+        PostCallRecordCreateDescriptorUpdateTemplate(device, pCreateInfo, pAllocator, pDescriptorUpdateTemplate, result);
     }
     return result;
 }

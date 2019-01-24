@@ -2259,12 +2259,10 @@ void SetValidationFeatures(instance_layer_data *instance_data, const VkValidatio
     }
 }
 
-void PreCallRecordCreateInstance(VkLayerInstanceCreateInfo *chain_info) {
-    // Advance the link info for the next element on the chain
-    chain_info->u.pLayerInfo = chain_info->u.pLayerInfo->pNext;
-}
-
-void PostCallRecordCreateInstance(instance_layer_data *instance_data, const VkInstanceCreateInfo *pCreateInfo) {
+void PostCallRecordCreateInstance(const VkInstanceCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator,
+                                  VkInstance *pInstance, VkResult result) {
+    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(*pInstance), instance_layer_data_map);
+    if (VK_SUCCESS != result) return;
     // Parse any pNext chains
     const auto *validation_flags_ext = lvl_find_in_chain<VkValidationFlagsEXT>(pCreateInfo->pNext);
     if (validation_flags_ext) {
@@ -2345,8 +2343,9 @@ static bool ValidateDeviceQueueCreateInfos(instance_layer_data *instance_data, c
     return skip;
 }
 
-bool PreCallValidateCreateDevice(instance_layer_data *instance_data, const VkPhysicalDeviceFeatures **enabled_features_found,
-                                 VkPhysicalDevice gpu, const VkDeviceCreateInfo *pCreateInfo) {
+bool PreCallValidateCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo *pCreateInfo,
+                                 const VkAllocationCallbacks *pAllocator, VkDevice *pDevice) {
+    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(gpu), instance_layer_data_map);
     bool skip = false;
     auto pd_state = GetPhysicalDeviceState(instance_data, gpu);
 
@@ -2357,53 +2356,33 @@ bool PreCallValidateCreateDevice(instance_layer_data *instance_data, const VkPhy
                         0, kVUID_Core_DevLimit_MustQueryCount,
                         "Invalid call to vkCreateDevice() w/o first calling vkEnumeratePhysicalDevices().");
     }
-
-    // The enabled features can come from either pEnabledFeatures, or from the pNext chain
-    // TODO: Validate "VUID-VkDeviceCreateInfo-pNext-00373" here, can't have non-null pEnabledFeatures & GPDF2 in pNext chain
-    if (nullptr == *enabled_features_found) {
-        const auto *features2 = lvl_find_in_chain<VkPhysicalDeviceFeatures2KHR>(pCreateInfo->pNext);
-        if (features2) {
-            *enabled_features_found = &(features2->features);
-        }
-    }
-
     skip |=
         ValidateDeviceQueueCreateInfos(instance_data, pd_state, pCreateInfo->queueCreateInfoCount, pCreateInfo->pQueueCreateInfos);
-
     return skip;
 }
 
-void PostCallRecordCreateDevice(instance_layer_data *instance_data, const VkPhysicalDeviceFeatures *enabled_features_found,
-                                PFN_vkGetDeviceProcAddr fpGetDeviceProcAddr, VkPhysicalDevice gpu,
-                                const VkDeviceCreateInfo *pCreateInfo, VkDevice *pDevice) {
+void PostCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo *pCreateInfo,
+                                const VkAllocationCallbacks *pAllocator, VkDevice *pDevice, VkResult result) {
+    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(gpu), instance_layer_data_map);
+
+    if (VK_SUCCESS != result) return;
+
+    const VkPhysicalDeviceFeatures *enabled_features_found = pCreateInfo->pEnabledFeatures;
+    if (nullptr == enabled_features_found) {
+        const auto *features2 = lvl_find_in_chain<VkPhysicalDeviceFeatures2KHR>(pCreateInfo->pNext);
+        if (features2) {
+            enabled_features_found = &(features2->features);
+        }
+    }
+
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(*pDevice), layer_data_map);
-
-    device_data->instance_data = instance_data;
-    // Setup device dispatch table
-    layer_init_device_dispatch_table(*pDevice, &device_data->dispatch_table, fpGetDeviceProcAddr);
-    device_data->device = *pDevice;
-    // Save PhysicalDevice handle
-    device_data->physical_device = gpu;
-
-    device_data->report_data = layer_debug_utils_create_device(instance_data->report_data, *pDevice);
-
-    // Get physical device limits for this device
-    instance_data->dispatch_table.GetPhysicalDeviceProperties(gpu, &(device_data->phys_dev_properties.properties));
-
-    // Setup the validation tables based on the application API version from the instance and the capabilities of the device driver.
-    uint32_t effective_api_version = std::min(device_data->phys_dev_properties.properties.apiVersion, instance_data->api_version);
-    device_data->api_version =
-        device_data->extensions.InitFromDeviceCreateInfo(&instance_data->extensions, effective_api_version, pCreateInfo);
+    device_data->enabled_features.core = *enabled_features_found;
 
     uint32_t count;
     instance_data->dispatch_table.GetPhysicalDeviceQueueFamilyProperties(gpu, &count, nullptr);
     device_data->phys_dev_properties.queue_family_properties.resize(count);
     instance_data->dispatch_table.GetPhysicalDeviceQueueFamilyProperties(
         gpu, &count, &device_data->phys_dev_properties.queue_family_properties[0]);
-    // TODO: device limits should make sure these are compatible
-    if (enabled_features_found) {
-        device_data->enabled_features.core = *enabled_features_found;
-    }
 
     const auto *device_group_ci = lvl_find_in_chain<VkDeviceGroupDeviceCreateInfo>(pCreateInfo->pNext);
     device_data->physical_device_count =
@@ -12037,10 +12016,8 @@ void PostCallRecordEnumeratePhysicalDeviceGroups(instance_layer_data *instance_d
     }
 }
 
-bool PreCallValidateCreateDescriptorUpdateTemplate(const char *func_name, layer_data *device_data,
-                                                   const VkDescriptorUpdateTemplateCreateInfoKHR *pCreateInfo,
-                                                   const VkAllocationCallbacks *pAllocator,
-                                                   VkDescriptorUpdateTemplateKHR *pDescriptorUpdateTemplate) {
+bool ValidateDescriptorUpdateTemplate(const char *func_name, layer_data *device_data,
+                                      const VkDescriptorUpdateTemplateCreateInfoKHR *pCreateInfo) {
     bool skip = false;
     const auto layout = GetDescriptorSetLayout(device_data, pCreateInfo->descriptorSetLayout);
     if (VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET == pCreateInfo->templateType && !layout) {
@@ -12082,6 +12059,24 @@ bool PreCallValidateCreateDescriptorUpdateTemplate(const char *func_name, layer_
     return skip;
 }
 
+bool PreCallValidateCreateDescriptorUpdateTemplate(VkDevice device, const VkDescriptorUpdateTemplateCreateInfoKHR *pCreateInfo,
+                                                   const VkAllocationCallbacks *pAllocator,
+                                                   VkDescriptorUpdateTemplateKHR *pDescriptorUpdateTemplate) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+
+    bool skip = ValidateDescriptorUpdateTemplate("vkCreateDescriptorUpdateTemplate()", device_data, pCreateInfo);
+    return skip;
+}
+
+bool PreCallValidateCreateDescriptorUpdateTemplateKHR(VkDevice device, const VkDescriptorUpdateTemplateCreateInfoKHR *pCreateInfo,
+                                                      const VkAllocationCallbacks *pAllocator,
+                                                      VkDescriptorUpdateTemplateKHR *pDescriptorUpdateTemplate) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+
+    bool skip = ValidateDescriptorUpdateTemplate("vkCreateDescriptorUpdateTemplateKHR()", device_data, pCreateInfo);
+    return skip;
+}
+
 void PreCallRecordDestroyDescriptorUpdateTemplate(VkDevice device, VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate,
                                                   const VkAllocationCallbacks *pAllocator) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
@@ -12096,13 +12091,27 @@ void PreCallRecordDestroyDescriptorUpdateTemplateKHR(VkDevice device, VkDescript
     device_data->desc_template_map.erase(descriptorUpdateTemplate);
 }
 
-void PostCallRecordCreateDescriptorUpdateTemplate(layer_data *device_data,
-                                                  const VkDescriptorUpdateTemplateCreateInfoKHR *pCreateInfo,
-                                                  VkDescriptorUpdateTemplateKHR *pDescriptorUpdateTemplate) {
-    // Shadow template createInfo for later updates
+void RecordCreateDescriptorUpdateTemplateState(layer_data *device_data, const VkDescriptorUpdateTemplateCreateInfoKHR *pCreateInfo,
+                                               VkDescriptorUpdateTemplateKHR *pDescriptorUpdateTemplate) {
     safe_VkDescriptorUpdateTemplateCreateInfo *local_create_info = new safe_VkDescriptorUpdateTemplateCreateInfo(pCreateInfo);
     std::unique_ptr<TEMPLATE_STATE> template_state(new TEMPLATE_STATE(*pDescriptorUpdateTemplate, local_create_info));
     device_data->desc_template_map[*pDescriptorUpdateTemplate] = std::move(template_state);
+}
+
+void PostCallRecordCreateDescriptorUpdateTemplate(VkDevice device, const VkDescriptorUpdateTemplateCreateInfoKHR *pCreateInfo,
+                                                  const VkAllocationCallbacks *pAllocator,
+                                                  VkDescriptorUpdateTemplateKHR *pDescriptorUpdateTemplate, VkResult result) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (VK_SUCCESS != result) return;
+    RecordCreateDescriptorUpdateTemplateState(device_data, pCreateInfo, pDescriptorUpdateTemplate);
+}
+
+void PostCallRecordCreateDescriptorUpdateTemplateKHR(VkDevice device, const VkDescriptorUpdateTemplateCreateInfoKHR *pCreateInfo,
+                                                     const VkAllocationCallbacks *pAllocator,
+                                                     VkDescriptorUpdateTemplateKHR *pDescriptorUpdateTemplate, VkResult result) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (VK_SUCCESS != result) return;
+    RecordCreateDescriptorUpdateTemplateState(device_data, pCreateInfo, pDescriptorUpdateTemplate);
 }
 
 bool PreCallValidateUpdateDescriptorSetWithTemplate(layer_data *device_data, VkDescriptorSet descriptorSet,

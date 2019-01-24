@@ -1358,13 +1358,12 @@ using std::vector;
 SURFACE_STATE* GetSurfaceState(instance_layer_data* instance_data, VkSurfaceKHR surface);
 PHYSICAL_DEVICE_STATE* GetPhysicalDeviceState(instance_layer_data* instance_data, VkPhysicalDevice phys);
 
-void PreCallRecordCreateInstance(VkLayerInstanceCreateInfo* chain_info);
-void PostCallRecordCreateInstance(instance_layer_data* instance_data, const VkInstanceCreateInfo* pCreateInfo);
-bool PreCallValidateCreateDevice(instance_layer_data* instance_data, const VkPhysicalDeviceFeatures** enabled_features_found,
-                                 VkPhysicalDevice gpu, const VkDeviceCreateInfo* pCreateInfo);
-void PostCallRecordCreateDevice(instance_layer_data* instance_data, const VkPhysicalDeviceFeatures* enabled_features_found,
-                                PFN_vkGetDeviceProcAddr fpGetDeviceProcAddr, VkPhysicalDevice gpu,
-                                const VkDeviceCreateInfo* pCreateInfo, VkDevice* pDevice);
+void PostCallRecordCreateInstance(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
+                                  VkInstance* pInstance, VkResult result);
+bool PreCallValidateCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo* pCreateInfo,
+                                 const VkAllocationCallbacks* pAllocator, VkDevice* pDevice);
+void PostCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo* pCreateInfo,
+                                const VkAllocationCallbacks* pAllocator, VkDevice* pDevice, VkResult result);
 bool PreCallCmdUpdateBuffer(layer_data* device_data, const GLOBAL_CB_NODE* cb_state, const BUFFER_STATE* dst_buffer_state);
 void PostCallRecordCmdUpdateBuffer(layer_data* device_data, GLOBAL_CB_NODE* cb_state, BUFFER_STATE* dst_buffer_state);
 
@@ -1776,13 +1775,18 @@ void PreCallRecordEnumeratePhysicalDeviceGroups(instance_layer_data* instance_da
                                                 VkPhysicalDeviceGroupPropertiesKHR* pPhysicalDeviceGroupProperties);
 void PostCallRecordEnumeratePhysicalDeviceGroups(instance_layer_data* instance_data, uint32_t* pPhysicalDeviceGroupCount,
                                                  VkPhysicalDeviceGroupPropertiesKHR* pPhysicalDeviceGroupProperties);
-bool PreCallValidateCreateDescriptorUpdateTemplate(const char* func_name, layer_data* device_data,
-                                                   const VkDescriptorUpdateTemplateCreateInfoKHR* pCreateInfo,
+bool PreCallValidateCreateDescriptorUpdateTemplate(VkDevice device, const VkDescriptorUpdateTemplateCreateInfoKHR* pCreateInfo,
                                                    const VkAllocationCallbacks* pAllocator,
                                                    VkDescriptorUpdateTemplateKHR* pDescriptorUpdateTemplate);
-void PostCallRecordCreateDescriptorUpdateTemplate(layer_data* device_data,
-                                                  const VkDescriptorUpdateTemplateCreateInfoKHR* pCreateInfo,
-                                                  VkDescriptorUpdateTemplateKHR* pDescriptorUpdateTemplate);
+void PostCallRecordCreateDescriptorUpdateTemplate(VkDevice device, const VkDescriptorUpdateTemplateCreateInfoKHR* pCreateInfo,
+                                                  const VkAllocationCallbacks* pAllocator,
+                                                  VkDescriptorUpdateTemplateKHR* pDescriptorUpdateTemplate, VkResult result);
+bool PreCallValidateCreateDescriptorUpdateTemplateKHR(VkDevice device, const VkDescriptorUpdateTemplateCreateInfoKHR* pCreateInfo,
+                                                      const VkAllocationCallbacks* pAllocator,
+                                                      VkDescriptorUpdateTemplateKHR* pDescriptorUpdateTemplate);
+void PostCallRecordCreateDescriptorUpdateTemplateKHR(VkDevice device, const VkDescriptorUpdateTemplateCreateInfoKHR* pCreateInfo,
+                                                     const VkAllocationCallbacks* pAllocator,
+                                                     VkDescriptorUpdateTemplateKHR* pDescriptorUpdateTemplate, VkResult result);
 void PreCallRecordDestroyDescriptorUpdateTemplate(VkDevice device, VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate,
                                                   const VkAllocationCallbacks* pAllocator);
 void PreCallRecordDestroyDescriptorUpdateTemplateKHR(VkDevice device, VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate,
