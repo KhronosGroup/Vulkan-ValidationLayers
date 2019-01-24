@@ -5108,18 +5108,24 @@ void PostCallRecordCreateSampler(layer_data *dev_data, const VkSamplerCreateInfo
     dev_data->samplerMap[*pSampler] = unique_ptr<SAMPLER_STATE>(new SAMPLER_STATE(pSampler, pCreateInfo));
 }
 
-bool PreCallValidateCreateDescriptorSetLayout(layer_data *dev_data, const VkDescriptorSetLayoutCreateInfo *create_info) {
-    if (dev_data->instance_data->disabled.create_descriptor_set_layout) return false;
+bool PreCallValidateCreateDescriptorSetLayout(VkDevice device, const VkDescriptorSetLayoutCreateInfo *pCreateInfo,
+                                              const VkAllocationCallbacks *pAllocator, VkDescriptorSetLayout *pSetLayout) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (device_data->instance_data->disabled.create_descriptor_set_layout) return false;
     return cvdescriptorset::DescriptorSetLayout::ValidateCreateInfo(
-        dev_data->report_data, create_info, dev_data->extensions.vk_khr_push_descriptor,
-        dev_data->phys_dev_ext_props.max_push_descriptors, dev_data->extensions.vk_ext_descriptor_indexing,
-        &dev_data->enabled_features.descriptor_indexing, &dev_data->enabled_features.inline_uniform_block,
-        &dev_data->phys_dev_ext_props.inline_uniform_block_props);
+        device_data->report_data, pCreateInfo, device_data->extensions.vk_khr_push_descriptor,
+        device_data->phys_dev_ext_props.max_push_descriptors, device_data->extensions.vk_ext_descriptor_indexing,
+        &device_data->enabled_features.descriptor_indexing, &device_data->enabled_features.inline_uniform_block,
+        &device_data->phys_dev_ext_props.inline_uniform_block_props);
 }
 
-void PostCallRecordCreateDescriptorSetLayout(layer_data *dev_data, const VkDescriptorSetLayoutCreateInfo *create_info,
-                                             VkDescriptorSetLayout set_layout) {
-    dev_data->descriptorSetLayoutMap[set_layout] = std::make_shared<cvdescriptorset::DescriptorSetLayout>(create_info, set_layout);
+void PostCallRecordCreateDescriptorSetLayout(VkDevice device, const VkDescriptorSetLayoutCreateInfo *pCreateInfo,
+                                             const VkAllocationCallbacks *pAllocator, VkDescriptorSetLayout *pSetLayout,
+                                             VkResult result) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (VK_SUCCESS != result) return;
+    device_data->descriptorSetLayoutMap[*pSetLayout] =
+        std::make_shared<cvdescriptorset::DescriptorSetLayout>(pCreateInfo, *pSetLayout);
 }
 
 // Used by CreatePipelineLayout and CmdPushConstants.
@@ -8564,25 +8570,26 @@ static bool ValidateFramebufferCreateInfo(layer_data *dev_data, const VkFramebuf
     return skip;
 }
 
-// Validate VkFramebufferCreateInfo state prior to calling down chain to create Framebuffer object
-//  Return true if an error is encountered and callback returns true to skip call down chain
-//   false indicates that call down chain should proceed
-bool PreCallValidateCreateFramebuffer(layer_data *dev_data, const VkFramebufferCreateInfo *pCreateInfo) {
+bool PreCallValidateCreateFramebuffer(VkDevice device, const VkFramebufferCreateInfo *pCreateInfo,
+                                      const VkAllocationCallbacks *pAllocator, VkFramebuffer *pFramebuffer) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     // TODO : Verify that renderPass FB is created with is compatible with FB
     bool skip = false;
-    skip |= ValidateFramebufferCreateInfo(dev_data, pCreateInfo);
+    skip |= ValidateFramebufferCreateInfo(device_data, pCreateInfo);
     return skip;
 }
 
-// CreateFramebuffer state has been validated and call down chain completed so record new framebuffer object
-void PostCallRecordCreateFramebuffer(layer_data *dev_data, const VkFramebufferCreateInfo *pCreateInfo, VkFramebuffer fb) {
+void PostCallRecordCreateFramebuffer(VkDevice device, const VkFramebufferCreateInfo *pCreateInfo,
+                                     const VkAllocationCallbacks *pAllocator, VkFramebuffer *pFramebuffer, VkResult result) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (VK_SUCCESS != result) return;
     // Shadow create info and store in map
     std::unique_ptr<FRAMEBUFFER_STATE> fb_state(
-        new FRAMEBUFFER_STATE(fb, pCreateInfo, GetRenderPassStateSharedPtr(dev_data, pCreateInfo->renderPass)));
+        new FRAMEBUFFER_STATE(*pFramebuffer, pCreateInfo, GetRenderPassStateSharedPtr(device_data, pCreateInfo->renderPass)));
 
     for (uint32_t i = 0; i < pCreateInfo->attachmentCount; ++i) {
         VkImageView view = pCreateInfo->pAttachments[i];
-        auto view_state = GetImageViewState(dev_data, view);
+        auto view_state = GetImageViewState(device_data, view);
         if (!view_state) {
             continue;
         }
@@ -8593,7 +8600,7 @@ void PostCallRecordCreateFramebuffer(layer_data *dev_data, const VkFramebufferCr
         fb_state->attachments.push_back(fb_info);
 #endif
     }
-    dev_data->frameBufferMap[fb] = std::move(fb_state);
+    device_data->frameBufferMap[*pFramebuffer] = std::move(fb_state);
 }
 
 static bool FindDependency(const uint32_t index, const uint32_t dependent, const std::vector<DAGNode> &subpass_to_node,
@@ -8802,8 +8809,38 @@ static bool ValidateDependencies(const layer_data *dev_data, FRAMEBUFFER_STATE c
     return skip;
 }
 
-static bool CreatePassDAG(const layer_data *dev_data, RenderPassCreateVersion rp_version,
-                          const VkRenderPassCreateInfo2KHR *pCreateInfo, RENDER_PASS_STATE *render_pass) {
+static bool RecordRenderPassDAG(const layer_data *dev_data, RenderPassCreateVersion rp_version,
+                                const VkRenderPassCreateInfo2KHR *pCreateInfo, RENDER_PASS_STATE *render_pass) {
+    // Shorthand...
+    auto &subpass_to_node = render_pass->subpassToNode;
+    subpass_to_node.resize(pCreateInfo->subpassCount);
+    auto &self_dependencies = render_pass->self_dependencies;
+    self_dependencies.resize(pCreateInfo->subpassCount);
+
+    bool skip = false;
+
+    for (uint32_t i = 0; i < pCreateInfo->subpassCount; ++i) {
+        subpass_to_node[i].pass = i;
+        self_dependencies[i].clear();
+    }
+    for (uint32_t i = 0; i < pCreateInfo->dependencyCount; ++i) {
+        const VkSubpassDependency2KHR &dependency = pCreateInfo->pDependencies[i];
+
+        // This VU is actually generalised  to *any* pipeline - not just graphics - but only graphics render passes are
+        // currently supported by the spec - so only that pipeline is checked here.
+        // If that is ever relaxed, this check should be extended to cover those pipelines.
+        if (dependency.srcSubpass == dependency.dstSubpass) {
+            self_dependencies[dependency.srcSubpass].push_back(i);
+        } else {
+            subpass_to_node[dependency.dstSubpass].prev.push_back(dependency.srcSubpass);
+            subpass_to_node[dependency.srcSubpass].next.push_back(dependency.dstSubpass);
+        }
+    }
+    return skip;
+}
+
+static bool ValidateRenderPassDAG(const layer_data *dev_data, RenderPassCreateVersion rp_version,
+                                  const VkRenderPassCreateInfo2KHR *pCreateInfo, RENDER_PASS_STATE *render_pass) {
     // Shorthand...
     auto &subpass_to_node = render_pass->subpassToNode;
     subpass_to_node.resize(pCreateInfo->subpassCount);
@@ -9279,7 +9316,7 @@ static bool ValidateCreateRenderPass(const layer_data *dev_data, VkDevice device
     skip |= ValidateRenderpassAttachmentUsage(dev_data, rp_version, pCreateInfo);
 
     render_pass->renderPass = VK_NULL_HANDLE;
-    skip |= CreatePassDAG(dev_data, rp_version, pCreateInfo, render_pass);
+    skip |= ValidateRenderPassDAG(dev_data, rp_version, pCreateInfo, render_pass);
 
     // Validate multiview correlation and view masks
     bool viewMaskZero = false;
@@ -9370,19 +9407,21 @@ static bool ValidateCreateRenderPass(const layer_data *dev_data, VkDevice device
     return skip;
 }
 
-bool PreCallValidateCreateRenderPass(const layer_data *dev_data, VkDevice device, const VkRenderPassCreateInfo *pCreateInfo,
-                                     RENDER_PASS_STATE *render_pass) {
+bool PreCallValidateCreateRenderPass(VkDevice device, const VkRenderPassCreateInfo *pCreateInfo,
+                                     const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+
     bool skip = false;
     // Handle extension structs from KHR_multiview and KHR_maintenance2 that can only be validated for RP1 (indices out of bounds)
     const VkRenderPassMultiviewCreateInfo *pMultiviewInfo = lvl_find_in_chain<VkRenderPassMultiviewCreateInfo>(pCreateInfo->pNext);
     if (pMultiviewInfo) {
         if (pMultiviewInfo->subpassCount && pMultiviewInfo->subpassCount != pCreateInfo->subpassCount) {
-            skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+            skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                             "VUID-VkRenderPassCreateInfo-pNext-01928",
                             "Subpass count is %u but multiview info has a subpass count of %u.", pCreateInfo->subpassCount,
                             pMultiviewInfo->subpassCount);
         } else if (pMultiviewInfo->dependencyCount && pMultiviewInfo->dependencyCount != pCreateInfo->dependencyCount) {
-            skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+            skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                             "VUID-VkRenderPassCreateInfo-pNext-01929",
                             "Dependency count is %u but multiview info has a dependency count of %u.", pCreateInfo->dependencyCount,
                             pMultiviewInfo->dependencyCount);
@@ -9395,13 +9434,13 @@ bool PreCallValidateCreateRenderPass(const layer_data *dev_data, VkDevice device
             uint32_t subpass = pInputAttachmentAspectInfo->pAspectReferences[i].subpass;
             uint32_t attachment = pInputAttachmentAspectInfo->pAspectReferences[i].inputAttachmentIndex;
             if (subpass >= pCreateInfo->subpassCount) {
-                skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                                 "VUID-VkRenderPassCreateInfo-pNext-01926",
                                 "Subpass index %u specified by input attachment aspect info %u is greater than the subpass "
                                 "count of %u for this render pass.",
                                 subpass, i, pCreateInfo->subpassCount);
             } else if (pCreateInfo->pSubpasses && attachment >= pCreateInfo->pSubpasses[subpass].inputAttachmentCount) {
-                skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                                 "VUID-VkRenderPassCreateInfo-pNext-01927",
                                 "Input attachment index %u specified by input attachment aspect info %u is greater than the "
                                 "input attachment count of %u for this subpass.",
@@ -9411,9 +9450,60 @@ bool PreCallValidateCreateRenderPass(const layer_data *dev_data, VkDevice device
     }
 
     if (!skip) {
-        skip |= ValidateCreateRenderPass(dev_data, device, RENDER_PASS_VERSION_1, render_pass->createInfo.ptr(), render_pass);
+        auto render_pass = std::unique_ptr<RENDER_PASS_STATE>(new RENDER_PASS_STATE(pCreateInfo));
+        skip |=
+            ValidateCreateRenderPass(device_data, device, RENDER_PASS_VERSION_1, render_pass->createInfo.ptr(), render_pass.get());
     }
     return skip;
+}
+
+void RecordCreateRenderPassState(layer_data *device_data, RenderPassCreateVersion rp_version,
+                                 std::shared_ptr<RENDER_PASS_STATE> &render_pass, VkRenderPass *pRenderPass) {
+    render_pass->renderPass = *pRenderPass;
+    auto create_info = render_pass->createInfo.ptr();
+
+    RecordRenderPassDAG(device_data, RENDER_PASS_VERSION_1, create_info, render_pass.get());
+
+    for (uint32_t i = 0; i < create_info->subpassCount; ++i) {
+        const VkSubpassDescription2KHR &subpass = create_info->pSubpasses[i];
+        for (uint32_t j = 0; j < subpass.colorAttachmentCount; ++j) {
+            MarkAttachmentFirstUse(render_pass.get(), subpass.pColorAttachments[j].attachment, false);
+
+            // resolve attachments are considered to be written
+            if (subpass.pResolveAttachments) {
+                MarkAttachmentFirstUse(render_pass.get(), subpass.pResolveAttachments[j].attachment, false);
+            }
+        }
+        if (subpass.pDepthStencilAttachment) {
+            MarkAttachmentFirstUse(render_pass.get(), subpass.pDepthStencilAttachment->attachment, false);
+        }
+        for (uint32_t j = 0; j < subpass.inputAttachmentCount; ++j) {
+            MarkAttachmentFirstUse(render_pass.get(), subpass.pInputAttachments[j].attachment, true);
+        }
+    }
+
+    // Even though render_pass is an rvalue-ref parameter, still must move s.t. move assignment is invoked.
+    device_data->renderPassMap[*pRenderPass] = std::move(render_pass);
+}
+
+// Style note:
+// Use of rvalue reference exceeds reccommended usage of rvalue refs in google style guide, but intentionally forces caller to move
+// or copy.  This is clearer than passing a pointer to shared_ptr and avoids the atomic increment/decrement of shared_ptr copy
+// construction or assignment.
+void PostCallRecordCreateRenderPass(VkDevice device, const VkRenderPassCreateInfo *pCreateInfo,
+                                    const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass, VkResult result) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (VK_SUCCESS != result) return;
+    auto render_pass_state = std::make_shared<RENDER_PASS_STATE>(pCreateInfo);
+    RecordCreateRenderPassState(device_data, RENDER_PASS_VERSION_1, render_pass_state, pRenderPass);
+}
+
+void PostCallRecordCreateRenderPass2KHR(VkDevice device, const VkRenderPassCreateInfo2KHR *pCreateInfo,
+                                        const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass, VkResult result) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (VK_SUCCESS != result) return;
+    auto render_pass_state = std::make_shared<RENDER_PASS_STATE>(pCreateInfo);
+    RecordCreateRenderPassState(device_data, RENDER_PASS_VERSION_2, render_pass_state, pRenderPass);
 }
 
 static bool ValidateDepthStencilResolve(const debug_report_data *report_data,
@@ -9544,46 +9634,18 @@ static bool ValidateDepthStencilResolve(const debug_report_data *report_data,
     return skip;
 }
 
-// Style note:
-// Use of rvalue reference exceeds reccommended usage of rvalue refs in google style guide, but intentionally forces caller to move
-// or copy.  This is clearer than passing a pointer to shared_ptr and avoids the atomic increment/decrement of shared_ptr copy
-// construction or assignment.
-void PostCallRecordCreateRenderPass(layer_data *dev_data, const VkRenderPass render_pass_handle,
-                                    std::shared_ptr<RENDER_PASS_STATE> &&render_pass) {
-    render_pass->renderPass = render_pass_handle;
-    auto pCreateInfo = render_pass->createInfo.ptr();
-    for (uint32_t i = 0; i < pCreateInfo->subpassCount; ++i) {
-        const VkSubpassDescription2KHR &subpass = pCreateInfo->pSubpasses[i];
-        for (uint32_t j = 0; j < subpass.colorAttachmentCount; ++j) {
-            MarkAttachmentFirstUse(render_pass.get(), subpass.pColorAttachments[j].attachment, false);
-
-            // resolve attachments are considered to be written
-            if (subpass.pResolveAttachments) {
-                MarkAttachmentFirstUse(render_pass.get(), subpass.pResolveAttachments[j].attachment, false);
-            }
-        }
-        if (subpass.pDepthStencilAttachment) {
-            MarkAttachmentFirstUse(render_pass.get(), subpass.pDepthStencilAttachment->attachment, false);
-        }
-        for (uint32_t j = 0; j < subpass.inputAttachmentCount; ++j) {
-            MarkAttachmentFirstUse(render_pass.get(), subpass.pInputAttachments[j].attachment, true);
-        }
-    }
-
-    // Even though render_pass is an rvalue-ref parameter, still must move s.t. move assignment is invoked.
-    dev_data->renderPassMap[render_pass_handle] = std::move(render_pass);
-}
-
-bool PreCallValidateCreateRenderPass2KHR(const layer_data *dev_data, VkDevice device, const VkRenderPassCreateInfo2KHR *pCreateInfo,
-                                         RENDER_PASS_STATE *render_pass) {
+bool PreCallValidateCreateRenderPass2KHR(VkDevice device, const VkRenderPassCreateInfo2KHR *pCreateInfo,
+                                         const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
 
-    if (GetDeviceExtensions(dev_data)->vk_khr_depth_stencil_resolve) {
-        skip |= ValidateDepthStencilResolve(dev_data->report_data, dev_data->phys_dev_ext_props.depth_stencil_resolve_props,
+    if (GetDeviceExtensions(device_data)->vk_khr_depth_stencil_resolve) {
+        skip |= ValidateDepthStencilResolve(device_data->report_data, device_data->phys_dev_ext_props.depth_stencil_resolve_props,
                                             pCreateInfo);
     }
 
-    skip |= ValidateCreateRenderPass(dev_data, device, RENDER_PASS_VERSION_2, pCreateInfo, render_pass);
+    auto render_pass = std::make_shared<RENDER_PASS_STATE>(pCreateInfo);
+    skip |= ValidateCreateRenderPass(device_data, device, RENDER_PASS_VERSION_2, render_pass->createInfo.ptr(), render_pass.get());
 
     return skip;
 }
