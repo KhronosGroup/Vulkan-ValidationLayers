@@ -70,10 +70,8 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateFence(VkDevice device, const VkFenceCreateI
                                            const VkAllocationCallbacks *pAllocator, VkFence *pFence) {
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     VkResult result = dev_data->dispatch_table.CreateFence(device, pCreateInfo, pAllocator, pFence);
-    if (VK_SUCCESS == result) {
-        lock_guard_t lock(global_lock);
-        PostCallRecordCreateFence(dev_data, pCreateInfo, pFence);
-    }
+    lock_guard_t lock(global_lock);
+    PostCallRecordCreateFence(device, pCreateInfo, pAllocator, pFence, result);
     return result;
 }
 
@@ -286,12 +284,12 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateSamplerYcbcrConversion(VkDevice device, con
                                                             const VkAllocationCallbacks *pAllocator,
                                                             VkSamplerYcbcrConversion *pYcbcrConversion) {
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    bool skip = PreCallValidateCreateSamplerYcbcrConversion(dev_data, pCreateInfo);
+    bool skip = PreCallValidateCreateSamplerYcbcrConversion(device, pCreateInfo, pAllocator, pYcbcrConversion);
     if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
 
     VkResult result = dev_data->dispatch_table.CreateSamplerYcbcrConversion(device, pCreateInfo, pAllocator, pYcbcrConversion);
     unique_lock_t lock(global_lock);
-    PostCallRecordCreateSamplerYcbcrConversion(dev_data, pCreateInfo, *pYcbcrConversion);
+    PostCallRecordCreateSamplerYcbcrConversion(device, pCreateInfo, pAllocator, pYcbcrConversion, result);
     lock.unlock();
     return result;
 };
@@ -301,12 +299,12 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateSamplerYcbcrConversionKHR(VkDevice device,
                                                                const VkAllocationCallbacks *pAllocator,
                                                                VkSamplerYcbcrConversion *pYcbcrConversion) {
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    bool skip = PreCallValidateCreateSamplerYcbcrConversion(dev_data, pCreateInfo);
+    bool skip = PreCallValidateCreateSamplerYcbcrConversion(device, pCreateInfo, pAllocator, pYcbcrConversion);
     if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
 
     VkResult result = dev_data->dispatch_table.CreateSamplerYcbcrConversionKHR(device, pCreateInfo, pAllocator, pYcbcrConversion);
     unique_lock_t lock(global_lock);
-    PostCallRecordCreateSamplerYcbcrConversion(dev_data, pCreateInfo, *pYcbcrConversion);
+    PostCallRecordCreateSamplerYcbcrConversion(device, pCreateInfo, pAllocator, pYcbcrConversion, result);
     lock.unlock();
     return result;
 };
@@ -827,13 +825,9 @@ VKAPI_ATTR void VKAPI_CALL FreeCommandBuffers(VkDevice device, VkCommandPool com
 VKAPI_ATTR VkResult VKAPI_CALL CreateCommandPool(VkDevice device, const VkCommandPoolCreateInfo *pCreateInfo,
                                                  const VkAllocationCallbacks *pAllocator, VkCommandPool *pCommandPool) {
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-
     VkResult result = dev_data->dispatch_table.CreateCommandPool(device, pCreateInfo, pAllocator, pCommandPool);
-
-    if (VK_SUCCESS == result) {
-        lock_guard_t lock(global_lock);
-        PostCallRecordCreateCommandPool(dev_data, pCreateInfo, pCommandPool);
-    }
+    lock_guard_t lock(global_lock);
+    PostCallRecordCreateCommandPool(device, pCreateInfo, pAllocator, pCommandPool, result);
     return result;
 }
 
@@ -1114,10 +1108,8 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateSampler(VkDevice device, const VkSamplerCre
                                              const VkAllocationCallbacks *pAllocator, VkSampler *pSampler) {
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     VkResult result = dev_data->dispatch_table.CreateSampler(device, pCreateInfo, pAllocator, pSampler);
-    if (VK_SUCCESS == result) {
-        lock_guard_t lock(global_lock);
-        PostCallRecordCreateSampler(dev_data, pCreateInfo, pSampler);
-    }
+    lock_guard_t lock(global_lock);
+    PostCallRecordCreateSampler(device, pCreateInfo, pAllocator, pSampler, result);
     return result;
 }
 
@@ -1141,18 +1133,8 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDescriptorPool(VkDevice device, const VkDes
                                                     const VkAllocationCallbacks *pAllocator, VkDescriptorPool *pDescriptorPool) {
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     VkResult result = dev_data->dispatch_table.CreateDescriptorPool(device, pCreateInfo, pAllocator, pDescriptorPool);
-    if (VK_SUCCESS == result) {
-        DESCRIPTOR_POOL_STATE *pNewNode = new DESCRIPTOR_POOL_STATE(*pDescriptorPool, pCreateInfo);
-        lock_guard_t lock(global_lock);
-        if (NULL == pNewNode) {
-            bool skip = PostCallValidateCreateDescriptorPool(dev_data, pDescriptorPool);
-            if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
-        } else {
-            PostCallRecordCreateDescriptorPool(dev_data, pNewNode, pDescriptorPool);
-        }
-    } else {
-        // Need to do anything if pool create fails?
-    }
+    lock_guard_t lock(global_lock);
+    PostCallRecordCreateDescriptorPool(device, pCreateInfo, pAllocator, pDescriptorPool, result);
     return result;
 }
 
@@ -2345,10 +2327,8 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateSemaphore(VkDevice device, const VkSemaphor
                                                const VkAllocationCallbacks *pAllocator, VkSemaphore *pSemaphore) {
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     VkResult result = dev_data->dispatch_table.CreateSemaphore(device, pCreateInfo, pAllocator, pSemaphore);
-    if (result == VK_SUCCESS) {
-        lock_guard_t lock(global_lock);
-        PostCallRecordCreateSemaphore(dev_data, pSemaphore);
-    }
+    lock_guard_t lock(global_lock);
+    PostCallRecordCreateSemaphore(device, pCreateInfo, pAllocator, pSemaphore, result);
     return result;
 }
 
@@ -2473,10 +2453,8 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateEvent(VkDevice device, const VkEventCreateI
                                            const VkAllocationCallbacks *pAllocator, VkEvent *pEvent) {
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     VkResult result = dev_data->dispatch_table.CreateEvent(device, pCreateInfo, pAllocator, pEvent);
-    if (result == VK_SUCCESS) {
-        lock_guard_t lock(global_lock);
-        PostCallRecordCreateEvent(dev_data, pEvent);
-    }
+    lock_guard_t lock(global_lock);
+    PostCallRecordCreateEvent(device, pCreateInfo, pAllocator, pEvent, result);
     return result;
 }
 
@@ -3098,10 +3076,8 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDebugUtilsMessengerEXT(VkInstance instance,
                                                             VkDebugUtilsMessengerEXT *pMessenger) {
     instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(instance), instance_layer_data_map);
     VkResult result = instance_data->dispatch_table.CreateDebugUtilsMessengerEXT(instance, pCreateInfo, pAllocator, pMessenger);
-
-    if (VK_SUCCESS == result) {
-        PostCallRecordCreateDebugUtilsMessengerEXT(instance_data, pCreateInfo, pAllocator, pMessenger);
-    }
+    std::unique_lock<std::mutex> lock(global_lock);
+    PostCallRecordCreateDebugUtilsMessengerEXT(instance, pCreateInfo, pAllocator, pMessenger, result);
     return result;
 }
 
