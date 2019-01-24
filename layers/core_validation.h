@@ -1366,12 +1366,21 @@ void PostCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo* 
                                 const VkAllocationCallbacks* pAllocator, VkDevice* pDevice, VkResult result);
 bool PreCallCmdUpdateBuffer(layer_data* device_data, const GLOBAL_CB_NODE* cb_state, const BUFFER_STATE* dst_buffer_state);
 void PostCallRecordCmdUpdateBuffer(layer_data* device_data, GLOBAL_CB_NODE* cb_state, BUFFER_STATE* dst_buffer_state);
-
-void PostCallRecordCreateFence(layer_data* dev_data, const VkFenceCreateInfo* pCreateInfo, VkFence* pFence);
+void PostCallRecordCreateFence(VkDevice device, const VkFenceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
+                               VkFence* pFence, VkResult result);
 void PostCallRecordGetDeviceQueue(layer_data* dev_data, uint32_t q_family_index, VkQueue queue);
-bool PreCallValidateCreateSamplerYcbcrConversion(const layer_data* dev_data, const VkSamplerYcbcrConversionCreateInfo* create_info);
-void PostCallRecordCreateSamplerYcbcrConversion(layer_data* dev_data, const VkSamplerYcbcrConversionCreateInfo* create_info,
-                                                VkSamplerYcbcrConversion ycbcr_conversion);
+bool PreCallValidateCreateSamplerYcbcrConversion(VkDevice device, const VkSamplerYcbcrConversionCreateInfo* pCreateInfo,
+                                                 const VkAllocationCallbacks* pAllocator,
+                                                 VkSamplerYcbcrConversion* pYcbcrConversion);
+void PostCallRecordCreateSamplerYcbcrConversion(VkDevice device, const VkSamplerYcbcrConversionCreateInfo* pCreateInfo,
+                                                const VkAllocationCallbacks* pAllocator, VkSamplerYcbcrConversion* pYcbcrConversion,
+                                                VkResult result);
+bool PreCallValidateCreateSamplerYcbcrConversionKHR(VkDevice device, const VkSamplerYcbcrConversionCreateInfo* pCreateInfo,
+                                                    const VkAllocationCallbacks* pAllocator,
+                                                    VkSamplerYcbcrConversion* pYcbcrConversion);
+void PostCallRecordCreateSamplerYcbcrConversionKHR(VkDevice device, const VkSamplerYcbcrConversionCreateInfo* pCreateInfo,
+                                                   const VkAllocationCallbacks* pAllocator,
+                                                   VkSamplerYcbcrConversion* pYcbcrConversion, VkResult result);
 bool PreCallValidateCmdDebugMarkerBeginEXT(layer_data* dev_data, GLOBAL_CB_NODE* cb_state);
 void PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks* pAllocator);
 bool PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits, VkFence fence);
@@ -1437,7 +1446,8 @@ bool PreCallValidateFreeCommandBuffers(VkDevice device, VkCommandPool commandPoo
                                        const VkCommandBuffer* pCommandBuffers);
 void PreCallRecordFreeCommandBuffers(VkDevice device, VkCommandPool commandPool, uint32_t commandBufferCount,
                                      const VkCommandBuffer* pCommandBuffers);
-void PostCallRecordCreateCommandPool(layer_data* dev_data, const VkCommandPoolCreateInfo* pCreateInfo, VkCommandPool* pCommandPool);
+void PostCallRecordCreateCommandPool(VkDevice device, const VkCommandPoolCreateInfo* pCreateInfo,
+                                     const VkAllocationCallbacks* pAllocator, VkCommandPool* pCommandPool, VkResult result);
 bool PreCallValidateCreateQueryPool(VkDevice device, const VkQueryPoolCreateInfo* pCreateInfo,
                                     const VkAllocationCallbacks* pAllocator, VkQueryPool* pQueryPool);
 void PostCallRecordCreateQueryPool(VkDevice device, const VkQueryPoolCreateInfo* pCreateInfo,
@@ -1467,7 +1477,8 @@ bool PreCallValidateCreateRayTracingPipelinesNV(layer_data* dev_data, uint32_t c
                                                 vector<std::unique_ptr<PIPELINE_STATE>>& pipe_state);
 void PostCallRecordCreateRayTracingPipelinesNV(layer_data* dev_data, uint32_t count,
                                                vector<std::unique_ptr<PIPELINE_STATE>>& pipe_state, VkPipeline* pPipelines);
-void PostCallRecordCreateSampler(layer_data* dev_data, const VkSamplerCreateInfo* pCreateInfo, VkSampler* pSampler);
+void PostCallRecordCreateSampler(VkDevice device, const VkSamplerCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
+                                 VkSampler* pSampler, VkResult result);
 bool PreCallValidateCreateDescriptorSetLayout(VkDevice device, const VkDescriptorSetLayoutCreateInfo* pCreateInfo,
                                               const VkAllocationCallbacks* pAllocator, VkDescriptorSetLayout* pSetLayout);
 void PostCallRecordCreateDescriptorSetLayout(VkDevice device, const VkDescriptorSetLayoutCreateInfo* pCreateInfo,
@@ -1476,8 +1487,9 @@ void PostCallRecordCreateDescriptorSetLayout(VkDevice device, const VkDescriptor
 bool PreCallValidateCreatePipelineLayout(const layer_data* dev_data, const VkPipelineLayoutCreateInfo* pCreateInfo);
 void PostCallRecordCreatePipelineLayout(layer_data* dev_data, const VkPipelineLayoutCreateInfo* pCreateInfo,
                                         const VkPipelineLayout* pPipelineLayout);
-bool PostCallValidateCreateDescriptorPool(layer_data* dev_data, VkDescriptorPool* pDescriptorPool);
-void PostCallRecordCreateDescriptorPool(layer_data* dev_data, DESCRIPTOR_POOL_STATE* pNewNode, VkDescriptorPool* pDescriptorPool);
+void PostCallRecordCreateDescriptorPool(VkDevice device, const VkDescriptorPoolCreateInfo* pCreateInfo,
+                                        const VkAllocationCallbacks* pAllocator, VkDescriptorPool* pDescriptorPool,
+                                        VkResult result);
 bool PreCallValidateResetDescriptorPool(layer_data* dev_data, VkDescriptorPool descriptorPool);
 void PostCallRecordResetDescriptorPool(layer_data* dev_data, VkDevice device, VkDescriptorPool descriptorPool,
                                        VkDescriptorPoolResetFlags flags);
@@ -1679,7 +1691,8 @@ void PreCallRecordSetEvent(layer_data* dev_data, VkEvent event);
 bool PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo* pBindInfo, VkFence fence);
 void PostCallRecordQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo* pBindInfo, VkFence fence,
                                    VkResult result);
-void PostCallRecordCreateSemaphore(layer_data* dev_data, VkSemaphore* pSemaphore);
+void PostCallRecordCreateSemaphore(VkDevice device, const VkSemaphoreCreateInfo* pCreateInfo,
+                                   const VkAllocationCallbacks* pAllocator, VkSemaphore* pSemaphore, VkResult result);
 bool PreCallValidateImportSemaphore(layer_data* dev_data, VkSemaphore semaphore, const char* caller_name);
 void PostCallRecordImportSemaphore(layer_data* dev_data, VkSemaphore semaphore,
                                    VkExternalSemaphoreHandleTypeFlagBitsKHR handle_type, VkSemaphoreImportFlagsKHR flags);
@@ -1688,7 +1701,8 @@ bool PreCallValidateImportFence(layer_data* dev_data, VkFence fence, const char*
 void PostCallRecordImportFence(layer_data* dev_data, VkFence fence, VkExternalFenceHandleTypeFlagBitsKHR handle_type,
                                VkFenceImportFlagsKHR flags);
 void PostCallRecordGetFence(layer_data* dev_data, VkFence fence, VkExternalFenceHandleTypeFlagBitsKHR handle_type);
-void PostCallRecordCreateEvent(layer_data* dev_data, VkEvent* pEvent);
+void PostCallRecordCreateEvent(VkDevice device, const VkEventCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
+                               VkEvent* pEvent, VkResult result);
 bool PreCallValidateCreateSwapchainKHR(layer_data* dev_data, const char* func_name, VkSwapchainCreateInfoKHR const* pCreateInfo,
                                        SURFACE_STATE* surface_state, SWAPCHAIN_NODE* old_swapchain_state);
 void PostCallRecordCreateSwapchainKHR(layer_data* dev_data, VkResult result, const VkSwapchainCreateInfoKHR* pCreateInfo,
@@ -1759,9 +1773,9 @@ void PreCallRecordCmdBeginDebugUtilsLabelEXT(layer_data* dev_data, VkCommandBuff
 void PostCallRecordCmdEndDebugUtilsLabelEXT(layer_data* dev_data, VkCommandBuffer commandBuffer);
 void PreCallRecordCmdInsertDebugUtilsLabelEXT(layer_data* dev_data, VkCommandBuffer commandBuffer,
                                               const VkDebugUtilsLabelEXT* pLabelInfo);
-void PostCallRecordCreateDebugUtilsMessengerEXT(instance_layer_data* instance_data,
-                                                const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
-                                                const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pMessenger);
+void PostCallRecordCreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
+                                                const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pMessenger,
+                                                VkResult result);
 void PostCallRecordDestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT messenger,
                                                  const VkAllocationCallbacks* pAllocator);
 void PostCallRecordCreateDebugReportCallbackEXT(instance_layer_data* instance_data,

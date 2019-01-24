@@ -4639,10 +4639,12 @@ void PreCallRecordFreeCommandBuffers(VkDevice device, VkCommandPool commandPool,
     FreeCommandBufferStates(device_data, pPool, commandBufferCount, pCommandBuffers);
 }
 
-void PostCallRecordCreateCommandPool(layer_data *dev_data, const VkCommandPoolCreateInfo *pCreateInfo,
-                                     VkCommandPool *pCommandPool) {
-    dev_data->commandPoolMap[*pCommandPool].createFlags = pCreateInfo->flags;
-    dev_data->commandPoolMap[*pCommandPool].queueFamilyIndex = pCreateInfo->queueFamilyIndex;
+void PostCallRecordCreateCommandPool(VkDevice device, const VkCommandPoolCreateInfo *pCreateInfo,
+                                     const VkAllocationCallbacks *pAllocator, VkCommandPool *pCommandPool, VkResult result) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (VK_SUCCESS != result) return;
+    device_data->commandPoolMap[*pCommandPool].createFlags = pCreateInfo->flags;
+    device_data->commandPoolMap[*pCommandPool].queueFamilyIndex = pCreateInfo->queueFamilyIndex;
 }
 
 bool PreCallValidateCreateQueryPool(VkDevice device, const VkQueryPoolCreateInfo *pCreateInfo,
@@ -4882,8 +4884,11 @@ VkDevice GetDevice(const layer_data *device_data) { return device_data->device; 
 
 uint32_t GetApiVersion(const layer_data *device_data) { return device_data->api_version; }
 
-void PostCallRecordCreateFence(layer_data *dev_data, const VkFenceCreateInfo *pCreateInfo, VkFence *pFence) {
-    auto &fence_node = dev_data->fenceMap[*pFence];
+void PostCallRecordCreateFence(VkDevice device, const VkFenceCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator,
+                               VkFence *pFence, VkResult result) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (VK_SUCCESS != result) return;
+    auto &fence_node = device_data->fenceMap[*pFence];
     fence_node.fence = *pFence;
     fence_node.createInfo = *pCreateInfo;
     fence_node.state = (pCreateInfo->flags & VK_FENCE_CREATE_SIGNALED_BIT) ? FENCE_RETIRED : FENCE_UNSIGNALED;
@@ -5085,8 +5090,10 @@ void PostCallRecordCreateRayTracingPipelinesNV(layer_data *dev_data, uint32_t co
     }
 }
 
-void PostCallRecordCreateSampler(layer_data *dev_data, const VkSamplerCreateInfo *pCreateInfo, VkSampler *pSampler) {
-    dev_data->samplerMap[*pSampler] = unique_ptr<SAMPLER_STATE>(new SAMPLER_STATE(pSampler, pCreateInfo));
+void PostCallRecordCreateSampler(VkDevice device, const VkSamplerCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator,
+                                 VkSampler *pSampler, VkResult result) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    device_data->samplerMap[*pSampler] = unique_ptr<SAMPLER_STATE>(new SAMPLER_STATE(pSampler, pCreateInfo));
 }
 
 bool PreCallValidateCreateDescriptorSetLayout(VkDevice device, const VkDescriptorSetLayoutCreateInfo *pCreateInfo,
@@ -5822,13 +5829,13 @@ void PostCallRecordCreatePipelineLayout(layer_data *dev_data, const VkPipelineLa
     // Implicit unlock
 };
 
-bool PostCallValidateCreateDescriptorPool(layer_data *dev_data, VkDescriptorPool *pDescriptorPool) {
-    return log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_POOL_EXT,
-                   HandleToUint64(*pDescriptorPool), kVUID_Core_DrawState_OutOfMemory,
-                   "Out of memory while attempting to allocate DESCRIPTOR_POOL_STATE in vkCreateDescriptorPool()");
-}
-
-void PostCallRecordCreateDescriptorPool(layer_data *dev_data, DESCRIPTOR_POOL_STATE *pNewNode, VkDescriptorPool *pDescriptorPool) {
+void PostCallRecordCreateDescriptorPool(VkDevice device, const VkDescriptorPoolCreateInfo *pCreateInfo,
+                                        const VkAllocationCallbacks *pAllocator, VkDescriptorPool *pDescriptorPool,
+                                        VkResult result) {
+    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (VK_SUCCESS != result) return;
+    DESCRIPTOR_POOL_STATE *pNewNode = new DESCRIPTOR_POOL_STATE(*pDescriptorPool, pCreateInfo);
+    assert(pNewNode);
     dev_data->descriptorPoolMap[*pDescriptorPool] = pNewNode;
 }
 
@@ -10715,8 +10722,11 @@ void PostCallRecordQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const 
     }
 }
 
-void PostCallRecordCreateSemaphore(layer_data *dev_data, VkSemaphore *pSemaphore) {
-    SEMAPHORE_NODE *sNode = &dev_data->semaphoreMap[*pSemaphore];
+void PostCallRecordCreateSemaphore(VkDevice device, const VkSemaphoreCreateInfo *pCreateInfo,
+                                   const VkAllocationCallbacks *pAllocator, VkSemaphore *pSemaphore, VkResult result) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (VK_SUCCESS != result) return;
+    SEMAPHORE_NODE *sNode = &device_data->semaphoreMap[*pSemaphore];
     sNode->signaler.first = VK_NULL_HANDLE;
     sNode->signaler.second = 0;
     sNode->signaled = false;
@@ -10791,10 +10801,13 @@ void PostCallRecordGetFence(layer_data *dev_data, VkFence fence, VkExternalFence
     }
 }
 
-void PostCallRecordCreateEvent(layer_data *dev_data, VkEvent *pEvent) {
-    dev_data->eventMap[*pEvent].needsSignaled = false;
-    dev_data->eventMap[*pEvent].write_in_use = 0;
-    dev_data->eventMap[*pEvent].stageMask = VkPipelineStageFlags(0);
+void PostCallRecordCreateEvent(VkDevice device, const VkEventCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator,
+                               VkEvent *pEvent, VkResult result) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (VK_SUCCESS != result) return;
+    device_data->eventMap[*pEvent].needsSignaled = false;
+    device_data->eventMap[*pEvent].write_in_use = 0;
+    device_data->eventMap[*pEvent].stageMask = VkPipelineStageFlags(0);
 }
 
 bool PreCallValidateCreateSwapchainKHR(layer_data *dev_data, const char *func_name, VkSwapchainCreateInfoKHR const *pCreateInfo,
@@ -11930,9 +11943,11 @@ void PreCallRecordCmdInsertDebugUtilsLabelEXT(layer_data *dev_data, VkCommandBuf
     InsertCmdDebugUtilsLabel(dev_data->report_data, commandBuffer, pLabelInfo);
 }
 
-void PostCallRecordCreateDebugUtilsMessengerEXT(instance_layer_data *instance_data,
-                                                const VkDebugUtilsMessengerCreateInfoEXT *pCreateInfo,
-                                                const VkAllocationCallbacks *pAllocator, VkDebugUtilsMessengerEXT *pMessenger) {
+void PostCallRecordCreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT *pCreateInfo,
+                                                const VkAllocationCallbacks *pAllocator, VkDebugUtilsMessengerEXT *pMessenger,
+                                                VkResult result) {
+    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(instance), instance_layer_data_map);
+    if (VK_SUCCESS != result) return;
     layer_create_messenger_callback(instance_data->report_data, false, pCreateInfo, pAllocator, pMessenger);
 }
 
@@ -12499,27 +12514,57 @@ void PreCallRecordCmdDrawMeshTasksIndirectCountNV(layer_data *dev_data, GLOBAL_C
     }
 }
 
-bool PreCallValidateCreateSamplerYcbcrConversion(const layer_data *dev_data,
+static bool ValidateCreateSamplerYcbcrConversion(const layer_data *device_data, const char *func_name,
                                                  const VkSamplerYcbcrConversionCreateInfo *create_info) {
     bool skip = false;
-    if (GetDeviceExtensions(dev_data)->vk_android_external_memory_android_hardware_buffer) {
-        skip |= ValidateCreateSamplerYcbcrConversionANDROID(dev_data, create_info);
+    if (GetDeviceExtensions(device_data)->vk_android_external_memory_android_hardware_buffer) {
+        skip |= ValidateCreateSamplerYcbcrConversionANDROID(device_data, create_info);
     } else {  // Not android hardware buffer
         if (VK_FORMAT_UNDEFINED == create_info->format) {
-            skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+            skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT,
                             VK_DEBUG_REPORT_OBJECT_TYPE_SAMPLER_YCBCR_CONVERSION_EXT, 0,
                             "VUID-VkSamplerYcbcrConversionCreateInfo-format-01649",
-                            "vkCreateSamplerYcbcrConversion[KHR]: CreateInfo format type is VK_FORMAT_UNDEFINED.");
+                            "%s: CreateInfo format type is VK_FORMAT_UNDEFINED.", func_name);
         }
     }
     return skip;
 }
 
-void PostCallRecordCreateSamplerYcbcrConversion(layer_data *dev_data, const VkSamplerYcbcrConversionCreateInfo *create_info,
-                                                VkSamplerYcbcrConversion ycbcr_conversion) {
-    if (GetDeviceExtensions(dev_data)->vk_android_external_memory_android_hardware_buffer) {
-        RecordCreateSamplerYcbcrConversionANDROID(dev_data, create_info, ycbcr_conversion);
+bool PreCallValidateCreateSamplerYcbcrConversion(VkDevice device, const VkSamplerYcbcrConversionCreateInfo *pCreateInfo,
+                                                 const VkAllocationCallbacks *pAllocator,
+                                                 VkSamplerYcbcrConversion *pYcbcrConversion) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    return ValidateCreateSamplerYcbcrConversion(device_data, "vkCreateSamplerYcbcrConversion()", pCreateInfo);
+}
+
+bool PreCallValidateCreateSamplerYcbcrConversionKHR(VkDevice device, const VkSamplerYcbcrConversionCreateInfo *pCreateInfo,
+                                                    const VkAllocationCallbacks *pAllocator,
+                                                    VkSamplerYcbcrConversion *pYcbcrConversion) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    return ValidateCreateSamplerYcbcrConversion(device_data, "vkCreateSamplerYcbcrConversionKHR()", pCreateInfo);
+}
+
+static void RecordCreateSamplerYcbcrConversionState(layer_data *device_data, const VkSamplerYcbcrConversionCreateInfo *create_info,
+                                                    VkSamplerYcbcrConversion ycbcr_conversion) {
+    if (GetDeviceExtensions(device_data)->vk_android_external_memory_android_hardware_buffer) {
+        RecordCreateSamplerYcbcrConversionANDROID(device_data, create_info, ycbcr_conversion);
     }
+}
+
+void PostCallRecordCreateSamplerYcbcrConversion(VkDevice device, const VkSamplerYcbcrConversionCreateInfo *pCreateInfo,
+                                                const VkAllocationCallbacks *pAllocator, VkSamplerYcbcrConversion *pYcbcrConversion,
+                                                VkResult result) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (VK_SUCCESS != result) return;
+    RecordCreateSamplerYcbcrConversionState(device_data, pCreateInfo, *pYcbcrConversion);
+}
+
+void PostCallRecordCreateSamplerYcbcrConversionKHR(VkDevice device, const VkSamplerYcbcrConversionCreateInfo *pCreateInfo,
+                                                   const VkAllocationCallbacks *pAllocator,
+                                                   VkSamplerYcbcrConversion *pYcbcrConversion, VkResult result) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (VK_SUCCESS != result) return;
+    RecordCreateSamplerYcbcrConversionState(device_data, pCreateInfo, *pYcbcrConversion);
 }
 
 void PostCallRecordDestroySamplerYcbcrConversion(VkDevice device, VkSamplerYcbcrConversion ycbcrConversion,
