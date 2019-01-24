@@ -326,7 +326,7 @@ class VkTextureObj : public VkImageObj {
    public:
     VkTextureObj(VkDeviceObj *device, uint32_t *colors = NULL);
 
-    VkDescriptorImageInfo m_imageInfo;
+    const VkDescriptorImageInfo &DescriptorImageInfo() const { return m_descriptorImageInfo; }
 
    protected:
     VkDeviceObj *m_device;

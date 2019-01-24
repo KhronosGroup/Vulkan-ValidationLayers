@@ -730,7 +730,7 @@ int VkDescriptorSetObj::AppendSamplerTexture(VkSamplerObj *sampler, VkTextureObj
 
     m_layout_bindings.push_back(binding);
     m_type_counts[VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER] += binding.descriptorCount;
-    VkDescriptorImageInfo tmp = texture->m_imageInfo;
+    VkDescriptorImageInfo tmp = texture->DescriptorImageInfo();
     tmp.sampler = sampler->handle();
     m_imageSamplerDescriptors.push_back(tmp);
 
@@ -1244,8 +1244,6 @@ VkTextureObj::VkTextureObj(VkDeviceObj *device, uint32_t *colors) : VkImageObj(d
 
     if (colors == NULL) colors = tex_colors;
 
-    memset(&m_imageInfo, 0, sizeof(m_imageInfo));
-
     VkImageViewCreateInfo view = {};
     view.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
     view.pNext = NULL;
@@ -1269,7 +1267,7 @@ VkTextureObj::VkTextureObj(VkDeviceObj *device, uint32_t *colors) : VkImageObj(d
     /* create image view */
     view.image = handle();
     m_textureView.init(*m_device, view);
-    m_imageInfo.imageView = m_textureView.handle();
+    m_descriptorImageInfo.imageView = m_textureView.handle();
 
     data = stagingImage.MapMemory();
 
