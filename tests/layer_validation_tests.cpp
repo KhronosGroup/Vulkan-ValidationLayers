@@ -2277,7 +2277,7 @@ TEST_F(VkLayerTest, GpuValidationArrayOOB) {
 
     VkDescriptorImageInfo image_info[6] = {};
     for (int i = 0; i < 6; i++) {
-        image_info[i] = texture.m_imageInfo;
+        image_info[i] = texture.DescriptorImageInfo();
         image_info[i].sampler = sampler.handle();
         image_info[i].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     }
