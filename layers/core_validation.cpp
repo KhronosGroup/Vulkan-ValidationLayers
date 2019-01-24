@@ -6268,6 +6268,19 @@ void CoreChecks::PostCallRecordResetCommandBuffer(VkCommandBuffer commandBuffer,
     }
 }
 
+static const char *GetPipelineTypeName(VkPipelineBindPoint pipelineBindPoint) {
+    switch (pipelineBindPoint) {
+        case VK_PIPELINE_BIND_POINT_GRAPHICS:
+            return "graphics";
+        case VK_PIPELINE_BIND_POINT_COMPUTE:
+            return "compute";
+        case VK_PIPELINE_BIND_POINT_RAY_TRACING_NV:
+            return "ray-tracing";
+        default:
+            return "unknown";
+    }
+}
+
 bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
                                                 VkPipeline pipeline) {
     GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
@@ -6276,8 +6289,37 @@ bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, V
     bool skip = ValidateCmdQueueFlags(cb_state, "vkCmdBindPipeline()", VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
                                       "VUID-vkCmdBindPipeline-commandBuffer-cmdpool");
     skip |= ValidateCmd(cb_state, CMD_BINDPIPELINE, "vkCmdBindPipeline()");
-    // TODO: "VUID-vkCmdBindPipeline-pipelineBindPoint-00777" "VUID-vkCmdBindPipeline-pipelineBindPoint-00779"  -- using
-    // ValidatePipelineBindPoint
+    static const std::map<VkPipelineBindPoint, std::string> bindpoint_errors = {
+        std::make_pair(VK_PIPELINE_BIND_POINT_GRAPHICS, "VUID-vkCmdBindPipeline-pipelineBindPoint-00777"),
+        std::make_pair(VK_PIPELINE_BIND_POINT_COMPUTE, "VUID-vkCmdBindPipeline-pipelineBindPoint-00778"),
+        std::make_pair(VK_PIPELINE_BIND_POINT_RAY_TRACING_NV, "VUID-vkCmdBindPipeline-pipelineBindPoint-02391")};
+
+    skip |= ValidatePipelineBindPoint(cb_state, pipelineBindPoint, "vkCmdBindPipeline()", bindpoint_errors);
+
+    auto pipeline_state = GetPipelineState(pipeline);
+    assert(pipeline_state);
+
+    const auto &pipeline_state_bind_point = pipeline_state->getPipelineType();
+
+    if (pipelineBindPoint != pipeline_state_bind_point) {
+        if (pipelineBindPoint == VK_PIPELINE_BIND_POINT_GRAPHICS) {
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                            HandleToUint64(cb_state->commandBuffer), "VUID-vkCmdBindPipeline-pipelineBindPoint-00779",
+                            "Cannot bind a pipeline of type %s to the graphics pipeline bind point",
+                            GetPipelineTypeName(pipeline_state_bind_point));
+        } else if (pipelineBindPoint == VK_PIPELINE_BIND_POINT_COMPUTE) {
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                            HandleToUint64(cb_state->commandBuffer), "VUID-vkCmdBindPipeline-pipelineBindPoint-00780",
+                            "Cannot bind a pipeline of type %s to the compute pipeline bind point",
+                            GetPipelineTypeName(pipeline_state_bind_point));
+        } else if (pipelineBindPoint == VK_PIPELINE_BIND_POINT_RAY_TRACING_NV) {
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                            HandleToUint64(cb_state->commandBuffer), "VUID-vkCmdBindPipeline-pipelineBindPoint-02392",
+                            "Cannot bind a pipeline of type %s to the ray-tracing pipeline bind point",
+                            GetPipelineTypeName(pipeline_state_bind_point));
+        }
+    }
+
     return skip;
 }
 
