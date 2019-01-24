@@ -769,8 +769,8 @@ static void GenerateStageMessage(const uint32_t *debug_record, std::string &msg)
     std::ostringstream strm;
     switch (debug_record[kInstCommonOutStageIdx]) {
         case 0: {
-            strm << "Stage = Vertex. Vertex ID = " << debug_record[kInstVertOutVertexId]
-                 << " Instance ID = " << debug_record[kInstVertOutInstanceId] << ". ";
+            strm << "Stage = Vertex. Vertex Index = " << debug_record[kInstVertOutVertexIndex]
+                 << " Instance Index = " << debug_record[kInstVertOutInstanceIndex] << ". ";
         } break;
         case 1: {
             strm << "Stage = Tessellation Control.  Invocation ID = " << debug_record[kInstTessOutInvocationId] << ". ";
