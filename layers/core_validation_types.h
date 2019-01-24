@@ -1048,10 +1048,10 @@ class PIPELINE_STATE : public BASE_NODE {
    public:
     VkPipeline pipeline;
     safe_VkGraphicsPipelineCreateInfo graphicsPipelineCI;
-    // Hold shared ptr to RP in case RP itself is destroyed
-    std::shared_ptr<RENDER_PASS_STATE> rp_state;
     safe_VkComputePipelineCreateInfo computePipelineCI;
     safe_VkRayTracingPipelineCreateInfoNV raytracingPipelineCI;
+    // Hold shared ptr to RP in case RP itself is destroyed
+    std::shared_ptr<RENDER_PASS_STATE> rp_state;
     // Flag of which shader stages are active for this pipeline
     uint32_t active_shaders;
     uint32_t duplicate_shaders;
@@ -1070,9 +1070,9 @@ class PIPELINE_STATE : public BASE_NODE {
     PIPELINE_STATE()
         : pipeline{},
           graphicsPipelineCI{},
-          rp_state(nullptr),
           computePipelineCI{},
           raytracingPipelineCI{},
+          rp_state(nullptr),
           active_shaders(0),
           duplicate_shaders(0),
           active_slots(),
@@ -1084,7 +1084,17 @@ class PIPELINE_STATE : public BASE_NODE {
           pipeline_layout(),
           topology_at_rasterizer{} {}
 
+    void reset() {
+        VkGraphicsPipelineCreateInfo emptyGraphicsCI = {};
+        graphicsPipelineCI.initialize(&emptyGraphicsCI, false, false);
+        VkComputePipelineCreateInfo emptyComputeCI = {};
+        computePipelineCI.initialize(&emptyComputeCI);
+        VkRayTracingPipelineCreateInfoNV emptyRayTracingCI = {};
+        raytracingPipelineCI.initialize(&emptyRayTracingCI);
+    }
+
     void initGraphicsPipeline(const VkGraphicsPipelineCreateInfo *pCreateInfo, std::shared_ptr<RENDER_PASS_STATE> &&rpstate) {
+        reset();
         bool uses_color_attachment = false;
         bool uses_depthstencil_attachment = false;
         if (pCreateInfo->subpass < rpstate->createInfo.subpassCount) {
@@ -1102,9 +1112,6 @@ class PIPELINE_STATE : public BASE_NODE {
             }
         }
         graphicsPipelineCI.initialize(pCreateInfo, uses_color_attachment, uses_depthstencil_attachment);
-        // Make sure compute pipeline is null
-        VkComputePipelineCreateInfo emptyComputeCI = {};
-        computePipelineCI.initialize(&emptyComputeCI);
         for (uint32_t i = 0; i < pCreateInfo->stageCount; i++) {
             const VkPipelineShaderStageCreateInfo *pPSSCI = &pCreateInfo->pStages[i];
             this->duplicate_shaders |= this->active_shaders & pPSSCI->stage;
@@ -1141,10 +1148,8 @@ class PIPELINE_STATE : public BASE_NODE {
     }
 
     void initComputePipeline(const VkComputePipelineCreateInfo *pCreateInfo) {
+        reset();
         computePipelineCI.initialize(pCreateInfo);
-        // Make sure gfx pipeline is null
-        VkGraphicsPipelineCreateInfo emptyGraphicsCI = {};
-        graphicsPipelineCI.initialize(&emptyGraphicsCI, false, false);
         switch (computePipelineCI.stage.stage) {
             case VK_SHADER_STAGE_COMPUTE_BIT:
                 this->active_shaders |= VK_SHADER_STAGE_COMPUTE_BIT;
@@ -1154,13 +1159,10 @@ class PIPELINE_STATE : public BASE_NODE {
                 break;
         }
     }
+
     void initRayTracingPipelineNV(const VkRayTracingPipelineCreateInfoNV *pCreateInfo) {
+        reset();
         raytracingPipelineCI.initialize(pCreateInfo);
-        // Make sure gfx and compute pipeline is null
-        VkGraphicsPipelineCreateInfo emptyGraphicsCI = {};
-        VkComputePipelineCreateInfo emptyComputeCI = {};
-        computePipelineCI.initialize(&emptyComputeCI);
-        graphicsPipelineCI.initialize(&emptyGraphicsCI, false, false);
         switch (raytracingPipelineCI.pStages->stage) {
             case VK_SHADER_STAGE_RAYGEN_BIT_NV:
                 this->active_shaders |= VK_SHADER_STAGE_RAYGEN_BIT_NV;
@@ -1184,6 +1186,17 @@ class PIPELINE_STATE : public BASE_NODE {
                 // TODO : Flag error
                 break;
         }
+    }
+
+    inline VkPipelineBindPoint getPipelineType() {
+        if (graphicsPipelineCI.sType == VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO)
+            return VK_PIPELINE_BIND_POINT_GRAPHICS;
+        else if (computePipelineCI.sType == VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO)
+            return VK_PIPELINE_BIND_POINT_COMPUTE;
+        else if (raytracingPipelineCI.sType == VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_NV)
+            return VK_PIPELINE_BIND_POINT_RAY_TRACING_NV;
+        else
+            return VK_PIPELINE_BIND_POINT_MAX_ENUM;
     }
 };
 
