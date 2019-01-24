@@ -6,7 +6,7 @@
       "sub_dir" : "glslang",
       "build_dir" : "glslang/build",
       "install_dir" : "glslang/build/install",
-      "commit" : "2898223375d57fb3974f24e1e944bb624f67cb73",
+      "commit" : "8dff52509e5c73818d70ea5386886b6cb908962f",
       "prebuild" : [
         "python update_glslang_sources.py"
       ],
