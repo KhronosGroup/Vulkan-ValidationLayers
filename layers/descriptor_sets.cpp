@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2018 The Khronos Group Inc.
- * Copyright (c) 2015-2018 Valve Corporation
- * Copyright (c) 2015-2018 LunarG, Inc.
- * Copyright (C) 2015-2018 Google Inc.
+/* Copyright (c) 2015-2019 The Khronos Group Inc.
+ * Copyright (c) 2015-2019 Valve Corporation
+ * Copyright (c) 2015-2019 LunarG, Inc.
+ * Copyright (C) 2015-2019 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@
 #include "buffer_validation.h"
 #include <sstream>
 #include <algorithm>
+#include <array>
 #include <memory>
 
 // ExtendedBinding collects a VkDescriptorSetLayoutBinding and any extended
@@ -1497,6 +1498,46 @@ bool cvdescriptorset::ValidateImageUpdate(VkImageView image_view, VkImageLayout 
         *error_msg = error_str.str();
         return false;
     }
+
+    if ((type == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE) || (type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)) {
+        // Test that the layout is compatible with the descriptorType for the two sampled image types
+        const static std::array<VkImageLayout, 3> valid_layouts = {
+            VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_GENERAL};
+
+        struct ExtensionLayout {
+            VkImageLayout layout;
+            bool DeviceExtensions::*extension;
+        };
+
+        const static std::array<ExtensionLayout, 3> extended_layouts{
+            {//  Note double brace req'd for aggregate initialization
+             {VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR, &DeviceExtensions::vk_khr_shared_presentable_image},
+             {VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL, &DeviceExtensions::vk_khr_maintenance2},
+             {VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL, &DeviceExtensions::vk_khr_maintenance2}}};
+        auto is_layout = [image_layout, dev_data](const ExtensionLayout &ext_layout) {
+            return dev_data->extensions.*(ext_layout.extension) && (ext_layout.layout == image_layout);
+        };
+
+        bool valid_layout = (std::find(valid_layouts.cbegin(), valid_layouts.cend(), image_layout) != valid_layouts.cend()) ||
+                            std::any_of(extended_layouts.cbegin(), extended_layouts.cend(), is_layout);
+
+        if (!valid_layout) {
+            *error_code = "VUID-VkWriteDescriptorSet-descriptorType-01403";
+            std::stringstream error_str;
+            error_str << "Descriptor update with descriptorType " << string_VkDescriptorType(type)
+                      << " is being updated with invalid imageLayout " << string_VkImageLayout(image_layout)
+                      << ". Allowed layouts are: VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, "
+                      << "VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_GENERAL";
+            for (auto &ext_layout : extended_layouts) {
+                if (dev_data->extensions.*(ext_layout.extension)) {
+                    error_str << ", " << string_VkImageLayout(ext_layout.layout);
+                }
+            }
+            *error_msg = error_str.str();
+            return false;
+        }
+    }
+
     return true;
 }
 
