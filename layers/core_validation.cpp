@@ -3891,12 +3891,16 @@ void PostCallRecordWaitForFences(layer_data *dev_data, uint32_t fence_count, con
     //  vkGetFenceStatus() at which point we'll clean/remove their CBs if complete.
 }
 
-bool PreCallValidateGetFenceStatus(layer_data *dev_data, VkFence fence) {
-    if (dev_data->instance_data->disabled.get_fence_state) return false;
-    return VerifyWaitFenceState(dev_data, fence, "vkGetFenceStatus");
+bool PreCallValidateGetFenceStatus(VkDevice device, VkFence fence) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    return VerifyWaitFenceState(device_data, fence, "vkGetFenceStatus()");
 }
 
-void PostCallRecordGetFenceStatus(layer_data *dev_data, VkFence fence) { RetireFence(dev_data, fence); }
+void PostCallRecordGetFenceStatus(VkDevice device, VkFence fence, VkResult result) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (VK_SUCCESS != result) return;
+    RetireFence(device_data, fence);
+}
 
 void PostCallRecordGetDeviceQueue(layer_data *dev_data, uint32_t q_family_index, VkQueue queue) {
     // Add queue to tracking set only if it is new
@@ -4018,50 +4022,53 @@ void PreCallRecordDestroyQueryPool(VkDevice device, VkQueryPool queryPool, const
     device_data->queryPoolMap.erase(queryPool);
 }
 
-bool PreCallValidateGetQueryPoolResults(layer_data *dev_data, VkQueryPool query_pool, uint32_t first_query, uint32_t query_count,
-                                        VkQueryResultFlags flags,
-                                        unordered_map<QueryObject, vector<VkCommandBuffer>> *queries_in_flight) {
+bool PreCallValidateGetQueryPoolResults(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount,
+                                        size_t dataSize, void *pData, VkDeviceSize stride, VkQueryResultFlags flags) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
-    auto query_pool_state = dev_data->queryPoolMap.find(query_pool);
-    if (query_pool_state != dev_data->queryPoolMap.end()) {
+    auto query_pool_state = device_data->queryPoolMap.find(queryPool);
+    if (query_pool_state != device_data->queryPoolMap.end()) {
         if ((query_pool_state->second.createInfo.queryType == VK_QUERY_TYPE_TIMESTAMP) && (flags & VK_QUERY_RESULT_PARTIAL_BIT)) {
             skip |=
-                log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_QUERY_POOL_EXT, 0,
+                log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_QUERY_POOL_EXT, 0,
                         "VUID-vkGetQueryPoolResults-queryType-00818",
                         "QueryPool 0x%" PRIx64
                         " was created with a queryType of VK_QUERY_TYPE_TIMESTAMP but flags contains VK_QUERY_RESULT_PARTIAL_BIT.",
-                        HandleToUint64(query_pool));
+                        HandleToUint64(queryPool));
         }
     }
-
-    // TODO: clean this up, it's insanely wasteful.
-    for (auto cmd_buffer : dev_data->commandBufferMap) {
-        if (cmd_buffer.second->in_use.load()) {
-            for (auto query_state_pair : cmd_buffer.second->queryToStateMap) {
-                (*queries_in_flight)[query_state_pair.first].push_back(cmd_buffer.first);
-            }
-        }
-    }
-
     return skip;
 }
 
-void PostCallRecordGetQueryPoolResults(layer_data *dev_data, VkQueryPool query_pool, uint32_t first_query, uint32_t query_count,
-                                       unordered_map<QueryObject, vector<VkCommandBuffer>> *queries_in_flight) {
-    for (uint32_t i = 0; i < query_count; ++i) {
-        QueryObject query = {query_pool, first_query + i};
-        auto qif_pair = queries_in_flight->find(query);
-        auto query_state_pair = dev_data->queryToStateMap.find(query);
-        if (query_state_pair != dev_data->queryToStateMap.end()) {
+void PostCallRecordGetQueryPoolResults(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount,
+                                       size_t dataSize, void *pData, VkDeviceSize stride, VkQueryResultFlags flags,
+                                       VkResult result) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+
+    if ((VK_SUCCESS != result) && (VK_NOT_READY != result)) return;
+    // TODO: clean this up, it's insanely wasteful.
+    unordered_map<QueryObject, std::vector<VkCommandBuffer>> queries_in_flight;
+    for (auto cmd_buffer : device_data->commandBufferMap) {
+        if (cmd_buffer.second->in_use.load()) {
+            for (auto query_state_pair : cmd_buffer.second->queryToStateMap) {
+                queries_in_flight[query_state_pair.first].push_back(cmd_buffer.first);
+            }
+        }
+    }
+    for (uint32_t i = 0; i < queryCount; ++i) {
+        QueryObject query = {queryPool, firstQuery + i};
+        auto qif_pair = queries_in_flight.find(query);
+        auto query_state_pair = device_data->queryToStateMap.find(query);
+        if (query_state_pair != device_data->queryToStateMap.end()) {
             // Available and in flight
-            if (qif_pair != queries_in_flight->end() && query_state_pair != dev_data->queryToStateMap.end() &&
+            if (qif_pair != queries_in_flight.end() && query_state_pair != device_data->queryToStateMap.end() &&
                 query_state_pair->second) {
                 for (auto cmd_buffer : qif_pair->second) {
-                    auto cb = GetCBNode(dev_data, cmd_buffer);
+                    auto cb = GetCBNode(device_data, cmd_buffer);
                     auto query_event_pair = cb->waitedEventsBeforeQueryReset.find(query);
                     if (query_event_pair != cb->waitedEventsBeforeQueryReset.end()) {
                         for (auto event : query_event_pair->second) {
-                            dev_data->eventMap[event].needsSignaled = true;
+                            device_data->eventMap[event].needsSignaled = true;
                         }
                     }
                 }
@@ -4396,19 +4403,33 @@ void PostCallRecordBindBufferMemory2KHR(VkDevice device, uint32_t bindInfoCount,
     }
 }
 
-void PostCallRecordGetBufferMemoryRequirements(layer_data *dev_data, VkBuffer buffer, VkMemoryRequirements *pMemoryRequirements) {
-    BUFFER_STATE *buffer_state;
-    {
-        unique_lock_t lock(global_lock);
-        buffer_state = GetBufferState(dev_data, buffer);
-    }
+static void RecordGetBufferMemoryRequirementsState(layer_data *device_data, VkBuffer buffer,
+                                                   VkMemoryRequirements *pMemoryRequirements) {
+    BUFFER_STATE *buffer_state = GetBufferState(device_data, buffer);
     if (buffer_state) {
         buffer_state->requirements = *pMemoryRequirements;
         buffer_state->memory_requirements_checked = true;
     }
 }
 
-bool PreCallValidateGetImageMemoryRequirements2(layer_data *dev_data, const VkImageMemoryRequirementsInfo2 *pInfo) {
+void PostCallRecordGetBufferMemoryRequirements(VkDevice device, VkBuffer buffer, VkMemoryRequirements *pMemoryRequirements) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    RecordGetBufferMemoryRequirementsState(device_data, buffer, pMemoryRequirements);
+}
+
+void PostCallRecordGetBufferMemoryRequirements2(VkDevice device, const VkBufferMemoryRequirementsInfo2KHR *pInfo,
+                                                VkMemoryRequirements2KHR *pMemoryRequirements) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    RecordGetBufferMemoryRequirementsState(device_data, pInfo->buffer, &pMemoryRequirements->memoryRequirements);
+}
+
+void PostCallRecordGetBufferMemoryRequirements2KHR(VkDevice device, const VkBufferMemoryRequirementsInfo2KHR *pInfo,
+                                                   VkMemoryRequirements2KHR *pMemoryRequirements) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    RecordGetBufferMemoryRequirementsState(device_data, pInfo->buffer, &pMemoryRequirements->memoryRequirements);
+}
+
+static bool ValidateGetImageMemoryRequirements2(layer_data *dev_data, const VkImageMemoryRequirementsInfo2 *pInfo) {
     bool skip = false;
     if (GetDeviceExtensions(dev_data)->vk_android_external_memory_android_hardware_buffer) {
         skip |= ValidateGetImageMemoryRequirements2ANDROID(dev_data, pInfo->image);
@@ -4416,16 +4437,42 @@ bool PreCallValidateGetImageMemoryRequirements2(layer_data *dev_data, const VkIm
     return skip;
 }
 
-void PostCallRecordGetImageMemoryRequirements(layer_data *dev_data, VkImage image, VkMemoryRequirements *pMemoryRequirements) {
-    IMAGE_STATE *image_state;
-    {
-        unique_lock_t lock(global_lock);
-        image_state = GetImageState(dev_data, image);
-    }
+bool PreCallValidateGetImageMemoryRequirements2(VkDevice device, const VkImageMemoryRequirementsInfo2 *pInfo,
+                                                VkMemoryRequirements2 *pMemoryRequirements) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    return ValidateGetImageMemoryRequirements2(device_data, pInfo);
+}
+
+bool PreCallValidateGetImageMemoryRequirements2KHR(VkDevice device, const VkImageMemoryRequirementsInfo2 *pInfo,
+                                                   VkMemoryRequirements2 *pMemoryRequirements) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    return ValidateGetImageMemoryRequirements2(device_data, pInfo);
+}
+
+static void RecordGetImageMemoryRequiementsState(layer_data *device_data, VkImage image,
+                                                 VkMemoryRequirements *pMemoryRequirements) {
+    IMAGE_STATE *image_state = GetImageState(device_data, image);
     if (image_state) {
         image_state->requirements = *pMemoryRequirements;
         image_state->memory_requirements_checked = true;
     }
+}
+
+void PostCallRecordGetImageMemoryRequirements(VkDevice device, VkImage image, VkMemoryRequirements *pMemoryRequirements) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    RecordGetImageMemoryRequiementsState(device_data, image, pMemoryRequirements);
+}
+
+void PostCallRecordGetImageMemoryRequirements2(VkDevice device, const VkImageMemoryRequirementsInfo2 *pInfo,
+                                               VkMemoryRequirements2 *pMemoryRequirements) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    RecordGetImageMemoryRequiementsState(device_data, pInfo->image, &pMemoryRequirements->memoryRequirements);
+}
+
+void PostCallRecordGetImageMemoryRequirements2KHR(VkDevice device, const VkImageMemoryRequirementsInfo2 *pInfo,
+                                                  VkMemoryRequirements2 *pMemoryRequirements) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    RecordGetImageMemoryRequiementsState(device_data, pInfo->image, &pMemoryRequirements->memoryRequirements);
 }
 
 void PostCallRecordGetImageSparseMemoryRequirements(IMAGE_STATE *image_state, uint32_t req_count,
@@ -9442,6 +9489,7 @@ bool PreCallValidateCreateRenderPass(VkDevice device, const VkRenderPassCreateIn
         skip |=
             ValidateCreateRenderPass(device_data, device, RENDER_PASS_VERSION_1, render_pass->createInfo.ptr(), render_pass.get());
     }
+
     return skip;
 }
 
