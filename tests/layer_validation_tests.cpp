@@ -2692,7 +2692,7 @@ TEST_F(VkLayerTest, RebindMemory) {
     image_create_info.mipLevels = 1;
     image_create_info.arrayLayers = 1;
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
-    image_create_info.tiling = VK_IMAGE_TILING_LINEAR;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
     image_create_info.flags = 0;
 
@@ -3465,7 +3465,7 @@ TEST_F(VkLayerTest, BindMemoryToDestroyedObject) {
     image_create_info.mipLevels = 1;
     image_create_info.arrayLayers = 1;
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
-    image_create_info.tiling = VK_IMAGE_TILING_LINEAR;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
     image_create_info.flags = 0;
 
@@ -14387,7 +14387,6 @@ TEST_F(VkLayerTest, ClearColorImageWithinRenderPass) {
 
     VkClearColorValue clear_color;
     memset(clear_color.uint32, 0, sizeof(uint32_t) * 4);
-    VkMemoryPropertyFlags reqs = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
     const VkFormat tex_format = VK_FORMAT_B8G8R8A8_UNORM;
     const int32_t tex_width = 32;
     const int32_t tex_height = 32;
@@ -14402,11 +14401,11 @@ TEST_F(VkLayerTest, ClearColorImageWithinRenderPass) {
     image_create_info.mipLevels = 1;
     image_create_info.arrayLayers = 1;
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
-    image_create_info.tiling = VK_IMAGE_TILING_LINEAR;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 
     vk_testing::Image dstImage;
-    dstImage.init(*m_device, (const VkImageCreateInfo &)image_create_info, reqs);
+    dstImage.init(*m_device, (const VkImageCreateInfo &)image_create_info);
 
     const VkImageSubresourceRange range = vk_testing::Image::subresource_range(image_create_info, VK_IMAGE_ASPECT_COLOR_BIT);
 
@@ -17145,6 +17144,14 @@ TEST_F(VkLayerTest, UnclosedQuery) {
 TEST_F(VkLayerTest, QueryPreciseBit) {
     TEST_DESCRIPTION("Check for correct Query Precise Bit circumstances.");
     ASSERT_NO_FATAL_FAILURE(Init());
+
+    // These tests require that the device support pipeline statistics query
+    VkPhysicalDeviceFeatures device_features = {};
+    ASSERT_NO_FATAL_FAILURE(GetPhysicalDeviceFeatures(&device_features));
+    if (VK_TRUE != device_features.pipelineStatisticsQuery) {
+        printf("%s Test requires unsupported pipelineStatisticsQuery feature. Skipped.\n", kSkipPrefix);
+        return;
+    }
 
     std::vector<const char *> device_extension_names;
     auto features = m_device->phy().features();
@@ -22718,7 +22725,7 @@ TEST_F(VkLayerTest, CreateImageViewNoMemoryBoundToImage) {
     image_create_info.mipLevels = 1;
     image_create_info.arrayLayers = 1;
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
-    image_create_info.tiling = VK_IMAGE_TILING_LINEAR;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
     image_create_info.flags = 0;
 
@@ -26563,7 +26570,6 @@ TEST_F(VkLayerTest, ClearImageErrors) {
     // Color image
     VkClearColorValue clear_color;
     memset(clear_color.uint32, 0, sizeof(uint32_t) * 4);
-    VkMemoryPropertyFlags reqs = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
     const VkFormat color_format = VK_FORMAT_B8G8R8A8_UNORM;
     const int32_t img_width = 32;
     const int32_t img_height = 32;
@@ -26578,21 +26584,20 @@ TEST_F(VkLayerTest, ClearImageErrors) {
     image_create_info.mipLevels = 1;
     image_create_info.arrayLayers = 1;
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
-    image_create_info.tiling = VK_IMAGE_TILING_LINEAR;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
 
     image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
     vk_testing::Image color_image_no_transfer;
-    color_image_no_transfer.init(*m_device, image_create_info, reqs);
+    color_image_no_transfer.init(*m_device, image_create_info);
 
     image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     vk_testing::Image color_image;
-    color_image.init(*m_device, image_create_info, reqs);
+    color_image.init(*m_device, image_create_info);
 
     const VkImageSubresourceRange color_range = vk_testing::Image::subresource_range(image_create_info, VK_IMAGE_ASPECT_COLOR_BIT);
 
     // Depth/Stencil image
     VkClearDepthStencilValue clear_value = {0};
-    reqs = 0;  // don't need HOST_VISIBLE DS image
     VkImageCreateInfo ds_image_create_info = vk_testing::Image::create_info();
     ds_image_create_info.imageType = VK_IMAGE_TYPE_2D;
     ds_image_create_info.format = VK_FORMAT_D16_UNORM;
@@ -26602,7 +26607,7 @@ TEST_F(VkLayerTest, ClearImageErrors) {
     ds_image_create_info.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 
     vk_testing::Image ds_image;
-    ds_image.init(*m_device, ds_image_create_info, reqs);
+    ds_image.init(*m_device, ds_image_create_info);
 
     const VkImageSubresourceRange ds_range = vk_testing::Image::subresource_range(ds_image_create_info, VK_IMAGE_ASPECT_DEPTH_BIT);
 
