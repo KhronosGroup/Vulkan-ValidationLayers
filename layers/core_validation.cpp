@@ -3244,34 +3244,38 @@ std::map<VkImageCreateFlags, uint64_t> ahb_create_map_v2a = {
 //
 // AHB-extension new APIs
 //
-bool PreCallValidateGetAndroidHardwareBufferProperties(const layer_data *dev_data, const AHardwareBuffer *ahb) {
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
+bool PreCallValidateGetAndroidHardwareBufferProperties(VkDevice device, const struct AHardwareBuffer *buffer,
+                                                       VkAndroidHardwareBufferPropertiesANDROID *pProperties) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
-
     //  buffer must be a valid Android hardware buffer object with at least one of the AHARDWAREBUFFER_USAGE_GPU_* usage flags.
     AHardwareBuffer_Desc ahb_desc;
-    AHardwareBuffer_describe(ahb, &ahb_desc);
+    AHardwareBuffer_describe(buffer, &ahb_desc);
     uint32_t required_flags = AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE | AHARDWAREBUFFER_USAGE_GPU_COLOR_OUTPUT |
                               AHARDWAREBUFFER_USAGE_GPU_CUBE_MAP | AHARDWAREBUFFER_USAGE_GPU_MIPMAP_COMPLETE |
                               AHARDWAREBUFFER_USAGE_GPU_DATA_BUFFER;
     if (0 == (ahb_desc.usage & required_flags)) {
-        skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
-                        HandleToUint64(dev_data->device), "VUID-vkGetAndroidHardwareBufferPropertiesANDROID-buffer-01884",
+        skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
+                        HandleToUint64(device_data->device), "VUID-vkGetAndroidHardwareBufferPropertiesANDROID-buffer-01884",
                         "vkGetAndroidHardwareBufferPropertiesANDROID: The AHardwareBuffer's AHardwareBuffer_Desc.usage (0x%" PRIx64
                         ") does not have any AHARDWAREBUFFER_USAGE_GPU_* flags set.",
                         ahb_desc.usage);
     }
-
     return skip;
 }
 
-void PostCallRecordGetAndroidHardwareBufferProperties(layer_data *dev_data,
-                                                      const VkAndroidHardwareBufferPropertiesANDROID *ahb_props) {
+void PostCallRecordGetAndroidHardwareBufferProperties(VkDevice device, const struct AHardwareBuffer *buffer,
+                                                      VkAndroidHardwareBufferPropertiesANDROID *pProperties, VkResult result) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (VK_SUCCESS != result) return;
     auto ahb_format_props = lvl_find_in_chain<VkAndroidHardwareBufferFormatPropertiesANDROID>(ahb_props->pNext);
     if (ahb_format_props) {
-        auto ext_formats = GetAHBExternalFormatsSet(dev_data);
+        auto ext_formats = GetAHBExternalFormatsSet(device_data);
         ext_formats->insert(ahb_format_props->externalFormat);
     }
 }
+#endif  // VK_USE_PLATFORM_ANDROID_KHR
 
 bool PreCallValidateGetMemoryAndroidHardwareBuffer(const layer_data *dev_data,
                                                    const VkMemoryGetAndroidHardwareBufferInfoANDROID *pInfo) {
@@ -10823,12 +10827,28 @@ void PostCallRecordImportSemaphore(layer_data *dev_data, VkSemaphore semaphore,
     }
 }
 
-void PostCallRecordGetSemaphore(layer_data *dev_data, VkSemaphore semaphore, VkExternalSemaphoreHandleTypeFlagBitsKHR handle_type) {
-    SEMAPHORE_NODE *sema_node = GetSemaphoreNode(dev_data, semaphore);
-    if (sema_node && handle_type != VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT_KHR) {
+static void RecordGetExternalSemaphoreState(layer_data *device_data, VkSemaphore semaphore,
+                                            VkExternalSemaphoreHandleTypeFlagBitsKHR handle_type) {
+    SEMAPHORE_NODE *semaphore_state = GetSemaphoreNode(device_data, semaphore);
+    if (semaphore_state && handle_type != VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT_KHR) {
         // Cannot track semaphore state once it is exported, except for Sync FD handle types which have copy transference
-        sema_node->scope = kSyncScopeExternalPermanent;
+        semaphore_state->scope = kSyncScopeExternalPermanent;
     }
+}
+
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+void PostCallRecordGetSemaphoreWin32HandleKHR(VkDevice device, const VkSemaphoreGetWin32HandleInfoKHR *pGetWin32HandleInfo,
+                                              HANDLE *pHandle, VkResult result) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (VK_SUCCESS != result) return;
+    RecordGetExternalSemaphoreState(device_data, pGetWin32HandleInfo->semaphore, pGetWin32HandleInfo->handleType);
+}
+#endif
+
+void PostCallRecordGetSemaphoreFdKHR(VkDevice device, const VkSemaphoreGetFdInfoKHR *pGetFdInfo, int *pFd, VkResult result) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (VK_SUCCESS != result) return;
+    RecordGetExternalSemaphoreState(device_data, pGetFdInfo->semaphore, pGetFdInfo->handleType);
 }
 
 bool PreCallValidateImportFence(layer_data *dev_data, VkFence fence, const char *caller_name) {
@@ -10855,17 +10875,32 @@ void PostCallRecordImportFence(layer_data *dev_data, VkFence fence, VkExternalFe
     }
 }
 
-void PostCallRecordGetFence(layer_data *dev_data, VkFence fence, VkExternalFenceHandleTypeFlagBitsKHR handle_type) {
-    FENCE_NODE *fence_node = GetFenceNode(dev_data, fence);
-    if (fence_node) {
+static void RecordGetExternalFenceState(layer_data *device_data, VkFence fence, VkExternalFenceHandleTypeFlagBitsKHR handle_type) {
+    FENCE_NODE *fence_state = GetFenceNode(device_data, fence);
+    if (fence_state) {
         if (handle_type != VK_EXTERNAL_FENCE_HANDLE_TYPE_SYNC_FD_BIT_KHR) {
             // Export with reference transference becomes external
-            fence_node->scope = kSyncScopeExternalPermanent;
-        } else if (fence_node->scope == kSyncScopeInternal) {
+            fence_state->scope = kSyncScopeExternalPermanent;
+        } else if (fence_state->scope == kSyncScopeInternal) {
             // Export with copy transference has a side effect of resetting the fence
-            fence_node->state = FENCE_UNSIGNALED;
+            fence_state->state = FENCE_UNSIGNALED;
         }
     }
+}
+
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+void PostCallRecordGetFenceWin32HandleKHR(VkDevice device, const VkFenceGetWin32HandleInfoKHR *pGetWin32HandleInfo, HANDLE *pHandle,
+                                          VkResult result) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (VK_SUCCESS != result) return;
+    RecordGetExternalFenceState(device_data, pGetWin32HandleInfo->fence, pGetWin32HandleInfo->handleType);
+}
+#endif
+
+void PostCallRecordGetFenceFdKHR(VkDevice device, const VkFenceGetFdInfoKHR *pGetFdInfo, int *pFd, VkResult result) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (VK_SUCCESS != result) return;
+    RecordGetExternalFenceState(device_data, pGetFdInfo->fence, pGetFdInfo->handleType);
 }
 
 void PostCallRecordCreateEvent(VkDevice device, const VkEventCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator,

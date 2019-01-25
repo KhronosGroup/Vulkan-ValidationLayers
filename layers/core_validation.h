@@ -1713,11 +1713,17 @@ void PostCallRecordCreateSemaphore(VkDevice device, const VkSemaphoreCreateInfo*
 bool PreCallValidateImportSemaphore(layer_data* dev_data, VkSemaphore semaphore, const char* caller_name);
 void PostCallRecordImportSemaphore(layer_data* dev_data, VkSemaphore semaphore,
                                    VkExternalSemaphoreHandleTypeFlagBitsKHR handle_type, VkSemaphoreImportFlagsKHR flags);
-void PostCallRecordGetSemaphore(layer_data* dev_data, VkSemaphore semaphore, VkExternalSemaphoreHandleTypeFlagBitsKHR handle_type);
+void PostCallRecordGetSemaphoreFdKHR(VkDevice device, const VkSemaphoreGetFdInfoKHR* pGetFdInfo, int* pFd, VkResult result);
 bool PreCallValidateImportFence(layer_data* dev_data, VkFence fence, const char* caller_name);
 void PostCallRecordImportFence(layer_data* dev_data, VkFence fence, VkExternalFenceHandleTypeFlagBitsKHR handle_type,
                                VkFenceImportFlagsKHR flags);
-void PostCallRecordGetFence(layer_data* dev_data, VkFence fence, VkExternalFenceHandleTypeFlagBitsKHR handle_type);
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+void PostCallRecordGetSemaphoreWin32HandleKHR(VkDevice device, const VkSemaphoreGetWin32HandleInfoKHR* pGetWin32HandleInfo,
+                                              HANDLE* pHandle, VkResult result);
+void PostCallRecordGetFenceWin32HandleKHR(VkDevice device, const VkFenceGetWin32HandleInfoKHR* pGetWin32HandleInfo, HANDLE* pHandle,
+                                          VkResult result);
+#endif  // VK_USE_PLATFORM_WIN32_KHR
+void PostCallRecordGetFenceFdKHR(VkDevice device, const VkFenceGetFdInfoKHR* pGetFdInfo, int* pFd, VkResult result);
 void PostCallRecordCreateEvent(VkDevice device, const VkEventCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                                VkEvent* pEvent, VkResult result);
 bool PreCallValidateCreateSwapchainKHR(VkDevice device, const VkSwapchainCreateInfoKHR* pCreateInfo,
@@ -1870,11 +1876,12 @@ void PostCallRecordCreateShaderModule(layer_data* dev_data, bool is_spirv, const
                                       VkShaderModule* pShaderModule, uint32_t unique_shader_id);
 bool PreCallValidateGetBufferDeviceAddressEXT(layer_data* dev_data, const VkBufferDeviceAddressInfoEXT* pInfo);
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
-bool PreCallValidateGetAndroidHardwareBufferProperties(const layer_data* dev_data, const AHardwareBuffer* ahb);
-void PostCallRecordGetAndroidHardwareBufferProperties(layer_data* dev_data,
-                                                      const VkAndroidHardwareBufferPropertiesANDROID* ahb_props);
-bool PreCallValidateGetMemoryAndroidHardwareBuffer(const layer_data* dev_data,
-                                                   const VkMemoryGetAndroidHardwareBufferInfoANDROID* pInfo);
+bool PreCallValidateGetAndroidHardwareBufferProperties(VkDevice device, const struct AHardwareBuffer* buffer,
+                                                       VkAndroidHardwareBufferPropertiesANDROID* pProperties);
+void PostCallRecordGetAndroidHardwareBufferProperties(VkDevice device, const struct AHardwareBuffer* buffer,
+                                                      VkAndroidHardwareBufferPropertiesANDROID* pProperties, VkResult result);
+bool PreCallValidateGetMemoryAndroidHardwareBuffer(VkDevice device, const VkMemoryGetAndroidHardwareBufferInfoANDROID* pInfo,
+                                                   struct AHardwareBuffer** pBuffer);
 void PostCallRecordCreateAndroidSurfaceKHR(VkInstance instance, const VkAndroidSurfaceCreateInfoKHR* pCreateInfo,
                                            const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface, VkResult result);
 #endif  // VK_USE_PLATFORM_ANDROID_KHR

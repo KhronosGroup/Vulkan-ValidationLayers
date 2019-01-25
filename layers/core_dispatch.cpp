@@ -650,8 +650,7 @@ VKAPI_ATTR void VKAPI_CALL GetImageSparseMemoryRequirements(VkDevice device, VkI
     dev_data->dispatch_table.GetImageSparseMemoryRequirements(device, image, pSparseMemoryRequirementCount,
                                                               pSparseMemoryRequirements);
     unique_lock_t lock(global_lock);
-    PostCallRecordGetImageSparseMemoryRequirements(device, image, pSparseMemoryRequirementCount,
-        pSparseMemoryRequirements);
+    PostCallRecordGetImageSparseMemoryRequirements(device, image, pSparseMemoryRequirementCount, pSparseMemoryRequirements);
 }
 
 VKAPI_ATTR void VKAPI_CALL GetImageSparseMemoryRequirements2(VkDevice device, const VkImageSparseMemoryRequirementsInfo2KHR *pInfo,
@@ -662,8 +661,7 @@ VKAPI_ATTR void VKAPI_CALL GetImageSparseMemoryRequirements2(VkDevice device, co
     dev_data->dispatch_table.GetImageSparseMemoryRequirements2(device, pInfo, pSparseMemoryRequirementCount,
                                                                pSparseMemoryRequirements);
     unique_lock_t lock(global_lock);
-    PostCallRecordGetImageSparseMemoryRequirements2(device, pInfo, pSparseMemoryRequirementCount,
-        pSparseMemoryRequirements);
+    PostCallRecordGetImageSparseMemoryRequirements2(device, pInfo, pSparseMemoryRequirementCount, pSparseMemoryRequirements);
 }
 
 VKAPI_ATTR void VKAPI_CALL GetImageSparseMemoryRequirements2KHR(VkDevice device,
@@ -675,8 +673,7 @@ VKAPI_ATTR void VKAPI_CALL GetImageSparseMemoryRequirements2KHR(VkDevice device,
     dev_data->dispatch_table.GetImageSparseMemoryRequirements2KHR(device, pInfo, pSparseMemoryRequirementCount,
                                                                   pSparseMemoryRequirements);
     unique_lock_t lock(global_lock);
-    PostCallRecordGetImageSparseMemoryRequirements2(device, pInfo, pSparseMemoryRequirementCount,
-        pSparseMemoryRequirements);
+    PostCallRecordGetImageSparseMemoryRequirements2(device, pInfo, pSparseMemoryRequirementCount, pSparseMemoryRequirements);
 }
 
 VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceSparseImageFormatProperties(VkPhysicalDevice physicalDevice, VkFormat format,
@@ -1031,14 +1028,13 @@ VKAPI_ATTR VkResult VKAPI_CALL MergeValidationCachesEXT(VkDevice device, VkValid
 VKAPI_ATTR VkResult VKAPI_CALL GetAndroidHardwareBufferPropertiesANDROID(VkDevice device, const struct AHardwareBuffer *buffer,
                                                                          VkAndroidHardwareBufferPropertiesANDROID *pProperties) {
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    bool skip = PreCallValidateGetAndroidHardwareBufferProperties(dev_data, buffer);
+    unique_lock_t lock(global_lock);
+    bool skip = PreCallValidateGetAndroidHardwareBufferProperties(device, buffer, pProperties);
     if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
-
+    lock.unlock();
     VkResult res = dev_data->dispatch_table.GetAndroidHardwareBufferPropertiesANDROID(device, buffer, pProperties);
-    if (VK_SUCCESS == res) {
-        PostCallRecordGetAndroidHardwareBufferProperties(dev_data, pProperties);
-    }
-    return res;
+    lock.lock();
+    PostCallRecordGetAndroidHardwareBufferProperties(device, buffer, pProperties, result);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetMemoryAndroidHardwareBufferANDROID(VkDevice device,
@@ -2377,10 +2373,8 @@ VKAPI_ATTR VkResult VKAPI_CALL GetSemaphoreWin32HandleKHR(VkDevice device,
                                                           HANDLE *pHandle) {
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     VkResult result = dev_data->dispatch_table.GetSemaphoreWin32HandleKHR(device, pGetWin32HandleInfo, pHandle);
-
-    if (result == VK_SUCCESS) {
-        PostCallRecordGetSemaphore(dev_data, pGetWin32HandleInfo->semaphore, pGetWin32HandleInfo->handleType);
-    }
+    unique_lock_t lock(global_lock);
+    PostCallRecordGetSemaphoreWin32HandleKHR(device, pGetWin32HandleInfo, pHandle, result);
     return result;
 }
 #endif
@@ -2388,10 +2382,8 @@ VKAPI_ATTR VkResult VKAPI_CALL GetSemaphoreWin32HandleKHR(VkDevice device,
 VKAPI_ATTR VkResult VKAPI_CALL GetSemaphoreFdKHR(VkDevice device, const VkSemaphoreGetFdInfoKHR *pGetFdInfo, int *pFd) {
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     VkResult result = dev_data->dispatch_table.GetSemaphoreFdKHR(device, pGetFdInfo, pFd);
-
-    if (result == VK_SUCCESS) {
-        PostCallRecordGetSemaphore(dev_data, pGetFdInfo->semaphore, pGetFdInfo->handleType);
-    }
+    unique_lock_t lock(global_lock);
+    PostCallRecordGetSemaphoreFdKHR(device, pGetFdInfo, pFd, result);
     return result;
 }
 
@@ -2434,10 +2426,8 @@ VKAPI_ATTR VkResult VKAPI_CALL GetFenceWin32HandleKHR(VkDevice device, const VkF
                                                       HANDLE *pHandle) {
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     VkResult result = dev_data->dispatch_table.GetFenceWin32HandleKHR(device, pGetWin32HandleInfo, pHandle);
-
-    if (result == VK_SUCCESS) {
-        PostCallRecordGetFence(dev_data, pGetWin32HandleInfo->fence, pGetWin32HandleInfo->handleType);
-    }
+    unique_lock_t lock(global_lock);
+    PostCallRecordGetFenceWin32HandleKHR(device, pGetWin32HandleInfo, pHandle, result);
     return result;
 }
 #endif
@@ -2447,7 +2437,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetFenceFdKHR(VkDevice device, const VkFenceGetFd
     VkResult result = dev_data->dispatch_table.GetFenceFdKHR(device, pGetFdInfo, pFd);
 
     if (result == VK_SUCCESS) {
-        PostCallRecordGetFence(dev_data, pGetFdInfo->fence, pGetFdInfo->handleType);
+        PostCallRecordGetFenceFdKHR(device, pGetFdInfo, pFd, result);
     }
     return result;
 }
