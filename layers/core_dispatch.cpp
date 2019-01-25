@@ -402,16 +402,13 @@ VKAPI_ATTR VkResult VKAPI_CALL WaitForFences(VkDevice device, uint32_t fenceCoun
 VKAPI_ATTR VkResult VKAPI_CALL GetFenceStatus(VkDevice device, VkFence fence) {
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     unique_lock_t lock(global_lock);
-    bool skip = PreCallValidateGetFenceStatus(dev_data, fence);
+    bool skip = PreCallValidateGetFenceStatus(device, fence);
     lock.unlock();
     if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
-
     VkResult result = dev_data->dispatch_table.GetFenceStatus(device, fence);
-    if (result == VK_SUCCESS) {
-        lock.lock();
-        PostCallRecordGetFenceStatus(dev_data, fence);
-        lock.unlock();
-    }
+    lock.lock();
+    PostCallRecordGetFenceStatus(device, fence, result);
+    lock.unlock();
     return result;
 }
 
@@ -493,15 +490,14 @@ VKAPI_ATTR void VKAPI_CALL DestroyQueryPool(VkDevice device, VkQueryPool queryPo
 VKAPI_ATTR VkResult VKAPI_CALL GetQueryPoolResults(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount,
                                                    size_t dataSize, void *pData, VkDeviceSize stride, VkQueryResultFlags flags) {
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    unordered_map<QueryObject, std::vector<VkCommandBuffer>> queries_in_flight;
     unique_lock_t lock(global_lock);
-    bool skip = PreCallValidateGetQueryPoolResults(dev_data, queryPool, firstQuery, queryCount, flags, &queries_in_flight);
+    bool skip = PreCallValidateGetQueryPoolResults(device, queryPool, firstQuery, queryCount, dataSize, pData, stride, flags);
     lock.unlock();
     if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     VkResult result =
         dev_data->dispatch_table.GetQueryPoolResults(device, queryPool, firstQuery, queryCount, dataSize, pData, stride, flags);
     lock.lock();
-    PostCallRecordGetQueryPoolResults(dev_data, queryPool, firstQuery, queryCount, &queries_in_flight);
+    PostCallRecordGetQueryPoolResults(device, queryPool, firstQuery, queryCount, dataSize, pData, stride, flags, result);
     lock.unlock();
     return result;
 }
@@ -599,45 +595,52 @@ VKAPI_ATTR void VKAPI_CALL GetBufferMemoryRequirements(VkDevice device, VkBuffer
                                                        VkMemoryRequirements *pMemoryRequirements) {
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     dev_data->dispatch_table.GetBufferMemoryRequirements(device, buffer, pMemoryRequirements);
-    PostCallRecordGetBufferMemoryRequirements(dev_data, buffer, pMemoryRequirements);
+    PostCallRecordGetBufferMemoryRequirements(device, buffer, pMemoryRequirements);
 }
 
 VKAPI_ATTR void VKAPI_CALL GetBufferMemoryRequirements2(VkDevice device, const VkBufferMemoryRequirementsInfo2KHR *pInfo,
                                                         VkMemoryRequirements2KHR *pMemoryRequirements) {
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     dev_data->dispatch_table.GetBufferMemoryRequirements2(device, pInfo, pMemoryRequirements);
-    PostCallRecordGetBufferMemoryRequirements(dev_data, pInfo->buffer, &pMemoryRequirements->memoryRequirements);
+    PostCallRecordGetBufferMemoryRequirements2(device, pInfo, pMemoryRequirements);
 }
 
 VKAPI_ATTR void VKAPI_CALL GetBufferMemoryRequirements2KHR(VkDevice device, const VkBufferMemoryRequirementsInfo2KHR *pInfo,
                                                            VkMemoryRequirements2KHR *pMemoryRequirements) {
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     dev_data->dispatch_table.GetBufferMemoryRequirements2KHR(device, pInfo, pMemoryRequirements);
-    PostCallRecordGetBufferMemoryRequirements(dev_data, pInfo->buffer, &pMemoryRequirements->memoryRequirements);
+    PostCallRecordGetBufferMemoryRequirements2KHR(device, pInfo, pMemoryRequirements);
 }
 
 VKAPI_ATTR void VKAPI_CALL GetImageMemoryRequirements(VkDevice device, VkImage image, VkMemoryRequirements *pMemoryRequirements) {
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     dev_data->dispatch_table.GetImageMemoryRequirements(device, image, pMemoryRequirements);
-    PostCallRecordGetImageMemoryRequirements(dev_data, image, pMemoryRequirements);
+    unique_lock_t lock(global_lock);
+    PostCallRecordGetImageMemoryRequirements(device, image, pMemoryRequirements);
 }
 
 VKAPI_ATTR void VKAPI_CALL GetImageMemoryRequirements2(VkDevice device, const VkImageMemoryRequirementsInfo2 *pInfo,
                                                        VkMemoryRequirements2 *pMemoryRequirements) {
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    bool skip = PreCallValidateGetImageMemoryRequirements2(dev_data, pInfo);
+    unique_lock_t lock(global_lock);
+    bool skip = PreCallValidateGetImageMemoryRequirements2(device, pInfo, pMemoryRequirements);
     if (skip) return;
+    lock.unlock();
     dev_data->dispatch_table.GetImageMemoryRequirements2(device, pInfo, pMemoryRequirements);
-    PostCallRecordGetImageMemoryRequirements(dev_data, pInfo->image, &pMemoryRequirements->memoryRequirements);
+    lock.lock();
+    PostCallRecordGetImageMemoryRequirements2(device, pInfo, pMemoryRequirements);
 }
 
 VKAPI_ATTR void VKAPI_CALL GetImageMemoryRequirements2KHR(VkDevice device, const VkImageMemoryRequirementsInfo2 *pInfo,
                                                           VkMemoryRequirements2 *pMemoryRequirements) {
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    bool skip = PreCallValidateGetImageMemoryRequirements2(dev_data, pInfo);
+    unique_lock_t lock(global_lock);
+    bool skip = PreCallValidateGetImageMemoryRequirements2(device, pInfo, pMemoryRequirements);
     if (skip) return;
+    lock.unlock();
     dev_data->dispatch_table.GetImageMemoryRequirements2KHR(device, pInfo, pMemoryRequirements);
-    PostCallRecordGetImageMemoryRequirements(dev_data, pInfo->image, &pMemoryRequirements->memoryRequirements);
+    lock.lock();
+    PostCallRecordGetImageMemoryRequirements2KHR(device, pInfo, pMemoryRequirements);
 }
 
 VKAPI_ATTR void VKAPI_CALL GetImageSparseMemoryRequirements(VkDevice device, VkImage image, uint32_t *pSparseMemoryRequirementCount,

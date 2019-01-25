@@ -1393,8 +1393,8 @@ bool PreCallValidateFreeMemory(VkDevice device, VkDeviceMemory mem, const VkAllo
 void PreCallRecordFreeMemory(VkDevice device, VkDeviceMemory mem, const VkAllocationCallbacks* pAllocator);
 bool PreCallValidateWaitForFences(layer_data* dev_data, uint32_t fence_count, const VkFence* fences);
 void PostCallRecordWaitForFences(layer_data* dev_data, uint32_t fence_count, const VkFence* fences, VkBool32 wait_all);
-bool PreCallValidateGetFenceStatus(layer_data* dev_data, VkFence fence);
-void PostCallRecordGetFenceStatus(layer_data* dev_data, VkFence fence);
+bool PreCallValidateGetFenceStatus(VkDevice device, VkFence fence);
+void PostCallRecordGetFenceStatus(VkDevice device, VkFence fence, VkResult result);
 bool PreCallValidateQueueWaitIdle(VkQueue queue);
 void PostCallRecordQueueWaitIdle(VkQueue queue, VkResult result);
 bool PreCallValidateDeviceWaitIdle(layer_data* dev_data);
@@ -1407,11 +1407,11 @@ bool PreCallValidateDestroyEvent(VkDevice device, VkEvent event, const VkAllocat
 void PreCallRecordDestroyEvent(VkDevice device, VkEvent event, const VkAllocationCallbacks* pAllocator);
 bool PreCallValidateDestroyQueryPool(VkDevice device, VkQueryPool queryPool, const VkAllocationCallbacks* pAllocator);
 void PreCallRecordDestroyQueryPool(VkDevice device, VkQueryPool queryPool, const VkAllocationCallbacks* pAllocator);
-bool PreCallValidateGetQueryPoolResults(layer_data* dev_data, VkQueryPool query_pool, uint32_t first_query, uint32_t query_count,
-                                        VkQueryResultFlags flags,
-                                        unordered_map<QueryObject, std::vector<VkCommandBuffer>>* queries_in_flight);
-void PostCallRecordGetQueryPoolResults(layer_data* dev_data, VkQueryPool query_pool, uint32_t first_query, uint32_t query_count,
-                                       unordered_map<QueryObject, std::vector<VkCommandBuffer>>* queries_in_flight);
+bool PreCallValidateGetQueryPoolResults(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount,
+                                        size_t dataSize, void* pData, VkDeviceSize stride, VkQueryResultFlags flags);
+void PostCallRecordGetQueryPoolResults(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount,
+                                       size_t dataSize, void* pData, VkDeviceSize stride, VkQueryResultFlags flags,
+                                       VkResult result);
 bool PreCallValidateBindBufferMemory2KHR(VkDevice device, uint32_t bindInfoCount, const VkBindBufferMemoryInfoKHR* pBindInfos);
 void PostCallRecordBindBufferMemory2KHR(VkDevice device, uint32_t bindInfoCount, const VkBindBufferMemoryInfoKHR* pBindInfos,
                                         VkResult result);
@@ -1421,9 +1421,20 @@ void PostCallRecordBindBufferMemory2(VkDevice device, uint32_t bindInfoCount, co
 bool PreCallValidateBindBufferMemory(VkDevice device, VkBuffer buffer, VkDeviceMemory mem, VkDeviceSize memoryOffset);
 void PostCallRecordBindBufferMemory(VkDevice device, VkBuffer buffer, VkDeviceMemory mem, VkDeviceSize memoryOffset,
                                     VkResult result);
-void PostCallRecordGetBufferMemoryRequirements(layer_data* dev_data, VkBuffer buffer, VkMemoryRequirements* pMemoryRequirements);
-bool PreCallValidateGetImageMemoryRequirements2(layer_data* dev_data, const VkImageMemoryRequirementsInfo2* pInfo);
-void PostCallRecordGetImageMemoryRequirements(layer_data* dev_data, VkImage image, VkMemoryRequirements* pMemoryRequirements);
+void PostCallRecordGetBufferMemoryRequirements(VkDevice device, VkBuffer buffer, VkMemoryRequirements* pMemoryRequirements);
+void PostCallRecordGetBufferMemoryRequirements2(VkDevice device, const VkBufferMemoryRequirementsInfo2KHR* pInfo,
+                                                VkMemoryRequirements2KHR* pMemoryRequirements);
+void PostCallRecordGetBufferMemoryRequirements2KHR(VkDevice device, const VkBufferMemoryRequirementsInfo2KHR* pInfo,
+                                                   VkMemoryRequirements2KHR* pMemoryRequirements);
+bool PreCallValidateGetImageMemoryRequirements2(VkDevice device, const VkImageMemoryRequirementsInfo2* pInfo,
+                                                VkMemoryRequirements2* pMemoryRequirements);
+bool PreCallValidateGetImageMemoryRequirements2KHR(VkDevice device, const VkImageMemoryRequirementsInfo2* pInfo,
+                                                   VkMemoryRequirements2* pMemoryRequirements);
+void PostCallRecordGetImageMemoryRequirements(VkDevice device, VkImage image, VkMemoryRequirements* pMemoryRequirements);
+void PostCallRecordGetImageMemoryRequirements2(VkDevice device, const VkImageMemoryRequirementsInfo2* pInfo,
+                                               VkMemoryRequirements2* pMemoryRequirements);
+void PostCallRecordGetImageMemoryRequirements2KHR(VkDevice device, const VkImageMemoryRequirementsInfo2* pInfo,
+                                                  VkMemoryRequirements2* pMemoryRequirements);
 void PostCallRecordGetImageSparseMemoryRequirements2(IMAGE_STATE* image_state, uint32_t req_count,
                                                      VkSparseImageMemoryRequirements2KHR* reqs);
 void PostCallRecordGetImageSparseMemoryRequirements(IMAGE_STATE* image_state, uint32_t req_count,
