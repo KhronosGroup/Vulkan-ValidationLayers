@@ -8498,68 +8498,22 @@ TEST_F(VkLayerTest, WriteDescriptorSetIntegrityCheck) {
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkWriteDescriptorSet-descriptorType-00324");
 
     ASSERT_NO_FATAL_FAILURE(Init());
-    VkDescriptorPoolSize ds_type_count[4] = {};
-    ds_type_count[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    ds_type_count[0].descriptorCount = 1;
-    ds_type_count[1].type = VK_DESCRIPTOR_TYPE_SAMPLER;
-    ds_type_count[1].descriptorCount = 1;
-    ds_type_count[2].type = VK_DESCRIPTOR_TYPE_SAMPLER;
-    ds_type_count[2].descriptorCount = 1;
-    ds_type_count[3].type = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
-    ds_type_count[3].descriptorCount = 1;
-
-    VkDescriptorPoolCreateInfo ds_pool_ci = {};
-    ds_pool_ci.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    ds_pool_ci.maxSets = 1;
-    ds_pool_ci.poolSizeCount = sizeof(ds_type_count) / sizeof(VkDescriptorPoolSize);
-    ds_pool_ci.pPoolSizes = ds_type_count;
-
-    VkDescriptorPool ds_pool;
-    VkResult err = vkCreateDescriptorPool(m_device->device(), &ds_pool_ci, NULL, &ds_pool);
-    ASSERT_VK_SUCCESS(err);
-
-    VkDescriptorSetLayoutBinding dslb1 = {};
-    dslb1.binding = 0;
-    dslb1.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    dslb1.descriptorCount = 1;
-    dslb1.stageFlags = VK_SHADER_STAGE_ALL;
-    dslb1.pImmutableSamplers = NULL;
-
-    VkDescriptorSetLayoutBinding dslb2 = {};
-    dslb2.binding = 1;
-    dslb2.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
-    dslb2.descriptorCount = 1;
-    dslb2.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-    dslb2.pImmutableSamplers = NULL;
 
     VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
     VkSampler sampler;
-
-    err = vkCreateSampler(m_device->device(), &sampler_ci, NULL, &sampler);
+    VkResult err = vkCreateSampler(m_device->device(), &sampler_ci, NULL, &sampler);
     ASSERT_VK_SUCCESS(err);
 
-    VkDescriptorSetLayoutBinding dslb3 = {};
-    dslb3.binding = 2;
-    dslb3.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
-    dslb3.descriptorCount = 1;
-    dslb3.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-    dslb3.pImmutableSamplers = static_cast<VkSampler *>(&sampler);
-
-    const std::vector<VkDescriptorSetLayoutBinding> layout_bindings = {dslb1, dslb2, dslb3};
-    const VkDescriptorSetLayoutObj ds_layout(m_device, layout_bindings);
-
-    VkDescriptorSetAllocateInfo alloc_info = {};
-    alloc_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    alloc_info.descriptorSetCount = 1;
-    alloc_info.descriptorPool = ds_pool;
-    alloc_info.pSetLayouts = &ds_layout.handle();
-    VkDescriptorSet descriptorSet;
-    err = vkAllocateDescriptorSets(m_device->device(), &alloc_info, &descriptorSet);
-    ASSERT_VK_SUCCESS(err);
+    OneOffDescriptorSet::Bindings bindings = {
+        {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, NULL},
+        {1, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, NULL},
+        {2, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, static_cast<VkSampler *>(&sampler)}};
+    OneOffDescriptorSet descriptor_set(m_device, bindings);
+    ASSERT_TRUE(descriptor_set.Initialized());
 
     VkWriteDescriptorSet descriptor_write = {};
     descriptor_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    descriptor_write.dstSet = descriptorSet;
+    descriptor_write.dstSet = descriptor_set.set_;
     descriptor_write.dstBinding = 0;
     descriptor_write.descriptorCount = 1;
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -8626,7 +8580,6 @@ TEST_F(VkLayerTest, WriteDescriptorSetIntegrityCheck) {
     vkDestroyBuffer(m_device->device(), dyub, NULL);
     vkFreeMemory(m_device->device(), mem, NULL);
     vkDestroySampler(m_device->device(), sampler, NULL);
-    vkDestroyDescriptorPool(m_device->device(), ds_pool, NULL);
 }
 
 TEST_F(VkLayerTest, WriteDescriptorSetConsecutiveUpdates) {
