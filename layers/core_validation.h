@@ -1759,7 +1759,7 @@ void PostCallRecordGetPhysicalDeviceSurfaceFormatsKHR(PHYSICAL_DEVICE_STATE* phy
 void PostCallRecordGetPhysicalDeviceSurfaceFormats2KHR(instance_layer_data* instanceData, VkPhysicalDevice physicalDevice,
                                                        uint32_t* pSurfaceFormatCount, VkSurfaceFormat2KHR* pSurfaceFormats);
 void PostCallRecordCreateDisplayPlaneSurfaceKHR(VkInstance instance, const VkDisplaySurfaceCreateInfoKHR* pCreateInfo,
-                                                const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface);
+                                                const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface, VkResult result);
 void PreCallRecordSetDebugUtilsObjectNameEXT(layer_data* dev_data, const VkDebugUtilsObjectNameInfoEXT* pNameInfo);
 void PreCallRecordQueueBeginDebugUtilsLabelEXT(VkQueue queue, const VkDebugUtilsLabelEXT* pLabelInfo);
 void PostCallRecordQueueEndDebugUtilsLabelEXT(VkQueue queue);
@@ -1859,39 +1859,39 @@ void PostCallRecordGetAndroidHardwareBufferProperties(layer_data* dev_data,
 bool PreCallValidateGetMemoryAndroidHardwareBuffer(const layer_data* dev_data,
                                                    const VkMemoryGetAndroidHardwareBufferInfoANDROID* pInfo);
 void PostCallRecordCreateAndroidSurfaceKHR(VkInstance instance, const VkAndroidSurfaceCreateInfoKHR* pCreateInfo,
-                                           const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface);
+                                           const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface, VkResult result);
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
 #ifdef VK_USE_PLATFORM_IOS_MVK
 void PostCallRecordCreateIOSSurfaceMVK(VkInstance instance, const VkIOSSurfaceCreateInfoMVK* pCreateInfo,
-                                       const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface);
+                                       const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface, VkResult result);
 #endif  // VK_USE_PLATFORM_IOS_MVK
 #ifdef VK_USE_PLATFORM_MACOS_MVK
 void PostCallRecordCreateMacOSSurfaceMVK(VkInstance instance, const VkMacOSSurfaceCreateInfoMVK* pCreateInfo,
-                                         const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface);
+                                         const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface, VkResult result);
 #endif  // VK_USE_PLATFORM_MACOS_MVK
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
 bool PreCallValidateGetPhysicalDeviceWaylandPresentationSupportKHR(instance_layer_data* instance_data,
                                                                    VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex);
 void PostCallRecordCreateWaylandSurfaceKHR(VkInstance instance, const VkWaylandSurfaceCreateInfoKHR* pCreateInfo,
-                                           const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface);
+                                           const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface, VkResult result);
 #endif  // VK_USE_PLATFORM_WAYLAND_KHR
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 bool PreCallValidateGetPhysicalDeviceWin32PresentationSupportKHR(instance_layer_data* instance_data,
                                                                  VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex);
 void PostCallRecordCreateWin32SurfaceKHR(VkInstance instance, const VkWin32SurfaceCreateInfoKHR* pCreateInfo,
-                                         const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface);
+                                         const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface, VkResult result);
 #endif  // VK_USE_PLATFORM_WIN32_KHR
 #ifdef VK_USE_PLATFORM_XCB_KHR
 bool PreCallValidateGetPhysicalDeviceXcbPresentationSupportKHR(instance_layer_data* instance_data, VkPhysicalDevice physicalDevice,
                                                                uint32_t queueFamilyIndex);
 void PostCallRecordCreateXcbSurfaceKHR(VkInstance instance, const VkXcbSurfaceCreateInfoKHR* pCreateInfo,
-                                       const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface);
+                                       const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface, VkResult result);
 #endif  // VK_USE_PLATFORM_XCB_KHR
 #ifdef VK_USE_PLATFORM_XLIB_KHR
 bool PreCallValidateGetPhysicalDeviceXlibPresentationSupportKHR(instance_layer_data* instance_data, VkPhysicalDevice physicalDevice,
                                                                 uint32_t queueFamilyIndex);
 void PostCallRecordCreateXlibSurfaceKHR(VkInstance instance, const VkXlibSurfaceCreateInfoKHR* pCreateInfo,
-                                        const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface);
+                                        const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface, VkResult result);
 #endif  // VK_USE_PLATFORM_XLIB_KHR
 
 };  // namespace core_validation
