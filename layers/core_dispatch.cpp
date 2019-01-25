@@ -650,8 +650,8 @@ VKAPI_ATTR void VKAPI_CALL GetImageSparseMemoryRequirements(VkDevice device, VkI
     dev_data->dispatch_table.GetImageSparseMemoryRequirements(device, image, pSparseMemoryRequirementCount,
                                                               pSparseMemoryRequirements);
     unique_lock_t lock(global_lock);
-    auto image_state = GetImageState(dev_data, image);
-    PostCallRecordGetImageSparseMemoryRequirements(image_state, *pSparseMemoryRequirementCount, pSparseMemoryRequirements);
+    PostCallRecordGetImageSparseMemoryRequirements(device, image, pSparseMemoryRequirementCount,
+        pSparseMemoryRequirements);
 }
 
 VKAPI_ATTR void VKAPI_CALL GetImageSparseMemoryRequirements2(VkDevice device, const VkImageSparseMemoryRequirementsInfo2KHR *pInfo,
@@ -662,8 +662,8 @@ VKAPI_ATTR void VKAPI_CALL GetImageSparseMemoryRequirements2(VkDevice device, co
     dev_data->dispatch_table.GetImageSparseMemoryRequirements2(device, pInfo, pSparseMemoryRequirementCount,
                                                                pSparseMemoryRequirements);
     unique_lock_t lock(global_lock);
-    auto image_state = GetImageState(dev_data, pInfo->image);
-    PostCallRecordGetImageSparseMemoryRequirements2(image_state, *pSparseMemoryRequirementCount, pSparseMemoryRequirements);
+    PostCallRecordGetImageSparseMemoryRequirements2(device, pInfo, pSparseMemoryRequirementCount,
+        pSparseMemoryRequirements);
 }
 
 VKAPI_ATTR void VKAPI_CALL GetImageSparseMemoryRequirements2KHR(VkDevice device,
@@ -675,8 +675,8 @@ VKAPI_ATTR void VKAPI_CALL GetImageSparseMemoryRequirements2KHR(VkDevice device,
     dev_data->dispatch_table.GetImageSparseMemoryRequirements2KHR(device, pInfo, pSparseMemoryRequirementCount,
                                                                   pSparseMemoryRequirements);
     unique_lock_t lock(global_lock);
-    auto image_state = GetImageState(dev_data, pInfo->image);
-    PostCallRecordGetImageSparseMemoryRequirements2(image_state, *pSparseMemoryRequirementCount, pSparseMemoryRequirements);
+    PostCallRecordGetImageSparseMemoryRequirements2(device, pInfo, pSparseMemoryRequirementCount,
+        pSparseMemoryRequirements);
 }
 
 VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceSparseImageFormatProperties(VkPhysicalDevice physicalDevice, VkFormat format,

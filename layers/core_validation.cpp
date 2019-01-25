@@ -4475,33 +4475,52 @@ void PostCallRecordGetImageMemoryRequirements2KHR(VkDevice device, const VkImage
     RecordGetImageMemoryRequiementsState(device_data, pInfo->image, &pMemoryRequirements->memoryRequirements);
 }
 
-void PostCallRecordGetImageSparseMemoryRequirements(IMAGE_STATE *image_state, uint32_t req_count,
-                                                    VkSparseImageMemoryRequirements *reqs) {
-    image_state->get_sparse_reqs_called = true;
-    image_state->sparse_requirements.resize(req_count);
-    if (reqs) {
-        std::copy(reqs, reqs + req_count, image_state->sparse_requirements.begin());
-    }
-    for (const auto &req : image_state->sparse_requirements) {
-        if (req.formatProperties.aspectMask & VK_IMAGE_ASPECT_METADATA_BIT) {
-            image_state->sparse_metadata_required = true;
-        }
+static void RecordGetImageSparseMemoryRequirementsState(IMAGE_STATE *image_state,
+                                                        VkSparseImageMemoryRequirements *sparse_image_memory_requirements) {
+    image_state->sparse_requirements.emplace_back(*sparse_image_memory_requirements);
+    if (sparse_image_memory_requirements->formatProperties.aspectMask & VK_IMAGE_ASPECT_METADATA_BIT) {
+        image_state->sparse_metadata_required = true;
     }
 }
 
-void PostCallRecordGetImageSparseMemoryRequirements2(IMAGE_STATE *image_state, uint32_t req_count,
-                                                     VkSparseImageMemoryRequirements2KHR *reqs) {
-    // reqs is empty, so there is nothing to loop over and read.
-    if (reqs == nullptr) {
-        return;
+void PostCallRecordGetImageSparseMemoryRequirements(VkDevice device, VkImage image, uint32_t *pSparseMemoryRequirementCount,
+                                                    VkSparseImageMemoryRequirements *pSparseMemoryRequirements) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+
+    auto image_state = GetImageState(device_data, image);
+    image_state->get_sparse_reqs_called = true;
+    if (!pSparseMemoryRequirements) return;
+    for (uint32_t i = 0; i < *pSparseMemoryRequirementCount; i++) {
+        RecordGetImageSparseMemoryRequirementsState(image_state, &pSparseMemoryRequirements[i]);
     }
-    std::vector<VkSparseImageMemoryRequirements> sparse_reqs(req_count);
-    // Migrate to old struct type for common handling with GetImageSparseMemoryRequirements()
-    for (uint32_t i = 0; i < req_count; ++i) {
-        assert(!reqs[i].pNext);  // TODO: If an extension is ever added here we need to handle it
-        sparse_reqs[i] = reqs[i].memoryRequirements;
+}
+
+void PostCallRecordGetImageSparseMemoryRequirements2(VkDevice device, const VkImageSparseMemoryRequirementsInfo2KHR *pInfo,
+                                                     uint32_t *pSparseMemoryRequirementCount,
+                                                     VkSparseImageMemoryRequirements2KHR *pSparseMemoryRequirements) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+
+    auto image_state = GetImageState(device_data, pInfo->image);
+    image_state->get_sparse_reqs_called = true;
+    if (!pSparseMemoryRequirements) return;
+    for (uint32_t i = 0; i < *pSparseMemoryRequirementCount; i++) {
+        assert(!pSparseMemoryRequirements[i].pNext);  // TODO: If an extension is ever added here we need to handle it
+        RecordGetImageSparseMemoryRequirementsState(image_state, &pSparseMemoryRequirements[i].memoryRequirements);
     }
-    PostCallRecordGetImageSparseMemoryRequirements(image_state, req_count, sparse_reqs.data());
+}
+
+void PostCallRecordGetImageSparseMemoryRequirements2KHR(VkDevice device, const VkImageSparseMemoryRequirementsInfo2KHR *pInfo,
+                                                        uint32_t *pSparseMemoryRequirementCount,
+                                                        VkSparseImageMemoryRequirements2KHR *pSparseMemoryRequirements) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+
+    auto image_state = GetImageState(device_data, pInfo->image);
+    image_state->get_sparse_reqs_called = true;
+    if (!pSparseMemoryRequirements) return;
+    for (uint32_t i = 0; i < *pSparseMemoryRequirementCount; i++) {
+        assert(!pSparseMemoryRequirements[i].pNext);  // TODO: If an extension is ever added here we need to handle it
+        RecordGetImageSparseMemoryRequirementsState(image_state, &pSparseMemoryRequirements[i].memoryRequirements);
+    }
 }
 
 bool PreCallValidateGetPhysicalDeviceImageFormatProperties2(const debug_report_data *report_data,
