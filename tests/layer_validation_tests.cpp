@@ -36010,6 +36010,162 @@ TEST_F(VkLayerTest, CreateYCbCrSampler) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(VkPositiveLayerTest, ViewportArray2NV) {
+    TEST_DESCRIPTION("Test to validate VK_NV_viewport_array2");
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+
+    VkPhysicalDeviceFeatures available_features = {};
+    ASSERT_NO_FATAL_FAILURE(GetPhysicalDeviceFeatures(&available_features));
+
+    if (!available_features.multiViewport) {
+        printf("VkPhysicalDeviceFeatures::multiViewport is not supported, skipping tests\n");
+        return;
+    }
+    if (!available_features.tessellationShader) {
+        printf("VkPhysicalDeviceFeatures::tessellationShader is not supported, skipping tests\n");
+        return;
+    }
+    if (!available_features.geometryShader) {
+        printf("VkPhysicalDeviceFeatures::geometryShader is not supported, skipping tests\n");
+        return;
+    }
+
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_NV_VIEWPORT_ARRAY2_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_NV_VIEWPORT_ARRAY2_EXTENSION_NAME);
+    } else {
+        printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, VK_NV_VIEWPORT_ARRAY2_EXTENSION_NAME);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    const char tcs_src[] = R"(
+        #version 450
+        layout(vertices = 3) out;
+
+        void main() {
+            gl_TessLevelOuter[0] = 4.0f;
+            gl_TessLevelOuter[1] = 4.0f;
+            gl_TessLevelOuter[2] = 4.0f;
+            gl_TessLevelInner[0] = 3.0f;
+
+            gl_out[gl_InvocationID].gl_Position = gl_in[gl_InvocationID].gl_Position;
+        })";
+
+    const char fs_src[] = R"(
+        #version 450
+        layout(location = 0) out vec4 outColor;
+        void main() {
+            outColor = vec4(1.0f);
+        })";
+
+    // Create tessellation control and fragment shader here since they will not be
+    // modified by the different test cases.
+    VkShaderObj tcs(m_device, tcs_src, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, this);
+    VkShaderObj fs(m_device, fs_src, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+
+    std::vector<VkViewport> vps = {{0.0f, 0.0f, m_width / 2.0f, m_height}, {m_width / 2.0f, 0.0f, m_width / 2.0f, m_height}};
+    std::vector<VkRect2D> scs = {
+        {{0, 0}, {static_cast<uint32_t>(m_width) / 2, static_cast<uint32_t>(m_height)}},
+        {{static_cast<int32_t>(m_width) / 2, 0}, {static_cast<uint32_t>(m_width) / 2, static_cast<uint32_t>(m_height)}}};
+
+    enum class TestStage { VERTEX = 0, TESSELLATION_EVAL = 1, GEOMETRY = 2 };
+    std::array<TestStage, 3> vertex_stages = {{TestStage::VERTEX, TestStage::TESSELLATION_EVAL, TestStage::GEOMETRY}};
+
+    // Verify that the usage of gl_ViewportMask[] in the allowed vertex processing
+    // stages does not cause any errors.
+    for (auto stage : vertex_stages) {
+        m_errorMonitor->ExpectSuccess();
+
+        VkPipelineInputAssemblyStateCreateInfo iaci = {VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO};
+        iaci.topology = (stage != TestStage::VERTEX) ? VK_PRIMITIVE_TOPOLOGY_PATCH_LIST : VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+
+        VkPipelineTessellationStateCreateInfo tsci = {VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO};
+        tsci.patchControlPoints = 3;
+
+        const VkPipelineLayoutObj pl(m_device);
+
+        VkPipelineObj pipe(m_device);
+        pipe.AddDefaultColorAttachment();
+        pipe.SetInputAssembly(&iaci);
+        pipe.SetViewport(vps);
+        pipe.SetScissor(scs);
+        pipe.AddShader(&fs);
+
+        std::stringstream vs_src, tes_src, geom_src;
+
+        vs_src << R"(
+            #version 450
+            #extension GL_NV_viewport_array2 : require
+
+            vec2 positions[3] = { vec2( 0.0f, -0.5f),
+                                  vec2( 0.5f,  0.5f),
+                                  vec2(-0.5f,  0.5f)
+                                };
+            void main() {)";
+        // Write viewportMask if the vertex shader is the last vertex processing stage.
+        if (stage == TestStage::VERTEX) {
+            vs_src << "gl_ViewportMask[0] = 3;\n";
+        }
+        vs_src << R"(
+                gl_Position = vec4(positions[gl_VertexIndex % 3], 0.0, 1.0);
+            })";
+
+        VkShaderObj vs(m_device, vs_src.str().c_str(), VK_SHADER_STAGE_VERTEX_BIT, this);
+        pipe.AddShader(&vs);
+
+        std::unique_ptr<VkShaderObj> tes, geom;
+
+        if (stage >= TestStage::TESSELLATION_EVAL) {
+            tes_src << R"(
+                #version 450
+                #extension GL_NV_viewport_array2 : require
+                layout(triangles) in;
+
+                void main() {
+                   gl_Position = (gl_in[0].gl_Position * gl_TessCoord.x +
+                                  gl_in[1].gl_Position * gl_TessCoord.y +
+                                  gl_in[2].gl_Position * gl_TessCoord.z);)";
+            // Write viewportMask if the tess eval shader is the last vertex processing stage.
+            if (stage == TestStage::TESSELLATION_EVAL) {
+                tes_src << "gl_ViewportMask[0] = 3;\n";
+            }
+            tes_src << "}";
+
+            tes = std::unique_ptr<VkShaderObj>(
+                new VkShaderObj(m_device, tes_src.str().c_str(), VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, this));
+            pipe.AddShader(tes.get());
+            pipe.AddShader(&tcs);
+            pipe.SetTessellation(&tsci);
+        }
+
+        if (stage >= TestStage::GEOMETRY) {
+            geom_src << R"(
+                #version 450
+                #extension GL_NV_viewport_array2 : require
+                layout(triangles)   in;
+                layout(triangle_strip, max_vertices = 3) out;
+
+                void main() {
+                   gl_ViewportMask[0] = 3;
+                   for(int i = 0; i < 3; ++i) {
+                       gl_Position = gl_in[i].gl_Position;
+                       EmitVertex();
+                    }
+                })";
+
+            geom =
+                std::unique_ptr<VkShaderObj>(new VkShaderObj(m_device, geom_src.str().c_str(), VK_SHADER_STAGE_GEOMETRY_BIT, this));
+            pipe.AddShader(geom.get());
+        }
+
+        pipe.CreateVKPipeline(pl.handle(), renderPass());
+        m_errorMonitor->VerifyNotFound();
+    }
+}
+
 #ifdef VK_USE_PLATFORM_ANDROID_KHR  // or ifdef ANDROID?
 #include "android_ndk_types.h"
 
