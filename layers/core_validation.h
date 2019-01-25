@@ -1437,8 +1437,14 @@ void PostCallRecordGetImageMemoryRequirements2KHR(VkDevice device, const VkImage
                                                   VkMemoryRequirements2* pMemoryRequirements);
 void PostCallRecordGetImageSparseMemoryRequirements2(IMAGE_STATE* image_state, uint32_t req_count,
                                                      VkSparseImageMemoryRequirements2KHR* reqs);
-void PostCallRecordGetImageSparseMemoryRequirements(IMAGE_STATE* image_state, uint32_t req_count,
-                                                    VkSparseImageMemoryRequirements* reqs);
+void PostCallRecordGetImageSparseMemoryRequirements(VkDevice device, VkImage image, uint32_t* pSparseMemoryRequirementCount,
+                                                    VkSparseImageMemoryRequirements* pSparseMemoryRequirements);
+void PostCallRecordGetImageSparseMemoryRequirements2(VkDevice device, const VkImageSparseMemoryRequirementsInfo2KHR* pInfo,
+                                                     uint32_t* pSparseMemoryRequirementCount,
+                                                     VkSparseImageMemoryRequirements2KHR* pSparseMemoryRequirements);
+void PostCallRecordGetImageSparseMemoryRequirements2KHR(VkDevice device, const VkImageSparseMemoryRequirementsInfo2KHR* pInfo,
+                                                        uint32_t* pSparseMemoryRequirementCount,
+                                                        VkSparseImageMemoryRequirements2KHR* pSparseMemoryRequirements);
 bool PreCallValidateGetPhysicalDeviceImageFormatProperties2(const debug_report_data* report_data,
                                                             const VkPhysicalDeviceImageFormatInfo2* pImageFormatInfo,
                                                             const VkImageFormatProperties2* pImageFormatProperties);
