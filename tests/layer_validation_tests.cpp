@@ -8493,7 +8493,8 @@ TEST_F(VkLayerTest, WriteDescriptorSetIntegrityCheck) {
         "1) A uniform buffer update must have a valid buffer index. "
         "2) When using an array of descriptors in a single WriteDescriptor, the descriptor types and stageflags "
         "must all be the same. "
-        "3) Immutable Sampler state must match across descriptors");
+        "3) Immutable Sampler state must match across descriptors. "
+        "4) That sampled image descriptors have required layouts. ");
 
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkWriteDescriptorSet-descriptorType-00324");
 
@@ -8507,7 +8508,8 @@ TEST_F(VkLayerTest, WriteDescriptorSetIntegrityCheck) {
     OneOffDescriptorSet::Bindings bindings = {
         {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, NULL},
         {1, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, NULL},
-        {2, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, static_cast<VkSampler *>(&sampler)}};
+        {2, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, static_cast<VkSampler *>(&sampler)},
+        {3, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_FRAGMENT_BIT, NULL}};
     OneOffDescriptorSet descriptor_set(m_device, bindings);
     ASSERT_TRUE(descriptor_set.Initialized());
 
@@ -8574,6 +8576,25 @@ TEST_F(VkLayerTest, WriteDescriptorSetIntegrityCheck) {
     imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     descriptor_write.pImageInfo = &imageInfo;
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkWriteDescriptorSet-dstArrayElement-00321");
+    vkUpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+    m_errorMonitor->VerifyFound();
+
+    // 4) That sampled image descriptors have required layouts
+    // Create images to update the descriptor with
+    VkImageObj image(m_device);
+    const VkFormat tex_format = VK_FORMAT_B8G8R8A8_UNORM;
+    image.Init(32, 32, 1, tex_format, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    ASSERT_TRUE(image.initialized());
+
+    // Attmept write with incorrect layout for sampled descriptor
+    imageInfo.sampler = VK_NULL_HANDLE;
+    imageInfo.imageView = image.targetView(tex_format);
+    imageInfo.imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+    descriptor_write.dstBinding = 3;
+    descriptor_write.descriptorCount = 1;
+    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkWriteDescriptorSet-descriptorType-01403");
     vkUpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
     m_errorMonitor->VerifyFound();
 
