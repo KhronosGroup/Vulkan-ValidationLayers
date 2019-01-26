@@ -576,7 +576,7 @@ VKAPI_ATTR VkResult VKAPI_CALL BindBufferMemory2KHR(VkDevice device, uint32_t bi
     skip = PreCallValidateBindBufferMemory2KHR(device, bindInfoCount, pBindInfos);
     lock.unlock();
     if (!skip) {
-        result = dev_data->dispatch_table.BindBufferMemory2(device, bindInfoCount, pBindInfos);
+        result = dev_data->dispatch_table.BindBufferMemory2KHR(device, bindInfoCount, pBindInfos);
         lock.lock();
         PostCallRecordBindBufferMemory2KHR(device, bindInfoCount, pBindInfos, result);
         lock.unlock();
@@ -2111,7 +2111,7 @@ VKAPI_ATTR void VKAPI_CALL CmdBeginRenderPass2KHR(VkCommandBuffer commandBuffer,
 
     lock.unlock();
     if (!skip) {
-        dev_data->dispatch_table.CmdBeginRenderPass(commandBuffer, pRenderPassBegin, pSubpassBeginInfo->contents);
+        dev_data->dispatch_table.CmdBeginRenderPass2KHR(commandBuffer, pRenderPassBegin, pSubpassBeginInfo);
     }
 }
 
@@ -2148,7 +2148,7 @@ VKAPI_ATTR void VKAPI_CALL CmdNextSubpass2KHR(VkCommandBuffer commandBuffer, con
 
     if (skip) return;
 
-    dev_data->dispatch_table.CmdNextSubpass(commandBuffer, pSubpassBeginInfo->contents);
+    dev_data->dispatch_table.CmdNextSubpass2KHR(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo);
 
     if (pCB) {
         lock.lock();
@@ -2188,7 +2188,7 @@ VKAPI_ATTR void VKAPI_CALL CmdEndRenderPass2KHR(VkCommandBuffer commandBuffer, c
 
     if (skip) return;
 
-    dev_data->dispatch_table.CmdEndRenderPass(commandBuffer);
+    dev_data->dispatch_table.CmdEndRenderPass2KHR(commandBuffer, pSubpassEndInfo);
 
     if (pCB) {
         lock.lock();
