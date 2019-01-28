@@ -81,7 +81,6 @@ endif()
 
 # ~~~
 # The vulkan loader search is:
-#     Existing vulkan target already present in the build
 #     User-supplied setting of CMAKE_PREFIX_PATH
 #     VULKAN_LOADER_INSTALL_DIR defined via cmake option
 #     VULKAN_LOADER_INSTALL_DIR defined via environment variable
@@ -89,24 +88,16 @@ endif()
 # ~~~
 set(VULKAN_LOADER_INSTALL_DIR "LOADER-NOTFOUND" CACHE PATH "Absolute path to a Vulkan-Loader install directory")
 
-if (TARGET vulkan)
-    add_library(Vulkan::Vulkan ALIAS vulkan)
-else()
-    if(VULKAN_LOADER_INSTALL_DIR)
-        message(STATUS "VULKAN_LOADER_INSTALL_DIR specified, using find_package to locate Vulkan")
-    elseif(ENV{VULKAN_LOADER_INSTALL_DIR})
-        message(STATUS "VULKAN_LOADER_INSTALL_DIR environment variable specified, using find_package to locate Vulkan")
-    endif()
-    set(
-        CMAKE_PREFIX_PATH
-        ${CMAKE_PREFIX_PATH};${VULKAN_LOADER_INSTALL_DIR};${VULKAN_HEADERS_INSTALL_DIR};$ENV{VULKAN_LOADER_INSTALL_DIR};$ENV{VULKAN_HEADERS_INSTALL_DIR}
-        )
-    find_package(Vulkan)
-    add_library(vulkan STATIC IMPORTED)
-
-    set_target_properties(vulkan PROPERTIES IMPORTED_LOCATION "${Vulkan_LIBRARY}")
-    target_include_directories(vulkan INTERFACE "${Vulkan_INCLUDE_DIR}")
+if(VULKAN_LOADER_INSTALL_DIR)
+    message(STATUS "VULKAN_LOADER_INSTALL_DIR specified, using find_package to locate Vulkan")
+elseif(ENV{VULKAN_LOADER_INSTALL_DIR})
+    message(STATUS "VULKAN_LOADER_INSTALL_DIR environment variable specified, using find_package to locate Vulkan")
 endif()
+set(
+    CMAKE_PREFIX_PATH
+    ${CMAKE_PREFIX_PATH};${VULKAN_LOADER_INSTALL_DIR};${VULKAN_HEADERS_INSTALL_DIR};$ENV{VULKAN_LOADER_INSTALL_DIR};$ENV{VULKAN_HEADERS_INSTALL_DIR}
+    )
+find_package(Vulkan)
 
 set_source_files_properties(${PROJECT_BINARY_DIR}/vk_safe_struct.cpp PROPERTIES GENERATED TRUE)
 add_executable(vk_layer_validation_tests
