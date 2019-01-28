@@ -689,8 +689,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceImageFormatProperties2(VkPhysica
                                                                        const VkPhysicalDeviceImageFormatInfo2 *pImageFormatInfo,
                                                                        VkImageFormatProperties2 *pImageFormatProperties) {
     instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), instance_layer_data_map);
-    bool skip = PreCallValidateGetPhysicalDeviceImageFormatProperties2(instance_data->report_data, pImageFormatInfo,
-                                                                       pImageFormatProperties);
+    unique_lock_t lock(global_lock);
+    bool skip = PreCallValidateGetPhysicalDeviceImageFormatProperties2(physicalDevice, pImageFormatInfo, pImageFormatProperties);
+    lock.unlock();
     if (skip) {
         return VK_ERROR_VALIDATION_FAILED_EXT;
     } else {
@@ -703,8 +704,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceImageFormatProperties2KHR(VkPhys
                                                                           const VkPhysicalDeviceImageFormatInfo2 *pImageFormatInfo,
                                                                           VkImageFormatProperties2 *pImageFormatProperties) {
     instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), instance_layer_data_map);
-    bool skip = PreCallValidateGetPhysicalDeviceImageFormatProperties2(instance_data->report_data, pImageFormatInfo,
-                                                                       pImageFormatProperties);
+    unique_lock_t lock(global_lock);
+    bool skip = PreCallValidateGetPhysicalDeviceImageFormatProperties2KHR(physicalDevice, pImageFormatInfo, pImageFormatProperties);
+    lock.unlock();
     if (skip) {
         return VK_ERROR_VALIDATION_FAILED_EXT;
     } else {
@@ -2883,22 +2885,15 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfaceSupportKHR(VkPhysicalDevi
                                                                   VkSurfaceKHR surface, VkBool32 *pSupported) {
     bool skip = false;
     auto instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), instance_layer_data_map);
-
     unique_lock_t lock(global_lock);
-    const auto pd_state = GetPhysicalDeviceState(instance_data, physicalDevice);
-
-    skip |= PreCallValidateGetPhysicalDeviceSurfaceSupportKHR(instance_data, pd_state, queueFamilyIndex);
+    skip |= PreCallValidateGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, queueFamilyIndex, surface, pSupported);
     lock.unlock();
-
     if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
-
-    auto result =
+    VkResult result =
         instance_data->dispatch_table.GetPhysicalDeviceSurfaceSupportKHR(physicalDevice, queueFamilyIndex, surface, pSupported);
 
-    if (result == VK_SUCCESS) {
-        lock.lock();
-        PostCallRecordGetPhysicalDeviceSurfaceSupportKHR(instance_data, physicalDevice, queueFamilyIndex, surface, pSupported);
-    }
+    lock.lock();
+    PostCallRecordGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, queueFamilyIndex, surface, pSupported, result);
 
     return result;
 }
@@ -2925,25 +2920,14 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDevi
     bool skip = false;
     auto instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), instance_layer_data_map);
     unique_lock_t lock(global_lock);
-    auto physical_device_state = GetPhysicalDeviceState(instance_data, physicalDevice);
-    auto &call_state = physical_device_state->vkGetPhysicalDeviceSurfaceFormatsKHRState;
-
-    if (pSurfaceFormats) {
-        skip |= PreCallValidateGetPhysicalDeviceSurfaceFormatsKHR(instance_data, physical_device_state, call_state, physicalDevice,
-                                                                  pSurfaceFormatCount);
-    }
+    skip |= PreCallValidateGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, pSurfaceFormatCount, pSurfaceFormats);
     lock.unlock();
-
     if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
 
-    // Call down the call chain:
     auto result = instance_data->dispatch_table.GetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, pSurfaceFormatCount,
                                                                                    pSurfaceFormats);
-
-    if (result == VK_SUCCESS || result == VK_INCOMPLETE) {
-        lock.lock();
-        PostCallRecordGetPhysicalDeviceSurfaceFormatsKHR(physical_device_state, call_state, pSurfaceFormatCount, pSurfaceFormats);
-    }
+    lock.lock();
+    PostCallRecordGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, pSurfaceFormatCount, pSurfaceFormats, result);
     return result;
 }
 
