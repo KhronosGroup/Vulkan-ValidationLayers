@@ -105,7 +105,7 @@ else()
     add_library(vulkan STATIC IMPORTED)
 
     set_target_properties(vulkan PROPERTIES IMPORTED_LOCATION "${Vulkan_LIBRARY}")
-    target_include_directories(vulkan INTERFACE "${Vulkan_INCLUDE_DIR}")
+    set_target_properties(vulkan PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${Vulkan_INCLUDE_DIR}")
 endif()
 
 set_source_files_properties(${PROJECT_BINARY_DIR}/vk_safe_struct.cpp PROPERTIES GENERATED TRUE)
