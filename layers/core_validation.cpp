@@ -3269,7 +3269,7 @@ void PostCallRecordGetAndroidHardwareBufferProperties(VkDevice device, const str
                                                       VkAndroidHardwareBufferPropertiesANDROID *pProperties, VkResult result) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (VK_SUCCESS != result) return;
-    auto ahb_format_props = lvl_find_in_chain<VkAndroidHardwareBufferFormatPropertiesANDROID>(ahb_props->pNext);
+    auto ahb_format_props = lvl_find_in_chain<VkAndroidHardwareBufferFormatPropertiesANDROID>(pProperties->pNext);
     if (ahb_format_props) {
         auto ext_formats = GetAHBExternalFormatsSet(device_data);
         ext_formats->insert(ahb_format_props->externalFormat);
@@ -3277,18 +3277,18 @@ void PostCallRecordGetAndroidHardwareBufferProperties(VkDevice device, const str
 }
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
 
-bool PreCallValidateGetMemoryAndroidHardwareBuffer(const layer_data *dev_data,
-                                                   const VkMemoryGetAndroidHardwareBufferInfoANDROID *pInfo) {
+bool PreCallValidateGetMemoryAndroidHardwareBuffer(VkDevice device, const VkMemoryGetAndroidHardwareBufferInfoANDROID *pInfo,
+                                                   struct AHardwareBuffer **pBuffer) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
-    unique_lock_t lock(global_lock);
-    DEVICE_MEM_INFO *mem_info = GetMemObjInfo(dev_data, pInfo->memory);
+    DEVICE_MEM_INFO *mem_info = GetMemObjInfo(device_data, pInfo->memory);
 
     // VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID must have been included in
     // VkExportMemoryAllocateInfoKHR::handleTypes when memory was created.
     if (!mem_info->is_export ||
         (0 == (mem_info->export_handle_type_flags & VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID))) {
-        skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
-                        HandleToUint64(dev_data->device), "VUID-VkMemoryGetAndroidHardwareBufferInfoANDROID-handleTypes-01882",
+        skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
+                        HandleToUint64(device), "VUID-VkMemoryGetAndroidHardwareBufferInfoANDROID-handleTypes-01882",
                         "vkGetMemoryAndroidHardwareBufferANDROID: The VkDeviceMemory (0x%" PRIx64
                         ") was not allocated for export, or the export handleTypes (0x%" PRIx32
                         ") did not contain VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID.",
@@ -3298,10 +3298,10 @@ bool PreCallValidateGetMemoryAndroidHardwareBuffer(const layer_data *dev_data,
     // If the pNext chain of the VkMemoryAllocateInfo used to allocate memory included a VkMemoryDedicatedAllocateInfo
     // with non-NULL image member, then that image must already be bound to memory.
     if (mem_info->is_dedicated && (VK_NULL_HANDLE != mem_info->dedicated_image)) {
-        auto image_state = GetImageState(dev_data, mem_info->dedicated_image);
+        auto image_state = GetImageState(device_data, mem_info->dedicated_image);
         if ((nullptr == image_state) || (0 == (image_state->GetBoundMemory().count(pInfo->memory)))) {
-            skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
-                            HandleToUint64(dev_data->device), "VUID-VkMemoryGetAndroidHardwareBufferInfoANDROID-pNext-01883",
+            skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
+                            HandleToUint64(device), "VUID-VkMemoryGetAndroidHardwareBufferInfoANDROID-pNext-01883",
                             "vkGetMemoryAndroidHardwareBufferANDROID: The VkDeviceMemory (0x%" PRIx64
                             ") was allocated using a dedicated image (0x%" PRIx64
                             "), but that image is not bound to the VkDeviceMemory object.",
@@ -3906,15 +3906,25 @@ void PostCallRecordGetFenceStatus(VkDevice device, VkFence fence, VkResult resul
     RetireFence(device_data, fence);
 }
 
-void PostCallRecordGetDeviceQueue(layer_data *dev_data, uint32_t q_family_index, VkQueue queue) {
+static void RecordGetDeviceQueueState(layer_data *device_data, uint32_t queue_family_index, VkQueue queue) {
     // Add queue to tracking set only if it is new
-    auto result = dev_data->queues.emplace(queue);
-    if (result.second == true) {
-        QUEUE_STATE *queue_state = &dev_data->queueMap[queue];
+    auto queue_is_new = device_data->queues.emplace(queue);
+    if (queue_is_new.second == true) {
+        QUEUE_STATE *queue_state = &device_data->queueMap[queue];
         queue_state->queue = queue;
-        queue_state->queueFamilyIndex = q_family_index;
+        queue_state->queueFamilyIndex = queue_family_index;
         queue_state->seq = 0;
     }
+}
+
+void PostCallRecordGetDeviceQueue(VkDevice device, uint32_t queueFamilyIndex, uint32_t queueIndex, VkQueue *pQueue) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    RecordGetDeviceQueueState(device_data, queueFamilyIndex, *pQueue);
+}
+
+void PostCallRecordGetDeviceQueue2(VkDevice device, const VkDeviceQueueInfo2 *pQueueInfo, VkQueue *pQueue) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    RecordGetDeviceQueueState(device_data, pQueueInfo->queueFamilyIndex, *pQueue);
 }
 
 bool PreCallValidateQueueWaitIdle(VkQueue queue) {
@@ -11273,11 +11283,12 @@ void PreCallRecordDestroySwapchainKHR(VkDevice device, VkSwapchainKHR swapchain,
     }
 }
 
-bool PreCallValidateGetSwapchainImagesKHR(layer_data *device_data, SWAPCHAIN_NODE *swapchain_state, VkDevice device,
-                                          uint32_t *pSwapchainImageCount, VkImage *pSwapchainImages) {
+bool PreCallValidateGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain, uint32_t *pSwapchainImageCount,
+                                          VkImage *pSwapchainImages) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    auto swapchain_state = GetSwapchainNode(device_data, swapchain);
     bool skip = false;
     if (swapchain_state && pSwapchainImages) {
-        lock_guard_t lock(global_lock);
         // Compare the preliminary value of *pSwapchainImageCount with the value this time:
         if (swapchain_state->vkGetSwapchainImagesKHRState == UNCALLED) {
             skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
@@ -11296,9 +11307,12 @@ bool PreCallValidateGetSwapchainImagesKHR(layer_data *device_data, SWAPCHAIN_NOD
     return skip;
 }
 
-void PostCallRecordGetSwapchainImagesKHR(layer_data *device_data, SWAPCHAIN_NODE *swapchain_state, VkDevice device,
-                                         uint32_t *pSwapchainImageCount, VkImage *pSwapchainImages) {
-    lock_guard_t lock(global_lock);
+void PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain, uint32_t *pSwapchainImageCount,
+                                         VkImage *pSwapchainImages, VkResult result) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+
+    if ((result != VK_SUCCESS) && (result != VK_INCOMPLETE)) return;
+    auto swapchain_state = GetSwapchainNode(device_data, swapchain);
 
     if (*pSwapchainImageCount > swapchain_state->images.size()) swapchain_state->images.resize(*pSwapchainImageCount);
 
@@ -12415,21 +12429,32 @@ static bool ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(instance_lay
     return skip;
 }
 
-bool PreCallValidateGetDisplayPlaneSupportedDisplaysKHR(instance_layer_data *instance_data, VkPhysicalDevice physicalDevice,
-                                                        uint32_t planeIndex) {
+bool PreCallValidateGetDisplayPlaneSupportedDisplaysKHR(VkPhysicalDevice physicalDevice, uint32_t planeIndex,
+                                                        uint32_t *pDisplayCount, VkDisplayKHR *pDisplays) {
+    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), instance_layer_data_map);
     bool skip = false;
-    lock_guard_t lock(global_lock);
     skip |= ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(instance_data, physicalDevice, planeIndex,
                                                                     "vkGetDisplayPlaneSupportedDisplaysKHR");
     return skip;
 }
 
-bool PreCallValidateGetDisplayPlaneCapabilitiesKHR(instance_layer_data *instance_data, VkPhysicalDevice physicalDevice,
-                                                   uint32_t planeIndex) {
+bool PreCallValidateGetDisplayPlaneCapabilitiesKHR(VkPhysicalDevice physicalDevice, VkDisplayModeKHR mode, uint32_t planeIndex,
+                                                   VkDisplayPlaneCapabilitiesKHR *pCapabilities) {
+    // instance_layer_data *instance_data, VkPhysicalDevice physicalDevice, uint32_t planeIndex) {
+    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), instance_layer_data_map);
     bool skip = false;
-    lock_guard_t lock(global_lock);
     skip |= ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(instance_data, physicalDevice, planeIndex,
                                                                     "vkGetDisplayPlaneCapabilitiesKHR");
+    return skip;
+}
+
+bool PreCallValidateGetDisplayPlaneCapabilities2KHR(VkPhysicalDevice physicalDevice,
+                                                    const VkDisplayPlaneInfo2KHR *pDisplayPlaneInfo,
+                                                    VkDisplayPlaneCapabilities2KHR *pCapabilities) {
+    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), instance_layer_data_map);
+    bool skip = false;
+    skip |= ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(instance_data, physicalDevice, pDisplayPlaneInfo->planeIndex,
+                                                                    "vkGetDisplayPlaneCapabilities2KHR");
     return skip;
 }
 
