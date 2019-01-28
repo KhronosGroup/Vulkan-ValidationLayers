@@ -265,18 +265,16 @@ VKAPI_ATTR void VKAPI_CALL CmdUpdateBuffer(VkCommandBuffer commandBuffer, VkBuff
 VKAPI_ATTR void VKAPI_CALL GetDeviceQueue(VkDevice device, uint32_t queueFamilyIndex, uint32_t queueIndex, VkQueue *pQueue) {
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     dev_data->dispatch_table.GetDeviceQueue(device, queueFamilyIndex, queueIndex, pQueue);
-    lock_guard_t lock(global_lock);
-
-    PostCallRecordGetDeviceQueue(dev_data, queueFamilyIndex, *pQueue);
+    unique_lock_t lock(global_lock);
+    PostCallRecordGetDeviceQueue(device, queueFamilyIndex, queueIndex, pQueue);
 }
 
 VKAPI_ATTR void VKAPI_CALL GetDeviceQueue2(VkDevice device, const VkDeviceQueueInfo2 *pQueueInfo, VkQueue *pQueue) {
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     dev_data->dispatch_table.GetDeviceQueue2(device, pQueueInfo, pQueue);
-    lock_guard_t lock(global_lock);
-
+    unique_lock_t lock(global_lock);
     if (*pQueue != VK_NULL_HANDLE) {
-        PostCallRecordGetDeviceQueue(dev_data, pQueueInfo->queueFamilyIndex, *pQueue);
+        PostCallRecordGetDeviceQueue2(device, pQueueInfo, pQueue);
     }
 }
 
@@ -1032,18 +1030,20 @@ VKAPI_ATTR VkResult VKAPI_CALL GetAndroidHardwareBufferPropertiesANDROID(VkDevic
     bool skip = PreCallValidateGetAndroidHardwareBufferProperties(device, buffer, pProperties);
     if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     lock.unlock();
-    VkResult res = dev_data->dispatch_table.GetAndroidHardwareBufferPropertiesANDROID(device, buffer, pProperties);
+    VkResult result = dev_data->dispatch_table.GetAndroidHardwareBufferPropertiesANDROID(device, buffer, pProperties);
     lock.lock();
     PostCallRecordGetAndroidHardwareBufferProperties(device, buffer, pProperties, result);
+    return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetMemoryAndroidHardwareBufferANDROID(VkDevice device,
                                                                      const VkMemoryGetAndroidHardwareBufferInfoANDROID *pInfo,
                                                                      struct AHardwareBuffer **pBuffer) {
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    bool skip = PreCallValidateGetMemoryAndroidHardwareBuffer(dev_data, pInfo);
+    unique_lock_t lock(global_lock);
+    bool skip = PreCallValidateGetMemoryAndroidHardwareBuffer(device, pInfo, pBuffer);
+    lock.unlock();
     if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
-
     return dev_data->dispatch_table.GetMemoryAndroidHardwareBufferANDROID(device, pInfo, pBuffer);
 }
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
@@ -2478,17 +2478,15 @@ VKAPI_ATTR VkResult VKAPI_CALL GetSwapchainImagesKHR(VkDevice device, VkSwapchai
                                                      VkImage *pSwapchainImages) {
     VkResult result = VK_ERROR_VALIDATION_FAILED_EXT;
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-
-    auto swapchain_state = GetSwapchainNode(device_data, swapchain);
-    bool skip = PreCallValidateGetSwapchainImagesKHR(device_data, swapchain_state, device, pSwapchainImageCount, pSwapchainImages);
-
+    unique_lock_t lock(global_lock);
+    bool skip = PreCallValidateGetSwapchainImagesKHR(device, swapchain, pSwapchainImageCount, pSwapchainImages);
+    lock.unlock();
     if (!skip) {
         result = device_data->dispatch_table.GetSwapchainImagesKHR(device, swapchain, pSwapchainImageCount, pSwapchainImages);
     }
-
-    if ((result == VK_SUCCESS || result == VK_INCOMPLETE)) {
-        PostCallRecordGetSwapchainImagesKHR(device_data, swapchain_state, device, pSwapchainImageCount, pSwapchainImages);
-    }
+    lock.lock();
+    PostCallRecordGetSwapchainImagesKHR(device, swapchain, pSwapchainImageCount, pSwapchainImages, result);
+    lock.unlock();
     return result;
 }
 
@@ -3275,7 +3273,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDisplayPlaneSupportedDisplaysKHR(VkPhysicalDev
                                                                    uint32_t *pDisplayCount, VkDisplayKHR *pDisplays) {
     VkResult result = VK_ERROR_VALIDATION_FAILED_EXT;
     instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), instance_layer_data_map);
-    bool skip = PreCallValidateGetDisplayPlaneSupportedDisplaysKHR(instance_data, physicalDevice, planeIndex);
+    unique_lock_t lock(global_lock);
+    bool skip = PreCallValidateGetDisplayPlaneSupportedDisplaysKHR(physicalDevice, planeIndex, pDisplayCount, pDisplays);
+    lock.unlock();
     if (!skip) {
         result =
             instance_data->dispatch_table.GetDisplayPlaneSupportedDisplaysKHR(physicalDevice, planeIndex, pDisplayCount, pDisplays);
@@ -3287,12 +3287,12 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDisplayPlaneCapabilitiesKHR(VkPhysicalDevice p
                                                               uint32_t planeIndex, VkDisplayPlaneCapabilitiesKHR *pCapabilities) {
     VkResult result = VK_ERROR_VALIDATION_FAILED_EXT;
     instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), instance_layer_data_map);
-    bool skip = PreCallValidateGetDisplayPlaneCapabilitiesKHR(instance_data, physicalDevice, planeIndex);
-
+    unique_lock_t lock(global_lock);
+    bool skip = PreCallValidateGetDisplayPlaneCapabilitiesKHR(physicalDevice, mode, planeIndex, pCapabilities);
+    lock.unlock();
     if (!skip) {
         result = instance_data->dispatch_table.GetDisplayPlaneCapabilitiesKHR(physicalDevice, mode, planeIndex, pCapabilities);
     }
-
     return result;
 }
 
@@ -3301,12 +3301,12 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDisplayPlaneCapabilities2KHR(VkPhysicalDevice 
                                                                VkDisplayPlaneCapabilities2KHR *pCapabilities) {
     VkResult result = VK_ERROR_VALIDATION_FAILED_EXT;
     instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), instance_layer_data_map);
-    bool skip = PreCallValidateGetDisplayPlaneCapabilitiesKHR(instance_data, physicalDevice, pDisplayPlaneInfo->planeIndex);
-
+    unique_lock_t lock(global_lock);
+    bool skip = PreCallValidateGetDisplayPlaneCapabilities2KHR(physicalDevice, pDisplayPlaneInfo, pCapabilities);
+    lock.unlock();
     if (!skip) {
         result = instance_data->dispatch_table.GetDisplayPlaneCapabilities2KHR(physicalDevice, pDisplayPlaneInfo, pCapabilities);
     }
-
     return result;
 }
 

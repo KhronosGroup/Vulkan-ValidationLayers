@@ -1368,7 +1368,8 @@ bool PreCallCmdUpdateBuffer(layer_data* device_data, const GLOBAL_CB_NODE* cb_st
 void PostCallRecordCmdUpdateBuffer(layer_data* device_data, GLOBAL_CB_NODE* cb_state, BUFFER_STATE* dst_buffer_state);
 void PostCallRecordCreateFence(VkDevice device, const VkFenceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                                VkFence* pFence, VkResult result);
-void PostCallRecordGetDeviceQueue(layer_data* dev_data, uint32_t q_family_index, VkQueue queue);
+void PostCallRecordGetDeviceQueue(VkDevice device, uint32_t queueFamilyIndex, uint32_t queueIndex, VkQueue* pQueue);
+void PostCallRecordGetDeviceQueue2(VkDevice device, const VkDeviceQueueInfo2* pQueueInfo, VkQueue* pQueue);
 bool PreCallValidateCreateSamplerYcbcrConversion(VkDevice device, const VkSamplerYcbcrConversionCreateInfo* pCreateInfo,
                                                  const VkAllocationCallbacks* pAllocator,
                                                  VkSamplerYcbcrConversion* pYcbcrConversion);
@@ -1731,10 +1732,10 @@ bool PreCallValidateCreateSwapchainKHR(VkDevice device, const VkSwapchainCreateI
 void PostCallRecordCreateSwapchainKHR(VkDevice device, const VkSwapchainCreateInfoKHR* pCreateInfo,
                                       const VkAllocationCallbacks* pAllocator, VkSwapchainKHR* pSwapchain, VkResult result);
 void PreCallRecordDestroySwapchainKHR(VkDevice device, VkSwapchainKHR swapchain, const VkAllocationCallbacks* pAllocator);
-bool PreCallValidateGetSwapchainImagesKHR(layer_data* device_data, SWAPCHAIN_NODE* swapchain_state, VkDevice device,
-                                          uint32_t* pSwapchainImageCount, VkImage* pSwapchainImages);
-void PostCallRecordGetSwapchainImagesKHR(layer_data* device_data, SWAPCHAIN_NODE* swapchain_state, VkDevice device,
-                                         uint32_t* pSwapchainImageCount, VkImage* pSwapchainImages);
+bool PreCallValidateGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain, uint32_t* pSwapchainImageCount,
+                                          VkImage* pSwapchainImages);
+void PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain, uint32_t* pSwapchainImageCount,
+                                         VkImage* pSwapchainImages, VkResult result);
 bool PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR* pPresentInfo);
 void PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR* pPresentInfo, VkResult result);
 bool PreCallValidateCreateSharedSwapchainsKHR(VkDevice device, uint32_t swapchainCount,
@@ -1837,10 +1838,13 @@ void PreCallRecordCmdPushDescriptorSetWithTemplateKHR(layer_data* device_data, G
                                                       VkPipelineLayout layout, uint32_t set, const void* pData);
 void PostCallRecordGetPhysicalDeviceDisplayPlanePropertiesKHR(instance_layer_data* instanceData, VkPhysicalDevice physicalDevice,
                                                               uint32_t* pPropertyCount, void* pProperties);
-bool PreCallValidateGetDisplayPlaneSupportedDisplaysKHR(instance_layer_data* instance_data, VkPhysicalDevice physicalDevice,
-                                                        uint32_t planeIndex);
-bool PreCallValidateGetDisplayPlaneCapabilitiesKHR(instance_layer_data* instance_data, VkPhysicalDevice physicalDevice,
-                                                   uint32_t planeIndex);
+bool PreCallValidateGetDisplayPlaneSupportedDisplaysKHR(VkPhysicalDevice physicalDevice, uint32_t planeIndex,
+                                                        uint32_t* pDisplayCount, VkDisplayKHR* pDisplays);
+bool PreCallValidateGetDisplayPlaneCapabilitiesKHR(VkPhysicalDevice physicalDevice, VkDisplayModeKHR mode, uint32_t planeIndex,
+                                                   VkDisplayPlaneCapabilitiesKHR* pCapabilities);
+bool PreCallValidateGetDisplayPlaneCapabilities2KHR(VkPhysicalDevice physicalDevice,
+                                                    const VkDisplayPlaneInfo2KHR* pDisplayPlaneInfo,
+                                                    VkDisplayPlaneCapabilities2KHR* pCapabilities);
 void PreCallRecordDebugMarkerSetObjectNameEXT(layer_data* dev_data, const VkDebugMarkerObjectNameInfoEXT* pNameInfo);
 bool PreCallValidateCmdDebugMarkerEndEXT(layer_data* dev_data, GLOBAL_CB_NODE* cb_state);
 bool PreCallValidateCmdSetDiscardRectangleEXT(layer_data* dev_data, GLOBAL_CB_NODE* cb_state);
