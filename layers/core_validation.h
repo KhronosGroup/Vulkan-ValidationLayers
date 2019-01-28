@@ -1446,9 +1446,12 @@ void PostCallRecordGetImageSparseMemoryRequirements2(VkDevice device, const VkIm
 void PostCallRecordGetImageSparseMemoryRequirements2KHR(VkDevice device, const VkImageSparseMemoryRequirementsInfo2KHR* pInfo,
                                                         uint32_t* pSparseMemoryRequirementCount,
                                                         VkSparseImageMemoryRequirements2KHR* pSparseMemoryRequirements);
-bool PreCallValidateGetPhysicalDeviceImageFormatProperties2(const debug_report_data* report_data,
+bool PreCallValidateGetPhysicalDeviceImageFormatProperties2(VkPhysicalDevice physicalDevice,
                                                             const VkPhysicalDeviceImageFormatInfo2* pImageFormatInfo,
-                                                            const VkImageFormatProperties2* pImageFormatProperties);
+                                                            VkImageFormatProperties2* pImageFormatProperties);
+bool PreCallValidateGetPhysicalDeviceImageFormatProperties2KHR(VkPhysicalDevice physicalDevice,
+                                                               const VkPhysicalDeviceImageFormatInfo2* pImageFormatInfo,
+                                                               VkImageFormatProperties2* pImageFormatProperties);
 void PreCallRecordDestroyShaderModule(VkDevice device, VkShaderModule shaderModule, const VkAllocationCallbacks* pAllocator);
 bool PreCallValidateDestroyPipeline(VkDevice device, VkPipeline pipeline, const VkAllocationCallbacks* pAllocator);
 void PreCallRecordDestroyPipeline(VkDevice device, VkPipeline pipeline, const VkAllocationCallbacks* pAllocator);
@@ -1769,17 +1772,17 @@ void PostCallRecordGetPhysicalDeviceSurfaceCapabilities2KHR(instance_layer_data*
                                                             VkSurfaceCapabilities2KHR* pSurfaceCapabilities);
 void PostCallRecordGetPhysicalDeviceSurfaceCapabilities2EXT(instance_layer_data* instanceData, VkPhysicalDevice physicalDevice,
                                                             VkSurfaceCapabilities2EXT* pSurfaceCapabilities);
-bool PreCallValidateGetPhysicalDeviceSurfaceSupportKHR(instance_layer_data* instance_data,
-                                                       PHYSICAL_DEVICE_STATE* physical_device_state, uint32_t queueFamilyIndex);
-void PostCallRecordGetPhysicalDeviceSurfaceSupportKHR(instance_layer_data* instance_data, VkPhysicalDevice physicalDevice,
-                                                      uint32_t queueFamilyIndex, VkSurfaceKHR surface, VkBool32* pSupported);
+bool PreCallValidateGetPhysicalDeviceSurfaceSupportKHR(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
+                                                       VkSurfaceKHR surface, VkBool32* pSupported);
+void PostCallRecordGetPhysicalDeviceSurfaceSupportKHR(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
+                                                      VkSurfaceKHR surface, VkBool32* pSupported, VkResult result);
 void PostCallRecordGetPhysicalDeviceSurfacePresentModesKHR(instance_layer_data* instance_data, VkPhysicalDevice physical_device,
                                                            uint32_t* pPresentModeCount, VkPresentModeKHR* pPresentModes);
-bool PreCallValidateGetPhysicalDeviceSurfaceFormatsKHR(instance_layer_data* instance_data,
-                                                       PHYSICAL_DEVICE_STATE* physical_device_state, CALL_STATE& call_state,
-                                                       VkPhysicalDevice physicalDevice, uint32_t* pSurfaceFormatCount);
-void PostCallRecordGetPhysicalDeviceSurfaceFormatsKHR(PHYSICAL_DEVICE_STATE* physical_device_state, CALL_STATE& call_state,
-                                                      uint32_t* pSurfaceFormatCount, VkSurfaceFormatKHR* pSurfaceFormats);
+bool PreCallValidateGetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
+                                                       uint32_t* pSurfaceFormatCount, VkSurfaceFormatKHR* pSurfaceFormats);
+void PostCallRecordGetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
+                                                      uint32_t* pSurfaceFormatCount, VkSurfaceFormatKHR* pSurfaceFormats,
+                                                      VkResult result);
 void PostCallRecordGetPhysicalDeviceSurfaceFormats2KHR(instance_layer_data* instanceData, VkPhysicalDevice physicalDevice,
                                                        uint32_t* pSurfaceFormatCount, VkSurfaceFormat2KHR* pSurfaceFormats);
 void PostCallRecordCreateDisplayPlaneSurfaceKHR(VkInstance instance, const VkDisplaySurfaceCreateInfoKHR* pCreateInfo,

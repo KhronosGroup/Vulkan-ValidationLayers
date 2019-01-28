@@ -4537,12 +4537,23 @@ void PostCallRecordGetImageSparseMemoryRequirements2KHR(VkDevice device, const V
     }
 }
 
-bool PreCallValidateGetPhysicalDeviceImageFormatProperties2(const debug_report_data *report_data,
+bool PreCallValidateGetPhysicalDeviceImageFormatProperties2(VkPhysicalDevice physicalDevice,
                                                             const VkPhysicalDeviceImageFormatInfo2 *pImageFormatInfo,
-                                                            const VkImageFormatProperties2 *pImageFormatProperties) {
+                                                            VkImageFormatProperties2 *pImageFormatProperties) {
+    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), instance_layer_data_map);
     // Can't wrap AHB-specific validation in a device extension check here, but no harm
-    bool skip = ValidateGetPhysicalDeviceImageFormatProperties2ANDROID(report_data, pImageFormatInfo, pImageFormatProperties);
+    bool skip = ValidateGetPhysicalDeviceImageFormatProperties2ANDROID(instance_data->report_data, pImageFormatInfo,
+                                                                       pImageFormatProperties);
+    return skip;
+}
 
+bool PreCallValidateGetPhysicalDeviceImageFormatProperties2KHR(VkPhysicalDevice physicalDevice,
+                                                               const VkPhysicalDeviceImageFormatInfo2 *pImageFormatInfo,
+                                                               VkImageFormatProperties2 *pImageFormatProperties) {
+    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), instance_layer_data_map);
+    // Can't wrap AHB-specific validation in a device extension check here, but no harm
+    bool skip = ValidateGetPhysicalDeviceImageFormatProperties2ANDROID(instance_data->report_data, pImageFormatInfo,
+                                                                       pImageFormatProperties);
     return skip;
 }
 
@@ -11920,15 +11931,19 @@ void PostCallRecordGetPhysicalDeviceSurfaceCapabilities2EXT(instance_layer_data 
     physicalDeviceState->surfaceCapabilities.supportedUsageFlags = pSurfaceCapabilities->supportedUsageFlags;
 }
 
-bool PreCallValidateGetPhysicalDeviceSurfaceSupportKHR(instance_layer_data *instance_data,
-                                                       PHYSICAL_DEVICE_STATE *physical_device_state, uint32_t queueFamilyIndex) {
+bool PreCallValidateGetPhysicalDeviceSurfaceSupportKHR(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
+                                                       VkSurfaceKHR surface, VkBool32 *pSupported) {
+    auto instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), instance_layer_data_map);
+    const auto physical_device_state = GetPhysicalDeviceState(instance_data, physicalDevice);
     return ValidatePhysicalDeviceQueueFamily(instance_data, physical_device_state, queueFamilyIndex,
                                              "VUID-vkGetPhysicalDeviceSurfaceSupportKHR-queueFamilyIndex-01269",
                                              "vkGetPhysicalDeviceSurfaceSupportKHR", "queueFamilyIndex");
 }
 
-void PostCallRecordGetPhysicalDeviceSurfaceSupportKHR(instance_layer_data *instance_data, VkPhysicalDevice physicalDevice,
-                                                      uint32_t queueFamilyIndex, VkSurfaceKHR surface, VkBool32 *pSupported) {
+void PostCallRecordGetPhysicalDeviceSurfaceSupportKHR(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
+                                                      VkSurfaceKHR surface, VkBool32 *pSupported, VkResult result) {
+    auto instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), instance_layer_data_map);
+    if (VK_SUCCESS != result) return;
     auto surface_state = GetSurfaceState(instance_data, surface);
     surface_state->gpu_queue_support[{physicalDevice, queueFamilyIndex}] = (*pSupported == VK_TRUE);
 }
@@ -11952,16 +11967,16 @@ void PostCallRecordGetPhysicalDeviceSurfacePresentModesKHR(instance_layer_data *
     }
 }
 
-bool PreCallValidateGetPhysicalDeviceSurfaceFormatsKHR(instance_layer_data *instance_data,
-                                                       PHYSICAL_DEVICE_STATE *physical_device_state, CALL_STATE &call_state,
-                                                       VkPhysicalDevice physicalDevice, uint32_t *pSurfaceFormatCount) {
-    auto prev_format_count = (uint32_t)physical_device_state->surface_formats.size();
+bool PreCallValidateGetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
+                                                       uint32_t *pSurfaceFormatCount, VkSurfaceFormatKHR *pSurfaceFormats) {
+    auto instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), instance_layer_data_map);
+    if (!pSurfaceFormats) return false;
+    auto physical_device_state = GetPhysicalDeviceState(instance_data, physicalDevice);
+    auto &call_state = physical_device_state->vkGetPhysicalDeviceSurfaceFormatsKHRState;
     bool skip = false;
-
     switch (call_state) {
         case UNCALLED:
-            // Since we haven't recorded a preliminary value of *pSurfaceFormatCount, that likely means that the application
-            // didn't
+            // Since we haven't recorded a preliminary value of *pSurfaceFormatCount, that likely means that the application didn't
             // previously call this function with a NULL value of pSurfaceFormats:
             skip |= log_msg(instance_data->report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT,
                             VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT, HandleToUint64(physicalDevice),
@@ -11970,6 +11985,7 @@ bool PreCallValidateGetPhysicalDeviceSurfaceFormatsKHR(instance_layer_data *inst
                             "positive value has been seen for pSurfaceFormats.");
             break;
         default:
+            auto prev_format_count = (uint32_t)physical_device_state->surface_formats.size();
             if (prev_format_count != *pSurfaceFormatCount) {
                 skip |= log_msg(instance_data->report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT,
                                 VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT, HandleToUint64(physicalDevice),
@@ -11984,8 +12000,15 @@ bool PreCallValidateGetPhysicalDeviceSurfaceFormatsKHR(instance_layer_data *inst
     return skip;
 }
 
-void PostCallRecordGetPhysicalDeviceSurfaceFormatsKHR(PHYSICAL_DEVICE_STATE *physical_device_state, CALL_STATE &call_state,
-                                                      uint32_t *pSurfaceFormatCount, VkSurfaceFormatKHR *pSurfaceFormats) {
+void PostCallRecordGetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
+                                                      uint32_t *pSurfaceFormatCount, VkSurfaceFormatKHR *pSurfaceFormats,
+                                                      VkResult result) {
+    auto instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), instance_layer_data_map);
+    if ((VK_SUCCESS != result) && (VK_INCOMPLETE != result)) return;
+
+    auto physical_device_state = GetPhysicalDeviceState(instance_data, physicalDevice);
+    auto &call_state = physical_device_state->vkGetPhysicalDeviceSurfaceFormatsKHRState;
+
     if (*pSurfaceFormatCount) {
         if (call_state < QUERY_COUNT) call_state = QUERY_COUNT;
         if (*pSurfaceFormatCount > physical_device_state->surface_formats.size())
