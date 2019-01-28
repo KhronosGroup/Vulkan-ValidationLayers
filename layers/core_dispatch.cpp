@@ -1462,8 +1462,9 @@ VKAPI_ATTR void VKAPI_CALL CmdDraw(VkCommandBuffer commandBuffer, uint32_t verte
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     unique_lock_t lock(global_lock);
     bool skip = PreCallValidateCmdDraw(commandBuffer, vertexCount, instanceCount, firstVertex, firstInstance);
-    lock.unlock();
     if (!skip) {
+        PreCallRecordCmdDraw(commandBuffer, vertexCount, instanceCount, firstVertex, firstInstance);
+        lock.unlock();
         dev_data->dispatch_table.CmdDraw(commandBuffer, vertexCount, instanceCount, firstVertex, firstInstance);
         lock.lock();
         PostCallRecordCmdDraw(commandBuffer, vertexCount, instanceCount, firstVertex, firstInstance);
@@ -1476,8 +1477,9 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawIndexed(VkCommandBuffer commandBuffer, uint32_
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     unique_lock_t lock(global_lock);
     bool skip = PreCallValidateCmdDrawIndexed(commandBuffer, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
-    lock.unlock();
     if (!skip) {
+        PreCallRecordCmdDrawIndexed(commandBuffer, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
+        lock.unlock();
         dev_data->dispatch_table.CmdDrawIndexed(commandBuffer, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
         lock.lock();
         PostCallRecordCmdDrawIndexed(commandBuffer, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
@@ -1490,8 +1492,9 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawIndexedIndirect(VkCommandBuffer commandBuffer,
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     unique_lock_t lock(global_lock);
     bool skip = PreCallValidateCmdDrawIndexedIndirect(commandBuffer, buffer, offset, count, stride);
-    lock.unlock();
     if (!skip) {
+        PreCallRecordCmdDrawIndexedIndirect(commandBuffer, buffer, offset, count, stride);
+        lock.unlock();
         dev_data->dispatch_table.CmdDrawIndexedIndirect(commandBuffer, buffer, offset, count, stride);
         lock.lock();
         PostCallRecordCmdDrawIndexedIndirect(commandBuffer, buffer, offset, count, stride);
@@ -1503,8 +1506,9 @@ VKAPI_ATTR void VKAPI_CALL CmdDispatch(VkCommandBuffer commandBuffer, uint32_t x
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     unique_lock_t lock(global_lock);
     bool skip = PreCallValidateCmdDispatch(commandBuffer, x, y, z);
-    lock.unlock();
     if (!skip) {
+        PreCallRecordCmdDispatch(commandBuffer, x, y, z);
+        lock.unlock();
         dev_data->dispatch_table.CmdDispatch(commandBuffer, x, y, z);
         lock.lock();
         PostCallRecordCmdDispatch(commandBuffer, x, y, z);
@@ -1516,8 +1520,9 @@ VKAPI_ATTR void VKAPI_CALL CmdDispatchIndirect(VkCommandBuffer commandBuffer, Vk
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     unique_lock_t lock(global_lock);
     bool skip = PreCallValidateCmdDispatchIndirect(commandBuffer, buffer, offset);
-    lock.unlock();
     if (!skip) {
+        PreCallValidateCmdDispatchIndirect(commandBuffer, buffer, offset);
+        lock.unlock();
         dev_data->dispatch_table.CmdDispatchIndirect(commandBuffer, buffer, offset);
         lock.lock();
         PostCallRecordCmdDispatchIndirect(commandBuffer, buffer, offset);
@@ -1558,8 +1563,9 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuff
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     unique_lock_t lock(global_lock);
     bool skip = PreCallValidateCmdDrawIndirect(commandBuffer, buffer, offset, count, stride);
-    lock.unlock();
     if (!skip) {
+        PreCallRecordCmdDrawIndirect(commandBuffer, buffer, offset, count, stride);
+        lock.unlock();
         dev_data->dispatch_table.CmdDrawIndirect(commandBuffer, buffer, offset, count, stride);
         lock.lock();
         PostCallRecordCmdDrawIndirect(commandBuffer, buffer, offset, count, stride);
@@ -3210,9 +3216,6 @@ VKAPI_ATTR void VKAPI_CALL CmdBindPipeline(VkCommandBuffer commandBuffer, VkPipe
         PreCallRecordCmdBindPipeline(commandBuffer, pipelineBindPoint, pipeline);
         lock.unlock();
         dev_data->dispatch_table.CmdBindPipeline(commandBuffer, pipelineBindPoint, pipeline);
-        lock.lock();
-        PostCallRecordCmdBindPipeline(commandBuffer, pipelineBindPoint, pipeline);
-        lock.unlock();
     }
 }
 

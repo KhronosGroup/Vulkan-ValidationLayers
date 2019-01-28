@@ -116,16 +116,12 @@ std::unique_ptr<safe_VkDeviceCreateInfo> GpuPreCallRecordCreateDevice(VkPhysical
                                                                       VkPhysicalDeviceFeatures *supported_features);
 void GpuPostCallRecordCreateDevice(layer_data *dev_data);
 void GpuPreCallRecordDestroyDevice(layer_data *dev_data);
-void GpuPostCallRecordAllocateCommandBuffers(layer_data *dev_data, const VkCommandBufferAllocateInfo *pCreateInfo,
-                                             VkCommandBuffer *pCommandBuffer);
 void GpuPreCallRecordFreeCommandBuffers(layer_data *dev_data, uint32_t commandBufferCount, const VkCommandBuffer *pCommandBuffers);
 VkResult GpuOverrideDispatchCreateShaderModule(layer_data *dev_data, const VkShaderModuleCreateInfo *pCreateInfo,
                                                const VkAllocationCallbacks *pAllocator, VkShaderModule *pShaderModule,
                                                uint32_t *unique_shader_id);
 VkResult GpuOverrideDispatchCreatePipelineLayout(layer_data *dev_data, const VkPipelineLayoutCreateInfo *pCreateInfo,
                                                  const VkAllocationCallbacks *pAllocator, VkPipelineLayout *pPipelineLayout);
-void GpuPostCallDispatchCmdBindPipeline(layer_data *dev_data, VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
-                                        VkPipeline pipeline);
 void GpuPostCallQueueSubmit(layer_data *dev_data, VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits, VkFence fence);
 void GpuPreCallValidateCmdWaitEvents(layer_data *dev_data, VkPipelineStageFlags sourceStageMask);
 std::vector<safe_VkGraphicsPipelineCreateInfo> GpuPreCallRecordCreateGraphicsPipelines(
@@ -135,5 +131,6 @@ void GpuPostCallRecordCreateGraphicsPipelines(layer_data *dev_data, const uint32
                                               const VkGraphicsPipelineCreateInfo *pCreateInfos,
                                               const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines);
 void GpuPreCallRecordDestroyPipeline(layer_data *dev_data, const VkPipeline pipeline);
+void GpuAllocateValidationResources(layer_data *dev_data, const VkCommandBuffer cmd_buffer, VkPipelineBindPoint bind_point);
 
 #endif  // VULKAN_GPU_VALIDATION_H

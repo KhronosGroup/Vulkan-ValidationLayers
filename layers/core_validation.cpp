@@ -6095,9 +6095,6 @@ void PostCallRecordAllocateCommandBuffers(VkDevice device, const VkCommandBuffer
             pCB->createInfo = *pCreateInfo;
             pCB->device = device;
         }
-        if (GetEnables(device_data)->gpu_validation) {
-            GpuPostCallRecordAllocateCommandBuffers(device_data, pCreateInfo, pCommandBuffer);
-        }
     }
 }
 
@@ -6324,15 +6321,6 @@ void PreCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindP
     cb_state->lastBound[pipelineBindPoint].pipeline_state = pipe_state;
     SetPipelineState(pipe_state);
     AddCommandBufferBinding(&pipe_state->cb_bindings, {HandleToUint64(pipeline), kVulkanObjectTypePipeline}, cb_state);
-}
-
-void PostCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint, VkPipeline pipeline) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-
-    if (GetEnables(device_data)->gpu_validation) {
-        // Bind the debug descriptor set immediately after binding the pipeline.
-        GpuPostCallDispatchCmdBindPipeline(device_data, commandBuffer, pipelineBindPoint, pipeline);
-    }
 }
 
 bool PreCallValidateCmdSetViewport(VkCommandBuffer commandBuffer, uint32_t firstViewport, uint32_t viewportCount,
@@ -7172,6 +7160,12 @@ bool PreCallValidateCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount,
                                "VUID-vkCmdDraw-None-00442", "VUID-vkCmdDraw-None-00443");
 }
 
+void PreCallRecordCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex,
+                          uint32_t firstInstance) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    GpuAllocateValidationResources(device_data, commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS);
+}
+
 void PostCallRecordCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex,
                            uint32_t firstInstance) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
@@ -7209,6 +7203,12 @@ bool PreCallValidateCmdDrawIndexed(VkCommandBuffer commandBuffer, uint32_t index
     return skip;
 }
 
+void PreCallRecordCmdDrawIndexed(VkCommandBuffer commandBuffer, uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex,
+                                 int32_t vertexOffset, uint32_t firstInstance) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    GpuAllocateValidationResources(device_data, commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS);
+}
+
 void PostCallRecordCmdDrawIndexed(VkCommandBuffer commandBuffer, uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex,
                                   int32_t vertexOffset, uint32_t firstInstance) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
@@ -7228,6 +7228,12 @@ bool PreCallValidateCmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buff
     // TODO: If the drawIndirectFirstInstance feature is not enabled, all the firstInstance members of the
     // VkDrawIndirectCommand structures accessed by this command must be 0, which will require access to the contents of 'buffer'.
     return skip;
+}
+
+void PreCallRecordCmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, uint32_t count,
+                                  uint32_t stride) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    GpuAllocateValidationResources(device_data, commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS);
 }
 
 void PostCallRecordCmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, uint32_t count,
@@ -7255,6 +7261,12 @@ bool PreCallValidateCmdDrawIndexedIndirect(VkCommandBuffer commandBuffer, VkBuff
     return skip;
 }
 
+void PreCallRecordCmdDrawIndexedIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, uint32_t count,
+                                         uint32_t stride) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    GpuAllocateValidationResources(device_data, commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS);
+}
+
 void PostCallRecordCmdDrawIndexedIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, uint32_t count,
                                           uint32_t stride) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
@@ -7269,6 +7281,11 @@ bool PreCallValidateCmdDispatch(VkCommandBuffer commandBuffer, uint32_t x, uint3
     return ValidateCmdDrawType(device_data, commandBuffer, false, VK_PIPELINE_BIND_POINT_COMPUTE, CMD_DISPATCH, "vkCmdDispatch()",
                                VK_QUEUE_COMPUTE_BIT, "VUID-vkCmdDispatch-commandBuffer-cmdpool", "VUID-vkCmdDispatch-renderpass",
                                "VUID-vkCmdDispatch-None-00391", kVUIDUndefined);
+}
+
+void PreCallRecordCmdDispatch(VkCommandBuffer commandBuffer, uint32_t x, uint32_t y, uint32_t z) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    GpuAllocateValidationResources(device_data, commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE);
 }
 
 void PostCallRecordCmdDispatch(VkCommandBuffer commandBuffer, uint32_t x, uint32_t y, uint32_t z) {
@@ -7287,6 +7304,11 @@ bool PreCallValidateCmdDispatchIndirect(VkCommandBuffer commandBuffer, VkBuffer 
     skip |= ValidateMemoryIsBoundToBuffer(device_data, buffer_state, "vkCmdDispatchIndirect()",
                                           "VUID-vkCmdDispatchIndirect-buffer-00401");
     return skip;
+}
+
+void PreCallRecordCmdDispatchIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    GpuAllocateValidationResources(device_data, commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE);
 }
 
 void PostCallRecordCmdDispatchIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset) {
