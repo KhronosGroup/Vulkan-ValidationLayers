@@ -976,6 +976,14 @@ struct GpuDeviceMemoryBlock {
     uint32_t offset;
 };
 
+struct GpuBufferInfo {
+    GpuDeviceMemoryBlock mem_block;
+    VkDescriptorSet desc_set;
+    VkDescriptorPool desc_pool;
+    GpuBufferInfo(GpuDeviceMemoryBlock mem_block, VkDescriptorSet desc_set, VkDescriptorPool desc_pool)
+        : mem_block(mem_block), desc_set(desc_set), desc_pool(desc_pool){};
+};
+
 // Cmd Buffer Wrapper Struct - TODO : This desperately needs its own class
 struct GLOBAL_CB_NODE : public BASE_NODE {
     VkCommandBuffer commandBuffer;
@@ -1043,9 +1051,7 @@ struct GLOBAL_CB_NODE : public BASE_NODE {
     // Contents valid only after an index buffer is bound (CBSTATUS_INDEX_BUFFER_BOUND set)
     IndexBufferBinding index_buffer_binding;
     // GPU Validation data
-    GpuDeviceMemoryBlock gpu_output_memory_block;
-    VkDescriptorSet gpu_buffer_desc_set;
-    VkDescriptorPool gpu_buffer_desc_pool;
+    std::vector<GpuBufferInfo> gpu_buffer_list;
 };
 
 static inline QFOTransferBarrierSets<VkImageMemoryBarrier> &GetQFOBarrierSets(

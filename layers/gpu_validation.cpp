@@ -382,25 +382,6 @@ void GpuPreCallRecordDestroyDevice(layer_data *dev_data) {
     }
 }
 
-// Bind our debug descriptor set immediately after binding a pipeline if the pipeline layout is not using our slot.
-void GpuPostCallDispatchCmdBindPipeline(layer_data *dev_data, VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
-                                        VkPipeline pipeline) {
-    auto gpu_state = GetGpuValidationState(dev_data);
-    if (gpu_state->aborted) {
-        return;
-    }
-    const GLOBAL_CB_NODE *cb_state = GetCBNode(dev_data, commandBuffer);
-    auto iter = cb_state->lastBound.find(pipelineBindPoint);  // find() allows read-only access to cb_state
-    if (iter != cb_state->lastBound.end()) {
-        auto pipeline_state = iter->second.pipeline_state;
-        if (pipeline_state && (pipeline_state->pipeline_layout.set_layouts.size() <= gpu_state->desc_set_bind_index)) {
-            GetDispatchTable(dev_data)->CmdBindDescriptorSets(
-                commandBuffer, pipelineBindPoint, pipeline_state->pipeline_layout.layout, gpu_state->desc_set_bind_index, 1,
-                &cb_state->gpu_buffer_desc_set, 0, nullptr);
-        }
-    }
-}
-
 // Modify the pipeline layout to include our debug descriptor set and any needed padding with the dummy descriptor set.
 VkResult GpuOverrideDispatchCreatePipelineLayout(layer_data *dev_data, const VkPipelineLayoutCreateInfo *pCreateInfo,
                                                  const VkAllocationCallbacks *pAllocator, VkPipelineLayout *pPipelineLayout) {
@@ -443,59 +424,6 @@ VkResult GpuOverrideDispatchCreatePipelineLayout(layer_data *dev_data, const VkP
     return result;
 }
 
-// Each command buffer gets a piece of device memory and a descriptor set for the debug buffer.
-void GpuPostCallRecordAllocateCommandBuffers(layer_data *dev_data, const VkCommandBufferAllocateInfo *pCreateInfo,
-                                             VkCommandBuffer *pCommandBuffer) {
-    VkResult result;
-
-    auto gpu_state = GetGpuValidationState(dev_data);
-    if (gpu_state->aborted) return;
-
-    std::vector<VkDescriptorSet> desc_sets;
-    VkDescriptorPool desc_pool = VK_NULL_HANDLE;
-    result = gpu_state->desc_set_manager->GetDescriptorSets(pCreateInfo->commandBufferCount, &desc_pool, &desc_sets);
-    assert(result == VK_SUCCESS);
-    if (result != VK_SUCCESS) {
-        ReportSetupProblem(dev_data, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(GetDevice(dev_data)),
-                           "Unable to allocate descriptor sets.  Device could become unstable.");
-        gpu_state->aborted = true;
-        return;
-    }
-
-    VkDescriptorBufferInfo desc_buffer_info = {};
-    desc_buffer_info.range = gpu_state->memory_manager->GetBlockSize();
-
-    VkWriteDescriptorSet desc_write = {};
-    desc_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    desc_write.descriptorCount = 1;
-    desc_write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-    desc_write.pBufferInfo = &desc_buffer_info;
-
-    for (uint32_t i = 0; i < pCreateInfo->commandBufferCount; i++) {
-        auto cb_node = GetCBNode(dev_data, pCommandBuffer[i]);
-
-        GpuDeviceMemoryBlock block = {};
-        result = gpu_state->memory_manager->GetBlock(&block);
-        if (result != VK_SUCCESS) {
-            ReportSetupProblem(dev_data, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(GetDevice(dev_data)),
-                               "Unable to allocate device memory.  Device could become unstable.");
-            gpu_state->aborted = true;
-            return;
-        }
-
-        // Record buffer and memory info in CB state tracking
-        cb_node->gpu_output_memory_block = block;
-        cb_node->gpu_buffer_desc_set = desc_sets[i];
-        cb_node->gpu_buffer_desc_pool = desc_pool;
-
-        // Write the descriptor
-        desc_buffer_info.buffer = block.buffer;
-        desc_buffer_info.offset = block.offset;
-        desc_write.dstSet = cb_node->gpu_buffer_desc_set;
-        GetDispatchTable(dev_data)->UpdateDescriptorSets(GetDevice(dev_data), 1, &desc_write, 0, NULL);
-    }
-}
-
 // Free the device memory and descriptor set associated with a command buffer.
 void GpuPreCallRecordFreeCommandBuffers(layer_data *dev_data, uint32_t commandBufferCount, const VkCommandBuffer *pCommandBuffers) {
     auto gpu_state = GetGpuValidationState(dev_data);
@@ -504,13 +432,17 @@ void GpuPreCallRecordFreeCommandBuffers(layer_data *dev_data, uint32_t commandBu
     }
     for (uint32_t i = 0; i < commandBufferCount; ++i) {
         auto cb_node = GetCBNode(dev_data, pCommandBuffers[i]);
-        if (BlockUsed(cb_node->gpu_output_memory_block)) {
-            gpu_state->memory_manager->PutBackBlock(cb_node->gpu_output_memory_block);
-            ResetBlock(cb_node->gpu_output_memory_block);
-        }
-        if (cb_node->gpu_buffer_desc_set != VK_NULL_HANDLE) {
-            gpu_state->desc_set_manager->PutBackDescriptorSet(cb_node->gpu_buffer_desc_pool, cb_node->gpu_buffer_desc_set);
-            cb_node->gpu_buffer_desc_set = VK_NULL_HANDLE;
+        if (cb_node) {
+            for (auto &buffer_info : cb_node->gpu_buffer_list) {
+                if (BlockUsed(buffer_info.mem_block)) {
+                    gpu_state->memory_manager->PutBackBlock(buffer_info.mem_block);
+                    ResetBlock(buffer_info.mem_block);
+                }
+                if (buffer_info.desc_set != VK_NULL_HANDLE) {
+                    gpu_state->desc_set_manager->PutBackDescriptorSet(buffer_info.desc_pool, buffer_info.desc_set);
+                }
+            }
+            cb_node->gpu_buffer_list.clear();
         }
     }
 }
@@ -1101,24 +1033,26 @@ static void AnalyzeAndReportError(const layer_data *dev_data, GLOBAL_CB_NODE *cb
 // For the given command buffer, map its debug data buffer and read its contents for analysis.
 static void ProcessInstrumentationBuffer(const layer_data *dev_data, VkQueue queue, GLOBAL_CB_NODE *cb_node) {
     auto gpu_state = GetGpuValidationState(dev_data);
-    if (cb_node && cb_node->hasDrawCmd && cb_node->gpu_output_memory_block.memory) {
+    if (cb_node && cb_node->hasDrawCmd && cb_node->gpu_buffer_list.size() > 0) {
         VkResult result;
         char *pData;
-        uint32_t block_offset = cb_node->gpu_output_memory_block.offset;
-        uint32_t block_size = gpu_state->memory_manager->GetBlockSize();
-        uint32_t offset_to_data = 0;
-        const uint32_t map_align = std::max(1U, static_cast<uint32_t>(GetPDProperties(dev_data)->limits.minMemoryMapAlignment));
+        for (auto &buffer_info : cb_node->gpu_buffer_list) {
+            uint32_t block_offset = buffer_info.mem_block.offset;
+            uint32_t block_size = gpu_state->memory_manager->GetBlockSize();
+            uint32_t offset_to_data = 0;
+            const uint32_t map_align = std::max(1U, static_cast<uint32_t>(GetPDProperties(dev_data)->limits.minMemoryMapAlignment));
 
-        // Adjust the offset to the alignment required for mapping.
-        block_offset = (block_offset / map_align) * map_align;
-        offset_to_data = cb_node->gpu_output_memory_block.offset - block_offset;
-        block_size += offset_to_data;
-        result = GetDispatchTable(dev_data)->MapMemory(cb_node->device, cb_node->gpu_output_memory_block.memory, block_offset,
-                                                       block_size, 0, (void **)&pData);
-        // Analyze debug output buffer
-        if (result == VK_SUCCESS) {
-            AnalyzeAndReportError(dev_data, cb_node, queue, (uint32_t *)(pData + offset_to_data));
-            GetDispatchTable(dev_data)->UnmapMemory(cb_node->device, cb_node->gpu_output_memory_block.memory);
+            // Adjust the offset to the alignment required for mapping.
+            block_offset = (block_offset / map_align) * map_align;
+            offset_to_data = buffer_info.mem_block.offset - block_offset;
+            block_size += offset_to_data;
+            result = GetDispatchTable(dev_data)->MapMemory(cb_node->device, buffer_info.mem_block.memory, block_offset, block_size,
+                                                           0, (void **)&pData);
+            // Analyze debug output buffer
+            if (result == VK_SUCCESS) {
+                AnalyzeAndReportError(dev_data, cb_node, queue, (uint32_t *)(pData + offset_to_data));
+                GetDispatchTable(dev_data)->UnmapMemory(cb_node->device, buffer_info.mem_block.memory);
+            }
         }
     }
 }
@@ -1223,5 +1157,75 @@ void GpuPostCallQueueSubmit(layer_data *dev_data, VkQueue queue, uint32_t submit
                 ProcessInstrumentationBuffer(dev_data, queue, secondaryCmdBuffer);
             }
         }
+    }
+}
+
+void GpuAllocateValidationResources(layer_data *dev_data, const VkCommandBuffer cmd_buffer, const VkPipelineBindPoint bind_point) {
+    VkResult result;
+
+    if (!(GetEnables(dev_data)->gpu_validation)) return;
+
+    auto gpu_state = GetGpuValidationState(dev_data);
+    if (gpu_state->aborted) return;
+
+    std::vector<VkDescriptorSet> desc_sets;
+    VkDescriptorPool desc_pool = VK_NULL_HANDLE;
+    result = gpu_state->desc_set_manager->GetDescriptorSets(1, &desc_pool, &desc_sets);
+    assert(result == VK_SUCCESS);
+    if (result != VK_SUCCESS) {
+        ReportSetupProblem(dev_data, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(GetDevice(dev_data)),
+                           "Unable to allocate descriptor sets.  Device could become unstable.");
+        gpu_state->aborted = true;
+        return;
+    }
+
+    VkDescriptorBufferInfo desc_buffer_info = {};
+    desc_buffer_info.range = gpu_state->memory_manager->GetBlockSize();
+
+    auto cb_node = GetCBNode(dev_data, cmd_buffer);
+    if (!cb_node) {
+        ReportSetupProblem(dev_data, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(GetDevice(dev_data)),
+                           "Unrecognized command buffer");
+        gpu_state->aborted = true;
+        return;
+    }
+
+    GpuDeviceMemoryBlock block = {};
+    result = gpu_state->memory_manager->GetBlock(&block);
+    if (result != VK_SUCCESS) {
+        ReportSetupProblem(dev_data, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(GetDevice(dev_data)),
+                           "Unable to allocate device memory.  Device could become unstable.");
+        gpu_state->aborted = true;
+        return;
+    }
+
+    // Record buffer and memory info in CB state tracking
+    cb_node->gpu_buffer_list.emplace_back(block, desc_sets[0], desc_pool);
+
+    // Write the descriptor
+    desc_buffer_info.buffer = block.buffer;
+    desc_buffer_info.offset = block.offset;
+
+    VkWriteDescriptorSet desc_write = {};
+    desc_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    desc_write.descriptorCount = 1;
+    desc_write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    desc_write.pBufferInfo = &desc_buffer_info;
+    desc_write.dstSet = desc_sets[0];
+    GetDispatchTable(dev_data)->UpdateDescriptorSets(GetDevice(dev_data), 1, &desc_write, 0, NULL);
+
+    auto iter = cb_node->lastBound.find(VK_PIPELINE_BIND_POINT_GRAPHICS);  // find() allows read-only access to cb_state
+    if (iter != cb_node->lastBound.end()) {
+        auto pipeline_state = iter->second.pipeline_state;
+        if (pipeline_state && (pipeline_state->pipeline_layout.set_layouts.size() <= gpu_state->desc_set_bind_index)) {
+            GetDispatchTable(dev_data)->CmdBindDescriptorSets(
+                cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_state->pipeline_layout.layout, gpu_state->desc_set_bind_index,
+                1, &cb_node->gpu_buffer_list[0].desc_set, 0, nullptr);
+        }
+    } else {
+        ReportSetupProblem(dev_data, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(GetDevice(dev_data)),
+                           "Unable to find pipeline state");
+        gpu_state->aborted = true;
+        return;
     }
 }
