@@ -1589,37 +1589,31 @@ bool PreCallValidateCmdBindVertexBuffers(layer_data* dev_data, GLOBAL_CB_NODE* c
                                          const VkBuffer* pBuffers, const VkDeviceSize* pOffsets);
 void PreCallRecordCmdBindVertexBuffers(GLOBAL_CB_NODE* pCB, uint32_t firstBinding, uint32_t bindingCount, const VkBuffer* pBuffers,
                                        const VkDeviceSize* pOffsets);
-bool PreCallValidateCmdDraw(layer_data* dev_data, VkCommandBuffer cmd_buffer, bool indexed, VkPipelineBindPoint bind_point,
-                            GLOBAL_CB_NODE** cb_state, const char* caller);
-void PostCallRecordCmdDraw(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, VkPipelineBindPoint bind_point);
-bool PreCallValidateCmdDrawIndexed(layer_data* dev_data, VkCommandBuffer cmd_buffer, bool indexed, VkPipelineBindPoint bind_point,
-                                   GLOBAL_CB_NODE** cb_state, const char* caller, uint32_t indexCount, uint32_t firstIndex);
-void PostCallRecordCmdDrawIndexed(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, VkPipelineBindPoint bind_point);
-bool PreCallValidateCmdDrawIndexedIndirect(layer_data* dev_data, VkCommandBuffer cmd_buffer, VkBuffer buffer, bool indexed,
-                                           VkPipelineBindPoint bind_point, GLOBAL_CB_NODE** cb_state, BUFFER_STATE** buffer_state,
-                                           const char* caller);
+bool PreCallValidateCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex,
+                            uint32_t firstInstance);
+void PostCallRecordCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex,
+                           uint32_t firstInstance);
+bool PreCallValidateCmdDrawIndexed(VkCommandBuffer commandBuffer, uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex,
+                                   int32_t vertexOffset, uint32_t firstInstance);
+void PostCallRecordCmdDrawIndexed(VkCommandBuffer commandBuffer, uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex,
+                                  int32_t vertexOffset, uint32_t firstInstance);
+bool PreCallValidateCmdDrawIndexedIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, uint32_t count,
+                                           uint32_t stride);
+void PostCallRecordCmdDrawIndexedIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, uint32_t count,
+                                          uint32_t stride);
+bool PreCallValidateCmdDrawIndexedIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                   VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
+                                                   uint32_t stride);
 void PostCallRecordCmdDrawIndexedIndirect(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, VkPipelineBindPoint bind_point,
                                           BUFFER_STATE* buffer_state);
-bool PreCallValidateCmdDrawIndexedIndirectCountKHR(layer_data* dev_data, VkCommandBuffer commandBuffer, VkBuffer buffer,
-                                                   VkDeviceSize offset, VkBuffer countBuffer, VkDeviceSize countBufferOffset,
-                                                   uint32_t stride, GLOBAL_CB_NODE** cb_state, BUFFER_STATE** buffer_state,
-                                                   BUFFER_STATE** count_buffer_state, bool indexed, VkPipelineBindPoint bind_point,
-                                                   const char* caller);
-void PostCallRecordCmdDrawIndexedIndirect(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, VkPipelineBindPoint bind_point,
-                                          BUFFER_STATE* buffer_state);
-bool PreCallValidateCmdDispatch(layer_data* dev_data, VkCommandBuffer cmd_buffer, bool indexed, VkPipelineBindPoint bind_point,
-                                GLOBAL_CB_NODE** cb_state, const char* caller);
-void PostCallRecordCmdDispatch(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, VkPipelineBindPoint bind_point);
-bool PreCallValidateCmdDispatchIndirect(layer_data* dev_data, VkCommandBuffer cmd_buffer, VkBuffer buffer, bool indexed,
-                                        VkPipelineBindPoint bind_point, GLOBAL_CB_NODE** cb_state, BUFFER_STATE** buffer_state,
-                                        const char* caller);
-void PostCallRecordCmdDispatchIndirect(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, VkPipelineBindPoint bind_point,
-                                       BUFFER_STATE* buffer_state);
-bool PreCallValidateCmdDrawIndirect(layer_data* dev_data, VkCommandBuffer cmd_buffer, VkBuffer buffer, bool indexed,
-                                    VkPipelineBindPoint bind_point, GLOBAL_CB_NODE** cb_state, BUFFER_STATE** buffer_state,
-                                    const char* caller);
-void PostCallRecordCmdDrawIndirect(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, VkPipelineBindPoint bind_point,
-                                   BUFFER_STATE* buffer_state);
+bool PreCallValidateCmdDispatch(VkCommandBuffer commandBuffer, uint32_t x, uint32_t y, uint32_t z);
+void PostCallRecordCmdDispatch(VkCommandBuffer commandBuffer, uint32_t x, uint32_t y, uint32_t z);
+bool PreCallValidateCmdDispatchIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset);
+void PostCallRecordCmdDispatchIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset);
+bool PreCallValidateCmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, uint32_t count,
+                                    uint32_t stride);
+void PostCallRecordCmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, uint32_t count,
+                                   uint32_t stride);
 bool PreCallValidateCmdSetEvent(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, VkPipelineStageFlags stageMask);
 void PreCallRecordCmdSetEvent(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, VkCommandBuffer commandBuffer, VkEvent event,
                               VkPipelineStageFlags stageMask);
@@ -1849,29 +1843,26 @@ void PreCallRecordDebugMarkerSetObjectNameEXT(layer_data* dev_data, const VkDebu
 bool PreCallValidateCmdDebugMarkerEndEXT(layer_data* dev_data, GLOBAL_CB_NODE* cb_state);
 bool PreCallValidateCmdSetDiscardRectangleEXT(layer_data* dev_data, GLOBAL_CB_NODE* cb_state);
 bool PreCallValidateCmdSetSampleLocationsEXT(layer_data* dev_data, GLOBAL_CB_NODE* cb_state);
-bool PreCallValidateCmdDrawIndirectCountKHR(layer_data* dev_data, VkCommandBuffer commandBuffer, VkBuffer buffer,
-                                            VkDeviceSize offset, VkBuffer countBuffer, VkDeviceSize countBufferOffset,
-                                            uint32_t stride, GLOBAL_CB_NODE** cb_state, BUFFER_STATE** buffer_state,
-                                            BUFFER_STATE** count_buffer_state, bool indexed, VkPipelineBindPoint bind_point,
-                                            const char* caller);
-void PreCallRecordCmdDrawIndirectCountKHR(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, VkPipelineBindPoint bind_point,
-                                          BUFFER_STATE* buffer_state, BUFFER_STATE* count_buffer_state);
-void PreCallRecordCmdDrawIndexedIndirectCountKHR(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, VkPipelineBindPoint bind_point,
-                                                 BUFFER_STATE* buffer_state, BUFFER_STATE* count_buffer_state);
-bool PreCallValidateCmdDrawMeshTasksNV(layer_data* dev_data, VkCommandBuffer cmd_buffer, bool indexed,
-                                       VkPipelineBindPoint bind_point, GLOBAL_CB_NODE** cb_state, const char* caller);
-void PreCallRecordCmdDrawMeshTasksNV(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, VkPipelineBindPoint bind_point);
-bool PreCallValidateCmdDrawMeshTasksIndirectNV(layer_data* dev_data, VkCommandBuffer cmd_buffer, VkBuffer buffer, bool indexed,
-                                               VkPipelineBindPoint bind_point, GLOBAL_CB_NODE** cb_state,
-                                               BUFFER_STATE** buffer_state, const char* caller);
-void PreCallRecordCmdDrawMeshTasksIndirectNV(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, VkPipelineBindPoint bind_point,
-                                             BUFFER_STATE* buffer_state);
-bool PreCallValidateCmdDrawMeshTasksIndirectCountNV(layer_data* dev_data, VkCommandBuffer cmd_buffer, VkBuffer buffer,
-                                                    VkBuffer count_buffer, bool indexed, VkPipelineBindPoint bind_point,
-                                                    GLOBAL_CB_NODE** cb_state, BUFFER_STATE** buffer_state,
-                                                    BUFFER_STATE** count_buffer_state, const char* caller);
-void PreCallRecordCmdDrawMeshTasksIndirectCountNV(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, VkPipelineBindPoint bind_point,
-                                                  BUFFER_STATE* buffer_state, BUFFER_STATE* count_buffer_state);
+bool PreCallValidateCmdDrawIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                            VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
+                                            uint32_t stride);
+void PreCallRecordCmdDrawIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkBuffer countBuffer,
+                                          VkDeviceSize countBufferOffset, uint32_t maxDrawCount, uint32_t stride);
+void PreCallRecordCmdDrawIndexedIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                 VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
+                                                 uint32_t stride);
+bool PreCallValidateCmdDrawMeshTasksNV(VkCommandBuffer commandBuffer, uint32_t taskCount, uint32_t firstTask);
+void PreCallRecordCmdDrawMeshTasksNV(VkCommandBuffer commandBuffer, uint32_t taskCount, uint32_t firstTask);
+bool PreCallValidateCmdDrawMeshTasksIndirectNV(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                               uint32_t drawCount, uint32_t stride);
+void PreCallRecordCmdDrawMeshTasksIndirectNV(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                             uint32_t drawCount, uint32_t stride);
+bool PreCallValidateCmdDrawMeshTasksIndirectCountNV(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                    VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
+                                                    uint32_t stride);
+void PreCallRecordCmdDrawMeshTasksIndirectCountNV(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                  VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
+                                                  uint32_t stride);
 void PostCallRecordDestroySamplerYcbcrConversion(VkDevice device, VkSamplerYcbcrConversion ycbcrConversion,
                                                  const VkAllocationCallbacks* pAllocator);
 void PostCallRecordDestroySamplerYcbcrConversionKHR(VkDevice device, VkSamplerYcbcrConversion ycbcrConversion,
