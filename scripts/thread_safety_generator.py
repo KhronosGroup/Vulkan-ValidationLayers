@@ -356,8 +356,10 @@ class ThreadSafety : public ValidationObject {
 public:
 
     // Override chassis read/write locks for this validation object
-    void write_lock() {}
-    void write_unlock() {}
+    // This override takes a deferred lock. i.e. it is not acquired.
+    std::unique_lock<std::mutex> write_lock() {
+        return std::unique_lock<std::mutex>(validation_object_mutex, std::defer_lock);
+    }
 
     std::mutex command_pool_lock;
     std::unordered_map<VkCommandBuffer, VkCommandPool> command_pool_map;
