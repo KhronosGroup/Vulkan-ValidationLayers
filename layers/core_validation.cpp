@@ -6992,19 +6992,18 @@ void PreCallRecordCmdBindVertexBuffers(GLOBAL_CB_NODE *pCB, uint32_t firstBindin
 
 // Generic function to handle validation for all CmdDraw* type functions
 static bool ValidateCmdDrawType(layer_data *dev_data, VkCommandBuffer cmd_buffer, bool indexed, VkPipelineBindPoint bind_point,
-                                CMD_TYPE cmd_type, GLOBAL_CB_NODE **cb_state, const char *caller, VkQueueFlags queue_flags,
-                                const std::string &queue_flag_code, const std::string &renderpass_msg_code,
-                                const std::string &pipebound_msg_code, const std::string &dynamic_state_msg_code) {
+                                CMD_TYPE cmd_type, const char *caller, VkQueueFlags queue_flags, const std::string &queue_flag_code,
+                                const std::string &renderpass_msg_code, const std::string &pipebound_msg_code,
+                                const std::string &dynamic_state_msg_code) {
     bool skip = false;
-    *cb_state = GetCBNode(dev_data, cmd_buffer);
-    if (*cb_state) {
-        skip |= ValidateCmdQueueFlags(dev_data, *cb_state, caller, queue_flags, queue_flag_code);
-        skip |= ValidateCmd(dev_data, *cb_state, cmd_type, caller);
-        skip |= ValidateCmdBufDrawState(dev_data, *cb_state, cmd_type, indexed, bind_point, caller, pipebound_msg_code,
+    GLOBAL_CB_NODE *cb_state = GetCBNode(dev_data, cmd_buffer);
+    if (cb_state) {
+        skip |= ValidateCmdQueueFlags(dev_data, cb_state, caller, queue_flags, queue_flag_code);
+        skip |= ValidateCmd(dev_data, cb_state, cmd_type, caller);
+        skip |= ValidateCmdBufDrawState(dev_data, cb_state, cmd_type, indexed, bind_point, caller, pipebound_msg_code,
                                         dynamic_state_msg_code);
-        skip |= (VK_PIPELINE_BIND_POINT_GRAPHICS == bind_point)
-                    ? OutsideRenderPass(dev_data, *cb_state, caller, renderpass_msg_code)
-                    : InsideRenderPass(dev_data, *cb_state, caller, renderpass_msg_code);
+        skip |= (VK_PIPELINE_BIND_POINT_GRAPHICS == bind_point) ? OutsideRenderPass(dev_data, cb_state, caller, renderpass_msg_code)
+                                                                : InsideRenderPass(dev_data, cb_state, caller, renderpass_msg_code);
     }
     return skip;
 }
@@ -7024,10 +7023,9 @@ static void UpdateStateCmdDrawType(layer_data *dev_data, GLOBAL_CB_NODE *cb_stat
 bool PreCallValidateCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex,
                             uint32_t firstInstance) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    GLOBAL_CB_NODE *cb_state = nullptr;
-    return ValidateCmdDrawType(device_data, commandBuffer, false, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAW, &cb_state,
-                               "vkCmdDraw()", VK_QUEUE_GRAPHICS_BIT, "VUID-vkCmdDraw-commandBuffer-cmdpool",
-                               "VUID-vkCmdDraw-renderpass", "VUID-vkCmdDraw-None-00442", "VUID-vkCmdDraw-None-00443");
+    return ValidateCmdDrawType(device_data, commandBuffer, false, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAW, "vkCmdDraw()",
+                               VK_QUEUE_GRAPHICS_BIT, "VUID-vkCmdDraw-commandBuffer-cmdpool", "VUID-vkCmdDraw-renderpass",
+                               "VUID-vkCmdDraw-None-00442", "VUID-vkCmdDraw-None-00443");
 }
 
 void PostCallRecordCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex,
@@ -7040,11 +7038,11 @@ void PostCallRecordCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, 
 bool PreCallValidateCmdDrawIndexed(VkCommandBuffer commandBuffer, uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex,
                                    int32_t vertexOffset, uint32_t firstInstance) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    GLOBAL_CB_NODE *cb_state = nullptr;
-    bool skip = ValidateCmdDrawType(device_data, commandBuffer, true, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWINDEXED, &cb_state,
+    bool skip = ValidateCmdDrawType(device_data, commandBuffer, true, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWINDEXED,
                                     "vkCmdDrawIndexed()", VK_QUEUE_GRAPHICS_BIT, "VUID-vkCmdDrawIndexed-commandBuffer-cmdpool",
                                     "VUID-vkCmdDrawIndexed-renderpass", "VUID-vkCmdDrawIndexed-None-00461",
                                     "VUID-vkCmdDrawIndexed-None-00462");
+    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
     if (!skip && (cb_state->status & CBSTATUS_INDEX_BUFFER_BOUND)) {
         unsigned int index_size = 0;
         const auto &index_buffer_binding = cb_state->index_buffer_binding;
@@ -7077,8 +7075,7 @@ void PostCallRecordCmdDrawIndexed(VkCommandBuffer commandBuffer, uint32_t indexC
 bool PreCallValidateCmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, uint32_t count,
                                     uint32_t stride) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    GLOBAL_CB_NODE *cb_state = nullptr;
-    bool skip = ValidateCmdDrawType(device_data, commandBuffer, false, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWINDIRECT, &cb_state,
+    bool skip = ValidateCmdDrawType(device_data, commandBuffer, false, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWINDIRECT,
                                     "vkCmdDrawIndirect()", VK_QUEUE_GRAPHICS_BIT, "VUID-vkCmdDrawIndirect-commandBuffer-cmdpool",
                                     "VUID-vkCmdDrawIndirect-renderpass", "VUID-vkCmdDrawIndirect-None-00485",
                                     "VUID-vkCmdDrawIndirect-None-00486");
@@ -7101,12 +7098,10 @@ void PostCallRecordCmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buffe
 bool PreCallValidateCmdDrawIndexedIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, uint32_t count,
                                            uint32_t stride) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    GLOBAL_CB_NODE *cb_state = nullptr;
-    bool skip =
-        ValidateCmdDrawType(device_data, commandBuffer, true, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWINDEXEDINDIRECT, &cb_state,
-                            "vkCmdDrawIndexedIndirect()", VK_QUEUE_GRAPHICS_BIT,
-                            "VUID-vkCmdDrawIndexedIndirect-commandBuffer-cmdpool", "VUID-vkCmdDrawIndexedIndirect-renderpass",
-                            "VUID-vkCmdDrawIndexedIndirect-None-00537", "VUID-vkCmdDrawIndexedIndirect-None-00538");
+    bool skip = ValidateCmdDrawType(
+        device_data, commandBuffer, true, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWINDEXEDINDIRECT, "vkCmdDrawIndexedIndirect()",
+        VK_QUEUE_GRAPHICS_BIT, "VUID-vkCmdDrawIndexedIndirect-commandBuffer-cmdpool", "VUID-vkCmdDrawIndexedIndirect-renderpass",
+        "VUID-vkCmdDrawIndexedIndirect-None-00537", "VUID-vkCmdDrawIndexedIndirect-None-00538");
     BUFFER_STATE *buffer_state = GetBufferState(device_data, buffer);
     skip |= ValidateMemoryIsBoundToBuffer(device_data, buffer_state, "vkCmdDrawIndexedIndirect()",
                                           "VUID-vkCmdDrawIndexedIndirect-buffer-00526");
@@ -7127,10 +7122,9 @@ void PostCallRecordCmdDrawIndexedIndirect(VkCommandBuffer commandBuffer, VkBuffe
 
 bool PreCallValidateCmdDispatch(VkCommandBuffer commandBuffer, uint32_t x, uint32_t y, uint32_t z) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    GLOBAL_CB_NODE *cb_state = nullptr;
-    return ValidateCmdDrawType(device_data, commandBuffer, false, VK_PIPELINE_BIND_POINT_COMPUTE, CMD_DISPATCH, &cb_state,
-                               "vkCmdDispatch()", VK_QUEUE_COMPUTE_BIT, "VUID-vkCmdDispatch-commandBuffer-cmdpool",
-                               "VUID-vkCmdDispatch-renderpass", "VUID-vkCmdDispatch-None-00391", kVUIDUndefined);
+    return ValidateCmdDrawType(device_data, commandBuffer, false, VK_PIPELINE_BIND_POINT_COMPUTE, CMD_DISPATCH, "vkCmdDispatch()",
+                               VK_QUEUE_COMPUTE_BIT, "VUID-vkCmdDispatch-commandBuffer-cmdpool", "VUID-vkCmdDispatch-renderpass",
+                               "VUID-vkCmdDispatch-None-00391", kVUIDUndefined);
 }
 
 void PostCallRecordCmdDispatch(VkCommandBuffer commandBuffer, uint32_t x, uint32_t y, uint32_t z) {
@@ -7141,9 +7135,8 @@ void PostCallRecordCmdDispatch(VkCommandBuffer commandBuffer, uint32_t x, uint32
 
 bool PreCallValidateCmdDispatchIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    GLOBAL_CB_NODE *cb_state = nullptr;
     bool skip =
-        ValidateCmdDrawType(device_data, commandBuffer, false, VK_PIPELINE_BIND_POINT_COMPUTE, CMD_DISPATCHINDIRECT, &cb_state,
+        ValidateCmdDrawType(device_data, commandBuffer, false, VK_PIPELINE_BIND_POINT_COMPUTE, CMD_DISPATCHINDIRECT,
                             "vkCmdDispatchIndirect()", VK_QUEUE_COMPUTE_BIT, "VUID-vkCmdDispatchIndirect-commandBuffer-cmdpool",
                             "VUID-vkCmdDispatchIndirect-renderpass", "VUID-vkCmdDispatchIndirect-None-00404", kVUIDUndefined);
     BUFFER_STATE *buffer_state = GetBufferState(device_data, buffer);
@@ -12620,9 +12613,8 @@ bool PreCallValidateCmdDrawIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuf
                         stride);
     }
 
-    GLOBAL_CB_NODE *cb_state = nullptr;
     skip |= ValidateCmdDrawType(device_data, commandBuffer, false, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWINDIRECTCOUNTKHR,
-                                &cb_state, "vkCmdDrawIndirectCountKHR()", VK_QUEUE_GRAPHICS_BIT,
+                                "vkCmdDrawIndirectCountKHR()", VK_QUEUE_GRAPHICS_BIT,
                                 "VUID-vkCmdDrawIndirectCountKHR-commandBuffer-cmdpool", "VUID-vkCmdDrawIndirectCountKHR-renderpass",
                                 "VUID-vkCmdDrawIndirectCountKHR-None-03119", "VUID-vkCmdDrawIndirectCountKHR-None-03120");
     BUFFER_STATE *buffer_state = GetBufferState(device_data, buffer);
@@ -12675,9 +12667,8 @@ bool PreCallValidateCmdDrawIndexedIndirectCountKHR(VkCommandBuffer commandBuffer
                         stride);
     }
 
-    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
     skip |= ValidateCmdDrawType(
-        device_data, commandBuffer, true, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWINDEXEDINDIRECTCOUNTKHR, &cb_state,
+        device_data, commandBuffer, true, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWINDEXEDINDIRECTCOUNTKHR,
         "vkCmdDrawIndexedIndirectCountKHR()", VK_QUEUE_GRAPHICS_BIT, "VUID-vkCmdDrawIndexedIndirectCountKHR-commandBuffer-cmdpool",
         "VUID-vkCmdDrawIndexedIndirectCountKHR-renderpass", "VUID-vkCmdDrawIndexedIndirectCountKHR-None-03151",
         "VUID-vkCmdDrawIndexedIndirectCountKHR-None-03152");
@@ -12704,9 +12695,8 @@ void PreCallRecordCmdDrawIndexedIndirectCountKHR(VkCommandBuffer commandBuffer, 
 
 bool PreCallValidateCmdDrawMeshTasksNV(VkCommandBuffer commandBuffer, uint32_t taskCount, uint32_t firstTask) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    GLOBAL_CB_NODE *cb_state = nullptr;
     bool skip = ValidateCmdDrawType(device_data, commandBuffer, false, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWMESHTASKSNV,
-                                    &cb_state, "vkCmdDrawMeshTasksNV()", VK_QUEUE_GRAPHICS_BIT,
+                                    "vkCmdDrawMeshTasksNV()", VK_QUEUE_GRAPHICS_BIT,
                                     "VUID-vkCmdDrawMeshTasksNV-commandBuffer-cmdpool", "VUID-vkCmdDrawMeshTasksNV-renderpass",
                                     "VUID-vkCmdDrawMeshTasksNV-None-02125", "VUID-vkCmdDrawMeshTasksNV-None-02126");
     return skip;
@@ -12721,9 +12711,8 @@ void PreCallRecordCmdDrawMeshTasksNV(VkCommandBuffer commandBuffer, uint32_t tas
 bool PreCallValidateCmdDrawMeshTasksIndirectNV(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                uint32_t drawCount, uint32_t stride) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    GLOBAL_CB_NODE *cb_state = nullptr;
     bool skip = ValidateCmdDrawType(device_data, commandBuffer, false, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWMESHTASKSINDIRECTNV,
-                                    &cb_state, "vkCmdDrawMeshTasksIndirectNV()", VK_QUEUE_GRAPHICS_BIT,
+                                    "vkCmdDrawMeshTasksIndirectNV()", VK_QUEUE_GRAPHICS_BIT,
                                     "VUID-vkCmdDrawMeshTasksIndirectNV-commandBuffer-cmdpool",
                                     "VUID-vkCmdDrawMeshTasksIndirectNV-renderpass", "VUID-vkCmdDrawMeshTasksIndirectNV-None-02154",
                                     "VUID-vkCmdDrawMeshTasksIndirectNV-None-02155");
@@ -12749,9 +12738,8 @@ bool PreCallValidateCmdDrawMeshTasksIndirectCountNV(VkCommandBuffer commandBuffe
                                                     VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
                                                     uint32_t stride) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    GLOBAL_CB_NODE *cb_state = nullptr;
     bool skip = ValidateCmdDrawType(
-        device_data, commandBuffer, false, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWMESHTASKSINDIRECTCOUNTNV, &cb_state,
+        device_data, commandBuffer, false, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWMESHTASKSINDIRECTCOUNTNV,
         "vkCmdDrawMeshTasksIndirectCountNV()", VK_QUEUE_GRAPHICS_BIT,
         "VUID-vkCmdDrawMeshTasksIndirectCountNV-commandBuffer-cmdpool", "VUID-vkCmdDrawMeshTasksIndirectCountNV-renderpass",
         "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-02189", "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-02190");
