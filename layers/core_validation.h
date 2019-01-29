@@ -1754,37 +1754,43 @@ bool PreCallValidateEnumeratePhysicalDevices(instance_layer_data* instance_data,
 void PreCallRecordEnumeratePhysicalDevices(instance_layer_data* instance_data);
 void PostCallRecordEnumeratePhysicalDevices(instance_layer_data* instance_data, const VkResult& result,
                                             uint32_t* pPhysicalDeviceCount, VkPhysicalDevice* pPhysicalDevices);
-bool PreCallValidateGetPhysicalDeviceQueueFamilyProperties(instance_layer_data* instance_data, PHYSICAL_DEVICE_STATE* pd_state,
-                                                           uint32_t* pQueueFamilyPropertyCount,
+bool PreCallValidateGetPhysicalDeviceQueueFamilyProperties(VkPhysicalDevice physicalDevice, uint32_t* pQueueFamilyPropertyCount,
                                                            VkQueueFamilyProperties* pQueueFamilyProperties);
-void PostCallRecordGetPhysicalDeviceQueueFamilyProperties(PHYSICAL_DEVICE_STATE* pd_state, uint32_t count,
+void PostCallRecordGetPhysicalDeviceQueueFamilyProperties(VkPhysicalDevice physicalDevice, uint32_t* pQueueFamilyPropertyCount,
                                                           VkQueueFamilyProperties* pQueueFamilyProperties);
-bool PreCallValidateGetPhysicalDeviceQueueFamilyProperties2(instance_layer_data* instance_data, PHYSICAL_DEVICE_STATE* pd_state,
-                                                            uint32_t* pQueueFamilyPropertyCount,
+bool PreCallValidateGetPhysicalDeviceQueueFamilyProperties2(VkPhysicalDevice physicalDevice, uint32_t* pQueueFamilyPropertyCount,
                                                             VkQueueFamilyProperties2KHR* pQueueFamilyProperties);
-void PostCallRecordGetPhysicalDeviceQueueFamilyProperties2(PHYSICAL_DEVICE_STATE* pd_state, uint32_t count,
+void PostCallRecordGetPhysicalDeviceQueueFamilyProperties2(VkPhysicalDevice physicalDevice, uint32_t* pQueueFamilyPropertyCount,
                                                            VkQueueFamilyProperties2KHR* pQueueFamilyProperties);
+bool PreCallValidateGetPhysicalDeviceQueueFamilyProperties2KHR(VkPhysicalDevice physicalDevice, uint32_t* pQueueFamilyPropertyCount,
+                                                               VkQueueFamilyProperties2KHR* pQueueFamilyProperties);
+void PostCallRecordGetPhysicalDeviceQueueFamilyProperties2KHR(VkPhysicalDevice physicalDevice, uint32_t* pQueueFamilyPropertyCount,
+                                                              VkQueueFamilyProperties2KHR* pQueueFamilyProperties);
 bool PreCallValidateDestroySurfaceKHR(VkInstance instance, VkSurfaceKHR surface, const VkAllocationCallbacks* pAllocator);
 void PreCallRecordValidateDestroySurfaceKHR(VkInstance instance, VkSurfaceKHR surface, const VkAllocationCallbacks* pAllocator);
-void PostCallRecordGetPhysicalDeviceSurfaceCapabilitiesKHR(instance_layer_data* instance_data, VkPhysicalDevice physicalDevice,
-                                                           VkSurfaceCapabilitiesKHR* pSurfaceCapabilities);
-void PostCallRecordGetPhysicalDeviceSurfaceCapabilities2KHR(instance_layer_data* instanceData, VkPhysicalDevice physicalDevice,
-                                                            VkSurfaceCapabilities2KHR* pSurfaceCapabilities);
-void PostCallRecordGetPhysicalDeviceSurfaceCapabilities2EXT(instance_layer_data* instanceData, VkPhysicalDevice physicalDevice,
-                                                            VkSurfaceCapabilities2EXT* pSurfaceCapabilities);
+void PostCallRecordGetPhysicalDeviceSurfaceCapabilitiesKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
+                                                           VkSurfaceCapabilitiesKHR* pSurfaceCapabilities, VkResult result);
+void PostCallRecordGetPhysicalDeviceSurfaceCapabilities2KHR(VkPhysicalDevice physicalDevice,
+                                                            const VkPhysicalDeviceSurfaceInfo2KHR* pSurfaceInfo,
+                                                            VkSurfaceCapabilities2KHR* pSurfaceCapabilities, VkResult result);
+void PostCallRecordGetPhysicalDeviceSurfaceCapabilities2EXT(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
+                                                            VkSurfaceCapabilities2EXT* pSurfaceCapabilities, VkResult result);
 bool PreCallValidateGetPhysicalDeviceSurfaceSupportKHR(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
                                                        VkSurfaceKHR surface, VkBool32* pSupported);
 void PostCallRecordGetPhysicalDeviceSurfaceSupportKHR(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
                                                       VkSurfaceKHR surface, VkBool32* pSupported, VkResult result);
-void PostCallRecordGetPhysicalDeviceSurfacePresentModesKHR(instance_layer_data* instance_data, VkPhysicalDevice physical_device,
-                                                           uint32_t* pPresentModeCount, VkPresentModeKHR* pPresentModes);
+void PostCallRecordGetPhysicalDeviceSurfacePresentModesKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
+                                                           uint32_t* pPresentModeCount, VkPresentModeKHR* pPresentModes,
+                                                           VkResult result);
 bool PreCallValidateGetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
                                                        uint32_t* pSurfaceFormatCount, VkSurfaceFormatKHR* pSurfaceFormats);
 void PostCallRecordGetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
                                                       uint32_t* pSurfaceFormatCount, VkSurfaceFormatKHR* pSurfaceFormats,
                                                       VkResult result);
-void PostCallRecordGetPhysicalDeviceSurfaceFormats2KHR(instance_layer_data* instanceData, VkPhysicalDevice physicalDevice,
-                                                       uint32_t* pSurfaceFormatCount, VkSurfaceFormat2KHR* pSurfaceFormats);
+void PostCallRecordGetPhysicalDeviceSurfaceFormats2KHR(VkPhysicalDevice physicalDevice,
+                                                       const VkPhysicalDeviceSurfaceInfo2KHR* pSurfaceInfo,
+                                                       uint32_t* pSurfaceFormatCount, VkSurfaceFormat2KHR* pSurfaceFormats,
+                                                       VkResult result);
 void PostCallRecordCreateDisplayPlaneSurfaceKHR(VkInstance instance, const VkDisplaySurfaceCreateInfoKHR* pCreateInfo,
                                                 const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface, VkResult result);
 void PreCallRecordSetDebugUtilsObjectNameEXT(layer_data* dev_data, const VkDebugUtilsObjectNameInfoEXT* pNameInfo);
@@ -1839,8 +1845,10 @@ bool PreCallValidateCmdPushDescriptorSetWithTemplateKHR(layer_data* device_data,
 void PreCallRecordCmdPushDescriptorSetWithTemplateKHR(layer_data* device_data, GLOBAL_CB_NODE* cb_state,
                                                       VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate,
                                                       VkPipelineLayout layout, uint32_t set, const void* pData);
-void PostCallRecordGetPhysicalDeviceDisplayPlanePropertiesKHR(instance_layer_data* instanceData, VkPhysicalDevice physicalDevice,
-                                                              uint32_t* pPropertyCount, void* pProperties);
+void PostCallRecordGetPhysicalDeviceDisplayPlanePropertiesKHR(VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount,
+                                                              VkDisplayPlanePropertiesKHR* pProperties, VkResult result);
+void PostCallRecordGetPhysicalDeviceDisplayPlaneProperties2KHR(VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount,
+                                                               VkDisplayPlaneProperties2KHR* pProperties, VkResult result);
 bool PreCallValidateGetDisplayPlaneSupportedDisplaysKHR(VkPhysicalDevice physicalDevice, uint32_t planeIndex,
                                                         uint32_t* pDisplayCount, VkDisplayKHR* pDisplays);
 bool PreCallValidateGetDisplayPlaneCapabilitiesKHR(VkPhysicalDevice physicalDevice, VkDisplayModeKHR mode, uint32_t planeIndex,
@@ -1901,26 +1909,25 @@ void PostCallRecordCreateMacOSSurfaceMVK(VkInstance instance, const VkMacOSSurfa
                                          const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface, VkResult result);
 #endif  // VK_USE_PLATFORM_MACOS_MVK
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
-bool PreCallValidateGetPhysicalDeviceWaylandPresentationSupportKHR(instance_layer_data* instance_data,
-                                                                   VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex);
+bool PreCallValidateGetPhysicalDeviceWaylandPresentationSupportKHR(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
+                                                                   struct wl_display* display);
 void PostCallRecordCreateWaylandSurfaceKHR(VkInstance instance, const VkWaylandSurfaceCreateInfoKHR* pCreateInfo,
                                            const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface, VkResult result);
 #endif  // VK_USE_PLATFORM_WAYLAND_KHR
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-bool PreCallValidateGetPhysicalDeviceWin32PresentationSupportKHR(instance_layer_data* instance_data,
-                                                                 VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex);
+bool PreCallValidateGetPhysicalDeviceWin32PresentationSupportKHR(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex);
 void PostCallRecordCreateWin32SurfaceKHR(VkInstance instance, const VkWin32SurfaceCreateInfoKHR* pCreateInfo,
                                          const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface, VkResult result);
 #endif  // VK_USE_PLATFORM_WIN32_KHR
 #ifdef VK_USE_PLATFORM_XCB_KHR
-bool PreCallValidateGetPhysicalDeviceXcbPresentationSupportKHR(instance_layer_data* instance_data, VkPhysicalDevice physicalDevice,
-                                                               uint32_t queueFamilyIndex);
+bool PreCallValidateGetPhysicalDeviceXcbPresentationSupportKHR(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
+                                                               xcb_connection_t* connection, xcb_visualid_t visual_id);
 void PostCallRecordCreateXcbSurfaceKHR(VkInstance instance, const VkXcbSurfaceCreateInfoKHR* pCreateInfo,
                                        const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface, VkResult result);
 #endif  // VK_USE_PLATFORM_XCB_KHR
 #ifdef VK_USE_PLATFORM_XLIB_KHR
-bool PreCallValidateGetPhysicalDeviceXlibPresentationSupportKHR(instance_layer_data* instance_data, VkPhysicalDevice physicalDevice,
-                                                                uint32_t queueFamilyIndex);
+bool PreCallValidateGetPhysicalDeviceXlibPresentationSupportKHR(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
+                                                                Display* dpy, VisualID visualID);
 void PostCallRecordCreateXlibSurfaceKHR(VkInstance instance, const VkXlibSurfaceCreateInfoKHR* pCreateInfo,
                                         const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface, VkResult result);
 #endif  // VK_USE_PLATFORM_XLIB_KHR
