@@ -2378,7 +2378,11 @@ void PostCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo *
     }
 
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(*pDevice), layer_data_map);
-    device_data->enabled_features.core = *enabled_features_found;
+    if (nullptr == enabled_features_found) {
+        device_data->enabled_features.core = {};
+    } else {
+        device_data->enabled_features.core = *enabled_features_found;
+    }
 
     uint32_t count;
     instance_data->dispatch_table.GetPhysicalDeviceQueueFamilyProperties(gpu, &count, nullptr);
