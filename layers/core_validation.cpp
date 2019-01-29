@@ -11720,20 +11720,34 @@ static bool ValidateCommonGetPhysicalDeviceQueueFamilyProperties(instance_layer_
     return skip;
 }
 
-bool PreCallValidateGetPhysicalDeviceQueueFamilyProperties(instance_layer_data *instance_data, PHYSICAL_DEVICE_STATE *pd_state,
-                                                           uint32_t *pQueueFamilyPropertyCount,
+bool PreCallValidateGetPhysicalDeviceQueueFamilyProperties(VkPhysicalDevice physicalDevice, uint32_t *pQueueFamilyPropertyCount,
                                                            VkQueueFamilyProperties *pQueueFamilyProperties) {
-    return ValidateCommonGetPhysicalDeviceQueueFamilyProperties(instance_data, pd_state, *pQueueFamilyPropertyCount,
+    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), instance_layer_data_map);
+    auto physical_device_state = GetPhysicalDeviceState(instance_data, physicalDevice);
+    assert(physical_device_state);
+    return ValidateCommonGetPhysicalDeviceQueueFamilyProperties(instance_data, physical_device_state, *pQueueFamilyPropertyCount,
                                                                 (nullptr == pQueueFamilyProperties),
                                                                 "vkGetPhysicalDeviceQueueFamilyProperties()");
 }
 
-bool PreCallValidateGetPhysicalDeviceQueueFamilyProperties2(instance_layer_data *instance_data, PHYSICAL_DEVICE_STATE *pd_state,
-                                                            uint32_t *pQueueFamilyPropertyCount,
+bool PreCallValidateGetPhysicalDeviceQueueFamilyProperties2(VkPhysicalDevice physicalDevice, uint32_t *pQueueFamilyPropertyCount,
                                                             VkQueueFamilyProperties2KHR *pQueueFamilyProperties) {
-    return ValidateCommonGetPhysicalDeviceQueueFamilyProperties(instance_data, pd_state, *pQueueFamilyPropertyCount,
+    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), instance_layer_data_map);
+    auto physical_device_state = GetPhysicalDeviceState(instance_data, physicalDevice);
+    assert(physical_device_state);
+    return ValidateCommonGetPhysicalDeviceQueueFamilyProperties(instance_data, physical_device_state, *pQueueFamilyPropertyCount,
                                                                 (nullptr == pQueueFamilyProperties),
-                                                                "vkGetPhysicalDeviceQueueFamilyProperties2[KHR]()");
+                                                                "vkGetPhysicalDeviceQueueFamilyProperties2()");
+}
+
+bool PreCallValidateGetPhysicalDeviceQueueFamilyProperties2KHR(VkPhysicalDevice physicalDevice, uint32_t *pQueueFamilyPropertyCount,
+                                                               VkQueueFamilyProperties2KHR *pQueueFamilyProperties) {
+    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), instance_layer_data_map);
+    auto physical_device_state = GetPhysicalDeviceState(instance_data, physicalDevice);
+    assert(physical_device_state);
+    return ValidateCommonGetPhysicalDeviceQueueFamilyProperties(instance_data, physical_device_state, *pQueueFamilyPropertyCount,
+                                                                (nullptr == pQueueFamilyProperties),
+                                                                "vkGetPhysicalDeviceQueueFamilyProperties2KHR()");
 }
 
 // Common function to update state for GetPhysicalDeviceQueueFamilyProperties & 2KHR version
@@ -11754,25 +11768,41 @@ static void StateUpdateCommonGetPhysicalDeviceQueueFamilyProperties(PHYSICAL_DEV
     }
 }
 
-void PostCallRecordGetPhysicalDeviceQueueFamilyProperties(PHYSICAL_DEVICE_STATE *pd_state, uint32_t count,
+void PostCallRecordGetPhysicalDeviceQueueFamilyProperties(VkPhysicalDevice physicalDevice, uint32_t *pQueueFamilyPropertyCount,
                                                           VkQueueFamilyProperties *pQueueFamilyProperties) {
+    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), instance_layer_data_map);
+    auto physical_device_state = GetPhysicalDeviceState(instance_data, physicalDevice);
+    assert(physical_device_state);
     VkQueueFamilyProperties2KHR *pqfp = nullptr;
     std::vector<VkQueueFamilyProperties2KHR> qfp;
-    qfp.resize(count);
+    qfp.resize(*pQueueFamilyPropertyCount);
     if (pQueueFamilyProperties) {
-        for (uint32_t i = 0; i < count; ++i) {
+        for (uint32_t i = 0; i < *pQueueFamilyPropertyCount; ++i) {
             qfp[i].sType = VK_STRUCTURE_TYPE_QUEUE_FAMILY_PROPERTIES_2_KHR;
             qfp[i].pNext = nullptr;
             qfp[i].queueFamilyProperties = pQueueFamilyProperties[i];
         }
         pqfp = qfp.data();
     }
-    StateUpdateCommonGetPhysicalDeviceQueueFamilyProperties(pd_state, count, pqfp);
+    StateUpdateCommonGetPhysicalDeviceQueueFamilyProperties(physical_device_state, *pQueueFamilyPropertyCount, pqfp);
 }
 
-void PostCallRecordGetPhysicalDeviceQueueFamilyProperties2(PHYSICAL_DEVICE_STATE *pd_state, uint32_t count,
+void PostCallRecordGetPhysicalDeviceQueueFamilyProperties2(VkPhysicalDevice physicalDevice, uint32_t *pQueueFamilyPropertyCount,
                                                            VkQueueFamilyProperties2KHR *pQueueFamilyProperties) {
-    StateUpdateCommonGetPhysicalDeviceQueueFamilyProperties(pd_state, count, pQueueFamilyProperties);
+    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), instance_layer_data_map);
+    auto physical_device_state = GetPhysicalDeviceState(instance_data, physicalDevice);
+    assert(physical_device_state);
+    StateUpdateCommonGetPhysicalDeviceQueueFamilyProperties(physical_device_state, *pQueueFamilyPropertyCount,
+                                                            pQueueFamilyProperties);
+}
+
+void PostCallRecordGetPhysicalDeviceQueueFamilyProperties2KHR(VkPhysicalDevice physicalDevice, uint32_t *pQueueFamilyPropertyCount,
+                                                              VkQueueFamilyProperties2KHR *pQueueFamilyProperties) {
+    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), instance_layer_data_map);
+    auto physical_device_state = GetPhysicalDeviceState(instance_data, physicalDevice);
+    assert(physical_device_state);
+    StateUpdateCommonGetPhysicalDeviceQueueFamilyProperties(physical_device_state, *pQueueFamilyPropertyCount,
+                                                            pQueueFamilyProperties);
 }
 
 bool PreCallValidateDestroySurfaceKHR(VkInstance instance, VkSurfaceKHR surface, const VkAllocationCallbacks *pAllocator) {
@@ -11838,14 +11868,14 @@ void PostCallRecordCreateWaylandSurfaceKHR(VkInstance instance, const VkWaylandS
     RecordVulkanSurface(instance_data, pSurface);
 }
 
-bool PreCallValidateGetPhysicalDeviceWaylandPresentationSupportKHR(instance_layer_data *instance_data,
-                                                                   VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex) {
+bool PreCallValidateGetPhysicalDeviceWaylandPresentationSupportKHR(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
+                                                                   struct wl_display *display) {
+    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), instance_layer_data_map);
     const auto pd_state = GetPhysicalDeviceState(instance_data, physicalDevice);
     return ValidatePhysicalDeviceQueueFamily(instance_data, pd_state, queueFamilyIndex,
                                              "VUID-vkGetPhysicalDeviceWaylandPresentationSupportKHR-queueFamilyIndex-01306",
                                              "vkGetPhysicalDeviceWaylandPresentationSupportKHR", "queueFamilyIndex");
 }
-
 #endif  // VK_USE_PLATFORM_WAYLAND_KHR
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
@@ -11856,8 +11886,8 @@ void PostCallRecordCreateWin32SurfaceKHR(VkInstance instance, const VkWin32Surfa
     RecordVulkanSurface(instance_data, pSurface);
 }
 
-bool PreCallValidateGetPhysicalDeviceWin32PresentationSupportKHR(instance_layer_data *instance_data,
-                                                                 VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex) {
+bool PreCallValidateGetPhysicalDeviceWin32PresentationSupportKHR(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex) {
+    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), instance_layer_data_map);
     const auto pd_state = GetPhysicalDeviceState(instance_data, physicalDevice);
     return ValidatePhysicalDeviceQueueFamily(instance_data, pd_state, queueFamilyIndex,
                                              "VUID-vkGetPhysicalDeviceWin32PresentationSupportKHR-queueFamilyIndex-01309",
@@ -11873,8 +11903,9 @@ void PostCallRecordCreateXcbSurfaceKHR(VkInstance instance, const VkXcbSurfaceCr
     RecordVulkanSurface(instance_data, pSurface);
 }
 
-bool PreCallValidateGetPhysicalDeviceXcbPresentationSupportKHR(instance_layer_data *instance_data, VkPhysicalDevice physicalDevice,
-                                                               uint32_t queueFamilyIndex) {
+bool PreCallValidateGetPhysicalDeviceXcbPresentationSupportKHR(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
+                                                               xcb_connection_t *connection, xcb_visualid_t visual_id) {
+    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), instance_layer_data_map);
     const auto pd_state = GetPhysicalDeviceState(instance_data, physicalDevice);
     return ValidatePhysicalDeviceQueueFamily(instance_data, pd_state, queueFamilyIndex,
                                              "VUID-vkGetPhysicalDeviceXcbPresentationSupportKHR-queueFamilyIndex-01312",
@@ -11890,8 +11921,9 @@ void PostCallRecordCreateXlibSurfaceKHR(VkInstance instance, const VkXlibSurface
     RecordVulkanSurface(instance_data, pSurface);
 }
 
-bool PreCallValidateGetPhysicalDeviceXlibPresentationSupportKHR(instance_layer_data *instance_data, VkPhysicalDevice physicalDevice,
-                                                                uint32_t queueFamilyIndex) {
+bool PreCallValidateGetPhysicalDeviceXlibPresentationSupportKHR(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
+                                                                Display *dpy, VisualID visualID) {
+    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), instance_layer_data_map);
     const auto pd_state = GetPhysicalDeviceState(instance_data, physicalDevice);
     return ValidatePhysicalDeviceQueueFamily(instance_data, pd_state, queueFamilyIndex,
                                              "VUID-vkGetPhysicalDeviceXlibPresentationSupportKHR-queueFamilyIndex-01315",
@@ -11899,36 +11931,40 @@ bool PreCallValidateGetPhysicalDeviceXlibPresentationSupportKHR(instance_layer_d
 }
 #endif  // VK_USE_PLATFORM_XLIB_KHR
 
-void PostCallRecordGetPhysicalDeviceSurfaceCapabilitiesKHR(instance_layer_data *instance_data, VkPhysicalDevice physicalDevice,
-                                                           VkSurfaceCapabilitiesKHR *pSurfaceCapabilities) {
+void PostCallRecordGetPhysicalDeviceSurfaceCapabilitiesKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
+                                                           VkSurfaceCapabilitiesKHR *pSurfaceCapabilities, VkResult result) {
+    auto instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), instance_layer_data_map);
+    if (VK_SUCCESS != result) return;
     auto physical_device_state = GetPhysicalDeviceState(instance_data, physicalDevice);
     physical_device_state->vkGetPhysicalDeviceSurfaceCapabilitiesKHRState = QUERY_DETAILS;
     physical_device_state->surfaceCapabilities = *pSurfaceCapabilities;
 }
 
-void PostCallRecordGetPhysicalDeviceSurfaceCapabilities2KHR(instance_layer_data *instanceData, VkPhysicalDevice physicalDevice,
-                                                            VkSurfaceCapabilities2KHR *pSurfaceCapabilities) {
-    unique_lock_t lock(global_lock);
-    auto physicalDeviceState = GetPhysicalDeviceState(instanceData, physicalDevice);
-    physicalDeviceState->vkGetPhysicalDeviceSurfaceCapabilitiesKHRState = QUERY_DETAILS;
-    physicalDeviceState->surfaceCapabilities = pSurfaceCapabilities->surfaceCapabilities;
+void PostCallRecordGetPhysicalDeviceSurfaceCapabilities2KHR(VkPhysicalDevice physicalDevice,
+                                                            const VkPhysicalDeviceSurfaceInfo2KHR *pSurfaceInfo,
+                                                            VkSurfaceCapabilities2KHR *pSurfaceCapabilities, VkResult result) {
+    auto instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), instance_layer_data_map);
+    if (VK_SUCCESS != result) return;
+    auto physical_device_state = GetPhysicalDeviceState(instance_data, physicalDevice);
+    physical_device_state->vkGetPhysicalDeviceSurfaceCapabilitiesKHRState = QUERY_DETAILS;
+    physical_device_state->surfaceCapabilities = pSurfaceCapabilities->surfaceCapabilities;
 }
 
-void PostCallRecordGetPhysicalDeviceSurfaceCapabilities2EXT(instance_layer_data *instanceData, VkPhysicalDevice physicalDevice,
-                                                            VkSurfaceCapabilities2EXT *pSurfaceCapabilities) {
-    unique_lock_t lock(global_lock);
-    auto physicalDeviceState = GetPhysicalDeviceState(instanceData, physicalDevice);
-    physicalDeviceState->vkGetPhysicalDeviceSurfaceCapabilitiesKHRState = QUERY_DETAILS;
-    physicalDeviceState->surfaceCapabilities.minImageCount = pSurfaceCapabilities->minImageCount;
-    physicalDeviceState->surfaceCapabilities.maxImageCount = pSurfaceCapabilities->maxImageCount;
-    physicalDeviceState->surfaceCapabilities.currentExtent = pSurfaceCapabilities->currentExtent;
-    physicalDeviceState->surfaceCapabilities.minImageExtent = pSurfaceCapabilities->minImageExtent;
-    physicalDeviceState->surfaceCapabilities.maxImageExtent = pSurfaceCapabilities->maxImageExtent;
-    physicalDeviceState->surfaceCapabilities.maxImageArrayLayers = pSurfaceCapabilities->maxImageArrayLayers;
-    physicalDeviceState->surfaceCapabilities.supportedTransforms = pSurfaceCapabilities->supportedTransforms;
-    physicalDeviceState->surfaceCapabilities.currentTransform = pSurfaceCapabilities->currentTransform;
-    physicalDeviceState->surfaceCapabilities.supportedCompositeAlpha = pSurfaceCapabilities->supportedCompositeAlpha;
-    physicalDeviceState->surfaceCapabilities.supportedUsageFlags = pSurfaceCapabilities->supportedUsageFlags;
+void PostCallRecordGetPhysicalDeviceSurfaceCapabilities2EXT(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
+                                                            VkSurfaceCapabilities2EXT *pSurfaceCapabilities, VkResult result) {
+    auto instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), instance_layer_data_map);
+    auto physical_device_state = GetPhysicalDeviceState(instance_data, physicalDevice);
+    physical_device_state->vkGetPhysicalDeviceSurfaceCapabilitiesKHRState = QUERY_DETAILS;
+    physical_device_state->surfaceCapabilities.minImageCount = pSurfaceCapabilities->minImageCount;
+    physical_device_state->surfaceCapabilities.maxImageCount = pSurfaceCapabilities->maxImageCount;
+    physical_device_state->surfaceCapabilities.currentExtent = pSurfaceCapabilities->currentExtent;
+    physical_device_state->surfaceCapabilities.minImageExtent = pSurfaceCapabilities->minImageExtent;
+    physical_device_state->surfaceCapabilities.maxImageExtent = pSurfaceCapabilities->maxImageExtent;
+    physical_device_state->surfaceCapabilities.maxImageArrayLayers = pSurfaceCapabilities->maxImageArrayLayers;
+    physical_device_state->surfaceCapabilities.supportedTransforms = pSurfaceCapabilities->supportedTransforms;
+    physical_device_state->surfaceCapabilities.currentTransform = pSurfaceCapabilities->currentTransform;
+    physical_device_state->surfaceCapabilities.supportedCompositeAlpha = pSurfaceCapabilities->supportedCompositeAlpha;
+    physical_device_state->surfaceCapabilities.supportedUsageFlags = pSurfaceCapabilities->supportedUsageFlags;
 }
 
 bool PreCallValidateGetPhysicalDeviceSurfaceSupportKHR(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
@@ -11948,10 +11984,14 @@ void PostCallRecordGetPhysicalDeviceSurfaceSupportKHR(VkPhysicalDevice physicalD
     surface_state->gpu_queue_support[{physicalDevice, queueFamilyIndex}] = (*pSupported == VK_TRUE);
 }
 
-void PostCallRecordGetPhysicalDeviceSurfacePresentModesKHR(instance_layer_data *instance_data, VkPhysicalDevice physical_device,
-                                                           uint32_t *pPresentModeCount, VkPresentModeKHR *pPresentModes) {
-    // TODO: this isn't quite right. available modes may differ by surface AND physical device.
-    auto physical_device_state = GetPhysicalDeviceState(instance_data, physical_device);
+void PostCallRecordGetPhysicalDeviceSurfacePresentModesKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
+                                                           uint32_t *pPresentModeCount, VkPresentModeKHR *pPresentModes,
+                                                           VkResult result) {
+    auto instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), instance_layer_data_map);
+    if ((VK_SUCCESS != result) && (VK_INCOMPLETE != result)) return;
+
+    // TODO: This isn't quite right -- available modes may differ by surface AND physical device.
+    auto physical_device_state = GetPhysicalDeviceState(instance_data, physicalDevice);
     auto &call_state = physical_device_state->vkGetPhysicalDeviceSurfacePresentModesKHRState;
 
     if (*pPresentModeCount) {
@@ -12022,10 +12062,14 @@ void PostCallRecordGetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDevice physicalD
     }
 }
 
-void PostCallRecordGetPhysicalDeviceSurfaceFormats2KHR(instance_layer_data *instanceData, VkPhysicalDevice physicalDevice,
-                                                       uint32_t *pSurfaceFormatCount, VkSurfaceFormat2KHR *pSurfaceFormats) {
-    unique_lock_t lock(global_lock);
-    auto physicalDeviceState = GetPhysicalDeviceState(instanceData, physicalDevice);
+void PostCallRecordGetPhysicalDeviceSurfaceFormats2KHR(VkPhysicalDevice physicalDevice,
+                                                       const VkPhysicalDeviceSurfaceInfo2KHR *pSurfaceInfo,
+                                                       uint32_t *pSurfaceFormatCount, VkSurfaceFormat2KHR *pSurfaceFormats,
+                                                       VkResult result) {
+    auto instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), instance_layer_data_map);
+    if ((VK_SUCCESS != result) && (VK_INCOMPLETE != result)) return;
+
+    auto physicalDeviceState = GetPhysicalDeviceState(instance_data, physicalDevice);
     if (*pSurfaceFormatCount) {
         if (physicalDeviceState->vkGetPhysicalDeviceSurfaceFormatsKHRState < QUERY_COUNT) {
             physicalDeviceState->vkGetPhysicalDeviceSurfaceFormatsKHRState = QUERY_COUNT;
@@ -12409,11 +12453,9 @@ void PreCallRecordCmdPushDescriptorSetWithTemplateKHR(layer_data *device_data, G
     }
 }
 
-void PostCallRecordGetPhysicalDeviceDisplayPlanePropertiesKHR(instance_layer_data *instanceData, VkPhysicalDevice physicalDevice,
-                                                              uint32_t *pPropertyCount, void *pProperties) {
-    unique_lock_t lock(global_lock);
-    auto physical_device_state = GetPhysicalDeviceState(instanceData, physicalDevice);
-
+static void RecordGetPhysicalDeviceDisplayPlanePropertiesState(instance_layer_data *instance_data, VkPhysicalDevice physicalDevice,
+                                                               uint32_t *pPropertyCount, void *pProperties) {
+    auto physical_device_state = GetPhysicalDeviceState(instance_data, physicalDevice);
     if (*pPropertyCount) {
         if (physical_device_state->vkGetPhysicalDeviceDisplayPlanePropertiesKHRState < QUERY_COUNT) {
             physical_device_state->vkGetPhysicalDeviceDisplayPlanePropertiesKHRState = QUERY_COUNT;
@@ -12425,6 +12467,20 @@ void PostCallRecordGetPhysicalDeviceDisplayPlanePropertiesKHR(instance_layer_dat
             physical_device_state->vkGetPhysicalDeviceDisplayPlanePropertiesKHRState = QUERY_DETAILS;
         }
     }
+}
+
+void PostCallRecordGetPhysicalDeviceDisplayPlanePropertiesKHR(VkPhysicalDevice physicalDevice, uint32_t *pPropertyCount,
+                                                              VkDisplayPlanePropertiesKHR *pProperties, VkResult result) {
+    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), instance_layer_data_map);
+    if ((VK_SUCCESS != result) && (VK_INCOMPLETE != result)) return;
+    RecordGetPhysicalDeviceDisplayPlanePropertiesState(instance_data, physicalDevice, pPropertyCount, pProperties);
+}
+
+void PostCallRecordGetPhysicalDeviceDisplayPlaneProperties2KHR(VkPhysicalDevice physicalDevice, uint32_t *pPropertyCount,
+                                                               VkDisplayPlaneProperties2KHR *pProperties, VkResult result) {
+    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), instance_layer_data_map);
+    if ((VK_SUCCESS != result) && (VK_INCOMPLETE != result)) return;
+    RecordGetPhysicalDeviceDisplayPlanePropertiesState(instance_data, physicalDevice, pPropertyCount, pProperties);
 }
 
 static bool ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(instance_layer_data *instance_data,
