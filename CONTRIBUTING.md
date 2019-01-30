@@ -34,8 +34,9 @@ Repository Issue labels:
 * _Incomplete_:   These issues refer to missing validation checks that users have encountered during application
 development that would have been directly useful, and are high priority.
 * _Enhancement_:  These issues refer to ideas for extending or improving the validation layers.
+* _Triaged_:      These issues have been assessed and/or reviewed
 
-It is the maintainers goal for all issues to be assigned within one business day of their submission. If you choose
+It is the maintainers goal for all issues to be assigned or triaged within one business day of their submission. If you choose
 to work on an issue that is assigned, simply coordinate with the current assignee.
 
 ### **How to Submit Fixes**
@@ -47,6 +48,9 @@ to work on an issue that is assigned, simply coordinate with the current assigne
   creating a branch with your commits, and then [submitting a pull request](https://help.github.com/articles/using-pull-requests/).
 * Please read and adhere to the style and process [guidelines ](#coding-conventions-and-formatting) enumerated below.
 * Please base your fixes on the master branch.  SDK branches are generally not updated except for critical fixes needed to repair an SDK release.
+* The resulting Pull Request will be assigned to a repository maintainer. It is the maintainer's responsibility to ensure the Pull Request
+  passes the Google/LunarG internal CI processes. Once the Pull Request has been approved and is passing internal CI, a repository maintainer
+  will merge the PR.
 
 
 #### **Coding Conventions and Formatting**
