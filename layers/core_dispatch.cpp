@@ -1277,12 +1277,9 @@ VKAPI_ATTR void VKAPI_CALL CmdSetViewport(VkCommandBuffer commandBuffer, uint32_
     bool skip = false;
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     unique_lock_t lock(global_lock);
-    GLOBAL_CB_NODE *pCB = GetCBNode(dev_data, commandBuffer);
-    if (pCB) {
-        skip |= PreCallValidateCmdSetViewport(dev_data, pCB, commandBuffer);
-        if (!skip) {
-            PreCallRecordCmdSetViewport(pCB, firstViewport, viewportCount);
-        }
+    skip |= PreCallValidateCmdSetViewport(commandBuffer, firstViewport, viewportCount, pViewports);
+    if (!skip) {
+        PreCallRecordCmdSetViewport(commandBuffer, firstViewport, viewportCount, pViewports);
     }
     lock.unlock();
     if (!skip) dev_data->dispatch_table.CmdSetViewport(commandBuffer, firstViewport, viewportCount, pViewports);
@@ -1293,12 +1290,9 @@ VKAPI_ATTR void VKAPI_CALL CmdSetScissor(VkCommandBuffer commandBuffer, uint32_t
     bool skip = false;
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     unique_lock_t lock(global_lock);
-    GLOBAL_CB_NODE *pCB = GetCBNode(dev_data, commandBuffer);
-    if (pCB) {
-        skip |= PreCallValidateCmdSetScissor(dev_data, pCB, commandBuffer);
-        if (!skip) {
-            PreCallRecordCmdSetScissor(pCB, firstScissor, scissorCount);
-        }
+    skip |= PreCallValidateCmdSetScissor(commandBuffer, firstScissor, scissorCount, pScissors);
+    if (!skip) {
+        PreCallRecordCmdSetScissor(commandBuffer, firstScissor, scissorCount, pScissors);
     }
     lock.unlock();
     if (!skip) dev_data->dispatch_table.CmdSetScissor(commandBuffer, firstScissor, scissorCount, pScissors);
@@ -1309,12 +1303,10 @@ VKAPI_ATTR void VKAPI_CALL CmdSetExclusiveScissorNV(VkCommandBuffer commandBuffe
     bool skip = false;
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     unique_lock_t lock(global_lock);
-    GLOBAL_CB_NODE *pCB = GetCBNode(dev_data, commandBuffer);
-    if (pCB) {
-        skip |= PreCallValidateCmdSetExclusiveScissorNV(dev_data, pCB, commandBuffer);
-        if (!skip) {
-            PreCallRecordCmdSetExclusiveScissorNV(pCB, firstExclusiveScissor, exclusiveScissorCount);
-        }
+    skip |=
+        PreCallValidateCmdSetExclusiveScissorNV(commandBuffer, firstExclusiveScissor, exclusiveScissorCount, pExclusiveScissors);
+    if (!skip) {
+        PreCallRecordCmdSetExclusiveScissorNV(commandBuffer, firstExclusiveScissor, exclusiveScissorCount, pExclusiveScissors);
     }
     lock.unlock();
     if (!skip)
@@ -1344,13 +1336,9 @@ VKAPI_ATTR void VKAPI_CALL CmdSetViewportShadingRatePaletteNV(VkCommandBuffer co
     bool skip = false;
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     unique_lock_t lock(global_lock);
-    GLOBAL_CB_NODE *pCB = GetCBNode(dev_data, commandBuffer);
-    if (pCB) {
-        skip |= PreCallValidateCmdSetViewportShadingRatePaletteNV(dev_data, pCB, commandBuffer, firstViewport, viewportCount,
-                                                                  pShadingRatePalettes);
-        if (!skip) {
-            PreCallRecordCmdSetViewportShadingRatePaletteNV(pCB, firstViewport, viewportCount);
-        }
+    skip |= PreCallValidateCmdSetViewportShadingRatePaletteNV(commandBuffer, firstViewport, viewportCount, pShadingRatePalettes);
+    if (!skip) {
+        PreCallRecordCmdSetViewportShadingRatePaletteNV(commandBuffer, firstViewport, viewportCount, pShadingRatePalettes);
     }
     lock.unlock();
     if (!skip)
@@ -1362,12 +1350,9 @@ VKAPI_ATTR void VKAPI_CALL CmdSetLineWidth(VkCommandBuffer commandBuffer, float 
     bool skip = false;
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     unique_lock_t lock(global_lock);
-    GLOBAL_CB_NODE *pCB = GetCBNode(dev_data, commandBuffer);
-    if (pCB) {
-        skip |= PreCallValidateCmdSetLineWidth(dev_data, pCB, commandBuffer);
-        if (!skip) {
-            PreCallRecordCmdSetLineWidth(pCB);
-        }
+    skip |= PreCallValidateCmdSetLineWidth(commandBuffer, lineWidth);
+    if (!skip) {
+        PreCallRecordCmdSetLineWidth(commandBuffer, lineWidth);
     }
     lock.unlock();
     if (!skip) dev_data->dispatch_table.CmdSetLineWidth(commandBuffer, lineWidth);
@@ -1378,12 +1363,9 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDepthBias(VkCommandBuffer commandBuffer, float 
     bool skip = false;
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     unique_lock_t lock(global_lock);
-    GLOBAL_CB_NODE *pCB = GetCBNode(dev_data, commandBuffer);
-    if (pCB) {
-        skip |= PreCallValidateCmdSetDepthBias(dev_data, pCB, commandBuffer, depthBiasClamp);
-        if (!skip) {
-            PreCallRecordCmdSetDepthBias(pCB);
-        }
+    skip |= PreCallValidateCmdSetDepthBias(commandBuffer, depthBiasConstantFactor, depthBiasClamp, depthBiasSlopeFactor);
+    if (!skip) {
+        PreCallRecordCmdSetDepthBias(commandBuffer, depthBiasConstantFactor, depthBiasClamp, depthBiasSlopeFactor);
     }
     lock.unlock();
     if (!skip) {
@@ -1395,12 +1377,9 @@ VKAPI_ATTR void VKAPI_CALL CmdSetBlendConstants(VkCommandBuffer commandBuffer, c
     bool skip = false;
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     unique_lock_t lock(global_lock);
-    GLOBAL_CB_NODE *pCB = GetCBNode(dev_data, commandBuffer);
-    if (pCB) {
-        skip |= PreCallValidateCmdSetBlendConstants(dev_data, pCB, commandBuffer);
-        if (!skip) {
-            PreCallRecordCmdSetBlendConstants(pCB);
-        }
+    skip |= PreCallValidateCmdSetBlendConstants(commandBuffer, blendConstants);
+    if (!skip) {
+        PreCallRecordCmdSetBlendConstants(commandBuffer, blendConstants);
     }
     lock.unlock();
     if (!skip) dev_data->dispatch_table.CmdSetBlendConstants(commandBuffer, blendConstants);
@@ -1410,12 +1389,9 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDepthBounds(VkCommandBuffer commandBuffer, floa
     bool skip = false;
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     unique_lock_t lock(global_lock);
-    GLOBAL_CB_NODE *pCB = GetCBNode(dev_data, commandBuffer);
-    if (pCB) {
-        skip |= PreCallValidateCmdSetDepthBounds(dev_data, pCB, commandBuffer);
-        if (!skip) {
-            PreCallRecordCmdSetDepthBounds(pCB);
-        }
+    skip |= PreCallValidateCmdSetDepthBounds(commandBuffer, minDepthBounds, maxDepthBounds);
+    if (!skip) {
+        PreCallRecordCmdSetDepthBounds(commandBuffer, minDepthBounds, maxDepthBounds);
     }
     lock.unlock();
     if (!skip) dev_data->dispatch_table.CmdSetDepthBounds(commandBuffer, minDepthBounds, maxDepthBounds);
@@ -1426,12 +1402,9 @@ VKAPI_ATTR void VKAPI_CALL CmdSetStencilCompareMask(VkCommandBuffer commandBuffe
     bool skip = false;
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     unique_lock_t lock(global_lock);
-    GLOBAL_CB_NODE *pCB = GetCBNode(dev_data, commandBuffer);
-    if (pCB) {
-        skip |= PreCallValidateCmdSetStencilCompareMask(dev_data, pCB, commandBuffer);
-        if (!skip) {
-            PreCallRecordCmdSetStencilCompareMask(pCB);
-        }
+    skip |= PreCallValidateCmdSetStencilCompareMask(commandBuffer, faceMask, compareMask);
+    if (!skip) {
+        PreCallRecordCmdSetStencilCompareMask(commandBuffer, faceMask, compareMask);
     }
     lock.unlock();
     if (!skip) dev_data->dispatch_table.CmdSetStencilCompareMask(commandBuffer, faceMask, compareMask);
@@ -1441,12 +1414,9 @@ VKAPI_ATTR void VKAPI_CALL CmdSetStencilWriteMask(VkCommandBuffer commandBuffer,
     bool skip = false;
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     unique_lock_t lock(global_lock);
-    GLOBAL_CB_NODE *pCB = GetCBNode(dev_data, commandBuffer);
-    if (pCB) {
-        skip |= PreCallValidateCmdSetStencilWriteMask(dev_data, pCB, commandBuffer);
-        if (!skip) {
-            PreCallRecordCmdSetStencilWriteMask(pCB);
-        }
+    skip |= PreCallValidateCmdSetStencilWriteMask(commandBuffer, faceMask, writeMask);
+    if (!skip) {
+        PreCallRecordCmdSetStencilWriteMask(commandBuffer, faceMask, writeMask);
     }
     lock.unlock();
     if (!skip) dev_data->dispatch_table.CmdSetStencilWriteMask(commandBuffer, faceMask, writeMask);
@@ -1456,12 +1426,9 @@ VKAPI_ATTR void VKAPI_CALL CmdSetStencilReference(VkCommandBuffer commandBuffer,
     bool skip = false;
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     unique_lock_t lock(global_lock);
-    GLOBAL_CB_NODE *pCB = GetCBNode(dev_data, commandBuffer);
-    if (pCB) {
-        skip |= PreCallValidateCmdSetStencilReference(dev_data, pCB, commandBuffer);
-        if (!skip) {
-            PreCallRecordCmdSetStencilReference(pCB);
-        }
+    skip |= PreCallValidateCmdSetStencilReference(commandBuffer, faceMask, reference);
+    if (!skip) {
+        PreCallRecordCmdSetStencilReference(commandBuffer, faceMask, reference);
     }
     lock.unlock();
     if (!skip) dev_data->dispatch_table.CmdSetStencilReference(commandBuffer, faceMask, reference);
@@ -3250,11 +3217,8 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDiscardRectangleEXT(VkCommandBuffer commandBuff
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     unique_lock_t lock(global_lock);
     bool skip = false;
-    GLOBAL_CB_NODE *cb_state = GetCBNode(dev_data, commandBuffer);
-    // Minimal validation for command buffer state
-    if (cb_state) {
-        skip |= PreCallValidateCmdSetDiscardRectangleEXT(dev_data, cb_state);
-    }
+    skip |=
+        PreCallValidateCmdSetDiscardRectangleEXT(commandBuffer, firstDiscardRectangle, discardRectangleCount, pDiscardRectangles);
     lock.unlock();
 
     if (!skip) {
@@ -3268,11 +3232,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetSampleLocationsEXT(VkCommandBuffer commandBuffe
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     unique_lock_t lock(global_lock);
     bool skip = false;
-    GLOBAL_CB_NODE *cb_state = GetCBNode(dev_data, commandBuffer);
-    // Minimal validation for command buffer state
-    if (cb_state) {
-        skip |= PreCallValidateCmdSetSampleLocationsEXT(dev_data, cb_state);
-    }
+    skip |= PreCallValidateCmdSetSampleLocationsEXT(commandBuffer, pSampleLocationsInfo);
     lock.unlock();
 
     if (!skip) {

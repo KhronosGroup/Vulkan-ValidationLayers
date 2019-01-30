@@ -6305,52 +6305,70 @@ void PreCallRecordCmdBindPipeline(layer_data *dev_data, GLOBAL_CB_NODE *cb_state
     AddCommandBufferBinding(&pipe_state->cb_bindings, {HandleToUint64(pipeline), kVulkanObjectTypePipeline}, cb_state);
 }
 
-bool PreCallValidateCmdSetViewport(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, VkCommandBuffer commandBuffer) {
-    bool skip = ValidateCmdQueueFlags(dev_data, cb_state, "vkCmdSetViewport()", VK_QUEUE_GRAPHICS_BIT,
+bool PreCallValidateCmdSetViewport(VkCommandBuffer commandBuffer, uint32_t firstViewport, uint32_t viewportCount,
+                                   const VkViewport *pViewports) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    assert(cb_state);
+    bool skip = ValidateCmdQueueFlags(device_data, cb_state, "vkCmdSetViewport()", VK_QUEUE_GRAPHICS_BIT,
                                       "VUID-vkCmdSetViewport-commandBuffer-cmdpool");
-    skip |= ValidateCmd(dev_data, cb_state, CMD_SETVIEWPORT, "vkCmdSetViewport()");
+    skip |= ValidateCmd(device_data, cb_state, CMD_SETVIEWPORT, "vkCmdSetViewport()");
     if (cb_state->static_status & CBSTATUS_VIEWPORT_SET) {
-        skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+        skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                         HandleToUint64(commandBuffer), "VUID-vkCmdSetViewport-None-01221",
-                        "vkCmdSetViewport(): pipeline was created without VK_DYNAMIC_STATE_VIEWPORT flag..");
+                        "vkCmdSetViewport(): pipeline was created without VK_DYNAMIC_STATE_VIEWPORT flag.");
     }
     return skip;
 }
 
-void PreCallRecordCmdSetViewport(GLOBAL_CB_NODE *cb_state, uint32_t firstViewport, uint32_t viewportCount) {
+void PreCallRecordCmdSetViewport(VkCommandBuffer commandBuffer, uint32_t firstViewport, uint32_t viewportCount,
+                                 const VkViewport *pViewports) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
     cb_state->viewportMask |= ((1u << viewportCount) - 1u) << firstViewport;
     cb_state->status |= CBSTATUS_VIEWPORT_SET;
 }
 
-bool PreCallValidateCmdSetScissor(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, VkCommandBuffer commandBuffer) {
-    bool skip = ValidateCmdQueueFlags(dev_data, cb_state, "vkCmdSetScissor()", VK_QUEUE_GRAPHICS_BIT,
+bool PreCallValidateCmdSetScissor(VkCommandBuffer commandBuffer, uint32_t firstScissor, uint32_t scissorCount,
+                                  const VkRect2D *pScissors) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    assert(cb_state);
+    bool skip = ValidateCmdQueueFlags(device_data, cb_state, "vkCmdSetScissor()", VK_QUEUE_GRAPHICS_BIT,
                                       "VUID-vkCmdSetScissor-commandBuffer-cmdpool");
-    skip |= ValidateCmd(dev_data, cb_state, CMD_SETSCISSOR, "vkCmdSetScissor()");
+    skip |= ValidateCmd(device_data, cb_state, CMD_SETSCISSOR, "vkCmdSetScissor()");
     if (cb_state->static_status & CBSTATUS_SCISSOR_SET) {
-        skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+        skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                         HandleToUint64(commandBuffer), "VUID-vkCmdSetScissor-None-00590",
                         "vkCmdSetScissor(): pipeline was created without VK_DYNAMIC_STATE_SCISSOR flag..");
     }
     return skip;
 }
 
-void PreCallRecordCmdSetScissor(GLOBAL_CB_NODE *cb_state, uint32_t firstScissor, uint32_t scissorCount) {
+void PreCallRecordCmdSetScissor(VkCommandBuffer commandBuffer, uint32_t firstScissor, uint32_t scissorCount,
+                                const VkRect2D *pScissors) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
     cb_state->scissorMask |= ((1u << scissorCount) - 1u) << firstScissor;
     cb_state->status |= CBSTATUS_SCISSOR_SET;
 }
 
-bool PreCallValidateCmdSetExclusiveScissorNV(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, VkCommandBuffer commandBuffer) {
-    bool skip = ValidateCmdQueueFlags(dev_data, cb_state, "vkCmdSetExclusiveScissorNV()", VK_QUEUE_GRAPHICS_BIT,
+bool PreCallValidateCmdSetExclusiveScissorNV(VkCommandBuffer commandBuffer, uint32_t firstExclusiveScissor,
+                                             uint32_t exclusiveScissorCount, const VkRect2D *pExclusiveScissors) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    assert(cb_state);
+    bool skip = ValidateCmdQueueFlags(device_data, cb_state, "vkCmdSetExclusiveScissorNV()", VK_QUEUE_GRAPHICS_BIT,
                                       "VUID-vkCmdSetExclusiveScissorNV-commandBuffer-cmdpool");
-    skip |= ValidateCmd(dev_data, cb_state, CMD_SETEXCLUSIVESCISSOR, "vkCmdSetExclusiveScissorNV()");
+    skip |= ValidateCmd(device_data, cb_state, CMD_SETEXCLUSIVESCISSOR, "vkCmdSetExclusiveScissorNV()");
     if (cb_state->static_status & CBSTATUS_EXCLUSIVE_SCISSOR_SET) {
-        skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+        skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                         HandleToUint64(commandBuffer), "VUID-vkCmdSetExclusiveScissorNV-None-02032",
                         "vkCmdSetExclusiveScissorNV(): pipeline was created without VK_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_NV flag.");
     }
 
-    if (!GetEnabledFeatures(dev_data)->exclusive_scissor.exclusiveScissor) {
-        skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+    if (!GetEnabledFeatures(device_data)->exclusive_scissor.exclusiveScissor) {
+        skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                         HandleToUint64(commandBuffer), "VUID-vkCmdSetExclusiveScissorNV-None-02031",
                         "vkCmdSetExclusiveScissorNV: The exclusiveScissor feature is disabled.");
     }
@@ -6358,8 +6376,10 @@ bool PreCallValidateCmdSetExclusiveScissorNV(layer_data *dev_data, GLOBAL_CB_NOD
     return skip;
 }
 
-void PreCallRecordCmdSetExclusiveScissorNV(GLOBAL_CB_NODE *cb_state, uint32_t firstExclusiveScissor,
-                                           uint32_t exclusiveScissorCount) {
+void PreCallRecordCmdSetExclusiveScissorNV(VkCommandBuffer commandBuffer, uint32_t firstExclusiveScissor,
+                                           uint32_t exclusiveScissorCount, const VkRect2D *pExclusiveScissors) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
     // XXX TODO: We don't have VUIDs for validating that all exclusive scissors have been set.
     // cb_state->exclusiveScissorMask |= ((1u << exclusiveScissorCount) - 1u) << firstExclusiveScissor;
     cb_state->status |= CBSTATUS_EXCLUSIVE_SCISSOR_SET;
@@ -6433,22 +6453,24 @@ void PreCallRecordCmdBindShadingRateImageNV(layer_data *dev_data, GLOBAL_CB_NODE
     }
 }
 
-bool PreCallValidateCmdSetViewportShadingRatePaletteNV(layer_data *dev_data, GLOBAL_CB_NODE *cb_state,
-                                                       VkCommandBuffer commandBuffer, uint32_t firstViewport,
+bool PreCallValidateCmdSetViewportShadingRatePaletteNV(VkCommandBuffer commandBuffer, uint32_t firstViewport,
                                                        uint32_t viewportCount, const VkShadingRatePaletteNV *pShadingRatePalettes) {
-    bool skip = ValidateCmdQueueFlags(dev_data, cb_state, "vkCmdSetViewportShadingRatePaletteNV()", VK_QUEUE_GRAPHICS_BIT,
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    assert(cb_state);
+    bool skip = ValidateCmdQueueFlags(device_data, cb_state, "vkCmdSetViewportShadingRatePaletteNV()", VK_QUEUE_GRAPHICS_BIT,
                                       "VUID-vkCmdSetViewportShadingRatePaletteNV-commandBuffer-cmdpool");
 
-    skip |= ValidateCmd(dev_data, cb_state, CMD_SETVIEWPORTSHADINGRATEPALETTE, "vkCmdSetViewportShadingRatePaletteNV()");
+    skip |= ValidateCmd(device_data, cb_state, CMD_SETVIEWPORTSHADINGRATEPALETTE, "vkCmdSetViewportShadingRatePaletteNV()");
 
-    if (!GetEnabledFeatures(dev_data)->shading_rate_image.shadingRateImage) {
-        skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+    if (!GetEnabledFeatures(device_data)->shading_rate_image.shadingRateImage) {
+        skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                         HandleToUint64(commandBuffer), "VUID-vkCmdSetViewportShadingRatePaletteNV-None-02064",
                         "vkCmdSetViewportShadingRatePaletteNV: The shadingRateImage feature is disabled.");
     }
 
     if (cb_state->static_status & CBSTATUS_SHADING_RATE_PALETTE_SET) {
-        skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+        skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                         HandleToUint64(commandBuffer), "VUID-vkCmdSetViewportShadingRatePaletteNV-None-02065",
                         "vkCmdSetViewportShadingRatePaletteNV(): pipeline was created without "
                         "VK_DYNAMIC_STATE_VIEWPORT_SHADING_RATE_PALETTE_NV flag.");
@@ -6457,9 +6479,10 @@ bool PreCallValidateCmdSetViewportShadingRatePaletteNV(layer_data *dev_data, GLO
     for (uint32_t i = 0; i < viewportCount; ++i) {
         auto *palette = &pShadingRatePalettes[i];
         if (palette->shadingRatePaletteEntryCount == 0 ||
-            palette->shadingRatePaletteEntryCount > dev_data->phys_dev_ext_props.shading_rate_image_props.shadingRatePaletteSize) {
+            palette->shadingRatePaletteEntryCount >
+                device_data->phys_dev_ext_props.shading_rate_image_props.shadingRatePaletteSize) {
             skip |= log_msg(
-                dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                 HandleToUint64(commandBuffer), "VUID-VkShadingRatePaletteNV-shadingRatePaletteEntryCount-02071",
                 "vkCmdSetViewportShadingRatePaletteNV: shadingRatePaletteEntryCount must be between 1 and shadingRatePaletteSize.");
         }
@@ -6468,39 +6491,52 @@ bool PreCallValidateCmdSetViewportShadingRatePaletteNV(layer_data *dev_data, GLO
     return skip;
 }
 
-void PreCallRecordCmdSetViewportShadingRatePaletteNV(GLOBAL_CB_NODE *cb_state, uint32_t firstViewport, uint32_t viewportCount) {
+void PreCallRecordCmdSetViewportShadingRatePaletteNV(VkCommandBuffer commandBuffer, uint32_t firstViewport, uint32_t viewportCount,
+                                                     const VkShadingRatePaletteNV *pShadingRatePalettes) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
     // XXX TODO: We don't have VUIDs for validating that all shading rate palettes have been set.
     // cb_state->shadingRatePaletteMask |= ((1u << viewportCount) - 1u) << firstViewport;
     cb_state->status |= CBSTATUS_SHADING_RATE_PALETTE_SET;
 }
 
-bool PreCallValidateCmdSetLineWidth(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, VkCommandBuffer commandBuffer) {
-    bool skip = ValidateCmdQueueFlags(dev_data, cb_state, "vkCmdSetLineWidth()", VK_QUEUE_GRAPHICS_BIT,
+bool PreCallValidateCmdSetLineWidth(VkCommandBuffer commandBuffer, float lineWidth) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    assert(cb_state);
+    bool skip = ValidateCmdQueueFlags(device_data, cb_state, "vkCmdSetLineWidth()", VK_QUEUE_GRAPHICS_BIT,
                                       "VUID-vkCmdSetLineWidth-commandBuffer-cmdpool");
-    skip |= ValidateCmd(dev_data, cb_state, CMD_SETLINEWIDTH, "vkCmdSetLineWidth()");
+    skip |= ValidateCmd(device_data, cb_state, CMD_SETLINEWIDTH, "vkCmdSetLineWidth()");
 
     if (cb_state->static_status & CBSTATUS_LINE_WIDTH_SET) {
-        skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+        skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                         HandleToUint64(commandBuffer), "VUID-vkCmdSetLineWidth-None-00787",
                         "vkCmdSetLineWidth called but pipeline was created without VK_DYNAMIC_STATE_LINE_WIDTH flag.");
     }
     return skip;
 }
 
-void PreCallRecordCmdSetLineWidth(GLOBAL_CB_NODE *cb_state) { cb_state->status |= CBSTATUS_LINE_WIDTH_SET; }
+void PreCallRecordCmdSetLineWidth(VkCommandBuffer commandBuffer, float lineWidth) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    cb_state->status |= CBSTATUS_LINE_WIDTH_SET;
+}
 
-bool PreCallValidateCmdSetDepthBias(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, VkCommandBuffer commandBuffer,
-                                    float depthBiasClamp) {
-    bool skip = ValidateCmdQueueFlags(dev_data, cb_state, "vkCmdSetDepthBias()", VK_QUEUE_GRAPHICS_BIT,
+bool PreCallValidateCmdSetDepthBias(VkCommandBuffer commandBuffer, float depthBiasConstantFactor, float depthBiasClamp,
+                                    float depthBiasSlopeFactor) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    assert(cb_state);
+    bool skip = ValidateCmdQueueFlags(device_data, cb_state, "vkCmdSetDepthBias()", VK_QUEUE_GRAPHICS_BIT,
                                       "VUID-vkCmdSetDepthBias-commandBuffer-cmdpool");
-    skip |= ValidateCmd(dev_data, cb_state, CMD_SETDEPTHBIAS, "vkCmdSetDepthBias()");
+    skip |= ValidateCmd(device_data, cb_state, CMD_SETDEPTHBIAS, "vkCmdSetDepthBias()");
     if (cb_state->static_status & CBSTATUS_DEPTH_BIAS_SET) {
-        skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+        skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                         HandleToUint64(commandBuffer), "VUID-vkCmdSetDepthBias-None-00789",
                         "vkCmdSetDepthBias(): pipeline was created without VK_DYNAMIC_STATE_DEPTH_BIAS flag..");
     }
-    if ((depthBiasClamp != 0.0) && (!dev_data->enabled_features.core.depthBiasClamp)) {
-        skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+    if ((depthBiasClamp != 0.0) && (!device_data->enabled_features.core.depthBiasClamp)) {
+        skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                         HandleToUint64(commandBuffer), "VUID-vkCmdSetDepthBias-depthBiasClamp-00790",
                         "vkCmdSetDepthBias(): the depthBiasClamp device feature is disabled: the depthBiasClamp parameter must "
                         "be set to 0.0.");
@@ -6508,77 +6544,117 @@ bool PreCallValidateCmdSetDepthBias(layer_data *dev_data, GLOBAL_CB_NODE *cb_sta
     return skip;
 }
 
-void PreCallRecordCmdSetDepthBias(GLOBAL_CB_NODE *cb_state) { cb_state->status |= CBSTATUS_DEPTH_BIAS_SET; }
+void PreCallRecordCmdSetDepthBias(VkCommandBuffer commandBuffer, float depthBiasConstantFactor, float depthBiasClamp,
+                                  float depthBiasSlopeFactor) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    cb_state->status |= CBSTATUS_DEPTH_BIAS_SET;
+}
 
-bool PreCallValidateCmdSetBlendConstants(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, VkCommandBuffer commandBuffer) {
-    bool skip = ValidateCmdQueueFlags(dev_data, cb_state, "vkCmdSetBlendConstants()", VK_QUEUE_GRAPHICS_BIT,
+bool PreCallValidateCmdSetBlendConstants(VkCommandBuffer commandBuffer, const float blendConstants[4]) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    assert(cb_state);
+    bool skip = ValidateCmdQueueFlags(device_data, cb_state, "vkCmdSetBlendConstants()", VK_QUEUE_GRAPHICS_BIT,
                                       "VUID-vkCmdSetBlendConstants-commandBuffer-cmdpool");
-    skip |= ValidateCmd(dev_data, cb_state, CMD_SETBLENDCONSTANTS, "vkCmdSetBlendConstants()");
+    skip |= ValidateCmd(device_data, cb_state, CMD_SETBLENDCONSTANTS, "vkCmdSetBlendConstants()");
     if (cb_state->static_status & CBSTATUS_BLEND_CONSTANTS_SET) {
-        skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+        skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                         HandleToUint64(commandBuffer), "VUID-vkCmdSetBlendConstants-None-00612",
                         "vkCmdSetBlendConstants(): pipeline was created without VK_DYNAMIC_STATE_BLEND_CONSTANTS flag..");
     }
     return skip;
 }
 
-void PreCallRecordCmdSetBlendConstants(GLOBAL_CB_NODE *cb_state) { cb_state->status |= CBSTATUS_BLEND_CONSTANTS_SET; }
+void PreCallRecordCmdSetBlendConstants(VkCommandBuffer commandBuffer, const float blendConstants[4]) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    cb_state->status |= CBSTATUS_BLEND_CONSTANTS_SET;
+}
 
-bool PreCallValidateCmdSetDepthBounds(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, VkCommandBuffer commandBuffer) {
-    bool skip = ValidateCmdQueueFlags(dev_data, cb_state, "vkCmdSetDepthBounds()", VK_QUEUE_GRAPHICS_BIT,
+bool PreCallValidateCmdSetDepthBounds(VkCommandBuffer commandBuffer, float minDepthBounds, float maxDepthBounds) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    assert(cb_state);
+    bool skip = ValidateCmdQueueFlags(device_data, cb_state, "vkCmdSetDepthBounds()", VK_QUEUE_GRAPHICS_BIT,
                                       "VUID-vkCmdSetDepthBounds-commandBuffer-cmdpool");
-    skip |= ValidateCmd(dev_data, cb_state, CMD_SETDEPTHBOUNDS, "vkCmdSetDepthBounds()");
+    skip |= ValidateCmd(device_data, cb_state, CMD_SETDEPTHBOUNDS, "vkCmdSetDepthBounds()");
     if (cb_state->static_status & CBSTATUS_DEPTH_BOUNDS_SET) {
-        skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+        skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                         HandleToUint64(commandBuffer), "VUID-vkCmdSetDepthBounds-None-00599",
                         "vkCmdSetDepthBounds(): pipeline was created without VK_DYNAMIC_STATE_DEPTH_BOUNDS flag..");
     }
     return skip;
 }
 
-void PreCallRecordCmdSetDepthBounds(GLOBAL_CB_NODE *cb_state) { cb_state->status |= CBSTATUS_DEPTH_BOUNDS_SET; }
+void PreCallRecordCmdSetDepthBounds(VkCommandBuffer commandBuffer, float minDepthBounds, float maxDepthBounds) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    cb_state->status |= CBSTATUS_DEPTH_BOUNDS_SET;
+}
 
-bool PreCallValidateCmdSetStencilCompareMask(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, VkCommandBuffer commandBuffer) {
-    bool skip = ValidateCmdQueueFlags(dev_data, cb_state, "vkCmdSetStencilCompareMask()", VK_QUEUE_GRAPHICS_BIT,
+bool PreCallValidateCmdSetStencilCompareMask(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, uint32_t compareMask) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    assert(cb_state);
+    bool skip = ValidateCmdQueueFlags(device_data, cb_state, "vkCmdSetStencilCompareMask()", VK_QUEUE_GRAPHICS_BIT,
                                       "VUID-vkCmdSetStencilCompareMask-commandBuffer-cmdpool");
-    skip |= ValidateCmd(dev_data, cb_state, CMD_SETSTENCILCOMPAREMASK, "vkCmdSetStencilCompareMask()");
+    skip |= ValidateCmd(device_data, cb_state, CMD_SETSTENCILCOMPAREMASK, "vkCmdSetStencilCompareMask()");
     if (cb_state->static_status & CBSTATUS_STENCIL_READ_MASK_SET) {
-        skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+        skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                         HandleToUint64(commandBuffer), "VUID-vkCmdSetStencilCompareMask-None-00602",
                         "vkCmdSetStencilCompareMask(): pipeline was created without VK_DYNAMIC_STATE_STENCIL_COMPARE_MASK flag..");
     }
     return skip;
 }
 
-void PreCallRecordCmdSetStencilCompareMask(GLOBAL_CB_NODE *cb_state) { cb_state->status |= CBSTATUS_STENCIL_READ_MASK_SET; }
+void PreCallRecordCmdSetStencilCompareMask(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, uint32_t compareMask) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    cb_state->status |= CBSTATUS_STENCIL_READ_MASK_SET;
+}
 
-bool PreCallValidateCmdSetStencilWriteMask(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, VkCommandBuffer commandBuffer) {
-    bool skip = ValidateCmdQueueFlags(dev_data, cb_state, "vkCmdSetStencilWriteMask()", VK_QUEUE_GRAPHICS_BIT,
+bool PreCallValidateCmdSetStencilWriteMask(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, uint32_t writeMask) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    assert(cb_state);
+    bool skip = ValidateCmdQueueFlags(device_data, cb_state, "vkCmdSetStencilWriteMask()", VK_QUEUE_GRAPHICS_BIT,
                                       "VUID-vkCmdSetStencilWriteMask-commandBuffer-cmdpool");
-    skip |= ValidateCmd(dev_data, cb_state, CMD_SETSTENCILWRITEMASK, "vkCmdSetStencilWriteMask()");
+    skip |= ValidateCmd(device_data, cb_state, CMD_SETSTENCILWRITEMASK, "vkCmdSetStencilWriteMask()");
     if (cb_state->static_status & CBSTATUS_STENCIL_WRITE_MASK_SET) {
-        skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+        skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                         HandleToUint64(commandBuffer), "VUID-vkCmdSetStencilWriteMask-None-00603",
                         "vkCmdSetStencilWriteMask(): pipeline was created without VK_DYNAMIC_STATE_STENCIL_WRITE_MASK flag..");
     }
     return skip;
 }
 
-void PreCallRecordCmdSetStencilWriteMask(GLOBAL_CB_NODE *cb_state) { cb_state->status |= CBSTATUS_STENCIL_WRITE_MASK_SET; }
+void PreCallRecordCmdSetStencilWriteMask(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, uint32_t writeMask) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    cb_state->status |= CBSTATUS_STENCIL_WRITE_MASK_SET;
+}
 
-bool PreCallValidateCmdSetStencilReference(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, VkCommandBuffer commandBuffer) {
-    bool skip = ValidateCmdQueueFlags(dev_data, cb_state, "vkCmdSetStencilReference()", VK_QUEUE_GRAPHICS_BIT,
+bool PreCallValidateCmdSetStencilReference(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, uint32_t reference) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    assert(cb_state);
+    bool skip = ValidateCmdQueueFlags(device_data, cb_state, "vkCmdSetStencilReference()", VK_QUEUE_GRAPHICS_BIT,
                                       "VUID-vkCmdSetStencilReference-commandBuffer-cmdpool");
-    skip |= ValidateCmd(dev_data, cb_state, CMD_SETSTENCILREFERENCE, "vkCmdSetStencilReference()");
+    skip |= ValidateCmd(device_data, cb_state, CMD_SETSTENCILREFERENCE, "vkCmdSetStencilReference()");
     if (cb_state->static_status & CBSTATUS_STENCIL_REFERENCE_SET) {
-        skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+        skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                         HandleToUint64(commandBuffer), "VUID-vkCmdSetStencilReference-None-00604",
                         "vkCmdSetStencilReference(): pipeline was created without VK_DYNAMIC_STATE_STENCIL_REFERENCE flag..");
     }
     return skip;
 }
 
-void PreCallRecordCmdSetStencilReference(GLOBAL_CB_NODE *cb_state) { cb_state->status |= CBSTATUS_STENCIL_REFERENCE_SET; }
+void PreCallRecordCmdSetStencilReference(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, uint32_t reference) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    cb_state->status |= CBSTATUS_STENCIL_REFERENCE_SET;
+}
 
 // Update pipeline_layout bind points applying the "Pipeline Layout Compatibility" rules
 static void UpdateLastBoundDescriptorSets(layer_data *device_data, GLOBAL_CB_NODE *cb_state,
@@ -12571,12 +12647,19 @@ bool PreCallValidateCmdDebugMarkerEndEXT(layer_data *dev_data, GLOBAL_CB_NODE *c
     return ValidateCmd(dev_data, cb_state, CMD_DEBUGMARKERENDEXT, "vkCmdDebugMarkerEndEXT()");
 }
 
-bool PreCallValidateCmdSetDiscardRectangleEXT(layer_data *dev_data, GLOBAL_CB_NODE *cb_state) {
-    return ValidateCmd(dev_data, cb_state, CMD_SETDISCARDRECTANGLEEXT, "vkCmdSetDiscardRectangleEXT()");
+bool PreCallValidateCmdSetDiscardRectangleEXT(VkCommandBuffer commandBuffer, uint32_t firstDiscardRectangle,
+                                              uint32_t discardRectangleCount, const VkRect2D *pDiscardRectangles) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    // Minimal validation for command buffer state
+    return ValidateCmd(device_data, cb_state, CMD_SETDISCARDRECTANGLEEXT, "vkCmdSetDiscardRectangleEXT()");
 }
 
-bool PreCallValidateCmdSetSampleLocationsEXT(layer_data *dev_data, GLOBAL_CB_NODE *cb_state) {
-    return ValidateCmd(dev_data, cb_state, CMD_SETSAMPLELOCATIONSEXT, "vkCmdSetSampleLocationsEXT()");
+bool PreCallValidateCmdSetSampleLocationsEXT(VkCommandBuffer commandBuffer, const VkSampleLocationsInfoEXT *pSampleLocationsInfo) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    // Minimal validation for command buffer state
+    return ValidateCmd(device_data, cb_state, CMD_SETSAMPLELOCATIONSEXT, "vkCmdSetSampleLocationsEXT()");
 }
 
 bool PreCallValidateCmdDrawIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
