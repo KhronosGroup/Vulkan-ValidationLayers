@@ -6819,6 +6819,26 @@ void PreCallRecordCmdBindDescriptorSets(VkCommandBuffer commandBuffer, VkPipelin
     }
 }
 
+static bool ValidateDynamicOffsetAlignment(const debug_report_data *report_data, const VkDescriptorSetLayoutBinding *binding,
+                                           VkDescriptorType test_type, VkDeviceSize alignment, const uint32_t *pDynamicOffsets,
+                                           const char *err_msg, const char *limit_name, uint32_t *offset_idx) {
+    bool skip = false;
+    if (binding->descriptorType == test_type) {
+        const auto end_idx = *offset_idx + binding->descriptorCount;
+        for (uint32_t current_idx = *offset_idx; current_idx < end_idx; current_idx++) {
+            if (SafeModulo(pDynamicOffsets[current_idx], alignment) != 0) {
+                skip |= log_msg(
+                    report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT, 0, err_msg,
+                    "vkCmdBindDescriptorSets(): pDynamicOffsets[%d] is %d but must be a multiple of device limit %s 0x%" PRIxLEAST64
+                    ".",
+                    current_idx, pDynamicOffsets[current_idx], limit_name, alignment);
+            }
+        }
+        *offset_idx = end_idx;
+    }
+    return skip;
+}
+
 bool PreCallValidateCmdBindDescriptorSets(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
                                           VkPipelineLayout layout, uint32_t firstSet, uint32_t setCount,
                                           const VkDescriptorSet *pDescriptorSets, uint32_t dynamicOffsetCount,
@@ -6855,18 +6875,21 @@ bool PreCallValidateCmdBindDescriptorSets(VkCommandBuffer commandBuffer, VkPipel
             }
 
             auto set_dynamic_descriptor_count = descriptor_set->GetDynamicDescriptorCount();
-
             if (set_dynamic_descriptor_count) {
                 // First make sure we won't overstep bounds of pDynamicOffsets array
                 if ((total_dynamic_descriptors + set_dynamic_descriptor_count) > dynamicOffsetCount) {
+                    // Test/report this here, such that we don't run past the end of pDynamicOffsets in the else clause
                     skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT,
                                     VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_EXT, HandleToUint64(pDescriptorSets[set_idx]),
-                                    kVUID_Core_DrawState_InvalidDynamicOffsetCount,
+                                    "VUID-vkCmdBindDescriptorSets-dynamicOffsetCount-00359",
                                     "descriptorSet #%u (0x%" PRIx64
                                     ") requires %u dynamicOffsets, but only %u dynamicOffsets are left in pDynamicOffsets array. "
                                     "There must be one dynamic offset for each dynamic descriptor being bound.",
                                     set_idx, HandleToUint64(pDescriptorSets[set_idx]), descriptor_set->GetDynamicDescriptorCount(),
                                     (dynamicOffsetCount - total_dynamic_descriptors));
+                    // Set the number found to the maximum to prevent duplicate messages, or subsquent descriptor sets from
+                    // testing against the "short tail" we're skipping below.
+                    total_dynamic_descriptors = dynamicOffsetCount;
                 } else {  // Validate dynamic offsets and Dynamic Offset Minimums
                     uint32_t cur_dyn_offset = total_dynamic_descriptors;
                     const auto dsl = descriptor_set->GetLayout();
@@ -6874,33 +6897,16 @@ bool PreCallValidateCmdBindDescriptorSets(VkCommandBuffer commandBuffer, VkPipel
                     const auto &limits = device_data->phys_dev_properties.properties.limits;
                     for (uint32_t binding_idx = 0; binding_idx < binding_count; binding_idx++) {
                         const auto *binding = dsl->GetDescriptorSetLayoutBindingPtrFromIndex(binding_idx);
-                        if (binding->descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC) {
-                            for (uint32_t descriptor_idx = 0; descriptor_idx < binding->descriptorCount; descriptor_idx++) {
-                                if (SafeModulo(pDynamicOffsets[cur_dyn_offset], limits.minUniformBufferOffsetAlignment) != 0) {
-                                    skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                                    VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT, 0,
-                                                    "VUID-vkCmdBindDescriptorSets-pDynamicOffsets-01971",
-                                                    "vkCmdBindDescriptorSets(): pDynamicOffsets[%d] is %d but must be a multiple "
-                                                    "of device limit minUniformBufferOffsetAlignment 0x%" PRIxLEAST64 ".",
-                                                    cur_dyn_offset, pDynamicOffsets[cur_dyn_offset],
-                                                    limits.minUniformBufferOffsetAlignment);
-                                }
-                                cur_dyn_offset++;
-                            }
-                        } else if (binding->descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC) {
-                            for (uint32_t descriptor_idx = 0; descriptor_idx < binding->descriptorCount; descriptor_idx++) {
-                                if (SafeModulo(pDynamicOffsets[cur_dyn_offset], limits.minStorageBufferOffsetAlignment) != 0) {
-                                    skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                                    VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT, 0,
-                                                    "VUID-vkCmdBindDescriptorSets-pDynamicOffsets-01972",
-                                                    "vkCmdBindDescriptorSets(): pDynamicOffsets[%d] is %d but must be a multiple "
-                                                    "of device limit minStorageBufferOffsetAlignment 0x%" PRIxLEAST64 ".",
-                                                    cur_dyn_offset, pDynamicOffsets[cur_dyn_offset],
-                                                    limits.minStorageBufferOffsetAlignment);
-                                }
-                                cur_dyn_offset++;
-                            }
-                        }
+                        skip |= ValidateDynamicOffsetAlignment(device_data->report_data, binding,
+                                                               VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
+                                                               limits.minUniformBufferOffsetAlignment, pDynamicOffsets,
+                                                               "VUID-vkCmdBindDescriptorSets-pDynamicOffsets-01971",
+                                                               "minUniformBufferOffsetAlignment", &cur_dyn_offset);
+                        skip |= ValidateDynamicOffsetAlignment(device_data->report_data, binding,
+                                                               VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC,
+                                                               limits.minStorageBufferOffsetAlignment, pDynamicOffsets,
+                                                               "VUID-vkCmdBindDescriptorSets-pDynamicOffsets-01972",
+                                                               "minStorageBufferOffsetAlignment", &cur_dyn_offset);
                     }
                     // Keep running total of dynamic descriptor count to verify at the end
                     total_dynamic_descriptors += set_dynamic_descriptor_count;
