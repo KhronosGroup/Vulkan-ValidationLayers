@@ -1071,6 +1071,7 @@ VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkNegotiateLoaderLayerInterfaceVe
             'VkDeviceAddress': 'return 0;',
             'VkResult': 'return VK_ERROR_VALIDATION_FAILED_EXT;',
             'void': 'return;',
+            'uint32_t': 'return 0;'
             }
         resulttype = cmdinfo.elem.find('proto/type')
         assignresult = ''

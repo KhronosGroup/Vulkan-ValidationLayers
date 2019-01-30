@@ -185,6 +185,8 @@ class DispatchTableHelperOutputGenerator(OutputGenerator):
                     return_type = 'return VK_SUCCESS;'
                 elif decl.startswith('typedef VkDeviceAddress'):
                     return_type = 'return 0;'
+                elif decl.startswith('typedef uint32_t'):
+                    return_type = 'return 0;'
                 pre_decl, decl = decl.split('*PFN_vk')
                 pre_decl = pre_decl.replace('typedef ', '')
                 pre_decl = pre_decl.split(' (')[0]
