@@ -36166,7 +36166,7 @@ TEST_F(VkPositiveLayerTest, ViewportArray2NV) {
     }
 }
 
-#ifdef VK_USE_PLATFORM_ANDROID_KHR  // or ifdef ANDROID?
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
 #include "android_ndk_types.h"
 
 TEST_F(VkLayerTest, AndroidHardwareBufferImageCreate) {
@@ -37056,7 +37056,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferExporttBuffer) {
     vkDestroyImage(dev, img, NULL);
 }
 
-#endif
+#endif  // VK_USE_PLATFORM_ANDROID_KHR
 
 TEST_F(VkLayerTest, ViewportSwizzleNV) {
     TEST_DESCRIPTION("Verify VK_NV_viewprot_swizzle.");

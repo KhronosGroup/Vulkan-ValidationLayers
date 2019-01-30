@@ -3166,7 +3166,8 @@ bool PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSub
 }
 
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
-// Android-specific validation that uses types defined only with VK_USE_PLATFORM_ANDROID_KHR
+// Android-specific validation that uses types defined only on Android and only for NDK versions
+// that support the VK_ANDROID_external_memory_android_hardware_buffer extension.
 // This chunk could move into a seperate core_validation_android.cpp file... ?
 
 // clang-format off
@@ -3248,7 +3249,6 @@ std::map<VkImageCreateFlags, uint64_t> ahb_create_map_v2a = {
 //
 // AHB-extension new APIs
 //
-#ifdef VK_USE_PLATFORM_ANDROID_KHR
 bool PreCallValidateGetAndroidHardwareBufferProperties(VkDevice device, const struct AHardwareBuffer *buffer,
                                                        VkAndroidHardwareBufferPropertiesANDROID *pProperties) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
@@ -3279,7 +3279,6 @@ void PostCallRecordGetAndroidHardwareBufferProperties(VkDevice device, const str
         ext_formats->insert(ahb_format_props->externalFormat);
     }
 }
-#endif  // VK_USE_PLATFORM_ANDROID_KHR
 
 bool PreCallValidateGetMemoryAndroidHardwareBuffer(VkDevice device, const VkMemoryGetAndroidHardwareBufferInfoANDROID *pInfo,
                                                    struct AHardwareBuffer **pBuffer) {
@@ -3638,7 +3637,7 @@ static void RecordDestroySamplerYcbcrConversionANDROID(layer_data *dev_data, VkS
     dev_data->ycbcr_conversion_ahb_fmt_map.erase(ycbcr_conversion);
 };
 
-#else
+#else  // !VK_USE_PLATFORM_ANDROID_KHR
 
 static bool ValidateAllocateMemoryANDROID(layer_data *dev_data, const VkMemoryAllocateInfo *alloc_info) { return false; }
 
