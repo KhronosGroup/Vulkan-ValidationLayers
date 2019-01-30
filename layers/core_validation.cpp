@@ -8380,78 +8380,95 @@ static bool SetQueryState(VkQueue queue, VkCommandBuffer commandBuffer, QueryObj
     return false;
 }
 
-bool PreCallValidateCmdBeginQuery(layer_data *dev_data, GLOBAL_CB_NODE *pCB, VkQueryPool queryPool, VkFlags flags) {
-    bool skip = ValidateCmdQueueFlags(dev_data, pCB, "vkCmdBeginQuery()", VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
+bool PreCallValidateCmdBeginQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot, VkFlags flags) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    assert(cb_state);
+    bool skip = ValidateCmdQueueFlags(device_data, cb_state, "vkCmdBeginQuery()", VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
                                       "VUID-vkCmdBeginQuery-commandBuffer-cmdpool");
-    auto queryType = GetQueryPoolNode(dev_data, queryPool)->createInfo.queryType;
+    auto queryType = GetQueryPoolNode(device_data, queryPool)->createInfo.queryType;
 
     if (flags & VK_QUERY_CONTROL_PRECISE_BIT) {
-        if (!dev_data->enabled_features.core.occlusionQueryPrecise) {
-            skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                            HandleToUint64(pCB->commandBuffer), "VUID-vkCmdBeginQuery-queryType-00800",
+        if (!device_data->enabled_features.core.occlusionQueryPrecise) {
+            skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                            HandleToUint64(cb_state->commandBuffer), "VUID-vkCmdBeginQuery-queryType-00800",
                             "VK_QUERY_CONTROL_PRECISE_BIT provided to vkCmdBeginQuery, but precise occlusion queries not enabled "
                             "on the device.");
         }
 
         if (queryType != VK_QUERY_TYPE_OCCLUSION) {
             skip |= log_msg(
-                dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                HandleToUint64(pCB->commandBuffer), "VUID-vkCmdBeginQuery-queryType-00800",
+                device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                HandleToUint64(cb_state->commandBuffer), "VUID-vkCmdBeginQuery-queryType-00800",
                 "VK_QUERY_CONTROL_PRECISE_BIT provided to vkCmdBeginQuery, but pool query type is not VK_QUERY_TYPE_OCCLUSION");
         }
     }
 
-    skip |= ValidateCmd(dev_data, pCB, CMD_BEGINQUERY, "vkCmdBeginQuery()");
+    skip |= ValidateCmd(device_data, cb_state, CMD_BEGINQUERY, "vkCmdBeginQuery()");
     return skip;
 }
 
-void PostCallRecordCmdBeginQuery(layer_data *dev_data, VkQueryPool queryPool, uint32_t slot, GLOBAL_CB_NODE *pCB) {
+void PostCallRecordCmdBeginQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot, VkFlags flags) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
     QueryObject query = {queryPool, slot};
-    pCB->activeQueries.insert(query);
-    pCB->startedQueries.insert(query);
-    AddCommandBufferBinding(&GetQueryPoolNode(dev_data, queryPool)->cb_bindings,
-                            {HandleToUint64(queryPool), kVulkanObjectTypeQueryPool}, pCB);
-}
-
-bool PreCallValidateCmdEndQuery(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, const QueryObject &query,
-                                VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot) {
-    bool skip = false;
-    if (!cb_state->activeQueries.count(query)) {
-        skip |=
-            log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                    HandleToUint64(commandBuffer), "VUID-vkCmdEndQuery-None-01923",
-                    "Ending a query before it was started: queryPool 0x%" PRIx64 ", index %d.", HandleToUint64(queryPool), slot);
-    }
-    skip |= ValidateCmdQueueFlags(dev_data, cb_state, "VkCmdEndQuery()", VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
-                                  "VUID-vkCmdEndQuery-commandBuffer-cmdpool");
-    skip |= ValidateCmd(dev_data, cb_state, CMD_ENDQUERY, "VkCmdEndQuery()");
-    return skip;
-}
-
-void PostCallRecordCmdEndQuery(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, const QueryObject &query,
-                               VkCommandBuffer commandBuffer, VkQueryPool queryPool) {
-    cb_state->activeQueries.erase(query);
-    cb_state->queryUpdates.emplace_back([=](VkQueue q) { return SetQueryState(q, commandBuffer, query, true); });
-    AddCommandBufferBinding(&GetQueryPoolNode(dev_data, queryPool)->cb_bindings,
+    cb_state->activeQueries.insert(query);
+    cb_state->startedQueries.insert(query);
+    AddCommandBufferBinding(&GetQueryPoolNode(device_data, queryPool)->cb_bindings,
                             {HandleToUint64(queryPool), kVulkanObjectTypeQueryPool}, cb_state);
 }
 
-bool PreCallValidateCmdResetQueryPool(layer_data *dev_data, GLOBAL_CB_NODE *cb_state) {
-    bool skip = InsideRenderPass(dev_data, cb_state, "vkCmdResetQueryPool()", "VUID-vkCmdResetQueryPool-renderpass");
-    skip |= ValidateCmd(dev_data, cb_state, CMD_RESETQUERYPOOL, "VkCmdResetQueryPool()");
-    skip |= ValidateCmdQueueFlags(dev_data, cb_state, "VkCmdResetQueryPool()", VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
+bool PreCallValidateCmdEndQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    QueryObject query = {queryPool, slot};
+    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    assert(cb_state);
+    bool skip = false;
+    if (!cb_state->activeQueries.count(query)) {
+        skip |=
+            log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                    HandleToUint64(commandBuffer), "VUID-vkCmdEndQuery-None-01923",
+                    "Ending a query before it was started: queryPool 0x%" PRIx64 ", index %d.", HandleToUint64(queryPool), slot);
+    }
+    skip |= ValidateCmdQueueFlags(device_data, cb_state, "VkCmdEndQuery()", VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
+                                  "VUID-vkCmdEndQuery-commandBuffer-cmdpool");
+    skip |= ValidateCmd(device_data, cb_state, CMD_ENDQUERY, "VkCmdEndQuery()");
+    return skip;
+}
+
+void PostCallRecordCmdEndQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    QueryObject query = {queryPool, slot};
+    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    cb_state->activeQueries.erase(query);
+    cb_state->queryUpdates.emplace_back([=](VkQueue q) { return SetQueryState(q, commandBuffer, query, true); });
+    AddCommandBufferBinding(&GetQueryPoolNode(device_data, queryPool)->cb_bindings,
+                            {HandleToUint64(queryPool), kVulkanObjectTypeQueryPool}, cb_state);
+}
+
+bool PreCallValidateCmdResetQueryPool(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery,
+                                      uint32_t queryCount) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+
+    bool skip = InsideRenderPass(device_data, cb_state, "vkCmdResetQueryPool()", "VUID-vkCmdResetQueryPool-renderpass");
+    skip |= ValidateCmd(device_data, cb_state, CMD_RESETQUERYPOOL, "VkCmdResetQueryPool()");
+    skip |= ValidateCmdQueueFlags(device_data, cb_state, "VkCmdResetQueryPool()", VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
                                   "VUID-vkCmdResetQueryPool-commandBuffer-cmdpool");
     return skip;
 }
 
-void PostCallRecordCmdResetQueryPool(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, VkCommandBuffer commandBuffer,
-                                     VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount) {
+void PostCallRecordCmdResetQueryPool(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery,
+                                     uint32_t queryCount) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+
     for (uint32_t i = 0; i < queryCount; i++) {
         QueryObject query = {queryPool, firstQuery + i};
         cb_state->waitedEventsBeforeQueryReset[query] = cb_state->waitedEvents;
         cb_state->queryUpdates.emplace_back([=](VkQueue q) { return SetQueryState(q, commandBuffer, query, false); });
     }
-    AddCommandBufferBinding(&GetQueryPoolNode(dev_data, queryPool)->cb_bindings,
+    AddCommandBufferBinding(&GetQueryPoolNode(device_data, queryPool)->cb_bindings,
                             {HandleToUint64(queryPool), kVulkanObjectTypeQueryPool}, cb_state);
 }
 
@@ -8484,25 +8501,37 @@ static bool ValidateQuery(VkQueue queue, GLOBAL_CB_NODE *pCB, VkQueryPool queryP
     return skip;
 }
 
-bool PreCallValidateCmdCopyQueryPoolResults(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, BUFFER_STATE *dst_buff_state) {
-    bool skip = ValidateMemoryIsBoundToBuffer(dev_data, dst_buff_state, "vkCmdCopyQueryPoolResults()",
+bool PreCallValidateCmdCopyQueryPoolResults(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery,
+                                            uint32_t queryCount, VkBuffer dstBuffer, VkDeviceSize dstOffset, VkDeviceSize stride,
+                                            VkQueryResultFlags flags) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    auto cb_state = GetCBNode(device_data, commandBuffer);
+    auto dst_buff_state = GetBufferState(device_data, dstBuffer);
+    assert(cb_state);
+    assert(dst_buff_state);
+    bool skip = ValidateMemoryIsBoundToBuffer(device_data, dst_buff_state, "vkCmdCopyQueryPoolResults()",
                                               "VUID-vkCmdCopyQueryPoolResults-dstBuffer-00826");
     // Validate that DST buffer has correct usage flags set
-    skip |= ValidateBufferUsageFlags(dev_data, dst_buff_state, VK_BUFFER_USAGE_TRANSFER_DST_BIT, true,
+    skip |= ValidateBufferUsageFlags(device_data, dst_buff_state, VK_BUFFER_USAGE_TRANSFER_DST_BIT, true,
                                      "VUID-vkCmdCopyQueryPoolResults-dstBuffer-00825", "vkCmdCopyQueryPoolResults()",
                                      "VK_BUFFER_USAGE_TRANSFER_DST_BIT");
-    skip |= ValidateCmdQueueFlags(dev_data, cb_state, "vkCmdCopyQueryPoolResults()", VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
-                                  "VUID-vkCmdCopyQueryPoolResults-commandBuffer-cmdpool");
-    skip |= ValidateCmd(dev_data, cb_state, CMD_COPYQUERYPOOLRESULTS, "vkCmdCopyQueryPoolResults()");
-    skip |= InsideRenderPass(dev_data, cb_state, "vkCmdCopyQueryPoolResults()", "VUID-vkCmdCopyQueryPoolResults-renderpass");
+    skip |=
+        ValidateCmdQueueFlags(device_data, cb_state, "vkCmdCopyQueryPoolResults()", VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
+                              "VUID-vkCmdCopyQueryPoolResults-commandBuffer-cmdpool");
+    skip |= ValidateCmd(device_data, cb_state, CMD_COPYQUERYPOOLRESULTS, "vkCmdCopyQueryPoolResults()");
+    skip |= InsideRenderPass(device_data, cb_state, "vkCmdCopyQueryPoolResults()", "VUID-vkCmdCopyQueryPoolResults-renderpass");
     return skip;
 }
 
-void PostCallRecordCmdCopyQueryPoolResults(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, BUFFER_STATE *dst_buff_state,
-                                           VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount) {
-    AddCommandBufferBindingBuffer(dev_data, cb_state, dst_buff_state);
+void PostCallRecordCmdCopyQueryPoolResults(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery,
+                                           uint32_t queryCount, VkBuffer dstBuffer, VkDeviceSize dstOffset, VkDeviceSize stride,
+                                           VkQueryResultFlags flags) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    auto cb_state = GetCBNode(device_data, commandBuffer);
+    auto dst_buff_state = GetBufferState(device_data, dstBuffer);
+    AddCommandBufferBindingBuffer(device_data, cb_state, dst_buff_state);
     cb_state->queryUpdates.emplace_back([=](VkQueue q) { return ValidateQuery(q, cb_state, queryPool, firstQuery, queryCount); });
-    AddCommandBufferBinding(&GetQueryPoolNode(dev_data, queryPool)->cb_bindings,
+    AddCommandBufferBinding(&GetQueryPoolNode(device_data, queryPool)->cb_bindings,
                             {HandleToUint64(queryPool), kVulkanObjectTypeQueryPool}, cb_state);
 }
 
