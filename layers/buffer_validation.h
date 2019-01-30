@@ -141,9 +141,9 @@ bool ValidateBarriersQFOTransferUniqueness(layer_data *device_data, const char *
                                            uint32_t bufferBarrierCount, const VkBufferMemoryBarrier *pBufferMemBarriers,
                                            uint32_t imageMemBarrierCount, const VkImageMemoryBarrier *pImageMemBarriers);
 
-void RecordBarriersQFOTransfers(layer_data *device_data, const char *func_name, GLOBAL_CB_NODE *cb_state,
-                                uint32_t bufferBarrierCount, const VkBufferMemoryBarrier *pBufferMemBarriers,
-                                uint32_t imageMemBarrierCount, const VkImageMemoryBarrier *pImageMemBarriers);
+void RecordBarriersQFOTransfers(layer_data *device_data, GLOBAL_CB_NODE *cb_state, uint32_t bufferBarrierCount,
+                                const VkBufferMemoryBarrier *pBufferMemBarriers, uint32_t imageMemBarrierCount,
+                                const VkImageMemoryBarrier *pImageMemBarriers);
 
 bool ValidateQueuedQFOTransfers(layer_data *dev_data, GLOBAL_CB_NODE *pCB,
                                 QFOTransferCBScoreboards<VkImageMemoryBarrier> *qfo_image_scoreboards,

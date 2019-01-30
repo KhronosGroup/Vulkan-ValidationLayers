@@ -922,9 +922,9 @@ bool ValidateBarriersQFOTransferUniqueness(layer_data *device_data, const char *
     return skip;
 }
 
-void RecordBarriersQFOTransfers(layer_data *device_data, const char *func_name, GLOBAL_CB_NODE *cb_state,
-                                uint32_t bufferBarrierCount, const VkBufferMemoryBarrier *pBufferMemBarriers,
-                                uint32_t imageMemBarrierCount, const VkImageMemoryBarrier *pImageMemBarriers) {
+void RecordBarriersQFOTransfers(layer_data *device_data, GLOBAL_CB_NODE *cb_state, uint32_t bufferBarrierCount,
+                                const VkBufferMemoryBarrier *pBufferMemBarriers, uint32_t imageMemBarrierCount,
+                                const VkImageMemoryBarrier *pImageMemBarriers) {
     RecordQFOTransferBarriers(device_data, cb_state, bufferBarrierCount, pBufferMemBarriers);
     RecordQFOTransferBarriers(device_data, cb_state, imageMemBarrierCount, pImageMemBarriers);
 }
