@@ -1,7 +1,7 @@
-/* Copyright (c) 2018 The Khronos Group Inc.
- * Copyright (c) 2018 Valve Corporation
- * Copyright (c) 2018 LunarG, Inc.
- * Copyright (C) 2018 Google Inc.
+/* Copyright (c) 2018-2019 The Khronos Group Inc.
+ * Copyright (c) 2018-2019 Valve Corporation
+ * Copyright (c) 2018-2019 LunarG, Inc.
+ * Copyright (C) 2018-2019 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,13 +23,38 @@
 
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
 
-#ifdef __ANDROID__  // If we have an NDK, use it
+// All eums referenced by VK_ANDROID_external_memory_android_hardware_buffer are present in
+// the platform-28 (Android P) versions of the header files.  A partial set exists in the
+// platform-26 (O) headers, where hardware_buffer.h first appears in the NDK.
+//
+// Building Vulkan validation with NDK header files prior to platform-26 is not supported.
+//
+// Decoder ring for Android compile symbols found here: https://github.com/android-ndk/ndk/issues/407
 
-#include <android/hardware_buffer.h>
+#ifdef __ANDROID__  // Compiling for Android
+#include <android/api-level.h>
+#include <android/hardware_buffer.h>  // First appearance in Android O (platform-26)
 
-#else
+// If NDK is O (platform-26 or -27), supplement the missing enums with pre-processor defined literals
+// If Android P or later, then all required enums are already defined
+#if defined(__ANDROID_API_O__) && !defined(__ANDROID_API_P__)
+// Formats
+#define AHARDWAREBUFFER_FORMAT_D16_UNORM 0x30
+#define AHARDWAREBUFFER_FORMAT_D24_UNORM 0x31
+#define AHARDWAREBUFFER_FORMAT_D24_UNORM_S8_UINT 0x32
+#define AHARDWAREBUFFER_FORMAT_D32_FLOAT 0x33
+#define AHARDWAREBUFFER_FORMAT_D32_FLOAT_S8_UINT 0x34
+#define AHARDWAREBUFFER_FORMAT_S8_UINT 0x35
+// Usage bits
+#define AHARDWAREBUFFER_USAGE_GPU_CUBE_MAP 0x2000000
+#define AHARDWAREBUFFER_USAGE_GPU_MIPMAP_COMPLETE 0x4000000
+#endif  // __ANDROID_API_O__ && !_P__
 
-// For convenience, define the minimal set of NDK enums and structs needed to compile
+#else  // Not __ANDROID__, but VK_USE_PLATFORM_ANDROID_KHR
+// This combination should not be seen in the wild, but can be used to allow testing
+// of the AHB extension validation on other platforms using MockICD
+//
+// Define the minimal set of NDK enums and structs needed to compile
 // VK_ANDROID_external_memory_android_hardware_buffer validation without an NDK present
 struct AHardwareBuffer {};
 
