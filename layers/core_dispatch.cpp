@@ -1761,26 +1761,24 @@ VKAPI_ATTR void VKAPI_CALL CmdSetEvent(VkCommandBuffer commandBuffer, VkEvent ev
     bool skip = false;
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     unique_lock_t lock(global_lock);
-    GLOBAL_CB_NODE *pCB = GetCBNode(dev_data, commandBuffer);
-    if (pCB) {
-        skip |= PreCallValidateCmdSetEvent(dev_data, pCB, stageMask);
-        PreCallRecordCmdSetEvent(dev_data, pCB, commandBuffer, event, stageMask);
+    skip |= PreCallValidateCmdSetEvent(commandBuffer, event, stageMask);
+    if (!skip) {
+        PreCallRecordCmdSetEvent(commandBuffer, event, stageMask);
+        lock.unlock();
+        dev_data->dispatch_table.CmdSetEvent(commandBuffer, event, stageMask);
     }
-    lock.unlock();
-    if (!skip) dev_data->dispatch_table.CmdSetEvent(commandBuffer, event, stageMask);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask) {
     bool skip = false;
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     unique_lock_t lock(global_lock);
-    GLOBAL_CB_NODE *pCB = GetCBNode(dev_data, commandBuffer);
-    if (pCB) {
-        skip |= PreCallValidateCmdResetEvent(dev_data, pCB, stageMask);
-        PreCallRecordCmdResetEvent(dev_data, pCB, commandBuffer, event);
+    skip |= PreCallValidateCmdResetEvent(commandBuffer, event, stageMask);
+    if (!skip) {
+        PreCallRecordCmdResetEvent(commandBuffer, event, stageMask);
+        lock.unlock();
+        dev_data->dispatch_table.CmdResetEvent(commandBuffer, event, stageMask);
     }
-    lock.unlock();
-    if (!skip) dev_data->dispatch_table.CmdResetEvent(commandBuffer, event, stageMask);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
@@ -1791,27 +1789,24 @@ VKAPI_ATTR void VKAPI_CALL CmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t
     bool skip = false;
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     unique_lock_t lock(global_lock);
-    GLOBAL_CB_NODE *cb_state = GetCBNode(dev_data, commandBuffer);
-    if (cb_state) {
-        skip |= PreCallValidateCmdEventCount(dev_data, cb_state, sourceStageMask, dstStageMask, memoryBarrierCount, pMemoryBarriers,
-                                             bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount,
-                                             pImageMemoryBarriers);
-        if (!skip) {
-            PreCallRecordCmdWaitEvents(dev_data, cb_state, eventCount, pEvents, sourceStageMask, imageMemoryBarrierCount,
-                                       pImageMemoryBarriers);
-        }
-    }
-    lock.unlock();
-
+    skip |= PreCallValidateCmdWaitEvents(commandBuffer, eventCount, pEvents, sourceStageMask, dstStageMask, memoryBarrierCount,
+                                         pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount,
+                                         pImageMemoryBarriers);
     if (!skip) {
+        PreCallRecordCmdWaitEvents(commandBuffer, eventCount, pEvents, sourceStageMask, dstStageMask, memoryBarrierCount,
+                                   pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount,
+                                   pImageMemoryBarriers);
+        lock.unlock();
+
         dev_data->dispatch_table.CmdWaitEvents(commandBuffer, eventCount, pEvents, sourceStageMask, dstStageMask,
                                                memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers,
                                                imageMemoryBarrierCount, pImageMemoryBarriers);
-    }
 
-    lock.lock();
-    PostCallRecordCmdWaitEvents(dev_data, cb_state, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount,
-                                pImageMemoryBarriers);
+        lock.lock();
+        PostCallRecordCmdWaitEvents(commandBuffer, eventCount, pEvents, sourceStageMask, dstStageMask, memoryBarrierCount,
+                                    pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount,
+                                    pImageMemoryBarriers);
+    }
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdPipelineBarrier(VkCommandBuffer commandBuffer, VkPipelineStageFlags srcStageMask,

@@ -1621,22 +1621,25 @@ bool PreCallValidateCmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buff
                                     uint32_t stride);
 void PostCallRecordCmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, uint32_t count,
                                    uint32_t stride);
-bool PreCallValidateCmdSetEvent(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, VkPipelineStageFlags stageMask);
-void PreCallRecordCmdSetEvent(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, VkCommandBuffer commandBuffer, VkEvent event,
-                              VkPipelineStageFlags stageMask);
-bool PreCallValidateCmdResetEvent(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, VkPipelineStageFlags stageMask);
-void PreCallRecordCmdResetEvent(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, VkCommandBuffer commandBuffer, VkEvent event);
-bool PreCallValidateCmdEventCount(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, VkPipelineStageFlags sourceStageMask,
-                                  VkPipelineStageFlags dstStageMask, uint32_t memoryBarrierCount,
-                                  const VkMemoryBarrier* pMemoryBarriers, uint32_t bufferMemoryBarrierCount,
-                                  const VkBufferMemoryBarrier* pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount,
-                                  const VkImageMemoryBarrier* pImageMemoryBarriers);
-void PreCallRecordCmdWaitEvents(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, uint32_t eventCount, const VkEvent* pEvents,
-                                VkPipelineStageFlags sourceStageMask, uint32_t imageMemoryBarrierCount,
-                                const VkImageMemoryBarrier* pImageMemoryBarriers);
-void PostCallRecordCmdWaitEvents(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, uint32_t bufferMemoryBarrierCount,
-                                 const VkBufferMemoryBarrier* pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount,
-                                 const VkImageMemoryBarrier* pImageMemoryBarriers);
+bool PreCallValidateCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask);
+void PreCallRecordCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask);
+bool PreCallValidateCmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask);
+void PreCallRecordCmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask);
+bool PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
+                                  VkPipelineStageFlags sourceStageMask, VkPipelineStageFlags dstStageMask,
+                                  uint32_t memoryBarrierCount, const VkMemoryBarrier* pMemoryBarriers,
+                                  uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier* pBufferMemoryBarriers,
+                                  uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier* pImageMemoryBarriers);
+void PreCallRecordCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
+                                VkPipelineStageFlags sourceStageMask, VkPipelineStageFlags dstStageMask,
+                                uint32_t memoryBarrierCount, const VkMemoryBarrier* pMemoryBarriers,
+                                uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier* pBufferMemoryBarriers,
+                                uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier* pImageMemoryBarriers);
+void PostCallRecordCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
+                                 VkPipelineStageFlags sourceStageMask, VkPipelineStageFlags dstStageMask,
+                                 uint32_t memoryBarrierCount, const VkMemoryBarrier* pMemoryBarriers,
+                                 uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier* pBufferMemoryBarriers,
+                                 uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier* pImageMemoryBarriers);
 bool PreCallValidateCmdPipelineBarrier(layer_data* device_data, GLOBAL_CB_NODE* cb_state, VkPipelineStageFlags srcStageMask,
                                        VkPipelineStageFlags dstStageMask, VkDependencyFlags dependencyFlags,
                                        uint32_t memoryBarrierCount, const VkMemoryBarrier* pMemoryBarriers,
