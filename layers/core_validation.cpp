@@ -8892,15 +8892,12 @@ static bool ValidateDependencies(const layer_data *dev_data, FRAMEBUFFER_STATE c
     return skip;
 }
 
-static bool RecordRenderPassDAG(const layer_data *dev_data, RenderPassCreateVersion rp_version,
+static void RecordRenderPassDAG(const layer_data *dev_data, RenderPassCreateVersion rp_version,
                                 const VkRenderPassCreateInfo2KHR *pCreateInfo, RENDER_PASS_STATE *render_pass) {
-    // Shorthand...
     auto &subpass_to_node = render_pass->subpassToNode;
     subpass_to_node.resize(pCreateInfo->subpassCount);
     auto &self_dependencies = render_pass->self_dependencies;
     self_dependencies.resize(pCreateInfo->subpassCount);
-
-    bool skip = false;
 
     for (uint32_t i = 0; i < pCreateInfo->subpassCount; ++i) {
         subpass_to_node[i].pass = i;
@@ -8908,18 +8905,15 @@ static bool RecordRenderPassDAG(const layer_data *dev_data, RenderPassCreateVers
     }
     for (uint32_t i = 0; i < pCreateInfo->dependencyCount; ++i) {
         const VkSubpassDependency2KHR &dependency = pCreateInfo->pDependencies[i];
-
-        // This VU is actually generalised  to *any* pipeline - not just graphics - but only graphics render passes are
-        // currently supported by the spec - so only that pipeline is checked here.
-        // If that is ever relaxed, this check should be extended to cover those pipelines.
-        if (dependency.srcSubpass == dependency.dstSubpass) {
-            self_dependencies[dependency.srcSubpass].push_back(i);
-        } else {
-            subpass_to_node[dependency.dstSubpass].prev.push_back(dependency.srcSubpass);
-            subpass_to_node[dependency.srcSubpass].next.push_back(dependency.dstSubpass);
+        if ((dependency.srcSubpass != VK_SUBPASS_EXTERNAL) && (dependency.dstSubpass != VK_SUBPASS_EXTERNAL)) {
+            if (dependency.srcSubpass == dependency.dstSubpass) {
+                self_dependencies[dependency.srcSubpass].push_back(i);
+            } else {
+                subpass_to_node[dependency.dstSubpass].prev.push_back(dependency.srcSubpass);
+                subpass_to_node[dependency.srcSubpass].next.push_back(dependency.dstSubpass);
+            }
         }
     }
-    return skip;
 }
 
 static bool ValidateRenderPassDAG(const layer_data *dev_data, RenderPassCreateVersion rp_version,
