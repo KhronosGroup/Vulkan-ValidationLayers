@@ -8287,6 +8287,7 @@ bool PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventC
                                   uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier *pImageMemoryBarriers) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    assert(cb_state);
 
     auto barrier_op_type = ComputeBarrierOperationsType(device_data, cb_state, bufferMemoryBarrierCount, pBufferMemoryBarriers,
                                                         imageMemoryBarrierCount, pImageMemoryBarriers);
@@ -8340,8 +8341,8 @@ void PostCallRecordCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCo
                                  uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier *pImageMemoryBarriers) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
-    RecordBarriersQFOTransfers(device_data, "vkCmdWaitEvents()", cb_state, bufferMemoryBarrierCount, pBufferMemoryBarriers,
-                               imageMemoryBarrierCount, pImageMemoryBarriers);
+    RecordBarriersQFOTransfers(device_data, cb_state, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount,
+                               pImageMemoryBarriers);
 }
 
 bool PreCallValidateCmdPipelineBarrier(layer_data *device_data, GLOBAL_CB_NODE *cb_state, VkPipelineStageFlags srcStageMask,
@@ -8383,8 +8384,8 @@ bool PreCallValidateCmdPipelineBarrier(layer_data *device_data, GLOBAL_CB_NODE *
 void PreCallRecordCmdPipelineBarrier(layer_data *device_data, GLOBAL_CB_NODE *cb_state, VkCommandBuffer commandBuffer,
                                      uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier *pBufferMemoryBarriers,
                                      uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier *pImageMemoryBarriers) {
-    RecordBarriersQFOTransfers(device_data, "vkCmdPipelineBarrier()", cb_state, bufferMemoryBarrierCount, pBufferMemoryBarriers,
-                               imageMemoryBarrierCount, pImageMemoryBarriers);
+    RecordBarriersQFOTransfers(device_data, cb_state, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount,
+                               pImageMemoryBarriers);
     TransitionImageLayouts(device_data, cb_state, imageMemoryBarrierCount, pImageMemoryBarriers);
 }
 
