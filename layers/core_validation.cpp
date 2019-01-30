@@ -7277,20 +7277,24 @@ bool SetEventStageMask(VkQueue queue, VkCommandBuffer commandBuffer, VkEvent eve
     return false;
 }
 
-bool PreCallValidateCmdSetEvent(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, VkPipelineStageFlags stageMask) {
-    bool skip = ValidateCmdQueueFlags(dev_data, cb_state, "vkCmdSetEvent()", VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
+bool PreCallValidateCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    assert(cb_state);
+    bool skip = ValidateCmdQueueFlags(device_data, cb_state, "vkCmdSetEvent()", VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
                                       "VUID-vkCmdSetEvent-commandBuffer-cmdpool");
-    skip |= ValidateCmd(dev_data, cb_state, CMD_SETEVENT, "vkCmdSetEvent()");
-    skip |= InsideRenderPass(dev_data, cb_state, "vkCmdSetEvent()", "VUID-vkCmdSetEvent-renderpass");
-    skip |= ValidateStageMaskGsTsEnables(dev_data, stageMask, "vkCmdSetEvent()", "VUID-vkCmdSetEvent-stageMask-01150",
+    skip |= ValidateCmd(device_data, cb_state, CMD_SETEVENT, "vkCmdSetEvent()");
+    skip |= InsideRenderPass(device_data, cb_state, "vkCmdSetEvent()", "VUID-vkCmdSetEvent-renderpass");
+    skip |= ValidateStageMaskGsTsEnables(device_data, stageMask, "vkCmdSetEvent()", "VUID-vkCmdSetEvent-stageMask-01150",
                                          "VUID-vkCmdSetEvent-stageMask-01151", "VUID-vkCmdSetEvent-stageMask-02107",
                                          "VUID-vkCmdSetEvent-stageMask-02108");
     return skip;
 }
 
-void PreCallRecordCmdSetEvent(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, VkCommandBuffer commandBuffer, VkEvent event,
-                              VkPipelineStageFlags stageMask) {
-    auto event_state = GetEventNode(dev_data, event);
+void PreCallRecordCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    auto event_state = GetEventNode(device_data, event);
     if (event_state) {
         AddCommandBufferBinding(&event_state->cb_bindings, {HandleToUint64(event), kVulkanObjectTypeEvent}, cb_state);
         event_state->cb_bindings.insert(cb_state);
@@ -7302,19 +7306,25 @@ void PreCallRecordCmdSetEvent(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, Vk
     cb_state->eventUpdates.emplace_back([=](VkQueue q) { return SetEventStageMask(q, commandBuffer, event, stageMask); });
 }
 
-bool PreCallValidateCmdResetEvent(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, VkPipelineStageFlags stageMask) {
-    bool skip = ValidateCmdQueueFlags(dev_data, cb_state, "vkCmdResetEvent()", VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
+bool PreCallValidateCmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    assert(cb_state);
+
+    bool skip = ValidateCmdQueueFlags(device_data, cb_state, "vkCmdResetEvent()", VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
                                       "VUID-vkCmdResetEvent-commandBuffer-cmdpool");
-    skip |= ValidateCmd(dev_data, cb_state, CMD_RESETEVENT, "vkCmdResetEvent()");
-    skip |= InsideRenderPass(dev_data, cb_state, "vkCmdResetEvent()", "VUID-vkCmdResetEvent-renderpass");
-    skip |= ValidateStageMaskGsTsEnables(dev_data, stageMask, "vkCmdResetEvent()", "VUID-vkCmdResetEvent-stageMask-01154",
+    skip |= ValidateCmd(device_data, cb_state, CMD_RESETEVENT, "vkCmdResetEvent()");
+    skip |= InsideRenderPass(device_data, cb_state, "vkCmdResetEvent()", "VUID-vkCmdResetEvent-renderpass");
+    skip |= ValidateStageMaskGsTsEnables(device_data, stageMask, "vkCmdResetEvent()", "VUID-vkCmdResetEvent-stageMask-01154",
                                          "VUID-vkCmdResetEvent-stageMask-01155", "VUID-vkCmdResetEvent-stageMask-02109",
                                          "VUID-vkCmdResetEvent-stageMask-02110");
     return skip;
 }
 
-void PreCallRecordCmdResetEvent(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, VkCommandBuffer commandBuffer, VkEvent event) {
-    auto event_state = GetEventNode(dev_data, event);
+void PreCallRecordCmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    auto event_state = GetEventNode(device_data, event);
     if (event_state) {
         AddCommandBufferBinding(&event_state->cb_bindings, {HandleToUint64(event), kVulkanObjectTypeEvent}, cb_state);
         event_state->cb_bindings.insert(cb_state);
@@ -8270,37 +8280,44 @@ bool ValidateStageMasksAgainstQueueCapabilities(layer_data *dev_data, GLOBAL_CB_
     return skip;
 }
 
-bool PreCallValidateCmdEventCount(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, VkPipelineStageFlags sourceStageMask,
-                                  VkPipelineStageFlags dstStageMask, uint32_t memoryBarrierCount,
-                                  const VkMemoryBarrier *pMemoryBarriers, uint32_t bufferMemoryBarrierCount,
-                                  const VkBufferMemoryBarrier *pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount,
-                                  const VkImageMemoryBarrier *pImageMemoryBarriers) {
-    auto barrier_op_type = ComputeBarrierOperationsType(dev_data, cb_state, bufferMemoryBarrierCount, pBufferMemoryBarriers,
+bool PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
+                                  VkPipelineStageFlags sourceStageMask, VkPipelineStageFlags dstStageMask,
+                                  uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers,
+                                  uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier *pBufferMemoryBarriers,
+                                  uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier *pImageMemoryBarriers) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+
+    auto barrier_op_type = ComputeBarrierOperationsType(device_data, cb_state, bufferMemoryBarrierCount, pBufferMemoryBarriers,
                                                         imageMemoryBarrierCount, pImageMemoryBarriers);
-    bool skip = ValidateStageMasksAgainstQueueCapabilities(dev_data, cb_state, sourceStageMask, dstStageMask, barrier_op_type,
+    bool skip = ValidateStageMasksAgainstQueueCapabilities(device_data, cb_state, sourceStageMask, dstStageMask, barrier_op_type,
                                                            "vkCmdWaitEvents", "VUID-vkCmdWaitEvents-srcStageMask-01164");
-    skip |= ValidateStageMaskGsTsEnables(dev_data, sourceStageMask, "vkCmdWaitEvents()", "VUID-vkCmdWaitEvents-srcStageMask-01159",
-                                         "VUID-vkCmdWaitEvents-srcStageMask-01161", "VUID-vkCmdWaitEvents-srcStageMask-02111",
-                                         "VUID-vkCmdWaitEvents-srcStageMask-02112");
-    skip |= ValidateStageMaskGsTsEnables(dev_data, dstStageMask, "vkCmdWaitEvents()", "VUID-vkCmdWaitEvents-dstStageMask-01160",
+    skip |= ValidateStageMaskGsTsEnables(device_data, sourceStageMask, "vkCmdWaitEvents()",
+                                         "VUID-vkCmdWaitEvents-srcStageMask-01159", "VUID-vkCmdWaitEvents-srcStageMask-01161",
+                                         "VUID-vkCmdWaitEvents-srcStageMask-02111", "VUID-vkCmdWaitEvents-srcStageMask-02112");
+    skip |= ValidateStageMaskGsTsEnables(device_data, dstStageMask, "vkCmdWaitEvents()", "VUID-vkCmdWaitEvents-dstStageMask-01160",
                                          "VUID-vkCmdWaitEvents-dstStageMask-01162", "VUID-vkCmdWaitEvents-dstStageMask-02113",
                                          "VUID-vkCmdWaitEvents-dstStageMask-02114");
-    skip |= ValidateCmdQueueFlags(dev_data, cb_state, "vkCmdWaitEvents()", VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
+    skip |= ValidateCmdQueueFlags(device_data, cb_state, "vkCmdWaitEvents()", VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
                                   "VUID-vkCmdWaitEvents-commandBuffer-cmdpool");
-    skip |= ValidateCmd(dev_data, cb_state, CMD_WAITEVENTS, "vkCmdWaitEvents()");
-    skip |= ValidateBarriersToImages(dev_data, cb_state, imageMemoryBarrierCount, pImageMemoryBarriers, "vkCmdWaitEvents()");
-    skip |= ValidateBarriers(dev_data, "vkCmdWaitEvents()", cb_state, sourceStageMask, dstStageMask, memoryBarrierCount,
+    skip |= ValidateCmd(device_data, cb_state, CMD_WAITEVENTS, "vkCmdWaitEvents()");
+    skip |= ValidateBarriersToImages(device_data, cb_state, imageMemoryBarrierCount, pImageMemoryBarriers, "vkCmdWaitEvents()");
+    skip |= ValidateBarriers(device_data, "vkCmdWaitEvents()", cb_state, sourceStageMask, dstStageMask, memoryBarrierCount,
                              pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount,
                              pImageMemoryBarriers);
     return skip;
 }
 
-void PreCallRecordCmdWaitEvents(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, uint32_t eventCount, const VkEvent *pEvents,
-                                VkPipelineStageFlags sourceStageMask, uint32_t imageMemoryBarrierCount,
-                                const VkImageMemoryBarrier *pImageMemoryBarriers) {
+void PreCallRecordCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
+                                VkPipelineStageFlags sourceStageMask, VkPipelineStageFlags dstStageMask,
+                                uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers,
+                                uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier *pBufferMemoryBarriers,
+                                uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier *pImageMemoryBarriers) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
     auto first_event_index = cb_state->events.size();
     for (uint32_t i = 0; i < eventCount; ++i) {
-        auto event_state = GetEventNode(dev_data, pEvents[i]);
+        auto event_state = GetEventNode(device_data, pEvents[i]);
         if (event_state) {
             AddCommandBufferBinding(&event_state->cb_bindings, {HandleToUint64(pEvents[i]), kVulkanObjectTypeEvent}, cb_state);
             event_state->cb_bindings.insert(cb_state);
@@ -8310,16 +8327,20 @@ void PreCallRecordCmdWaitEvents(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, 
     }
     cb_state->eventUpdates.emplace_back(
         [=](VkQueue q) { return ValidateEventStageMask(q, cb_state, eventCount, first_event_index, sourceStageMask); });
-    TransitionImageLayouts(dev_data, cb_state, imageMemoryBarrierCount, pImageMemoryBarriers);
-    if (GetEnables(dev_data)->gpu_validation) {
-        GpuPreCallValidateCmdWaitEvents(dev_data, sourceStageMask);
+    TransitionImageLayouts(device_data, cb_state, imageMemoryBarrierCount, pImageMemoryBarriers);
+    if (GetEnables(device_data)->gpu_validation) {
+        GpuPreCallValidateCmdWaitEvents(device_data, sourceStageMask);
     }
 }
 
-void PostCallRecordCmdWaitEvents(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, uint32_t bufferMemoryBarrierCount,
-                                 const VkBufferMemoryBarrier *pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount,
-                                 const VkImageMemoryBarrier *pImageMemoryBarriers) {
-    RecordBarriersQFOTransfers(dev_data, "vkCmdWaitEvents()", cb_state, bufferMemoryBarrierCount, pBufferMemoryBarriers,
+void PostCallRecordCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
+                                 VkPipelineStageFlags sourceStageMask, VkPipelineStageFlags dstStageMask,
+                                 uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers,
+                                 uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier *pBufferMemoryBarriers,
+                                 uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier *pImageMemoryBarriers) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    RecordBarriersQFOTransfers(device_data, "vkCmdWaitEvents()", cb_state, bufferMemoryBarrierCount, pBufferMemoryBarriers,
                                imageMemoryBarrierCount, pImageMemoryBarriers);
 }
 
