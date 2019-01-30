@@ -1645,18 +1645,20 @@ bool PreCallValidateCmdPipelineBarrier(layer_data* device_data, GLOBAL_CB_NODE* 
 void PreCallRecordCmdPipelineBarrier(layer_data* device_data, GLOBAL_CB_NODE* cb_state, VkCommandBuffer commandBuffer,
                                      uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier* pBufferMemoryBarriers,
                                      uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier* pImageMemoryBarriers);
-bool PreCallValidateCmdBeginQuery(layer_data* dev_data, GLOBAL_CB_NODE* pCB, VkQueryPool queryPool, VkFlags flags);
-void PostCallRecordCmdBeginQuery(layer_data* dev_data, VkQueryPool queryPool, uint32_t slot, GLOBAL_CB_NODE* pCB);
-bool PreCallValidateCmdEndQuery(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, const QueryObject& query,
-                                VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot);
-void PostCallRecordCmdEndQuery(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, const QueryObject& query,
-                               VkCommandBuffer commandBuffer, VkQueryPool queryPool);
-bool PreCallValidateCmdResetQueryPool(layer_data* dev_data, GLOBAL_CB_NODE* cb_state);
-void PostCallRecordCmdResetQueryPool(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, VkCommandBuffer commandBuffer,
-                                     VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount);
-bool PreCallValidateCmdCopyQueryPoolResults(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, BUFFER_STATE* dst_buff_state);
-void PostCallRecordCmdCopyQueryPoolResults(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, BUFFER_STATE* dst_buff_state,
-                                           VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount);
+bool PreCallValidateCmdBeginQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot, VkFlags flags);
+void PostCallRecordCmdBeginQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot, VkFlags flags);
+bool PreCallValidateCmdEndQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot);
+void PostCallRecordCmdEndQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot);
+bool PreCallValidateCmdResetQueryPool(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery,
+                                      uint32_t queryCount);
+void PostCallRecordCmdResetQueryPool(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery,
+                                     uint32_t queryCount);
+bool PreCallValidateCmdCopyQueryPoolResults(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery,
+                                            uint32_t queryCount, VkBuffer dstBuffer, VkDeviceSize dstOffset, VkDeviceSize stride,
+                                            VkQueryResultFlags flags);
+void PostCallRecordCmdCopyQueryPoolResults(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery,
+                                           uint32_t queryCount, VkBuffer dstBuffer, VkDeviceSize dstOffset, VkDeviceSize stride,
+                                           VkQueryResultFlags flags);
 bool PreCallValidateCmdPushConstants(layer_data* dev_data, VkCommandBuffer commandBuffer, VkPipelineLayout layout,
                                      VkShaderStageFlags stageFlags, uint32_t offset, uint32_t size);
 bool PreCallValidateCmdWriteTimestamp(layer_data* dev_data, GLOBAL_CB_NODE* cb_state);
