@@ -1540,35 +1540,41 @@ void PostCallRecordResetCommandBuffer(VkCommandBuffer commandBuffer, VkCommandBu
 bool PreCallValidateCmdBindPipeline(layer_data* dev_data, GLOBAL_CB_NODE* cb_state);
 void PreCallRecordCmdBindPipeline(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, VkPipelineBindPoint pipelineBindPoint,
                                   VkPipeline pipeline);
-bool PreCallValidateCmdSetViewport(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, VkCommandBuffer commandBuffer);
-void PreCallRecordCmdSetViewport(GLOBAL_CB_NODE* cb_state, uint32_t firstViewport, uint32_t viewportCount);
-bool PreCallValidateCmdSetScissor(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, VkCommandBuffer commandBuffer);
-void PreCallRecordCmdSetScissor(GLOBAL_CB_NODE* cb_state, uint32_t firstScissor, uint32_t scissorCount);
-bool PreCallValidateCmdSetExclusiveScissorNV(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, VkCommandBuffer commandBuffer);
-void PreCallRecordCmdSetExclusiveScissorNV(GLOBAL_CB_NODE* cb_state, uint32_t firstExclusiveScissor,
-                                           uint32_t exclusiveScissorCount);
+bool PreCallValidateCmdSetViewport(VkCommandBuffer commandBuffer, uint32_t firstViewport, uint32_t viewportCount,
+                                   const VkViewport* pViewports);
+void PreCallRecordCmdSetViewport(VkCommandBuffer commandBuffer, uint32_t firstViewport, uint32_t viewportCount,
+                                 const VkViewport* pViewports);
+bool PreCallValidateCmdSetScissor(VkCommandBuffer commandBuffer, uint32_t firstScissor, uint32_t scissorCount,
+                                  const VkRect2D* pScissors);
+void PreCallRecordCmdSetScissor(VkCommandBuffer commandBuffer, uint32_t firstScissor, uint32_t scissorCount,
+                                const VkRect2D* pScissors);
+bool PreCallValidateCmdSetExclusiveScissorNV(VkCommandBuffer commandBuffer, uint32_t firstExclusiveScissor,
+                                             uint32_t exclusiveScissorCount, const VkRect2D* pExclusiveScissors);
+void PreCallRecordCmdSetExclusiveScissorNV(VkCommandBuffer commandBuffer, uint32_t firstExclusiveScissor,
+                                           uint32_t exclusiveScissorCount, const VkRect2D* pExclusiveScissors);
 bool PreCallValidateCmdBindShadingRateImageNV(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, VkCommandBuffer commandBuffer,
                                               VkImageView imageView, VkImageLayout imageLayout);
 void PreCallRecordCmdBindShadingRateImageNV(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, VkImageView imageView);
-bool PreCallValidateCmdSetViewportShadingRatePaletteNV(layer_data* dev_data, GLOBAL_CB_NODE* cb_state,
-                                                       VkCommandBuffer commandBuffer, uint32_t firstViewport,
+bool PreCallValidateCmdSetViewportShadingRatePaletteNV(VkCommandBuffer commandBuffer, uint32_t firstViewport,
                                                        uint32_t viewportCount, const VkShadingRatePaletteNV* pShadingRatePalettes);
-void PreCallRecordCmdSetViewportShadingRatePaletteNV(GLOBAL_CB_NODE* cb_state, uint32_t firstViewport, uint32_t viewportCount);
-bool PreCallValidateCmdSetLineWidth(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, VkCommandBuffer commandBuffer);
-void PreCallRecordCmdSetLineWidth(GLOBAL_CB_NODE* cb_state);
-bool PreCallValidateCmdSetDepthBias(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, VkCommandBuffer commandBuffer,
-                                    float depthBiasClamp);
-void PreCallRecordCmdSetDepthBias(GLOBAL_CB_NODE* cb_state);
-bool PreCallValidateCmdSetBlendConstants(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, VkCommandBuffer commandBuffer);
-void PreCallRecordCmdSetBlendConstants(GLOBAL_CB_NODE* cb_state);
-bool PreCallValidateCmdSetDepthBounds(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, VkCommandBuffer commandBuffer);
-void PreCallRecordCmdSetDepthBounds(GLOBAL_CB_NODE* cb_state);
-bool PreCallValidateCmdSetStencilCompareMask(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, VkCommandBuffer commandBuffer);
-void PreCallRecordCmdSetStencilCompareMask(GLOBAL_CB_NODE* cb_state);
-bool PreCallValidateCmdSetStencilWriteMask(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, VkCommandBuffer commandBuffer);
-void PreCallRecordCmdSetStencilWriteMask(GLOBAL_CB_NODE* cb_state);
-bool PreCallValidateCmdSetStencilReference(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, VkCommandBuffer commandBuffer);
-void PreCallRecordCmdSetStencilReference(GLOBAL_CB_NODE* cb_state);
+void PreCallRecordCmdSetViewportShadingRatePaletteNV(VkCommandBuffer commandBuffer, uint32_t firstViewport, uint32_t viewportCount,
+                                                     const VkShadingRatePaletteNV* pShadingRatePalettes);
+bool PreCallValidateCmdSetLineWidth(VkCommandBuffer commandBuffer, float lineWidth);
+void PreCallRecordCmdSetLineWidth(VkCommandBuffer commandBuffer, float lineWidth);
+bool PreCallValidateCmdSetDepthBias(VkCommandBuffer commandBuffer, float depthBiasConstantFactor, float depthBiasClamp,
+                                    float depthBiasSlopeFactor);
+void PreCallRecordCmdSetDepthBias(VkCommandBuffer commandBuffer, float depthBiasConstantFactor, float depthBiasClamp,
+                                  float depthBiasSlopeFactor);
+bool PreCallValidateCmdSetBlendConstants(VkCommandBuffer commandBuffer, const float blendConstants[4]);
+void PreCallRecordCmdSetBlendConstants(VkCommandBuffer commandBuffer, const float blendConstants[4]);
+bool PreCallValidateCmdSetDepthBounds(VkCommandBuffer commandBuffer, float minDepthBounds, float maxDepthBounds);
+void PreCallRecordCmdSetDepthBounds(VkCommandBuffer commandBuffer, float minDepthBounds, float maxDepthBounds);
+bool PreCallValidateCmdSetStencilCompareMask(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, uint32_t compareMask);
+void PreCallRecordCmdSetStencilCompareMask(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, uint32_t compareMask);
+bool PreCallValidateCmdSetStencilWriteMask(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, uint32_t writeMask);
+void PreCallRecordCmdSetStencilWriteMask(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, uint32_t writeMask);
+bool PreCallValidateCmdSetStencilReference(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, uint32_t reference);
+void PreCallRecordCmdSetStencilReference(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, uint32_t reference);
 bool PreCallValidateCmdBindDescriptorSets(layer_data* device_data, GLOBAL_CB_NODE* cb_state, VkPipelineBindPoint pipelineBindPoint,
                                           VkPipelineLayout layout, uint32_t firstSet, uint32_t setCount,
                                           const VkDescriptorSet* pDescriptorSets, uint32_t dynamicOffsetCount,
@@ -1850,8 +1856,9 @@ bool PreCallValidateGetDisplayPlaneCapabilities2KHR(VkPhysicalDevice physicalDev
                                                     VkDisplayPlaneCapabilities2KHR* pCapabilities);
 void PreCallRecordDebugMarkerSetObjectNameEXT(layer_data* dev_data, const VkDebugMarkerObjectNameInfoEXT* pNameInfo);
 bool PreCallValidateCmdDebugMarkerEndEXT(layer_data* dev_data, GLOBAL_CB_NODE* cb_state);
-bool PreCallValidateCmdSetDiscardRectangleEXT(layer_data* dev_data, GLOBAL_CB_NODE* cb_state);
-bool PreCallValidateCmdSetSampleLocationsEXT(layer_data* dev_data, GLOBAL_CB_NODE* cb_state);
+bool PreCallValidateCmdSetDiscardRectangleEXT(VkCommandBuffer commandBuffer, uint32_t firstDiscardRectangle,
+                                              uint32_t discardRectangleCount, const VkRect2D* pDiscardRectangles);
+bool PreCallValidateCmdSetSampleLocationsEXT(VkCommandBuffer commandBuffer, const VkSampleLocationsInfoEXT* pSampleLocationsInfo);
 bool PreCallValidateCmdDrawIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                             VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
                                             uint32_t stride);
