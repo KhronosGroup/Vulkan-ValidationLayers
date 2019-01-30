@@ -2357,7 +2357,12 @@ bool StatelessValidation::manual_PreCallValidateCmdCopyImage(VkCommandBuffer com
 
     VkImageAspectFlags legal_aspect_flags =
         VK_IMAGE_ASPECT_COLOR_BIT | VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT | VK_IMAGE_ASPECT_METADATA_BIT;
-    if (device_extensions.vk_khr_sampler_ycbcr_conversion) {
+    // YCbCr is core after 1.1
+    if (api_version >= VK_API_VERSION_1_1) {
+        legal_aspect_flags |= (VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT | VK_IMAGE_ASPECT_PLANE_2_BIT);
+    }
+    // If physical device does not support 1.1, check for YCbCr extension support
+    else if (device_extensions.vk_khr_sampler_ycbcr_conversion) {
         legal_aspect_flags |= (VK_IMAGE_ASPECT_PLANE_0_BIT_KHR | VK_IMAGE_ASPECT_PLANE_1_BIT_KHR | VK_IMAGE_ASPECT_PLANE_2_BIT_KHR);
     }
 
@@ -2386,7 +2391,12 @@ bool StatelessValidation::manual_PreCallValidateCmdBlitImage(VkCommandBuffer com
 
     VkImageAspectFlags legal_aspect_flags =
         VK_IMAGE_ASPECT_COLOR_BIT | VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT | VK_IMAGE_ASPECT_METADATA_BIT;
-    if (device_extensions.vk_khr_sampler_ycbcr_conversion) {
+    // YCbCr is core after 1.1
+    if (api_version >= VK_API_VERSION_1_1) {
+        legal_aspect_flags |= (VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT | VK_IMAGE_ASPECT_PLANE_2_BIT);
+    }
+    // If physical device does not support 1.1, check for YCbCr extension support
+    else if (device_extensions.vk_khr_sampler_ycbcr_conversion) {
         legal_aspect_flags |= (VK_IMAGE_ASPECT_PLANE_0_BIT_KHR | VK_IMAGE_ASPECT_PLANE_1_BIT_KHR | VK_IMAGE_ASPECT_PLANE_2_BIT_KHR);
     }
 
@@ -2414,7 +2424,12 @@ bool StatelessValidation::manual_PreCallValidateCmdCopyBufferToImage(VkCommandBu
 
     VkImageAspectFlags legal_aspect_flags =
         VK_IMAGE_ASPECT_COLOR_BIT | VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT | VK_IMAGE_ASPECT_METADATA_BIT;
-    if (device_extensions.vk_khr_sampler_ycbcr_conversion) {
+    // YCbCr is core after 1.1
+    if (api_version >= VK_API_VERSION_1_1) {
+        legal_aspect_flags |= (VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT | VK_IMAGE_ASPECT_PLANE_2_BIT);
+    }
+    // If physical device does not support 1.1, check for YCbCr extension support
+    else if (device_extensions.vk_khr_sampler_ycbcr_conversion) {
         legal_aspect_flags |= (VK_IMAGE_ASPECT_PLANE_0_BIT_KHR | VK_IMAGE_ASPECT_PLANE_1_BIT_KHR | VK_IMAGE_ASPECT_PLANE_2_BIT_KHR);
     }
 
@@ -2436,7 +2451,12 @@ bool StatelessValidation::manual_PreCallValidateCmdCopyImageToBuffer(VkCommandBu
 
     VkImageAspectFlags legal_aspect_flags =
         VK_IMAGE_ASPECT_COLOR_BIT | VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT | VK_IMAGE_ASPECT_METADATA_BIT;
-    if (device_extensions.vk_khr_sampler_ycbcr_conversion) {
+    // YCbCr is core after 1.1
+    if (api_version >= VK_API_VERSION_1_1) {
+        legal_aspect_flags |= (VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT | VK_IMAGE_ASPECT_PLANE_2_BIT);
+    }
+    // If physical device does not support 1.1, check for YCbCr extension support
+    else if (device_extensions.vk_khr_sampler_ycbcr_conversion) {
         legal_aspect_flags |= (VK_IMAGE_ASPECT_PLANE_0_BIT_KHR | VK_IMAGE_ASPECT_PLANE_1_BIT_KHR | VK_IMAGE_ASPECT_PLANE_2_BIT_KHR);
     }
 
