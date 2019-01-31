@@ -787,7 +787,8 @@ static std::string LookupDebugUtilsName(const layer_data *dev_data, const uint64
 
 // Generate message from the common portion of the debug report record.
 static void GenerateCommonMessage(const layer_data *dev_data, const GLOBAL_CB_NODE *cb_node, const uint32_t *debug_record,
-                                  const VkShaderModule shader_module_handle, const VkPipeline pipeline_handle, std::string &msg) {
+                                  const VkShaderModule shader_module_handle, const VkPipeline pipeline_handle,
+                                  const uint32_t draw_index, std::string &msg) {
     using namespace spvtools;
     std::ostringstream strm;
     if (shader_module_handle == VK_NULL_HANDLE) {
@@ -799,6 +800,7 @@ static void GenerateCommonMessage(const layer_data *dev_data, const GLOBAL_CB_NO
         strm << std::hex << std::showbase << "Command buffer "
              << LookupDebugUtilsName(dev_data, HandleToUint64(cb_node->commandBuffer)) << "("
              << HandleToUint64(cb_node->commandBuffer) << "). "
+             << "Draw Index " << draw_index << ". "
              << "Pipeline " << LookupDebugUtilsName(dev_data, HandleToUint64(pipeline_handle)) << "("
              << HandleToUint64(pipeline_handle) << "). "
              << "Shader Module " << LookupDebugUtilsName(dev_data, HandleToUint64(shader_module_handle)) << "("
@@ -979,7 +981,7 @@ static void GenerateSourceMessages(const std::vector<unsigned int> &pgm, const u
 // sure it is available when the pipeline is submitted.  (The ShaderModule tracking object also
 // keeps a copy, but it can be destroyed after the pipeline is created and before it is submitted.)
 //
-static void AnalyzeAndReportError(const layer_data *dev_data, GLOBAL_CB_NODE *cb_node, VkQueue queue,
+static void AnalyzeAndReportError(const layer_data *dev_data, GLOBAL_CB_NODE *cb_node, VkQueue queue, uint32_t draw_index,
                                   uint32_t *const debug_output_buffer) {
     using namespace spvtools;
     const uint32_t total_words = debug_output_buffer[0];
@@ -1019,7 +1021,7 @@ static void AnalyzeAndReportError(const layer_data *dev_data, GLOBAL_CB_NODE *cb
     }
     GenerateValidationMessage(debug_record, validation_message, vuid_msg);
     GenerateStageMessage(debug_record, stage_message);
-    GenerateCommonMessage(dev_data, cb_node, debug_record, shader_module_handle, pipeline_handle, common_message);
+    GenerateCommonMessage(dev_data, cb_node, debug_record, shader_module_handle, pipeline_handle, draw_index, common_message);
     GenerateSourceMessages(pgm, debug_record, filename_message, source_message);
     log_msg(GetReportData(dev_data), VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_QUEUE_EXT, HandleToUint64(queue),
             vuid_msg.c_str(), "%s %s %s %s%s", validation_message.c_str(), common_message.c_str(), stage_message.c_str(),
@@ -1040,6 +1042,7 @@ static void ProcessInstrumentationBuffer(const layer_data *dev_data, VkQueue que
             uint32_t block_offset = buffer_info.mem_block.offset;
             uint32_t block_size = gpu_state->memory_manager->GetBlockSize();
             uint32_t offset_to_data = 0;
+            uint32_t draw_index = 0;
             const uint32_t map_align = std::max(1U, static_cast<uint32_t>(GetPDProperties(dev_data)->limits.minMemoryMapAlignment));
 
             // Adjust the offset to the alignment required for mapping.
@@ -1050,9 +1053,10 @@ static void ProcessInstrumentationBuffer(const layer_data *dev_data, VkQueue que
                                                            0, (void **)&pData);
             // Analyze debug output buffer
             if (result == VK_SUCCESS) {
-                AnalyzeAndReportError(dev_data, cb_node, queue, (uint32_t *)(pData + offset_to_data));
+                AnalyzeAndReportError(dev_data, cb_node, queue, draw_index, (uint32_t *)(pData + offset_to_data));
                 GetDispatchTable(dev_data)->UnmapMemory(cb_node->device, buffer_info.mem_block.memory);
             }
+            draw_index++;
         }
     }
 }
