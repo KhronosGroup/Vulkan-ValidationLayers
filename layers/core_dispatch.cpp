@@ -248,16 +248,12 @@ VKAPI_ATTR void VKAPI_CALL CmdUpdateBuffer(VkCommandBuffer commandBuffer, VkBuff
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     unique_lock_t lock(global_lock);
 
-    auto cb_state = GetCBNode(dev_data, commandBuffer);
-    assert(cb_state);
-    auto dst_buff_state = GetBufferState(dev_data, dstBuffer);
-    assert(dst_buff_state);
-    skip |= PreCallCmdUpdateBuffer(dev_data, cb_state, dst_buff_state);
+    skip |= PreCallValidateCmdUpdateBuffer(commandBuffer, dstBuffer, dstOffset, dataSize, pData);
     lock.unlock();
     if (!skip) {
         dev_data->dispatch_table.CmdUpdateBuffer(commandBuffer, dstBuffer, dstOffset, dataSize, pData);
         lock.lock();
-        PostCallRecordCmdUpdateBuffer(dev_data, cb_state, dst_buff_state);
+        PostCallRecordCmdUpdateBuffer(commandBuffer, dstBuffer, dstOffset, dataSize, pData);
         lock.unlock();
     }
 }
@@ -317,11 +313,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDebugMarkerBeginEXT(VkCommandBuffer commandBuffer,
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     unique_lock_t lock(global_lock);
     bool skip = false;
-    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
-    // Minimal validation for command buffer state
-    if (cb_state) {
-        skip |= PreCallValidateCmdDebugMarkerBeginEXT(device_data, cb_state);
-    }
+    skip |= PreCallValidateCmdDebugMarkerBeginEXT(commandBuffer, pMarkerInfo);
     lock.unlock();
     if (!skip) {
         device_data->dispatch_table.CmdDebugMarkerBeginEXT(commandBuffer, pMarkerInfo);
@@ -1319,15 +1311,12 @@ VKAPI_ATTR void VKAPI_CALL CmdBindShadingRateImageNV(VkCommandBuffer commandBuff
     bool skip = false;
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     unique_lock_t lock(global_lock);
-    GLOBAL_CB_NODE *pCB = GetCBNode(dev_data, commandBuffer);
-    if (pCB) {
-        skip |= PreCallValidateCmdBindShadingRateImageNV(dev_data, pCB, commandBuffer, imageView, imageLayout);
-        if (!skip) {
-            PreCallRecordCmdBindShadingRateImageNV(dev_data, pCB, imageView);
-        }
+    skip |= PreCallValidateCmdBindShadingRateImageNV(commandBuffer, imageView, imageLayout);
+    if (!skip) {
+        PreCallRecordCmdBindShadingRateImageNV(commandBuffer, imageView, imageLayout);
+        lock.unlock();
+        dev_data->dispatch_table.CmdBindShadingRateImageNV(commandBuffer, imageView, imageLayout);
     }
-    lock.unlock();
-    if (!skip) dev_data->dispatch_table.CmdBindShadingRateImageNV(commandBuffer, imageView, imageLayout);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdSetViewportShadingRatePaletteNV(VkCommandBuffer commandBuffer, uint32_t firstViewport,
@@ -1441,18 +1430,14 @@ VKAPI_ATTR void VKAPI_CALL CmdBindDescriptorSets(VkCommandBuffer commandBuffer, 
     bool skip = false;
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     unique_lock_t lock(global_lock);
-    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
-    assert(cb_state);
-    skip = PreCallValidateCmdBindDescriptorSets(device_data, cb_state, pipelineBindPoint, layout, firstSet, setCount,
-                                                pDescriptorSets, dynamicOffsetCount, pDynamicOffsets);
+    skip = PreCallValidateCmdBindDescriptorSets(commandBuffer, pipelineBindPoint, layout, firstSet, setCount, pDescriptorSets,
+                                                dynamicOffsetCount, pDynamicOffsets);
     if (!skip) {
-        PreCallRecordCmdBindDescriptorSets(device_data, cb_state, pipelineBindPoint, layout, firstSet, setCount, pDescriptorSets,
+        PreCallRecordCmdBindDescriptorSets(commandBuffer, pipelineBindPoint, layout, firstSet, setCount, pDescriptorSets,
                                            dynamicOffsetCount, pDynamicOffsets);
         lock.unlock();
         device_data->dispatch_table.CmdBindDescriptorSets(commandBuffer, pipelineBindPoint, layout, firstSet, setCount,
                                                           pDescriptorSets, dynamicOffsetCount, pDynamicOffsets);
-    } else {
-        lock.unlock();
     }
 }
 
@@ -1462,18 +1447,12 @@ VKAPI_ATTR void VKAPI_CALL CmdPushDescriptorSetKHR(VkCommandBuffer commandBuffer
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     unique_lock_t lock(global_lock);
     bool skip = false;
-    auto cb_state = GetCBNode(device_data, commandBuffer);
-    if (cb_state) {
-        skip = PreCallValidateCmdPushDescriptorSetKHR(device_data, cb_state, pipelineBindPoint, layout, set, descriptorWriteCount,
-                                                      pDescriptorWrites, "vkCmdPushDescriptorSetKHR()");
-        if (!skip) {
-            PreCallRecordCmdPushDescriptorSetKHR(device_data, cb_state, pipelineBindPoint, layout, set, descriptorWriteCount,
-                                                 pDescriptorWrites);
-        }
-    }
-    lock.unlock();
-
+    skip = PreCallValidateCmdPushDescriptorSetKHR(commandBuffer, pipelineBindPoint, layout, set, descriptorWriteCount,
+                                                  pDescriptorWrites);
     if (!skip) {
+        PreCallRecordCmdPushDescriptorSetKHR(commandBuffer, pipelineBindPoint, layout, set, descriptorWriteCount,
+                                             pDescriptorWrites);
+        lock.unlock();
         device_data->dispatch_table.CmdPushDescriptorSetKHR(commandBuffer, pipelineBindPoint, layout, set, descriptorWriteCount,
                                                             pDescriptorWrites);
     }
@@ -1485,18 +1464,10 @@ VKAPI_ATTR void VKAPI_CALL CmdBindIndexBuffer(VkCommandBuffer commandBuffer, VkB
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     unique_lock_t lock(global_lock);
 
-    auto buffer_state = GetBufferState(dev_data, buffer);
-    auto cb_node = GetCBNode(dev_data, commandBuffer);
-    assert(cb_node);
-    assert(buffer_state);
-
-    PreCallValidateCmdBindIndexBuffer(dev_data, buffer_state, cb_node, commandBuffer, buffer, offset, indexType);
-
+    skip = PreCallValidateCmdBindIndexBuffer(commandBuffer, buffer, offset, indexType);
     if (skip) return;
-
-    PreCallRecordCmdBindIndexBuffer(buffer_state, cb_node, buffer, offset, indexType);
+    PreCallRecordCmdBindIndexBuffer(commandBuffer, buffer, offset, indexType);
     lock.unlock();
-
     dev_data->dispatch_table.CmdBindIndexBuffer(commandBuffer, buffer, offset, indexType);
 }
 
@@ -1506,15 +1477,9 @@ VKAPI_ATTR void VKAPI_CALL CmdBindVertexBuffers(VkCommandBuffer commandBuffer, u
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     unique_lock_t lock(global_lock);
 
-    auto cb_node = GetCBNode(dev_data, commandBuffer);
-    assert(cb_node);
-
-    skip |= PreCallValidateCmdBindVertexBuffers(dev_data, cb_node, bindingCount, pBuffers, pOffsets);
-
+    skip |= PreCallValidateCmdBindVertexBuffers(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets);
     if (skip) return;
-
-    PreCallRecordCmdBindVertexBuffers(cb_node, firstBinding, bindingCount, pBuffers, pOffsets);
-
+    PreCallRecordCmdBindVertexBuffers(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets);
     lock.unlock();
     dev_data->dispatch_table.CmdBindVertexBuffers(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets);
 }
@@ -1817,20 +1782,14 @@ VKAPI_ATTR void VKAPI_CALL CmdPipelineBarrier(VkCommandBuffer commandBuffer, VkP
     bool skip = false;
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     unique_lock_t lock(global_lock);
-    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
-    if (cb_state) {
-        skip |= PreCallValidateCmdPipelineBarrier(device_data, cb_state, srcStageMask, dstStageMask, dependencyFlags,
-                                                  memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount,
-                                                  pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
-        if (!skip) {
-            PreCallRecordCmdPipelineBarrier(device_data, cb_state, commandBuffer, bufferMemoryBarrierCount, pBufferMemoryBarriers,
-                                            imageMemoryBarrierCount, pImageMemoryBarriers);
-        }
-    } else {
-        assert(0);
-    }
-    lock.unlock();
+    skip |= PreCallValidateCmdPipelineBarrier(commandBuffer, srcStageMask, dstStageMask, dependencyFlags, memoryBarrierCount,
+                                              pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers,
+                                              imageMemoryBarrierCount, pImageMemoryBarriers);
     if (!skip) {
+        PreCallRecordCmdPipelineBarrier(commandBuffer, srcStageMask, dstStageMask, dependencyFlags, memoryBarrierCount,
+                                        pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount,
+                                        pImageMemoryBarriers);
+        lock.unlock();
         device_data->dispatch_table.CmdPipelineBarrier(commandBuffer, srcStageMask, dstStageMask, dependencyFlags,
                                                        memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount,
                                                        pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
@@ -1900,7 +1859,7 @@ VKAPI_ATTR void VKAPI_CALL CmdPushConstants(VkCommandBuffer commandBuffer, VkPip
     bool skip = false;
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     unique_lock_t lock(global_lock);
-    skip |= PreCallValidateCmdPushConstants(dev_data, commandBuffer, layout, stageFlags, offset, size);
+    skip |= PreCallValidateCmdPushConstants(commandBuffer, layout, stageFlags, offset, size, pValues);
     lock.unlock();
     if (!skip) dev_data->dispatch_table.CmdPushConstants(commandBuffer, layout, stageFlags, offset, size, pValues);
 }
@@ -1910,18 +1869,12 @@ VKAPI_ATTR void VKAPI_CALL CmdWriteTimestamp(VkCommandBuffer commandBuffer, VkPi
     bool skip = false;
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     unique_lock_t lock(global_lock);
-    GLOBAL_CB_NODE *cb_state = GetCBNode(dev_data, commandBuffer);
-    if (cb_state) {
-        skip |= PreCallValidateCmdWriteTimestamp(dev_data, cb_state);
-    }
+    skip |= PreCallValidateCmdWriteTimestamp(commandBuffer, pipelineStage, queryPool, slot);
     lock.unlock();
-
     if (skip) return;
-
     dev_data->dispatch_table.CmdWriteTimestamp(commandBuffer, pipelineStage, queryPool, slot);
-
     lock.lock();
-    if (cb_state) PostCallRecordCmdWriteTimestamp(cb_state, commandBuffer, queryPool, slot);
+    PostCallRecordCmdWriteTimestamp(commandBuffer, pipelineStage, queryPool, slot);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL CreateFramebuffer(VkDevice device, const VkFramebufferCreateInfo *pCreateInfo,
@@ -1985,16 +1938,10 @@ VKAPI_ATTR void VKAPI_CALL CmdBeginRenderPass(VkCommandBuffer commandBuffer, con
     bool skip = false;
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     unique_lock_t lock(global_lock);
-    GLOBAL_CB_NODE *cb_state = GetCBNode(dev_data, commandBuffer);
-    if (cb_state) {
-        skip |= PreCallValidateCmdBeginRenderPass(dev_data, cb_state, RENDER_PASS_VERSION_1, pRenderPassBegin);
-        if (!skip) {
-            PreCallRecordCmdBeginRenderPass(dev_data, cb_state, pRenderPassBegin, contents);
-        }
-    }
-
-    lock.unlock();
+    skip |= PreCallValidateCmdBeginRenderPass(commandBuffer, pRenderPassBegin, contents);
     if (!skip) {
+        PreCallRecordCmdBeginRenderPass(commandBuffer, pRenderPassBegin, contents);
+        lock.unlock();
         dev_data->dispatch_table.CmdBeginRenderPass(commandBuffer, pRenderPassBegin, contents);
     }
 }
@@ -2004,16 +1951,10 @@ VKAPI_ATTR void VKAPI_CALL CmdBeginRenderPass2KHR(VkCommandBuffer commandBuffer,
     bool skip = false;
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     unique_lock_t lock(global_lock);
-    GLOBAL_CB_NODE *cb_state = GetCBNode(dev_data, commandBuffer);
-    if (cb_state) {
-        skip |= PreCallValidateCmdBeginRenderPass(dev_data, cb_state, RENDER_PASS_VERSION_2, pRenderPassBegin);
-        if (!skip) {
-            PreCallRecordCmdBeginRenderPass(dev_data, cb_state, pRenderPassBegin, pSubpassBeginInfo->contents);
-        }
-    }
-
-    lock.unlock();
+    skip |= PreCallValidateCmdBeginRenderPass2KHR(commandBuffer, pRenderPassBegin, pSubpassBeginInfo);
     if (!skip) {
+        PreCallRecordCmdBeginRenderPass2KHR(commandBuffer, pRenderPassBegin, pSubpassBeginInfo);
+        lock.unlock();
         dev_data->dispatch_table.CmdBeginRenderPass2KHR(commandBuffer, pRenderPassBegin, pSubpassBeginInfo);
     }
 }
@@ -2022,20 +1963,12 @@ VKAPI_ATTR void VKAPI_CALL CmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpa
     bool skip = false;
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     unique_lock_t lock(global_lock);
-    GLOBAL_CB_NODE *pCB = GetCBNode(dev_data, commandBuffer);
-    if (pCB) {
-        skip |= PreCallValidateCmdNextSubpass(dev_data, pCB, RENDER_PASS_VERSION_1, commandBuffer);
-    }
+    skip |= PreCallValidateCmdNextSubpass(commandBuffer, contents);
     lock.unlock();
-
     if (skip) return;
-
     dev_data->dispatch_table.CmdNextSubpass(commandBuffer, contents);
-
-    if (pCB) {
-        lock.lock();
-        PostCallRecordCmdNextSubpass(dev_data, pCB, contents);
-    }
+    lock.lock();
+    PostCallRecordCmdNextSubpass(commandBuffer, contents);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdNextSubpass2KHR(VkCommandBuffer commandBuffer, const VkSubpassBeginInfoKHR *pSubpassBeginInfo,
@@ -2043,60 +1976,36 @@ VKAPI_ATTR void VKAPI_CALL CmdNextSubpass2KHR(VkCommandBuffer commandBuffer, con
     bool skip = false;
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     unique_lock_t lock(global_lock);
-    GLOBAL_CB_NODE *pCB = GetCBNode(dev_data, commandBuffer);
-    if (pCB) {
-        skip |= PreCallValidateCmdNextSubpass(dev_data, pCB, RENDER_PASS_VERSION_2, commandBuffer);
-    }
+    skip |= PreCallValidateCmdNextSubpass2KHR(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo);
     lock.unlock();
-
     if (skip) return;
-
     dev_data->dispatch_table.CmdNextSubpass2KHR(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo);
-
-    if (pCB) {
-        lock.lock();
-        PostCallRecordCmdNextSubpass(dev_data, pCB, pSubpassBeginInfo->contents);
-    }
+    PostCallRecordCmdNextSubpass2KHR(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdEndRenderPass(VkCommandBuffer commandBuffer) {
     bool skip = false;
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     unique_lock_t lock(global_lock);
-    auto pCB = GetCBNode(dev_data, commandBuffer);
-    if (pCB) {
-        skip |= PreCallValidateCmdEndRenderPass(dev_data, pCB, RENDER_PASS_VERSION_1, commandBuffer);
-    }
+    skip |= PreCallValidateCmdEndRenderPass(commandBuffer);
     lock.unlock();
-
     if (skip) return;
-
     dev_data->dispatch_table.CmdEndRenderPass(commandBuffer);
-
-    if (pCB) {
-        lock.lock();
-        PostCallRecordCmdEndRenderPass(dev_data, pCB);
-    }
+    lock.lock();
+    PostCallRecordCmdEndRenderPass(commandBuffer);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdEndRenderPass2KHR(VkCommandBuffer commandBuffer, const VkSubpassEndInfoKHR *pSubpassEndInfo) {
     bool skip = false;
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     unique_lock_t lock(global_lock);
-    auto pCB = GetCBNode(dev_data, commandBuffer);
-    if (pCB) {
-        skip |= PreCallValidateCmdEndRenderPass(dev_data, pCB, RENDER_PASS_VERSION_2, commandBuffer);
-    }
+    skip |= PreCallValidateCmdEndRenderPass2KHR(commandBuffer, pSubpassEndInfo);
     lock.unlock();
-
     if (skip) return;
-
     dev_data->dispatch_table.CmdEndRenderPass2KHR(commandBuffer, pSubpassEndInfo);
 
-    if (pCB) {
-        lock.lock();
-        PostCallRecordCmdEndRenderPass(dev_data, pCB);
-    }
+    lock.lock();
+    PostCallRecordCmdEndRenderPass2KHR(commandBuffer, pSubpassEndInfo);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBuffersCount,
@@ -2104,14 +2013,12 @@ VKAPI_ATTR void VKAPI_CALL CmdExecuteCommands(VkCommandBuffer commandBuffer, uin
     bool skip = false;
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     unique_lock_t lock(global_lock);
-    GLOBAL_CB_NODE *cb_state = GetCBNode(dev_data, commandBuffer);
-    if (cb_state) {
-        // TODO: State changes needs to be untangled from validation in PreCallValidationCmdExecuteCommands()
-        skip |= PreCallValidateCmdExecuteCommands(dev_data, cb_state, commandBuffer, commandBuffersCount, pCommandBuffers);
-        PreCallRecordCmdExecuteCommands(dev_data, cb_state, commandBuffersCount, pCommandBuffers);
-    }
+    // TODO: State changes needs to be untangled from validation in PreCallValidationCmdExecuteCommands()
+    skip |= PreCallValidateCmdExecuteCommands(commandBuffer, commandBuffersCount, pCommandBuffers);
+    if (skip) return;
+    PreCallRecordCmdExecuteCommands(commandBuffer, commandBuffersCount, pCommandBuffers);
     lock.unlock();
-    if (!skip) dev_data->dispatch_table.CmdExecuteCommands(commandBuffer, commandBuffersCount, pCommandBuffers);
+    dev_data->dispatch_table.CmdExecuteCommands(commandBuffer, commandBuffersCount, pCommandBuffers);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL MapMemory(VkDevice device, VkDeviceMemory mem, VkDeviceSize offset, VkDeviceSize size, VkFlags flags,
@@ -2870,7 +2777,7 @@ VKAPI_ATTR void VKAPI_CALL QueueInsertDebugUtilsLabelEXT(VkQueue queue, const Vk
 VKAPI_ATTR void VKAPI_CALL CmdBeginDebugUtilsLabelEXT(VkCommandBuffer commandBuffer, const VkDebugUtilsLabelEXT *pLabelInfo) {
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     std::unique_lock<std::mutex> lock(global_lock);
-    PreCallRecordCmdBeginDebugUtilsLabelEXT(dev_data, commandBuffer, pLabelInfo);
+    PreCallRecordCmdBeginDebugUtilsLabelEXT(commandBuffer, pLabelInfo);
     lock.unlock();
     if (nullptr != dev_data->dispatch_table.CmdBeginDebugUtilsLabelEXT) {
         dev_data->dispatch_table.CmdBeginDebugUtilsLabelEXT(commandBuffer, pLabelInfo);
@@ -2879,17 +2786,15 @@ VKAPI_ATTR void VKAPI_CALL CmdBeginDebugUtilsLabelEXT(VkCommandBuffer commandBuf
 
 VKAPI_ATTR void VKAPI_CALL CmdEndDebugUtilsLabelEXT(VkCommandBuffer commandBuffer) {
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    if (nullptr != dev_data->dispatch_table.CmdEndDebugUtilsLabelEXT) {
-        dev_data->dispatch_table.CmdEndDebugUtilsLabelEXT(commandBuffer);
-    }
+    dev_data->dispatch_table.CmdEndDebugUtilsLabelEXT(commandBuffer);
     lock_guard_t lock(global_lock);
-    PostCallRecordCmdEndDebugUtilsLabelEXT(dev_data, commandBuffer);
+    PostCallRecordCmdEndDebugUtilsLabelEXT(commandBuffer);
 }
 
 VKAPI_ATTR void VKAPI_CALL CmdInsertDebugUtilsLabelEXT(VkCommandBuffer commandBuffer, const VkDebugUtilsLabelEXT *pLabelInfo) {
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     std::unique_lock<std::mutex> lock(global_lock);
-    PreCallRecordCmdInsertDebugUtilsLabelEXT(dev_data, commandBuffer, pLabelInfo);
+    PreCallRecordCmdInsertDebugUtilsLabelEXT(commandBuffer, pLabelInfo);
     lock.unlock();
     if (nullptr != dev_data->dispatch_table.CmdInsertDebugUtilsLabelEXT) {
         dev_data->dispatch_table.CmdInsertDebugUtilsLabelEXT(commandBuffer, pLabelInfo);
@@ -2939,7 +2844,7 @@ VKAPI_ATTR void VKAPI_CALL DestroyDebugReportCallbackEXT(VkInstance instance, Vk
     instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(instance), instance_layer_data_map);
     instance_data->dispatch_table.DestroyDebugReportCallbackEXT(instance, msgCallback, pAllocator);
     lock_guard_t lock(global_lock);
-    PostCallDestroyDebugReportCallbackEXT(instance_data, msgCallback, pAllocator);
+    PostCallDestroyDebugReportCallbackEXT(instance, msgCallback, pAllocator);
 }
 
 VKAPI_ATTR void VKAPI_CALL DebugReportMessageEXT(VkInstance instance, VkDebugReportFlagsEXT flags,
@@ -3082,17 +2987,10 @@ VKAPI_ATTR void VKAPI_CALL CmdPushDescriptorSetWithTemplateKHR(VkCommandBuffer c
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     unique_lock_t lock(global_lock);
     bool skip = false;
-    GLOBAL_CB_NODE *cb_state = GetCBNode(dev_data, commandBuffer);
-    if (cb_state) {
-        skip |=
-            PreCallValidateCmdPushDescriptorSetWithTemplateKHR(dev_data, cb_state, descriptorUpdateTemplate, layout, set, pData);
-        if (!skip) {
-            PreCallRecordCmdPushDescriptorSetWithTemplateKHR(dev_data, cb_state, descriptorUpdateTemplate, layout, set, pData);
-        }
-    }
-    lock.unlock();
-
+    skip |= PreCallValidateCmdPushDescriptorSetWithTemplateKHR(commandBuffer, descriptorUpdateTemplate, layout, set, pData);
     if (!skip) {
+        PreCallRecordCmdPushDescriptorSetWithTemplateKHR(commandBuffer, descriptorUpdateTemplate, layout, set, pData);
+        lock.unlock();
         dev_data->dispatch_table.CmdPushDescriptorSetWithTemplateKHR(commandBuffer, descriptorUpdateTemplate, layout, set, pData);
     }
 }
@@ -3172,11 +3070,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDebugMarkerEndEXT(VkCommandBuffer commandBuffer) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     unique_lock_t lock(global_lock);
     bool skip = false;
-    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
-    // Minimal validation for command buffer state
-    if (cb_state) {
-        skip |= PreCallValidateCmdDebugMarkerEndEXT(device_data, cb_state);
-    }
+    skip |= PreCallValidateCmdDebugMarkerEndEXT(commandBuffer);
     lock.unlock();
     if (!skip) {
         device_data->dispatch_table.CmdDebugMarkerEndEXT(commandBuffer);
@@ -3373,17 +3267,13 @@ VKAPI_ATTR void VKAPI_CALL CmdBindPipeline(VkCommandBuffer commandBuffer, VkPipe
     bool skip = false;
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     unique_lock_t lock(global_lock);
-    GLOBAL_CB_NODE *cb_state = GetCBNode(dev_data, commandBuffer);
-    if (cb_state) {
-        skip |= PreCallValidateCmdBindPipeline(dev_data, cb_state);
-        PreCallRecordCmdBindPipeline(dev_data, cb_state, pipelineBindPoint, pipeline);
-    }
-    lock.unlock();
-    if (!skip) dev_data->dispatch_table.CmdBindPipeline(commandBuffer, pipelineBindPoint, pipeline);
-    if (GetEnables(dev_data)->gpu_validation) {
+    skip |= PreCallValidateCmdBindPipeline(commandBuffer, pipelineBindPoint, pipeline);
+    if (!skip) {
+        PreCallRecordCmdBindPipeline(commandBuffer, pipelineBindPoint, pipeline);
+        lock.unlock();
+        dev_data->dispatch_table.CmdBindPipeline(commandBuffer, pipelineBindPoint, pipeline);
         lock.lock();
-        // Bind the debug descriptor set immediately after binding the pipeline.
-        GpuPostCallDispatchCmdBindPipeline(dev_data, commandBuffer, pipelineBindPoint, pipeline);
+        PostCallRecordCmdBindPipeline(commandBuffer, pipelineBindPoint, pipeline);
         lock.unlock();
     }
 }
