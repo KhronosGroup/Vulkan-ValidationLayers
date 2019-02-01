@@ -1721,26 +1721,33 @@ void PostCallRecordBindImageMemory2(VkDevice device, uint32_t bindInfoCount, con
 bool PreCallValidateBindImageMemory2KHR(VkDevice device, uint32_t bindInfoCount, const VkBindImageMemoryInfoKHR* pBindInfos);
 void PostCallRecordBindImageMemory2KHR(VkDevice device, uint32_t bindInfoCount, const VkBindImageMemoryInfoKHR* pBindInfos,
                                        VkResult result);
-bool PreCallValidateSetEvent(layer_data* dev_data, VkEvent event);
-void PreCallRecordSetEvent(layer_data* dev_data, VkEvent event);
+bool PreCallValidateSetEvent(VkDevice device, VkEvent event);
+void PreCallRecordSetEvent(VkDevice device, VkEvent event);
 bool PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo* pBindInfo, VkFence fence);
 void PostCallRecordQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo* pBindInfo, VkFence fence,
                                    VkResult result);
 void PostCallRecordCreateSemaphore(VkDevice device, const VkSemaphoreCreateInfo* pCreateInfo,
                                    const VkAllocationCallbacks* pAllocator, VkSemaphore* pSemaphore, VkResult result);
-bool PreCallValidateImportSemaphore(layer_data* dev_data, VkSemaphore semaphore, const char* caller_name);
-void PostCallRecordImportSemaphore(layer_data* dev_data, VkSemaphore semaphore,
-                                   VkExternalSemaphoreHandleTypeFlagBitsKHR handle_type, VkSemaphoreImportFlagsKHR flags);
-void PostCallRecordGetSemaphoreFdKHR(VkDevice device, const VkSemaphoreGetFdInfoKHR* pGetFdInfo, int* pFd, VkResult result);
-bool PreCallValidateImportFence(layer_data* dev_data, VkFence fence, const char* caller_name);
-void PostCallRecordImportFence(layer_data* dev_data, VkFence fence, VkExternalFenceHandleTypeFlagBitsKHR handle_type,
-                               VkFenceImportFlagsKHR flags);
+bool PreCallValidateImportSemaphoreFdKHR(VkDevice device, const VkImportSemaphoreFdInfoKHR* pImportSemaphoreFdInfo);
+void PostCallRecordImportSemaphoreFdKHR(VkDevice device, const VkImportSemaphoreFdInfoKHR* pImportSemaphoreFdInfo, VkResult result);
 #ifdef VK_USE_PLATFORM_WIN32_KHR
+void PostCallRecordImportSemaphoreWin32HandleKHR(VkDevice device,
+                                                 const VkImportSemaphoreWin32HandleInfoKHR* pImportSemaphoreWin32HandleInfo,
+                                                 VkResult result);
+bool PreCallValidateImportSemaphoreWin32HandleKHR(VkDevice device,
+                                                  const VkImportSemaphoreWin32HandleInfoKHR* pImportSemaphoreWin32HandleInfo);
+bool PreCallValidateImportFenceWin32HandleKHR(VkDevice device, const VkImportFenceWin32HandleInfoKHR* pImportFenceWin32HandleInfo);
+void PostCallRecordImportFenceWin32HandleKHR(VkDevice device, const VkImportFenceWin32HandleInfoKHR* pImportFenceWin32HandleInfo,
+                                             VkResult result);
 void PostCallRecordGetSemaphoreWin32HandleKHR(VkDevice device, const VkSemaphoreGetWin32HandleInfoKHR* pGetWin32HandleInfo,
                                               HANDLE* pHandle, VkResult result);
 void PostCallRecordGetFenceWin32HandleKHR(VkDevice device, const VkFenceGetWin32HandleInfoKHR* pGetWin32HandleInfo, HANDLE* pHandle,
                                           VkResult result);
 #endif  // VK_USE_PLATFORM_WIN32_KHR
+bool PreCallValidateImportFenceFdKHR(VkDevice device, const VkImportFenceFdInfoKHR* pImportFenceFdInfo);
+void PostCallRecordImportFenceFdKHR(VkDevice device, const VkImportFenceFdInfoKHR* pImportFenceFdInfo, VkResult result);
+
+void PostCallRecordGetSemaphoreFdKHR(VkDevice device, const VkSemaphoreGetFdInfoKHR* pGetFdInfo, int* pFd, VkResult result);
 void PostCallRecordGetFenceFdKHR(VkDevice device, const VkFenceGetFdInfoKHR* pGetFdInfo, int* pFd, VkResult result);
 void PostCallRecordCreateEvent(VkDevice device, const VkEventCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                                VkEvent* pEvent, VkResult result);
@@ -1760,14 +1767,18 @@ bool PreCallValidateCreateSharedSwapchainsKHR(VkDevice device, uint32_t swapchai
                                               VkSwapchainKHR* pSwapchains);
 void PostCallRecordCreateSharedSwapchainsKHR(VkDevice device, uint32_t swapchainCount, const VkSwapchainCreateInfoKHR* pCreateInfos,
                                              const VkAllocationCallbacks* pAllocator, VkSwapchainKHR* pSwapchains, VkResult result);
-bool PreCallValidateCommonAcquireNextImage(layer_data* dev_data, VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout,
-                                           VkSemaphore semaphore, VkFence fence, uint32_t* pImageIndex, const char* func_name);
-void PostCallRecordCommonAcquireNextImage(layer_data* dev_data, VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout,
-                                          VkSemaphore semaphore, VkFence fence, uint32_t* pImageIndex);
-bool PreCallValidateEnumeratePhysicalDevices(instance_layer_data* instance_data, uint32_t* pPhysicalDeviceCount);
-void PreCallRecordEnumeratePhysicalDevices(instance_layer_data* instance_data);
-void PostCallRecordEnumeratePhysicalDevices(instance_layer_data* instance_data, const VkResult& result,
-                                            uint32_t* pPhysicalDeviceCount, VkPhysicalDevice* pPhysicalDevices);
+bool PreCallValidateAcquireNextImageKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout, VkSemaphore semaphore,
+                                        VkFence fence, uint32_t* pImageIndex);
+bool PreCallValidateAcquireNextImage2KHR(VkDevice device, const VkAcquireNextImageInfoKHR* pAcquireInfo, uint32_t* pImageIndex);
+void PostCallRecordAcquireNextImageKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout, VkSemaphore semaphore,
+                                       VkFence fence, uint32_t* pImageIndex, VkResult result);
+void PostCallRecordAcquireNextImage2KHR(VkDevice device, const VkAcquireNextImageInfoKHR* pAcquireInfo, uint32_t* pImageIndex,
+                                        VkResult result);
+bool PreCallValidateEnumeratePhysicalDevices(VkInstance instance, uint32_t* pPhysicalDeviceCount,
+                                             VkPhysicalDevice* pPhysicalDevices);
+void PreCallRecordEnumeratePhysicalDevices(VkInstance instance, uint32_t* pPhysicalDeviceCount, VkPhysicalDevice* pPhysicalDevices);
+void PostCallRecordEnumeratePhysicalDevices(VkInstance instance, uint32_t* pPhysicalDeviceCount, VkPhysicalDevice* pPhysicalDevices,
+                                            VkResult result);
 bool PreCallValidateGetPhysicalDeviceQueueFamilyProperties(VkPhysicalDevice physicalDevice, uint32_t* pQueueFamilyPropertyCount,
                                                            VkQueueFamilyProperties* pQueueFamilyProperties);
 void PostCallRecordGetPhysicalDeviceQueueFamilyProperties(VkPhysicalDevice physicalDevice, uint32_t* pQueueFamilyPropertyCount,
@@ -1826,10 +1837,18 @@ void PostCallDestroyDebugReportCallbackEXT(VkInstance instance, VkDebugReportCal
                                            const VkAllocationCallbacks* pAllocator);
 bool PreCallValidateEnumeratePhysicalDeviceGroups(VkInstance instance, uint32_t* pPhysicalDeviceGroupCount,
                                                   VkPhysicalDeviceGroupPropertiesKHR* pPhysicalDeviceGroupProperties);
-void PreCallRecordEnumeratePhysicalDeviceGroups(instance_layer_data* instance_data,
+void PreCallRecordEnumeratePhysicalDeviceGroups(VkInstance instance, uint32_t* pPhysicalDeviceGroupCount,
                                                 VkPhysicalDeviceGroupPropertiesKHR* pPhysicalDeviceGroupProperties);
-void PostCallRecordEnumeratePhysicalDeviceGroups(instance_layer_data* instance_data, uint32_t* pPhysicalDeviceGroupCount,
-                                                 VkPhysicalDeviceGroupPropertiesKHR* pPhysicalDeviceGroupProperties);
+void PostCallRecordEnumeratePhysicalDeviceGroups(VkInstance instance, uint32_t* pPhysicalDeviceGroupCount,
+                                                 VkPhysicalDeviceGroupPropertiesKHR* pPhysicalDeviceGroupProperties,
+                                                 VkResult result);
+bool PreCallValidateEnumeratePhysicalDeviceGroupsKHR(VkInstance instance, uint32_t* pPhysicalDeviceGroupCount,
+                                                     VkPhysicalDeviceGroupPropertiesKHR* pPhysicalDeviceGroupProperties);
+void PreCallRecordEnumeratePhysicalDeviceGroupsKHR(VkInstance instance, uint32_t* pPhysicalDeviceGroupCount,
+                                                   VkPhysicalDeviceGroupPropertiesKHR* pPhysicalDeviceGroupProperties);
+void PostCallRecordEnumeratePhysicalDeviceGroupsKHR(VkInstance instance, uint32_t* pPhysicalDeviceGroupCount,
+                                                    VkPhysicalDeviceGroupPropertiesKHR* pPhysicalDeviceGroupProperties,
+                                                    VkResult result);
 bool PreCallValidateCreateDescriptorUpdateTemplate(VkDevice device, const VkDescriptorUpdateTemplateCreateInfoKHR* pCreateInfo,
                                                    const VkAllocationCallbacks* pAllocator,
                                                    VkDescriptorUpdateTemplateKHR* pDescriptorUpdateTemplate);
