@@ -2766,6 +2766,41 @@ static inline bool ContainsRect(VkRect2D rect, VkRect2D sub_rect) {
     return true;
 }
 
+static bool ValidateClearAttachementExtent(const layer_data *device_data, VkCommandBuffer command_buffer, uint32_t attachment_index,
+                                           FRAMEBUFFER_STATE *framebuffer, uint32_t fb_attachment, const VkRect2D &render_area,
+                                           uint32_t rect_count, const VkClearRect *clear_rects) {
+    bool skip = false;
+    auto image_view = framebuffer && (fb_attachment != VK_ATTACHMENT_UNUSED) ? framebuffer->createInfo.pAttachments[fb_attachment]
+                                                                             : VK_NULL_HANDLE;
+    const auto image_view_state = GetImageViewState(device_data, image_view);
+
+    for (uint32_t j = 0; j < rect_count; j++) {
+        if (!ContainsRect(render_area, clear_rects[j].rect)) {
+            skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                            HandleToUint64(command_buffer), "VUID-vkCmdClearAttachments-pRects-00016",
+                            "vkCmdClearAttachments(): The area defined by pRects[%d] is not contained in the area of "
+                            "the current render pass instance.",
+                            j);
+        }
+
+        if (image_view_state) {
+            // The layers specified by a given element of pRects must be contained within every attachment that
+            // pAttachments refers to
+            const auto attachment_layer_count = image_view_state->create_info.subresourceRange.layerCount;
+            if ((clear_rects[j].baseArrayLayer >= attachment_layer_count) ||
+                (clear_rects[j].baseArrayLayer + clear_rects[j].layerCount > attachment_layer_count)) {
+                skip |=
+                    log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                            HandleToUint64(command_buffer), "VUID-vkCmdClearAttachments-pRects-00017",
+                            "vkCmdClearAttachments(): The layers defined in pRects[%d] are not contained in the layers "
+                            "of pAttachment[%d].",
+                            j, attachment_index);
+            }
+        }
+    }
+    return skip;
+}
+
 bool PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffer, uint32_t attachmentCount,
                                         const VkClearAttachment *pAttachments, uint32_t rectCount, const VkClearRect *pRects) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
@@ -2799,10 +2834,12 @@ bool PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffer, uint32_t 
         const VkRenderPassCreateInfo2KHR *renderpass_create_info = cb_node->activeRenderPass->createInfo.ptr();
         const VkSubpassDescription2KHR *subpass_desc = &renderpass_create_info->pSubpasses[cb_node->activeSubpass];
         auto framebuffer = GetFramebufferState(device_data, cb_node->activeFramebuffer);
+        const auto &render_area = cb_node->activeRenderPassBeginInfo.renderArea;
+        std::shared_ptr<std::vector<VkClearRect>> clear_rect_copy;
 
-        for (uint32_t i = 0; i < attachmentCount; i++) {
-            auto clear_desc = &pAttachments[i];
-            VkImageView image_view = VK_NULL_HANDLE;
+        for (uint32_t attachment_index = 0; attachment_index < attachmentCount; attachment_index++) {
+            auto clear_desc = &pAttachments[attachment_index];
+            uint32_t fb_attachment = VK_ATTACHMENT_UNUSED;
 
             if (0 == clear_desc->aspectMask) {
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
@@ -2819,22 +2856,23 @@ bool PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffer, uint32_t 
                                     "range for active subpass %d.",
                                     clear_desc->colorAttachment, cb_node->activeSubpass);
                 } else {
-                    image_view = framebuffer->createInfo
-                                     .pAttachments[subpass_desc->pColorAttachments[clear_desc->colorAttachment].attachment];
+                    fb_attachment = subpass_desc->pColorAttachments[clear_desc->colorAttachment].attachment;
                 }
                 if ((clear_desc->aspectMask & VK_IMAGE_ASPECT_DEPTH_BIT) ||
                     (clear_desc->aspectMask & VK_IMAGE_ASPECT_STENCIL_BIT)) {
                     char const str[] =
                         "vkCmdClearAttachments() aspectMask [%d] must set only VK_IMAGE_ASPECT_COLOR_BIT of a color attachment.";
-                    skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                                    HandleToUint64(commandBuffer), "VUID-VkClearAttachment-aspectMask-00019", str, i);
+                    skip |=
+                        log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                                HandleToUint64(commandBuffer), "VUID-VkClearAttachment-aspectMask-00019", str, attachment_index);
                 }
             } else {  // Must be depth and/or stencil
                 if (((clear_desc->aspectMask & VK_IMAGE_ASPECT_DEPTH_BIT) != VK_IMAGE_ASPECT_DEPTH_BIT) &&
                     ((clear_desc->aspectMask & VK_IMAGE_ASPECT_STENCIL_BIT) != VK_IMAGE_ASPECT_STENCIL_BIT)) {
                     char const str[] = "vkCmdClearAttachments() aspectMask [%d] is not a valid combination of bits.";
                     skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                                    HandleToUint64(commandBuffer), "VUID-VkClearAttachment-aspectMask-parameter", str, i);
+                                    HandleToUint64(commandBuffer), "VUID-VkClearAttachment-aspectMask-parameter", str,
+                                    attachment_index);
                 }
                 if (!subpass_desc->pDepthStencilAttachment ||
                     (subpass_desc->pDepthStencilAttachment->attachment == VK_ATTACHMENT_UNUSED)) {
@@ -2843,50 +2881,32 @@ bool PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffer, uint32_t 
                         HandleToUint64(commandBuffer), kVUID_Core_DrawState_MissingAttachmentReference,
                         "vkCmdClearAttachments() depth/stencil clear with no depth/stencil attachment in subpass; ignored");
                 } else {
-                    image_view = framebuffer->createInfo.pAttachments[subpass_desc->pDepthStencilAttachment->attachment];
+                    fb_attachment = subpass_desc->pDepthStencilAttachment->attachment;
                 }
             }
-            if (image_view) {
-                auto image_view_state = GetImageViewState(device_data, image_view);
-                for (uint32_t j = 0; j < rectCount; j++) {
-                    // The rectangular region specified by a given element of pRects must be contained within the render area of
-                    // the current render pass instance
-                    if (cb_node->createInfo.level == VK_COMMAND_BUFFER_LEVEL_PRIMARY) {
-                        if (false == ContainsRect(cb_node->activeRenderPassBeginInfo.renderArea, pRects[j].rect)) {
-                            skip |=
-                                log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                                        HandleToUint64(commandBuffer), "VUID-vkCmdClearAttachments-pRects-00016",
-                                        "vkCmdClearAttachments(): The area defined by pRects[%d] is not contained in the area of "
-                                        "the current render pass instance.",
-                                        j);
-                        }
-                    } else {
-                        const auto local_rect =
-                            pRects[j].rect;  // local copy of rect captured by value below to preserve original contents
-                        cb_node->cmd_execute_commands_functions.emplace_back([=](GLOBAL_CB_NODE *prim_cb, VkFramebuffer fb) {
-                            if (false == ContainsRect(prim_cb->activeRenderPassBeginInfo.renderArea, local_rect)) {
-                                return log_msg(
-                                    report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                                    HandleToUint64(commandBuffer), "VUID-vkCmdClearAttachments-pRects-00016",
-                                    "vkCmdClearAttachments(): The area defined by pRects[%d] is not contained in the area of "
-                                    "the current render pass instance.",
-                                    j);
-                            }
-                            return false;
-                        });
-                    }
-                    // The layers specified by a given element of pRects must be contained within every attachment that
-                    // pAttachments refers to
-                    auto attachment_layer_count = image_view_state->create_info.subresourceRange.layerCount;
-                    if ((pRects[j].baseArrayLayer >= attachment_layer_count) ||
-                        (pRects[j].baseArrayLayer + pRects[j].layerCount > attachment_layer_count)) {
-                        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                                        HandleToUint64(commandBuffer), "VUID-vkCmdClearAttachments-pRects-00017",
-                                        "vkCmdClearAttachments(): The layers defined in pRects[%d] are not contained in the layers "
-                                        "of pAttachment[%d].",
-                                        j, i);
-                    }
+            if (cb_node->createInfo.level == VK_COMMAND_BUFFER_LEVEL_PRIMARY) {
+                skip |= ValidateClearAttachementExtent(device_data, commandBuffer, attachment_index, framebuffer, fb_attachment,
+                                                       render_area, rectCount, pRects);
+            } else {
+                // if a secondary level command buffer inherits the framebuffer from the primary command buffer
+                // (see VkCommandBufferInheritanceInfo), this validation must be deferred until queue submit time
+                if (!clear_rect_copy) {
+                    // We need a copy of the clear rectangles that will persist until the last lambda executes
+                    // but we want to create it as lazily as possible
+                    clear_rect_copy.reset(new std::vector<VkClearRect>(pRects, pRects + rectCount));
                 }
+
+                auto val_fn = [device_data, commandBuffer, attachment_index, fb_attachment, rectCount, clear_rect_copy](
+                                  GLOBAL_CB_NODE *prim_cb, VkFramebuffer fb) {
+                    assert(rectCount == clear_rect_copy->size());
+                    auto framebuffer = GetFramebufferState(device_data, fb);
+                    const auto &render_area = prim_cb->activeRenderPassBeginInfo.renderArea;
+                    bool skip = false;
+                    skip = ValidateClearAttachementExtent(device_data, commandBuffer, attachment_index, framebuffer, fb_attachment,
+                                                          render_area, rectCount, clear_rect_copy->data());
+                    return skip;
+                };
+                cb_node->cmd_execute_commands_functions.emplace_back(val_fn);
             }
         }
     }
