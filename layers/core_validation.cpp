@@ -3531,8 +3531,7 @@ static bool ValidateAllocateMemoryANDROID(layer_data *dev_data, const VkMemoryAl
 
             bool illegal_usage = false;
             std::vector<VkImageUsageFlags> usages = {VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT,
-                                                     VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
-                                                     VK_IMAGE_USAGE_TRANSFER_DST_BIT};
+                                                     VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT};
             for (VkImageUsageFlags ubit : usages) {
                 if (ici->usage & ubit) {
                     uint64_t ahb_usage = ahb_usage_map_v2a[ubit];
