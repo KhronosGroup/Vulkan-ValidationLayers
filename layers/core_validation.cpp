@@ -10346,6 +10346,8 @@ bool PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t c
     assert(cb_state);
     bool skip = false;
     GLOBAL_CB_NODE *sub_cb_state = NULL;
+    std::unordered_set<GLOBAL_CB_NODE *> linked_command_buffers = cb_state->linkedCommandBuffers;
+
     for (uint32_t i = 0; i < commandBuffersCount; i++) {
         sub_cb_state = GetCBNode(device_data, pCommandBuffers[i]);
         assert(sub_cb_state);
@@ -10390,7 +10392,7 @@ bool PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t c
         skip |= ValidateCommandBufferState(device_data, sub_cb_state, "vkCmdExecuteCommands()", 0,
                                            "VUID-vkCmdExecuteCommands-pCommandBuffers-00089");
         if (!(sub_cb_state->beginInfo.flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT)) {
-            if (sub_cb_state->in_use.load() || cb_state->linkedCommandBuffers.count(sub_cb_state)) {
+            if (sub_cb_state->in_use.load() || linked_command_buffers.count(sub_cb_state)) {
                 skip |=
                     log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                             HandleToUint64(cb_state->commandBuffer), "VUID-vkCmdExecuteCommands-pCommandBuffers-00090",
@@ -10409,9 +10411,6 @@ bool PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t c
                                 ") to be treated as if it does not have VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT set, even "
                                 "though it does.",
                                 HandleToUint64(pCommandBuffers[i]), HandleToUint64(cb_state->commandBuffer));
-                // TODO: Clearing the VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT needs to be moved from the validation step to the
-                // recording step
-                cb_state->beginInfo.flags &= ~VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
             }
         }
         if (!cb_state->activeQueries.empty() && !device_data->enabled_features.core.inheritedQueries) {
@@ -10461,11 +10460,7 @@ bool PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t c
                 }
             }
         }
-        // TODO: Linking command buffers here is necessary to pass existing validation tests--however, this state change still needs
-        // to be removed from the validation step
-        sub_cb_state->primaryCommandBuffer = cb_state->commandBuffer;
-        cb_state->linkedCommandBuffers.insert(sub_cb_state);
-        sub_cb_state->linkedCommandBuffers.insert(cb_state);
+        linked_command_buffers.insert(sub_cb_state);
     }
     skip |= ValidatePrimaryCommandBuffer(device_data, cb_state, "vkCmdExecuteCommands()", "VUID-vkCmdExecuteCommands-bufferlevel");
     skip |= ValidateCmdQueueFlags(device_data, cb_state, "vkCmdExecuteCommands()",

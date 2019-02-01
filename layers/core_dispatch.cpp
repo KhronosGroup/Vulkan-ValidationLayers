@@ -2013,7 +2013,6 @@ VKAPI_ATTR void VKAPI_CALL CmdExecuteCommands(VkCommandBuffer commandBuffer, uin
     bool skip = false;
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     unique_lock_t lock(global_lock);
-    // TODO: State changes needs to be untangled from validation in PreCallValidationCmdExecuteCommands()
     skip |= PreCallValidateCmdExecuteCommands(commandBuffer, commandBuffersCount, pCommandBuffers);
     if (skip) return;
     PreCallRecordCmdExecuteCommands(commandBuffer, commandBuffersCount, pCommandBuffers);
