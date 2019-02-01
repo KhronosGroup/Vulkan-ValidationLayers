@@ -375,17 +375,14 @@ VKAPI_ATTR VkResult VKAPI_CALL WaitForFences(VkDevice device, uint32_t fenceCoun
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     // Verify fence status of submitted fences
     unique_lock_t lock(global_lock);
-    bool skip = PreCallValidateWaitForFences(dev_data, fenceCount, pFences);
+    bool skip = PreCallValidateWaitForFences(device, fenceCount, pFences, waitAll, timeout);
     lock.unlock();
     if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
 
     VkResult result = dev_data->dispatch_table.WaitForFences(device, fenceCount, pFences, waitAll, timeout);
-
-    if (result == VK_SUCCESS) {
-        lock.lock();
-        PostCallRecordWaitForFences(dev_data, fenceCount, pFences, waitAll);
-        lock.unlock();
-    }
+    lock.lock();
+    PostCallRecordWaitForFences(device, fenceCount, pFences, waitAll, timeout, result);
+    lock.unlock();
     return result;
 }
 
@@ -418,15 +415,13 @@ VKAPI_ATTR VkResult VKAPI_CALL QueueWaitIdle(VkQueue queue) {
 VKAPI_ATTR VkResult VKAPI_CALL DeviceWaitIdle(VkDevice device) {
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     unique_lock_t lock(global_lock);
-    bool skip = PreCallValidateDeviceWaitIdle(dev_data);
+    bool skip = PreCallValidateDeviceWaitIdle(device);
     lock.unlock();
     if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     VkResult result = dev_data->dispatch_table.DeviceWaitIdle(device);
-    if (VK_SUCCESS == result) {
-        lock.lock();
-        PostCallRecordDeviceWaitIdle(dev_data);
-        lock.unlock();
-    }
+    lock.lock();
+    PostCallRecordDeviceWaitIdle(device, result);
+    lock.unlock();
     return result;
 }
 
@@ -856,39 +851,28 @@ VKAPI_ATTR void VKAPI_CALL DestroyCommandPool(VkDevice device, VkCommandPool com
 VKAPI_ATTR VkResult VKAPI_CALL ResetCommandPool(VkDevice device, VkCommandPool commandPool, VkCommandPoolResetFlags flags) {
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     unique_lock_t lock(global_lock);
-    auto pPool = GetCommandPoolNode(dev_data, commandPool);
-    bool skip = PreCallValidateResetCommandPool(dev_data, pPool);
+    bool skip = PreCallValidateResetCommandPool(device, commandPool, flags);
     lock.unlock();
-
     if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
 
     VkResult result = dev_data->dispatch_table.ResetCommandPool(device, commandPool, flags);
-
-    // Reset all of the CBs allocated from this pool
-    if (VK_SUCCESS == result) {
-        lock.lock();
-        PostCallRecordResetCommandPool(dev_data, pPool);
-        lock.unlock();
-    }
+    lock.lock();
+    PostCallRecordResetCommandPool(device, commandPool, flags, result);
+    lock.unlock();
     return result;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL ResetFences(VkDevice device, uint32_t fenceCount, const VkFence *pFences) {
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     unique_lock_t lock(global_lock);
-    bool skip = PreCallValidateResetFences(dev_data, fenceCount, pFences);
+    bool skip = PreCallValidateResetFences(device, fenceCount, pFences);
     lock.unlock();
-
     if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
 
     VkResult result = dev_data->dispatch_table.ResetFences(device, fenceCount, pFences);
-
-    if (result == VK_SUCCESS) {
-        lock.lock();
-        PostCallRecordResetFences(dev_data, fenceCount, pFences);
-        lock.unlock();
-    }
-
+    lock.lock();
+    PostCallRecordResetFences(device, fenceCount, pFences, result);
+    lock.unlock();
     return result;
 }
 
@@ -1136,18 +1120,13 @@ VKAPI_ATTR VkResult VKAPI_CALL ResetDescriptorPool(VkDevice device, VkDescriptor
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
 
     unique_lock_t lock(global_lock);
-    // Make sure sets being destroyed are not currently in-use
-    bool skip = PreCallValidateResetDescriptorPool(dev_data, descriptorPool);
+    bool skip = PreCallValidateResetDescriptorPool(device, descriptorPool, flags);
     lock.unlock();
-
     if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
-
     VkResult result = dev_data->dispatch_table.ResetDescriptorPool(device, descriptorPool, flags);
-    if (VK_SUCCESS == result) {
-        lock.lock();
-        PostCallRecordResetDescriptorPool(dev_data, device, descriptorPool, flags);
-        lock.unlock();
-    }
+    lock.lock();
+    PostCallRecordResetDescriptorPool(device, descriptorPool, flags, result);
+    lock.unlock();
     return result;
 }
 
@@ -1175,16 +1154,12 @@ VKAPI_ATTR VkResult VKAPI_CALL AllocateDescriptorSets(VkDevice device, const VkD
 VKAPI_ATTR VkResult VKAPI_CALL FreeDescriptorSets(VkDevice device, VkDescriptorPool descriptorPool, uint32_t count,
                                                   const VkDescriptorSet *pDescriptorSets) {
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    // Make sure that no sets being destroyed are in-flight
     unique_lock_t lock(global_lock);
-    bool skip = PreCallValidateFreeDescriptorSets(dev_data, descriptorPool, count, pDescriptorSets);
+    bool skip = PreCallValidateFreeDescriptorSets(device, descriptorPool, count, pDescriptorSets);
 
-    VkResult result;
-    if (skip) {
-        result = VK_ERROR_VALIDATION_FAILED_EXT;
-    } else {
-        // A race here is invalid (descriptorPool should be externally sync'd), but code defensively against an invalid race
-        PreCallRecordFreeDescriptorSets(dev_data, descriptorPool, count, pDescriptorSets);
+    VkResult result = VK_ERROR_VALIDATION_FAILED_EXT;
+    if (!skip) {
+        PreCallRecordFreeDescriptorSets(device, descriptorPool, count, pDescriptorSets);
         lock.unlock();
         result = dev_data->dispatch_table.FreeDescriptorSets(device, descriptorPool, count, pDescriptorSets);
     }
