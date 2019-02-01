@@ -1394,14 +1394,15 @@ void PostCallRecordAllocateMemory(VkDevice device, const VkMemoryAllocateInfo* p
                                   const VkAllocationCallbacks* pAllocator, VkDeviceMemory* pMemory, VkResult result);
 bool PreCallValidateFreeMemory(VkDevice device, VkDeviceMemory mem, const VkAllocationCallbacks* pAllocator);
 void PreCallRecordFreeMemory(VkDevice device, VkDeviceMemory mem, const VkAllocationCallbacks* pAllocator);
-bool PreCallValidateWaitForFences(layer_data* dev_data, uint32_t fence_count, const VkFence* fences);
-void PostCallRecordWaitForFences(layer_data* dev_data, uint32_t fence_count, const VkFence* fences, VkBool32 wait_all);
+bool PreCallValidateWaitForFences(VkDevice device, uint32_t fenceCount, const VkFence* pFences, VkBool32 waitAll, uint64_t timeout);
+void PostCallRecordWaitForFences(VkDevice device, uint32_t fenceCount, const VkFence* pFences, VkBool32 waitAll, uint64_t timeout,
+                                 VkResult result);
 bool PreCallValidateGetFenceStatus(VkDevice device, VkFence fence);
 void PostCallRecordGetFenceStatus(VkDevice device, VkFence fence, VkResult result);
 bool PreCallValidateQueueWaitIdle(VkQueue queue);
 void PostCallRecordQueueWaitIdle(VkQueue queue, VkResult result);
-bool PreCallValidateDeviceWaitIdle(layer_data* dev_data);
-void PostCallRecordDeviceWaitIdle(layer_data* dev_data);
+bool PreCallValidateDeviceWaitIdle(VkDevice device);
+void PostCallRecordDeviceWaitIdle(VkDevice device, VkResult result);
 bool PreCallValidateDestroyFence(VkDevice device, VkFence fence, const VkAllocationCallbacks* pAllocator);
 void PreCallRecordDestroyFence(VkDevice device, VkFence fence, const VkAllocationCallbacks* pAllocator);
 bool PreCallValidateDestroySemaphore(VkDevice device, VkSemaphore semaphore, const VkAllocationCallbacks* pAllocator);
@@ -1477,10 +1478,10 @@ void PostCallRecordCreateQueryPool(VkDevice device, const VkQueryPoolCreateInfo*
                                    const VkAllocationCallbacks* pAllocator, VkQueryPool* pQueryPool, VkResult result);
 bool PreCallValidateDestroyCommandPool(VkDevice device, VkCommandPool commandPool, const VkAllocationCallbacks* pAllocator);
 void PreCallRecordDestroyCommandPool(VkDevice device, VkCommandPool commandPool, const VkAllocationCallbacks* pAllocator);
-bool PreCallValidateResetCommandPool(layer_data* dev_data, COMMAND_POOL_NODE* pPool);
-void PostCallRecordResetCommandPool(layer_data* dev_data, COMMAND_POOL_NODE* pPool);
-bool PreCallValidateResetFences(layer_data* dev_data, uint32_t fenceCount, const VkFence* pFences);
-void PostCallRecordResetFences(layer_data* dev_data, uint32_t fenceCount, const VkFence* pFences);
+bool PreCallValidateResetCommandPool(VkDevice device, VkCommandPool commandPool, VkCommandPoolResetFlags flags);
+void PostCallRecordResetCommandPool(VkDevice device, VkCommandPool commandPool, VkCommandPoolResetFlags flags, VkResult result);
+bool PreCallValidateResetFences(VkDevice device, uint32_t fenceCount, const VkFence* pFences);
+void PostCallRecordResetFences(VkDevice device, uint32_t fenceCount, const VkFence* pFences, VkResult result);
 bool PreCallValidateDestroyFramebuffer(VkDevice device, VkFramebuffer framebuffer, const VkAllocationCallbacks* pAllocator);
 void PreCallRecordDestroyFramebuffer(VkDevice device, VkFramebuffer framebuffer, const VkAllocationCallbacks* pAllocator);
 bool PreCallValidateDestroyRenderPass(VkDevice device, VkRenderPass renderPass, const VkAllocationCallbacks* pAllocator);
@@ -1513,18 +1514,18 @@ void PostCallRecordCreatePipelineLayout(layer_data* dev_data, const VkPipelineLa
 void PostCallRecordCreateDescriptorPool(VkDevice device, const VkDescriptorPoolCreateInfo* pCreateInfo,
                                         const VkAllocationCallbacks* pAllocator, VkDescriptorPool* pDescriptorPool,
                                         VkResult result);
-bool PreCallValidateResetDescriptorPool(layer_data* dev_data, VkDescriptorPool descriptorPool);
-void PostCallRecordResetDescriptorPool(layer_data* dev_data, VkDevice device, VkDescriptorPool descriptorPool,
-                                       VkDescriptorPoolResetFlags flags);
+bool PreCallValidateResetDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool, VkDescriptorPoolResetFlags flags);
+void PostCallRecordResetDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool, VkDescriptorPoolResetFlags flags,
+                                       VkResult result);
 bool PreCallValidateAllocateDescriptorSets(layer_data* dev_data, const VkDescriptorSetAllocateInfo* pAllocateInfo,
                                            cvdescriptorset::AllocateDescriptorSetsData* common_data);
 void PostCallRecordAllocateDescriptorSets(layer_data* dev_data, const VkDescriptorSetAllocateInfo* pAllocateInfo,
                                           VkDescriptorSet* pDescriptorSets,
                                           const cvdescriptorset::AllocateDescriptorSetsData* common_data);
-bool PreCallValidateFreeDescriptorSets(const layer_data* dev_data, VkDescriptorPool pool, uint32_t count,
-                                       const VkDescriptorSet* descriptor_sets);
-void PreCallRecordFreeDescriptorSets(layer_data* dev_data, VkDescriptorPool pool, uint32_t count,
-                                     const VkDescriptorSet* descriptor_sets);
+bool PreCallValidateFreeDescriptorSets(VkDevice device, VkDescriptorPool descriptorPool, uint32_t count,
+                                       const VkDescriptorSet* pDescriptorSets);
+void PreCallRecordFreeDescriptorSets(VkDevice device, VkDescriptorPool descriptorPool, uint32_t count,
+                                     const VkDescriptorSet* pDescriptorSets);
 bool PreCallValidateUpdateDescriptorSets(layer_data* dev_data, uint32_t descriptorWriteCount,
                                          const VkWriteDescriptorSet* pDescriptorWrites, uint32_t descriptorCopyCount,
                                          const VkCopyDescriptorSet* pDescriptorCopies);
