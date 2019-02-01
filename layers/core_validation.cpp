@@ -3396,12 +3396,11 @@ static bool ValidateAllocateMemoryANDROID(layer_data *dev_data, const VkMemoryAl
         //  BLOB & GPU_DATA_BUFFER combo specifically allowed
         if ((AHARDWAREBUFFER_FORMAT_BLOB != ahb_desc.format) || (0 == (ahb_desc.usage & AHARDWAREBUFFER_USAGE_GPU_DATA_BUFFER))) {
             // Otherwise, must be a combination from the AHardwareBuffer Format and Usage Equivalence tables
-            // Usage must have at least one bit from, and none that are not in the table
+            // Usage must have at least one bit from the table. It may have additional bits not in the table
             uint64_t ahb_equiv_usage_bits = AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE | AHARDWAREBUFFER_USAGE_GPU_COLOR_OUTPUT |
                                             AHARDWAREBUFFER_USAGE_GPU_CUBE_MAP | AHARDWAREBUFFER_USAGE_GPU_MIPMAP_COMPLETE |
                                             AHARDWAREBUFFER_USAGE_PROTECTED_CONTENT;
-            if ((0 == (ahb_desc.usage & ahb_equiv_usage_bits)) || (0 != (ahb_desc.usage & ~ahb_equiv_usage_bits)) ||
-                (0 == ahb_format_map_a2v.count(ahb_desc.format))) {
+            if ((0 == (ahb_desc.usage & ahb_equiv_usage_bits)) || (0 == ahb_format_map_a2v.count(ahb_desc.format))) {
                 skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
                                 HandleToUint64(dev_data->device), "VUID-VkImportAndroidHardwareBufferInfoANDROID-buffer-01881",
                                 "vkAllocateMemory: The AHardwareBuffer_Desc's format ( %u ) and/or usage ( 0x%" PRIx64
