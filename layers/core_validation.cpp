@@ -10861,14 +10861,13 @@ void PostCallRecordBindImageMemory2KHR(VkDevice device, uint32_t bindInfoCount, 
     }
 }
 
-bool PreCallValidateSetEvent(layer_data *dev_data, VkEvent event) {
+bool PreCallValidateSetEvent(VkDevice device, VkEvent event) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
-    auto event_state = GetEventNode(dev_data, event);
+    auto event_state = GetEventNode(device_data, event);
     if (event_state) {
-        event_state->needsSignaled = false;
-        event_state->stageMask = VK_PIPELINE_STAGE_HOST_BIT;
         if (event_state->write_in_use) {
-            skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_EVENT_EXT,
+            skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_EVENT_EXT,
                             HandleToUint64(event), kVUID_Core_DrawState_QueueForwardProgress,
                             "Cannot call vkSetEvent() on event 0x%" PRIx64 " that is already in use by a command buffer.",
                             HandleToUint64(event));
@@ -10877,11 +10876,17 @@ bool PreCallValidateSetEvent(layer_data *dev_data, VkEvent event) {
     return skip;
 }
 
-void PreCallRecordSetEvent(layer_data *dev_data, VkEvent event) {
+void PreCallRecordSetEvent(VkDevice device, VkEvent event) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    auto event_state = GetEventNode(device_data, event);
+    if (event_state) {
+        event_state->needsSignaled = false;
+        event_state->stageMask = VK_PIPELINE_STAGE_HOST_BIT;
+    }
     // Host setting event is visible to all queues immediately so update stageMask for any queue that's seen this event
     // TODO : For correctness this needs separate fix to verify that app doesn't make incorrect assumptions about the
     // ordering of this command in relation to vkCmd[Set|Reset]Events (see GH297)
-    for (auto queue_data : dev_data->queueMap) {
+    for (auto queue_data : device_data->queueMap) {
         auto event_entry = queue_data.second.eventToStageMap.find(event);
         if (event_entry != queue_data.second.eventToStageMap.end()) {
             event_entry->second |= VK_PIPELINE_STAGE_HOST_BIT;
@@ -11143,19 +11148,19 @@ void PostCallRecordCreateSemaphore(VkDevice device, const VkSemaphoreCreateInfo 
     sNode->scope = kSyncScopeInternal;
 }
 
-bool PreCallValidateImportSemaphore(layer_data *dev_data, VkSemaphore semaphore, const char *caller_name) {
-    SEMAPHORE_NODE *sema_node = GetSemaphoreNode(dev_data, semaphore);
-    VK_OBJECT obj_struct = {HandleToUint64(semaphore), kVulkanObjectTypeSemaphore};
+static bool ValidateImportSemaphore(layer_data *device_data, VkSemaphore semaphore, const char *caller_name) {
     bool skip = false;
+    SEMAPHORE_NODE *sema_node = GetSemaphoreNode(device_data, semaphore);
     if (sema_node) {
-        skip |= ValidateObjectNotInUse(dev_data, sema_node, obj_struct, caller_name, kVUIDUndefined);
+        VK_OBJECT obj_struct = {HandleToUint64(semaphore), kVulkanObjectTypeSemaphore};
+        skip |= ValidateObjectNotInUse(device_data, sema_node, obj_struct, caller_name, kVUIDUndefined);
     }
     return skip;
 }
 
-void PostCallRecordImportSemaphore(layer_data *dev_data, VkSemaphore semaphore,
-                                   VkExternalSemaphoreHandleTypeFlagBitsKHR handle_type, VkSemaphoreImportFlagsKHR flags) {
-    SEMAPHORE_NODE *sema_node = GetSemaphoreNode(dev_data, semaphore);
+static void RecordImportSemaphoreState(layer_data *device_data, VkSemaphore semaphore,
+                                       VkExternalSemaphoreHandleTypeFlagBitsKHR handle_type, VkSemaphoreImportFlagsKHR flags) {
+    SEMAPHORE_NODE *sema_node = GetSemaphoreNode(device_data, semaphore);
     if (sema_node && sema_node->scope != kSyncScopeExternalPermanent) {
         if ((handle_type == VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT_KHR || flags & VK_SEMAPHORE_IMPORT_TEMPORARY_BIT_KHR) &&
             sema_node->scope == kSyncScopeInternal) {
@@ -11164,6 +11169,36 @@ void PostCallRecordImportSemaphore(layer_data *dev_data, VkSemaphore semaphore,
             sema_node->scope = kSyncScopeExternalPermanent;
         }
     }
+}
+
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+bool PreCallValidateImportSemaphoreWin32HandleKHR(VkDevice device,
+                                                  const VkImportSemaphoreWin32HandleInfoKHR *pImportSemaphoreWin32HandleInfo) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    return ValidateImportSemaphore(device_data, pImportSemaphoreWin32HandleInfo->semaphore, "vkImportSemaphoreWin32HandleKHR");
+}
+
+void PostCallRecordImportSemaphoreWin32HandleKHR(VkDevice device,
+                                                 const VkImportSemaphoreWin32HandleInfoKHR *pImportSemaphoreWin32HandleInfo,
+                                                 VkResult result) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (VK_SUCCESS != result) return;
+    RecordImportSemaphoreState(device_data, pImportSemaphoreWin32HandleInfo->semaphore, pImportSemaphoreWin32HandleInfo->handleType,
+                               pImportSemaphoreWin32HandleInfo->flags);
+}
+#endif  // VK_USE_PLATFORM_WIN32_KHR
+
+bool PreCallValidateImportSemaphoreFdKHR(VkDevice device, const VkImportSemaphoreFdInfoKHR *pImportSemaphoreFdInfo) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    return ValidateImportSemaphore(device_data, pImportSemaphoreFdInfo->semaphore, "vkImportSemaphoreFdKHR");
+}
+
+void PostCallRecordImportSemaphoreFdKHR(VkDevice device, const VkImportSemaphoreFdInfoKHR *pImportSemaphoreFdInfo,
+                                        VkResult result) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (VK_SUCCESS != result) return;
+    RecordImportSemaphoreState(device_data, pImportSemaphoreFdInfo->semaphore, pImportSemaphoreFdInfo->handleType,
+                               pImportSemaphoreFdInfo->flags);
 }
 
 static void RecordGetExternalSemaphoreState(layer_data *device_data, VkSemaphore semaphore,
@@ -11190,20 +11225,20 @@ void PostCallRecordGetSemaphoreFdKHR(VkDevice device, const VkSemaphoreGetFdInfo
     RecordGetExternalSemaphoreState(device_data, pGetFdInfo->semaphore, pGetFdInfo->handleType);
 }
 
-bool PreCallValidateImportFence(layer_data *dev_data, VkFence fence, const char *caller_name) {
-    FENCE_NODE *fence_node = GetFenceNode(dev_data, fence);
+static bool ValidateImportFence(layer_data *device_data, VkFence fence, const char *caller_name) {
+    FENCE_NODE *fence_node = GetFenceNode(device_data, fence);
     bool skip = false;
     if (fence_node && fence_node->scope == kSyncScopeInternal && fence_node->state == FENCE_INFLIGHT) {
-        skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_FENCE_EXT,
+        skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_FENCE_EXT,
                         HandleToUint64(fence), kVUIDUndefined, "Cannot call %s on fence 0x%" PRIx64 " that is currently in use.",
                         caller_name, HandleToUint64(fence));
     }
     return skip;
 }
 
-void PostCallRecordImportFence(layer_data *dev_data, VkFence fence, VkExternalFenceHandleTypeFlagBitsKHR handle_type,
-                               VkFenceImportFlagsKHR flags) {
-    FENCE_NODE *fence_node = GetFenceNode(dev_data, fence);
+static void RecordImportFenceState(layer_data *device_data, VkFence fence, VkExternalFenceHandleTypeFlagBitsKHR handle_type,
+                                   VkFenceImportFlagsKHR flags) {
+    FENCE_NODE *fence_node = GetFenceNode(device_data, fence);
     if (fence_node && fence_node->scope != kSyncScopeExternalPermanent) {
         if ((handle_type == VK_EXTERNAL_FENCE_HANDLE_TYPE_SYNC_FD_BIT_KHR || flags & VK_FENCE_IMPORT_TEMPORARY_BIT_KHR) &&
             fence_node->scope == kSyncScopeInternal) {
@@ -11212,6 +11247,30 @@ void PostCallRecordImportFence(layer_data *dev_data, VkFence fence, VkExternalFe
             fence_node->scope = kSyncScopeExternalPermanent;
         }
     }
+}
+
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+bool PreCallValidateImportFenceWin32HandleKHR(VkDevice device, const VkImportFenceWin32HandleInfoKHR *pImportFenceWin32HandleInfo) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    return ValidateImportFence(device_data, pImportFenceWin32HandleInfo->fence, "vkImportFenceWin32HandleKHR");
+}
+void PostCallRecordImportFenceWin32HandleKHR(VkDevice device, const VkImportFenceWin32HandleInfoKHR *pImportFenceWin32HandleInfo,
+                                             VkResult result) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (VK_SUCCESS != result) return;
+    RecordImportFenceState(device_data, pImportFenceWin32HandleInfo->fence, pImportFenceWin32HandleInfo->handleType,
+                           pImportFenceWin32HandleInfo->flags);
+}
+#endif  // VK_USE_PLATFORM_WIN32_KHR
+
+bool PreCallValidateImportFenceFdKHR(VkDevice device, const VkImportFenceFdInfoKHR *pImportFenceFdInfo) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    return ValidateImportFence(device_data, pImportFenceFdInfo->fence, "vkImportFenceFdKHR");
+}
+void PostCallRecordImportFenceFdKHR(VkDevice device, const VkImportFenceFdInfoKHR *pImportFenceFdInfo, VkResult result) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (VK_SUCCESS != result) return;
+    RecordImportFenceState(device_data, pImportFenceFdInfo->fence, pImportFenceFdInfo->handleType, pImportFenceFdInfo->flags);
 }
 
 static void RecordGetExternalFenceState(layer_data *device_data, VkFence fence, VkExternalFenceHandleTypeFlagBitsKHR handle_type) {
@@ -11883,44 +11942,44 @@ void PostCallRecordCreateSharedSwapchainsKHR(VkDevice device, uint32_t swapchain
     }
 }
 
-bool PreCallValidateCommonAcquireNextImage(layer_data *dev_data, VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout,
-                                           VkSemaphore semaphore, VkFence fence, uint32_t *pImageIndex, const char *func_name) {
+bool ValidateAcquireNextImage(layer_data *device_data, VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout,
+                              VkSemaphore semaphore, VkFence fence, uint32_t *pImageIndex, const char *func_name) {
     bool skip = false;
     if (fence == VK_NULL_HANDLE && semaphore == VK_NULL_HANDLE) {
-        skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
+        skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
                         HandleToUint64(device), "VUID-vkAcquireNextImageKHR-semaphore-01780",
                         "%s: Semaphore and fence cannot both be VK_NULL_HANDLE. There would be no way to "
                         "determine the completion of this operation.",
                         func_name);
     }
 
-    auto pSemaphore = GetSemaphoreNode(dev_data, semaphore);
+    auto pSemaphore = GetSemaphoreNode(device_data, semaphore);
     if (pSemaphore && pSemaphore->scope == kSyncScopeInternal && pSemaphore->signaled) {
-        skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SEMAPHORE_EXT,
+        skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SEMAPHORE_EXT,
                         HandleToUint64(semaphore), "VUID-vkAcquireNextImageKHR-semaphore-01286",
                         "%s: Semaphore must not be currently signaled or in a wait state.", func_name);
     }
 
-    auto pFence = GetFenceNode(dev_data, fence);
+    auto pFence = GetFenceNode(device_data, fence);
     if (pFence) {
-        skip |= ValidateFenceForSubmit(dev_data, pFence);
+        skip |= ValidateFenceForSubmit(device_data, pFence);
     }
 
-    auto swapchain_data = GetSwapchainNode(dev_data, swapchain);
+    auto swapchain_data = GetSwapchainNode(device_data, swapchain);
     if (swapchain_data && swapchain_data->replaced) {
-        skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SWAPCHAIN_KHR_EXT,
+        skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SWAPCHAIN_KHR_EXT,
                         HandleToUint64(swapchain), "VUID-vkAcquireNextImageKHR-swapchain-01285",
                         "%s: This swapchain has been retired. The application can still present any images it "
                         "has acquired, but cannot acquire any more.",
                         func_name);
     }
 
-    auto physical_device_state = GetPhysicalDeviceState(dev_data->instance_data, dev_data->physical_device);
+    auto physical_device_state = GetPhysicalDeviceState(device_data->instance_data, device_data->physical_device);
     if (physical_device_state->vkGetPhysicalDeviceSurfaceCapabilitiesKHRState != UNCALLED) {
         uint64_t acquired_images = std::count_if(swapchain_data->images.begin(), swapchain_data->images.end(),
-                                                 [=](VkImage image) { return GetImageState(dev_data, image)->acquired; });
+                                                 [=](VkImage image) { return GetImageState(device_data, image)->acquired; });
         if (acquired_images > swapchain_data->images.size() - physical_device_state->surfaceCapabilities.minImageCount) {
-            skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SWAPCHAIN_KHR_EXT,
+            skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SWAPCHAIN_KHR_EXT,
                             HandleToUint64(swapchain), kVUID_Core_DrawState_SwapchainTooManyImages,
                             "%s: Application has already acquired the maximum number of images (0x%" PRIxLEAST64 ")", func_name,
                             acquired_images);
@@ -11928,7 +11987,7 @@ bool PreCallValidateCommonAcquireNextImage(layer_data *dev_data, VkDevice device
     }
 
     if (swapchain_data && swapchain_data->images.size() == 0) {
-        skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SWAPCHAIN_KHR_EXT,
+        skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SWAPCHAIN_KHR_EXT,
                         HandleToUint64(swapchain), kVUID_Core_DrawState_SwapchainImagesNotFound,
                         "%s: No images found to acquire from. Application probably did not call "
                         "vkGetSwapchainImagesKHR after swapchain creation.",
@@ -11937,9 +11996,22 @@ bool PreCallValidateCommonAcquireNextImage(layer_data *dev_data, VkDevice device
     return skip;
 }
 
-void PostCallRecordCommonAcquireNextImage(layer_data *dev_data, VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout,
-                                          VkSemaphore semaphore, VkFence fence, uint32_t *pImageIndex) {
-    auto pFence = GetFenceNode(dev_data, fence);
+bool PreCallValidateAcquireNextImageKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout, VkSemaphore semaphore,
+                                        VkFence fence, uint32_t *pImageIndex) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    return ValidateAcquireNextImage(device_data, device, swapchain, timeout, semaphore, fence, pImageIndex,
+                                    "vkAcquireNextImageKHR");
+}
+
+bool PreCallValidateAcquireNextImage2KHR(VkDevice device, const VkAcquireNextImageInfoKHR *pAcquireInfo, uint32_t *pImageIndex) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    return ValidateAcquireNextImage(device_data, device, pAcquireInfo->swapchain, pAcquireInfo->timeout, pAcquireInfo->semaphore,
+                                    pAcquireInfo->fence, pImageIndex, "vkAcquireNextImage2KHR");
+}
+
+void RecordAcquireNextImageState(layer_data *device_data, VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout,
+                                 VkSemaphore semaphore, VkFence fence, uint32_t *pImageIndex) {
+    auto pFence = GetFenceNode(device_data, fence);
     if (pFence && pFence->scope == kSyncScopeInternal) {
         // Treat as inflight since it is valid to wait on this fence, even in cases where it is technically a temporary
         // import
@@ -11947,7 +12019,7 @@ void PostCallRecordCommonAcquireNextImage(layer_data *dev_data, VkDevice device,
         pFence->signaler.first = VK_NULL_HANDLE;  // ANI isn't on a queue, so this can't participate in a completion proof.
     }
 
-    auto pSemaphore = GetSemaphoreNode(dev_data, semaphore);
+    auto pSemaphore = GetSemaphoreNode(device_data, semaphore);
     if (pSemaphore && pSemaphore->scope == kSyncScopeInternal) {
         // Treat as signaled since it is valid to wait on this semaphore, even in cases where it is technically a
         // temporary import
@@ -11956,10 +12028,10 @@ void PostCallRecordCommonAcquireNextImage(layer_data *dev_data, VkDevice device,
     }
 
     // Mark the image as acquired.
-    auto swapchain_data = GetSwapchainNode(dev_data, swapchain);
+    auto swapchain_data = GetSwapchainNode(device_data, swapchain);
     if (swapchain_data && (swapchain_data->images.size() > *pImageIndex)) {
         auto image = swapchain_data->images[*pImageIndex];
-        auto image_state = GetImageState(dev_data, image);
+        auto image_state = GetImageState(device_data, image);
         if (image_state) {
             image_state->acquired = true;
             image_state->shared_presentable = swapchain_data->shared_presentable;
@@ -11967,7 +12039,25 @@ void PostCallRecordCommonAcquireNextImage(layer_data *dev_data, VkDevice device,
     }
 }
 
-bool PreCallValidateEnumeratePhysicalDevices(instance_layer_data *instance_data, uint32_t *pPhysicalDeviceCount) {
+void PostCallRecordAcquireNextImageKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout, VkSemaphore semaphore,
+                                       VkFence fence, uint32_t *pImageIndex, VkResult result) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if ((VK_SUCCESS != result) && (VK_SUBOPTIMAL_KHR != result)) return;
+    RecordAcquireNextImageState(device_data, device, swapchain, timeout, semaphore, fence, pImageIndex);
+}
+
+void PostCallRecordAcquireNextImage2KHR(VkDevice device, const VkAcquireNextImageInfoKHR *pAcquireInfo, uint32_t *pImageIndex,
+                                        VkResult result) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if ((VK_SUCCESS != result) && (VK_SUBOPTIMAL_KHR != result)) return;
+    RecordAcquireNextImageState(device_data, device, pAcquireInfo->swapchain, pAcquireInfo->timeout, pAcquireInfo->semaphore,
+                                pAcquireInfo->fence, pImageIndex);
+}
+
+bool PreCallValidateEnumeratePhysicalDevices(VkInstance instance, uint32_t *pPhysicalDeviceCount,
+                                             VkPhysicalDevice *pPhysicalDevices) {
+    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(instance), instance_layer_data_map);
+    if (!pPhysicalDevices) return false;
     bool skip = false;
     if (UNCALLED == instance_data->vkEnumeratePhysicalDevicesState) {
         // Flag warning here. You can call this without having queried the count, but it may not be
@@ -11988,12 +12078,15 @@ bool PreCallValidateEnumeratePhysicalDevices(instance_layer_data *instance_data,
     return skip;
 }
 
-void PreCallRecordEnumeratePhysicalDevices(instance_layer_data *instance_data) {
+void PreCallRecordEnumeratePhysicalDevices(VkInstance instance, uint32_t *pPhysicalDeviceCount,
+                                           VkPhysicalDevice *pPhysicalDevices) {
+    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(instance), instance_layer_data_map);
     instance_data->vkEnumeratePhysicalDevicesState = QUERY_COUNT;
 }
 
-void PostCallRecordEnumeratePhysicalDevices(instance_layer_data *instance_data, const VkResult &result,
-                                            uint32_t *pPhysicalDeviceCount, VkPhysicalDevice *pPhysicalDevices) {
+void PostCallRecordEnumeratePhysicalDevices(VkInstance instance, uint32_t *pPhysicalDeviceCount, VkPhysicalDevice *pPhysicalDevices,
+                                            VkResult result) {
+    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(instance), instance_layer_data_map);
     if (NULL == pPhysicalDevices) {
         instance_data->physical_devices_count = *pPhysicalDeviceCount;
     } else if (result == VK_SUCCESS || result == VK_INCOMPLETE) {  // Save physical devices
@@ -12475,43 +12568,38 @@ void PostCallDestroyDebugReportCallbackEXT(VkInstance instance, VkDebugReportCal
     layer_destroy_report_callback(instance_data->report_data, msgCallback, pAllocator);
 }
 
-bool PreCallValidateEnumeratePhysicalDeviceGroups(VkInstance instance, uint32_t *pPhysicalDeviceGroupCount,
-                                                  VkPhysicalDeviceGroupPropertiesKHR *pPhysicalDeviceGroupProperties) {
-    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(instance), instance_layer_data_map);
+static bool ValidateEnumeratePhysicalDeviceGroups(instance_layer_data *instance_data, uint32_t *pPhysicalDeviceGroupCount,
+                                                  VkPhysicalDeviceGroupPropertiesKHR *pPhysicalDeviceGroupProperties,
+                                                  const char *func_name) {
     bool skip = false;
 
-    if (instance_data) {
-        // For this instance, flag when EnumeratePhysicalDeviceGroups goes to QUERY_COUNT and then QUERY_DETAILS.
-        if (NULL != pPhysicalDeviceGroupProperties) {
-            if (UNCALLED == instance_data->vkEnumeratePhysicalDeviceGroupsState) {
-                // Flag warning here. You can call this without having queried the count, but it may not be
-                // robust on platforms with multiple physical devices.
-                skip |= log_msg(instance_data->report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT,
-                                VK_DEBUG_REPORT_OBJECT_TYPE_INSTANCE_EXT, 0, kVUID_Core_DevLimit_MissingQueryCount,
-                                "Call sequence has vkEnumeratePhysicalDeviceGroups() w/ non-NULL "
-                                "pPhysicalDeviceGroupProperties. You should first call vkEnumeratePhysicalDeviceGroups() w/ "
-                                "NULL pPhysicalDeviceGroupProperties to query pPhysicalDeviceGroupCount.");
-            }  // TODO : Could also flag a warning if re-calling this function in QUERY_DETAILS state
-            else if (instance_data->physical_device_groups_count != *pPhysicalDeviceGroupCount) {
-                // Having actual count match count from app is not a requirement, so this can be a warning
-                skip |= log_msg(instance_data->report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT,
-                                VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT, 0, kVUID_Core_DevLimit_CountMismatch,
-                                "Call to vkEnumeratePhysicalDeviceGroups() w/ pPhysicalDeviceGroupCount value %u, but actual count "
-                                "supported by this instance is %u.",
-                                *pPhysicalDeviceGroupCount, instance_data->physical_device_groups_count);
-            }
+    // For this instance, flag when EnumeratePhysicalDeviceGroups goes to QUERY_COUNT and then QUERY_DETAILS.
+    if (NULL != pPhysicalDeviceGroupProperties) {
+        if (UNCALLED == instance_data->vkEnumeratePhysicalDeviceGroupsState) {
+            // Flag warning here. You can call this without having queried the count, but it may not be
+            // robust on platforms with multiple physical devices.
+            skip |= log_msg(instance_data->report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_INSTANCE_EXT,
+                            0, kVUID_Core_DevLimit_MissingQueryCount,
+                            "Call sequence has vkEnumeratePhysicalDeviceGroups() w/ non-NULL "
+                            "pPhysicalDeviceGroupProperties. You should first call %s w/ "
+                            "NULL pPhysicalDeviceGroupProperties to query pPhysicalDeviceGroupCount.",
+                            func_name);
+        }  // TODO : Could also flag a warning if re-calling this function in QUERY_DETAILS state
+        else if (instance_data->physical_device_groups_count != *pPhysicalDeviceGroupCount) {
+            // Having actual count match count from app is not a requirement, so this can be a warning
+            skip |= log_msg(instance_data->report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT,
+                            VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT, 0, kVUID_Core_DevLimit_CountMismatch,
+                            "Call to %s w/ pPhysicalDeviceGroupCount value %u, but actual count "
+                            "supported by this instance is %u.",
+                            func_name, *pPhysicalDeviceGroupCount, instance_data->physical_device_groups_count);
         }
-    } else {
-        log_msg(instance_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_INSTANCE_EXT, 0,
-                kVUID_Core_DevLimit_InvalidInstance,
-                "Invalid instance (0x%" PRIx64 ") passed into vkEnumeratePhysicalDeviceGroups().", HandleToUint64(instance));
     }
 
     return skip;
 }
 
-void PreCallRecordEnumeratePhysicalDeviceGroups(instance_layer_data *instance_data,
-                                                VkPhysicalDeviceGroupPropertiesKHR *pPhysicalDeviceGroupProperties) {
+static void PreRecordEnumeratePhysicalDeviceGroupsState(instance_layer_data *instance_data,
+                                                        VkPhysicalDeviceGroupPropertiesKHR *pPhysicalDeviceGroupProperties) {
     if (instance_data) {
         // For this instance, flag when EnumeratePhysicalDeviceGroups goes to QUERY_COUNT and then QUERY_DETAILS.
         if (NULL == pPhysicalDeviceGroupProperties) {
@@ -12522,8 +12610,8 @@ void PreCallRecordEnumeratePhysicalDeviceGroups(instance_layer_data *instance_da
     }
 }
 
-void PostCallRecordEnumeratePhysicalDeviceGroups(instance_layer_data *instance_data, uint32_t *pPhysicalDeviceGroupCount,
-                                                 VkPhysicalDeviceGroupPropertiesKHR *pPhysicalDeviceGroupProperties) {
+static void PostRecordEnumeratePhysicalDeviceGroupsState(instance_layer_data *instance_data, uint32_t *pPhysicalDeviceGroupCount,
+                                                         VkPhysicalDeviceGroupPropertiesKHR *pPhysicalDeviceGroupProperties) {
     if (NULL == pPhysicalDeviceGroupProperties) {
         instance_data->physical_device_groups_count = *pPhysicalDeviceGroupCount;
     } else {  // Save physical devices
@@ -12537,6 +12625,44 @@ void PostCallRecordEnumeratePhysicalDeviceGroups(instance_layer_data *instance_d
             }
         }
     }
+}
+
+bool PreCallValidateEnumeratePhysicalDeviceGroups(VkInstance instance, uint32_t *pPhysicalDeviceGroupCount,
+                                                  VkPhysicalDeviceGroupPropertiesKHR *pPhysicalDeviceGroupProperties) {
+    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(instance), instance_layer_data_map);
+    return ValidateEnumeratePhysicalDeviceGroups(instance_data, pPhysicalDeviceGroupCount, pPhysicalDeviceGroupProperties,
+                                                 "vkEnumeratePhysicalDeviceGroups()");
+}
+void PreCallRecordEnumeratePhysicalDeviceGroups(VkInstance instance, uint32_t *pPhysicalDeviceGroupCount,
+                                                VkPhysicalDeviceGroupPropertiesKHR *pPhysicalDeviceGroupProperties) {
+    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(instance), instance_layer_data_map);
+    PreRecordEnumeratePhysicalDeviceGroupsState(instance_data, pPhysicalDeviceGroupProperties);
+}
+void PostCallRecordEnumeratePhysicalDeviceGroups(VkInstance instance, uint32_t *pPhysicalDeviceGroupCount,
+                                                 VkPhysicalDeviceGroupPropertiesKHR *pPhysicalDeviceGroupProperties,
+                                                 VkResult result) {
+    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(instance), instance_layer_data_map);
+    if ((VK_SUCCESS != result) && (VK_INCOMPLETE != result)) return;
+    PostRecordEnumeratePhysicalDeviceGroupsState(instance_data, pPhysicalDeviceGroupCount, pPhysicalDeviceGroupProperties);
+}
+
+bool PreCallValidateEnumeratePhysicalDeviceGroupsKHR(VkInstance instance, uint32_t *pPhysicalDeviceGroupCount,
+                                                     VkPhysicalDeviceGroupPropertiesKHR *pPhysicalDeviceGroupProperties) {
+    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(instance), instance_layer_data_map);
+    return ValidateEnumeratePhysicalDeviceGroups(instance_data, pPhysicalDeviceGroupCount, pPhysicalDeviceGroupProperties,
+                                                 "vkEnumeratePhysicalDeviceGroupsKHR()");
+}
+void PreCallRecordEnumeratePhysicalDeviceGroupsKHR(VkInstance instance, uint32_t *pPhysicalDeviceGroupCount,
+                                                   VkPhysicalDeviceGroupPropertiesKHR *pPhysicalDeviceGroupProperties) {
+    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(instance), instance_layer_data_map);
+    PreRecordEnumeratePhysicalDeviceGroupsState(instance_data, pPhysicalDeviceGroupProperties);
+}
+void PostCallRecordEnumeratePhysicalDeviceGroupsKHR(VkInstance instance, uint32_t *pPhysicalDeviceGroupCount,
+                                                    VkPhysicalDeviceGroupPropertiesKHR *pPhysicalDeviceGroupProperties,
+                                                    VkResult result) {
+    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(instance), instance_layer_data_map);
+    if ((VK_SUCCESS != result) && (VK_INCOMPLETE != result)) return;
+    PostRecordEnumeratePhysicalDeviceGroupsState(instance_data, pPhysicalDeviceGroupCount, pPhysicalDeviceGroupProperties);
 }
 
 bool ValidateDescriptorUpdateTemplate(const char *func_name, layer_data *device_data,

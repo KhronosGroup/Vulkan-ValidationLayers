@@ -2100,16 +2100,13 @@ VKAPI_ATTR VkResult VKAPI_CALL BindImageMemory2KHR(VkDevice device, uint32_t bin
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL SetEvent(VkDevice device, VkEvent event) {
-    VkResult result = VK_ERROR_VALIDATION_FAILED_EXT;
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-
     unique_lock_t lock(global_lock);
-    bool skip = PreCallValidateSetEvent(dev_data, event);
-    PreCallRecordSetEvent(dev_data, event);
+    bool skip = PreCallValidateSetEvent(device, event);
+    if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+    PreCallRecordSetEvent(device, event);
     lock.unlock();
-
-    if (!skip) result = dev_data->dispatch_table.SetEvent(device, event);
-    return result;
+    return dev_data->dispatch_table.SetEvent(device, event);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL QueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo *pBindInfo,
@@ -2143,16 +2140,14 @@ VKAPI_ATTR VkResult VKAPI_CALL
 ImportSemaphoreWin32HandleKHR(VkDevice device, const VkImportSemaphoreWin32HandleInfoKHR *pImportSemaphoreWin32HandleInfo) {
     VkResult result = VK_ERROR_VALIDATION_FAILED_EXT;
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    bool skip =
-        PreCallValidateImportSemaphore(dev_data, pImportSemaphoreWin32HandleInfo->semaphore, "vkImportSemaphoreWin32HandleKHR");
+    unique_lock_t lock(global_lock);
+    bool skip = PreCallValidateImportSemaphoreWin32HandleKHR(device, pImportSemaphoreWin32HandleInfo);
 
     if (!skip) {
+        lock.unlock();
         result = dev_data->dispatch_table.ImportSemaphoreWin32HandleKHR(device, pImportSemaphoreWin32HandleInfo);
-    }
-
-    if (result == VK_SUCCESS) {
-        PostCallRecordImportSemaphore(dev_data, pImportSemaphoreWin32HandleInfo->semaphore,
-                                      pImportSemaphoreWin32HandleInfo->handleType, pImportSemaphoreWin32HandleInfo->flags);
+        lock.lock();
+        PostCallRecordImportSemaphoreWin32HandleKHR(device, pImportSemaphoreWin32HandleInfo, result);
     }
     return result;
 }
@@ -2161,15 +2156,14 @@ ImportSemaphoreWin32HandleKHR(VkDevice device, const VkImportSemaphoreWin32Handl
 VKAPI_ATTR VkResult VKAPI_CALL ImportSemaphoreFdKHR(VkDevice device, const VkImportSemaphoreFdInfoKHR *pImportSemaphoreFdInfo) {
     VkResult result = VK_ERROR_VALIDATION_FAILED_EXT;
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    bool skip = PreCallValidateImportSemaphore(dev_data, pImportSemaphoreFdInfo->semaphore, "vkImportSemaphoreFdKHR");
+    unique_lock_t lock(global_lock);
+    bool skip = PreCallValidateImportSemaphoreFdKHR(device, pImportSemaphoreFdInfo);
 
     if (!skip) {
+        lock.unlock();
         result = dev_data->dispatch_table.ImportSemaphoreFdKHR(device, pImportSemaphoreFdInfo);
-    }
-
-    if (result == VK_SUCCESS) {
-        PostCallRecordImportSemaphore(dev_data, pImportSemaphoreFdInfo->semaphore, pImportSemaphoreFdInfo->handleType,
-                                      pImportSemaphoreFdInfo->flags);
+        lock.lock();
+        PostCallRecordImportSemaphoreFdKHR(device, pImportSemaphoreFdInfo, result);
     }
     return result;
 }
@@ -2199,31 +2193,30 @@ VKAPI_ATTR VkResult VKAPI_CALL ImportFenceWin32HandleKHR(VkDevice device,
                                                          const VkImportFenceWin32HandleInfoKHR *pImportFenceWin32HandleInfo) {
     VkResult result = VK_ERROR_VALIDATION_FAILED_EXT;
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    bool skip = PreCallValidateImportFence(dev_data, pImportFenceWin32HandleInfo->fence, "vkImportFenceWin32HandleKHR");
+    unique_lock_t lock(global_lock);
+    bool skip = PreCallValidateImportFenceWin32HandleKHR(device, pImportFenceWin32HandleInfo);
 
     if (!skip) {
+        lock.unlock();
         result = dev_data->dispatch_table.ImportFenceWin32HandleKHR(device, pImportFenceWin32HandleInfo);
-    }
-
-    if (result == VK_SUCCESS) {
-        PostCallRecordImportFence(dev_data, pImportFenceWin32HandleInfo->fence, pImportFenceWin32HandleInfo->handleType,
-                                  pImportFenceWin32HandleInfo->flags);
+        lock.lock();
+        PostCallRecordImportFenceWin32HandleKHR(device, pImportFenceWin32HandleInfo, result);
     }
     return result;
 }
-#endif
+#endif  // VK_USE_PLATFORM_WIN32_KHR
 
 VKAPI_ATTR VkResult VKAPI_CALL ImportFenceFdKHR(VkDevice device, const VkImportFenceFdInfoKHR *pImportFenceFdInfo) {
     VkResult result = VK_ERROR_VALIDATION_FAILED_EXT;
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    bool skip = PreCallValidateImportFence(dev_data, pImportFenceFdInfo->fence, "vkImportFenceFdKHR");
+    unique_lock_t lock(global_lock);
+    bool skip = PreCallValidateImportFenceFdKHR(device, pImportFenceFdInfo);
 
     if (!skip) {
+        lock.unlock();
         result = dev_data->dispatch_table.ImportFenceFdKHR(device, pImportFenceFdInfo);
-    }
-
-    if (result == VK_SUCCESS) {
-        PostCallRecordImportFence(dev_data, pImportFenceFdInfo->fence, pImportFenceFdInfo->handleType, pImportFenceFdInfo->flags);
+        lock.lock();
+        PostCallRecordImportFenceFdKHR(device, pImportFenceFdInfo, result);
     }
     return result;
 }
@@ -2331,20 +2324,14 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateSharedSwapchainsKHR(VkDevice device, uint32
 VKAPI_ATTR VkResult VKAPI_CALL AcquireNextImageKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout,
                                                    VkSemaphore semaphore, VkFence fence, uint32_t *pImageIndex) {
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-
     unique_lock_t lock(global_lock);
-    bool skip = PreCallValidateCommonAcquireNextImage(dev_data, device, swapchain, timeout, semaphore, fence, pImageIndex,
-                                                      "vkAcquireNextImageKHR");
+    bool skip = PreCallValidateAcquireNextImageKHR(device, swapchain, timeout, semaphore, fence, pImageIndex);
     lock.unlock();
-
     if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
 
     VkResult result = dev_data->dispatch_table.AcquireNextImageKHR(device, swapchain, timeout, semaphore, fence, pImageIndex);
-
     lock.lock();
-    if (result == VK_SUCCESS || result == VK_SUBOPTIMAL_KHR) {
-        PostCallRecordCommonAcquireNextImage(dev_data, device, swapchain, timeout, semaphore, fence, pImageIndex);
-    }
+    PostCallRecordAcquireNextImageKHR(device, swapchain, timeout, semaphore, fence, pImageIndex, result);
     lock.unlock();
 
     return result;
@@ -2353,25 +2340,16 @@ VKAPI_ATTR VkResult VKAPI_CALL AcquireNextImageKHR(VkDevice device, VkSwapchainK
 VKAPI_ATTR VkResult VKAPI_CALL AcquireNextImage2KHR(VkDevice device, const VkAcquireNextImageInfoKHR *pAcquireInfo,
                                                     uint32_t *pImageIndex) {
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-
     unique_lock_t lock(global_lock);
-    bool skip =
-        PreCallValidateCommonAcquireNextImage(dev_data, device, pAcquireInfo->swapchain, pAcquireInfo->timeout,
-                                              pAcquireInfo->semaphore, pAcquireInfo->fence, pImageIndex, "vkAcquireNextImage2KHR");
+    bool skip = PreCallValidateAcquireNextImage2KHR(device, pAcquireInfo, pImageIndex);
     lock.unlock();
 
     if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
-
     VkResult result = dev_data->dispatch_table.AcquireNextImage2KHR(device, pAcquireInfo, pImageIndex);
-
     lock.lock();
-    if (result == VK_SUCCESS || result == VK_SUBOPTIMAL_KHR) {
-        PostCallRecordCommonAcquireNextImage(dev_data, device, pAcquireInfo->swapchain, pAcquireInfo->timeout,
-                                             pAcquireInfo->semaphore, pAcquireInfo->fence, pImageIndex);
-        // TODO: consider physical device masks
-    }
+    PostCallRecordAcquireNextImage2KHR(device, pAcquireInfo, pImageIndex, result);
+    // TODO: consider physical device masks
     lock.unlock();
-
     return result;
 }
 
@@ -2382,20 +2360,13 @@ VKAPI_ATTR VkResult VKAPI_CALL EnumeratePhysicalDevices(VkInstance instance, uin
     assert(instance_data);
 
     unique_lock_t lock(global_lock);
-    // For this instance, flag when vkEnumeratePhysicalDevices goes to QUERY_COUNT and then QUERY_DETAILS
-    if (pPhysicalDevices) {
-        skip |= PreCallValidateEnumeratePhysicalDevices(instance_data, pPhysicalDeviceCount);
-    }
-    PreCallRecordEnumeratePhysicalDevices(instance_data);
+    skip |= PreCallValidateEnumeratePhysicalDevices(instance, pPhysicalDeviceCount, pPhysicalDevices);
+    if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+    PreCallRecordEnumeratePhysicalDevices(instance, pPhysicalDeviceCount, pPhysicalDevices);
     lock.unlock();
-
-    if (skip) {
-        return VK_ERROR_VALIDATION_FAILED_EXT;
-    }
     VkResult result = instance_data->dispatch_table.EnumeratePhysicalDevices(instance, pPhysicalDeviceCount, pPhysicalDevices);
-
     lock.lock();
-    PostCallRecordEnumeratePhysicalDevices(instance_data, result, pPhysicalDeviceCount, pPhysicalDevices);
+    PostCallRecordEnumeratePhysicalDevices(instance, pPhysicalDeviceCount, pPhysicalDevices, result);
     return result;
 }
 
@@ -2832,17 +2803,15 @@ VKAPI_ATTR VkResult VKAPI_CALL EnumeratePhysicalDeviceGroups(VkInstance instance
                                                              VkPhysicalDeviceGroupPropertiesKHR *pPhysicalDeviceGroupProperties) {
     bool skip = false;
     instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(instance), instance_layer_data_map);
-
+    unique_lock_t lock(global_lock);
     skip = PreCallValidateEnumeratePhysicalDeviceGroups(instance, pPhysicalDeviceGroupCount, pPhysicalDeviceGroupProperties);
-    if (skip) {
-        return VK_ERROR_VALIDATION_FAILED_EXT;
-    }
-    PreCallRecordEnumeratePhysicalDeviceGroups(instance_data, pPhysicalDeviceGroupProperties);
+    if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+    PreCallRecordEnumeratePhysicalDeviceGroups(instance, pPhysicalDeviceGroupCount, pPhysicalDeviceGroupProperties);
+    lock.unlock();
     VkResult result = instance_data->dispatch_table.EnumeratePhysicalDeviceGroups(instance, pPhysicalDeviceGroupCount,
                                                                                   pPhysicalDeviceGroupProperties);
-    if (result == VK_SUCCESS || result == VK_INCOMPLETE) {
-        PostCallRecordEnumeratePhysicalDeviceGroups(instance_data, pPhysicalDeviceGroupCount, pPhysicalDeviceGroupProperties);
-    }
+    lock.lock();
+    PostCallRecordEnumeratePhysicalDeviceGroups(instance, pPhysicalDeviceGroupCount, pPhysicalDeviceGroupProperties, result);
     return result;
 }
 
@@ -2850,17 +2819,16 @@ VKAPI_ATTR VkResult VKAPI_CALL EnumeratePhysicalDeviceGroupsKHR(
     VkInstance instance, uint32_t *pPhysicalDeviceGroupCount, VkPhysicalDeviceGroupPropertiesKHR *pPhysicalDeviceGroupProperties) {
     bool skip = false;
     instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(instance), instance_layer_data_map);
+    unique_lock_t lock(global_lock);
 
-    skip = PreCallValidateEnumeratePhysicalDeviceGroups(instance, pPhysicalDeviceGroupCount, pPhysicalDeviceGroupProperties);
-    if (skip) {
-        return VK_ERROR_VALIDATION_FAILED_EXT;
-    }
-    PreCallRecordEnumeratePhysicalDeviceGroups(instance_data, pPhysicalDeviceGroupProperties);
+    skip = PreCallValidateEnumeratePhysicalDeviceGroupsKHR(instance, pPhysicalDeviceGroupCount, pPhysicalDeviceGroupProperties);
+    if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+    lock.unlock();
+    PreCallRecordEnumeratePhysicalDeviceGroupsKHR(instance, pPhysicalDeviceGroupCount, pPhysicalDeviceGroupProperties);
     VkResult result = instance_data->dispatch_table.EnumeratePhysicalDeviceGroupsKHR(instance, pPhysicalDeviceGroupCount,
                                                                                      pPhysicalDeviceGroupProperties);
-    if (result == VK_SUCCESS) {
-        PostCallRecordEnumeratePhysicalDeviceGroups(instance_data, pPhysicalDeviceGroupCount, pPhysicalDeviceGroupProperties);
-    }
+    lock.lock();
+    PostCallRecordEnumeratePhysicalDeviceGroupsKHR(instance, pPhysicalDeviceGroupCount, pPhysicalDeviceGroupProperties, result);
     return result;
 }
 
