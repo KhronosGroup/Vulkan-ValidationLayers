@@ -91,22 +91,24 @@ set(TARGET_NAMES
     VkLayer_standard_validation
     VkLayer_thread_safety)
 
-# Install the layer json files
-if(WIN32)
-    if(CMAKE_GENERATOR MATCHES "^Visual Studio.*")
+if(BUILD_LAYERS)
+    # Install the layer json files
+    if(WIN32)
+        if(CMAKE_GENERATOR MATCHES "^Visual Studio.*")
+            foreach(TARGET_NAME ${TARGET_NAMES})
+                install(FILES ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/${TARGET_NAME}.json DESTINATION ${CMAKE_INSTALL_LIBDIR})
+            endforeach()
+        else()
+            foreach(TARGET_NAME ${TARGET_NAMES})
+                install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${TARGET_NAME}.json DESTINATION ${CMAKE_INSTALL_LIBDIR})
+            endforeach()
+        endif()
+    elseif(UNIX) # UNIX includes APPLE
         foreach(TARGET_NAME ${TARGET_NAMES})
-            install(FILES ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/${TARGET_NAME}.json DESTINATION ${CMAKE_INSTALL_LIBDIR})
-        endforeach()
-    else()
-        foreach(TARGET_NAME ${TARGET_NAMES})
-            install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${TARGET_NAME}.json DESTINATION ${CMAKE_INSTALL_LIBDIR})
+            install(FILES ${CMAKE_CURRENT_BINARY_DIR}/staging-json/${TARGET_NAME}.json
+                    DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/vulkan/explicit_layer.d)
         endforeach()
     endif()
-elseif(UNIX) # UNIX includes APPLE
-    foreach(TARGET_NAME ${TARGET_NAMES})
-        install(FILES ${CMAKE_CURRENT_BINARY_DIR}/staging-json/${TARGET_NAME}.json
-                DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/vulkan/explicit_layer.d)
-    endforeach()
 endif()
 
 # System-specific macros to create a library target.
@@ -213,52 +215,52 @@ if(BUILD_LAYERS)
     target_include_directories(VkLayer_core_validation PRIVATE ${SPIRV_TOOLS_INCLUDE_DIR})
     target_link_libraries(VkLayer_core_validation PRIVATE ${SPIRV_TOOLS_LIBRARIES})
     add_dependencies(VkLayer_core_validation spirv_tools_revision_file)
-endif()
 
-# The output file needs Unix "/" separators or Windows "\" separators On top of that, Windows separators actually need to be doubled
-# because the json format uses backslash escapes
-file(TO_NATIVE_PATH "./" RELATIVE_PATH_PREFIX)
-string(REPLACE "\\"
-               "\\\\"
-               RELATIVE_PATH_PREFIX
-               "${RELATIVE_PATH_PREFIX}")
+    # The output file needs Unix "/" separators or Windows "\" separators On top of that, Windows separators actually need to be doubled
+    # because the json format uses backslash escapes
+    file(TO_NATIVE_PATH "./" RELATIVE_PATH_PREFIX)
+    string(REPLACE "\\"
+                   "\\\\"
+                   RELATIVE_PATH_PREFIX
+                   "${RELATIVE_PATH_PREFIX}")
 
-# Run each .json.in file through the generator We need to create the generator.cmake script so that the generator can be run at
-# compile time, instead of configure time Running at compile time lets us use cmake generator expressions (TARGET_FILE_NAME and
-# TARGET_FILE_DIR, specifically)
-file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/generator.cmake" "configure_file(\"\${INPUT_FILE}\" \"\${OUTPUT_FILE}\")")
-foreach(TARGET_NAME ${TARGET_NAMES})
-    set(CONFIG_DEFINES -DINPUT_FILE="${CMAKE_CURRENT_SOURCE_DIR}/json/${TARGET_NAME}.json.in" -DVK_VERSION=1.1.${vk_header_version})
-    # If this json file is not a metalayer, get the needed properties from that target
-    if(TARGET ${TARGET_NAME})
-        set(CONFIG_DEFINES
-            ${CONFIG_DEFINES}
-            -DOUTPUT_FILE="$<TARGET_FILE_DIR:${TARGET_NAME}>/${TARGET_NAME}.json"
-            -DRELATIVE_LAYER_BINARY="${RELATIVE_PATH_PREFIX}$<TARGET_FILE_NAME:${TARGET_NAME}>")
-        # If this json file is a metalayer, make the output path match core validation, and there is no layer binary file
-    else()
-        set(CONFIG_DEFINES ${CONFIG_DEFINES} -DOUTPUT_FILE="$<TARGET_FILE_DIR:VkLayer_core_validation>/${TARGET_NAME}.json")
-    endif()
-    add_custom_target(${TARGET_NAME}-json ALL
-                      COMMAND ${CMAKE_COMMAND} ${CONFIG_DEFINES} -P "${CMAKE_CURRENT_BINARY_DIR}/generator.cmake")
-    if(CMAKE_GENERATOR MATCHES "^Visual Studio.*")
-        set_target_properties(${TARGET_NAME}-json PROPERTIES FOLDER ${LAYERS_HELPER_FOLDER})
-    endif()
-endforeach()
-
-# For UNIX-based systems, `library_path` should not contain a relative path (indicated by "./") before installing to system
-# directories, so we do not include it in the staging-json files which are used for installation
-if(UNIX)
+    # Run each .json.in file through the generator We need to create the generator.cmake script so that the generator can be run at
+    # compile time, instead of configure time Running at compile time lets us use cmake generator expressions (TARGET_FILE_NAME and
+    # TARGET_FILE_DIR, specifically)
+    file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/generator.cmake" "configure_file(\"\${INPUT_FILE}\" \"\${OUTPUT_FILE}\")")
     foreach(TARGET_NAME ${TARGET_NAMES})
-        set(INSTALL_DEFINES
-            -DINPUT_FILE="${CMAKE_CURRENT_SOURCE_DIR}/json/${TARGET_NAME}.json.in"
-            -DOUTPUT_FILE="${CMAKE_CURRENT_BINARY_DIR}/staging-json/${TARGET_NAME}.json"
-            -DVK_VERSION=1.1.${vk_header_version})
+        set(CONFIG_DEFINES -DINPUT_FILE="${CMAKE_CURRENT_SOURCE_DIR}/json/${TARGET_NAME}.json.in" -DVK_VERSION=1.1.${vk_header_version})
         # If this json file is not a metalayer, get the needed properties from that target
         if(TARGET ${TARGET_NAME})
-            set(INSTALL_DEFINES ${INSTALL_DEFINES} -DRELATIVE_LAYER_BINARY="$<TARGET_FILE_NAME:${TARGET_NAME}>")
+            set(CONFIG_DEFINES
+                ${CONFIG_DEFINES}
+                -DOUTPUT_FILE="$<TARGET_FILE_DIR:${TARGET_NAME}>/${TARGET_NAME}.json"
+                -DRELATIVE_LAYER_BINARY="${RELATIVE_PATH_PREFIX}$<TARGET_FILE_NAME:${TARGET_NAME}>")
+            # If this json file is a metalayer, make the output path match core validation, and there is no layer binary file
+        else()
+            set(CONFIG_DEFINES ${CONFIG_DEFINES} -DOUTPUT_FILE="$<TARGET_FILE_DIR:VkLayer_core_validation>/${TARGET_NAME}.json")
         endif()
-        add_custom_target(${TARGET_NAME}-staging-json ALL
-                          COMMAND ${CMAKE_COMMAND} ${INSTALL_DEFINES} -P "${CMAKE_CURRENT_BINARY_DIR}/generator.cmake")
+        add_custom_target(${TARGET_NAME}-json ALL
+                          COMMAND ${CMAKE_COMMAND} ${CONFIG_DEFINES} -P "${CMAKE_CURRENT_BINARY_DIR}/generator.cmake")
+        if(CMAKE_GENERATOR MATCHES "^Visual Studio.*")
+            set_target_properties(${TARGET_NAME}-json PROPERTIES FOLDER ${LAYERS_HELPER_FOLDER})
+        endif()
     endforeach()
+
+    # For UNIX-based systems, `library_path` should not contain a relative path (indicated by "./") before installing to system
+    # directories, so we do not include it in the staging-json files which are used for installation
+    if(UNIX)
+        foreach(TARGET_NAME ${TARGET_NAMES})
+            set(INSTALL_DEFINES
+                -DINPUT_FILE="${CMAKE_CURRENT_SOURCE_DIR}/json/${TARGET_NAME}.json.in"
+                -DOUTPUT_FILE="${CMAKE_CURRENT_BINARY_DIR}/staging-json/${TARGET_NAME}.json"
+                -DVK_VERSION=1.1.${vk_header_version})
+            # If this json file is not a metalayer, get the needed properties from that target
+            if(TARGET ${TARGET_NAME})
+                set(INSTALL_DEFINES ${INSTALL_DEFINES} -DRELATIVE_LAYER_BINARY="$<TARGET_FILE_NAME:${TARGET_NAME}>")
+            endif()
+            add_custom_target(${TARGET_NAME}-staging-json ALL
+                              COMMAND ${CMAKE_COMMAND} ${INSTALL_DEFINES} -P "${CMAKE_CURRENT_BINARY_DIR}/generator.cmake")
+        endforeach()
+    endif()
 endif()

@@ -150,136 +150,139 @@ option(INSTALL_TESTS "Install tests" OFF)
 option(BUILD_LAYERS "Build layers" ON)
 option(BUILD_LAYER_SUPPORT_FILES "Generate layer files" OFF) # For generating files when not building layers
 
-set(GLSLANG_INSTALL_DIR "GLSLANG-NOTFOUND" CACHE PATH "Absolute path to a glslang install directory")
-if(NOT GLSLANG_INSTALL_DIR AND NOT DEFINED ENV{GLSLANG_INSTALL_DIR} AND NOT TARGET glslang)
-    message(FATAL_ERROR "Must define location of glslang binaries -- see BUILD.md")
-endif()
+if(BUILD_TESTS OR BUILD_LAYERS)
 
-# GLSLANG_INSTALL_DIR is used as the path to all dependent projects' install dirs
-# CMake command line option overrides environment variable
-if(NOT GLSLANG_INSTALL_DIR)
-    set(GLSLANG_INSTALL_DIR $ENV{GLSLANG_INSTALL_DIR})
-endif()
-
-if (NOT TARGET glslang)
-    message(STATUS "Using glslang install located at ${GLSLANG_INSTALL_DIR}")
-    set(GLSLANG_SEARCH_PATH "${GLSLANG_INSTALL_DIR}/lib")
-    set(GLSLANG_DEBUG_SEARCH_PATH "${GLSLANG_INSTALL_DIR}/lib")
-    set(GLSLANG_SPIRV_INCLUDE_DIR "${GLSLANG_INSTALL_DIR}/include" CACHE PATH "Path to glslang spirv headers")
-
-    find_library(GLSLANG_LIB NAMES glslang HINTS ${GLSLANG_SEARCH_PATH})
-    find_library(OGLCompiler_LIB NAMES OGLCompiler HINTS ${GLSLANG_SEARCH_PATH})
-    find_library(OSDependent_LIB NAMES OSDependent HINTS ${GLSLANG_SEARCH_PATH})
-    find_library(HLSL_LIB NAMES HLSL HINTS ${GLSLANG_SEARCH_PATH})
-    find_library(SPIRV_LIB NAMES SPIRV HINTS ${GLSLANG_SEARCH_PATH})
-    find_library(SPIRV_REMAPPER_LIB NAMES SPVRemapper HINTS ${GLSLANG_SEARCH_PATH})
-
-    if(WIN32)
-        add_library(glslang STATIC IMPORTED)
-        add_library(OGLCompiler STATIC IMPORTED)
-        add_library(OSDependent STATIC IMPORTED)
-        add_library(HLSL STATIC IMPORTED)
-        add_library(SPIRV STATIC IMPORTED)
-        add_library(SPVRemapper STATIC IMPORTED)
-        add_library(Loader STATIC IMPORTED)
-
-        find_library(GLSLANG_DLIB NAMES glslangd HINTS ${GLSLANG_DEBUG_SEARCH_PATH})
-        find_library(OGLCompiler_DLIB NAMES OGLCompilerd HINTS ${GLSLANG_DEBUG_SEARCH_PATH})
-        find_library(OSDependent_DLIB NAMES OSDependentd HINTS ${GLSLANG_DEBUG_SEARCH_PATH})
-        find_library(HLSL_DLIB NAMES HLSLd HINTS ${GLSLANG_DEBUG_SEARCH_PATH})
-        find_library(SPIRV_DLIB NAMES SPIRVd HINTS ${GLSLANG_DEBUG_SEARCH_PATH})
-        find_library(SPIRV_REMAPPER_DLIB NAMES SPVRemapperd HINTS ${GLSLANG_DEBUG_SEARCH_PATH})
-
-        set_target_properties(glslang
-                              PROPERTIES IMPORTED_LOCATION
-                                         "${GLSLANG_LIB}"
-                                         IMPORTED_LOCATION_DEBUG
-                                         "${GLSLANG_DLIB}")
-        set_target_properties(OGLCompiler
-                              PROPERTIES IMPORTED_LOCATION
-                                         "${OGLCompiler_LIB}"
-                                         IMPORTED_LOCATION_DEBUG
-                                         "${OGLCompiler_DLIB}")
-        set_target_properties(OSDependent
-                              PROPERTIES IMPORTED_LOCATION
-                                         "${OSDependent_LIB}"
-                                         IMPORTED_LOCATION_DEBUG
-                                         "${OSDependent_DLIB}")
-        set_target_properties(HLSL
-                              PROPERTIES IMPORTED_LOCATION
-                                         "${HLSL_LIB}"
-                                         IMPORTED_LOCATION_DEBUG
-                                         "${HLSL_DLIB}")
-        set_target_properties(SPIRV
-                              PROPERTIES IMPORTED_LOCATION
-                                         "${SPIRV_LIB}"
-                                         IMPORTED_LOCATION_DEBUG
-                                         "${SPIRV_DLIB}")
-        set_target_properties(SPVRemapper
-                              PROPERTIES IMPORTED_LOCATION
-                                         "${SPIRV_REMAPPER_LIB}"
-                                         IMPORTED_LOCATION_DEBUG
-                                         "${SPIRV_REMAPPER_DLIB}")
-
-        set(GLSLANG_LIBRARIES glslang OGLCompiler OSDependent HLSL SPIRV SPVRemapper ${SPIRV_TOOLS_LIBRARIES})
-    else()
-        set(GLSLANG_LIBRARIES
-            ${GLSLANG_LIB}
-            ${OGLCompiler_LIB}
-            ${OSDependent_LIB}
-            ${HLSL_LIB}
-            ${SPIRV_LIB}
-            ${SPIRV_REMAPPER_LIB}
-            ${SPIRV_TOOLS_LIBRARIES})
+    set(GLSLANG_INSTALL_DIR "GLSLANG-NOTFOUND" CACHE PATH "Absolute path to a glslang install directory")
+    if(NOT GLSLANG_INSTALL_DIR AND NOT DEFINED ENV{GLSLANG_INSTALL_DIR} AND NOT TARGET glslang)
+        message(FATAL_ERROR "Must define location of glslang binaries -- see BUILD.md")
     endif()
-else()
-    set(GLSLANG_SPIRV_INCLUDE_DIR "${glslang_SOURCE_DIR}" CACHE PATH "Path to glslang spirv headers")
-    set(GLSLANG_LIBRARIES glslang SPIRV SPVRemapper)
-endif()
 
-# spirv-tools
-if (NOT TARGET SPIRV-Tools)
-    set(SPIRV_TOOLS_BINARY_ROOT "${GLSLANG_INSTALL_DIR}/lib"
-        CACHE PATH "User defined path to the SPIRV-Tools binaries for this project")
-    set(SPIRV_TOOLS_OPT_BINARY_ROOT "${GLSLANG_INSTALL_DIR}/lib"
-        CACHE PATH "User defined path to the SPIRV-Tools-opt binaries for this project")
-    set(SPIRV_TOOLS_INCLUDE_DIR "${GLSLANG_INSTALL_DIR}/include" CACHE PATH "Path to spirv tools headers")
-    set(SPIRV_TOOLS_SEARCH_PATH "${GLSLANG_INSTALL_DIR}/lib")
-    set(SPIRV_TOOLS_DEBUG_SEARCH_PATH "${GLSLANG_INSTALL_DIR}/lib")
-    set(SPIRV_TOOLS_OPT_SEARCH_PATH "${GLSLANG_INSTALL_DIR}/lib")
-    set(SPIRV_TOOLS_OPT_DEBUG_SEARCH_PATH "${GLSLANG_INSTALL_DIR}/lib")
-
-    find_library(SPIRV_TOOLS_LIB NAMES SPIRV-Tools HINTS ${SPIRV_TOOLS_SEARCH_PATH})
-    find_library(SPIRV_TOOLS_OPT_LIB NAMES SPIRV-Tools-opt HINTS ${SPIRV_TOOLS_OPT_SEARCH_PATH})
-
-    if(WIN32)
-        add_library(SPIRV-Tools-opt STATIC IMPORTED)
-        add_library(SPIRV-Tools STATIC IMPORTED)
-
-        find_library(SPIRV_TOOLS_DLIB NAMES SPIRV-Toolsd HINTS ${SPIRV_TOOLS_DEBUG_SEARCH_PATH})
-        find_library(SPIRV_TOOLS_OPT_DLIB NAMES SPIRV-Tools-optd HINTS ${SPIRV_TOOLS_OPT_DEBUG_SEARCH_PATH})
-
-        set_target_properties(SPIRV-Tools
-                              PROPERTIES IMPORTED_LOCATION
-                                         "${SPIRV_TOOLS_LIB}"
-                                         IMPORTED_LOCATION_DEBUG
-                                         "${SPIRV_TOOLS_DLIB}")
-        set_target_properties(SPIRV-Tools-opt
-                              PROPERTIES IMPORTED_LOCATION
-                                         "${SPIRV_TOOLS_OPT_LIB}"
-                                         IMPORTED_LOCATION_DEBUG
-                                         "${SPIRV_TOOLS_OPT_DLIB}")
-
-        set(SPIRV_TOOLS_LIBRARIES SPIRV-Tools-opt SPIRV-Tools)
-    else()
-        set(SPIRV_TOOLS_LIBRARIES ${SPIRV_TOOLS_OPT_LIB} ${SPIRV_TOOLS_LIB})
+    # GLSLANG_INSTALL_DIR is used as the path to all dependent projects' install dirs
+    # CMake command line option overrides environment variable
+    if(NOT GLSLANG_INSTALL_DIR)
+        set(GLSLANG_INSTALL_DIR $ENV{GLSLANG_INSTALL_DIR})
     endif()
-else()
-    set(SPIRV_TOOLS_LIBRARIES SPIRV-Tools SPIRV-Tools-opt)
-    set(SPIRV_TOOLS_INCLUDE_DIR "${spirv-tools_SOURCE_DIR}/include" CACHE PATH "Path to spirv tools headers")
-endif()
 
-set(GLSLANG_LIBRARIES ${GLSLANG_LIBRARIES} ${SPIRV_TOOLS_LIBRARIES})
+    if (NOT TARGET glslang)
+        message(STATUS "Using glslang install located at ${GLSLANG_INSTALL_DIR}")
+        set(GLSLANG_SEARCH_PATH "${GLSLANG_INSTALL_DIR}/lib")
+        set(GLSLANG_DEBUG_SEARCH_PATH "${GLSLANG_INSTALL_DIR}/lib")
+        set(GLSLANG_SPIRV_INCLUDE_DIR "${GLSLANG_INSTALL_DIR}/include" CACHE PATH "Path to glslang spirv headers")
+
+        find_library(GLSLANG_LIB NAMES glslang HINTS ${GLSLANG_SEARCH_PATH})
+        find_library(OGLCompiler_LIB NAMES OGLCompiler HINTS ${GLSLANG_SEARCH_PATH})
+        find_library(OSDependent_LIB NAMES OSDependent HINTS ${GLSLANG_SEARCH_PATH})
+        find_library(HLSL_LIB NAMES HLSL HINTS ${GLSLANG_SEARCH_PATH})
+        find_library(SPIRV_LIB NAMES SPIRV HINTS ${GLSLANG_SEARCH_PATH})
+        find_library(SPIRV_REMAPPER_LIB NAMES SPVRemapper HINTS ${GLSLANG_SEARCH_PATH})
+
+        if(WIN32)
+            add_library(glslang STATIC IMPORTED)
+            add_library(OGLCompiler STATIC IMPORTED)
+            add_library(OSDependent STATIC IMPORTED)
+            add_library(HLSL STATIC IMPORTED)
+            add_library(SPIRV STATIC IMPORTED)
+            add_library(SPVRemapper STATIC IMPORTED)
+            add_library(Loader STATIC IMPORTED)
+
+            find_library(GLSLANG_DLIB NAMES glslangd HINTS ${GLSLANG_DEBUG_SEARCH_PATH})
+            find_library(OGLCompiler_DLIB NAMES OGLCompilerd HINTS ${GLSLANG_DEBUG_SEARCH_PATH})
+            find_library(OSDependent_DLIB NAMES OSDependentd HINTS ${GLSLANG_DEBUG_SEARCH_PATH})
+            find_library(HLSL_DLIB NAMES HLSLd HINTS ${GLSLANG_DEBUG_SEARCH_PATH})
+            find_library(SPIRV_DLIB NAMES SPIRVd HINTS ${GLSLANG_DEBUG_SEARCH_PATH})
+            find_library(SPIRV_REMAPPER_DLIB NAMES SPVRemapperd HINTS ${GLSLANG_DEBUG_SEARCH_PATH})
+
+            set_target_properties(glslang
+                                  PROPERTIES IMPORTED_LOCATION
+                                             "${GLSLANG_LIB}"
+                                             IMPORTED_LOCATION_DEBUG
+                                             "${GLSLANG_DLIB}")
+            set_target_properties(OGLCompiler
+                                  PROPERTIES IMPORTED_LOCATION
+                                             "${OGLCompiler_LIB}"
+                                             IMPORTED_LOCATION_DEBUG
+                                             "${OGLCompiler_DLIB}")
+            set_target_properties(OSDependent
+                                  PROPERTIES IMPORTED_LOCATION
+                                             "${OSDependent_LIB}"
+                                             IMPORTED_LOCATION_DEBUG
+                                             "${OSDependent_DLIB}")
+            set_target_properties(HLSL
+                                  PROPERTIES IMPORTED_LOCATION
+                                             "${HLSL_LIB}"
+                                             IMPORTED_LOCATION_DEBUG
+                                             "${HLSL_DLIB}")
+            set_target_properties(SPIRV
+                                  PROPERTIES IMPORTED_LOCATION
+                                             "${SPIRV_LIB}"
+                                             IMPORTED_LOCATION_DEBUG
+                                             "${SPIRV_DLIB}")
+            set_target_properties(SPVRemapper
+                                  PROPERTIES IMPORTED_LOCATION
+                                             "${SPIRV_REMAPPER_LIB}"
+                                             IMPORTED_LOCATION_DEBUG
+                                             "${SPIRV_REMAPPER_DLIB}")
+
+            set(GLSLANG_LIBRARIES glslang OGLCompiler OSDependent HLSL SPIRV SPVRemapper ${SPIRV_TOOLS_LIBRARIES})
+        else()
+            set(GLSLANG_LIBRARIES
+                ${GLSLANG_LIB}
+                ${OGLCompiler_LIB}
+                ${OSDependent_LIB}
+                ${HLSL_LIB}
+                ${SPIRV_LIB}
+                ${SPIRV_REMAPPER_LIB}
+                ${SPIRV_TOOLS_LIBRARIES})
+        endif()
+    else()
+        set(GLSLANG_SPIRV_INCLUDE_DIR "${glslang_SOURCE_DIR}" CACHE PATH "Path to glslang spirv headers")
+        set(GLSLANG_LIBRARIES glslang SPIRV SPVRemapper)
+    endif()
+
+    # spirv-tools
+    if (NOT TARGET SPIRV-Tools)
+        set(SPIRV_TOOLS_BINARY_ROOT "${GLSLANG_INSTALL_DIR}/lib"
+            CACHE PATH "User defined path to the SPIRV-Tools binaries for this project")
+        set(SPIRV_TOOLS_OPT_BINARY_ROOT "${GLSLANG_INSTALL_DIR}/lib"
+            CACHE PATH "User defined path to the SPIRV-Tools-opt binaries for this project")
+        set(SPIRV_TOOLS_INCLUDE_DIR "${GLSLANG_INSTALL_DIR}/include" CACHE PATH "Path to spirv tools headers")
+        set(SPIRV_TOOLS_SEARCH_PATH "${GLSLANG_INSTALL_DIR}/lib")
+        set(SPIRV_TOOLS_DEBUG_SEARCH_PATH "${GLSLANG_INSTALL_DIR}/lib")
+        set(SPIRV_TOOLS_OPT_SEARCH_PATH "${GLSLANG_INSTALL_DIR}/lib")
+        set(SPIRV_TOOLS_OPT_DEBUG_SEARCH_PATH "${GLSLANG_INSTALL_DIR}/lib")
+
+        find_library(SPIRV_TOOLS_LIB NAMES SPIRV-Tools HINTS ${SPIRV_TOOLS_SEARCH_PATH})
+        find_library(SPIRV_TOOLS_OPT_LIB NAMES SPIRV-Tools-opt HINTS ${SPIRV_TOOLS_OPT_SEARCH_PATH})
+
+        if(WIN32)
+            add_library(SPIRV-Tools-opt STATIC IMPORTED)
+            add_library(SPIRV-Tools STATIC IMPORTED)
+
+            find_library(SPIRV_TOOLS_DLIB NAMES SPIRV-Toolsd HINTS ${SPIRV_TOOLS_DEBUG_SEARCH_PATH})
+            find_library(SPIRV_TOOLS_OPT_DLIB NAMES SPIRV-Tools-optd HINTS ${SPIRV_TOOLS_OPT_DEBUG_SEARCH_PATH})
+
+            set_target_properties(SPIRV-Tools
+                                  PROPERTIES IMPORTED_LOCATION
+                                             "${SPIRV_TOOLS_LIB}"
+                                             IMPORTED_LOCATION_DEBUG
+                                             "${SPIRV_TOOLS_DLIB}")
+            set_target_properties(SPIRV-Tools-opt
+                                  PROPERTIES IMPORTED_LOCATION
+                                             "${SPIRV_TOOLS_OPT_LIB}"
+                                             IMPORTED_LOCATION_DEBUG
+                                             "${SPIRV_TOOLS_OPT_DLIB}")
+
+            set(SPIRV_TOOLS_LIBRARIES SPIRV-Tools-opt SPIRV-Tools)
+        else()
+            set(SPIRV_TOOLS_LIBRARIES ${SPIRV_TOOLS_OPT_LIB} ${SPIRV_TOOLS_LIB})
+        endif()
+    else()
+        set(SPIRV_TOOLS_LIBRARIES SPIRV-Tools SPIRV-Tools-opt)
+        set(SPIRV_TOOLS_INCLUDE_DIR "${spirv-tools_SOURCE_DIR}/include" CACHE PATH "Path to spirv tools headers")
+    endif()
+
+    set(GLSLANG_LIBRARIES ${GLSLANG_LIBRARIES} ${SPIRV_TOOLS_LIBRARIES})
+endif()
 
 # Generate dependent helper files ------------------------------------------------------------------------------------------------
 
