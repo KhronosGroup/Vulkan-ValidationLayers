@@ -96,6 +96,10 @@ class StatelessValidation : public ValidationObject {
     VkDevice device = VK_NULL_HANDLE;
     uint32_t api_version;
 
+    // Override chassis read/write locks for this validation object
+    // This override takes a deferred lock. i.e. it is not acquired.
+    std::unique_lock<std::mutex> write_lock() { return std::unique_lock<std::mutex>(validation_object_mutex, std::defer_lock); }
+
     // Device extension properties -- storing properties gathered from VkPhysicalDeviceProperties2KHR::pNext chain
     struct DeviceExtensionProperties {
         VkPhysicalDeviceShadingRateImagePropertiesNV shading_rate_image_props;
@@ -108,6 +112,10 @@ class StatelessValidation : public ValidationObject {
         std::unordered_set<uint32_t> subpasses_using_depthstencil_attachment;
     };
 
+    // Though this validation object is predominantly statless, the Framebuffer checks are greatly simplified by creating and
+    // updating a map of the renderpass usage states, and these accesses need thread protection. Use a mutex separate from the
+    // parent object's to maintain that functionality.
+    std::mutex renderpass_map_mutex;
     std::unordered_map<VkRenderPass, SubpassesUsageStates> renderpasses_states;
 
     // Constructor for stateles validation tracking
@@ -859,7 +867,9 @@ class StatelessValidation : public ValidationObject {
 
     template <typename T>
     void RecordRenderPass(VkRenderPass renderPass, const T *pCreateInfo) {
+        std::unique_lock<std::mutex> lock(renderpass_map_mutex);
         auto &renderpass_state = renderpasses_states[renderPass];
+        lock.unlock();
 
         for (uint32_t subpass = 0; subpass < pCreateInfo->subpassCount; ++subpass) {
             bool uses_color = false;
