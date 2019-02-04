@@ -3609,13 +3609,15 @@ static bool ValidateGetPhysicalDeviceImageFormatProperties2ANDROID(const debug_r
 static bool ValidateCreateSamplerYcbcrConversionANDROID(const layer_data *dev_data,
                                                         const VkSamplerYcbcrConversionCreateInfo *create_info) {
     const VkExternalFormatANDROID *ext_format_android = lvl_find_in_chain<VkExternalFormatANDROID>(create_info->pNext);
-    if ((nullptr != ext_format_android) && (VK_FORMAT_UNDEFINED != create_info->format)) {
-        return log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                       VK_DEBUG_REPORT_OBJECT_TYPE_SAMPLER_YCBCR_CONVERSION_EXT, 0,
-                       "VUID-VkSamplerYcbcrConversionCreateInfo-format-01904",
-                       "vkCreateSamplerYcbcrConversion[KHR]: CreateInfo format is not VK_FORMAT_UNDEFINED while there is a "
-                       "chained VkExternalFormatANDROID struct.");
-    } else if ((nullptr == ext_format_android) && (VK_FORMAT_UNDEFINED == create_info->format)) {
+    if ((nullptr != ext_format_android) && (0 != ext_format_android->externalFormat)) {
+        if (VK_FORMAT_UNDEFINED != create_info->format) {
+            return log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                           VK_DEBUG_REPORT_OBJECT_TYPE_SAMPLER_YCBCR_CONVERSION_EXT, 0,
+                           "VUID-VkSamplerYcbcrConversionCreateInfo-format-01904",
+                           "vkCreateSamplerYcbcrConversion[KHR]: CreateInfo format is not VK_FORMAT_UNDEFINED while "
+                           "there is a chained VkExternalFormatANDROID struct.");
+        }
+    } else if (VK_FORMAT_UNDEFINED == create_info->format) {
         return log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT,
                        VK_DEBUG_REPORT_OBJECT_TYPE_SAMPLER_YCBCR_CONVERSION_EXT, 0,
                        "VUID-VkSamplerYcbcrConversionCreateInfo-format-01904",
@@ -3628,7 +3630,7 @@ static bool ValidateCreateSamplerYcbcrConversionANDROID(const layer_data *dev_da
 static void RecordCreateSamplerYcbcrConversionANDROID(layer_data *dev_data, const VkSamplerYcbcrConversionCreateInfo *create_info,
                                                       VkSamplerYcbcrConversion ycbcr_conversion) {
     const VkExternalFormatANDROID *ext_format_android = lvl_find_in_chain<VkExternalFormatANDROID>(create_info->pNext);
-    if (ext_format_android) {
+    if (ext_format_android && (0 != ext_format_android->externalFormat)) {
         dev_data->ycbcr_conversion_ahb_fmt_map.emplace(ycbcr_conversion, ext_format_android->externalFormat);
     }
 };
