@@ -585,6 +585,50 @@ static bool SetSparseMemBinding(layer_data *dev_data, MEM_BINDING binding, uint6
     return skip;
 }
 
+bool ValidateDeviceQueueFamily(layer_data *device_data, uint32_t queue_family, const char *cmd_name, const char *parameter_name,
+                               const char *error_code, bool optional = false) {
+    bool skip = false;
+    if (!optional && queue_family == VK_QUEUE_FAMILY_IGNORED) {
+        skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
+                        HandleToUint64(device_data->device), error_code,
+                        "%s: %s is VK_QUEUE_FAMILY_IGNORED, but it is required to provide a valid queue family index value.",
+                        cmd_name, parameter_name);
+    } else if (device_data->queue_family_index_map.find(queue_family) == device_data->queue_family_index_map.end()) {
+        skip |=
+            log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
+                    HandleToUint64(device_data->device), error_code,
+                    "%s: %s (= %" PRIu32
+                    ") is not one of the queue families given via VkDeviceQueueCreateInfo structures when the device was created.",
+                    cmd_name, parameter_name, queue_family);
+    }
+
+    return skip;
+}
+
+bool ValidateQueueFamilies(layer_data *device_data, uint32_t queue_family_count, const uint32_t *queue_families,
+                           const char *cmd_name, const char *array_parameter_name, const std::string &unique_error_code,
+                           const std::string &valid_error_code, bool optional = false) {
+    bool skip = false;
+    if (queue_families) {
+        std::unordered_set<uint32_t> set;
+        for (uint32_t i = 0; i < queue_family_count; ++i) {
+            std::string parameter_name = std::string(array_parameter_name) + "[" + std::to_string(i) + "]";
+
+            if (set.count(queue_families[i])) {
+                skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
+                                HandleToUint64(device_data->device), unique_error_code.c_str(),
+                                "%s: %s (=%" PRIu32 ") is not unique within %s array.", cmd_name, parameter_name.c_str(),
+                                queue_families[i], array_parameter_name);
+            } else {
+                set.insert(queue_families[i]);
+                skip |= ValidateDeviceQueueFamily(device_data, queue_families[i], cmd_name, parameter_name.c_str(),
+                                                  valid_error_code.c_str(), optional);
+            }
+        }
+    }
+    return skip;
+}
+
 // Check object status for selected flag state
 static bool ValidateStatus(layer_data *dev_data, GLOBAL_CB_NODE *pNode, CBStatusFlags status_mask, VkFlags msg_flags,
                            const char *fail_msg, std::string const msg_code) {
@@ -2305,6 +2349,8 @@ static bool ValidateDeviceQueueCreateInfos(instance_layer_data *instance_data, c
                                            uint32_t info_count, const VkDeviceQueueCreateInfo *infos) {
     bool skip = false;
 
+    std::unordered_set<uint32_t> queue_family_set;
+
     for (uint32_t i = 0; i < info_count; ++i) {
         const auto requested_queue_family = infos[i].queueFamilyIndex;
 
@@ -2313,6 +2359,14 @@ static bool ValidateDeviceQueueCreateInfos(instance_layer_data *instance_data, c
         skip |= ValidatePhysicalDeviceQueueFamily(instance_data, pd_state, requested_queue_family,
                                                   "VUID-VkDeviceQueueCreateInfo-queueFamilyIndex-00381", "vkCreateDevice",
                                                   queue_family_var_name.c_str());
+        if (queue_family_set.count(requested_queue_family)) {
+            skip |= log_msg(instance_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
+                            HandleToUint64(pd_state->phys_device), "VUID-VkDeviceCreateInfo-queueFamilyIndex-00372",
+                            "CreateDevice(): %s (=%" PRIu32 ") is not unique within pQueueCreateInfos.",
+                            queue_family_var_name.c_str(), requested_queue_family);
+        } else {
+            queue_family_set.insert(requested_queue_family);
+        }
 
         // Verify that requested  queue count of queue family is known to be valid at this point in time
         if (requested_queue_family < pd_state->queue_family_count) {
@@ -2507,6 +2561,14 @@ void PostCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo *
         device_data->gpu_validation_state.reserve_binding_slot =
             device_data->instance_data->enabled.gpu_validation_reserve_binding_slot;
         GpuPostCallRecordCreateDevice(device_data);
+    }
+
+    // Store queue family data
+    if ((pCreateInfo != nullptr) && (pCreateInfo->pQueueCreateInfos != nullptr)) {
+        for (uint32_t i = 0; i < pCreateInfo->queueCreateInfoCount; ++i) {
+            device_data->queue_family_index_map.insert(
+                std::make_pair(pCreateInfo->pQueueCreateInfos[i].queueFamilyIndex, pCreateInfo->pQueueCreateInfos[i].queueCount));
+        }
     }
 }
 
@@ -3926,6 +3988,29 @@ static void RecordGetDeviceQueueState(layer_data *device_data, uint32_t queue_fa
     }
 }
 
+static bool ValidateGetDeviceQueue(layer_data *device_data, uint32_t queueFamilyIndex, uint32_t queueIndex, VkQueue *pQueue,
+                                   const char *valid_qfi_vuid, const char *qfi_in_range_vuid) {
+    bool skip = false;
+
+    skip |= ValidateDeviceQueueFamily(device_data, queueFamilyIndex, "vkGetDeviceQueue", "queueFamilyIndex", valid_qfi_vuid);
+    const auto &queue_data = device_data->queue_family_index_map.find(queueFamilyIndex);
+    if (queue_data != device_data->queue_family_index_map.end() && queue_data->second <= queueIndex) {
+        skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
+                        HandleToUint64(device_data->device), qfi_in_range_vuid,
+                        "vkGetDeviceQueue: queueIndex (=%" PRIu32
+                        ") is not less than the number of queues requested from queueFamilyIndex (=%" PRIu32
+                        ") when the device was created (i.e. is not less than %" PRIu32 ").",
+                        queueIndex, queueFamilyIndex, queue_data->second);
+    }
+    return skip;
+}
+
+bool PreCallValidateGetDeviceQueue(VkDevice device, uint32_t queueFamilyIndex, uint32_t queueIndex, VkQueue *pQueue) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    return ValidateGetDeviceQueue(device_data, queueFamilyIndex, queueIndex, pQueue, "VUID-vkGetDeviceQueue-queueFamilyIndex-00384",
+                                  "VUID-vkGetDeviceQueue-queueIndex-00385");
+}
+
 void PostCallRecordGetDeviceQueue(VkDevice device, uint32_t queueFamilyIndex, uint32_t queueIndex, VkQueue *pQueue) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     RecordGetDeviceQueueState(device_data, queueFamilyIndex, *pQueue);
@@ -4740,6 +4825,13 @@ void PreCallRecordFreeCommandBuffers(VkDevice device, VkCommandPool commandPool,
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     auto pPool = GetCommandPoolNode(device_data, commandPool);
     FreeCommandBufferStates(device_data, pPool, commandBufferCount, pCommandBuffers);
+}
+
+bool PreCallValidateCreateCommandPool(VkDevice device, const VkCommandPoolCreateInfo *pCreateInfo,
+                                      const VkAllocationCallbacks *pAllocator, VkCommandPool *pCommandPool) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    return ValidateDeviceQueueFamily(device_data, pCreateInfo->queueFamilyIndex, "vkCreateCommandPool",
+                                     "pCreateInfo->queueFamilyIndex", "VUID-vkCreateCommandPool-queueFamilyIndex-01937");
 }
 
 void PostCallRecordCreateCommandPool(VkDevice device, const VkCommandPoolCreateInfo *pCreateInfo,
@@ -11594,6 +11686,15 @@ bool ValidateCreateSwapchain(layer_data *device_data, const char *func_name, VkS
             }
         }
     }
+
+    if ((pCreateInfo->imageSharingMode == VK_SHARING_MODE_CONCURRENT) && pCreateInfo->pQueueFamilyIndices) {
+        bool skip = ValidateQueueFamilies(device_data, pCreateInfo->queueFamilyIndexCount, pCreateInfo->pQueueFamilyIndices,
+                                          "vkCreateBuffer", "pCreateInfo->pQueueFamilyIndices",
+                                          "VUID-VkSwapchainCreateInfoKHR-imageSharingMode-01428",
+                                          "VUID-VkSwapchainCreateInfoKHR-imageSharingMode-01428", false);
+        if (skip) return true;
+    }
+
     return false;
 }
 
