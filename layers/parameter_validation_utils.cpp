@@ -1442,6 +1442,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                 bool uses_color_attachment = false;
                 bool uses_depthstencil_attachment = false;
                 {
+                    std::unique_lock<std::mutex> lock(renderpass_map_mutex);
                     const auto subpasses_uses_it = renderpasses_states.find(pCreateInfos[i].renderPass);
                     if (subpasses_uses_it != renderpasses_states.end()) {
                         const auto &subpasses_uses = subpasses_uses_it->second;
@@ -1450,6 +1451,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                         if (subpasses_uses.subpasses_using_depthstencil_attachment.count(pCreateInfos[i].subpass))
                             uses_depthstencil_attachment = true;
                     }
+                    lock.unlock();
                 }
 
                 if (pCreateInfos[i].pDepthStencilState != nullptr && uses_depthstencil_attachment) {
@@ -2926,6 +2928,7 @@ void StatelessValidation::PostCallRecordCreateRenderPass2KHR(VkDevice device, co
 void StatelessValidation::PostCallRecordDestroyRenderPass(VkDevice device, VkRenderPass renderPass,
                                                           const VkAllocationCallbacks *pAllocator) {
     // Track the state necessary for checking vkCreateGraphicsPipeline (subpass usage of depth and color attachments)
+    std::unique_lock<std::mutex> lock(renderpass_map_mutex);
     renderpasses_states.erase(renderPass);
 }
 
