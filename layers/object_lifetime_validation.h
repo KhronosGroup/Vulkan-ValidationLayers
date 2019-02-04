@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2018 The Khronos Group Inc.
- * Copyright (c) 2015-2018 Valve Corporation
- * Copyright (c) 2015-2018 LunarG, Inc.
- * Copyright (C) 2015-2018 Google Inc.
+/* Copyright (c) 2015-2019 The Khronos Group Inc.
+ * Copyright (c) 2015-2019 Valve Corporation
+ * Copyright (c) 2015-2019 LunarG, Inc.
+ * Copyright (C) 2015-2019 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -95,7 +95,7 @@ class ObjectLifetimes : public ValidationObject {
     void CreateSwapchainImageObject(VkDevice dispatchable_object, VkImage swapchain_image, VkSwapchainKHR swapchain);
     bool ReportUndestroyedObjects(VkDevice device, const std::string &error_code);
     void DestroyUndestroyedObjects(VkDevice device);
-    bool ValidateDeviceObject(uint64_t device_handle, const std::string &invalid_handle_code, const std::string &wrong_device_code);
+    bool ValidateDeviceObject(uint64_t device_handle, const char *invalid_handle_code, const char *wrong_device_code);
     void DestroyQueueDataStructures(VkDevice device);
     bool ValidateCommandBuffer(VkDevice device, VkCommandPool command_pool, VkCommandBuffer command_buffer);
     bool ValidateDescriptorSet(VkDevice device, VkDescriptorPool descriptor_pool, VkDescriptorSet descriptor_set);
@@ -114,7 +114,7 @@ class ObjectLifetimes : public ValidationObject {
 
     template <typename T1, typename T2>
     bool ValidateObject(T1 dispatchable_object, T2 object, VulkanObjectType object_type, bool null_allowed,
-                        const std::string &invalid_handle_code, const std::string &wrong_device_code) {
+                        const char *invalid_handle_code, const char *wrong_device_code) {
         if (null_allowed && (object == VK_NULL_HANDLE)) {
             return false;
         }
@@ -218,8 +218,8 @@ class ObjectLifetimes : public ValidationObject {
 
     template <typename T1, typename T2>
     bool ValidateDestroyObject(T1 dispatchable_object, T2 object, VulkanObjectType object_type,
-                               const VkAllocationCallbacks *pAllocator, const std::string &expected_custom_allocator_code,
-                               const std::string &expected_default_allocator_code) {
+                               const VkAllocationCallbacks *pAllocator, const char *expected_custom_allocator_code,
+                               const char *expected_default_allocator_code) {
         auto object_handle = HandleToUint64(object);
         bool custom_allocator = pAllocator != nullptr;
         VkDebugReportObjectTypeEXT debug_object_type = get_debug_report_enum[object_type];

@@ -431,7 +431,7 @@ void ClearMemoryObjectBindings(layer_data *dev_data, uint64_t handle, VulkanObje
 
 // For given mem object, verify that it is not null or UNBOUND, if it is, report error. Return skip value.
 bool VerifyBoundMemoryIsValid(const layer_data *dev_data, VkDeviceMemory mem, uint64_t handle, const char *api_name,
-                              const char *type_name, std::string error_code) {
+                              const char *type_name, const char *error_code) {
     bool result = false;
     if (VK_NULL_HANDLE == mem) {
         result =
@@ -451,7 +451,7 @@ bool VerifyBoundMemoryIsValid(const layer_data *dev_data, VkDeviceMemory mem, ui
 
 // Check to see if memory was ever bound to this image
 bool ValidateMemoryIsBoundToImage(const layer_data *dev_data, const IMAGE_STATE *image_state, const char *api_name,
-                                  const std::string &error_code) {
+                                  const char *error_code) {
     bool result = false;
     if (0 == (static_cast<uint32_t>(image_state->createInfo.flags) & VK_IMAGE_CREATE_SPARSE_BINDING_BIT)) {
         result = VerifyBoundMemoryIsValid(dev_data, image_state->binding.mem, HandleToUint64(image_state->image), api_name, "Image",
@@ -462,7 +462,7 @@ bool ValidateMemoryIsBoundToImage(const layer_data *dev_data, const IMAGE_STATE 
 
 // Check to see if memory was bound to this buffer
 bool ValidateMemoryIsBoundToBuffer(const layer_data *dev_data, const BUFFER_STATE *buffer_state, const char *api_name,
-                                   const std::string &error_code) {
+                                   const char *error_code) {
     bool result = false;
     if (0 == (static_cast<uint32_t>(buffer_state->createInfo.flags) & VK_BUFFER_CREATE_SPARSE_BINDING_BIT)) {
         result = VerifyBoundMemoryIsValid(dev_data, buffer_state->binding.mem, HandleToUint64(buffer_state->buffer), api_name,
@@ -768,7 +768,7 @@ static bool ValidateAttachmentCompatibility(layer_data const *dev_data, const ch
 
 static bool ValidateSubpassCompatibility(layer_data const *dev_data, const char *type1_string, const RENDER_PASS_STATE *rp1_state,
                                          const char *type2_string, const RENDER_PASS_STATE *rp2_state, const int subpass,
-                                         const char *caller, std::string error_code) {
+                                         const char *caller, const char *error_code) {
     bool skip = false;
     const auto &primary_desc = rp1_state->createInfo.pSubpasses[subpass];
     const auto &secondary_desc = rp2_state->createInfo.pSubpasses[subpass];
@@ -824,7 +824,7 @@ static bool ValidateSubpassCompatibility(layer_data const *dev_data, const char 
 //  will then feed into this function
 static bool ValidateRenderPassCompatibility(layer_data const *dev_data, const char *type1_string,
                                             const RENDER_PASS_STATE *rp1_state, const char *type2_string,
-                                            const RENDER_PASS_STATE *rp2_state, const char *caller, std::string error_code) {
+                                            const RENDER_PASS_STATE *rp2_state, const char *caller, const char *error_code) {
     bool skip = false;
 
     if (rp1_state->createInfo.subpassCount != rp2_state->createInfo.subpassCount) {
@@ -1068,7 +1068,6 @@ static bool ValidatePipelineDrawtimeState(layer_data const *dev_data, LAST_BOUND
                 assert(CMD_DRAW == cmd_type);
                 break;
         }
-        std::string err_string;
         if (pCB->activeRenderPass->renderPass != pPipeline->rp_state->renderPass) {
             // renderPass that PSO was created with must be compatible with active renderPass that PSO is being used with
             skip |= ValidateRenderPassCompatibility(dev_data, "active render pass", pCB->activeRenderPass, "pipeline state object",
@@ -1106,8 +1105,8 @@ static bool VerifySetLayoutCompatibility(const cvdescriptorset::DescriptorSet *d
 
 // Validate overall state at the time of a draw call
 static bool ValidateCmdBufDrawState(layer_data *dev_data, GLOBAL_CB_NODE *cb_node, CMD_TYPE cmd_type, const bool indexed,
-                                    const VkPipelineBindPoint bind_point, const char *function, const std::string &pipe_err_code,
-                                    const std::string &state_err_code) {
+                                    const VkPipelineBindPoint bind_point, const char *function, const char *pipe_err_code,
+                                    const char *state_err_code) {
     bool result = false;
     auto const &state = cb_node->lastBound[bind_point];
     PIPELINE_STATE *pPipe = state.pipeline_state;
@@ -1811,7 +1810,7 @@ bool ValidateCmdSubpassState(const layer_data *dev_data, const GLOBAL_CB_NODE *p
 }
 
 bool ValidateCmdQueueFlags(layer_data *dev_data, const GLOBAL_CB_NODE *cb_node, const char *caller_name,
-                           VkQueueFlags required_flags, const std::string &error_code) {
+                           VkQueueFlags required_flags, const char *error_code) {
     auto pool = GetCommandPoolNode(dev_data, cb_node->createInfo.commandPool);
     if (pool) {
         VkQueueFlags queue_flags = dev_data->phys_dev_properties.queue_family_properties[pool->queueFamilyIndex].queueFlags;
@@ -2170,7 +2169,7 @@ CBStatusFlags MakeStaticStateMask(VkPipelineDynamicStateCreateInfo const *ds) {
 
 // Flags validation error if the associated call is made inside a render pass. The apiName routine should ONLY be called outside a
 // render pass.
-bool InsideRenderPass(const layer_data *dev_data, const GLOBAL_CB_NODE *pCB, const char *apiName, const std::string &msgCode) {
+bool InsideRenderPass(const layer_data *dev_data, const GLOBAL_CB_NODE *pCB, const char *apiName, const char *msgCode) {
     bool inside = false;
     if (pCB->activeRenderPass) {
         inside = log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
@@ -2183,7 +2182,7 @@ bool InsideRenderPass(const layer_data *dev_data, const GLOBAL_CB_NODE *pCB, con
 
 // Flags validation error if the associated call is made outside a render pass. The apiName
 // routine should ONLY be called inside a render pass.
-bool OutsideRenderPass(const layer_data *dev_data, GLOBAL_CB_NODE *pCB, const char *apiName, const std::string &msgCode) {
+bool OutsideRenderPass(const layer_data *dev_data, GLOBAL_CB_NODE *pCB, const char *apiName, const char *msgCode) {
     bool outside = false;
     if (((pCB->createInfo.level == VK_COMMAND_BUFFER_LEVEL_PRIMARY) && (!pCB->activeRenderPass)) ||
         ((pCB->createInfo.level == VK_COMMAND_BUFFER_LEVEL_SECONDARY) && (!pCB->activeRenderPass) &&
@@ -2543,8 +2542,8 @@ void PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks *pA
 //   and if Tessellation Control or Evaluation shader stages are on w/o TS being enabled, report tess_error_id.
 // Similarly for mesh and task shaders.
 static bool ValidateStageMaskGsTsEnables(const layer_data *dev_data, VkPipelineStageFlags stageMask, const char *caller,
-                                         std::string geo_error_id, std::string tess_error_id, std::string mesh_error_id,
-                                         std::string task_error_id) {
+                                         const char *geo_error_id, const char *tess_error_id, const char *mesh_error_id,
+                                         const char *task_error_id) {
     bool skip = false;
     if (!dev_data->enabled_features.core.geometryShader && (stageMask & VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT)) {
         skip |=
@@ -6122,7 +6121,6 @@ bool PreCallValidateBeginCommandBuffer(const VkCommandBuffer commandBuffer, cons
         } else {
             if (pBeginInfo->flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT) {
                 assert(pInfo->renderPass);
-                string errorString = "";
                 auto framebuffer = GetFramebufferState(device_data, pInfo->framebuffer);
                 if (framebuffer) {
                     if (framebuffer->createInfo.renderPass != pInfo->renderPass) {
@@ -7067,9 +7065,9 @@ void PreCallRecordCmdBindVertexBuffers(GLOBAL_CB_NODE *pCB, uint32_t firstBindin
 
 // Generic function to handle validation for all CmdDraw* type functions
 static bool ValidateCmdDrawType(layer_data *dev_data, VkCommandBuffer cmd_buffer, bool indexed, VkPipelineBindPoint bind_point,
-                                CMD_TYPE cmd_type, const char *caller, VkQueueFlags queue_flags, const std::string &queue_flag_code,
-                                const std::string &renderpass_msg_code, const std::string &pipebound_msg_code,
-                                const std::string &dynamic_state_msg_code) {
+                                CMD_TYPE cmd_type, const char *caller, VkQueueFlags queue_flags, const char *queue_flag_code,
+                                const char *renderpass_msg_code, const char *pipebound_msg_code,
+                                const char *dynamic_state_msg_code) {
     bool skip = false;
     GLOBAL_CB_NODE *cb_state = GetCBNode(dev_data, cmd_buffer);
     if (cb_state) {
@@ -8252,7 +8250,7 @@ BarrierOperationsType ComputeBarrierOperationsType(layer_data *device_data, GLOB
 bool ValidateStageMasksAgainstQueueCapabilities(layer_data *dev_data, GLOBAL_CB_NODE const *cb_state,
                                                 VkPipelineStageFlags source_stage_mask, VkPipelineStageFlags dest_stage_mask,
                                                 BarrierOperationsType barrier_op_type, const char *function,
-                                                std::string error_code) {
+                                                const char *error_code) {
     bool skip = false;
     uint32_t queue_family_index = dev_data->commandPoolMap[cb_state->createInfo.commandPool].queueFamilyIndex;
     instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(dev_data->physical_device), instance_layer_data_map);
