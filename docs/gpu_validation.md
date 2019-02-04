@@ -216,21 +216,26 @@ It isn't necessarily required for using the feature.
 
 In general, the implementation does:
 
-* For each command buffer, allocate a block of device memory to hold a single debug output record written by the
+* For each draw call, allocate a block of device memory to hold a single debug output record written by the
     instrumented shader code.
     There is a device memory manager to handle this efficiently.
 
     There is probably little advantage in providing a larger buffer in order to obtain more debug records.
     It is likely, especially for fragment shaders, that multiple errors occurring near each other have the same root cause.
 
-    A block is allocated on a per-command buffer basis to make it possible to associate a shader debug error record with
-    an individual command buffer.
-    This is done partly to give the user more information in the error report, namely the command buffer handle/name.
+    A block is allocated on a per draw basis to make it possible to associate a shader debug error record with
+    a draw within a command buffer.
+    This is done partly to give the user more information in the error report, namely the command buffer handle/name and the draw within that command buffer.
     An alternative design allocates this block on a per-device or per-queue basis and should work.
     However, it is not possible to identify the command buffer that causes the error if multiple command buffers
     are submitted at once.
-* For each command buffer, allocate a descriptor set and update it to point to the block of device memory just allocated.
+* For each draw call, allocate a descriptor set and update it to point to the block of device memory just allocated.
     There is a descriptor set manager to handle this efficiently.
+    Also make an additional call down the chain to create a bind descriptor set command to bind our descriptor set at the desired index.
+    This has the effect of binding the device memory block belonging to this draw so that the GPU instrumentation
+    writes into this buffer for when the draw is executed.
+    The end result is that each draw call has its own device memory block containing GPU instrumentation error
+    records, if any occurred while executing that draw.
 * Determine the descriptor set binding index that is eventually used to bind the descriptor set just allocated and updated.
     Usually, it is `VkPhysicalDeviceLimits::maxBoundDescriptorSets` minus one.
     For devices that have a very high or no limit on this bound, pick an index that isn't too high, but above most other device
@@ -249,16 +254,8 @@ In general, the implementation does:
     The layer issues an error message to report this condition.
 * When creating a GraphicsPipeline, check to see if the pipeline is using the debug binding index.
     If it is, replace the instrumented shaders in the pipeline with non-instrumented ones.
-* After binding a pipeline to a command buffer,  make an additional call down the chain to
-    create a bind descriptor set command to bind our descriptor set at the desired index.
-    This has the effect of binding the device memory block belonging to this command buffer so that the GPU instrumentation
-    writes into this buffer for the duration of the command buffer.
-    The end result is that each command buffer has its own device memory block containing GPU instrumentation error
-    records, if any occurred while executing that command buffer.
-
-    As was the case with the pipeline layout, don't do this additional binding if the binding slot is already used in the pipeline layout.
 * After calling QueueSubmit, perform a wait on the queue to allow the queue to finish executing.
-    Then map and examine the device memory block for each command buffer that was submitted.
+    Then map and examine the device memory block for each draw that was submitted.
     If any debug record is found, generate a validation error message for each record found.
 
 The above describes only the high-level details of GPU-Assisted Validation operation.
@@ -383,19 +380,22 @@ The design of each hooked function follows:
 * Clean up device memory manager
 * Clean up device state
 
-#### GpuPostCallRecordAllocateCommandBuffers
+#### GpuAllocateValidationResources
 
-* For each command buffer:
+* For each Draw or Dispatch call:
   * Get a descriptor set from the descriptor set manager
   * Get a device memory block from the device memory manager
   * Update (write) the descriptor set with the memory info
+  * Check to see if the layout for the pipeline just bound is using our selected bind index
+  * If no conflict, add an additional command to the command buffer to bind our descriptor set at our selected index
 * Record the above objects in the per-CB state
+Note that the Draw and Dispatch calls include vkCmdDraw, vkCmdDrawIndexed, vkCmdDrawIndirect, vkCmdDrawIndexedIndirect, vkCmdDispatch, and vkCmdDispatchIndirect. 
 
 #### GpuPreCallRecordFreeCommandBuffers
 
 * For each command buffer:
-  * Give the memory block back to the device memory manager
-  * Give the descriptor set back to the descriptor set manager
+  * Give the memory blocks back to the device memory manager
+  * Give the descriptor sets back to the descriptor set manager
   * Clean up CB state
 
 #### GpuOverrideDispatchCreateShaderModule
@@ -441,17 +441,13 @@ This is another function that replaces the parameters and so can't be called fro
     * Add our descriptor set layout as the last one in the new pipeline layout
 * Create the pipeline layouts by calling down the chain with the original or modified create info
 
-#### GpuPostCallDispatchCmdBindPipeline
-
-* Check to see if the layout for the pipeline just bound is using our selected bind index
-  * If no conflict, add an additional command to the command buffer to bind our descriptor set at our selected index
 
 #### GpuPostCallQueueSubmit
 
 * Submit a command buffer containing a memory barrier to make GPU writes available to the host domain.
 * Call QueueWaitIdle.
 * For each primary and secondary command buffer in the submission:
-  * Call a helper function to process the instrumentation debug buffer (described later)
+  * Call a helper function to process the instrumentation debug buffers (described later)
 
 #### GpuPreCallValidateCmdWaitEvents
 
@@ -670,8 +666,10 @@ offsets into the record for locating each item.
 ## GPU-Assisted Validation Error Report
 
 This is a fairly simple process of mapping the debug report buffer associated with
-each command buffer that was just submitted and looking to see if the GPU instrumentation
+each draw in the command buffer that was just submitted and looking to see if the GPU instrumentation
 code wrote anything.
+Each draw in the command buffer should have a corresponding result buffer in the command buffer's list of result buffers.
+The report generating code loops through the result buffers, maps each of them, checks for errors, and unmaps them.
 The layer clears the buffer to zeros when it is allocated and after processing any
 buffer that was written to.
 The instrumented shader code expects these buffers to be cleared to zeros before it
@@ -681,6 +679,7 @@ The layer then prepares a "common" validation error message containing:
 
 * command buffer handle - This is easily obtained because we are looping over the command
   buffers just submitted.
+* draw number - keep track of how many draws we've processed for a given command buffer.
 * pipeline handle - The shader tracker discussed earlier contains this handle
 * shader module handle - The "Shader ID" (Word 1 in the record) is used to lookup
   the shader tracker which is then used to obtain the shader module and pipeline handles
