@@ -1490,6 +1490,13 @@ bool PreCallValidateCreateImage(VkDevice device, const VkImageCreateInfo *pCreat
         }
     }
 
+    if (pCreateInfo->sharingMode == VK_SHARING_MODE_CONCURRENT && pCreateInfo->pQueueFamilyIndices) {
+        skip |= core_validation::ValidateQueueFamilies(
+            device_data, pCreateInfo->queueFamilyIndexCount, pCreateInfo->pQueueFamilyIndices, "vkCreateImage",
+            "pCreateInfo->pQueueFamilyIndices", "VUID-VkImageCreateInfo-sharingMode-01420",
+            "VUID-VkImageCreateInfo-sharingMode-01420", false);
+    }
+
     return skip;
 }
 
@@ -3897,6 +3904,13 @@ bool PreCallValidateCreateBuffer(VkDevice device, const VkBufferCreateInfo *pCre
                         "VUID-VkBufferCreateInfo-usage-02606",
                         "vkCreateBuffer(): the bufferDeviceAddress device feature is disabled: Buffers cannot be created with "
                         "the VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_EXT set.");
+    }
+
+    if (pCreateInfo->sharingMode == VK_SHARING_MODE_CONCURRENT && pCreateInfo->pQueueFamilyIndices) {
+        skip |= core_validation::ValidateQueueFamilies(
+            device_data, pCreateInfo->queueFamilyIndexCount, pCreateInfo->pQueueFamilyIndices, "vkCreateBuffer",
+            "pCreateInfo->pQueueFamilyIndices", "VUID-VkBufferCreateInfo-sharingMode-01419",
+            "VUID-VkBufferCreateInfo-sharingMode-01419", false);
     }
 
     return skip;

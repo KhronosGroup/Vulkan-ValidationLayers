@@ -260,8 +260,13 @@ VKAPI_ATTR void VKAPI_CALL CmdUpdateBuffer(VkCommandBuffer commandBuffer, VkBuff
 
 VKAPI_ATTR void VKAPI_CALL GetDeviceQueue(VkDevice device, uint32_t queueFamilyIndex, uint32_t queueIndex, VkQueue *pQueue) {
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    dev_data->dispatch_table.GetDeviceQueue(device, queueFamilyIndex, queueIndex, pQueue);
+    bool skip = false;
     unique_lock_t lock(global_lock);
+    skip = PreCallValidateGetDeviceQueue(device, queueFamilyIndex, queueIndex, pQueue);
+    lock.unlock();
+    if (skip) return;
+    dev_data->dispatch_table.GetDeviceQueue(device, queueFamilyIndex, queueIndex, pQueue);
+    lock.lock();
     PostCallRecordGetDeviceQueue(device, queueFamilyIndex, queueIndex, pQueue);
 }
 
@@ -812,8 +817,12 @@ VKAPI_ATTR void VKAPI_CALL FreeCommandBuffers(VkDevice device, VkCommandPool com
 VKAPI_ATTR VkResult VKAPI_CALL CreateCommandPool(VkDevice device, const VkCommandPoolCreateInfo *pCreateInfo,
                                                  const VkAllocationCallbacks *pAllocator, VkCommandPool *pCommandPool) {
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    unique_lock_t lock(global_lock);
+    bool skip = PreCallValidateCreateCommandPool(device, pCreateInfo, pAllocator, pCommandPool);
+    lock.unlock();
+    if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     VkResult result = dev_data->dispatch_table.CreateCommandPool(device, pCreateInfo, pAllocator, pCommandPool);
-    lock_guard_t lock(global_lock);
+    lock.lock();
     PostCallRecordCreateCommandPool(device, pCreateInfo, pAllocator, pCommandPool, result);
     return result;
 }
