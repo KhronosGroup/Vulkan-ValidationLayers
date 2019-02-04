@@ -1290,7 +1290,7 @@ void RecordCreateImageANDROID(const VkImageCreateInfo *create_info, IMAGE_STATE 
         is_node->imported_ahb = true;
     }
     const VkExternalFormatANDROID *ext_fmt_android = lvl_find_in_chain<VkExternalFormatANDROID>(create_info->pNext);
-    if (ext_fmt_android) {
+    if (ext_fmt_android && (0 != ext_fmt_android->externalFormat)) {
         is_node->has_ahb_format = true;
         is_node->ahb_format = ext_fmt_android->externalFormat;
     }
