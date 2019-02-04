@@ -1129,8 +1129,7 @@ void TransitionImageLayouts(layer_data *device_data, GLOBAL_CB_NODE *cb_state, u
 
 bool VerifyImageLayout(layer_data const *device_data, GLOBAL_CB_NODE const *cb_node, IMAGE_STATE *image_state,
                        VkImageSubresourceLayers subLayers, VkImageLayout explicit_layout, VkImageLayout optimal_layout,
-                       const char *caller, const std::string &layout_invalid_msg_code, const std::string &layout_mismatch_msg_code,
-                       bool *error) {
+                       const char *caller, const char *layout_invalid_msg_code, const char *layout_mismatch_msg_code, bool *error) {
     const auto report_data = core_validation::GetReportData(device_data);
     const auto image = image_state->image;
     bool skip = false;
@@ -2713,11 +2712,11 @@ bool PreCallValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage
     skip |= ValidateCmd(device_data, cb_node, CMD_COPYIMAGE, "vkCmdCopyImage()");
     skip |= InsideRenderPass(device_data, cb_node, "vkCmdCopyImage()", "VUID-vkCmdCopyImage-renderpass");
     bool hit_error = false;
-    const std::string invalid_src_layout_vuid =
+    const char *invalid_src_layout_vuid =
         (src_image_state->shared_presentable && core_validation::GetDeviceExtensions(device_data)->vk_khr_shared_presentable_image)
             ? "VUID-vkCmdCopyImage-srcImageLayout-01917"
             : "VUID-vkCmdCopyImage-srcImageLayout-00129";
-    const std::string invalid_dst_layout_vuid =
+    const char *invalid_dst_layout_vuid =
         (dst_image_state->shared_presentable && core_validation::GetDeviceExtensions(device_data)->vk_khr_shared_presentable_image)
             ? "VUID-vkCmdCopyImage-dstImageLayout-01395"
             : "VUID-vkCmdCopyImage-dstImageLayout-00134";
@@ -2910,16 +2909,14 @@ bool PreCallValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage srcIm
                                                 "VUID-vkCmdResolveImage-dstImage-02003");
 
         bool hit_error = false;
-        const std::string invalid_src_layout_vuid =
-            (src_image_state->shared_presentable &&
-             core_validation::GetDeviceExtensions(device_data)->vk_khr_shared_presentable_image)
-                ? "VUID-vkCmdResolveImage-srcImageLayout-01400"
-                : "VUID-vkCmdResolveImage-srcImageLayout-00261";
-        const std::string invalid_dst_layout_vuid =
-            (dst_image_state->shared_presentable &&
-             core_validation::GetDeviceExtensions(device_data)->vk_khr_shared_presentable_image)
-                ? "VUID-vkCmdResolveImage-dstImageLayout-01401"
-                : "VUID-vkCmdResolveImage-dstImageLayout-00263";
+        const char *invalid_src_layout_vuid = (src_image_state->shared_presentable &&
+                                               core_validation::GetDeviceExtensions(device_data)->vk_khr_shared_presentable_image)
+                                                  ? "VUID-vkCmdResolveImage-srcImageLayout-01400"
+                                                  : "VUID-vkCmdResolveImage-srcImageLayout-00261";
+        const char *invalid_dst_layout_vuid = (dst_image_state->shared_presentable &&
+                                               core_validation::GetDeviceExtensions(device_data)->vk_khr_shared_presentable_image)
+                                                  ? "VUID-vkCmdResolveImage-dstImageLayout-01401"
+                                                  : "VUID-vkCmdResolveImage-dstImageLayout-00263";
         // For each region, the number of layers in the image subresource should not be zero
         // For each region, src and dest image aspect must be color only
         for (uint32_t i = 0; i < regionCount; i++) {
@@ -3109,16 +3106,14 @@ bool PreCallValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage
         }  // Depth or Stencil
 
         // Do per-region checks
-        const std::string invalid_src_layout_vuid =
-            (src_image_state->shared_presentable &&
-             core_validation::GetDeviceExtensions(device_data)->vk_khr_shared_presentable_image)
-                ? "VUID-vkCmdBlitImage-srcImageLayout-01398"
-                : "VUID-vkCmdBlitImage-srcImageLayout-00222";
-        const std::string invalid_dst_layout_vuid =
-            (dst_image_state->shared_presentable &&
-             core_validation::GetDeviceExtensions(device_data)->vk_khr_shared_presentable_image)
-                ? "VUID-vkCmdBlitImage-dstImageLayout-01399"
-                : "VUID-vkCmdBlitImage-dstImageLayout-00227";
+        const char *invalid_src_layout_vuid = (src_image_state->shared_presentable &&
+                                               core_validation::GetDeviceExtensions(device_data)->vk_khr_shared_presentable_image)
+                                                  ? "VUID-vkCmdBlitImage-srcImageLayout-01398"
+                                                  : "VUID-vkCmdBlitImage-srcImageLayout-00222";
+        const char *invalid_dst_layout_vuid = (dst_image_state->shared_presentable &&
+                                               core_validation::GetDeviceExtensions(device_data)->vk_khr_shared_presentable_image)
+                                                  ? "VUID-vkCmdBlitImage-dstImageLayout-01399"
+                                                  : "VUID-vkCmdBlitImage-dstImageLayout-00227";
         for (uint32_t i = 0; i < regionCount; i++) {
             const VkImageBlit rgn = pRegions[i];
             bool hit_error = false;
@@ -3675,7 +3670,7 @@ bool ValidateMapImageLayouts(core_validation::layer_data *device_data, VkDevice 
 // Helper function to validate correct usage bits set for buffers or images. Verify that (actual & desired) flags != 0 or, if strict
 // is true, verify that (actual & desired) flags == desired
 static bool ValidateUsageFlags(const layer_data *device_data, VkFlags actual, VkFlags desired, VkBool32 strict, uint64_t obj_handle,
-                               VulkanObjectType obj_type, std::string msgCode, char const *func_name, char const *usage_str) {
+                               VulkanObjectType obj_type, const char *msgCode, char const *func_name, char const *usage_str) {
     const debug_report_data *report_data = core_validation::GetReportData(device_data);
 
     bool correct_usage = false;
@@ -3707,7 +3702,7 @@ static bool ValidateUsageFlags(const layer_data *device_data, VkFlags actual, Vk
 // Helper function to validate usage flags for buffers. For given buffer_state send actual vs. desired usage off to helper above
 // where an error will be flagged if usage is not correct
 bool ValidateImageUsageFlags(layer_data *device_data, IMAGE_STATE const *image_state, VkFlags desired, bool strict,
-                             const std::string &msgCode, char const *func_name, char const *usage_string) {
+                             const char *msgCode, char const *func_name, char const *usage_string) {
     return ValidateUsageFlags(device_data, image_state->createInfo.usage, desired, strict, HandleToUint64(image_state->image),
                               kVulkanObjectTypeImage, msgCode, func_name, usage_string);
 }
@@ -3769,7 +3764,7 @@ bool ValidateImageSubresourceLayers(layer_data *dev_data, const GLOBAL_CB_NODE *
 // Helper function to validate usage flags for buffers. For given buffer_state send actual vs. desired usage off to helper above
 // where an error will be flagged if usage is not correct
 bool ValidateBufferUsageFlags(const layer_data *device_data, BUFFER_STATE const *buffer_state, VkFlags desired, bool strict,
-                              const std::string &msgCode, char const *func_name, char const *usage_string) {
+                              const char *msgCode, char const *func_name, char const *usage_string) {
     return ValidateUsageFlags(device_data, buffer_state->createInfo.usage, desired, strict, HandleToUint64(buffer_state->buffer),
                               kVulkanObjectTypeBuffer, msgCode, func_name, usage_string);
 }
@@ -4905,7 +4900,7 @@ bool PreCallValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage 
     }
     skip |= InsideRenderPass(device_data, cb_node, "vkCmdCopyImageToBuffer()", "VUID-vkCmdCopyImageToBuffer-renderpass");
     bool hit_error = false;
-    const std::string src_invalid_layout_vuid =
+    const char *src_invalid_layout_vuid =
         (src_image_state->shared_presentable && core_validation::GetDeviceExtensions(device_data)->vk_khr_shared_presentable_image)
             ? "VUID-vkCmdCopyImageToBuffer-srcImageLayout-01397"
             : "VUID-vkCmdCopyImageToBuffer-srcImageLayout-00190";
@@ -4989,7 +4984,7 @@ bool PreCallValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer
     }
     skip |= InsideRenderPass(device_data, cb_node, "vkCmdCopyBufferToImage()", "VUID-vkCmdCopyBufferToImage-renderpass");
     bool hit_error = false;
-    const std::string dst_invalid_layout_vuid =
+    const char *dst_invalid_layout_vuid =
         (dst_image_state->shared_presentable && core_validation::GetDeviceExtensions(device_data)->vk_khr_shared_presentable_image)
             ? "VUID-vkCmdCopyBufferToImage-dstImageLayout-01396"
             : "VUID-vkCmdCopyBufferToImage-dstImageLayout-00181";

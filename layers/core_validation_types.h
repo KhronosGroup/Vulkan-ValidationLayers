@@ -1220,8 +1220,8 @@ const DeviceFeatures *GetEnabledFeatures(const layer_data *device_data);
 const DeviceExtensions *GetEnabledExtensions(const layer_data *device_data);
 
 void InvalidateCommandBuffers(const layer_data *, std::unordered_set<GLOBAL_CB_NODE *> const &, VK_OBJECT);
-bool ValidateMemoryIsBoundToBuffer(const layer_data *, const BUFFER_STATE *, const char *, const std::string &);
-bool ValidateMemoryIsBoundToImage(const layer_data *, const IMAGE_STATE *, const char *, const std::string &);
+bool ValidateMemoryIsBoundToBuffer(const layer_data *, const BUFFER_STATE *, const char *, const char *);
+bool ValidateMemoryIsBoundToImage(const layer_data *, const IMAGE_STATE *, const char *, const char *);
 void AddCommandBufferBindingSampler(GLOBAL_CB_NODE *, SAMPLER_STATE *);
 void AddCommandBufferBindingImage(const layer_data *, GLOBAL_CB_NODE *, IMAGE_STATE *);
 void AddCommandBufferBindingImageView(const layer_data *, GLOBAL_CB_NODE *, IMAGE_VIEW_STATE *);
@@ -1234,11 +1234,11 @@ void RemoveImageMemoryRange(uint64_t handle, DEVICE_MEM_INFO *mem_info);
 void RemoveBufferMemoryRange(uint64_t handle, DEVICE_MEM_INFO *mem_info);
 void ClearMemoryObjectBindings(layer_data *dev_data, uint64_t handle, VulkanObjectType type);
 bool ValidateCmdQueueFlags(layer_data *dev_data, const GLOBAL_CB_NODE *cb_node, const char *caller_name, VkQueueFlags flags,
-                           const std::string &error_code);
+                           const char *error_code);
 bool ValidateCmd(layer_data *my_data, const GLOBAL_CB_NODE *pCB, const CMD_TYPE cmd, const char *caller_name);
-bool InsideRenderPass(const layer_data *my_data, const GLOBAL_CB_NODE *pCB, const char *apiName, const std::string &msgCode);
+bool InsideRenderPass(const layer_data *my_data, const GLOBAL_CB_NODE *pCB, const char *apiName, const char *msgCode);
 void SetImageMemoryValid(layer_data *dev_data, IMAGE_STATE *image_state, bool valid);
-bool OutsideRenderPass(const layer_data *my_data, GLOBAL_CB_NODE *pCB, const char *apiName, const std::string &msgCode);
+bool OutsideRenderPass(const layer_data *my_data, GLOBAL_CB_NODE *pCB, const char *apiName, const char *msgCode);
 void SetLayout(GLOBAL_CB_NODE *pCB, ImageSubresourcePair imgpair, const IMAGE_CMD_BUF_LAYOUT_NODE &node);
 void SetLayout(GLOBAL_CB_NODE *pCB, ImageSubresourcePair imgpair, const VkImageLayout &layout);
 bool ValidateImageMemoryIsValid(layer_data *dev_data, IMAGE_STATE *image_state, const char *functionName);

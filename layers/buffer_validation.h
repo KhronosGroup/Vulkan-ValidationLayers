@@ -61,8 +61,7 @@ bool VerifyClearImageLayout(layer_data *device_data, GLOBAL_CB_NODE *cb_node, IM
 
 bool VerifyImageLayout(layer_data const *device_data, GLOBAL_CB_NODE const *cb_node, IMAGE_STATE *image_state,
                        VkImageSubresourceLayers subLayers, VkImageLayout explicit_layout, VkImageLayout optimal_layout,
-                       const char *caller, const std::string &layout_invalid_msg_code, const std::string &layout_mismatch_msg_code,
-                       bool *error);
+                       const char *caller, const char *layout_invalid_msg_code, const char *layout_mismatch_msg_code, bool *error);
 
 void RecordClearImageLayout(layer_data *dev_data, GLOBAL_CB_NODE *cb_node, VkImage image, VkImageSubresourceRange range,
                             VkImageLayout dest_image_layout);
@@ -202,7 +201,7 @@ bool ValidateMapImageLayouts(core_validation::layer_data *dev_data, VkDevice dev
                              VkDeviceSize offset, VkDeviceSize end_offset);
 
 bool ValidateImageUsageFlags(layer_data *dev_data, IMAGE_STATE const *image_state, VkFlags desired, bool strict,
-                             const std::string &msgCode, char const *func_name, char const *usage_string);
+                             const char *msgCode, char const *func_name, char const *usage_string);
 
 bool ValidateImageFormatFeatureFlags(layer_data *dev_data, IMAGE_STATE const *image_state, VkFormatFeatureFlags desired,
                                      char const *func_name, const std::string &linear_vuid, const std::string &optimal_vuid);
@@ -212,7 +211,7 @@ bool ValidateImageSubresourceLayers(layer_data *dev_data, const GLOBAL_CB_NODE *
                                     uint32_t i);
 
 bool ValidateBufferUsageFlags(const layer_data *dev_data, BUFFER_STATE const *buffer_state, VkFlags desired, bool strict,
-                              const std::string &msgCode, char const *func_name, char const *usage_string);
+                              const char *msgCode, char const *func_name, char const *usage_string);
 
 bool PreCallValidateCreateBuffer(VkDevice device, const VkBufferCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator,
                                  VkBuffer *pBuffer);

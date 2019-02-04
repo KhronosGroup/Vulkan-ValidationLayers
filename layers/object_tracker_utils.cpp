@@ -86,8 +86,7 @@ void ObjectLifetimes::ValidateQueueFlags(VkQueue queue, const char *function) {
 // Look for this device object in any of the instance child devices lists.
 // NOTE: This is of dubious value. In most circumstances Vulkan will die a flaming death if a dispatchable object is invalid.
 // However, if this layer is loaded first and GetProcAddress is used to make API calls, it will detect bad DOs.
-bool ObjectLifetimes::ValidateDeviceObject(uint64_t device_handle, const std::string &invalid_handle_code,
-                                           const std::string &wrong_device_code) {
+bool ObjectLifetimes::ValidateDeviceObject(uint64_t device_handle, const char *invalid_handle_code, const char *wrong_device_code) {
     auto instance_data = GetLayerDataPtr(get_dispatch_key(instance), layer_data_map);
     auto instance_object_lifetime_data = GetObjectLifetimeData(instance_data->object_dispatch);
     for (auto object : instance_object_lifetime_data->object_map[kVulkanObjectTypeDevice]) {
