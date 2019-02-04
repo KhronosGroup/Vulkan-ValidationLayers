@@ -191,13 +191,63 @@ struct object_use_data {
     int writer_count;
 };
 
+// This is a wrapper around unordered_map that optimizes for the common case
+// of only containing a single element. The "first" element's use is stored
+// inline in the class and doesn't require hashing or memory (de)allocation.
+// TODO: Consider generalizing this from one element to N elements (where N
+// is a template parameter).
+template <typename Key, typename T>
+class small_unordered_map {
+
+    bool first_data_allocated;
+    Key first_data_key;
+    T first_data;
+
+    std::unordered_map<Key, T> uses;
+
+public:
+    small_unordered_map() : first_data_allocated(false) {}
+
+    bool contains(const Key& object) const {
+        if (first_data_allocated && object == first_data_key) {
+            return true;
+        // check size() first to avoid hashing object unnecessarily.
+        } else if (uses.size() == 0) {
+            return false;
+        } else {
+            return uses.find(object) != uses.end();
+        }
+    }
+
+    T& operator[](const Key& object) {
+        if (first_data_allocated && first_data_key == object) {
+            return first_data;
+        } else if (!first_data_allocated && uses.size() == 0) {
+            first_data_allocated = true;
+            first_data_key = object;
+            return first_data;
+        } else {
+            return uses[object];
+        }
+    }
+
+    typename std::unordered_map<Key, T>::size_type erase(const Key& object) {
+        if (first_data_allocated && first_data_key == object) {
+            first_data_allocated = false;
+            return 1;
+        } else {
+            return uses.erase(object);
+        }
+    }
+};
+
 template <typename T>
 class counter {
 public:
     const char *typeName;
     VkDebugReportObjectTypeEXT objectType;
     debug_report_data **report_data;
-    std::unordered_map<T, object_use_data> uses;
+    small_unordered_map<T, object_use_data> uses;
     std::mutex counter_lock;
     std::condition_variable counter_condition;
 
@@ -209,7 +259,7 @@ public:
         bool skip = false;
         loader_platform_thread_id tid = loader_platform_get_thread_id();
         std::unique_lock<std::mutex> lock(counter_lock);
-        if (uses.find(object) == uses.end()) {
+        if (!uses.contains(object)) {
             // There is no current use of the object.  Record writer thread.
             struct object_use_data *use_data = &uses[object];
             use_data->reader_count = 0;
@@ -227,7 +277,7 @@ public:
                         typeName, (uint64_t)use_data->thread, (uint64_t)tid);
                     if (skip) {
                         // Wait for thread-safe access to object instead of skipping call.
-                        while (uses.find(object) != uses.end()) {
+                        while (uses.contains(object)) {
                             counter_condition.wait(lock);
                         }
                         // There is now no current use of the object.  Record writer thread.
@@ -255,7 +305,7 @@ public:
                         typeName, (uint64_t)use_data->thread, (uint64_t)tid);
                     if (skip) {
                         // Wait for thread-safe access to object instead of skipping call.
-                        while (uses.find(object) != uses.end()) {
+                        while (uses.contains(object)) {
                             counter_condition.wait(lock);
                         }
                         // There is now no current use of the object.  Record writer thread.
@@ -299,7 +349,7 @@ public:
         bool skip = false;
         loader_platform_thread_id tid = loader_platform_get_thread_id();
         std::unique_lock<std::mutex> lock(counter_lock);
-        if (uses.find(object) == uses.end()) {
+        if (!uses.contains(object)) {
             // There is no current use of the object.  Record reader count
             struct object_use_data *use_data = &uses[object];
             use_data->reader_count = 1;
@@ -314,7 +364,7 @@ public:
                 typeName, (uint64_t)uses[object].thread, (uint64_t)tid);
             if (skip) {
                 // Wait for thread-safe access to object instead of skipping call.
-                while (uses.find(object) != uses.end()) {
+                while (uses.contains(object)) {
                     counter_condition.wait(lock);
                 }
                 // There is no current use of the object.  Record reader count
