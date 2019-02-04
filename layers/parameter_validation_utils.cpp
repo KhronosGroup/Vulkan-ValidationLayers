@@ -52,49 +52,6 @@ bool StatelessValidation::validate_string(const char *apiName, const ParameterNa
     return skip;
 }
 
-bool StatelessValidation::ValidateDeviceQueueFamily(uint32_t queue_family, const char *cmd_name, const char *parameter_name,
-                                                    const std::string &error_code, bool optional = false) {
-    bool skip = false;
-
-    if (!optional && queue_family == VK_QUEUE_FAMILY_IGNORED) {
-        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
-                        error_code,
-                        "%s: %s is VK_QUEUE_FAMILY_IGNORED, but it is required to provide a valid queue family index value.",
-                        cmd_name, parameter_name);
-    } else if (queueFamilyIndexMap.find(queue_family) == queueFamilyIndexMap.end()) {
-        skip |= log_msg(
-            report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device), error_code,
-            "%s: %s (= %" PRIu32
-            ") is not one of the queue families given via VkDeviceQueueCreateInfo structures when the device was created.",
-            cmd_name, parameter_name, queue_family);
-    }
-
-    return skip;
-}
-
-bool StatelessValidation::ValidateQueueFamilies(uint32_t queue_family_count, const uint32_t *queue_families, const char *cmd_name,
-                                                const char *array_parameter_name, const std::string &unique_error_code,
-                                                const std::string &valid_error_code, bool optional = false) {
-    bool skip = false;
-    if (queue_families) {
-        std::unordered_set<uint32_t> set;
-        for (uint32_t i = 0; i < queue_family_count; ++i) {
-            std::string parameter_name = std::string(array_parameter_name) + "[" + std::to_string(i) + "]";
-
-            if (set.count(queue_families[i])) {
-                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
-                                HandleToUint64(device), "VUID-VkDeviceCreateInfo-queueFamilyIndex-00372",
-                                "%s: %s (=%" PRIu32 ") is not unique within %s array.", cmd_name, parameter_name.c_str(),
-                                queue_families[i], array_parameter_name);
-            } else {
-                set.insert(queue_families[i]);
-                skip |= ValidateDeviceQueueFamily(queue_families[i], cmd_name, parameter_name.c_str(), valid_error_code, optional);
-            }
-        }
-    }
-    return skip;
-}
-
 bool StatelessValidation::validate_api_version(uint32_t api_version, uint32_t effective_api_version) {
     bool skip = false;
     uint32_t api_version_nopatch = VK_MAKE_VERSION(VK_VERSION_MAJOR(api_version), VK_VERSION_MINOR(api_version), 0);
@@ -163,14 +120,6 @@ void StatelessValidation::PostCallRecordCreateDevice(VkPhysicalDevice physicalDe
     if (result != VK_SUCCESS) return;
     ValidationObject *validation_data = GetValidationObject(device_data->object_dispatch, LayerObjectTypeParameterValidation);
     StatelessValidation *stateless_validation = static_cast<StatelessValidation *>(validation_data);
-
-    // Store queue family data
-    if ((pCreateInfo != nullptr) && (pCreateInfo->pQueueCreateInfos != nullptr)) {
-        for (uint32_t i = 0; i < pCreateInfo->queueCreateInfoCount; ++i) {
-            stateless_validation->queueFamilyIndexMap.insert(
-                std::make_pair(pCreateInfo->pQueueCreateInfos[i].queueFamilyIndex, pCreateInfo->pQueueCreateInfos[i].queueCount));
-        }
-    }
 
     // Parmeter validation also uses extension data
     stateless_validation->device_extensions = this->device_extensions;
@@ -310,24 +259,6 @@ bool StatelessValidation::require_device_extension(bool flag, char const *functi
     return false;
 }
 
-bool StatelessValidation::manual_PreCallValidateGetDeviceQueue(VkDevice device, uint32_t queueFamilyIndex, uint32_t queueIndex,
-                                                               VkQueue *pQueue) {
-    bool skip = false;
-
-    skip |= ValidateDeviceQueueFamily(queueFamilyIndex, "vkGetDeviceQueue", "queueFamilyIndex",
-                                      "VUID-vkGetDeviceQueue-queueFamilyIndex-00384");
-    const auto &queue_data = queueFamilyIndexMap.find(queueFamilyIndex);
-    if (queue_data != queueFamilyIndexMap.end() && queue_data->second <= queueIndex) {
-        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
-                        "VUID-vkGetDeviceQueue-queueIndex-00385",
-                        "vkGetDeviceQueue: queueIndex (=%" PRIu32
-                        ") is not less than the number of queues requested from queueFamilyIndex (=%" PRIu32
-                        ") when the device was created (i.e. is not less than %" PRIu32 ").",
-                        queueIndex, queueFamilyIndex, queue_data->second);
-    }
-    return skip;
-}
-
 bool StatelessValidation::manual_PreCallValidateCreateBuffer(VkDevice device, const VkBufferCreateInfo *pCreateInfo,
                                                              const VkAllocationCallbacks *pAllocator, VkBuffer *pBuffer) {
     bool skip = false;
@@ -355,10 +286,6 @@ bool StatelessValidation::manual_PreCallValidateCreateBuffer(VkDevice device, co
                                 "vkCreateBuffer: if pCreateInfo->sharingMode is VK_SHARING_MODE_CONCURRENT, "
                                 "pCreateInfo->pQueueFamilyIndices must be a pointer to an array of "
                                 "pCreateInfo->queueFamilyIndexCount uint32_t values.");
-            } else {
-                skip |= ValidateQueueFamilies(pCreateInfo->queueFamilyIndexCount, pCreateInfo->pQueueFamilyIndices,
-                                              "vkCreateBuffer", "pCreateInfo->pQueueFamilyIndices", kVUID_PVError_InvalidUsage,
-                                              kVUID_PVError_InvalidUsage, false);
             }
         }
 
@@ -401,10 +328,6 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
                                 "vkCreateImage(): if pCreateInfo->sharingMode is VK_SHARING_MODE_CONCURRENT, "
                                 "pCreateInfo->pQueueFamilyIndices must be a pointer to an array of "
                                 "pCreateInfo->queueFamilyIndexCount uint32_t values.");
-            } else {
-                skip |= ValidateQueueFamilies(pCreateInfo->queueFamilyIndexCount, pCreateInfo->pQueueFamilyIndices, "vkCreateImage",
-                                              "pCreateInfo->pQueueFamilyIndices", kVUID_PVError_InvalidUsage,
-                                              kVUID_PVError_InvalidUsage, false);
             }
         }
 
@@ -2529,10 +2452,6 @@ bool StatelessValidation::manual_PreCallValidateCreateSwapchainKHR(VkDevice devi
                                 "vkCreateSwapchainKHR(): if pCreateInfo->imageSharingMode is VK_SHARING_MODE_CONCURRENT, "
                                 "pCreateInfo->pQueueFamilyIndices must be a pointer to an array of "
                                 "pCreateInfo->queueFamilyIndexCount uint32_t values.");
-            } else {
-                skip |= ValidateQueueFamilies(pCreateInfo->queueFamilyIndexCount, pCreateInfo->pQueueFamilyIndices,
-                                              "vkCreateSwapchainKHR", "pCreateInfo->pQueueFamilyIndices",
-                                              kVUID_PVError_InvalidUsage, kVUID_PVError_InvalidUsage, false);
             }
         }
 
@@ -2960,13 +2879,6 @@ bool StatelessValidation::manual_PreCallValidateCmdDrawMeshTasksIndirectCountNV(
     }
 
     return skip;
-}
-
-bool StatelessValidation::manual_PreCallValidateCreateCommandPool(VkDevice device, const VkCommandPoolCreateInfo *pCreateInfo,
-                                                                  const VkAllocationCallbacks *pAllocator,
-                                                                  VkCommandPool *pCommandPool) {
-    return ValidateDeviceQueueFamily(pCreateInfo->queueFamilyIndex, "vkCreateCommandPool", "pCreateInfo->queueFamilyIndex",
-                                     "VUID-vkCreateCommandPool-queueFamilyIndex-01937");
 }
 
 bool StatelessValidation::manual_PreCallValidateCreateQueryPool(VkDevice device, const VkQueryPoolCreateInfo *pCreateInfo,

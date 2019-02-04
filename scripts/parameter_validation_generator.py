@@ -135,10 +135,8 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             'vkCreateInstance',
             'vkCreateDevice',
             'vkCreateQueryPool'
-            'vkCreateCommandPool',
             'vkCreateRenderPass',
             'vkCreateRenderPass2KHR',
-            'vkGetDeviceQueue',
             'vkCreateBuffer',
             'vkCreateImage',
             'vkCreateImageView',
