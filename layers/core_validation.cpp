@@ -6054,14 +6054,11 @@ void PreCallRecordFreeDescriptorSets(VkDevice device, VkDescriptorPool descripto
     }
 }
 
-// TODO : This is a Proof-of-concept for core validation architecture
-//  Really we'll want to break out these functions to separate files but
-//  keeping it all together here to prove out design
-// PreCallValidate* handles validating all of the state prior to calling down chain to UpdateDescriptorSets()
-bool PreCallValidateUpdateDescriptorSets(layer_data *dev_data, uint32_t descriptorWriteCount,
+bool PreCallValidateUpdateDescriptorSets(VkDevice device, uint32_t descriptorWriteCount,
                                          const VkWriteDescriptorSet *pDescriptorWrites, uint32_t descriptorCopyCount,
                                          const VkCopyDescriptorSet *pDescriptorCopies) {
-    if (dev_data->instance_data->disabled.update_descriptor_sets) return false;
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (device_data->instance_data->disabled.update_descriptor_sets) return false;
     // First thing to do is perform map look-ups.
     // NOTE : UpdateDescriptorSets is somewhat unique in that it's operating on a number of DescriptorSets
     //  so we can't just do a single map look-up up-front, but do them individually in functions below
@@ -6069,14 +6066,16 @@ bool PreCallValidateUpdateDescriptorSets(layer_data *dev_data, uint32_t descript
     // Now make call(s) that validate state, but don't perform state updates in this function
     // Note, here DescriptorSets is unique in that we don't yet have an instance. Using a helper function in the
     //  namespace which will parse params and make calls into specific class instances
-    return cvdescriptorset::ValidateUpdateDescriptorSets(dev_data->report_data, dev_data, descriptorWriteCount, pDescriptorWrites,
-                                                         descriptorCopyCount, pDescriptorCopies, "vkUpdateDescriptorSets()");
+    return cvdescriptorset::ValidateUpdateDescriptorSets(device_data->report_data, device_data, descriptorWriteCount,
+                                                         pDescriptorWrites, descriptorCopyCount, pDescriptorCopies,
+                                                         "vkUpdateDescriptorSets()");
 }
-// PostCallRecord* handles recording state updates following call down chain to UpdateDescriptorSets()
-void PreCallRecordUpdateDescriptorSets(layer_data *dev_data, uint32_t descriptorWriteCount,
+
+void PreCallRecordUpdateDescriptorSets(VkDevice device, uint32_t descriptorWriteCount,
                                        const VkWriteDescriptorSet *pDescriptorWrites, uint32_t descriptorCopyCount,
                                        const VkCopyDescriptorSet *pDescriptorCopies) {
-    cvdescriptorset::PerformUpdateDescriptorSets(dev_data, descriptorWriteCount, pDescriptorWrites, descriptorCopyCount,
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    cvdescriptorset::PerformUpdateDescriptorSets(device_data, descriptorWriteCount, pDescriptorWrites, descriptorCopyCount,
                                                  pDescriptorCopies);
 }
 
@@ -12496,14 +12495,13 @@ void PostCallRecordGetPhysicalDeviceSurfaceFormats2KHR(VkPhysicalDevice physical
     }
 }
 
-void PreCallRecordSetDebugUtilsObjectNameEXT(layer_data *dev_data, const VkDebugUtilsObjectNameInfoEXT *pNameInfo) {
+void PreCallRecordSetDebugUtilsObjectNameEXT(VkDevice device, const VkDebugUtilsObjectNameInfoEXT *pNameInfo) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (pNameInfo->pObjectName) {
-        lock_guard_t lock(global_lock);
-        dev_data->report_data->debugUtilsObjectNameMap->insert(
+        device_data->report_data->debugUtilsObjectNameMap->insert(
             std::make_pair<uint64_t, std::string>((uint64_t &&) pNameInfo->objectHandle, pNameInfo->pObjectName));
     } else {
-        lock_guard_t lock(global_lock);
-        dev_data->report_data->debugUtilsObjectNameMap->erase(pNameInfo->objectHandle);
+        device_data->report_data->debugUtilsObjectNameMap->erase(pNameInfo->objectHandle);
     }
 }
 
@@ -12761,8 +12759,8 @@ void PostCallRecordCreateDescriptorUpdateTemplateKHR(VkDevice device, const VkDe
     RecordCreateDescriptorUpdateTemplateState(device_data, pCreateInfo, pDescriptorUpdateTemplate);
 }
 
-bool PreCallValidateUpdateDescriptorSetWithTemplate(layer_data *device_data, VkDescriptorSet descriptorSet,
-                                                    VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate, const void *pData) {
+bool ValidateUpdateDescriptorSetWithTemplate(layer_data *device_data, VkDescriptorSet descriptorSet,
+                                             VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate, const void *pData) {
     bool skip = false;
     auto const template_map_entry = device_data->desc_template_map.find(descriptorUpdateTemplate);
     if ((template_map_entry == device_data->desc_template_map.end()) || (template_map_entry->second.get() == nullptr)) {
@@ -12779,8 +12777,20 @@ bool PreCallValidateUpdateDescriptorSetWithTemplate(layer_data *device_data, VkD
     return skip;
 }
 
-void PreCallRecordUpdateDescriptorSetWithTemplate(layer_data *device_data, VkDescriptorSet descriptorSet,
-                                                  VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate, const void *pData) {
+bool PreCallValidateUpdateDescriptorSetWithTemplate(VkDevice device, VkDescriptorSet descriptorSet,
+                                                    VkDescriptorUpdateTemplate descriptorUpdateTemplate, const void *pData) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    return ValidateUpdateDescriptorSetWithTemplate(device_data, descriptorSet, descriptorUpdateTemplate, pData);
+}
+
+bool PreCallValidateUpdateDescriptorSetWithTemplateKHR(VkDevice device, VkDescriptorSet descriptorSet,
+                                                       VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate, const void *pData) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    return ValidateUpdateDescriptorSetWithTemplate(device_data, descriptorSet, descriptorUpdateTemplate, pData);
+}
+
+void RecordUpdateDescriptorSetWithTemplateState(layer_data *device_data, VkDescriptorSet descriptorSet,
+                                                VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate, const void *pData) {
     auto const template_map_entry = device_data->desc_template_map.find(descriptorUpdateTemplate);
     if ((template_map_entry == device_data->desc_template_map.end()) || (template_map_entry->second.get() == nullptr)) {
         assert(0);
@@ -12791,6 +12801,18 @@ void PreCallRecordUpdateDescriptorSetWithTemplate(layer_data *device_data, VkDes
             cvdescriptorset::PerformUpdateDescriptorSetsWithTemplateKHR(device_data, descriptorSet, template_state, pData);
         }
     }
+}
+
+void PreCallRecordUpdateDescriptorSetWithTemplate(VkDevice device, VkDescriptorSet descriptorSet,
+                                                  VkDescriptorUpdateTemplate descriptorUpdateTemplate, const void *pData) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    RecordUpdateDescriptorSetWithTemplateState(device_data, descriptorSet, descriptorUpdateTemplate, pData);
+}
+
+void PreCallRecordUpdateDescriptorSetWithTemplateKHR(VkDevice device, VkDescriptorSet descriptorSet,
+                                                     VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate, const void *pData) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    RecordUpdateDescriptorSetWithTemplateState(device_data, descriptorSet, descriptorUpdateTemplate, pData);
 }
 
 static std::shared_ptr<cvdescriptorset::DescriptorSetLayout const> GetDslFromPipelineLayout(PIPELINE_LAYOUT_NODE const *layout_data,
@@ -12986,12 +13008,13 @@ bool PreCallValidateGetDisplayPlaneCapabilities2KHR(VkPhysicalDevice physicalDev
     return skip;
 }
 
-void PreCallRecordDebugMarkerSetObjectNameEXT(layer_data *dev_data, const VkDebugMarkerObjectNameInfoEXT *pNameInfo) {
+void PreCallRecordDebugMarkerSetObjectNameEXT(VkDevice device, const VkDebugMarkerObjectNameInfoEXT *pNameInfo) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (pNameInfo->pObjectName) {
-        dev_data->report_data->debugObjectNameMap->insert(
+        device_data->report_data->debugObjectNameMap->insert(
             std::make_pair<uint64_t, std::string>((uint64_t &&) pNameInfo->object, pNameInfo->pObjectName));
     } else {
-        dev_data->report_data->debugObjectNameMap->erase(pNameInfo->object);
+        device_data->report_data->debugObjectNameMap->erase(pNameInfo->object);
     }
 }
 

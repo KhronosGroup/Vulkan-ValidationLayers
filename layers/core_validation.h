@@ -1526,10 +1526,10 @@ bool PreCallValidateFreeDescriptorSets(VkDevice device, VkDescriptorPool descrip
                                        const VkDescriptorSet* pDescriptorSets);
 void PreCallRecordFreeDescriptorSets(VkDevice device, VkDescriptorPool descriptorPool, uint32_t count,
                                      const VkDescriptorSet* pDescriptorSets);
-bool PreCallValidateUpdateDescriptorSets(layer_data* dev_data, uint32_t descriptorWriteCount,
+bool PreCallValidateUpdateDescriptorSets(VkDevice device, uint32_t descriptorWriteCount,
                                          const VkWriteDescriptorSet* pDescriptorWrites, uint32_t descriptorCopyCount,
                                          const VkCopyDescriptorSet* pDescriptorCopies);
-void PreCallRecordUpdateDescriptorSets(layer_data* dev_data, uint32_t descriptorWriteCount,
+void PreCallRecordUpdateDescriptorSets(VkDevice device, uint32_t descriptorWriteCount,
                                        const VkWriteDescriptorSet* pDescriptorWrites, uint32_t descriptorCopyCount,
                                        const VkCopyDescriptorSet* pDescriptorCopies);
 void PostCallRecordAllocateCommandBuffers(VkDevice device, const VkCommandBufferAllocateInfo* pCreateInfo,
@@ -1818,7 +1818,7 @@ void PostCallRecordGetPhysicalDeviceSurfaceFormats2KHR(VkPhysicalDevice physical
                                                        VkResult result);
 void PostCallRecordCreateDisplayPlaneSurfaceKHR(VkInstance instance, const VkDisplaySurfaceCreateInfoKHR* pCreateInfo,
                                                 const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface, VkResult result);
-void PreCallRecordSetDebugUtilsObjectNameEXT(layer_data* dev_data, const VkDebugUtilsObjectNameInfoEXT* pNameInfo);
+void PreCallRecordSetDebugUtilsObjectNameEXT(VkDevice device, const VkDebugUtilsObjectNameInfoEXT* pNameInfo);
 void PreCallRecordQueueBeginDebugUtilsLabelEXT(VkQueue queue, const VkDebugUtilsLabelEXT* pLabelInfo);
 void PostCallRecordQueueEndDebugUtilsLabelEXT(VkQueue queue);
 void PreCallRecordQueueInsertDebugUtilsLabelEXT(VkQueue queue, const VkDebugUtilsLabelEXT* pLabelInfo);
@@ -1865,11 +1865,15 @@ void PreCallRecordDestroyDescriptorUpdateTemplate(VkDevice device, VkDescriptorU
                                                   const VkAllocationCallbacks* pAllocator);
 void PreCallRecordDestroyDescriptorUpdateTemplateKHR(VkDevice device, VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate,
                                                      const VkAllocationCallbacks* pAllocator);
-
-bool PreCallValidateUpdateDescriptorSetWithTemplate(layer_data* device_data, VkDescriptorSet descriptorSet,
+bool PreCallValidateUpdateDescriptorSetWithTemplate(VkDevice device, VkDescriptorSet descriptorSet,
                                                     VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate, const void* pData);
-void PreCallRecordUpdateDescriptorSetWithTemplate(layer_data* device_data, VkDescriptorSet descriptorSet,
+void PreCallRecordUpdateDescriptorSetWithTemplate(VkDevice device, VkDescriptorSet descriptorSet,
                                                   VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate, const void* pData);
+bool PreCallValidateUpdateDescriptorSetWithTemplateKHR(VkDevice device, VkDescriptorSet descriptorSet,
+                                                       VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate, const void* pData);
+void PreCallRecordUpdateDescriptorSetWithTemplateKHR(VkDevice device, VkDescriptorSet descriptorSet,
+                                                     VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate, const void* pData);
+
 bool PreCallValidateCmdPushDescriptorSetWithTemplateKHR(VkCommandBuffer commandBuffer,
                                                         VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate,
                                                         VkPipelineLayout layout, uint32_t set, const void* pData);
@@ -1887,7 +1891,7 @@ bool PreCallValidateGetDisplayPlaneCapabilitiesKHR(VkPhysicalDevice physicalDevi
 bool PreCallValidateGetDisplayPlaneCapabilities2KHR(VkPhysicalDevice physicalDevice,
                                                     const VkDisplayPlaneInfo2KHR* pDisplayPlaneInfo,
                                                     VkDisplayPlaneCapabilities2KHR* pCapabilities);
-void PreCallRecordDebugMarkerSetObjectNameEXT(layer_data* dev_data, const VkDebugMarkerObjectNameInfoEXT* pNameInfo);
+void PreCallRecordDebugMarkerSetObjectNameEXT(VkDevice device, const VkDebugMarkerObjectNameInfoEXT* pNameInfo);
 bool PreCallValidateCmdDebugMarkerEndEXT(VkCommandBuffer commandBuffer);
 bool PreCallValidateCmdSetDiscardRectangleEXT(VkCommandBuffer commandBuffer, uint32_t firstDiscardRectangle,
                                               uint32_t discardRectangleCount, const VkRect2D* pDiscardRectangles);

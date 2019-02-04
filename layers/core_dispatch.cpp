@@ -1172,12 +1172,10 @@ VKAPI_ATTR void VKAPI_CALL UpdateDescriptorSets(VkDevice device, uint32_t descri
     // Only map look-up at top level is for device-level layer_data
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     unique_lock_t lock(global_lock);
-    bool skip = PreCallValidateUpdateDescriptorSets(dev_data, descriptorWriteCount, pDescriptorWrites, descriptorCopyCount,
+    bool skip = PreCallValidateUpdateDescriptorSets(device, descriptorWriteCount, pDescriptorWrites, descriptorCopyCount,
                                                     pDescriptorCopies);
     if (!skip) {
-        // Since UpdateDescriptorSets() is void, nothing to check prior to updating state & we can update before call down chain
-        PreCallRecordUpdateDescriptorSets(dev_data, descriptorWriteCount, pDescriptorWrites, descriptorCopyCount,
-                                          pDescriptorCopies);
+        PreCallRecordUpdateDescriptorSets(device, descriptorWriteCount, pDescriptorWrites, descriptorCopyCount, pDescriptorCopies);
         lock.unlock();
         dev_data->dispatch_table.UpdateDescriptorSets(device, descriptorWriteCount, pDescriptorWrites, descriptorCopyCount,
                                                       pDescriptorCopies);
@@ -2672,12 +2670,10 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfaceFormats2KHR(VkPhysicalDev
 VKAPI_ATTR VkResult VKAPI_CALL SetDebugUtilsObjectNameEXT(VkDevice device, const VkDebugUtilsObjectNameInfoEXT *pNameInfo) {
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     VkResult result = VK_SUCCESS;
-
-    PreCallRecordSetDebugUtilsObjectNameEXT(dev_data, pNameInfo);
-
-    if (nullptr != dev_data->dispatch_table.SetDebugUtilsObjectNameEXT) {
-        result = dev_data->dispatch_table.SetDebugUtilsObjectNameEXT(device, pNameInfo);
-    }
+    unique_lock_t lock(global_lock);
+    PreCallRecordSetDebugUtilsObjectNameEXT(device, pNameInfo);
+    lock.unlock();
+    result = dev_data->dispatch_table.SetDebugUtilsObjectNameEXT(device, pNameInfo);
     return result;
 }
 
@@ -2898,10 +2894,10 @@ VKAPI_ATTR void VKAPI_CALL UpdateDescriptorSetWithTemplate(VkDevice device, VkDe
 
     unique_lock_t lock(global_lock);
     bool skip = false;
-    skip = PreCallValidateUpdateDescriptorSetWithTemplate(device_data, descriptorSet, descriptorUpdateTemplate, pData);
+    skip = PreCallValidateUpdateDescriptorSetWithTemplate(device, descriptorSet, descriptorUpdateTemplate, pData);
 
     if (!skip) {
-        PreCallRecordUpdateDescriptorSetWithTemplate(device_data, descriptorSet, descriptorUpdateTemplate, pData);
+        PreCallRecordUpdateDescriptorSetWithTemplate(device, descriptorSet, descriptorUpdateTemplate, pData);
         lock.unlock();
         device_data->dispatch_table.UpdateDescriptorSetWithTemplate(device, descriptorSet, descriptorUpdateTemplate, pData);
     }
@@ -2914,10 +2910,10 @@ VKAPI_ATTR void VKAPI_CALL UpdateDescriptorSetWithTemplateKHR(VkDevice device, V
 
     unique_lock_t lock(global_lock);
     bool skip = false;
-    skip = PreCallValidateUpdateDescriptorSetWithTemplate(device_data, descriptorSet, descriptorUpdateTemplate, pData);
+    skip = PreCallValidateUpdateDescriptorSetWithTemplate(device, descriptorSet, descriptorUpdateTemplate, pData);
 
     if (!skip) {
-        PreCallRecordUpdateDescriptorSetWithTemplate(device_data, descriptorSet, descriptorUpdateTemplate, pData);
+        PreCallRecordUpdateDescriptorSetWithTemplate(device, descriptorSet, descriptorUpdateTemplate, pData);
         lock.unlock();
         device_data->dispatch_table.UpdateDescriptorSetWithTemplateKHR(device, descriptorSet, descriptorUpdateTemplate, pData);
     }
@@ -3000,9 +2996,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDisplayPlaneCapabilities2KHR(VkPhysicalDevice 
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL DebugMarkerSetObjectNameEXT(VkDevice device, const VkDebugMarkerObjectNameInfoEXT *pNameInfo) {
-    unique_lock_t lock(global_lock);
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    PreCallRecordDebugMarkerSetObjectNameEXT(device_data, pNameInfo);
+    unique_lock_t lock(global_lock);
+    PreCallRecordDebugMarkerSetObjectNameEXT(device, pNameInfo);
     lock.unlock();
     VkResult result = device_data->dispatch_table.DebugMarkerSetObjectNameEXT(device, pNameInfo);
     return result;
