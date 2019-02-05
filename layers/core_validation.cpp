@@ -606,8 +606,8 @@ bool ValidateDeviceQueueFamily(layer_data *device_data, uint32_t queue_family, c
 }
 
 bool ValidateQueueFamilies(layer_data *device_data, uint32_t queue_family_count, const uint32_t *queue_families,
-                           const char *cmd_name, const char *array_parameter_name, const std::string &unique_error_code,
-                           const std::string &valid_error_code, bool optional = false) {
+                           const char *cmd_name, const char *array_parameter_name, const char *unique_error_code,
+                           const char *valid_error_code, bool optional = false) {
     bool skip = false;
     if (queue_families) {
         std::unordered_set<uint32_t> set;
@@ -616,13 +616,13 @@ bool ValidateQueueFamilies(layer_data *device_data, uint32_t queue_family_count,
 
             if (set.count(queue_families[i])) {
                 skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
-                                HandleToUint64(device_data->device), unique_error_code.c_str(),
+                                HandleToUint64(device_data->device), unique_error_code,
                                 "%s: %s (=%" PRIu32 ") is not unique within %s array.", cmd_name, parameter_name.c_str(),
                                 queue_families[i], array_parameter_name);
             } else {
                 set.insert(queue_families[i]);
                 skip |= ValidateDeviceQueueFamily(device_data, queue_families[i], cmd_name, parameter_name.c_str(),
-                                                  valid_error_code.c_str(), optional);
+                                                  valid_error_code, optional);
             }
         }
     }
