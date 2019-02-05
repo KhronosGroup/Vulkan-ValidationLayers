@@ -1359,10 +1359,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateImagePipeSurfaceFUCHSIA(VkInstance instance
 using std::vector;
 SURFACE_STATE* GetSurfaceState(instance_layer_data* instance_data, VkSurfaceKHR surface);
 PHYSICAL_DEVICE_STATE* GetPhysicalDeviceState(instance_layer_data* instance_data, VkPhysicalDevice phys);
-bool ValidateQueueFamilies(layer_data *device_data, uint32_t queue_family_count, const uint32_t *queue_families,
-    const char *cmd_name, const char *array_parameter_name, const std::string &unique_error_code,
-    const std::string &valid_error_code, bool optional);
-
+bool ValidateQueueFamilies(layer_data* device_data, uint32_t queue_family_count, const uint32_t* queue_families,
+                           const char* cmd_name, const char* array_parameter_name, const char* unique_error_code,
+                           const char* valid_error_code, bool optional);
 void PostCallRecordCreateInstance(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                                   VkInstance* pInstance, VkResult result);
 bool PreCallValidateCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo* pCreateInfo,
