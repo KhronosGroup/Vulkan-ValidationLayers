@@ -15687,7 +15687,7 @@ TEST_F(VkLayerTest, IdxBufferAlignmentError) {
 }
 
 TEST_F(VkLayerTest, InvalidQueueFamilyIndex) {
-    // Create an out-of-range queueFamilyIndex
+    // Miscellaneous queueFamilyIndex validation tests
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
     VkBufferCreateInfo buffCI = {};
@@ -15704,9 +15704,14 @@ TEST_F(VkLayerTest, InvalidQueueFamilyIndex) {
     buffCI.sharingMode = VK_SHARING_MODE_CONCURRENT;  // qfi only matters in CONCURRENT mode
 
     VkBuffer ib;
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                         "vkCreateBuffer: pCreateInfo->pQueueFamilyIndices[0] (= 777) is not one of the queue "
-                                         "families given via VkDeviceQueueCreateInfo structures when the device was created.");
+    // Test for queue family index out of range
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkBufferCreateInfo-sharingMode-01419");
+    vkCreateBuffer(m_device->device(), &buffCI, NULL, &ib);
+    m_errorMonitor->VerifyFound();
+
+    // Test for non-unique QFI in array
+    qfi[0] = 0;
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkBufferCreateInfo-sharingMode-01419");
     vkCreateBuffer(m_device->device(), &buffCI, NULL, &ib);
     m_errorMonitor->VerifyFound();
 
