@@ -780,8 +780,10 @@ static void GenerateStageMessage(const uint32_t *debug_record, std::string &msg)
     std::ostringstream strm;
     switch (debug_record[kInstCommonOutStageIdx]) {
         case 0: {
-            strm << "Stage = Vertex. Vertex ID = " << debug_record[kInstVertOutVertexId]
-                 << " Instance ID = " << debug_record[kInstVertOutInstanceId] << ". ";
+            // TODO: When we find a spirv-tools / glslang / shaderc combination that works well with validation layers,
+            // replace the 4 below with kInstVertOutVertexIndex and the 5 with kInstVertOutInstanceIndex.  Change the
+            // message to refer to Vertex Index instead of Vertex ID and Instance Index instead of Instance ID
+            strm << "Stage = Vertex. Vertex ID = " << debug_record[4] << " Instance ID = " << debug_record[5] << ". ";
         } break;
         case 1: {
             strm << "Stage = Tessellation Control.  Invocation ID = " << debug_record[kInstTessOutInvocationId] << ". ";
