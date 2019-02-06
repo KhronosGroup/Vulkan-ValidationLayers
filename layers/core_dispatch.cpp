@@ -2050,6 +2050,17 @@ VKAPI_ATTR VkResult VKAPI_CALL InvalidateMappedMemoryRanges(VkDevice device, uin
     return result;
 }
 
+VKAPI_ATTR void VKAPI_CALL GetDeviceMemoryCommitment(VkDevice device, VkDeviceMemory mem, VkDeviceSize *pCommittedMem) {
+    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    unique_lock_t lock(global_lock);
+    bool skip = PreCallValidateGetDeviceMemoryCommitment(device, mem, pCommittedMem);
+    lock.unlock();
+
+    if (skip) return;
+
+    dev_data->dispatch_table.GetDeviceMemoryCommitment(device, mem, pCommittedMem);
+}
+
 VKAPI_ATTR VkResult VKAPI_CALL BindImageMemory(VkDevice device, VkImage image, VkDeviceMemory mem, VkDeviceSize memoryOffset) {
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     VkResult result = VK_ERROR_VALIDATION_FAILED_EXT;
@@ -3385,6 +3396,7 @@ static const std::unordered_map<std::string, void *> name_to_funcptr_map = {
     {"vkUnmapMemory", (void *)UnmapMemory},
     {"vkFlushMappedMemoryRanges", (void *)FlushMappedMemoryRanges},
     {"vkInvalidateMappedMemoryRanges", (void *)InvalidateMappedMemoryRanges},
+    {"vkGetDeviceMemoryCommitment", (void *)GetDeviceMemoryCommitment},
     {"vkAllocateMemory", (void *)AllocateMemory},
     {"vkFreeMemory", (void *)FreeMemory},
     {"vkBindBufferMemory", (void *)BindBufferMemory},

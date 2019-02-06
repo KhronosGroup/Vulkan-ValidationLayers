@@ -10933,6 +10933,24 @@ void PostCallRecordInvalidateMappedMemoryRanges(VkDevice device, uint32_t memRan
     }
 }
 
+bool PreCallValidateGetDeviceMemoryCommitment(VkDevice device, VkDeviceMemory mem, VkDeviceSize *pCommittedMem) {
+    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    bool skip = false;
+    auto mem_info = GetMemObjInfo(dev_data, mem);
+
+    if (mem_info) {
+        if ((dev_data->phys_dev_mem_props.memoryTypes[mem_info->alloc_info.memoryTypeIndex].propertyFlags &
+             VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT) == 0) {
+            skip = log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_MEMORY_EXT,
+                           HandleToUint64(mem), "VUID-vkGetDeviceMemoryCommitment-memory-00690",
+                           "Querying commitment for memory without VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT set: mem obj 0x%" PRIx64
+                           ".",
+                           HandleToUint64(mem));
+        }
+    }
+    return skip;
+}
+
 bool ValidateBindImageMemory(layer_data *device_data, VkImage image, VkDeviceMemory mem, VkDeviceSize memoryOffset,
                              const char *api_name) {
     bool skip = false;
