@@ -2670,9 +2670,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfaceFormats2KHR(VkPhysicalDev
 VKAPI_ATTR VkResult VKAPI_CALL SetDebugUtilsObjectNameEXT(VkDevice device, const VkDebugUtilsObjectNameInfoEXT *pNameInfo) {
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     VkResult result = VK_SUCCESS;
-    unique_lock_t lock(global_lock);
-    PreCallRecordSetDebugUtilsObjectNameEXT(device, pNameInfo);
-    lock.unlock();
+    dev_data->report_data->DebugReportSetUtilsObjectName(pNameInfo);
     result = dev_data->dispatch_table.SetDebugUtilsObjectNameEXT(device, pNameInfo);
     return result;
 }
@@ -2997,9 +2995,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDisplayPlaneCapabilities2KHR(VkPhysicalDevice 
 
 VKAPI_ATTR VkResult VKAPI_CALL DebugMarkerSetObjectNameEXT(VkDevice device, const VkDebugMarkerObjectNameInfoEXT *pNameInfo) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    unique_lock_t lock(global_lock);
-    PreCallRecordDebugMarkerSetObjectNameEXT(device, pNameInfo);
-    lock.unlock();
+    device_data->report_data->DebugReportSetMarkerObjectName(pNameInfo);
     VkResult result = device_data->dispatch_table.DebugMarkerSetObjectNameEXT(device, pNameInfo);
     return result;
 }

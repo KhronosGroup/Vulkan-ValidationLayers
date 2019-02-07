@@ -166,7 +166,8 @@ class LayerChassisOutputGenerator(OutputGenerator):
     ]
 
     pre_dispatch_debug_utils_functions = {
-        'vkSetDebugUtilsObjectNameEXT' : 'layer_data->report_data->debugUtilsObjectNameMap->insert(std::make_pair<uint64_t, std::string>((uint64_t &&) pNameInfo->objectHandle, pNameInfo->pObjectName));',
+        'vkDebugMarkerSetObjectNameEXT' : 'layer_data->report_data->DebugReportSetMarkerObjectName(pNameInfo);',
+        'vkSetDebugUtilsObjectNameEXT' : 'layer_data->report_data->DebugReportSetUtilsObjectName(pNameInfo);',
         'vkQueueBeginDebugUtilsLabelEXT' : 'BeginQueueDebugUtilsLabel(layer_data->report_data, queue, pLabelInfo);',
         'vkQueueInsertDebugUtilsLabelEXT' : 'InsertQueueDebugUtilsLabel(layer_data->report_data, queue, pLabelInfo);',
         'vkCmdBeginDebugUtilsLabelEXT' : 'BeginCmdDebugUtilsLabel(layer_data->report_data, commandBuffer, pLabelInfo);',
@@ -1082,20 +1083,14 @@ VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkNegotiateLoaderLayerInterfaceVe
 
         # Insert pre-dispatch debug utils function call
         if name in self.pre_dispatch_debug_utils_functions:
-            self.appendSection('command', '    {')
-            self.appendSection('command', '        std::lock_guard<std::mutex> lock(layer_data->validation_object_mutex);')
-            self.appendSection('command', '        %s' % self.pre_dispatch_debug_utils_functions[name])
-            self.appendSection('command', '    }')
+            self.appendSection('command', '    %s' % self.pre_dispatch_debug_utils_functions[name])
 
         # Output dispatch (down-chain) function call
         self.appendSection('command', '    ' + assignresult + API + paramstext + ');')
 
         # Insert post-dispatch debug utils function call
         if name in self.post_dispatch_debug_utils_functions:
-            self.appendSection('command', '    {')
-            self.appendSection('command', '        std::lock_guard<std::mutex> lock(layer_data->validation_object_mutex);')
-            self.appendSection('command', '        %s' % self.post_dispatch_debug_utils_functions[name])
-            self.appendSection('command', '    }')
+            self.appendSection('command', '    %s' % self.post_dispatch_debug_utils_functions[name])
 
         # Generate post-call object processing source code
         self.appendSection('command', '    %s' % self.postcallrecord_loop)

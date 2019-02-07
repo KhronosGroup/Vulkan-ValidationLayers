@@ -12694,16 +12694,6 @@ void PostCallRecordGetPhysicalDeviceSurfaceFormats2KHR(VkPhysicalDevice physical
     }
 }
 
-void PreCallRecordSetDebugUtilsObjectNameEXT(VkDevice device, const VkDebugUtilsObjectNameInfoEXT *pNameInfo) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    if (pNameInfo->pObjectName) {
-        device_data->report_data->debugUtilsObjectNameMap->insert(
-            std::make_pair<uint64_t, std::string>((uint64_t &&) pNameInfo->objectHandle, pNameInfo->pObjectName));
-    } else {
-        device_data->report_data->debugUtilsObjectNameMap->erase(pNameInfo->objectHandle);
-    }
-}
-
 void PreCallRecordQueueBeginDebugUtilsLabelEXT(VkQueue queue, const VkDebugUtilsLabelEXT *pLabelInfo) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(queue), layer_data_map);
     BeginQueueDebugUtilsLabel(device_data->report_data, queue, pLabelInfo);
@@ -13205,16 +13195,6 @@ bool PreCallValidateGetDisplayPlaneCapabilities2KHR(VkPhysicalDevice physicalDev
     skip |= ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(instance_data, physicalDevice, pDisplayPlaneInfo->planeIndex,
                                                                     "vkGetDisplayPlaneCapabilities2KHR");
     return skip;
-}
-
-void PreCallRecordDebugMarkerSetObjectNameEXT(VkDevice device, const VkDebugMarkerObjectNameInfoEXT *pNameInfo) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    if (pNameInfo->pObjectName) {
-        device_data->report_data->debugObjectNameMap->insert(
-            std::make_pair<uint64_t, std::string>((uint64_t &&) pNameInfo->object, pNameInfo->pObjectName));
-    } else {
-        device_data->report_data->debugObjectNameMap->erase(pNameInfo->object);
-    }
 }
 
 bool PreCallValidateCmdDebugMarkerBeginEXT(VkCommandBuffer commandBuffer, const VkDebugMarkerMarkerInfoEXT *pMarkerInfo) {
