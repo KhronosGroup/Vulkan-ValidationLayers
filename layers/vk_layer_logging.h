@@ -79,41 +79,41 @@ typedef struct _LoggingLabelData {
 } LoggingLabelData;
 
 typedef struct _debug_report_data {
-    VkLayerDbgFunctionNode *debug_callback_list;
-    VkLayerDbgFunctionNode *default_debug_callback_list;
-    VkDebugUtilsMessageSeverityFlagsEXT active_severities;
-    VkDebugUtilsMessageTypeFlagsEXT active_types;
-    bool g_DEBUG_REPORT;
-    bool g_DEBUG_UTILS;
-    std::unordered_map<uint64_t, std::string> *debugObjectNameMap;
-    std::unordered_map<uint64_t, std::string> *debugUtilsObjectNameMap;
-    std::unordered_map<VkQueue, std::vector<LoggingLabelData>> *debugUtilsQueueLabels;
-    bool queueLabelHasInsert;
-    std::unordered_map<VkCommandBuffer, std::vector<LoggingLabelData>> *debugUtilsCmdBufLabels;
-    bool cmdBufLabelHasInsert;
+    VkLayerDbgFunctionNode *debug_callback_list{nullptr};
+    VkLayerDbgFunctionNode *default_debug_callback_list{nullptr};
+    VkDebugUtilsMessageSeverityFlagsEXT active_severities{0};
+    VkDebugUtilsMessageTypeFlagsEXT active_types{0};
+    bool g_DEBUG_REPORT{false};
+    bool g_DEBUG_UTILS{false};
+    bool queueLabelHasInsert{false};
+    bool cmdBufLabelHasInsert{false};
+    std::unordered_map<uint64_t, std::string> debugObjectNameMap;
+    std::unordered_map<uint64_t, std::string> debugUtilsObjectNameMap;
+    std::unordered_map<VkQueue, std::vector<LoggingLabelData>> debugUtilsQueueLabels;
+    std::unordered_map<VkCommandBuffer, std::vector<LoggingLabelData>> debugUtilsCmdBufLabels;
 
     void DebugReportSetUtilsObjectName(const VkDebugUtilsObjectNameInfoEXT *pNameInfo) {
         if (pNameInfo->pObjectName) {
-            debugUtilsObjectNameMap->insert(
+            debugUtilsObjectNameMap.insert(
                 std::make_pair<uint64_t, std::string>((uint64_t &&) pNameInfo->objectHandle, pNameInfo->pObjectName));
         } else {
-            debugUtilsObjectNameMap->erase(pNameInfo->objectHandle);
+            debugUtilsObjectNameMap.erase(pNameInfo->objectHandle);
         }
     }
 
     void DebugReportSetMarkerObjectName(const VkDebugMarkerObjectNameInfoEXT *pNameInfo) {
         if (pNameInfo->pObjectName) {
-            debugObjectNameMap->insert(
+            debugObjectNameMap.insert(
                 std::make_pair<uint64_t, std::string>((uint64_t &&) pNameInfo->object, pNameInfo->pObjectName));
         } else {
-            debugObjectNameMap->erase(pNameInfo->object);
+            debugObjectNameMap.erase(pNameInfo->object);
         }
     }
 
     std::string DebugReportGetUtilsObjectName(const uint64_t object) const {
         std::string label = "";
-        auto utils_name_iter = debugUtilsObjectNameMap->find(object);
-        if (utils_name_iter != debugUtilsObjectNameMap->end()) {
+        auto utils_name_iter = debugUtilsObjectNameMap.find(object);
+        if (utils_name_iter != debugUtilsObjectNameMap.end()) {
             label = utils_name_iter->second;
         }
         return label;
@@ -121,8 +121,8 @@ typedef struct _debug_report_data {
 
     std::string DebugReportGetMarkerObjectName(const uint64_t object) const {
         std::string label = "";
-        auto marker_name_iter = debugObjectNameMap->find(object);
-        if (marker_name_iter != debugObjectNameMap->end()) {
+        auto marker_name_iter = debugObjectNameMap.find(object);
+        if (marker_name_iter != debugObjectNameMap.end()) {
             label = marker_name_iter->second;
         }
         return label;
@@ -351,8 +351,8 @@ static inline bool debug_log_msg(const debug_report_data *debug_data, VkFlags ms
         oss << "Object: 0x" << std::hex << src_object;
         // If this is a queue, add any queue labels to the callback data.
         if (VK_OBJECT_TYPE_QUEUE == object_name_info.objectType) {
-            auto label_iter = debug_data->debugUtilsQueueLabels->find(reinterpret_cast<VkQueue>(src_object));
-            if (label_iter != debug_data->debugUtilsQueueLabels->end()) {
+            auto label_iter = debug_data->debugUtilsQueueLabels.find(reinterpret_cast<VkQueue>(src_object));
+            if (label_iter != debug_data->debugUtilsQueueLabels.end()) {
                 queue_labels = new VkDebugUtilsLabelEXT[label_iter->second.size()];
                 if (nullptr != queue_labels) {
                     // Record the labels, but record them in reverse order since we want the
@@ -374,8 +374,8 @@ static inline bool debug_log_msg(const debug_report_data *debug_data, VkFlags ms
             }
             // If this is a command buffer, add any command buffer labels to the callback data.
         } else if (VK_OBJECT_TYPE_COMMAND_BUFFER == object_name_info.objectType) {
-            auto label_iter = debug_data->debugUtilsCmdBufLabels->find(reinterpret_cast<VkCommandBuffer>(src_object));
-            if (label_iter != debug_data->debugUtilsCmdBufLabels->end()) {
+            auto label_iter = debug_data->debugUtilsCmdBufLabels.find(reinterpret_cast<VkCommandBuffer>(src_object));
+            if (label_iter != debug_data->debugUtilsCmdBufLabels.end()) {
                 cmd_buf_labels = new VkDebugUtilsLabelEXT[label_iter->second.size()];
                 if (nullptr != cmd_buf_labels) {
                     // Record the labels, but record them in reverse order since we want the
@@ -398,12 +398,12 @@ static inline bool debug_log_msg(const debug_report_data *debug_data, VkFlags ms
         }
         // Look for any debug utils or marker names to use for this object
         object_name_info.pObjectName = NULL;
-        auto utils_name_iter = debug_data->debugUtilsObjectNameMap->find(src_object);
-        if (utils_name_iter != debug_data->debugUtilsObjectNameMap->end()) {
+        auto utils_name_iter = debug_data->debugUtilsObjectNameMap.find(src_object);
+        if (utils_name_iter != debug_data->debugUtilsObjectNameMap.end()) {
             object_name_info.pObjectName = utils_name_iter->second.c_str();
         } else {
-            auto marker_name_iter = debug_data->debugObjectNameMap->find(src_object);
-            if (marker_name_iter != debug_data->debugObjectNameMap->end()) {
+            auto marker_name_iter = debug_data->debugObjectNameMap.find(src_object);
+            if (marker_name_iter != debug_data->debugObjectNameMap.end()) {
                 object_name_info.pObjectName = marker_name_iter->second.c_str();
             }
         }
@@ -504,8 +504,8 @@ static inline bool debug_messenger_log_msg(const debug_report_data *debug_data,
     while (layer_dbg_node) {
         if (layer_dbg_node->is_messenger && (layer_dbg_node->messenger.messageSeverity & message_severity) &&
             (layer_dbg_node->messenger.messageType & message_type)) {
-            auto it = debug_data->debugUtilsObjectNameMap->find(object_name_info.objectHandle);
-            if (it != debug_data->debugUtilsObjectNameMap->end()) {
+            auto it = debug_data->debugUtilsObjectNameMap.find(object_name_info.objectHandle);
+            if (it != debug_data->debugUtilsObjectNameMap.end()) {
                 object_name_info.pObjectName = it->second.c_str();
             }
             if (layer_dbg_node->messenger.pfnUserCallback(message_severity, message_type, callback_data,
@@ -513,9 +513,9 @@ static inline bool debug_messenger_log_msg(const debug_report_data *debug_data,
                 bail = true;
             }
         } else if (!layer_dbg_node->is_messenger && layer_dbg_node->report.msgFlags & object_flags) {
-            auto it = debug_data->debugObjectNameMap->find(callback_data->pObjects[0].objectHandle);
+            auto it = debug_data->debugObjectNameMap.find(callback_data->pObjects[0].objectHandle);
             VkDebugReportObjectTypeEXT object_type = convertCoreObjectToDebugReportObject(callback_data->pObjects[0].objectType);
-            if (it == debug_data->debugObjectNameMap->end()) {
+            if (it == debug_data->debugObjectNameMap.end()) {
                 if (layer_dbg_node->report.pfnMsgCallback(object_flags, object_type, callback_data->pObjects[0].objectHandle, 0,
                                                           callback_data->messageIdNumber, callback_data->pMessageIdName,
                                                           callback_data->pMessage, layer_dbg_node->pUserData)) {
@@ -543,24 +543,14 @@ static inline debug_report_data *debug_utils_create_instance(
     VkLayerInstanceDispatchTable *table, VkInstance inst, uint32_t extension_count,
     const char *const *enabled_extensions)  // layer or extension name to be enabled
 {
-    debug_report_data *debug_data = (debug_report_data *)malloc(sizeof(debug_report_data));
-    if (!debug_data) return NULL;
-
-    memset(debug_data, 0, sizeof(debug_report_data));
+    debug_report_data *debug_data = new debug_report_data;
     for (uint32_t i = 0; i < extension_count; i++) {
-        // TODO: Check other property fields
         if (strcmp(enabled_extensions[i], VK_EXT_DEBUG_REPORT_EXTENSION_NAME) == 0) {
             debug_data->g_DEBUG_REPORT = true;
         } else if (strcmp(enabled_extensions[i], VK_EXT_DEBUG_UTILS_EXTENSION_NAME) == 0) {
             debug_data->g_DEBUG_UTILS = true;
         }
     }
-    debug_data->debugObjectNameMap = new std::unordered_map<uint64_t, std::string>;
-    debug_data->debugUtilsObjectNameMap = new std::unordered_map<uint64_t, std::string>;
-    debug_data->debugUtilsQueueLabels = new std::unordered_map<VkQueue, std::vector<LoggingLabelData>>;
-    debug_data->debugUtilsCmdBufLabels = new std::unordered_map<VkCommandBuffer, std::vector<LoggingLabelData>>;
-    debug_data->queueLabelHasInsert = false;
-    debug_data->cmdBufLabelHasInsert = false;
     return debug_data;
 }
 
@@ -568,11 +558,7 @@ static inline void layer_debug_utils_destroy_instance(debug_report_data *debug_d
     if (debug_data) {
         RemoveAllMessageCallbacks(debug_data, &debug_data->default_debug_callback_list);
         RemoveAllMessageCallbacks(debug_data, &debug_data->debug_callback_list);
-        delete debug_data->debugObjectNameMap;
-        delete debug_data->debugUtilsObjectNameMap;
-        delete debug_data->debugUtilsQueueLabels;
-        delete debug_data->debugUtilsCmdBufLabels;
-        free(debug_data);
+        delete (debug_data);
     }
 }
 
@@ -928,6 +914,7 @@ static inline bool log_msg(const debug_report_data *debug_data, VkFlags msg_flag
 #endif
 static inline bool log_msg(const debug_report_data *debug_data, VkFlags msg_flags, VkDebugReportObjectTypeEXT object_type,
                            uint64_t src_object, std::string vuid_text, const char *format, ...) {
+    if (!debug_data) return false;
     VkFlags local_severity = 0;
     VkFlags local_type = 0;
     DebugReportFlagsToAnnotFlags(msg_flags, true, &local_severity, &local_type);
@@ -1107,11 +1094,11 @@ static inline void InsertLabelIntoLog(const VkDebugUtilsLabelEXT *utils_label, s
 static inline void BeginQueueDebugUtilsLabel(debug_report_data *report_data, VkQueue queue,
                                              const VkDebugUtilsLabelEXT *label_info) {
     if (nullptr != label_info && nullptr != label_info->pLabelName) {
-        auto label_iter = report_data->debugUtilsQueueLabels->find(queue);
-        if (label_iter == report_data->debugUtilsQueueLabels->end()) {
+        auto label_iter = report_data->debugUtilsQueueLabels.find(queue);
+        if (label_iter == report_data->debugUtilsQueueLabels.end()) {
             std::vector<LoggingLabelData> new_queue_labels;
             InsertLabelIntoLog(label_info, new_queue_labels);
-            report_data->debugUtilsQueueLabels->insert({queue, new_queue_labels});
+            report_data->debugUtilsQueueLabels.insert({queue, new_queue_labels});
         } else {
             // If the last thing was a label insert, we need to pop it off of the label vector before any
             // changes. This is because a label added with "vkQueueInsertDebugUtilsLabelEXT" is only a
@@ -1127,8 +1114,8 @@ static inline void BeginQueueDebugUtilsLabel(debug_report_data *report_data, VkQ
 }
 
 static inline void EndQueueDebugUtilsLabel(debug_report_data *report_data, VkQueue queue) {
-    auto label_iter = report_data->debugUtilsQueueLabels->find(queue);
-    if (label_iter != report_data->debugUtilsQueueLabels->end()) {
+    auto label_iter = report_data->debugUtilsQueueLabels.find(queue);
+    if (label_iter != report_data->debugUtilsQueueLabels.end()) {
         // If the last thing was a label insert, we need to pop it off of the label vector before any
         // changes. This is because a label added with "vkQueueInsertDebugUtilsLabelEXT" is only a
         // temporary location that exists until the next operation occurs.  In this case, a
@@ -1145,11 +1132,11 @@ static inline void EndQueueDebugUtilsLabel(debug_report_data *report_data, VkQue
 static inline void InsertQueueDebugUtilsLabel(debug_report_data *report_data, VkQueue queue,
                                               const VkDebugUtilsLabelEXT *label_info) {
     if (nullptr != label_info && nullptr != label_info->pLabelName) {
-        auto label_iter = report_data->debugUtilsQueueLabels->find(queue);
-        if (label_iter == report_data->debugUtilsQueueLabels->end()) {
+        auto label_iter = report_data->debugUtilsQueueLabels.find(queue);
+        if (label_iter == report_data->debugUtilsQueueLabels.end()) {
             std::vector<LoggingLabelData> new_queue_labels;
             InsertLabelIntoLog(label_info, new_queue_labels);
-            report_data->debugUtilsQueueLabels->insert({queue, new_queue_labels});
+            report_data->debugUtilsQueueLabels.insert({queue, new_queue_labels});
         } else {
             // If the last thing was a label insert, we need to pop it off of the label vector before any
             // changes. This is because a label added with "vkQueueInsertDebugUtilsLabelEXT" is only a
@@ -1169,11 +1156,11 @@ static inline void InsertQueueDebugUtilsLabel(debug_report_data *report_data, Vk
 static inline void BeginCmdDebugUtilsLabel(debug_report_data *report_data, VkCommandBuffer command_buffer,
                                            const VkDebugUtilsLabelEXT *label_info) {
     if (nullptr != label_info && nullptr != label_info->pLabelName) {
-        auto label_iter = report_data->debugUtilsCmdBufLabels->find(command_buffer);
-        if (label_iter == report_data->debugUtilsCmdBufLabels->end()) {
+        auto label_iter = report_data->debugUtilsCmdBufLabels.find(command_buffer);
+        if (label_iter == report_data->debugUtilsCmdBufLabels.end()) {
             std::vector<LoggingLabelData> new_cmdbuf_labels;
             InsertLabelIntoLog(label_info, new_cmdbuf_labels);
-            report_data->debugUtilsCmdBufLabels->insert({command_buffer, new_cmdbuf_labels});
+            report_data->debugUtilsCmdBufLabels.insert({command_buffer, new_cmdbuf_labels});
         } else {
             // If the last thing was a label insert, we need to pop it off of the label vector before any
             // changes. This is because a label added with "vkCmdInsertDebugUtilsLabelEXT" is only a
@@ -1189,8 +1176,8 @@ static inline void BeginCmdDebugUtilsLabel(debug_report_data *report_data, VkCom
 }
 
 static inline void EndCmdDebugUtilsLabel(debug_report_data *report_data, VkCommandBuffer command_buffer) {
-    auto label_iter = report_data->debugUtilsCmdBufLabels->find(command_buffer);
-    if (label_iter != report_data->debugUtilsCmdBufLabels->end()) {
+    auto label_iter = report_data->debugUtilsCmdBufLabels.find(command_buffer);
+    if (label_iter != report_data->debugUtilsCmdBufLabels.end()) {
         // If the last thing was a label insert, we need to pop it off of the label vector before any
         // changes. This is because a label added with "vkCmdInsertDebugUtilsLabelEXT" is only a
         // temporary location that exists until the next operation occurs.  In this case, a
@@ -1210,11 +1197,11 @@ static inline void EndCmdDebugUtilsLabel(debug_report_data *report_data, VkComma
 static inline void InsertCmdDebugUtilsLabel(debug_report_data *report_data, VkCommandBuffer command_buffer,
                                             const VkDebugUtilsLabelEXT *label_info) {
     if (nullptr != label_info && nullptr != label_info->pLabelName) {
-        auto label_iter = report_data->debugUtilsCmdBufLabels->find(command_buffer);
-        if (label_iter == report_data->debugUtilsCmdBufLabels->end()) {
+        auto label_iter = report_data->debugUtilsCmdBufLabels.find(command_buffer);
+        if (label_iter == report_data->debugUtilsCmdBufLabels.end()) {
             std::vector<LoggingLabelData> new_cmdbuf_labels;
             InsertLabelIntoLog(label_info, new_cmdbuf_labels);
-            report_data->debugUtilsCmdBufLabels->insert({command_buffer, new_cmdbuf_labels});
+            report_data->debugUtilsCmdBufLabels.insert({command_buffer, new_cmdbuf_labels});
         } else {
             // If the last thing was a label insert, we need to pop it off of the label vector before any
             // changes. This is because a label added with "vkCmdInsertDebugUtilsLabelEXT" is only a
