@@ -27503,8 +27503,11 @@ TEST_F(VkLayerTest, SecondaryCommandBufferClearColorAttachmentsRenderArea) {
     command_buffer_allocate_info.level = VK_COMMAND_BUFFER_LEVEL_SECONDARY;
     command_buffer_allocate_info.commandBufferCount = 1;
 
-    VkCommandBuffer secondary_command_buffer;
-    ASSERT_VK_SUCCESS(vkAllocateCommandBuffers(m_device->device(), &command_buffer_allocate_info, &secondary_command_buffer));
+    VkCommandBuffer secondary_cb_with_framebuffer;
+    auto device = m_device->device();
+    ASSERT_VK_SUCCESS(vkAllocateCommandBuffers(device, &command_buffer_allocate_info, &secondary_cb_with_framebuffer));
+    VkCommandBuffer secondary_cb_with_null_framebuffer;
+    ASSERT_VK_SUCCESS(vkAllocateCommandBuffers(device, &command_buffer_allocate_info, &secondary_cb_with_null_framebuffer));
     VkCommandBufferBeginInfo command_buffer_begin_info = {};
     VkCommandBufferInheritanceInfo command_buffer_inheritance_info = {};
     command_buffer_inheritance_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO;
@@ -27516,7 +27519,6 @@ TEST_F(VkLayerTest, SecondaryCommandBufferClearColorAttachmentsRenderArea) {
         VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT | VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
     command_buffer_begin_info.pInheritanceInfo = &command_buffer_inheritance_info;
 
-    vkBeginCommandBuffer(secondary_command_buffer, &command_buffer_begin_info);
     VkClearAttachment color_attachment;
     color_attachment.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     color_attachment.clearValue.color.float32[0] = 0;
@@ -27526,13 +27528,34 @@ TEST_F(VkLayerTest, SecondaryCommandBufferClearColorAttachmentsRenderArea) {
     color_attachment.colorAttachment = 0;
     // x extent of 257 exceeds render area of 256
     VkClearRect clear_rect = {{{0, 0}, {257, 32}}};
-    vkCmdClearAttachments(secondary_command_buffer, 1, &color_attachment, 1, &clear_rect);
-    vkEndCommandBuffer(secondary_command_buffer);
+
+    m_errorMonitor->ExpectSuccess();
+
+    // Create secondary with explict framebuffer
+    vkBeginCommandBuffer(secondary_cb_with_framebuffer, &command_buffer_begin_info);
+    vkCmdClearAttachments(secondary_cb_with_framebuffer, 1, &color_attachment, 1, &clear_rect);
+    vkEndCommandBuffer(secondary_cb_with_framebuffer);
+
+    // Create secondary with inherited framebuffer
+    command_buffer_inheritance_info.framebuffer = VK_NULL_HANDLE;
+    clear_rect.rect.extent.width++;  //  modify erroneous width for debug reasons
+    vkBeginCommandBuffer(secondary_cb_with_null_framebuffer, &command_buffer_begin_info);
+    vkCmdClearAttachments(secondary_cb_with_null_framebuffer, 1, &color_attachment, 1, &clear_rect);
+    vkEndCommandBuffer(secondary_cb_with_null_framebuffer);
+
+    m_errorMonitor->VerifyNotFound();
+
     m_commandBuffer->begin();
     vkCmdBeginRenderPass(m_commandBuffer->handle(), &m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
 
+    // The explicit framebuffer case
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdClearAttachments-pRects-00016");
-    vkCmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary_command_buffer);
+    vkCmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary_cb_with_framebuffer);
+    m_errorMonitor->VerifyFound();
+
+    // The inherited framebuffer case
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdClearAttachments-pRects-00016");
+    vkCmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary_cb_with_null_framebuffer);
     m_errorMonitor->VerifyFound();
 
     vkCmdEndRenderPass(m_commandBuffer->handle());
