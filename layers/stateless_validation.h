@@ -1017,8 +1017,6 @@ class StatelessValidation : public ValidationObject {
                                                      const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface);
 #endif  // VK_USE_PLATFORM_WIN32_KHR
 
-    bool manual_PreCallValidateDebugMarkerSetObjectNameEXT(VkDevice device, const VkDebugMarkerObjectNameInfoEXT *pNameInfo);
-
     bool manual_PreCallValidateCreateDescriptorPool(VkDevice device, const VkDescriptorPoolCreateInfo *pCreateInfo,
                                                     const VkAllocationCallbacks *pAllocator, VkDescriptorPool *pDescriptorPool);
     bool manual_PreCallValidateCmdDispatch(VkCommandBuffer commandBuffer, uint32_t groupCountX, uint32_t groupCountY,
