@@ -91,6 +91,43 @@ typedef struct _debug_report_data {
     bool queueLabelHasInsert;
     std::unordered_map<VkCommandBuffer, std::vector<LoggingLabelData>> *debugUtilsCmdBufLabels;
     bool cmdBufLabelHasInsert;
+
+    void DebugReportSetUtilsObjectName(const VkDebugUtilsObjectNameInfoEXT *pNameInfo) {
+        if (pNameInfo->pObjectName) {
+            debugUtilsObjectNameMap->insert(
+                std::make_pair<uint64_t, std::string>((uint64_t &&) pNameInfo->objectHandle, pNameInfo->pObjectName));
+        } else {
+            debugUtilsObjectNameMap->erase(pNameInfo->objectHandle);
+        }
+    }
+
+    void DebugReportSetMarkerObjectName(const VkDebugMarkerObjectNameInfoEXT *pNameInfo) {
+        if (pNameInfo->pObjectName) {
+            debugObjectNameMap->insert(
+                std::make_pair<uint64_t, std::string>((uint64_t &&) pNameInfo->object, pNameInfo->pObjectName));
+        } else {
+            debugObjectNameMap->erase(pNameInfo->object);
+        }
+    }
+
+    std::string DebugReportGetUtilsObjectName(const uint64_t object) const {
+        std::string label = "";
+        auto utils_name_iter = debugUtilsObjectNameMap->find(object);
+        if (utils_name_iter != debugUtilsObjectNameMap->end()) {
+            label = utils_name_iter->second;
+        }
+        return label;
+    }
+
+    std::string DebugReportGetMarkerObjectName(const uint64_t object) const {
+        std::string label = "";
+        auto marker_name_iter = debugObjectNameMap->find(object);
+        if (marker_name_iter != debugObjectNameMap->end()) {
+            label = marker_name_iter->second;
+        }
+        return label;
+    }
+
 } debug_report_data;
 
 template debug_report_data *GetLayerDataPtr<debug_report_data>(void *data_key,
