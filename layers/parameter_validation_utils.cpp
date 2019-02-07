@@ -2518,17 +2518,6 @@ bool StatelessValidation::manual_PreCallValidateCreateWin32SurfaceKHR(VkInstance
 }
 #endif  // VK_USE_PLATFORM_WIN32_KHR
 
-bool StatelessValidation::manual_PreCallValidateDebugMarkerSetObjectNameEXT(VkDevice device,
-                                                                            const VkDebugMarkerObjectNameInfoEXT *pNameInfo) {
-    if (pNameInfo->pObjectName) {
-        report_data->debugObjectNameMap->insert(
-            std::make_pair<uint64_t, std::string>((uint64_t &&) pNameInfo->object, pNameInfo->pObjectName));
-    } else {
-        report_data->debugObjectNameMap->erase(pNameInfo->object);
-    }
-    return false;
-}
-
 bool StatelessValidation::manual_PreCallValidateCreateDescriptorPool(VkDevice device, const VkDescriptorPoolCreateInfo *pCreateInfo,
                                                                      const VkAllocationCallbacks *pAllocator,
                                                                      VkDescriptorPool *pDescriptorPool) {
