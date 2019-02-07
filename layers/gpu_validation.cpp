@@ -678,14 +678,13 @@ static void GenerateValidationMessage(const uint32_t *debug_record, std::string 
     msg = strm.str();
 }
 
-static std::string LookupDebugUtilsName(const layer_data *dev_data, const uint64_t object) {
-    const debug_report_data *debug_data = GetReportData(dev_data);
-    auto utils_name_iter = debug_data->debugUtilsObjectNameMap->find(object);
-    if (utils_name_iter != debug_data->debugUtilsObjectNameMap->end()) {
-        return "(" + utils_name_iter->second + ")";
-    } else {
-        return "";
+static std::string LookupDebugUtilsName(const layer_data *device_data, const uint64_t object) {
+    debug_report_data *report_data = device_data->report_data;
+    auto object_label = report_data->DebugReportGetUtilsObjectName(object);
+    if (object_label != "") {
+        object_label = "(" + object_label + ")";
     }
+    return object_label;
 }
 
 // Generate message from the common portion of the debug report record.
