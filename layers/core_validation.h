@@ -1880,7 +1880,6 @@ void PostCallRecordGetPhysicalDeviceSurfaceFormats2KHR(VkPhysicalDevice physical
                                                        VkResult result);
 void PostCallRecordCreateDisplayPlaneSurfaceKHR(VkInstance instance, const VkDisplaySurfaceCreateInfoKHR* pCreateInfo,
                                                 const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface, VkResult result);
-void PreCallRecordSetDebugUtilsObjectNameEXT(VkDevice device, const VkDebugUtilsObjectNameInfoEXT* pNameInfo);
 void PreCallRecordQueueBeginDebugUtilsLabelEXT(VkQueue queue, const VkDebugUtilsLabelEXT* pLabelInfo);
 void PostCallRecordQueueEndDebugUtilsLabelEXT(VkQueue queue);
 void PreCallRecordQueueInsertDebugUtilsLabelEXT(VkQueue queue, const VkDebugUtilsLabelEXT* pLabelInfo);
@@ -1953,7 +1952,6 @@ bool PreCallValidateGetDisplayPlaneCapabilitiesKHR(VkPhysicalDevice physicalDevi
 bool PreCallValidateGetDisplayPlaneCapabilities2KHR(VkPhysicalDevice physicalDevice,
                                                     const VkDisplayPlaneInfo2KHR* pDisplayPlaneInfo,
                                                     VkDisplayPlaneCapabilities2KHR* pCapabilities);
-void PreCallRecordDebugMarkerSetObjectNameEXT(VkDevice device, const VkDebugMarkerObjectNameInfoEXT* pNameInfo);
 bool PreCallValidateCmdDebugMarkerEndEXT(VkCommandBuffer commandBuffer);
 bool PreCallValidateCmdSetDiscardRectangleEXT(VkCommandBuffer commandBuffer, uint32_t firstDiscardRectangle,
                                               uint32_t discardRectangleCount, const VkRect2D* pDiscardRectangles);

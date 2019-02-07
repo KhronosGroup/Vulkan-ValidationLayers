@@ -396,19 +396,15 @@ static inline bool debug_log_msg(const debug_report_data *debug_data, VkFlags ms
                 }
             }
         }
+
         // Look for any debug utils or marker names to use for this object
-        object_name_info.pObjectName = NULL;
-        auto utils_name_iter = debug_data->debugUtilsObjectNameMap.find(src_object);
-        if (utils_name_iter != debug_data->debugUtilsObjectNameMap.end()) {
-            object_name_info.pObjectName = utils_name_iter->second.c_str();
-        } else {
-            auto marker_name_iter = debug_data->debugObjectNameMap.find(src_object);
-            if (marker_name_iter != debug_data->debugObjectNameMap.end()) {
-                object_name_info.pObjectName = marker_name_iter->second.c_str();
-            }
+        std::string label = debug_data->DebugReportGetUtilsObjectName(src_object);
+        if (label.empty()) {
+            label = debug_data->DebugReportGetMarkerObjectName(src_object);
         }
-        if (NULL != object_name_info.pObjectName) {
-            oss << " (Name = " << object_name_info.pObjectName << " : Type = ";
+        if (!label.empty()) {
+            object_name_info.pObjectName = label.c_str();
+            oss << " (Name = " << label << " : Type = ";
         } else {
             oss << " (Type = ";
         }
@@ -504,26 +500,25 @@ static inline bool debug_messenger_log_msg(const debug_report_data *debug_data,
     while (layer_dbg_node) {
         if (layer_dbg_node->is_messenger && (layer_dbg_node->messenger.messageSeverity & message_severity) &&
             (layer_dbg_node->messenger.messageType & message_type)) {
-            auto it = debug_data->debugUtilsObjectNameMap.find(object_name_info.objectHandle);
-            if (it != debug_data->debugUtilsObjectNameMap.end()) {
-                object_name_info.pObjectName = it->second.c_str();
+            std::string messenger_label = debug_data->DebugReportGetUtilsObjectName(object_name_info.objectHandle);
+            if (!messenger_label.empty()) {
+                object_name_info.pObjectName = messenger_label.c_str();
             }
             if (layer_dbg_node->messenger.pfnUserCallback(message_severity, message_type, callback_data,
                                                           layer_dbg_node->pUserData)) {
                 bail = true;
             }
         } else if (!layer_dbg_node->is_messenger && layer_dbg_node->report.msgFlags & object_flags) {
-            auto it = debug_data->debugObjectNameMap.find(callback_data->pObjects[0].objectHandle);
             VkDebugReportObjectTypeEXT object_type = convertCoreObjectToDebugReportObject(callback_data->pObjects[0].objectType);
-            if (it == debug_data->debugObjectNameMap.end()) {
+            std::string marker_label = debug_data->DebugReportGetMarkerObjectName(object_name_info.objectHandle);
+            if (marker_label.empty()) {
                 if (layer_dbg_node->report.pfnMsgCallback(object_flags, object_type, callback_data->pObjects[0].objectHandle, 0,
                                                           callback_data->messageIdNumber, callback_data->pMessageIdName,
                                                           callback_data->pMessage, layer_dbg_node->pUserData)) {
                     bail = true;
                 }
             } else {
-                std::string newMsg = "SrcObject name = ";
-                newMsg.append(it->second.c_str());
+                std::string newMsg = "SrcObject name = " + marker_label;
                 newMsg.append(" ");
                 newMsg.append(callback_data->pMessage);
                 if (layer_dbg_node->report.pfnMsgCallback(object_flags, object_type, callback_data->pObjects[0].objectHandle, 0,
