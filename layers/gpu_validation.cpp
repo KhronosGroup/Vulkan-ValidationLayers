@@ -564,99 +564,6 @@ void GpuPreCallRecordDestroyPipeline(layer_data *dev_data, const VkPipeline pipe
     }
 }
 
-// This is a temporary workaround to fix a missing operation in the spirv-tools
-// instrumentation pass.
-// The instrumentation pass creates an array (of uint) variable to store the debug
-// data.  But it doesn't set the ArrayStride decoration (to 4).  Some drivers
-// move along and come up with a value of 4, but some don't and use a stride value of 0.
-// Add our own decoration to the SPIR-V type definition for the array.
-static void FixMissingStride(layer_data *dev_data, std::vector<unsigned int> &new_pgm) {
-    auto gpu_state = GetGpuValidationState(dev_data);
-    unsigned int insert_offset = 0;
-    shader_module shader;
-    shader.words = new_pgm;
-    if (shader.words.size() > 0) {
-        // Find the ID of the variable referenced by our debug descriptor set.
-        // If found, also save an offset for a good place to insert our additional decoration later.
-        unsigned int variable_id = 0;
-        for (auto insn : shader) {
-            if (insn.opcode() == spv::OpDecorate) {
-                if (insn.word(2) == spv::Decoration::DecorationDescriptorSet && insn.word(3) == gpu_state->desc_set_bind_index) {
-                    variable_id = insn.word(1);
-                    insn++;
-                    insert_offset = insn.offset();
-                    break;
-                }
-            }
-        }
-        if (variable_id == 0) return;
-
-        // Look up the variable and find its type ptr.
-        unsigned int variable_type_ptr_id = 0;
-        for (auto insn : shader) {
-            if (insn.opcode() == spv::OpVariable) {
-                if (insn.word(2) == variable_id) {
-                    variable_type_ptr_id = insn.word(1);
-                    break;
-                }
-            }
-        }
-        if (variable_type_ptr_id == 0) return;
-
-        // Look up the type ptr of the variable to find its type
-        unsigned int type_id = 0;
-        for (auto insn : shader) {
-            if (insn.opcode() == spv::OpTypePointer) {
-                if (insn.word(1) == variable_type_ptr_id) {
-                    type_id = insn.word(3);
-                    break;
-                }
-            }
-        }
-        if (type_id == 0) return;
-
-        // Look up the type that we want to annotate with the stride.
-        // We don't really know what the actual type is that is pointed to by the type ptr we just found.
-        // I suppose we could scan on the OpType* opcodes to look for an ID match.
-        // But we happen to know that there is a struct here, so look for just OpTypeStruct.
-        // We also know that the second struct member is the array of debug output words.
-        unsigned int array_type_id = 0;
-        for (auto insn : shader) {
-            if (insn.opcode() == spv::OpTypeStruct) {
-                if (insn.word(1) == type_id && insn.len() >= 4) {  // has at least 2 members
-                    array_type_id = insn.word(3);                  // second member type
-                    break;
-                }
-            }
-        }
-        if (array_type_id == 0) return;
-
-        // See if the array stride decoration for the type of the debug data array is already there.
-        // Don't insert a new one if there is one already there.
-        bool stride_already_there = false;
-        for (auto insn : shader) {
-            if (insn.opcode() == spv::OpDecorate) {
-                if (insn.len() == 4 && insn.word(1) == array_type_id && insn.word(2) == spv::Decoration::DecorationArrayStride) {
-                    stride_already_there = true;
-                    break;
-                }
-            }
-        }
-        if (stride_already_there) return;
-
-        // Build an OpDecorate instruction to add the stride information and insert it in the program.
-        if (insert_offset != 0) {
-            std::vector<unsigned int> inst(4);
-            inst[0] = (4 << 16) | spv::OpDecorate;
-            inst[1] = array_type_id;
-            inst[2] = spv::Decoration::DecorationArrayStride;
-            inst[3] = 4;
-            auto it = new_pgm.begin();
-            new_pgm.insert(it + insert_offset, inst.begin(), inst.end());
-        }
-    }
-}
-
 // Call the SPIR-V Optimizer to run the instrumentation pass on the shader.
 static bool GpuInstrumentShader(layer_data *dev_data, const VkShaderModuleCreateInfo *pCreateInfo,
                                 std::vector<unsigned int> &new_pgm, uint32_t *unique_shader_id) {
@@ -682,7 +589,6 @@ static bool GpuInstrumentShader(layer_data *dev_data, const VkShaderModuleCreate
         ReportSetupProblem(dev_data, VK_DEBUG_REPORT_OBJECT_TYPE_SHADER_MODULE_EXT, VK_NULL_HANDLE,
                            "Failure to instrument shader.  Proceeding with non-instrumented shader.");
     }
-    FixMissingStride(dev_data, new_pgm);
     *unique_shader_id = gpu_state->unique_shader_module_id++;
     return pass;
 }
