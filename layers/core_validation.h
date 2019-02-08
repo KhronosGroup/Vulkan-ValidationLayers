@@ -161,7 +161,6 @@ struct hash<GpuQueue> {
 struct SURFACE_STATE {
     VkSurfaceKHR surface = VK_NULL_HANDLE;
     SWAPCHAIN_NODE* swapchain = nullptr;
-    SWAPCHAIN_NODE* old_swapchain = nullptr;
     std::unordered_map<GpuQueue, bool> gpu_queue_support;
 
     SURFACE_STATE() {}
