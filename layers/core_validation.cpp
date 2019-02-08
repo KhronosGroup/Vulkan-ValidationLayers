@@ -11433,9 +11433,7 @@ void PostCallRecordCreateEvent(VkDevice device, const VkEventCreateInfo *pCreate
 
 bool ValidateCreateSwapchain(layer_data *device_data, const char *func_name, VkSwapchainCreateInfoKHR const *pCreateInfo,
                              SURFACE_STATE *surface_state, SWAPCHAIN_NODE *old_swapchain_state) {
-    auto most_recent_swapchain = surface_state->swapchain ? surface_state->swapchain : surface_state->old_swapchain;
     VkDevice device = device_data->device;
-    // TODO: revisit this. some of these rules are being relaxed.
 
     // All physical devices and queue families are required to be able to present to any native window on Android; require the
     // application to have established support on any other platform.
@@ -11458,17 +11456,19 @@ bool ValidateCreateSwapchain(layer_data *device_data, const char *func_name, VkS
         }
     }
 
-    if (most_recent_swapchain != old_swapchain_state || (surface_state->old_swapchain && surface_state->swapchain)) {
-        if (log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
-                    HandleToUint64(device), kVUID_Core_DrawState_SwapchainAlreadyExists,
-                    "%s: surface has an existing swapchain other than oldSwapchain", func_name))
-            return true;
-    }
-    if (old_swapchain_state && old_swapchain_state->createInfo.surface != pCreateInfo->surface) {
-        if (log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SWAPCHAIN_KHR_EXT,
-                    HandleToUint64(pCreateInfo->oldSwapchain), kVUID_Core_DrawState_SwapchainWrongSurface,
-                    "%s: pCreateInfo->oldSwapchain's surface is not pCreateInfo->surface", func_name))
-            return true;
+    if (old_swapchain_state) {
+        if (old_swapchain_state->createInfo.surface != pCreateInfo->surface) {
+            if (log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SWAPCHAIN_KHR_EXT,
+                        HandleToUint64(pCreateInfo->oldSwapchain), "VUID-VkSwapchainCreateInfoKHR-oldSwapchain-01933",
+                        "%s: pCreateInfo->oldSwapchain's surface is not pCreateInfo->surface", func_name))
+                return true;
+        }
+        if (old_swapchain_state->retired) {
+            if (log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SWAPCHAIN_KHR_EXT,
+                        HandleToUint64(pCreateInfo->oldSwapchain), "VUID-VkSwapchainCreateInfoKHR-oldSwapchain-01933",
+                        "%s: pCreateInfo->oldSwapchain is retired", func_name))
+                return true;
+        }
     }
 
     if ((pCreateInfo->imageExtent.width == 0) || (pCreateInfo->imageExtent.height == 0)) {
@@ -11752,11 +11752,10 @@ static void RecordCreateSwapchainState(layer_data *device_data, VkResult result,
     } else {
         surface_state->swapchain = nullptr;
     }
-    // Spec requires that even if CreateSwapchainKHR fails, oldSwapchain behaves as replaced.
+    // Spec requires that even if CreateSwapchainKHR fails, oldSwapchain is retired
     if (old_swapchain_state) {
-        old_swapchain_state->replaced = true;
+        old_swapchain_state->retired = true;
     }
-    surface_state->old_swapchain = old_swapchain_state;
     return;
 }
 
@@ -11794,7 +11793,6 @@ void PreCallRecordDestroySwapchainKHR(VkDevice device, VkSwapchainKHR swapchain,
         auto surface_state = GetSurfaceState(device_data->instance_data, swapchain_data->createInfo.surface);
         if (surface_state) {
             if (surface_state->swapchain == swapchain_data) surface_state->swapchain = nullptr;
-            if (surface_state->old_swapchain == swapchain_data) surface_state->old_swapchain = nullptr;
         }
 
         device_data->swapchainMap.erase(swapchain);
@@ -12096,7 +12094,7 @@ bool ValidateAcquireNextImage(layer_data *device_data, VkDevice device, VkSwapch
     }
 
     auto swapchain_data = GetSwapchainNode(device_data, swapchain);
-    if (swapchain_data && swapchain_data->replaced) {
+    if (swapchain_data && swapchain_data->retired) {
         skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SWAPCHAIN_KHR_EXT,
                         HandleToUint64(swapchain), "VUID-vkAcquireNextImageKHR-swapchain-01285",
                         "%s: This swapchain has been retired. The application can still present any images it "
