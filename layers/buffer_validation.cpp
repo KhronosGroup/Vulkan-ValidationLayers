@@ -3574,11 +3574,12 @@ bool ValidateLayouts(const core_validation::layer_data *device_data, RenderPassC
                                     string_VkImageLayout(subpass.pColorAttachments[j].layout));
             }
 
-            if (subpass.pResolveAttachments && (subpass.pResolveAttachments[j].layout == VK_IMAGE_LAYOUT_UNDEFINED ||
-                                                subpass.pResolveAttachments[j].layout == VK_IMAGE_LAYOUT_PREINITIALIZED)) {
+            if (subpass.pResolveAttachments && (subpass.pResolveAttachments[j].attachment != VK_ATTACHMENT_UNUSED) &&
+                (subpass.pResolveAttachments[j].layout == VK_IMAGE_LAYOUT_UNDEFINED ||
+                 subpass.pResolveAttachments[j].layout == VK_IMAGE_LAYOUT_PREINITIALIZED)) {
                 vuid = use_rp2 ? "VUID-VkAttachmentReference2KHR-layout-03077" : "VUID-VkAttachmentReference-layout-00857";
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, vuid,
-                                "Layout for color attachment reference %u in subpass %u is %s but should be "
+                                "Layout for resolve attachment reference %u in subpass %u is %s but should be "
                                 "COLOR_ATTACHMENT_OPTIMAL or GENERAL.",
                                 j, i, string_VkImageLayout(subpass.pColorAttachments[j].layout));
             }
