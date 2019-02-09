@@ -20,6 +20,7 @@
 #ifndef VULKAN_SHADER_VALIDATION_H
 #define VULKAN_SHADER_VALIDATION_H
 
+#include <SPIRV/spirv.hpp>
 #include <spirv_tools_commit_id.h>
 #include "spirv-tools/optimizer.hpp"
 
@@ -79,11 +80,46 @@ struct shader_module {
     uint32_t gpu_validation_shader_id;
 
     std::vector<uint32_t> PreprocessShaderBinary(uint32_t *src_binary, size_t binary_size, spv_target_env env) {
-        spvtools::Optimizer optimizer(env);
-        optimizer.RegisterPass(spvtools::CreateFlattenDecorationPass());
-        std::vector<uint32_t> optimized_binary;
-        auto result = optimizer.Run(src_binary, binary_size / sizeof(uint32_t), &optimized_binary);
-        return (result ? optimized_binary : std::vector<uint32_t>(src_binary, src_binary + binary_size / sizeof(uint32_t)));
+        std::vector<uint32_t> src(src_binary, src_binary + binary_size / sizeof(uint32_t));
+
+        // Check if there are any group decoration instructions, and flatten them if found.
+        bool has_group_decoration = false;
+        bool done = false;
+
+        // Walk through the first part of the SPIR-V module, looking for group decoration instructions.
+        // Skip the header (5 words).
+        auto itr = spirv_inst_iter(src.begin(), src.begin() + 5);
+        auto itrend = spirv_inst_iter(src.begin(), src.end());
+        while (itr != itrend && !done) {
+            spv::Op opcode = (spv::Op)itr.opcode();
+            switch (opcode) {
+                case spv::OpDecorationGroup:
+                case spv::OpGroupDecorate:
+                case spv::OpGroupMemberDecorate:
+                    has_group_decoration = true;
+                    done = true;
+                    break;
+                case spv::OpFunction:
+                    // An OpFunction indicates there are no more decorations
+                    done = true;
+                    break;
+                default:
+                    break;
+            }
+            itr++;
+        }
+
+        if (has_group_decoration) {
+            spvtools::Optimizer optimizer(env);
+            optimizer.RegisterPass(spvtools::CreateFlattenDecorationPass());
+            std::vector<uint32_t> optimized_binary;
+            auto result = optimizer.Run(src_binary, binary_size / sizeof(uint32_t), &optimized_binary);
+            if (result) {
+                return optimized_binary;
+            }
+        }
+        // Return the original module.
+        return src;
     }
 
     shader_module(VkShaderModuleCreateInfo const *pCreateInfo, VkShaderModule shaderModule, spv_target_env env,
