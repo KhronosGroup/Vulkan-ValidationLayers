@@ -2759,6 +2759,41 @@ TEST_F(VkLayerTest, RebindMemory) {
     vkFreeMemory(m_device->device(), mem2, NULL);
 }
 
+TEST_F(VkLayerTest, QueryMemoryCommitmentWithoutLazyProperty) {
+    TEST_DESCRIPTION("Attempt to query memory commitment on memory without lazy allocation");
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    auto image_ci = vk_testing::Image::create_info();
+    image_ci.imageType = VK_IMAGE_TYPE_2D;
+    image_ci.format = VK_FORMAT_B8G8R8A8_UNORM;
+    image_ci.extent.width = 32;
+    image_ci.extent.height = 32;
+    image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_ci.usage = VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    vk_testing::Image image;
+    image.init_no_mem(*m_device, image_ci);
+
+    auto mem_reqs = image.memory_requirements();
+    // memory_type_index is set to 0 here, but is set properly below
+    auto image_alloc_info = vk_testing::DeviceMemory::alloc_info(mem_reqs.size, 0);
+
+    bool pass;
+    // the last argument is the "forbid" argument for set_memory_type, disallowing
+    // that particular memory type rather than requiring it
+    pass = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &image_alloc_info, 0, VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT);
+    if (!pass) {
+        printf("%s Failed to set memory type.\n", kSkipPrefix);
+        return;
+    }
+    vk_testing::DeviceMemory mem;
+    mem.init(*m_device, image_alloc_info);
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkGetDeviceMemoryCommitment-memory-00690");
+    VkDeviceSize size;
+    vkGetDeviceMemoryCommitment(m_device->device(), mem.handle(), &size);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(VkLayerTest, SubmitSignaledFence) {
     vk_testing::Fence testFence;
 
