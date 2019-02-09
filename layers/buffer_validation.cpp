@@ -2770,9 +2770,10 @@ static bool ValidateClearAttachementExtent(const layer_data *device_data, VkComm
                                            FRAMEBUFFER_STATE *framebuffer, uint32_t fb_attachment, const VkRect2D &render_area,
                                            uint32_t rect_count, const VkClearRect *clear_rects) {
     bool skip = false;
-    auto image_view = framebuffer && (fb_attachment != VK_ATTACHMENT_UNUSED) ? framebuffer->createInfo.pAttachments[fb_attachment]
-                                                                             : VK_NULL_HANDLE;
-    const auto image_view_state = GetImageViewState(device_data, image_view);
+    const IMAGE_VIEW_STATE *image_view_state = nullptr;
+    if (framebuffer && (fb_attachment != VK_ATTACHMENT_UNUSED) && (fb_attachment < framebuffer->createInfo.attachmentCount)) {
+        image_view_state = GetImageViewState(device_data, framebuffer->createInfo.pAttachments[fb_attachment]);
+    }
 
     for (uint32_t j = 0; j < rect_count; j++) {
         if (!ContainsRect(render_area, clear_rects[j].rect)) {
@@ -2832,6 +2833,7 @@ bool PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffer, uint32_t 
     // Validate that attachment is in reference list of active subpass
     if (cb_node->activeRenderPass) {
         const VkRenderPassCreateInfo2KHR *renderpass_create_info = cb_node->activeRenderPass->createInfo.ptr();
+        const uint32_t renderpass_attachment_count = renderpass_create_info->attachmentCount;
         const VkSubpassDescription2KHR *subpass_desc = &renderpass_create_info->pSubpasses[cb_node->activeSubpass];
         auto framebuffer = GetFramebufferState(device_data, cb_node->activeFramebuffer);
         const auto &render_area = cb_node->activeRenderPassBeginInfo.renderArea;
@@ -2848,16 +2850,31 @@ bool PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffer, uint32_t 
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                                 HandleToUint64(commandBuffer), "VUID-VkClearAttachment-aspectMask-00020", " ");
             } else if (clear_desc->aspectMask & VK_IMAGE_ASPECT_COLOR_BIT) {
-                if ((subpass_desc->pColorAttachments[clear_desc->colorAttachment].attachment != VK_ATTACHMENT_UNUSED) &&
-                    (clear_desc->colorAttachment >= subpass_desc->colorAttachmentCount)) {
-                    skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                                    HandleToUint64(commandBuffer), "VUID-vkCmdClearAttachments-aspectMask-02501",
-                                    "vkCmdClearAttachments() color attachment index %d is not VK_ATTACHMENT_UNUSED and is out of "
-                                    "range for active subpass %d.",
-                                    clear_desc->colorAttachment, cb_node->activeSubpass);
+                uint32_t color_attachment = VK_ATTACHMENT_UNUSED;
+                if (clear_desc->colorAttachment < subpass_desc->colorAttachmentCount) {
+                    color_attachment = subpass_desc->pColorAttachments[clear_desc->colorAttachment].attachment;
+                    if ((color_attachment != VK_ATTACHMENT_UNUSED) && (color_attachment >= renderpass_attachment_count)) {
+                        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                                        HandleToUint64(commandBuffer), "VUID-vkCmdClearAttachments-aspectMask-02501",
+                                        "vkCmdClearAttachments() pAttachments[%u].colorAttachment=%u is not VK_ATTACHMENT_UNUSED "
+                                        "and not a valid attachment for render pass 0x%" PRIx64
+                                        " attachmentCount=%u. Subpass %u pColorAttachment[%u]=%u.",
+                                        attachment_index, clear_desc->colorAttachment,
+                                        HandleToUint64(cb_node->activeRenderPass->renderPass), cb_node->activeSubpass,
+                                        clear_desc->colorAttachment, color_attachment, renderpass_attachment_count);
+                        color_attachment = VK_ATTACHMENT_UNUSED;  // Defensive, prevent lookup past end of renderpass attachment
+                    }
                 } else {
-                    fb_attachment = subpass_desc->pColorAttachments[clear_desc->colorAttachment].attachment;
+                    skip |= log_msg(
+                        report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                        HandleToUint64(commandBuffer), "VUID-vkCmdClearAttachments-aspectMask-02501",
+                        "vkCmdClearAttachments() pAttachments[%u].colorAttachment=%u out of range for render pass 0x%" PRIx64
+                        " subpass %u. colorAttachmentCount=%u",
+                        attachment_index, clear_desc->colorAttachment, HandleToUint64(cb_node->activeRenderPass->renderPass),
+                        cb_node->activeSubpass, subpass_desc->colorAttachmentCount);
                 }
+                fb_attachment = color_attachment;
+
                 if ((clear_desc->aspectMask & VK_IMAGE_ASPECT_DEPTH_BIT) ||
                     (clear_desc->aspectMask & VK_IMAGE_ASPECT_STENCIL_BIT)) {
                     char const str[] =
