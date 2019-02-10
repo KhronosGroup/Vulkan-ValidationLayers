@@ -84,9 +84,13 @@ cvdescriptorset::DescriptorSetLayoutDef::DescriptorSetLayoutDef(const VkDescript
     bindings_.reserve(binding_count_);
     binding_flags_.reserve(binding_count_);
     binding_to_index_map_.reserve(binding_count_);
+    binding_to_index_map_is_identity_ = true;
     for (auto input_binding : sorted_bindings) {
         // Add to binding and map, s.t. it is robust to invalid duplication of binding_num
         const auto binding_num = input_binding.layout_binding->binding;
+        if (binding_num != index) {
+            binding_to_index_map_is_identity_ = false;
+        }
         binding_to_index_map_[binding_num] = index++;
         bindings_.emplace_back(input_binding.layout_binding);
         auto &binding_info = bindings_.back();
@@ -146,6 +150,9 @@ size_t cvdescriptorset::DescriptorSetLayoutDef::hash() const {
 // The asserts in "Get" are reduced to the set where no valid answer(like null or 0) could be given
 // Common code for all binding lookups.
 uint32_t cvdescriptorset::DescriptorSetLayoutDef::GetIndexFromBinding(uint32_t binding) const {
+    if (binding_to_index_map_is_identity_ && binding < GetBindingCount()) {
+        return binding;
+    }
     const auto &bi_itr = binding_to_index_map_.find(binding);
     if (bi_itr != binding_to_index_map_.cend()) return bi_itr->second;
     return GetBindingCount();

@@ -101,7 +101,12 @@ class DescriptorSetLayoutDef {
     // Non-empty binding numbers in order
     const std::set<uint32_t> &GetSortedBindingSet() const { return non_empty_bindings_; }
     // Return true if given binding is present in this layout
-    bool HasBinding(const uint32_t binding) const { return binding_to_index_map_.count(binding) > 0; };
+    bool HasBinding(const uint32_t binding) const {
+        if (binding_to_index_map_is_identity_ && binding < GetBindingCount()) {
+            return true;
+        }
+        return binding_to_index_map_.count(binding) > 0;
+    };
     // Return true if this DSL Def (referenced by the 1st layout) is compatible with another DSL Def (ref'd from the 2nd layout)
     // else return false and update error_msg with description of incompatibility
     bool IsCompatible(VkDescriptorSetLayout, VkDescriptorSetLayout, DescriptorSetLayoutDef const *const, std::string *) const;
@@ -174,6 +179,7 @@ class DescriptorSetLayoutDef {
     // Convenience data structures for rapid lookup of various descriptor set layout properties
     std::set<uint32_t> non_empty_bindings_;  // Containing non-emtpy bindings in numerical order
     std::unordered_map<uint32_t, uint32_t> binding_to_index_map_;
+    bool binding_to_index_map_is_identity_;
     // The following map allows an non-iterative lookup of a binding from a global index...
     std::map<uint32_t, uint32_t> global_start_to_index_map_;  // The index corresponding for a starting global (descriptor) index
     std::unordered_map<uint32_t, IndexRange> binding_to_global_index_range_map_;  // range is exclusive of .end
