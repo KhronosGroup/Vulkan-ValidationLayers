@@ -515,7 +515,7 @@ static bool ValidateSetMemBinding(layer_data *dev_data, VkDeviceMemory mem, uint
         BINDABLE *mem_binding = GetObjectMemBinding(dev_data, handle, type);
         assert(mem_binding);
         if (mem_binding->sparse) {
-            std::string error_code = "VUID-vkBindImageMemory-image-01045";
+            const char *error_code = "VUID-vkBindImageMemory-image-01045";
             const char *handle_type = "IMAGE";
             if (type == kVulkanObjectTypeBuffer) {
                 error_code = "VUID-vkBindBufferMemory-buffer-01030";
@@ -533,7 +533,7 @@ static bool ValidateSetMemBinding(layer_data *dev_data, VkDeviceMemory mem, uint
         if (mem_info) {
             DEVICE_MEM_INFO *prev_binding = GetMemObjInfo(dev_data, mem_binding->binding.mem);
             if (prev_binding) {
-                std::string error_code = "VUID-vkBindImageMemory-image-01044";
+                const char *error_code = "VUID-vkBindImageMemory-image-01044";
                 if (type == kVulkanObjectTypeBuffer) {
                     error_code = "VUID-vkBindBufferMemory-buffer-01029";
                 } else {
@@ -631,7 +631,7 @@ bool ValidateQueueFamilies(layer_data *device_data, uint32_t queue_family_count,
 
 // Check object status for selected flag state
 static bool ValidateStatus(layer_data *dev_data, GLOBAL_CB_NODE *pNode, CBStatusFlags status_mask, VkFlags msg_flags,
-                           const char *fail_msg, std::string const msg_code) {
+                           const char *fail_msg, const char *msg_code) {
     if (!(pNode->status & status_mask)) {
         return log_msg(dev_data->report_data, msg_flags, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                        HandleToUint64(pNode->commandBuffer), msg_code, "command buffer object 0x%" PRIx64 ": %s..",
@@ -719,7 +719,7 @@ static bool IsDynamic(const PIPELINE_STATE *pPipeline, const VkDynamicState stat
 
 // Validate state stored as flags at time of draw call
 static bool ValidateDrawStateFlags(layer_data *dev_data, GLOBAL_CB_NODE *pCB, const PIPELINE_STATE *pPipe, bool indexed,
-                                   std::string const msg_code) {
+                                   const char *msg_code) {
     bool result = false;
     if (pPipe->topology_at_rasterizer == VK_PRIMITIVE_TOPOLOGY_LINE_LIST ||
         pPipe->topology_at_rasterizer == VK_PRIMITIVE_TOPOLOGY_LINE_STRIP) {
@@ -759,7 +759,7 @@ static bool ValidateDrawStateFlags(layer_data *dev_data, GLOBAL_CB_NODE *pCB, co
 
 static bool LogInvalidAttachmentMessage(layer_data const *dev_data, const char *type1_string, const RENDER_PASS_STATE *rp1_state,
                                         const char *type2_string, const RENDER_PASS_STATE *rp2_state, uint32_t primary_attach,
-                                        uint32_t secondary_attach, const char *msg, const char *caller, std::string error_code) {
+                                        uint32_t secondary_attach, const char *msg, const char *caller, const char *error_code) {
     return log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT,
                    HandleToUint64(rp1_state->renderPass), error_code,
                    "%s: RenderPasses incompatible between %s w/ renderPass 0x%" PRIx64 " and %s w/ renderPass 0x%" PRIx64
@@ -771,7 +771,7 @@ static bool LogInvalidAttachmentMessage(layer_data const *dev_data, const char *
 static bool ValidateAttachmentCompatibility(layer_data const *dev_data, const char *type1_string,
                                             const RENDER_PASS_STATE *rp1_state, const char *type2_string,
                                             const RENDER_PASS_STATE *rp2_state, uint32_t primary_attach, uint32_t secondary_attach,
-                                            const char *caller, std::string error_code) {
+                                            const char *caller, const char *error_code) {
     bool skip = false;
     const auto &primaryPassCI = rp1_state->createInfo;
     const auto &secondaryPassCI = rp2_state->createInfo;
@@ -1786,22 +1786,22 @@ DESCRIPTOR_POOL_STATE *GetDescriptorPoolState(const layer_data *dev_data, const 
 // func_str is the name of the calling function
 // Return false if no errors occur
 // Return true if validation error occurs and callback returns true (to skip upcoming API call down the chain)
-static bool ValidateIdleDescriptorSet(const layer_data *dev_data, VkDescriptorSet set, std::string func_str) {
+static bool ValidateIdleDescriptorSet(const layer_data *dev_data, VkDescriptorSet set, const char *func_str) {
     if (dev_data->instance_data->disabled.idle_descriptor_set) return false;
     bool skip = false;
     auto set_node = dev_data->setMap.find(set);
     if (set_node == dev_data->setMap.end()) {
-        skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_EXT,
-                        HandleToUint64(set), kVUID_Core_DrawState_DoubleDestroy,
-                        "Cannot call %s() on descriptor set 0x%" PRIx64 " that has not been allocated.", func_str.c_str(),
-                        HandleToUint64(set));
+        skip |=
+            log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_EXT,
+                    HandleToUint64(set), kVUID_Core_DrawState_DoubleDestroy,
+                    "Cannot call %s() on descriptor set 0x%" PRIx64 " that has not been allocated.", func_str, HandleToUint64(set));
     } else {
         // TODO : This covers various error cases so should pass error enum into this function and use passed in enum here
         if (set_node->second->in_use.load()) {
             skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_EXT,
                             HandleToUint64(set), "VUID-vkFreeDescriptorSets-pDescriptorSets-00309",
-                            "Cannot call %s() on descriptor set 0x%" PRIx64 " that is in use by a command buffer.",
-                            func_str.c_str(), HandleToUint64(set));
+                            "Cannot call %s() on descriptor set 0x%" PRIx64 " that is in use by a command buffer.", func_str,
+                            HandleToUint64(set));
         }
     }
     return skip;
@@ -2321,7 +2321,7 @@ void PostCallRecordCreateInstance(const VkInstanceCreateInfo *pCreateInfo, const
 }
 
 static bool ValidatePhysicalDeviceQueueFamily(instance_layer_data *instance_data, const PHYSICAL_DEVICE_STATE *pd_state,
-                                              uint32_t requested_queue_family, std::string err_code, const char *cmd_name,
+                                              uint32_t requested_queue_family, const char *err_code, const char *cmd_name,
                                               const char *queue_family_var_name) {
     bool skip = false;
 
@@ -2837,7 +2837,7 @@ static bool ValidateCommandBufferSimultaneousUse(layer_data *dev_data, GLOBAL_CB
 }
 
 static bool ValidateCommandBufferState(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, const char *call_source,
-                                       int current_submit_count, std::string vu_id) {
+                                       int current_submit_count, const char *vu_id) {
     bool skip = false;
     if (dev_data->instance_data->disabled.command_buffer_state) return skip;
     // Validate ONE_TIME_SUBMIT_BIT CB is not being submitted more than once
@@ -3757,7 +3757,7 @@ void PostCallRecordAllocateMemory(VkDevice device, const VkMemoryAllocateInfo *p
 
 // For given obj node, if it is use, flag a validation error and return callback result, else return false
 bool ValidateObjectNotInUse(const layer_data *dev_data, BASE_NODE *obj_node, VK_OBJECT obj_struct, const char *caller_name,
-                            const std::string &error_code) {
+                            const char *error_code) {
     if (dev_data->instance_data->disabled.object_in_use) return false;
     bool skip = false;
     if (obj_node->in_use.load()) {
@@ -4265,7 +4265,7 @@ static bool ValidateInsertMemoryRange(layer_data const *dev_data, uint64_t handl
     }
 
     if (memoryOffset >= mem_info->alloc_info.allocationSize) {
-        std::string error_code =
+        const char *error_code =
             is_image ? "VUID-vkBindImageMemory-memoryOffset-01046" : "VUID-vkBindBufferMemory-memoryOffset-01031";
         skip = log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_MEMORY_EXT,
                        HandleToUint64(mem_info->mem), error_code,
@@ -4361,7 +4361,7 @@ void RemoveBufferMemoryRange(uint64_t handle, DEVICE_MEM_INFO *mem_info) { Remov
 void RemoveImageMemoryRange(uint64_t handle, DEVICE_MEM_INFO *mem_info) { RemoveMemoryRange(handle, mem_info, true); }
 
 static bool ValidateMemoryTypes(const layer_data *dev_data, const DEVICE_MEM_INFO *mem_info, const uint32_t memory_type_bits,
-                                const char *funcName, std::string msgCode) {
+                                const char *funcName, const char *msgCode) {
     bool skip = false;
     if (((1 << mem_info->alloc_info.memoryTypeIndex) & memory_type_bits) == 0) {
         skip = log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_MEMORY_EXT,
@@ -4764,7 +4764,7 @@ void PreCallRecordDestroyDescriptorPool(VkDevice device, VkDescriptorPool descri
 //  If primary is not in-flight, then remove secondary from global in-flight set
 // This function is only valid at a point when cmdBuffer is being reset or freed
 static bool CheckCommandBufferInFlight(layer_data *dev_data, const GLOBAL_CB_NODE *cb_node, const char *action,
-                                       std::string error_code) {
+                                       const char *error_code) {
     bool skip = false;
     if (cb_node->in_use.load()) {
         skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
@@ -4777,7 +4777,7 @@ static bool CheckCommandBufferInFlight(layer_data *dev_data, const GLOBAL_CB_NOD
 
 // Iterate over all cmdBuffers in given commandPool and verify that each is not in use
 static bool CheckCommandBuffersInFlight(layer_data *dev_data, COMMAND_POOL_NODE *pPool, const char *action,
-                                        std::string error_code) {
+                                        const char *error_code) {
     bool skip = false;
     for (auto cmd_buffer : pPool->commandBuffers) {
         skip |= CheckCommandBufferInFlight(dev_data, GetCBNode(dev_data, cmd_buffer), action, error_code);
@@ -7026,7 +7026,7 @@ bool ValidatePipelineBindPoint(layer_data *device_data, GLOBAL_CB_NODE *cb_state
         };
         const auto &qfp = GetPhysDevProperties(device_data)->queue_family_properties[pool->queueFamilyIndex];
         if (0 == (qfp.queueFlags & flag_mask.at(bind_point))) {
-            const std::string error = bind_errors.at(bind_point);
+            const std::string &error = bind_errors.at(bind_point);
             auto cb_u64 = HandleToUint64(cb_state->commandBuffer);
             auto cp_u64 = HandleToUint64(cb_state->createInfo.commandPool);
             skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
@@ -8043,7 +8043,7 @@ class ValidatorState {
     // Log the messages using boilerplate from object state, and Vu specific information from the template arg
     // One and two family versions, in the single family version, Vu holds the name of the passed parameter
     bool LogMsg(VuIndex vu_index, uint32_t family, const char *param_name) const {
-        const std::string val_code = val_codes_[vu_index];
+        const std::string &val_code = val_codes_[vu_index];
         const char *annotation = GetFamilyAnnotation(family);
         return log_msg(report_data_, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT, cb_handle64_,
                        val_code, "%s: Barrier using %s 0x%" PRIx64 " created with sharingMode %s, has %s %u%s. %s", func_name_,
@@ -8051,7 +8051,7 @@ class ValidatorState {
     }
 
     bool LogMsg(VuIndex vu_index, uint32_t src_family, uint32_t dst_family) const {
-        const std::string val_code = val_codes_[vu_index];
+        const std::string &val_code = val_codes_[vu_index];
         const char *src_annotation = GetFamilyAnnotation(src_family);
         const char *dst_annotation = GetFamilyAnnotation(dst_family);
         return log_msg(report_data_, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT, cb_handle64_,
@@ -8072,7 +8072,7 @@ class ValidatorState {
 
         uint32_t queue_family = queue_data_it->second.queueFamilyIndex;
         if ((src_family != queue_family) && (dst_family != queue_family)) {
-            const std::string val_code = val.val_codes_[kSubmitQueueMustMatchSrcOrDst];
+            const std::string &val_code = val.val_codes_[kSubmitQueueMustMatchSrcOrDst];
             const char *src_annotation = val.GetFamilyAnnotation(src_family);
             const char *dst_annotation = val.GetFamilyAnnotation(dst_family);
             return log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_QUEUE_EXT,
@@ -8399,7 +8399,7 @@ static const VkPipelineStageFlags stage_flag_bit_array[] = {VK_PIPELINE_STAGE_CO
 
 bool CheckStageMaskQueueCompatibility(layer_data *dev_data, VkCommandBuffer command_buffer, VkPipelineStageFlags stage_mask,
                                       VkQueueFlags queue_flags, const char *function, const char *src_or_dest,
-                                      std::string error_code) {
+                                      const char *error_code) {
     bool skip = false;
     // Lookup each bit in the stagemask and check for overlap between its table bits and queue_flags
     for (const auto &item : stage_flag_bit_array) {
@@ -8845,7 +8845,7 @@ void PostCallRecordCmdWriteTimestamp(VkCommandBuffer commandBuffer, VkPipelineSt
 }
 
 static bool MatchUsage(layer_data *dev_data, uint32_t count, const VkAttachmentReference2KHR *attachments,
-                       const VkFramebufferCreateInfo *fbci, VkImageUsageFlagBits usage_flag, std::string error_code) {
+                       const VkFramebufferCreateInfo *fbci, VkImageUsageFlagBits usage_flag, const char *error_code) {
     bool skip = false;
 
     for (uint32_t attach = 0; attach < count; attach++) {
@@ -10094,7 +10094,7 @@ bool PreCallValidateCreateRenderPass2KHR(VkDevice device, const VkRenderPassCrea
 }
 
 static bool ValidatePrimaryCommandBuffer(const layer_data *dev_data, const GLOBAL_CB_NODE *pCB, char const *cmd_name,
-                                         std::string error_code) {
+                                         const char *error_code) {
     bool skip = false;
     if (pCB->createInfo.level != VK_COMMAND_BUFFER_LEVEL_PRIMARY) {
         skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,

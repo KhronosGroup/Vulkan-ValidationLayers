@@ -154,12 +154,6 @@ void EraseQFOImageRelaseBarriers(layer_data *device_data, const VkImage &image);
 void TransitionImageLayouts(layer_data *device_data, GLOBAL_CB_NODE *cb_state, uint32_t memBarrierCount,
                             const VkImageMemoryBarrier *pImgMemBarriers);
 
-bool VerifySourceImageLayout(layer_data *dev_data, GLOBAL_CB_NODE *cb_node, VkImage srcImage, VkImageSubresourceLayers subLayers,
-                             VkImageLayout srcImageLayout, const std::string &msgCode);
-
-bool VerifyDestImageLayout(layer_data *dev_data, GLOBAL_CB_NODE *cb_node, VkImage destImage, VkImageSubresourceLayers subLayers,
-                           VkImageLayout destImageLayout, const std::string &msgCode);
-
 void TransitionFinalSubpassLayouts(layer_data *dev_data, GLOBAL_CB_NODE *pCB, const VkRenderPassBeginInfo *pRenderPassBegin,
                                    FRAMEBUFFER_STATE *framebuffer_state);
 
@@ -204,7 +198,7 @@ bool ValidateImageUsageFlags(layer_data *dev_data, IMAGE_STATE const *image_stat
                              const char *msgCode, char const *func_name, char const *usage_string);
 
 bool ValidateImageFormatFeatureFlags(layer_data *dev_data, IMAGE_STATE const *image_state, VkFormatFeatureFlags desired,
-                                     char const *func_name, const std::string &linear_vuid, const std::string &optimal_vuid);
+                                     char const *func_name, const char *linear_vuid, const char *optimal_vuid);
 
 bool ValidateImageSubresourceLayers(layer_data *dev_data, const GLOBAL_CB_NODE *cb_node,
                                     const VkImageSubresourceLayers *subresource_layers, char const *func_name, char const *member,
@@ -249,14 +243,14 @@ void PostCallRecordCreateImageView(VkDevice device, const VkImageViewCreateInfo 
 
 bool ValidateCopyBufferImageTransferGranularityRequirements(layer_data *device_data, const GLOBAL_CB_NODE *cb_node,
                                                             const IMAGE_STATE *img, const VkBufferImageCopy *region,
-                                                            const uint32_t i, const char *function, const std::string &vuid);
+                                                            const uint32_t i, const char *function, const char *vuid);
 
 bool ValidateImageMipLevel(layer_data *device_data, const GLOBAL_CB_NODE *cb_node, const IMAGE_STATE *img, uint32_t mip_level,
-                           const uint32_t i, const char *function, const char *member, const std::string &vuid);
+                           const uint32_t i, const char *function, const char *member, const char *vuid);
 
 bool ValidateImageArrayLayerRange(layer_data *device_data, const GLOBAL_CB_NODE *cb_node, const IMAGE_STATE *img,
                                   const uint32_t base_layer, const uint32_t layer_count, const uint32_t i, const char *function,
-                                  const char *member, const std::string &vuid);
+                                  const char *member, const char *vuid);
 
 void PreCallRecordCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage,
                                VkImageLayout dstImageLayout, uint32_t regionCount, const VkImageCopy *pRegions);

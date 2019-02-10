@@ -680,7 +680,7 @@ bool ValidateBarrierLayoutToImageUsage(layer_data *device_data, const VkImageMem
     const auto report_data = core_validation::GetReportData(device_data);
     bool skip = false;
     const VkImageLayout layout = (new_not_old) ? img_barrier->newLayout : img_barrier->oldLayout;
-    std::string msg_code = kVUIDUndefined;  // sentinel value meaning "no error"
+    const char *msg_code = kVUIDUndefined;  // sentinel value meaning "no error"
 
     switch (layout) {
         case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
@@ -1637,7 +1637,7 @@ bool VerifyClearImageLayout(layer_data *device_data, GLOBAL_CB_NODE *cb_node, IM
                 }
             }
         } else {
-            std::string error_code = "VUID-vkCmdClearColorImage-imageLayout-00005";
+            const char *error_code = "VUID-vkCmdClearColorImage-imageLayout-00005";
             if (strcmp(func_name, "vkCmdClearDepthStencilImage()") == 0) {
                 error_code = "VUID-vkCmdClearDepthStencilImage-imageLayout-00012";
             } else {
@@ -1658,7 +1658,7 @@ bool VerifyClearImageLayout(layer_data *device_data, GLOBAL_CB_NODE *cb_node, IM
             IMAGE_CMD_BUF_LAYOUT_NODE node;
             if (FindCmdBufLayout(device_data, cb_node, image_state->image, sub, node)) {
                 if (node.layout != dest_image_layout) {
-                    std::string error_code = "VUID-vkCmdClearColorImage-imageLayout-00004";
+                    const char *error_code = "VUID-vkCmdClearColorImage-imageLayout-00004";
                     if (strcmp(func_name, "vkCmdClearDepthStencilImage()") == 0) {
                         error_code = "VUID-vkCmdClearDepthStencilImage-imageLayout-00011";
                     } else {
@@ -1980,7 +1980,7 @@ static inline bool IsExtentAligned(const VkExtent3D *extent, const VkExtent3D *g
 // Check elements of a VkOffset3D structure against a queue family's Image Transfer Granularity values
 static inline bool CheckItgOffset(layer_data *device_data, const GLOBAL_CB_NODE *cb_node, const VkOffset3D *offset,
                                   const VkExtent3D *granularity, const uint32_t i, const char *function, const char *member,
-                                  std::string vuid) {
+                                  const char *vuid) {
     const debug_report_data *report_data = core_validation::GetReportData(device_data);
     bool skip = false;
     VkExtent3D offset_extent = {};
@@ -2015,7 +2015,7 @@ static inline bool CheckItgOffset(layer_data *device_data, const GLOBAL_CB_NODE 
 static inline bool CheckItgExtent(layer_data *device_data, const GLOBAL_CB_NODE *cb_node, const VkExtent3D *extent,
                                   const VkOffset3D *offset, const VkExtent3D *granularity, const VkExtent3D *subresource_extent,
                                   const VkImageType image_type, const uint32_t i, const char *function, const char *member,
-                                  std::string vuid) {
+                                  const char *vuid) {
     const debug_report_data *report_data = core_validation::GetReportData(device_data);
     bool skip = false;
     if (IsExtentAllZeroes(granularity)) {
@@ -2072,7 +2072,7 @@ static inline bool CheckItgExtent(layer_data *device_data, const GLOBAL_CB_NODE 
 }
 
 bool ValidateImageMipLevel(layer_data *device_data, const GLOBAL_CB_NODE *cb_node, const IMAGE_STATE *img, uint32_t mip_level,
-                           const uint32_t i, const char *function, const char *member, const std::string &vuid) {
+                           const uint32_t i, const char *function, const char *member, const char *vuid) {
     const debug_report_data *report_data = core_validation::GetReportData(device_data);
     bool skip = false;
     if (mip_level >= img->createInfo.mipLevels) {
@@ -2086,7 +2086,7 @@ bool ValidateImageMipLevel(layer_data *device_data, const GLOBAL_CB_NODE *cb_nod
 
 bool ValidateImageArrayLayerRange(layer_data *device_data, const GLOBAL_CB_NODE *cb_node, const IMAGE_STATE *img,
                                   const uint32_t base_layer, const uint32_t layer_count, const uint32_t i, const char *function,
-                                  const char *member, const std::string &vuid) {
+                                  const char *member, const char *vuid) {
     const debug_report_data *report_data = core_validation::GetReportData(device_data);
     bool skip = false;
     if (base_layer >= img->createInfo.arrayLayers || layer_count > img->createInfo.arrayLayers ||
@@ -2103,7 +2103,7 @@ bool ValidateImageArrayLayerRange(layer_data *device_data, const GLOBAL_CB_NODE 
 // Check valid usage Image Transfer Granularity requirements for elements of a VkBufferImageCopy structure
 bool ValidateCopyBufferImageTransferGranularityRequirements(layer_data *device_data, const GLOBAL_CB_NODE *cb_node,
                                                             const IMAGE_STATE *img, const VkBufferImageCopy *region,
-                                                            const uint32_t i, const char *function, const std::string &vuid) {
+                                                            const uint32_t i, const char *function, const char *vuid) {
     bool skip = false;
     VkExtent3D granularity = GetScaledItg(device_data, cb_node, img);
     skip |= CheckItgOffset(device_data, cb_node, &region->imageOffset, &granularity, i, function, "imageOffset", vuid);
@@ -2228,7 +2228,7 @@ bool ValidateImageCopyData(const layer_data *device_data, const debug_report_dat
             if ((SafeModulo(region.srcOffset.x, block_size.width) != 0) ||
                 (SafeModulo(region.srcOffset.y, block_size.height) != 0) ||
                 (SafeModulo(region.srcOffset.z, block_size.depth) != 0)) {
-                std::string vuid = ext_ycbcr ? "VUID-VkImageCopy-srcImage-01727" : "VUID-VkImageCopy-srcOffset-00157";
+                const char *vuid = ext_ycbcr ? "VUID-VkImageCopy-srcImage-01727" : "VUID-VkImageCopy-srcOffset-00157";
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
                                 HandleToUint64(src_state->image), vuid,
                                 "vkCmdCopyImage(): pRegion[%d] srcOffset (%d, %d) must be multiples of the compressed image's "
@@ -2239,7 +2239,7 @@ bool ValidateImageCopyData(const layer_data *device_data, const debug_report_dat
             const VkExtent3D mip_extent = GetImageSubresourceExtent(src_state, &(region.srcSubresource));
             if ((SafeModulo(src_copy_extent.width, block_size.width) != 0) &&
                 (src_copy_extent.width + region.srcOffset.x != mip_extent.width)) {
-                std::string vuid = ext_ycbcr ? "VUID-VkImageCopy-srcImage-01728" : "VUID-VkImageCopy-extent-00158";
+                const char *vuid = ext_ycbcr ? "VUID-VkImageCopy-srcImage-01728" : "VUID-VkImageCopy-extent-00158";
                 skip |=
                     log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
                             HandleToUint64(src_state->image), vuid,
@@ -2251,7 +2251,7 @@ bool ValidateImageCopyData(const layer_data *device_data, const debug_report_dat
             // Extent height must be a multiple of block height, or extent+offset height must equal subresource height
             if ((SafeModulo(src_copy_extent.height, block_size.height) != 0) &&
                 (src_copy_extent.height + region.srcOffset.y != mip_extent.height)) {
-                std::string vuid = ext_ycbcr ? "VUID-VkImageCopy-srcImage-01729" : "VUID-VkImageCopy-extent-00159";
+                const char *vuid = ext_ycbcr ? "VUID-VkImageCopy-srcImage-01729" : "VUID-VkImageCopy-extent-00159";
                 skip |=
                     log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
                             HandleToUint64(src_state->image), vuid,
@@ -2263,7 +2263,7 @@ bool ValidateImageCopyData(const layer_data *device_data, const debug_report_dat
             // Extent depth must be a multiple of block depth, or extent+offset depth must equal subresource depth
             uint32_t copy_depth = (slice_override ? depth_slices : src_copy_extent.depth);
             if ((SafeModulo(copy_depth, block_size.depth) != 0) && (copy_depth + region.srcOffset.z != mip_extent.depth)) {
-                std::string vuid = ext_ycbcr ? "VUID-VkImageCopy-srcImage-01730" : "VUID-VkImageCopy-extent-00160";
+                const char *vuid = ext_ycbcr ? "VUID-VkImageCopy-srcImage-01730" : "VUID-VkImageCopy-extent-00160";
                 skip |=
                     log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
                             HandleToUint64(src_state->image), vuid,
@@ -2345,7 +2345,7 @@ bool ValidateImageCopyData(const layer_data *device_data, const debug_report_dat
             if ((SafeModulo(region.dstOffset.x, block_size.width) != 0) ||
                 (SafeModulo(region.dstOffset.y, block_size.height) != 0) ||
                 (SafeModulo(region.dstOffset.z, block_size.depth) != 0)) {
-                std::string vuid = ext_ycbcr ? "VUID-VkImageCopy-dstImage-01731" : "VUID-VkImageCopy-dstOffset-00162";
+                const char *vuid = ext_ycbcr ? "VUID-VkImageCopy-dstImage-01731" : "VUID-VkImageCopy-dstOffset-00162";
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
                                 HandleToUint64(dst_state->image), vuid,
                                 "vkCmdCopyImage(): pRegion[%d] dstOffset (%d, %d) must be multiples of the compressed image's "
@@ -2356,7 +2356,7 @@ bool ValidateImageCopyData(const layer_data *device_data, const debug_report_dat
             const VkExtent3D mip_extent = GetImageSubresourceExtent(dst_state, &(region.dstSubresource));
             if ((SafeModulo(dst_copy_extent.width, block_size.width) != 0) &&
                 (dst_copy_extent.width + region.dstOffset.x != mip_extent.width)) {
-                std::string vuid = ext_ycbcr ? "VUID-VkImageCopy-dstImage-01732" : "VUID-VkImageCopy-extent-00163";
+                const char *vuid = ext_ycbcr ? "VUID-VkImageCopy-dstImage-01732" : "VUID-VkImageCopy-extent-00163";
                 skip |=
                     log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
                             HandleToUint64(dst_state->image), vuid,
@@ -2368,7 +2368,7 @@ bool ValidateImageCopyData(const layer_data *device_data, const debug_report_dat
             // Extent height must be a multiple of block height, or dst_copy_extent+offset height must equal subresource height
             if ((SafeModulo(dst_copy_extent.height, block_size.height) != 0) &&
                 (dst_copy_extent.height + region.dstOffset.y != mip_extent.height)) {
-                std::string vuid = ext_ycbcr ? "VUID-VkImageCopy-dstImage-01733" : "VUID-VkImageCopy-extent-00164";
+                const char *vuid = ext_ycbcr ? "VUID-VkImageCopy-dstImage-01733" : "VUID-VkImageCopy-extent-00164";
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
                                 HandleToUint64(dst_state->image), vuid,
                                 "vkCmdCopyImage(): pRegion[%d] dst_copy_extent height (%d) must be a multiple of the compressed "
@@ -2380,7 +2380,7 @@ bool ValidateImageCopyData(const layer_data *device_data, const debug_report_dat
             // Extent depth must be a multiple of block depth, or dst_copy_extent+offset depth must equal subresource depth
             uint32_t copy_depth = (slice_override ? depth_slices : dst_copy_extent.depth);
             if ((SafeModulo(copy_depth, block_size.depth) != 0) && (copy_depth + region.dstOffset.z != mip_extent.depth)) {
-                std::string vuid = ext_ycbcr ? "VUID-VkImageCopy-dstImage-01734" : "VUID-VkImageCopy-extent-00165";
+                const char *vuid = ext_ycbcr ? "VUID-VkImageCopy-dstImage-01734" : "VUID-VkImageCopy-extent-00165";
                 skip |=
                     log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
                             HandleToUint64(dst_state->image), vuid,
@@ -3715,7 +3715,7 @@ bool ValidateImageUsageFlags(layer_data *device_data, IMAGE_STATE const *image_s
 }
 
 bool ValidateImageFormatFeatureFlags(layer_data *dev_data, IMAGE_STATE const *image_state, VkFormatFeatureFlags desired,
-                                     char const *func_name, const std::string &linear_vuid, const std::string &optimal_vuid) {
+                                     char const *func_name, const char *linear_vuid, const char *optimal_vuid) {
     VkFormatProperties format_properties = GetPDFormatProperties(dev_data, image_state->createInfo.format);
     const debug_report_data *report_data = core_validation::GetReportData(dev_data);
     bool skip = false;
@@ -4038,7 +4038,7 @@ bool ValidateImageAspectMask(const layer_data *device_data, VkImage image, VkFor
 }
 
 struct SubresourceRangeErrorCodes {
-    std::string base_mip_err, mip_count_err, base_layer_err, layer_count_err;
+    const char *base_mip_err, *mip_count_err, *base_layer_err, *layer_count_err;
 };
 
 bool ValidateImageSubresourceRange(const layer_data *device_data, const uint32_t image_mip_count, const uint32_t image_layer_count,
@@ -4757,7 +4757,7 @@ bool ValidateBufferImageCopyData(const debug_report_data *report_data, uint32_t 
 }
 
 static bool ValidateImageBounds(const debug_report_data *report_data, const IMAGE_STATE *image_state, const uint32_t regionCount,
-                                const VkBufferImageCopy *pRegions, const char *func_name, std::string msg_code) {
+                                const VkBufferImageCopy *pRegions, const char *func_name, const char *msg_code) {
     bool skip = false;
     const VkImageCreateInfo *image_info = &(image_state->createInfo);
 
@@ -4800,7 +4800,7 @@ static bool ValidateImageBounds(const debug_report_data *report_data, const IMAG
 
 static inline bool ValidateBufferBounds(const debug_report_data *report_data, IMAGE_STATE *image_state, BUFFER_STATE *buff_state,
                                         uint32_t regionCount, const VkBufferImageCopy *pRegions, const char *func_name,
-                                        std::string msg_code) {
+                                        const char *msg_code) {
     bool skip = false;
 
     VkDeviceSize buffer_size = buff_state->createInfo.size;
@@ -5084,7 +5084,7 @@ bool PreCallValidateGetImageSubresourceLayout(VkDevice device, VkImage image, co
     const VkFormat img_format = image_entry->createInfo.format;
     if (FormatIsMultiplane(img_format)) {
         VkImageAspectFlags allowed_flags = (VK_IMAGE_ASPECT_PLANE_0_BIT_KHR | VK_IMAGE_ASPECT_PLANE_1_BIT_KHR);
-        std::string vuid = "VUID-vkGetImageSubresourceLayout-format-01581";  // 2-plane version
+        const char *vuid = "VUID-vkGetImageSubresourceLayout-format-01581";  // 2-plane version
         if (FormatPlaneCount(img_format) > 2u) {
             allowed_flags |= VK_IMAGE_ASPECT_PLANE_2_BIT_KHR;
             vuid = "VUID-vkGetImageSubresourceLayout-format-01582";  // 3-plane version
