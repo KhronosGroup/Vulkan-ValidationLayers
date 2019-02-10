@@ -150,6 +150,12 @@ void ObjectLifetimes::AllocateDescriptorSet(VkDevice device, VkDescriptorPool de
     object_map[kVulkanObjectTypeDescriptorSet][HandleToUint64(descriptor_set)] = pNewObjNode;
     num_objects[kVulkanObjectTypeDescriptorSet]++;
     num_total_objects++;
+
+    auto itr = object_map[kVulkanObjectTypeDescriptorPool].find(HandleToUint64(descriptor_pool));
+    if (itr != object_map[kVulkanObjectTypeDescriptorPool].end()) {
+        ObjTrackState *pPoolNode = itr->second;
+        pPoolNode->child_objects->insert(HandleToUint64(descriptor_set));
+    }
 }
 
 bool ObjectLifetimes::ValidateDescriptorSet(VkDevice device, VkDescriptorPool descriptor_pool, VkDescriptorSet descriptor_set) {
@@ -442,10 +448,13 @@ bool ObjectLifetimes::PreCallValidateResetDescriptorPool(VkDevice device, VkDesc
     skip |=
         ValidateObject(device, descriptorPool, kVulkanObjectTypeDescriptorPool, false,
                        "VUID-vkResetDescriptorPool-descriptorPool-parameter", "VUID-vkResetDescriptorPool-descriptorPool-parent");
-    for (const auto &itr : object_map[kVulkanObjectTypeDescriptorSet]) {
-        if (itr.second->parent_object == HandleToUint64(descriptorPool)) {
-            skip |= ValidateDestroyObject(device, (VkDescriptorSet)(itr.first), kVulkanObjectTypeDescriptorSet, nullptr,
-                                          kVUIDUndefined, kVUIDUndefined);
+
+    auto itr = object_map[kVulkanObjectTypeDescriptorPool].find(HandleToUint64(descriptorPool));
+    if (itr != object_map[kVulkanObjectTypeDescriptorPool].end()) {
+        ObjTrackState *pPoolNode = itr->second;
+        for (auto set : *pPoolNode->child_objects) {
+            skip |= ValidateDestroyObject(device, (VkDescriptorSet)set, kVulkanObjectTypeDescriptorSet, nullptr, kVUIDUndefined,
+                                          kVUIDUndefined);
         }
     }
     return skip;
@@ -455,13 +464,13 @@ void ObjectLifetimes::PreCallRecordResetDescriptorPool(VkDevice device, VkDescri
                                                        VkDescriptorPoolResetFlags flags) {
     // A DescriptorPool's descriptor sets are implicitly deleted when the pool is reset. Remove this pool's descriptor sets from
     // our descriptorSet map.
-    auto itr = object_map[kVulkanObjectTypeDescriptorSet].begin();
-    while (itr != object_map[kVulkanObjectTypeDescriptorSet].end()) {
-        ObjTrackState *pNode = (*itr).second;
-        auto del_itr = itr++;
-        if (pNode->parent_object == HandleToUint64(descriptorPool)) {
-            RecordDestroyObject(device, (VkDescriptorSet)((*del_itr).first), kVulkanObjectTypeDescriptorSet);
+    auto itr = object_map[kVulkanObjectTypeDescriptorPool].find(HandleToUint64(descriptorPool));
+    if (itr != object_map[kVulkanObjectTypeDescriptorPool].end()) {
+        ObjTrackState *pPoolNode = itr->second;
+        for (auto set : *pPoolNode->child_objects) {
+            RecordDestroyObject(device, (VkDescriptorSet)set, kVulkanObjectTypeDescriptorSet);
         }
+        pPoolNode->child_objects->clear();
     }
 }
 
@@ -704,8 +713,16 @@ bool ObjectLifetimes::PreCallValidateFreeDescriptorSets(VkDevice device, VkDescr
 }
 void ObjectLifetimes::PreCallRecordFreeDescriptorSets(VkDevice device, VkDescriptorPool descriptorPool, uint32_t descriptorSetCount,
                                                       const VkDescriptorSet *pDescriptorSets) {
+    ObjTrackState *pPoolNode = nullptr;
+    auto itr = object_map[kVulkanObjectTypeDescriptorPool].find(HandleToUint64(descriptorPool));
+    if (itr != object_map[kVulkanObjectTypeDescriptorPool].end()) {
+        pPoolNode = itr->second;
+    }
     for (uint32_t i = 0; i < descriptorSetCount; i++) {
         RecordDestroyObject(device, pDescriptorSets[i], kVulkanObjectTypeDescriptorSet);
+        if (pPoolNode) {
+            pPoolNode->child_objects->erase(HandleToUint64(pDescriptorSets[i]));
+        }
     }
 }
 
@@ -717,13 +734,13 @@ bool ObjectLifetimes::PreCallValidateDestroyDescriptorPool(VkDevice device, VkDe
     skip |= ValidateObject(device, descriptorPool, kVulkanObjectTypeDescriptorPool, true,
                            "VUID-vkDestroyDescriptorPool-descriptorPool-parameter",
                            "VUID-vkDestroyDescriptorPool-descriptorPool-parent");
-    std::unordered_map<uint64_t, ObjTrackState *>::iterator itr = object_map[kVulkanObjectTypeDescriptorSet].begin();
-    while (itr != object_map[kVulkanObjectTypeDescriptorSet].end()) {
-        ObjTrackState *pNode = (*itr).second;
-        auto del_itr = itr++;
-        if (pNode->parent_object == HandleToUint64(descriptorPool)) {
-            skip |= ValidateDestroyObject(device, (VkDescriptorSet)((*del_itr).first), kVulkanObjectTypeDescriptorSet, nullptr,
-                                          kVUIDUndefined, kVUIDUndefined);
+
+    auto itr = object_map[kVulkanObjectTypeDescriptorPool].find(HandleToUint64(descriptorPool));
+    if (itr != object_map[kVulkanObjectTypeDescriptorPool].end()) {
+        ObjTrackState *pPoolNode = itr->second;
+        for (auto set : *pPoolNode->child_objects) {
+            skip |= ValidateDestroyObject(device, (VkDescriptorSet)set, kVulkanObjectTypeDescriptorSet, nullptr, kVUIDUndefined,
+                                          kVUIDUndefined);
         }
     }
     skip |= ValidateDestroyObject(device, descriptorPool, kVulkanObjectTypeDescriptorPool, pAllocator,
@@ -733,13 +750,13 @@ bool ObjectLifetimes::PreCallValidateDestroyDescriptorPool(VkDevice device, VkDe
 }
 void ObjectLifetimes::PreCallRecordDestroyDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool,
                                                          const VkAllocationCallbacks *pAllocator) {
-    std::unordered_map<uint64_t, ObjTrackState *>::iterator itr = object_map[kVulkanObjectTypeDescriptorSet].begin();
-    while (itr != object_map[kVulkanObjectTypeDescriptorSet].end()) {
-        ObjTrackState *pNode = (*itr).second;
-        auto del_itr = itr++;
-        if (pNode->parent_object == HandleToUint64(descriptorPool)) {
-            RecordDestroyObject(device, (VkDescriptorSet)((*del_itr).first), kVulkanObjectTypeDescriptorSet);
+    auto itr = object_map[kVulkanObjectTypeDescriptorPool].find(HandleToUint64(descriptorPool));
+    if (itr != object_map[kVulkanObjectTypeDescriptorPool].end()) {
+        ObjTrackState *pPoolNode = itr->second;
+        for (auto set : *pPoolNode->child_objects) {
+            RecordDestroyObject(device, (VkDescriptorSet)set, kVulkanObjectTypeDescriptorSet);
         }
+        pPoolNode->child_objects->clear();
     }
     RecordDestroyObject(device, descriptorPool, kVulkanObjectTypeDescriptorPool);
 }
