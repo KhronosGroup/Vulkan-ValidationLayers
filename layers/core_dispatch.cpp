@@ -1038,24 +1038,21 @@ VKAPI_ATTR VkResult VKAPI_CALL GetMemoryAndroidHardwareBufferANDROID(VkDevice de
 VKAPI_ATTR VkResult VKAPI_CALL CreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                       const VkComputePipelineCreateInfo *pCreateInfos,
                                                       const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines) {
-    std::vector<std::unique_ptr<PIPELINE_STATE>> pipe_state;
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
 
+    std::vector<std::unique_ptr<PIPELINE_STATE>> pipe_state;
+
     unique_lock_t lock(global_lock);
-    bool skip = PreCallValidateCreateComputePipelines(dev_data, &pipe_state, count, pCreateInfos);
-    if (skip) {
-        for (uint32_t i = 0; i < count; i++) {
-            pPipelines[i] = VK_NULL_HANDLE;
-        }
-        return VK_ERROR_VALIDATION_FAILED_EXT;
-    }
+    bool skip =
+        PreCallValidateCreateComputePipelines(device, pipelineCache, count, pCreateInfos, pAllocator, pPipelines, &pipe_state);
+    if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     lock.unlock();
 
-    auto result =
+    VkResult result =
         dev_data->dispatch_table.CreateComputePipelines(device, pipelineCache, count, pCreateInfos, pAllocator, pPipelines);
 
     lock.lock();
-    PostCallRecordCreateComputePipelines(dev_data, &pipe_state, count, pPipelines);
+    PostCallRecordCreateComputePipelines(device, pipelineCache, count, pCreateInfos, pAllocator, pPipelines, result, &pipe_state);
 
     return result;
 }
