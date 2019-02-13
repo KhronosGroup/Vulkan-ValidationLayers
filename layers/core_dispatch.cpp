@@ -3162,35 +3162,22 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateGraphicsPipelines(VkDevice device, VkPipeli
     //  1. Pipeline create state is first shadowed into PIPELINE_STATE struct
     //  2. Create state is then validated (which uses flags setup during shadowing)
     //  3. If everything looks good, we'll then create the pipeline and add NODE to pipelineMap
-    std::vector<std::unique_ptr<PIPELINE_STATE>> pipe_state;
+    create_graphics_pipeline_api_state cgpl_state{};
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     unique_lock_t lock(global_lock);
 
-    bool skip = PreCallValidateCreateGraphicsPipelines(dev_data, &pipe_state, count, pCreateInfos);
+    bool skip =
+        PreCallValidateCreateGraphicsPipelines(device, pipelineCache, count, pCreateInfos, pAllocator, pPipelines, &cgpl_state);
+    if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
 
-    if (skip) {
-        for (uint32_t i = 0; i < count; i++) {
-            pPipelines[i] = VK_NULL_HANDLE;
-        }
-        return VK_ERROR_VALIDATION_FAILED_EXT;
-    }
-
-    // GPU Validation can possibly replace instrumented shaders with non-instrumented ones, so give it a chance to modify the create
-    // infos.
-    std::vector<safe_VkGraphicsPipelineCreateInfo> gpu_create_infos;
-    if (GetEnables(dev_data)->gpu_validation) {
-        gpu_create_infos = GpuPreCallRecordCreateGraphicsPipelines(dev_data, pipelineCache, count, pCreateInfos, pAllocator,
-                                                                   pPipelines, pipe_state);
-        pCreateInfos = reinterpret_cast<VkGraphicsPipelineCreateInfo *>(gpu_create_infos.data());
-    }
-
+    PreCallRecordCreateGraphicsPipelines(device, pipelineCache, count, pCreateInfos, pAllocator, pPipelines, &cgpl_state);
     lock.unlock();
 
-    auto result =
-        dev_data->dispatch_table.CreateGraphicsPipelines(device, pipelineCache, count, pCreateInfos, pAllocator, pPipelines);
+    VkResult result = dev_data->dispatch_table.CreateGraphicsPipelines(device, pipelineCache, count, cgpl_state.pCreateInfos,
+                                                                       pAllocator, pPipelines);
 
     lock.lock();
-    PostCallRecordCreateGraphicsPipelines(dev_data, &pipe_state, count, pCreateInfos, pAllocator, pPipelines);
+    PostCallRecordCreateGraphicsPipelines(device, pipelineCache, count, pCreateInfos, pAllocator, pPipelines, result, &cgpl_state);
 
     return result;
 }

@@ -259,6 +259,13 @@ struct layer_data {
     uint32_t physical_device_count;
 };
 
+// This structure is used to save data across the CreateGraphicsPipelines down-chain API call
+struct create_graphics_pipeline_api_state {
+    std::vector<safe_VkGraphicsPipelineCreateInfo> gpu_create_infos;
+    std::vector<std::unique_ptr<PIPELINE_STATE>> pipe_state;
+    const VkGraphicsPipelineCreateInfo* pCreateInfos;
+};
+
 VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                                               VkInstance* pInstance);
 
@@ -1358,6 +1365,23 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateImagePipeSurfaceFUCHSIA(VkInstance instance
 using std::vector;
 SURFACE_STATE* GetSurfaceState(instance_layer_data* instance_data, VkSurfaceKHR surface);
 PHYSICAL_DEVICE_STATE* GetPhysicalDeviceState(instance_layer_data* instance_data, VkPhysicalDevice phys);
+
+bool PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
+    const VkGraphicsPipelineCreateInfo* pCreateInfos,
+    const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
+    // Default parameter
+    create_graphics_pipeline_api_state* cgpl_state);
+void PreCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
+    const VkGraphicsPipelineCreateInfo* pCreateInfos, const VkAllocationCallbacks* pAllocator,
+    VkPipeline* pPipelines,
+    // Default parameter
+    create_graphics_pipeline_api_state* cgpl_state);
+void PostCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
+    const VkGraphicsPipelineCreateInfo* pCreateInfos,
+    const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines, VkResult result,
+    // Default parameter
+    create_graphics_pipeline_api_state* cgpl_state);
+
 bool ValidateQueueFamilies(layer_data* device_data, uint32_t queue_family_count, const uint32_t* queue_families,
                            const char* cmd_name, const char* array_parameter_name, const char* unique_error_code,
                            const char* valid_error_code, bool optional);
@@ -1492,11 +1516,6 @@ bool PreCallValidateDestroyFramebuffer(VkDevice device, VkFramebuffer framebuffe
 void PreCallRecordDestroyFramebuffer(VkDevice device, VkFramebuffer framebuffer, const VkAllocationCallbacks* pAllocator);
 bool PreCallValidateDestroyRenderPass(VkDevice device, VkRenderPass renderPass, const VkAllocationCallbacks* pAllocator);
 void PreCallRecordDestroyRenderPass(VkDevice device, VkRenderPass renderPass, const VkAllocationCallbacks* pAllocator);
-bool PreCallValidateCreateGraphicsPipelines(layer_data* dev_data, std::vector<std::unique_ptr<PIPELINE_STATE>>* pipe_state,
-                                            const uint32_t count, const VkGraphicsPipelineCreateInfo* pCreateInfos);
-void PostCallRecordCreateGraphicsPipelines(layer_data* dev_data, vector<std::unique_ptr<PIPELINE_STATE>>* pipe_state,
-                                           const uint32_t count, const VkGraphicsPipelineCreateInfo* pCreateInfos,
-                                           const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines);
 bool PreCallValidateCreateComputePipelines(layer_data* dev_data, std::vector<std::unique_ptr<PIPELINE_STATE>>* pipe_state,
                                            const uint32_t count, const VkComputePipelineCreateInfo* pCreateInfos);
 void PostCallRecordCreateComputePipelines(layer_data* dev_data, vector<std::unique_ptr<PIPELINE_STATE>>* pipe_state,
