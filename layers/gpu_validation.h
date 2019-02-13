@@ -120,8 +120,11 @@ void GpuPreCallRecordFreeCommandBuffers(layer_data *dev_data, uint32_t commandBu
 VkResult GpuOverrideDispatchCreateShaderModule(layer_data *dev_data, const VkShaderModuleCreateInfo *pCreateInfo,
                                                const VkAllocationCallbacks *pAllocator, VkShaderModule *pShaderModule,
                                                uint32_t *unique_shader_id);
-VkResult GpuOverrideDispatchCreatePipelineLayout(layer_data *dev_data, const VkPipelineLayoutCreateInfo *pCreateInfo,
-                                                 const VkAllocationCallbacks *pAllocator, VkPipelineLayout *pPipelineLayout);
+bool GpuPreCallCreatePipelineLayout(layer_data *device_data, const VkPipelineLayoutCreateInfo *pCreateInfo,
+                                    const VkAllocationCallbacks *pAllocator, VkPipelineLayout *pPipelineLayout,
+                                    std::vector<VkDescriptorSetLayout> *new_layouts,
+                                    VkPipelineLayoutCreateInfo *modified_create_info);
+void GpuPostCallCreatePipelineLayout(layer_data *device_data, VkResult result);
 void GpuPostCallQueueSubmit(layer_data *dev_data, VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits, VkFence fence);
 void GpuPreCallValidateCmdWaitEvents(layer_data *dev_data, VkPipelineStageFlags sourceStageMask);
 std::vector<safe_VkGraphicsPipelineCreateInfo> GpuPreCallRecordCreateGraphicsPipelines(
