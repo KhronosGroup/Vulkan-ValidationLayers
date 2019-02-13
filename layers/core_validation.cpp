@@ -5195,44 +5195,75 @@ static bool ValidatePipelineVertexDivisors(layer_data *dev_data, vector<std::uni
     return skip;
 }
 
-bool PreCallValidateCreateGraphicsPipelines(layer_data *dev_data, vector<std::unique_ptr<PIPELINE_STATE>> *pipe_state,
-                                            const uint32_t count, const VkGraphicsPipelineCreateInfo *pCreateInfos) {
+bool PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
+                                            const VkGraphicsPipelineCreateInfo *pCreateInfos,
+                                            const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
+                                            // Default parameter
+                                            create_graphics_pipeline_api_state *cgpl_state) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+
     bool skip = false;
-    pipe_state->reserve(count);
-    // TODO - State changes and validation need to be untangled here
+    cgpl_state->pipe_state.reserve(count);
+    // TODO - State changes and validation need to be untangled here -- potentially a performance issue
     for (uint32_t i = 0; i < count; i++) {
-        pipe_state->push_back(std::unique_ptr<PIPELINE_STATE>(new PIPELINE_STATE));
-        (*pipe_state)[i]->initGraphicsPipeline(&pCreateInfos[i], GetRenderPassStateSharedPtr(dev_data, pCreateInfos[i].renderPass));
-        (*pipe_state)[i]->pipeline_layout = *GetPipelineLayout(dev_data, pCreateInfos[i].layout);
+        cgpl_state->pipe_state.push_back(std::unique_ptr<PIPELINE_STATE>(new PIPELINE_STATE));
+        (cgpl_state->pipe_state)[i]->initGraphicsPipeline(&pCreateInfos[i],
+                                                          GetRenderPassStateSharedPtr(device_data, pCreateInfos[i].renderPass));
+        (cgpl_state->pipe_state)[i]->pipeline_layout = *GetPipelineLayout(device_data, pCreateInfos[i].layout);
     }
 
     for (uint32_t i = 0; i < count; i++) {
-        skip |= ValidatePipelineLocked(dev_data, *pipe_state, i);
+        skip |= ValidatePipelineLocked(device_data, cgpl_state->pipe_state, i);
     }
 
     for (uint32_t i = 0; i < count; i++) {
-        skip |= ValidatePipelineUnlocked(dev_data, *pipe_state, i);
+        skip |= ValidatePipelineUnlocked(device_data, cgpl_state->pipe_state, i);
     }
 
-    if (dev_data->extensions.vk_ext_vertex_attribute_divisor) {
-        skip |= ValidatePipelineVertexDivisors(dev_data, *pipe_state, count, pCreateInfos);
+    if (device_data->extensions.vk_ext_vertex_attribute_divisor) {
+        skip |= ValidatePipelineVertexDivisors(device_data, cgpl_state->pipe_state, count, pCreateInfos);
     }
 
     return skip;
 }
 
-void PostCallRecordCreateGraphicsPipelines(layer_data *dev_data, vector<std::unique_ptr<PIPELINE_STATE>> *pipe_state,
-                                           const uint32_t count, const VkGraphicsPipelineCreateInfo *pCreateInfos,
-                                           const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines) {
-    for (uint32_t i = 0; i < count; i++) {
-        if (pPipelines[i] != VK_NULL_HANDLE) {
-            (*pipe_state)[i]->pipeline = pPipelines[i];
-            dev_data->pipelineMap[pPipelines[i]] = std::move((*pipe_state)[i]);
+// GPU validation may replace pCreateInfos for the down-chain call
+void PreCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
+                                          const VkGraphicsPipelineCreateInfo *pCreateInfos, const VkAllocationCallbacks *pAllocator,
+                                          VkPipeline *pPipelines,
+                                          // Default parameter
+                                          create_graphics_pipeline_api_state *cgpl_state) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    cgpl_state->pCreateInfos = pCreateInfos;
+    // GPU Validation may replace instrumented shaders with non-instrumented ones, so allow it to modify the createinfos.
+    if (GetEnables(device_data)->gpu_validation) {
+        cgpl_state->gpu_create_infos = GpuPreCallRecordCreateGraphicsPipelines(device_data, pipelineCache, count, pCreateInfos,
+                                                                               pAllocator, pPipelines, cgpl_state->pipe_state);
+        cgpl_state->pCreateInfos = reinterpret_cast<VkGraphicsPipelineCreateInfo *>(cgpl_state->gpu_create_infos.data());
+    }
+}
+
+void PostCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
+                                           const VkGraphicsPipelineCreateInfo *pCreateInfos,
+                                           const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines, VkResult result,
+                                           // Default parameter
+                                           create_graphics_pipeline_api_state *cgpl_state) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+
+    if (result == VK_SUCCESS) {
+        for (uint32_t i = 0; i < count; i++) {
+            if (pPipelines[i] != VK_NULL_HANDLE) {
+                (cgpl_state->pipe_state)[i]->pipeline = pPipelines[i];
+                device_data->pipelineMap[pPipelines[i]] = std::move((cgpl_state->pipe_state)[i]);
+            }
         }
     }
-    if (GetEnables(dev_data)->gpu_validation) {
-        GpuPostCallRecordCreateGraphicsPipelines(dev_data, count, pCreateInfos, pAllocator, pPipelines);
+    // GPU val needs clean up regardless of result
+    if (GetEnables(device_data)->gpu_validation) {
+        GpuPostCallRecordCreateGraphicsPipelines(device_data, count, pCreateInfos, pAllocator, pPipelines);
+        cgpl_state->gpu_create_infos.clear();
     }
+    cgpl_state->pipe_state.clear();
 }
 
 bool PreCallValidateCreateComputePipelines(layer_data *dev_data, vector<std::unique_ptr<PIPELINE_STATE>> *pipe_state,
