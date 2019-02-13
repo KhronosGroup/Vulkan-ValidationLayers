@@ -1367,20 +1367,30 @@ SURFACE_STATE* GetSurfaceState(instance_layer_data* instance_data, VkSurfaceKHR 
 PHYSICAL_DEVICE_STATE* GetPhysicalDeviceState(instance_layer_data* instance_data, VkPhysicalDevice phys);
 
 bool PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
-    const VkGraphicsPipelineCreateInfo* pCreateInfos,
-    const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
-    // Default parameter
-    create_graphics_pipeline_api_state* cgpl_state);
+                                            const VkGraphicsPipelineCreateInfo* pCreateInfos,
+                                            const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
+                                            // Default parameter
+                                            create_graphics_pipeline_api_state* cgpl_state);
 void PreCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
-    const VkGraphicsPipelineCreateInfo* pCreateInfos, const VkAllocationCallbacks* pAllocator,
-    VkPipeline* pPipelines,
-    // Default parameter
-    create_graphics_pipeline_api_state* cgpl_state);
+                                          const VkGraphicsPipelineCreateInfo* pCreateInfos, const VkAllocationCallbacks* pAllocator,
+                                          VkPipeline* pPipelines,
+                                          // Default parameter
+                                          create_graphics_pipeline_api_state* cgpl_state);
 void PostCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
-    const VkGraphicsPipelineCreateInfo* pCreateInfos,
-    const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines, VkResult result,
-    // Default parameter
-    create_graphics_pipeline_api_state* cgpl_state);
+                                           const VkGraphicsPipelineCreateInfo* pCreateInfos,
+                                           const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines, VkResult result,
+                                           // Default parameter
+                                           create_graphics_pipeline_api_state* cgpl_state);
+bool PreCallValidateCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
+                                           const VkComputePipelineCreateInfo* pCreateInfos, const VkAllocationCallbacks* pAllocator,
+                                           VkPipeline* pPipelines,
+                                           // Default parameter
+                                           std::vector<std::unique_ptr<PIPELINE_STATE>>* pipe_state);
+void PostCallRecordCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
+                                          const VkComputePipelineCreateInfo* pCreateInfos, const VkAllocationCallbacks* pAllocator,
+                                          VkPipeline* pPipelines, VkResult result,
+                                          // Default parameter
+                                          std::vector<std::unique_ptr<PIPELINE_STATE>>* pipe_state);
 
 bool ValidateQueueFamilies(layer_data* device_data, uint32_t queue_family_count, const uint32_t* queue_families,
                            const char* cmd_name, const char* array_parameter_name, const char* unique_error_code,
@@ -1516,11 +1526,6 @@ bool PreCallValidateDestroyFramebuffer(VkDevice device, VkFramebuffer framebuffe
 void PreCallRecordDestroyFramebuffer(VkDevice device, VkFramebuffer framebuffer, const VkAllocationCallbacks* pAllocator);
 bool PreCallValidateDestroyRenderPass(VkDevice device, VkRenderPass renderPass, const VkAllocationCallbacks* pAllocator);
 void PreCallRecordDestroyRenderPass(VkDevice device, VkRenderPass renderPass, const VkAllocationCallbacks* pAllocator);
-bool PreCallValidateCreateComputePipelines(layer_data* dev_data, std::vector<std::unique_ptr<PIPELINE_STATE>>* pipe_state,
-                                           const uint32_t count, const VkComputePipelineCreateInfo* pCreateInfos);
-void PostCallRecordCreateComputePipelines(layer_data* dev_data, vector<std::unique_ptr<PIPELINE_STATE>>* pipe_state,
-                                          const uint32_t count, VkPipeline* pPipelines);
-
 bool PreCallValidateCreateRayTracingPipelinesNV(layer_data* dev_data, uint32_t count,
                                                 const VkRayTracingPipelineCreateInfoNV* pCreateInfos,
                                                 vector<std::unique_ptr<PIPELINE_STATE>>& pipe_state);

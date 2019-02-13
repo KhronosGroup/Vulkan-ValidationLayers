@@ -5266,28 +5266,36 @@ void PostCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipe
     cgpl_state->pipe_state.clear();
 }
 
-bool PreCallValidateCreateComputePipelines(layer_data *dev_data, vector<std::unique_ptr<PIPELINE_STATE>> *pipe_state,
-                                           const uint32_t count, const VkComputePipelineCreateInfo *pCreateInfos) {
+bool PreCallValidateCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
+                                           const VkComputePipelineCreateInfo *pCreateInfos, const VkAllocationCallbacks *pAllocator,
+                                           VkPipeline *pPipelines, std::vector<std::unique_ptr<PIPELINE_STATE>> *pipe_state) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+
     bool skip = false;
     pipe_state->reserve(count);
     for (uint32_t i = 0; i < count; i++) {
         // Create and initialize internal tracking data structure
         pipe_state->push_back(unique_ptr<PIPELINE_STATE>(new PIPELINE_STATE));
         (*pipe_state)[i]->initComputePipeline(&pCreateInfos[i]);
-        (*pipe_state)[i]->pipeline_layout = *GetPipelineLayout(dev_data, pCreateInfos[i].layout);
+        (*pipe_state)[i]->pipeline_layout = *GetPipelineLayout(device_data, pCreateInfos[i].layout);
 
         // TODO: Add Compute Pipeline Verification
-        skip |= ValidateComputePipeline(dev_data, (*pipe_state)[i].get());
+        skip |= ValidateComputePipeline(device_data, (*pipe_state)[i].get());
     }
     return skip;
 }
 
-void PostCallRecordCreateComputePipelines(layer_data *dev_data, vector<std::unique_ptr<PIPELINE_STATE>> *pipe_state,
-                                          const uint32_t count, VkPipeline *pPipelines) {
+void PostCallRecordCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
+                                          const VkComputePipelineCreateInfo *pCreateInfos, const VkAllocationCallbacks *pAllocator,
+                                          VkPipeline *pPipelines, VkResult result,
+                                          std::vector<std::unique_ptr<PIPELINE_STATE>> *pipe_state) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+
+    if (VK_SUCCESS != result) return;
     for (uint32_t i = 0; i < count; i++) {
         if (pPipelines[i] != VK_NULL_HANDLE) {
             (*pipe_state)[i]->pipeline = pPipelines[i];
-            dev_data->pipelineMap[pPipelines[i]] = std::move((*pipe_state)[i]);
+            device_data->pipelineMap[pPipelines[i]] = std::move((*pipe_state)[i]);
         }
     }
 }
