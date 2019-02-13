@@ -383,45 +383,50 @@ void GpuPreCallRecordDestroyDevice(layer_data *dev_data) {
 }
 
 // Modify the pipeline layout to include our debug descriptor set and any needed padding with the dummy descriptor set.
-VkResult GpuOverrideDispatchCreatePipelineLayout(layer_data *dev_data, const VkPipelineLayoutCreateInfo *pCreateInfo,
-                                                 const VkAllocationCallbacks *pAllocator, VkPipelineLayout *pPipelineLayout) {
-    auto gpu_state = GetGpuValidationState(dev_data);
+bool GpuPreCallCreatePipelineLayout(layer_data *device_data, const VkPipelineLayoutCreateInfo *pCreateInfo,
+                                    const VkAllocationCallbacks *pAllocator, VkPipelineLayout *pPipelineLayout,
+                                    std::vector<VkDescriptorSetLayout> *new_layouts,
+                                    VkPipelineLayoutCreateInfo *modified_create_info) {
+    auto gpu_state = GetGpuValidationState(device_data);
     if (gpu_state->aborted) {
-        return GetDispatchTable(dev_data)->CreatePipelineLayout(GetDevice(dev_data), pCreateInfo, pAllocator, pPipelineLayout);
+        return false;
     }
-    VkPipelineLayoutCreateInfo new_create_info = *pCreateInfo;
-    std::vector<VkDescriptorSetLayout> new_layouts;
-    if (new_create_info.setLayoutCount >= gpu_state->adjusted_max_desc_sets) {
+
+    if (modified_create_info->setLayoutCount >= gpu_state->adjusted_max_desc_sets) {
         std::ostringstream strm;
         strm << "Pipeline Layout conflict with validation's descriptor set at slot " << gpu_state->desc_set_bind_index << ". "
              << "Application has too many descriptor sets in the pipeline layout to continue with gpu validation. "
              << "Validation is not modifying the pipeline layout. "
              << "Instrumented shaders are replaced with non-instrumented shaders.";
-        ReportSetupProblem(dev_data, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(GetDevice(dev_data)),
+        ReportSetupProblem(device_data, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(GetDevice(device_data)),
                            strm.str().c_str());
     } else {
         // Modify the pipeline layout by:
         // 1. Copying the caller's descriptor set desc_layouts
         // 2. Fill in dummy descriptor layouts up to the max binding
         // 3. Fill in with the debug descriptor layout at the max binding slot
-        new_layouts.reserve(gpu_state->adjusted_max_desc_sets);
-        new_layouts.insert(new_layouts.end(), &pCreateInfo->pSetLayouts[0], &pCreateInfo->pSetLayouts[pCreateInfo->setLayoutCount]);
+        new_layouts->reserve(gpu_state->adjusted_max_desc_sets);
+        new_layouts->insert(new_layouts->end(), &pCreateInfo->pSetLayouts[0],
+                            &pCreateInfo->pSetLayouts[pCreateInfo->setLayoutCount]);
         for (uint32_t i = pCreateInfo->setLayoutCount; i < gpu_state->adjusted_max_desc_sets - 1; ++i) {
-            new_layouts.push_back(gpu_state->dummy_desc_layout);
+            new_layouts->push_back(gpu_state->dummy_desc_layout);
         }
-        new_layouts.push_back(gpu_state->debug_desc_layout);
-        new_create_info.pSetLayouts = new_layouts.data();
-        new_create_info.setLayoutCount = gpu_state->adjusted_max_desc_sets;
+        new_layouts->push_back(gpu_state->debug_desc_layout);
+        modified_create_info->pSetLayouts = new_layouts->data();
+        modified_create_info->setLayoutCount = gpu_state->adjusted_max_desc_sets;
     }
-    VkResult result;
-    result = GetDispatchTable(dev_data)->CreatePipelineLayout(GetDevice(dev_data), &new_create_info, pAllocator, pPipelineLayout);
-    assert(result == VK_SUCCESS);
+    return true;
+}
+
+// Clean up GPU validation after the CreatePipelineLayout call is made
+void GpuPostCallCreatePipelineLayout(layer_data *device_data, VkResult result) {
+    auto gpu_state = GetGpuValidationState(device_data);
+    // Clean up GPU validation
     if (result != VK_SUCCESS) {
-        ReportSetupProblem(dev_data, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(GetDevice(dev_data)),
+        ReportSetupProblem(device_data, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(GetDevice(device_data)),
                            "Unable to create pipeline layout.  Device could become unstable.");
         gpu_state->aborted = true;
     }
-    return result;
 }
 
 // Free the device memory and descriptor set associated with a command buffer.

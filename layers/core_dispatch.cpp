@@ -3183,19 +3183,21 @@ VKAPI_ATTR VkResult VKAPI_CALL CreatePipelineLayout(VkDevice device, const VkPip
                                                     const VkAllocationCallbacks *pAllocator, VkPipelineLayout *pPipelineLayout) {
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     VkResult result;
-    bool skip = PreCallValidateCreatePipelineLayout(dev_data, pCreateInfo);
+
+    unique_lock_t lock(global_lock);
+    bool skip = PreCallValidateCreatePipelineLayout(device, pCreateInfo, pAllocator, pPipelineLayout);
     if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
 
-    if (GetEnables(dev_data)->gpu_validation) {
-        unique_lock_t lock(global_lock);
-        result = GpuOverrideDispatchCreatePipelineLayout(dev_data, pCreateInfo, pAllocator, pPipelineLayout);
-    } else {
-        result = dev_data->dispatch_table.CreatePipelineLayout(device, pCreateInfo, pAllocator, pPipelineLayout);
-    }
+    create_pipeline_layout_api_state cpl_state{};
+    cpl_state.modified_create_info = *pCreateInfo;
 
-    if (VK_SUCCESS == result) {
-        PostCallRecordCreatePipelineLayout(dev_data, pCreateInfo, pPipelineLayout);
-    }
+    PreCallRecordCreatePipelineLayout(device, pCreateInfo, pAllocator, pPipelineLayout, &cpl_state);
+
+    lock.unlock();
+    result = dev_data->dispatch_table.CreatePipelineLayout(device, &cpl_state.modified_create_info, pAllocator, pPipelineLayout);
+
+    lock.lock();
+    PostCallRecordCreatePipelineLayout(device, pCreateInfo, pAllocator, pPipelineLayout, result);
     return result;
 }
 

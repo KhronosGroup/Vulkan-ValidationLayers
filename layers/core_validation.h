@@ -140,6 +140,19 @@ struct PHYSICAL_DEVICE_STATE {
     uint32_t display_plane_property_count = 0;
 };
 
+// This structure is used to save data across the CreateGraphicsPipelines down-chain API call
+struct create_graphics_pipeline_api_state {
+    std::vector<safe_VkGraphicsPipelineCreateInfo> gpu_create_infos;
+    std::vector<std::unique_ptr<PIPELINE_STATE>> pipe_state;
+    const VkGraphicsPipelineCreateInfo* pCreateInfos;
+};
+
+// This structure is used modify parameters for the CreatePipelineLayout down-chain API call
+struct create_pipeline_layout_api_state {
+    std::vector<VkDescriptorSetLayout> new_layouts;
+    VkPipelineLayoutCreateInfo modified_create_info;
+};
+
 struct GpuQueue {
     VkPhysicalDevice gpu;
     uint32_t queue_family_index;
@@ -258,13 +271,6 @@ struct layer_data {
     uint32_t api_version = 0;
     GpuValidationState gpu_validation_state = {};
     uint32_t physical_device_count;
-};
-
-// This structure is used to save data across the CreateGraphicsPipelines down-chain API call
-struct create_graphics_pipeline_api_state {
-    std::vector<safe_VkGraphicsPipelineCreateInfo> gpu_create_infos;
-    std::vector<std::unique_ptr<PIPELINE_STATE>> pipe_state;
-    const VkGraphicsPipelineCreateInfo* pCreateInfos;
 };
 
 VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
@@ -1392,6 +1398,14 @@ void PostCallRecordCreateComputePipelines(VkDevice device, VkPipelineCache pipel
                                           VkPipeline* pPipelines, VkResult result,
                                           // Default parameter
                                           std::vector<std::unique_ptr<PIPELINE_STATE>>* pipe_state);
+bool PreCallValidateCreatePipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo* pCreateInfo,
+                                         const VkAllocationCallbacks* pAllocator, VkPipelineLayout* pPipelineLayout);
+void PreCallRecordCreatePipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo* pCreateInfo,
+                                       const VkAllocationCallbacks* pAllocator, VkPipelineLayout* pPipelineLayout,
+                                       create_pipeline_layout_api_state* cpl_state);
+void PostCallRecordCreatePipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo* pCreateInfo,
+                                        const VkAllocationCallbacks* pAllocator, VkPipelineLayout* pPipelineLayout,
+                                        VkResult result);
 
 bool ValidateQueueFamilies(layer_data* device_data, uint32_t queue_family_count, const uint32_t* queue_families,
                            const char* cmd_name, const char* array_parameter_name, const char* unique_error_code,
@@ -1539,9 +1553,6 @@ bool PreCallValidateCreateDescriptorSetLayout(VkDevice device, const VkDescripto
 void PostCallRecordCreateDescriptorSetLayout(VkDevice device, const VkDescriptorSetLayoutCreateInfo* pCreateInfo,
                                              const VkAllocationCallbacks* pAllocator, VkDescriptorSetLayout* pSetLayout,
                                              VkResult result);
-bool PreCallValidateCreatePipelineLayout(const layer_data* dev_data, const VkPipelineLayoutCreateInfo* pCreateInfo);
-void PostCallRecordCreatePipelineLayout(layer_data* dev_data, const VkPipelineLayoutCreateInfo* pCreateInfo,
-                                        const VkPipelineLayout* pPipelineLayout);
 void PostCallRecordCreateDescriptorPool(VkDevice device, const VkDescriptorPoolCreateInfo* pCreateInfo,
                                         const VkAllocationCallbacks* pAllocator, VkDescriptorPool* pDescriptorPool,
                                         VkResult result);
