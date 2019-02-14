@@ -1060,29 +1060,22 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateComputePipelines(VkDevice device, VkPipelin
 VKAPI_ATTR VkResult VKAPI_CALL CreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                            const VkRayTracingPipelineCreateInfoNV *pCreateInfos,
                                                            const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines) {
+    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
     std::vector<std::unique_ptr<PIPELINE_STATE>> pipe_state;
-    pipe_state.reserve(count);
-    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
 
     unique_lock_t lock(global_lock);
-
-    skip |= PreCallValidateCreateRayTracingPipelinesNV(dev_data, count, pCreateInfos, pipe_state);
+    skip |=
+        PreCallValidateCreateRayTracingPipelinesNV(device, pipelineCache, count, pCreateInfos, pAllocator, pPipelines, &pipe_state);
 
     lock.unlock();
+    if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
 
-    if (skip) {
-        for (uint32_t i = 0; i < count; i++) {
-            pPipelines[i] = VK_NULL_HANDLE;
-        }
-        return VK_ERROR_VALIDATION_FAILED_EXT;
-    }
-
-    auto result =
+    VkResult result =
         dev_data->dispatch_table.CreateRayTracingPipelinesNV(device, pipelineCache, count, pCreateInfos, pAllocator, pPipelines);
     lock.lock();
-
-    PostCallRecordCreateRayTracingPipelinesNV(dev_data, count, pipe_state, pPipelines);
+    PostCallRecordCreateRayTracingPipelinesNV(device, pipelineCache, count, pCreateInfos, pAllocator, pPipelines, result,
+                                              &pipe_state);
 
     return result;
 }
