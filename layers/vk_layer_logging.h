@@ -99,8 +99,7 @@ typedef struct _debug_report_data {
     void DebugReportSetUtilsObjectName(const VkDebugUtilsObjectNameInfoEXT *pNameInfo) {
         std::unique_lock<std::mutex> lock(debug_report_mutex);
         if (pNameInfo->pObjectName) {
-            debugUtilsObjectNameMap.insert(
-                std::make_pair<uint64_t, std::string>((uint64_t &&) pNameInfo->objectHandle, pNameInfo->pObjectName));
+            debugUtilsObjectNameMap.emplace(pNameInfo->objectHandle, pNameInfo->pObjectName);
         } else {
             debugUtilsObjectNameMap.erase(pNameInfo->objectHandle);
         }
@@ -109,8 +108,7 @@ typedef struct _debug_report_data {
     void DebugReportSetMarkerObjectName(const VkDebugMarkerObjectNameInfoEXT *pNameInfo) {
         std::unique_lock<std::mutex> lock(debug_report_mutex);
         if (pNameInfo->pObjectName) {
-            debugObjectNameMap.insert(
-                std::make_pair<uint64_t, std::string>((uint64_t &&) pNameInfo->object, pNameInfo->pObjectName));
+            debugObjectNameMap.emplace(pNameInfo->object, pNameInfo->pObjectName);
         } else {
             debugObjectNameMap.erase(pNameInfo->object);
         }
@@ -118,7 +116,7 @@ typedef struct _debug_report_data {
 
     std::string DebugReportGetUtilsObjectName(const uint64_t object) const {
         std::string label = "";
-        auto utils_name_iter = debugUtilsObjectNameMap.find(object);
+        const auto utils_name_iter = debugUtilsObjectNameMap.find(object);
         if (utils_name_iter != debugUtilsObjectNameMap.end()) {
             label = utils_name_iter->second;
         }
@@ -127,7 +125,7 @@ typedef struct _debug_report_data {
 
     std::string DebugReportGetMarkerObjectName(const uint64_t object) const {
         std::string label = "";
-        auto marker_name_iter = debugObjectNameMap.find(object);
+        const auto marker_name_iter = debugObjectNameMap.find(object);
         if (marker_name_iter != debugObjectNameMap.end()) {
             label = marker_name_iter->second;
         }
