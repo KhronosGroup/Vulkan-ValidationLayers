@@ -13501,30 +13501,31 @@ void PostCallRecordDestroySamplerYcbcrConversionKHR(VkDevice device, VkSamplerYc
     }
 }
 
-bool PreCallValidateGetBufferDeviceAddressEXT(layer_data *dev_data, const VkBufferDeviceAddressInfoEXT *pInfo) {
+bool PreCallValidateGetBufferDeviceAddressEXT(VkDevice device, const VkBufferDeviceAddressInfoEXT *pInfo) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
 
-    if (!GetEnabledFeatures(dev_data)->buffer_address.bufferDeviceAddress) {
-        skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT,
+    if (!GetEnabledFeatures(device_data)->buffer_address.bufferDeviceAddress) {
+        skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT,
                         HandleToUint64(pInfo->buffer), "VUID-vkGetBufferDeviceAddressEXT-None-02598",
                         "The bufferDeviceAddress feature must: be enabled.");
     }
 
-    if (dev_data->physical_device_count > 1 && !GetEnabledFeatures(dev_data)->buffer_address.bufferDeviceAddressMultiDevice) {
-        skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT,
+    if (device_data->physical_device_count > 1 && !GetEnabledFeatures(device_data)->buffer_address.bufferDeviceAddressMultiDevice) {
+        skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT,
                         HandleToUint64(pInfo->buffer), "VUID-vkGetBufferDeviceAddressEXT-device-02599",
                         "If device was created with multiple physical devices, then the "
                         "bufferDeviceAddressMultiDevice feature must: be enabled.");
     }
 
-    auto buffer_state = GetBufferState(dev_data, pInfo->buffer);
+    auto buffer_state = GetBufferState(device_data, pInfo->buffer);
     if (buffer_state) {
         if (!(buffer_state->createInfo.flags & VK_BUFFER_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT_EXT)) {
-            skip |= ValidateMemoryIsBoundToBuffer(dev_data, buffer_state, "vkGetBufferDeviceAddressEXT()",
+            skip |= ValidateMemoryIsBoundToBuffer(device_data, buffer_state, "vkGetBufferDeviceAddressEXT()",
                                                   "VUID-VkBufferDeviceAddressInfoEXT-buffer-02600");
         }
 
-        skip |= ValidateBufferUsageFlags(dev_data, buffer_state, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_EXT, true,
+        skip |= ValidateBufferUsageFlags(device_data, buffer_state, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_EXT, true,
                                          "VUID-VkBufferDeviceAddressInfoEXT-buffer-02601", "vkGetBufferDeviceAddressEXT()",
                                          "VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_EXT");
     }
