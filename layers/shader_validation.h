@@ -210,7 +210,13 @@ bool ValidateAndCapturePipelineShaderState(layer_data *dev_data, PIPELINE_STATE 
 bool ValidateComputePipeline(layer_data *dev_data, PIPELINE_STATE *pPipeline);
 bool ValidateRayTracingPipelineNV(layer_data *dev_data, PIPELINE_STATE *pipeline);
 typedef std::pair<unsigned, unsigned> descriptor_slot_t;
-bool PreCallValidateCreateShaderModule(layer_data *dev_data, VkShaderModuleCreateInfo const *pCreateInfo, bool *is_spirv,
-                                       bool *spirv_valid);
+bool PreCallValidateCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo *pCreateInfo,
+                                       const VkAllocationCallbacks *pAllocator, VkShaderModule *pShaderModule);
+void PreCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo *pCreateInfo,
+                                     const VkAllocationCallbacks *pAllocator, VkShaderModule *pShaderModule,
+                                     create_shader_module_api_state *csm_state);
+void PostCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo *pCreateInfo,
+                                      const VkAllocationCallbacks *pAllocator, VkShaderModule *pShaderModule, VkResult result,
+                                      create_shader_module_api_state *csm_state);
 
 #endif  // VULKAN_SHADER_VALIDATION_H

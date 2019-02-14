@@ -153,6 +153,15 @@ struct create_pipeline_layout_api_state {
     VkPipelineLayoutCreateInfo modified_create_info;
 };
 
+// This structure is used modify and pass parameters for the CreateShaderModule down-chain API call
+
+struct create_shader_module_api_state {
+    uint32_t unique_shader_id;
+    VkShaderModuleCreateInfo instrumented_create_info;
+    std::vector<unsigned int> instrumented_pgm;
+};
+
+
 struct GpuQueue {
     VkPhysicalDevice gpu;
     uint32_t queue_family_index;
@@ -1971,8 +1980,6 @@ void PostCallRecordDestroySamplerYcbcrConversion(VkDevice device, VkSamplerYcbcr
                                                  const VkAllocationCallbacks* pAllocator);
 void PostCallRecordDestroySamplerYcbcrConversionKHR(VkDevice device, VkSamplerYcbcrConversion ycbcrConversion,
                                                     const VkAllocationCallbacks* pAllocator);
-void PostCallRecordCreateShaderModule(layer_data* dev_data, bool is_spirv, const VkShaderModuleCreateInfo* pCreateInfo,
-                                      VkShaderModule* pShaderModule, uint32_t unique_shader_id);
 bool PreCallValidateGetBufferDeviceAddressEXT(layer_data* dev_data, const VkBufferDeviceAddressInfoEXT* pInfo);
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
 bool PreCallValidateGetAndroidHardwareBufferProperties(VkDevice device, const struct AHardwareBuffer* buffer,

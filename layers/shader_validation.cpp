@@ -38,6 +38,14 @@
 #include "spirv-tools/libspirv.h"
 #include "xxhash.h"
 
+namespace core_validation {
+extern unordered_map<void *, layer_data *> layer_data_map;
+extern unordered_map<void *, instance_layer_data *> instance_layer_data_map;
+};  // namespace core_validation
+
+using core_validation::instance_layer_data_map;
+using core_validation::layer_data_map;
+
 enum FORMAT_TYPE {
     FORMAT_TYPE_FLOAT = 1,  // UNORM, SNORM, FLOAT, USCALED, SSCALED, SRGB -- anything we consider float in the shader
     FORMAT_TYPE_SINT = 2,
@@ -2261,20 +2269,21 @@ static ValidationCache *GetValidationCacheInfo(VkShaderModuleCreateInfo const *p
     return nullptr;
 }
 
-bool PreCallValidateCreateShaderModule(layer_data *dev_data, VkShaderModuleCreateInfo const *pCreateInfo, bool *is_spirv,
-                                       bool *spirv_valid) {
+bool PreCallValidateCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo *pCreateInfo,
+                                       const VkAllocationCallbacks *pAllocator, VkShaderModule *pShaderModule) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+
     bool skip = false;
     spv_result_t spv_valid = SPV_SUCCESS;
-    auto report_data = GetReportData(dev_data);
 
-    if (GetDisables(dev_data)->shader_validation) {
+    if (GetDisables(device_data)->shader_validation) {
         return false;
     }
 
-    auto have_glsl_shader = GetDeviceExtensions(dev_data)->vk_nv_glsl_shader;
+    auto have_glsl_shader = GetDeviceExtensions(device_data)->vk_nv_glsl_shader;
 
     if (!have_glsl_shader && (pCreateInfo->codeSize % 4)) {
-        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+        skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                         "VUID-VkShaderModuleCreateInfo-pCode-01376",
                         "SPIR-V module not valid: Codesize must be a multiple of 4 but is " PRINTF_SIZE_T_SPECIFIER ".",
                         pCreateInfo->codeSize);
@@ -2288,27 +2297,27 @@ bool PreCallValidateCreateShaderModule(layer_data *dev_data, VkShaderModuleCreat
 
         // Use SPIRV-Tools validator to try and catch any issues with the module itself
         spv_target_env spirv_environment = SPV_ENV_VULKAN_1_0;
-        if (GetApiVersion(dev_data) >= VK_API_VERSION_1_1) {
+        if (GetApiVersion(device_data) >= VK_API_VERSION_1_1) {
             spirv_environment = SPV_ENV_VULKAN_1_1;
         }
         spv_context ctx = spvContextCreate(spirv_environment);
         spv_const_binary_t binary{pCreateInfo->pCode, pCreateInfo->codeSize / sizeof(uint32_t)};
         spv_diagnostic diag = nullptr;
         spv_validator_options options = spvValidatorOptionsCreate();
-        if (GetDeviceExtensions(dev_data)->vk_khr_relaxed_block_layout) {
+        if (GetDeviceExtensions(device_data)->vk_khr_relaxed_block_layout) {
             spvValidatorOptionsSetRelaxBlockLayout(options, true);
         }
-        if (GetDeviceExtensions(dev_data)->vk_ext_scalar_block_layout &&
-            GetEnabledFeatures(dev_data)->scalar_block_layout_features.scalarBlockLayout == VK_TRUE) {
+        if (GetDeviceExtensions(device_data)->vk_ext_scalar_block_layout &&
+            GetEnabledFeatures(device_data)->scalar_block_layout_features.scalarBlockLayout == VK_TRUE) {
             spvValidatorOptionsSetScalarBlockLayout(options, true);
         }
         spv_valid = spvValidateWithOptions(ctx, options, &binary, &diag);
         if (spv_valid != SPV_SUCCESS) {
             if (!have_glsl_shader || (pCreateInfo->pCode[0] == spv::MagicNumber)) {
-                skip |=
-                    log_msg(report_data, spv_valid == SPV_WARNING ? VK_DEBUG_REPORT_WARNING_BIT_EXT : VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                            VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, kVUID_Core_Shader_InconsistentSpirv,
-                            "SPIR-V module not valid: %s", diag && diag->error ? diag->error : "(no error text)");
+                skip |= log_msg(device_data->report_data,
+                                spv_valid == SPV_WARNING ? VK_DEBUG_REPORT_WARNING_BIT_EXT : VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, kVUID_Core_Shader_InconsistentSpirv,
+                                "SPIR-V module not valid: %s", diag && diag->error ? diag->error : "(no error text)");
             }
         } else {
             if (cache) {
@@ -2321,7 +2330,31 @@ bool PreCallValidateCreateShaderModule(layer_data *dev_data, VkShaderModuleCreat
         spvContextDestroy(ctx);
     }
 
-    *is_spirv = (pCreateInfo->pCode[0] == spv::MagicNumber);
-    *spirv_valid = (spv_valid == SPV_SUCCESS);
     return skip;
+}
+
+void PreCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo *pCreateInfo,
+                                     const VkAllocationCallbacks *pAllocator, VkShaderModule *pShaderModule,
+                                     create_shader_module_api_state *csm_state) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), core_validation::layer_data_map);
+
+    if (GetEnables(device_data)->gpu_validation) {
+        GpuPreCallCreateShaderModule(device_data, pCreateInfo, pAllocator, pShaderModule, &csm_state->unique_shader_id,
+                                     &csm_state->instrumented_create_info, &csm_state->instrumented_pgm);
+    }
+}
+
+void PostCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo *pCreateInfo,
+                                      const VkAllocationCallbacks *pAllocator, VkShaderModule *pShaderModule, VkResult result,
+                                      create_shader_module_api_state *csm_state) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), core_validation::layer_data_map);
+    if (VK_SUCCESS != result) return;
+
+    spv_target_env spirv_environment =
+        ((GetApiVersion(device_data) >= VK_API_VERSION_1_1) ? SPV_ENV_VULKAN_1_1 : SPV_ENV_VULKAN_1_0);
+    bool is_spirv = (pCreateInfo->pCode[0] == spv::MagicNumber);
+    std::unique_ptr<shader_module> new_shader_module(
+        is_spirv ? new shader_module(pCreateInfo, *pShaderModule, spirv_environment, csm_state->unique_shader_id)
+                 : new shader_module());
+    device_data->shaderModuleMap[*pShaderModule] = std::move(new_shader_module);
 }

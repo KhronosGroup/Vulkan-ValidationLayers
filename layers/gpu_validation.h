@@ -117,9 +117,10 @@ std::unique_ptr<safe_VkDeviceCreateInfo> GpuPreCallRecordCreateDevice(VkPhysical
 void GpuPostCallRecordCreateDevice(layer_data *dev_data);
 void GpuPreCallRecordDestroyDevice(layer_data *dev_data);
 void GpuPreCallRecordFreeCommandBuffers(layer_data *dev_data, uint32_t commandBufferCount, const VkCommandBuffer *pCommandBuffers);
-VkResult GpuOverrideDispatchCreateShaderModule(layer_data *dev_data, const VkShaderModuleCreateInfo *pCreateInfo,
-                                               const VkAllocationCallbacks *pAllocator, VkShaderModule *pShaderModule,
-                                               uint32_t *unique_shader_id);
+bool GpuPreCallCreateShaderModule(layer_data *dev_data, const VkShaderModuleCreateInfo *pCreateInfo,
+                                  const VkAllocationCallbacks *pAllocator, VkShaderModule *pShaderModule,
+                                  uint32_t *unique_shader_id, VkShaderModuleCreateInfo *instrumented_create_info,
+                                  std::vector<unsigned int> *instrumented_pgm);
 bool GpuPreCallCreatePipelineLayout(layer_data *device_data, const VkPipelineLayoutCreateInfo *pCreateInfo,
                                     const VkAllocationCallbacks *pAllocator, VkPipelineLayout *pPipelineLayout,
                                     std::vector<VkDescriptorSetLayout> *new_layouts,
