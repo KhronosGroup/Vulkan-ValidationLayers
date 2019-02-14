@@ -3618,7 +3618,7 @@ bool ValidateLayouts(const core_validation::layer_data *device_data, RenderPassC
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, vuid,
                                 "Layout for resolve attachment reference %u in subpass %u is %s but should be "
                                 "COLOR_ATTACHMENT_OPTIMAL or GENERAL.",
-                                j, i, string_VkImageLayout(subpass.pColorAttachments[j].layout));
+                                j, i, string_VkImageLayout(subpass.pResolveAttachments[j].layout));
             }
 
             if (attach_first_use[attach_index]) {
