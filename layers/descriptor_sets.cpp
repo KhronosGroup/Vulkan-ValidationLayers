@@ -22,6 +22,8 @@
 // Allow use of STL min and max functions in Windows
 #define NOMINMAX
 
+#include "core_validation_error_enums.h"
+#include "core_validation.h"
 #include "descriptor_sets.h"
 #include "hash_vk_types.h"
 #include "vk_enum_string_helper.h"

@@ -33,7 +33,6 @@
 #include "vk_layer_extension_utils.h"
 #include "vk_layer_utils.h"
 #include "core_validation.h"
-#include "core_validation_types.h"
 #include "shader_validation.h"
 #include "spirv-tools/libspirv.h"
 #include "xxhash.h"

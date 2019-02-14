@@ -21,8 +21,6 @@
 #ifndef CORE_VALIDATION_DESCRIPTOR_SETS_H_
 #define CORE_VALIDATION_DESCRIPTOR_SETS_H_
 
-#include "core_validation_error_enums.h"
-#include "core_validation_types.h"
 #include "hash_vk_types.h"
 #include "vk_layer_logging.h"
 #include "vk_layer_utils.h"
