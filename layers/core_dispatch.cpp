@@ -3217,23 +3217,19 @@ VKAPI_ATTR void VKAPI_CALL CmdBindPipeline(VkCommandBuffer commandBuffer, VkPipe
 VKAPI_ATTR VkResult VKAPI_CALL CreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo *pCreateInfo,
                                                   const VkAllocationCallbacks *pAllocator, VkShaderModule *pShaderModule) {
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    bool is_spirv;
-    bool spirv_valid;
     VkResult result;
-    uint32_t unique_shader_id = 0;
+    create_shader_module_api_state csm_state{};
+    csm_state.instrumented_create_info = *pCreateInfo;
+    unique_lock_t lock(global_lock);
 
-    if (PreCallValidateCreateShaderModule(dev_data, pCreateInfo, &is_spirv, &spirv_valid)) return VK_ERROR_VALIDATION_FAILED_EXT;
+    bool skip = PreCallValidateCreateShaderModule(device, pCreateInfo, pAllocator, pShaderModule);
+    if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
 
-    if (GetEnables(dev_data)->gpu_validation) {
-        result = GpuOverrideDispatchCreateShaderModule(dev_data, pCreateInfo, pAllocator, pShaderModule, &unique_shader_id);
-    } else {
-        result = dev_data->dispatch_table.CreateShaderModule(device, pCreateInfo, pAllocator, pShaderModule);
-    }
-
-    if (result == VK_SUCCESS) {
-        lock_guard_t lock(global_lock);
-        PostCallRecordCreateShaderModule(dev_data, is_spirv, pCreateInfo, pShaderModule, unique_shader_id);
-    }
+    PreCallRecordCreateShaderModule(device, pCreateInfo, pAllocator, pShaderModule, &csm_state);
+    lock.unlock();
+    result = dev_data->dispatch_table.CreateShaderModule(device, &csm_state.instrumented_create_info, pAllocator, pShaderModule);
+    lock.lock();
+    PostCallRecordCreateShaderModule(device, pCreateInfo, pAllocator, pShaderModule, result, &csm_state);
     return result;
 }
 

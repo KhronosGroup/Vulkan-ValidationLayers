@@ -598,23 +598,17 @@ static bool GpuInstrumentShader(layer_data *dev_data, const VkShaderModuleCreate
     return pass;
 }
 
-// Override the CreateShaderModule command to provide the instrumented shader to the driver.
-VkResult GpuOverrideDispatchCreateShaderModule(layer_data *dev_data, const VkShaderModuleCreateInfo *pCreateInfo,
-                                               const VkAllocationCallbacks *pAllocator, VkShaderModule *pShaderModule,
-                                               uint32_t *unique_shader_id) {
-    VkShaderModuleCreateInfo instrumented_create_info = *pCreateInfo;
-    std::vector<unsigned int> instrumented_pgm;
-    bool pass = GpuInstrumentShader(dev_data, pCreateInfo, instrumented_pgm, unique_shader_id);
+// Create the instrumented shader data to provide to the driver.
+bool GpuPreCallCreateShaderModule(layer_data *dev_data, const VkShaderModuleCreateInfo *pCreateInfo,
+                                  const VkAllocationCallbacks *pAllocator, VkShaderModule *pShaderModule,
+                                  uint32_t *unique_shader_id, VkShaderModuleCreateInfo *instrumented_create_info,
+                                  std::vector<unsigned int> *instrumented_pgm) {
+    bool pass = GpuInstrumentShader(dev_data, pCreateInfo, *instrumented_pgm, unique_shader_id);
     if (pass) {
-        instrumented_create_info.pCode = instrumented_pgm.data();
-        instrumented_create_info.codeSize = instrumented_pgm.size() * sizeof(unsigned int);
+        instrumented_create_info->pCode = instrumented_pgm->data();
+        instrumented_create_info->codeSize = instrumented_pgm->size() * sizeof(unsigned int);
     }
-    // We trust the optimizer's instrumentation pass to not change the validity of the SPIR-V as determined by
-    // the prior call to PreCallValidate.
-    // But we do pass the instrumented shader to the driver.
-    VkResult result =
-        GetDispatchTable(dev_data)->CreateShaderModule(GetDevice(dev_data), &instrumented_create_info, pAllocator, pShaderModule);
-    return result;
+    return pass;
 }
 
 // Generate the stage-specific part of the message.
