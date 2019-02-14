@@ -1136,24 +1136,19 @@ VKAPI_ATTR VkResult VKAPI_CALL ResetDescriptorPool(VkDevice device, VkDescriptor
     return result;
 }
 
-// TODO: PostCallRecord routine is dependent on data generated in PreCallValidate -- needs to be moved out
 VKAPI_ATTR VkResult VKAPI_CALL AllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo *pAllocateInfo,
                                                       VkDescriptorSet *pDescriptorSets) {
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     unique_lock_t lock(global_lock);
     cvdescriptorset::AllocateDescriptorSetsData common_data(pAllocateInfo->descriptorSetCount);
-    bool skip = PreCallValidateAllocateDescriptorSets(dev_data, pAllocateInfo, &common_data);
-    lock.unlock();
-
+    bool skip = PreCallValidateAllocateDescriptorSets(device, pAllocateInfo, pDescriptorSets, &common_data);
     if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
 
+    lock.unlock();
     VkResult result = dev_data->dispatch_table.AllocateDescriptorSets(device, pAllocateInfo, pDescriptorSets);
 
-    if (VK_SUCCESS == result) {
-        lock.lock();
-        PostCallRecordAllocateDescriptorSets(dev_data, pAllocateInfo, pDescriptorSets, &common_data);
-        lock.unlock();
-    }
+    lock.lock();
+    PostCallRecordAllocateDescriptorSets(device, pAllocateInfo, pDescriptorSets, result, &common_data);
     return result;
 }
 

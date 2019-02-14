@@ -6146,21 +6146,27 @@ void PostCallRecordResetDescriptorPool(VkDevice device, VkDescriptorPool descrip
 // Ensure the pool contains enough descriptors and descriptor sets to satisfy
 // an allocation request. Fills common_data with the total number of descriptors of each type required,
 // as well as DescriptorSetLayout ptrs used for later update.
-bool PreCallValidateAllocateDescriptorSets(layer_data *dev_data, const VkDescriptorSetAllocateInfo *pAllocateInfo,
+bool PreCallValidateAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo *pAllocateInfo,
+                                           VkDescriptorSet *pDescriptorSets,
                                            cvdescriptorset::AllocateDescriptorSetsData *common_data) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+
     // Always update common data
-    cvdescriptorset::UpdateAllocateDescriptorSetsData(dev_data, pAllocateInfo, common_data);
-    if (dev_data->instance_data->disabled.allocate_descriptor_sets) return false;
+    cvdescriptorset::UpdateAllocateDescriptorSetsData(device_data, pAllocateInfo, common_data);
+    if (device_data->instance_data->disabled.allocate_descriptor_sets) return false;
     // All state checks for AllocateDescriptorSets is done in single function
-    return cvdescriptorset::ValidateAllocateDescriptorSets(dev_data, pAllocateInfo, common_data);
+    return cvdescriptorset::ValidateAllocateDescriptorSets(device_data, pAllocateInfo, common_data);
 }
+
 // Allocation state was good and call down chain was made so update state based on allocating descriptor sets
-void PostCallRecordAllocateDescriptorSets(layer_data *dev_data, const VkDescriptorSetAllocateInfo *pAllocateInfo,
-                                          VkDescriptorSet *pDescriptorSets,
-                                          const cvdescriptorset::AllocateDescriptorSetsData *common_data) {
+void PostCallRecordAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo *pAllocateInfo,
+                                          VkDescriptorSet *pDescriptorSets, VkResult result,
+                                          cvdescriptorset::AllocateDescriptorSetsData *common_data) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (VK_SUCCESS != result) return;
     // All the updates are contained in a single cvdescriptorset function
-    cvdescriptorset::PerformAllocateDescriptorSets(pAllocateInfo, pDescriptorSets, common_data, &dev_data->descriptorPoolMap,
-                                                   &dev_data->setMap, dev_data);
+    cvdescriptorset::PerformAllocateDescriptorSets(pAllocateInfo, pDescriptorSets, common_data, &device_data->descriptorPoolMap,
+                                                   &device_data->setMap, device_data);
 }
 
 bool PreCallValidateFreeDescriptorSets(VkDevice device, VkDescriptorPool descriptorPool, uint32_t count,
