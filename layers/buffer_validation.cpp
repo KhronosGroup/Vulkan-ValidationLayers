@@ -34,6 +34,9 @@
 #include "vk_layer_logging.h"
 #include "vk_typemap_helper.h"
 
+#include "core_validation.h"
+#include "shader_validation.h"
+#include "descriptor_sets.h"
 #include "buffer_validation.h"
 
 namespace core_validation {

@@ -21,9 +21,6 @@
 #ifndef CORE_VALIDATION_BUFFER_VALIDATION_H_
 #define CORE_VALIDATION_BUFFER_VALIDATION_H_
 
-#include "core_validation.h"
-#include "shader_validation.h"
-#include "descriptor_sets.h"
 #include "vulkan/vk_layer.h"
 #include <limits.h>
 #include <memory>
