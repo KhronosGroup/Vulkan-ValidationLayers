@@ -38,6 +38,50 @@
 #include "spirv-tools/libspirv.h"
 #include "xxhash.h"
 
+void decoration_set::add(uint32_t decoration, uint32_t value) {
+    switch (decoration) {
+        case spv::DecorationLocation:
+            flags |= location_bit;
+            location = value;
+            break;
+        case spv::DecorationPatch:
+            flags |= patch_bit;
+            break;
+        case spv::DecorationRelaxedPrecision:
+            flags |= relaxed_precision_bit;
+            break;
+        case spv::DecorationBlock:
+            flags |= block_bit;
+            break;
+        case spv::DecorationBufferBlock:
+            flags |= buffer_block_bit;
+            break;
+        case spv::DecorationComponent:
+            flags |= component_bit;
+            component = value;
+            break;
+        case spv::DecorationInputAttachmentIndex:
+            flags |= input_attachment_index_bit;
+            input_attachment_index = value;
+            break;
+        case spv::DecorationDescriptorSet:
+            flags |= descriptor_set_bit;
+            descriptor_set = value;
+            break;
+        case spv::DecorationBinding:
+            flags |= binding_bit;
+            binding = value;
+            break;
+        case spv::DecorationNonWritable:
+            flags |= nonwritable_bit;
+            break;
+        case spv::DecorationBuiltIn:
+            flags |= builtin_bit;
+            builtin = value;
+            break;
+    }
+}
+
 enum FORMAT_TYPE {
     FORMAT_TYPE_FLOAT = 1,  // UNORM, SNORM, FLOAT, USCALED, SSCALED, SRGB -- anything we consider float in the shader
     FORMAT_TYPE_SINT = 2,
@@ -122,6 +166,16 @@ void SHADER_MODULE_STATE::BuildDefIndex() {
                 def_index[insn.word(2)] = insn.offset();
                 break;
 
+                // Decorations
+            case spv::OpDecorate: {
+                auto targetId = insn.word(1);
+                decorations[targetId].add(insn.word(2), insn.len() > 3u ? insn.word(3) : 0u);
+            } break;
+            case spv::OpGroupDecorate: {
+                auto const &src = decorations[insn.word(1)];
+                for (auto i = 2u; i < insn.len(); i++) decorations[insn.word(i)].merge(src);
+            } break;
+
                 // Entry points ... add to the entrypoint table
             case spv::OpEntryPoint: {
                 // Entry points do not have an id (the id is the function id) and thus need their own table
@@ -131,6 +185,7 @@ void SHADER_MODULE_STATE::BuildDefIndex() {
                 entry_points.emplace(entrypoint_name, EntryPoint{insn.offset(), entrypoint_stage});
                 break;
             }
+
             default:
                 // We don't care about any other defs for now.
                 break;
@@ -548,11 +603,11 @@ static spirv_inst_iter GetStructType(SHADER_MODULE_STATE const *src, spirv_inst_
 }
 
 static bool CollectInterfaceBlockMembers(SHADER_MODULE_STATE const *src, std::map<location_t, interface_var> *out,
-                                         std::unordered_map<unsigned, unsigned> const &blocks, bool is_array_of_verts, uint32_t id,
-                                         uint32_t type_id, bool is_patch, int /*first_location*/) {
+                                         bool is_array_of_verts, uint32_t id, uint32_t type_id, bool is_patch,
+                                         int /*first_location*/) {
     // Walk down the type_id presented, trying to determine whether it's actually an interface block.
     auto type = GetStructType(src, src->get_def(type_id), is_array_of_verts && !is_patch);
-    if (type == src->end() || blocks.find(type.word(1)) == blocks.end()) {
+    if (type == src->end() || !(src->get_decorations(type.word(1)).flags & decoration_set::block_bit)) {
         // This isn't an interface block.
         return false;
     }
@@ -616,6 +671,8 @@ static bool CollectInterfaceBlockMembers(SHADER_MODULE_STATE const *src, std::ma
 }
 
 static std::vector<uint32_t> FindEntrypointInterfaces(spirv_inst_iter entrypoint) {
+    assert(entrypoint.opcode() == spv::OpEntryPoint);
+
     std::vector<uint32_t> interfaces;
     // Find the end of the entrypoint's name string. additional zero bytes follow the actual null terminator, to fill out the
     // rest of the word - so we only need to look at the last byte in the word to determine which word contains the terminator.
@@ -632,66 +689,29 @@ static std::vector<uint32_t> FindEntrypointInterfaces(spirv_inst_iter entrypoint
 
 static std::map<location_t, interface_var> CollectInterfaceByLocation(SHADER_MODULE_STATE const *src, spirv_inst_iter entrypoint,
                                                                       spv::StorageClass sinterface, bool is_array_of_verts) {
-    std::unordered_map<unsigned, unsigned> var_locations;
-    std::unordered_map<unsigned, unsigned> var_builtins;
-    std::unordered_map<unsigned, unsigned> var_components;
-    std::unordered_map<unsigned, unsigned> blocks;
-    std::unordered_map<unsigned, unsigned> var_patch;
-    std::unordered_map<unsigned, unsigned> var_relaxed_precision;
-
-    for (auto insn : *src) {
-        // We consider two interface models: SSO rendezvous-by-location, and builtins. Complain about anything that
-        // fits neither model.
-        if (insn.opcode() == spv::OpDecorate) {
-            if (insn.word(2) == spv::DecorationLocation) {
-                var_locations[insn.word(1)] = insn.word(3);
-            }
-
-            if (insn.word(2) == spv::DecorationBuiltIn) {
-                var_builtins[insn.word(1)] = insn.word(3);
-            }
-
-            if (insn.word(2) == spv::DecorationComponent) {
-                var_components[insn.word(1)] = insn.word(3);
-            }
-
-            if (insn.word(2) == spv::DecorationBlock) {
-                blocks[insn.word(1)] = 1;
-            }
-
-            if (insn.word(2) == spv::DecorationPatch) {
-                var_patch[insn.word(1)] = 1;
-            }
-
-            if (insn.word(2) == spv::DecorationRelaxedPrecision) {
-                var_relaxed_precision[insn.word(1)] = 1;
-            }
-        }
-    }
-
-    // TODO: handle grouped decorations
     // TODO: handle index=1 dual source outputs from FS -- two vars will have the same location, and we DON'T want to clobber.
 
     std::map<location_t, interface_var> out;
 
-    for (uint32_t word : FindEntrypointInterfaces(entrypoint)) {
-        auto insn = src->get_def(word);
+    for (uint32_t iid : FindEntrypointInterfaces(entrypoint)) {
+        auto insn = src->get_def(iid);
         assert(insn != src->end());
         assert(insn.opcode() == spv::OpVariable);
 
         if (insn.word(3) == static_cast<uint32_t>(sinterface)) {
+            auto d = src->get_decorations(iid);
             unsigned id = insn.word(2);
             unsigned type = insn.word(1);
 
-            int location = ValueOrDefault(var_locations, id, static_cast<unsigned>(-1));
-            int builtin = ValueOrDefault(var_builtins, id, static_cast<unsigned>(-1));
-            unsigned component = ValueOrDefault(var_components, id, 0);  // Unspecified is OK, is 0
-            bool is_patch = var_patch.find(id) != var_patch.end();
-            bool is_relaxed_precision = var_relaxed_precision.find(id) != var_relaxed_precision.end();
+            int location = d.location;
+            int builtin = d.builtin;
+            unsigned component = d.component;
+            bool is_patch = (d.flags & decoration_set::patch_bit) != 0;
+            bool is_relaxed_precision = (d.flags & decoration_set::relaxed_precision_bit) != 0;
 
             if (builtin != -1)
                 continue;
-            else if (!CollectInterfaceBlockMembers(src, &out, blocks, is_array_of_verts, id, type, is_patch, location)) {
+            else if (!CollectInterfaceBlockMembers(src, &out, is_array_of_verts, id, type, is_patch, location)) {
                 // A user-defined interface variable, with a location. Where a variable occupied multiple locations, emit
                 // one result for each.
                 unsigned num_locations = GetLocationsConsumedByType(src, type, is_array_of_verts && !is_patch);
@@ -844,15 +864,10 @@ static bool IsWritableDescriptorType(SHADER_MODULE_STATE const *module, uint32_t
 
         case spv::OpTypeStruct: {
             std::unordered_set<unsigned> nonwritable_members;
+            if (module->get_decorations(type.word(1)).flags & decoration_set::buffer_block_bit) is_storage_buffer = true;
             for (auto insn : *module) {
-                if (insn.opcode() == spv::OpDecorate && insn.word(1) == type.word(1)) {
-                    if (insn.word(2) == spv::DecorationBufferBlock) {
-                        // Legacy storage block in the Uniform storage class
-                        // has its struct type decorated with BufferBlock.
-                        is_storage_buffer = true;
-                    }
-                } else if (insn.opcode() == spv::OpMemberDecorate && insn.word(1) == type.word(1) &&
-                           insn.word(3) == spv::DecorationNonWritable) {
+                if (insn.opcode() == spv::OpMemberDecorate && insn.word(1) == type.word(1) &&
+                    insn.word(3) == spv::DecorationNonWritable) {
                     nonwritable_members.insert(insn.word(2));
                 }
             }
@@ -869,30 +884,6 @@ static bool IsWritableDescriptorType(SHADER_MODULE_STATE const *module, uint32_t
 static std::vector<std::pair<descriptor_slot_t, interface_var>> CollectInterfaceByDescriptorSlot(
     debug_report_data const *report_data, SHADER_MODULE_STATE const *src, std::unordered_set<uint32_t> const &accessible_ids,
     bool *has_writable_descriptor) {
-    std::unordered_map<unsigned, unsigned> var_sets;
-    std::unordered_map<unsigned, unsigned> var_bindings;
-    std::unordered_map<unsigned, unsigned> var_nonwritable;
-
-    for (auto insn : *src) {
-        // All variables in the Uniform or UniformConstant storage classes are required to be decorated with both
-        // DecorationDescriptorSet and DecorationBinding.
-        if (insn.opcode() == spv::OpDecorate) {
-            if (insn.word(2) == spv::DecorationDescriptorSet) {
-                var_sets[insn.word(1)] = insn.word(3);
-            }
-
-            if (insn.word(2) == spv::DecorationBinding) {
-                var_bindings[insn.word(1)] = insn.word(3);
-            }
-
-            // Note: do toplevel DecorationNonWritable out here; it applies to
-            // the OpVariable rather than the type.
-            if (insn.word(2) == spv::DecorationNonWritable) {
-                var_nonwritable[insn.word(1)] = 1;
-            }
-        }
-    }
-
     std::vector<std::pair<descriptor_slot_t, interface_var>> out;
 
     for (auto id : accessible_ids) {
@@ -902,15 +893,16 @@ static std::vector<std::pair<descriptor_slot_t, interface_var>> CollectInterface
         if (insn.opcode() == spv::OpVariable &&
             (insn.word(3) == spv::StorageClassUniform || insn.word(3) == spv::StorageClassUniformConstant ||
              insn.word(3) == spv::StorageClassStorageBuffer)) {
-            unsigned set = ValueOrDefault(var_sets, insn.word(2), 0);
-            unsigned binding = ValueOrDefault(var_bindings, insn.word(2), 0);
+            auto d = src->get_decorations(insn.word(2));
+            unsigned set = d.descriptor_set;
+            unsigned binding = d.binding;
 
             interface_var v = {};
             v.id = insn.word(2);
             v.type_id = insn.word(1);
             out.emplace_back(std::make_pair(set, binding), v);
 
-            if (var_nonwritable.find(id) == var_nonwritable.end() &&
+            if (!(d.flags & decoration_set::nonwritable_bit) &&
                 IsWritableDescriptorType(src, insn.word(1), insn.word(3) == spv::StorageClassStorageBuffer)) {
                 *has_writable_descriptor = true;
             }

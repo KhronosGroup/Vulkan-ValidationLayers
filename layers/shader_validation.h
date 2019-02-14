@@ -71,12 +71,48 @@ struct spirv_inst_iter {
     spirv_inst_iter const &operator*() const { return *this; }
 };
 
+struct decoration_set {
+    enum {
+        location_bit = 1 << 0,
+        patch_bit = 1 << 1,
+        relaxed_precision_bit = 1 << 2,
+        block_bit = 1 << 3,
+        buffer_block_bit = 1 << 4,
+        component_bit = 1 << 5,
+        input_attachment_index_bit = 1 << 6,
+        descriptor_set_bit = 1 << 7,
+        binding_bit = 1 << 8,
+        nonwritable_bit = 1 << 9,
+        builtin_bit = 1 << 10,
+    };
+    uint32_t flags = 0;
+    uint32_t location = static_cast<uint32_t>(-1);
+    uint32_t component = 0;
+    uint32_t input_attachment_index = 0;
+    uint32_t descriptor_set = 0;
+    uint32_t binding = 0;
+    uint32_t builtin = static_cast<uint32_t>(-1);
+
+    void merge(decoration_set const &other) {
+        if (other.flags & location_bit) location = other.location;
+        if (other.flags & component_bit) component = other.component;
+        if (other.flags & input_attachment_index_bit) input_attachment_index = other.input_attachment_index;
+        if (other.flags & descriptor_set_bit) descriptor_set = other.descriptor_set;
+        if (other.flags & binding_bit) binding = other.binding;
+        if (other.flags & builtin_bit) builtin = other.builtin;
+        flags |= other.flags;
+    }
+
+    void add(uint32_t decoration, uint32_t value);
+};
+
 struct SHADER_MODULE_STATE {
     // The spirv image itself
     std::vector<uint32_t> words;
     // A mapping of <id> to the first word of its def. this is useful because walking type
     // trees, constant expressions, etc requires jumping all over the instruction stream.
     std::unordered_map<unsigned, unsigned> def_index;
+    std::unordered_map<unsigned, decoration_set> decorations;
     struct EntryPoint {
         uint32_t offset;
         VkShaderStageFlags stage;
@@ -142,6 +178,13 @@ struct SHADER_MODULE_STATE {
     }
 
     SHADER_MODULE_STATE() : has_valid_spirv(false), vk_shader_module(VK_NULL_HANDLE) {}
+
+    decoration_set get_decorations(unsigned id) const {
+        // return the actual decorations for this id, or a default set.
+        auto it = decorations.find(id);
+        if (it != decorations.end()) return it->second;
+        return decoration_set();
+    }
 
     // Expose begin() / end() to enable range-based for
     spirv_inst_iter begin() const { return spirv_inst_iter(words.begin(), words.begin() + 5); }  // First insn
