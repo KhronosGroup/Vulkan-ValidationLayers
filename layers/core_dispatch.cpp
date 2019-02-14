@@ -3224,7 +3224,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateShaderModule(VkDevice device, const VkShade
 VKAPI_ATTR VkDeviceAddress VKAPI_CALL GetBufferDeviceAddressEXT(VkDevice device, const VkBufferDeviceAddressInfoEXT *pInfo) {
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     unique_lock_t lock(global_lock);
-    bool skip = PreCallValidateGetBufferDeviceAddressEXT(dev_data, pInfo);
+    bool skip = PreCallValidateGetBufferDeviceAddressEXT(device, pInfo);
     if (!skip) {
         lock.unlock();
         return dev_data->dispatch_table.GetBufferDeviceAddressEXT(device, pInfo);

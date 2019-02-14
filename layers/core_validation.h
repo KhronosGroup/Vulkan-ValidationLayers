@@ -1983,7 +1983,7 @@ void PostCallRecordDestroySamplerYcbcrConversion(VkDevice device, VkSamplerYcbcr
                                                  const VkAllocationCallbacks* pAllocator);
 void PostCallRecordDestroySamplerYcbcrConversionKHR(VkDevice device, VkSamplerYcbcrConversion ycbcrConversion,
                                                     const VkAllocationCallbacks* pAllocator);
-bool PreCallValidateGetBufferDeviceAddressEXT(layer_data* dev_data, const VkBufferDeviceAddressInfoEXT* pInfo);
+bool PreCallValidateGetBufferDeviceAddressEXT(VkDevice device, const VkBufferDeviceAddressInfoEXT* pInfo);
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
 bool PreCallValidateGetAndroidHardwareBufferProperties(VkDevice device, const struct AHardwareBuffer* buffer,
                                                        VkAndroidHardwareBufferPropertiesANDROID* pProperties);
