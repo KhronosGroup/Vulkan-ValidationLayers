@@ -5300,9 +5300,11 @@ void PostCallRecordCreateComputePipelines(VkDevice device, VkPipelineCache pipel
     }
 }
 
-bool PreCallValidateCreateRayTracingPipelinesNV(layer_data *dev_data, uint32_t count,
+bool PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                 const VkRayTracingPipelineCreateInfoNV *pCreateInfos,
-                                                vector<std::unique_ptr<PIPELINE_STATE>> &pipe_state) {
+                                                const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
+                                                vector<std::unique_ptr<PIPELINE_STATE>> *pipe_state) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
 
     // The order of operations here is a little convoluted but gets the job done
@@ -5310,25 +5312,31 @@ bool PreCallValidateCreateRayTracingPipelinesNV(layer_data *dev_data, uint32_t c
     //  2. Create state is then validated (which uses flags setup during shadowing)
     //  3. If everything looks good, we'll then create the pipeline and add NODE to pipelineMap
     uint32_t i = 0;
+    pipe_state->reserve(count);
     for (i = 0; i < count; i++) {
-        pipe_state.push_back(std::unique_ptr<PIPELINE_STATE>(new PIPELINE_STATE));
-        pipe_state[i]->initRayTracingPipelineNV(&pCreateInfos[i]);
-        pipe_state[i]->pipeline_layout = *GetPipelineLayout(dev_data, pCreateInfos[i].layout);
+        pipe_state->push_back(std::unique_ptr<PIPELINE_STATE>(new PIPELINE_STATE));
+        (*pipe_state)[i]->initRayTracingPipelineNV(&pCreateInfos[i]);
+        (*pipe_state)[i]->pipeline_layout = *GetPipelineLayout(device_data, pCreateInfos[i].layout);
     }
 
     for (i = 0; i < count; i++) {
-        skip |= ValidateRayTracingPipelineNV(dev_data, pipe_state[i].get());
+        skip |= ValidateRayTracingPipelineNV(device_data, (*pipe_state)[i].get());
     }
 
     return skip;
 }
 
-void PostCallRecordCreateRayTracingPipelinesNV(layer_data *dev_data, uint32_t count,
-                                               vector<std::unique_ptr<PIPELINE_STATE>> &pipe_state, VkPipeline *pPipelines) {
+void PostCallRecordCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
+                                               const VkRayTracingPipelineCreateInfoNV *pCreateInfos,
+                                               const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines, VkResult result,
+                                               vector<std::unique_ptr<PIPELINE_STATE>> *pipe_state) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+
+    if (VK_SUCCESS != result) return;
     for (uint32_t i = 0; i < count; i++) {
         if (pPipelines[i] != VK_NULL_HANDLE) {
-            pipe_state[i]->pipeline = pPipelines[i];
-            dev_data->pipelineMap[pPipelines[i]] = std::move(pipe_state[i]);
+            (*pipe_state)[i]->pipeline = pPipelines[i];
+            device_data->pipelineMap[pPipelines[i]] = std::move((*pipe_state)[i]);
         }
     }
 }

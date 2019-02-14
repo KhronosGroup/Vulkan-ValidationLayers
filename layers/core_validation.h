@@ -1419,6 +1419,14 @@ bool PreCallValidateAllocateDescriptorSets(VkDevice device, const VkDescriptorSe
 void PostCallRecordAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo* pAllocateInfo,
                                           VkDescriptorSet* pDescriptorSets, VkResult result,
                                           cvdescriptorset::AllocateDescriptorSetsData* common_data);
+bool PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
+                                                const VkRayTracingPipelineCreateInfoNV* pCreateInfos,
+                                                const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
+                                                vector<std::unique_ptr<PIPELINE_STATE>>* pipe_state);
+void PostCallRecordCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
+                                               const VkRayTracingPipelineCreateInfoNV* pCreateInfos,
+                                               const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines, VkResult result,
+                                               vector<std::unique_ptr<PIPELINE_STATE>>* pipe_state);
 
 bool ValidateQueueFamilies(layer_data* device_data, uint32_t queue_family_count, const uint32_t* queue_families,
                            const char* cmd_name, const char* array_parameter_name, const char* unique_error_code,
@@ -1554,11 +1562,6 @@ bool PreCallValidateDestroyFramebuffer(VkDevice device, VkFramebuffer framebuffe
 void PreCallRecordDestroyFramebuffer(VkDevice device, VkFramebuffer framebuffer, const VkAllocationCallbacks* pAllocator);
 bool PreCallValidateDestroyRenderPass(VkDevice device, VkRenderPass renderPass, const VkAllocationCallbacks* pAllocator);
 void PreCallRecordDestroyRenderPass(VkDevice device, VkRenderPass renderPass, const VkAllocationCallbacks* pAllocator);
-bool PreCallValidateCreateRayTracingPipelinesNV(layer_data* dev_data, uint32_t count,
-                                                const VkRayTracingPipelineCreateInfoNV* pCreateInfos,
-                                                vector<std::unique_ptr<PIPELINE_STATE>>& pipe_state);
-void PostCallRecordCreateRayTracingPipelinesNV(layer_data* dev_data, uint32_t count,
-                                               vector<std::unique_ptr<PIPELINE_STATE>>& pipe_state, VkPipeline* pPipelines);
 void PostCallRecordCreateSampler(VkDevice device, const VkSamplerCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                                  VkSampler* pSampler, VkResult result);
 bool PreCallValidateCreateDescriptorSetLayout(VkDevice device, const VkDescriptorSetLayoutCreateInfo* pCreateInfo,
