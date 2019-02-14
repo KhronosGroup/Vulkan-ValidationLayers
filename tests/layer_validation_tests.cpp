@@ -223,6 +223,27 @@ static bool CheckCreateRenderPass2Support(VkRenderFramework *renderFramework, st
     }
     return false;
 }
+// Helper for checking descriptor_indexing support and adding related extensions.
+static bool CheckDescriptorIndexingSupportAndInitFramework(VkRenderFramework *renderFramework,
+                                                           std::vector<const char *> &instance_extension_names,
+                                                           std::vector<const char *> &device_extension_names,
+                                                           VkValidationFeaturesEXT *features, void *userData) {
+    bool descriptor_indexing = renderFramework->InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    if (descriptor_indexing) {
+        instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    }
+    renderFramework->InitFramework(myDbgFunc, userData, features);
+    descriptor_indexing = descriptor_indexing && renderFramework->DeviceExtensionSupported(renderFramework->gpu(), nullptr,
+                                                                                           VK_KHR_MAINTENANCE3_EXTENSION_NAME);
+    descriptor_indexing = descriptor_indexing && renderFramework->DeviceExtensionSupported(
+                                                     renderFramework->gpu(), nullptr, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+    if (descriptor_indexing) {
+        device_extension_names.push_back(VK_KHR_MAINTENANCE3_EXTENSION_NAME);
+        device_extension_names.push_back(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+        return true;
+    }
+    return false;
+}
 
 // Dependent "false" type for the static assert, as GCC will evaluate
 // non-dependent static_asserts even for non-instantiated templates
@@ -1448,24 +1469,10 @@ TEST_F(VkLayerTest, RequiredParameter) {
 TEST_F(VkLayerTest, PnextOnlyStructValidation) {
     TEST_DESCRIPTION("See if checks occur on structs ONLY used in pnext chains.");
 
-    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
-        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    } else {
-        printf("%s Did not find required instance extension %s; skipped.\n", kSkipPrefix,
-               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    if (!(CheckDescriptorIndexingSupportAndInitFramework(this, m_instance_extension_names, m_device_extension_names, NULL,
+                                                         m_errorMonitor))) {
+        printf("Descriptor indexing or one of its dependencies not supported, skipping tests\n");
         return;
-    }
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
-
-    std::array<const char *, 2> required_device_extensions = {
-        {VK_KHR_MAINTENANCE3_EXTENSION_NAME, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME}};
-    for (auto device_extension : required_device_extensions) {
-        if (DeviceExtensionSupported(gpu(), nullptr, device_extension)) {
-            m_device_extension_names.push_back(device_extension);
-        } else {
-            printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, device_extension);
-            return;
-        }
     }
 
     PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
@@ -2451,13 +2458,32 @@ TEST_F(VkLayerTest, GpuValidationArrayOOB) {
         return;
     }
 #endif
+
     VkValidationFeatureEnableEXT enables[] = {VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT};
     VkValidationFeaturesEXT features = {};
     features.sType = VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT;
     features.enabledValidationFeatureCount = 1;
     features.pEnabledValidationFeatures = enables;
+    bool descriptor_indexing = CheckDescriptorIndexingSupportAndInitFramework(this, m_instance_extension_names,
+                                                                              m_device_extension_names, &features, m_errorMonitor);
+    VkPhysicalDeviceFeatures2KHR features2 = {};
+    auto indexing_features = lvl_init_struct<VkPhysicalDeviceDescriptorIndexingFeaturesEXT>();
+    if (descriptor_indexing) {
+        PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
+            (PFN_vkGetPhysicalDeviceFeatures2KHR)vkGetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+        ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
+
+        features2 = lvl_init_struct<VkPhysicalDeviceFeatures2KHR>(&indexing_features);
+        vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
+
+        if (!indexing_features.runtimeDescriptorArray) {
+            printf("runtimeDescriptorArrayfeature not supported, skipping runtime test\n");
+            descriptor_indexing = false;
+        }
+    }
+
     VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-    ASSERT_NO_FATAL_FAILURE(Init(nullptr, nullptr, pool_flags, &features));
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, pool_flags));
     if (m_device->props.apiVersion < VK_API_VERSION_1_1) {
         printf("%s GPU-Assisted validation test requires Vulkan 1.1+.\n", kSkipPrefix);
         return;
@@ -2567,7 +2593,16 @@ TEST_F(VkLayerTest, GpuValidationArrayOOB) {
         "void main(){\n"
         "   uFragColor = texture(tex[tex_ind], vec2(0, 0));\n"
         "}\n";
-
+    char const *fsSource_frag_runtime =
+        "#version 450\n"
+        "#extension GL_EXT_nonuniform_qualifier : enable\n"
+        "\n"
+        "layout(set = 0, binding = 1) uniform sampler2D tex[];\n"
+        "layout(location = 0) out vec4 uFragColor;\n"
+        "layout(location = 0) in flat uint tex_ind;\n"
+        "void main(){\n"
+        "   uFragColor = texture(tex[tex_ind], vec2(0, 0));\n"
+        "}\n";
     struct TestCase {
         char const *vertex_source;
         char const *fragment_source;
@@ -2586,6 +2621,9 @@ TEST_F(VkLayerTest, GpuValidationArrayOOB) {
                      "gl_Position += 1e-30 * texture(tex[uniform_index_buffer.tex_index[0]], vec2(0, 0));"});
     tests.push_back({vsSource_frag, fsSource_frag, true, "uFragColor = texture(tex[tex_ind], vec2(0, 0));"});
 #endif
+    if (descriptor_indexing) {
+        tests.push_back({vsSource_frag, fsSource_frag_runtime, false, "Index of 25 used to index descriptor array of length 6."});
+    }
 
     VkViewport viewport = m_viewports[0];
     VkRect2D scissors = m_scissors[0];
@@ -29208,23 +29246,10 @@ TEST_F(VkLayerTest, DescriptorIndexingSetLayoutWithoutExtension) {
 TEST_F(VkLayerTest, DescriptorIndexingSetLayout) {
     TEST_DESCRIPTION("Exercise various create/allocate-time errors related to VK_EXT_descriptor_indexing.");
 
-    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
-        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    } else {
-        printf("%s Did not find required instance extension %s; skipped.\n", kSkipPrefix,
-               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    if (!(CheckDescriptorIndexingSupportAndInitFramework(this, m_instance_extension_names, m_device_extension_names, NULL,
+                                                         m_errorMonitor))) {
+        printf("Descriptor indexing or one of its dependencies not supported, skipping tests\n");
         return;
-    }
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
-    std::array<const char *, 2> required_device_extensions = {
-        {VK_KHR_MAINTENANCE3_EXTENSION_NAME, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME}};
-    for (auto device_extension : required_device_extensions) {
-        if (DeviceExtensionSupported(gpu(), nullptr, device_extension)) {
-            m_device_extension_names.push_back(device_extension);
-        } else {
-            printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, device_extension);
-            return;
-        }
     }
 
     PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
