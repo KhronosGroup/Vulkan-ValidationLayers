@@ -7642,18 +7642,35 @@ static bool HasNonFramebufferStagePipelineStageFlags(VkPipelineStageFlags inflag
 }
 
 static int GetGraphicsPipelineStageLogicalOrdinal(VkPipelineStageFlagBits flag) {
+    // Note that the list (and lookup) ignore invalid-for-enabled-extension condition.  This should be checked elsewhere
+    // and would greatly complicate this intentionally simple implementation
+    // clang-format off
     const VkPipelineStageFlagBits ordered_array[] = {
-        VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT,
-        VK_PIPELINE_STAGE_VERTEX_SHADER_BIT, VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT,
-        VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT, VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT,
+        VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+        VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT,
+        VK_PIPELINE_STAGE_VERTEX_INPUT_BIT,
+        VK_PIPELINE_STAGE_VERTEX_SHADER_BIT,
+        VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT,
+        VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT,
+        VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT,
+        VK_PIPELINE_STAGE_TRANSFORM_FEEDBACK_BIT_EXT,
+
         // Including the task/mesh shaders here is not technically correct, as they are in a
         // separate logical pipeline - but it works for the case this is currently used, and
         // fixing it would require significant rework and end up with the code being far more
         // verbose for no practical gain.
         // However, worth paying attention to this if using this function in a new way.
-        VK_PIPELINE_STAGE_TASK_SHADER_BIT_NV, VK_PIPELINE_STAGE_MESH_SHADER_BIT_NV, VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
-        VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
-        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT};
+        VK_PIPELINE_STAGE_TASK_SHADER_BIT_NV,
+        VK_PIPELINE_STAGE_MESH_SHADER_BIT_NV,
+
+        VK_PIPELINE_STAGE_SHADING_RATE_IMAGE_BIT_NV,
+        VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
+        VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+        VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+        VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT
+    };
+    // clang-format on
 
     const int ordered_array_length = sizeof(ordered_array) / sizeof(VkPipelineStageFlagBits);
 
