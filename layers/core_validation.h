@@ -161,7 +161,6 @@ struct create_shader_module_api_state {
     std::vector<unsigned int> instrumented_pgm;
 };
 
-
 struct GpuQueue {
     VkPhysicalDevice gpu;
     uint32_t queue_family_index;
@@ -1415,6 +1414,12 @@ void PreCallRecordCreatePipelineLayout(VkDevice device, const VkPipelineLayoutCr
 void PostCallRecordCreatePipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo* pCreateInfo,
                                         const VkAllocationCallbacks* pAllocator, VkPipelineLayout* pPipelineLayout,
                                         VkResult result);
+bool PreCallValidateAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo* pAllocateInfo,
+                                           VkDescriptorSet* pDescriptorSets,
+                                           cvdescriptorset::AllocateDescriptorSetsData* common_data);
+void PostCallRecordAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo* pAllocateInfo,
+                                          VkDescriptorSet* pDescriptorSets, VkResult result,
+                                          cvdescriptorset::AllocateDescriptorSetsData* common_data);
 
 bool ValidateQueueFamilies(layer_data* device_data, uint32_t queue_family_count, const uint32_t* queue_families,
                            const char* cmd_name, const char* array_parameter_name, const char* unique_error_code,
@@ -1568,11 +1573,6 @@ void PostCallRecordCreateDescriptorPool(VkDevice device, const VkDescriptorPoolC
 bool PreCallValidateResetDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool, VkDescriptorPoolResetFlags flags);
 void PostCallRecordResetDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool, VkDescriptorPoolResetFlags flags,
                                        VkResult result);
-bool PreCallValidateAllocateDescriptorSets(layer_data* dev_data, const VkDescriptorSetAllocateInfo* pAllocateInfo,
-                                           cvdescriptorset::AllocateDescriptorSetsData* common_data);
-void PostCallRecordAllocateDescriptorSets(layer_data* dev_data, const VkDescriptorSetAllocateInfo* pAllocateInfo,
-                                          VkDescriptorSet* pDescriptorSets,
-                                          const cvdescriptorset::AllocateDescriptorSetsData* common_data);
 bool PreCallValidateFreeDescriptorSets(VkDevice device, VkDescriptorPool descriptorPool, uint32_t count,
                                        const VkDescriptorSet* pDescriptorSets);
 void PreCallRecordFreeDescriptorSets(VkDevice device, VkDescriptorPool descriptorPool, uint32_t count,
