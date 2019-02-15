@@ -714,18 +714,24 @@ void ThreadSafety::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapch
                             # Replace first empty [] in member name with index
                             element = member.replace('[]','[index]',1)
                             if '[]' in element:
-                                # Replace any second empty [] in element name with
-                                # inner array index based on mapping array names like
-                                # "pSomeThings[]" to "someThingCount" array size.
-                                # This could be more robust by mapping a param member
-                                # name to a struct type and "len" attribute.
+                                # TODO: These null checks can be removed if threading ends up behind parameter
+                                #       validation in layer order
+                                element_ptr = element.split('[]')[0]
+                                paramdecl += '    if (' + element_ptr + ') {\n'
+                                # Replace any second empty [] in element name with inner array index based on mapping array
+                                # names like "pSomeThings[]" to "someThingCount" array size. This could be more robust by
+                                # mapping a param member name to a struct type and "len" attribute.
                                 limit = element[0:element.find('s[]')] + 'Count'
                                 dotp = limit.rfind('.p')
                                 limit = limit[0:dotp+1] + limit[dotp+2:dotp+3].lower() + limit[dotp+3:]
-                                paramdecl += '    for(uint32_t index2=0;index2<'+limit+';index2++)\n'
+                                paramdecl += '        for(uint32_t index2=0;index2<'+limit+';index2++) {\n'
                                 element = element.replace('[]','[index2]')
                                 second_indent = '   '
-                            paramdecl += '    ' + second_indent + functionprefix + 'WriteObject(' + element + ');\n'
+                                paramdecl += '        ' + second_indent + functionprefix + 'WriteObject(' + element + ');\n'
+                                paramdecl += '        }\n'
+                                paramdecl += '    }\n'
+                            else:
+                                paramdecl += '    ' + second_indent + functionprefix + 'WriteObject(' + element + ');\n'
                         paramdecl += '}\n'
                     else:
                         # externsync can list members to synchronize
