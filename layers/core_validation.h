@@ -199,8 +199,6 @@ struct instance_layer_data {
     std::vector<VkDebugUtilsMessengerEXT> logging_messenger;
     VkLayerInstanceDispatchTable dispatch_table;
 
-    CALL_STATE vkEnumeratePhysicalDevicesState = UNCALLED;
-    uint32_t physical_devices_count = 0;
     CALL_STATE vkEnumeratePhysicalDeviceGroupsState = UNCALLED;
     uint32_t physical_device_groups_count = 0;
     CHECK_DISABLED disabled = {};
@@ -1837,9 +1835,6 @@ void PostCallRecordAcquireNextImageKHR(VkDevice device, VkSwapchainKHR swapchain
                                        VkFence fence, uint32_t* pImageIndex, VkResult result);
 void PostCallRecordAcquireNextImage2KHR(VkDevice device, const VkAcquireNextImageInfoKHR* pAcquireInfo, uint32_t* pImageIndex,
                                         VkResult result);
-bool PreCallValidateEnumeratePhysicalDevices(VkInstance instance, uint32_t* pPhysicalDeviceCount,
-                                             VkPhysicalDevice* pPhysicalDevices);
-void PreCallRecordEnumeratePhysicalDevices(VkInstance instance, uint32_t* pPhysicalDeviceCount, VkPhysicalDevice* pPhysicalDevices);
 void PostCallRecordEnumeratePhysicalDevices(VkInstance instance, uint32_t* pPhysicalDeviceCount, VkPhysicalDevice* pPhysicalDevices,
                                             VkResult result);
 bool PreCallValidateGetPhysicalDeviceQueueFamilyProperties(VkPhysicalDevice physicalDevice, uint32_t* pQueueFamilyPropertyCount,
