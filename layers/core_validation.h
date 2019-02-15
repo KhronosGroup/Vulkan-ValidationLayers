@@ -249,6 +249,12 @@ struct layer_data {
     // Map for queue family index to queue count
     unordered_map<uint32_t, uint32_t> queue_family_index_map;
 
+    // Used for instance versions of this object
+    unordered_map<VkPhysicalDevice, PHYSICAL_DEVICE_STATE> physical_device_map;
+    unordered_map<VkSurfaceKHR, SURFACE_STATE> surface_map;
+    CHECK_DISABLED disabled = {};
+    CHECK_ENABLED enabled = {};
+
     VkDevice device = VK_NULL_HANDLE;
     VkPhysicalDevice physical_device = VK_NULL_HANDLE;
 
