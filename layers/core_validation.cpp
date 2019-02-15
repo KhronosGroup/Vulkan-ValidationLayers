@@ -12290,42 +12290,10 @@ void PostCallRecordAcquireNextImage2KHR(VkDevice device, const VkAcquireNextImag
                                 pAcquireInfo->fence, pImageIndex);
 }
 
-bool PreCallValidateEnumeratePhysicalDevices(VkInstance instance, uint32_t *pPhysicalDeviceCount,
-                                             VkPhysicalDevice *pPhysicalDevices) {
-    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(instance), instance_layer_data_map);
-    if (!pPhysicalDevices) return false;
-    bool skip = false;
-    if (UNCALLED == instance_data->vkEnumeratePhysicalDevicesState) {
-        // Flag warning here. You can call this without having queried the count, but it may not be
-        // robust on platforms with multiple physical devices.
-        skip |= log_msg(instance_data->report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_INSTANCE_EXT, 0,
-                        kVUID_Core_DevLimit_MissingQueryCount,
-                        "Call sequence has vkEnumeratePhysicalDevices() w/ non-NULL pPhysicalDevices. You should first call "
-                        "vkEnumeratePhysicalDevices() w/ NULL pPhysicalDevices to query pPhysicalDeviceCount.");
-    }  // TODO : Could also flag a warning if re-calling this function in QUERY_DETAILS state
-    else if (instance_data->physical_devices_count != *pPhysicalDeviceCount) {
-        // Having actual count match count from app is not a requirement, so this can be a warning
-        skip |= log_msg(instance_data->report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT,
-                        VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT, 0, kVUID_Core_DevLimit_CountMismatch,
-                        "Call to vkEnumeratePhysicalDevices() w/ pPhysicalDeviceCount value %u, but actual count supported by "
-                        "this instance is %u.",
-                        *pPhysicalDeviceCount, instance_data->physical_devices_count);
-    }
-    return skip;
-}
-
-void PreCallRecordEnumeratePhysicalDevices(VkInstance instance, uint32_t *pPhysicalDeviceCount,
-                                           VkPhysicalDevice *pPhysicalDevices) {
-    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(instance), instance_layer_data_map);
-    instance_data->vkEnumeratePhysicalDevicesState = QUERY_COUNT;
-}
-
 void PostCallRecordEnumeratePhysicalDevices(VkInstance instance, uint32_t *pPhysicalDeviceCount, VkPhysicalDevice *pPhysicalDevices,
                                             VkResult result) {
     instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(instance), instance_layer_data_map);
-    if (NULL == pPhysicalDevices) {
-        instance_data->physical_devices_count = *pPhysicalDeviceCount;
-    } else if (result == VK_SUCCESS || result == VK_INCOMPLETE) {  // Save physical devices
+    if ((NULL != pPhysicalDevices) && ((result == VK_SUCCESS || result == VK_INCOMPLETE))) {
         for (uint32_t i = 0; i < *pPhysicalDeviceCount; i++) {
             auto &phys_device_state = instance_data->physical_device_map[pPhysicalDevices[i]];
             phys_device_state.phys_device = pPhysicalDevices[i];
