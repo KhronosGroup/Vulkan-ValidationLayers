@@ -12761,53 +12761,9 @@ void PostCallDestroyDebugReportCallbackEXT(VkInstance instance, VkDebugReportCal
     layer_destroy_report_callback(instance_data->report_data, msgCallback, pAllocator);
 }
 
-static bool ValidateEnumeratePhysicalDeviceGroups(instance_layer_data *instance_data, uint32_t *pPhysicalDeviceGroupCount,
-                                                  VkPhysicalDeviceGroupPropertiesKHR *pPhysicalDeviceGroupProperties,
-                                                  const char *func_name) {
-    bool skip = false;
-
-    // For this instance, flag when EnumeratePhysicalDeviceGroups goes to QUERY_COUNT and then QUERY_DETAILS.
-    if (NULL != pPhysicalDeviceGroupProperties) {
-        if (UNCALLED == instance_data->vkEnumeratePhysicalDeviceGroupsState) {
-            // Flag warning here. You can call this without having queried the count, but it may not be
-            // robust on platforms with multiple physical devices.
-            skip |= log_msg(instance_data->report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_INSTANCE_EXT,
-                            0, kVUID_Core_DevLimit_MissingQueryCount,
-                            "Call sequence has vkEnumeratePhysicalDeviceGroups() w/ non-NULL "
-                            "pPhysicalDeviceGroupProperties. You should first call %s w/ "
-                            "NULL pPhysicalDeviceGroupProperties to query pPhysicalDeviceGroupCount.",
-                            func_name);
-        }  // TODO : Could also flag a warning if re-calling this function in QUERY_DETAILS state
-        else if (instance_data->physical_device_groups_count != *pPhysicalDeviceGroupCount) {
-            // Having actual count match count from app is not a requirement, so this can be a warning
-            skip |= log_msg(instance_data->report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT,
-                            VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT, 0, kVUID_Core_DevLimit_CountMismatch,
-                            "Call to %s w/ pPhysicalDeviceGroupCount value %u, but actual count "
-                            "supported by this instance is %u.",
-                            func_name, *pPhysicalDeviceGroupCount, instance_data->physical_device_groups_count);
-        }
-    }
-
-    return skip;
-}
-
-static void PreRecordEnumeratePhysicalDeviceGroupsState(instance_layer_data *instance_data,
-                                                        VkPhysicalDeviceGroupPropertiesKHR *pPhysicalDeviceGroupProperties) {
-    if (instance_data) {
-        // For this instance, flag when EnumeratePhysicalDeviceGroups goes to QUERY_COUNT and then QUERY_DETAILS.
-        if (NULL == pPhysicalDeviceGroupProperties) {
-            instance_data->vkEnumeratePhysicalDeviceGroupsState = QUERY_COUNT;
-        } else {
-            instance_data->vkEnumeratePhysicalDeviceGroupsState = QUERY_DETAILS;
-        }
-    }
-}
-
 static void PostRecordEnumeratePhysicalDeviceGroupsState(instance_layer_data *instance_data, uint32_t *pPhysicalDeviceGroupCount,
                                                          VkPhysicalDeviceGroupPropertiesKHR *pPhysicalDeviceGroupProperties) {
-    if (NULL == pPhysicalDeviceGroupProperties) {
-        instance_data->physical_device_groups_count = *pPhysicalDeviceGroupCount;
-    } else {  // Save physical devices
+    if (NULL != pPhysicalDeviceGroupProperties) {
         for (uint32_t i = 0; i < *pPhysicalDeviceGroupCount; i++) {
             for (uint32_t j = 0; j < pPhysicalDeviceGroupProperties[i].physicalDeviceCount; j++) {
                 VkPhysicalDevice cur_phys_dev = pPhysicalDeviceGroupProperties[i].physicalDevices[j];
@@ -12820,17 +12776,6 @@ static void PostRecordEnumeratePhysicalDeviceGroupsState(instance_layer_data *in
     }
 }
 
-bool PreCallValidateEnumeratePhysicalDeviceGroups(VkInstance instance, uint32_t *pPhysicalDeviceGroupCount,
-                                                  VkPhysicalDeviceGroupPropertiesKHR *pPhysicalDeviceGroupProperties) {
-    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(instance), instance_layer_data_map);
-    return ValidateEnumeratePhysicalDeviceGroups(instance_data, pPhysicalDeviceGroupCount, pPhysicalDeviceGroupProperties,
-                                                 "vkEnumeratePhysicalDeviceGroups()");
-}
-void PreCallRecordEnumeratePhysicalDeviceGroups(VkInstance instance, uint32_t *pPhysicalDeviceGroupCount,
-                                                VkPhysicalDeviceGroupPropertiesKHR *pPhysicalDeviceGroupProperties) {
-    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(instance), instance_layer_data_map);
-    PreRecordEnumeratePhysicalDeviceGroupsState(instance_data, pPhysicalDeviceGroupProperties);
-}
 void PostCallRecordEnumeratePhysicalDeviceGroups(VkInstance instance, uint32_t *pPhysicalDeviceGroupCount,
                                                  VkPhysicalDeviceGroupPropertiesKHR *pPhysicalDeviceGroupProperties,
                                                  VkResult result) {
@@ -12839,17 +12784,6 @@ void PostCallRecordEnumeratePhysicalDeviceGroups(VkInstance instance, uint32_t *
     PostRecordEnumeratePhysicalDeviceGroupsState(instance_data, pPhysicalDeviceGroupCount, pPhysicalDeviceGroupProperties);
 }
 
-bool PreCallValidateEnumeratePhysicalDeviceGroupsKHR(VkInstance instance, uint32_t *pPhysicalDeviceGroupCount,
-                                                     VkPhysicalDeviceGroupPropertiesKHR *pPhysicalDeviceGroupProperties) {
-    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(instance), instance_layer_data_map);
-    return ValidateEnumeratePhysicalDeviceGroups(instance_data, pPhysicalDeviceGroupCount, pPhysicalDeviceGroupProperties,
-                                                 "vkEnumeratePhysicalDeviceGroupsKHR()");
-}
-void PreCallRecordEnumeratePhysicalDeviceGroupsKHR(VkInstance instance, uint32_t *pPhysicalDeviceGroupCount,
-                                                   VkPhysicalDeviceGroupPropertiesKHR *pPhysicalDeviceGroupProperties) {
-    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(instance), instance_layer_data_map);
-    PreRecordEnumeratePhysicalDeviceGroupsState(instance_data, pPhysicalDeviceGroupProperties);
-}
 void PostCallRecordEnumeratePhysicalDeviceGroupsKHR(VkInstance instance, uint32_t *pPhysicalDeviceGroupCount,
                                                     VkPhysicalDeviceGroupPropertiesKHR *pPhysicalDeviceGroupProperties,
                                                     VkResult result) {
