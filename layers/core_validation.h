@@ -199,8 +199,6 @@ struct instance_layer_data {
     std::vector<VkDebugUtilsMessengerEXT> logging_messenger;
     VkLayerInstanceDispatchTable dispatch_table;
 
-    CALL_STATE vkEnumeratePhysicalDeviceGroupsState = UNCALLED;
-    uint32_t physical_device_groups_count = 0;
     CHECK_DISABLED disabled = {};
     CHECK_ENABLED enabled = {};
 
@@ -1892,17 +1890,9 @@ void PostCallRecordCreateDebugReportCallbackEXT(VkInstance instance, const VkDeb
                                                 VkResult result);
 void PostCallDestroyDebugReportCallbackEXT(VkInstance instance, VkDebugReportCallbackEXT msgCallback,
                                            const VkAllocationCallbacks* pAllocator);
-bool PreCallValidateEnumeratePhysicalDeviceGroups(VkInstance instance, uint32_t* pPhysicalDeviceGroupCount,
-                                                  VkPhysicalDeviceGroupPropertiesKHR* pPhysicalDeviceGroupProperties);
-void PreCallRecordEnumeratePhysicalDeviceGroups(VkInstance instance, uint32_t* pPhysicalDeviceGroupCount,
-                                                VkPhysicalDeviceGroupPropertiesKHR* pPhysicalDeviceGroupProperties);
 void PostCallRecordEnumeratePhysicalDeviceGroups(VkInstance instance, uint32_t* pPhysicalDeviceGroupCount,
                                                  VkPhysicalDeviceGroupPropertiesKHR* pPhysicalDeviceGroupProperties,
                                                  VkResult result);
-bool PreCallValidateEnumeratePhysicalDeviceGroupsKHR(VkInstance instance, uint32_t* pPhysicalDeviceGroupCount,
-                                                     VkPhysicalDeviceGroupPropertiesKHR* pPhysicalDeviceGroupProperties);
-void PreCallRecordEnumeratePhysicalDeviceGroupsKHR(VkInstance instance, uint32_t* pPhysicalDeviceGroupCount,
-                                                   VkPhysicalDeviceGroupPropertiesKHR* pPhysicalDeviceGroupProperties);
 void PostCallRecordEnumeratePhysicalDeviceGroupsKHR(VkInstance instance, uint32_t* pPhysicalDeviceGroupCount,
                                                     VkPhysicalDeviceGroupPropertiesKHR* pPhysicalDeviceGroupProperties,
                                                     VkResult result);
