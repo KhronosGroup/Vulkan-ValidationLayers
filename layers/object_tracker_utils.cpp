@@ -123,11 +123,12 @@ bool ObjectLifetimes::ValidateCommandBuffer(VkDevice device, VkCommandPool comma
         ObjTrackState *pNode = object_map[kVulkanObjectTypeCommandBuffer][HandleToUint64(command_buffer)];
 
         if (pNode->parent_object != HandleToUint64(command_pool)) {
-            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                            object_handle, "VUID-vkFreeCommandBuffers-pCommandBuffers-parent",
-                            "FreeCommandBuffers is attempting to free Command Buffer 0x%" PRIxLEAST64
-                            " belonging to Command Pool 0x%" PRIxLEAST64 " from pool 0x%" PRIxLEAST64 ").",
-                            HandleToUint64(command_buffer), pNode->parent_object, HandleToUint64(command_pool));
+            skip |=
+                log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT, object_handle,
+                        "VUID-vkFreeCommandBuffers-pCommandBuffers-parent",
+                        "FreeCommandBuffers is attempting to free Command Buffer %s belonging to Command Pool %s from pool %s).",
+                        report_data->FormatHandle(command_buffer).c_str(), report_data->FormatHandle(pNode->parent_object).c_str(),
+                        report_data->FormatHandle(command_pool).c_str());
         }
     } else {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT, object_handle,
@@ -276,8 +277,8 @@ bool ObjectLifetimes::DeviceReportUndestroyedObjects(VkDevice device, VulkanObje
         const ObjTrackState *object_info = item.second;
         skip |=
             log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, get_debug_report_enum[object_type], object_info->handle, error_code,
-                    "OBJ ERROR : For device 0x%" PRIxLEAST64 ", %s object 0x%" PRIxLEAST64 " has not been destroyed.",
-                    HandleToUint64(device), object_string[object_type], object_info->handle);
+                    "OBJ ERROR : For device %s, %s object %s has not been destroyed.", report_data->FormatHandle(device).c_str(),
+                    object_string[object_type], report_data->FormatHandle(object_info->handle).c_str());
     }
     return skip;
 }
