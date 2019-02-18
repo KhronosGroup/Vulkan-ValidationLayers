@@ -539,11 +539,12 @@ static bool ValidateSetMemBinding(layer_data *dev_data, VkDeviceMemory mem, uint
                 } else {
                     assert(type == kVulkanObjectTypeImage);
                 }
-                skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_MEMORY_EXT,
-                                HandleToUint64(mem), error_code,
-                                "In %s, attempting to bind memory (0x%" PRIx64 ") to object (0x%" PRIx64
-                                ") which has already been bound to mem object 0x%" PRIx64 ".",
-                                apiName, HandleToUint64(mem), handle, HandleToUint64(prev_binding->mem));
+                skip |= log_msg(
+                    dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_MEMORY_EXT,
+                    HandleToUint64(mem), error_code,
+                    "In %s, attempting to bind memory (%s) to object (%s) which has already been bound to mem object %s.", apiName,
+                    dev_data->report_data->FormatHandle(mem).c_str(), dev_data->report_data->FormatHandle(handle).c_str(),
+                    dev_data->report_data->FormatHandle(prev_binding->mem).c_str());
             } else if (mem_binding->binding.mem == MEMORY_UNBOUND) {
                 skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_MEMORY_EXT,
                                 HandleToUint64(mem), kVUID_Core_MemTrack_RebindObject,
