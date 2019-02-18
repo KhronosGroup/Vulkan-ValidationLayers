@@ -834,7 +834,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             if name in self.alias_dict:
                 alias_string = 'VUID-%s-%s' % (self.alias_dict[name], suffix)
                 if alias_string in self.valid_vuids:
-                    vuid = "\"%s\"" % vuid_string
+                    vuid = "\"%s\"" % alias_string
         return vuid
     #
     # Generate the sType check string

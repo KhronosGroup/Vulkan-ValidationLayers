@@ -7772,7 +7772,7 @@ static bool ValidateImageBarrierImage(layer_data *device_data, const char *funcN
         if (!sub_image_found) {
             skip |= log_msg(
                 device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT, rp_handle,
-                "VUID-vkCmdPipelineBarrier-image-01179",
+                "VUID-vkCmdPipelineBarrier-image-02635",
                 "%s: Barrier pImageMemoryBarriers[%d].image (0x%" PRIx64
                 ") is not referenced by the VkSubpassDescription for active subpass (%d) of current renderPass (0x%" PRIx64 ").",
                 funcName, img_index, HandleToUint64(img_bar_image), active_subpass, rp_handle);
@@ -7780,7 +7780,7 @@ static bool ValidateImageBarrierImage(layer_data *device_data, const char *funcN
     } else {  // !image_match
         auto const fb_handle = HandleToUint64(fb_state->framebuffer);
         skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_FRAMEBUFFER_EXT,
-                        fb_handle, "VUID-vkCmdPipelineBarrier-image-01179",
+                        fb_handle, "VUID-vkCmdPipelineBarrier-image-02635",
                         "%s: Barrier pImageMemoryBarriers[%d].image (0x%" PRIx64
                         ") does not match an image from the current framebuffer (0x%" PRIx64 ").",
                         funcName, img_index, HandleToUint64(img_bar_image), fb_handle);
@@ -7795,7 +7795,7 @@ static bool ValidateImageBarrierImage(layer_data *device_data, const char *funcN
     } else {
         if (sub_image_found && sub_image_layout != img_barrier.oldLayout) {
             skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT,
-                            rp_handle, "VUID-vkCmdPipelineBarrier-oldLayout-01180",
+                            rp_handle, "VUID-vkCmdPipelineBarrier-oldLayout-02636",
                             "%s: Barrier pImageMemoryBarriers[%d].image (0x%" PRIx64
                             ") is referenced by the VkSubpassDescription for active subpass (%d) of current renderPass (0x%" PRIx64
                             ") as having layout %s, but image barrier has layout %s.",
@@ -9071,7 +9071,7 @@ static bool ValidateFramebufferCreateInfo(layer_data *dev_data, const VkFramebuf
             // Verify depth/stencil attachments:
             if (rpci->pSubpasses[subpass].pDepthStencilAttachment != nullptr) {
                 skip |= MatchUsage(dev_data, 1, rpci->pSubpasses[subpass].pDepthStencilAttachment, pCreateInfo,
-                                   VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, "VUID-VkFramebufferCreateInfo-pAttachments-02603");
+                                   VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, "VUID-VkFramebufferCreateInfo-pAttachments-02633");
             }
         }
     }
