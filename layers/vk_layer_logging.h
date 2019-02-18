@@ -132,6 +132,27 @@ typedef struct _debug_report_data {
         return label;
     }
 
+    template <typename HANDLE_T>
+    std::string FormatHandle(HANDLE_T *h) const {
+        return FormatHandle(HandleToUint64(h));
+    }
+
+    std::string FormatHandle(uint64_t h) const {
+        std::string ret = "0x";
+        ret.append(std::to_string(h));
+
+        std::string name = DebugReportGetUtilsObjectName(h);
+        if (name.empty()) {
+            name = DebugReportGetMarkerObjectName(h);
+        }
+        if (!name.empty()) {
+            ret.append("[");
+            ret.append(name);
+            ret.append("]");
+        }
+        return ret;
+    }
+
 } debug_report_data;
 
 template debug_report_data *GetLayerDataPtr<debug_report_data>(void *data_key,
