@@ -206,16 +206,6 @@ class ValidationCache {
     }
 };
 
-bool ValidateAndCapturePipelineShaderState(layer_data *dev_data, PIPELINE_STATE *pPipeline);
-bool ValidateComputePipeline(layer_data *dev_data, PIPELINE_STATE *pPipeline);
-bool ValidateRayTracingPipelineNV(layer_data *dev_data, PIPELINE_STATE *pipeline);
 typedef std::pair<unsigned, unsigned> descriptor_slot_t;
-bool PreCallValidateCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo *pCreateInfo,
-                                       const VkAllocationCallbacks *pAllocator, VkShaderModule *pShaderModule);
-void PreCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo *pCreateInfo,
-                                     const VkAllocationCallbacks *pAllocator, VkShaderModule *pShaderModule, void *csm_state);
-void PostCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo *pCreateInfo,
-                                      const VkAllocationCallbacks *pAllocator, VkShaderModule *pShaderModule, VkResult result,
-                                      void *csm_state);
 
 #endif  // VULKAN_SHADER_VALIDATION_H
