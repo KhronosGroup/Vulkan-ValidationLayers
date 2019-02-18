@@ -32,18 +32,11 @@
 #include "vk_layer_data.h"
 #include "vk_layer_extension_utils.h"
 #include "vk_layer_utils.h"
+#include "chassis.h"
 #include "core_validation.h"
 #include "shader_validation.h"
 #include "spirv-tools/libspirv.h"
 #include "xxhash.h"
-
-namespace core_validation {
-extern unordered_map<void *, layer_data *> layer_data_map;
-extern unordered_map<void *, instance_layer_data *> instance_layer_data_map;
-};  // namespace core_validation
-
-using core_validation::instance_layer_data_map;
-using core_validation::layer_data_map;
 
 enum FORMAT_TYPE {
     FORMAT_TYPE_FLOAT = 1,  // UNORM, SNORM, FLOAT, USCALED, SSCALED, SRGB -- anything we consider float in the shader
@@ -1426,8 +1419,8 @@ static bool RequireExtension(debug_report_data const *report_data, bool extensio
     return false;
 }
 
-static bool ValidateShaderCapabilities(layer_data *dev_data, shader_module const *src, VkShaderStageFlagBits stage,
-                                       bool has_writable_descriptor) {
+bool CoreChecks::ValidateShaderCapabilities(layer_data *dev_data, shader_module const *src, VkShaderStageFlagBits stage,
+                                            bool has_writable_descriptor) {
     bool skip = false;
 
     auto report_data = GetReportData(dev_data);
@@ -1654,8 +1647,8 @@ static bool VariableIsBuiltIn(shader_module const *src, const uint32_t ID, std::
     return false;
 }
 
-static bool ValidateShaderStageInputOutputLimits(layer_data *dev_data, shader_module const *src,
-                                                 VkPipelineShaderStageCreateInfo const *pStage, PIPELINE_STATE *pipeline) {
+bool CoreChecks::ValidateShaderStageInputOutputLimits(layer_data *dev_data, shader_module const *src,
+                                                      VkPipelineShaderStageCreateInfo const *pStage, PIPELINE_STATE *pipeline) {
     if (pStage->stage == VK_SHADER_STAGE_COMPUTE_BIT || pStage->stage == VK_SHADER_STAGE_ALL_GRAPHICS ||
         pStage->stage == VK_SHADER_STAGE_ALL) {
         return false;
@@ -1837,7 +1830,7 @@ static bool ValidateShaderStageInputOutputLimits(layer_data *dev_data, shader_mo
     return skip;
 }
 
-static uint32_t DescriptorTypeToReqs(shader_module const *module, uint32_t type_id) {
+uint32_t DescriptorTypeToReqs(shader_module const *module, uint32_t type_id) {
     auto type = module->get_def(type_id);
 
     while (true) {
@@ -1948,8 +1941,8 @@ static void ProcessExecutionModes(shader_module const *src, spirv_inst_iter entr
 //            * gl_PointSize must be written in the final geometry stage
 //        - If shaderTessellationAndGeometryPointSize feature is disabled:
 //            * gl_PointSize must NOT be written and a default of 1.0 is assumed
-bool ValidatePointListShaderState(const layer_data *dev_data, const PIPELINE_STATE *pipeline, shader_module const *src,
-                                  spirv_inst_iter entrypoint, VkShaderStageFlagBits stage) {
+bool CoreChecks::ValidatePointListShaderState(const layer_data *dev_data, const PIPELINE_STATE *pipeline, shader_module const *src,
+                                              spirv_inst_iter entrypoint, VkShaderStageFlagBits stage) {
     if (pipeline->topology_at_rasterizer != VK_PRIMITIVE_TOPOLOGY_POINT_LIST) {
         return false;
     }
@@ -1996,9 +1989,9 @@ bool ValidatePointListShaderState(const layer_data *dev_data, const PIPELINE_STA
     return skip;
 }
 
-static bool ValidatePipelineShaderStage(layer_data *dev_data, VkPipelineShaderStageCreateInfo const *pStage,
-                                        PIPELINE_STATE *pipeline, shader_module const **out_module, spirv_inst_iter *out_entrypoint,
-                                        bool check_point_size) {
+bool CoreChecks::ValidatePipelineShaderStage(layer_data *dev_data, VkPipelineShaderStageCreateInfo const *pStage,
+                                             PIPELINE_STATE *pipeline, shader_module const **out_module,
+                                             spirv_inst_iter *out_entrypoint, bool check_point_size) {
     bool skip = false;
     auto module = *out_module = GetShaderModuleState(dev_data, pStage->module);
     auto report_data = GetReportData(dev_data);
@@ -2187,7 +2180,7 @@ static inline uint32_t DetermineFinalGeomStage(PIPELINE_STATE *pipeline, VkGraph
 
 // Validate that the shaders used by the given pipeline and store the active_slots
 //  that are actually used by the pipeline into pPipeline->active_slots
-bool ValidateAndCapturePipelineShaderState(layer_data *dev_data, PIPELINE_STATE *pipeline) {
+bool CoreChecks::ValidateAndCapturePipelineShaderState(layer_data *dev_data, PIPELINE_STATE *pipeline) {
     auto pCreateInfo = pipeline->graphicsPipelineCI.ptr();
     int vertex_stage = GetShaderStageId(VK_SHADER_STAGE_VERTEX_BIT);
     int fragment_stage = GetShaderStageId(VK_SHADER_STAGE_FRAGMENT_BIT);
@@ -2250,7 +2243,7 @@ bool ValidateAndCapturePipelineShaderState(layer_data *dev_data, PIPELINE_STATE 
     return skip;
 }
 
-bool ValidateComputePipeline(layer_data *dev_data, PIPELINE_STATE *pipeline) {
+bool CoreChecks::ValidateComputePipeline(layer_data *dev_data, PIPELINE_STATE *pipeline) {
     auto pCreateInfo = pipeline->computePipelineCI.ptr();
 
     shader_module const *module;
@@ -2259,7 +2252,7 @@ bool ValidateComputePipeline(layer_data *dev_data, PIPELINE_STATE *pipeline) {
     return ValidatePipelineShaderStage(dev_data, &pCreateInfo->stage, pipeline, &module, &entrypoint, false);
 }
 
-bool ValidateRayTracingPipelineNV(layer_data *dev_data, PIPELINE_STATE *pipeline) {
+bool CoreChecks::ValidateRayTracingPipelineNV(layer_data *dev_data, PIPELINE_STATE *pipeline) {
     auto pCreateInfo = pipeline->raytracingPipelineCI.ptr();
 
     shader_module const *module;
@@ -2279,8 +2272,8 @@ static ValidationCache *GetValidationCacheInfo(VkShaderModuleCreateInfo const *p
     return nullptr;
 }
 
-bool PreCallValidateCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo *pCreateInfo,
-                                       const VkAllocationCallbacks *pAllocator, VkShaderModule *pShaderModule) {
+bool CoreChecks::PreCallValidateCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo *pCreateInfo,
+                                                   const VkAllocationCallbacks *pAllocator, VkShaderModule *pShaderModule) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
 
     bool skip = false;
@@ -2343,9 +2336,11 @@ bool PreCallValidateCreateShaderModule(VkDevice device, const VkShaderModuleCrea
     return skip;
 }
 
-void PreCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo *pCreateInfo,
-                                     const VkAllocationCallbacks *pAllocator, VkShaderModule *pShaderModule, void *csm_state_data) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), core_validation::layer_data_map);
+void CoreChecks::PreCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo *pCreateInfo,
+                                                 const VkAllocationCallbacks *pAllocator, VkShaderModule *pShaderModule,
+                                                 void *csm_state_data) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+
     create_shader_module_api_state *csm_state = reinterpret_cast<create_shader_module_api_state *>(csm_state_data);
     if (GetEnables(device_data)->gpu_validation) {
         GpuPreCallCreateShaderModule(device_data, pCreateInfo, pAllocator, pShaderModule, &csm_state->unique_shader_id,
@@ -2353,10 +2348,11 @@ void PreCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreate
     }
 }
 
-void PostCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo *pCreateInfo,
-                                      const VkAllocationCallbacks *pAllocator, VkShaderModule *pShaderModule, VkResult result,
-                                      void *csm_state_data) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), core_validation::layer_data_map);
+void CoreChecks::PostCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo *pCreateInfo,
+                                                  const VkAllocationCallbacks *pAllocator, VkShaderModule *pShaderModule,
+                                                  VkResult result, void *csm_state_data) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+
     if (VK_SUCCESS != result) return;
     create_shader_module_api_state *csm_state = reinterpret_cast<create_shader_module_api_state *>(csm_state_data);
 

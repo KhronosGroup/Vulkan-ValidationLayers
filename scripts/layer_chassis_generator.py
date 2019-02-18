@@ -236,10 +236,12 @@ extern std::unordered_map<uint64_t, uint64_t> unique_id_mapping;
 
 // Layer object type identifiers
 enum LayerObjectTypeId {
-    LayerObjectTypeThreading,
-    LayerObjectTypeParameterValidation,
-    LayerObjectTypeObjectTracker,
-    LayerObjectTypeCoreValidation,
+    LayerObjectTypeInstance,                    // Container for an instance dispatch object
+    LayerObjectTypeDevice,                      // Container for a device dispatch object
+    LayerObjectTypeThreading,                   // Instance or device threading layer object
+    LayerObjectTypeParameterValidation,         // Instance or device parameter validation layer object
+    LayerObjectTypeObjectTracker,               // Instance or device object tracker layer object
+    LayerObjectTypeCoreValidation,              // Instance or device core validation layer object
 };
 
 struct TEMPLATE_STATE {
@@ -327,6 +329,8 @@ class ValidationObject {
         std::vector<ValidationObject*> object_dispatch;
         LayerObjectTypeId container_type;
 
+        std::string layer_name = "CHASSIS";
+
         // Constructor
         ValidationObject(){};
         // Destructor
@@ -345,8 +349,6 @@ class ValidationObject {
             }
             return nullptr;
         };
-
-        std::string layer_name = "CHASSIS";
 
         // Handle Wrapping Data
         // Reverse map display handles
@@ -461,6 +463,7 @@ const bool wrap_handles = false;
 #include "stateless_validation.h"
 #define OBJECT_LAYER_NAME "VK_LAYER_LUNARG_parameter_validation"
 #elif BUILD_CORE_VALIDATION
+#include "core_validation.h"
 #define OBJECT_LAYER_NAME "VK_LAYER_LUNARG_core_validation"
 #else
 #define OBJECT_LAYER_NAME "VK_LAYER_GOOGLE_unique_objects"
@@ -641,8 +644,12 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
     local_object_dispatch.emplace_back(parameter_validation);
     parameter_validation->container_type = LayerObjectTypeParameterValidation;
     parameter_validation->api_version = api_version;
+#elif BUILD_CORE_VALIDATION
+    auto core_checks = new CoreChecks;
+    local_object_dispatch.emplace_back(core_checks);
+    core_checks->container_type = LayerObjectTypeCoreValidation;
+    core_checks->api_version = api_version;
 #endif
-
 
     // Init dispatch array and call registration functions
     for (auto intercept : local_object_dispatch) {
@@ -658,6 +665,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
     auto framework = GetLayerDataPtr(get_dispatch_key(*pInstance), layer_data_map);
 
     framework->object_dispatch = local_object_dispatch;
+    framework->container_type = LayerObjectTypeInstance;
 
     framework->instance = *pInstance;
     layer_init_instance_dispatch_table(*pInstance, &framework->instance_dispatch_table, fpGetInstanceProcAddr);
@@ -685,6 +693,14 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
 #elif BUILD_PARAMETER_VALIDATION
     layer_debug_messenger_actions(framework->report_data, framework->logging_messenger, pAllocator, "lunarg_parameter_validation");
     parameter_validation->report_data = framework->report_data;
+#elif BUILD_CORE_VALIDATION
+    layer_debug_messenger_actions(framework->report_data, framework->logging_messenger, pAllocator, "lunarg_core_validation");
+    core_checks->report_data = framework->report_data;
+    core_checks->instance_dispatch_table = framework->instance_dispatch_table;
+    core_checks->instance = *pInstance;
+    core_checks->enabled = framework->enabled;
+    core_checks->disabled = framework->disabled;
+    core_checks->instance_state = core_checks;
 #else
     layer_debug_messenger_actions(framework->report_data, framework->logging_messenger, pAllocator, "lunarg_unique_objects");
 #endif
@@ -782,6 +798,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
     }
 
     auto device_interceptor = GetLayerDataPtr(get_dispatch_key(*pDevice), layer_data_map);
+    device_interceptor->container_type = LayerObjectTypeDevice;
 
     // Save local info in device object
     device_interceptor->phys_dev_properties.properties = device_properties;
@@ -827,6 +844,22 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
     stateless_validation->device_dispatch_table = device_interceptor->device_dispatch_table;
     stateless_validation->api_version = device_interceptor->api_version;
     device_interceptor->object_dispatch.emplace_back(stateless_validation);
+#elif BUILD_CORE_VALIDATION
+    auto core_checks = new CoreChecks;
+    // TODO:  Initialize child objects with parent info thru constuctor taking a parent object
+    core_checks->container_type = LayerObjectTypeCoreValidation;
+    core_checks->physical_device = gpu;
+    core_checks->instance = instance_interceptor->instance;
+    core_checks->report_data = device_interceptor->report_data;
+    core_checks->device_dispatch_table = device_interceptor->device_dispatch_table;
+    core_checks->instance_dispatch_table = instance_interceptor->instance_dispatch_table;
+    core_checks->api_version = device_interceptor->api_version;
+    core_checks->instance_extensions = instance_interceptor->instance_extensions;
+    core_checks->device_extensions = device_interceptor->device_extensions;
+    core_checks->instance_state = reinterpret_cast<CoreChecks *>(
+        core_checks->GetValidationObject(instance_interceptor->object_dispatch, LayerObjectTypeCoreValidation));
+    core_checks->device = *pDevice;
+    device_interceptor->object_dispatch.emplace_back(core_checks);
 #endif
 
     for (auto intercept : instance_interceptor->object_dispatch) {
