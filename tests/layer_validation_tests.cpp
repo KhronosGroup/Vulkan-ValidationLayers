@@ -1542,6 +1542,91 @@ TEST_F(VkLayerTest, DebugMarkerNameTest) {
     vkDestroyEvent(m_device->device(), event_handle, NULL);
     m_errorMonitor->VerifyFound();
     vkQueueWaitIdle(m_device->m_queue);
+
+    VkBuffer buffer;
+    VkDeviceMemory memory_1, memory_2;
+    std::string memory_name = "memory_name";
+
+    VkBufferCreateInfo buffer_create_info = {};
+    buffer_create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    buffer_create_info.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+    buffer_create_info.size = 1;
+
+    vkCreateBuffer(device(), &buffer_create_info, nullptr, &buffer);
+
+    VkMemoryRequirements memRequirements;
+    vkGetBufferMemoryRequirements(device(), buffer, &memRequirements);
+
+    VkMemoryAllocateInfo memory_allocate_info = {};
+    memory_allocate_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    memory_allocate_info.allocationSize = memRequirements.size;
+    memory_allocate_info.memoryTypeIndex = 0;
+
+    vkAllocateMemory(device(), &memory_allocate_info, nullptr, &memory_1);
+    vkAllocateMemory(device(), &memory_allocate_info, nullptr, &memory_2);
+
+    name_info.object = (uint64_t)memory_2;
+    name_info.objectType = VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT;
+    name_info.pObjectName = memory_name.c_str();
+    fpvkDebugMarkerSetObjectNameEXT(device(), &name_info);
+
+    vkBindBufferMemory(device(), buffer, memory_1, 0);
+
+    // Test core_validation layer
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, memory_name);
+    vkBindBufferMemory(device(), buffer, memory_2, 0);
+    m_errorMonitor->VerifyFound();
+
+    vkFreeMemory(device(), memory_1, nullptr);
+    memory_1 = VK_NULL_HANDLE;
+    vkFreeMemory(device(), memory_2, nullptr);
+    memory_2 = VK_NULL_HANDLE;
+    vkDestroyBuffer(device(), buffer, nullptr);
+    buffer = VK_NULL_HANDLE;
+
+    VkCommandBuffer commandBuffer;
+    std::string commandBuffer_name = "command_buffer_name";
+    VkCommandPool commandpool_1;
+    VkCommandPool commandpool_2;
+    VkCommandPoolCreateInfo pool_create_info{};
+    pool_create_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    pool_create_info.queueFamilyIndex = m_device->graphics_queue_node_index_;
+    pool_create_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+    vkCreateCommandPool(device(), &pool_create_info, nullptr, &commandpool_1);
+    vkCreateCommandPool(device(), &pool_create_info, nullptr, &commandpool_2);
+
+    VkCommandBufferAllocateInfo command_buffer_allocate_info{};
+    command_buffer_allocate_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    command_buffer_allocate_info.commandPool = commandpool_1;
+    command_buffer_allocate_info.commandBufferCount = 1;
+    command_buffer_allocate_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    vkAllocateCommandBuffers(device(), &command_buffer_allocate_info, &commandBuffer);
+
+    name_info.object = (uint64_t)commandBuffer;
+    name_info.objectType = VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT;
+    name_info.pObjectName = commandBuffer_name.c_str();
+    fpvkDebugMarkerSetObjectNameEXT(device(), &name_info);
+
+    VkCommandBufferBeginInfo cb_begin_Info = {};
+    cb_begin_Info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    cb_begin_Info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+    vkBeginCommandBuffer(commandBuffer, &cb_begin_Info);
+
+    const VkRect2D scissor = {{-1, 0}, {16, 16}};
+    const VkRect2D scissors[] = {scissor, scissor};
+
+    // Test parameter_validation layer
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, commandBuffer_name);
+    vkCmdSetScissor(commandBuffer, 1, 1, scissors);
+    m_errorMonitor->VerifyFound();
+
+    // Test object_tracker layer
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, commandBuffer_name);
+    vkFreeCommandBuffers(device(), commandpool_2, 1, &commandBuffer);
+    m_errorMonitor->VerifyFound();
+
+    vkDestroyCommandPool(device(), commandpool_1, NULL);
+    vkDestroyCommandPool(device(), commandpool_2, NULL);
 }
 
 TEST_F(VkLayerTest, DebugUtilsNameTest) {
