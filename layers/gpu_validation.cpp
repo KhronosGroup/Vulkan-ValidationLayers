@@ -734,24 +734,55 @@ static void ReadOpSource(const shader_module &shader, const uint32_t reported_fi
         }
     }
 }
+
+// The task here is to search the OpSource content to find the #line directive with the
+// line number that is closest to, but still prior to the reported error line number and
+// still within the reported filename.
+// From this known position in the OpSource content we can add the difference between
+// the #line line number and the reported error line number to determine the location
+// in the OpSource content of the reported error line.
+//
+// Considerations:
+// - Look only at #line directives that specify the reported_filename since
+//   the reported error line number refers to its location in the reported filename.
+// - If a #line directive does not have a filename, the file is the reported filename, or
+//   the filename found in a prior #line directive.  (This is C-preprocessor behavior)
+// - It is possible (e.g., inlining) for blocks of code to get shuffled out of their
+//   original order and the #line directives are used to keep the numbering correct.  This
+//   is why we need to examine the entire contents of the source, instead of leaving early
+//   when finding a #line line number larger than the reported error line number.
+//
+
+// GCC 4.8 has a problem with std::regex that is fixed in GCC 4.9.  Provide fallback code for 4.8
+#define GCC_VERSION (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__)
+
+#if defined(__GNUC__) && GCC_VERSION < 40900
 static bool GetLineAndFilename(const std::string string, uint32_t *linenumber, std::string &filename) {
-    // The task here is to search the OpSource content to find the #line directive with the
-    // line number that is closest to, but still prior to the reported error line number and
-    // still within the reported filename.
-    // From this known position in the OpSource content we can add the difference between
-    // the #line line number and the reported error line number to determine the location
-    // in the OpSource content of the reported error line.
-    //
-    // Considerations:
-    // - Look only at #line directives that specify the reported_filename since
-    //   the reported error line number refers to its location in the reported filename.
-    // - If a #line directive does not have a filename, the file is the reported filename, or
-    //   the filename found in a prior #line directive.  (This is C-preprocessor behavior)
-    // - It is possible (e.g., inlining) for blocks of code to get shuffled out of their
-    //   original order and the #line directives are used to keep the numbering correct.  This
-    //   is why we need to examine the entire contents of the source, instead of leaving early
-    //   when finding a #line line number larger than the reported error line number.
-    //
+    // # line <linenumber> "<filename>" or
+    // #line <linenumber> "<filename>"
+    std::vector<std::string> tokens;
+    std::stringstream stream(string);
+    std::string temp;
+    uint32_t line_index = 0;
+
+    while (stream >> temp) tokens.push_back(temp);
+    auto size = tokens.size();
+    if (size > 1) {
+        if (tokens[0] == "#" && tokens[1] == "line") {
+            line_index = 2;
+        } else if (tokens[0] == "#line") {
+            line_index = 1;
+        }
+    }
+    if (0 == line_index) return false;
+    *linenumber = std::stoul(tokens[line_index]);
+    uint32_t filename_index = line_index + 1;
+    // Remove enclosing double quotes around filename
+    if (size > filename_index) filename = tokens[filename_index].substr(1, tokens[filename_index].size() - 2);
+    return true;
+}
+#else
+static bool GetLineAndFilename(const std::string string, uint32_t *linenumber, std::string &filename) {
     static const std::regex line_regex(  // matches #line directives
         "^"                              // beginning of line
         "\\s*"                           // optional whitespace
@@ -777,6 +808,8 @@ static bool GetLineAndFilename(const std::string string, uint32_t *linenumber, s
     *linenumber = std::stoul(captures[1]);
     return true;
 }
+#endif  // GCC_VERSION
+
 // Extract the filename, line number, and column number from the correct OpLine and build a message string from it.
 // Scan the source (from OpSource) to find the line of source at the reported line number and place it in another message string.
 static void GenerateSourceMessages(const std::vector<unsigned int> &pgm, const uint32_t *debug_record, std::string &filename_msg,
