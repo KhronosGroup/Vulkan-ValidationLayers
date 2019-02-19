@@ -734,7 +734,49 @@ static void ReadOpSource(const shader_module &shader, const uint32_t reported_fi
         }
     }
 }
+static bool GetLineAndFilename(const std::string string, uint32_t *linenumber, std::string &filename) {
+    // The task here is to search the OpSource content to find the #line directive with the
+    // line number that is closest to, but still prior to the reported error line number and
+    // still within the reported filename.
+    // From this known position in the OpSource content we can add the difference between
+    // the #line line number and the reported error line number to determine the location
+    // in the OpSource content of the reported error line.
+    //
+    // Considerations:
+    // - Look only at #line directives that specify the reported_filename since
+    //   the reported error line number refers to its location in the reported filename.
+    // - If a #line directive does not have a filename, the file is the reported filename, or
+    //   the filename found in a prior #line directive.  (This is C-preprocessor behavior)
+    // - It is possible (e.g., inlining) for blocks of code to get shuffled out of their
+    //   original order and the #line directives are used to keep the numbering correct.  This
+    //   is why we need to examine the entire contents of the source, instead of leaving early
+    //   when finding a #line line number larger than the reported error line number.
+    //
+    static const std::regex line_regex(  // matches #line directives
+        "^"                              // beginning of line
+        "\\s*"                           // optional whitespace
+        "#"                              // required text
+        "\\s*"                           // optional whitespace
+        "line"                           // required text
+        "\\s+"                           // required whitespace
+        "([0-9]+)"                       // required first capture - line number
+        "(\\s+)?"                        // optional second capture - whitespace
+        "(\".+\")?"                      // optional third capture - quoted filename with at least one char inside
+        ".*");                           // rest of line (needed when using std::regex_match since the entire line is tested)
 
+    std::smatch captures;
+
+    bool found_line = std::regex_match(string, captures, line_regex);
+    if (!found_line) return false;
+
+    // filename is optional and considered found only if the whitespace and the filename are captured
+    if (captures[2].matched && captures[3].matched) {
+        // Remove enclosing double quotes.  The regex guarantees the quotes and at least one char.
+        filename = captures[3].str().substr(1, captures[3].str().size() - 2);
+    }
+    *linenumber = std::stoul(captures[1]);
+    return true;
+}
 // Extract the filename, line number, and column number from the correct OpLine and build a message string from it.
 // Scan the source (from OpSource) to find the line of source at the reported line number and place it in another message string.
 static void GenerateSourceMessages(const std::vector<unsigned int> &pgm, const uint32_t *debug_record, std::string &filename_msg,
@@ -800,51 +842,21 @@ static void GenerateSourceMessages(const std::vector<unsigned int> &pgm, const u
         ReadOpSource(shader, reported_file_id, opsource_lines);
         // Find the line in the OpSource content that corresponds to the reported error file and line.
         if (!opsource_lines.empty()) {
-            // The task here is to search the OpSource content to find the #line directive with the
-            // line number that is closest to, but still prior to the reported error line number and
-            // still within the reported filename.
-            // From this known position in the OpSource content we can add the difference between
-            // the #line line number and the reported error line number to determine the location
-            // in the OpSource content of the reported error line.
-            //
-            // Considerations:
-            // - Look only at #line directives that specify the reported_filename since
-            //   the reported error line number refers to its location in the reported filename.
-            // - If a #line directive does not have a filename, the file is the reported filename, or
-            //   the filename found in a prior #line directive.  (This is C-preprocessor behavior)
-            // - It is possible (e.g., inlining) for blocks of code to get shuffled out of their
-            //   original order and the #line directives are used to keep the numbering correct.  This
-            //   is why we need to examine the entire contents of the source, instead of leaving early
-            //   when finding a #line line number larger than the reported error line number.
-            //
-            std::regex line_regex(  // matches #line directives
-                "^"                 // beginning of line
-                "\\s*"              // optional whitespace
-                "#"                 // required text
-                "\\s*"              // optional whitespace
-                "line"              // required text
-                "\\s+"              // required whitespace
-                "([0-9]+)"          // required first capture - line number
-                "(\\s+)?"           // optional second capture - whitespace
-                "(\".+\")?"         // optional third capture - quoted filename with at least one char inside
-                ".*");              // rest of line (needed when using std::regex_match since the entire line is tested)
             uint32_t saved_line_number = 0;
             std::string current_filename = reported_filename;  // current "preprocessor" filename state.
             std::vector<std::string>::size_type saved_opsource_offset = 0;
             bool found_best_line = false;
             for (auto it = opsource_lines.begin(); it != opsource_lines.end(); ++it) {
-                std::smatch captures;
-                bool found_line = std::regex_match(*it, captures, line_regex);
+                uint32_t parsed_line_number;
+                std::string parsed_filename;
+                bool found_line = GetLineAndFilename(*it, &parsed_line_number, parsed_filename);
                 if (!found_line) continue;
-                // filename is optional and considered found only if the whitespace and the filename are captured
-                bool found_filename = captures[2].matched && captures[3].matched;
+
+                bool found_filename = parsed_filename.size() > 0;
                 if (found_filename) {
-                    // Remove enclosing double quotes.  The regex guarantees the quotes and at least one char.
-                    current_filename = captures[3].str().substr(1, captures[3].str().size() - 2);
+                    current_filename = parsed_filename;
                 }
                 if ((!found_filename) || (current_filename == reported_filename)) {
-                    // captures[1] is valid whenever the regex matches, which it has at this point.
-                    uint32_t parsed_line_number = std::stoul(captures[1]);
                     // Update the candidate best line directive, if the current one is prior and closer to the reported line
                     if (reported_line_number >= parsed_line_number) {
                         if (!found_best_line ||
