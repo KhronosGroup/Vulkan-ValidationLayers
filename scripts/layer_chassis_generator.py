@@ -177,7 +177,11 @@ class LayerChassisOutputGenerator(OutputGenerator):
     post_dispatch_debug_utils_functions = {
         'vkQueueEndDebugUtilsLabelEXT' : 'EndQueueDebugUtilsLabel(layer_data->report_data, queue);',
         'vkCmdEndDebugUtilsLabelEXT' : 'EndCmdDebugUtilsLabel(layer_data->report_data, commandBuffer);',
-        'vkCmdInsertDebugUtilsLabelEXT' : 'InsertCmdDebugUtilsLabel(layer_data->report_data, commandBuffer, pLabelInfo);'
+        'vkCmdInsertDebugUtilsLabelEXT' : 'InsertCmdDebugUtilsLabel(layer_data->report_data, commandBuffer, pLabelInfo);',
+        'vkCreateDebugReportCallbackEXT' : 'layer_create_report_callback(layer_data->report_data, false, pCreateInfo, pAllocator, pCallback);',
+        'vkDestroyDebugReportCallbackEXT' : 'layer_destroy_report_callback(layer_data->report_data, callback, pAllocator);',
+        'vkCreateDebugUtilsMessengerEXT' : 'layer_create_messenger_callback(layer_data->report_data, false, pCreateInfo, pAllocator, pMessenger);',
+        'vkDestroyDebugUtilsMessengerEXT' : 'layer_destroy_messenger_callback(layer_data->report_data, messenger, pAllocator);',
         }
 
     precallvalidate_loop = "for (auto intercept : layer_data->object_dispatch) {"
