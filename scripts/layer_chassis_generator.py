@@ -132,8 +132,6 @@ class LayerChassisOutputGenerator(OutputGenerator):
         'vkDestroyDevice',
         'vkCreateInstance',
         'vkDestroyInstance',
-        'vkCreateDebugReportCallbackEXT',
-        'vkDestroyDebugReportCallbackEXT',
         'vkEnumerateInstanceLayerProperties',
         'vkEnumerateInstanceExtensionProperties',
         'vkEnumerateDeviceLayerProperties',
@@ -745,47 +743,6 @@ VKAPI_ATTR void VKAPI_CALL DestroyDevice(VkDevice device, const VkAllocationCall
         delete *item;
     }
     FreeLayerDataPtr(key, layer_data_map);
-}
-
-VKAPI_ATTR VkResult VKAPI_CALL CreateDebugReportCallbackEXT(VkInstance instance,
-                                                            const VkDebugReportCallbackCreateInfoEXT *pCreateInfo,
-                                                            const VkAllocationCallbacks *pAllocator,
-                                                            VkDebugReportCallbackEXT *pCallback) {
-    auto layer_data = GetLayerDataPtr(get_dispatch_key(instance), layer_data_map);
-    """ + precallvalidate_loop + """
-        auto lock = intercept->write_lock();
-        intercept->PreCallValidateCreateDebugReportCallbackEXT(instance, pCreateInfo, pAllocator, pCallback);
-    }
-    """ + precallrecord_loop + """
-        auto lock = intercept->write_lock();
-        intercept->PreCallRecordCreateDebugReportCallbackEXT(instance, pCreateInfo, pAllocator, pCallback);
-    }
-    VkResult result = DispatchCreateDebugReportCallbackEXT(layer_data, instance, pCreateInfo, pAllocator, pCallback);
-    result = layer_create_report_callback(layer_data->report_data, false, pCreateInfo, pAllocator, pCallback);
-    """ + postcallrecord_loop + """
-        auto lock = intercept->write_lock();
-        intercept->PostCallRecordCreateDebugReportCallbackEXT(instance, pCreateInfo, pAllocator, pCallback, result);
-    }
-    return result;
-}
-
-VKAPI_ATTR void VKAPI_CALL DestroyDebugReportCallbackEXT(VkInstance instance, VkDebugReportCallbackEXT callback,
-                                                         const VkAllocationCallbacks *pAllocator) {
-    auto layer_data = GetLayerDataPtr(get_dispatch_key(instance), layer_data_map);
-    """ + precallvalidate_loop + """
-        auto lock = intercept->write_lock();
-        intercept->PreCallValidateDestroyDebugReportCallbackEXT(instance, callback, pAllocator);
-    }
-    """ + precallrecord_loop + """
-        auto lock = intercept->write_lock();
-        intercept->PreCallRecordDestroyDebugReportCallbackEXT(instance, callback, pAllocator);
-    }
-    DispatchDestroyDebugReportCallbackEXT(layer_data, instance, callback, pAllocator);
-    layer_destroy_report_callback(layer_data->report_data, callback, pAllocator);
-    """ + postcallrecord_loop + """
-        auto lock = intercept->write_lock();
-        intercept->PostCallRecordDestroyDebugReportCallbackEXT(instance, callback, pAllocator);
-    }
 }"""
 
     inline_custom_source_postamble = """
