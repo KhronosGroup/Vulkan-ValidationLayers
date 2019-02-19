@@ -944,7 +944,6 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                 allocator_dict = {'pfnAllocation': '"VUID-VkAllocationCallbacks-pfnAllocation-00632"',
                                   'pfnReallocation': '"VUID-VkAllocationCallbacks-pfnReallocation-00633"',
                                   'pfnFree': '"VUID-VkAllocationCallbacks-pfnFree-00634"',
-                                  'pfnInternalAllocation': '"VUID-VkAllocationCallbacks-pfnInternalAllocation-00635"'
                                  }
                 vuid = allocator_dict.get(value.name)
                 if vuid is not None:
@@ -952,6 +951,21 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                 checkExpr.append('skip |= validate_required_pointer("{}", {ppp}"{}"{pps}, reinterpret_cast<const void*>({}{}), {});\n'.format(funcPrintName, valuePrintName, prefix, value.name, ptr_required_vuid, **postProcSpec))
             else:
                 checkExpr.append('skip |= validate_required_pointer("{}", {ppp}"{}"{pps}, {}{}, {});\n'.format(funcPrintName, valuePrintName, prefix, value.name, ptr_required_vuid, **postProcSpec))
+        else:
+            # Special case for optional internal allocation function pointers.
+            if (value.type, value.name) == ('PFN_vkInternalAllocationNotification', 'pfnInternalAllocation'):
+                vuid = '"VUID-VkAllocationCallbacks-pfnInternalAllocation-00635"'
+                # Alternate names replacing pfnInternalAllocation with pfnInternalFree.
+                other_name = 'pfnInternalFree'
+                other_print_name = valuePrintName[:-len(value.name)] + other_name
+                # Combined check.
+                checkExpr.append('if (({}{}) != NULL || ({}{}) != NULL)'.format(prefix, value.name, prefix, other_name))
+                checkExpr.append('{')
+                local_indent = self.incIndent('')
+                # Function pointers need a reinterpret_cast to void*
+                checkExpr.append(local_indent + 'skip |= validate_required_pointer("{}", {ppp}"{}"{pps}, reinterpret_cast<const void*>({}{}), {});\n'.format(funcPrintName, valuePrintName, prefix, value.name, vuid, **postProcSpec))
+                checkExpr.append(local_indent + 'skip |= validate_required_pointer("{}", {ppp}"{}"{pps}, reinterpret_cast<const void*>({}{}), {});\n'.format(funcPrintName, other_print_name, prefix, other_name, vuid, **postProcSpec))
+                checkExpr.append('}\n')
         return checkExpr
     #
     # Process struct member validation code, performing name substitution if required
@@ -1115,7 +1129,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                 # For the pointer to struct case, the struct pointer will not be validated, but any
                 # members not tagged as 'noautovalidity' will be validated
                 # We special-case the custom allocator checks, as they are explicit but can be auto-generated.
-                AllocatorFunctions = ['PFN_vkAllocationFunction', 'PFN_vkReallocationFunction', 'PFN_vkFreeFunction']
+                AllocatorFunctions = ['PFN_vkAllocationFunction', 'PFN_vkReallocationFunction', 'PFN_vkFreeFunction', 'PFN_vkInternalAllocationNotification', 'PFN_vkInternalFreeNotification']
                 if value.noautovalidity and value.type not in AllocatorFunctions:
                     # Log a diagnostic message when validation cannot be automatically generated and must be implemented manually
                     self.logMsg('diag', 'ParameterValidation: No validation for {} {}'.format(structTypeName if structTypeName else funcName, value.name))
