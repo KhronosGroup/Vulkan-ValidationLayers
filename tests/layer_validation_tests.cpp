@@ -1582,9 +1582,17 @@ TEST_F(VkLayerTest, DebugUtilsNameTest) {
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
     vkQueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    // Provoke an error from the core_validation layer
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "Popbutton_T_Bumfuzzle");
     vkDestroyEvent(m_device->device(), event_handle, NULL);
     m_errorMonitor->VerifyFound();
+    vkQueueWaitIdle(m_device->m_queue);
+
+    // Provoke an error from the object tracker layer
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "Popbutton_T_Bumfuzzle");
+    vkDestroyEvent(m_device->device(), event_handle, NULL);
+    m_errorMonitor->VerifyFound();
+
     vkQueueWaitIdle(m_device->m_queue);
 }
 
