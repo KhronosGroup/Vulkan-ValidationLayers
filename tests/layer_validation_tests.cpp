@@ -1544,6 +1544,50 @@ TEST_F(VkLayerTest, DebugMarkerNameTest) {
     vkQueueWaitIdle(m_device->m_queue);
 }
 
+TEST_F(VkLayerTest, DebugUtilsNameTest) {
+    // Check for external semaphore instance extensions
+    if (InstanceExtensionSupported(VK_EXT_DEBUG_UTILS_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    } else {
+        printf("%s Debug Utils Extension not supported, skipping test\n", kSkipPrefix);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    PFN_vkSetDebugUtilsObjectNameEXT fpvkSetDebugUtilsObjectNameEXT =
+        (PFN_vkSetDebugUtilsObjectNameEXT)vkGetDeviceProcAddr(m_device->device(), "vkSetDebugUtilsObjectNameEXT");
+    if (!(fpvkSetDebugUtilsObjectNameEXT)) {
+        printf("%s Can't find fpvkSetDebugUtilsObjectNameEXT; skipped.\n", kSkipPrefix);
+        return;
+    }
+
+    VkEvent event_handle = VK_NULL_HANDLE;
+    VkEventCreateInfo event_info = {};
+    event_info.sType = VK_STRUCTURE_TYPE_EVENT_CREATE_INFO;
+    vkCreateEvent(device(), &event_info, NULL, &event_handle);
+    VkDebugUtilsObjectNameInfoEXT name_info = {};
+    name_info.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
+    name_info.pNext = nullptr;
+    name_info.objectHandle = (uint64_t)event_handle;
+    name_info.objectType = VK_OBJECT_TYPE_EVENT;
+    name_info.pObjectName = "Popbutton_T_Bumfuzzle";
+    fpvkSetDebugUtilsObjectNameEXT(device(), &name_info);
+
+    m_commandBuffer->begin();
+    vkCmdSetEvent(m_commandBuffer->handle(), event_handle, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
+    m_commandBuffer->end();
+    VkSubmitInfo submit_info = {};
+    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers = &m_commandBuffer->handle();
+    vkQueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "Popbutton_T_Bumfuzzle");
+    vkDestroyEvent(m_device->device(), event_handle, NULL);
+    m_errorMonitor->VerifyFound();
+    vkQueueWaitIdle(m_device->m_queue);
+}
+
 TEST_F(VkLayerTest, InvalidStructSType) {
     TEST_DESCRIPTION("Specify an invalid VkStructureType for a Vulkan structure's sType field");
 
