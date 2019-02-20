@@ -11863,7 +11863,7 @@ void PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapcha
             image_state->valid = false;
             image_state->binding.mem = MEMTRACKER_SWAP_CHAIN_IMAGE_KEY;
             swapchain_state->images[i] = pSwapchainImages[i];
-            ImageSubresourcePair subpair = {pSwapchainImages[i], false, VkImageSubresource()};
+            ImageSubresourcePair subpair = {pSwapchainImages[i], VkImageSubresource(), false};
             device_data->imageSubresourceMap[pSwapchainImages[i]].push_back(subpair);
             device_data->imageLayoutMap[subpair] = image_layout_node;
         }

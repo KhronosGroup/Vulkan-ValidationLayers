@@ -68,7 +68,7 @@ void SetLayout(layer_data *device_data, GLOBAL_CB_NODE *pCB, ImageSubresourcePai
 }
 template <class OBJECT, class LAYOUT>
 void SetLayout(layer_data *device_data, OBJECT *pObject, VkImage image, VkImageSubresource range, const LAYOUT &layout) {
-    ImageSubresourcePair imgpair = {image, true, range};
+    ImageSubresourcePair imgpair = {image, range, true};
     SetLayout(device_data, pObject, imgpair, layout, VK_IMAGE_ASPECT_COLOR_BIT);
     SetLayout(device_data, pObject, imgpair, layout, VK_IMAGE_ASPECT_DEPTH_BIT);
     SetLayout(device_data, pObject, imgpair, layout, VK_IMAGE_ASPECT_STENCIL_BIT);
@@ -158,7 +158,7 @@ bool FindLayoutVerifyLayout(layer_data const *device_data, ImageSubresourcePair 
 // Find layout(s) on the command buffer level
 bool FindCmdBufLayout(layer_data const *device_data, GLOBAL_CB_NODE const *pCB, VkImage image, VkImageSubresource range,
                       IMAGE_CMD_BUF_LAYOUT_NODE &node) {
-    ImageSubresourcePair imgpair = {image, true, range};
+    ImageSubresourcePair imgpair = {image, range, true};
     node = IMAGE_CMD_BUF_LAYOUT_NODE(VK_IMAGE_LAYOUT_MAX_ENUM, VK_IMAGE_LAYOUT_MAX_ENUM);
     FindLayoutVerifyNode(device_data, pCB, imgpair, node, VK_IMAGE_ASPECT_COLOR_BIT);
     FindLayoutVerifyNode(device_data, pCB, imgpair, node, VK_IMAGE_ASPECT_DEPTH_BIT);
@@ -170,7 +170,7 @@ bool FindCmdBufLayout(layer_data const *device_data, GLOBAL_CB_NODE const *pCB, 
         FindLayoutVerifyNode(device_data, pCB, imgpair, node, VK_IMAGE_ASPECT_PLANE_2_BIT_KHR);
     }
     if (node.layout == VK_IMAGE_LAYOUT_MAX_ENUM) {
-        imgpair = {image, false, VkImageSubresource()};
+        imgpair = {image, VkImageSubresource(), false};
         auto imgsubIt = pCB->imageLayoutMap.find(imgpair);
         if (imgsubIt == pCB->imageLayoutMap.end()) return false;
         // TODO: This is ostensibly a find function but it changes state here
@@ -192,7 +192,7 @@ bool FindGlobalLayout(layer_data *device_data, ImageSubresourcePair imgpair, VkI
         FindLayoutVerifyLayout(device_data, imgpair, layout, VK_IMAGE_ASPECT_PLANE_2_BIT_KHR);
     }
     if (layout == VK_IMAGE_LAYOUT_MAX_ENUM) {
-        imgpair = {imgpair.image, false, VkImageSubresource()};
+        imgpair = {imgpair.image, VkImageSubresource(), false};
         auto imgsubIt = (*core_validation::GetImageLayoutMap(device_data)).find(imgpair);
         if (imgsubIt == (*core_validation::GetImageLayoutMap(device_data)).end()) return false;
         layout = imgsubIt->second.layout;
@@ -248,7 +248,7 @@ bool FindLayout(layer_data *device_data, const std::unordered_map<ImageSubresour
     }
     // Image+subresource not found, look for image handle w/o subresource
     if (layout == VK_IMAGE_LAYOUT_MAX_ENUM) {
-        imgpair = {imgpair.image, false, VkImageSubresource()};
+        imgpair = {imgpair.image, VkImageSubresource(), false};
         auto imgsubIt = imageLayoutMap.find(imgpair);
         if (imgsubIt == imageLayoutMap.end()) return false;
         layout = imgsubIt->second.layout;
@@ -1512,7 +1512,7 @@ void PostCallRecordCreateImage(VkDevice device, const VkImageCreateInfo *pCreate
         RecordCreateImageANDROID(pCreateInfo, is_node);
     }
     GetImageMap(device_data)->insert(std::make_pair(*pImage, std::unique_ptr<IMAGE_STATE>(is_node)));
-    ImageSubresourcePair subpair{*pImage, false, VkImageSubresource()};
+    ImageSubresourcePair subpair{*pImage, VkImageSubresource(), false};
     (*core_validation::GetImageSubresourceMap(device_data))[*pImage].push_back(subpair);
     (*core_validation::GetImageLayoutMap(device_data))[subpair] = image_state;
 }
