@@ -695,6 +695,8 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
                 object_dest = '%s[index]' % cmd_info[-1].name
 
             dispobj = params[0].find('type').text
+            if 'CreateGraphicsPipelines' in proto.text or 'CreateComputePipelines' in proto.text or 'CreateRayTracingPipelines' in proto.text:
+                create_obj_code += '%sif (!pPipelines[index]) continue;\n' % indent
             create_obj_code += '%sCreateObject(%s, %s, %s, %s);\n' % (indent, params[0].find('name').text, object_dest, self.GetVulkanObjType(cmd_info[-1].type), allocator)
             if object_array == True:
                 indent = self.decIndent(indent)
@@ -975,7 +977,9 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
 
                     if result_type.text == 'VkResult':
                         post_cr_func_decl = post_cr_func_decl.replace(')', ',\n    VkResult                                    result)')
-                        post_cr_func_decl = post_cr_func_decl.replace('{', '{\n    if (result != VK_SUCCESS) return;')
+                        # The two createpipelines APIs may create on failure -- skip the success result check
+                        if 'CreateGraphicsPipelines' not in cmdname and 'CreateComputePipelines' not in cmdname and 'CreateRayTracingPipelines' not in cmdname:
+                            post_cr_func_decl = post_cr_func_decl.replace('{', '{\n    if (result != VK_SUCCESS) return;')
                     self.appendSection('command', post_cr_func_decl)
 
 
