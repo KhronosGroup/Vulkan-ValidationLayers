@@ -5249,13 +5249,11 @@ void PostCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipe
                                            // Default parameter
                                            create_graphics_pipeline_api_state *cgpl_state) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-
-    if (result == VK_SUCCESS) {
-        for (uint32_t i = 0; i < count; i++) {
-            if (pPipelines[i] != VK_NULL_HANDLE) {
-                (cgpl_state->pipe_state)[i]->pipeline = pPipelines[i];
-                device_data->pipelineMap[pPipelines[i]] = std::move((cgpl_state->pipe_state)[i]);
-            }
+    // This API may create pipelines regardless of the return value
+    for (uint32_t i = 0; i < count; i++) {
+        if (pPipelines[i] != VK_NULL_HANDLE) {
+            (cgpl_state->pipe_state)[i]->pipeline = pPipelines[i];
+            device_data->pipelineMap[pPipelines[i]] = std::move((cgpl_state->pipe_state)[i]);
         }
     }
     // GPU val needs clean up regardless of result
@@ -5291,7 +5289,7 @@ void PostCallRecordCreateComputePipelines(VkDevice device, VkPipelineCache pipel
                                           std::vector<std::unique_ptr<PIPELINE_STATE>> *pipe_state) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
 
-    if (VK_SUCCESS != result) return;
+    // This API may create pipelines regardless of the return value
     for (uint32_t i = 0; i < count; i++) {
         if (pPipelines[i] != VK_NULL_HANDLE) {
             (*pipe_state)[i]->pipeline = pPipelines[i];
@@ -5332,7 +5330,7 @@ void PostCallRecordCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache 
                                                vector<std::unique_ptr<PIPELINE_STATE>> *pipe_state) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
 
-    if (VK_SUCCESS != result) return;
+    // This API may create pipelines regardless of the return value
     for (uint32_t i = 0; i < count; i++) {
         if (pPipelines[i] != VK_NULL_HANDLE) {
             (*pipe_state)[i]->pipeline = pPipelines[i];
