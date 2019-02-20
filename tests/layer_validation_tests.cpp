@@ -1910,6 +1910,9 @@ TEST_F(VkLayerTest, AnisotropyFeatureEnabled) {
 
     // Both anisotropy and unnormalized coords enabled
     sampler_info.unnormalizedCoordinates = VK_TRUE;
+    // If unnormalizedCoordinates is VK_TRUE, minLod and maxLod must be zero
+    sampler_info.minLod = 0;
+    sampler_info.maxLod = 0;
     do_test("VUID-VkSamplerCreateInfo-unnormalizedCoordinates-01076", &sampler_info);
     sampler_info.unnormalizedCoordinates = sampler_info_ref.unnormalizedCoordinates;
 
