@@ -174,6 +174,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             'vkCmdDrawMeshTasksIndirectNV',
             'vkCmdDrawMeshTasksIndirectCountNV',
             'vkAllocateMemory',
+            'vkCreateAccelerationStructureNV',
             ]
 
         # Commands to ignore
