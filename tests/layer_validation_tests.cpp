@@ -12934,6 +12934,7 @@ TEST_F(VkLayerTest, InvalidPipelineSamplePNext) {
 
     // Set up the extension structs
     auto sampleLocations = chain_util::Init<VkPipelineSampleLocationsStateCreateInfoEXT>();
+    sampleLocations.sampleLocationsInfo.sType = VK_STRUCTURE_TYPE_SAMPLE_LOCATIONS_INFO_EXT;
     auto coverageToColor = chain_util::Init<VkPipelineCoverageToColorStateCreateInfoNV>();
     auto coverageModulation = chain_util::Init<VkPipelineCoverageModulationStateCreateInfoNV>();
     auto discriminatrix = [this](const char *name) { return DeviceExtensionSupported(gpu(), nullptr, name); };
