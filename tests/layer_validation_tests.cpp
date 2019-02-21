@@ -11464,14 +11464,16 @@ TEST_F(VkLayerTest, InvalidPipeline) {
         ASSERT_NE(fpCmdDrawIndirectCountKHR, nullptr);
 
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDrawIndirectCountKHR-None-03119");
-        fpCmdDrawIndirectCountKHR(m_commandBuffer->handle(), buffer.handle(), 0, buffer.handle(), 512, 1, 0);
+        // stride must be a multiple of 4 and must be greater than or equal to sizeof(VkDrawIndirectCommand)
+        fpCmdDrawIndirectCountKHR(m_commandBuffer->handle(), buffer.handle(), 0, buffer.handle(), 512, 1, 512);
         m_errorMonitor->VerifyFound();
 
         auto fpCmdDrawIndexedIndirectCountKHR =
             (PFN_vkCmdDrawIndexedIndirectCountKHR)vkGetDeviceProcAddr(m_device->device(), "vkCmdDrawIndexedIndirectCountKHR");
         ASSERT_NE(fpCmdDrawIndexedIndirectCountKHR, nullptr);
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDrawIndexedIndirectCountKHR-None-03151");
-        fpCmdDrawIndexedIndirectCountKHR(m_commandBuffer->handle(), buffer.handle(), 0, buffer.handle(), 512, 1, 0);
+        // stride must be a multiple of 4 and must be greater than or equal to sizeof(VkDrawIndexedIndirectCommand)
+        fpCmdDrawIndexedIndirectCountKHR(m_commandBuffer->handle(), buffer.handle(), 0, buffer.handle(), 512, 1, 512);
         m_errorMonitor->VerifyFound();
     }
 
