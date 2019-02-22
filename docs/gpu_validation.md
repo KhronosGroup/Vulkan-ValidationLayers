@@ -645,10 +645,8 @@ For the *Uninitialized errors, one word will follow: Word0:DescriptorIndex
 
 | Error                       | Code | Word 0         | Word 1                |
 |-----------------------------|:----:|----------------|-----------------------|
-|ImageIndexOutOfBounds        |0     |Descriptor Index|Descriptor Array Length|
-|SampleIndexOutOfBounds       |1     |Descriptor Index|Descriptor Array Length|
-|ImageDescriptorUninitialized |2     |Descriptor Index|unused                 |
-|SampleDescriptorUninitialized|3     |Descriptor Index|unused                 |
+|IndexOutOfBounds             |0     |Descriptor Index|Descriptor Array Length|
+|DescriptorUninitialized      |1     |Descriptor Index|unused                 |
 
 So the words written for an image descriptor bounds error in a fragment shader is:
 
