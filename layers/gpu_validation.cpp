@@ -654,20 +654,11 @@ static void GenerateValidationMessage(const uint32_t *debug_record, std::string 
         case 0: {
             strm << "Index of " << debug_record[kInstBindlessOutDescIndex] << " used to index descriptor array of length "
                  << debug_record[kInstBindlessOutDescBound] << ". ";
-            vuid_msg = "UNASSIGNED-Image descriptor index out of bounds";
+            vuid_msg = "UNASSIGNED-Descriptor index out of bounds";
         } break;
         case 1: {
-            strm << "Index of " << debug_record[kInstBindlessOutDescIndex] << " used to index descriptor array of length "
-                 << debug_record[kInstBindlessOutDescBound] << ". ";
-            vuid_msg = "UNASSIGNED-Sampler index out of bounds";
-        } break;
-        case 2: {
             strm << "Descriptor index " << debug_record[kInstBindlessOutDescIndex] << " is uninitialized. ";
-            vuid_msg = "UNASSIGNED-Image descriptor uninitialized";
-        } break;
-        case 3: {
-            strm << "Descriptor index " << debug_record[kInstBindlessOutDescIndex] << " is uninitialized. ";
-            vuid_msg = "UNASSIGNED-Sampler descriptor uninitialized";
+            vuid_msg = "UNASSIGNED-Descriptor uninitialized";
         } break;
         default: {
             strm << "Internal Error (unexpected error type = " << debug_record[kInstValidationOutError] << "). ";
