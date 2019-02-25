@@ -28879,6 +28879,7 @@ TEST_F(VkLayerTest, PushDescriptorSetCmdPushBadArgs) {
 
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
                                              "VUID-vkCmdPushDescriptorSetKHR-pipelineBindPoint-00363");
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkWriteDescriptorSet-descriptorType-00330");
         if (err_qfi == transfer_only_qfi) {
             // This as this queue neither supports the gfx or compute bindpoints, we'll get two errors
             m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
@@ -28901,6 +28902,7 @@ TEST_F(VkLayerTest, PushDescriptorSetCmdPushBadArgs) {
             // We can't avoid getting *both* errors in this case
             m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
                                                  "VUID-vkCmdPushDescriptorSetKHR-pipelineBindPoint-00363");
+            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkWriteDescriptorSet-descriptorType-00330");
             m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
                                                  "VUID-vkCmdPushDescriptorSetKHR-commandBuffer-cmdpool");
             vkCmdPushDescriptorSetKHR(tran_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
@@ -28928,6 +28930,7 @@ TEST_F(VkLayerTest, PushDescriptorSetCmdPushBadArgs) {
     // TODO: Add VALIDATION_ERROR_ code support to core_validation::ValidateCmd
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
                                          "You must call vkBeginCommandBuffer() before this call to vkCmdPushDescriptorSetKHR()");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkWriteDescriptorSet-descriptorType-00330");
     vkCmdPushDescriptorSetKHR(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                               &descriptor_write);
     m_errorMonitor->VerifyFound();
