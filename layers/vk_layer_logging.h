@@ -138,8 +138,9 @@ typedef struct _debug_report_data {
     }
 
     std::string FormatHandle(uint64_t h) const {
-        std::string ret = "0x";
-        ret.append(std::to_string(h));
+        char uint64_string[64];
+        sprintf(uint64_string, "0x%" PRIxLEAST64, h);
+        std::string ret = uint64_string;
 
         std::string name = DebugReportGetUtilsObjectName(h);
         if (name.empty()) {
