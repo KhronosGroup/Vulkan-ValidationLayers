@@ -1593,6 +1593,13 @@ TEST_F(VkLayerTest, DebugUtilsNameTest) {
     vkDestroyEvent(m_device->device(), event_handle, NULL);
     m_errorMonitor->VerifyFound();
 
+    // Change label for a given object, then provoke an error from core_validation and look for the new name
+    name_info.pObjectName = "A_Totally_Different_Name";
+    fpvkSetDebugUtilsObjectNameEXT(device(), &name_info);
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "A_Totally_Different_Name");
+    vkDestroyEvent(m_device->device(), event_handle, NULL);
+    m_errorMonitor->VerifyFound();
+
     vkQueueWaitIdle(m_device->m_queue);
 }
 
