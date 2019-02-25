@@ -99,7 +99,7 @@ typedef struct _debug_report_data {
     void DebugReportSetUtilsObjectName(const VkDebugUtilsObjectNameInfoEXT *pNameInfo) {
         std::unique_lock<std::mutex> lock(debug_report_mutex);
         if (pNameInfo->pObjectName) {
-            debugUtilsObjectNameMap.emplace(pNameInfo->objectHandle, pNameInfo->pObjectName);
+            debugUtilsObjectNameMap[pNameInfo->objectHandle] = pNameInfo->pObjectName;
         } else {
             debugUtilsObjectNameMap.erase(pNameInfo->objectHandle);
         }
@@ -108,7 +108,7 @@ typedef struct _debug_report_data {
     void DebugReportSetMarkerObjectName(const VkDebugMarkerObjectNameInfoEXT *pNameInfo) {
         std::unique_lock<std::mutex> lock(debug_report_mutex);
         if (pNameInfo->pObjectName) {
-            debugObjectNameMap.emplace(pNameInfo->object, pNameInfo->pObjectName);
+            debugObjectNameMap[pNameInfo->object] = pNameInfo->pObjectName;
         } else {
             debugObjectNameMap.erase(pNameInfo->object);
         }
