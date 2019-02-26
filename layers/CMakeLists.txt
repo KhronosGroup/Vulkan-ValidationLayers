@@ -81,7 +81,7 @@ set(LAYER_UTIL_FILES
     ${PROJECT_BINARY_DIR}/vk_object_types.h
     ${PROJECT_BINARY_DIR}/vk_extension_helper.h
     ${PROJECT_BINARY_DIR}/vk_typemap_helper.h)
-install(FILES ${LAYER_UTIL_FILES} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+install(FILES ${LAYER_UTIL_FILES} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/vulkan)
 
 set(TARGET_NAMES
     VkLayer_core_validation
