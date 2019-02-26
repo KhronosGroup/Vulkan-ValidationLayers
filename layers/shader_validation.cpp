@@ -949,6 +949,9 @@ static bool ValidateFsOutputsAgainstRenderPass(debug_report_data const *report_d
     auto it_a = outputs.begin();
     auto it_b = color_attachments.begin();
     bool used = false;
+    bool alphaToCoverageEnabled = pipeline->graphicsPipelineCI.pMultisampleState != NULL &&
+                                  pipeline->graphicsPipelineCI.pMultisampleState->alphaToCoverageEnable == VK_TRUE;
+    bool locationZeroHasAlpha = false;
 
     // Walk attachment list and outputs together
 
@@ -956,10 +959,16 @@ static bool ValidateFsOutputsAgainstRenderPass(debug_report_data const *report_d
         bool a_at_end = outputs.size() == 0 || it_a == outputs.end();
         bool b_at_end = color_attachments.size() == 0 || it_b == color_attachments.end();
 
+        if (!a_at_end && it_a->first.first == 0 && fs->get_def(it_a->second.type_id) != fs->end() &&
+            GetComponentsConsumedByType(fs, it_a->second.type_id, false) == 4)
+            locationZeroHasAlpha = true;
+
         if (!a_at_end && (b_at_end || it_a->first.first < it_b->first)) {
-            skip |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SHADER_MODULE_EXT,
-                            HandleToUint64(fs->vk_shader_module), kVUID_Core_Shader_OutputNotConsumed,
-                            "fragment shader writes to output location %d with no matching attachment", it_a->first.first);
+            if (!alphaToCoverageEnabled || it_a->first.first != 0) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SHADER_MODULE_EXT,
+                                HandleToUint64(fs->vk_shader_module), kVUID_Core_Shader_OutputNotConsumed,
+                                "fragment shader writes to output location %d with no matching attachment", it_a->first.first);
+            }
             it_a++;
         } else if (!b_at_end && (a_at_end || it_a->first.first > it_b->first)) {
             // Only complain if there are unmasked channels for this attachment. If the writemask is 0, it's acceptable for the
@@ -991,6 +1000,12 @@ static bool ValidateFsOutputsAgainstRenderPass(debug_report_data const *report_d
             it_a++;
             used = true;
         }
+    }
+
+    if (alphaToCoverageEnabled && !locationZeroHasAlpha) {
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SHADER_MODULE_EXT,
+                        HandleToUint64(fs->vk_shader_module), kVUID_Core_Shader_NoAlphaAtLocation0WithAlphaToCoverage,
+                        "fragment shader doesn't declare alpha output at location 0 even though alpha to coverage is enabled.");
     }
 
     return skip;
