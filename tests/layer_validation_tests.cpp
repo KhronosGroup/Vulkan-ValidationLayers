@@ -18986,7 +18986,9 @@ TEST_F(VkLayerTest, InvalidImageViewUsageCreateInfo) {
 
     // Try a zero usage field
     usage_ci.usage = 0;
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkImageViewUsageCreateInfo-usage-requiredbitmask");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                         "vkCreateImageView: Chained VkImageViewUsageCreateInfo usage field must not be 0");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VkImageViewUsageCreateInfo: value of usage must not be 0");
     res = vkCreateImageView(m_device->device(), &ivci, NULL, &imageView);
     m_errorMonitor->VerifyFound();
     if (VK_SUCCESS == res) {
@@ -19005,6 +19007,7 @@ TEST_F(VkLayerTest, InvalidImageViewUsageCreateInfo) {
     // Try an illegal bit in usage field
     usage_ci.usage = 0x10000000 | VK_IMAGE_USAGE_SAMPLED_BIT;
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkImageViewUsageCreateInfo-usage-parameter");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "UNASSIGNED-GeneralParameterError-UnrecognizedValue");
     res = vkCreateImageView(m_device->device(), &ivci, NULL, &imageView);
     m_errorMonitor->VerifyFound();
     if (VK_SUCCESS == res) {
