@@ -678,6 +678,7 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
     def generate_create_object_code(self, indent, proto, params, cmd_info, allocator):
         create_obj_code = ''
         handle_type = params[-1].find('type')
+        is_create_pipelines = False
 
         if self.isHandleTypeObject(handle_type.text):
             # Check for special case where multiple handles are returned
@@ -687,6 +688,9 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
             handle_name = params[-1].find('name')
             object_dest = '*%s' % handle_name.text
             if object_array == True:
+                if 'CreateGraphicsPipelines' in proto.text or 'CreateComputePipelines' in proto.text or 'CreateRayTracingPipelines' in proto.text:
+                    is_create_pipelines = True
+                    create_obj_code += '%sif (VK_ERROR_VALIDATION_FAILED_EXT == result) return;\n' % indent
                 countispointer = ''
                 if 'uint32_t*' in cmd_info[-2].cdecl:
                     countispointer = '*'
@@ -695,7 +699,7 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
                 object_dest = '%s[index]' % cmd_info[-1].name
 
             dispobj = params[0].find('type').text
-            if 'CreateGraphicsPipelines' in proto.text or 'CreateComputePipelines' in proto.text or 'CreateRayTracingPipelines' in proto.text:
+            if is_create_pipelines:
                 create_obj_code += '%sif (!pPipelines[index]) continue;\n' % indent
             create_obj_code += '%sCreateObject(%s, %s, %s, %s);\n' % (indent, params[0].find('name').text, object_dest, self.GetVulkanObjType(cmd_info[-1].type), allocator)
             if object_array == True:
