@@ -43,18 +43,12 @@ class GpuDeviceMemoryManager {
         dev_data_ = dev_data;
     }
 
-    ~GpuDeviceMemoryManager() {
-        for (auto &chunk : chunk_list_) {
-            FreeMemoryChunk(chunk);
-        }
-        chunk_list_.clear();
-    }
-
     uint32_t GetBlockSize() { return block_size_; }
 
     VkResult GetBlock(GpuDeviceMemoryBlock *block);
     void PutBackBlock(VkBuffer buffer, VkDeviceMemory memory, uint32_t offset);
     void PutBackBlock(GpuDeviceMemoryBlock &block);
+    void FreeAllBlocks();
 
    private:
     // Define allocation granularity of Vulkan resources.
@@ -87,15 +81,9 @@ class GpuDescriptorSetManager {
    public:
     GpuDescriptorSetManager(layer_data *dev_data) { dev_data_ = dev_data; }
 
-    ~GpuDescriptorSetManager() {
-        for (auto &pool : desc_pool_map_) {
-            GetDispatchTable(dev_data_)->DestroyDescriptorPool(GetDevice(dev_data_), pool.first, NULL);
-        }
-        desc_pool_map_.clear();
-    }
-
     VkResult GetDescriptorSets(uint32_t count, VkDescriptorPool *pool, std::vector<VkDescriptorSet> *desc_sets);
     void PutBackDescriptorSet(VkDescriptorPool desc_pool, VkDescriptorSet desc_set);
+    void DestroyDescriptorPools();
 
    private:
     static const uint32_t kItemsPerChunk = 512;
