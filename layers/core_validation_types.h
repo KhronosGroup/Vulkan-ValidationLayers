@@ -123,7 +123,6 @@ struct hash<VK_OBJECT> {
 class PHYS_DEV_PROPERTIES_NODE {
    public:
     VkPhysicalDeviceProperties properties;
-    std::vector<VkQueueFamilyProperties> queue_family_properties;
 };
 
 // Flags describing requirements imposed by the pipeline on a descriptor. These
