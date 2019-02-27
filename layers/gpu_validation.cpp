@@ -1029,7 +1029,7 @@ static void SubmitBarrier(layer_data *dev_data, VkQueue queue) {
 
     // Pay attention only to queues that support graphics.
     // This ensures that the command buffer pool is created so that it can be used on a graphics queue.
-    VkQueueFlags queue_flags = dev_data->phys_dev_properties.queue_family_properties[queue_family_index].queueFlags;
+    VkQueueFlags queue_flags = GetPhysicalDeviceState(dev_data)->queue_family_properties[queue_family_index].queueFlags;
     if (!(queue_flags & VK_QUEUE_GRAPHICS_BIT)) {
         return;
     }

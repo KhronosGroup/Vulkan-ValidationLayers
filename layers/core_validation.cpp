@@ -263,6 +263,24 @@ PHYSICAL_DEVICE_STATE *GetPhysicalDeviceState(instance_layer_data *instance_data
     return &it->second;
 }
 
+PHYSICAL_DEVICE_STATE *GetPhysicalDeviceState(const layer_data *device_data) {
+    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(device_data->physical_device), instance_layer_data_map);
+    auto it = instance_data->physical_device_map.find(device_data->physical_device);
+    if (it == instance_data->physical_device_map.end()) {
+        return nullptr;
+    }
+    return &it->second;
+}
+
+PHYSICAL_DEVICE_STATE *GetPhysicalDeviceState(layer_data *device_data) {
+    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(device_data->physical_device), instance_layer_data_map);
+    auto it = instance_data->physical_device_map.find(device_data->physical_device);
+    if (it == instance_data->physical_device_map.end()) {
+        return nullptr;
+    }
+    return &it->second;
+}
+
 SURFACE_STATE *GetSurfaceState(instance_layer_data *instance_data, VkSurfaceKHR surface) {
     auto it = instance_data->surface_map.find(surface);
     if (it == instance_data->surface_map.end()) {
@@ -1858,7 +1876,7 @@ bool ValidateCmdQueueFlags(layer_data *dev_data, const GLOBAL_CB_NODE *cb_node, 
                            VkQueueFlags required_flags, const char *error_code) {
     auto pool = GetCommandPoolNode(dev_data, cb_node->createInfo.commandPool);
     if (pool) {
-        VkQueueFlags queue_flags = dev_data->phys_dev_properties.queue_family_properties[pool->queueFamilyIndex].queueFlags;
+        VkQueueFlags queue_flags = GetPhysicalDeviceState(dev_data)->queue_family_properties[pool->queueFamilyIndex].queueFlags;
         if (!(required_flags & queue_flags)) {
             string required_flags_string;
             for (auto flag : {VK_QUEUE_TRANSFER_BIT, VK_QUEUE_GRAPHICS_BIT, VK_QUEUE_COMPUTE_BIT}) {
@@ -2438,11 +2456,14 @@ void PostCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo *
         device_data->enabled_features.core = *enabled_features_found;
     }
 
+    // Make sure that queue_family_properties are obtained for this device's physical_device, even if the app has not
+    // previously set them through an explicit API call.
     uint32_t count;
+    auto pd_state = GetPhysicalDeviceState(instance_data, gpu);
     instance_data->dispatch_table.GetPhysicalDeviceQueueFamilyProperties(gpu, &count, nullptr);
-    device_data->phys_dev_properties.queue_family_properties.resize(count);
-    instance_data->dispatch_table.GetPhysicalDeviceQueueFamilyProperties(
-        gpu, &count, &device_data->phys_dev_properties.queue_family_properties[0]);
+    pd_state->queue_family_count = std::max(pd_state->queue_family_count, count);
+    pd_state->queue_family_properties.resize(std::max(static_cast<uint32_t>(pd_state->queue_family_properties.size()), count));
+    instance_data->dispatch_table.GetPhysicalDeviceQueueFamilyProperties(gpu, &count, &pd_state->queue_family_properties[0]);
 
     const auto *device_group_ci = lvl_find_in_chain<VkDeviceGroupDeviceCreateInfo>(pCreateInfo->pNext);
     device_data->physical_device_count =
@@ -7099,7 +7120,7 @@ bool ValidatePipelineBindPoint(layer_data *device_data, GLOBAL_CB_NODE *cb_state
             std::make_pair(VK_PIPELINE_BIND_POINT_RAY_TRACING_NV,
                            static_cast<VkQueueFlags>(VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT)),
         };
-        const auto &qfp = GetPhysDevProperties(device_data)->queue_family_properties[pool->queueFamilyIndex];
+        const auto &qfp = GetPhysicalDeviceState(device_data)->queue_family_properties[pool->queueFamilyIndex];
         if (0 == (qfp.queueFlags & flag_mask.at(bind_point))) {
             const std::string &error = bind_errors.at(bind_point);
             auto cb_u64 = HandleToUint64(cb_state->commandBuffer);
@@ -8122,7 +8143,7 @@ class ValidatorState {
           sharing_mode_(sharing_mode),
           object_type_(object_type),
           val_codes_(val_codes),
-          limit_(static_cast<uint32_t>(device_data->phys_dev_properties.queue_family_properties.size())),
+          limit_(static_cast<uint32_t>(GetPhysicalDeviceState(device_data)->queue_family_properties.size())),
           mem_ext_(device_data->extensions.vk_khr_external_memory) {}
 
     // Create a validator state from an image state... reducing the image specific to the generic version.
