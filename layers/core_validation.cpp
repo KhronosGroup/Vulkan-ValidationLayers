@@ -3748,11 +3748,11 @@ bool PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAllocateInfo *
                                    const VkAllocationCallbacks *pAllocator, VkDeviceMemory *pMemory) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
-    if (device_data->memObjMap.size() >= device_data->phys_dev_properties.properties.limits.maxMemoryAllocationCount) {
+    if (device_data->memObjMap.size() >= device_data->phys_dev_props.limits.maxMemoryAllocationCount) {
         skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
                         HandleToUint64(device), kVUIDUndefined,
                         "Number of currently valid memory objects is not less than the maximum allowed (%u).",
-                        device_data->phys_dev_properties.properties.limits.maxMemoryAllocationCount);
+                        device_data->phys_dev_props.limits.maxMemoryAllocationCount);
     }
 
     if (GetDeviceExtensions(device_data)->vk_android_external_memory_android_hardware_buffer) {
@@ -3901,11 +3901,10 @@ static void InitializeAndTrackMemory(layer_data *dev_data, VkDeviceMemory mem, V
             if (size == VK_WHOLE_SIZE) {
                 size = mem_info->alloc_info.allocationSize - offset;
             }
-            mem_info->shadow_pad_size = dev_data->phys_dev_properties.properties.limits.minMemoryMapAlignment;
-            assert(SafeModulo(mem_info->shadow_pad_size, dev_data->phys_dev_properties.properties.limits.minMemoryMapAlignment) ==
-                   0);
+            mem_info->shadow_pad_size = dev_data->phys_dev_props.limits.minMemoryMapAlignment;
+            assert(SafeModulo(mem_info->shadow_pad_size, dev_data->phys_dev_props.limits.minMemoryMapAlignment) == 0);
             // Ensure start of mapped region reflects hardware alignment constraints
-            uint64_t map_alignment = dev_data->phys_dev_properties.properties.limits.minMemoryMapAlignment;
+            uint64_t map_alignment = dev_data->phys_dev_props.limits.minMemoryMapAlignment;
 
             // From spec: (ppData - offset) must be aligned to at least limits::minMemoryMapAlignment.
             uint64_t start_offset = offset % map_alignment;
@@ -4226,7 +4225,7 @@ static bool RangesIntersect(layer_data const *dev_data, MEMORY_RANGE const *rang
     auto r2_end = range2->end;
     VkDeviceSize pad_align = 1;
     if (range1->linear != range2->linear) {
-        pad_align = dev_data->phys_dev_properties.properties.limits.bufferImageGranularity;
+        pad_align = dev_data->phys_dev_props.limits.bufferImageGranularity;
     }
     if ((r1_end & ~(pad_align - 1)) < (r2_start & ~(pad_align - 1))) return false;
     if ((r1_start & ~(pad_align - 1)) > (r2_end & ~(pad_align - 1))) return false;
@@ -5097,8 +5096,6 @@ std::unordered_map<VkImageView, std::unique_ptr<IMAGE_VIEW_STATE>> *GetImageView
     return &device_data->imageViewMap;
 }
 
-const PHYS_DEV_PROPERTIES_NODE *GetPhysDevProperties(const layer_data *device_data) { return &device_data->phys_dev_properties; }
-
 const DeviceFeatures *GetEnabledFeatures(const layer_data *device_data) { return &device_data->enabled_features; }
 
 const DeviceExtensions *GetDeviceExtensions(const layer_data *device_data) { return &device_data->extensions; }
@@ -5392,7 +5389,7 @@ void PostCallRecordCreateDescriptorSetLayout(VkDevice device, const VkDescriptor
 static bool ValidatePushConstantRange(const layer_data *dev_data, const uint32_t offset, const uint32_t size,
                                       const char *caller_name, uint32_t index = 0) {
     if (dev_data->instance_data->disabled.push_constant_range) return false;
-    uint32_t const maxPushConstantsSize = dev_data->phys_dev_properties.properties.limits.maxPushConstantsSize;
+    uint32_t const maxPushConstantsSize = dev_data->phys_dev_props.limits.maxPushConstantsSize;
     bool skip = false;
     // Check that offset + size don't exceed the max.
     // Prevent arithetic overflow here by avoiding addition and testing in this order.
@@ -7070,7 +7067,7 @@ bool PreCallValidateCmdBindDescriptorSets(VkCommandBuffer commandBuffer, VkPipel
                     uint32_t cur_dyn_offset = total_dynamic_descriptors;
                     const auto dsl = descriptor_set->GetLayout();
                     const auto binding_count = dsl->GetBindingCount();
-                    const auto &limits = device_data->phys_dev_properties.properties.limits;
+                    const auto &limits = device_data->phys_dev_props.limits;
                     for (uint32_t binding_idx = 0; binding_idx < binding_count; binding_idx++) {
                         const auto *binding = dsl->GetDescriptorSetLayoutBindingPtrFromIndex(binding_idx);
                         skip |= ValidateDynamicOffsetAlignment(device_data->report_data, binding,
@@ -9096,26 +9093,26 @@ static bool ValidateFramebufferCreateInfo(layer_data *dev_data, const VkFramebuf
         }
     }
     // Verify FB dimensions are within physical device limits
-    if (pCreateInfo->width > dev_data->phys_dev_properties.properties.limits.maxFramebufferWidth) {
+    if (pCreateInfo->width > dev_data->phys_dev_props.limits.maxFramebufferWidth) {
         skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                         "VUID-VkFramebufferCreateInfo-width-00886",
                         "vkCreateFramebuffer(): Requested VkFramebufferCreateInfo width exceeds physical device limits. Requested "
                         "width: %u, device max: %u\n",
-                        pCreateInfo->width, dev_data->phys_dev_properties.properties.limits.maxFramebufferWidth);
+                        pCreateInfo->width, dev_data->phys_dev_props.limits.maxFramebufferWidth);
     }
-    if (pCreateInfo->height > dev_data->phys_dev_properties.properties.limits.maxFramebufferHeight) {
+    if (pCreateInfo->height > dev_data->phys_dev_props.limits.maxFramebufferHeight) {
         skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                         "VUID-VkFramebufferCreateInfo-height-00888",
                         "vkCreateFramebuffer(): Requested VkFramebufferCreateInfo height exceeds physical device limits. Requested "
                         "height: %u, device max: %u\n",
-                        pCreateInfo->height, dev_data->phys_dev_properties.properties.limits.maxFramebufferHeight);
+                        pCreateInfo->height, dev_data->phys_dev_props.limits.maxFramebufferHeight);
     }
-    if (pCreateInfo->layers > dev_data->phys_dev_properties.properties.limits.maxFramebufferLayers) {
+    if (pCreateInfo->layers > dev_data->phys_dev_props.limits.maxFramebufferLayers) {
         skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                         "VUID-VkFramebufferCreateInfo-layers-00890",
                         "vkCreateFramebuffer(): Requested VkFramebufferCreateInfo layers exceeds physical device limits. Requested "
                         "layers: %u, device max: %u\n",
-                        pCreateInfo->layers, dev_data->phys_dev_properties.properties.limits.maxFramebufferLayers);
+                        pCreateInfo->layers, dev_data->phys_dev_props.limits.maxFramebufferLayers);
     }
     // Verify FB dimensions are greater than zero
     if (pCreateInfo->width <= 0) {
@@ -10905,7 +10902,7 @@ static bool ValidateMappedMemoryRangeDeviceLimits(layer_data *dev_data, const ch
                                                   const VkMappedMemoryRange *mem_ranges) {
     bool skip = false;
     for (uint32_t i = 0; i < mem_range_count; ++i) {
-        uint64_t atom_size = dev_data->phys_dev_properties.properties.limits.nonCoherentAtomSize;
+        uint64_t atom_size = dev_data->phys_dev_props.limits.nonCoherentAtomSize;
         if (SafeModulo(mem_ranges[i].offset, atom_size) != 0) {
             skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_MEMORY_EXT,
                             HandleToUint64(mem_ranges->memory), "VUID-VkMappedMemoryRange-offset-00687",
