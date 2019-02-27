@@ -1381,6 +1381,8 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateImagePipeSurfaceFUCHSIA(VkInstance instance
 using std::vector;
 SURFACE_STATE* GetSurfaceState(instance_layer_data* instance_data, VkSurfaceKHR surface);
 PHYSICAL_DEVICE_STATE* GetPhysicalDeviceState(instance_layer_data* instance_data, VkPhysicalDevice phys);
+PHYSICAL_DEVICE_STATE* GetPhysicalDeviceState(const layer_data* device_data);
+PHYSICAL_DEVICE_STATE* GetPhysicalDeviceState(layer_data* device_data);
 
 bool PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                             const VkGraphicsPipelineCreateInfo* pCreateInfos,

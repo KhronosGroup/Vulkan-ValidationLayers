@@ -1960,7 +1960,7 @@ static inline VkExtent3D GetScaledItg(layer_data *device_data, const GLOBAL_CB_N
     auto pPool = GetCommandPoolNode(device_data, cb_node->createInfo.commandPool);
     if (pPool) {
         granularity =
-            GetPhysDevProperties(device_data)->queue_family_properties[pPool->queueFamilyIndex].minImageTransferGranularity;
+            GetPhysicalDeviceState(device_data)->queue_family_properties[pPool->queueFamilyIndex].minImageTransferGranularity;
         if (FormatIsCompressed(img->createInfo.format)) {
             auto block_size = FormatTexelBlockExtent(img->createInfo.format);
             granularity.width *= block_size.width;
@@ -4922,7 +4922,8 @@ bool PreCallValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage 
     // Command pool must support graphics, compute, or transfer operations
     auto pPool = GetCommandPoolNode(device_data, cb_node->createInfo.commandPool);
 
-    VkQueueFlags queue_flags = GetPhysDevProperties(device_data)->queue_family_properties[pPool->queueFamilyIndex].queueFlags;
+    VkQueueFlags queue_flags = GetPhysicalDeviceState(device_data)->queue_family_properties[pPool->queueFamilyIndex].queueFlags;
+
     if (0 == (queue_flags & (VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT))) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                         HandleToUint64(cb_node->createInfo.commandPool), "VUID-vkCmdCopyImageToBuffer-commandBuffer-cmdpool",
@@ -5009,7 +5010,7 @@ bool PreCallValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer
 
     // Command pool must support graphics, compute, or transfer operations
     auto pPool = GetCommandPoolNode(device_data, cb_node->createInfo.commandPool);
-    VkQueueFlags queue_flags = GetPhysDevProperties(device_data)->queue_family_properties[pPool->queueFamilyIndex].queueFlags;
+    VkQueueFlags queue_flags = GetPhysicalDeviceState(device_data)->queue_family_properties[pPool->queueFamilyIndex].queueFlags;
     if (0 == (queue_flags & (VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT))) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                         HandleToUint64(cb_node->createInfo.commandPool), "VUID-vkCmdCopyBufferToImage-commandBuffer-cmdpool",
