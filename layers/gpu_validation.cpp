@@ -179,6 +179,13 @@ void GpuDeviceMemoryManager::FreeMemoryChunk(MemoryChunk &chunk) {
     GetDispatchTable(dev_data_)->FreeMemory(GetDevice(dev_data_), chunk.memory, NULL);
 }
 
+void GpuDeviceMemoryManager::FreeAllBlocks() {
+    for (auto &chunk : chunk_list_) {
+        FreeMemoryChunk(chunk);
+    }
+    chunk_list_.clear();
+}
+
 // Implementation for Descriptor Set Manager class
 VkResult GpuDescriptorSetManager::GetDescriptorSets(uint32_t count, VkDescriptorPool *pool,
                                                     std::vector<VkDescriptorSet> *desc_sets) {
@@ -253,6 +260,13 @@ void GpuDescriptorSetManager::PutBackDescriptorSet(VkDescriptorPool desc_pool, V
         }
     }
     return;
+}
+
+void GpuDescriptorSetManager::DestroyDescriptorPools() {
+    for (auto &pool : desc_pool_map_) {
+        GetDispatchTable(dev_data_)->DestroyDescriptorPool(GetDevice(dev_data_), pool.first, NULL);
+    }
+    desc_pool_map_.clear();
 }
 
 // Convenience function for reporting problems with setting up GPU Validation.
@@ -380,6 +394,8 @@ void GpuPreCallRecordDestroyDevice(layer_data *dev_data) {
         GetDispatchTable(dev_data)->DestroyDescriptorSetLayout(GetDevice(dev_data), gpu_state->dummy_desc_layout, NULL);
         gpu_state->dummy_desc_layout = VK_NULL_HANDLE;
     }
+    gpu_state->memory_manager->FreeAllBlocks();
+    gpu_state->desc_set_manager->DestroyDescriptorPools();
 }
 
 // Modify the pipeline layout to include our debug descriptor set and any needed padding with the dummy descriptor set.
