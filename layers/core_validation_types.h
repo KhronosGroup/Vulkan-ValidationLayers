@@ -120,11 +120,6 @@ struct hash<VK_OBJECT> {
 };
 }  // namespace std
 
-class PHYS_DEV_PROPERTIES_NODE {
-   public:
-    VkPhysicalDeviceProperties properties;
-};
-
 // Flags describing requirements imposed by the pipeline on a descriptor. These
 // can't be checked at pipeline creation time as they depend on the Image or
 // ImageView bound.
@@ -1220,7 +1215,6 @@ std::shared_ptr<RENDER_PASS_STATE> GetRenderPassStateSharedPtr(layer_data const 
 FRAMEBUFFER_STATE *GetFramebufferState(const layer_data *my_data, VkFramebuffer framebuffer);
 COMMAND_POOL_NODE *GetCommandPoolNode(layer_data *dev_data, VkCommandPool pool);
 shader_module const *GetShaderModuleState(layer_data const *dev_data, VkShaderModule module);
-const PHYS_DEV_PROPERTIES_NODE *GetPhysDevProperties(const layer_data *device_data);
 const DeviceFeatures *GetEnabledFeatures(const layer_data *device_data);
 const DeviceExtensions *GetEnabledExtensions(const layer_data *device_data);
 
