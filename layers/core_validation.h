@@ -262,7 +262,6 @@ struct layer_data {
 
     DeviceFeatures enabled_features = {};
     // Device specific data
-    PHYS_DEV_PROPERTIES_NODE phys_dev_properties = {};
     VkPhysicalDeviceMemoryProperties phys_dev_mem_props = {};
     VkPhysicalDeviceProperties phys_dev_props = {};
     // Device extension properties -- storing properties gathered from VkPhysicalDeviceProperties2KHR::pNext chain
