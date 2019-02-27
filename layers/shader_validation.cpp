@@ -1647,7 +1647,7 @@ static bool ValidateShaderStageInputOutputLimits(layer_data *dev_data, shader_mo
     }
 
     bool skip = false;
-    auto const &properties = GetPhysDevProperties(dev_data);
+    auto const &limits = dev_data->phys_dev_props.limits;
     auto const report_data = GetReportData(dev_data);
 
     std::vector<uint32_t> builtInBlockIDs;
@@ -1724,89 +1724,85 @@ static bool ValidateShaderStageInputOutputLimits(layer_data *dev_data, shader_mo
 
     switch (pStage->stage) {
         case VK_SHADER_STAGE_VERTEX_BIT:
-            if (numCompOut > properties->properties.limits.maxVertexOutputComponents) {
+            if (numCompOut > limits.maxVertexOutputComponents) {
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
                                 HandleToUint64(pipeline->pipeline), kVUID_Core_Shader_ExceedDeviceLimit,
                                 "Invalid Pipeline CreateInfo State: Vertex shader exceeds "
                                 "VkPhysicalDeviceLimits::maxVertexOutputComponents of %u "
                                 "components by %u components",
-                                properties->properties.limits.maxVertexOutputComponents,
-                                numCompOut - properties->properties.limits.maxVertexOutputComponents);
+                                limits.maxVertexOutputComponents, numCompOut - limits.maxVertexOutputComponents);
             }
             break;
 
         case VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT:
-            if (numCompIn > properties->properties.limits.maxTessellationControlPerVertexInputComponents) {
+            if (numCompIn > limits.maxTessellationControlPerVertexInputComponents) {
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
                                 HandleToUint64(pipeline->pipeline), kVUID_Core_Shader_ExceedDeviceLimit,
                                 "Invalid Pipeline CreateInfo State: Tessellation control shader exceeds "
                                 "VkPhysicalDeviceLimits::maxTessellationControlPerVertexInputComponents of %u "
                                 "components by %u components",
-                                properties->properties.limits.maxTessellationControlPerVertexInputComponents,
-                                numCompIn - properties->properties.limits.maxTessellationControlPerVertexInputComponents);
+                                limits.maxTessellationControlPerVertexInputComponents,
+                                numCompIn - limits.maxTessellationControlPerVertexInputComponents);
             }
-            if (numCompOut > properties->properties.limits.maxTessellationControlPerVertexOutputComponents) {
+            if (numCompOut > limits.maxTessellationControlPerVertexOutputComponents) {
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
                                 HandleToUint64(pipeline->pipeline), kVUID_Core_Shader_ExceedDeviceLimit,
                                 "Invalid Pipeline CreateInfo State: Tessellation control shader exceeds "
                                 "VkPhysicalDeviceLimits::maxTessellationControlPerVertexOutputComponents of %u "
                                 "components by %u components",
-                                properties->properties.limits.maxTessellationControlPerVertexOutputComponents,
-                                numCompOut - properties->properties.limits.maxTessellationControlPerVertexOutputComponents);
+                                limits.maxTessellationControlPerVertexOutputComponents,
+                                numCompOut - limits.maxTessellationControlPerVertexOutputComponents);
             }
             break;
 
         case VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT:
-            if (numCompIn > properties->properties.limits.maxTessellationEvaluationInputComponents) {
+            if (numCompIn > limits.maxTessellationEvaluationInputComponents) {
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
                                 HandleToUint64(pipeline->pipeline), kVUID_Core_Shader_ExceedDeviceLimit,
                                 "Invalid Pipeline CreateInfo State: Tessellation evaluation shader exceeds "
                                 "VkPhysicalDeviceLimits::maxTessellationEvaluationInputComponents of %u "
                                 "components by %u components",
-                                properties->properties.limits.maxTessellationEvaluationInputComponents,
-                                numCompIn - properties->properties.limits.maxTessellationEvaluationInputComponents);
+                                limits.maxTessellationEvaluationInputComponents,
+                                numCompIn - limits.maxTessellationEvaluationInputComponents);
             }
-            if (numCompOut > properties->properties.limits.maxTessellationEvaluationOutputComponents) {
+            if (numCompOut > limits.maxTessellationEvaluationOutputComponents) {
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
                                 HandleToUint64(pipeline->pipeline), kVUID_Core_Shader_ExceedDeviceLimit,
                                 "Invalid Pipeline CreateInfo State: Tessellation evaluation shader exceeds "
                                 "VkPhysicalDeviceLimits::maxTessellationEvaluationOutputComponents of %u "
                                 "components by %u components",
-                                properties->properties.limits.maxTessellationEvaluationOutputComponents,
-                                numCompOut - properties->properties.limits.maxTessellationEvaluationOutputComponents);
+                                limits.maxTessellationEvaluationOutputComponents,
+                                numCompOut - limits.maxTessellationEvaluationOutputComponents);
             }
             break;
 
         case VK_SHADER_STAGE_GEOMETRY_BIT:
-            if (numCompIn > properties->properties.limits.maxGeometryInputComponents) {
+            if (numCompIn > limits.maxGeometryInputComponents) {
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
                                 HandleToUint64(pipeline->pipeline), kVUID_Core_Shader_ExceedDeviceLimit,
                                 "Invalid Pipeline CreateInfo State: Geometry shader exceeds "
                                 "VkPhysicalDeviceLimits::maxGeometryInputComponents of %u "
                                 "components by %u components",
-                                properties->properties.limits.maxGeometryInputComponents,
-                                numCompIn - properties->properties.limits.maxGeometryInputComponents);
+                                limits.maxGeometryInputComponents, numCompIn - limits.maxGeometryInputComponents);
             }
-            if (numCompOut > properties->properties.limits.maxGeometryOutputComponents) {
+            if (numCompOut > limits.maxGeometryOutputComponents) {
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
                                 HandleToUint64(pipeline->pipeline), kVUID_Core_Shader_ExceedDeviceLimit,
                                 "Invalid Pipeline CreateInfo State: Geometry shader exceeds "
                                 "VkPhysicalDeviceLimits::maxGeometryOutputComponents of %u "
                                 "components by %u components",
-                                properties->properties.limits.maxGeometryOutputComponents,
-                                numCompOut - properties->properties.limits.maxGeometryOutputComponents);
+                                limits.maxGeometryOutputComponents, numCompOut - limits.maxGeometryOutputComponents);
             }
             break;
 
         case VK_SHADER_STAGE_FRAGMENT_BIT:
-            if (numCompIn > properties->properties.limits.maxFragmentInputComponents) {
+            if (numCompIn > limits.maxFragmentInputComponents) {
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
                                 HandleToUint64(pipeline->pipeline), kVUID_Core_Shader_ExceedDeviceLimit,
                                 "Invalid Pipeline CreateInfo State: Fragment shader exceeds "
                                 "VkPhysicalDeviceLimits::maxFragmentInputComponents of %u "
                                 "components by %u components",
-                                properties->properties.limits.maxFragmentInputComponents,
-                                numCompIn - properties->properties.limits.maxFragmentInputComponents);
+                                limits.maxFragmentInputComponents, numCompIn - limits.maxFragmentInputComponents);
             }
             break;
 

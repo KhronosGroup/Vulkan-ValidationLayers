@@ -173,9 +173,10 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
     device_data->physical_device = gpu;
     device_data->report_data = layer_debug_utils_create_device(instance_data->report_data, *pDevice);
     // Get physical device limits for this device
-    instance_data->dispatch_table.GetPhysicalDeviceProperties(gpu, &(device_data->phys_dev_properties.properties));
+    VkPhysicalDeviceProperties phys_dev_properties;
+    instance_data->dispatch_table.GetPhysicalDeviceProperties(gpu, &phys_dev_properties);
     // Setup the validation tables based on the application API version from the instance and the capabilities of the device driver.
-    uint32_t effective_api_version = std::min(device_data->phys_dev_properties.properties.apiVersion, instance_data->api_version);
+    uint32_t effective_api_version = std::min(phys_dev_properties.apiVersion, instance_data->api_version);
     device_data->api_version =
         device_data->extensions.InitFromDeviceCreateInfo(&instance_data->extensions, effective_api_version, pCreateInfo);
     PostCallRecordCreateDevice(gpu, pCreateInfo, pAllocator, pDevice, result);
