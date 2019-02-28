@@ -13473,6 +13473,20 @@ bool PreCallValidateGetBufferDeviceAddressEXT(VkDevice device, const VkBufferDev
     return skip;
 }
 
+void PostCallRecordGetPhysicalDeviceProperties(VkPhysicalDevice physicalDevice,
+                                               VkPhysicalDeviceProperties *pPhysicalDeviceProperties) {
+    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), instance_layer_data_map);
+    if (instance_data->enabled.gpu_validation && instance_data->enabled.gpu_validation_reserve_binding_slot) {
+        if (pPhysicalDeviceProperties->limits.maxBoundDescriptorSets > 1) {
+            pPhysicalDeviceProperties->limits.maxBoundDescriptorSets -= 1;
+        } else {
+            log_msg(instance_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT,
+                    HandleToUint64(physicalDevice), "UNASSIGNED-GPU-Assisted Validation Setup Error.",
+                    "Unable to reserve descriptor binding slot on a device with only one slot.");
+        }
+    }
+}
+
 VkResult CoreLayerCreateValidationCacheEXT(VkDevice device, const VkValidationCacheCreateInfoEXT *pCreateInfo,
                                            const VkAllocationCallbacks *pAllocator, VkValidationCacheEXT *pValidationCache) {
     *pValidationCache = ValidationCache::Create(pCreateInfo);
