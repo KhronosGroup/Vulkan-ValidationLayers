@@ -13473,4 +13473,44 @@ bool PreCallValidateGetBufferDeviceAddressEXT(VkDevice device, const VkBufferDev
     return skip;
 }
 
+VkResult CoreLayerCreateValidationCacheEXT(VkDevice device, const VkValidationCacheCreateInfoEXT *pCreateInfo,
+                                           const VkAllocationCallbacks *pAllocator, VkValidationCacheEXT *pValidationCache) {
+    *pValidationCache = ValidationCache::Create(pCreateInfo);
+    return *pValidationCache ? VK_SUCCESS : VK_ERROR_INITIALIZATION_FAILED;
+}
+
+void CoreLayerDestroyValidationCacheEXT(VkDevice device, VkValidationCacheEXT validationCache,
+                                        const VkAllocationCallbacks *pAllocator) {
+    delete (ValidationCache *)validationCache;
+}
+
+VkResult CoreLayerGetValidationCacheDataEXT(VkDevice device, VkValidationCacheEXT validationCache, size_t *pDataSize, void *pData) {
+    size_t inSize = *pDataSize;
+    ((ValidationCache *)validationCache)->Write(pDataSize, pData);
+    return (pData && *pDataSize != inSize) ? VK_INCOMPLETE : VK_SUCCESS;
+}
+
+VkResult CoreLayerMergeValidationCachesEXT(VkDevice device, VkValidationCacheEXT dstCache, uint32_t srcCacheCount,
+                                           const VkValidationCacheEXT *pSrcCaches) {
+    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    bool skip = false;
+    auto dst = (ValidationCache *)dstCache;
+    auto src = (ValidationCache const *const *)pSrcCaches;
+    VkResult result = VK_SUCCESS;
+    for (uint32_t i = 0; i < srcCacheCount; i++) {
+        if (src[i] == dst) {
+            skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_VALIDATION_CACHE_EXT,
+                            0, "VUID-vkMergeValidationCachesEXT-dstCache-01536",
+                            "vkMergeValidationCachesEXT: dstCache (0x%" PRIx64 ") must not appear in pSrcCaches array.",
+                            HandleToUint64(dstCache));
+            result = VK_ERROR_VALIDATION_FAILED_EXT;
+        }
+        if (!skip) {
+            dst->Merge(src[i]);
+        }
+    }
+
+    return result;
+}
+
 }  // namespace core_validation

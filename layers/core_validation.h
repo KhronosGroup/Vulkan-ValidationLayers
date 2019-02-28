@@ -1383,6 +1383,17 @@ PHYSICAL_DEVICE_STATE* GetPhysicalDeviceState(instance_layer_data* instance_data
 PHYSICAL_DEVICE_STATE* GetPhysicalDeviceState(const layer_data* device_data);
 PHYSICAL_DEVICE_STATE* GetPhysicalDeviceState(layer_data* device_data);
 
+VkResult CoreLayerCreateValidationCacheEXT(VkDevice device, const VkValidationCacheCreateInfoEXT* pCreateInfo,
+                                           const VkAllocationCallbacks* pAllocator, VkValidationCacheEXT* pValidationCache);
+
+void CoreLayerDestroyValidationCacheEXT(VkDevice device, VkValidationCacheEXT validationCache,
+                                        const VkAllocationCallbacks* pAllocator);
+
+VkResult CoreLayerMergeValidationCachesEXT(VkDevice device, VkValidationCacheEXT dstCache, uint32_t srcCacheCount,
+                                           const VkValidationCacheEXT* pSrcCaches);
+
+VkResult CoreLayerGetValidationCacheDataEXT(VkDevice device, VkValidationCacheEXT validationCache, size_t* pDataSize, void* pData);
+
 bool PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                             const VkGraphicsPipelineCreateInfo* pCreateInfos,
                                             const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
