@@ -971,43 +971,22 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateImageView(VkDevice device, const VkImageVie
 VKAPI_ATTR VkResult VKAPI_CALL CreateValidationCacheEXT(VkDevice device, const VkValidationCacheCreateInfoEXT *pCreateInfo,
                                                         const VkAllocationCallbacks *pAllocator,
                                                         VkValidationCacheEXT *pValidationCache) {
-    *pValidationCache = ValidationCache::Create(pCreateInfo);
-    return *pValidationCache ? VK_SUCCESS : VK_ERROR_INITIALIZATION_FAILED;
+    return CoreLayerCreateValidationCacheEXT(device, pCreateInfo, pAllocator, pValidationCache);
 }
 
 VKAPI_ATTR void VKAPI_CALL DestroyValidationCacheEXT(VkDevice device, VkValidationCacheEXT validationCache,
                                                      const VkAllocationCallbacks *pAllocator) {
-    delete (ValidationCache *)validationCache;
+    CoreLayerDestroyValidationCacheEXT(device, validationCache, pAllocator);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetValidationCacheDataEXT(VkDevice device, VkValidationCacheEXT validationCache, size_t *pDataSize,
                                                          void *pData) {
-    size_t inSize = *pDataSize;
-    ((ValidationCache *)validationCache)->Write(pDataSize, pData);
-    return (pData && *pDataSize != inSize) ? VK_INCOMPLETE : VK_SUCCESS;
+    return CoreLayerGetValidationCacheDataEXT(device, validationCache, pDataSize, pData);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL MergeValidationCachesEXT(VkDevice device, VkValidationCacheEXT dstCache, uint32_t srcCacheCount,
                                                         const VkValidationCacheEXT *pSrcCaches) {
-    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    bool skip = false;
-    auto dst = (ValidationCache *)dstCache;
-    auto src = (ValidationCache const *const *)pSrcCaches;
-    VkResult result = VK_SUCCESS;
-    for (uint32_t i = 0; i < srcCacheCount; i++) {
-        if (src[i] == dst) {
-            skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_VALIDATION_CACHE_EXT,
-                            0, "VUID-vkMergeValidationCachesEXT-dstCache-01536",
-                            "vkMergeValidationCachesEXT: dstCache (0x%" PRIx64 ") must not appear in pSrcCaches array.",
-                            HandleToUint64(dstCache));
-            result = VK_ERROR_VALIDATION_FAILED_EXT;
-        }
-        if (!skip) {
-            dst->Merge(src[i]);
-        }
-    }
-
-    return result;
+    return CoreLayerMergeValidationCachesEXT(device, dstCache, srcCacheCount, pSrcCaches);
 }
 
 #ifdef VK_USE_PLATFORM_ANDROID_KHR

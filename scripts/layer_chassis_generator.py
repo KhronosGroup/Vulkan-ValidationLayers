@@ -136,6 +136,11 @@ class LayerChassisOutputGenerator(OutputGenerator):
         'vkEnumerateInstanceExtensionProperties',
         'vkEnumerateDeviceLayerProperties',
         'vkEnumerateDeviceExtensionProperties',
+        # ValidationCache functions do not get dispatched
+        'vkCreateValidationCacheEXT',
+        'vkDestroyValidationCacheEXT',
+        'vkMergeValidationCachesEXT',
+        'vkGetValidationCacheDataEXT',
         ]
 
     alt_ret_codes = [
@@ -743,7 +748,79 @@ VKAPI_ATTR void VKAPI_CALL DestroyDevice(VkDevice device, const VkAllocationCall
         delete *item;
     }
     FreeLayerDataPtr(key, layer_data_map);
+}
+
+
+
+
+VKAPI_ATTR VkResult VKAPI_CALL CreateValidationCacheEXT(
+    VkDevice                                    device,
+    const VkValidationCacheCreateInfoEXT*       pCreateInfo,
+    const VkAllocationCallbacks*                pAllocator,
+    VkValidationCacheEXT*                       pValidationCache) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    VkResult result = VK_SUCCESS;
+
+    ValidationObject *validation_data = layer_data->GetValidationObject(layer_data->object_dispatch, LayerObjectTypeCoreValidation);
+    if (validation_data) {
+        auto lock = validation_data->write_lock();
+        result = validation_data->CoreLayerCreateValidationCacheEXT(device, pCreateInfo, pAllocator, pValidationCache);
+    }
+    return result;
+}
+
+VKAPI_ATTR void VKAPI_CALL DestroyValidationCacheEXT(
+    VkDevice                                    device,
+    VkValidationCacheEXT                        validationCache,
+    const VkAllocationCallbacks*                pAllocator) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+
+    ValidationObject *validation_data = layer_data->GetValidationObject(layer_data->object_dispatch, LayerObjectTypeCoreValidation);
+    if (validation_data) {
+        auto lock = validation_data->write_lock();
+        validation_data->CoreLayerDestroyValidationCacheEXT(device, validationCache, pAllocator);
+    }
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL MergeValidationCachesEXT(
+    VkDevice                                    device,
+    VkValidationCacheEXT                        dstCache,
+    uint32_t                                    srcCacheCount,
+    const VkValidationCacheEXT*                 pSrcCaches) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    VkResult result = VK_SUCCESS;
+
+    ValidationObject *validation_data = layer_data->GetValidationObject(layer_data->object_dispatch, LayerObjectTypeCoreValidation);
+    if (validation_data) {
+        auto lock = validation_data->write_lock();
+        result = validation_data->CoreLayerMergeValidationCachesEXT(device, dstCache, srcCacheCount, pSrcCaches);
+    }
+    return result;
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL GetValidationCacheDataEXT(
+    VkDevice                                    device,
+    VkValidationCacheEXT                        validationCache,
+    size_t*                                     pDataSize,
+    void*                                       pData) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    VkResult result = VK_SUCCESS;
+
+    ValidationObject *validation_data = layer_data->GetValidationObject(layer_data->object_dispatch, LayerObjectTypeCoreValidation);
+    if (validation_data) {
+        auto lock = validation_data->write_lock();
+        result = validation_data->CoreLayerGetValidationCacheDataEXT(device, validationCache, pDataSize, pData);
+    }
+    return result;
+
 }"""
+
+    inline_custom_validation_class_definitions = """
+        virtual VkResult CoreLayerCreateValidationCacheEXT(VkDevice device, const VkValidationCacheCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkValidationCacheEXT* pValidationCache) { return VK_SUCCESS; };
+        virtual void CoreLayerDestroyValidationCacheEXT(VkDevice device, VkValidationCacheEXT validationCache, const VkAllocationCallbacks* pAllocator) {};
+        virtual VkResult CoreLayerMergeValidationCachesEXT(VkDevice device, VkValidationCacheEXT dstCache, uint32_t srcCacheCount, const VkValidationCacheEXT* pSrcCaches)  { return VK_SUCCESS; };
+        virtual VkResult CoreLayerGetValidationCacheDataEXT(VkDevice device, VkValidationCacheEXT validationCache, size_t* pDataSize, void* pData)  { return VK_SUCCESS; };
+"""
 
     inline_custom_source_postamble = """
 // loader-layer interface v0, just wrappers since there is only a layer
@@ -871,6 +948,7 @@ VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkNegotiateLoaderLayerInterfaceVe
         if self.header:
             self.newline()
             # Output Layer Factory Class Definitions
+            self.layer_factory += self.inline_custom_validation_class_definitions
             self.layer_factory += '};\n\n'
             self.layer_factory += 'extern std::unordered_map<void*, ValidationObject*> layer_data_map;'
             write(self.layer_factory, file=self.outFile)
@@ -961,7 +1039,7 @@ VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkNegotiateLoaderLayerInterfaceVe
     # Command generation
     def genCmd(self, cmdinfo, name, alias):
         ignore_functions = [
-        'vkEnumerateInstanceVersion'
+        'vkEnumerateInstanceVersion',
         ]
 
         if name in ignore_functions:
@@ -971,19 +1049,21 @@ VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkNegotiateLoaderLayerInterfaceVe
             self.appendSection('command', '')
             self.appendSection('command', self.makeCDecls(cmdinfo.elem)[0])
             if (self.featureExtraProtect != None):
-                self.intercepts += [ '#ifdef %s' % self.featureExtraProtect ]
                 self.layer_factory += '#ifdef %s\n' % self.featureExtraProtect
             # Update base class with virtual function declarations
-            self.layer_factory += self.BaseClassCdecl(cmdinfo.elem, name)
-            # Update function intercepts
-            self.intercepts += [ '    {"%s", (void*)%s},' % (name,name[2:]) ]
+            if 'ValidationCache' not in name:
+                self.layer_factory += self.BaseClassCdecl(cmdinfo.elem, name)
             if (self.featureExtraProtect != None):
-                self.intercepts += [ '#endif' ]
                 self.layer_factory += '#endif\n'
             return
 
         if name in self.manual_functions:
-            self.intercepts += [ '    {"%s", (void*)%s},' % (name,name[2:]) ]
+            if 'ValidationCache' not in name:
+                self.intercepts += [ '    {"%s", (void*)%s},' % (name,name[2:]) ]
+            else:
+                self.intercepts += [ '#ifdef BUILD_CORE_VALIDATION' ]
+                self.intercepts += [ '    {"%s", (void*)%s},' % (name,name[2:]) ]
+                self.intercepts += [ '#endif' ]
             return
         # Record that the function will be intercepted
         if (self.featureExtraProtect != None):
