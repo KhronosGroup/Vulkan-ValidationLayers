@@ -5217,13 +5217,12 @@ static bool ValidatePipelineVertexDivisors(layer_data *dev_data, vector<std::uni
 bool PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                             const VkGraphicsPipelineCreateInfo *pCreateInfos,
                                             const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-                                            // Default parameter
-                                            create_graphics_pipeline_api_state *cgpl_state) {
+                                            void *cgpl_state_data) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
 
     bool skip = false;
+    create_graphics_pipeline_api_state *cgpl_state = reinterpret_cast<create_graphics_pipeline_api_state *>(cgpl_state_data);
     cgpl_state->pipe_state.reserve(count);
-    // TODO - State changes and validation need to be untangled here -- potentially a performance issue
     for (uint32_t i = 0; i < count; i++) {
         cgpl_state->pipe_state.push_back(std::unique_ptr<PIPELINE_STATE>(new PIPELINE_STATE));
         (cgpl_state->pipe_state)[i]->initGraphicsPipeline(&pCreateInfos[i],
@@ -5249,10 +5248,9 @@ bool PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pip
 // GPU validation may replace pCreateInfos for the down-chain call
 void PreCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                           const VkGraphicsPipelineCreateInfo *pCreateInfos, const VkAllocationCallbacks *pAllocator,
-                                          VkPipeline *pPipelines,
-                                          // Default parameter
-                                          create_graphics_pipeline_api_state *cgpl_state) {
+                                          VkPipeline *pPipelines, void *cgpl_state_data) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    create_graphics_pipeline_api_state *cgpl_state = reinterpret_cast<create_graphics_pipeline_api_state *>(cgpl_state_data);
     cgpl_state->pCreateInfos = pCreateInfos;
     // GPU Validation may replace instrumented shaders with non-instrumented ones, so allow it to modify the createinfos.
     if (GetEnables(device_data)->gpu_validation) {
@@ -5265,9 +5263,9 @@ void PreCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipel
 void PostCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                            const VkGraphicsPipelineCreateInfo *pCreateInfos,
                                            const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines, VkResult result,
-                                           // Default parameter
-                                           create_graphics_pipeline_api_state *cgpl_state) {
+                                           void *cgpl_state_data) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    create_graphics_pipeline_api_state *cgpl_state = reinterpret_cast<create_graphics_pipeline_api_state *>(cgpl_state_data);
     // This API may create pipelines regardless of the return value
     for (uint32_t i = 0; i < count; i++) {
         if (pPipelines[i] != VK_NULL_HANDLE) {

@@ -1396,19 +1396,14 @@ VkResult CoreLayerGetValidationCacheDataEXT(VkDevice device, VkValidationCacheEX
 
 bool PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                             const VkGraphicsPipelineCreateInfo* pCreateInfos,
-                                            const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
-                                            // Default parameter
-                                            create_graphics_pipeline_api_state* cgpl_state);
+                                            const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines, void* cgpl_state);
 void PreCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                           const VkGraphicsPipelineCreateInfo* pCreateInfos, const VkAllocationCallbacks* pAllocator,
-                                          VkPipeline* pPipelines,
-                                          // Default parameter
-                                          create_graphics_pipeline_api_state* cgpl_state);
+                                          VkPipeline* pPipelines, void* cgpl_state);
 void PostCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                            const VkGraphicsPipelineCreateInfo* pCreateInfos,
                                            const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines, VkResult result,
-                                           // Default parameter
-                                           create_graphics_pipeline_api_state* cgpl_state);
+                                           void* cgpl_state);
 bool PreCallValidateCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                            const VkComputePipelineCreateInfo* pCreateInfos, const VkAllocationCallbacks* pAllocator,
                                            VkPipeline* pPipelines,

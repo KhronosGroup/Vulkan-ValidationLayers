@@ -136,6 +136,8 @@ class LayerChassisOutputGenerator(OutputGenerator):
         'vkEnumerateInstanceExtensionProperties',
         'vkEnumerateDeviceLayerProperties',
         'vkEnumerateDeviceExtensionProperties',
+        # Functions that are handled explicitly due to chassis architecture violations
+        'vkCreateGraphicsPipelines',
         # ValidationCache functions do not get dispatched
         'vkCreateValidationCacheEXT',
         'vkDestroyValidationCacheEXT',
@@ -751,7 +753,45 @@ VKAPI_ATTR void VKAPI_CALL DestroyDevice(VkDevice device, const VkAllocationCall
 }
 
 
+// Special-case APIs for which core_validation needs custom parameter lists and/or modifies parameters
 
+VKAPI_ATTR VkResult VKAPI_CALL CreateGraphicsPipelines(
+    VkDevice                                    device,
+    VkPipelineCache                             pipelineCache,
+    uint32_t                                    createInfoCount,
+    const VkGraphicsPipelineCreateInfo*         pCreateInfos,
+    const VkAllocationCallbacks*                pAllocator,
+    VkPipeline*                                 pPipelines) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    bool skip = false;
+
+#ifdef BUILD_CORE_VALIDATION
+        create_graphics_pipeline_api_state cgpl_state{};
+#else
+        struct create_graphics_pipeline_api_state {
+            const VkGraphicsPipelineCreateInfo* pCreateInfos;
+        } cgpl_state;
+        cgpl_state.pCreateInfos = pCreateInfos;
+#endif
+
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->write_lock();
+        skip |= intercept->PreCallValidateCreateGraphicsPipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines, &cgpl_state);
+        if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+    }
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->write_lock();
+        intercept->PreCallRecordCreateGraphicsPipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines, &cgpl_state);
+    }
+
+    VkResult result = DispatchCreateGraphicsPipelines(layer_data, device, pipelineCache, createInfoCount, cgpl_state.pCreateInfos, pAllocator, pPipelines);
+
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->write_lock();
+        intercept->PostCallRecordCreateGraphicsPipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines, result, &cgpl_state);
+    }
+    return result;
+}
 
 VKAPI_ATTR VkResult VKAPI_CALL CreateValidationCacheEXT(
     VkDevice                                    device,
@@ -820,6 +860,18 @@ VKAPI_ATTR VkResult VKAPI_CALL GetValidationCacheDataEXT(
         virtual void CoreLayerDestroyValidationCacheEXT(VkDevice device, VkValidationCacheEXT validationCache, const VkAllocationCallbacks* pAllocator) {};
         virtual VkResult CoreLayerMergeValidationCachesEXT(VkDevice device, VkValidationCacheEXT dstCache, uint32_t srcCacheCount, const VkValidationCacheEXT* pSrcCaches)  { return VK_SUCCESS; };
         virtual VkResult CoreLayerGetValidationCacheDataEXT(VkDevice device, VkValidationCacheEXT validationCache, size_t* pDataSize, void* pData)  { return VK_SUCCESS; };
+
+        // Allow additional parameter for CreateGraphicsPipelines
+        virtual bool PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount, const VkGraphicsPipelineCreateInfo* pCreateInfos, const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines, void* cgpl_state) {
+            return PreCallValidateCreateGraphicsPipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines);
+        };
+        virtual void PreCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount, const VkGraphicsPipelineCreateInfo* pCreateInfos, const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines, void* cgpl_state) {
+            PreCallRecordCreateGraphicsPipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines);
+        };
+        virtual void PostCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount, const VkGraphicsPipelineCreateInfo* pCreateInfos, const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines, VkResult result, void* cgpl_state) {
+            PostCallRecordCreateGraphicsPipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines, result);
+        };
+
 """
 
     inline_custom_source_postamble = """
