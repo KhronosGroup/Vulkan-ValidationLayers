@@ -6083,8 +6083,9 @@ static PipelineLayoutCompatId GetCanonicalId(const uint32_t set_index, const Pus
 
 void PreCallRecordCreatePipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo *pCreateInfo,
                                        const VkAllocationCallbacks *pAllocator, VkPipelineLayout *pPipelineLayout,
-                                       create_pipeline_layout_api_state *cpl_state) {
+                                       void *cpl_state_data) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    create_pipeline_layout_api_state *cpl_state = reinterpret_cast<create_pipeline_layout_api_state *>(cpl_state_data);
     if (GetEnables(device_data)->gpu_validation) {
         GpuPreCallCreatePipelineLayout(device_data, pCreateInfo, pAllocator, pPipelineLayout, &cpl_state->new_layouts,
                                        &cpl_state->modified_create_info);
