@@ -1406,14 +1406,10 @@ void PostCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipe
                                            void* cgpl_state);
 bool PreCallValidateCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                            const VkComputePipelineCreateInfo* pCreateInfos, const VkAllocationCallbacks* pAllocator,
-                                           VkPipeline* pPipelines,
-                                           // Default parameter
-                                           std::vector<std::unique_ptr<PIPELINE_STATE>>* pipe_state);
+                                           VkPipeline* pPipelines, void* pipe_state);
 void PostCallRecordCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                           const VkComputePipelineCreateInfo* pCreateInfos, const VkAllocationCallbacks* pAllocator,
-                                          VkPipeline* pPipelines, VkResult result,
-                                          // Default parameter
-                                          std::vector<std::unique_ptr<PIPELINE_STATE>>* pipe_state);
+                                          VkPipeline* pPipelines, VkResult result, void* pipe_state);
 bool PreCallValidateCreatePipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo* pCreateInfo,
                                          const VkAllocationCallbacks* pAllocator, VkPipelineLayout* pPipelineLayout);
 void PreCallRecordCreatePipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo* pCreateInfo,
