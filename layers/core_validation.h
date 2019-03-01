@@ -1413,8 +1413,7 @@ void PostCallRecordCreateComputePipelines(VkDevice device, VkPipelineCache pipel
 bool PreCallValidateCreatePipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo* pCreateInfo,
                                          const VkAllocationCallbacks* pAllocator, VkPipelineLayout* pPipelineLayout);
 void PreCallRecordCreatePipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo* pCreateInfo,
-                                       const VkAllocationCallbacks* pAllocator, VkPipelineLayout* pPipelineLayout,
-                                       create_pipeline_layout_api_state* cpl_state);
+                                       const VkAllocationCallbacks* pAllocator, VkPipelineLayout* pPipelineLayout, void* cpl_state);
 void PostCallRecordCreatePipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo* pCreateInfo,
                                         const VkAllocationCallbacks* pAllocator, VkPipelineLayout* pPipelineLayout,
                                         VkResult result);

@@ -140,6 +140,7 @@ class LayerChassisOutputGenerator(OutputGenerator):
         'vkCreateGraphicsPipelines',
         'vkCreateComputePipelines',
         'vkCreateRayTracingPipelinesNV',
+        'vkCreatePipelineLayout',
         # ValidationCache functions do not get dispatched
         'vkCreateValidationCacheEXT',
         'vkDestroyValidationCacheEXT',
@@ -862,6 +863,39 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateRayTracingPipelinesNV(
     return result;
 }
 
+// This API needs the ability to modify a down-chain parameter
+VKAPI_ATTR VkResult VKAPI_CALL CreatePipelineLayout(
+    VkDevice                                    device,
+    const VkPipelineLayoutCreateInfo*           pCreateInfo,
+    const VkAllocationCallbacks*                pAllocator,
+    VkPipelineLayout*                           pPipelineLayout) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    bool skip = false;
+
+#ifndef BUILD_CORE_VALIDATION
+    struct create_pipeline_layout_api_state {
+        VkPipelineLayoutCreateInfo modified_create_info;
+    };
+#endif
+    create_pipeline_layout_api_state cpl_state{};
+    cpl_state.modified_create_info = *pCreateInfo;
+
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->write_lock();
+        skip |= intercept->PreCallValidateCreatePipelineLayout(device, pCreateInfo, pAllocator, pPipelineLayout);
+        if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+    }
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->write_lock();
+        intercept->PreCallRecordCreatePipelineLayout(device, pCreateInfo, pAllocator, pPipelineLayout, &cpl_state);
+    }
+    VkResult result = DispatchCreatePipelineLayout(layer_data, device, &cpl_state.modified_create_info, pAllocator, pPipelineLayout);
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->write_lock();
+        intercept->PostCallRecordCreatePipelineLayout(device, pCreateInfo, pAllocator, pPipelineLayout, result);
+    }
+    return result;
+}
 
 
 // ValidationCache APIs do not dispatch
@@ -959,6 +993,11 @@ VKAPI_ATTR VkResult VKAPI_CALL GetValidationCacheDataEXT(
         };
         virtual void PostCallRecordCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount, const VkRayTracingPipelineCreateInfoNV* pCreateInfos, const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines, VkResult result, void* pipe_state) {
             PostCallRecordCreateRayTracingPipelinesNV(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines, result);
+        };
+
+        // Allow modification of a down-chain parameter for CreatePipelineLayout
+        virtual void PreCallRecordCreatePipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkPipelineLayout* pPipelineLayout, void *cpl_state) {
+            PreCallRecordCreatePipelineLayout(device, pCreateInfo, pAllocator, pPipelineLayout);
         };
 """
 
