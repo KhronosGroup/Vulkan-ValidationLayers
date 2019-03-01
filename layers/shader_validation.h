@@ -213,10 +213,9 @@ typedef std::pair<unsigned, unsigned> descriptor_slot_t;
 bool PreCallValidateCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo *pCreateInfo,
                                        const VkAllocationCallbacks *pAllocator, VkShaderModule *pShaderModule);
 void PreCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo *pCreateInfo,
-                                     const VkAllocationCallbacks *pAllocator, VkShaderModule *pShaderModule,
-                                     create_shader_module_api_state *csm_state);
+                                     const VkAllocationCallbacks *pAllocator, VkShaderModule *pShaderModule, void *csm_state);
 void PostCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo *pCreateInfo,
                                       const VkAllocationCallbacks *pAllocator, VkShaderModule *pShaderModule, VkResult result,
-                                      create_shader_module_api_state *csm_state);
+                                      void *csm_state);
 
 #endif  // VULKAN_SHADER_VALIDATION_H

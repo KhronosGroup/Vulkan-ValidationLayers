@@ -2329,10 +2329,9 @@ bool PreCallValidateCreateShaderModule(VkDevice device, const VkShaderModuleCrea
 }
 
 void PreCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo *pCreateInfo,
-                                     const VkAllocationCallbacks *pAllocator, VkShaderModule *pShaderModule,
-                                     create_shader_module_api_state *csm_state) {
+                                     const VkAllocationCallbacks *pAllocator, VkShaderModule *pShaderModule, void *csm_state_data) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), core_validation::layer_data_map);
-
+    create_shader_module_api_state *csm_state = reinterpret_cast<create_shader_module_api_state *>(csm_state_data);
     if (GetEnables(device_data)->gpu_validation) {
         GpuPreCallCreateShaderModule(device_data, pCreateInfo, pAllocator, pShaderModule, &csm_state->unique_shader_id,
                                      &csm_state->instrumented_create_info, &csm_state->instrumented_pgm);
@@ -2341,9 +2340,10 @@ void PreCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreate
 
 void PostCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo *pCreateInfo,
                                       const VkAllocationCallbacks *pAllocator, VkShaderModule *pShaderModule, VkResult result,
-                                      create_shader_module_api_state *csm_state) {
+                                      void *csm_state_data) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), core_validation::layer_data_map);
     if (VK_SUCCESS != result) return;
+    create_shader_module_api_state *csm_state = reinterpret_cast<create_shader_module_api_state *>(csm_state_data);
 
     spv_target_env spirv_environment =
         ((GetApiVersion(device_data) >= VK_API_VERSION_1_1) ? SPV_ENV_VULKAN_1_1 : SPV_ENV_VULKAN_1_0);
