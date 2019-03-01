@@ -5320,15 +5320,16 @@ void PostCallRecordCreateComputePipelines(VkDevice device, VkPipelineCache pipel
 bool PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                 const VkRayTracingPipelineCreateInfoNV *pCreateInfos,
                                                 const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-                                                vector<std::unique_ptr<PIPELINE_STATE>> *pipe_state) {
+                                                void *pipe_state_data) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
-
     // The order of operations here is a little convoluted but gets the job done
     //  1. Pipeline create state is first shadowed into PIPELINE_STATE struct
     //  2. Create state is then validated (which uses flags setup during shadowing)
     //  3. If everything looks good, we'll then create the pipeline and add NODE to pipelineMap
     uint32_t i = 0;
+    vector<std::unique_ptr<PIPELINE_STATE>> *pipe_state =
+        reinterpret_cast<vector<std::unique_ptr<PIPELINE_STATE>> *>(pipe_state_data);
     pipe_state->reserve(count);
     for (i = 0; i < count; i++) {
         pipe_state->push_back(std::unique_ptr<PIPELINE_STATE>(new PIPELINE_STATE));
@@ -5346,9 +5347,10 @@ bool PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache
 void PostCallRecordCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                const VkRayTracingPipelineCreateInfoNV *pCreateInfos,
                                                const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines, VkResult result,
-                                               vector<std::unique_ptr<PIPELINE_STATE>> *pipe_state) {
+                                               void *pipe_state_data) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-
+    vector<std::unique_ptr<PIPELINE_STATE>> *pipe_state =
+        reinterpret_cast<vector<std::unique_ptr<PIPELINE_STATE>> *>(pipe_state_data);
     // This API may create pipelines regardless of the return value
     for (uint32_t i = 0; i < count; i++) {
         if (pPipelines[i] != VK_NULL_HANDLE) {

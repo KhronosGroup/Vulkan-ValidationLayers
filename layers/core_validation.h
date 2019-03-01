@@ -1426,13 +1426,11 @@ void PostCallRecordAllocateDescriptorSets(VkDevice device, const VkDescriptorSet
                                           cvdescriptorset::AllocateDescriptorSetsData* common_data);
 bool PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                 const VkRayTracingPipelineCreateInfoNV* pCreateInfos,
-                                                const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
-                                                vector<std::unique_ptr<PIPELINE_STATE>>* pipe_state);
+                                                const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines, void* pipe_state);
 void PostCallRecordCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                const VkRayTracingPipelineCreateInfoNV* pCreateInfos,
                                                const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines, VkResult result,
-                                               vector<std::unique_ptr<PIPELINE_STATE>>* pipe_state);
-
+                                               void* pipe_state);
 bool ValidateQueueFamilies(layer_data* device_data, uint32_t queue_family_count, const uint32_t* queue_families,
                            const char* cmd_name, const char* array_parameter_name, const char* unique_error_code,
                            const char* valid_error_code, bool optional);
