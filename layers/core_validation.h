@@ -1418,11 +1418,9 @@ void PostCallRecordCreatePipelineLayout(VkDevice device, const VkPipelineLayoutC
                                         const VkAllocationCallbacks* pAllocator, VkPipelineLayout* pPipelineLayout,
                                         VkResult result);
 bool PreCallValidateAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo* pAllocateInfo,
-                                           VkDescriptorSet* pDescriptorSets,
-                                           cvdescriptorset::AllocateDescriptorSetsData* common_data);
+                                           VkDescriptorSet* pDescriptorSets, void* ads_state);
 void PostCallRecordAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo* pAllocateInfo,
-                                          VkDescriptorSet* pDescriptorSets, VkResult result,
-                                          cvdescriptorset::AllocateDescriptorSetsData* common_data);
+                                          VkDescriptorSet* pDescriptorSets, VkResult result, void* ads_state);
 bool PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                 const VkRayTracingPipelineCreateInfoNV* pCreateInfos,
                                                 const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines, void* pipe_state);
