@@ -147,18 +147,12 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
 
     // Advance the link info for the next element on the chain
     chain_info->u.pLayerInfo = chain_info->u.pLayerInfo->pNext;
+    std::unique_ptr<safe_VkDeviceCreateInfo> modified_create_info(new safe_VkDeviceCreateInfo(pCreateInfo));
+    PreCallRecordCreateDevice(gpu, pCreateInfo, pAllocator, pDevice, modified_create_info);
 
-    // GPU Validation can possibly turn on device features, so give it a chance to change the create info.
-    std::unique_ptr<safe_VkDeviceCreateInfo> gpu_create_info;
-    if (instance_data->enabled.gpu_validation) {
-        VkPhysicalDeviceFeatures supported_features;
-        instance_data->dispatch_table.GetPhysicalDeviceFeatures(gpu, &supported_features);
-        gpu_create_info = GpuPreCallRecordCreateDevice(gpu, pCreateInfo, &supported_features);
-        pCreateInfo = reinterpret_cast<VkDeviceCreateInfo *>(gpu_create_info.get());
-    }
     lock.unlock();
 
-    VkResult result = fpCreateDevice(gpu, pCreateInfo, pAllocator, pDevice);
+    VkResult result = fpCreateDevice(gpu, reinterpret_cast<VkDeviceCreateInfo *>(modified_create_info.get()), pAllocator, pDevice);
     if (result != VK_SUCCESS) {
         return result;
     }

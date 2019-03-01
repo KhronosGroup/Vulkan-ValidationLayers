@@ -277,20 +277,18 @@ static void ReportSetupProblem(const layer_data *dev_data, VkDebugReportObjectTy
 }
 
 // Turn on necessary device features.
-std::unique_ptr<safe_VkDeviceCreateInfo> GpuPreCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo *create_info,
+void GpuPreCallRecordCreateDevice(VkPhysicalDevice gpu, std::unique_ptr<safe_VkDeviceCreateInfo> &create_info,
                                                                       VkPhysicalDeviceFeatures *supported_features) {
-    std::unique_ptr<safe_VkDeviceCreateInfo> new_info(new safe_VkDeviceCreateInfo(create_info));
     if (supported_features->fragmentStoresAndAtomics || supported_features->vertexPipelineStoresAndAtomics) {
         VkPhysicalDeviceFeatures new_features = {};
-        if (new_info->pEnabledFeatures) {
-            new_features = *new_info->pEnabledFeatures;
+        if (create_info->pEnabledFeatures) {
+            new_features = *create_info->pEnabledFeatures;
         }
         new_features.fragmentStoresAndAtomics = supported_features->fragmentStoresAndAtomics;
         new_features.vertexPipelineStoresAndAtomics = supported_features->vertexPipelineStoresAndAtomics;
-        delete new_info->pEnabledFeatures;
-        new_info->pEnabledFeatures = new VkPhysicalDeviceFeatures(new_features);
+        delete create_info->pEnabledFeatures;
+        create_info->pEnabledFeatures = new VkPhysicalDeviceFeatures(new_features);
     }
-    return new_info;
 }
 
 // Perform initializations that can be done at Create Device time.

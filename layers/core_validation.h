@@ -1435,6 +1435,8 @@ void PostCallRecordCreateInstance(const VkInstanceCreateInfo* pCreateInfo, const
                                   VkInstance* pInstance, VkResult result);
 bool PreCallValidateCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo* pCreateInfo,
                                  const VkAllocationCallbacks* pAllocator, VkDevice* pDevice);
+void PreCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
+                               VkDevice* pDevice, std::unique_ptr<safe_VkDeviceCreateInfo> &modified_create_info);
 void PostCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo* pCreateInfo,
                                 const VkAllocationCallbacks* pAllocator, VkDevice* pDevice, VkResult result);
 bool PreCallValidateCmdUpdateBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,
