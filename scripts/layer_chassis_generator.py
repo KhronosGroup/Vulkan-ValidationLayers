@@ -141,6 +141,7 @@ class LayerChassisOutputGenerator(OutputGenerator):
         'vkCreateComputePipelines',
         'vkCreateRayTracingPipelinesNV',
         'vkCreatePipelineLayout',
+        'vkCreateShaderModule',
         # ValidationCache functions do not get dispatched
         'vkCreateValidationCacheEXT',
         'vkDestroyValidationCacheEXT',
@@ -897,6 +898,40 @@ VKAPI_ATTR VkResult VKAPI_CALL CreatePipelineLayout(
     return result;
 }
 
+// This API needs some local stack data for performance reasons and also may modify a parameter
+VKAPI_ATTR VkResult VKAPI_CALL CreateShaderModule(
+    VkDevice                                    device,
+    const VkShaderModuleCreateInfo*             pCreateInfo,
+    const VkAllocationCallbacks*                pAllocator,
+    VkShaderModule*                             pShaderModule) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    bool skip = false;
+
+#ifndef BUILD_CORE_VALIDATION
+    struct create_shader_module_api_state {
+        VkShaderModuleCreateInfo instrumented_create_info;
+    };
+#endif
+    create_shader_module_api_state csm_state{};
+    csm_state.instrumented_create_info = *pCreateInfo;
+
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->write_lock();
+        skip |= intercept->PreCallValidateCreateShaderModule(device, pCreateInfo, pAllocator, pShaderModule, &csm_state);
+        if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+    }
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->write_lock();
+        intercept->PreCallRecordCreateShaderModule(device, pCreateInfo, pAllocator, pShaderModule, &csm_state);
+    }
+    VkResult result = DispatchCreateShaderModule(layer_data, device, &csm_state.instrumented_create_info, pAllocator, pShaderModule);
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->write_lock();
+        intercept->PostCallRecordCreateShaderModule(device, pCreateInfo, pAllocator, pShaderModule, result, &csm_state);
+    }
+    return result;
+}
+
 
 // ValidationCache APIs do not dispatch
 
@@ -998,6 +1033,17 @@ VKAPI_ATTR VkResult VKAPI_CALL GetValidationCacheDataEXT(
         // Allow modification of a down-chain parameter for CreatePipelineLayout
         virtual void PreCallRecordCreatePipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkPipelineLayout* pPipelineLayout, void *cpl_state) {
             PreCallRecordCreatePipelineLayout(device, pCreateInfo, pAllocator, pPipelineLayout);
+        };
+
+        // Enable the CreateShaderModule API to take an extra argument for state preservation and paramter modification
+        virtual bool PreCallValidateCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkShaderModule* pShaderModule, void* csm_state)  {
+            return PreCallValidateCreateShaderModule(device, pCreateInfo, pAllocator, pShaderModule);
+        };
+        virtual void PreCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkShaderModule* pShaderModule, void* csm_state) {
+            PreCallRecordCreateShaderModule(device, pCreateInfo, pAllocator, pShaderModule);
+        };
+        virtual void PostCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkShaderModule* pShaderModule, VkResult result, void* csm_state) {
+            PostCallRecordCreateShaderModule(device, pCreateInfo, pAllocator, pShaderModule, result);
         };
 """
 
