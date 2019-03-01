@@ -5283,10 +5283,11 @@ void PostCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipe
 
 bool PreCallValidateCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                            const VkComputePipelineCreateInfo *pCreateInfos, const VkAllocationCallbacks *pAllocator,
-                                           VkPipeline *pPipelines, std::vector<std::unique_ptr<PIPELINE_STATE>> *pipe_state) {
+                                           VkPipeline *pPipelines, void *pipe_state_data) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-
     bool skip = false;
+    std::vector<std::unique_ptr<PIPELINE_STATE>> *pipe_state =
+        reinterpret_cast<std::vector<std::unique_ptr<PIPELINE_STATE>> *>(pipe_state_data);
     pipe_state->reserve(count);
     for (uint32_t i = 0; i < count; i++) {
         // Create and initialize internal tracking data structure
@@ -5302,9 +5303,10 @@ bool PreCallValidateCreateComputePipelines(VkDevice device, VkPipelineCache pipe
 
 void PostCallRecordCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                           const VkComputePipelineCreateInfo *pCreateInfos, const VkAllocationCallbacks *pAllocator,
-                                          VkPipeline *pPipelines, VkResult result,
-                                          std::vector<std::unique_ptr<PIPELINE_STATE>> *pipe_state) {
+                                          VkPipeline *pPipelines, VkResult result, void *pipe_state_data) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    std::vector<std::unique_ptr<PIPELINE_STATE>> *pipe_state =
+        reinterpret_cast<std::vector<std::unique_ptr<PIPELINE_STATE>> *>(pipe_state_data);
 
     // This API may create pipelines regardless of the return value
     for (uint32_t i = 0; i < count; i++) {
