@@ -100,8 +100,8 @@ using mutex_t = std::mutex;
 using lock_guard_t = std::lock_guard<mutex_t>;
 using unique_lock_t = std::unique_lock<mutex_t>;
 
-std::unique_ptr<safe_VkDeviceCreateInfo> GpuPreCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo *create_info,
-                                                                      VkPhysicalDeviceFeatures *supported_features);
+void GpuPreCallRecordCreateDevice(VkPhysicalDevice gpu, std::unique_ptr<safe_VkDeviceCreateInfo> &modified_create_info,
+                                  VkPhysicalDeviceFeatures *supported_features);
 void GpuPostCallRecordCreateDevice(layer_data *dev_data);
 void GpuPreCallRecordDestroyDevice(layer_data *dev_data);
 void GpuPreCallRecordFreeCommandBuffers(layer_data *dev_data, uint32_t commandBufferCount, const VkCommandBuffer *pCommandBuffers);
