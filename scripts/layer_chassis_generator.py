@@ -142,6 +142,7 @@ class LayerChassisOutputGenerator(OutputGenerator):
         'vkCreateRayTracingPipelinesNV',
         'vkCreatePipelineLayout',
         'vkCreateShaderModule',
+        'vkAllocateDescriptorSets',
         # ValidationCache functions do not get dispatched
         'vkCreateValidationCacheEXT',
         'vkDestroyValidationCacheEXT',
@@ -932,6 +933,39 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateShaderModule(
     return result;
 }
 
+VKAPI_ATTR VkResult VKAPI_CALL AllocateDescriptorSets(
+    VkDevice                                    device,
+    const VkDescriptorSetAllocateInfo*          pAllocateInfo,
+    VkDescriptorSet*                            pDescriptorSets) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    bool skip = false;
+
+#ifdef BUILD_CORE_VALIDATION
+    cvdescriptorset::AllocateDescriptorSetsData ads_state(pAllocateInfo->descriptorSetCount);
+#else
+    struct ads_state {} ads_state;
+#endif
+
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->write_lock();
+        skip |= intercept->PreCallValidateAllocateDescriptorSets(device, pAllocateInfo, pDescriptorSets, &ads_state);
+        if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+    }
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->write_lock();
+        intercept->PreCallRecordAllocateDescriptorSets(device, pAllocateInfo, pDescriptorSets);
+    }
+    VkResult result = DispatchAllocateDescriptorSets(layer_data, device, pAllocateInfo, pDescriptorSets);
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->write_lock();
+        intercept->PostCallRecordAllocateDescriptorSets(device, pAllocateInfo, pDescriptorSets, result, &ads_state);
+    }
+    return result;
+}
+
+
+
+
 
 // ValidationCache APIs do not dispatch
 
@@ -1044,6 +1078,14 @@ VKAPI_ATTR VkResult VKAPI_CALL GetValidationCacheDataEXT(
         };
         virtual void PostCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkShaderModule* pShaderModule, VkResult result, void* csm_state) {
             PostCallRecordCreateShaderModule(device, pCreateInfo, pAllocator, pShaderModule, result);
+        };
+
+        // Allow AllocateDescriptorSets to use some local stack storage for performance purposes
+        virtual bool PreCallValidateAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo* pAllocateInfo, VkDescriptorSet* pDescriptorSets, void* ads_state)  {
+            return PreCallValidateAllocateDescriptorSets(device, pAllocateInfo, pDescriptorSets);
+        };
+        virtual void PostCallRecordAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo* pAllocateInfo, VkDescriptorSet* pDescriptorSets, VkResult result, void* ads_state)  {
+            PostCallRecordAllocateDescriptorSets(device, pAllocateInfo, pDescriptorSets, result);
         };
 """
 
