@@ -225,6 +225,8 @@ class LayerChassisOutputGenerator(OutputGenerator):
 #include "vk_validation_error_messages.h"
 #include "vk_extension_helper.h"
 #include "vk_safe_struct.h"
+#include "vk_typemap_helper.h"
+
 
 extern uint64_t global_unique_id;
 extern std::unordered_map<uint64_t, uint64_t> unique_id_mapping;
@@ -254,6 +256,53 @@ public:
     std::vector<VkQueueFamilyProperties> queue_family_properties;
 };
 
+// CHECK_DISABLED struct is a container for bools that can block validation checks from being performed.
+// The end goal is to have all checks guarded by a bool. The bools are all "false" by default meaning that all checks
+// are enabled. At CreateInstance time, the user can use the VK_EXT_validation_flags extension to pass in enum values
+// of VkValidationCheckEXT that will selectively disable checks.
+// The VK_EXT_validation_features extension can also be used with the VkValidationFeaturesEXT structure to set
+// disables in the CHECK_DISABLED struct and/or enables in the CHECK_ENABLED struct.
+struct CHECK_DISABLED {
+    bool command_buffer_state;
+    bool create_descriptor_set_layout;
+    bool destroy_buffer_view;       // Skip validation at DestroyBufferView time
+    bool destroy_image_view;        // Skip validation at DestroyImageView time
+    bool destroy_pipeline;          // Skip validation at DestroyPipeline time
+    bool destroy_descriptor_pool;   // Skip validation at DestroyDescriptorPool time
+    bool destroy_framebuffer;       // Skip validation at DestroyFramebuffer time
+    bool destroy_renderpass;        // Skip validation at DestroyRenderpass time
+    bool destroy_image;             // Skip validation at DestroyImage time
+    bool destroy_sampler;           // Skip validation at DestroySampler time
+    bool destroy_command_pool;      // Skip validation at DestroyCommandPool time
+    bool destroy_event;             // Skip validation at DestroyEvent time
+    bool free_memory;               // Skip validation at FreeMemory time
+    bool object_in_use;             // Skip all object in_use checking
+    bool idle_descriptor_set;       // Skip check to verify that descriptor set is no in-use
+    bool push_constant_range;       // Skip push constant range checks
+    bool free_descriptor_sets;      // Skip validation prior to vkFreeDescriptorSets()
+    bool allocate_descriptor_sets;  // Skip validation prior to vkAllocateDescriptorSets()
+    bool update_descriptor_sets;    // Skip validation prior to vkUpdateDescriptorSets()
+    bool wait_for_fences;
+    bool get_fence_state;
+    bool queue_wait_idle;
+    bool device_wait_idle;
+    bool destroy_fence;
+    bool destroy_semaphore;
+    bool destroy_query_pool;
+    bool get_query_pool_results;
+    bool destroy_buffer;
+    bool shader_validation;  // Skip validation for shaders
+
+    void SetAll(bool value) { std::fill(&command_buffer_state, &shader_validation + 1, value); }
+};
+
+struct CHECK_ENABLED {
+    bool gpu_validation;
+    bool gpu_validation_reserve_binding_slot;
+
+    void SetAll(bool value) { std::fill(&gpu_validation, &gpu_validation_reserve_binding_slot + 1, value); }
+};
+
 // Layer chassis validation object base class definition
 class ValidationObject {
     public:
@@ -267,6 +316,8 @@ class ValidationObject {
 
         InstanceExtensions instance_extensions;
         DeviceExtensions device_extensions = {};
+        CHECK_DISABLED disabled = {};
+        CHECK_ENABLED enabled = {};
 
         VkInstance instance = VK_NULL_HANDLE;
         VkPhysicalDevice physical_device = VK_NULL_HANDLE;
@@ -458,6 +509,51 @@ static void DeviceExtensionWhitelist(ValidationObject *layer_data, const VkDevic
     }
 }
 
+// For the given ValidationCheck enum, set all relevant instance disabled flags to true
+void SetDisabledFlags(ValidationObject *instance_data, const VkValidationFlagsEXT *val_flags_struct) {
+    for (uint32_t i = 0; i < val_flags_struct->disabledValidationCheckCount; ++i) {
+        switch (val_flags_struct->pDisabledValidationChecks[i]) {
+        case VK_VALIDATION_CHECK_SHADERS_EXT:
+            instance_data->disabled.shader_validation = true;
+            break;
+        case VK_VALIDATION_CHECK_ALL_EXT:
+            // Set all disabled flags to true
+            instance_data->disabled.SetAll(true);
+            break;
+        default:
+            break;
+        }
+    }
+}
+
+void SetValidationFeatures(ValidationObject *instance_data, const VkValidationFeaturesEXT *val_features_struct) {
+    for (uint32_t i = 0; i < val_features_struct->disabledValidationFeatureCount; ++i) {
+        switch (val_features_struct->pDisabledValidationFeatures[i]) {
+        case VK_VALIDATION_FEATURE_DISABLE_SHADERS_EXT:
+            instance_data->disabled.shader_validation = true;
+            break;
+        case VK_VALIDATION_FEATURE_DISABLE_ALL_EXT:
+            // Set all disabled flags to true
+            instance_data->disabled.SetAll(true);
+            break;
+        default:
+            break;
+        }
+    }
+    for (uint32_t i = 0; i < val_features_struct->enabledValidationFeatureCount; ++i) {
+        switch (val_features_struct->pEnabledValidationFeatures[i]) {
+        case VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT:
+            instance_data->enabled.gpu_validation = true;
+            break;
+        case VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT:
+            instance_data->enabled.gpu_validation_reserve_binding_slot = true;
+            break;
+        default:
+            break;
+        }
+    }
+}
+
 VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetDeviceProcAddr(VkDevice device, const char *funcName) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!ApiParentExtensionEnabled(funcName, layer_data->device_extensions.device_extension_set)) {
@@ -569,6 +665,16 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
                                                          pCreateInfo->ppEnabledExtensionNames);
     framework->api_version = api_version;
     framework->instance_extensions.InitFromInstanceCreateInfo(specified_version, pCreateInfo);
+
+    // Parse any pNext chains for validation features and flags
+    const auto *validation_flags_ext = lvl_find_in_chain<VkValidationFlagsEXT>(pCreateInfo->pNext);
+    if (validation_flags_ext) {
+        SetDisabledFlags(framework, validation_flags_ext);
+    }
+    const auto *validation_features_ext = lvl_find_in_chain<VkValidationFeaturesEXT>(pCreateInfo->pNext);
+    if (validation_features_ext) {
+        SetValidationFeatures(framework, validation_features_ext);
+    }
 
 #if BUILD_OBJECT_TRACKER
     layer_debug_messenger_actions(framework->report_data, framework->logging_messenger, pAllocator, "lunarg_object_tracker");

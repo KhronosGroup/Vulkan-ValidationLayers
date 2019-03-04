@@ -2441,8 +2441,8 @@ bool PreCallValidateCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo 
     return skip;
 }
 
-void PreCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
-    VkDevice* pDevice, std::unique_ptr<safe_VkDeviceCreateInfo> &modified_create_info) {
+void PreCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator,
+                               VkDevice *pDevice, std::unique_ptr<safe_VkDeviceCreateInfo> &modified_create_info) {
     instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(gpu), instance_layer_data_map);
     // GPU Validation can possibly turn on device features, so give it a chance to change the create info.
     if (instance_data->enabled.gpu_validation) {
