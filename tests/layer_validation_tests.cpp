@@ -7041,6 +7041,10 @@ TEST_F(VkLayerTest, RenderPassBeginClearOpMismatch) {
 TEST_F(VkLayerTest, RenderPassBeginSampleLocationsInvalidIndicesEXT) {
     TEST_DESCRIPTION("Test that attachment indices and subpass indices specifed by sample locations structures are valid");
 
+    // Check for VK_KHR_get_physical_device_properties2
+    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    }
     ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
     if (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_SAMPLE_LOCATIONS_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_EXT_SAMPLE_LOCATIONS_EXTENSION_NAME);
