@@ -1538,6 +1538,7 @@ bool PreCallValidateDestroyImage(VkDevice device, VkImage image, const VkAllocat
 
 void PreCallRecordDestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks *pAllocator) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!image) return;
     IMAGE_STATE *image_state = core_validation::GetImageState(device_data, image);
     VK_OBJECT obj_struct = {HandleToUint64(image), kVulkanObjectTypeImage};
     core_validation::InvalidateCommandBuffers(device_data, image_state->cb_bindings, obj_struct);
