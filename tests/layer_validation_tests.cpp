@@ -10444,7 +10444,9 @@ TEST_F(VkLayerTest, InvalidCmdBufferDescriptorSetImageSamplerDestroyed) {
     memory_info.memoryTypeIndex = 0;
     vkGetImageMemoryRequirements(m_device->device(), image, &memory_reqs);
     // Allocate enough memory for both images
-    memory_info.allocationSize = memory_reqs.size * 2;
+    VkDeviceSize align_mod = memory_reqs.size % memory_reqs.alignment;
+    VkDeviceSize aligned_size = ((align_mod == 0) ? memory_reqs.size : (memory_reqs.size + memory_reqs.alignment - align_mod));
+    memory_info.allocationSize = aligned_size * 2;
     pass = m_device->phy().set_memory_type(memory_reqs.memoryTypeBits, &memory_info, 0);
     ASSERT_TRUE(pass);
     err = vkAllocateMemory(m_device->device(), &memory_info, NULL, &image_memory);
@@ -10452,7 +10454,7 @@ TEST_F(VkLayerTest, InvalidCmdBufferDescriptorSetImageSamplerDestroyed) {
     err = vkBindImageMemory(m_device->device(), image, image_memory, 0);
     ASSERT_VK_SUCCESS(err);
     // Bind second image to memory right after first image
-    err = vkBindImageMemory(m_device->device(), image2, image_memory, memory_reqs.size);
+    err = vkBindImageMemory(m_device->device(), image2, image_memory, aligned_size);
     ASSERT_VK_SUCCESS(err);
 
     VkImageViewCreateInfo image_view_create_info = {};
