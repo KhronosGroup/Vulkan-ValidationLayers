@@ -60,7 +60,6 @@ generated_layer_source_files = [
 ]
 layer_source_files = [
 '../layers/buffer_validation.cpp',
-'../layers/core_dispatch.cpp',
 '../layers/core_validation.cpp',
 '../layers/descriptor_sets.cpp',
 '../layers/parameter_validation_utils.cpp',
