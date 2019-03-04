@@ -52,6 +52,7 @@ platform_dict = {
     'fuchsia' : 'VK_USE_PLATFORM_FUCHSIA',
     'ios' : 'VK_USE_PLATFORM_IOS_MVK',
     'macos' : 'VK_USE_PLATFORM_MACOS_MVK',
+    'metal' : 'VK_USE_PLATFORM_METAL_MVK',
     'vi' : 'VK_USE_PLATFORM_VI_NN',
     'wayland' : 'VK_USE_PLATFORM_WAYLAND_KHR',
     'win32' : 'VK_USE_PLATFORM_WIN32_KHR',
