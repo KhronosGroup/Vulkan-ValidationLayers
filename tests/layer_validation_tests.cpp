@@ -35660,7 +35660,8 @@ TEST_F(VkLayerTest, InlineUniformBlockEXT) {
         return;
     }
     ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
-    std::array<const char *, 1> required_device_extensions = {{VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME}};
+    std::array<const char *, 2> required_device_extensions = {VK_KHR_MAINTENANCE1_EXTENSION_NAME,
+                                                              VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME};
     for (auto device_extension : required_device_extensions) {
         if (DeviceExtensionSupported(gpu(), nullptr, device_extension)) {
             m_device_extension_names.push_back(device_extension);
@@ -35671,9 +35672,16 @@ TEST_F(VkLayerTest, InlineUniformBlockEXT) {
     }
 
     // Enable descriptor indexing if supported, but don't require it.
-    bool supportsDescriptorIndexing = DeviceExtensionSupported(gpu(), nullptr, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
-    if (supportsDescriptorIndexing) {
-        m_device_extension_names.push_back(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+    bool supportsDescriptorIndexing = true;
+    required_device_extensions = {VK_KHR_MAINTENANCE3_EXTENSION_NAME, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME};
+    for (auto device_extension : required_device_extensions) {
+        if (DeviceExtensionSupported(gpu(), nullptr, device_extension)) {
+            m_device_extension_names.push_back(device_extension);
+        } else {
+            printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, device_extension);
+            supportsDescriptorIndexing = false;
+            return;
+        }
     }
 
     PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
