@@ -986,17 +986,17 @@ static void AnalyzeAndReportError(const layer_data *dev_data, GLOBAL_CB_NODE *cb
     memset(debug_output_buffer, 0, sizeof(uint32_t) * words_to_clear);
 }
 
-// For the given command buffer, map its debug data buffer and read its contents for analysis.
+// For the given command buffer, map its debug data buffers and read their contents for analysis.
 static void ProcessInstrumentationBuffer(const layer_data *dev_data, VkQueue queue, GLOBAL_CB_NODE *cb_node) {
     auto gpu_state = GetGpuValidationState(dev_data);
     if (cb_node && cb_node->hasDrawCmd && cb_node->gpu_buffer_list.size() > 0) {
         VkResult result;
         char *pData;
+        uint32_t draw_index = 0;
         for (auto &buffer_info : cb_node->gpu_buffer_list) {
             uint32_t block_offset = buffer_info.mem_block.offset;
             uint32_t block_size = gpu_state->memory_manager->GetBlockSize();
             uint32_t offset_to_data = 0;
-            uint32_t draw_index = 0;
             const uint32_t map_align = std::max(1U, static_cast<uint32_t>(GetPDProperties(dev_data)->limits.minMemoryMapAlignment));
 
             // Adjust the offset to the alignment required for mapping.
@@ -1176,9 +1176,9 @@ void GpuAllocateValidationResources(layer_data *dev_data, const VkCommandBuffer 
     if (iter != cb_node->lastBound.end()) {
         auto pipeline_state = iter->second.pipeline_state;
         if (pipeline_state && (pipeline_state->pipeline_layout.set_layouts.size() <= gpu_state->desc_set_bind_index)) {
-            GetDispatchTable(dev_data)->CmdBindDescriptorSets(
-                cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_state->pipeline_layout.layout, gpu_state->desc_set_bind_index,
-                1, &cb_node->gpu_buffer_list[0].desc_set, 0, nullptr);
+            GetDispatchTable(dev_data)->CmdBindDescriptorSets(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                                              pipeline_state->pipeline_layout.layout,
+                                                              gpu_state->desc_set_bind_index, 1, desc_sets.data(), 0, nullptr);
         }
     } else {
         ReportSetupProblem(dev_data, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(GetDevice(dev_data)),
