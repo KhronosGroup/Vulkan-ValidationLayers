@@ -873,7 +873,7 @@ bool cvdescriptorset::DescriptorSet::ValidateDrawState(const std::map<uint32_t, 
                     }
                 } else if (descriptor_class == TexelBuffer) {
                     auto texel_buffer = static_cast<TexelDescriptor *>(descriptors_[i].get());
-                    auto buffer_view = device_data_->GetBufferViewState(device_data_, texel_buffer->GetBufferView());
+                    auto buffer_view = device_data_->GetBufferViewState(texel_buffer->GetBufferView());
 
                     auto reqs = binding_pair.second;
                     auto format_bits = DescriptorRequirementsBitsFromFormat(buffer_view->create_info.format);
@@ -934,7 +934,7 @@ uint32_t cvdescriptorset::DescriptorSet::GetStorageUpdates(const std::map<uint32
                 for (uint32_t i = 0; i < p_layout_->GetDescriptorCountFromBinding(binding); ++i) {
                     if (descriptors_[start_idx + i]->updated) {
                         auto bufferview = static_cast<TexelDescriptor *>(descriptors_[start_idx + i].get())->GetBufferView();
-                        auto bv_state = device_data_->GetBufferViewState(device_data_, bufferview);
+                        auto bv_state = device_data_->GetBufferViewState(bufferview);
                         if (bv_state) {
                             buffer_set->insert(bv_state->create_info.buffer);
                             num_updates++;
@@ -1700,7 +1700,7 @@ void cvdescriptorset::TexelDescriptor::CopyUpdate(const Descriptor *src) {
 }
 
 void cvdescriptorset::TexelDescriptor::UpdateDrawState(layer_data *dev_data, GLOBAL_CB_NODE *cb_node) {
-    auto bv_state = dev_data->GetBufferViewState(dev_data, buffer_view_);
+    auto bv_state = dev_data->GetBufferViewState(buffer_view_);
     if (bv_state) {
         dev_data->AddCommandBufferBindingBufferView(dev_data, cb_node, bv_state);
     }
@@ -2252,7 +2252,7 @@ bool cvdescriptorset::DescriptorSet::VerifyWriteUpdateContents(const VkWriteDesc
         case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER: {
             for (uint32_t di = 0; di < update->descriptorCount; ++di) {
                 auto buffer_view = update->pTexelBufferView[di];
-                auto bv_state = device_data_->GetBufferViewState(device_data_, buffer_view);
+                auto bv_state = device_data_->GetBufferViewState(buffer_view);
                 if (!bv_state) {
                     *error_code = "VUID-VkWriteDescriptorSet-descriptorType-00323";
                     std::stringstream error_str;
@@ -2382,7 +2382,7 @@ bool cvdescriptorset::DescriptorSet::VerifyCopyUpdateContents(const VkCopyDescri
                 const auto src_desc = src_set->descriptors_[index + di].get();
                 if (!src_desc->updated) continue;
                 auto buffer_view = static_cast<TexelDescriptor *>(src_desc)->GetBufferView();
-                auto bv_state = device_data_->GetBufferViewState(device_data_, buffer_view);
+                auto bv_state = device_data_->GetBufferViewState(buffer_view);
                 if (!bv_state) {
                     *error_code = "VUID-VkWriteDescriptorSet-descriptorType-00323";
                     std::stringstream error_str;

@@ -4544,7 +4544,7 @@ void CoreChecks::PreCallRecordDestroyBuffer(VkDevice device, VkBuffer buffer, co
 bool CoreChecks::PreCallValidateDestroyBufferView(VkDevice device, VkBufferView bufferView,
                                                   const VkAllocationCallbacks *pAllocator) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    auto buffer_view_state = GetBufferViewState(device_data, bufferView);
+    auto buffer_view_state = GetBufferViewState(bufferView);
     VK_OBJECT obj_struct = {HandleToUint64(bufferView), kVulkanObjectTypeBufferView};
     bool skip = false;
     if (buffer_view_state) {
@@ -4557,7 +4557,7 @@ bool CoreChecks::PreCallValidateDestroyBufferView(VkDevice device, VkBufferView 
 void CoreChecks::PreCallRecordDestroyBufferView(VkDevice device, VkBufferView bufferView, const VkAllocationCallbacks *pAllocator) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!bufferView) return;
-    auto buffer_view_state = GetBufferViewState(device_data, bufferView);
+    auto buffer_view_state = GetBufferViewState(bufferView);
     VK_OBJECT obj_struct = {HandleToUint64(bufferView), kVulkanObjectTypeBufferView};
 
     // Any bound cmd buffers are now invalid
