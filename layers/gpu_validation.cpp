@@ -543,7 +543,7 @@ std::vector<safe_VkGraphicsPipelineCreateInfo> CoreChecks::GpuPreCallRecordCreat
     for (uint32_t pipeline = 0; pipeline < count; ++pipeline) {
         if (pipeline_uses_debug_index[pipeline]) {
             for (uint32_t stage = 0; stage < pCreateInfos[pipeline].stageCount; ++stage) {
-                const shader_module *shader = GetShaderModuleState(dev_data, pCreateInfos[pipeline].pStages[stage].module);
+                const shader_module *shader = GetShaderModuleState(pCreateInfos[pipeline].pStages[stage].module);
                 VkShaderModuleCreateInfo create_info = {};
                 VkShaderModule shader_module;
                 create_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
@@ -583,7 +583,7 @@ void CoreChecks::GpuPostCallRecordCreateGraphicsPipelines(layer_data *dev_data, 
                 GetDispatchTable(dev_data)->DestroyShaderModule(GetDevice(dev_data), pCreateInfos->pStages[stage].module,
                                                                 pAllocator);
             }
-            auto shader_state = GetShaderModuleState(dev_data, pipeline_state->graphicsPipelineCI.pStages[stage].module);
+            auto shader_state = GetShaderModuleState(pipeline_state->graphicsPipelineCI.pStages[stage].module);
             std::vector<unsigned int> code;
             // Save the shader binary if debug info is present.
             // The core_validation ShaderModule tracker saves the binary too, but discards it when the ShaderModule
