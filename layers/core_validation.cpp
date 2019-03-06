@@ -233,9 +233,9 @@ SEMAPHORE_NODE *CoreChecks::GetSemaphoreNode(layer_data *dev_data, VkSemaphore s
     return &it->second;
 }
 
-COMMAND_POOL_NODE *CoreChecks::GetCommandPoolNode(layer_data *dev_data, VkCommandPool pool) {
-    auto it = dev_data->commandPoolMap.find(pool);
-    if (it == dev_data->commandPoolMap.end()) {
+COMMAND_POOL_NODE *CoreChecks::GetCommandPoolNode(VkCommandPool pool) {
+    auto it = commandPoolMap.find(pool);
+    if (it == commandPoolMap.end()) {
         return nullptr;
     }
     return &it->second;
@@ -1856,7 +1856,7 @@ bool CoreChecks::ValidateCmdSubpassState(const layer_data *dev_data, const GLOBA
 
 bool CoreChecks::ValidateCmdQueueFlags(layer_data *dev_data, const GLOBAL_CB_NODE *cb_node, const char *caller_name,
                                        VkQueueFlags required_flags, const char *error_code) {
-    auto pool = GetCommandPoolNode(dev_data, cb_node->createInfo.commandPool);
+    auto pool = GetCommandPoolNode(cb_node->createInfo.commandPool);
     if (pool) {
         VkQueueFlags queue_flags = GetPhysicalDeviceState()->queue_family_properties[pool->queueFamilyIndex].queueFlags;
         if (!(required_flags & queue_flags)) {
@@ -2051,7 +2051,7 @@ BASE_NODE *CoreChecks::GetStateStructPtrFromObject(layer_data *dev_data, VK_OBJE
             break;
         }
         case kVulkanObjectTypeCommandPool: {
-            base_ptr = GetCommandPoolNode(dev_data, reinterpret_cast<VkCommandPool &>(object_struct.handle));
+            base_ptr = GetCommandPoolNode(reinterpret_cast<VkCommandPool &>(object_struct.handle));
             break;
         }
         case kVulkanObjectTypeFramebuffer: {
@@ -2893,7 +2893,7 @@ bool CoreChecks::ValidImageBufferQueue(layer_data *dev_data, GLOBAL_CB_NODE *cb_
 // Secondary command buffers were previously validated in vkCmdExecuteCommands().
 bool CoreChecks::ValidateQueueFamilyIndices(layer_data *dev_data, GLOBAL_CB_NODE *pCB, VkQueue queue) {
     bool skip = false;
-    auto pPool = GetCommandPoolNode(dev_data, pCB->createInfo.commandPool);
+    auto pPool = GetCommandPoolNode(pCB->createInfo.commandPool);
     auto queue_state = GetQueueState(dev_data, queue);
 
     if (pPool && queue_state) {
@@ -4804,7 +4804,7 @@ bool CoreChecks::PreCallValidateFreeCommandBuffers(VkDevice device, VkCommandPoo
 void CoreChecks::PreCallRecordFreeCommandBuffers(VkDevice device, VkCommandPool commandPool, uint32_t commandBufferCount,
                                                  const VkCommandBuffer *pCommandBuffers) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    auto pPool = GetCommandPoolNode(device_data, commandPool);
+    auto pPool = GetCommandPoolNode(commandPool);
     FreeCommandBufferStates(device_data, pPool, commandBufferCount, pCommandBuffers);
 }
 
@@ -4851,7 +4851,7 @@ bool CoreChecks::PreCallValidateDestroyCommandPool(VkDevice device, VkCommandPoo
                                                    const VkAllocationCallbacks *pAllocator) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
 
-    COMMAND_POOL_NODE *cp_state = GetCommandPoolNode(device_data, commandPool);
+    COMMAND_POOL_NODE *cp_state = GetCommandPoolNode(commandPool);
     if (device_data->instance_data->disabled.destroy_command_pool) return false;
     bool skip = false;
     if (cp_state) {
@@ -4866,7 +4866,7 @@ void CoreChecks::PreCallRecordDestroyCommandPool(VkDevice device, VkCommandPool 
                                                  const VkAllocationCallbacks *pAllocator) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!commandPool) return;
-    COMMAND_POOL_NODE *cp_state = GetCommandPoolNode(device_data, commandPool);
+    COMMAND_POOL_NODE *cp_state = GetCommandPoolNode(commandPool);
     // Remove cmdpool from cmdpoolmap, after freeing layer data for the command buffers
     // "When a pool is destroyed, all command buffers allocated from the pool are freed."
     if (cp_state) {
@@ -4879,7 +4879,7 @@ void CoreChecks::PreCallRecordDestroyCommandPool(VkDevice device, VkCommandPool 
 
 bool CoreChecks::PreCallValidateResetCommandPool(VkDevice device, VkCommandPool commandPool, VkCommandPoolResetFlags flags) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    auto command_pool_state = GetCommandPoolNode(device_data, commandPool);
+    auto command_pool_state = GetCommandPoolNode(commandPool);
     return CheckCommandBuffersInFlight(device_data, command_pool_state, "reset command pool with",
                                        "VUID-vkResetCommandPool-commandPool-00040");
 }
@@ -4889,7 +4889,7 @@ void CoreChecks::PostCallRecordResetCommandPool(VkDevice device, VkCommandPool c
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (VK_SUCCESS != result) return;
     // Reset all of the CBs allocated from this pool
-    auto command_pool_state = GetCommandPoolNode(device_data, commandPool);
+    auto command_pool_state = GetCommandPoolNode(commandPool);
     for (auto cmdBuffer : command_pool_state->commandBuffers) {
         ResetCommandBufferState(device_data, cmdBuffer);
     }
@@ -6243,7 +6243,7 @@ void CoreChecks::PostCallRecordAllocateCommandBuffers(VkDevice device, const VkC
                                                       VkCommandBuffer *pCommandBuffer, VkResult result) {
     if (VK_SUCCESS != result) return;
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    auto pPool = GetCommandPoolNode(device_data, pCreateInfo->commandPool);
+    auto pPool = GetCommandPoolNode(pCreateInfo->commandPool);
     if (pPool) {
         for (uint32_t i = 0; i < pCreateInfo->commandBufferCount; i++) {
             // Add command buffer to its commandPool map
@@ -6339,7 +6339,7 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
                         device_data->report_data->FormatHandle(commandBuffer).c_str());
     } else if (CB_RECORDED == cb_state->state || CB_INVALID_COMPLETE == cb_state->state) {
         VkCommandPool cmdPool = cb_state->createInfo.commandPool;
-        auto pPool = GetCommandPoolNode(device_data, cmdPool);
+        auto pPool = GetCommandPoolNode(cmdPool);
         if (!(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT & pPool->createFlags)) {
             skip |=
                 log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
@@ -6433,7 +6433,7 @@ bool CoreChecks::PreCallValidateResetCommandBuffer(VkCommandBuffer commandBuffer
     GLOBAL_CB_NODE *pCB = GetCBNode(commandBuffer);
     if (!pCB) return false;
     VkCommandPool cmdPool = pCB->createInfo.commandPool;
-    auto pPool = GetCommandPoolNode(device_data, cmdPool);
+    auto pPool = GetCommandPoolNode(cmdPool);
 
     if (!(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT & pPool->createFlags)) {
         skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
@@ -7083,7 +7083,7 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorSets(VkCommandBuffer commandBuf
 bool CoreChecks::ValidatePipelineBindPoint(layer_data *device_data, GLOBAL_CB_NODE *cb_state, VkPipelineBindPoint bind_point,
                                            const char *func_name, const std::map<VkPipelineBindPoint, std::string> &bind_errors) {
     bool skip = false;
-    auto pool = GetCommandPoolNode(device_data, cb_state->createInfo.commandPool);
+    auto pool = GetCommandPoolNode(cb_state->createInfo.commandPool);
     if (pool) {  // The loss of a pool in a recording cmd is reported in DestroyCommandPool
         static const std::map<VkPipelineBindPoint, VkQueueFlags> flag_mask = {
             std::make_pair(VK_PIPELINE_BIND_POINT_GRAPHICS, static_cast<VkQueueFlags>(VK_QUEUE_GRAPHICS_BIT)),
@@ -8525,7 +8525,7 @@ BarrierOperationsType CoreChecks::ComputeBarrierOperationsType(layer_data *devic
                                                                const VkBufferMemoryBarrier *buffer_barriers,
                                                                uint32_t image_barrier_count,
                                                                const VkImageMemoryBarrier *image_barriers) {
-    auto pool = GetCommandPoolNode(device_data, cb_state->createInfo.commandPool);
+    auto pool = GetCommandPoolNode(cb_state->createInfo.commandPool);
     BarrierOperationsType op_type = kGeneral;
 
     // Look at the barrier details only if they exist
@@ -10558,8 +10558,8 @@ bool CoreChecks::ValidateSecondaryCommandBufferState(layer_data *dev_data, GLOBA
         }
     }
 
-    auto primary_pool = GetCommandPoolNode(dev_data, pCB->createInfo.commandPool);
-    auto secondary_pool = GetCommandPoolNode(dev_data, pSubCB->createInfo.commandPool);
+    auto primary_pool = GetCommandPoolNode(pCB->createInfo.commandPool);
+    auto secondary_pool = GetCommandPoolNode(pSubCB->createInfo.commandPool);
     if (primary_pool && secondary_pool && (primary_pool->queueFamilyIndex != secondary_pool->queueFamilyIndex)) {
         skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                         HandleToUint64(pSubCB->commandBuffer), kVUID_Core_DrawState_InvalidQueueFamily,
