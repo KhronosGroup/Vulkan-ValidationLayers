@@ -257,8 +257,8 @@ class CoreChecks : public ValidationObject {
     SWAPCHAIN_NODE* GetSwapchainNode(VkSwapchainKHR);
     GLOBAL_CB_NODE* GetCBNode(const VkCommandBuffer cb);
     PIPELINE_STATE* GetPipelineState(VkPipeline pipeline);
-    RENDER_PASS_STATE* GetRenderPassState(layer_data const* dev_data, VkRenderPass renderpass);
-    std::shared_ptr<RENDER_PASS_STATE> GetRenderPassStateSharedPtr(layer_data const* dev_data, VkRenderPass renderpass);
+    RENDER_PASS_STATE* GetRenderPassState(VkRenderPass renderpass);
+    std::shared_ptr<RENDER_PASS_STATE> GetRenderPassStateSharedPtr(VkRenderPass renderpass);
     FRAMEBUFFER_STATE* GetFramebufferState(const layer_data* my_data, VkFramebuffer framebuffer);
     COMMAND_POOL_NODE* GetCommandPoolNode(layer_data* dev_data, VkCommandPool pool);
     shader_module const* GetShaderModuleState(layer_data const* dev_data, VkShaderModule module);
