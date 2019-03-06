@@ -3947,7 +3947,7 @@ bool CoreChecks::PreCallValidateCreateBufferView(VkDevice device, const VkBuffer
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
 
     bool skip = false;
-    BUFFER_STATE *buffer_state = GetBufferState(device_data, pCreateInfo->buffer);
+    BUFFER_STATE *buffer_state = GetBufferState(pCreateInfo->buffer);
     // If this isn't a sparse buffer, it needs to have memory backing it at CreateBufferView time
     if (buffer_state) {
         skip |= ValidateMemoryIsBoundToBuffer(device_data, buffer_state, "vkCreateBufferView()",
@@ -4436,8 +4436,8 @@ bool CoreChecks::PreCallValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, VkB
                                               uint32_t regionCount, const VkBufferCopy *pRegions) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     auto cb_node = GetCBNode(device_data, commandBuffer);
-    auto src_buffer_state = GetBufferState(device_data, srcBuffer);
-    auto dst_buffer_state = GetBufferState(device_data, dstBuffer);
+    auto src_buffer_state = GetBufferState(srcBuffer);
+    auto dst_buffer_state = GetBufferState(dstBuffer);
 
     bool skip = false;
     skip |=
@@ -4463,8 +4463,8 @@ void CoreChecks::PreCallRecordCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuf
                                             uint32_t regionCount, const VkBufferCopy *pRegions) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     auto cb_node = GetCBNode(device_data, commandBuffer);
-    auto src_buffer_state = GetBufferState(device_data, srcBuffer);
-    auto dst_buffer_state = GetBufferState(device_data, dstBuffer);
+    auto src_buffer_state = GetBufferState(srcBuffer);
+    auto dst_buffer_state = GetBufferState(dstBuffer);
 
     // Update bindings between buffers and cmd buffer
     AddCommandBufferBindingBuffer(device_data, cb_node, src_buffer_state);
@@ -4473,7 +4473,7 @@ void CoreChecks::PreCallRecordCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuf
 
 bool CoreChecks::ValidateIdleBuffer(layer_data *device_data, VkBuffer buffer) {
     bool skip = false;
-    auto buffer_state = GetBufferState(device_data, buffer);
+    auto buffer_state = GetBufferState(buffer);
     if (!buffer_state) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT, HandleToUint64(buffer),
                         kVUID_Core_DrawState_DoubleDestroy, "Cannot free buffer %s that has not been allocated.",
@@ -4514,7 +4514,7 @@ void CoreChecks::PreCallRecordDestroyImageView(VkDevice device, VkImageView imag
 
 bool CoreChecks::PreCallValidateDestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationCallbacks *pAllocator) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    auto buffer_state = GetBufferState(device_data, buffer);
+    auto buffer_state = GetBufferState(buffer);
 
     bool skip = false;
     if (buffer_state) {
@@ -4526,7 +4526,7 @@ bool CoreChecks::PreCallValidateDestroyBuffer(VkDevice device, VkBuffer buffer, 
 void CoreChecks::PreCallRecordDestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationCallbacks *pAllocator) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!buffer) return;
-    auto buffer_state = GetBufferState(device_data, buffer);
+    auto buffer_state = GetBufferState(buffer);
     VK_OBJECT obj_struct = {HandleToUint64(buffer), kVulkanObjectTypeBuffer};
 
     InvalidateCommandBuffers(device_data, buffer_state->cb_bindings, obj_struct);
@@ -4569,7 +4569,7 @@ bool CoreChecks::PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, VkB
                                               VkDeviceSize size, uint32_t data) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     auto cb_node = GetCBNode(device_data, commandBuffer);
-    auto buffer_state = GetBufferState(device_data, dstBuffer);
+    auto buffer_state = GetBufferState(dstBuffer);
     bool skip = false;
     skip |= ValidateMemoryIsBoundToBuffer(device_data, buffer_state, "vkCmdFillBuffer()", "VUID-vkCmdFillBuffer-dstBuffer-00031");
     skip |= ValidateCmdQueueFlags(device_data, cb_node, "vkCmdFillBuffer()",
@@ -4588,7 +4588,7 @@ void CoreChecks::PreCallRecordCmdFillBuffer(VkCommandBuffer commandBuffer, VkBuf
                                             VkDeviceSize size, uint32_t data) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     auto cb_node = GetCBNode(device_data, commandBuffer);
-    auto buffer_state = GetBufferState(device_data, dstBuffer);
+    auto buffer_state = GetBufferState(dstBuffer);
     // Update bindings between buffer and cmd buffer
     AddCommandBufferBindingBuffer(device_data, cb_node, buffer_state);
 }
@@ -4880,7 +4880,7 @@ bool CoreChecks::PreCallValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuff
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     auto cb_node = GetCBNode(device_data, commandBuffer);
     auto src_image_state = GetImageState(device_data, srcImage);
-    auto dst_buffer_state = GetBufferState(device_data, dstBuffer);
+    auto dst_buffer_state = GetBufferState(dstBuffer);
 
     bool skip = ValidateBufferImageCopyData(report_data, regionCount, pRegions, src_image_state, "vkCmdCopyImageToBuffer");
 
@@ -4952,7 +4952,7 @@ void CoreChecks::PreCallRecordCmdCopyImageToBuffer(VkCommandBuffer commandBuffer
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     auto cb_node = GetCBNode(device_data, commandBuffer);
     auto src_image_state = GetImageState(device_data, srcImage);
-    auto dst_buffer_state = GetBufferState(device_data, dstBuffer);
+    auto dst_buffer_state = GetBufferState(dstBuffer);
 
     // Make sure that all image slices are updated to correct layout
     for (uint32_t i = 0; i < regionCount; ++i) {
@@ -4968,7 +4968,7 @@ bool CoreChecks::PreCallValidateCmdCopyBufferToImage(VkCommandBuffer commandBuff
                                                      const VkBufferImageCopy *pRegions) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     auto cb_node = GetCBNode(device_data, commandBuffer);
-    auto src_buffer_state = GetBufferState(device_data, srcBuffer);
+    auto src_buffer_state = GetBufferState(srcBuffer);
     auto dst_image_state = GetImageState(device_data, dstImage);
 
     bool skip = ValidateBufferImageCopyData(report_data, regionCount, pRegions, dst_image_state, "vkCmdCopyBufferToImage");
@@ -5036,7 +5036,7 @@ void CoreChecks::PreCallRecordCmdCopyBufferToImage(VkCommandBuffer commandBuffer
                                                    const VkBufferImageCopy *pRegions) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     auto cb_node = GetCBNode(device_data, commandBuffer);
-    auto src_buffer_state = GetBufferState(device_data, srcBuffer);
+    auto src_buffer_state = GetBufferState(srcBuffer);
     auto dst_image_state = GetImageState(device_data, dstImage);
 
     // Make sure that all image slices are updated to correct layout

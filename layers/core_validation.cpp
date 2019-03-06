@@ -122,9 +122,9 @@ static const VkDeviceMemory MEMTRACKER_SWAP_CHAIN_IMAGE_KEY = (VkDeviceMemory)(-
 static const VkDeviceMemory MEMORY_UNBOUND = VkDeviceMemory(~((uint64_t)(0)) - 1);
 
 // Return buffer state ptr for specified buffer or else NULL
-BUFFER_STATE *CoreChecks::GetBufferState(const layer_data *dev_data, VkBuffer buffer) {
-    auto buff_it = dev_data->bufferMap.find(buffer);
-    if (buff_it == dev_data->bufferMap.end()) {
+BUFFER_STATE *CoreChecks::GetBufferState(VkBuffer buffer) {
+    auto buff_it = bufferMap.find(buffer);
+    if (buff_it == bufferMap.end()) {
         return nullptr;
     }
     return buff_it->second.get();
@@ -267,7 +267,7 @@ BINDABLE *CoreChecks::GetObjectMemBinding(layer_data *dev_data, uint64_t handle,
         case kVulkanObjectTypeImage:
             return GetImageState(dev_data, VkImage(handle));
         case kVulkanObjectTypeBuffer:
-            return GetBufferState(dev_data, VkBuffer(handle));
+            return GetBufferState(VkBuffer(handle));
         default:
             break;
     }
@@ -375,7 +375,7 @@ void CoreChecks::AddCommandBufferBindingBufferView(const layer_data *dev_data, G
     // First add bindings for bufferView
     view_state->cb_bindings.insert(cb_node);
     cb_node->object_bindings.insert({HandleToUint64(view_state->buffer_view), kVulkanObjectTypeBufferView});
-    auto buffer_state = GetBufferState(dev_data, view_state->create_info.buffer);
+    auto buffer_state = GetBufferState(view_state->create_info.buffer);
     // Add bindings for buffer within bufferView
     if (buffer_state) {
         AddCommandBufferBindingBuffer(dev_data, cb_node, buffer_state);
@@ -948,8 +948,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(layer_data const *dev_data, LAST_
                 (pCB->current_draw_data.vertex_buffer_bindings[vertex_binding].buffer != VK_NULL_HANDLE)) {
                 const auto vertex_buffer_stride = pPipeline->vertex_binding_descriptions_[vertex_binding_map_it->second].stride;
                 const auto vertex_buffer_offset = pCB->current_draw_data.vertex_buffer_bindings[vertex_binding].offset;
-                const auto buffer_state =
-                    GetBufferState(dev_data, pCB->current_draw_data.vertex_buffer_bindings[vertex_binding].buffer);
+                const auto buffer_state = GetBufferState(pCB->current_draw_data.vertex_buffer_bindings[vertex_binding].buffer);
 
                 // Use only memory binding offset as base memory should be properly aligned by the driver
                 const auto buffer_binding_address = buffer_state->binding.offset + vertex_buffer_offset;
@@ -2028,7 +2027,7 @@ BASE_NODE *CoreChecks::GetStateStructPtrFromObject(layer_data *dev_data, VK_OBJE
             break;
         }
         case kVulkanObjectTypeBuffer: {
-            base_ptr = GetBufferState(dev_data, reinterpret_cast<VkBuffer &>(object_struct.handle));
+            base_ptr = GetBufferState(reinterpret_cast<VkBuffer &>(object_struct.handle));
             break;
         }
         case kVulkanObjectTypeBufferView: {
@@ -2627,7 +2626,7 @@ void CoreChecks::IncrementResources(layer_data *dev_data, GLOBAL_CB_NODE *cb_nod
     //  should then be flagged prior to calling this function
     for (auto draw_data_element : cb_node->draw_data) {
         for (auto &vertex_buffer : draw_data_element.vertex_buffer_bindings) {
-            auto buffer_state = GetBufferState(dev_data, vertex_buffer.buffer);
+            auto buffer_state = GetBufferState(vertex_buffer.buffer);
             if (buffer_state) {
                 buffer_state->in_use.fetch_add(1);
             }
@@ -2745,7 +2744,7 @@ void CoreChecks::RetireWorkOnQueue(layer_data *dev_data, QUEUE_STATE *pQueue, ui
             DecrementBoundResources(dev_data, cb_node);
             for (auto draw_data_element : cb_node->draw_data) {
                 for (auto &vertex_buffer_binding : draw_data_element.vertex_buffer_bindings) {
-                    auto buffer_state = GetBufferState(dev_data, vertex_buffer_binding.buffer);
+                    auto buffer_state = GetBufferState(vertex_buffer_binding.buffer);
                     if (buffer_state) {
                         buffer_state->in_use.fetch_sub(1);
                     }
@@ -2852,7 +2851,7 @@ bool CoreChecks::ValidateResources(layer_data *dev_data, GLOBAL_CB_NODE *cb_node
     //  should then be flagged prior to calling this function
     for (const auto &draw_data_element : cb_node->draw_data) {
         for (const auto &vertex_buffer_binding : draw_data_element.vertex_buffer_bindings) {
-            auto buffer_state = GetBufferState(dev_data, vertex_buffer_binding.buffer);
+            auto buffer_state = GetBufferState(vertex_buffer_binding.buffer);
             if ((vertex_buffer_binding.buffer != VK_NULL_HANDLE) && (!buffer_state)) {
                 skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT,
                                 HandleToUint64(vertex_buffer_binding.buffer), kVUID_Core_DrawState_InvalidBuffer,
@@ -2916,7 +2915,7 @@ bool CoreChecks::ValidateQueueFamilyIndices(layer_data *dev_data, GLOBAL_CB_NODE
                                                   image_state->createInfo.pQueueFamilyIndices);
                 }
             } else if (object.type == kVulkanObjectTypeBuffer) {
-                auto buffer_state = GetBufferState(dev_data, reinterpret_cast<VkBuffer &>(object.handle));
+                auto buffer_state = GetBufferState(reinterpret_cast<VkBuffer &>(object.handle));
                 if (buffer_state && buffer_state->createInfo.sharingMode == VK_SHARING_MODE_CONCURRENT) {
                     skip |= ValidImageBufferQueue(dev_data, pCB, &object, queue, buffer_state->createInfo.queueFamilyIndexCount,
                                                   buffer_state->createInfo.pQueueFamilyIndices);
@@ -3774,7 +3773,7 @@ void CoreChecks::PreCallRecordFreeMemory(VkDevice device, VkDeviceMemory mem, co
                 bindable_state = GetImageState(device_data, reinterpret_cast<VkImage &>(obj.handle));
                 break;
             case kVulkanObjectTypeBuffer:
-                bindable_state = GetBufferState(device_data, reinterpret_cast<VkBuffer &>(obj.handle));
+                bindable_state = GetBufferState(reinterpret_cast<VkBuffer &>(obj.handle));
                 break;
             default:
                 // Should only have buffer or image objects bound to memory
@@ -4353,7 +4352,7 @@ bool CoreChecks::ValidateMemoryTypes(const layer_data *dev_data, const DEVICE_ME
 
 bool CoreChecks::ValidateBindBufferMemory(layer_data *device_data, VkBuffer buffer, VkDeviceMemory mem, VkDeviceSize memoryOffset,
                                           const char *api_name) {
-    BUFFER_STATE *buffer_state = GetBufferState(device_data, buffer);
+    BUFFER_STATE *buffer_state = GetBufferState(buffer);
 
     bool skip = false;
     if (buffer_state) {
@@ -4432,7 +4431,7 @@ bool CoreChecks::PreCallValidateBindBufferMemory(VkDevice device, VkBuffer buffe
 
 void CoreChecks::UpdateBindBufferMemoryState(layer_data *device_data, VkBuffer buffer, VkDeviceMemory mem,
                                              VkDeviceSize memoryOffset) {
-    BUFFER_STATE *buffer_state = GetBufferState(device_data, buffer);
+    BUFFER_STATE *buffer_state = GetBufferState(buffer);
     if (buffer_state) {
         // Track bound memory range information
         auto mem_info = GetMemObjInfo(device_data, mem);
@@ -4498,7 +4497,7 @@ void CoreChecks::PostCallRecordBindBufferMemory2KHR(VkDevice device, uint32_t bi
 
 void CoreChecks::RecordGetBufferMemoryRequirementsState(layer_data *device_data, VkBuffer buffer,
                                                         VkMemoryRequirements *pMemoryRequirements) {
-    BUFFER_STATE *buffer_state = GetBufferState(device_data, buffer);
+    BUFFER_STATE *buffer_state = GetBufferState(buffer);
     if (buffer_state) {
         buffer_state->requirements = *pMemoryRequirements;
         buffer_state->memory_requirements_checked = true;
@@ -7231,7 +7230,7 @@ static VkDeviceSize GetIndexAlignment(VkIndexType indexType) {
 bool CoreChecks::PreCallValidateCmdBindIndexBuffer(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                    VkIndexType indexType) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    auto buffer_state = GetBufferState(device_data, buffer);
+    auto buffer_state = GetBufferState(buffer);
     auto cb_node = GetCBNode(device_data, commandBuffer);
     assert(buffer_state);
     assert(cb_node);
@@ -7258,7 +7257,7 @@ bool CoreChecks::PreCallValidateCmdBindIndexBuffer(VkCommandBuffer commandBuffer
 void CoreChecks::PreCallRecordCmdBindIndexBuffer(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                  VkIndexType indexType) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    auto buffer_state = GetBufferState(device_data, buffer);
+    auto buffer_state = GetBufferState(buffer);
     auto cb_node = GetCBNode(device_data, commandBuffer);
 
     cb_node->status |= CBSTATUS_INDEX_BUFFER_BOUND;
@@ -7280,7 +7279,7 @@ bool CoreChecks::PreCallValidateCmdBindVertexBuffers(VkCommandBuffer commandBuff
                                       "VUID-vkCmdBindVertexBuffers-commandBuffer-cmdpool");
     skip |= ValidateCmd(device_data, cb_state, CMD_BINDVERTEXBUFFERS, "vkCmdBindVertexBuffers()");
     for (uint32_t i = 0; i < bindingCount; ++i) {
-        auto buffer_state = GetBufferState(device_data, pBuffers[i]);
+        auto buffer_state = GetBufferState(pBuffers[i]);
         assert(buffer_state);
         skip |= ValidateBufferUsageFlags(device_data, buffer_state, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, true,
                                          "VUID-vkCmdBindVertexBuffers-pBuffers-00627", "vkCmdBindVertexBuffers()",
@@ -7414,7 +7413,7 @@ bool CoreChecks::PreCallValidateCmdDrawIndirect(VkCommandBuffer commandBuffer, V
                                     "vkCmdDrawIndirect()", VK_QUEUE_GRAPHICS_BIT, "VUID-vkCmdDrawIndirect-commandBuffer-cmdpool",
                                     "VUID-vkCmdDrawIndirect-renderpass", "VUID-vkCmdDrawIndirect-None-00485",
                                     "VUID-vkCmdDrawIndirect-None-00486");
-    BUFFER_STATE *buffer_state = GetBufferState(device_data, buffer);
+    BUFFER_STATE *buffer_state = GetBufferState(buffer);
     skip |= ValidateMemoryIsBoundToBuffer(device_data, buffer_state, "vkCmdDrawIndirect()", "VUID-vkCmdDrawIndirect-buffer-00474");
     // TODO: If the drawIndirectFirstInstance feature is not enabled, all the firstInstance members of the
     // VkDrawIndirectCommand structures accessed by this command must be 0, which will require access to the contents of 'buffer'.
@@ -7431,7 +7430,7 @@ void CoreChecks::PostCallRecordCmdDrawIndirect(VkCommandBuffer commandBuffer, Vk
                                                uint32_t stride) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
-    BUFFER_STATE *buffer_state = GetBufferState(device_data, buffer);
+    BUFFER_STATE *buffer_state = GetBufferState(buffer);
     UpdateStateCmdDrawType(device_data, cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS);
     AddCommandBufferBindingBuffer(device_data, cb_state, buffer_state);
 }
@@ -7443,7 +7442,7 @@ bool CoreChecks::PreCallValidateCmdDrawIndexedIndirect(VkCommandBuffer commandBu
         device_data, commandBuffer, true, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWINDEXEDINDIRECT, "vkCmdDrawIndexedIndirect()",
         VK_QUEUE_GRAPHICS_BIT, "VUID-vkCmdDrawIndexedIndirect-commandBuffer-cmdpool", "VUID-vkCmdDrawIndexedIndirect-renderpass",
         "VUID-vkCmdDrawIndexedIndirect-None-00537", "VUID-vkCmdDrawIndexedIndirect-None-00538");
-    BUFFER_STATE *buffer_state = GetBufferState(device_data, buffer);
+    BUFFER_STATE *buffer_state = GetBufferState(buffer);
     skip |= ValidateMemoryIsBoundToBuffer(device_data, buffer_state, "vkCmdDrawIndexedIndirect()",
                                           "VUID-vkCmdDrawIndexedIndirect-buffer-00526");
     // TODO: If the drawIndirectFirstInstance feature is not enabled, all the firstInstance members of the
@@ -7462,7 +7461,7 @@ void CoreChecks::PostCallRecordCmdDrawIndexedIndirect(VkCommandBuffer commandBuf
                                                       uint32_t count, uint32_t stride) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
-    BUFFER_STATE *buffer_state = GetBufferState(device_data, buffer);
+    BUFFER_STATE *buffer_state = GetBufferState(buffer);
     UpdateStateCmdDrawType(device_data, cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS);
     AddCommandBufferBindingBuffer(device_data, cb_state, buffer_state);
 }
@@ -7491,7 +7490,7 @@ bool CoreChecks::PreCallValidateCmdDispatchIndirect(VkCommandBuffer commandBuffe
         ValidateCmdDrawType(device_data, commandBuffer, false, VK_PIPELINE_BIND_POINT_COMPUTE, CMD_DISPATCHINDIRECT,
                             "vkCmdDispatchIndirect()", VK_QUEUE_COMPUTE_BIT, "VUID-vkCmdDispatchIndirect-commandBuffer-cmdpool",
                             "VUID-vkCmdDispatchIndirect-renderpass", "VUID-vkCmdDispatchIndirect-None-00404", kVUIDUndefined);
-    BUFFER_STATE *buffer_state = GetBufferState(device_data, buffer);
+    BUFFER_STATE *buffer_state = GetBufferState(buffer);
     skip |= ValidateMemoryIsBoundToBuffer(device_data, buffer_state, "vkCmdDispatchIndirect()",
                                           "VUID-vkCmdDispatchIndirect-buffer-00401");
     return skip;
@@ -7506,7 +7505,7 @@ void CoreChecks::PostCallRecordCmdDispatchIndirect(VkCommandBuffer commandBuffer
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
     UpdateStateCmdDrawDispatchType(device_data, cb_state, VK_PIPELINE_BIND_POINT_COMPUTE);
-    BUFFER_STATE *buffer_state = GetBufferState(device_data, buffer);
+    BUFFER_STATE *buffer_state = GetBufferState(buffer);
     AddCommandBufferBindingBuffer(device_data, cb_state, buffer_state);
 }
 
@@ -7529,7 +7528,7 @@ bool CoreChecks::PreCallValidateCmdUpdateBuffer(VkCommandBuffer commandBuffer, V
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     auto cb_state = GetCBNode(device_data, commandBuffer);
     assert(cb_state);
-    auto dst_buffer_state = GetBufferState(device_data, dstBuffer);
+    auto dst_buffer_state = GetBufferState(dstBuffer);
     assert(dst_buffer_state);
 
     bool skip = false;
@@ -7551,7 +7550,7 @@ void CoreChecks::PostCallRecordCmdUpdateBuffer(VkCommandBuffer commandBuffer, Vk
                                                VkDeviceSize dataSize, const void *pData) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     auto cb_state = GetCBNode(device_data, commandBuffer);
-    auto dst_buffer_state = GetBufferState(device_data, dstBuffer);
+    auto dst_buffer_state = GetBufferState(dstBuffer);
 
     // Update bindings between buffer and cmd buffer
     AddCommandBufferBindingBuffer(device_data, cb_state, dst_buffer_state);
@@ -8408,7 +8407,7 @@ bool CoreChecks::ValidateBarriers(layer_data *device_data, const char *funcName,
                             mem_barrier->dstAccessMask, dst_stage_mask);
         }
         // Validate buffer barrier queue family indices
-        auto buffer_state = GetBufferState(device_data, mem_barrier->buffer);
+        auto buffer_state = GetBufferState(mem_barrier->buffer);
         skip |= ValidateBarrierQueueFamilies(device_data, funcName, cb_state, mem_barrier, buffer_state);
 
         if (buffer_state) {
@@ -8858,7 +8857,7 @@ bool CoreChecks::PreCallValidateCmdCopyQueryPoolResults(VkCommandBuffer commandB
                                                         VkDeviceSize stride, VkQueryResultFlags flags) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     auto cb_state = GetCBNode(device_data, commandBuffer);
-    auto dst_buff_state = GetBufferState(device_data, dstBuffer);
+    auto dst_buff_state = GetBufferState(dstBuffer);
     assert(cb_state);
     assert(dst_buff_state);
     bool skip = ValidateMemoryIsBoundToBuffer(device_data, dst_buff_state, "vkCmdCopyQueryPoolResults()",
@@ -8880,7 +8879,7 @@ void CoreChecks::PostCallRecordCmdCopyQueryPoolResults(VkCommandBuffer commandBu
                                                        VkDeviceSize stride, VkQueryResultFlags flags) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     auto cb_state = GetCBNode(device_data, commandBuffer);
-    auto dst_buff_state = GetBufferState(device_data, dstBuffer);
+    auto dst_buff_state = GetBufferState(dstBuffer);
     AddCommandBufferBindingBuffer(device_data, cb_state, dst_buff_state);
     cb_state->queryUpdates.emplace_back([=](VkQueue q) { return ValidateQuery(q, cb_state, queryPool, firstQuery, queryCount); });
     AddCommandBufferBinding(&GetQueryPoolNode(device_data, queryPool)->cb_bindings,
@@ -13281,8 +13280,8 @@ bool CoreChecks::PreCallValidateCmdDrawIndirectCountKHR(VkCommandBuffer commandB
                                 "vkCmdDrawIndirectCountKHR()", VK_QUEUE_GRAPHICS_BIT,
                                 "VUID-vkCmdDrawIndirectCountKHR-commandBuffer-cmdpool", "VUID-vkCmdDrawIndirectCountKHR-renderpass",
                                 "VUID-vkCmdDrawIndirectCountKHR-None-03119", "VUID-vkCmdDrawIndirectCountKHR-None-03120");
-    BUFFER_STATE *buffer_state = GetBufferState(device_data, buffer);
-    BUFFER_STATE *count_buffer_state = GetBufferState(device_data, countBuffer);
+    BUFFER_STATE *buffer_state = GetBufferState(buffer);
+    BUFFER_STATE *count_buffer_state = GetBufferState(countBuffer);
     skip |= ValidateMemoryIsBoundToBuffer(device_data, buffer_state, "vkCmdDrawIndirectCountKHR()",
                                           "VUID-vkCmdDrawIndirectCountKHR-buffer-03104");
     skip |= ValidateMemoryIsBoundToBuffer(device_data, count_buffer_state, "vkCmdDrawIndirectCountKHR()",
@@ -13296,8 +13295,8 @@ void CoreChecks::PreCallRecordCmdDrawIndirectCountKHR(VkCommandBuffer commandBuf
                                                       uint32_t stride) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
-    BUFFER_STATE *buffer_state = GetBufferState(device_data, buffer);
-    BUFFER_STATE *count_buffer_state = GetBufferState(device_data, countBuffer);
+    BUFFER_STATE *buffer_state = GetBufferState(buffer);
+    BUFFER_STATE *count_buffer_state = GetBufferState(countBuffer);
     UpdateStateCmdDrawType(device_data, cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS);
     AddCommandBufferBindingBuffer(device_data, cb_state, buffer_state);
     AddCommandBufferBindingBuffer(device_data, cb_state, count_buffer_state);
@@ -13337,8 +13336,8 @@ bool CoreChecks::PreCallValidateCmdDrawIndexedIndirectCountKHR(VkCommandBuffer c
         "vkCmdDrawIndexedIndirectCountKHR()", VK_QUEUE_GRAPHICS_BIT, "VUID-vkCmdDrawIndexedIndirectCountKHR-commandBuffer-cmdpool",
         "VUID-vkCmdDrawIndexedIndirectCountKHR-renderpass", "VUID-vkCmdDrawIndexedIndirectCountKHR-None-03151",
         "VUID-vkCmdDrawIndexedIndirectCountKHR-None-03152");
-    BUFFER_STATE *buffer_state = GetBufferState(device_data, buffer);
-    BUFFER_STATE *count_buffer_state = GetBufferState(device_data, countBuffer);
+    BUFFER_STATE *buffer_state = GetBufferState(buffer);
+    BUFFER_STATE *count_buffer_state = GetBufferState(countBuffer);
     skip |= ValidateMemoryIsBoundToBuffer(device_data, buffer_state, "vkCmdDrawIndexedIndirectCountKHR()",
                                           "VUID-vkCmdDrawIndexedIndirectCountKHR-buffer-03136");
     skip |= ValidateMemoryIsBoundToBuffer(device_data, count_buffer_state, "vkCmdDrawIndexedIndirectCountKHR()",
@@ -13351,8 +13350,8 @@ void CoreChecks::PreCallRecordCmdDrawIndexedIndirectCountKHR(VkCommandBuffer com
                                                              uint32_t maxDrawCount, uint32_t stride) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
-    BUFFER_STATE *buffer_state = GetBufferState(device_data, buffer);
-    BUFFER_STATE *count_buffer_state = GetBufferState(device_data, countBuffer);
+    BUFFER_STATE *buffer_state = GetBufferState(buffer);
+    BUFFER_STATE *count_buffer_state = GetBufferState(countBuffer);
     UpdateStateCmdDrawType(device_data, cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS);
     AddCommandBufferBindingBuffer(device_data, cb_state, buffer_state);
     AddCommandBufferBindingBuffer(device_data, cb_state, count_buffer_state);
@@ -13381,7 +13380,7 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectNV(VkCommandBuffer comma
                                     "VUID-vkCmdDrawMeshTasksIndirectNV-commandBuffer-cmdpool",
                                     "VUID-vkCmdDrawMeshTasksIndirectNV-renderpass", "VUID-vkCmdDrawMeshTasksIndirectNV-None-02154",
                                     "VUID-vkCmdDrawMeshTasksIndirectNV-None-02155");
-    BUFFER_STATE *buffer_state = GetBufferState(device_data, buffer);
+    BUFFER_STATE *buffer_state = GetBufferState(buffer);
     skip |= ValidateMemoryIsBoundToBuffer(device_data, buffer_state, "vkCmdDrawMeshTasksIndirectNV()",
                                           "VUID-vkCmdDrawMeshTasksIndirectNV-buffer-02143");
 
@@ -13393,7 +13392,7 @@ void CoreChecks::PreCallRecordCmdDrawMeshTasksIndirectNV(VkCommandBuffer command
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
     UpdateStateCmdDrawType(device_data, cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS);
-    BUFFER_STATE *buffer_state = GetBufferState(device_data, buffer);
+    BUFFER_STATE *buffer_state = GetBufferState(buffer);
     if (buffer_state) {
         AddCommandBufferBindingBuffer(device_data, cb_state, buffer_state);
     }
@@ -13408,8 +13407,8 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectCountNV(VkCommandBuffer 
         "vkCmdDrawMeshTasksIndirectCountNV()", VK_QUEUE_GRAPHICS_BIT,
         "VUID-vkCmdDrawMeshTasksIndirectCountNV-commandBuffer-cmdpool", "VUID-vkCmdDrawMeshTasksIndirectCountNV-renderpass",
         "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-02189", "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-02190");
-    BUFFER_STATE *buffer_state = GetBufferState(device_data, buffer);
-    BUFFER_STATE *count_buffer_state = GetBufferState(device_data, countBuffer);
+    BUFFER_STATE *buffer_state = GetBufferState(buffer);
+    BUFFER_STATE *count_buffer_state = GetBufferState(countBuffer);
     skip |= ValidateMemoryIsBoundToBuffer(device_data, buffer_state, "vkCmdDrawMeshTasksIndirectCountNV()",
                                           "VUID-vkCmdDrawMeshTasksIndirectCountNV-buffer-02176");
     skip |= ValidateMemoryIsBoundToBuffer(device_data, count_buffer_state, "vkCmdDrawMeshTasksIndirectCountNV()",
@@ -13423,8 +13422,8 @@ void CoreChecks::PreCallRecordCmdDrawMeshTasksIndirectCountNV(VkCommandBuffer co
                                                               uint32_t maxDrawCount, uint32_t stride) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
-    BUFFER_STATE *buffer_state = GetBufferState(device_data, buffer);
-    BUFFER_STATE *count_buffer_state = GetBufferState(device_data, countBuffer);
+    BUFFER_STATE *buffer_state = GetBufferState(buffer);
+    BUFFER_STATE *count_buffer_state = GetBufferState(countBuffer);
     UpdateStateCmdDrawType(device_data, cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS);
     if (buffer_state) {
         AddCommandBufferBindingBuffer(device_data, cb_state, buffer_state);
@@ -13525,7 +13524,7 @@ bool CoreChecks::PreCallValidateGetBufferDeviceAddressEXT(VkDevice device, const
                         "bufferDeviceAddressMultiDevice feature must: be enabled.");
     }
 
-    auto buffer_state = GetBufferState(device_data, pInfo->buffer);
+    auto buffer_state = GetBufferState(pInfo->buffer);
     if (buffer_state) {
         if (!(buffer_state->createInfo.flags & VK_BUFFER_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT_EXT)) {
             skip |= ValidateMemoryIsBoundToBuffer(device_data, buffer_state, "vkGetBufferDeviceAddressEXT()",
