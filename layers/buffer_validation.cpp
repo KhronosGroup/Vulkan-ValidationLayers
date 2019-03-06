@@ -456,10 +456,10 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(layer_data *device_data, 
                                                        GLOBAL_CB_NODE *pCB, const VkRenderPassBeginInfo *pRenderPassBegin,
                                                        const FRAMEBUFFER_STATE *framebuffer_state) {
     bool skip = false;
-    auto const pRenderPassInfo = GetRenderPassState(device_data, pRenderPassBegin->renderPass)->createInfo.ptr();
+    auto const pRenderPassInfo = GetRenderPassState(pRenderPassBegin->renderPass)->createInfo.ptr();
     auto const &framebufferInfo = framebuffer_state->createInfo;
 
-    auto render_pass = GetRenderPassState(device_data, pRenderPassBegin->renderPass)->renderPass;
+    auto render_pass = GetRenderPassState(pRenderPassBegin->renderPass)->renderPass;
     auto framebuffer = framebuffer_state->framebuffer;
 
     if (pRenderPassInfo->attachmentCount != framebufferInfo.attachmentCount) {
@@ -1176,7 +1176,7 @@ bool CoreChecks::VerifyImageLayout(layer_data const *device_data, GLOBAL_CB_NODE
 void CoreChecks::TransitionFinalSubpassLayouts(layer_data *device_data, GLOBAL_CB_NODE *pCB,
                                                const VkRenderPassBeginInfo *pRenderPassBegin,
                                                FRAMEBUFFER_STATE *framebuffer_state) {
-    auto renderPass = GetRenderPassState(device_data, pRenderPassBegin->renderPass);
+    auto renderPass = GetRenderPassState(pRenderPassBegin->renderPass);
     if (!renderPass) return;
 
     const VkRenderPassCreateInfo2KHR *pRenderPassInfo = renderPass->createInfo.ptr();

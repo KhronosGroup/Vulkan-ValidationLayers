@@ -644,17 +644,17 @@ PIPELINE_STATE *CoreChecks::GetPipelineState(VkPipeline pipeline) {
     return it->second.get();
 }
 
-RENDER_PASS_STATE *CoreChecks::GetRenderPassState(layer_data const *dev_data, VkRenderPass renderpass) {
-    auto it = dev_data->renderPassMap.find(renderpass);
-    if (it == dev_data->renderPassMap.end()) {
+RENDER_PASS_STATE *CoreChecks::GetRenderPassState(VkRenderPass renderpass) {
+    auto it = renderPassMap.find(renderpass);
+    if (it == renderPassMap.end()) {
         return nullptr;
     }
     return it->second.get();
 }
 
-std::shared_ptr<RENDER_PASS_STATE> CoreChecks::GetRenderPassStateSharedPtr(layer_data const *dev_data, VkRenderPass renderpass) {
-    auto it = dev_data->renderPassMap.find(renderpass);
-    if (it == dev_data->renderPassMap.end()) {
+std::shared_ptr<RENDER_PASS_STATE> CoreChecks::GetRenderPassStateSharedPtr(VkRenderPass renderpass) {
+    auto it = renderPassMap.find(renderpass);
+    if (it == renderPassMap.end()) {
         return nullptr;
     }
     return it->second;
@@ -2059,7 +2059,7 @@ BASE_NODE *CoreChecks::GetStateStructPtrFromObject(layer_data *dev_data, VK_OBJE
             break;
         }
         case kVulkanObjectTypeRenderPass: {
-            base_ptr = GetRenderPassState(dev_data, reinterpret_cast<VkRenderPass &>(object_struct.handle));
+            base_ptr = GetRenderPassState(reinterpret_cast<VkRenderPass &>(object_struct.handle));
             break;
         }
         case kVulkanObjectTypeDeviceMemory: {
@@ -4971,7 +4971,7 @@ void CoreChecks::PreCallRecordDestroyFramebuffer(VkDevice device, VkFramebuffer 
 bool CoreChecks::PreCallValidateDestroyRenderPass(VkDevice device, VkRenderPass renderPass,
                                                   const VkAllocationCallbacks *pAllocator) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    RENDER_PASS_STATE *rp_state = GetRenderPassState(device_data, renderPass);
+    RENDER_PASS_STATE *rp_state = GetRenderPassState(renderPass);
     VK_OBJECT obj_struct = {HandleToUint64(renderPass), kVulkanObjectTypeRenderPass};
     bool skip = false;
     if (rp_state) {
@@ -4984,7 +4984,7 @@ bool CoreChecks::PreCallValidateDestroyRenderPass(VkDevice device, VkRenderPass 
 void CoreChecks::PreCallRecordDestroyRenderPass(VkDevice device, VkRenderPass renderPass, const VkAllocationCallbacks *pAllocator) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!renderPass) return;
-    RENDER_PASS_STATE *rp_state = GetRenderPassState(device_data, renderPass);
+    RENDER_PASS_STATE *rp_state = GetRenderPassState(renderPass);
     VK_OBJECT obj_struct = {HandleToUint64(renderPass), kVulkanObjectTypeRenderPass};
     InvalidateCommandBuffers(device_data, rp_state->cb_bindings, obj_struct);
     device_data->renderPassMap.erase(renderPass);
@@ -5192,7 +5192,7 @@ bool CoreChecks::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipel
     for (uint32_t i = 0; i < count; i++) {
         cgpl_state->pipe_state.push_back(std::unique_ptr<PIPELINE_STATE>(new PIPELINE_STATE));
         (cgpl_state->pipe_state)[i]->initGraphicsPipeline(&pCreateInfos[i],
-                                                          GetRenderPassStateSharedPtr(device_data, pCreateInfos[i].renderPass));
+                                                          GetRenderPassStateSharedPtr(pCreateInfos[i].renderPass));
         (cgpl_state->pipe_state)[i]->pipeline_layout = *GetPipelineLayout(device_data, pCreateInfos[i].layout);
     }
 
@@ -6301,7 +6301,7 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
                         // renderPass that framebuffer was created with must be compatible with local renderPass
                         skip |=
                             ValidateRenderPassCompatibility(device_data, "framebuffer", framebuffer->rp_state.get(),
-                                                            "command buffer", GetRenderPassState(device_data, pInfo->renderPass),
+                                                            "command buffer", GetRenderPassState(pInfo->renderPass),
                                                             "vkBeginCommandBuffer()", "VUID-VkCommandBufferBeginInfo-flags-00055");
                     }
                 }
@@ -6317,7 +6317,7 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
             }
         }
         if (pInfo && pInfo->renderPass != VK_NULL_HANDLE) {
-            auto renderPass = GetRenderPassState(device_data, pInfo->renderPass);
+            auto renderPass = GetRenderPassState(pInfo->renderPass);
             if (renderPass) {
                 if (pInfo->subpass >= renderPass->createInfo.subpassCount) {
                     skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT,
@@ -6385,7 +6385,7 @@ void CoreChecks::PreCallRecordBeginCommandBuffer(VkCommandBuffer commandBuffer, 
         // If we are a secondary command-buffer and inheriting.  Update the items we should inherit.
         if ((cb_state->createInfo.level != VK_COMMAND_BUFFER_LEVEL_PRIMARY) &&
             (cb_state->beginInfo.flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT)) {
-            cb_state->activeRenderPass = GetRenderPassState(device_data, cb_state->beginInfo.pInheritanceInfo->renderPass);
+            cb_state->activeRenderPass = GetRenderPassState(cb_state->beginInfo.pInheritanceInfo->renderPass);
             cb_state->activeSubpass = cb_state->beginInfo.pInheritanceInfo->subpass;
             cb_state->activeFramebuffer = cb_state->beginInfo.pInheritanceInfo->framebuffer;
             cb_state->framebuffers.insert(cb_state->beginInfo.pInheritanceInfo->framebuffer);
@@ -8979,7 +8979,7 @@ bool CoreChecks::MatchUsage(layer_data *dev_data, uint32_t count, const VkAttach
 bool CoreChecks::ValidateFramebufferCreateInfo(layer_data *dev_data, const VkFramebufferCreateInfo *pCreateInfo) {
     bool skip = false;
 
-    auto rp_state = GetRenderPassState(dev_data, pCreateInfo->renderPass);
+    auto rp_state = GetRenderPassState(pCreateInfo->renderPass);
     if (rp_state) {
         const VkRenderPassCreateInfo2KHR *rpci = rp_state->createInfo.ptr();
         if (rpci->attachmentCount != pCreateInfo->attachmentCount) {
@@ -9130,7 +9130,7 @@ void CoreChecks::PostCallRecordCreateFramebuffer(VkDevice device, const VkFrameb
     if (VK_SUCCESS != result) return;
     // Shadow create info and store in map
     std::unique_ptr<FRAMEBUFFER_STATE> fb_state(
-        new FRAMEBUFFER_STATE(*pFramebuffer, pCreateInfo, GetRenderPassStateSharedPtr(device_data, pCreateInfo->renderPass)));
+        new FRAMEBUFFER_STATE(*pFramebuffer, pCreateInfo, GetRenderPassStateSharedPtr(pCreateInfo->renderPass)));
 
     for (uint32_t i = 0; i < pCreateInfo->attachmentCount; ++i) {
         VkImageView view = pCreateInfo->pAttachments[i];
@@ -10233,7 +10233,7 @@ bool CoreChecks::ValidateCmdBeginRenderPass(layer_data *device_data, VkCommandBu
                                             RenderPassCreateVersion rp_version, const VkRenderPassBeginInfo *pRenderPassBegin) {
     GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
-    auto render_pass_state = pRenderPassBegin ? GetRenderPassState(device_data, pRenderPassBegin->renderPass) : nullptr;
+    auto render_pass_state = pRenderPassBegin ? GetRenderPassState(pRenderPassBegin->renderPass) : nullptr;
     auto framebuffer = pRenderPassBegin ? GetFramebufferState(device_data, pRenderPassBegin->framebuffer) : nullptr;
 
     bool skip = false;
@@ -10337,7 +10337,7 @@ bool CoreChecks::PreCallValidateCmdBeginRenderPass2KHR(VkCommandBuffer commandBu
 void CoreChecks::RecordCmdBeginRenderPassState(layer_data *device_data, VkCommandBuffer commandBuffer,
                                                const VkRenderPassBeginInfo *pRenderPassBegin, const VkSubpassContents contents) {
     GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
-    auto render_pass_state = pRenderPassBegin ? GetRenderPassState(device_data, pRenderPassBegin->renderPass) : nullptr;
+    auto render_pass_state = pRenderPassBegin ? GetRenderPassState(pRenderPassBegin->renderPass) : nullptr;
     auto framebuffer = pRenderPassBegin ? GetFramebufferState(device_data, pRenderPassBegin->framebuffer) : nullptr;
 
     if (render_pass_state) {
@@ -10593,7 +10593,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                             device_data->report_data->FormatHandle(pCommandBuffers[i]).c_str(), i);
         } else if (cb_state->activeRenderPass) {  // Secondary CB w/i RenderPass must have *CONTINUE_BIT set
             if (sub_cb_state->beginInfo.pInheritanceInfo != nullptr) {
-                auto secondary_rp_state = GetRenderPassState(device_data, sub_cb_state->beginInfo.pInheritanceInfo->renderPass);
+                auto secondary_rp_state = GetRenderPassState(sub_cb_state->beginInfo.pInheritanceInfo->renderPass);
                 if (!(sub_cb_state->beginInfo.flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT)) {
                     skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT,
                                     VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT, HandleToUint64(pCommandBuffers[i]),
