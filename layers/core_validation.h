@@ -245,7 +245,7 @@ class CoreChecks : public ValidationObject {
     uint32_t physical_device_count;
 
     // Class Declarations for helper functions
-    cvdescriptorset::DescriptorSet* GetSetNode(const layer_data*, VkDescriptorSet);
+    cvdescriptorset::DescriptorSet* GetSetNode(VkDescriptorSet);
     DESCRIPTOR_POOL_STATE* GetDescriptorPoolState(const layer_data*, const VkDescriptorPool);
     BUFFER_STATE* GetBufferState(const layer_data*, VkBuffer);
     IMAGE_STATE* GetImageState(const layer_data*, VkImage);

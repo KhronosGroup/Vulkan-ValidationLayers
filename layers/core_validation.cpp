@@ -885,9 +885,9 @@ bool CoreChecks::ValidateRenderPassCompatibility(layer_data const *dev_data, con
 }
 
 // Return Set node ptr for specified set or else NULL
-cvdescriptorset::DescriptorSet *CoreChecks::GetSetNode(const layer_data *dev_data, VkDescriptorSet set) {
-    auto set_it = dev_data->setMap.find(set);
-    if (set_it == dev_data->setMap.end()) {
+cvdescriptorset::DescriptorSet *CoreChecks::GetSetNode(VkDescriptorSet set) {
+    auto set_it = setMap.find(set);
+    if (set_it == setMap.end()) {
         return NULL;
     }
     return set_it->second;
@@ -2012,7 +2012,7 @@ BASE_NODE *CoreChecks::GetStateStructPtrFromObject(layer_data *dev_data, VK_OBJE
     BASE_NODE *base_ptr = nullptr;
     switch (object_struct.type) {
         case kVulkanObjectTypeDescriptorSet: {
-            base_ptr = GetSetNode(dev_data, reinterpret_cast<VkDescriptorSet &>(object_struct.handle));
+            base_ptr = GetSetNode(reinterpret_cast<VkDescriptorSet &>(object_struct.handle));
             break;
         }
         case kVulkanObjectTypeSampler: {
@@ -6977,7 +6977,7 @@ void CoreChecks::PreCallRecordCmdBindDescriptorSets(VkCommandBuffer commandBuffe
     // Construct a list of the descriptors
     bool found_non_null = false;
     for (uint32_t i = 0; i < setCount; i++) {
-        cvdescriptorset::DescriptorSet *descriptor_set = GetSetNode(device_data, pDescriptorSets[i]);
+        cvdescriptorset::DescriptorSet *descriptor_set = GetSetNode(pDescriptorSets[i]);
         descriptor_sets.emplace_back(descriptor_set);
         found_non_null |= descriptor_set != nullptr;
     }
@@ -7031,7 +7031,7 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorSets(VkCommandBuffer commandBuf
     }
     auto pipeline_layout = GetPipelineLayout(device_data, layout);
     for (uint32_t set_idx = 0; set_idx < setCount; set_idx++) {
-        cvdescriptorset::DescriptorSet *descriptor_set = GetSetNode(device_data, pDescriptorSets[set_idx]);
+        cvdescriptorset::DescriptorSet *descriptor_set = GetSetNode(pDescriptorSets[set_idx]);
         if (descriptor_set) {
             // Verify that set being bound is compatible with overlapping setLayout of pipelineLayout
             if (!VerifySetLayoutCompatibility(descriptor_set, pipeline_layout, set_idx + firstSet, error_string)) {

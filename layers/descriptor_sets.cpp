@@ -1718,7 +1718,7 @@ bool CoreChecks::ValidateUpdateDescriptorSets(const debug_report_data *report_da
     // Validate Write updates
     for (uint32_t i = 0; i < write_count; i++) {
         auto dest_set = p_wds[i].dstSet;
-        auto set_node = GetSetNode(dev_data, dest_set);
+        auto set_node = GetSetNode(dest_set);
         if (!set_node) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_EXT,
                             HandleToUint64(dest_set), kVUID_Core_DrawState_InvalidDescriptorSet,
@@ -1739,8 +1739,8 @@ bool CoreChecks::ValidateUpdateDescriptorSets(const debug_report_data *report_da
     for (uint32_t i = 0; i < copy_count; ++i) {
         auto dst_set = p_cds[i].dstSet;
         auto src_set = p_cds[i].srcSet;
-        auto src_node = GetSetNode(dev_data, src_set);
-        auto dst_node = GetSetNode(dev_data, dst_set);
+        auto src_node = GetSetNode(src_set);
+        auto dst_node = GetSetNode(dst_set);
         // Object_tracker verifies that src & dest descriptor set are valid
         assert(src_node);
         assert(dst_node);
@@ -1767,7 +1767,7 @@ void cvdescriptorset::PerformUpdateDescriptorSets(layer_data *dev_data, uint32_t
     uint32_t i = 0;
     for (i = 0; i < write_count; ++i) {
         auto dest_set = p_wds[i].dstSet;
-        auto set_node = dev_data->GetSetNode(dev_data, dest_set);
+        auto set_node = dev_data->GetSetNode(dest_set);
         if (set_node) {
             set_node->PerformWriteUpdate(&p_wds[i]);
         }
@@ -1776,8 +1776,8 @@ void cvdescriptorset::PerformUpdateDescriptorSets(layer_data *dev_data, uint32_t
     for (i = 0; i < copy_count; ++i) {
         auto dst_set = p_cds[i].dstSet;
         auto src_set = p_cds[i].srcSet;
-        auto src_node = dev_data->GetSetNode(dev_data, src_set);
-        auto dst_node = dev_data->GetSetNode(dev_data, dst_set);
+        auto src_node = dev_data->GetSetNode(src_set);
+        auto dst_node = dev_data->GetSetNode(dst_set);
         if (src_node && dst_node) {
             dst_node->PerformCopyUpdate(&p_cds[i], src_node);
         }
