@@ -1318,7 +1318,7 @@ cvdescriptorset::SamplerDescriptor::SamplerDescriptor(const VkSampler *immut) : 
 }
 // Validate given sampler. Currently this only checks to make sure it exists in the samplerMap
 bool cvdescriptorset::ValidateSampler(const VkSampler sampler, layer_data *dev_data) {
-    return (dev_data->GetSamplerState(dev_data, sampler) != nullptr);
+    return (dev_data->GetSamplerState(sampler) != nullptr);
 }
 
 bool cvdescriptorset::ValidateImageUpdate(VkImageView image_view, VkImageLayout image_layout, VkDescriptorType type,
@@ -1563,7 +1563,7 @@ void cvdescriptorset::SamplerDescriptor::CopyUpdate(const Descriptor *src) {
 
 void cvdescriptorset::SamplerDescriptor::UpdateDrawState(layer_data *dev_data, GLOBAL_CB_NODE *cb_node) {
     if (!immutable_) {
-        auto sampler_state = dev_data->GetSamplerState(dev_data, sampler_);
+        auto sampler_state = dev_data->GetSamplerState(sampler_);
         if (sampler_state) dev_data->AddCommandBufferBindingSampler(cb_node, sampler_state);
     }
 }
@@ -1603,7 +1603,7 @@ void cvdescriptorset::ImageSamplerDescriptor::CopyUpdate(const Descriptor *src) 
 void cvdescriptorset::ImageSamplerDescriptor::UpdateDrawState(layer_data *dev_data, GLOBAL_CB_NODE *cb_node) {
     // First add binding for any non-immutable sampler
     if (!immutable_) {
-        auto sampler_state = dev_data->GetSamplerState(dev_data, sampler_);
+        auto sampler_state = dev_data->GetSamplerState(sampler_);
         if (sampler_state) dev_data->AddCommandBufferBindingSampler(cb_node, sampler_state);
     }
     // Add binding for image
@@ -2197,7 +2197,7 @@ bool cvdescriptorset::DescriptorSet::VerifyWriteUpdateContents(const VkWriteDesc
                 if (device_data_->GetDeviceExtensions(device_data_)->vk_khr_sampler_ycbcr_conversion) {
                     ImageSamplerDescriptor *desc = (ImageSamplerDescriptor *)descriptors_[index].get();
                     if (desc->IsImmutableSampler()) {
-                        auto sampler_state = device_data_->GetSamplerState(device_data_, desc->GetSampler());
+                        auto sampler_state = device_data_->GetSamplerState(desc->GetSampler());
                         auto iv_state = device_data_->GetImageViewState(device_data_, image_view);
                         if (iv_state && sampler_state) {
                             if (iv_state->samplerConversion != sampler_state->samplerConversion) {
