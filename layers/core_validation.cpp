@@ -660,9 +660,9 @@ std::shared_ptr<RENDER_PASS_STATE> CoreChecks::GetRenderPassStateSharedPtr(VkRen
     return it->second;
 }
 
-FRAMEBUFFER_STATE *CoreChecks::GetFramebufferState(const layer_data *dev_data, VkFramebuffer framebuffer) {
-    auto it = dev_data->frameBufferMap.find(framebuffer);
-    if (it == dev_data->frameBufferMap.end()) {
+FRAMEBUFFER_STATE *CoreChecks::GetFramebufferState(VkFramebuffer framebuffer) {
+    auto it = frameBufferMap.find(framebuffer);
+    if (it == frameBufferMap.end()) {
         return nullptr;
     }
     return it->second.get();
@@ -2055,7 +2055,7 @@ BASE_NODE *CoreChecks::GetStateStructPtrFromObject(layer_data *dev_data, VK_OBJE
             break;
         }
         case kVulkanObjectTypeFramebuffer: {
-            base_ptr = GetFramebufferState(dev_data, reinterpret_cast<VkFramebuffer &>(object_struct.handle));
+            base_ptr = GetFramebufferState(reinterpret_cast<VkFramebuffer &>(object_struct.handle));
             break;
         }
         case kVulkanObjectTypeRenderPass: {
@@ -2152,7 +2152,7 @@ void CoreChecks::ResetCommandBufferState(layer_data *dev_data, const VkCommandBu
         pCB->object_bindings.clear();
         // Remove this cmdBuffer's reference from each FrameBuffer's CB ref list
         for (auto framebuffer : pCB->framebuffers) {
-            auto fb_state = GetFramebufferState(dev_data, framebuffer);
+            auto fb_state = GetFramebufferState(framebuffer);
             if (fb_state) fb_state->cb_bindings.erase(pCB);
         }
         pCB->framebuffers.clear();
@@ -4948,7 +4948,7 @@ void CoreChecks::InvalidateCommandBuffers(const layer_data *dev_data, std::unord
 bool CoreChecks::PreCallValidateDestroyFramebuffer(VkDevice device, VkFramebuffer framebuffer,
                                                    const VkAllocationCallbacks *pAllocator) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    FRAMEBUFFER_STATE *framebuffer_state = GetFramebufferState(device_data, framebuffer);
+    FRAMEBUFFER_STATE *framebuffer_state = GetFramebufferState(framebuffer);
     VK_OBJECT obj_struct = {HandleToUint64(framebuffer), kVulkanObjectTypeFramebuffer};
     bool skip = false;
     if (framebuffer_state) {
@@ -4962,7 +4962,7 @@ void CoreChecks::PreCallRecordDestroyFramebuffer(VkDevice device, VkFramebuffer 
                                                  const VkAllocationCallbacks *pAllocator) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!framebuffer) return;
-    FRAMEBUFFER_STATE *framebuffer_state = GetFramebufferState(device_data, framebuffer);
+    FRAMEBUFFER_STATE *framebuffer_state = GetFramebufferState(framebuffer);
     VK_OBJECT obj_struct = {HandleToUint64(framebuffer), kVulkanObjectTypeFramebuffer};
     InvalidateCommandBuffers(device_data, framebuffer_state->cb_bindings, obj_struct);
     device_data->frameBufferMap.erase(framebuffer);
@@ -6295,7 +6295,7 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
         } else {
             if (pBeginInfo->flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT) {
                 assert(pInfo->renderPass);
-                auto framebuffer = GetFramebufferState(device_data, pInfo->framebuffer);
+                auto framebuffer = GetFramebufferState(pInfo->framebuffer);
                 if (framebuffer) {
                     if (framebuffer->createInfo.renderPass != pInfo->renderPass) {
                         // renderPass that framebuffer was created with must be compatible with local renderPass
@@ -6365,7 +6365,7 @@ void CoreChecks::PreCallRecordBeginCommandBuffer(VkCommandBuffer commandBuffer, 
         if (pInfo) {
             if (pBeginInfo->flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT) {
                 assert(pInfo->renderPass);
-                auto framebuffer = GetFramebufferState(device_data, pInfo->framebuffer);
+                auto framebuffer = GetFramebufferState(pInfo->framebuffer);
                 if (framebuffer) {
                     // Connect this framebuffer and its children to this cmdBuffer
                     AddFramebufferBinding(device_data, cb_state, framebuffer);
@@ -7718,7 +7718,7 @@ bool CoreChecks::ValidateImageBarrierImage(layer_data *device_data, const char *
                                            const safe_VkSubpassDescription2KHR &sub_desc, uint64_t rp_handle, uint32_t img_index,
                                            const VkImageMemoryBarrier &img_barrier) {
     bool skip = false;
-    const auto &fb_state = GetFramebufferState(device_data, framebuffer);
+    const auto &fb_state = GetFramebufferState(framebuffer);
     assert(fb_state);
     const auto img_bar_image = img_barrier.image;
     bool image_match = false;
@@ -10198,8 +10198,7 @@ bool CoreChecks::ValidatePrimaryCommandBuffer(const layer_data *dev_data, const 
 
 bool CoreChecks::VerifyRenderAreaBounds(const layer_data *dev_data, const VkRenderPassBeginInfo *pRenderPassBegin) {
     bool skip = false;
-    const safe_VkFramebufferCreateInfo *pFramebufferInfo =
-        &GetFramebufferState(dev_data, pRenderPassBegin->framebuffer)->createInfo;
+    const safe_VkFramebufferCreateInfo *pFramebufferInfo = &GetFramebufferState(pRenderPassBegin->framebuffer)->createInfo;
     if (pRenderPassBegin->renderArea.offset.x < 0 ||
         (pRenderPassBegin->renderArea.offset.x + pRenderPassBegin->renderArea.extent.width) > pFramebufferInfo->width ||
         pRenderPassBegin->renderArea.offset.y < 0 ||
@@ -10234,7 +10233,7 @@ bool CoreChecks::ValidateCmdBeginRenderPass(layer_data *device_data, VkCommandBu
     GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
     auto render_pass_state = pRenderPassBegin ? GetRenderPassState(pRenderPassBegin->renderPass) : nullptr;
-    auto framebuffer = pRenderPassBegin ? GetFramebufferState(device_data, pRenderPassBegin->framebuffer) : nullptr;
+    auto framebuffer = pRenderPassBegin ? GetFramebufferState(pRenderPassBegin->framebuffer) : nullptr;
 
     bool skip = false;
     const bool use_rp2 = (rp_version == RENDER_PASS_VERSION_2);
@@ -10297,7 +10296,7 @@ bool CoreChecks::ValidateCmdBeginRenderPass(layer_data *device_data, VkCommandBu
         }
         skip |= VerifyRenderAreaBounds(device_data, pRenderPassBegin);
         skip |= VerifyFramebufferAndRenderPassLayouts(device_data, rp_version, cb_state, pRenderPassBegin,
-                                                      GetFramebufferState(device_data, pRenderPassBegin->framebuffer));
+                                                      GetFramebufferState(pRenderPassBegin->framebuffer));
         if (framebuffer->rp_state->renderPass != render_pass_state->renderPass) {
             skip |= ValidateRenderPassCompatibility(device_data, "render pass", render_pass_state, "framebuffer",
                                                     framebuffer->rp_state.get(), function_name,
@@ -10338,7 +10337,7 @@ void CoreChecks::RecordCmdBeginRenderPassState(layer_data *device_data, VkComman
                                                const VkRenderPassBeginInfo *pRenderPassBegin, const VkSubpassContents contents) {
     GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     auto render_pass_state = pRenderPassBegin ? GetRenderPassState(pRenderPassBegin->renderPass) : nullptr;
-    auto framebuffer = pRenderPassBegin ? GetFramebufferState(device_data, pRenderPassBegin->framebuffer) : nullptr;
+    auto framebuffer = pRenderPassBegin ? GetFramebufferState(pRenderPassBegin->framebuffer) : nullptr;
 
     if (render_pass_state) {
         cb_state->activeFramebuffer = pRenderPassBegin->framebuffer;
@@ -10415,7 +10414,7 @@ void CoreChecks::RecordCmdNextSubpass(layer_data *device_data, VkCommandBuffer c
     cb_state->activeSubpass++;
     cb_state->activeSubpassContents = contents;
     TransitionSubpassLayouts(device_data, cb_state, cb_state->activeRenderPass, cb_state->activeSubpass,
-                             GetFramebufferState(device_data, cb_state->activeRenderPassBeginInfo.framebuffer));
+                             GetFramebufferState(cb_state->activeRenderPassBeginInfo.framebuffer));
 }
 
 void CoreChecks::PostCallRecordCmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpassContents contents) {
@@ -10475,7 +10474,7 @@ bool CoreChecks::PreCallValidateCmdEndRenderPass2KHR(VkCommandBuffer commandBuff
 
 void CoreChecks::RecordCmdEndRenderPassState(layer_data *device_data, VkCommandBuffer commandBuffer) {
     GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
-    FRAMEBUFFER_STATE *framebuffer = GetFramebufferState(device_data, cb_state->activeFramebuffer);
+    FRAMEBUFFER_STATE *framebuffer = GetFramebufferState(cb_state->activeFramebuffer);
     TransitionFinalSubpassLayouts(device_data, cb_state, &cb_state->activeRenderPassBeginInfo, framebuffer);
     cb_state->activeRenderPass = nullptr;
     cb_state->activeSubpass = 0;
@@ -10510,7 +10509,7 @@ bool CoreChecks::ValidateFramebuffer(layer_data *dev_data, VkCommandBuffer prima
                             dev_data->report_data->FormatHandle(secondary_fb).c_str(),
                             dev_data->report_data->FormatHandle(primary_fb).c_str());
         }
-        auto fb = GetFramebufferState(dev_data, secondary_fb);
+        auto fb = GetFramebufferState(secondary_fb);
         if (!fb) {
             skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                             HandleToUint64(primaryBuffer), kVUID_Core_DrawState_InvalidSecondaryCommandBuffer,
