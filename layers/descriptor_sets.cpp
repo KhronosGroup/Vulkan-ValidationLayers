@@ -798,7 +798,7 @@ bool cvdescriptorset::DescriptorSet::ValidateDrawState(const std::map<uint32_t, 
                     }
                     auto reqs = binding_pair.second;
 
-                    auto image_view_state = device_data_->GetImageViewState(device_data_, image_view);
+                    auto image_view_state = device_data_->GetImageViewState(image_view);
                     if (nullptr == image_view_state) {
                         // Image view must have been destroyed since initial update. Could potentially flag the descriptor
                         //  as "invalid" (updated = false) at DestroyImageView() time and detect this error at bind time
@@ -1325,7 +1325,7 @@ bool cvdescriptorset::ValidateImageUpdate(VkImageView image_view, VkImageLayout 
                                           layer_data *dev_data, const char *func_name, std::string *error_code,
                                           std::string *error_msg) {
     *error_code = "VUID-VkWriteDescriptorSet-descriptorType-00326";
-    auto iv_state = dev_data->GetImageViewState(dev_data, image_view);
+    auto iv_state = dev_data->GetImageViewState(image_view);
     if (!iv_state) {
         std::stringstream error_str;
         error_str << "Invalid VkImageView: " << image_view;
@@ -1607,7 +1607,7 @@ void cvdescriptorset::ImageSamplerDescriptor::UpdateDrawState(layer_data *dev_da
         if (sampler_state) dev_data->AddCommandBufferBindingSampler(cb_node, sampler_state);
     }
     // Add binding for image
-    auto iv_state = dev_data->GetImageViewState(dev_data, image_view_);
+    auto iv_state = dev_data->GetImageViewState(image_view_);
     if (iv_state) {
         dev_data->AddCommandBufferBindingImageView(dev_data, cb_node, iv_state);
     }
@@ -1640,7 +1640,7 @@ void cvdescriptorset::ImageDescriptor::CopyUpdate(const Descriptor *src) {
 
 void cvdescriptorset::ImageDescriptor::UpdateDrawState(layer_data *dev_data, GLOBAL_CB_NODE *cb_node) {
     // Add binding for image
-    auto iv_state = dev_data->GetImageViewState(dev_data, image_view_);
+    auto iv_state = dev_data->GetImageViewState(image_view_);
     if (iv_state) {
         dev_data->AddCommandBufferBindingImageView(dev_data, cb_node, iv_state);
     }
@@ -2198,7 +2198,7 @@ bool cvdescriptorset::DescriptorSet::VerifyWriteUpdateContents(const VkWriteDesc
                     ImageSamplerDescriptor *desc = (ImageSamplerDescriptor *)descriptors_[index].get();
                     if (desc->IsImmutableSampler()) {
                         auto sampler_state = device_data_->GetSamplerState(desc->GetSampler());
-                        auto iv_state = device_data_->GetImageViewState(device_data_, image_view);
+                        auto iv_state = device_data_->GetImageViewState(image_view);
                         if (iv_state && sampler_state) {
                             if (iv_state->samplerConversion != sampler_state->samplerConversion) {
                                 *error_code = "VUID-VkWriteDescriptorSet-descriptorType-01948";

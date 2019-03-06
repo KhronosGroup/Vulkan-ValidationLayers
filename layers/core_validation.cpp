@@ -131,9 +131,9 @@ BUFFER_STATE *CoreChecks::GetBufferState(VkBuffer buffer) {
 }
 
 // Return IMAGE_VIEW_STATE ptr for specified imageView or else NULL
-IMAGE_VIEW_STATE *CoreChecks::GetImageViewState(layer_data *dev_data, VkImageView image_view) {
-    auto iv_it = dev_data->imageViewMap.find(image_view);
-    if (iv_it == dev_data->imageViewMap.end()) {
+IMAGE_VIEW_STATE *CoreChecks::GetImageViewState(VkImageView image_view) {
+    auto iv_it = imageViewMap.find(image_view);
+    if (iv_it == imageViewMap.end()) {
         return nullptr;
     }
     return iv_it->second.get();
@@ -150,13 +150,13 @@ GlobalQFOTransferBarrierMap<VkBufferMemoryBarrier> &CoreChecks::GetGlobalQFORele
 }
 
 // Get the image viewstate for a given framebuffer attachment
-IMAGE_VIEW_STATE *CoreChecks::GetAttachmentImageViewState(layer_data *dev_data, FRAMEBUFFER_STATE *framebuffer, uint32_t index) {
+IMAGE_VIEW_STATE *CoreChecks::GetAttachmentImageViewState(FRAMEBUFFER_STATE *framebuffer, uint32_t index) {
     assert(framebuffer && (index < framebuffer->createInfo.attachmentCount));
 #ifdef FRAMEBUFFER_ATTACHMENT_STATE_CACHE
     return framebuffer->attachments[index].view_state;
 #else
     const VkImageView &image_view = framebuffer->createInfo.pAttachments[index];
-    return GetImageViewState(dev_data, image_view);
+    return GetImageViewState(image_view);
 #endif
 }
 
@@ -2039,7 +2039,7 @@ BASE_NODE *CoreChecks::GetStateStructPtrFromObject(layer_data *dev_data, VK_OBJE
             break;
         }
         case kVulkanObjectTypeImageView: {
-            base_ptr = GetImageViewState(dev_data, reinterpret_cast<VkImageView &>(object_struct.handle));
+            base_ptr = GetImageViewState(reinterpret_cast<VkImageView &>(object_struct.handle));
             break;
         }
         case kVulkanObjectTypeEvent: {
@@ -6265,7 +6265,7 @@ void CoreChecks::AddFramebufferBinding(layer_data *dev_data, GLOBAL_CB_NODE *cb_
 
     const uint32_t attachmentCount = fb_state->createInfo.attachmentCount;
     for (uint32_t attachment = 0; attachment < attachmentCount; ++attachment) {
-        auto view_state = GetAttachmentImageViewState(dev_data, fb_state, attachment);
+        auto view_state = GetAttachmentImageViewState(fb_state, attachment);
         if (view_state) {
             AddCommandBufferBindingImageView(dev_data, cb_state, view_state);
         }
@@ -6584,7 +6584,7 @@ bool CoreChecks::PreCallValidateCmdBindShadingRateImageNV(VkCommandBuffer comman
     }
 
     if (imageView != VK_NULL_HANDLE) {
-        auto view_state = GetImageViewState(device_data, imageView);
+        auto view_state = GetImageViewState(imageView);
         auto &ivci = view_state->create_info;
 
         if (!view_state || (ivci.viewType != VK_IMAGE_VIEW_TYPE_2D && ivci.viewType != VK_IMAGE_VIEW_TYPE_2D_ARRAY)) {
@@ -6637,7 +6637,7 @@ void CoreChecks::PreCallRecordCmdBindShadingRateImageNV(VkCommandBuffer commandB
     GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
 
     if (imageView != VK_NULL_HANDLE) {
-        auto view_state = GetImageViewState(device_data, imageView);
+        auto view_state = GetImageViewState(imageView);
         AddCommandBufferBindingImageView(device_data, cb_state, view_state);
     }
 }
@@ -7743,7 +7743,7 @@ bool CoreChecks::ValidateImageBarrierImage(layer_data *device_data, const char *
     // Verify that a framebuffer image matches barrier image
     const auto attachmentCount = fb_state->createInfo.attachmentCount;
     for (uint32_t attachment = 0; attachment < attachmentCount; ++attachment) {
-        auto view_state = GetAttachmentImageViewState(device_data, fb_state, attachment);
+        auto view_state = GetAttachmentImageViewState(fb_state, attachment);
         if (view_state && (img_bar_image == view_state->create_info.image)) {
             image_match = true;
             attach_index = attachment;
@@ -8964,7 +8964,7 @@ bool CoreChecks::MatchUsage(layer_data *dev_data, uint32_t count, const VkAttach
             // Attachment counts are verified elsewhere, but prevent an invalid access
             if (attachments[attach].attachment < fbci->attachmentCount) {
                 const VkImageView *image_view = &fbci->pAttachments[attachments[attach].attachment];
-                auto view_state = GetImageViewState(dev_data, *image_view);
+                auto view_state = GetImageViewState(*image_view);
                 if (view_state) {
                     const VkImageCreateInfo *ici = &GetImageState(view_state->create_info.image)->createInfo;
                     if (ici != nullptr) {
@@ -9009,7 +9009,7 @@ bool CoreChecks::ValidateFramebufferCreateInfo(layer_data *dev_data, const VkFra
             // attachmentCounts match, so make sure corresponding attachment details line up
             const VkImageView *image_views = pCreateInfo->pAttachments;
             for (uint32_t i = 0; i < pCreateInfo->attachmentCount; ++i) {
-                auto view_state = GetImageViewState(dev_data, image_views[i]);
+                auto view_state = GetImageViewState(image_views[i]);
                 auto &ivci = view_state->create_info;
                 if (ivci.format != rpci->pAttachments[i].format) {
                     skip |=
@@ -9150,7 +9150,7 @@ void CoreChecks::PostCallRecordCreateFramebuffer(VkDevice device, const VkFrameb
 
     for (uint32_t i = 0; i < pCreateInfo->attachmentCount; ++i) {
         VkImageView view = pCreateInfo->pAttachments[i];
-        auto view_state = GetImageViewState(device_data, view);
+        auto view_state = GetImageViewState(view);
         if (!view_state) {
             continue;
         }
@@ -9275,8 +9275,8 @@ bool CoreChecks::ValidateDependencies(layer_data *dev_data, FRAMEBUFFER_STATE co
                 overlapping_attachments[j].push_back(i);
                 continue;
             }
-            auto view_state_i = GetImageViewState(dev_data, viewi);
-            auto view_state_j = GetImageViewState(dev_data, viewj);
+            auto view_state_i = GetImageViewState(viewi);
+            auto view_state_j = GetImageViewState(viewj);
             if (!view_state_i || !view_state_j) {
                 continue;
             }
