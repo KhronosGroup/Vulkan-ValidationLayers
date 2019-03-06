@@ -1993,7 +1993,7 @@ bool CoreChecks::ValidatePipelineShaderStage(layer_data *dev_data, VkPipelineSha
                                              PIPELINE_STATE *pipeline, shader_module const **out_module,
                                              spirv_inst_iter *out_entrypoint, bool check_point_size) {
     bool skip = false;
-    auto module = *out_module = GetShaderModuleState(dev_data, pStage->module);
+    auto module = *out_module = GetShaderModuleState(pStage->module);
     auto report_data = GetReportData(dev_data);
 
     if (!module->has_valid_spirv) return false;
