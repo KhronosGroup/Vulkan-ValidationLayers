@@ -740,7 +740,7 @@ bool cvdescriptorset::DescriptorSet::ValidateDrawState(const std::map<uint32_t, 
                 if (descriptor_class == GeneralBuffer) {
                     // Verify that buffers are valid
                     auto buffer = static_cast<BufferDescriptor *>(descriptors_[i].get())->GetBuffer();
-                    auto buffer_node = device_data_->GetBufferState(device_data_, buffer);
+                    auto buffer_node = device_data_->GetBufferState(buffer);
                     if (!buffer_node) {
                         std::stringstream error_str;
                         error_str << "Descriptor in binding #" << binding << " at global descriptor index " << i
@@ -1679,7 +1679,7 @@ void cvdescriptorset::BufferDescriptor::CopyUpdate(const Descriptor *src) {
 }
 
 void cvdescriptorset::BufferDescriptor::UpdateDrawState(layer_data *dev_data, GLOBAL_CB_NODE *cb_node) {
-    auto buffer_node = dev_data->GetBufferState(dev_data, buffer_);
+    auto buffer_node = dev_data->GetBufferState(buffer_);
     if (buffer_node) dev_data->AddCommandBufferBindingBuffer(dev_data, cb_node, buffer_node);
 }
 
@@ -2093,7 +2093,7 @@ bool cvdescriptorset::DescriptorSet::ValidateBufferUpdate(VkDescriptorBufferInfo
                                                           const char *func_name, std::string *error_code,
                                                           std::string *error_msg) const {
     // First make sure that buffer is valid
-    auto buffer_node = device_data_->GetBufferState(device_data_, buffer_info->buffer);
+    auto buffer_node = device_data_->GetBufferState(buffer_info->buffer);
     // Any invalid buffer should already be caught by object_tracker
     assert(buffer_node);
     if (device_data_->ValidateMemoryIsBoundToBuffer(device_data_, buffer_node, func_name,
@@ -2261,7 +2261,7 @@ bool cvdescriptorset::DescriptorSet::VerifyWriteUpdateContents(const VkWriteDesc
                     return false;
                 }
                 auto buffer = bv_state->create_info.buffer;
-                auto buffer_state = device_data_->GetBufferState(device_data_, buffer);
+                auto buffer_state = device_data_->GetBufferState(buffer);
                 // Verify that buffer underlying the view hasn't been destroyed prematurely
                 if (!buffer_state) {
                     *error_code = "VUID-VkWriteDescriptorSet-descriptorType-00323";
@@ -2391,7 +2391,7 @@ bool cvdescriptorset::DescriptorSet::VerifyCopyUpdateContents(const VkCopyDescri
                     return false;
                 }
                 auto buffer = bv_state->create_info.buffer;
-                if (!ValidateBufferUsage(device_data_->GetBufferState(device_data_, buffer), type, error_code, error_msg)) {
+                if (!ValidateBufferUsage(device_data_->GetBufferState(buffer), type, error_code, error_msg)) {
                     std::stringstream error_str;
                     error_str << "Attempted copy update to texel buffer descriptor failed due to: " << error_msg->c_str();
                     *error_msg = error_str.str();
@@ -2405,7 +2405,7 @@ bool cvdescriptorset::DescriptorSet::VerifyCopyUpdateContents(const VkCopyDescri
                 const auto src_desc = src_set->descriptors_[index + di].get();
                 if (!src_desc->updated) continue;
                 auto buffer = static_cast<BufferDescriptor *>(src_desc)->GetBuffer();
-                if (!ValidateBufferUsage(device_data_->GetBufferState(device_data_, buffer), type, error_code, error_msg)) {
+                if (!ValidateBufferUsage(device_data_->GetBufferState(buffer), type, error_code, error_msg)) {
                     std::stringstream error_str;
                     error_str << "Attempted copy update to buffer descriptor failed due to: " << error_msg->c_str();
                     *error_msg = error_str.str();
