@@ -1828,9 +1828,9 @@ void CoreChecks::DeletePools(layer_data *dev_data) {
 }
 
 // For given CB object, fetch associated CB Node from map
-GLOBAL_CB_NODE *CoreChecks::GetCBNode(layer_data const *dev_data, const VkCommandBuffer cb) {
-    auto it = dev_data->commandBufferMap.find(cb);
-    if (it == dev_data->commandBufferMap.end()) {
+GLOBAL_CB_NODE *CoreChecks::GetCBNode(const VkCommandBuffer cb) {
+    auto it = commandBufferMap.find(cb);
+    if (it == commandBufferMap.end()) {
         return NULL;
     }
     return it->second;
@@ -2736,7 +2736,7 @@ void CoreChecks::RetireWorkOnQueue(layer_data *dev_data, QUEUE_STATE *pQueue, ui
         }
 
         for (auto cb : submission.cbs) {
-            auto cb_node = GetCBNode(dev_data, cb);
+            auto cb_node = GetCBNode(cb);
             if (!cb_node) {
                 continue;
             }
@@ -3075,7 +3075,7 @@ void CoreChecks::PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, 
             }
         }
         for (uint32_t i = 0; i < submit->commandBufferCount; i++) {
-            auto cb_node = GetCBNode(device_data, submit->pCommandBuffers[i]);
+            auto cb_node = GetCBNode(submit->pCommandBuffers[i]);
             if (cb_node) {
                 cbs.push_back(submit->pCommandBuffers[i]);
                 for (auto secondaryCmdBuffer : cb_node->linkedCommandBuffers) {
@@ -3166,7 +3166,7 @@ bool CoreChecks::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount,
         QFOTransferCBScoreboards<VkBufferMemoryBarrier> qfo_buffer_scoreboards;
 
         for (uint32_t i = 0; i < submit->commandBufferCount; i++) {
-            auto cb_node = GetCBNode(device_data, submit->pCommandBuffers[i]);
+            auto cb_node = GetCBNode(submit->pCommandBuffers[i]);
             if (cb_node) {
                 skip |= ValidateCmdBufImageLayouts(device_data, cb_node, device_data->imageLayoutMap, localImageLayoutMap);
                 current_cmds.push_back(submit->pCommandBuffers[i]);
@@ -4151,7 +4151,7 @@ void CoreChecks::PostCallRecordGetQueryPoolResults(VkDevice device, VkQueryPool 
             if (qif_pair != queries_in_flight.end() && query_state_pair != device_data->queryToStateMap.end() &&
                 query_state_pair->second) {
                 for (auto cmd_buffer : qif_pair->second) {
-                    auto cb = GetCBNode(device_data, cmd_buffer);
+                    auto cb = GetCBNode(cmd_buffer);
                     auto query_event_pair = cb->waitedEventsBeforeQueryReset.find(query);
                     if (query_event_pair != cb->waitedEventsBeforeQueryReset.end()) {
                         for (auto event : query_event_pair->second) {
@@ -4761,7 +4761,7 @@ bool CoreChecks::CheckCommandBuffersInFlight(layer_data *dev_data, COMMAND_POOL_
                                              const char *error_code) {
     bool skip = false;
     for (auto cmd_buffer : pPool->commandBuffers) {
-        skip |= CheckCommandBufferInFlight(dev_data, GetCBNode(dev_data, cmd_buffer), action, error_code);
+        skip |= CheckCommandBufferInFlight(dev_data, GetCBNode(cmd_buffer), action, error_code);
     }
     return skip;
 }
@@ -4773,7 +4773,7 @@ void CoreChecks::FreeCommandBufferStates(layer_data *dev_data, COMMAND_POOL_NODE
         GpuPreCallRecordFreeCommandBuffers(dev_data, command_buffer_count, command_buffers);
     }
     for (uint32_t i = 0; i < command_buffer_count; i++) {
-        auto cb_state = GetCBNode(dev_data, command_buffers[i]);
+        auto cb_state = GetCBNode(command_buffers[i]);
         // Remove references to command buffer's state and delete
         if (cb_state) {
             // reset prior to delete, removing various references to it.
@@ -4792,7 +4792,7 @@ bool CoreChecks::PreCallValidateFreeCommandBuffers(VkDevice device, VkCommandPoo
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
     for (uint32_t i = 0; i < commandBufferCount; i++) {
-        auto cb_node = GetCBNode(device_data, pCommandBuffers[i]);
+        auto cb_node = GetCBNode(pCommandBuffers[i]);
         // Delete CB information structure, and remove from commandBufferMap
         if (cb_node) {
             skip |= CheckCommandBufferInFlight(device_data, cb_node, "free", "VUID-vkFreeCommandBuffers-pCommandBuffers-00047");
@@ -6274,7 +6274,7 @@ void CoreChecks::AddFramebufferBinding(layer_data *dev_data, GLOBAL_CB_NODE *cb_
 
 bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo *pBeginInfo) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     if (!cb_state) return false;
     bool skip = false;
     if (cb_state->in_use.load()) {
@@ -6355,7 +6355,7 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
 
 void CoreChecks::PreCallRecordBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo *pBeginInfo) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     if (!cb_state) return;
     // This implicitly resets the Cmd Buffer so make sure any fence is done and then clear memory references
     ClearCmdBufAndMemReferences(device_data, cb_state);
@@ -6395,7 +6395,7 @@ void CoreChecks::PreCallRecordBeginCommandBuffer(VkCommandBuffer commandBuffer, 
 
 bool CoreChecks::PreCallValidateEndCommandBuffer(VkCommandBuffer commandBuffer) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     if (!cb_state) return false;
     bool skip = false;
     if ((VK_COMMAND_BUFFER_LEVEL_PRIMARY == cb_state->createInfo.level) ||
@@ -6415,8 +6415,7 @@ bool CoreChecks::PreCallValidateEndCommandBuffer(VkCommandBuffer commandBuffer) 
 }
 
 void CoreChecks::PostCallRecordEndCommandBuffer(VkCommandBuffer commandBuffer, VkResult result) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     if (!cb_state) return;
     // Cached validation is specific to a specific recording of a specific command buffer.
     for (auto descriptor_set : cb_state->validated_descriptor_sets) {
@@ -6431,7 +6430,7 @@ void CoreChecks::PostCallRecordEndCommandBuffer(VkCommandBuffer commandBuffer, V
 bool CoreChecks::PreCallValidateResetCommandBuffer(VkCommandBuffer commandBuffer, VkCommandBufferResetFlags flags) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    GLOBAL_CB_NODE *pCB = GetCBNode(device_data, commandBuffer);
+    GLOBAL_CB_NODE *pCB = GetCBNode(commandBuffer);
     if (!pCB) return false;
     VkCommandPool cmdPool = pCB->createInfo.commandPool;
     auto pPool = GetCommandPoolNode(device_data, cmdPool);
@@ -6459,7 +6458,7 @@ void CoreChecks::PostCallRecordResetCommandBuffer(VkCommandBuffer commandBuffer,
 bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
                                                 VkPipeline pipeline) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
 
     bool skip = ValidateCmdQueueFlags(device_data, cb_state, "vkCmdBindPipeline()", VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
@@ -6473,7 +6472,7 @@ bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, V
 void CoreChecks::PreCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
                                               VkPipeline pipeline) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
 
     auto pipe_state = GetPipelineState(device_data, pipeline);
@@ -6490,7 +6489,7 @@ void CoreChecks::PreCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer, VkP
 bool CoreChecks::PreCallValidateCmdSetViewport(VkCommandBuffer commandBuffer, uint32_t firstViewport, uint32_t viewportCount,
                                                const VkViewport *pViewports) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
     bool skip = ValidateCmdQueueFlags(device_data, cb_state, "vkCmdSetViewport()", VK_QUEUE_GRAPHICS_BIT,
                                       "VUID-vkCmdSetViewport-commandBuffer-cmdpool");
@@ -6505,8 +6504,7 @@ bool CoreChecks::PreCallValidateCmdSetViewport(VkCommandBuffer commandBuffer, ui
 
 void CoreChecks::PreCallRecordCmdSetViewport(VkCommandBuffer commandBuffer, uint32_t firstViewport, uint32_t viewportCount,
                                              const VkViewport *pViewports) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     cb_state->viewportMask |= ((1u << viewportCount) - 1u) << firstViewport;
     cb_state->status |= CBSTATUS_VIEWPORT_SET;
 }
@@ -6514,7 +6512,7 @@ void CoreChecks::PreCallRecordCmdSetViewport(VkCommandBuffer commandBuffer, uint
 bool CoreChecks::PreCallValidateCmdSetScissor(VkCommandBuffer commandBuffer, uint32_t firstScissor, uint32_t scissorCount,
                                               const VkRect2D *pScissors) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
     bool skip = ValidateCmdQueueFlags(device_data, cb_state, "vkCmdSetScissor()", VK_QUEUE_GRAPHICS_BIT,
                                       "VUID-vkCmdSetScissor-commandBuffer-cmdpool");
@@ -6529,8 +6527,7 @@ bool CoreChecks::PreCallValidateCmdSetScissor(VkCommandBuffer commandBuffer, uin
 
 void CoreChecks::PreCallRecordCmdSetScissor(VkCommandBuffer commandBuffer, uint32_t firstScissor, uint32_t scissorCount,
                                             const VkRect2D *pScissors) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     cb_state->scissorMask |= ((1u << scissorCount) - 1u) << firstScissor;
     cb_state->status |= CBSTATUS_SCISSOR_SET;
 }
@@ -6538,7 +6535,7 @@ void CoreChecks::PreCallRecordCmdSetScissor(VkCommandBuffer commandBuffer, uint3
 bool CoreChecks::PreCallValidateCmdSetExclusiveScissorNV(VkCommandBuffer commandBuffer, uint32_t firstExclusiveScissor,
                                                          uint32_t exclusiveScissorCount, const VkRect2D *pExclusiveScissors) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
     bool skip = ValidateCmdQueueFlags(device_data, cb_state, "vkCmdSetExclusiveScissorNV()", VK_QUEUE_GRAPHICS_BIT,
                                       "VUID-vkCmdSetExclusiveScissorNV-commandBuffer-cmdpool");
@@ -6560,9 +6557,8 @@ bool CoreChecks::PreCallValidateCmdSetExclusiveScissorNV(VkCommandBuffer command
 
 void CoreChecks::PreCallRecordCmdSetExclusiveScissorNV(VkCommandBuffer commandBuffer, uint32_t firstExclusiveScissor,
                                                        uint32_t exclusiveScissorCount, const VkRect2D *pExclusiveScissors) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
-    // XXX TODO: We don't have VUIDs for validating that all exclusive scissors have been set.
+    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
+    // TODO: We don't have VUIDs for validating that all exclusive scissors have been set.
     // cb_state->exclusiveScissorMask |= ((1u << exclusiveScissorCount) - 1u) << firstExclusiveScissor;
     cb_state->status |= CBSTATUS_EXCLUSIVE_SCISSOR_SET;
 }
@@ -6570,7 +6566,7 @@ void CoreChecks::PreCallRecordCmdSetExclusiveScissorNV(VkCommandBuffer commandBu
 bool CoreChecks::PreCallValidateCmdBindShadingRateImageNV(VkCommandBuffer commandBuffer, VkImageView imageView,
                                                           VkImageLayout imageLayout) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
     bool skip = ValidateCmdQueueFlags(device_data, cb_state, "vkCmdBindShadingRateImageNV()", VK_QUEUE_GRAPHICS_BIT,
                                       "VUID-vkCmdBindShadingRateImageNV-commandBuffer-cmdpool");
@@ -6634,7 +6630,7 @@ bool CoreChecks::PreCallValidateCmdBindShadingRateImageNV(VkCommandBuffer comman
 void CoreChecks::PreCallRecordCmdBindShadingRateImageNV(VkCommandBuffer commandBuffer, VkImageView imageView,
                                                         VkImageLayout imageLayout) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
 
     if (imageView != VK_NULL_HANDLE) {
         auto view_state = GetImageViewState(imageView);
@@ -6646,7 +6642,7 @@ bool CoreChecks::PreCallValidateCmdSetViewportShadingRatePaletteNV(VkCommandBuff
                                                                    uint32_t viewportCount,
                                                                    const VkShadingRatePaletteNV *pShadingRatePalettes) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
     bool skip = ValidateCmdQueueFlags(device_data, cb_state, "vkCmdSetViewportShadingRatePaletteNV()", VK_QUEUE_GRAPHICS_BIT,
                                       "VUID-vkCmdSetViewportShadingRatePaletteNV-commandBuffer-cmdpool");
@@ -6684,16 +6680,15 @@ bool CoreChecks::PreCallValidateCmdSetViewportShadingRatePaletteNV(VkCommandBuff
 void CoreChecks::PreCallRecordCmdSetViewportShadingRatePaletteNV(VkCommandBuffer commandBuffer, uint32_t firstViewport,
                                                                  uint32_t viewportCount,
                                                                  const VkShadingRatePaletteNV *pShadingRatePalettes) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
-    // XXX TODO: We don't have VUIDs for validating that all shading rate palettes have been set.
+    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
+    // TODO: We don't have VUIDs for validating that all shading rate palettes have been set.
     // cb_state->shadingRatePaletteMask |= ((1u << viewportCount) - 1u) << firstViewport;
     cb_state->status |= CBSTATUS_SHADING_RATE_PALETTE_SET;
 }
 
 bool CoreChecks::PreCallValidateCmdSetLineWidth(VkCommandBuffer commandBuffer, float lineWidth) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
     bool skip = ValidateCmdQueueFlags(device_data, cb_state, "vkCmdSetLineWidth()", VK_QUEUE_GRAPHICS_BIT,
                                       "VUID-vkCmdSetLineWidth-commandBuffer-cmdpool");
@@ -6708,15 +6703,14 @@ bool CoreChecks::PreCallValidateCmdSetLineWidth(VkCommandBuffer commandBuffer, f
 }
 
 void CoreChecks::PreCallRecordCmdSetLineWidth(VkCommandBuffer commandBuffer, float lineWidth) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     cb_state->status |= CBSTATUS_LINE_WIDTH_SET;
 }
 
 bool CoreChecks::PreCallValidateCmdSetDepthBias(VkCommandBuffer commandBuffer, float depthBiasConstantFactor, float depthBiasClamp,
                                                 float depthBiasSlopeFactor) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
     bool skip = ValidateCmdQueueFlags(device_data, cb_state, "vkCmdSetDepthBias()", VK_QUEUE_GRAPHICS_BIT,
                                       "VUID-vkCmdSetDepthBias-commandBuffer-cmdpool");
@@ -6737,14 +6731,13 @@ bool CoreChecks::PreCallValidateCmdSetDepthBias(VkCommandBuffer commandBuffer, f
 
 void CoreChecks::PreCallRecordCmdSetDepthBias(VkCommandBuffer commandBuffer, float depthBiasConstantFactor, float depthBiasClamp,
                                               float depthBiasSlopeFactor) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     cb_state->status |= CBSTATUS_DEPTH_BIAS_SET;
 }
 
 bool CoreChecks::PreCallValidateCmdSetBlendConstants(VkCommandBuffer commandBuffer, const float blendConstants[4]) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
     bool skip = ValidateCmdQueueFlags(device_data, cb_state, "vkCmdSetBlendConstants()", VK_QUEUE_GRAPHICS_BIT,
                                       "VUID-vkCmdSetBlendConstants-commandBuffer-cmdpool");
@@ -6758,14 +6751,13 @@ bool CoreChecks::PreCallValidateCmdSetBlendConstants(VkCommandBuffer commandBuff
 }
 
 void CoreChecks::PreCallRecordCmdSetBlendConstants(VkCommandBuffer commandBuffer, const float blendConstants[4]) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     cb_state->status |= CBSTATUS_BLEND_CONSTANTS_SET;
 }
 
 bool CoreChecks::PreCallValidateCmdSetDepthBounds(VkCommandBuffer commandBuffer, float minDepthBounds, float maxDepthBounds) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
     bool skip = ValidateCmdQueueFlags(device_data, cb_state, "vkCmdSetDepthBounds()", VK_QUEUE_GRAPHICS_BIT,
                                       "VUID-vkCmdSetDepthBounds-commandBuffer-cmdpool");
@@ -6779,15 +6771,14 @@ bool CoreChecks::PreCallValidateCmdSetDepthBounds(VkCommandBuffer commandBuffer,
 }
 
 void CoreChecks::PreCallRecordCmdSetDepthBounds(VkCommandBuffer commandBuffer, float minDepthBounds, float maxDepthBounds) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     cb_state->status |= CBSTATUS_DEPTH_BOUNDS_SET;
 }
 
 bool CoreChecks::PreCallValidateCmdSetStencilCompareMask(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask,
                                                          uint32_t compareMask) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
     bool skip = ValidateCmdQueueFlags(device_data, cb_state, "vkCmdSetStencilCompareMask()", VK_QUEUE_GRAPHICS_BIT,
                                       "VUID-vkCmdSetStencilCompareMask-commandBuffer-cmdpool");
@@ -6802,15 +6793,14 @@ bool CoreChecks::PreCallValidateCmdSetStencilCompareMask(VkCommandBuffer command
 
 void CoreChecks::PreCallRecordCmdSetStencilCompareMask(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask,
                                                        uint32_t compareMask) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     cb_state->status |= CBSTATUS_STENCIL_READ_MASK_SET;
 }
 
 bool CoreChecks::PreCallValidateCmdSetStencilWriteMask(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask,
                                                        uint32_t writeMask) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
     bool skip = ValidateCmdQueueFlags(device_data, cb_state, "vkCmdSetStencilWriteMask()", VK_QUEUE_GRAPHICS_BIT,
                                       "VUID-vkCmdSetStencilWriteMask-commandBuffer-cmdpool");
@@ -6825,15 +6815,14 @@ bool CoreChecks::PreCallValidateCmdSetStencilWriteMask(VkCommandBuffer commandBu
 
 void CoreChecks::PreCallRecordCmdSetStencilWriteMask(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask,
                                                      uint32_t writeMask) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     cb_state->status |= CBSTATUS_STENCIL_WRITE_MASK_SET;
 }
 
 bool CoreChecks::PreCallValidateCmdSetStencilReference(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask,
                                                        uint32_t reference) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
     bool skip = ValidateCmdQueueFlags(device_data, cb_state, "vkCmdSetStencilReference()", VK_QUEUE_GRAPHICS_BIT,
                                       "VUID-vkCmdSetStencilReference-commandBuffer-cmdpool");
@@ -6848,8 +6837,7 @@ bool CoreChecks::PreCallValidateCmdSetStencilReference(VkCommandBuffer commandBu
 
 void CoreChecks::PreCallRecordCmdSetStencilReference(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask,
                                                      uint32_t reference) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     cb_state->status |= CBSTATUS_STENCIL_REFERENCE_SET;
 }
 
@@ -6961,7 +6949,7 @@ void CoreChecks::PreCallRecordCmdBindDescriptorSets(VkCommandBuffer commandBuffe
                                                     const VkDescriptorSet *pDescriptorSets, uint32_t dynamicOffsetCount,
                                                     const uint32_t *pDynamicOffsets) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     auto pipeline_layout = GetPipelineLayout(device_data, layout);
     std::vector<cvdescriptorset::DescriptorSet *> descriptor_sets;
     descriptor_sets.reserve(setCount);
@@ -7005,7 +6993,7 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorSets(VkCommandBuffer commandBuf
                                                       const VkDescriptorSet *pDescriptorSets, uint32_t dynamicOffsetCount,
                                                       const uint32_t *pDynamicOffsets) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
     bool skip = false;
     skip |= ValidateCmdQueueFlags(device_data, cb_state, "vkCmdBindDescriptorSets()", VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
@@ -7123,7 +7111,7 @@ bool CoreChecks::PreCallValidateCmdPushDescriptorSetKHR(VkCommandBuffer commandB
                                                         VkPipelineLayout layout, uint32_t set, uint32_t descriptorWriteCount,
                                                         const VkWriteDescriptorSet *pDescriptorWrites) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
     const char *func_name = "vkCmdPushDescriptorSetKHR()";
     bool skip = false;
@@ -7203,7 +7191,7 @@ void CoreChecks::PreCallRecordCmdPushDescriptorSetKHR(VkCommandBuffer commandBuf
                                                       VkPipelineLayout layout, uint32_t set, uint32_t descriptorWriteCount,
                                                       const VkWriteDescriptorSet *pDescriptorWrites) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     RecordCmdPushDescriptorSetState(device_data, cb_state, pipelineBindPoint, layout, set, descriptorWriteCount, pDescriptorWrites);
 }
 
@@ -7224,7 +7212,7 @@ bool CoreChecks::PreCallValidateCmdBindIndexBuffer(VkCommandBuffer commandBuffer
                                                    VkIndexType indexType) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     auto buffer_state = GetBufferState(buffer);
-    auto cb_node = GetCBNode(device_data, commandBuffer);
+    auto cb_node = GetCBNode(commandBuffer);
     assert(buffer_state);
     assert(cb_node);
 
@@ -7249,9 +7237,8 @@ bool CoreChecks::PreCallValidateCmdBindIndexBuffer(VkCommandBuffer commandBuffer
 
 void CoreChecks::PreCallRecordCmdBindIndexBuffer(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                  VkIndexType indexType) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     auto buffer_state = GetBufferState(buffer);
-    auto cb_node = GetCBNode(device_data, commandBuffer);
+    auto cb_node = GetCBNode(commandBuffer);
 
     cb_node->status |= CBSTATUS_INDEX_BUFFER_BOUND;
     cb_node->index_buffer_binding.buffer = buffer;
@@ -7265,7 +7252,7 @@ static inline void UpdateResourceTrackingOnDraw(GLOBAL_CB_NODE *pCB) { pCB->draw
 bool CoreChecks::PreCallValidateCmdBindVertexBuffers(VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount,
                                                      const VkBuffer *pBuffers, const VkDeviceSize *pOffsets) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    auto cb_state = GetCBNode(device_data, commandBuffer);
+    auto cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
 
     bool skip = ValidateCmdQueueFlags(device_data, cb_state, "vkCmdBindVertexBuffers()", VK_QUEUE_GRAPHICS_BIT,
@@ -7290,8 +7277,7 @@ bool CoreChecks::PreCallValidateCmdBindVertexBuffers(VkCommandBuffer commandBuff
 
 void CoreChecks::PreCallRecordCmdBindVertexBuffers(VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount,
                                                    const VkBuffer *pBuffers, const VkDeviceSize *pOffsets) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    auto cb_state = GetCBNode(device_data, commandBuffer);
+    auto cb_state = GetCBNode(commandBuffer);
 
     uint32_t end = firstBinding + bindingCount;
     if (cb_state->current_draw_data.vertex_buffer_bindings.size() < end) {
@@ -7311,7 +7297,7 @@ bool CoreChecks::ValidateCmdDrawType(layer_data *dev_data, VkCommandBuffer cmd_b
                                      const char *renderpass_msg_code, const char *pipebound_msg_code,
                                      const char *dynamic_state_msg_code) {
     bool skip = false;
-    GLOBAL_CB_NODE *cb_state = GetCBNode(dev_data, cmd_buffer);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(cmd_buffer);
     if (cb_state) {
         skip |= ValidateCmdQueueFlags(dev_data, cb_state, caller, queue_flags, queue_flag_code);
         skip |= ValidateCmd(dev_data, cb_state, cmd_type, caller);
@@ -7352,7 +7338,7 @@ void CoreChecks::PreCallRecordCmdDraw(VkCommandBuffer commandBuffer, uint32_t ve
 void CoreChecks::PostCallRecordCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount,
                                        uint32_t firstVertex, uint32_t firstInstance) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     UpdateStateCmdDrawType(device_data, cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS);
 }
 
@@ -7363,7 +7349,7 @@ bool CoreChecks::PreCallValidateCmdDrawIndexed(VkCommandBuffer commandBuffer, ui
                                     "vkCmdDrawIndexed()", VK_QUEUE_GRAPHICS_BIT, "VUID-vkCmdDrawIndexed-commandBuffer-cmdpool",
                                     "VUID-vkCmdDrawIndexed-renderpass", "VUID-vkCmdDrawIndexed-None-00461",
                                     "VUID-vkCmdDrawIndexed-None-00462");
-    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     if (!skip && (cb_state->status & CBSTATUS_INDEX_BUFFER_BOUND)) {
         unsigned int index_size = 0;
         const auto &index_buffer_binding = cb_state->index_buffer_binding;
@@ -7395,7 +7381,7 @@ void CoreChecks::PreCallRecordCmdDrawIndexed(VkCommandBuffer commandBuffer, uint
 void CoreChecks::PostCallRecordCmdDrawIndexed(VkCommandBuffer commandBuffer, uint32_t indexCount, uint32_t instanceCount,
                                               uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     UpdateStateCmdDrawType(device_data, cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS);
 }
 
@@ -7422,7 +7408,7 @@ void CoreChecks::PreCallRecordCmdDrawIndirect(VkCommandBuffer commandBuffer, VkB
 void CoreChecks::PostCallRecordCmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, uint32_t count,
                                                uint32_t stride) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     BUFFER_STATE *buffer_state = GetBufferState(buffer);
     UpdateStateCmdDrawType(device_data, cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS);
     AddCommandBufferBindingBuffer(device_data, cb_state, buffer_state);
@@ -7453,7 +7439,7 @@ void CoreChecks::PreCallRecordCmdDrawIndexedIndirect(VkCommandBuffer commandBuff
 void CoreChecks::PostCallRecordCmdDrawIndexedIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                       uint32_t count, uint32_t stride) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     BUFFER_STATE *buffer_state = GetBufferState(buffer);
     UpdateStateCmdDrawType(device_data, cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS);
     AddCommandBufferBindingBuffer(device_data, cb_state, buffer_state);
@@ -7473,7 +7459,7 @@ void CoreChecks::PreCallRecordCmdDispatch(VkCommandBuffer commandBuffer, uint32_
 
 void CoreChecks::PostCallRecordCmdDispatch(VkCommandBuffer commandBuffer, uint32_t x, uint32_t y, uint32_t z) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     UpdateStateCmdDrawDispatchType(device_data, cb_state, VK_PIPELINE_BIND_POINT_COMPUTE);
 }
 
@@ -7496,7 +7482,7 @@ void CoreChecks::PreCallRecordCmdDispatchIndirect(VkCommandBuffer commandBuffer,
 
 void CoreChecks::PostCallRecordCmdDispatchIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     UpdateStateCmdDrawDispatchType(device_data, cb_state, VK_PIPELINE_BIND_POINT_COMPUTE);
     BUFFER_STATE *buffer_state = GetBufferState(buffer);
     AddCommandBufferBindingBuffer(device_data, cb_state, buffer_state);
@@ -7519,7 +7505,7 @@ bool CoreChecks::ValidateImageSampleCount(layer_data *dev_data, IMAGE_STATE *ima
 bool CoreChecks::PreCallValidateCmdUpdateBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,
                                                 VkDeviceSize dataSize, const void *pData) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    auto cb_state = GetCBNode(device_data, commandBuffer);
+    auto cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
     auto dst_buffer_state = GetBufferState(dstBuffer);
     assert(dst_buffer_state);
@@ -7542,7 +7528,7 @@ bool CoreChecks::PreCallValidateCmdUpdateBuffer(VkCommandBuffer commandBuffer, V
 void CoreChecks::PostCallRecordCmdUpdateBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,
                                                VkDeviceSize dataSize, const void *pData) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    auto cb_state = GetCBNode(device_data, commandBuffer);
+    auto cb_state = GetCBNode(commandBuffer);
     auto dst_buffer_state = GetBufferState(dstBuffer);
 
     // Update bindings between buffer and cmd buffer
@@ -7551,7 +7537,7 @@ void CoreChecks::PostCallRecordCmdUpdateBuffer(VkCommandBuffer commandBuffer, Vk
 
 bool CoreChecks::SetEventStageMask(VkQueue queue, VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask) {
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    GLOBAL_CB_NODE *pCB = GetCBNode(dev_data, commandBuffer);
+    GLOBAL_CB_NODE *pCB = GetCBNode(commandBuffer);
     if (pCB) {
         pCB->eventToStageMap[event] = stageMask;
     }
@@ -7564,7 +7550,7 @@ bool CoreChecks::SetEventStageMask(VkQueue queue, VkCommandBuffer commandBuffer,
 
 bool CoreChecks::PreCallValidateCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
     bool skip = ValidateCmdQueueFlags(device_data, cb_state, "vkCmdSetEvent()", VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
                                       "VUID-vkCmdSetEvent-commandBuffer-cmdpool");
@@ -7578,7 +7564,7 @@ bool CoreChecks::PreCallValidateCmdSetEvent(VkCommandBuffer commandBuffer, VkEve
 
 void CoreChecks::PreCallRecordCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     auto event_state = GetEventNode(device_data, event);
     if (event_state) {
         AddCommandBufferBinding(&event_state->cb_bindings, {HandleToUint64(event), kVulkanObjectTypeEvent}, cb_state);
@@ -7593,7 +7579,7 @@ void CoreChecks::PreCallRecordCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent
 
 bool CoreChecks::PreCallValidateCmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
 
     bool skip = ValidateCmdQueueFlags(device_data, cb_state, "vkCmdResetEvent()", VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
@@ -7608,7 +7594,7 @@ bool CoreChecks::PreCallValidateCmdResetEvent(VkCommandBuffer commandBuffer, VkE
 
 void CoreChecks::PreCallRecordCmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     auto event_state = GetEventNode(device_data, event);
     if (event_state) {
         AddCommandBufferBinding(&event_state->cb_bindings, {HandleToUint64(event), kVulkanObjectTypeEvent}, cb_state);
@@ -8594,7 +8580,7 @@ bool CoreChecks::PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, uin
                                               uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier *pBufferMemoryBarriers,
                                               uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier *pImageMemoryBarriers) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
 
     auto barrier_op_type = ComputeBarrierOperationsType(device_data, cb_state, bufferMemoryBarrierCount, pBufferMemoryBarriers,
@@ -8623,7 +8609,7 @@ void CoreChecks::PreCallRecordCmdWaitEvents(VkCommandBuffer commandBuffer, uint3
                                             uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier *pBufferMemoryBarriers,
                                             uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier *pImageMemoryBarriers) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     auto first_event_index = cb_state->events.size();
     for (uint32_t i = 0; i < eventCount; ++i) {
         auto event_state = GetEventNode(device_data, pEvents[i]);
@@ -8648,7 +8634,7 @@ void CoreChecks::PostCallRecordCmdWaitEvents(VkCommandBuffer commandBuffer, uint
                                              uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier *pBufferMemoryBarriers,
                                              uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier *pImageMemoryBarriers) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     RecordBarriersQFOTransfers(device_data, cb_state, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount,
                                pImageMemoryBarriers);
 }
@@ -8661,7 +8647,7 @@ bool CoreChecks::PreCallValidateCmdPipelineBarrier(VkCommandBuffer commandBuffer
                                                    uint32_t imageMemoryBarrierCount,
                                                    const VkImageMemoryBarrier *pImageMemoryBarriers) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
 
     bool skip = false;
@@ -8703,7 +8689,7 @@ void CoreChecks::PreCallRecordCmdPipelineBarrier(VkCommandBuffer commandBuffer, 
                                                  uint32_t imageMemoryBarrierCount,
                                                  const VkImageMemoryBarrier *pImageMemoryBarriers) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
 
     RecordBarriersQFOTransfers(device_data, cb_state, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount,
                                pImageMemoryBarriers);
@@ -8712,7 +8698,7 @@ void CoreChecks::PreCallRecordCmdPipelineBarrier(VkCommandBuffer commandBuffer, 
 
 bool CoreChecks::SetQueryState(VkQueue queue, VkCommandBuffer commandBuffer, QueryObject object, bool value) {
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    GLOBAL_CB_NODE *pCB = GetCBNode(dev_data, commandBuffer);
+    GLOBAL_CB_NODE *pCB = GetCBNode(commandBuffer);
     if (pCB) {
         pCB->queryToStateMap[object] = value;
     }
@@ -8725,7 +8711,7 @@ bool CoreChecks::SetQueryState(VkQueue queue, VkCommandBuffer commandBuffer, Que
 
 bool CoreChecks::PreCallValidateCmdBeginQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot, VkFlags flags) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
     bool skip = ValidateCmdQueueFlags(device_data, cb_state, "vkCmdBeginQuery()", VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
                                       "VUID-vkCmdBeginQuery-commandBuffer-cmdpool");
@@ -8753,7 +8739,7 @@ bool CoreChecks::PreCallValidateCmdBeginQuery(VkCommandBuffer commandBuffer, VkQ
 
 void CoreChecks::PostCallRecordCmdBeginQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot, VkFlags flags) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     QueryObject query = {queryPool, slot};
     cb_state->activeQueries.insert(query);
     cb_state->startedQueries.insert(query);
@@ -8764,7 +8750,7 @@ void CoreChecks::PostCallRecordCmdBeginQuery(VkCommandBuffer commandBuffer, VkQu
 bool CoreChecks::PreCallValidateCmdEndQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     QueryObject query = {queryPool, slot};
-    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
     bool skip = false;
     if (!cb_state->activeQueries.count(query)) {
@@ -8782,7 +8768,7 @@ bool CoreChecks::PreCallValidateCmdEndQuery(VkCommandBuffer commandBuffer, VkQue
 void CoreChecks::PostCallRecordCmdEndQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     QueryObject query = {queryPool, slot};
-    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     cb_state->activeQueries.erase(query);
     cb_state->queryUpdates.emplace_back([=](VkQueue q) { return SetQueryState(q, commandBuffer, query, true); });
     AddCommandBufferBinding(&GetQueryPoolNode(device_data, queryPool)->cb_bindings,
@@ -8792,7 +8778,7 @@ void CoreChecks::PostCallRecordCmdEndQuery(VkCommandBuffer commandBuffer, VkQuer
 bool CoreChecks::PreCallValidateCmdResetQueryPool(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery,
                                                   uint32_t queryCount) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
 
     bool skip = InsideRenderPass(device_data, cb_state, "vkCmdResetQueryPool()", "VUID-vkCmdResetQueryPool-renderpass");
     skip |= ValidateCmd(device_data, cb_state, CMD_RESETQUERYPOOL, "VkCmdResetQueryPool()");
@@ -8804,7 +8790,7 @@ bool CoreChecks::PreCallValidateCmdResetQueryPool(VkCommandBuffer commandBuffer,
 void CoreChecks::PostCallRecordCmdResetQueryPool(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery,
                                                  uint32_t queryCount) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
 
     for (uint32_t i = 0; i < queryCount; i++) {
         QueryObject query = {queryPool, firstQuery + i};
@@ -8849,7 +8835,7 @@ bool CoreChecks::PreCallValidateCmdCopyQueryPoolResults(VkCommandBuffer commandB
                                                         uint32_t queryCount, VkBuffer dstBuffer, VkDeviceSize dstOffset,
                                                         VkDeviceSize stride, VkQueryResultFlags flags) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    auto cb_state = GetCBNode(device_data, commandBuffer);
+    auto cb_state = GetCBNode(commandBuffer);
     auto dst_buff_state = GetBufferState(dstBuffer);
     assert(cb_state);
     assert(dst_buff_state);
@@ -8871,7 +8857,7 @@ void CoreChecks::PostCallRecordCmdCopyQueryPoolResults(VkCommandBuffer commandBu
                                                        uint32_t queryCount, VkBuffer dstBuffer, VkDeviceSize dstOffset,
                                                        VkDeviceSize stride, VkQueryResultFlags flags) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    auto cb_state = GetCBNode(device_data, commandBuffer);
+    auto cb_state = GetCBNode(commandBuffer);
     auto dst_buff_state = GetBufferState(dstBuffer);
     AddCommandBufferBindingBuffer(device_data, cb_state, dst_buff_state);
     cb_state->queryUpdates.emplace_back([=](VkQueue q) { return ValidateQuery(q, cb_state, queryPool, firstQuery, queryCount); });
@@ -8884,7 +8870,7 @@ bool CoreChecks::PreCallValidateCmdPushConstants(VkCommandBuffer commandBuffer, 
                                                  const void *pValues) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
     skip |= ValidateCmdQueueFlags(device_data, cb_state, "vkCmdPushConstants()", VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
                                   "VUID-vkCmdPushConstants-commandBuffer-cmdpool");
@@ -8938,7 +8924,7 @@ bool CoreChecks::PreCallValidateCmdPushConstants(VkCommandBuffer commandBuffer, 
 bool CoreChecks::PreCallValidateCmdWriteTimestamp(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage,
                                                   VkQueryPool queryPool, uint32_t slot) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
     bool skip = ValidateCmdQueueFlags(device_data, cb_state, "vkCmdWriteTimestamp()",
                                       VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT,
@@ -8949,8 +8935,7 @@ bool CoreChecks::PreCallValidateCmdWriteTimestamp(VkCommandBuffer commandBuffer,
 
 void CoreChecks::PostCallRecordCmdWriteTimestamp(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage,
                                                  VkQueryPool queryPool, uint32_t slot) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     QueryObject query = {queryPool, slot};
     cb_state->queryUpdates.emplace_back([=](VkQueue q) { return SetQueryState(q, commandBuffer, query, true); });
 }
@@ -10247,7 +10232,7 @@ static bool FormatSpecificLoadAndStoreOpSettings(VkFormat format, T color_depth_
 
 bool CoreChecks::ValidateCmdBeginRenderPass(layer_data *device_data, VkCommandBuffer commandBuffer,
                                             RenderPassCreateVersion rp_version, const VkRenderPassBeginInfo *pRenderPassBegin) {
-    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
     auto render_pass_state = pRenderPassBegin ? GetRenderPassState(device_data, pRenderPassBegin->renderPass) : nullptr;
     auto framebuffer = pRenderPassBegin ? GetFramebufferState(device_data, pRenderPassBegin->framebuffer) : nullptr;
@@ -10352,7 +10337,7 @@ bool CoreChecks::PreCallValidateCmdBeginRenderPass2KHR(VkCommandBuffer commandBu
 
 void CoreChecks::RecordCmdBeginRenderPassState(layer_data *device_data, VkCommandBuffer commandBuffer,
                                                const VkRenderPassBeginInfo *pRenderPassBegin, const VkSubpassContents contents) {
-    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     auto render_pass_state = pRenderPassBegin ? GetRenderPassState(device_data, pRenderPassBegin->renderPass) : nullptr;
     auto framebuffer = pRenderPassBegin ? GetFramebufferState(device_data, pRenderPassBegin->framebuffer) : nullptr;
 
@@ -10388,7 +10373,7 @@ void CoreChecks::PreCallRecordCmdBeginRenderPass2KHR(VkCommandBuffer commandBuff
 
 bool CoreChecks::ValidateCmdNextSubpass(layer_data *device_data, RenderPassCreateVersion rp_version,
                                         VkCommandBuffer commandBuffer) {
-    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
     bool skip = false;
     const bool use_rp2 = (rp_version == RENDER_PASS_VERSION_2);
@@ -10427,7 +10412,7 @@ bool CoreChecks::PreCallValidateCmdNextSubpass2KHR(VkCommandBuffer commandBuffer
 }
 
 void CoreChecks::RecordCmdNextSubpass(layer_data *device_data, VkCommandBuffer commandBuffer, VkSubpassContents contents) {
-    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     cb_state->activeSubpass++;
     cb_state->activeSubpassContents = contents;
     TransitionSubpassLayouts(device_data, cb_state, cb_state->activeRenderPass, cb_state->activeSubpass,
@@ -10447,7 +10432,7 @@ void CoreChecks::PostCallRecordCmdNextSubpass2KHR(VkCommandBuffer commandBuffer,
 
 bool CoreChecks::ValidateCmdEndRenderPass(layer_data *device_data, RenderPassCreateVersion rp_version,
                                           VkCommandBuffer commandBuffer) {
-    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
     bool skip = false;
     const bool use_rp2 = (rp_version == RENDER_PASS_VERSION_2);
@@ -10490,7 +10475,7 @@ bool CoreChecks::PreCallValidateCmdEndRenderPass2KHR(VkCommandBuffer commandBuff
 }
 
 void CoreChecks::RecordCmdEndRenderPassState(layer_data *device_data, VkCommandBuffer commandBuffer) {
-    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     FRAMEBUFFER_STATE *framebuffer = GetFramebufferState(device_data, cb_state->activeFramebuffer);
     TransitionFinalSubpassLayouts(device_data, cb_state, &cb_state->activeRenderPassBeginInfo, framebuffer);
     cb_state->activeRenderPass = nullptr;
@@ -10592,14 +10577,14 @@ bool CoreChecks::ValidateSecondaryCommandBufferState(layer_data *dev_data, GLOBA
 bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBuffersCount,
                                                    const VkCommandBuffer *pCommandBuffers) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
     bool skip = false;
     GLOBAL_CB_NODE *sub_cb_state = NULL;
     std::unordered_set<GLOBAL_CB_NODE *> linked_command_buffers = cb_state->linkedCommandBuffers;
 
     for (uint32_t i = 0; i < commandBuffersCount; i++) {
-        sub_cb_state = GetCBNode(device_data, pCommandBuffers[i]);
+        sub_cb_state = GetCBNode(pCommandBuffers[i]);
         assert(sub_cb_state);
         if (VK_COMMAND_BUFFER_LEVEL_PRIMARY == sub_cb_state->createInfo.level) {
             skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
@@ -10725,11 +10710,11 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
 void CoreChecks::PreCallRecordCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBuffersCount,
                                                  const VkCommandBuffer *pCommandBuffers) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
 
     GLOBAL_CB_NODE *sub_cb_state = NULL;
     for (uint32_t i = 0; i < commandBuffersCount; i++) {
-        sub_cb_state = GetCBNode(device_data, pCommandBuffers[i]);
+        sub_cb_state = GetCBNode(pCommandBuffers[i]);
         assert(sub_cb_state);
         if (!(sub_cb_state->beginInfo.flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT)) {
             if (cb_state->beginInfo.flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT) {
@@ -13025,7 +13010,7 @@ bool CoreChecks::PreCallValidateCmdPushDescriptorSetWithTemplateKHR(VkCommandBuf
                                                                     VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate,
                                                                     VkPipelineLayout layout, uint32_t set, const void *pData) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
     const char *const func_name = "vkPushDescriptorSetWithTemplateKHR()";
     bool skip = false;
@@ -13105,7 +13090,7 @@ void CoreChecks::PreCallRecordCmdPushDescriptorSetWithTemplateKHR(VkCommandBuffe
                                                                   VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate,
                                                                   VkPipelineLayout layout, uint32_t set, const void *pData) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
 
     const auto template_state = GetDescriptorTemplateState(device_data, descriptorUpdateTemplate);
     if (template_state) {
@@ -13213,14 +13198,14 @@ bool CoreChecks::PreCallValidateGetDisplayPlaneCapabilities2KHR(VkPhysicalDevice
 bool CoreChecks::PreCallValidateCmdDebugMarkerBeginEXT(VkCommandBuffer commandBuffer,
                                                        const VkDebugMarkerMarkerInfoEXT *pMarkerInfo) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
     return ValidateCmd(device_data, cb_state, CMD_DEBUGMARKERBEGINEXT, "vkCmdDebugMarkerBeginEXT()");
 }
 
 bool CoreChecks::PreCallValidateCmdDebugMarkerEndEXT(VkCommandBuffer commandBuffer) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
     return ValidateCmd(device_data, cb_state, CMD_DEBUGMARKERENDEXT, "vkCmdDebugMarkerEndEXT()");
 }
@@ -13228,7 +13213,7 @@ bool CoreChecks::PreCallValidateCmdDebugMarkerEndEXT(VkCommandBuffer commandBuff
 bool CoreChecks::PreCallValidateCmdSetDiscardRectangleEXT(VkCommandBuffer commandBuffer, uint32_t firstDiscardRectangle,
                                                           uint32_t discardRectangleCount, const VkRect2D *pDiscardRectangles) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     // Minimal validation for command buffer state
     return ValidateCmd(device_data, cb_state, CMD_SETDISCARDRECTANGLEEXT, "vkCmdSetDiscardRectangleEXT()");
 }
@@ -13236,7 +13221,7 @@ bool CoreChecks::PreCallValidateCmdSetDiscardRectangleEXT(VkCommandBuffer comman
 bool CoreChecks::PreCallValidateCmdSetSampleLocationsEXT(VkCommandBuffer commandBuffer,
                                                          const VkSampleLocationsInfoEXT *pSampleLocationsInfo) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     // Minimal validation for command buffer state
     return ValidateCmd(device_data, cb_state, CMD_SETSAMPLELOCATIONSEXT, "vkCmdSetSampleLocationsEXT()");
 }
@@ -13287,7 +13272,7 @@ void CoreChecks::PreCallRecordCmdDrawIndirectCountKHR(VkCommandBuffer commandBuf
                                                       VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
                                                       uint32_t stride) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     BUFFER_STATE *buffer_state = GetBufferState(buffer);
     BUFFER_STATE *count_buffer_state = GetBufferState(countBuffer);
     UpdateStateCmdDrawType(device_data, cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS);
@@ -13342,7 +13327,7 @@ void CoreChecks::PreCallRecordCmdDrawIndexedIndirectCountKHR(VkCommandBuffer com
                                                              VkBuffer countBuffer, VkDeviceSize countBufferOffset,
                                                              uint32_t maxDrawCount, uint32_t stride) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     BUFFER_STATE *buffer_state = GetBufferState(buffer);
     BUFFER_STATE *count_buffer_state = GetBufferState(countBuffer);
     UpdateStateCmdDrawType(device_data, cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS);
@@ -13361,7 +13346,7 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksNV(VkCommandBuffer commandBuffer
 
 void CoreChecks::PreCallRecordCmdDrawMeshTasksNV(VkCommandBuffer commandBuffer, uint32_t taskCount, uint32_t firstTask) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     UpdateStateCmdDrawType(device_data, cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS);
 }
 
@@ -13383,7 +13368,7 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectNV(VkCommandBuffer comma
 void CoreChecks::PreCallRecordCmdDrawMeshTasksIndirectNV(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                          uint32_t drawCount, uint32_t stride) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     UpdateStateCmdDrawType(device_data, cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS);
     BUFFER_STATE *buffer_state = GetBufferState(buffer);
     if (buffer_state) {
@@ -13414,7 +13399,7 @@ void CoreChecks::PreCallRecordCmdDrawMeshTasksIndirectCountNV(VkCommandBuffer co
                                                               VkBuffer countBuffer, VkDeviceSize countBufferOffset,
                                                               uint32_t maxDrawCount, uint32_t stride) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    GLOBAL_CB_NODE *cb_state = GetCBNode(device_data, commandBuffer);
+    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     BUFFER_STATE *buffer_state = GetBufferState(buffer);
     BUFFER_STATE *count_buffer_state = GetBufferState(countBuffer);
     UpdateStateCmdDrawType(device_data, cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS);
