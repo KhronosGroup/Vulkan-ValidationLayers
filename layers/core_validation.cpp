@@ -636,9 +636,9 @@ bool CoreChecks::ValidateStatus(layer_data *dev_data, GLOBAL_CB_NODE *pNode, CBS
 }
 
 // Retrieve pipeline node ptr for given pipeline object
-PIPELINE_STATE *CoreChecks::GetPipelineState(layer_data const *dev_data, VkPipeline pipeline) {
-    auto it = dev_data->pipelineMap.find(pipeline);
-    if (it == dev_data->pipelineMap.end()) {
+PIPELINE_STATE *CoreChecks::GetPipelineState(VkPipeline pipeline) {
+    auto it = pipelineMap.find(pipeline);
+    if (it == pipelineMap.end()) {
         return nullptr;
     }
     return it->second.get();
@@ -1272,7 +1272,7 @@ bool CoreChecks::ValidatePipelineLocked(layer_data *dev_data, std::vector<std::u
                 pBasePipeline = pPipelines[pPipeline->graphicsPipelineCI.basePipelineIndex].get();
             }
         } else if (pPipeline->graphicsPipelineCI.basePipelineHandle != VK_NULL_HANDLE) {
-            pBasePipeline = GetPipelineState(dev_data, pPipeline->graphicsPipelineCI.basePipelineHandle);
+            pBasePipeline = GetPipelineState(pPipeline->graphicsPipelineCI.basePipelineHandle);
         }
 
         if (pBasePipeline && !(pBasePipeline->graphicsPipelineCI.flags & VK_PIPELINE_CREATE_ALLOW_DERIVATIVES_BIT)) {
@@ -2023,7 +2023,7 @@ BASE_NODE *CoreChecks::GetStateStructPtrFromObject(layer_data *dev_data, VK_OBJE
             break;
         }
         case kVulkanObjectTypePipeline: {
-            base_ptr = GetPipelineState(dev_data, reinterpret_cast<VkPipeline &>(object_struct.handle));
+            base_ptr = GetPipelineState(reinterpret_cast<VkPipeline &>(object_struct.handle));
             break;
         }
         case kVulkanObjectTypeBuffer: {
@@ -4642,7 +4642,7 @@ void CoreChecks::PreCallRecordDestroyShaderModule(VkDevice device, VkShaderModul
 
 bool CoreChecks::PreCallValidateDestroyPipeline(VkDevice device, VkPipeline pipeline, const VkAllocationCallbacks *pAllocator) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    PIPELINE_STATE *pipeline_state = GetPipelineState(device_data, pipeline);
+    PIPELINE_STATE *pipeline_state = GetPipelineState(pipeline);
     VK_OBJECT obj_struct = {HandleToUint64(pipeline), kVulkanObjectTypePipeline};
     if (device_data->instance_data->disabled.destroy_pipeline) return false;
     bool skip = false;
@@ -4656,7 +4656,7 @@ bool CoreChecks::PreCallValidateDestroyPipeline(VkDevice device, VkPipeline pipe
 void CoreChecks::PreCallRecordDestroyPipeline(VkDevice device, VkPipeline pipeline, const VkAllocationCallbacks *pAllocator) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!pipeline) return;
-    PIPELINE_STATE *pipeline_state = GetPipelineState(device_data, pipeline);
+    PIPELINE_STATE *pipeline_state = GetPipelineState(pipeline);
     VK_OBJECT obj_struct = {HandleToUint64(pipeline), kVulkanObjectTypePipeline};
     // Any bound cmd buffers are now invalid
     InvalidateCommandBuffers(device_data, pipeline_state->cb_bindings, obj_struct);
@@ -6471,11 +6471,10 @@ bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, V
 
 void CoreChecks::PreCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
                                               VkPipeline pipeline) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
 
-    auto pipe_state = GetPipelineState(device_data, pipeline);
+    auto pipe_state = GetPipelineState(pipeline);
     if (VK_PIPELINE_BIND_POINT_GRAPHICS == pipelineBindPoint) {
         cb_state->status &= ~cb_state->static_status;
         cb_state->static_status = MakeStaticStateMask(pipe_state->graphicsPipelineCI.ptr()->pDynamicState);
