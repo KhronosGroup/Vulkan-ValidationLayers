@@ -548,11 +548,14 @@ bool CoreChecks::GpuInstrumentShader(const VkShaderModuleCreateInfo *pCreateInfo
 
     // Call the optimizer to instrument the shader.
     // Use the unique_shader_module_id as a shader ID so we can look up its handle later in the shader_map.
+    // If descriptor indexing is enabled, enable length checks and updated descriptor checks
+    const bool descriptor_indexing = GetDeviceExtensions()->vk_ext_descriptor_indexing;
     using namespace spvtools;
     spv_target_env target_env = SPV_ENV_VULKAN_1_1;
     Optimizer optimizer(target_env);
     optimizer.RegisterPass(CreateInstBindlessCheckPass(gpu_validation_state->desc_set_bind_index,
-                                                       gpu_validation_state->unique_shader_module_id, true));
+                                                       gpu_validation_state->unique_shader_module_id, descriptor_indexing,
+                                                       descriptor_indexing));
     optimizer.RegisterPass(CreateAggressiveDCEPass());
     bool pass = optimizer.Run(new_pgm.data(), new_pgm.size(), &new_pgm);
     if (!pass) {
@@ -1097,7 +1100,7 @@ void CoreChecks::GpuAllocateValidationResources(const VkCommandBuffer cmd_buffer
         return;
     }
 
-    void *pData;
+    uint32_t *pData;
     result = vmaMapMemory(gpu_validation_state->vmaAllocator, output_block.allocation, (void **)&pData);
     if (result == VK_SUCCESS) {
         memset(pData, 0, gpu_validation_state->output_buffer_size);
@@ -1109,22 +1112,33 @@ void CoreChecks::GpuAllocateValidationResources(const VkCommandBuffer cmd_buffer
     auto const &state = cb_node->lastBound[bind_point];
     uint32_t number_of_sets = (uint32_t)state.boundDescriptorSets.size();
 
-    if (number_of_sets > 0) {
-        uint32_t words_needed = 1 + number_of_sets;
+    if (number_of_sets > 0 && GetDeviceExtensions()->vk_ext_descriptor_indexing) {
+        uint32_t descriptor_count = 0;
+        uint32_t binding_count = 0;
         for (auto desc : state.boundDescriptorSets) {
-            auto layout = desc->GetLayout();
-            auto ds_bindings = layout->GetBindings();
-            if (ds_bindings.size()) {
-                auto last = ds_bindings.size() - 1;
-                words_needed += ds_bindings[last].binding + 1;  // Assumes that last binding has highest binding number
+            auto bindings = desc->GetLayout()->GetSortedBindingSet();
+            if (bindings.size() > 0) {
+                binding_count += desc->GetLayout()->GetMaxBinding() + 1;
+                for (auto binding : bindings) {
+                    if (binding == desc->GetLayout()->GetMaxBinding() && desc->IsVariableDescriptorCount(binding)) {
+                        descriptor_count += desc->GetVariableDescriptorCount();
+                    } else {
+                        descriptor_count += desc->GetDescriptorCountFromBinding(binding);
+                    }
+                }
             }
         }
 
+        // Note that the size of the input buffer is dependent on the maximum binding number, which
+        // can be very large.  This is because for (set = s, binding = b, index = i), the validation
+        // code is going to dereference Input[ i + Input[ b + Input[ s + Input[ Input[0] ] ] ] ] to
+        // see if descriptors have been written. In gpu_validation.md, we note this and advise
+        // using densely packed bindings as a best practice when using gpu-av with descriptor indexing
+        uint32_t words_needed = 1 + (number_of_sets * 2) + (binding_count * 2) + descriptor_count;
         allocInfo.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
         bufferInfo.size = words_needed * 4;
         result = vmaCreateBuffer(gpu_validation_state->vmaAllocator, &bufferInfo, &allocInfo, &input_block.buffer,
                                  &input_block.allocation, nullptr);
-
         if (result != VK_SUCCESS) {
             ReportSetupProblem(VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
                                "Unable to allocate device memory.  Device could become unstable.");
@@ -1132,33 +1146,55 @@ void CoreChecks::GpuAllocateValidationResources(const VkCommandBuffer cmd_buffer
             return;
         }
 
+        // Populate input buffer first with the sizes of every descriptor in every set, then with whether
+        // each element of each descriptor has been written or not.  See gpu_validation.md for a more thourough
+        // outline of the input buffer format
         result = vmaMapMemory(gpu_validation_state->vmaAllocator, input_block.allocation, (void **)&pData);
-
-        uint32_t *sets = (uint32_t *)pData + 1;
-        uint32_t *bindings = (uint32_t *)pData + number_of_sets + 1;
+        // Pointer to a sets array that points into the sizes array
+        uint32_t *sets_to_sizes = pData + 1;
+        // Pointer to the sizes array that contains the array size of the descriptor at each binding
+        uint32_t *sizes = sets_to_sizes + number_of_sets;
+        // Pointer to another sets array that points into the bindings array that points into the written array
+        uint32_t *sets_to_bindings = sizes + binding_count;
+        // Pointer to the bindings array that points at the start of the writes in the writes array for each binding
+        uint32_t *bindings_to_written = sets_to_bindings + number_of_sets;
+        // Index of the next entry in the written array to be updated
+        uint32_t written_index = 1 + (number_of_sets * 2) + (binding_count * 2);
         uint32_t bindCounter = number_of_sets + 1;
+        // Index of the start of the sets_to_bindings array
+        pData[0] = number_of_sets + binding_count + 1;
+
         for (auto desc : state.boundDescriptorSets) {
             auto layout = desc->GetLayout();
-            auto ds_bindings = layout->GetBindings();
-            size_t last = 0;
-            if (ds_bindings.size()) {
-                last = ds_bindings.size() - 1;
-                *sets++ = bindCounter;
-            } else {
-                *sets++ = 0;
-            }
+            auto not_empty = layout->GetSortedBindingSet();
+            if (not_empty.size() > 0) {
+                *sets_to_sizes++ = bindCounter;
+                *sets_to_bindings++ = bindCounter + number_of_sets + binding_count;
+                for (auto binding : not_empty) {
+                    // For each binding, fill in its size in the sizes array
+                    if (binding == layout->GetMaxBinding() && desc->IsVariableDescriptorCount(binding)) {
+                        sizes[binding] = desc->GetVariableDescriptorCount();
+                    } else {
+                        sizes[binding] = desc->GetDescriptorCountFromBinding(binding);
+                    }
+                    // Fill in the starting index for this binding in the written array in the bindings_to_written array
+                    bindings_to_written[binding] = written_index;
 
-            for (auto binding : ds_bindings) {
-                auto index_range = layout->GetGlobalIndexRangeFromBinding(binding.binding);
-                if (desc->IsVariableDescriptorCount(binding.binding)) {
-                    *(bindings + binding.binding) = desc->GetVariableDescriptorCount();
-                } else {
-                    *(bindings + binding.binding) = binding.descriptorCount;
+                    auto index_range = desc->GetGlobalIndexRangeFromBinding(binding, true);
+                    // For each array element in the binding, update the written array with whether it has been written
+                    for (uint32_t i = index_range.start; i < index_range.end; ++i) {
+                        auto *descriptor = desc->GetDescriptorFromGlobalIndex(i);
+                        if (descriptor->updated) pData[written_index] = 1;
+                        written_index++;
+                    }
                 }
-            }
-            if (last) {
-                bindCounter += ds_bindings[last].binding + 1;
-                bindings += ds_bindings[last].binding + 1;
+                auto last = std::prev(not_empty.end());
+                bindings_to_written += *last + 1;
+                bindCounter += *last + 1;
+                sizes += *last + 1;
+            } else {
+                *sets_to_sizes++ = 0;
+                *sets_to_bindings++ = 0;
             }
         }
         vmaUnmapMemory(gpu_validation_state->vmaAllocator, input_block.allocation);
