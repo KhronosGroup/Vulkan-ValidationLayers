@@ -486,7 +486,7 @@ void CoreChecks::GpuPreCallRecordFreeCommandBuffers(layer_data *dev_data, uint32
         return;
     }
     for (uint32_t i = 0; i < commandBufferCount; ++i) {
-        auto cb_node = GetCBNode(dev_data, pCommandBuffers[i]);
+        auto cb_node = GetCBNode(pCommandBuffers[i]);
         if (cb_node) {
             for (auto &buffer_info : cb_node->gpu_buffer_list) {
                 if (BlockUsed(buffer_info.mem_block)) {
@@ -1142,7 +1142,7 @@ void CoreChecks::GpuPostCallQueueSubmit(layer_data *dev_data, VkQueue queue, uin
     for (uint32_t submit_idx = 0; submit_idx < submitCount; submit_idx++) {
         const VkSubmitInfo *submit = &pSubmits[submit_idx];
         for (uint32_t i = 0; i < submit->commandBufferCount; i++) {
-            auto cb_node = GetCBNode(dev_data, submit->pCommandBuffers[i]);
+            auto cb_node = GetCBNode(submit->pCommandBuffers[i]);
             ProcessInstrumentationBuffer(dev_data, queue, cb_node);
             for (auto secondaryCmdBuffer : cb_node->linkedCommandBuffers) {
                 ProcessInstrumentationBuffer(dev_data, queue, secondaryCmdBuffer);
@@ -1174,7 +1174,7 @@ void CoreChecks::GpuAllocateValidationResources(layer_data *dev_data, const VkCo
     VkDescriptorBufferInfo desc_buffer_info = {};
     desc_buffer_info.range = gpu_state->memory_manager->GetBlockSize();
 
-    auto cb_node = GetCBNode(dev_data, cmd_buffer);
+    auto cb_node = GetCBNode(cmd_buffer);
     if (!cb_node) {
         ReportSetupProblem(dev_data, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(GetDevice(dev_data)),
                            "Unrecognized command buffer");
