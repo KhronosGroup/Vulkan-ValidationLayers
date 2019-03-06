@@ -254,7 +254,7 @@ class CoreChecks : public ValidationObject {
     SAMPLER_STATE* GetSamplerState(VkSampler);
     IMAGE_VIEW_STATE* GetAttachmentImageViewState(FRAMEBUFFER_STATE* framebuffer, uint32_t index);
     IMAGE_VIEW_STATE* GetImageViewState(VkImageView);
-    SWAPCHAIN_NODE* GetSwapchainNode(const layer_data*, VkSwapchainKHR);
+    SWAPCHAIN_NODE* GetSwapchainNode(VkSwapchainKHR);
     GLOBAL_CB_NODE* GetCBNode(layer_data const* my_data, const VkCommandBuffer cb);
     PIPELINE_STATE* GetPipelineState(layer_data const* dev_data, VkPipeline pipeline);
     RENDER_PASS_STATE* GetRenderPassState(layer_data const* dev_data, VkRenderPass renderpass);

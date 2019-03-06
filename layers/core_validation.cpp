@@ -177,9 +177,9 @@ IMAGE_STATE *CoreChecks::GetImageState(VkImage image) {
     return img_it->second.get();
 }
 // Return swapchain node for specified swapchain or else NULL
-SWAPCHAIN_NODE *CoreChecks::GetSwapchainNode(const layer_data *dev_data, VkSwapchainKHR swapchain) {
-    auto swp_it = dev_data->swapchainMap.find(swapchain);
-    if (swp_it == dev_data->swapchainMap.end()) {
+SWAPCHAIN_NODE *CoreChecks::GetSwapchainNode(VkSwapchainKHR swapchain) {
+    auto swp_it = swapchainMap.find(swapchain);
+    if (swp_it == swapchainMap.end()) {
         return nullptr;
     }
     return swp_it->second.get();
@@ -11880,7 +11880,7 @@ bool CoreChecks::PreCallValidateCreateSwapchainKHR(VkDevice device, const VkSwap
                                                    const VkAllocationCallbacks *pAllocator, VkSwapchainKHR *pSwapchain) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     auto surface_state = GetSurfaceState(pCreateInfo->surface);
-    auto old_swapchain_state = GetSwapchainNode(device_data, pCreateInfo->oldSwapchain);
+    auto old_swapchain_state = GetSwapchainNode(pCreateInfo->oldSwapchain);
     return ValidateCreateSwapchain(device_data, "vkCreateSwapchainKHR()", pCreateInfo, surface_state, old_swapchain_state);
 }
 
@@ -11910,7 +11910,7 @@ void CoreChecks::PostCallRecordCreateSwapchainKHR(VkDevice device, const VkSwapc
                                                   VkResult result) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     auto surface_state = GetSurfaceState(pCreateInfo->surface);
-    auto old_swapchain_state = GetSwapchainNode(device_data, pCreateInfo->oldSwapchain);
+    auto old_swapchain_state = GetSwapchainNode(pCreateInfo->oldSwapchain);
     RecordCreateSwapchainState(device_data, result, pCreateInfo, pSwapchain, surface_state, old_swapchain_state);
 }
 
@@ -11918,7 +11918,7 @@ void CoreChecks::PreCallRecordDestroySwapchainKHR(VkDevice device, VkSwapchainKH
                                                   const VkAllocationCallbacks *pAllocator) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!swapchain) return;
-    auto swapchain_data = GetSwapchainNode(device_data, swapchain);
+    auto swapchain_data = GetSwapchainNode(swapchain);
     if (swapchain_data) {
         if (swapchain_data->images.size() > 0) {
             for (auto swapchain_image : swapchain_data->images) {
@@ -11950,7 +11950,7 @@ void CoreChecks::PreCallRecordDestroySwapchainKHR(VkDevice device, VkSwapchainKH
 bool CoreChecks::PreCallValidateGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain, uint32_t *pSwapchainImageCount,
                                                       VkImage *pSwapchainImages) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    auto swapchain_state = GetSwapchainNode(device_data, swapchain);
+    auto swapchain_state = GetSwapchainNode(swapchain);
     bool skip = false;
     if (swapchain_state && pSwapchainImages) {
         // Compare the preliminary value of *pSwapchainImageCount with the value this time:
@@ -11976,7 +11976,7 @@ void CoreChecks::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchai
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
 
     if ((result != VK_SUCCESS) && (result != VK_INCOMPLETE)) return;
-    auto swapchain_state = GetSwapchainNode(device_data, swapchain);
+    auto swapchain_state = GetSwapchainNode(swapchain);
 
     if (*pSwapchainImageCount > swapchain_state->images.size()) swapchain_state->images.resize(*pSwapchainImageCount);
 
@@ -12040,7 +12040,7 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
     }
 
     for (uint32_t i = 0; i < pPresentInfo->swapchainCount; ++i) {
-        auto swapchain_data = GetSwapchainNode(device_data, pPresentInfo->pSwapchains[i]);
+        auto swapchain_data = GetSwapchainNode(pPresentInfo->pSwapchains[i]);
         if (swapchain_data) {
             if (pPresentInfo->pImageIndices[i] >= swapchain_data->images.size()) {
                 skip |=
@@ -12106,7 +12106,7 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
         const auto *present_regions = lvl_find_in_chain<VkPresentRegionsKHR>(pPresentInfo->pNext);
         if (present_regions) {
             for (uint32_t i = 0; i < present_regions->swapchainCount; ++i) {
-                auto swapchain_data = GetSwapchainNode(device_data, pPresentInfo->pSwapchains[i]);
+                auto swapchain_data = GetSwapchainNode(pPresentInfo->pSwapchains[i]);
                 assert(swapchain_data);
                 VkPresentRegionKHR region = present_regions->pRegions[i];
                 for (uint32_t j = 0; j < region.rectangleCount; ++j) {
@@ -12175,7 +12175,7 @@ void CoreChecks::PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentInf
         auto local_result = pPresentInfo->pResults ? pPresentInfo->pResults[i] : result;
         if (local_result != VK_SUCCESS && local_result != VK_SUBOPTIMAL_KHR) continue;  // this present didn't actually happen.
         // Mark the image as having been released to the WSI
-        auto swapchain_data = GetSwapchainNode(device_data, pPresentInfo->pSwapchains[i]);
+        auto swapchain_data = GetSwapchainNode(pPresentInfo->pSwapchains[i]);
         if (swapchain_data && (swapchain_data->images.size() > pPresentInfo->pImageIndices[i])) {
             auto image = swapchain_data->images[pPresentInfo->pImageIndices[i]];
             auto image_state = GetImageState(image);
@@ -12196,7 +12196,7 @@ bool CoreChecks::PreCallValidateCreateSharedSwapchainsKHR(VkDevice device, uint3
     if (pCreateInfos) {
         for (uint32_t i = 0; i < swapchainCount; i++) {
             auto surface_state = GetSurfaceState(pCreateInfos[i].surface);
-            auto old_swapchain_state = GetSwapchainNode(device_data, pCreateInfos[i].oldSwapchain);
+            auto old_swapchain_state = GetSwapchainNode(pCreateInfos[i].oldSwapchain);
             std::stringstream func_name;
             func_name << "vkCreateSharedSwapchainsKHR[" << swapchainCount << "]()";
             skip |=
@@ -12214,7 +12214,7 @@ void CoreChecks::PostCallRecordCreateSharedSwapchainsKHR(VkDevice device, uint32
     if (pCreateInfos) {
         for (uint32_t i = 0; i < swapchainCount; i++) {
             auto surface_state = GetSurfaceState(pCreateInfos[i].surface);
-            auto old_swapchain_state = GetSwapchainNode(device_data, pCreateInfos[i].oldSwapchain);
+            auto old_swapchain_state = GetSwapchainNode(pCreateInfos[i].oldSwapchain);
             RecordCreateSwapchainState(device_data, result, &pCreateInfos[i], &pSwapchains[i], surface_state, old_swapchain_state);
         }
     }
@@ -12243,7 +12243,7 @@ bool CoreChecks::ValidateAcquireNextImage(layer_data *device_data, VkDevice devi
         skip |= ValidateFenceForSubmit(device_data, pFence);
     }
 
-    auto swapchain_data = GetSwapchainNode(device_data, swapchain);
+    auto swapchain_data = GetSwapchainNode(swapchain);
     if (swapchain_data && swapchain_data->retired) {
         skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SWAPCHAIN_KHR_EXT,
                         HandleToUint64(swapchain), "VUID-vkAcquireNextImageKHR-swapchain-01285",
@@ -12307,7 +12307,7 @@ void CoreChecks::RecordAcquireNextImageState(layer_data *device_data, VkDevice d
     }
 
     // Mark the image as acquired.
-    auto swapchain_data = GetSwapchainNode(device_data, swapchain);
+    auto swapchain_data = GetSwapchainNode(swapchain);
     if (swapchain_data && (swapchain_data->images.size() > *pImageIndex)) {
         auto image = swapchain_data->images[*pImageIndex];
         auto image_state = GetImageState(image);
