@@ -185,9 +185,9 @@ SWAPCHAIN_NODE *CoreChecks::GetSwapchainNode(const layer_data *dev_data, VkSwapc
     return swp_it->second.get();
 }
 // Return buffer node ptr for specified buffer or else NULL
-BUFFER_VIEW_STATE *CoreChecks::GetBufferViewState(const layer_data *dev_data, VkBufferView buffer_view) {
-    auto bv_it = dev_data->bufferViewMap.find(buffer_view);
-    if (bv_it == dev_data->bufferViewMap.end()) {
+BUFFER_VIEW_STATE *CoreChecks::GetBufferViewState(VkBufferView buffer_view) {
+    auto bv_it = bufferViewMap.find(buffer_view);
+    if (bv_it == bufferViewMap.end()) {
         return nullptr;
     }
     return bv_it->second.get();
@@ -2031,7 +2031,7 @@ BASE_NODE *CoreChecks::GetStateStructPtrFromObject(layer_data *dev_data, VK_OBJE
             break;
         }
         case kVulkanObjectTypeBufferView: {
-            base_ptr = GetBufferViewState(dev_data, reinterpret_cast<VkBufferView &>(object_struct.handle));
+            base_ptr = GetBufferViewState(reinterpret_cast<VkBufferView &>(object_struct.handle));
             break;
         }
         case kVulkanObjectTypeImage: {
