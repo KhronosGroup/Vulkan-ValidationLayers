@@ -599,7 +599,7 @@ cvdescriptorset::DescriptorSet::DescriptorSet(const VkDescriptorSet set, const V
       device_data_(dev_data),
       limits_(dev_data->phys_dev_props.limits),
       variable_count_(variable_count) {
-    pool_state_ = dev_data->GetDescriptorPoolState(dev_data, pool);
+    pool_state_ = dev_data->GetDescriptorPoolState(pool);
     // Foreach binding, create default descriptors of given type
     descriptors_.reserve(p_layout_->GetTotalDescriptorCount());
     for (uint32_t i = 0; i < p_layout_->GetBindingCount(); ++i) {
@@ -2446,7 +2446,7 @@ bool CoreChecks::ValidateAllocateDescriptorSets(const layer_data *dev_data, cons
                                                 const cvdescriptorset::AllocateDescriptorSetsData *ds_data) {
     bool skip = false;
     auto report_data = GetReportData(dev_data);
-    auto pool_state = GetDescriptorPoolState(dev_data, p_alloc_info->descriptorPool);
+    auto pool_state = GetDescriptorPoolState(p_alloc_info->descriptorPool);
 
     for (uint32_t i = 0; i < p_alloc_info->descriptorSetCount; i++) {
         auto layout = GetDescriptorSetLayout(dev_data, p_alloc_info->pSetLayouts[i]);

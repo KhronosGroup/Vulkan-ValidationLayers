@@ -246,7 +246,7 @@ class CoreChecks : public ValidationObject {
 
     // Class Declarations for helper functions
     cvdescriptorset::DescriptorSet* GetSetNode(VkDescriptorSet);
-    DESCRIPTOR_POOL_STATE* GetDescriptorPoolState(const layer_data*, const VkDescriptorPool);
+    DESCRIPTOR_POOL_STATE* GetDescriptorPoolState(const VkDescriptorPool);
     BUFFER_STATE* GetBufferState(const layer_data*, VkBuffer);
     IMAGE_STATE* GetImageState(const layer_data*, VkImage);
     DEVICE_MEM_INFO* GetMemObjInfo(const layer_data*, VkDeviceMemory);
