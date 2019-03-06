@@ -161,9 +161,9 @@ IMAGE_VIEW_STATE *CoreChecks::GetAttachmentImageViewState(layer_data *dev_data, 
 }
 
 // Return sampler node ptr for specified sampler or else NULL
-SAMPLER_STATE *CoreChecks::GetSamplerState(const layer_data *dev_data, VkSampler sampler) {
-    auto sampler_it = dev_data->samplerMap.find(sampler);
-    if (sampler_it == dev_data->samplerMap.end()) {
+SAMPLER_STATE *CoreChecks::GetSamplerState(VkSampler sampler) {
+    auto sampler_it = samplerMap.find(sampler);
+    if (sampler_it == samplerMap.end()) {
         return nullptr;
     }
     return sampler_it->second.get();
@@ -2015,7 +2015,7 @@ BASE_NODE *CoreChecks::GetStateStructPtrFromObject(layer_data *dev_data, VK_OBJE
             break;
         }
         case kVulkanObjectTypeSampler: {
-            base_ptr = GetSamplerState(dev_data, reinterpret_cast<VkSampler &>(object_struct.handle));
+            base_ptr = GetSamplerState(reinterpret_cast<VkSampler &>(object_struct.handle));
             break;
         }
         case kVulkanObjectTypeQueryPool: {
@@ -4675,7 +4675,7 @@ void CoreChecks::PreCallRecordDestroyPipelineLayout(VkDevice device, VkPipelineL
 
 bool CoreChecks::PreCallValidateDestroySampler(VkDevice device, VkSampler sampler, const VkAllocationCallbacks *pAllocator) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    SAMPLER_STATE *sampler_state = GetSamplerState(device_data, sampler);
+    SAMPLER_STATE *sampler_state = GetSamplerState(sampler);
     VK_OBJECT obj_struct = {HandleToUint64(sampler), kVulkanObjectTypeSampler};
     if (device_data->instance_data->disabled.destroy_sampler) return false;
     bool skip = false;
@@ -4689,7 +4689,7 @@ bool CoreChecks::PreCallValidateDestroySampler(VkDevice device, VkSampler sample
 void CoreChecks::PreCallRecordDestroySampler(VkDevice device, VkSampler sampler, const VkAllocationCallbacks *pAllocator) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!sampler) return;
-    SAMPLER_STATE *sampler_state = GetSamplerState(device_data, sampler);
+    SAMPLER_STATE *sampler_state = GetSamplerState(sampler);
     VK_OBJECT obj_struct = {HandleToUint64(sampler), kVulkanObjectTypeSampler};
     // Any bound cmd buffers are now invalid
     if (sampler_state) {
