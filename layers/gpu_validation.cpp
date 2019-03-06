@@ -576,7 +576,7 @@ void CoreChecks::GpuPostCallRecordCreateGraphicsPipelines(layer_data *dev_data, 
                                                           const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines) {
     auto gpu_state = GetGpuValidationState(dev_data);
     for (uint32_t pipeline = 0; pipeline < count; ++pipeline) {
-        auto pipeline_state = GetPipelineState(dev_data, pPipelines[pipeline]);
+        auto pipeline_state = GetPipelineState(pPipelines[pipeline]);
         if (nullptr == pipeline_state) continue;
         for (uint32_t stage = 0; stage < pipeline_state->graphicsPipelineCI.stageCount; ++stage) {
             if (pipeline_state->active_slots.find(gpu_state->desc_set_bind_index) != pipeline_state->active_slots.end()) {
