@@ -259,7 +259,7 @@ class CoreChecks : public ValidationObject {
     PIPELINE_STATE* GetPipelineState(VkPipeline pipeline);
     RENDER_PASS_STATE* GetRenderPassState(VkRenderPass renderpass);
     std::shared_ptr<RENDER_PASS_STATE> GetRenderPassStateSharedPtr(VkRenderPass renderpass);
-    FRAMEBUFFER_STATE* GetFramebufferState(const layer_data* my_data, VkFramebuffer framebuffer);
+    FRAMEBUFFER_STATE* GetFramebufferState(VkFramebuffer framebuffer);
     COMMAND_POOL_NODE* GetCommandPoolNode(layer_data* dev_data, VkCommandPool pool);
     shader_module const* GetShaderModuleState(layer_data const* dev_data, VkShaderModule module);
     const DeviceFeatures* GetEnabledFeatures(const layer_data* device_data);

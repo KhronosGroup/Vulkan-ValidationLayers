@@ -2822,7 +2822,7 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
         const VkRenderPassCreateInfo2KHR *renderpass_create_info = cb_node->activeRenderPass->createInfo.ptr();
         const uint32_t renderpass_attachment_count = renderpass_create_info->attachmentCount;
         const VkSubpassDescription2KHR *subpass_desc = &renderpass_create_info->pSubpasses[cb_node->activeSubpass];
-        auto framebuffer = GetFramebufferState(device_data, cb_node->activeFramebuffer);
+        auto framebuffer = GetFramebufferState(cb_node->activeFramebuffer);
         const auto &render_area = cb_node->activeRenderPassBeginInfo.renderArea;
         std::shared_ptr<std::vector<VkClearRect>> clear_rect_copy;
 
@@ -2904,7 +2904,7 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
                 auto val_fn = [device_data, commandBuffer, attachment_index, fb_attachment, rectCount, clear_rect_copy](
                                   GLOBAL_CB_NODE *prim_cb, VkFramebuffer fb) {
                     assert(rectCount == clear_rect_copy->size());
-                    FRAMEBUFFER_STATE *framebuffer = device_data->GetFramebufferState(device_data, fb);
+                    FRAMEBUFFER_STATE *framebuffer = device_data->GetFramebufferState(fb);
                     const auto &render_area = prim_cb->activeRenderPassBeginInfo.renderArea;
                     bool skip = false;
                     skip =
