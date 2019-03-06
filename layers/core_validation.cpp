@@ -169,9 +169,9 @@ SAMPLER_STATE *CoreChecks::GetSamplerState(const layer_data *dev_data, VkSampler
     return sampler_it->second.get();
 }
 // Return image state ptr for specified image or else NULL
-IMAGE_STATE *CoreChecks::GetImageState(const layer_data *dev_data, VkImage image) {
-    auto img_it = dev_data->imageMap.find(image);
-    if (img_it == dev_data->imageMap.end()) {
+IMAGE_STATE *CoreChecks::GetImageState(VkImage image) {
+    auto img_it = imageMap.find(image);
+    if (img_it == imageMap.end()) {
         return nullptr;
     }
     return img_it->second.get();
@@ -265,7 +265,7 @@ SURFACE_STATE *CoreChecks::GetSurfaceState(VkSurfaceKHR surface) {
 BINDABLE *CoreChecks::GetObjectMemBinding(layer_data *dev_data, uint64_t handle, VulkanObjectType type) {
     switch (type) {
         case kVulkanObjectTypeImage:
-            return GetImageState(dev_data, VkImage(handle));
+            return GetImageState(VkImage(handle));
         case kVulkanObjectTypeBuffer:
             return GetBufferState(VkBuffer(handle));
         default:
@@ -346,7 +346,7 @@ void CoreChecks::AddCommandBufferBindingImageView(const layer_data *dev_data, GL
     // First add bindings for imageView
     view_state->cb_bindings.insert(cb_node);
     cb_node->object_bindings.insert({HandleToUint64(view_state->image_view), kVulkanObjectTypeImageView});
-    auto image_state = GetImageState(dev_data, view_state->create_info.image);
+    auto image_state = GetImageState(view_state->create_info.image);
     // Add bindings for image within imageView
     if (image_state) {
         AddCommandBufferBindingImage(dev_data, cb_node, image_state);
@@ -2035,7 +2035,7 @@ BASE_NODE *CoreChecks::GetStateStructPtrFromObject(layer_data *dev_data, VK_OBJE
             break;
         }
         case kVulkanObjectTypeImage: {
-            base_ptr = GetImageState(dev_data, reinterpret_cast<VkImage &>(object_struct.handle));
+            base_ptr = GetImageState(reinterpret_cast<VkImage &>(object_struct.handle));
             break;
         }
         case kVulkanObjectTypeImageView: {
@@ -2909,7 +2909,7 @@ bool CoreChecks::ValidateQueueFamilyIndices(layer_data *dev_data, GLOBAL_CB_NODE
         // Ensure that any bound images or buffers created with SHARING_MODE_CONCURRENT have access to the current queue family
         for (auto object : pCB->object_bindings) {
             if (object.type == kVulkanObjectTypeImage) {
-                auto image_state = GetImageState(dev_data, reinterpret_cast<VkImage &>(object.handle));
+                auto image_state = GetImageState(reinterpret_cast<VkImage &>(object.handle));
                 if (image_state && image_state->createInfo.sharingMode == VK_SHARING_MODE_CONCURRENT) {
                     skip |= ValidImageBufferQueue(dev_data, pCB, &object, queue, image_state->createInfo.queueFamilyIndexCount,
                                                   image_state->createInfo.pQueueFamilyIndices);
@@ -3334,7 +3334,7 @@ bool CoreChecks::PreCallValidateGetMemoryAndroidHardwareBuffer(VkDevice device,
     // If the pNext chain of the VkMemoryAllocateInfo used to allocate memory included a VkMemoryDedicatedAllocateInfo
     // with non-NULL image member, then that image must already be bound to memory.
     if (mem_info->is_dedicated && (VK_NULL_HANDLE != mem_info->dedicated_image)) {
-        auto image_state = GetImageState(device_data, mem_info->dedicated_image);
+        auto image_state = GetImageState(mem_info->dedicated_image);
         if ((nullptr == image_state) || (0 == (image_state->GetBoundMemory().count(pInfo->memory)))) {
             skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
                             HandleToUint64(device), "VUID-VkMemoryGetAndroidHardwareBufferInfoANDROID-pNext-01883",
@@ -3489,7 +3489,7 @@ bool CoreChecks::ValidateAllocateMemoryANDROID(layer_data *dev_data, const VkMem
                     ahb_format_props.externalFormat, ahb_desc.usage);
             }
         } else {  // Checks specific to import with a dedicated allocation requirement
-            VkImageCreateInfo *ici = &(GetImageState(dev_data, mem_ded_alloc_info->image)->createInfo);
+            VkImageCreateInfo *ici = &(GetImageState(mem_ded_alloc_info->image)->createInfo);
 
             // The Android hardware buffer's usage must include at least one of AHARDWAREBUFFER_USAGE_GPU_COLOR_OUTPUT or
             // AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE
@@ -3606,7 +3606,7 @@ bool CoreChecks::ValidateGetImageMemoryRequirements2ANDROID(layer_data *dev_data
     bool skip = false;
     const debug_report_data *report_data = GetReportData(dev_data);
 
-    IMAGE_STATE *image_state = GetImageState(dev_data, image);
+    IMAGE_STATE *image_state = GetImageState(image);
     if (image_state->imported_ahb && (0 == image_state->GetBoundMemory().size())) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, HandleToUint64(image),
                         "VUID-VkImageMemoryRequirementsInfo2-image-01897",
@@ -3770,7 +3770,7 @@ void CoreChecks::PreCallRecordFreeMemory(VkDevice device, VkDeviceMemory mem, co
         BINDABLE *bindable_state = nullptr;
         switch (obj.type) {
             case kVulkanObjectTypeImage:
-                bindable_state = GetImageState(device_data, reinterpret_cast<VkImage &>(obj.handle));
+                bindable_state = GetImageState(reinterpret_cast<VkImage &>(obj.handle));
                 break;
             case kVulkanObjectTypeBuffer:
                 bindable_state = GetBufferState(reinterpret_cast<VkBuffer &>(obj.handle));
@@ -4544,7 +4544,7 @@ bool CoreChecks::PreCallValidateGetImageMemoryRequirements2KHR(VkDevice device, 
 
 void CoreChecks::RecordGetImageMemoryRequiementsState(layer_data *device_data, VkImage image,
                                                       VkMemoryRequirements *pMemoryRequirements) {
-    IMAGE_STATE *image_state = GetImageState(device_data, image);
+    IMAGE_STATE *image_state = GetImageState(image);
     if (image_state) {
         image_state->requirements = *pMemoryRequirements;
         image_state->memory_requirements_checked = true;
@@ -4580,9 +4580,7 @@ static void RecordGetImageSparseMemoryRequirementsState(IMAGE_STATE *image_state
 void CoreChecks::PostCallRecordGetImageSparseMemoryRequirements(VkDevice device, VkImage image,
                                                                 uint32_t *pSparseMemoryRequirementCount,
                                                                 VkSparseImageMemoryRequirements *pSparseMemoryRequirements) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-
-    auto image_state = GetImageState(device_data, image);
+    auto image_state = GetImageState(image);
     image_state->get_sparse_reqs_called = true;
     if (!pSparseMemoryRequirements) return;
     for (uint32_t i = 0; i < *pSparseMemoryRequirementCount; i++) {
@@ -4594,9 +4592,7 @@ void CoreChecks::PostCallRecordGetImageSparseMemoryRequirements2(VkDevice device
                                                                  const VkImageSparseMemoryRequirementsInfo2KHR *pInfo,
                                                                  uint32_t *pSparseMemoryRequirementCount,
                                                                  VkSparseImageMemoryRequirements2KHR *pSparseMemoryRequirements) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-
-    auto image_state = GetImageState(device_data, pInfo->image);
+    auto image_state = GetImageState(pInfo->image);
     image_state->get_sparse_reqs_called = true;
     if (!pSparseMemoryRequirements) return;
     for (uint32_t i = 0; i < *pSparseMemoryRequirementCount; i++) {
@@ -4608,9 +4604,7 @@ void CoreChecks::PostCallRecordGetImageSparseMemoryRequirements2(VkDevice device
 void CoreChecks::PostCallRecordGetImageSparseMemoryRequirements2KHR(
     VkDevice device, const VkImageSparseMemoryRequirementsInfo2KHR *pInfo, uint32_t *pSparseMemoryRequirementCount,
     VkSparseImageMemoryRequirements2KHR *pSparseMemoryRequirements) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-
-    auto image_state = GetImageState(device_data, pInfo->image);
+    auto image_state = GetImageState(pInfo->image);
     image_state->get_sparse_reqs_called = true;
     if (!pSparseMemoryRequirements) return;
     for (uint32_t i = 0; i < *pSparseMemoryRequirementCount; i++) {
@@ -6607,8 +6601,7 @@ bool CoreChecks::PreCallValidateCmdBindShadingRateImageNV(VkCommandBuffer comman
                 "vkCmdBindShadingRateImageNV: If imageView is not VK_NULL_HANDLE, it must have a format of VK_FORMAT_R8_UINT.");
         }
 
-        const VkImageCreateInfo *ici =
-            view_state ? &GetImageState(device_data, view_state->create_info.image)->createInfo : nullptr;
+        const VkImageCreateInfo *ici = view_state ? &GetImageState(view_state->create_info.image)->createInfo : nullptr;
         if (ici && !(ici->usage & VK_IMAGE_USAGE_SHADING_RATE_IMAGE_BIT_NV)) {
             skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_VIEW_EXT,
                             HandleToUint64(imageView), "VUID-vkCmdBindShadingRateImageNV-imageView-02061",
@@ -6617,7 +6610,7 @@ bool CoreChecks::PreCallValidateCmdBindShadingRateImageNV(VkCommandBuffer comman
         }
 
         if (view_state) {
-            auto image_state = GetImageState(device_data, view_state->create_info.image);
+            auto image_state = GetImageState(view_state->create_info.image);
             bool hit_error = false;
 
             // XXX TODO: While the VUID says "each subresource", only the base mip level is
@@ -8365,7 +8358,7 @@ bool CoreChecks::ValidateBarriers(layer_data *device_data, const char *funcName,
                             mem_barrier->dstAccessMask, dst_stage_mask);
         }
 
-        auto image_data = GetImageState(device_data, mem_barrier->image);
+        auto image_data = GetImageState(mem_barrier->image);
         skip |= ValidateBarrierQueueFamilies(device_data, funcName, cb_state, mem_barrier, image_data);
 
         if (mem_barrier->newLayout == VK_IMAGE_LAYOUT_UNDEFINED || mem_barrier->newLayout == VK_IMAGE_LAYOUT_PREINITIALIZED) {
@@ -8973,7 +8966,7 @@ bool CoreChecks::MatchUsage(layer_data *dev_data, uint32_t count, const VkAttach
                 const VkImageView *image_view = &fbci->pAttachments[attachments[attach].attachment];
                 auto view_state = GetImageViewState(dev_data, *image_view);
                 if (view_state) {
-                    const VkImageCreateInfo *ici = &GetImageState(dev_data, view_state->create_info.image)->createInfo;
+                    const VkImageCreateInfo *ici = &GetImageState(view_state->create_info.image)->createInfo;
                     if (ici != nullptr) {
                         if ((ici->usage & usage_flag) == 0) {
                             skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT,
@@ -9027,7 +9020,7 @@ bool CoreChecks::ValidateFramebufferCreateInfo(layer_data *dev_data, const VkFra
                                 i, string_VkFormat(ivci.format), string_VkFormat(rpci->pAttachments[i].format),
                                 dev_data->report_data->FormatHandle(pCreateInfo->renderPass).c_str());
                 }
-                const VkImageCreateInfo *ici = &GetImageState(dev_data, ivci.image)->createInfo;
+                const VkImageCreateInfo *ici = &GetImageState(ivci.image)->createInfo;
                 if (ici->samples != rpci->pAttachments[i].samples) {
                     skip |= log_msg(
                         dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT,
@@ -9294,8 +9287,8 @@ bool CoreChecks::ValidateDependencies(layer_data *dev_data, FRAMEBUFFER_STATE co
                 overlapping_attachments[j].push_back(i);
                 continue;
             }
-            auto image_data_i = GetImageState(dev_data, view_ci_i.image);
-            auto image_data_j = GetImageState(dev_data, view_ci_j.image);
+            auto image_data_i = GetImageState(view_ci_i.image);
+            auto image_data_j = GetImageState(view_ci_j.image);
             if (!image_data_i || !image_data_j) {
                 continue;
             }
@@ -10987,7 +10980,7 @@ bool CoreChecks::PreCallValidateGetDeviceMemoryCommitment(VkDevice device, VkDev
 bool CoreChecks::ValidateBindImageMemory(layer_data *device_data, VkImage image, VkDeviceMemory mem, VkDeviceSize memoryOffset,
                                          const char *api_name) {
     bool skip = false;
-    IMAGE_STATE *image_state = GetImageState(device_data, image);
+    IMAGE_STATE *image_state = GetImageState(image);
     if (image_state) {
         // Track objects tied to memory
         uint64_t image_handle = HandleToUint64(image);
@@ -11060,7 +11053,7 @@ bool CoreChecks::PreCallValidateBindImageMemory(VkDevice device, VkImage image, 
 }
 
 void CoreChecks::UpdateBindImageMemoryState(layer_data *device_data, VkImage image, VkDeviceMemory mem, VkDeviceSize memoryOffset) {
-    IMAGE_STATE *image_state = GetImageState(device_data, image);
+    IMAGE_STATE *image_state = GetImageState(image);
     if (image_state) {
         // Track bound memory range information
         auto mem_info = GetMemObjInfo(device_data, mem);
@@ -11221,7 +11214,7 @@ bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfo
         // If we're binding sparse image memory make sure reqs were queried and note if metadata is required and bound
         for (uint32_t i = 0; i < bindInfo.imageBindCount; ++i) {
             const auto &image_bind = bindInfo.pImageBinds[i];
-            auto image_state = GetImageState(device_data, image_bind.image);
+            auto image_state = GetImageState(image_bind.image);
             if (!image_state)
                 continue;  // Param/Object validation should report image_bind.image handles being invalid, so just skip here.
             sparse_images.insert(image_state);
@@ -11246,7 +11239,7 @@ bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfo
         }
         for (uint32_t i = 0; i < bindInfo.imageOpaqueBindCount; ++i) {
             const auto &image_opaque_bind = bindInfo.pImageOpaqueBinds[i];
-            auto image_state = GetImageState(device_data, bindInfo.pImageOpaqueBinds[i].image);
+            auto image_state = GetImageState(bindInfo.pImageOpaqueBinds[i].image);
             if (!image_state)
                 continue;  // Param/Object validation should report image_bind.image handles being invalid, so just skip here.
             sparse_images.insert(image_state);
@@ -12057,7 +12050,7 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
                             pPresentInfo->pImageIndices[i], (uint32_t)swapchain_data->images.size());
             } else {
                 auto image = swapchain_data->images[pPresentInfo->pImageIndices[i]];
-                auto image_state = GetImageState(device_data, image);
+                auto image_state = GetImageState(image);
 
                 if (image_state->shared_presentable) {
                     image_state->layout_locked = true;
@@ -12185,7 +12178,7 @@ void CoreChecks::PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentInf
         auto swapchain_data = GetSwapchainNode(device_data, pPresentInfo->pSwapchains[i]);
         if (swapchain_data && (swapchain_data->images.size() > pPresentInfo->pImageIndices[i])) {
             auto image = swapchain_data->images[pPresentInfo->pImageIndices[i]];
-            auto image_state = GetImageState(device_data, image);
+            auto image_state = GetImageState(image);
             if (image_state) {
                 image_state->acquired = false;
             }
@@ -12262,7 +12255,7 @@ bool CoreChecks::ValidateAcquireNextImage(layer_data *device_data, VkDevice devi
     auto physical_device_state = GetPhysicalDeviceState();
     if (physical_device_state->vkGetPhysicalDeviceSurfaceCapabilitiesKHRState != UNCALLED) {
         uint64_t acquired_images = std::count_if(swapchain_data->images.begin(), swapchain_data->images.end(),
-                                                 [=](VkImage image) { return GetImageState(device_data, image)->acquired; });
+                                                 [=](VkImage image) { return GetImageState(image)->acquired; });
         if (acquired_images > swapchain_data->images.size() - physical_device_state->surfaceCapabilities.minImageCount) {
             skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SWAPCHAIN_KHR_EXT,
                             HandleToUint64(swapchain), kVUID_Core_DrawState_SwapchainTooManyImages,
@@ -12317,7 +12310,7 @@ void CoreChecks::RecordAcquireNextImageState(layer_data *device_data, VkDevice d
     auto swapchain_data = GetSwapchainNode(device_data, swapchain);
     if (swapchain_data && (swapchain_data->images.size() > *pImageIndex)) {
         auto image = swapchain_data->images[*pImageIndex];
-        auto image_state = GetImageState(device_data, image);
+        auto image_state = GetImageState(image);
         if (image_state) {
             image_state->acquired = true;
             image_state->shared_presentable = swapchain_data->shared_presentable;
