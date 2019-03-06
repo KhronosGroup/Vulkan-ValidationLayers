@@ -229,6 +229,7 @@ class DescriptorSetLayout {
         return layout_id_->GetDescriptorSetLayoutBindingPtrFromBinding(binding);
     }
     const std::vector<safe_VkDescriptorSetLayoutBinding> &GetBindings() const { return layout_id_->GetBindings(); }
+    const std::set<uint32_t> &GetSortedBindingSet() const { return layout_id_->GetSortedBindingSet(); }
     uint32_t GetDescriptorCountFromIndex(const uint32_t index) const { return layout_id_->GetDescriptorCountFromIndex(index); }
     uint32_t GetDescriptorCountFromBinding(const uint32_t binding) const {
         return layout_id_->GetDescriptorCountFromBinding(binding);
@@ -539,7 +540,13 @@ class DescriptorSet : public BASE_NODE {
         return p_layout_->GetImmutableSamplerPtrFromBinding(index);
     };
     // For a particular binding, get the global index
-    const IndexRange &GetGlobalIndexRangeFromBinding(const uint32_t binding) const {
+    const IndexRange GetGlobalIndexRangeFromBinding(const uint32_t binding, bool actual_length = false) const {
+        if (actual_length && binding == p_layout_->GetMaxBinding() && IsVariableDescriptorCount(binding)) {
+            IndexRange range = p_layout_->GetGlobalIndexRangeFromBinding(binding);
+            auto diff = GetDescriptorCountFromBinding(binding) - GetVariableDescriptorCount();
+            range.end -= diff;
+            return range;
+        }
         return p_layout_->GetGlobalIndexRangeFromBinding(binding);
     };
     // Return true if any part of set has ever been updated
@@ -551,6 +558,7 @@ class DescriptorSet : public BASE_NODE {
     }
     uint32_t GetVariableDescriptorCount() const { return variable_count_; }
     DESCRIPTOR_POOL_STATE *GetPoolState() const { return pool_state_; }
+    const Descriptor *GetDescriptorFromGlobalIndex(const uint32_t index) const { return descriptors_[index].get(); }
 
    private:
     bool VerifyWriteUpdateContents(const VkWriteDescriptorSet *, const uint32_t, const char *, std::string *, std::string *) const;
