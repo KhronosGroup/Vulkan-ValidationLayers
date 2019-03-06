@@ -831,7 +831,7 @@ bool cvdescriptorset::DescriptorSet::ValidateDrawState(const std::map<uint32_t, 
                         return false;
                     }
 
-                    auto image_node = device_data_->GetImageState(device_data_, image_view_ci.image);
+                    auto image_node = device_data_->GetImageState(image_view_ci.image);
                     assert(image_node);
                     // Verify Image Layout
                     // Copy first mip level into sub_layers and loop over each mip level to verify layout
@@ -1339,7 +1339,7 @@ bool cvdescriptorset::ValidateImageUpdate(VkImageView image_view, VkImageLayout 
     VkImage image = iv_state->create_info.image;
     VkFormat format = VK_FORMAT_MAX_ENUM;
     VkImageUsageFlags usage = 0;
-    auto image_node = dev_data->GetImageState(dev_data, image);
+    auto image_node = dev_data->GetImageState(image);
     if (image_node) {
         format = image_node->createInfo.format;
         usage = image_node->createInfo.usage;

@@ -248,7 +248,7 @@ class CoreChecks : public ValidationObject {
     cvdescriptorset::DescriptorSet* GetSetNode(VkDescriptorSet);
     DESCRIPTOR_POOL_STATE* GetDescriptorPoolState(const VkDescriptorPool);
     BUFFER_STATE* GetBufferState(VkBuffer);
-    IMAGE_STATE* GetImageState(const layer_data*, VkImage);
+    IMAGE_STATE* GetImageState(VkImage);
     DEVICE_MEM_INFO* GetMemObjInfo(const layer_data*, VkDeviceMemory);
     BUFFER_VIEW_STATE* GetBufferViewState(const layer_data*, VkBufferView);
     SAMPLER_STATE* GetSamplerState(const layer_data*, VkSampler);
