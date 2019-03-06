@@ -252,8 +252,8 @@ class CoreChecks : public ValidationObject {
     DEVICE_MEM_INFO* GetMemObjInfo(const layer_data*, VkDeviceMemory);
     BUFFER_VIEW_STATE* GetBufferViewState(VkBufferView);
     SAMPLER_STATE* GetSamplerState(VkSampler);
-    IMAGE_VIEW_STATE* GetAttachmentImageViewState(layer_data* dev_data, FRAMEBUFFER_STATE* framebuffer, uint32_t index);
-    IMAGE_VIEW_STATE* GetImageViewState(layer_data*, VkImageView);
+    IMAGE_VIEW_STATE* GetAttachmentImageViewState(FRAMEBUFFER_STATE* framebuffer, uint32_t index);
+    IMAGE_VIEW_STATE* GetImageViewState(VkImageView);
     SWAPCHAIN_NODE* GetSwapchainNode(const layer_data*, VkSwapchainKHR);
     GLOBAL_CB_NODE* GetCBNode(layer_data const* my_data, const VkCommandBuffer cb);
     PIPELINE_STATE* GetPipelineState(layer_data const* dev_data, VkPipeline pipeline);

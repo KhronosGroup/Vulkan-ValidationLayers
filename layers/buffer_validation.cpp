@@ -347,7 +347,7 @@ void CoreChecks::SetImageViewLayout(layer_data *device_data, GLOBAL_CB_NODE *cb_
 
 void CoreChecks::SetImageViewLayout(layer_data *device_data, GLOBAL_CB_NODE *cb_node, VkImageView imageView,
                                     const VkImageLayout &layout) {
-    auto view_state = GetImageViewState(device_data, imageView);
+    auto view_state = GetImageViewState(imageView);
     SetImageViewLayout(device_data, cb_node, view_state, layout);
 }
 
@@ -469,7 +469,7 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(layer_data *device_data, 
     }
     for (uint32_t i = 0; i < pRenderPassInfo->attachmentCount; ++i) {
         const VkImageView &image_view = framebufferInfo.pAttachments[i];
-        auto view_state = GetImageViewState(device_data, image_view);
+        auto view_state = GetImageViewState(image_view);
 
         if (!view_state) {
             skip |=
@@ -521,7 +521,7 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(layer_data *device_data, 
             auto &attachment_ref = subpass.pInputAttachments[k];
             if (attachment_ref.attachment != VK_ATTACHMENT_UNUSED) {
                 auto image_view = framebufferInfo.pAttachments[attachment_ref.attachment];
-                auto view_state = GetImageViewState(device_data, image_view);
+                auto view_state = GetImageViewState(image_view);
 
                 if (view_state) {
                     auto image = view_state->create_info.image;
@@ -536,7 +536,7 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(layer_data *device_data, 
             auto &attachment_ref = subpass.pColorAttachments[k];
             if (attachment_ref.attachment != VK_ATTACHMENT_UNUSED) {
                 auto image_view = framebufferInfo.pAttachments[attachment_ref.attachment];
-                auto view_state = GetImageViewState(device_data, image_view);
+                auto view_state = GetImageViewState(image_view);
 
                 if (view_state) {
                     auto image = view_state->create_info.image;
@@ -556,7 +556,7 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(layer_data *device_data, 
             auto &attachment_ref = *subpass.pDepthStencilAttachment;
             if (attachment_ref.attachment != VK_ATTACHMENT_UNUSED) {
                 auto image_view = framebufferInfo.pAttachments[attachment_ref.attachment];
-                auto view_state = GetImageViewState(device_data, image_view);
+                auto view_state = GetImageViewState(image_view);
 
                 if (view_state) {
                     auto image = view_state->create_info.image;
@@ -573,7 +573,7 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(layer_data *device_data, 
 void CoreChecks::TransitionAttachmentRefLayout(layer_data *device_data, GLOBAL_CB_NODE *pCB, FRAMEBUFFER_STATE *pFramebuffer,
                                                const safe_VkAttachmentReference2KHR &ref) {
     if (ref.attachment != VK_ATTACHMENT_UNUSED) {
-        auto image_view = GetAttachmentImageViewState(device_data, pFramebuffer, ref.attachment);
+        auto image_view = GetAttachmentImageViewState(pFramebuffer, ref.attachment);
         if (image_view) {
             SetImageViewLayout(device_data, pCB, image_view, ref.layout);
         }
@@ -632,7 +632,7 @@ void CoreChecks::TransitionBeginRenderPassLayouts(layer_data *device_data, GLOBA
     // First transition into initialLayout
     auto const rpci = render_pass_state->createInfo.ptr();
     for (uint32_t i = 0; i < rpci->attachmentCount; ++i) {
-        auto view_state = GetAttachmentImageViewState(device_data, framebuffer_state, i);
+        auto view_state = GetAttachmentImageViewState(framebuffer_state, i);
         if (view_state) {
             SetImageViewLayout(device_data, cb_state, view_state, rpci->pAttachments[i].initialLayout);
         }
@@ -1182,7 +1182,7 @@ void CoreChecks::TransitionFinalSubpassLayouts(layer_data *device_data, GLOBAL_C
     const VkRenderPassCreateInfo2KHR *pRenderPassInfo = renderPass->createInfo.ptr();
     if (framebuffer_state) {
         for (uint32_t i = 0; i < pRenderPassInfo->attachmentCount; ++i) {
-            auto view_state = GetAttachmentImageViewState(device_data, framebuffer_state, i);
+            auto view_state = GetAttachmentImageViewState(framebuffer_state, i);
             if (view_state) {
                 SetImageViewLayout(device_data, pCB, view_state, pRenderPassInfo->pAttachments[i].finalLayout);
             }
@@ -2759,7 +2759,7 @@ bool CoreChecks::ValidateClearAttachmentExtent(layer_data *device_data, VkComman
     bool skip = false;
     const IMAGE_VIEW_STATE *image_view_state = nullptr;
     if (framebuffer && (fb_attachment != VK_ATTACHMENT_UNUSED) && (fb_attachment < framebuffer->createInfo.attachmentCount)) {
-        image_view_state = GetImageViewState(device_data, framebuffer->createInfo.pAttachments[fb_attachment]);
+        image_view_state = GetImageViewState(framebuffer->createInfo.pAttachments[fb_attachment]);
     }
 
     for (uint32_t j = 0; j < rect_count; j++) {
@@ -4490,7 +4490,7 @@ bool CoreChecks::ValidateIdleBuffer(layer_data *device_data, VkBuffer buffer) {
 
 bool CoreChecks::PreCallValidateDestroyImageView(VkDevice device, VkImageView imageView, const VkAllocationCallbacks *pAllocator) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    IMAGE_VIEW_STATE *image_view_state = GetImageViewState(device_data, imageView);
+    IMAGE_VIEW_STATE *image_view_state = GetImageViewState(imageView);
     VK_OBJECT obj_struct = {HandleToUint64(imageView), kVulkanObjectTypeImageView};
 
     bool skip = false;
@@ -4503,7 +4503,7 @@ bool CoreChecks::PreCallValidateDestroyImageView(VkDevice device, VkImageView im
 
 void CoreChecks::PreCallRecordDestroyImageView(VkDevice device, VkImageView imageView, const VkAllocationCallbacks *pAllocator) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    IMAGE_VIEW_STATE *image_view_state = GetImageViewState(device_data, imageView);
+    IMAGE_VIEW_STATE *image_view_state = GetImageViewState(imageView);
     if (!image_view_state) return;
     VK_OBJECT obj_struct = {HandleToUint64(imageView), kVulkanObjectTypeImageView};
 
