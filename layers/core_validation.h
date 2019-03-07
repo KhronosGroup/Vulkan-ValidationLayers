@@ -293,7 +293,7 @@ class CoreChecks : public ValidationObject {
     PIPELINE_LAYOUT_NODE const* GetPipelineLayout(layer_data const* dev_data, VkPipelineLayout pipeLayout);
     const TEMPLATE_STATE* GetDescriptorTemplateState(const layer_data* dev_data,
                                                      VkDescriptorUpdateTemplateKHR descriptor_update_template);
-    bool ValidateGetImageMemoryRequirements2(layer_data* dev_data, const VkImageMemoryRequirementsInfo2* pInfo);
+    bool ValidateGetImageMemoryRequirements2(const VkImageMemoryRequirementsInfo2* pInfo);
     void RecordGetImageMemoryRequiementsState(layer_data* device_data, VkImage image, VkMemoryRequirements* pMemoryRequirements);
     void FreeCommandBufferStates(layer_data* dev_data, COMMAND_POOL_NODE* pool_state, const uint32_t command_buffer_count,
                                  const VkCommandBuffer* command_buffers);
@@ -396,8 +396,7 @@ class CoreChecks : public ValidationObject {
                              VkCommandBuffer secondaryBuffer, const GLOBAL_CB_NODE* pSubCB, const char* caller);
     bool ValidateDescriptorUpdateTemplate(const char* func_name, layer_data* device_data,
                                           const VkDescriptorUpdateTemplateCreateInfoKHR* pCreateInfo);
-    bool ValidateCreateSamplerYcbcrConversion(const layer_data* device_data, const char* func_name,
-                                              const VkSamplerYcbcrConversionCreateInfo* create_info);
+    bool ValidateCreateSamplerYcbcrConversion(const char* func_name, const VkSamplerYcbcrConversionCreateInfo* create_info);
     void RecordCreateSamplerYcbcrConversionState(layer_data* device_data, const VkSamplerYcbcrConversionCreateInfo* create_info,
                                                  VkSamplerYcbcrConversion ycbcr_conversion);
     bool ValidateImportFence(layer_data* device_data, VkFence fence, const char* caller_name);
@@ -945,21 +944,19 @@ class CoreChecks : public ValidationObject {
 
     bool PreCallValidateGetImageSubresourceLayout(VkDevice device, VkImage image, const VkImageSubresource* pSubresource,
                                                   VkSubresourceLayout* pLayout);
-    bool ValidateCreateImageANDROID(layer_data* device_data, const debug_report_data* report_data,
-                                    const VkImageCreateInfo* create_info);
+    bool ValidateCreateImageANDROID(const debug_report_data* report_data, const VkImageCreateInfo* create_info);
     void RecordCreateImageANDROID(const VkImageCreateInfo* create_info, IMAGE_STATE* is_node);
-    bool ValidateCreateImageViewANDROID(layer_data* device_data, const VkImageViewCreateInfo* create_info);
-    bool ValidateGetImageSubresourceLayoutANDROID(layer_data* device_data, const VkImage image);
+    bool ValidateCreateImageViewANDROID(const VkImageViewCreateInfo* create_info);
+    bool ValidateGetImageSubresourceLayoutANDROID(const VkImage image);
     bool ValidateQueueFamilies(uint32_t queue_family_count, const uint32_t* queue_families, const char* cmd_name,
                                const char* array_parameter_name, const char* unique_error_code, const char* valid_error_code,
                                bool optional);
-    bool ValidateAllocateMemoryANDROID(layer_data* dev_data, const VkMemoryAllocateInfo* alloc_info);
-    bool ValidateGetImageMemoryRequirements2ANDROID(layer_data* dev_data, const VkImage image);
-    bool ValidateCreateSamplerYcbcrConversionANDROID(const layer_data* dev_data,
-                                                     const VkSamplerYcbcrConversionCreateInfo* create_info);
-    void RecordCreateSamplerYcbcrConversionANDROID(layer_data* dev_data, const VkSamplerYcbcrConversionCreateInfo* create_info,
+    bool ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo* alloc_info);
+    bool ValidateGetImageMemoryRequirements2ANDROID(const VkImage image);
+    bool ValidateCreateSamplerYcbcrConversionANDROID(const VkSamplerYcbcrConversionCreateInfo* create_info);
+    void RecordCreateSamplerYcbcrConversionANDROID(const VkSamplerYcbcrConversionCreateInfo* create_info,
                                                    VkSamplerYcbcrConversion ycbcr_conversion);
-    void RecordDestroySamplerYcbcrConversionANDROID(layer_data* dev_data, VkSamplerYcbcrConversion ycbcr_conversion);
+    void RecordDestroySamplerYcbcrConversionANDROID(VkSamplerYcbcrConversion ycbcr_conversion);
     bool PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                 const VkGraphicsPipelineCreateInfo* pCreateInfos,
                                                 const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines, void* cgpl_state);
