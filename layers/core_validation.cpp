@@ -2256,21 +2256,19 @@ void CoreChecks::PostCallRecordCreateInstance(const VkInstanceCreateInfo *pCreat
     InitGpuValidation();
 }
 
-static bool ValidatePhysicalDeviceQueueFamily(instance_layer_data *instance_data, const PHYSICAL_DEVICE_STATE *pd_state,
-                                              uint32_t requested_queue_family, const char *err_code, const char *cmd_name,
-                                              const char *queue_family_var_name) {
+bool CoreChecks::ValidatePhysicalDeviceQueueFamily(const PHYSICAL_DEVICE_STATE *pd_state, uint32_t requested_queue_family,
+                                                   const char *err_code, const char *cmd_name, const char *queue_family_var_name) {
     bool skip = false;
 
-    const char *conditional_ext_cmd = instance_data->instance_extensions.vk_khr_get_physical_device_properties_2
-                                          ? " or vkGetPhysicalDeviceQueueFamilyProperties2[KHR]"
-                                          : "";
+    const char *conditional_ext_cmd =
+        instance_extensions.vk_khr_get_physical_device_properties_2 ? " or vkGetPhysicalDeviceQueueFamilyProperties2[KHR]" : "";
 
     std::string count_note = (UNCALLED == pd_state->vkGetPhysicalDeviceQueueFamilyPropertiesState)
                                  ? "the pQueueFamilyPropertyCount was never obtained"
                                  : "i.e. is not less than " + std::to_string(pd_state->queue_family_count);
 
     if (requested_queue_family >= pd_state->queue_family_count) {
-        skip |= log_msg(instance_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT,
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT,
                         HandleToUint64(pd_state->phys_device), err_code,
                         "%s: %s (= %" PRIu32
                         ") is not less than any previously obtained pQueueFamilyPropertyCount from "
@@ -2281,8 +2279,8 @@ static bool ValidatePhysicalDeviceQueueFamily(instance_layer_data *instance_data
 }
 
 // Verify VkDeviceQueueCreateInfos
-static bool ValidateDeviceQueueCreateInfos(instance_layer_data *instance_data, const PHYSICAL_DEVICE_STATE *pd_state,
-                                           uint32_t info_count, const VkDeviceQueueCreateInfo *infos) {
+bool CoreChecks::ValidateDeviceQueueCreateInfos(const PHYSICAL_DEVICE_STATE *pd_state, uint32_t info_count,
+                                                const VkDeviceQueueCreateInfo *infos) {
     bool skip = false;
 
     std::unordered_set<uint32_t> queue_family_set;
@@ -2292,11 +2290,11 @@ static bool ValidateDeviceQueueCreateInfos(instance_layer_data *instance_data, c
 
         // Verify that requested queue family is known to be valid at this point in time
         std::string queue_family_var_name = "pCreateInfo->pQueueCreateInfos[" + std::to_string(i) + "].queueFamilyIndex";
-        skip |= ValidatePhysicalDeviceQueueFamily(instance_data, pd_state, requested_queue_family,
+        skip |= ValidatePhysicalDeviceQueueFamily(pd_state, requested_queue_family,
                                                   "VUID-VkDeviceQueueCreateInfo-queueFamilyIndex-00381", "vkCreateDevice",
                                                   queue_family_var_name.c_str());
         if (queue_family_set.count(requested_queue_family)) {
-            skip |= log_msg(instance_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
                             HandleToUint64(pd_state->phys_device), "VUID-VkDeviceCreateInfo-queueFamilyIndex-00372",
                             "CreateDevice(): %s (=%" PRIu32 ") is not unique within pQueueCreateInfos.",
                             queue_family_var_name.c_str(), requested_queue_family);
@@ -2309,7 +2307,7 @@ static bool ValidateDeviceQueueCreateInfos(instance_layer_data *instance_data, c
             const auto requested_queue_count = infos[i].queueCount;
             const auto queue_family_props_count = pd_state->queue_family_properties.size();
             const bool queue_family_has_props = requested_queue_family < queue_family_props_count;
-            const char *conditional_ext_cmd = instance_data->instance_extensions.vk_khr_get_physical_device_properties_2
+            const char *conditional_ext_cmd = instance_extensions.vk_khr_get_physical_device_properties_2
                                                   ? " or vkGetPhysicalDeviceQueueFamilyProperties2[KHR]"
                                                   : "";
             std::string count_note =
@@ -2321,7 +2319,7 @@ static bool ValidateDeviceQueueCreateInfos(instance_layer_data *instance_data, c
             if (!queue_family_has_props ||
                 requested_queue_count > pd_state->queue_family_properties[requested_queue_family].queueCount) {
                 skip |= log_msg(
-                    instance_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT,
+                    report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT,
                     HandleToUint64(pd_state->phys_device), "VUID-VkDeviceQueueCreateInfo-queueCount-00382",
                     "vkCreateDevice: pCreateInfo->pQueueCreateInfos[%" PRIu32 "].queueCount (=%" PRIu32
                     ") is not less than or equal to available queue count for this pCreateInfo->pQueueCreateInfos[%" PRIu32
@@ -2336,19 +2334,17 @@ static bool ValidateDeviceQueueCreateInfos(instance_layer_data *instance_data, c
 
 bool CoreChecks::PreCallValidateCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo *pCreateInfo,
                                              const VkAllocationCallbacks *pAllocator, VkDevice *pDevice) {
-    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(gpu), instance_layer_data_map);
     bool skip = false;
     auto pd_state = GetPhysicalDeviceState(gpu);
 
     // TODO: object_tracker should perhaps do this instead
     //       and it does not seem to currently work anyway -- the loader just crashes before this point
     if (!pd_state) {
-        skip |= log_msg(instance_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT,
-                        0, kVUID_Core_DevLimit_MustQueryCount,
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT, 0,
+                        kVUID_Core_DevLimit_MustQueryCount,
                         "Invalid call to vkCreateDevice() w/o first calling vkEnumeratePhysicalDevices().");
     }
-    skip |=
-        ValidateDeviceQueueCreateInfos(instance_data, pd_state, pCreateInfo->queueCreateInfoCount, pCreateInfo->pQueueCreateInfos);
+    skip |= ValidateDeviceQueueCreateInfos(pd_state, pCreateInfo->queueCreateInfoCount, pCreateInfo->pQueueCreateInfos);
     return skip;
 }
 
@@ -6054,7 +6050,6 @@ bool CoreChecks::PreCallValidateResetDescriptorPool(VkDevice device, VkDescripto
 
 void CoreChecks::PostCallRecordResetDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool,
                                                    VkDescriptorPoolResetFlags flags, VkResult result) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (VK_SUCCESS != result) return;
     DESCRIPTOR_POOL_STATE *pPool = GetDescriptorPoolState(descriptorPool);
     // TODO: validate flags
@@ -12375,9 +12370,8 @@ void CoreChecks::PostCallRecordCreateWaylandSurfaceKHR(VkInstance instance, cons
 bool CoreChecks::PreCallValidateGetPhysicalDeviceWaylandPresentationSupportKHR(VkPhysicalDevice physicalDevice,
                                                                                uint32_t queueFamilyIndex,
                                                                                struct wl_display *display) {
-    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), instance_layer_data_map);
     const auto pd_state = GetPhysicalDeviceState(physicalDevice);
-    return ValidatePhysicalDeviceQueueFamily(instance_data, pd_state, queueFamilyIndex,
+    return ValidatePhysicalDeviceQueueFamily(pd_state, queueFamilyIndex,
                                              "VUID-vkGetPhysicalDeviceWaylandPresentationSupportKHR-queueFamilyIndex-01306",
                                              "vkGetPhysicalDeviceWaylandPresentationSupportKHR", "queueFamilyIndex");
 }
@@ -12396,7 +12390,7 @@ bool CoreChecks::PreCallValidateGetPhysicalDeviceWin32PresentationSupportKHR(VkP
                                                                              uint32_t queueFamilyIndex) {
     instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), instance_layer_data_map);
     const auto pd_state = GetPhysicalDeviceState(physicalDevice);
-    return ValidatePhysicalDeviceQueueFamily(instance_data, pd_state, queueFamilyIndex,
+    return ValidatePhysicalDeviceQueueFamily(pd_state, queueFamilyIndex,
                                              "VUID-vkGetPhysicalDeviceWin32PresentationSupportKHR-queueFamilyIndex-01309",
                                              "vkGetPhysicalDeviceWin32PresentationSupportKHR", "queueFamilyIndex");
 }
@@ -12414,9 +12408,8 @@ void CoreChecks::PostCallRecordCreateXcbSurfaceKHR(VkInstance instance, const Vk
 bool CoreChecks::PreCallValidateGetPhysicalDeviceXcbPresentationSupportKHR(VkPhysicalDevice physicalDevice,
                                                                            uint32_t queueFamilyIndex, xcb_connection_t *connection,
                                                                            xcb_visualid_t visual_id) {
-    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), instance_layer_data_map);
     const auto pd_state = GetPhysicalDeviceState(physicalDevice);
-    return ValidatePhysicalDeviceQueueFamily(instance_data, pd_state, queueFamilyIndex,
+    return ValidatePhysicalDeviceQueueFamily(pd_state, queueFamilyIndex,
                                              "VUID-vkGetPhysicalDeviceXcbPresentationSupportKHR-queueFamilyIndex-01312",
                                              "vkGetPhysicalDeviceXcbPresentationSupportKHR", "queueFamilyIndex");
 }
@@ -12434,9 +12427,8 @@ void CoreChecks::PostCallRecordCreateXlibSurfaceKHR(VkInstance instance, const V
 bool CoreChecks::PreCallValidateGetPhysicalDeviceXlibPresentationSupportKHR(VkPhysicalDevice physicalDevice,
                                                                             uint32_t queueFamilyIndex, Display *dpy,
                                                                             VisualID visualID) {
-    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), instance_layer_data_map);
     const auto pd_state = GetPhysicalDeviceState(physicalDevice);
-    return ValidatePhysicalDeviceQueueFamily(instance_data, pd_state, queueFamilyIndex,
+    return ValidatePhysicalDeviceQueueFamily(pd_state, queueFamilyIndex,
                                              "VUID-vkGetPhysicalDeviceXlibPresentationSupportKHR-queueFamilyIndex-01315",
                                              "vkGetPhysicalDeviceXlibPresentationSupportKHR", "queueFamilyIndex");
 }
@@ -12480,9 +12472,8 @@ void CoreChecks::PostCallRecordGetPhysicalDeviceSurfaceCapabilities2EXT(VkPhysic
 
 bool CoreChecks::PreCallValidateGetPhysicalDeviceSurfaceSupportKHR(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
                                                                    VkSurfaceKHR surface, VkBool32 *pSupported) {
-    auto instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), instance_layer_data_map);
     const auto physical_device_state = GetPhysicalDeviceState(physicalDevice);
-    return ValidatePhysicalDeviceQueueFamily(instance_data, physical_device_state, queueFamilyIndex,
+    return ValidatePhysicalDeviceQueueFamily(physical_device_state, queueFamilyIndex,
                                              "VUID-vkGetPhysicalDeviceSurfaceSupportKHR-queueFamilyIndex-01269",
                                              "vkGetPhysicalDeviceSurfaceSupportKHR", "queueFamilyIndex");
 }
