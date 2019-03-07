@@ -274,13 +274,11 @@ BINDABLE *CoreChecks::GetObjectMemBinding(uint64_t handle, VulkanObjectType type
     return nullptr;
 }
 
-std::unordered_map<VkSamplerYcbcrConversion, uint64_t> *CoreChecks::GetYcbcrConversionFormatMap(layer_data *device_data) {
-    return &device_data->ycbcr_conversion_ahb_fmt_map;
+std::unordered_map<VkSamplerYcbcrConversion, uint64_t> *CoreChecks::GetYcbcrConversionFormatMap() {
+    return &ycbcr_conversion_ahb_fmt_map;
 }
 
-std::unordered_set<uint64_t> *CoreChecks::GetAHBExternalFormatsSet(layer_data *device_data) {
-    return &device_data->ahb_ext_formats_set;
-}
+std::unordered_set<uint64_t> *CoreChecks::GetAHBExternalFormatsSet() { return &ahb_ext_formats_set; }
 
 // prototype
 GLOBAL_CB_NODE *GetCBNode(layer_data const *, const VkCommandBuffer);
@@ -3302,11 +3300,10 @@ bool CoreChecks::PreCallValidateGetAndroidHardwareBufferProperties(VkDevice devi
 void CoreChecks::PostCallRecordGetAndroidHardwareBufferProperties(VkDevice device, const struct AHardwareBuffer *buffer,
                                                                   VkAndroidHardwareBufferPropertiesANDROID *pProperties,
                                                                   VkResult result) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (VK_SUCCESS != result) return;
     auto ahb_format_props = lvl_find_in_chain<VkAndroidHardwareBufferFormatPropertiesANDROID>(pProperties->pNext);
     if (ahb_format_props) {
-        auto ext_formats = GetAHBExternalFormatsSet(device_data);
+        auto ext_formats = GetAHBExternalFormatsSet();
         ext_formats->insert(ahb_format_props->externalFormat);
     }
 }

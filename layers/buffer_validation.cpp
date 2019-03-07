@@ -1234,7 +1234,7 @@ bool CoreChecks::ValidateCreateImageANDROID(layer_data *device_data, const debug
             }
         }
 
-        auto ahb_formats = GetAHBExternalFormatsSet(device_data);
+        auto ahb_formats = GetAHBExternalFormatsSet();
         if ((0 != ext_fmt_android->externalFormat) && (0 == ahb_formats->count(ext_fmt_android->externalFormat))) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                             "VUID-VkExternalFormatANDROID-externalFormat-01894",
@@ -1307,7 +1307,7 @@ bool CoreChecks::ValidateCreateImageViewANDROID(layer_data *device_data, const V
         const VkSamplerYcbcrConversionInfo *ycbcr_conv_info = lvl_find_in_chain<VkSamplerYcbcrConversionInfo>(create_info->pNext);
         if (ycbcr_conv_info != nullptr) {
             VkSamplerYcbcrConversion conv_handle = ycbcr_conv_info->conversion;
-            auto fmap = GetYcbcrConversionFormatMap(device_data);
+            auto fmap = GetYcbcrConversionFormatMap();
             if (fmap->find(conv_handle) != fmap->end()) {
                 conv_found = true;
                 external_format = fmap->at(conv_handle);
