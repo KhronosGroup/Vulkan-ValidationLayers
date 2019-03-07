@@ -126,8 +126,7 @@ bool CoreChecks::FindLayoutVerifyNode(GLOBAL_CB_NODE const *pCB, ImageSubresourc
     return true;
 }
 
-bool CoreChecks::FindLayoutVerifyLayout(layer_data const *device_data, ImageSubresourcePair imgpair, VkImageLayout &layout,
-                                        const VkImageAspectFlags aspectMask) {
+bool CoreChecks::FindLayoutVerifyLayout(ImageSubresourcePair imgpair, VkImageLayout &layout, const VkImageAspectFlags aspectMask) {
     if (!(imgpair.subresource.aspectMask & aspectMask)) {
         return false;
     }
@@ -173,16 +172,16 @@ bool CoreChecks::FindCmdBufLayout(GLOBAL_CB_NODE const *pCB, VkImage image, VkIm
 }
 
 // Find layout(s) on the global level
-bool CoreChecks::FindGlobalLayout(layer_data *device_data, ImageSubresourcePair imgpair, VkImageLayout &layout) {
+bool CoreChecks::FindGlobalLayout(ImageSubresourcePair imgpair, VkImageLayout &layout) {
     layout = VK_IMAGE_LAYOUT_MAX_ENUM;
-    FindLayoutVerifyLayout(device_data, imgpair, layout, VK_IMAGE_ASPECT_COLOR_BIT);
-    FindLayoutVerifyLayout(device_data, imgpair, layout, VK_IMAGE_ASPECT_DEPTH_BIT);
-    FindLayoutVerifyLayout(device_data, imgpair, layout, VK_IMAGE_ASPECT_STENCIL_BIT);
-    FindLayoutVerifyLayout(device_data, imgpair, layout, VK_IMAGE_ASPECT_METADATA_BIT);
+    FindLayoutVerifyLayout(imgpair, layout, VK_IMAGE_ASPECT_COLOR_BIT);
+    FindLayoutVerifyLayout(imgpair, layout, VK_IMAGE_ASPECT_DEPTH_BIT);
+    FindLayoutVerifyLayout(imgpair, layout, VK_IMAGE_ASPECT_STENCIL_BIT);
+    FindLayoutVerifyLayout(imgpair, layout, VK_IMAGE_ASPECT_METADATA_BIT);
     if (GetDeviceExtensions()->vk_khr_sampler_ycbcr_conversion) {
-        FindLayoutVerifyLayout(device_data, imgpair, layout, VK_IMAGE_ASPECT_PLANE_0_BIT_KHR);
-        FindLayoutVerifyLayout(device_data, imgpair, layout, VK_IMAGE_ASPECT_PLANE_1_BIT_KHR);
-        FindLayoutVerifyLayout(device_data, imgpair, layout, VK_IMAGE_ASPECT_PLANE_2_BIT_KHR);
+        FindLayoutVerifyLayout(imgpair, layout, VK_IMAGE_ASPECT_PLANE_0_BIT_KHR);
+        FindLayoutVerifyLayout(imgpair, layout, VK_IMAGE_ASPECT_PLANE_1_BIT_KHR);
+        FindLayoutVerifyLayout(imgpair, layout, VK_IMAGE_ASPECT_PLANE_2_BIT_KHR);
     }
     if (layout == VK_IMAGE_LAYOUT_MAX_ENUM) {
         imgpair = {imgpair.image, false, VkImageSubresource()};
@@ -193,7 +192,7 @@ bool CoreChecks::FindGlobalLayout(layer_data *device_data, ImageSubresourcePair 
     return true;
 }
 
-bool CoreChecks::FindLayouts(layer_data *device_data, VkImage image, std::vector<VkImageLayout> &layouts) {
+bool CoreChecks::FindLayouts(VkImage image, std::vector<VkImageLayout> &layouts) {
     auto sub_data = (*GetImageSubresourceMap()).find(image);
     if (sub_data == (*GetImageSubresourceMap()).end()) return false;
     auto image_state = GetImageState(image);
@@ -228,8 +227,7 @@ bool CoreChecks::FindLayout(const std::unordered_map<ImageSubresourcePair, IMAGE
 }
 
 // find layout in supplied map
-bool CoreChecks::FindLayout(layer_data *device_data,
-                            const std::unordered_map<ImageSubresourcePair, IMAGE_LAYOUT_NODE> &imageLayoutMap,
+bool CoreChecks::FindLayout(const std::unordered_map<ImageSubresourcePair, IMAGE_LAYOUT_NODE> &imageLayoutMap,
                             ImageSubresourcePair imgpair, VkImageLayout &layout) {
     layout = VK_IMAGE_LAYOUT_MAX_ENUM;
     FindLayout(imageLayoutMap, imgpair, layout, VK_IMAGE_ASPECT_COLOR_BIT);
@@ -345,8 +343,8 @@ void CoreChecks::SetImageViewLayout(GLOBAL_CB_NODE *cb_node, VkImageView imageVi
     SetImageViewLayout(cb_node, view_state, layout);
 }
 
-bool CoreChecks::ValidateRenderPassLayoutAgainstFramebufferImageUsage(layer_data *device_data, RenderPassCreateVersion rp_version,
-                                                                      VkImageLayout layout, VkImage image, VkImageView image_view,
+bool CoreChecks::ValidateRenderPassLayoutAgainstFramebufferImageUsage(RenderPassCreateVersion rp_version, VkImageLayout layout,
+                                                                      VkImage image, VkImageView image_view,
                                                                       VkFramebuffer framebuffer, VkRenderPass renderpass,
                                                                       uint32_t attachment_index, const char *variable_name) {
     bool skip = false;
@@ -445,8 +443,8 @@ bool CoreChecks::ValidateRenderPassLayoutAgainstFramebufferImageUsage(layer_data
     return skip;
 }
 
-bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(layer_data *device_data, RenderPassCreateVersion rp_version,
-                                                       GLOBAL_CB_NODE *pCB, const VkRenderPassBeginInfo *pRenderPassBegin,
+bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(RenderPassCreateVersion rp_version, GLOBAL_CB_NODE *pCB,
+                                                       const VkRenderPassBeginInfo *pRenderPassBegin,
                                                        const FRAMEBUFFER_STATE *framebuffer_state) {
     bool skip = false;
     auto const pRenderPassInfo = GetRenderPassState(pRenderPassBegin->renderPass)->createInfo.ptr();
@@ -501,11 +499,11 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(layer_data *device_data, 
             }
         }
 
-        ValidateRenderPassLayoutAgainstFramebufferImageUsage(device_data, rp_version, initial_layout, image, image_view,
-                                                             framebuffer, render_pass, i, "initial layout");
+        ValidateRenderPassLayoutAgainstFramebufferImageUsage(rp_version, initial_layout, image, image_view, framebuffer,
+                                                             render_pass, i, "initial layout");
 
-        ValidateRenderPassLayoutAgainstFramebufferImageUsage(device_data, rp_version, final_layout, image, image_view, framebuffer,
-                                                             render_pass, i, "final layout");
+        ValidateRenderPassLayoutAgainstFramebufferImageUsage(rp_version, final_layout, image, image_view, framebuffer, render_pass,
+                                                             i, "final layout");
     }
 
     for (uint32_t j = 0; j < pRenderPassInfo->subpassCount; ++j) {
@@ -518,9 +516,9 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(layer_data *device_data, 
 
                 if (view_state) {
                     auto image = view_state->create_info.image;
-                    ValidateRenderPassLayoutAgainstFramebufferImageUsage(device_data, rp_version, attachment_ref.layout, image,
-                                                                         image_view, framebuffer, render_pass,
-                                                                         attachment_ref.attachment, "input attachment layout");
+                    ValidateRenderPassLayoutAgainstFramebufferImageUsage(rp_version, attachment_ref.layout, image, image_view,
+                                                                         framebuffer, render_pass, attachment_ref.attachment,
+                                                                         "input attachment layout");
                 }
             }
         }
@@ -533,13 +531,13 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(layer_data *device_data, 
 
                 if (view_state) {
                     auto image = view_state->create_info.image;
-                    ValidateRenderPassLayoutAgainstFramebufferImageUsage(device_data, rp_version, attachment_ref.layout, image,
-                                                                         image_view, framebuffer, render_pass,
-                                                                         attachment_ref.attachment, "color attachment layout");
+                    ValidateRenderPassLayoutAgainstFramebufferImageUsage(rp_version, attachment_ref.layout, image, image_view,
+                                                                         framebuffer, render_pass, attachment_ref.attachment,
+                                                                         "color attachment layout");
                     if (subpass.pResolveAttachments) {
-                        ValidateRenderPassLayoutAgainstFramebufferImageUsage(
-                            device_data, rp_version, attachment_ref.layout, image, image_view, framebuffer, render_pass,
-                            attachment_ref.attachment, "resolve attachment layout");
+                        ValidateRenderPassLayoutAgainstFramebufferImageUsage(rp_version, attachment_ref.layout, image, image_view,
+                                                                             framebuffer, render_pass, attachment_ref.attachment,
+                                                                             "resolve attachment layout");
                     }
                 }
             }
@@ -553,9 +551,9 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(layer_data *device_data, 
 
                 if (view_state) {
                     auto image = view_state->create_info.image;
-                    ValidateRenderPassLayoutAgainstFramebufferImageUsage(device_data, rp_version, attachment_ref.layout, image,
-                                                                         image_view, framebuffer, render_pass,
-                                                                         attachment_ref.attachment, "input attachment layout");
+                    ValidateRenderPassLayoutAgainstFramebufferImageUsage(rp_version, attachment_ref.layout, image, image_view,
+                                                                         framebuffer, render_pass, attachment_ref.attachment,
+                                                                         "input attachment layout");
                 }
             }
         }
@@ -591,9 +589,8 @@ void CoreChecks::TransitionSubpassLayouts(GLOBAL_CB_NODE *pCB, const RENDER_PASS
     }
 }
 
-bool CoreChecks::ValidateImageAspectLayout(layer_data *device_data, GLOBAL_CB_NODE const *pCB,
-                                           const VkImageMemoryBarrier *mem_barrier, uint32_t level, uint32_t layer,
-                                           VkImageAspectFlags aspect) {
+bool CoreChecks::ValidateImageAspectLayout(GLOBAL_CB_NODE const *pCB, const VkImageMemoryBarrier *mem_barrier, uint32_t level,
+                                           uint32_t layer, VkImageAspectFlags aspect) {
     if (!(mem_barrier->subresourceRange.aspectMask & aspect)) {
         return false;
     }
@@ -669,8 +666,8 @@ bool VerifyAspectsPresent(VkImageAspectFlags aspect_mask, VkFormat format) {
 }
 
 // Verify an ImageMemoryBarrier's old/new ImageLayouts are compatible with the Image's ImageUsageFlags.
-bool CoreChecks::ValidateBarrierLayoutToImageUsage(layer_data *device_data, const VkImageMemoryBarrier *img_barrier,
-                                                   bool new_not_old, VkImageUsageFlags usage_flags, const char *func_name) {
+bool CoreChecks::ValidateBarrierLayoutToImageUsage(const VkImageMemoryBarrier *img_barrier, bool new_not_old,
+                                                   VkImageUsageFlags usage_flags, const char *func_name) {
     bool skip = false;
     const VkImageLayout layout = (new_not_old) ? img_barrier->newLayout : img_barrier->oldLayout;
     const char *msg_code = kVUIDUndefined;  // sentinel value meaning "no error"
@@ -737,7 +734,7 @@ using ImageBarrierScoreboardSubresMap = std::unordered_map<VkImageSubresourceRan
 using ImageBarrierScoreboardImageMap = std::unordered_map<VkImage, ImageBarrierScoreboardSubresMap>;
 
 // Verify image barriers are compatible with the images they reference.
-bool CoreChecks::ValidateBarriersToImages(layer_data *device_data, GLOBAL_CB_NODE const *cb_state, uint32_t imageMemoryBarrierCount,
+bool CoreChecks::ValidateBarriersToImages(GLOBAL_CB_NODE const *cb_state, uint32_t imageMemoryBarrierCount,
                                           const VkImageMemoryBarrier *pImageMemoryBarriers, const char *func_name) {
     bool skip = false;
 
@@ -785,8 +782,8 @@ bool CoreChecks::ValidateBarriersToImages(layer_data *device_data, GLOBAL_CB_NOD
         auto image_state = GetImageState(img_barrier->image);
         if (image_state) {
             VkImageUsageFlags usage_flags = image_state->createInfo.usage;
-            skip |= ValidateBarrierLayoutToImageUsage(device_data, img_barrier, false, usage_flags, func_name);
-            skip |= ValidateBarrierLayoutToImageUsage(device_data, img_barrier, true, usage_flags, func_name);
+            skip |= ValidateBarrierLayoutToImageUsage(img_barrier, false, usage_flags, func_name);
+            skip |= ValidateBarrierLayoutToImageUsage(img_barrier, true, usage_flags, func_name);
 
             // Make sure layout is able to be transitioned, currently only presented shared presentable images are locked
             if (image_state->layout_locked) {
@@ -823,17 +820,14 @@ bool CoreChecks::ValidateBarriersToImages(layer_data *device_data, GLOBAL_CB_NOD
             uint32_t level = img_barrier->subresourceRange.baseMipLevel + j;
             for (uint32_t k = 0; k < layer_count; k++) {
                 uint32_t layer = img_barrier->subresourceRange.baseArrayLayer + k;
-                skip |= ValidateImageAspectLayout(device_data, cb_state, img_barrier, level, layer, VK_IMAGE_ASPECT_COLOR_BIT);
-                skip |= ValidateImageAspectLayout(device_data, cb_state, img_barrier, level, layer, VK_IMAGE_ASPECT_DEPTH_BIT);
-                skip |= ValidateImageAspectLayout(device_data, cb_state, img_barrier, level, layer, VK_IMAGE_ASPECT_STENCIL_BIT);
-                skip |= ValidateImageAspectLayout(device_data, cb_state, img_barrier, level, layer, VK_IMAGE_ASPECT_METADATA_BIT);
+                skip |= ValidateImageAspectLayout(cb_state, img_barrier, level, layer, VK_IMAGE_ASPECT_COLOR_BIT);
+                skip |= ValidateImageAspectLayout(cb_state, img_barrier, level, layer, VK_IMAGE_ASPECT_DEPTH_BIT);
+                skip |= ValidateImageAspectLayout(cb_state, img_barrier, level, layer, VK_IMAGE_ASPECT_STENCIL_BIT);
+                skip |= ValidateImageAspectLayout(cb_state, img_barrier, level, layer, VK_IMAGE_ASPECT_METADATA_BIT);
                 if (GetDeviceExtensions()->vk_khr_sampler_ycbcr_conversion) {
-                    skip |= ValidateImageAspectLayout(device_data, cb_state, img_barrier, level, layer,
-                                                      VK_IMAGE_ASPECT_PLANE_0_BIT_KHR);
-                    skip |= ValidateImageAspectLayout(device_data, cb_state, img_barrier, level, layer,
-                                                      VK_IMAGE_ASPECT_PLANE_1_BIT_KHR);
-                    skip |= ValidateImageAspectLayout(device_data, cb_state, img_barrier, level, layer,
-                                                      VK_IMAGE_ASPECT_PLANE_2_BIT_KHR);
+                    skip |= ValidateImageAspectLayout(cb_state, img_barrier, level, layer, VK_IMAGE_ASPECT_PLANE_0_BIT_KHR);
+                    skip |= ValidateImageAspectLayout(cb_state, img_barrier, level, layer, VK_IMAGE_ASPECT_PLANE_1_BIT_KHR);
+                    skip |= ValidateImageAspectLayout(cb_state, img_barrier, level, layer, VK_IMAGE_ASPECT_PLANE_2_BIT_KHR);
                 }
             }
         }
@@ -3348,15 +3342,15 @@ void CoreChecks::PreCallRecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImag
 }
 
 // This validates that the initial layout specified in the command buffer for the IMAGE is the same as the global IMAGE layout
-bool CoreChecks::ValidateCmdBufImageLayouts(layer_data *device_data, GLOBAL_CB_NODE *pCB,
+bool CoreChecks::ValidateCmdBufImageLayouts(GLOBAL_CB_NODE *pCB,
                                             std::unordered_map<ImageSubresourcePair, IMAGE_LAYOUT_NODE> const &globalImageLayoutMap,
                                             std::unordered_map<ImageSubresourcePair, IMAGE_LAYOUT_NODE> &overlayLayoutMap) {
     bool skip = false;
     for (auto cb_image_data : pCB->imageLayoutMap) {
         VkImageLayout imageLayout;
 
-        if (FindLayout(device_data, overlayLayoutMap, cb_image_data.first, imageLayout) ||
-            FindLayout(device_data, globalImageLayoutMap, cb_image_data.first, imageLayout)) {
+        if (FindLayout(overlayLayoutMap, cb_image_data.first, imageLayout) ||
+            FindLayout(globalImageLayoutMap, cb_image_data.first, imageLayout)) {
             if (cb_image_data.second.initialLayout == VK_IMAGE_LAYOUT_UNDEFINED) {
                 // TODO: Set memory invalid which is in mem_tracker currently
             } else if (imageLayout != cb_image_data.second.initialLayout) {
@@ -3386,10 +3380,10 @@ bool CoreChecks::ValidateCmdBufImageLayouts(layer_data *device_data, GLOBAL_CB_N
     return skip;
 }
 
-void CoreChecks::UpdateCmdBufImageLayouts(layer_data *device_data, GLOBAL_CB_NODE *pCB) {
+void CoreChecks::UpdateCmdBufImageLayouts(GLOBAL_CB_NODE *pCB) {
     for (auto cb_image_data : pCB->imageLayoutMap) {
         VkImageLayout imageLayout;
-        FindGlobalLayout(device_data, cb_image_data.first, imageLayout);
+        FindGlobalLayout(cb_image_data.first, imageLayout);
         SetGlobalLayout(cb_image_data.first, cb_image_data.second.layout);
     }
 }
@@ -3441,7 +3435,7 @@ bool CoreChecks::ValidateLayoutVsAttachmentDescription(const debug_report_data *
     return skip;
 }
 
-bool CoreChecks::ValidateLayouts(layer_data *device_data, RenderPassCreateVersion rp_version, VkDevice device,
+bool CoreChecks::ValidateLayouts(RenderPassCreateVersion rp_version, VkDevice device,
                                  const VkRenderPassCreateInfo2KHR *pCreateInfo) {
     bool skip = false;
     const char *vuid;
@@ -3648,8 +3642,8 @@ bool CoreChecks::ValidateLayouts(layer_data *device_data, RenderPassCreateVersio
 }
 
 // For any image objects that overlap mapped memory, verify that their layouts are PREINIT or GENERAL
-bool CoreChecks::ValidateMapImageLayouts(layer_data *device_data, VkDevice device, DEVICE_MEM_INFO const *mem_info,
-                                         VkDeviceSize offset, VkDeviceSize end_offset) {
+bool CoreChecks::ValidateMapImageLayouts(VkDevice device, DEVICE_MEM_INFO const *mem_info, VkDeviceSize offset,
+                                         VkDeviceSize end_offset) {
     bool skip = false;
     // Iterate over all bound image ranges and verify that for any that overlap the map ranges, the layouts are
     // VK_IMAGE_LAYOUT_PREINITIALIZED or VK_IMAGE_LAYOUT_GENERAL
@@ -3657,9 +3651,9 @@ bool CoreChecks::ValidateMapImageLayouts(layer_data *device_data, VkDevice devic
     for (auto image_handle : mem_info->bound_images) {
         auto img_it = mem_info->bound_ranges.find(image_handle);
         if (img_it != mem_info->bound_ranges.end()) {
-            if (RangesIntersect(device_data, &img_it->second, offset, end_offset)) {
+            if (RangesIntersect(&img_it->second, offset, end_offset)) {
                 std::vector<VkImageLayout> layouts;
-                if (FindLayouts(device_data, VkImage(image_handle), layouts)) {
+                if (FindLayouts(VkImage(image_handle), layouts)) {
                     for (auto layout : layouts) {
                         if (layout != VK_IMAGE_LAYOUT_PREINITIALIZED && layout != VK_IMAGE_LAYOUT_GENERAL) {
                             skip |=
