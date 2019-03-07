@@ -136,8 +136,8 @@ bool CoreChecks::FindLayoutVerifyLayout(layer_data const *device_data, ImageSubr
     }
     VkImageAspectFlags oldAspectMask = imgpair.subresource.aspectMask;
     imgpair.subresource.aspectMask = aspectMask;
-    auto imgsubIt = (*GetImageLayoutMap(device_data)).find(imgpair);
-    if (imgsubIt == (*GetImageLayoutMap(device_data)).end()) {
+    auto imgsubIt = (*GetImageLayoutMap()).find(imgpair);
+    if (imgsubIt == (*GetImageLayoutMap()).end()) {
         return false;
     }
     if (layout != VK_IMAGE_LAYOUT_MAX_ENUM && layout != imgsubIt->second.layout) {
@@ -189,16 +189,16 @@ bool CoreChecks::FindGlobalLayout(layer_data *device_data, ImageSubresourcePair 
     }
     if (layout == VK_IMAGE_LAYOUT_MAX_ENUM) {
         imgpair = {imgpair.image, false, VkImageSubresource()};
-        auto imgsubIt = (*GetImageLayoutMap(device_data)).find(imgpair);
-        if (imgsubIt == (*GetImageLayoutMap(device_data)).end()) return false;
+        auto imgsubIt = (*GetImageLayoutMap()).find(imgpair);
+        if (imgsubIt == (*GetImageLayoutMap()).end()) return false;
         layout = imgsubIt->second.layout;
     }
     return true;
 }
 
 bool CoreChecks::FindLayouts(layer_data *device_data, VkImage image, std::vector<VkImageLayout> &layouts) {
-    auto sub_data = (*GetImageSubresourceMap(device_data)).find(image);
-    if (sub_data == (*GetImageSubresourceMap(device_data)).end()) return false;
+    auto sub_data = (*GetImageSubresourceMap()).find(image);
+    if (sub_data == (*GetImageSubresourceMap()).end()) return false;
     auto image_state = GetImageState(image);
     if (!image_state) return false;
     bool ignoreGlobal = false;
@@ -208,8 +208,8 @@ bool CoreChecks::FindLayouts(layer_data *device_data, VkImage image, std::vector
     }
     for (auto imgsubpair : sub_data->second) {
         if (ignoreGlobal && !imgsubpair.hasSubresource) continue;
-        auto img_data = (*GetImageLayoutMap(device_data)).find(imgsubpair);
-        if (img_data != (*GetImageLayoutMap(device_data)).end()) {
+        auto img_data = (*GetImageLayoutMap()).find(imgsubpair);
+        if (img_data != (*GetImageLayoutMap()).end()) {
             layouts.push_back(img_data->second.layout);
         }
     }
@@ -257,14 +257,14 @@ bool CoreChecks::FindLayout(layer_data *device_data,
 // Set the layout on the global level
 void CoreChecks::SetGlobalLayout(layer_data *device_data, ImageSubresourcePair imgpair, const VkImageLayout &layout) {
     VkImage &image = imgpair.image;
-    auto &lmap = (*GetImageLayoutMap(device_data));
+    auto &lmap = (*GetImageLayoutMap());
     auto data = lmap.find(imgpair);
     if (data != lmap.end()) {
         data->second.layout = layout;  // Update
     } else {
         lmap[imgpair].layout = layout;  // Insert
     }
-    auto &image_subresources = (*GetImageSubresourceMap(device_data))[image];
+    auto &image_subresources = (*GetImageSubresourceMap())[image];
     auto subresource = std::find(image_subresources.begin(), image_subresources.end(), imgpair);
     if (subresource == image_subresources.end()) {
         image_subresources.push_back(imgpair);
@@ -1491,7 +1491,6 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
 
 void CoreChecks::PostCallRecordCreateImage(VkDevice device, const VkImageCreateInfo *pCreateInfo,
                                            const VkAllocationCallbacks *pAllocator, VkImage *pImage, VkResult result) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (VK_SUCCESS != result) return;
     IMAGE_LAYOUT_NODE image_state;
     image_state.layout = pCreateInfo->initialLayout;
@@ -1500,10 +1499,10 @@ void CoreChecks::PostCallRecordCreateImage(VkDevice device, const VkImageCreateI
     if (GetDeviceExtensions()->vk_android_external_memory_android_hardware_buffer) {
         RecordCreateImageANDROID(pCreateInfo, is_node);
     }
-    GetImageMap(device_data)->insert(std::make_pair(*pImage, std::unique_ptr<IMAGE_STATE>(is_node)));
+    GetImageMap()->insert(std::make_pair(*pImage, std::unique_ptr<IMAGE_STATE>(is_node)));
     ImageSubresourcePair subpair{*pImage, false, VkImageSubresource()};
-    (*GetImageSubresourceMap(device_data))[*pImage].push_back(subpair);
-    (*GetImageLayoutMap(device_data))[subpair] = image_state;
+    (*GetImageSubresourceMap())[*pImage].push_back(subpair);
+    (*GetImageLayoutMap())[subpair] = image_state;
 }
 
 bool CoreChecks::PreCallValidateDestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks *pAllocator) {
@@ -1533,13 +1532,13 @@ void CoreChecks::PreCallRecordDestroyImage(VkDevice device, VkImage image, const
     ClearMemoryObjectBindings(obj_struct.handle, kVulkanObjectTypeImage);
     EraseQFOReleaseBarriers<VkImageMemoryBarrier>(device_data, image);
     // Remove image from imageMap
-    GetImageMap(device_data)->erase(image);
-    std::unordered_map<VkImage, std::vector<ImageSubresourcePair>> *imageSubresourceMap = GetImageSubresourceMap(device_data);
+    GetImageMap()->erase(image);
+    std::unordered_map<VkImage, std::vector<ImageSubresourcePair>> *imageSubresourceMap = GetImageSubresourceMap();
 
     const auto &sub_entry = imageSubresourceMap->find(image);
     if (sub_entry != imageSubresourceMap->end()) {
         for (const auto &pair : sub_entry->second) {
-            GetImageLayoutMap(device_data)->erase(pair);
+            GetImageLayoutMap()->erase(pair);
         }
         imageSubresourceMap->erase(sub_entry);
     }
