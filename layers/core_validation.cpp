@@ -3600,7 +3600,6 @@ bool CoreChecks::ValidateAllocateMemoryANDROID(layer_data *dev_data, const VkMem
 
 bool CoreChecks::ValidateGetImageMemoryRequirements2ANDROID(layer_data *dev_data, const VkImage image) {
     bool skip = false;
-    const debug_report_data *report_data = GetReportData(dev_data);
 
     IMAGE_STATE *image_state = GetImageState(image);
     if (image_state->imported_ahb && (0 == image_state->GetBoundMemory().size())) {
@@ -5006,7 +5005,7 @@ VkResult CoreChecks::GetPDImageFormatProperties2(const VkPhysicalDeviceImageForm
                                                                            pImageFormatProperties);
 }
 
-const debug_report_data *CoreChecks::GetReportData(const layer_data *device_data) { return device_data->report_data; }
+const debug_report_data *CoreChecks::GetReportData() { return report_data; }
 
 const VkLayerDispatchTable *CoreChecks::GetDispatchTable() { return &device_dispatch_table; }
 
