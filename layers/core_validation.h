@@ -262,7 +262,7 @@ class CoreChecks : public ValidationObject {
     FRAMEBUFFER_STATE* GetFramebufferState(VkFramebuffer framebuffer);
     COMMAND_POOL_NODE* GetCommandPoolNode(VkCommandPool pool);
     shader_module const* GetShaderModuleState(VkShaderModule module);
-    const DeviceFeatures* GetEnabledFeatures(const layer_data* device_data);
+    const DeviceFeatures* GetEnabledFeatures();
     FENCE_NODE* GetFenceNode(layer_data* dev_data, VkFence fence);
     EVENT_STATE* GetEventNode(layer_data* dev_data, VkEvent event);
     QUERY_POOL_NODE* GetQueryPoolNode(layer_data* dev_data, VkQueryPool query_pool);
@@ -529,7 +529,7 @@ class CoreChecks : public ValidationObject {
     std::unordered_map<VkSamplerYcbcrConversion, uint64_t>* GetYcbcrConversionFormatMap(layer_data*);
     std::unordered_set<uint64_t>* GetAHBExternalFormatsSet(layer_data*);
 
-    const DeviceExtensions* GetDeviceExtensions(const layer_data*);
+    const DeviceExtensions* GetDeviceExtensions();
     GpuValidationState* GetGpuValidationState(layer_data*);
     const GpuValidationState* GetGpuValidationState(const layer_data*);
     VkDevice GetDevice(const layer_data*);
