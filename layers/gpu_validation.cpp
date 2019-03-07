@@ -36,7 +36,7 @@ static const uint32_t kNumBindingsInSet = 1;
 
 // Implementation for Device Memory Manager class
 GpuDeviceMemoryManager::GpuDeviceMemoryManager(layer_data *dev_data, uint32_t data_size) {
-    uint32_t align = static_cast<uint32_t>(dev_data->GetPDProperties(dev_data)->limits.minStorageBufferOffsetAlignment);
+    uint32_t align = static_cast<uint32_t>(dev_data->GetPDProperties()->limits.minStorageBufferOffsetAlignment);
     if (0 == align) {
         align = 1;
     }
@@ -124,7 +124,7 @@ bool BlockUsed(GpuDeviceMemoryBlock &block) { return (block.buffer != VK_NULL_HA
 
 bool GpuDeviceMemoryManager::MemoryTypeFromProperties(uint32_t typeBits, VkFlags requirements_mask, uint32_t *typeIndex) {
     // Search memtypes to find first index with those properties
-    const VkPhysicalDeviceMemoryProperties *props = dev_data_->GetPhysicalDeviceMemoryProperties(dev_data_);
+    const VkPhysicalDeviceMemoryProperties *props = dev_data_->GetPhysicalDeviceMemoryProperties();
     for (uint32_t i = 0; i < VK_MAX_MEMORY_TYPES; i++) {
         if ((typeBits & 1) == 1) {
             // Type is available, does it match user properties?
@@ -336,7 +336,7 @@ void CoreChecks::GpuPostCallRecordCreateDevice(layer_data *dev_data) {
     gpu_state->barrier_command_pool = VK_NULL_HANDLE;
     gpu_state->barrier_command_buffer = VK_NULL_HANDLE;
 
-    if (GetPDProperties(dev_data)->apiVersion < VK_API_VERSION_1_1) {
+    if (GetPDProperties()->apiVersion < VK_API_VERSION_1_1) {
         ReportSetupProblem(dev_data, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(GetDevice(dev_data)),
                            "GPU-Assisted validation requires Vulkan 1.1 or later.  GPU-Assisted Validation disabled.");
         gpu_state->aborted = true;
@@ -344,7 +344,7 @@ void CoreChecks::GpuPostCallRecordCreateDevice(layer_data *dev_data) {
     }
     // Some devices have extremely high limits here, so set a reasonable max because we have to pad
     // the pipeline layout with dummy descriptor set layouts.
-    gpu_state->adjusted_max_desc_sets = GetPDProperties(dev_data)->limits.maxBoundDescriptorSets;
+    gpu_state->adjusted_max_desc_sets = GetPDProperties()->limits.maxBoundDescriptorSets;
     gpu_state->adjusted_max_desc_sets = std::min(33U, gpu_state->adjusted_max_desc_sets);
 
     // We can't do anything if there is only one.
@@ -1030,7 +1030,7 @@ void CoreChecks::ProcessInstrumentationBuffer(const layer_data *dev_data, VkQueu
             uint32_t block_offset = buffer_info.mem_block.offset;
             uint32_t block_size = gpu_state->memory_manager->GetBlockSize();
             uint32_t offset_to_data = 0;
-            const uint32_t map_align = std::max(1U, static_cast<uint32_t>(GetPDProperties(dev_data)->limits.minMemoryMapAlignment));
+            const uint32_t map_align = std::max(1U, static_cast<uint32_t>(GetPDProperties()->limits.minMemoryMapAlignment));
 
             // Adjust the offset to the alignment required for mapping.
             block_offset = (block_offset / map_align) * map_align;

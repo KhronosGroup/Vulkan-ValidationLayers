@@ -3427,7 +3427,7 @@ bool CoreChecks::ValidateAllocateMemoryANDROID(layer_data *dev_data, const VkMem
         ifp2.sType = VK_STRUCTURE_TYPE_IMAGE_FORMAT_PROPERTIES_2;
         ifp2.pNext = &ext_img_fmt_props;
 
-        VkResult fmt_lookup_result = GetPDImageFormatProperties2(dev_data, &pdifi2, &ifp2);
+        VkResult fmt_lookup_result = GetPDImageFormatProperties2(&pdifi2, &ifp2);
 
         //  If buffer is not NULL, Android hardware buffers must be supported for import, as reported by
         //  VkExternalImageFormatProperties or VkExternalBufferProperties.
@@ -4990,26 +4990,24 @@ void CoreChecks::PreCallRecordDestroyRenderPass(VkDevice device, VkRenderPass re
 }
 
 // Access helper functions for external modules
-VkFormatProperties CoreChecks::GetPDFormatProperties(const layer_data *device_data, const VkFormat format) {
+VkFormatProperties CoreChecks::GetPDFormatProperties(const VkFormat format) {
     VkFormatProperties format_properties;
-    device_data->instance_dispatch_table.GetPhysicalDeviceFormatProperties(device_data->physical_device, format,
-                                                                           &format_properties);
+    instance_dispatch_table.GetPhysicalDeviceFormatProperties(physical_device, format, &format_properties);
     return format_properties;
 }
 
-VkResult CoreChecks::GetPDImageFormatProperties(layer_data *device_data, const VkImageCreateInfo *image_ci,
+VkResult CoreChecks::GetPDImageFormatProperties(const VkImageCreateInfo *image_ci,
                                                 VkImageFormatProperties *pImageFormatProperties) {
-    return device_data->instance_dispatch_table.GetPhysicalDeviceImageFormatProperties(
-        device_data->physical_device, image_ci->format, image_ci->imageType, image_ci->tiling, image_ci->usage, image_ci->flags,
-        pImageFormatProperties);
+    return instance_dispatch_table.GetPhysicalDeviceImageFormatProperties(physical_device, image_ci->format, image_ci->imageType,
+                                                                          image_ci->tiling, image_ci->usage, image_ci->flags,
+                                                                          pImageFormatProperties);
 }
 
-VkResult CoreChecks::GetPDImageFormatProperties2(layer_data *device_data,
-                                                 const VkPhysicalDeviceImageFormatInfo2 *phys_dev_image_fmt_info,
+VkResult CoreChecks::GetPDImageFormatProperties2(const VkPhysicalDeviceImageFormatInfo2 *phys_dev_image_fmt_info,
                                                  VkImageFormatProperties2 *pImageFormatProperties) {
-    if (!device_data->instance_extensions.vk_khr_get_physical_device_properties_2) return VK_ERROR_EXTENSION_NOT_PRESENT;
-    return device_data->instance_dispatch_table.GetPhysicalDeviceImageFormatProperties2(
-        device_data->physical_device, phys_dev_image_fmt_info, pImageFormatProperties);
+    if (!instance_extensions.vk_khr_get_physical_device_properties_2) return VK_ERROR_EXTENSION_NOT_PRESENT;
+    return instance_dispatch_table.GetPhysicalDeviceImageFormatProperties2(physical_device, phys_dev_image_fmt_info,
+                                                                           pImageFormatProperties);
 }
 
 const debug_report_data *CoreChecks::GetReportData(const layer_data *device_data) { return device_data->report_data; }
@@ -5018,13 +5016,9 @@ const VkLayerDispatchTable *CoreChecks::GetDispatchTable(const layer_data *devic
     return &device_data->device_dispatch_table;
 }
 
-const VkPhysicalDeviceProperties *CoreChecks::GetPDProperties(const layer_data *device_data) {
-    return &device_data->phys_dev_props;
-}
+const VkPhysicalDeviceProperties *CoreChecks::GetPDProperties() { return &phys_dev_props; }
 
-const VkPhysicalDeviceMemoryProperties *CoreChecks::GetPhysicalDeviceMemoryProperties(const layer_data *device_data) {
-    return &device_data->phys_dev_mem_props;
-}
+const VkPhysicalDeviceMemoryProperties *CoreChecks::GetPhysicalDeviceMemoryProperties() { return &phys_dev_mem_props; }
 
 const CHECK_DISABLED *CoreChecks::GetDisables(layer_data *device_data) { return &device_data->instance_state->disabled; }
 
@@ -5108,7 +5102,7 @@ bool CoreChecks::ValidatePipelineVertexDivisors(layer_data *dev_data,
                                                 std::vector<std::unique_ptr<PIPELINE_STATE>> const &pipe_state_vec,
                                                 const uint32_t count, const VkGraphicsPipelineCreateInfo *pipe_cis) {
     bool skip = false;
-    const VkPhysicalDeviceLimits *device_limits = &(GetPDProperties(dev_data)->limits);
+    const VkPhysicalDeviceLimits *device_limits = &(GetPDProperties()->limits);
 
     for (uint32_t i = 0; i < count; i++) {
         auto pvids_ci = lvl_find_in_chain<VkPipelineVertexInputDivisorStateCreateInfoEXT>(pipe_cis[i].pVertexInputState->pNext);
