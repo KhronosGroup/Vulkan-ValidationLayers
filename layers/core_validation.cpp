@@ -3344,6 +3344,11 @@ bool CoreChecks::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount,
     }
     return skip;
 }
+void CoreChecks::PreCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits, VkFence fence) {
+    if (GetEnables()->gpu_validation && GetDeviceExtensions()->vk_ext_descriptor_indexing) {
+        GpuPreCallRecordQueueSubmit(queue, submitCount, pSubmits, fence);
+    }
+}
 
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
 // Android-specific validation that uses types defined only on Android and only for NDK versions

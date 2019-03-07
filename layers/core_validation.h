@@ -620,6 +620,7 @@ class CoreChecks : public ValidationObject {
                                         VkPipelineLayout* pPipelineLayout, std::vector<VkDescriptorSetLayout>* new_layouts,
                                         VkPipelineLayoutCreateInfo* modified_create_info);
     void GpuPostCallCreatePipelineLayout(VkResult result);
+    void GpuPreCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits, VkFence fence);
     void GpuPostCallQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits, VkFence fence);
     void GpuPreCallValidateCmdWaitEvents(VkPipelineStageFlags sourceStageMask);
     std::vector<safe_VkGraphicsPipelineCreateInfo> GpuPreCallRecordCreateGraphicsPipelines(
@@ -631,6 +632,7 @@ class CoreChecks : public ValidationObject {
     void GpuAllocateValidationResources(const VkCommandBuffer cmd_buffer, VkPipelineBindPoint bind_point);
     void AnalyzeAndReportError(GLOBAL_CB_NODE* cb_node, VkQueue queue, uint32_t draw_index, uint32_t* const debug_output_buffer);
     void ProcessInstrumentationBuffer(VkQueue queue, GLOBAL_CB_NODE* cb_node);
+    void UpdateInstrumentationBuffer(GLOBAL_CB_NODE* cb_node);
     void SubmitBarrier(VkQueue queue);
     bool GpuInstrumentShader(const VkShaderModuleCreateInfo* pCreateInfo, std::vector<unsigned int>& new_pgm,
                              uint32_t* unique_shader_id);
@@ -1022,6 +1024,7 @@ class CoreChecks : public ValidationObject {
     bool PreCallValidateCmdDebugMarkerBeginEXT(VkCommandBuffer commandBuffer, const VkDebugMarkerMarkerInfoEXT* pMarkerInfo);
     void PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks* pAllocator);
     bool PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits, VkFence fence);
+    void PreCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits, VkFence fence);
     void PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits, VkFence fence,
                                    VkResult result);
     bool PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAllocateInfo* pAllocateInfo,

@@ -951,6 +951,24 @@ void CoreChecks::ProcessInstrumentationBuffer(VkQueue queue, GLOBAL_CB_NODE *cb_
     }
 }
 
+// For the given command buffer, map its debug data buffers and update the status of any update after bind descriptors
+void CoreChecks::UpdateInstrumentationBuffer(GLOBAL_CB_NODE *cb_node) {
+    auto gpu_buffer_list = gpu_validation_state->GetGpuBufferInfo(cb_node->commandBuffer);
+    uint32_t *pData;
+    for (auto &buffer_info : gpu_buffer_list) {
+        if (buffer_info.input_mem_block.update_at_submit.size() > 0) {
+            VkResult result =
+                vmaMapMemory(gpu_validation_state->vmaAllocator, buffer_info.input_mem_block.allocation, (void **)&pData);
+            if (result == VK_SUCCESS) {
+                for (auto update : buffer_info.input_mem_block.update_at_submit) {
+                    if (update.second->updated) pData[update.first] = 1;
+                }
+                vmaUnmapMemory(gpu_validation_state->vmaAllocator, buffer_info.input_mem_block.allocation);
+            }
+        }
+    }
+}
+
 // Submit a memory barrier on graphics queues.
 // Lazy-create and record the needed command buffer.
 void CoreChecks::SubmitBarrier(VkQueue queue) {
@@ -1026,6 +1044,19 @@ void CoreChecks::SubmitBarrier(VkQueue queue) {
     }
 }
 
+void CoreChecks::GpuPreCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits, VkFence fence) {
+    for (uint32_t submit_idx = 0; submit_idx < submitCount; submit_idx++) {
+        const VkSubmitInfo *submit = &pSubmits[submit_idx];
+        for (uint32_t i = 0; i < submit->commandBufferCount; i++) {
+            auto cb_node = GetCBNode(submit->pCommandBuffers[i]);
+            UpdateInstrumentationBuffer(cb_node);
+            for (auto secondaryCmdBuffer : cb_node->linkedCommandBuffers) {
+                UpdateInstrumentationBuffer(secondaryCmdBuffer);
+            }
+        }
+    }
+}
+
 // Issue a memory barrier to make GPU-written data available to host.
 // Wait for the queue to complete execution.
 // Check the debug buffers for all the command buffers that were submitted.
@@ -1080,6 +1111,7 @@ void CoreChecks::GpuAllocateValidationResources(const VkCommandBuffer cmd_buffer
         return;
     }
 
+    // Allocate memory for the output block that the gpu will use to return any error information
     GpuDeviceMemoryBlock output_block = {};
     VkBufferCreateInfo bufferInfo = {VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
     bufferInfo.size = gpu_validation_state->output_buffer_size;
@@ -1095,21 +1127,25 @@ void CoreChecks::GpuAllocateValidationResources(const VkCommandBuffer cmd_buffer
         return;
     }
 
+    // Clear the output block to zeros so that only error information from the gpu will be present
     uint32_t *pData;
     result = vmaMapMemory(gpu_validation_state->vmaAllocator, output_block.allocation, (void **)&pData);
     if (result == VK_SUCCESS) {
         memset(pData, 0, gpu_validation_state->output_buffer_size);
         vmaUnmapMemory(gpu_validation_state->vmaAllocator, output_block.allocation);
     }
+
     GpuDeviceMemoryBlock input_block = {};
     VkWriteDescriptorSet desc_writes[2] = {};
     uint32_t desc_count = 1;
     auto const &state = cb_node->lastBound[bind_point];
     uint32_t number_of_sets = (uint32_t)state.boundDescriptorSets.size();
 
+    // Figure out how much memory we need for the input block based on how many sets and bindings there are
+    // and how big each of the bindings is
     if (number_of_sets > 0 && GetDeviceExtensions()->vk_ext_descriptor_indexing) {
-        uint32_t descriptor_count = 0;
-        uint32_t binding_count = 0;
+        uint32_t descriptor_count = 0;  // Number of descriptors, including all array elements
+        uint32_t binding_count = 0;     // Number of bindings based on the max binding number used
         for (auto desc : state.boundDescriptorSets) {
             auto bindings = desc->GetLayout()->GetSortedBindingSet();
             if (bindings.size() > 0) {
@@ -1161,11 +1197,13 @@ void CoreChecks::GpuAllocateValidationResources(const VkCommandBuffer cmd_buffer
 
         for (auto desc : state.boundDescriptorSets) {
             auto layout = desc->GetLayout();
-            auto not_empty = layout->GetSortedBindingSet();
-            if (not_empty.size() > 0) {
+            auto bindings = layout->GetSortedBindingSet();
+            if (bindings.size() > 0) {
+                // For each set, fill in index of its bindings sizes in the sizes array
                 *sets_to_sizes++ = bindCounter;
+                // For each set, fill in the index of its bindings in the bindings_to_written array
                 *sets_to_bindings++ = bindCounter + number_of_sets + binding_count;
-                for (auto binding : not_empty) {
+                for (auto binding : bindings) {
                     // For each binding, fill in its size in the sizes array
                     if (binding == layout->GetMaxBinding() && desc->IsVariableDescriptorCount(binding)) {
                         sizes[binding] = desc->GetVariableDescriptorCount();
@@ -1179,14 +1217,19 @@ void CoreChecks::GpuAllocateValidationResources(const VkCommandBuffer cmd_buffer
                     // For each array element in the binding, update the written array with whether it has been written
                     for (uint32_t i = index_range.start; i < index_range.end; ++i) {
                         auto *descriptor = desc->GetDescriptorFromGlobalIndex(i);
-                        if (descriptor->updated) pData[written_index] = 1;
+                        if (descriptor->updated) {
+                            pData[written_index] = 1;
+                        } else if (desc->IsUpdateAfterBind(binding)) {
+                            // If it hasn't been written now and it's update after bind, put it in a list to check at QueueSubmit
+                            input_block.update_at_submit[written_index] = descriptor;
+                        }
                         written_index++;
                     }
                 }
-                auto last = std::prev(not_empty.end());
-                bindings_to_written += *last + 1;
-                bindCounter += *last + 1;
-                sizes += *last + 1;
+                auto last = desc->GetLayout()->GetMaxBinding();
+                bindings_to_written += last + 1;
+                bindCounter += last + 1;
+                sizes += last + 1;
             } else {
                 *sets_to_sizes++ = 0;
                 *sets_to_bindings++ = 0;
