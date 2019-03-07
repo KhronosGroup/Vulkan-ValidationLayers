@@ -3931,11 +3931,9 @@ bool CoreChecks::PreCallValidateCreateBuffer(VkDevice device, const VkBufferCrea
 
 void CoreChecks::PostCallRecordCreateBuffer(VkDevice device, const VkBufferCreateInfo *pCreateInfo,
                                             const VkAllocationCallbacks *pAllocator, VkBuffer *pBuffer, VkResult result) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (result != VK_SUCCESS) return;
     // TODO : This doesn't create deep copy of pQueueFamilyIndices so need to fix that if/when we want that data to be valid
-    GetBufferMap(device_data)
-        ->insert(std::make_pair(*pBuffer, std::unique_ptr<BUFFER_STATE>(new BUFFER_STATE(*pBuffer, pCreateInfo))));
+    GetBufferMap()->insert(std::make_pair(*pBuffer, std::unique_ptr<BUFFER_STATE>(new BUFFER_STATE(*pBuffer, pCreateInfo))));
 }
 
 bool CoreChecks::PreCallValidateCreateBufferView(VkDevice device, const VkBufferViewCreateInfo *pCreateInfo,
@@ -3983,9 +3981,8 @@ bool CoreChecks::PreCallValidateCreateBufferView(VkDevice device, const VkBuffer
 
 void CoreChecks::PostCallRecordCreateBufferView(VkDevice device, const VkBufferViewCreateInfo *pCreateInfo,
                                                 const VkAllocationCallbacks *pAllocator, VkBufferView *pView, VkResult result) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (result != VK_SUCCESS) return;
-    (*GetBufferViewMap(device_data))[*pView] = std::unique_ptr<BUFFER_VIEW_STATE>(new BUFFER_VIEW_STATE(*pView, pCreateInfo));
+    (*GetBufferViewMap())[*pView] = std::unique_ptr<BUFFER_VIEW_STATE>(new BUFFER_VIEW_STATE(*pView, pCreateInfo));
 }
 
 // For the given format verify that the aspect masks make sense
@@ -4417,9 +4414,8 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
 
 void CoreChecks::PostCallRecordCreateImageView(VkDevice device, const VkImageViewCreateInfo *pCreateInfo,
                                                const VkAllocationCallbacks *pAllocator, VkImageView *pView, VkResult result) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (result != VK_SUCCESS) return;
-    auto image_view_map = GetImageViewMap(device_data);
+    auto image_view_map = GetImageViewMap();
     (*image_view_map)[*pView] = std::unique_ptr<IMAGE_VIEW_STATE>(new IMAGE_VIEW_STATE(*pView, pCreateInfo));
 
     auto image_state = GetImageState(pCreateInfo->image);
@@ -4505,7 +4501,7 @@ void CoreChecks::PreCallRecordDestroyImageView(VkDevice device, VkImageView imag
 
     // Any bound cmd buffers are now invalid
     InvalidateCommandBuffers(device_data, image_view_state->cb_bindings, obj_struct);
-    (*GetImageViewMap(device_data)).erase(imageView);
+    (*GetImageViewMap()).erase(imageView);
 }
 
 bool CoreChecks::PreCallValidateDestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationCallbacks *pAllocator) {
@@ -4534,7 +4530,7 @@ void CoreChecks::PreCallRecordDestroyBuffer(VkDevice device, VkBuffer buffer, co
     }
     ClearMemoryObjectBindings(HandleToUint64(buffer), kVulkanObjectTypeBuffer);
     EraseQFOReleaseBarriers<VkBufferMemoryBarrier>(device_data, buffer);
-    GetBufferMap(device_data)->erase(buffer_state->buffer);
+    GetBufferMap()->erase(buffer_state->buffer);
 }
 
 bool CoreChecks::PreCallValidateDestroyBufferView(VkDevice device, VkBufferView bufferView,
@@ -4558,7 +4554,7 @@ void CoreChecks::PreCallRecordDestroyBufferView(VkDevice device, VkBufferView bu
 
     // Any bound cmd buffers are now invalid
     InvalidateCommandBuffers(device_data, buffer_view_state->cb_bindings, obj_struct);
-    GetBufferViewMap(device_data)->erase(bufferView);
+    GetBufferViewMap()->erase(bufferView);
 }
 
 bool CoreChecks::PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,
