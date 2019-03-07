@@ -324,6 +324,12 @@ class CoreChecks : public ValidationObject {
     bool LogInvalidAttachmentMessage(layer_data const* dev_data, const char* type1_string, const RENDER_PASS_STATE* rp1_state,
                                      const char* type2_string, const RENDER_PASS_STATE* rp2_state, uint32_t primary_attach,
                                      uint32_t secondary_attach, const char* msg, const char* caller, const char* error_code);
+    bool ValidateStageMaskGsTsEnables(VkPipelineStageFlags stageMask, const char* caller, const char* geo_error_id,
+                                      const char* tess_error_id, const char* mesh_error_id, const char* task_error_id);
+    bool ValidateMapMemRange(VkDeviceMemory mem, VkDeviceSize offset, VkDeviceSize size);
+    bool ValidatePushConstantRange(const uint32_t offset, const uint32_t size, const char* caller_name, uint32_t index);
+    bool ValidateRenderPassDAG(RenderPassCreateVersion rp_version, const VkRenderPassCreateInfo2KHR* pCreateInfo,
+                               RENDER_PASS_STATE* render_pass);
     bool ValidateAttachmentCompatibility(layer_data const* dev_data, const char* type1_string, const RENDER_PASS_STATE* rp1_state,
                                          const char* type2_string, const RENDER_PASS_STATE* rp2_state, uint32_t primary_attach,
                                          uint32_t secondary_attach, const char* caller, const char* error_code);
