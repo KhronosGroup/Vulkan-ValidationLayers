@@ -224,8 +224,10 @@ class CoreChecks : public ValidationObject {
         VkPhysicalDeviceInlineUniformBlockPropertiesEXT inline_uniform_block_props;
         VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT vtx_attrib_divisor_props;
         VkPhysicalDeviceDepthStencilResolvePropertiesKHR depth_stencil_resolve_props;
+        VkPhysicalDeviceCooperativeMatrixPropertiesNV cooperative_matrix_props;
     };
     DeviceExtensionProperties phys_dev_ext_props = {};
+    std::vector<VkCooperativeMatrixPropertiesNV> cooperative_matrix_properties;
     bool external_sync_warning = false;
     uint32_t api_version = 0;
     std::unique_ptr<GpuValidationState> gpu_validation_state;
@@ -603,6 +605,8 @@ class CoreChecks : public ValidationObject {
     bool ValidateShaderCapabilities(shader_module const* src, VkShaderStageFlagBits stage, bool has_writable_descriptor);
     bool ValidateShaderStageInputOutputLimits(shader_module const* src, VkPipelineShaderStageCreateInfo const* pStage,
                                               PIPELINE_STATE* pipeline);
+    bool ValidateCooperativeMatrix(shader_module const* src, VkPipelineShaderStageCreateInfo const* pStage,
+                                   PIPELINE_STATE* pipeline);
 
     // Gpu Validation Functions
     void GpuPreCallRecordCreateDevice(VkPhysicalDevice gpu, std::unique_ptr<safe_VkDeviceCreateInfo>& modified_create_info,
