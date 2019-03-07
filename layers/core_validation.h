@@ -511,13 +511,13 @@ class CoreChecks : public ValidationObject {
     bool ValidateCmd(layer_data* dev_data, const GLOBAL_CB_NODE* cb_state, const CMD_TYPE cmd, const char* caller_name);
 
     // Prototypes for layer_data accessor functions.  These should be in their own header file at some point
-    VkFormatProperties GetPDFormatProperties(const layer_data* device_data, const VkFormat format);
-    VkResult GetPDImageFormatProperties(layer_data*, const VkImageCreateInfo*, VkImageFormatProperties*);
-    VkResult GetPDImageFormatProperties2(layer_data*, const VkPhysicalDeviceImageFormatInfo2*, VkImageFormatProperties2*);
+    VkFormatProperties GetPDFormatProperties(const VkFormat format);
+    VkResult GetPDImageFormatProperties(const VkImageCreateInfo*, VkImageFormatProperties*);
+    VkResult GetPDImageFormatProperties2(const VkPhysicalDeviceImageFormatInfo2*, VkImageFormatProperties2*);
     const debug_report_data* GetReportData(const layer_data*);
     const VkLayerDispatchTable* GetDispatchTable(const layer_data*);
-    const VkPhysicalDeviceProperties* GetPDProperties(const layer_data*);
-    const VkPhysicalDeviceMemoryProperties* GetPhysicalDeviceMemoryProperties(const layer_data*);
+    const VkPhysicalDeviceProperties* GetPDProperties();
+    const VkPhysicalDeviceMemoryProperties* GetPhysicalDeviceMemoryProperties();
     const CHECK_DISABLED* GetDisables(layer_data*);
     const CHECK_ENABLED* GetEnables(layer_data*);
     std::unordered_map<VkImage, std::unique_ptr<IMAGE_STATE>>* GetImageMap(layer_data*);
