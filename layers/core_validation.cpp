@@ -5042,7 +5042,7 @@ GpuValidationState *CoreChecks::GetGpuValidationState() { return &gpu_validation
 
 VkDevice CoreChecks::GetDevice() { return device; }
 
-uint32_t CoreChecks::GetApiVersion(const layer_data *device_data) { return device_data->api_version; }
+uint32_t CoreChecks::GetApiVersion() { return api_version; }
 
 void CoreChecks::PostCallRecordCreateFence(VkDevice device, const VkFenceCreateInfo *pCreateInfo,
                                            const VkAllocationCallbacks *pAllocator, VkFence *pFence, VkResult result) {

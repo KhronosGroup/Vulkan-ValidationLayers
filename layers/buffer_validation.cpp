@@ -1695,7 +1695,7 @@ bool CoreChecks::PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuffer
         skip |= ValidateCmdQueueFlags(device_data, cb_node, "vkCmdClearColorImage()", VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
                                       "VUID-vkCmdClearColorImage-commandBuffer-cmdpool");
         skip |= ValidateCmd(device_data, cb_node, CMD_CLEARCOLORIMAGE, "vkCmdClearColorImage()");
-        if (GetApiVersion(device_data) >= VK_API_VERSION_1_1 || GetDeviceExtensions()->vk_khr_maintenance1) {
+        if (GetApiVersion() >= VK_API_VERSION_1_1 || GetDeviceExtensions()->vk_khr_maintenance1) {
             skip |= ValidateImageFormatFeatureFlags(device_data, image_state, VK_FORMAT_FEATURE_TRANSFER_DST_BIT,
                                                     "vkCmdClearColorImage", "VUID-vkCmdClearColorImage-image-01993",
                                                     "VUID-vkCmdClearColorImage-image-01993");
@@ -1741,7 +1741,7 @@ bool CoreChecks::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer comman
         skip |= ValidateCmdQueueFlags(device_data, cb_node, "vkCmdClearDepthStencilImage()", VK_QUEUE_GRAPHICS_BIT,
                                       "VUID-vkCmdClearDepthStencilImage-commandBuffer-cmdpool");
         skip |= ValidateCmd(device_data, cb_node, CMD_CLEARDEPTHSTENCILIMAGE, "vkCmdClearDepthStencilImage()");
-        if (GetApiVersion(device_data) >= VK_API_VERSION_1_1 || GetDeviceExtensions()->vk_khr_maintenance1) {
+        if (GetApiVersion() >= VK_API_VERSION_1_1 || GetDeviceExtensions()->vk_khr_maintenance1) {
             skip |= ValidateImageFormatFeatureFlags(device_data, image_state, VK_FORMAT_FEATURE_TRANSFER_DST_BIT,
                                                     "vkCmdClearDepthStencilImage", "VUID-vkCmdClearDepthStencilImage-image-01994",
                                                     "VUID-vkCmdClearDepthStencilImage-image-01994");
@@ -2689,7 +2689,7 @@ bool CoreChecks::PreCallValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkIm
                                     "VUID-vkCmdCopyImage-srcImage-00126", "vkCmdCopyImage()", "VK_IMAGE_USAGE_TRANSFER_SRC_BIT");
     skip |= ValidateImageUsageFlags(device_data, dst_image_state, VK_IMAGE_USAGE_TRANSFER_DST_BIT, true,
                                     "VUID-vkCmdCopyImage-dstImage-00131", "vkCmdCopyImage()", "VK_IMAGE_USAGE_TRANSFER_DST_BIT");
-    if (GetApiVersion(device_data) >= VK_API_VERSION_1_1 || GetDeviceExtensions()->vk_khr_maintenance1) {
+    if (GetApiVersion() >= VK_API_VERSION_1_1 || GetDeviceExtensions()->vk_khr_maintenance1) {
         skip |=
             ValidateImageFormatFeatureFlags(device_data, src_image_state, VK_FORMAT_FEATURE_TRANSFER_SRC_BIT, "vkCmdCopyImage()",
                                             "VUID-vkCmdCopyImage-srcImage-01995", "VUID-vkCmdCopyImage-srcImage-01995");
@@ -4909,7 +4909,7 @@ bool CoreChecks::PreCallValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuff
     skip |= ValidateBufferUsageFlags(device_data, dst_buffer_state, VK_BUFFER_USAGE_TRANSFER_DST_BIT, true,
                                      "VUID-vkCmdCopyImageToBuffer-dstBuffer-00191", "vkCmdCopyImageToBuffer()",
                                      "VK_BUFFER_USAGE_TRANSFER_DST_BIT");
-    if (GetApiVersion(device_data) >= VK_API_VERSION_1_1 || GetDeviceExtensions()->vk_khr_maintenance1) {
+    if (GetApiVersion() >= VK_API_VERSION_1_1 || GetDeviceExtensions()->vk_khr_maintenance1) {
         skip |= ValidateImageFormatFeatureFlags(device_data, src_image_state, VK_FORMAT_FEATURE_TRANSFER_SRC_BIT,
                                                 "vkCmdCopyImageToBuffer()", "VUID-vkCmdCopyImageToBuffer-srcImage-01998",
                                                 "VUID-vkCmdCopyImageToBuffer-srcImage-01998");
@@ -4993,7 +4993,7 @@ bool CoreChecks::PreCallValidateCmdCopyBufferToImage(VkCommandBuffer commandBuff
     skip |= ValidateImageUsageFlags(device_data, dst_image_state, VK_IMAGE_USAGE_TRANSFER_DST_BIT, true,
                                     "VUID-vkCmdCopyBufferToImage-dstImage-00177", "vkCmdCopyBufferToImage()",
                                     "VK_IMAGE_USAGE_TRANSFER_DST_BIT");
-    if (GetApiVersion(device_data) >= VK_API_VERSION_1_1 || GetDeviceExtensions()->vk_khr_maintenance1) {
+    if (GetApiVersion() >= VK_API_VERSION_1_1 || GetDeviceExtensions()->vk_khr_maintenance1) {
         skip |= ValidateImageFormatFeatureFlags(device_data, dst_image_state, VK_FORMAT_FEATURE_TRANSFER_DST_BIT,
                                                 "vkCmdCopyBufferToImage()", "VUID-vkCmdCopyBufferToImage-dstImage-01997",
                                                 "VUID-vkCmdCopyBufferToImage-dstImage-01997");
