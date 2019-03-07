@@ -5038,12 +5038,9 @@ const DeviceFeatures *CoreChecks::GetEnabledFeatures() { return &enabled_feature
 
 const DeviceExtensions *CoreChecks::GetDeviceExtensions() { return &device_extensions; }
 
-GpuValidationState *CoreChecks::GetGpuValidationState(layer_data *device_data) { return &device_data->gpu_validation_state; }
-const GpuValidationState *CoreChecks::GetGpuValidationState(const layer_data *device_data) {
-    return &device_data->gpu_validation_state;
-}
+GpuValidationState *CoreChecks::GetGpuValidationState() { return &gpu_validation_state; }
 
-VkDevice CoreChecks::GetDevice(const layer_data *device_data) { return device_data->device; }
+VkDevice CoreChecks::GetDevice() { return device; }
 
 uint32_t CoreChecks::GetApiVersion(const layer_data *device_data) { return device_data->api_version; }
 

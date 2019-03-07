@@ -530,9 +530,8 @@ class CoreChecks : public ValidationObject {
     std::unordered_set<uint64_t>* GetAHBExternalFormatsSet();
 
     const DeviceExtensions* GetDeviceExtensions();
-    GpuValidationState* GetGpuValidationState(layer_data*);
-    const GpuValidationState* GetGpuValidationState(const layer_data*);
-    VkDevice GetDevice(const layer_data*);
+    GpuValidationState* GetGpuValidationState();
+    VkDevice GetDevice();
 
     uint32_t GetApiVersion(const layer_data*);
 
