@@ -301,7 +301,7 @@ class CoreChecks : public ValidationObject {
     bool CheckCommandBufferInFlight(layer_data* dev_data, const GLOBAL_CB_NODE* cb_node, const char* action,
                                     const char* error_code);
     bool VerifyQueueStateToFence(VkFence fence);
-    void DecrementBoundResources(layer_data* dev_data, GLOBAL_CB_NODE const* cb_node);
+    void DecrementBoundResources(GLOBAL_CB_NODE const* cb_node);
     bool VerifyWaitFenceState(layer_data* dev_data, VkFence fence, const char* apiCall);
     void RetireFence(layer_data* dev_data, VkFence fence);
     void StoreMemRanges(layer_data* dev_data, VkDeviceMemory mem, VkDeviceSize offset, VkDeviceSize size);
@@ -315,7 +315,7 @@ class CoreChecks : public ValidationObject {
     void DeletePools();
     bool ValidImageBufferQueue(GLOBAL_CB_NODE* cb_node, const VK_OBJECT* object, VkQueue queue, uint32_t count,
                                const uint32_t* indices);
-    bool ValidateFenceForSubmit(layer_data* dev_data, FENCE_NODE* pFence);
+    bool ValidateFenceForSubmit(FENCE_NODE* pFence);
     void AddMemObjInfo(layer_data* dev_data, void* object, const VkDeviceMemory mem, const VkMemoryAllocateInfo* pAllocateInfo);
     bool ValidateStatus(layer_data* dev_data, GLOBAL_CB_NODE* pNode, CBStatusFlags status_mask, VkFlags msg_flags,
                         const char* fail_msg, const char* msg_code);
@@ -340,7 +340,7 @@ class CoreChecks : public ValidationObject {
                                          const char* type2_string, const RENDER_PASS_STATE* rp2_state, const char* caller,
                                          const char* error_code);
     void UpdateDrawState(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, const VkPipelineBindPoint bind_point);
-    bool ReportInvalidCommandBuffer(layer_data* dev_data, const GLOBAL_CB_NODE* cb_state, const char* call_source);
+    bool ReportInvalidCommandBuffer(const GLOBAL_CB_NODE* cb_state, const char* call_source);
     void InitGpuValidation();
     bool ValidatePhysicalDeviceQueueFamily(const PHYSICAL_DEVICE_STATE* pd_state, uint32_t requested_queue_family,
                                            const char* err_code, const char* cmd_name, const char* queue_family_var_name);
@@ -459,9 +459,8 @@ class CoreChecks : public ValidationObject {
                                  VkMemoryRequirements mem_reqs);
     bool ValidateMemoryTypes(const layer_data* dev_data, const DEVICE_MEM_INFO* mem_info, const uint32_t memory_type_bits,
                              const char* funcName, const char* msgCode);
-    bool ValidateCommandBufferState(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, const char* call_source,
-                                    int current_submit_count, const char* vu_id);
-    bool ValidateCommandBufferSimultaneousUse(layer_data* dev_data, GLOBAL_CB_NODE* pCB, int current_submit_count);
+    bool ValidateCommandBufferState(GLOBAL_CB_NODE* cb_state, const char* call_source, int current_submit_count, const char* vu_id);
+    bool ValidateCommandBufferSimultaneousUse(GLOBAL_CB_NODE* pCB, int current_submit_count);
     bool ValidateGetDeviceQueue(uint32_t queueFamilyIndex, uint32_t queueIndex, VkQueue* pQueue, const char* valid_qfi_vuid,
                                 const char* qfi_in_range_vuid);
     void RecordGetDeviceQueueState(uint32_t queue_family_index, VkQueue queue);
@@ -563,7 +562,7 @@ class CoreChecks : public ValidationObject {
     bool ValidateBarriersQFOTransferUniqueness(const char* func_name, GLOBAL_CB_NODE* cb_state, uint32_t bufferBarrierCount,
                                                const VkBufferMemoryBarrier* pBufferMemBarriers, uint32_t imageMemBarrierCount,
                                                const VkImageMemoryBarrier* pImageMemBarriers);
-    bool ValidatePrimaryCommandBufferState(layer_data* dev_data, GLOBAL_CB_NODE* pCB, int current_submit_count,
+    bool ValidatePrimaryCommandBufferState(GLOBAL_CB_NODE* pCB, int current_submit_count,
                                            QFOTransferCBScoreboards<VkImageMemoryBarrier>* qfo_image_scoreboards,
                                            QFOTransferCBScoreboards<VkBufferMemoryBarrier>* qfo_buffer_scoreboards);
     bool ValidatePipelineDrawtimeState(layer_data const* dev_data, LAST_BOUND_STATE const& state, const GLOBAL_CB_NODE* pCB,
@@ -575,8 +574,8 @@ class CoreChecks : public ValidationObject {
     void IncrementResources(GLOBAL_CB_NODE* cb_node);
     bool ValidateEventStageMask(VkQueue queue, GLOBAL_CB_NODE* pCB, uint32_t eventCount, size_t firstEventIndex,
                                 VkPipelineStageFlags sourceStageMask);
-    void RetireWorkOnQueue(layer_data* dev_data, QUEUE_STATE* pQueue, uint64_t seq);
-    bool ValidateResources(layer_data* dev_data, GLOBAL_CB_NODE* cb_node);
+    void RetireWorkOnQueue(QUEUE_STATE* pQueue, uint64_t seq);
+    bool ValidateResources(GLOBAL_CB_NODE* cb_node);
     bool ValidateQueueFamilyIndices(GLOBAL_CB_NODE* pCB, VkQueue queue);
     VkResult CoreLayerCreateValidationCacheEXT(VkDevice device, const VkValidationCacheCreateInfoEXT* pCreateInfo,
                                                const VkAllocationCallbacks* pAllocator, VkValidationCacheEXT* pValidationCache);
@@ -640,8 +639,7 @@ class CoreChecks : public ValidationObject {
                                         std::vector<VkDescriptorSetLayout>* new_layouts,
                                         VkPipelineLayoutCreateInfo* modified_create_info);
     void GpuPostCallCreatePipelineLayout(layer_data* device_data, VkResult result);
-    void GpuPostCallQueueSubmit(layer_data* dev_data, VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits,
-                                VkFence fence);
+    void GpuPostCallQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits, VkFence fence);
     void GpuPreCallValidateCmdWaitEvents(layer_data* dev_data, VkPipelineStageFlags sourceStageMask);
     std::vector<safe_VkGraphicsPipelineCreateInfo> GpuPreCallRecordCreateGraphicsPipelines(
         layer_data* dev_data, VkPipelineCache pipelineCache, uint32_t count, const VkGraphicsPipelineCreateInfo* pCreateInfos,
@@ -651,10 +649,9 @@ class CoreChecks : public ValidationObject {
                                                   const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines);
     void GpuPreCallRecordDestroyPipeline(layer_data* dev_data, const VkPipeline pipeline);
     void GpuAllocateValidationResources(layer_data* dev_data, const VkCommandBuffer cmd_buffer, VkPipelineBindPoint bind_point);
-    void AnalyzeAndReportError(const layer_data* dev_data, GLOBAL_CB_NODE* cb_node, VkQueue queue, uint32_t draw_index,
-                               uint32_t* const debug_output_buffer);
-    void ProcessInstrumentationBuffer(const layer_data* dev_data, VkQueue queue, GLOBAL_CB_NODE* cb_node);
-    void SubmitBarrier(layer_data* dev_data, VkQueue queue);
+    void AnalyzeAndReportError(GLOBAL_CB_NODE* cb_node, VkQueue queue, uint32_t draw_index, uint32_t* const debug_output_buffer);
+    void ProcessInstrumentationBuffer(VkQueue queue, GLOBAL_CB_NODE* cb_node);
+    void SubmitBarrier(VkQueue queue);
     bool GpuInstrumentShader(layer_data* dev_data, const VkShaderModuleCreateInfo* pCreateInfo, std::vector<unsigned int>& new_pgm,
                              uint32_t* unique_shader_id);
     void ReportSetupProblem(const layer_data* dev_data, VkDebugReportObjectTypeEXT object_type, uint64_t object_handle,

@@ -1873,7 +1873,7 @@ static char const *GetCauseStr(VK_OBJECT obj) {
     return "destroyed";
 }
 
-bool CoreChecks::ReportInvalidCommandBuffer(layer_data *dev_data, const GLOBAL_CB_NODE *cb_state, const char *call_source) {
+bool CoreChecks::ReportInvalidCommandBuffer(const GLOBAL_CB_NODE *cb_state, const char *call_source) {
     bool skip = false;
     for (auto obj : cb_state->broken_bindings) {
         const char *type_str = object_string[obj.type];
@@ -1979,7 +1979,7 @@ bool CoreChecks::ValidateCmd(layer_data *dev_data, const GLOBAL_CB_NODE *cb_stat
 
         case CB_INVALID_COMPLETE:
         case CB_INVALID_INCOMPLETE:
-            return ReportInvalidCommandBuffer(dev_data, cb_state, caller_name);
+            return ReportInvalidCommandBuffer(cb_state, caller_name);
 
         default:
             auto error_it = must_be_recording_map.find(cmd);
@@ -2672,7 +2672,7 @@ bool CoreChecks::VerifyQueueStateToFence(VkFence fence) {
 }
 
 // Decrement in-use count for objects bound to command buffer
-void CoreChecks::DecrementBoundResources(layer_data *dev_data, GLOBAL_CB_NODE const *cb_node) {
+void CoreChecks::DecrementBoundResources(GLOBAL_CB_NODE const *cb_node) {
     BASE_NODE *base_obj = nullptr;
     for (auto obj : cb_node->object_bindings) {
         base_obj = GetStateStructPtrFromObject(obj);
@@ -2682,7 +2682,7 @@ void CoreChecks::DecrementBoundResources(layer_data *dev_data, GLOBAL_CB_NODE co
     }
 }
 
-void CoreChecks::RetireWorkOnQueue(layer_data *dev_data, QUEUE_STATE *pQueue, uint64_t seq) {
+void CoreChecks::RetireWorkOnQueue(QUEUE_STATE *pQueue, uint64_t seq) {
     std::unordered_map<VkQueue, uint64_t> otherQueueSeqs;
 
     // Roll this queue forward, one submission at a time.
@@ -2718,7 +2718,7 @@ void CoreChecks::RetireWorkOnQueue(layer_data *dev_data, QUEUE_STATE *pQueue, ui
                 continue;
             }
             // First perform decrement on general case bound objects
-            DecrementBoundResources(dev_data, cb_node);
+            DecrementBoundResources(cb_node);
             for (auto draw_data_element : cb_node->draw_data) {
                 for (auto &vertex_buffer_binding : draw_data_element.vertex_buffer_bindings) {
                     auto buffer_state = GetBufferState(vertex_buffer_binding.buffer);
@@ -2728,16 +2728,16 @@ void CoreChecks::RetireWorkOnQueue(layer_data *dev_data, QUEUE_STATE *pQueue, ui
                 }
             }
             for (auto event : cb_node->writeEventsBeforeWait) {
-                auto eventNode = dev_data->eventMap.find(event);
-                if (eventNode != dev_data->eventMap.end()) {
+                auto eventNode = eventMap.find(event);
+                if (eventNode != eventMap.end()) {
                     eventNode->second.write_in_use--;
                 }
             }
             for (auto queryStatePair : cb_node->queryToStateMap) {
-                dev_data->queryToStateMap[queryStatePair.first] = queryStatePair.second;
+                queryToStateMap[queryStatePair.first] = queryStatePair.second;
             }
             for (auto eventStagePair : cb_node->eventToStageMap) {
-                dev_data->eventMap[eventStagePair.first].stageMask = eventStagePair.second;
+                eventMap[eventStagePair.first].stageMask = eventStagePair.second;
             }
 
             cb_node->in_use.fetch_sub(1);
@@ -2754,7 +2754,7 @@ void CoreChecks::RetireWorkOnQueue(layer_data *dev_data, QUEUE_STATE *pQueue, ui
 
     // Roll other queues forward to the highest seq we saw a wait for
     for (auto qs : otherQueueSeqs) {
-        RetireWorkOnQueue(dev_data, GetQueueState(qs.first), qs.second);
+        RetireWorkOnQueue(GetQueueState(qs.first), qs.second);
     }
 }
 
@@ -2766,7 +2766,7 @@ static void SubmitFence(QUEUE_STATE *pQueue, FENCE_NODE *pFence, uint64_t submit
     pFence->signaler.second = pQueue->seq + pQueue->submissions.size() + submitCount;
 }
 
-bool CoreChecks::ValidateCommandBufferSimultaneousUse(layer_data *dev_data, GLOBAL_CB_NODE *pCB, int current_submit_count) {
+bool CoreChecks::ValidateCommandBufferSimultaneousUse(GLOBAL_CB_NODE *pCB, int current_submit_count) {
     bool skip = false;
     if ((pCB->in_use.load() || current_submit_count > 1) &&
         !(pCB->beginInfo.flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT)) {
@@ -2778,10 +2778,10 @@ bool CoreChecks::ValidateCommandBufferSimultaneousUse(layer_data *dev_data, GLOB
     return skip;
 }
 
-bool CoreChecks::ValidateCommandBufferState(layer_data *dev_data, GLOBAL_CB_NODE *cb_state, const char *call_source,
-                                            int current_submit_count, const char *vu_id) {
+bool CoreChecks::ValidateCommandBufferState(GLOBAL_CB_NODE *cb_state, const char *call_source, int current_submit_count,
+                                            const char *vu_id) {
     bool skip = false;
-    if (dev_data->instance_data->disabled.command_buffer_state) return skip;
+    if (disabled.command_buffer_state) return skip;
     // Validate ONE_TIME_SUBMIT_BIT CB is not being submitted more than once
     if ((cb_state->beginInfo.flags & VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT) &&
         (cb_state->submitCount + current_submit_count > 1)) {
@@ -2797,7 +2797,7 @@ bool CoreChecks::ValidateCommandBufferState(layer_data *dev_data, GLOBAL_CB_NODE
     switch (cb_state->state) {
         case CB_INVALID_INCOMPLETE:
         case CB_INVALID_COMPLETE:
-            skip |= ReportInvalidCommandBuffer(dev_data, cb_state, call_source);
+            skip |= ReportInvalidCommandBuffer(cb_state, call_source);
             break;
 
         case CB_NEW:
@@ -2820,7 +2820,7 @@ bool CoreChecks::ValidateCommandBufferState(layer_data *dev_data, GLOBAL_CB_NODE
     return skip;
 }
 
-bool CoreChecks::ValidateResources(layer_data *dev_data, GLOBAL_CB_NODE *cb_node) {
+bool CoreChecks::ValidateResources(GLOBAL_CB_NODE *cb_node) {
     bool skip = false;
 
     // TODO : We should be able to remove the NULL look-up checks from the code below as long as
@@ -2904,7 +2904,7 @@ bool CoreChecks::ValidateQueueFamilyIndices(GLOBAL_CB_NODE *pCB, VkQueue queue) 
     return skip;
 }
 
-bool CoreChecks::ValidatePrimaryCommandBufferState(layer_data *dev_data, GLOBAL_CB_NODE *pCB, int current_submit_count,
+bool CoreChecks::ValidatePrimaryCommandBufferState(GLOBAL_CB_NODE *pCB, int current_submit_count,
                                                    QFOTransferCBScoreboards<VkImageMemoryBarrier> *qfo_image_scoreboards,
                                                    QFOTransferCBScoreboards<VkBufferMemoryBarrier> *qfo_buffer_scoreboards) {
     // Track in-use for resources off of primary and any secondary CBs
@@ -2912,13 +2912,13 @@ bool CoreChecks::ValidatePrimaryCommandBufferState(layer_data *dev_data, GLOBAL_
 
     // If USAGE_SIMULTANEOUS_USE_BIT not set then CB cannot already be executing
     // on device
-    skip |= ValidateCommandBufferSimultaneousUse(dev_data, pCB, current_submit_count);
+    skip |= ValidateCommandBufferSimultaneousUse(pCB, current_submit_count);
 
-    skip |= ValidateResources(dev_data, pCB);
+    skip |= ValidateResources(pCB);
     skip |= ValidateQueuedQFOTransfers(pCB, qfo_image_scoreboards, qfo_buffer_scoreboards);
 
     for (auto pSubCB : pCB->linkedCommandBuffers) {
-        skip |= ValidateResources(dev_data, pSubCB);
+        skip |= ValidateResources(pSubCB);
         skip |= ValidateQueuedQFOTransfers(pSubCB, qfo_image_scoreboards, qfo_buffer_scoreboards);
         // TODO: replace with InvalidateCommandBuffers() at recording.
         if ((pSubCB->primaryCommandBuffer != pCB->commandBuffer) &&
@@ -2932,13 +2932,12 @@ bool CoreChecks::ValidatePrimaryCommandBufferState(layer_data *dev_data, GLOBAL_
         }
     }
 
-    skip |= ValidateCommandBufferState(dev_data, pCB, "vkQueueSubmit()", current_submit_count,
-                                       "VUID-vkQueueSubmit-pCommandBuffers-00072");
+    skip |= ValidateCommandBufferState(pCB, "vkQueueSubmit()", current_submit_count, "VUID-vkQueueSubmit-pCommandBuffers-00072");
 
     return skip;
 }
 
-bool CoreChecks::ValidateFenceForSubmit(layer_data *dev_data, FENCE_NODE *pFence) {
+bool CoreChecks::ValidateFenceForSubmit(FENCE_NODE *pFence) {
     bool skip = false;
 
     if (pFence && pFence->scope == kSyncScopeInternal) {
@@ -2965,7 +2964,6 @@ bool CoreChecks::ValidateFenceForSubmit(layer_data *dev_data, FENCE_NODE *pFence
 
 void CoreChecks::PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits, VkFence fence,
                                            VkResult result) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(queue), layer_data_map);
     uint64_t early_retire_seq = 0;
     auto pQueue = GetQueueState(queue);
     auto pFence = GetFenceNode(fence);
@@ -2984,8 +2982,8 @@ void CoreChecks::PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, 
         } else {
             // Retire work up until this fence early, we will not see the wait that corresponds to this signal
             early_retire_seq = pQueue->seq + pQueue->submissions.size();
-            if (!device_data->external_sync_warning) {
-                device_data->external_sync_warning = true;
+            if (!external_sync_warning) {
+                external_sync_warning = true;
                 log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_FENCE_EXT, HandleToUint64(fence),
                         kVUID_Core_DrawState_QueueForwardProgress,
                         "vkQueueSubmit(): Signaling external fence %s on queue %s will disable validation of preceding command "
@@ -3035,8 +3033,8 @@ void CoreChecks::PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, 
                 } else {
                     // Retire work up until this submit early, we will not see the wait that corresponds to this signal
                     early_retire_seq = std::max(early_retire_seq, pQueue->seq + pQueue->submissions.size() + 1);
-                    if (!device_data->external_sync_warning) {
-                        device_data->external_sync_warning = true;
+                    if (!external_sync_warning) {
+                        external_sync_warning = true;
                         log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SEMAPHORE_EXT,
                                 HandleToUint64(semaphore), kVUID_Core_DrawState_QueueForwardProgress,
                                 "vkQueueSubmit(): Signaling external semaphore %s on queue %s will disable validation of preceding "
@@ -3066,18 +3064,17 @@ void CoreChecks::PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, 
     }
 
     if (early_retire_seq) {
-        RetireWorkOnQueue(device_data, pQueue, early_retire_seq);
+        RetireWorkOnQueue(pQueue, early_retire_seq);
     }
 
     if (GetEnables()->gpu_validation) {
-        GpuPostCallQueueSubmit(device_data, queue, submitCount, pSubmits, fence);
+        GpuPostCallQueueSubmit(queue, submitCount, pSubmits, fence);
     }
 }
 
 bool CoreChecks::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits, VkFence fence) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(queue), layer_data_map);
     auto pFence = GetFenceNode(fence);
-    bool skip = ValidateFenceForSubmit(device_data, pFence);
+    bool skip = ValidateFenceForSubmit(pFence);
     if (skip) {
         return true;
     }
@@ -3136,10 +3133,10 @@ bool CoreChecks::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount,
         for (uint32_t i = 0; i < submit->commandBufferCount; i++) {
             auto cb_node = GetCBNode(submit->pCommandBuffers[i]);
             if (cb_node) {
-                skip |= ValidateCmdBufImageLayouts(cb_node, device_data->imageLayoutMap, localImageLayoutMap);
+                skip |= ValidateCmdBufImageLayouts(cb_node, imageLayoutMap, localImageLayoutMap);
                 current_cmds.push_back(submit->pCommandBuffers[i]);
                 skip |= ValidatePrimaryCommandBufferState(
-                    device_data, cb_node, (int)std::count(current_cmds.begin(), current_cmds.end(), submit->pCommandBuffers[i]),
+                    cb_node, (int)std::count(current_cmds.begin(), current_cmds.end(), submit->pCommandBuffers[i]),
                     &qfo_image_scoreboards, &qfo_buffer_scoreboards);
                 skip |= ValidateQueueFamilyIndices(cb_node, queue);
 
@@ -3864,7 +3861,7 @@ void CoreChecks::RetireFence(layer_data *dev_data, VkFence fence) {
     if (pFence && pFence->scope == kSyncScopeInternal) {
         if (pFence->signaler.first != VK_NULL_HANDLE) {
             // Fence signaller is a queue -- use this as proof that prior operations on that queue have completed.
-            RetireWorkOnQueue(dev_data, GetQueueState(pFence->signaler.first), pFence->signaler.second);
+            RetireWorkOnQueue(GetQueueState(pFence->signaler.first), pFence->signaler.second);
         } else {
             // Fence signaller is the WSI. We're not tracking what the WSI op actually /was/ in CV yet, but we need to mark
             // the fence as retired.
@@ -3962,10 +3959,9 @@ bool CoreChecks::PreCallValidateQueueWaitIdle(VkQueue queue) {
 }
 
 void CoreChecks::PostCallRecordQueueWaitIdle(VkQueue queue, VkResult result) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(queue), layer_data_map);
     if (VK_SUCCESS != result) return;
     QUEUE_STATE *queue_state = GetQueueState(queue);
-    RetireWorkOnQueue(device_data, queue_state, queue_state->seq + queue_state->submissions.size());
+    RetireWorkOnQueue(queue_state, queue_state->seq + queue_state->submissions.size());
 }
 
 bool CoreChecks::PreCallValidateDeviceWaitIdle(VkDevice device) {
@@ -3982,7 +3978,7 @@ void CoreChecks::PostCallRecordDeviceWaitIdle(VkDevice device, VkResult result) 
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (VK_SUCCESS != result) return;
     for (auto &queue : device_data->queueMap) {
-        RetireWorkOnQueue(device_data, &queue.second, queue.second.seq + queue.second.submissions.size());
+        RetireWorkOnQueue(&queue.second, queue.second.seq + queue.second.submissions.size());
     }
 }
 
@@ -10498,7 +10494,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
         }
         // TODO(mlentine): Move more logic into this method
         skip |= ValidateSecondaryCommandBufferState(device_data, cb_state, sub_cb_state);
-        skip |= ValidateCommandBufferState(device_data, sub_cb_state, "vkCmdExecuteCommands()", 0,
+        skip |= ValidateCommandBufferState(sub_cb_state, "vkCmdExecuteCommands()", 0,
                                            "VUID-vkCmdExecuteCommands-pCommandBuffers-00089");
         if (!(sub_cb_state->beginInfo.flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT)) {
             if (sub_cb_state->in_use.load() || linked_command_buffers.count(sub_cb_state)) {
@@ -11001,9 +10997,8 @@ void CoreChecks::PreCallRecordSetEvent(VkDevice device, VkEvent event) {
 
 bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo *pBindInfo,
                                                 VkFence fence) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(queue), layer_data_map);
     auto pFence = GetFenceNode(fence);
-    bool skip = ValidateFenceForSubmit(device_data, pFence);
+    bool skip = ValidateFenceForSubmit(pFence);
     if (skip) {
         return true;
     }
@@ -11234,7 +11229,7 @@ void CoreChecks::PostCallRecordQueueBindSparse(VkQueue queue, uint32_t bindInfoC
     }
 
     if (early_retire_seq) {
-        RetireWorkOnQueue(device_data, pQueue, early_retire_seq);
+        RetireWorkOnQueue(pQueue, early_retire_seq);
     }
 }
 
@@ -12070,7 +12065,7 @@ bool CoreChecks::ValidateAcquireNextImage(layer_data *device_data, VkDevice devi
 
     auto pFence = GetFenceNode(fence);
     if (pFence) {
-        skip |= ValidateFenceForSubmit(device_data, pFence);
+        skip |= ValidateFenceForSubmit(pFence);
     }
 
     auto swapchain_data = GetSwapchainNode(swapchain);

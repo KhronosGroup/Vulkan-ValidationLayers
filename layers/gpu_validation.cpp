@@ -961,7 +961,7 @@ static void GenerateSourceMessages(const std::vector<unsigned int> &pgm, const u
 // sure it is available when the pipeline is submitted.  (The ShaderModule tracking object also
 // keeps a copy, but it can be destroyed after the pipeline is created and before it is submitted.)
 //
-void CoreChecks::AnalyzeAndReportError(const layer_data *dev_data, GLOBAL_CB_NODE *cb_node, VkQueue queue, uint32_t draw_index,
+void CoreChecks::AnalyzeAndReportError(GLOBAL_CB_NODE *cb_node, VkQueue queue, uint32_t draw_index,
                                        uint32_t *const debug_output_buffer) {
     using namespace spvtools;
     const uint32_t total_words = debug_output_buffer[0];
@@ -1013,7 +1013,7 @@ void CoreChecks::AnalyzeAndReportError(const layer_data *dev_data, GLOBAL_CB_NOD
 }
 
 // For the given command buffer, map its debug data buffers and read their contents for analysis.
-void CoreChecks::ProcessInstrumentationBuffer(const layer_data *dev_data, VkQueue queue, GLOBAL_CB_NODE *cb_node) {
+void CoreChecks::ProcessInstrumentationBuffer(VkQueue queue, GLOBAL_CB_NODE *cb_node) {
     auto gpu_state = GetGpuValidationState();
     if (cb_node && cb_node->hasDrawCmd && cb_node->gpu_buffer_list.size() > 0) {
         VkResult result;
@@ -1033,7 +1033,7 @@ void CoreChecks::ProcessInstrumentationBuffer(const layer_data *dev_data, VkQueu
                                                    (void **)&pData);
             // Analyze debug output buffer
             if (result == VK_SUCCESS) {
-                AnalyzeAndReportError(dev_data, cb_node, queue, draw_index, (uint32_t *)(pData + offset_to_data));
+                AnalyzeAndReportError(cb_node, queue, draw_index, (uint32_t *)(pData + offset_to_data));
                 GetDispatchTable()->UnmapMemory(cb_node->device, buffer_info.mem_block.memory);
             }
             draw_index++;
@@ -1043,13 +1043,13 @@ void CoreChecks::ProcessInstrumentationBuffer(const layer_data *dev_data, VkQueu
 
 // Submit a memory barrier on graphics queues.
 // Lazy-create and record the needed command buffer.
-void CoreChecks::SubmitBarrier(layer_data *dev_data, VkQueue queue) {
+void CoreChecks::SubmitBarrier(VkQueue queue) {
     auto gpu_state = GetGpuValidationState();
     const auto *dispatch_table = GetDispatchTable();
     uint32_t queue_family_index = 0;
 
-    auto it = dev_data->queueMap.find(queue);
-    if (it != dev_data->queueMap.end()) {
+    auto it = queueMap.find(queue);
+    if (it != queueMap.end()) {
         queue_family_index = it->second.queueFamilyIndex;
     }
 
@@ -1122,22 +1122,21 @@ void CoreChecks::SubmitBarrier(layer_data *dev_data, VkQueue queue) {
 // Issue a memory barrier to make GPU-written data available to host.
 // Wait for the queue to complete execution.
 // Check the debug buffers for all the command buffers that were submitted.
-void CoreChecks::GpuPostCallQueueSubmit(layer_data *dev_data, VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits,
-                                        VkFence fence) {
+void CoreChecks::GpuPostCallQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits, VkFence fence) {
     auto gpu_state = GetGpuValidationState();
     if (gpu_state->aborted) return;
 
-    SubmitBarrier(dev_data, queue);
+    SubmitBarrier(queue);
 
-    dev_data->device_dispatch_table.QueueWaitIdle(queue);
+    device_dispatch_table.QueueWaitIdle(queue);
 
     for (uint32_t submit_idx = 0; submit_idx < submitCount; submit_idx++) {
         const VkSubmitInfo *submit = &pSubmits[submit_idx];
         for (uint32_t i = 0; i < submit->commandBufferCount; i++) {
             auto cb_node = GetCBNode(submit->pCommandBuffers[i]);
-            ProcessInstrumentationBuffer(dev_data, queue, cb_node);
+            ProcessInstrumentationBuffer(queue, cb_node);
             for (auto secondaryCmdBuffer : cb_node->linkedCommandBuffers) {
-                ProcessInstrumentationBuffer(dev_data, queue, secondaryCmdBuffer);
+                ProcessInstrumentationBuffer(queue, secondaryCmdBuffer);
             }
         }
     }
