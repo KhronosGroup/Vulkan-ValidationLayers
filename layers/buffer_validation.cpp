@@ -1664,8 +1664,7 @@ bool CoreChecks::PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuffer
     auto cb_node = GetCBNode(commandBuffer);
     auto image_state = GetImageState(image);
     if (cb_node && image_state) {
-        skip |= ValidateMemoryIsBoundToImage(device_data, image_state, "vkCmdClearColorImage()",
-                                             "VUID-vkCmdClearColorImage-image-00003");
+        skip |= ValidateMemoryIsBoundToImage(image_state, "vkCmdClearColorImage()", "VUID-vkCmdClearColorImage-image-00003");
         skip |= ValidateCmdQueueFlags(device_data, cb_node, "vkCmdClearColorImage()", VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
                                       "VUID-vkCmdClearColorImage-commandBuffer-cmdpool");
         skip |= ValidateCmd(device_data, cb_node, CMD_CLEARCOLORIMAGE, "vkCmdClearColorImage()");
@@ -1710,7 +1709,7 @@ bool CoreChecks::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer comman
     auto cb_node = GetCBNode(commandBuffer);
     auto image_state = GetImageState(image);
     if (cb_node && image_state) {
-        skip |= ValidateMemoryIsBoundToImage(device_data, image_state, "vkCmdClearDepthStencilImage()",
+        skip |= ValidateMemoryIsBoundToImage(image_state, "vkCmdClearDepthStencilImage()",
                                              "VUID-vkCmdClearDepthStencilImage-image-00010");
         skip |= ValidateCmdQueueFlags(device_data, cb_node, "vkCmdClearDepthStencilImage()", VK_QUEUE_GRAPHICS_BIT,
                                       "VUID-vkCmdClearDepthStencilImage-commandBuffer-cmdpool");
@@ -2656,8 +2655,8 @@ bool CoreChecks::PreCallValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkIm
                         HandleToUint64(command_buffer), "VUID-vkCmdCopyImage-srcImage-00136", "%s", str);
     }
 
-    skip |= ValidateMemoryIsBoundToImage(device_data, src_image_state, "vkCmdCopyImage()", "VUID-vkCmdCopyImage-srcImage-00127");
-    skip |= ValidateMemoryIsBoundToImage(device_data, dst_image_state, "vkCmdCopyImage()", "VUID-vkCmdCopyImage-dstImage-00132");
+    skip |= ValidateMemoryIsBoundToImage(src_image_state, "vkCmdCopyImage()", "VUID-vkCmdCopyImage-srcImage-00127");
+    skip |= ValidateMemoryIsBoundToImage(dst_image_state, "vkCmdCopyImage()", "VUID-vkCmdCopyImage-dstImage-00132");
     // Validate that SRC & DST images have correct usage flags set
     skip |= ValidateImageUsageFlags(device_data, src_image_state, VK_IMAGE_USAGE_TRANSFER_SRC_BIT, true,
                                     "VUID-vkCmdCopyImage-srcImage-00126", "vkCmdCopyImage()", "VK_IMAGE_USAGE_TRANSFER_SRC_BIT");
@@ -2901,10 +2900,8 @@ bool CoreChecks::PreCallValidateCmdResolveImage(VkCommandBuffer commandBuffer, V
 
     bool skip = false;
     if (cb_node && src_image_state && dst_image_state) {
-        skip |= ValidateMemoryIsBoundToImage(device_data, src_image_state, "vkCmdResolveImage()",
-                                             "VUID-vkCmdResolveImage-srcImage-00256");
-        skip |= ValidateMemoryIsBoundToImage(device_data, dst_image_state, "vkCmdResolveImage()",
-                                             "VUID-vkCmdResolveImage-dstImage-00258");
+        skip |= ValidateMemoryIsBoundToImage(src_image_state, "vkCmdResolveImage()", "VUID-vkCmdResolveImage-srcImage-00256");
+        skip |= ValidateMemoryIsBoundToImage(dst_image_state, "vkCmdResolveImage()", "VUID-vkCmdResolveImage-dstImage-00258");
         skip |= ValidateCmdQueueFlags(device_data, cb_node, "vkCmdResolveImage()", VK_QUEUE_GRAPHICS_BIT,
                                       "VUID-vkCmdResolveImage-commandBuffer-cmdpool");
         skip |= ValidateCmd(device_data, cb_node, CMD_RESOLVEIMAGE, "vkCmdResolveImage()");
@@ -3019,10 +3016,8 @@ bool CoreChecks::PreCallValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkIm
                                          "VUID-vkCmdBlitImage-srcImage-00233");
         skip |= ValidateImageSampleCount(device_data, dst_image_state, VK_SAMPLE_COUNT_1_BIT, "vkCmdBlitImage(): dstImage",
                                          "VUID-vkCmdBlitImage-dstImage-00234");
-        skip |=
-            ValidateMemoryIsBoundToImage(device_data, src_image_state, "vkCmdBlitImage()", "VUID-vkCmdBlitImage-srcImage-00220");
-        skip |=
-            ValidateMemoryIsBoundToImage(device_data, dst_image_state, "vkCmdBlitImage()", "VUID-vkCmdBlitImage-dstImage-00225");
+        skip |= ValidateMemoryIsBoundToImage(src_image_state, "vkCmdBlitImage()", "VUID-vkCmdBlitImage-srcImage-00220");
+        skip |= ValidateMemoryIsBoundToImage(dst_image_state, "vkCmdBlitImage()", "VUID-vkCmdBlitImage-dstImage-00225");
         skip |=
             ValidateImageUsageFlags(device_data, src_image_state, VK_IMAGE_USAGE_TRANSFER_SRC_BIT, true,
                                     "VUID-vkCmdBlitImage-srcImage-00219", "vkCmdBlitImage()", "VK_IMAGE_USAGE_TRANSFER_SRC_BIT");
@@ -3918,8 +3913,7 @@ bool CoreChecks::PreCallValidateCreateBufferView(VkDevice device, const VkBuffer
     BUFFER_STATE *buffer_state = GetBufferState(pCreateInfo->buffer);
     // If this isn't a sparse buffer, it needs to have memory backing it at CreateBufferView time
     if (buffer_state) {
-        skip |= ValidateMemoryIsBoundToBuffer(device_data, buffer_state, "vkCreateBufferView()",
-                                              "VUID-VkBufferViewCreateInfo-buffer-00935");
+        skip |= ValidateMemoryIsBoundToBuffer(buffer_state, "vkCreateBufferView()", "VUID-VkBufferViewCreateInfo-buffer-00935");
         // In order to create a valid buffer view, the buffer must have been created with at least one of the following flags:
         // UNIFORM_TEXEL_BUFFER_BIT or STORAGE_TEXEL_BUFFER_BIT
         skip |= ValidateBufferUsageFlags(device_data, buffer_state,
@@ -4164,8 +4158,7 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
             false, kVUIDUndefined, "vkCreateImageView()",
             "VK_IMAGE_USAGE_[SAMPLED|STORAGE|COLOR_ATTACHMENT|DEPTH_STENCIL_ATTACHMENT|INPUT_ATTACHMENT|SHADING_RATE_IMAGE]_BIT");
         // If this isn't a sparse image, it needs to have memory backing it at CreateImageView time
-        skip |=
-            ValidateMemoryIsBoundToImage(device_data, image_state, "vkCreateImageView()", "VUID-VkImageViewCreateInfo-image-01020");
+        skip |= ValidateMemoryIsBoundToImage(image_state, "vkCreateImageView()", "VUID-VkImageViewCreateInfo-image-01020");
         // Checks imported from image layer
         skip |= ValidateCreateImageViewSubresourceRange(
             device_data, image_state,
@@ -4406,10 +4399,8 @@ bool CoreChecks::PreCallValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, VkB
     auto dst_buffer_state = GetBufferState(dstBuffer);
 
     bool skip = false;
-    skip |=
-        ValidateMemoryIsBoundToBuffer(device_data, src_buffer_state, "vkCmdCopyBuffer()", "VUID-vkCmdCopyBuffer-srcBuffer-00119");
-    skip |=
-        ValidateMemoryIsBoundToBuffer(device_data, dst_buffer_state, "vkCmdCopyBuffer()", "VUID-vkCmdCopyBuffer-dstBuffer-00121");
+    skip |= ValidateMemoryIsBoundToBuffer(src_buffer_state, "vkCmdCopyBuffer()", "VUID-vkCmdCopyBuffer-srcBuffer-00119");
+    skip |= ValidateMemoryIsBoundToBuffer(dst_buffer_state, "vkCmdCopyBuffer()", "VUID-vkCmdCopyBuffer-dstBuffer-00121");
     // Validate that SRC & DST buffers have correct usage flags set
     skip |=
         ValidateBufferUsageFlags(device_data, src_buffer_state, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, true,
@@ -4537,7 +4528,7 @@ bool CoreChecks::PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, VkB
     auto cb_node = GetCBNode(commandBuffer);
     auto buffer_state = GetBufferState(dstBuffer);
     bool skip = false;
-    skip |= ValidateMemoryIsBoundToBuffer(device_data, buffer_state, "vkCmdFillBuffer()", "VUID-vkCmdFillBuffer-dstBuffer-00031");
+    skip |= ValidateMemoryIsBoundToBuffer(buffer_state, "vkCmdFillBuffer()", "VUID-vkCmdFillBuffer-dstBuffer-00031");
     skip |= ValidateCmdQueueFlags(device_data, cb_node, "vkCmdFillBuffer()",
                                   VK_QUEUE_TRANSFER_BIT | VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
                                   "VUID-vkCmdFillBuffer-commandBuffer-cmdpool");
@@ -4871,10 +4862,9 @@ bool CoreChecks::PreCallValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuff
 
     skip |= ValidateImageSampleCount(device_data, src_image_state, VK_SAMPLE_COUNT_1_BIT, "vkCmdCopyImageToBuffer(): srcImage",
                                      "VUID-vkCmdCopyImageToBuffer-srcImage-00188");
-    skip |= ValidateMemoryIsBoundToImage(device_data, src_image_state, "vkCmdCopyImageToBuffer()",
-                                         "VUID-vkCmdCopyImageToBuffer-srcImage-00187");
-    skip |= ValidateMemoryIsBoundToBuffer(device_data, dst_buffer_state, "vkCmdCopyImageToBuffer()",
-                                          "VUID-vkCmdCopyImageToBuffer-dstBuffer-00192");
+    skip |= ValidateMemoryIsBoundToImage(src_image_state, "vkCmdCopyImageToBuffer()", "VUID-vkCmdCopyImageToBuffer-srcImage-00187");
+    skip |=
+        ValidateMemoryIsBoundToBuffer(dst_buffer_state, "vkCmdCopyImageToBuffer()", "VUID-vkCmdCopyImageToBuffer-dstBuffer-00192");
 
     // Validate that SRC image & DST buffer have correct usage flags set
     skip |= ValidateImageUsageFlags(device_data, src_image_state, VK_IMAGE_USAGE_TRANSFER_SRC_BIT, true,
@@ -4957,10 +4947,9 @@ bool CoreChecks::PreCallValidateCmdCopyBufferToImage(VkCommandBuffer commandBuff
                                  "VUID-vkCmdCopyBufferToImage-pRegions-00171");
     skip |= ValidateImageSampleCount(device_data, dst_image_state, VK_SAMPLE_COUNT_1_BIT, "vkCmdCopyBufferToImage(): dstImage",
                                      "VUID-vkCmdCopyBufferToImage-dstImage-00179");
-    skip |= ValidateMemoryIsBoundToBuffer(device_data, src_buffer_state, "vkCmdCopyBufferToImage()",
-                                          "VUID-vkCmdCopyBufferToImage-srcBuffer-00176");
-    skip |= ValidateMemoryIsBoundToImage(device_data, dst_image_state, "vkCmdCopyBufferToImage()",
-                                         "VUID-vkCmdCopyBufferToImage-dstImage-00178");
+    skip |=
+        ValidateMemoryIsBoundToBuffer(src_buffer_state, "vkCmdCopyBufferToImage()", "VUID-vkCmdCopyBufferToImage-srcBuffer-00176");
+    skip |= ValidateMemoryIsBoundToImage(dst_image_state, "vkCmdCopyBufferToImage()", "VUID-vkCmdCopyBufferToImage-dstImage-00178");
     skip |= ValidateBufferUsageFlags(device_data, src_buffer_state, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, true,
                                      "VUID-vkCmdCopyBufferToImage-srcBuffer-00174", "vkCmdCopyBufferToImage()",
                                      "VK_BUFFER_USAGE_TRANSFER_SRC_BIT");

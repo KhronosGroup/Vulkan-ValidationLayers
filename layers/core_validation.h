@@ -279,8 +279,7 @@ class CoreChecks : public ValidationObject {
     void ResetCommandBufferState(layer_data* dev_data, const VkCommandBuffer cb);
     void SetMemBinding(layer_data* dev_data, VkDeviceMemory mem, BINDABLE* mem_binding, VkDeviceSize memory_offset, uint64_t handle,
                        VulkanObjectType type);
-    bool ValidateSetMemBinding(layer_data* dev_data, VkDeviceMemory mem, uint64_t handle, VulkanObjectType type,
-                               const char* apiName);
+    bool ValidateSetMemBinding(VkDeviceMemory mem, uint64_t handle, VulkanObjectType type, const char* apiName);
     bool SetSparseMemBinding(layer_data* dev_data, MEM_BINDING binding, uint64_t handle, VulkanObjectType type);
     bool ValidateDeviceQueueFamily(layer_data* device_data, uint32_t queue_family, const char* cmd_name, const char* parameter_name,
                                    const char* error_code, bool optional);
@@ -478,8 +477,8 @@ class CoreChecks : public ValidationObject {
                                                     VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate, const void* pData);
     bool ValidateUpdateDescriptorSetWithTemplate(layer_data* device_data, VkDescriptorSet descriptorSet,
                                                  VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate, const void* pData);
-    bool ValidateMemoryIsBoundToBuffer(const layer_data*, const BUFFER_STATE*, const char*, const char*);
-    bool ValidateMemoryIsBoundToImage(const layer_data*, const IMAGE_STATE*, const char*, const char*);
+    bool ValidateMemoryIsBoundToBuffer(const BUFFER_STATE*, const char*, const char*);
+    bool ValidateMemoryIsBoundToImage(const IMAGE_STATE*, const char*, const char*);
     void AddCommandBufferBindingSampler(GLOBAL_CB_NODE*, SAMPLER_STATE*);
     void AddCommandBufferBindingImage(const layer_data*, GLOBAL_CB_NODE*, IMAGE_STATE*);
     void AddCommandBufferBindingImageView(const layer_data*, GLOBAL_CB_NODE*, IMAGE_VIEW_STATE*);
@@ -833,6 +832,9 @@ class CoreChecks : public ValidationObject {
                                     std::unordered_map<ImageSubresourcePair, IMAGE_LAYOUT_NODE>& overlayLayoutMap);
 
     void UpdateCmdBufImageLayouts(GLOBAL_CB_NODE* pCB);
+
+    bool VerifyBoundMemoryIsValid(VkDeviceMemory mem, uint64_t handle, const char* api_name, const char* type_name,
+                                  const char* error_code);
 
     bool ValidateLayoutVsAttachmentDescription(const debug_report_data* report_data, RenderPassCreateVersion rp_version,
                                                const VkImageLayout first_layout, const uint32_t attachment,
