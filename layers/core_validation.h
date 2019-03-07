@@ -263,7 +263,7 @@ class CoreChecks : public ValidationObject {
     COMMAND_POOL_NODE* GetCommandPoolNode(VkCommandPool pool);
     shader_module const* GetShaderModuleState(VkShaderModule module);
     const DeviceFeatures* GetEnabledFeatures();
-    FENCE_NODE* GetFenceNode(layer_data* dev_data, VkFence fence);
+    FENCE_NODE* GetFenceNode(VkFence fence);
     EVENT_STATE* GetEventNode(layer_data* dev_data, VkEvent event);
     QUERY_POOL_NODE* GetQueryPoolNode(layer_data* dev_data, VkQueryPool query_pool);
     QUEUE_STATE* GetQueueState(layer_data* dev_data, VkQueue queue);
@@ -272,6 +272,7 @@ class CoreChecks : public ValidationObject {
     PHYSICAL_DEVICE_STATE* GetPhysicalDeviceState();
     SURFACE_STATE* GetSurfaceState(VkSurfaceKHR surface);
     BINDABLE* GetObjectMemBinding(uint64_t handle, VulkanObjectType type);
+
     bool VerifyQueueStateToSeq(layer_data* dev_data, QUEUE_STATE* initial_queue, uint64_t initial_seq);
     void ClearCmdBufAndMemReferences(layer_data* dev_data, GLOBAL_CB_NODE* cb_node);
     void ClearMemoryObjectBinding(uint64_t handle, VulkanObjectType type, VkDeviceMemory mem);
