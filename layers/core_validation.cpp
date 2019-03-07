@@ -5008,9 +5008,7 @@ VkResult CoreChecks::GetPDImageFormatProperties2(const VkPhysicalDeviceImageForm
 
 const debug_report_data *CoreChecks::GetReportData(const layer_data *device_data) { return device_data->report_data; }
 
-const VkLayerDispatchTable *CoreChecks::GetDispatchTable(const layer_data *device_data) {
-    return &device_data->device_dispatch_table;
-}
+const VkLayerDispatchTable *CoreChecks::GetDispatchTable() { return &device_dispatch_table; }
 
 const VkPhysicalDeviceProperties *CoreChecks::GetPDProperties() { return &phys_dev_props; }
 
