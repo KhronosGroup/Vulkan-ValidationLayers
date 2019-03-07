@@ -201,17 +201,17 @@ FENCE_NODE *CoreChecks::GetFenceNode(VkFence fence) {
     return &it->second;
 }
 
-EVENT_STATE *CoreChecks::GetEventNode(layer_data *dev_data, VkEvent event) {
-    auto it = dev_data->eventMap.find(event);
-    if (it == dev_data->eventMap.end()) {
+EVENT_STATE *CoreChecks::GetEventNode(VkEvent event) {
+    auto it = eventMap.find(event);
+    if (it == eventMap.end()) {
         return nullptr;
     }
     return &it->second;
 }
 
-QUERY_POOL_NODE *CoreChecks::GetQueryPoolNode(layer_data *dev_data, VkQueryPool query_pool) {
-    auto it = dev_data->queryPoolMap.find(query_pool);
-    if (it == dev_data->queryPoolMap.end()) {
+QUERY_POOL_NODE *CoreChecks::GetQueryPoolNode(VkQueryPool query_pool) {
+    auto it = queryPoolMap.find(query_pool);
+    if (it == queryPoolMap.end()) {
         return nullptr;
     }
     return &it->second;
@@ -2019,7 +2019,7 @@ BASE_NODE *CoreChecks::GetStateStructPtrFromObject(layer_data *dev_data, VK_OBJE
             break;
         }
         case kVulkanObjectTypeQueryPool: {
-            base_ptr = GetQueryPoolNode(dev_data, reinterpret_cast<VkQueryPool &>(object_struct.handle));
+            base_ptr = GetQueryPoolNode(reinterpret_cast<VkQueryPool &>(object_struct.handle));
             break;
         }
         case kVulkanObjectTypePipeline: {
@@ -2043,7 +2043,7 @@ BASE_NODE *CoreChecks::GetStateStructPtrFromObject(layer_data *dev_data, VK_OBJE
             break;
         }
         case kVulkanObjectTypeEvent: {
-            base_ptr = GetEventNode(dev_data, reinterpret_cast<VkEvent &>(object_struct.handle));
+            base_ptr = GetEventNode(reinterpret_cast<VkEvent &>(object_struct.handle));
             break;
         }
         case kVulkanObjectTypeDescriptorPool: {
@@ -2633,7 +2633,7 @@ void CoreChecks::IncrementResources(layer_data *dev_data, GLOBAL_CB_NODE *cb_nod
         }
     }
     for (auto event : cb_node->writeEventsBeforeWait) {
-        auto event_state = GetEventNode(dev_data, event);
+        auto event_state = GetEventNode(event);
         if (event_state) event_state->write_in_use++;
     }
 }
@@ -4070,7 +4070,7 @@ void CoreChecks::PreCallRecordDestroySemaphore(VkDevice device, VkSemaphore sema
 
 bool CoreChecks::PreCallValidateDestroyEvent(VkDevice device, VkEvent event, const VkAllocationCallbacks *pAllocator) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    EVENT_STATE *event_state = GetEventNode(device_data, event);
+    EVENT_STATE *event_state = GetEventNode(event);
     VK_OBJECT obj_struct = {HandleToUint64(event), kVulkanObjectTypeEvent};
     bool skip = false;
     if (event_state) {
@@ -4082,7 +4082,7 @@ bool CoreChecks::PreCallValidateDestroyEvent(VkDevice device, VkEvent event, con
 void CoreChecks::PreCallRecordDestroyEvent(VkDevice device, VkEvent event, const VkAllocationCallbacks *pAllocator) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!event) return;
-    EVENT_STATE *event_state = GetEventNode(device_data, event);
+    EVENT_STATE *event_state = GetEventNode(event);
     VK_OBJECT obj_struct = {HandleToUint64(event), kVulkanObjectTypeEvent};
     InvalidateCommandBuffers(device_data, event_state->cb_bindings, obj_struct);
     device_data->eventMap.erase(event);
@@ -4090,7 +4090,7 @@ void CoreChecks::PreCallRecordDestroyEvent(VkDevice device, VkEvent event, const
 
 bool CoreChecks::PreCallValidateDestroyQueryPool(VkDevice device, VkQueryPool queryPool, const VkAllocationCallbacks *pAllocator) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    QUERY_POOL_NODE *qp_state = GetQueryPoolNode(device_data, queryPool);
+    QUERY_POOL_NODE *qp_state = GetQueryPoolNode(queryPool);
     VK_OBJECT obj_struct = {HandleToUint64(queryPool), kVulkanObjectTypeQueryPool};
     bool skip = false;
     if (qp_state) {
@@ -4103,7 +4103,7 @@ bool CoreChecks::PreCallValidateDestroyQueryPool(VkDevice device, VkQueryPool qu
 void CoreChecks::PreCallRecordDestroyQueryPool(VkDevice device, VkQueryPool queryPool, const VkAllocationCallbacks *pAllocator) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!queryPool) return;
-    QUERY_POOL_NODE *qp_state = GetQueryPoolNode(device_data, queryPool);
+    QUERY_POOL_NODE *qp_state = GetQueryPoolNode(queryPool);
     VK_OBJECT obj_struct = {HandleToUint64(queryPool), kVulkanObjectTypeQueryPool};
     InvalidateCommandBuffers(device_data, qp_state->cb_bindings, obj_struct);
     device_data->queryPoolMap.erase(queryPool);
@@ -7561,9 +7561,8 @@ bool CoreChecks::PreCallValidateCmdSetEvent(VkCommandBuffer commandBuffer, VkEve
 }
 
 void CoreChecks::PreCallRecordCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
-    auto event_state = GetEventNode(device_data, event);
+    auto event_state = GetEventNode(event);
     if (event_state) {
         AddCommandBufferBinding(&event_state->cb_bindings, {HandleToUint64(event), kVulkanObjectTypeEvent}, cb_state);
         event_state->cb_bindings.insert(cb_state);
@@ -7591,9 +7590,8 @@ bool CoreChecks::PreCallValidateCmdResetEvent(VkCommandBuffer commandBuffer, VkE
 }
 
 void CoreChecks::PreCallRecordCmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
-    auto event_state = GetEventNode(device_data, event);
+    auto event_state = GetEventNode(event);
     if (event_state) {
         AddCommandBufferBinding(&event_state->cb_bindings, {HandleToUint64(event), kVulkanObjectTypeEvent}, cb_state);
         event_state->cb_bindings.insert(cb_state);
@@ -8433,7 +8431,7 @@ bool CoreChecks::ValidateEventStageMask(VkQueue queue, GLOBAL_CB_NODE *pCB, uint
         if (event_data != queue_data->second.eventToStageMap.end()) {
             stageMask |= event_data->second;
         } else {
-            auto global_event_data = GetEventNode(dev_data, event);
+            auto global_event_data = GetEventNode(event);
             if (!global_event_data) {
                 skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_EVENT_EXT,
                                 HandleToUint64(event), kVUID_Core_DrawState_InvalidEvent,
@@ -8610,7 +8608,7 @@ void CoreChecks::PreCallRecordCmdWaitEvents(VkCommandBuffer commandBuffer, uint3
     GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     auto first_event_index = cb_state->events.size();
     for (uint32_t i = 0; i < eventCount; ++i) {
-        auto event_state = GetEventNode(device_data, pEvents[i]);
+        auto event_state = GetEventNode(pEvents[i]);
         if (event_state) {
             AddCommandBufferBinding(&event_state->cb_bindings, {HandleToUint64(pEvents[i]), kVulkanObjectTypeEvent}, cb_state);
             event_state->cb_bindings.insert(cb_state);
@@ -8713,7 +8711,7 @@ bool CoreChecks::PreCallValidateCmdBeginQuery(VkCommandBuffer commandBuffer, VkQ
     assert(cb_state);
     bool skip = ValidateCmdQueueFlags(device_data, cb_state, "vkCmdBeginQuery()", VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
                                       "VUID-vkCmdBeginQuery-commandBuffer-cmdpool");
-    auto queryType = GetQueryPoolNode(device_data, queryPool)->createInfo.queryType;
+    auto queryType = GetQueryPoolNode(queryPool)->createInfo.queryType;
 
     if (flags & VK_QUERY_CONTROL_PRECISE_BIT) {
         if (!device_data->enabled_features.core.occlusionQueryPrecise) {
@@ -8736,13 +8734,12 @@ bool CoreChecks::PreCallValidateCmdBeginQuery(VkCommandBuffer commandBuffer, VkQ
 }
 
 void CoreChecks::PostCallRecordCmdBeginQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot, VkFlags flags) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     QueryObject query = {queryPool, slot};
     cb_state->activeQueries.insert(query);
     cb_state->startedQueries.insert(query);
-    AddCommandBufferBinding(&GetQueryPoolNode(device_data, queryPool)->cb_bindings,
-                            {HandleToUint64(queryPool), kVulkanObjectTypeQueryPool}, cb_state);
+    AddCommandBufferBinding(&GetQueryPoolNode(queryPool)->cb_bindings, {HandleToUint64(queryPool), kVulkanObjectTypeQueryPool},
+                            cb_state);
 }
 
 bool CoreChecks::PreCallValidateCmdEndQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot) {
@@ -8764,13 +8761,12 @@ bool CoreChecks::PreCallValidateCmdEndQuery(VkCommandBuffer commandBuffer, VkQue
 }
 
 void CoreChecks::PostCallRecordCmdEndQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     QueryObject query = {queryPool, slot};
     GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     cb_state->activeQueries.erase(query);
     cb_state->queryUpdates.emplace_back([=](VkQueue q) { return SetQueryState(q, commandBuffer, query, true); });
-    AddCommandBufferBinding(&GetQueryPoolNode(device_data, queryPool)->cb_bindings,
-                            {HandleToUint64(queryPool), kVulkanObjectTypeQueryPool}, cb_state);
+    AddCommandBufferBinding(&GetQueryPoolNode(queryPool)->cb_bindings, {HandleToUint64(queryPool), kVulkanObjectTypeQueryPool},
+                            cb_state);
 }
 
 bool CoreChecks::PreCallValidateCmdResetQueryPool(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery,
@@ -8787,7 +8783,6 @@ bool CoreChecks::PreCallValidateCmdResetQueryPool(VkCommandBuffer commandBuffer,
 
 void CoreChecks::PostCallRecordCmdResetQueryPool(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery,
                                                  uint32_t queryCount) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
 
     for (uint32_t i = 0; i < queryCount; i++) {
@@ -8795,8 +8790,8 @@ void CoreChecks::PostCallRecordCmdResetQueryPool(VkCommandBuffer commandBuffer, 
         cb_state->waitedEventsBeforeQueryReset[query] = cb_state->waitedEvents;
         cb_state->queryUpdates.emplace_back([=](VkQueue q) { return SetQueryState(q, commandBuffer, query, false); });
     }
-    AddCommandBufferBinding(&GetQueryPoolNode(device_data, queryPool)->cb_bindings,
-                            {HandleToUint64(queryPool), kVulkanObjectTypeQueryPool}, cb_state);
+    AddCommandBufferBinding(&GetQueryPoolNode(queryPool)->cb_bindings, {HandleToUint64(queryPool), kVulkanObjectTypeQueryPool},
+                            cb_state);
 }
 
 bool CoreChecks::IsQueryInvalid(layer_data *dev_data, QUEUE_STATE *queue_data, VkQueryPool queryPool, uint32_t queryIndex) {
@@ -8859,8 +8854,8 @@ void CoreChecks::PostCallRecordCmdCopyQueryPoolResults(VkCommandBuffer commandBu
     auto dst_buff_state = GetBufferState(dstBuffer);
     AddCommandBufferBindingBuffer(device_data, cb_state, dst_buff_state);
     cb_state->queryUpdates.emplace_back([=](VkQueue q) { return ValidateQuery(q, cb_state, queryPool, firstQuery, queryCount); });
-    AddCommandBufferBinding(&GetQueryPoolNode(device_data, queryPool)->cb_bindings,
-                            {HandleToUint64(queryPool), kVulkanObjectTypeQueryPool}, cb_state);
+    AddCommandBufferBinding(&GetQueryPoolNode(queryPool)->cb_bindings, {HandleToUint64(queryPool), kVulkanObjectTypeQueryPool},
+                            cb_state);
 }
 
 bool CoreChecks::PreCallValidateCmdPushConstants(VkCommandBuffer commandBuffer, VkPipelineLayout layout,
@@ -11103,7 +11098,7 @@ void CoreChecks::PostCallRecordBindImageMemory2KHR(VkDevice device, uint32_t bin
 bool CoreChecks::PreCallValidateSetEvent(VkDevice device, VkEvent event) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
-    auto event_state = GetEventNode(device_data, event);
+    auto event_state = GetEventNode(event);
     if (event_state) {
         if (event_state->write_in_use) {
             skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_EVENT_EXT,
@@ -11117,7 +11112,7 @@ bool CoreChecks::PreCallValidateSetEvent(VkDevice device, VkEvent event) {
 
 void CoreChecks::PreCallRecordSetEvent(VkDevice device, VkEvent event) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    auto event_state = GetEventNode(device_data, event);
+    auto event_state = GetEventNode(event);
     if (event_state) {
         event_state->needsSignaled = false;
         event_state->stageMask = VK_PIPELINE_STAGE_HOST_BIT;
