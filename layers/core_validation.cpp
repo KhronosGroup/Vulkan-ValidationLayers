@@ -2229,7 +2229,7 @@ bool CoreChecks::OutsideRenderPass(const layer_data *dev_data, GLOBAL_CB_NODE *p
     return outside;
 }
 
-void CoreChecks::InitGpuValidation(instance_layer_data *instance_data) {
+void CoreChecks::InitGpuValidation() {
     // Process the layer settings file.
     enum CoreValidationGpuFlagBits {
         CORE_VALIDATION_GPU_VALIDATION_ALL_BIT = 0x00000001,
@@ -2243,18 +2243,17 @@ void CoreChecks::InitGpuValidation(instance_layer_data *instance_data) {
     std::string gpu_flags_key = "lunarg_core_validation.gpu_validation";
     CoreGPUFlags gpu_flags = GetLayerOptionFlags(gpu_flags_key, gpu_flags_option_definitions, 0);
     if (gpu_flags & CORE_VALIDATION_GPU_VALIDATION_ALL_BIT) {
-        instance_data->instance_state->enabled.gpu_validation = true;
+        instance_state->enabled.gpu_validation = true;
     }
     if (gpu_flags & CORE_VALIDATION_GPU_VALIDATION_RESERVE_BINDING_SLOT_BIT) {
-        instance_data->instance_state->enabled.gpu_validation_reserve_binding_slot = true;
+        instance_state->enabled.gpu_validation_reserve_binding_slot = true;
     }
 }
 
 void CoreChecks::PostCallRecordCreateInstance(const VkInstanceCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator,
                                               VkInstance *pInstance, VkResult result) {
-    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(*pInstance), instance_layer_data_map);
     if (VK_SUCCESS != result) return;
-    InitGpuValidation(instance_data);
+    InitGpuValidation();
 }
 
 static bool ValidatePhysicalDeviceQueueFamily(instance_layer_data *instance_data, const PHYSICAL_DEVICE_STATE *pd_state,

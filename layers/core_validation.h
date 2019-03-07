@@ -341,7 +341,7 @@ class CoreChecks : public ValidationObject {
                                          const char* error_code);
     void UpdateDrawState(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, const VkPipelineBindPoint bind_point);
     bool ReportInvalidCommandBuffer(layer_data* dev_data, const GLOBAL_CB_NODE* cb_state, const char* call_source);
-    void InitGpuValidation(layer_data* instance_data);
+    void InitGpuValidation();
 
     bool ValidatePipelineVertexDivisors(layer_data* dev_data, std::vector<std::unique_ptr<PIPELINE_STATE>> const& pipe_state_vec,
                                         const uint32_t count, const VkGraphicsPipelineCreateInfo* pipe_cis);
