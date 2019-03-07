@@ -3077,11 +3077,11 @@ void CoreChecks::PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, 
                 cbs.push_back(submit->pCommandBuffers[i]);
                 for (auto secondaryCmdBuffer : cb_node->linkedCommandBuffers) {
                     cbs.push_back(secondaryCmdBuffer->commandBuffer);
-                    UpdateCmdBufImageLayouts(device_data, secondaryCmdBuffer);
+                    UpdateCmdBufImageLayouts(secondaryCmdBuffer);
                     IncrementResources(device_data, secondaryCmdBuffer);
                     RecordQueuedQFOTransfers(device_data, secondaryCmdBuffer);
                 }
-                UpdateCmdBufImageLayouts(device_data, cb_node);
+                UpdateCmdBufImageLayouts(cb_node);
                 IncrementResources(device_data, cb_node);
                 RecordQueuedQFOTransfers(device_data, cb_node);
             }
@@ -3165,7 +3165,7 @@ bool CoreChecks::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount,
         for (uint32_t i = 0; i < submit->commandBufferCount; i++) {
             auto cb_node = GetCBNode(submit->pCommandBuffers[i]);
             if (cb_node) {
-                skip |= ValidateCmdBufImageLayouts(device_data, cb_node, device_data->imageLayoutMap, localImageLayoutMap);
+                skip |= ValidateCmdBufImageLayouts(cb_node, device_data->imageLayoutMap, localImageLayoutMap);
                 current_cmds.push_back(submit->pCommandBuffers[i]);
                 skip |= ValidatePrimaryCommandBufferState(
                     device_data, cb_node, (int)std::count(current_cmds.begin(), current_cmds.end(), submit->pCommandBuffers[i]),
@@ -4166,8 +4166,7 @@ void CoreChecks::PostCallRecordGetQueryPoolResults(VkDevice device, VkQueryPool 
 // In the case where padding is required, if an alias is encountered then a validation error is reported and skip
 //  may be set by the callback function so caller should merge in skip value if padding case is possible.
 // This check can be skipped by passing skip_checks=true, for call sites outside the validation path.
-bool CoreChecks::RangesIntersect(layer_data const *dev_data, MEMORY_RANGE const *range1, MEMORY_RANGE const *range2, bool *skip,
-                                 bool skip_checks) {
+bool CoreChecks::RangesIntersect(MEMORY_RANGE const *range1, MEMORY_RANGE const *range2, bool *skip, bool skip_checks) {
     *skip = false;
     auto r1_start = range1->start;
     auto r1_end = range1->end;
@@ -4175,7 +4174,7 @@ bool CoreChecks::RangesIntersect(layer_data const *dev_data, MEMORY_RANGE const 
     auto r2_end = range2->end;
     VkDeviceSize pad_align = 1;
     if (range1->linear != range2->linear) {
-        pad_align = dev_data->phys_dev_props.limits.bufferImageGranularity;
+        pad_align = phys_dev_props.limits.bufferImageGranularity;
     }
     if ((r1_end & ~(pad_align - 1)) < (r2_start & ~(pad_align - 1))) return false;
     if ((r1_start & ~(pad_align - 1)) > (r2_end & ~(pad_align - 1))) return false;
@@ -4188,18 +4187,18 @@ bool CoreChecks::RangesIntersect(layer_data const *dev_data, MEMORY_RANGE const 
         const char *r2_type_str = range2->image ? "image" : "buffer";
         auto obj_type = range1->image ? VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT : VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT;
         *skip |= log_msg(
-            dev_data->report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, obj_type, range1->handle, kVUID_Core_MemTrack_InvalidAliasing,
+            report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, obj_type, range1->handle, kVUID_Core_MemTrack_InvalidAliasing,
             "%s %s %s is aliased with %s %s %s which may indicate a bug. For further info refer to the Buffer-Image Granularity "
             "section of the Vulkan specification. "
             "(https://www.khronos.org/registry/vulkan/specs/1.0-extensions/xhtml/vkspec.html#resources-bufferimagegranularity)",
-            r1_linear_str, r1_type_str, dev_data->report_data->FormatHandle(range1->handle).c_str(), r2_linear_str, r2_type_str,
-            dev_data->report_data->FormatHandle(range2->handle).c_str());
+            r1_linear_str, r1_type_str, report_data->FormatHandle(range1->handle).c_str(), r2_linear_str, r2_type_str,
+            report_data->FormatHandle(range2->handle).c_str());
     }
     // Ranges intersect
     return true;
 }
 // Simplified RangesIntersect that calls above function to check range1 for intersection with offset & end addresses
-bool CoreChecks::RangesIntersect(layer_data const *dev_data, MEMORY_RANGE const *range1, VkDeviceSize offset, VkDeviceSize end) {
+bool CoreChecks::RangesIntersect(MEMORY_RANGE const *range1, VkDeviceSize offset, VkDeviceSize end) {
     // Create a local MEMORY_RANGE struct to wrap offset/size
     MEMORY_RANGE range_wrap;
     // Synch linear with range1 to avoid padding and potential validation error case
@@ -4207,12 +4206,12 @@ bool CoreChecks::RangesIntersect(layer_data const *dev_data, MEMORY_RANGE const 
     range_wrap.start = offset;
     range_wrap.end = end;
     bool tmp_bool;
-    return RangesIntersect(dev_data, range1, &range_wrap, &tmp_bool, true);
+    return RangesIntersect(range1, &range_wrap, &tmp_bool, true);
 }
 
-bool CoreChecks::ValidateInsertMemoryRange(layer_data const *dev_data, uint64_t handle, DEVICE_MEM_INFO *mem_info,
-                                           VkDeviceSize memoryOffset, VkMemoryRequirements memRequirements, bool is_image,
-                                           bool is_linear, const char *api_name) {
+bool CoreChecks::ValidateInsertMemoryRange(uint64_t handle, DEVICE_MEM_INFO *mem_info, VkDeviceSize memoryOffset,
+                                           VkMemoryRequirements memRequirements, bool is_image, bool is_linear,
+                                           const char *api_name) {
     bool skip = false;
 
     MEMORY_RANGE range;
@@ -4229,7 +4228,7 @@ bool CoreChecks::ValidateInsertMemoryRange(layer_data const *dev_data, uint64_t 
     for (auto &obj_range_pair : mem_info->bound_ranges) {
         auto check_range = &obj_range_pair.second;
         bool intersection_error = false;
-        if (RangesIntersect(dev_data, &range, check_range, &intersection_error, false)) {
+        if (RangesIntersect(&range, check_range, &intersection_error, false)) {
             skip |= intersection_error;
             range.aliases.insert(check_range);
         }
@@ -4238,12 +4237,12 @@ bool CoreChecks::ValidateInsertMemoryRange(layer_data const *dev_data, uint64_t 
     if (memoryOffset >= mem_info->alloc_info.allocationSize) {
         const char *error_code =
             is_image ? "VUID-vkBindImageMemory-memoryOffset-01046" : "VUID-vkBindBufferMemory-memoryOffset-01031";
-        skip = log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_MEMORY_EXT,
+        skip = log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_MEMORY_EXT,
                        HandleToUint64(mem_info->mem), error_code,
                        "In %s, attempting to bind memory (%s) to object (%s), memoryOffset=0x%" PRIxLEAST64
                        " must be less than the memory allocation size 0x%" PRIxLEAST64 ".",
-                       api_name, dev_data->report_data->FormatHandle(mem_info->mem).c_str(),
-                       dev_data->report_data->FormatHandle(handle).c_str(), memoryOffset, mem_info->alloc_info.allocationSize);
+                       api_name, report_data->FormatHandle(mem_info->mem).c_str(), report_data->FormatHandle(handle).c_str(),
+                       memoryOffset, mem_info->alloc_info.allocationSize);
     }
 
     return skip;
@@ -4256,8 +4255,8 @@ bool CoreChecks::ValidateInsertMemoryRange(layer_data const *dev_data, uint64_t 
 // Return true if an error is flagged and the user callback returns "true", otherwise false
 // is_image indicates an image object, otherwise handle is for a buffer
 // is_linear indicates a buffer or linear image
-void CoreChecks::InsertMemoryRange(layer_data const *dev_data, uint64_t handle, DEVICE_MEM_INFO *mem_info,
-                                   VkDeviceSize memoryOffset, VkMemoryRequirements memRequirements, bool is_image, bool is_linear) {
+void CoreChecks::InsertMemoryRange(uint64_t handle, DEVICE_MEM_INFO *mem_info, VkDeviceSize memoryOffset,
+                                   VkMemoryRequirements memRequirements, bool is_image, bool is_linear) {
     MEMORY_RANGE range;
 
     range.image = is_image;
@@ -4275,7 +4274,7 @@ void CoreChecks::InsertMemoryRange(layer_data const *dev_data, uint64_t handle, 
     for (auto &obj_range_pair : mem_info->bound_ranges) {
         auto check_range = &obj_range_pair.second;
         bool intersection_error = false;
-        if (RangesIntersect(dev_data, &range, check_range, &intersection_error, true)) {
+        if (RangesIntersect(&range, check_range, &intersection_error, true)) {
             range.aliases.insert(check_range);
             tmp_alias_ranges.insert(check_range);
         }
@@ -4290,23 +4289,22 @@ void CoreChecks::InsertMemoryRange(layer_data const *dev_data, uint64_t handle, 
         mem_info->bound_buffers.insert(handle);
 }
 
-bool CoreChecks::ValidateInsertImageMemoryRange(layer_data const *dev_data, VkImage image, DEVICE_MEM_INFO *mem_info,
-                                                VkDeviceSize mem_offset, VkMemoryRequirements mem_reqs, bool is_linear,
-                                                const char *api_name) {
-    return ValidateInsertMemoryRange(dev_data, HandleToUint64(image), mem_info, mem_offset, mem_reqs, true, is_linear, api_name);
+bool CoreChecks::ValidateInsertImageMemoryRange(VkImage image, DEVICE_MEM_INFO *mem_info, VkDeviceSize mem_offset,
+                                                VkMemoryRequirements mem_reqs, bool is_linear, const char *api_name) {
+    return ValidateInsertMemoryRange(HandleToUint64(image), mem_info, mem_offset, mem_reqs, true, is_linear, api_name);
 }
-void CoreChecks::InsertImageMemoryRange(layer_data const *dev_data, VkImage image, DEVICE_MEM_INFO *mem_info,
-                                        VkDeviceSize mem_offset, VkMemoryRequirements mem_reqs, bool is_linear) {
-    InsertMemoryRange(dev_data, HandleToUint64(image), mem_info, mem_offset, mem_reqs, true, is_linear);
+void CoreChecks::InsertImageMemoryRange(VkImage image, DEVICE_MEM_INFO *mem_info, VkDeviceSize mem_offset,
+                                        VkMemoryRequirements mem_reqs, bool is_linear) {
+    InsertMemoryRange(HandleToUint64(image), mem_info, mem_offset, mem_reqs, true, is_linear);
 }
 
-bool CoreChecks::ValidateInsertBufferMemoryRange(layer_data const *dev_data, VkBuffer buffer, DEVICE_MEM_INFO *mem_info,
-                                                 VkDeviceSize mem_offset, VkMemoryRequirements mem_reqs, const char *api_name) {
-    return ValidateInsertMemoryRange(dev_data, HandleToUint64(buffer), mem_info, mem_offset, mem_reqs, false, true, api_name);
+bool CoreChecks::ValidateInsertBufferMemoryRange(VkBuffer buffer, DEVICE_MEM_INFO *mem_info, VkDeviceSize mem_offset,
+                                                 VkMemoryRequirements mem_reqs, const char *api_name) {
+    return ValidateInsertMemoryRange(HandleToUint64(buffer), mem_info, mem_offset, mem_reqs, false, true, api_name);
 }
-void CoreChecks::InsertBufferMemoryRange(layer_data const *dev_data, VkBuffer buffer, DEVICE_MEM_INFO *mem_info,
-                                         VkDeviceSize mem_offset, VkMemoryRequirements mem_reqs) {
-    InsertMemoryRange(dev_data, HandleToUint64(buffer), mem_info, mem_offset, mem_reqs, false, true);
+void CoreChecks::InsertBufferMemoryRange(VkBuffer buffer, DEVICE_MEM_INFO *mem_info, VkDeviceSize mem_offset,
+                                         VkMemoryRequirements mem_reqs) {
+    InsertMemoryRange(HandleToUint64(buffer), mem_info, mem_offset, mem_reqs, false, true);
 }
 
 // Remove MEMORY_RANGE struct for give handle from bound_ranges of mem_info
@@ -4371,8 +4369,7 @@ bool CoreChecks::ValidateBindBufferMemory(layer_data *device_data, VkBuffer buff
         // Validate bound memory range information
         const auto mem_info = GetMemObjInfo(mem);
         if (mem_info) {
-            skip |=
-                ValidateInsertBufferMemoryRange(device_data, buffer, mem_info, memoryOffset, buffer_state->requirements, api_name);
+            skip |= ValidateInsertBufferMemoryRange(buffer, mem_info, memoryOffset, buffer_state->requirements, api_name);
             skip |= ValidateMemoryTypes(device_data, mem_info, buffer_state->requirements.memoryTypeBits, api_name,
                                         "VUID-vkBindBufferMemory-memory-01035");
         }
@@ -4431,7 +4428,7 @@ void CoreChecks::UpdateBindBufferMemoryState(layer_data *device_data, VkBuffer b
         // Track bound memory range information
         auto mem_info = GetMemObjInfo(mem);
         if (mem_info) {
-            InsertBufferMemoryRange(device_data, buffer, mem_info, memoryOffset, buffer_state->requirements);
+            InsertBufferMemoryRange(buffer, mem_info, memoryOffset, buffer_state->requirements);
         }
         // Track objects tied to memory
         uint64_t buffer_handle = HandleToUint64(buffer);
@@ -8561,7 +8558,7 @@ bool CoreChecks::PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, uin
     skip |= ValidateCmdQueueFlags(device_data, cb_state, "vkCmdWaitEvents()", VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
                                   "VUID-vkCmdWaitEvents-commandBuffer-cmdpool");
     skip |= ValidateCmd(device_data, cb_state, CMD_WAITEVENTS, "vkCmdWaitEvents()");
-    skip |= ValidateBarriersToImages(device_data, cb_state, imageMemoryBarrierCount, pImageMemoryBarriers, "vkCmdWaitEvents()");
+    skip |= ValidateBarriersToImages(cb_state, imageMemoryBarrierCount, pImageMemoryBarriers, "vkCmdWaitEvents()");
     skip |= ValidateBarriers(device_data, "vkCmdWaitEvents()", cb_state, sourceStageMask, dstStageMask, memoryBarrierCount,
                              pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount,
                              pImageMemoryBarriers);
@@ -8638,8 +8635,7 @@ bool CoreChecks::PreCallValidateCmdPipelineBarrier(VkCommandBuffer commandBuffer
                                                    pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
         if (skip) return true;  // Early return to avoid redundant errors from below calls
     }
-    skip |=
-        ValidateBarriersToImages(device_data, cb_state, imageMemoryBarrierCount, pImageMemoryBarriers, "vkCmdPipelineBarrier()");
+    skip |= ValidateBarriersToImages(cb_state, imageMemoryBarrierCount, pImageMemoryBarriers, "vkCmdPipelineBarrier()");
     skip |= ValidateBarriers(device_data, "vkCmdPipelineBarrier()", cb_state, srcStageMask, dstStageMask, memoryBarrierCount,
                              pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount,
                              pImageMemoryBarriers);
@@ -9897,7 +9893,7 @@ bool CoreChecks::ValidateCreateRenderPass(layer_data *dev_data, VkDevice device,
         }
     }
     if (!skip) {
-        skip |= ValidateLayouts(dev_data, rp_version, device, pCreateInfo);
+        skip |= ValidateLayouts(rp_version, device, pCreateInfo);
     }
     return skip;
 }
@@ -10258,7 +10254,7 @@ bool CoreChecks::ValidateCmdBeginRenderPass(layer_data *device_data, VkCommandBu
                 device_data->report_data->FormatHandle(render_pass_state->renderPass).c_str(), clear_op_size, clear_op_size - 1);
         }
         skip |= VerifyRenderAreaBounds(device_data, pRenderPassBegin);
-        skip |= VerifyFramebufferAndRenderPassLayouts(device_data, rp_version, cb_state, pRenderPassBegin,
+        skip |= VerifyFramebufferAndRenderPassLayouts(rp_version, cb_state, pRenderPassBegin,
                                                       GetFramebufferState(pRenderPassBegin->framebuffer));
         if (framebuffer->rp_state->renderPass != render_pass_state->renderPass) {
             skip |= ValidateRenderPassCompatibility(device_data, "render pass", render_pass_state, "framebuffer",
@@ -10715,13 +10711,13 @@ bool CoreChecks::PreCallValidateMapMemory(VkDevice device, VkDeviceMemory mem, V
     DEVICE_MEM_INFO *mem_info = GetMemObjInfo(mem);
     if (mem_info) {
         auto end_offset = (VK_WHOLE_SIZE == size) ? mem_info->alloc_info.allocationSize - 1 : offset + size - 1;
-        skip |= ValidateMapImageLayouts(device_data, device, mem_info, offset, end_offset);
-        if ((device_data->phys_dev_mem_props.memoryTypes[mem_info->alloc_info.memoryTypeIndex].propertyFlags &
+        skip |= ValidateMapImageLayouts(device, mem_info, offset, end_offset);
+        if ((phys_dev_mem_props.memoryTypes[mem_info->alloc_info.memoryTypeIndex].propertyFlags &
              VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) == 0) {
-            skip = log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_MEMORY_EXT,
+            skip = log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_MEMORY_EXT,
                            HandleToUint64(mem), "VUID-vkMapMemory-memory-00682",
                            "Mapping Memory without VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT set: mem obj %s.",
-                           device_data->report_data->FormatHandle(mem).c_str());
+                           report_data->FormatHandle(mem).c_str());
         }
     }
     skip |= ValidateMapMemRange(device_data, mem, offset, size);
@@ -10938,7 +10934,7 @@ bool CoreChecks::ValidateBindImageMemory(layer_data *device_data, VkImage image,
         // Validate bound memory range information
         auto mem_info = GetMemObjInfo(mem);
         if (mem_info) {
-            skip |= ValidateInsertImageMemoryRange(device_data, image, mem_info, memoryOffset, image_state->requirements,
+            skip |= ValidateInsertImageMemoryRange(image, mem_info, memoryOffset, image_state->requirements,
                                                    image_state->createInfo.tiling == VK_IMAGE_TILING_LINEAR, api_name);
             skip |= ValidateMemoryTypes(device_data, mem_info, image_state->requirements.memoryTypeBits, api_name,
                                         "VUID-vkBindImageMemory-memory-01047");
@@ -10996,7 +10992,7 @@ void CoreChecks::UpdateBindImageMemoryState(layer_data *device_data, VkImage ima
         // Track bound memory range information
         auto mem_info = GetMemObjInfo(mem);
         if (mem_info) {
-            InsertImageMemoryRange(device_data, image, mem_info, memoryOffset, image_state->requirements,
+            InsertImageMemoryRange(image, mem_info, memoryOffset, image_state->requirements,
                                    image_state->createInfo.tiling == VK_IMAGE_TILING_LINEAR);
         }
 
@@ -12002,7 +11998,7 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
                 }
 
                 vector<VkImageLayout> layouts;
-                if (FindLayouts(device_data, image, layouts)) {
+                if (FindLayouts(image, layouts)) {
                     for (auto layout : layouts) {
                         if ((layout != VK_IMAGE_LAYOUT_PRESENT_SRC_KHR) &&
                             (!device_data->device_extensions.vk_khr_shared_presentable_image ||

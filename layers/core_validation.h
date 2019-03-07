@@ -434,22 +434,19 @@ class CoreChecks : public ValidationObject {
     void UpdateStateCmdDrawDispatchType(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, VkPipelineBindPoint bind_point);
     void UpdateStateCmdDrawType(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, VkPipelineBindPoint bind_point);
     bool ValidateCmdNextSubpass(layer_data* device_data, RenderPassCreateVersion rp_version, VkCommandBuffer commandBuffer);
-    bool RangesIntersect(layer_data const* dev_data, MEMORY_RANGE const* range1, VkDeviceSize offset, VkDeviceSize end);
-    bool RangesIntersect(layer_data const* dev_data, MEMORY_RANGE const* range1, MEMORY_RANGE const* range2, bool* skip,
-                         bool skip_checks);
-    bool ValidateInsertMemoryRange(layer_data const* dev_data, uint64_t handle, DEVICE_MEM_INFO* mem_info,
-                                   VkDeviceSize memoryOffset, VkMemoryRequirements memRequirements, bool is_image, bool is_linear,
-                                   const char* api_name);
-    void InsertMemoryRange(layer_data const* dev_data, uint64_t handle, DEVICE_MEM_INFO* mem_info, VkDeviceSize memoryOffset,
+    bool RangesIntersect(MEMORY_RANGE const* range1, VkDeviceSize offset, VkDeviceSize end);
+    bool RangesIntersect(MEMORY_RANGE const* range1, MEMORY_RANGE const* range2, bool* skip, bool skip_checks);
+    bool ValidateInsertMemoryRange(uint64_t handle, DEVICE_MEM_INFO* mem_info, VkDeviceSize memoryOffset,
+                                   VkMemoryRequirements memRequirements, bool is_image, bool is_linear, const char* api_name);
+    void InsertMemoryRange(uint64_t handle, DEVICE_MEM_INFO* mem_info, VkDeviceSize memoryOffset,
                            VkMemoryRequirements memRequirements, bool is_image, bool is_linear);
-    bool ValidateInsertImageMemoryRange(layer_data const* dev_data, VkImage image, DEVICE_MEM_INFO* mem_info,
-                                        VkDeviceSize mem_offset, VkMemoryRequirements mem_reqs, bool is_linear,
-                                        const char* api_name);
-    void InsertImageMemoryRange(layer_data const* dev_data, VkImage image, DEVICE_MEM_INFO* mem_info, VkDeviceSize mem_offset,
-                                VkMemoryRequirements mem_reqs, bool is_linear);
-    bool ValidateInsertBufferMemoryRange(layer_data const* dev_data, VkBuffer buffer, DEVICE_MEM_INFO* mem_info,
-                                         VkDeviceSize mem_offset, VkMemoryRequirements mem_reqs, const char* api_name);
-    void InsertBufferMemoryRange(layer_data const* dev_data, VkBuffer buffer, DEVICE_MEM_INFO* mem_info, VkDeviceSize mem_offset,
+    bool ValidateInsertImageMemoryRange(VkImage image, DEVICE_MEM_INFO* mem_info, VkDeviceSize mem_offset,
+                                        VkMemoryRequirements mem_reqs, bool is_linear, const char* api_name);
+    void InsertImageMemoryRange(VkImage image, DEVICE_MEM_INFO* mem_info, VkDeviceSize mem_offset, VkMemoryRequirements mem_reqs,
+                                bool is_linear);
+    bool ValidateInsertBufferMemoryRange(VkBuffer buffer, DEVICE_MEM_INFO* mem_info, VkDeviceSize mem_offset,
+                                         VkMemoryRequirements mem_reqs, const char* api_name);
+    void InsertBufferMemoryRange(VkBuffer buffer, DEVICE_MEM_INFO* mem_info, VkDeviceSize mem_offset,
                                  VkMemoryRequirements mem_reqs);
     bool ValidateMemoryTypes(const layer_data* dev_data, const DEVICE_MEM_INFO* mem_info, const uint32_t memory_type_bits,
                              const char* funcName, const char* msgCode);
@@ -687,10 +684,10 @@ class CoreChecks : public ValidationObject {
                         const VkImageLayout& layout);
     void SetImageLayout(GLOBAL_CB_NODE* cb_node, const IMAGE_STATE* image_state, VkImageSubresourceLayers image_subresource_layers,
                         const VkImageLayout& layout);
-    bool ValidateRenderPassLayoutAgainstFramebufferImageUsage(layer_data* device_data, RenderPassCreateVersion rp_version,
-                                                              VkImageLayout layout, VkImage image, VkImageView image_view,
-                                                              VkFramebuffer framebuffer, VkRenderPass renderpass,
-                                                              uint32_t attachment_index, const char* variable_name);
+    bool ValidateRenderPassLayoutAgainstFramebufferImageUsage(RenderPassCreateVersion rp_version, VkImageLayout layout,
+                                                              VkImage image, VkImageView image_view, VkFramebuffer framebuffer,
+                                                              VkRenderPass renderpass, uint32_t attachment_index,
+                                                              const char* variable_name);
     bool ValidateBufferImageCopyData(const debug_report_data* report_data, uint32_t regionCount, const VkBufferImageCopy* pRegions,
                                      IMAGE_STATE* image_state, const char* function);
     bool ValidateBufferViewRange(const layer_data* device_data, const BUFFER_STATE* buffer_state,
@@ -757,17 +754,16 @@ class CoreChecks : public ValidationObject {
     bool FindLayoutVerifyNode(GLOBAL_CB_NODE const* pCB, ImageSubresourcePair imgpair, IMAGE_CMD_BUF_LAYOUT_NODE& node,
                               const VkImageAspectFlags aspectMask);
 
-    bool FindLayoutVerifyLayout(layer_data const* device_data, ImageSubresourcePair imgpair, VkImageLayout& layout,
-                                const VkImageAspectFlags aspectMask);
+    bool FindLayoutVerifyLayout(ImageSubresourcePair imgpair, VkImageLayout& layout, const VkImageAspectFlags aspectMask);
 
     bool FindCmdBufLayout(GLOBAL_CB_NODE const* pCB, VkImage image, VkImageSubresource range, IMAGE_CMD_BUF_LAYOUT_NODE& node);
 
-    bool FindGlobalLayout(layer_data* device_data, ImageSubresourcePair imgpair, VkImageLayout& layout);
+    bool FindGlobalLayout(ImageSubresourcePair imgpair, VkImageLayout& layout);
 
-    bool FindLayouts(layer_data* device_data, VkImage image, std::vector<VkImageLayout>& layouts);
+    bool FindLayouts(VkImage image, std::vector<VkImageLayout>& layouts);
 
-    bool FindLayout(layer_data* device_data, const std::unordered_map<ImageSubresourcePair, IMAGE_LAYOUT_NODE>& imageLayoutMap,
-                    ImageSubresourcePair imgpair, VkImageLayout& layout);
+    bool FindLayout(const std::unordered_map<ImageSubresourcePair, IMAGE_LAYOUT_NODE>& imageLayoutMap, ImageSubresourcePair imgpair,
+                    VkImageLayout& layout);
 
     bool FindLayout(const std::unordered_map<ImageSubresourcePair, IMAGE_LAYOUT_NODE>& imageLayoutMap, ImageSubresourcePair imgpair,
                     VkImageLayout& layout, const VkImageAspectFlags aspectMask);
@@ -778,7 +774,7 @@ class CoreChecks : public ValidationObject {
 
     void SetImageViewLayout(GLOBAL_CB_NODE* cb_node, IMAGE_VIEW_STATE* view_state, const VkImageLayout& layout);
 
-    bool VerifyFramebufferAndRenderPassLayouts(layer_data* dev_data, RenderPassCreateVersion rp_version, GLOBAL_CB_NODE* pCB,
+    bool VerifyFramebufferAndRenderPassLayouts(RenderPassCreateVersion rp_version, GLOBAL_CB_NODE* pCB,
                                                const VkRenderPassBeginInfo* pRenderPassBegin,
                                                const FRAMEBUFFER_STATE* framebuffer_state);
 
@@ -789,16 +785,16 @@ class CoreChecks : public ValidationObject {
 
     void TransitionBeginRenderPassLayouts(GLOBAL_CB_NODE*, const RENDER_PASS_STATE*, FRAMEBUFFER_STATE*);
 
-    bool ValidateImageAspectLayout(layer_data* device_data, GLOBAL_CB_NODE const* pCB, const VkImageMemoryBarrier* mem_barrier,
-                                   uint32_t level, uint32_t layer, VkImageAspectFlags aspect);
+    bool ValidateImageAspectLayout(GLOBAL_CB_NODE const* pCB, const VkImageMemoryBarrier* mem_barrier, uint32_t level,
+                                   uint32_t layer, VkImageAspectFlags aspect);
 
     void TransitionImageAspectLayout(GLOBAL_CB_NODE* pCB, const VkImageMemoryBarrier* mem_barrier, uint32_t level, uint32_t layer,
                                      VkImageAspectFlags aspect_mask, VkImageAspectFlags aspect);
 
-    bool ValidateBarrierLayoutToImageUsage(layer_data* device_data, const VkImageMemoryBarrier* img_barrier, bool new_not_old,
-                                           VkImageUsageFlags usage, const char* func_name);
+    bool ValidateBarrierLayoutToImageUsage(const VkImageMemoryBarrier* img_barrier, bool new_not_old, VkImageUsageFlags usage,
+                                           const char* func_name);
 
-    bool ValidateBarriersToImages(layer_data* device_data, GLOBAL_CB_NODE const* cb_state, uint32_t imageMemoryBarrierCount,
+    bool ValidateBarriersToImages(GLOBAL_CB_NODE const* cb_state, uint32_t imageMemoryBarrierCount,
                                   const VkImageMemoryBarrier* pImageMemoryBarriers, const char* func_name);
 
     void RecordQueuedQFOTransfers(layer_data* dev_data, GLOBAL_CB_NODE* pCB);
@@ -832,24 +828,19 @@ class CoreChecks : public ValidationObject {
                                    VkImageLayout dstImageLayout, uint32_t regionCount, const VkImageBlit* pRegions,
                                    VkFilter filter);
 
-    bool ValidateCmdBufImageLayouts(layer_data* device_data, GLOBAL_CB_NODE* pCB,
+    bool ValidateCmdBufImageLayouts(GLOBAL_CB_NODE* pCB,
                                     std::unordered_map<ImageSubresourcePair, IMAGE_LAYOUT_NODE> const& globalImageLayoutMap,
                                     std::unordered_map<ImageSubresourcePair, IMAGE_LAYOUT_NODE>& overlayLayoutMap);
 
-    void UpdateCmdBufImageLayouts(layer_data* device_data, GLOBAL_CB_NODE* pCB);
-
-    bool ValidateMaskBitsFromLayouts(layer_data* device_data, VkCommandBuffer cmdBuffer, const VkAccessFlags& accessMask,
-                                     const VkImageLayout& layout, const char* type);
+    void UpdateCmdBufImageLayouts(GLOBAL_CB_NODE* pCB);
 
     bool ValidateLayoutVsAttachmentDescription(const debug_report_data* report_data, RenderPassCreateVersion rp_version,
                                                const VkImageLayout first_layout, const uint32_t attachment,
                                                const VkAttachmentDescription2KHR& attachment_description);
 
-    bool ValidateLayouts(layer_data* dev_data, RenderPassCreateVersion rp_version, VkDevice device,
-                         const VkRenderPassCreateInfo2KHR* pCreateInfo);
+    bool ValidateLayouts(RenderPassCreateVersion rp_version, VkDevice device, const VkRenderPassCreateInfo2KHR* pCreateInfo);
 
-    bool ValidateMapImageLayouts(layer_data* dev_data, VkDevice device, DEVICE_MEM_INFO const* mem_info, VkDeviceSize offset,
-                                 VkDeviceSize end_offset);
+    bool ValidateMapImageLayouts(VkDevice device, DEVICE_MEM_INFO const* mem_info, VkDeviceSize offset, VkDeviceSize end_offset);
 
     bool ValidateImageUsageFlags(layer_data* dev_data, IMAGE_STATE const* image_state, VkFlags desired, bool strict,
                                  const char* msgCode, char const* func_name, char const* usage_string);
