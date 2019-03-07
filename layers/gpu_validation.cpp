@@ -1155,7 +1155,7 @@ void CoreChecks::GpuAllocateValidationResources(layer_data *dev_data, const VkCo
                                                 const VkPipelineBindPoint bind_point) {
     VkResult result;
 
-    if (!(GetEnables(dev_data)->gpu_validation)) return;
+    if (!(GetEnables()->gpu_validation)) return;
 
     auto gpu_state = GetGpuValidationState(dev_data);
     if (gpu_state->aborted) return;

@@ -2279,7 +2279,7 @@ bool CoreChecks::PreCallValidateCreateShaderModule(VkDevice device, const VkShad
     bool skip = false;
     spv_result_t spv_valid = SPV_SUCCESS;
 
-    if (GetDisables(device_data)->shader_validation) {
+    if (GetDisables()->shader_validation) {
         return false;
     }
 
@@ -2342,7 +2342,7 @@ void CoreChecks::PreCallRecordCreateShaderModule(VkDevice device, const VkShader
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
 
     create_shader_module_api_state *csm_state = reinterpret_cast<create_shader_module_api_state *>(csm_state_data);
-    if (GetEnables(device_data)->gpu_validation) {
+    if (GetEnables()->gpu_validation) {
         GpuPreCallCreateShaderModule(device_data, pCreateInfo, pAllocator, pShaderModule, &csm_state->unique_shader_id,
                                      &csm_state->instrumented_create_info, &csm_state->instrumented_pgm);
     }
