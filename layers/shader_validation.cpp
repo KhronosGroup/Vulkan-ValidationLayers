@@ -1424,8 +1424,8 @@ bool CoreChecks::ValidateShaderCapabilities(layer_data *dev_data, shader_module 
     bool skip = false;
 
     auto report_data = GetReportData(dev_data);
-    auto const &features = GetEnabledFeatures(dev_data);
-    auto const &extensions = GetDeviceExtensions(dev_data);
+    auto const &features = GetEnabledFeatures();
+    auto const &extensions = GetDeviceExtensions();
 
     struct FeaturePointer {
         // Callable object to test if this feature is enabled in the given aggregate feature struct
@@ -1972,7 +1972,7 @@ bool CoreChecks::ValidatePointListShaderState(const layer_data *dev_data, const 
     }
 
     if ((stage == VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT || stage == VK_SHADER_STAGE_GEOMETRY_BIT) &&
-        !GetEnabledFeatures(dev_data)->core.shaderTessellationAndGeometryPointSize) {
+        !GetEnabledFeatures()->core.shaderTessellationAndGeometryPointSize) {
         if (pointsize_written) {
             skip |= log_msg(GetReportData(dev_data), VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
                             HandleToUint64(pipeline->pipeline), kVUID_Core_Shader_PointSizeBuiltInOverSpecified,
@@ -2283,7 +2283,7 @@ bool CoreChecks::PreCallValidateCreateShaderModule(VkDevice device, const VkShad
         return false;
     }
 
-    auto have_glsl_shader = GetDeviceExtensions(device_data)->vk_nv_glsl_shader;
+    auto have_glsl_shader = GetDeviceExtensions()->vk_nv_glsl_shader;
 
     if (!have_glsl_shader && (pCreateInfo->codeSize % 4)) {
         skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
@@ -2307,11 +2307,11 @@ bool CoreChecks::PreCallValidateCreateShaderModule(VkDevice device, const VkShad
         spv_const_binary_t binary{pCreateInfo->pCode, pCreateInfo->codeSize / sizeof(uint32_t)};
         spv_diagnostic diag = nullptr;
         spv_validator_options options = spvValidatorOptionsCreate();
-        if (GetDeviceExtensions(device_data)->vk_khr_relaxed_block_layout) {
+        if (GetDeviceExtensions()->vk_khr_relaxed_block_layout) {
             spvValidatorOptionsSetRelaxBlockLayout(options, true);
         }
-        if (GetDeviceExtensions(device_data)->vk_ext_scalar_block_layout &&
-            GetEnabledFeatures(device_data)->scalar_block_layout_features.scalarBlockLayout == VK_TRUE) {
+        if (GetDeviceExtensions()->vk_ext_scalar_block_layout &&
+            GetEnabledFeatures()->scalar_block_layout_features.scalarBlockLayout == VK_TRUE) {
             spvValidatorOptionsSetScalarBlockLayout(options, true);
         }
         spv_valid = spvValidateWithOptions(ctx, options, &binary, &diag);

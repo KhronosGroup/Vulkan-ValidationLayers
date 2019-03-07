@@ -3708,7 +3708,7 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
                         device_data->phys_dev_props.limits.maxMemoryAllocationCount);
     }
 
-    if (GetDeviceExtensions(device_data)->vk_android_external_memory_android_hardware_buffer) {
+    if (GetDeviceExtensions()->vk_android_external_memory_android_hardware_buffer) {
         skip |= ValidateAllocateMemoryANDROID(device_data, pAllocateInfo);
     } else {
         if (0 == pAllocateInfo->allocationSize) {
@@ -4524,7 +4524,7 @@ void CoreChecks::PostCallRecordGetBufferMemoryRequirements2KHR(VkDevice device, 
 
 bool CoreChecks::ValidateGetImageMemoryRequirements2(layer_data *dev_data, const VkImageMemoryRequirementsInfo2 *pInfo) {
     bool skip = false;
-    if (GetDeviceExtensions(dev_data)->vk_android_external_memory_android_hardware_buffer) {
+    if (GetDeviceExtensions()->vk_android_external_memory_android_hardware_buffer) {
         skip |= ValidateGetImageMemoryRequirements2ANDROID(dev_data, pInfo->image);
     }
     return skip;
@@ -5059,9 +5059,9 @@ std::unordered_map<VkImageView, std::unique_ptr<IMAGE_VIEW_STATE>> *CoreChecks::
     return &device_data->imageViewMap;
 }
 
-const DeviceFeatures *CoreChecks::GetEnabledFeatures(const layer_data *device_data) { return &device_data->enabled_features; }
+const DeviceFeatures *CoreChecks::GetEnabledFeatures() { return &enabled_features; }
 
-const DeviceExtensions *CoreChecks::GetDeviceExtensions(const layer_data *device_data) { return &device_data->device_extensions; }
+const DeviceExtensions *CoreChecks::GetDeviceExtensions() { return &device_extensions; }
 
 GpuValidationState *CoreChecks::GetGpuValidationState(layer_data *device_data) { return &device_data->gpu_validation_state; }
 const GpuValidationState *CoreChecks::GetGpuValidationState(const layer_data *device_data) {
@@ -6545,7 +6545,7 @@ bool CoreChecks::PreCallValidateCmdSetExclusiveScissorNV(VkCommandBuffer command
                         "vkCmdSetExclusiveScissorNV(): pipeline was created without VK_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_NV flag.");
     }
 
-    if (!GetEnabledFeatures(device_data)->exclusive_scissor.exclusiveScissor) {
+    if (!GetEnabledFeatures()->exclusive_scissor.exclusiveScissor) {
         skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                         HandleToUint64(commandBuffer), "VUID-vkCmdSetExclusiveScissorNV-None-02031",
                         "vkCmdSetExclusiveScissorNV: The exclusiveScissor feature is disabled.");
@@ -6572,7 +6572,7 @@ bool CoreChecks::PreCallValidateCmdBindShadingRateImageNV(VkCommandBuffer comman
 
     skip |= ValidateCmd(device_data, cb_state, CMD_BINDSHADINGRATEIMAGE, "vkCmdBindShadingRateImageNV()");
 
-    if (!GetEnabledFeatures(device_data)->shading_rate_image.shadingRateImage) {
+    if (!GetEnabledFeatures()->shading_rate_image.shadingRateImage) {
         skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                         HandleToUint64(commandBuffer), "VUID-vkCmdBindShadingRateImageNV-None-02058",
                         "vkCmdBindShadingRateImageNV: The shadingRateImage feature is disabled.");
@@ -6648,7 +6648,7 @@ bool CoreChecks::PreCallValidateCmdSetViewportShadingRatePaletteNV(VkCommandBuff
 
     skip |= ValidateCmd(device_data, cb_state, CMD_SETVIEWPORTSHADINGRATEPALETTE, "vkCmdSetViewportShadingRatePaletteNV()");
 
-    if (!GetEnabledFeatures(device_data)->shading_rate_image.shadingRateImage) {
+    if (!GetEnabledFeatures()->shading_rate_image.shadingRateImage) {
         skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                         HandleToUint64(commandBuffer), "VUID-vkCmdSetViewportShadingRatePaletteNV-None-02064",
                         "vkCmdSetViewportShadingRatePaletteNV: The shadingRateImage feature is disabled.");
@@ -7739,7 +7739,7 @@ bool CoreChecks::ValidateImageBarrierImage(layer_data *device_data, const char *
         if (sub_desc.pDepthStencilAttachment && sub_desc.pDepthStencilAttachment->attachment == attach_index) {
             sub_image_layout = sub_desc.pDepthStencilAttachment->layout;
             sub_image_found = true;
-        } else if (GetDeviceExtensions(device_data)->vk_khr_depth_stencil_resolve) {
+        } else if (GetDeviceExtensions()->vk_khr_depth_stencil_resolve) {
             const auto *resolve = lvl_find_in_chain<VkSubpassDescriptionDepthStencilResolveKHR>(sub_desc.pNext);
             if (resolve && resolve->pDepthStencilResolveAttachment &&
                 resolve->pDepthStencilResolveAttachment->attachment == attach_index) {
@@ -10174,7 +10174,7 @@ bool CoreChecks::PreCallValidateCreateRenderPass2KHR(VkDevice device, const VkRe
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
 
-    if (GetDeviceExtensions(device_data)->vk_khr_depth_stencil_resolve) {
+    if (GetDeviceExtensions()->vk_khr_depth_stencil_resolve) {
         skip |= ValidateDepthStencilResolve(device_data->report_data, device_data->phys_dev_ext_props.depth_stencil_resolve_props,
                                             pCreateInfo);
     }
@@ -13411,7 +13411,7 @@ void CoreChecks::PreCallRecordCmdDrawMeshTasksIndirectCountNV(VkCommandBuffer co
 bool CoreChecks::ValidateCreateSamplerYcbcrConversion(const layer_data *device_data, const char *func_name,
                                                       const VkSamplerYcbcrConversionCreateInfo *create_info) {
     bool skip = false;
-    if (GetDeviceExtensions(device_data)->vk_android_external_memory_android_hardware_buffer) {
+    if (GetDeviceExtensions()->vk_android_external_memory_android_hardware_buffer) {
         skip |= ValidateCreateSamplerYcbcrConversionANDROID(device_data, create_info);
     } else {  // Not android hardware buffer
         if (VK_FORMAT_UNDEFINED == create_info->format) {
@@ -13442,7 +13442,7 @@ bool CoreChecks::PreCallValidateCreateSamplerYcbcrConversionKHR(VkDevice device,
 void CoreChecks::RecordCreateSamplerYcbcrConversionState(layer_data *device_data,
                                                          const VkSamplerYcbcrConversionCreateInfo *create_info,
                                                          VkSamplerYcbcrConversion ycbcr_conversion) {
-    if (GetDeviceExtensions(device_data)->vk_android_external_memory_android_hardware_buffer) {
+    if (GetDeviceExtensions()->vk_android_external_memory_android_hardware_buffer) {
         RecordCreateSamplerYcbcrConversionANDROID(device_data, create_info, ycbcr_conversion);
     }
 }
@@ -13468,7 +13468,7 @@ void CoreChecks::PostCallRecordDestroySamplerYcbcrConversion(VkDevice device, Vk
                                                              const VkAllocationCallbacks *pAllocator) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!ycbcrConversion) return;
-    if (GetDeviceExtensions(device_data)->vk_android_external_memory_android_hardware_buffer) {
+    if (GetDeviceExtensions()->vk_android_external_memory_android_hardware_buffer) {
         RecordDestroySamplerYcbcrConversionANDROID(device_data, ycbcrConversion);
     }
 }
@@ -13477,7 +13477,7 @@ void CoreChecks::PostCallRecordDestroySamplerYcbcrConversionKHR(VkDevice device,
                                                                 const VkAllocationCallbacks *pAllocator) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!ycbcrConversion) return;
-    if (GetDeviceExtensions(device_data)->vk_android_external_memory_android_hardware_buffer) {
+    if (GetDeviceExtensions()->vk_android_external_memory_android_hardware_buffer) {
         RecordDestroySamplerYcbcrConversionANDROID(device_data, ycbcrConversion);
     }
 }
@@ -13486,13 +13486,13 @@ bool CoreChecks::PreCallValidateGetBufferDeviceAddressEXT(VkDevice device, const
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
 
-    if (!GetEnabledFeatures(device_data)->buffer_address.bufferDeviceAddress) {
+    if (!GetEnabledFeatures()->buffer_address.bufferDeviceAddress) {
         skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT,
                         HandleToUint64(pInfo->buffer), "VUID-vkGetBufferDeviceAddressEXT-None-02598",
                         "The bufferDeviceAddress feature must: be enabled.");
     }
 
-    if (device_data->physical_device_count > 1 && !GetEnabledFeatures(device_data)->buffer_address.bufferDeviceAddressMultiDevice) {
+    if (device_data->physical_device_count > 1 && !GetEnabledFeatures()->buffer_address.bufferDeviceAddressMultiDevice) {
         skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT,
                         HandleToUint64(pInfo->buffer), "VUID-vkGetBufferDeviceAddressEXT-device-02599",
                         "If device was created with multiple physical devices, then the "

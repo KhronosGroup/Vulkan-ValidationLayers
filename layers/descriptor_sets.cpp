@@ -2194,7 +2194,7 @@ bool cvdescriptorset::DescriptorSet::VerifyWriteUpdateContents(const VkWriteDesc
                     *error_msg = error_str.str();
                     return false;
                 }
-                if (device_data_->GetDeviceExtensions(device_data_)->vk_khr_sampler_ycbcr_conversion) {
+                if (device_data_->GetDeviceExtensions()->vk_khr_sampler_ycbcr_conversion) {
                     ImageSamplerDescriptor *desc = (ImageSamplerDescriptor *)descriptors_[index].get();
                     if (desc->IsImmutableSampler()) {
                         auto sampler_state = device_data_->GetSamplerState(desc->GetSampler());
@@ -2467,7 +2467,7 @@ bool CoreChecks::ValidateAllocateDescriptorSets(const layer_data *dev_data, cons
             }
         }
     }
-    if (!GetDeviceExtensions(dev_data)->vk_khr_maintenance1) {
+    if (!GetDeviceExtensions()->vk_khr_maintenance1) {
         // Track number of descriptorSets allowable in this pool
         if (pool_state->availableSets < p_alloc_info->descriptorSetCount) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_POOL_EXT,
