@@ -533,7 +533,7 @@ class CoreChecks : public ValidationObject {
     GpuValidationState* GetGpuValidationState();
     VkDevice GetDevice();
 
-    uint32_t GetApiVersion(const layer_data*);
+    uint32_t GetApiVersion();
 
     GlobalQFOTransferBarrierMap<VkImageMemoryBarrier>& GetGlobalQFOReleaseBarrierMap(
         layer_data* dev_data, const QFOTransferBarrier<VkImageMemoryBarrier>::Tag& type_tag);
