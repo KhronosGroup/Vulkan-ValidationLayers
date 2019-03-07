@@ -217,17 +217,17 @@ QUERY_POOL_NODE *CoreChecks::GetQueryPoolNode(VkQueryPool query_pool) {
     return &it->second;
 }
 
-QUEUE_STATE *CoreChecks::GetQueueState(layer_data *dev_data, VkQueue queue) {
-    auto it = dev_data->queueMap.find(queue);
-    if (it == dev_data->queueMap.end()) {
+QUEUE_STATE *CoreChecks::GetQueueState(VkQueue queue) {
+    auto it = queueMap.find(queue);
+    if (it == queueMap.end()) {
         return nullptr;
     }
     return &it->second;
 }
 
-SEMAPHORE_NODE *CoreChecks::GetSemaphoreNode(layer_data *dev_data, VkSemaphore semaphore) {
-    auto it = dev_data->semaphoreMap.find(semaphore);
-    if (it == dev_data->semaphoreMap.end()) {
+SEMAPHORE_NODE *CoreChecks::GetSemaphoreNode(VkSemaphore semaphore) {
+    auto it = semaphoreMap.find(semaphore);
+    if (it == semaphoreMap.end()) {
         return nullptr;
     }
     return &it->second;
@@ -2661,7 +2661,7 @@ bool CoreChecks::VerifyQueueStateToSeq(layer_data *dev_data, QUEUE_STATE *initia
 
         for (; seq < target_seq; ++sub_it, ++seq) {
             for (auto &wait : sub_it->waitSemaphores) {
-                auto other_queue = GetQueueState(dev_data, wait.queue);
+                auto other_queue = GetQueueState(wait.queue);
 
                 if (other_queue == queue) continue;  // semaphores /always/ point backwards, so no point here.
 
@@ -2689,7 +2689,7 @@ bool CoreChecks::VerifyQueueStateToSeq(layer_data *dev_data, QUEUE_STATE *initia
 bool CoreChecks::VerifyQueueStateToFence(layer_data *dev_data, VkFence fence) {
     auto fence_state = GetFenceNode(fence);
     if (fence_state && fence_state->scope == kSyncScopeInternal && VK_NULL_HANDLE != fence_state->signaler.first) {
-        return VerifyQueueStateToSeq(dev_data, GetQueueState(dev_data, fence_state->signaler.first), fence_state->signaler.second);
+        return VerifyQueueStateToSeq(dev_data, GetQueueState(fence_state->signaler.first), fence_state->signaler.second);
     }
     return false;
 }
@@ -2713,7 +2713,7 @@ void CoreChecks::RetireWorkOnQueue(layer_data *dev_data, QUEUE_STATE *pQueue, ui
         auto &submission = pQueue->submissions.front();
 
         for (auto &wait : submission.waitSemaphores) {
-            auto pSemaphore = GetSemaphoreNode(dev_data, wait.semaphore);
+            auto pSemaphore = GetSemaphoreNode(wait.semaphore);
             if (pSemaphore) {
                 pSemaphore->in_use.fetch_sub(1);
             }
@@ -2722,14 +2722,14 @@ void CoreChecks::RetireWorkOnQueue(layer_data *dev_data, QUEUE_STATE *pQueue, ui
         }
 
         for (auto &semaphore : submission.signalSemaphores) {
-            auto pSemaphore = GetSemaphoreNode(dev_data, semaphore);
+            auto pSemaphore = GetSemaphoreNode(semaphore);
             if (pSemaphore) {
                 pSemaphore->in_use.fetch_sub(1);
             }
         }
 
         for (auto &semaphore : submission.externalSemaphores) {
-            auto pSemaphore = GetSemaphoreNode(dev_data, semaphore);
+            auto pSemaphore = GetSemaphoreNode(semaphore);
             if (pSemaphore) {
                 pSemaphore->in_use.fetch_sub(1);
             }
@@ -2777,7 +2777,7 @@ void CoreChecks::RetireWorkOnQueue(layer_data *dev_data, QUEUE_STATE *pQueue, ui
 
     // Roll other queues forward to the highest seq we saw a wait for
     for (auto qs : otherQueueSeqs) {
-        RetireWorkOnQueue(dev_data, GetQueueState(dev_data, qs.first), qs.second);
+        RetireWorkOnQueue(dev_data, GetQueueState(qs.first), qs.second);
     }
 }
 
@@ -2868,7 +2868,7 @@ bool CoreChecks::ValidImageBufferQueue(layer_data *dev_data, GLOBAL_CB_NODE *cb_
                                        uint32_t count, const uint32_t *indices) {
     bool found = false;
     bool skip = false;
-    auto queue_state = GetQueueState(dev_data, queue);
+    auto queue_state = GetQueueState(queue);
     if (queue_state) {
         for (uint32_t i = 0; i < count; i++) {
             if (indices[i] == queue_state->queueFamilyIndex) {
@@ -2894,7 +2894,7 @@ bool CoreChecks::ValidImageBufferQueue(layer_data *dev_data, GLOBAL_CB_NODE *cb_
 bool CoreChecks::ValidateQueueFamilyIndices(layer_data *dev_data, GLOBAL_CB_NODE *pCB, VkQueue queue) {
     bool skip = false;
     auto pPool = GetCommandPoolNode(pCB->createInfo.commandPool);
-    auto queue_state = GetQueueState(dev_data, queue);
+    auto queue_state = GetQueueState(queue);
 
     if (pPool && queue_state) {
         if (pPool->queueFamilyIndex != queue_state->queueFamilyIndex) {
@@ -2992,7 +2992,7 @@ void CoreChecks::PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, 
                                            VkResult result) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(queue), layer_data_map);
     uint64_t early_retire_seq = 0;
-    auto pQueue = GetQueueState(device_data, queue);
+    auto pQueue = GetQueueState(queue);
     auto pFence = GetFenceNode(fence);
 
     if (pFence) {
@@ -3030,7 +3030,7 @@ void CoreChecks::PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, 
         vector<VkSemaphore> semaphore_externals;
         for (uint32_t i = 0; i < submit->waitSemaphoreCount; ++i) {
             VkSemaphore semaphore = submit->pWaitSemaphores[i];
-            auto pSemaphore = GetSemaphoreNode(device_data, semaphore);
+            auto pSemaphore = GetSemaphoreNode(semaphore);
             if (pSemaphore) {
                 if (pSemaphore->scope == kSyncScopeInternal) {
                     if (pSemaphore->signaler.first != VK_NULL_HANDLE) {
@@ -3050,7 +3050,7 @@ void CoreChecks::PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, 
         }
         for (uint32_t i = 0; i < submit->signalSemaphoreCount; ++i) {
             VkSemaphore semaphore = submit->pSignalSemaphores[i];
-            auto pSemaphore = GetSemaphoreNode(device_data, semaphore);
+            auto pSemaphore = GetSemaphoreNode(semaphore);
             if (pSemaphore) {
                 if (pSemaphore->scope == kSyncScopeInternal) {
                     pSemaphore->signaler.first = queue;
@@ -3124,7 +3124,7 @@ bool CoreChecks::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount,
                 "VUID-VkSubmitInfo-pWaitDstStageMask-00077", "VUID-VkSubmitInfo-pWaitDstStageMask-02089",
                 "VUID-VkSubmitInfo-pWaitDstStageMask-02090");
             VkSemaphore semaphore = submit->pWaitSemaphores[i];
-            auto pSemaphore = GetSemaphoreNode(device_data, semaphore);
+            auto pSemaphore = GetSemaphoreNode(semaphore);
             if (pSemaphore && (pSemaphore->scope == kSyncScopeInternal || internal_semaphores.count(semaphore))) {
                 if (unsignaled_semaphores.count(semaphore) ||
                     (!(signaled_semaphores.count(semaphore)) && !(pSemaphore->signaled))) {
@@ -3145,7 +3145,7 @@ bool CoreChecks::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount,
         }
         for (uint32_t i = 0; i < submit->signalSemaphoreCount; ++i) {
             VkSemaphore semaphore = submit->pSignalSemaphores[i];
-            auto pSemaphore = GetSemaphoreNode(device_data, semaphore);
+            auto pSemaphore = GetSemaphoreNode(semaphore);
             if (pSemaphore && (pSemaphore->scope == kSyncScopeInternal || internal_semaphores.count(semaphore))) {
                 if (signaled_semaphores.count(semaphore) || (!(unsignaled_semaphores.count(semaphore)) && pSemaphore->signaled)) {
                     skip |=
@@ -3904,7 +3904,7 @@ void CoreChecks::RetireFence(layer_data *dev_data, VkFence fence) {
     if (pFence && pFence->scope == kSyncScopeInternal) {
         if (pFence->signaler.first != VK_NULL_HANDLE) {
             // Fence signaller is a queue -- use this as proof that prior operations on that queue have completed.
-            RetireWorkOnQueue(dev_data, GetQueueState(dev_data, pFence->signaler.first), pFence->signaler.second);
+            RetireWorkOnQueue(dev_data, GetQueueState(pFence->signaler.first), pFence->signaler.second);
         } else {
             // Fence signaller is the WSI. We're not tracking what the WSI op actually /was/ in CV yet, but we need to mark
             // the fence as retired.
@@ -3999,7 +3999,7 @@ void CoreChecks::PostCallRecordGetDeviceQueue2(VkDevice device, const VkDeviceQu
 
 bool CoreChecks::PreCallValidateQueueWaitIdle(VkQueue queue) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(queue), layer_data_map);
-    QUEUE_STATE *queue_state = GetQueueState(device_data, queue);
+    QUEUE_STATE *queue_state = GetQueueState(queue);
     if (device_data->instance_data->disabled.queue_wait_idle) return false;
     return VerifyQueueStateToSeq(device_data, queue_state, queue_state->seq + queue_state->submissions.size());
 }
@@ -4007,7 +4007,7 @@ bool CoreChecks::PreCallValidateQueueWaitIdle(VkQueue queue) {
 void CoreChecks::PostCallRecordQueueWaitIdle(VkQueue queue, VkResult result) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(queue), layer_data_map);
     if (VK_SUCCESS != result) return;
-    QUEUE_STATE *queue_state = GetQueueState(device_data, queue);
+    QUEUE_STATE *queue_state = GetQueueState(queue);
     RetireWorkOnQueue(device_data, queue_state, queue_state->seq + queue_state->submissions.size());
 }
 
@@ -4051,7 +4051,7 @@ void CoreChecks::PreCallRecordDestroyFence(VkDevice device, VkFence fence, const
 
 bool CoreChecks::PreCallValidateDestroySemaphore(VkDevice device, VkSemaphore semaphore, const VkAllocationCallbacks *pAllocator) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    SEMAPHORE_NODE *sema_node = GetSemaphoreNode(device_data, semaphore);
+    SEMAPHORE_NODE *sema_node = GetSemaphoreNode(semaphore);
     VK_OBJECT obj_struct = {HandleToUint64(semaphore), kVulkanObjectTypeSemaphore};
     if (device_data->instance_data->disabled.destroy_semaphore) return false;
     bool skip = false;
@@ -8811,7 +8811,7 @@ bool CoreChecks::ValidateQuery(VkQueue queue, GLOBAL_CB_NODE *pCB, VkQueryPool q
                                uint32_t queryCount) {
     bool skip = false;
     layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(pCB->commandBuffer), layer_data_map);
-    auto queue_data = GetQueueState(dev_data, queue);
+    auto queue_data = GetQueueState(queue);
     if (!queue_data) return false;
     for (uint32_t i = 0; i < queryCount; i++) {
         if (IsQueryInvalid(dev_data, queue_data, queryPool, firstQuery + i)) {
@@ -11147,7 +11147,7 @@ bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfo
         std::vector<VkSemaphore> semaphore_signals;
         for (uint32_t i = 0; i < bindInfo.waitSemaphoreCount; ++i) {
             VkSemaphore semaphore = bindInfo.pWaitSemaphores[i];
-            auto pSemaphore = GetSemaphoreNode(device_data, semaphore);
+            auto pSemaphore = GetSemaphoreNode(semaphore);
             if (pSemaphore && (pSemaphore->scope == kSyncScopeInternal || internal_semaphores.count(semaphore))) {
                 if (unsignaled_semaphores.count(semaphore) ||
                     (!(signaled_semaphores.count(semaphore)) && !(pSemaphore->signaled))) {
@@ -11168,7 +11168,7 @@ bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfo
         }
         for (uint32_t i = 0; i < bindInfo.signalSemaphoreCount; ++i) {
             VkSemaphore semaphore = bindInfo.pSignalSemaphores[i];
-            auto pSemaphore = GetSemaphoreNode(device_data, semaphore);
+            auto pSemaphore = GetSemaphoreNode(semaphore);
             if (pSemaphore && pSemaphore->scope == kSyncScopeInternal) {
                 if (signaled_semaphores.count(semaphore) || (!(unsignaled_semaphores.count(semaphore)) && pSemaphore->signaled)) {
                     skip |=
@@ -11263,7 +11263,7 @@ void CoreChecks::PostCallRecordQueueBindSparse(VkQueue queue, uint32_t bindInfoC
     if (result != VK_SUCCESS) return;
     uint64_t early_retire_seq = 0;
     auto pFence = GetFenceNode(fence);
-    auto pQueue = GetQueueState(device_data, queue);
+    auto pQueue = GetQueueState(queue);
 
     if (pFence) {
         if (pFence->scope == kSyncScopeInternal) {
@@ -11320,7 +11320,7 @@ void CoreChecks::PostCallRecordQueueBindSparse(VkQueue queue, uint32_t bindInfoC
         std::vector<VkSemaphore> semaphore_externals;
         for (uint32_t i = 0; i < bindInfo.waitSemaphoreCount; ++i) {
             VkSemaphore semaphore = bindInfo.pWaitSemaphores[i];
-            auto pSemaphore = GetSemaphoreNode(device_data, semaphore);
+            auto pSemaphore = GetSemaphoreNode(semaphore);
             if (pSemaphore) {
                 if (pSemaphore->scope == kSyncScopeInternal) {
                     if (pSemaphore->signaler.first != VK_NULL_HANDLE) {
@@ -11340,7 +11340,7 @@ void CoreChecks::PostCallRecordQueueBindSparse(VkQueue queue, uint32_t bindInfoC
         }
         for (uint32_t i = 0; i < bindInfo.signalSemaphoreCount; ++i) {
             VkSemaphore semaphore = bindInfo.pSignalSemaphores[i];
-            auto pSemaphore = GetSemaphoreNode(device_data, semaphore);
+            auto pSemaphore = GetSemaphoreNode(semaphore);
             if (pSemaphore) {
                 if (pSemaphore->scope == kSyncScopeInternal) {
                     pSemaphore->signaler.first = queue;
@@ -11387,7 +11387,7 @@ void CoreChecks::PostCallRecordCreateSemaphore(VkDevice device, const VkSemaphor
 
 bool CoreChecks::ValidateImportSemaphore(layer_data *device_data, VkSemaphore semaphore, const char *caller_name) {
     bool skip = false;
-    SEMAPHORE_NODE *sema_node = GetSemaphoreNode(device_data, semaphore);
+    SEMAPHORE_NODE *sema_node = GetSemaphoreNode(semaphore);
     if (sema_node) {
         VK_OBJECT obj_struct = {HandleToUint64(semaphore), kVulkanObjectTypeSemaphore};
         skip |= ValidateObjectNotInUse(device_data, sema_node, obj_struct, caller_name, kVUIDUndefined);
@@ -11397,7 +11397,7 @@ bool CoreChecks::ValidateImportSemaphore(layer_data *device_data, VkSemaphore se
 
 void CoreChecks::RecordImportSemaphoreState(layer_data *device_data, VkSemaphore semaphore,
                                             VkExternalSemaphoreHandleTypeFlagBitsKHR handle_type, VkSemaphoreImportFlagsKHR flags) {
-    SEMAPHORE_NODE *sema_node = GetSemaphoreNode(device_data, semaphore);
+    SEMAPHORE_NODE *sema_node = GetSemaphoreNode(semaphore);
     if (sema_node && sema_node->scope != kSyncScopeExternalPermanent) {
         if ((handle_type == VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT_KHR || flags & VK_SEMAPHORE_IMPORT_TEMPORARY_BIT_KHR) &&
             sema_node->scope == kSyncScopeInternal) {
@@ -11439,7 +11439,7 @@ void CoreChecks::PostCallRecordImportSemaphoreFdKHR(VkDevice device, const VkImp
 
 void CoreChecks::RecordGetExternalSemaphoreState(layer_data *device_data, VkSemaphore semaphore,
                                                  VkExternalSemaphoreHandleTypeFlagBitsKHR handle_type) {
-    SEMAPHORE_NODE *semaphore_state = GetSemaphoreNode(device_data, semaphore);
+    SEMAPHORE_NODE *semaphore_state = GetSemaphoreNode(semaphore);
     if (semaphore_state && handle_type != VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT_KHR) {
         // Cannot track semaphore state once it is exported, except for Sync FD handle types which have copy transference
         semaphore_state->scope = kSyncScopeExternalPermanent;
@@ -12002,10 +12002,10 @@ void CoreChecks::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchai
 bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR *pPresentInfo) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(queue), layer_data_map);
     bool skip = false;
-    auto queue_state = GetQueueState(device_data, queue);
+    auto queue_state = GetQueueState(queue);
 
     for (uint32_t i = 0; i < pPresentInfo->waitSemaphoreCount; ++i) {
-        auto pSemaphore = GetSemaphoreNode(device_data, pPresentInfo->pWaitSemaphores[i]);
+        auto pSemaphore = GetSemaphoreNode(pPresentInfo->pWaitSemaphores[i]);
         if (pSemaphore && !pSemaphore->signaled) {
             skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                             0, kVUID_Core_DrawState_QueueForwardProgress,
@@ -12135,10 +12135,9 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
 }
 
 void CoreChecks::PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR *pPresentInfo, VkResult result) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(queue), layer_data_map);
     // Semaphore waits occur before error generation, if the call reached the ICD. (Confirm?)
     for (uint32_t i = 0; i < pPresentInfo->waitSemaphoreCount; ++i) {
-        auto pSemaphore = GetSemaphoreNode(device_data, pPresentInfo->pWaitSemaphores[i]);
+        auto pSemaphore = GetSemaphoreNode(pPresentInfo->pWaitSemaphores[i]);
         if (pSemaphore) {
             pSemaphore->signaler.first = VK_NULL_HANDLE;
             pSemaphore->signaled = false;
@@ -12207,7 +12206,7 @@ bool CoreChecks::ValidateAcquireNextImage(layer_data *device_data, VkDevice devi
                         func_name);
     }
 
-    auto pSemaphore = GetSemaphoreNode(device_data, semaphore);
+    auto pSemaphore = GetSemaphoreNode(semaphore);
     if (pSemaphore && pSemaphore->scope == kSyncScopeInternal && pSemaphore->signaled) {
         skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SEMAPHORE_EXT,
                         HandleToUint64(semaphore), "VUID-vkAcquireNextImageKHR-semaphore-01286",
@@ -12274,7 +12273,7 @@ void CoreChecks::RecordAcquireNextImageState(layer_data *device_data, VkDevice d
         pFence->signaler.first = VK_NULL_HANDLE;  // ANI isn't on a queue, so this can't participate in a completion proof.
     }
 
-    auto pSemaphore = GetSemaphoreNode(device_data, semaphore);
+    auto pSemaphore = GetSemaphoreNode(semaphore);
     if (pSemaphore && pSemaphore->scope == kSyncScopeInternal) {
         // Treat as signaled since it is valid to wait on this semaphore, even in cases where it is technically a
         // temporary import

@@ -266,8 +266,8 @@ class CoreChecks : public ValidationObject {
     FENCE_NODE* GetFenceNode(VkFence fence);
     EVENT_STATE* GetEventNode(VkEvent event);
     QUERY_POOL_NODE* GetQueryPoolNode(VkQueryPool query_pool);
-    QUEUE_STATE* GetQueueState(layer_data* dev_data, VkQueue queue);
-    SEMAPHORE_NODE* GetSemaphoreNode(layer_data* dev_data, VkSemaphore semaphore);
+    QUEUE_STATE* GetQueueState(VkQueue queue);
+    SEMAPHORE_NODE* GetSemaphoreNode(VkSemaphore semaphore);
     PHYSICAL_DEVICE_STATE* GetPhysicalDeviceState(VkPhysicalDevice phys);
     PHYSICAL_DEVICE_STATE* GetPhysicalDeviceState();
     SURFACE_STATE* GetSurfaceState(VkSurfaceKHR surface);
