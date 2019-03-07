@@ -1798,21 +1798,21 @@ bool CoreChecks::ValidateIdleDescriptorSet(const layer_data *dev_data, VkDescrip
 }
 
 // Remove set from setMap and delete the set
-void CoreChecks::FreeDescriptorSet(layer_data *dev_data, cvdescriptorset::DescriptorSet *descriptor_set) {
-    dev_data->setMap.erase(descriptor_set->GetSet());
+void CoreChecks::FreeDescriptorSet(cvdescriptorset::DescriptorSet *descriptor_set) {
+    setMap.erase(descriptor_set->GetSet());
     delete descriptor_set;
 }
 // Free all DS Pools including their Sets & related sub-structs
 // NOTE : Calls to this function should be wrapped in mutex
-void CoreChecks::DeletePools(layer_data *dev_data) {
-    for (auto ii = dev_data->descriptorPoolMap.begin(); ii != dev_data->descriptorPoolMap.end();) {
+void CoreChecks::DeletePools() {
+    for (auto ii = descriptorPoolMap.begin(); ii != descriptorPoolMap.end();) {
         // Remove this pools' sets from setMap and delete them
         for (auto ds : ii->second->sets) {
-            FreeDescriptorSet(dev_data, ds);
+            FreeDescriptorSet(ds);
         }
         ii->second->sets.clear();
         delete ii->second;
-        ii = dev_data->descriptorPoolMap.erase(ii);
+        ii = descriptorPoolMap.erase(ii);
     }
 }
 
@@ -2513,7 +2513,7 @@ void CoreChecks::PostCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDevice
     if (GetEnables()->gpu_validation) {
         // Copy any needed instance data into the gpu validation state
         core_checks->gpu_validation_state.reserve_binding_slot = GetEnables()->gpu_validation_reserve_binding_slot;
-        core_checks->GpuPostCallRecordCreateDevice(core_checks);
+        core_checks->GpuPostCallRecordCreateDevice();
     }
 
     // Store queue family data
@@ -2527,29 +2527,28 @@ void CoreChecks::PostCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDevice
 
 void CoreChecks::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks *pAllocator) {
     if (!device) return;
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (GetEnables()->gpu_validation) {
-        GpuPreCallRecordDestroyDevice(device_data);
+        GpuPreCallRecordDestroyDevice();
     }
-    device_data->pipelineMap.clear();
-    device_data->renderPassMap.clear();
-    for (auto ii = device_data->commandBufferMap.begin(); ii != device_data->commandBufferMap.end(); ++ii) {
+    pipelineMap.clear();
+    renderPassMap.clear();
+    for (auto ii = commandBufferMap.begin(); ii != commandBufferMap.end(); ++ii) {
         delete (*ii).second;
     }
-    device_data->commandBufferMap.clear();
+    commandBufferMap.clear();
     // This will also delete all sets in the pool & remove them from setMap
-    DeletePools(device_data);
+    DeletePools();
     // All sets should be removed
-    assert(device_data->setMap.empty());
-    device_data->descriptorSetLayoutMap.clear();
-    device_data->imageViewMap.clear();
-    device_data->imageMap.clear();
-    device_data->imageSubresourceMap.clear();
-    device_data->imageLayoutMap.clear();
-    device_data->bufferViewMap.clear();
-    device_data->bufferMap.clear();
+    assert(setMap.empty());
+    descriptorSetLayoutMap.clear();
+    imageViewMap.clear();
+    imageMap.clear();
+    imageSubresourceMap.clear();
+    imageLayoutMap.clear();
+    bufferViewMap.clear();
+    bufferMap.clear();
     // Queues persist until device is destroyed
-    device_data->queueMap.clear();
+    queueMap.clear();
     layer_debug_utils_destroy_device(device);
 }
 
@@ -4693,7 +4692,7 @@ void CoreChecks::PreCallRecordDestroyDescriptorPool(VkDevice device, VkDescripto
         InvalidateCommandBuffers(device_data, desc_pool_state->cb_bindings, obj_struct);
         // Free sets that were in this pool
         for (auto ds : desc_pool_state->sets) {
-            FreeDescriptorSet(device_data, ds);
+            FreeDescriptorSet(ds);
         }
         device_data->descriptorPoolMap.erase(descriptorPool);
         delete desc_pool_state;
@@ -6062,7 +6061,7 @@ void CoreChecks::PostCallRecordResetDescriptorPool(VkDevice device, VkDescriptor
     // TODO: validate flags
     // For every set off of this pool, clear it, remove from setMap, and free cvdescriptorset::DescriptorSet
     for (auto ds : pPool->sets) {
-        FreeDescriptorSet(device_data, ds);
+        FreeDescriptorSet(ds);
     }
     pPool->sets.clear();
     // Reset available count for each type and available sets for this pool
@@ -6139,7 +6138,7 @@ void CoreChecks::PreCallRecordFreeDescriptorSets(VkDevice device, VkDescriptorPo
                 descriptor_count = descriptor_set->GetDescriptorCountFromIndex(j);
                 pool_state->availableDescriptorTypeCount[type_index] += descriptor_count;
             }
-            FreeDescriptorSet(device_data, descriptor_set);
+            FreeDescriptorSet(descriptor_set);
             pool_state->sets.erase(descriptor_set);
         }
     }

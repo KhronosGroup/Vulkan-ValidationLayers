@@ -311,8 +311,8 @@ class CoreChecks : public ValidationObject {
                                 int pipelineIndex);
     bool ValidatePipelineUnlocked(layer_data* dev_data, std::vector<std::unique_ptr<PIPELINE_STATE>> const& pPipelines,
                                   int pipelineIndex);
-    void FreeDescriptorSet(layer_data* dev_data, cvdescriptorset::DescriptorSet* descriptor_set);
-    void DeletePools(layer_data* dev_data);
+    void FreeDescriptorSet(cvdescriptorset::DescriptorSet* descriptor_set);
+    void DeletePools();
     bool ValidImageBufferQueue(GLOBAL_CB_NODE* cb_node, const VK_OBJECT* object, VkQueue queue, uint32_t count,
                                const uint32_t* indices);
     bool ValidateFenceForSubmit(layer_data* dev_data, FENCE_NODE* pFence);
@@ -623,8 +623,8 @@ class CoreChecks : public ValidationObject {
     // Gpu Validation Functions
     void GpuPreCallRecordCreateDevice(VkPhysicalDevice gpu, std::unique_ptr<safe_VkDeviceCreateInfo>& modified_create_info,
                                       VkPhysicalDeviceFeatures* supported_features);
-    void GpuPostCallRecordCreateDevice(layer_data* dev_data);
-    void GpuPreCallRecordDestroyDevice(layer_data* dev_data);
+    void GpuPostCallRecordCreateDevice();
+    void GpuPreCallRecordDestroyDevice();
     void GpuPreCallRecordFreeCommandBuffers(layer_data* dev_data, uint32_t commandBufferCount,
                                             const VkCommandBuffer* pCommandBuffers);
     bool GpuPreCallCreateShaderModule(layer_data* dev_data, const VkShaderModuleCreateInfo* pCreateInfo,
