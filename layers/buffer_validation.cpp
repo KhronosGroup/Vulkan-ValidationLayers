@@ -843,8 +843,8 @@ bool CoreChecks::IsReleaseOp(GLOBAL_CB_NODE *cb_state, VkImageMemoryBarrier cons
 }
 
 template <typename Barrier>
-bool CoreChecks::ValidateQFOTransferBarrierUniqueness(layer_data *device_data, const char *func_name, GLOBAL_CB_NODE *cb_state,
-                                                      uint32_t barrier_count, const Barrier *barriers) {
+bool CoreChecks::ValidateQFOTransferBarrierUniqueness(const char *func_name, GLOBAL_CB_NODE *cb_state, uint32_t barrier_count,
+                                                      const Barrier *barriers) {
     using BarrierRecord = QFOTransferBarrier<Barrier>;
     bool skip = false;
     auto pool = GetCommandPoolNode(cb_state->createInfo.commandPool);
@@ -884,8 +884,7 @@ bool CoreChecks::ValidateQFOTransferBarrierUniqueness(layer_data *device_data, c
 }
 
 template <typename Barrier>
-void CoreChecks::RecordQFOTransferBarriers(layer_data *device_data, GLOBAL_CB_NODE *cb_state, uint32_t barrier_count,
-                                           const Barrier *barriers) {
+void CoreChecks::RecordQFOTransferBarriers(GLOBAL_CB_NODE *cb_state, uint32_t barrier_count, const Barrier *barriers) {
     auto pool = GetCommandPoolNode(cb_state->createInfo.commandPool);
     auto &barrier_sets = GetQFOBarrierSets(cb_state, typename QFOTransferBarrier<Barrier>::Tag());
     for (uint32_t b = 0; b < barrier_count; b++) {
@@ -900,21 +899,21 @@ void CoreChecks::RecordQFOTransferBarriers(layer_data *device_data, GLOBAL_CB_NO
     }
 }
 
-bool CoreChecks::ValidateBarriersQFOTransferUniqueness(layer_data *device_data, const char *func_name, GLOBAL_CB_NODE *cb_state,
-                                                       uint32_t bufferBarrierCount, const VkBufferMemoryBarrier *pBufferMemBarriers,
+bool CoreChecks::ValidateBarriersQFOTransferUniqueness(const char *func_name, GLOBAL_CB_NODE *cb_state, uint32_t bufferBarrierCount,
+                                                       const VkBufferMemoryBarrier *pBufferMemBarriers,
                                                        uint32_t imageMemBarrierCount,
                                                        const VkImageMemoryBarrier *pImageMemBarriers) {
     bool skip = false;
-    skip |= ValidateQFOTransferBarrierUniqueness(device_data, func_name, cb_state, bufferBarrierCount, pBufferMemBarriers);
-    skip |= ValidateQFOTransferBarrierUniqueness(device_data, func_name, cb_state, imageMemBarrierCount, pImageMemBarriers);
+    skip |= ValidateQFOTransferBarrierUniqueness(func_name, cb_state, bufferBarrierCount, pBufferMemBarriers);
+    skip |= ValidateQFOTransferBarrierUniqueness(func_name, cb_state, imageMemBarrierCount, pImageMemBarriers);
     return skip;
 }
 
-void CoreChecks::RecordBarriersQFOTransfers(layer_data *device_data, GLOBAL_CB_NODE *cb_state, uint32_t bufferBarrierCount,
+void CoreChecks::RecordBarriersQFOTransfers(GLOBAL_CB_NODE *cb_state, uint32_t bufferBarrierCount,
                                             const VkBufferMemoryBarrier *pBufferMemBarriers, uint32_t imageMemBarrierCount,
                                             const VkImageMemoryBarrier *pImageMemBarriers) {
-    RecordQFOTransferBarriers(device_data, cb_state, bufferBarrierCount, pBufferMemBarriers);
-    RecordQFOTransferBarriers(device_data, cb_state, imageMemBarrierCount, pImageMemBarriers);
+    RecordQFOTransferBarriers(cb_state, bufferBarrierCount, pBufferMemBarriers);
+    RecordQFOTransferBarriers(cb_state, imageMemBarrierCount, pImageMemBarriers);
 }
 
 template <typename BarrierRecord, typename Scoreboard>
@@ -937,8 +936,7 @@ bool CoreChecks::ValidateAndUpdateQFOScoreboard(const debug_report_data *report_
 }
 
 template <typename Barrier>
-bool CoreChecks::ValidateQueuedQFOTransferBarriers(layer_data *device_data, GLOBAL_CB_NODE *cb_state,
-                                                   QFOTransferCBScoreboards<Barrier> *scoreboards) {
+bool CoreChecks::ValidateQueuedQFOTransferBarriers(GLOBAL_CB_NODE *cb_state, QFOTransferCBScoreboards<Barrier> *scoreboards) {
     using BarrierRecord = QFOTransferBarrier<Barrier>;
     using TypeTag = typename BarrierRecord::Tag;
     bool skip = false;
@@ -986,17 +984,17 @@ bool CoreChecks::ValidateQueuedQFOTransferBarriers(layer_data *device_data, GLOB
     return skip;
 }
 
-bool CoreChecks::ValidateQueuedQFOTransfers(layer_data *device_data, GLOBAL_CB_NODE *cb_state,
+bool CoreChecks::ValidateQueuedQFOTransfers(GLOBAL_CB_NODE *cb_state,
                                             QFOTransferCBScoreboards<VkImageMemoryBarrier> *qfo_image_scoreboards,
                                             QFOTransferCBScoreboards<VkBufferMemoryBarrier> *qfo_buffer_scoreboards) {
     bool skip = false;
-    skip |= ValidateQueuedQFOTransferBarriers<VkImageMemoryBarrier>(device_data, cb_state, qfo_image_scoreboards);
-    skip |= ValidateQueuedQFOTransferBarriers<VkBufferMemoryBarrier>(device_data, cb_state, qfo_buffer_scoreboards);
+    skip |= ValidateQueuedQFOTransferBarriers<VkImageMemoryBarrier>(cb_state, qfo_image_scoreboards);
+    skip |= ValidateQueuedQFOTransferBarriers<VkBufferMemoryBarrier>(cb_state, qfo_buffer_scoreboards);
     return skip;
 }
 
 template <typename Barrier>
-void CoreChecks::RecordQueuedQFOTransferBarriers(layer_data *device_data, GLOBAL_CB_NODE *cb_state) {
+void CoreChecks::RecordQueuedQFOTransferBarriers(GLOBAL_CB_NODE *cb_state) {
     using BarrierRecord = QFOTransferBarrier<Barrier>;
     using TypeTag = typename BarrierRecord::Tag;
     const auto &cb_barriers = GetQFOBarrierSets(cb_state, TypeTag());
@@ -1023,15 +1021,13 @@ void CoreChecks::RecordQueuedQFOTransferBarriers(layer_data *device_data, GLOBAL
     }
 }
 
-void CoreChecks::RecordQueuedQFOTransfers(layer_data *device_data, GLOBAL_CB_NODE *cb_state) {
-    RecordQueuedQFOTransferBarriers<VkImageMemoryBarrier>(device_data, cb_state);
-    RecordQueuedQFOTransferBarriers<VkBufferMemoryBarrier>(device_data, cb_state);
+void CoreChecks::RecordQueuedQFOTransfers(GLOBAL_CB_NODE *cb_state) {
+    RecordQueuedQFOTransferBarriers<VkImageMemoryBarrier>(cb_state);
+    RecordQueuedQFOTransferBarriers<VkBufferMemoryBarrier>(cb_state);
 }
 
 // Avoid making the template globally visible by exporting the one instance of it we need.
-void CoreChecks::EraseQFOImageRelaseBarriers(layer_data *device_data, const VkImage &image) {
-    EraseQFOReleaseBarriers<VkImageMemoryBarrier>(device_data, image);
-}
+void CoreChecks::EraseQFOImageRelaseBarriers(const VkImage &image) { EraseQFOReleaseBarriers<VkImageMemoryBarrier>(image); }
 
 void CoreChecks::TransitionImageLayouts(GLOBAL_CB_NODE *cb_state, uint32_t memBarrierCount,
                                         const VkImageMemoryBarrier *pImgMemBarriers) {
@@ -1454,10 +1450,9 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
     }
 
     if (pCreateInfo->sharingMode == VK_SHARING_MODE_CONCURRENT && pCreateInfo->pQueueFamilyIndices) {
-        skip |=
-            ValidateQueueFamilies(device_data, pCreateInfo->queueFamilyIndexCount, pCreateInfo->pQueueFamilyIndices,
-                                  "vkCreateImage", "pCreateInfo->pQueueFamilyIndices", "VUID-VkImageCreateInfo-sharingMode-01420",
-                                  "VUID-VkImageCreateInfo-sharingMode-01420", false);
+        skip |= ValidateQueueFamilies(pCreateInfo->queueFamilyIndexCount, pCreateInfo->pQueueFamilyIndices, "vkCreateImage",
+                                      "pCreateInfo->pQueueFamilyIndices", "VUID-VkImageCreateInfo-sharingMode-01420",
+                                      "VUID-VkImageCreateInfo-sharingMode-01420", false);
     }
 
     return skip;
@@ -1504,7 +1499,7 @@ void CoreChecks::PreCallRecordDestroyImage(VkDevice device, VkImage image, const
         }
     }
     ClearMemoryObjectBindings(obj_struct.handle, kVulkanObjectTypeImage);
-    EraseQFOReleaseBarriers<VkImageMemoryBarrier>(device_data, image);
+    EraseQFOReleaseBarriers<VkImageMemoryBarrier>(image);
     // Remove image from imageMap
     GetImageMap()->erase(image);
     std::unordered_map<VkImage, std::vector<ImageSubresourcePair>> *imageSubresourceMap = GetImageSubresourceMap();
@@ -1665,7 +1660,7 @@ bool CoreChecks::PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuffer
     auto image_state = GetImageState(image);
     if (cb_node && image_state) {
         skip |= ValidateMemoryIsBoundToImage(image_state, "vkCmdClearColorImage()", "VUID-vkCmdClearColorImage-image-00003");
-        skip |= ValidateCmdQueueFlags(device_data, cb_node, "vkCmdClearColorImage()", VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
+        skip |= ValidateCmdQueueFlags(cb_node, "vkCmdClearColorImage()", VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
                                       "VUID-vkCmdClearColorImage-commandBuffer-cmdpool");
         skip |= ValidateCmd(device_data, cb_node, CMD_CLEARCOLORIMAGE, "vkCmdClearColorImage()");
         if (GetApiVersion() >= VK_API_VERSION_1_1 || GetDeviceExtensions()->vk_khr_maintenance1) {
@@ -1711,7 +1706,7 @@ bool CoreChecks::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer comman
     if (cb_node && image_state) {
         skip |= ValidateMemoryIsBoundToImage(image_state, "vkCmdClearDepthStencilImage()",
                                              "VUID-vkCmdClearDepthStencilImage-image-00010");
-        skip |= ValidateCmdQueueFlags(device_data, cb_node, "vkCmdClearDepthStencilImage()", VK_QUEUE_GRAPHICS_BIT,
+        skip |= ValidateCmdQueueFlags(cb_node, "vkCmdClearDepthStencilImage()", VK_QUEUE_GRAPHICS_BIT,
                                       "VUID-vkCmdClearDepthStencilImage-commandBuffer-cmdpool");
         skip |= ValidateCmd(device_data, cb_node, CMD_CLEARDEPTHSTENCILIMAGE, "vkCmdClearDepthStencilImage()");
         if (GetApiVersion() >= VK_API_VERSION_1_1 || GetDeviceExtensions()->vk_khr_maintenance1) {
@@ -2670,8 +2665,7 @@ bool CoreChecks::PreCallValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkIm
             ValidateImageFormatFeatureFlags(device_data, dst_image_state, VK_FORMAT_FEATURE_TRANSFER_DST_BIT, "vkCmdCopyImage()",
                                             "VUID-vkCmdCopyImage-dstImage-01996", "VUID-vkCmdCopyImage-dstImage-01996");
     }
-    skip |= ValidateCmdQueueFlags(device_data, cb_node, "vkCmdCopyImage()",
-                                  VK_QUEUE_TRANSFER_BIT | VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
+    skip |= ValidateCmdQueueFlags(cb_node, "vkCmdCopyImage()", VK_QUEUE_TRANSFER_BIT | VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
                                   "VUID-vkCmdCopyImage-commandBuffer-cmdpool");
     skip |= ValidateCmd(device_data, cb_node, CMD_COPYIMAGE, "vkCmdCopyImage()");
     skip |= InsideRenderPass(device_data, cb_node, "vkCmdCopyImage()", "VUID-vkCmdCopyImage-renderpass");
@@ -2769,7 +2763,7 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
 
     bool skip = false;
     if (cb_node) {
-        skip |= ValidateCmdQueueFlags(device_data, cb_node, "vkCmdClearAttachments()", VK_QUEUE_GRAPHICS_BIT,
+        skip |= ValidateCmdQueueFlags(cb_node, "vkCmdClearAttachments()", VK_QUEUE_GRAPHICS_BIT,
                                       "VUID-vkCmdClearAttachments-commandBuffer-cmdpool");
         skip |= ValidateCmd(device_data, cb_node, CMD_CLEARATTACHMENTS, "vkCmdClearAttachments()");
         // Warn if this is issued prior to Draw Cmd and clearing the entire attachment
@@ -2902,7 +2896,7 @@ bool CoreChecks::PreCallValidateCmdResolveImage(VkCommandBuffer commandBuffer, V
     if (cb_node && src_image_state && dst_image_state) {
         skip |= ValidateMemoryIsBoundToImage(src_image_state, "vkCmdResolveImage()", "VUID-vkCmdResolveImage-srcImage-00256");
         skip |= ValidateMemoryIsBoundToImage(dst_image_state, "vkCmdResolveImage()", "VUID-vkCmdResolveImage-dstImage-00258");
-        skip |= ValidateCmdQueueFlags(device_data, cb_node, "vkCmdResolveImage()", VK_QUEUE_GRAPHICS_BIT,
+        skip |= ValidateCmdQueueFlags(cb_node, "vkCmdResolveImage()", VK_QUEUE_GRAPHICS_BIT,
                                       "VUID-vkCmdResolveImage-commandBuffer-cmdpool");
         skip |= ValidateCmd(device_data, cb_node, CMD_RESOLVEIMAGE, "vkCmdResolveImage()");
         skip |= InsideRenderPass(device_data, cb_node, "vkCmdResolveImage()", "VUID-vkCmdResolveImage-renderpass");
@@ -3024,8 +3018,8 @@ bool CoreChecks::PreCallValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkIm
         skip |=
             ValidateImageUsageFlags(device_data, dst_image_state, VK_IMAGE_USAGE_TRANSFER_DST_BIT, true,
                                     "VUID-vkCmdBlitImage-dstImage-00224", "vkCmdBlitImage()", "VK_IMAGE_USAGE_TRANSFER_DST_BIT");
-        skip |= ValidateCmdQueueFlags(device_data, cb_node, "vkCmdBlitImage()", VK_QUEUE_GRAPHICS_BIT,
-                                      "VUID-vkCmdBlitImage-commandBuffer-cmdpool");
+        skip |=
+            ValidateCmdQueueFlags(cb_node, "vkCmdBlitImage()", VK_QUEUE_GRAPHICS_BIT, "VUID-vkCmdBlitImage-commandBuffer-cmdpool");
         skip |= ValidateCmd(device_data, cb_node, CMD_BLITIMAGE, "vkCmdBlitImage()");
         skip |= InsideRenderPass(device_data, cb_node, "vkCmdBlitImage()", "VUID-vkCmdBlitImage-renderpass");
         skip |= ValidateImageFormatFeatureFlags(device_data, src_image_state, VK_FORMAT_FEATURE_BLIT_SRC_BIT, "vkCmdBlitImage()",
@@ -3833,8 +3827,6 @@ bool CoreChecks::ValidateBufferViewBuffer(const layer_data *device_data, const B
 
 bool CoreChecks::PreCallValidateCreateBuffer(VkDevice device, const VkBufferCreateInfo *pCreateInfo,
                                              const VkAllocationCallbacks *pAllocator, VkBuffer *pBuffer) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-
     bool skip = false;
 
     // TODO: Add check for "VUID-vkCreateBuffer-flags-00911"        (sparse address space accounting)
@@ -3889,10 +3881,9 @@ bool CoreChecks::PreCallValidateCreateBuffer(VkDevice device, const VkBufferCrea
     }
 
     if (pCreateInfo->sharingMode == VK_SHARING_MODE_CONCURRENT && pCreateInfo->pQueueFamilyIndices) {
-        skip |=
-            ValidateQueueFamilies(device_data, pCreateInfo->queueFamilyIndexCount, pCreateInfo->pQueueFamilyIndices,
-                                  "vkCreateBuffer", "pCreateInfo->pQueueFamilyIndices", "VUID-VkBufferCreateInfo-sharingMode-01419",
-                                  "VUID-VkBufferCreateInfo-sharingMode-01419", false);
+        skip |= ValidateQueueFamilies(pCreateInfo->queueFamilyIndexCount, pCreateInfo->pQueueFamilyIndices, "vkCreateBuffer",
+                                      "pCreateInfo->pQueueFamilyIndices", "VUID-VkBufferCreateInfo-sharingMode-01419",
+                                      "VUID-VkBufferCreateInfo-sharingMode-01419", false);
     }
 
     return skip;
@@ -4408,9 +4399,9 @@ bool CoreChecks::PreCallValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, VkB
     skip |=
         ValidateBufferUsageFlags(device_data, dst_buffer_state, VK_BUFFER_USAGE_TRANSFER_DST_BIT, true,
                                  "VUID-vkCmdCopyBuffer-dstBuffer-00120", "vkCmdCopyBuffer()", "VK_BUFFER_USAGE_TRANSFER_DST_BIT");
-    skip |= ValidateCmdQueueFlags(device_data, cb_node, "vkCmdCopyBuffer()",
-                                  VK_QUEUE_TRANSFER_BIT | VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
-                                  "VUID-vkCmdCopyBuffer-commandBuffer-cmdpool");
+    skip |=
+        ValidateCmdQueueFlags(cb_node, "vkCmdCopyBuffer()", VK_QUEUE_TRANSFER_BIT | VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
+                              "VUID-vkCmdCopyBuffer-commandBuffer-cmdpool");
     skip |= ValidateCmd(device_data, cb_node, CMD_COPYBUFFER, "vkCmdCopyBuffer()");
     skip |= InsideRenderPass(device_data, cb_node, "vkCmdCopyBuffer()", "VUID-vkCmdCopyBuffer-renderpass");
     return skip;
@@ -4494,7 +4485,7 @@ void CoreChecks::PreCallRecordDestroyBuffer(VkDevice device, VkBuffer buffer, co
         }
     }
     ClearMemoryObjectBindings(HandleToUint64(buffer), kVulkanObjectTypeBuffer);
-    EraseQFOReleaseBarriers<VkBufferMemoryBarrier>(device_data, buffer);
+    EraseQFOReleaseBarriers<VkBufferMemoryBarrier>(buffer);
     GetBufferMap()->erase(buffer_state->buffer);
 }
 
@@ -4529,9 +4520,9 @@ bool CoreChecks::PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, VkB
     auto buffer_state = GetBufferState(dstBuffer);
     bool skip = false;
     skip |= ValidateMemoryIsBoundToBuffer(buffer_state, "vkCmdFillBuffer()", "VUID-vkCmdFillBuffer-dstBuffer-00031");
-    skip |= ValidateCmdQueueFlags(device_data, cb_node, "vkCmdFillBuffer()",
-                                  VK_QUEUE_TRANSFER_BIT | VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
-                                  "VUID-vkCmdFillBuffer-commandBuffer-cmdpool");
+    skip |=
+        ValidateCmdQueueFlags(cb_node, "vkCmdFillBuffer()", VK_QUEUE_TRANSFER_BIT | VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
+                              "VUID-vkCmdFillBuffer-commandBuffer-cmdpool");
     skip |= ValidateCmd(device_data, cb_node, CMD_FILLBUFFER, "vkCmdFillBuffer()");
     // Validate that DST buffer has correct usage flags set
     skip |=

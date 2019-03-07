@@ -273,7 +273,7 @@ class CoreChecks : public ValidationObject {
     SURFACE_STATE* GetSurfaceState(VkSurfaceKHR surface);
     BINDABLE* GetObjectMemBinding(uint64_t handle, VulkanObjectType type);
 
-    bool VerifyQueueStateToSeq(layer_data* dev_data, QUEUE_STATE* initial_queue, uint64_t initial_seq);
+    bool VerifyQueueStateToSeq(QUEUE_STATE* initial_queue, uint64_t initial_seq);
     void ClearCmdBufAndMemReferences(layer_data* dev_data, GLOBAL_CB_NODE* cb_node);
     void ClearMemoryObjectBinding(uint64_t handle, VulkanObjectType type, VkDeviceMemory mem);
     void ResetCommandBufferState(layer_data* dev_data, const VkCommandBuffer cb);
@@ -281,10 +281,10 @@ class CoreChecks : public ValidationObject {
                        VulkanObjectType type);
     bool ValidateSetMemBinding(VkDeviceMemory mem, uint64_t handle, VulkanObjectType type, const char* apiName);
     bool SetSparseMemBinding(layer_data* dev_data, MEM_BINDING binding, uint64_t handle, VulkanObjectType type);
-    bool ValidateDeviceQueueFamily(layer_data* device_data, uint32_t queue_family, const char* cmd_name, const char* parameter_name,
-                                   const char* error_code, bool optional);
-    BASE_NODE* GetStateStructPtrFromObject(layer_data* dev_data, VK_OBJECT object_struct);
-    void RemoveCommandBufferBinding(layer_data* dev_data, VK_OBJECT const* object, GLOBAL_CB_NODE* cb_node);
+    bool ValidateDeviceQueueFamily(uint32_t queue_family, const char* cmd_name, const char* parameter_name, const char* error_code,
+                                   bool optional);
+    BASE_NODE* GetStateStructPtrFromObject(VK_OBJECT object_struct);
+    void RemoveCommandBufferBinding(VK_OBJECT const* object, GLOBAL_CB_NODE* cb_node);
     bool ValidateBindBufferMemory(layer_data* device_data, VkBuffer buffer, VkDeviceMemory mem, VkDeviceSize memoryOffset,
                                   const char* api_name);
     void RecordGetBufferMemoryRequirementsState(layer_data* device_data, VkBuffer buffer,
@@ -300,7 +300,7 @@ class CoreChecks : public ValidationObject {
     bool CheckCommandBuffersInFlight(layer_data* dev_data, COMMAND_POOL_NODE* pPool, const char* action, const char* error_code);
     bool CheckCommandBufferInFlight(layer_data* dev_data, const GLOBAL_CB_NODE* cb_node, const char* action,
                                     const char* error_code);
-    bool VerifyQueueStateToFence(layer_data* dev_data, VkFence fence);
+    bool VerifyQueueStateToFence(VkFence fence);
     void DecrementBoundResources(layer_data* dev_data, GLOBAL_CB_NODE const* cb_node);
     bool VerifyWaitFenceState(layer_data* dev_data, VkFence fence, const char* apiCall);
     void RetireFence(layer_data* dev_data, VkFence fence);
@@ -313,8 +313,8 @@ class CoreChecks : public ValidationObject {
                                   int pipelineIndex);
     void FreeDescriptorSet(layer_data* dev_data, cvdescriptorset::DescriptorSet* descriptor_set);
     void DeletePools(layer_data* dev_data);
-    bool ValidImageBufferQueue(layer_data* dev_data, GLOBAL_CB_NODE* cb_node, const VK_OBJECT* object, VkQueue queue,
-                               uint32_t count, const uint32_t* indices);
+    bool ValidImageBufferQueue(GLOBAL_CB_NODE* cb_node, const VK_OBJECT* object, VkQueue queue, uint32_t count,
+                               const uint32_t* indices);
     bool ValidateFenceForSubmit(layer_data* dev_data, FENCE_NODE* pFence);
     void AddMemObjInfo(layer_data* dev_data, void* object, const VkDeviceMemory mem, const VkMemoryAllocateInfo* pAllocateInfo);
     bool ValidateStatus(layer_data* dev_data, GLOBAL_CB_NODE* pNode, CBStatusFlags status_mask, VkFlags msg_flags,
@@ -458,9 +458,9 @@ class CoreChecks : public ValidationObject {
     bool ValidateCommandBufferState(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, const char* call_source,
                                     int current_submit_count, const char* vu_id);
     bool ValidateCommandBufferSimultaneousUse(layer_data* dev_data, GLOBAL_CB_NODE* pCB, int current_submit_count);
-    bool ValidateGetDeviceQueue(layer_data* device_data, uint32_t queueFamilyIndex, uint32_t queueIndex, VkQueue* pQueue,
-                                const char* valid_qfi_vuid, const char* qfi_in_range_vuid);
-    void RecordGetDeviceQueueState(layer_data* device_data, uint32_t queue_family_index, VkQueue queue);
+    bool ValidateGetDeviceQueue(uint32_t queueFamilyIndex, uint32_t queueIndex, VkQueue* pQueue, const char* valid_qfi_vuid,
+                                const char* qfi_in_range_vuid);
+    void RecordGetDeviceQueueState(uint32_t queue_family_index, VkQueue queue);
     bool ValidateRenderpassAttachmentUsage(const layer_data* dev_data, RenderPassCreateVersion rp_version,
                                            const VkRenderPassCreateInfo2KHR* pCreateInfo);
     bool AddAttachmentUse(const layer_data* dev_data, RenderPassCreateVersion rp_version, uint32_t subpass,
@@ -476,9 +476,8 @@ class CoreChecks : public ValidationObject {
                                             const VkMemoryBarrier* mem_barriers, uint32_t buffer_mem_barrier_count,
                                             const VkBufferMemoryBarrier* buffer_mem_barriers, uint32_t image_mem_barrier_count,
                                             const VkImageMemoryBarrier* image_barriers);
-    bool CheckStageMaskQueueCompatibility(layer_data* dev_data, VkCommandBuffer command_buffer, VkPipelineStageFlags stage_mask,
-                                          VkQueueFlags queue_flags, const char* function, const char* src_or_dest,
-                                          const char* error_code);
+    bool CheckStageMaskQueueCompatibility(VkCommandBuffer command_buffer, VkPipelineStageFlags stage_mask, VkQueueFlags queue_flags,
+                                          const char* function, const char* src_or_dest, const char* error_code);
     void RecordUpdateDescriptorSetWithTemplateState(layer_data* device_data, VkDescriptorSet descriptorSet,
                                                     VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate, const void* pData);
     bool ValidateUpdateDescriptorSetWithTemplate(layer_data* device_data, VkDescriptorSet descriptorSet,
@@ -496,8 +495,7 @@ class CoreChecks : public ValidationObject {
     void RemoveImageMemoryRange(uint64_t handle, DEVICE_MEM_INFO* mem_info);
     void RemoveBufferMemoryRange(uint64_t handle, DEVICE_MEM_INFO* mem_info);
     void ClearMemoryObjectBindings(uint64_t handle, VulkanObjectType type);
-    bool ValidateCmdQueueFlags(layer_data* dev_data, const GLOBAL_CB_NODE* cb_node, const char* caller_name, VkQueueFlags flags,
-                               const char* error_code);
+    bool ValidateCmdQueueFlags(const GLOBAL_CB_NODE* cb_node, const char* caller_name, VkQueueFlags flags, const char* error_code);
     bool InsideRenderPass(const layer_data* my_data, const GLOBAL_CB_NODE* pCB, const char* apiName, const char* msgCode);
     bool OutsideRenderPass(const layer_data* my_data, GLOBAL_CB_NODE* pCB, const char* apiName, const char* msgCode);
 
@@ -541,29 +539,26 @@ class CoreChecks : public ValidationObject {
     GlobalQFOTransferBarrierMap<VkBufferMemoryBarrier>& GetGlobalQFOReleaseBarrierMap(
         const QFOTransferBarrier<VkBufferMemoryBarrier>::Tag& type_tag);
     template <typename Barrier>
-    void RecordQueuedQFOTransferBarriers(layer_data* device_data, GLOBAL_CB_NODE* cb_state);
+    void RecordQueuedQFOTransferBarriers(GLOBAL_CB_NODE* cb_state);
     template <typename Barrier>
-    bool ValidateQueuedQFOTransferBarriers(layer_data* device_data, GLOBAL_CB_NODE* cb_state,
-                                           QFOTransferCBScoreboards<Barrier>* scoreboards);
-    bool ValidateQueuedQFOTransfers(layer_data* device_data, GLOBAL_CB_NODE* cb_state,
-                                    QFOTransferCBScoreboards<VkImageMemoryBarrier>* qfo_image_scoreboards,
+    bool ValidateQueuedQFOTransferBarriers(GLOBAL_CB_NODE* cb_state, QFOTransferCBScoreboards<Barrier>* scoreboards);
+    bool ValidateQueuedQFOTransfers(GLOBAL_CB_NODE* cb_state, QFOTransferCBScoreboards<VkImageMemoryBarrier>* qfo_image_scoreboards,
                                     QFOTransferCBScoreboards<VkBufferMemoryBarrier>* qfo_buffer_scoreboards);
     template <typename BarrierRecord, typename Scoreboard>
     bool ValidateAndUpdateQFOScoreboard(const debug_report_data* report_data, const GLOBAL_CB_NODE* cb_state, const char* operation,
                                         const BarrierRecord& barrier, Scoreboard* scoreboard);
     template <typename Barrier>
-    void RecordQFOTransferBarriers(layer_data* device_data, GLOBAL_CB_NODE* cb_state, uint32_t barrier_count,
-                                   const Barrier* barriers);
-    void RecordBarriersQFOTransfers(layer_data* device_data, GLOBAL_CB_NODE* cb_state, uint32_t bufferBarrierCount,
+    void RecordQFOTransferBarriers(GLOBAL_CB_NODE* cb_state, uint32_t barrier_count, const Barrier* barriers);
+    void RecordBarriersQFOTransfers(GLOBAL_CB_NODE* cb_state, uint32_t bufferBarrierCount,
                                     const VkBufferMemoryBarrier* pBufferMemBarriers, uint32_t imageMemBarrierCount,
                                     const VkImageMemoryBarrier* pImageMemBarriers);
     template <typename Barrier>
-    bool ValidateQFOTransferBarrierUniqueness(layer_data* device_data, const char* func_name, GLOBAL_CB_NODE* cb_state,
-                                              uint32_t barrier_count, const Barrier* barriers);
+    bool ValidateQFOTransferBarrierUniqueness(const char* func_name, GLOBAL_CB_NODE* cb_state, uint32_t barrier_count,
+                                              const Barrier* barriers);
     bool IsReleaseOp(GLOBAL_CB_NODE* cb_state, VkImageMemoryBarrier const* barrier);
-    bool ValidateBarriersQFOTransferUniqueness(layer_data* device_data, const char* func_name, GLOBAL_CB_NODE* cb_state,
-                                               uint32_t bufferBarrierCount, const VkBufferMemoryBarrier* pBufferMemBarriers,
-                                               uint32_t imageMemBarrierCount, const VkImageMemoryBarrier* pImageMemBarriers);
+    bool ValidateBarriersQFOTransferUniqueness(const char* func_name, GLOBAL_CB_NODE* cb_state, uint32_t bufferBarrierCount,
+                                               const VkBufferMemoryBarrier* pBufferMemBarriers, uint32_t imageMemBarrierCount,
+                                               const VkImageMemoryBarrier* pImageMemBarriers);
     bool ValidatePrimaryCommandBufferState(layer_data* dev_data, GLOBAL_CB_NODE* pCB, int current_submit_count,
                                            QFOTransferCBScoreboards<VkImageMemoryBarrier>* qfo_image_scoreboards,
                                            QFOTransferCBScoreboards<VkBufferMemoryBarrier>* qfo_buffer_scoreboards);
@@ -572,13 +567,13 @@ class CoreChecks : public ValidationObject {
     bool ValidateCmdBufDrawState(layer_data* dev_data, GLOBAL_CB_NODE* cb_node, CMD_TYPE cmd_type, const bool indexed,
                                  const VkPipelineBindPoint bind_point, const char* function, const char* pipe_err_code,
                                  const char* state_err_code);
-    void IncrementBoundObjects(layer_data* dev_data, GLOBAL_CB_NODE const* cb_node);
-    void IncrementResources(layer_data* dev_data, GLOBAL_CB_NODE* cb_node);
+    void IncrementBoundObjects(GLOBAL_CB_NODE const* cb_node);
+    void IncrementResources(GLOBAL_CB_NODE* cb_node);
     bool ValidateEventStageMask(VkQueue queue, GLOBAL_CB_NODE* pCB, uint32_t eventCount, size_t firstEventIndex,
                                 VkPipelineStageFlags sourceStageMask);
     void RetireWorkOnQueue(layer_data* dev_data, QUEUE_STATE* pQueue, uint64_t seq);
     bool ValidateResources(layer_data* dev_data, GLOBAL_CB_NODE* cb_node);
-    bool ValidateQueueFamilyIndices(layer_data* dev_data, GLOBAL_CB_NODE* pCB, VkQueue queue);
+    bool ValidateQueueFamilyIndices(GLOBAL_CB_NODE* pCB, VkQueue queue);
     VkResult CoreLayerCreateValidationCacheEXT(VkDevice device, const VkValidationCacheCreateInfoEXT* pCreateInfo,
                                                const VkAllocationCallbacks* pAllocator, VkValidationCacheEXT* pValidationCache);
     void CoreLayerDestroyValidationCacheEXT(VkDevice device, VkValidationCacheEXT validationCache,
@@ -670,7 +665,7 @@ class CoreChecks : public ValidationObject {
     // Note that the type of the handle argument constrained to match Barrier type
     // The defaulted BarrierRecord argument allows use to declare the type once, but is not intended to be specified by the caller
     template <typename Barrier, typename BarrierRecord = QFOTransferBarrier<Barrier>>
-    void EraseQFOReleaseBarriers(layer_data* device_data, const typename BarrierRecord::HandleType& handle) {
+    void EraseQFOReleaseBarriers(const typename BarrierRecord::HandleType& handle) {
         GlobalQFOTransferBarrierMap<Barrier>& global_release_barriers =
             GetGlobalQFOReleaseBarrierMap(typename BarrierRecord::Tag());
         global_release_barriers.erase(handle);
@@ -802,8 +797,8 @@ class CoreChecks : public ValidationObject {
     bool ValidateBarriersToImages(GLOBAL_CB_NODE const* cb_state, uint32_t imageMemoryBarrierCount,
                                   const VkImageMemoryBarrier* pImageMemoryBarriers, const char* func_name);
 
-    void RecordQueuedQFOTransfers(layer_data* dev_data, GLOBAL_CB_NODE* pCB);
-    void EraseQFOImageRelaseBarriers(layer_data* device_data, const VkImage& image);
+    void RecordQueuedQFOTransfers(GLOBAL_CB_NODE* pCB);
+    void EraseQFOImageRelaseBarriers(const VkImage& image);
 
     void TransitionImageLayouts(GLOBAL_CB_NODE* cb_state, uint32_t memBarrierCount, const VkImageMemoryBarrier* pImgMemBarriers);
 
@@ -954,9 +949,9 @@ class CoreChecks : public ValidationObject {
     void RecordCreateImageANDROID(const VkImageCreateInfo* create_info, IMAGE_STATE* is_node);
     bool ValidateCreateImageViewANDROID(layer_data* device_data, const VkImageViewCreateInfo* create_info);
     bool ValidateGetImageSubresourceLayoutANDROID(layer_data* device_data, const VkImage image);
-    bool ValidateQueueFamilies(layer_data* device_data, uint32_t queue_family_count, const uint32_t* queue_families,
-                               const char* cmd_name, const char* array_parameter_name, const char* unique_error_code,
-                               const char* valid_error_code, bool optional);
+    bool ValidateQueueFamilies(uint32_t queue_family_count, const uint32_t* queue_families, const char* cmd_name,
+                               const char* array_parameter_name, const char* unique_error_code, const char* valid_error_code,
+                               bool optional);
     bool ValidateAllocateMemoryANDROID(layer_data* dev_data, const VkMemoryAllocateInfo* alloc_info);
     bool ValidateGetImageMemoryRequirements2ANDROID(layer_data* dev_data, const VkImage image);
     bool ValidateCreateSamplerYcbcrConversionANDROID(const layer_data* dev_data,
