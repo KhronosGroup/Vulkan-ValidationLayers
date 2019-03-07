@@ -573,28 +573,27 @@ bool CoreChecks::SetSparseMemBinding(layer_data *dev_data, MEM_BINDING binding, 
     return skip;
 }
 
-bool CoreChecks::ValidateDeviceQueueFamily(layer_data *device_data, uint32_t queue_family, const char *cmd_name,
-                                           const char *parameter_name, const char *error_code, bool optional = false) {
+bool CoreChecks::ValidateDeviceQueueFamily(uint32_t queue_family, const char *cmd_name, const char *parameter_name,
+                                           const char *error_code, bool optional = false) {
     bool skip = false;
     if (!optional && queue_family == VK_QUEUE_FAMILY_IGNORED) {
-        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
-                        HandleToUint64(device_data->device), error_code,
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
+                        error_code,
                         "%s: %s is VK_QUEUE_FAMILY_IGNORED, but it is required to provide a valid queue family index value.",
                         cmd_name, parameter_name);
-    } else if (device_data->queue_family_index_map.find(queue_family) == device_data->queue_family_index_map.end()) {
-        skip |=
-            log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
-                    HandleToUint64(device_data->device), error_code,
-                    "%s: %s (= %" PRIu32
-                    ") is not one of the queue families given via VkDeviceQueueCreateInfo structures when the device was created.",
-                    cmd_name, parameter_name, queue_family);
+    } else if (queue_family_index_map.find(queue_family) == queue_family_index_map.end()) {
+        skip |= log_msg(
+            report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device), error_code,
+            "%s: %s (= %" PRIu32
+            ") is not one of the queue families given via VkDeviceQueueCreateInfo structures when the device was created.",
+            cmd_name, parameter_name, queue_family);
     }
 
     return skip;
 }
 
-bool CoreChecks::ValidateQueueFamilies(layer_data *device_data, uint32_t queue_family_count, const uint32_t *queue_families,
-                                       const char *cmd_name, const char *array_parameter_name, const char *unique_error_code,
+bool CoreChecks::ValidateQueueFamilies(uint32_t queue_family_count, const uint32_t *queue_families, const char *cmd_name,
+                                       const char *array_parameter_name, const char *unique_error_code,
                                        const char *valid_error_code, bool optional = false) {
     bool skip = false;
     if (queue_families) {
@@ -604,13 +603,11 @@ bool CoreChecks::ValidateQueueFamilies(layer_data *device_data, uint32_t queue_f
 
             if (set.count(queue_families[i])) {
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
-                                HandleToUint64(device_data->device), unique_error_code,
-                                "%s: %s (=%" PRIu32 ") is not unique within %s array.", cmd_name, parameter_name.c_str(),
-                                queue_families[i], array_parameter_name);
+                                HandleToUint64(device), unique_error_code, "%s: %s (=%" PRIu32 ") is not unique within %s array.",
+                                cmd_name, parameter_name.c_str(), queue_families[i], array_parameter_name);
             } else {
                 set.insert(queue_families[i]);
-                skip |= ValidateDeviceQueueFamily(device_data, queue_families[i], cmd_name, parameter_name.c_str(),
-                                                  valid_error_code, optional);
+                skip |= ValidateDeviceQueueFamily(queue_families[i], cmd_name, parameter_name.c_str(), valid_error_code, optional);
             }
         }
     }
@@ -1846,8 +1843,8 @@ bool CoreChecks::ValidateCmdSubpassState(const layer_data *dev_data, const GLOBA
     return skip;
 }
 
-bool CoreChecks::ValidateCmdQueueFlags(layer_data *dev_data, const GLOBAL_CB_NODE *cb_node, const char *caller_name,
-                                       VkQueueFlags required_flags, const char *error_code) {
+bool CoreChecks::ValidateCmdQueueFlags(const GLOBAL_CB_NODE *cb_node, const char *caller_name, VkQueueFlags required_flags,
+                                       const char *error_code) {
     auto pool = GetCommandPoolNode(cb_node->createInfo.commandPool);
     if (pool) {
         VkQueueFlags queue_flags = GetPhysicalDeviceState()->queue_family_properties[pool->queueFamilyIndex].queueFlags;
@@ -1999,7 +1996,7 @@ bool CoreChecks::ValidateCmd(layer_data *dev_data, const GLOBAL_CB_NODE *cb_stat
 }
 
 // For given object struct return a ptr of BASE_NODE type for its wrapping struct
-BASE_NODE *CoreChecks::GetStateStructPtrFromObject(layer_data *dev_data, VK_OBJECT object_struct) {
+BASE_NODE *CoreChecks::GetStateStructPtrFromObject(VK_OBJECT object_struct) {
     BASE_NODE *base_ptr = nullptr;
     switch (object_struct.type) {
         case kVulkanObjectTypeDescriptorSet: {
@@ -2074,8 +2071,8 @@ static void AddCommandBufferBinding(std::unordered_set<GLOBAL_CB_NODE *> *cb_bin
     cb_node->object_bindings.insert(obj);
 }
 // For a given object, if cb_node is in that objects cb_bindings, remove cb_node
-void CoreChecks::RemoveCommandBufferBinding(layer_data *dev_data, VK_OBJECT const *object, GLOBAL_CB_NODE *cb_node) {
-    BASE_NODE *base_obj = GetStateStructPtrFromObject(dev_data, *object);
+void CoreChecks::RemoveCommandBufferBinding(VK_OBJECT const *object, GLOBAL_CB_NODE *cb_node) {
+    BASE_NODE *base_obj = GetStateStructPtrFromObject(*object);
     if (base_obj) base_obj->cb_bindings.erase(cb_node);
 }
 // Reset the command buffer state
@@ -2139,7 +2136,7 @@ void CoreChecks::ResetCommandBufferState(layer_data *dev_data, const VkCommandBu
 
         // Remove object bindings
         for (auto obj : pCB->object_bindings) {
-            RemoveCommandBufferBinding(dev_data, &obj, pCB);
+            RemoveCommandBufferBinding(&obj, pCB);
         }
         pCB->object_bindings.clear();
         // Remove this cmdBuffer's reference from each FrameBuffer's CB ref list
@@ -2592,21 +2589,21 @@ bool CoreChecks::ValidateStageMaskGsTsEnables(VkPipelineStageFlags stageMask, co
 }
 
 // Loop through bound objects and increment their in_use counts.
-void CoreChecks::IncrementBoundObjects(layer_data *dev_data, GLOBAL_CB_NODE const *cb_node) {
+void CoreChecks::IncrementBoundObjects(GLOBAL_CB_NODE const *cb_node) {
     for (auto obj : cb_node->object_bindings) {
-        auto base_obj = GetStateStructPtrFromObject(dev_data, obj);
+        auto base_obj = GetStateStructPtrFromObject(obj);
         if (base_obj) {
             base_obj->in_use.fetch_add(1);
         }
     }
 }
 // Track which resources are in-flight by atomically incrementing their "in_use" count
-void CoreChecks::IncrementResources(layer_data *dev_data, GLOBAL_CB_NODE *cb_node) {
+void CoreChecks::IncrementResources(GLOBAL_CB_NODE *cb_node) {
     cb_node->submitCount++;
     cb_node->in_use.fetch_add(1);
 
     // First Increment for all "generic" objects bound to cmd buffer, followed by special-case objects below
-    IncrementBoundObjects(dev_data, cb_node);
+    IncrementBoundObjects(cb_node);
     // TODO : We should be able to remove the NULL look-up checks from the code below as long as
     //  all the corresponding cases are verified to cause CB_INVALID state and the CB_INVALID state
     //  should then be flagged prior to calling this function
@@ -2628,7 +2625,7 @@ void CoreChecks::IncrementResources(layer_data *dev_data, GLOBAL_CB_NODE *cb_nod
 // For the given queue, verify the queue state up to the given seq number.
 // Currently the only check is to make sure that if there are events to be waited on prior to
 //  a QueryReset, make sure that all such events have been signalled.
-bool CoreChecks::VerifyQueueStateToSeq(layer_data *dev_data, QUEUE_STATE *initial_queue, uint64_t initial_seq) {
+bool CoreChecks::VerifyQueueStateToSeq(QUEUE_STATE *initial_queue, uint64_t initial_seq) {
     bool skip = false;
 
     // sequence number we want to validate up to, per queue
@@ -2672,10 +2669,10 @@ bool CoreChecks::VerifyQueueStateToSeq(layer_data *dev_data, QUEUE_STATE *initia
 }
 
 // When the given fence is retired, verify outstanding queue operations through the point of the fence
-bool CoreChecks::VerifyQueueStateToFence(layer_data *dev_data, VkFence fence) {
+bool CoreChecks::VerifyQueueStateToFence(VkFence fence) {
     auto fence_state = GetFenceNode(fence);
     if (fence_state && fence_state->scope == kSyncScopeInternal && VK_NULL_HANDLE != fence_state->signaler.first) {
-        return VerifyQueueStateToSeq(dev_data, GetQueueState(fence_state->signaler.first), fence_state->signaler.second);
+        return VerifyQueueStateToSeq(GetQueueState(fence_state->signaler.first), fence_state->signaler.second);
     }
     return false;
 }
@@ -2684,7 +2681,7 @@ bool CoreChecks::VerifyQueueStateToFence(layer_data *dev_data, VkFence fence) {
 void CoreChecks::DecrementBoundResources(layer_data *dev_data, GLOBAL_CB_NODE const *cb_node) {
     BASE_NODE *base_obj = nullptr;
     for (auto obj : cb_node->object_bindings) {
-        base_obj = GetStateStructPtrFromObject(dev_data, obj);
+        base_obj = GetStateStructPtrFromObject(obj);
         if (base_obj) {
             base_obj->in_use.fetch_sub(1);
         }
@@ -2850,8 +2847,8 @@ bool CoreChecks::ValidateResources(layer_data *dev_data, GLOBAL_CB_NODE *cb_node
 }
 
 // Check that the queue family index of 'queue' matches one of the entries in pQueueFamilyIndices
-bool CoreChecks::ValidImageBufferQueue(layer_data *dev_data, GLOBAL_CB_NODE *cb_node, const VK_OBJECT *object, VkQueue queue,
-                                       uint32_t count, const uint32_t *indices) {
+bool CoreChecks::ValidImageBufferQueue(GLOBAL_CB_NODE *cb_node, const VK_OBJECT *object, VkQueue queue, uint32_t count,
+                                       const uint32_t *indices) {
     bool found = false;
     bool skip = false;
     auto queue_state = GetQueueState(queue);
@@ -2877,7 +2874,7 @@ bool CoreChecks::ValidImageBufferQueue(layer_data *dev_data, GLOBAL_CB_NODE *cb_
 
 // Validate that queueFamilyIndices of primary command buffers match this queue
 // Secondary command buffers were previously validated in vkCmdExecuteCommands().
-bool CoreChecks::ValidateQueueFamilyIndices(layer_data *dev_data, GLOBAL_CB_NODE *pCB, VkQueue queue) {
+bool CoreChecks::ValidateQueueFamilyIndices(GLOBAL_CB_NODE *pCB, VkQueue queue) {
     bool skip = false;
     auto pPool = GetCommandPoolNode(pCB->createInfo.commandPool);
     auto queue_state = GetQueueState(queue);
@@ -2897,13 +2894,13 @@ bool CoreChecks::ValidateQueueFamilyIndices(layer_data *dev_data, GLOBAL_CB_NODE
             if (object.type == kVulkanObjectTypeImage) {
                 auto image_state = GetImageState(reinterpret_cast<VkImage &>(object.handle));
                 if (image_state && image_state->createInfo.sharingMode == VK_SHARING_MODE_CONCURRENT) {
-                    skip |= ValidImageBufferQueue(dev_data, pCB, &object, queue, image_state->createInfo.queueFamilyIndexCount,
+                    skip |= ValidImageBufferQueue(pCB, &object, queue, image_state->createInfo.queueFamilyIndexCount,
                                                   image_state->createInfo.pQueueFamilyIndices);
                 }
             } else if (object.type == kVulkanObjectTypeBuffer) {
                 auto buffer_state = GetBufferState(reinterpret_cast<VkBuffer &>(object.handle));
                 if (buffer_state && buffer_state->createInfo.sharingMode == VK_SHARING_MODE_CONCURRENT) {
-                    skip |= ValidImageBufferQueue(dev_data, pCB, &object, queue, buffer_state->createInfo.queueFamilyIndexCount,
+                    skip |= ValidImageBufferQueue(pCB, &object, queue, buffer_state->createInfo.queueFamilyIndexCount,
                                                   buffer_state->createInfo.pQueueFamilyIndices);
                 }
             }
@@ -2924,11 +2921,11 @@ bool CoreChecks::ValidatePrimaryCommandBufferState(layer_data *dev_data, GLOBAL_
     skip |= ValidateCommandBufferSimultaneousUse(dev_data, pCB, current_submit_count);
 
     skip |= ValidateResources(dev_data, pCB);
-    skip |= ValidateQueuedQFOTransfers(dev_data, pCB, qfo_image_scoreboards, qfo_buffer_scoreboards);
+    skip |= ValidateQueuedQFOTransfers(pCB, qfo_image_scoreboards, qfo_buffer_scoreboards);
 
     for (auto pSubCB : pCB->linkedCommandBuffers) {
         skip |= ValidateResources(dev_data, pSubCB);
-        skip |= ValidateQueuedQFOTransfers(dev_data, pSubCB, qfo_image_scoreboards, qfo_buffer_scoreboards);
+        skip |= ValidateQueuedQFOTransfers(pSubCB, qfo_image_scoreboards, qfo_buffer_scoreboards);
         // TODO: replace with InvalidateCommandBuffers() at recording.
         if ((pSubCB->primaryCommandBuffer != pCB->commandBuffer) &&
             !(pSubCB->beginInfo.flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT)) {
@@ -3062,12 +3059,12 @@ void CoreChecks::PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, 
                 for (auto secondaryCmdBuffer : cb_node->linkedCommandBuffers) {
                     cbs.push_back(secondaryCmdBuffer->commandBuffer);
                     UpdateCmdBufImageLayouts(secondaryCmdBuffer);
-                    IncrementResources(device_data, secondaryCmdBuffer);
-                    RecordQueuedQFOTransfers(device_data, secondaryCmdBuffer);
+                    IncrementResources(secondaryCmdBuffer);
+                    RecordQueuedQFOTransfers(secondaryCmdBuffer);
                 }
                 UpdateCmdBufImageLayouts(cb_node);
-                IncrementResources(device_data, cb_node);
-                RecordQueuedQFOTransfers(device_data, cb_node);
+                IncrementResources(cb_node);
+                RecordQueuedQFOTransfers(cb_node);
             }
         }
         pQueue->submissions.emplace_back(cbs, semaphore_waits, semaphore_signals, semaphore_externals,
@@ -3150,7 +3147,7 @@ bool CoreChecks::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount,
                 skip |= ValidatePrimaryCommandBufferState(
                     device_data, cb_node, (int)std::count(current_cmds.begin(), current_cmds.end(), submit->pCommandBuffers[i]),
                     &qfo_image_scoreboards, &qfo_buffer_scoreboards);
-                skip |= ValidateQueueFamilyIndices(device_data, cb_node, queue);
+                skip |= ValidateQueueFamilyIndices(cb_node, queue);
 
                 // Potential early exit here as bad object state may crash in delayed function calls
                 if (skip) {
@@ -3890,7 +3887,7 @@ bool CoreChecks::PreCallValidateWaitForFences(VkDevice device, uint32_t fenceCou
     bool skip = false;
     for (uint32_t i = 0; i < fenceCount; i++) {
         skip |= VerifyWaitFenceState(device_data, pFences[i], "vkWaitForFences");
-        skip |= VerifyQueueStateToFence(device_data, pFences[i]);
+        skip |= VerifyQueueStateToFence(pFences[i]);
     }
     return skip;
 }
@@ -3922,26 +3919,26 @@ void CoreChecks::PostCallRecordGetFenceStatus(VkDevice device, VkFence fence, Vk
     RetireFence(device_data, fence);
 }
 
-void CoreChecks::RecordGetDeviceQueueState(layer_data *device_data, uint32_t queue_family_index, VkQueue queue) {
+void CoreChecks::RecordGetDeviceQueueState(uint32_t queue_family_index, VkQueue queue) {
     // Add queue to tracking set only if it is new
-    auto queue_is_new = device_data->queues.emplace(queue);
+    auto queue_is_new = queues.emplace(queue);
     if (queue_is_new.second == true) {
-        QUEUE_STATE *queue_state = &device_data->queueMap[queue];
+        QUEUE_STATE *queue_state = &queueMap[queue];
         queue_state->queue = queue;
         queue_state->queueFamilyIndex = queue_family_index;
         queue_state->seq = 0;
     }
 }
 
-bool CoreChecks::ValidateGetDeviceQueue(layer_data *device_data, uint32_t queueFamilyIndex, uint32_t queueIndex, VkQueue *pQueue,
-                                        const char *valid_qfi_vuid, const char *qfi_in_range_vuid) {
+bool CoreChecks::ValidateGetDeviceQueue(uint32_t queueFamilyIndex, uint32_t queueIndex, VkQueue *pQueue, const char *valid_qfi_vuid,
+                                        const char *qfi_in_range_vuid) {
     bool skip = false;
 
-    skip |= ValidateDeviceQueueFamily(device_data, queueFamilyIndex, "vkGetDeviceQueue", "queueFamilyIndex", valid_qfi_vuid);
-    const auto &queue_data = device_data->queue_family_index_map.find(queueFamilyIndex);
-    if (queue_data != device_data->queue_family_index_map.end() && queue_data->second <= queueIndex) {
-        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
-                        HandleToUint64(device_data->device), qfi_in_range_vuid,
+    skip |= ValidateDeviceQueueFamily(queueFamilyIndex, "vkGetDeviceQueue", "queueFamilyIndex", valid_qfi_vuid);
+    const auto &queue_data = queue_family_index_map.find(queueFamilyIndex);
+    if (queue_data != queue_family_index_map.end() && queue_data->second <= queueIndex) {
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
+                        qfi_in_range_vuid,
                         "vkGetDeviceQueue: queueIndex (=%" PRIu32
                         ") is not less than the number of queues requested from queueFamilyIndex (=%" PRIu32
                         ") when the device was created (i.e. is not less than %" PRIu32 ").",
@@ -3951,26 +3948,23 @@ bool CoreChecks::ValidateGetDeviceQueue(layer_data *device_data, uint32_t queueF
 }
 
 bool CoreChecks::PreCallValidateGetDeviceQueue(VkDevice device, uint32_t queueFamilyIndex, uint32_t queueIndex, VkQueue *pQueue) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    return ValidateGetDeviceQueue(device_data, queueFamilyIndex, queueIndex, pQueue, "VUID-vkGetDeviceQueue-queueFamilyIndex-00384",
+    return ValidateGetDeviceQueue(queueFamilyIndex, queueIndex, pQueue, "VUID-vkGetDeviceQueue-queueFamilyIndex-00384",
                                   "VUID-vkGetDeviceQueue-queueIndex-00385");
 }
 
 void CoreChecks::PostCallRecordGetDeviceQueue(VkDevice device, uint32_t queueFamilyIndex, uint32_t queueIndex, VkQueue *pQueue) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    RecordGetDeviceQueueState(device_data, queueFamilyIndex, *pQueue);
+    RecordGetDeviceQueueState(queueFamilyIndex, *pQueue);
 }
 
 void CoreChecks::PostCallRecordGetDeviceQueue2(VkDevice device, const VkDeviceQueueInfo2 *pQueueInfo, VkQueue *pQueue) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    RecordGetDeviceQueueState(device_data, pQueueInfo->queueFamilyIndex, *pQueue);
+    RecordGetDeviceQueueState(pQueueInfo->queueFamilyIndex, *pQueue);
 }
 
 bool CoreChecks::PreCallValidateQueueWaitIdle(VkQueue queue) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(queue), layer_data_map);
     QUEUE_STATE *queue_state = GetQueueState(queue);
     if (device_data->instance_data->disabled.queue_wait_idle) return false;
-    return VerifyQueueStateToSeq(device_data, queue_state, queue_state->seq + queue_state->submissions.size());
+    return VerifyQueueStateToSeq(queue_state, queue_state->seq + queue_state->submissions.size());
 }
 
 void CoreChecks::PostCallRecordQueueWaitIdle(VkQueue queue, VkResult result) {
@@ -3985,7 +3979,7 @@ bool CoreChecks::PreCallValidateDeviceWaitIdle(VkDevice device) {
     if (device_data->instance_data->disabled.device_wait_idle) return false;
     bool skip = false;
     for (auto &queue : device_data->queueMap) {
-        skip |= VerifyQueueStateToSeq(device_data, &queue.second, queue.second.seq + queue.second.submissions.size());
+        skip |= VerifyQueueStateToSeq(&queue.second, queue.second.seq + queue.second.submissions.size());
     }
     return skip;
 }
@@ -4775,9 +4769,8 @@ void CoreChecks::PreCallRecordFreeCommandBuffers(VkDevice device, VkCommandPool 
 
 bool CoreChecks::PreCallValidateCreateCommandPool(VkDevice device, const VkCommandPoolCreateInfo *pCreateInfo,
                                                   const VkAllocationCallbacks *pAllocator, VkCommandPool *pCommandPool) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    return ValidateDeviceQueueFamily(device_data, pCreateInfo->queueFamilyIndex, "vkCreateCommandPool",
-                                     "pCreateInfo->queueFamilyIndex", "VUID-vkCreateCommandPool-queueFamilyIndex-01937");
+    return ValidateDeviceQueueFamily(pCreateInfo->queueFamilyIndex, "vkCreateCommandPool", "pCreateInfo->queueFamilyIndex",
+                                     "VUID-vkCreateCommandPool-queueFamilyIndex-01937");
 }
 
 void CoreChecks::PostCallRecordCreateCommandPool(VkDevice device, const VkCommandPoolCreateInfo *pCreateInfo,
@@ -6395,7 +6388,7 @@ bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, V
     GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
 
-    bool skip = ValidateCmdQueueFlags(device_data, cb_state, "vkCmdBindPipeline()", VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
+    bool skip = ValidateCmdQueueFlags(cb_state, "vkCmdBindPipeline()", VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
                                       "VUID-vkCmdBindPipeline-commandBuffer-cmdpool");
     skip |= ValidateCmd(device_data, cb_state, CMD_BINDPIPELINE, "vkCmdBindPipeline()");
     // TODO: "VUID-vkCmdBindPipeline-pipelineBindPoint-00777" "VUID-vkCmdBindPipeline-pipelineBindPoint-00779"  -- using
@@ -6424,8 +6417,8 @@ bool CoreChecks::PreCallValidateCmdSetViewport(VkCommandBuffer commandBuffer, ui
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
-    bool skip = ValidateCmdQueueFlags(device_data, cb_state, "vkCmdSetViewport()", VK_QUEUE_GRAPHICS_BIT,
-                                      "VUID-vkCmdSetViewport-commandBuffer-cmdpool");
+    bool skip =
+        ValidateCmdQueueFlags(cb_state, "vkCmdSetViewport()", VK_QUEUE_GRAPHICS_BIT, "VUID-vkCmdSetViewport-commandBuffer-cmdpool");
     skip |= ValidateCmd(device_data, cb_state, CMD_SETVIEWPORT, "vkCmdSetViewport()");
     if (cb_state->static_status & CBSTATUS_VIEWPORT_SET) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
@@ -6447,8 +6440,8 @@ bool CoreChecks::PreCallValidateCmdSetScissor(VkCommandBuffer commandBuffer, uin
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
-    bool skip = ValidateCmdQueueFlags(device_data, cb_state, "vkCmdSetScissor()", VK_QUEUE_GRAPHICS_BIT,
-                                      "VUID-vkCmdSetScissor-commandBuffer-cmdpool");
+    bool skip =
+        ValidateCmdQueueFlags(cb_state, "vkCmdSetScissor()", VK_QUEUE_GRAPHICS_BIT, "VUID-vkCmdSetScissor-commandBuffer-cmdpool");
     skip |= ValidateCmd(device_data, cb_state, CMD_SETSCISSOR, "vkCmdSetScissor()");
     if (cb_state->static_status & CBSTATUS_SCISSOR_SET) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
@@ -6470,7 +6463,7 @@ bool CoreChecks::PreCallValidateCmdSetExclusiveScissorNV(VkCommandBuffer command
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
-    bool skip = ValidateCmdQueueFlags(device_data, cb_state, "vkCmdSetExclusiveScissorNV()", VK_QUEUE_GRAPHICS_BIT,
+    bool skip = ValidateCmdQueueFlags(cb_state, "vkCmdSetExclusiveScissorNV()", VK_QUEUE_GRAPHICS_BIT,
                                       "VUID-vkCmdSetExclusiveScissorNV-commandBuffer-cmdpool");
     skip |= ValidateCmd(device_data, cb_state, CMD_SETEXCLUSIVESCISSOR, "vkCmdSetExclusiveScissorNV()");
     if (cb_state->static_status & CBSTATUS_EXCLUSIVE_SCISSOR_SET) {
@@ -6501,7 +6494,7 @@ bool CoreChecks::PreCallValidateCmdBindShadingRateImageNV(VkCommandBuffer comman
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
-    bool skip = ValidateCmdQueueFlags(device_data, cb_state, "vkCmdBindShadingRateImageNV()", VK_QUEUE_GRAPHICS_BIT,
+    bool skip = ValidateCmdQueueFlags(cb_state, "vkCmdBindShadingRateImageNV()", VK_QUEUE_GRAPHICS_BIT,
                                       "VUID-vkCmdBindShadingRateImageNV-commandBuffer-cmdpool");
 
     skip |= ValidateCmd(device_data, cb_state, CMD_BINDSHADINGRATEIMAGE, "vkCmdBindShadingRateImageNV()");
@@ -6576,7 +6569,7 @@ bool CoreChecks::PreCallValidateCmdSetViewportShadingRatePaletteNV(VkCommandBuff
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
-    bool skip = ValidateCmdQueueFlags(device_data, cb_state, "vkCmdSetViewportShadingRatePaletteNV()", VK_QUEUE_GRAPHICS_BIT,
+    bool skip = ValidateCmdQueueFlags(cb_state, "vkCmdSetViewportShadingRatePaletteNV()", VK_QUEUE_GRAPHICS_BIT,
                                       "VUID-vkCmdSetViewportShadingRatePaletteNV-commandBuffer-cmdpool");
 
     skip |= ValidateCmd(device_data, cb_state, CMD_SETVIEWPORTSHADINGRATEPALETTE, "vkCmdSetViewportShadingRatePaletteNV()");
@@ -6622,7 +6615,7 @@ bool CoreChecks::PreCallValidateCmdSetLineWidth(VkCommandBuffer commandBuffer, f
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
-    bool skip = ValidateCmdQueueFlags(device_data, cb_state, "vkCmdSetLineWidth()", VK_QUEUE_GRAPHICS_BIT,
+    bool skip = ValidateCmdQueueFlags(cb_state, "vkCmdSetLineWidth()", VK_QUEUE_GRAPHICS_BIT,
                                       "VUID-vkCmdSetLineWidth-commandBuffer-cmdpool");
     skip |= ValidateCmd(device_data, cb_state, CMD_SETLINEWIDTH, "vkCmdSetLineWidth()");
 
@@ -6644,7 +6637,7 @@ bool CoreChecks::PreCallValidateCmdSetDepthBias(VkCommandBuffer commandBuffer, f
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
-    bool skip = ValidateCmdQueueFlags(device_data, cb_state, "vkCmdSetDepthBias()", VK_QUEUE_GRAPHICS_BIT,
+    bool skip = ValidateCmdQueueFlags(cb_state, "vkCmdSetDepthBias()", VK_QUEUE_GRAPHICS_BIT,
                                       "VUID-vkCmdSetDepthBias-commandBuffer-cmdpool");
     skip |= ValidateCmd(device_data, cb_state, CMD_SETDEPTHBIAS, "vkCmdSetDepthBias()");
     if (cb_state->static_status & CBSTATUS_DEPTH_BIAS_SET) {
@@ -6671,7 +6664,7 @@ bool CoreChecks::PreCallValidateCmdSetBlendConstants(VkCommandBuffer commandBuff
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
-    bool skip = ValidateCmdQueueFlags(device_data, cb_state, "vkCmdSetBlendConstants()", VK_QUEUE_GRAPHICS_BIT,
+    bool skip = ValidateCmdQueueFlags(cb_state, "vkCmdSetBlendConstants()", VK_QUEUE_GRAPHICS_BIT,
                                       "VUID-vkCmdSetBlendConstants-commandBuffer-cmdpool");
     skip |= ValidateCmd(device_data, cb_state, CMD_SETBLENDCONSTANTS, "vkCmdSetBlendConstants()");
     if (cb_state->static_status & CBSTATUS_BLEND_CONSTANTS_SET) {
@@ -6691,7 +6684,7 @@ bool CoreChecks::PreCallValidateCmdSetDepthBounds(VkCommandBuffer commandBuffer,
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
-    bool skip = ValidateCmdQueueFlags(device_data, cb_state, "vkCmdSetDepthBounds()", VK_QUEUE_GRAPHICS_BIT,
+    bool skip = ValidateCmdQueueFlags(cb_state, "vkCmdSetDepthBounds()", VK_QUEUE_GRAPHICS_BIT,
                                       "VUID-vkCmdSetDepthBounds-commandBuffer-cmdpool");
     skip |= ValidateCmd(device_data, cb_state, CMD_SETDEPTHBOUNDS, "vkCmdSetDepthBounds()");
     if (cb_state->static_status & CBSTATUS_DEPTH_BOUNDS_SET) {
@@ -6712,7 +6705,7 @@ bool CoreChecks::PreCallValidateCmdSetStencilCompareMask(VkCommandBuffer command
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
-    bool skip = ValidateCmdQueueFlags(device_data, cb_state, "vkCmdSetStencilCompareMask()", VK_QUEUE_GRAPHICS_BIT,
+    bool skip = ValidateCmdQueueFlags(cb_state, "vkCmdSetStencilCompareMask()", VK_QUEUE_GRAPHICS_BIT,
                                       "VUID-vkCmdSetStencilCompareMask-commandBuffer-cmdpool");
     skip |= ValidateCmd(device_data, cb_state, CMD_SETSTENCILCOMPAREMASK, "vkCmdSetStencilCompareMask()");
     if (cb_state->static_status & CBSTATUS_STENCIL_READ_MASK_SET) {
@@ -6734,7 +6727,7 @@ bool CoreChecks::PreCallValidateCmdSetStencilWriteMask(VkCommandBuffer commandBu
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
-    bool skip = ValidateCmdQueueFlags(device_data, cb_state, "vkCmdSetStencilWriteMask()", VK_QUEUE_GRAPHICS_BIT,
+    bool skip = ValidateCmdQueueFlags(cb_state, "vkCmdSetStencilWriteMask()", VK_QUEUE_GRAPHICS_BIT,
                                       "VUID-vkCmdSetStencilWriteMask-commandBuffer-cmdpool");
     skip |= ValidateCmd(device_data, cb_state, CMD_SETSTENCILWRITEMASK, "vkCmdSetStencilWriteMask()");
     if (cb_state->static_status & CBSTATUS_STENCIL_WRITE_MASK_SET) {
@@ -6756,7 +6749,7 @@ bool CoreChecks::PreCallValidateCmdSetStencilReference(VkCommandBuffer commandBu
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
-    bool skip = ValidateCmdQueueFlags(device_data, cb_state, "vkCmdSetStencilReference()", VK_QUEUE_GRAPHICS_BIT,
+    bool skip = ValidateCmdQueueFlags(cb_state, "vkCmdSetStencilReference()", VK_QUEUE_GRAPHICS_BIT,
                                       "VUID-vkCmdSetStencilReference-commandBuffer-cmdpool");
     skip |= ValidateCmd(device_data, cb_state, CMD_SETSTENCILREFERENCE, "vkCmdSetStencilReference()");
     if (cb_state->static_status & CBSTATUS_STENCIL_REFERENCE_SET) {
@@ -6928,7 +6921,7 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorSets(VkCommandBuffer commandBuf
     GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
     bool skip = false;
-    skip |= ValidateCmdQueueFlags(device_data, cb_state, "vkCmdBindDescriptorSets()", VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
+    skip |= ValidateCmdQueueFlags(cb_state, "vkCmdBindDescriptorSets()", VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
                                   "VUID-vkCmdBindDescriptorSets-commandBuffer-cmdpool");
     skip |= ValidateCmd(device_data, cb_state, CMD_BINDDESCRIPTORSETS, "vkCmdBindDescriptorSets()");
     // Track total count of dynamic descriptor types to make sure we have an offset for each one
@@ -7045,7 +7038,7 @@ bool CoreChecks::PreCallValidateCmdPushDescriptorSetKHR(VkCommandBuffer commandB
     const char *func_name = "vkCmdPushDescriptorSetKHR()";
     bool skip = false;
     skip |= ValidateCmd(device_data, cb_state, CMD_PUSHDESCRIPTORSETKHR, func_name);
-    skip |= ValidateCmdQueueFlags(device_data, cb_state, func_name, (VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT),
+    skip |= ValidateCmdQueueFlags(cb_state, func_name, (VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT),
                                   "VUID-vkCmdPushDescriptorSetKHR-commandBuffer-cmdpool");
 
     static const std::map<VkPipelineBindPoint, std::string> bind_errors = {
@@ -7146,7 +7139,7 @@ bool CoreChecks::PreCallValidateCmdBindIndexBuffer(VkCommandBuffer commandBuffer
     bool skip = ValidateBufferUsageFlags(device_data, buffer_state, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, true,
                                          "VUID-vkCmdBindIndexBuffer-buffer-00433", "vkCmdBindIndexBuffer()",
                                          "VK_BUFFER_USAGE_INDEX_BUFFER_BIT");
-    skip |= ValidateCmdQueueFlags(device_data, cb_node, "vkCmdBindIndexBuffer()", VK_QUEUE_GRAPHICS_BIT,
+    skip |= ValidateCmdQueueFlags(cb_node, "vkCmdBindIndexBuffer()", VK_QUEUE_GRAPHICS_BIT,
                                   "VUID-vkCmdBindIndexBuffer-commandBuffer-cmdpool");
     skip |= ValidateCmd(device_data, cb_node, CMD_BINDINDEXBUFFER, "vkCmdBindIndexBuffer()");
     skip |= ValidateMemoryIsBoundToBuffer(buffer_state, "vkCmdBindIndexBuffer()", "VUID-vkCmdBindIndexBuffer-buffer-00434");
@@ -7181,7 +7174,7 @@ bool CoreChecks::PreCallValidateCmdBindVertexBuffers(VkCommandBuffer commandBuff
     auto cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
 
-    bool skip = ValidateCmdQueueFlags(device_data, cb_state, "vkCmdBindVertexBuffers()", VK_QUEUE_GRAPHICS_BIT,
+    bool skip = ValidateCmdQueueFlags(cb_state, "vkCmdBindVertexBuffers()", VK_QUEUE_GRAPHICS_BIT,
                                       "VUID-vkCmdBindVertexBuffers-commandBuffer-cmdpool");
     skip |= ValidateCmd(device_data, cb_state, CMD_BINDVERTEXBUFFERS, "vkCmdBindVertexBuffers()");
     for (uint32_t i = 0; i < bindingCount; ++i) {
@@ -7225,7 +7218,7 @@ bool CoreChecks::ValidateCmdDrawType(layer_data *dev_data, VkCommandBuffer cmd_b
     bool skip = false;
     GLOBAL_CB_NODE *cb_state = GetCBNode(cmd_buffer);
     if (cb_state) {
-        skip |= ValidateCmdQueueFlags(dev_data, cb_state, caller, queue_flags, queue_flag_code);
+        skip |= ValidateCmdQueueFlags(cb_state, caller, queue_flags, queue_flag_code);
         skip |= ValidateCmd(dev_data, cb_state, cmd_type, caller);
         skip |= ValidateCmdBufDrawState(dev_data, cb_state, cmd_type, indexed, bind_point, caller, pipebound_msg_code,
                                         dynamic_state_msg_code);
@@ -7440,9 +7433,9 @@ bool CoreChecks::PreCallValidateCmdUpdateBuffer(VkCommandBuffer commandBuffer, V
     skip |= ValidateBufferUsageFlags(device_data, dst_buffer_state, VK_BUFFER_USAGE_TRANSFER_DST_BIT, true,
                                      "VUID-vkCmdUpdateBuffer-dstBuffer-00034", "vkCmdUpdateBuffer()",
                                      "VK_BUFFER_USAGE_TRANSFER_DST_BIT");
-    skip |= ValidateCmdQueueFlags(device_data, cb_state, "vkCmdUpdateBuffer()",
-                                  VK_QUEUE_TRANSFER_BIT | VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
-                                  "VUID-vkCmdUpdateBuffer-commandBuffer-cmdpool");
+    skip |=
+        ValidateCmdQueueFlags(cb_state, "vkCmdUpdateBuffer()", VK_QUEUE_TRANSFER_BIT | VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
+                              "VUID-vkCmdUpdateBuffer-commandBuffer-cmdpool");
     skip |= ValidateCmd(device_data, cb_state, CMD_UPDATEBUFFER, "vkCmdUpdateBuffer()");
     skip |= InsideRenderPass(device_data, cb_state, "vkCmdUpdateBuffer()", "VUID-vkCmdUpdateBuffer-renderpass");
     return skip;
@@ -7475,7 +7468,7 @@ bool CoreChecks::PreCallValidateCmdSetEvent(VkCommandBuffer commandBuffer, VkEve
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
-    bool skip = ValidateCmdQueueFlags(device_data, cb_state, "vkCmdSetEvent()", VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
+    bool skip = ValidateCmdQueueFlags(cb_state, "vkCmdSetEvent()", VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
                                       "VUID-vkCmdSetEvent-commandBuffer-cmdpool");
     skip |= ValidateCmd(device_data, cb_state, CMD_SETEVENT, "vkCmdSetEvent()");
     skip |= InsideRenderPass(device_data, cb_state, "vkCmdSetEvent()", "VUID-vkCmdSetEvent-renderpass");
@@ -7504,7 +7497,7 @@ bool CoreChecks::PreCallValidateCmdResetEvent(VkCommandBuffer commandBuffer, VkE
     GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
 
-    bool skip = ValidateCmdQueueFlags(device_data, cb_state, "vkCmdResetEvent()", VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
+    bool skip = ValidateCmdQueueFlags(cb_state, "vkCmdResetEvent()", VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
                                       "VUID-vkCmdResetEvent-commandBuffer-cmdpool");
     skip |= ValidateCmd(device_data, cb_state, CMD_RESETEVENT, "vkCmdResetEvent()");
     skip |= InsideRenderPass(device_data, cb_state, "vkCmdResetEvent()", "VUID-vkCmdResetEvent-renderpass");
@@ -8335,8 +8328,8 @@ bool CoreChecks::ValidateBarriers(layer_data *device_data, const char *funcName,
         }
     }
 
-    skip |= ValidateBarriersQFOTransferUniqueness(device_data, funcName, cb_state, bufferBarrierCount, pBufferMemBarriers,
-                                                  imageMemBarrierCount, pImageMemBarriers);
+    skip |= ValidateBarriersQFOTransferUniqueness(funcName, cb_state, bufferBarrierCount, pBufferMemBarriers, imageMemBarrierCount,
+                                                  pImageMemBarriers);
 
     return skip;
 }
@@ -8409,9 +8402,9 @@ static const VkPipelineStageFlags stage_flag_bit_array[] = {VK_PIPELINE_STAGE_CO
                                                             VK_PIPELINE_STAGE_TRANSFER_BIT,
                                                             VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT};
 
-bool CoreChecks::CheckStageMaskQueueCompatibility(layer_data *dev_data, VkCommandBuffer command_buffer,
-                                                  VkPipelineStageFlags stage_mask, VkQueueFlags queue_flags, const char *function,
-                                                  const char *src_or_dest, const char *error_code) {
+bool CoreChecks::CheckStageMaskQueueCompatibility(VkCommandBuffer command_buffer, VkPipelineStageFlags stage_mask,
+                                                  VkQueueFlags queue_flags, const char *function, const char *src_or_dest,
+                                                  const char *error_code) {
     bool skip = false;
     // Lookup each bit in the stagemask and check for overlap between its table bits and queue_flags
     for (const auto &item : stage_flag_bit_array) {
@@ -8480,13 +8473,13 @@ bool CoreChecks::ValidateStageMasksAgainstQueueCapabilities(layer_data *dev_data
 
         // Only check the source stage mask if any barriers aren't "acquire ownership"
         if ((barrier_op_type != kAllAcquire) && (source_stage_mask & VK_PIPELINE_STAGE_ALL_COMMANDS_BIT) == 0) {
-            skip |= CheckStageMaskQueueCompatibility(dev_data, cb_state->commandBuffer, source_stage_mask, specified_queue_flags,
-                                                     function, "srcStageMask", error_code);
+            skip |= CheckStageMaskQueueCompatibility(cb_state->commandBuffer, source_stage_mask, specified_queue_flags, function,
+                                                     "srcStageMask", error_code);
         }
         // Only check the dest stage mask if any barriers aren't "release ownership"
         if ((barrier_op_type != kAllRelease) && (dest_stage_mask & VK_PIPELINE_STAGE_ALL_COMMANDS_BIT) == 0) {
-            skip |= CheckStageMaskQueueCompatibility(dev_data, cb_state->commandBuffer, dest_stage_mask, specified_queue_flags,
-                                                     function, "dstStageMask", error_code);
+            skip |= CheckStageMaskQueueCompatibility(cb_state->commandBuffer, dest_stage_mask, specified_queue_flags, function,
+                                                     "dstStageMask", error_code);
         }
     }
     return skip;
@@ -8511,7 +8504,7 @@ bool CoreChecks::PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, uin
     skip |= ValidateStageMaskGsTsEnables(dstStageMask, "vkCmdWaitEvents()", "VUID-vkCmdWaitEvents-dstStageMask-01160",
                                          "VUID-vkCmdWaitEvents-dstStageMask-01162", "VUID-vkCmdWaitEvents-dstStageMask-02113",
                                          "VUID-vkCmdWaitEvents-dstStageMask-02114");
-    skip |= ValidateCmdQueueFlags(device_data, cb_state, "vkCmdWaitEvents()", VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
+    skip |= ValidateCmdQueueFlags(cb_state, "vkCmdWaitEvents()", VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
                                   "VUID-vkCmdWaitEvents-commandBuffer-cmdpool");
     skip |= ValidateCmd(device_data, cb_state, CMD_WAITEVENTS, "vkCmdWaitEvents()");
     skip |= ValidateBarriersToImages(cb_state, imageMemoryBarrierCount, pImageMemoryBarriers, "vkCmdWaitEvents()");
@@ -8551,9 +8544,8 @@ void CoreChecks::PostCallRecordCmdWaitEvents(VkCommandBuffer commandBuffer, uint
                                              uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers,
                                              uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier *pBufferMemoryBarriers,
                                              uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier *pImageMemoryBarriers) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
-    RecordBarriersQFOTransfers(device_data, cb_state, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount,
+    RecordBarriersQFOTransfers(cb_state, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount,
                                pImageMemoryBarriers);
 }
 
@@ -8573,7 +8565,7 @@ bool CoreChecks::PreCallValidateCmdPipelineBarrier(VkCommandBuffer commandBuffer
                                                         imageMemoryBarrierCount, pImageMemoryBarriers);
     skip |= ValidateStageMasksAgainstQueueCapabilities(device_data, cb_state, srcStageMask, dstStageMask, barrier_op_type,
                                                        "vkCmdPipelineBarrier", "VUID-vkCmdPipelineBarrier-srcStageMask-01183");
-    skip |= ValidateCmdQueueFlags(device_data, cb_state, "vkCmdPipelineBarrier()",
+    skip |= ValidateCmdQueueFlags(cb_state, "vkCmdPipelineBarrier()",
                                   VK_QUEUE_TRANSFER_BIT | VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
                                   "VUID-vkCmdPipelineBarrier-commandBuffer-cmdpool");
     skip |= ValidateCmd(device_data, cb_state, CMD_PIPELINEBARRIER, "vkCmdPipelineBarrier()");
@@ -8605,10 +8597,9 @@ void CoreChecks::PreCallRecordCmdPipelineBarrier(VkCommandBuffer commandBuffer, 
                                                  const VkBufferMemoryBarrier *pBufferMemoryBarriers,
                                                  uint32_t imageMemoryBarrierCount,
                                                  const VkImageMemoryBarrier *pImageMemoryBarriers) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
 
-    RecordBarriersQFOTransfers(device_data, cb_state, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount,
+    RecordBarriersQFOTransfers(cb_state, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount,
                                pImageMemoryBarriers);
     TransitionImageLayouts(cb_state, imageMemoryBarrierCount, pImageMemoryBarriers);
 }
@@ -8630,7 +8621,7 @@ bool CoreChecks::PreCallValidateCmdBeginQuery(VkCommandBuffer commandBuffer, VkQ
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
-    bool skip = ValidateCmdQueueFlags(device_data, cb_state, "vkCmdBeginQuery()", VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
+    bool skip = ValidateCmdQueueFlags(cb_state, "vkCmdBeginQuery()", VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
                                       "VUID-vkCmdBeginQuery-commandBuffer-cmdpool");
     auto queryType = GetQueryPoolNode(queryPool)->createInfo.queryType;
 
@@ -8675,7 +8666,7 @@ bool CoreChecks::PreCallValidateCmdEndQuery(VkCommandBuffer commandBuffer, VkQue
                         "Ending a query before it was started: queryPool %s, index %d.",
                         report_data->FormatHandle(queryPool).c_str(), slot);
     }
-    skip |= ValidateCmdQueueFlags(device_data, cb_state, "VkCmdEndQuery()", VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
+    skip |= ValidateCmdQueueFlags(cb_state, "VkCmdEndQuery()", VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
                                   "VUID-vkCmdEndQuery-commandBuffer-cmdpool");
     skip |= ValidateCmd(device_data, cb_state, CMD_ENDQUERY, "VkCmdEndQuery()");
     return skip;
@@ -8697,7 +8688,7 @@ bool CoreChecks::PreCallValidateCmdResetQueryPool(VkCommandBuffer commandBuffer,
 
     bool skip = InsideRenderPass(device_data, cb_state, "vkCmdResetQueryPool()", "VUID-vkCmdResetQueryPool-renderpass");
     skip |= ValidateCmd(device_data, cb_state, CMD_RESETQUERYPOOL, "VkCmdResetQueryPool()");
-    skip |= ValidateCmdQueueFlags(device_data, cb_state, "VkCmdResetQueryPool()", VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
+    skip |= ValidateCmdQueueFlags(cb_state, "VkCmdResetQueryPool()", VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
                                   "VUID-vkCmdResetQueryPool-commandBuffer-cmdpool");
     return skip;
 }
@@ -8759,9 +8750,8 @@ bool CoreChecks::PreCallValidateCmdCopyQueryPoolResults(VkCommandBuffer commandB
     skip |= ValidateBufferUsageFlags(device_data, dst_buff_state, VK_BUFFER_USAGE_TRANSFER_DST_BIT, true,
                                      "VUID-vkCmdCopyQueryPoolResults-dstBuffer-00825", "vkCmdCopyQueryPoolResults()",
                                      "VK_BUFFER_USAGE_TRANSFER_DST_BIT");
-    skip |=
-        ValidateCmdQueueFlags(device_data, cb_state, "vkCmdCopyQueryPoolResults()", VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
-                              "VUID-vkCmdCopyQueryPoolResults-commandBuffer-cmdpool");
+    skip |= ValidateCmdQueueFlags(cb_state, "vkCmdCopyQueryPoolResults()", VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
+                                  "VUID-vkCmdCopyQueryPoolResults-commandBuffer-cmdpool");
     skip |= ValidateCmd(device_data, cb_state, CMD_COPYQUERYPOOLRESULTS, "vkCmdCopyQueryPoolResults()");
     skip |= InsideRenderPass(device_data, cb_state, "vkCmdCopyQueryPoolResults()", "VUID-vkCmdCopyQueryPoolResults-renderpass");
     return skip;
@@ -8786,7 +8776,7 @@ bool CoreChecks::PreCallValidateCmdPushConstants(VkCommandBuffer commandBuffer, 
     bool skip = false;
     GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
-    skip |= ValidateCmdQueueFlags(device_data, cb_state, "vkCmdPushConstants()", VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
+    skip |= ValidateCmdQueueFlags(cb_state, "vkCmdPushConstants()", VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
                                   "VUID-vkCmdPushConstants-commandBuffer-cmdpool");
     skip |= ValidateCmd(device_data, cb_state, CMD_PUSHCONSTANTS, "vkCmdPushConstants()");
     skip |= ValidatePushConstantRange(offset, size, "vkCmdPushConstants()");
@@ -8838,7 +8828,7 @@ bool CoreChecks::PreCallValidateCmdWriteTimestamp(VkCommandBuffer commandBuffer,
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
-    bool skip = ValidateCmdQueueFlags(device_data, cb_state, "vkCmdWriteTimestamp()",
+    bool skip = ValidateCmdQueueFlags(cb_state, "vkCmdWriteTimestamp()",
                                       VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT,
                                       "VUID-vkCmdWriteTimestamp-commandBuffer-cmdpool");
     skip |= ValidateCmd(device_data, cb_state, CMD_WRITETIMESTAMP, "vkCmdWriteTimestamp()");
@@ -10213,7 +10203,7 @@ bool CoreChecks::ValidateCmdBeginRenderPass(layer_data *device_data, VkCommandBu
         skip |= ValidatePrimaryCommandBuffer(device_data, cb_state, function_name, vuid);
 
         vuid = use_rp2 ? "VUID-vkCmdBeginRenderPass2KHR-commandBuffer-cmdpool" : "VUID-vkCmdBeginRenderPass-commandBuffer-cmdpool";
-        skip |= ValidateCmdQueueFlags(device_data, cb_state, function_name, VK_QUEUE_GRAPHICS_BIT, vuid);
+        skip |= ValidateCmdQueueFlags(cb_state, function_name, VK_QUEUE_GRAPHICS_BIT, vuid);
 
         const CMD_TYPE cmd_type = use_rp2 ? CMD_BEGINRENDERPASS2KHR : CMD_BEGINRENDERPASS;
         skip |= ValidateCmd(device_data, cb_state, cmd_type, function_name);
@@ -10284,7 +10274,7 @@ bool CoreChecks::ValidateCmdNextSubpass(layer_data *device_data, RenderPassCreat
     skip |= ValidatePrimaryCommandBuffer(device_data, cb_state, function_name, vuid);
 
     vuid = use_rp2 ? "VUID-vkCmdNextSubpass2KHR-commandBuffer-cmdpool" : "VUID-vkCmdNextSubpass-commandBuffer-cmdpool";
-    skip |= ValidateCmdQueueFlags(device_data, cb_state, function_name, VK_QUEUE_GRAPHICS_BIT, vuid);
+    skip |= ValidateCmdQueueFlags(cb_state, function_name, VK_QUEUE_GRAPHICS_BIT, vuid);
     const CMD_TYPE cmd_type = use_rp2 ? CMD_NEXTSUBPASS2KHR : CMD_NEXTSUBPASS;
     skip |= ValidateCmd(device_data, cb_state, cmd_type, function_name);
 
@@ -10353,7 +10343,7 @@ bool CoreChecks::ValidateCmdEndRenderPass(layer_data *device_data, RenderPassCre
     skip |= ValidatePrimaryCommandBuffer(device_data, cb_state, function_name, vuid);
 
     vuid = use_rp2 ? "VUID-vkCmdEndRenderPass2KHR-commandBuffer-cmdpool" : "VUID-vkCmdEndRenderPass-commandBuffer-cmdpool";
-    skip |= ValidateCmdQueueFlags(device_data, cb_state, function_name, VK_QUEUE_GRAPHICS_BIT, vuid);
+    skip |= ValidateCmdQueueFlags(cb_state, function_name, VK_QUEUE_GRAPHICS_BIT, vuid);
 
     const CMD_TYPE cmd_type = use_rp2 ? CMD_ENDRENDERPASS2KHR : CMD_ENDRENDERPASS;
     skip |= ValidateCmd(device_data, cb_state, cmd_type, function_name);
@@ -10586,7 +10576,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
         linked_command_buffers.insert(sub_cb_state);
     }
     skip |= ValidatePrimaryCommandBuffer(device_data, cb_state, "vkCmdExecuteCommands()", "VUID-vkCmdExecuteCommands-bufferlevel");
-    skip |= ValidateCmdQueueFlags(device_data, cb_state, "vkCmdExecuteCommands()",
+    skip |= ValidateCmdQueueFlags(cb_state, "vkCmdExecuteCommands()",
                                   VK_QUEUE_TRANSFER_BIT | VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
                                   "VUID-vkCmdExecuteCommands-commandBuffer-cmdpool");
     skip |= ValidateCmd(device_data, cb_state, CMD_EXECUTECOMMANDS, "vkCmdExecuteCommands()");
@@ -11721,10 +11711,10 @@ bool CoreChecks::ValidateCreateSwapchain(layer_data *device_data, const char *fu
     }
 
     if ((pCreateInfo->imageSharingMode == VK_SHARING_MODE_CONCURRENT) && pCreateInfo->pQueueFamilyIndices) {
-        bool skip = ValidateQueueFamilies(device_data, pCreateInfo->queueFamilyIndexCount, pCreateInfo->pQueueFamilyIndices,
-                                          "vkCreateBuffer", "pCreateInfo->pQueueFamilyIndices",
-                                          "VUID-VkSwapchainCreateInfoKHR-imageSharingMode-01428",
-                                          "VUID-VkSwapchainCreateInfoKHR-imageSharingMode-01428", false);
+        bool skip =
+            ValidateQueueFamilies(pCreateInfo->queueFamilyIndexCount, pCreateInfo->pQueueFamilyIndices, "vkCreateBuffer",
+                                  "pCreateInfo->pQueueFamilyIndices", "VUID-VkSwapchainCreateInfoKHR-imageSharingMode-01428",
+                                  "VUID-VkSwapchainCreateInfoKHR-imageSharingMode-01428", false);
         if (skip) return true;
     }
 
@@ -11788,7 +11778,7 @@ void CoreChecks::PreCallRecordDestroySwapchainKHR(VkDevice device, VkSwapchainKH
                     device_data->imageSubresourceMap.erase(image_sub);
                 }
                 ClearMemoryObjectBindings(HandleToUint64(swapchain_image), kVulkanObjectTypeSwapchainKHR);
-                EraseQFOImageRelaseBarriers(device_data, swapchain_image);
+                EraseQFOImageRelaseBarriers(swapchain_image);
                 device_data->imageMap.erase(swapchain_image);
             }
         }
