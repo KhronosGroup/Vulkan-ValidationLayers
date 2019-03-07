@@ -1346,7 +1346,7 @@ bool cvdescriptorset::ValidateImageUpdate(VkImageView image_view, VkImageLayout 
         // Validate that memory is bound to image
         // TODO: This should have its own valid usage id apart from 2524 which is from CreateImageView case. The only
         //  the error here occurs is if memory bound to a created imageView has been freed.
-        if (dev_data->ValidateMemoryIsBoundToImage(dev_data, image_node, func_name, "VUID-VkImageViewCreateInfo-image-01020")) {
+        if (dev_data->ValidateMemoryIsBoundToImage(image_node, func_name, "VUID-VkImageViewCreateInfo-image-01020")) {
             *error_code = "VUID-VkImageViewCreateInfo-image-01020";
             *error_msg = "No memory bound to image.";
             return false;
@@ -2095,8 +2095,7 @@ bool cvdescriptorset::DescriptorSet::ValidateBufferUpdate(VkDescriptorBufferInfo
     auto buffer_node = device_data_->GetBufferState(buffer_info->buffer);
     // Any invalid buffer should already be caught by object_tracker
     assert(buffer_node);
-    if (device_data_->ValidateMemoryIsBoundToBuffer(device_data_, buffer_node, func_name,
-                                                    "VUID-VkWriteDescriptorSet-descriptorType-00329")) {
+    if (device_data_->ValidateMemoryIsBoundToBuffer(buffer_node, func_name, "VUID-VkWriteDescriptorSet-descriptorType-00329")) {
         *error_code = "VUID-VkWriteDescriptorSet-descriptorType-00329";
         *error_msg = "No memory bound to buffer.";
         return false;

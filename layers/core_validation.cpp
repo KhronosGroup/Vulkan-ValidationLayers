@@ -421,42 +421,39 @@ void CoreChecks::ClearMemoryObjectBindings(uint64_t handle, VulkanObjectType typ
 }
 
 // For given mem object, verify that it is not null or UNBOUND, if it is, report error. Return skip value.
-bool VerifyBoundMemoryIsValid(const layer_data *dev_data, VkDeviceMemory mem, uint64_t handle, const char *api_name,
-                              const char *type_name, const char *error_code) {
+bool CoreChecks::VerifyBoundMemoryIsValid(VkDeviceMemory mem, uint64_t handle, const char *api_name, const char *type_name,
+                                          const char *error_code) {
     bool result = false;
     if (VK_NULL_HANDLE == mem) {
-        result =
-            log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, handle, error_code,
-                    "%s: Vk%s object %s used with no memory bound. Memory should be bound by calling vkBind%sMemory().", api_name,
-                    type_name, dev_data->report_data->FormatHandle(handle).c_str(), type_name);
+        result = log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, handle, error_code,
+                         "%s: Vk%s object %s used with no memory bound. Memory should be bound by calling vkBind%sMemory().",
+                         api_name, type_name, report_data->FormatHandle(handle).c_str(), type_name);
     } else if (MEMORY_UNBOUND == mem) {
         result =
-            log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, handle, error_code,
+            log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, handle, error_code,
                     "%s: Vk%s object %s used with no memory bound and previously bound memory was freed. Memory must not be freed "
                     "prior to this operation.",
-                    api_name, type_name, dev_data->report_data->FormatHandle(handle).c_str());
+                    api_name, type_name, report_data->FormatHandle(handle).c_str());
     }
     return result;
 }
 
 // Check to see if memory was ever bound to this image
-bool CoreChecks::ValidateMemoryIsBoundToImage(const layer_data *dev_data, const IMAGE_STATE *image_state, const char *api_name,
-                                              const char *error_code) {
+bool CoreChecks::ValidateMemoryIsBoundToImage(const IMAGE_STATE *image_state, const char *api_name, const char *error_code) {
     bool result = false;
     if (0 == (static_cast<uint32_t>(image_state->createInfo.flags) & VK_IMAGE_CREATE_SPARSE_BINDING_BIT)) {
-        result = VerifyBoundMemoryIsValid(dev_data, image_state->binding.mem, HandleToUint64(image_state->image), api_name, "Image",
-                                          error_code);
+        result =
+            VerifyBoundMemoryIsValid(image_state->binding.mem, HandleToUint64(image_state->image), api_name, "Image", error_code);
     }
     return result;
 }
 
 // Check to see if memory was bound to this buffer
-bool CoreChecks::ValidateMemoryIsBoundToBuffer(const layer_data *dev_data, const BUFFER_STATE *buffer_state, const char *api_name,
-                                               const char *error_code) {
+bool CoreChecks::ValidateMemoryIsBoundToBuffer(const BUFFER_STATE *buffer_state, const char *api_name, const char *error_code) {
     bool result = false;
     if (0 == (static_cast<uint32_t>(buffer_state->createInfo.flags) & VK_BUFFER_CREATE_SPARSE_BINDING_BIT)) {
-        result = VerifyBoundMemoryIsValid(dev_data, buffer_state->binding.mem, HandleToUint64(buffer_state->buffer), api_name,
-                                          "Buffer", error_code);
+        result = VerifyBoundMemoryIsValid(buffer_state->binding.mem, HandleToUint64(buffer_state->buffer), api_name, "Buffer",
+                                          error_code);
     }
     return result;
 }
@@ -497,8 +494,7 @@ void CoreChecks::SetMemBinding(layer_data *dev_data, VkDeviceMemory mem, BINDABL
 //  Otherwise, add reference from objectInfo to memoryInfo
 //  Add reference off of objInfo
 // TODO: We may need to refactor or pass in multiple valid usage statements to handle multiple valid usage conditions.
-bool CoreChecks::ValidateSetMemBinding(layer_data *dev_data, VkDeviceMemory mem, uint64_t handle, VulkanObjectType type,
-                                       const char *apiName) {
+bool CoreChecks::ValidateSetMemBinding(VkDeviceMemory mem, uint64_t handle, VulkanObjectType type, const char *apiName) {
     bool skip = false;
     // It's an error to bind an object to NULL memory
     if (mem != VK_NULL_HANDLE) {
@@ -513,12 +509,12 @@ bool CoreChecks::ValidateSetMemBinding(layer_data *dev_data, VkDeviceMemory mem,
             } else {
                 assert(type == kVulkanObjectTypeImage);
             }
-            skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_MEMORY_EXT,
-                            HandleToUint64(mem), error_code,
-                            "In %s, attempting to bind memory (%s) to object (%s) which was created with sparse memory flags "
-                            "(VK_%s_CREATE_SPARSE_*_BIT).",
-                            apiName, dev_data->report_data->FormatHandle(mem).c_str(),
-                            dev_data->report_data->FormatHandle(handle).c_str(), handle_type);
+            skip |=
+                log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_MEMORY_EXT,
+                        HandleToUint64(mem), error_code,
+                        "In %s, attempting to bind memory (%s) to object (%s) which was created with sparse memory flags "
+                        "(VK_%s_CREATE_SPARSE_*_BIT).",
+                        apiName, report_data->FormatHandle(mem).c_str(), report_data->FormatHandle(handle).c_str(), handle_type);
         }
         DEVICE_MEM_INFO *mem_info = GetMemObjInfo(mem);
         if (mem_info) {
@@ -530,20 +526,19 @@ bool CoreChecks::ValidateSetMemBinding(layer_data *dev_data, VkDeviceMemory mem,
                 } else {
                     assert(type == kVulkanObjectTypeImage);
                 }
-                skip |= log_msg(
-                    dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_MEMORY_EXT,
-                    HandleToUint64(mem), error_code,
-                    "In %s, attempting to bind memory (%s) to object (%s) which has already been bound to mem object %s.", apiName,
-                    dev_data->report_data->FormatHandle(mem).c_str(), dev_data->report_data->FormatHandle(handle).c_str(),
-                    dev_data->report_data->FormatHandle(prev_binding->mem).c_str());
+                skip |=
+                    log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_MEMORY_EXT,
+                            HandleToUint64(mem), error_code,
+                            "In %s, attempting to bind memory (%s) to object (%s) which has already been bound to mem object %s.",
+                            apiName, report_data->FormatHandle(mem).c_str(), report_data->FormatHandle(handle).c_str(),
+                            report_data->FormatHandle(prev_binding->mem).c_str());
             } else if (mem_binding->binding.mem == MEMORY_UNBOUND) {
-                skip |= log_msg(dev_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_MEMORY_EXT,
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_MEMORY_EXT,
                                 HandleToUint64(mem), kVUID_Core_MemTrack_RebindObject,
                                 "In %s, attempting to bind memory (%s) to object (%s) which was previous bound to memory that has "
                                 "since been freed. Memory bindings are immutable in "
                                 "Vulkan so this attempt to bind to new memory is not allowed.",
-                                apiName, dev_data->report_data->FormatHandle(mem).c_str(),
-                                dev_data->report_data->FormatHandle(handle).c_str());
+                                apiName, report_data->FormatHandle(mem).c_str(), report_data->FormatHandle(handle).c_str());
             }
         }
     }
@@ -4351,7 +4346,7 @@ bool CoreChecks::ValidateBindBufferMemory(layer_data *device_data, VkBuffer buff
     if (buffer_state) {
         // Track objects tied to memory
         uint64_t buffer_handle = HandleToUint64(buffer);
-        skip = ValidateSetMemBinding(device_data, mem, buffer_handle, kVulkanObjectTypeBuffer, api_name);
+        skip = ValidateSetMemBinding(mem, buffer_handle, kVulkanObjectTypeBuffer, api_name);
         if (!buffer_state->memory_requirements_checked) {
             // There's not an explicit requirement in the spec to call vkGetBufferMemoryRequirements() prior to calling
             // BindBufferMemory, but it's implied in that memory being bound must conform with VkMemoryRequirements from
@@ -7186,8 +7181,7 @@ bool CoreChecks::PreCallValidateCmdBindIndexBuffer(VkCommandBuffer commandBuffer
     skip |= ValidateCmdQueueFlags(device_data, cb_node, "vkCmdBindIndexBuffer()", VK_QUEUE_GRAPHICS_BIT,
                                   "VUID-vkCmdBindIndexBuffer-commandBuffer-cmdpool");
     skip |= ValidateCmd(device_data, cb_node, CMD_BINDINDEXBUFFER, "vkCmdBindIndexBuffer()");
-    skip |= ValidateMemoryIsBoundToBuffer(device_data, buffer_state, "vkCmdBindIndexBuffer()",
-                                          "VUID-vkCmdBindIndexBuffer-buffer-00434");
+    skip |= ValidateMemoryIsBoundToBuffer(buffer_state, "vkCmdBindIndexBuffer()", "VUID-vkCmdBindIndexBuffer-buffer-00434");
     auto offset_align = GetIndexAlignment(indexType);
     if (offset % offset_align) {
         skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
@@ -7228,8 +7222,8 @@ bool CoreChecks::PreCallValidateCmdBindVertexBuffers(VkCommandBuffer commandBuff
         skip |= ValidateBufferUsageFlags(device_data, buffer_state, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, true,
                                          "VUID-vkCmdBindVertexBuffers-pBuffers-00627", "vkCmdBindVertexBuffers()",
                                          "VK_BUFFER_USAGE_VERTEX_BUFFER_BIT");
-        skip |= ValidateMemoryIsBoundToBuffer(device_data, buffer_state, "vkCmdBindVertexBuffers()",
-                                              "VUID-vkCmdBindVertexBuffers-pBuffers-00628");
+        skip |=
+            ValidateMemoryIsBoundToBuffer(buffer_state, "vkCmdBindVertexBuffers()", "VUID-vkCmdBindVertexBuffers-pBuffers-00628");
         if (pOffsets[i] >= buffer_state->createInfo.size) {
             skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT,
                             HandleToUint64(buffer_state->buffer), "VUID-vkCmdBindVertexBuffers-pOffsets-00626",
@@ -7357,7 +7351,7 @@ bool CoreChecks::PreCallValidateCmdDrawIndirect(VkCommandBuffer commandBuffer, V
                                     "VUID-vkCmdDrawIndirect-renderpass", "VUID-vkCmdDrawIndirect-None-00485",
                                     "VUID-vkCmdDrawIndirect-None-00486");
     BUFFER_STATE *buffer_state = GetBufferState(buffer);
-    skip |= ValidateMemoryIsBoundToBuffer(device_data, buffer_state, "vkCmdDrawIndirect()", "VUID-vkCmdDrawIndirect-buffer-00474");
+    skip |= ValidateMemoryIsBoundToBuffer(buffer_state, "vkCmdDrawIndirect()", "VUID-vkCmdDrawIndirect-buffer-00474");
     // TODO: If the drawIndirectFirstInstance feature is not enabled, all the firstInstance members of the
     // VkDrawIndirectCommand structures accessed by this command must be 0, which will require access to the contents of 'buffer'.
     return skip;
@@ -7386,8 +7380,7 @@ bool CoreChecks::PreCallValidateCmdDrawIndexedIndirect(VkCommandBuffer commandBu
         VK_QUEUE_GRAPHICS_BIT, "VUID-vkCmdDrawIndexedIndirect-commandBuffer-cmdpool", "VUID-vkCmdDrawIndexedIndirect-renderpass",
         "VUID-vkCmdDrawIndexedIndirect-None-00537", "VUID-vkCmdDrawIndexedIndirect-None-00538");
     BUFFER_STATE *buffer_state = GetBufferState(buffer);
-    skip |= ValidateMemoryIsBoundToBuffer(device_data, buffer_state, "vkCmdDrawIndexedIndirect()",
-                                          "VUID-vkCmdDrawIndexedIndirect-buffer-00526");
+    skip |= ValidateMemoryIsBoundToBuffer(buffer_state, "vkCmdDrawIndexedIndirect()", "VUID-vkCmdDrawIndexedIndirect-buffer-00526");
     // TODO: If the drawIndirectFirstInstance feature is not enabled, all the firstInstance members of the
     // VkDrawIndexedIndirectCommand structures accessed by this command must be 0, which will require access to the contents of
     // 'buffer'.
@@ -7434,8 +7427,7 @@ bool CoreChecks::PreCallValidateCmdDispatchIndirect(VkCommandBuffer commandBuffe
                             "vkCmdDispatchIndirect()", VK_QUEUE_COMPUTE_BIT, "VUID-vkCmdDispatchIndirect-commandBuffer-cmdpool",
                             "VUID-vkCmdDispatchIndirect-renderpass", "VUID-vkCmdDispatchIndirect-None-00404", kVUIDUndefined);
     BUFFER_STATE *buffer_state = GetBufferState(buffer);
-    skip |= ValidateMemoryIsBoundToBuffer(device_data, buffer_state, "vkCmdDispatchIndirect()",
-                                          "VUID-vkCmdDispatchIndirect-buffer-00401");
+    skip |= ValidateMemoryIsBoundToBuffer(buffer_state, "vkCmdDispatchIndirect()", "VUID-vkCmdDispatchIndirect-buffer-00401");
     return skip;
 }
 
@@ -7475,8 +7467,7 @@ bool CoreChecks::PreCallValidateCmdUpdateBuffer(VkCommandBuffer commandBuffer, V
     assert(dst_buffer_state);
 
     bool skip = false;
-    skip |= ValidateMemoryIsBoundToBuffer(device_data, dst_buffer_state, "vkCmdUpdateBuffer()",
-                                          "VUID-vkCmdUpdateBuffer-dstBuffer-00035");
+    skip |= ValidateMemoryIsBoundToBuffer(dst_buffer_state, "vkCmdUpdateBuffer()", "VUID-vkCmdUpdateBuffer-dstBuffer-00035");
     // Validate that DST buffer has correct usage flags set
     skip |= ValidateBufferUsageFlags(device_data, dst_buffer_state, VK_BUFFER_USAGE_TRANSFER_DST_BIT, true,
                                      "VUID-vkCmdUpdateBuffer-dstBuffer-00034", "vkCmdUpdateBuffer()",
@@ -8320,7 +8311,7 @@ bool CoreChecks::ValidateBarriers(layer_data *device_data, const char *funcName,
             //     "Non-sparse resources must be bound completely and contiguously to a single VkDeviceMemory object before
             //     recording commands in a command buffer."
             // TODO: Update this when VUID is defined
-            skip |= ValidateMemoryIsBoundToImage(device_data, image_data, funcName, kVUIDUndefined);
+            skip |= ValidateMemoryIsBoundToImage(image_data, funcName, kVUIDUndefined);
 
             auto aspect_mask = mem_barrier->subresourceRange.aspectMask;
             skip |= ValidateImageAspectMask(device_data, image_data->image, image_data->createInfo.format, aspect_mask, funcName);
@@ -8356,7 +8347,7 @@ bool CoreChecks::ValidateBarriers(layer_data *device_data, const char *funcName,
             //     "Non-sparse resources must be bound completely and contiguously to a single VkDeviceMemory object before
             //     recording commands in a command buffer"
             // TODO: Update this when VUID is defined
-            skip |= ValidateMemoryIsBoundToBuffer(device_data, buffer_state, funcName, kVUIDUndefined);
+            skip |= ValidateMemoryIsBoundToBuffer(buffer_state, funcName, kVUIDUndefined);
 
             auto buffer_size = buffer_state->createInfo.size;
             if (mem_barrier->offset >= buffer_size) {
@@ -8797,7 +8788,7 @@ bool CoreChecks::PreCallValidateCmdCopyQueryPoolResults(VkCommandBuffer commandB
     auto dst_buff_state = GetBufferState(dstBuffer);
     assert(cb_state);
     assert(dst_buff_state);
-    bool skip = ValidateMemoryIsBoundToBuffer(device_data, dst_buff_state, "vkCmdCopyQueryPoolResults()",
+    bool skip = ValidateMemoryIsBoundToBuffer(dst_buff_state, "vkCmdCopyQueryPoolResults()",
                                               "VUID-vkCmdCopyQueryPoolResults-dstBuffer-00826");
     // Validate that DST buffer has correct usage flags set
     skip |= ValidateBufferUsageFlags(device_data, dst_buff_state, VK_BUFFER_USAGE_TRANSFER_DST_BIT, true,
@@ -10918,7 +10909,7 @@ bool CoreChecks::ValidateBindImageMemory(layer_data *device_data, VkImage image,
     if (image_state) {
         // Track objects tied to memory
         uint64_t image_handle = HandleToUint64(image);
-        skip = ValidateSetMemBinding(device_data, mem, image_handle, kVulkanObjectTypeImage, api_name);
+        skip = ValidateSetMemBinding(mem, image_handle, kVulkanObjectTypeImage, api_name);
         if (!image_state->memory_requirements_checked) {
             // There's not an explicit requirement in the spec to call vkGetImageMemoryRequirements() prior to calling
             // BindImageMemory but it's implied in that memory being bound must conform with VkMemoryRequirements from
@@ -13208,9 +13199,9 @@ bool CoreChecks::PreCallValidateCmdDrawIndirectCountKHR(VkCommandBuffer commandB
                                 "VUID-vkCmdDrawIndirectCountKHR-None-03119", "VUID-vkCmdDrawIndirectCountKHR-None-03120");
     BUFFER_STATE *buffer_state = GetBufferState(buffer);
     BUFFER_STATE *count_buffer_state = GetBufferState(countBuffer);
-    skip |= ValidateMemoryIsBoundToBuffer(device_data, buffer_state, "vkCmdDrawIndirectCountKHR()",
-                                          "VUID-vkCmdDrawIndirectCountKHR-buffer-03104");
-    skip |= ValidateMemoryIsBoundToBuffer(device_data, count_buffer_state, "vkCmdDrawIndirectCountKHR()",
+    skip |=
+        ValidateMemoryIsBoundToBuffer(buffer_state, "vkCmdDrawIndirectCountKHR()", "VUID-vkCmdDrawIndirectCountKHR-buffer-03104");
+    skip |= ValidateMemoryIsBoundToBuffer(count_buffer_state, "vkCmdDrawIndirectCountKHR()",
                                           "VUID-vkCmdDrawIndirectCountKHR-countBuffer-03106");
 
     return skip;
@@ -13264,9 +13255,9 @@ bool CoreChecks::PreCallValidateCmdDrawIndexedIndirectCountKHR(VkCommandBuffer c
         "VUID-vkCmdDrawIndexedIndirectCountKHR-None-03152");
     BUFFER_STATE *buffer_state = GetBufferState(buffer);
     BUFFER_STATE *count_buffer_state = GetBufferState(countBuffer);
-    skip |= ValidateMemoryIsBoundToBuffer(device_data, buffer_state, "vkCmdDrawIndexedIndirectCountKHR()",
+    skip |= ValidateMemoryIsBoundToBuffer(buffer_state, "vkCmdDrawIndexedIndirectCountKHR()",
                                           "VUID-vkCmdDrawIndexedIndirectCountKHR-buffer-03136");
-    skip |= ValidateMemoryIsBoundToBuffer(device_data, count_buffer_state, "vkCmdDrawIndexedIndirectCountKHR()",
+    skip |= ValidateMemoryIsBoundToBuffer(count_buffer_state, "vkCmdDrawIndexedIndirectCountKHR()",
                                           "VUID-vkCmdDrawIndexedIndirectCountKHR-countBuffer-03138");
     return skip;
 }
@@ -13307,7 +13298,7 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectNV(VkCommandBuffer comma
                                     "VUID-vkCmdDrawMeshTasksIndirectNV-renderpass", "VUID-vkCmdDrawMeshTasksIndirectNV-None-02154",
                                     "VUID-vkCmdDrawMeshTasksIndirectNV-None-02155");
     BUFFER_STATE *buffer_state = GetBufferState(buffer);
-    skip |= ValidateMemoryIsBoundToBuffer(device_data, buffer_state, "vkCmdDrawMeshTasksIndirectNV()",
+    skip |= ValidateMemoryIsBoundToBuffer(buffer_state, "vkCmdDrawMeshTasksIndirectNV()",
                                           "VUID-vkCmdDrawMeshTasksIndirectNV-buffer-02143");
 
     return skip;
@@ -13335,9 +13326,9 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectCountNV(VkCommandBuffer 
         "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-02189", "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-02190");
     BUFFER_STATE *buffer_state = GetBufferState(buffer);
     BUFFER_STATE *count_buffer_state = GetBufferState(countBuffer);
-    skip |= ValidateMemoryIsBoundToBuffer(device_data, buffer_state, "vkCmdDrawMeshTasksIndirectCountNV()",
+    skip |= ValidateMemoryIsBoundToBuffer(buffer_state, "vkCmdDrawMeshTasksIndirectCountNV()",
                                           "VUID-vkCmdDrawMeshTasksIndirectCountNV-buffer-02176");
-    skip |= ValidateMemoryIsBoundToBuffer(device_data, count_buffer_state, "vkCmdDrawMeshTasksIndirectCountNV()",
+    skip |= ValidateMemoryIsBoundToBuffer(count_buffer_state, "vkCmdDrawMeshTasksIndirectCountNV()",
                                           "VUID-vkCmdDrawMeshTasksIndirectCountNV-countBuffer-02178");
 
     return skip;
@@ -13453,7 +13444,7 @@ bool CoreChecks::PreCallValidateGetBufferDeviceAddressEXT(VkDevice device, const
     auto buffer_state = GetBufferState(pInfo->buffer);
     if (buffer_state) {
         if (!(buffer_state->createInfo.flags & VK_BUFFER_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT_EXT)) {
-            skip |= ValidateMemoryIsBoundToBuffer(device_data, buffer_state, "vkGetBufferDeviceAddressEXT()",
+            skip |= ValidateMemoryIsBoundToBuffer(buffer_state, "vkGetBufferDeviceAddressEXT()",
                                                   "VUID-VkBufferDeviceAddressInfoEXT-buffer-02600");
         }
 
