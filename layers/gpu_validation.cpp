@@ -324,7 +324,7 @@ void CoreChecks::GpuPreCallRecordCreateDevice(VkPhysicalDevice gpu, std::unique_
 }
 
 // Perform initializations that can be done at Create Device time.
-void CoreChecks::GpuPostCallRecordCreateDevice(layer_data *dev_data) {
+void CoreChecks::GpuPostCallRecordCreateDevice() {
     auto gpu_state = GetGpuValidationState();
     const auto *dispatch_table = GetDispatchTable();
 
@@ -404,7 +404,7 @@ void CoreChecks::GpuPostCallRecordCreateDevice(layer_data *dev_data) {
 }
 
 // Clean up device-related resources
-void CoreChecks::GpuPreCallRecordDestroyDevice(layer_data *dev_data) {
+void CoreChecks::GpuPreCallRecordDestroyDevice() {
     auto gpu_state = GetGpuValidationState();
 
     if (gpu_state->barrier_command_buffer) {
