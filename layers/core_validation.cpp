@@ -5023,21 +5023,13 @@ const CHECK_DISABLED *CoreChecks::GetDisables() { return &instance_state->disabl
 
 const CHECK_ENABLED *CoreChecks::GetEnables() { return &instance_state->enabled; }
 
-std::unordered_map<VkImage, std::unique_ptr<IMAGE_STATE>> *CoreChecks::GetImageMap(layer_data *device_data) {
-    return &device_data->imageMap;
+std::unordered_map<VkImage, std::unique_ptr<IMAGE_STATE>> *CoreChecks::GetImageMap() { return &imageMap; }
+
+std::unordered_map<VkImage, std::vector<ImageSubresourcePair>> *CoreChecks::GetImageSubresourceMap() {
+    return &imageSubresourceMap;
 }
 
-std::unordered_map<VkImage, std::vector<ImageSubresourcePair>> *CoreChecks::GetImageSubresourceMap(layer_data *device_data) {
-    return &device_data->imageSubresourceMap;
-}
-
-std::unordered_map<ImageSubresourcePair, IMAGE_LAYOUT_NODE> *CoreChecks::GetImageLayoutMap(layer_data *device_data) {
-    return &device_data->imageLayoutMap;
-}
-
-std::unordered_map<ImageSubresourcePair, IMAGE_LAYOUT_NODE> const *CoreChecks::GetImageLayoutMap(layer_data const *device_data) {
-    return &device_data->imageLayoutMap;
-}
+std::unordered_map<ImageSubresourcePair, IMAGE_LAYOUT_NODE> *CoreChecks::GetImageLayoutMap() { return &imageLayoutMap; }
 
 std::unordered_map<VkBuffer, std::unique_ptr<BUFFER_STATE>> *CoreChecks::GetBufferMap(layer_data *device_data) {
     return &device_data->bufferMap;
