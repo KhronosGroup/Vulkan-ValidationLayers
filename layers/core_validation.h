@@ -518,8 +518,8 @@ class CoreChecks : public ValidationObject {
     const VkLayerDispatchTable* GetDispatchTable(const layer_data*);
     const VkPhysicalDeviceProperties* GetPDProperties();
     const VkPhysicalDeviceMemoryProperties* GetPhysicalDeviceMemoryProperties();
-    const CHECK_DISABLED* GetDisables(layer_data*);
-    const CHECK_ENABLED* GetEnables(layer_data*);
+    const CHECK_DISABLED* GetDisables();
+    const CHECK_ENABLED* GetEnables();
     std::unordered_map<VkImage, std::unique_ptr<IMAGE_STATE>>* GetImageMap(layer_data*);
     std::unordered_map<VkImage, std::vector<ImageSubresourcePair>>* GetImageSubresourceMap(layer_data*);
     std::unordered_map<ImageSubresourcePair, IMAGE_LAYOUT_NODE>* GetImageLayoutMap(layer_data*);
