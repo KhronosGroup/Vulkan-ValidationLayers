@@ -49,42 +49,39 @@ uint32_t FullMipChainLevels(VkExtent3D extent) { return FullMipChainLevels(exten
 
 uint32_t FullMipChainLevels(VkExtent2D extent) { return FullMipChainLevels(extent.height, extent.width); }
 
-void CoreChecks::SetLayout(layer_data *device_data, GLOBAL_CB_NODE *pCB, ImageSubresourcePair imgpair,
-                           const VkImageLayout &layout) {
+void CoreChecks::SetLayout(GLOBAL_CB_NODE *pCB, ImageSubresourcePair imgpair, const VkImageLayout &layout) {
     auto it = pCB->imageLayoutMap.find(imgpair);
     if (it != pCB->imageLayoutMap.end()) {
         it->second.layout = layout;
     } else {
         assert(imgpair.hasSubresource);
         IMAGE_CMD_BUF_LAYOUT_NODE node;
-        if (!FindCmdBufLayout(device_data, pCB, imgpair.image, imgpair.subresource, node)) {
+        if (!FindCmdBufLayout(pCB, imgpair.image, imgpair.subresource, node)) {
             node.initialLayout = layout;
         }
-        SetLayout(device_data, pCB, imgpair, {node.initialLayout, layout});
+        SetLayout(pCB, imgpair, {node.initialLayout, layout});
     }
 }
 
 template <class OBJECT, class LAYOUT>
-void CoreChecks::SetLayout(layer_data *device_data, OBJECT *pObject, VkImage image, VkImageSubresource range,
-                           const LAYOUT &layout) {
+void CoreChecks::SetLayout(OBJECT *pObject, VkImage image, VkImageSubresource range, const LAYOUT &layout) {
     ImageSubresourcePair imgpair = {image, true, range};
-    SetLayout(device_data, pObject, imgpair, layout, VK_IMAGE_ASPECT_COLOR_BIT);
-    SetLayout(device_data, pObject, imgpair, layout, VK_IMAGE_ASPECT_DEPTH_BIT);
-    SetLayout(device_data, pObject, imgpair, layout, VK_IMAGE_ASPECT_STENCIL_BIT);
-    SetLayout(device_data, pObject, imgpair, layout, VK_IMAGE_ASPECT_METADATA_BIT);
+    SetLayout(pObject, imgpair, layout, VK_IMAGE_ASPECT_COLOR_BIT);
+    SetLayout(pObject, imgpair, layout, VK_IMAGE_ASPECT_DEPTH_BIT);
+    SetLayout(pObject, imgpair, layout, VK_IMAGE_ASPECT_STENCIL_BIT);
+    SetLayout(pObject, imgpair, layout, VK_IMAGE_ASPECT_METADATA_BIT);
     if (GetDeviceExtensions()->vk_khr_sampler_ycbcr_conversion) {
-        SetLayout(device_data, pObject, imgpair, layout, VK_IMAGE_ASPECT_PLANE_0_BIT_KHR);
-        SetLayout(device_data, pObject, imgpair, layout, VK_IMAGE_ASPECT_PLANE_1_BIT_KHR);
-        SetLayout(device_data, pObject, imgpair, layout, VK_IMAGE_ASPECT_PLANE_2_BIT_KHR);
+        SetLayout(pObject, imgpair, layout, VK_IMAGE_ASPECT_PLANE_0_BIT_KHR);
+        SetLayout(pObject, imgpair, layout, VK_IMAGE_ASPECT_PLANE_1_BIT_KHR);
+        SetLayout(pObject, imgpair, layout, VK_IMAGE_ASPECT_PLANE_2_BIT_KHR);
     }
 }
 
 template <class OBJECT, class LAYOUT>
-void CoreChecks::SetLayout(layer_data *device_data, OBJECT *pObject, ImageSubresourcePair imgpair, const LAYOUT &layout,
-                           VkImageAspectFlags aspectMask) {
+void CoreChecks::SetLayout(OBJECT *pObject, ImageSubresourcePair imgpair, const LAYOUT &layout, VkImageAspectFlags aspectMask) {
     if (imgpair.subresource.aspectMask & aspectMask) {
         imgpair.subresource.aspectMask = aspectMask;
-        SetLayout(device_data, pObject, imgpair, layout);
+        SetLayout(pObject, imgpair, layout);
     }
 }
 
@@ -99,8 +96,8 @@ void CoreChecks::SetLayout(std::unordered_map<ImageSubresourcePair, IMAGE_LAYOUT
     }
 }
 
-bool CoreChecks::FindLayoutVerifyNode(layer_data const *device_data, GLOBAL_CB_NODE const *pCB, ImageSubresourcePair imgpair,
-                                      IMAGE_CMD_BUF_LAYOUT_NODE &node, const VkImageAspectFlags aspectMask) {
+bool CoreChecks::FindLayoutVerifyNode(GLOBAL_CB_NODE const *pCB, ImageSubresourcePair imgpair, IMAGE_CMD_BUF_LAYOUT_NODE &node,
+                                      const VkImageAspectFlags aspectMask) {
     if (!(imgpair.subresource.aspectMask & aspectMask)) {
         return false;
     }
@@ -152,18 +149,18 @@ bool CoreChecks::FindLayoutVerifyLayout(layer_data const *device_data, ImageSubr
 }
 
 // Find layout(s) on the command buffer level
-bool CoreChecks::FindCmdBufLayout(layer_data const *device_data, GLOBAL_CB_NODE const *pCB, VkImage image, VkImageSubresource range,
+bool CoreChecks::FindCmdBufLayout(GLOBAL_CB_NODE const *pCB, VkImage image, VkImageSubresource range,
                                   IMAGE_CMD_BUF_LAYOUT_NODE &node) {
     ImageSubresourcePair imgpair = {image, true, range};
     node = IMAGE_CMD_BUF_LAYOUT_NODE(VK_IMAGE_LAYOUT_MAX_ENUM, VK_IMAGE_LAYOUT_MAX_ENUM);
-    FindLayoutVerifyNode(device_data, pCB, imgpair, node, VK_IMAGE_ASPECT_COLOR_BIT);
-    FindLayoutVerifyNode(device_data, pCB, imgpair, node, VK_IMAGE_ASPECT_DEPTH_BIT);
-    FindLayoutVerifyNode(device_data, pCB, imgpair, node, VK_IMAGE_ASPECT_STENCIL_BIT);
-    FindLayoutVerifyNode(device_data, pCB, imgpair, node, VK_IMAGE_ASPECT_METADATA_BIT);
+    FindLayoutVerifyNode(pCB, imgpair, node, VK_IMAGE_ASPECT_COLOR_BIT);
+    FindLayoutVerifyNode(pCB, imgpair, node, VK_IMAGE_ASPECT_DEPTH_BIT);
+    FindLayoutVerifyNode(pCB, imgpair, node, VK_IMAGE_ASPECT_STENCIL_BIT);
+    FindLayoutVerifyNode(pCB, imgpair, node, VK_IMAGE_ASPECT_METADATA_BIT);
     if (GetDeviceExtensions()->vk_khr_sampler_ycbcr_conversion) {
-        FindLayoutVerifyNode(device_data, pCB, imgpair, node, VK_IMAGE_ASPECT_PLANE_0_BIT_KHR);
-        FindLayoutVerifyNode(device_data, pCB, imgpair, node, VK_IMAGE_ASPECT_PLANE_1_BIT_KHR);
-        FindLayoutVerifyNode(device_data, pCB, imgpair, node, VK_IMAGE_ASPECT_PLANE_2_BIT_KHR);
+        FindLayoutVerifyNode(pCB, imgpair, node, VK_IMAGE_ASPECT_PLANE_0_BIT_KHR);
+        FindLayoutVerifyNode(pCB, imgpair, node, VK_IMAGE_ASPECT_PLANE_1_BIT_KHR);
+        FindLayoutVerifyNode(pCB, imgpair, node, VK_IMAGE_ASPECT_PLANE_2_BIT_KHR);
     }
     if (node.layout == VK_IMAGE_LAYOUT_MAX_ENUM) {
         imgpair = {image, false, VkImageSubresource()};
@@ -255,7 +252,7 @@ bool CoreChecks::FindLayout(layer_data *device_data,
 }
 
 // Set the layout on the global level
-void CoreChecks::SetGlobalLayout(layer_data *device_data, ImageSubresourcePair imgpair, const VkImageLayout &layout) {
+void CoreChecks::SetGlobalLayout(ImageSubresourcePair imgpair, const VkImageLayout &layout) {
     VkImage &image = imgpair.image;
     auto &lmap = (*GetImageLayoutMap());
     auto data = lmap.find(imgpair);
@@ -272,8 +269,7 @@ void CoreChecks::SetGlobalLayout(layer_data *device_data, ImageSubresourcePair i
 }
 
 // Set the layout on the cmdbuf level
-void CoreChecks::SetLayout(layer_data *device_data, GLOBAL_CB_NODE *pCB, ImageSubresourcePair imgpair,
-                           const IMAGE_CMD_BUF_LAYOUT_NODE &node) {
+void CoreChecks::SetLayout(GLOBAL_CB_NODE *pCB, ImageSubresourcePair imgpair, const IMAGE_CMD_BUF_LAYOUT_NODE &node) {
     auto it = pCB->imageLayoutMap.find(imgpair);
     if (it != pCB->imageLayoutMap.end()) {
         it->second = node;  // Update
@@ -282,7 +278,7 @@ void CoreChecks::SetLayout(layer_data *device_data, GLOBAL_CB_NODE *pCB, ImageSu
     }
 }
 // Set image layout for given VkImageSubresourceRange struct
-void CoreChecks::SetImageLayout(layer_data *device_data, GLOBAL_CB_NODE *cb_node, const IMAGE_STATE *image_state,
+void CoreChecks::SetImageLayout(GLOBAL_CB_NODE *cb_node, const IMAGE_STATE *image_state,
                                 VkImageSubresourceRange image_subresource_range, const VkImageLayout &layout) {
     assert(image_state);
     cb_node->image_layout_change_count++;  // Change the version of this data to force revalidation
@@ -310,12 +306,12 @@ void CoreChecks::SetImageLayout(layer_data *device_data, GLOBAL_CB_NODE *cb_node
                     }
                 }
             }
-            SetLayout(device_data, cb_node, image_state->image, sub, layout);
+            SetLayout(cb_node, image_state->image, sub, layout);
         }
     }
 }
 // Set image layout for given VkImageSubresourceLayers struct
-void CoreChecks::SetImageLayout(layer_data *device_data, GLOBAL_CB_NODE *cb_node, const IMAGE_STATE *image_state,
+void CoreChecks::SetImageLayout(GLOBAL_CB_NODE *cb_node, const IMAGE_STATE *image_state,
                                 VkImageSubresourceLayers image_subresource_layers, const VkImageLayout &layout) {
     // Transfer VkImageSubresourceLayers into VkImageSubresourceRange struct
     VkImageSubresourceRange image_subresource_range;
@@ -324,12 +320,11 @@ void CoreChecks::SetImageLayout(layer_data *device_data, GLOBAL_CB_NODE *cb_node
     image_subresource_range.layerCount = image_subresource_layers.layerCount;
     image_subresource_range.baseMipLevel = image_subresource_layers.mipLevel;
     image_subresource_range.levelCount = 1;
-    SetImageLayout(device_data, cb_node, image_state, image_subresource_range, layout);
+    SetImageLayout(cb_node, image_state, image_subresource_range, layout);
 }
 
 // Set image layout for all slices of an image view
-void CoreChecks::SetImageViewLayout(layer_data *device_data, GLOBAL_CB_NODE *cb_node, IMAGE_VIEW_STATE *view_state,
-                                    const VkImageLayout &layout) {
+void CoreChecks::SetImageViewLayout(GLOBAL_CB_NODE *cb_node, IMAGE_VIEW_STATE *view_state, const VkImageLayout &layout) {
     assert(view_state);
 
     IMAGE_STATE *image_state = GetImageState(view_state->create_info.image);
@@ -342,13 +337,12 @@ void CoreChecks::SetImageViewLayout(layer_data *device_data, GLOBAL_CB_NODE *cb_
         sub_range.layerCount = image_state->createInfo.extent.depth;
     }
 
-    SetImageLayout(device_data, cb_node, image_state, sub_range, layout);
+    SetImageLayout(cb_node, image_state, sub_range, layout);
 }
 
-void CoreChecks::SetImageViewLayout(layer_data *device_data, GLOBAL_CB_NODE *cb_node, VkImageView imageView,
-                                    const VkImageLayout &layout) {
+void CoreChecks::SetImageViewLayout(GLOBAL_CB_NODE *cb_node, VkImageView imageView, const VkImageLayout &layout) {
     auto view_state = GetImageViewState(imageView);
-    SetImageViewLayout(device_data, cb_node, view_state, layout);
+    SetImageViewLayout(cb_node, view_state, layout);
 }
 
 bool CoreChecks::ValidateRenderPassLayoutAgainstFramebufferImageUsage(layer_data *device_data, RenderPassCreateVersion rp_version,
@@ -492,7 +486,7 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(layer_data *device_data, 
                 uint32_t layer = subRange.baseArrayLayer + k;
                 VkImageSubresource sub = {subRange.aspectMask, level, layer};
                 IMAGE_CMD_BUF_LAYOUT_NODE node;
-                if (!FindCmdBufLayout(device_data, pCB, image, sub, node)) {
+                if (!FindCmdBufLayout(pCB, image, sub, node)) {
                     // Missing layouts will be added during state update
                     continue;
                 }
@@ -569,30 +563,30 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(layer_data *device_data, 
     return skip;
 }
 
-void CoreChecks::TransitionAttachmentRefLayout(layer_data *device_data, GLOBAL_CB_NODE *pCB, FRAMEBUFFER_STATE *pFramebuffer,
+void CoreChecks::TransitionAttachmentRefLayout(GLOBAL_CB_NODE *pCB, FRAMEBUFFER_STATE *pFramebuffer,
                                                const safe_VkAttachmentReference2KHR &ref) {
     if (ref.attachment != VK_ATTACHMENT_UNUSED) {
         auto image_view = GetAttachmentImageViewState(pFramebuffer, ref.attachment);
         if (image_view) {
-            SetImageViewLayout(device_data, pCB, image_view, ref.layout);
+            SetImageViewLayout(pCB, image_view, ref.layout);
         }
     }
 }
 
-void CoreChecks::TransitionSubpassLayouts(layer_data *device_data, GLOBAL_CB_NODE *pCB, const RENDER_PASS_STATE *render_pass_state,
-                                          const int subpass_index, FRAMEBUFFER_STATE *framebuffer_state) {
+void CoreChecks::TransitionSubpassLayouts(GLOBAL_CB_NODE *pCB, const RENDER_PASS_STATE *render_pass_state, const int subpass_index,
+                                          FRAMEBUFFER_STATE *framebuffer_state) {
     assert(render_pass_state);
 
     if (framebuffer_state) {
         auto const &subpass = render_pass_state->createInfo.pSubpasses[subpass_index];
         for (uint32_t j = 0; j < subpass.inputAttachmentCount; ++j) {
-            TransitionAttachmentRefLayout(device_data, pCB, framebuffer_state, subpass.pInputAttachments[j]);
+            TransitionAttachmentRefLayout(pCB, framebuffer_state, subpass.pInputAttachments[j]);
         }
         for (uint32_t j = 0; j < subpass.colorAttachmentCount; ++j) {
-            TransitionAttachmentRefLayout(device_data, pCB, framebuffer_state, subpass.pColorAttachments[j]);
+            TransitionAttachmentRefLayout(pCB, framebuffer_state, subpass.pColorAttachments[j]);
         }
         if (subpass.pDepthStencilAttachment) {
-            TransitionAttachmentRefLayout(device_data, pCB, framebuffer_state, *subpass.pDepthStencilAttachment);
+            TransitionAttachmentRefLayout(pCB, framebuffer_state, *subpass.pDepthStencilAttachment);
         }
     }
 }
@@ -605,7 +599,7 @@ bool CoreChecks::ValidateImageAspectLayout(layer_data *device_data, GLOBAL_CB_NO
     }
     VkImageSubresource sub = {aspect, level, layer};
     IMAGE_CMD_BUF_LAYOUT_NODE node;
-    if (!FindCmdBufLayout(device_data, pCB, mem_barrier->image, sub, node)) {
+    if (!FindCmdBufLayout(pCB, mem_barrier->image, sub, node)) {
         return false;
     }
     bool skip = false;
@@ -625,39 +619,36 @@ bool CoreChecks::ValidateImageAspectLayout(layer_data *device_data, GLOBAL_CB_NO
 // Transition the layout state for renderpass attachments based on the BeginRenderPass() call. This includes:
 // 1. Transition into initialLayout state
 // 2. Transition from initialLayout to layout used in subpass 0
-void CoreChecks::TransitionBeginRenderPassLayouts(layer_data *device_data, GLOBAL_CB_NODE *cb_state,
-                                                  const RENDER_PASS_STATE *render_pass_state,
+void CoreChecks::TransitionBeginRenderPassLayouts(GLOBAL_CB_NODE *cb_state, const RENDER_PASS_STATE *render_pass_state,
                                                   FRAMEBUFFER_STATE *framebuffer_state) {
     // First transition into initialLayout
     auto const rpci = render_pass_state->createInfo.ptr();
     for (uint32_t i = 0; i < rpci->attachmentCount; ++i) {
         auto view_state = GetAttachmentImageViewState(framebuffer_state, i);
         if (view_state) {
-            SetImageViewLayout(device_data, cb_state, view_state, rpci->pAttachments[i].initialLayout);
+            SetImageViewLayout(cb_state, view_state, rpci->pAttachments[i].initialLayout);
         }
     }
     // Now transition for first subpass (index 0)
-    TransitionSubpassLayouts(device_data, cb_state, render_pass_state, 0, framebuffer_state);
+    TransitionSubpassLayouts(cb_state, render_pass_state, 0, framebuffer_state);
 }
 
-void CoreChecks::TransitionImageAspectLayout(layer_data *device_data, GLOBAL_CB_NODE *pCB, const VkImageMemoryBarrier *mem_barrier,
-                                             uint32_t level, uint32_t layer, VkImageAspectFlags aspect_mask,
-                                             VkImageAspectFlags aspect) {
+void CoreChecks::TransitionImageAspectLayout(GLOBAL_CB_NODE *pCB, const VkImageMemoryBarrier *mem_barrier, uint32_t level,
+                                             uint32_t layer, VkImageAspectFlags aspect_mask, VkImageAspectFlags aspect) {
     if (!(aspect_mask & aspect)) {
         return;
     }
     VkImageSubresource sub = {aspect, level, layer};
     IMAGE_CMD_BUF_LAYOUT_NODE node;
-    if (!FindCmdBufLayout(device_data, pCB, mem_barrier->image, sub, node)) {
+    if (!FindCmdBufLayout(pCB, mem_barrier->image, sub, node)) {
         pCB->image_layout_change_count++;  // Change the version of this data to force revalidation
-        SetLayout(device_data, pCB, mem_barrier->image, sub,
-                  IMAGE_CMD_BUF_LAYOUT_NODE(mem_barrier->oldLayout, mem_barrier->newLayout));
+        SetLayout(pCB, mem_barrier->image, sub, IMAGE_CMD_BUF_LAYOUT_NODE(mem_barrier->oldLayout, mem_barrier->newLayout));
         return;
     }
     if (mem_barrier->oldLayout == VK_IMAGE_LAYOUT_UNDEFINED) {
         // TODO: Set memory invalid
     }
-    SetLayout(device_data, pCB, mem_barrier->image, sub, mem_barrier->newLayout);
+    SetLayout(pCB, mem_barrier->image, sub, mem_barrier->newLayout);
 }
 
 bool VerifyAspectsPresent(VkImageAspectFlags aspect_mask, VkFormat format) {
@@ -1048,7 +1039,7 @@ void CoreChecks::EraseQFOImageRelaseBarriers(layer_data *device_data, const VkIm
     EraseQFOReleaseBarriers<VkImageMemoryBarrier>(device_data, image);
 }
 
-void CoreChecks::TransitionImageLayouts(layer_data *device_data, GLOBAL_CB_NODE *cb_state, uint32_t memBarrierCount,
+void CoreChecks::TransitionImageLayouts(GLOBAL_CB_NODE *cb_state, uint32_t memBarrierCount,
                                         const VkImageMemoryBarrier *pImgMemBarriers) {
     for (uint32_t i = 0; i < memBarrierCount; ++i) {
         auto mem_barrier = &pImgMemBarriers[i];
@@ -1095,31 +1086,23 @@ void CoreChecks::TransitionImageLayouts(layer_data *device_data, GLOBAL_CB_NODE 
             uint32_t level = mem_barrier->subresourceRange.baseMipLevel + j;
             for (uint32_t k = 0; k < layer_count; k++) {
                 uint32_t layer = mem_barrier->subresourceRange.baseArrayLayer + k;
-                TransitionImageAspectLayout(device_data, cb_state, mem_barrier, level, layer, aspect_mask,
-                                            VK_IMAGE_ASPECT_COLOR_BIT);
-                TransitionImageAspectLayout(device_data, cb_state, mem_barrier, level, layer, aspect_mask,
-                                            VK_IMAGE_ASPECT_DEPTH_BIT);
-                TransitionImageAspectLayout(device_data, cb_state, mem_barrier, level, layer, aspect_mask,
-                                            VK_IMAGE_ASPECT_STENCIL_BIT);
-                TransitionImageAspectLayout(device_data, cb_state, mem_barrier, level, layer, aspect_mask,
-                                            VK_IMAGE_ASPECT_METADATA_BIT);
+                TransitionImageAspectLayout(cb_state, mem_barrier, level, layer, aspect_mask, VK_IMAGE_ASPECT_COLOR_BIT);
+                TransitionImageAspectLayout(cb_state, mem_barrier, level, layer, aspect_mask, VK_IMAGE_ASPECT_DEPTH_BIT);
+                TransitionImageAspectLayout(cb_state, mem_barrier, level, layer, aspect_mask, VK_IMAGE_ASPECT_STENCIL_BIT);
+                TransitionImageAspectLayout(cb_state, mem_barrier, level, layer, aspect_mask, VK_IMAGE_ASPECT_METADATA_BIT);
                 if (GetDeviceExtensions()->vk_khr_sampler_ycbcr_conversion) {
-                    TransitionImageAspectLayout(device_data, cb_state, mem_barrier, level, layer, aspect_mask,
-                                                VK_IMAGE_ASPECT_PLANE_0_BIT_KHR);
-                    TransitionImageAspectLayout(device_data, cb_state, mem_barrier, level, layer, aspect_mask,
-                                                VK_IMAGE_ASPECT_PLANE_1_BIT_KHR);
-                    TransitionImageAspectLayout(device_data, cb_state, mem_barrier, level, layer, aspect_mask,
-                                                VK_IMAGE_ASPECT_PLANE_2_BIT_KHR);
+                    TransitionImageAspectLayout(cb_state, mem_barrier, level, layer, aspect_mask, VK_IMAGE_ASPECT_PLANE_0_BIT_KHR);
+                    TransitionImageAspectLayout(cb_state, mem_barrier, level, layer, aspect_mask, VK_IMAGE_ASPECT_PLANE_1_BIT_KHR);
+                    TransitionImageAspectLayout(cb_state, mem_barrier, level, layer, aspect_mask, VK_IMAGE_ASPECT_PLANE_2_BIT_KHR);
                 }
             }
         }
     }
 }
 
-bool CoreChecks::VerifyImageLayout(layer_data const *device_data, GLOBAL_CB_NODE const *cb_node, IMAGE_STATE *image_state,
-                                   VkImageSubresourceLayers subLayers, VkImageLayout explicit_layout, VkImageLayout optimal_layout,
-                                   const char *caller, const char *layout_invalid_msg_code, const char *layout_mismatch_msg_code,
-                                   bool *error) {
+bool CoreChecks::VerifyImageLayout(GLOBAL_CB_NODE const *cb_node, IMAGE_STATE *image_state, VkImageSubresourceLayers subLayers,
+                                   VkImageLayout explicit_layout, VkImageLayout optimal_layout, const char *caller,
+                                   const char *layout_invalid_msg_code, const char *layout_mismatch_msg_code, bool *error) {
     const auto image = image_state->image;
     bool skip = false;
 
@@ -1127,7 +1110,7 @@ bool CoreChecks::VerifyImageLayout(layer_data const *device_data, GLOBAL_CB_NODE
         uint32_t layer = i + subLayers.baseArrayLayer;
         VkImageSubresource sub = {subLayers.aspectMask, subLayers.mipLevel, layer};
         IMAGE_CMD_BUF_LAYOUT_NODE node;
-        if (FindCmdBufLayout(device_data, cb_node, image, sub, node)) {
+        if (FindCmdBufLayout(cb_node, image, sub, node)) {
             if (node.layout != explicit_layout) {
                 *error = true;
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
@@ -1171,8 +1154,7 @@ bool CoreChecks::VerifyImageLayout(layer_data const *device_data, GLOBAL_CB_NODE
     return skip;
 }
 
-void CoreChecks::TransitionFinalSubpassLayouts(layer_data *device_data, GLOBAL_CB_NODE *pCB,
-                                               const VkRenderPassBeginInfo *pRenderPassBegin,
+void CoreChecks::TransitionFinalSubpassLayouts(GLOBAL_CB_NODE *pCB, const VkRenderPassBeginInfo *pRenderPassBegin,
                                                FRAMEBUFFER_STATE *framebuffer_state) {
     auto renderPass = GetRenderPassState(pRenderPassBegin->renderPass);
     if (!renderPass) return;
@@ -1182,7 +1164,7 @@ void CoreChecks::TransitionFinalSubpassLayouts(layer_data *device_data, GLOBAL_C
         for (uint32_t i = 0; i < pRenderPassInfo->attachmentCount; ++i) {
             auto view_state = GetAttachmentImageViewState(framebuffer_state, i);
             if (view_state) {
-                SetImageViewLayout(device_data, pCB, view_state, pRenderPassInfo->pAttachments[i].finalLayout);
+                SetImageViewLayout(pCB, view_state, pRenderPassInfo->pAttachments[i].finalLayout);
             }
         }
     }
@@ -1639,7 +1621,7 @@ bool CoreChecks::VerifyClearImageLayout(layer_data *device_data, GLOBAL_CB_NODE 
             uint32_t layer = layer_index + range.baseArrayLayer;
             VkImageSubresource sub = {range.aspectMask, level, layer};
             IMAGE_CMD_BUF_LAYOUT_NODE node;
-            if (FindCmdBufLayout(device_data, cb_node, image_state->image, sub, node)) {
+            if (FindCmdBufLayout(cb_node, image_state->image, sub, node)) {
                 if (node.layout != dest_image_layout) {
                     const char *error_code = "VUID-vkCmdClearColorImage-imageLayout-00004";
                     if (strcmp(func_name, "vkCmdClearDepthStencilImage()") == 0) {
@@ -1671,8 +1653,8 @@ void CoreChecks::RecordClearImageLayout(layer_data *device_data, GLOBAL_CB_NODE 
             uint32_t layer = layer_index + range.baseArrayLayer;
             VkImageSubresource sub = {range.aspectMask, level, layer};
             IMAGE_CMD_BUF_LAYOUT_NODE node;
-            if (!FindCmdBufLayout(device_data, cb_node, image, sub, node)) {
-                SetLayout(device_data, cb_node, image, sub, IMAGE_CMD_BUF_LAYOUT_NODE(dest_image_layout, dest_image_layout));
+            if (!FindCmdBufLayout(cb_node, image, sub, node)) {
+                SetLayout(cb_node, image, sub, IMAGE_CMD_BUF_LAYOUT_NODE(dest_image_layout, dest_image_layout));
             }
         }
     }
@@ -2710,10 +2692,10 @@ bool CoreChecks::PreCallValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkIm
             ? "VUID-vkCmdCopyImage-dstImageLayout-01395"
             : "VUID-vkCmdCopyImage-dstImageLayout-00134";
     for (uint32_t i = 0; i < regionCount; ++i) {
-        skip |= VerifyImageLayout(device_data, cb_node, src_image_state, pRegions[i].srcSubresource, srcImageLayout,
+        skip |= VerifyImageLayout(cb_node, src_image_state, pRegions[i].srcSubresource, srcImageLayout,
                                   VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, "vkCmdCopyImage()", invalid_src_layout_vuid,
                                   "VUID-vkCmdCopyImage-srcImageLayout-00128", &hit_error);
-        skip |= VerifyImageLayout(device_data, cb_node, dst_image_state, pRegions[i].dstSubresource, dstImageLayout,
+        skip |= VerifyImageLayout(cb_node, dst_image_state, pRegions[i].dstSubresource, dstImageLayout,
                                   VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, "vkCmdCopyImage()", invalid_dst_layout_vuid,
                                   "VUID-vkCmdCopyImage-dstImageLayout-00133", &hit_error);
         skip |= ValidateCopyImageTransferGranularityRequirements(device_data, cb_node, src_image_state, dst_image_state,
@@ -2733,8 +2715,8 @@ void CoreChecks::PreCallRecordCmdCopyImage(VkCommandBuffer commandBuffer, VkImag
 
     // Make sure that all image slices are updated to correct layout
     for (uint32_t i = 0; i < regionCount; ++i) {
-        SetImageLayout(device_data, cb_node, src_image_state, pRegions[i].srcSubresource, srcImageLayout);
-        SetImageLayout(device_data, cb_node, dst_image_state, pRegions[i].dstSubresource, dstImageLayout);
+        SetImageLayout(cb_node, src_image_state, pRegions[i].srcSubresource, srcImageLayout);
+        SetImageLayout(cb_node, dst_image_state, pRegions[i].dstSubresource, dstImageLayout);
     }
     // Update bindings between images and cmd buffer
     AddCommandBufferBindingImage(device_data, cb_node, src_image_state);
@@ -2953,10 +2935,10 @@ bool CoreChecks::PreCallValidateCmdResolveImage(VkCommandBuffer commandBuffer, V
                                                    "srcSubresource", i);
             skip |= ValidateImageSubresourceLayers(device_data, cb_node, &pRegions[i].dstSubresource, "vkCmdResolveImage()",
                                                    "dstSubresource", i);
-            skip |= VerifyImageLayout(device_data, cb_node, src_image_state, pRegions[i].srcSubresource, srcImageLayout,
+            skip |= VerifyImageLayout(cb_node, src_image_state, pRegions[i].srcSubresource, srcImageLayout,
                                       VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, "vkCmdResolveImage()", invalid_src_layout_vuid,
                                       "VUID-vkCmdResolveImage-srcImageLayout-00260", &hit_error);
-            skip |= VerifyImageLayout(device_data, cb_node, dst_image_state, pRegions[i].dstSubresource, dstImageLayout,
+            skip |= VerifyImageLayout(cb_node, dst_image_state, pRegions[i].dstSubresource, dstImageLayout,
                                       VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, "vkCmdResolveImage()", invalid_dst_layout_vuid,
                                       "VUID-vkCmdResolveImage-dstImageLayout-00262", &hit_error);
             skip |= ValidateImageMipLevel(device_data, cb_node, src_image_state, pRegions[i].srcSubresource.mipLevel, i,
@@ -3147,10 +3129,10 @@ bool CoreChecks::PreCallValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkIm
         for (uint32_t i = 0; i < regionCount; i++) {
             const VkImageBlit rgn = pRegions[i];
             bool hit_error = false;
-            skip |= VerifyImageLayout(device_data, cb_node, src_image_state, rgn.srcSubresource, srcImageLayout,
+            skip |= VerifyImageLayout(cb_node, src_image_state, rgn.srcSubresource, srcImageLayout,
                                       VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, "vkCmdBlitImage()", invalid_src_layout_vuid,
                                       "VUID-vkCmdBlitImage-srcImageLayout-00221", &hit_error);
-            skip |= VerifyImageLayout(device_data, cb_node, dst_image_state, rgn.dstSubresource, dstImageLayout,
+            skip |= VerifyImageLayout(cb_node, dst_image_state, rgn.dstSubresource, dstImageLayout,
                                       VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, "vkCmdBlitImage()", invalid_dst_layout_vuid,
                                       "VUID-vkCmdBlitImage-dstImageLayout-00226", &hit_error);
             skip |=
@@ -3357,8 +3339,8 @@ void CoreChecks::PreCallRecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImag
 
     // Make sure that all image slices are updated to correct layout
     for (uint32_t i = 0; i < regionCount; ++i) {
-        SetImageLayout(device_data, cb_node, src_image_state, pRegions[i].srcSubresource, srcImageLayout);
-        SetImageLayout(device_data, cb_node, dst_image_state, pRegions[i].dstSubresource, dstImageLayout);
+        SetImageLayout(cb_node, src_image_state, pRegions[i].srcSubresource, srcImageLayout);
+        SetImageLayout(cb_node, dst_image_state, pRegions[i].dstSubresource, dstImageLayout);
     }
     // Update bindings between images and cmd buffer
     AddCommandBufferBindingImage(device_data, cb_node, src_image_state);
@@ -3408,7 +3390,7 @@ void CoreChecks::UpdateCmdBufImageLayouts(layer_data *device_data, GLOBAL_CB_NOD
     for (auto cb_image_data : pCB->imageLayoutMap) {
         VkImageLayout imageLayout;
         FindGlobalLayout(device_data, cb_image_data.first, imageLayout);
-        SetGlobalLayout(device_data, cb_image_data.first, cb_image_data.second.layout);
+        SetGlobalLayout(cb_image_data.first, cb_image_data.second.layout);
     }
 }
 
@@ -4921,7 +4903,7 @@ bool CoreChecks::PreCallValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuff
     for (uint32_t i = 0; i < regionCount; ++i) {
         skip |= ValidateImageSubresourceLayers(device_data, cb_node, &pRegions[i].imageSubresource, "vkCmdCopyImageToBuffer()",
                                                "imageSubresource", i);
-        skip |= VerifyImageLayout(device_data, cb_node, src_image_state, pRegions[i].imageSubresource, srcImageLayout,
+        skip |= VerifyImageLayout(cb_node, src_image_state, pRegions[i].imageSubresource, srcImageLayout,
                                   VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, "vkCmdCopyImageToBuffer()", src_invalid_layout_vuid,
                                   "VUID-vkCmdCopyImageToBuffer-srcImageLayout-00189", &hit_error);
         skip |= ValidateCopyBufferImageTransferGranularityRequirements(device_data, cb_node, src_image_state, &pRegions[i], i,
@@ -4946,7 +4928,7 @@ void CoreChecks::PreCallRecordCmdCopyImageToBuffer(VkCommandBuffer commandBuffer
 
     // Make sure that all image slices are updated to correct layout
     for (uint32_t i = 0; i < regionCount; ++i) {
-        SetImageLayout(device_data, cb_node, src_image_state, pRegions[i].imageSubresource, srcImageLayout);
+        SetImageLayout(cb_node, src_image_state, pRegions[i].imageSubresource, srcImageLayout);
     }
     // Update bindings between buffer/image and cmd buffer
     AddCommandBufferBindingImage(device_data, cb_node, src_image_state);
@@ -5005,7 +4987,7 @@ bool CoreChecks::PreCallValidateCmdCopyBufferToImage(VkCommandBuffer commandBuff
     for (uint32_t i = 0; i < regionCount; ++i) {
         skip |= ValidateImageSubresourceLayers(device_data, cb_node, &pRegions[i].imageSubresource, "vkCmdCopyBufferToImage()",
                                                "imageSubresource", i);
-        skip |= VerifyImageLayout(device_data, cb_node, dst_image_state, pRegions[i].imageSubresource, dstImageLayout,
+        skip |= VerifyImageLayout(cb_node, dst_image_state, pRegions[i].imageSubresource, dstImageLayout,
                                   VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, "vkCmdCopyBufferToImage()", dst_invalid_layout_vuid,
                                   "VUID-vkCmdCopyBufferToImage-dstImageLayout-00180", &hit_error);
         skip |= ValidateCopyBufferImageTransferGranularityRequirements(device_data, cb_node, dst_image_state, &pRegions[i], i,
@@ -5031,7 +5013,7 @@ void CoreChecks::PreCallRecordCmdCopyBufferToImage(VkCommandBuffer commandBuffer
 
     // Make sure that all image slices are updated to correct layout
     for (uint32_t i = 0; i < regionCount; ++i) {
-        SetImageLayout(device_data, cb_node, dst_image_state, pRegions[i].imageSubresource, dstImageLayout);
+        SetImageLayout(cb_node, dst_image_state, pRegions[i].imageSubresource, dstImageLayout);
     }
     AddCommandBufferBindingBuffer(device_data, cb_node, src_buffer_state);
     AddCommandBufferBindingImage(device_data, cb_node, dst_image_state);

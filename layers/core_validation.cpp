@@ -6584,9 +6584,8 @@ bool CoreChecks::PreCallValidateCmdBindShadingRateImageNV(VkCommandBuffer comman
             VkImageSubresourceLayers subresource = {range.aspectMask, range.baseMipLevel, range.baseArrayLayer, range.layerCount};
 
             if (image_state) {
-                skip |= VerifyImageLayout(device_data, cb_state, image_state, subresource, imageLayout,
-                                          VK_IMAGE_LAYOUT_SHADING_RATE_OPTIMAL_NV, "vkCmdCopyImage()",
-                                          "VUID-vkCmdBindShadingRateImageNV-imageLayout-02063",
+                skip |= VerifyImageLayout(cb_state, image_state, subresource, imageLayout, VK_IMAGE_LAYOUT_SHADING_RATE_OPTIMAL_NV,
+                                          "vkCmdCopyImage()", "VUID-vkCmdBindShadingRateImageNV-imageLayout-02063",
                                           "VUID-vkCmdBindShadingRateImageNV-imageView-02062", &hit_error);
             }
         }
@@ -8588,7 +8587,7 @@ void CoreChecks::PreCallRecordCmdWaitEvents(VkCommandBuffer commandBuffer, uint3
     }
     cb_state->eventUpdates.emplace_back(
         [=](VkQueue q) { return ValidateEventStageMask(q, cb_state, eventCount, first_event_index, sourceStageMask); });
-    TransitionImageLayouts(device_data, cb_state, imageMemoryBarrierCount, pImageMemoryBarriers);
+    TransitionImageLayouts(cb_state, imageMemoryBarrierCount, pImageMemoryBarriers);
     if (GetEnables()->gpu_validation) {
         GpuPreCallValidateCmdWaitEvents(device_data, sourceStageMask);
     }
@@ -8659,7 +8658,7 @@ void CoreChecks::PreCallRecordCmdPipelineBarrier(VkCommandBuffer commandBuffer, 
 
     RecordBarriersQFOTransfers(device_data, cb_state, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount,
                                pImageMemoryBarriers);
-    TransitionImageLayouts(device_data, cb_state, imageMemoryBarrierCount, pImageMemoryBarriers);
+    TransitionImageLayouts(cb_state, imageMemoryBarrierCount, pImageMemoryBarriers);
 }
 
 bool CoreChecks::SetQueryState(VkQueue queue, VkCommandBuffer commandBuffer, QueryObject object, bool value) {
@@ -10317,7 +10316,7 @@ void CoreChecks::RecordCmdBeginRenderPassState(layer_data *device_data, VkComman
         AddCommandBufferBinding(&render_pass_state->cb_bindings,
                                 {HandleToUint64(render_pass_state->renderPass), kVulkanObjectTypeRenderPass}, cb_state);
         // transition attachments to the correct layouts for beginning of renderPass and first subpass
-        TransitionBeginRenderPassLayouts(device_data, cb_state, render_pass_state, framebuffer);
+        TransitionBeginRenderPassLayouts(cb_state, render_pass_state, framebuffer);
     }
 }
 
@@ -10373,23 +10372,21 @@ bool CoreChecks::PreCallValidateCmdNextSubpass2KHR(VkCommandBuffer commandBuffer
     return ValidateCmdNextSubpass(device_data, RENDER_PASS_VERSION_2, commandBuffer);
 }
 
-void CoreChecks::RecordCmdNextSubpass(layer_data *device_data, VkCommandBuffer commandBuffer, VkSubpassContents contents) {
+void CoreChecks::RecordCmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpassContents contents) {
     GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     cb_state->activeSubpass++;
     cb_state->activeSubpassContents = contents;
-    TransitionSubpassLayouts(device_data, cb_state, cb_state->activeRenderPass, cb_state->activeSubpass,
+    TransitionSubpassLayouts(cb_state, cb_state->activeRenderPass, cb_state->activeSubpass,
                              GetFramebufferState(cb_state->activeRenderPassBeginInfo.framebuffer));
 }
 
 void CoreChecks::PostCallRecordCmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpassContents contents) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    RecordCmdNextSubpass(device_data, commandBuffer, contents);
+    RecordCmdNextSubpass(commandBuffer, contents);
 }
 
 void CoreChecks::PostCallRecordCmdNextSubpass2KHR(VkCommandBuffer commandBuffer, const VkSubpassBeginInfoKHR *pSubpassBeginInfo,
                                                   const VkSubpassEndInfoKHR *pSubpassEndInfo) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    RecordCmdNextSubpass(device_data, commandBuffer, pSubpassBeginInfo->contents);
+    RecordCmdNextSubpass(commandBuffer, pSubpassBeginInfo->contents);
 }
 
 bool CoreChecks::ValidateCmdEndRenderPass(layer_data *device_data, RenderPassCreateVersion rp_version,
@@ -10436,23 +10433,19 @@ bool CoreChecks::PreCallValidateCmdEndRenderPass2KHR(VkCommandBuffer commandBuff
     return skip;
 }
 
-void CoreChecks::RecordCmdEndRenderPassState(layer_data *device_data, VkCommandBuffer commandBuffer) {
+void CoreChecks::RecordCmdEndRenderPassState(VkCommandBuffer commandBuffer) {
     GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     FRAMEBUFFER_STATE *framebuffer = GetFramebufferState(cb_state->activeFramebuffer);
-    TransitionFinalSubpassLayouts(device_data, cb_state, &cb_state->activeRenderPassBeginInfo, framebuffer);
+    TransitionFinalSubpassLayouts(cb_state, &cb_state->activeRenderPassBeginInfo, framebuffer);
     cb_state->activeRenderPass = nullptr;
     cb_state->activeSubpass = 0;
     cb_state->activeFramebuffer = VK_NULL_HANDLE;
 }
 
-void CoreChecks::PostCallRecordCmdEndRenderPass(VkCommandBuffer commandBuffer) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    RecordCmdEndRenderPassState(device_data, commandBuffer);
-}
+void CoreChecks::PostCallRecordCmdEndRenderPass(VkCommandBuffer commandBuffer) { RecordCmdEndRenderPassState(commandBuffer); }
 
 void CoreChecks::PostCallRecordCmdEndRenderPass2KHR(VkCommandBuffer commandBuffer, const VkSubpassEndInfoKHR *pSubpassEndInfo) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    RecordCmdEndRenderPassState(device_data, commandBuffer);
+    RecordCmdEndRenderPassState(commandBuffer);
 }
 
 bool CoreChecks::ValidateFramebuffer(layer_data *dev_data, VkCommandBuffer primaryBuffer, const GLOBAL_CB_NODE *pCB,
@@ -10641,7 +10634,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                 // Look for partial matches (in aspectMask), and update or create parent map entry in SetLayout
                 assert(ilm_entry.first.hasSubresource);
                 IMAGE_CMD_BUF_LAYOUT_NODE node;
-                if (FindCmdBufLayout(device_data, cb_state, ilm_entry.first.image, ilm_entry.first.subresource, node)) {
+                if (FindCmdBufLayout(cb_state, ilm_entry.first.image, ilm_entry.first.subresource, node)) {
                     if ((VK_IMAGE_LAYOUT_UNDEFINED != ilm_entry.second.initialLayout) &&
                         (node.layout != ilm_entry.second.initialLayout)) {
                         const VkImageSubresource &subresource = ilm_entry.first.subresource;
@@ -10671,7 +10664,6 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
 
 void CoreChecks::PreCallRecordCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBuffersCount,
                                                  const VkCommandBuffer *pCommandBuffers) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
 
     GLOBAL_CB_NODE *sub_cb_state = NULL;
@@ -10697,11 +10689,11 @@ void CoreChecks::PreCallRecordCmdExecuteCommands(VkCommandBuffer commandBuffer, 
                 // Look for partial matches (in aspectMask), and update or create parent map entry in SetLayout
                 assert(ilm_entry.first.hasSubresource);
                 IMAGE_CMD_BUF_LAYOUT_NODE node;
-                if (!FindCmdBufLayout(device_data, cb_state, ilm_entry.first.image, ilm_entry.first.subresource, node)) {
+                if (!FindCmdBufLayout(cb_state, ilm_entry.first.image, ilm_entry.first.subresource, node)) {
                     node.initialLayout = ilm_entry.second.initialLayout;
                 }
                 node.layout = ilm_entry.second.layout;
-                SetLayout(device_data, cb_state, ilm_entry.first, node);
+                SetLayout(cb_state, ilm_entry.first, node);
             }
         }
         sub_cb_state->primaryCommandBuffer = cb_state->commandBuffer;
