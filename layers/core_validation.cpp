@@ -141,12 +141,12 @@ IMAGE_VIEW_STATE *CoreChecks::GetImageViewState(VkImageView image_view) {
 
 // Get the global map of pending releases
 GlobalQFOTransferBarrierMap<VkImageMemoryBarrier> &CoreChecks::GetGlobalQFOReleaseBarrierMap(
-    layer_data *dev_data, const QFOTransferBarrier<VkImageMemoryBarrier>::Tag &type_tag) {
-    return dev_data->qfo_release_image_barrier_map;
+    const QFOTransferBarrier<VkImageMemoryBarrier>::Tag &type_tag) {
+    return qfo_release_image_barrier_map;
 }
 GlobalQFOTransferBarrierMap<VkBufferMemoryBarrier> &CoreChecks::GetGlobalQFOReleaseBarrierMap(
-    layer_data *dev_data, const QFOTransferBarrier<VkBufferMemoryBarrier>::Tag &type_tag) {
-    return dev_data->qfo_release_buffer_barrier_map;
+    const QFOTransferBarrier<VkBufferMemoryBarrier>::Tag &type_tag) {
+    return qfo_release_buffer_barrier_map;
 }
 
 // Get the image viewstate for a given framebuffer attachment
