@@ -25,6 +25,7 @@
 struct GpuDeviceMemoryBlock {
     VkBuffer buffer;
     VmaAllocation allocation;
+    std::unordered_map<uint32_t, const cvdescriptorset::Descriptor *> update_at_submit;
 };
 
 struct GpuBufferInfo {
