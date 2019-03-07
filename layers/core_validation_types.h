@@ -1095,6 +1095,7 @@ struct DeviceFeatures {
     VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT vtx_attrib_divisor_features;
     VkPhysicalDeviceScalarBlockLayoutFeaturesEXT scalar_block_layout_features;
     VkPhysicalDeviceBufferAddressFeaturesEXT buffer_address;
+    VkPhysicalDeviceCooperativeMatrixFeaturesNV cooperative_matrix_features;
 };
 
 enum RenderPassCreateVersion { RENDER_PASS_VERSION_1 = 0, RENDER_PASS_VERSION_2 = 1 };

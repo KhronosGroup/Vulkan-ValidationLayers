@@ -2472,6 +2472,11 @@ void CoreChecks::PostCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDevice
         core_checks->enabled_features.buffer_address = *buffer_address;
     }
 
+    const auto *cooperative_matrix_features = lvl_find_in_chain<VkPhysicalDeviceCooperativeMatrixFeaturesNV>(pCreateInfo->pNext);
+    if (cooperative_matrix_features) {
+        core_checks->enabled_features.cooperative_matrix_features = *cooperative_matrix_features;
+    }
+
     // Store physical device properties and physical device mem limits into CoreChecks structs
     DispatchGetPhysicalDeviceMemoryProperties(gpu, &core_checks->phys_dev_mem_props);
     DispatchGetPhysicalDeviceProperties(gpu, &core_checks->phys_dev_props);
@@ -2527,6 +2532,21 @@ void CoreChecks::PostCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDevice
     }
     if (GetEnables()->gpu_validation) {
         core_checks->GpuPostCallRecordCreateDevice(GetEnables());
+    }
+    if (core_checks->device_extensions.vk_nv_cooperative_matrix) {
+        // Get the needed cooperative_matrix properties
+        auto cooperative_matrix_props = lvl_init_struct<VkPhysicalDeviceCooperativeMatrixPropertiesNV>();
+        auto prop2 = lvl_init_struct<VkPhysicalDeviceProperties2KHR>(&cooperative_matrix_props);
+        instance_dispatch_table.GetPhysicalDeviceProperties2KHR(gpu, &prop2);
+        core_checks->phys_dev_ext_props.cooperative_matrix_props = cooperative_matrix_props;
+
+        uint32_t numCooperativeMatrixProperties = 0;
+        instance_dispatch_table.GetPhysicalDeviceCooperativeMatrixPropertiesNV(gpu, &numCooperativeMatrixProperties, NULL);
+        core_checks->cooperative_matrix_properties.resize(numCooperativeMatrixProperties,
+                                                          lvl_init_struct<VkCooperativeMatrixPropertiesNV>());
+
+        instance_dispatch_table.GetPhysicalDeviceCooperativeMatrixPropertiesNV(gpu, &numCooperativeMatrixProperties,
+                                                                               core_checks->cooperative_matrix_properties.data());
     }
 
     // Store queue family data
