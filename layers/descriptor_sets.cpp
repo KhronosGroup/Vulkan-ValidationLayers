@@ -1867,9 +1867,8 @@ bool CoreChecks::ValidateUpdateDescriptorSetsWithTemplateKHR(layer_data *device_
                                                              const TEMPLATE_STATE *template_state, const void *pData) {
     // Translate the templated update into a normal update for validation...
     cvdescriptorset::DecodedTemplateUpdate decoded_update(device_data, descriptorSet, template_state, pData);
-    return ValidateUpdateDescriptorSets(GetReportData(device_data), device_data,
-                                        static_cast<uint32_t>(decoded_update.desc_writes.size()), decoded_update.desc_writes.data(),
-                                        0, NULL, "vkUpdateDescriptorSetWithTemplate()");
+    return ValidateUpdateDescriptorSets(GetReportData(), device_data, static_cast<uint32_t>(decoded_update.desc_writes.size()),
+                                        decoded_update.desc_writes.data(), 0, NULL, "vkUpdateDescriptorSetWithTemplate()");
 }
 
 void CoreChecks::PerformUpdateDescriptorSetsWithTemplateKHR(layer_data *device_data, VkDescriptorSet descriptorSet,
@@ -2445,7 +2444,6 @@ void CoreChecks::UpdateAllocateDescriptorSetsData(const layer_data *dev_data, co
 bool CoreChecks::ValidateAllocateDescriptorSets(const layer_data *dev_data, const VkDescriptorSetAllocateInfo *p_alloc_info,
                                                 const cvdescriptorset::AllocateDescriptorSetsData *ds_data) {
     bool skip = false;
-    auto report_data = GetReportData(dev_data);
     auto pool_state = GetDescriptorPoolState(p_alloc_info->descriptorPool);
 
     for (uint32_t i = 0; i < p_alloc_info->descriptorSetCount; i++) {

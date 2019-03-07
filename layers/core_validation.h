@@ -514,7 +514,7 @@ class CoreChecks : public ValidationObject {
     VkFormatProperties GetPDFormatProperties(const VkFormat format);
     VkResult GetPDImageFormatProperties(const VkImageCreateInfo*, VkImageFormatProperties*);
     VkResult GetPDImageFormatProperties2(const VkPhysicalDeviceImageFormatInfo2*, VkImageFormatProperties2*);
-    const debug_report_data* GetReportData(const layer_data*);
+    const debug_report_data* GetReportData();
     const VkLayerDispatchTable* GetDispatchTable();
     const VkPhysicalDeviceProperties* GetPDProperties();
     const VkPhysicalDeviceMemoryProperties* GetPhysicalDeviceMemoryProperties();

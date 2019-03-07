@@ -353,7 +353,7 @@ void CoreChecks::GpuPostCallRecordCreateDevice(layer_data *dev_data) {
         return;
     }
     gpu_state->desc_set_bind_index = gpu_state->adjusted_max_desc_sets - 1;
-    log_msg(GetReportData(dev_data), VK_DEBUG_REPORT_INFORMATION_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
+    log_msg(GetReportData(), VK_DEBUG_REPORT_INFORMATION_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
             HandleToUint64(GetDevice()), "UNASSIGNED-GPU-Assisted Validation. ", "Shaders using descriptor set at index %d. ",
             gpu_state->desc_set_bind_index);
 
@@ -1003,7 +1003,7 @@ void CoreChecks::AnalyzeAndReportError(const layer_data *dev_data, GLOBAL_CB_NOD
     GenerateStageMessage(debug_record, stage_message);
     GenerateCommonMessage(report_data, cb_node, debug_record, shader_module_handle, pipeline_handle, draw_index, common_message);
     GenerateSourceMessages(pgm, debug_record, filename_message, source_message);
-    log_msg(GetReportData(dev_data), VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_QUEUE_EXT, HandleToUint64(queue),
+    log_msg(GetReportData(), VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_QUEUE_EXT, HandleToUint64(queue),
             vuid_msg.c_str(), "%s %s %s %s%s", validation_message.c_str(), common_message.c_str(), stage_message.c_str(),
             filename_message.c_str(), source_message.c_str());
     // The debug record at word kInstCommonOutSize is the number of words in the record

@@ -1423,7 +1423,6 @@ bool CoreChecks::ValidateShaderCapabilities(layer_data *dev_data, shader_module 
                                             bool has_writable_descriptor) {
     bool skip = false;
 
-    auto report_data = GetReportData(dev_data);
     auto const &features = GetEnabledFeatures();
     auto const &extensions = GetDeviceExtensions();
 
@@ -1656,7 +1655,6 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(layer_data *dev_data, shad
 
     bool skip = false;
     auto const &limits = dev_data->phys_dev_props.limits;
-    auto const report_data = GetReportData(dev_data);
 
     std::vector<uint32_t> builtInBlockIDs;
     std::vector<uint32_t> builtInIDs;
@@ -1974,14 +1972,14 @@ bool CoreChecks::ValidatePointListShaderState(const layer_data *dev_data, const 
     if ((stage == VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT || stage == VK_SHADER_STAGE_GEOMETRY_BIT) &&
         !GetEnabledFeatures()->core.shaderTessellationAndGeometryPointSize) {
         if (pointsize_written) {
-            skip |= log_msg(GetReportData(dev_data), VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
+            skip |= log_msg(GetReportData(), VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
                             HandleToUint64(pipeline->pipeline), kVUID_Core_Shader_PointSizeBuiltInOverSpecified,
                             "Pipeline topology is set to POINT_LIST and geometry or tessellation shaders write PointSize which "
                             "is prohibited when the shaderTessellationAndGeometryPointSize feature is not enabled.");
         }
     } else if (!pointsize_written) {
         skip |=
-            log_msg(GetReportData(dev_data), VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
+            log_msg(GetReportData(), VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
                     HandleToUint64(pipeline->pipeline), kVUID_Core_Shader_MissingPointSizeBuiltIn,
                     "Pipeline topology is set to POINT_LIST, but PointSize is not written to in the shader corresponding to %s.",
                     string_VkShaderStageFlagBits(stage));
@@ -1994,7 +1992,7 @@ bool CoreChecks::ValidatePipelineShaderStage(layer_data *dev_data, VkPipelineSha
                                              spirv_inst_iter *out_entrypoint, bool check_point_size) {
     bool skip = false;
     auto module = *out_module = GetShaderModuleState(pStage->module);
-    auto report_data = GetReportData(dev_data);
+    auto report_data = GetReportData();
 
     if (!module->has_valid_spirv) return false;
 
@@ -2184,7 +2182,7 @@ bool CoreChecks::ValidateAndCapturePipelineShaderState(layer_data *dev_data, PIP
     auto pCreateInfo = pipeline->graphicsPipelineCI.ptr();
     int vertex_stage = GetShaderStageId(VK_SHADER_STAGE_VERTEX_BIT);
     int fragment_stage = GetShaderStageId(VK_SHADER_STAGE_FRAGMENT_BIT);
-    auto report_data = GetReportData(dev_data);
+    auto report_data = GetReportData();
 
     shader_module const *shaders[32];
     memset(shaders, 0, sizeof(shaders));

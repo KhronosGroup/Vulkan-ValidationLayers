@@ -356,7 +356,6 @@ bool CoreChecks::ValidateRenderPassLayoutAgainstFramebufferImageUsage(layer_data
                                                                       VkFramebuffer framebuffer, VkRenderPass renderpass,
                                                                       uint32_t attachment_index, const char *variable_name) {
     bool skip = false;
-    const auto report_data = GetReportData(device_data);
     auto image_state = GetImageState(image);
     const char *vuid;
     const bool use_rp2 = (rp_version == RENDER_PASS_VERSION_2);
@@ -958,7 +957,6 @@ bool CoreChecks::ValidateQueuedQFOTransferBarriers(layer_data *device_data, GLOB
     using BarrierRecord = QFOTransferBarrier<Barrier>;
     using TypeTag = typename BarrierRecord::Tag;
     bool skip = false;
-    const auto report_data = device_data->GetReportData(device_data);
     const auto &cb_barriers = GetQFOBarrierSets(cb_state, TypeTag());
     const GlobalQFOTransferBarrierMap<Barrier> &global_release_barriers = GetGlobalQFOReleaseBarrierMap(TypeTag());
     const char *barrier_name = BarrierRecord::BarrierName();
