@@ -844,9 +844,9 @@ bool cvdescriptorset::DescriptorSet::ValidateDrawState(const std::map<uint32_t, 
                          cur_level < image_view_ci.subresourceRange.levelCount; ++cur_level) {
                         sub_layers.mipLevel = cur_level;
                         // No "invalid layout" VUID required for this call, since the optimal_layout parameter is UNDEFINED.
-                        device_data_->VerifyImageLayout(device_data_, cb_node, image_node, sub_layers, image_layout,
-                                                        VK_IMAGE_LAYOUT_UNDEFINED, caller, kVUIDUndefined,
-                                                        "VUID-VkDescriptorImageInfo-imageLayout-00344", &hit_error);
+                        device_data_->VerifyImageLayout(cb_node, image_node, sub_layers, image_layout, VK_IMAGE_LAYOUT_UNDEFINED,
+                                                        caller, kVUIDUndefined, "VUID-VkDescriptorImageInfo-imageLayout-00344",
+                                                        &hit_error);
                         if (hit_error) {
                             *error =
                                 "Image layout specified at vkUpdateDescriptorSet* or vkCmdPushDescriptorSet* time "
@@ -1612,7 +1612,7 @@ void cvdescriptorset::ImageSamplerDescriptor::UpdateDrawState(layer_data *dev_da
         dev_data->AddCommandBufferBindingImageView(dev_data, cb_node, iv_state);
     }
     if (image_view_) {
-        dev_data->SetImageViewLayout(dev_data, cb_node, image_view_, image_layout_);
+        dev_data->SetImageViewLayout(cb_node, image_view_, image_layout_);
     }
 }
 
@@ -1645,7 +1645,7 @@ void cvdescriptorset::ImageDescriptor::UpdateDrawState(layer_data *dev_data, GLO
         dev_data->AddCommandBufferBindingImageView(dev_data, cb_node, iv_state);
     }
     if (image_view_) {
-        dev_data->SetImageViewLayout(dev_data, cb_node, image_view_, image_layout_);
+        dev_data->SetImageViewLayout(cb_node, image_view_, image_layout_);
     }
 }
 
