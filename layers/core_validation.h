@@ -249,7 +249,7 @@ class CoreChecks : public ValidationObject {
     DESCRIPTOR_POOL_STATE* GetDescriptorPoolState(const VkDescriptorPool);
     BUFFER_STATE* GetBufferState(VkBuffer);
     IMAGE_STATE* GetImageState(VkImage);
-    DEVICE_MEM_INFO* GetMemObjInfo(const layer_data*, VkDeviceMemory);
+    DEVICE_MEM_INFO* GetMemObjInfo(VkDeviceMemory);
     BUFFER_VIEW_STATE* GetBufferViewState(VkBufferView);
     SAMPLER_STATE* GetSamplerState(VkSampler);
     IMAGE_VIEW_STATE* GetAttachmentImageViewState(FRAMEBUFFER_STATE* framebuffer, uint32_t index);
@@ -271,10 +271,10 @@ class CoreChecks : public ValidationObject {
     PHYSICAL_DEVICE_STATE* GetPhysicalDeviceState(VkPhysicalDevice phys);
     PHYSICAL_DEVICE_STATE* GetPhysicalDeviceState();
     SURFACE_STATE* GetSurfaceState(VkSurfaceKHR surface);
-    BINDABLE* GetObjectMemBinding(layer_data* dev_data, uint64_t handle, VulkanObjectType type);
+    BINDABLE* GetObjectMemBinding(uint64_t handle, VulkanObjectType type);
     bool VerifyQueueStateToSeq(layer_data* dev_data, QUEUE_STATE* initial_queue, uint64_t initial_seq);
     void ClearCmdBufAndMemReferences(layer_data* dev_data, GLOBAL_CB_NODE* cb_node);
-    void ClearMemoryObjectBinding(layer_data* dev_data, uint64_t handle, VulkanObjectType type, VkDeviceMemory mem);
+    void ClearMemoryObjectBinding(uint64_t handle, VulkanObjectType type, VkDeviceMemory mem);
     void ResetCommandBufferState(layer_data* dev_data, const VkCommandBuffer cb);
     void SetMemBinding(layer_data* dev_data, VkDeviceMemory mem, BINDABLE* mem_binding, VkDeviceSize memory_offset, uint64_t handle,
                        VulkanObjectType type);
@@ -492,7 +492,7 @@ class CoreChecks : public ValidationObject {
     void InvalidateCommandBuffers(const layer_data* dev_data, std::unordered_set<GLOBAL_CB_NODE*> const& cb_nodes, VK_OBJECT obj);
     void RemoveImageMemoryRange(uint64_t handle, DEVICE_MEM_INFO* mem_info);
     void RemoveBufferMemoryRange(uint64_t handle, DEVICE_MEM_INFO* mem_info);
-    void ClearMemoryObjectBindings(layer_data* dev_data, uint64_t handle, VulkanObjectType type);
+    void ClearMemoryObjectBindings(uint64_t handle, VulkanObjectType type);
     bool ValidateCmdQueueFlags(layer_data* dev_data, const GLOBAL_CB_NODE* cb_node, const char* caller_name, VkQueueFlags flags,
                                const char* error_code);
     bool InsideRenderPass(const layer_data* my_data, const GLOBAL_CB_NODE* pCB, const char* apiName, const char* msgCode);

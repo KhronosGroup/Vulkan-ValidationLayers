@@ -1526,12 +1526,12 @@ void CoreChecks::PreCallRecordDestroyImage(VkDevice device, VkImage image, const
     InvalidateCommandBuffers(device_data, image_state->cb_bindings, obj_struct);
     // Clean up memory mapping, bindings and range references for image
     for (auto mem_binding : image_state->GetBoundMemory()) {
-        auto mem_info = GetMemObjInfo(device_data, mem_binding);
+        auto mem_info = GetMemObjInfo(mem_binding);
         if (mem_info) {
             RemoveImageMemoryRange(obj_struct.handle, mem_info);
         }
     }
-    ClearMemoryObjectBindings(device_data, obj_struct.handle, kVulkanObjectTypeImage);
+    ClearMemoryObjectBindings(obj_struct.handle, kVulkanObjectTypeImage);
     EraseQFOReleaseBarriers<VkImageMemoryBarrier>(device_data, image);
     // Remove image from imageMap
     GetImageMap(device_data)->erase(image);
@@ -4531,12 +4531,12 @@ void CoreChecks::PreCallRecordDestroyBuffer(VkDevice device, VkBuffer buffer, co
 
     InvalidateCommandBuffers(device_data, buffer_state->cb_bindings, obj_struct);
     for (auto mem_binding : buffer_state->GetBoundMemory()) {
-        auto mem_info = GetMemObjInfo(device_data, mem_binding);
+        auto mem_info = GetMemObjInfo(mem_binding);
         if (mem_info) {
             RemoveBufferMemoryRange(HandleToUint64(buffer), mem_info);
         }
     }
-    ClearMemoryObjectBindings(device_data, HandleToUint64(buffer), kVulkanObjectTypeBuffer);
+    ClearMemoryObjectBindings(HandleToUint64(buffer), kVulkanObjectTypeBuffer);
     EraseQFOReleaseBarriers<VkBufferMemoryBarrier>(device_data, buffer);
     GetBufferMap(device_data)->erase(buffer_state->buffer);
 }

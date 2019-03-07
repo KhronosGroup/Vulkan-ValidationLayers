@@ -749,7 +749,7 @@ bool cvdescriptorset::DescriptorSet::ValidateDrawState(const std::map<uint32_t, 
                         return false;
                     } else if (!buffer_node->sparse) {
                         for (auto mem_binding : buffer_node->GetBoundMemory()) {
-                            if (!device_data_->GetMemObjInfo(device_data_, mem_binding)) {
+                            if (!device_data_->GetMemObjInfo(mem_binding)) {
                                 std::stringstream error_str;
                                 error_str << "Descriptor in binding #" << binding << " at global descriptor index " << i
                                           << " uses buffer " << buffer << " that references invalid memory " << mem_binding << ".";
