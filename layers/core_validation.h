@@ -342,6 +342,10 @@ class CoreChecks : public ValidationObject {
     void UpdateDrawState(layer_data* dev_data, GLOBAL_CB_NODE* cb_state, const VkPipelineBindPoint bind_point);
     bool ReportInvalidCommandBuffer(layer_data* dev_data, const GLOBAL_CB_NODE* cb_state, const char* call_source);
     void InitGpuValidation();
+    bool ValidatePhysicalDeviceQueueFamily(const PHYSICAL_DEVICE_STATE* pd_state, uint32_t requested_queue_family,
+                                           const char* err_code, const char* cmd_name, const char* queue_family_var_name);
+    bool ValidateDeviceQueueCreateInfos(const PHYSICAL_DEVICE_STATE* pd_state, uint32_t info_count,
+                                        const VkDeviceQueueCreateInfo* infos);
 
     bool ValidatePipelineVertexDivisors(layer_data* dev_data, std::vector<std::unique_ptr<PIPELINE_STATE>> const& pipe_state_vec,
                                         const uint32_t count, const VkGraphicsPipelineCreateInfo* pipe_cis);
