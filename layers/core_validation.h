@@ -526,8 +526,8 @@ class CoreChecks : public ValidationObject {
     std::unordered_map<VkBuffer, std::unique_ptr<BUFFER_STATE>>* GetBufferMap();
     std::unordered_map<VkBufferView, std::unique_ptr<BUFFER_VIEW_STATE>>* GetBufferViewMap();
     std::unordered_map<VkImageView, std::unique_ptr<IMAGE_VIEW_STATE>>* GetImageViewMap();
-    std::unordered_map<VkSamplerYcbcrConversion, uint64_t>* GetYcbcrConversionFormatMap(layer_data*);
-    std::unordered_set<uint64_t>* GetAHBExternalFormatsSet(layer_data*);
+    std::unordered_map<VkSamplerYcbcrConversion, uint64_t>* GetYcbcrConversionFormatMap();
+    std::unordered_set<uint64_t>* GetAHBExternalFormatsSet();
 
     const DeviceExtensions* GetDeviceExtensions();
     GpuValidationState* GetGpuValidationState(layer_data*);
