@@ -536,9 +536,9 @@ class CoreChecks : public ValidationObject {
     uint32_t GetApiVersion();
 
     GlobalQFOTransferBarrierMap<VkImageMemoryBarrier>& GetGlobalQFOReleaseBarrierMap(
-        layer_data* dev_data, const QFOTransferBarrier<VkImageMemoryBarrier>::Tag& type_tag);
+        const QFOTransferBarrier<VkImageMemoryBarrier>::Tag& type_tag);
     GlobalQFOTransferBarrierMap<VkBufferMemoryBarrier>& GetGlobalQFOReleaseBarrierMap(
-        layer_data* dev_data, const QFOTransferBarrier<VkBufferMemoryBarrier>::Tag& type_tag);
+        const QFOTransferBarrier<VkBufferMemoryBarrier>::Tag& type_tag);
     template <typename Barrier>
     void RecordQueuedQFOTransferBarriers(layer_data* device_data, GLOBAL_CB_NODE* cb_state);
     template <typename Barrier>
@@ -559,7 +559,7 @@ class CoreChecks : public ValidationObject {
     template <typename Barrier>
     bool ValidateQFOTransferBarrierUniqueness(layer_data* device_data, const char* func_name, GLOBAL_CB_NODE* cb_state,
                                               uint32_t barrier_count, const Barrier* barriers);
-    bool IsReleaseOp(layer_data* device_data, GLOBAL_CB_NODE* cb_state, VkImageMemoryBarrier const* barrier);
+    bool IsReleaseOp(GLOBAL_CB_NODE* cb_state, VkImageMemoryBarrier const* barrier);
     bool ValidateBarriersQFOTransferUniqueness(layer_data* device_data, const char* func_name, GLOBAL_CB_NODE* cb_state,
                                                uint32_t bufferBarrierCount, const VkBufferMemoryBarrier* pBufferMemBarriers,
                                                uint32_t imageMemBarrierCount, const VkImageMemoryBarrier* pImageMemBarriers);
@@ -672,7 +672,7 @@ class CoreChecks : public ValidationObject {
     template <typename Barrier, typename BarrierRecord = QFOTransferBarrier<Barrier>>
     void EraseQFOReleaseBarriers(layer_data* device_data, const typename BarrierRecord::HandleType& handle) {
         GlobalQFOTransferBarrierMap<Barrier>& global_release_barriers =
-            GetGlobalQFOReleaseBarrierMap(device_data, typename BarrierRecord::Tag());
+            GetGlobalQFOReleaseBarrierMap(typename BarrierRecord::Tag());
         global_release_barriers.erase(handle);
     }
     bool ValidateCopyImageTransferGranularityRequirements(layer_data* device_data, const GLOBAL_CB_NODE* cb_node,

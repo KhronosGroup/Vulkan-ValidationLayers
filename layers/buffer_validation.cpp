@@ -851,7 +851,7 @@ bool CoreChecks::ValidateBarriersToImages(layer_data *device_data, GLOBAL_CB_NOD
     return skip;
 }
 
-bool CoreChecks::IsReleaseOp(layer_data *device_data, GLOBAL_CB_NODE *cb_state, VkImageMemoryBarrier const *barrier) {
+bool CoreChecks::IsReleaseOp(GLOBAL_CB_NODE *cb_state, VkImageMemoryBarrier const *barrier) {
     if (!IsTransferOp(barrier)) return false;
 
     auto pool = GetCommandPoolNode(cb_state->createInfo.commandPool);
@@ -960,7 +960,7 @@ bool CoreChecks::ValidateQueuedQFOTransferBarriers(layer_data *device_data, GLOB
     bool skip = false;
     const auto report_data = device_data->GetReportData(device_data);
     const auto &cb_barriers = GetQFOBarrierSets(cb_state, TypeTag());
-    const GlobalQFOTransferBarrierMap<Barrier> &global_release_barriers = GetGlobalQFOReleaseBarrierMap(device_data, TypeTag());
+    const GlobalQFOTransferBarrierMap<Barrier> &global_release_barriers = GetGlobalQFOReleaseBarrierMap(TypeTag());
     const char *barrier_name = BarrierRecord::BarrierName();
     const char *handle_name = BarrierRecord::HandleName();
     // No release should have an extant duplicate (WARNING)
@@ -1017,7 +1017,7 @@ void CoreChecks::RecordQueuedQFOTransferBarriers(layer_data *device_data, GLOBAL
     using BarrierRecord = QFOTransferBarrier<Barrier>;
     using TypeTag = typename BarrierRecord::Tag;
     const auto &cb_barriers = GetQFOBarrierSets(cb_state, TypeTag());
-    GlobalQFOTransferBarrierMap<Barrier> &global_release_barriers = GetGlobalQFOReleaseBarrierMap(device_data, TypeTag());
+    GlobalQFOTransferBarrierMap<Barrier> &global_release_barriers = GetGlobalQFOReleaseBarrierMap(TypeTag());
 
     // Add release barriers from this submit to the global map
     for (const auto &release : cb_barriers.release) {
@@ -1063,7 +1063,7 @@ void CoreChecks::TransitionImageLayouts(layer_data *device_data, GLOBAL_CB_NODE 
         // purposes it doesn't seem important which side performs the layout
         // transition, but it must not be performed twice. We'll arbitrarily
         // choose to perform it as part of the acquire operation.
-        if (IsReleaseOp(device_data, cb_state, mem_barrier)) {
+        if (IsReleaseOp(cb_state, mem_barrier)) {
             continue;
         }
 
