@@ -34,15 +34,11 @@
 #include "vk_layer_logging.h"
 #include "vk_typemap_helper.h"
 
+#include "chassis.h"
+#include "core_validation.h"
+#include "shader_validation.h"
+#include "descriptor_sets.h"
 #include "buffer_validation.h"
-
-namespace core_validation {
-extern unordered_map<void *, layer_data *> layer_data_map;
-extern unordered_map<void *, instance_layer_data *> instance_layer_data_map;
-};  // namespace core_validation
-
-using core_validation::instance_layer_data_map;
-using core_validation::layer_data_map;
 
 uint32_t FullMipChainLevels(uint32_t height, uint32_t width, uint32_t depth) {
     // uint cast applies floor()
@@ -53,7 +49,8 @@ uint32_t FullMipChainLevels(VkExtent3D extent) { return FullMipChainLevels(exten
 
 uint32_t FullMipChainLevels(VkExtent2D extent) { return FullMipChainLevels(extent.height, extent.width); }
 
-void SetLayout(layer_data *device_data, GLOBAL_CB_NODE *pCB, ImageSubresourcePair imgpair, const VkImageLayout &layout) {
+void CoreChecks::SetLayout(layer_data *device_data, GLOBAL_CB_NODE *pCB, ImageSubresourcePair imgpair,
+                           const VkImageLayout &layout) {
     auto it = pCB->imageLayoutMap.find(imgpair);
     if (it != pCB->imageLayoutMap.end()) {
         it->second.layout = layout;
@@ -66,14 +63,16 @@ void SetLayout(layer_data *device_data, GLOBAL_CB_NODE *pCB, ImageSubresourcePai
         SetLayout(device_data, pCB, imgpair, {node.initialLayout, layout});
     }
 }
+
 template <class OBJECT, class LAYOUT>
-void SetLayout(layer_data *device_data, OBJECT *pObject, VkImage image, VkImageSubresource range, const LAYOUT &layout) {
+void CoreChecks::SetLayout(layer_data *device_data, OBJECT *pObject, VkImage image, VkImageSubresource range,
+                           const LAYOUT &layout) {
     ImageSubresourcePair imgpair = {image, true, range};
     SetLayout(device_data, pObject, imgpair, layout, VK_IMAGE_ASPECT_COLOR_BIT);
     SetLayout(device_data, pObject, imgpair, layout, VK_IMAGE_ASPECT_DEPTH_BIT);
     SetLayout(device_data, pObject, imgpair, layout, VK_IMAGE_ASPECT_STENCIL_BIT);
     SetLayout(device_data, pObject, imgpair, layout, VK_IMAGE_ASPECT_METADATA_BIT);
-    if (GetDeviceExtensions(device_data)->vk_khr_sampler_ycbcr_conversion) {
+    if (GetDeviceExtensions()->vk_khr_sampler_ycbcr_conversion) {
         SetLayout(device_data, pObject, imgpair, layout, VK_IMAGE_ASPECT_PLANE_0_BIT_KHR);
         SetLayout(device_data, pObject, imgpair, layout, VK_IMAGE_ASPECT_PLANE_1_BIT_KHR);
         SetLayout(device_data, pObject, imgpair, layout, VK_IMAGE_ASPECT_PLANE_2_BIT_KHR);
@@ -81,8 +80,8 @@ void SetLayout(layer_data *device_data, OBJECT *pObject, VkImage image, VkImageS
 }
 
 template <class OBJECT, class LAYOUT>
-void SetLayout(layer_data *device_data, OBJECT *pObject, ImageSubresourcePair imgpair, const LAYOUT &layout,
-               VkImageAspectFlags aspectMask) {
+void CoreChecks::SetLayout(layer_data *device_data, OBJECT *pObject, ImageSubresourcePair imgpair, const LAYOUT &layout,
+                           VkImageAspectFlags aspectMask) {
     if (imgpair.subresource.aspectMask & aspectMask) {
         imgpair.subresource.aspectMask = aspectMask;
         SetLayout(device_data, pObject, imgpair, layout);
@@ -90,8 +89,8 @@ void SetLayout(layer_data *device_data, OBJECT *pObject, ImageSubresourcePair im
 }
 
 // Set the layout in supplied map
-void SetLayout(std::unordered_map<ImageSubresourcePair, IMAGE_LAYOUT_NODE> &imageLayoutMap, ImageSubresourcePair imgpair,
-               VkImageLayout layout) {
+void CoreChecks::SetLayout(std::unordered_map<ImageSubresourcePair, IMAGE_LAYOUT_NODE> &imageLayoutMap,
+                           ImageSubresourcePair imgpair, VkImageLayout layout) {
     auto it = imageLayoutMap.find(imgpair);
     if (it != imageLayoutMap.end()) {
         it->second.layout = layout;  // Update
@@ -100,10 +99,8 @@ void SetLayout(std::unordered_map<ImageSubresourcePair, IMAGE_LAYOUT_NODE> &imag
     }
 }
 
-bool FindLayoutVerifyNode(layer_data const *device_data, GLOBAL_CB_NODE const *pCB, ImageSubresourcePair imgpair,
-                          IMAGE_CMD_BUF_LAYOUT_NODE &node, const VkImageAspectFlags aspectMask) {
-    const debug_report_data *report_data = core_validation::GetReportData(device_data);
-
+bool CoreChecks::FindLayoutVerifyNode(layer_data const *device_data, GLOBAL_CB_NODE const *pCB, ImageSubresourcePair imgpair,
+                                      IMAGE_CMD_BUF_LAYOUT_NODE &node, const VkImageAspectFlags aspectMask) {
     if (!(imgpair.subresource.aspectMask & aspectMask)) {
         return false;
     }
@@ -116,39 +113,38 @@ bool FindLayoutVerifyNode(layer_data const *device_data, GLOBAL_CB_NODE const *p
     if (node.layout != VK_IMAGE_LAYOUT_MAX_ENUM && node.layout != imgsubIt->second.layout) {
         log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, HandleToUint64(imgpair.image),
                 kVUID_Core_DrawState_InvalidLayout,
-                "Cannot query for VkImage 0x%" PRIx64 " layout when combined aspect mask %d has multiple layout types: %s and %s",
-                HandleToUint64(imgpair.image), oldAspectMask, string_VkImageLayout(node.layout),
+                "Cannot query for VkImage %s layout when combined aspect mask %d has multiple layout types: %s and %s",
+                report_data->FormatHandle(imgpair.image).c_str(), oldAspectMask, string_VkImageLayout(node.layout),
                 string_VkImageLayout(imgsubIt->second.layout));
     }
     if (node.initialLayout != VK_IMAGE_LAYOUT_MAX_ENUM && node.initialLayout != imgsubIt->second.initialLayout) {
         log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, HandleToUint64(imgpair.image),
                 kVUID_Core_DrawState_InvalidLayout,
-                "Cannot query for VkImage 0x%" PRIx64
+                "Cannot query for VkImage %s"
                 " layout when combined aspect mask %d has multiple initial layout types: %s and %s",
-                HandleToUint64(imgpair.image), oldAspectMask, string_VkImageLayout(node.initialLayout),
+                report_data->FormatHandle(imgpair.image).c_str(), oldAspectMask, string_VkImageLayout(node.initialLayout),
                 string_VkImageLayout(imgsubIt->second.initialLayout));
     }
     node = imgsubIt->second;
     return true;
 }
 
-bool FindLayoutVerifyLayout(layer_data const *device_data, ImageSubresourcePair imgpair, VkImageLayout &layout,
-                            const VkImageAspectFlags aspectMask) {
+bool CoreChecks::FindLayoutVerifyLayout(layer_data const *device_data, ImageSubresourcePair imgpair, VkImageLayout &layout,
+                                        const VkImageAspectFlags aspectMask) {
     if (!(imgpair.subresource.aspectMask & aspectMask)) {
         return false;
     }
-    const debug_report_data *report_data = core_validation::GetReportData(device_data);
     VkImageAspectFlags oldAspectMask = imgpair.subresource.aspectMask;
     imgpair.subresource.aspectMask = aspectMask;
-    auto imgsubIt = (*core_validation::GetImageLayoutMap(device_data)).find(imgpair);
-    if (imgsubIt == (*core_validation::GetImageLayoutMap(device_data)).end()) {
+    auto imgsubIt = (*GetImageLayoutMap()).find(imgpair);
+    if (imgsubIt == (*GetImageLayoutMap()).end()) {
         return false;
     }
     if (layout != VK_IMAGE_LAYOUT_MAX_ENUM && layout != imgsubIt->second.layout) {
         log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, HandleToUint64(imgpair.image),
                 kVUID_Core_DrawState_InvalidLayout,
-                "Cannot query for VkImage 0x%" PRIx64 " layout when combined aspect mask %d has multiple layout types: %s and %s",
-                HandleToUint64(imgpair.image), oldAspectMask, string_VkImageLayout(layout),
+                "Cannot query for VkImage %s layout when combined aspect mask %d has multiple layout types: %s and %s",
+                report_data->FormatHandle(imgpair.image).c_str(), oldAspectMask, string_VkImageLayout(layout),
                 string_VkImageLayout(imgsubIt->second.layout));
     }
     layout = imgsubIt->second.layout;
@@ -156,15 +152,15 @@ bool FindLayoutVerifyLayout(layer_data const *device_data, ImageSubresourcePair 
 }
 
 // Find layout(s) on the command buffer level
-bool FindCmdBufLayout(layer_data const *device_data, GLOBAL_CB_NODE const *pCB, VkImage image, VkImageSubresource range,
-                      IMAGE_CMD_BUF_LAYOUT_NODE &node) {
+bool CoreChecks::FindCmdBufLayout(layer_data const *device_data, GLOBAL_CB_NODE const *pCB, VkImage image, VkImageSubresource range,
+                                  IMAGE_CMD_BUF_LAYOUT_NODE &node) {
     ImageSubresourcePair imgpair = {image, true, range};
     node = IMAGE_CMD_BUF_LAYOUT_NODE(VK_IMAGE_LAYOUT_MAX_ENUM, VK_IMAGE_LAYOUT_MAX_ENUM);
     FindLayoutVerifyNode(device_data, pCB, imgpair, node, VK_IMAGE_ASPECT_COLOR_BIT);
     FindLayoutVerifyNode(device_data, pCB, imgpair, node, VK_IMAGE_ASPECT_DEPTH_BIT);
     FindLayoutVerifyNode(device_data, pCB, imgpair, node, VK_IMAGE_ASPECT_STENCIL_BIT);
     FindLayoutVerifyNode(device_data, pCB, imgpair, node, VK_IMAGE_ASPECT_METADATA_BIT);
-    if (GetDeviceExtensions(device_data)->vk_khr_sampler_ycbcr_conversion) {
+    if (GetDeviceExtensions()->vk_khr_sampler_ycbcr_conversion) {
         FindLayoutVerifyNode(device_data, pCB, imgpair, node, VK_IMAGE_ASPECT_PLANE_0_BIT_KHR);
         FindLayoutVerifyNode(device_data, pCB, imgpair, node, VK_IMAGE_ASPECT_PLANE_1_BIT_KHR);
         FindLayoutVerifyNode(device_data, pCB, imgpair, node, VK_IMAGE_ASPECT_PLANE_2_BIT_KHR);
@@ -180,30 +176,30 @@ bool FindCmdBufLayout(layer_data const *device_data, GLOBAL_CB_NODE const *pCB, 
 }
 
 // Find layout(s) on the global level
-bool FindGlobalLayout(layer_data *device_data, ImageSubresourcePair imgpair, VkImageLayout &layout) {
+bool CoreChecks::FindGlobalLayout(layer_data *device_data, ImageSubresourcePair imgpair, VkImageLayout &layout) {
     layout = VK_IMAGE_LAYOUT_MAX_ENUM;
     FindLayoutVerifyLayout(device_data, imgpair, layout, VK_IMAGE_ASPECT_COLOR_BIT);
     FindLayoutVerifyLayout(device_data, imgpair, layout, VK_IMAGE_ASPECT_DEPTH_BIT);
     FindLayoutVerifyLayout(device_data, imgpair, layout, VK_IMAGE_ASPECT_STENCIL_BIT);
     FindLayoutVerifyLayout(device_data, imgpair, layout, VK_IMAGE_ASPECT_METADATA_BIT);
-    if (GetDeviceExtensions(device_data)->vk_khr_sampler_ycbcr_conversion) {
+    if (GetDeviceExtensions()->vk_khr_sampler_ycbcr_conversion) {
         FindLayoutVerifyLayout(device_data, imgpair, layout, VK_IMAGE_ASPECT_PLANE_0_BIT_KHR);
         FindLayoutVerifyLayout(device_data, imgpair, layout, VK_IMAGE_ASPECT_PLANE_1_BIT_KHR);
         FindLayoutVerifyLayout(device_data, imgpair, layout, VK_IMAGE_ASPECT_PLANE_2_BIT_KHR);
     }
     if (layout == VK_IMAGE_LAYOUT_MAX_ENUM) {
         imgpair = {imgpair.image, false, VkImageSubresource()};
-        auto imgsubIt = (*core_validation::GetImageLayoutMap(device_data)).find(imgpair);
-        if (imgsubIt == (*core_validation::GetImageLayoutMap(device_data)).end()) return false;
+        auto imgsubIt = (*GetImageLayoutMap()).find(imgpair);
+        if (imgsubIt == (*GetImageLayoutMap()).end()) return false;
         layout = imgsubIt->second.layout;
     }
     return true;
 }
 
-bool FindLayouts(layer_data *device_data, VkImage image, std::vector<VkImageLayout> &layouts) {
-    auto sub_data = (*core_validation::GetImageSubresourceMap(device_data)).find(image);
-    if (sub_data == (*core_validation::GetImageSubresourceMap(device_data)).end()) return false;
-    auto image_state = GetImageState(device_data, image);
+bool CoreChecks::FindLayouts(layer_data *device_data, VkImage image, std::vector<VkImageLayout> &layouts) {
+    auto sub_data = (*GetImageSubresourceMap()).find(image);
+    if (sub_data == (*GetImageSubresourceMap()).end()) return false;
+    auto image_state = GetImageState(image);
     if (!image_state) return false;
     bool ignoreGlobal = false;
     // TODO: Make this robust for >1 aspect mask. Now it will just say ignore potential errors in this case.
@@ -212,15 +208,16 @@ bool FindLayouts(layer_data *device_data, VkImage image, std::vector<VkImageLayo
     }
     for (auto imgsubpair : sub_data->second) {
         if (ignoreGlobal && !imgsubpair.hasSubresource) continue;
-        auto img_data = (*core_validation::GetImageLayoutMap(device_data)).find(imgsubpair);
-        if (img_data != (*core_validation::GetImageLayoutMap(device_data)).end()) {
+        auto img_data = (*GetImageLayoutMap()).find(imgsubpair);
+        if (img_data != (*GetImageLayoutMap()).end()) {
             layouts.push_back(img_data->second.layout);
         }
     }
     return true;
 }
-bool FindLayout(const std::unordered_map<ImageSubresourcePair, IMAGE_LAYOUT_NODE> &imageLayoutMap, ImageSubresourcePair imgpair,
-                VkImageLayout &layout, const VkImageAspectFlags aspectMask) {
+
+bool CoreChecks::FindLayout(const std::unordered_map<ImageSubresourcePair, IMAGE_LAYOUT_NODE> &imageLayoutMap,
+                            ImageSubresourcePair imgpair, VkImageLayout &layout, const VkImageAspectFlags aspectMask) {
     if (!(imgpair.subresource.aspectMask & aspectMask)) {
         return false;
     }
@@ -234,14 +231,15 @@ bool FindLayout(const std::unordered_map<ImageSubresourcePair, IMAGE_LAYOUT_NODE
 }
 
 // find layout in supplied map
-bool FindLayout(layer_data *device_data, const std::unordered_map<ImageSubresourcePair, IMAGE_LAYOUT_NODE> &imageLayoutMap,
-                ImageSubresourcePair imgpair, VkImageLayout &layout) {
+bool CoreChecks::FindLayout(layer_data *device_data,
+                            const std::unordered_map<ImageSubresourcePair, IMAGE_LAYOUT_NODE> &imageLayoutMap,
+                            ImageSubresourcePair imgpair, VkImageLayout &layout) {
     layout = VK_IMAGE_LAYOUT_MAX_ENUM;
     FindLayout(imageLayoutMap, imgpair, layout, VK_IMAGE_ASPECT_COLOR_BIT);
     FindLayout(imageLayoutMap, imgpair, layout, VK_IMAGE_ASPECT_DEPTH_BIT);
     FindLayout(imageLayoutMap, imgpair, layout, VK_IMAGE_ASPECT_STENCIL_BIT);
     FindLayout(imageLayoutMap, imgpair, layout, VK_IMAGE_ASPECT_METADATA_BIT);
-    if (GetDeviceExtensions(device_data)->vk_khr_sampler_ycbcr_conversion) {
+    if (GetDeviceExtensions()->vk_khr_sampler_ycbcr_conversion) {
         FindLayout(imageLayoutMap, imgpair, layout, VK_IMAGE_ASPECT_PLANE_0_BIT_KHR);
         FindLayout(imageLayoutMap, imgpair, layout, VK_IMAGE_ASPECT_PLANE_1_BIT_KHR);
         FindLayout(imageLayoutMap, imgpair, layout, VK_IMAGE_ASPECT_PLANE_2_BIT_KHR);
@@ -257,16 +255,16 @@ bool FindLayout(layer_data *device_data, const std::unordered_map<ImageSubresour
 }
 
 // Set the layout on the global level
-void SetGlobalLayout(layer_data *device_data, ImageSubresourcePair imgpair, const VkImageLayout &layout) {
+void CoreChecks::SetGlobalLayout(layer_data *device_data, ImageSubresourcePair imgpair, const VkImageLayout &layout) {
     VkImage &image = imgpair.image;
-    auto &lmap = (*core_validation::GetImageLayoutMap(device_data));
+    auto &lmap = (*GetImageLayoutMap());
     auto data = lmap.find(imgpair);
     if (data != lmap.end()) {
         data->second.layout = layout;  // Update
     } else {
         lmap[imgpair].layout = layout;  // Insert
     }
-    auto &image_subresources = (*core_validation::GetImageSubresourceMap(device_data))[image];
+    auto &image_subresources = (*GetImageSubresourceMap())[image];
     auto subresource = std::find(image_subresources.begin(), image_subresources.end(), imgpair);
     if (subresource == image_subresources.end()) {
         image_subresources.push_back(imgpair);
@@ -274,7 +272,8 @@ void SetGlobalLayout(layer_data *device_data, ImageSubresourcePair imgpair, cons
 }
 
 // Set the layout on the cmdbuf level
-void SetLayout(layer_data *device_data, GLOBAL_CB_NODE *pCB, ImageSubresourcePair imgpair, const IMAGE_CMD_BUF_LAYOUT_NODE &node) {
+void CoreChecks::SetLayout(layer_data *device_data, GLOBAL_CB_NODE *pCB, ImageSubresourcePair imgpair,
+                           const IMAGE_CMD_BUF_LAYOUT_NODE &node) {
     auto it = pCB->imageLayoutMap.find(imgpair);
     if (it != pCB->imageLayoutMap.end()) {
         it->second = node;  // Update
@@ -283,8 +282,8 @@ void SetLayout(layer_data *device_data, GLOBAL_CB_NODE *pCB, ImageSubresourcePai
     }
 }
 // Set image layout for given VkImageSubresourceRange struct
-void SetImageLayout(layer_data *device_data, GLOBAL_CB_NODE *cb_node, const IMAGE_STATE *image_state,
-                    VkImageSubresourceRange image_subresource_range, const VkImageLayout &layout) {
+void CoreChecks::SetImageLayout(layer_data *device_data, GLOBAL_CB_NODE *cb_node, const IMAGE_STATE *image_state,
+                                VkImageSubresourceRange image_subresource_range, const VkImageLayout &layout) {
     assert(image_state);
     cb_node->image_layout_change_count++;  // Change the version of this data to force revalidation
     for (uint32_t level_index = 0; level_index < image_subresource_range.levelCount; ++level_index) {
@@ -300,7 +299,7 @@ void SetImageLayout(layer_data *device_data, GLOBAL_CB_NODE *cb_node, const IMAG
                 }
             }
             // For multiplane images, IMAGE_ASPECT_COLOR is an alias for all of the plane bits
-            if (GetDeviceExtensions(device_data)->vk_khr_sampler_ycbcr_conversion) {
+            if (GetDeviceExtensions()->vk_khr_sampler_ycbcr_conversion) {
                 if (FormatIsMultiplane(image_state->createInfo.format)) {
                     if (sub.aspectMask & VK_IMAGE_ASPECT_COLOR_BIT) {
                         sub.aspectMask &= ~VK_IMAGE_ASPECT_COLOR_BIT;
@@ -316,8 +315,8 @@ void SetImageLayout(layer_data *device_data, GLOBAL_CB_NODE *cb_node, const IMAG
     }
 }
 // Set image layout for given VkImageSubresourceLayers struct
-void SetImageLayout(layer_data *device_data, GLOBAL_CB_NODE *cb_node, const IMAGE_STATE *image_state,
-                    VkImageSubresourceLayers image_subresource_layers, const VkImageLayout &layout) {
+void CoreChecks::SetImageLayout(layer_data *device_data, GLOBAL_CB_NODE *cb_node, const IMAGE_STATE *image_state,
+                                VkImageSubresourceLayers image_subresource_layers, const VkImageLayout &layout) {
     // Transfer VkImageSubresourceLayers into VkImageSubresourceRange struct
     VkImageSubresourceRange image_subresource_range;
     image_subresource_range.aspectMask = image_subresource_layers.aspectMask;
@@ -329,11 +328,11 @@ void SetImageLayout(layer_data *device_data, GLOBAL_CB_NODE *cb_node, const IMAG
 }
 
 // Set image layout for all slices of an image view
-void SetImageViewLayout(layer_data *device_data, GLOBAL_CB_NODE *cb_node, IMAGE_VIEW_STATE *view_state,
-                        const VkImageLayout &layout) {
+void CoreChecks::SetImageViewLayout(layer_data *device_data, GLOBAL_CB_NODE *cb_node, IMAGE_VIEW_STATE *view_state,
+                                    const VkImageLayout &layout) {
     assert(view_state);
 
-    IMAGE_STATE *image_state = GetImageState(device_data, view_state->create_info.image);
+    IMAGE_STATE *image_state = GetImageState(view_state->create_info.image);
     VkImageSubresourceRange sub_range = view_state->create_info.subresourceRange;
 
     // When changing the layout of a 3D image subresource via a 2D or 2D_ARRRAY image view, all depth slices of
@@ -346,27 +345,28 @@ void SetImageViewLayout(layer_data *device_data, GLOBAL_CB_NODE *cb_node, IMAGE_
     SetImageLayout(device_data, cb_node, image_state, sub_range, layout);
 }
 
-void SetImageViewLayout(layer_data *device_data, GLOBAL_CB_NODE *cb_node, VkImageView imageView, const VkImageLayout &layout) {
-    auto view_state = GetImageViewState(device_data, imageView);
+void CoreChecks::SetImageViewLayout(layer_data *device_data, GLOBAL_CB_NODE *cb_node, VkImageView imageView,
+                                    const VkImageLayout &layout) {
+    auto view_state = GetImageViewState(imageView);
     SetImageViewLayout(device_data, cb_node, view_state, layout);
 }
 
-bool ValidateRenderPassLayoutAgainstFramebufferImageUsage(layer_data *device_data, RenderPassCreateVersion rp_version,
-                                                          VkImageLayout layout, VkImage image, VkImageView image_view,
-                                                          VkFramebuffer framebuffer, VkRenderPass renderpass,
-                                                          uint32_t attachment_index, const char *variable_name) {
+bool CoreChecks::ValidateRenderPassLayoutAgainstFramebufferImageUsage(layer_data *device_data, RenderPassCreateVersion rp_version,
+                                                                      VkImageLayout layout, VkImage image, VkImageView image_view,
+                                                                      VkFramebuffer framebuffer, VkRenderPass renderpass,
+                                                                      uint32_t attachment_index, const char *variable_name) {
     bool skip = false;
-    const auto report_data = core_validation::GetReportData(device_data);
-    auto image_state = GetImageState(device_data, image);
+    auto image_state = GetImageState(image);
     const char *vuid;
     const bool use_rp2 = (rp_version == RENDER_PASS_VERSION_2);
 
     if (!image_state) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, HandleToUint64(image),
                         "VUID-VkRenderPassBeginInfo-framebuffer-parameter",
-                        "Render Pass begin with renderpass 0x%" PRIx64 " uses framebuffer 0x%" PRIx64 " where pAttachments[%" PRIu32
-                        "] = image view 0x%" PRIx64 ", which refers to an invalid image",
-                        HandleToUint64(renderpass), HandleToUint64(framebuffer), attachment_index, HandleToUint64(image_view));
+                        "Render Pass begin with renderpass %s uses framebuffer %s where pAttachments[%" PRIu32
+                        "] = image view %s, which refers to an invalid image",
+                        report_data->FormatHandle(renderpass).c_str(), report_data->FormatHandle(framebuffer).c_str(),
+                        attachment_index, report_data->FormatHandle(image_view).c_str());
         return skip;
     }
 
@@ -377,11 +377,11 @@ bool ValidateRenderPassLayoutAgainstFramebufferImageUsage(layer_data *device_dat
         vuid = use_rp2 ? "VUID-vkCmdBeginRenderPass2KHR-initialLayout-03094" : "VUID-vkCmdBeginRenderPass-initialLayout-00895";
         skip |=
             log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, HandleToUint64(image), vuid,
-                    "Layout/usage mismatch for attachment %u in render pass 0x%" PRIx64
-                    " - the %s is %s but the image attached to framebuffer 0x%" PRIx64 " via image view 0x%" PRIx64
+                    "Layout/usage mismatch for attachment %u in render pass %s"
+                    " - the %s is %s but the image attached to framebuffer %s via image view %s"
                     " was not created with VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT",
-                    attachment_index, HandleToUint64(framebuffer), variable_name, string_VkImageLayout(layout),
-                    HandleToUint64(renderpass), HandleToUint64(image_view));
+                    attachment_index, report_data->FormatHandle(framebuffer).c_str(), variable_name, string_VkImageLayout(layout),
+                    report_data->FormatHandle(renderpass).c_str(), report_data->FormatHandle(image_view).c_str());
     }
 
     if (layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL &&
@@ -389,49 +389,49 @@ bool ValidateRenderPassLayoutAgainstFramebufferImageUsage(layer_data *device_dat
         vuid = use_rp2 ? "VUID-vkCmdBeginRenderPass2KHR-initialLayout-03097" : "VUID-vkCmdBeginRenderPass-initialLayout-00897";
         skip |=
             log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, HandleToUint64(image), vuid,
-                    "Layout/usage mismatch for attachment %u in render pass 0x%" PRIx64
-                    " - the %s is %s but the image attached to framebuffer 0x%" PRIx64 " via image view 0x%" PRIx64
+                    "Layout/usage mismatch for attachment %u in render pass %s"
+                    " - the %s is %s but the image attached to framebuffer %s via image view %s"
                     " was not created with VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT or VK_IMAGE_USAGE_SAMPLED_BIT",
-                    attachment_index, HandleToUint64(framebuffer), variable_name, string_VkImageLayout(layout),
-                    HandleToUint64(renderpass), HandleToUint64(image_view));
+                    attachment_index, report_data->FormatHandle(framebuffer).c_str(), variable_name, string_VkImageLayout(layout),
+                    report_data->FormatHandle(renderpass).c_str(), report_data->FormatHandle(image_view).c_str());
     }
 
     if (layout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL && !(image_usage & VK_IMAGE_USAGE_TRANSFER_SRC_BIT)) {
         vuid = use_rp2 ? "VUID-vkCmdBeginRenderPass2KHR-initialLayout-03098" : "VUID-vkCmdBeginRenderPass-initialLayout-00898";
         skip |=
             log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, HandleToUint64(image), vuid,
-                    "Layout/usage mismatch for attachment %u in render pass 0x%" PRIx64
-                    " - the %s is %s but the image attached to framebuffer 0x%" PRIx64 " via image view 0x%" PRIx64
+                    "Layout/usage mismatch for attachment %u in render pass %s"
+                    " - the %s is %s but the image attached to framebuffer %s via image view %s"
                     " was not created with VK_IMAGE_USAGE_TRANSFER_SRC_BIT",
-                    attachment_index, HandleToUint64(framebuffer), variable_name, string_VkImageLayout(layout),
-                    HandleToUint64(renderpass), HandleToUint64(image_view));
+                    attachment_index, report_data->FormatHandle(framebuffer).c_str(), variable_name, string_VkImageLayout(layout),
+                    report_data->FormatHandle(renderpass).c_str(), report_data->FormatHandle(image_view).c_str());
     }
 
     if (layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && !(image_usage & VK_IMAGE_USAGE_TRANSFER_DST_BIT)) {
         vuid = use_rp2 ? "VUID-vkCmdBeginRenderPass2KHR-initialLayout-03099" : "VUID-vkCmdBeginRenderPass-initialLayout-00899";
         skip |=
             log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, HandleToUint64(image), vuid,
-                    "Layout/usage mismatch for attachment %u in render pass 0x%" PRIx64
-                    " - the %s is %s but the image attached to framebuffer 0x%" PRIx64 " via image view 0x%" PRIx64
+                    "Layout/usage mismatch for attachment %u in render pass %s"
+                    " - the %s is %s but the image attached to framebuffer %s via image view %s"
                     " was not created with VK_IMAGE_USAGE_TRANSFER_DST_BIT",
-                    attachment_index, HandleToUint64(framebuffer), variable_name, string_VkImageLayout(layout),
-                    HandleToUint64(renderpass), HandleToUint64(image_view));
+                    attachment_index, report_data->FormatHandle(framebuffer).c_str(), variable_name, string_VkImageLayout(layout),
+                    report_data->FormatHandle(renderpass).c_str(), report_data->FormatHandle(image_view).c_str());
     }
 
-    if (GetDeviceExtensions(device_data)->vk_khr_maintenance2) {
+    if (GetDeviceExtensions()->vk_khr_maintenance2) {
         if ((layout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL ||
              layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL ||
              layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL ||
              layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL) &&
             !(image_usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)) {
             vuid = use_rp2 ? "VUID-vkCmdBeginRenderPass2KHR-initialLayout-03096" : "VUID-vkCmdBeginRenderPass-initialLayout-01758";
-            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
-                            HandleToUint64(image), vuid,
-                            "Layout/usage mismatch for attachment %u in render pass 0x%" PRIx64
-                            " - the %s is %s but the image attached to framebuffer 0x%" PRIx64 " via image view 0x%" PRIx64
-                            " was not created with VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT",
-                            attachment_index, HandleToUint64(framebuffer), variable_name, string_VkImageLayout(layout),
-                            HandleToUint64(renderpass), HandleToUint64(image_view));
+            skip |= log_msg(
+                report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, HandleToUint64(image), vuid,
+                "Layout/usage mismatch for attachment %u in render pass %s"
+                " - the %s is %s but the image attached to framebuffer %s via image view %s"
+                " was not created with VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT",
+                attachment_index, report_data->FormatHandle(framebuffer).c_str(), variable_name, string_VkImageLayout(layout),
+                report_data->FormatHandle(renderpass).c_str(), report_data->FormatHandle(image_view).c_str());
         }
     } else {
         // The create render pass 2 extension requires maintenance 2 (the previous branch), so no vuid switch needed here.
@@ -440,25 +440,25 @@ bool ValidateRenderPassLayoutAgainstFramebufferImageUsage(layer_data *device_dat
             !(image_usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
                             HandleToUint64(image), "VUID-vkCmdBeginRenderPass-initialLayout-00896",
-                            "Layout/usage mismatch for attachment %u in render pass 0x%" PRIx64
-                            " - the %s is %s but the image attached to framebuffer 0x%" PRIx64 " via image view 0x%" PRIx64
+                            "Layout/usage mismatch for attachment %u in render pass %s"
+                            " - the %s is %s but the image attached to framebuffer %s via image view %s"
                             " was not created with VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT",
-                            attachment_index, HandleToUint64(framebuffer), variable_name, string_VkImageLayout(layout),
-                            HandleToUint64(renderpass), HandleToUint64(image_view));
+                            attachment_index, report_data->FormatHandle(framebuffer).c_str(), variable_name,
+                            string_VkImageLayout(layout), report_data->FormatHandle(renderpass).c_str(),
+                            report_data->FormatHandle(image_view).c_str());
         }
     }
     return skip;
 }
 
-bool VerifyFramebufferAndRenderPassLayouts(layer_data *device_data, RenderPassCreateVersion rp_version, GLOBAL_CB_NODE *pCB,
-                                           const VkRenderPassBeginInfo *pRenderPassBegin,
-                                           const FRAMEBUFFER_STATE *framebuffer_state) {
+bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(layer_data *device_data, RenderPassCreateVersion rp_version,
+                                                       GLOBAL_CB_NODE *pCB, const VkRenderPassBeginInfo *pRenderPassBegin,
+                                                       const FRAMEBUFFER_STATE *framebuffer_state) {
     bool skip = false;
-    auto const pRenderPassInfo = GetRenderPassState(device_data, pRenderPassBegin->renderPass)->createInfo.ptr();
+    auto const pRenderPassInfo = GetRenderPassState(pRenderPassBegin->renderPass)->createInfo.ptr();
     auto const &framebufferInfo = framebuffer_state->createInfo;
-    const auto report_data = core_validation::GetReportData(device_data);
 
-    auto render_pass = GetRenderPassState(device_data, pRenderPassBegin->renderPass)->renderPass;
+    auto render_pass = GetRenderPassState(pRenderPassBegin->renderPass)->renderPass;
     auto framebuffer = framebuffer_state->framebuffer;
 
     if (pRenderPassInfo->attachmentCount != framebufferInfo.attachmentCount) {
@@ -468,14 +468,15 @@ bool VerifyFramebufferAndRenderPassLayouts(layer_data *device_data, RenderPassCr
     }
     for (uint32_t i = 0; i < pRenderPassInfo->attachmentCount; ++i) {
         const VkImageView &image_view = framebufferInfo.pAttachments[i];
-        auto view_state = GetImageViewState(device_data, image_view);
+        auto view_state = GetImageViewState(image_view);
 
         if (!view_state) {
-            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT,
-                            HandleToUint64(pRenderPassBegin->renderPass), "VUID-VkRenderPassBeginInfo-framebuffer-parameter",
-                            "vkCmdBeginRenderPass(): framebuffer 0x%" PRIx64 " pAttachments[%" PRIu32 "] = 0x%" PRIx64
-                            " is not a valid VkImageView handle",
-                            HandleToUint64(framebuffer_state->framebuffer), i, HandleToUint64(image_view));
+            skip |=
+                log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT,
+                        HandleToUint64(pRenderPassBegin->renderPass), "VUID-VkRenderPassBeginInfo-framebuffer-parameter",
+                        "vkCmdBeginRenderPass(): framebuffer %s pAttachments[%" PRIu32 "] = %s is not a valid VkImageView handle",
+                        report_data->FormatHandle(framebuffer_state->framebuffer).c_str(), i,
+                        report_data->FormatHandle(image_view).c_str());
             continue;
         }
 
@@ -519,7 +520,7 @@ bool VerifyFramebufferAndRenderPassLayouts(layer_data *device_data, RenderPassCr
             auto &attachment_ref = subpass.pInputAttachments[k];
             if (attachment_ref.attachment != VK_ATTACHMENT_UNUSED) {
                 auto image_view = framebufferInfo.pAttachments[attachment_ref.attachment];
-                auto view_state = GetImageViewState(device_data, image_view);
+                auto view_state = GetImageViewState(image_view);
 
                 if (view_state) {
                     auto image = view_state->create_info.image;
@@ -534,7 +535,7 @@ bool VerifyFramebufferAndRenderPassLayouts(layer_data *device_data, RenderPassCr
             auto &attachment_ref = subpass.pColorAttachments[k];
             if (attachment_ref.attachment != VK_ATTACHMENT_UNUSED) {
                 auto image_view = framebufferInfo.pAttachments[attachment_ref.attachment];
-                auto view_state = GetImageViewState(device_data, image_view);
+                auto view_state = GetImageViewState(image_view);
 
                 if (view_state) {
                     auto image = view_state->create_info.image;
@@ -554,7 +555,7 @@ bool VerifyFramebufferAndRenderPassLayouts(layer_data *device_data, RenderPassCr
             auto &attachment_ref = *subpass.pDepthStencilAttachment;
             if (attachment_ref.attachment != VK_ATTACHMENT_UNUSED) {
                 auto image_view = framebufferInfo.pAttachments[attachment_ref.attachment];
-                auto view_state = GetImageViewState(device_data, image_view);
+                auto view_state = GetImageViewState(image_view);
 
                 if (view_state) {
                     auto image = view_state->create_info.image;
@@ -568,18 +569,18 @@ bool VerifyFramebufferAndRenderPassLayouts(layer_data *device_data, RenderPassCr
     return skip;
 }
 
-void TransitionAttachmentRefLayout(layer_data *device_data, GLOBAL_CB_NODE *pCB, FRAMEBUFFER_STATE *pFramebuffer,
-                                   const safe_VkAttachmentReference2KHR &ref) {
+void CoreChecks::TransitionAttachmentRefLayout(layer_data *device_data, GLOBAL_CB_NODE *pCB, FRAMEBUFFER_STATE *pFramebuffer,
+                                               const safe_VkAttachmentReference2KHR &ref) {
     if (ref.attachment != VK_ATTACHMENT_UNUSED) {
-        auto image_view = GetAttachmentImageViewState(device_data, pFramebuffer, ref.attachment);
+        auto image_view = GetAttachmentImageViewState(pFramebuffer, ref.attachment);
         if (image_view) {
             SetImageViewLayout(device_data, pCB, image_view, ref.layout);
         }
     }
 }
 
-void TransitionSubpassLayouts(layer_data *device_data, GLOBAL_CB_NODE *pCB, const RENDER_PASS_STATE *render_pass_state,
-                              const int subpass_index, FRAMEBUFFER_STATE *framebuffer_state) {
+void CoreChecks::TransitionSubpassLayouts(layer_data *device_data, GLOBAL_CB_NODE *pCB, const RENDER_PASS_STATE *render_pass_state,
+                                          const int subpass_index, FRAMEBUFFER_STATE *framebuffer_state) {
     assert(render_pass_state);
 
     if (framebuffer_state) {
@@ -596,8 +597,9 @@ void TransitionSubpassLayouts(layer_data *device_data, GLOBAL_CB_NODE *pCB, cons
     }
 }
 
-bool ValidateImageAspectLayout(layer_data *device_data, GLOBAL_CB_NODE const *pCB, const VkImageMemoryBarrier *mem_barrier,
-                               uint32_t level, uint32_t layer, VkImageAspectFlags aspect) {
+bool CoreChecks::ValidateImageAspectLayout(layer_data *device_data, GLOBAL_CB_NODE const *pCB,
+                                           const VkImageMemoryBarrier *mem_barrier, uint32_t level, uint32_t layer,
+                                           VkImageAspectFlags aspect) {
     if (!(mem_barrier->subresourceRange.aspectMask & aspect)) {
         return false;
     }
@@ -610,13 +612,12 @@ bool ValidateImageAspectLayout(layer_data *device_data, GLOBAL_CB_NODE const *pC
     if (mem_barrier->oldLayout == VK_IMAGE_LAYOUT_UNDEFINED) {
         // TODO: Set memory invalid which is in mem_tracker currently
     } else if (node.layout != mem_barrier->oldLayout) {
-        skip = log_msg(core_validation::GetReportData(device_data), VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                       VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT, HandleToUint64(pCB->commandBuffer),
-                       "VUID-VkImageMemoryBarrier-oldLayout-01197",
-                       "For image 0x%" PRIx64
-                       " you cannot transition the layout of aspect=%d level=%d layer=%d from %s when current layout is %s.",
-                       HandleToUint64(mem_barrier->image), aspect, level, layer, string_VkImageLayout(mem_barrier->oldLayout),
-                       string_VkImageLayout(node.layout));
+        skip = log_msg(
+            report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+            HandleToUint64(pCB->commandBuffer), "VUID-VkImageMemoryBarrier-oldLayout-01197",
+            "For image %s you cannot transition the layout of aspect=%d level=%d layer=%d from %s when current layout is %s.",
+            report_data->FormatHandle(mem_barrier->image).c_str(), aspect, level, layer,
+            string_VkImageLayout(mem_barrier->oldLayout), string_VkImageLayout(node.layout));
     }
     return skip;
 }
@@ -624,12 +625,13 @@ bool ValidateImageAspectLayout(layer_data *device_data, GLOBAL_CB_NODE const *pC
 // Transition the layout state for renderpass attachments based on the BeginRenderPass() call. This includes:
 // 1. Transition into initialLayout state
 // 2. Transition from initialLayout to layout used in subpass 0
-void TransitionBeginRenderPassLayouts(layer_data *device_data, GLOBAL_CB_NODE *cb_state, const RENDER_PASS_STATE *render_pass_state,
-                                      FRAMEBUFFER_STATE *framebuffer_state) {
+void CoreChecks::TransitionBeginRenderPassLayouts(layer_data *device_data, GLOBAL_CB_NODE *cb_state,
+                                                  const RENDER_PASS_STATE *render_pass_state,
+                                                  FRAMEBUFFER_STATE *framebuffer_state) {
     // First transition into initialLayout
     auto const rpci = render_pass_state->createInfo.ptr();
     for (uint32_t i = 0; i < rpci->attachmentCount; ++i) {
-        auto view_state = GetAttachmentImageViewState(device_data, framebuffer_state, i);
+        auto view_state = GetAttachmentImageViewState(framebuffer_state, i);
         if (view_state) {
             SetImageViewLayout(device_data, cb_state, view_state, rpci->pAttachments[i].initialLayout);
         }
@@ -638,8 +640,9 @@ void TransitionBeginRenderPassLayouts(layer_data *device_data, GLOBAL_CB_NODE *c
     TransitionSubpassLayouts(device_data, cb_state, render_pass_state, 0, framebuffer_state);
 }
 
-void TransitionImageAspectLayout(layer_data *device_data, GLOBAL_CB_NODE *pCB, const VkImageMemoryBarrier *mem_barrier,
-                                 uint32_t level, uint32_t layer, VkImageAspectFlags aspect_mask, VkImageAspectFlags aspect) {
+void CoreChecks::TransitionImageAspectLayout(layer_data *device_data, GLOBAL_CB_NODE *pCB, const VkImageMemoryBarrier *mem_barrier,
+                                             uint32_t level, uint32_t layer, VkImageAspectFlags aspect_mask,
+                                             VkImageAspectFlags aspect) {
     if (!(aspect_mask & aspect)) {
         return;
     }
@@ -675,9 +678,8 @@ bool VerifyAspectsPresent(VkImageAspectFlags aspect_mask, VkFormat format) {
 }
 
 // Verify an ImageMemoryBarrier's old/new ImageLayouts are compatible with the Image's ImageUsageFlags.
-bool ValidateBarrierLayoutToImageUsage(layer_data *device_data, const VkImageMemoryBarrier *img_barrier, bool new_not_old,
-                                       VkImageUsageFlags usage_flags, const char *func_name) {
-    const auto report_data = core_validation::GetReportData(device_data);
+bool CoreChecks::ValidateBarrierLayoutToImageUsage(layer_data *device_data, const VkImageMemoryBarrier *img_barrier,
+                                                   bool new_not_old, VkImageUsageFlags usage_flags, const char *func_name) {
     bool skip = false;
     const VkImageLayout layout = (new_not_old) ? img_barrier->newLayout : img_barrier->oldLayout;
     const char *msg_code = kVUIDUndefined;  // sentinel value meaning "no error"
@@ -726,9 +728,9 @@ bool ValidateBarrierLayoutToImageUsage(layer_data *device_data, const VkImageMem
     if (msg_code != kVUIDUndefined) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
                         HandleToUint64(img_barrier->image), msg_code,
-                        "%s: Image barrier 0x%p %sLayout=%s is not compatible with image 0x%" PRIx64 " usage flags 0x%" PRIx32 ".",
-                        func_name, static_cast<const void *>(img_barrier), ((new_not_old) ? "new" : "old"),
-                        string_VkImageLayout(layout), HandleToUint64(img_barrier->image), usage_flags);
+                        "%s: Image barrier 0x%p %sLayout=%s is not compatible with image %s usage flags 0x%" PRIx32 ".", func_name,
+                        static_cast<const void *>(img_barrier), ((new_not_old) ? "new" : "old"), string_VkImageLayout(layout),
+                        report_data->FormatHandle(img_barrier->image).c_str(), usage_flags);
     }
     return skip;
 }
@@ -744,8 +746,8 @@ using ImageBarrierScoreboardSubresMap = std::unordered_map<VkImageSubresourceRan
 using ImageBarrierScoreboardImageMap = std::unordered_map<VkImage, ImageBarrierScoreboardSubresMap>;
 
 // Verify image barriers are compatible with the images they reference.
-bool ValidateBarriersToImages(layer_data *device_data, GLOBAL_CB_NODE const *cb_state, uint32_t imageMemoryBarrierCount,
-                              const VkImageMemoryBarrier *pImageMemoryBarriers, const char *func_name) {
+bool CoreChecks::ValidateBarriersToImages(layer_data *device_data, GLOBAL_CB_NODE const *cb_state, uint32_t imageMemoryBarrierCount,
+                                          const VkImageMemoryBarrier *pImageMemoryBarriers, const char *func_name) {
     bool skip = false;
 
     // Scoreboard for duplicate layout transition barriers within the list
@@ -771,15 +773,14 @@ bool ValidateBarriersToImages(layer_data *device_data, GLOBAL_CB_NODE const *cb_
                         (img_barrier->oldLayout != VK_IMAGE_LAYOUT_UNDEFINED)) {
                         const VkImageSubresourceRange &range = img_barrier->subresourceRange;
                         skip = log_msg(
-                            core_validation::GetReportData(device_data), VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                            VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT, HandleToUint64(cb_state->commandBuffer),
-                            "VUID-VkImageMemoryBarrier-oldLayout-01197",
-                            "%s: pImageMemoryBarrier[%u] conflicts with earlier entry pImageMemoryBarrier[%u]. Image 0x%" PRIx64
+                            report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                            HandleToUint64(cb_state->commandBuffer), "VUID-VkImageMemoryBarrier-oldLayout-01197",
+                            "%s: pImageMemoryBarrier[%u] conflicts with earlier entry pImageMemoryBarrier[%u]. Image %s"
                             " subresourceRange: aspectMask=%u baseMipLevel=%u levelCount=%u, baseArrayLayer=%u, layerCount=%u; "
                             "conflicting barrier transitions image layout from %s when earlier barrier transitioned to layout %s.",
-                            func_name, i, entry.index, HandleToUint64(img_barrier->image), range.aspectMask, range.baseMipLevel,
-                            range.levelCount, range.baseArrayLayer, range.layerCount, string_VkImageLayout(img_barrier->oldLayout),
-                            string_VkImageLayout(entry.barrier->newLayout));
+                            func_name, i, entry.index, report_data->FormatHandle(img_barrier->image).c_str(), range.aspectMask,
+                            range.baseMipLevel, range.levelCount, range.baseArrayLayer, range.layerCount,
+                            string_VkImageLayout(img_barrier->oldLayout), string_VkImageLayout(entry.barrier->newLayout));
                     }
                     entry = new_entry;
                 } else {
@@ -790,7 +791,7 @@ bool ValidateBarriersToImages(layer_data *device_data, GLOBAL_CB_NODE const *cb_
             }
         }
 
-        auto image_state = GetImageState(device_data, img_barrier->image);
+        auto image_state = GetImageState(img_barrier->image);
         if (image_state) {
             VkImageUsageFlags usage_flags = image_state->createInfo.usage;
             skip |= ValidateBarrierLayoutToImageUsage(device_data, img_barrier, false, usage_flags, func_name);
@@ -800,29 +801,28 @@ bool ValidateBarriersToImages(layer_data *device_data, GLOBAL_CB_NODE const *cb_
             if (image_state->layout_locked) {
                 // TODO: Add unique id for error when available
                 skip |= log_msg(
-                    core_validation::GetReportData(device_data), VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                    VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, HandleToUint64(img_barrier->image), 0,
-                    "Attempting to transition shared presentable image 0x%" PRIx64
+                    report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
+                    HandleToUint64(img_barrier->image), 0,
+                    "Attempting to transition shared presentable image %s"
                     " from layout %s to layout %s, but image has already been presented and cannot have its layout transitioned.",
-                    HandleToUint64(img_barrier->image), string_VkImageLayout(img_barrier->oldLayout),
+                    report_data->FormatHandle(img_barrier->image).c_str(), string_VkImageLayout(img_barrier->oldLayout),
                     string_VkImageLayout(img_barrier->newLayout));
             }
         }
 
-        VkImageCreateInfo *image_create_info = &(GetImageState(device_data, img_barrier->image)->createInfo);
+        VkImageCreateInfo *image_create_info = &(GetImageState(img_barrier->image)->createInfo);
         // For a Depth/Stencil image both aspects MUST be set
         if (FormatIsDepthAndStencil(image_create_info->format)) {
             auto const aspect_mask = img_barrier->subresourceRange.aspectMask;
             auto const ds_mask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
             if ((aspect_mask & ds_mask) != (ds_mask)) {
-                skip |=
-                    log_msg(core_validation::GetReportData(device_data), VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                            VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, HandleToUint64(img_barrier->image),
-                            "VUID-VkImageMemoryBarrier-image-01207",
-                            "%s: Image barrier 0x%p references image 0x%" PRIx64
-                            " of format %s that must have the depth and stencil aspects set, but its aspectMask is 0x%" PRIx32 ".",
-                            func_name, static_cast<const void *>(img_barrier), HandleToUint64(img_barrier->image),
-                            string_VkFormat(image_create_info->format), aspect_mask);
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
+                                HandleToUint64(img_barrier->image), "VUID-VkImageMemoryBarrier-image-01207",
+                                "%s: Image barrier 0x%p references image %s of format %s that must have the depth and stencil "
+                                "aspects set, but its aspectMask is 0x%" PRIx32 ".",
+                                func_name, static_cast<const void *>(img_barrier),
+                                report_data->FormatHandle(img_barrier->image).c_str(), string_VkFormat(image_create_info->format),
+                                aspect_mask);
             }
         }
         uint32_t level_count = ResolveRemainingLevels(&img_barrier->subresourceRange, image_create_info->mipLevels);
@@ -836,7 +836,7 @@ bool ValidateBarriersToImages(layer_data *device_data, GLOBAL_CB_NODE const *cb_
                 skip |= ValidateImageAspectLayout(device_data, cb_state, img_barrier, level, layer, VK_IMAGE_ASPECT_DEPTH_BIT);
                 skip |= ValidateImageAspectLayout(device_data, cb_state, img_barrier, level, layer, VK_IMAGE_ASPECT_STENCIL_BIT);
                 skip |= ValidateImageAspectLayout(device_data, cb_state, img_barrier, level, layer, VK_IMAGE_ASPECT_METADATA_BIT);
-                if (GetDeviceExtensions(device_data)->vk_khr_sampler_ycbcr_conversion) {
+                if (GetDeviceExtensions()->vk_khr_sampler_ycbcr_conversion) {
                     skip |= ValidateImageAspectLayout(device_data, cb_state, img_barrier, level, layer,
                                                       VK_IMAGE_ASPECT_PLANE_0_BIT_KHR);
                     skip |= ValidateImageAspectLayout(device_data, cb_state, img_barrier, level, layer,
@@ -850,20 +850,19 @@ bool ValidateBarriersToImages(layer_data *device_data, GLOBAL_CB_NODE const *cb_
     return skip;
 }
 
-static bool IsReleaseOp(layer_data *device_data, GLOBAL_CB_NODE *cb_state, VkImageMemoryBarrier const *barrier) {
+bool CoreChecks::IsReleaseOp(GLOBAL_CB_NODE *cb_state, VkImageMemoryBarrier const *barrier) {
     if (!IsTransferOp(barrier)) return false;
 
-    auto pool = GetCommandPoolNode(device_data, cb_state->createInfo.commandPool);
-    return pool && IsReleaseOp<VkImageMemoryBarrier, true>(pool, barrier);
+    auto pool = GetCommandPoolNode(cb_state->createInfo.commandPool);
+    return pool && TempIsReleaseOp<VkImageMemoryBarrier, true>(pool, barrier);
 }
 
 template <typename Barrier>
-bool ValidateQFOTransferBarrierUniqueness(layer_data *device_data, const char *func_name, GLOBAL_CB_NODE *cb_state,
-                                          uint32_t barrier_count, const Barrier *barriers) {
+bool CoreChecks::ValidateQFOTransferBarrierUniqueness(layer_data *device_data, const char *func_name, GLOBAL_CB_NODE *cb_state,
+                                                      uint32_t barrier_count, const Barrier *barriers) {
     using BarrierRecord = QFOTransferBarrier<Barrier>;
     bool skip = false;
-    const auto report_data = core_validation::GetReportData(device_data);
-    auto pool = GetCommandPoolNode(device_data, cb_state->createInfo.commandPool);
+    auto pool = GetCommandPoolNode(cb_state->createInfo.commandPool);
     auto &barrier_sets = GetQFOBarrierSets(cb_state, typename BarrierRecord::Tag());
     const char *barrier_name = BarrierRecord::BarrierName();
     const char *handle_name = BarrierRecord::HandleName();
@@ -871,7 +870,8 @@ bool ValidateQFOTransferBarrierUniqueness(layer_data *device_data, const char *f
     for (uint32_t b = 0; b < barrier_count; b++) {
         if (!IsTransferOp(&barriers[b])) continue;
         const BarrierRecord *barrier_record = nullptr;
-        if (IsReleaseOp<Barrier, true /* Assume IsTransfer */>(pool, &barriers[b]) && !IsSpecial(barriers[b].dstQueueFamilyIndex)) {
+        if (TempIsReleaseOp<Barrier, true /* Assume IsTransfer */>(pool, &barriers[b]) &&
+            !IsSpecial(barriers[b].dstQueueFamilyIndex)) {
             const auto found = barrier_sets.release.find(barriers[b]);
             if (found != barrier_sets.release.cend()) {
                 barrier_record = &(*found);
@@ -886,25 +886,27 @@ bool ValidateQFOTransferBarrierUniqueness(layer_data *device_data, const char *f
             }
         }
         if (barrier_record != nullptr) {
-            skip |=
-                log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                        HandleToUint64(cb_state->commandBuffer), BarrierRecord::ErrMsgDuplicateQFOInCB(),
-                        "%s: %s at index %" PRIu32 " %s queue ownership of %s (0x%" PRIx64 "), from srcQueueFamilyIndex %" PRIu32
-                        " to dstQueueFamilyIndex %" PRIu32 " duplicates existing barrier recorded in this command buffer.",
-                        func_name, barrier_name, b, transfer_type, handle_name, HandleToUint64(barrier_record->handle),
-                        barrier_record->srcQueueFamilyIndex, barrier_record->dstQueueFamilyIndex);
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                            HandleToUint64(cb_state->commandBuffer), BarrierRecord::ErrMsgDuplicateQFOInCB(),
+                            "%s: %s at index %" PRIu32 " %s queue ownership of %s (%s), from srcQueueFamilyIndex %" PRIu32
+                            " to dstQueueFamilyIndex %" PRIu32 " duplicates existing barrier recorded in this command buffer.",
+                            func_name, barrier_name, b, transfer_type, handle_name,
+                            report_data->FormatHandle(barrier_record->handle).c_str(), barrier_record->srcQueueFamilyIndex,
+                            barrier_record->dstQueueFamilyIndex);
         }
     }
     return skip;
 }
 
 template <typename Barrier>
-void RecordQFOTransferBarriers(layer_data *device_data, GLOBAL_CB_NODE *cb_state, uint32_t barrier_count, const Barrier *barriers) {
-    auto pool = GetCommandPoolNode(device_data, cb_state->createInfo.commandPool);
+void CoreChecks::RecordQFOTransferBarriers(layer_data *device_data, GLOBAL_CB_NODE *cb_state, uint32_t barrier_count,
+                                           const Barrier *barriers) {
+    auto pool = GetCommandPoolNode(cb_state->createInfo.commandPool);
     auto &barrier_sets = GetQFOBarrierSets(cb_state, typename QFOTransferBarrier<Barrier>::Tag());
     for (uint32_t b = 0; b < barrier_count; b++) {
         if (!IsTransferOp(&barriers[b])) continue;
-        if (IsReleaseOp<Barrier, true /* Assume IsTransfer*/>(pool, &barriers[b]) && !IsSpecial(barriers[b].dstQueueFamilyIndex)) {
+        if (TempIsReleaseOp<Barrier, true /* Assume IsTransfer*/>(pool, &barriers[b]) &&
+            !IsSpecial(barriers[b].dstQueueFamilyIndex)) {
             barrier_sets.release.emplace(barriers[b]);
         } else if (IsAcquireOp<Barrier, true /*Assume IsTransfer */>(pool, &barriers[b]) &&
                    !IsSpecial(barriers[b].srcQueueFamilyIndex)) {
@@ -913,51 +915,50 @@ void RecordQFOTransferBarriers(layer_data *device_data, GLOBAL_CB_NODE *cb_state
     }
 }
 
-bool ValidateBarriersQFOTransferUniqueness(layer_data *device_data, const char *func_name, GLOBAL_CB_NODE *cb_state,
-                                           uint32_t bufferBarrierCount, const VkBufferMemoryBarrier *pBufferMemBarriers,
-                                           uint32_t imageMemBarrierCount, const VkImageMemoryBarrier *pImageMemBarriers) {
+bool CoreChecks::ValidateBarriersQFOTransferUniqueness(layer_data *device_data, const char *func_name, GLOBAL_CB_NODE *cb_state,
+                                                       uint32_t bufferBarrierCount, const VkBufferMemoryBarrier *pBufferMemBarriers,
+                                                       uint32_t imageMemBarrierCount,
+                                                       const VkImageMemoryBarrier *pImageMemBarriers) {
     bool skip = false;
     skip |= ValidateQFOTransferBarrierUniqueness(device_data, func_name, cb_state, bufferBarrierCount, pBufferMemBarriers);
     skip |= ValidateQFOTransferBarrierUniqueness(device_data, func_name, cb_state, imageMemBarrierCount, pImageMemBarriers);
     return skip;
 }
 
-void RecordBarriersQFOTransfers(layer_data *device_data, GLOBAL_CB_NODE *cb_state, uint32_t bufferBarrierCount,
-                                const VkBufferMemoryBarrier *pBufferMemBarriers, uint32_t imageMemBarrierCount,
-                                const VkImageMemoryBarrier *pImageMemBarriers) {
+void CoreChecks::RecordBarriersQFOTransfers(layer_data *device_data, GLOBAL_CB_NODE *cb_state, uint32_t bufferBarrierCount,
+                                            const VkBufferMemoryBarrier *pBufferMemBarriers, uint32_t imageMemBarrierCount,
+                                            const VkImageMemoryBarrier *pImageMemBarriers) {
     RecordQFOTransferBarriers(device_data, cb_state, bufferBarrierCount, pBufferMemBarriers);
     RecordQFOTransferBarriers(device_data, cb_state, imageMemBarrierCount, pImageMemBarriers);
 }
 
 template <typename BarrierRecord, typename Scoreboard>
-static bool ValidateAndUpdateQFOScoreboard(const debug_report_data *report_data, const GLOBAL_CB_NODE *cb_state,
-                                           const char *operation, const BarrierRecord &barrier, Scoreboard *scoreboard) {
+bool CoreChecks::ValidateAndUpdateQFOScoreboard(const debug_report_data *report_data, const GLOBAL_CB_NODE *cb_state,
+                                                const char *operation, const BarrierRecord &barrier, Scoreboard *scoreboard) {
     // Record to the scoreboard or report that we have a duplication
     bool skip = false;
     auto inserted = scoreboard->insert(std::make_pair(barrier, cb_state));
     if (!inserted.second && inserted.first->second != cb_state) {
         // This is a duplication (but don't report duplicates from the same CB, as we do that at record time
-        skip = log_msg(
-            report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-            HandleToUint64(cb_state->commandBuffer), BarrierRecord::ErrMsgDuplicateQFOInSubmit(),
-            "%s: %s %s queue ownership of %s (0x%" PRIx64 "), from srcQueueFamilyIndex %" PRIu32 " to dstQueueFamilyIndex %" PRIu32
-            " duplicates existing barrier submitted in this batch from command buffer 0x%" PRIx64 ".",
-            "vkQueueSubmit()", BarrierRecord::BarrierName(), operation, BarrierRecord::HandleName(), HandleToUint64(barrier.handle),
-            barrier.srcQueueFamilyIndex, barrier.dstQueueFamilyIndex, HandleToUint64(inserted.first->second));
+        skip = log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                       HandleToUint64(cb_state->commandBuffer), BarrierRecord::ErrMsgDuplicateQFOInSubmit(),
+                       "%s: %s %s queue ownership of %s (%s), from srcQueueFamilyIndex %" PRIu32 " to dstQueueFamilyIndex %" PRIu32
+                       " duplicates existing barrier submitted in this batch from command buffer %s.",
+                       "vkQueueSubmit()", BarrierRecord::BarrierName(), operation, BarrierRecord::HandleName(),
+                       report_data->FormatHandle(barrier.handle).c_str(), barrier.srcQueueFamilyIndex, barrier.dstQueueFamilyIndex,
+                       report_data->FormatHandle(inserted.first->second).c_str());
     }
     return skip;
 }
 
 template <typename Barrier>
-static bool ValidateQueuedQFOTransferBarriers(layer_data *device_data, GLOBAL_CB_NODE *cb_state,
-                                              QFOTransferCBScoreboards<Barrier> *scoreboards) {
+bool CoreChecks::ValidateQueuedQFOTransferBarriers(layer_data *device_data, GLOBAL_CB_NODE *cb_state,
+                                                   QFOTransferCBScoreboards<Barrier> *scoreboards) {
     using BarrierRecord = QFOTransferBarrier<Barrier>;
     using TypeTag = typename BarrierRecord::Tag;
     bool skip = false;
-    const auto report_data = core_validation::GetReportData(device_data);
     const auto &cb_barriers = GetQFOBarrierSets(cb_state, TypeTag());
-    const GlobalQFOTransferBarrierMap<Barrier> &global_release_barriers =
-        core_validation::GetGlobalQFOReleaseBarrierMap(device_data, TypeTag());
+    const GlobalQFOTransferBarrierMap<Barrier> &global_release_barriers = GetGlobalQFOReleaseBarrierMap(TypeTag());
     const char *barrier_name = BarrierRecord::BarrierName();
     const char *handle_name = BarrierRecord::HandleName();
     // No release should have an extant duplicate (WARNING)
@@ -970,10 +971,10 @@ static bool ValidateQueuedQFOTransferBarriers(layer_data *device_data, GLOBAL_CB
             if (found != set_for_handle.cend()) {
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                                 HandleToUint64(cb_state->commandBuffer), BarrierRecord::ErrMsgDuplicateQFOSubmitted(),
-                                "%s: %s releasing queue ownership of %s (0x%" PRIx64 "), from srcQueueFamilyIndex %" PRIu32
+                                "%s: %s releasing queue ownership of %s (%s), from srcQueueFamilyIndex %" PRIu32
                                 " to dstQueueFamilyIndex %" PRIu32
                                 " duplicates existing barrier queued for execution, without intervening acquire operation.",
-                                "vkQueueSubmit()", barrier_name, handle_name, HandleToUint64(found->handle),
+                                "vkQueueSubmit()", barrier_name, handle_name, report_data->FormatHandle(found->handle).c_str(),
                                 found->srcQueueFamilyIndex, found->dstQueueFamilyIndex);
             }
         }
@@ -990,10 +991,9 @@ static bool ValidateQueuedQFOTransferBarriers(layer_data *device_data, GLOBAL_CB
         if (!matching_release_found) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                             HandleToUint64(cb_state->commandBuffer), BarrierRecord::ErrMsgMissingQFOReleaseInSubmit(),
-                            "%s: in submitted command buffer %s acquiring ownership of %s (0x%" PRIx64
-                            "), from srcQueueFamilyIndex %" PRIu32 " to dstQueueFamilyIndex %" PRIu32
-                            " has no matching release barrier queued for execution.",
-                            "vkQueueSubmit()", barrier_name, handle_name, HandleToUint64(acquire.handle),
+                            "%s: in submitted command buffer %s acquiring ownership of %s (%s), from srcQueueFamilyIndex %" PRIu32
+                            " to dstQueueFamilyIndex %" PRIu32 " has no matching release barrier queued for execution.",
+                            "vkQueueSubmit()", barrier_name, handle_name, report_data->FormatHandle(acquire.handle).c_str(),
                             acquire.srcQueueFamilyIndex, acquire.dstQueueFamilyIndex);
         }
         skip |= ValidateAndUpdateQFOScoreboard(report_data, cb_state, "acquiring", acquire, &scoreboards->acquire);
@@ -1001,9 +1001,9 @@ static bool ValidateQueuedQFOTransferBarriers(layer_data *device_data, GLOBAL_CB
     return skip;
 }
 
-bool ValidateQueuedQFOTransfers(layer_data *device_data, GLOBAL_CB_NODE *cb_state,
-                                QFOTransferCBScoreboards<VkImageMemoryBarrier> *qfo_image_scoreboards,
-                                QFOTransferCBScoreboards<VkBufferMemoryBarrier> *qfo_buffer_scoreboards) {
+bool CoreChecks::ValidateQueuedQFOTransfers(layer_data *device_data, GLOBAL_CB_NODE *cb_state,
+                                            QFOTransferCBScoreboards<VkImageMemoryBarrier> *qfo_image_scoreboards,
+                                            QFOTransferCBScoreboards<VkBufferMemoryBarrier> *qfo_buffer_scoreboards) {
     bool skip = false;
     skip |= ValidateQueuedQFOTransferBarriers<VkImageMemoryBarrier>(device_data, cb_state, qfo_image_scoreboards);
     skip |= ValidateQueuedQFOTransferBarriers<VkBufferMemoryBarrier>(device_data, cb_state, qfo_buffer_scoreboards);
@@ -1011,12 +1011,11 @@ bool ValidateQueuedQFOTransfers(layer_data *device_data, GLOBAL_CB_NODE *cb_stat
 }
 
 template <typename Barrier>
-static void RecordQueuedQFOTransferBarriers(layer_data *device_data, GLOBAL_CB_NODE *cb_state) {
+void CoreChecks::RecordQueuedQFOTransferBarriers(layer_data *device_data, GLOBAL_CB_NODE *cb_state) {
     using BarrierRecord = QFOTransferBarrier<Barrier>;
     using TypeTag = typename BarrierRecord::Tag;
     const auto &cb_barriers = GetQFOBarrierSets(cb_state, TypeTag());
-    GlobalQFOTransferBarrierMap<Barrier> &global_release_barriers =
-        core_validation::GetGlobalQFOReleaseBarrierMap(device_data, TypeTag());
+    GlobalQFOTransferBarrierMap<Barrier> &global_release_barriers = GetGlobalQFOReleaseBarrierMap(TypeTag());
 
     // Add release barriers from this submit to the global map
     for (const auto &release : cb_barriers.release) {
@@ -1039,28 +1038,18 @@ static void RecordQueuedQFOTransferBarriers(layer_data *device_data, GLOBAL_CB_N
     }
 }
 
-void RecordQueuedQFOTransfers(layer_data *device_data, GLOBAL_CB_NODE *cb_state) {
+void CoreChecks::RecordQueuedQFOTransfers(layer_data *device_data, GLOBAL_CB_NODE *cb_state) {
     RecordQueuedQFOTransferBarriers<VkImageMemoryBarrier>(device_data, cb_state);
     RecordQueuedQFOTransferBarriers<VkBufferMemoryBarrier>(device_data, cb_state);
 }
 
-// Remove the pending QFO release records from the global set
-// Note that the type of the handle argument constrained to match Barrier type
-// The defaulted BarrierRecord argument allows use to declare the type once, but is not intended to be specified by the caller
-template <typename Barrier, typename BarrierRecord = QFOTransferBarrier<Barrier>>
-static void EraseQFOReleaseBarriers(layer_data *device_data, const typename BarrierRecord::HandleType &handle) {
-    GlobalQFOTransferBarrierMap<Barrier> &global_release_barriers =
-        core_validation::GetGlobalQFOReleaseBarrierMap(device_data, typename BarrierRecord::Tag());
-    global_release_barriers.erase(handle);
-}
-
 // Avoid making the template globally visible by exporting the one instance of it we need.
-void EraseQFOImageRelaseBarriers(layer_data *device_data, const VkImage &image) {
+void CoreChecks::EraseQFOImageRelaseBarriers(layer_data *device_data, const VkImage &image) {
     EraseQFOReleaseBarriers<VkImageMemoryBarrier>(device_data, image);
 }
 
-void TransitionImageLayouts(layer_data *device_data, GLOBAL_CB_NODE *cb_state, uint32_t memBarrierCount,
-                            const VkImageMemoryBarrier *pImgMemBarriers) {
+void CoreChecks::TransitionImageLayouts(layer_data *device_data, GLOBAL_CB_NODE *cb_state, uint32_t memBarrierCount,
+                                        const VkImageMemoryBarrier *pImgMemBarriers) {
     for (uint32_t i = 0; i < memBarrierCount; ++i) {
         auto mem_barrier = &pImgMemBarriers[i];
         if (!mem_barrier) continue;
@@ -1072,11 +1061,11 @@ void TransitionImageLayouts(layer_data *device_data, GLOBAL_CB_NODE *cb_state, u
         // purposes it doesn't seem important which side performs the layout
         // transition, but it must not be performed twice. We'll arbitrarily
         // choose to perform it as part of the acquire operation.
-        if (IsReleaseOp(device_data, cb_state, mem_barrier)) {
+        if (IsReleaseOp(cb_state, mem_barrier)) {
             continue;
         }
 
-        VkImageCreateInfo *image_create_info = &(GetImageState(device_data, mem_barrier->image)->createInfo);
+        VkImageCreateInfo *image_create_info = &(GetImageState(mem_barrier->image)->createInfo);
         uint32_t level_count = ResolveRemainingLevels(&mem_barrier->subresourceRange, image_create_info->mipLevels);
         uint32_t layer_count = ResolveRemainingLayers(&mem_barrier->subresourceRange, image_create_info->arrayLayers);
 
@@ -1090,7 +1079,7 @@ void TransitionImageLayouts(layer_data *device_data, GLOBAL_CB_NODE *cb_state, u
 
         // For multiplanar formats, IMAGE_ASPECT_COLOR is equivalent to adding the aspect of the individual planes
         VkImageAspectFlags aspect_mask = mem_barrier->subresourceRange.aspectMask;
-        if (GetDeviceExtensions(device_data)->vk_khr_sampler_ycbcr_conversion) {
+        if (GetDeviceExtensions()->vk_khr_sampler_ycbcr_conversion) {
             if (FormatIsMultiplane(image_create_info->format)) {
                 if (aspect_mask & VK_IMAGE_ASPECT_COLOR_BIT) {
                     aspect_mask &= ~VK_IMAGE_ASPECT_COLOR_BIT;
@@ -1114,7 +1103,7 @@ void TransitionImageLayouts(layer_data *device_data, GLOBAL_CB_NODE *cb_state, u
                                             VK_IMAGE_ASPECT_STENCIL_BIT);
                 TransitionImageAspectLayout(device_data, cb_state, mem_barrier, level, layer, aspect_mask,
                                             VK_IMAGE_ASPECT_METADATA_BIT);
-                if (GetDeviceExtensions(device_data)->vk_khr_sampler_ycbcr_conversion) {
+                if (GetDeviceExtensions()->vk_khr_sampler_ycbcr_conversion) {
                     TransitionImageAspectLayout(device_data, cb_state, mem_barrier, level, layer, aspect_mask,
                                                 VK_IMAGE_ASPECT_PLANE_0_BIT_KHR);
                     TransitionImageAspectLayout(device_data, cb_state, mem_barrier, level, layer, aspect_mask,
@@ -1127,10 +1116,10 @@ void TransitionImageLayouts(layer_data *device_data, GLOBAL_CB_NODE *cb_state, u
     }
 }
 
-bool VerifyImageLayout(layer_data const *device_data, GLOBAL_CB_NODE const *cb_node, IMAGE_STATE *image_state,
-                       VkImageSubresourceLayers subLayers, VkImageLayout explicit_layout, VkImageLayout optimal_layout,
-                       const char *caller, const char *layout_invalid_msg_code, const char *layout_mismatch_msg_code, bool *error) {
-    const auto report_data = core_validation::GetReportData(device_data);
+bool CoreChecks::VerifyImageLayout(layer_data const *device_data, GLOBAL_CB_NODE const *cb_node, IMAGE_STATE *image_state,
+                                   VkImageSubresourceLayers subLayers, VkImageLayout explicit_layout, VkImageLayout optimal_layout,
+                                   const char *caller, const char *layout_invalid_msg_code, const char *layout_mismatch_msg_code,
+                                   bool *error) {
     const auto image = image_state->image;
     bool skip = false;
 
@@ -1143,10 +1132,10 @@ bool VerifyImageLayout(layer_data const *device_data, GLOBAL_CB_NODE const *cb_n
                 *error = true;
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                                 HandleToUint64(cb_node->commandBuffer), layout_mismatch_msg_code,
-                                "%s: Cannot use image 0x%" PRIx64
-                                " (layer=%u mip=%u) with specific layout %s that doesn't match the actual current layout %s.",
-                                caller, HandleToUint64(image), layer, subLayers.mipLevel, string_VkImageLayout(explicit_layout),
-                                string_VkImageLayout(node.layout));
+                                "%s: Cannot use image %s (layer=%u mip=%u) with specific layout %s that doesn't match the actual "
+                                "current layout %s.",
+                                caller, report_data->FormatHandle(image).c_str(), layer, subLayers.mipLevel,
+                                string_VkImageLayout(explicit_layout), string_VkImageLayout(node.layout));
             }
         }
     }
@@ -1158,10 +1147,10 @@ bool VerifyImageLayout(layer_data const *device_data, GLOBAL_CB_NODE const *cb_n
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
                                 VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT, HandleToUint64(cb_node->commandBuffer),
                                 kVUID_Core_DrawState_InvalidImageLayout,
-                                "%s: For optimal performance image 0x%" PRIx64 " layout should be %s instead of GENERAL.", caller,
-                                HandleToUint64(image), string_VkImageLayout(optimal_layout));
+                                "%s: For optimal performance image %s layout should be %s instead of GENERAL.", caller,
+                                report_data->FormatHandle(image).c_str(), string_VkImageLayout(optimal_layout));
             }
-        } else if (GetDeviceExtensions(device_data)->vk_khr_shared_presentable_image) {
+        } else if (GetDeviceExtensions()->vk_khr_shared_presentable_image) {
             if (image_state->shared_presentable) {
                 if (VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR != explicit_layout) {
                     skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
@@ -1174,22 +1163,24 @@ bool VerifyImageLayout(layer_data const *device_data, GLOBAL_CB_NODE const *cb_n
             *error = true;
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                             HandleToUint64(cb_node->commandBuffer), layout_invalid_msg_code,
-                            "%s: Layout for image 0x%" PRIx64 " is %s but can only be %s or VK_IMAGE_LAYOUT_GENERAL.", caller,
-                            HandleToUint64(image), string_VkImageLayout(explicit_layout), string_VkImageLayout(optimal_layout));
+                            "%s: Layout for image %s is %s but can only be %s or VK_IMAGE_LAYOUT_GENERAL.", caller,
+                            report_data->FormatHandle(image).c_str(), string_VkImageLayout(explicit_layout),
+                            string_VkImageLayout(optimal_layout));
         }
     }
     return skip;
 }
 
-void TransitionFinalSubpassLayouts(layer_data *device_data, GLOBAL_CB_NODE *pCB, const VkRenderPassBeginInfo *pRenderPassBegin,
-                                   FRAMEBUFFER_STATE *framebuffer_state) {
-    auto renderPass = GetRenderPassState(device_data, pRenderPassBegin->renderPass);
+void CoreChecks::TransitionFinalSubpassLayouts(layer_data *device_data, GLOBAL_CB_NODE *pCB,
+                                               const VkRenderPassBeginInfo *pRenderPassBegin,
+                                               FRAMEBUFFER_STATE *framebuffer_state) {
+    auto renderPass = GetRenderPassState(pRenderPassBegin->renderPass);
     if (!renderPass) return;
 
     const VkRenderPassCreateInfo2KHR *pRenderPassInfo = renderPass->createInfo.ptr();
     if (framebuffer_state) {
         for (uint32_t i = 0; i < pRenderPassInfo->attachmentCount; ++i) {
-            auto view_state = GetAttachmentImageViewState(device_data, framebuffer_state, i);
+            auto view_state = GetAttachmentImageViewState(framebuffer_state, i);
             if (view_state) {
                 SetImageViewLayout(device_data, pCB, view_state, pRenderPassInfo->pAttachments[i].finalLayout);
             }
@@ -1204,8 +1195,8 @@ void TransitionFinalSubpassLayouts(layer_data *device_data, GLOBAL_CB_NODE *pCB,
 //
 // AHB-specific validation within non-AHB APIs
 //
-bool ValidateCreateImageANDROID(layer_data *device_data, const debug_report_data *report_data,
-                                const VkImageCreateInfo *create_info) {
+bool CoreChecks::ValidateCreateImageANDROID(layer_data *device_data, const debug_report_data *report_data,
+                                            const VkImageCreateInfo *create_info) {
     bool skip = false;
 
     const VkExternalFormatANDROID *ext_fmt_android = lvl_find_in_chain<VkExternalFormatANDROID>(create_info->pNext);
@@ -1241,7 +1232,7 @@ bool ValidateCreateImageANDROID(layer_data *device_data, const debug_report_data
             }
         }
 
-        auto ahb_formats = GetAHBExternalFormatsSet(device_data);
+        auto ahb_formats = GetAHBExternalFormatsSet();
         if ((0 != ext_fmt_android->externalFormat) && (0 == ahb_formats->count(ext_fmt_android->externalFormat))) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                             "VUID-VkExternalFormatANDROID-externalFormat-01894",
@@ -1283,7 +1274,7 @@ bool ValidateCreateImageANDROID(layer_data *device_data, const debug_report_data
     return skip;
 }
 
-void RecordCreateImageANDROID(const VkImageCreateInfo *create_info, IMAGE_STATE *is_node) {
+void CoreChecks::RecordCreateImageANDROID(const VkImageCreateInfo *create_info, IMAGE_STATE *is_node) {
     const VkExternalMemoryImageCreateInfo *emici = lvl_find_in_chain<VkExternalMemoryImageCreateInfo>(create_info->pNext);
     if (emici && (emici->handleTypes & VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID)) {
         is_node->imported_ahb = true;
@@ -1295,10 +1286,9 @@ void RecordCreateImageANDROID(const VkImageCreateInfo *create_info, IMAGE_STATE 
     }
 }
 
-bool ValidateCreateImageViewANDROID(layer_data *device_data, const VkImageViewCreateInfo *create_info) {
+bool CoreChecks::ValidateCreateImageViewANDROID(layer_data *device_data, const VkImageViewCreateInfo *create_info) {
     bool skip = false;
-    const debug_report_data *report_data = core_validation::GetReportData(device_data);
-    IMAGE_STATE *image_state = GetImageState(device_data, create_info->image);
+    IMAGE_STATE *image_state = GetImageState(create_info->image);
 
     if (image_state->has_ahb_format) {
         if (VK_FORMAT_UNDEFINED != create_info->format) {
@@ -1315,7 +1305,7 @@ bool ValidateCreateImageViewANDROID(layer_data *device_data, const VkImageViewCr
         const VkSamplerYcbcrConversionInfo *ycbcr_conv_info = lvl_find_in_chain<VkSamplerYcbcrConversionInfo>(create_info->pNext);
         if (ycbcr_conv_info != nullptr) {
             VkSamplerYcbcrConversion conv_handle = ycbcr_conv_info->conversion;
-            auto fmap = GetYcbcrConversionFormatMap(device_data);
+            auto fmap = GetYcbcrConversionFormatMap();
             if (fmap->find(conv_handle) != fmap->end()) {
                 conv_found = true;
                 external_format = fmap->at(conv_handle);
@@ -1343,11 +1333,10 @@ bool ValidateCreateImageViewANDROID(layer_data *device_data, const VkImageViewCr
     return skip;
 }
 
-bool ValidateGetImageSubresourceLayoutANDROID(layer_data *device_data, const VkImage image) {
+bool CoreChecks::ValidateGetImageSubresourceLayoutANDROID(layer_data *device_data, const VkImage image) {
     bool skip = false;
-    const debug_report_data *report_data = core_validation::GetReportData(device_data);
 
-    IMAGE_STATE *image_state = GetImageState(device_data, image);
+    IMAGE_STATE *image_state = GetImageState(image);
     if (image_state->imported_ahb && (0 == image_state->GetBoundMemory().size())) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, HandleToUint64(image),
                         "VUID-vkGetImageSubresourceLayout-image-01895",
@@ -1360,26 +1349,25 @@ bool ValidateGetImageSubresourceLayoutANDROID(layer_data *device_data, const VkI
 
 #else
 
-bool ValidateCreateImageANDROID(layer_data *device_data, const debug_report_data *report_data,
-                                const VkImageCreateInfo *create_info) {
+bool CoreChecks::ValidateCreateImageANDROID(layer_data *device_data, const debug_report_data *report_data,
+                                            const VkImageCreateInfo *create_info) {
     return false;
 }
 
-void RecordCreateImageANDROID(const VkImageCreateInfo *create_info, IMAGE_STATE *is_node) {}
+void CoreChecks::RecordCreateImageANDROID(const VkImageCreateInfo *create_info, IMAGE_STATE *is_node) {}
 
-bool ValidateCreateImageViewANDROID(layer_data *device_data, const VkImageViewCreateInfo *create_info) { return false; }
+bool CoreChecks::ValidateCreateImageViewANDROID(layer_data *device_data, const VkImageViewCreateInfo *create_info) { return false; }
 
-bool ValidateGetImageSubresourceLayoutANDROID(layer_data *device_data, const VkImage image) { return false; }
+bool CoreChecks::ValidateGetImageSubresourceLayoutANDROID(layer_data *device_data, const VkImage image) { return false; }
 
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
 
-bool PreCallValidateCreateImage(VkDevice device, const VkImageCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator,
-                                VkImage *pImage) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), core_validation::layer_data_map);
+bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreateInfo *pCreateInfo,
+                                            const VkAllocationCallbacks *pAllocator, VkImage *pImage) {
+    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
-    const debug_report_data *report_data = GetReportData(device_data);
 
-    if (GetDeviceExtensions(device_data)->vk_android_external_memory_android_hardware_buffer) {
+    if (GetDeviceExtensions()->vk_android_external_memory_android_hardware_buffer) {
         skip |= ValidateCreateImageANDROID(device_data, report_data, pCreateInfo);
     } else {  // These checks are omitted or replaced when Android HW Buffer extension is active
         if (pCreateInfo->format == VK_FORMAT_UNDEFINED) {
@@ -1396,7 +1384,7 @@ bool PreCallValidateCreateImage(VkDevice device, const VkImageCreateInfo *pCreat
             "vkCreateImage(): Image type must be VK_IMAGE_TYPE_2D when VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT flag bit is set");
     }
 
-    const VkPhysicalDeviceLimits *device_limits = &(GetPDProperties(device_data)->limits);
+    const VkPhysicalDeviceLimits *device_limits = &(GetPDProperties()->limits);
     VkImageUsageFlags attach_flags = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT |
                                      VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
     if ((pCreateInfo->usage & attach_flags) && (pCreateInfo->extent.width > device_limits->maxFramebufferWidth)) {
@@ -1414,7 +1402,7 @@ bool PreCallValidateCreateImage(VkDevice device, const VkImageCreateInfo *pCreat
     }
 
     VkImageFormatProperties format_limits = {};
-    VkResult res = GetPDImageFormatProperties(device_data, pCreateInfo, &format_limits);
+    VkResult res = GetPDImageFormatProperties(pCreateInfo, &format_limits);
     if (res == VK_ERROR_FORMAT_NOT_SUPPORTED) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, kVUIDUndefined,
                         "vkCreateImage(): Format %s is not supported for this combination of parameters.",
@@ -1434,7 +1422,7 @@ bool PreCallValidateCreateImage(VkDevice device, const VkImageCreateInfo *pCreat
         uint64_t total_size = (uint64_t)std::ceil(FormatTexelSize(pCreateInfo->format) * texel_count);
 
         // Round up to imageGranularity boundary
-        VkDeviceSize imageGranularity = GetPDProperties(device_data)->limits.bufferImageGranularity;
+        VkDeviceSize imageGranularity = GetPDProperties()->limits.bufferImageGranularity;
         uint64_t ig_mask = imageGranularity - 1;
         total_size = (total_size + ig_mask) & ~ig_mask;
 
@@ -1461,15 +1449,14 @@ bool PreCallValidateCreateImage(VkDevice device, const VkImageCreateInfo *pCreat
         }
     }
 
-    if ((pCreateInfo->flags & VK_IMAGE_CREATE_SPARSE_ALIASED_BIT) &&
-        (!GetEnabledFeatures(device_data)->core.sparseResidencyAliased)) {
+    if ((pCreateInfo->flags & VK_IMAGE_CREATE_SPARSE_ALIASED_BIT) && (!GetEnabledFeatures()->core.sparseResidencyAliased)) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                         "VUID-VkImageCreateInfo-flags-01924",
                         "vkCreateImage(): the sparseResidencyAliased device feature is disabled: Images cannot be created with the "
                         "VK_IMAGE_CREATE_SPARSE_ALIASED_BIT set.");
     }
 
-    if (GetDeviceExtensions(device_data)->vk_khr_maintenance2) {
+    if (GetDeviceExtensions()->vk_khr_maintenance2) {
         if (pCreateInfo->flags & VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT_KHR) {
             if (!(FormatIsCompressed_BC(pCreateInfo->format) || FormatIsCompressed_ASTC_LDR(pCreateInfo->format) ||
                   FormatIsCompressed_ETC2_EAC(pCreateInfo->format))) {
@@ -1491,75 +1478,72 @@ bool PreCallValidateCreateImage(VkDevice device, const VkImageCreateInfo *pCreat
     }
 
     if (pCreateInfo->sharingMode == VK_SHARING_MODE_CONCURRENT && pCreateInfo->pQueueFamilyIndices) {
-        skip |= core_validation::ValidateQueueFamilies(
-            device_data, pCreateInfo->queueFamilyIndexCount, pCreateInfo->pQueueFamilyIndices, "vkCreateImage",
-            "pCreateInfo->pQueueFamilyIndices", "VUID-VkImageCreateInfo-sharingMode-01420",
-            "VUID-VkImageCreateInfo-sharingMode-01420", false);
+        skip |=
+            ValidateQueueFamilies(device_data, pCreateInfo->queueFamilyIndexCount, pCreateInfo->pQueueFamilyIndices,
+                                  "vkCreateImage", "pCreateInfo->pQueueFamilyIndices", "VUID-VkImageCreateInfo-sharingMode-01420",
+                                  "VUID-VkImageCreateInfo-sharingMode-01420", false);
     }
 
     return skip;
 }
 
-void PostCallRecordCreateImage(VkDevice device, const VkImageCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator,
-                               VkImage *pImage, VkResult result) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), core_validation::layer_data_map);
+void CoreChecks::PostCallRecordCreateImage(VkDevice device, const VkImageCreateInfo *pCreateInfo,
+                                           const VkAllocationCallbacks *pAllocator, VkImage *pImage, VkResult result) {
     if (VK_SUCCESS != result) return;
     IMAGE_LAYOUT_NODE image_state;
     image_state.layout = pCreateInfo->initialLayout;
     image_state.format = pCreateInfo->format;
     IMAGE_STATE *is_node = new IMAGE_STATE(*pImage, pCreateInfo);
-    if (GetDeviceExtensions(device_data)->vk_android_external_memory_android_hardware_buffer) {
+    if (GetDeviceExtensions()->vk_android_external_memory_android_hardware_buffer) {
         RecordCreateImageANDROID(pCreateInfo, is_node);
     }
-    GetImageMap(device_data)->insert(std::make_pair(*pImage, std::unique_ptr<IMAGE_STATE>(is_node)));
+    GetImageMap()->insert(std::make_pair(*pImage, std::unique_ptr<IMAGE_STATE>(is_node)));
     ImageSubresourcePair subpair{*pImage, false, VkImageSubresource()};
-    (*core_validation::GetImageSubresourceMap(device_data))[*pImage].push_back(subpair);
-    (*core_validation::GetImageLayoutMap(device_data))[subpair] = image_state;
+    (*GetImageSubresourceMap())[*pImage].push_back(subpair);
+    (*GetImageLayoutMap())[subpair] = image_state;
 }
 
-bool PreCallValidateDestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks *pAllocator) {
+bool CoreChecks::PreCallValidateDestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks *pAllocator) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    IMAGE_STATE *image_state = core_validation::GetImageState(device_data, image);
+    IMAGE_STATE *image_state = GetImageState(image);
     const VK_OBJECT obj_struct = {HandleToUint64(image), kVulkanObjectTypeImage};
     bool skip = false;
     if (image_state) {
-        skip |= core_validation::ValidateObjectNotInUse(device_data, image_state, obj_struct, "vkDestroyImage",
-                                                        "VUID-vkDestroyImage-image-01000");
+        skip |= ValidateObjectNotInUse(device_data, image_state, obj_struct, "vkDestroyImage", "VUID-vkDestroyImage-image-01000");
     }
     return skip;
 }
 
-void PreCallRecordDestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks *pAllocator) {
+void CoreChecks::PreCallRecordDestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks *pAllocator) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    IMAGE_STATE *image_state = core_validation::GetImageState(device_data, image);
+    if (!image) return;
+    IMAGE_STATE *image_state = GetImageState(image);
     VK_OBJECT obj_struct = {HandleToUint64(image), kVulkanObjectTypeImage};
-    core_validation::InvalidateCommandBuffers(device_data, image_state->cb_bindings, obj_struct);
+    InvalidateCommandBuffers(device_data, image_state->cb_bindings, obj_struct);
     // Clean up memory mapping, bindings and range references for image
     for (auto mem_binding : image_state->GetBoundMemory()) {
-        auto mem_info = core_validation::GetMemObjInfo(device_data, mem_binding);
+        auto mem_info = GetMemObjInfo(mem_binding);
         if (mem_info) {
-            core_validation::RemoveImageMemoryRange(obj_struct.handle, mem_info);
+            RemoveImageMemoryRange(obj_struct.handle, mem_info);
         }
     }
-    core_validation::ClearMemoryObjectBindings(device_data, obj_struct.handle, kVulkanObjectTypeImage);
+    ClearMemoryObjectBindings(obj_struct.handle, kVulkanObjectTypeImage);
     EraseQFOReleaseBarriers<VkImageMemoryBarrier>(device_data, image);
     // Remove image from imageMap
-    core_validation::GetImageMap(device_data)->erase(image);
-    std::unordered_map<VkImage, std::vector<ImageSubresourcePair>> *imageSubresourceMap =
-        core_validation::GetImageSubresourceMap(device_data);
+    GetImageMap()->erase(image);
+    std::unordered_map<VkImage, std::vector<ImageSubresourcePair>> *imageSubresourceMap = GetImageSubresourceMap();
 
     const auto &sub_entry = imageSubresourceMap->find(image);
     if (sub_entry != imageSubresourceMap->end()) {
         for (const auto &pair : sub_entry->second) {
-            core_validation::GetImageLayoutMap(device_data)->erase(pair);
+            GetImageLayoutMap()->erase(pair);
         }
         imageSubresourceMap->erase(sub_entry);
     }
 }
 
-bool ValidateImageAttributes(layer_data *device_data, IMAGE_STATE *image_state, VkImageSubresourceRange range) {
+bool CoreChecks::ValidateImageAttributes(layer_data *device_data, IMAGE_STATE *image_state, VkImageSubresourceRange range) {
     bool skip = false;
-    const debug_report_data *report_data = core_validation::GetReportData(device_data);
 
     if (range.aspectMask != VK_IMAGE_ASPECT_COLOR_BIT) {
         char const str[] = "vkCmdClearColorImage aspectMasks for all subresource ranges must be set to VK_IMAGE_ASPECT_COLOR_BIT";
@@ -1603,10 +1587,9 @@ uint32_t ResolveRemainingLayers(const VkImageSubresourceRange *range, uint32_t l
     return array_layer_count;
 }
 
-bool VerifyClearImageLayout(layer_data *device_data, GLOBAL_CB_NODE *cb_node, IMAGE_STATE *image_state,
-                            VkImageSubresourceRange range, VkImageLayout dest_image_layout, const char *func_name) {
+bool CoreChecks::VerifyClearImageLayout(layer_data *device_data, GLOBAL_CB_NODE *cb_node, IMAGE_STATE *image_state,
+                                        VkImageSubresourceRange range, VkImageLayout dest_image_layout, const char *func_name) {
     bool skip = false;
-    const debug_report_data *report_data = core_validation::GetReportData(device_data);
 
     uint32_t level_count = ResolveRemainingLevels(&range, image_state->createInfo.mipLevels);
     uint32_t layer_count = ResolveRemainingLayers(&range, image_state->createInfo.arrayLayers);
@@ -1620,7 +1603,7 @@ bool VerifyClearImageLayout(layer_data *device_data, GLOBAL_CB_NODE *cb_node, IM
                                 "%s: Layout for cleared image should be TRANSFER_DST_OPTIMAL instead of GENERAL.", func_name);
             }
         } else if (VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR == dest_image_layout) {
-            if (!GetDeviceExtensions(device_data)->vk_khr_shared_presentable_image) {
+            if (!GetDeviceExtensions()->vk_khr_shared_presentable_image) {
                 // TODO: Add unique error id when available.
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
                                 HandleToUint64(image_state->image), 0,
@@ -1676,9 +1659,9 @@ bool VerifyClearImageLayout(layer_data *device_data, GLOBAL_CB_NODE *cb_node, IM
     return skip;
 }
 
-void RecordClearImageLayout(layer_data *device_data, GLOBAL_CB_NODE *cb_node, VkImage image, VkImageSubresourceRange range,
-                            VkImageLayout dest_image_layout) {
-    VkImageCreateInfo *image_create_info = &(GetImageState(device_data, image)->createInfo);
+void CoreChecks::RecordClearImageLayout(layer_data *device_data, GLOBAL_CB_NODE *cb_node, VkImage image,
+                                        VkImageSubresourceRange range, VkImageLayout dest_image_layout) {
+    VkImageCreateInfo *image_create_info = &(GetImageState(image)->createInfo);
     uint32_t level_count = ResolveRemainingLevels(&range, image_create_info->mipLevels);
     uint32_t layer_count = ResolveRemainingLayers(&range, image_create_info->arrayLayers);
 
@@ -1695,22 +1678,22 @@ void RecordClearImageLayout(layer_data *device_data, GLOBAL_CB_NODE *cb_node, Vk
     }
 }
 
-bool PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
-                                       const VkClearColorValue *pColor, uint32_t rangeCount,
-                                       const VkImageSubresourceRange *pRanges) {
+bool CoreChecks::PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
+                                                   const VkClearColorValue *pColor, uint32_t rangeCount,
+                                                   const VkImageSubresourceRange *pRanges) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
 
     bool skip = false;
     // TODO : Verify memory is in VK_IMAGE_STATE_CLEAR state
-    auto cb_node = GetCBNode(device_data, commandBuffer);
-    auto image_state = GetImageState(device_data, image);
+    auto cb_node = GetCBNode(commandBuffer);
+    auto image_state = GetImageState(image);
     if (cb_node && image_state) {
         skip |= ValidateMemoryIsBoundToImage(device_data, image_state, "vkCmdClearColorImage()",
                                              "VUID-vkCmdClearColorImage-image-00003");
         skip |= ValidateCmdQueueFlags(device_data, cb_node, "vkCmdClearColorImage()", VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
                                       "VUID-vkCmdClearColorImage-commandBuffer-cmdpool");
         skip |= ValidateCmd(device_data, cb_node, CMD_CLEARCOLORIMAGE, "vkCmdClearColorImage()");
-        if (GetApiVersion(device_data) >= VK_API_VERSION_1_1 || GetDeviceExtensions(device_data)->vk_khr_maintenance1) {
+        if (GetApiVersion() >= VK_API_VERSION_1_1 || GetDeviceExtensions()->vk_khr_maintenance1) {
             skip |= ValidateImageFormatFeatureFlags(device_data, image_state, VK_FORMAT_FEATURE_TRANSFER_DST_BIT,
                                                     "vkCmdClearColorImage", "VUID-vkCmdClearColorImage-image-01993",
                                                     "VUID-vkCmdClearColorImage-image-01993");
@@ -1726,12 +1709,13 @@ bool PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage im
     return skip;
 }
 
-void PreCallRecordCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
-                                     const VkClearColorValue *pColor, uint32_t rangeCount, const VkImageSubresourceRange *pRanges) {
+void CoreChecks::PreCallRecordCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
+                                                 const VkClearColorValue *pColor, uint32_t rangeCount,
+                                                 const VkImageSubresourceRange *pRanges) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
 
-    auto cb_node = GetCBNode(device_data, commandBuffer);
-    auto image_state = GetImageState(device_data, image);
+    auto cb_node = GetCBNode(commandBuffer);
+    auto image_state = GetImageState(image);
     if (cb_node && image_state) {
         AddCommandBufferBindingImage(device_data, cb_node, image_state);
         for (uint32_t i = 0; i < rangeCount; ++i) {
@@ -1740,23 +1724,22 @@ void PreCallRecordCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage imag
     }
 }
 
-bool PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
-                                              const VkClearDepthStencilValue *pDepthStencil, uint32_t rangeCount,
-                                              const VkImageSubresourceRange *pRanges) {
+bool CoreChecks::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
+                                                          const VkClearDepthStencilValue *pDepthStencil, uint32_t rangeCount,
+                                                          const VkImageSubresourceRange *pRanges) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
-    const debug_report_data *report_data = core_validation::GetReportData(device_data);
 
     // TODO : Verify memory is in VK_IMAGE_STATE_CLEAR state
-    auto cb_node = GetCBNode(device_data, commandBuffer);
-    auto image_state = GetImageState(device_data, image);
+    auto cb_node = GetCBNode(commandBuffer);
+    auto image_state = GetImageState(image);
     if (cb_node && image_state) {
         skip |= ValidateMemoryIsBoundToImage(device_data, image_state, "vkCmdClearDepthStencilImage()",
                                              "VUID-vkCmdClearDepthStencilImage-image-00010");
         skip |= ValidateCmdQueueFlags(device_data, cb_node, "vkCmdClearDepthStencilImage()", VK_QUEUE_GRAPHICS_BIT,
                                       "VUID-vkCmdClearDepthStencilImage-commandBuffer-cmdpool");
         skip |= ValidateCmd(device_data, cb_node, CMD_CLEARDEPTHSTENCILIMAGE, "vkCmdClearDepthStencilImage()");
-        if (GetApiVersion(device_data) >= VK_API_VERSION_1_1 || GetDeviceExtensions(device_data)->vk_khr_maintenance1) {
+        if (GetApiVersion() >= VK_API_VERSION_1_1 || GetDeviceExtensions()->vk_khr_maintenance1) {
             skip |= ValidateImageFormatFeatureFlags(device_data, image_state, VK_FORMAT_FEATURE_TRANSFER_DST_BIT,
                                                     "vkCmdClearDepthStencilImage", "VUID-vkCmdClearDepthStencilImage-image-01994",
                                                     "VUID-vkCmdClearDepthStencilImage-image-01994");
@@ -1794,13 +1777,13 @@ bool PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer commandBuffer, VkI
     return skip;
 }
 
-void PreCallRecordCmdClearDepthStencilImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
-                                            const VkClearDepthStencilValue *pDepthStencil, uint32_t rangeCount,
-                                            const VkImageSubresourceRange *pRanges) {
+void CoreChecks::PreCallRecordCmdClearDepthStencilImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
+                                                        const VkClearDepthStencilValue *pDepthStencil, uint32_t rangeCount,
+                                                        const VkImageSubresourceRange *pRanges) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
 
-    auto cb_node = GetCBNode(device_data, commandBuffer);
-    auto image_state = GetImageState(device_data, image);
+    auto cb_node = GetCBNode(commandBuffer);
+    auto image_state = GetImageState(image);
     if (cb_node && image_state) {
         AddCommandBufferBindingImage(device_data, cb_node, image_state);
         for (uint32_t i = 0; i < rangeCount; ++i) {
@@ -1951,13 +1934,12 @@ static inline bool IsExtentSizeZero(const VkExtent3D *extent) {
 }
 
 // Returns the image transfer granularity for a specific image scaled by compressed block size if necessary.
-static inline VkExtent3D GetScaledItg(layer_data *device_data, const GLOBAL_CB_NODE *cb_node, const IMAGE_STATE *img) {
+VkExtent3D CoreChecks::GetScaledItg(layer_data *device_data, const GLOBAL_CB_NODE *cb_node, const IMAGE_STATE *img) {
     // Default to (0, 0, 0) granularity in case we can't find the real granularity for the physical device.
     VkExtent3D granularity = {0, 0, 0};
-    auto pPool = GetCommandPoolNode(device_data, cb_node->createInfo.commandPool);
+    auto pPool = GetCommandPoolNode(cb_node->createInfo.commandPool);
     if (pPool) {
-        granularity =
-            GetPhysDevProperties(device_data)->queue_family_properties[pPool->queueFamilyIndex].minImageTransferGranularity;
+        granularity = GetPhysicalDeviceState()->queue_family_properties[pPool->queueFamilyIndex].minImageTransferGranularity;
         if (FormatIsCompressed(img->createInfo.format)) {
             auto block_size = FormatTexelBlockExtent(img->createInfo.format);
             granularity.width *= block_size.width;
@@ -1978,10 +1960,9 @@ static inline bool IsExtentAligned(const VkExtent3D *extent, const VkExtent3D *g
 }
 
 // Check elements of a VkOffset3D structure against a queue family's Image Transfer Granularity values
-static inline bool CheckItgOffset(layer_data *device_data, const GLOBAL_CB_NODE *cb_node, const VkOffset3D *offset,
-                                  const VkExtent3D *granularity, const uint32_t i, const char *function, const char *member,
-                                  const char *vuid) {
-    const debug_report_data *report_data = core_validation::GetReportData(device_data);
+bool CoreChecks::CheckItgOffset(layer_data *device_data, const GLOBAL_CB_NODE *cb_node, const VkOffset3D *offset,
+                                const VkExtent3D *granularity, const uint32_t i, const char *function, const char *member,
+                                const char *vuid) {
     bool skip = false;
     VkExtent3D offset_extent = {};
     offset_extent.width = static_cast<uint32_t>(abs(offset->x));
@@ -2012,11 +1993,10 @@ static inline bool CheckItgOffset(layer_data *device_data, const GLOBAL_CB_NODE 
 }
 
 // Check elements of a VkExtent3D structure against a queue family's Image Transfer Granularity values
-static inline bool CheckItgExtent(layer_data *device_data, const GLOBAL_CB_NODE *cb_node, const VkExtent3D *extent,
-                                  const VkOffset3D *offset, const VkExtent3D *granularity, const VkExtent3D *subresource_extent,
-                                  const VkImageType image_type, const uint32_t i, const char *function, const char *member,
-                                  const char *vuid) {
-    const debug_report_data *report_data = core_validation::GetReportData(device_data);
+bool CoreChecks::CheckItgExtent(layer_data *device_data, const GLOBAL_CB_NODE *cb_node, const VkExtent3D *extent,
+                                const VkOffset3D *offset, const VkExtent3D *granularity, const VkExtent3D *subresource_extent,
+                                const VkImageType image_type, const uint32_t i, const char *function, const char *member,
+                                const char *vuid) {
     bool skip = false;
     if (IsExtentAllZeroes(granularity)) {
         // If the queue family image transfer granularity is (0, 0, 0), then the extent must always match the image
@@ -2071,39 +2051,39 @@ static inline bool CheckItgExtent(layer_data *device_data, const GLOBAL_CB_NODE 
     return skip;
 }
 
-bool ValidateImageMipLevel(layer_data *device_data, const GLOBAL_CB_NODE *cb_node, const IMAGE_STATE *img, uint32_t mip_level,
-                           const uint32_t i, const char *function, const char *member, const char *vuid) {
-    const debug_report_data *report_data = core_validation::GetReportData(device_data);
+bool CoreChecks::ValidateImageMipLevel(layer_data *device_data, const GLOBAL_CB_NODE *cb_node, const IMAGE_STATE *img,
+                                       uint32_t mip_level, const uint32_t i, const char *function, const char *member,
+                                       const char *vuid) {
     bool skip = false;
     if (mip_level >= img->createInfo.mipLevels) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                         HandleToUint64(cb_node->commandBuffer), vuid,
-                        "In %s, pRegions[%u].%s.mipLevel is %u, but provided image %" PRIx64 " has %u mip levels.", function, i,
-                        member, mip_level, HandleToUint64(img->image), img->createInfo.mipLevels);
+                        "In %s, pRegions[%u].%s.mipLevel is %u, but provided image %s has %u mip levels.", function, i, member,
+                        mip_level, report_data->FormatHandle(img->image).c_str(), img->createInfo.mipLevels);
     }
     return skip;
 }
 
-bool ValidateImageArrayLayerRange(layer_data *device_data, const GLOBAL_CB_NODE *cb_node, const IMAGE_STATE *img,
-                                  const uint32_t base_layer, const uint32_t layer_count, const uint32_t i, const char *function,
-                                  const char *member, const char *vuid) {
-    const debug_report_data *report_data = core_validation::GetReportData(device_data);
+bool CoreChecks::ValidateImageArrayLayerRange(layer_data *device_data, const GLOBAL_CB_NODE *cb_node, const IMAGE_STATE *img,
+                                              const uint32_t base_layer, const uint32_t layer_count, const uint32_t i,
+                                              const char *function, const char *member, const char *vuid) {
     bool skip = false;
     if (base_layer >= img->createInfo.arrayLayers || layer_count > img->createInfo.arrayLayers ||
         (base_layer + layer_count) > img->createInfo.arrayLayers) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                         HandleToUint64(cb_node->commandBuffer), vuid,
                         "In %s, pRegions[%u].%s.baseArrayLayer is %u and .layerCount is "
-                        "%u, but provided image %" PRIx64 " has %u array layers.",
-                        function, i, member, base_layer, layer_count, HandleToUint64(img->image), img->createInfo.arrayLayers);
+                        "%u, but provided image %s has %u array layers.",
+                        function, i, member, base_layer, layer_count, report_data->FormatHandle(img->image).c_str(),
+                        img->createInfo.arrayLayers);
     }
     return skip;
 }
 
 // Check valid usage Image Transfer Granularity requirements for elements of a VkBufferImageCopy structure
-bool ValidateCopyBufferImageTransferGranularityRequirements(layer_data *device_data, const GLOBAL_CB_NODE *cb_node,
-                                                            const IMAGE_STATE *img, const VkBufferImageCopy *region,
-                                                            const uint32_t i, const char *function, const char *vuid) {
+bool CoreChecks::ValidateCopyBufferImageTransferGranularityRequirements(layer_data *device_data, const GLOBAL_CB_NODE *cb_node,
+                                                                        const IMAGE_STATE *img, const VkBufferImageCopy *region,
+                                                                        const uint32_t i, const char *function, const char *vuid) {
     bool skip = false;
     VkExtent3D granularity = GetScaledItg(device_data, cb_node, img);
     skip |= CheckItgOffset(device_data, cb_node, &region->imageOffset, &granularity, i, function, "imageOffset", vuid);
@@ -2114,9 +2094,10 @@ bool ValidateCopyBufferImageTransferGranularityRequirements(layer_data *device_d
 }
 
 // Check valid usage Image Transfer Granularity requirements for elements of a VkImageCopy structure
-bool ValidateCopyImageTransferGranularityRequirements(layer_data *device_data, const GLOBAL_CB_NODE *cb_node,
-                                                      const IMAGE_STATE *src_img, const IMAGE_STATE *dst_img,
-                                                      const VkImageCopy *region, const uint32_t i, const char *function) {
+bool CoreChecks::ValidateCopyImageTransferGranularityRequirements(layer_data *device_data, const GLOBAL_CB_NODE *cb_node,
+                                                                  const IMAGE_STATE *src_img, const IMAGE_STATE *dst_img,
+                                                                  const VkImageCopy *region, const uint32_t i,
+                                                                  const char *function) {
     bool skip = false;
     // Source image checks
     VkExtent3D granularity = GetScaledItg(device_data, cb_node, src_img);
@@ -2141,8 +2122,9 @@ bool ValidateCopyImageTransferGranularityRequirements(layer_data *device_data, c
 }
 
 // Validate contents of a VkImageCopy struct
-bool ValidateImageCopyData(const layer_data *device_data, const debug_report_data *report_data, const uint32_t regionCount,
-                           const VkImageCopy *ic_regions, const IMAGE_STATE *src_state, const IMAGE_STATE *dst_state) {
+bool CoreChecks::ValidateImageCopyData(const layer_data *device_data, const debug_report_data *report_data,
+                                       const uint32_t regionCount, const VkImageCopy *ic_regions, const IMAGE_STATE *src_state,
+                                       const IMAGE_STATE *dst_state) {
     bool skip = false;
 
     for (uint32_t i = 0; i < regionCount; i++) {
@@ -2195,7 +2177,7 @@ bool ValidateImageCopyData(const layer_data *device_data, const debug_report_dat
                             region.srcOffset.z);
         }
 
-        if (GetDeviceExtensions(device_data)->vk_khr_maintenance1) {
+        if (GetDeviceExtensions()->vk_khr_maintenance1) {
             if (src_state->createInfo.imageType == VK_IMAGE_TYPE_3D) {
                 if ((0 != region.srcSubresource.baseArrayLayer) || (1 != region.srcSubresource.layerCount)) {
                     skip |=
@@ -2220,7 +2202,7 @@ bool ValidateImageCopyData(const layer_data *device_data, const debug_report_dat
         }
 
         // Source checks that apply only to compressed images (or to _422 images if ycbcr enabled)
-        bool ext_ycbcr = GetDeviceExtensions(device_data)->vk_khr_sampler_ycbcr_conversion;
+        bool ext_ycbcr = GetDeviceExtensions()->vk_khr_sampler_ycbcr_conversion;
         if (FormatIsCompressed(src_state->createInfo.format) ||
             (ext_ycbcr && FormatIsSinglePlane_422(src_state->createInfo.format))) {
             const VkExtent3D block_size = FormatTexelBlockExtent(src_state->createInfo.format);
@@ -2312,7 +2294,7 @@ bool ValidateImageCopyData(const layer_data *device_data, const debug_report_dat
             }
         }
         // VU01199 changed with mnt1
-        if (GetDeviceExtensions(device_data)->vk_khr_maintenance1) {
+        if (GetDeviceExtensions()->vk_khr_maintenance1) {
             if (dst_state->createInfo.imageType == VK_IMAGE_TYPE_3D) {
                 if ((0 != region.dstSubresource.baseArrayLayer) || (1 != region.dstSubresource.layerCount)) {
                     skip |=
@@ -2394,10 +2376,10 @@ bool ValidateImageCopyData(const layer_data *device_data, const debug_report_dat
 }
 
 // vkCmdCopyImage checks that only apply if the multiplane extension is enabled
-bool CopyImageMultiplaneValidation(const layer_data *dev_data, VkCommandBuffer command_buffer, const IMAGE_STATE *src_image_state,
-                                   const IMAGE_STATE *dst_image_state, const VkImageCopy region) {
+bool CoreChecks::CopyImageMultiplaneValidation(const layer_data *dev_data, VkCommandBuffer command_buffer,
+                                               const IMAGE_STATE *src_image_state, const IMAGE_STATE *dst_image_state,
+                                               const VkImageCopy region) {
     bool skip = false;
-    const debug_report_data *report_data = core_validation::GetReportData(dev_data);
 
     // Neither image is multiplane
     if ((!FormatIsMultiplane(src_image_state->createInfo.format)) && (!FormatIsMultiplane(dst_image_state->createInfo.format))) {
@@ -2464,14 +2446,14 @@ bool CopyImageMultiplaneValidation(const layer_data *dev_data, VkCommandBuffer c
     return skip;
 }
 
-bool PreCallValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage,
-                                 VkImageLayout dstImageLayout, uint32_t regionCount, const VkImageCopy *pRegions) {
+bool CoreChecks::PreCallValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
+                                             VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
+                                             const VkImageCopy *pRegions) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    auto cb_node = GetCBNode(device_data, commandBuffer);
-    auto src_image_state = GetImageState(device_data, srcImage);
-    auto dst_image_state = GetImageState(device_data, dstImage);
+    auto cb_node = GetCBNode(commandBuffer);
+    auto src_image_state = GetImageState(srcImage);
+    auto dst_image_state = GetImageState(dstImage);
     bool skip = false;
-    const debug_report_data *report_data = device_data->report_data;
 
     skip = ValidateImageCopyData(device_data, report_data, regionCount, pRegions, src_image_state, dst_image_state);
 
@@ -2513,7 +2495,7 @@ bool PreCallValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage
                                              region.dstSubresource.layerCount, i, "vkCmdCopyImage", "dstSubresource",
                                              "VUID-vkCmdCopyImage-dstSubresource-01699");
 
-        if (GetDeviceExtensions(device_data)->vk_khr_maintenance1) {
+        if (GetDeviceExtensions()->vk_khr_maintenance1) {
             // No chance of mismatch if we're overriding depth slice count
             if (!slice_override) {
                 // The number of depth slices in srcSubresource and dstSubresource must match
@@ -2544,11 +2526,11 @@ bool PreCallValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage
         }
 
         // Do multiplane-specific checks, if extension enabled
-        if (GetDeviceExtensions(device_data)->vk_khr_sampler_ycbcr_conversion) {
+        if (GetDeviceExtensions()->vk_khr_sampler_ycbcr_conversion) {
             skip |= CopyImageMultiplaneValidation(device_data, command_buffer, src_image_state, dst_image_state, region);
         }
 
-        if (!GetDeviceExtensions(device_data)->vk_khr_sampler_ycbcr_conversion) {
+        if (!GetDeviceExtensions()->vk_khr_sampler_ycbcr_conversion) {
             // not multi-plane, the aspectMask member of srcSubresource and dstSubresource must match
             if (region.srcSubresource.aspectMask != region.dstSubresource.aspectMask) {
                 char const str[] = "vkCmdCopyImage(): Src and dest aspectMasks for each region must match";
@@ -2705,7 +2687,7 @@ bool PreCallValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage
                                     "VUID-vkCmdCopyImage-srcImage-00126", "vkCmdCopyImage()", "VK_IMAGE_USAGE_TRANSFER_SRC_BIT");
     skip |= ValidateImageUsageFlags(device_data, dst_image_state, VK_IMAGE_USAGE_TRANSFER_DST_BIT, true,
                                     "VUID-vkCmdCopyImage-dstImage-00131", "vkCmdCopyImage()", "VK_IMAGE_USAGE_TRANSFER_DST_BIT");
-    if (GetApiVersion(device_data) >= VK_API_VERSION_1_1 || GetDeviceExtensions(device_data)->vk_khr_maintenance1) {
+    if (GetApiVersion() >= VK_API_VERSION_1_1 || GetDeviceExtensions()->vk_khr_maintenance1) {
         skip |=
             ValidateImageFormatFeatureFlags(device_data, src_image_state, VK_FORMAT_FEATURE_TRANSFER_SRC_BIT, "vkCmdCopyImage()",
                                             "VUID-vkCmdCopyImage-srcImage-01995", "VUID-vkCmdCopyImage-srcImage-01995");
@@ -2720,11 +2702,11 @@ bool PreCallValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage
     skip |= InsideRenderPass(device_data, cb_node, "vkCmdCopyImage()", "VUID-vkCmdCopyImage-renderpass");
     bool hit_error = false;
     const char *invalid_src_layout_vuid =
-        (src_image_state->shared_presentable && core_validation::GetDeviceExtensions(device_data)->vk_khr_shared_presentable_image)
+        (src_image_state->shared_presentable && GetDeviceExtensions()->vk_khr_shared_presentable_image)
             ? "VUID-vkCmdCopyImage-srcImageLayout-01917"
             : "VUID-vkCmdCopyImage-srcImageLayout-00129";
     const char *invalid_dst_layout_vuid =
-        (dst_image_state->shared_presentable && core_validation::GetDeviceExtensions(device_data)->vk_khr_shared_presentable_image)
+        (dst_image_state->shared_presentable && GetDeviceExtensions()->vk_khr_shared_presentable_image)
             ? "VUID-vkCmdCopyImage-dstImageLayout-01395"
             : "VUID-vkCmdCopyImage-dstImageLayout-00134";
     for (uint32_t i = 0; i < regionCount; ++i) {
@@ -2741,12 +2723,13 @@ bool PreCallValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage
     return skip;
 }
 
-void PreCallRecordCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage,
-                               VkImageLayout dstImageLayout, uint32_t regionCount, const VkImageCopy *pRegions) {
+void CoreChecks::PreCallRecordCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
+                                           VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
+                                           const VkImageCopy *pRegions) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    auto cb_node = GetCBNode(device_data, commandBuffer);
-    auto src_image_state = GetImageState(device_data, srcImage);
-    auto dst_image_state = GetImageState(device_data, dstImage);
+    auto cb_node = GetCBNode(commandBuffer);
+    auto src_image_state = GetImageState(srcImage);
+    auto dst_image_state = GetImageState(dstImage);
 
     // Make sure that all image slices are updated to correct layout
     for (uint32_t i = 0; i < regionCount; ++i) {
@@ -2766,13 +2749,13 @@ static inline bool ContainsRect(VkRect2D rect, VkRect2D sub_rect) {
     return true;
 }
 
-static bool ValidateClearAttachementExtent(const layer_data *device_data, VkCommandBuffer command_buffer, uint32_t attachment_index,
-                                           FRAMEBUFFER_STATE *framebuffer, uint32_t fb_attachment, const VkRect2D &render_area,
-                                           uint32_t rect_count, const VkClearRect *clear_rects) {
+bool CoreChecks::ValidateClearAttachmentExtent(layer_data *device_data, VkCommandBuffer command_buffer, uint32_t attachment_index,
+                                               FRAMEBUFFER_STATE *framebuffer, uint32_t fb_attachment, const VkRect2D &render_area,
+                                               uint32_t rect_count, const VkClearRect *clear_rects) {
     bool skip = false;
     const IMAGE_VIEW_STATE *image_view_state = nullptr;
     if (framebuffer && (fb_attachment != VK_ATTACHMENT_UNUSED) && (fb_attachment < framebuffer->createInfo.attachmentCount)) {
-        image_view_state = GetImageViewState(device_data, framebuffer->createInfo.pAttachments[fb_attachment]);
+        image_view_state = GetImageViewState(framebuffer->createInfo.pAttachments[fb_attachment]);
     }
 
     for (uint32_t j = 0; j < rect_count; j++) {
@@ -2802,12 +2785,12 @@ static bool ValidateClearAttachementExtent(const layer_data *device_data, VkComm
     return skip;
 }
 
-bool PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffer, uint32_t attachmentCount,
-                                        const VkClearAttachment *pAttachments, uint32_t rectCount, const VkClearRect *pRects) {
+bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffer, uint32_t attachmentCount,
+                                                    const VkClearAttachment *pAttachments, uint32_t rectCount,
+                                                    const VkClearRect *pRects) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
 
-    GLOBAL_CB_NODE *cb_node = GetCBNode(device_data, commandBuffer);
-    const debug_report_data *report_data = device_data->report_data;
+    GLOBAL_CB_NODE *cb_node = GetCBNode(commandBuffer);
 
     bool skip = false;
     if (cb_node) {
@@ -2820,12 +2803,12 @@ bool PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffer, uint32_t 
             // There are times where app needs to use ClearAttachments (generally when reusing a buffer inside of a render pass)
             // This warning should be made more specific. It'd be best to avoid triggering this test if it's a use that must call
             // CmdClearAttachments.
-            skip |= log_msg(
-                report_data, VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                HandleToUint64(commandBuffer), kVUID_Core_DrawState_ClearCmdBeforeDraw,
-                "vkCmdClearAttachments() issued on command buffer object 0x%" PRIx64
-                " prior to any Draw Cmds. It is recommended you use RenderPass LOAD_OP_CLEAR on Attachments prior to any Draw.",
-                HandleToUint64(commandBuffer));
+            skip |=
+                log_msg(report_data, VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                        HandleToUint64(commandBuffer), kVUID_Core_DrawState_ClearCmdBeforeDraw,
+                        "vkCmdClearAttachments() issued on command buffer object %s prior to any Draw Cmds. It is recommended you "
+                        "use RenderPass LOAD_OP_CLEAR on Attachments prior to any Draw.",
+                        report_data->FormatHandle(commandBuffer).c_str());
         }
         skip |= OutsideRenderPass(device_data, cb_node, "vkCmdClearAttachments()", "VUID-vkCmdClearAttachments-renderpass");
     }
@@ -2835,7 +2818,7 @@ bool PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffer, uint32_t 
         const VkRenderPassCreateInfo2KHR *renderpass_create_info = cb_node->activeRenderPass->createInfo.ptr();
         const uint32_t renderpass_attachment_count = renderpass_create_info->attachmentCount;
         const VkSubpassDescription2KHR *subpass_desc = &renderpass_create_info->pSubpasses[cb_node->activeSubpass];
-        auto framebuffer = GetFramebufferState(device_data, cb_node->activeFramebuffer);
+        auto framebuffer = GetFramebufferState(cb_node->activeFramebuffer);
         const auto &render_area = cb_node->activeRenderPassBeginInfo.renderArea;
         std::shared_ptr<std::vector<VkClearRect>> clear_rect_copy;
 
@@ -2854,24 +2837,25 @@ bool PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffer, uint32_t 
                 if (clear_desc->colorAttachment < subpass_desc->colorAttachmentCount) {
                     color_attachment = subpass_desc->pColorAttachments[clear_desc->colorAttachment].attachment;
                     if ((color_attachment != VK_ATTACHMENT_UNUSED) && (color_attachment >= renderpass_attachment_count)) {
-                        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                                        HandleToUint64(commandBuffer), "VUID-vkCmdClearAttachments-aspectMask-02501",
-                                        "vkCmdClearAttachments() pAttachments[%u].colorAttachment=%u is not VK_ATTACHMENT_UNUSED "
-                                        "and not a valid attachment for render pass 0x%" PRIx64
-                                        " attachmentCount=%u. Subpass %u pColorAttachment[%u]=%u.",
-                                        attachment_index, clear_desc->colorAttachment,
-                                        HandleToUint64(cb_node->activeRenderPass->renderPass), cb_node->activeSubpass,
-                                        clear_desc->colorAttachment, color_attachment, renderpass_attachment_count);
+                        skip |= log_msg(
+                            report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                            HandleToUint64(commandBuffer), "VUID-vkCmdClearAttachments-aspectMask-02501",
+                            "vkCmdClearAttachments() pAttachments[%u].colorAttachment=%u is not VK_ATTACHMENT_UNUSED "
+                            "and not a valid attachment for render pass %s attachmentCount=%u. Subpass %u pColorAttachment[%u]=%u.",
+                            attachment_index, clear_desc->colorAttachment,
+                            report_data->FormatHandle(cb_node->activeRenderPass->renderPass).c_str(), cb_node->activeSubpass,
+                            clear_desc->colorAttachment, color_attachment, renderpass_attachment_count);
+
                         color_attachment = VK_ATTACHMENT_UNUSED;  // Defensive, prevent lookup past end of renderpass attachment
                     }
                 } else {
-                    skip |= log_msg(
-                        report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                        HandleToUint64(commandBuffer), "VUID-vkCmdClearAttachments-aspectMask-02501",
-                        "vkCmdClearAttachments() pAttachments[%u].colorAttachment=%u out of range for render pass 0x%" PRIx64
-                        " subpass %u. colorAttachmentCount=%u",
-                        attachment_index, clear_desc->colorAttachment, HandleToUint64(cb_node->activeRenderPass->renderPass),
-                        cb_node->activeSubpass, subpass_desc->colorAttachmentCount);
+                    skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                                    HandleToUint64(commandBuffer), "VUID-vkCmdClearAttachments-aspectMask-02501",
+                                    "vkCmdClearAttachments() pAttachments[%u].colorAttachment=%u out of range for render pass %s"
+                                    " subpass %u. colorAttachmentCount=%u",
+                                    attachment_index, clear_desc->colorAttachment,
+                                    report_data->FormatHandle(cb_node->activeRenderPass->renderPass).c_str(),
+                                    cb_node->activeSubpass, subpass_desc->colorAttachmentCount);
                 }
                 fb_attachment = color_attachment;
 
@@ -2902,8 +2886,8 @@ bool PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffer, uint32_t 
                 }
             }
             if (cb_node->createInfo.level == VK_COMMAND_BUFFER_LEVEL_PRIMARY) {
-                skip |= ValidateClearAttachementExtent(device_data, commandBuffer, attachment_index, framebuffer, fb_attachment,
-                                                       render_area, rectCount, pRects);
+                skip |= ValidateClearAttachmentExtent(device_data, commandBuffer, attachment_index, framebuffer, fb_attachment,
+                                                      render_area, rectCount, pRects);
             } else {
                 // if a secondary level command buffer inherits the framebuffer from the primary command buffer
                 // (see VkCommandBufferInheritanceInfo), this validation must be deferred until queue submit time
@@ -2916,11 +2900,12 @@ bool PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffer, uint32_t 
                 auto val_fn = [device_data, commandBuffer, attachment_index, fb_attachment, rectCount, clear_rect_copy](
                                   GLOBAL_CB_NODE *prim_cb, VkFramebuffer fb) {
                     assert(rectCount == clear_rect_copy->size());
-                    auto framebuffer = GetFramebufferState(device_data, fb);
+                    FRAMEBUFFER_STATE *framebuffer = device_data->GetFramebufferState(fb);
                     const auto &render_area = prim_cb->activeRenderPassBeginInfo.renderArea;
                     bool skip = false;
-                    skip = ValidateClearAttachementExtent(device_data, commandBuffer, attachment_index, framebuffer, fb_attachment,
-                                                          render_area, rectCount, clear_rect_copy->data());
+                    skip =
+                        device_data->ValidateClearAttachmentExtent(device_data, commandBuffer, attachment_index, framebuffer,
+                                                                   fb_attachment, render_area, rectCount, clear_rect_copy->data());
                     return skip;
                 };
                 cb_node->cmd_execute_commands_functions.emplace_back(val_fn);
@@ -2930,14 +2915,14 @@ bool PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffer, uint32_t 
     return skip;
 }
 
-bool PreCallValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage,
-                                    VkImageLayout dstImageLayout, uint32_t regionCount, const VkImageResolve *pRegions) {
+bool CoreChecks::PreCallValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
+                                                VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
+                                                const VkImageResolve *pRegions) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    auto cb_node = GetCBNode(device_data, commandBuffer);
-    auto src_image_state = GetImageState(device_data, srcImage);
-    auto dst_image_state = GetImageState(device_data, dstImage);
+    auto cb_node = GetCBNode(commandBuffer);
+    auto src_image_state = GetImageState(srcImage);
+    auto dst_image_state = GetImageState(dstImage);
 
-    const debug_report_data *report_data = device_data->report_data;
     bool skip = false;
     if (cb_node && src_image_state && dst_image_state) {
         skip |= ValidateMemoryIsBoundToImage(device_data, src_image_state, "vkCmdResolveImage()",
@@ -2953,14 +2938,14 @@ bool PreCallValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage srcIm
                                                 "VUID-vkCmdResolveImage-dstImage-02003");
 
         bool hit_error = false;
-        const char *invalid_src_layout_vuid = (src_image_state->shared_presentable &&
-                                               core_validation::GetDeviceExtensions(device_data)->vk_khr_shared_presentable_image)
-                                                  ? "VUID-vkCmdResolveImage-srcImageLayout-01400"
-                                                  : "VUID-vkCmdResolveImage-srcImageLayout-00261";
-        const char *invalid_dst_layout_vuid = (dst_image_state->shared_presentable &&
-                                               core_validation::GetDeviceExtensions(device_data)->vk_khr_shared_presentable_image)
-                                                  ? "VUID-vkCmdResolveImage-dstImageLayout-01401"
-                                                  : "VUID-vkCmdResolveImage-dstImageLayout-00263";
+        const char *invalid_src_layout_vuid =
+            (src_image_state->shared_presentable && GetDeviceExtensions()->vk_khr_shared_presentable_image)
+                ? "VUID-vkCmdResolveImage-srcImageLayout-01400"
+                : "VUID-vkCmdResolveImage-srcImageLayout-00261";
+        const char *invalid_dst_layout_vuid =
+            (dst_image_state->shared_presentable && GetDeviceExtensions()->vk_khr_shared_presentable_image)
+                ? "VUID-vkCmdResolveImage-dstImageLayout-01401"
+                : "VUID-vkCmdResolveImage-dstImageLayout-00263";
         // For each region, the number of layers in the image subresource should not be zero
         // For each region, src and dest image aspect must be color only
         for (uint32_t i = 0; i < regionCount; i++) {
@@ -3028,25 +3013,26 @@ bool PreCallValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage srcIm
     return skip;
 }
 
-void PreCallRecordCmdResolveImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage,
-                                  VkImageLayout dstImageLayout, uint32_t regionCount, const VkImageResolve *pRegions) {
+void CoreChecks::PreCallRecordCmdResolveImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
+                                              VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
+                                              const VkImageResolve *pRegions) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    auto cb_node = GetCBNode(device_data, commandBuffer);
-    auto src_image_state = GetImageState(device_data, srcImage);
-    auto dst_image_state = GetImageState(device_data, dstImage);
+    auto cb_node = GetCBNode(commandBuffer);
+    auto src_image_state = GetImageState(srcImage);
+    auto dst_image_state = GetImageState(dstImage);
 
     // Update bindings between images and cmd buffer
     AddCommandBufferBindingImage(device_data, cb_node, src_image_state);
     AddCommandBufferBindingImage(device_data, cb_node, dst_image_state);
 }
 
-bool PreCallValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage,
-                                 VkImageLayout dstImageLayout, uint32_t regionCount, const VkImageBlit *pRegions, VkFilter filter) {
+bool CoreChecks::PreCallValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
+                                             VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
+                                             const VkImageBlit *pRegions, VkFilter filter) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    auto cb_node = GetCBNode(device_data, commandBuffer);
-    auto src_image_state = GetImageState(device_data, srcImage);
-    auto dst_image_state = GetImageState(device_data, dstImage);
-    const debug_report_data *report_data = device_data->report_data;
+    auto cb_node = GetCBNode(commandBuffer);
+    auto src_image_state = GetImageState(srcImage);
+    auto dst_image_state = GetImageState(dstImage);
 
     bool skip = false;
     if (cb_node) {
@@ -3150,14 +3136,14 @@ bool PreCallValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage
         }  // Depth or Stencil
 
         // Do per-region checks
-        const char *invalid_src_layout_vuid = (src_image_state->shared_presentable &&
-                                               core_validation::GetDeviceExtensions(device_data)->vk_khr_shared_presentable_image)
-                                                  ? "VUID-vkCmdBlitImage-srcImageLayout-01398"
-                                                  : "VUID-vkCmdBlitImage-srcImageLayout-00222";
-        const char *invalid_dst_layout_vuid = (dst_image_state->shared_presentable &&
-                                               core_validation::GetDeviceExtensions(device_data)->vk_khr_shared_presentable_image)
-                                                  ? "VUID-vkCmdBlitImage-dstImageLayout-01399"
-                                                  : "VUID-vkCmdBlitImage-dstImageLayout-00227";
+        const char *invalid_src_layout_vuid =
+            (src_image_state->shared_presentable && GetDeviceExtensions()->vk_khr_shared_presentable_image)
+                ? "VUID-vkCmdBlitImage-srcImageLayout-01398"
+                : "VUID-vkCmdBlitImage-srcImageLayout-00222";
+        const char *invalid_dst_layout_vuid =
+            (dst_image_state->shared_presentable && GetDeviceExtensions()->vk_khr_shared_presentable_image)
+                ? "VUID-vkCmdBlitImage-dstImageLayout-01399"
+                : "VUID-vkCmdBlitImage-dstImageLayout-00227";
         for (uint32_t i = 0; i < regionCount; i++) {
             const VkImageBlit rgn = pRegions[i];
             bool hit_error = false;
@@ -3361,12 +3347,13 @@ bool PreCallValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage
     return skip;
 }
 
-void PreCallRecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage,
-                               VkImageLayout dstImageLayout, uint32_t regionCount, const VkImageBlit *pRegions, VkFilter filter) {
+void CoreChecks::PreCallRecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
+                                           VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
+                                           const VkImageBlit *pRegions, VkFilter filter) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    auto cb_node = GetCBNode(device_data, commandBuffer);
-    auto src_image_state = GetImageState(device_data, srcImage);
-    auto dst_image_state = GetImageState(device_data, dstImage);
+    auto cb_node = GetCBNode(commandBuffer);
+    auto src_image_state = GetImageState(srcImage);
+    auto dst_image_state = GetImageState(dstImage);
 
     // Make sure that all image slices are updated to correct layout
     for (uint32_t i = 0; i < regionCount; ++i) {
@@ -3379,11 +3366,10 @@ void PreCallRecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, 
 }
 
 // This validates that the initial layout specified in the command buffer for the IMAGE is the same as the global IMAGE layout
-bool ValidateCmdBufImageLayouts(layer_data *device_data, GLOBAL_CB_NODE *pCB,
-                                std::unordered_map<ImageSubresourcePair, IMAGE_LAYOUT_NODE> const &globalImageLayoutMap,
-                                std::unordered_map<ImageSubresourcePair, IMAGE_LAYOUT_NODE> &overlayLayoutMap) {
+bool CoreChecks::ValidateCmdBufImageLayouts(layer_data *device_data, GLOBAL_CB_NODE *pCB,
+                                            std::unordered_map<ImageSubresourcePair, IMAGE_LAYOUT_NODE> const &globalImageLayoutMap,
+                                            std::unordered_map<ImageSubresourcePair, IMAGE_LAYOUT_NODE> &overlayLayoutMap) {
     bool skip = false;
-    const debug_report_data *report_data = core_validation::GetReportData(device_data);
     for (auto cb_image_data : pCB->imageLayoutMap) {
         VkImageLayout imageLayout;
 
@@ -3393,24 +3379,23 @@ bool ValidateCmdBufImageLayouts(layer_data *device_data, GLOBAL_CB_NODE *pCB,
                 // TODO: Set memory invalid which is in mem_tracker currently
             } else if (imageLayout != cb_image_data.second.initialLayout) {
                 if (cb_image_data.first.hasSubresource) {
-                    skip |= log_msg(
-                        report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                        HandleToUint64(pCB->commandBuffer), kVUID_Core_DrawState_InvalidImageLayout,
-                        "Submitted command buffer expects image 0x%" PRIx64
-                        " (subresource: aspectMask 0x%X array layer %u, mip level %u) to be in layout %s--instead, image 0x%" PRIx64
-                        "'s current layout is %s.",
-                        HandleToUint64(cb_image_data.first.image), cb_image_data.first.subresource.aspectMask,
-                        cb_image_data.first.subresource.arrayLayer, cb_image_data.first.subresource.mipLevel,
-                        string_VkImageLayout(cb_image_data.second.initialLayout), HandleToUint64(cb_image_data.first.image),
-                        string_VkImageLayout(imageLayout));
-                } else {
                     skip |=
                         log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                                 HandleToUint64(pCB->commandBuffer), kVUID_Core_DrawState_InvalidImageLayout,
-                                "Submitted command buffer expects image 0x%" PRIx64 " to be in layout %s--instead, image 0x%" PRIx64
-                                "'s current layout is %s.",
-                                HandleToUint64(cb_image_data.first.image), string_VkImageLayout(cb_image_data.second.initialLayout),
-                                HandleToUint64(cb_image_data.first.image), string_VkImageLayout(imageLayout));
+                                "Submitted command buffer expects image %s (subresource: aspectMask 0x%X array layer %u, mip level "
+                                "%u) to be in layout %s--instead, image %s's current layout is %s.",
+                                report_data->FormatHandle(cb_image_data.first.image).c_str(),
+                                cb_image_data.first.subresource.aspectMask, cb_image_data.first.subresource.arrayLayer,
+                                cb_image_data.first.subresource.mipLevel, string_VkImageLayout(cb_image_data.second.initialLayout),
+                                report_data->FormatHandle(cb_image_data.first.image).c_str(), string_VkImageLayout(imageLayout));
+                } else {
+                    skip |= log_msg(
+                        report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                        HandleToUint64(pCB->commandBuffer), kVUID_Core_DrawState_InvalidImageLayout,
+                        "Submitted command buffer expects image %s to be in layout %s--instead, image %s's current layout is %s.",
+                        report_data->FormatHandle(cb_image_data.first.image).c_str(),
+                        string_VkImageLayout(cb_image_data.second.initialLayout),
+                        report_data->FormatHandle(cb_image_data.first.image).c_str(), string_VkImageLayout(imageLayout));
                 }
             }
             SetLayout(overlayLayoutMap, cb_image_data.first, cb_image_data.second.layout);
@@ -3419,7 +3404,7 @@ bool ValidateCmdBufImageLayouts(layer_data *device_data, GLOBAL_CB_NODE *pCB,
     return skip;
 }
 
-void UpdateCmdBufImageLayouts(layer_data *device_data, GLOBAL_CB_NODE *pCB) {
+void CoreChecks::UpdateCmdBufImageLayouts(layer_data *device_data, GLOBAL_CB_NODE *pCB) {
     for (auto cb_image_data : pCB->imageLayoutMap) {
         VkImageLayout imageLayout;
         FindGlobalLayout(device_data, cb_image_data.first, imageLayout);
@@ -3430,9 +3415,9 @@ void UpdateCmdBufImageLayouts(layer_data *device_data, GLOBAL_CB_NODE *pCB) {
 // ValidateLayoutVsAttachmentDescription is a general function where we can validate various state associated with the
 // VkAttachmentDescription structs that are used by the sub-passes of a renderpass. Initial check is to make sure that READ_ONLY
 // layout attachments don't have CLEAR as their loadOp.
-bool ValidateLayoutVsAttachmentDescription(const debug_report_data *report_data, RenderPassCreateVersion rp_version,
-                                           const VkImageLayout first_layout, const uint32_t attachment,
-                                           const VkAttachmentDescription2KHR &attachment_description) {
+bool CoreChecks::ValidateLayoutVsAttachmentDescription(const debug_report_data *report_data, RenderPassCreateVersion rp_version,
+                                                       const VkImageLayout first_layout, const uint32_t attachment,
+                                                       const VkAttachmentDescription2KHR &attachment_description) {
     bool skip = false;
     const char *vuid;
     const bool use_rp2 = (rp_version == RENDER_PASS_VERSION_2);
@@ -3474,9 +3459,8 @@ bool ValidateLayoutVsAttachmentDescription(const debug_report_data *report_data,
     return skip;
 }
 
-bool ValidateLayouts(const core_validation::layer_data *device_data, RenderPassCreateVersion rp_version, VkDevice device,
-                     const VkRenderPassCreateInfo2KHR *pCreateInfo) {
-    const debug_report_data *report_data = core_validation::GetReportData(device_data);
+bool CoreChecks::ValidateLayouts(layer_data *device_data, RenderPassCreateVersion rp_version, VkDevice device,
+                                 const VkRenderPassCreateInfo2KHR *pCreateInfo) {
     bool skip = false;
     const char *vuid;
     const bool use_rp2 = (rp_version == RENDER_PASS_VERSION_2);
@@ -3538,7 +3522,7 @@ bool ValidateLayouts(const core_validation::layer_data *device_data, RenderPassC
 
                 case VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL_KHR:
                 case VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL_KHR:
-                    if (GetDeviceExtensions(device_data)->vk_khr_maintenance2) {
+                    if (GetDeviceExtensions()->vk_khr_maintenance2) {
                         break;
                     } else {
                         // Intentionally fall through to generic error message
@@ -3654,7 +3638,7 @@ bool ValidateLayouts(const core_validation::layer_data *device_data, RenderPassC
 
                 case VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL_KHR:
                 case VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL_KHR:
-                    if (GetDeviceExtensions(device_data)->vk_khr_maintenance2) {
+                    if (GetDeviceExtensions()->vk_khr_maintenance2) {
                         break;
                     } else {
                         // Intentionally fall through to generic error message
@@ -3682,9 +3666,8 @@ bool ValidateLayouts(const core_validation::layer_data *device_data, RenderPassC
 }
 
 // For any image objects that overlap mapped memory, verify that their layouts are PREINIT or GENERAL
-bool ValidateMapImageLayouts(core_validation::layer_data *device_data, VkDevice device, DEVICE_MEM_INFO const *mem_info,
-                             VkDeviceSize offset, VkDeviceSize end_offset) {
-    const debug_report_data *report_data = core_validation::GetReportData(device_data);
+bool CoreChecks::ValidateMapImageLayouts(layer_data *device_data, VkDevice device, DEVICE_MEM_INFO const *mem_info,
+                                         VkDeviceSize offset, VkDeviceSize end_offset) {
     bool skip = false;
     // Iterate over all bound image ranges and verify that for any that overlap the map ranges, the layouts are
     // VK_IMAGE_LAYOUT_PREINITIALIZED or VK_IMAGE_LAYOUT_GENERAL
@@ -3714,10 +3697,9 @@ bool ValidateMapImageLayouts(core_validation::layer_data *device_data, VkDevice 
 
 // Helper function to validate correct usage bits set for buffers or images. Verify that (actual & desired) flags != 0 or, if strict
 // is true, verify that (actual & desired) flags == desired
-static bool ValidateUsageFlags(const layer_data *device_data, VkFlags actual, VkFlags desired, VkBool32 strict, uint64_t obj_handle,
-                               VulkanObjectType obj_type, const char *msgCode, char const *func_name, char const *usage_str) {
-    const debug_report_data *report_data = core_validation::GetReportData(device_data);
-
+bool CoreChecks::ValidateUsageFlags(const layer_data *device_data, VkFlags actual, VkFlags desired, VkBool32 strict,
+                                    uint64_t obj_handle, VulkanObjectType obj_type, const char *msgCode, char const *func_name,
+                                    char const *usage_str) {
     bool correct_usage = false;
     bool skip = false;
     const char *type_str = object_string[obj_type];
@@ -3729,16 +3711,14 @@ static bool ValidateUsageFlags(const layer_data *device_data, VkFlags actual, Vk
     if (!correct_usage) {
         if (msgCode == kVUIDUndefined) {
             // TODO: Fix callers with kVUIDUndefined to use correct validation checks.
-            skip =
-                log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, get_debug_report_enum[obj_type], obj_handle,
-                        kVUID_Core_MemTrack_InvalidUsageFlag,
-                        "Invalid usage flag for %s 0x%" PRIx64 " used by %s. In this case, %s should have %s set during creation.",
-                        type_str, obj_handle, func_name, type_str, usage_str);
+            skip = log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, get_debug_report_enum[obj_type], obj_handle,
+                           kVUID_Core_MemTrack_InvalidUsageFlag,
+                           "Invalid usage flag for %s %s used by %s. In this case, %s should have %s set during creation.",
+                           type_str, report_data->FormatHandle(obj_handle).c_str(), func_name, type_str, usage_str);
         } else {
-            skip =
-                log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, get_debug_report_enum[obj_type], obj_handle, msgCode,
-                        "Invalid usage flag for %s 0x%" PRIx64 " used by %s. In this case, %s should have %s set during creation.",
-                        type_str, obj_handle, func_name, type_str, usage_str);
+            skip = log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, get_debug_report_enum[obj_type], obj_handle, msgCode,
+                           "Invalid usage flag for %s %s used by %s. In this case, %s should have %s set during creation.",
+                           type_str, report_data->FormatHandle(obj_handle).c_str(), func_name, type_str, usage_str);
         }
     }
     return skip;
@@ -3746,42 +3726,40 @@ static bool ValidateUsageFlags(const layer_data *device_data, VkFlags actual, Vk
 
 // Helper function to validate usage flags for buffers. For given buffer_state send actual vs. desired usage off to helper above
 // where an error will be flagged if usage is not correct
-bool ValidateImageUsageFlags(layer_data *device_data, IMAGE_STATE const *image_state, VkFlags desired, bool strict,
-                             const char *msgCode, char const *func_name, char const *usage_string) {
+bool CoreChecks::ValidateImageUsageFlags(layer_data *device_data, IMAGE_STATE const *image_state, VkFlags desired, bool strict,
+                                         const char *msgCode, char const *func_name, char const *usage_string) {
     return ValidateUsageFlags(device_data, image_state->createInfo.usage, desired, strict, HandleToUint64(image_state->image),
                               kVulkanObjectTypeImage, msgCode, func_name, usage_string);
 }
 
-bool ValidateImageFormatFeatureFlags(layer_data *dev_data, IMAGE_STATE const *image_state, VkFormatFeatureFlags desired,
-                                     char const *func_name, const char *linear_vuid, const char *optimal_vuid) {
-    VkFormatProperties format_properties = GetPDFormatProperties(dev_data, image_state->createInfo.format);
-    const debug_report_data *report_data = core_validation::GetReportData(dev_data);
+bool CoreChecks::ValidateImageFormatFeatureFlags(layer_data *dev_data, IMAGE_STATE const *image_state, VkFormatFeatureFlags desired,
+                                                 char const *func_name, const char *linear_vuid, const char *optimal_vuid) {
+    VkFormatProperties format_properties = GetPDFormatProperties(image_state->createInfo.format);
     bool skip = false;
     if (image_state->createInfo.tiling == VK_IMAGE_TILING_LINEAR) {
         if ((format_properties.linearTilingFeatures & desired) != desired) {
-            skip |=
-                log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
-                        HandleToUint64(image_state->image), linear_vuid,
-                        "In %s, invalid linearTilingFeatures (0x%08X) for format %u used by image %" PRIx64 ".", func_name,
-                        format_properties.linearTilingFeatures, image_state->createInfo.format, HandleToUint64(image_state->image));
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
+                            HandleToUint64(image_state->image), linear_vuid,
+                            "In %s, invalid linearTilingFeatures (0x%08X) for format %u used by image %s.", func_name,
+                            format_properties.linearTilingFeatures, image_state->createInfo.format,
+                            report_data->FormatHandle(image_state->image).c_str());
         }
     } else if (image_state->createInfo.tiling == VK_IMAGE_TILING_OPTIMAL) {
         if ((format_properties.optimalTilingFeatures & desired) != desired) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
                             HandleToUint64(image_state->image), optimal_vuid,
-                            "In %s, invalid optimalTilingFeatures (0x%08X) for format %u used by image %" PRIx64 ".", func_name,
+                            "In %s, invalid optimalTilingFeatures (0x%08X) for format %u used by image %s.", func_name,
                             format_properties.optimalTilingFeatures, image_state->createInfo.format,
-                            HandleToUint64(image_state->image));
+                            report_data->FormatHandle(image_state->image).c_str());
         }
     }
     return skip;
 }
 
-bool ValidateImageSubresourceLayers(layer_data *dev_data, const GLOBAL_CB_NODE *cb_node,
-                                    const VkImageSubresourceLayers *subresource_layers, char const *func_name, char const *member,
-                                    uint32_t i) {
+bool CoreChecks::ValidateImageSubresourceLayers(layer_data *dev_data, const GLOBAL_CB_NODE *cb_node,
+                                                const VkImageSubresourceLayers *subresource_layers, char const *func_name,
+                                                char const *member, uint32_t i) {
     bool skip = false;
-    const debug_report_data *report_data = core_validation::GetReportData(dev_data);
     // layerCount must not be zero
     if (subresource_layers->layerCount == 0) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
@@ -3808,16 +3786,15 @@ bool ValidateImageSubresourceLayers(layer_data *dev_data, const GLOBAL_CB_NODE *
 
 // Helper function to validate usage flags for buffers. For given buffer_state send actual vs. desired usage off to helper above
 // where an error will be flagged if usage is not correct
-bool ValidateBufferUsageFlags(const layer_data *device_data, BUFFER_STATE const *buffer_state, VkFlags desired, bool strict,
-                              const char *msgCode, char const *func_name, char const *usage_string) {
+bool CoreChecks::ValidateBufferUsageFlags(const layer_data *device_data, BUFFER_STATE const *buffer_state, VkFlags desired,
+                                          bool strict, const char *msgCode, char const *func_name, char const *usage_string) {
     return ValidateUsageFlags(device_data, buffer_state->createInfo.usage, desired, strict, HandleToUint64(buffer_state->buffer),
                               kVulkanObjectTypeBuffer, msgCode, func_name, usage_string);
 }
 
-bool ValidateBufferViewRange(const layer_data *device_data, const BUFFER_STATE *buffer_state,
-                             const VkBufferViewCreateInfo *pCreateInfo, const VkPhysicalDeviceLimits *device_limits) {
+bool CoreChecks::ValidateBufferViewRange(const layer_data *device_data, const BUFFER_STATE *buffer_state,
+                                         const VkBufferViewCreateInfo *pCreateInfo, const VkPhysicalDeviceLimits *device_limits) {
     bool skip = false;
-    const debug_report_data *report_data = core_validation::GetReportData(device_data);
 
     const VkDeviceSize &range = pCreateInfo->range;
     if (range != VK_WHOLE_SIZE) {
@@ -3862,11 +3839,10 @@ bool ValidateBufferViewRange(const layer_data *device_data, const BUFFER_STATE *
     return skip;
 }
 
-bool ValidateBufferViewBuffer(const layer_data *device_data, const BUFFER_STATE *buffer_state,
-                              const VkBufferViewCreateInfo *pCreateInfo) {
+bool CoreChecks::ValidateBufferViewBuffer(const layer_data *device_data, const BUFFER_STATE *buffer_state,
+                                          const VkBufferViewCreateInfo *pCreateInfo) {
     bool skip = false;
-    const debug_report_data *report_data = GetReportData(device_data);
-    const VkFormatProperties format_properties = GetPDFormatProperties(device_data, pCreateInfo->format);
+    const VkFormatProperties format_properties = GetPDFormatProperties(pCreateInfo->format);
     if ((buffer_state->createInfo.usage & VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT) &&
         !(format_properties.bufferFeatures & VK_FORMAT_FEATURE_UNIFORM_TEXEL_BUFFER_BIT)) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT,
@@ -3884,32 +3860,29 @@ bool ValidateBufferViewBuffer(const layer_data *device_data, const BUFFER_STATE 
     return skip;
 }
 
-bool PreCallValidateCreateBuffer(VkDevice device, const VkBufferCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator,
-                                 VkBuffer *pBuffer) {
+bool CoreChecks::PreCallValidateCreateBuffer(VkDevice device, const VkBufferCreateInfo *pCreateInfo,
+                                             const VkAllocationCallbacks *pAllocator, VkBuffer *pBuffer) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
 
     bool skip = false;
-    const debug_report_data *report_data = device_data->report_data;
 
     // TODO: Add check for "VUID-vkCreateBuffer-flags-00911"        (sparse address space accounting)
 
-    if ((pCreateInfo->flags & VK_BUFFER_CREATE_SPARSE_BINDING_BIT) && (!GetEnabledFeatures(device_data)->core.sparseBinding)) {
+    if ((pCreateInfo->flags & VK_BUFFER_CREATE_SPARSE_BINDING_BIT) && (!GetEnabledFeatures()->core.sparseBinding)) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                         "VUID-VkBufferCreateInfo-flags-00915",
                         "vkCreateBuffer(): the sparseBinding device feature is disabled: Buffers cannot be created with the "
                         "VK_BUFFER_CREATE_SPARSE_BINDING_BIT set.");
     }
 
-    if ((pCreateInfo->flags & VK_BUFFER_CREATE_SPARSE_RESIDENCY_BIT) &&
-        (!GetEnabledFeatures(device_data)->core.sparseResidencyBuffer)) {
+    if ((pCreateInfo->flags & VK_BUFFER_CREATE_SPARSE_RESIDENCY_BIT) && (!GetEnabledFeatures()->core.sparseResidencyBuffer)) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                         "VUID-VkBufferCreateInfo-flags-00916",
                         "vkCreateBuffer(): the sparseResidencyBuffer device feature is disabled: Buffers cannot be created with "
                         "the VK_BUFFER_CREATE_SPARSE_RESIDENCY_BIT set.");
     }
 
-    if ((pCreateInfo->flags & VK_BUFFER_CREATE_SPARSE_ALIASED_BIT) &&
-        (!GetEnabledFeatures(device_data)->core.sparseResidencyAliased)) {
+    if ((pCreateInfo->flags & VK_BUFFER_CREATE_SPARSE_ALIASED_BIT) && (!GetEnabledFeatures()->core.sparseResidencyAliased)) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                         "VUID-VkBufferCreateInfo-flags-00917",
                         "vkCreateBuffer(): the sparseResidencyAliased device feature is disabled: Buffers cannot be created with "
@@ -3928,7 +3901,7 @@ bool PreCallValidateCreateBuffer(VkDevice device, const VkBufferCreateInfo *pCre
     }
 
     if ((pCreateInfo->flags & VK_BUFFER_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT_EXT) &&
-        !GetEnabledFeatures(device_data)->buffer_address.bufferDeviceAddressCaptureReplay) {
+        !GetEnabledFeatures()->buffer_address.bufferDeviceAddressCaptureReplay) {
         skip |= log_msg(
             report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
             "VUID-VkBufferCreateInfo-flags-02605",
@@ -3937,7 +3910,7 @@ bool PreCallValidateCreateBuffer(VkDevice device, const VkBufferCreateInfo *pCre
     }
 
     if ((pCreateInfo->usage & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_EXT) &&
-        !GetEnabledFeatures(device_data)->buffer_address.bufferDeviceAddress) {
+        !GetEnabledFeatures()->buffer_address.bufferDeviceAddress) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                         "VUID-VkBufferCreateInfo-usage-02606",
                         "vkCreateBuffer(): the bufferDeviceAddress device feature is disabled: Buffers cannot be created with "
@@ -3945,31 +3918,28 @@ bool PreCallValidateCreateBuffer(VkDevice device, const VkBufferCreateInfo *pCre
     }
 
     if (pCreateInfo->sharingMode == VK_SHARING_MODE_CONCURRENT && pCreateInfo->pQueueFamilyIndices) {
-        skip |= core_validation::ValidateQueueFamilies(
-            device_data, pCreateInfo->queueFamilyIndexCount, pCreateInfo->pQueueFamilyIndices, "vkCreateBuffer",
-            "pCreateInfo->pQueueFamilyIndices", "VUID-VkBufferCreateInfo-sharingMode-01419",
-            "VUID-VkBufferCreateInfo-sharingMode-01419", false);
+        skip |=
+            ValidateQueueFamilies(device_data, pCreateInfo->queueFamilyIndexCount, pCreateInfo->pQueueFamilyIndices,
+                                  "vkCreateBuffer", "pCreateInfo->pQueueFamilyIndices", "VUID-VkBufferCreateInfo-sharingMode-01419",
+                                  "VUID-VkBufferCreateInfo-sharingMode-01419", false);
     }
 
     return skip;
 }
 
-void PostCallRecordCreateBuffer(VkDevice device, const VkBufferCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator,
-                                VkBuffer *pBuffer, VkResult result) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+void CoreChecks::PostCallRecordCreateBuffer(VkDevice device, const VkBufferCreateInfo *pCreateInfo,
+                                            const VkAllocationCallbacks *pAllocator, VkBuffer *pBuffer, VkResult result) {
     if (result != VK_SUCCESS) return;
     // TODO : This doesn't create deep copy of pQueueFamilyIndices so need to fix that if/when we want that data to be valid
-    GetBufferMap(device_data)
-        ->insert(std::make_pair(*pBuffer, std::unique_ptr<BUFFER_STATE>(new BUFFER_STATE(*pBuffer, pCreateInfo))));
+    GetBufferMap()->insert(std::make_pair(*pBuffer, std::unique_ptr<BUFFER_STATE>(new BUFFER_STATE(*pBuffer, pCreateInfo))));
 }
 
-bool PreCallValidateCreateBufferView(VkDevice device, const VkBufferViewCreateInfo *pCreateInfo,
-                                     const VkAllocationCallbacks *pAllocator, VkBufferView *pView) {
+bool CoreChecks::PreCallValidateCreateBufferView(VkDevice device, const VkBufferViewCreateInfo *pCreateInfo,
+                                                 const VkAllocationCallbacks *pAllocator, VkBufferView *pView) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
 
     bool skip = false;
-    const debug_report_data *report_data = device_data->report_data;
-    BUFFER_STATE *buffer_state = GetBufferState(device_data, pCreateInfo->buffer);
+    BUFFER_STATE *buffer_state = GetBufferState(pCreateInfo->buffer);
     // If this isn't a sparse buffer, it needs to have memory backing it at CreateBufferView time
     if (buffer_state) {
         skip |= ValidateMemoryIsBoundToBuffer(device_data, buffer_state, "vkCreateBufferView()",
@@ -3990,7 +3960,7 @@ bool PreCallValidateCreateBufferView(VkDevice device, const VkBufferViewCreateIn
                             pCreateInfo->offset, buffer_state->createInfo.size);
         }
 
-        const VkPhysicalDeviceLimits *device_limits = &(GetPDProperties(device_data)->limits);
+        const VkPhysicalDeviceLimits *device_limits = &(GetPDProperties()->limits);
         // Buffer view offset must be a multiple of VkPhysicalDeviceLimits::minTexelBufferOffsetAlignment
         if ((pCreateInfo->offset % device_limits->minTexelBufferOffsetAlignment) != 0) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT,
@@ -4007,17 +3977,15 @@ bool PreCallValidateCreateBufferView(VkDevice device, const VkBufferViewCreateIn
     return skip;
 }
 
-void PostCallRecordCreateBufferView(VkDevice device, const VkBufferViewCreateInfo *pCreateInfo,
-                                    const VkAllocationCallbacks *pAllocator, VkBufferView *pView, VkResult result) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+void CoreChecks::PostCallRecordCreateBufferView(VkDevice device, const VkBufferViewCreateInfo *pCreateInfo,
+                                                const VkAllocationCallbacks *pAllocator, VkBufferView *pView, VkResult result) {
     if (result != VK_SUCCESS) return;
-    (*GetBufferViewMap(device_data))[*pView] = std::unique_ptr<BUFFER_VIEW_STATE>(new BUFFER_VIEW_STATE(*pView, pCreateInfo));
+    (*GetBufferViewMap())[*pView] = std::unique_ptr<BUFFER_VIEW_STATE>(new BUFFER_VIEW_STATE(*pView, pCreateInfo));
 }
 
 // For the given format verify that the aspect masks make sense
-bool ValidateImageAspectMask(const layer_data *device_data, VkImage image, VkFormat format, VkImageAspectFlags aspect_mask,
-                             const char *func_name, const char *vuid) {
-    const debug_report_data *report_data = device_data->report_data;
+bool CoreChecks::ValidateImageAspectMask(const layer_data *device_data, VkImage image, VkFormat format,
+                                         VkImageAspectFlags aspect_mask, const char *func_name, const char *vuid) {
     bool skip = false;
     VkDebugReportObjectTypeEXT objectType = VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT;
     if (image != VK_NULL_HANDLE) {
@@ -4075,15 +4043,10 @@ bool ValidateImageAspectMask(const layer_data *device_data, VkImage image, VkFor
     return skip;
 }
 
-struct SubresourceRangeErrorCodes {
-    const char *base_mip_err, *mip_count_err, *base_layer_err, *layer_count_err;
-};
-
-bool ValidateImageSubresourceRange(const layer_data *device_data, const uint32_t image_mip_count, const uint32_t image_layer_count,
-                                   const VkImageSubresourceRange &subresourceRange, const char *cmd_name, const char *param_name,
-                                   const char *image_layer_count_var_name, const uint64_t image_handle,
-                                   SubresourceRangeErrorCodes errorCodes) {
-    const debug_report_data *report_data = core_validation::GetReportData(device_data);
+bool CoreChecks::ValidateImageSubresourceRange(const layer_data *device_data, const uint32_t image_mip_count,
+                                               const uint32_t image_layer_count, const VkImageSubresourceRange &subresourceRange,
+                                               const char *cmd_name, const char *param_name, const char *image_layer_count_var_name,
+                                               const uint64_t image_handle, SubresourceRangeErrorCodes errorCodes) {
     bool skip = false;
 
     // Validate mip levels
@@ -4144,9 +4107,10 @@ bool ValidateImageSubresourceRange(const layer_data *device_data, const uint32_t
     return skip;
 }
 
-bool ValidateCreateImageViewSubresourceRange(const layer_data *device_data, const IMAGE_STATE *image_state,
-                                             bool is_imageview_2d_type, const VkImageSubresourceRange &subresourceRange) {
-    bool is_khr_maintenance1 = GetDeviceExtensions(device_data)->vk_khr_maintenance1;
+bool CoreChecks::ValidateCreateImageViewSubresourceRange(const layer_data *device_data, const IMAGE_STATE *image_state,
+                                                         bool is_imageview_2d_type,
+                                                         const VkImageSubresourceRange &subresourceRange) {
+    bool is_khr_maintenance1 = GetDeviceExtensions()->vk_khr_maintenance1;
     bool is_image_slicable = image_state->createInfo.imageType == VK_IMAGE_TYPE_3D &&
                              (image_state->createInfo.flags & VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT_KHR);
     bool is_3D_to_2D_map = is_khr_maintenance1 && is_image_slicable && is_imageview_2d_type;
@@ -4170,8 +4134,8 @@ bool ValidateCreateImageViewSubresourceRange(const layer_data *device_data, cons
                                          HandleToUint64(image_state->image), subresourceRangeErrorCodes);
 }
 
-bool ValidateCmdClearColorSubresourceRange(const layer_data *device_data, const IMAGE_STATE *image_state,
-                                           const VkImageSubresourceRange &subresourceRange, const char *param_name) {
+bool CoreChecks::ValidateCmdClearColorSubresourceRange(const layer_data *device_data, const IMAGE_STATE *image_state,
+                                                       const VkImageSubresourceRange &subresourceRange, const char *param_name) {
     SubresourceRangeErrorCodes subresourceRangeErrorCodes = {};
     subresourceRangeErrorCodes.base_mip_err = "VUID-vkCmdClearColorImage-baseMipLevel-01470";
     subresourceRangeErrorCodes.mip_count_err = "VUID-vkCmdClearColorImage-pRanges-01692";
@@ -4183,8 +4147,8 @@ bool ValidateCmdClearColorSubresourceRange(const layer_data *device_data, const 
                                          HandleToUint64(image_state->image), subresourceRangeErrorCodes);
 }
 
-bool ValidateCmdClearDepthSubresourceRange(const layer_data *device_data, const IMAGE_STATE *image_state,
-                                           const VkImageSubresourceRange &subresourceRange, const char *param_name) {
+bool CoreChecks::ValidateCmdClearDepthSubresourceRange(const layer_data *device_data, const IMAGE_STATE *image_state,
+                                                       const VkImageSubresourceRange &subresourceRange, const char *param_name) {
     SubresourceRangeErrorCodes subresourceRangeErrorCodes = {};
     subresourceRangeErrorCodes.base_mip_err = "VUID-vkCmdClearDepthStencilImage-baseMipLevel-01474";
     subresourceRangeErrorCodes.mip_count_err = "VUID-vkCmdClearDepthStencilImage-pRanges-01694";
@@ -4196,9 +4160,9 @@ bool ValidateCmdClearDepthSubresourceRange(const layer_data *device_data, const 
                                          HandleToUint64(image_state->image), subresourceRangeErrorCodes);
 }
 
-bool ValidateImageBarrierSubresourceRange(const layer_data *device_data, const IMAGE_STATE *image_state,
-                                          const VkImageSubresourceRange &subresourceRange, const char *cmd_name,
-                                          const char *param_name) {
+bool CoreChecks::ValidateImageBarrierSubresourceRange(const layer_data *device_data, const IMAGE_STATE *image_state,
+                                                      const VkImageSubresourceRange &subresourceRange, const char *cmd_name,
+                                                      const char *param_name) {
     SubresourceRangeErrorCodes subresourceRangeErrorCodes = {};
     subresourceRangeErrorCodes.base_mip_err = "VUID-VkImageMemoryBarrier-subresourceRange-01486";
     subresourceRangeErrorCodes.mip_count_err = "VUID-VkImageMemoryBarrier-subresourceRange-01724";
@@ -4210,12 +4174,11 @@ bool ValidateImageBarrierSubresourceRange(const layer_data *device_data, const I
                                          subresourceRangeErrorCodes);
 }
 
-bool PreCallValidateCreateImageView(VkDevice device, const VkImageViewCreateInfo *pCreateInfo,
-                                    const VkAllocationCallbacks *pAllocator, VkImageView *pView) {
+bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageViewCreateInfo *pCreateInfo,
+                                                const VkAllocationCallbacks *pAllocator, VkImageView *pView) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    const debug_report_data *report_data = device_data->report_data;
     bool skip = false;
-    IMAGE_STATE *image_state = GetImageState(device_data, pCreateInfo->image);
+    IMAGE_STATE *image_state = GetImageState(pCreateInfo->image);
     if (image_state) {
         skip |= ValidateImageUsageFlags(
             device_data, image_state,
@@ -4288,14 +4251,14 @@ bool PreCallValidateCreateImageView(VkDevice device, const VkImageViewCreateInfo
                                     ss.str().c_str());
                 }
             } else {
-                if ((!GetDeviceExtensions(device_data)->vk_khr_maintenance2 ||
+                if ((!GetDeviceExtensions()->vk_khr_maintenance2 ||
                      !(image_flags & VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT_KHR))) {
                     // Format MUST be compatible (in the same format compatibility class) as the format the image was created with
                     if (FormatCompatibilityClass(image_format) != FormatCompatibilityClass(view_format)) {
                         std::stringstream ss;
                         ss << "vkCreateImageView(): ImageView format " << string_VkFormat(view_format)
-                           << " is not in the same format compatibility class as image (" << HandleToUint64(pCreateInfo->image)
-                           << ")  format " << string_VkFormat(image_format)
+                           << " is not in the same format compatibility class as image ("
+                           << report_data->FormatHandle(pCreateInfo->image).c_str() << ")  format " << string_VkFormat(image_format)
                            << ".  Images created with the VK_IMAGE_CREATE_MUTABLE_FORMAT BIT "
                            << "can support ImageViews with differing formats but they must be in the same compatibility class.";
                         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
@@ -4309,7 +4272,7 @@ bool PreCallValidateCreateImageView(VkDevice device, const VkImageViewCreateInfo
             if (image_format != view_format) {
                 std::stringstream ss;
                 ss << "vkCreateImageView() format " << string_VkFormat(view_format) << " differs from image "
-                   << HandleToUint64(pCreateInfo->image) << " format " << string_VkFormat(image_format)
+                   << report_data->FormatHandle(pCreateInfo->image).c_str() << " format " << string_VkFormat(image_format)
                    << ".  Formats MUST be IDENTICAL unless VK_IMAGE_CREATE_MUTABLE_FORMAT BIT was set on image creation.";
                 skip |=
                     log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
@@ -4346,7 +4309,7 @@ bool PreCallValidateCreateImageView(VkDevice device, const VkImageViewCreateInfo
                 }
                 break;
             case VK_IMAGE_TYPE_3D:
-                if (GetDeviceExtensions(device_data)->vk_khr_maintenance1) {
+                if (GetDeviceExtensions()->vk_khr_maintenance1) {
                     if (view_type != VK_IMAGE_VIEW_TYPE_3D) {
                         if ((view_type == VK_IMAGE_VIEW_TYPE_2D || view_type == VK_IMAGE_VIEW_TYPE_2D_ARRAY)) {
                             if (!(image_flags & VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT_KHR)) {
@@ -4386,11 +4349,11 @@ bool PreCallValidateCreateImageView(VkDevice device, const VkImageViewCreateInfo
         }
 
         // External format checks needed when VK_ANDROID_external_memory_android_hardware_buffer enabled
-        if (GetDeviceExtensions(device_data)->vk_android_external_memory_android_hardware_buffer) {
+        if (GetDeviceExtensions()->vk_android_external_memory_android_hardware_buffer) {
             skip |= ValidateCreateImageViewANDROID(device_data, pCreateInfo);
         }
 
-        VkFormatProperties format_properties = GetPDFormatProperties(device_data, view_format);
+        VkFormatProperties format_properties = GetPDFormatProperties(view_format);
         VkFormatFeatureFlags tiling_features = (image_tiling & VK_IMAGE_TILING_LINEAR) ? format_properties.linearTilingFeatures
                                                                                        : format_properties.optimalTilingFeatures;
 
@@ -4447,25 +4410,24 @@ bool PreCallValidateCreateImageView(VkDevice device, const VkImageViewCreateInfo
     return skip;
 }
 
-void PostCallRecordCreateImageView(VkDevice device, const VkImageViewCreateInfo *pCreateInfo,
-                                   const VkAllocationCallbacks *pAllocator, VkImageView *pView, VkResult result) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+void CoreChecks::PostCallRecordCreateImageView(VkDevice device, const VkImageViewCreateInfo *pCreateInfo,
+                                               const VkAllocationCallbacks *pAllocator, VkImageView *pView, VkResult result) {
     if (result != VK_SUCCESS) return;
-    auto image_view_map = GetImageViewMap(device_data);
+    auto image_view_map = GetImageViewMap();
     (*image_view_map)[*pView] = std::unique_ptr<IMAGE_VIEW_STATE>(new IMAGE_VIEW_STATE(*pView, pCreateInfo));
 
-    auto image_state = GetImageState(device_data, pCreateInfo->image);
+    auto image_state = GetImageState(pCreateInfo->image);
     auto &sub_res_range = (*image_view_map)[*pView].get()->create_info.subresourceRange;
     sub_res_range.levelCount = ResolveRemainingLevels(&sub_res_range, image_state->createInfo.mipLevels);
     sub_res_range.layerCount = ResolveRemainingLayers(&sub_res_range, image_state->createInfo.arrayLayers);
 }
 
-bool PreCallValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer, uint32_t regionCount,
-                                  const VkBufferCopy *pRegions) {
+bool CoreChecks::PreCallValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer,
+                                              uint32_t regionCount, const VkBufferCopy *pRegions) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    auto cb_node = GetCBNode(device_data, commandBuffer);
-    auto src_buffer_state = GetBufferState(device_data, srcBuffer);
-    auto dst_buffer_state = GetBufferState(device_data, dstBuffer);
+    auto cb_node = GetCBNode(commandBuffer);
+    auto src_buffer_state = GetBufferState(srcBuffer);
+    auto dst_buffer_state = GetBufferState(dstBuffer);
 
     bool skip = false;
     skip |=
@@ -4487,39 +4449,38 @@ bool PreCallValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuf
     return skip;
 }
 
-void PreCallRecordCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer, uint32_t regionCount,
-                                const VkBufferCopy *pRegions) {
+void CoreChecks::PreCallRecordCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer,
+                                            uint32_t regionCount, const VkBufferCopy *pRegions) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    auto cb_node = GetCBNode(device_data, commandBuffer);
-    auto src_buffer_state = GetBufferState(device_data, srcBuffer);
-    auto dst_buffer_state = GetBufferState(device_data, dstBuffer);
+    auto cb_node = GetCBNode(commandBuffer);
+    auto src_buffer_state = GetBufferState(srcBuffer);
+    auto dst_buffer_state = GetBufferState(dstBuffer);
 
     // Update bindings between buffers and cmd buffer
     AddCommandBufferBindingBuffer(device_data, cb_node, src_buffer_state);
     AddCommandBufferBindingBuffer(device_data, cb_node, dst_buffer_state);
 }
 
-static bool ValidateIdleBuffer(layer_data *device_data, VkBuffer buffer) {
-    const debug_report_data *report_data = core_validation::GetReportData(device_data);
+bool CoreChecks::ValidateIdleBuffer(layer_data *device_data, VkBuffer buffer) {
     bool skip = false;
-    auto buffer_state = GetBufferState(device_data, buffer);
+    auto buffer_state = GetBufferState(buffer);
     if (!buffer_state) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT, HandleToUint64(buffer),
-                        kVUID_Core_DrawState_DoubleDestroy, "Cannot free buffer 0x%" PRIx64 " that has not been allocated.",
-                        HandleToUint64(buffer));
+                        kVUID_Core_DrawState_DoubleDestroy, "Cannot free buffer %s that has not been allocated.",
+                        report_data->FormatHandle(buffer).c_str());
     } else {
         if (buffer_state->in_use.load()) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT,
                             HandleToUint64(buffer), "VUID-vkDestroyBuffer-buffer-00922",
-                            "Cannot free buffer 0x%" PRIx64 " that is in use by a command buffer.", HandleToUint64(buffer));
+                            "Cannot free buffer %s that is in use by a command buffer.", report_data->FormatHandle(buffer).c_str());
         }
     }
     return skip;
 }
 
-bool PreCallValidateDestroyImageView(VkDevice device, VkImageView imageView, const VkAllocationCallbacks *pAllocator) {
+bool CoreChecks::PreCallValidateDestroyImageView(VkDevice device, VkImageView imageView, const VkAllocationCallbacks *pAllocator) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    IMAGE_VIEW_STATE *image_view_state = GetImageViewState(device_data, imageView);
+    IMAGE_VIEW_STATE *image_view_state = GetImageViewState(imageView);
     VK_OBJECT obj_struct = {HandleToUint64(imageView), kVulkanObjectTypeImageView};
 
     bool skip = false;
@@ -4530,20 +4491,20 @@ bool PreCallValidateDestroyImageView(VkDevice device, VkImageView imageView, con
     return skip;
 }
 
-void PreCallRecordDestroyImageView(VkDevice device, VkImageView imageView, const VkAllocationCallbacks *pAllocator) {
+void CoreChecks::PreCallRecordDestroyImageView(VkDevice device, VkImageView imageView, const VkAllocationCallbacks *pAllocator) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    IMAGE_VIEW_STATE *image_view_state = GetImageViewState(device_data, imageView);
+    IMAGE_VIEW_STATE *image_view_state = GetImageViewState(imageView);
     if (!image_view_state) return;
     VK_OBJECT obj_struct = {HandleToUint64(imageView), kVulkanObjectTypeImageView};
 
     // Any bound cmd buffers are now invalid
     InvalidateCommandBuffers(device_data, image_view_state->cb_bindings, obj_struct);
-    (*GetImageViewMap(device_data)).erase(imageView);
+    (*GetImageViewMap()).erase(imageView);
 }
 
-bool PreCallValidateDestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationCallbacks *pAllocator) {
+bool CoreChecks::PreCallValidateDestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationCallbacks *pAllocator) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    auto buffer_state = GetBufferState(device_data, buffer);
+    auto buffer_state = GetBufferState(buffer);
 
     bool skip = false;
     if (buffer_state) {
@@ -4552,27 +4513,28 @@ bool PreCallValidateDestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllo
     return skip;
 }
 
-void PreCallRecordDestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationCallbacks *pAllocator) {
+void CoreChecks::PreCallRecordDestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationCallbacks *pAllocator) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!buffer) return;
-    auto buffer_state = GetBufferState(device_data, buffer);
+    auto buffer_state = GetBufferState(buffer);
     VK_OBJECT obj_struct = {HandleToUint64(buffer), kVulkanObjectTypeBuffer};
 
     InvalidateCommandBuffers(device_data, buffer_state->cb_bindings, obj_struct);
     for (auto mem_binding : buffer_state->GetBoundMemory()) {
-        auto mem_info = GetMemObjInfo(device_data, mem_binding);
+        auto mem_info = GetMemObjInfo(mem_binding);
         if (mem_info) {
-            core_validation::RemoveBufferMemoryRange(HandleToUint64(buffer), mem_info);
+            RemoveBufferMemoryRange(HandleToUint64(buffer), mem_info);
         }
     }
-    ClearMemoryObjectBindings(device_data, HandleToUint64(buffer), kVulkanObjectTypeBuffer);
+    ClearMemoryObjectBindings(HandleToUint64(buffer), kVulkanObjectTypeBuffer);
     EraseQFOReleaseBarriers<VkBufferMemoryBarrier>(device_data, buffer);
-    GetBufferMap(device_data)->erase(buffer_state->buffer);
+    GetBufferMap()->erase(buffer_state->buffer);
 }
 
-bool PreCallValidateDestroyBufferView(VkDevice device, VkBufferView bufferView, const VkAllocationCallbacks *pAllocator) {
+bool CoreChecks::PreCallValidateDestroyBufferView(VkDevice device, VkBufferView bufferView,
+                                                  const VkAllocationCallbacks *pAllocator) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    auto buffer_view_state = GetBufferViewState(device_data, bufferView);
+    auto buffer_view_state = GetBufferViewState(bufferView);
     VK_OBJECT obj_struct = {HandleToUint64(bufferView), kVulkanObjectTypeBufferView};
     bool skip = false;
     if (buffer_view_state) {
@@ -4582,22 +4544,22 @@ bool PreCallValidateDestroyBufferView(VkDevice device, VkBufferView bufferView, 
     return skip;
 }
 
-void PreCallRecordDestroyBufferView(VkDevice device, VkBufferView bufferView, const VkAllocationCallbacks *pAllocator) {
+void CoreChecks::PreCallRecordDestroyBufferView(VkDevice device, VkBufferView bufferView, const VkAllocationCallbacks *pAllocator) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!bufferView) return;
-    auto buffer_view_state = GetBufferViewState(device_data, bufferView);
+    auto buffer_view_state = GetBufferViewState(bufferView);
     VK_OBJECT obj_struct = {HandleToUint64(bufferView), kVulkanObjectTypeBufferView};
 
     // Any bound cmd buffers are now invalid
     InvalidateCommandBuffers(device_data, buffer_view_state->cb_bindings, obj_struct);
-    GetBufferViewMap(device_data)->erase(bufferView);
+    GetBufferViewMap()->erase(bufferView);
 }
 
-bool PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset, VkDeviceSize size,
-                                  uint32_t data) {
+bool CoreChecks::PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,
+                                              VkDeviceSize size, uint32_t data) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    auto cb_node = GetCBNode(device_data, commandBuffer);
-    auto buffer_state = GetBufferState(device_data, dstBuffer);
+    auto cb_node = GetCBNode(commandBuffer);
+    auto buffer_state = GetBufferState(dstBuffer);
     bool skip = false;
     skip |= ValidateMemoryIsBoundToBuffer(device_data, buffer_state, "vkCmdFillBuffer()", "VUID-vkCmdFillBuffer-dstBuffer-00031");
     skip |= ValidateCmdQueueFlags(device_data, cb_node, "vkCmdFillBuffer()",
@@ -4612,17 +4574,17 @@ bool PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuf
     return skip;
 }
 
-void PreCallRecordCmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset, VkDeviceSize size,
-                                uint32_t data) {
+void CoreChecks::PreCallRecordCmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,
+                                            VkDeviceSize size, uint32_t data) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    auto cb_node = GetCBNode(device_data, commandBuffer);
-    auto buffer_state = GetBufferState(device_data, dstBuffer);
+    auto cb_node = GetCBNode(commandBuffer);
+    auto buffer_state = GetBufferState(dstBuffer);
     // Update bindings between buffer and cmd buffer
     AddCommandBufferBindingBuffer(device_data, cb_node, buffer_state);
 }
 
-bool ValidateBufferImageCopyData(const debug_report_data *report_data, uint32_t regionCount, const VkBufferImageCopy *pRegions,
-                                 IMAGE_STATE *image_state, const char *function) {
+bool CoreChecks::ValidateBufferImageCopyData(const debug_report_data *report_data, uint32_t regionCount,
+                                             const VkBufferImageCopy *pRegions, IMAGE_STATE *image_state, const char *function) {
     bool skip = false;
 
     for (uint32_t i = 0; i < regionCount; i++) {
@@ -4903,13 +4865,12 @@ static inline bool ValidateBufferBounds(const debug_report_data *report_data, IM
     return skip;
 }
 
-bool PreCallValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
-                                         VkBuffer dstBuffer, uint32_t regionCount, const VkBufferImageCopy *pRegions) {
+bool CoreChecks::PreCallValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
+                                                     VkBuffer dstBuffer, uint32_t regionCount, const VkBufferImageCopy *pRegions) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    auto cb_node = GetCBNode(device_data, commandBuffer);
-    auto src_image_state = GetImageState(device_data, srcImage);
-    auto dst_buffer_state = GetBufferState(device_data, dstBuffer);
-    const debug_report_data *report_data = device_data->report_data;
+    auto cb_node = GetCBNode(commandBuffer);
+    auto src_image_state = GetImageState(srcImage);
+    auto dst_buffer_state = GetBufferState(dstBuffer);
 
     bool skip = ValidateBufferImageCopyData(report_data, regionCount, pRegions, src_image_state, "vkCmdCopyImageToBuffer");
 
@@ -4917,9 +4878,10 @@ bool PreCallValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage 
     skip |= ValidateCmd(device_data, cb_node, CMD_COPYIMAGETOBUFFER, "vkCmdCopyImageToBuffer()");
 
     // Command pool must support graphics, compute, or transfer operations
-    auto pPool = GetCommandPoolNode(device_data, cb_node->createInfo.commandPool);
+    auto pPool = GetCommandPoolNode(cb_node->createInfo.commandPool);
 
-    VkQueueFlags queue_flags = GetPhysDevProperties(device_data)->queue_family_properties[pPool->queueFamilyIndex].queueFlags;
+    VkQueueFlags queue_flags = GetPhysicalDeviceState()->queue_family_properties[pPool->queueFamilyIndex].queueFlags;
+
     if (0 == (queue_flags & (VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT))) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                         HandleToUint64(cb_node->createInfo.commandPool), "VUID-vkCmdCopyImageToBuffer-commandBuffer-cmdpool",
@@ -4945,7 +4907,7 @@ bool PreCallValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage 
     skip |= ValidateBufferUsageFlags(device_data, dst_buffer_state, VK_BUFFER_USAGE_TRANSFER_DST_BIT, true,
                                      "VUID-vkCmdCopyImageToBuffer-dstBuffer-00191", "vkCmdCopyImageToBuffer()",
                                      "VK_BUFFER_USAGE_TRANSFER_DST_BIT");
-    if (GetApiVersion(device_data) >= VK_API_VERSION_1_1 || GetDeviceExtensions(device_data)->vk_khr_maintenance1) {
+    if (GetApiVersion() >= VK_API_VERSION_1_1 || GetDeviceExtensions()->vk_khr_maintenance1) {
         skip |= ValidateImageFormatFeatureFlags(device_data, src_image_state, VK_FORMAT_FEATURE_TRANSFER_SRC_BIT,
                                                 "vkCmdCopyImageToBuffer()", "VUID-vkCmdCopyImageToBuffer-srcImage-01998",
                                                 "VUID-vkCmdCopyImageToBuffer-srcImage-01998");
@@ -4953,7 +4915,7 @@ bool PreCallValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage 
     skip |= InsideRenderPass(device_data, cb_node, "vkCmdCopyImageToBuffer()", "VUID-vkCmdCopyImageToBuffer-renderpass");
     bool hit_error = false;
     const char *src_invalid_layout_vuid =
-        (src_image_state->shared_presentable && core_validation::GetDeviceExtensions(device_data)->vk_khr_shared_presentable_image)
+        (src_image_state->shared_presentable && GetDeviceExtensions()->vk_khr_shared_presentable_image)
             ? "VUID-vkCmdCopyImageToBuffer-srcImageLayout-01397"
             : "VUID-vkCmdCopyImageToBuffer-srcImageLayout-00190";
     for (uint32_t i = 0; i < regionCount; ++i) {
@@ -4975,12 +4937,12 @@ bool PreCallValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage 
     return skip;
 }
 
-void PreCallRecordCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
-                                       VkBuffer dstBuffer, uint32_t regionCount, const VkBufferImageCopy *pRegions) {
+void CoreChecks::PreCallRecordCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
+                                                   VkBuffer dstBuffer, uint32_t regionCount, const VkBufferImageCopy *pRegions) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    auto cb_node = GetCBNode(device_data, commandBuffer);
-    auto src_image_state = GetImageState(device_data, srcImage);
-    auto dst_buffer_state = GetBufferState(device_data, dstBuffer);
+    auto cb_node = GetCBNode(commandBuffer);
+    auto src_image_state = GetImageState(srcImage);
+    auto dst_buffer_state = GetBufferState(dstBuffer);
 
     // Make sure that all image slices are updated to correct layout
     for (uint32_t i = 0; i < regionCount; ++i) {
@@ -4991,13 +4953,13 @@ void PreCallRecordCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage sr
     AddCommandBufferBindingBuffer(device_data, cb_node, dst_buffer_state);
 }
 
-bool PreCallValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
-                                         VkImageLayout dstImageLayout, uint32_t regionCount, const VkBufferImageCopy *pRegions) {
+bool CoreChecks::PreCallValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
+                                                     VkImageLayout dstImageLayout, uint32_t regionCount,
+                                                     const VkBufferImageCopy *pRegions) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    auto cb_node = GetCBNode(device_data, commandBuffer);
-    auto src_buffer_state = GetBufferState(device_data, srcBuffer);
-    auto dst_image_state = GetImageState(device_data, dstImage);
-    const debug_report_data *report_data = device_data->report_data;
+    auto cb_node = GetCBNode(commandBuffer);
+    auto src_buffer_state = GetBufferState(srcBuffer);
+    auto dst_image_state = GetImageState(dstImage);
 
     bool skip = ValidateBufferImageCopyData(report_data, regionCount, pRegions, dst_image_state, "vkCmdCopyBufferToImage");
 
@@ -5005,8 +4967,8 @@ bool PreCallValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer
     skip |= ValidateCmd(device_data, cb_node, CMD_COPYBUFFERTOIMAGE, "vkCmdCopyBufferToImage()");
 
     // Command pool must support graphics, compute, or transfer operations
-    auto pPool = GetCommandPoolNode(device_data, cb_node->createInfo.commandPool);
-    VkQueueFlags queue_flags = GetPhysDevProperties(device_data)->queue_family_properties[pPool->queueFamilyIndex].queueFlags;
+    auto pPool = GetCommandPoolNode(cb_node->createInfo.commandPool);
+    VkQueueFlags queue_flags = GetPhysicalDeviceState()->queue_family_properties[pPool->queueFamilyIndex].queueFlags;
     if (0 == (queue_flags & (VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT))) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                         HandleToUint64(cb_node->createInfo.commandPool), "VUID-vkCmdCopyBufferToImage-commandBuffer-cmdpool",
@@ -5029,7 +4991,7 @@ bool PreCallValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer
     skip |= ValidateImageUsageFlags(device_data, dst_image_state, VK_IMAGE_USAGE_TRANSFER_DST_BIT, true,
                                     "VUID-vkCmdCopyBufferToImage-dstImage-00177", "vkCmdCopyBufferToImage()",
                                     "VK_IMAGE_USAGE_TRANSFER_DST_BIT");
-    if (GetApiVersion(device_data) >= VK_API_VERSION_1_1 || GetDeviceExtensions(device_data)->vk_khr_maintenance1) {
+    if (GetApiVersion() >= VK_API_VERSION_1_1 || GetDeviceExtensions()->vk_khr_maintenance1) {
         skip |= ValidateImageFormatFeatureFlags(device_data, dst_image_state, VK_FORMAT_FEATURE_TRANSFER_DST_BIT,
                                                 "vkCmdCopyBufferToImage()", "VUID-vkCmdCopyBufferToImage-dstImage-01997",
                                                 "VUID-vkCmdCopyBufferToImage-dstImage-01997");
@@ -5037,7 +4999,7 @@ bool PreCallValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer
     skip |= InsideRenderPass(device_data, cb_node, "vkCmdCopyBufferToImage()", "VUID-vkCmdCopyBufferToImage-renderpass");
     bool hit_error = false;
     const char *dst_invalid_layout_vuid =
-        (dst_image_state->shared_presentable && core_validation::GetDeviceExtensions(device_data)->vk_khr_shared_presentable_image)
+        (dst_image_state->shared_presentable && GetDeviceExtensions()->vk_khr_shared_presentable_image)
             ? "VUID-vkCmdCopyBufferToImage-dstImageLayout-01396"
             : "VUID-vkCmdCopyBufferToImage-dstImageLayout-00181";
     for (uint32_t i = 0; i < regionCount; ++i) {
@@ -5059,12 +5021,13 @@ bool PreCallValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer
     return skip;
 }
 
-void PreCallRecordCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
-                                       VkImageLayout dstImageLayout, uint32_t regionCount, const VkBufferImageCopy *pRegions) {
+void CoreChecks::PreCallRecordCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
+                                                   VkImageLayout dstImageLayout, uint32_t regionCount,
+                                                   const VkBufferImageCopy *pRegions) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    auto cb_node = GetCBNode(device_data, commandBuffer);
-    auto src_buffer_state = GetBufferState(device_data, srcBuffer);
-    auto dst_image_state = GetImageState(device_data, dstImage);
+    auto cb_node = GetCBNode(commandBuffer);
+    auto src_buffer_state = GetBufferState(srcBuffer);
+    auto dst_image_state = GetImageState(dstImage);
 
     // Make sure that all image slices are updated to correct layout
     for (uint32_t i = 0; i < regionCount; ++i) {
@@ -5074,8 +5037,8 @@ void PreCallRecordCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer s
     AddCommandBufferBindingImage(device_data, cb_node, dst_image_state);
 }
 
-bool PreCallValidateGetImageSubresourceLayout(VkDevice device, VkImage image, const VkImageSubresource *pSubresource,
-                                              VkSubresourceLayout *pLayout) {
+bool CoreChecks::PreCallValidateGetImageSubresourceLayout(VkDevice device, VkImage image, const VkImageSubresource *pSubresource,
+                                                          VkSubresourceLayout *pLayout) {
     layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     const auto report_data = device_data->report_data;
     bool skip = false;
@@ -5090,7 +5053,7 @@ bool PreCallValidateGetImageSubresourceLayout(VkDevice device, VkImage image, co
                         "vkGetImageSubresourceLayout(): VkImageSubresource.aspectMask must have exactly 1 bit set.");
     }
 
-    IMAGE_STATE *image_entry = GetImageState(device_data, image);
+    IMAGE_STATE *image_entry = GetImageState(image);
     if (!image_entry) {
         return skip;
     }
@@ -5150,7 +5113,7 @@ bool PreCallValidateGetImageSubresourceLayout(VkDevice device, VkImage image, co
         }
     }
 
-    if (GetDeviceExtensions(device_data)->vk_android_external_memory_android_hardware_buffer) {
+    if (GetDeviceExtensions()->vk_android_external_memory_android_hardware_buffer) {
         skip |= ValidateGetImageSubresourceLayoutANDROID(device_data, image);
     }
 
