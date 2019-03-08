@@ -3651,12 +3651,11 @@ void CoreChecks::RecordDestroySamplerYcbcrConversionANDROID(VkSamplerYcbcrConver
 
 bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAllocateInfo *pAllocateInfo,
                                                const VkAllocationCallbacks *pAllocator, VkDeviceMemory *pMemory) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
-    if (device_data->memObjMap.size() >= device_data->phys_dev_props.limits.maxMemoryAllocationCount) {
+    if (memObjMap.size() >= phys_dev_props.limits.maxMemoryAllocationCount) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
                         kVUIDUndefined, "Number of currently valid memory objects is not less than the maximum allowed (%u).",
-                        device_data->phys_dev_props.limits.maxMemoryAllocationCount);
+                        phys_dev_props.limits.maxMemoryAllocationCount);
     }
 
     if (GetDeviceExtensions()->vk_android_external_memory_android_hardware_buffer) {
@@ -3944,9 +3943,8 @@ void CoreChecks::PostCallRecordGetDeviceQueue2(VkDevice device, const VkDeviceQu
 }
 
 bool CoreChecks::PreCallValidateQueueWaitIdle(VkQueue queue) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(queue), layer_data_map);
     QUEUE_STATE *queue_state = GetQueueState(queue);
-    if (device_data->instance_data->disabled.queue_wait_idle) return false;
+    if (disabled.queue_wait_idle) return false;
     return VerifyQueueStateToSeq(queue_state, queue_state->seq + queue_state->submissions.size());
 }
 
@@ -3957,19 +3955,17 @@ void CoreChecks::PostCallRecordQueueWaitIdle(VkQueue queue, VkResult result) {
 }
 
 bool CoreChecks::PreCallValidateDeviceWaitIdle(VkDevice device) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    if (device_data->instance_data->disabled.device_wait_idle) return false;
+    if (disabled.device_wait_idle) return false;
     bool skip = false;
-    for (auto &queue : device_data->queueMap) {
+    for (auto &queue : queueMap) {
         skip |= VerifyQueueStateToSeq(&queue.second, queue.second.seq + queue.second.submissions.size());
     }
     return skip;
 }
 
 void CoreChecks::PostCallRecordDeviceWaitIdle(VkDevice device, VkResult result) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (VK_SUCCESS != result) return;
-    for (auto &queue : device_data->queueMap) {
+    for (auto &queue : queueMap) {
         RetireWorkOnQueue(&queue.second, queue.second.seq + queue.second.submissions.size());
     }
 }
@@ -3988,9 +3984,8 @@ bool CoreChecks::PreCallValidateDestroyFence(VkDevice device, VkFence fence, con
 }
 
 void CoreChecks::PreCallRecordDestroyFence(VkDevice device, VkFence fence, const VkAllocationCallbacks *pAllocator) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!fence) return;
-    device_data->fenceMap.erase(fence);
+    fenceMap.erase(fence);
 }
 
 bool CoreChecks::PreCallValidateDestroySemaphore(VkDevice device, VkSemaphore semaphore, const VkAllocationCallbacks *pAllocator) {
@@ -4007,9 +4002,8 @@ bool CoreChecks::PreCallValidateDestroySemaphore(VkDevice device, VkSemaphore se
 }
 
 void CoreChecks::PreCallRecordDestroySemaphore(VkDevice device, VkSemaphore semaphore, const VkAllocationCallbacks *pAllocator) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!semaphore) return;
-    device_data->semaphoreMap.erase(semaphore);
+    semaphoreMap.erase(semaphore);
 }
 
 bool CoreChecks::PreCallValidateDestroyEvent(VkDevice device, VkEvent event, const VkAllocationCallbacks *pAllocator) {
@@ -4056,10 +4050,9 @@ void CoreChecks::PreCallRecordDestroyQueryPool(VkDevice device, VkQueryPool quer
 bool CoreChecks::PreCallValidateGetQueryPoolResults(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery,
                                                     uint32_t queryCount, size_t dataSize, void *pData, VkDeviceSize stride,
                                                     VkQueryResultFlags flags) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
-    auto query_pool_state = device_data->queryPoolMap.find(queryPool);
-    if (query_pool_state != device_data->queryPoolMap.end()) {
+    auto query_pool_state = queryPoolMap.find(queryPool);
+    if (query_pool_state != queryPoolMap.end()) {
         if ((query_pool_state->second.createInfo.queryType == VK_QUERY_TYPE_TIMESTAMP) && (flags & VK_QUERY_RESULT_PARTIAL_BIT)) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_QUERY_POOL_EXT, 0,
                             "VUID-vkGetQueryPoolResults-queryType-00818",
@@ -4074,12 +4067,10 @@ bool CoreChecks::PreCallValidateGetQueryPoolResults(VkDevice device, VkQueryPool
 void CoreChecks::PostCallRecordGetQueryPoolResults(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount,
                                                    size_t dataSize, void *pData, VkDeviceSize stride, VkQueryResultFlags flags,
                                                    VkResult result) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-
     if ((VK_SUCCESS != result) && (VK_NOT_READY != result)) return;
     // TODO: clean this up, it's insanely wasteful.
     unordered_map<QueryObject, std::vector<VkCommandBuffer>> queries_in_flight;
-    for (auto cmd_buffer : device_data->commandBufferMap) {
+    for (auto cmd_buffer : commandBufferMap) {
         if (cmd_buffer.second->in_use.load()) {
             for (auto query_state_pair : cmd_buffer.second->queryToStateMap) {
                 queries_in_flight[query_state_pair.first].push_back(cmd_buffer.first);
@@ -4089,17 +4080,16 @@ void CoreChecks::PostCallRecordGetQueryPoolResults(VkDevice device, VkQueryPool 
     for (uint32_t i = 0; i < queryCount; ++i) {
         QueryObject query = {queryPool, firstQuery + i};
         auto qif_pair = queries_in_flight.find(query);
-        auto query_state_pair = device_data->queryToStateMap.find(query);
-        if (query_state_pair != device_data->queryToStateMap.end()) {
+        auto query_state_pair = queryToStateMap.find(query);
+        if (query_state_pair != queryToStateMap.end()) {
             // Available and in flight
-            if (qif_pair != queries_in_flight.end() && query_state_pair != device_data->queryToStateMap.end() &&
-                query_state_pair->second) {
+            if (qif_pair != queries_in_flight.end() && query_state_pair != queryToStateMap.end() && query_state_pair->second) {
                 for (auto cmd_buffer : qif_pair->second) {
                     auto cb = GetCBNode(cmd_buffer);
                     auto query_event_pair = cb->waitedEventsBeforeQueryReset.find(query);
                     if (query_event_pair != cb->waitedEventsBeforeQueryReset.end()) {
                         for (auto event : query_event_pair->second) {
-                            device_data->eventMap[event].needsSignaled = true;
+                            eventMap[event].needsSignaled = true;
                         }
                     }
                 }
@@ -4555,28 +4545,23 @@ void CoreChecks::PostCallRecordGetImageSparseMemoryRequirements2KHR(
 bool CoreChecks::PreCallValidateGetPhysicalDeviceImageFormatProperties2(VkPhysicalDevice physicalDevice,
                                                                         const VkPhysicalDeviceImageFormatInfo2 *pImageFormatInfo,
                                                                         VkImageFormatProperties2 *pImageFormatProperties) {
-    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), instance_layer_data_map);
     // Can't wrap AHB-specific validation in a device extension check here, but no harm
-    bool skip = ValidateGetPhysicalDeviceImageFormatProperties2ANDROID(instance_data->report_data, pImageFormatInfo,
-                                                                       pImageFormatProperties);
+    bool skip = ValidateGetPhysicalDeviceImageFormatProperties2ANDROID(report_data, pImageFormatInfo, pImageFormatProperties);
     return skip;
 }
 
 bool CoreChecks::PreCallValidateGetPhysicalDeviceImageFormatProperties2KHR(VkPhysicalDevice physicalDevice,
                                                                            const VkPhysicalDeviceImageFormatInfo2 *pImageFormatInfo,
                                                                            VkImageFormatProperties2 *pImageFormatProperties) {
-    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), instance_layer_data_map);
     // Can't wrap AHB-specific validation in a device extension check here, but no harm
-    bool skip = ValidateGetPhysicalDeviceImageFormatProperties2ANDROID(instance_data->report_data, pImageFormatInfo,
-                                                                       pImageFormatProperties);
+    bool skip = ValidateGetPhysicalDeviceImageFormatProperties2ANDROID(report_data, pImageFormatInfo, pImageFormatProperties);
     return skip;
 }
 
 void CoreChecks::PreCallRecordDestroyShaderModule(VkDevice device, VkShaderModule shaderModule,
                                                   const VkAllocationCallbacks *pAllocator) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!shaderModule) return;
-    device_data->shaderModuleMap.erase(shaderModule);
+    shaderModuleMap.erase(shaderModule);
 }
 
 bool CoreChecks::PreCallValidateDestroyPipeline(VkDevice device, VkPipeline pipeline, const VkAllocationCallbacks *pAllocator) {
@@ -4607,9 +4592,8 @@ void CoreChecks::PreCallRecordDestroyPipeline(VkDevice device, VkPipeline pipeli
 
 void CoreChecks::PreCallRecordDestroyPipelineLayout(VkDevice device, VkPipelineLayout pipelineLayout,
                                                     const VkAllocationCallbacks *pAllocator) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!pipelineLayout) return;
-    device_data->pipelineLayoutMap.erase(pipelineLayout);
+    pipelineLayoutMap.erase(pipelineLayout);
 }
 
 bool CoreChecks::PreCallValidateDestroySampler(VkDevice device, VkSampler sampler, const VkAllocationCallbacks *pAllocator) {
@@ -4639,12 +4623,11 @@ void CoreChecks::PreCallRecordDestroySampler(VkDevice device, VkSampler sampler,
 
 void CoreChecks::PreCallRecordDestroyDescriptorSetLayout(VkDevice device, VkDescriptorSetLayout descriptorSetLayout,
                                                          const VkAllocationCallbacks *pAllocator) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!descriptorSetLayout) return;
-    auto layout_it = device_data->descriptorSetLayoutMap.find(descriptorSetLayout);
-    if (layout_it != device_data->descriptorSetLayoutMap.end()) {
+    auto layout_it = descriptorSetLayoutMap.find(descriptorSetLayout);
+    if (layout_it != descriptorSetLayoutMap.end()) {
         layout_it->second.get()->MarkDestroyed();
-        device_data->descriptorSetLayoutMap.erase(layout_it);
+        descriptorSetLayoutMap.erase(layout_it);
     }
 }
 
@@ -4756,18 +4739,16 @@ bool CoreChecks::PreCallValidateCreateCommandPool(VkDevice device, const VkComma
 void CoreChecks::PostCallRecordCreateCommandPool(VkDevice device, const VkCommandPoolCreateInfo *pCreateInfo,
                                                  const VkAllocationCallbacks *pAllocator, VkCommandPool *pCommandPool,
                                                  VkResult result) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (VK_SUCCESS != result) return;
-    device_data->commandPoolMap[*pCommandPool].createFlags = pCreateInfo->flags;
-    device_data->commandPoolMap[*pCommandPool].queueFamilyIndex = pCreateInfo->queueFamilyIndex;
+    commandPoolMap[*pCommandPool].createFlags = pCreateInfo->flags;
+    commandPoolMap[*pCommandPool].queueFamilyIndex = pCreateInfo->queueFamilyIndex;
 }
 
 bool CoreChecks::PreCallValidateCreateQueryPool(VkDevice device, const VkQueryPoolCreateInfo *pCreateInfo,
                                                 const VkAllocationCallbacks *pAllocator, VkQueryPool *pQueryPool) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
     if (pCreateInfo && pCreateInfo->queryType == VK_QUERY_TYPE_PIPELINE_STATISTICS) {
-        if (!device_data->enabled_features.core.pipelineStatisticsQuery) {
+        if (!enabled_features.core.pipelineStatisticsQuery) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_QUERY_POOL_EXT, 0,
                             "VUID-VkQueryPoolCreateInfo-queryType-00791",
                             "Query pool with type VK_QUERY_TYPE_PIPELINE_STATISTICS created on a device with "
@@ -4779,9 +4760,8 @@ bool CoreChecks::PreCallValidateCreateQueryPool(VkDevice device, const VkQueryPo
 
 void CoreChecks::PostCallRecordCreateQueryPool(VkDevice device, const VkQueryPoolCreateInfo *pCreateInfo,
                                                const VkAllocationCallbacks *pAllocator, VkQueryPool *pQueryPool, VkResult result) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (VK_SUCCESS != result) return;
-    QUERY_POOL_NODE *qp_node = &device_data->queryPoolMap[*pQueryPool];
+    QUERY_POOL_NODE *qp_node = &queryPoolMap[*pQueryPool];
     qp_node->createInfo = *pCreateInfo;
 }
 
@@ -4985,9 +4965,8 @@ uint32_t CoreChecks::GetApiVersion() { return api_version; }
 
 void CoreChecks::PostCallRecordCreateFence(VkDevice device, const VkFenceCreateInfo *pCreateInfo,
                                            const VkAllocationCallbacks *pAllocator, VkFence *pFence, VkResult result) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (VK_SUCCESS != result) return;
-    auto &fence_node = device_data->fenceMap[*pFence];
+    auto &fence_node = fenceMap[*pFence];
     fence_node.fence = *pFence;
     fence_node.createInfo = *pCreateInfo;
     fence_node.state = (pCreateInfo->flags & VK_FENCE_CREATE_SIGNALED_BIT) ? FENCE_RETIRED : FENCE_UNSIGNALED;
@@ -5184,7 +5163,6 @@ void CoreChecks::PostCallRecordCreateComputePipelines(VkDevice device, VkPipelin
                                                       const VkComputePipelineCreateInfo *pCreateInfos,
                                                       const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
                                                       VkResult result, void *pipe_state_data) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     std::vector<std::unique_ptr<PIPELINE_STATE>> *pipe_state =
         reinterpret_cast<std::vector<std::unique_ptr<PIPELINE_STATE>> *>(pipe_state_data);
 
@@ -5192,7 +5170,7 @@ void CoreChecks::PostCallRecordCreateComputePipelines(VkDevice device, VkPipelin
     for (uint32_t i = 0; i < count; i++) {
         if (pPipelines[i] != VK_NULL_HANDLE) {
             (*pipe_state)[i]->pipeline = pPipelines[i];
-            device_data->pipelineMap[pPipelines[i]] = std::move((*pipe_state)[i]);
+            pipelineMap[pPipelines[i]] = std::move((*pipe_state)[i]);
         }
     }
 }
@@ -5228,43 +5206,37 @@ void CoreChecks::PostCallRecordCreateRayTracingPipelinesNV(VkDevice device, VkPi
                                                            const VkRayTracingPipelineCreateInfoNV *pCreateInfos,
                                                            const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
                                                            VkResult result, void *pipe_state_data) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     vector<std::unique_ptr<PIPELINE_STATE>> *pipe_state =
         reinterpret_cast<vector<std::unique_ptr<PIPELINE_STATE>> *>(pipe_state_data);
     // This API may create pipelines regardless of the return value
     for (uint32_t i = 0; i < count; i++) {
         if (pPipelines[i] != VK_NULL_HANDLE) {
             (*pipe_state)[i]->pipeline = pPipelines[i];
-            device_data->pipelineMap[pPipelines[i]] = std::move((*pipe_state)[i]);
+            pipelineMap[pPipelines[i]] = std::move((*pipe_state)[i]);
         }
     }
 }
 
 void CoreChecks::PostCallRecordCreateSampler(VkDevice device, const VkSamplerCreateInfo *pCreateInfo,
                                              const VkAllocationCallbacks *pAllocator, VkSampler *pSampler, VkResult result) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    device_data->samplerMap[*pSampler] = unique_ptr<SAMPLER_STATE>(new SAMPLER_STATE(pSampler, pCreateInfo));
+    samplerMap[*pSampler] = unique_ptr<SAMPLER_STATE>(new SAMPLER_STATE(pSampler, pCreateInfo));
 }
 
 bool CoreChecks::PreCallValidateCreateDescriptorSetLayout(VkDevice device, const VkDescriptorSetLayoutCreateInfo *pCreateInfo,
                                                           const VkAllocationCallbacks *pAllocator,
                                                           VkDescriptorSetLayout *pSetLayout) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    if (device_data->instance_data->disabled.create_descriptor_set_layout) return false;
+    if (instance_data->disabled.create_descriptor_set_layout) return false;
     return cvdescriptorset::DescriptorSetLayout::ValidateCreateInfo(
-        report_data, pCreateInfo, device_data->device_extensions.vk_khr_push_descriptor,
-        device_data->phys_dev_ext_props.max_push_descriptors, device_data->device_extensions.vk_ext_descriptor_indexing,
-        &device_data->enabled_features.descriptor_indexing, &device_data->enabled_features.inline_uniform_block,
-        &device_data->phys_dev_ext_props.inline_uniform_block_props);
+        report_data, pCreateInfo, device_extensions.vk_khr_push_descriptor, phys_dev_ext_props.max_push_descriptors,
+        device_extensions.vk_ext_descriptor_indexing, &enabled_features.descriptor_indexing, &enabled_features.inline_uniform_block,
+        &phys_dev_ext_props.inline_uniform_block_props);
 }
 
 void CoreChecks::PostCallRecordCreateDescriptorSetLayout(VkDevice device, const VkDescriptorSetLayoutCreateInfo *pCreateInfo,
                                                          const VkAllocationCallbacks *pAllocator, VkDescriptorSetLayout *pSetLayout,
                                                          VkResult result) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (VK_SUCCESS != result) return;
-    device_data->descriptorSetLayoutMap[*pSetLayout] =
-        std::make_shared<cvdescriptorset::DescriptorSetLayout>(pCreateInfo, *pSetLayout);
+    descriptorSetLayoutMap[*pSetLayout] = std::make_shared<cvdescriptorset::DescriptorSetLayout>(pCreateInfo, *pSetLayout);
 }
 
 // Used by CreatePipelineLayout and CmdPushConstants.
@@ -6007,18 +5979,16 @@ void CoreChecks::PostCallRecordCreatePipelineLayout(VkDevice device, const VkPip
 void CoreChecks::PostCallRecordCreateDescriptorPool(VkDevice device, const VkDescriptorPoolCreateInfo *pCreateInfo,
                                                     const VkAllocationCallbacks *pAllocator, VkDescriptorPool *pDescriptorPool,
                                                     VkResult result) {
-    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (VK_SUCCESS != result) return;
     DESCRIPTOR_POOL_STATE *pNewNode = new DESCRIPTOR_POOL_STATE(*pDescriptorPool, pCreateInfo);
     assert(pNewNode);
-    dev_data->descriptorPoolMap[*pDescriptorPool] = pNewNode;
+    descriptorPoolMap[*pDescriptorPool] = pNewNode;
 }
 
 bool CoreChecks::PreCallValidateResetDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool,
                                                     VkDescriptorPoolResetFlags flags) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     // Make sure sets being destroyed are not currently in-use
-    if (device_data->instance_data->disabled.idle_descriptor_set) return false;
+    if (disabled.idle_descriptor_set) return false;
     bool skip = false;
     DESCRIPTOR_POOL_STATE *pPool = GetDescriptorPoolState(descriptorPool);
     if (pPool != nullptr) {
@@ -6103,7 +6073,6 @@ bool CoreChecks::PreCallValidateFreeDescriptorSets(VkDevice device, VkDescriptor
 
 void CoreChecks::PreCallRecordFreeDescriptorSets(VkDevice device, VkDescriptorPool descriptorPool, uint32_t count,
                                                  const VkDescriptorSet *pDescriptorSets) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     DESCRIPTOR_POOL_STATE *pool_state = GetDescriptorPoolState(descriptorPool);
     // Update available descriptor sets in pool
     pool_state->availableSets += count;
@@ -6111,7 +6080,7 @@ void CoreChecks::PreCallRecordFreeDescriptorSets(VkDevice device, VkDescriptorPo
     // For each freed descriptor add its resources back into the pool as available and remove from pool and setMap
     for (uint32_t i = 0; i < count; ++i) {
         if (pDescriptorSets[i] != VK_NULL_HANDLE) {
-            auto descriptor_set = device_data->setMap[pDescriptorSets[i]];
+            auto descriptor_set = setMap[pDescriptorSets[i]];
             uint32_t type_index = 0, descriptor_count = 0;
             for (uint32_t j = 0; j < descriptor_set->GetBindingCount(); ++j) {
                 type_index = static_cast<uint32_t>(descriptor_set->GetTypeFromIndex(j));
@@ -7431,13 +7400,12 @@ void CoreChecks::PostCallRecordCmdUpdateBuffer(VkCommandBuffer commandBuffer, Vk
 }
 
 bool CoreChecks::SetEventStageMask(VkQueue queue, VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask) {
-    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     GLOBAL_CB_NODE *pCB = GetCBNode(commandBuffer);
     if (pCB) {
         pCB->eventToStageMap[event] = stageMask;
     }
-    auto queue_data = dev_data->queueMap.find(queue);
-    if (queue_data != dev_data->queueMap.end()) {
+    auto queue_data = queueMap.find(queue);
+    if (queue_data != queueMap.end()) {
         queue_data->second.eventToStageMap[event] = stageMask;
     }
     return false;
@@ -8317,11 +8285,10 @@ bool CoreChecks::ValidateEventStageMask(VkQueue queue, GLOBAL_CB_NODE *pCB, uint
                                         VkPipelineStageFlags sourceStageMask) {
     bool skip = false;
     VkPipelineStageFlags stageMask = 0;
-    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(queue), layer_data_map);
     for (uint32_t i = 0; i < eventCount; ++i) {
         auto event = pCB->events[firstEventIndex + i];
-        auto queue_data = dev_data->queueMap.find(queue);
-        if (queue_data == dev_data->queueMap.end()) return false;
+        auto queue_data = queueMap.find(queue);
+        if (queue_data == queueMap.end()) return false;
         auto event_data = queue_data->second.eventToStageMap.find(event);
         if (event_data != queue_data->second.eventToStageMap.end()) {
             stageMask |= event_data->second;
@@ -8584,13 +8551,12 @@ void CoreChecks::PreCallRecordCmdPipelineBarrier(VkCommandBuffer commandBuffer, 
 }
 
 bool CoreChecks::SetQueryState(VkQueue queue, VkCommandBuffer commandBuffer, QueryObject object, bool value) {
-    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     GLOBAL_CB_NODE *pCB = GetCBNode(commandBuffer);
     if (pCB) {
         pCB->queryToStateMap[object] = value;
     }
-    auto queue_data = dev_data->queueMap.find(queue);
-    if (queue_data != dev_data->queueMap.end()) {
+    auto queue_data = queueMap.find(queue);
+    if (queue_data != queueMap.end()) {
         queue_data->second.queryToStateMap[object] = value;
     }
     return false;
@@ -9007,7 +8973,6 @@ bool CoreChecks::PreCallValidateCreateFramebuffer(VkDevice device, const VkFrame
 void CoreChecks::PostCallRecordCreateFramebuffer(VkDevice device, const VkFramebufferCreateInfo *pCreateInfo,
                                                  const VkAllocationCallbacks *pAllocator, VkFramebuffer *pFramebuffer,
                                                  VkResult result) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (VK_SUCCESS != result) return;
     // Shadow create info and store in map
     std::unique_ptr<FRAMEBUFFER_STATE> fb_state(
@@ -9026,7 +8991,7 @@ void CoreChecks::PostCallRecordCreateFramebuffer(VkDevice device, const VkFrameb
         fb_state->attachments.push_back(fb_info);
 #endif
     }
-    device_data->frameBufferMap[*pFramebuffer] = std::move(fb_state);
+    frameBufferMap[*pFramebuffer] = std::move(fb_state);
 }
 
 static bool FindDependency(const uint32_t index, const uint32_t dependent, const std::vector<DAGNode> &subpass_to_node,
@@ -10795,12 +10760,11 @@ void CoreChecks::PostCallRecordInvalidateMappedMemoryRanges(VkDevice device, uin
 }
 
 bool CoreChecks::PreCallValidateGetDeviceMemoryCommitment(VkDevice device, VkDeviceMemory mem, VkDeviceSize *pCommittedMem) {
-    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
     auto mem_info = GetMemObjInfo(mem);
 
     if (mem_info) {
-        if ((dev_data->phys_dev_mem_props.memoryTypes[mem_info->alloc_info.memoryTypeIndex].propertyFlags &
+        if ((phys_dev_mem_props.memoryTypes[mem_info->alloc_info.memoryTypeIndex].propertyFlags &
              VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT) == 0) {
             skip = log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_MEMORY_EXT,
                            HandleToUint64(mem), "VUID-vkGetDeviceMemoryCommitment-memory-00690",
@@ -10968,7 +10932,6 @@ bool CoreChecks::PreCallValidateSetEvent(VkDevice device, VkEvent event) {
 }
 
 void CoreChecks::PreCallRecordSetEvent(VkDevice device, VkEvent event) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     auto event_state = GetEventNode(event);
     if (event_state) {
         event_state->needsSignaled = false;
@@ -10977,7 +10940,7 @@ void CoreChecks::PreCallRecordSetEvent(VkDevice device, VkEvent event) {
     // Host setting event is visible to all queues immediately so update stageMask for any queue that's seen this event
     // TODO : For correctness this needs separate fix to verify that app doesn't make incorrect assumptions about the
     // ordering of this command in relation to vkCmd[Set|Reset]Events (see GH297)
-    for (auto queue_data : device_data->queueMap) {
+    for (auto queue_data : queueMap) {
         auto event_entry = queue_data.second.eventToStageMap.find(event);
         if (event_entry != queue_data.second.eventToStageMap.end()) {
             event_entry->second |= VK_PIPELINE_STAGE_HOST_BIT;
@@ -11225,9 +11188,8 @@ void CoreChecks::PostCallRecordQueueBindSparse(VkQueue queue, uint32_t bindInfoC
 
 void CoreChecks::PostCallRecordCreateSemaphore(VkDevice device, const VkSemaphoreCreateInfo *pCreateInfo,
                                                const VkAllocationCallbacks *pAllocator, VkSemaphore *pSemaphore, VkResult result) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (VK_SUCCESS != result) return;
-    SEMAPHORE_NODE *sNode = &device_data->semaphoreMap[*pSemaphore];
+    SEMAPHORE_NODE *sNode = &semaphoreMap[*pSemaphore];
     sNode->signaler.first = VK_NULL_HANDLE;
     sNode->signaler.second = 0;
     sNode->signaled = false;
@@ -11394,11 +11356,10 @@ void CoreChecks::PostCallRecordGetFenceFdKHR(VkDevice device, const VkFenceGetFd
 
 void CoreChecks::PostCallRecordCreateEvent(VkDevice device, const VkEventCreateInfo *pCreateInfo,
                                            const VkAllocationCallbacks *pAllocator, VkEvent *pEvent, VkResult result) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (VK_SUCCESS != result) return;
-    device_data->eventMap[*pEvent].needsSignaled = false;
-    device_data->eventMap[*pEvent].write_in_use = 0;
-    device_data->eventMap[*pEvent].stageMask = VkPipelineStageFlags(0);
+    eventMap[*pEvent].needsSignaled = false;
+    eventMap[*pEvent].write_in_use = 0;
+    eventMap[*pEvent].stageMask = VkPipelineStageFlags(0);
 }
 
 bool CoreChecks::ValidateCreateSwapchain(layer_data *device_data, const char *func_name,
@@ -11739,25 +11700,24 @@ void CoreChecks::PostCallRecordCreateSwapchainKHR(VkDevice device, const VkSwapc
 
 void CoreChecks::PreCallRecordDestroySwapchainKHR(VkDevice device, VkSwapchainKHR swapchain,
                                                   const VkAllocationCallbacks *pAllocator) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!swapchain) return;
     auto swapchain_data = GetSwapchainNode(swapchain);
     if (swapchain_data) {
         if (swapchain_data->images.size() > 0) {
             for (auto swapchain_image : swapchain_data->images) {
-                auto image_sub = device_data->imageSubresourceMap.find(swapchain_image);
-                if (image_sub != device_data->imageSubresourceMap.end()) {
+                auto image_sub = imageSubresourceMap.find(swapchain_image);
+                if (image_sub != imageSubresourceMap.end()) {
                     for (auto imgsubpair : image_sub->second) {
-                        auto image_item = device_data->imageLayoutMap.find(imgsubpair);
-                        if (image_item != device_data->imageLayoutMap.end()) {
-                            device_data->imageLayoutMap.erase(image_item);
+                        auto image_item = imageLayoutMap.find(imgsubpair);
+                        if (image_item != imageLayoutMap.end()) {
+                            imageLayoutMap.erase(image_item);
                         }
                     }
-                    device_data->imageSubresourceMap.erase(image_sub);
+                    imageSubresourceMap.erase(image_sub);
                 }
                 ClearMemoryObjectBindings(HandleToUint64(swapchain_image), kVulkanObjectTypeSwapchainKHR);
                 EraseQFOImageRelaseBarriers(swapchain_image);
-                device_data->imageMap.erase(swapchain_image);
+                imageMap.erase(swapchain_image);
             }
         }
 
@@ -11766,7 +11726,7 @@ void CoreChecks::PreCallRecordDestroySwapchainKHR(VkDevice device, VkSwapchainKH
             if (surface_state->swapchain == swapchain_data) surface_state->swapchain = nullptr;
         }
 
-        device_data->swapchainMap.erase(swapchain);
+        swapchainMap.erase(swapchain);
     }
 }
 
@@ -11795,8 +11755,6 @@ bool CoreChecks::PreCallValidateGetSwapchainImagesKHR(VkDevice device, VkSwapcha
 
 void CoreChecks::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain, uint32_t *pSwapchainImageCount,
                                                      VkImage *pSwapchainImages, VkResult result) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-
     if ((result != VK_SUCCESS) && (result != VK_INCOMPLETE)) return;
     auto swapchain_state = GetSwapchainNode(swapchain);
 
@@ -11826,14 +11784,14 @@ void CoreChecks::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchai
             image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
             image_ci.usage = swapchain_state->createInfo.imageUsage;
             image_ci.sharingMode = swapchain_state->createInfo.imageSharingMode;
-            device_data->imageMap[pSwapchainImages[i]] = unique_ptr<IMAGE_STATE>(new IMAGE_STATE(pSwapchainImages[i], &image_ci));
-            auto &image_state = device_data->imageMap[pSwapchainImages[i]];
+            imageMap[pSwapchainImages[i]] = unique_ptr<IMAGE_STATE>(new IMAGE_STATE(pSwapchainImages[i], &image_ci));
+            auto &image_state = imageMap[pSwapchainImages[i]];
             image_state->valid = false;
             image_state->binding.mem = MEMTRACKER_SWAP_CHAIN_IMAGE_KEY;
             swapchain_state->images[i] = pSwapchainImages[i];
             ImageSubresourcePair subpair = {pSwapchainImages[i], false, VkImageSubresource()};
-            device_data->imageSubresourceMap[pSwapchainImages[i]].push_back(subpair);
-            device_data->imageLayoutMap[subpair] = image_layout_node;
+            imageSubresourceMap[pSwapchainImages[i]].push_back(subpair);
+            imageLayoutMap[subpair] = image_layout_node;
         }
     }
 
@@ -11846,7 +11804,6 @@ void CoreChecks::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchai
 }
 
 bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR *pPresentInfo) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(queue), layer_data_map);
     bool skip = false;
     auto queue_state = GetQueueState(queue);
 
@@ -11887,9 +11844,8 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
                 vector<VkImageLayout> layouts;
                 if (FindLayouts(image, layouts)) {
                     for (auto layout : layouts) {
-                        if ((layout != VK_IMAGE_LAYOUT_PRESENT_SRC_KHR) &&
-                            (!device_data->device_extensions.vk_khr_shared_presentable_image ||
-                             (layout != VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR))) {
+                        if ((layout != VK_IMAGE_LAYOUT_PRESENT_SRC_KHR) && (!device_extensions.vk_khr_shared_presentable_image ||
+                                                                            (layout != VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR))) {
                             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_QUEUE_EXT,
                                             HandleToUint64(queue), "VUID-VkPresentInfoKHR-pImageIndices-01296",
                                             "Images passed to present must be in layout VK_IMAGE_LAYOUT_PRESENT_SRC_KHR or "
@@ -11902,10 +11858,9 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
 
             // All physical devices and queue families are required to be able to present to any native window on Android; require
             // the application to have established support on any other platform.
-            if (!device_data->instance_extensions.vk_khr_android_surface) {
+            if (!instance_extensions.vk_khr_android_surface) {
                 auto surface_state = GetSurfaceState(swapchain_data->createInfo.surface);
-                auto support_it =
-                    surface_state->gpu_queue_support.find({device_data->physical_device, queue_state->queueFamilyIndex});
+                auto support_it = surface_state->gpu_queue_support.find({physical_device, queue_state->queueFamilyIndex});
 
                 if (support_it == surface_state->gpu_queue_support.end()) {
                     skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SWAPCHAIN_KHR_EXT,
@@ -12150,14 +12105,12 @@ void CoreChecks::PostCallRecordAcquireNextImage2KHR(VkDevice device, const VkAcq
 
 void CoreChecks::PostCallRecordEnumeratePhysicalDevices(VkInstance instance, uint32_t *pPhysicalDeviceCount,
                                                         VkPhysicalDevice *pPhysicalDevices, VkResult result) {
-    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(instance), layer_data_map);
     if ((NULL != pPhysicalDevices) && ((result == VK_SUCCESS || result == VK_INCOMPLETE))) {
         for (uint32_t i = 0; i < *pPhysicalDeviceCount; i++) {
-            auto &phys_device_state = instance_data->physical_device_map[pPhysicalDevices[i]];
+            auto &phys_device_state = physical_device_map[pPhysicalDevices[i]];
             phys_device_state.phys_device = pPhysicalDevices[i];
             // Init actual features for each physical device
-            instance_data->instance_dispatch_table.GetPhysicalDeviceFeatures(pPhysicalDevices[i],
-                                                                             &phys_device_state.features2.features);
+            instance_dispatch_table.GetPhysicalDeviceFeatures(pPhysicalDevices[i], &phys_device_state.features2.features);
         }
     }
 }
@@ -12284,11 +12237,10 @@ void CoreChecks::PostCallRecordGetPhysicalDeviceQueueFamilyProperties2KHR(VkPhys
 
 bool CoreChecks::PreCallValidateDestroySurfaceKHR(VkInstance instance, VkSurfaceKHR surface,
                                                   const VkAllocationCallbacks *pAllocator) {
-    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(instance), instance_layer_data_map);
     auto surface_state = GetSurfaceState(surface);
     bool skip = false;
     if ((surface_state) && (surface_state->swapchain)) {
-        skip |= log_msg(instance_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_INSTANCE_EXT,
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_INSTANCE_EXT,
                         HandleToUint64(instance), "VUID-vkDestroySurfaceKHR-surface-01266",
                         "vkDestroySurfaceKHR() called before its associated VkSwapchainKHR was destroyed.");
     }
@@ -12297,8 +12249,7 @@ bool CoreChecks::PreCallValidateDestroySurfaceKHR(VkInstance instance, VkSurface
 
 void CoreChecks::PreCallRecordValidateDestroySurfaceKHR(VkInstance instance, VkSurfaceKHR surface,
                                                         const VkAllocationCallbacks *pAllocator) {
-    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(instance), instance_layer_data_map);
-    instance_data->surface_map.erase(surface);
+    surface_map.erase(surface);
 }
 
 static void RecordVulkanSurface(instance_layer_data *instance_data, VkSurfaceKHR *pSurface) {
@@ -12373,7 +12324,6 @@ void CoreChecks::PostCallRecordCreateWin32SurfaceKHR(VkInstance instance, const 
 
 bool CoreChecks::PreCallValidateGetPhysicalDeviceWin32PresentationSupportKHR(VkPhysicalDevice physicalDevice,
                                                                              uint32_t queueFamilyIndex) {
-    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), instance_layer_data_map);
     const auto pd_state = GetPhysicalDeviceState(physicalDevice);
     return ValidatePhysicalDeviceQueueFamily(pd_state, queueFamilyIndex,
                                              "VUID-vkGetPhysicalDeviceWin32PresentationSupportKHR-queueFamilyIndex-01309",
@@ -12495,7 +12445,6 @@ void CoreChecks::PostCallRecordGetPhysicalDeviceSurfacePresentModesKHR(VkPhysica
 bool CoreChecks::PreCallValidateGetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
                                                                    uint32_t *pSurfaceFormatCount,
                                                                    VkSurfaceFormatKHR *pSurfaceFormats) {
-    auto instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), instance_layer_data_map);
     if (!pSurfaceFormats) return false;
     auto physical_device_state = GetPhysicalDeviceState(physicalDevice);
     auto &call_state = physical_device_state->vkGetPhysicalDeviceSurfaceFormatsKHRState;
@@ -12504,18 +12453,16 @@ bool CoreChecks::PreCallValidateGetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDev
         case UNCALLED:
             // Since we haven't recorded a preliminary value of *pSurfaceFormatCount, that likely means that the application didn't
             // previously call this function with a NULL value of pSurfaceFormats:
-            skip |= log_msg(instance_data->report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT,
-                            VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT, HandleToUint64(physicalDevice),
-                            kVUID_Core_DevLimit_MustQueryCount,
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT,
+                            HandleToUint64(physicalDevice), kVUID_Core_DevLimit_MustQueryCount,
                             "vkGetPhysicalDeviceSurfaceFormatsKHR() called with non-NULL pSurfaceFormatCount; but no prior "
                             "positive value has been seen for pSurfaceFormats.");
             break;
         default:
             auto prev_format_count = (uint32_t)physical_device_state->surface_formats.size();
             if (prev_format_count != *pSurfaceFormatCount) {
-                skip |= log_msg(instance_data->report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT,
-                                VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT, HandleToUint64(physicalDevice),
-                                kVUID_Core_DevLimit_CountMismatch,
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT,
+                                HandleToUint64(physicalDevice), kVUID_Core_DevLimit_CountMismatch,
                                 "vkGetPhysicalDeviceSurfaceFormatsKHR() called with non-NULL pSurfaceFormatCount, and with "
                                 "pSurfaceFormats set to a value (%u) that is greater than the value (%u) that was returned "
                                 "when pSurfaceFormatCount was NULL.",
@@ -12597,22 +12544,19 @@ void CoreChecks::PostCallRecordCreateDebugUtilsMessengerEXT(VkInstance instance,
                                                             const VkDebugUtilsMessengerCreateInfoEXT *pCreateInfo,
                                                             const VkAllocationCallbacks *pAllocator,
                                                             VkDebugUtilsMessengerEXT *pMessenger, VkResult result) {
-    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(instance), instance_layer_data_map);
     if (VK_SUCCESS != result) return;
-    layer_create_messenger_callback(instance_data->report_data, false, pCreateInfo, pAllocator, pMessenger);
+    layer_create_messenger_callback(report_data, false, pCreateInfo, pAllocator, pMessenger);
 }
 
 void CoreChecks::PostCallRecordDestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT messenger,
                                                              const VkAllocationCallbacks *pAllocator) {
     if (!messenger) return;
-    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(instance), instance_layer_data_map);
-    layer_destroy_messenger_callback(instance_data->report_data, messenger, pAllocator);
+    layer_destroy_messenger_callback(report_data, messenger, pAllocator);
 }
 
 void CoreChecks::PostCallRecordDestroyDebugReportCallbackEXT(VkInstance instance, VkDebugReportCallbackEXT msgCallback,
                                                              const VkAllocationCallbacks *pAllocator) {
-    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(instance), instance_layer_data_map);
-    layer_destroy_report_callback(instance_data->report_data, msgCallback, pAllocator);
+    layer_destroy_report_callback(report_data, msgCallback, pAllocator);
 }
 
 static void PostRecordEnumeratePhysicalDeviceGroupsState(instance_layer_data *instance_data, uint32_t *pPhysicalDeviceGroupCount,
@@ -12710,17 +12654,15 @@ bool CoreChecks::PreCallValidateCreateDescriptorUpdateTemplateKHR(VkDevice devic
 void CoreChecks::PreCallRecordDestroyDescriptorUpdateTemplate(VkDevice device,
                                                               VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate,
                                                               const VkAllocationCallbacks *pAllocator) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!descriptorUpdateTemplate) return;
-    device_data->desc_template_map.erase(descriptorUpdateTemplate);
+    desc_template_map.erase(descriptorUpdateTemplate);
 }
 
 void CoreChecks::PreCallRecordDestroyDescriptorUpdateTemplateKHR(VkDevice device,
                                                                  VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate,
                                                                  const VkAllocationCallbacks *pAllocator) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!descriptorUpdateTemplate) return;
-    device_data->desc_template_map.erase(descriptorUpdateTemplate);
+    desc_template_map.erase(descriptorUpdateTemplate);
 }
 
 void RecordCreateDescriptorUpdateTemplateState(layer_data *device_data, const VkDescriptorUpdateTemplateCreateInfoKHR *pCreateInfo,
@@ -13327,12 +13269,11 @@ bool CoreChecks::PreCallValidateGetBufferDeviceAddressEXT(VkDevice device, const
 
 void CoreChecks::PreCallRecordGetPhysicalDeviceProperties(VkPhysicalDevice physicalDevice,
                                                           VkPhysicalDeviceProperties *pPhysicalDeviceProperties) {
-    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), instance_layer_data_map);
     if (GetEnables()->gpu_validation && GetEnables()->gpu_validation_reserve_binding_slot) {
         if (pPhysicalDeviceProperties->limits.maxBoundDescriptorSets > 1) {
             pPhysicalDeviceProperties->limits.maxBoundDescriptorSets -= 1;
         } else {
-            log_msg(instance_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT,
+            log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT,
                     HandleToUint64(physicalDevice), "UNASSIGNED-GPU-Assisted Validation Setup Error.",
                     "Unable to reserve descriptor binding slot on a device with only one slot.");
         }
