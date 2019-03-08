@@ -1037,11 +1037,13 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                         "pCreateInfos[%d].pTessellationState must not be NULL.",
                                         i, i);
                     } else {
+                        const VkStructureType allowed_type =
+                            VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_DOMAIN_ORIGIN_STATE_CREATE_INFO;
                         skip |= validate_struct_pnext(
                             "vkCreateGraphicsPipelines",
-                            ParameterName("pCreateInfos[%i].pTessellationState->pNext", ParameterName::IndexVector{i}), NULL,
-                            pCreateInfos[i].pTessellationState->pNext, 0, NULL, GeneratedVulkanHeaderVersion,
-                            "VUID-VkGraphicsPipelineCreateInfo-pNext-pNext");
+                            ParameterName("pCreateInfos[%i].pTessellationState->pNext", ParameterName::IndexVector{i}),
+                            "VkPipelineTessellationDomainOriginStateCreateInfo", pCreateInfos[i].pTessellationState->pNext, 1,
+                            &allowed_type, GeneratedVulkanHeaderVersion, "VUID-VkGraphicsPipelineCreateInfo-pNext-pNext");
 
                         skip |= validate_reserved_flags(
                             "vkCreateGraphicsPipelines",
