@@ -4534,7 +4534,8 @@ bool CoreChecks::ValidateBufferImageCopyData(uint32_t regionCount, const VkBuffe
 
         // If the the calling command's VkImage parameter's format is not a depth/stencil format,
         // then bufferOffset must be a multiple of the calling command's VkImage parameter's element size
-        uint32_t element_size = FormatElementSize(image_state->createInfo.format);
+        uint32_t element_size = FormatElementSize(image_state->createInfo.format, pRegions[i].imageSubresource.aspectMask);
+
         if (!FormatIsDepthAndStencil(image_state->createInfo.format) && SafeModulo(pRegions[i].bufferOffset, element_size) != 0) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
                             HandleToUint64(image_state->image), "VUID-VkBufferImageCopy-bufferOffset-00193",
@@ -4724,27 +4725,8 @@ static inline bool ValidateBufferBounds(const debug_report_data *report_data, IM
 
         VkDeviceSize buffer_width = (0 == pRegions[i].bufferRowLength ? copy_extent.width : pRegions[i].bufferRowLength);
         VkDeviceSize buffer_height = (0 == pRegions[i].bufferImageHeight ? copy_extent.height : pRegions[i].bufferImageHeight);
-        VkDeviceSize unit_size = FormatElementSize(image_state->createInfo.format);  // size (bytes) of texel or block
-
-        // Handle special buffer packing rules for specific depth/stencil formats
-        if (pRegions[i].imageSubresource.aspectMask & VK_IMAGE_ASPECT_STENCIL_BIT) {
-            unit_size = FormatElementSize(VK_FORMAT_S8_UINT);
-        } else if (pRegions[i].imageSubresource.aspectMask & VK_IMAGE_ASPECT_DEPTH_BIT) {
-            switch (image_state->createInfo.format) {
-                case VK_FORMAT_D16_UNORM_S8_UINT:
-                    unit_size = FormatElementSize(VK_FORMAT_D16_UNORM);
-                    break;
-                case VK_FORMAT_D32_SFLOAT_S8_UINT:
-                    unit_size = FormatElementSize(VK_FORMAT_D32_SFLOAT);
-                    break;
-                case VK_FORMAT_X8_D24_UNORM_PACK32:  // Fall through
-                case VK_FORMAT_D24_UNORM_S8_UINT:
-                    unit_size = 4;
-                    break;
-                default:
-                    break;
-            }
-        }
+        VkDeviceSize unit_size = FormatElementSize(image_state->createInfo.format,
+                                                   pRegions[i].imageSubresource.aspectMask);  // size (bytes) of texel or block
 
         if (FormatIsCompressed(image_state->createInfo.format) || FormatIsSinglePlane_422(image_state->createInfo.format)) {
             // Switch to texel block units, rounding up for any partially-used blocks
