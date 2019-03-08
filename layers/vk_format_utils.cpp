@@ -1157,7 +1157,29 @@ VK_LAYER_EXPORT VkFormatCompatibilityClass FormatCompatibilityClass(VkFormat for
 
 // Return size, in bytes, of one element of the specified format
 // For uncompressed this is one texel, for compressed it is one block
-VK_LAYER_EXPORT uint32_t FormatElementSize(VkFormat format) {
+VK_LAYER_EXPORT uint32_t FormatElementSize(VkFormat format, VkImageAspectFlags aspectMask) {
+    // Handle special buffer packing rules for specific depth/stencil formats
+    if (aspectMask & VK_IMAGE_ASPECT_STENCIL_BIT) {
+        format = VK_FORMAT_S8_UINT;
+    } else if (aspectMask & VK_IMAGE_ASPECT_DEPTH_BIT) {
+        switch (format) {
+            case VK_FORMAT_D16_UNORM_S8_UINT:
+                format = VK_FORMAT_D16_UNORM;
+                break;
+            case VK_FORMAT_D32_SFLOAT_S8_UINT:
+                format = VK_FORMAT_D32_SFLOAT;
+                break;
+            case VK_FORMAT_X8_D24_UNORM_PACK32:  // Fall through
+            case VK_FORMAT_D24_UNORM_S8_UINT:
+                return 4;
+                break;
+            default:
+                break;
+        }
+    } else if (FormatIsMultiplane(format)) {
+        format = FindMultiplaneCompatibleFormat(format, aspectMask);
+    }
+
     auto item = vk_format_table.find(format);
     if (item != vk_format_table.end()) {
         return item->second.size;
