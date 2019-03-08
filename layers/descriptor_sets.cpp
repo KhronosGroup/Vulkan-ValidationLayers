@@ -1215,7 +1215,7 @@ void cvdescriptorset::DescriptorSet::PerformCopyUpdate(const VkCopyDescriptorSet
 // TODO: Modify the UpdateDrawState virtural functions to *only* set initial layout and not change layouts
 // Prereq: This should be called for a set that has been confirmed to be active for the given cb_node, meaning it's going
 //   to be used in a draw by the given cb_node
-void cvdescriptorset::DescriptorSet::UpdateDrawState(GLOBAL_CB_NODE *cb_node,
+void cvdescriptorset::DescriptorSet::UpdateDrawState(CoreChecks *device_data, GLOBAL_CB_NODE *cb_node,
                                                      const std::map<uint32_t, descriptor_req> &binding_req_map) {
     // bind cb to this descriptor set
     cb_bindings.insert(cb_node);
@@ -1234,7 +1234,7 @@ void cvdescriptorset::DescriptorSet::UpdateDrawState(GLOBAL_CB_NODE *cb_node,
         }
         auto range = p_layout_->GetGlobalIndexRangeFromBinding(binding);
         for (uint32_t i = range.start; i < range.end; ++i) {
-            descriptors_[i]->UpdateDrawState(device_data_, cb_node);
+            descriptors_[i]->UpdateDrawState(device_data, cb_node);
         }
     }
 }
@@ -1561,7 +1561,7 @@ void cvdescriptorset::SamplerDescriptor::CopyUpdate(const Descriptor *src) {
     updated = true;
 }
 
-void cvdescriptorset::SamplerDescriptor::UpdateDrawState(layer_data *dev_data, GLOBAL_CB_NODE *cb_node) {
+void cvdescriptorset::SamplerDescriptor::UpdateDrawState(CoreChecks *dev_data, GLOBAL_CB_NODE *cb_node) {
     if (!immutable_) {
         auto sampler_state = dev_data->GetSamplerState(sampler_);
         if (sampler_state) dev_data->AddCommandBufferBindingSampler(cb_node, sampler_state);
@@ -1600,7 +1600,7 @@ void cvdescriptorset::ImageSamplerDescriptor::CopyUpdate(const Descriptor *src) 
     image_layout_ = image_layout;
 }
 
-void cvdescriptorset::ImageSamplerDescriptor::UpdateDrawState(layer_data *dev_data, GLOBAL_CB_NODE *cb_node) {
+void cvdescriptorset::ImageSamplerDescriptor::UpdateDrawState(CoreChecks *dev_data, GLOBAL_CB_NODE *cb_node) {
     // First add binding for any non-immutable sampler
     if (!immutable_) {
         auto sampler_state = dev_data->GetSamplerState(sampler_);
@@ -1609,7 +1609,7 @@ void cvdescriptorset::ImageSamplerDescriptor::UpdateDrawState(layer_data *dev_da
     // Add binding for image
     auto iv_state = dev_data->GetImageViewState(image_view_);
     if (iv_state) {
-        dev_data->AddCommandBufferBindingImageView(dev_data, cb_node, iv_state);
+        dev_data->AddCommandBufferBindingImageView(cb_node, iv_state);
     }
     if (image_view_) {
         dev_data->SetImageViewLayout(cb_node, image_view_, image_layout_);
@@ -1638,11 +1638,11 @@ void cvdescriptorset::ImageDescriptor::CopyUpdate(const Descriptor *src) {
     image_layout_ = image_layout;
 }
 
-void cvdescriptorset::ImageDescriptor::UpdateDrawState(layer_data *dev_data, GLOBAL_CB_NODE *cb_node) {
+void cvdescriptorset::ImageDescriptor::UpdateDrawState(CoreChecks *dev_data, GLOBAL_CB_NODE *cb_node) {
     // Add binding for image
     auto iv_state = dev_data->GetImageViewState(image_view_);
     if (iv_state) {
-        dev_data->AddCommandBufferBindingImageView(dev_data, cb_node, iv_state);
+        dev_data->AddCommandBufferBindingImageView(cb_node, iv_state);
     }
     if (image_view_) {
         dev_data->SetImageViewLayout(cb_node, image_view_, image_layout_);
@@ -1678,9 +1678,9 @@ void cvdescriptorset::BufferDescriptor::CopyUpdate(const Descriptor *src) {
     range_ = buff_desc->range_;
 }
 
-void cvdescriptorset::BufferDescriptor::UpdateDrawState(layer_data *dev_data, GLOBAL_CB_NODE *cb_node) {
+void cvdescriptorset::BufferDescriptor::UpdateDrawState(CoreChecks *dev_data, GLOBAL_CB_NODE *cb_node) {
     auto buffer_node = dev_data->GetBufferState(buffer_);
-    if (buffer_node) dev_data->AddCommandBufferBindingBuffer(dev_data, cb_node, buffer_node);
+    if (buffer_node) dev_data->AddCommandBufferBindingBuffer(cb_node, buffer_node);
 }
 
 cvdescriptorset::TexelDescriptor::TexelDescriptor(const VkDescriptorType type) : buffer_view_(VK_NULL_HANDLE), storage_(false) {
@@ -1699,10 +1699,10 @@ void cvdescriptorset::TexelDescriptor::CopyUpdate(const Descriptor *src) {
     buffer_view_ = static_cast<const TexelDescriptor *>(src)->buffer_view_;
 }
 
-void cvdescriptorset::TexelDescriptor::UpdateDrawState(layer_data *dev_data, GLOBAL_CB_NODE *cb_node) {
+void cvdescriptorset::TexelDescriptor::UpdateDrawState(CoreChecks *dev_data, GLOBAL_CB_NODE *cb_node) {
     auto bv_state = dev_data->GetBufferViewState(buffer_view_);
     if (bv_state) {
-        dev_data->AddCommandBufferBindingBufferView(dev_data, cb_node, bv_state);
+        dev_data->AddCommandBufferBindingBufferView(cb_node, bv_state);
     }
 }
 

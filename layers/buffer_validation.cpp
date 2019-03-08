@@ -1659,13 +1659,13 @@ bool CoreChecks::PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuffer
         skip |= ValidateMemoryIsBoundToImage(image_state, "vkCmdClearColorImage()", "VUID-vkCmdClearColorImage-image-00003");
         skip |= ValidateCmdQueueFlags(cb_node, "vkCmdClearColorImage()", VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
                                       "VUID-vkCmdClearColorImage-commandBuffer-cmdpool");
-        skip |= ValidateCmd(device_data, cb_node, CMD_CLEARCOLORIMAGE, "vkCmdClearColorImage()");
+        skip |= ValidateCmd(cb_node, CMD_CLEARCOLORIMAGE, "vkCmdClearColorImage()");
         if (GetApiVersion() >= VK_API_VERSION_1_1 || GetDeviceExtensions()->vk_khr_maintenance1) {
             skip |= ValidateImageFormatFeatureFlags(device_data, image_state, VK_FORMAT_FEATURE_TRANSFER_DST_BIT,
                                                     "vkCmdClearColorImage", "VUID-vkCmdClearColorImage-image-01993",
                                                     "VUID-vkCmdClearColorImage-image-01993");
         }
-        skip |= InsideRenderPass(device_data, cb_node, "vkCmdClearColorImage()", "VUID-vkCmdClearColorImage-renderpass");
+        skip |= InsideRenderPass(cb_node, "vkCmdClearColorImage()", "VUID-vkCmdClearColorImage-renderpass");
         for (uint32_t i = 0; i < rangeCount; ++i) {
             std::string param_name = "pRanges[" + std::to_string(i) + "]";
             skip |= ValidateCmdClearColorSubresourceRange(device_data, image_state, pRanges[i], param_name.c_str());
@@ -1684,7 +1684,7 @@ void CoreChecks::PreCallRecordCmdClearColorImage(VkCommandBuffer commandBuffer, 
     auto cb_node = GetCBNode(commandBuffer);
     auto image_state = GetImageState(image);
     if (cb_node && image_state) {
-        AddCommandBufferBindingImage(device_data, cb_node, image_state);
+        AddCommandBufferBindingImage(cb_node, image_state);
         for (uint32_t i = 0; i < rangeCount; ++i) {
             RecordClearImageLayout(device_data, cb_node, image, pRanges[i], imageLayout);
         }
@@ -1705,14 +1705,13 @@ bool CoreChecks::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer comman
                                              "VUID-vkCmdClearDepthStencilImage-image-00010");
         skip |= ValidateCmdQueueFlags(cb_node, "vkCmdClearDepthStencilImage()", VK_QUEUE_GRAPHICS_BIT,
                                       "VUID-vkCmdClearDepthStencilImage-commandBuffer-cmdpool");
-        skip |= ValidateCmd(device_data, cb_node, CMD_CLEARDEPTHSTENCILIMAGE, "vkCmdClearDepthStencilImage()");
+        skip |= ValidateCmd(cb_node, CMD_CLEARDEPTHSTENCILIMAGE, "vkCmdClearDepthStencilImage()");
         if (GetApiVersion() >= VK_API_VERSION_1_1 || GetDeviceExtensions()->vk_khr_maintenance1) {
             skip |= ValidateImageFormatFeatureFlags(device_data, image_state, VK_FORMAT_FEATURE_TRANSFER_DST_BIT,
                                                     "vkCmdClearDepthStencilImage", "VUID-vkCmdClearDepthStencilImage-image-01994",
                                                     "VUID-vkCmdClearDepthStencilImage-image-01994");
         }
-        skip |=
-            InsideRenderPass(device_data, cb_node, "vkCmdClearDepthStencilImage()", "VUID-vkCmdClearDepthStencilImage-renderpass");
+        skip |= InsideRenderPass(cb_node, "vkCmdClearDepthStencilImage()", "VUID-vkCmdClearDepthStencilImage-renderpass");
         for (uint32_t i = 0; i < rangeCount; ++i) {
             std::string param_name = "pRanges[" + std::to_string(i) + "]";
             skip |= ValidateCmdClearDepthSubresourceRange(device_data, image_state, pRanges[i], param_name.c_str());
@@ -1752,7 +1751,7 @@ void CoreChecks::PreCallRecordCmdClearDepthStencilImage(VkCommandBuffer commandB
     auto cb_node = GetCBNode(commandBuffer);
     auto image_state = GetImageState(image);
     if (cb_node && image_state) {
-        AddCommandBufferBindingImage(device_data, cb_node, image_state);
+        AddCommandBufferBindingImage(cb_node, image_state);
         for (uint32_t i = 0; i < rangeCount; ++i) {
             RecordClearImageLayout(device_data, cb_node, image, pRanges[i], imageLayout);
         }
@@ -2664,8 +2663,8 @@ bool CoreChecks::PreCallValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkIm
     }
     skip |= ValidateCmdQueueFlags(cb_node, "vkCmdCopyImage()", VK_QUEUE_TRANSFER_BIT | VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
                                   "VUID-vkCmdCopyImage-commandBuffer-cmdpool");
-    skip |= ValidateCmd(device_data, cb_node, CMD_COPYIMAGE, "vkCmdCopyImage()");
-    skip |= InsideRenderPass(device_data, cb_node, "vkCmdCopyImage()", "VUID-vkCmdCopyImage-renderpass");
+    skip |= ValidateCmd(cb_node, CMD_COPYIMAGE, "vkCmdCopyImage()");
+    skip |= InsideRenderPass(cb_node, "vkCmdCopyImage()", "VUID-vkCmdCopyImage-renderpass");
     bool hit_error = false;
     const char *invalid_src_layout_vuid =
         (src_image_state->shared_presentable && GetDeviceExtensions()->vk_khr_shared_presentable_image)
@@ -2692,7 +2691,6 @@ bool CoreChecks::PreCallValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkIm
 void CoreChecks::PreCallRecordCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                            VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
                                            const VkImageCopy *pRegions) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     auto cb_node = GetCBNode(commandBuffer);
     auto src_image_state = GetImageState(srcImage);
     auto dst_image_state = GetImageState(dstImage);
@@ -2703,8 +2701,8 @@ void CoreChecks::PreCallRecordCmdCopyImage(VkCommandBuffer commandBuffer, VkImag
         SetImageLayout(cb_node, dst_image_state, pRegions[i].dstSubresource, dstImageLayout);
     }
     // Update bindings between images and cmd buffer
-    AddCommandBufferBindingImage(device_data, cb_node, src_image_state);
-    AddCommandBufferBindingImage(device_data, cb_node, dst_image_state);
+    AddCommandBufferBindingImage(cb_node, src_image_state);
+    AddCommandBufferBindingImage(cb_node, dst_image_state);
 }
 
 // Returns true if sub_rect is entirely contained within rect
@@ -2762,7 +2760,7 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
     if (cb_node) {
         skip |= ValidateCmdQueueFlags(cb_node, "vkCmdClearAttachments()", VK_QUEUE_GRAPHICS_BIT,
                                       "VUID-vkCmdClearAttachments-commandBuffer-cmdpool");
-        skip |= ValidateCmd(device_data, cb_node, CMD_CLEARATTACHMENTS, "vkCmdClearAttachments()");
+        skip |= ValidateCmd(cb_node, CMD_CLEARATTACHMENTS, "vkCmdClearAttachments()");
         // Warn if this is issued prior to Draw Cmd and clearing the entire attachment
         if (!cb_node->hasDrawCmd && (cb_node->activeRenderPassBeginInfo.renderArea.extent.width == pRects[0].rect.extent.width) &&
             (cb_node->activeRenderPassBeginInfo.renderArea.extent.height == pRects[0].rect.extent.height)) {
@@ -2776,7 +2774,7 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
                         "use RenderPass LOAD_OP_CLEAR on Attachments prior to any Draw.",
                         report_data->FormatHandle(commandBuffer).c_str());
         }
-        skip |= OutsideRenderPass(device_data, cb_node, "vkCmdClearAttachments()", "VUID-vkCmdClearAttachments-renderpass");
+        skip |= OutsideRenderPass(cb_node, "vkCmdClearAttachments()", "VUID-vkCmdClearAttachments-renderpass");
     }
 
     // Validate that attachment is in reference list of active subpass
@@ -2895,8 +2893,8 @@ bool CoreChecks::PreCallValidateCmdResolveImage(VkCommandBuffer commandBuffer, V
         skip |= ValidateMemoryIsBoundToImage(dst_image_state, "vkCmdResolveImage()", "VUID-vkCmdResolveImage-dstImage-00258");
         skip |= ValidateCmdQueueFlags(cb_node, "vkCmdResolveImage()", VK_QUEUE_GRAPHICS_BIT,
                                       "VUID-vkCmdResolveImage-commandBuffer-cmdpool");
-        skip |= ValidateCmd(device_data, cb_node, CMD_RESOLVEIMAGE, "vkCmdResolveImage()");
-        skip |= InsideRenderPass(device_data, cb_node, "vkCmdResolveImage()", "VUID-vkCmdResolveImage-renderpass");
+        skip |= ValidateCmd(cb_node, CMD_RESOLVEIMAGE, "vkCmdResolveImage()");
+        skip |= InsideRenderPass(cb_node, "vkCmdResolveImage()", "VUID-vkCmdResolveImage-renderpass");
         skip |= ValidateImageFormatFeatureFlags(device_data, dst_image_state, VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT,
                                                 "vkCmdResolveImage()", "VUID-vkCmdResolveImage-dstImage-02003",
                                                 "VUID-vkCmdResolveImage-dstImage-02003");
@@ -2980,14 +2978,13 @@ bool CoreChecks::PreCallValidateCmdResolveImage(VkCommandBuffer commandBuffer, V
 void CoreChecks::PreCallRecordCmdResolveImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                               VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
                                               const VkImageResolve *pRegions) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     auto cb_node = GetCBNode(commandBuffer);
     auto src_image_state = GetImageState(srcImage);
     auto dst_image_state = GetImageState(dstImage);
 
     // Update bindings between images and cmd buffer
-    AddCommandBufferBindingImage(device_data, cb_node, src_image_state);
-    AddCommandBufferBindingImage(device_data, cb_node, dst_image_state);
+    AddCommandBufferBindingImage(cb_node, src_image_state);
+    AddCommandBufferBindingImage(cb_node, dst_image_state);
 }
 
 bool CoreChecks::PreCallValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
@@ -3000,7 +2997,7 @@ bool CoreChecks::PreCallValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkIm
 
     bool skip = false;
     if (cb_node) {
-        skip |= ValidateCmd(device_data, cb_node, CMD_BLITIMAGE, "vkCmdBlitImage()");
+        skip |= ValidateCmd(cb_node, CMD_BLITIMAGE, "vkCmdBlitImage()");
     }
     if (cb_node && src_image_state && dst_image_state) {
         skip |= ValidateImageSampleCount(device_data, src_image_state, VK_SAMPLE_COUNT_1_BIT, "vkCmdBlitImage(): srcImage",
@@ -3017,8 +3014,8 @@ bool CoreChecks::PreCallValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkIm
                                     "VUID-vkCmdBlitImage-dstImage-00224", "vkCmdBlitImage()", "VK_IMAGE_USAGE_TRANSFER_DST_BIT");
         skip |=
             ValidateCmdQueueFlags(cb_node, "vkCmdBlitImage()", VK_QUEUE_GRAPHICS_BIT, "VUID-vkCmdBlitImage-commandBuffer-cmdpool");
-        skip |= ValidateCmd(device_data, cb_node, CMD_BLITIMAGE, "vkCmdBlitImage()");
-        skip |= InsideRenderPass(device_data, cb_node, "vkCmdBlitImage()", "VUID-vkCmdBlitImage-renderpass");
+        skip |= ValidateCmd(cb_node, CMD_BLITIMAGE, "vkCmdBlitImage()");
+        skip |= InsideRenderPass(cb_node, "vkCmdBlitImage()", "VUID-vkCmdBlitImage-renderpass");
         skip |= ValidateImageFormatFeatureFlags(device_data, src_image_state, VK_FORMAT_FEATURE_BLIT_SRC_BIT, "vkCmdBlitImage()",
                                                 "VUID-vkCmdBlitImage-srcImage-01999", "VUID-vkCmdBlitImage-srcImage-01999");
         skip |= ValidateImageFormatFeatureFlags(device_data, dst_image_state, VK_FORMAT_FEATURE_BLIT_DST_BIT, "vkCmdBlitImage()",
@@ -3312,7 +3309,6 @@ bool CoreChecks::PreCallValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkIm
 void CoreChecks::PreCallRecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                            VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
                                            const VkImageBlit *pRegions, VkFilter filter) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     auto cb_node = GetCBNode(commandBuffer);
     auto src_image_state = GetImageState(srcImage);
     auto dst_image_state = GetImageState(dstImage);
@@ -3323,8 +3319,8 @@ void CoreChecks::PreCallRecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImag
         SetImageLayout(cb_node, dst_image_state, pRegions[i].dstSubresource, dstImageLayout);
     }
     // Update bindings between images and cmd buffer
-    AddCommandBufferBindingImage(device_data, cb_node, src_image_state);
-    AddCommandBufferBindingImage(device_data, cb_node, dst_image_state);
+    AddCommandBufferBindingImage(cb_node, src_image_state);
+    AddCommandBufferBindingImage(cb_node, dst_image_state);
 }
 
 // This validates that the initial layout specified in the command buffer for the IMAGE is the same as the global IMAGE layout
@@ -4399,21 +4395,20 @@ bool CoreChecks::PreCallValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, VkB
     skip |=
         ValidateCmdQueueFlags(cb_node, "vkCmdCopyBuffer()", VK_QUEUE_TRANSFER_BIT | VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
                               "VUID-vkCmdCopyBuffer-commandBuffer-cmdpool");
-    skip |= ValidateCmd(device_data, cb_node, CMD_COPYBUFFER, "vkCmdCopyBuffer()");
-    skip |= InsideRenderPass(device_data, cb_node, "vkCmdCopyBuffer()", "VUID-vkCmdCopyBuffer-renderpass");
+    skip |= ValidateCmd(cb_node, CMD_COPYBUFFER, "vkCmdCopyBuffer()");
+    skip |= InsideRenderPass(cb_node, "vkCmdCopyBuffer()", "VUID-vkCmdCopyBuffer-renderpass");
     return skip;
 }
 
 void CoreChecks::PreCallRecordCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer,
                                             uint32_t regionCount, const VkBufferCopy *pRegions) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     auto cb_node = GetCBNode(commandBuffer);
     auto src_buffer_state = GetBufferState(srcBuffer);
     auto dst_buffer_state = GetBufferState(dstBuffer);
 
     // Update bindings between buffers and cmd buffer
-    AddCommandBufferBindingBuffer(device_data, cb_node, src_buffer_state);
-    AddCommandBufferBindingBuffer(device_data, cb_node, dst_buffer_state);
+    AddCommandBufferBindingBuffer(cb_node, src_buffer_state);
+    AddCommandBufferBindingBuffer(cb_node, dst_buffer_state);
 }
 
 bool CoreChecks::ValidateIdleBuffer(layer_data *device_data, VkBuffer buffer) {
@@ -4520,22 +4515,21 @@ bool CoreChecks::PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, VkB
     skip |=
         ValidateCmdQueueFlags(cb_node, "vkCmdFillBuffer()", VK_QUEUE_TRANSFER_BIT | VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
                               "VUID-vkCmdFillBuffer-commandBuffer-cmdpool");
-    skip |= ValidateCmd(device_data, cb_node, CMD_FILLBUFFER, "vkCmdFillBuffer()");
+    skip |= ValidateCmd(cb_node, CMD_FILLBUFFER, "vkCmdFillBuffer()");
     // Validate that DST buffer has correct usage flags set
     skip |=
         ValidateBufferUsageFlags(device_data, buffer_state, VK_BUFFER_USAGE_TRANSFER_DST_BIT, true,
                                  "VUID-vkCmdFillBuffer-dstBuffer-00029", "vkCmdFillBuffer()", "VK_BUFFER_USAGE_TRANSFER_DST_BIT");
-    skip |= InsideRenderPass(device_data, cb_node, "vkCmdFillBuffer()", "VUID-vkCmdFillBuffer-renderpass");
+    skip |= InsideRenderPass(cb_node, "vkCmdFillBuffer()", "VUID-vkCmdFillBuffer-renderpass");
     return skip;
 }
 
 void CoreChecks::PreCallRecordCmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,
                                             VkDeviceSize size, uint32_t data) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     auto cb_node = GetCBNode(commandBuffer);
     auto buffer_state = GetBufferState(dstBuffer);
     // Update bindings between buffer and cmd buffer
-    AddCommandBufferBindingBuffer(device_data, cb_node, buffer_state);
+    AddCommandBufferBindingBuffer(cb_node, buffer_state);
 }
 
 bool CoreChecks::ValidateBufferImageCopyData(const debug_report_data *report_data, uint32_t regionCount,
@@ -4830,7 +4824,7 @@ bool CoreChecks::PreCallValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuff
     bool skip = ValidateBufferImageCopyData(report_data, regionCount, pRegions, src_image_state, "vkCmdCopyImageToBuffer");
 
     // Validate command buffer state
-    skip |= ValidateCmd(device_data, cb_node, CMD_COPYIMAGETOBUFFER, "vkCmdCopyImageToBuffer()");
+    skip |= ValidateCmd(cb_node, CMD_COPYIMAGETOBUFFER, "vkCmdCopyImageToBuffer()");
 
     // Command pool must support graphics, compute, or transfer operations
     auto pPool = GetCommandPoolNode(cb_node->createInfo.commandPool);
@@ -4866,7 +4860,7 @@ bool CoreChecks::PreCallValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuff
                                                 "vkCmdCopyImageToBuffer()", "VUID-vkCmdCopyImageToBuffer-srcImage-01998",
                                                 "VUID-vkCmdCopyImageToBuffer-srcImage-01998");
     }
-    skip |= InsideRenderPass(device_data, cb_node, "vkCmdCopyImageToBuffer()", "VUID-vkCmdCopyImageToBuffer-renderpass");
+    skip |= InsideRenderPass(cb_node, "vkCmdCopyImageToBuffer()", "VUID-vkCmdCopyImageToBuffer-renderpass");
     bool hit_error = false;
     const char *src_invalid_layout_vuid =
         (src_image_state->shared_presentable && GetDeviceExtensions()->vk_khr_shared_presentable_image)
@@ -4893,7 +4887,6 @@ bool CoreChecks::PreCallValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuff
 
 void CoreChecks::PreCallRecordCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                                    VkBuffer dstBuffer, uint32_t regionCount, const VkBufferImageCopy *pRegions) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     auto cb_node = GetCBNode(commandBuffer);
     auto src_image_state = GetImageState(srcImage);
     auto dst_buffer_state = GetBufferState(dstBuffer);
@@ -4903,8 +4896,8 @@ void CoreChecks::PreCallRecordCmdCopyImageToBuffer(VkCommandBuffer commandBuffer
         SetImageLayout(cb_node, src_image_state, pRegions[i].imageSubresource, srcImageLayout);
     }
     // Update bindings between buffer/image and cmd buffer
-    AddCommandBufferBindingImage(device_data, cb_node, src_image_state);
-    AddCommandBufferBindingBuffer(device_data, cb_node, dst_buffer_state);
+    AddCommandBufferBindingImage(cb_node, src_image_state);
+    AddCommandBufferBindingBuffer(cb_node, dst_buffer_state);
 }
 
 bool CoreChecks::PreCallValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
@@ -4918,7 +4911,7 @@ bool CoreChecks::PreCallValidateCmdCopyBufferToImage(VkCommandBuffer commandBuff
     bool skip = ValidateBufferImageCopyData(report_data, regionCount, pRegions, dst_image_state, "vkCmdCopyBufferToImage");
 
     // Validate command buffer state
-    skip |= ValidateCmd(device_data, cb_node, CMD_COPYBUFFERTOIMAGE, "vkCmdCopyBufferToImage()");
+    skip |= ValidateCmd(cb_node, CMD_COPYBUFFERTOIMAGE, "vkCmdCopyBufferToImage()");
 
     // Command pool must support graphics, compute, or transfer operations
     auto pPool = GetCommandPoolNode(cb_node->createInfo.commandPool);
@@ -4949,7 +4942,7 @@ bool CoreChecks::PreCallValidateCmdCopyBufferToImage(VkCommandBuffer commandBuff
                                                 "vkCmdCopyBufferToImage()", "VUID-vkCmdCopyBufferToImage-dstImage-01997",
                                                 "VUID-vkCmdCopyBufferToImage-dstImage-01997");
     }
-    skip |= InsideRenderPass(device_data, cb_node, "vkCmdCopyBufferToImage()", "VUID-vkCmdCopyBufferToImage-renderpass");
+    skip |= InsideRenderPass(cb_node, "vkCmdCopyBufferToImage()", "VUID-vkCmdCopyBufferToImage-renderpass");
     bool hit_error = false;
     const char *dst_invalid_layout_vuid =
         (dst_image_state->shared_presentable && GetDeviceExtensions()->vk_khr_shared_presentable_image)
@@ -4977,7 +4970,6 @@ bool CoreChecks::PreCallValidateCmdCopyBufferToImage(VkCommandBuffer commandBuff
 void CoreChecks::PreCallRecordCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
                                                    VkImageLayout dstImageLayout, uint32_t regionCount,
                                                    const VkBufferImageCopy *pRegions) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     auto cb_node = GetCBNode(commandBuffer);
     auto src_buffer_state = GetBufferState(srcBuffer);
     auto dst_image_state = GetImageState(dstImage);
@@ -4986,8 +4978,8 @@ void CoreChecks::PreCallRecordCmdCopyBufferToImage(VkCommandBuffer commandBuffer
     for (uint32_t i = 0; i < regionCount; ++i) {
         SetImageLayout(cb_node, dst_image_state, pRegions[i].imageSubresource, dstImageLayout);
     }
-    AddCommandBufferBindingBuffer(device_data, cb_node, src_buffer_state);
-    AddCommandBufferBindingImage(device_data, cb_node, dst_image_state);
+    AddCommandBufferBindingBuffer(cb_node, src_buffer_state);
+    AddCommandBufferBindingImage(cb_node, dst_image_state);
 }
 
 bool CoreChecks::PreCallValidateGetImageSubresourceLayout(VkDevice device, VkImage image, const VkImageSubresource *pSubresource,
