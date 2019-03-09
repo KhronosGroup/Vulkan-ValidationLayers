@@ -280,9 +280,6 @@ std::unordered_map<VkSamplerYcbcrConversion, uint64_t> *CoreChecks::GetYcbcrConv
 
 std::unordered_set<uint64_t> *CoreChecks::GetAHBExternalFormatsSet() { return &ahb_ext_formats_set; }
 
-// prototype
-GLOBAL_CB_NODE *GetCBNode(layer_data const *, const VkCommandBuffer);
-
 // Return ptr to info in map container containing mem, or NULL if not found
 //  Calls to this function should be wrapped in mutex
 DEVICE_MEM_INFO *CoreChecks::GetMemObjInfo(const VkDeviceMemory mem) {
@@ -1264,7 +1261,7 @@ bool CoreChecks::ValidatePipelineLocked(std::vector<std::unique_ptr<PIPELINE_STA
     return skip;
 }
 
-// UNLOCKED pipeline validation. DO NOT lookup objects in the layer_data->* maps in this function.
+// UNLOCKED pipeline validation. DO NOT lookup objects in the CoreChecks->* maps in this function.
 bool CoreChecks::ValidatePipelineUnlocked(std::vector<std::unique_ptr<PIPELINE_STATE>> const &pPipelines, int pipelineIndex) {
     bool skip = false;
 
@@ -2438,7 +2435,7 @@ void CoreChecks::PostCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDevice
         core_checks->enabled_features.buffer_address = *buffer_address;
     }
 
-    // Store physical device properties and physical device mem limits into device layer_data structs
+    // Store physical device properties and physical device mem limits into CoreChecks structs
     instance_dispatch_table.GetPhysicalDeviceMemoryProperties(gpu, &core_checks->phys_dev_mem_props);
     instance_dispatch_table.GetPhysicalDeviceProperties(gpu, &core_checks->phys_dev_props);
 
@@ -4643,7 +4640,7 @@ void CoreChecks::FreeCommandBufferStates(COMMAND_POOL_NODE *pool_state, const ui
             // reset prior to delete, removing various references to it.
             // TODO: fix this, it's insane.
             ResetCommandBufferState(cb_state->commandBuffer);
-            // Remove the cb_state's references from layer_data and COMMAND_POOL_NODE
+            // Remove the cb_state's references from COMMAND_POOL_NODEs
             commandBufferMap.erase(cb_state->commandBuffer);
             pool_state->commandBuffers.erase(command_buffers[i]);
             delete cb_state;
@@ -5269,15 +5266,15 @@ enum DSL_DESCRIPTOR_GROUPS {
 // Used by PreCallValidateCreatePipelineLayout.
 // Returns an array of size DSL_NUM_DESCRIPTOR_GROUPS of the maximum number of descriptors used in any single pipeline stage
 std::valarray<uint32_t> GetDescriptorCountMaxPerStage(
-    const layer_data *dev_data, const std::vector<std::shared_ptr<cvdescriptorset::DescriptorSetLayout const>> set_layouts,
-    bool skip_update_after_bind) {
+    const DeviceFeatures *enabled_features,
+    const std::vector<std::shared_ptr<cvdescriptorset::DescriptorSetLayout const>> set_layouts, bool skip_update_after_bind) {
     // Identify active pipeline stages
     std::vector<VkShaderStageFlags> stage_flags = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT,
                                                    VK_SHADER_STAGE_COMPUTE_BIT};
-    if (dev_data->enabled_features.core.geometryShader) {
+    if (enabled_features->core.geometryShader) {
         stage_flags.push_back(VK_SHADER_STAGE_GEOMETRY_BIT);
     }
-    if (dev_data->enabled_features.core.tessellationShader) {
+    if (enabled_features->core.tessellationShader) {
         stage_flags.push_back(VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
         stage_flags.push_back(VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
     }
@@ -5349,8 +5346,7 @@ std::valarray<uint32_t> GetDescriptorCountMaxPerStage(
 // Returns a map indexed by VK_DESCRIPTOR_TYPE_* enum of the summed descriptors by type.
 // Note: descriptors only count against the limit once even if used by multiple stages.
 std::map<uint32_t, uint32_t> GetDescriptorSum(
-    const layer_data *dev_data, const std::vector<std::shared_ptr<cvdescriptorset::DescriptorSetLayout const>> &set_layouts,
-    bool skip_update_after_bind) {
+    const std::vector<std::shared_ptr<cvdescriptorset::DescriptorSetLayout const>> &set_layouts, bool skip_update_after_bind) {
     std::map<uint32_t, uint32_t> sum_by_type;
     for (auto dsl : set_layouts) {
         if (skip_update_after_bind && (dsl->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT)) {
@@ -5375,15 +5371,14 @@ std::map<uint32_t, uint32_t> GetDescriptorSum(
 
 bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo *pCreateInfo,
                                                      const VkAllocationCallbacks *pAllocator, VkPipelineLayout *pPipelineLayout) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
 
     // Validate layout count against device physical limit
-    if (pCreateInfo->setLayoutCount > device_data->phys_dev_props.limits.maxBoundDescriptorSets) {
+    if (pCreateInfo->setLayoutCount > phys_dev_props.limits.maxBoundDescriptorSets) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                         "VUID-VkPipelineLayoutCreateInfo-setLayoutCount-00286",
                         "vkCreatePipelineLayout(): setLayoutCount (%d) exceeds physical device maxBoundDescriptorSets limit (%d).",
-                        pCreateInfo->setLayoutCount, device_data->phys_dev_props.limits.maxBoundDescriptorSets);
+                        pCreateInfo->setLayoutCount, phys_dev_props.limits.maxBoundDescriptorSets);
     }
 
     // Validate Push Constant ranges
@@ -5416,7 +5411,7 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
     unsigned int push_descriptor_set_count = 0;
     {
         for (i = 0; i < pCreateInfo->setLayoutCount; ++i) {
-            set_layouts[i] = GetDescriptorSetLayout(device_data, pCreateInfo->pSetLayouts[i]);
+            set_layouts[i] = GetDescriptorSetLayout(this, pCreateInfo->pSetLayouts[i]);
             if (set_layouts[i]->IsPushDescriptor()) ++push_descriptor_set_count;
         }
     }
@@ -5428,378 +5423,354 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
     }
 
     // Max descriptors by type, within a single pipeline stage
-    std::valarray<uint32_t> max_descriptors_per_stage = GetDescriptorCountMaxPerStage(device_data, set_layouts, true);
+    std::valarray<uint32_t> max_descriptors_per_stage = GetDescriptorCountMaxPerStage(&enabled_features, set_layouts, true);
     // Samplers
-    if (max_descriptors_per_stage[DSL_TYPE_SAMPLERS] > device_data->phys_dev_props.limits.maxPerStageDescriptorSamplers) {
-        skip |=
-            log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                    "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-00287",
-                    "vkCreatePipelineLayout(): max per-stage sampler bindings count (%d) exceeds device "
-                    "maxPerStageDescriptorSamplers limit (%d).",
-                    max_descriptors_per_stage[DSL_TYPE_SAMPLERS], device_data->phys_dev_props.limits.maxPerStageDescriptorSamplers);
+    if (max_descriptors_per_stage[DSL_TYPE_SAMPLERS] > phys_dev_props.limits.maxPerStageDescriptorSamplers) {
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                        "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-00287",
+                        "vkCreatePipelineLayout(): max per-stage sampler bindings count (%d) exceeds device "
+                        "maxPerStageDescriptorSamplers limit (%d).",
+                        max_descriptors_per_stage[DSL_TYPE_SAMPLERS], phys_dev_props.limits.maxPerStageDescriptorSamplers);
     }
 
     // Uniform buffers
-    if (max_descriptors_per_stage[DSL_TYPE_UNIFORM_BUFFERS] >
-        device_data->phys_dev_props.limits.maxPerStageDescriptorUniformBuffers) {
-        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                        "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-00288",
-                        "vkCreatePipelineLayout(): max per-stage uniform buffer bindings count (%d) exceeds device "
-                        "maxPerStageDescriptorUniformBuffers limit (%d).",
-                        max_descriptors_per_stage[DSL_TYPE_UNIFORM_BUFFERS],
-                        device_data->phys_dev_props.limits.maxPerStageDescriptorUniformBuffers);
+    if (max_descriptors_per_stage[DSL_TYPE_UNIFORM_BUFFERS] > phys_dev_props.limits.maxPerStageDescriptorUniformBuffers) {
+        skip |=
+            log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                    "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-00288",
+                    "vkCreatePipelineLayout(): max per-stage uniform buffer bindings count (%d) exceeds device "
+                    "maxPerStageDescriptorUniformBuffers limit (%d).",
+                    max_descriptors_per_stage[DSL_TYPE_UNIFORM_BUFFERS], phys_dev_props.limits.maxPerStageDescriptorUniformBuffers);
     }
 
     // Storage buffers
-    if (max_descriptors_per_stage[DSL_TYPE_STORAGE_BUFFERS] >
-        device_data->phys_dev_props.limits.maxPerStageDescriptorStorageBuffers) {
-        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                        "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-00289",
-                        "vkCreatePipelineLayout(): max per-stage storage buffer bindings count (%d) exceeds device "
-                        "maxPerStageDescriptorStorageBuffers limit (%d).",
-                        max_descriptors_per_stage[DSL_TYPE_STORAGE_BUFFERS],
-                        device_data->phys_dev_props.limits.maxPerStageDescriptorStorageBuffers);
+    if (max_descriptors_per_stage[DSL_TYPE_STORAGE_BUFFERS] > phys_dev_props.limits.maxPerStageDescriptorStorageBuffers) {
+        skip |=
+            log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                    "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-00289",
+                    "vkCreatePipelineLayout(): max per-stage storage buffer bindings count (%d) exceeds device "
+                    "maxPerStageDescriptorStorageBuffers limit (%d).",
+                    max_descriptors_per_stage[DSL_TYPE_STORAGE_BUFFERS], phys_dev_props.limits.maxPerStageDescriptorStorageBuffers);
     }
 
     // Sampled images
-    if (max_descriptors_per_stage[DSL_TYPE_SAMPLED_IMAGES] >
-        device_data->phys_dev_props.limits.maxPerStageDescriptorSampledImages) {
-        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                        "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-00290",
-                        "vkCreatePipelineLayout(): max per-stage sampled image bindings count (%d) exceeds device "
-                        "maxPerStageDescriptorSampledImages limit (%d).",
-                        max_descriptors_per_stage[DSL_TYPE_SAMPLED_IMAGES],
-                        device_data->phys_dev_props.limits.maxPerStageDescriptorSampledImages);
+    if (max_descriptors_per_stage[DSL_TYPE_SAMPLED_IMAGES] > phys_dev_props.limits.maxPerStageDescriptorSampledImages) {
+        skip |=
+            log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                    "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-00290",
+                    "vkCreatePipelineLayout(): max per-stage sampled image bindings count (%d) exceeds device "
+                    "maxPerStageDescriptorSampledImages limit (%d).",
+                    max_descriptors_per_stage[DSL_TYPE_SAMPLED_IMAGES], phys_dev_props.limits.maxPerStageDescriptorSampledImages);
     }
 
     // Storage images
-    if (max_descriptors_per_stage[DSL_TYPE_STORAGE_IMAGES] >
-        device_data->phys_dev_props.limits.maxPerStageDescriptorStorageImages) {
-        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                        "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-00291",
-                        "vkCreatePipelineLayout(): max per-stage storage image bindings count (%d) exceeds device "
-                        "maxPerStageDescriptorStorageImages limit (%d).",
-                        max_descriptors_per_stage[DSL_TYPE_STORAGE_IMAGES],
-                        device_data->phys_dev_props.limits.maxPerStageDescriptorStorageImages);
+    if (max_descriptors_per_stage[DSL_TYPE_STORAGE_IMAGES] > phys_dev_props.limits.maxPerStageDescriptorStorageImages) {
+        skip |=
+            log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                    "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-00291",
+                    "vkCreatePipelineLayout(): max per-stage storage image bindings count (%d) exceeds device "
+                    "maxPerStageDescriptorStorageImages limit (%d).",
+                    max_descriptors_per_stage[DSL_TYPE_STORAGE_IMAGES], phys_dev_props.limits.maxPerStageDescriptorStorageImages);
     }
 
     // Input attachments
-    if (max_descriptors_per_stage[DSL_TYPE_INPUT_ATTACHMENTS] >
-        device_data->phys_dev_props.limits.maxPerStageDescriptorInputAttachments) {
+    if (max_descriptors_per_stage[DSL_TYPE_INPUT_ATTACHMENTS] > phys_dev_props.limits.maxPerStageDescriptorInputAttachments) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                         "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01676",
                         "vkCreatePipelineLayout(): max per-stage input attachment bindings count (%d) exceeds device "
                         "maxPerStageDescriptorInputAttachments limit (%d).",
                         max_descriptors_per_stage[DSL_TYPE_INPUT_ATTACHMENTS],
-                        device_data->phys_dev_props.limits.maxPerStageDescriptorInputAttachments);
+                        phys_dev_props.limits.maxPerStageDescriptorInputAttachments);
     }
 
     // Inline uniform blocks
     if (max_descriptors_per_stage[DSL_TYPE_INLINE_UNIFORM_BLOCK] >
-        device_data->phys_dev_ext_props.inline_uniform_block_props.maxPerStageDescriptorInlineUniformBlocks) {
+        phys_dev_ext_props.inline_uniform_block_props.maxPerStageDescriptorInlineUniformBlocks) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                         "VUID-VkPipelineLayoutCreateInfo-descriptorType-02214",
                         "vkCreatePipelineLayout(): max per-stage inline uniform block bindings count (%d) exceeds device "
                         "maxPerStageDescriptorInlineUniformBlocks limit (%d).",
                         max_descriptors_per_stage[DSL_TYPE_INLINE_UNIFORM_BLOCK],
-                        device_data->phys_dev_ext_props.inline_uniform_block_props.maxPerStageDescriptorInlineUniformBlocks);
+                        phys_dev_ext_props.inline_uniform_block_props.maxPerStageDescriptorInlineUniformBlocks);
     }
 
     // Total descriptors by type
     //
-    std::map<uint32_t, uint32_t> sum_all_stages = GetDescriptorSum(device_data, set_layouts, true);
+    std::map<uint32_t, uint32_t> sum_all_stages = GetDescriptorSum(set_layouts, true);
     // Samplers
     uint32_t sum = sum_all_stages[VK_DESCRIPTOR_TYPE_SAMPLER] + sum_all_stages[VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER];
-    if (sum > device_data->phys_dev_props.limits.maxDescriptorSetSamplers) {
+    if (sum > phys_dev_props.limits.maxDescriptorSetSamplers) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                         "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01677",
                         "vkCreatePipelineLayout(): sum of sampler bindings among all stages (%d) exceeds device "
                         "maxDescriptorSetSamplers limit (%d).",
-                        sum, device_data->phys_dev_props.limits.maxDescriptorSetSamplers);
+                        sum, phys_dev_props.limits.maxDescriptorSetSamplers);
     }
 
     // Uniform buffers
-    if (sum_all_stages[VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER] > device_data->phys_dev_props.limits.maxDescriptorSetUniformBuffers) {
+    if (sum_all_stages[VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER] > phys_dev_props.limits.maxDescriptorSetUniformBuffers) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                         "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01678",
                         "vkCreatePipelineLayout(): sum of uniform buffer bindings among all stages (%d) exceeds device "
                         "maxDescriptorSetUniformBuffers limit (%d).",
-                        sum_all_stages[VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER],
-                        device_data->phys_dev_props.limits.maxDescriptorSetUniformBuffers);
+                        sum_all_stages[VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER], phys_dev_props.limits.maxDescriptorSetUniformBuffers);
     }
 
     // Dynamic uniform buffers
-    if (sum_all_stages[VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC] >
-        device_data->phys_dev_props.limits.maxDescriptorSetUniformBuffersDynamic) {
+    if (sum_all_stages[VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC] > phys_dev_props.limits.maxDescriptorSetUniformBuffersDynamic) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                         "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01679",
                         "vkCreatePipelineLayout(): sum of dynamic uniform buffer bindings among all stages (%d) exceeds device "
                         "maxDescriptorSetUniformBuffersDynamic limit (%d).",
                         sum_all_stages[VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC],
-                        device_data->phys_dev_props.limits.maxDescriptorSetUniformBuffersDynamic);
+                        phys_dev_props.limits.maxDescriptorSetUniformBuffersDynamic);
     }
 
     // Storage buffers
-    if (sum_all_stages[VK_DESCRIPTOR_TYPE_STORAGE_BUFFER] > device_data->phys_dev_props.limits.maxDescriptorSetStorageBuffers) {
+    if (sum_all_stages[VK_DESCRIPTOR_TYPE_STORAGE_BUFFER] > phys_dev_props.limits.maxDescriptorSetStorageBuffers) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                         "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01680",
                         "vkCreatePipelineLayout(): sum of storage buffer bindings among all stages (%d) exceeds device "
                         "maxDescriptorSetStorageBuffers limit (%d).",
-                        sum_all_stages[VK_DESCRIPTOR_TYPE_STORAGE_BUFFER],
-                        device_data->phys_dev_props.limits.maxDescriptorSetStorageBuffers);
+                        sum_all_stages[VK_DESCRIPTOR_TYPE_STORAGE_BUFFER], phys_dev_props.limits.maxDescriptorSetStorageBuffers);
     }
 
     // Dynamic storage buffers
-    if (sum_all_stages[VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC] >
-        device_data->phys_dev_props.limits.maxDescriptorSetStorageBuffersDynamic) {
+    if (sum_all_stages[VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC] > phys_dev_props.limits.maxDescriptorSetStorageBuffersDynamic) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                         "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01681",
                         "vkCreatePipelineLayout(): sum of dynamic storage buffer bindings among all stages (%d) exceeds device "
                         "maxDescriptorSetStorageBuffersDynamic limit (%d).",
                         sum_all_stages[VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC],
-                        device_data->phys_dev_props.limits.maxDescriptorSetStorageBuffersDynamic);
+                        phys_dev_props.limits.maxDescriptorSetStorageBuffersDynamic);
     }
 
     //  Sampled images
     sum = sum_all_stages[VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE] + sum_all_stages[VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER] +
           sum_all_stages[VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER];
-    if (sum > device_data->phys_dev_props.limits.maxDescriptorSetSampledImages) {
+    if (sum > phys_dev_props.limits.maxDescriptorSetSampledImages) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                         "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01682",
                         "vkCreatePipelineLayout(): sum of sampled image bindings among all stages (%d) exceeds device "
                         "maxDescriptorSetSampledImages limit (%d).",
-                        sum, device_data->phys_dev_props.limits.maxDescriptorSetSampledImages);
+                        sum, phys_dev_props.limits.maxDescriptorSetSampledImages);
     }
 
     //  Storage images
     sum = sum_all_stages[VK_DESCRIPTOR_TYPE_STORAGE_IMAGE] + sum_all_stages[VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER];
-    if (sum > device_data->phys_dev_props.limits.maxDescriptorSetStorageImages) {
+    if (sum > phys_dev_props.limits.maxDescriptorSetStorageImages) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                         "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01683",
                         "vkCreatePipelineLayout(): sum of storage image bindings among all stages (%d) exceeds device "
                         "maxDescriptorSetStorageImages limit (%d).",
-                        sum, device_data->phys_dev_props.limits.maxDescriptorSetStorageImages);
+                        sum, phys_dev_props.limits.maxDescriptorSetStorageImages);
     }
 
     // Input attachments
-    if (sum_all_stages[VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT] > device_data->phys_dev_props.limits.maxDescriptorSetInputAttachments) {
-        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                        "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01684",
-                        "vkCreatePipelineLayout(): sum of input attachment bindings among all stages (%d) exceeds device "
-                        "maxDescriptorSetInputAttachments limit (%d).",
-                        sum_all_stages[VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT],
-                        device_data->phys_dev_props.limits.maxDescriptorSetInputAttachments);
+    if (sum_all_stages[VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT] > phys_dev_props.limits.maxDescriptorSetInputAttachments) {
+        skip |=
+            log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                    "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01684",
+                    "vkCreatePipelineLayout(): sum of input attachment bindings among all stages (%d) exceeds device "
+                    "maxDescriptorSetInputAttachments limit (%d).",
+                    sum_all_stages[VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT], phys_dev_props.limits.maxDescriptorSetInputAttachments);
     }
 
     // Inline uniform blocks
     if (sum_all_stages[VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT] >
-        device_data->phys_dev_ext_props.inline_uniform_block_props.maxDescriptorSetInlineUniformBlocks) {
+        phys_dev_ext_props.inline_uniform_block_props.maxDescriptorSetInlineUniformBlocks) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                         "VUID-VkPipelineLayoutCreateInfo-descriptorType-02216",
                         "vkCreatePipelineLayout(): sum of inline uniform block bindings among all stages (%d) exceeds device "
                         "maxDescriptorSetInlineUniformBlocks limit (%d).",
                         sum_all_stages[VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT],
-                        device_data->phys_dev_ext_props.inline_uniform_block_props.maxDescriptorSetInlineUniformBlocks);
+                        phys_dev_ext_props.inline_uniform_block_props.maxDescriptorSetInlineUniformBlocks);
     }
 
-    if (device_data->device_extensions.vk_ext_descriptor_indexing) {
+    if (device_extensions.vk_ext_descriptor_indexing) {
         // XXX TODO: replace with correct VU messages
 
         // Max descriptors by type, within a single pipeline stage
         std::valarray<uint32_t> max_descriptors_per_stage_update_after_bind =
-            GetDescriptorCountMaxPerStage(device_data, set_layouts, false);
+            GetDescriptorCountMaxPerStage(&enabled_features, set_layouts, false);
         // Samplers
         if (max_descriptors_per_stage_update_after_bind[DSL_TYPE_SAMPLERS] >
-            device_data->phys_dev_ext_props.descriptor_indexing_props.maxPerStageDescriptorUpdateAfterBindSamplers) {
+            phys_dev_ext_props.descriptor_indexing_props.maxPerStageDescriptorUpdateAfterBindSamplers) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                             "VUID-VkPipelineLayoutCreateInfo-descriptorType-03022",
                             "vkCreatePipelineLayout(): max per-stage sampler bindings count (%d) exceeds device "
                             "maxPerStageDescriptorUpdateAfterBindSamplers limit (%d).",
                             max_descriptors_per_stage_update_after_bind[DSL_TYPE_SAMPLERS],
-                            device_data->phys_dev_ext_props.descriptor_indexing_props.maxPerStageDescriptorUpdateAfterBindSamplers);
+                            phys_dev_ext_props.descriptor_indexing_props.maxPerStageDescriptorUpdateAfterBindSamplers);
         }
 
         // Uniform buffers
         if (max_descriptors_per_stage_update_after_bind[DSL_TYPE_UNIFORM_BUFFERS] >
-            device_data->phys_dev_ext_props.descriptor_indexing_props.maxPerStageDescriptorUpdateAfterBindUniformBuffers) {
-            skip |= log_msg(
-                report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                "VUID-VkPipelineLayoutCreateInfo-descriptorType-03023",
-                "vkCreatePipelineLayout(): max per-stage uniform buffer bindings count (%d) exceeds device "
-                "maxPerStageDescriptorUpdateAfterBindUniformBuffers limit (%d).",
-                max_descriptors_per_stage_update_after_bind[DSL_TYPE_UNIFORM_BUFFERS],
-                device_data->phys_dev_ext_props.descriptor_indexing_props.maxPerStageDescriptorUpdateAfterBindUniformBuffers);
+            phys_dev_ext_props.descriptor_indexing_props.maxPerStageDescriptorUpdateAfterBindUniformBuffers) {
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                            "VUID-VkPipelineLayoutCreateInfo-descriptorType-03023",
+                            "vkCreatePipelineLayout(): max per-stage uniform buffer bindings count (%d) exceeds device "
+                            "maxPerStageDescriptorUpdateAfterBindUniformBuffers limit (%d).",
+                            max_descriptors_per_stage_update_after_bind[DSL_TYPE_UNIFORM_BUFFERS],
+                            phys_dev_ext_props.descriptor_indexing_props.maxPerStageDescriptorUpdateAfterBindUniformBuffers);
         }
 
         // Storage buffers
         if (max_descriptors_per_stage_update_after_bind[DSL_TYPE_STORAGE_BUFFERS] >
-            device_data->phys_dev_ext_props.descriptor_indexing_props.maxPerStageDescriptorUpdateAfterBindStorageBuffers) {
-            skip |= log_msg(
-                report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                "VUID-VkPipelineLayoutCreateInfo-descriptorType-03024",
-                "vkCreatePipelineLayout(): max per-stage storage buffer bindings count (%d) exceeds device "
-                "maxPerStageDescriptorUpdateAfterBindStorageBuffers limit (%d).",
-                max_descriptors_per_stage_update_after_bind[DSL_TYPE_STORAGE_BUFFERS],
-                device_data->phys_dev_ext_props.descriptor_indexing_props.maxPerStageDescriptorUpdateAfterBindStorageBuffers);
+            phys_dev_ext_props.descriptor_indexing_props.maxPerStageDescriptorUpdateAfterBindStorageBuffers) {
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                            "VUID-VkPipelineLayoutCreateInfo-descriptorType-03024",
+                            "vkCreatePipelineLayout(): max per-stage storage buffer bindings count (%d) exceeds device "
+                            "maxPerStageDescriptorUpdateAfterBindStorageBuffers limit (%d).",
+                            max_descriptors_per_stage_update_after_bind[DSL_TYPE_STORAGE_BUFFERS],
+                            phys_dev_ext_props.descriptor_indexing_props.maxPerStageDescriptorUpdateAfterBindStorageBuffers);
         }
 
         // Sampled images
         if (max_descriptors_per_stage_update_after_bind[DSL_TYPE_SAMPLED_IMAGES] >
-            device_data->phys_dev_ext_props.descriptor_indexing_props.maxPerStageDescriptorUpdateAfterBindSampledImages) {
-            skip |= log_msg(
-                report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                "VUID-VkPipelineLayoutCreateInfo-descriptorType-03025",
-                "vkCreatePipelineLayout(): max per-stage sampled image bindings count (%d) exceeds device "
-                "maxPerStageDescriptorUpdateAfterBindSampledImages limit (%d).",
-                max_descriptors_per_stage_update_after_bind[DSL_TYPE_SAMPLED_IMAGES],
-                device_data->phys_dev_ext_props.descriptor_indexing_props.maxPerStageDescriptorUpdateAfterBindSampledImages);
+            phys_dev_ext_props.descriptor_indexing_props.maxPerStageDescriptorUpdateAfterBindSampledImages) {
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                            "VUID-VkPipelineLayoutCreateInfo-descriptorType-03025",
+                            "vkCreatePipelineLayout(): max per-stage sampled image bindings count (%d) exceeds device "
+                            "maxPerStageDescriptorUpdateAfterBindSampledImages limit (%d).",
+                            max_descriptors_per_stage_update_after_bind[DSL_TYPE_SAMPLED_IMAGES],
+                            phys_dev_ext_props.descriptor_indexing_props.maxPerStageDescriptorUpdateAfterBindSampledImages);
         }
 
         // Storage images
         if (max_descriptors_per_stage_update_after_bind[DSL_TYPE_STORAGE_IMAGES] >
-            device_data->phys_dev_ext_props.descriptor_indexing_props.maxPerStageDescriptorUpdateAfterBindStorageImages) {
-            skip |= log_msg(
-                report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                "VUID-VkPipelineLayoutCreateInfo-descriptorType-03026",
-                "vkCreatePipelineLayout(): max per-stage storage image bindings count (%d) exceeds device "
-                "maxPerStageDescriptorUpdateAfterBindStorageImages limit (%d).",
-                max_descriptors_per_stage_update_after_bind[DSL_TYPE_STORAGE_IMAGES],
-                device_data->phys_dev_ext_props.descriptor_indexing_props.maxPerStageDescriptorUpdateAfterBindStorageImages);
+            phys_dev_ext_props.descriptor_indexing_props.maxPerStageDescriptorUpdateAfterBindStorageImages) {
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                            "VUID-VkPipelineLayoutCreateInfo-descriptorType-03026",
+                            "vkCreatePipelineLayout(): max per-stage storage image bindings count (%d) exceeds device "
+                            "maxPerStageDescriptorUpdateAfterBindStorageImages limit (%d).",
+                            max_descriptors_per_stage_update_after_bind[DSL_TYPE_STORAGE_IMAGES],
+                            phys_dev_ext_props.descriptor_indexing_props.maxPerStageDescriptorUpdateAfterBindStorageImages);
         }
 
         // Input attachments
         if (max_descriptors_per_stage_update_after_bind[DSL_TYPE_INPUT_ATTACHMENTS] >
-            device_data->phys_dev_ext_props.descriptor_indexing_props.maxPerStageDescriptorUpdateAfterBindInputAttachments) {
-            skip |= log_msg(
-                report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                "VUID-VkPipelineLayoutCreateInfo-descriptorType-03027",
-                "vkCreatePipelineLayout(): max per-stage input attachment bindings count (%d) exceeds device "
-                "maxPerStageDescriptorUpdateAfterBindInputAttachments limit (%d).",
-                max_descriptors_per_stage_update_after_bind[DSL_TYPE_INPUT_ATTACHMENTS],
-                device_data->phys_dev_ext_props.descriptor_indexing_props.maxPerStageDescriptorUpdateAfterBindInputAttachments);
+            phys_dev_ext_props.descriptor_indexing_props.maxPerStageDescriptorUpdateAfterBindInputAttachments) {
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                            "VUID-VkPipelineLayoutCreateInfo-descriptorType-03027",
+                            "vkCreatePipelineLayout(): max per-stage input attachment bindings count (%d) exceeds device "
+                            "maxPerStageDescriptorUpdateAfterBindInputAttachments limit (%d).",
+                            max_descriptors_per_stage_update_after_bind[DSL_TYPE_INPUT_ATTACHMENTS],
+                            phys_dev_ext_props.descriptor_indexing_props.maxPerStageDescriptorUpdateAfterBindInputAttachments);
         }
 
         // Inline uniform blocks
         if (max_descriptors_per_stage_update_after_bind[DSL_TYPE_INLINE_UNIFORM_BLOCK] >
-            device_data->phys_dev_ext_props.inline_uniform_block_props.maxPerStageDescriptorUpdateAfterBindInlineUniformBlocks) {
-            skip |= log_msg(
-                report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                "VUID-VkPipelineLayoutCreateInfo-descriptorType-02215",
-                "vkCreatePipelineLayout(): max per-stage inline uniform block bindings count (%d) exceeds device "
-                "maxPerStageDescriptorUpdateAfterBindInlineUniformBlocks limit (%d).",
-                max_descriptors_per_stage_update_after_bind[DSL_TYPE_INLINE_UNIFORM_BLOCK],
-                device_data->phys_dev_ext_props.inline_uniform_block_props.maxPerStageDescriptorUpdateAfterBindInlineUniformBlocks);
+            phys_dev_ext_props.inline_uniform_block_props.maxPerStageDescriptorUpdateAfterBindInlineUniformBlocks) {
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                            "VUID-VkPipelineLayoutCreateInfo-descriptorType-02215",
+                            "vkCreatePipelineLayout(): max per-stage inline uniform block bindings count (%d) exceeds device "
+                            "maxPerStageDescriptorUpdateAfterBindInlineUniformBlocks limit (%d).",
+                            max_descriptors_per_stage_update_after_bind[DSL_TYPE_INLINE_UNIFORM_BLOCK],
+                            phys_dev_ext_props.inline_uniform_block_props.maxPerStageDescriptorUpdateAfterBindInlineUniformBlocks);
         }
 
         // Total descriptors by type, summed across all pipeline stages
         //
-        std::map<uint32_t, uint32_t> sum_all_stages_update_after_bind = GetDescriptorSum(device_data, set_layouts, false);
+        std::map<uint32_t, uint32_t> sum_all_stages_update_after_bind = GetDescriptorSum(set_layouts, false);
         // Samplers
         sum = sum_all_stages_update_after_bind[VK_DESCRIPTOR_TYPE_SAMPLER] +
               sum_all_stages_update_after_bind[VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER];
-        if (sum > device_data->phys_dev_ext_props.descriptor_indexing_props.maxDescriptorSetUpdateAfterBindSamplers) {
+        if (sum > phys_dev_ext_props.descriptor_indexing_props.maxDescriptorSetUpdateAfterBindSamplers) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                             "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-03036",
                             "vkCreatePipelineLayout(): sum of sampler bindings among all stages (%d) exceeds device "
                             "maxDescriptorSetUpdateAfterBindSamplers limit (%d).",
-                            sum, device_data->phys_dev_ext_props.descriptor_indexing_props.maxDescriptorSetUpdateAfterBindSamplers);
+                            sum, phys_dev_ext_props.descriptor_indexing_props.maxDescriptorSetUpdateAfterBindSamplers);
         }
 
         // Uniform buffers
         if (sum_all_stages_update_after_bind[VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER] >
-            device_data->phys_dev_ext_props.descriptor_indexing_props.maxDescriptorSetUpdateAfterBindUniformBuffers) {
-            skip |=
-                log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                        "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-03037",
-                        "vkCreatePipelineLayout(): sum of uniform buffer bindings among all stages (%d) exceeds device "
-                        "maxDescriptorSetUpdateAfterBindUniformBuffers limit (%d).",
-                        sum_all_stages_update_after_bind[VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER],
-                        device_data->phys_dev_ext_props.descriptor_indexing_props.maxDescriptorSetUpdateAfterBindUniformBuffers);
+            phys_dev_ext_props.descriptor_indexing_props.maxDescriptorSetUpdateAfterBindUniformBuffers) {
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                            "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-03037",
+                            "vkCreatePipelineLayout(): sum of uniform buffer bindings among all stages (%d) exceeds device "
+                            "maxDescriptorSetUpdateAfterBindUniformBuffers limit (%d).",
+                            sum_all_stages_update_after_bind[VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER],
+                            phys_dev_ext_props.descriptor_indexing_props.maxDescriptorSetUpdateAfterBindUniformBuffers);
         }
 
         // Dynamic uniform buffers
         if (sum_all_stages_update_after_bind[VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC] >
-            device_data->phys_dev_ext_props.descriptor_indexing_props.maxDescriptorSetUpdateAfterBindUniformBuffersDynamic) {
-            skip |= log_msg(
-                report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-03038",
-                "vkCreatePipelineLayout(): sum of dynamic uniform buffer bindings among all stages (%d) exceeds device "
-                "maxDescriptorSetUpdateAfterBindUniformBuffersDynamic limit (%d).",
-                sum_all_stages_update_after_bind[VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC],
-                device_data->phys_dev_ext_props.descriptor_indexing_props.maxDescriptorSetUpdateAfterBindUniformBuffersDynamic);
+            phys_dev_ext_props.descriptor_indexing_props.maxDescriptorSetUpdateAfterBindUniformBuffersDynamic) {
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                            "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-03038",
+                            "vkCreatePipelineLayout(): sum of dynamic uniform buffer bindings among all stages (%d) exceeds device "
+                            "maxDescriptorSetUpdateAfterBindUniformBuffersDynamic limit (%d).",
+                            sum_all_stages_update_after_bind[VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC],
+                            phys_dev_ext_props.descriptor_indexing_props.maxDescriptorSetUpdateAfterBindUniformBuffersDynamic);
         }
 
         // Storage buffers
         if (sum_all_stages_update_after_bind[VK_DESCRIPTOR_TYPE_STORAGE_BUFFER] >
-            device_data->phys_dev_ext_props.descriptor_indexing_props.maxDescriptorSetUpdateAfterBindStorageBuffers) {
-            skip |=
-                log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                        "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-03039",
-                        "vkCreatePipelineLayout(): sum of storage buffer bindings among all stages (%d) exceeds device "
-                        "maxDescriptorSetUpdateAfterBindStorageBuffers limit (%d).",
-                        sum_all_stages_update_after_bind[VK_DESCRIPTOR_TYPE_STORAGE_BUFFER],
-                        device_data->phys_dev_ext_props.descriptor_indexing_props.maxDescriptorSetUpdateAfterBindStorageBuffers);
+            phys_dev_ext_props.descriptor_indexing_props.maxDescriptorSetUpdateAfterBindStorageBuffers) {
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                            "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-03039",
+                            "vkCreatePipelineLayout(): sum of storage buffer bindings among all stages (%d) exceeds device "
+                            "maxDescriptorSetUpdateAfterBindStorageBuffers limit (%d).",
+                            sum_all_stages_update_after_bind[VK_DESCRIPTOR_TYPE_STORAGE_BUFFER],
+                            phys_dev_ext_props.descriptor_indexing_props.maxDescriptorSetUpdateAfterBindStorageBuffers);
         }
 
         // Dynamic storage buffers
         if (sum_all_stages_update_after_bind[VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC] >
-            device_data->phys_dev_ext_props.descriptor_indexing_props.maxDescriptorSetUpdateAfterBindStorageBuffersDynamic) {
-            skip |= log_msg(
-                report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-03040",
-                "vkCreatePipelineLayout(): sum of dynamic storage buffer bindings among all stages (%d) exceeds device "
-                "maxDescriptorSetUpdateAfterBindStorageBuffersDynamic limit (%d).",
-                sum_all_stages_update_after_bind[VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC],
-                device_data->phys_dev_ext_props.descriptor_indexing_props.maxDescriptorSetUpdateAfterBindStorageBuffersDynamic);
+            phys_dev_ext_props.descriptor_indexing_props.maxDescriptorSetUpdateAfterBindStorageBuffersDynamic) {
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                            "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-03040",
+                            "vkCreatePipelineLayout(): sum of dynamic storage buffer bindings among all stages (%d) exceeds device "
+                            "maxDescriptorSetUpdateAfterBindStorageBuffersDynamic limit (%d).",
+                            sum_all_stages_update_after_bind[VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC],
+                            phys_dev_ext_props.descriptor_indexing_props.maxDescriptorSetUpdateAfterBindStorageBuffersDynamic);
         }
 
         //  Sampled images
         sum = sum_all_stages_update_after_bind[VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE] +
               sum_all_stages_update_after_bind[VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER] +
               sum_all_stages_update_after_bind[VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER];
-        if (sum > device_data->phys_dev_ext_props.descriptor_indexing_props.maxDescriptorSetUpdateAfterBindSampledImages) {
+        if (sum > phys_dev_ext_props.descriptor_indexing_props.maxDescriptorSetUpdateAfterBindSampledImages) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                             "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-03041",
                             "vkCreatePipelineLayout(): sum of sampled image bindings among all stages (%d) exceeds device "
                             "maxDescriptorSetUpdateAfterBindSampledImages limit (%d).",
-                            sum,
-                            device_data->phys_dev_ext_props.descriptor_indexing_props.maxDescriptorSetUpdateAfterBindSampledImages);
+                            sum, phys_dev_ext_props.descriptor_indexing_props.maxDescriptorSetUpdateAfterBindSampledImages);
         }
 
         //  Storage images
         sum = sum_all_stages_update_after_bind[VK_DESCRIPTOR_TYPE_STORAGE_IMAGE] +
               sum_all_stages_update_after_bind[VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER];
-        if (sum > device_data->phys_dev_ext_props.descriptor_indexing_props.maxDescriptorSetUpdateAfterBindStorageImages) {
+        if (sum > phys_dev_ext_props.descriptor_indexing_props.maxDescriptorSetUpdateAfterBindStorageImages) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                             "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-03042",
                             "vkCreatePipelineLayout(): sum of storage image bindings among all stages (%d) exceeds device "
                             "maxDescriptorSetUpdateAfterBindStorageImages limit (%d).",
-                            sum,
-                            device_data->phys_dev_ext_props.descriptor_indexing_props.maxDescriptorSetUpdateAfterBindStorageImages);
+                            sum, phys_dev_ext_props.descriptor_indexing_props.maxDescriptorSetUpdateAfterBindStorageImages);
         }
 
         // Input attachments
         if (sum_all_stages_update_after_bind[VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT] >
-            device_data->phys_dev_ext_props.descriptor_indexing_props.maxDescriptorSetUpdateAfterBindInputAttachments) {
-            skip |=
-                log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                        "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-03043",
-                        "vkCreatePipelineLayout(): sum of input attachment bindings among all stages (%d) exceeds device "
-                        "maxDescriptorSetUpdateAfterBindInputAttachments limit (%d).",
-                        sum_all_stages_update_after_bind[VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT],
-                        device_data->phys_dev_ext_props.descriptor_indexing_props.maxDescriptorSetUpdateAfterBindInputAttachments);
+            phys_dev_ext_props.descriptor_indexing_props.maxDescriptorSetUpdateAfterBindInputAttachments) {
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                            "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-03043",
+                            "vkCreatePipelineLayout(): sum of input attachment bindings among all stages (%d) exceeds device "
+                            "maxDescriptorSetUpdateAfterBindInputAttachments limit (%d).",
+                            sum_all_stages_update_after_bind[VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT],
+                            phys_dev_ext_props.descriptor_indexing_props.maxDescriptorSetUpdateAfterBindInputAttachments);
         }
 
         // Inline uniform blocks
         if (sum_all_stages_update_after_bind[VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT] >
-            device_data->phys_dev_ext_props.inline_uniform_block_props.maxDescriptorSetUpdateAfterBindInlineUniformBlocks) {
-            skip |= log_msg(
-                report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                "VUID-VkPipelineLayoutCreateInfo-descriptorType-02217",
-                "vkCreatePipelineLayout(): sum of inline uniform block bindings among all stages (%d) exceeds device "
-                "maxDescriptorSetUpdateAfterBindInlineUniformBlocks limit (%d).",
-                sum_all_stages_update_after_bind[VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT],
-                device_data->phys_dev_ext_props.inline_uniform_block_props.maxDescriptorSetUpdateAfterBindInlineUniformBlocks);
+            phys_dev_ext_props.inline_uniform_block_props.maxDescriptorSetUpdateAfterBindInlineUniformBlocks) {
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                            "VUID-VkPipelineLayoutCreateInfo-descriptorType-02217",
+                            "vkCreatePipelineLayout(): sum of inline uniform block bindings among all stages (%d) exceeds device "
+                            "maxDescriptorSetUpdateAfterBindInlineUniformBlocks limit (%d).",
+                            sum_all_stages_update_after_bind[VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT],
+                            phys_dev_ext_props.inline_uniform_block_props.maxDescriptorSetUpdateAfterBindInlineUniformBlocks);
         }
     }
     return skip;
@@ -6021,8 +5992,7 @@ bool CoreChecks::PreCallValidateUpdateDescriptorSets(VkDevice device, uint32_t d
 void CoreChecks::PreCallRecordUpdateDescriptorSets(VkDevice device, uint32_t descriptorWriteCount,
                                                    const VkWriteDescriptorSet *pDescriptorWrites, uint32_t descriptorCopyCount,
                                                    const VkCopyDescriptorSet *pDescriptorCopies) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    cvdescriptorset::PerformUpdateDescriptorSets(device_data, descriptorWriteCount, pDescriptorWrites, descriptorCopyCount,
+    cvdescriptorset::PerformUpdateDescriptorSets(this, descriptorWriteCount, pDescriptorWrites, descriptorCopyCount,
                                                  pDescriptorCopies);
 }
 
@@ -7823,7 +7793,7 @@ static const std::string buffer_error_codes[] = {
 
 class ValidatorState {
    public:
-    ValidatorState(const layer_data *device_data, const char *func_name, const GLOBAL_CB_NODE *cb_state,
+    ValidatorState(const CoreChecks *device_data, const char *func_name, const GLOBAL_CB_NODE *cb_state,
                    const uint64_t barrier_handle64, const VkSharingMode sharing_mode, const VulkanObjectType object_type,
                    const std::string *val_codes)
         : report_data_(device_data->report_data),
@@ -7837,13 +7807,13 @@ class ValidatorState {
           mem_ext_(device_data->device_extensions.vk_khr_external_memory) {}
 
     // Create a validator state from an image state... reducing the image specific to the generic version.
-    ValidatorState(const layer_data *device_data, const char *func_name, const GLOBAL_CB_NODE *cb_state,
+    ValidatorState(const CoreChecks *device_data, const char *func_name, const GLOBAL_CB_NODE *cb_state,
                    const VkImageMemoryBarrier *barrier, const IMAGE_STATE *state)
         : ValidatorState(device_data, func_name, cb_state, HandleToUint64(barrier->image), state->createInfo.sharingMode,
                          kVulkanObjectTypeImage, image_error_codes) {}
 
     // Create a validator state from an buffer state... reducing the buffer specific to the generic version.
-    ValidatorState(const layer_data *device_data, const char *func_name, const GLOBAL_CB_NODE *cb_state,
+    ValidatorState(const CoreChecks *device_data, const char *func_name, const GLOBAL_CB_NODE *cb_state,
                    const VkBufferMemoryBarrier *barrier, const BUFFER_STATE *state)
         : ValidatorState(device_data, func_name, cb_state, HandleToUint64(barrier->buffer), state->createInfo.sharingMode,
                          kVulkanObjectTypeImage, buffer_error_codes) {}
@@ -7873,7 +7843,7 @@ class ValidatorState {
     // This abstract Vu can only be tested at submit time, thus we need a callback from the closure containing the needed
     // data. Note that the mem_barrier is copied to the closure as the lambda lifespan exceed the guarantees of validity for
     // application input.
-    static bool ValidateAtQueueSubmit(const VkQueue queue, const layer_data *device_data, uint32_t src_family, uint32_t dst_family,
+    static bool ValidateAtQueueSubmit(const VkQueue queue, const CoreChecks *device_data, uint32_t src_family, uint32_t dst_family,
                                       const ValidatorState &val) {
         auto queue_data_it = device_data->queueMap.find(queue);
         if (queue_data_it == device_data->queueMap.end()) return false;
@@ -11445,9 +11415,9 @@ bool CoreChecks::PreCallValidateCreateSwapchainKHR(VkDevice device, const VkSwap
     return ValidateCreateSwapchain("vkCreateSwapchainKHR()", pCreateInfo, surface_state, old_swapchain_state);
 }
 
-static void RecordCreateSwapchainState(layer_data *device_data, VkResult result, const VkSwapchainCreateInfoKHR *pCreateInfo,
-                                       VkSwapchainKHR *pSwapchain, SURFACE_STATE *surface_state,
-                                       SWAPCHAIN_NODE *old_swapchain_state) {
+void CoreChecks::RecordCreateSwapchainState(VkResult result, const VkSwapchainCreateInfoKHR *pCreateInfo,
+                                            VkSwapchainKHR *pSwapchain, SURFACE_STATE *surface_state,
+                                            SWAPCHAIN_NODE *old_swapchain_state) {
     if (VK_SUCCESS == result) {
         auto swapchain_state = unique_ptr<SWAPCHAIN_NODE>(new SWAPCHAIN_NODE(pCreateInfo, *pSwapchain));
         if (VK_PRESENT_MODE_SHARED_DEMAND_REFRESH_KHR == pCreateInfo->presentMode ||
@@ -11455,7 +11425,7 @@ static void RecordCreateSwapchainState(layer_data *device_data, VkResult result,
             swapchain_state->shared_presentable = true;
         }
         surface_state->swapchain = swapchain_state.get();
-        device_data->swapchainMap[*pSwapchain] = std::move(swapchain_state);
+        swapchainMap[*pSwapchain] = std::move(swapchain_state);
     } else {
         surface_state->swapchain = nullptr;
     }
@@ -11469,10 +11439,9 @@ static void RecordCreateSwapchainState(layer_data *device_data, VkResult result,
 void CoreChecks::PostCallRecordCreateSwapchainKHR(VkDevice device, const VkSwapchainCreateInfoKHR *pCreateInfo,
                                                   const VkAllocationCallbacks *pAllocator, VkSwapchainKHR *pSwapchain,
                                                   VkResult result) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     auto surface_state = GetSurfaceState(pCreateInfo->surface);
     auto old_swapchain_state = GetSwapchainNode(pCreateInfo->oldSwapchain);
-    RecordCreateSwapchainState(device_data, result, pCreateInfo, pSwapchain, surface_state, old_swapchain_state);
+    RecordCreateSwapchainState(result, pCreateInfo, pSwapchain, surface_state, old_swapchain_state);
 }
 
 void CoreChecks::PreCallRecordDestroySwapchainKHR(VkDevice device, VkSwapchainKHR swapchain,
@@ -11755,12 +11724,11 @@ void CoreChecks::PostCallRecordCreateSharedSwapchainsKHR(VkDevice device, uint32
                                                          const VkSwapchainCreateInfoKHR *pCreateInfos,
                                                          const VkAllocationCallbacks *pAllocator, VkSwapchainKHR *pSwapchains,
                                                          VkResult result) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (pCreateInfos) {
         for (uint32_t i = 0; i < swapchainCount; i++) {
             auto surface_state = GetSurfaceState(pCreateInfos[i].surface);
             auto old_swapchain_state = GetSwapchainNode(pCreateInfos[i].oldSwapchain);
-            RecordCreateSwapchainState(device_data, result, &pCreateInfos[i], &pSwapchains[i], surface_state, old_swapchain_state);
+            RecordCreateSwapchainState(result, &pCreateInfos[i], &pSwapchains[i], surface_state, old_swapchain_state);
         }
     }
 }
@@ -11886,8 +11854,7 @@ void CoreChecks::PostCallRecordEnumeratePhysicalDevices(VkInstance instance, uin
 }
 
 // Common function to handle validation for GetPhysicalDeviceQueueFamilyProperties & 2KHR version
-static bool ValidateCommonGetPhysicalDeviceQueueFamilyProperties(instance_layer_data *instance_data,
-                                                                 PHYSICAL_DEVICE_STATE *pd_state,
+static bool ValidateCommonGetPhysicalDeviceQueueFamilyProperties(debug_report_data *report_data, PHYSICAL_DEVICE_STATE *pd_state,
                                                                  uint32_t requested_queue_family_property_count, bool qfp_null,
                                                                  const char *caller_name) {
     bool skip = false;
@@ -11895,7 +11862,7 @@ static bool ValidateCommonGetPhysicalDeviceQueueFamilyProperties(instance_layer_
         // Verify that for each physical device, this command is called first with NULL pQueueFamilyProperties in order to get count
         if (UNCALLED == pd_state->vkGetPhysicalDeviceQueueFamilyPropertiesState) {
             skip |= log_msg(
-                instance_data->report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT,
+                report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT,
                 HandleToUint64(pd_state->phys_device), kVUID_Core_DevLimit_MissingQueryCount,
                 "%s is called with non-NULL pQueueFamilyProperties before obtaining pQueueFamilyPropertyCount. It is recommended "
                 "to first call %s with NULL pQueueFamilyProperties in order to obtain the maximal pQueueFamilyPropertyCount.",
@@ -11903,7 +11870,7 @@ static bool ValidateCommonGetPhysicalDeviceQueueFamilyProperties(instance_layer_
             // Then verify that pCount that is passed in on second call matches what was returned
         } else if (pd_state->queue_family_count != requested_queue_family_property_count) {
             skip |= log_msg(
-                instance_data->report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT,
+                report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT,
                 HandleToUint64(pd_state->phys_device), kVUID_Core_DevLimit_CountMismatch,
                 "%s is called with non-NULL pQueueFamilyProperties and pQueueFamilyPropertyCount value %" PRIu32
                 ", but the largest previously returned pQueueFamilyPropertyCount for this physicalDevice is %" PRIu32
@@ -11920,10 +11887,9 @@ static bool ValidateCommonGetPhysicalDeviceQueueFamilyProperties(instance_layer_
 bool CoreChecks::PreCallValidateGetPhysicalDeviceQueueFamilyProperties(VkPhysicalDevice physicalDevice,
                                                                        uint32_t *pQueueFamilyPropertyCount,
                                                                        VkQueueFamilyProperties *pQueueFamilyProperties) {
-    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), instance_layer_data_map);
     auto physical_device_state = GetPhysicalDeviceState(physicalDevice);
     assert(physical_device_state);
-    return ValidateCommonGetPhysicalDeviceQueueFamilyProperties(instance_data, physical_device_state, *pQueueFamilyPropertyCount,
+    return ValidateCommonGetPhysicalDeviceQueueFamilyProperties(report_data, physical_device_state, *pQueueFamilyPropertyCount,
                                                                 (nullptr == pQueueFamilyProperties),
                                                                 "vkGetPhysicalDeviceQueueFamilyProperties()");
 }
@@ -11931,10 +11897,9 @@ bool CoreChecks::PreCallValidateGetPhysicalDeviceQueueFamilyProperties(VkPhysica
 bool CoreChecks::PreCallValidateGetPhysicalDeviceQueueFamilyProperties2(VkPhysicalDevice physicalDevice,
                                                                         uint32_t *pQueueFamilyPropertyCount,
                                                                         VkQueueFamilyProperties2KHR *pQueueFamilyProperties) {
-    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), instance_layer_data_map);
     auto physical_device_state = GetPhysicalDeviceState(physicalDevice);
     assert(physical_device_state);
-    return ValidateCommonGetPhysicalDeviceQueueFamilyProperties(instance_data, physical_device_state, *pQueueFamilyPropertyCount,
+    return ValidateCommonGetPhysicalDeviceQueueFamilyProperties(report_data, physical_device_state, *pQueueFamilyPropertyCount,
                                                                 (nullptr == pQueueFamilyProperties),
                                                                 "vkGetPhysicalDeviceQueueFamilyProperties2()");
 }
@@ -11942,10 +11907,9 @@ bool CoreChecks::PreCallValidateGetPhysicalDeviceQueueFamilyProperties2(VkPhysic
 bool CoreChecks::PreCallValidateGetPhysicalDeviceQueueFamilyProperties2KHR(VkPhysicalDevice physicalDevice,
                                                                            uint32_t *pQueueFamilyPropertyCount,
                                                                            VkQueueFamilyProperties2KHR *pQueueFamilyProperties) {
-    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), instance_layer_data_map);
     auto physical_device_state = GetPhysicalDeviceState(physicalDevice);
     assert(physical_device_state);
-    return ValidateCommonGetPhysicalDeviceQueueFamilyProperties(instance_data, physical_device_state, *pQueueFamilyPropertyCount,
+    return ValidateCommonGetPhysicalDeviceQueueFamilyProperties(report_data, physical_device_state, *pQueueFamilyPropertyCount,
                                                                 (nullptr == pQueueFamilyProperties),
                                                                 "vkGetPhysicalDeviceQueueFamilyProperties2KHR()");
 }
@@ -12022,25 +11986,21 @@ void CoreChecks::PreCallRecordValidateDestroySurfaceKHR(VkInstance instance, VkS
     surface_map.erase(surface);
 }
 
-static void RecordVulkanSurface(instance_layer_data *instance_data, VkSurfaceKHR *pSurface) {
-    instance_data->surface_map[*pSurface] = SURFACE_STATE(*pSurface);
-}
+void CoreChecks::RecordVulkanSurface(VkSurfaceKHR *pSurface) { surface_map[*pSurface] = SURFACE_STATE(*pSurface); }
 
 void CoreChecks::PostCallRecordCreateDisplayPlaneSurfaceKHR(VkInstance instance, const VkDisplaySurfaceCreateInfoKHR *pCreateInfo,
                                                             const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface,
                                                             VkResult result) {
-    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(instance), instance_layer_data_map);
     if (VK_SUCCESS != result) return;
-    RecordVulkanSurface(instance_data, pSurface);
+    RecordVulkanSurface(pSurface);
 }
 
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
 void CoreChecks::PostCallRecordCreateAndroidSurfaceKHR(VkInstance instance, const VkAndroidSurfaceCreateInfoKHR *pCreateInfo,
                                                        const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface,
                                                        VkResult result) {
-    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(instance), instance_layer_data_map);
     if (VK_SUCCESS != result) return;
-    RecordVulkanSurface(instance_data, pSurface);
+    RecordVulkanSurface(pSurface);
 }
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
 
@@ -12048,9 +12008,8 @@ void CoreChecks::PostCallRecordCreateAndroidSurfaceKHR(VkInstance instance, cons
 void CoreChecks::PostCallRecordCreateIOSSurfaceMVK(VkInstance instance, const VkIOSSurfaceCreateInfoMVK *pCreateInfo,
                                                    const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface,
                                                    VkResult result) {
-    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(instance), instance_layer_data_map);
     if (VK_SUCCESS != result) return;
-    RecordVulkanSurface(instance_data, pSurface);
+    RecordVulkanSurface(pSurface);
 }
 #endif  // VK_USE_PLATFORM_IOS_MVK
 
@@ -12058,9 +12017,8 @@ void CoreChecks::PostCallRecordCreateIOSSurfaceMVK(VkInstance instance, const Vk
 void CoreChecks::PostCallRecordCreateMacOSSurfaceMVK(VkInstance instance, const VkMacOSSurfaceCreateInfoMVK *pCreateInfo,
                                                      const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface,
                                                      VkResult result) {
-    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(instance), instance_layer_data_map);
     if (VK_SUCCESS != result) return;
-    RecordVulkanSurface(instance_data, pSurface);
+    RecordVulkanSurface(pSurface);
 }
 #endif  // VK_USE_PLATFORM_MACOS_MVK
 
@@ -12068,9 +12026,8 @@ void CoreChecks::PostCallRecordCreateMacOSSurfaceMVK(VkInstance instance, const 
 void CoreChecks::PostCallRecordCreateWaylandSurfaceKHR(VkInstance instance, const VkWaylandSurfaceCreateInfoKHR *pCreateInfo,
                                                        const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface,
                                                        VkResult result) {
-    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(instance), instance_layer_data_map);
     if (VK_SUCCESS != result) return;
-    RecordVulkanSurface(instance_data, pSurface);
+    RecordVulkanSurface(pSurface);
 }
 
 bool CoreChecks::PreCallValidateGetPhysicalDeviceWaylandPresentationSupportKHR(VkPhysicalDevice physicalDevice,
@@ -12087,9 +12044,8 @@ bool CoreChecks::PreCallValidateGetPhysicalDeviceWaylandPresentationSupportKHR(V
 void CoreChecks::PostCallRecordCreateWin32SurfaceKHR(VkInstance instance, const VkWin32SurfaceCreateInfoKHR *pCreateInfo,
                                                      const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface,
                                                      VkResult result) {
-    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(instance), instance_layer_data_map);
     if (VK_SUCCESS != result) return;
-    RecordVulkanSurface(instance_data, pSurface);
+    RecordVulkanSurface(pSurface);
 }
 
 bool CoreChecks::PreCallValidateGetPhysicalDeviceWin32PresentationSupportKHR(VkPhysicalDevice physicalDevice,
@@ -12105,9 +12061,8 @@ bool CoreChecks::PreCallValidateGetPhysicalDeviceWin32PresentationSupportKHR(VkP
 void CoreChecks::PostCallRecordCreateXcbSurfaceKHR(VkInstance instance, const VkXcbSurfaceCreateInfoKHR *pCreateInfo,
                                                    const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface,
                                                    VkResult result) {
-    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(instance), instance_layer_data_map);
     if (VK_SUCCESS != result) return;
-    RecordVulkanSurface(instance_data, pSurface);
+    RecordVulkanSurface(pSurface);
 }
 
 bool CoreChecks::PreCallValidateGetPhysicalDeviceXcbPresentationSupportKHR(VkPhysicalDevice physicalDevice,
@@ -12124,9 +12079,8 @@ bool CoreChecks::PreCallValidateGetPhysicalDeviceXcbPresentationSupportKHR(VkPhy
 void CoreChecks::PostCallRecordCreateXlibSurfaceKHR(VkInstance instance, const VkXlibSurfaceCreateInfoKHR *pCreateInfo,
                                                     const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface,
                                                     VkResult result) {
-    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(instance), instance_layer_data_map);
     if (VK_SUCCESS != result) return;
-    RecordVulkanSurface(instance_data, pSurface);
+    RecordVulkanSurface(pSurface);
 }
 
 bool CoreChecks::PreCallValidateGetPhysicalDeviceXlibPresentationSupportKHR(VkPhysicalDevice physicalDevice,
@@ -12329,17 +12283,16 @@ void CoreChecks::PostCallRecordDestroyDebugReportCallbackEXT(VkInstance instance
     layer_destroy_report_callback(report_data, msgCallback, pAllocator);
 }
 
-static void PostRecordEnumeratePhysicalDeviceGroupsState(instance_layer_data *instance_data, uint32_t *pPhysicalDeviceGroupCount,
-                                                         VkPhysicalDeviceGroupPropertiesKHR *pPhysicalDeviceGroupProperties) {
+void CoreChecks::PostRecordEnumeratePhysicalDeviceGroupsState(uint32_t *pPhysicalDeviceGroupCount,
+                                                              VkPhysicalDeviceGroupPropertiesKHR *pPhysicalDeviceGroupProperties) {
     if (NULL != pPhysicalDeviceGroupProperties) {
         for (uint32_t i = 0; i < *pPhysicalDeviceGroupCount; i++) {
             for (uint32_t j = 0; j < pPhysicalDeviceGroupProperties[i].physicalDeviceCount; j++) {
                 VkPhysicalDevice cur_phys_dev = pPhysicalDeviceGroupProperties[i].physicalDevices[j];
-                auto &phys_device_state = instance_data->physical_device_map[cur_phys_dev];
+                auto &phys_device_state = physical_device_map[cur_phys_dev];
                 phys_device_state.phys_device = cur_phys_dev;
                 // Init actual features for each physical device
-                instance_data->instance_dispatch_table.GetPhysicalDeviceFeatures(cur_phys_dev,
-                                                                                 &phys_device_state.features2.features);
+                instance_dispatch_table.GetPhysicalDeviceFeatures(cur_phys_dev, &phys_device_state.features2.features);
             }
         }
     }
@@ -12348,17 +12301,15 @@ static void PostRecordEnumeratePhysicalDeviceGroupsState(instance_layer_data *in
 void CoreChecks::PostCallRecordEnumeratePhysicalDeviceGroups(VkInstance instance, uint32_t *pPhysicalDeviceGroupCount,
                                                              VkPhysicalDeviceGroupPropertiesKHR *pPhysicalDeviceGroupProperties,
                                                              VkResult result) {
-    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(instance), instance_layer_data_map);
     if ((VK_SUCCESS != result) && (VK_INCOMPLETE != result)) return;
-    PostRecordEnumeratePhysicalDeviceGroupsState(instance_data, pPhysicalDeviceGroupCount, pPhysicalDeviceGroupProperties);
+    PostRecordEnumeratePhysicalDeviceGroupsState(pPhysicalDeviceGroupCount, pPhysicalDeviceGroupProperties);
 }
 
 void CoreChecks::PostCallRecordEnumeratePhysicalDeviceGroupsKHR(VkInstance instance, uint32_t *pPhysicalDeviceGroupCount,
                                                                 VkPhysicalDeviceGroupPropertiesKHR *pPhysicalDeviceGroupProperties,
                                                                 VkResult result) {
-    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(instance), instance_layer_data_map);
     if ((VK_SUCCESS != result) && (VK_INCOMPLETE != result)) return;
-    PostRecordEnumeratePhysicalDeviceGroupsState(instance_data, pPhysicalDeviceGroupCount, pPhysicalDeviceGroupProperties);
+    PostRecordEnumeratePhysicalDeviceGroupsState(pPhysicalDeviceGroupCount, pPhysicalDeviceGroupProperties);
 }
 
 bool CoreChecks::ValidateDescriptorUpdateTemplate(const char *func_name,
@@ -12431,11 +12382,11 @@ void CoreChecks::PreCallRecordDestroyDescriptorUpdateTemplateKHR(VkDevice device
     desc_template_map.erase(descriptorUpdateTemplate);
 }
 
-void RecordCreateDescriptorUpdateTemplateState(layer_data *device_data, const VkDescriptorUpdateTemplateCreateInfoKHR *pCreateInfo,
-                                               VkDescriptorUpdateTemplateKHR *pDescriptorUpdateTemplate) {
+void CoreChecks::RecordCreateDescriptorUpdateTemplateState(const VkDescriptorUpdateTemplateCreateInfoKHR *pCreateInfo,
+                                                           VkDescriptorUpdateTemplateKHR *pDescriptorUpdateTemplate) {
     safe_VkDescriptorUpdateTemplateCreateInfo *local_create_info = new safe_VkDescriptorUpdateTemplateCreateInfo(pCreateInfo);
     std::unique_ptr<TEMPLATE_STATE> template_state(new TEMPLATE_STATE(*pDescriptorUpdateTemplate, local_create_info));
-    device_data->desc_template_map[*pDescriptorUpdateTemplate] = std::move(template_state);
+    desc_template_map[*pDescriptorUpdateTemplate] = std::move(template_state);
 }
 
 void CoreChecks::PostCallRecordCreateDescriptorUpdateTemplate(VkDevice device,
@@ -12443,9 +12394,8 @@ void CoreChecks::PostCallRecordCreateDescriptorUpdateTemplate(VkDevice device,
                                                               const VkAllocationCallbacks *pAllocator,
                                                               VkDescriptorUpdateTemplateKHR *pDescriptorUpdateTemplate,
                                                               VkResult result) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (VK_SUCCESS != result) return;
-    RecordCreateDescriptorUpdateTemplateState(device_data, pCreateInfo, pDescriptorUpdateTemplate);
+    RecordCreateDescriptorUpdateTemplateState(pCreateInfo, pDescriptorUpdateTemplate);
 }
 
 void CoreChecks::PostCallRecordCreateDescriptorUpdateTemplateKHR(VkDevice device,
@@ -12453,9 +12403,8 @@ void CoreChecks::PostCallRecordCreateDescriptorUpdateTemplateKHR(VkDevice device
                                                                  const VkAllocationCallbacks *pAllocator,
                                                                  VkDescriptorUpdateTemplateKHR *pDescriptorUpdateTemplate,
                                                                  VkResult result) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (VK_SUCCESS != result) return;
-    RecordCreateDescriptorUpdateTemplateState(device_data, pCreateInfo, pDescriptorUpdateTemplate);
+    RecordCreateDescriptorUpdateTemplateState(pCreateInfo, pDescriptorUpdateTemplate);
 }
 
 bool CoreChecks::ValidateUpdateDescriptorSetWithTemplate(VkDescriptorSet descriptorSet,
