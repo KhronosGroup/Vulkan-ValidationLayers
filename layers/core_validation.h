@@ -289,8 +289,7 @@ class CoreChecks : public ValidationObject {
     void RecordGetBufferMemoryRequirementsState(VkBuffer buffer, VkMemoryRequirements* pMemoryRequirements);
     void UpdateBindBufferMemoryState(VkBuffer buffer, VkDeviceMemory mem, VkDeviceSize memoryOffset);
     PIPELINE_LAYOUT_NODE const* GetPipelineLayout(VkPipelineLayout pipeLayout);
-    const TEMPLATE_STATE* GetDescriptorTemplateState(const layer_data* dev_data,
-                                                     VkDescriptorUpdateTemplateKHR descriptor_update_template);
+    const TEMPLATE_STATE* GetDescriptorTemplateState(VkDescriptorUpdateTemplateKHR descriptor_update_template);
     bool ValidateGetImageMemoryRequirements2(const VkImageMemoryRequirementsInfo2* pInfo);
     void RecordGetImageMemoryRequiementsState(VkImage image, VkMemoryRequirements* pMemoryRequirements);
     void FreeCommandBufferStates(COMMAND_POOL_NODE* pool_state, const uint32_t command_buffer_count,
@@ -302,7 +301,7 @@ class CoreChecks : public ValidationObject {
     bool VerifyWaitFenceState(VkFence fence, const char* apiCall);
     void RetireFence(VkFence fence);
     void StoreMemRanges(VkDeviceMemory mem, VkDeviceSize offset, VkDeviceSize size);
-    bool ValidateIdleDescriptorSet(const layer_data* dev_data, VkDescriptorSet set, const char* func_str);
+    bool ValidateIdleDescriptorSet(VkDescriptorSet set, const char* func_str);
     void InitializeAndTrackMemory(VkDeviceMemory mem, VkDeviceSize offset, VkDeviceSize size, void** ppData);
     bool ValidatePipelineLocked(std::vector<std::unique_ptr<PIPELINE_STATE>> const& pPipelines, int pipelineIndex);
     bool ValidatePipelineUnlocked(std::vector<std::unique_ptr<PIPELINE_STATE>> const& pPipelines, int pipelineIndex);
@@ -358,9 +357,13 @@ class CoreChecks : public ValidationObject {
                           const VkImageMemoryBarrier* pImageMemBarriers);
     bool ValidateCreateSwapchain(layer_data* device_data, const char* func_name, VkSwapchainCreateInfoKHR const* pCreateInfo,
                                  SURFACE_STATE* surface_state, SWAPCHAIN_NODE* old_swapchain_state);
-    void RecordCmdPushDescriptorSetState(layer_data* device_data, GLOBAL_CB_NODE* cb_state, VkPipelineBindPoint pipelineBindPoint,
-                                         VkPipelineLayout layout, uint32_t set, uint32_t descriptorWriteCount,
+    void RecordCmdPushDescriptorSetState(GLOBAL_CB_NODE* cb_state, VkPipelineBindPoint pipelineBindPoint, VkPipelineLayout layout,
+                                         uint32_t set, uint32_t descriptorWriteCount,
                                          const VkWriteDescriptorSet* pDescriptorWrites);
+    void UpdateLastBoundDescriptorSets(GLOBAL_CB_NODE* cb_state, VkPipelineBindPoint pipeline_bind_point,
+                                       const PIPELINE_LAYOUT_NODE* pipeline_layout, uint32_t first_set, uint32_t set_count,
+                                       const std::vector<cvdescriptorset::DescriptorSet*> descriptor_sets,
+                                       uint32_t dynamic_offset_count, const uint32_t* p_dynamic_offsets);
     bool ValidatePipelineBindPoint(GLOBAL_CB_NODE* cb_state, VkPipelineBindPoint bind_point, const char* func_name,
                                    const std::map<VkPipelineBindPoint, std::string>& bind_errors);
     bool ValidateMemoryIsMapped(const char* funcName, uint32_t memRangeCount, const VkMappedMemoryRange* pMemRanges);
@@ -384,8 +387,7 @@ class CoreChecks : public ValidationObject {
     bool ValidateSecondaryCommandBufferState(GLOBAL_CB_NODE* pCB, GLOBAL_CB_NODE* pSubCB);
     bool ValidateFramebuffer(VkCommandBuffer primaryBuffer, const GLOBAL_CB_NODE* pCB, VkCommandBuffer secondaryBuffer,
                              const GLOBAL_CB_NODE* pSubCB, const char* caller);
-    bool ValidateDescriptorUpdateTemplate(const char* func_name, layer_data* device_data,
-                                          const VkDescriptorUpdateTemplateCreateInfoKHR* pCreateInfo);
+    bool ValidateDescriptorUpdateTemplate(const char* func_name, const VkDescriptorUpdateTemplateCreateInfoKHR* pCreateInfo);
     bool ValidateCreateSamplerYcbcrConversion(const char* func_name, const VkSamplerYcbcrConversionCreateInfo* create_info);
     void RecordCreateSamplerYcbcrConversionState(layer_data* device_data, const VkSamplerYcbcrConversionCreateInfo* create_info,
                                                  VkSamplerYcbcrConversion ycbcr_conversion);
@@ -465,7 +467,7 @@ class CoreChecks : public ValidationObject {
                                             uint32_t image_mem_barrier_count, const VkImageMemoryBarrier* image_barriers);
     bool CheckStageMaskQueueCompatibility(VkCommandBuffer command_buffer, VkPipelineStageFlags stage_mask, VkQueueFlags queue_flags,
                                           const char* function, const char* src_or_dest, const char* error_code);
-    void RecordUpdateDescriptorSetWithTemplateState(layer_data* device_data, VkDescriptorSet descriptorSet,
+    void RecordUpdateDescriptorSetWithTemplateState(VkDescriptorSet descriptorSet,
                                                     VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate, const void* pData);
     bool ValidateUpdateDescriptorSetWithTemplate(VkDescriptorSet descriptorSet,
                                                  VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate, const void* pData);
@@ -572,14 +574,14 @@ class CoreChecks : public ValidationObject {
     // Descriptor Set Validation Functions
     bool ValidateUpdateDescriptorSetsWithTemplateKHR(VkDescriptorSet descriptorSet, const TEMPLATE_STATE* template_state,
                                                      const void* pData);
-    void PerformUpdateDescriptorSetsWithTemplateKHR(layer_data* device_data, VkDescriptorSet descriptorSet,
-                                                    const TEMPLATE_STATE* template_state, const void* pData);
+    void PerformUpdateDescriptorSetsWithTemplateKHR(VkDescriptorSet descriptorSet, const TEMPLATE_STATE* template_state,
+                                                    const void* pData);
     void UpdateAllocateDescriptorSetsData(const VkDescriptorSetAllocateInfo*, cvdescriptorset::AllocateDescriptorSetsData*);
     bool ValidateAllocateDescriptorSets(const VkDescriptorSetAllocateInfo*, const cvdescriptorset::AllocateDescriptorSetsData*);
     void PerformAllocateDescriptorSets(const VkDescriptorSetAllocateInfo*, const VkDescriptorSet*,
                                        const cvdescriptorset::AllocateDescriptorSetsData*,
                                        std::unordered_map<VkDescriptorPool, DESCRIPTOR_POOL_STATE*>*,
-                                       std::unordered_map<VkDescriptorSet, cvdescriptorset::DescriptorSet*>*, layer_data*);
+                                       std::unordered_map<VkDescriptorSet, cvdescriptorset::DescriptorSet*>*);
     bool ValidateUpdateDescriptorSets(uint32_t write_count, const VkWriteDescriptorSet* p_wds, uint32_t copy_count,
                                       const VkCopyDescriptorSet* p_cds, const char* func_name);
 
