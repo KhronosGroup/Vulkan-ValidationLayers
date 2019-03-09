@@ -1419,8 +1419,7 @@ static bool RequireExtension(debug_report_data const *report_data, bool extensio
     return false;
 }
 
-bool CoreChecks::ValidateShaderCapabilities(layer_data *dev_data, shader_module const *src, VkShaderStageFlagBits stage,
-                                            bool has_writable_descriptor) {
+bool CoreChecks::ValidateShaderCapabilities(shader_module const *src, VkShaderStageFlagBits stage, bool has_writable_descriptor) {
     bool skip = false;
 
     auto const &features = GetEnabledFeatures();
@@ -1646,15 +1645,15 @@ static bool VariableIsBuiltIn(shader_module const *src, const uint32_t ID, std::
     return false;
 }
 
-bool CoreChecks::ValidateShaderStageInputOutputLimits(layer_data *dev_data, shader_module const *src,
-                                                      VkPipelineShaderStageCreateInfo const *pStage, PIPELINE_STATE *pipeline) {
+bool CoreChecks::ValidateShaderStageInputOutputLimits(shader_module const *src, VkPipelineShaderStageCreateInfo const *pStage,
+                                                      PIPELINE_STATE *pipeline) {
     if (pStage->stage == VK_SHADER_STAGE_COMPUTE_BIT || pStage->stage == VK_SHADER_STAGE_ALL_GRAPHICS ||
         pStage->stage == VK_SHADER_STAGE_ALL) {
         return false;
     }
 
     bool skip = false;
-    auto const &limits = dev_data->phys_dev_props.limits;
+    auto const &limits = phys_dev_props.limits;
 
     std::vector<uint32_t> builtInBlockIDs;
     std::vector<uint32_t> builtInIDs;
@@ -1939,8 +1938,8 @@ static void ProcessExecutionModes(shader_module const *src, spirv_inst_iter entr
 //            * gl_PointSize must be written in the final geometry stage
 //        - If shaderTessellationAndGeometryPointSize feature is disabled:
 //            * gl_PointSize must NOT be written and a default of 1.0 is assumed
-bool CoreChecks::ValidatePointListShaderState(const layer_data *dev_data, const PIPELINE_STATE *pipeline, shader_module const *src,
-                                              spirv_inst_iter entrypoint, VkShaderStageFlagBits stage) {
+bool CoreChecks::ValidatePointListShaderState(const PIPELINE_STATE *pipeline, shader_module const *src, spirv_inst_iter entrypoint,
+                                              VkShaderStageFlagBits stage) {
     if (pipeline->topology_at_rasterizer != VK_PRIMITIVE_TOPOLOGY_POINT_LIST) {
         return false;
     }
@@ -1987,9 +1986,9 @@ bool CoreChecks::ValidatePointListShaderState(const layer_data *dev_data, const 
     return skip;
 }
 
-bool CoreChecks::ValidatePipelineShaderStage(layer_data *dev_data, VkPipelineShaderStageCreateInfo const *pStage,
-                                             PIPELINE_STATE *pipeline, shader_module const **out_module,
-                                             spirv_inst_iter *out_entrypoint, bool check_point_size) {
+bool CoreChecks::ValidatePipelineShaderStage(VkPipelineShaderStageCreateInfo const *pStage, PIPELINE_STATE *pipeline,
+                                             shader_module const **out_module, spirv_inst_iter *out_entrypoint,
+                                             bool check_point_size) {
     bool skip = false;
     auto module = *out_module = GetShaderModuleState(pStage->module);
     auto report_data = GetReportData();
@@ -2015,13 +2014,13 @@ bool CoreChecks::ValidatePipelineShaderStage(layer_data *dev_data, VkPipelineSha
     auto descriptor_uses = CollectInterfaceByDescriptorSlot(report_data, module, accessible_ids, &has_writable_descriptor);
 
     // Validate shader capabilities against enabled device features
-    skip |= ValidateShaderCapabilities(dev_data, module, pStage->stage, has_writable_descriptor);
-    skip |= ValidateShaderStageInputOutputLimits(dev_data, module, pStage, pipeline);
+    skip |= ValidateShaderCapabilities(module, pStage->stage, has_writable_descriptor);
+    skip |= ValidateShaderStageInputOutputLimits(module, pStage, pipeline);
     skip |= ValidateSpecializationOffsets(report_data, pStage);
     skip |= ValidatePushConstantUsage(report_data, pipeline->pipeline_layout.push_constant_ranges.get(), module, accessible_ids,
                                       pStage->stage);
     if (check_point_size && !pipeline->graphicsPipelineCI.pRasterizationState->rasterizerDiscardEnable) {
-        skip |= ValidatePointListShaderState(dev_data, pipeline, module, entrypoint, pStage->stage);
+        skip |= ValidatePointListShaderState(pipeline, module, entrypoint, pStage->stage);
     }
 
     // Validate descriptor use
@@ -2178,7 +2177,7 @@ static inline uint32_t DetermineFinalGeomStage(PIPELINE_STATE *pipeline, VkGraph
 
 // Validate that the shaders used by the given pipeline and store the active_slots
 //  that are actually used by the pipeline into pPipeline->active_slots
-bool CoreChecks::ValidateAndCapturePipelineShaderState(layer_data *dev_data, PIPELINE_STATE *pipeline) {
+bool CoreChecks::ValidateAndCapturePipelineShaderState(PIPELINE_STATE *pipeline) {
     auto pCreateInfo = pipeline->graphicsPipelineCI.ptr();
     int vertex_stage = GetShaderStageId(VK_SHADER_STAGE_VERTEX_BIT);
     int fragment_stage = GetShaderStageId(VK_SHADER_STAGE_FRAGMENT_BIT);
@@ -2195,7 +2194,7 @@ bool CoreChecks::ValidateAndCapturePipelineShaderState(layer_data *dev_data, PIP
     for (uint32_t i = 0; i < pCreateInfo->stageCount; i++) {
         auto pStage = &pCreateInfo->pStages[i];
         auto stage_id = GetShaderStageId(pStage->stage);
-        skip |= ValidatePipelineShaderStage(dev_data, pStage, pipeline, &shaders[stage_id], &entrypoints[stage_id],
+        skip |= ValidatePipelineShaderStage(pStage, pipeline, &shaders[stage_id], &entrypoints[stage_id],
                                             (pointlist_stage_mask == pStage->stage));
     }
 
@@ -2241,22 +2240,22 @@ bool CoreChecks::ValidateAndCapturePipelineShaderState(layer_data *dev_data, PIP
     return skip;
 }
 
-bool CoreChecks::ValidateComputePipeline(layer_data *dev_data, PIPELINE_STATE *pipeline) {
+bool CoreChecks::ValidateComputePipeline(PIPELINE_STATE *pipeline) {
     auto pCreateInfo = pipeline->computePipelineCI.ptr();
 
     shader_module const *module;
     spirv_inst_iter entrypoint;
 
-    return ValidatePipelineShaderStage(dev_data, &pCreateInfo->stage, pipeline, &module, &entrypoint, false);
+    return ValidatePipelineShaderStage(&pCreateInfo->stage, pipeline, &module, &entrypoint, false);
 }
 
-bool CoreChecks::ValidateRayTracingPipelineNV(layer_data *dev_data, PIPELINE_STATE *pipeline) {
+bool CoreChecks::ValidateRayTracingPipelineNV(PIPELINE_STATE *pipeline) {
     auto pCreateInfo = pipeline->raytracingPipelineCI.ptr();
 
     shader_module const *module;
     spirv_inst_iter entrypoint;
 
-    return ValidatePipelineShaderStage(dev_data, pCreateInfo->pStages, pipeline, &module, &entrypoint, false);
+    return ValidatePipelineShaderStage(pCreateInfo->pStages, pipeline, &module, &entrypoint, false);
 }
 
 uint32_t ValidationCache::MakeShaderHash(VkShaderModuleCreateInfo const *smci) { return XXH32(smci->pCode, smci->codeSize, 0); }
