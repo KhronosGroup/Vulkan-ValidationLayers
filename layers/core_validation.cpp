@@ -5058,8 +5058,8 @@ void CoreChecks::PreCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelin
     cgpl_state->pCreateInfos = pCreateInfos;
     // GPU Validation may replace instrumented shaders with non-instrumented ones, so allow it to modify the createinfos.
     if (GetEnables()->gpu_validation) {
-        cgpl_state->gpu_create_infos = GpuPreCallRecordCreateGraphicsPipelines(pipelineCache, count, pCreateInfos,
-                                                                               pAllocator, pPipelines, cgpl_state->pipe_state);
+        cgpl_state->gpu_create_infos = GpuPreCallRecordCreateGraphicsPipelines(pipelineCache, count, pCreateInfos, pAllocator,
+                                                                               pPipelines, cgpl_state->pipe_state);
         cgpl_state->pCreateInfos = reinterpret_cast<VkGraphicsPipelineCreateInfo *>(cgpl_state->gpu_create_infos.data());
     }
 }
@@ -5969,15 +5969,13 @@ void CoreChecks::PostCallRecordResetDescriptorPool(VkDevice device, VkDescriptor
 // as well as DescriptorSetLayout ptrs used for later update.
 bool CoreChecks::PreCallValidateAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo *pAllocateInfo,
                                                        VkDescriptorSet *pDescriptorSets, void *ads_state_data) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-
     // Always update common data
     cvdescriptorset::AllocateDescriptorSetsData *ads_state =
         reinterpret_cast<cvdescriptorset::AllocateDescriptorSetsData *>(ads_state_data);
-    UpdateAllocateDescriptorSetsData(device_data, pAllocateInfo, ads_state);
-    if (device_data->instance_data->disabled.allocate_descriptor_sets) return false;
+    UpdateAllocateDescriptorSetsData(pAllocateInfo, ads_state);
+    if (disabled.allocate_descriptor_sets) return false;
     // All state checks for AllocateDescriptorSets is done in single function
-    return ValidateAllocateDescriptorSets(device_data, pAllocateInfo, ads_state);
+    return ValidateAllocateDescriptorSets(pAllocateInfo, ads_state);
 }
 
 // Allocation state was good and call down chain was made so update state based on allocating descriptor sets
@@ -6039,8 +6037,7 @@ void CoreChecks::PreCallRecordFreeDescriptorSets(VkDevice device, VkDescriptorPo
 bool CoreChecks::PreCallValidateUpdateDescriptorSets(VkDevice device, uint32_t descriptorWriteCount,
                                                      const VkWriteDescriptorSet *pDescriptorWrites, uint32_t descriptorCopyCount,
                                                      const VkCopyDescriptorSet *pDescriptorCopies) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    if (device_data->disabled.update_descriptor_sets) return false;
+    if (disabled.update_descriptor_sets) return false;
     // First thing to do is perform map look-ups.
     // NOTE : UpdateDescriptorSets is somewhat unique in that it's operating on a number of DescriptorSets
     //  so we can't just do a single map look-up up-front, but do them individually in functions below
@@ -6048,8 +6045,8 @@ bool CoreChecks::PreCallValidateUpdateDescriptorSets(VkDevice device, uint32_t d
     // Now make call(s) that validate state, but don't perform state updates in this function
     // Note, here DescriptorSets is unique in that we don't yet have an instance. Using a helper function in the
     //  namespace which will parse params and make calls into specific class instances
-    return ValidateUpdateDescriptorSets(report_data, device_data, descriptorWriteCount, pDescriptorWrites, descriptorCopyCount,
-                                        pDescriptorCopies, "vkUpdateDescriptorSets()");
+    return ValidateUpdateDescriptorSets(descriptorWriteCount, pDescriptorWrites, descriptorCopyCount, pDescriptorCopies,
+                                        "vkUpdateDescriptorSets()");
 }
 
 void CoreChecks::PreCallRecordUpdateDescriptorSets(VkDevice device, uint32_t descriptorWriteCount,
@@ -12553,12 +12550,12 @@ void CoreChecks::PostCallRecordCreateDescriptorUpdateTemplateKHR(VkDevice device
     RecordCreateDescriptorUpdateTemplateState(device_data, pCreateInfo, pDescriptorUpdateTemplate);
 }
 
-bool CoreChecks::ValidateUpdateDescriptorSetWithTemplate(layer_data *device_data, VkDescriptorSet descriptorSet,
+bool CoreChecks::ValidateUpdateDescriptorSetWithTemplate(VkDescriptorSet descriptorSet,
                                                          VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate,
                                                          const void *pData) {
     bool skip = false;
-    auto const template_map_entry = device_data->desc_template_map.find(descriptorUpdateTemplate);
-    if ((template_map_entry == device_data->desc_template_map.end()) || (template_map_entry->second.get() == nullptr)) {
+    auto const template_map_entry = desc_template_map.find(descriptorUpdateTemplate);
+    if ((template_map_entry == desc_template_map.end()) || (template_map_entry->second.get() == nullptr)) {
         // Object tracker will report errors for invalid descriptorUpdateTemplate values, avoiding a crash in release builds
         // but retaining the assert as template support is new enough to want to investigate these in debug builds.
         assert(0);
@@ -12566,7 +12563,7 @@ bool CoreChecks::ValidateUpdateDescriptorSetWithTemplate(layer_data *device_data
         const TEMPLATE_STATE *template_state = template_map_entry->second.get();
         // TODO: Validate template push descriptor updates
         if (template_state->create_info.templateType == VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET) {
-            skip = ValidateUpdateDescriptorSetsWithTemplateKHR(device_data, descriptorSet, template_state, pData);
+            skip = ValidateUpdateDescriptorSetsWithTemplateKHR(descriptorSet, template_state, pData);
         }
     }
     return skip;
@@ -12575,15 +12572,13 @@ bool CoreChecks::ValidateUpdateDescriptorSetWithTemplate(layer_data *device_data
 bool CoreChecks::PreCallValidateUpdateDescriptorSetWithTemplate(VkDevice device, VkDescriptorSet descriptorSet,
                                                                 VkDescriptorUpdateTemplate descriptorUpdateTemplate,
                                                                 const void *pData) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    return ValidateUpdateDescriptorSetWithTemplate(device_data, descriptorSet, descriptorUpdateTemplate, pData);
+    return ValidateUpdateDescriptorSetWithTemplate(descriptorSet, descriptorUpdateTemplate, pData);
 }
 
 bool CoreChecks::PreCallValidateUpdateDescriptorSetWithTemplateKHR(VkDevice device, VkDescriptorSet descriptorSet,
                                                                    VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate,
                                                                    const void *pData) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    return ValidateUpdateDescriptorSetWithTemplate(device_data, descriptorSet, descriptorUpdateTemplate, pData);
+    return ValidateUpdateDescriptorSetWithTemplate(descriptorSet, descriptorUpdateTemplate, pData);
 }
 
 void CoreChecks::RecordUpdateDescriptorSetWithTemplateState(layer_data *device_data, VkDescriptorSet descriptorSet,

@@ -473,7 +473,7 @@ class CoreChecks : public ValidationObject {
                                           const char* function, const char* src_or_dest, const char* error_code);
     void RecordUpdateDescriptorSetWithTemplateState(layer_data* device_data, VkDescriptorSet descriptorSet,
                                                     VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate, const void* pData);
-    bool ValidateUpdateDescriptorSetWithTemplate(layer_data* device_data, VkDescriptorSet descriptorSet,
+    bool ValidateUpdateDescriptorSetWithTemplate(VkDescriptorSet descriptorSet,
                                                  VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate, const void* pData);
     bool ValidateMemoryIsBoundToBuffer(const BUFFER_STATE*, const char*, const char*);
     bool ValidateMemoryIsBoundToImage(const IMAGE_STATE*, const char*, const char*);
@@ -576,21 +576,18 @@ class CoreChecks : public ValidationObject {
                                                 void* pData);
 
     // Descriptor Set Validation Functions
-    bool ValidateUpdateDescriptorSetsWithTemplateKHR(layer_data* device_data, VkDescriptorSet descriptorSet,
-                                                     const TEMPLATE_STATE* template_state, const void* pData);
+    bool ValidateUpdateDescriptorSetsWithTemplateKHR(VkDescriptorSet descriptorSet, const TEMPLATE_STATE* template_state,
+                                                     const void* pData);
     void PerformUpdateDescriptorSetsWithTemplateKHR(layer_data* device_data, VkDescriptorSet descriptorSet,
                                                     const TEMPLATE_STATE* template_state, const void* pData);
-    void UpdateAllocateDescriptorSetsData(const layer_data* dev_data, const VkDescriptorSetAllocateInfo*,
-                                          cvdescriptorset::AllocateDescriptorSetsData*);
-    bool ValidateAllocateDescriptorSets(const layer_data*, const VkDescriptorSetAllocateInfo*,
-                                        const cvdescriptorset::AllocateDescriptorSetsData*);
+    void UpdateAllocateDescriptorSetsData(const VkDescriptorSetAllocateInfo*, cvdescriptorset::AllocateDescriptorSetsData*);
+    bool ValidateAllocateDescriptorSets(const VkDescriptorSetAllocateInfo*, const cvdescriptorset::AllocateDescriptorSetsData*);
     void PerformAllocateDescriptorSets(const VkDescriptorSetAllocateInfo*, const VkDescriptorSet*,
                                        const cvdescriptorset::AllocateDescriptorSetsData*,
                                        std::unordered_map<VkDescriptorPool, DESCRIPTOR_POOL_STATE*>*,
                                        std::unordered_map<VkDescriptorSet, cvdescriptorset::DescriptorSet*>*, layer_data*);
-    bool ValidateUpdateDescriptorSets(const debug_report_data* report_data, const layer_data* dev_data, uint32_t write_count,
-                                      const VkWriteDescriptorSet* p_wds, uint32_t copy_count, const VkCopyDescriptorSet* p_cds,
-                                      const char* func_name);
+    bool ValidateUpdateDescriptorSets(uint32_t write_count, const VkWriteDescriptorSet* p_wds, uint32_t copy_count,
+                                      const VkCopyDescriptorSet* p_cds, const char* func_name);
 
     // Stuff from shader_validation
     bool ValidateAndCapturePipelineShaderState(layer_data* dev_data, PIPELINE_STATE* pPipeline);
