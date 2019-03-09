@@ -655,7 +655,7 @@ FRAMEBUFFER_STATE *CoreChecks::GetFramebufferState(VkFramebuffer framebuffer) {
     return it->second.get();
 }
 
-std::shared_ptr<cvdescriptorset::DescriptorSetLayout const> const GetDescriptorSetLayout(layer_data const *dev_data,
+std::shared_ptr<cvdescriptorset::DescriptorSetLayout const> const GetDescriptorSetLayout(CoreChecks const *dev_data,
                                                                                          VkDescriptorSetLayout dsLayout) {
     auto it = dev_data->descriptorSetLayoutMap.find(dsLayout);
     if (it == dev_data->descriptorSetLayoutMap.end()) {
@@ -4538,14 +4538,13 @@ bool CoreChecks::PreCallValidateDestroyPipeline(VkDevice device, VkPipeline pipe
 }
 
 void CoreChecks::PreCallRecordDestroyPipeline(VkDevice device, VkPipeline pipeline, const VkAllocationCallbacks *pAllocator) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!pipeline) return;
     PIPELINE_STATE *pipeline_state = GetPipelineState(pipeline);
     VK_OBJECT obj_struct = {HandleToUint64(pipeline), kVulkanObjectTypePipeline};
     // Any bound cmd buffers are now invalid
     InvalidateCommandBuffers(pipeline_state->cb_bindings, obj_struct);
     if (GetEnables()->gpu_validation) {
-        GpuPreCallRecordDestroyPipeline(device_data, pipeline);
+        GpuPreCallRecordDestroyPipeline(pipeline);
     }
     pipelineMap.erase(pipeline);
 }
@@ -4647,7 +4646,7 @@ bool CoreChecks::CheckCommandBuffersInFlight(layer_data *dev_data, COMMAND_POOL_
 void CoreChecks::FreeCommandBufferStates(layer_data *dev_data, COMMAND_POOL_NODE *pool_state, const uint32_t command_buffer_count,
                                          const VkCommandBuffer *command_buffers) {
     if (GetEnables()->gpu_validation) {
-        GpuPreCallRecordFreeCommandBuffers(dev_data, command_buffer_count, command_buffers);
+        GpuPreCallRecordFreeCommandBuffers(command_buffer_count, command_buffers);
     }
     for (uint32_t i = 0; i < command_buffer_count; i++) {
         auto cb_state = GetCBNode(command_buffers[i]);
@@ -5055,12 +5054,11 @@ void CoreChecks::PreCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelin
                                                       const VkGraphicsPipelineCreateInfo *pCreateInfos,
                                                       const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
                                                       void *cgpl_state_data) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     create_graphics_pipeline_api_state *cgpl_state = reinterpret_cast<create_graphics_pipeline_api_state *>(cgpl_state_data);
     cgpl_state->pCreateInfos = pCreateInfos;
     // GPU Validation may replace instrumented shaders with non-instrumented ones, so allow it to modify the createinfos.
     if (GetEnables()->gpu_validation) {
-        cgpl_state->gpu_create_infos = GpuPreCallRecordCreateGraphicsPipelines(device_data, pipelineCache, count, pCreateInfos,
+        cgpl_state->gpu_create_infos = GpuPreCallRecordCreateGraphicsPipelines(pipelineCache, count, pCreateInfos,
                                                                                pAllocator, pPipelines, cgpl_state->pipe_state);
         cgpl_state->pCreateInfos = reinterpret_cast<VkGraphicsPipelineCreateInfo *>(cgpl_state->gpu_create_infos.data());
     }
@@ -5070,18 +5068,17 @@ void CoreChecks::PostCallRecordCreateGraphicsPipelines(VkDevice device, VkPipeli
                                                        const VkGraphicsPipelineCreateInfo *pCreateInfos,
                                                        const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
                                                        VkResult result, void *cgpl_state_data) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     create_graphics_pipeline_api_state *cgpl_state = reinterpret_cast<create_graphics_pipeline_api_state *>(cgpl_state_data);
     // This API may create pipelines regardless of the return value
     for (uint32_t i = 0; i < count; i++) {
         if (pPipelines[i] != VK_NULL_HANDLE) {
             (cgpl_state->pipe_state)[i]->pipeline = pPipelines[i];
-            device_data->pipelineMap[pPipelines[i]] = std::move((cgpl_state->pipe_state)[i]);
+            pipelineMap[pPipelines[i]] = std::move((cgpl_state->pipe_state)[i]);
         }
     }
     // GPU val needs clean up regardless of result
     if (GetEnables()->gpu_validation) {
-        GpuPostCallRecordCreateGraphicsPipelines(device_data, count, pCreateInfos, pAllocator, pPipelines);
+        GpuPostCallRecordCreateGraphicsPipelines(count, pCreateInfos, pAllocator, pPipelines);
         cgpl_state->gpu_create_infos.clear();
     }
     cgpl_state->pipe_state.clear();
@@ -5886,10 +5883,9 @@ static PipelineLayoutCompatId GetCanonicalId(const uint32_t set_index, const Pus
 void CoreChecks::PreCallRecordCreatePipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo *pCreateInfo,
                                                    const VkAllocationCallbacks *pAllocator, VkPipelineLayout *pPipelineLayout,
                                                    void *cpl_state_data) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     create_pipeline_layout_api_state *cpl_state = reinterpret_cast<create_pipeline_layout_api_state *>(cpl_state_data);
     if (GetEnables()->gpu_validation) {
-        GpuPreCallCreatePipelineLayout(device_data, pCreateInfo, pAllocator, pPipelineLayout, &cpl_state->new_layouts,
+        GpuPreCallCreatePipelineLayout(pCreateInfo, pAllocator, pPipelineLayout, &cpl_state->new_layouts,
                                        &cpl_state->modified_create_info);
     }
 }
@@ -5897,20 +5893,18 @@ void CoreChecks::PreCallRecordCreatePipelineLayout(VkDevice device, const VkPipe
 void CoreChecks::PostCallRecordCreatePipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo *pCreateInfo,
                                                     const VkAllocationCallbacks *pAllocator, VkPipelineLayout *pPipelineLayout,
                                                     VkResult result) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-
     // Clean up GPU validation
     if (GetEnables()->gpu_validation) {
-        GpuPostCallCreatePipelineLayout(device_data, result);
+        GpuPostCallCreatePipelineLayout(result);
     }
     if (VK_SUCCESS != result) return;
 
-    PIPELINE_LAYOUT_NODE &plNode = device_data->pipelineLayoutMap[*pPipelineLayout];
+    PIPELINE_LAYOUT_NODE &plNode = pipelineLayoutMap[*pPipelineLayout];
     plNode.layout = *pPipelineLayout;
     plNode.set_layouts.resize(pCreateInfo->setLayoutCount);
     PipelineLayoutSetLayoutsDef set_layouts(pCreateInfo->setLayoutCount);
     for (uint32_t i = 0; i < pCreateInfo->setLayoutCount; ++i) {
-        plNode.set_layouts[i] = GetDescriptorSetLayout(device_data, pCreateInfo->pSetLayouts[i]);
+        plNode.set_layouts[i] = GetDescriptorSetLayout(this, pCreateInfo->pSetLayouts[i]);
         set_layouts[i] = plNode.set_layouts[i]->GetLayoutId();
     }
 
@@ -7128,8 +7122,7 @@ bool CoreChecks::PreCallValidateCmdDraw(VkCommandBuffer commandBuffer, uint32_t 
 
 void CoreChecks::PreCallRecordCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount,
                                       uint32_t firstVertex, uint32_t firstInstance) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    GpuAllocateValidationResources(device_data, commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS);
+    GpuAllocateValidationResources(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS);
 }
 
 void CoreChecks::PostCallRecordCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount,
@@ -7170,8 +7163,7 @@ bool CoreChecks::PreCallValidateCmdDrawIndexed(VkCommandBuffer commandBuffer, ui
 
 void CoreChecks::PreCallRecordCmdDrawIndexed(VkCommandBuffer commandBuffer, uint32_t indexCount, uint32_t instanceCount,
                                              uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    GpuAllocateValidationResources(device_data, commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS);
+    GpuAllocateValidationResources(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS);
 }
 
 void CoreChecks::PostCallRecordCmdDrawIndexed(VkCommandBuffer commandBuffer, uint32_t indexCount, uint32_t instanceCount,
@@ -7196,8 +7188,7 @@ bool CoreChecks::PreCallValidateCmdDrawIndirect(VkCommandBuffer commandBuffer, V
 
 void CoreChecks::PreCallRecordCmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, uint32_t count,
                                               uint32_t stride) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    GpuAllocateValidationResources(device_data, commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS);
+    GpuAllocateValidationResources(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS);
 }
 
 void CoreChecks::PostCallRecordCmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, uint32_t count,
@@ -7225,8 +7216,7 @@ bool CoreChecks::PreCallValidateCmdDrawIndexedIndirect(VkCommandBuffer commandBu
 
 void CoreChecks::PreCallRecordCmdDrawIndexedIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                      uint32_t count, uint32_t stride) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    GpuAllocateValidationResources(device_data, commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS);
+    GpuAllocateValidationResources(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS);
 }
 
 void CoreChecks::PostCallRecordCmdDrawIndexedIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
@@ -7245,8 +7235,7 @@ bool CoreChecks::PreCallValidateCmdDispatch(VkCommandBuffer commandBuffer, uint3
 }
 
 void CoreChecks::PreCallRecordCmdDispatch(VkCommandBuffer commandBuffer, uint32_t x, uint32_t y, uint32_t z) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    GpuAllocateValidationResources(device_data, commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE);
+    GpuAllocateValidationResources(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE);
 }
 
 void CoreChecks::PostCallRecordCmdDispatch(VkCommandBuffer commandBuffer, uint32_t x, uint32_t y, uint32_t z) {
@@ -7266,8 +7255,7 @@ bool CoreChecks::PreCallValidateCmdDispatchIndirect(VkCommandBuffer commandBuffe
 }
 
 void CoreChecks::PreCallRecordCmdDispatchIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    GpuAllocateValidationResources(device_data, commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE);
+    GpuAllocateValidationResources(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE);
 }
 
 void CoreChecks::PostCallRecordCmdDispatchIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset) {
@@ -8385,7 +8373,6 @@ void CoreChecks::PreCallRecordCmdWaitEvents(VkCommandBuffer commandBuffer, uint3
                                             uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers,
                                             uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier *pBufferMemoryBarriers,
                                             uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier *pImageMemoryBarriers) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     auto first_event_index = cb_state->events.size();
     for (uint32_t i = 0; i < eventCount; ++i) {
@@ -8401,7 +8388,7 @@ void CoreChecks::PreCallRecordCmdWaitEvents(VkCommandBuffer commandBuffer, uint3
         [=](VkQueue q) { return ValidateEventStageMask(q, cb_state, eventCount, first_event_index, sourceStageMask); });
     TransitionImageLayouts(cb_state, imageMemoryBarrierCount, pImageMemoryBarriers);
     if (GetEnables()->gpu_validation) {
-        GpuPreCallValidateCmdWaitEvents(device_data, sourceStageMask);
+        GpuPreCallValidateCmdWaitEvents(sourceStageMask);
     }
 }
 
