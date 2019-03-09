@@ -955,7 +955,7 @@ uint32_t cvdescriptorset::DescriptorSet::GetStorageUpdates(const std::map<uint32
 }
 // Set is being deleted or updates so invalidate all bound cmd buffers
 void cvdescriptorset::DescriptorSet::InvalidateBoundCmdBuffers() {
-    device_data_->InvalidateCommandBuffers(device_data_, cb_bindings, {HandleToUint64(set_), kVulkanObjectTypeDescriptorSet});
+    device_data_->InvalidateCommandBuffers(cb_bindings, {HandleToUint64(set_), kVulkanObjectTypeDescriptorSet});
 }
 
 // Loop through the write updates to do for a push descriptor set, ignoring dstSet

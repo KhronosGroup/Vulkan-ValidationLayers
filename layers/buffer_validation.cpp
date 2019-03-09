@@ -1469,25 +1469,24 @@ void CoreChecks::PostCallRecordCreateImage(VkDevice device, const VkImageCreateI
     ImageSubresourcePair subpair{*pImage, false, VkImageSubresource()};
     (*GetImageSubresourceMap())[*pImage].push_back(subpair);
     (*GetImageLayoutMap())[subpair] = image_state;
+    (*GetImageLayoutMap())[subpair] = image_state;
 }
 
 bool CoreChecks::PreCallValidateDestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks *pAllocator) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     IMAGE_STATE *image_state = GetImageState(image);
     const VK_OBJECT obj_struct = {HandleToUint64(image), kVulkanObjectTypeImage};
     bool skip = false;
     if (image_state) {
-        skip |= ValidateObjectNotInUse(device_data, image_state, obj_struct, "vkDestroyImage", "VUID-vkDestroyImage-image-01000");
+        skip |= ValidateObjectNotInUse(image_state, obj_struct, "vkDestroyImage", "VUID-vkDestroyImage-image-01000");
     }
     return skip;
 }
 
 void CoreChecks::PreCallRecordDestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks *pAllocator) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!image) return;
     IMAGE_STATE *image_state = GetImageState(image);
     VK_OBJECT obj_struct = {HandleToUint64(image), kVulkanObjectTypeImage};
-    InvalidateCommandBuffers(device_data, image_state->cb_bindings, obj_struct);
+    InvalidateCommandBuffers(image_state->cb_bindings, obj_struct);
     // Clean up memory mapping, bindings and range references for image
     for (auto mem_binding : image_state->GetBoundMemory()) {
         auto mem_info = GetMemObjInfo(mem_binding);
@@ -1668,7 +1667,7 @@ bool CoreChecks::PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuffer
         skip |= InsideRenderPass(cb_node, "vkCmdClearColorImage()", "VUID-vkCmdClearColorImage-renderpass");
         for (uint32_t i = 0; i < rangeCount; ++i) {
             std::string param_name = "pRanges[" + std::to_string(i) + "]";
-            skip |= ValidateCmdClearColorSubresourceRange(device_data, image_state, pRanges[i], param_name.c_str());
+            skip |= ValidateCmdClearColorSubresourceRange(image_state, pRanges[i], param_name.c_str());
             skip |= ValidateImageAttributes(device_data, image_state, pRanges[i]);
             skip |= VerifyClearImageLayout(device_data, cb_node, image_state, pRanges[i], imageLayout, "vkCmdClearColorImage()");
         }
@@ -1714,7 +1713,7 @@ bool CoreChecks::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer comman
         skip |= InsideRenderPass(cb_node, "vkCmdClearDepthStencilImage()", "VUID-vkCmdClearDepthStencilImage-renderpass");
         for (uint32_t i = 0; i < rangeCount; ++i) {
             std::string param_name = "pRanges[" + std::to_string(i) + "]";
-            skip |= ValidateCmdClearDepthSubresourceRange(device_data, image_state, pRanges[i], param_name.c_str());
+            skip |= ValidateCmdClearDepthSubresourceRange(image_state, pRanges[i], param_name.c_str());
             skip |=
                 VerifyClearImageLayout(device_data, cb_node, image_state, pRanges[i], imageLayout, "vkCmdClearDepthStencilImage()");
             // Image aspect must be depth or stencil or both
@@ -3938,8 +3937,8 @@ void CoreChecks::PostCallRecordCreateBufferView(VkDevice device, const VkBufferV
 }
 
 // For the given format verify that the aspect masks make sense
-bool CoreChecks::ValidateImageAspectMask(const layer_data *device_data, VkImage image, VkFormat format,
-                                         VkImageAspectFlags aspect_mask, const char *func_name, const char *vuid) {
+bool CoreChecks::ValidateImageAspectMask(VkImage image, VkFormat format, VkImageAspectFlags aspect_mask, const char *func_name,
+                                         const char *vuid) {
     bool skip = false;
     VkDebugReportObjectTypeEXT objectType = VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT;
     if (image != VK_NULL_HANDLE) {
@@ -3997,9 +3996,9 @@ bool CoreChecks::ValidateImageAspectMask(const layer_data *device_data, VkImage 
     return skip;
 }
 
-bool CoreChecks::ValidateImageSubresourceRange(const layer_data *device_data, const uint32_t image_mip_count,
-                                               const uint32_t image_layer_count, const VkImageSubresourceRange &subresourceRange,
-                                               const char *cmd_name, const char *param_name, const char *image_layer_count_var_name,
+bool CoreChecks::ValidateImageSubresourceRange(const uint32_t image_mip_count, const uint32_t image_layer_count,
+                                               const VkImageSubresourceRange &subresourceRange, const char *cmd_name,
+                                               const char *param_name, const char *image_layer_count_var_name,
                                                const uint64_t image_handle, SubresourceRangeErrorCodes errorCodes) {
     bool skip = false;
 
@@ -4061,8 +4060,7 @@ bool CoreChecks::ValidateImageSubresourceRange(const layer_data *device_data, co
     return skip;
 }
 
-bool CoreChecks::ValidateCreateImageViewSubresourceRange(const layer_data *device_data, const IMAGE_STATE *image_state,
-                                                         bool is_imageview_2d_type,
+bool CoreChecks::ValidateCreateImageViewSubresourceRange(const IMAGE_STATE *image_state, bool is_imageview_2d_type,
                                                          const VkImageSubresourceRange &subresourceRange) {
     bool is_khr_maintenance1 = GetDeviceExtensions()->vk_khr_maintenance1;
     bool is_image_slicable = image_state->createInfo.imageType == VK_IMAGE_TYPE_3D &&
@@ -4083,12 +4081,12 @@ bool CoreChecks::ValidateCreateImageViewSubresourceRange(const layer_data *devic
                                                                         : "VUID-VkImageViewCreateInfo-subresourceRange-01483")
                                                      : "VUID-VkImageViewCreateInfo-subresourceRange-01719";
 
-    return ValidateImageSubresourceRange(device_data, image_state->createInfo.mipLevels, image_layer_count, subresourceRange,
+    return ValidateImageSubresourceRange(image_state->createInfo.mipLevels, image_layer_count, subresourceRange,
                                          "vkCreateImageView", "pCreateInfo->subresourceRange", image_layer_count_var_name,
                                          HandleToUint64(image_state->image), subresourceRangeErrorCodes);
 }
 
-bool CoreChecks::ValidateCmdClearColorSubresourceRange(const layer_data *device_data, const IMAGE_STATE *image_state,
+bool CoreChecks::ValidateCmdClearColorSubresourceRange(const IMAGE_STATE *image_state,
                                                        const VkImageSubresourceRange &subresourceRange, const char *param_name) {
     SubresourceRangeErrorCodes subresourceRangeErrorCodes = {};
     subresourceRangeErrorCodes.base_mip_err = "VUID-vkCmdClearColorImage-baseMipLevel-01470";
@@ -4096,12 +4094,12 @@ bool CoreChecks::ValidateCmdClearColorSubresourceRange(const layer_data *device_
     subresourceRangeErrorCodes.base_layer_err = "VUID-vkCmdClearColorImage-baseArrayLayer-01472";
     subresourceRangeErrorCodes.layer_count_err = "VUID-vkCmdClearColorImage-pRanges-01693";
 
-    return ValidateImageSubresourceRange(device_data, image_state->createInfo.mipLevels, image_state->createInfo.arrayLayers,
-                                         subresourceRange, "vkCmdClearColorImage", param_name, "arrayLayers",
-                                         HandleToUint64(image_state->image), subresourceRangeErrorCodes);
+    return ValidateImageSubresourceRange(image_state->createInfo.mipLevels, image_state->createInfo.arrayLayers, subresourceRange,
+                                         "vkCmdClearColorImage", param_name, "arrayLayers", HandleToUint64(image_state->image),
+                                         subresourceRangeErrorCodes);
 }
 
-bool CoreChecks::ValidateCmdClearDepthSubresourceRange(const layer_data *device_data, const IMAGE_STATE *image_state,
+bool CoreChecks::ValidateCmdClearDepthSubresourceRange(const IMAGE_STATE *image_state,
                                                        const VkImageSubresourceRange &subresourceRange, const char *param_name) {
     SubresourceRangeErrorCodes subresourceRangeErrorCodes = {};
     subresourceRangeErrorCodes.base_mip_err = "VUID-vkCmdClearDepthStencilImage-baseMipLevel-01474";
@@ -4109,12 +4107,12 @@ bool CoreChecks::ValidateCmdClearDepthSubresourceRange(const layer_data *device_
     subresourceRangeErrorCodes.base_layer_err = "VUID-vkCmdClearDepthStencilImage-baseArrayLayer-01476";
     subresourceRangeErrorCodes.layer_count_err = "VUID-vkCmdClearDepthStencilImage-pRanges-01695";
 
-    return ValidateImageSubresourceRange(device_data, image_state->createInfo.mipLevels, image_state->createInfo.arrayLayers,
-                                         subresourceRange, "vkCmdClearDepthStencilImage", param_name, "arrayLayers",
+    return ValidateImageSubresourceRange(image_state->createInfo.mipLevels, image_state->createInfo.arrayLayers, subresourceRange,
+                                         "vkCmdClearDepthStencilImage", param_name, "arrayLayers",
                                          HandleToUint64(image_state->image), subresourceRangeErrorCodes);
 }
 
-bool CoreChecks::ValidateImageBarrierSubresourceRange(const layer_data *device_data, const IMAGE_STATE *image_state,
+bool CoreChecks::ValidateImageBarrierSubresourceRange(const IMAGE_STATE *image_state,
                                                       const VkImageSubresourceRange &subresourceRange, const char *cmd_name,
                                                       const char *param_name) {
     SubresourceRangeErrorCodes subresourceRangeErrorCodes = {};
@@ -4123,8 +4121,8 @@ bool CoreChecks::ValidateImageBarrierSubresourceRange(const layer_data *device_d
     subresourceRangeErrorCodes.base_layer_err = "VUID-VkImageMemoryBarrier-subresourceRange-01488";
     subresourceRangeErrorCodes.layer_count_err = "VUID-VkImageMemoryBarrier-subresourceRange-01725";
 
-    return ValidateImageSubresourceRange(device_data, image_state->createInfo.mipLevels, image_state->createInfo.arrayLayers,
-                                         subresourceRange, cmd_name, param_name, "arrayLayers", HandleToUint64(image_state->image),
+    return ValidateImageSubresourceRange(image_state->createInfo.mipLevels, image_state->createInfo.arrayLayers, subresourceRange,
+                                         cmd_name, param_name, "arrayLayers", HandleToUint64(image_state->image),
                                          subresourceRangeErrorCodes);
 }
 
@@ -4145,8 +4143,7 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
         skip |= ValidateMemoryIsBoundToImage(image_state, "vkCreateImageView()", "VUID-VkImageViewCreateInfo-image-01020");
         // Checks imported from image layer
         skip |= ValidateCreateImageViewSubresourceRange(
-            device_data, image_state,
-            pCreateInfo->viewType == VK_IMAGE_VIEW_TYPE_2D || pCreateInfo->viewType == VK_IMAGE_VIEW_TYPE_2D_ARRAY,
+            image_state, pCreateInfo->viewType == VK_IMAGE_VIEW_TYPE_2D || pCreateInfo->viewType == VK_IMAGE_VIEW_TYPE_2D_ARRAY,
             pCreateInfo->subresourceRange);
 
         VkImageCreateFlags image_flags = image_state->createInfo.flags;
@@ -4234,7 +4231,7 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
         }
 
         // Validate correct image aspect bits for desired formats and format consistency
-        skip |= ValidateImageAspectMask(device_data, image_state->image, image_format, aspect_mask, "vkCreateImageView()");
+        skip |= ValidateImageAspectMask(image_state->image, image_format, aspect_mask, "vkCreateImageView()");
 
         switch (image_type) {
             case VK_IMAGE_TYPE_1D:
@@ -4429,26 +4426,24 @@ bool CoreChecks::ValidateIdleBuffer(layer_data *device_data, VkBuffer buffer) {
 }
 
 bool CoreChecks::PreCallValidateDestroyImageView(VkDevice device, VkImageView imageView, const VkAllocationCallbacks *pAllocator) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     IMAGE_VIEW_STATE *image_view_state = GetImageViewState(imageView);
     VK_OBJECT obj_struct = {HandleToUint64(imageView), kVulkanObjectTypeImageView};
 
     bool skip = false;
     if (image_view_state) {
-        skip |= ValidateObjectNotInUse(device_data, image_view_state, obj_struct, "vkDestroyImageView",
-                                       "VUID-vkDestroyImageView-imageView-01026");
+        skip |=
+            ValidateObjectNotInUse(image_view_state, obj_struct, "vkDestroyImageView", "VUID-vkDestroyImageView-imageView-01026");
     }
     return skip;
 }
 
 void CoreChecks::PreCallRecordDestroyImageView(VkDevice device, VkImageView imageView, const VkAllocationCallbacks *pAllocator) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     IMAGE_VIEW_STATE *image_view_state = GetImageViewState(imageView);
     if (!image_view_state) return;
     VK_OBJECT obj_struct = {HandleToUint64(imageView), kVulkanObjectTypeImageView};
 
     // Any bound cmd buffers are now invalid
-    InvalidateCommandBuffers(device_data, image_view_state->cb_bindings, obj_struct);
+    InvalidateCommandBuffers(image_view_state->cb_bindings, obj_struct);
     (*GetImageViewMap()).erase(imageView);
 }
 
@@ -4464,12 +4459,11 @@ bool CoreChecks::PreCallValidateDestroyBuffer(VkDevice device, VkBuffer buffer, 
 }
 
 void CoreChecks::PreCallRecordDestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationCallbacks *pAllocator) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!buffer) return;
     auto buffer_state = GetBufferState(buffer);
     VK_OBJECT obj_struct = {HandleToUint64(buffer), kVulkanObjectTypeBuffer};
 
-    InvalidateCommandBuffers(device_data, buffer_state->cb_bindings, obj_struct);
+    InvalidateCommandBuffers(buffer_state->cb_bindings, obj_struct);
     for (auto mem_binding : buffer_state->GetBoundMemory()) {
         auto mem_info = GetMemObjInfo(mem_binding);
         if (mem_info) {
@@ -4483,25 +4477,23 @@ void CoreChecks::PreCallRecordDestroyBuffer(VkDevice device, VkBuffer buffer, co
 
 bool CoreChecks::PreCallValidateDestroyBufferView(VkDevice device, VkBufferView bufferView,
                                                   const VkAllocationCallbacks *pAllocator) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     auto buffer_view_state = GetBufferViewState(bufferView);
     VK_OBJECT obj_struct = {HandleToUint64(bufferView), kVulkanObjectTypeBufferView};
     bool skip = false;
     if (buffer_view_state) {
-        skip |= ValidateObjectNotInUse(device_data, buffer_view_state, obj_struct, "vkDestroyBufferView",
+        skip |= ValidateObjectNotInUse(buffer_view_state, obj_struct, "vkDestroyBufferView",
                                        "VUID-vkDestroyBufferView-bufferView-00936");
     }
     return skip;
 }
 
 void CoreChecks::PreCallRecordDestroyBufferView(VkDevice device, VkBufferView bufferView, const VkAllocationCallbacks *pAllocator) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!bufferView) return;
     auto buffer_view_state = GetBufferViewState(bufferView);
     VK_OBJECT obj_struct = {HandleToUint64(bufferView), kVulkanObjectTypeBufferView};
 
     // Any bound cmd buffers are now invalid
-    InvalidateCommandBuffers(device_data, buffer_view_state->cb_bindings, obj_struct);
+    InvalidateCommandBuffers(buffer_view_state->cb_bindings, obj_struct);
     GetBufferViewMap()->erase(bufferView);
 }
 

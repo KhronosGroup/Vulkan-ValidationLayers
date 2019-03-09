@@ -2111,7 +2111,7 @@ void CoreChecks::ResetCommandBufferState(layer_data *dev_data, const VkCommandBu
         pCB->primaryCommandBuffer = VK_NULL_HANDLE;
         // If secondary, invalidate any primary command buffer that may call us.
         if (pCB->createInfo.level == VK_COMMAND_BUFFER_LEVEL_SECONDARY) {
-            InvalidateCommandBuffers(dev_data, pCB->linkedCommandBuffers, {HandleToUint64(cb), kVulkanObjectTypeCommandBuffer});
+            InvalidateCommandBuffers(pCB->linkedCommandBuffers, {HandleToUint64(cb), kVulkanObjectTypeCommandBuffer});
         }
 
         // Remove reverse command buffer links.
@@ -3674,9 +3674,9 @@ void CoreChecks::PostCallRecordAllocateMemory(VkDevice device, const VkMemoryAll
 }
 
 // For given obj node, if it is use, flag a validation error and return callback result, else return false
-bool CoreChecks::ValidateObjectNotInUse(const layer_data *dev_data, BASE_NODE *obj_node, VK_OBJECT obj_struct,
-                                        const char *caller_name, const char *error_code) {
-    if (dev_data->instance_data->disabled.object_in_use) return false;
+bool CoreChecks::ValidateObjectNotInUse(BASE_NODE *obj_node, VK_OBJECT obj_struct, const char *caller_name,
+                                        const char *error_code) {
+    if (disabled.object_in_use) return false;
     bool skip = false;
     if (obj_node->in_use.load()) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, get_debug_report_enum[obj_struct.type], obj_struct.handle,
@@ -3687,18 +3687,16 @@ bool CoreChecks::ValidateObjectNotInUse(const layer_data *dev_data, BASE_NODE *o
 }
 
 bool CoreChecks::PreCallValidateFreeMemory(VkDevice device, VkDeviceMemory mem, const VkAllocationCallbacks *pAllocator) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     DEVICE_MEM_INFO *mem_info = GetMemObjInfo(mem);
     VK_OBJECT obj_struct = {HandleToUint64(mem), kVulkanObjectTypeDeviceMemory};
     bool skip = false;
     if (mem_info) {
-        skip |= ValidateObjectNotInUse(device_data, mem_info, obj_struct, "vkFreeMemory", "VUID-vkFreeMemory-memory-00677");
+        skip |= ValidateObjectNotInUse(mem_info, obj_struct, "vkFreeMemory", "VUID-vkFreeMemory-memory-00677");
     }
     return skip;
 }
 
 void CoreChecks::PreCallRecordFreeMemory(VkDevice device, VkDeviceMemory mem, const VkAllocationCallbacks *pAllocator) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!mem) return;
     DEVICE_MEM_INFO *mem_info = GetMemObjInfo(mem);
     VK_OBJECT obj_struct = {HandleToUint64(mem), kVulkanObjectTypeDeviceMemory};
@@ -3726,8 +3724,8 @@ void CoreChecks::PreCallRecordFreeMemory(VkDevice device, VkDeviceMemory mem, co
         bindable_state->UpdateBoundMemorySet();
     }
     // Any bound cmd buffers are now invalid
-    InvalidateCommandBuffers(device_data, mem_info->cb_bindings, obj_struct);
-    device_data->memObjMap.erase(mem);
+    InvalidateCommandBuffers(mem_info->cb_bindings, obj_struct);
+    memObjMap.erase(mem);
 }
 
 // Validate that given Map memory range is valid. This means that the memory should not already be mapped,
@@ -3982,14 +3980,12 @@ void CoreChecks::PreCallRecordDestroyFence(VkDevice device, VkFence fence, const
 }
 
 bool CoreChecks::PreCallValidateDestroySemaphore(VkDevice device, VkSemaphore semaphore, const VkAllocationCallbacks *pAllocator) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     SEMAPHORE_NODE *sema_node = GetSemaphoreNode(semaphore);
     VK_OBJECT obj_struct = {HandleToUint64(semaphore), kVulkanObjectTypeSemaphore};
-    if (device_data->instance_data->disabled.destroy_semaphore) return false;
+    if (disabled.destroy_semaphore) return false;
     bool skip = false;
     if (sema_node) {
-        skip |= ValidateObjectNotInUse(device_data, sema_node, obj_struct, "vkDestroySemaphore",
-                                       "VUID-vkDestroySemaphore-semaphore-01137");
+        skip |= ValidateObjectNotInUse(sema_node, obj_struct, "vkDestroySemaphore", "VUID-vkDestroySemaphore-semaphore-01137");
     }
     return skip;
 }
@@ -4000,44 +3996,39 @@ void CoreChecks::PreCallRecordDestroySemaphore(VkDevice device, VkSemaphore sema
 }
 
 bool CoreChecks::PreCallValidateDestroyEvent(VkDevice device, VkEvent event, const VkAllocationCallbacks *pAllocator) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     EVENT_STATE *event_state = GetEventNode(event);
     VK_OBJECT obj_struct = {HandleToUint64(event), kVulkanObjectTypeEvent};
     bool skip = false;
     if (event_state) {
-        skip |= ValidateObjectNotInUse(device_data, event_state, obj_struct, "vkDestroyEvent", "VUID-vkDestroyEvent-event-01145");
+        skip |= ValidateObjectNotInUse(event_state, obj_struct, "vkDestroyEvent", "VUID-vkDestroyEvent-event-01145");
     }
     return skip;
 }
 
 void CoreChecks::PreCallRecordDestroyEvent(VkDevice device, VkEvent event, const VkAllocationCallbacks *pAllocator) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!event) return;
     EVENT_STATE *event_state = GetEventNode(event);
     VK_OBJECT obj_struct = {HandleToUint64(event), kVulkanObjectTypeEvent};
-    InvalidateCommandBuffers(device_data, event_state->cb_bindings, obj_struct);
-    device_data->eventMap.erase(event);
+    InvalidateCommandBuffers(event_state->cb_bindings, obj_struct);
+    eventMap.erase(event);
 }
 
 bool CoreChecks::PreCallValidateDestroyQueryPool(VkDevice device, VkQueryPool queryPool, const VkAllocationCallbacks *pAllocator) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     QUERY_POOL_NODE *qp_state = GetQueryPoolNode(queryPool);
     VK_OBJECT obj_struct = {HandleToUint64(queryPool), kVulkanObjectTypeQueryPool};
     bool skip = false;
     if (qp_state) {
-        skip |= ValidateObjectNotInUse(device_data, qp_state, obj_struct, "vkDestroyQueryPool",
-                                       "VUID-vkDestroyQueryPool-queryPool-00793");
+        skip |= ValidateObjectNotInUse(qp_state, obj_struct, "vkDestroyQueryPool", "VUID-vkDestroyQueryPool-queryPool-00793");
     }
     return skip;
 }
 
 void CoreChecks::PreCallRecordDestroyQueryPool(VkDevice device, VkQueryPool queryPool, const VkAllocationCallbacks *pAllocator) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!queryPool) return;
     QUERY_POOL_NODE *qp_state = GetQueryPoolNode(queryPool);
     VK_OBJECT obj_struct = {HandleToUint64(queryPool), kVulkanObjectTypeQueryPool};
-    InvalidateCommandBuffers(device_data, qp_state->cb_bindings, obj_struct);
-    device_data->queryPoolMap.erase(queryPool);
+    InvalidateCommandBuffers(qp_state->cb_bindings, obj_struct);
+    queryPoolMap.erase(queryPool);
 }
 
 bool CoreChecks::PreCallValidateGetQueryPoolResults(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery,
@@ -4558,14 +4549,12 @@ void CoreChecks::PreCallRecordDestroyShaderModule(VkDevice device, VkShaderModul
 }
 
 bool CoreChecks::PreCallValidateDestroyPipeline(VkDevice device, VkPipeline pipeline, const VkAllocationCallbacks *pAllocator) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     PIPELINE_STATE *pipeline_state = GetPipelineState(pipeline);
     VK_OBJECT obj_struct = {HandleToUint64(pipeline), kVulkanObjectTypePipeline};
-    if (device_data->instance_data->disabled.destroy_pipeline) return false;
+    if (disabled.destroy_pipeline) return false;
     bool skip = false;
     if (pipeline_state) {
-        skip |= ValidateObjectNotInUse(device_data, pipeline_state, obj_struct, "vkDestroyPipeline",
-                                       "VUID-vkDestroyPipeline-pipeline-00765");
+        skip |= ValidateObjectNotInUse(pipeline_state, obj_struct, "vkDestroyPipeline", "VUID-vkDestroyPipeline-pipeline-00765");
     }
     return skip;
 }
@@ -4576,11 +4565,11 @@ void CoreChecks::PreCallRecordDestroyPipeline(VkDevice device, VkPipeline pipeli
     PIPELINE_STATE *pipeline_state = GetPipelineState(pipeline);
     VK_OBJECT obj_struct = {HandleToUint64(pipeline), kVulkanObjectTypePipeline};
     // Any bound cmd buffers are now invalid
-    InvalidateCommandBuffers(device_data, pipeline_state->cb_bindings, obj_struct);
+    InvalidateCommandBuffers(pipeline_state->cb_bindings, obj_struct);
     if (GetEnables()->gpu_validation) {
         GpuPreCallRecordDestroyPipeline(device_data, pipeline);
     }
-    device_data->pipelineMap.erase(pipeline);
+    pipelineMap.erase(pipeline);
 }
 
 void CoreChecks::PreCallRecordDestroyPipelineLayout(VkDevice device, VkPipelineLayout pipelineLayout,
@@ -4590,28 +4579,25 @@ void CoreChecks::PreCallRecordDestroyPipelineLayout(VkDevice device, VkPipelineL
 }
 
 bool CoreChecks::PreCallValidateDestroySampler(VkDevice device, VkSampler sampler, const VkAllocationCallbacks *pAllocator) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     SAMPLER_STATE *sampler_state = GetSamplerState(sampler);
     VK_OBJECT obj_struct = {HandleToUint64(sampler), kVulkanObjectTypeSampler};
-    if (device_data->instance_data->disabled.destroy_sampler) return false;
+    if (disabled.destroy_sampler) return false;
     bool skip = false;
     if (sampler_state) {
-        skip |= ValidateObjectNotInUse(device_data, sampler_state, obj_struct, "vkDestroySampler",
-                                       "VUID-vkDestroySampler-sampler-01082");
+        skip |= ValidateObjectNotInUse(sampler_state, obj_struct, "vkDestroySampler", "VUID-vkDestroySampler-sampler-01082");
     }
     return skip;
 }
 
 void CoreChecks::PreCallRecordDestroySampler(VkDevice device, VkSampler sampler, const VkAllocationCallbacks *pAllocator) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!sampler) return;
     SAMPLER_STATE *sampler_state = GetSamplerState(sampler);
     VK_OBJECT obj_struct = {HandleToUint64(sampler), kVulkanObjectTypeSampler};
     // Any bound cmd buffers are now invalid
     if (sampler_state) {
-        InvalidateCommandBuffers(device_data, sampler_state->cb_bindings, obj_struct);
+        InvalidateCommandBuffers(sampler_state->cb_bindings, obj_struct);
     }
-    device_data->samplerMap.erase(sampler);
+    samplerMap.erase(sampler);
 }
 
 void CoreChecks::PreCallRecordDestroyDescriptorSetLayout(VkDevice device, VkDescriptorSetLayout descriptorSetLayout,
@@ -4626,13 +4612,12 @@ void CoreChecks::PreCallRecordDestroyDescriptorSetLayout(VkDevice device, VkDesc
 
 bool CoreChecks::PreCallValidateDestroyDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool,
                                                       const VkAllocationCallbacks *pAllocator) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     DESCRIPTOR_POOL_STATE *desc_pool_state = GetDescriptorPoolState(descriptorPool);
     VK_OBJECT obj_struct = {HandleToUint64(descriptorPool), kVulkanObjectTypeDescriptorPool};
-    if (device_data->instance_data->disabled.destroy_descriptor_pool) return false;
+    if (disabled.destroy_descriptor_pool) return false;
     bool skip = false;
     if (desc_pool_state) {
-        skip |= ValidateObjectNotInUse(device_data, desc_pool_state, obj_struct, "vkDestroyDescriptorPool",
+        skip |= ValidateObjectNotInUse(desc_pool_state, obj_struct, "vkDestroyDescriptorPool",
                                        "VUID-vkDestroyDescriptorPool-descriptorPool-00303");
     }
     return skip;
@@ -4640,18 +4625,17 @@ bool CoreChecks::PreCallValidateDestroyDescriptorPool(VkDevice device, VkDescrip
 
 void CoreChecks::PreCallRecordDestroyDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool,
                                                     const VkAllocationCallbacks *pAllocator) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!descriptorPool) return;
     DESCRIPTOR_POOL_STATE *desc_pool_state = GetDescriptorPoolState(descriptorPool);
     VK_OBJECT obj_struct = {HandleToUint64(descriptorPool), kVulkanObjectTypeDescriptorPool};
     if (desc_pool_state) {
         // Any bound cmd buffers are now invalid
-        InvalidateCommandBuffers(device_data, desc_pool_state->cb_bindings, obj_struct);
+        InvalidateCommandBuffers(desc_pool_state->cb_bindings, obj_struct);
         // Free sets that were in this pool
         for (auto ds : desc_pool_state->sets) {
             FreeDescriptorSet(ds);
         }
-        device_data->descriptorPoolMap.erase(descriptorPool);
+        descriptorPoolMap.erase(descriptorPool);
         delete desc_pool_state;
     }
 }
@@ -4833,8 +4817,7 @@ void CoreChecks::PostCallRecordResetFences(VkDevice device, uint32_t fenceCount,
 }
 
 // For given cb_nodes, invalidate them and track object causing invalidation
-void CoreChecks::InvalidateCommandBuffers(const layer_data *dev_data, std::unordered_set<GLOBAL_CB_NODE *> const &cb_nodes,
-                                          VK_OBJECT obj) {
+void CoreChecks::InvalidateCommandBuffers(std::unordered_set<GLOBAL_CB_NODE *> const &cb_nodes, VK_OBJECT obj) {
     for (auto cb_node : cb_nodes) {
         if (cb_node->state == CB_RECORDING) {
             log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
@@ -4849,19 +4832,18 @@ void CoreChecks::InvalidateCommandBuffers(const layer_data *dev_data, std::unord
 
         // if secondary, then propagate the invalidation to the primaries that will call us.
         if (cb_node->createInfo.level == VK_COMMAND_BUFFER_LEVEL_SECONDARY) {
-            InvalidateCommandBuffers(dev_data, cb_node->linkedCommandBuffers, obj);
+            InvalidateCommandBuffers(cb_node->linkedCommandBuffers, obj);
         }
     }
 }
 
 bool CoreChecks::PreCallValidateDestroyFramebuffer(VkDevice device, VkFramebuffer framebuffer,
                                                    const VkAllocationCallbacks *pAllocator) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     FRAMEBUFFER_STATE *framebuffer_state = GetFramebufferState(framebuffer);
     VK_OBJECT obj_struct = {HandleToUint64(framebuffer), kVulkanObjectTypeFramebuffer};
     bool skip = false;
     if (framebuffer_state) {
-        skip |= ValidateObjectNotInUse(device_data, framebuffer_state, obj_struct, "vkDestroyFramebuffer",
+        skip |= ValidateObjectNotInUse(framebuffer_state, obj_struct, "vkDestroyFramebuffer",
                                        "VUID-vkDestroyFramebuffer-framebuffer-00892");
     }
     return skip;
@@ -4869,34 +4851,30 @@ bool CoreChecks::PreCallValidateDestroyFramebuffer(VkDevice device, VkFramebuffe
 
 void CoreChecks::PreCallRecordDestroyFramebuffer(VkDevice device, VkFramebuffer framebuffer,
                                                  const VkAllocationCallbacks *pAllocator) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!framebuffer) return;
     FRAMEBUFFER_STATE *framebuffer_state = GetFramebufferState(framebuffer);
     VK_OBJECT obj_struct = {HandleToUint64(framebuffer), kVulkanObjectTypeFramebuffer};
-    InvalidateCommandBuffers(device_data, framebuffer_state->cb_bindings, obj_struct);
-    device_data->frameBufferMap.erase(framebuffer);
+    InvalidateCommandBuffers(framebuffer_state->cb_bindings, obj_struct);
+    frameBufferMap.erase(framebuffer);
 }
 
 bool CoreChecks::PreCallValidateDestroyRenderPass(VkDevice device, VkRenderPass renderPass,
                                                   const VkAllocationCallbacks *pAllocator) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     RENDER_PASS_STATE *rp_state = GetRenderPassState(renderPass);
     VK_OBJECT obj_struct = {HandleToUint64(renderPass), kVulkanObjectTypeRenderPass};
     bool skip = false;
     if (rp_state) {
-        skip |= ValidateObjectNotInUse(device_data, rp_state, obj_struct, "vkDestroyRenderPass",
-                                       "VUID-vkDestroyRenderPass-renderPass-00873");
+        skip |= ValidateObjectNotInUse(rp_state, obj_struct, "vkDestroyRenderPass", "VUID-vkDestroyRenderPass-renderPass-00873");
     }
     return skip;
 }
 
 void CoreChecks::PreCallRecordDestroyRenderPass(VkDevice device, VkRenderPass renderPass, const VkAllocationCallbacks *pAllocator) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!renderPass) return;
     RENDER_PASS_STATE *rp_state = GetRenderPassState(renderPass);
     VK_OBJECT obj_struct = {HandleToUint64(renderPass), kVulkanObjectTypeRenderPass};
-    InvalidateCommandBuffers(device_data, rp_state->cb_bindings, obj_struct);
-    device_data->renderPassMap.erase(renderPass);
+    InvalidateCommandBuffers(rp_state->cb_bindings, obj_struct);
+    renderPassMap.erase(renderPass);
 }
 
 // Access helper functions for external modules
@@ -8186,11 +8164,10 @@ bool CoreChecks::ValidateBarriers(layer_data *device_data, const char *funcName,
             skip |= ValidateMemoryIsBoundToImage(image_data, funcName, kVUIDUndefined);
 
             auto aspect_mask = mem_barrier->subresourceRange.aspectMask;
-            skip |= ValidateImageAspectMask(device_data, image_data->image, image_data->createInfo.format, aspect_mask, funcName);
+            skip |= ValidateImageAspectMask(image_data->image, image_data->createInfo.format, aspect_mask, funcName);
 
             std::string param_name = "pImageMemoryBarriers[" + std::to_string(i) + "].subresourceRange";
-            skip |= ValidateImageBarrierSubresourceRange(device_data, image_data, mem_barrier->subresourceRange, funcName,
-                                                         param_name.c_str());
+            skip |= ValidateImageBarrierSubresourceRange(image_data, mem_barrier->subresourceRange, funcName, param_name.c_str());
         }
     }
 
@@ -9159,8 +9136,8 @@ bool CoreChecks::ValidateDependencies(layer_data *dev_data, FRAMEBUFFER_STATE co
     return skip;
 }
 
-static void RecordRenderPassDAG(const layer_data *dev_data, RenderPassCreateVersion rp_version,
-                                const VkRenderPassCreateInfo2KHR *pCreateInfo, RENDER_PASS_STATE *render_pass) {
+void CoreChecks::RecordRenderPassDAG(RenderPassCreateVersion rp_version, const VkRenderPassCreateInfo2KHR *pCreateInfo,
+                                     RENDER_PASS_STATE *render_pass) {
     auto &subpass_to_node = render_pass->subpassToNode;
     subpass_to_node.resize(pCreateInfo->subpassCount);
     auto &self_dependencies = render_pass->self_dependencies;
@@ -9326,8 +9303,8 @@ bool CoreChecks::ValidateRenderPassDAG(RenderPassCreateVersion rp_version, const
     return skip;
 }
 
-bool CoreChecks::ValidateAttachmentIndex(const layer_data *dev_data, RenderPassCreateVersion rp_version, uint32_t attachment,
-                                         uint32_t attachment_count, const char *type) {
+bool CoreChecks::ValidateAttachmentIndex(RenderPassCreateVersion rp_version, uint32_t attachment, uint32_t attachment_count,
+                                         const char *type) {
     bool skip = false;
     const bool use_rp2 = (rp_version == RENDER_PASS_VERSION_2);
     const char *const function_name = use_rp2 ? "vkCreateRenderPass2KHR()" : "vkCreateRenderPass()";
@@ -9367,9 +9344,9 @@ char const *StringAttachmentType(uint8_t type) {
     }
 }
 
-bool CoreChecks::AddAttachmentUse(const layer_data *dev_data, RenderPassCreateVersion rp_version, uint32_t subpass,
-                                  std::vector<uint8_t> &attachment_uses, std::vector<VkImageLayout> &attachment_layouts,
-                                  uint32_t attachment, uint8_t new_use, VkImageLayout new_layout) {
+bool CoreChecks::AddAttachmentUse(RenderPassCreateVersion rp_version, uint32_t subpass, std::vector<uint8_t> &attachment_uses,
+                                  std::vector<VkImageLayout> &attachment_layouts, uint32_t attachment, uint8_t new_use,
+                                  VkImageLayout new_layout) {
     if (attachment >= attachment_uses.size()) return false; /* out of range, but already reported */
 
     bool skip = false;
@@ -9400,7 +9377,7 @@ bool CoreChecks::AddAttachmentUse(const layer_data *dev_data, RenderPassCreateVe
     return skip;
 }
 
-bool CoreChecks::ValidateRenderpassAttachmentUsage(const layer_data *dev_data, RenderPassCreateVersion rp_version,
+bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_version,
                                                    const VkRenderPassCreateInfo2KHR *pCreateInfo) {
     bool skip = false;
     const bool use_rp2 = (rp_version == RENDER_PASS_VERSION_2);
@@ -9422,8 +9399,7 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(const layer_data *dev_data, R
         for (uint32_t j = 0; j < subpass.inputAttachmentCount; ++j) {
             auto const &attachment_ref = subpass.pInputAttachments[j];
             if (attachment_ref.attachment != VK_ATTACHMENT_UNUSED) {
-                skip |=
-                    ValidateAttachmentIndex(dev_data, rp_version, attachment_ref.attachment, pCreateInfo->attachmentCount, "Input");
+                skip |= ValidateAttachmentIndex(rp_version, attachment_ref.attachment, pCreateInfo->attachmentCount, "Input");
 
                 if (attachment_ref.aspectMask & VK_IMAGE_ASPECT_METADATA_BIT) {
                     vuid =
@@ -9435,12 +9411,11 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(const layer_data *dev_data, R
                 }
 
                 if (attachment_ref.attachment < pCreateInfo->attachmentCount) {
-                    skip |= AddAttachmentUse(dev_data, rp_version, i, attachment_uses, attachment_layouts,
-                                             attachment_ref.attachment, ATTACHMENT_INPUT, attachment_ref.layout);
+                    skip |= AddAttachmentUse(rp_version, i, attachment_uses, attachment_layouts, attachment_ref.attachment,
+                                             ATTACHMENT_INPUT, attachment_ref.layout);
 
                     vuid = use_rp2 ? kVUID_Core_DrawState_InvalidRenderpass : "VUID-VkRenderPassCreateInfo-pNext-01963";
-                    skip |= ValidateImageAspectMask(dev_data, VK_NULL_HANDLE,
-                                                    pCreateInfo->pAttachments[attachment_ref.attachment].format,
+                    skip |= ValidateImageAspectMask(VK_NULL_HANDLE, pCreateInfo->pAttachments[attachment_ref.attachment].format,
                                                     attachment_ref.aspectMask, function_name, vuid);
                 }
             }
@@ -9478,10 +9453,10 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(const layer_data *dev_data, R
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, vuid,
                                 "%s:  Preserve attachment (%d) must not be VK_ATTACHMENT_UNUSED.", function_name, j);
             } else {
-                skip |= ValidateAttachmentIndex(dev_data, rp_version, attachment, pCreateInfo->attachmentCount, "Preserve");
+                skip |= ValidateAttachmentIndex(rp_version, attachment, pCreateInfo->attachmentCount, "Preserve");
                 if (attachment < pCreateInfo->attachmentCount) {
-                    skip |= AddAttachmentUse(dev_data, rp_version, i, attachment_uses, attachment_layouts, attachment,
-                                             ATTACHMENT_PRESERVE, VkImageLayout(0) /* preserve doesn't have any layout */);
+                    skip |= AddAttachmentUse(rp_version, i, attachment_uses, attachment_layouts, attachment, ATTACHMENT_PRESERVE,
+                                             VkImageLayout(0) /* preserve doesn't have any layout */);
                 }
             }
         }
@@ -9492,12 +9467,11 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(const layer_data *dev_data, R
             if (subpass.pResolveAttachments) {
                 auto const &attachment_ref = subpass.pResolveAttachments[j];
                 if (attachment_ref.attachment != VK_ATTACHMENT_UNUSED) {
-                    skip |= ValidateAttachmentIndex(dev_data, rp_version, attachment_ref.attachment, pCreateInfo->attachmentCount,
-                                                    "Resolve");
+                    skip |= ValidateAttachmentIndex(rp_version, attachment_ref.attachment, pCreateInfo->attachmentCount, "Resolve");
 
                     if (attachment_ref.attachment < pCreateInfo->attachmentCount) {
-                        skip |= AddAttachmentUse(dev_data, rp_version, i, attachment_uses, attachment_layouts,
-                                                 attachment_ref.attachment, ATTACHMENT_RESOLVE, attachment_ref.layout);
+                        skip |= AddAttachmentUse(rp_version, i, attachment_uses, attachment_layouts, attachment_ref.attachment,
+                                                 ATTACHMENT_RESOLVE, attachment_ref.layout);
 
                         subpass_performs_resolve = true;
 
@@ -9518,10 +9492,10 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(const layer_data *dev_data, R
 
         if (subpass.pDepthStencilAttachment) {
             if (subpass.pDepthStencilAttachment->attachment != VK_ATTACHMENT_UNUSED) {
-                skip |= ValidateAttachmentIndex(dev_data, rp_version, subpass.pDepthStencilAttachment->attachment,
+                skip |= ValidateAttachmentIndex(rp_version, subpass.pDepthStencilAttachment->attachment,
                                                 pCreateInfo->attachmentCount, "Depth");
                 if (subpass.pDepthStencilAttachment->attachment < pCreateInfo->attachmentCount) {
-                    skip |= AddAttachmentUse(dev_data, rp_version, i, attachment_uses, attachment_layouts,
+                    skip |= AddAttachmentUse(rp_version, i, attachment_uses, attachment_layouts,
                                              subpass.pDepthStencilAttachment->attachment, ATTACHMENT_DEPTH,
                                              subpass.pDepthStencilAttachment->layout);
                 }
@@ -9531,9 +9505,9 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(const layer_data *dev_data, R
         uint32_t last_sample_count_attachment = VK_ATTACHMENT_UNUSED;
         for (uint32_t j = 0; j < subpass.colorAttachmentCount; ++j) {
             auto const &attachment_ref = subpass.pColorAttachments[j];
-            skip |= ValidateAttachmentIndex(dev_data, rp_version, attachment_ref.attachment, pCreateInfo->attachmentCount, "Color");
+            skip |= ValidateAttachmentIndex(rp_version, attachment_ref.attachment, pCreateInfo->attachmentCount, "Color");
             if (attachment_ref.attachment != VK_ATTACHMENT_UNUSED && attachment_ref.attachment < pCreateInfo->attachmentCount) {
-                skip |= AddAttachmentUse(dev_data, rp_version, i, attachment_uses, attachment_layouts, attachment_ref.attachment,
+                skip |= AddAttachmentUse(rp_version, i, attachment_uses, attachment_layouts, attachment_ref.attachment,
                                          ATTACHMENT_COLOR, attachment_ref.layout);
 
                 VkSampleCountFlagBits current_sample_count = pCreateInfo->pAttachments[attachment_ref.attachment].samples;
@@ -9568,7 +9542,7 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(const layer_data *dev_data, R
                     const auto depth_stencil_sample_count =
                         pCreateInfo->pAttachments[subpass.pDepthStencilAttachment->attachment].samples;
 
-                    if (dev_data->device_extensions.vk_amd_mixed_attachment_samples) {
+                    if (device_extensions.vk_amd_mixed_attachment_samples) {
                         if (pCreateInfo->pAttachments[attachment_ref.attachment].samples > depth_stencil_sample_count) {
                             vuid = use_rp2 ? "VUID-VkSubpassDescription2KHR-pColorAttachments-03070"
                                            : "VUID-VkSubpassDescription-pColorAttachments-01506";
@@ -9583,8 +9557,7 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(const layer_data *dev_data, R
                         }
                     }
 
-                    if (!dev_data->device_extensions.vk_amd_mixed_attachment_samples &&
-                        !dev_data->device_extensions.vk_nv_framebuffer_mixed_samples &&
+                    if (!device_extensions.vk_amd_mixed_attachment_samples && !device_extensions.vk_nv_framebuffer_mixed_samples &&
                         current_sample_count != depth_stencil_sample_count) {
                         vuid = use_rp2 ? "VUID-VkSubpassDescription2KHR-pDepthStencilAttachment-03071"
                                        : "VUID-VkSubpassDescription-pDepthStencilAttachment-01418";
@@ -9634,7 +9607,7 @@ static void MarkAttachmentFirstUse(RENDER_PASS_STATE *render_pass, uint32_t inde
     if (!render_pass->attachment_first_read.count(index)) render_pass->attachment_first_read[index] = is_read;
 }
 
-bool CoreChecks::ValidateCreateRenderPass(layer_data *dev_data, VkDevice device, RenderPassCreateVersion rp_version,
+bool CoreChecks::ValidateCreateRenderPass(VkDevice device, RenderPassCreateVersion rp_version,
                                           const VkRenderPassCreateInfo2KHR *pCreateInfo, RENDER_PASS_STATE *render_pass) {
     bool skip = false;
     const bool use_rp2 = (rp_version == RENDER_PASS_VERSION_2);
@@ -9643,7 +9616,7 @@ bool CoreChecks::ValidateCreateRenderPass(layer_data *dev_data, VkDevice device,
 
     // TODO: As part of wrapping up the mem_tracker/core_validation merge the following routine should be consolidated with
     //       ValidateLayouts.
-    skip |= ValidateRenderpassAttachmentUsage(dev_data, rp_version, pCreateInfo);
+    skip |= ValidateRenderpassAttachmentUsage(rp_version, pCreateInfo);
 
     render_pass->renderPass = VK_NULL_HANDLE;
     skip |= ValidateRenderPassDAG(rp_version, pCreateInfo, render_pass);
@@ -9717,14 +9690,14 @@ bool CoreChecks::ValidateCreateRenderPass(layer_data *dev_data, VkDevice device,
                 "VUID-VkSubpassDependency-dstStageMask-02102");
         }
 
-        if (!ValidateAccessMaskPipelineStage(dev_data->device_extensions, dependency.srcAccessMask, dependency.srcStageMask)) {
+        if (!ValidateAccessMaskPipelineStage(device_extensions, dependency.srcAccessMask, dependency.srcStageMask)) {
             vuid = use_rp2 ? "VUID-VkSubpassDependency2KHR-srcAccessMask-03088" : "VUID-VkSubpassDependency-srcAccessMask-00868";
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, vuid,
                             "%s: pDependencies[%u].srcAccessMask (0x%" PRIx32 ") is not supported by srcStageMask (0x%" PRIx32 ").",
                             function_name, i, dependency.srcAccessMask, dependency.srcStageMask);
         }
 
-        if (!ValidateAccessMaskPipelineStage(dev_data->device_extensions, dependency.dstAccessMask, dependency.dstStageMask)) {
+        if (!ValidateAccessMaskPipelineStage(device_extensions, dependency.dstAccessMask, dependency.dstStageMask)) {
             vuid = use_rp2 ? "VUID-VkSubpassDependency2KHR-dstAccessMask-03089" : "VUID-VkSubpassDependency-dstAccessMask-00869";
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, vuid,
                             "%s: pDependencies[%u].dstAccessMask (0x%" PRIx32 ") is not supported by dstStageMask (0x%" PRIx32 ").",
@@ -9739,8 +9712,6 @@ bool CoreChecks::ValidateCreateRenderPass(layer_data *dev_data, VkDevice device,
 
 bool CoreChecks::PreCallValidateCreateRenderPass(VkDevice device, const VkRenderPassCreateInfo *pCreateInfo,
                                                  const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-
     bool skip = false;
     // Handle extension structs from KHR_multiview and KHR_maintenance2 that can only be validated for RP1 (indices out of bounds)
     const VkRenderPassMultiviewCreateInfo *pMultiviewInfo = lvl_find_in_chain<VkRenderPassMultiviewCreateInfo>(pCreateInfo->pNext);
@@ -9781,19 +9752,18 @@ bool CoreChecks::PreCallValidateCreateRenderPass(VkDevice device, const VkRender
 
     if (!skip) {
         auto render_pass = std::unique_ptr<RENDER_PASS_STATE>(new RENDER_PASS_STATE(pCreateInfo));
-        skip |=
-            ValidateCreateRenderPass(device_data, device, RENDER_PASS_VERSION_1, render_pass->createInfo.ptr(), render_pass.get());
+        skip |= ValidateCreateRenderPass(device, RENDER_PASS_VERSION_1, render_pass->createInfo.ptr(), render_pass.get());
     }
 
     return skip;
 }
 
-void RecordCreateRenderPassState(layer_data *device_data, RenderPassCreateVersion rp_version,
-                                 std::shared_ptr<RENDER_PASS_STATE> &render_pass, VkRenderPass *pRenderPass) {
+void CoreChecks::RecordCreateRenderPassState(RenderPassCreateVersion rp_version, std::shared_ptr<RENDER_PASS_STATE> &render_pass,
+                                             VkRenderPass *pRenderPass) {
     render_pass->renderPass = *pRenderPass;
     auto create_info = render_pass->createInfo.ptr();
 
-    RecordRenderPassDAG(device_data, RENDER_PASS_VERSION_1, create_info, render_pass.get());
+    RecordRenderPassDAG(RENDER_PASS_VERSION_1, create_info, render_pass.get());
 
     for (uint32_t i = 0; i < create_info->subpassCount; ++i) {
         const VkSubpassDescription2KHR &subpass = create_info->pSubpasses[i];
@@ -9814,7 +9784,7 @@ void RecordCreateRenderPassState(layer_data *device_data, RenderPassCreateVersio
     }
 
     // Even though render_pass is an rvalue-ref parameter, still must move s.t. move assignment is invoked.
-    device_data->renderPassMap[*pRenderPass] = std::move(render_pass);
+    renderPassMap[*pRenderPass] = std::move(render_pass);
 }
 
 // Style note:
@@ -9824,19 +9794,17 @@ void RecordCreateRenderPassState(layer_data *device_data, RenderPassCreateVersio
 void CoreChecks::PostCallRecordCreateRenderPass(VkDevice device, const VkRenderPassCreateInfo *pCreateInfo,
                                                 const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
                                                 VkResult result) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (VK_SUCCESS != result) return;
     auto render_pass_state = std::make_shared<RENDER_PASS_STATE>(pCreateInfo);
-    RecordCreateRenderPassState(device_data, RENDER_PASS_VERSION_1, render_pass_state, pRenderPass);
+    RecordCreateRenderPassState(RENDER_PASS_VERSION_1, render_pass_state, pRenderPass);
 }
 
 void CoreChecks::PostCallRecordCreateRenderPass2KHR(VkDevice device, const VkRenderPassCreateInfo2KHR *pCreateInfo,
                                                     const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
                                                     VkResult result) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (VK_SUCCESS != result) return;
     auto render_pass_state = std::make_shared<RENDER_PASS_STATE>(pCreateInfo);
-    RecordCreateRenderPassState(device_data, RENDER_PASS_VERSION_2, render_pass_state, pRenderPass);
+    RecordCreateRenderPassState(RENDER_PASS_VERSION_2, render_pass_state, pRenderPass);
 }
 
 static bool ValidateDepthStencilResolve(const debug_report_data *report_data,
@@ -9969,15 +9937,14 @@ static bool ValidateDepthStencilResolve(const debug_report_data *report_data,
 
 bool CoreChecks::PreCallValidateCreateRenderPass2KHR(VkDevice device, const VkRenderPassCreateInfo2KHR *pCreateInfo,
                                                      const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
 
     if (GetDeviceExtensions()->vk_khr_depth_stencil_resolve) {
-        skip |= ValidateDepthStencilResolve(report_data, device_data->phys_dev_ext_props.depth_stencil_resolve_props, pCreateInfo);
+        skip |= ValidateDepthStencilResolve(report_data, phys_dev_ext_props.depth_stencil_resolve_props, pCreateInfo);
     }
 
     auto render_pass = std::make_shared<RENDER_PASS_STATE>(pCreateInfo);
-    skip |= ValidateCreateRenderPass(device_data, device, RENDER_PASS_VERSION_2, render_pass->createInfo.ptr(), render_pass.get());
+    skip |= ValidateCreateRenderPass(device, RENDER_PASS_VERSION_2, render_pass->createInfo.ptr(), render_pass.get());
 
     return skip;
 }
@@ -11145,18 +11112,18 @@ void CoreChecks::PostCallRecordCreateSemaphore(VkDevice device, const VkSemaphor
     sNode->scope = kSyncScopeInternal;
 }
 
-bool CoreChecks::ValidateImportSemaphore(layer_data *device_data, VkSemaphore semaphore, const char *caller_name) {
+bool CoreChecks::ValidateImportSemaphore(VkSemaphore semaphore, const char *caller_name) {
     bool skip = false;
     SEMAPHORE_NODE *sema_node = GetSemaphoreNode(semaphore);
     if (sema_node) {
         VK_OBJECT obj_struct = {HandleToUint64(semaphore), kVulkanObjectTypeSemaphore};
-        skip |= ValidateObjectNotInUse(device_data, sema_node, obj_struct, caller_name, kVUIDUndefined);
+        skip |= ValidateObjectNotInUse(sema_node, obj_struct, caller_name, kVUIDUndefined);
     }
     return skip;
 }
 
-void CoreChecks::RecordImportSemaphoreState(layer_data *device_data, VkSemaphore semaphore,
-                                            VkExternalSemaphoreHandleTypeFlagBitsKHR handle_type, VkSemaphoreImportFlagsKHR flags) {
+void CoreChecks::RecordImportSemaphoreState(VkSemaphore semaphore, VkExternalSemaphoreHandleTypeFlagBitsKHR handle_type,
+                                            VkSemaphoreImportFlagsKHR flags) {
     SEMAPHORE_NODE *sema_node = GetSemaphoreNode(semaphore);
     if (sema_node && sema_node->scope != kSyncScopeExternalPermanent) {
         if ((handle_type == VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT_KHR || flags & VK_SEMAPHORE_IMPORT_TEMPORARY_BIT_KHR) &&
@@ -11171,29 +11138,25 @@ void CoreChecks::RecordImportSemaphoreState(layer_data *device_data, VkSemaphore
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 bool CoreChecks::PreCallValidateImportSemaphoreWin32HandleKHR(
     VkDevice device, const VkImportSemaphoreWin32HandleInfoKHR *pImportSemaphoreWin32HandleInfo) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    return ValidateImportSemaphore(device_data, pImportSemaphoreWin32HandleInfo->semaphore, "vkImportSemaphoreWin32HandleKHR");
+    return ValidateImportSemaphore(pImportSemaphoreWin32HandleInfo->semaphore, "vkImportSemaphoreWin32HandleKHR");
 }
 
 void CoreChecks::PostCallRecordImportSemaphoreWin32HandleKHR(
     VkDevice device, const VkImportSemaphoreWin32HandleInfoKHR *pImportSemaphoreWin32HandleInfo, VkResult result) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (VK_SUCCESS != result) return;
-    RecordImportSemaphoreState(device_data, pImportSemaphoreWin32HandleInfo->semaphore, pImportSemaphoreWin32HandleInfo->handleType,
+    RecordImportSemaphoreState(pImportSemaphoreWin32HandleInfo->semaphore, pImportSemaphoreWin32HandleInfo->handleType,
                                pImportSemaphoreWin32HandleInfo->flags);
 }
 #endif  // VK_USE_PLATFORM_WIN32_KHR
 
 bool CoreChecks::PreCallValidateImportSemaphoreFdKHR(VkDevice device, const VkImportSemaphoreFdInfoKHR *pImportSemaphoreFdInfo) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    return ValidateImportSemaphore(device_data, pImportSemaphoreFdInfo->semaphore, "vkImportSemaphoreFdKHR");
+    return ValidateImportSemaphore(pImportSemaphoreFdInfo->semaphore, "vkImportSemaphoreFdKHR");
 }
 
 void CoreChecks::PostCallRecordImportSemaphoreFdKHR(VkDevice device, const VkImportSemaphoreFdInfoKHR *pImportSemaphoreFdInfo,
                                                     VkResult result) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (VK_SUCCESS != result) return;
-    RecordImportSemaphoreState(device_data, pImportSemaphoreFdInfo->semaphore, pImportSemaphoreFdInfo->handleType,
+    RecordImportSemaphoreState(pImportSemaphoreFdInfo->semaphore, pImportSemaphoreFdInfo->handleType,
                                pImportSemaphoreFdInfo->flags);
 }
 
