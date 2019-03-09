@@ -300,8 +300,8 @@ class CoreChecks : public ValidationObject {
                                     const char* error_code);
     bool VerifyQueueStateToFence(VkFence fence);
     void DecrementBoundResources(GLOBAL_CB_NODE const* cb_node);
-    bool VerifyWaitFenceState(layer_data* dev_data, VkFence fence, const char* apiCall);
-    void RetireFence(layer_data* dev_data, VkFence fence);
+    bool VerifyWaitFenceState(VkFence fence, const char* apiCall);
+    void RetireFence(VkFence fence);
     void StoreMemRanges(VkDeviceMemory mem, VkDeviceSize offset, VkDeviceSize size);
     bool ValidateIdleDescriptorSet(const layer_data* dev_data, VkDescriptorSet set, const char* func_str);
     void InitializeAndTrackMemory(VkDeviceMemory mem, VkDeviceSize offset, VkDeviceSize size, void** ppData);
@@ -393,10 +393,9 @@ class CoreChecks : public ValidationObject {
     bool ValidateCreateSamplerYcbcrConversion(const char* func_name, const VkSamplerYcbcrConversionCreateInfo* create_info);
     void RecordCreateSamplerYcbcrConversionState(layer_data* device_data, const VkSamplerYcbcrConversionCreateInfo* create_info,
                                                  VkSamplerYcbcrConversion ycbcr_conversion);
-    bool ValidateImportFence(layer_data* device_data, VkFence fence, const char* caller_name);
-    void RecordImportFenceState(layer_data* device_data, VkFence fence, VkExternalFenceHandleTypeFlagBitsKHR handle_type,
-                                VkFenceImportFlagsKHR flags);
-    void RecordGetExternalFenceState(layer_data* device_data, VkFence fence, VkExternalFenceHandleTypeFlagBitsKHR handle_type);
+    bool ValidateImportFence(VkFence fence, const char* caller_name);
+    void RecordImportFenceState(VkFence fence, VkExternalFenceHandleTypeFlagBitsKHR handle_type, VkFenceImportFlagsKHR flags);
+    void RecordGetExternalFenceState(VkFence fence, VkExternalFenceHandleTypeFlagBitsKHR handle_type);
     bool ValidateAcquireNextImage(layer_data* device_data, VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout,
                                   VkSemaphore semaphore, VkFence fence, uint32_t* pImageIndex, const char* func_name);
     void RecordAcquireNextImageState(layer_data* device_data, VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout,

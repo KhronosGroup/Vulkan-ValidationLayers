@@ -3820,7 +3820,7 @@ void CoreChecks::InitializeAndTrackMemory(VkDeviceMemory mem, VkDeviceSize offse
 // Verify that state for fence being waited on is appropriate. That is,
 //  a fence being waited on should not already be signaled and
 //  it should have been submitted on a queue or during acquire next image
-bool CoreChecks::VerifyWaitFenceState(layer_data *dev_data, VkFence fence, const char *apiCall) {
+bool CoreChecks::VerifyWaitFenceState(VkFence fence, const char *apiCall) {
     bool skip = false;
 
     auto pFence = GetFenceNode(fence);
@@ -3835,7 +3835,7 @@ bool CoreChecks::VerifyWaitFenceState(layer_data *dev_data, VkFence fence, const
     return skip;
 }
 
-void CoreChecks::RetireFence(layer_data *dev_data, VkFence fence) {
+void CoreChecks::RetireFence(VkFence fence) {
     auto pFence = GetFenceNode(fence);
     if (pFence && pFence->scope == kSyncScopeInternal) {
         if (pFence->signaler.first != VK_NULL_HANDLE) {
@@ -3851,12 +3851,11 @@ void CoreChecks::RetireFence(layer_data *dev_data, VkFence fence) {
 
 bool CoreChecks::PreCallValidateWaitForFences(VkDevice device, uint32_t fenceCount, const VkFence *pFences, VkBool32 waitAll,
                                               uint64_t timeout) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     // Verify fence status of submitted fences
     if (device_data->instance_data->disabled.wait_for_fences) return false;
     bool skip = false;
     for (uint32_t i = 0; i < fenceCount; i++) {
-        skip |= VerifyWaitFenceState(device_data, pFences[i], "vkWaitForFences");
+        skip |= VerifyWaitFenceState(pFences[i], "vkWaitForFences");
         skip |= VerifyQueueStateToFence(pFences[i]);
     }
     return skip;
@@ -3864,13 +3863,12 @@ bool CoreChecks::PreCallValidateWaitForFences(VkDevice device, uint32_t fenceCou
 
 void CoreChecks::PostCallRecordWaitForFences(VkDevice device, uint32_t fenceCount, const VkFence *pFences, VkBool32 waitAll,
                                              uint64_t timeout, VkResult result) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (VK_SUCCESS != result) return;
 
     // When we know that all fences are complete we can clean/remove their CBs
     if ((VK_TRUE == waitAll) || (1 == fenceCount)) {
         for (uint32_t i = 0; i < fenceCount; i++) {
-            RetireFence(device_data, pFences[i]);
+            RetireFence(pFences[i]);
         }
     }
     // NOTE : Alternate case not handled here is when some fences have completed. In
@@ -3879,14 +3877,12 @@ void CoreChecks::PostCallRecordWaitForFences(VkDevice device, uint32_t fenceCoun
 }
 
 bool CoreChecks::PreCallValidateGetFenceStatus(VkDevice device, VkFence fence) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    return VerifyWaitFenceState(device_data, fence, "vkGetFenceStatus()");
+    return VerifyWaitFenceState(fence, "vkGetFenceStatus()");
 }
 
 void CoreChecks::PostCallRecordGetFenceStatus(VkDevice device, VkFence fence, VkResult result) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (VK_SUCCESS != result) return;
-    RetireFence(device_data, fence);
+    RetireFence(fence);
 }
 
 void CoreChecks::RecordGetDeviceQueueState(uint32_t queue_family_index, VkQueue queue) {
@@ -11132,7 +11128,7 @@ void CoreChecks::PostCallRecordGetSemaphoreFdKHR(VkDevice device, const VkSemaph
     RecordGetExternalSemaphoreState(device_data, pGetFdInfo->semaphore, pGetFdInfo->handleType);
 }
 
-bool CoreChecks::ValidateImportFence(layer_data *device_data, VkFence fence, const char *caller_name) {
+bool CoreChecks::ValidateImportFence(VkFence fence, const char *caller_name) {
     FENCE_NODE *fence_node = GetFenceNode(fence);
     bool skip = false;
     if (fence_node && fence_node->scope == kSyncScopeInternal && fence_node->state == FENCE_INFLIGHT) {
@@ -11143,7 +11139,7 @@ bool CoreChecks::ValidateImportFence(layer_data *device_data, VkFence fence, con
     return skip;
 }
 
-void CoreChecks::RecordImportFenceState(layer_data *device_data, VkFence fence, VkExternalFenceHandleTypeFlagBitsKHR handle_type,
+void CoreChecks::RecordImportFenceState(VkFence fence, VkExternalFenceHandleTypeFlagBitsKHR handle_type,
                                         VkFenceImportFlagsKHR flags) {
     FENCE_NODE *fence_node = GetFenceNode(fence);
     if (fence_node && fence_node->scope != kSyncScopeExternalPermanent) {
@@ -11159,32 +11155,27 @@ void CoreChecks::RecordImportFenceState(layer_data *device_data, VkFence fence, 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 bool CoreChecks::PreCallValidateImportFenceWin32HandleKHR(VkDevice device,
                                                           const VkImportFenceWin32HandleInfoKHR *pImportFenceWin32HandleInfo) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    return ValidateImportFence(device_data, pImportFenceWin32HandleInfo->fence, "vkImportFenceWin32HandleKHR");
+    return ValidateImportFence(pImportFenceWin32HandleInfo->fence, "vkImportFenceWin32HandleKHR");
 }
 void CoreChecks::PostCallRecordImportFenceWin32HandleKHR(VkDevice device,
                                                          const VkImportFenceWin32HandleInfoKHR *pImportFenceWin32HandleInfo,
                                                          VkResult result) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (VK_SUCCESS != result) return;
-    RecordImportFenceState(device_data, pImportFenceWin32HandleInfo->fence, pImportFenceWin32HandleInfo->handleType,
+    RecordImportFenceState(pImportFenceWin32HandleInfo->fence, pImportFenceWin32HandleInfo->handleType,
                            pImportFenceWin32HandleInfo->flags);
 }
 #endif  // VK_USE_PLATFORM_WIN32_KHR
 
 bool CoreChecks::PreCallValidateImportFenceFdKHR(VkDevice device, const VkImportFenceFdInfoKHR *pImportFenceFdInfo) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    return ValidateImportFence(device_data, pImportFenceFdInfo->fence, "vkImportFenceFdKHR");
+    return ValidateImportFence(pImportFenceFdInfo->fence, "vkImportFenceFdKHR");
 }
 void CoreChecks::PostCallRecordImportFenceFdKHR(VkDevice device, const VkImportFenceFdInfoKHR *pImportFenceFdInfo,
                                                 VkResult result) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (VK_SUCCESS != result) return;
-    RecordImportFenceState(device_data, pImportFenceFdInfo->fence, pImportFenceFdInfo->handleType, pImportFenceFdInfo->flags);
+    RecordImportFenceState(pImportFenceFdInfo->fence, pImportFenceFdInfo->handleType, pImportFenceFdInfo->flags);
 }
 
-void CoreChecks::RecordGetExternalFenceState(layer_data *device_data, VkFence fence,
-                                             VkExternalFenceHandleTypeFlagBitsKHR handle_type) {
+void CoreChecks::RecordGetExternalFenceState(VkFence fence, VkExternalFenceHandleTypeFlagBitsKHR handle_type) {
     FENCE_NODE *fence_state = GetFenceNode(fence);
     if (fence_state) {
         if (handle_type != VK_EXTERNAL_FENCE_HANDLE_TYPE_SYNC_FD_BIT_KHR) {
@@ -11200,16 +11191,14 @@ void CoreChecks::RecordGetExternalFenceState(layer_data *device_data, VkFence fe
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 void CoreChecks::PostCallRecordGetFenceWin32HandleKHR(VkDevice device, const VkFenceGetWin32HandleInfoKHR *pGetWin32HandleInfo,
                                                       HANDLE *pHandle, VkResult result) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (VK_SUCCESS != result) return;
-    RecordGetExternalFenceState(device_data, pGetWin32HandleInfo->fence, pGetWin32HandleInfo->handleType);
+    RecordGetExternalFenceState(pGetWin32HandleInfo->fence, pGetWin32HandleInfo->handleType);
 }
 #endif
 
 void CoreChecks::PostCallRecordGetFenceFdKHR(VkDevice device, const VkFenceGetFdInfoKHR *pGetFdInfo, int *pFd, VkResult result) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (VK_SUCCESS != result) return;
-    RecordGetExternalFenceState(device_data, pGetFdInfo->fence, pGetFdInfo->handleType);
+    RecordGetExternalFenceState(pGetFdInfo->fence, pGetFdInfo->handleType);
 }
 
 void CoreChecks::PostCallRecordCreateEvent(VkDevice device, const VkEventCreateInfo *pCreateInfo,
