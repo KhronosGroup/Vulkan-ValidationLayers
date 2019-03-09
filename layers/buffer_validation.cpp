@@ -2695,7 +2695,7 @@ static inline bool ContainsRect(VkRect2D rect, VkRect2D sub_rect) {
     return true;
 }
 
-bool CoreChecks::ValidateClearAttachmentExtent(layer_data *device_data, VkCommandBuffer command_buffer, uint32_t attachment_index,
+bool CoreChecks::ValidateClearAttachmentExtent(VkCommandBuffer command_buffer, uint32_t attachment_index,
                                                FRAMEBUFFER_STATE *framebuffer, uint32_t fb_attachment, const VkRect2D &render_area,
                                                uint32_t rect_count, const VkClearRect *clear_rects) {
     bool skip = false;
@@ -2706,7 +2706,7 @@ bool CoreChecks::ValidateClearAttachmentExtent(layer_data *device_data, VkComman
 
     for (uint32_t j = 0; j < rect_count; j++) {
         if (!ContainsRect(render_area, clear_rects[j].rect)) {
-            skip |= log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                             HandleToUint64(command_buffer), "VUID-vkCmdClearAttachments-pRects-00016",
                             "vkCmdClearAttachments(): The area defined by pRects[%d] is not contained in the area of "
                             "the current render pass instance.",
@@ -2719,12 +2719,11 @@ bool CoreChecks::ValidateClearAttachmentExtent(layer_data *device_data, VkComman
             const auto attachment_layer_count = image_view_state->create_info.subresourceRange.layerCount;
             if ((clear_rects[j].baseArrayLayer >= attachment_layer_count) ||
                 (clear_rects[j].baseArrayLayer + clear_rects[j].layerCount > attachment_layer_count)) {
-                skip |=
-                    log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                            HandleToUint64(command_buffer), "VUID-vkCmdClearAttachments-pRects-00017",
-                            "vkCmdClearAttachments(): The layers defined in pRects[%d] are not contained in the layers "
-                            "of pAttachment[%d].",
-                            j, attachment_index);
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                                HandleToUint64(command_buffer), "VUID-vkCmdClearAttachments-pRects-00017",
+                                "vkCmdClearAttachments(): The layers defined in pRects[%d] are not contained in the layers "
+                                "of pAttachment[%d].",
+                                j, attachment_index);
             }
         }
     }
@@ -2734,8 +2733,6 @@ bool CoreChecks::ValidateClearAttachmentExtent(layer_data *device_data, VkComman
 bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffer, uint32_t attachmentCount,
                                                     const VkClearAttachment *pAttachments, uint32_t rectCount,
                                                     const VkClearRect *pRects) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-
     GLOBAL_CB_NODE *cb_node = GetCBNode(commandBuffer);
 
     bool skip = false;
@@ -2832,8 +2829,8 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
                 }
             }
             if (cb_node->createInfo.level == VK_COMMAND_BUFFER_LEVEL_PRIMARY) {
-                skip |= ValidateClearAttachmentExtent(device_data, commandBuffer, attachment_index, framebuffer, fb_attachment,
-                                                      render_area, rectCount, pRects);
+                skip |= ValidateClearAttachmentExtent(commandBuffer, attachment_index, framebuffer, fb_attachment, render_area,
+                                                      rectCount, pRects);
             } else {
                 // if a secondary level command buffer inherits the framebuffer from the primary command buffer
                 // (see VkCommandBufferInheritanceInfo), this validation must be deferred until queue submit time
@@ -2843,15 +2840,14 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
                     clear_rect_copy.reset(new std::vector<VkClearRect>(pRects, pRects + rectCount));
                 }
 
-                auto val_fn = [device_data, commandBuffer, attachment_index, fb_attachment, rectCount, clear_rect_copy](
+                auto val_fn = [this, commandBuffer, attachment_index, fb_attachment, rectCount, clear_rect_copy](
                                   GLOBAL_CB_NODE *prim_cb, VkFramebuffer fb) {
                     assert(rectCount == clear_rect_copy->size());
-                    FRAMEBUFFER_STATE *framebuffer = device_data->GetFramebufferState(fb);
+                    FRAMEBUFFER_STATE *framebuffer = GetFramebufferState(fb);
                     const auto &render_area = prim_cb->activeRenderPassBeginInfo.renderArea;
                     bool skip = false;
-                    skip =
-                        device_data->ValidateClearAttachmentExtent(device_data, commandBuffer, attachment_index, framebuffer,
-                                                                   fb_attachment, render_area, rectCount, clear_rect_copy->data());
+                    skip = ValidateClearAttachmentExtent(commandBuffer, attachment_index, framebuffer, fb_attachment, render_area,
+                                                         rectCount, clear_rect_copy->data());
                     return skip;
                 };
                 cb_node->cmd_execute_commands_functions.emplace_back(val_fn);
@@ -4379,7 +4375,7 @@ void CoreChecks::PreCallRecordCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuf
     AddCommandBufferBindingBuffer(cb_node, dst_buffer_state);
 }
 
-bool CoreChecks::ValidateIdleBuffer(layer_data *device_data, VkBuffer buffer) {
+bool CoreChecks::ValidateIdleBuffer(VkBuffer buffer) {
     bool skip = false;
     auto buffer_state = GetBufferState(buffer);
     if (!buffer_state) {
@@ -4419,12 +4415,11 @@ void CoreChecks::PreCallRecordDestroyImageView(VkDevice device, VkImageView imag
 }
 
 bool CoreChecks::PreCallValidateDestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationCallbacks *pAllocator) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     auto buffer_state = GetBufferState(buffer);
 
     bool skip = false;
     if (buffer_state) {
-        skip |= ValidateIdleBuffer(device_data, buffer);
+        skip |= ValidateIdleBuffer(buffer);
     }
     return skip;
 }

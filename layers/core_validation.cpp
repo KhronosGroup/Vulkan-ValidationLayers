@@ -548,7 +548,7 @@ bool CoreChecks::ValidateSetMemBinding(VkDeviceMemory mem, uint64_t handle, Vulk
 //  Add reference from objectInfo to memoryInfo
 //  Add reference off of object's binding info
 // Return VK_TRUE if addition is successful, VK_FALSE otherwise
-bool CoreChecks::SetSparseMemBinding(layer_data *dev_data, MEM_BINDING binding, uint64_t handle, VulkanObjectType type) {
+bool CoreChecks::SetSparseMemBinding(MEM_BINDING binding, uint64_t handle, VulkanObjectType type) {
     bool skip = VK_FALSE;
     // Handle NULL case separately, just clear previous binding & decrement reference
     if (binding.mem == VK_NULL_HANDLE) {
@@ -7940,7 +7940,7 @@ class ValidatorState {
     const bool mem_ext_;
 };
 
-bool Validate(const layer_data *device_data, const char *func_name, GLOBAL_CB_NODE *cb_state, const ValidatorState &val,
+bool Validate(const CoreChecks *device_data, const char *func_name, GLOBAL_CB_NODE *cb_state, const ValidatorState &val,
               const uint32_t src_queue_family, const uint32_t dst_queue_family) {
     bool skip = false;
 
@@ -7995,50 +7995,50 @@ bool Validate(const layer_data *device_data, const char *func_name, GLOBAL_CB_NO
 }  // namespace barrier_queue_families
 
 // Type specific wrapper for image barriers
-bool ValidateBarrierQueueFamilies(const layer_data *device_data, const char *func_name, GLOBAL_CB_NODE *cb_state,
-                                  const VkImageMemoryBarrier *barrier, const IMAGE_STATE *state_data) {
+bool CoreChecks::ValidateBarrierQueueFamilies(const char *func_name, GLOBAL_CB_NODE *cb_state, const VkImageMemoryBarrier *barrier,
+                                              const IMAGE_STATE *state_data) {
     // State data is required
     if (!state_data) {
         return false;
     }
 
     // Create the validator state from the image state
-    barrier_queue_families::ValidatorState val(device_data, func_name, cb_state, barrier, state_data);
+    barrier_queue_families::ValidatorState val(this, func_name, cb_state, barrier, state_data);
     const uint32_t src_queue_family = barrier->srcQueueFamilyIndex;
     const uint32_t dst_queue_family = barrier->dstQueueFamilyIndex;
-    return barrier_queue_families::Validate(device_data, func_name, cb_state, val, src_queue_family, dst_queue_family);
+    return barrier_queue_families::Validate(this, func_name, cb_state, val, src_queue_family, dst_queue_family);
 }
 
 // Type specific wrapper for buffer barriers
-bool ValidateBarrierQueueFamilies(const layer_data *device_data, const char *func_name, GLOBAL_CB_NODE *cb_state,
-                                  const VkBufferMemoryBarrier *barrier, const BUFFER_STATE *state_data) {
+bool CoreChecks::ValidateBarrierQueueFamilies(const char *func_name, GLOBAL_CB_NODE *cb_state, const VkBufferMemoryBarrier *barrier,
+                                              const BUFFER_STATE *state_data) {
     // State data is required
     if (!state_data) {
         return false;
     }
 
     // Create the validator state from the buffer state
-    barrier_queue_families::ValidatorState val(device_data, func_name, cb_state, barrier, state_data);
+    barrier_queue_families::ValidatorState val(this, func_name, cb_state, barrier, state_data);
     const uint32_t src_queue_family = barrier->srcQueueFamilyIndex;
     const uint32_t dst_queue_family = barrier->dstQueueFamilyIndex;
-    return barrier_queue_families::Validate(device_data, func_name, cb_state, val, src_queue_family, dst_queue_family);
+    return barrier_queue_families::Validate(this, func_name, cb_state, val, src_queue_family, dst_queue_family);
 }
 
-bool CoreChecks::ValidateBarriers(layer_data *device_data, const char *funcName, GLOBAL_CB_NODE *cb_state,
-                                  VkPipelineStageFlags src_stage_mask, VkPipelineStageFlags dst_stage_mask,
-                                  uint32_t memBarrierCount, const VkMemoryBarrier *pMemBarriers, uint32_t bufferBarrierCount,
+bool CoreChecks::ValidateBarriers(const char *funcName, GLOBAL_CB_NODE *cb_state, VkPipelineStageFlags src_stage_mask,
+                                  VkPipelineStageFlags dst_stage_mask, uint32_t memBarrierCount,
+                                  const VkMemoryBarrier *pMemBarriers, uint32_t bufferBarrierCount,
                                   const VkBufferMemoryBarrier *pBufferMemBarriers, uint32_t imageMemBarrierCount,
                                   const VkImageMemoryBarrier *pImageMemBarriers) {
     bool skip = false;
     for (uint32_t i = 0; i < memBarrierCount; ++i) {
         const auto &mem_barrier = pMemBarriers[i];
-        if (!ValidateAccessMaskPipelineStage(device_data->device_extensions, mem_barrier.srcAccessMask, src_stage_mask)) {
+        if (!ValidateAccessMaskPipelineStage(device_extensions, mem_barrier.srcAccessMask, src_stage_mask)) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                             HandleToUint64(cb_state->commandBuffer), "VUID-vkCmdPipelineBarrier-pMemoryBarriers-01184",
                             "%s: pMemBarriers[%d].srcAccessMask (0x%X) is not supported by srcStageMask (0x%X).", funcName, i,
                             mem_barrier.srcAccessMask, src_stage_mask);
         }
-        if (!ValidateAccessMaskPipelineStage(device_data->device_extensions, mem_barrier.dstAccessMask, dst_stage_mask)) {
+        if (!ValidateAccessMaskPipelineStage(device_extensions, mem_barrier.dstAccessMask, dst_stage_mask)) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                             HandleToUint64(cb_state->commandBuffer), "VUID-vkCmdPipelineBarrier-pMemoryBarriers-01185",
                             "%s: pMemBarriers[%d].dstAccessMask (0x%X) is not supported by dstStageMask (0x%X).", funcName, i,
@@ -8047,13 +8047,13 @@ bool CoreChecks::ValidateBarriers(layer_data *device_data, const char *funcName,
     }
     for (uint32_t i = 0; i < imageMemBarrierCount; ++i) {
         auto mem_barrier = &pImageMemBarriers[i];
-        if (!ValidateAccessMaskPipelineStage(device_data->device_extensions, mem_barrier->srcAccessMask, src_stage_mask)) {
+        if (!ValidateAccessMaskPipelineStage(device_extensions, mem_barrier->srcAccessMask, src_stage_mask)) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                             HandleToUint64(cb_state->commandBuffer), "VUID-vkCmdPipelineBarrier-pMemoryBarriers-01184",
                             "%s: pImageMemBarriers[%d].srcAccessMask (0x%X) is not supported by srcStageMask (0x%X).", funcName, i,
                             mem_barrier->srcAccessMask, src_stage_mask);
         }
-        if (!ValidateAccessMaskPipelineStage(device_data->device_extensions, mem_barrier->dstAccessMask, dst_stage_mask)) {
+        if (!ValidateAccessMaskPipelineStage(device_extensions, mem_barrier->dstAccessMask, dst_stage_mask)) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                             HandleToUint64(cb_state->commandBuffer), "VUID-vkCmdPipelineBarrier-pMemoryBarriers-01185",
                             "%s: pImageMemBarriers[%d].dstAccessMask (0x%X) is not supported by dstStageMask (0x%X).", funcName, i,
@@ -8061,7 +8061,7 @@ bool CoreChecks::ValidateBarriers(layer_data *device_data, const char *funcName,
         }
 
         auto image_data = GetImageState(mem_barrier->image);
-        skip |= ValidateBarrierQueueFamilies(device_data, funcName, cb_state, mem_barrier, image_data);
+        skip |= ValidateBarrierQueueFamilies(funcName, cb_state, mem_barrier, image_data);
 
         if (mem_barrier->newLayout == VK_IMAGE_LAYOUT_UNDEFINED || mem_barrier->newLayout == VK_IMAGE_LAYOUT_PREINITIALIZED) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
@@ -8088,13 +8088,13 @@ bool CoreChecks::ValidateBarriers(layer_data *device_data, const char *funcName,
         auto mem_barrier = &pBufferMemBarriers[i];
         if (!mem_barrier) continue;
 
-        if (!ValidateAccessMaskPipelineStage(device_data->device_extensions, mem_barrier->srcAccessMask, src_stage_mask)) {
+        if (!ValidateAccessMaskPipelineStage(device_extensions, mem_barrier->srcAccessMask, src_stage_mask)) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                             HandleToUint64(cb_state->commandBuffer), "VUID-vkCmdPipelineBarrier-pMemoryBarriers-01184",
                             "%s: pBufferMemBarriers[%d].srcAccessMask (0x%X) is not supported by srcStageMask (0x%X).", funcName, i,
                             mem_barrier->srcAccessMask, src_stage_mask);
         }
-        if (!ValidateAccessMaskPipelineStage(device_data->device_extensions, mem_barrier->dstAccessMask, dst_stage_mask)) {
+        if (!ValidateAccessMaskPipelineStage(device_extensions, mem_barrier->dstAccessMask, dst_stage_mask)) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                             HandleToUint64(cb_state->commandBuffer), "VUID-vkCmdPipelineBarrier-pMemoryBarriers-01185",
                             "%s: pBufferMemBarriers[%d].dstAccessMask (0x%X) is not supported by dstStageMask (0x%X).", funcName, i,
@@ -8102,7 +8102,7 @@ bool CoreChecks::ValidateBarriers(layer_data *device_data, const char *funcName,
         }
         // Validate buffer barrier queue family indices
         auto buffer_state = GetBufferState(mem_barrier->buffer);
-        skip |= ValidateBarrierQueueFamilies(device_data, funcName, cb_state, mem_barrier, buffer_state);
+        skip |= ValidateBarrierQueueFamilies(funcName, cb_state, mem_barrier, buffer_state);
 
         if (buffer_state) {
             // There is no VUID for this, but there is blanket text:
@@ -8233,8 +8233,7 @@ bool AllTransferOp(const COMMAND_POOL_NODE *pool, OpCheck &op_check, uint32_t co
 }
 
 // Look at the barriers to see if we they are all release or all acquire, the result impacts queue properties validation
-BarrierOperationsType CoreChecks::ComputeBarrierOperationsType(layer_data *device_data, GLOBAL_CB_NODE *cb_state,
-                                                               uint32_t buffer_barrier_count,
+BarrierOperationsType CoreChecks::ComputeBarrierOperationsType(GLOBAL_CB_NODE *cb_state, uint32_t buffer_barrier_count,
                                                                const VkBufferMemoryBarrier *buffer_barriers,
                                                                uint32_t image_barrier_count,
                                                                const VkImageMemoryBarrier *image_barriers) {
@@ -8256,13 +8255,12 @@ BarrierOperationsType CoreChecks::ComputeBarrierOperationsType(layer_data *devic
     return op_type;
 }
 
-bool CoreChecks::ValidateStageMasksAgainstQueueCapabilities(layer_data *dev_data, GLOBAL_CB_NODE const *cb_state,
-                                                            VkPipelineStageFlags source_stage_mask,
+bool CoreChecks::ValidateStageMasksAgainstQueueCapabilities(GLOBAL_CB_NODE const *cb_state, VkPipelineStageFlags source_stage_mask,
                                                             VkPipelineStageFlags dest_stage_mask,
                                                             BarrierOperationsType barrier_op_type, const char *function,
                                                             const char *error_code) {
     bool skip = false;
-    uint32_t queue_family_index = dev_data->commandPoolMap[cb_state->createInfo.commandPool].queueFamilyIndex;
+    uint32_t queue_family_index = commandPoolMap[cb_state->createInfo.commandPool].queueFamilyIndex;
     auto physical_device_state = GetPhysicalDeviceState();
 
     // Any pipeline stage included in srcStageMask or dstStageMask must be supported by the capabilities of the queue family
@@ -8291,13 +8289,12 @@ bool CoreChecks::PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, uin
                                               uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers,
                                               uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier *pBufferMemoryBarriers,
                                               uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier *pImageMemoryBarriers) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
 
-    auto barrier_op_type = ComputeBarrierOperationsType(device_data, cb_state, bufferMemoryBarrierCount, pBufferMemoryBarriers,
+    auto barrier_op_type = ComputeBarrierOperationsType(cb_state, bufferMemoryBarrierCount, pBufferMemoryBarriers,
                                                         imageMemoryBarrierCount, pImageMemoryBarriers);
-    bool skip = ValidateStageMasksAgainstQueueCapabilities(device_data, cb_state, sourceStageMask, dstStageMask, barrier_op_type,
+    bool skip = ValidateStageMasksAgainstQueueCapabilities(cb_state, sourceStageMask, dstStageMask, barrier_op_type,
                                                            "vkCmdWaitEvents", "VUID-vkCmdWaitEvents-srcStageMask-01164");
     skip |= ValidateStageMaskGsTsEnables(sourceStageMask, "vkCmdWaitEvents()", "VUID-vkCmdWaitEvents-srcStageMask-01159",
                                          "VUID-vkCmdWaitEvents-srcStageMask-01161", "VUID-vkCmdWaitEvents-srcStageMask-02111",
@@ -8309,9 +8306,8 @@ bool CoreChecks::PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, uin
                                   "VUID-vkCmdWaitEvents-commandBuffer-cmdpool");
     skip |= ValidateCmd(cb_state, CMD_WAITEVENTS, "vkCmdWaitEvents()");
     skip |= ValidateBarriersToImages(cb_state, imageMemoryBarrierCount, pImageMemoryBarriers, "vkCmdWaitEvents()");
-    skip |= ValidateBarriers(device_data, "vkCmdWaitEvents()", cb_state, sourceStageMask, dstStageMask, memoryBarrierCount,
-                             pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount,
-                             pImageMemoryBarriers);
+    skip |= ValidateBarriers("vkCmdWaitEvents()", cb_state, sourceStageMask, dstStageMask, memoryBarrierCount, pMemoryBarriers,
+                             bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
     return skip;
 }
 
@@ -8356,14 +8352,13 @@ bool CoreChecks::PreCallValidateCmdPipelineBarrier(VkCommandBuffer commandBuffer
                                                    const VkBufferMemoryBarrier *pBufferMemoryBarriers,
                                                    uint32_t imageMemoryBarrierCount,
                                                    const VkImageMemoryBarrier *pImageMemoryBarriers) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
 
     bool skip = false;
-    auto barrier_op_type = ComputeBarrierOperationsType(device_data, cb_state, bufferMemoryBarrierCount, pBufferMemoryBarriers,
+    auto barrier_op_type = ComputeBarrierOperationsType(cb_state, bufferMemoryBarrierCount, pBufferMemoryBarriers,
                                                         imageMemoryBarrierCount, pImageMemoryBarriers);
-    skip |= ValidateStageMasksAgainstQueueCapabilities(device_data, cb_state, srcStageMask, dstStageMask, barrier_op_type,
+    skip |= ValidateStageMasksAgainstQueueCapabilities(cb_state, srcStageMask, dstStageMask, barrier_op_type,
                                                        "vkCmdPipelineBarrier", "VUID-vkCmdPipelineBarrier-srcStageMask-01183");
     skip |= ValidateCmdQueueFlags(cb_state, "vkCmdPipelineBarrier()",
                                   VK_QUEUE_TRANSFER_BIT | VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
@@ -8384,9 +8379,8 @@ bool CoreChecks::PreCallValidateCmdPipelineBarrier(VkCommandBuffer commandBuffer
         if (skip) return true;  // Early return to avoid redundant errors from below calls
     }
     skip |= ValidateBarriersToImages(cb_state, imageMemoryBarrierCount, pImageMemoryBarriers, "vkCmdPipelineBarrier()");
-    skip |= ValidateBarriers(device_data, "vkCmdPipelineBarrier()", cb_state, srcStageMask, dstStageMask, memoryBarrierCount,
-                             pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount,
-                             pImageMemoryBarriers);
+    skip |= ValidateBarriers("vkCmdPipelineBarrier()", cb_state, srcStageMask, dstStageMask, memoryBarrierCount, pMemoryBarriers,
+                             bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
     return skip;
 }
 
@@ -8502,14 +8496,14 @@ void CoreChecks::PostCallRecordCmdResetQueryPool(VkCommandBuffer commandBuffer, 
                             cb_state);
 }
 
-bool CoreChecks::IsQueryInvalid(layer_data *dev_data, QUEUE_STATE *queue_data, VkQueryPool queryPool, uint32_t queryIndex) {
+bool CoreChecks::IsQueryInvalid(QUEUE_STATE *queue_data, VkQueryPool queryPool, uint32_t queryIndex) {
     QueryObject query = {queryPool, queryIndex};
     auto query_data = queue_data->queryToStateMap.find(query);
     if (query_data != queue_data->queryToStateMap.end()) {
         if (!query_data->second) return true;
     } else {
-        auto it = dev_data->queryToStateMap.find(query);
-        if (it == dev_data->queryToStateMap.end() || !it->second) return true;
+        auto it = queryToStateMap.find(query);
+        if (it == queryToStateMap.end() || !it->second) return true;
     }
 
     return false;
@@ -8518,11 +8512,10 @@ bool CoreChecks::IsQueryInvalid(layer_data *dev_data, QUEUE_STATE *queue_data, V
 bool CoreChecks::ValidateQuery(VkQueue queue, GLOBAL_CB_NODE *pCB, VkQueryPool queryPool, uint32_t firstQuery,
                                uint32_t queryCount) {
     bool skip = false;
-    layer_data *dev_data = GetLayerDataPtr(get_dispatch_key(pCB->commandBuffer), layer_data_map);
     auto queue_data = GetQueueState(queue);
     if (!queue_data) return false;
     for (uint32_t i = 0; i < queryCount; i++) {
-        if (IsQueryInvalid(dev_data, queue_data, queryPool, firstQuery + i)) {
+        if (IsQueryInvalid(queue_data, queryPool, firstQuery + i)) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                             HandleToUint64(pCB->commandBuffer), kVUID_Core_DrawState_InvalidQuery,
                             "Requesting a copy from query to buffer with invalid query: queryPool %s, index %d",
@@ -8855,8 +8848,7 @@ static bool FindDependency(const uint32_t index, const uint32_t dependent, const
     return false;
 }
 
-bool CoreChecks::CheckDependencyExists(const layer_data *dev_data, const uint32_t subpass,
-                                       const std::vector<uint32_t> &dependent_subpasses,
+bool CoreChecks::CheckDependencyExists(const uint32_t subpass, const std::vector<uint32_t> &dependent_subpasses,
                                        const std::vector<DAGNode> &subpass_to_node, bool &skip) {
     bool result = true;
     // Loop through all subpasses that share the same attachment and make sure a dependency exists
@@ -8882,8 +8874,8 @@ bool CoreChecks::CheckDependencyExists(const layer_data *dev_data, const uint32_
     return result;
 }
 
-bool CoreChecks::CheckPreserved(const layer_data *dev_data, const VkRenderPassCreateInfo2KHR *pCreateInfo, const int index,
-                                const uint32_t attachment, const std::vector<DAGNode> &subpass_to_node, int depth, bool &skip) {
+bool CoreChecks::CheckPreserved(const VkRenderPassCreateInfo2KHR *pCreateInfo, const int index, const uint32_t attachment,
+                                const std::vector<DAGNode> &subpass_to_node, int depth, bool &skip) {
     const DAGNode &node = subpass_to_node[index];
     // If this node writes to the attachment return true as next nodes need to preserve the attachment.
     const VkSubpassDescription2KHR &subpass = pCreateInfo->pSubpasses[index];
@@ -8899,7 +8891,7 @@ bool CoreChecks::CheckPreserved(const layer_data *dev_data, const VkRenderPassCr
     bool result = false;
     // Loop through previous nodes and see if any of them write to the attachment.
     for (auto elem : node.prev) {
-        result |= CheckPreserved(dev_data, pCreateInfo, elem, attachment, subpass_to_node, depth + 1, skip);
+        result |= CheckPreserved(pCreateInfo, elem, attachment, subpass_to_node, depth + 1, skip);
     }
     // If the attachment was written to by a previous node than this node needs to preserve it.
     if (result && depth > 0) {
@@ -8930,8 +8922,7 @@ bool IsRegionOverlapping(VkImageSubresourceRange range1, VkImageSubresourceRange
             IsRangeOverlapping(range1.baseArrayLayer, range1.layerCount, range2.baseArrayLayer, range2.layerCount));
 }
 
-bool CoreChecks::ValidateDependencies(layer_data *dev_data, FRAMEBUFFER_STATE const *framebuffer,
-                                      RENDER_PASS_STATE const *renderPass) {
+bool CoreChecks::ValidateDependencies(FRAMEBUFFER_STATE const *framebuffer, RENDER_PASS_STATE const *renderPass) {
     bool skip = false;
     auto const pFramebufferInfo = framebuffer->createInfo.ptr();
     auto const pCreateInfo = renderPass->createInfo.ptr();
@@ -9018,19 +9009,19 @@ bool CoreChecks::ValidateDependencies(layer_data *dev_data, FRAMEBUFFER_STATE co
         for (uint32_t j = 0; j < subpass.inputAttachmentCount; ++j) {
             uint32_t attachment = subpass.pInputAttachments[j].attachment;
             if (attachment == VK_ATTACHMENT_UNUSED) continue;
-            CheckDependencyExists(dev_data, i, output_attachment_to_subpass[attachment], subpass_to_node, skip);
+            CheckDependencyExists(i, output_attachment_to_subpass[attachment], subpass_to_node, skip);
         }
         // If the attachment is an output then all subpasses that use the attachment must have a dependency relationship
         for (uint32_t j = 0; j < subpass.colorAttachmentCount; ++j) {
             uint32_t attachment = subpass.pColorAttachments[j].attachment;
             if (attachment == VK_ATTACHMENT_UNUSED) continue;
-            CheckDependencyExists(dev_data, i, output_attachment_to_subpass[attachment], subpass_to_node, skip);
-            CheckDependencyExists(dev_data, i, input_attachment_to_subpass[attachment], subpass_to_node, skip);
+            CheckDependencyExists(i, output_attachment_to_subpass[attachment], subpass_to_node, skip);
+            CheckDependencyExists(i, input_attachment_to_subpass[attachment], subpass_to_node, skip);
         }
         if (subpass.pDepthStencilAttachment && subpass.pDepthStencilAttachment->attachment != VK_ATTACHMENT_UNUSED) {
             const uint32_t &attachment = subpass.pDepthStencilAttachment->attachment;
-            CheckDependencyExists(dev_data, i, output_attachment_to_subpass[attachment], subpass_to_node, skip);
-            CheckDependencyExists(dev_data, i, input_attachment_to_subpass[attachment], subpass_to_node, skip);
+            CheckDependencyExists(i, output_attachment_to_subpass[attachment], subpass_to_node, skip);
+            CheckDependencyExists(i, input_attachment_to_subpass[attachment], subpass_to_node, skip);
         }
     }
     // Loop through implicit dependencies, if this pass reads make sure the attachment is preserved for all passes after it was
@@ -9038,7 +9029,7 @@ bool CoreChecks::ValidateDependencies(layer_data *dev_data, FRAMEBUFFER_STATE co
     for (uint32_t i = 0; i < pCreateInfo->subpassCount; ++i) {
         const VkSubpassDescription2KHR &subpass = pCreateInfo->pSubpasses[i];
         for (uint32_t j = 0; j < subpass.inputAttachmentCount; ++j) {
-            CheckPreserved(dev_data, pCreateInfo, i, subpass.pInputAttachments[j].attachment, subpass_to_node, 0, skip);
+            CheckPreserved(pCreateInfo, i, subpass.pInputAttachments[j].attachment, subpass_to_node, 0, skip);
         }
     }
     return skip;
@@ -9899,8 +9890,8 @@ static bool FormatSpecificLoadAndStoreOpSettings(VkFormat format, T color_depth_
     return ((check_color_depth_load_op && (color_depth_op == op)) || (check_stencil_load_op && (stencil_op == op)));
 }
 
-bool CoreChecks::ValidateCmdBeginRenderPass(layer_data *device_data, VkCommandBuffer commandBuffer,
-                                            RenderPassCreateVersion rp_version, const VkRenderPassBeginInfo *pRenderPassBegin) {
+bool CoreChecks::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, RenderPassCreateVersion rp_version,
+                                            const VkRenderPassBeginInfo *pRenderPassBegin) {
     GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
     auto render_pass_state = pRenderPassBegin ? GetRenderPassState(pRenderPassBegin->renderPass) : nullptr;
@@ -9973,7 +9964,7 @@ bool CoreChecks::ValidateCmdBeginRenderPass(layer_data *device_data, VkCommandBu
 
         vuid = use_rp2 ? "VUID-vkCmdBeginRenderPass2KHR-renderpass" : "VUID-vkCmdBeginRenderPass-renderpass";
         skip |= InsideRenderPass(cb_state, function_name, vuid);
-        skip |= ValidateDependencies(device_data, framebuffer, render_pass_state);
+        skip |= ValidateDependencies(framebuffer, render_pass_state);
 
         vuid = use_rp2 ? "VUID-vkCmdBeginRenderPass2KHR-bufferlevel" : "VUID-vkCmdBeginRenderPass-bufferlevel";
         skip |= ValidatePrimaryCommandBuffer(cb_state, function_name, vuid);
@@ -9989,15 +9980,13 @@ bool CoreChecks::ValidateCmdBeginRenderPass(layer_data *device_data, VkCommandBu
 
 bool CoreChecks::PreCallValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
                                                    VkSubpassContents contents) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    bool skip = ValidateCmdBeginRenderPass(device_data, commandBuffer, RENDER_PASS_VERSION_1, pRenderPassBegin);
+    bool skip = ValidateCmdBeginRenderPass(commandBuffer, RENDER_PASS_VERSION_1, pRenderPassBegin);
     return skip;
 }
 
 bool CoreChecks::PreCallValidateCmdBeginRenderPass2KHR(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
                                                        const VkSubpassBeginInfoKHR *pSubpassBeginInfo) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    bool skip = ValidateCmdBeginRenderPass(device_data, commandBuffer, RENDER_PASS_VERSION_2, pRenderPassBegin);
+    bool skip = ValidateCmdBeginRenderPass(commandBuffer, RENDER_PASS_VERSION_2, pRenderPassBegin);
     return skip;
 }
 
@@ -10881,7 +10870,6 @@ bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfo
 }
 void CoreChecks::PostCallRecordQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo *pBindInfo,
                                                VkFence fence, VkResult result) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(queue), layer_data_map);
     if (result != VK_SUCCESS) return;
     uint64_t early_retire_seq = 0;
     auto pFence = GetFenceNode(fence);
@@ -10898,8 +10886,8 @@ void CoreChecks::PostCallRecordQueueBindSparse(VkQueue queue, uint32_t bindInfoC
         } else {
             // Retire work up until this fence early, we will not see the wait that corresponds to this signal
             early_retire_seq = pQueue->seq + pQueue->submissions.size();
-            if (!device_data->external_sync_warning) {
-                device_data->external_sync_warning = true;
+            if (!external_sync_warning) {
+                external_sync_warning = true;
                 log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_FENCE_EXT, HandleToUint64(fence),
                         kVUID_Core_DrawState_QueueForwardProgress,
                         "vkQueueBindSparse(): Signaling external fence %s on queue %s will disable validation of preceding command "
@@ -10915,14 +10903,14 @@ void CoreChecks::PostCallRecordQueueBindSparse(VkQueue queue, uint32_t bindInfoC
         for (uint32_t j = 0; j < bindInfo.bufferBindCount; j++) {
             for (uint32_t k = 0; k < bindInfo.pBufferBinds[j].bindCount; k++) {
                 auto sparse_binding = bindInfo.pBufferBinds[j].pBinds[k];
-                SetSparseMemBinding(device_data, {sparse_binding.memory, sparse_binding.memoryOffset, sparse_binding.size},
+                SetSparseMemBinding({sparse_binding.memory, sparse_binding.memoryOffset, sparse_binding.size},
                                     HandleToUint64(bindInfo.pBufferBinds[j].buffer), kVulkanObjectTypeBuffer);
             }
         }
         for (uint32_t j = 0; j < bindInfo.imageOpaqueBindCount; j++) {
             for (uint32_t k = 0; k < bindInfo.pImageOpaqueBinds[j].bindCount; k++) {
                 auto sparse_binding = bindInfo.pImageOpaqueBinds[j].pBinds[k];
-                SetSparseMemBinding(device_data, {sparse_binding.memory, sparse_binding.memoryOffset, sparse_binding.size},
+                SetSparseMemBinding({sparse_binding.memory, sparse_binding.memoryOffset, sparse_binding.size},
                                     HandleToUint64(bindInfo.pImageOpaqueBinds[j].image), kVulkanObjectTypeImage);
             }
         }
@@ -10931,7 +10919,7 @@ void CoreChecks::PostCallRecordQueueBindSparse(VkQueue queue, uint32_t bindInfoC
                 auto sparse_binding = bindInfo.pImageBinds[j].pBinds[k];
                 // TODO: This size is broken for non-opaque bindings, need to update to comprehend full sparse binding data
                 VkDeviceSize size = sparse_binding.extent.depth * sparse_binding.extent.height * sparse_binding.extent.width * 4;
-                SetSparseMemBinding(device_data, {sparse_binding.memory, sparse_binding.memoryOffset, size},
+                SetSparseMemBinding({sparse_binding.memory, sparse_binding.memoryOffset, size},
                                     HandleToUint64(bindInfo.pImageBinds[j].image), kVulkanObjectTypeImage);
             }
         }
@@ -10972,8 +10960,8 @@ void CoreChecks::PostCallRecordQueueBindSparse(VkQueue queue, uint32_t bindInfoC
                 } else {
                     // Retire work up until this submit early, we will not see the wait that corresponds to this signal
                     early_retire_seq = std::max(early_retire_seq, pQueue->seq + pQueue->submissions.size() + 1);
-                    if (!device_data->external_sync_warning) {
-                        device_data->external_sync_warning = true;
+                    if (!external_sync_warning) {
+                        external_sync_warning = true;
                         log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SEMAPHORE_EXT,
                                 HandleToUint64(semaphore), kVUID_Core_DrawState_QueueForwardProgress,
                                 "vkQueueBindSparse(): Signaling external semaphore %s on queue %s will disable validation of "
@@ -11051,8 +11039,7 @@ void CoreChecks::PostCallRecordImportSemaphoreFdKHR(VkDevice device, const VkImp
                                pImportSemaphoreFdInfo->flags);
 }
 
-void CoreChecks::RecordGetExternalSemaphoreState(layer_data *device_data, VkSemaphore semaphore,
-                                                 VkExternalSemaphoreHandleTypeFlagBitsKHR handle_type) {
+void CoreChecks::RecordGetExternalSemaphoreState(VkSemaphore semaphore, VkExternalSemaphoreHandleTypeFlagBitsKHR handle_type) {
     SEMAPHORE_NODE *semaphore_state = GetSemaphoreNode(semaphore);
     if (semaphore_state && handle_type != VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT_KHR) {
         // Cannot track semaphore state once it is exported, except for Sync FD handle types which have copy transference
@@ -11064,17 +11051,15 @@ void CoreChecks::RecordGetExternalSemaphoreState(layer_data *device_data, VkSema
 void CoreChecks::PostCallRecordGetSemaphoreWin32HandleKHR(VkDevice device,
                                                           const VkSemaphoreGetWin32HandleInfoKHR *pGetWin32HandleInfo,
                                                           HANDLE *pHandle, VkResult result) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (VK_SUCCESS != result) return;
-    RecordGetExternalSemaphoreState(device_data, pGetWin32HandleInfo->semaphore, pGetWin32HandleInfo->handleType);
+    RecordGetExternalSemaphoreState(pGetWin32HandleInfo->semaphore, pGetWin32HandleInfo->handleType);
 }
 #endif
 
 void CoreChecks::PostCallRecordGetSemaphoreFdKHR(VkDevice device, const VkSemaphoreGetFdInfoKHR *pGetFdInfo, int *pFd,
                                                  VkResult result) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (VK_SUCCESS != result) return;
-    RecordGetExternalSemaphoreState(device_data, pGetFdInfo->semaphore, pGetFdInfo->handleType);
+    RecordGetExternalSemaphoreState(pGetFdInfo->semaphore, pGetFdInfo->handleType);
 }
 
 bool CoreChecks::ValidateImportFence(VkFence fence, const char *caller_name) {
@@ -11158,17 +11143,14 @@ void CoreChecks::PostCallRecordCreateEvent(VkDevice device, const VkEventCreateI
     eventMap[*pEvent].stageMask = VkPipelineStageFlags(0);
 }
 
-bool CoreChecks::ValidateCreateSwapchain(layer_data *device_data, const char *func_name,
-                                         VkSwapchainCreateInfoKHR const *pCreateInfo, SURFACE_STATE *surface_state,
-                                         SWAPCHAIN_NODE *old_swapchain_state) {
-    VkDevice device = device_data->device;
-
+bool CoreChecks::ValidateCreateSwapchain(const char *func_name, VkSwapchainCreateInfoKHR const *pCreateInfo,
+                                         SURFACE_STATE *surface_state, SWAPCHAIN_NODE *old_swapchain_state) {
     // All physical devices and queue families are required to be able to present to any native window on Android; require the
     // application to have established support on any other platform.
-    if (!device_data->instance_extensions.vk_khr_android_surface) {
-        auto support_predicate = [device_data](decltype(surface_state->gpu_queue_support)::value_type qs) -> bool {
+    if (!instance_extensions.vk_khr_android_surface) {
+        auto support_predicate = [this](decltype(surface_state->gpu_queue_support)::value_type qs) -> bool {
             // TODO: should restrict search only to queue families of VkDeviceQueueCreateInfos, not whole phys. device
-            return (qs.first.gpu == device_data->physical_device) && qs.second;
+            return (qs.first.gpu == physical_device) && qs.second;
         };
         const auto &support = surface_state->gpu_queue_support;
         bool is_supported = std::any_of(support.begin(), support.end(), support_predicate);
@@ -11209,7 +11191,7 @@ bool CoreChecks::ValidateCreateSwapchain(layer_data *device_data, const char *fu
     auto physical_device_state = GetPhysicalDeviceState();
     if (physical_device_state->vkGetPhysicalDeviceSurfaceCapabilitiesKHRState == UNCALLED) {
         if (log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT,
-                    HandleToUint64(device_data->physical_device), kVUID_Core_DrawState_SwapchainCreateBeforeQuery,
+                    HandleToUint64(physical_device), kVUID_Core_DrawState_SwapchainCreateBeforeQuery,
                     "%s: surface capabilities not retrieved for this physical device", func_name))
             return true;
     } else {  // have valid capabilities
@@ -11383,7 +11365,7 @@ bool CoreChecks::ValidateCreateSwapchain(layer_data *device_data, const char *fu
     // Validate state for shared presentable case
     if (VK_PRESENT_MODE_SHARED_DEMAND_REFRESH_KHR == pCreateInfo->presentMode ||
         VK_PRESENT_MODE_SHARED_CONTINUOUS_REFRESH_KHR == pCreateInfo->presentMode) {
-        if (!device_data->device_extensions.vk_khr_shared_presentable_image) {
+        if (!device_extensions.vk_khr_shared_presentable_image) {
             if (log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
                         kVUID_Core_DrawState_ExtensionNotEnabled,
                         "%s called with presentMode %s which requires the VK_KHR_shared_presentable_image extension, which has not "
@@ -11401,7 +11383,7 @@ bool CoreChecks::ValidateCreateSwapchain(layer_data *device_data, const char *fu
     }
 
     if (pCreateInfo->flags & VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR) {
-        if (!device_data->device_extensions.vk_khr_swapchain_mutable_format) {
+        if (!device_extensions.vk_khr_swapchain_mutable_format) {
             if (log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
                         kVUID_Core_DrawState_ExtensionNotEnabled,
                         "%s: pCreateInfo->flags contains VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR which requires the "
@@ -11458,10 +11440,9 @@ bool CoreChecks::ValidateCreateSwapchain(layer_data *device_data, const char *fu
 
 bool CoreChecks::PreCallValidateCreateSwapchainKHR(VkDevice device, const VkSwapchainCreateInfoKHR *pCreateInfo,
                                                    const VkAllocationCallbacks *pAllocator, VkSwapchainKHR *pSwapchain) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     auto surface_state = GetSurfaceState(pCreateInfo->surface);
     auto old_swapchain_state = GetSwapchainNode(pCreateInfo->oldSwapchain);
-    return ValidateCreateSwapchain(device_data, "vkCreateSwapchainKHR()", pCreateInfo, surface_state, old_swapchain_state);
+    return ValidateCreateSwapchain("vkCreateSwapchainKHR()", pCreateInfo, surface_state, old_swapchain_state);
 }
 
 static void RecordCreateSwapchainState(layer_data *device_data, VkResult result, const VkSwapchainCreateInfoKHR *pCreateInfo,
@@ -11757,7 +11738,6 @@ void CoreChecks::PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentInf
 bool CoreChecks::PreCallValidateCreateSharedSwapchainsKHR(VkDevice device, uint32_t swapchainCount,
                                                           const VkSwapchainCreateInfoKHR *pCreateInfos,
                                                           const VkAllocationCallbacks *pAllocator, VkSwapchainKHR *pSwapchains) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
     if (pCreateInfos) {
         for (uint32_t i = 0; i < swapchainCount; i++) {
@@ -11765,8 +11745,7 @@ bool CoreChecks::PreCallValidateCreateSharedSwapchainsKHR(VkDevice device, uint3
             auto old_swapchain_state = GetSwapchainNode(pCreateInfos[i].oldSwapchain);
             std::stringstream func_name;
             func_name << "vkCreateSharedSwapchainsKHR[" << swapchainCount << "]()";
-            skip |=
-                ValidateCreateSwapchain(device_data, func_name.str().c_str(), &pCreateInfos[i], surface_state, old_swapchain_state);
+            skip |= ValidateCreateSwapchain(func_name.str().c_str(), &pCreateInfos[i], surface_state, old_swapchain_state);
         }
     }
     return skip;
@@ -12644,8 +12623,7 @@ void CoreChecks::PreCallRecordCmdPushDescriptorSetWithTemplateKHR(VkCommandBuffe
     }
 }
 
-void CoreChecks::RecordGetPhysicalDeviceDisplayPlanePropertiesState(instance_layer_data *instance_data,
-                                                                    VkPhysicalDevice physicalDevice, uint32_t *pPropertyCount,
+void CoreChecks::RecordGetPhysicalDeviceDisplayPlanePropertiesState(VkPhysicalDevice physicalDevice, uint32_t *pPropertyCount,
                                                                     void *pProperties) {
     auto physical_device_state = GetPhysicalDeviceState(physicalDevice);
     if (*pPropertyCount) {
@@ -12664,36 +12642,32 @@ void CoreChecks::RecordGetPhysicalDeviceDisplayPlanePropertiesState(instance_lay
 void CoreChecks::PostCallRecordGetPhysicalDeviceDisplayPlanePropertiesKHR(VkPhysicalDevice physicalDevice, uint32_t *pPropertyCount,
                                                                           VkDisplayPlanePropertiesKHR *pProperties,
                                                                           VkResult result) {
-    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), instance_layer_data_map);
     if ((VK_SUCCESS != result) && (VK_INCOMPLETE != result)) return;
-    RecordGetPhysicalDeviceDisplayPlanePropertiesState(instance_data, physicalDevice, pPropertyCount, pProperties);
+    RecordGetPhysicalDeviceDisplayPlanePropertiesState(physicalDevice, pPropertyCount, pProperties);
 }
 
 void CoreChecks::PostCallRecordGetPhysicalDeviceDisplayPlaneProperties2KHR(VkPhysicalDevice physicalDevice,
                                                                            uint32_t *pPropertyCount,
                                                                            VkDisplayPlaneProperties2KHR *pProperties,
                                                                            VkResult result) {
-    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), instance_layer_data_map);
     if ((VK_SUCCESS != result) && (VK_INCOMPLETE != result)) return;
-    RecordGetPhysicalDeviceDisplayPlanePropertiesState(instance_data, physicalDevice, pPropertyCount, pProperties);
+    RecordGetPhysicalDeviceDisplayPlanePropertiesState(physicalDevice, pPropertyCount, pProperties);
 }
 
-bool CoreChecks::ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(instance_layer_data *instance_data,
-                                                                         VkPhysicalDevice physicalDevice, uint32_t planeIndex,
+bool CoreChecks::ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(VkPhysicalDevice physicalDevice, uint32_t planeIndex,
                                                                          const char *api_name) {
     bool skip = false;
     auto physical_device_state = GetPhysicalDeviceState(physicalDevice);
     if (physical_device_state->vkGetPhysicalDeviceDisplayPlanePropertiesKHRState == UNCALLED) {
-        skip |=
-            log_msg(instance_data->report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT,
-                    HandleToUint64(physicalDevice), kVUID_Core_Swapchain_GetSupportedDisplaysWithoutQuery,
-                    "Potential problem with calling %s() without first querying vkGetPhysicalDeviceDisplayPlanePropertiesKHR "
-                    "or vkGetPhysicalDeviceDisplayPlaneProperties2KHR.",
-                    api_name);
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT,
+                        HandleToUint64(physicalDevice), kVUID_Core_Swapchain_GetSupportedDisplaysWithoutQuery,
+                        "Potential problem with calling %s() without first querying vkGetPhysicalDeviceDisplayPlanePropertiesKHR "
+                        "or vkGetPhysicalDeviceDisplayPlaneProperties2KHR.",
+                        api_name);
     } else {
         if (planeIndex >= physical_device_state->display_plane_property_count) {
             skip |= log_msg(
-                instance_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT,
+                report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT,
                 HandleToUint64(physicalDevice), "VUID-vkGetDisplayPlaneSupportedDisplaysKHR-planeIndex-01249",
                 "%s(): planeIndex must be in the range [0, %d] that was returned by vkGetPhysicalDeviceDisplayPlanePropertiesKHR "
                 "or vkGetPhysicalDeviceDisplayPlaneProperties2KHR. Do you have the plane index hardcoded?",
@@ -12705,28 +12679,24 @@ bool CoreChecks::ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(instanc
 
 bool CoreChecks::PreCallValidateGetDisplayPlaneSupportedDisplaysKHR(VkPhysicalDevice physicalDevice, uint32_t planeIndex,
                                                                     uint32_t *pDisplayCount, VkDisplayKHR *pDisplays) {
-    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), instance_layer_data_map);
     bool skip = false;
-    skip |= ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(instance_data, physicalDevice, planeIndex,
+    skip |= ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(physicalDevice, planeIndex,
                                                                     "vkGetDisplayPlaneSupportedDisplaysKHR");
     return skip;
 }
 
 bool CoreChecks::PreCallValidateGetDisplayPlaneCapabilitiesKHR(VkPhysicalDevice physicalDevice, VkDisplayModeKHR mode,
                                                                uint32_t planeIndex, VkDisplayPlaneCapabilitiesKHR *pCapabilities) {
-    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), instance_layer_data_map);
     bool skip = false;
-    skip |= ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(instance_data, physicalDevice, planeIndex,
-                                                                    "vkGetDisplayPlaneCapabilitiesKHR");
+    skip |= ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(physicalDevice, planeIndex, "vkGetDisplayPlaneCapabilitiesKHR");
     return skip;
 }
 
 bool CoreChecks::PreCallValidateGetDisplayPlaneCapabilities2KHR(VkPhysicalDevice physicalDevice,
                                                                 const VkDisplayPlaneInfo2KHR *pDisplayPlaneInfo,
                                                                 VkDisplayPlaneCapabilities2KHR *pCapabilities) {
-    instance_layer_data *instance_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), instance_layer_data_map);
     bool skip = false;
-    skip |= ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(instance_data, physicalDevice, pDisplayPlaneInfo->planeIndex,
+    skip |= ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(physicalDevice, pDisplayPlaneInfo->planeIndex,
                                                                     "vkGetDisplayPlaneCapabilities2KHR");
     return skip;
 }
@@ -12961,8 +12931,7 @@ bool CoreChecks::PreCallValidateCreateSamplerYcbcrConversionKHR(VkDevice device,
     return ValidateCreateSamplerYcbcrConversion("vkCreateSamplerYcbcrConversionKHR()", pCreateInfo);
 }
 
-void CoreChecks::RecordCreateSamplerYcbcrConversionState(layer_data *device_data,
-                                                         const VkSamplerYcbcrConversionCreateInfo *create_info,
+void CoreChecks::RecordCreateSamplerYcbcrConversionState(const VkSamplerYcbcrConversionCreateInfo *create_info,
                                                          VkSamplerYcbcrConversion ycbcr_conversion) {
     if (GetDeviceExtensions()->vk_android_external_memory_android_hardware_buffer) {
         RecordCreateSamplerYcbcrConversionANDROID(create_info, ycbcr_conversion);
@@ -12972,18 +12941,16 @@ void CoreChecks::RecordCreateSamplerYcbcrConversionState(layer_data *device_data
 void CoreChecks::PostCallRecordCreateSamplerYcbcrConversion(VkDevice device, const VkSamplerYcbcrConversionCreateInfo *pCreateInfo,
                                                             const VkAllocationCallbacks *pAllocator,
                                                             VkSamplerYcbcrConversion *pYcbcrConversion, VkResult result) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (VK_SUCCESS != result) return;
-    RecordCreateSamplerYcbcrConversionState(device_data, pCreateInfo, *pYcbcrConversion);
+    RecordCreateSamplerYcbcrConversionState(pCreateInfo, *pYcbcrConversion);
 }
 
 void CoreChecks::PostCallRecordCreateSamplerYcbcrConversionKHR(VkDevice device,
                                                                const VkSamplerYcbcrConversionCreateInfo *pCreateInfo,
                                                                const VkAllocationCallbacks *pAllocator,
                                                                VkSamplerYcbcrConversion *pYcbcrConversion, VkResult result) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (VK_SUCCESS != result) return;
-    RecordCreateSamplerYcbcrConversionState(device_data, pCreateInfo, *pYcbcrConversion);
+    RecordCreateSamplerYcbcrConversionState(pCreateInfo, *pYcbcrConversion);
 }
 
 void CoreChecks::PostCallRecordDestroySamplerYcbcrConversion(VkDevice device, VkSamplerYcbcrConversion ycbcrConversion,
