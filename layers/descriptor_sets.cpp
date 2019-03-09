@@ -591,7 +591,7 @@ cvdescriptorset::AllocateDescriptorSetsData::AllocateDescriptorSetsData(uint32_t
 
 cvdescriptorset::DescriptorSet::DescriptorSet(const VkDescriptorSet set, const VkDescriptorPool pool,
                                               const std::shared_ptr<DescriptorSetLayout const> &layout, uint32_t variable_count,
-                                              layer_data *dev_data)
+                                              CoreChecks *dev_data)
     : some_update_(false),
       set_(set),
       pool_state_(nullptr),
@@ -1317,12 +1317,12 @@ cvdescriptorset::SamplerDescriptor::SamplerDescriptor(const VkSampler *immut) : 
     }
 }
 // Validate given sampler. Currently this only checks to make sure it exists in the samplerMap
-bool cvdescriptorset::ValidateSampler(const VkSampler sampler, layer_data *dev_data) {
+bool cvdescriptorset::ValidateSampler(const VkSampler sampler, CoreChecks *dev_data) {
     return (dev_data->GetSamplerState(sampler) != nullptr);
 }
 
 bool cvdescriptorset::ValidateImageUpdate(VkImageView image_view, VkImageLayout image_layout, VkDescriptorType type,
-                                          layer_data *dev_data, const char *func_name, std::string *error_code,
+                                          CoreChecks *dev_data, const char *func_name, std::string *error_code,
                                           std::string *error_msg) {
     *error_code = "VUID-VkWriteDescriptorSet-descriptorType-00326";
     auto iv_state = dev_data->GetImageViewState(image_view);
@@ -1711,8 +1711,7 @@ void cvdescriptorset::TexelDescriptor::UpdateDrawState(CoreChecks *dev_data, GLO
 // If the update hits an issue for which the callback returns "true", meaning that the call down the chain should
 //  be skipped, then true is returned.
 // If there is no issue with the update, then false is returned.
-bool CoreChecks::ValidateUpdateDescriptorSets(const debug_report_data *report_data, const layer_data *dev_data,
-                                              uint32_t write_count, const VkWriteDescriptorSet *p_wds, uint32_t copy_count,
+bool CoreChecks::ValidateUpdateDescriptorSets(uint32_t write_count, const VkWriteDescriptorSet *p_wds, uint32_t copy_count,
                                               const VkCopyDescriptorSet *p_cds, const char *func_name) {
     bool skip = false;
     // Validate Write updates
@@ -1761,7 +1760,7 @@ bool CoreChecks::ValidateUpdateDescriptorSets(const debug_report_data *report_da
 //  with the same set of updates.
 // This is split from the validate code to allow validation prior to calling down the chain, and then update after
 //  calling down the chain.
-void cvdescriptorset::PerformUpdateDescriptorSets(layer_data *dev_data, uint32_t write_count, const VkWriteDescriptorSet *p_wds,
+void cvdescriptorset::PerformUpdateDescriptorSets(CoreChecks *dev_data, uint32_t write_count, const VkWriteDescriptorSet *p_wds,
                                                   uint32_t copy_count, const VkCopyDescriptorSet *p_cds) {
     // Write updates first
     uint32_t i = 0;
@@ -1784,7 +1783,7 @@ void cvdescriptorset::PerformUpdateDescriptorSets(layer_data *dev_data, uint32_t
     }
 }
 
-cvdescriptorset::DecodedTemplateUpdate::DecodedTemplateUpdate(layer_data *device_data, VkDescriptorSet descriptorSet,
+cvdescriptorset::DecodedTemplateUpdate::DecodedTemplateUpdate(CoreChecks *device_data, VkDescriptorSet descriptorSet,
                                                               const TEMPLATE_STATE *template_state, const void *pData,
                                                               VkDescriptorSetLayout push_layout) {
     auto const &create_info = template_state->create_info;
@@ -1863,15 +1862,15 @@ cvdescriptorset::DecodedTemplateUpdate::DecodedTemplateUpdate(layer_data *device
 }
 // These helper functions carry out the validate and record descriptor updates peformed via update templates. They decode
 // the templatized data and leverage the non-template UpdateDescriptor helper functions.
-bool CoreChecks::ValidateUpdateDescriptorSetsWithTemplateKHR(layer_data *device_data, VkDescriptorSet descriptorSet,
-                                                             const TEMPLATE_STATE *template_state, const void *pData) {
+bool CoreChecks::ValidateUpdateDescriptorSetsWithTemplateKHR(VkDescriptorSet descriptorSet, const TEMPLATE_STATE *template_state,
+                                                             const void *pData) {
     // Translate the templated update into a normal update for validation...
-    cvdescriptorset::DecodedTemplateUpdate decoded_update(device_data, descriptorSet, template_state, pData);
-    return ValidateUpdateDescriptorSets(GetReportData(), device_data, static_cast<uint32_t>(decoded_update.desc_writes.size()),
-                                        decoded_update.desc_writes.data(), 0, NULL, "vkUpdateDescriptorSetWithTemplate()");
+    cvdescriptorset::DecodedTemplateUpdate decoded_update(this, descriptorSet, template_state, pData);
+    return ValidateUpdateDescriptorSets(static_cast<uint32_t>(decoded_update.desc_writes.size()), decoded_update.desc_writes.data(),
+                                        0, NULL, "vkUpdateDescriptorSetWithTemplate()");
 }
 
-void CoreChecks::PerformUpdateDescriptorSetsWithTemplateKHR(layer_data *device_data, VkDescriptorSet descriptorSet,
+void CoreChecks::PerformUpdateDescriptorSetsWithTemplateKHR(CoreChecks *device_data, VkDescriptorSet descriptorSet,
                                                             const TEMPLATE_STATE *template_state, const void *pData) {
     // Translate the templated update into a normal update for validation...
     cvdescriptorset::DecodedTemplateUpdate decoded_update(device_data, descriptorSet, template_state, pData);
@@ -2423,10 +2422,10 @@ bool cvdescriptorset::DescriptorSet::VerifyCopyUpdateContents(const VkCopyDescri
     return true;
 }
 // Update the common AllocateDescriptorSetsData
-void CoreChecks::UpdateAllocateDescriptorSetsData(const layer_data *dev_data, const VkDescriptorSetAllocateInfo *p_alloc_info,
+void CoreChecks::UpdateAllocateDescriptorSetsData(const VkDescriptorSetAllocateInfo *p_alloc_info,
                                                   cvdescriptorset::AllocateDescriptorSetsData *ds_data) {
     for (uint32_t i = 0; i < p_alloc_info->descriptorSetCount; i++) {
-        auto layout = GetDescriptorSetLayout(dev_data, p_alloc_info->pSetLayouts[i]);
+        auto layout = GetDescriptorSetLayout(this, p_alloc_info->pSetLayouts[i]);
         if (layout) {
             ds_data->layout_nodes[i] = layout;
             // Count total descriptors required per type
@@ -2440,13 +2439,13 @@ void CoreChecks::UpdateAllocateDescriptorSetsData(const layer_data *dev_data, co
     }
 }
 // Verify that the state at allocate time is correct, but don't actually allocate the sets yet
-bool CoreChecks::ValidateAllocateDescriptorSets(const layer_data *dev_data, const VkDescriptorSetAllocateInfo *p_alloc_info,
+bool CoreChecks::ValidateAllocateDescriptorSets(const VkDescriptorSetAllocateInfo *p_alloc_info,
                                                 const cvdescriptorset::AllocateDescriptorSetsData *ds_data) {
     bool skip = false;
     auto pool_state = GetDescriptorPoolState(p_alloc_info->descriptorPool);
 
     for (uint32_t i = 0; i < p_alloc_info->descriptorSetCount; i++) {
-        auto layout = GetDescriptorSetLayout(dev_data, p_alloc_info->pSetLayouts[i]);
+        auto layout = GetDescriptorSetLayout(this, p_alloc_info->pSetLayouts[i]);
         if (layout) {  // nullptr layout indicates no valid layout handle for this device, validated/logged in object_tracker
             if (layout->IsPushDescriptor()) {
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT_EXT,
@@ -2501,7 +2500,7 @@ bool CoreChecks::ValidateAllocateDescriptorSets(const layer_data *dev_data, cons
         }
         if (count_allocate_info->descriptorSetCount == p_alloc_info->descriptorSetCount) {
             for (uint32_t i = 0; i < p_alloc_info->descriptorSetCount; i++) {
-                auto layout = GetDescriptorSetLayout(dev_data, p_alloc_info->pSetLayouts[i]);
+                auto layout = GetDescriptorSetLayout(this, p_alloc_info->pSetLayouts[i]);
                 if (count_allocate_info->pDescriptorCounts[i] > layout->GetDescriptorCountFromBinding(layout->GetMaxBinding())) {
                     skip |= log_msg(
                         report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT_EXT, 0,
@@ -2521,7 +2520,7 @@ void CoreChecks::PerformAllocateDescriptorSets(const VkDescriptorSetAllocateInfo
                                                const cvdescriptorset::AllocateDescriptorSetsData *ds_data,
                                                std::unordered_map<VkDescriptorPool, DESCRIPTOR_POOL_STATE *> *pool_map,
                                                std::unordered_map<VkDescriptorSet, cvdescriptorset::DescriptorSet *> *set_map,
-                                               layer_data *dev_data) {
+                                               CoreChecks *dev_data) {
     auto pool_state = (*pool_map)[p_alloc_info->descriptorPool];
     // Account for sets and individual descriptors allocated from pool
     pool_state->availableSets -= p_alloc_info->descriptorSetCount;

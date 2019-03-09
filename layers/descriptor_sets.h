@@ -35,7 +35,6 @@
 #include <vector>
 
 class CoreChecks;
-typedef CoreChecks layer_data;
 
 // Descriptor Data structures
 namespace cvdescriptorset {
@@ -315,8 +314,8 @@ class Descriptor {
 };
 // Shared helper functions - These are useful because the shared sampler image descriptor type
 //  performs common functions with both sampler and image descriptors so they can share their common functions
-bool ValidateSampler(const VkSampler, layer_data *);
-bool ValidateImageUpdate(VkImageView, VkImageLayout, VkDescriptorType, layer_data *, const char *func_name, std::string *,
+bool ValidateSampler(const VkSampler, CoreChecks *);
+bool ValidateImageUpdate(VkImageView, VkImageLayout, VkDescriptorType, CoreChecks *, const char *func_name, std::string *,
                          std::string *);
 
 class SamplerDescriptor : public Descriptor {
@@ -339,7 +338,7 @@ class ImageSamplerDescriptor : public Descriptor {
     ImageSamplerDescriptor(const VkSampler *);
     void WriteUpdate(const VkWriteDescriptorSet *, const uint32_t) override;
     void CopyUpdate(const Descriptor *) override;
-    void UpdateDrawState(layer_data *, GLOBAL_CB_NODE *) override;
+    void UpdateDrawState(CoreChecks *, GLOBAL_CB_NODE *) override;
     virtual bool IsImmutableSampler() const override { return immutable_; };
     VkSampler GetSampler() const { return sampler_; }
     VkImageView GetImageView() const { return image_view_; }
@@ -432,16 +431,16 @@ struct AllocateDescriptorSetsData {
 };
 // Helper functions for descriptor set functions that cross multiple sets
 // "Validate" will make sure an update is ok without actually performing it
-bool ValidateUpdateDescriptorSets(const debug_report_data *, const layer_data *, uint32_t, const VkWriteDescriptorSet *, uint32_t,
+bool ValidateUpdateDescriptorSets(const debug_report_data *, const CoreChecks *, uint32_t, const VkWriteDescriptorSet *, uint32_t,
                                   const VkCopyDescriptorSet *, const char *func_name);
 // "Perform" does the update with the assumption that ValidateUpdateDescriptorSets() has passed for the given update
-void PerformUpdateDescriptorSets(layer_data *, uint32_t, const VkWriteDescriptorSet *, uint32_t, const VkCopyDescriptorSet *);
+void PerformUpdateDescriptorSets(CoreChecks *, uint32_t, const VkWriteDescriptorSet *, uint32_t, const VkCopyDescriptorSet *);
 
 // Helper class to encapsulate the descriptor update template decoding logic
 struct DecodedTemplateUpdate {
     std::vector<VkWriteDescriptorSet> desc_writes;
     std::vector<VkWriteDescriptorSetInlineUniformBlockEXT> inline_infos;
-    DecodedTemplateUpdate(layer_data *device_data, VkDescriptorSet descriptorSet, const TEMPLATE_STATE *template_state,
+    DecodedTemplateUpdate(CoreChecks *device_data, VkDescriptorSet descriptorSet, const TEMPLATE_STATE *template_state,
                           const void *pData, VkDescriptorSetLayout push_layout = VK_NULL_HANDLE);
 };
 
@@ -466,7 +465,7 @@ struct DecodedTemplateUpdate {
 class DescriptorSet : public BASE_NODE {
    public:
     DescriptorSet(const VkDescriptorSet, const VkDescriptorPool, const std::shared_ptr<DescriptorSetLayout const> &,
-                  uint32_t variable_count, layer_data *);
+                  uint32_t variable_count, CoreChecks *);
     ~DescriptorSet();
     // A number of common Get* functions that return data based on layout from which this set was created
     uint32_t GetTotalDescriptorCount() const { return p_layout_->GetTotalDescriptorCount(); };
@@ -566,7 +565,7 @@ class DescriptorSet : public BASE_NODE {
     DESCRIPTOR_POOL_STATE *pool_state_;
     const std::shared_ptr<DescriptorSetLayout const> p_layout_;
     std::vector<std::unique_ptr<Descriptor>> descriptors_;
-    layer_data *device_data_;
+    CoreChecks *device_data_;
     const VkPhysicalDeviceLimits limits_;
     uint32_t variable_count_;
 
