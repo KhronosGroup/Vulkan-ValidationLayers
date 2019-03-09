@@ -277,7 +277,7 @@ class CoreChecks : public ValidationObject {
     void ClearCmdBufAndMemReferences(layer_data* dev_data, GLOBAL_CB_NODE* cb_node);
     void ClearMemoryObjectBinding(uint64_t handle, VulkanObjectType type, VkDeviceMemory mem);
     void ResetCommandBufferState(layer_data* dev_data, const VkCommandBuffer cb);
-    void SetMemBinding(layer_data* dev_data, VkDeviceMemory mem, BINDABLE* mem_binding, VkDeviceSize memory_offset, uint64_t handle,
+    void SetMemBinding(VkDeviceMemory mem, BINDABLE* mem_binding, VkDeviceSize memory_offset, uint64_t handle,
                        VulkanObjectType type);
     bool ValidateSetMemBinding(VkDeviceMemory mem, uint64_t handle, VulkanObjectType type, const char* apiName);
     bool SetSparseMemBinding(layer_data* dev_data, MEM_BINDING binding, uint64_t handle, VulkanObjectType type);
@@ -285,16 +285,14 @@ class CoreChecks : public ValidationObject {
                                    bool optional);
     BASE_NODE* GetStateStructPtrFromObject(VK_OBJECT object_struct);
     void RemoveCommandBufferBinding(VK_OBJECT const* object, GLOBAL_CB_NODE* cb_node);
-    bool ValidateBindBufferMemory(layer_data* device_data, VkBuffer buffer, VkDeviceMemory mem, VkDeviceSize memoryOffset,
-                                  const char* api_name);
-    void RecordGetBufferMemoryRequirementsState(layer_data* device_data, VkBuffer buffer,
-                                                VkMemoryRequirements* pMemoryRequirements);
-    void UpdateBindBufferMemoryState(layer_data* device_data, VkBuffer buffer, VkDeviceMemory mem, VkDeviceSize memoryOffset);
+    bool ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory mem, VkDeviceSize memoryOffset, const char* api_name);
+    void RecordGetBufferMemoryRequirementsState(VkBuffer buffer, VkMemoryRequirements* pMemoryRequirements);
+    void UpdateBindBufferMemoryState(VkBuffer buffer, VkDeviceMemory mem, VkDeviceSize memoryOffset);
     PIPELINE_LAYOUT_NODE const* GetPipelineLayout(VkPipelineLayout pipeLayout);
     const TEMPLATE_STATE* GetDescriptorTemplateState(const layer_data* dev_data,
                                                      VkDescriptorUpdateTemplateKHR descriptor_update_template);
     bool ValidateGetImageMemoryRequirements2(const VkImageMemoryRequirementsInfo2* pInfo);
-    void RecordGetImageMemoryRequiementsState(layer_data* device_data, VkImage image, VkMemoryRequirements* pMemoryRequirements);
+    void RecordGetImageMemoryRequiementsState(VkImage image, VkMemoryRequirements* pMemoryRequirements);
     void FreeCommandBufferStates(layer_data* dev_data, COMMAND_POOL_NODE* pool_state, const uint32_t command_buffer_count,
                                  const VkCommandBuffer* command_buffers);
     bool CheckCommandBuffersInFlight(layer_data* dev_data, COMMAND_POOL_NODE* pPool, const char* action, const char* error_code);
@@ -304,9 +302,9 @@ class CoreChecks : public ValidationObject {
     void DecrementBoundResources(GLOBAL_CB_NODE const* cb_node);
     bool VerifyWaitFenceState(layer_data* dev_data, VkFence fence, const char* apiCall);
     void RetireFence(layer_data* dev_data, VkFence fence);
-    void StoreMemRanges(layer_data* dev_data, VkDeviceMemory mem, VkDeviceSize offset, VkDeviceSize size);
+    void StoreMemRanges(VkDeviceMemory mem, VkDeviceSize offset, VkDeviceSize size);
     bool ValidateIdleDescriptorSet(const layer_data* dev_data, VkDescriptorSet set, const char* func_str);
-    void InitializeAndTrackMemory(layer_data* dev_data, VkDeviceMemory mem, VkDeviceSize offset, VkDeviceSize size, void** ppData);
+    void InitializeAndTrackMemory(VkDeviceMemory mem, VkDeviceSize offset, VkDeviceSize size, void** ppData);
     bool ValidatePipelineLocked(layer_data* dev_data, std::vector<std::unique_ptr<PIPELINE_STATE>> const& pPipelines,
                                 int pipelineIndex);
     bool ValidatePipelineUnlocked(layer_data* dev_data, std::vector<std::unique_ptr<PIPELINE_STATE>> const& pPipelines,
@@ -316,7 +314,7 @@ class CoreChecks : public ValidationObject {
     bool ValidImageBufferQueue(GLOBAL_CB_NODE* cb_node, const VK_OBJECT* object, VkQueue queue, uint32_t count,
                                const uint32_t* indices);
     bool ValidateFenceForSubmit(FENCE_NODE* pFence);
-    void AddMemObjInfo(layer_data* dev_data, void* object, const VkDeviceMemory mem, const VkMemoryAllocateInfo* pAllocateInfo);
+    void AddMemObjInfo(void* object, const VkDeviceMemory mem, const VkMemoryAllocateInfo* pAllocateInfo);
     bool ValidateStatus(GLOBAL_CB_NODE* pNode, CBStatusFlags status_mask, VkFlags msg_flags, const char* fail_msg,
                         const char* msg_code);
     bool ValidateDrawStateFlags(GLOBAL_CB_NODE* pCB, const PIPELINE_STATE* pPipe, bool indexed, const char* msg_code);
@@ -369,12 +367,10 @@ class CoreChecks : public ValidationObject {
                                          const VkWriteDescriptorSet* pDescriptorWrites);
     bool ValidatePipelineBindPoint(layer_data* device_data, GLOBAL_CB_NODE* cb_state, VkPipelineBindPoint bind_point,
                                    const char* func_name, const std::map<VkPipelineBindPoint, std::string>& bind_errors);
-    bool ValidateMemoryIsMapped(layer_data* dev_data, const char* funcName, uint32_t memRangeCount,
-                                const VkMappedMemoryRange* pMemRanges);
-    bool ValidateAndCopyNoncoherentMemoryToDriver(layer_data* dev_data, uint32_t mem_range_count,
-                                                  const VkMappedMemoryRange* mem_ranges);
-    void CopyNoncoherentMemoryFromDriver(layer_data* dev_data, uint32_t mem_range_count, const VkMappedMemoryRange* mem_ranges);
-    bool ValidateMappedMemoryRangeDeviceLimits(layer_data* dev_data, const char* func_name, uint32_t mem_range_count,
+    bool ValidateMemoryIsMapped(const char* funcName, uint32_t memRangeCount, const VkMappedMemoryRange* pMemRanges);
+    bool ValidateAndCopyNoncoherentMemoryToDriver(uint32_t mem_range_count, const VkMappedMemoryRange* mem_ranges);
+    void CopyNoncoherentMemoryFromDriver(uint32_t mem_range_count, const VkMappedMemoryRange* mem_ranges);
+    bool ValidateMappedMemoryRangeDeviceLimits(const char* func_name, uint32_t mem_range_count,
                                                const VkMappedMemoryRange* mem_ranges);
     BarrierOperationsType ComputeBarrierOperationsType(layer_data* device_data, GLOBAL_CB_NODE* cb_state,
                                                        uint32_t buffer_barrier_count, const VkBufferMemoryBarrier* buffer_barriers,
@@ -417,9 +413,8 @@ class CoreChecks : public ValidationObject {
                                const std::vector<DAGNode>& subpass_to_node, bool& skip);
     bool CheckPreserved(const layer_data* dev_data, const VkRenderPassCreateInfo2KHR* pCreateInfo, const int index,
                         const uint32_t attachment, const std::vector<DAGNode>& subpass_to_node, int depth, bool& skip);
-    bool ValidateBindImageMemory(layer_data* device_data, VkImage image, VkDeviceMemory mem, VkDeviceSize memoryOffset,
-                                 const char* api_name);
-    void UpdateBindImageMemoryState(layer_data* device_data, VkImage image, VkDeviceMemory mem, VkDeviceSize memoryOffset);
+    bool ValidateBindImageMemory(VkImage image, VkDeviceMemory mem, VkDeviceSize memoryOffset, const char* api_name);
+    void UpdateBindImageMemoryState(VkImage image, VkDeviceMemory mem, VkDeviceSize memoryOffset);
     void RecordGetPhysicalDeviceDisplayPlanePropertiesState(instance_layer_data* instance_data, VkPhysicalDevice physicalDevice,
                                                             uint32_t* pPropertyCount, void* pProperties);
     bool ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(instance_layer_data* instance_data,
@@ -453,8 +448,8 @@ class CoreChecks : public ValidationObject {
                                          VkMemoryRequirements mem_reqs, const char* api_name);
     void InsertBufferMemoryRange(VkBuffer buffer, DEVICE_MEM_INFO* mem_info, VkDeviceSize mem_offset,
                                  VkMemoryRequirements mem_reqs);
-    bool ValidateMemoryTypes(const layer_data* dev_data, const DEVICE_MEM_INFO* mem_info, const uint32_t memory_type_bits,
-                             const char* funcName, const char* msgCode);
+    bool ValidateMemoryTypes(const DEVICE_MEM_INFO* mem_info, const uint32_t memory_type_bits, const char* funcName,
+                             const char* msgCode);
     bool ValidateCommandBufferState(GLOBAL_CB_NODE* cb_state, const char* call_source, int current_submit_count, const char* vu_id);
     bool ValidateCommandBufferSimultaneousUse(GLOBAL_CB_NODE* pCB, int current_submit_count);
     bool ValidateGetDeviceQueue(uint32_t queueFamilyIndex, uint32_t queueIndex, VkQueue* pQueue, const char* valid_qfi_vuid,
