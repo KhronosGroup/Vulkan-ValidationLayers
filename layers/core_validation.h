@@ -274,9 +274,9 @@ class CoreChecks : public ValidationObject {
     BINDABLE* GetObjectMemBinding(uint64_t handle, VulkanObjectType type);
 
     bool VerifyQueueStateToSeq(QUEUE_STATE* initial_queue, uint64_t initial_seq);
-    void ClearCmdBufAndMemReferences(layer_data* dev_data, GLOBAL_CB_NODE* cb_node);
+    void ClearCmdBufAndMemReferences(GLOBAL_CB_NODE* cb_node);
     void ClearMemoryObjectBinding(uint64_t handle, VulkanObjectType type, VkDeviceMemory mem);
-    void ResetCommandBufferState(layer_data* dev_data, const VkCommandBuffer cb);
+    void ResetCommandBufferState(const VkCommandBuffer cb);
     void SetMemBinding(VkDeviceMemory mem, BINDABLE* mem_binding, VkDeviceSize memory_offset, uint64_t handle,
                        VulkanObjectType type);
     bool ValidateSetMemBinding(VkDeviceMemory mem, uint64_t handle, VulkanObjectType type, const char* apiName);
@@ -293,11 +293,10 @@ class CoreChecks : public ValidationObject {
                                                      VkDescriptorUpdateTemplateKHR descriptor_update_template);
     bool ValidateGetImageMemoryRequirements2(const VkImageMemoryRequirementsInfo2* pInfo);
     void RecordGetImageMemoryRequiementsState(VkImage image, VkMemoryRequirements* pMemoryRequirements);
-    void FreeCommandBufferStates(layer_data* dev_data, COMMAND_POOL_NODE* pool_state, const uint32_t command_buffer_count,
+    void FreeCommandBufferStates(COMMAND_POOL_NODE* pool_state, const uint32_t command_buffer_count,
                                  const VkCommandBuffer* command_buffers);
-    bool CheckCommandBuffersInFlight(layer_data* dev_data, COMMAND_POOL_NODE* pPool, const char* action, const char* error_code);
-    bool CheckCommandBufferInFlight(layer_data* dev_data, const GLOBAL_CB_NODE* cb_node, const char* action,
-                                    const char* error_code);
+    bool CheckCommandBuffersInFlight(COMMAND_POOL_NODE* pPool, const char* action, const char* error_code);
+    bool CheckCommandBufferInFlight(const GLOBAL_CB_NODE* cb_node, const char* action, const char* error_code);
     bool VerifyQueueStateToFence(VkFence fence);
     void DecrementBoundResources(GLOBAL_CB_NODE const* cb_node);
     bool VerifyWaitFenceState(VkFence fence, const char* apiCall);
@@ -385,7 +384,7 @@ class CoreChecks : public ValidationObject {
                                          const safe_VkSubpassDependency2KHR* dependencies,
                                          const std::vector<uint32_t>& self_dependencies, uint32_t image_mem_barrier_count,
                                          const VkImageMemoryBarrier* image_barriers);
-    bool ValidateSecondaryCommandBufferState(layer_data* dev_data, GLOBAL_CB_NODE* pCB, GLOBAL_CB_NODE* pSubCB);
+    bool ValidateSecondaryCommandBufferState(GLOBAL_CB_NODE* pCB, GLOBAL_CB_NODE* pSubCB);
     bool ValidateFramebuffer(layer_data* dev_data, VkCommandBuffer primaryBuffer, const GLOBAL_CB_NODE* pCB,
                              VkCommandBuffer secondaryBuffer, const GLOBAL_CB_NODE* pSubCB, const char* caller);
     bool ValidateDescriptorUpdateTemplate(const char* func_name, layer_data* device_data,
@@ -427,8 +426,8 @@ class CoreChecks : public ValidationObject {
     void RecordGetExternalSemaphoreState(layer_data* device_data, VkSemaphore semaphore,
                                          VkExternalSemaphoreHandleTypeFlagBitsKHR handle_type);
     bool SetQueryState(VkQueue queue, VkCommandBuffer commandBuffer, QueryObject object, bool value);
-    bool ValidateCmdDrawType(layer_data* dev_data, VkCommandBuffer cmd_buffer, bool indexed, VkPipelineBindPoint bind_point,
-                             CMD_TYPE cmd_type, const char* caller, VkQueueFlags queue_flags, const char* queue_flag_code,
+    bool ValidateCmdDrawType(VkCommandBuffer cmd_buffer, bool indexed, VkPipelineBindPoint bind_point, CMD_TYPE cmd_type,
+                             const char* caller, VkQueueFlags queue_flags, const char* queue_flag_code,
                              const char* renderpass_msg_code, const char* pipebound_msg_code, const char* dynamic_state_msg_code);
     void UpdateStateCmdDrawDispatchType(GLOBAL_CB_NODE* cb_state, VkPipelineBindPoint bind_point);
     void UpdateStateCmdDrawType(GLOBAL_CB_NODE* cb_state, VkPipelineBindPoint bind_point);
@@ -555,7 +554,7 @@ class CoreChecks : public ValidationObject {
                                            QFOTransferCBScoreboards<VkBufferMemoryBarrier>* qfo_buffer_scoreboards);
     bool ValidatePipelineDrawtimeState(LAST_BOUND_STATE const& state, const GLOBAL_CB_NODE* pCB, CMD_TYPE cmd_type,
                                        PIPELINE_STATE const* pPipeline, const char* caller);
-    bool ValidateCmdBufDrawState(layer_data* dev_data, GLOBAL_CB_NODE* cb_node, CMD_TYPE cmd_type, const bool indexed,
+    bool ValidateCmdBufDrawState(GLOBAL_CB_NODE* cb_node, CMD_TYPE cmd_type, const bool indexed,
                                  const VkPipelineBindPoint bind_point, const char* function, const char* pipe_err_code,
                                  const char* state_err_code);
     void IncrementBoundObjects(GLOBAL_CB_NODE const* cb_node);
