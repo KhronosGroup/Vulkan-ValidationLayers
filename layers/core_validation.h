@@ -433,6 +433,11 @@ class CoreChecks : public ValidationObject {
     bool ValidateCmdNextSubpass(RenderPassCreateVersion rp_version, VkCommandBuffer commandBuffer);
     bool RangesIntersect(MEMORY_RANGE const* range1, VkDeviceSize offset, VkDeviceSize end);
     bool RangesIntersect(MEMORY_RANGE const* range1, MEMORY_RANGE const* range2, bool* skip, bool skip_checks);
+    void RecordCreateSwapchainState(VkResult result, const VkSwapchainCreateInfoKHR* pCreateInfo, VkSwapchainKHR* pSwapchain,
+                                    SURFACE_STATE* surface_state, SWAPCHAIN_NODE* old_swapchain_state);
+    void RecordVulkanSurface(VkSurfaceKHR* pSurface);
+    void PostRecordEnumeratePhysicalDeviceGroupsState(uint32_t* pPhysicalDeviceGroupCount,
+                                                      VkPhysicalDeviceGroupPropertiesKHR* pPhysicalDeviceGroupProperties);
     bool ValidateInsertMemoryRange(uint64_t handle, DEVICE_MEM_INFO* mem_info, VkDeviceSize memoryOffset,
                                    VkMemoryRequirements memRequirements, bool is_image, bool is_linear, const char* api_name);
     void InsertMemoryRange(uint64_t handle, DEVICE_MEM_INFO* mem_info, VkDeviceSize memoryOffset,
@@ -447,6 +452,8 @@ class CoreChecks : public ValidationObject {
                                  VkMemoryRequirements mem_reqs);
     bool ValidateMemoryTypes(const DEVICE_MEM_INFO* mem_info, const uint32_t memory_type_bits, const char* funcName,
                              const char* msgCode);
+    void RecordCreateDescriptorUpdateTemplateState(const VkDescriptorUpdateTemplateCreateInfoKHR* pCreateInfo,
+                                                   VkDescriptorUpdateTemplateKHR* pDescriptorUpdateTemplate);
     bool ValidateCommandBufferState(GLOBAL_CB_NODE* cb_state, const char* call_source, int current_submit_count, const char* vu_id);
     bool ValidateCommandBufferSimultaneousUse(GLOBAL_CB_NODE* pCB, int current_submit_count);
     bool ValidateGetDeviceQueue(uint32_t queueFamilyIndex, uint32_t queueIndex, VkQueue* pQueue, const char* valid_qfi_vuid,
