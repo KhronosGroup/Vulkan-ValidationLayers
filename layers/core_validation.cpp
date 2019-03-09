@@ -1226,8 +1226,7 @@ void CoreChecks::UpdateDrawState(GLOBAL_CB_NODE *cb_state, const VkPipelineBindP
     }
 }
 
-bool CoreChecks::ValidatePipelineLocked(layer_data *dev_data, std::vector<std::unique_ptr<PIPELINE_STATE>> const &pPipelines,
-                                        int pipelineIndex) {
+bool CoreChecks::ValidatePipelineLocked(std::vector<std::unique_ptr<PIPELINE_STATE>> const &pPipelines, int pipelineIndex) {
     bool skip = false;
 
     PIPELINE_STATE *pPipeline = pPipelines[pipelineIndex].get();
@@ -1267,8 +1266,7 @@ bool CoreChecks::ValidatePipelineLocked(layer_data *dev_data, std::vector<std::u
 }
 
 // UNLOCKED pipeline validation. DO NOT lookup objects in the layer_data->* maps in this function.
-bool CoreChecks::ValidatePipelineUnlocked(layer_data *dev_data, std::vector<std::unique_ptr<PIPELINE_STATE>> const &pPipelines,
-                                          int pipelineIndex) {
+bool CoreChecks::ValidatePipelineUnlocked(std::vector<std::unique_ptr<PIPELINE_STATE>> const &pPipelines, int pipelineIndex) {
     bool skip = false;
 
     PIPELINE_STATE *pPipeline = pPipelines[pipelineIndex].get();
@@ -1296,7 +1294,7 @@ bool CoreChecks::ValidatePipelineUnlocked(layer_data *dev_data, std::vector<std:
                         report_data->FormatHandle(pPipeline->rp_state->renderPass).c_str(), pPipeline->graphicsPipelineCI.subpass,
                         subpass_desc->colorAttachmentCount, color_blend_state->attachmentCount);
         }
-        if (!dev_data->enabled_features.core.independentBlend) {
+        if (!enabled_features.core.independentBlend) {
             if (pPipeline->attachments.size() > 1) {
                 VkPipelineColorBlendAttachmentState *pAttachments = &pPipeline->attachments[0];
                 for (size_t i = 1; i < pPipeline->attachments.size(); i++) {
@@ -1315,8 +1313,7 @@ bool CoreChecks::ValidatePipelineUnlocked(layer_data *dev_data, std::vector<std:
                 }
             }
         }
-        if (!dev_data->enabled_features.core.logicOp &&
-            (pPipeline->graphicsPipelineCI.pColorBlendState->logicOpEnable != VK_FALSE)) {
+        if (!enabled_features.core.logicOp && (pPipeline->graphicsPipelineCI.pColorBlendState->logicOpEnable != VK_FALSE)) {
             skip |=
                 log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
                         HandleToUint64(pPipeline->pipeline), "VUID-VkPipelineColorBlendStateCreateInfo-logicOpEnable-00606",
@@ -1327,7 +1324,7 @@ bool CoreChecks::ValidatePipelineUnlocked(layer_data *dev_data, std::vector<std:
                 (pPipeline->attachments[i].srcColorBlendFactor == VK_BLEND_FACTOR_ONE_MINUS_SRC1_COLOR) ||
                 (pPipeline->attachments[i].srcColorBlendFactor == VK_BLEND_FACTOR_SRC1_ALPHA) ||
                 (pPipeline->attachments[i].srcColorBlendFactor == VK_BLEND_FACTOR_ONE_MINUS_SRC1_ALPHA)) {
-                if (!dev_data->enabled_features.core.dualSrcBlend) {
+                if (!enabled_features.core.dualSrcBlend) {
                     skip |= log_msg(
                         report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
                         HandleToUint64(pPipeline->pipeline), "VUID-VkPipelineColorBlendAttachmentState-srcColorBlendFactor-00608",
@@ -1341,7 +1338,7 @@ bool CoreChecks::ValidatePipelineUnlocked(layer_data *dev_data, std::vector<std:
                 (pPipeline->attachments[i].dstColorBlendFactor == VK_BLEND_FACTOR_ONE_MINUS_SRC1_COLOR) ||
                 (pPipeline->attachments[i].dstColorBlendFactor == VK_BLEND_FACTOR_SRC1_ALPHA) ||
                 (pPipeline->attachments[i].dstColorBlendFactor == VK_BLEND_FACTOR_ONE_MINUS_SRC1_ALPHA)) {
-                if (!dev_data->enabled_features.core.dualSrcBlend) {
+                if (!enabled_features.core.dualSrcBlend) {
                     skip |= log_msg(
                         report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
                         HandleToUint64(pPipeline->pipeline), "VUID-VkPipelineColorBlendAttachmentState-dstColorBlendFactor-00609",
@@ -1355,7 +1352,7 @@ bool CoreChecks::ValidatePipelineUnlocked(layer_data *dev_data, std::vector<std:
                 (pPipeline->attachments[i].srcAlphaBlendFactor == VK_BLEND_FACTOR_ONE_MINUS_SRC1_COLOR) ||
                 (pPipeline->attachments[i].srcAlphaBlendFactor == VK_BLEND_FACTOR_SRC1_ALPHA) ||
                 (pPipeline->attachments[i].srcAlphaBlendFactor == VK_BLEND_FACTOR_ONE_MINUS_SRC1_ALPHA)) {
-                if (!dev_data->enabled_features.core.dualSrcBlend) {
+                if (!enabled_features.core.dualSrcBlend) {
                     skip |= log_msg(
                         report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
                         HandleToUint64(pPipeline->pipeline), "VUID-VkPipelineColorBlendAttachmentState-srcAlphaBlendFactor-00610",
@@ -1369,7 +1366,7 @@ bool CoreChecks::ValidatePipelineUnlocked(layer_data *dev_data, std::vector<std:
                 (pPipeline->attachments[i].dstAlphaBlendFactor == VK_BLEND_FACTOR_ONE_MINUS_SRC1_COLOR) ||
                 (pPipeline->attachments[i].dstAlphaBlendFactor == VK_BLEND_FACTOR_SRC1_ALPHA) ||
                 (pPipeline->attachments[i].dstAlphaBlendFactor == VK_BLEND_FACTOR_ONE_MINUS_SRC1_ALPHA)) {
-                if (!dev_data->enabled_features.core.dualSrcBlend) {
+                if (!enabled_features.core.dualSrcBlend) {
                     skip |= log_msg(
                         report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
                         HandleToUint64(pPipeline->pipeline), "VUID-VkPipelineColorBlendAttachmentState-dstAlphaBlendFactor-00611",
@@ -1382,7 +1379,7 @@ bool CoreChecks::ValidatePipelineUnlocked(layer_data *dev_data, std::vector<std:
         }
     }
 
-    if (ValidateAndCapturePipelineShaderState(dev_data, pPipeline)) {
+    if (ValidateAndCapturePipelineShaderState(pPipeline)) {
         skip = true;
     }
     // Each shader's stage must be unique
@@ -1396,7 +1393,7 @@ bool CoreChecks::ValidatePipelineUnlocked(layer_data *dev_data, std::vector<std:
             }
         }
     }
-    if (dev_data->device_extensions.vk_nv_mesh_shader) {
+    if (device_extensions.vk_nv_mesh_shader) {
         // VS or mesh is required
         if (!(pPipeline->active_shaders & (VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_MESH_BIT_NV))) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
@@ -1422,13 +1419,13 @@ bool CoreChecks::ValidatePipelineUnlocked(layer_data *dev_data, std::vector<std:
         }
     }
 
-    if (!dev_data->enabled_features.mesh_shader.meshShader && (pPipeline->active_shaders & VK_SHADER_STAGE_MESH_BIT_NV)) {
+    if (!enabled_features.mesh_shader.meshShader && (pPipeline->active_shaders & VK_SHADER_STAGE_MESH_BIT_NV)) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
                         HandleToUint64(pPipeline->pipeline), "VUID-VkPipelineShaderStageCreateInfo-stage-02091",
                         "Invalid Pipeline CreateInfo State: Mesh Shader not supported.");
     }
 
-    if (!dev_data->enabled_features.mesh_shader.taskShader && (pPipeline->active_shaders & VK_SHADER_STAGE_TASK_BIT_NV)) {
+    if (!enabled_features.mesh_shader.taskShader && (pPipeline->active_shaders & VK_SHADER_STAGE_TASK_BIT_NV)) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
                         HandleToUint64(pPipeline->pipeline), "VUID-VkPipelineShaderStageCreateInfo-stage-02092",
                         "Invalid Pipeline CreateInfo State: Task Shader not supported.");
@@ -1483,7 +1480,7 @@ bool CoreChecks::ValidatePipelineUnlocked(layer_data *dev_data, std::vector<std:
     // If a rasterization state is provided...
     if (pPipeline->graphicsPipelineCI.pRasterizationState) {
         if ((pPipeline->graphicsPipelineCI.pRasterizationState->depthClampEnable == VK_TRUE) &&
-            (!dev_data->enabled_features.core.depthClamp)) {
+            (!enabled_features.core.depthClamp)) {
             skip |=
                 log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
                         HandleToUint64(pPipeline->pipeline), "VUID-VkPipelineRasterizationStateCreateInfo-depthClampEnable-00782",
@@ -1492,8 +1489,7 @@ bool CoreChecks::ValidatePipelineUnlocked(layer_data *dev_data, std::vector<std:
         }
 
         if (!IsDynamic(pPipeline, VK_DYNAMIC_STATE_DEPTH_BIAS) &&
-            (pPipeline->graphicsPipelineCI.pRasterizationState->depthBiasClamp != 0.0) &&
-            (!dev_data->enabled_features.core.depthBiasClamp)) {
+            (pPipeline->graphicsPipelineCI.pRasterizationState->depthBiasClamp != 0.0) && (!enabled_features.core.depthBiasClamp)) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
                             HandleToUint64(pPipeline->pipeline), kVUID_Core_DrawState_InvalidFeature,
                             "vkCreateGraphicsPipelines(): the depthBiasClamp device feature is disabled: the depthBiasClamp member "
@@ -1504,7 +1500,7 @@ bool CoreChecks::ValidatePipelineUnlocked(layer_data *dev_data, std::vector<std:
         // If rasterization is enabled...
         if (pPipeline->graphicsPipelineCI.pRasterizationState->rasterizerDiscardEnable == VK_FALSE) {
             if ((pPipeline->graphicsPipelineCI.pMultisampleState->alphaToOneEnable == VK_TRUE) &&
-                (!dev_data->enabled_features.core.alphaToOne)) {
+                (!enabled_features.core.alphaToOne)) {
                 skip |=
                     log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
                             HandleToUint64(pPipeline->pipeline), "VUID-VkPipelineMultisampleStateCreateInfo-alphaToOneEnable-00785",
@@ -1523,7 +1519,7 @@ bool CoreChecks::ValidatePipelineUnlocked(layer_data *dev_data, std::vector<std:
                                     "and subpass uses a depth/stencil attachment.");
 
                 } else if ((pPipeline->graphicsPipelineCI.pDepthStencilState->depthBoundsTestEnable == VK_TRUE) &&
-                           (!dev_data->enabled_features.core.depthBounds)) {
+                           (!enabled_features.core.depthBounds)) {
                     skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
                                     HandleToUint64(pPipeline->pipeline),
                                     "VUID-VkPipelineDepthStencilStateCreateInfo-depthBoundsTestEnable-00598",
@@ -1564,7 +1560,7 @@ bool CoreChecks::ValidatePipelineUnlocked(layer_data *dev_data, std::vector<std:
             VkFormat format = vi->pVertexAttributeDescriptions[j].format;
             // Internal call to get format info.  Still goes through layers, could potentially go directly to ICD.
             VkFormatProperties properties;
-            dev_data->instance_dispatch_table.GetPhysicalDeviceFormatProperties(dev_data->physical_device, format, &properties);
+            instance_dispatch_table.GetPhysicalDeviceFormatProperties(dev_data->physical_device, format, &properties);
             if ((properties.bufferFeatures & VK_FORMAT_FEATURE_VERTEX_BUFFER_BIT) == 0) {
                 skip |=
                     log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
@@ -1585,8 +1581,7 @@ bool CoreChecks::ValidatePipelineUnlocked(layer_data *dev_data, std::vector<std:
         }
     };
 
-    if (!(dev_data->device_extensions.vk_amd_mixed_attachment_samples ||
-          dev_data->device_extensions.vk_nv_framebuffer_mixed_samples)) {
+    if (!(device_extensions.vk_amd_mixed_attachment_samples || device_extensions.vk_nv_framebuffer_mixed_samples)) {
         uint32_t raster_samples = static_cast<uint32_t>(GetNumSamples(pPipeline));
         uint32_t subpass_num_samples = 0;
 
@@ -1608,7 +1603,7 @@ bool CoreChecks::ValidatePipelineUnlocked(layer_data *dev_data, std::vector<std:
         }
     }
 
-    if (dev_data->device_extensions.vk_amd_mixed_attachment_samples) {
+    if (device_extensions.vk_amd_mixed_attachment_samples) {
         VkSampleCountFlagBits max_sample_count = static_cast<VkSampleCountFlagBits>(0);
         for (uint32_t i = 0; i < subpass_desc->colorAttachmentCount; ++i) {
             if (subpass_desc->pColorAttachments[i].attachment != VK_ATTACHMENT_UNUSED) {
@@ -1634,7 +1629,7 @@ bool CoreChecks::ValidatePipelineUnlocked(layer_data *dev_data, std::vector<std:
         }
     }
 
-    if (dev_data->device_extensions.vk_nv_framebuffer_mixed_samples) {
+    if (device_extensions.vk_nv_framebuffer_mixed_samples) {
         uint32_t raster_samples = static_cast<uint32_t>(GetNumSamples(pPipeline));
         uint32_t subpass_color_samples = 0;
 
@@ -1698,7 +1693,7 @@ bool CoreChecks::ValidatePipelineUnlocked(layer_data *dev_data, std::vector<std:
         }
     }
 
-    if (dev_data->device_extensions.vk_nv_fragment_coverage_to_color) {
+    if (device_extensions.vk_nv_fragment_coverage_to_color) {
         const auto coverage_to_color_state =
             lvl_find_in_chain<VkPipelineCoverageToColorStateCreateInfoNV>(pPipeline->graphicsPipelineCI.pMultisampleState);
 
@@ -4928,8 +4923,7 @@ void SetPipelineState(PIPELINE_STATE *pPipe) {
     }
 }
 
-bool CoreChecks::ValidatePipelineVertexDivisors(layer_data *dev_data,
-                                                std::vector<std::unique_ptr<PIPELINE_STATE>> const &pipe_state_vec,
+bool CoreChecks::ValidatePipelineVertexDivisors(std::vector<std::unique_ptr<PIPELINE_STATE>> const &pipe_state_vec,
                                                 const uint32_t count, const VkGraphicsPipelineCreateInfo *pipe_cis) {
     bool skip = false;
     const VkPhysicalDeviceLimits *device_limits = &(GetPDProperties()->limits);
@@ -4949,16 +4943,15 @@ bool CoreChecks::ValidatePipelineVertexDivisors(layer_data *dev_data,
                     "pVertexBindingDivisors[%1u] binding index of (%1u) exceeds device maxVertexInputBindings (%1u).",
                     i, j, vibdd->binding, device_limits->maxVertexInputBindings);
             }
-            if (vibdd->divisor > dev_data->phys_dev_ext_props.vtx_attrib_divisor_props.maxVertexAttribDivisor) {
+            if (vibdd->divisor > phys_dev_ext_props.vtx_attrib_divisor_props.maxVertexAttribDivisor) {
                 skip |= log_msg(
                     report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
                     HandleToUint64(pipe_state->pipeline), "VUID-VkVertexInputBindingDivisorDescriptionEXT-divisor-01870",
                     "vkCreateGraphicsPipelines(): Pipeline[%1u] with chained VkPipelineVertexInputDivisorStateCreateInfoEXT, "
                     "pVertexBindingDivisors[%1u] divisor of (%1u) exceeds extension maxVertexAttribDivisor (%1u).",
-                    i, j, vibdd->divisor, dev_data->phys_dev_ext_props.vtx_attrib_divisor_props.maxVertexAttribDivisor);
+                    i, j, vibdd->divisor, phys_dev_ext_props.vtx_attrib_divisor_props.maxVertexAttribDivisor);
             }
-            if ((0 == vibdd->divisor) &&
-                !dev_data->enabled_features.vtx_attrib_divisor_features.vertexAttributeInstanceRateZeroDivisor) {
+            if ((0 == vibdd->divisor) && !enabled_features.vtx_attrib_divisor_features.vertexAttributeInstanceRateZeroDivisor) {
                 skip |= log_msg(
                     report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
                     HandleToUint64(pipe_state->pipeline),
@@ -4968,8 +4961,7 @@ bool CoreChecks::ValidatePipelineVertexDivisors(layer_data *dev_data,
                     "enabled.",
                     i, j);
             }
-            if ((1 != vibdd->divisor) &&
-                !dev_data->enabled_features.vtx_attrib_divisor_features.vertexAttributeInstanceRateDivisor) {
+            if ((1 != vibdd->divisor) && !enabled_features.vtx_attrib_divisor_features.vertexAttributeInstanceRateDivisor) {
                 skip |= log_msg(
                     report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
                     HandleToUint64(pipe_state->pipeline),
@@ -5020,15 +5012,15 @@ bool CoreChecks::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipel
     }
 
     for (uint32_t i = 0; i < count; i++) {
-        skip |= ValidatePipelineLocked(device_data, cgpl_state->pipe_state, i);
+        skip |= ValidatePipelineLocked(cgpl_state->pipe_state, i);
     }
 
     for (uint32_t i = 0; i < count; i++) {
-        skip |= ValidatePipelineUnlocked(device_data, cgpl_state->pipe_state, i);
+        skip |= ValidatePipelineUnlocked(cgpl_state->pipe_state, i);
     }
 
-    if (device_data->device_extensions.vk_ext_vertex_attribute_divisor) {
-        skip |= ValidatePipelineVertexDivisors(device_data, cgpl_state->pipe_state, count, pCreateInfos);
+    if (device_extensions.vk_ext_vertex_attribute_divisor) {
+        skip |= ValidatePipelineVertexDivisors(cgpl_state->pipe_state, count, pCreateInfos);
     }
 
     return skip;
@@ -5073,7 +5065,6 @@ bool CoreChecks::PreCallValidateCreateComputePipelines(VkDevice device, VkPipeli
                                                        const VkComputePipelineCreateInfo *pCreateInfos,
                                                        const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
                                                        void *pipe_state_data) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
     std::vector<std::unique_ptr<PIPELINE_STATE>> *pipe_state =
         reinterpret_cast<std::vector<std::unique_ptr<PIPELINE_STATE>> *>(pipe_state_data);
@@ -5085,7 +5076,7 @@ bool CoreChecks::PreCallValidateCreateComputePipelines(VkDevice device, VkPipeli
         (*pipe_state)[i]->pipeline_layout = *GetPipelineLayout(pCreateInfos[i].layout);
 
         // TODO: Add Compute Pipeline Verification
-        skip |= ValidateComputePipeline(device_data, (*pipe_state)[i].get());
+        skip |= ValidateComputePipeline((*pipe_state)[i].get());
     }
     return skip;
 }
@@ -5110,7 +5101,6 @@ bool CoreChecks::PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, VkP
                                                             const VkRayTracingPipelineCreateInfoNV *pCreateInfos,
                                                             const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
                                                             void *pipe_state_data) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
     // The order of operations here is a little convoluted but gets the job done
     //  1. Pipeline create state is first shadowed into PIPELINE_STATE struct
@@ -5127,7 +5117,7 @@ bool CoreChecks::PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, VkP
     }
 
     for (i = 0; i < count; i++) {
-        skip |= ValidateRayTracingPipelineNV(device_data, (*pipe_state)[i].get());
+        skip |= ValidateRayTracingPipelineNV((*pipe_state)[i].get());
     }
 
     return skip;
@@ -6854,8 +6844,8 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorSets(VkCommandBuffer commandBuf
 // Validates that the supplied bind point is supported for the command buffer (vis. the command pool)
 // Takes array of error codes as some of the VUID's (e.g. vkCmdBindPipeline) are written per bindpoint
 // TODO add vkCmdBindPipeline bind_point validation using this call.
-bool CoreChecks::ValidatePipelineBindPoint(layer_data *device_data, GLOBAL_CB_NODE *cb_state, VkPipelineBindPoint bind_point,
-                                           const char *func_name, const std::map<VkPipelineBindPoint, std::string> &bind_errors) {
+bool CoreChecks::ValidatePipelineBindPoint(GLOBAL_CB_NODE *cb_state, VkPipelineBindPoint bind_point, const char *func_name,
+                                           const std::map<VkPipelineBindPoint, std::string> &bind_errors) {
     bool skip = false;
     auto pool = GetCommandPoolNode(cb_state->createInfo.commandPool);
     if (pool) {  // The loss of a pool in a recording cmd is reported in DestroyCommandPool
@@ -6896,7 +6886,7 @@ bool CoreChecks::PreCallValidateCmdPushDescriptorSetKHR(VkCommandBuffer commandB
         std::make_pair(VK_PIPELINE_BIND_POINT_COMPUTE, "VUID-vkCmdPushDescriptorSetKHR-pipelineBindPoint-00363"),
         std::make_pair(VK_PIPELINE_BIND_POINT_RAY_TRACING_NV, "VUID-vkCmdPushDescriptorSetKHR-pipelineBindPoint-00363")};
 
-    skip |= ValidatePipelineBindPoint(device_data, cb_state, pipelineBindPoint, func_name, bind_errors);
+    skip |= ValidatePipelineBindPoint(cb_state, pipelineBindPoint, func_name, bind_errors);
     auto layout_data = GetPipelineLayout(layout);
 
     // Validate the set index points to a push descriptor set and is in range
@@ -12609,7 +12599,7 @@ bool CoreChecks::PreCallValidateCmdPushDescriptorSetWithTemplateKHR(VkCommandBuf
             std::make_pair(VK_PIPELINE_BIND_POINT_COMPUTE, "VUID-vkCmdPushDescriptorSetWithTemplateKHR-commandBuffer-00366"),
             std::make_pair(VK_PIPELINE_BIND_POINT_RAY_TRACING_NV,
                            "VUID-vkCmdPushDescriptorSetWithTemplateKHR-commandBuffer-00366")};
-        skip |= ValidatePipelineBindPoint(device_data, cb_state, template_ci.pipelineBindPoint, func_name, bind_errors);
+        skip |= ValidatePipelineBindPoint(cb_state, template_ci.pipelineBindPoint, func_name, bind_errors);
 
         if (template_ci.templateType != VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS_KHR) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
