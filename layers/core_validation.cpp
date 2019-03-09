@@ -378,7 +378,7 @@ void CoreChecks::AddCommandBufferBindingBufferView(GLOBAL_CB_NODE *cb_node, BUFF
 }
 
 // For every mem obj bound to particular CB, free bindings related to that CB
-void CoreChecks::ClearCmdBufAndMemReferences(layer_data *dev_data, GLOBAL_CB_NODE *cb_node) {
+void CoreChecks::ClearCmdBufAndMemReferences(GLOBAL_CB_NODE *cb_node) {
     if (cb_node) {
         if (cb_node->memObjs.size() > 0) {
             for (auto mem : cb_node->memObjs) {
@@ -1130,7 +1130,7 @@ static bool VerifySetLayoutCompatibility(const cvdescriptorset::DescriptorSet *d
 }
 
 // Validate overall state at the time of a draw call
-bool CoreChecks::ValidateCmdBufDrawState(layer_data *dev_data, GLOBAL_CB_NODE *cb_node, CMD_TYPE cmd_type, const bool indexed,
+bool CoreChecks::ValidateCmdBufDrawState(GLOBAL_CB_NODE *cb_node, CMD_TYPE cmd_type, const bool indexed,
                                          const VkPipelineBindPoint bind_point, const char *function, const char *pipe_err_code,
                                          const char *state_err_code) {
     bool result = false;
@@ -2069,8 +2069,8 @@ void CoreChecks::RemoveCommandBufferBinding(VK_OBJECT const *object, GLOBAL_CB_N
 }
 // Reset the command buffer state
 //  Maintain the createInfo and set state to CB_NEW, but clear all other state
-void CoreChecks::ResetCommandBufferState(layer_data *dev_data, const VkCommandBuffer cb) {
-    GLOBAL_CB_NODE *pCB = dev_data->commandBufferMap[cb];
+void CoreChecks::ResetCommandBufferState(const VkCommandBuffer cb) {
+    GLOBAL_CB_NODE *pCB = commandBufferMap[cb];
     if (pCB) {
         pCB->in_use.store(0);
         // Reset CB state (note that createInfo is not cleared)
@@ -2120,7 +2120,7 @@ void CoreChecks::ResetCommandBufferState(layer_data *dev_data, const VkCommandBu
         pCB->linkedCommandBuffers.clear();
         pCB->updateImages.clear();
         pCB->updateBuffers.clear();
-        ClearCmdBufAndMemReferences(dev_data, pCB);
+        ClearCmdBufAndMemReferences(pCB);
         pCB->queue_submit_functions.clear();
         pCB->cmd_execute_commands_functions.clear();
         pCB->eventUpdates.clear();
@@ -4617,8 +4617,7 @@ void CoreChecks::PreCallRecordDestroyDescriptorPool(VkDevice device, VkDescripto
 //  If this is a secondary command buffer, then make sure its primary is also in-flight
 //  If primary is not in-flight, then remove secondary from global in-flight set
 // This function is only valid at a point when cmdBuffer is being reset or freed
-bool CoreChecks::CheckCommandBufferInFlight(layer_data *dev_data, const GLOBAL_CB_NODE *cb_node, const char *action,
-                                            const char *error_code) {
+bool CoreChecks::CheckCommandBufferInFlight(const GLOBAL_CB_NODE *cb_node, const char *action, const char *error_code) {
     bool skip = false;
     if (cb_node->in_use.load()) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
@@ -4629,17 +4628,16 @@ bool CoreChecks::CheckCommandBufferInFlight(layer_data *dev_data, const GLOBAL_C
 }
 
 // Iterate over all cmdBuffers in given commandPool and verify that each is not in use
-bool CoreChecks::CheckCommandBuffersInFlight(layer_data *dev_data, COMMAND_POOL_NODE *pPool, const char *action,
-                                             const char *error_code) {
+bool CoreChecks::CheckCommandBuffersInFlight(COMMAND_POOL_NODE *pPool, const char *action, const char *error_code) {
     bool skip = false;
     for (auto cmd_buffer : pPool->commandBuffers) {
-        skip |= CheckCommandBufferInFlight(dev_data, GetCBNode(cmd_buffer), action, error_code);
+        skip |= CheckCommandBufferInFlight(GetCBNode(cmd_buffer), action, error_code);
     }
     return skip;
 }
 
 // Free all command buffers in given list, removing all references/links to them using ResetCommandBufferState
-void CoreChecks::FreeCommandBufferStates(layer_data *dev_data, COMMAND_POOL_NODE *pool_state, const uint32_t command_buffer_count,
+void CoreChecks::FreeCommandBufferStates(COMMAND_POOL_NODE *pool_state, const uint32_t command_buffer_count,
                                          const VkCommandBuffer *command_buffers) {
     if (GetEnables()->gpu_validation) {
         GpuPreCallRecordFreeCommandBuffers(command_buffer_count, command_buffers);
@@ -4650,9 +4648,9 @@ void CoreChecks::FreeCommandBufferStates(layer_data *dev_data, COMMAND_POOL_NODE
         if (cb_state) {
             // reset prior to delete, removing various references to it.
             // TODO: fix this, it's insane.
-            ResetCommandBufferState(dev_data, cb_state->commandBuffer);
+            ResetCommandBufferState(cb_state->commandBuffer);
             // Remove the cb_state's references from layer_data and COMMAND_POOL_NODE
-            dev_data->commandBufferMap.erase(cb_state->commandBuffer);
+            commandBufferMap.erase(cb_state->commandBuffer);
             pool_state->commandBuffers.erase(command_buffers[i]);
             delete cb_state;
         }
@@ -4661,13 +4659,12 @@ void CoreChecks::FreeCommandBufferStates(layer_data *dev_data, COMMAND_POOL_NODE
 
 bool CoreChecks::PreCallValidateFreeCommandBuffers(VkDevice device, VkCommandPool commandPool, uint32_t commandBufferCount,
                                                    const VkCommandBuffer *pCommandBuffers) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
     for (uint32_t i = 0; i < commandBufferCount; i++) {
         auto cb_node = GetCBNode(pCommandBuffers[i]);
         // Delete CB information structure, and remove from commandBufferMap
         if (cb_node) {
-            skip |= CheckCommandBufferInFlight(device_data, cb_node, "free", "VUID-vkFreeCommandBuffers-pCommandBuffers-00047");
+            skip |= CheckCommandBufferInFlight(cb_node, "free", "VUID-vkFreeCommandBuffers-pCommandBuffers-00047");
         }
     }
     return skip;
@@ -4675,9 +4672,8 @@ bool CoreChecks::PreCallValidateFreeCommandBuffers(VkDevice device, VkCommandPoo
 
 void CoreChecks::PreCallRecordFreeCommandBuffers(VkDevice device, VkCommandPool commandPool, uint32_t commandBufferCount,
                                                  const VkCommandBuffer *pCommandBuffers) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     auto pPool = GetCommandPoolNode(commandPool);
-    FreeCommandBufferStates(device_data, pPool, commandBufferCount, pCommandBuffers);
+    FreeCommandBufferStates(pPool, commandBufferCount, pCommandBuffers);
 }
 
 bool CoreChecks::PreCallValidateCreateCommandPool(VkDevice device, const VkCommandPoolCreateInfo *pCreateInfo,
@@ -4717,22 +4713,18 @@ void CoreChecks::PostCallRecordCreateQueryPool(VkDevice device, const VkQueryPoo
 
 bool CoreChecks::PreCallValidateDestroyCommandPool(VkDevice device, VkCommandPool commandPool,
                                                    const VkAllocationCallbacks *pAllocator) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-
     COMMAND_POOL_NODE *cp_state = GetCommandPoolNode(commandPool);
-    if (device_data->instance_data->disabled.destroy_command_pool) return false;
+    if (disabled.destroy_command_pool) return false;
     bool skip = false;
     if (cp_state) {
         // Verify that command buffers in pool are complete (not in-flight)
-        skip |= CheckCommandBuffersInFlight(device_data, cp_state, "destroy command pool with",
-                                            "VUID-vkDestroyCommandPool-commandPool-00041");
+        skip |= CheckCommandBuffersInFlight(cp_state, "destroy command pool with", "VUID-vkDestroyCommandPool-commandPool-00041");
     }
     return skip;
 }
 
 void CoreChecks::PreCallRecordDestroyCommandPool(VkDevice device, VkCommandPool commandPool,
                                                  const VkAllocationCallbacks *pAllocator) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!commandPool) return;
     COMMAND_POOL_NODE *cp_state = GetCommandPoolNode(commandPool);
     // Remove cmdpool from cmdpoolmap, after freeing layer data for the command buffers
@@ -4740,26 +4732,23 @@ void CoreChecks::PreCallRecordDestroyCommandPool(VkDevice device, VkCommandPool 
     if (cp_state) {
         // Create a vector, as FreeCommandBufferStates deletes from cp_state->commandBuffers during iteration.
         std::vector<VkCommandBuffer> cb_vec{cp_state->commandBuffers.begin(), cp_state->commandBuffers.end()};
-        FreeCommandBufferStates(device_data, cp_state, static_cast<uint32_t>(cb_vec.size()), cb_vec.data());
-        device_data->commandPoolMap.erase(commandPool);
+        FreeCommandBufferStates(cp_state, static_cast<uint32_t>(cb_vec.size()), cb_vec.data());
+        commandPoolMap.erase(commandPool);
     }
 }
 
 bool CoreChecks::PreCallValidateResetCommandPool(VkDevice device, VkCommandPool commandPool, VkCommandPoolResetFlags flags) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     auto command_pool_state = GetCommandPoolNode(commandPool);
-    return CheckCommandBuffersInFlight(device_data, command_pool_state, "reset command pool with",
-                                       "VUID-vkResetCommandPool-commandPool-00040");
+    return CheckCommandBuffersInFlight(command_pool_state, "reset command pool with", "VUID-vkResetCommandPool-commandPool-00040");
 }
 
 void CoreChecks::PostCallRecordResetCommandPool(VkDevice device, VkCommandPool commandPool, VkCommandPoolResetFlags flags,
                                                 VkResult result) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (VK_SUCCESS != result) return;
     // Reset all of the CBs allocated from this pool
     auto command_pool_state = GetCommandPoolNode(commandPool);
     for (auto cmdBuffer : command_pool_state->commandBuffers) {
-        ResetCommandBufferState(device_data, cmdBuffer);
+        ResetCommandBufferState(cmdBuffer);
     }
 }
 
@@ -6056,7 +6045,6 @@ void CoreChecks::PreCallRecordUpdateDescriptorSets(VkDevice device, uint32_t des
 void CoreChecks::PostCallRecordAllocateCommandBuffers(VkDevice device, const VkCommandBufferAllocateInfo *pCreateInfo,
                                                       VkCommandBuffer *pCommandBuffer, VkResult result) {
     if (VK_SUCCESS != result) return;
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     auto pPool = GetCommandPoolNode(pCreateInfo->commandPool);
     if (pPool) {
         for (uint32_t i = 0; i < pCreateInfo->commandBufferCount; i++) {
@@ -6064,8 +6052,8 @@ void CoreChecks::PostCallRecordAllocateCommandBuffers(VkDevice device, const VkC
             pPool->commandBuffers.insert(pCommandBuffer[i]);
             GLOBAL_CB_NODE *pCB = new GLOBAL_CB_NODE;
             // Add command buffer to map
-            device_data->commandBufferMap[pCommandBuffer[i]] = pCB;
-            ResetCommandBufferState(device_data, pCommandBuffer[i]);
+            commandBufferMap[pCommandBuffer[i]] = pCB;
+            ResetCommandBufferState(pCommandBuffer[i]);
             pCB->createInfo = *pCreateInfo;
             pCB->device = device;
         }
@@ -6164,11 +6152,10 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
 }
 
 void CoreChecks::PreCallRecordBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo *pBeginInfo) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     if (!cb_state) return;
     // This implicitly resets the Cmd Buffer so make sure any fence is done and then clear memory references
-    ClearCmdBufAndMemReferences(device_data, cb_state);
+    ClearCmdBufAndMemReferences(cb_state);
     if (cb_state->createInfo.level != VK_COMMAND_BUFFER_LEVEL_PRIMARY) {
         // Secondary Command Buffer
         const VkCommandBufferInheritanceInfo *pInfo = pBeginInfo->pInheritanceInfo;
@@ -6184,7 +6171,7 @@ void CoreChecks::PreCallRecordBeginCommandBuffer(VkCommandBuffer commandBuffer, 
         }
     }
     if (CB_RECORDED == cb_state->state || CB_INVALID_COMPLETE == cb_state->state) {
-        ResetCommandBufferState(device_data, commandBuffer);
+        ResetCommandBufferState(commandBuffer);
     }
     // Set updated state here in case implicit reset occurs above
     cb_state->state = CB_RECORDING;
@@ -6237,7 +6224,6 @@ void CoreChecks::PostCallRecordEndCommandBuffer(VkCommandBuffer commandBuffer, V
 }
 
 bool CoreChecks::PreCallValidateResetCommandBuffer(VkCommandBuffer commandBuffer, VkCommandBufferResetFlags flags) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
     GLOBAL_CB_NODE *pCB = GetCBNode(commandBuffer);
     if (!pCB) return false;
@@ -6251,15 +6237,14 @@ bool CoreChecks::PreCallValidateResetCommandBuffer(VkCommandBuffer commandBuffer
                         "VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT bit set.",
                         report_data->FormatHandle(commandBuffer).c_str(), report_data->FormatHandle(cmdPool).c_str());
     }
-    skip |= CheckCommandBufferInFlight(device_data, pCB, "reset", "VUID-vkResetCommandBuffer-commandBuffer-00045");
+    skip |= CheckCommandBufferInFlight(pCB, "reset", "VUID-vkResetCommandBuffer-commandBuffer-00045");
 
     return skip;
 }
 
 void CoreChecks::PostCallRecordResetCommandBuffer(VkCommandBuffer commandBuffer, VkCommandBufferResetFlags flags, VkResult result) {
     if (VK_SUCCESS == result) {
-        layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-        ResetCommandBufferState(device_data, commandBuffer);
+        ResetCommandBufferState(commandBuffer);
     }
 }
 
@@ -7076,8 +7061,8 @@ void CoreChecks::PreCallRecordCmdBindVertexBuffers(VkCommandBuffer commandBuffer
 }
 
 // Generic function to handle validation for all CmdDraw* type functions
-bool CoreChecks::ValidateCmdDrawType(layer_data *dev_data, VkCommandBuffer cmd_buffer, bool indexed, VkPipelineBindPoint bind_point,
-                                     CMD_TYPE cmd_type, const char *caller, VkQueueFlags queue_flags, const char *queue_flag_code,
+bool CoreChecks::ValidateCmdDrawType(VkCommandBuffer cmd_buffer, bool indexed, VkPipelineBindPoint bind_point, CMD_TYPE cmd_type,
+                                     const char *caller, VkQueueFlags queue_flags, const char *queue_flag_code,
                                      const char *renderpass_msg_code, const char *pipebound_msg_code,
                                      const char *dynamic_state_msg_code) {
     bool skip = false;
@@ -7085,8 +7070,8 @@ bool CoreChecks::ValidateCmdDrawType(layer_data *dev_data, VkCommandBuffer cmd_b
     if (cb_state) {
         skip |= ValidateCmdQueueFlags(cb_state, caller, queue_flags, queue_flag_code);
         skip |= ValidateCmd(cb_state, cmd_type, caller);
-        skip |= ValidateCmdBufDrawState(dev_data, cb_state, cmd_type, indexed, bind_point, caller, pipebound_msg_code,
-                                        dynamic_state_msg_code);
+        skip |=
+            ValidateCmdBufDrawState(cb_state, cmd_type, indexed, bind_point, caller, pipebound_msg_code, dynamic_state_msg_code);
         skip |= (VK_PIPELINE_BIND_POINT_GRAPHICS == bind_point) ? OutsideRenderPass(cb_state, caller, renderpass_msg_code)
                                                                 : InsideRenderPass(cb_state, caller, renderpass_msg_code);
     }
@@ -7107,8 +7092,7 @@ void CoreChecks::UpdateStateCmdDrawType(GLOBAL_CB_NODE *cb_state, VkPipelineBind
 
 bool CoreChecks::PreCallValidateCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount,
                                         uint32_t firstVertex, uint32_t firstInstance) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    return ValidateCmdDrawType(device_data, commandBuffer, false, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAW, "vkCmdDraw()",
+    return ValidateCmdDrawType(commandBuffer, false, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAW, "vkCmdDraw()",
                                VK_QUEUE_GRAPHICS_BIT, "VUID-vkCmdDraw-commandBuffer-cmdpool", "VUID-vkCmdDraw-renderpass",
                                "VUID-vkCmdDraw-None-00442", "VUID-vkCmdDraw-None-00443");
 }
@@ -7126,9 +7110,8 @@ void CoreChecks::PostCallRecordCmdDraw(VkCommandBuffer commandBuffer, uint32_t v
 
 bool CoreChecks::PreCallValidateCmdDrawIndexed(VkCommandBuffer commandBuffer, uint32_t indexCount, uint32_t instanceCount,
                                                uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    bool skip = ValidateCmdDrawType(device_data, commandBuffer, true, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWINDEXED,
-                                    "vkCmdDrawIndexed()", VK_QUEUE_GRAPHICS_BIT, "VUID-vkCmdDrawIndexed-commandBuffer-cmdpool",
+    bool skip = ValidateCmdDrawType(commandBuffer, true, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWINDEXED, "vkCmdDrawIndexed()",
+                                    VK_QUEUE_GRAPHICS_BIT, "VUID-vkCmdDrawIndexed-commandBuffer-cmdpool",
                                     "VUID-vkCmdDrawIndexed-renderpass", "VUID-vkCmdDrawIndexed-None-00461",
                                     "VUID-vkCmdDrawIndexed-None-00462");
     GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
@@ -7167,9 +7150,8 @@ void CoreChecks::PostCallRecordCmdDrawIndexed(VkCommandBuffer commandBuffer, uin
 
 bool CoreChecks::PreCallValidateCmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, uint32_t count,
                                                 uint32_t stride) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    bool skip = ValidateCmdDrawType(device_data, commandBuffer, false, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWINDIRECT,
-                                    "vkCmdDrawIndirect()", VK_QUEUE_GRAPHICS_BIT, "VUID-vkCmdDrawIndirect-commandBuffer-cmdpool",
+    bool skip = ValidateCmdDrawType(commandBuffer, false, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWINDIRECT, "vkCmdDrawIndirect()",
+                                    VK_QUEUE_GRAPHICS_BIT, "VUID-vkCmdDrawIndirect-commandBuffer-cmdpool",
                                     "VUID-vkCmdDrawIndirect-renderpass", "VUID-vkCmdDrawIndirect-None-00485",
                                     "VUID-vkCmdDrawIndirect-None-00486");
     BUFFER_STATE *buffer_state = GetBufferState(buffer);
@@ -7194,9 +7176,8 @@ void CoreChecks::PostCallRecordCmdDrawIndirect(VkCommandBuffer commandBuffer, Vk
 
 bool CoreChecks::PreCallValidateCmdDrawIndexedIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                        uint32_t count, uint32_t stride) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = ValidateCmdDrawType(
-        device_data, commandBuffer, true, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWINDEXEDINDIRECT, "vkCmdDrawIndexedIndirect()",
+        commandBuffer, true, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWINDEXEDINDIRECT, "vkCmdDrawIndexedIndirect()",
         VK_QUEUE_GRAPHICS_BIT, "VUID-vkCmdDrawIndexedIndirect-commandBuffer-cmdpool", "VUID-vkCmdDrawIndexedIndirect-renderpass",
         "VUID-vkCmdDrawIndexedIndirect-None-00537", "VUID-vkCmdDrawIndexedIndirect-None-00538");
     BUFFER_STATE *buffer_state = GetBufferState(buffer);
@@ -7221,8 +7202,7 @@ void CoreChecks::PostCallRecordCmdDrawIndexedIndirect(VkCommandBuffer commandBuf
 }
 
 bool CoreChecks::PreCallValidateCmdDispatch(VkCommandBuffer commandBuffer, uint32_t x, uint32_t y, uint32_t z) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    return ValidateCmdDrawType(device_data, commandBuffer, false, VK_PIPELINE_BIND_POINT_COMPUTE, CMD_DISPATCH, "vkCmdDispatch()",
+    return ValidateCmdDrawType(commandBuffer, false, VK_PIPELINE_BIND_POINT_COMPUTE, CMD_DISPATCH, "vkCmdDispatch()",
                                VK_QUEUE_COMPUTE_BIT, "VUID-vkCmdDispatch-commandBuffer-cmdpool", "VUID-vkCmdDispatch-renderpass",
                                "VUID-vkCmdDispatch-None-00391", kVUIDUndefined);
 }
@@ -7237,10 +7217,9 @@ void CoreChecks::PostCallRecordCmdDispatch(VkCommandBuffer commandBuffer, uint32
 }
 
 bool CoreChecks::PreCallValidateCmdDispatchIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip =
-        ValidateCmdDrawType(device_data, commandBuffer, false, VK_PIPELINE_BIND_POINT_COMPUTE, CMD_DISPATCHINDIRECT,
-                            "vkCmdDispatchIndirect()", VK_QUEUE_COMPUTE_BIT, "VUID-vkCmdDispatchIndirect-commandBuffer-cmdpool",
+        ValidateCmdDrawType(commandBuffer, false, VK_PIPELINE_BIND_POINT_COMPUTE, CMD_DISPATCHINDIRECT, "vkCmdDispatchIndirect()",
+                            VK_QUEUE_COMPUTE_BIT, "VUID-vkCmdDispatchIndirect-commandBuffer-cmdpool",
                             "VUID-vkCmdDispatchIndirect-renderpass", "VUID-vkCmdDispatchIndirect-None-00404", kVUIDUndefined);
     BUFFER_STATE *buffer_state = GetBufferState(buffer);
     skip |= ValidateMemoryIsBoundToBuffer(buffer_state, "vkCmdDispatchIndirect()", "VUID-vkCmdDispatchIndirect-buffer-00401");
@@ -10224,12 +10203,12 @@ bool CoreChecks::ValidateFramebuffer(layer_data *dev_data, VkCommandBuffer prima
     return skip;
 }
 
-bool CoreChecks::ValidateSecondaryCommandBufferState(layer_data *dev_data, GLOBAL_CB_NODE *pCB, GLOBAL_CB_NODE *pSubCB) {
+bool CoreChecks::ValidateSecondaryCommandBufferState(GLOBAL_CB_NODE *pCB, GLOBAL_CB_NODE *pSubCB) {
     bool skip = false;
     unordered_set<int> activeTypes;
     for (auto queryObject : pCB->activeQueries) {
-        auto queryPoolData = dev_data->queryPoolMap.find(queryObject.pool);
-        if (queryPoolData != dev_data->queryPoolMap.end()) {
+        auto queryPoolData = queryPoolMap.find(queryObject.pool);
+        if (queryPoolData != queryPoolMap.end()) {
             if (queryPoolData->second.createInfo.queryType == VK_QUERY_TYPE_PIPELINE_STATISTICS &&
                 pSubCB->beginInfo.pInheritanceInfo) {
                 VkQueryPipelineStatisticFlags cmdBufStatistics = pSubCB->beginInfo.pInheritanceInfo->pipelineStatistics;
@@ -10247,8 +10226,8 @@ bool CoreChecks::ValidateSecondaryCommandBufferState(layer_data *dev_data, GLOBA
         }
     }
     for (auto queryObject : pSubCB->startedQueries) {
-        auto queryPoolData = dev_data->queryPoolMap.find(queryObject.pool);
-        if (queryPoolData != dev_data->queryPoolMap.end() && activeTypes.count(queryPoolData->second.createInfo.queryType)) {
+        auto queryPoolData = queryPoolMap.find(queryObject.pool);
+        if (queryPoolData != queryPoolMap.end() && activeTypes.count(queryPoolData->second.createInfo.queryType)) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                             HandleToUint64(pCB->commandBuffer), kVUID_Core_DrawState_InvalidSecondaryCommandBuffer,
                             "vkCmdExecuteCommands() called w/ invalid Cmd Buffer %s which has invalid active query pool %s"
@@ -10322,7 +10301,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
             }
         }
         // TODO(mlentine): Move more logic into this method
-        skip |= ValidateSecondaryCommandBufferState(device_data, cb_state, sub_cb_state);
+        skip |= ValidateSecondaryCommandBufferState(cb_state, sub_cb_state);
         skip |= ValidateCommandBufferState(sub_cb_state, "vkCmdExecuteCommands()", 0,
                                            "VUID-vkCmdExecuteCommands-pCommandBuffers-00089");
         if (!(sub_cb_state->beginInfo.flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT)) {
@@ -10345,7 +10324,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                                 report_data->FormatHandle(cb_state->commandBuffer).c_str());
             }
         }
-        if (!cb_state->activeQueries.empty() && !device_data->enabled_features.core.inheritedQueries) {
+        if (!cb_state->activeQueries.empty() && !enabled_features.core.inheritedQueries) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                             HandleToUint64(pCommandBuffers[i]), "VUID-vkCmdExecuteCommands-commandBuffer-00101",
                             "vkCmdExecuteCommands(): Secondary Command Buffer (%s) cannot be submitted with a query in flight and "
@@ -12825,7 +12804,6 @@ bool CoreChecks::PreCallValidateCmdSetSampleLocationsEXT(VkCommandBuffer command
 bool CoreChecks::PreCallValidateCmdDrawIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                         VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
                                                         uint32_t stride) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
     if (offset & 3) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
@@ -12850,7 +12828,7 @@ bool CoreChecks::PreCallValidateCmdDrawIndirectCountKHR(VkCommandBuffer commandB
                         stride);
     }
 
-    skip |= ValidateCmdDrawType(device_data, commandBuffer, false, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWINDIRECTCOUNTKHR,
+    skip |= ValidateCmdDrawType(commandBuffer, false, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWINDIRECTCOUNTKHR,
                                 "vkCmdDrawIndirectCountKHR()", VK_QUEUE_GRAPHICS_BIT,
                                 "VUID-vkCmdDrawIndirectCountKHR-commandBuffer-cmdpool", "VUID-vkCmdDrawIndirectCountKHR-renderpass",
                                 "VUID-vkCmdDrawIndirectCountKHR-None-03119", "VUID-vkCmdDrawIndirectCountKHR-None-03120");
@@ -12878,7 +12856,6 @@ void CoreChecks::PreCallRecordCmdDrawIndirectCountKHR(VkCommandBuffer commandBuf
 bool CoreChecks::PreCallValidateCmdDrawIndexedIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                                VkBuffer countBuffer, VkDeviceSize countBufferOffset,
                                                                uint32_t maxDrawCount, uint32_t stride) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
     if (offset & 3) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
@@ -12905,8 +12882,8 @@ bool CoreChecks::PreCallValidateCmdDrawIndexedIndirectCountKHR(VkCommandBuffer c
     }
 
     skip |= ValidateCmdDrawType(
-        device_data, commandBuffer, true, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWINDEXEDINDIRECTCOUNTKHR,
-        "vkCmdDrawIndexedIndirectCountKHR()", VK_QUEUE_GRAPHICS_BIT, "VUID-vkCmdDrawIndexedIndirectCountKHR-commandBuffer-cmdpool",
+        commandBuffer, true, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWINDEXEDINDIRECTCOUNTKHR, "vkCmdDrawIndexedIndirectCountKHR()",
+        VK_QUEUE_GRAPHICS_BIT, "VUID-vkCmdDrawIndexedIndirectCountKHR-commandBuffer-cmdpool",
         "VUID-vkCmdDrawIndexedIndirectCountKHR-renderpass", "VUID-vkCmdDrawIndexedIndirectCountKHR-None-03151",
         "VUID-vkCmdDrawIndexedIndirectCountKHR-None-03152");
     BUFFER_STATE *buffer_state = GetBufferState(buffer);
@@ -12930,8 +12907,7 @@ void CoreChecks::PreCallRecordCmdDrawIndexedIndirectCountKHR(VkCommandBuffer com
 }
 
 bool CoreChecks::PreCallValidateCmdDrawMeshTasksNV(VkCommandBuffer commandBuffer, uint32_t taskCount, uint32_t firstTask) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    bool skip = ValidateCmdDrawType(device_data, commandBuffer, false, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWMESHTASKSNV,
+    bool skip = ValidateCmdDrawType(commandBuffer, false, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWMESHTASKSNV,
                                     "vkCmdDrawMeshTasksNV()", VK_QUEUE_GRAPHICS_BIT,
                                     "VUID-vkCmdDrawMeshTasksNV-commandBuffer-cmdpool", "VUID-vkCmdDrawMeshTasksNV-renderpass",
                                     "VUID-vkCmdDrawMeshTasksNV-None-02125", "VUID-vkCmdDrawMeshTasksNV-None-02126");
@@ -12945,8 +12921,7 @@ void CoreChecks::PreCallRecordCmdDrawMeshTasksNV(VkCommandBuffer commandBuffer, 
 
 bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectNV(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                            uint32_t drawCount, uint32_t stride) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    bool skip = ValidateCmdDrawType(device_data, commandBuffer, false, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWMESHTASKSINDIRECTNV,
+    bool skip = ValidateCmdDrawType(commandBuffer, false, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWMESHTASKSINDIRECTNV,
                                     "vkCmdDrawMeshTasksIndirectNV()", VK_QUEUE_GRAPHICS_BIT,
                                     "VUID-vkCmdDrawMeshTasksIndirectNV-commandBuffer-cmdpool",
                                     "VUID-vkCmdDrawMeshTasksIndirectNV-renderpass", "VUID-vkCmdDrawMeshTasksIndirectNV-None-02154",
@@ -12971,9 +12946,8 @@ void CoreChecks::PreCallRecordCmdDrawMeshTasksIndirectNV(VkCommandBuffer command
 bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectCountNV(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                                 VkBuffer countBuffer, VkDeviceSize countBufferOffset,
                                                                 uint32_t maxDrawCount, uint32_t stride) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = ValidateCmdDrawType(
-        device_data, commandBuffer, false, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWMESHTASKSINDIRECTCOUNTNV,
+        commandBuffer, false, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWMESHTASKSINDIRECTCOUNTNV,
         "vkCmdDrawMeshTasksIndirectCountNV()", VK_QUEUE_GRAPHICS_BIT,
         "VUID-vkCmdDrawMeshTasksIndirectCountNV-commandBuffer-cmdpool", "VUID-vkCmdDrawMeshTasksIndirectCountNV-renderpass",
         "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-02189", "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-02190");
