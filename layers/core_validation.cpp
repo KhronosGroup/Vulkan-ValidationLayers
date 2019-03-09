@@ -680,10 +680,9 @@ shader_module const *CoreChecks::GetShaderModuleState(VkShaderModule module) {
     return it->second.get();
 }
 
-const TEMPLATE_STATE *CoreChecks::GetDescriptorTemplateState(const layer_data *dev_data,
-                                                             VkDescriptorUpdateTemplateKHR descriptor_update_template) {
-    const auto it = dev_data->desc_template_map.find(descriptor_update_template);
-    if (it == dev_data->desc_template_map.cend()) {
+const TEMPLATE_STATE *CoreChecks::GetDescriptorTemplateState(VkDescriptorUpdateTemplateKHR descriptor_update_template) {
+    const auto it = desc_template_map.find(descriptor_update_template);
+    if (it == desc_template_map.cend()) {
         return nullptr;
     }
     return it->second.get();
@@ -1763,11 +1762,11 @@ DESCRIPTOR_POOL_STATE *CoreChecks::GetDescriptorPoolState(const VkDescriptorPool
 // func_str is the name of the calling function
 // Return false if no errors occur
 // Return true if validation error occurs and callback returns true (to skip upcoming API call down the chain)
-bool CoreChecks::ValidateIdleDescriptorSet(const layer_data *dev_data, VkDescriptorSet set, const char *func_str) {
-    if (dev_data->disabled.idle_descriptor_set) return false;
+bool CoreChecks::ValidateIdleDescriptorSet(VkDescriptorSet set, const char *func_str) {
+    if (disabled.idle_descriptor_set) return false;
     bool skip = false;
-    auto set_node = dev_data->setMap.find(set);
-    if (set_node == dev_data->setMap.end()) {
+    auto set_node = setMap.find(set);
+    if (set_node == setMap.end()) {
         skip |=
             log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_EXT, HandleToUint64(set),
                     kVUID_Core_DrawState_DoubleDestroy, "Cannot call %s() on descriptor set %s that has not been allocated.",
@@ -4999,8 +4998,6 @@ bool CoreChecks::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipel
                                                         const VkGraphicsPipelineCreateInfo *pCreateInfos,
                                                         const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
                                                         void *cgpl_state_data) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-
     bool skip = false;
     create_graphics_pipeline_api_state *cgpl_state = reinterpret_cast<create_graphics_pipeline_api_state *>(cgpl_state_data);
     cgpl_state->pipe_state.reserve(count);
@@ -5956,24 +5953,21 @@ bool CoreChecks::PreCallValidateAllocateDescriptorSets(VkDevice device, const Vk
 // Allocation state was good and call down chain was made so update state based on allocating descriptor sets
 void CoreChecks::PostCallRecordAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo *pAllocateInfo,
                                                       VkDescriptorSet *pDescriptorSets, VkResult result, void *ads_state_data) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (VK_SUCCESS != result) return;
     // All the updates are contained in a single cvdescriptorset function
     cvdescriptorset::AllocateDescriptorSetsData *ads_state =
         reinterpret_cast<cvdescriptorset::AllocateDescriptorSetsData *>(ads_state_data);
-    PerformAllocateDescriptorSets(pAllocateInfo, pDescriptorSets, ads_state, &device_data->descriptorPoolMap, &device_data->setMap,
-                                  device_data);
+    PerformAllocateDescriptorSets(pAllocateInfo, pDescriptorSets, ads_state, &descriptorPoolMap, &setMap);
 }
 
 bool CoreChecks::PreCallValidateFreeDescriptorSets(VkDevice device, VkDescriptorPool descriptorPool, uint32_t count,
                                                    const VkDescriptorSet *pDescriptorSets) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     // Make sure that no sets being destroyed are in-flight
     bool skip = false;
     // First make sure sets being destroyed are not currently in-use
     for (uint32_t i = 0; i < count; ++i) {
         if (pDescriptorSets[i] != VK_NULL_HANDLE) {
-            skip |= ValidateIdleDescriptorSet(device_data, pDescriptorSets[i], "vkFreeDescriptorSets");
+            skip |= ValidateIdleDescriptorSet(pDescriptorSets[i], "vkFreeDescriptorSets");
         }
     }
     DESCRIPTOR_POOL_STATE *pool_state = GetDescriptorPoolState(descriptorPool);
@@ -6608,11 +6602,10 @@ void CoreChecks::PreCallRecordCmdSetStencilReference(VkCommandBuffer commandBuff
 }
 
 // Update pipeline_layout bind points applying the "Pipeline Layout Compatibility" rules
-static void UpdateLastBoundDescriptorSets(layer_data *device_data, GLOBAL_CB_NODE *cb_state,
-                                          VkPipelineBindPoint pipeline_bind_point, const PIPELINE_LAYOUT_NODE *pipeline_layout,
-                                          uint32_t first_set, uint32_t set_count,
-                                          const std::vector<cvdescriptorset::DescriptorSet *> descriptor_sets,
-                                          uint32_t dynamic_offset_count, const uint32_t *p_dynamic_offsets) {
+void CoreChecks::UpdateLastBoundDescriptorSets(GLOBAL_CB_NODE *cb_state, VkPipelineBindPoint pipeline_bind_point,
+                                               const PIPELINE_LAYOUT_NODE *pipeline_layout, uint32_t first_set, uint32_t set_count,
+                                               const std::vector<cvdescriptorset::DescriptorSet *> descriptor_sets,
+                                               uint32_t dynamic_offset_count, const uint32_t *p_dynamic_offsets) {
     // Defensive
     assert(set_count);
     if (0 == set_count) return;
@@ -6714,7 +6707,6 @@ void CoreChecks::PreCallRecordCmdBindDescriptorSets(VkCommandBuffer commandBuffe
                                                     VkPipelineLayout layout, uint32_t firstSet, uint32_t setCount,
                                                     const VkDescriptorSet *pDescriptorSets, uint32_t dynamicOffsetCount,
                                                     const uint32_t *pDynamicOffsets) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     auto pipeline_layout = GetPipelineLayout(layout);
     std::vector<cvdescriptorset::DescriptorSet *> descriptor_sets;
@@ -6728,8 +6720,8 @@ void CoreChecks::PreCallRecordCmdBindDescriptorSets(VkCommandBuffer commandBuffe
         found_non_null |= descriptor_set != nullptr;
     }
     if (found_non_null) {  // which implies setCount > 0
-        UpdateLastBoundDescriptorSets(device_data, cb_state, pipelineBindPoint, pipeline_layout, firstSet, setCount,
-                                      descriptor_sets, dynamicOffsetCount, pDynamicOffsets);
+        UpdateLastBoundDescriptorSets(cb_state, pipelineBindPoint, pipeline_layout, firstSet, setCount, descriptor_sets,
+                                      dynamicOffsetCount, pDynamicOffsets);
         cb_state->lastBound[pipelineBindPoint].pipeline_layout = layout;
     }
 }
@@ -6872,7 +6864,6 @@ bool CoreChecks::ValidatePipelineBindPoint(GLOBAL_CB_NODE *cb_state, VkPipelineB
 bool CoreChecks::PreCallValidateCmdPushDescriptorSetKHR(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
                                                         VkPipelineLayout layout, uint32_t set, uint32_t descriptorWriteCount,
                                                         const VkWriteDescriptorSet *pDescriptorWrites) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
     const char *func_name = "vkCmdPushDescriptorSetKHR()";
@@ -6906,7 +6897,7 @@ bool CoreChecks::PreCallValidateCmdPushDescriptorSetKHR(VkCommandBuffer commandB
                     // Create an empty proxy in order to use the existing descriptor set update validation
                     // TODO move the validation (like this) that doesn't need descriptor set state to the DSL object so we
                     // don't have to do this.
-                    cvdescriptorset::DescriptorSet proxy_ds(VK_NULL_HANDLE, VK_NULL_HANDLE, dsl, 0, device_data);
+                    cvdescriptorset::DescriptorSet proxy_ds(VK_NULL_HANDLE, VK_NULL_HANDLE, dsl, 0, this);
                     skip |= proxy_ds.ValidatePushDescriptorsUpdate(report_data, descriptorWriteCount, pDescriptorWrites, func_name);
                 }
             }
@@ -6921,9 +6912,9 @@ bool CoreChecks::PreCallValidateCmdPushDescriptorSetKHR(VkCommandBuffer commandB
     return skip;
 }
 
-void CoreChecks::RecordCmdPushDescriptorSetState(layer_data *device_data, GLOBAL_CB_NODE *cb_state,
-                                                 VkPipelineBindPoint pipelineBindPoint, VkPipelineLayout layout, uint32_t set,
-                                                 uint32_t descriptorWriteCount, const VkWriteDescriptorSet *pDescriptorWrites) {
+void CoreChecks::RecordCmdPushDescriptorSetState(GLOBAL_CB_NODE *cb_state, VkPipelineBindPoint pipelineBindPoint,
+                                                 VkPipelineLayout layout, uint32_t set, uint32_t descriptorWriteCount,
+                                                 const VkWriteDescriptorSet *pDescriptorWrites) {
     const auto &pipeline_layout = GetPipelineLayout(layout);
     // Short circuit invalid updates
     if (!pipeline_layout || (set >= pipeline_layout->set_layouts.size()) || !pipeline_layout->set_layouts[set] ||
@@ -6936,11 +6927,11 @@ void CoreChecks::RecordCmdPushDescriptorSetState(layer_data *device_data, GLOBAL
     auto &push_descriptor_set = last_bound.push_descriptor_set;
     // If we are disturbing the current push_desriptor_set clear it
     if (!push_descriptor_set || !CompatForSet(set, last_bound.compat_id_for_set, pipeline_layout->compat_for_set)) {
-        push_descriptor_set.reset(new cvdescriptorset::DescriptorSet(0, 0, dsl, 0, device_data));
+        push_descriptor_set.reset(new cvdescriptorset::DescriptorSet(0, 0, dsl, 0, this));
     }
 
     std::vector<cvdescriptorset::DescriptorSet *> descriptor_sets = {push_descriptor_set.get()};
-    UpdateLastBoundDescriptorSets(device_data, cb_state, pipelineBindPoint, pipeline_layout, set, 1, descriptor_sets, 0, nullptr);
+    UpdateLastBoundDescriptorSets(cb_state, pipelineBindPoint, pipeline_layout, set, 1, descriptor_sets, 0, nullptr);
     last_bound.pipeline_layout = layout;
 
     // Now that we have either the new or extant push_descriptor set ... do the write updates against it
@@ -6950,9 +6941,8 @@ void CoreChecks::RecordCmdPushDescriptorSetState(layer_data *device_data, GLOBAL
 void CoreChecks::PreCallRecordCmdPushDescriptorSetKHR(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
                                                       VkPipelineLayout layout, uint32_t set, uint32_t descriptorWriteCount,
                                                       const VkWriteDescriptorSet *pDescriptorWrites) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
-    RecordCmdPushDescriptorSetState(device_data, cb_state, pipelineBindPoint, layout, set, descriptorWriteCount, pDescriptorWrites);
+    RecordCmdPushDescriptorSetState(cb_state, pipelineBindPoint, layout, set, descriptorWriteCount, pDescriptorWrites);
 }
 
 static VkDeviceSize GetIndexAlignment(VkIndexType indexType) {
@@ -12392,10 +12382,10 @@ void CoreChecks::PostCallRecordEnumeratePhysicalDeviceGroupsKHR(VkInstance insta
     PostRecordEnumeratePhysicalDeviceGroupsState(instance_data, pPhysicalDeviceGroupCount, pPhysicalDeviceGroupProperties);
 }
 
-bool CoreChecks::ValidateDescriptorUpdateTemplate(const char *func_name, layer_data *device_data,
+bool CoreChecks::ValidateDescriptorUpdateTemplate(const char *func_name,
                                                   const VkDescriptorUpdateTemplateCreateInfoKHR *pCreateInfo) {
     bool skip = false;
-    const auto layout = GetDescriptorSetLayout(device_data, pCreateInfo->descriptorSetLayout);
+    const auto layout = GetDescriptorSetLayout(this, pCreateInfo->descriptorSetLayout);
     if (VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET == pCreateInfo->templateType && !layout) {
         auto ds_uint = HandleToUint64(pCreateInfo->descriptorSetLayout);
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_POOL_EXT, ds_uint,
@@ -12436,9 +12426,7 @@ bool CoreChecks::PreCallValidateCreateDescriptorUpdateTemplate(VkDevice device,
                                                                const VkDescriptorUpdateTemplateCreateInfoKHR *pCreateInfo,
                                                                const VkAllocationCallbacks *pAllocator,
                                                                VkDescriptorUpdateTemplateKHR *pDescriptorUpdateTemplate) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-
-    bool skip = ValidateDescriptorUpdateTemplate("vkCreateDescriptorUpdateTemplate()", device_data, pCreateInfo);
+    bool skip = ValidateDescriptorUpdateTemplate("vkCreateDescriptorUpdateTemplate()", pCreateInfo);
     return skip;
 }
 
@@ -12446,9 +12434,7 @@ bool CoreChecks::PreCallValidateCreateDescriptorUpdateTemplateKHR(VkDevice devic
                                                                   const VkDescriptorUpdateTemplateCreateInfoKHR *pCreateInfo,
                                                                   const VkAllocationCallbacks *pAllocator,
                                                                   VkDescriptorUpdateTemplateKHR *pDescriptorUpdateTemplate) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-
-    bool skip = ValidateDescriptorUpdateTemplate("vkCreateDescriptorUpdateTemplateKHR()", device_data, pCreateInfo);
+    bool skip = ValidateDescriptorUpdateTemplate("vkCreateDescriptorUpdateTemplateKHR()", pCreateInfo);
     return skip;
 }
 
@@ -12524,17 +12510,17 @@ bool CoreChecks::PreCallValidateUpdateDescriptorSetWithTemplateKHR(VkDevice devi
     return ValidateUpdateDescriptorSetWithTemplate(descriptorSet, descriptorUpdateTemplate, pData);
 }
 
-void CoreChecks::RecordUpdateDescriptorSetWithTemplateState(layer_data *device_data, VkDescriptorSet descriptorSet,
+void CoreChecks::RecordUpdateDescriptorSetWithTemplateState(VkDescriptorSet descriptorSet,
                                                             VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate,
                                                             const void *pData) {
-    auto const template_map_entry = device_data->desc_template_map.find(descriptorUpdateTemplate);
-    if ((template_map_entry == device_data->desc_template_map.end()) || (template_map_entry->second.get() == nullptr)) {
+    auto const template_map_entry = desc_template_map.find(descriptorUpdateTemplate);
+    if ((template_map_entry == desc_template_map.end()) || (template_map_entry->second.get() == nullptr)) {
         assert(0);
     } else {
         const TEMPLATE_STATE *template_state = template_map_entry->second.get();
         // TODO: Record template push descriptor updates
         if (template_state->create_info.templateType == VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET) {
-            PerformUpdateDescriptorSetsWithTemplateKHR(device_data, descriptorSet, template_state, pData);
+            PerformUpdateDescriptorSetsWithTemplateKHR(descriptorSet, template_state, pData);
         }
     }
 }
@@ -12542,15 +12528,13 @@ void CoreChecks::RecordUpdateDescriptorSetWithTemplateState(layer_data *device_d
 void CoreChecks::PreCallRecordUpdateDescriptorSetWithTemplate(VkDevice device, VkDescriptorSet descriptorSet,
                                                               VkDescriptorUpdateTemplate descriptorUpdateTemplate,
                                                               const void *pData) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    RecordUpdateDescriptorSetWithTemplateState(device_data, descriptorSet, descriptorUpdateTemplate, pData);
+    RecordUpdateDescriptorSetWithTemplateState(descriptorSet, descriptorUpdateTemplate, pData);
 }
 
 void CoreChecks::PreCallRecordUpdateDescriptorSetWithTemplateKHR(VkDevice device, VkDescriptorSet descriptorSet,
                                                                  VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate,
                                                                  const void *pData) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    RecordUpdateDescriptorSetWithTemplateState(device_data, descriptorSet, descriptorUpdateTemplate, pData);
+    RecordUpdateDescriptorSetWithTemplateState(descriptorSet, descriptorUpdateTemplate, pData);
 }
 
 static std::shared_ptr<cvdescriptorset::DescriptorSetLayout const> GetDslFromPipelineLayout(PIPELINE_LAYOUT_NODE const *layout_data,
@@ -12565,7 +12549,6 @@ static std::shared_ptr<cvdescriptorset::DescriptorSetLayout const> GetDslFromPip
 bool CoreChecks::PreCallValidateCmdPushDescriptorSetWithTemplateKHR(VkCommandBuffer commandBuffer,
                                                                     VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate,
                                                                     VkPipelineLayout layout, uint32_t set, const void *pData) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
     const char *const func_name = "vkPushDescriptorSetWithTemplateKHR()";
@@ -12591,7 +12574,7 @@ bool CoreChecks::PreCallValidateCmdPushDescriptorSetWithTemplateKHR(VkCommandBuf
                        report_data->FormatHandle(layout_u64).c_str(), static_cast<uint32_t>(layout_data->set_layouts.size()));
     }
 
-    const auto template_state = GetDescriptorTemplateState(device_data, descriptorUpdateTemplate);
+    const auto template_state = GetDescriptorTemplateState(descriptorUpdateTemplate);
     if (template_state) {
         const auto &template_ci = template_state->create_info;
         static const std::map<VkPipelineBindPoint, std::string> bind_errors = {
@@ -12628,9 +12611,9 @@ bool CoreChecks::PreCallValidateCmdPushDescriptorSetWithTemplateKHR(VkCommandBuf
 
     if (dsl && template_state) {
         // Create an empty proxy in order to use the existing descriptor set update validation
-        cvdescriptorset::DescriptorSet proxy_ds(VK_NULL_HANDLE, VK_NULL_HANDLE, dsl, 0, device_data);
+        cvdescriptorset::DescriptorSet proxy_ds(VK_NULL_HANDLE, VK_NULL_HANDLE, dsl, 0, this);
         // Decode the template into a set of write updates
-        cvdescriptorset::DecodedTemplateUpdate decoded_template(device_data, VK_NULL_HANDLE, template_state, pData,
+        cvdescriptorset::DecodedTemplateUpdate decoded_template(this, VK_NULL_HANDLE, template_state, pData,
                                                                 dsl->GetDescriptorSetLayout());
         // Validate the decoded update against the proxy_ds
         skip |= proxy_ds.ValidatePushDescriptorsUpdate(report_data, static_cast<uint32_t>(decoded_template.desc_writes.size()),
@@ -12643,19 +12626,18 @@ bool CoreChecks::PreCallValidateCmdPushDescriptorSetWithTemplateKHR(VkCommandBuf
 void CoreChecks::PreCallRecordCmdPushDescriptorSetWithTemplateKHR(VkCommandBuffer commandBuffer,
                                                                   VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate,
                                                                   VkPipelineLayout layout, uint32_t set, const void *pData) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
 
-    const auto template_state = GetDescriptorTemplateState(device_data, descriptorUpdateTemplate);
+    const auto template_state = GetDescriptorTemplateState(descriptorUpdateTemplate);
     if (template_state) {
         auto layout_data = GetPipelineLayout(layout);
         auto dsl = GetDslFromPipelineLayout(layout_data, set);
         const auto &template_ci = template_state->create_info;
         if (dsl && !dsl->IsDestroyed()) {
             // Decode the template into a set of write updates
-            cvdescriptorset::DecodedTemplateUpdate decoded_template(device_data, VK_NULL_HANDLE, template_state, pData,
+            cvdescriptorset::DecodedTemplateUpdate decoded_template(this, VK_NULL_HANDLE, template_state, pData,
                                                                     dsl->GetDescriptorSetLayout());
-            RecordCmdPushDescriptorSetState(device_data, cb_state, template_ci.pipelineBindPoint, layout, set,
+            RecordCmdPushDescriptorSetState(cb_state, template_ci.pipelineBindPoint, layout, set,
                                             static_cast<uint32_t>(decoded_template.desc_writes.size()),
                                             decoded_template.desc_writes.data());
         }

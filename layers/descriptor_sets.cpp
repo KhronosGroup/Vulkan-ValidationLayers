@@ -1870,11 +1870,11 @@ bool CoreChecks::ValidateUpdateDescriptorSetsWithTemplateKHR(VkDescriptorSet des
                                         0, NULL, "vkUpdateDescriptorSetWithTemplate()");
 }
 
-void CoreChecks::PerformUpdateDescriptorSetsWithTemplateKHR(CoreChecks *device_data, VkDescriptorSet descriptorSet,
-                                                            const TEMPLATE_STATE *template_state, const void *pData) {
+void CoreChecks::PerformUpdateDescriptorSetsWithTemplateKHR(VkDescriptorSet descriptorSet, const TEMPLATE_STATE *template_state,
+                                                            const void *pData) {
     // Translate the templated update into a normal update for validation...
-    cvdescriptorset::DecodedTemplateUpdate decoded_update(device_data, descriptorSet, template_state, pData);
-    cvdescriptorset::PerformUpdateDescriptorSets(device_data, static_cast<uint32_t>(decoded_update.desc_writes.size()),
+    cvdescriptorset::DecodedTemplateUpdate decoded_update(this, descriptorSet, template_state, pData);
+    cvdescriptorset::PerformUpdateDescriptorSets(this, static_cast<uint32_t>(decoded_update.desc_writes.size()),
                                                  decoded_update.desc_writes.data(), 0, NULL);
 }
 
@@ -2519,8 +2519,7 @@ void CoreChecks::PerformAllocateDescriptorSets(const VkDescriptorSetAllocateInfo
                                                const VkDescriptorSet *descriptor_sets,
                                                const cvdescriptorset::AllocateDescriptorSetsData *ds_data,
                                                std::unordered_map<VkDescriptorPool, DESCRIPTOR_POOL_STATE *> *pool_map,
-                                               std::unordered_map<VkDescriptorSet, cvdescriptorset::DescriptorSet *> *set_map,
-                                               CoreChecks *dev_data) {
+                                               std::unordered_map<VkDescriptorSet, cvdescriptorset::DescriptorSet *> *set_map) {
     auto pool_state = (*pool_map)[p_alloc_info->descriptorPool];
     // Account for sets and individual descriptors allocated from pool
     pool_state->availableSets -= p_alloc_info->descriptorSetCount;
