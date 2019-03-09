@@ -6980,15 +6980,14 @@ static VkDeviceSize GetIndexAlignment(VkIndexType indexType) {
 
 bool CoreChecks::PreCallValidateCmdBindIndexBuffer(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                    VkIndexType indexType) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     auto buffer_state = GetBufferState(buffer);
     auto cb_node = GetCBNode(commandBuffer);
     assert(buffer_state);
     assert(cb_node);
 
-    bool skip = ValidateBufferUsageFlags(device_data, buffer_state, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, true,
-                                         "VUID-vkCmdBindIndexBuffer-buffer-00433", "vkCmdBindIndexBuffer()",
-                                         "VK_BUFFER_USAGE_INDEX_BUFFER_BIT");
+    bool skip =
+        ValidateBufferUsageFlags(buffer_state, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, true, "VUID-vkCmdBindIndexBuffer-buffer-00433",
+                                 "vkCmdBindIndexBuffer()", "VK_BUFFER_USAGE_INDEX_BUFFER_BIT");
     skip |= ValidateCmdQueueFlags(cb_node, "vkCmdBindIndexBuffer()", VK_QUEUE_GRAPHICS_BIT,
                                   "VUID-vkCmdBindIndexBuffer-commandBuffer-cmdpool");
     skip |= ValidateCmd(cb_node, CMD_BINDINDEXBUFFER, "vkCmdBindIndexBuffer()");
@@ -7020,7 +7019,6 @@ static inline void UpdateResourceTrackingOnDraw(GLOBAL_CB_NODE *pCB) { pCB->draw
 
 bool CoreChecks::PreCallValidateCmdBindVertexBuffers(VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount,
                                                      const VkBuffer *pBuffers, const VkDeviceSize *pOffsets) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     auto cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
 
@@ -7030,7 +7028,7 @@ bool CoreChecks::PreCallValidateCmdBindVertexBuffers(VkCommandBuffer commandBuff
     for (uint32_t i = 0; i < bindingCount; ++i) {
         auto buffer_state = GetBufferState(pBuffers[i]);
         assert(buffer_state);
-        skip |= ValidateBufferUsageFlags(device_data, buffer_state, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, true,
+        skip |= ValidateBufferUsageFlags(buffer_state, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, true,
                                          "VUID-vkCmdBindVertexBuffers-pBuffers-00627", "vkCmdBindVertexBuffers()",
                                          "VK_BUFFER_USAGE_VERTEX_BUFFER_BIT");
         skip |=
@@ -7238,8 +7236,8 @@ void CoreChecks::PostCallRecordCmdDispatchIndirect(VkCommandBuffer commandBuffer
 }
 
 // Validate that an image's sampleCount matches the requirement for a specific API call
-bool CoreChecks::ValidateImageSampleCount(layer_data *dev_data, IMAGE_STATE *image_state, VkSampleCountFlagBits sample_count,
-                                          const char *location, const std::string &msgCode) {
+bool CoreChecks::ValidateImageSampleCount(IMAGE_STATE *image_state, VkSampleCountFlagBits sample_count, const char *location,
+                                          const std::string &msgCode) {
     bool skip = false;
     if (image_state->createInfo.samples != sample_count) {
         skip = log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
@@ -7253,7 +7251,6 @@ bool CoreChecks::ValidateImageSampleCount(layer_data *dev_data, IMAGE_STATE *ima
 
 bool CoreChecks::PreCallValidateCmdUpdateBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,
                                                 VkDeviceSize dataSize, const void *pData) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     auto cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
     auto dst_buffer_state = GetBufferState(dstBuffer);
@@ -7262,9 +7259,9 @@ bool CoreChecks::PreCallValidateCmdUpdateBuffer(VkCommandBuffer commandBuffer, V
     bool skip = false;
     skip |= ValidateMemoryIsBoundToBuffer(dst_buffer_state, "vkCmdUpdateBuffer()", "VUID-vkCmdUpdateBuffer-dstBuffer-00035");
     // Validate that DST buffer has correct usage flags set
-    skip |= ValidateBufferUsageFlags(device_data, dst_buffer_state, VK_BUFFER_USAGE_TRANSFER_DST_BIT, true,
-                                     "VUID-vkCmdUpdateBuffer-dstBuffer-00034", "vkCmdUpdateBuffer()",
-                                     "VK_BUFFER_USAGE_TRANSFER_DST_BIT");
+    skip |=
+        ValidateBufferUsageFlags(dst_buffer_state, VK_BUFFER_USAGE_TRANSFER_DST_BIT, true, "VUID-vkCmdUpdateBuffer-dstBuffer-00034",
+                                 "vkCmdUpdateBuffer()", "VK_BUFFER_USAGE_TRANSFER_DST_BIT");
     skip |=
         ValidateCmdQueueFlags(cb_state, "vkCmdUpdateBuffer()", VK_QUEUE_TRANSFER_BIT | VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
                               "VUID-vkCmdUpdateBuffer-commandBuffer-cmdpool");
@@ -7456,10 +7453,9 @@ static VkPipelineStageFlagBits GetLogicallyLatestGraphicsPipelineStage(VkPipelin
 }
 
 // Verify image barrier image state and that the image is consistent with FB image
-bool CoreChecks::ValidateImageBarrierImage(layer_data *device_data, const char *funcName, GLOBAL_CB_NODE const *cb_state,
-                                           VkFramebuffer framebuffer, uint32_t active_subpass,
-                                           const safe_VkSubpassDescription2KHR &sub_desc, uint64_t rp_handle, uint32_t img_index,
-                                           const VkImageMemoryBarrier &img_barrier) {
+bool CoreChecks::ValidateImageBarrierImage(const char *funcName, GLOBAL_CB_NODE const *cb_state, VkFramebuffer framebuffer,
+                                           uint32_t active_subpass, const safe_VkSubpassDescription2KHR &sub_desc,
+                                           uint64_t rp_handle, uint32_t img_index, const VkImageMemoryBarrier &img_barrier) {
     bool skip = false;
     const auto &fb_state = GetFramebufferState(framebuffer);
     assert(fb_state);
@@ -7540,9 +7536,9 @@ bool CoreChecks::ValidateImageBarrierImage(layer_data *device_data, const char *
 }
 
 // Validate image barriers within a renderPass
-bool CoreChecks::ValidateRenderPassImageBarriers(layer_data *device_data, const char *funcName, GLOBAL_CB_NODE *cb_state,
-                                                 uint32_t active_subpass, const safe_VkSubpassDescription2KHR &sub_desc,
-                                                 uint64_t rp_handle, const safe_VkSubpassDependency2KHR *dependencies,
+bool CoreChecks::ValidateRenderPassImageBarriers(const char *funcName, GLOBAL_CB_NODE *cb_state, uint32_t active_subpass,
+                                                 const safe_VkSubpassDescription2KHR &sub_desc, uint64_t rp_handle,
+                                                 const safe_VkSubpassDependency2KHR *dependencies,
                                                  const std::vector<uint32_t> &self_dependencies, uint32_t image_mem_barrier_count,
                                                  const VkImageMemoryBarrier *image_barriers) {
     bool skip = false;
@@ -7588,12 +7584,11 @@ bool CoreChecks::ValidateRenderPassImageBarriers(layer_data *device_data, const 
             assert(VK_COMMAND_BUFFER_LEVEL_SECONDARY == cb_state->createInfo.level);
             // Secondary CB case w/o FB specified delay validation
             cb_state->cmd_execute_commands_functions.emplace_back([=](GLOBAL_CB_NODE *primary_cb, VkFramebuffer fb) {
-                return ValidateImageBarrierImage(device_data, funcName, cb_state, fb, active_subpass, sub_desc, rp_handle, i,
-                                                 img_barrier);
+                return ValidateImageBarrierImage(funcName, cb_state, fb, active_subpass, sub_desc, rp_handle, i, img_barrier);
             });
         } else {
-            skip |= ValidateImageBarrierImage(device_data, funcName, cb_state, cb_state->activeFramebuffer, active_subpass,
-                                              sub_desc, rp_handle, i, img_barrier);
+            skip |= ValidateImageBarrierImage(funcName, cb_state, cb_state->activeFramebuffer, active_subpass, sub_desc, rp_handle,
+                                              i, img_barrier);
         }
     }
     return skip;
@@ -7601,7 +7596,7 @@ bool CoreChecks::ValidateRenderPassImageBarriers(layer_data *device_data, const 
 
 // Validate VUs for Pipeline Barriers that are within a renderPass
 // Pre: cb_state->activeRenderPass must be a pointer to valid renderPass state
-bool CoreChecks::ValidateRenderPassPipelineBarriers(layer_data *device_data, const char *funcName, GLOBAL_CB_NODE *cb_state,
+bool CoreChecks::ValidateRenderPassPipelineBarriers(const char *funcName, GLOBAL_CB_NODE *cb_state,
                                                     VkPipelineStageFlags src_stage_mask, VkPipelineStageFlags dst_stage_mask,
                                                     VkDependencyFlags dependency_flags, uint32_t mem_barrier_count,
                                                     const VkMemoryBarrier *mem_barriers, uint32_t buffer_mem_barrier_count,
@@ -7625,8 +7620,8 @@ bool CoreChecks::ValidateRenderPassPipelineBarriers(layer_data *device_data, con
         bool stage_mask_match = false;
         for (const auto self_dep_index : self_dependencies) {
             const auto &sub_dep = dependencies[self_dep_index];
-            const auto &sub_src_stage_mask = ExpandPipelineStageFlags(device_data->device_extensions, sub_dep.srcStageMask);
-            const auto &sub_dst_stage_mask = ExpandPipelineStageFlags(device_data->device_extensions, sub_dep.dstStageMask);
+            const auto &sub_src_stage_mask = ExpandPipelineStageFlags(device_extensions, sub_dep.srcStageMask);
+            const auto &sub_dst_stage_mask = ExpandPipelineStageFlags(device_extensions, sub_dep.dstStageMask);
             stage_mask_match = ((sub_src_stage_mask == VK_PIPELINE_STAGE_ALL_COMMANDS_BIT) ||
                                 (src_stage_mask == (sub_src_stage_mask & src_stage_mask))) &&
                                ((sub_dst_stage_mask == VK_PIPELINE_STAGE_ALL_COMMANDS_BIT) ||
@@ -7691,7 +7686,7 @@ bool CoreChecks::ValidateRenderPassPipelineBarriers(layer_data *device_data, con
             }
         }
 
-        skip |= ValidateRenderPassImageBarriers(device_data, funcName, cb_state, active_subpass, sub_desc, rp_handle, dependencies,
+        skip |= ValidateRenderPassImageBarriers(funcName, cb_state, active_subpass, sub_desc, rp_handle, dependencies,
                                                 self_dependencies, image_mem_barrier_count, image_barriers);
 
         bool flag_match = false;
@@ -8403,8 +8398,8 @@ bool CoreChecks::PreCallValidateCmdPipelineBarrier(VkCommandBuffer commandBuffer
                                      "VUID-vkCmdPipelineBarrier-dstStageMask-01171", "VUID-vkCmdPipelineBarrier-dstStageMask-02117",
                                      "VUID-vkCmdPipelineBarrier-dstStageMask-02118");
     if (cb_state->activeRenderPass) {
-        skip |= ValidateRenderPassPipelineBarriers(device_data, "vkCmdPipelineBarrier()", cb_state, srcStageMask, dstStageMask,
-                                                   dependencyFlags, memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount,
+        skip |= ValidateRenderPassPipelineBarriers("vkCmdPipelineBarrier()", cb_state, srcStageMask, dstStageMask, dependencyFlags,
+                                                   memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount,
                                                    pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
         if (skip) return true;  // Early return to avoid redundant errors from below calls
     }
@@ -8560,7 +8555,6 @@ bool CoreChecks::ValidateQuery(VkQueue queue, GLOBAL_CB_NODE *pCB, VkQueryPool q
 bool CoreChecks::PreCallValidateCmdCopyQueryPoolResults(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery,
                                                         uint32_t queryCount, VkBuffer dstBuffer, VkDeviceSize dstOffset,
                                                         VkDeviceSize stride, VkQueryResultFlags flags) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     auto cb_state = GetCBNode(commandBuffer);
     auto dst_buff_state = GetBufferState(dstBuffer);
     assert(cb_state);
@@ -8568,7 +8562,7 @@ bool CoreChecks::PreCallValidateCmdCopyQueryPoolResults(VkCommandBuffer commandB
     bool skip = ValidateMemoryIsBoundToBuffer(dst_buff_state, "vkCmdCopyQueryPoolResults()",
                                               "VUID-vkCmdCopyQueryPoolResults-dstBuffer-00826");
     // Validate that DST buffer has correct usage flags set
-    skip |= ValidateBufferUsageFlags(device_data, dst_buff_state, VK_BUFFER_USAGE_TRANSFER_DST_BIT, true,
+    skip |= ValidateBufferUsageFlags(dst_buff_state, VK_BUFFER_USAGE_TRANSFER_DST_BIT, true,
                                      "VUID-vkCmdCopyQueryPoolResults-dstBuffer-00825", "vkCmdCopyQueryPoolResults()",
                                      "VK_BUFFER_USAGE_TRANSFER_DST_BIT");
     skip |= ValidateCmdQueueFlags(cb_state, "vkCmdCopyQueryPoolResults()", VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
@@ -8660,8 +8654,8 @@ void CoreChecks::PostCallRecordCmdWriteTimestamp(VkCommandBuffer commandBuffer, 
     cb_state->queryUpdates.emplace_back([=](VkQueue q) { return SetQueryState(q, commandBuffer, query, true); });
 }
 
-bool CoreChecks::MatchUsage(layer_data *dev_data, uint32_t count, const VkAttachmentReference2KHR *attachments,
-                            const VkFramebufferCreateInfo *fbci, VkImageUsageFlagBits usage_flag, const char *error_code) {
+bool CoreChecks::MatchUsage(uint32_t count, const VkAttachmentReference2KHR *attachments, const VkFramebufferCreateInfo *fbci,
+                            VkImageUsageFlagBits usage_flag, const char *error_code) {
     bool skip = false;
 
     for (uint32_t attach = 0; attach < count; attach++) {
@@ -8697,7 +8691,7 @@ bool CoreChecks::MatchUsage(layer_data *dev_data, uint32_t count, const VkAttach
 // 6. fb attachments use idenity swizzle
 // 7. fb attachments used by renderPass for color/input/ds have correct usage bit set
 // 8. fb dimensions are within physical device limits
-bool CoreChecks::ValidateFramebufferCreateInfo(layer_data *dev_data, const VkFramebufferCreateInfo *pCreateInfo) {
+bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pCreateInfo) {
     bool skip = false;
 
     auto rp_state = GetRenderPassState(pCreateInfo->renderPass);
@@ -8779,41 +8773,39 @@ bool CoreChecks::ValidateFramebufferCreateInfo(layer_data *dev_data, const VkFra
         // Verify correct attachment usage flags
         for (uint32_t subpass = 0; subpass < rpci->subpassCount; subpass++) {
             // Verify input attachments:
-            skip |=
-                MatchUsage(dev_data, rpci->pSubpasses[subpass].inputAttachmentCount, rpci->pSubpasses[subpass].pInputAttachments,
-                           pCreateInfo, VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT, "VUID-VkFramebufferCreateInfo-pAttachments-00879");
+            skip |= MatchUsage(rpci->pSubpasses[subpass].inputAttachmentCount, rpci->pSubpasses[subpass].pInputAttachments,
+                               pCreateInfo, VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT, "VUID-VkFramebufferCreateInfo-pAttachments-00879");
             // Verify color attachments:
-            skip |=
-                MatchUsage(dev_data, rpci->pSubpasses[subpass].colorAttachmentCount, rpci->pSubpasses[subpass].pColorAttachments,
-                           pCreateInfo, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, "VUID-VkFramebufferCreateInfo-pAttachments-00877");
+            skip |= MatchUsage(rpci->pSubpasses[subpass].colorAttachmentCount, rpci->pSubpasses[subpass].pColorAttachments,
+                               pCreateInfo, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, "VUID-VkFramebufferCreateInfo-pAttachments-00877");
             // Verify depth/stencil attachments:
             if (rpci->pSubpasses[subpass].pDepthStencilAttachment != nullptr) {
-                skip |= MatchUsage(dev_data, 1, rpci->pSubpasses[subpass].pDepthStencilAttachment, pCreateInfo,
+                skip |= MatchUsage(1, rpci->pSubpasses[subpass].pDepthStencilAttachment, pCreateInfo,
                                    VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, "VUID-VkFramebufferCreateInfo-pAttachments-02633");
             }
         }
     }
     // Verify FB dimensions are within physical device limits
-    if (pCreateInfo->width > dev_data->phys_dev_props.limits.maxFramebufferWidth) {
+    if (pCreateInfo->width > phys_dev_props.limits.maxFramebufferWidth) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                         "VUID-VkFramebufferCreateInfo-width-00886",
                         "vkCreateFramebuffer(): Requested VkFramebufferCreateInfo width exceeds physical device limits. Requested "
                         "width: %u, device max: %u\n",
-                        pCreateInfo->width, dev_data->phys_dev_props.limits.maxFramebufferWidth);
+                        pCreateInfo->width, phys_dev_props.limits.maxFramebufferWidth);
     }
-    if (pCreateInfo->height > dev_data->phys_dev_props.limits.maxFramebufferHeight) {
+    if (pCreateInfo->height > phys_dev_props.limits.maxFramebufferHeight) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                         "VUID-VkFramebufferCreateInfo-height-00888",
                         "vkCreateFramebuffer(): Requested VkFramebufferCreateInfo height exceeds physical device limits. Requested "
                         "height: %u, device max: %u\n",
-                        pCreateInfo->height, dev_data->phys_dev_props.limits.maxFramebufferHeight);
+                        pCreateInfo->height, phys_dev_props.limits.maxFramebufferHeight);
     }
-    if (pCreateInfo->layers > dev_data->phys_dev_props.limits.maxFramebufferLayers) {
+    if (pCreateInfo->layers > phys_dev_props.limits.maxFramebufferLayers) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                         "VUID-VkFramebufferCreateInfo-layers-00890",
                         "vkCreateFramebuffer(): Requested VkFramebufferCreateInfo layers exceeds physical device limits. Requested "
                         "layers: %u, device max: %u\n",
-                        pCreateInfo->layers, dev_data->phys_dev_props.limits.maxFramebufferLayers);
+                        pCreateInfo->layers, phys_dev_props.limits.maxFramebufferLayers);
     }
     // Verify FB dimensions are greater than zero
     if (pCreateInfo->width <= 0) {
@@ -8836,10 +8828,9 @@ bool CoreChecks::ValidateFramebufferCreateInfo(layer_data *dev_data, const VkFra
 
 bool CoreChecks::PreCallValidateCreateFramebuffer(VkDevice device, const VkFramebufferCreateInfo *pCreateInfo,
                                                   const VkAllocationCallbacks *pAllocator, VkFramebuffer *pFramebuffer) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     // TODO : Verify that renderPass FB is created with is compatible with FB
     bool skip = false;
-    skip |= ValidateFramebufferCreateInfo(device_data, pCreateInfo);
+    skip |= ValidateFramebufferCreateInfo(pCreateInfo);
     return skip;
 }
 
@@ -10174,8 +10165,8 @@ void CoreChecks::PostCallRecordCmdEndRenderPass2KHR(VkCommandBuffer commandBuffe
     RecordCmdEndRenderPassState(commandBuffer);
 }
 
-bool CoreChecks::ValidateFramebuffer(layer_data *dev_data, VkCommandBuffer primaryBuffer, const GLOBAL_CB_NODE *pCB,
-                                     VkCommandBuffer secondaryBuffer, const GLOBAL_CB_NODE *pSubCB, const char *caller) {
+bool CoreChecks::ValidateFramebuffer(VkCommandBuffer primaryBuffer, const GLOBAL_CB_NODE *pCB, VkCommandBuffer secondaryBuffer,
+                                     const GLOBAL_CB_NODE *pSubCB, const char *caller) {
     bool skip = false;
     if (!pSubCB->beginInfo.pInheritanceInfo) {
         return skip;
@@ -10254,7 +10245,6 @@ bool CoreChecks::ValidateSecondaryCommandBufferState(GLOBAL_CB_NODE *pCB, GLOBAL
 
 bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBuffersCount,
                                                    const VkCommandBuffer *pCommandBuffers) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
     bool skip = false;
@@ -10289,8 +10279,8 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                             "vkCmdExecuteCommands()", "VUID-vkCmdExecuteCommands-pInheritanceInfo-00098");
                     }
                     //  If framebuffer for secondary CB is not NULL, then it must match active FB from primaryCB
-                    skip |= ValidateFramebuffer(device_data, commandBuffer, cb_state, pCommandBuffers[i], sub_cb_state,
-                                                "vkCmdExecuteCommands()");
+                    skip |=
+                        ValidateFramebuffer(commandBuffer, cb_state, pCommandBuffers[i], sub_cb_state, "vkCmdExecuteCommands()");
                     if (!sub_cb_state->cmd_execute_commands_functions.empty()) {
                         //  Inherit primary's activeFramebuffer and while running validate functions
                         for (auto &function : sub_cb_state->cmd_execute_commands_functions) {
@@ -11816,8 +11806,8 @@ void CoreChecks::PostCallRecordCreateSharedSwapchainsKHR(VkDevice device, uint32
     }
 }
 
-bool CoreChecks::ValidateAcquireNextImage(layer_data *device_data, VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout,
-                                          VkSemaphore semaphore, VkFence fence, uint32_t *pImageIndex, const char *func_name) {
+bool CoreChecks::ValidateAcquireNextImage(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout, VkSemaphore semaphore,
+                                          VkFence fence, uint32_t *pImageIndex, const char *func_name) {
     bool skip = false;
     if (fence == VK_NULL_HANDLE && semaphore == VK_NULL_HANDLE) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
@@ -11872,20 +11862,17 @@ bool CoreChecks::ValidateAcquireNextImage(layer_data *device_data, VkDevice devi
 
 bool CoreChecks::PreCallValidateAcquireNextImageKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout,
                                                     VkSemaphore semaphore, VkFence fence, uint32_t *pImageIndex) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    return ValidateAcquireNextImage(device_data, device, swapchain, timeout, semaphore, fence, pImageIndex,
-                                    "vkAcquireNextImageKHR");
+    return ValidateAcquireNextImage(device, swapchain, timeout, semaphore, fence, pImageIndex, "vkAcquireNextImageKHR");
 }
 
 bool CoreChecks::PreCallValidateAcquireNextImage2KHR(VkDevice device, const VkAcquireNextImageInfoKHR *pAcquireInfo,
                                                      uint32_t *pImageIndex) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    return ValidateAcquireNextImage(device_data, device, pAcquireInfo->swapchain, pAcquireInfo->timeout, pAcquireInfo->semaphore,
+    return ValidateAcquireNextImage(device, pAcquireInfo->swapchain, pAcquireInfo->timeout, pAcquireInfo->semaphore,
                                     pAcquireInfo->fence, pImageIndex, "vkAcquireNextImage2KHR");
 }
 
-void CoreChecks::RecordAcquireNextImageState(layer_data *device_data, VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout,
-                                             VkSemaphore semaphore, VkFence fence, uint32_t *pImageIndex) {
+void CoreChecks::RecordAcquireNextImageState(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout, VkSemaphore semaphore,
+                                             VkFence fence, uint32_t *pImageIndex) {
     auto pFence = GetFenceNode(fence);
     if (pFence && pFence->scope == kSyncScopeInternal) {
         // Treat as inflight since it is valid to wait on this fence, even in cases where it is technically a temporary
@@ -11916,16 +11903,14 @@ void CoreChecks::RecordAcquireNextImageState(layer_data *device_data, VkDevice d
 
 void CoreChecks::PostCallRecordAcquireNextImageKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout,
                                                    VkSemaphore semaphore, VkFence fence, uint32_t *pImageIndex, VkResult result) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if ((VK_SUCCESS != result) && (VK_SUBOPTIMAL_KHR != result)) return;
-    RecordAcquireNextImageState(device_data, device, swapchain, timeout, semaphore, fence, pImageIndex);
+    RecordAcquireNextImageState(device, swapchain, timeout, semaphore, fence, pImageIndex);
 }
 
 void CoreChecks::PostCallRecordAcquireNextImage2KHR(VkDevice device, const VkAcquireNextImageInfoKHR *pAcquireInfo,
                                                     uint32_t *pImageIndex, VkResult result) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if ((VK_SUCCESS != result) && (VK_SUBOPTIMAL_KHR != result)) return;
-    RecordAcquireNextImageState(device_data, device, pAcquireInfo->swapchain, pAcquireInfo->timeout, pAcquireInfo->semaphore,
+    RecordAcquireNextImageState(device, pAcquireInfo->swapchain, pAcquireInfo->timeout, pAcquireInfo->semaphore,
                                 pAcquireInfo->fence, pImageIndex);
 }
 
@@ -13046,7 +13031,6 @@ void CoreChecks::PostCallRecordDestroySamplerYcbcrConversionKHR(VkDevice device,
 }
 
 bool CoreChecks::PreCallValidateGetBufferDeviceAddressEXT(VkDevice device, const VkBufferDeviceAddressInfoEXT *pInfo) {
-    layer_data *device_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
 
     if (!GetEnabledFeatures()->buffer_address.bufferDeviceAddress) {
@@ -13055,7 +13039,7 @@ bool CoreChecks::PreCallValidateGetBufferDeviceAddressEXT(VkDevice device, const
                         "The bufferDeviceAddress feature must: be enabled.");
     }
 
-    if (device_data->physical_device_count > 1 && !GetEnabledFeatures()->buffer_address.bufferDeviceAddressMultiDevice) {
+    if (physical_device_count > 1 && !GetEnabledFeatures()->buffer_address.bufferDeviceAddressMultiDevice) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT,
                         HandleToUint64(pInfo->buffer), "VUID-vkGetBufferDeviceAddressEXT-device-02599",
                         "If device was created with multiple physical devices, then the "
@@ -13069,7 +13053,7 @@ bool CoreChecks::PreCallValidateGetBufferDeviceAddressEXT(VkDevice device, const
                                                   "VUID-VkBufferDeviceAddressInfoEXT-buffer-02600");
         }
 
-        skip |= ValidateBufferUsageFlags(device_data, buffer_state, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_EXT, true,
+        skip |= ValidateBufferUsageFlags(buffer_state, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_EXT, true,
                                          "VUID-VkBufferDeviceAddressInfoEXT-buffer-02601", "vkGetBufferDeviceAddressEXT()",
                                          "VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_EXT");
     }
