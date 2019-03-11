@@ -84,6 +84,7 @@ set(LAYER_UTIL_FILES
 install(FILES ${LAYER_UTIL_FILES} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
 set(TARGET_NAMES
+    VkLayer_khronos_validation
     VkLayer_core_validation
     VkLayer_object_lifetimes
     VkLayer_unique_objects
@@ -219,7 +220,9 @@ set(STATELESS_VALIDATION_LIBRARY_FILES
 
 # Inter-layer dependencies are temporarily necessary to serialize layer builds which avoids contention for common generated files
 if(BUILD_LAYERS)
-    AddVkLayer(core_validation "BUILD_CORE_VALIDATION" ${CHASSIS_LIBRARY_FILES} ${CORE_VALIDATION_LIBRARY_FILES})
+    AddVkLayer(core_validation "BUILD_CORE_VALIDATION"
+        ${CHASSIS_LIBRARY_FILES}
+        ${CORE_VALIDATION_LIBRARY_FILES})
     add_dependencies(VkLayer_core_validation VulkanVL_generate_chassis_files)
     AddVkLayer(object_lifetimes "BUILD_OBJECT_TRACKER" ${CHASSIS_LIBRARY_FILES} ${OBJECT_LIFETIMES_LIBRARY_FILES})
     add_dependencies(VkLayer_object_lifetimes VkLayer_core_validation)
@@ -229,12 +232,23 @@ if(BUILD_LAYERS)
     add_dependencies(VkLayer_stateless_validation VkLayer_unique_objects)
     AddVkLayer(unique_objects "LAYER_CHASSIS_CAN_WRAP_HANDLES" ${CHASSIS_LIBRARY_FILES})
     add_dependencies(VkLayer_unique_objects VkLayer_thread_safety)
+    AddVkLayer(khronos_validation "BUILD_KHRONOS_VALIDATION;BUILD_CORE_VALIDATION;BUILD_OBJECT_TRACKER;BUILD_THREAD_SAFETY;BUILD_PARAMETER_VALIDATION;LAYER_CHASSIS_CAN_WRAP_HANDLES"
+        ${CHASSIS_LIBRARY_FILES}
+        ${CORE_VALIDATION_LIBRARY_FILES}
+        ${OBJECT_LIFETIMES_LIBRARY_FILES}
+        ${THREAD_SAFETY_LIBRARY_FILES}
+        ${STATELESS_VALIDATION_LIBRARY_FILES})
+    add_dependencies(VkLayer_khronos_validation VkLayer_unique_objects)
 
-    # Core validation has additional dependencies
+    # Core validation and Khronos validation have additional dependencies
     target_include_directories(VkLayer_core_validation PRIVATE ${GLSLANG_SPIRV_INCLUDE_DIR})
     target_include_directories(VkLayer_core_validation PRIVATE ${SPIRV_TOOLS_INCLUDE_DIR})
     target_link_libraries(VkLayer_core_validation PRIVATE ${SPIRV_TOOLS_LIBRARIES})
     add_dependencies(VkLayer_core_validation spirv_tools_revision_file)
+    target_include_directories(VkLayer_khronos_validation PRIVATE ${GLSLANG_SPIRV_INCLUDE_DIR})
+    target_include_directories(VkLayer_khronos_validation PRIVATE ${SPIRV_TOOLS_INCLUDE_DIR})
+    target_link_libraries(VkLayer_khronos_validation PRIVATE ${SPIRV_TOOLS_LIBRARIES})
+    add_dependencies(VkLayer_khronos_validation spirv_tools_revision_file)
 
     # The output file needs Unix "/" separators or Windows "\" separators On top of that, Windows separators actually need to be doubled
     # because the json format uses backslash escapes
