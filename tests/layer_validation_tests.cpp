@@ -17403,7 +17403,6 @@ TEST_F(VkLayerTest, QueryPreciseBit) {
 
         vkCmdResetQueryPool(m_commandBuffer->handle(), query_pool, 0, 1);
         vkCmdBeginQuery(m_commandBuffer->handle(), query_pool, 0, VK_QUERY_CONTROL_PRECISE_BIT);
-        vkCmdEndQuery(m_commandBuffer->handle(), query_pool, 0);
         m_errorMonitor->VerifyFound();
 
         m_commandBuffer->end();
@@ -17453,7 +17452,6 @@ TEST_F(VkLayerTest, QueryPreciseBit) {
 
     vkCmdResetQueryPool(cmd_buffer, query_pool, 0, 1);
     vkCmdBeginQuery(cmd_buffer, query_pool, 0, VK_QUERY_CONTROL_PRECISE_BIT);
-    vkCmdEndQuery(cmd_buffer, query_pool, 0);
     m_errorMonitor->VerifyFound();
 
     vkEndCommandBuffer(cmd_buffer);
