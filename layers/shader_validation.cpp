@@ -60,11 +60,15 @@ struct shader_stage_attributes {
     char const *const name;
     bool arrayed_input;
     bool arrayed_output;
+    VkShaderStageFlags stage;
 };
 
 static shader_stage_attributes shader_stage_attribs[] = {
-    {"vertex shader", false, false},  {"tessellation control shader", true, true}, {"tessellation evaluation shader", true, false},
-    {"geometry shader", true, false}, {"fragment shader", false, false},
+    {"vertex shader", false, false, VK_SHADER_STAGE_VERTEX_BIT},
+    {"tessellation control shader", true, true, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT},
+    {"tessellation evaluation shader", true, false, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT},
+    {"geometry shader", true, false, VK_SHADER_STAGE_GEOMETRY_BIT},
+    {"fragment shader", false, false, VK_SHADER_STAGE_FRAGMENT_BIT},
 };
 
 // SPIRV utility functions
@@ -616,6 +620,21 @@ static bool CollectInterfaceBlockMembers(shader_module const *src, std::map<loca
     return true;
 }
 
+static std::vector<uint32_t> FindEntrypointInterfaces(spirv_inst_iter entrypoint) {
+    std::vector<uint32_t> interfaces;
+    // Find the end of the entrypoint's name string. additional zero bytes follow the actual null terminator, to fill out the
+    // rest of the word - so we only need to look at the last byte in the word to determine which word contains the terminator.
+    uint32_t word = 3;
+    while (entrypoint.word(word) & 0xff000000u) {
+        ++word;
+    }
+    ++word;
+
+    for (; word < entrypoint.len(); word++) interfaces.push_back(entrypoint.word(word));
+
+    return interfaces;
+}
+
 static std::map<location_t, interface_var> CollectInterfaceByLocation(shader_module const *src, spirv_inst_iter entrypoint,
                                                                       spv::StorageClass sinterface, bool is_array_of_verts) {
     std::unordered_map<unsigned, unsigned> var_locations;
@@ -658,18 +677,10 @@ static std::map<location_t, interface_var> CollectInterfaceByLocation(shader_mod
     // TODO: handle grouped decorations
     // TODO: handle index=1 dual source outputs from FS -- two vars will have the same location, and we DON'T want to clobber.
 
-    // Find the end of the entrypoint's name string. additional zero bytes follow the actual null terminator, to fill out the
-    // rest of the word - so we only need to look at the last byte in the word to determine which word contains the terminator.
-    uint32_t word = 3;
-    while (entrypoint.word(word) & 0xff000000u) {
-        ++word;
-    }
-    ++word;
-
     std::map<location_t, interface_var> out;
 
-    for (; word < entrypoint.len(); word++) {
-        auto insn = src->get_def(entrypoint.word(word));
+    for (uint32_t word : FindEntrypointInterfaces(entrypoint)) {
+        auto insn = src->get_def(word);
         assert(insn != src->end());
         assert(insn.opcode() == spv::OpVariable);
 
@@ -703,6 +714,86 @@ static std::map<location_t, interface_var> CollectInterfaceByLocation(shader_mod
     }
 
     return out;
+}
+
+static std::vector<uint32_t> CollectBuiltinBlockMembers(shader_module const *src, spirv_inst_iter entrypoint,
+                                                        uint32_t storageClass) {
+    std::vector<uint32_t> variables;
+    std::vector<uint32_t> builtinStructMembers;
+    std::vector<uint32_t> builtinDecorations;
+
+    for (auto insn : *src) {
+        switch (insn.opcode()) {
+            // Find all built-in member decorations
+            case spv::OpMemberDecorate:
+                if (insn.word(3) == spv::DecorationBuiltIn) {
+                    builtinStructMembers.push_back(insn.word(1));
+                }
+                break;
+            // Find all built-in decorations
+            case spv::OpDecorate:
+                switch (insn.word(2)) {
+                    case spv::DecorationBlock: {
+                        uint32_t blockID = insn.word(1);
+                        for (auto builtInBlockID : builtinStructMembers) {
+                            // Check if one of the members of the block are built-in -> the block is built-in
+                            if (blockID == builtInBlockID) {
+                                builtinDecorations.push_back(blockID);
+                                break;
+                            }
+                        }
+                        break;
+                    }
+                    case spv::DecorationBuiltIn:
+                        builtinDecorations.push_back(insn.word(1));
+                        break;
+                    default:
+                        break;
+                }
+                break;
+            default:
+                break;
+        }
+    }
+
+    // Find all interface variables belonging to the entrypoint and matching the storage class
+    for (uint32_t id : FindEntrypointInterfaces(entrypoint)) {
+        auto def = src->get_def(id);
+        assert(def != src->end());
+        assert(def.opcode() == spv::OpVariable);
+
+        if (def.word(3) == storageClass) variables.push_back(def.word(1));
+    }
+
+    // Find all members belonging to the builtin block selected
+    std::vector<uint32_t> builtinBlockMembers;
+    for (auto &var : variables) {
+        auto def = src->get_def(src->get_def(var).word(3));
+
+        // It could be an array of IO blocks. The element type should be the struct defining the block contents
+        if (def.opcode() == spv::OpTypeArray) def = src->get_def(def.word(2));
+
+        // Now find all members belonging to the struct defining the IO block
+        if (def.opcode() == spv::OpTypeStruct) {
+            for (auto builtInID : builtinDecorations) {
+                if (builtInID == def.word(1)) {
+                    for (int i = 2; i < (int)def.len(); i++)
+                        builtinBlockMembers.push_back(spv::BuiltInMax);  // Start with undefined builtin for each struct member.
+                                                                         // These shouldn't be left after replacing.
+                    for (auto insn : *src) {
+                        if (insn.opcode() == spv::OpMemberDecorate && insn.word(1) == builtInID &&
+                            insn.word(3) == spv::DecorationBuiltIn) {
+                            auto structIndex = insn.word(2);
+                            assert(structIndex < builtinBlockMembers.size());
+                            builtinBlockMembers[structIndex] = insn.word(4);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return builtinBlockMembers;
 }
 
 static std::vector<std::pair<uint32_t, interface_var>> CollectInterfaceByInputAttachmentIndex(
@@ -2150,6 +2241,35 @@ static bool ValidateInterfaceBetweenStages(debug_report_data const *report_data,
             }
             a_it++;
             b_it++;
+        }
+    }
+
+    if (consumer_stage->stage != VK_SHADER_STAGE_FRAGMENT_BIT) {
+        auto builtins_producer = CollectBuiltinBlockMembers(producer, producer_entrypoint, spv::StorageClassOutput);
+        auto builtins_consumer = CollectBuiltinBlockMembers(consumer, consumer_entrypoint, spv::StorageClassInput);
+
+        if (!builtins_producer.empty() && !builtins_consumer.empty()) {
+            if (builtins_producer.size() != builtins_consumer.size()) {
+                skip |=
+                    log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SHADER_MODULE_EXT,
+                            HandleToUint64(producer->vk_shader_module), kVUID_Core_Shader_InterfaceTypeMismatch,
+                            "Number of elements inside builtin block differ between stages (%s %d vs %s %d).", producer_stage->name,
+                            (int)builtins_producer.size(), consumer_stage->name, (int)builtins_consumer.size());
+            } else {
+                auto it_producer = builtins_producer.begin();
+                auto it_consumer = builtins_consumer.begin();
+                while (it_producer != builtins_producer.end() && it_consumer != builtins_consumer.end()) {
+                    if (*it_producer != *it_consumer) {
+                        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SHADER_MODULE_EXT,
+                                        HandleToUint64(producer->vk_shader_module), kVUID_Core_Shader_InterfaceTypeMismatch,
+                                        "Builtin variable inside block doesn't match between %s and %s.", producer_stage->name,
+                                        consumer_stage->name);
+                        break;
+                    }
+                    it_producer++;
+                    it_consumer++;
+                }
+            }
         }
     }
 
