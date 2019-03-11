@@ -451,21 +451,39 @@ bool wrap_handles = true;
 const bool wrap_handles = false;
 #endif
 
-// Include child object (layer) definitions
-#if BUILD_OBJECT_TRACKER
-#include "object_lifetime_validation.h"
+// Set layer name -- Khronos layer name overrides any other defined names
+#if BUILD_KNRONOS_VALIDATION
+#define OBJECT_LAYER_NAME "VK_LAYER_KHRONOS_validation"
+#define OBJECT_LAYER_DESCRIPTION "khronos_validation"
+#elif BUILD_OBJECT_TRACKER
 #define OBJECT_LAYER_NAME "VK_LAYER_LUNARG_object_tracker"
+#define OBJECT_LAYER_DESCRIPTION "lunarg_object_tracker"
 #elif BUILD_THREAD_SAFETY
-#include "thread_safety.h"
 #define OBJECT_LAYER_NAME "VK_LAYER_GOOGLE_threading"
+#define OBJECT_LAYER_DESCRIPTION "google_thread_checker"
 #elif BUILD_PARAMETER_VALIDATION
-#include "stateless_validation.h"
 #define OBJECT_LAYER_NAME "VK_LAYER_LUNARG_parameter_validation"
+#define OBJECT_LAYER_DESCRIPTION "lunarg_parameter_validation"
 #elif BUILD_CORE_VALIDATION
-#include "core_validation.h"
 #define OBJECT_LAYER_NAME "VK_LAYER_LUNARG_core_validation"
+#define OBJECT_LAYER_DESCRIPTION "lunarg_core_validation"
 #else
 #define OBJECT_LAYER_NAME "VK_LAYER_GOOGLE_unique_objects"
+#define OBJECT_LAYER_DESCRIPTION "lunarg_unique_objects"
+#endif
+
+// Include layer validation object definitions
+#if BUILD_OBJECT_TRACKER
+#include "object_lifetime_validation.h"
+#endif
+#if BUILD_THREAD_SAFETY
+#include "thread_safety.h"
+#endif
+#if BUILD_PARAMETER_VALIDATION
+#include "stateless_validation.h"
+#endif
+#if BUILD_CORE_VALIDATION
+#include "core_validation.h"
 #endif
 
 namespace vulkan_layer_chassis {
@@ -628,22 +646,26 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
 
     // Create temporary dispatch vector for pre-calls until instance is created
     std::vector<ValidationObject*> local_object_dispatch;
+    // Add VOs to dispatch vector. Order here will be the validation dispatch order!
+#if BUILD_THREAD_SAFETY
+    auto thread_checker = new ThreadSafety;
+    local_object_dispatch.emplace_back(thread_checker);
+    thread_checker->container_type = LayerObjectTypeThreading;
+    thread_checker->api_version = api_version;
+#endif
+#if BUILD_PARAMETER_VALIDATION
+    auto parameter_validation = new StatelessValidation;
+    local_object_dispatch.emplace_back(parameter_validation);
+    parameter_validation->container_type = LayerObjectTypeParameterValidation;
+    parameter_validation->api_version = api_version;
+#endif
 #if BUILD_OBJECT_TRACKER
     auto object_tracker = new ObjectLifetimes;
     local_object_dispatch.emplace_back(object_tracker);
     object_tracker->container_type = LayerObjectTypeObjectTracker;
     object_tracker->api_version = api_version;
-#elif BUILD_THREAD_SAFETY
-    auto thread_checker = new ThreadSafety;
-    local_object_dispatch.emplace_back(thread_checker);
-    thread_checker->container_type = LayerObjectTypeThreading;
-    thread_checker->api_version = api_version;
-#elif BUILD_PARAMETER_VALIDATION
-    auto parameter_validation = new StatelessValidation;
-    local_object_dispatch.emplace_back(parameter_validation);
-    parameter_validation->container_type = LayerObjectTypeParameterValidation;
-    parameter_validation->api_version = api_version;
-#elif BUILD_CORE_VALIDATION
+#endif
+#if BUILD_CORE_VALIDATION
     auto core_checks = new CoreChecks;
     local_object_dispatch.emplace_back(core_checks);
     core_checks->container_type = LayerObjectTypeCoreValidation;
@@ -683,25 +705,33 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
         SetValidationFeatures(framework, validation_features_ext);
     }
 
+    layer_debug_messenger_actions(framework->report_data, framework->logging_messenger, pAllocator, OBJECT_LAYER_DESCRIPTION);
+
 #if BUILD_OBJECT_TRACKER
-    layer_debug_messenger_actions(framework->report_data, framework->logging_messenger, pAllocator, "lunarg_object_tracker");
     object_tracker->report_data = framework->report_data;
-#elif BUILD_THREAD_SAFETY
-    layer_debug_messenger_actions(framework->report_data, framework->logging_messenger, pAllocator, "google_thread_checker");
+    object_tracker->instance_dispatch_table = framework->instance_dispatch_table;
+    object_tracker->enabled = framework->enabled;
+    object_tracker->disabled = framework->disabled;
+#endif
+#if BUILD_THREAD_SAFETY
     thread_checker->report_data = framework->report_data;
-#elif BUILD_PARAMETER_VALIDATION
-    layer_debug_messenger_actions(framework->report_data, framework->logging_messenger, pAllocator, "lunarg_parameter_validation");
+    thread_checker->instance_dispatch_table = framework->instance_dispatch_table;
+    thread_checker->enabled = framework->enabled;
+    thread_checker->disabled = framework->disabled;
+#endif
+#if BUILD_PARAMETER_VALIDATION
     parameter_validation->report_data = framework->report_data;
-#elif BUILD_CORE_VALIDATION
-    layer_debug_messenger_actions(framework->report_data, framework->logging_messenger, pAllocator, "lunarg_core_validation");
+    parameter_validation->instance_dispatch_table = framework->instance_dispatch_table;
+    parameter_validation->enabled = framework->enabled;
+    parameter_validation->disabled = framework->disabled;
+#endif
+#if BUILD_CORE_VALIDATION
     core_checks->report_data = framework->report_data;
     core_checks->instance_dispatch_table = framework->instance_dispatch_table;
     core_checks->instance = *pInstance;
     core_checks->enabled = framework->enabled;
     core_checks->disabled = framework->disabled;
     core_checks->instance_state = core_checks;
-#else
-    layer_debug_messenger_actions(framework->report_data, framework->logging_messenger, pAllocator, "lunarg_unique_objects");
 #endif
 
     for (auto intercept : framework->object_dispatch) {
@@ -812,6 +842,29 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
     device_interceptor->instance = instance_interceptor->instance;
     device_interceptor->report_data = layer_debug_utils_create_device(instance_interceptor->report_data, *pDevice);
 
+    // Note that this defines the order in which the layer validation objects are called
+#if BUILD_THREAD_SAFETY
+    auto thread_safety = new ThreadSafety;
+    // TODO:  Initialize child objects with parent info thru constuctor taking a parent object
+    thread_safety->container_type = LayerObjectTypeThreading;
+    thread_safety->physical_device = gpu;
+    thread_safety->instance = instance_interceptor->instance;
+    thread_safety->report_data = device_interceptor->report_data;
+    thread_safety->device_dispatch_table = device_interceptor->device_dispatch_table;
+    thread_safety->api_version = device_interceptor->api_version;
+    device_interceptor->object_dispatch.emplace_back(thread_safety);
+#endif
+#if BUILD_PARAMETER_VALIDATION
+    auto stateless_validation = new StatelessValidation;
+    // TODO:  Initialize child objects with parent info thru constuctor taking a parent object
+    stateless_validation->container_type = LayerObjectTypeParameterValidation;
+    stateless_validation->physical_device = gpu;
+    stateless_validation->instance = instance_interceptor->instance;
+    stateless_validation->report_data = device_interceptor->report_data;
+    stateless_validation->device_dispatch_table = device_interceptor->device_dispatch_table;
+    stateless_validation->api_version = device_interceptor->api_version;
+    device_interceptor->object_dispatch.emplace_back(stateless_validation);
+#endif
 #if BUILD_OBJECT_TRACKER
     // Create child layer objects for this key and add to dispatch vector
     auto object_tracker = new ObjectLifetimes;
@@ -823,27 +876,8 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
     object_tracker->device_dispatch_table = device_interceptor->device_dispatch_table;
     object_tracker->api_version = device_interceptor->api_version;
     device_interceptor->object_dispatch.emplace_back(object_tracker);
-#elif BUILD_THREAD_SAFETY
-    auto thread_safety = new ThreadSafety;
-    // TODO:  Initialize child objects with parent info thru constuctor taking a parent object
-    thread_safety->container_type = LayerObjectTypeThreading;
-    thread_safety->physical_device = gpu;
-    thread_safety->instance = instance_interceptor->instance;
-    thread_safety->report_data = device_interceptor->report_data;
-    thread_safety->device_dispatch_table = device_interceptor->device_dispatch_table;
-    thread_safety->api_version = device_interceptor->api_version;
-    device_interceptor->object_dispatch.emplace_back(thread_safety);
-#elif BUILD_PARAMETER_VALIDATION
-    auto stateless_validation = new StatelessValidation;
-    // TODO:  Initialize child objects with parent info thru constuctor taking a parent object
-    stateless_validation->container_type = LayerObjectTypeParameterValidation;
-    stateless_validation->physical_device = gpu;
-    stateless_validation->instance = instance_interceptor->instance;
-    stateless_validation->report_data = device_interceptor->report_data;
-    stateless_validation->device_dispatch_table = device_interceptor->device_dispatch_table;
-    stateless_validation->api_version = device_interceptor->api_version;
-    device_interceptor->object_dispatch.emplace_back(stateless_validation);
-#elif BUILD_CORE_VALIDATION
+#endif
+#if BUILD_CORE_VALIDATION
     auto core_checks = new CoreChecks;
     // TODO:  Initialize child objects with parent info thru constuctor taking a parent object
     core_checks->container_type = LayerObjectTypeCoreValidation;
