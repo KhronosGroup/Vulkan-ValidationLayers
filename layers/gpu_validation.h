@@ -27,12 +27,9 @@
 // The interface allows the caller to "get" and "put back" blocks.
 // The manager allocates and frees chunks as needed.
 
-class CoreChecks;
-typedef CoreChecks layer_data;
-
 class GpuDeviceMemoryManager {
    public:
-    GpuDeviceMemoryManager(layer_data *dev_data, uint32_t data_size);
+    GpuDeviceMemoryManager(CoreChecks *dev_data, uint32_t data_size);
     ~GpuDeviceMemoryManager();
 
     uint32_t GetBlockSize() { return block_size_; }
@@ -55,7 +52,7 @@ class GpuDeviceMemoryManager {
         std::vector<uint32_t> available_offsets;
     };
 
-    layer_data *dev_data_;
+    CoreChecks *dev_data_;
     uint32_t record_size_;
     uint32_t block_size_;
     uint32_t blocks_per_chunk_;
@@ -71,7 +68,7 @@ class GpuDeviceMemoryManager {
 // as needed to satisfy requests for descriptor sets.
 class GpuDescriptorSetManager {
    public:
-    GpuDescriptorSetManager(layer_data *dev_data);
+    GpuDescriptorSetManager(CoreChecks *dev_data);
     ~GpuDescriptorSetManager();
 
     VkResult GetDescriptorSets(uint32_t count, VkDescriptorPool *pool, std::vector<VkDescriptorSet> *desc_sets);
@@ -85,7 +82,7 @@ class GpuDescriptorSetManager {
         uint32_t used;
     };
 
-    layer_data *dev_data_;
+    CoreChecks *dev_data_;
     std::unordered_map<VkDescriptorPool, struct PoolTracker> desc_pool_map_;
 };
 

@@ -30,9 +30,6 @@
 #include <algorithm>
 #include <bitset>
 
-class CoreChecks;
-typedef CoreChecks layer_data;
-
 uint32_t FullMipChainLevels(uint32_t height, uint32_t width = 1, uint32_t depth = 1);
 uint32_t FullMipChainLevels(VkExtent3D);
 uint32_t FullMipChainLevels(VkExtent2D);

@@ -49,10 +49,6 @@
 #include "android_ndk_types.h"
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
 
-class CoreChecks;
-typedef CoreChecks layer_data;
-typedef CoreChecks instance_layer_data;
-
 // Fwd declarations -- including descriptor_set.h creates an ugly include loop
 namespace cvdescriptorset {
 class DescriptorSetLayoutDef;
@@ -1149,6 +1145,8 @@ enum BarrierOperationsType {
     kGeneral,     // Either no ownership operations or a mix of ownership operation types and/or non-ownership operations
 };
 
-std::shared_ptr<cvdescriptorset::DescriptorSetLayout const> const GetDescriptorSetLayout(layer_data const *, VkDescriptorSetLayout);
+class CoreChecks;
+
+std::shared_ptr<cvdescriptorset::DescriptorSetLayout const> const GetDescriptorSetLayout(CoreChecks const *, VkDescriptorSetLayout);
 
 #endif  // CORE_VALIDATION_TYPES_H_

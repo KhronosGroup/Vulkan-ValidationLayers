@@ -210,20 +210,6 @@ class CoreChecks : public ValidationObject {
     // Link for derived device objects back to their parent instance object
     CoreChecks* instance_state;
 
-    // Temporary object pointers
-    layer_data* device_data = this;
-    layer_data* instance_data = this;
-    layer_data* dev_data = this;
-    std::unordered_map<void*, layer_data*> layer_data_map;
-    std::unordered_map<void*, layer_data*> instance_layer_data_map;
-
-    dispatch_key get_dispatch_key(const void* object) { return nullptr; }
-
-    template <typename DATA_T>
-    DATA_T* GetLayerDataPtr(void* data_key, std::unordered_map<void*, DATA_T*>& layer_data_map) {
-        return this;
-    }
-
     DeviceFeatures enabled_features = {};
     // Device specific data
     VkPhysicalDeviceMemoryProperties phys_dev_mem_props = {};
