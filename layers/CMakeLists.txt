@@ -190,18 +190,45 @@ add_custom_target(VulkanVL_generate_chassis_files
                           layer_chassis_dispatch.cpp)
 set_target_properties(VulkanVL_generate_chassis_files PROPERTIES FOLDER ${LAYERS_HELPER_FOLDER})
 
+set(CHASSIS_LIBRARY_FILES
+    chassis.cpp
+    layer_chassis_dispatch.cpp)
+
+set(CORE_VALIDATION_LIBRARY_FILES
+    core_validation.cpp
+    convert_to_renderpass2.cpp
+    descriptor_sets.cpp
+    buffer_validation.cpp
+    shader_validation.cpp
+    gpu_validation.cpp
+    xxhash.c)
+
+set(OBJECT_LIFETIMES_LIBRARY_FILES
+    object_tracker.cpp
+    object_tracker.h
+    object_tracker_utils.cpp)
+
+set(THREAD_SAFETY_LIBRARY_FILES
+    thread_safety.cpp
+    thread_safety.h)
+
+set(STATELESS_VALIDATION_LIBRARY_FILES
+    parameter_validation.cpp
+    parameter_validation.h
+    parameter_validation_utils.cpp)
+
 # Inter-layer dependencies are temporarily necessary to serialize layer builds which avoids contention for common generated files
 if(BUILD_LAYERS)
-    AddVkLayer(core_validation "BUILD_CORE_VALIDATION" chassis.cpp layer_chassis_dispatch.cpp core_validation.cpp convert_to_renderpass2.cpp descriptor_sets.cpp buffer_validation.cpp shader_validation.cpp gpu_validation.cpp xxhash.c)
+    AddVkLayer(core_validation "BUILD_CORE_VALIDATION" ${CHASSIS_LIBRARY_FILES} ${CORE_VALIDATION_LIBRARY_FILES})
     add_dependencies(VkLayer_core_validation VulkanVL_generate_chassis_files)
-    AddVkLayer(object_lifetimes "BUILD_OBJECT_TRACKER" object_tracker.cpp object_tracker.h object_tracker_utils.cpp chassis.cpp layer_chassis_dispatch.cpp)
+    AddVkLayer(object_lifetimes "BUILD_OBJECT_TRACKER" ${CHASSIS_LIBRARY_FILES} ${OBJECT_LIFETIMES_LIBRARY_FILES})
     add_dependencies(VkLayer_object_lifetimes VkLayer_core_validation)
-    AddVkLayer(thread_safety "BUILD_THREAD_SAFETY" thread_safety.cpp thread_safety.h chassis.cpp layer_chassis_dispatch.cpp)
+    AddVkLayer(thread_safety "BUILD_THREAD_SAFETY" ${CHASSIS_LIBRARY_FILES} ${THREAD_SAFETY_LIBRARY_FILES})
     add_dependencies(VkLayer_thread_safety VkLayer_object_lifetimes)
-    AddVkLayer(unique_objects "LAYER_CHASSIS_CAN_WRAP_HANDLES" chassis.cpp layer_chassis_dispatch.cpp)
-    add_dependencies(VkLayer_unique_objects VkLayer_thread_safety)
-    AddVkLayer(stateless_validation "BUILD_PARAMETER_VALIDATION" parameter_validation.cpp parameter_validation.h parameter_validation_utils.cpp chassis.cpp layer_chassis_dispatch.cpp)
+    AddVkLayer(stateless_validation "BUILD_PARAMETER_VALIDATION" ${CHASSIS_LIBRARY_FILES} ${STATELESS_VALIDATION_LIBRARY_FILES})
     add_dependencies(VkLayer_stateless_validation VkLayer_unique_objects)
+    AddVkLayer(unique_objects "LAYER_CHASSIS_CAN_WRAP_HANDLES" ${CHASSIS_LIBRARY_FILES})
+    add_dependencies(VkLayer_unique_objects VkLayer_thread_safety)
 
     # Core validation has additional dependencies
     target_include_directories(VkLayer_core_validation PRIVATE ${GLSLANG_SPIRV_INCLUDE_DIR})
