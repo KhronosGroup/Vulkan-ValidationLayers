@@ -358,8 +358,8 @@ void CoreChecks::GpuPostCallRecordCreateDevice() {
             gpu_state->desc_set_bind_index);
 
     std::unique_ptr<GpuDeviceMemoryManager> memory_manager(
-        new GpuDeviceMemoryManager(dev_data, sizeof(uint32_t) * (spvtools::kInstMaxOutCnt + 1)));
-    std::unique_ptr<GpuDescriptorSetManager> desc_set_manager(new GpuDescriptorSetManager(dev_data));
+        new GpuDeviceMemoryManager(this, sizeof(uint32_t) * (spvtools::kInstMaxOutCnt + 1)));
+    std::unique_ptr<GpuDescriptorSetManager> desc_set_manager(new GpuDescriptorSetManager(this));
 
     // The descriptor indexing checks require only the first "output" binding.
     const VkDescriptorSetLayoutBinding debug_desc_layout_bindings[kNumBindingsInSet] = {

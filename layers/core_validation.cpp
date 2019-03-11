@@ -1237,12 +1237,12 @@ bool CoreChecks::ValidatePipelineLocked(std::vector<std::unique_ptr<PIPELINE_STA
             // This check is a superset of "VUID-VkGraphicsPipelineCreateInfo-flags-00724" and
             // "VUID-VkGraphicsPipelineCreateInfo-flags-00725"
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
-                            HandleToUint64(dev_data->device), kVUID_Core_DrawState_InvalidPipelineCreateState,
+                            HandleToUint64(device), kVUID_Core_DrawState_InvalidPipelineCreateState,
                             "Invalid Pipeline CreateInfo: exactly one of base pipeline index and handle must be specified");
         } else if (pPipeline->graphicsPipelineCI.basePipelineIndex != -1) {
             if (pPipeline->graphicsPipelineCI.basePipelineIndex >= pipelineIndex) {
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
-                                HandleToUint64(dev_data->device), "VUID-vkCreateGraphicsPipelines-flags-00720",
+                                HandleToUint64(device), "VUID-vkCreateGraphicsPipelines-flags-00720",
                                 "Invalid Pipeline CreateInfo: base pipeline must occur earlier in array than derivative pipeline.");
             } else {
                 pBasePipeline = pPipelines[pPipeline->graphicsPipelineCI.basePipelineIndex].get();
@@ -1253,7 +1253,7 @@ bool CoreChecks::ValidatePipelineLocked(std::vector<std::unique_ptr<PIPELINE_STA
 
         if (pBasePipeline && !(pBasePipeline->graphicsPipelineCI.flags & VK_PIPELINE_CREATE_ALLOW_DERIVATIVES_BIT)) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
-                            HandleToUint64(dev_data->device), kVUID_Core_DrawState_InvalidPipelineCreateState,
+                            HandleToUint64(device), kVUID_Core_DrawState_InvalidPipelineCreateState,
                             "Invalid Pipeline CreateInfo: base pipeline does not allow derivatives.");
         }
     }
@@ -1272,8 +1272,8 @@ bool CoreChecks::ValidatePipelineUnlocked(std::vector<std::unique_ptr<PIPELINE_S
     // emit errors for renderpass being invalid.
     auto subpass_desc = &pPipeline->rp_state->createInfo.pSubpasses[pPipeline->graphicsPipelineCI.subpass];
     if (pPipeline->graphicsPipelineCI.subpass >= pPipeline->rp_state->createInfo.subpassCount) {
-        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
-                        HandleToUint64(dev_data->device), "VUID-VkGraphicsPipelineCreateInfo-subpass-00759",
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
+                        "VUID-VkGraphicsPipelineCreateInfo-subpass-00759",
                         "Invalid Pipeline CreateInfo State: Subpass index %u is out of range for this renderpass (0..%u).",
                         pPipeline->graphicsPipelineCI.subpass, pPipeline->rp_state->createInfo.subpassCount - 1);
         subpass_desc = nullptr;
@@ -1283,8 +1283,8 @@ bool CoreChecks::ValidatePipelineUnlocked(std::vector<std::unique_ptr<PIPELINE_S
         const safe_VkPipelineColorBlendStateCreateInfo *color_blend_state = pPipeline->graphicsPipelineCI.pColorBlendState;
         if (color_blend_state->attachmentCount != subpass_desc->colorAttachmentCount) {
             skip |=
-                log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
-                        HandleToUint64(dev_data->device), "VUID-VkGraphicsPipelineCreateInfo-attachmentCount-00746",
+                log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
+                        "VUID-VkGraphicsPipelineCreateInfo-attachmentCount-00746",
                         "vkCreateGraphicsPipelines(): Render pass (%s) subpass %u has colorAttachmentCount of %u which doesn't "
                         "match the pColorBlendState->attachmentCount of %u.",
                         report_data->FormatHandle(pPipeline->rp_state->renderPass).c_str(), pPipeline->graphicsPipelineCI.subpass,
@@ -1299,11 +1299,10 @@ bool CoreChecks::ValidatePipelineUnlocked(std::vector<std::unique_ptr<PIPELINE_S
                     // only attachment state, so memcmp is best suited for the comparison
                     if (memcmp(static_cast<const void *>(pAttachments), static_cast<const void *>(&pAttachments[i]),
                                sizeof(pAttachments[0]))) {
-                        skip |=
-                            log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
-                                    HandleToUint64(dev_data->device), "VUID-VkPipelineColorBlendStateCreateInfo-pAttachments-00605",
-                                    "Invalid Pipeline CreateInfo: If independent blend feature not enabled, all elements of "
-                                    "pAttachments must be identical.");
+                        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
+                                        HandleToUint64(device), "VUID-VkPipelineColorBlendStateCreateInfo-pAttachments-00605",
+                                        "Invalid Pipeline CreateInfo: If independent blend feature not enabled, all elements of "
+                                        "pAttachments must be identical.");
                         break;
                     }
                 }
@@ -1311,8 +1310,8 @@ bool CoreChecks::ValidatePipelineUnlocked(std::vector<std::unique_ptr<PIPELINE_S
         }
         if (!enabled_features.core.logicOp && (pPipeline->graphicsPipelineCI.pColorBlendState->logicOpEnable != VK_FALSE)) {
             skip |=
-                log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
-                        HandleToUint64(dev_data->device), "VUID-VkPipelineColorBlendStateCreateInfo-logicOpEnable-00606",
+                log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
+                        "VUID-VkPipelineColorBlendStateCreateInfo-logicOpEnable-00606",
                         "Invalid Pipeline CreateInfo: If logic operations feature not enabled, logicOpEnable must be VK_FALSE.");
         }
         for (size_t i = 0; i < pPipeline->attachments.size(); i++) {
@@ -1321,13 +1320,13 @@ bool CoreChecks::ValidatePipelineUnlocked(std::vector<std::unique_ptr<PIPELINE_S
                 (pPipeline->attachments[i].srcColorBlendFactor == VK_BLEND_FACTOR_SRC1_ALPHA) ||
                 (pPipeline->attachments[i].srcColorBlendFactor == VK_BLEND_FACTOR_ONE_MINUS_SRC1_ALPHA)) {
                 if (!enabled_features.core.dualSrcBlend) {
-                    skip |= log_msg(
-                        report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
-                        HandleToUint64(dev_data->device), "VUID-VkPipelineColorBlendAttachmentState-srcColorBlendFactor-00608",
-                        "vkCreateGraphicsPipelines(): pPipelines[%d].pColorBlendState.pAttachments[" PRINTF_SIZE_T_SPECIFIER
-                        "].srcColorBlendFactor uses a dual-source blend factor (%d), but this device feature is not "
-                        "enabled.",
-                        pipelineIndex, i, pPipeline->attachments[i].srcColorBlendFactor);
+                    skip |=
+                        log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
+                                HandleToUint64(device), "VUID-VkPipelineColorBlendAttachmentState-srcColorBlendFactor-00608",
+                                "vkCreateGraphicsPipelines(): pPipelines[%d].pColorBlendState.pAttachments[" PRINTF_SIZE_T_SPECIFIER
+                                "].srcColorBlendFactor uses a dual-source blend factor (%d), but this device feature is not "
+                                "enabled.",
+                                pipelineIndex, i, pPipeline->attachments[i].srcColorBlendFactor);
                 }
             }
             if ((pPipeline->attachments[i].dstColorBlendFactor == VK_BLEND_FACTOR_SRC1_COLOR) ||
@@ -1335,13 +1334,13 @@ bool CoreChecks::ValidatePipelineUnlocked(std::vector<std::unique_ptr<PIPELINE_S
                 (pPipeline->attachments[i].dstColorBlendFactor == VK_BLEND_FACTOR_SRC1_ALPHA) ||
                 (pPipeline->attachments[i].dstColorBlendFactor == VK_BLEND_FACTOR_ONE_MINUS_SRC1_ALPHA)) {
                 if (!enabled_features.core.dualSrcBlend) {
-                    skip |= log_msg(
-                        report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
-                        HandleToUint64(dev_data->device), "VUID-VkPipelineColorBlendAttachmentState-dstColorBlendFactor-00609",
-                        "vkCreateGraphicsPipelines(): pPipelines[%d].pColorBlendState.pAttachments[" PRINTF_SIZE_T_SPECIFIER
-                        "].dstColorBlendFactor uses a dual-source blend factor (%d), but this device feature is not "
-                        "enabled.",
-                        pipelineIndex, i, pPipeline->attachments[i].dstColorBlendFactor);
+                    skip |=
+                        log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
+                                HandleToUint64(device), "VUID-VkPipelineColorBlendAttachmentState-dstColorBlendFactor-00609",
+                                "vkCreateGraphicsPipelines(): pPipelines[%d].pColorBlendState.pAttachments[" PRINTF_SIZE_T_SPECIFIER
+                                "].dstColorBlendFactor uses a dual-source blend factor (%d), but this device feature is not "
+                                "enabled.",
+                                pipelineIndex, i, pPipeline->attachments[i].dstColorBlendFactor);
                 }
             }
             if ((pPipeline->attachments[i].srcAlphaBlendFactor == VK_BLEND_FACTOR_SRC1_COLOR) ||
@@ -1349,13 +1348,13 @@ bool CoreChecks::ValidatePipelineUnlocked(std::vector<std::unique_ptr<PIPELINE_S
                 (pPipeline->attachments[i].srcAlphaBlendFactor == VK_BLEND_FACTOR_SRC1_ALPHA) ||
                 (pPipeline->attachments[i].srcAlphaBlendFactor == VK_BLEND_FACTOR_ONE_MINUS_SRC1_ALPHA)) {
                 if (!enabled_features.core.dualSrcBlend) {
-                    skip |= log_msg(
-                        report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
-                        HandleToUint64(dev_data->device), "VUID-VkPipelineColorBlendAttachmentState-srcAlphaBlendFactor-00610",
-                        "vkCreateGraphicsPipelines(): pPipelines[%d].pColorBlendState.pAttachments[" PRINTF_SIZE_T_SPECIFIER
-                        "].srcAlphaBlendFactor uses a dual-source blend factor (%d), but this device feature is not "
-                        "enabled.",
-                        pipelineIndex, i, pPipeline->attachments[i].srcAlphaBlendFactor);
+                    skip |=
+                        log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
+                                HandleToUint64(device), "VUID-VkPipelineColorBlendAttachmentState-srcAlphaBlendFactor-00610",
+                                "vkCreateGraphicsPipelines(): pPipelines[%d].pColorBlendState.pAttachments[" PRINTF_SIZE_T_SPECIFIER
+                                "].srcAlphaBlendFactor uses a dual-source blend factor (%d), but this device feature is not "
+                                "enabled.",
+                                pipelineIndex, i, pPipeline->attachments[i].srcAlphaBlendFactor);
                 }
             }
             if ((pPipeline->attachments[i].dstAlphaBlendFactor == VK_BLEND_FACTOR_SRC1_COLOR) ||
@@ -1363,13 +1362,13 @@ bool CoreChecks::ValidatePipelineUnlocked(std::vector<std::unique_ptr<PIPELINE_S
                 (pPipeline->attachments[i].dstAlphaBlendFactor == VK_BLEND_FACTOR_SRC1_ALPHA) ||
                 (pPipeline->attachments[i].dstAlphaBlendFactor == VK_BLEND_FACTOR_ONE_MINUS_SRC1_ALPHA)) {
                 if (!enabled_features.core.dualSrcBlend) {
-                    skip |= log_msg(
-                        report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
-                        HandleToUint64(dev_data->device), "VUID-VkPipelineColorBlendAttachmentState-dstAlphaBlendFactor-00611",
-                        "vkCreateGraphicsPipelines(): pPipelines[%d].pColorBlendState.pAttachments[" PRINTF_SIZE_T_SPECIFIER
-                        "].dstAlphaBlendFactor uses a dual-source blend factor (%d), but this device feature is not "
-                        "enabled.",
-                        pipelineIndex, i, pPipeline->attachments[i].dstAlphaBlendFactor);
+                    skip |=
+                        log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
+                                HandleToUint64(device), "VUID-VkPipelineColorBlendAttachmentState-dstAlphaBlendFactor-00611",
+                                "vkCreateGraphicsPipelines(): pPipelines[%d].pColorBlendState.pAttachments[" PRINTF_SIZE_T_SPECIFIER
+                                "].dstAlphaBlendFactor uses a dual-source blend factor (%d), but this device feature is not "
+                                "enabled.",
+                                pipelineIndex, i, pPipeline->attachments[i].dstAlphaBlendFactor);
                 }
             }
         }
@@ -1383,7 +1382,7 @@ bool CoreChecks::ValidatePipelineUnlocked(std::vector<std::unique_ptr<PIPELINE_S
         for (uint32_t stage = VK_SHADER_STAGE_VERTEX_BIT; stage & VK_SHADER_STAGE_ALL_GRAPHICS; stage <<= 1) {
             if (pPipeline->duplicate_shaders & stage) {
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
-                                HandleToUint64(dev_data->device), kVUID_Core_DrawState_InvalidPipelineCreateState,
+                                HandleToUint64(device), kVUID_Core_DrawState_InvalidPipelineCreateState,
                                 "Invalid Pipeline CreateInfo State: Multiple shaders provided for stage %s",
                                 string_VkShaderStageFlagBits(VkShaderStageFlagBits(stage)));
             }
@@ -1393,7 +1392,7 @@ bool CoreChecks::ValidatePipelineUnlocked(std::vector<std::unique_ptr<PIPELINE_S
         // VS or mesh is required
         if (!(pPipeline->active_shaders & (VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_MESH_BIT_NV))) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
-                            HandleToUint64(dev_data->device), "VUID-VkGraphicsPipelineCreateInfo-stage-02096",
+                            HandleToUint64(device), "VUID-VkGraphicsPipelineCreateInfo-stage-02096",
                             "Invalid Pipeline CreateInfo State: Vertex Shader or Mesh Shader required.");
         }
         // Can't mix mesh and VTG
@@ -1402,7 +1401,7 @@ bool CoreChecks::ValidatePipelineUnlocked(std::vector<std::unique_ptr<PIPELINE_S
              (VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT |
               VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT))) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
-                            HandleToUint64(dev_data->device), "VUID-VkGraphicsPipelineCreateInfo-pStages-02095",
+                            HandleToUint64(device), "VUID-VkGraphicsPipelineCreateInfo-pStages-02095",
                             "Invalid Pipeline CreateInfo State: Geometric shader stages must either be all mesh (mesh | task) "
                             "or all VTG (vertex, tess control, tess eval, geom).");
         }
@@ -1410,20 +1409,20 @@ bool CoreChecks::ValidatePipelineUnlocked(std::vector<std::unique_ptr<PIPELINE_S
         // VS is required
         if (!(pPipeline->active_shaders & VK_SHADER_STAGE_VERTEX_BIT)) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
-                            HandleToUint64(dev_data->device), "VUID-VkGraphicsPipelineCreateInfo-stage-00727",
+                            HandleToUint64(device), "VUID-VkGraphicsPipelineCreateInfo-stage-00727",
                             "Invalid Pipeline CreateInfo State: Vertex Shader required.");
         }
     }
 
     if (!enabled_features.mesh_shader.meshShader && (pPipeline->active_shaders & VK_SHADER_STAGE_MESH_BIT_NV)) {
-        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
-                        HandleToUint64(dev_data->device), "VUID-VkPipelineShaderStageCreateInfo-stage-02091",
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
+                        "VUID-VkPipelineShaderStageCreateInfo-stage-02091",
                         "Invalid Pipeline CreateInfo State: Mesh Shader not supported.");
     }
 
     if (!enabled_features.mesh_shader.taskShader && (pPipeline->active_shaders & VK_SHADER_STAGE_TASK_BIT_NV)) {
-        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
-                        HandleToUint64(dev_data->device), "VUID-VkPipelineShaderStageCreateInfo-stage-02092",
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
+                        "VUID-VkPipelineShaderStageCreateInfo-stage-02092",
                         "Invalid Pipeline CreateInfo State: Task Shader not supported.");
     }
 
@@ -1431,25 +1430,25 @@ bool CoreChecks::ValidatePipelineUnlocked(std::vector<std::unique_ptr<PIPELINE_S
     bool has_control = (pPipeline->active_shaders & VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT) != 0;
     bool has_eval = (pPipeline->active_shaders & VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT) != 0;
     if (has_control && !has_eval) {
-        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
-                        HandleToUint64(dev_data->device), "VUID-VkGraphicsPipelineCreateInfo-pStages-00729",
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
+                        "VUID-VkGraphicsPipelineCreateInfo-pStages-00729",
                         "Invalid Pipeline CreateInfo State: TE and TC shaders must be included or excluded as a pair.");
     }
     if (!has_control && has_eval) {
-        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
-                        HandleToUint64(dev_data->device), "VUID-VkGraphicsPipelineCreateInfo-pStages-00730",
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
+                        "VUID-VkGraphicsPipelineCreateInfo-pStages-00730",
                         "Invalid Pipeline CreateInfo State: TE and TC shaders must be included or excluded as a pair.");
     }
     // Compute shaders should be specified independent of Gfx shaders
     if (pPipeline->active_shaders & VK_SHADER_STAGE_COMPUTE_BIT) {
-        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
-                        HandleToUint64(dev_data->device), "VUID-VkGraphicsPipelineCreateInfo-stage-00728",
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
+                        "VUID-VkGraphicsPipelineCreateInfo-stage-00728",
                         "Invalid Pipeline CreateInfo State: Do not specify Compute Shader for Gfx Pipeline.");
     }
 
     if ((pPipeline->active_shaders & VK_SHADER_STAGE_VERTEX_BIT) && !pPipeline->graphicsPipelineCI.pInputAssemblyState) {
-        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
-                        HandleToUint64(dev_data->device), "VUID-VkGraphicsPipelineCreateInfo-pStages-02098",
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
+                        "VUID-VkGraphicsPipelineCreateInfo-pStages-02098",
                         "Invalid Pipeline CreateInfo State: Missing pInputAssemblyState.");
     }
 
@@ -1458,8 +1457,8 @@ bool CoreChecks::ValidatePipelineUnlocked(std::vector<std::unique_ptr<PIPELINE_S
     if (has_control && has_eval &&
         (!pPipeline->graphicsPipelineCI.pInputAssemblyState ||
          pPipeline->graphicsPipelineCI.pInputAssemblyState->topology != VK_PRIMITIVE_TOPOLOGY_PATCH_LIST)) {
-        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
-                        HandleToUint64(dev_data->device), "VUID-VkGraphicsPipelineCreateInfo-pStages-00736",
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
+                        "VUID-VkGraphicsPipelineCreateInfo-pStages-00736",
                         "Invalid Pipeline CreateInfo State: VK_PRIMITIVE_TOPOLOGY_PATCH_LIST must be set as IA topology for "
                         "tessellation pipelines.");
     }
@@ -1467,7 +1466,7 @@ bool CoreChecks::ValidatePipelineUnlocked(std::vector<std::unique_ptr<PIPELINE_S
         pPipeline->graphicsPipelineCI.pInputAssemblyState->topology == VK_PRIMITIVE_TOPOLOGY_PATCH_LIST) {
         if (!has_control || !has_eval) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
-                            HandleToUint64(dev_data->device), "VUID-VkGraphicsPipelineCreateInfo-topology-00737",
+                            HandleToUint64(device), "VUID-VkGraphicsPipelineCreateInfo-topology-00737",
                             "Invalid Pipeline CreateInfo State: VK_PRIMITIVE_TOPOLOGY_PATCH_LIST primitive topology is only valid "
                             "for tessellation pipelines.");
         }
@@ -1478,7 +1477,7 @@ bool CoreChecks::ValidatePipelineUnlocked(std::vector<std::unique_ptr<PIPELINE_S
         if ((pPipeline->graphicsPipelineCI.pRasterizationState->depthClampEnable == VK_TRUE) &&
             (!enabled_features.core.depthClamp)) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
-                            HandleToUint64(dev_data->device), "VUID-VkPipelineRasterizationStateCreateInfo-depthClampEnable-00782",
+                            HandleToUint64(device), "VUID-VkPipelineRasterizationStateCreateInfo-depthClampEnable-00782",
                             "vkCreateGraphicsPipelines(): the depthClamp device feature is disabled: the depthClampEnable member "
                             "of the VkPipelineRasterizationStateCreateInfo structure must be set to VK_FALSE.");
         }
@@ -1486,7 +1485,7 @@ bool CoreChecks::ValidatePipelineUnlocked(std::vector<std::unique_ptr<PIPELINE_S
         if (!IsDynamic(pPipeline, VK_DYNAMIC_STATE_DEPTH_BIAS) &&
             (pPipeline->graphicsPipelineCI.pRasterizationState->depthBiasClamp != 0.0) && (!enabled_features.core.depthBiasClamp)) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
-                            HandleToUint64(dev_data->device), kVUID_Core_DrawState_InvalidFeature,
+                            HandleToUint64(device), kVUID_Core_DrawState_InvalidFeature,
                             "vkCreateGraphicsPipelines(): the depthBiasClamp device feature is disabled: the depthBiasClamp member "
                             "of the VkPipelineRasterizationStateCreateInfo structure must be set to 0.0 unless the "
                             "VK_DYNAMIC_STATE_DEPTH_BIAS dynamic state is enabled");
@@ -1496,31 +1495,29 @@ bool CoreChecks::ValidatePipelineUnlocked(std::vector<std::unique_ptr<PIPELINE_S
         if (pPipeline->graphicsPipelineCI.pRasterizationState->rasterizerDiscardEnable == VK_FALSE) {
             if ((pPipeline->graphicsPipelineCI.pMultisampleState->alphaToOneEnable == VK_TRUE) &&
                 (!enabled_features.core.alphaToOne)) {
-                skip |=
-                    log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
-                            HandleToUint64(dev_data->device), "VUID-VkPipelineMultisampleStateCreateInfo-alphaToOneEnable-00785",
-                            "vkCreateGraphicsPipelines(): the alphaToOne device feature is disabled: the alphaToOneEnable "
-                            "member of the VkPipelineMultisampleStateCreateInfo structure must be set to VK_FALSE.");
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
+                                HandleToUint64(device), "VUID-VkPipelineMultisampleStateCreateInfo-alphaToOneEnable-00785",
+                                "vkCreateGraphicsPipelines(): the alphaToOne device feature is disabled: the alphaToOneEnable "
+                                "member of the VkPipelineMultisampleStateCreateInfo structure must be set to VK_FALSE.");
             }
 
             // If subpass uses a depth/stencil attachment, pDepthStencilState must be a pointer to a valid structure
             if (subpass_desc && subpass_desc->pDepthStencilAttachment &&
                 subpass_desc->pDepthStencilAttachment->attachment != VK_ATTACHMENT_UNUSED) {
                 if (!pPipeline->graphicsPipelineCI.pDepthStencilState) {
-                    skip |=
-                        log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
-                                HandleToUint64(dev_data->device), "VUID-VkGraphicsPipelineCreateInfo-rasterizerDiscardEnable-00752",
-                                "Invalid Pipeline CreateInfo State: pDepthStencilState is NULL when rasterization is enabled "
-                                "and subpass uses a depth/stencil attachment.");
+                    skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
+                                    HandleToUint64(device), "VUID-VkGraphicsPipelineCreateInfo-rasterizerDiscardEnable-00752",
+                                    "Invalid Pipeline CreateInfo State: pDepthStencilState is NULL when rasterization is enabled "
+                                    "and subpass uses a depth/stencil attachment.");
 
                 } else if ((pPipeline->graphicsPipelineCI.pDepthStencilState->depthBoundsTestEnable == VK_TRUE) &&
                            (!enabled_features.core.depthBounds)) {
-                    skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
-                                    HandleToUint64(dev_data->device),
-                                    "VUID-VkPipelineDepthStencilStateCreateInfo-depthBoundsTestEnable-00598",
-                                    "vkCreateGraphicsPipelines(): the depthBounds device feature is disabled: the "
-                                    "depthBoundsTestEnable member of the VkPipelineDepthStencilStateCreateInfo structure must be "
-                                    "set to VK_FALSE.");
+                    skip |=
+                        log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
+                                HandleToUint64(device), "VUID-VkPipelineDepthStencilStateCreateInfo-depthBoundsTestEnable-00598",
+                                "vkCreateGraphicsPipelines(): the depthBounds device feature is disabled: the "
+                                "depthBoundsTestEnable member of the VkPipelineDepthStencilStateCreateInfo structure must be "
+                                "set to VK_FALSE.");
                 }
             }
 
@@ -1533,19 +1530,18 @@ bool CoreChecks::ValidatePipelineUnlocked(std::vector<std::unique_ptr<PIPELINE_S
                     }
                 }
                 if (color_attachment_count > 0 && pPipeline->graphicsPipelineCI.pColorBlendState == nullptr) {
-                    skip |=
-                        log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
-                                HandleToUint64(dev_data->device), "VUID-VkGraphicsPipelineCreateInfo-rasterizerDiscardEnable-00753",
-                                "Invalid Pipeline CreateInfo State: pColorBlendState is NULL when rasterization is enabled and "
-                                "subpass uses color attachments.");
+                    skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
+                                    HandleToUint64(device), "VUID-VkGraphicsPipelineCreateInfo-rasterizerDiscardEnable-00753",
+                                    "Invalid Pipeline CreateInfo State: pColorBlendState is NULL when rasterization is enabled and "
+                                    "subpass uses color attachments.");
                 }
             }
         }
     }
 
     if ((pPipeline->active_shaders & VK_SHADER_STAGE_VERTEX_BIT) && !pPipeline->graphicsPipelineCI.pVertexInputState) {
-        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
-                        HandleToUint64(dev_data->device), "VUID-VkGraphicsPipelineCreateInfo-pStages-02097",
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
+                        "VUID-VkGraphicsPipelineCreateInfo-pStages-02097",
                         "Invalid Pipeline CreateInfo State: Missing pVertexInputState.");
     }
 
@@ -1555,11 +1551,11 @@ bool CoreChecks::ValidatePipelineUnlocked(std::vector<std::unique_ptr<PIPELINE_S
             VkFormat format = vi->pVertexAttributeDescriptions[j].format;
             // Internal call to get format info.  Still goes through layers, could potentially go directly to ICD.
             VkFormatProperties properties;
-            instance_dispatch_table.GetPhysicalDeviceFormatProperties(dev_data->physical_device, format, &properties);
+            instance_dispatch_table.GetPhysicalDeviceFormatProperties(physical_device, format, &properties);
             if ((properties.bufferFeatures & VK_FORMAT_FEATURE_VERTEX_BUFFER_BIT) == 0) {
                 skip |=
                     log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
-                            HandleToUint64(dev_data->device), "VUID-VkVertexInputAttributeDescription-format-00623",
+                            HandleToUint64(device), "VUID-VkVertexInputAttributeDescription-format-00623",
                             "vkCreateGraphicsPipelines: pCreateInfo[%d].pVertexInputState->vertexAttributeDescriptions[%d].format "
                             "(%s) is not a supported vertex buffer format.",
                             pipelineIndex, j, string_VkFormat(format));
@@ -1591,7 +1587,7 @@ bool CoreChecks::ValidatePipelineUnlocked(std::vector<std::unique_ptr<PIPELINE_S
         // Only validate the value of subpass_num_samples if the subpass has attachments that are not VK_ATTACHMENT_UNUSED.
         if (subpass_num_samples && (!IsPowerOfTwo(subpass_num_samples) || (subpass_num_samples != raster_samples))) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
-                            HandleToUint64(dev_data->device), "VUID-VkGraphicsPipelineCreateInfo-subpass-00757",
+                            HandleToUint64(device), "VUID-VkGraphicsPipelineCreateInfo-subpass-00757",
                             "vkCreateGraphicsPipelines: pCreateInfo[%d].pMultisampleState->rasterizationSamples (%u) "
                             "does not match the number of samples of the RenderPass color and/or depth attachment.",
                             pipelineIndex, raster_samples);
@@ -1615,7 +1611,7 @@ bool CoreChecks::ValidatePipelineUnlocked(std::vector<std::unique_ptr<PIPELINE_S
         if ((pPipeline->graphicsPipelineCI.pRasterizationState->rasterizerDiscardEnable == VK_FALSE) &&
             (pPipeline->graphicsPipelineCI.pMultisampleState->rasterizationSamples != max_sample_count)) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
-                            HandleToUint64(dev_data->device), "VUID-VkGraphicsPipelineCreateInfo-subpass-01505",
+                            HandleToUint64(device), "VUID-VkGraphicsPipelineCreateInfo-subpass-01505",
                             "vkCreateGraphicsPipelines: pCreateInfo[%d].pMultisampleState->rasterizationSamples (%s) != max "
                             "attachment samples (%s) used in subpass %u.",
                             pipelineIndex,
@@ -1642,7 +1638,7 @@ bool CoreChecks::ValidatePipelineUnlocked(std::vector<std::unique_ptr<PIPELINE_S
 
                 if (ds_test_enabled && (!IsPowerOfTwo(subpass_depth_samples) || (raster_samples != subpass_depth_samples))) {
                     skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
-                                    HandleToUint64(dev_data->device), "VUID-VkGraphicsPipelineCreateInfo-subpass-01411",
+                                    HandleToUint64(device), "VUID-VkGraphicsPipelineCreateInfo-subpass-01411",
                                     "vkCreateGraphicsPipelines: pCreateInfo[%d].pMultisampleState->rasterizationSamples (%u) "
                                     "does not match the number of samples of the RenderPass depth attachment (%u).",
                                     pipelineIndex, raster_samples, subpass_depth_samples);
@@ -1653,7 +1649,7 @@ bool CoreChecks::ValidatePipelineUnlocked(std::vector<std::unique_ptr<PIPELINE_S
         if (IsPowerOfTwo(subpass_color_samples)) {
             if (raster_samples < subpass_color_samples) {
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
-                                HandleToUint64(dev_data->device), "VUID-VkGraphicsPipelineCreateInfo-subpass-01412",
+                                HandleToUint64(device), "VUID-VkGraphicsPipelineCreateInfo-subpass-01412",
                                 "vkCreateGraphicsPipelines: pCreateInfo[%d].pMultisampleState->rasterizationSamples (%u) "
                                 "is not greater or equal to the number of samples of the RenderPass color attachment (%u).",
                                 pipelineIndex, raster_samples, subpass_color_samples);
@@ -1663,8 +1659,8 @@ bool CoreChecks::ValidatePipelineUnlocked(std::vector<std::unique_ptr<PIPELINE_S
                 if ((raster_samples > subpass_color_samples) &&
                     (pPipeline->graphicsPipelineCI.pMultisampleState->sampleShadingEnable == VK_TRUE)) {
                     skip |= log_msg(
-                        report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
-                        HandleToUint64(dev_data->device), "VUID-VkPipelineMultisampleStateCreateInfo-rasterizationSamples-01415",
+                        report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
+                        "VUID-VkPipelineMultisampleStateCreateInfo-rasterizationSamples-01415",
                         "vkCreateGraphicsPipelines: pCreateInfo[%d].pMultisampleState->sampleShadingEnable must be VK_FALSE when "
                         "pCreateInfo[%d].pMultisampleState->rasterizationSamples (%u) is greater than the number of samples of the "
                         "subpass color attachment (%u).",
@@ -1677,7 +1673,7 @@ bool CoreChecks::ValidatePipelineUnlocked(std::vector<std::unique_ptr<PIPELINE_S
                 if (coverage_modulation_state && (coverage_modulation_state->coverageModulationTableEnable == VK_TRUE)) {
                     if (coverage_modulation_state->coverageModulationTableCount != (raster_samples / subpass_color_samples)) {
                         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
-                                        HandleToUint64(dev_data->device),
+                                        HandleToUint64(device),
                                         "VUID-VkPipelineCoverageModulationStateCreateInfoNV-coverageModulationTableEnable-01405",
                                         "vkCreateGraphicsPipelines: pCreateInfos[%d] VkPipelineCoverageModulationStateCreateInfoNV "
                                         "coverageModulationTableCount of %u is invalid.",
@@ -1729,13 +1725,13 @@ bool CoreChecks::ValidatePipelineUnlocked(std::vector<std::unique_ptr<PIPELINE_S
             }
 
             if (!attachment_is_valid) {
-                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
-                                HandleToUint64(dev_data->device),
-                                "VUID-VkPipelineCoverageToColorStateCreateInfoNV-coverageToColorEnable-01404",
-                                "vkCreateGraphicsPipelines: pCreateInfos[%" PRId32
-                                "].pMultisampleState VkPipelineCoverageToColorStateCreateInfoNV "
-                                "coverageToColorLocation = %" PRIu32 " %s",
-                                pipelineIndex, coverage_to_color_state->coverageToColorLocation, error_detail.c_str());
+                skip |=
+                    log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
+                            HandleToUint64(device), "VUID-VkPipelineCoverageToColorStateCreateInfoNV-coverageToColorEnable-01404",
+                            "vkCreateGraphicsPipelines: pCreateInfos[%" PRId32
+                            "].pMultisampleState VkPipelineCoverageToColorStateCreateInfoNV "
+                            "coverageToColorLocation = %" PRIu32 " %s",
+                            pipelineIndex, coverage_to_color_state->coverageToColorLocation, error_detail.c_str());
             }
         }
     }
@@ -2353,7 +2349,7 @@ void CoreChecks::PostCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDevice
         }
     }
 
-    ValidationObject *device_object = ::GetLayerDataPtr(::get_dispatch_key(*pDevice), ::layer_data_map);
+    ValidationObject *device_object = GetLayerDataPtr(get_dispatch_key(*pDevice), layer_data_map);
     ValidationObject *validation_data = GetValidationObject(device_object->object_dispatch, LayerObjectTypeCoreValidation);
     CoreChecks *core_checks = static_cast<CoreChecks *>(validation_data);
 
@@ -3842,7 +3838,7 @@ void CoreChecks::RetireFence(VkFence fence) {
 bool CoreChecks::PreCallValidateWaitForFences(VkDevice device, uint32_t fenceCount, const VkFence *pFences, VkBool32 waitAll,
                                               uint64_t timeout) {
     // Verify fence status of submitted fences
-    if (device_data->instance_data->disabled.wait_for_fences) return false;
+    if (disabled.wait_for_fences) return false;
     bool skip = false;
     for (uint32_t i = 0; i < fenceCount; i++) {
         skip |= VerifyWaitFenceState(pFences[i], "vkWaitForFences");
@@ -4932,24 +4928,23 @@ bool CoreChecks::ValidatePipelineVertexDivisors(std::vector<std::unique_ptr<PIPE
             const VkVertexInputBindingDivisorDescriptionEXT *vibdd = &(pvids_ci->pVertexBindingDivisors[j]);
             if (vibdd->binding >= device_limits->maxVertexInputBindings) {
                 skip |= log_msg(
-                    report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
-                    HandleToUint64(dev_data->device), "VUID-VkVertexInputBindingDivisorDescriptionEXT-binding-01869",
+                    report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
+                    "VUID-VkVertexInputBindingDivisorDescriptionEXT-binding-01869",
                     "vkCreateGraphicsPipelines(): Pipeline[%1u] with chained VkPipelineVertexInputDivisorStateCreateInfoEXT, "
                     "pVertexBindingDivisors[%1u] binding index of (%1u) exceeds device maxVertexInputBindings (%1u).",
                     i, j, vibdd->binding, device_limits->maxVertexInputBindings);
             }
             if (vibdd->divisor > phys_dev_ext_props.vtx_attrib_divisor_props.maxVertexAttribDivisor) {
                 skip |= log_msg(
-                    report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
-                    HandleToUint64(dev_data->device), "VUID-VkVertexInputBindingDivisorDescriptionEXT-divisor-01870",
+                    report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
+                    "VUID-VkVertexInputBindingDivisorDescriptionEXT-divisor-01870",
                     "vkCreateGraphicsPipelines(): Pipeline[%1u] with chained VkPipelineVertexInputDivisorStateCreateInfoEXT, "
                     "pVertexBindingDivisors[%1u] divisor of (%1u) exceeds extension maxVertexAttribDivisor (%1u).",
                     i, j, vibdd->divisor, phys_dev_ext_props.vtx_attrib_divisor_props.maxVertexAttribDivisor);
             }
             if ((0 == vibdd->divisor) && !enabled_features.vtx_attrib_divisor_features.vertexAttributeInstanceRateZeroDivisor) {
                 skip |= log_msg(
-                    report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
-                    HandleToUint64(dev_data->device),
+                    report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
                     "VUID-VkVertexInputBindingDivisorDescriptionEXT-vertexAttributeInstanceRateZeroDivisor-02228",
                     "vkCreateGraphicsPipelines(): Pipeline[%1u] with chained VkPipelineVertexInputDivisorStateCreateInfoEXT, "
                     "pVertexBindingDivisors[%1u] divisor must not be 0 when vertexAttributeInstanceRateZeroDivisor feature is not "
@@ -4958,8 +4953,7 @@ bool CoreChecks::ValidatePipelineVertexDivisors(std::vector<std::unique_ptr<PIPE
             }
             if ((1 != vibdd->divisor) && !enabled_features.vtx_attrib_divisor_features.vertexAttributeInstanceRateDivisor) {
                 skip |= log_msg(
-                    report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
-                    HandleToUint64(dev_data->device),
+                    report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
                     "VUID-VkVertexInputBindingDivisorDescriptionEXT-vertexAttributeInstanceRateDivisor-02229",
                     "vkCreateGraphicsPipelines(): Pipeline[%1u] with chained VkPipelineVertexInputDivisorStateCreateInfoEXT, "
                     "pVertexBindingDivisors[%1u] divisor (%1u) must be 1 when vertexAttributeInstanceRateDivisor feature is not "
@@ -4978,8 +4972,8 @@ bool CoreChecks::ValidatePipelineVertexDivisors(std::vector<std::unique_ptr<PIPE
             }
             if (failed_01871) {  // Description not found, or has incorrect inputRate value
                 skip |= log_msg(
-                    report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
-                    HandleToUint64(dev_data->device), "VUID-VkVertexInputBindingDivisorDescriptionEXT-inputRate-01871",
+                    report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
+                    "VUID-VkVertexInputBindingDivisorDescriptionEXT-inputRate-01871",
                     "vkCreateGraphicsPipelines(): Pipeline[%1u] with chained VkPipelineVertexInputDivisorStateCreateInfoEXT, "
                     "pVertexBindingDivisors[%1u] specifies binding index (%1u), but that binding index's "
                     "VkVertexInputBindingDescription.inputRate member is not VK_VERTEX_INPUT_RATE_INSTANCE.",
@@ -5139,7 +5133,7 @@ void CoreChecks::PostCallRecordCreateSampler(VkDevice device, const VkSamplerCre
 bool CoreChecks::PreCallValidateCreateDescriptorSetLayout(VkDevice device, const VkDescriptorSetLayoutCreateInfo *pCreateInfo,
                                                           const VkAllocationCallbacks *pAllocator,
                                                           VkDescriptorSetLayout *pSetLayout) {
-    if (instance_data->disabled.create_descriptor_set_layout) return false;
+    if (disabled.create_descriptor_set_layout) return false;
     return cvdescriptorset::DescriptorSetLayout::ValidateCreateInfo(
         report_data, pCreateInfo, device_extensions.vk_khr_push_descriptor, phys_dev_ext_props.max_push_descriptors,
         device_extensions.vk_ext_descriptor_indexing, &enabled_features.descriptor_indexing, &enabled_features.inline_uniform_block,
@@ -5157,7 +5151,7 @@ void CoreChecks::PostCallRecordCreateDescriptorSetLayout(VkDevice device, const 
 // Note that the index argument is optional and only used by CreatePipelineLayout.
 bool CoreChecks::ValidatePushConstantRange(const uint32_t offset, const uint32_t size, const char *caller_name,
                                            uint32_t index = 0) {
-    if (instance_data->disabled.push_constant_range) return false;
+    if (disabled.push_constant_range) return false;
     uint32_t const maxPushConstantsSize = phys_dev_props.limits.maxPushConstantsSize;
     bool skip = false;
     // Check that offset + size don't exceed the max.
