@@ -1338,3 +1338,7 @@ VK_LAYER_EXPORT bool FormatSizesAreEqual(VkFormat srcFormat, VkFormat dstFormat,
         return (dstSize == srcSize);
     }
 }
+
+VK_LAYER_EXPORT bool FormatRequiresYcbcrConversion(VkFormat format) {
+    return format >= VK_FORMAT_G8B8G8R8_422_UNORM && format <= VK_FORMAT_G16_B16_R16_3PLANE_444_UNORM;
+}

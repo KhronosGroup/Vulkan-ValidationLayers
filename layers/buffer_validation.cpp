@@ -1410,6 +1410,15 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
                             pCreateInfo->arrayLayers, format_limits.maxArrayLayers);
         }
 
+        if (GetDeviceExtensions()->vk_khr_sampler_ycbcr_conversion && FormatRequiresYcbcrConversion(pCreateInfo->format) &&
+            !GetDeviceExtensions()->vk_ext_ycbcr_image_arrays && pCreateInfo->arrayLayers > 1) {
+            skip |= log_msg(
+                report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, 0,
+                "VUID-VkImageCreateInfo-format-02653",
+                "vkCreateImage(): arrayLayers=%d exceeds the maximum allowed of 1 for formats requiring sampler ycbcr conversion",
+                pCreateInfo->arrayLayers);
+        }
+
         if ((pCreateInfo->samples & format_limits.sampleCounts) == 0) {
             skip |=
                 log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, 0,
