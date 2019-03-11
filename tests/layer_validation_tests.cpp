@@ -8303,6 +8303,193 @@ TEST_F(VkLayerTest, PointSizeGeomShaderFailure) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(VkLayerTest, BuiltinBlockOrderMismatchVsGs) {
+    TEST_DESCRIPTION("Use different order of gl_Position and gl_PointSize in builtin block interface between VS and GS.");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    if (!m_device->phy().features().geometryShader) {
+        printf("%s Device does not support geometry shaders; Skipped.\n", kSkipPrefix);
+        return;
+    }
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "Builtin variable inside block doesn't match between");
+
+    ASSERT_NO_FATAL_FAILURE(InitViewport());
+    static const char *vsSource =
+        "#version 450\n"
+        "out gl_PerVertex\n"
+        "{\n"
+        "    vec4 gl_Position;\n"
+        "    float gl_PointSize;\n"
+        "};\n"
+        "void main() {\n"
+        "    gl_Position = vec4(1.0);\n"
+        "    gl_PointSize = 5.0;\n"
+        "}\n";
+
+    /*
+       Compiled using the GLSL code below. GlslangValidator rearranges the members, but here they are kept in the order provided.
+
+        #version 450
+        layout (points) in;
+        layout (points) out;
+        layout (max_vertices = 1) out;
+        in gl_PerVertex {
+            float gl_PointSize;
+            vec4 gl_Position;
+        } gl_in[];
+        void main() {
+            gl_Position = gl_in[0].gl_Position;
+            gl_PointSize = gl_in[0].gl_PointSize;
+            EmitVertex();
+        }
+    */
+    const std::string gsSource = R"(
+               OpCapability Geometry
+               OpCapability GeometryPointSize
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Geometry %main "main" %_ %gl_in
+               OpExecutionMode %main InputPoints
+               OpExecutionMode %main Invocations 1
+               OpExecutionMode %main OutputPoints
+               OpExecutionMode %main OutputVertices 1
+               OpSource GLSL 450
+               OpMemberDecorate %gl_PerVertex 0 BuiltIn Position
+               OpMemberDecorate %gl_PerVertex 1 BuiltIn PointSize
+               OpMemberDecorate %gl_PerVertex 2 BuiltIn ClipDistance
+               OpMemberDecorate %gl_PerVertex 3 BuiltIn CullDistance
+               OpDecorate %gl_PerVertex Block
+               OpMemberDecorate %gl_PerVertex_0 0 BuiltIn PointSize
+               OpMemberDecorate %gl_PerVertex_0 1 BuiltIn Position
+               OpDecorate %gl_PerVertex_0 Block
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+      %float = OpTypeFloat 32
+    %v4float = OpTypeVector %float 4
+       %uint = OpTypeInt 32 0
+     %uint_1 = OpConstant %uint 1
+%_arr_float_uint_1 = OpTypeArray %float %uint_1
+%gl_PerVertex = OpTypeStruct %v4float %float %_arr_float_uint_1 %_arr_float_uint_1
+%_ptr_Output_gl_PerVertex = OpTypePointer Output %gl_PerVertex
+          %_ = OpVariable %_ptr_Output_gl_PerVertex Output
+        %int = OpTypeInt 32 1
+      %int_0 = OpConstant %int 0
+%gl_PerVertex_0 = OpTypeStruct %float %v4float
+%_arr_gl_PerVertex_0_uint_1 = OpTypeArray %gl_PerVertex_0 %uint_1
+%_ptr_Input__arr_gl_PerVertex_0_uint_1 = OpTypePointer Input %_arr_gl_PerVertex_0_uint_1
+      %gl_in = OpVariable %_ptr_Input__arr_gl_PerVertex_0_uint_1 Input
+%_ptr_Input_v4float = OpTypePointer Input %v4float
+%_ptr_Output_v4float = OpTypePointer Output %v4float
+      %int_1 = OpConstant %int 1
+%_ptr_Input_float = OpTypePointer Input %float
+%_ptr_Output_float = OpTypePointer Output %float
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+         %21 = OpAccessChain %_ptr_Input_v4float %gl_in %int_0 %int_1
+         %22 = OpLoad %v4float %21
+         %24 = OpAccessChain %_ptr_Output_v4float %_ %int_0
+               OpStore %24 %22
+         %27 = OpAccessChain %_ptr_Input_float %gl_in %int_0 %int_0
+         %28 = OpLoad %float %27
+         %30 = OpAccessChain %_ptr_Output_float %_ %int_1
+               OpStore %30 %28
+               OpEmitVertex
+               OpReturn
+               OpFunctionEnd
+        )";
+
+    VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
+    VkShaderObj gs(m_device, gsSource, VK_SHADER_STAGE_GEOMETRY_BIT, this);
+    VkShaderObj ps(m_device, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+
+    VkPipelineObj pipelineobj(m_device);
+    pipelineobj.AddDefaultColorAttachment();
+    pipelineobj.AddShader(&vs);
+    pipelineobj.AddShader(&gs);
+    pipelineobj.AddShader(&ps);
+
+    VkPipelineInputAssemblyStateCreateInfo ia_state = {};
+    ia_state.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+    ia_state.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+    pipelineobj.SetInputAssembly(&ia_state);
+
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    m_commandBuffer->begin();
+    VkDescriptorSetObj descriptorSet(m_device);
+    descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
+    pipelineobj.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderPass());
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkLayerTest, BuiltinBlockSizeMismatchVsGs) {
+    TEST_DESCRIPTION("Use different number of elements in builtin block interface between VS and GS.");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    if (!m_device->phy().features().geometryShader) {
+        printf("%s Device does not support geometry shaders; Skipped.\n", kSkipPrefix);
+        return;
+    }
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                         "Number of elements inside builtin block differ between stages");
+
+    ASSERT_NO_FATAL_FAILURE(InitViewport());
+    static const char *vsSource =
+        "#version 450\n"
+        "out gl_PerVertex\n"
+        "{\n"
+        "    vec4 gl_Position;\n"
+        "    float gl_PointSize;\n"
+        "};\n"
+        "void main() {\n"
+        "    gl_Position = vec4(1.0);\n"
+        "    gl_PointSize = 5.0;\n"
+        "}\n";
+
+    static const char *gsSource =
+        "#version 450\n"
+        "layout (points) in;\n"
+        "layout (points) out;\n"
+        "layout (max_vertices = 1) out;\n"
+        "in gl_PerVertex\n"
+        "{\n"
+        "    vec4 gl_Position;\n"
+        "    float gl_PointSize;\n"
+        "    float gl_ClipDistance[];\n"
+        "} gl_in[];\n"
+        "void main()\n"
+        "{\n"
+        "    gl_Position = gl_in[0].gl_Position;\n"
+        "    gl_PointSize = gl_in[0].gl_PointSize;\n"
+        "    EmitVertex();\n"
+        "}\n";
+
+    VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
+    VkShaderObj gs(m_device, gsSource, VK_SHADER_STAGE_GEOMETRY_BIT, this);
+    VkShaderObj ps(m_device, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+
+    VkPipelineObj pipelineobj(m_device);
+    pipelineobj.AddDefaultColorAttachment();
+    pipelineobj.AddShader(&vs);
+    pipelineobj.AddShader(&gs);
+    pipelineobj.AddShader(&ps);
+
+    VkPipelineInputAssemblyStateCreateInfo ia_state = {};
+    ia_state.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+    ia_state.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+    pipelineobj.SetInputAssembly(&ia_state);
+
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    m_commandBuffer->begin();
+    VkDescriptorSetObj descriptorSet(m_device);
+    descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
+    pipelineobj.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderPass());
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(VkLayerTest, DynamicDepthBiasNotBound) {
     TEST_DESCRIPTION(
         "Run a simple draw calls to validate failure when Depth Bias dynamic state is required but not correctly bound.");
