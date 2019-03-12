@@ -26,6 +26,7 @@ VkTestFramework::~VkTestFramework() {}
 
 // Define static elements
 bool VkTestFramework::m_devsim_layer = false;
+bool VkTestFramework::m_khronos_layer = false;
 
 VkFormat VkTestFramework::GetFormat(VkInstance instance, vk_testing::Device *device) {
     VkFormatProperties format_props;
