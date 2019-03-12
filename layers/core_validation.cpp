@@ -11496,6 +11496,26 @@ bool CoreChecks::ValidateCreateSwapchain(const char *func_name, VkSwapchainCreat
                         func_name, pCreateInfo->imageUsage, capabilities.supportedUsageFlags))
                 return true;
         }
+
+        if (device_extensions.vk_khr_surface_protected_capabilities &&
+            (pCreateInfo->flags & VK_SWAPCHAIN_CREATE_PROTECTED_BIT_KHR)) {
+            VkPhysicalDeviceSurfaceInfo2KHR surfaceInfo = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SURFACE_INFO_2_KHR };
+            surfaceInfo.surface = pCreateInfo->surface;
+            VkSurfaceProtectedCapabilitiesKHR surfaceProtectedCapabilities = { VK_STRUCTURE_TYPE_SURFACE_PROTECTED_CAPABILITIES_KHR };
+            VkSurfaceCapabilities2KHR surfaceCapabilities = { VK_STRUCTURE_TYPE_SURFACE_CAPABILITIES_2_KHR };
+            surfaceCapabilities.pNext = &surfaceProtectedCapabilities;
+            DispatchGetPhysicalDeviceSurfaceCapabilities2KHR(physical_device_state->phys_device, &surfaceInfo,
+                                                             &surfaceCapabilities);
+
+            if (!surfaceProtectedCapabilities.supportsProtected) {
+                if (log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
+                            HandleToUint64(device), "VUID-VkSwapchainCreateInfoKHR-flags-03187",
+                            "%s: pCreateInfo->flags contains VK_SWAPCHAIN_CREATE_PROTECTED_BIT_KHR but the surface "
+                            "capabilities does not have VkSurfaceProtectedCapabilitiesKHR.supportsProtected set to VK_TRUE.",
+                            func_name))
+                    return true;
+            }
+        }
     }
 
     // Validate pCreateInfo values with the results of vkGetPhysicalDeviceSurfaceFormatsKHR():
