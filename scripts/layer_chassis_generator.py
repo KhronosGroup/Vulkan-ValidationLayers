@@ -292,7 +292,13 @@ struct CHECK_DISABLED {
     bool destroy_query_pool;
     bool get_query_pool_results;
     bool destroy_buffer;
-    bool shader_validation;  // Skip validation for shaders
+
+    bool object_tracking;           // Disable object lifetime validation
+    bool core_checks;               // Disable core validation checks
+    bool thread_safety;             // Disable thread safety validation
+    bool stateless_checks;          // Disable stateless validation checks
+    bool handle_wrapping;           // Disable unique handles/handle wrapping
+    bool shader_validation;         // Skip validation for shaders
 
     void SetAll(bool value) { std::fill(&command_buffer_state, &shader_validation + 1, value); }
 };
@@ -448,7 +454,7 @@ std::unordered_map<uint64_t, uint64_t> unique_id_mapping;
 #if defined(LAYER_CHASSIS_CAN_WRAP_HANDLES)
 bool wrap_handles = true;
 #else
-const bool wrap_handles = false;
+bool wrap_handles = false;
 #endif
 
 // Set layer name -- Khronos layer name overrides any other defined names
@@ -546,15 +552,31 @@ void SetDisabledFlags(ValidationObject *instance_data, const VkValidationFlagsEX
     }
 }
 
-void SetValidationFeatures(ValidationObject *instance_data, const VkValidationFeaturesEXT *val_features_struct) {
+void SetValidationFeatures(CHECK_DISABLED *disable_data, CHECK_ENABLED *enable_data,
+                           const VkValidationFeaturesEXT *val_features_struct) {
     for (uint32_t i = 0; i < val_features_struct->disabledValidationFeatureCount; ++i) {
         switch (val_features_struct->pDisabledValidationFeatures[i]) {
         case VK_VALIDATION_FEATURE_DISABLE_SHADERS_EXT:
-            instance_data->disabled.shader_validation = true;
+            disable_data->shader_validation = true;
+            break;
+        case VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT:
+            disable_data->thread_safety = true;
+            break;
+        case VK_VALIDATION_FEATURE_DISABLE_API_PARAMETERS_EXT:
+            disable_data->stateless_checks = true;
+            break;
+        case VK_VALIDATION_FEATURE_DISABLE_OBJECT_LIFETIMES_EXT:
+            disable_data->object_tracking = true;
+            break;
+        case VK_VALIDATION_FEATURE_DISABLE_CORE_CHECKS_EXT:
+            disable_data->core_checks = true;
+            break;
+        case VK_VALIDATION_FEATURE_DISABLE_UNIQUE_HANDLES_EXT:
+            disable_data->handle_wrapping = true;
             break;
         case VK_VALIDATION_FEATURE_DISABLE_ALL_EXT:
             // Set all disabled flags to true
-            instance_data->disabled.SetAll(true);
+            disable_data->SetAll(true);
             break;
         default:
             break;
@@ -563,10 +585,10 @@ void SetValidationFeatures(ValidationObject *instance_data, const VkValidationFe
     for (uint32_t i = 0; i < val_features_struct->enabledValidationFeatureCount; ++i) {
         switch (val_features_struct->pEnabledValidationFeatures[i]) {
         case VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT:
-            instance_data->enabled.gpu_validation = true;
+            enable_data->gpu_validation = true;
             break;
         case VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT:
-            instance_data->enabled.gpu_validation_reserve_binding_slot = true;
+            enable_data->gpu_validation_reserve_binding_slot = true;
             break;
         default:
             break;
@@ -643,34 +665,53 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
     uint32_t specified_version = (pCreateInfo->pApplicationInfo ? pCreateInfo->pApplicationInfo->apiVersion : VK_API_VERSION_1_0);
     uint32_t api_version = (specified_version < VK_API_VERSION_1_1) ? VK_API_VERSION_1_0 : VK_API_VERSION_1_1;
 
+    CHECK_ENABLED local_enables {};
+    CHECK_DISABLED local_disables {};
+    const auto *validation_features_ext = lvl_find_in_chain<VkValidationFeaturesEXT>(pCreateInfo->pNext);
+    if (validation_features_ext) {
+        SetValidationFeatures(&local_disables, &local_enables, validation_features_ext);
+    }
 
     // Create temporary dispatch vector for pre-calls until instance is created
     std::vector<ValidationObject*> local_object_dispatch;
     // Add VOs to dispatch vector. Order here will be the validation dispatch order!
 #if BUILD_THREAD_SAFETY
     auto thread_checker = new ThreadSafety;
-    local_object_dispatch.emplace_back(thread_checker);
+    if (!local_disables.thread_safety) {
+        local_object_dispatch.emplace_back(thread_checker);
+    }
     thread_checker->container_type = LayerObjectTypeThreading;
     thread_checker->api_version = api_version;
 #endif
 #if BUILD_PARAMETER_VALIDATION
     auto parameter_validation = new StatelessValidation;
-    local_object_dispatch.emplace_back(parameter_validation);
+    if (!local_disables.stateless_checks) {
+        local_object_dispatch.emplace_back(parameter_validation);
+    }
     parameter_validation->container_type = LayerObjectTypeParameterValidation;
     parameter_validation->api_version = api_version;
 #endif
 #if BUILD_OBJECT_TRACKER
     auto object_tracker = new ObjectLifetimes;
-    local_object_dispatch.emplace_back(object_tracker);
+    if (!local_disables.object_tracking) {
+        local_object_dispatch.emplace_back(object_tracker);
+    }
     object_tracker->container_type = LayerObjectTypeObjectTracker;
     object_tracker->api_version = api_version;
 #endif
 #if BUILD_CORE_VALIDATION
     auto core_checks = new CoreChecks;
-    local_object_dispatch.emplace_back(core_checks);
+    if (!local_disables.core_checks) {
+        local_object_dispatch.emplace_back(core_checks);
+    }
     core_checks->container_type = LayerObjectTypeCoreValidation;
     core_checks->api_version = api_version;
 #endif
+
+    // If handle wrapping is disabled via the ValidationFeatures extension, override build flag
+    if (local_disables.handle_wrapping) {
+        wrap_handles = false;
+    }
 
     // Init dispatch array and call registration functions
     for (auto intercept : local_object_dispatch) {
@@ -687,6 +728,8 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
 
     framework->object_dispatch = local_object_dispatch;
     framework->container_type = LayerObjectTypeInstance;
+    framework->disabled = local_disables;
+    framework->enabled = local_enables;
 
     framework->instance = *pInstance;
     layer_init_instance_dispatch_table(*pInstance, &framework->instance_dispatch_table, fpGetInstanceProcAddr);
@@ -699,10 +742,6 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
     const auto *validation_flags_ext = lvl_find_in_chain<VkValidationFlagsEXT>(pCreateInfo->pNext);
     if (validation_flags_ext) {
         SetDisabledFlags(framework, validation_flags_ext);
-    }
-    const auto *validation_features_ext = lvl_find_in_chain<VkValidationFeaturesEXT>(pCreateInfo->pNext);
-    if (validation_features_ext) {
-        SetValidationFeatures(framework, validation_features_ext);
     }
 
     layer_debug_messenger_actions(framework->report_data, framework->logging_messenger, pAllocator, OBJECT_LAYER_DESCRIPTION);
@@ -852,7 +891,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
     thread_safety->report_data = device_interceptor->report_data;
     thread_safety->device_dispatch_table = device_interceptor->device_dispatch_table;
     thread_safety->api_version = device_interceptor->api_version;
-    device_interceptor->object_dispatch.emplace_back(thread_safety);
+    if (!instance_interceptor->disabled.thread_safety) {
+        device_interceptor->object_dispatch.emplace_back(thread_safety);
+    }
 #endif
 #if BUILD_PARAMETER_VALIDATION
     auto stateless_validation = new StatelessValidation;
@@ -863,7 +904,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
     stateless_validation->report_data = device_interceptor->report_data;
     stateless_validation->device_dispatch_table = device_interceptor->device_dispatch_table;
     stateless_validation->api_version = device_interceptor->api_version;
-    device_interceptor->object_dispatch.emplace_back(stateless_validation);
+    if (!instance_interceptor->disabled.stateless_checks) {
+        device_interceptor->object_dispatch.emplace_back(stateless_validation);
+    }
 #endif
 #if BUILD_OBJECT_TRACKER
     // Create child layer objects for this key and add to dispatch vector
@@ -875,7 +918,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
     object_tracker->report_data = device_interceptor->report_data;
     object_tracker->device_dispatch_table = device_interceptor->device_dispatch_table;
     object_tracker->api_version = device_interceptor->api_version;
-    device_interceptor->object_dispatch.emplace_back(object_tracker);
+    if (!instance_interceptor->disabled.object_tracking) {
+        device_interceptor->object_dispatch.emplace_back(object_tracker);
+    }
 #endif
 #if BUILD_CORE_VALIDATION
     auto core_checks = new CoreChecks;
@@ -892,7 +937,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
     core_checks->instance_state = reinterpret_cast<CoreChecks *>(
         core_checks->GetValidationObject(instance_interceptor->object_dispatch, LayerObjectTypeCoreValidation));
     core_checks->device = *pDevice;
-    device_interceptor->object_dispatch.emplace_back(core_checks);
+    if (!instance_interceptor->disabled.core_checks) {
+        device_interceptor->object_dispatch.emplace_back(core_checks);
+    }
 #endif
 
     for (auto intercept : instance_interceptor->object_dispatch) {

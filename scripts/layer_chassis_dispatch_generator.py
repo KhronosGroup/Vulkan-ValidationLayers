@@ -1083,7 +1083,7 @@ VkResult DispatchSetDebugUtilsObjectNameEXT(ValidationObject *layer_data,
             self.appendSection('header_file', '#if defined(LAYER_CHASSIS_CAN_WRAP_HANDLES)')
             self.appendSection('header_file', 'extern bool wrap_handles;')
             self.appendSection('header_file', '#else')
-            self.appendSection('header_file', 'extern const bool wrap_handles;')
+            self.appendSection('header_file', 'extern bool wrap_handles;')
             self.appendSection('header_file', '#endif')
 
     # Now that the data is all collected and complete, generate and output the wrapping/unwrapping routines
