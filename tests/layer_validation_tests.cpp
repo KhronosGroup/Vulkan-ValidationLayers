@@ -1502,6 +1502,8 @@ TEST_F(VkLayerTest, ReservedParameter) {
 }
 
 TEST_F(VkLayerTest, DebugMarkerNameTest) {
+    TEST_DESCRIPTION("Ensure debug marker object names are printed in debug report output");
+
     ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
     if (DeviceExtensionSupported(gpu(), "VK_LAYER_LUNARG_core_validation", VK_EXT_DEBUG_MARKER_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_EXT_DEBUG_MARKER_EXTENSION_NAME);
@@ -1517,31 +1519,6 @@ TEST_F(VkLayerTest, DebugMarkerNameTest) {
         printf("%s Can't find fpvkDebugMarkerSetObjectNameEXT; skipped.\n", kSkipPrefix);
         return;
     }
-
-    VkEvent event_handle = VK_NULL_HANDLE;
-    VkEventCreateInfo event_info = {};
-    event_info.sType = VK_STRUCTURE_TYPE_EVENT_CREATE_INFO;
-    vkCreateEvent(device(), &event_info, NULL, &event_handle);
-    VkDebugMarkerObjectNameInfoEXT name_info = {};
-    name_info.sType = VK_STRUCTURE_TYPE_DEBUG_MARKER_OBJECT_NAME_INFO_EXT;
-    name_info.pNext = nullptr;
-    name_info.object = (uint64_t)event_handle;
-    name_info.objectType = VK_DEBUG_REPORT_OBJECT_TYPE_EVENT_EXT;
-    name_info.pObjectName = "UnimaginablyImprobableString";
-    fpvkDebugMarkerSetObjectNameEXT(device(), &name_info);
-
-    m_commandBuffer->begin();
-    vkCmdSetEvent(m_commandBuffer->handle(), event_handle, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
-    m_commandBuffer->end();
-    VkSubmitInfo submit_info = {};
-    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    submit_info.commandBufferCount = 1;
-    submit_info.pCommandBuffers = &m_commandBuffer->handle();
-    vkQueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "UnimaginablyImprobableString");
-    vkDestroyEvent(m_device->device(), event_handle, NULL);
-    m_errorMonitor->VerifyFound();
-    vkQueueWaitIdle(m_device->m_queue);
 
     VkBuffer buffer;
     VkDeviceMemory memory_1, memory_2;
@@ -1565,8 +1542,11 @@ TEST_F(VkLayerTest, DebugMarkerNameTest) {
     vkAllocateMemory(device(), &memory_allocate_info, nullptr, &memory_1);
     vkAllocateMemory(device(), &memory_allocate_info, nullptr, &memory_2);
 
+    VkDebugMarkerObjectNameInfoEXT name_info = {};
+    name_info.sType = VK_STRUCTURE_TYPE_DEBUG_MARKER_OBJECT_NAME_INFO_EXT;
+    name_info.pNext = nullptr;
     name_info.object = (uint64_t)memory_2;
-    name_info.objectType = VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT;
+    name_info.objectType = VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_MEMORY_EXT;
     name_info.pObjectName = memory_name.c_str();
     fpvkDebugMarkerSetObjectNameEXT(device(), &name_info);
 
@@ -1603,7 +1583,7 @@ TEST_F(VkLayerTest, DebugMarkerNameTest) {
     vkAllocateCommandBuffers(device(), &command_buffer_allocate_info, &commandBuffer);
 
     name_info.object = (uint64_t)commandBuffer;
-    name_info.objectType = VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT;
+    name_info.objectType = VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT;
     name_info.pObjectName = commandBuffer_name.c_str();
     fpvkDebugMarkerSetObjectNameEXT(device(), &name_info);
 
@@ -1630,7 +1610,8 @@ TEST_F(VkLayerTest, DebugMarkerNameTest) {
 }
 
 TEST_F(VkLayerTest, DebugUtilsNameTest) {
-    // Check for external semaphore instance extensions
+    TEST_DESCRIPTION("Ensure debug utils object names are printed in debug messenger output");
+
     if (InstanceExtensionSupported(VK_EXT_DEBUG_UTILS_EXTENSION_NAME)) {
         m_instance_extension_names.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     } else {
@@ -1647,45 +1628,93 @@ TEST_F(VkLayerTest, DebugUtilsNameTest) {
         return;
     }
 
-    VkEvent event_handle = VK_NULL_HANDLE;
-    VkEventCreateInfo event_info = {};
-    event_info.sType = VK_STRUCTURE_TYPE_EVENT_CREATE_INFO;
-    vkCreateEvent(device(), &event_info, NULL, &event_handle);
+    VkBuffer buffer;
+    VkDeviceMemory memory_1, memory_2;
+    std::string memory_name = "memory_name";
+
+    VkBufferCreateInfo buffer_create_info = {};
+    buffer_create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    buffer_create_info.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+    buffer_create_info.size = 1;
+
+    vkCreateBuffer(device(), &buffer_create_info, nullptr, &buffer);
+
+    VkMemoryRequirements memRequirements;
+    vkGetBufferMemoryRequirements(device(), buffer, &memRequirements);
+
+    VkMemoryAllocateInfo memory_allocate_info = {};
+    memory_allocate_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    memory_allocate_info.allocationSize = memRequirements.size;
+    memory_allocate_info.memoryTypeIndex = 0;
+
+    vkAllocateMemory(device(), &memory_allocate_info, nullptr, &memory_1);
+    vkAllocateMemory(device(), &memory_allocate_info, nullptr, &memory_2);
+
     VkDebugUtilsObjectNameInfoEXT name_info = {};
     name_info.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
     name_info.pNext = nullptr;
-    name_info.objectHandle = (uint64_t)event_handle;
-    name_info.objectType = VK_OBJECT_TYPE_EVENT;
-    name_info.pObjectName = "Popbutton_T_Bumfuzzle";
+    name_info.objectHandle = (uint64_t)memory_2;
+    name_info.objectType = VK_OBJECT_TYPE_DEVICE_MEMORY;
+    name_info.pObjectName = memory_name.c_str();
     fpvkSetDebugUtilsObjectNameEXT(device(), &name_info);
 
-    m_commandBuffer->begin();
-    vkCmdSetEvent(m_commandBuffer->handle(), event_handle, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
-    m_commandBuffer->end();
-    VkSubmitInfo submit_info = {};
-    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    submit_info.commandBufferCount = 1;
-    submit_info.pCommandBuffers = &m_commandBuffer->handle();
-    vkQueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
-    // Provoke an error from the core_validation layer
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "Popbutton_T_Bumfuzzle");
-    vkDestroyEvent(m_device->device(), event_handle, NULL);
-    m_errorMonitor->VerifyFound();
-    vkQueueWaitIdle(m_device->m_queue);
+    vkBindBufferMemory(device(), buffer, memory_1, 0);
 
-    // Provoke an error from the object tracker layer
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "Popbutton_T_Bumfuzzle");
-    vkDestroyEvent(m_device->device(), event_handle, NULL);
+    // Test core_validation layer
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, memory_name);
+    vkBindBufferMemory(device(), buffer, memory_2, 0);
     m_errorMonitor->VerifyFound();
 
-    // Change label for a given object, then provoke an error from core_validation and look for the new name
-    name_info.pObjectName = "A_Totally_Different_Name";
+    vkFreeMemory(device(), memory_1, nullptr);
+    memory_1 = VK_NULL_HANDLE;
+    vkFreeMemory(device(), memory_2, nullptr);
+    memory_2 = VK_NULL_HANDLE;
+    vkDestroyBuffer(device(), buffer, nullptr);
+    buffer = VK_NULL_HANDLE;
+
+    VkCommandBuffer commandBuffer;
+    std::string commandBuffer_name = "command_buffer_name";
+    VkCommandPool commandpool_1;
+    VkCommandPool commandpool_2;
+    VkCommandPoolCreateInfo pool_create_info{};
+    pool_create_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    pool_create_info.queueFamilyIndex = m_device->graphics_queue_node_index_;
+    pool_create_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+    vkCreateCommandPool(device(), &pool_create_info, nullptr, &commandpool_1);
+    vkCreateCommandPool(device(), &pool_create_info, nullptr, &commandpool_2);
+
+    VkCommandBufferAllocateInfo command_buffer_allocate_info{};
+    command_buffer_allocate_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    command_buffer_allocate_info.commandPool = commandpool_1;
+    command_buffer_allocate_info.commandBufferCount = 1;
+    command_buffer_allocate_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    vkAllocateCommandBuffers(device(), &command_buffer_allocate_info, &commandBuffer);
+
+    name_info.objectHandle = (uint64_t)commandBuffer;
+    name_info.objectType = VK_OBJECT_TYPE_COMMAND_BUFFER;
+    name_info.pObjectName = commandBuffer_name.c_str();
     fpvkSetDebugUtilsObjectNameEXT(device(), &name_info);
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "A_Totally_Different_Name");
-    vkDestroyEvent(m_device->device(), event_handle, NULL);
+
+    VkCommandBufferBeginInfo cb_begin_Info = {};
+    cb_begin_Info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    cb_begin_Info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+    vkBeginCommandBuffer(commandBuffer, &cb_begin_Info);
+
+    const VkRect2D scissor = {{-1, 0}, {16, 16}};
+    const VkRect2D scissors[] = {scissor, scissor};
+
+    // Test parameter_validation layer
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, commandBuffer_name);
+    vkCmdSetScissor(commandBuffer, 1, 1, scissors);
     m_errorMonitor->VerifyFound();
 
-    vkQueueWaitIdle(m_device->m_queue);
+    // Test object_tracker layer
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, commandBuffer_name);
+    vkFreeCommandBuffers(device(), commandpool_2, 1, &commandBuffer);
+    m_errorMonitor->VerifyFound();
+
+    vkDestroyCommandPool(device(), commandpool_1, NULL);
+    vkDestroyCommandPool(device(), commandpool_2, NULL);
 }
 
 TEST_F(VkLayerTest, InvalidStructSType) {
