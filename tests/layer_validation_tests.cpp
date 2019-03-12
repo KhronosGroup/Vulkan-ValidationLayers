@@ -27518,6 +27518,29 @@ TEST_F(VkLayerTest, SetDynViewportParamMultiviewportTests) {
 //
 // These tests do not expect to encounter ANY validation errors pass only if this is true
 
+TEST_F(VkPositiveLayerTest, StatelessValidationDisable) {
+    TEST_DESCRIPTION("Specify a non-zero value for a reserved parameter with stateless validation disabled");
+
+    VkValidationFeatureDisableEXT disables[] = {VK_VALIDATION_FEATURE_DISABLE_API_PARAMETERS_EXT};
+    VkValidationFeaturesEXT features = {};
+    features.sType = VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT;
+    features.disabledValidationFeatureCount = 1;
+    features.pDisabledValidationFeatures = disables;
+    VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+    ASSERT_NO_FATAL_FAILURE(Init(nullptr, nullptr, pool_flags, &features));
+
+    m_errorMonitor->ExpectSuccess();
+    // Specify 0 for a reserved VkFlags parameter. Normally this is expected to trigger an stateless validation error, but this
+    // validation was disabled via the features extension, so no errors should be forthcoming.
+    VkEvent event_handle = VK_NULL_HANDLE;
+    VkEventCreateInfo event_info = {};
+    event_info.sType = VK_STRUCTURE_TYPE_EVENT_CREATE_INFO;
+    event_info.flags = 1;
+    vkCreateEvent(device(), &event_info, NULL, &event_handle);
+    vkDestroyEvent(device(), event_handle, NULL);
+    m_errorMonitor->VerifyNotFound();
+}
+
 TEST_F(VkPositiveLayerTest, PointSizeWriteInFunction) {
     TEST_DESCRIPTION("Create a pipeline using TOPOLOGY_POINT_LIST and write PointSize in vertex shader function.");
 
