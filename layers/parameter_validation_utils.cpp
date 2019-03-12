@@ -25,6 +25,7 @@
 
 #include "chassis.h"
 #include "stateless_validation.h"
+#include "layer_chassis_dispatch.h"
 
 static const int MaxParamCheckerStringLength = 256;
 
@@ -126,15 +127,14 @@ void StatelessValidation::PostCallRecordCreateDevice(VkPhysicalDevice physicalDe
 
     VkPhysicalDeviceProperties device_properties = {};
     // Need to get instance and do a getlayerdata call...
-    ValidationObject *instance_object = GetLayerDataPtr(get_dispatch_key(physicalDevice), layer_data_map);
-    instance_object->instance_dispatch_table.GetPhysicalDeviceProperties(physicalDevice, &device_properties);
+    DispatchGetPhysicalDeviceProperties(this, physicalDevice, &device_properties);
     memcpy(&stateless_validation->device_limits, &device_properties.limits, sizeof(VkPhysicalDeviceLimits));
 
     if (device_extensions.vk_nv_shading_rate_image) {
         // Get the needed shading rate image limits
         auto shading_rate_image_props = lvl_init_struct<VkPhysicalDeviceShadingRateImagePropertiesNV>();
         auto prop2 = lvl_init_struct<VkPhysicalDeviceProperties2KHR>(&shading_rate_image_props);
-        instance_object->instance_dispatch_table.GetPhysicalDeviceProperties2KHR(physicalDevice, &prop2);
+        DispatchGetPhysicalDeviceProperties2KHR(this, physicalDevice, &prop2);
         phys_dev_ext_props.shading_rate_image_props = shading_rate_image_props;
     }
 
@@ -142,7 +142,7 @@ void StatelessValidation::PostCallRecordCreateDevice(VkPhysicalDevice physicalDe
         // Get the needed mesh shader limits
         auto mesh_shader_props = lvl_init_struct<VkPhysicalDeviceMeshShaderPropertiesNV>();
         auto prop2 = lvl_init_struct<VkPhysicalDeviceProperties2KHR>(&mesh_shader_props);
-        instance_object->instance_dispatch_table.GetPhysicalDeviceProperties2KHR(physicalDevice, &prop2);
+        DispatchGetPhysicalDeviceProperties2KHR(this, physicalDevice, &prop2);
         phys_dev_ext_props.mesh_shader_props = mesh_shader_props;
     }
 

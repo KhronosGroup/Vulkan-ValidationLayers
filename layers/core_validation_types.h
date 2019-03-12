@@ -32,6 +32,7 @@
 #include "vk_extension_helper.h"
 #include "vk_typemap_helper.h"
 #include "convert_to_renderpass2.h"
+#include "layer_chassis_dispatch.h"
 #include <atomic>
 #include <functional>
 #include <list>

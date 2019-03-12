@@ -1551,7 +1551,7 @@ bool CoreChecks::ValidatePipelineUnlocked(std::vector<std::unique_ptr<PIPELINE_S
             VkFormat format = vi->pVertexAttributeDescriptions[j].format;
             // Internal call to get format info.  Still goes through layers, could potentially go directly to ICD.
             VkFormatProperties properties;
-            instance_dispatch_table.GetPhysicalDeviceFormatProperties(physical_device, format, &properties);
+            DispatchGetPhysicalDeviceFormatProperties(this, physical_device, format, &properties);
             if ((properties.bufferFeatures & VK_FORMAT_FEATURE_VERTEX_BUFFER_BIT) == 0) {
                 skip |=
                     log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
@@ -2332,7 +2332,7 @@ void CoreChecks::PreCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDeviceC
     // GPU Validation can possibly turn on device features, so give it a chance to change the create info.
     if (GetEnables()->gpu_validation) {
         VkPhysicalDeviceFeatures supported_features;
-        instance_dispatch_table.GetPhysicalDeviceFeatures(gpu, &supported_features);
+        DispatchGetPhysicalDeviceFeatures(this, gpu, &supported_features);
         GpuPreCallRecordCreateDevice(gpu, modified_create_info, &supported_features);
     }
 }
@@ -2363,10 +2363,10 @@ void CoreChecks::PostCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDevice
     // previously set them through an explicit API call.
     uint32_t count;
     auto pd_state = GetPhysicalDeviceState(gpu);
-    instance_dispatch_table.GetPhysicalDeviceQueueFamilyProperties(gpu, &count, nullptr);
+    DispatchGetPhysicalDeviceQueueFamilyProperties(this, gpu, &count, nullptr);
     pd_state->queue_family_count = std::max(pd_state->queue_family_count, count);
     pd_state->queue_family_properties.resize(std::max(static_cast<uint32_t>(pd_state->queue_family_properties.size()), count));
-    instance_dispatch_table.GetPhysicalDeviceQueueFamilyProperties(gpu, &count, &pd_state->queue_family_properties[0]);
+    DispatchGetPhysicalDeviceQueueFamilyProperties(this, gpu, &count, &pd_state->queue_family_properties[0]);
     // Save local link to this device's physical device state
     core_checks->physical_device_state = pd_state;
 
@@ -2431,56 +2431,56 @@ void CoreChecks::PostCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDevice
     }
 
     // Store physical device properties and physical device mem limits into CoreChecks structs
-    instance_dispatch_table.GetPhysicalDeviceMemoryProperties(gpu, &core_checks->phys_dev_mem_props);
-    instance_dispatch_table.GetPhysicalDeviceProperties(gpu, &core_checks->phys_dev_props);
+    DispatchGetPhysicalDeviceMemoryProperties(this, gpu, &core_checks->phys_dev_mem_props);
+    DispatchGetPhysicalDeviceProperties(this, gpu, &core_checks->phys_dev_props);
 
     if (core_checks->device_extensions.vk_khr_push_descriptor) {
         // Get the needed push_descriptor limits
         auto push_descriptor_prop = lvl_init_struct<VkPhysicalDevicePushDescriptorPropertiesKHR>();
         auto prop2 = lvl_init_struct<VkPhysicalDeviceProperties2KHR>(&push_descriptor_prop);
-        instance_dispatch_table.GetPhysicalDeviceProperties2KHR(gpu, &prop2);
+        DispatchGetPhysicalDeviceProperties2KHR(this, gpu, &prop2);
         core_checks->phys_dev_ext_props.max_push_descriptors = push_descriptor_prop.maxPushDescriptors;
     }
     if (core_checks->device_extensions.vk_ext_descriptor_indexing) {
         // Get the needed descriptor_indexing limits
         auto descriptor_indexing_props = lvl_init_struct<VkPhysicalDeviceDescriptorIndexingPropertiesEXT>();
         auto prop2 = lvl_init_struct<VkPhysicalDeviceProperties2KHR>(&descriptor_indexing_props);
-        instance_dispatch_table.GetPhysicalDeviceProperties2KHR(gpu, &prop2);
+        DispatchGetPhysicalDeviceProperties2KHR(this, gpu, &prop2);
         core_checks->phys_dev_ext_props.descriptor_indexing_props = descriptor_indexing_props;
     }
     if (core_checks->device_extensions.vk_nv_shading_rate_image) {
         // Get the needed shading rate image limits
         auto shading_rate_image_props = lvl_init_struct<VkPhysicalDeviceShadingRateImagePropertiesNV>();
         auto prop2 = lvl_init_struct<VkPhysicalDeviceProperties2KHR>(&shading_rate_image_props);
-        instance_dispatch_table.GetPhysicalDeviceProperties2KHR(gpu, &prop2);
+        DispatchGetPhysicalDeviceProperties2KHR(this, gpu, &prop2);
         core_checks->phys_dev_ext_props.shading_rate_image_props = shading_rate_image_props;
     }
     if (core_checks->device_extensions.vk_nv_mesh_shader) {
         // Get the needed mesh shader limits
         auto mesh_shader_props = lvl_init_struct<VkPhysicalDeviceMeshShaderPropertiesNV>();
         auto prop2 = lvl_init_struct<VkPhysicalDeviceProperties2KHR>(&mesh_shader_props);
-        instance_dispatch_table.GetPhysicalDeviceProperties2KHR(gpu, &prop2);
+        DispatchGetPhysicalDeviceProperties2KHR(this, gpu, &prop2);
         core_checks->phys_dev_ext_props.mesh_shader_props = mesh_shader_props;
     }
     if (core_checks->device_extensions.vk_ext_inline_uniform_block) {
         // Get the needed inline uniform block limits
         auto inline_uniform_block_props = lvl_init_struct<VkPhysicalDeviceInlineUniformBlockPropertiesEXT>();
         auto prop2 = lvl_init_struct<VkPhysicalDeviceProperties2KHR>(&inline_uniform_block_props);
-        instance_dispatch_table.GetPhysicalDeviceProperties2KHR(gpu, &prop2);
+        DispatchGetPhysicalDeviceProperties2KHR(this, gpu, &prop2);
         core_checks->phys_dev_ext_props.inline_uniform_block_props = inline_uniform_block_props;
     }
     if (core_checks->device_extensions.vk_ext_vertex_attribute_divisor) {
         // Get the needed vertex attribute divisor limits
         auto vtx_attrib_divisor_props = lvl_init_struct<VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT>();
         auto prop2 = lvl_init_struct<VkPhysicalDeviceProperties2KHR>(&vtx_attrib_divisor_props);
-        instance_dispatch_table.GetPhysicalDeviceProperties2KHR(gpu, &prop2);
+        DispatchGetPhysicalDeviceProperties2KHR(this, gpu, &prop2);
         core_checks->phys_dev_ext_props.vtx_attrib_divisor_props = vtx_attrib_divisor_props;
     }
     if (core_checks->device_extensions.vk_khr_depth_stencil_resolve) {
         // Get the needed depth and stencil resolve modes
         auto depth_stencil_resolve_props = lvl_init_struct<VkPhysicalDeviceDepthStencilResolvePropertiesKHR>();
         auto prop2 = lvl_init_struct<VkPhysicalDeviceProperties2KHR>(&depth_stencil_resolve_props);
-        instance_dispatch_table.GetPhysicalDeviceProperties2KHR(gpu, &prop2);
+        DispatchGetPhysicalDeviceProperties2KHR(this, gpu, &prop2);
         core_checks->phys_dev_ext_props.depth_stencil_resolve_props = depth_stencil_resolve_props;
     }
     if (GetEnables()->gpu_validation) {
@@ -3334,7 +3334,7 @@ bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo *alloc
         VkExternalBufferProperties ext_buf_props = {};
         ext_buf_props.sType = VK_STRUCTURE_TYPE_EXTERNAL_BUFFER_PROPERTIES;
 
-        instance_dispatch_table.GetPhysicalDeviceExternalBufferProperties(physical_device, &pdebi, &ext_buf_props);
+        DispatchGetPhysicalDeviceExternalBufferProperties(this, physical_device, &pdebi, &ext_buf_props);
 
         // Collect external format info
         VkPhysicalDeviceExternalImageFormatInfo pdeifi = {};
@@ -3385,7 +3385,7 @@ bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo *alloc
         VkAndroidHardwareBufferPropertiesANDROID ahb_props = {};
         ahb_props.sType = VK_STRUCTURE_TYPE_ANDROID_HARDWARE_BUFFER_PROPERTIES_ANDROID;
         ahb_props.pNext = &ahb_format_props;
-        device_dispatch_table.GetAndroidHardwareBufferPropertiesANDROID(device, import_ahb_info->buffer, &ahb_props);
+        DispatchGetAndroidHardwareBufferPropertiesANDROID(this, device, import_ahb_info->buffer, &ahb_props);
 
         // allocationSize must be the size returned by vkGetAndroidHardwareBufferPropertiesANDROID for the Android hardware buffer
         if (alloc_info->allocationSize != ahb_props.allocationSize) {
@@ -4263,7 +4263,7 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory mem, V
                         "%s: Binding memory to buffer %s but vkGetBufferMemoryRequirements() has not been called on that buffer.",
                         api_name, report_data->FormatHandle(buffer_handle).c_str());
             // Make the call for them so we can verify the state
-            device_dispatch_table.GetBufferMemoryRequirements(device, buffer, &buffer_state->requirements);
+            DispatchGetBufferMemoryRequirements(this, device, buffer, &buffer_state->requirements);
         }
 
         // Validate bound memory range information
@@ -4828,27 +4828,24 @@ void CoreChecks::PreCallRecordDestroyRenderPass(VkDevice device, VkRenderPass re
 // Access helper functions for external modules
 VkFormatProperties CoreChecks::GetPDFormatProperties(const VkFormat format) {
     VkFormatProperties format_properties;
-    instance_dispatch_table.GetPhysicalDeviceFormatProperties(physical_device, format, &format_properties);
+    DispatchGetPhysicalDeviceFormatProperties(this, physical_device, format, &format_properties);
     return format_properties;
 }
 
 VkResult CoreChecks::GetPDImageFormatProperties(const VkImageCreateInfo *image_ci,
                                                 VkImageFormatProperties *pImageFormatProperties) {
-    return instance_dispatch_table.GetPhysicalDeviceImageFormatProperties(physical_device, image_ci->format, image_ci->imageType,
-                                                                          image_ci->tiling, image_ci->usage, image_ci->flags,
-                                                                          pImageFormatProperties);
+    return DispatchGetPhysicalDeviceImageFormatProperties(this, physical_device, image_ci->format, image_ci->imageType,
+                                                          image_ci->tiling, image_ci->usage, image_ci->flags,
+                                                          pImageFormatProperties);
 }
 
 VkResult CoreChecks::GetPDImageFormatProperties2(const VkPhysicalDeviceImageFormatInfo2 *phys_dev_image_fmt_info,
                                                  VkImageFormatProperties2 *pImageFormatProperties) {
     if (!instance_extensions.vk_khr_get_physical_device_properties_2) return VK_ERROR_EXTENSION_NOT_PRESENT;
-    return instance_dispatch_table.GetPhysicalDeviceImageFormatProperties2(physical_device, phys_dev_image_fmt_info,
-                                                                           pImageFormatProperties);
+    return DispatchGetPhysicalDeviceImageFormatProperties2(this, physical_device, phys_dev_image_fmt_info, pImageFormatProperties);
 }
 
 const debug_report_data *CoreChecks::GetReportData() { return report_data; }
-
-const VkLayerDispatchTable *CoreChecks::GetDispatchTable() { return &device_dispatch_table; }
 
 const VkPhysicalDeviceProperties *CoreChecks::GetPDProperties() { return &phys_dev_props; }
 
@@ -10559,7 +10556,7 @@ bool CoreChecks::ValidateBindImageMemory(VkImage image, VkDeviceMemory mem, VkDe
                             "%s: Binding memory to image %s but vkGetImageMemoryRequirements() has not been called on that image.",
                             api_name, report_data->FormatHandle(image_handle).c_str());
             // Make the call for them so we can verify the state
-            device_dispatch_table.GetImageMemoryRequirements(device, image, &image_state->requirements);
+            DispatchGetImageMemoryRequirements(this, device, image, &image_state->requirements);
         }
 
         // Validate bound memory range information
@@ -11841,7 +11838,7 @@ void CoreChecks::PostCallRecordEnumeratePhysicalDevices(VkInstance instance, uin
             auto &phys_device_state = physical_device_map[pPhysicalDevices[i]];
             phys_device_state.phys_device = pPhysicalDevices[i];
             // Init actual features for each physical device
-            instance_dispatch_table.GetPhysicalDeviceFeatures(pPhysicalDevices[i], &phys_device_state.features2.features);
+            DispatchGetPhysicalDeviceFeatures(this, pPhysicalDevices[i], &phys_device_state.features2.features);
         }
     }
 }
@@ -12285,7 +12282,7 @@ void CoreChecks::PostRecordEnumeratePhysicalDeviceGroupsState(uint32_t *pPhysica
                 auto &phys_device_state = physical_device_map[cur_phys_dev];
                 phys_device_state.phys_device = cur_phys_dev;
                 // Init actual features for each physical device
-                instance_dispatch_table.GetPhysicalDeviceFeatures(cur_phys_dev, &phys_device_state.features2.features);
+                DispatchGetPhysicalDeviceFeatures(this, cur_phys_dev, &phys_device_state.features2.features);
             }
         }
     }
