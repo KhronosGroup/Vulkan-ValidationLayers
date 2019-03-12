@@ -1884,7 +1884,7 @@ std::string cvdescriptorset::DescriptorSet::StringifySetAndLayout() const {
     if (IsPushDescriptor()) {
         string_sprintf(&out, "Push Descriptors defined with VkDescriptorSetLayout 0x%" PRIxLEAST64, layout_handle);
     } else {
-        string_sprintf(&out, "VkDescriptorSet 0x%" PRIxLEAST64 "allocated with VkDescriptorSetLayout 0x%" PRIxLEAST64,
+        string_sprintf(&out, "VkDescriptorSet 0x%" PRIxLEAST64 " allocated with VkDescriptorSetLayout 0x%" PRIxLEAST64,
                        HandleToUint64(set_), layout_handle);
     }
     return out;
