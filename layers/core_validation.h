@@ -164,6 +164,7 @@ struct SURFACE_STATE {
 };
 
 using std::unordered_map;
+struct GpuValidationState;
 
 class CoreChecks : public ValidationObject {
    public:
@@ -227,7 +228,7 @@ class CoreChecks : public ValidationObject {
     DeviceExtensionProperties phys_dev_ext_props = {};
     bool external_sync_warning = false;
     uint32_t api_version = 0;
-    GpuValidationState gpu_validation_state = {};
+    std::unique_ptr<GpuValidationState> gpu_validation_state;
     uint32_t physical_device_count;
 
     // Class Declarations for helper functions
@@ -509,8 +510,6 @@ class CoreChecks : public ValidationObject {
     std::unordered_set<uint64_t>* GetAHBExternalFormatsSet();
 
     const DeviceExtensions* GetDeviceExtensions();
-    GpuValidationState* GetGpuValidationState();
-    VkDevice GetDevice();
 
     uint32_t GetApiVersion();
 
@@ -599,7 +598,7 @@ class CoreChecks : public ValidationObject {
     // Gpu Validation Functions
     void GpuPreCallRecordCreateDevice(VkPhysicalDevice gpu, std::unique_ptr<safe_VkDeviceCreateInfo>& modified_create_info,
                                       VkPhysicalDeviceFeatures* supported_features);
-    void GpuPostCallRecordCreateDevice();
+    void GpuPostCallRecordCreateDevice(const CHECK_ENABLED* enables);
     void GpuPreCallRecordDestroyDevice();
     void GpuPreCallRecordFreeCommandBuffers(uint32_t commandBufferCount, const VkCommandBuffer* pCommandBuffers);
     bool GpuPreCallCreateShaderModule(const VkShaderModuleCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,

@@ -957,20 +957,6 @@ struct QFOTransferCBScoreboards {
     QFOTransferCBScoreboard<Barrier> release;
 };
 
-struct GpuDeviceMemoryBlock {
-    VkBuffer buffer;
-    VkDeviceMemory memory;
-    uint32_t offset;
-};
-
-struct GpuBufferInfo {
-    GpuDeviceMemoryBlock mem_block;
-    VkDescriptorSet desc_set;
-    VkDescriptorPool desc_pool;
-    GpuBufferInfo(GpuDeviceMemoryBlock mem_block, VkDescriptorSet desc_set, VkDescriptorPool desc_pool)
-        : mem_block(mem_block), desc_set(desc_set), desc_pool(desc_pool){};
-};
-
 // Cmd Buffer Wrapper Struct - TODO : This desperately needs its own class
 struct GLOBAL_CB_NODE : public BASE_NODE {
     VkCommandBuffer commandBuffer;
@@ -1037,8 +1023,6 @@ struct GLOBAL_CB_NODE : public BASE_NODE {
     std::unordered_set<cvdescriptorset::DescriptorSet *> validated_descriptor_sets;
     // Contents valid only after an index buffer is bound (CBSTATUS_INDEX_BUFFER_BOUND set)
     IndexBufferBinding index_buffer_binding;
-    // GPU Validation data
-    std::vector<GpuBufferInfo> gpu_buffer_list;
 };
 
 static inline QFOTransferBarrierSets<VkImageMemoryBarrier> &GetQFOBarrierSets(
@@ -1118,26 +1102,10 @@ struct DeviceFeatures {
 
 enum RenderPassCreateVersion { RENDER_PASS_VERSION_1 = 0, RENDER_PASS_VERSION_2 = 1 };
 
-class GpuDeviceMemoryManager;
-class GpuDescriptorSetManager;
 struct ShaderTracker {
     VkPipeline pipeline;
     VkShaderModule shader_module;
     std::vector<unsigned int> pgm;
-};
-struct GpuValidationState {
-    bool aborted;
-    bool reserve_binding_slot;
-    VkDescriptorSetLayout debug_desc_layout;
-    VkDescriptorSetLayout dummy_desc_layout;
-    uint32_t adjusted_max_desc_sets;
-    uint32_t desc_set_bind_index;
-    uint32_t unique_shader_module_id;
-    std::unordered_map<uint32_t, ShaderTracker> shader_map;
-    std::unique_ptr<GpuDeviceMemoryManager> memory_manager;
-    std::unique_ptr<GpuDescriptorSetManager> desc_set_manager;
-    VkCommandPool barrier_command_pool;
-    VkCommandBuffer barrier_command_buffer;
 };
 
 enum BarrierOperationsType {
