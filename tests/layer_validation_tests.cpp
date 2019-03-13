@@ -38290,6 +38290,104 @@ TEST_F(VkLayerTest, CreateImageYcbcrArrayLayers) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(VkLayerTest, CooperativeMatrixNV) {
+    TEST_DESCRIPTION("Test VK_NV_cooperative_matrix.");
+
+    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    } else {
+        printf("%s Did not find required instance extension %s; skipped.\n", kSkipPrefix,
+               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    std::array<const char *, 2> required_device_extensions = {
+        {VK_NV_COOPERATIVE_MATRIX_EXTENSION_NAME, VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME}};
+    for (auto device_extension : required_device_extensions) {
+        if (DeviceExtensionSupported(gpu(), nullptr, device_extension)) {
+            m_device_extension_names.push_back(device_extension);
+        } else {
+            printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, device_extension);
+            return;
+        }
+    }
+
+    if (DeviceIsMockICD() || DeviceSimulation()) {
+        printf("%s Test not supported by MockICD, skipping tests\n", kSkipPrefix);
+        return;
+    }
+
+    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
+        (PFN_vkGetPhysicalDeviceFeatures2KHR)vkGetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
+
+    auto float16_features = lvl_init_struct<VkPhysicalDeviceFloat16Int8FeaturesKHR>();
+    auto cooperative_matrix_features = lvl_init_struct<VkPhysicalDeviceCooperativeMatrixFeaturesNV>(&float16_features);
+    auto features2 = lvl_init_struct<VkPhysicalDeviceFeatures2KHR>(&cooperative_matrix_features);
+    vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    std::vector<VkDescriptorSetLayoutBinding> bindings(0);
+    const VkDescriptorSetLayoutObj dsl(m_device, bindings);
+    const VkPipelineLayoutObj pl(m_device, {&dsl});
+
+    char const *csSource =
+        "#version 450\n"
+        "#extension GL_NV_cooperative_matrix : enable\n"
+        "#extension GL_KHR_shader_subgroup_basic : enable\n"
+        "#extension GL_KHR_memory_scope_semantics : enable\n"
+        "#extension GL_EXT_shader_explicit_arithmetic_types_float16 : enable\n"
+        "layout(local_size_x = 32) in;\n"
+        "layout(constant_id = 0) const uint C0 = 1;"
+        "layout(constant_id = 1) const uint C1 = 1;"
+        "void main() {\n"
+        // Bad type
+        "   fcoopmatNV<16, gl_ScopeSubgroup, 3, 5> badSize = fcoopmatNV<16, gl_ScopeSubgroup, 3, 5>(float16_t(0.0));\n"
+        // Not a valid multiply when C0 != C1
+        "   fcoopmatNV<16, gl_ScopeSubgroup, C0, C1> A;\n"
+        "   fcoopmatNV<16, gl_ScopeSubgroup, C0, C1> B;\n"
+        "   fcoopmatNV<16, gl_ScopeSubgroup, C0, C1> C;\n"
+        "   coopMatMulAddNV(A, B, C);\n"
+        "}\n";
+    VkShaderObj cs(m_device, csSource, VK_SHADER_STAGE_COMPUTE_BIT, this);
+
+    const uint32_t specData[] = {
+        16,
+        8,
+    };
+    VkSpecializationMapEntry entries[] = {
+        {0, sizeof(uint32_t) * 0, sizeof(uint32_t)},
+        {1, sizeof(uint32_t) * 1, sizeof(uint32_t)},
+    };
+
+    VkSpecializationInfo specInfo = {
+        2,
+        entries,
+        sizeof(specData),
+        specData,
+    };
+
+    VkComputePipelineCreateInfo cpci = {VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,
+                                        nullptr,
+                                        0,
+                                        {VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO, nullptr, 0,
+                                         VK_SHADER_STAGE_COMPUTE_BIT, cs.handle(), "main", &specInfo},
+                                        pl.handle(),
+                                        VK_NULL_HANDLE,
+                                        -1};
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "UNASSIGNED-CoreValidation-Shader-CooperativeMatrixType");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "UNASSIGNED-CoreValidation-Shader-CooperativeMatrixMulAdd");
+
+    VkPipeline pipe = VK_NULL_HANDLE;
+    vkCreateComputePipelines(m_device->device(), VK_NULL_HANDLE, 1, &cpci, nullptr, &pipe);
+
+    m_errorMonitor->VerifyFound();
+
+    vkDestroyPipeline(m_device->device(), pipe, nullptr);
+}
+
 #if defined(ANDROID) && defined(VALIDATION_APK)
 const char *appTag = "VulkanLayerValidationTests";
 static bool initialized = false;
