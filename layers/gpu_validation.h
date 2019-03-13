@@ -20,6 +20,20 @@
 #ifndef VULKAN_GPU_VALIDATION_H
 #define VULKAN_GPU_VALIDATION_H
 
+struct GpuDeviceMemoryBlock {
+    VkBuffer buffer;
+    VkDeviceMemory memory;
+    uint32_t offset;
+};
+
+struct GpuBufferInfo {
+    GpuDeviceMemoryBlock mem_block;
+    VkDescriptorSet desc_set;
+    VkDescriptorPool desc_pool;
+    GpuBufferInfo(GpuDeviceMemoryBlock mem_block, VkDescriptorSet desc_set, VkDescriptorPool desc_pool)
+        : mem_block(mem_block), desc_set(desc_set), desc_pool(desc_pool){};
+};
+
 // Class to encapsulate Vulkan Device Memory allocations.
 // It allocates device memory in large chunks for efficiency and to avoid
 // hitting the device limit of the number of allocations.
@@ -84,6 +98,32 @@ class GpuDescriptorSetManager {
 
     CoreChecks *dev_data_;
     std::unordered_map<VkDescriptorPool, struct PoolTracker> desc_pool_map_;
+};
+
+struct GpuValidationState {
+    bool aborted;
+    bool reserve_binding_slot;
+    VkDescriptorSetLayout debug_desc_layout;
+    VkDescriptorSetLayout dummy_desc_layout;
+    uint32_t adjusted_max_desc_sets;
+    uint32_t desc_set_bind_index;
+    uint32_t unique_shader_module_id;
+    std::unordered_map<uint32_t, ShaderTracker> shader_map;
+    std::unique_ptr<GpuDeviceMemoryManager> memory_manager;
+    std::unique_ptr<GpuDescriptorSetManager> desc_set_manager;
+    VkCommandPool barrier_command_pool;
+    VkCommandBuffer barrier_command_buffer;
+    std::unordered_map<VkCommandBuffer, std::vector<GpuBufferInfo>> command_buffer_map;  // gpu_buffer_list;
+
+    std::vector<GpuBufferInfo> &GetGpuBufferInfo(const VkCommandBuffer command_buffer) {
+        auto buffer_list = command_buffer_map.find(command_buffer);
+        if (buffer_list == command_buffer_map.end()) {
+            std::vector<GpuBufferInfo> new_list{};
+            command_buffer_map[command_buffer] = new_list;
+            return command_buffer_map[command_buffer];
+        }
+        return buffer_list->second;
+    }
 };
 
 using mutex_t = std::mutex;

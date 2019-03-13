@@ -2484,9 +2484,7 @@ void CoreChecks::PostCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDevice
         core_checks->phys_dev_ext_props.depth_stencil_resolve_props = depth_stencil_resolve_props;
     }
     if (GetEnables()->gpu_validation) {
-        // Copy any needed instance data into the gpu validation state
-        core_checks->gpu_validation_state.reserve_binding_slot = GetEnables()->gpu_validation_reserve_binding_slot;
-        core_checks->GpuPostCallRecordCreateDevice();
+        core_checks->GpuPostCallRecordCreateDevice(GetEnables());
     }
 
     // Store queue family data
@@ -4872,10 +4870,6 @@ std::unordered_map<VkImageView, std::unique_ptr<IMAGE_VIEW_STATE>> *CoreChecks::
 const DeviceFeatures *CoreChecks::GetEnabledFeatures() { return &enabled_features; }
 
 const DeviceExtensions *CoreChecks::GetDeviceExtensions() { return &device_extensions; }
-
-GpuValidationState *CoreChecks::GetGpuValidationState() { return &gpu_validation_state; }
-
-VkDevice CoreChecks::GetDevice() { return device; }
 
 uint32_t CoreChecks::GetApiVersion() { return api_version; }
 
