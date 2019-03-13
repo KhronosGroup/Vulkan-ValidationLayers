@@ -188,7 +188,13 @@ add_custom_target(VulkanVL_generate_chassis_files
                   DEPENDS chassis.cpp
                           chassis.h
                           layer_chassis_dispatch.h
-                          layer_chassis_dispatch.cpp)
+                          layer_chassis_dispatch.cpp
+                          thread_safety.h
+                          thread_safety.cpp
+                          parameter_validation.h
+                          parameter_validation.cpp
+                          object_tracker.h
+                          object_tracker.cpp)
 set_target_properties(VulkanVL_generate_chassis_files PROPERTIES FOLDER ${LAYERS_HELPER_FOLDER})
 
 set(CHASSIS_LIBRARY_FILES
@@ -218,27 +224,20 @@ set(STATELESS_VALIDATION_LIBRARY_FILES
     parameter_validation.h
     parameter_validation_utils.cpp)
 
-# Inter-layer dependencies are temporarily necessary to serialize layer builds which avoids contention for common generated files
 if(BUILD_LAYERS)
     AddVkLayer(core_validation "BUILD_CORE_VALIDATION"
         ${CHASSIS_LIBRARY_FILES}
         ${CORE_VALIDATION_LIBRARY_FILES})
-    add_dependencies(VkLayer_core_validation VulkanVL_generate_chassis_files)
     AddVkLayer(object_lifetimes "BUILD_OBJECT_TRACKER" ${CHASSIS_LIBRARY_FILES} ${OBJECT_LIFETIMES_LIBRARY_FILES})
-    add_dependencies(VkLayer_object_lifetimes VkLayer_core_validation)
     AddVkLayer(thread_safety "BUILD_THREAD_SAFETY" ${CHASSIS_LIBRARY_FILES} ${THREAD_SAFETY_LIBRARY_FILES})
-    add_dependencies(VkLayer_thread_safety VkLayer_object_lifetimes)
     AddVkLayer(stateless_validation "BUILD_PARAMETER_VALIDATION" ${CHASSIS_LIBRARY_FILES} ${STATELESS_VALIDATION_LIBRARY_FILES})
-    add_dependencies(VkLayer_stateless_validation VkLayer_unique_objects)
     AddVkLayer(unique_objects "LAYER_CHASSIS_CAN_WRAP_HANDLES" ${CHASSIS_LIBRARY_FILES})
-    add_dependencies(VkLayer_unique_objects VkLayer_thread_safety)
     AddVkLayer(khronos_validation "BUILD_KHRONOS_VALIDATION;BUILD_CORE_VALIDATION;BUILD_OBJECT_TRACKER;BUILD_THREAD_SAFETY;BUILD_PARAMETER_VALIDATION;LAYER_CHASSIS_CAN_WRAP_HANDLES"
         ${CHASSIS_LIBRARY_FILES}
         ${CORE_VALIDATION_LIBRARY_FILES}
         ${OBJECT_LIFETIMES_LIBRARY_FILES}
         ${THREAD_SAFETY_LIBRARY_FILES}
         ${STATELESS_VALIDATION_LIBRARY_FILES})
-    add_dependencies(VkLayer_khronos_validation VkLayer_unique_objects)
 
     # Core validation and Khronos validation have additional dependencies
     target_include_directories(VkLayer_core_validation PRIVATE ${GLSLANG_SPIRV_INCLUDE_DIR})
