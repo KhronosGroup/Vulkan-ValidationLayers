@@ -5622,6 +5622,8 @@ TEST_F(VkPositiveLayerTest, SecondaryCommandBufferBarrier) {
     TEST_DESCRIPTION("Add a pipeline barrier in a secondary command buffer");
     ASSERT_NO_FATAL_FAILURE(Init());
 
+    m_errorMonitor->ExpectSuccess();
+
     // A renderpass with a single subpass that declared a self-dependency
     VkAttachmentDescription attach[] = {
         {0, VK_FORMAT_R8G8B8A8_UNORM, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE,
@@ -5723,6 +5725,7 @@ TEST_F(VkPositiveLayerTest, SecondaryCommandBufferBarrier) {
 
     vkDestroyFramebuffer(m_device->device(), fb, nullptr);
     vkDestroyRenderPass(m_device->device(), rp, nullptr);
+    m_errorMonitor->VerifyNotFound();
 }
 
 static void TestRenderPassCreate(ErrorMonitor *error_monitor, const VkDevice device, const VkRenderPassCreateInfo *create_info,
