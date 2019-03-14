@@ -16044,6 +16044,15 @@ TEST_F(VkLayerTest, DSUsageBitsErrors) {
     TEST_DESCRIPTION("Attempt to update descriptor sets for images and buffers that do not have correct usage bits sets.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
+
+    const VkFormat buffer_format = VK_FORMAT_R8_UNORM;
+    VkFormatProperties format_properties;
+    vkGetPhysicalDeviceFormatProperties(gpu(), buffer_format, &format_properties);
+    if (!(format_properties.bufferFeatures & VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_BIT)) {
+        printf("%s Device does not support VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_BIT for this format; skipped.\n", kSkipPrefix);
+        return;
+    }
+
     std::array<VkDescriptorPoolSize, VK_DESCRIPTOR_TYPE_RANGE_SIZE> ds_type_count;
     for (uint32_t i = 0; i < ds_type_count.size(); ++i) {
         ds_type_count[i].type = VkDescriptorType(i);
