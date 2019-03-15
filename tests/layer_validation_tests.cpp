@@ -20664,6 +20664,11 @@ TEST_F(VkPositiveLayerTest, SpirvGroupDecorations) {
     ds_layout_ci.bindingCount = 6;
     ds_layout_ci.pBindings = dslb;
 
+    if (m_device->props.limits.maxPerStageDescriptorStorageBuffers < ds_layout_ci.bindingCount) {
+        printf("%sNeeded storage buffer bindings exceeds this devices limit.  Skipping tests.\n", kSkipPrefix);
+        return;
+    }
+
     VkDescriptorSetLayout ds_layout = {};
     vkCreateDescriptorSetLayout(m_device->device(), &ds_layout_ci, NULL, &ds_layout);
 
