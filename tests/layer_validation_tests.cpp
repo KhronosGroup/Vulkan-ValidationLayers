@@ -35086,7 +35086,7 @@ TEST_F(VkLayerTest, ShadingRateImageNV) {
     }
 
     if (DeviceIsMockICD() || DeviceSimulation()) {
-        printf("%sTest not suppored by MockICD, skipping tests\n", kSkipPrefix);
+        printf("%s Test not supported by MockICD, skipping tests\n", kSkipPrefix);
         return;
     }
 
@@ -35604,6 +35604,11 @@ TEST_F(VkLayerTest, MeshShaderNV) {
             printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, device_extension);
             return;
         }
+    }
+
+    if (DeviceIsMockICD() || DeviceSimulation()) {
+        printf("%sNot suppored by MockICD, skipping tests\n", kSkipPrefix);
+        return;
     }
 
     PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
