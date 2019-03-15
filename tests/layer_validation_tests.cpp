@@ -13047,6 +13047,12 @@ TEST_F(VkLayerTest, VertexAttributeDivisorExtension) {
     vibd.stride = 12;
     vibd.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
+    if (pdvad_props.maxVertexAttribDivisor < pvids_ci.vertexBindingDivisorCount) {
+        printf("%sThis device does not support %d vertexBindingDivisors, skipping tests\n", kSkipPrefix,
+               pvids_ci.vertexBindingDivisorCount);
+        return;
+    }
+
     using std::vector;
     struct TestCase {
         uint32_t div_binding;
