@@ -415,6 +415,12 @@ class GoodRepo(object):
                 cmake_cmd.append('-A')
                 cmake_cmd.append('x64')
 
+        # Apply a generator, if one is specified.  If there are multiple Visual
+        # Studio instances on a machine, this is the only way to ensure that a
+        # specific instance is used.
+        if self._args.generator is not None:
+            cmake_cmd.extend(['-G', self._args.generator])
+
         if VERBOSE:
             print("CMake command: " + " ".join(cmake_cmd))
 
@@ -435,8 +441,13 @@ class GoodRepo(object):
         # Speed up the build.
         if platform.system() == 'Linux' or platform.system() == 'Darwin':
             cmake_cmd.append('--')
-            cmake_cmd.append('-j{ncpu}'
-                             .format(ncpu=multiprocessing.cpu_count()))
+            num_make_jobs = multiprocessing.cpu_count()
+            if 'MAKE_JOBS' in os.environ:
+                try:
+                    num_make_jobs = min(num_make_jobs, int(os.environ['MAKE_JOBS']))
+                except ValueError:
+                    pass
+            cmake_cmd.append('-j{}'.format(num_make_jobs))
         if platform.system() == 'Windows':
             cmake_cmd.append('--')
             cmake_cmd.append('/maxcpucount')
@@ -594,6 +605,11 @@ def main():
         type=str.lower,
         help="Set build files configuration",
         default='debug')
+    parser.add_argument(
+        '--generator',
+        dest='generator',
+        help="Set the CMake generator",
+        default=None)
 
     args = parser.parse_args()
     save_cwd = os.getcwd()
@@ -628,7 +644,7 @@ def main():
                       'build_platforms',
                       'repo_dir',
                       'on_build_platform')
-        repo_dict[repo.name] = {field: getattr(repo, field) for field in field_list};
+        repo_dict[repo.name] = {field: getattr(repo, field) for field in field_list}
 
         # If the repo has a CI whitelist, skip the repo unless
         # one of the CI's environment variable is set to true.
