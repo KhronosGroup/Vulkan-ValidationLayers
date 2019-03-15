@@ -13130,6 +13130,13 @@ TEST_F(VkLayerTest, VertexAttributeDivisorDisabled) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &pd_features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
+    VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT pdvad_props = {};
+    pdvad_props.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_ATTRIBUTE_DIVISOR_PROPERTIES_EXT;
+    VkPhysicalDeviceProperties2 pd_props2 = {};
+    pd_props2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+    pd_props2.pNext = &pdvad_props;
+    vkGetPhysicalDeviceProperties2(gpu(), &pd_props2);
+
     VkVertexInputBindingDivisorDescriptionEXT vibdd = {};
     vibdd.binding = 0;
     vibdd.divisor = 2;
@@ -13141,6 +13148,12 @@ TEST_F(VkLayerTest, VertexAttributeDivisorDisabled) {
     vibd.binding = vibdd.binding;
     vibd.stride = 12;
     vibd.inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
+
+    if (pdvad_props.maxVertexAttribDivisor < pvids_ci.vertexBindingDivisorCount) {
+        printf("%sThis device does not support %d vertexBindingDivisors, skipping tests\n", kSkipPrefix,
+               pvids_ci.vertexBindingDivisorCount);
+        return;
+    }
 
     const auto instance_rate = [&pvids_ci, &vibd](CreatePipelineHelper &helper) {
         helper.vi_ci_.pNext = &pvids_ci;
