@@ -35880,6 +35880,11 @@ TEST_F(VkLayerTest, InlineUniformBlockEXT) {
     dslb.descriptorCount = 4;
     dslb.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
+    if (inline_uniform_props.maxInlineUniformBlockSize < dslb.descriptorCount) {
+        printf("%sDescriptorCount exceeds InlineUniformBlockSize limit, skipping tests\n", kSkipPrefix);
+        return;
+    }
+
     uint32_t maxBlocks = std::max(inline_uniform_props.maxPerStageDescriptorInlineUniformBlocks,
                                   inline_uniform_props.maxDescriptorSetInlineUniformBlocks);
     for (uint32_t i = 0; i < 1 + maxBlocks; ++i) {
