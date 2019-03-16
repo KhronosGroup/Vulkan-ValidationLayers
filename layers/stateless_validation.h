@@ -1052,5 +1052,10 @@ class StatelessValidation : public ValidationObject {
                                                              const VkAccelerationStructureCreateInfoNV *pCreateInfo,
                                                              const VkAllocationCallbacks *pAllocator,
                                                              VkAccelerationStructureNV *pAccelerationStructure);
+
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+    bool PreCallValidateGetDeviceGroupSurfacePresentModes2EXT(VkDevice device, const VkPhysicalDeviceSurfaceInfo2KHR *pSurfaceInfo,
+                                                              VkDeviceGroupPresentModeFlagsKHR *pModes);
+#endif  // VK_USE_PLATFORM_WIN32_KHR
 #include "parameter_validation.h"
 };  // Class StatelessValidation

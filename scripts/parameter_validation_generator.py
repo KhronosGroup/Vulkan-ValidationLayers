@@ -64,6 +64,7 @@ from io import open
 #     separate line, align parameter names at the specified column
 class ParameterValidationGeneratorOptions(GeneratorOptions):
     def __init__(self,
+                 conventions = None,
                  filename = None,
                  directory = '.',
                  apiname = None,
@@ -84,7 +85,7 @@ class ParameterValidationGeneratorOptions(GeneratorOptions):
                  alignFuncParam = 0,
                  expandEnumerants = True,
                  valid_usage_path = ''):
-        GeneratorOptions.__init__(self, filename, directory, apiname, profile,
+        GeneratorOptions.__init__(self, conventions, filename, directory, apiname, profile,
                                   versions, emitversions, defaultExtensions,
                                   addExtensions, removeExtensions, emitExtensions, sortProcedure)
         self.prefixText      = prefixText
@@ -186,6 +187,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             'vkEnumerateInstanceExtensionProperties',
             'vkEnumerateDeviceLayerProperties',
             'vkEnumerateDeviceExtensionProperties',
+            'vkGetDeviceGroupSurfacePresentModes2EXT'
             ]
 
         # Structure fields to ignore
@@ -593,12 +595,18 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             if isEnum:
                 self.enumRanges[groupName] = (expandPrefix + '_BEGIN_RANGE' + expandSuffix, expandPrefix + '_END_RANGE' + expandSuffix)
                 # Create definition for a list containing valid enum values for this enumerated type
-                enum_entry = 'const std::vector<%s> All%sEnums = {' % (groupName, groupName)
+                if self.featureExtraProtect is not None:
+                    enum_entry = '\n#ifdef %s\n' % self.featureExtraProtect
+                else:
+                    enum_entry = ''
+                enum_entry += 'const std::vector<%s> All%sEnums = {' % (groupName, groupName)
                 for enum in groupElem:
                     name = enum.get('name')
                     if name is not None and enum.get('supported') != 'disabled':
                         enum_entry += '%s, ' % name
                 enum_entry += '};\n'
+                if self.featureExtraProtect is not None:
+                    enum_entry += '#endif // %s' % self.featureExtraProtect
                 self.enumValueLists += enum_entry
     #
     # Capture command parameter info to be used for param check code generation.

@@ -19540,15 +19540,6 @@ TEST_F(VkLayerTest, InvalidImageViewUsageCreateInfo) {
         vkDestroyImageView(m_device->device(), imageView, nullptr);
     }
 
-    // Try a usage field with a bit not supported by underlying image
-    usage_ci.usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkImageViewUsageCreateInfo-usage-01587");
-    res = vkCreateImageView(m_device->device(), &ivci, NULL, &imageView);
-    m_errorMonitor->VerifyFound();
-    if (VK_SUCCESS == res) {
-        vkDestroyImageView(m_device->device(), imageView, nullptr);
-    }
-
     // Try an illegal bit in usage field
     usage_ci.usage = 0x10000000 | VK_IMAGE_USAGE_SAMPLED_BIT;
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkImageViewUsageCreateInfo-usage-parameter");

@@ -1,9 +1,9 @@
 #!/usr/bin/python3 -i
 #
-# Copyright (c) 2015-2017 The Khronos Group Inc.
-# Copyright (c) 2015-2017 Valve Corporation
-# Copyright (c) 2015-2017 LunarG, Inc.
-# Copyright (c) 2015-2017 Google Inc.
+# Copyright (c) 2015-2019 The Khronos Group Inc.
+# Copyright (c) 2015-2019 Valve Corporation
+# Copyright (c) 2015-2019 LunarG, Inc.
+# Copyright (c) 2015-2019 Google Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ from common_codegen import *
 # DispatchTableHelperOutputGeneratorOptions - subclass of GeneratorOptions.
 class DispatchTableHelperOutputGeneratorOptions(GeneratorOptions):
     def __init__(self,
+                 conventions = None,
                  filename = None,
                  directory = '.',
                  apiname = None,
@@ -47,7 +48,7 @@ class DispatchTableHelperOutputGeneratorOptions(GeneratorOptions):
                  apientryp = '',
                  alignFuncParam = 0,
                  expandEnumerants = True):
-        GeneratorOptions.__init__(self, filename, directory, apiname, profile,
+        GeneratorOptions.__init__(self, conventions, filename, directory, apiname, profile,
                                   versions, emitversions, defaultExtensions,
                                   addExtensions, removeExtensions, emitExtensions, sortProcedure)
         self.prefixText      = prefixText
@@ -89,9 +90,9 @@ class DispatchTableHelperOutputGenerator(OutputGenerator):
         write(file_comment, file=self.outFile)
         # Copyright Notice
         copyright =  '/*\n'
-        copyright += ' * Copyright (c) 2015-2017 The Khronos Group Inc.\n'
-        copyright += ' * Copyright (c) 2015-2017 Valve Corporation\n'
-        copyright += ' * Copyright (c) 2015-2017 LunarG, Inc.\n'
+        copyright += ' * Copyright (c) 2015-2019 The Khronos Group Inc.\n'
+        copyright += ' * Copyright (c) 2015-2019 Valve Corporation\n'
+        copyright += ' * Copyright (c) 2015-2019 LunarG, Inc.\n'
         copyright += ' *\n'
         copyright += ' * Licensed under the Apache License, Version 2.0 (the "License");\n'
         copyright += ' * you may not use this file except in compliance with the License.\n'

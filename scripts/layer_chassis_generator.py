@@ -62,6 +62,7 @@ from common_codegen import *
 #     separate line, align parameter names at the specified column
 class LayerChassisGeneratorOptions(GeneratorOptions):
     def __init__(self,
+                 conventions = None,
                  filename = None,
                  directory = '.',
                  apiname = None,
@@ -85,7 +86,7 @@ class LayerChassisGeneratorOptions(GeneratorOptions):
                  alignFuncParam = 0,
                  helper_file_type = '',
                  expandEnumerants = True):
-        GeneratorOptions.__init__(self, filename, directory, apiname, profile,
+        GeneratorOptions.__init__(self, conventions, filename, directory, apiname, profile,
                                   versions, emitversions, defaultExtensions,
                                   addExtensions, removeExtensions, emitExtensions, sortProcedure)
         self.prefixText      = prefixText

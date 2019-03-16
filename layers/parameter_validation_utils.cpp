@@ -2961,3 +2961,40 @@ bool StatelessValidation::manual_PreCallValidateCreateAccelerationStructureNV(
 
     return skip;
 }
+
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+bool StatelessValidation::PreCallValidateGetDeviceGroupSurfacePresentModes2EXT(VkDevice device,
+                                                                               const VkPhysicalDeviceSurfaceInfo2KHR *pSurfaceInfo,
+                                                                               VkDeviceGroupPresentModeFlagsKHR *pModes) {
+    bool skip = false;
+    if (!device_extensions.vk_khr_swapchain)
+        skip |= OutputExtensionError("vkGetDeviceGroupSurfacePresentModes2EXT", VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+    if (!device_extensions.vk_khr_get_surface_capabilities_2)
+        skip |= OutputExtensionError("vkGetDeviceGroupSurfacePresentModes2EXT", VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME);
+    if (!device_extensions.vk_khr_surface)
+        skip |= OutputExtensionError("vkGetDeviceGroupSurfacePresentModes2EXT", VK_KHR_SURFACE_EXTENSION_NAME);
+    if (!device_extensions.vk_khr_get_physical_device_properties_2)
+        skip |=
+            OutputExtensionError("vkGetDeviceGroupSurfacePresentModes2EXT", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    if (!device_extensions.vk_ext_full_screen_exclusive)
+        skip |= OutputExtensionError("vkGetDeviceGroupSurfacePresentModes2EXT", VK_EXT_FULL_SCREEN_EXCLUSIVE_EXTENSION_NAME);
+    skip |= validate_struct_type(
+        "vkGetDeviceGroupSurfacePresentModes2EXT", "pSurfaceInfo", "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SURFACE_INFO_2_KHR",
+        pSurfaceInfo, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SURFACE_INFO_2_KHR, true,
+        "VUID-vkGetDeviceGroupSurfacePresentModes2EXT-pSurfaceInfo-parameter", "VUID-VkPhysicalDeviceSurfaceInfo2KHR-sType-sType");
+    if (pSurfaceInfo != NULL) {
+        const VkStructureType allowed_structs_VkPhysicalDeviceSurfaceInfo2KHR[] = {
+            VK_STRUCTURE_TYPE_SURFACE_FULL_SCREEN_EXCLUSIVE_INFO_EXT,
+            VK_STRUCTURE_TYPE_SURFACE_FULL_SCREEN_EXCLUSIVE_WIN32_INFO_EXT};
+
+        skip |= validate_struct_pnext("vkGetDeviceGroupSurfacePresentModes2EXT", "pSurfaceInfo->pNext",
+                                      "VkSurfaceFullScreenExclusiveInfoEXT, VkSurfaceFullScreenExclusiveWin32InfoEXT",
+                                      pSurfaceInfo->pNext, ARRAY_SIZE(allowed_structs_VkPhysicalDeviceSurfaceInfo2KHR),
+                                      allowed_structs_VkPhysicalDeviceSurfaceInfo2KHR, GeneratedVulkanHeaderVersion,
+                                      "VUID-VkPhysicalDeviceSurfaceInfo2KHR-pNext-pNext");
+
+        skip |= validate_required_handle("vkGetDeviceGroupSurfacePresentModes2EXT", "pSurfaceInfo->surface", pSurfaceInfo->surface);
+    }
+    return skip;
+}
+#endif
