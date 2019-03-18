@@ -36098,6 +36098,13 @@ TEST_F(VkLayerTest, FramebufferMixedSamplesNV) {
         return;
     }
 
+    VkPhysicalDeviceFeatures device_features = {};
+    ASSERT_NO_FATAL_FAILURE(GetPhysicalDeviceFeatures(&device_features));
+    if (VK_TRUE != device_features.sampleRateShading) {
+        printf("%s Test requires unsupported sampleRateShading feature.\n", kSkipPrefix);
+        return;
+    }
+
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
