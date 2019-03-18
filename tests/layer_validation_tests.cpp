@@ -1522,6 +1522,11 @@ TEST_F(VkLayerTest, DebugMarkerNameTest) {
         return;
     }
 
+    if (DeviceSimulation()) {
+        printf("%sSkipping object naming test.\n", kSkipPrefix);
+        return;
+    }
+
     VkBuffer buffer;
     VkDeviceMemory memory_1, memory_2;
     std::string memory_name = "memory_name";
@@ -1627,6 +1632,11 @@ TEST_F(VkLayerTest, DebugUtilsNameTest) {
         (PFN_vkSetDebugUtilsObjectNameEXT)vkGetDeviceProcAddr(m_device->device(), "vkSetDebugUtilsObjectNameEXT");
     if (!(fpvkSetDebugUtilsObjectNameEXT)) {
         printf("%s Can't find fpvkSetDebugUtilsObjectNameEXT; skipped.\n", kSkipPrefix);
+        return;
+    }
+
+    if (DeviceSimulation()) {
+        printf("%sSkipping object naming test.\n", kSkipPrefix);
         return;
     }
 
