@@ -20,6 +20,15 @@
 // THE SOFTWARE.
 //
 
+
+//
+// Source: https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator
+// THIS FILE HAS BEEN CHANGED FROM THE ORIGINAL VERSION
+//
+// Change Log:
+//    3/27/19 - Make changes to suppress warnings from GCC
+//
+
 #ifndef AMD_VULKAN_MEMORY_ALLOCATOR_H
 #define AMD_VULKAN_MEMORY_ALLOCATOR_H
 
@@ -3426,6 +3435,14 @@ static const uint8_t VMA_ALLOCATION_FILL_PATTERN_DESTROYED = 0xEF;
 END OF CONFIGURATION
 */
 
+#if defined(__GNUC__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wtype-limits"
+#pragma GCC diagnostic ignored "-Wunused-variable"
+#if defined(ANDROID)
+#pragma GCC diagnostic ignored "-Wunused-private-field"
+#endif
+#endif
 static const uint32_t VMA_ALLOCATION_INTERNAL_STRATEGY_MIN_OFFSET = 0x10000000u;
 
 static VkAllocationCallbacks VmaEmptyAllocationCallbacks = {
@@ -12437,8 +12454,8 @@ VmaDefragmentationAlgorithm_Generic::VmaDefragmentationAlgorithm_Generic(
     uint32_t currentFrameIndex,
     bool overlappingMoveSupported) :
     VmaDefragmentationAlgorithm(hAllocator, pBlockVector, currentFrameIndex),
-    m_AllAllocations(false),
     m_AllocationCount(0),
+    m_AllAllocations(false),
     m_BytesMoved(0),
     m_AllocationsMoved(0),
     m_Blocks(VmaStlAllocator<BlockInfo*>(hAllocator->GetAllocationCallbacks()))
@@ -14341,7 +14358,7 @@ VkResult VmaAllocator_T::AllocateDedicatedMemory(
 #endif // #if VMA_DEDICATED_ALLOCATION
 
     size_t allocIndex;
-    VkResult res;
+    VkResult res = VK_SUCCESS;
     for(allocIndex = 0; allocIndex < allocationCount; ++allocIndex)
     {
         res = AllocateDedicatedMemoryPage(
@@ -16759,5 +16776,7 @@ void vmaDestroyImage(
             &allocation);
     }
 }
-
+#if defined(__GNUC__)
+#pragma GCC diagnostic pop
+#endif
 #endif // #ifdef VMA_IMPLEMENTATION
