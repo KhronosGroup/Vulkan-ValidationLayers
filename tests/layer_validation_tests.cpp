@@ -244,6 +244,38 @@ T NearestSmaller(const T from) {
     return std::nextafter(from, negative_direction);
 }
 
+struct OneOffDescriptorSet {
+    VkDeviceObj *device_;
+    VkDescriptorPool pool_;
+    VkDescriptorSetLayoutObj layout_;
+    VkDescriptorSet set_;
+    typedef std::vector<VkDescriptorSetLayoutBinding> Bindings;
+
+    OneOffDescriptorSet(VkDeviceObj *device, const Bindings &bindings)
+        : device_{device}, pool_{}, layout_(device, bindings), set_{} {
+        VkResult err;
+
+        std::vector<VkDescriptorPoolSize> sizes;
+        for (const auto &b : bindings) sizes.push_back({b.descriptorType, std::max(1u, b.descriptorCount)});
+
+        VkDescriptorPoolCreateInfo dspci = {
+            VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO, nullptr, 0, 1, uint32_t(sizes.size()), sizes.data()};
+        err = vkCreateDescriptorPool(device_->handle(), &dspci, nullptr, &pool_);
+        if (err != VK_SUCCESS) return;
+
+        VkDescriptorSetAllocateInfo alloc_info = {VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO, nullptr, pool_, 1,
+                                                  &layout_.handle()};
+        err = vkAllocateDescriptorSets(device_->handle(), &alloc_info, &set_);
+    }
+
+    ~OneOffDescriptorSet() {
+        // No need to destroy set-- it's going away with the pool.
+        vkDestroyDescriptorPool(device_->handle(), pool_, nullptr);
+    }
+
+    bool Initialized() { return pool_ != VK_NULL_HANDLE && layout_.initialized() && set_ != VK_NULL_HANDLE; }
+};
+
 // ErrorMonitor Usage:
 //
 // Call SetDesiredFailureMsg with a string to be compared against all
@@ -439,6 +471,8 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL myDbgFunc(VkFlags msgFlags, VkDebugReportO
 class VkLayerTest : public VkRenderFramework {
    public:
     void VKTriangleTest(BsoFailSelect failCase);
+    void ShaderBufferSizeTest(VkDeviceSize buffer_size, VkDeviceSize binding_offset, VkDeviceSize binding_range,
+                              VkDescriptorType descriptor_type, const char *fragment_shader, const char *expected_error);
     void GenericDrawPreparation(VkCommandBufferObj *commandBuffer, VkPipelineObj &pipelineobj, VkDescriptorSetObj &descriptorSet,
                                 BsoFailSelect failCase);
 
@@ -727,6 +761,77 @@ void VkLayerTest::VKTriangleTest(BsoFailSelect failCase) {
     DestroyRenderTarget();
 }
 
+void VkLayerTest::ShaderBufferSizeTest(VkDeviceSize buffer_size, VkDeviceSize binding_offset, VkDeviceSize binding_range,
+                                       VkDescriptorType descriptor_type, const char *fragment_shader, const char *expected_error) {
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitViewport());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, expected_error);
+
+    OneOffDescriptorSet ds(m_device, {{0, descriptor_type, 1, VK_SHADER_STAGE_ALL, nullptr}});
+
+    const VkPipelineLayoutObj pipeline_layout(m_device, {&ds.layout_});
+
+    uint32_t qfi = 0;
+    VkBufferCreateInfo bci = {};
+    bci.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    bci.usage = descriptor_type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER ? VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT
+                                                                     : VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+    bci.size = buffer_size;
+    bci.queueFamilyIndexCount = 1;
+    bci.pQueueFamilyIndices = &qfi;
+    VkBufferObj buffer;
+    buffer.init(*m_device, bci);
+    VkPipelineObj pipe(m_device);
+
+    VkDescriptorBufferInfo buffer_info;
+    buffer_info.buffer = buffer.handle();
+    buffer_info.offset = binding_offset;
+    buffer_info.range = binding_range;
+
+    VkWriteDescriptorSet descriptor_write = {};
+    descriptor_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    descriptor_write.dstSet = ds.set_;
+    descriptor_write.dstBinding = 0;
+    descriptor_write.descriptorCount = 1;
+    descriptor_write.descriptorType = descriptor_type;
+    descriptor_write.pBufferInfo = &buffer_info;
+
+    vkUpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+
+    char const *vsSource =
+        "#version 450\n"
+        "\n"
+        "void main(){\n"
+        "   gl_Position = vec4(1);\n"
+        "}\n";
+
+    VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
+    VkShaderObj fs(m_device, fragment_shader, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+
+    pipe.AddShader(&vs);
+    pipe.AddShader(&fs);
+    pipe.AddDefaultColorAttachment();
+
+    VkResult err = pipe.CreateVKPipeline(pipeline_layout.handle(), renderPass());
+    ASSERT_VK_SUCCESS(err);
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+
+    vkCmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
+    vkCmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1, &ds.set_, 0,
+                            nullptr);
+
+    VkViewport viewport = {0, 0, 16, 16, 0, 1};
+    vkCmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
+    VkRect2D scissor = {{0, 0}, {16, 16}};
+    vkCmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissor);
+    vkCmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+}
+
 void VkLayerTest::GenericDrawPreparation(VkCommandBufferObj *commandBuffer, VkPipelineObj &pipelineobj,
                                          VkDescriptorSetObj &descriptorSet, BsoFailSelect failCase) {
     commandBuffer->ClearAllBuffers(m_renderTargets, m_clear_color, m_depthStencil, m_depth_clear_color, m_stencil_clear_color);
@@ -1003,38 +1108,6 @@ class VkVerticesObj {
 };
 
 uint32_t VkVerticesObj::BindIdGenerator;
-
-struct OneOffDescriptorSet {
-    VkDeviceObj *device_;
-    VkDescriptorPool pool_;
-    VkDescriptorSetLayoutObj layout_;
-    VkDescriptorSet set_;
-    typedef std::vector<VkDescriptorSetLayoutBinding> Bindings;
-
-    OneOffDescriptorSet(VkDeviceObj *device, const Bindings &bindings)
-        : device_{device}, pool_{}, layout_(device, bindings), set_{} {
-        VkResult err;
-
-        std::vector<VkDescriptorPoolSize> sizes;
-        for (const auto &b : bindings) sizes.push_back({b.descriptorType, std::max(1u, b.descriptorCount)});
-
-        VkDescriptorPoolCreateInfo dspci = {
-            VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO, nullptr, 0, 1, uint32_t(sizes.size()), sizes.data()};
-        err = vkCreateDescriptorPool(device_->handle(), &dspci, nullptr, &pool_);
-        if (err != VK_SUCCESS) return;
-
-        VkDescriptorSetAllocateInfo alloc_info = {VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO, nullptr, pool_, 1,
-                                                  &layout_.handle()};
-        err = vkAllocateDescriptorSets(device_->handle(), &alloc_info, &set_);
-    }
-
-    ~OneOffDescriptorSet() {
-        // No need to destroy set-- it's going away with the pool.
-        vkDestroyDescriptorPool(device_->handle(), pool_, nullptr);
-    }
-
-    bool Initialized() { return pool_ != VK_NULL_HANDLE && layout_.initialized() && set_ != VK_NULL_HANDLE; }
-};
 
 template <typename T>
 bool IsValidVkStruct(const T &s) {
@@ -22910,6 +22983,135 @@ TEST_F(VkLayerTest, CreateComputePipelineDescriptorTypeMismatch) {
     if (err == VK_SUCCESS) {
         vkDestroyPipeline(m_device->device(), pipe, nullptr);
     }
+}
+
+TEST_F(VkLayerTest, DrawTimeShaderUniformBufferTooSmall) {
+    TEST_DESCRIPTION("Test that an error is produced when trying to access uniform buffer outside the bound region.");
+
+    char const *fsSource =
+        "#version 450\n"
+        "\n"
+        "layout(location=0) out vec4 x;\n"
+        "layout(set=0, binding=0) uniform readonly foo { int x; int y; } bar;\n"
+        "void main(){\n"
+        "   x = vec4(bar.x, bar.y, 0, 1);\n"
+        "}\n";
+
+    ShaderBufferSizeTest(4,  // buffer size
+                         0,  // binding offset
+                         4,  // binding range
+                         VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, fsSource,
+                         "is using a structure type where field 1 exceeds the bound buffer range");
+}
+
+TEST_F(VkLayerTest, DrawTimeShaderStorageBufferTooSmall) {
+    TEST_DESCRIPTION("Test that an error is produced when trying to access storage buffer outside the bound region.");
+
+    char const *fsSource =
+        "#version 450\n"
+        "\n"
+        "layout(location=0) out vec4 x;\n"
+        "layout(set=0, binding=0) buffer readonly foo { int x; int y; } bar;\n"
+        "void main(){\n"
+        "   x = vec4(bar.x, bar.y, 0, 1);\n"
+        "}\n";
+
+    ShaderBufferSizeTest(4,  // buffer size
+                         0,  // binding offset
+                         4,  // binding range
+                         VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, fsSource,
+                         "is using a structure type where field 1 exceeds the bound buffer range");
+}
+
+TEST_F(VkLayerTest, DrawTimeShaderUniformBufferTooSmallArray) {
+    TEST_DESCRIPTION(
+        "Test that an error is produced when trying to access uniform buffer outside the bound region. Uses array in block "
+        "definition.");
+
+    char const *fsSource =
+        "#version 450\n"
+        "\n"
+        "layout(location=0) out vec4 x;\n"
+        "layout(set=0, binding=0) uniform readonly foo { int x[17]; } bar;\n"
+        "void main(){\n"
+        "   int y = 0;\n"
+        "   for (int i = 0; i < 17; i++)\n"
+        "       y += bar.x[i];\n"
+        "   x = vec4(y, 0, 0, 1);\n"
+        "}\n";
+
+    ShaderBufferSizeTest(64,  // buffer size
+                         0,   // binding offset
+                         64,  // binding range
+                         VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, fsSource,
+                         "is using a structure type where field 0 exceeds the bound buffer range");
+}
+
+TEST_F(VkLayerTest, DrawTimeShaderUniformBufferTooSmallNestedStruct) {
+    TEST_DESCRIPTION(
+        "Test that an error is produced when trying to access uniform buffer outside the bound region. Uses nested struct in block "
+        "definition.");
+
+    char const *fsSource =
+        "#version 450\n"
+        "\n"
+        "struct S {\n"
+        "    int x;\n"
+        "    int y;\n"
+        "};\n"
+        "layout(location=0) out vec4 x;\n"
+        "layout(set=0, binding=0) uniform readonly foo { int a; S b; } bar;\n"
+        "void main(){\n"
+        "   x = vec4(bar.a, bar.b.x, bar.b.y, 1);\n"
+        "}\n";
+
+    ShaderBufferSizeTest(8,  // buffer size
+                         0,  // binding offset
+                         8,  // binding range
+                         VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, fsSource,
+                         "is using a structure type where field 1 exceeds the bound buffer range");
+}
+
+TEST_F(VkLayerTest, DrawTimeShaderUniformBufferTooSmallNonzeroOffset) {
+    TEST_DESCRIPTION(
+        "Test that an error is produced when trying to access uniform buffer outside the bound region. Using nonzero offset for "
+        "descriptor write.");
+
+    char const *fsSource =
+        "#version 450\n"
+        "\n"
+        "layout(location=0) out vec4 x;\n"
+        "layout(set=0, binding=0) uniform readonly foo { int x; int y; } bar;\n"
+        "void main(){\n"
+        "   x = vec4(bar.x, bar.y, 0, 1);\n"
+        "}\n";
+
+    ShaderBufferSizeTest(260,  // buffer size
+                         256,  // binding offset
+                         4,    // binding range
+                         VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, fsSource,
+                         "is using a structure type where field 1 exceeds the bound buffer range");
+}
+
+TEST_F(VkLayerTest, DrawTimeShaderUniformBufferTooSmallWholeSize) {
+    TEST_DESCRIPTION(
+        "Test that an error is produced when trying to access uniform buffer outside the bound region. Uses whole size for buffer "
+        "binding.");
+
+    char const *fsSource =
+        "#version 450\n"
+        "\n"
+        "layout(location=0) out vec4 x;\n"
+        "layout(set=0, binding=0) uniform readonly foo { int x; int y; } bar;\n"
+        "void main(){\n"
+        "   x = vec4(bar.x, bar.y, 0, 1);\n"
+        "}\n";
+
+    ShaderBufferSizeTest(260,            // buffer size
+                         256,            // binding offset
+                         VK_WHOLE_SIZE,  // binding range
+                         VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, fsSource,
+                         "is using a structure type where field 1 exceeds the bound buffer range");
 }
 
 TEST_F(VkLayerTest, DrawTimeImageViewTypeMismatchWithPipeline) {
