@@ -188,6 +188,9 @@ bool VkRenderFramework::DeviceIsMockICD() {
     return false;
 }
 
+// Some tests may need to be skipped if the devsim layer is in use.
+bool VkRenderFramework::DeviceSimulation() { return m_devsim_layer; }
+
 // Render into a RenderTarget and read the pixels back to see if the device can really draw.
 // Note: This cannot be called from inside an initialized VkRenderFramework because frameworks cannot be "nested".
 // It is best to call it before "Init()".
