@@ -76,6 +76,14 @@ printf %s "$COMMIT_TEXT" | while IFS='' read -r line; do
       echo "     '$line'"
       success=0
     fi
+    # Check if first character after the colon is lower-case
+    subject=$(echo $line | cut -f2 -d " ")
+    firstchar=$(echo ${subject} | cut -c 1)
+    if [[ "${firstchar}" =~ [a-z] ]]; then
+      echo "The first word of the subject line after the ':' character must be capitalized."
+      echo "     '$line'"
+      success=0
+    fi
   elif [ $current_line -eq 2 ]; then
     # Commit message must have a blank line between subject and body
     if [ $chars -ne 0 ]; then
