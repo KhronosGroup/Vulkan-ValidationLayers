@@ -34959,6 +34959,11 @@ TEST_F(VkLayerTest, ExclusiveScissorNV) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
+    if (m_device->phy().properties().limits.maxViewports) {
+        printf("%s Device doesn't support the necessary number of viewports, skipping test.\n", kSkipPrefix);
+        return;
+    }
+
     // Based on PSOViewportStateTests
     {
         VkViewport viewport = {0.0f, 0.0f, 64.0f, 64.0f, 0.0f, 1.0f};
