@@ -1546,6 +1546,23 @@ bool cvdescriptorset::ValidateImageUpdate(VkImageView image_view, VkImageLayout 
     return true;
 }
 
+// Validate the given range has been bound for a buffer descriptor
+bool cvdescriptorset::DescriptorSet::ValidateBufferRange(uint32_t binding, VkDeviceSize offset, VkDeviceSize range) const {
+    assert(HasBinding(binding));
+    auto idx = GetGlobalIndexRangeFromBinding(binding).start;
+    assert(descriptors_[idx]->GetClass() == GeneralBuffer);
+
+    auto bufferDescriptor = static_cast<const BufferDescriptor *>(&(*descriptors_[idx]));
+    auto boundSize = bufferDescriptor->GetRange();
+
+    if (boundSize == VK_WHOLE_SIZE) {
+        auto buffer_node = device_data_->GetBufferState(bufferDescriptor->GetBuffer());
+        boundSize = buffer_node->createInfo.size - bufferDescriptor->GetOffset();
+    }
+
+    return (offset + range <= boundSize);
+}
+
 void cvdescriptorset::SamplerDescriptor::WriteUpdate(const VkWriteDescriptorSet *update, const uint32_t index) {
     if (!immutable_) {
         sampler_ = update->pImageInfo[index].sampler;

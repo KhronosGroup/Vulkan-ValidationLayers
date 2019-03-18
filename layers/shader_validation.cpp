@@ -449,11 +449,11 @@ static unsigned GetComponentsConsumedByType(shader_module const *src, unsigned t
             return sum;
         }
         case spv::OpTypeArray: {
-            uint32_t sum = 0;
-            for (uint32_t i = 2; i < insn.len(); i++) {
-                sum += GetComponentsConsumedByType(src, insn.word(i), false);
+            if (strip_array_level) {
+                return GetComponentsConsumedByType(src, insn.word(2), true);
+            } else {
+                return GetConstantValue(src, insn.word(3)) * GetComponentsConsumedByType(src, insn.word(2), false);
             }
-            return sum;
         }
         case spv::OpTypeMatrix:
             // Num locations is the dimension * element size
@@ -1253,6 +1253,72 @@ static bool ValidatePushConstantUsage(debug_report_data const *report_data,
         if (def_insn.opcode() == spv::OpVariable && def_insn.word(3) == spv::StorageClassPushConstant) {
             skip |= ValidatePushConstantBlockAgainstPipeline(report_data, push_constant_ranges, src, src->get_def(def_insn.word(1)),
                                                              stage);
+        }
+    }
+
+    return skip;
+}
+
+static bool ValidateBufferBlockSize(debug_report_data const *report_data, LAST_BOUND_STATE const &state, shader_module const *src,
+                                    spirv_inst_iter type, int var_id) {
+    bool skip = false;
+
+    // Strip off ptrs etc
+    type = GetStructType(src, type, false);
+    assert(type != src->end());
+
+    int set = -1;
+    int binding = -1;
+
+    for (auto insn : *src) {
+        if (insn.opcode() == spv::OpDecorate && insn.word(1) == var_id && insn.word(2) == spv::DecorationBinding) {
+            binding = insn.word(3);
+        } else if (insn.opcode() == spv::OpDecorate && insn.word(1) == var_id && insn.word(2) == spv::DecorationDescriptorSet) {
+            set = insn.word(3);
+        }
+    }
+
+    // Missing set or binding handled elsewhere
+    if (set == -1 || binding == -1) return false;
+
+    for (auto insn : *src) {
+        if (insn.opcode() == spv::OpMemberDecorate && insn.word(1) == type.word(1)) {
+            if (insn.word(3) == spv::DecorationOffset) {
+                unsigned offset = insn.word(4);
+                auto fieldIdx = insn.word(2);
+                auto fieldType = type.word(fieldIdx + 2);
+                auto range = GetComponentsConsumedByType(src, fieldType, false) * 4;
+
+                if ((int)state.boundDescriptorSets.size() > set && state.boundDescriptorSets[set] &&
+                    state.boundDescriptorSets[set]->HasBinding(binding)) {
+                    auto descriptorType = state.boundDescriptorSets[set]->GetTypeFromBinding(binding);
+                    if (descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER ||
+                        descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER) {
+                        if (!state.boundDescriptorSets[set]->ValidateBufferRange(binding, offset, range)) {
+                            skip |=
+                                log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                        kVUID_Core_Shader_BlockFieldOutOfBoundRange,
+                                        "Variable id %d is using a structure type where field %d exceeds the bound buffer range.\n",
+                                        var_id, insn.word(2));
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return skip;
+}
+
+static bool ValidateBufferBlockUsage(debug_report_data const *report_data, LAST_BOUND_STATE const &state, shader_module const *src,
+                                     std::unordered_set<uint32_t> accessible_ids) {
+    bool skip = false;
+
+    for (auto id : accessible_ids) {
+        auto def_insn = src->get_def(id);
+        if (def_insn.opcode() == spv::OpVariable &&
+            (def_insn.word(3) == spv::StorageClassStorageBuffer || def_insn.word(3) == spv::StorageClassUniform)) {
+            skip |= ValidateBufferBlockSize(report_data, state, src, src->get_def(def_insn.word(1)), def_insn.word(2));
         }
     }
 
@@ -2085,6 +2151,26 @@ bool CoreChecks::ValidatePipelineShaderStage(VkPipelineShaderStageCreateInfo con
     return skip;
 }
 
+bool CoreChecks::ValidateDrawTimePipelineShaderStage(VkPipelineShaderStageCreateInfo const *pStage, const PIPELINE_STATE *pipeline,
+                                                     LAST_BOUND_STATE const &state) {
+    bool skip = false;
+    auto module = GetShaderModuleState(pStage->module);
+    auto report_data = GetReportData();
+
+    if (!module->has_valid_spirv) return false;
+
+    // Find the entrypoint
+    auto entrypoint = FindEntrypoint(module, pStage->pName, pStage->stage);
+    if (entrypoint == module->end()) return true;
+
+    // Mark accessible ids
+    auto accessible_ids = MarkAccessibleIds(module, entrypoint);
+
+    skip |= ValidateBufferBlockUsage(report_data, state, module, accessible_ids);
+
+    return skip;
+}
+
 static bool ValidateInterfaceBetweenStages(debug_report_data const *report_data, shader_module const *producer,
                                            spirv_inst_iter producer_entrypoint, shader_stage_attributes const *producer_stage,
                                            shader_module const *consumer, spirv_inst_iter consumer_entrypoint,
@@ -2170,6 +2256,18 @@ static inline uint32_t DetermineFinalGeomStage(PIPELINE_STATE *pipeline, VkGraph
         }
     }
     return stage_mask;
+}
+
+bool CoreChecks::ValidateDrawTimePipelineShaderState(const PIPELINE_STATE *pipeline, LAST_BOUND_STATE const &state) {
+    auto pCreateInfo = pipeline->graphicsPipelineCI.ptr();
+    bool skip = false;
+
+    for (uint32_t i = 0; i < pCreateInfo->stageCount; i++) {
+        auto pStage = &pCreateInfo->pStages[i];
+        skip |= ValidateDrawTimePipelineShaderStage(pStage, pipeline, state);
+    }
+
+    return skip;
 }
 
 // Validate that the shaders used by the given pipeline and store the active_slots

@@ -589,6 +589,9 @@ class CoreChecks : public ValidationObject {
                                           void* csm_state);
     bool ValidatePipelineShaderStage(VkPipelineShaderStageCreateInfo const* pStage, PIPELINE_STATE* pipeline,
                                      shader_module const** out_module, spirv_inst_iter* out_entrypoint, bool check_point_size);
+    bool ValidateDrawTimePipelineShaderState(const PIPELINE_STATE* pPipeline, LAST_BOUND_STATE const& state);
+    bool ValidateDrawTimePipelineShaderStage(VkPipelineShaderStageCreateInfo const* pStage, const PIPELINE_STATE* pipeline,
+                                             LAST_BOUND_STATE const& state);
     bool ValidatePointListShaderState(const PIPELINE_STATE* pipeline, shader_module const* src, spirv_inst_iter entrypoint,
                                       VkShaderStageFlagBits stage);
     bool ValidateShaderCapabilities(shader_module const* src, VkShaderStageFlagBits stage, bool has_writable_descriptor);

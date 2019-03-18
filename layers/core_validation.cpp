@@ -1103,6 +1103,11 @@ bool CoreChecks::ValidatePipelineDrawtimeState(LAST_BOUND_STATE const &state, co
         }
     }
 
+    // Draw time shader validation
+    if (ValidateDrawTimePipelineShaderState(pPipeline, state)) {
+        skip = true;
+    }
+
     return skip;
 }
 

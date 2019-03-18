@@ -510,6 +510,8 @@ class DescriptorSet : public BASE_NODE {
                             std::string *, std::string *);
     // Perform a CopyUpdate whose contents were just validated using ValidateCopyUpdate
     void PerformCopyUpdate(const VkCopyDescriptorSet *, const DescriptorSet *);
+    // Validate the given range has been bound for a buffer descriptor
+    bool ValidateBufferRange(uint32_t binding, VkDeviceSize offset, VkDeviceSize size) const;
 
     const std::shared_ptr<DescriptorSetLayout const> GetLayout() const { return p_layout_; };
     VkDescriptorSet GetSet() const { return set_; };
