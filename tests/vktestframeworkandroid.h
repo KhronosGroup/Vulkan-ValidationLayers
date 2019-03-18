@@ -47,7 +47,7 @@ class VkTestFramework : public ::testing::Test {
                    bool debug = false);
     bool ASMtoSPV(const spv_target_env target_env, const uint32_t options, const char *pasm, std::vector<unsigned int> &spv);
     static bool m_devsim_layer;
-    static bool m_khronos_layer;
+    static bool m_khronos_layer_disable;
 };
 
 class TestEnvironment : public ::testing::Environment {

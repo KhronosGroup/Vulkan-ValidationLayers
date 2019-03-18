@@ -468,16 +468,14 @@ class VkLayerTest : public VkRenderFramework {
         // Add default instance extensions to the list
         m_instance_extension_names.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
 
-        // Use Threading layer first to protect others from
-        // ThreadCommandBufferCollision test
-        if (VkTestFramework::m_khronos_layer) {
-            m_instance_layer_names.push_back("VK_LAYER_KHRONOS_validation");
-        } else {
+        if (VkTestFramework::m_khronos_layer_disable) {
             m_instance_layer_names.push_back("VK_LAYER_GOOGLE_threading");
             m_instance_layer_names.push_back("VK_LAYER_LUNARG_parameter_validation");
             m_instance_layer_names.push_back("VK_LAYER_LUNARG_object_tracker");
             m_instance_layer_names.push_back("VK_LAYER_LUNARG_core_validation");
             m_instance_layer_names.push_back("VK_LAYER_GOOGLE_unique_objects");
+        } else {
+            m_instance_layer_names.push_back("VK_LAYER_KHRONOS_validation");
         }
         if (VkTestFramework::m_devsim_layer) {
             if (InstanceLayerSupported("VK_LAYER_LUNARG_device_simulation")) {
