@@ -174,6 +174,10 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             'vkCmdDrawMeshTasksIndirectNV',
             'vkCmdDrawMeshTasksIndirectCountNV',
             'vkAllocateMemory',
+            'vkQueueSubmit',
+            'vkCmdBeginRenderPass',
+            'vkCmdSetDeviceMask',
+            'vkAcquireNextImage2KHR',
             ]
 
         # Commands to ignore
