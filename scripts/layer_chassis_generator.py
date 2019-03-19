@@ -458,7 +458,7 @@ bool wrap_handles = false;
 #endif
 
 // Set layer name -- Khronos layer name overrides any other defined names
-#if BUILD_KNRONOS_VALIDATION
+#if BUILD_KHRONOS_VALIDATION
 #define OBJECT_LAYER_NAME "VK_LAYER_KHRONOS_validation"
 #define OBJECT_LAYER_DESCRIPTION "khronos_validation"
 #elif BUILD_OBJECT_TRACKER
