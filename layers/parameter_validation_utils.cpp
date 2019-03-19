@@ -3021,3 +3021,55 @@ bool StatelessValidation::manual_PreCallValidateQueueSubmit(VkQueue queue, uint3
     }
     return skip;
 }
+
+bool StatelessValidation::manual_PreCallValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer,
+                                                                   const VkRenderPassBeginInfo *pRenderPassBegin,
+                                                                   VkSubpassContents contents) {
+    bool skip = false;
+    auto chained_device_group_struct = lvl_find_in_chain<VkDeviceGroupRenderPassBeginInfo>(pRenderPassBegin->pNext);
+    if (chained_device_group_struct) {
+        uint32_t count = 1 << physical_device_count;
+        if (count <= chained_device_group_struct->deviceMask) {
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT,
+                            HandleToUint64(pRenderPassBegin->renderPass), "VUID-VkDeviceGroupRenderPassBeginInfo-deviceMask-00905",
+                            "deviceMask[%" PRIu32 "] is invaild. Physical device count is %d.",
+                            chained_device_group_struct->deviceMask, physical_device_count);
+        }
+        if (chained_device_group_struct->deviceMask == 0) {
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT,
+                            HandleToUint64(pRenderPassBegin->renderPass), "VUID-VkDeviceGroupRenderPassBeginInfo-deviceMask-00906",
+                            "deviceMask[%" PRIu32 "] is invaild.", chained_device_group_struct->deviceMask);
+        }
+        std::unordered_map<VkCommandBuffer, DeviceMasksRecord>::iterator it = device_mask_record.find(commandBuffer);
+        if (it == device_mask_record.end()) {
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT,
+                            HandleToUint64(pRenderPassBegin->renderPass), "VUID-VkDeviceGroupRenderPassBeginInfo-deviceMask-00907",
+                            "The command buffer[%s] doesn't have deviceMask.", report_data->FormatHandle(commandBuffer).c_str());
+        } else {
+            for (uint32_t i = 0; i < count; ++i) {
+                uint32_t mask = 1 << i;
+                if ((mask & chained_device_group_struct->deviceMask) && !(mask & it->second.command_buffer_device_mask)) {
+                    skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT,
+                                    HandleToUint64(pRenderPassBegin->renderPass),
+                                    "VUID-VkDeviceGroupRenderPassBeginInfo-deviceMask-00907",
+                                    "deviceMask[%" PRIu32 "] is not a subset of the command buffer[%s] device mask[%" PRIu32 "].",
+                                    chained_device_group_struct->deviceMask, report_data->FormatHandle(commandBuffer).c_str(),
+                                    it->second.command_buffer_device_mask);
+                    break;
+                }
+            }
+            if (!skip) {
+                it->second.render_pass_device_mask = chained_device_group_struct->deviceMask;
+            }
+        }
+        if (chained_device_group_struct->deviceRenderAreaCount != 0 &&
+            chained_device_group_struct->deviceRenderAreaCount != physical_device_count) {
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT,
+                            HandleToUint64(pRenderPassBegin->renderPass),
+                            "VUID-VkDeviceGroupRenderPassBeginInfo-deviceRenderAreaCount-00908",
+                            "deviceRenderAreaCount[%" PRIu32 "] is invaild. Physical device count is %d.",
+                            chained_device_group_struct->deviceRenderAreaCount, physical_device_count);
+        }
+    }
+    return skip;
+}
