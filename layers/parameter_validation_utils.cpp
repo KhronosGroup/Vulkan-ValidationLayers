@@ -162,6 +162,10 @@ void StatelessValidation::PostCallRecordCreateDevice(VkPhysicalDevice physicalDe
     } else {
         memset(&stateless_validation->physical_device_features, 0, sizeof(VkPhysicalDeviceFeatures));
     }
+
+    const auto *device_group_ci = lvl_find_in_chain<VkDeviceGroupDeviceCreateInfo>(pCreateInfo->pNext);
+    stateless_validation->physical_device_count =
+        device_group_ci && device_group_ci->physicalDeviceCount > 0 ? device_group_ci->physicalDeviceCount : 1;
 }
 
 bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCreateInfo,
