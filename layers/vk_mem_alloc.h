@@ -20,7 +20,7 @@
 // THE SOFTWARE.
 //
 
-
+// clang-format off
 //
 // Source: https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator
 // THIS FILE HAS BEEN CHANGED FROM THE ORIGINAL VERSION
@@ -16780,3 +16780,4 @@ void vmaDestroyImage(
 #pragma GCC diagnostic pop
 #endif
 #endif // #ifdef VMA_IMPLEMENTATION
+// clang-format on

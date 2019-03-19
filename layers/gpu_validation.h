@@ -17,13 +17,14 @@
  *
  */
 
+#include "vk_mem_alloc.h"
+
 #ifndef VULKAN_GPU_VALIDATION_H
 #define VULKAN_GPU_VALIDATION_H
 
 struct GpuDeviceMemoryBlock {
     VkBuffer buffer;
-    VkDeviceMemory memory;
-    uint32_t offset;
+    VmaAllocation allocation;
 };
 
 struct GpuBufferInfo {
@@ -32,50 +33,6 @@ struct GpuBufferInfo {
     VkDescriptorPool desc_pool;
     GpuBufferInfo(GpuDeviceMemoryBlock mem_block, VkDescriptorSet desc_set, VkDescriptorPool desc_pool)
         : mem_block(mem_block), desc_set(desc_set), desc_pool(desc_pool){};
-};
-
-// Class to encapsulate Vulkan Device Memory allocations.
-// It allocates device memory in large chunks for efficiency and to avoid
-// hitting the device limit of the number of allocations.
-// This manager handles only fixed-sized blocks of "data_size" bytes.
-// The interface allows the caller to "get" and "put back" blocks.
-// The manager allocates and frees chunks as needed.
-
-class GpuDeviceMemoryManager {
-   public:
-    GpuDeviceMemoryManager(CoreChecks *dev_data, uint32_t data_size);
-    ~GpuDeviceMemoryManager();
-
-    uint32_t GetBlockSize() { return block_size_; }
-
-    VkResult GetBlock(GpuDeviceMemoryBlock *block);
-    void PutBackBlock(VkBuffer buffer, VkDeviceMemory memory, uint32_t offset);
-    void PutBackBlock(GpuDeviceMemoryBlock &block);
-    void FreeAllBlocks();
-
-   private:
-    // Define allocation granularity of Vulkan resources.
-    // Things like device memory and descriptors are allocated in "chunks".
-    // This number should be chosen to try to avoid too many chunk allocations
-    // and chunk allocations that are too large.
-    static const uint32_t kItemsPerChunk = 512;
-
-    struct MemoryChunk {
-        VkBuffer buffer;
-        VkDeviceMemory memory;
-        std::vector<uint32_t> available_offsets;
-    };
-
-    CoreChecks *dev_data_;
-    uint32_t record_size_;
-    uint32_t block_size_;
-    uint32_t blocks_per_chunk_;
-    uint32_t chunk_size_;
-    std::list<MemoryChunk> chunk_list_;
-
-    bool MemoryTypeFromProperties(uint32_t typeBits, VkFlags requirements_mask, uint32_t *typeIndex);
-    VkResult AllocMemoryChunk(MemoryChunk &chunk);
-    void FreeMemoryChunk(MemoryChunk &chunk);
 };
 
 // Class to encapsulate Descriptor Set allocation.  This manager creates and destroys Descriptor Pools
@@ -109,11 +66,12 @@ struct GpuValidationState {
     uint32_t desc_set_bind_index;
     uint32_t unique_shader_module_id;
     std::unordered_map<uint32_t, ShaderTracker> shader_map;
-    std::unique_ptr<GpuDeviceMemoryManager> memory_manager;
     std::unique_ptr<GpuDescriptorSetManager> desc_set_manager;
     VkCommandPool barrier_command_pool;
     VkCommandBuffer barrier_command_buffer;
     std::unordered_map<VkCommandBuffer, std::vector<GpuBufferInfo>> command_buffer_map;  // gpu_buffer_list;
+    uint32_t output_buffer_size;
+    VmaAllocator vmaAllocator;
 
     std::vector<GpuBufferInfo> &GetGpuBufferInfo(const VkCommandBuffer command_buffer) {
         auto buffer_list = command_buffer_map.find(command_buffer);
