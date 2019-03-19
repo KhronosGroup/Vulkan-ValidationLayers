@@ -3001,3 +3001,23 @@ bool StatelessValidation::manual_PreCallValidateAllocateMemory(VkDevice device, 
     }
     return skip;
 }
+
+bool StatelessValidation::manual_PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits,
+                                                            VkFence fence) {
+    bool skip = false;
+    auto chained_device_group_struct = lvl_find_in_chain<VkDeviceGroupSubmitInfo>(pSubmits->pNext);
+    if (chained_device_group_struct && chained_device_group_struct->commandBufferCount > 0) {
+        skip |= validate_array("VkDeviceGroupSubmitInfo", "commandBufferCount", "pCommandBufferDeviceMasks", chained_device_group_struct->commandBufferCount, &chained_device_group_struct->pCommandBufferDeviceMasks, true, true, kVUIDUndefined, kVUIDUndefined);
+
+        for (uint32_t i = 0; i < chained_device_group_struct->commandBufferCount; ++i) {
+            uint32_t count = 1 << physical_device_count;
+            if (count <= chained_device_group_struct->pCommandBufferDeviceMasks[i]) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_QUEUE_EXT,
+                                HandleToUint64(queue), "VUID-VkDeviceGroupSubmitInfo-pCommandBufferDeviceMasks-00086",
+                                "deviceMask[%" PRIu32 "] is invaild. Physical device count is %d.",
+                                chained_device_group_struct->pCommandBufferDeviceMasks[i], physical_device_count);
+            }
+        }
+    }
+    return skip;
+}

@@ -1057,5 +1057,7 @@ class StatelessValidation : public ValidationObject {
                                                                   uint32_t *pPropertyCount, VkExtensionProperties *pProperties);
     bool manual_PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAllocateInfo *pAllocateInfo,
                                               const VkAllocationCallbacks *pAllocator, VkDeviceMemory *pMemory);
+
+    bool manual_PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits, VkFence fence);
 #include "parameter_validation.h"
 };  // Class StatelessValidation
