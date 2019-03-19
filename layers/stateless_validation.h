@@ -1061,5 +1061,7 @@ class StatelessValidation : public ValidationObject {
     bool manual_PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits, VkFence fence);
     bool manual_PreCallValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
                                                   VkSubpassContents contents);
+                                                  
+    bool manual_PreCallValidateCmdSetDeviceMask(VkCommandBuffer commandBuffer, uint32_t deviceMask);
 #include "parameter_validation.h"
 };  // Class StatelessValidation

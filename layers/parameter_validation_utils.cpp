@@ -3073,3 +3073,43 @@ bool StatelessValidation::manual_PreCallValidateCmdBeginRenderPass(VkCommandBuff
     }
     return skip;
 }
+
+bool StatelessValidation::manual_PreCallValidateCmdSetDeviceMask(VkCommandBuffer commandBuffer, uint32_t deviceMask) {
+    bool skip = false;
+    uint32_t count = 1 << physical_device_count;
+    if (count <= deviceMask) {
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                        HandleToUint64(commandBuffer), "VUID-vkCmdSetDeviceMask-deviceMask-00108",
+                        "deviceMask[%" PRIu32 "] is invaild. Physical device count is %d.", deviceMask, physical_device_count);
+    }
+    if (deviceMask == 0) {
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                        HandleToUint64(commandBuffer), "VUID-vkCmdSetDeviceMask-deviceMask-00109",
+                        "deviceMask[%" PRIu32 "] is invaild.", deviceMask);
+    }
+
+    std::unordered_map<VkCommandBuffer, DeviceMasksRecord>::iterator it = device_mask_record.find(commandBuffer);
+    if (it != device_mask_record.end()) {
+        for (uint32_t i = 0; i < count; ++i) {
+            uint32_t mask = 1 << i;
+            if ((mask & deviceMask) && !(mask & it->second.command_buffer_device_mask)) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                                HandleToUint64(commandBuffer), "VUID-vkCmdSetDeviceMask-deviceMask-00110",
+                                "deviceMask[%" PRIu32 "] is not a subset of the command buffer[%s] device mask[%" PRIu32 "].",
+                                deviceMask, report_data->FormatHandle(commandBuffer).c_str(), it->second.command_buffer_device_mask);
+                break;
+            }
+        }
+        for (uint32_t i = 0; i < count; ++i) {
+            uint32_t mask = 1 << i;
+            if ((mask & deviceMask) && !(mask & it->second.render_pass_device_mask)) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                                HandleToUint64(commandBuffer), "VUID-vkCmdSetDeviceMask-deviceMask-00111",
+                                "deviceMask[%" PRIu32 "] is not a subset of the render pass device mask[%" PRIu32 "].",
+                                deviceMask, it->second.render_pass_device_mask);
+                break;
+            }
+        }
+    }
+    return skip;
+}
