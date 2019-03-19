@@ -22,6 +22,7 @@
 #pragma once
 
 #include <bitset>
+#include <unordered_map>
 
 #include "parameter_name.h"
 #include "vk_typemap_helper.h"
@@ -89,6 +90,11 @@ struct LogMiscParams {
     const char *api_name;
 };
 
+struct DeviceMasksRecord {
+    uint32_t command_buffer_device_mask;
+    uint32_t render_pass_device_mask;
+};
+
 class StatelessValidation : public ValidationObject {
    public:
     VkPhysicalDeviceLimits device_limits = {};
@@ -96,6 +102,7 @@ class StatelessValidation : public ValidationObject {
     VkDevice device = VK_NULL_HANDLE;
     uint32_t api_version;
     uint32_t physical_device_count;
+    std::unordered_map<VkCommandBuffer, DeviceMasksRecord> device_mask_record;
 
     // Override chassis read/write locks for this validation object
     // This override takes a deferred lock. i.e. it is not acquired.

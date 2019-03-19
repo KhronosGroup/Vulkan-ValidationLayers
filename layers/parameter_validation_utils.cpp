@@ -2071,6 +2071,13 @@ bool StatelessValidation::manual_PreCallValidateFreeCommandBuffers(VkDevice devi
     // validate_array()
     skip |= validate_array("vkFreeCommandBuffers", "commandBufferCount", "pCommandBuffers", commandBufferCount, &pCommandBuffers,
                            true, true, kVUIDUndefined, kVUIDUndefined);
+
+    for (uint32_t i = 0; i < commandBufferCount; ++i) {
+        std::unordered_map<VkCommandBuffer, DeviceMasksRecord>::iterator it = device_mask_record.find(pCommandBuffers[i]);
+        if (it != device_mask_record.end()) {
+            device_mask_record.erase(it);
+        }
+    }
     return skip;
 }
 
