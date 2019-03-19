@@ -2125,6 +2125,39 @@ bool StatelessValidation::manual_PreCallValidateBeginCommandBuffer(VkCommandBuff
         }
     }
 
+    auto chained_device_group_struct = lvl_find_in_chain<VkDeviceGroupCommandBufferBeginInfo>(pBeginInfo->pNext);
+    if (chained_device_group_struct) {
+        uint32_t count = 1 << physical_device_count;
+        if (count <= chained_device_group_struct->deviceMask) {
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                            HandleToUint64(commandBuffer), "VUID-VkDeviceGroupCommandBufferBeginInfo-deviceMask-00106",
+                            "deviceMask[%" PRIu32 "] is invaild. Physical device count is %d.",
+                            chained_device_group_struct->deviceMask, physical_device_count);
+        }
+        if (chained_device_group_struct->deviceMask == 0) {
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                            HandleToUint64(commandBuffer), "VUID-VkDeviceGroupCommandBufferBeginInfo-deviceMask-00107",
+                            "deviceMask[%" PRIu32 "] is invaild.", chained_device_group_struct->deviceMask);
+        }
+
+        if (!skip) {
+            DeviceMasksRecord record;
+            record.command_buffer_device_mask = chained_device_group_struct->deviceMask;
+            record.render_pass_device_mask = 0;
+            std::unordered_map<VkCommandBuffer, DeviceMasksRecord>::iterator it = device_mask_record.find(commandBuffer);
+            if (it != device_mask_record.end()) {
+                it->second = record;
+            } else {
+                device_mask_record.insert({commandBuffer, record});
+            }
+        }
+    }
+    else {
+        std::unordered_map<VkCommandBuffer, DeviceMasksRecord>::iterator it = device_mask_record.find(commandBuffer);
+        if (it != device_mask_record.end()) {
+            device_mask_record.erase(it);
+        }
+    }
     return skip;
 }
 
