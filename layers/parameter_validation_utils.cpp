@@ -2983,6 +2983,21 @@ bool StatelessValidation::manual_PreCallValidateAllocateMemory(VkDevice device, 
                             "VUID-VkMemoryPriorityAllocateInfoEXT-priority-02602",
                             "priority (=%f) must be between `0` and `1`, inclusive.", chained_prio_struct->priority);
         }
+        auto chained_flags_struct = lvl_find_in_chain<VkMemoryAllocateFlagsInfo>(pAllocateInfo->pNext);
+        if (chained_flags_struct && chained_flags_struct->flags == VK_MEMORY_ALLOCATE_DEVICE_MASK_BIT) {
+            uint32_t count = 1 << physical_device_count;
+            if (count <= chained_flags_struct->deviceMask) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
+                                HandleToUint64(device), "VUID-VkMemoryAllocateFlagsInfo-deviceMask-00675",
+                                "deviceMask[%" PRIu32 "] is invaild. Physical device count is %d.",
+                                chained_flags_struct->deviceMask, physical_device_count);
+            }
+            if (chained_flags_struct->deviceMask == 0) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
+                                HandleToUint64(device), "VUID-VkMemoryAllocateFlagsInfo-deviceMask-00676",
+                                "deviceMask[%" PRIu32 "] is invaild.", chained_flags_struct->deviceMask);
+            }
+        }
     }
     return skip;
 }
