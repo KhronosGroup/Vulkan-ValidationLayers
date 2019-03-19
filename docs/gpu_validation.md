@@ -232,9 +232,9 @@ It isn't necessarily required for using the feature.
 
 In general, the implementation does:
 
-* For each draw call, allocate a block of device memory to hold a single debug output record written by the
+* For each draw call, allocate a buffer with enough device memory to hold a single debug output record written by the
     instrumented shader code.
-    There is a device memory manager to handle this efficiently.
+    The Vulkan Memory Allocator is used to handle this efficiently.
 
     There is probably little advantage in providing a larger buffer in order to obtain more debug records.
     It is likely, especially for fragment shaders, that multiple errors occurring near each other have the same root cause.
@@ -250,7 +250,7 @@ In general, the implementation does:
     Also make an additional call down the chain to create a bind descriptor set command to bind our descriptor set at the desired index.
     This has the effect of binding the device memory block belonging to this draw so that the GPU instrumentation
     writes into this buffer for when the draw is executed.
-    The end result is that each draw call has its own device memory block containing GPU instrumentation error
+    The end result is that each draw call has its own buffer containing GPU instrumentation error
     records, if any occurred while executing that draw.
 * Determine the descriptor set binding index that is eventually used to bind the descriptor set just allocated and updated.
     Usually, it is `VkPhysicalDeviceLimits::maxBoundDescriptorSets` minus one.
@@ -377,7 +377,7 @@ The design of each hooked function follows:
 #### GpuPostCallRecordCreateDevice
 
 * Determine and record (save in device state) the desired descriptor set binding index.
-* Initialize device memory manager
+* Initialize Vulkan Memory Allocator
   * Determine error record block size based on the maximum size of the error record and alignment limits of the device.
 * Initialize descriptor set manager
 * Make a descriptor set layout to describe our descriptor set
@@ -389,14 +389,14 @@ The design of each hooked function follows:
 
 * Destroy descriptor set layouts created in CreateDevice
 * Clean up descriptor set manager
-* Clean up device memory manager
+* Clean up Vulkan Memory Allocator (VMA)
 * Clean up device state
 
 #### GpuAllocateValidationResources
 
 * For each Draw or Dispatch call:
   * Get a descriptor set from the descriptor set manager
-  * Get a device memory block from the device memory manager
+  * Get a buffer and associated memory from VMA
   * Update (write) the descriptor set with the memory info
   * Check to see if the layout for the pipeline just bound is using our selected bind index
   * If no conflict, add an additional command to the command buffer to bind our descriptor set at our selected index
@@ -406,7 +406,7 @@ Note that the Draw and Dispatch calls include vkCmdDraw, vkCmdDrawIndexed, vkCmd
 #### GpuPreCallRecordFreeCommandBuffers
 
 * For each command buffer:
-  * Give the memory blocks back to the device memory manager
+  * Destroy the VMA buffer, releasing the memory
   * Give the descriptor sets back to the descriptor set manager
   * Clean up CB state
 

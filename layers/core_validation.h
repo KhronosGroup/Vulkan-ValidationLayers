@@ -623,6 +623,7 @@ class CoreChecks : public ValidationObject {
     void SubmitBarrier(VkQueue queue);
     bool GpuInstrumentShader(const VkShaderModuleCreateInfo* pCreateInfo, std::vector<unsigned int>& new_pgm,
                              uint32_t* unique_shader_id);
+    VkResult GpuInitializeVma();
     void ReportSetupProblem(VkDebugReportObjectTypeEXT object_type, uint64_t object_handle, const char* const specific_message);
 
     // Buffer Validation Functions

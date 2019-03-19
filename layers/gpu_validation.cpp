@@ -22,6 +22,10 @@
 
 #include "chassis.h"
 #include "core_validation.h"
+// This define indicates to build the VMA routines themselves
+#define VMA_IMPLEMENTATION
+// This define indicates that we will supply Vulkan function pointers at initialization
+#define VMA_STATIC_VULKAN_FUNCTIONS 0
 #include "gpu_validation.h"
 #include "shader_validation.h"
 #include "spirv-tools/libspirv.h"
@@ -33,180 +37,6 @@
 
 // This is the number of bindings in the debug descriptor set.
 static const uint32_t kNumBindingsInSet = 1;
-
-// Implementation for Device Memory Manager class
-GpuDeviceMemoryManager::GpuDeviceMemoryManager(CoreChecks *dev_data, uint32_t data_size) {
-    uint32_t align = static_cast<uint32_t>(dev_data->GetPDProperties()->limits.minStorageBufferOffsetAlignment);
-    if (0 == align) {
-        align = 1;
-    }
-    record_size_ = data_size;
-    // Round the requested size up to the next multiple of the storage buffer offset alignment
-    // so that we can address each block in the storage buffer using the offset.
-    block_size_ = ((record_size_ + align - 1) / align) * align;
-    blocks_per_chunk_ = kItemsPerChunk;
-    chunk_size_ = blocks_per_chunk_ * block_size_;
-    dev_data_ = dev_data;
-}
-
-GpuDeviceMemoryManager::~GpuDeviceMemoryManager() {
-    for (auto &chunk : chunk_list_) {
-        FreeMemoryChunk(chunk);
-    }
-    chunk_list_.clear();
-}
-
-VkResult GpuDeviceMemoryManager::GetBlock(GpuDeviceMemoryBlock *block) {
-    assert(block->buffer == VK_NULL_HANDLE);  // avoid possible overwrite/leak of an allocated block
-    VkResult result = VK_SUCCESS;
-    MemoryChunk *pChunk = nullptr;
-    // Look for a chunk with available offsets.
-    for (auto &chunk : chunk_list_) {
-        if (!chunk.available_offsets.empty()) {
-            pChunk = &chunk;
-            break;
-        }
-    }
-    // If no chunks with available offsets, allocate device memory and set up offsets.
-    if (pChunk == nullptr) {
-        MemoryChunk new_chunk;
-        result = AllocMemoryChunk(new_chunk);
-        if (result == VK_SUCCESS) {
-            new_chunk.available_offsets.resize(blocks_per_chunk_);
-            for (uint32_t offset = 0, i = 0; i < blocks_per_chunk_; offset += block_size_, ++i) {
-                new_chunk.available_offsets[i] = offset;
-            }
-            chunk_list_.push_front(std::move(new_chunk));
-            pChunk = &chunk_list_.front();
-        } else {
-            // Indicate failure
-            block->buffer = VK_NULL_HANDLE;
-            block->memory = VK_NULL_HANDLE;
-            return result;
-        }
-    }
-    // Give the requester an available offset
-    block->buffer = pChunk->buffer;
-    block->memory = pChunk->memory;
-    block->offset = pChunk->available_offsets.back();
-    pChunk->available_offsets.pop_back();
-    return result;
-}
-
-void GpuDeviceMemoryManager::PutBackBlock(VkBuffer buffer, VkDeviceMemory memory, uint32_t offset) {
-    GpuDeviceMemoryBlock block = {buffer, memory, offset};
-    PutBackBlock(block);
-}
-
-void GpuDeviceMemoryManager::PutBackBlock(GpuDeviceMemoryBlock &block) {
-    // Find the chunk belonging to the allocated offset and make the offset available again
-    auto chunk = std::find_if(std::begin(chunk_list_), std::end(chunk_list_),
-                              [&block](const MemoryChunk &c) { return c.buffer == block.buffer; });
-    if (chunk_list_.end() == chunk) {
-        assert(false);
-    } else {
-        chunk->available_offsets.push_back(block.offset);
-        if (chunk->available_offsets.size() == blocks_per_chunk_) {
-            // All offsets have been returned
-            FreeMemoryChunk(*chunk);
-            chunk_list_.erase(chunk);
-        }
-    }
-}
-
-void ResetBlock(GpuDeviceMemoryBlock &block) {
-    block.buffer = VK_NULL_HANDLE;
-    block.memory = VK_NULL_HANDLE;
-    block.offset = 0;
-}
-
-bool BlockUsed(GpuDeviceMemoryBlock &block) { return (block.buffer != VK_NULL_HANDLE) && (block.memory != VK_NULL_HANDLE); }
-
-bool GpuDeviceMemoryManager::MemoryTypeFromProperties(uint32_t typeBits, VkFlags requirements_mask, uint32_t *typeIndex) {
-    // Search memtypes to find first index with those properties
-    const VkPhysicalDeviceMemoryProperties *props = dev_data_->GetPhysicalDeviceMemoryProperties();
-    for (uint32_t i = 0; i < VK_MAX_MEMORY_TYPES; i++) {
-        if ((typeBits & 1) == 1) {
-            // Type is available, does it match user properties?
-            if ((props->memoryTypes[i].propertyFlags & requirements_mask) == requirements_mask) {
-                *typeIndex = i;
-                return true;
-            }
-        }
-        typeBits >>= 1;
-    }
-    // No memory types matched, return failure
-    return false;
-}
-
-VkResult GpuDeviceMemoryManager::AllocMemoryChunk(MemoryChunk &chunk) {
-    VkBuffer buffer;
-    VkDeviceMemory memory;
-    VkBufferCreateInfo buffer_create_info = {};
-    VkMemoryRequirements mem_reqs = {};
-    VkMemoryAllocateInfo mem_alloc = {};
-    VkResult result = VK_SUCCESS;
-    bool pass;
-    void *pData;
-
-    buffer_create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    buffer_create_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
-    buffer_create_info.size = chunk_size_;
-    result = DispatchCreateBuffer(dev_data_->device, &buffer_create_info, NULL, &buffer);
-    if (result != VK_SUCCESS) {
-        return result;
-    }
-
-    DispatchGetBufferMemoryRequirements(dev_data_->device, buffer, &mem_reqs);
-
-    mem_alloc.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    mem_alloc.pNext = NULL;
-    mem_alloc.allocationSize = mem_reqs.size;
-    pass = MemoryTypeFromProperties(mem_reqs.memoryTypeBits,
-                                    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                                    &mem_alloc.memoryTypeIndex);
-    if (!pass) {
-        DispatchDestroyBuffer(dev_data_->device, buffer, NULL);
-        return result;
-    }
-    result = DispatchAllocateMemory(dev_data_->device, &mem_alloc, NULL, &memory);
-    if (result != VK_SUCCESS) {
-        DispatchDestroyBuffer(dev_data_->device, buffer, NULL);
-        return result;
-    }
-
-    result = DispatchBindBufferMemory(dev_data_->device, buffer, memory, 0);
-    if (result != VK_SUCCESS) {
-        DispatchDestroyBuffer(dev_data_->device, buffer, NULL);
-        DispatchFreeMemory(dev_data_->device, memory, NULL);
-        return result;
-    }
-
-    result = DispatchMapMemory(dev_data_->device, memory, 0, mem_alloc.allocationSize, 0, &pData);
-    if (result == VK_SUCCESS) {
-        memset(pData, 0, chunk_size_);
-        DispatchUnmapMemory(dev_data_->device, memory);
-    } else {
-        DispatchDestroyBuffer(dev_data_->device, buffer, NULL);
-        DispatchFreeMemory(dev_data_->device, memory, NULL);
-        return result;
-    }
-    chunk.buffer = buffer;
-    chunk.memory = memory;
-    return result;
-}
-
-void GpuDeviceMemoryManager::FreeMemoryChunk(MemoryChunk &chunk) {
-    DispatchDestroyBuffer(dev_data_->device, chunk.buffer, NULL);
-    DispatchFreeMemory(dev_data_->device, chunk.memory, NULL);
-}
-
-void GpuDeviceMemoryManager::FreeAllBlocks() {
-    for (auto &chunk : chunk_list_) {
-        FreeMemoryChunk(chunk);
-    }
-    chunk_list_.clear();
-}
 
 // Implementation for Descriptor Set Manager class
 GpuDescriptorSetManager::GpuDescriptorSetManager(CoreChecks *dev_data) { dev_data_ = dev_data; }
@@ -299,6 +129,101 @@ void GpuDescriptorSetManager::DestroyDescriptorPools() {
     desc_pool_map_.clear();
 }
 
+// Trampolines to make VMA call Dispatch for Vulkan calls
+static VKAPI_ATTR void VKAPI_CALL gpuVkGetPhysicalDeviceProperties(VkPhysicalDevice physicalDevice,
+                                                                   VkPhysicalDeviceProperties *pProperties) {
+    DispatchGetPhysicalDeviceProperties(physicalDevice, pProperties);
+}
+static VKAPI_ATTR void VKAPI_CALL gpuVkGetPhysicalDeviceMemoryProperties(VkPhysicalDevice physicalDevice,
+                                                                         VkPhysicalDeviceMemoryProperties *pMemoryProperties) {
+    DispatchGetPhysicalDeviceMemoryProperties(physicalDevice, pMemoryProperties);
+}
+static VKAPI_ATTR VkResult VKAPI_CALL gpuVkAllocateMemory(VkDevice device, const VkMemoryAllocateInfo *pAllocateInfo,
+                                                          const VkAllocationCallbacks *pAllocator, VkDeviceMemory *pMemory) {
+    return DispatchAllocateMemory(device, pAllocateInfo, pAllocator, pMemory);
+}
+static VKAPI_ATTR void VKAPI_CALL gpuVkFreeMemory(VkDevice device, VkDeviceMemory memory, const VkAllocationCallbacks *pAllocator) {
+    DispatchFreeMemory(device, memory, pAllocator);
+}
+static VKAPI_ATTR VkResult VKAPI_CALL gpuVkMapMemory(VkDevice device, VkDeviceMemory memory, VkDeviceSize offset, VkDeviceSize size,
+                                                     VkMemoryMapFlags flags, void **ppData) {
+    return DispatchMapMemory(device, memory, offset, size, flags, ppData);
+}
+static VKAPI_ATTR void VKAPI_CALL gpuVkUnmapMemory(VkDevice device, VkDeviceMemory memory) { DispatchUnmapMemory(device, memory); }
+static VKAPI_ATTR VkResult VKAPI_CALL gpuVkFlushMappedMemoryRanges(VkDevice device, uint32_t memoryRangeCount,
+                                                                   const VkMappedMemoryRange *pMemoryRanges) {
+    return DispatchFlushMappedMemoryRanges(device, memoryRangeCount, pMemoryRanges);
+}
+static VKAPI_ATTR VkResult VKAPI_CALL gpuVkInvalidateMappedMemoryRanges(VkDevice device, uint32_t memoryRangeCount,
+                                                                        const VkMappedMemoryRange *pMemoryRanges) {
+    return DispatchInvalidateMappedMemoryRanges(device, memoryRangeCount, pMemoryRanges);
+}
+static VKAPI_ATTR VkResult VKAPI_CALL gpuVkBindBufferMemory(VkDevice device, VkBuffer buffer, VkDeviceMemory memory,
+                                                            VkDeviceSize memoryOffset) {
+    return DispatchBindBufferMemory(device, buffer, memory, memoryOffset);
+}
+static VKAPI_ATTR VkResult VKAPI_CALL gpuVkBindImageMemory(VkDevice device, VkImage image, VkDeviceMemory memory,
+                                                           VkDeviceSize memoryOffset) {
+    return DispatchBindImageMemory(device, image, memory, memoryOffset);
+}
+static VKAPI_ATTR void VKAPI_CALL gpuVkGetBufferMemoryRequirements(VkDevice device, VkBuffer buffer,
+                                                                   VkMemoryRequirements *pMemoryRequirements) {
+    DispatchGetBufferMemoryRequirements(device, buffer, pMemoryRequirements);
+}
+static VKAPI_ATTR void VKAPI_CALL gpuVkGetImageMemoryRequirements(VkDevice device, VkImage image,
+                                                                  VkMemoryRequirements *pMemoryRequirements) {
+    DispatchGetImageMemoryRequirements(device, image, pMemoryRequirements);
+}
+static VKAPI_ATTR VkResult VKAPI_CALL gpuVkCreateBuffer(VkDevice device, const VkBufferCreateInfo *pCreateInfo,
+                                                        const VkAllocationCallbacks *pAllocator, VkBuffer *pBuffer) {
+    return DispatchCreateBuffer(device, pCreateInfo, pAllocator, pBuffer);
+}
+static VKAPI_ATTR void VKAPI_CALL gpuVkDestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationCallbacks *pAllocator) {
+    return DispatchDestroyBuffer(device, buffer, pAllocator);
+}
+static VKAPI_ATTR VkResult VKAPI_CALL gpuVkCreateImage(VkDevice device, const VkImageCreateInfo *pCreateInfo,
+                                                       const VkAllocationCallbacks *pAllocator, VkImage *pImage) {
+    return DispatchCreateImage(device, pCreateInfo, pAllocator, pImage);
+}
+static VKAPI_ATTR void VKAPI_CALL gpuVkDestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks *pAllocator) {
+    DispatchDestroyImage(device, image, pAllocator);
+}
+static VKAPI_ATTR void VKAPI_CALL gpuVkCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer,
+                                                     uint32_t regionCount, const VkBufferCopy *pRegions) {
+    DispatchCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, regionCount, pRegions);
+}
+
+VkResult CoreChecks::GpuInitializeVma() {
+    VmaVulkanFunctions functions;
+    VmaAllocatorCreateInfo allocatorInfo = {};
+    allocatorInfo.device = device;
+    ValidationObject *device_object = GetLayerDataPtr(get_dispatch_key(allocatorInfo.device), layer_data_map);
+    ValidationObject *validation_data = GetValidationObject(device_object->object_dispatch, LayerObjectTypeCoreValidation);
+    CoreChecks *core_checks = static_cast<CoreChecks *>(validation_data);
+    allocatorInfo.physicalDevice = core_checks->physical_device;
+
+    functions.vkGetPhysicalDeviceProperties = (PFN_vkGetPhysicalDeviceProperties)gpuVkGetPhysicalDeviceProperties;
+    functions.vkGetPhysicalDeviceMemoryProperties = (PFN_vkGetPhysicalDeviceMemoryProperties)gpuVkGetPhysicalDeviceMemoryProperties;
+    functions.vkAllocateMemory = (PFN_vkAllocateMemory)gpuVkAllocateMemory;
+    functions.vkFreeMemory = (PFN_vkFreeMemory)gpuVkFreeMemory;
+    functions.vkMapMemory = (PFN_vkMapMemory)gpuVkMapMemory;
+    functions.vkUnmapMemory = (PFN_vkUnmapMemory)gpuVkUnmapMemory;
+    functions.vkFlushMappedMemoryRanges = (PFN_vkFlushMappedMemoryRanges)gpuVkFlushMappedMemoryRanges;
+    functions.vkInvalidateMappedMemoryRanges = (PFN_vkInvalidateMappedMemoryRanges)gpuVkInvalidateMappedMemoryRanges;
+    functions.vkBindBufferMemory = (PFN_vkBindBufferMemory)gpuVkBindBufferMemory;
+    functions.vkBindImageMemory = (PFN_vkBindImageMemory)gpuVkBindImageMemory;
+    functions.vkGetBufferMemoryRequirements = (PFN_vkGetBufferMemoryRequirements)gpuVkGetBufferMemoryRequirements;
+    functions.vkGetImageMemoryRequirements = (PFN_vkGetImageMemoryRequirements)gpuVkGetImageMemoryRequirements;
+    functions.vkCreateBuffer = (PFN_vkCreateBuffer)gpuVkCreateBuffer;
+    functions.vkDestroyBuffer = (PFN_vkDestroyBuffer)gpuVkDestroyBuffer;
+    functions.vkCreateImage = (PFN_vkCreateImage)gpuVkCreateImage;
+    functions.vkDestroyImage = (PFN_vkDestroyImage)gpuVkDestroyImage;
+    functions.vkCmdCopyBuffer = (PFN_vkCmdCopyBuffer)gpuVkCmdCopyBuffer;
+    allocatorInfo.pVulkanFunctions = &functions;
+
+    return vmaCreateAllocator(&allocatorInfo, &gpu_validation_state->vmaAllocator);
+}
+
 // Convenience function for reporting problems with setting up GPU Validation.
 void CoreChecks::ReportSetupProblem(VkDebugReportObjectTypeEXT object_type, uint64_t object_handle,
                                     const char *const specific_message) {
@@ -355,8 +280,9 @@ void CoreChecks::GpuPostCallRecordCreateDevice(const CHECK_ENABLED *enables) {
             "UNASSIGNED-GPU-Assisted Validation. ", "Shaders using descriptor set at index %d. ",
             gpu_validation_state->desc_set_bind_index);
 
-    std::unique_ptr<GpuDeviceMemoryManager> memory_manager(
-        new GpuDeviceMemoryManager(this, sizeof(uint32_t) * (spvtools::kInstMaxOutCnt + 1)));
+    gpu_validation_state->output_buffer_size = sizeof(uint32_t) * (spvtools::kInstMaxOutCnt + 1);
+    VkResult result = GpuInitializeVma();
+    assert(result == VK_SUCCESS);
     std::unique_ptr<GpuDescriptorSetManager> desc_set_manager(new GpuDescriptorSetManager(this));
 
     // The descriptor indexing checks require only the first "output" binding.
@@ -376,8 +302,7 @@ void CoreChecks::GpuPostCallRecordCreateDevice(const CHECK_ENABLED *enables) {
     const VkDescriptorSetLayoutCreateInfo dummy_desc_layout_info = {VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO, NULL, 0, 0,
                                                                     NULL};
 
-    VkResult result =
-        DispatchCreateDescriptorSetLayout(device, &debug_desc_layout_info, NULL, &gpu_validation_state->debug_desc_layout);
+    result = DispatchCreateDescriptorSetLayout(device, &debug_desc_layout_info, NULL, &gpu_validation_state->debug_desc_layout);
 
     // This is a layout used to "pad" a pipeline layout to fill in any gaps to the selected bind index.
     VkResult result2 =
@@ -397,7 +322,6 @@ void CoreChecks::GpuPostCallRecordCreateDevice(const CHECK_ENABLED *enables) {
         gpu_validation_state->aborted = true;
         return;
     }
-    gpu_validation_state->memory_manager = std::move(memory_manager);
     gpu_validation_state->desc_set_manager = std::move(desc_set_manager);
 }
 
@@ -420,8 +344,8 @@ void CoreChecks::GpuPreCallRecordDestroyDevice() {
         DispatchDestroyDescriptorSetLayout(device, gpu_validation_state->dummy_desc_layout, NULL);
         gpu_validation_state->dummy_desc_layout = VK_NULL_HANDLE;
     }
-    gpu_validation_state->memory_manager->FreeAllBlocks();
     gpu_validation_state->desc_set_manager->DestroyDescriptorPools();
+    vmaDestroyAllocator(gpu_validation_state->vmaAllocator);
 }
 
 // Modify the pipeline layout to include our debug descriptor set and any needed padding with the dummy descriptor set.
@@ -477,15 +401,12 @@ void CoreChecks::GpuPreCallRecordFreeCommandBuffers(uint32_t commandBufferCount,
     for (uint32_t i = 0; i < commandBufferCount; ++i) {
         auto gpu_buffer_list = gpu_validation_state->GetGpuBufferInfo(pCommandBuffers[i]);
         for (auto buffer_info : gpu_buffer_list) {
-            if (BlockUsed(buffer_info.mem_block)) {
-                gpu_validation_state->memory_manager->PutBackBlock(buffer_info.mem_block);
-                ResetBlock(buffer_info.mem_block);
-            }
+            vmaDestroyBuffer(gpu_validation_state->vmaAllocator, buffer_info.mem_block.buffer, buffer_info.mem_block.allocation);
             if (buffer_info.desc_set != VK_NULL_HANDLE) {
                 gpu_validation_state->desc_set_manager->PutBackDescriptorSet(buffer_info.desc_pool, buffer_info.desc_set);
             }
         }
-        gpu_buffer_list.clear();
+        gpu_validation_state->command_buffer_map.erase(pCommandBuffers[i]);
     }
 }
 
@@ -1008,20 +929,11 @@ void CoreChecks::ProcessInstrumentationBuffer(VkQueue queue, GLOBAL_CB_NODE *cb_
         char *pData;
         uint32_t draw_index = 0;
         for (auto &buffer_info : gpu_buffer_list) {
-            uint32_t block_offset = buffer_info.mem_block.offset;
-            uint32_t block_size = gpu_validation_state->memory_manager->GetBlockSize();
-            uint32_t offset_to_data = 0;
-            const uint32_t map_align = std::max(1U, static_cast<uint32_t>(GetPDProperties()->limits.minMemoryMapAlignment));
-
-            // Adjust the offset to the alignment required for mapping.
-            block_offset = (block_offset / map_align) * map_align;
-            offset_to_data = buffer_info.mem_block.offset - block_offset;
-            block_size += offset_to_data;
-            result = DispatchMapMemory(cb_node->device, buffer_info.mem_block.memory, block_offset, block_size, 0, (void **)&pData);
+            result = vmaMapMemory(gpu_validation_state->vmaAllocator, buffer_info.mem_block.allocation, (void **)&pData);
             // Analyze debug output buffer
             if (result == VK_SUCCESS) {
-                AnalyzeAndReportError(cb_node, queue, draw_index, (uint32_t *)(pData + offset_to_data));
-                DispatchUnmapMemory(cb_node->device, buffer_info.mem_block.memory);
+                AnalyzeAndReportError(cb_node, queue, draw_index, (uint32_t *)pData);
+                vmaUnmapMemory(gpu_validation_state->vmaAllocator, buffer_info.mem_block.allocation);
             }
             draw_index++;
         }
@@ -1144,7 +1056,7 @@ void CoreChecks::GpuAllocateValidationResources(const VkCommandBuffer cmd_buffer
     }
 
     VkDescriptorBufferInfo desc_buffer_info = {};
-    desc_buffer_info.range = gpu_validation_state->memory_manager->GetBlockSize();
+    desc_buffer_info.range = gpu_validation_state->output_buffer_size;
 
     auto cb_node = GetCBNode(cmd_buffer);
     if (!cb_node) {
@@ -1154,20 +1066,29 @@ void CoreChecks::GpuAllocateValidationResources(const VkCommandBuffer cmd_buffer
     }
 
     GpuDeviceMemoryBlock block = {};
-    result = gpu_validation_state->memory_manager->GetBlock(&block);
+    VkBufferCreateInfo bufferInfo = {VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
+    bufferInfo.size = gpu_validation_state->output_buffer_size;
+    bufferInfo.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+    VmaAllocationCreateInfo allocInfo = {};
+    allocInfo.usage = VMA_MEMORY_USAGE_GPU_TO_CPU;
+    result =
+        vmaCreateBuffer(gpu_validation_state->vmaAllocator, &bufferInfo, &allocInfo, &block.buffer, &block.allocation, nullptr);
     if (result != VK_SUCCESS) {
         ReportSetupProblem(VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
                            "Unable to allocate device memory.  Device could become unstable.");
         gpu_validation_state->aborted = true;
         return;
     }
-
-    // Record buffer and memory info in CB state tracking
-    gpu_validation_state->GetGpuBufferInfo(cmd_buffer).emplace_back(block, desc_sets[0], desc_pool);
+    void *pData;
+    result = vmaMapMemory(gpu_validation_state->vmaAllocator, block.allocation, (void **)&pData);
+    if (result == VK_SUCCESS) {
+        memset(pData, 0, gpu_validation_state->output_buffer_size);
+        vmaUnmapMemory(gpu_validation_state->vmaAllocator, block.allocation);
+    }
 
     // Write the descriptor
     desc_buffer_info.buffer = block.buffer;
-    desc_buffer_info.offset = block.offset;
+    desc_buffer_info.offset = 0;
 
     VkWriteDescriptorSet desc_write = {};
     desc_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -1184,8 +1105,11 @@ void CoreChecks::GpuAllocateValidationResources(const VkCommandBuffer cmd_buffer
             DispatchCmdBindDescriptorSets(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_state->pipeline_layout.layout,
                                           gpu_validation_state->desc_set_bind_index, 1, desc_sets.data(), 0, nullptr);
         }
+        // Record buffer and memory info in CB state tracking
+        gpu_validation_state->GetGpuBufferInfo(cmd_buffer).emplace_back(block, desc_sets[0], desc_pool);
     } else {
         ReportSetupProblem(VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device), "Unable to find pipeline state");
+        vmaDestroyBuffer(gpu_validation_state->vmaAllocator, block.buffer, block.allocation);
         gpu_validation_state->aborted = true;
         return;
     }
