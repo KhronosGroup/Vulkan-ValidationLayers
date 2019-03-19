@@ -468,6 +468,86 @@ void VkRenderFramework::InitViewport(float width, float height) {
 }
 
 void VkRenderFramework::InitViewport() { InitViewport(m_width, m_height); }
+
+void VkRenderFramework::InitSwapchian() { InitSwapchian(m_width, m_height); }
+
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+    return DefWindowProc(hwnd, uMsg, wParam, lParam);
+}
+#endif  // VK_USE_PLATFORM_WIN32_KHR
+
+void VkRenderFramework::InitSwapchian(float width, float height) {
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+    HINSTANCE window_instance = GetModuleHandle(nullptr);
+    const char class_name[] = "test";
+    WNDCLASS wc = {};
+    wc.lpfnWndProc = WindowProc;
+    wc.hInstance = window_instance;
+    wc.lpszClassName = class_name;
+    RegisterClass(&wc);
+    HWND window = CreateWindowEx(0, class_name, 0, 0, 0, 0, (int)m_width, (int)m_height, NULL, NULL, window_instance, NULL);
+    ShowWindow(window, SW_HIDE);
+
+    VkWin32SurfaceCreateInfoKHR surface_create_info = {};
+    surface_create_info.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
+    surface_create_info.pNext = nullptr;
+    surface_create_info.flags = 0;
+    surface_create_info.hinstance = window_instance;
+    surface_create_info.hwnd = window;
+    vkCreateWin32SurfaceKHR(instance(), &surface_create_info, nullptr, &m_surface);
+#endif
+
+    for (size_t i = 0; i < m_device->queue_props.size(); ++i) {
+        VkBool32 presentSupport = false;
+        vkGetPhysicalDeviceSurfaceSupportKHR(m_device->phy().handle(), i, m_surface, &presentSupport);
+    }
+
+    VkSurfaceCapabilitiesKHR capabilities;
+    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(m_device->phy().handle(), m_surface, &capabilities);
+
+    uint32_t format_count;
+    vkGetPhysicalDeviceSurfaceFormatsKHR(m_device->phy().handle(), m_surface, &format_count, nullptr);
+    std::vector<VkSurfaceFormatKHR> formats;
+    if (format_count != 0) {
+        formats.resize(format_count);
+        vkGetPhysicalDeviceSurfaceFormatsKHR(m_device->phy().handle(), m_surface, &format_count, formats.data());
+    }
+
+    uint32_t present_mode_count;
+    vkGetPhysicalDeviceSurfacePresentModesKHR(m_device->phy().handle(), m_surface, &present_mode_count, nullptr);
+    std::vector<VkPresentModeKHR> present_modes;
+    if (present_mode_count != 0) {
+        present_modes.resize(present_mode_count);
+        vkGetPhysicalDeviceSurfacePresentModesKHR(m_device->phy().handle(), m_surface, &present_mode_count, present_modes.data());
+    }
+
+    VkSwapchainCreateInfoKHR swapchain_create_info = {};
+    swapchain_create_info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+    swapchain_create_info.pNext = 0;
+    swapchain_create_info.surface = m_surface;
+    swapchain_create_info.minImageCount = capabilities.minImageCount;
+    swapchain_create_info.imageFormat = formats[0].format;
+    swapchain_create_info.imageColorSpace = formats[0].colorSpace;
+    swapchain_create_info.imageExtent = {capabilities.minImageExtent.width, capabilities.minImageExtent.height};
+    swapchain_create_info.imageArrayLayers = capabilities.maxImageArrayLayers;
+    swapchain_create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    swapchain_create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    swapchain_create_info.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+    swapchain_create_info.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+    swapchain_create_info.presentMode = present_modes[0];
+    swapchain_create_info.clipped = VK_FALSE;
+    swapchain_create_info.oldSwapchain = 0;
+    vkCreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &m_swapchain);
+}
+
+void VkRenderFramework::DestroySwapchain() { 
+    vkDestroySwapchainKHR(device(), m_swapchain, nullptr);
+    m_swapchain = VK_NULL_HANDLE;
+    vkDestroySurfaceKHR(instance(), m_surface, nullptr);
+    m_surface = VK_NULL_HANDLE;
+}
+
 void VkRenderFramework::InitRenderTarget() { InitRenderTarget(1); }
 
 void VkRenderFramework::InitRenderTarget(uint32_t targets) { InitRenderTarget(targets, NULL); }
