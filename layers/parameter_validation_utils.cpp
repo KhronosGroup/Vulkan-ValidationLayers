@@ -3113,3 +3113,21 @@ bool StatelessValidation::manual_PreCallValidateCmdSetDeviceMask(VkCommandBuffer
     }
     return skip;
 }
+
+bool StatelessValidation::manual_PreCallValidateAcquireNextImage2KHR(VkDevice device, const VkAcquireNextImageInfoKHR *pAcquireInfo,
+                                                                     uint32_t *pImageIndex) {
+    bool skip = false;
+    uint32_t count = 1 << physical_device_count;
+    if (count <= pAcquireInfo->deviceMask) {
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SWAPCHAIN_KHR_EXT,
+                        HandleToUint64(pAcquireInfo->swapchain), "VUID-VkAcquireNextImageInfoKHR-deviceMask-01290",
+                        "deviceMask[%" PRIu32 "] is invaild. Physical device count is %d.", pAcquireInfo->deviceMask,
+                        physical_device_count);
+    }
+    if (pAcquireInfo->deviceMask == 0) {
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SWAPCHAIN_KHR_EXT,
+                        HandleToUint64(pAcquireInfo->swapchain), "VUID-VkAcquireNextImageInfoKHR-deviceMask-01291",
+                        "deviceMask[%" PRIu32 "] is invaild.", pAcquireInfo->deviceMask);
+    }
+    return skip;
+}

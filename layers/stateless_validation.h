@@ -1063,5 +1063,7 @@ class StatelessValidation : public ValidationObject {
                                                   VkSubpassContents contents);
                                                   
     bool manual_PreCallValidateCmdSetDeviceMask(VkCommandBuffer commandBuffer, uint32_t deviceMask);
+    bool manual_PreCallValidateAcquireNextImage2KHR(VkDevice device, const VkAcquireNextImageInfoKHR *pAcquireInfo,
+                                                    uint32_t *pImageIndex);
 #include "parameter_validation.h"
 };  // Class StatelessValidation
