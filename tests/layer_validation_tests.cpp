@@ -38108,6 +38108,7 @@ static void processCommand(struct android_app *app, int32_t cmd) {
         case APP_CMD_INIT_WINDOW: {
             if (app->window) {
                 initialized = true;
+                VkTestFramework::window = app->window;
             }
             break;
         }
