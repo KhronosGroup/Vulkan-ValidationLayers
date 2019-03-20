@@ -27511,6 +27511,57 @@ TEST_F(VkLayerTest, SetDynViewportParamMultiviewportTests) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(VkLayerTest, BadRenderPassScopeSecondaryCmdBuffer) {
+    TEST_DESCRIPTION(
+        "Test secondary buffers executed in wrong render pass scope wrt VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkCommandBufferObj sec_cmdbuff_inside_rp(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    VkCommandBufferObj sec_cmdbuff_outside_rp(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+
+    const VkCommandBufferInheritanceInfo cmdbuff_ii = {
+        VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO,
+        nullptr,  // pNext
+        m_renderPass,
+        0,  // subpass
+        m_framebuffer,
+    };
+    const VkCommandBufferBeginInfo cmdbuff_bi_tmpl = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+                                                      nullptr,  // pNext
+                                                      VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, &cmdbuff_ii};
+
+    VkCommandBufferBeginInfo cmdbuff_inside_rp_bi = cmdbuff_bi_tmpl;
+    cmdbuff_inside_rp_bi.flags |= VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+    sec_cmdbuff_inside_rp.begin(&cmdbuff_inside_rp_bi);
+    sec_cmdbuff_inside_rp.end();
+
+    VkCommandBufferBeginInfo cmdbuff_outside_rp_bi = cmdbuff_bi_tmpl;
+    cmdbuff_outside_rp_bi.flags &= ~VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+    sec_cmdbuff_outside_rp.begin(&cmdbuff_outside_rp_bi);
+    sec_cmdbuff_outside_rp.end();
+
+    m_commandBuffer->begin();
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdExecuteCommands-pCommandBuffers-00100");
+    vkCmdExecuteCommands(m_commandBuffer->handle(), 1, &sec_cmdbuff_inside_rp.handle());
+    m_errorMonitor->VerifyFound();
+
+    const VkRenderPassBeginInfo rp_bi{VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
+                                      nullptr,  // pNext
+                                      m_renderPass,
+                                      m_framebuffer,
+                                      {{0, 0}, {32, 32}},
+                                      static_cast<uint32_t>(m_renderPassClearValues.size()),
+                                      m_renderPassClearValues.data()};
+    vkCmdBeginRenderPass(m_commandBuffer->handle(), &rp_bi, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdExecuteCommands-pCommandBuffers-00096");
+    vkCmdExecuteCommands(m_commandBuffer->handle(), 1, &sec_cmdbuff_outside_rp.handle());
+    m_errorMonitor->VerifyFound();
+}
+
 //
 // POSITIVE VALIDATION TESTS
 //
