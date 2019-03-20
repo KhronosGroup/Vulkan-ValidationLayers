@@ -1,7 +1,8 @@
 /**************************************************************************
  *
- * Copyright 2014 Valve Software
- * Copyright 2015 Google Inc.
+ * Copyright 2014-2019 Valve Software
+ * Copyright 2015-2019 Google Inc.
+ * Copyright 2019 LunarG, Inc.
  * All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -45,6 +46,7 @@ class ConfigFile {
 
     const char *getOption(const std::string &_option);
     void setOption(const std::string &_option, const std::string &_val);
+    std::string vk_layer_disables_env_var{};
 
    private:
     bool m_fileIsParsed;
@@ -76,6 +78,10 @@ std::string getEnvironment(const char *variable) {
 }
 
 VK_LAYER_EXPORT const char *getLayerOption(const char *_option) { return g_configFileObj.getOption(_option); }
+VK_LAYER_EXPORT const char *GetLayerEnvVar(const char *_option) {
+    g_configFileObj.vk_layer_disables_env_var = getEnvironment(_option);
+    return g_configFileObj.vk_layer_disables_env_var.c_str();
+}
 
 // If option is NULL or stdout, return stdout, otherwise try to open option
 // as a filename. If successful, return file handle, otherwise stdout

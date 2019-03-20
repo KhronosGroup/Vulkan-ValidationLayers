@@ -257,48 +257,51 @@ public:
     std::vector<VkQueueFamilyProperties> queue_family_properties;
 };
 
-// CHECK_DISABLED struct is a container for bools that can block validation checks from being performed.
-// The end goal is to have all checks guarded by a bool. The bools are all "false" by default meaning that all checks
-// are enabled. At CreateInstance time, the user can use the VK_EXT_validation_flags extension to pass in enum values
-// of VkValidationCheckEXT that will selectively disable checks.
-// The VK_EXT_validation_features extension can also be used with the VkValidationFeaturesEXT structure to set
-// disables in the CHECK_DISABLED struct and/or enables in the CHECK_ENABLED struct.
-struct CHECK_DISABLED {
-    bool command_buffer_state;
-    bool create_descriptor_set_layout;
-    bool destroy_buffer_view;       // Skip validation at DestroyBufferView time
-    bool destroy_image_view;        // Skip validation at DestroyImageView time
-    bool destroy_pipeline;          // Skip validation at DestroyPipeline time
-    bool destroy_descriptor_pool;   // Skip validation at DestroyDescriptorPool time
-    bool destroy_framebuffer;       // Skip validation at DestroyFramebuffer time
-    bool destroy_renderpass;        // Skip validation at DestroyRenderpass time
-    bool destroy_image;             // Skip validation at DestroyImage time
-    bool destroy_sampler;           // Skip validation at DestroySampler time
-    bool destroy_command_pool;      // Skip validation at DestroyCommandPool time
-    bool destroy_event;             // Skip validation at DestroyEvent time
-    bool free_memory;               // Skip validation at FreeMemory time
-    bool object_in_use;             // Skip all object in_use checking
-    bool idle_descriptor_set;       // Skip check to verify that descriptor set is no in-use
-    bool push_constant_range;       // Skip push constant range checks
-    bool free_descriptor_sets;      // Skip validation prior to vkFreeDescriptorSets()
-    bool allocate_descriptor_sets;  // Skip validation prior to vkAllocateDescriptorSets()
-    bool update_descriptor_sets;    // Skip validation prior to vkUpdateDescriptorSets()
-    bool wait_for_fences;
-    bool get_fence_state;
-    bool queue_wait_idle;
-    bool device_wait_idle;
-    bool destroy_fence;
-    bool destroy_semaphore;
-    bool destroy_query_pool;
-    bool get_query_pool_results;
-    bool destroy_buffer;
+typedef enum ValidationCheckDisables {
+    VALIDATION_CHECK_DISABLE_DESTROY_PIPELINE,
+    VALIDATION_CHECK_DISABLE_DESTROY_SAMPLER,
+    VALIDATION_CHECK_DISABLE_DESTROY_COMMAND_POOL,
+    VALIDATION_CHECK_DISABLE_DESTROY_SEMAPHORE,
+    VALIDATION_CHECK_DISABLE_DESTROY_DESCRIPTOR_POOL,
+    VALIDATION_CHECK_DISABLE_COMMAND_BUFFER_STATE,
+    VALIDATION_CHECK_DISABLE_CREATE_DESCRIPTOR_SET_LAYOUT,
+    VALIDATION_CHECK_DISABLE_OBJECT_IN_USE,
+    VALIDATION_CHECK_DISABLE_IDLE_DESCRIPTOR_SET,
+    VALIDATION_CHECK_DISABLE_PUSH_CONSTANT_RANGE,
+    VALIDATION_CHECK_DISABLE_ALLOCATE_DESCRIPTOR_SETS,
+    VALIDATION_CHECK_DISABLE_UPDATE_DESCRIPTOR_SETS,
+    VALIDATION_CHECK_DISABLE_WAIT_FOR_FENCES,
+    VALIDATION_CHECK_DISABLE_QUEUE_WAIT_IDLE,
+    VALIDATION_CHECK_DISABLE_DEVICE_WAIT_IDLE,
+} ValidationCheckDisables;
 
-    bool object_tracking;           // Disable object lifetime validation
-    bool core_checks;               // Disable core validation checks
-    bool thread_safety;             // Disable thread safety validation
-    bool stateless_checks;          // Disable stateless validation checks
-    bool handle_wrapping;           // Disable unique handles/handle wrapping
-    bool shader_validation;         // Skip validation for shaders
+
+// CHECK_DISABLED struct is a container for bools that can block validation checks from being performed.
+// These bools are all "false" by default meaning that all checks are enabled. Enum values can be specified
+// via the vk_layer_setting.txt config file or at CreateInstance time via the VK_EXT_validation_features extension
+// that can selectively disable checks.
+struct CHECK_DISABLED {
+    bool destroy_pipeline;                          // Skip validation at DestroyPipeline time
+    bool destroy_sampler;                           // Skip validation at DestroySampler time
+    bool destroy_command_pool;                      // Skip validation at DestroyCommandPool time
+    bool destroy_semaphore;                         // Skip validation at DestroySemaphore time
+    bool destroy_descriptor_pool;                   // Skip validation at DestroyDescriptorPool time
+    bool command_buffer_state;                      // Skip command buffer state validation
+    bool create_descriptor_set_layout;              // Skip validation at CreateDescSetLayout time
+    bool object_in_use;                             // Skip all object in_use checking
+    bool idle_descriptor_set;                       // Skip check to verify that descriptor set is not in-use
+    bool push_constant_range;                       // Skip push constant range checks
+    bool allocate_descriptor_sets;                  // Skip validation prior to vkAllocateDescriptorSets()
+    bool update_descriptor_sets;                    // Skip validation prior to vkUpdateDescriptorSets()
+    bool wait_for_fences;                           // Skip validation at WaitForFences time
+    bool queue_wait_idle;                           // Skip validation at QueueWaitIdle time
+    bool device_wait_idle;                          // Skip validation at DeviceWaitIdle time
+    bool object_tracking;                           // Disable object lifetime validation
+    bool core_checks;                               // Disable core validation checks
+    bool thread_safety;                             // Disable thread safety validation
+    bool stateless_checks;                          // Disable stateless validation checks
+    bool handle_wrapping;                           // Disable unique handles/handle wrapping
+    bool shader_validation;                         // Skip validation for shaders
 
     void SetAll(bool value) { std::fill(&command_buffer_state, &shader_validation + 1, value); }
 };
@@ -535,27 +538,110 @@ static void DeviceExtensionWhitelist(ValidationObject *layer_data, const VkDevic
     }
 }
 
-// For the given ValidationCheck enum, set all relevant instance disabled flags to true
-void SetDisabledFlags(ValidationObject *instance_data, const VkValidationFlagsEXT *val_flags_struct) {
+
+// Process validation features, flags and settings specified through extensions, a layer settings file, or environment variables
+
+static const std::unordered_map<std::string, VkValidationFeatureDisableEXT> VkValFeatureDisableLookup = {
+    {"VK_VALIDATION_FEATURE_DISABLE_SHADERS_EXT", VK_VALIDATION_FEATURE_DISABLE_SHADERS_EXT},
+    {"VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT", VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT},
+    {"VK_VALIDATION_FEATURE_DISABLE_API_PARAMETERS_EXT", VK_VALIDATION_FEATURE_DISABLE_API_PARAMETERS_EXT},
+    {"VK_VALIDATION_FEATURE_DISABLE_OBJECT_LIFETIMES_EXT", VK_VALIDATION_FEATURE_DISABLE_OBJECT_LIFETIMES_EXT},
+    {"VK_VALIDATION_FEATURE_DISABLE_CORE_CHECKS_EXT", VK_VALIDATION_FEATURE_DISABLE_CORE_CHECKS_EXT},
+    {"VK_VALIDATION_FEATURE_DISABLE_UNIQUE_HANDLES_EXT", VK_VALIDATION_FEATURE_DISABLE_UNIQUE_HANDLES_EXT},
+    {"VK_VALIDATION_FEATURE_DISABLE_ALL_EXT", VK_VALIDATION_FEATURE_DISABLE_ALL_EXT},
+};
+
+static const std::unordered_map<std::string, ValidationCheckDisables> ValidationDisableLookup = {
+    {"VALIDATION_CHECK_DISABLE_DESTROY_PIPELINE", VALIDATION_CHECK_DISABLE_DESTROY_PIPELINE},
+    {"VALIDATION_CHECK_DISABLE_DESTROY_SAMPLER", VALIDATION_CHECK_DISABLE_DESTROY_SAMPLER},
+    {"VALIDATION_CHECK_DISABLE_DESTROY_COMMAND_POOL", VALIDATION_CHECK_DISABLE_DESTROY_COMMAND_POOL},
+    {"VALIDATION_CHECK_DISABLE_DESTROY_SEMAPHORE", VALIDATION_CHECK_DISABLE_DESTROY_SEMAPHORE},
+    {"VALIDATION_CHECK_DISABLE_DESTROY_DESCRIPTOR_POOL", VALIDATION_CHECK_DISABLE_DESTROY_DESCRIPTOR_POOL},
+    {"VALIDATION_CHECK_DISABLE_COMMAND_BUFFER_STATE", VALIDATION_CHECK_DISABLE_COMMAND_BUFFER_STATE},
+    {"VALIDATION_CHECK_DISABLE_CREATE_DESCRIPTOR_SET_LAYOUT", VALIDATION_CHECK_DISABLE_CREATE_DESCRIPTOR_SET_LAYOUT},
+    {"VALIDATION_CHECK_DISABLE_OBJECT_IN_USE", VALIDATION_CHECK_DISABLE_OBJECT_IN_USE},
+    {"VALIDATION_CHECK_DISABLE_IDLE_DESCRIPTOR_SET", VALIDATION_CHECK_DISABLE_IDLE_DESCRIPTOR_SET},
+    {"VALIDATION_CHECK_DISABLE_PUSH_CONSTANT_RANGE", VALIDATION_CHECK_DISABLE_PUSH_CONSTANT_RANGE},
+    {"VALIDATION_CHECK_DISABLE_ALLOCATE_DESCRIPTOR_SETS", VALIDATION_CHECK_DISABLE_ALLOCATE_DESCRIPTOR_SETS},
+    {"VALIDATION_CHECK_DISABLE_UPDATE_DESCRIPTOR_SETS", VALIDATION_CHECK_DISABLE_UPDATE_DESCRIPTOR_SETS},
+    {"VALIDATION_CHECK_DISABLE_WAIT_FOR_FENCES", VALIDATION_CHECK_DISABLE_WAIT_FOR_FENCES},
+    {"VALIDATION_CHECK_DISABLE_QUEUE_WAIT_IDLE", VALIDATION_CHECK_DISABLE_QUEUE_WAIT_IDLE},
+    {"VALIDATION_CHECK_DISABLE_DEVICE_WAIT_IDLE", VALIDATION_CHECK_DISABLE_DEVICE_WAIT_IDLE},
+};
+
+// Set the local disable flag for settings specified through the VK_EXT_validation_flags extension
+void SetValidationFlags(CHECK_DISABLED* disables, const VkValidationFlagsEXT* val_flags_struct) {
     for (uint32_t i = 0; i < val_flags_struct->disabledValidationCheckCount; ++i) {
         switch (val_flags_struct->pDisabledValidationChecks[i]) {
-        case VK_VALIDATION_CHECK_SHADERS_EXT:
-            instance_data->disabled.shader_validation = true;
-            break;
-        case VK_VALIDATION_CHECK_ALL_EXT:
-            // Set all disabled flags to true
-            instance_data->disabled.SetAll(true);
-            break;
-        default:
-            break;
+            case VK_VALIDATION_CHECK_SHADERS_EXT:
+                disables->shader_validation = true;
+                break;
+            case VK_VALIDATION_CHECK_ALL_EXT:
+                // Set all disabled flags to true
+                disables->SetAll(true);
+                break;
+            default:
+                break;
         }
     }
 }
 
-void SetValidationFeatures(CHECK_DISABLED *disable_data, CHECK_ENABLED *enable_data,
-                           const VkValidationFeaturesEXT *val_features_struct) {
-    for (uint32_t i = 0; i < val_features_struct->disabledValidationFeatureCount; ++i) {
-        switch (val_features_struct->pDisabledValidationFeatures[i]) {
+// Set the local disable flag for the appropriate VALIDATION_CHECK_DISABLE enum
+void SetValidationDisable(CHECK_DISABLED* disable_data, const ValidationCheckDisables disable_id) {
+    switch (disable_id) {
+        case VALIDATION_CHECK_DISABLE_DESTROY_PIPELINE:
+            disable_data->destroy_pipeline = true;
+            break;
+        case VALIDATION_CHECK_DISABLE_DESTROY_SAMPLER:
+            disable_data->destroy_sampler = true;
+            break;
+        case VALIDATION_CHECK_DISABLE_DESTROY_COMMAND_POOL:
+            disable_data->destroy_command_pool = true;
+            break;
+        case VALIDATION_CHECK_DISABLE_DESTROY_SEMAPHORE:
+            disable_data->destroy_semaphore = true;
+            break;
+        case VALIDATION_CHECK_DISABLE_DESTROY_DESCRIPTOR_POOL:
+            disable_data->destroy_descriptor_pool = true;
+            break;
+        case VALIDATION_CHECK_DISABLE_COMMAND_BUFFER_STATE:
+            disable_data->command_buffer_state = true;
+            break;
+        case VALIDATION_CHECK_DISABLE_CREATE_DESCRIPTOR_SET_LAYOUT:
+            disable_data->create_descriptor_set_layout = true;
+            break;
+        case VALIDATION_CHECK_DISABLE_OBJECT_IN_USE:
+            disable_data->object_in_use = true;
+            break;
+        case VALIDATION_CHECK_DISABLE_IDLE_DESCRIPTOR_SET:
+            disable_data->idle_descriptor_set = true;
+            break;
+        case VALIDATION_CHECK_DISABLE_PUSH_CONSTANT_RANGE:
+            disable_data->push_constant_range = true;
+            break;
+        case VALIDATION_CHECK_DISABLE_ALLOCATE_DESCRIPTOR_SETS:
+            disable_data->allocate_descriptor_sets = true;
+            break;
+        case VALIDATION_CHECK_DISABLE_UPDATE_DESCRIPTOR_SETS:
+            disable_data->update_descriptor_sets = true;
+            break;
+        case VALIDATION_CHECK_DISABLE_WAIT_FOR_FENCES:
+            disable_data->wait_for_fences = true;
+            break;
+        case VALIDATION_CHECK_DISABLE_QUEUE_WAIT_IDLE:
+            disable_data->queue_wait_idle = true;
+            break;
+        case VALIDATION_CHECK_DISABLE_DEVICE_WAIT_IDLE:
+            disable_data->device_wait_idle = true;
+            break;
+        default:
+            assert(true);
+    }
+}
+
+// Set the local disable flag for a single VK_VALIDATION_FEATURE_DISABLE_* flag
+void SetValidationFeatureDisable(CHECK_DISABLED* disable_data, const VkValidationFeatureDisableEXT feature_disable) {
+    switch (feature_disable) {
         case VK_VALIDATION_FEATURE_DISABLE_SHADERS_EXT:
             disable_data->shader_validation = true;
             break;
@@ -580,10 +666,12 @@ void SetValidationFeatures(CHECK_DISABLED *disable_data, CHECK_ENABLED *enable_d
             break;
         default:
             break;
-        }
     }
-    for (uint32_t i = 0; i < val_features_struct->enabledValidationFeatureCount; ++i) {
-        switch (val_features_struct->pEnabledValidationFeatures[i]) {
+}
+
+// Set the local enable flag for a single VK_VALIDATION_FEATURE_ENABLE_* flag
+void SetValidationFeatureEnable(CHECK_ENABLED *enable_data, const VkValidationFeatureEnableEXT feature_enable) {
+    switch (feature_enable) {
         case VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT:
             enable_data->gpu_validation = true;
             break;
@@ -592,9 +680,65 @@ void SetValidationFeatures(CHECK_DISABLED *disable_data, CHECK_ENABLED *enable_d
             break;
         default:
             break;
-        }
     }
 }
+
+// Process Validation Features flags specified through the ValidationFeature extension
+void SetValidationFeatures(CHECK_DISABLED *disable_data, CHECK_ENABLED *enable_data,
+                           const VkValidationFeaturesEXT *val_features_struct) {
+    for (uint32_t i = 0; i < val_features_struct->disabledValidationFeatureCount; ++i) {
+        SetValidationFeatureDisable(disable_data, val_features_struct->pDisabledValidationFeatures[i]);
+    }
+    for (uint32_t i = 0; i < val_features_struct->enabledValidationFeatureCount; ++i) {
+        SetValidationFeatureEnable(enable_data, val_features_struct->pEnabledValidationFeatures[i]);
+    }
+}
+
+// Given a string representation of a list of disable enum values, call the appropriate setter function
+void SetLocalDisableSetting(std::string list_of_disables, std::string delimiter, CHECK_DISABLED* disables) {
+    size_t pos = 0;
+    std::string token;
+    while (list_of_disables.length() != 0) {
+        pos = list_of_disables.find(delimiter);
+        if (pos != std::string::npos) {
+            token = list_of_disables.substr(0, pos);
+        } else {
+            pos = list_of_disables.length() - delimiter.length();
+            token = list_of_disables;
+        }
+        if (token.find("VK_VALIDATION_FEATURE_DISABLE_") != std::string::npos) {
+            auto result = VkValFeatureDisableLookup.find(token);
+            if (result != VkValFeatureDisableLookup.end()) {
+                SetValidationFeatureDisable(disables, result->second);
+            }
+        }
+        if (token.find("VALIDATION_CHECK_DISABLE_") != std::string::npos) {
+            auto result = ValidationDisableLookup.find(token);
+            if (result != ValidationDisableLookup.end()) {
+                SetValidationDisable(disables, result->second);
+            }
+        }
+        list_of_disables.erase(0, pos + delimiter.length());
+    }
+}
+
+// Obtain and process disables set via the vk_layer_settings.txt config file or the VK_LAYER_DISABLES environment variable
+void ProcessLocalDisableSettings(const char* layer_description, CHECK_DISABLED* disables) {
+    std::string disable_key = layer_description;
+    disable_key.append(".disables");
+    std::string list_of_config_disables = getLayerOption(disable_key.c_str());
+    std::string list_of_env_disables = GetLayerEnvVar("VK_LAYER_DISABLES");
+#if defined(_WIN32)
+    std::string env_delimiter = ";";
+#else
+    std::string env_delimiter = ":";
+#endif
+    SetLocalDisableSetting(list_of_config_disables, ",", disables);
+    SetLocalDisableSetting(list_of_env_disables, env_delimiter, disables);
+}
+
+
+// Non-code-generated chassis API functions
 
 VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetDeviceProcAddr(VkDevice device, const char *funcName) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
@@ -671,6 +815,12 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
     if (validation_features_ext) {
         SetValidationFeatures(&local_disables, &local_enables, validation_features_ext);
     }
+    const auto *validation_flags_ext = lvl_find_in_chain<VkValidationFlagsEXT>(pCreateInfo->pNext);
+    if (validation_flags_ext) {
+        SetValidationFlags(&local_disables, validation_flags_ext);
+    }
+
+    ProcessLocalDisableSettings(OBJECT_LAYER_DESCRIPTION, &local_disables);
 
     // Create temporary dispatch vector for pre-calls until instance is created
     std::vector<ValidationObject*> local_object_dispatch;
@@ -737,12 +887,6 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
                                                          pCreateInfo->ppEnabledExtensionNames);
     framework->api_version = api_version;
     framework->instance_extensions.InitFromInstanceCreateInfo(specified_version, pCreateInfo);
-
-    // Parse any pNext chains for validation features and flags
-    const auto *validation_flags_ext = lvl_find_in_chain<VkValidationFlagsEXT>(pCreateInfo->pNext);
-    if (validation_flags_ext) {
-        SetDisabledFlags(framework, validation_flags_ext);
-    }
 
     layer_debug_messenger_actions(framework->report_data, framework->logging_messenger, pAllocator, OBJECT_LAYER_DESCRIPTION);
 
