@@ -152,12 +152,12 @@ VkResult GpuDeviceMemoryManager::AllocMemoryChunk(MemoryChunk &chunk) {
     buffer_create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
     buffer_create_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
     buffer_create_info.size = chunk_size_;
-    result = DispatchCreateBuffer(dev_data_, dev_data_->device, &buffer_create_info, NULL, &buffer);
+    result = DispatchCreateBuffer(dev_data_->device, &buffer_create_info, NULL, &buffer);
     if (result != VK_SUCCESS) {
         return result;
     }
 
-    DispatchGetBufferMemoryRequirements(dev_data_, dev_data_->device, buffer, &mem_reqs);
+    DispatchGetBufferMemoryRequirements(dev_data_->device, buffer, &mem_reqs);
 
     mem_alloc.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     mem_alloc.pNext = NULL;
@@ -166,29 +166,29 @@ VkResult GpuDeviceMemoryManager::AllocMemoryChunk(MemoryChunk &chunk) {
                                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                                     &mem_alloc.memoryTypeIndex);
     if (!pass) {
-        DispatchDestroyBuffer(dev_data_, dev_data_->device, buffer, NULL);
+        DispatchDestroyBuffer(dev_data_->device, buffer, NULL);
         return result;
     }
-    result = DispatchAllocateMemory(dev_data_, dev_data_->device, &mem_alloc, NULL, &memory);
+    result = DispatchAllocateMemory(dev_data_->device, &mem_alloc, NULL, &memory);
     if (result != VK_SUCCESS) {
-        DispatchDestroyBuffer(dev_data_, dev_data_->device, buffer, NULL);
+        DispatchDestroyBuffer(dev_data_->device, buffer, NULL);
         return result;
     }
 
-    result = DispatchBindBufferMemory(dev_data_, dev_data_->device, buffer, memory, 0);
+    result = DispatchBindBufferMemory(dev_data_->device, buffer, memory, 0);
     if (result != VK_SUCCESS) {
-        DispatchDestroyBuffer(dev_data_, dev_data_->device, buffer, NULL);
-        DispatchFreeMemory(dev_data_, dev_data_->device, memory, NULL);
+        DispatchDestroyBuffer(dev_data_->device, buffer, NULL);
+        DispatchFreeMemory(dev_data_->device, memory, NULL);
         return result;
     }
 
-    result = DispatchMapMemory(dev_data_, dev_data_->device, memory, 0, mem_alloc.allocationSize, 0, &pData);
+    result = DispatchMapMemory(dev_data_->device, memory, 0, mem_alloc.allocationSize, 0, &pData);
     if (result == VK_SUCCESS) {
         memset(pData, 0, chunk_size_);
-        DispatchUnmapMemory(dev_data_, dev_data_->device, memory);
+        DispatchUnmapMemory(dev_data_->device, memory);
     } else {
-        DispatchDestroyBuffer(dev_data_, dev_data_->device, buffer, NULL);
-        DispatchFreeMemory(dev_data_, dev_data_->device, memory, NULL);
+        DispatchDestroyBuffer(dev_data_->device, buffer, NULL);
+        DispatchFreeMemory(dev_data_->device, memory, NULL);
         return result;
     }
     chunk.buffer = buffer;
@@ -197,8 +197,8 @@ VkResult GpuDeviceMemoryManager::AllocMemoryChunk(MemoryChunk &chunk) {
 }
 
 void GpuDeviceMemoryManager::FreeMemoryChunk(MemoryChunk &chunk) {
-    DispatchDestroyBuffer(dev_data_, dev_data_->device, chunk.buffer, NULL);
-    DispatchFreeMemory(dev_data_, dev_data_->device, chunk.memory, NULL);
+    DispatchDestroyBuffer(dev_data_->device, chunk.buffer, NULL);
+    DispatchFreeMemory(dev_data_->device, chunk.memory, NULL);
 }
 
 void GpuDeviceMemoryManager::FreeAllBlocks() {
@@ -213,7 +213,7 @@ GpuDescriptorSetManager::GpuDescriptorSetManager(CoreChecks *dev_data) { dev_dat
 
 GpuDescriptorSetManager::~GpuDescriptorSetManager() {
     for (auto &pool : desc_pool_map_) {
-        DispatchDestroyDescriptorPool(dev_data_, dev_data_->device, pool.first, NULL);
+        DispatchDestroyDescriptorPool(dev_data_->device, pool.first, NULL);
     }
     desc_pool_map_.clear();
 }
@@ -252,7 +252,7 @@ VkResult GpuDescriptorSetManager::GetDescriptorSets(uint32_t count, VkDescriptor
         desc_pool_info.maxSets = pool_count;
         desc_pool_info.poolSizeCount = 1;
         desc_pool_info.pPoolSizes = &size_counts;
-        result = DispatchCreateDescriptorPool(dev_data_, dev_data_->device, &desc_pool_info, NULL, &pool_to_use);
+        result = DispatchCreateDescriptorPool(dev_data_->device, &desc_pool_info, NULL, &pool_to_use);
         assert(result == VK_SUCCESS);
         if (result != VK_SUCCESS) {
             return result;
@@ -265,7 +265,7 @@ VkResult GpuDescriptorSetManager::GetDescriptorSets(uint32_t count, VkDescriptor
     VkDescriptorSetAllocateInfo alloc_info = {VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO, NULL, pool_to_use, count,
                                               desc_layouts.data()};
 
-    result = DispatchAllocateDescriptorSets(dev_data_, dev_data_->device, &alloc_info, desc_sets->data());
+    result = DispatchAllocateDescriptorSets(dev_data_->device, &alloc_info, desc_sets->data());
     assert(result == VK_SUCCESS);
     if (result != VK_SUCCESS) {
         return result;
@@ -278,14 +278,14 @@ VkResult GpuDescriptorSetManager::GetDescriptorSets(uint32_t count, VkDescriptor
 void GpuDescriptorSetManager::PutBackDescriptorSet(VkDescriptorPool desc_pool, VkDescriptorSet desc_set) {
     auto iter = desc_pool_map_.find(desc_pool);
     if (iter != desc_pool_map_.end()) {
-        VkResult result = DispatchFreeDescriptorSets(dev_data_, dev_data_->device, desc_pool, 1, &desc_set);
+        VkResult result = DispatchFreeDescriptorSets(dev_data_->device, desc_pool, 1, &desc_set);
         assert(result == VK_SUCCESS);
         if (result != VK_SUCCESS) {
             return;
         }
         desc_pool_map_[desc_pool].used--;
         if (0 == desc_pool_map_[desc_pool].used) {
-            DispatchDestroyDescriptorPool(dev_data_, dev_data_->device, desc_pool, NULL);
+            DispatchDestroyDescriptorPool(dev_data_->device, desc_pool, NULL);
             desc_pool_map_.erase(desc_pool);
         }
     }
@@ -294,7 +294,7 @@ void GpuDescriptorSetManager::PutBackDescriptorSet(VkDescriptorPool desc_pool, V
 
 void GpuDescriptorSetManager::DestroyDescriptorPools() {
     for (auto &pool : desc_pool_map_) {
-        DispatchDestroyDescriptorPool(dev_data_, dev_data_->device, pool.first, NULL);
+        DispatchDestroyDescriptorPool(dev_data_->device, pool.first, NULL);
     }
     desc_pool_map_.clear();
 }
@@ -377,20 +377,20 @@ void CoreChecks::GpuPostCallRecordCreateDevice(const CHECK_ENABLED *enables) {
                                                                     NULL};
 
     VkResult result =
-        DispatchCreateDescriptorSetLayout(this, device, &debug_desc_layout_info, NULL, &gpu_validation_state->debug_desc_layout);
+        DispatchCreateDescriptorSetLayout(device, &debug_desc_layout_info, NULL, &gpu_validation_state->debug_desc_layout);
 
     // This is a layout used to "pad" a pipeline layout to fill in any gaps to the selected bind index.
     VkResult result2 =
-        DispatchCreateDescriptorSetLayout(this, device, &dummy_desc_layout_info, NULL, &gpu_validation_state->dummy_desc_layout);
+        DispatchCreateDescriptorSetLayout(device, &dummy_desc_layout_info, NULL, &gpu_validation_state->dummy_desc_layout);
     assert((result == VK_SUCCESS) && (result2 == VK_SUCCESS));
     if ((result != VK_SUCCESS) || (result2 != VK_SUCCESS)) {
         ReportSetupProblem(VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
                            "Unable to create descriptor set layout.  GPU-Assisted Validation disabled.");
         if (result == VK_SUCCESS) {
-            DispatchDestroyDescriptorSetLayout(this, device, gpu_validation_state->debug_desc_layout, NULL);
+            DispatchDestroyDescriptorSetLayout(device, gpu_validation_state->debug_desc_layout, NULL);
         }
         if (result2 == VK_SUCCESS) {
-            DispatchDestroyDescriptorSetLayout(this, device, gpu_validation_state->dummy_desc_layout, NULL);
+            DispatchDestroyDescriptorSetLayout(device, gpu_validation_state->dummy_desc_layout, NULL);
         }
         gpu_validation_state->debug_desc_layout = VK_NULL_HANDLE;
         gpu_validation_state->dummy_desc_layout = VK_NULL_HANDLE;
@@ -404,20 +404,20 @@ void CoreChecks::GpuPostCallRecordCreateDevice(const CHECK_ENABLED *enables) {
 // Clean up device-related resources
 void CoreChecks::GpuPreCallRecordDestroyDevice() {
     if (gpu_validation_state->barrier_command_buffer) {
-        DispatchFreeCommandBuffers(this, device, gpu_validation_state->barrier_command_pool, 1,
+        DispatchFreeCommandBuffers(device, gpu_validation_state->barrier_command_pool, 1,
                                    &gpu_validation_state->barrier_command_buffer);
         gpu_validation_state->barrier_command_buffer = VK_NULL_HANDLE;
     }
     if (gpu_validation_state->barrier_command_pool) {
-        DispatchDestroyCommandPool(this, device, gpu_validation_state->barrier_command_pool, NULL);
+        DispatchDestroyCommandPool(device, gpu_validation_state->barrier_command_pool, NULL);
         gpu_validation_state->barrier_command_pool = VK_NULL_HANDLE;
     }
     if (gpu_validation_state->debug_desc_layout) {
-        DispatchDestroyDescriptorSetLayout(this, device, gpu_validation_state->debug_desc_layout, NULL);
+        DispatchDestroyDescriptorSetLayout(device, gpu_validation_state->debug_desc_layout, NULL);
         gpu_validation_state->debug_desc_layout = VK_NULL_HANDLE;
     }
     if (gpu_validation_state->dummy_desc_layout) {
-        DispatchDestroyDescriptorSetLayout(this, device, gpu_validation_state->dummy_desc_layout, NULL);
+        DispatchDestroyDescriptorSetLayout(device, gpu_validation_state->dummy_desc_layout, NULL);
         gpu_validation_state->dummy_desc_layout = VK_NULL_HANDLE;
     }
     gpu_validation_state->memory_manager->FreeAllBlocks();
@@ -535,7 +535,7 @@ std::vector<safe_VkGraphicsPipelineCreateInfo> CoreChecks::GpuPreCallRecordCreat
                 create_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
                 create_info.pCode = shader->words.data();
                 create_info.codeSize = shader->words.size() * sizeof(uint32_t);
-                VkResult result = DispatchCreateShaderModule(this, device, &create_info, pAllocator, &shader_module);
+                VkResult result = DispatchCreateShaderModule(device, &create_info, pAllocator, &shader_module);
                 if (result == VK_SUCCESS) {
                     new_pipeline_create_infos[pipeline].pStages[stage].module = shader_module;
                 } else {
@@ -564,7 +564,7 @@ void CoreChecks::GpuPostCallRecordCreateGraphicsPipelines(const uint32_t count, 
         for (uint32_t stage = 0; stage < pipeline_state->graphicsPipelineCI.stageCount; ++stage) {
             if (pipeline_state->active_slots.find(gpu_validation_state->desc_set_bind_index) !=
                 pipeline_state->active_slots.end()) {
-                DispatchDestroyShaderModule(this, device, pCreateInfos->pStages[stage].module, pAllocator);
+                DispatchDestroyShaderModule(device, pCreateInfos->pStages[stage].module, pAllocator);
             }
             auto shader_state = GetShaderModuleState(pipeline_state->graphicsPipelineCI.pStages[stage].module);
             std::vector<unsigned int> code;
@@ -1017,12 +1017,11 @@ void CoreChecks::ProcessInstrumentationBuffer(VkQueue queue, GLOBAL_CB_NODE *cb_
             block_offset = (block_offset / map_align) * map_align;
             offset_to_data = buffer_info.mem_block.offset - block_offset;
             block_size += offset_to_data;
-            result = DispatchMapMemory(this, cb_node->device, buffer_info.mem_block.memory, block_offset, block_size, 0,
-                                       (void **)&pData);
+            result = DispatchMapMemory(cb_node->device, buffer_info.mem_block.memory, block_offset, block_size, 0, (void **)&pData);
             // Analyze debug output buffer
             if (result == VK_SUCCESS) {
                 AnalyzeAndReportError(cb_node, queue, draw_index, (uint32_t *)(pData + offset_to_data));
-                DispatchUnmapMemory(this, cb_node->device, buffer_info.mem_block.memory);
+                DispatchUnmapMemory(cb_node->device, buffer_info.mem_block.memory);
             }
             draw_index++;
         }
@@ -1052,7 +1051,7 @@ void CoreChecks::SubmitBarrier(VkQueue queue) {
         VkCommandPoolCreateInfo pool_create_info = {};
         pool_create_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
         pool_create_info.queueFamilyIndex = queue_family_index;
-        result = DispatchCreateCommandPool(this, device, &pool_create_info, nullptr, &gpu_validation_state->barrier_command_pool);
+        result = DispatchCreateCommandPool(device, &pool_create_info, nullptr, &gpu_validation_state->barrier_command_pool);
         if (result != VK_SUCCESS) {
             ReportSetupProblem(VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
                                "Unable to create command pool for barrier CB.");
@@ -1065,12 +1064,11 @@ void CoreChecks::SubmitBarrier(VkQueue queue) {
         command_buffer_alloc_info.commandPool = gpu_validation_state->barrier_command_pool;
         command_buffer_alloc_info.commandBufferCount = 1;
         command_buffer_alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-        result =
-            DispatchAllocateCommandBuffers(this, device, &command_buffer_alloc_info, &gpu_validation_state->barrier_command_buffer);
+        result = DispatchAllocateCommandBuffers(device, &command_buffer_alloc_info, &gpu_validation_state->barrier_command_buffer);
         if (result != VK_SUCCESS) {
             ReportSetupProblem(VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
                                "Unable to create barrier command buffer.");
-            DispatchDestroyCommandPool(this, device, gpu_validation_state->barrier_command_pool, nullptr);
+            DispatchDestroyCommandPool(device, gpu_validation_state->barrier_command_pool, nullptr);
             gpu_validation_state->barrier_command_pool = VK_NULL_HANDLE;
             gpu_validation_state->barrier_command_buffer = VK_NULL_HANDLE;
             return;
@@ -1082,7 +1080,7 @@ void CoreChecks::SubmitBarrier(VkQueue queue) {
         // Record a global memory barrier to force availability of device memory operations to the host domain.
         VkCommandBufferBeginInfo command_buffer_begin_info = {};
         command_buffer_begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-        result = DispatchBeginCommandBuffer(this, gpu_validation_state->barrier_command_buffer, &command_buffer_begin_info);
+        result = DispatchBeginCommandBuffer(gpu_validation_state->barrier_command_buffer, &command_buffer_begin_info);
 
         if (result == VK_SUCCESS) {
             VkMemoryBarrier memory_barrier = {};
@@ -1090,9 +1088,9 @@ void CoreChecks::SubmitBarrier(VkQueue queue) {
             memory_barrier.srcAccessMask = VK_ACCESS_MEMORY_WRITE_BIT;
             memory_barrier.dstAccessMask = VK_ACCESS_HOST_READ_BIT;
 
-            DispatchCmdPipelineBarrier(this, gpu_validation_state->barrier_command_buffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+            DispatchCmdPipelineBarrier(gpu_validation_state->barrier_command_buffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
                                        VK_PIPELINE_STAGE_HOST_BIT, 0, 1, &memory_barrier, 0, nullptr, 0, nullptr);
-            DispatchEndCommandBuffer(this, gpu_validation_state->barrier_command_buffer);
+            DispatchEndCommandBuffer(gpu_validation_state->barrier_command_buffer);
         }
     }
 
@@ -1101,7 +1099,7 @@ void CoreChecks::SubmitBarrier(VkQueue queue) {
         submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
         submit_info.commandBufferCount = 1;
         submit_info.pCommandBuffers = &gpu_validation_state->barrier_command_buffer;
-        DispatchQueueSubmit(this, queue, 1, &submit_info, VK_NULL_HANDLE);
+        DispatchQueueSubmit(queue, 1, &submit_info, VK_NULL_HANDLE);
     }
 }
 
@@ -1113,7 +1111,7 @@ void CoreChecks::GpuPostCallQueueSubmit(VkQueue queue, uint32_t submitCount, con
 
     SubmitBarrier(queue);
 
-    DispatchQueueWaitIdle(this, queue);
+    DispatchQueueWaitIdle(queue);
 
     for (uint32_t submit_idx = 0; submit_idx < submitCount; submit_idx++) {
         const VkSubmitInfo *submit = &pSubmits[submit_idx];
@@ -1177,13 +1175,13 @@ void CoreChecks::GpuAllocateValidationResources(const VkCommandBuffer cmd_buffer
     desc_write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
     desc_write.pBufferInfo = &desc_buffer_info;
     desc_write.dstSet = desc_sets[0];
-    DispatchUpdateDescriptorSets(this, device, 1, &desc_write, 0, NULL);
+    DispatchUpdateDescriptorSets(device, 1, &desc_write, 0, NULL);
 
     auto iter = cb_node->lastBound.find(VK_PIPELINE_BIND_POINT_GRAPHICS);  // find() allows read-only access to cb_state
     if (iter != cb_node->lastBound.end()) {
         auto pipeline_state = iter->second.pipeline_state;
         if (pipeline_state && (pipeline_state->pipeline_layout.set_layouts.size() <= gpu_validation_state->desc_set_bind_index)) {
-            DispatchCmdBindDescriptorSets(this, cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_state->pipeline_layout.layout,
+            DispatchCmdBindDescriptorSets(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_state->pipeline_layout.layout,
                                           gpu_validation_state->desc_set_bind_index, 1, desc_sets.data(), 0, nullptr);
         }
     } else {
