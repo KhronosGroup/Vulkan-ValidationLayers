@@ -1010,7 +1010,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateGraphicsPipelines(
         intercept->PreCallRecordCreateGraphicsPipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines, &cgpl_state);
     }
 
-    VkResult result = DispatchCreateGraphicsPipelines(layer_data, device, pipelineCache, createInfoCount, cgpl_state.pCreateInfos, pAllocator, pPipelines);
+    VkResult result = DispatchCreateGraphicsPipelines(device, pipelineCache, createInfoCount, cgpl_state.pCreateInfos, pAllocator, pPipelines);
 
     for (auto intercept : layer_data->object_dispatch) {
         auto lock = intercept->write_lock();
@@ -1045,7 +1045,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateComputePipelines(
         auto lock = intercept->write_lock();
         intercept->PreCallRecordCreateComputePipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines);
     }
-    VkResult result = DispatchCreateComputePipelines(layer_data, device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines);
+    VkResult result = DispatchCreateComputePipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines);
     for (auto intercept : layer_data->object_dispatch) {
         auto lock = intercept->write_lock();
         intercept->PostCallRecordCreateComputePipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines, result, &pipe_state);
@@ -1078,7 +1078,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateRayTracingPipelinesNV(
         auto lock = intercept->write_lock();
         intercept->PreCallRecordCreateRayTracingPipelinesNV(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines);
     }
-    VkResult result = DispatchCreateRayTracingPipelinesNV(layer_data, device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines);
+    VkResult result = DispatchCreateRayTracingPipelinesNV(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines);
     for (auto intercept : layer_data->object_dispatch) {
         auto lock = intercept->write_lock();
         intercept->PostCallRecordCreateRayTracingPipelinesNV(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines, result, &pipe_state);
@@ -1112,7 +1112,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreatePipelineLayout(
         auto lock = intercept->write_lock();
         intercept->PreCallRecordCreatePipelineLayout(device, pCreateInfo, pAllocator, pPipelineLayout, &cpl_state);
     }
-    VkResult result = DispatchCreatePipelineLayout(layer_data, device, &cpl_state.modified_create_info, pAllocator, pPipelineLayout);
+    VkResult result = DispatchCreatePipelineLayout(device, &cpl_state.modified_create_info, pAllocator, pPipelineLayout);
     for (auto intercept : layer_data->object_dispatch) {
         auto lock = intercept->write_lock();
         intercept->PostCallRecordCreatePipelineLayout(device, pCreateInfo, pAllocator, pPipelineLayout, result);
@@ -1146,7 +1146,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateShaderModule(
         auto lock = intercept->write_lock();
         intercept->PreCallRecordCreateShaderModule(device, pCreateInfo, pAllocator, pShaderModule, &csm_state);
     }
-    VkResult result = DispatchCreateShaderModule(layer_data, device, &csm_state.instrumented_create_info, pAllocator, pShaderModule);
+    VkResult result = DispatchCreateShaderModule(device, &csm_state.instrumented_create_info, pAllocator, pShaderModule);
     for (auto intercept : layer_data->object_dispatch) {
         auto lock = intercept->write_lock();
         intercept->PostCallRecordCreateShaderModule(device, pCreateInfo, pAllocator, pShaderModule, result, &csm_state);
@@ -1176,7 +1176,7 @@ VKAPI_ATTR VkResult VKAPI_CALL AllocateDescriptorSets(
         auto lock = intercept->write_lock();
         intercept->PreCallRecordAllocateDescriptorSets(device, pAllocateInfo, pDescriptorSets);
     }
-    VkResult result = DispatchAllocateDescriptorSets(layer_data, device, pAllocateInfo, pDescriptorSets);
+    VkResult result = DispatchAllocateDescriptorSets(device, pAllocateInfo, pDescriptorSets);
     for (auto intercept : layer_data->object_dispatch) {
         auto lock = intercept->write_lock();
         intercept->PostCallRecordAllocateDescriptorSets(device, pAllocateInfo, pDescriptorSets, result, &ads_state);
@@ -1583,7 +1583,7 @@ VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkNegotiateLoaderLayerInterfaceVe
         api_function_name = cmdinfo.elem.attrib.get('name')
         params = cmdinfo.elem.findall('param/name')
         paramstext = ', '.join([str(param.text) for param in params])
-        API = api_function_name.replace('vk','Dispatch') + '(layer_data, '
+        API = api_function_name.replace('vk','Dispatch') + '('
 
         # Declare result variable, if any.
         return_map = {
