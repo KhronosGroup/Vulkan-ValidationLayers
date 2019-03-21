@@ -52,11 +52,38 @@
 #      filename is specified or if filename has invalid path, then stdout
 #      is used by default.
 #
+#   DISABLES:
+#   =============
+#   <LayerIdentifier>.disables : comma separated list of feature/flag/disable enums
+#      These can include VkValidationFeatureDisableEXT flags defined in the Vulkan
+#      specification, or ValidationCheckDisables enums defined in chassis.h.
+#      Effects of setting these flags are described in the specification (or the
+#      source code in the case of the ValidationCheckDisables). The most useful
+#      flags are briefly described here:
+#      VK_VALIDATION_FEATURE_DISABLE_UNIQUE_HANDLES_EXT - disables handle wrapping.
+#          Disable this feature if you are running into crashes when authoring new extensions
+#          or developing new Vulkan objects/structures
+#      VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT - disables thread checks. It may
+#          help with performance to run with thread-checking disabled most of the time,
+#          enabling it occasionally for a quick sanity check, or when debugging difficult
+#          application behaviors.
+#      VK_VALIDATION_FEATURE_DISABLE_CORE_CHECKS_EXT - disables the main, heavy-duty
+#          validation checks. This may be valuable early in the development cycle to
+#          reduce validation output while correcting paramter/object usage errors.
+#      VK_VALIDATION_FEATURE_DISABLE_API_PARAMETERS_EXT - disables stateless parameter
+#          checks. This may not always be necessary late in a development cycle.
+#      VK_VALIDATION_FEATURE_DISABLE_OBJECT_LIFETIMES_EXT - disables object tracking.
+#          This may not always be necessary late in a development cycle.
+#
+
+
 
 # VK_LAYER_KHRONOS_validation Settings
 khronos_validation.debug_action = VK_DBG_LAYER_ACTION_LOG_MSG
 khronos_validation.report_flags = error,warn,perf
 khronos_validation.log_filename = stdout
+# Example entry showing how to disable threading checks and validation at DestroyPipeline time
+#khronos_validation.disables = VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT,VALIDATION_CHECK_DISABLE_DESTROY_PIPELINE
 
 # VK_LAYER_LUNARG_core_validation Settings
 lunarg_core_validation.debug_action = VK_DBG_LAYER_ACTION_LOG_MSG
