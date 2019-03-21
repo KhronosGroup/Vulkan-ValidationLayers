@@ -415,9 +415,9 @@ class GoodRepo(object):
                 cmake_cmd.append('-A')
                 cmake_cmd.append('x64')
 
-        # Apply a generator, if one is specified.  If there are multiple Visual
-        # Studio instances on a machine, this is the only way to ensure that a
-        # specific instance is used.
+        # Apply a generator, if one is specified.  This can be used to supply
+        # a specific generator for the dependent repositories to match
+        # that of the main repository.
         if self._args.generator is not None:
             cmake_cmd.extend(['-G', self._args.generator])
 
@@ -442,11 +442,13 @@ class GoodRepo(object):
         if platform.system() == 'Linux' or platform.system() == 'Darwin':
             cmake_cmd.append('--')
             num_make_jobs = multiprocessing.cpu_count()
-            if 'MAKE_JOBS' in os.environ:
+            env_make_jobs = os.environ.get('MAKE_JOBS', None)
+            if env_make_jobs is not None:
                 try:
-                    num_make_jobs = min(num_make_jobs, int(os.environ['MAKE_JOBS']))
+                    num_make_jobs = min(num_make_jobs, int(env_make_jobs))
                 except ValueError:
-                    pass
+                    print('warning: environment variable MAKE_JOBS has non-numeric value "{}".  '
+                          'Using {} (CPU count) instead.'.format(env_make_jobs, num_make_jobs))
             cmake_cmd.append('-j{}'.format(num_make_jobs))
         if platform.system() == 'Windows':
             cmake_cmd.append('--')
