@@ -3697,6 +3697,14 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
                         "VUID-VkMemoryAllocateInfo-allocationSize-00638", "vkAllocateMemory: allocationSize is 0.");
         };
     }
+
+    auto chained_flags_struct = lvl_find_in_chain<VkMemoryAllocateFlagsInfo>(pAllocateInfo->pNext);
+    if (chained_flags_struct && chained_flags_struct->flags == VK_MEMORY_ALLOCATE_DEVICE_MASK_BIT) {
+        skip |= ValidateDeviceMaskToPhysicalDeviceCount(chained_flags_struct->deviceMask, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
+                                                        HandleToUint64(device), "VUID-VkMemoryAllocateFlagsInfo-deviceMask-00675");
+        skip |= ValidateDeviceMaskToZero(chained_flags_struct->deviceMask, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
+                                         HandleToUint64(device), "VUID-VkMemoryAllocateFlagsInfo-deviceMask-00676");
+    }
     // TODO: VUIDs ending in 00643, 00644, 00646, 00647, 01742, 01743, 01745, 00645, 00648, 01744
     return skip;
 }
