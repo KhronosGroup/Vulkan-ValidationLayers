@@ -12556,6 +12556,29 @@ TEST_F(VkLayerTest, DescriptorSetCompatibility) {
     // Create pipelineLayout w/ incompatible set0 layout, but set1 is fine
     const VkPipelineLayoutObj pipe_layout_bad_set0(m_device, {&ds_layout_fs_only, &ds_layouts[1]});
 
+    // Add buffer binding for UBO
+    uint32_t qfi = 0;
+    VkBufferCreateInfo bci = {};
+    bci.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    bci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+    bci.size = 8;
+    bci.queueFamilyIndexCount = 1;
+    bci.pQueueFamilyIndices = &qfi;
+    VkBufferObj buffer;
+    buffer.init(*m_device, bci);
+    VkDescriptorBufferInfo buffer_info;
+    buffer_info.buffer = buffer.handle();
+    buffer_info.offset = 0;
+    buffer_info.range = VK_WHOLE_SIZE;
+    VkWriteDescriptorSet descriptor_write = {};
+    descriptor_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    descriptor_write.dstSet = descriptorSet[0];
+    descriptor_write.dstBinding = 0;
+    descriptor_write.descriptorCount = 1;
+    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    descriptor_write.pBufferInfo = &buffer_info;
+    vkUpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+
     // Create PSO to be used for draw-time errors below
     char const *vsSource =
         "#version 450\n"
