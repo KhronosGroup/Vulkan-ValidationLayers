@@ -10006,6 +10006,28 @@ bool CoreChecks::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, Rende
         const CMD_TYPE cmd_type = use_rp2 ? CMD_BEGINRENDERPASS2KHR : CMD_BEGINRENDERPASS;
         skip |= ValidateCmd(cb_state, cmd_type, function_name);
     }
+
+    auto chained_device_group_struct = lvl_find_in_chain<VkDeviceGroupRenderPassBeginInfo>(pRenderPassBegin->pNext);
+    if (chained_device_group_struct) {
+        skip |= ValidateDeviceMaskToPhysicalDeviceCount(
+            chained_device_group_struct->deviceMask, VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT,
+            HandleToUint64(pRenderPassBegin->renderPass), "VUID-VkDeviceGroupRenderPassBeginInfo-deviceMask-00905");
+        skip |= ValidateDeviceMaskToZero(chained_device_group_struct->deviceMask, VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT,
+                                         HandleToUint64(pRenderPassBegin->renderPass),
+                                         "VUID-VkDeviceGroupRenderPassBeginInfo-deviceMask-00906");
+        skip |= ValidateDeviceMaskToCommandBuffer(
+            cb_state, chained_device_group_struct->deviceMask, VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT,
+            HandleToUint64(pRenderPassBegin->renderPass), "VUID-VkDeviceGroupRenderPassBeginInfo-deviceMask-00907");
+
+        if (chained_device_group_struct->deviceRenderAreaCount != 0 &&
+            chained_device_group_struct->deviceRenderAreaCount != physical_device_count) {
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT,
+                            HandleToUint64(pRenderPassBegin->renderPass),
+                            "VUID-VkDeviceGroupRenderPassBeginInfo-deviceRenderAreaCount-00908",
+                            "deviceRenderAreaCount[%" PRIu32 "] is invaild. Physical device count is %" PRIu32 ".",
+                            chained_device_group_struct->deviceRenderAreaCount, physical_device_count);
+        }
+    }
     return skip;
 }
 
