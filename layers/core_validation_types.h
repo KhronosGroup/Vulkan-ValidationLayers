@@ -980,9 +980,12 @@ struct GLOBAL_CB_NODE : public BASE_NODE {
 
     uint32_t viewportMask;
     uint32_t scissorMask;
+    uint32_t initial_device_mask;
+
     VkRenderPassBeginInfo activeRenderPassBeginInfo;
     RENDER_PASS_STATE *activeRenderPass;
     VkSubpassContents activeSubpassContents;
+    uint32_t active_render_pass_device_mask;
     uint32_t activeSubpass;
     VkFramebuffer activeFramebuffer;
     std::unordered_set<VkFramebuffer> framebuffers;
