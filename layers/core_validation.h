@@ -491,6 +491,15 @@ class CoreChecks : public ValidationObject {
     bool ValidateCmdSubpassState(const GLOBAL_CB_NODE* pCB, const CMD_TYPE cmd_type);
     bool ValidateCmd(const GLOBAL_CB_NODE* cb_state, const CMD_TYPE cmd, const char* caller_name);
 
+    bool ValidateDeviceMaskToPhysicalDeviceCount(uint32_t deviceMask, VkDebugReportObjectTypeEXT VUID_handle_type,
+                                                 uint64_t VUID_handle, const char* VUID);
+    bool ValidateDeviceMaskToZero(uint32_t deviceMask, VkDebugReportObjectTypeEXT VUID_handle_type, uint64_t VUID_handle,
+                                  const char* VUID);
+    bool ValidateDeviceMaskToCommandBuffer(GLOBAL_CB_NODE* pCB, uint32_t deviceMask, VkDebugReportObjectTypeEXT VUID_handle_type,
+                                           uint64_t VUID_handle, const char* VUID);
+    bool ValidateDeviceMaskToRenderPass(GLOBAL_CB_NODE* pCB, uint32_t deviceMask, VkDebugReportObjectTypeEXT VUID_handle_type,
+                                        uint64_t VUID_handle, const char* VUID);
+
     // Prototypes for CoreChecks accessor functions
     VkFormatProperties GetPDFormatProperties(const VkFormat format);
     VkResult GetPDImageFormatProperties(const VkImageCreateInfo*, VkImageFormatProperties*);
