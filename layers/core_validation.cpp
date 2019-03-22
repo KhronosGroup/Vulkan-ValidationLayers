@@ -6147,6 +6147,15 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
                         report_data->FormatHandle(commandBuffer).c_str(), report_data->FormatHandle(cmdPool).c_str());
         }
     }
+    auto chained_device_group_struct = lvl_find_in_chain<VkDeviceGroupCommandBufferBeginInfo>(pBeginInfo->pNext);
+    if (chained_device_group_struct) {
+        skip |= ValidateDeviceMaskToPhysicalDeviceCount(
+            chained_device_group_struct->deviceMask, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT, HandleToUint64(commandBuffer),
+            "VUID-VkDeviceGroupCommandBufferBeginInfo-deviceMask-00106");
+        skip |=
+            ValidateDeviceMaskToZero(chained_device_group_struct->deviceMask, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                                     HandleToUint64(commandBuffer), "VUID-VkDeviceGroupCommandBufferBeginInfo-deviceMask-00107");
+    }
     return skip;
 }
 
