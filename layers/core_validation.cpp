@@ -2519,6 +2519,11 @@ void CoreChecks::PostCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDevice
         core_checks->enabled_features.float_controls = *float_controls_features;
     }
 
+    const auto *host_query_reset_features = lvl_find_in_chain<VkPhysicalDeviceHostQueryResetFeaturesEXT>(pCreateInfo->pNext);
+    if (host_query_reset_features) {
+        core_checks->enabled_features.host_query_reset_features = *host_query_reset_features;
+    }
+
     // Store physical device properties and physical device mem limits into CoreChecks structs
     DispatchGetPhysicalDeviceMemoryProperties(gpu, &core_checks->phys_dev_mem_props);
     DispatchGetPhysicalDeviceProperties(gpu, &core_checks->phys_dev_props);
@@ -4780,6 +4785,11 @@ void CoreChecks::PostCallRecordCreateQueryPool(VkDevice device, const VkQueryPoo
     std::unique_ptr<QUERY_POOL_STATE> query_pool_state(new QUERY_POOL_STATE{});
     query_pool_state->createInfo = *pCreateInfo;
     queryPoolMap[*pQueryPool] = std::move(query_pool_state);
+
+    for (uint32_t i = 0; i < pCreateInfo->queryCount; ++i) {
+        QueryObject query{*pQueryPool, i};
+        queryToStateMap[query] = false;
+    }
 }
 
 bool CoreChecks::PreCallValidateDestroyCommandPool(VkDevice device, VkCommandPool commandPool,
@@ -12841,6 +12851,65 @@ bool CoreChecks::PreCallValidateGetBufferDeviceAddressEXT(VkDevice device, const
     }
 
     return skip;
+}
+
+bool CoreChecks::ValidateQueryRange(VkDevice device, VkQueryPool queryPool, uint32_t totalCount, uint32_t firstQuery,
+                                    uint32_t queryCount, const char *vuid_badfirst, const char *vuid_badrange) {
+    bool skip = false;
+
+    if (firstQuery >= totalCount) {
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
+                        vuid_badfirst,
+                        "firstQuery (%" PRIu32 ") greater than or equal to query pool count (%" PRIu32 ") for query pool %s",
+                        firstQuery, totalCount, report_data->FormatHandle(queryPool).c_str());
+    }
+
+    if ((firstQuery + queryCount) > totalCount) {
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
+                        vuid_badrange,
+                        "Query range [%" PRIu32 ", %" PRIu32 ") goes beyond query pool count (%" PRIu32 ") for query pool %s",
+                        firstQuery, firstQuery + queryCount, totalCount, report_data->FormatHandle(queryPool).c_str());
+    }
+
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateResetQueryPoolEXT(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery,
+                                                  uint32_t queryCount) {
+    if (disabled.query_validation) return false;
+
+    bool skip = false;
+
+    if (!enabled_features.host_query_reset_features.hostQueryReset) {
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
+                        "VUID-vkResetQueryPoolEXT-None-02665", "Host query reset not enabled for device");
+    }
+
+    auto query_pool_it = queryPoolMap.find(queryPool);
+    if (query_pool_it != queryPoolMap.end()) {
+        skip |= ValidateQueryRange(device, queryPool, query_pool_it->second->createInfo.queryCount, firstQuery, queryCount,
+                                   "VUID-vkResetQueryPoolEXT-firstQuery-02666", "VUID-vkResetQueryPoolEXT-firstQuery-02667");
+    }
+
+    return skip;
+}
+
+void CoreChecks::PostCallRecordResetQueryPoolEXT(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount) {
+    // Do nothing if the feature is not enabled.
+    if (!enabled_features.host_query_reset_features.hostQueryReset) return;
+
+    // Do nothing if the query pool has been destroyed.
+    auto query_pool_it = queryPoolMap.find(queryPool);
+    if (query_pool_it == queryPoolMap.end()) return;
+
+    // Reset the state of existing entries.
+    QueryObject query{queryPool, 0};
+    for (uint32_t i = 0; i < queryCount; ++i) {
+        query.index = firstQuery + i;
+        if (query.index >= query_pool_it->second->createInfo.queryCount) break;
+        auto query_it = queryToStateMap.find(query);
+        if (query_it != queryToStateMap.end()) query_it->second = false;
+    }
 }
 
 void CoreChecks::PreCallRecordGetPhysicalDeviceProperties(VkPhysicalDevice physicalDevice,
