@@ -551,6 +551,11 @@ static const std::unordered_map<std::string, VkValidationFeatureDisableEXT> VkVa
     {"VK_VALIDATION_FEATURE_DISABLE_ALL_EXT", VK_VALIDATION_FEATURE_DISABLE_ALL_EXT},
 };
 
+static const std::unordered_map<std::string, VkValidationFeatureEnableEXT> VkValFeatureEnableLookup = {
+    {"VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT", VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT},
+    {"VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT", VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT},
+};
+
 static const std::unordered_map<std::string, ValidationCheckDisables> ValidationDisableLookup = {
     {"VALIDATION_CHECK_DISABLE_DESTROY_PIPELINE", VALIDATION_CHECK_DISABLE_DESTROY_PIPELINE},
     {"VALIDATION_CHECK_DISABLE_DESTROY_SAMPLER", VALIDATION_CHECK_DISABLE_DESTROY_SAMPLER},
@@ -568,23 +573,6 @@ static const std::unordered_map<std::string, ValidationCheckDisables> Validation
     {"VALIDATION_CHECK_DISABLE_QUEUE_WAIT_IDLE", VALIDATION_CHECK_DISABLE_QUEUE_WAIT_IDLE},
     {"VALIDATION_CHECK_DISABLE_DEVICE_WAIT_IDLE", VALIDATION_CHECK_DISABLE_DEVICE_WAIT_IDLE},
 };
-
-// Set the local disable flag for settings specified through the VK_EXT_validation_flags extension
-void SetValidationFlags(CHECK_DISABLED* disables, const VkValidationFlagsEXT* val_flags_struct) {
-    for (uint32_t i = 0; i < val_flags_struct->disabledValidationCheckCount; ++i) {
-        switch (val_flags_struct->pDisabledValidationChecks[i]) {
-            case VK_VALIDATION_CHECK_SHADERS_EXT:
-                disables->shader_validation = true;
-                break;
-            case VK_VALIDATION_CHECK_ALL_EXT:
-                // Set all disabled flags to true
-                disables->SetAll(true);
-                break;
-            default:
-                break;
-        }
-    }
-}
 
 // Set the local disable flag for the appropriate VALIDATION_CHECK_DISABLE enum
 void SetValidationDisable(CHECK_DISABLED* disable_data, const ValidationCheckDisables disable_id) {
@@ -683,6 +671,23 @@ void SetValidationFeatureEnable(CHECK_ENABLED *enable_data, const VkValidationFe
     }
 }
 
+// Set the local disable flag for settings specified through the VK_EXT_validation_flags extension
+void SetValidationFlags(CHECK_DISABLED* disables, const VkValidationFlagsEXT* val_flags_struct) {
+    for (uint32_t i = 0; i < val_flags_struct->disabledValidationCheckCount; ++i) {
+        switch (val_flags_struct->pDisabledValidationChecks[i]) {
+            case VK_VALIDATION_CHECK_SHADERS_EXT:
+                disables->shader_validation = true;
+                break;
+            case VK_VALIDATION_CHECK_ALL_EXT:
+                // Set all disabled flags to true
+                disables->SetAll(true);
+                break;
+            default:
+                break;
+        }
+    }
+}
+
 // Process Validation Features flags specified through the ValidationFeature extension
 void SetValidationFeatures(CHECK_DISABLED *disable_data, CHECK_ENABLED *enable_data,
                            const VkValidationFeaturesEXT *val_features_struct) {
@@ -691,6 +696,28 @@ void SetValidationFeatures(CHECK_DISABLED *disable_data, CHECK_ENABLED *enable_d
     }
     for (uint32_t i = 0; i < val_features_struct->enabledValidationFeatureCount; ++i) {
         SetValidationFeatureEnable(enable_data, val_features_struct->pEnabledValidationFeatures[i]);
+    }
+}
+
+// Given a string representation of a list of enable enum values, call the appropriate setter function
+void SetLocalEnableSetting(std::string list_of_enables, std::string delimiter, CHECK_ENABLED* enables) {
+    size_t pos = 0;
+    std::string token;
+    while (list_of_enables.length() != 0) {
+        pos = list_of_enables.find(delimiter);
+        if (pos != std::string::npos) {
+            token = list_of_enables.substr(0, pos);
+        } else {
+            pos = list_of_enables.length() - delimiter.length();
+            token = list_of_enables;
+        }
+        if (token.find("VK_VALIDATION_FEATURE_ENABLE_") != std::string::npos) {
+            auto result = VkValFeatureEnableLookup.find(token);
+            if (result != VkValFeatureEnableLookup.end()) {
+                SetValidationFeatureEnable(enables, result->second);
+            }
+        }
+        list_of_enables.erase(0, pos + delimiter.length());
     }
 }
 
@@ -722,10 +749,14 @@ void SetLocalDisableSetting(std::string list_of_disables, std::string delimiter,
     }
 }
 
-// Obtain and process disables set via the vk_layer_settings.txt config file or the VK_LAYER_DISABLES environment variable
-void ProcessLocalDisableSettings(const char* layer_description, CHECK_DISABLED* disables) {
+// Process enables and disables set though the vk_layer_settings.txt config file or through an environment variable
+void ProcessConfigAndEnvSettings(const char* layer_description, CHECK_ENABLED* enables, CHECK_DISABLED* disables) {
+    std::string enable_key = layer_description;
     std::string disable_key = layer_description;
+    enable_key.append(".enables");
     disable_key.append(".disables");
+    std::string list_of_config_enables = getLayerOption(enable_key.c_str());
+    std::string list_of_env_enables = GetLayerEnvVar("VK_LAYER_ENABLES");
     std::string list_of_config_disables = getLayerOption(disable_key.c_str());
     std::string list_of_env_disables = GetLayerEnvVar("VK_LAYER_DISABLES");
 #if defined(_WIN32)
@@ -733,6 +764,8 @@ void ProcessLocalDisableSettings(const char* layer_description, CHECK_DISABLED* 
 #else
     std::string env_delimiter = ":";
 #endif
+    SetLocalEnableSetting(list_of_config_enables, ",", enables);
+    SetLocalEnableSetting(list_of_env_enables, env_delimiter, enables);
     SetLocalDisableSetting(list_of_config_disables, ",", disables);
     SetLocalDisableSetting(list_of_env_disables, env_delimiter, disables);
 }
@@ -819,8 +852,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
     if (validation_flags_ext) {
         SetValidationFlags(&local_disables, validation_flags_ext);
     }
-
-    ProcessLocalDisableSettings(OBJECT_LAYER_DESCRIPTION, &local_disables);
+    ProcessConfigAndEnvSettings(OBJECT_LAYER_DESCRIPTION, &local_enables, &local_disables);
 
     // Create temporary dispatch vector for pre-calls until instance is created
     std::vector<ValidationObject*> local_object_dispatch;
