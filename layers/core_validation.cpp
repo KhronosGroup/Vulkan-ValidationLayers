@@ -13045,3 +13045,20 @@ VkResult CoreChecks::CoreLayerMergeValidationCachesEXT(VkDevice device, VkValida
 
     return result;
 }
+
+bool CoreChecks::PreCallValidateCmdSetDeviceMask(VkCommandBuffer commandBuffer, uint32_t deviceMask) {
+    bool skip = false;
+    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
+
+    skip |= ValidateDeviceMaskToPhysicalDeviceCount(deviceMask, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                                                    HandleToUint64(commandBuffer), "VUID-vkCmdSetDeviceMask-deviceMask-00108");
+    skip |= ValidateDeviceMaskToZero(deviceMask, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT, HandleToUint64(commandBuffer),
+                                     "VUID-vkCmdSetDeviceMask-deviceMask-00109");
+    skip |= ValidateDeviceMaskToCommandBuffer(cb_state, deviceMask, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                                              HandleToUint64(commandBuffer), "VUID-vkCmdSetDeviceMask-deviceMask-00110");
+    if (cb_state->activeRenderPass) {
+        skip |= ValidateDeviceMaskToRenderPass(cb_state, deviceMask, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                                               HandleToUint64(commandBuffer), "VUID-vkCmdSetDeviceMask-deviceMask-00111");
+    }
+    return skip;
+}
