@@ -11897,8 +11897,15 @@ bool CoreChecks::PreCallValidateAcquireNextImageKHR(VkDevice device, VkSwapchain
 
 bool CoreChecks::PreCallValidateAcquireNextImage2KHR(VkDevice device, const VkAcquireNextImageInfoKHR *pAcquireInfo,
                                                      uint32_t *pImageIndex) {
-    return ValidateAcquireNextImage(device, pAcquireInfo->swapchain, pAcquireInfo->timeout, pAcquireInfo->semaphore,
-                                    pAcquireInfo->fence, pImageIndex, "vkAcquireNextImage2KHR");
+    bool skip = false;
+    skip |= ValidateDeviceMaskToPhysicalDeviceCount(pAcquireInfo->deviceMask, VK_DEBUG_REPORT_OBJECT_TYPE_SWAPCHAIN_KHR_EXT,
+                                                    HandleToUint64(pAcquireInfo->swapchain),
+                                                    "VUID-VkAcquireNextImageInfoKHR-deviceMask-01290");
+    skip |= ValidateDeviceMaskToZero(pAcquireInfo->deviceMask, VK_DEBUG_REPORT_OBJECT_TYPE_SWAPCHAIN_KHR_EXT,
+                                     HandleToUint64(pAcquireInfo->swapchain), "VUID-VkAcquireNextImageInfoKHR-deviceMask-01291");
+    skip |= ValidateAcquireNextImage(device, pAcquireInfo->swapchain, pAcquireInfo->timeout, pAcquireInfo->semaphore,
+                                     pAcquireInfo->fence, pImageIndex, "vkAcquireNextImage2KHR");
+    return skip;
 }
 
 void CoreChecks::RecordAcquireNextImageState(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout, VkSemaphore semaphore,
