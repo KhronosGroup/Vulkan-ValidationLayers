@@ -36542,6 +36542,13 @@ TEST_F(VkPositiveLayerTest, ViewportArray2NV) {
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState());
+
+    // 256 is slightly more than the number of input components used by the shaders in this test
+    if (m_device->phy().properties().limits.maxTessellationControlPerVertexInputComponents < 256) {
+        printf("%s This device does not support the necessary number of tessellation vertex input components.\n", kSkipPrefix);
+        return;
+    }
+
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     const char tcs_src[] = R"(
