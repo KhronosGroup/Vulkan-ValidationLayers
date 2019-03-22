@@ -3179,6 +3179,14 @@ bool CoreChecks::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount,
                 }
             }
         }
+        auto chained_device_group_struct = lvl_find_in_chain<VkDeviceGroupSubmitInfo>(submit->pNext);
+        if (chained_device_group_struct && chained_device_group_struct->commandBufferCount > 0) {
+            for (uint32_t i = 0; i < chained_device_group_struct->commandBufferCount; ++i) {
+                skip |= ValidateDeviceMaskToPhysicalDeviceCount(chained_device_group_struct->pCommandBufferDeviceMasks[i],
+                                                                VK_DEBUG_REPORT_OBJECT_TYPE_QUEUE_EXT, HandleToUint64(queue),
+                                                                "VUID-VkDeviceGroupSubmitInfo-pCommandBufferDeviceMasks-00086");
+            }
+        }
     }
     return skip;
 }
