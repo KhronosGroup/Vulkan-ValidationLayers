@@ -75,8 +75,15 @@
 #      VK_VALIDATION_FEATURE_DISABLE_OBJECT_LIFETIMES_EXT - disables object tracking.
 #          This may not always be necessary late in a development cycle.
 #
-
-
+#   ENABLES:
+#   =============
+#   <LayerIdentifier>.enables : comma separated list of feature enable enums
+#      These can include VkValidationFeatureEnableEXT flags defined in the Vulkan
+#      specification, where their effects are described.  The most useful
+#      flags are briefly described here:
+#      VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT - enables intrusive GPU-assisted
+#      shader validation in core/khronos validation layers
+#
 
 # VK_LAYER_KHRONOS_validation Settings
 khronos_validation.debug_action = VK_DBG_LAYER_ACTION_LOG_MSG
