@@ -1973,6 +1973,52 @@ bool CoreChecks::ValidateCmd(const GLOBAL_CB_NODE *cb_state, const CMD_TYPE cmd,
     }
 }
 
+bool CoreChecks::ValidateDeviceMaskToPhysicalDeviceCount(uint32_t deviceMask, VkDebugReportObjectTypeEXT VUID_handle_type,
+                                                         uint64_t VUID_handle, const char *VUID) {
+    bool skip = false;
+    uint32_t count = 1 << physical_device_count;
+    if (count <= deviceMask) {
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VUID_handle_type, VUID_handle, VUID,
+                        "deviceMask(0x%" PRIx32 ") is invaild. Physical device count is %" PRIu32 ".", deviceMask,
+                        physical_device_count);
+    }
+    return skip;
+}
+
+bool CoreChecks::ValidateDeviceMaskToZero(uint32_t deviceMask, VkDebugReportObjectTypeEXT VUID_handle_type, uint64_t VUID_handle,
+                                          const char *VUID) {
+    bool skip = false;
+    if (deviceMask == 0) {
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VUID_handle_type, VUID_handle, VUID,
+                        "deviceMask(0x%" PRIx32 ") must be non-zero.", deviceMask);
+    }
+    return skip;
+}
+
+bool CoreChecks::ValidateDeviceMaskToCommandBuffer(GLOBAL_CB_NODE *pCB, uint32_t deviceMask,
+                                                   VkDebugReportObjectTypeEXT VUID_handle_type, uint64_t VUID_handle,
+                                                   const char *VUID) {
+    bool skip = false;
+    if ((deviceMask & pCB->initial_device_mask) != deviceMask) {
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VUID_handle_type, VUID_handle, VUID,
+                        "deviceMask(0x%" PRIx32 ") is not a subset of the command buffer[%s] initial device mask(0x%" PRIx32 ").",
+                        deviceMask, report_data->FormatHandle(pCB->commandBuffer).c_str(), pCB->initial_device_mask);
+    }
+    return skip;
+}
+
+bool CoreChecks::ValidateDeviceMaskToRenderPass(GLOBAL_CB_NODE *pCB, uint32_t deviceMask,
+                                                VkDebugReportObjectTypeEXT VUID_handle_type, uint64_t VUID_handle,
+                                                const char *VUID) {
+    bool skip = false;
+    if ((deviceMask & pCB->active_render_pass_device_mask) != deviceMask) {
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VUID_handle_type, VUID_handle, VUID,
+                        "deviceMask(0x%" PRIx32 ") is not a subset of the render pass[%s] device mask(0x%" PRIx32 ").", deviceMask,
+                        report_data->FormatHandle(pCB->activeRenderPass).c_str(), pCB->active_render_pass_device_mask);
+    }
+    return skip;
+}
+
 // For given object struct return a ptr of BASE_NODE type for its wrapping struct
 BASE_NODE *CoreChecks::GetStateStructPtrFromObject(VK_OBJECT object_struct) {
     BASE_NODE *base_ptr = nullptr;
