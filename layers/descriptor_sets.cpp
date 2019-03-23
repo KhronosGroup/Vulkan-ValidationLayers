@@ -836,27 +836,19 @@ bool cvdescriptorset::DescriptorSet::ValidateDrawState(const std::map<uint32_t, 
                     auto image_node = device_data_->GetImageState(image_view_ci.image);
                     assert(image_node);
                     // Verify Image Layout
-                    // Copy first mip level into sub_layers and loop over each mip level to verify layout
-                    VkImageSubresourceLayers sub_layers;
-                    sub_layers.aspectMask = image_view_ci.subresourceRange.aspectMask;
-                    sub_layers.baseArrayLayer = image_view_ci.subresourceRange.baseArrayLayer;
-                    sub_layers.layerCount = image_view_ci.subresourceRange.layerCount;
+                    // No "invalid layout" VUID required for this call, since the optimal_layout parameter is UNDEFINED.
                     bool hit_error = false;
-                    for (auto cur_level = image_view_ci.subresourceRange.baseMipLevel;
-                         cur_level < image_view_ci.subresourceRange.levelCount; ++cur_level) {
-                        sub_layers.mipLevel = cur_level;
-                        // No "invalid layout" VUID required for this call, since the optimal_layout parameter is UNDEFINED.
-                        device_data_->VerifyImageLayout(cb_node, image_node, sub_layers, image_layout, VK_IMAGE_LAYOUT_UNDEFINED,
-                                                        caller, kVUIDUndefined, "VUID-VkDescriptorImageInfo-imageLayout-00344",
-                                                        &hit_error);
-                        if (hit_error) {
-                            *error =
-                                "Image layout specified at vkUpdateDescriptorSet* or vkCmdPushDescriptorSet* time "
-                                "doesn't match actual image layout at time descriptor is used. See previous error callback for "
-                                "specific details.";
-                            return false;
-                        }
+                    device_data_->VerifyImageLayout(cb_node, image_node, image_view_state->normalized_subresource_range,
+                                                    image_layout, VK_IMAGE_LAYOUT_UNDEFINED, caller, kVUIDUndefined,
+                                                    "VUID-VkDescriptorImageInfo-imageLayout-00344", &hit_error);
+                    if (hit_error) {
+                        *error =
+                            "Image layout specified at vkUpdateDescriptorSet* or vkCmdPushDescriptorSet* time "
+                            "doesn't match actual image layout at time descriptor is used. See previous error callback for "
+                            "specific details.";
+                        return false;
                     }
+
                     // Verify Sample counts
                     if ((reqs & DESCRIPTOR_REQ_SINGLE_SAMPLE) && image_node->createInfo.samples != VK_SAMPLE_COUNT_1_BIT) {
                         std::stringstream error_str;
@@ -1612,9 +1604,7 @@ void cvdescriptorset::ImageSamplerDescriptor::UpdateDrawState(CoreChecks *dev_da
     auto iv_state = dev_data->GetImageViewState(image_view_);
     if (iv_state) {
         dev_data->AddCommandBufferBindingImageView(cb_node, iv_state);
-    }
-    if (image_view_) {
-        dev_data->SetImageViewLayout(cb_node, image_view_, image_layout_);
+        dev_data->SetImageViewInitialLayout(cb_node, *iv_state, image_layout_);
     }
 }
 
@@ -1645,9 +1635,7 @@ void cvdescriptorset::ImageDescriptor::UpdateDrawState(CoreChecks *dev_data, GLO
     auto iv_state = dev_data->GetImageViewState(image_view_);
     if (iv_state) {
         dev_data->AddCommandBufferBindingImageView(cb_node, iv_state);
-    }
-    if (image_view_) {
-        dev_data->SetImageViewLayout(cb_node, image_view_, image_layout_);
+        dev_data->SetImageViewInitialLayout(cb_node, *iv_state, image_layout_);
     }
 }
 

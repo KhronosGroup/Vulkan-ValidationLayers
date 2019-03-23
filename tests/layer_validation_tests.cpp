@@ -18390,7 +18390,7 @@ TEST_F(VkLayerTest, InvalidImageLayout) {
     // Final src error is due to bad layout type
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdCopyImage-srcImageLayout-00129");
     m_errorMonitor->SetUnexpectedError(
-        "with specific layout VK_IMAGE_LAYOUT_UNDEFINED that doesn't match the actual current layout VK_IMAGE_LAYOUT_GENERAL.");
+        "with specific layout VK_IMAGE_LAYOUT_UNDEFINED that doesn't match the previously used layout VK_IMAGE_LAYOUT_GENERAL.");
     m_commandBuffer->CopyImage(src_image, VK_IMAGE_LAYOUT_UNDEFINED, dst_image, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
     m_errorMonitor->VerifyFound();
     // Now verify same checks for dst
@@ -18407,7 +18407,7 @@ TEST_F(VkLayerTest, InvalidImageLayout) {
     m_errorMonitor->VerifyFound();
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdCopyImage-dstImageLayout-00134");
     m_errorMonitor->SetUnexpectedError(
-        "with specific layout VK_IMAGE_LAYOUT_UNDEFINED that doesn't match the actual current layout VK_IMAGE_LAYOUT_GENERAL.");
+        "with specific layout VK_IMAGE_LAYOUT_UNDEFINED that doesn't match the previously used layout VK_IMAGE_LAYOUT_GENERAL.");
     m_commandBuffer->CopyImage(src_image, VK_IMAGE_LAYOUT_GENERAL, dst_image, VK_IMAGE_LAYOUT_UNDEFINED, 1, &copy_region);
     m_errorMonitor->VerifyFound();
 

@@ -276,6 +276,71 @@ std::unordered_map<VkSamplerYcbcrConversion, uint64_t> *CoreChecks::GetYcbcrConv
 
 std::unordered_set<uint64_t> *CoreChecks::GetAHBExternalFormatsSet() { return &ahb_ext_formats_set; }
 
+// the ImageLayoutMap implementation bakes in the number of valid aspects -- we have to choose the correct one at construction time
+template <uint32_t kThreshold>
+static std::unique_ptr<ImageSubresourceLayoutMap> LayoutMapFactoryByAspect(const IMAGE_STATE &image_state) {
+    ImageSubresourceLayoutMap *map = nullptr;
+    switch (image_state.full_range.aspectMask) {
+        case VK_IMAGE_ASPECT_COLOR_BIT:
+            map = new ImageSubresourceLayoutMapImpl<ColorAspectTraits, kThreshold>(image_state);
+            break;
+        case VK_IMAGE_ASPECT_DEPTH_BIT:
+            map = new ImageSubresourceLayoutMapImpl<DepthAspectTraits, kThreshold>(image_state);
+            break;
+        case VK_IMAGE_ASPECT_STENCIL_BIT:
+            map = new ImageSubresourceLayoutMapImpl<StencilAspectTraits, kThreshold>(image_state);
+            break;
+        case VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT:
+            map = new ImageSubresourceLayoutMapImpl<DepthStencilAspectTraits, kThreshold>(image_state);
+            break;
+        case VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT:
+            map = new ImageSubresourceLayoutMapImpl<Multiplane2AspectTraits, kThreshold>(image_state);
+            break;
+        case VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT | VK_IMAGE_ASPECT_PLANE_2_BIT:
+            map = new ImageSubresourceLayoutMapImpl<Multiplane3AspectTraits, kThreshold>(image_state);
+            break;
+    }
+
+    assert(map);  // We shouldn't be able to get here null unless the traits cases are incomplete
+    return std::unique_ptr<ImageSubresourceLayoutMap>(map);
+}
+
+static std::unique_ptr<ImageSubresourceLayoutMap> LayoutMapFactory(const IMAGE_STATE &image_state) {
+    std::unique_ptr<ImageSubresourceLayoutMap> map;
+    const uint32_t kAlwaysDenseLimit = 16;  // About a cacheline on deskop architectures
+    if (image_state.full_range.layerCount <= kAlwaysDenseLimit) {
+        // Create a dense row map
+        map = LayoutMapFactoryByAspect<0>(image_state);
+    } else {
+        // Create an initially sparse row map
+        map = LayoutMapFactoryByAspect<kAlwaysDenseLimit>(image_state);
+    }
+    return map;
+}
+
+// The const variant only need the image as it is the key for the map
+const ImageSubresourceLayoutMap *GetImageSubresourceLayoutMap(const GLOBAL_CB_NODE *cb_state, VkImage image) {
+    auto it = cb_state->image_layout_map.find(image);
+    if (it == cb_state->image_layout_map.cend()) {
+        return nullptr;
+    }
+    return it->second.get();
+}
+
+// The non-const variant only needs the image state, as the factory requires it to construct a new entry
+ImageSubresourceLayoutMap *GetImageSubresourceLayoutMap(GLOBAL_CB_NODE *cb_state, const IMAGE_STATE &image_state) {
+    auto it = cb_state->image_layout_map.find(image_state.image);
+    if (it == cb_state->image_layout_map.end()) {
+        // Empty slot... fill it in.
+        auto insert_pair = cb_state->image_layout_map.insert(std::make_pair(image_state.image, LayoutMapFactory(image_state)));
+        assert(insert_pair.second);
+        ImageSubresourceLayoutMap *new_map = insert_pair.first->second.get();
+        assert(new_map);
+        return new_map;
+    }
+    return it->second.get();
+}
+
 // Return ptr to info in map container containing mem, or NULL if not found
 //  Calls to this function should be wrapped in mutex
 DEVICE_MEM_INFO *CoreChecks::GetMemObjInfo(const VkDeviceMemory mem) {
@@ -2159,7 +2224,7 @@ void CoreChecks::ResetCommandBufferState(const VkCommandBuffer cb) {
         pCB->queryToStateMap.clear();
         pCB->activeQueries.clear();
         pCB->startedQueries.clear();
-        pCB->imageLayoutMap.clear();
+        pCB->image_layout_map.clear();
         pCB->eventToStageMap.clear();
         pCB->draw_data.clear();
         pCB->current_draw_data.vertex_buffer_bindings.clear();
@@ -10400,45 +10465,46 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                             "inherited queries not supported on this device.",
                             report_data->FormatHandle(pCommandBuffers[i]).c_str());
         }
-        // Propagate layout transitions to the primary cmd buffer
+        // Validate initial layout uses vs. the primary cmd buffer state
         // Novel Valid usage: "UNASSIGNED-vkCmdExecuteCommands-commandBuffer-00001"
         // initial layout usage of secondary command buffers resources must match parent command buffer
-        for (const auto &ilm_entry : sub_cb_state->imageLayoutMap) {
-            auto cb_entry = cb_state->imageLayoutMap.find(ilm_entry.first);
-            if (cb_entry != cb_state->imageLayoutMap.end()) {
-                // For exact matches ImageSubresourcePair matches, validate and update the parent entry
-                if ((VK_IMAGE_LAYOUT_UNDEFINED != ilm_entry.second.initialLayout) &&
-                    (cb_entry->second.layout != ilm_entry.second.initialLayout)) {
-                    const VkImageSubresource &subresource = ilm_entry.first.subresource;
-                    log_msg(
-                        report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                        HandleToUint64(pCommandBuffers[i]), "UNASSIGNED-vkCmdExecuteCommands-commandBuffer-00001",
-                        "%s: Executed secondary command buffer using image %s (subresource: aspectMask 0x%X array layer %u, "
-                        "mip level %u) which expects layout %s--instead, image %s's current layout is %s.",
-                        "vkCmdExecuteCommands():", report_data->FormatHandle(ilm_entry.first.image).c_str(), subresource.aspectMask,
-                        subresource.arrayLayer, subresource.mipLevel, string_VkImageLayout(ilm_entry.second.initialLayout),
-                        report_data->FormatHandle(ilm_entry.first.image).c_str(), string_VkImageLayout(cb_entry->second.layout));
+        const auto *const_cb_state = static_cast<const GLOBAL_CB_NODE *>(cb_state);
+        for (const auto &sub_layout_map_entry : sub_cb_state->image_layout_map) {
+            const auto image = sub_layout_map_entry.first;
+            const auto *image_state = GetImageState(image);
+            if (!image_state) continue;  // Can't set layouts of a dead image
+
+            const auto *cb_subres_map = GetImageSubresourceLayoutMap(const_cb_state, image);
+            // Const getter can be null in which case we have nothing to check against for this image...
+            if (!cb_subres_map) continue;
+
+            const auto &sub_cb_subres_map = sub_layout_map_entry.second;
+            // Validate the initial_uses, that they match the current state of the primary cb, or absent a current state,
+            // that the match any initial_layout.
+            for (auto it_init = sub_cb_subres_map->BeginInitialUse(); !it_init.AtEnd(); ++it_init) {
+                const auto &sub_layout = (*it_init).layout;
+                if (VK_IMAGE_LAYOUT_UNDEFINED == sub_layout) continue;  // secondary doesn't care about current or initial
+                const auto &subresource = (*it_init).subresource;
+                // Look up the current layout (if any)
+                VkImageLayout cb_layout = cb_subres_map->GetSubresourceLayout(subresource);
+                const char *layout_type = "current";
+                if (cb_layout == kInvalidLayout) {
+                    // Find initial layout (if any)
+                    cb_layout = cb_subres_map->GetSubresourceInitialLayout(subresource);
+                    layout_type = "initial";
                 }
-            } else {
-                // Look for partial matches (in aspectMask), and update or create parent map entry in SetLayout
-                assert(ilm_entry.first.hasSubresource);
-                IMAGE_CMD_BUF_LAYOUT_NODE node;
-                if (FindCmdBufLayout(cb_state, ilm_entry.first.image, ilm_entry.first.subresource, node)) {
-                    if ((VK_IMAGE_LAYOUT_UNDEFINED != ilm_entry.second.initialLayout) &&
-                        (node.layout != ilm_entry.second.initialLayout)) {
-                        const VkImageSubresource &subresource = ilm_entry.first.subresource;
-                        log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                                HandleToUint64(pCommandBuffers[i]), "UNASSIGNED-vkCmdExecuteCommands-commandBuffer-00001",
-                                "%s: Executed secondary command buffer using image %s (subresource: aspectMask 0x%X array layer "
-                                "%u, mip level %u) which expects layout %s--instead, image %s's current layout is %s.",
-                                "vkCmdExecuteCommands():", report_data->FormatHandle(ilm_entry.first.image).c_str(),
-                                subresource.aspectMask, subresource.arrayLayer, subresource.mipLevel,
-                                string_VkImageLayout(ilm_entry.second.initialLayout),
-                                report_data->FormatHandle(ilm_entry.first.image).c_str(), string_VkImageLayout(node.layout));
-                    }
+                if ((cb_layout != kInvalidLayout) && (cb_layout != sub_layout)) {
+                    log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                            HandleToUint64(pCommandBuffers[i]), "UNASSIGNED-vkCmdExecuteCommands-commandBuffer-00001",
+                            "%s: Executed secondary command buffer using image %s (subresource: aspectMask 0x%X array layer %u, "
+                            "mip level %u) which expects layout %s--instead, image %s layout is %s.",
+                            "vkCmdExecuteCommands():", report_data->FormatHandle(image).c_str(), subresource.aspectMask,
+                            subresource.arrayLayer, subresource.mipLevel, string_VkImageLayout(sub_layout), layout_type,
+                            string_VkImageLayout(cb_layout));
                 }
             }
         }
+
         linked_command_buffers.insert(sub_cb_state);
     }
     skip |= ValidatePrimaryCommandBuffer(cb_state, "vkCmdExecuteCommands()", "VUID-vkCmdExecuteCommands-bufferlevel");
@@ -10464,25 +10530,19 @@ void CoreChecks::PreCallRecordCmdExecuteCommands(VkCommandBuffer commandBuffer, 
                 cb_state->beginInfo.flags &= ~VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
             }
         }
-        // Propagate layout transitions to the primary cmd buffer
-        // Novel Valid usage: "UNASSIGNED-vkCmdExecuteCommands-commandBuffer-00001"
-        //  initial layout usage of secondary command buffers resources must match parent command buffer
-        for (const auto &ilm_entry : sub_cb_state->imageLayoutMap) {
-            auto cb_entry = cb_state->imageLayoutMap.find(ilm_entry.first);
-            if (cb_entry != cb_state->imageLayoutMap.end()) {
-                // For exact matches ImageSubresourcePair matches, update the parent entry
-                cb_entry->second.layout = ilm_entry.second.layout;
-            } else {
-                // Look for partial matches (in aspectMask), and update or create parent map entry in SetLayout
-                assert(ilm_entry.first.hasSubresource);
-                IMAGE_CMD_BUF_LAYOUT_NODE node;
-                if (!FindCmdBufLayout(cb_state, ilm_entry.first.image, ilm_entry.first.subresource, node)) {
-                    node.initialLayout = ilm_entry.second.initialLayout;
-                }
-                node.layout = ilm_entry.second.layout;
-                SetLayout(cb_state, ilm_entry.first, node);
-            }
+
+        // Propagate inital layout and current layout state to the primary cmd buffer
+        for (const auto &sub_layout_map_entry : sub_cb_state->image_layout_map) {
+            const auto image = sub_layout_map_entry.first;
+            const auto *image_state = GetImageState(image);
+            if (!image_state) continue;  // Can't set layouts of a dead image
+
+            auto *cb_subres_map = GetImageSubresourceLayoutMap(cb_state, *image_state);
+            const auto *sub_cb_subres_map = sub_layout_map_entry.second.get();
+            assert(cb_subres_map && sub_cb_subres_map);  // Non const get and map traversal should never be null
+            cb_subres_map->UpdateFrom(*sub_cb_subres_map);
         }
+
         sub_cb_state->primaryCommandBuffer = cb_state->commandBuffer;
         cb_state->linkedCommandBuffers.insert(sub_cb_state);
         sub_cb_state->linkedCommandBuffers.insert(cb_state);

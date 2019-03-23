@@ -482,8 +482,6 @@ class CoreChecks : public ValidationObject {
     bool InsideRenderPass(const GLOBAL_CB_NODE* pCB, const char* apiName, const char* msgCode);
     bool OutsideRenderPass(GLOBAL_CB_NODE* pCB, const char* apiName, const char* msgCode);
 
-    void SetLayout(GLOBAL_CB_NODE* pCB, ImageSubresourcePair imgpair, const VkImageLayout& layout);
-    void SetLayout(GLOBAL_CB_NODE* pCB, ImageSubresourcePair imgpair, const IMAGE_CMD_BUF_LAYOUT_NODE& node);
     void SetLayout(std::unordered_map<ImageSubresourcePair, IMAGE_LAYOUT_NODE>& imageLayoutMap, ImageSubresourcePair imgpair,
                    VkImageLayout layout);
 
@@ -662,10 +660,11 @@ class CoreChecks : public ValidationObject {
                                        const VkImageSubresourceRange& subresourceRange, const char* cmd_name,
                                        const char* param_name, const char* image_layer_count_var_name, const uint64_t image_handle,
                                        SubresourceRangeErrorCodes errorCodes);
-    void SetImageLayout(GLOBAL_CB_NODE* cb_node, const IMAGE_STATE* image_state, VkImageSubresourceRange image_subresource_range,
-                        const VkImageLayout& layout);
-    void SetImageLayout(GLOBAL_CB_NODE* cb_node, const IMAGE_STATE* image_state, VkImageSubresourceLayers image_subresource_layers,
-                        const VkImageLayout& layout);
+    void SetImageLayout(GLOBAL_CB_NODE* cb_node, const IMAGE_STATE& image_state,
+                        const VkImageSubresourceRange& image_subresource_range, VkImageLayout layout,
+                        VkImageLayout expected_layout = kInvalidLayout);
+    void SetImageLayout(GLOBAL_CB_NODE* cb_node, const IMAGE_STATE& image_state,
+                        const VkImageSubresourceLayers& image_subresource_layers, VkImageLayout layout);
     bool ValidateRenderPassLayoutAgainstFramebufferImageUsage(RenderPassCreateVersion rp_version, VkImageLayout layout,
                                                               VkImage image, VkImageView image_view, VkFramebuffer framebuffer,
                                                               VkRenderPass renderpass, uint32_t attachment_index,
@@ -696,8 +695,11 @@ class CoreChecks : public ValidationObject {
 
     bool VerifyClearImageLayout(GLOBAL_CB_NODE* cb_node, IMAGE_STATE* image_state, VkImageSubresourceRange range,
                                 VkImageLayout dest_image_layout, const char* func_name);
+    bool VerifyImageLayout(GLOBAL_CB_NODE const* cb_node, IMAGE_STATE* image_state, const VkImageSubresourceRange& range,
+                           VkImageLayout explicit_layout, VkImageLayout optimal_layout, const char* caller,
+                           const char* layout_invalid_msg_code, const char* layout_mismatch_msg_code, bool* error);
 
-    bool VerifyImageLayout(GLOBAL_CB_NODE const* cb_node, IMAGE_STATE* image_state, VkImageSubresourceLayers subLayers,
+    bool VerifyImageLayout(GLOBAL_CB_NODE const* cb_node, IMAGE_STATE* image_state, const VkImageSubresourceLayers& subLayers,
                            VkImageLayout explicit_layout, VkImageLayout optimal_layout, const char* caller,
                            const char* layout_invalid_msg_code, const char* layout_mismatch_msg_code, bool* error);
 
@@ -734,12 +736,7 @@ class CoreChecks : public ValidationObject {
                                                 const VkClearDepthStencilValue* pDepthStencil, uint32_t rangeCount,
                                                 const VkImageSubresourceRange* pRanges);
 
-    bool FindLayoutVerifyNode(GLOBAL_CB_NODE const* pCB, ImageSubresourcePair imgpair, IMAGE_CMD_BUF_LAYOUT_NODE& node,
-                              const VkImageAspectFlags aspectMask);
-
     bool FindLayoutVerifyLayout(ImageSubresourcePair imgpair, VkImageLayout& layout, const VkImageAspectFlags aspectMask);
-
-    bool FindCmdBufLayout(GLOBAL_CB_NODE const* pCB, VkImage image, VkImageSubresource range, IMAGE_CMD_BUF_LAYOUT_NODE& node);
 
     bool FindGlobalLayout(ImageSubresourcePair imgpair, VkImageLayout& layout);
 
@@ -755,7 +752,14 @@ class CoreChecks : public ValidationObject {
 
     void SetImageViewLayout(GLOBAL_CB_NODE* pCB, VkImageView imageView, const VkImageLayout& layout);
 
-    void SetImageViewLayout(GLOBAL_CB_NODE* cb_node, IMAGE_VIEW_STATE* view_state, const VkImageLayout& layout);
+    void SetImageViewLayout(GLOBAL_CB_NODE* cb_node, const IMAGE_VIEW_STATE& view_state, VkImageLayout layout);
+    void SetImageViewInitialLayout(GLOBAL_CB_NODE* cb_node, const IMAGE_VIEW_STATE& view_state, VkImageLayout layout);
+
+    void SetImageInitialLayout(GLOBAL_CB_NODE* cb_node, VkImage image, const VkImageSubresourceRange& range, VkImageLayout layout);
+    void SetImageInitialLayout(GLOBAL_CB_NODE* cb_node, const IMAGE_STATE& image_state, const VkImageSubresourceRange& range,
+                               VkImageLayout layout);
+    void SetImageInitialLayout(GLOBAL_CB_NODE* cb_node, const IMAGE_STATE& image_state, const VkImageSubresourceLayers& layers,
+                               VkImageLayout layout);
 
     bool VerifyFramebufferAndRenderPassLayouts(RenderPassCreateVersion rp_version, GLOBAL_CB_NODE* pCB,
                                                const VkRenderPassBeginInfo* pRenderPassBegin,
