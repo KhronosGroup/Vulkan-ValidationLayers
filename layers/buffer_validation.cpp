@@ -40,6 +40,69 @@
 #include "descriptor_sets.h"
 #include "buffer_validation.h"
 
+// Transfer VkImageSubresourceLayers into VkImageSubresourceRange struct
+static VkImageSubresourceRange RangeFromLayers(const VkImageSubresourceLayers &subresource_layers) {
+    VkImageSubresourceRange subresource_range;
+    subresource_range.aspectMask = subresource_layers.aspectMask;
+    subresource_range.baseArrayLayer = subresource_layers.baseArrayLayer;
+    subresource_range.layerCount = subresource_layers.layerCount;
+    subresource_range.baseMipLevel = subresource_layers.mipLevel;
+    subresource_range.levelCount = 1;
+    return subresource_range;
+}
+
+IMAGE_STATE::IMAGE_STATE(VkImage img, const VkImageCreateInfo *pCreateInfo)
+    : image(img),
+      createInfo(*pCreateInfo),
+      valid(false),
+      acquired(false),
+      shared_presentable(false),
+      layout_locked(false),
+      get_sparse_reqs_called(false),
+      sparse_metadata_required(false),
+      sparse_metadata_bound(false),
+      imported_ahb(false),
+      has_ahb_format(false),
+      ahb_format(0),
+      full_range{},
+      sparse_requirements{} {
+    if ((createInfo.sharingMode == VK_SHARING_MODE_CONCURRENT) && (createInfo.queueFamilyIndexCount > 0)) {
+        uint32_t *pQueueFamilyIndices = new uint32_t[createInfo.queueFamilyIndexCount];
+        for (uint32_t i = 0; i < createInfo.queueFamilyIndexCount; i++) {
+            pQueueFamilyIndices[i] = pCreateInfo->pQueueFamilyIndices[i];
+        }
+        createInfo.pQueueFamilyIndices = pQueueFamilyIndices;
+    }
+
+    if (createInfo.flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT) {
+        sparse = true;
+    }
+    const auto format = createInfo.format;
+    VkImageSubresourceRange init_range{0, 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS};
+    if (FormatIsColor(format) || FormatIsMultiplane(format)) {
+        init_range.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;  // Normalization will expand this for multiplane
+    } else {
+        init_range.aspectMask =
+            (FormatHasDepth(format) ? VK_IMAGE_ASPECT_DEPTH_BIT : 0) | (FormatHasStencil(format) ? VK_IMAGE_ASPECT_STENCIL_BIT : 0);
+    }
+    full_range = NormalizeSubresourceRange(*this, init_range);
+}
+
+IMAGE_VIEW_STATE::IMAGE_VIEW_STATE(const IMAGE_STATE *image_state, VkImageView iv, const VkImageViewCreateInfo *ci)
+    : image_view(iv), create_info(*ci), normalized_subresource_range(ci->subresourceRange), samplerConversion(VK_NULL_HANDLE) {
+    auto *conversionInfo = lvl_find_in_chain<VkSamplerYcbcrConversionInfo>(create_info.pNext);
+    if (conversionInfo) samplerConversion = conversionInfo->conversion;
+    if (image_state) {
+        // A light normalization of the createInfo range
+        auto &sub_res_range = create_info.subresourceRange;
+        sub_res_range.levelCount = ResolveRemainingLevels(&sub_res_range, image_state->createInfo.mipLevels);
+        sub_res_range.layerCount = ResolveRemainingLayers(&sub_res_range, image_state->createInfo.arrayLayers);
+
+        // Cache a full normalization (for "full image/whole image" comparisons)
+        normalized_subresource_range = NormalizeSubresourceRange(*image_state, ci->subresourceRange);
+    }
+}
+
 uint32_t FullMipChainLevels(uint32_t height, uint32_t width, uint32_t depth) {
     // uint cast applies floor()
     return 1u + (uint32_t)log2(std::max({height, width, depth}));
@@ -49,18 +112,30 @@ uint32_t FullMipChainLevels(VkExtent3D extent) { return FullMipChainLevels(exten
 
 uint32_t FullMipChainLevels(VkExtent2D extent) { return FullMipChainLevels(extent.height, extent.width); }
 
-void CoreChecks::SetLayout(GLOBAL_CB_NODE *pCB, ImageSubresourcePair imgpair, const VkImageLayout &layout) {
-    auto it = pCB->imageLayoutMap.find(imgpair);
-    if (it != pCB->imageLayoutMap.end()) {
-        it->second.layout = layout;
-    } else {
-        assert(imgpair.hasSubresource);
-        IMAGE_CMD_BUF_LAYOUT_NODE node;
-        if (!FindCmdBufLayout(pCB, imgpair.image, imgpair.subresource, node)) {
-            node.initialLayout = layout;
+VkImageSubresourceRange NormalizeSubresourceRange(const IMAGE_STATE &image_state, const VkImageSubresourceRange &range) {
+    const VkImageCreateInfo &image_create_info = image_state.createInfo;
+    VkImageSubresourceRange norm = range;
+    norm.levelCount = ResolveRemainingLevels(&range, image_create_info.mipLevels);
+
+    // Special case for 3D images with VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT_KHR flag bit, where <extent.depth> and
+    // <arrayLayers> can potentially alias.
+    uint32_t layer_limit = (0 != (image_create_info.flags & VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT_KHR))
+                               ? image_create_info.extent.depth
+                               : image_create_info.arrayLayers;
+    norm.layerCount = ResolveRemainingLayers(&range, layer_limit);
+
+    // For multiplanar formats, IMAGE_ASPECT_COLOR is equivalent to adding the aspect of the individual planes
+    VkImageAspectFlags &aspect_mask = norm.aspectMask;
+    if (FormatIsMultiplane(image_create_info.format)) {
+        if (aspect_mask & VK_IMAGE_ASPECT_COLOR_BIT) {
+            aspect_mask &= ~VK_IMAGE_ASPECT_COLOR_BIT;
+            aspect_mask |= (VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT);
+            if (FormatPlaneCount(image_create_info.format) > 2) {
+                aspect_mask |= VK_IMAGE_ASPECT_PLANE_2_BIT;
+            }
         }
-        SetLayout(pCB, imgpair, {node.initialLayout, layout});
     }
+    return norm;
 }
 
 template <class OBJECT, class LAYOUT>
@@ -96,36 +171,6 @@ void CoreChecks::SetLayout(std::unordered_map<ImageSubresourcePair, IMAGE_LAYOUT
     }
 }
 
-bool CoreChecks::FindLayoutVerifyNode(GLOBAL_CB_NODE const *pCB, ImageSubresourcePair imgpair, IMAGE_CMD_BUF_LAYOUT_NODE &node,
-                                      const VkImageAspectFlags aspectMask) {
-    if (!(imgpair.subresource.aspectMask & aspectMask)) {
-        return false;
-    }
-    VkImageAspectFlags oldAspectMask = imgpair.subresource.aspectMask;
-    imgpair.subresource.aspectMask = aspectMask;
-    auto imgsubIt = pCB->imageLayoutMap.find(imgpair);
-    if (imgsubIt == pCB->imageLayoutMap.end()) {
-        return false;
-    }
-    if (node.layout != VK_IMAGE_LAYOUT_MAX_ENUM && node.layout != imgsubIt->second.layout) {
-        log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, HandleToUint64(imgpair.image),
-                kVUID_Core_DrawState_InvalidLayout,
-                "Cannot query for VkImage %s layout when combined aspect mask %d has multiple layout types: %s and %s",
-                report_data->FormatHandle(imgpair.image).c_str(), oldAspectMask, string_VkImageLayout(node.layout),
-                string_VkImageLayout(imgsubIt->second.layout));
-    }
-    if (node.initialLayout != VK_IMAGE_LAYOUT_MAX_ENUM && node.initialLayout != imgsubIt->second.initialLayout) {
-        log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, HandleToUint64(imgpair.image),
-                kVUID_Core_DrawState_InvalidLayout,
-                "Cannot query for VkImage %s"
-                " layout when combined aspect mask %d has multiple initial layout types: %s and %s",
-                report_data->FormatHandle(imgpair.image).c_str(), oldAspectMask, string_VkImageLayout(node.initialLayout),
-                string_VkImageLayout(imgsubIt->second.initialLayout));
-    }
-    node = imgsubIt->second;
-    return true;
-}
-
 bool CoreChecks::FindLayoutVerifyLayout(ImageSubresourcePair imgpair, VkImageLayout &layout, const VkImageAspectFlags aspectMask) {
     if (!(imgpair.subresource.aspectMask & aspectMask)) {
         return false;
@@ -144,30 +189,6 @@ bool CoreChecks::FindLayoutVerifyLayout(ImageSubresourcePair imgpair, VkImageLay
                 string_VkImageLayout(imgsubIt->second.layout));
     }
     layout = imgsubIt->second.layout;
-    return true;
-}
-
-// Find layout(s) on the command buffer level
-bool CoreChecks::FindCmdBufLayout(GLOBAL_CB_NODE const *pCB, VkImage image, VkImageSubresource range,
-                                  IMAGE_CMD_BUF_LAYOUT_NODE &node) {
-    ImageSubresourcePair imgpair = {image, true, range};
-    node = IMAGE_CMD_BUF_LAYOUT_NODE(VK_IMAGE_LAYOUT_MAX_ENUM, VK_IMAGE_LAYOUT_MAX_ENUM);
-    FindLayoutVerifyNode(pCB, imgpair, node, VK_IMAGE_ASPECT_COLOR_BIT);
-    FindLayoutVerifyNode(pCB, imgpair, node, VK_IMAGE_ASPECT_DEPTH_BIT);
-    FindLayoutVerifyNode(pCB, imgpair, node, VK_IMAGE_ASPECT_STENCIL_BIT);
-    FindLayoutVerifyNode(pCB, imgpair, node, VK_IMAGE_ASPECT_METADATA_BIT);
-    if (GetDeviceExtensions()->vk_khr_sampler_ycbcr_conversion) {
-        FindLayoutVerifyNode(pCB, imgpair, node, VK_IMAGE_ASPECT_PLANE_0_BIT_KHR);
-        FindLayoutVerifyNode(pCB, imgpair, node, VK_IMAGE_ASPECT_PLANE_1_BIT_KHR);
-        FindLayoutVerifyNode(pCB, imgpair, node, VK_IMAGE_ASPECT_PLANE_2_BIT_KHR);
-    }
-    if (node.layout == VK_IMAGE_LAYOUT_MAX_ENUM) {
-        imgpair = {image, false, VkImageSubresource()};
-        auto imgsubIt = pCB->imageLayoutMap.find(imgpair);
-        if (imgsubIt == pCB->imageLayoutMap.end()) return false;
-        // TODO: This is ostensibly a find function but it changes state here
-        node = imgsubIt->second;
-    }
     return true;
 }
 
@@ -266,81 +287,60 @@ void CoreChecks::SetGlobalLayout(ImageSubresourcePair imgpair, const VkImageLayo
     }
 }
 
-// Set the layout on the cmdbuf level
-void CoreChecks::SetLayout(GLOBAL_CB_NODE *pCB, ImageSubresourcePair imgpair, const IMAGE_CMD_BUF_LAYOUT_NODE &node) {
-    auto it = pCB->imageLayoutMap.find(imgpair);
-    if (it != pCB->imageLayoutMap.end()) {
-        it->second = node;  // Update
-    } else {
-        pCB->imageLayoutMap[imgpair] = node;  // Insert
-    }
-}
 // Set image layout for given VkImageSubresourceRange struct
-void CoreChecks::SetImageLayout(GLOBAL_CB_NODE *cb_node, const IMAGE_STATE *image_state,
-                                VkImageSubresourceRange image_subresource_range, const VkImageLayout &layout) {
-    assert(image_state);
-    cb_node->image_layout_change_count++;  // Change the version of this data to force revalidation
-    for (uint32_t level_index = 0; level_index < image_subresource_range.levelCount; ++level_index) {
-        uint32_t level = image_subresource_range.baseMipLevel + level_index;
-        for (uint32_t layer_index = 0; layer_index < image_subresource_range.layerCount; layer_index++) {
-            uint32_t layer = image_subresource_range.baseArrayLayer + layer_index;
-            VkImageSubresource sub = {image_subresource_range.aspectMask, level, layer};
-            // TODO: If ImageView was created with depth or stencil, transition both layouts as the aspectMask is ignored and both
-            // are used. Verify that the extra implicit layout is OK for descriptor set layout validation
-            if (image_subresource_range.aspectMask & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)) {
-                if (FormatIsDepthAndStencil(image_state->createInfo.format)) {
-                    sub.aspectMask |= (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
-                }
-            }
-            // For multiplane images, IMAGE_ASPECT_COLOR is an alias for all of the plane bits
-            if (GetDeviceExtensions()->vk_khr_sampler_ycbcr_conversion) {
-                if (FormatIsMultiplane(image_state->createInfo.format)) {
-                    if (sub.aspectMask & VK_IMAGE_ASPECT_COLOR_BIT) {
-                        sub.aspectMask &= ~VK_IMAGE_ASPECT_COLOR_BIT;
-                        sub.aspectMask |= VK_IMAGE_ASPECT_PLANE_0_BIT_KHR | VK_IMAGE_ASPECT_PLANE_1_BIT_KHR;
-                        if (FormatPlaneCount(image_state->createInfo.format) > 2) {
-                            sub.aspectMask |= VK_IMAGE_ASPECT_PLANE_2_BIT_KHR;
-                        }
-                    }
-                }
-            }
-            SetLayout(cb_node, image_state->image, sub, layout);
-        }
+void CoreChecks::SetImageLayout(GLOBAL_CB_NODE *cb_node, const IMAGE_STATE &image_state,
+                                const VkImageSubresourceRange &image_subresource_range, VkImageLayout layout,
+                                VkImageLayout expected_layout) {
+    auto *subresource_map = GetImageSubresourceLayoutMap(cb_node, image_state);
+    assert(subresource_map);  // the non-const getter must return a valid pointer
+    if (subresource_map->SetSubresourceRangeLayout(image_subresource_range, layout, expected_layout)) {
+        cb_node->image_layout_change_count++;  // Change the version of this data to force revalidation
     }
 }
-// Set image layout for given VkImageSubresourceLayers struct
-void CoreChecks::SetImageLayout(GLOBAL_CB_NODE *cb_node, const IMAGE_STATE *image_state,
-                                VkImageSubresourceLayers image_subresource_layers, const VkImageLayout &layout) {
-    // Transfer VkImageSubresourceLayers into VkImageSubresourceRange struct
-    VkImageSubresourceRange image_subresource_range;
-    image_subresource_range.aspectMask = image_subresource_layers.aspectMask;
-    image_subresource_range.baseArrayLayer = image_subresource_layers.baseArrayLayer;
-    image_subresource_range.layerCount = image_subresource_layers.layerCount;
-    image_subresource_range.baseMipLevel = image_subresource_layers.mipLevel;
-    image_subresource_range.levelCount = 1;
-    SetImageLayout(cb_node, image_state, image_subresource_range, layout);
+
+// Set the initial image layout for all slices of an image view
+void CoreChecks::SetImageViewInitialLayout(GLOBAL_CB_NODE *cb_node, const IMAGE_VIEW_STATE &view_state, VkImageLayout layout) {
+    IMAGE_STATE *image_state = GetImageState(view_state.create_info.image);
+    if (image_state) {
+        auto *subresource_map = GetImageSubresourceLayoutMap(cb_node, *image_state);
+        subresource_map->SetSubresourceRangeInitialLayout(view_state.normalized_subresource_range, layout);
+    }
+}
+
+// Set the initial image layout for a passed non-normalized subresource range
+void CoreChecks::SetImageInitialLayout(GLOBAL_CB_NODE *cb_node, const IMAGE_STATE &image_state,
+                                       const VkImageSubresourceRange &range, VkImageLayout layout) {
+    auto *subresource_map = GetImageSubresourceLayoutMap(cb_node, image_state);
+    assert(subresource_map);
+    subresource_map->SetSubresourceRangeInitialLayout(NormalizeSubresourceRange(image_state, range), layout);
+}
+
+void CoreChecks::SetImageInitialLayout(GLOBAL_CB_NODE *cb_node, VkImage image, const VkImageSubresourceRange &range,
+                                       VkImageLayout layout) {
+    const IMAGE_STATE *image_state = GetImageState(image);
+    if (!image_state) return;
+    SetImageInitialLayout(cb_node, *image_state, range, layout);
+};
+
+void CoreChecks::SetImageInitialLayout(GLOBAL_CB_NODE *cb_node, const IMAGE_STATE &image_state,
+                                       const VkImageSubresourceLayers &layers, VkImageLayout layout) {
+    SetImageInitialLayout(cb_node, image_state, RangeFromLayers(layers), layout);
 }
 
 // Set image layout for all slices of an image view
-void CoreChecks::SetImageViewLayout(GLOBAL_CB_NODE *cb_node, IMAGE_VIEW_STATE *view_state, const VkImageLayout &layout) {
-    assert(view_state);
+void CoreChecks::SetImageViewLayout(GLOBAL_CB_NODE *cb_node, const IMAGE_VIEW_STATE &view_state, VkImageLayout layout) {
+    IMAGE_STATE *image_state = GetImageState(view_state.create_info.image);
+    if (!image_state) return;  // TODO: track/report stale image references
 
-    IMAGE_STATE *image_state = GetImageState(view_state->create_info.image);
-    VkImageSubresourceRange sub_range = view_state->create_info.subresourceRange;
-
+    VkImageSubresourceRange sub_range = view_state.normalized_subresource_range;
     // When changing the layout of a 3D image subresource via a 2D or 2D_ARRRAY image view, all depth slices of
     // the subresource mip level(s) are transitioned, ignoring any layers restriction in the subresource info.
-    if ((image_state->createInfo.imageType == VK_IMAGE_TYPE_3D) && (view_state->create_info.viewType != VK_IMAGE_VIEW_TYPE_3D)) {
+    if ((image_state->createInfo.imageType == VK_IMAGE_TYPE_3D) && (view_state.create_info.viewType != VK_IMAGE_VIEW_TYPE_3D)) {
         sub_range.baseArrayLayer = 0;
         sub_range.layerCount = image_state->createInfo.extent.depth;
     }
 
-    SetImageLayout(cb_node, image_state, sub_range, layout);
-}
-
-void CoreChecks::SetImageViewLayout(GLOBAL_CB_NODE *cb_node, VkImageView imageView, const VkImageLayout &layout) {
-    auto view_state = GetImageViewState(imageView);
-    SetImageViewLayout(cb_node, view_state, layout);
+    SetImageLayout(cb_node, *image_state, sub_range, layout);
 }
 
 bool CoreChecks::ValidateRenderPassLayoutAgainstFramebufferImageUsage(RenderPassCreateVersion rp_version, VkImageLayout layout,
@@ -458,6 +458,7 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(RenderPassCreateVersion r
                         HandleToUint64(pCB->commandBuffer), kVUID_Core_DrawState_InvalidRenderpass,
                         "You cannot start a render pass using a framebuffer with a different number of attachments.");
     }
+    const auto *const_pCB = static_cast<const GLOBAL_CB_NODE *>(pCB);
     for (uint32_t i = 0; i < pRenderPassInfo->attachmentCount; ++i) {
         const VkImageView &image_view = framebufferInfo.pAttachments[i];
         auto view_state = GetImageViewState(image_view);
@@ -472,34 +473,49 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(RenderPassCreateVersion r
             continue;
         }
 
-        const VkImage &image = view_state->create_info.image;
-        const VkImageSubresourceRange &subRange = view_state->create_info.subresourceRange;
-        auto initial_layout = pRenderPassInfo->pAttachments[i].initialLayout;
+        const VkImage image = view_state->create_info.image;
+        const IMAGE_STATE *image_state = GetImageState(image);
+
+        if (!image_state) {
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT,
+                            HandleToUint64(pRenderPassBegin->renderPass), "VUID-VkRenderPassBeginInfo-framebuffer-parameter",
+                            "vkCmdBeginRenderPass(): framebuffer %s pAttachments[%" PRIu32
+                            "] =  VkImageView %s references non-extant VkImage %s.",
+                            report_data->FormatHandle(framebuffer_state->framebuffer).c_str(), i,
+                            report_data->FormatHandle(image_view).c_str(), report_data->FormatHandle(image).c_str());
+            continue;
+        }
+        auto attachment_initial_layout = pRenderPassInfo->pAttachments[i].initialLayout;
         auto final_layout = pRenderPassInfo->pAttachments[i].finalLayout;
 
-        // TODO: Do not iterate over every possibility - consolidate where possible
-        for (uint32_t j = 0; j < subRange.levelCount; j++) {
-            uint32_t level = subRange.baseMipLevel + j;
-            for (uint32_t k = 0; k < subRange.layerCount; k++) {
-                uint32_t layer = subRange.baseArrayLayer + k;
-                VkImageSubresource sub = {subRange.aspectMask, level, layer};
-                IMAGE_CMD_BUF_LAYOUT_NODE node;
-                if (!FindCmdBufLayout(pCB, image, sub, node)) {
-                    // Missing layouts will be added during state update
-                    continue;
+        // Cast pCB to const because we don't want to create entries that don't exist here (in case the key changes to something
+        // in common with the non-const version.)
+        const ImageSubresourceLayoutMap *subresource_map =
+            (attachment_initial_layout != VK_IMAGE_LAYOUT_UNDEFINED) ? GetImageSubresourceLayoutMap(const_pCB, image) : nullptr;
+
+        if (subresource_map) {  // If no layout information for image yet, will be checked at QueueSubmit time
+            bool subres_skip = false;
+            auto subresource_cb = [this, i, attachment_initial_layout, &subres_skip](
+                                      const VkImageSubresource &subres, VkImageLayout layout, VkImageLayout initial_layout) {
+                LayoutUseCheckAndMessage layout_check(attachment_initial_layout, layout, initial_layout);
+                if (layout_check.CheckFailed()) {
+                    subres_skip |=
+                        log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                kVUID_Core_DrawState_InvalidRenderpass,
+                                "You cannot start a render pass using attachment %u where the render pass initial layout is %s "
+                                "and the %s layout of the attachment is %s. The layouts must match, or the render "
+                                "pass initial layout for the attachment must be VK_IMAGE_LAYOUT_UNDEFINED",
+                                i, string_VkImageLayout(attachment_initial_layout), layout_check.message,
+                                string_VkImageLayout(layout_check.layout));
                 }
-                if (initial_layout != VK_IMAGE_LAYOUT_UNDEFINED && initial_layout != node.layout) {
-                    skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                    kVUID_Core_DrawState_InvalidRenderpass,
-                                    "You cannot start a render pass using attachment %u where the render pass initial layout is %s "
-                                    "and the previous known layout of the attachment is %s. The layouts must match, or the render "
-                                    "pass initial layout for the attachment must be VK_IMAGE_LAYOUT_UNDEFINED",
-                                    i, string_VkImageLayout(initial_layout), string_VkImageLayout(node.layout));
-                }
-            }
+                return !subres_skip;  // quit checking subresources once we fail once
+            };
+
+            subresource_map->ForRange(view_state->normalized_subresource_range, subresource_cb);
+            skip |= subres_skip;
         }
 
-        ValidateRenderPassLayoutAgainstFramebufferImageUsage(rp_version, initial_layout, image, image_view, framebuffer,
+        ValidateRenderPassLayoutAgainstFramebufferImageUsage(rp_version, attachment_initial_layout, image, image_view, framebuffer,
                                                              render_pass, i, "initial layout");
 
         ValidateRenderPassLayoutAgainstFramebufferImageUsage(rp_version, final_layout, image, image_view, framebuffer, render_pass,
@@ -566,7 +582,7 @@ void CoreChecks::TransitionAttachmentRefLayout(GLOBAL_CB_NODE *pCB, FRAMEBUFFER_
     if (ref.attachment != VK_ATTACHMENT_UNUSED) {
         auto image_view = GetAttachmentImageViewState(pFramebuffer, ref.attachment);
         if (image_view) {
-            SetImageViewLayout(pCB, image_view, ref.layout);
+            SetImageViewLayout(pCB, *image_view, ref.layout);
         }
     }
 }
@@ -589,30 +605,6 @@ void CoreChecks::TransitionSubpassLayouts(GLOBAL_CB_NODE *pCB, const RENDER_PASS
     }
 }
 
-bool CoreChecks::ValidateImageAspectLayout(GLOBAL_CB_NODE const *pCB, const VkImageMemoryBarrier *mem_barrier, uint32_t level,
-                                           uint32_t layer, VkImageAspectFlags aspect) {
-    if (!(mem_barrier->subresourceRange.aspectMask & aspect)) {
-        return false;
-    }
-    VkImageSubresource sub = {aspect, level, layer};
-    IMAGE_CMD_BUF_LAYOUT_NODE node;
-    if (!FindCmdBufLayout(pCB, mem_barrier->image, sub, node)) {
-        return false;
-    }
-    bool skip = false;
-    if (mem_barrier->oldLayout == VK_IMAGE_LAYOUT_UNDEFINED) {
-        // TODO: Set memory invalid which is in mem_tracker currently
-    } else if (node.layout != mem_barrier->oldLayout) {
-        skip = log_msg(
-            report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-            HandleToUint64(pCB->commandBuffer), "VUID-VkImageMemoryBarrier-oldLayout-01197",
-            "For image %s you cannot transition the layout of aspect=%d level=%d layer=%d from %s when current layout is %s.",
-            report_data->FormatHandle(mem_barrier->image).c_str(), aspect, level, layer,
-            string_VkImageLayout(mem_barrier->oldLayout), string_VkImageLayout(node.layout));
-    }
-    return skip;
-}
-
 // Transition the layout state for renderpass attachments based on the BeginRenderPass() call. This includes:
 // 1. Transition into initialLayout state
 // 2. Transition from initialLayout to layout used in subpass 0
@@ -623,29 +615,11 @@ void CoreChecks::TransitionBeginRenderPassLayouts(GLOBAL_CB_NODE *cb_state, cons
     for (uint32_t i = 0; i < rpci->attachmentCount; ++i) {
         auto view_state = GetAttachmentImageViewState(framebuffer_state, i);
         if (view_state) {
-            SetImageViewLayout(cb_state, view_state, rpci->pAttachments[i].initialLayout);
+            SetImageViewLayout(cb_state, *view_state, rpci->pAttachments[i].initialLayout);
         }
     }
     // Now transition for first subpass (index 0)
     TransitionSubpassLayouts(cb_state, render_pass_state, 0, framebuffer_state);
-}
-
-void CoreChecks::TransitionImageAspectLayout(GLOBAL_CB_NODE *pCB, const VkImageMemoryBarrier *mem_barrier, uint32_t level,
-                                             uint32_t layer, VkImageAspectFlags aspect_mask, VkImageAspectFlags aspect) {
-    if (!(aspect_mask & aspect)) {
-        return;
-    }
-    VkImageSubresource sub = {aspect, level, layer};
-    IMAGE_CMD_BUF_LAYOUT_NODE node;
-    if (!FindCmdBufLayout(pCB, mem_barrier->image, sub, node)) {
-        pCB->image_layout_change_count++;  // Change the version of this data to force revalidation
-        SetLayout(pCB, mem_barrier->image, sub, IMAGE_CMD_BUF_LAYOUT_NODE(mem_barrier->oldLayout, mem_barrier->newLayout));
-        return;
-    }
-    if (mem_barrier->oldLayout == VK_IMAGE_LAYOUT_UNDEFINED) {
-        // TODO: Set memory invalid
-    }
-    SetLayout(pCB, mem_barrier->image, sub, mem_barrier->newLayout);
 }
 
 bool VerifyAspectsPresent(VkImageAspectFlags aspect_mask, VkFormat format) {
@@ -716,7 +690,7 @@ bool CoreChecks::ValidateBarrierLayoutToImageUsage(const VkImageMemoryBarrier *i
     if (msg_code != kVUIDUndefined) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
                         HandleToUint64(img_barrier->image), msg_code,
-                        "%s: Image barrier 0x%p %sLayout=%s is not compatible with image %s usage flags 0x%" PRIx32 ".", func_name,
+                        "%s: Image barrier 0x%p %s Layout=%s is not compatible with image %s usage flags 0x%" PRIx32 ".", func_name,
                         static_cast<const void *>(img_barrier), ((new_not_old) ? "new" : "old"), string_VkImageLayout(layout),
                         report_data->FormatHandle(img_barrier->image).c_str(), usage_flags);
     }
@@ -796,39 +770,48 @@ bool CoreChecks::ValidateBarriersToImages(GLOBAL_CB_NODE const *cb_state, uint32
                     report_data->FormatHandle(img_barrier->image).c_str(), string_VkImageLayout(img_barrier->oldLayout),
                     string_VkImageLayout(img_barrier->newLayout));
             }
-        }
 
-        VkImageCreateInfo *image_create_info = &(GetImageState(img_barrier->image)->createInfo);
-        // For a Depth/Stencil image both aspects MUST be set
-        if (FormatIsDepthAndStencil(image_create_info->format)) {
-            auto const aspect_mask = img_barrier->subresourceRange.aspectMask;
-            auto const ds_mask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
-            if ((aspect_mask & ds_mask) != (ds_mask)) {
-                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
-                                HandleToUint64(img_barrier->image), "VUID-VkImageMemoryBarrier-image-01207",
-                                "%s: Image barrier 0x%p references image %s of format %s that must have the depth and stencil "
-                                "aspects set, but its aspectMask is 0x%" PRIx32 ".",
-                                func_name, static_cast<const void *>(img_barrier),
-                                report_data->FormatHandle(img_barrier->image).c_str(), string_VkFormat(image_create_info->format),
-                                aspect_mask);
-            }
-        }
-        uint32_t level_count = ResolveRemainingLevels(&img_barrier->subresourceRange, image_create_info->mipLevels);
-        uint32_t layer_count = ResolveRemainingLayers(&img_barrier->subresourceRange, image_create_info->arrayLayers);
-
-        for (uint32_t j = 0; j < level_count; j++) {
-            uint32_t level = img_barrier->subresourceRange.baseMipLevel + j;
-            for (uint32_t k = 0; k < layer_count; k++) {
-                uint32_t layer = img_barrier->subresourceRange.baseArrayLayer + k;
-                skip |= ValidateImageAspectLayout(cb_state, img_barrier, level, layer, VK_IMAGE_ASPECT_COLOR_BIT);
-                skip |= ValidateImageAspectLayout(cb_state, img_barrier, level, layer, VK_IMAGE_ASPECT_DEPTH_BIT);
-                skip |= ValidateImageAspectLayout(cb_state, img_barrier, level, layer, VK_IMAGE_ASPECT_STENCIL_BIT);
-                skip |= ValidateImageAspectLayout(cb_state, img_barrier, level, layer, VK_IMAGE_ASPECT_METADATA_BIT);
-                if (GetDeviceExtensions()->vk_khr_sampler_ycbcr_conversion) {
-                    skip |= ValidateImageAspectLayout(cb_state, img_barrier, level, layer, VK_IMAGE_ASPECT_PLANE_0_BIT_KHR);
-                    skip |= ValidateImageAspectLayout(cb_state, img_barrier, level, layer, VK_IMAGE_ASPECT_PLANE_1_BIT_KHR);
-                    skip |= ValidateImageAspectLayout(cb_state, img_barrier, level, layer, VK_IMAGE_ASPECT_PLANE_2_BIT_KHR);
+            VkImageCreateInfo *image_create_info = &image_state->createInfo;
+            // For a Depth/Stencil image both aspects MUST be set
+            if (FormatIsDepthAndStencil(image_create_info->format)) {
+                auto const aspect_mask = img_barrier->subresourceRange.aspectMask;
+                auto const ds_mask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+                if ((aspect_mask & ds_mask) != (ds_mask)) {
+                    skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
+                                    HandleToUint64(img_barrier->image), "VUID-VkImageMemoryBarrier-image-01207",
+                                    "%s: Image barrier 0x%p references image %s of format %s that must have the depth and stencil "
+                                    "aspects set, but its aspectMask is 0x%" PRIx32 ".",
+                                    func_name, static_cast<const void *>(img_barrier),
+                                    report_data->FormatHandle(img_barrier->image).c_str(),
+                                    string_VkFormat(image_create_info->format), aspect_mask);
                 }
+            }
+
+            const auto *subresource_map = GetImageSubresourceLayoutMap(cb_state, img_barrier->image);
+            if (img_barrier->oldLayout == VK_IMAGE_LAYOUT_UNDEFINED) {
+                // TODO: Set memory invalid which is in mem_tracker currently
+                // Not sure if this needs to be in the ForRange traversal, pulling it out as it is currently invariant with
+                // subresource.
+            } else if (subresource_map) {
+                bool subres_skip = false;
+                VkImageSubresourceRange normalized_isr = NormalizeSubresourceRange(*image_state, img_barrier->subresourceRange);
+                auto subres_callback = [this, img_barrier, cb_state, &subres_skip](
+                                           const VkImageSubresource &subres, VkImageLayout layout, VkImageLayout initial_layout) {
+                    LayoutUseCheckAndMessage layout_check(img_barrier->oldLayout, layout, initial_layout);
+                    if (layout_check.CheckFailed()) {
+                        subres_skip =
+                            log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                                    HandleToUint64(cb_state->commandBuffer), "VUID-VkImageMemoryBarrier-oldLayout-01197",
+                                    "For image %s you cannot transition the layout of aspect=%d level=%d layer=%d from %s when the "
+                                    "%s layout is %s.",
+                                    report_data->FormatHandle(img_barrier->image).c_str(), subres.aspectMask, subres.mipLevel,
+                                    subres.arrayLayer, string_VkImageLayout(img_barrier->oldLayout), layout_check.message,
+                                    string_VkImageLayout(layout_check.layout));
+                    }
+                    return !subres_skip;
+                };
+                subresource_map->ForRange(normalized_isr, subres_callback);
+                skip |= subres_skip;
             }
         }
     }
@@ -1046,72 +1029,54 @@ void CoreChecks::TransitionImageLayouts(GLOBAL_CB_NODE *cb_state, uint32_t memBa
             continue;
         }
 
-        VkImageCreateInfo *image_create_info = &(GetImageState(mem_barrier->image)->createInfo);
-        uint32_t level_count = ResolveRemainingLevels(&mem_barrier->subresourceRange, image_create_info->mipLevels);
-        uint32_t layer_count = ResolveRemainingLayers(&mem_barrier->subresourceRange, image_create_info->arrayLayers);
+        auto *image_state = GetImageState(mem_barrier->image);
+        if (!image_state) continue;
+
+        VkImageSubresourceRange normalized_isr = NormalizeSubresourceRange(*image_state, mem_barrier->subresourceRange);
+        const auto &image_create_info = image_state->createInfo;
 
         // Special case for 3D images with VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT_KHR flag bit, where <extent.depth> and
         // <arrayLayers> can potentially alias. When recording layout for the entire image, pre-emptively record layouts
         // for all (potential) layer sub_resources.
-        if ((0 != (image_create_info->flags & VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT_KHR)) &&
-            (mem_barrier->subresourceRange.baseArrayLayer == 0) && (layer_count == 1)) {
-            layer_count = image_create_info->extent.depth;  // Treat each depth slice as a layer subresource
+        if (0 != (image_create_info.flags & VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT_KHR)) {
+            normalized_isr.baseArrayLayer = 0;
+            normalized_isr.layerCount = image_create_info.extent.depth;  // Treat each depth slice as a layer subresource
         }
 
-        // For multiplanar formats, IMAGE_ASPECT_COLOR is equivalent to adding the aspect of the individual planes
-        VkImageAspectFlags aspect_mask = mem_barrier->subresourceRange.aspectMask;
-        if (GetDeviceExtensions()->vk_khr_sampler_ycbcr_conversion) {
-            if (FormatIsMultiplane(image_create_info->format)) {
-                if (aspect_mask & VK_IMAGE_ASPECT_COLOR_BIT) {
-                    aspect_mask &= ~VK_IMAGE_ASPECT_COLOR_BIT;
-                    aspect_mask |= (VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT);
-                    if (FormatPlaneCount(image_create_info->format) > 2) {
-                        aspect_mask |= VK_IMAGE_ASPECT_PLANE_2_BIT;
-                    }
-                }
-            }
-        }
-
-        for (uint32_t j = 0; j < level_count; j++) {
-            uint32_t level = mem_barrier->subresourceRange.baseMipLevel + j;
-            for (uint32_t k = 0; k < layer_count; k++) {
-                uint32_t layer = mem_barrier->subresourceRange.baseArrayLayer + k;
-                TransitionImageAspectLayout(cb_state, mem_barrier, level, layer, aspect_mask, VK_IMAGE_ASPECT_COLOR_BIT);
-                TransitionImageAspectLayout(cb_state, mem_barrier, level, layer, aspect_mask, VK_IMAGE_ASPECT_DEPTH_BIT);
-                TransitionImageAspectLayout(cb_state, mem_barrier, level, layer, aspect_mask, VK_IMAGE_ASPECT_STENCIL_BIT);
-                TransitionImageAspectLayout(cb_state, mem_barrier, level, layer, aspect_mask, VK_IMAGE_ASPECT_METADATA_BIT);
-                if (GetDeviceExtensions()->vk_khr_sampler_ycbcr_conversion) {
-                    TransitionImageAspectLayout(cb_state, mem_barrier, level, layer, aspect_mask, VK_IMAGE_ASPECT_PLANE_0_BIT_KHR);
-                    TransitionImageAspectLayout(cb_state, mem_barrier, level, layer, aspect_mask, VK_IMAGE_ASPECT_PLANE_1_BIT_KHR);
-                    TransitionImageAspectLayout(cb_state, mem_barrier, level, layer, aspect_mask, VK_IMAGE_ASPECT_PLANE_2_BIT_KHR);
-                }
-            }
-        }
+        SetImageLayout(cb_state, *image_state, normalized_isr, mem_barrier->newLayout, mem_barrier->oldLayout);
     }
 }
 
-bool CoreChecks::VerifyImageLayout(GLOBAL_CB_NODE const *cb_node, IMAGE_STATE *image_state, VkImageSubresourceLayers subLayers,
+bool CoreChecks::VerifyImageLayout(GLOBAL_CB_NODE const *cb_node, IMAGE_STATE *image_state, const VkImageSubresourceRange &range,
                                    VkImageLayout explicit_layout, VkImageLayout optimal_layout, const char *caller,
                                    const char *layout_invalid_msg_code, const char *layout_mismatch_msg_code, bool *error) {
+    assert(cb_node);
+    assert(image_state);
     const auto image = image_state->image;
     bool skip = false;
 
-    for (uint32_t i = 0; i < subLayers.layerCount; ++i) {
-        uint32_t layer = i + subLayers.baseArrayLayer;
-        VkImageSubresource sub = {subLayers.aspectMask, subLayers.mipLevel, layer};
-        IMAGE_CMD_BUF_LAYOUT_NODE node;
-        if (FindCmdBufLayout(cb_node, image, sub, node)) {
-            if (node.layout != explicit_layout) {
+    const auto *subresource_map = GetImageSubresourceLayoutMap(cb_node, image);
+    if (subresource_map) {
+        bool subres_skip = false;
+        auto subresource_cb = [this, explicit_layout, cb_node, layout_mismatch_msg_code, caller, image, &error, &subres_skip](
+                                  const VkImageSubresource &subres, VkImageLayout layout, VkImageLayout initial_layout) {
+            LayoutUseCheckAndMessage layout_check(explicit_layout, layout, initial_layout);
+            if (layout_check.CheckFailed()) {
                 *error = true;
-                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                                HandleToUint64(cb_node->commandBuffer), layout_mismatch_msg_code,
-                                "%s: Cannot use image %s (layer=%u mip=%u) with specific layout %s that doesn't match the actual "
-                                "current layout %s.",
-                                caller, report_data->FormatHandle(image).c_str(), layer, subLayers.mipLevel,
-                                string_VkImageLayout(explicit_layout), string_VkImageLayout(node.layout));
+                subres_skip |=
+                    log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                            HandleToUint64(cb_node->commandBuffer), layout_mismatch_msg_code,
+                            "%s: Cannot use image %s (layer=%u mip=%u) with specific layout %s that doesn't match the "
+                            "%s layout %s.",
+                            caller, report_data->FormatHandle(image).c_str(), subres.arrayLayer, subres.mipLevel,
+                            string_VkImageLayout(explicit_layout), layout_check.message, string_VkImageLayout(layout_check.layout));
             }
-        }
+            return !subres_skip;
+        };
+        subresource_map->ForRange(range, subresource_cb);
+        skip |= subres_skip;
     }
+
     // If optimal_layout is not UNDEFINED, check that layout matches optimal for this case
     if ((VK_IMAGE_LAYOUT_UNDEFINED != optimal_layout) && (explicit_layout != optimal_layout)) {
         if (VK_IMAGE_LAYOUT_GENERAL == explicit_layout) {
@@ -1143,6 +1108,13 @@ bool CoreChecks::VerifyImageLayout(GLOBAL_CB_NODE const *cb_node, IMAGE_STATE *i
     }
     return skip;
 }
+bool CoreChecks::VerifyImageLayout(GLOBAL_CB_NODE const *cb_node, IMAGE_STATE *image_state,
+                                   const VkImageSubresourceLayers &subLayers, VkImageLayout explicit_layout,
+                                   VkImageLayout optimal_layout, const char *caller, const char *layout_invalid_msg_code,
+                                   const char *layout_mismatch_msg_code, bool *error) {
+    return VerifyImageLayout(cb_node, image_state, RangeFromLayers(subLayers), explicit_layout, optimal_layout, caller,
+                             layout_invalid_msg_code, layout_mismatch_msg_code, error);
+}
 
 void CoreChecks::TransitionFinalSubpassLayouts(GLOBAL_CB_NODE *pCB, const VkRenderPassBeginInfo *pRenderPassBegin,
                                                FRAMEBUFFER_STATE *framebuffer_state) {
@@ -1154,7 +1126,7 @@ void CoreChecks::TransitionFinalSubpassLayouts(GLOBAL_CB_NODE *pCB, const VkRend
         for (uint32_t i = 0; i < pRenderPassInfo->attachmentCount; ++i) {
             auto view_state = GetAttachmentImageViewState(framebuffer_state, i);
             if (view_state) {
-                SetImageViewLayout(pCB, view_state, pRenderPassInfo->pAttachments[i].finalLayout);
+                SetImageViewLayout(pCB, *view_state, pRenderPassInfo->pAttachments[i].finalLayout);
             }
         }
     }
@@ -1567,9 +1539,6 @@ bool CoreChecks::VerifyClearImageLayout(GLOBAL_CB_NODE *cb_node, IMAGE_STATE *im
                                         VkImageLayout dest_image_layout, const char *func_name) {
     bool skip = false;
 
-    uint32_t level_count = ResolveRemainingLevels(&range, image_state->createInfo.mipLevels);
-    uint32_t layer_count = ResolveRemainingLayers(&range, image_state->createInfo.arrayLayers);
-
     if (dest_image_layout != VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
         if (dest_image_layout == VK_IMAGE_LAYOUT_GENERAL) {
             if (image_state->createInfo.tiling != VK_IMAGE_TILING_LINEAR) {
@@ -1609,49 +1578,34 @@ bool CoreChecks::VerifyClearImageLayout(GLOBAL_CB_NODE *cb_node, IMAGE_STATE *im
         }
     }
 
-    for (uint32_t level_index = 0; level_index < level_count; ++level_index) {
-        uint32_t level = level_index + range.baseMipLevel;
-        for (uint32_t layer_index = 0; layer_index < layer_count; ++layer_index) {
-            uint32_t layer = layer_index + range.baseArrayLayer;
-            VkImageSubresource sub = {range.aspectMask, level, layer};
-            IMAGE_CMD_BUF_LAYOUT_NODE node;
-            if (FindCmdBufLayout(cb_node, image_state->image, sub, node)) {
-                if (node.layout != dest_image_layout) {
-                    const char *error_code = "VUID-vkCmdClearColorImage-imageLayout-00004";
-                    if (strcmp(func_name, "vkCmdClearDepthStencilImage()") == 0) {
-                        error_code = "VUID-vkCmdClearDepthStencilImage-imageLayout-00011";
-                    } else {
-                        assert(strcmp(func_name, "vkCmdClearColorImage()") == 0);
-                    }
-                    skip |=
-                        log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT, 0,
-                                error_code, "%s: Cannot clear an image whose layout is %s and doesn't match the current layout %s.",
-                                func_name, string_VkImageLayout(dest_image_layout), string_VkImageLayout(node.layout));
+    // Cast to const to prevent creation at validate time.
+    const auto *subresource_map = GetImageSubresourceLayoutMap(static_cast<const GLOBAL_CB_NODE *>(cb_node), image_state->image);
+    if (subresource_map) {
+        bool subres_skip = false;
+        VkImageSubresourceRange normalized_isr = NormalizeSubresourceRange(*image_state, range);
+        auto subres_callback = [this, cb_node, dest_image_layout, func_name, &subres_skip](
+                                   const VkImageSubresource &subres, VkImageLayout layout, VkImageLayout initial_layout) {
+            LayoutUseCheckAndMessage layout_check(dest_image_layout, layout, initial_layout);
+            if (layout_check.CheckFailed()) {
+                const char *error_code = "VUID-vkCmdClearColorImage-imageLayout-00004";
+                if (strcmp(func_name, "vkCmdClearDepthStencilImage()") == 0) {
+                    error_code = "VUID-vkCmdClearDepthStencilImage-imageLayout-00011";
+                } else {
+                    assert(strcmp(func_name, "vkCmdClearColorImage()") == 0);
                 }
+                subres_skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                                       HandleToUint64(cb_node->commandBuffer), error_code,
+                                       "%s: Cannot clear an image whose layout is %s and doesn't match the %s layout %s.",
+                                       func_name, string_VkImageLayout(dest_image_layout), layout_check.message,
+                                       string_VkImageLayout(layout_check.layout));
             }
-        }
+            return !subres_skip;
+        };
+        subresource_map->ForRange(normalized_isr, subres_callback);
+        skip |= subres_skip;
     }
 
     return skip;
-}
-
-void CoreChecks::RecordClearImageLayout(GLOBAL_CB_NODE *cb_node, VkImage image, VkImageSubresourceRange range,
-                                        VkImageLayout dest_image_layout) {
-    VkImageCreateInfo *image_create_info = &(GetImageState(image)->createInfo);
-    uint32_t level_count = ResolveRemainingLevels(&range, image_create_info->mipLevels);
-    uint32_t layer_count = ResolveRemainingLayers(&range, image_create_info->arrayLayers);
-
-    for (uint32_t level_index = 0; level_index < level_count; ++level_index) {
-        uint32_t level = level_index + range.baseMipLevel;
-        for (uint32_t layer_index = 0; layer_index < layer_count; ++layer_index) {
-            uint32_t layer = layer_index + range.baseArrayLayer;
-            VkImageSubresource sub = {range.aspectMask, level, layer};
-            IMAGE_CMD_BUF_LAYOUT_NODE node;
-            if (!FindCmdBufLayout(cb_node, image, sub, node)) {
-                SetLayout(cb_node, image, sub, IMAGE_CMD_BUF_LAYOUT_NODE(dest_image_layout, dest_image_layout));
-            }
-        }
-    }
 }
 
 bool CoreChecks::PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
@@ -1690,7 +1644,7 @@ void CoreChecks::PreCallRecordCmdClearColorImage(VkCommandBuffer commandBuffer, 
     if (cb_node && image_state) {
         AddCommandBufferBindingImage(cb_node, image_state);
         for (uint32_t i = 0; i < rangeCount; ++i) {
-            RecordClearImageLayout(cb_node, image, pRanges[i], imageLayout);
+            SetImageInitialLayout(cb_node, image, pRanges[i], imageLayout);
         }
     }
 }
@@ -1753,7 +1707,7 @@ void CoreChecks::PreCallRecordCmdClearDepthStencilImage(VkCommandBuffer commandB
     if (cb_node && image_state) {
         AddCommandBufferBindingImage(cb_node, image_state);
         for (uint32_t i = 0; i < rangeCount; ++i) {
-            RecordClearImageLayout(cb_node, image, pRanges[i], imageLayout);
+            SetImageInitialLayout(cb_node, image, pRanges[i], imageLayout);
         }
     }
 }
@@ -2688,8 +2642,8 @@ void CoreChecks::PreCallRecordCmdCopyImage(VkCommandBuffer commandBuffer, VkImag
 
     // Make sure that all image slices are updated to correct layout
     for (uint32_t i = 0; i < regionCount; ++i) {
-        SetImageLayout(cb_node, src_image_state, pRegions[i].srcSubresource, srcImageLayout);
-        SetImageLayout(cb_node, dst_image_state, pRegions[i].dstSubresource, dstImageLayout);
+        SetImageInitialLayout(cb_node, *src_image_state, pRegions[i].srcSubresource, srcImageLayout);
+        SetImageInitialLayout(cb_node, *dst_image_state, pRegions[i].dstSubresource, dstImageLayout);
     }
     // Update bindings between images and cmd buffer
     AddCommandBufferBindingImage(cb_node, src_image_state);
@@ -3297,8 +3251,8 @@ void CoreChecks::PreCallRecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImag
 
     // Make sure that all image slices are updated to correct layout
     for (uint32_t i = 0; i < regionCount; ++i) {
-        SetImageLayout(cb_node, src_image_state, pRegions[i].srcSubresource, srcImageLayout);
-        SetImageLayout(cb_node, dst_image_state, pRegions[i].dstSubresource, dstImageLayout);
+        SetImageInitialLayout(cb_node, *src_image_state, pRegions[i].srcSubresource, srcImageLayout);
+        SetImageInitialLayout(cb_node, *dst_image_state, pRegions[i].dstSubresource, dstImageLayout);
     }
     // Update bindings between images and cmd buffer
     AddCommandBufferBindingImage(cb_node, src_image_state);
@@ -3310,45 +3264,63 @@ bool CoreChecks::ValidateCmdBufImageLayouts(GLOBAL_CB_NODE *pCB,
                                             std::unordered_map<ImageSubresourcePair, IMAGE_LAYOUT_NODE> const &globalImageLayoutMap,
                                             std::unordered_map<ImageSubresourcePair, IMAGE_LAYOUT_NODE> &overlayLayoutMap) {
     bool skip = false;
-    for (auto cb_image_data : pCB->imageLayoutMap) {
-        VkImageLayout imageLayout;
+    // Iterate over the layout maps for each referenced image
+    for (const auto &layout_map_entry : pCB->image_layout_map) {
+        const auto image = layout_map_entry.first;
+        const auto *image_state = GetImageState(image);
+        if (!image_state) continue;  // Can't check layouts of a dead image
+        const auto &subres_map = layout_map_entry.second;
+        ImageSubresourcePair isr_pair;
+        isr_pair.image = image;
+        isr_pair.hasSubresource = true;
 
-        if (FindLayout(overlayLayoutMap, cb_image_data.first, imageLayout) ||
-            FindLayout(globalImageLayoutMap, cb_image_data.first, imageLayout)) {
-            if (cb_image_data.second.initialLayout == VK_IMAGE_LAYOUT_UNDEFINED) {
-                // TODO: Set memory invalid which is in mem_tracker currently
-            } else if (imageLayout != cb_image_data.second.initialLayout) {
-                if (cb_image_data.first.hasSubresource) {
-                    skip |=
-                        log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                                HandleToUint64(pCB->commandBuffer), kVUID_Core_DrawState_InvalidImageLayout,
-                                "Submitted command buffer expects image %s (subresource: aspectMask 0x%X array layer %u, mip level "
-                                "%u) to be in layout %s--instead, image %s's current layout is %s.",
-                                report_data->FormatHandle(cb_image_data.first.image).c_str(),
-                                cb_image_data.first.subresource.aspectMask, cb_image_data.first.subresource.arrayLayer,
-                                cb_image_data.first.subresource.mipLevel, string_VkImageLayout(cb_image_data.second.initialLayout),
-                                report_data->FormatHandle(cb_image_data.first.image).c_str(), string_VkImageLayout(imageLayout));
-                } else {
+        // Validate the initial_uses for each subresource referenced
+        for (auto it_init = subres_map->BeginInitialUse(); !it_init.AtEnd(); ++it_init) {
+            isr_pair.subresource = (*it_init).subresource;
+            VkImageLayout initial_layout = (*it_init).layout;
+            VkImageLayout image_layout;
+            if (FindLayout(overlayLayoutMap, isr_pair, image_layout) || FindLayout(globalImageLayoutMap, isr_pair, image_layout)) {
+                if (initial_layout == VK_IMAGE_LAYOUT_UNDEFINED) {
+                    // TODO: Set memory invalid which is in mem_tracker currently
+                } else if (image_layout != initial_layout) {
                     skip |= log_msg(
                         report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                         HandleToUint64(pCB->commandBuffer), kVUID_Core_DrawState_InvalidImageLayout,
-                        "Submitted command buffer expects image %s to be in layout %s--instead, image %s's current layout is %s.",
-                        report_data->FormatHandle(cb_image_data.first.image).c_str(),
-                        string_VkImageLayout(cb_image_data.second.initialLayout),
-                        report_data->FormatHandle(cb_image_data.first.image).c_str(), string_VkImageLayout(imageLayout));
+                        "Submitted command buffer expects image %s  (subresource: aspectMask 0x%X array layer %u, mip level %u) "
+                        "to be in layout %s--instead, current layout is %s.",
+                        report_data->FormatHandle(image).c_str(), isr_pair.subresource.aspectMask, isr_pair.subresource.arrayLayer,
+                        isr_pair.subresource.mipLevel, string_VkImageLayout(initial_layout), string_VkImageLayout(image_layout));
                 }
             }
-            SetLayout(overlayLayoutMap, cb_image_data.first, cb_image_data.second.layout);
+        }
+
+        // Update all layout set operations (which will be a subset of the initial_layouts
+        for (auto it_set = subres_map->BeginSetLayout(); !it_set.AtEnd(); ++it_set) {
+            VkImageLayout layout = (*it_set).layout;
+            isr_pair.subresource = (*it_set).subresource;
+            SetLayout(overlayLayoutMap, isr_pair, layout);
         }
     }
+
     return skip;
 }
 
 void CoreChecks::UpdateCmdBufImageLayouts(GLOBAL_CB_NODE *pCB) {
-    for (auto cb_image_data : pCB->imageLayoutMap) {
-        VkImageLayout imageLayout;
-        FindGlobalLayout(cb_image_data.first, imageLayout);
-        SetGlobalLayout(cb_image_data.first, cb_image_data.second.layout);
+    for (const auto &layout_map_entry : pCB->image_layout_map) {
+        const auto image = layout_map_entry.first;
+        const auto *image_state = GetImageState(image);
+        if (!image_state) continue;  // Can't set layouts of a dead image
+        const auto &subres_map = layout_map_entry.second;
+        ImageSubresourcePair isr_pair;
+        isr_pair.image = image;
+        isr_pair.hasSubresource = true;
+
+        // Update all layout set operations (which will be a subset of the initial_layouts
+        for (auto it_set = subres_map->BeginSetLayout(); !it_set.AtEnd(); ++it_set) {
+            VkImageLayout layout = (*it_set).layout;
+            isr_pair.subresource = (*it_set).subresource;
+            SetGlobalLayout(isr_pair, layout);
+        }
     }
 }
 
@@ -4341,12 +4313,8 @@ void CoreChecks::PostCallRecordCreateImageView(VkDevice device, const VkImageVie
                                                const VkAllocationCallbacks *pAllocator, VkImageView *pView, VkResult result) {
     if (result != VK_SUCCESS) return;
     auto image_view_map = GetImageViewMap();
-    (*image_view_map)[*pView] = std::unique_ptr<IMAGE_VIEW_STATE>(new IMAGE_VIEW_STATE(*pView, pCreateInfo));
-
     auto image_state = GetImageState(pCreateInfo->image);
-    auto &sub_res_range = (*image_view_map)[*pView].get()->create_info.subresourceRange;
-    sub_res_range.levelCount = ResolveRemainingLevels(&sub_res_range, image_state->createInfo.mipLevels);
-    sub_res_range.layerCount = ResolveRemainingLayers(&sub_res_range, image_state->createInfo.arrayLayers);
+    (*image_view_map)[*pView] = std::unique_ptr<IMAGE_VIEW_STATE>(new IMAGE_VIEW_STATE(image_state, *pView, pCreateInfo));
 }
 
 bool CoreChecks::PreCallValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer,
@@ -4836,9 +4804,9 @@ void CoreChecks::PreCallRecordCmdCopyImageToBuffer(VkCommandBuffer commandBuffer
     auto src_image_state = GetImageState(srcImage);
     auto dst_buffer_state = GetBufferState(dstBuffer);
 
-    // Make sure that all image slices are updated to correct layout
+    // Make sure that all image slices record referenced layout
     for (uint32_t i = 0; i < regionCount; ++i) {
-        SetImageLayout(cb_node, src_image_state, pRegions[i].imageSubresource, srcImageLayout);
+        SetImageInitialLayout(cb_node, *src_image_state, pRegions[i].imageSubresource, srcImageLayout);
     }
     // Update bindings between buffer/image and cmd buffer
     AddCommandBufferBindingImage(cb_node, src_image_state);
@@ -4917,9 +4885,9 @@ void CoreChecks::PreCallRecordCmdCopyBufferToImage(VkCommandBuffer commandBuffer
     auto src_buffer_state = GetBufferState(srcBuffer);
     auto dst_image_state = GetImageState(dstImage);
 
-    // Make sure that all image slices are updated to correct layout
+    // Make sure that all image slices are record referenced layout
     for (uint32_t i = 0; i < regionCount; ++i) {
-        SetImageLayout(cb_node, dst_image_state, pRegions[i].imageSubresource, dstImageLayout);
+        SetImageInitialLayout(cb_node, *dst_image_state, pRegions[i].imageSubresource, dstImageLayout);
     }
     AddCommandBufferBindingBuffer(cb_node, src_buffer_state);
     AddCommandBufferBindingImage(cb_node, dst_image_state);
