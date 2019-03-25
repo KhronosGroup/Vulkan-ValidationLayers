@@ -2595,6 +2595,11 @@ void CoreChecks::PostCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDevice
         core_checks->enabled_features.cooperative_matrix_features = *cooperative_matrix_features;
     }
 
+    const auto *float_controls_features = lvl_find_in_chain<VkPhysicalDeviceFloatControlsPropertiesKHR>(pCreateInfo->pNext);
+    if (float_controls_features) {
+        core_checks->enabled_features.float_controls = *float_controls_features;
+    }
+
     // Store physical device properties and physical device mem limits into CoreChecks structs
     DispatchGetPhysicalDeviceMemoryProperties(gpu, &core_checks->phys_dev_mem_props);
     DispatchGetPhysicalDeviceProperties(gpu, &core_checks->phys_dev_props);
