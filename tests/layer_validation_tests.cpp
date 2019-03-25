@@ -32,9 +32,11 @@
 
 #include "layers/vk_device_profile_api_layer.h"
 
-#if defined(ANDROID) && defined(VALIDATION_APK)
+#if defined(ANDROID)
 #include <android/log.h>
+#if defined(VALIDATION_APK)
 #include <android_native_app_glue.h>
+#endif
 #endif
 
 #include "icd-spv.h"
@@ -390,7 +392,7 @@ class ErrorMonitor {
             }
         } else if (GetOtherFailureMsgs().size() > 0) {
             // Fail test case for any unexpected errors
-#if defined(ANDROID) && defined(VALIDATION_APK)
+#if defined(ANDROID)
             // This will get unexpected errors into the adb log
             for (auto msg : other_messages_) {
                 __android_log_print(ANDROID_LOG_INFO, "VulkanLayerValidationTests", "[ UNEXPECTED_ERR ] '%s'", msg.c_str());
@@ -411,7 +413,7 @@ class ErrorMonitor {
             }
         } else if (GetOtherFailureMsgs().size() > 0) {
             // Fail test case for any unexpected errors
-#if defined(ANDROID) && defined(VALIDATION_APK)
+#if defined(ANDROID)
             // This will get unexpected errors into the adb log
             for (auto msg : other_messages_) {
                 __android_log_print(ANDROID_LOG_INFO, "VulkanLayerValidationTests", "[ UNEXPECTED_ERR ] '%s'", msg.c_str());
