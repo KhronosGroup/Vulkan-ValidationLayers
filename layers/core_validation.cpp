@@ -372,66 +372,87 @@ void CoreChecks::AddMemObjInfo(void *object, const VkDeviceMemory mem, const VkM
 
 // Create binding link between given sampler and command buffer node
 void CoreChecks::AddCommandBufferBindingSampler(GLOBAL_CB_NODE *cb_node, SAMPLER_STATE *sampler_state) {
-    sampler_state->cb_bindings.insert(cb_node);
-    cb_node->object_bindings.insert({HandleToUint64(sampler_state->sampler), kVulkanObjectTypeSampler});
+    auto inserted = cb_node->object_bindings.insert({HandleToUint64(sampler_state->sampler), kVulkanObjectTypeSampler});
+    if (inserted.second) {
+        // Only need to complete the cross-reference if this is a new item
+        sampler_state->cb_bindings.insert(cb_node);
+    }
 }
 
 // Create binding link between given image node and command buffer node
 void CoreChecks::AddCommandBufferBindingImage(GLOBAL_CB_NODE *cb_node, IMAGE_STATE *image_state) {
     // Skip validation if this image was created through WSI
     if (image_state->binding.mem != MEMTRACKER_SWAP_CHAIN_IMAGE_KEY) {
-        // First update CB binding in MemObj mini CB list
-        for (auto mem_binding : image_state->GetBoundMemory()) {
-            DEVICE_MEM_INFO *pMemInfo = GetMemObjInfo(mem_binding);
-            if (pMemInfo) {
-                pMemInfo->cb_bindings.insert(cb_node);
-                // Now update CBInfo's Mem reference list
-                cb_node->memObjs.insert(mem_binding);
+        // First update cb binding for image
+        auto image_inserted = cb_node->object_bindings.insert({HandleToUint64(image_state->image), kVulkanObjectTypeImage});
+        if (image_inserted.second) {
+            // Only need to continue if this is a new item (the rest of the work would have be done previous)
+            image_state->cb_bindings.insert(cb_node);
+            // Now update CB binding in MemObj mini CB list
+            for (auto mem_binding : image_state->GetBoundMemory()) {
+                DEVICE_MEM_INFO *pMemInfo = GetMemObjInfo(mem_binding);
+                if (pMemInfo) {
+                    // Now update CBInfo's Mem reference list
+                    auto mem_inserted = cb_node->memObjs.insert(mem_binding);
+                    if (mem_inserted.second) {
+                        // Only need to complete the cross-reference if this is a new item
+                        pMemInfo->cb_bindings.insert(cb_node);
+                    }
+                }
             }
         }
-        // Now update cb binding for image
-        cb_node->object_bindings.insert({HandleToUint64(image_state->image), kVulkanObjectTypeImage});
-        image_state->cb_bindings.insert(cb_node);
     }
 }
 
 // Create binding link between given image view node and its image with command buffer node
 void CoreChecks::AddCommandBufferBindingImageView(GLOBAL_CB_NODE *cb_node, IMAGE_VIEW_STATE *view_state) {
     // First add bindings for imageView
-    view_state->cb_bindings.insert(cb_node);
-    cb_node->object_bindings.insert({HandleToUint64(view_state->image_view), kVulkanObjectTypeImageView});
-    auto image_state = GetImageState(view_state->create_info.image);
-    // Add bindings for image within imageView
-    if (image_state) {
-        AddCommandBufferBindingImage(cb_node, image_state);
+    auto inserted = cb_node->object_bindings.insert({HandleToUint64(view_state->image_view), kVulkanObjectTypeImageView});
+    if (inserted.second) {
+        // Only need to continue if this is a new item
+        view_state->cb_bindings.insert(cb_node);
+        auto image_state = GetImageState(view_state->create_info.image);
+        // Add bindings for image within imageView
+        if (image_state) {
+            AddCommandBufferBindingImage(cb_node, image_state);
+        }
     }
 }
 
 // Create binding link between given buffer node and command buffer node
 void CoreChecks::AddCommandBufferBindingBuffer(GLOBAL_CB_NODE *cb_node, BUFFER_STATE *buffer_state) {
-    // First update CB binding in MemObj mini CB list
-    for (auto mem_binding : buffer_state->GetBoundMemory()) {
-        DEVICE_MEM_INFO *pMemInfo = GetMemObjInfo(mem_binding);
-        if (pMemInfo) {
-            pMemInfo->cb_bindings.insert(cb_node);
-            // Now update CBInfo's Mem reference list
-            cb_node->memObjs.insert(mem_binding);
+    // First update cb binding for buffer
+    auto buffer_inserted = cb_node->object_bindings.insert({HandleToUint64(buffer_state->buffer), kVulkanObjectTypeBuffer});
+    if (buffer_inserted.second) {
+        // Only need to continue if this is a new item
+        buffer_state->cb_bindings.insert(cb_node);
+        // Now update CB binding in MemObj mini CB list
+        for (auto mem_binding : buffer_state->GetBoundMemory()) {
+            DEVICE_MEM_INFO *pMemInfo = GetMemObjInfo(mem_binding);
+            if (pMemInfo) {
+                // Now update CBInfo's Mem reference list
+                auto inserted = cb_node->memObjs.insert(mem_binding);
+                if (inserted.second) {
+                    // Only need to complete the cross-reference if this is a new item
+                    pMemInfo->cb_bindings.insert(cb_node);
+                }
+            }
         }
     }
-    // Now update cb binding for buffer
-    cb_node->object_bindings.insert({HandleToUint64(buffer_state->buffer), kVulkanObjectTypeBuffer});
-    buffer_state->cb_bindings.insert(cb_node);
 }
 
 // Create binding link between given buffer view node and its buffer with command buffer node
 void CoreChecks::AddCommandBufferBindingBufferView(GLOBAL_CB_NODE *cb_node, BUFFER_VIEW_STATE *view_state) {
     // First add bindings for bufferView
-    view_state->cb_bindings.insert(cb_node);
-    cb_node->object_bindings.insert({HandleToUint64(view_state->buffer_view), kVulkanObjectTypeBufferView});
-    auto buffer_state = GetBufferState(view_state->create_info.buffer);
-    // Add bindings for buffer within bufferView
-    if (buffer_state) {
-        AddCommandBufferBindingBuffer(cb_node, buffer_state);
+    auto inserted = cb_node->object_bindings.insert({HandleToUint64(view_state->buffer_view), kVulkanObjectTypeBufferView});
+    if (inserted.second) {
+        // Only need to complete the cross-reference if this is a new item
+        view_state->cb_bindings.insert(cb_node);
+        auto buffer_state = GetBufferState(view_state->create_info.buffer);
+        // Add bindings for buffer within bufferView
+        if (buffer_state) {
+            AddCommandBufferBindingBuffer(cb_node, buffer_state);
+        }
     }
 }
 
