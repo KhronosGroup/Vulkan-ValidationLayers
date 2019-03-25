@@ -77,9 +77,6 @@ class VkDepthStencilObj;
 
 class VkRenderFramework : public VkTestFramework {
    public:
-    VkRenderFramework();
-    ~VkRenderFramework();
-
     VkInstance instance() { return inst; }
     VkDevice device() { return m_device->device(); }
     VkDeviceObj *DeviceObj() const { return m_device; }
@@ -118,6 +115,9 @@ class VkRenderFramework : public VkTestFramework {
     bool DeviceCanDraw();
 
    protected:
+    VkRenderFramework();
+    virtual ~VkRenderFramework() = 0;
+
     VkApplicationInfo app_info;
     VkInstance inst;
     VkPhysicalDevice objs[16];
