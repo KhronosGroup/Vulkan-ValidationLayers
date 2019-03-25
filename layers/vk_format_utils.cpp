@@ -1169,10 +1169,6 @@ VK_LAYER_EXPORT uint32_t FormatElementSize(VkFormat format, VkImageAspectFlags a
             case VK_FORMAT_D32_SFLOAT_S8_UINT:
                 format = VK_FORMAT_D32_SFLOAT;
                 break;
-            case VK_FORMAT_X8_D24_UNORM_PACK32:  // Fall through
-            case VK_FORMAT_D24_UNORM_S8_UINT:
-                return 4;
-                break;
             default:
                 break;
         }
