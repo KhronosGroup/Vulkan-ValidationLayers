@@ -354,6 +354,7 @@ static inline bool debug_log_msg(const debug_report_data *debug_data, VkFlags ms
     object_name_info.objectType = convertDebugReportObjectToCoreObject(object_type);
     object_name_info.objectHandle = (uint64_t)(uintptr_t)src_object;
     object_name_info.pObjectName = NULL;
+    std::string object_label = {};
 
     callback_data.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CALLBACK_DATA_EXT;
     callback_data.pNext = NULL;
@@ -424,13 +425,13 @@ static inline bool debug_log_msg(const debug_report_data *debug_data, VkFlags ms
         }
 
         // Look for any debug utils or marker names to use for this object
-        std::string label = debug_data->DebugReportGetUtilsObjectName(src_object);
-        if (label.empty()) {
-            label = debug_data->DebugReportGetMarkerObjectName(src_object);
+        object_label = debug_data->DebugReportGetUtilsObjectName(src_object);
+        if (object_label.empty()) {
+            object_label = debug_data->DebugReportGetMarkerObjectName(src_object);
         }
-        if (!label.empty()) {
-            object_name_info.pObjectName = label.c_str();
-            oss << " (Name = " << label << " : Type = ";
+        if (!object_label.empty()) {
+            object_name_info.pObjectName = object_label.c_str();
+            oss << " (Name = " << object_label << " : Type = ";
         } else {
             oss << " (Type = ";
         }
