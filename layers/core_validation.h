@@ -604,6 +604,7 @@ class CoreChecks : public ValidationObject {
                                               PIPELINE_STATE* pipeline);
     bool ValidateCooperativeMatrix(shader_module const* src, VkPipelineShaderStageCreateInfo const* pStage,
                                    PIPELINE_STATE* pipeline);
+    bool ValidateExecutionModes(shader_module const* src, spirv_inst_iter entrypoint);
 
     // Gpu Validation Functions
     void GpuPreCallRecordCreateDevice(VkPhysicalDevice gpu, std::unique_ptr<safe_VkDeviceCreateInfo>& modified_create_info,

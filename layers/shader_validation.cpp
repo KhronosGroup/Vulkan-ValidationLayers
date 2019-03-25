@@ -1452,6 +1452,8 @@ bool CoreChecks::ValidateShaderCapabilities(shader_module const *src, VkShaderSt
             : IsEnabled([=](const DeviceFeatures &features) { return features.scalar_block_layout_features.*ptr; }) {}
         FeaturePointer(VkBool32 VkPhysicalDeviceCooperativeMatrixFeaturesNV::*ptr)
             : IsEnabled([=](const DeviceFeatures &features) { return features.cooperative_matrix_features.*ptr; }) {}
+        FeaturePointer(VkBool32 VkPhysicalDeviceFloatControlsPropertiesKHR::*ptr)
+            : IsEnabled([=](const DeviceFeatures &features) { return features.float_controls.*ptr; }) {}
     };
 
     struct CapabilityInfo {
@@ -1536,6 +1538,22 @@ bool CoreChecks::ValidateShaderCapabilities(shader_module const *src, VkShaderSt
         {spv::CapabilityInt8 , {"VkPhysicalDeviceFloat16Int8FeaturesKHR::shaderInt8", &VkPhysicalDeviceFloat16Int8FeaturesKHR::shaderInt8, &DeviceExtensions::vk_khr_shader_float16_int8}},
 
         {spv::CapabilityCooperativeMatrixNV, {"VkPhysicalDeviceCooperativeMatrixFeaturesNV::cooperativeMatrix", &VkPhysicalDeviceCooperativeMatrixFeaturesNV::cooperativeMatrix, &DeviceExtensions::vk_nv_cooperative_matrix}},
+
+        {spv::CapabilitySignedZeroInfNanPreserve, {"VkPhysicalDeviceFloatControlsPropertiesKHR::shaderSignedZeroInfNanPreserveFloat16", &VkPhysicalDeviceFloatControlsPropertiesKHR::shaderSignedZeroInfNanPreserveFloat16, &DeviceExtensions::vk_khr_shader_float_controls}},
+        {spv::CapabilitySignedZeroInfNanPreserve, {"VkPhysicalDeviceFloatControlsPropertiesKHR::shaderSignedZeroInfNanPreserveFloat32", &VkPhysicalDeviceFloatControlsPropertiesKHR::shaderSignedZeroInfNanPreserveFloat32, &DeviceExtensions::vk_khr_shader_float_controls}},
+        {spv::CapabilitySignedZeroInfNanPreserve, {"VkPhysicalDeviceFloatControlsPropertiesKHR::shaderSignedZeroInfNanPreserveFloat64", &VkPhysicalDeviceFloatControlsPropertiesKHR::shaderSignedZeroInfNanPreserveFloat64, &DeviceExtensions::vk_khr_shader_float_controls}},
+        {spv::CapabilityDenormPreserve, {"VkPhysicalDeviceFloatControlsPropertiesKHR::shaderDenormPreserveFloat16", &VkPhysicalDeviceFloatControlsPropertiesKHR::shaderDenormPreserveFloat16, &DeviceExtensions::vk_khr_shader_float_controls}},
+        {spv::CapabilityDenormPreserve, {"VkPhysicalDeviceFloatControlsPropertiesKHR::shaderDenormPreserveFloat32", &VkPhysicalDeviceFloatControlsPropertiesKHR::shaderDenormPreserveFloat32, &DeviceExtensions::vk_khr_shader_float_controls}},
+        {spv::CapabilityDenormPreserve, {"VkPhysicalDeviceFloatControlsPropertiesKHR::shaderDenormPreserveFloat64", &VkPhysicalDeviceFloatControlsPropertiesKHR::shaderDenormPreserveFloat64, &DeviceExtensions::vk_khr_shader_float_controls}},
+        {spv::CapabilityDenormFlushToZero, {"VkPhysicalDeviceFloatControlsPropertiesKHR::shaderDenormFlushToZeroFloat16", &VkPhysicalDeviceFloatControlsPropertiesKHR::shaderDenormFlushToZeroFloat16, &DeviceExtensions::vk_khr_shader_float_controls}},
+        {spv::CapabilityDenormFlushToZero, {"VkPhysicalDeviceFloatControlsPropertiesKHR::shaderDenormFlushToZeroFloat32", &VkPhysicalDeviceFloatControlsPropertiesKHR::shaderDenormFlushToZeroFloat32, &DeviceExtensions::vk_khr_shader_float_controls}},
+        {spv::CapabilityDenormFlushToZero, {"VkPhysicalDeviceFloatControlsPropertiesKHR::shaderDenormFlushToZeroFloat64", &VkPhysicalDeviceFloatControlsPropertiesKHR::shaderDenormFlushToZeroFloat64, &DeviceExtensions::vk_khr_shader_float_controls}},
+        {spv::CapabilityRoundingModeRTE, {"VkPhysicalDeviceFloatControlsPropertiesKHR::shaderRoundingModeRTEFloat16", &VkPhysicalDeviceFloatControlsPropertiesKHR::shaderRoundingModeRTEFloat16, &DeviceExtensions::vk_khr_shader_float_controls}},
+        {spv::CapabilityRoundingModeRTE, {"VkPhysicalDeviceFloatControlsPropertiesKHR::shaderRoundingModeRTEFloat32", &VkPhysicalDeviceFloatControlsPropertiesKHR::shaderRoundingModeRTEFloat32, &DeviceExtensions::vk_khr_shader_float_controls}},
+        {spv::CapabilityRoundingModeRTE, {"VkPhysicalDeviceFloatControlsPropertiesKHR::shaderRoundingModeRTEFloat64", &VkPhysicalDeviceFloatControlsPropertiesKHR::shaderRoundingModeRTEFloat64, &DeviceExtensions::vk_khr_shader_float_controls}},
+        {spv::CapabilityRoundingModeRTZ, {"VkPhysicalDeviceFloatControlsPropertiesKHR::shaderRoundingModeRTZFloat16", &VkPhysicalDeviceFloatControlsPropertiesKHR::shaderRoundingModeRTZFloat16, &DeviceExtensions::vk_khr_shader_float_controls}},
+        {spv::CapabilityRoundingModeRTZ, {"VkPhysicalDeviceFloatControlsPropertiesKHR::shaderRoundingModeRTZFloat32", &VkPhysicalDeviceFloatControlsPropertiesKHR::shaderRoundingModeRTZFloat32, &DeviceExtensions::vk_khr_shader_float_controls}},
+        {spv::CapabilityRoundingModeRTZ, {"VkPhysicalDeviceFloatControlsPropertiesKHR::shaderRoundingModeRTZFloat64", &VkPhysicalDeviceFloatControlsPropertiesKHR::shaderRoundingModeRTZFloat64, &DeviceExtensions::vk_khr_shader_float_controls}},
     };
     // clang-format on
 
@@ -2097,6 +2115,137 @@ bool CoreChecks::ValidateCooperativeMatrix(shader_module const *src, VkPipelineS
     return skip;
 }
 
+bool CoreChecks::ValidateExecutionModes(shader_module const *src, spirv_inst_iter entrypoint) {
+    auto entrypoint_id = entrypoint.word(2);
+
+    // Mapping between bit widths (16, 32 and 64) and the corresponding denorm
+    // execution mode which is first encountered. Used to check if
+    // separateDenormSettings is respected.
+    std::unordered_map<uint32_t, spv::ExecutionMode> first_denorm_execution_mode;
+
+    // Mapping between bit widths (16, 32 and 64) and the corresponding rounding
+    // execution mode which is first encountered. Used to check if
+    // separateRoundingModeSettings is respected.
+    std::unordered_map<uint32_t, spv::ExecutionMode> first_rounding_mode;
+
+    bool skip = false;
+
+    for (auto insn : *src) {
+        if (insn.opcode() == spv::OpExecutionMode && insn.word(1) == entrypoint_id) {
+            auto mode = insn.word(2);
+            switch (mode) {
+                case spv::ExecutionModeSignedZeroInfNanPreserve: {
+                    auto bit_width = insn.word(3);
+                    if ((bit_width == 16 && !GetEnabledFeatures()->float_controls.shaderSignedZeroInfNanPreserveFloat16) ||
+                        (bit_width == 32 && !GetEnabledFeatures()->float_controls.shaderSignedZeroInfNanPreserveFloat32) ||
+                        (bit_width == 64 && !GetEnabledFeatures()->float_controls.shaderSignedZeroInfNanPreserveFloat64)) {
+                        skip |=
+                            log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                    kVUID_Core_Shader_FeatureNotEnabled,
+                                    "Shader requires SignedZeroInfNanPreserve for bit width %d but it is not enabled on the device",
+                                    bit_width);
+                    }
+                    break;
+                }
+
+                case spv::ExecutionModeDenormPreserve: {
+                    auto bit_width = insn.word(3);
+                    if ((bit_width == 16 && !GetEnabledFeatures()->float_controls.shaderDenormPreserveFloat16) ||
+                        (bit_width == 32 && !GetEnabledFeatures()->float_controls.shaderDenormPreserveFloat32) ||
+                        (bit_width == 64 && !GetEnabledFeatures()->float_controls.shaderDenormPreserveFloat64)) {
+                        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                        kVUID_Core_Shader_FeatureNotEnabled,
+                                        "Shader requires DenormPreserve for bit width %d but it is not enabled on the device",
+                                        bit_width);
+                    }
+
+                    auto found = first_denorm_execution_mode.find(bit_width);
+                    if (found == first_denorm_execution_mode.end()) {
+                        first_denorm_execution_mode[bit_width] = static_cast<spv::ExecutionMode>(mode);
+                    } else if (found->second != mode && !GetEnabledFeatures()->float_controls.separateDenormSettings) {
+                        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                        kVUID_Core_Shader_FeatureNotEnabled,
+                                        "Shader uses separate denorm execution modes for different bit widths but "
+                                        "SeparateDenormSettings is not enabled on the device");
+                    }
+                    break;
+                }
+
+                case spv::ExecutionModeDenormFlushToZero: {
+                    auto bit_width = insn.word(3);
+                    if ((bit_width == 16 && !GetEnabledFeatures()->float_controls.shaderDenormFlushToZeroFloat16) ||
+                        (bit_width == 32 && !GetEnabledFeatures()->float_controls.shaderDenormFlushToZeroFloat32) ||
+                        (bit_width == 64 && !GetEnabledFeatures()->float_controls.shaderDenormFlushToZeroFloat64)) {
+                        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                        kVUID_Core_Shader_FeatureNotEnabled,
+                                        "Shader requires DenormFlushToZero for bit width %d but it is not enabled on the device",
+                                        bit_width);
+                    }
+
+                    auto found = first_denorm_execution_mode.find(bit_width);
+                    if (found == first_denorm_execution_mode.end()) {
+                        first_denorm_execution_mode[bit_width] = static_cast<spv::ExecutionMode>(mode);
+                    } else if (found->second != mode && !GetEnabledFeatures()->float_controls.separateDenormSettings) {
+                        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                        kVUID_Core_Shader_FeatureNotEnabled,
+                                        "Shader uses separate denorm execution modes for different bit widths but "
+                                        "SeparateDenormSettings is not enabled on the device");
+                    }
+                    break;
+                }
+
+                case spv::ExecutionModeRoundingModeRTE: {
+                    auto bit_width = insn.word(3);
+                    if ((bit_width == 16 && !GetEnabledFeatures()->float_controls.shaderRoundingModeRTEFloat16) ||
+                        (bit_width == 32 && !GetEnabledFeatures()->float_controls.shaderRoundingModeRTEFloat32) ||
+                        (bit_width == 64 && !GetEnabledFeatures()->float_controls.shaderRoundingModeRTEFloat64)) {
+                        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                        kVUID_Core_Shader_FeatureNotEnabled,
+                                        "Shader requires RoundingModeRTE for bit width %d but it is not enabled on the device",
+                                        bit_width);
+                    }
+
+                    auto found = first_rounding_mode.find(bit_width);
+                    if (found == first_rounding_mode.end()) {
+                        first_rounding_mode[bit_width] = static_cast<spv::ExecutionMode>(mode);
+                    } else if (found->second != mode && !GetEnabledFeatures()->float_controls.separateRoundingModeSettings) {
+                        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                        kVUID_Core_Shader_FeatureNotEnabled,
+                                        "Shader uses separate rounding modes for different bit widths but "
+                                        "SeparateRoundingModeSettings is not enabled on the device");
+                    }
+                    break;
+                }
+
+                case spv::ExecutionModeRoundingModeRTZ: {
+                    auto bit_width = insn.word(3);
+                    if ((bit_width == 16 && !GetEnabledFeatures()->float_controls.shaderRoundingModeRTZFloat16) ||
+                        (bit_width == 32 && !GetEnabledFeatures()->float_controls.shaderRoundingModeRTZFloat32) ||
+                        (bit_width == 64 && !GetEnabledFeatures()->float_controls.shaderRoundingModeRTZFloat64)) {
+                        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                        kVUID_Core_Shader_FeatureNotEnabled,
+                                        "Shader requires RoundingModeRTZ for bit width %d but it is not enabled on the device",
+                                        bit_width);
+                    }
+
+                    auto found = first_rounding_mode.find(bit_width);
+                    if (found == first_rounding_mode.end()) {
+                        first_rounding_mode[bit_width] = static_cast<spv::ExecutionMode>(mode);
+                    } else if (found->second != mode && !GetEnabledFeatures()->float_controls.separateRoundingModeSettings) {
+                        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                        kVUID_Core_Shader_FeatureNotEnabled,
+                                        "Shader uses separate rounding modes for different bit widths but "
+                                        "SeparateRoundingModeSettings is not enabled on the device");
+                    }
+                    break;
+                }
+            }
+        }
+    }
+
+    return skip;
+}
+
 static uint32_t DescriptorTypeToReqs(shader_module const *module, uint32_t type_id) {
     auto type = module->get_def(type_id);
 
@@ -2286,6 +2435,7 @@ bool CoreChecks::ValidatePipelineShaderStage(VkPipelineShaderStageCreateInfo con
     // Validate shader capabilities against enabled device features
     skip |= ValidateShaderCapabilities(module, pStage->stage, has_writable_descriptor);
     skip |= ValidateShaderStageInputOutputLimits(module, pStage, pipeline);
+    skip |= ValidateExecutionModes(module, entrypoint);
     skip |= ValidateSpecializationOffsets(report_data, pStage);
     skip |= ValidatePushConstantUsage(report_data, pipeline->pipeline_layout.push_constant_ranges.get(), module, accessible_ids,
                                       pStage->stage);
