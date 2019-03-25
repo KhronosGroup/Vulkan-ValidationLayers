@@ -1625,15 +1625,12 @@ static bool VariableIsBuiltIn(shader_module const *src, const uint32_t ID, std::
                 }
             }
 
-            VariableIsBuiltIn(src, insn.word(1), builtInBlockIDs, builtInIDs);
-            break;
+            return VariableIsBuiltIn(src, insn.word(1), builtInBlockIDs, builtInIDs);
         }
         case spv::OpTypePointer:
-            VariableIsBuiltIn(src, insn.word(3), builtInBlockIDs, builtInIDs);
-            break;
+            return VariableIsBuiltIn(src, insn.word(3), builtInBlockIDs, builtInIDs);
         case spv::OpTypeArray:
-            VariableIsBuiltIn(src, insn.word(2), builtInBlockIDs, builtInIDs);
-            break;
+            return VariableIsBuiltIn(src, insn.word(2), builtInBlockIDs, builtInIDs);
         case spv::OpTypeStruct: {
             uint32_t ID = insn.word(1);  // We only need to check the first member as either all will be, or none will be built-in
             for (auto builtInBlockID : builtInBlockIDs) {
