@@ -932,7 +932,9 @@ ErrorMonitor *VkLayerTest::Monitor() { return m_errorMonitor; }
 
 VkCommandBufferObj *VkLayerTest::CommandBuffer() { return m_commandBuffer; }
 
-void VkLayerTest::SetUp() {
+VkLayerTest::VkLayerTest() {
+    m_enableWSI = false;
+
     m_instance_layer_names.clear();
     m_instance_extension_names.clear();
     m_device_extension_names.clear();
@@ -1030,13 +1032,10 @@ bool VkLayerTest::LoadDeviceProfileLayer(
     return 1;
 }
 
-void VkLayerTest::TearDown() {
+VkLayerTest::~VkLayerTest() {
     // Clean up resources before we reset
-    ShutdownFramework();
     delete m_errorMonitor;
 }
-
-VkLayerTest::VkLayerTest() { m_enableWSI = false; }
 
 bool VkBufferTest::GetTestConditionValid(VkDeviceObj *aVulkanDevice, eTestEnFlags aTestFlag, VkBufferUsageFlags aBufferUsage) {
     if (eInvalidDeviceOffset != aTestFlag && eInvalidMemoryOffset != aTestFlag) {

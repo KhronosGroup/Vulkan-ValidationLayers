@@ -300,14 +300,15 @@ class VkLayerTest : public VkRenderFramework {
     uint32_t m_instance_api_version = 0;
     uint32_t m_target_api_version = 0;
     bool m_enableWSI;
-    virtual void SetUp();
+
     uint32_t SetTargetApiVersion(uint32_t target_api_version);
     uint32_t DeviceValidationVersion();
     bool LoadDeviceProfileLayer(
         PFN_vkSetPhysicalDeviceFormatPropertiesEXT &fpvkSetPhysicalDeviceFormatPropertiesEXT,
         PFN_vkGetOriginalPhysicalDeviceFormatPropertiesEXT &fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT);
-    virtual void TearDown();
+
     VkLayerTest();
+    ~VkLayerTest();
 };
 
 class VkPositiveLayerTest : public VkLayerTest {
