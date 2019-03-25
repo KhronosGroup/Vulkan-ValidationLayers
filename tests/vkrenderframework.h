@@ -163,24 +163,6 @@ class VkRenderFramework : public VkTestFramework {
     std::vector<const char *> m_instance_layer_names;
     std::vector<const char *> m_instance_extension_names;
     std::vector<const char *> m_device_extension_names;
-
-    /*
-     * SetUp and TearDown are called by the Google Test framework
-     * to initialize a test framework based on this class.
-     */
-    virtual void SetUp() {
-        this->app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-        this->app_info.pNext = NULL;
-        this->app_info.pApplicationName = "base";
-        this->app_info.applicationVersion = 1;
-        this->app_info.pEngineName = "unittest";
-        this->app_info.engineVersion = 1;
-        this->app_info.apiVersion = VK_API_VERSION_1_0;
-
-        InitFramework();
-    }
-
-    virtual void TearDown() { ShutdownFramework(); }
 };
 
 class VkDescriptorSetObj;
