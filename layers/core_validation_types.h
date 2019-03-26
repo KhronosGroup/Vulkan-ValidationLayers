@@ -1072,12 +1072,6 @@ class FRAMEBUFFER_STATE : public BASE_NODE {
     VkFramebuffer framebuffer;
     safe_VkFramebufferCreateInfo createInfo;
     std::shared_ptr<RENDER_PASS_STATE> rp_state;
-#ifdef FRAMEBUFFER_ATTACHMENT_STATE_CACHE
-    // TODO Re-enable attachment state cache once staleness protection is implemented
-    //      For staleness protection destoryed images and image view must invalidate the cached data and tag the framebuffer object
-    //      as no longer valid
-    std::vector<MT_FB_ATTACHMENT_INFO> attachments;
-#endif
     FRAMEBUFFER_STATE(VkFramebuffer fb, const VkFramebufferCreateInfo *pCreateInfo, std::shared_ptr<RENDER_PASS_STATE> &&rpstate)
         : framebuffer(fb), createInfo(pCreateInfo), rp_state(rpstate){};
 };

@@ -152,12 +152,8 @@ GlobalQFOTransferBarrierMap<VkBufferMemoryBarrier> &CoreChecks::GetGlobalQFORele
 // Get the image viewstate for a given framebuffer attachment
 IMAGE_VIEW_STATE *CoreChecks::GetAttachmentImageViewState(FRAMEBUFFER_STATE *framebuffer, uint32_t index) {
     assert(framebuffer && (index < framebuffer->createInfo.attachmentCount));
-#ifdef FRAMEBUFFER_ATTACHMENT_STATE_CACHE
-    return framebuffer->attachments[index].view_state;
-#else
     const VkImageView &image_view = framebuffer->createInfo.pAttachments[index];
     return GetImageViewState(image_view);
-#endif
 }
 
 // Return sampler node ptr for specified sampler or else NULL
@@ -8774,12 +8770,6 @@ void CoreChecks::PostCallRecordCreateFramebuffer(VkDevice device, const VkFrameb
         if (!view_state) {
             continue;
         }
-#ifdef FRAMEBUFFER_ATTACHMENT_STATE_CACHE
-        MT_FB_ATTACHMENT_INFO fb_info;
-        fb_info.view_state = view_state;
-        fb_info.image = view_state->create_info.image;
-        fb_state->attachments.push_back(fb_info);
-#endif
     }
     frameBufferMap[*pFramebuffer] = std::move(fb_state);
 }
