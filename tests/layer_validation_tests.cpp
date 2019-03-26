@@ -1052,15 +1052,15 @@ struct OneOffDescriptorSet {
     VkDescriptorSet set_;
     typedef std::vector<VkDescriptorSetLayoutBinding> Bindings;
 
-    OneOffDescriptorSet(VkDeviceObj *device, const Bindings &bindings)
-        : device_{device}, pool_{}, layout_(device, bindings), set_{} {
+    OneOffDescriptorSet(VkDeviceObj *device, const Bindings &bindings, VkDescriptorSetLayoutCreateFlags layout_flags = 0, void *layout_pNext = 0, VkDescriptorPoolCreateFlags poolFlags=0)
+        : device_{device}, pool_{}, layout_(device, bindings, layout_flags, layout_pNext), set_{} {
         VkResult err;
 
         std::vector<VkDescriptorPoolSize> sizes;
         for (const auto &b : bindings) sizes.push_back({b.descriptorType, std::max(1u, b.descriptorCount)});
 
         VkDescriptorPoolCreateInfo dspci = {
-            VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO, nullptr, 0, 1, uint32_t(sizes.size()), sizes.data()};
+            VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO, nullptr, poolFlags, 1, uint32_t(sizes.size()), sizes.data()};
         err = vkCreateDescriptorPool(device_->handle(), &dspci, nullptr, &pool_);
         if (err != VK_SUCCESS) return;
 
@@ -2447,7 +2447,7 @@ TEST_F(VkLayerTest, SparseResidencyImageCreateUnsupportedSamples) {
 }
 
 TEST_F(VkLayerTest, GpuValidationArrayOOB) {
-    TEST_DESCRIPTION("GPU validation: Verify detection of out-of-bounds descriptor array indexing.");
+    TEST_DESCRIPTION("GPU validation: Verify detection of out-of-bounds descriptor array indexing and use of uninitialized descriptors.");
     if (!VkRenderFramework::DeviceCanDraw()) {
         printf("%s GPU-Assisted validation test requires a driver that can draw.\n", kSkipPrefix);
         return;
@@ -2476,8 +2476,9 @@ TEST_F(VkLayerTest, GpuValidationArrayOOB) {
         features2 = lvl_init_struct<VkPhysicalDeviceFeatures2KHR>(&indexing_features);
         vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
 
-        if (!indexing_features.runtimeDescriptorArray) {
-            printf("runtimeDescriptorArrayfeature not supported, skipping runtime test\n");
+        if (!indexing_features.runtimeDescriptorArray || !indexing_features.descriptorBindingSampledImageUpdateAfterBind ||
+            !indexing_features.descriptorBindingPartiallyBound || !indexing_features.descriptorBindingVariableDescriptorCount) {
+            printf("Not all descriptor indexing features supported, skipping descriptor indexing tests\n");
             descriptor_indexing = false;
         }
     }
@@ -2502,15 +2503,30 @@ TEST_F(VkLayerTest, GpuValidationArrayOOB) {
     VkBufferObj buffer0;
     VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     buffer0.init(*m_device, bci, mem_props);
-    uint32_t *data = (uint32_t *)buffer0.memory().map();
-    data[0] = 25;
-    buffer0.memory().unmap();
+
+    void *create_pnext = nullptr;
+    auto create_flags = 0;
+    VkDescriptorBindingFlagsEXT ds_binding_flags[2] = {};
+    VkDescriptorSetLayoutBindingFlagsCreateInfoEXT layout_createinfo_binding_flags[1] = {};
+    if (descriptor_indexing) {
+        ds_binding_flags[0] = 0;
+        ds_binding_flags[1] = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT;
+
+        layout_createinfo_binding_flags[0].sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO_EXT;
+        layout_createinfo_binding_flags[0].pNext = NULL;
+        layout_createinfo_binding_flags[0].bindingCount = 2;
+        layout_createinfo_binding_flags[0].pBindingFlags = ds_binding_flags;
+        create_flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT;
+        create_pnext = layout_createinfo_binding_flags;
+    }
 
     // Prepare descriptors
-    OneOffDescriptorSet ds(m_device, {
-                                         {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                         {1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 6, VK_SHADER_STAGE_ALL, nullptr},
-                                     });
+    OneOffDescriptorSet ds(m_device,
+                           {
+                               {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                               {1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 6, VK_SHADER_STAGE_ALL, nullptr},
+                           },
+                           create_flags, create_pnext, create_flags);
 
     const VkPipelineLayoutObj pipeline_layout(m_device, {&ds.layout_});
     VkTextureObj texture(m_device, nullptr);
@@ -2538,7 +2554,10 @@ TEST_F(VkLayerTest, GpuValidationArrayOOB) {
     descriptor_writes[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
     descriptor_writes[1].dstSet = ds.set_;  // descriptor_set;
     descriptor_writes[1].dstBinding = 1;
-    descriptor_writes[1].descriptorCount = 6;
+    if (descriptor_indexing)
+        descriptor_writes[1].descriptorCount = 5; // Intentionally don't write index 5
+    else
+        descriptor_writes[1].descriptorCount = 6;
     descriptor_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     descriptor_writes[1].pImageInfo = image_info;
     vkUpdateDescriptorSets(m_device->device(), 2, descriptor_writes, 0, NULL);
@@ -2607,22 +2626,24 @@ TEST_F(VkLayerTest, GpuValidationArrayOOB) {
         char const *vertex_source;
         char const *fragment_source;
         bool debug;
+        uint32_t index;
         char const *expected_error;
     };
 
     std::vector<TestCase> tests;
-    tests.push_back({vsSource_vert, fsSource_vert, false, "Index of 25 used to index descriptor array of length 6."});
-    tests.push_back({vsSource_frag, fsSource_frag, false, "Index of 25 used to index descriptor array of length 6."});
+    tests.push_back({vsSource_vert, fsSource_vert, false, 25, "Index of 25 used to index descriptor array of length 6."});
+    tests.push_back({vsSource_frag, fsSource_frag, false, 25, "Index of 25 used to index descriptor array of length 6."});
 #if !defined(ANDROID)
     // The Android test framework uses shaderc for online compilations.  Even when configured to compile with debug info,
     // shaderc seems to drop the OpLine instructions from the shader binary.  This causes the following two tests to fail
     // on Android platforms.  Skip these tests until the shaderc issue is understood/resolved.
-    tests.push_back({vsSource_vert, fsSource_vert, true,
+    tests.push_back({vsSource_vert, fsSource_vert, true, 25, 
                      "gl_Position += 1e-30 * texture(tex[uniform_index_buffer.tex_index[0]], vec2(0, 0));"});
-    tests.push_back({vsSource_frag, fsSource_frag, true, "uFragColor = texture(tex[tex_ind], vec2(0, 0));"});
+    tests.push_back({vsSource_frag, fsSource_frag, true, 25, "uFragColor = texture(tex[tex_ind], vec2(0, 0));"});
 #endif
     if (descriptor_indexing) {
-        tests.push_back({vsSource_frag, fsSource_frag_runtime, false, "Index of 25 used to index descriptor array of length 6."});
+        tests.push_back({ vsSource_frag, fsSource_frag_runtime, false, 25, "Index of 25 used to index descriptor array of length 6." });
+        tests.push_back({ vsSource_frag, fsSource_frag_runtime, false, 5, "Descriptor index 5 is uninitialized" });
     }
 
     VkViewport viewport = m_viewports[0];
@@ -2653,6 +2674,9 @@ TEST_F(VkLayerTest, GpuValidationArrayOOB) {
         vkCmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
         vkCmdEndRenderPass(m_commandBuffer->handle());
         m_commandBuffer->end();
+        uint32_t *data = (uint32_t *)buffer0.memory().map();
+        data[0] = iter.index;
+        buffer0.memory().unmap();
         vkQueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
         vkQueueWaitIdle(m_device->m_queue);
         m_errorMonitor->VerifyFound();
