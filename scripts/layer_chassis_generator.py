@@ -259,21 +259,10 @@ public:
 };
 
 typedef enum ValidationCheckDisables {
-    VALIDATION_CHECK_DISABLE_DESTROY_PIPELINE,
-    VALIDATION_CHECK_DISABLE_DESTROY_SAMPLER,
-    VALIDATION_CHECK_DISABLE_DESTROY_COMMAND_POOL,
-    VALIDATION_CHECK_DISABLE_DESTROY_SEMAPHORE,
-    VALIDATION_CHECK_DISABLE_DESTROY_DESCRIPTOR_POOL,
     VALIDATION_CHECK_DISABLE_COMMAND_BUFFER_STATE,
-    VALIDATION_CHECK_DISABLE_CREATE_DESCRIPTOR_SET_LAYOUT,
     VALIDATION_CHECK_DISABLE_OBJECT_IN_USE,
     VALIDATION_CHECK_DISABLE_IDLE_DESCRIPTOR_SET,
     VALIDATION_CHECK_DISABLE_PUSH_CONSTANT_RANGE,
-    VALIDATION_CHECK_DISABLE_ALLOCATE_DESCRIPTOR_SETS,
-    VALIDATION_CHECK_DISABLE_UPDATE_DESCRIPTOR_SETS,
-    VALIDATION_CHECK_DISABLE_WAIT_FOR_FENCES,
-    VALIDATION_CHECK_DISABLE_QUEUE_WAIT_IDLE,
-    VALIDATION_CHECK_DISABLE_DEVICE_WAIT_IDLE,
 } ValidationCheckDisables;
 
 
@@ -282,21 +271,10 @@ typedef enum ValidationCheckDisables {
 // via the vk_layer_setting.txt config file or at CreateInstance time via the VK_EXT_validation_features extension
 // that can selectively disable checks.
 struct CHECK_DISABLED {
-    bool destroy_pipeline;                          // Skip validation at DestroyPipeline time
-    bool destroy_sampler;                           // Skip validation at DestroySampler time
-    bool destroy_command_pool;                      // Skip validation at DestroyCommandPool time
-    bool destroy_semaphore;                         // Skip validation at DestroySemaphore time
-    bool destroy_descriptor_pool;                   // Skip validation at DestroyDescriptorPool time
     bool command_buffer_state;                      // Skip command buffer state validation
-    bool create_descriptor_set_layout;              // Skip validation at CreateDescSetLayout time
     bool object_in_use;                             // Skip all object in_use checking
     bool idle_descriptor_set;                       // Skip check to verify that descriptor set is not in-use
     bool push_constant_range;                       // Skip push constant range checks
-    bool allocate_descriptor_sets;                  // Skip validation prior to vkAllocateDescriptorSets()
-    bool update_descriptor_sets;                    // Skip validation prior to vkUpdateDescriptorSets()
-    bool wait_for_fences;                           // Skip validation at WaitForFences time
-    bool queue_wait_idle;                           // Skip validation at QueueWaitIdle time
-    bool device_wait_idle;                          // Skip validation at DeviceWaitIdle time
     bool object_tracking;                           // Disable object lifetime validation
     bool core_checks;                               // Disable core validation checks
     bool thread_safety;                             // Disable thread safety validation
@@ -558,46 +536,17 @@ static const std::unordered_map<std::string, VkValidationFeatureEnableEXT> VkVal
 };
 
 static const std::unordered_map<std::string, ValidationCheckDisables> ValidationDisableLookup = {
-    {"VALIDATION_CHECK_DISABLE_DESTROY_PIPELINE", VALIDATION_CHECK_DISABLE_DESTROY_PIPELINE},
-    {"VALIDATION_CHECK_DISABLE_DESTROY_SAMPLER", VALIDATION_CHECK_DISABLE_DESTROY_SAMPLER},
-    {"VALIDATION_CHECK_DISABLE_DESTROY_COMMAND_POOL", VALIDATION_CHECK_DISABLE_DESTROY_COMMAND_POOL},
-    {"VALIDATION_CHECK_DISABLE_DESTROY_SEMAPHORE", VALIDATION_CHECK_DISABLE_DESTROY_SEMAPHORE},
-    {"VALIDATION_CHECK_DISABLE_DESTROY_DESCRIPTOR_POOL", VALIDATION_CHECK_DISABLE_DESTROY_DESCRIPTOR_POOL},
     {"VALIDATION_CHECK_DISABLE_COMMAND_BUFFER_STATE", VALIDATION_CHECK_DISABLE_COMMAND_BUFFER_STATE},
-    {"VALIDATION_CHECK_DISABLE_CREATE_DESCRIPTOR_SET_LAYOUT", VALIDATION_CHECK_DISABLE_CREATE_DESCRIPTOR_SET_LAYOUT},
     {"VALIDATION_CHECK_DISABLE_OBJECT_IN_USE", VALIDATION_CHECK_DISABLE_OBJECT_IN_USE},
     {"VALIDATION_CHECK_DISABLE_IDLE_DESCRIPTOR_SET", VALIDATION_CHECK_DISABLE_IDLE_DESCRIPTOR_SET},
     {"VALIDATION_CHECK_DISABLE_PUSH_CONSTANT_RANGE", VALIDATION_CHECK_DISABLE_PUSH_CONSTANT_RANGE},
-    {"VALIDATION_CHECK_DISABLE_ALLOCATE_DESCRIPTOR_SETS", VALIDATION_CHECK_DISABLE_ALLOCATE_DESCRIPTOR_SETS},
-    {"VALIDATION_CHECK_DISABLE_UPDATE_DESCRIPTOR_SETS", VALIDATION_CHECK_DISABLE_UPDATE_DESCRIPTOR_SETS},
-    {"VALIDATION_CHECK_DISABLE_WAIT_FOR_FENCES", VALIDATION_CHECK_DISABLE_WAIT_FOR_FENCES},
-    {"VALIDATION_CHECK_DISABLE_QUEUE_WAIT_IDLE", VALIDATION_CHECK_DISABLE_QUEUE_WAIT_IDLE},
-    {"VALIDATION_CHECK_DISABLE_DEVICE_WAIT_IDLE", VALIDATION_CHECK_DISABLE_DEVICE_WAIT_IDLE},
 };
 
 // Set the local disable flag for the appropriate VALIDATION_CHECK_DISABLE enum
 void SetValidationDisable(CHECK_DISABLED* disable_data, const ValidationCheckDisables disable_id) {
     switch (disable_id) {
-        case VALIDATION_CHECK_DISABLE_DESTROY_PIPELINE:
-            disable_data->destroy_pipeline = true;
-            break;
-        case VALIDATION_CHECK_DISABLE_DESTROY_SAMPLER:
-            disable_data->destroy_sampler = true;
-            break;
-        case VALIDATION_CHECK_DISABLE_DESTROY_COMMAND_POOL:
-            disable_data->destroy_command_pool = true;
-            break;
-        case VALIDATION_CHECK_DISABLE_DESTROY_SEMAPHORE:
-            disable_data->destroy_semaphore = true;
-            break;
-        case VALIDATION_CHECK_DISABLE_DESTROY_DESCRIPTOR_POOL:
-            disable_data->destroy_descriptor_pool = true;
-            break;
         case VALIDATION_CHECK_DISABLE_COMMAND_BUFFER_STATE:
             disable_data->command_buffer_state = true;
-            break;
-        case VALIDATION_CHECK_DISABLE_CREATE_DESCRIPTOR_SET_LAYOUT:
-            disable_data->create_descriptor_set_layout = true;
             break;
         case VALIDATION_CHECK_DISABLE_OBJECT_IN_USE:
             disable_data->object_in_use = true;
@@ -607,21 +556,6 @@ void SetValidationDisable(CHECK_DISABLED* disable_data, const ValidationCheckDis
             break;
         case VALIDATION_CHECK_DISABLE_PUSH_CONSTANT_RANGE:
             disable_data->push_constant_range = true;
-            break;
-        case VALIDATION_CHECK_DISABLE_ALLOCATE_DESCRIPTOR_SETS:
-            disable_data->allocate_descriptor_sets = true;
-            break;
-        case VALIDATION_CHECK_DISABLE_UPDATE_DESCRIPTOR_SETS:
-            disable_data->update_descriptor_sets = true;
-            break;
-        case VALIDATION_CHECK_DISABLE_WAIT_FOR_FENCES:
-            disable_data->wait_for_fences = true;
-            break;
-        case VALIDATION_CHECK_DISABLE_QUEUE_WAIT_IDLE:
-            disable_data->queue_wait_idle = true;
-            break;
-        case VALIDATION_CHECK_DISABLE_DEVICE_WAIT_IDLE:
-            disable_data->device_wait_idle = true;
             break;
         default:
             assert(true);
