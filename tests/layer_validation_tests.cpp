@@ -14472,6 +14472,221 @@ TEST_F(VkLayerTest, FillBufferWithinRenderPass) {
     m_commandBuffer->end();
 }
 
+TEST_F(VkLayerTest, InvalidDeviceMask) {
+    TEST_DESCRIPTION("Invalid deviceMask.");
+
+    if (InstanceExtensionSupported(VK_KHR_SURFACE_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
+    } else {
+        printf("%s KHR surface extension not supported, skipping test\n", kSkipPrefix);
+        return;
+    }
+    bool support_surface = false;
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+    if (InstanceExtensionSupported(VK_KHR_WIN32_SURFACE_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
+    } else {
+        printf("%s KHR win32 surface extension not supported, skipping test\n", kSkipPrefix);
+        return;
+    }
+    support_surface = true;
+#elif VK_USE_PLATFORM_XLIB_KHR
+    if (InstanceExtensionSupported(VK_KHR_XLIB_SURFACE_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_XLIB_SURFACE_EXTENSION_NAME);
+    } else {
+        printf("%s KHR xlib surface extension not supported, skipping test\n", kSkipPrefix);
+        return;
+    }
+    support_surface = true;
+#elif VK_USE_PLATFORM_ANDROID_KHR
+    if (InstanceExtensionSupported(VK_KHR_ANDROID_SURFACE_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_ANDROID_SURFACE_EXTENSION_NAME);
+    } else {
+        printf("%s KHR xlib surface extension not supported, skipping test\n", kSkipPrefix);
+        return;
+    }
+    support_surface = true;
+#endif
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SWAPCHAIN_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+    } else {
+        printf("%s KHR swapchain extension not supported, skipping test\n", kSkipPrefix);
+        return;
+    }
+    uint32_t physical_device_group_count = 0;
+    vkEnumeratePhysicalDeviceGroups(instance(), &physical_device_group_count, nullptr);
+
+    if (physical_device_group_count == 0) {
+        printf("%s physical_device_group_count is 0, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    std::vector<VkPhysicalDeviceGroupProperties> physical_device_group;
+    physical_device_group.resize(physical_device_group_count);
+    vkEnumeratePhysicalDeviceGroups(instance(), &physical_device_group_count, physical_device_group.data());
+    VkDeviceGroupDeviceCreateInfo create_device_pnext = {};
+    create_device_pnext.sType = VK_STRUCTURE_TYPE_DEVICE_GROUP_DEVICE_CREATE_INFO;
+    create_device_pnext.physicalDeviceCount = physical_device_group[0].physicalDeviceCount;
+    create_device_pnext.pPhysicalDevices = physical_device_group[0].physicalDevices;
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &create_device_pnext, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    // Test VkMemoryAllocateFlagsInfo
+    VkMemoryAllocateFlagsInfo alloc_flags_info = {};
+    alloc_flags_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO;
+    alloc_flags_info.flags = VK_MEMORY_ALLOCATE_DEVICE_MASK_BIT;
+    alloc_flags_info.deviceMask = 0xFFFFFFFF;
+    VkMemoryAllocateInfo alloc_info = {};
+    alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    alloc_info.pNext = &alloc_flags_info;
+    alloc_info.memoryTypeIndex = 0;
+    alloc_info.allocationSize = 32;
+
+    VkDeviceMemory mem;
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkMemoryAllocateFlagsInfo-deviceMask-00675");
+    vkAllocateMemory(m_device->device(), &alloc_info, NULL, &mem);
+    m_errorMonitor->VerifyFound();
+
+    alloc_flags_info.deviceMask = 0;
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkMemoryAllocateFlagsInfo-deviceMask-00676");
+    vkAllocateMemory(m_device->device(), &alloc_info, NULL, &mem);
+    m_errorMonitor->VerifyFound();
+
+    // Test VkDeviceGroupCommandBufferBeginInfo
+    VkDeviceGroupCommandBufferBeginInfo dev_grp_cmd_buf_info = {};
+    dev_grp_cmd_buf_info.sType = VK_STRUCTURE_TYPE_DEVICE_GROUP_COMMAND_BUFFER_BEGIN_INFO;
+    dev_grp_cmd_buf_info.deviceMask = 0xFFFFFFFF;
+    VkCommandBufferBeginInfo cmd_buf_info = {};
+    cmd_buf_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    cmd_buf_info.pNext = &dev_grp_cmd_buf_info;
+
+    m_commandBuffer->reset();
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                         "VUID-VkDeviceGroupCommandBufferBeginInfo-deviceMask-00106");
+    vkBeginCommandBuffer(m_commandBuffer->handle(), &cmd_buf_info);
+    m_errorMonitor->VerifyFound();
+
+    dev_grp_cmd_buf_info.deviceMask = 0;
+    m_commandBuffer->reset();
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                         "VUID-VkDeviceGroupCommandBufferBeginInfo-deviceMask-00107");
+    vkBeginCommandBuffer(m_commandBuffer->handle(), &cmd_buf_info);
+    m_errorMonitor->VerifyFound();
+
+    // Test VkDeviceGroupRenderPassBeginInfo
+    dev_grp_cmd_buf_info.deviceMask = 0x00000001;
+    m_commandBuffer->reset();
+    vkBeginCommandBuffer(m_commandBuffer->handle(), &cmd_buf_info);
+
+    VkDeviceGroupRenderPassBeginInfo dev_grp_rp_info = {};
+    dev_grp_rp_info.sType = VK_STRUCTURE_TYPE_DEVICE_GROUP_RENDER_PASS_BEGIN_INFO;
+    dev_grp_rp_info.deviceMask = 0xFFFFFFFF;
+    m_renderPassBeginInfo.pNext = &dev_grp_rp_info;
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkDeviceGroupRenderPassBeginInfo-deviceMask-00905");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkDeviceGroupRenderPassBeginInfo-deviceMask-00907");
+    vkCmdBeginRenderPass(m_commandBuffer->handle(), &m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+    m_errorMonitor->VerifyFound();
+
+    dev_grp_rp_info.deviceMask = 0;
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkDeviceGroupRenderPassBeginInfo-deviceMask-00906");
+    vkCmdBeginRenderPass(m_commandBuffer->handle(), &m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+    m_errorMonitor->VerifyFound();
+
+    dev_grp_rp_info.deviceMask = 0x00000001;
+    dev_grp_rp_info.deviceRenderAreaCount = physical_device_group[0].physicalDeviceCount + 1;
+    std::vector<VkRect2D> device_render_areas(dev_grp_rp_info.deviceRenderAreaCount, m_renderPassBeginInfo.renderArea);
+    dev_grp_rp_info.pDeviceRenderAreas = device_render_areas.data();
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                         "VUID-VkDeviceGroupRenderPassBeginInfo-deviceRenderAreaCount-00908");
+    vkCmdBeginRenderPass(m_commandBuffer->handle(), &m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+    m_errorMonitor->VerifyFound();
+
+    // Test vkCmdSetDeviceMask()
+    vkCmdSetDeviceMask(m_commandBuffer->handle(), 0x00000001);
+
+    dev_grp_rp_info.deviceRenderAreaCount = physical_device_group[0].physicalDeviceCount;
+    vkCmdBeginRenderPass(m_commandBuffer->handle(), &m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdSetDeviceMask-deviceMask-00108");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdSetDeviceMask-deviceMask-00110");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdSetDeviceMask-deviceMask-00111");
+    vkCmdSetDeviceMask(m_commandBuffer->handle(), 0xFFFFFFFF);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdSetDeviceMask-deviceMask-00109");
+    vkCmdSetDeviceMask(m_commandBuffer->handle(), 0);
+    m_errorMonitor->VerifyFound();
+
+    VkSemaphoreCreateInfo semaphore_create_info = {};
+    semaphore_create_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+    VkSemaphore semaphore;
+    ASSERT_VK_SUCCESS(vkCreateSemaphore(m_device->device(), &semaphore_create_info, nullptr, &semaphore));
+    VkSemaphore semaphore2;
+    ASSERT_VK_SUCCESS(vkCreateSemaphore(m_device->device(), &semaphore_create_info, nullptr, &semaphore2));
+    VkFenceCreateInfo fence_create_info = {};
+    fence_create_info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+    VkFence fence;
+    ASSERT_VK_SUCCESS(vkCreateFence(m_device->device(), &fence_create_info, nullptr, &fence));
+
+    if (support_surface) {
+        // Test VkAcquireNextImageInfoKHR
+        ASSERT_NO_FATAL_FAILURE(InitSwapchain());
+
+        uint32_t imageIndex = 0;
+        VkAcquireNextImageInfoKHR acquire_next_image_info = {};
+        acquire_next_image_info.sType = VK_STRUCTURE_TYPE_ACQUIRE_NEXT_IMAGE_INFO_KHR;
+        acquire_next_image_info.semaphore = semaphore;
+        acquire_next_image_info.swapchain = m_swapchain;
+        acquire_next_image_info.fence = fence;
+        acquire_next_image_info.deviceMask = 0xFFFFFFFF;
+
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkAcquireNextImageInfoKHR-deviceMask-01290");
+        vkAcquireNextImage2KHR(m_device->device(), &acquire_next_image_info, &imageIndex);
+        m_errorMonitor->VerifyFound();
+
+        vkWaitForFences(m_device->device(), 1, &fence, VK_TRUE, std::numeric_limits<int>::max());
+        vkResetFences(m_device->device(), 1, &fence);
+
+        acquire_next_image_info.semaphore = semaphore2;
+        acquire_next_image_info.deviceMask = 0;
+
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkAcquireNextImageInfoKHR-deviceMask-01291");
+        vkAcquireNextImage2KHR(m_device->device(), &acquire_next_image_info, &imageIndex);
+        m_errorMonitor->VerifyFound();
+        DestroySwapchain();
+    }
+
+    // Test VkDeviceGroupSubmitInfo
+    VkDeviceGroupSubmitInfo device_group_submit_info = {};
+    device_group_submit_info.sType = VK_STRUCTURE_TYPE_DEVICE_GROUP_SUBMIT_INFO;
+    device_group_submit_info.commandBufferCount = 1;
+    std::array<uint32_t, 1> command_buffer_device_masks = {0xFFFFFFFF};
+    device_group_submit_info.pCommandBufferDeviceMasks = command_buffer_device_masks.data();
+
+    VkSubmitInfo submit_info = {};
+    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submit_info.pNext = &device_group_submit_info;
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers = &m_commandBuffer->handle();
+
+    m_commandBuffer->reset();
+    vkBeginCommandBuffer(m_commandBuffer->handle(), &cmd_buf_info);
+    vkEndCommandBuffer(m_commandBuffer->handle());
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                         "VUID-VkDeviceGroupSubmitInfo-pCommandBufferDeviceMasks-00086");
+    vkQueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    m_errorMonitor->VerifyFound();
+    vkQueueWaitIdle(m_device->m_queue);
+
+    vkWaitForFences(m_device->device(), 1, &fence, VK_TRUE, std::numeric_limits<int>::max());
+    vkDestroyFence(m_device->device(), fence, nullptr);
+    vkDestroySemaphore(m_device->device(), semaphore, nullptr);
+    vkDestroySemaphore(m_device->device(), semaphore2, nullptr);
+}
+
 TEST_F(VkLayerTest, UpdateBufferWithinRenderPass) {
     // Call CmdUpdateBuffer within an active renderpass
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
