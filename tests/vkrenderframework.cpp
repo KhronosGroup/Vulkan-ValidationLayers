@@ -778,9 +778,10 @@ VkQueueObj *VkDeviceObj::GetDefaultQueue() {
 }
 VkDescriptorSetLayoutObj::VkDescriptorSetLayoutObj(const VkDeviceObj *device,
                                                    const std::vector<VkDescriptorSetLayoutBinding> &descriptor_set_bindings,
-                                                   VkDescriptorSetLayoutCreateFlags flags) {
+                                                   VkDescriptorSetLayoutCreateFlags flags, void *pNext) {
     VkDescriptorSetLayoutCreateInfo dsl_ci = {};
     dsl_ci.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    dsl_ci.pNext = pNext;
     dsl_ci.flags = flags;
     dsl_ci.bindingCount = static_cast<uint32_t>(descriptor_set_bindings.size());
     dsl_ci.pBindings = descriptor_set_bindings.data();
