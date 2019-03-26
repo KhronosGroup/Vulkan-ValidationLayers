@@ -1052,8 +1052,9 @@ struct OneOffDescriptorSet {
     VkDescriptorSet set_;
     typedef std::vector<VkDescriptorSetLayoutBinding> Bindings;
 
-    OneOffDescriptorSet(VkDeviceObj *device, const Bindings &bindings, VkDescriptorSetLayoutCreateFlags layout_flags = 0, void *layout_pNext = 0, VkDescriptorPoolCreateFlags poolFlags=0)
-        : device_{device}, pool_{}, layout_(device, bindings, layout_flags, layout_pNext), set_{} {
+    OneOffDescriptorSet(VkDeviceObj *device, const Bindings &bindings, VkDescriptorSetLayoutCreateFlags layout_flags = 0,
+                        void *layout_pnext = NULL, VkDescriptorPoolCreateFlags poolFlags = 0, void *allocate_pnext = NULL)
+        : device_{device}, pool_{}, layout_(device, bindings, layout_flags, layout_pnext), set_{} {
         VkResult err;
 
         std::vector<VkDescriptorPoolSize> sizes;
@@ -1064,7 +1065,7 @@ struct OneOffDescriptorSet {
         err = vkCreateDescriptorPool(device_->handle(), &dspci, nullptr, &pool_);
         if (err != VK_SUCCESS) return;
 
-        VkDescriptorSetAllocateInfo alloc_info = {VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO, nullptr, pool_, 1,
+        VkDescriptorSetAllocateInfo alloc_info = {VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO, allocate_pnext, pool_, 1,
                                                   &layout_.handle()};
         err = vkAllocateDescriptorSets(device_->handle(), &alloc_info, &set_);
     }
@@ -2447,7 +2448,8 @@ TEST_F(VkLayerTest, SparseResidencyImageCreateUnsupportedSamples) {
 }
 
 TEST_F(VkLayerTest, GpuValidationArrayOOB) {
-    TEST_DESCRIPTION("GPU validation: Verify detection of out-of-bounds descriptor array indexing and use of uninitialized descriptors.");
+    TEST_DESCRIPTION(
+        "GPU validation: Verify detection of out-of-bounds descriptor array indexing and use of uninitialized descriptors.");
     if (!VkRenderFramework::DeviceCanDraw()) {
         printf("%s GPU-Assisted validation test requires a driver that can draw.\n", kSkipPrefix);
         return;
@@ -2504,8 +2506,10 @@ TEST_F(VkLayerTest, GpuValidationArrayOOB) {
     VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     buffer0.init(*m_device, bci, mem_props);
 
-    void *create_pnext = nullptr;
-    auto create_flags = 0;
+    void *layout_pnext = nullptr;
+    void *allocate_pnext = nullptr;
+    auto pool_create_flags = 0;
+    auto layout_create_flags = 0;
     VkDescriptorBindingFlagsEXT ds_binding_flags[2] = {};
     VkDescriptorSetLayoutBindingFlagsCreateInfoEXT layout_createinfo_binding_flags[1] = {};
     if (descriptor_indexing) {
@@ -2516,8 +2520,9 @@ TEST_F(VkLayerTest, GpuValidationArrayOOB) {
         layout_createinfo_binding_flags[0].pNext = NULL;
         layout_createinfo_binding_flags[0].bindingCount = 2;
         layout_createinfo_binding_flags[0].pBindingFlags = ds_binding_flags;
-        create_flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT;
-        create_pnext = layout_createinfo_binding_flags;
+        layout_create_flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT;
+        pool_create_flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT;
+        layout_pnext = layout_createinfo_binding_flags;
     }
 
     // Prepare descriptors
@@ -2526,9 +2531,31 @@ TEST_F(VkLayerTest, GpuValidationArrayOOB) {
                                {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
                                {1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 6, VK_SHADER_STAGE_ALL, nullptr},
                            },
-                           create_flags, create_pnext, create_flags);
+                           layout_create_flags, layout_pnext, pool_create_flags);
+
+    VkDescriptorSetVariableDescriptorCountAllocateInfoEXT variable_count = {};
+    uint32_t desc_counts;
+    if (descriptor_indexing) {
+        layout_create_flags = 0;
+        pool_create_flags = 0;
+        ds_binding_flags[1] =
+            VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT | VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT_EXT;
+        desc_counts = 6;  // We'll reserve 8 spaces in the layout, but the descriptor will only use 6
+        variable_count.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_ALLOCATE_INFO_EXT;
+        variable_count.descriptorSetCount = 1;
+        variable_count.pDescriptorCounts = &desc_counts;
+        allocate_pnext = &variable_count;
+    }
+
+    OneOffDescriptorSet ds_variable(m_device,
+                                    {
+                                        {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                        {1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 8, VK_SHADER_STAGE_ALL, nullptr},
+                                    },
+                                    layout_create_flags, layout_pnext, pool_create_flags, allocate_pnext);
 
     const VkPipelineLayoutObj pipeline_layout(m_device, {&ds.layout_});
+    const VkPipelineLayoutObj pipeline_layout_variable(m_device, {&ds_variable.layout_});
     VkTextureObj texture(m_device, nullptr);
     VkSamplerObj sampler(m_device);
 
@@ -2555,12 +2582,17 @@ TEST_F(VkLayerTest, GpuValidationArrayOOB) {
     descriptor_writes[1].dstSet = ds.set_;  // descriptor_set;
     descriptor_writes[1].dstBinding = 1;
     if (descriptor_indexing)
-        descriptor_writes[1].descriptorCount = 5; // Intentionally don't write index 5
+        descriptor_writes[1].descriptorCount = 5;  // Intentionally don't write index 5
     else
         descriptor_writes[1].descriptorCount = 6;
     descriptor_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     descriptor_writes[1].pImageInfo = image_info;
     vkUpdateDescriptorSets(m_device->device(), 2, descriptor_writes, 0, NULL);
+    if (descriptor_indexing) {
+        descriptor_writes[0].dstSet = ds_variable.set_;
+        descriptor_writes[1].dstSet = ds_variable.set_;
+        vkUpdateDescriptorSets(m_device->device(), 2, descriptor_writes, 0, NULL);
+    }
 
     // Shader programs for array OOB test in vertex stage:
     // - The vertex shader fetches the invalid index from the uniform buffer and uses it to make an invalid index into another
@@ -2626,24 +2658,30 @@ TEST_F(VkLayerTest, GpuValidationArrayOOB) {
         char const *vertex_source;
         char const *fragment_source;
         bool debug;
+        bool variable_length;
         uint32_t index;
         char const *expected_error;
     };
 
     std::vector<TestCase> tests;
-    tests.push_back({vsSource_vert, fsSource_vert, false, 25, "Index of 25 used to index descriptor array of length 6."});
-    tests.push_back({vsSource_frag, fsSource_frag, false, 25, "Index of 25 used to index descriptor array of length 6."});
+    tests.push_back({vsSource_vert, fsSource_vert, false, false, 25, "Index of 25 used to index descriptor array of length 6."});
+    tests.push_back({vsSource_frag, fsSource_frag, false, false, 25, "Index of 25 used to index descriptor array of length 6."});
 #if !defined(ANDROID)
     // The Android test framework uses shaderc for online compilations.  Even when configured to compile with debug info,
     // shaderc seems to drop the OpLine instructions from the shader binary.  This causes the following two tests to fail
     // on Android platforms.  Skip these tests until the shaderc issue is understood/resolved.
-    tests.push_back({vsSource_vert, fsSource_vert, true, 25, 
+    tests.push_back({vsSource_vert, fsSource_vert, true, false, 25,
                      "gl_Position += 1e-30 * texture(tex[uniform_index_buffer.tex_index[0]], vec2(0, 0));"});
-    tests.push_back({vsSource_frag, fsSource_frag, true, 25, "uFragColor = texture(tex[tex_ind], vec2(0, 0));"});
+    tests.push_back({vsSource_frag, fsSource_frag, true, false, 25, "uFragColor = texture(tex[tex_ind], vec2(0, 0));"});
 #endif
     if (descriptor_indexing) {
-        tests.push_back({ vsSource_frag, fsSource_frag_runtime, false, 25, "Index of 25 used to index descriptor array of length 6." });
-        tests.push_back({ vsSource_frag, fsSource_frag_runtime, false, 5, "Descriptor index 5 is uninitialized" });
+        tests.push_back(
+            {vsSource_frag, fsSource_frag_runtime, false, false, 25, "Index of 25 used to index descriptor array of length 6."});
+        tests.push_back({vsSource_frag, fsSource_frag_runtime, false, false, 5, "Descriptor index 5 is uninitialized"});
+        // Pick 6 below because it is less than the maximum specified, but more than the actual specified
+        tests.push_back(
+            {vsSource_frag, fsSource_frag_runtime, false, true, 6, "Index of 6 used to index descriptor array of length 6."});
+        tests.push_back({vsSource_frag, fsSource_frag_runtime, false, true, 5, "Descriptor index 5 is uninitialized"});
     }
 
     VkViewport viewport = m_viewports[0];
@@ -2655,6 +2693,7 @@ TEST_F(VkLayerTest, GpuValidationArrayOOB) {
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
 
     for (const auto &iter : tests) {
+        VkResult err;
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, iter.expected_error);
         VkShaderObj vs(m_device, iter.vertex_source, VK_SHADER_STAGE_VERTEX_BIT, this, "main", iter.debug);
         VkShaderObj fs(m_device, iter.fragment_source, VK_SHADER_STAGE_FRAGMENT_BIT, this, "main", iter.debug);
@@ -2662,13 +2701,21 @@ TEST_F(VkLayerTest, GpuValidationArrayOOB) {
         pipe.AddShader(&vs);
         pipe.AddShader(&fs);
         pipe.AddDefaultColorAttachment();
-        VkResult err = pipe.CreateVKPipeline(pipeline_layout.handle(), renderPass());
+        if (iter.variable_length)
+            err = pipe.CreateVKPipeline(pipeline_layout_variable.handle(), renderPass());
+        else
+            err = pipe.CreateVKPipeline(pipeline_layout.handle(), renderPass());
         ASSERT_VK_SUCCESS(err);
         m_commandBuffer->begin();
         m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
         vkCmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
-        vkCmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
-                                &ds.set_, 0, nullptr);
+        if (iter.variable_length) {
+            vkCmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout_variable.handle(),
+                                    0, 1, &ds_variable.set_, 0, nullptr);
+        } else {
+            vkCmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
+                                    &ds.set_, 0, nullptr);
+        }
         vkCmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
         vkCmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissors);
         vkCmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
