@@ -2406,7 +2406,7 @@ void CoreChecks::PostCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDevice
     uint32_t count;
     auto pd_state = GetPhysicalDeviceState(gpu);
     DispatchGetPhysicalDeviceQueueFamilyProperties(gpu, &count, nullptr);
-    pd_state->queue_family_count = std::max(pd_state->queue_family_count, count);
+    pd_state->queue_family_count = count;
     pd_state->queue_family_properties.resize(std::max(static_cast<uint32_t>(pd_state->queue_family_properties.size()), count));
     DispatchGetPhysicalDeviceQueueFamilyProperties(gpu, &count, &pd_state->queue_family_properties[0]);
     // Save local link to this device's physical device state
