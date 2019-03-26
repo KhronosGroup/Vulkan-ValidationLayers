@@ -3894,7 +3894,6 @@ void CoreChecks::RetireFence(VkFence fence) {
 bool CoreChecks::PreCallValidateWaitForFences(VkDevice device, uint32_t fenceCount, const VkFence *pFences, VkBool32 waitAll,
                                               uint64_t timeout) {
     // Verify fence status of submitted fences
-    if (disabled.wait_for_fences) return false;
     bool skip = false;
     for (uint32_t i = 0; i < fenceCount; i++) {
         skip |= VerifyWaitFenceState(pFences[i], "vkWaitForFences");
@@ -3970,7 +3969,6 @@ void CoreChecks::PostCallRecordGetDeviceQueue2(VkDevice device, const VkDeviceQu
 
 bool CoreChecks::PreCallValidateQueueWaitIdle(VkQueue queue) {
     QUEUE_STATE *queue_state = GetQueueState(queue);
-    if (disabled.queue_wait_idle) return false;
     return VerifyQueueStateToSeq(queue_state, queue_state->seq + queue_state->submissions.size());
 }
 
@@ -3981,7 +3979,6 @@ void CoreChecks::PostCallRecordQueueWaitIdle(VkQueue queue, VkResult result) {
 }
 
 bool CoreChecks::PreCallValidateDeviceWaitIdle(VkDevice device) {
-    if (disabled.device_wait_idle) return false;
     bool skip = false;
     for (auto &queue : queueMap) {
         skip |= VerifyQueueStateToSeq(&queue.second, queue.second.seq + queue.second.submissions.size());
@@ -4017,7 +4014,6 @@ void CoreChecks::PreCallRecordDestroyFence(VkDevice device, VkFence fence, const
 bool CoreChecks::PreCallValidateDestroySemaphore(VkDevice device, VkSemaphore semaphore, const VkAllocationCallbacks *pAllocator) {
     SEMAPHORE_NODE *sema_node = GetSemaphoreNode(semaphore);
     VK_OBJECT obj_struct = {HandleToUint64(semaphore), kVulkanObjectTypeSemaphore};
-    if (disabled.destroy_semaphore) return false;
     bool skip = false;
     if (sema_node) {
         skip |= ValidateObjectNotInUse(sema_node, obj_struct, "vkDestroySemaphore", "VUID-vkDestroySemaphore-semaphore-01137");
@@ -4567,7 +4563,6 @@ void CoreChecks::PreCallRecordDestroyShaderModule(VkDevice device, VkShaderModul
 bool CoreChecks::PreCallValidateDestroyPipeline(VkDevice device, VkPipeline pipeline, const VkAllocationCallbacks *pAllocator) {
     PIPELINE_STATE *pipeline_state = GetPipelineState(pipeline);
     VK_OBJECT obj_struct = {HandleToUint64(pipeline), kVulkanObjectTypePipeline};
-    if (disabled.destroy_pipeline) return false;
     bool skip = false;
     if (pipeline_state) {
         skip |= ValidateObjectNotInUse(pipeline_state, obj_struct, "vkDestroyPipeline", "VUID-vkDestroyPipeline-pipeline-00765");
@@ -4596,7 +4591,6 @@ void CoreChecks::PreCallRecordDestroyPipelineLayout(VkDevice device, VkPipelineL
 bool CoreChecks::PreCallValidateDestroySampler(VkDevice device, VkSampler sampler, const VkAllocationCallbacks *pAllocator) {
     SAMPLER_STATE *sampler_state = GetSamplerState(sampler);
     VK_OBJECT obj_struct = {HandleToUint64(sampler), kVulkanObjectTypeSampler};
-    if (disabled.destroy_sampler) return false;
     bool skip = false;
     if (sampler_state) {
         skip |= ValidateObjectNotInUse(sampler_state, obj_struct, "vkDestroySampler", "VUID-vkDestroySampler-sampler-01082");
@@ -4629,7 +4623,6 @@ bool CoreChecks::PreCallValidateDestroyDescriptorPool(VkDevice device, VkDescrip
                                                       const VkAllocationCallbacks *pAllocator) {
     DESCRIPTOR_POOL_STATE *desc_pool_state = GetDescriptorPoolState(descriptorPool);
     VK_OBJECT obj_struct = {HandleToUint64(descriptorPool), kVulkanObjectTypeDescriptorPool};
-    if (disabled.destroy_descriptor_pool) return false;
     bool skip = false;
     if (desc_pool_state) {
         skip |= ValidateObjectNotInUse(desc_pool_state, obj_struct, "vkDestroyDescriptorPool",
@@ -4756,7 +4749,6 @@ void CoreChecks::PostCallRecordCreateQueryPool(VkDevice device, const VkQueryPoo
 bool CoreChecks::PreCallValidateDestroyCommandPool(VkDevice device, VkCommandPool commandPool,
                                                    const VkAllocationCallbacks *pAllocator) {
     COMMAND_POOL_NODE *cp_state = GetCommandPoolNode(commandPool);
-    if (disabled.destroy_command_pool) return false;
     bool skip = false;
     if (cp_state) {
         // Verify that command buffers in pool are complete (not in-flight)
@@ -5181,7 +5173,6 @@ void CoreChecks::PostCallRecordCreateSampler(VkDevice device, const VkSamplerCre
 bool CoreChecks::PreCallValidateCreateDescriptorSetLayout(VkDevice device, const VkDescriptorSetLayoutCreateInfo *pCreateInfo,
                                                           const VkAllocationCallbacks *pAllocator,
                                                           VkDescriptorSetLayout *pSetLayout) {
-    if (disabled.create_descriptor_set_layout) return false;
     return cvdescriptorset::DescriptorSetLayout::ValidateCreateInfo(
         report_data, pCreateInfo, device_extensions.vk_khr_push_descriptor, phys_dev_ext_props.max_push_descriptors,
         device_extensions.vk_ext_descriptor_indexing, &enabled_features.descriptor_indexing, &enabled_features.inline_uniform_block,
@@ -5957,7 +5948,6 @@ bool CoreChecks::PreCallValidateAllocateDescriptorSets(VkDevice device, const Vk
     cvdescriptorset::AllocateDescriptorSetsData *ads_state =
         reinterpret_cast<cvdescriptorset::AllocateDescriptorSetsData *>(ads_state_data);
     UpdateAllocateDescriptorSetsData(pAllocateInfo, ads_state);
-    if (disabled.allocate_descriptor_sets) return false;
     // All state checks for AllocateDescriptorSets is done in single function
     return ValidateAllocateDescriptorSets(pAllocateInfo, ads_state);
 }
@@ -6018,7 +6008,6 @@ void CoreChecks::PreCallRecordFreeDescriptorSets(VkDevice device, VkDescriptorPo
 bool CoreChecks::PreCallValidateUpdateDescriptorSets(VkDevice device, uint32_t descriptorWriteCount,
                                                      const VkWriteDescriptorSet *pDescriptorWrites, uint32_t descriptorCopyCount,
                                                      const VkCopyDescriptorSet *pDescriptorCopies) {
-    if (disabled.update_descriptor_sets) return false;
     // First thing to do is perform map look-ups.
     // NOTE : UpdateDescriptorSets is somewhat unique in that it's operating on a number of DescriptorSets
     //  so we can't just do a single map look-up up-front, but do them individually in functions below
