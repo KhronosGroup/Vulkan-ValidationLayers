@@ -4065,6 +4065,7 @@ void CoreChecks::PreCallRecordDestroyEvent(VkDevice device, VkEvent event, const
 }
 
 bool CoreChecks::PreCallValidateDestroyQueryPool(VkDevice device, VkQueryPool queryPool, const VkAllocationCallbacks *pAllocator) {
+    if (disabled.query_validation) return false;
     QUERY_POOL_NODE *qp_state = GetQueryPoolNode(queryPool);
     VK_OBJECT obj_struct = {HandleToUint64(queryPool), kVulkanObjectTypeQueryPool};
     bool skip = false;
@@ -4085,6 +4086,7 @@ void CoreChecks::PreCallRecordDestroyQueryPool(VkDevice device, VkQueryPool quer
 bool CoreChecks::PreCallValidateGetQueryPoolResults(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery,
                                                     uint32_t queryCount, size_t dataSize, void *pData, VkDeviceSize stride,
                                                     VkQueryResultFlags flags) {
+    if (disabled.query_validation) return false;
     bool skip = false;
     auto query_pool_state = queryPoolMap.find(queryPool);
     if (query_pool_state != queryPoolMap.end()) {
@@ -4747,6 +4749,7 @@ void CoreChecks::PostCallRecordCreateCommandPool(VkDevice device, const VkComman
 
 bool CoreChecks::PreCallValidateCreateQueryPool(VkDevice device, const VkQueryPoolCreateInfo *pCreateInfo,
                                                 const VkAllocationCallbacks *pAllocator, VkQueryPool *pQueryPool) {
+    if (disabled.query_validation) return false;
     bool skip = false;
     if (pCreateInfo && pCreateInfo->queryType == VK_QUERY_TYPE_PIPELINE_STATISTICS) {
         if (!enabled_features.core.pipelineStatisticsQuery) {
@@ -8447,6 +8450,7 @@ bool CoreChecks::SetQueryState(VkQueue queue, VkCommandBuffer commandBuffer, Que
 }
 
 bool CoreChecks::PreCallValidateCmdBeginQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot, VkFlags flags) {
+    if (disabled.query_validation) return false;
     GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
     bool skip = ValidateCmdQueueFlags(cb_state, "vkCmdBeginQuery()", VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
@@ -8483,6 +8487,7 @@ void CoreChecks::PostCallRecordCmdBeginQuery(VkCommandBuffer commandBuffer, VkQu
 }
 
 bool CoreChecks::PreCallValidateCmdEndQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot) {
+    if (disabled.query_validation) return false;
     QueryObject query = {queryPool, slot};
     GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
@@ -8510,6 +8515,7 @@ void CoreChecks::PostCallRecordCmdEndQuery(VkCommandBuffer commandBuffer, VkQuer
 
 bool CoreChecks::PreCallValidateCmdResetQueryPool(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery,
                                                   uint32_t queryCount) {
+    if (disabled.query_validation) return false;
     GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
 
     bool skip = InsideRenderPass(cb_state, "vkCmdResetQueryPool()", "VUID-vkCmdResetQueryPool-renderpass");
@@ -8564,6 +8570,7 @@ bool CoreChecks::ValidateQuery(VkQueue queue, GLOBAL_CB_NODE *pCB, VkQueryPool q
 bool CoreChecks::PreCallValidateCmdCopyQueryPoolResults(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery,
                                                         uint32_t queryCount, VkBuffer dstBuffer, VkDeviceSize dstOffset,
                                                         VkDeviceSize stride, VkQueryResultFlags flags) {
+    if (disabled.query_validation) return false;
     auto cb_state = GetCBNode(commandBuffer);
     auto dst_buff_state = GetBufferState(dstBuffer);
     assert(cb_state);
@@ -8647,6 +8654,7 @@ bool CoreChecks::PreCallValidateCmdPushConstants(VkCommandBuffer commandBuffer, 
 
 bool CoreChecks::PreCallValidateCmdWriteTimestamp(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage,
                                                   VkQueryPool queryPool, uint32_t slot) {
+    if (disabled.query_validation) return false;
     GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
     bool skip = ValidateCmdQueueFlags(cb_state, "vkCmdWriteTimestamp()",
@@ -10225,38 +10233,39 @@ bool CoreChecks::ValidateFramebuffer(VkCommandBuffer primaryBuffer, const GLOBAL
 bool CoreChecks::ValidateSecondaryCommandBufferState(GLOBAL_CB_NODE *pCB, GLOBAL_CB_NODE *pSubCB) {
     bool skip = false;
     unordered_set<int> activeTypes;
-    for (auto queryObject : pCB->activeQueries) {
-        auto queryPoolData = queryPoolMap.find(queryObject.pool);
-        if (queryPoolData != queryPoolMap.end()) {
-            if (queryPoolData->second.createInfo.queryType == VK_QUERY_TYPE_PIPELINE_STATISTICS &&
-                pSubCB->beginInfo.pInheritanceInfo) {
-                VkQueryPipelineStatisticFlags cmdBufStatistics = pSubCB->beginInfo.pInheritanceInfo->pipelineStatistics;
-                if ((cmdBufStatistics & queryPoolData->second.createInfo.pipelineStatistics) != cmdBufStatistics) {
-                    skip |= log_msg(
-                        report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                        HandleToUint64(pCB->commandBuffer), "VUID-vkCmdExecuteCommands-commandBuffer-00104",
-                        "vkCmdExecuteCommands() called w/ invalid Cmd Buffer %s which has invalid active query pool %s"
-                        ". Pipeline statistics is being queried so the command buffer must have all bits set on the queryPool.",
-                        report_data->FormatHandle(pCB->commandBuffer).c_str(),
-                        report_data->FormatHandle(queryPoolData->first).c_str());
-                }
-            }
-            activeTypes.insert(queryPoolData->second.createInfo.queryType);
-        }
-    }
-    for (auto queryObject : pSubCB->startedQueries) {
-        auto queryPoolData = queryPoolMap.find(queryObject.pool);
-        if (queryPoolData != queryPoolMap.end() && activeTypes.count(queryPoolData->second.createInfo.queryType)) {
-            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                            HandleToUint64(pCB->commandBuffer), kVUID_Core_DrawState_InvalidSecondaryCommandBuffer,
+    if (!disabled.query_validation) {
+        for (auto queryObject : pCB->activeQueries) {
+            auto queryPoolData = queryPoolMap.find(queryObject.pool);
+            if (queryPoolData != queryPoolMap.end()) {
+                if (queryPoolData->second.createInfo.queryType == VK_QUERY_TYPE_PIPELINE_STATISTICS &&
+                    pSubCB->beginInfo.pInheritanceInfo) {
+                    VkQueryPipelineStatisticFlags cmdBufStatistics = pSubCB->beginInfo.pInheritanceInfo->pipelineStatistics;
+                    if ((cmdBufStatistics & queryPoolData->second.createInfo.pipelineStatistics) != cmdBufStatistics) {
+                        skip |= log_msg(
+                            report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                            HandleToUint64(pCB->commandBuffer), "VUID-vkCmdExecuteCommands-commandBuffer-00104",
                             "vkCmdExecuteCommands() called w/ invalid Cmd Buffer %s which has invalid active query pool %s"
-                            " of type %d but a query of that type has been started on secondary Cmd Buffer %s.",
+                            ". Pipeline statistics is being queried so the command buffer must have all bits set on the queryPool.",
                             report_data->FormatHandle(pCB->commandBuffer).c_str(),
-                            report_data->FormatHandle(queryPoolData->first).c_str(), queryPoolData->second.createInfo.queryType,
-                            report_data->FormatHandle(pSubCB->commandBuffer).c_str());
+                            report_data->FormatHandle(queryPoolData->first).c_str());
+                    }
+                }
+                activeTypes.insert(queryPoolData->second.createInfo.queryType);
+            }
+        }
+        for (auto queryObject : pSubCB->startedQueries) {
+            auto queryPoolData = queryPoolMap.find(queryObject.pool);
+            if (queryPoolData != queryPoolMap.end() && activeTypes.count(queryPoolData->second.createInfo.queryType)) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                                HandleToUint64(pCB->commandBuffer), kVUID_Core_DrawState_InvalidSecondaryCommandBuffer,
+                                "vkCmdExecuteCommands() called w/ invalid Cmd Buffer %s which has invalid active query pool %s"
+                                " of type %d but a query of that type has been started on secondary Cmd Buffer %s.",
+                                report_data->FormatHandle(pCB->commandBuffer).c_str(),
+                                report_data->FormatHandle(queryPoolData->first).c_str(), queryPoolData->second.createInfo.queryType,
+                                report_data->FormatHandle(pSubCB->commandBuffer).c_str());
+            }
         }
     }
-
     auto primary_pool = GetCommandPoolNode(pCB->createInfo.commandPool);
     auto secondary_pool = GetCommandPoolNode(pSubCB->createInfo.commandPool);
     if (primary_pool && secondary_pool && (primary_pool->queueFamilyIndex != secondary_pool->queueFamilyIndex)) {
