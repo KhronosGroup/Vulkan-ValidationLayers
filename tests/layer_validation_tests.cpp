@@ -14476,6 +14476,7 @@ TEST_F(VkLayerTest, FillBufferWithinRenderPass) {
 
 TEST_F(VkLayerTest, InvalidDeviceMask) {
     TEST_DESCRIPTION("Invalid deviceMask.");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
 
     if (InstanceExtensionSupported(VK_KHR_SURFACE_EXTENSION_NAME)) {
         m_instance_extension_names.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
@@ -14515,6 +14516,10 @@ TEST_F(VkLayerTest, InvalidDeviceMask) {
         m_device_extension_names.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
     } else {
         printf("%s KHR swapchain extension not supported, skipping test\n", kSkipPrefix);
+        return;
+    }
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        printf("%s Device Groups requires Vulkan 1.1+.\n", kSkipPrefix);
         return;
     }
     uint32_t physical_device_group_count = 0;
