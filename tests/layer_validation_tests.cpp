@@ -14519,7 +14519,7 @@ TEST_F(VkLayerTest, InvalidDeviceMask) {
         return;
     }
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        printf("%s Device Groups requires Vulkan 1.1+.\n", kSkipPrefix);
+        printf("%s Device Groups requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
         return;
     }
     uint32_t physical_device_group_count = 0;
@@ -14530,8 +14530,8 @@ TEST_F(VkLayerTest, InvalidDeviceMask) {
         return;
     }
 
-    std::vector<VkPhysicalDeviceGroupProperties> physical_device_group;
-    physical_device_group.resize(physical_device_group_count);
+    std::vector<VkPhysicalDeviceGroupProperties> physical_device_group(physical_device_group_count,
+                                                                       {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES});
     vkEnumeratePhysicalDeviceGroups(instance(), &physical_device_group_count, physical_device_group.data());
     VkDeviceGroupDeviceCreateInfo create_device_pnext = {};
     create_device_pnext.sType = VK_STRUCTURE_TYPE_DEVICE_GROUP_DEVICE_CREATE_INFO;
