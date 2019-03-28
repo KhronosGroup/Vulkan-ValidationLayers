@@ -988,63 +988,49 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
     // Note that this defines the order in which the layer validation objects are called
 #if BUILD_THREAD_SAFETY
     auto thread_safety = new ThreadSafety;
-    // TODO:  Initialize child objects with parent info thru constuctor taking a parent object
     thread_safety->container_type = LayerObjectTypeThreading;
-    thread_safety->physical_device = gpu;
-    thread_safety->instance = instance_interceptor->instance;
-    thread_safety->report_data = device_interceptor->report_data;
-    thread_safety->device_dispatch_table = device_interceptor->device_dispatch_table;
-    thread_safety->api_version = device_interceptor->api_version;
     if (!instance_interceptor->disabled.thread_safety) {
         device_interceptor->object_dispatch.emplace_back(thread_safety);
     }
 #endif
 #if BUILD_PARAMETER_VALIDATION
     auto stateless_validation = new StatelessValidation;
-    // TODO:  Initialize child objects with parent info thru constuctor taking a parent object
     stateless_validation->container_type = LayerObjectTypeParameterValidation;
-    stateless_validation->physical_device = gpu;
-    stateless_validation->instance = instance_interceptor->instance;
-    stateless_validation->report_data = device_interceptor->report_data;
-    stateless_validation->device_dispatch_table = device_interceptor->device_dispatch_table;
-    stateless_validation->api_version = device_interceptor->api_version;
     if (!instance_interceptor->disabled.stateless_checks) {
         device_interceptor->object_dispatch.emplace_back(stateless_validation);
     }
 #endif
 #if BUILD_OBJECT_TRACKER
-    // Create child layer objects for this key and add to dispatch vector
     auto object_tracker = new ObjectLifetimes;
-    // TODO:  Initialize child objects with parent info thru constuctor taking a parent object
     object_tracker->container_type = LayerObjectTypeObjectTracker;
-    object_tracker->physical_device = gpu;
-    object_tracker->instance = instance_interceptor->instance;
-    object_tracker->report_data = device_interceptor->report_data;
-    object_tracker->device_dispatch_table = device_interceptor->device_dispatch_table;
-    object_tracker->api_version = device_interceptor->api_version;
     if (!instance_interceptor->disabled.object_tracking) {
         device_interceptor->object_dispatch.emplace_back(object_tracker);
     }
 #endif
 #if BUILD_CORE_VALIDATION
     auto core_checks = new CoreChecks;
-    // TODO:  Initialize child objects with parent info thru constuctor taking a parent object
     core_checks->container_type = LayerObjectTypeCoreValidation;
-    core_checks->physical_device = gpu;
-    core_checks->instance = instance_interceptor->instance;
-    core_checks->report_data = device_interceptor->report_data;
-    core_checks->device_dispatch_table = device_interceptor->device_dispatch_table;
-    core_checks->instance_dispatch_table = instance_interceptor->instance_dispatch_table;
-    core_checks->api_version = device_interceptor->api_version;
-    core_checks->instance_extensions = instance_interceptor->instance_extensions;
-    core_checks->device_extensions = device_interceptor->device_extensions;
     core_checks->instance_state = reinterpret_cast<CoreChecks *>(
         core_checks->GetValidationObject(instance_interceptor->object_dispatch, LayerObjectTypeCoreValidation));
-    core_checks->device = *pDevice;
     if (!instance_interceptor->disabled.core_checks) {
         device_interceptor->object_dispatch.emplace_back(core_checks);
     }
 #endif
+
+    // Set per-intercept common data items
+    for (auto dev_intercept : device_interceptor->object_dispatch) {
+        dev_intercept->device = *pDevice;
+        dev_intercept->physical_device = gpu;
+        dev_intercept->instance = instance_interceptor->instance;
+        dev_intercept->report_data = device_interceptor->report_data;
+        dev_intercept->device_dispatch_table = device_interceptor->device_dispatch_table;
+        dev_intercept->api_version = device_interceptor->api_version;
+        dev_intercept->disabled = instance_interceptor->disabled;
+        dev_intercept->enabled = instance_interceptor->enabled;
+        dev_intercept->instance_dispatch_table = instance_interceptor->instance_dispatch_table;
+        dev_intercept->instance_extensions = instance_interceptor->instance_extensions;
+        dev_intercept->device_extensions = device_interceptor->device_extensions;
+    }
 
     for (auto intercept : instance_interceptor->object_dispatch) {
         auto lock = intercept->write_lock();
