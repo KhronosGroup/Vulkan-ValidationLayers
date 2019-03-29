@@ -229,7 +229,6 @@ class CoreChecks : public ValidationObject {
     DeviceExtensionProperties phys_dev_ext_props = {};
     std::vector<VkCooperativeMatrixPropertiesNV> cooperative_matrix_properties;
     bool external_sync_warning = false;
-    uint32_t api_version = 0;
     std::unique_ptr<GpuValidationState> gpu_validation_state;
     uint32_t physical_device_count;
 
