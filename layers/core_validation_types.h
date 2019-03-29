@@ -611,7 +611,6 @@ class ImageSubresourceLayoutMapImpl : public ImageSubresourceLayoutMap {
             for (uint32_t mip_level = range.baseMipLevel; mip_level < end_mip; ++mip_level, array_offset += mip_size_) {
                 size_t start = array_offset + range.baseArrayLayer;
                 size_t end = start + range.layerCount;
-                BoundsCheck(start, end);
                 bool updated_level = layouts_.current.SetRange(start, end, layout);
                 if (updated_level) {
                     // We only need to try setting the initial layout, if we changed any of the layout values above
@@ -636,7 +635,6 @@ class ImageSubresourceLayoutMapImpl : public ImageSubresourceLayoutMap {
             for (uint32_t mip_level = range.baseMipLevel; mip_level < end_mip; ++mip_level, array_offset += mip_size_) {
                 size_t start = array_offset + range.baseArrayLayer;
                 size_t end = start + range.layerCount;
-                BoundsCheck(start, end);
                 updated |= layouts_.initial.SetRange(start, end, layout);
             }
         }
@@ -667,7 +665,6 @@ class ImageSubresourceLayoutMapImpl : public ImageSubresourceLayoutMap {
                 for (layer = range.baseArrayLayer; layer < end_layer; layer++) {
                     // TODO -- would an interator with range check be faster?
                     size_t index = array_offset + layer;
-                    BoundsCheck(index);
                     VkImageLayout layout = layouts_.current.Get(index);
                     VkImageLayout initial_layout = kInvalidLayout;
                     if (always_get_initial || (layout == kInvalidLayout)) {
@@ -687,7 +684,6 @@ class ImageSubresourceLayoutMapImpl : public ImageSubresourceLayoutMap {
         if (!InRange(subresource)) return kInvalidLayout;
         uint32_t aspect_index = AspectTraits::Index(subresource.aspectMask);
         size_t index = Encode(aspect_index, subresource.mipLevel, subresource.arrayLayer);
-        BoundsCheck(index);
         return layouts_.initial.Get(index);
     }
 
@@ -695,7 +691,6 @@ class ImageSubresourceLayoutMapImpl : public ImageSubresourceLayoutMap {
         if (!InRange(subresource)) return kInvalidLayout;
         uint32_t aspect_index = AspectTraits::Index(subresource.aspectMask);
         size_t index = Encode(aspect_index, subresource.mipLevel, subresource.arrayLayer);
-        BoundsCheck(index);
         return layouts_.current.Get(index);
     }
 
@@ -734,28 +729,6 @@ class ImageSubresourceLayoutMapImpl : public ImageSubresourceLayoutMap {
     ~ImageSubresourceLayoutMapImpl() override {}
 
    protected:
-//#define IMAGE_LAYOUT_MAP_BOUNDS_CHECK
-#ifdef IMAGE_LAYOUT_MAP_BOUNDS_CHECK
-    // Optional bounds checking
-    __declspec(noinline) void BoundsCheck(size_t inclusive) const {
-        if (inclusive >= layouts_.current.RangeMax()) {
-            error_count_++;
-            std::cout << "Bounds Error:" << error_count_ << std::endl;
-        }
-    }
-    // Optional bounds checking
-    __declspec(noinline) void BoundsCheck(size_t inclusive, size_t exclusive) const {
-        if ((inclusive >= layouts_.current.RangeMax()) || (exclusive > layouts_.current.RangeMax())) {
-            error_count_++;
-            std::cout << "Bounds Error:" << error_count_ << std::endl;
-        }
-    }
-    mutable size_t error_count_ = 0;
-#else
-    void BoundsCheck(size_t inclusive) const {}
-    void BoundsCheck(size_t inclusive, size_t exclusive) const {}
-#endif
-
     // This looks a bit ponderous but kAspectCount is a compile time constant
     VkImageSubresource Decode(size_t index) const {
         VkImageSubresource subres;
