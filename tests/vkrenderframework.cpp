@@ -472,7 +472,7 @@ void VkRenderFramework::InitViewport(float width, float height) {
 
 void VkRenderFramework::InitViewport() { InitViewport(m_width, m_height); }
 
-bool VkRenderFramework::InitSwapchain() { return InitSwapchain(m_width, m_height); }
+void VkRenderFramework::InitSwapchain() { InitSwapchain(m_width, m_height); }
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
@@ -480,7 +480,9 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 }
 #endif  // VK_USE_PLATFORM_WIN32_KHR
 
-bool VkRenderFramework::InitSwapchain(float width, float height) {
+void VkRenderFramework::InitSwapchain(float width, float height) {
+    VkResult err = VK_SUCCESS;
+
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     HINSTANCE window_instance = GetModuleHandle(nullptr);
     const char class_name[] = "test";
@@ -496,7 +498,9 @@ bool VkRenderFramework::InitSwapchain(float width, float height) {
     surface_create_info.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
     surface_create_info.hinstance = window_instance;
     surface_create_info.hwnd = window;
-    vkCreateWin32SurfaceKHR(instance(), &surface_create_info, nullptr, &m_surface);
+    err = vkCreateWin32SurfaceKHR(instance(), &surface_create_info, nullptr, &m_surface);
+    ASSERT_VK_SUCCESS(err);
+
 #elif VK_USE_PLATFORM_XLIB_KHR
     Display *d = XOpenDisplay(NULL);
     int s = DefaultScreen(d);
@@ -505,15 +509,20 @@ bool VkRenderFramework::InitSwapchain(float width, float height) {
     surface_create_info.sType = VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR;
     surface_create_info.dpy = d;
     surface_create_info.window = w;
-    vkCreateXlibSurfaceKHR(instance(), &surface_create_info, nullptr, &m_surface);
-#elif VK_USE_PLATFORM_ANDROID_KHR
+    err = vkCreateXlibSurfaceKHR(instance(), &surface_create_info, nullptr, &m_surface);
+    ASSERT_VK_SUCCESS(err);
+
+#elif defined(VK_USE_PLATFORM_ANDROID_KHR) && defined(VALIDATION_APK)
     VkAndroidSurfaceCreateInfoKHR surface_create_info = {};
     surface_create_info.sType = VK_STRUCTURE_TYPE_ANDROID_SURFACE_CREATE_INFO_KHR;
     surface_create_info.window = VkTestFramework::window;
-    vkCreateAndroidSurfaceKHR(instance(), &surface_create_info, nullptr, &m_surface);
+    err = vkCreateAndroidSurfaceKHR(instance(), &surface_create_info, nullptr, &m_surface);
+    ASSERT_VK_SUCCESS(err);
+
 #else
-    return false;
+    return;
 #endif
+
     for (size_t i = 0; i < m_device->queue_props.size(); ++i) {
         VkBool32 presentSupport = false;
         vkGetPhysicalDeviceSurfaceSupportKHR(m_device->phy().handle(), i, m_surface, &presentSupport);
@@ -558,7 +567,8 @@ bool VkRenderFramework::InitSwapchain(float width, float height) {
     swapchain_create_info.presentMode = present_modes[0];
     swapchain_create_info.clipped = VK_FALSE;
     swapchain_create_info.oldSwapchain = 0;
-    return (vkCreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &m_swapchain) == VK_SUCCESS);
+    err = vkCreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &m_swapchain);
+    ASSERT_VK_SUCCESS(err);
 }
 
 void VkRenderFramework::DestroySwapchain() {

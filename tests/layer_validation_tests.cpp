@@ -14515,46 +14515,46 @@ TEST_F(VkLayerTest, InvalidDeviceMask) {
     TEST_DESCRIPTION("Invalid deviceMask.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
-    if (InstanceExtensionSupported(VK_KHR_SURFACE_EXTENSION_NAME)) {
-        m_instance_extension_names.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
-    } else {
-        printf("%s KHR surface extension not supported, skipping test\n", kSkipPrefix);
-        return;
-    }
     bool support_surface = false;
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     if (InstanceExtensionSupported(VK_KHR_WIN32_SURFACE_EXTENSION_NAME)) {
         m_instance_extension_names.push_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
+        support_surface = true;
     } else {
-        printf("%s KHR win32 surface extension not supported, skipping test\n", kSkipPrefix);
-        return;
+        printf("%s VK_KHR_WIN32_SURFACE_EXTENSION_NAME extension not supported, skipping VkAcquireNextImageInfoKHR test\n",
+               kSkipPrefix);
     }
-    support_surface = true;
 #elif VK_USE_PLATFORM_XLIB_KHR
     if (InstanceExtensionSupported(VK_KHR_XLIB_SURFACE_EXTENSION_NAME)) {
         m_instance_extension_names.push_back(VK_KHR_XLIB_SURFACE_EXTENSION_NAME);
+        support_surface = true;
     } else {
-        printf("%s KHR xlib surface extension not supported, skipping test\n", kSkipPrefix);
-        return;
+        printf("%s VK_KHR_XLIB_SURFACE_EXTENSION_NAME extension not supported, skipping VkAcquireNextImageInfoKHR test\n",
+               kSkipPrefix);
     }
-    support_surface = true;
-#elif VK_USE_PLATFORM_ANDROID_KHR
+#elif defined(VK_USE_PLATFORM_ANDROID_KHR) && defined(VALIDATION_APK)
     if (InstanceExtensionSupported(VK_KHR_ANDROID_SURFACE_EXTENSION_NAME)) {
         m_instance_extension_names.push_back(VK_KHR_ANDROID_SURFACE_EXTENSION_NAME);
+        support_surface = true;
     } else {
-        printf("%s KHR xlib surface extension not supported, skipping test\n", kSkipPrefix);
-        return;
+        printf("%s VK_KHR_ANDROID_SURFACE_EXTENSION_NAME extension not supported, skipping VkAcquireNextImageInfoKHR test\n",
+               kSkipPrefix);
     }
-    support_surface = true;
+#else
+    printf("%s VkSurface not supported, skipping VkAcquireNextImageInfoKHR test\n", kSkipPrefix);
 #endif
+
+    if (support_surface) {
+        if (InstanceExtensionSupported(VK_KHR_SURFACE_EXTENSION_NAME)) {
+            m_instance_extension_names.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
+        } else {
+            printf("%s VK_KHR_SURFACE_EXTENSION_NAM extension not supported, skipping VkAcquireNextImageInfoKHR test\n",
+                   kSkipPrefix);
+            support_surface = false;
+        }
+    }
     ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
 
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SWAPCHAIN_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
-    } else {
-        printf("%s KHR swapchain extension not supported, skipping test\n", kSkipPrefix);
-        return;
-    }
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
         printf("%s Device Groups requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
         return;
@@ -14565,6 +14565,16 @@ TEST_F(VkLayerTest, InvalidDeviceMask) {
     if (physical_device_group_count == 0) {
         printf("%s physical_device_group_count is 0, skipping test\n", kSkipPrefix);
         return;
+    }
+
+    if (support_surface) {
+        if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SWAPCHAIN_EXTENSION_NAME)) {
+            m_device_extension_names.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+        } else {
+            printf("%s VK_KHR_SWAPCHAIN_EXTENSION_NAME extension not supported, skipping VkAcquireNextImageInfoKHR test\n",
+                   kSkipPrefix);
+            support_surface = false;
+        }
     }
 
     std::vector<VkPhysicalDeviceGroupProperties> physical_device_group(physical_device_group_count,
