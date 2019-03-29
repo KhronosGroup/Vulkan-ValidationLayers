@@ -93,8 +93,6 @@ class StatelessValidation : public ValidationObject {
    public:
     VkPhysicalDeviceLimits device_limits = {};
     VkPhysicalDeviceFeatures physical_device_features = {};
-    VkDevice device = VK_NULL_HANDLE;
-    uint32_t api_version;
 
     // Override chassis read/write locks for this validation object
     // This override takes a deferred lock. i.e. it is not acquired.
