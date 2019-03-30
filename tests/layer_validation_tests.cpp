@@ -10768,6 +10768,7 @@ TEST_F(VkLayerTest, InvalidDescriptorSetSamplerDestroyed) {
 
     OneOffDescriptorSet ds(m_device, {
                                          {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                         {1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
                                      });
 
     const VkPipelineLayoutObj pipeline_layout(m_device, {&ds.layout_});
@@ -10795,11 +10796,17 @@ TEST_F(VkLayerTest, InvalidDescriptorSetSamplerDestroyed) {
     VkSampler sampler;
     err = vkCreateSampler(m_device->device(), &sampler_ci, NULL, &sampler);
     ASSERT_VK_SUCCESS(err);
+    VkSampler sampler1;
+    err = vkCreateSampler(m_device->device(), &sampler_ci, NULL, &sampler1);
+    ASSERT_VK_SUCCESS(err);
     // Update descriptor with image and sampler
     VkDescriptorImageInfo img_info = {};
     img_info.sampler = sampler;
     img_info.imageView = view;
     img_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+    VkDescriptorImageInfo img_info1 = img_info;
+    img_info1.sampler = sampler1;
 
     VkWriteDescriptorSet descriptor_write;
     memset(&descriptor_write, 0, sizeof(descriptor_write));
@@ -10810,9 +10817,14 @@ TEST_F(VkLayerTest, InvalidDescriptorSetSamplerDestroyed) {
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     descriptor_write.pImageInfo = &img_info;
 
-    vkUpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+    std::array<VkWriteDescriptorSet, 2> descriptor_writes = {descriptor_write, descriptor_write};
+    descriptor_writes[1].dstBinding = 1;
+    descriptor_writes[1].pImageInfo = &img_info1;
+
+    vkUpdateDescriptorSets(m_device->device(), 2, descriptor_writes.data(), 0, NULL);
+
     // Destroy the sampler before it's bound to the cmd buffer
-    vkDestroySampler(m_device->device(), sampler, NULL);
+    vkDestroySampler(m_device->device(), sampler1, NULL);
 
     // Create PSO to be used for draw-time errors below
     char const *vsSource =
@@ -10825,9 +10837,11 @@ TEST_F(VkLayerTest, InvalidDescriptorSetSamplerDestroyed) {
         "#version 450\n"
         "\n"
         "layout(set=0, binding=0) uniform sampler2D s;\n"
+        "layout(set=0, binding=1) uniform sampler2D s1;\n"
         "layout(location=0) out vec4 x;\n"
         "void main(){\n"
         "   x = texture(s, vec2(1));\n"
+        "   x = texture(s1, vec2(1));\n"
         "}\n";
     VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
     VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
@@ -10847,14 +10861,14 @@ TEST_F(VkLayerTest, InvalidDescriptorSetSamplerDestroyed) {
     VkRect2D scissor = {{0, 0}, {16, 16}};
     vkCmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
     vkCmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissor);
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                         " Descriptor in binding #0 at global descriptor index 0 is using sampler ");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, " Descriptor in binding #1 index 0 is using sampler ");
     m_commandBuffer->Draw(1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
 
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 
+    vkDestroySampler(m_device->device(), sampler, NULL);
     vkDestroyImageView(m_device->device(), view, NULL);
 }
 
