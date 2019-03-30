@@ -723,6 +723,8 @@ bool cvdescriptorset::DescriptorSet::ValidateDrawState(const std::map<uint32_t, 
         }
 
         for (uint32_t i = index_range.start; i < index_range.end; ++i, ++array_idx) {
+            uint32_t index = i - index_range.start;
+
             if ((p_layout_->GetDescriptorBindingFlagsFromBinding(binding) &
                  (VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT)) ||
                 descriptors_[i]->GetClass() == InlineUniform) {
@@ -731,7 +733,7 @@ bool cvdescriptorset::DescriptorSet::ValidateDrawState(const std::map<uint32_t, 
                 continue;
             } else if (!descriptors_[i]->updated) {
                 std::stringstream error_str;
-                error_str << "Descriptor in binding #" << binding << " at global descriptor index " << i
+                error_str << "Descriptor in binding #" << binding << " index " << index
                           << " is being used in draw but has not been updated.";
                 *error = error_str.str();
                 return false;
@@ -743,16 +745,16 @@ bool cvdescriptorset::DescriptorSet::ValidateDrawState(const std::map<uint32_t, 
                     auto buffer_node = device_data_->GetBufferState(buffer);
                     if (!buffer_node) {
                         std::stringstream error_str;
-                        error_str << "Descriptor in binding #" << binding << " at global descriptor index " << i
-                                  << " references invalid buffer " << buffer << ".";
+                        error_str << "Descriptor in binding #" << binding << " index " << index << " references invalid buffer "
+                                  << buffer << ".";
                         *error = error_str.str();
                         return false;
                     } else if (!buffer_node->sparse) {
                         for (auto mem_binding : buffer_node->GetBoundMemory()) {
                             if (!device_data_->GetMemObjInfo(mem_binding)) {
                                 std::stringstream error_str;
-                                error_str << "Descriptor in binding #" << binding << " at global descriptor index " << i
-                                          << " uses buffer " << buffer << " that references invalid memory " << mem_binding << ".";
+                                error_str << "Descriptor in binding #" << binding << " index " << index << " uses buffer " << buffer
+                                          << " that references invalid memory " << mem_binding << ".";
                                 *error = error_str.str();
                                 return false;
                             }
@@ -767,20 +769,20 @@ bool cvdescriptorset::DescriptorSet::ValidateDrawState(const std::map<uint32_t, 
                         if (VK_WHOLE_SIZE == range) {
                             if ((dyn_offset + desc_offset) > buffer_size) {
                                 std::stringstream error_str;
-                                error_str << "Dynamic descriptor in binding #" << binding << " at global descriptor index " << i
-                                          << " uses buffer " << buffer << " with update range of VK_WHOLE_SIZE has dynamic offset "
-                                          << dyn_offset << " combined with offset " << desc_offset
-                                          << " that oversteps the buffer size of " << buffer_size << ".";
+                                error_str << "Dynamic descriptor in binding #" << binding << " index " << index << " uses buffer "
+                                          << buffer << " with update range of VK_WHOLE_SIZE has dynamic offset " << dyn_offset
+                                          << " combined with offset " << desc_offset << " that oversteps the buffer size of "
+                                          << buffer_size << ".";
                                 *error = error_str.str();
                                 return false;
                             }
                         } else {
                             if ((dyn_offset + desc_offset + range) > buffer_size) {
                                 std::stringstream error_str;
-                                error_str << "Dynamic descriptor in binding #" << binding << " at global descriptor index " << i
-                                          << " uses buffer " << buffer << " with dynamic offset " << dyn_offset
-                                          << " combined with offset " << desc_offset << " and range " << range
-                                          << " that oversteps the buffer size of " << buffer_size << ".";
+                                error_str << "Dynamic descriptor in binding #" << binding << " index " << index << " uses buffer "
+                                          << buffer << " with dynamic offset " << dyn_offset << " combined with offset "
+                                          << desc_offset << " and range " << range << " that oversteps the buffer size of "
+                                          << buffer_size << ".";
                                 *error = error_str.str();
                                 return false;
                             }
@@ -803,8 +805,8 @@ bool cvdescriptorset::DescriptorSet::ValidateDrawState(const std::map<uint32_t, 
                         // Image view must have been destroyed since initial update. Could potentially flag the descriptor
                         //  as "invalid" (updated = false) at DestroyImageView() time and detect this error at bind time
                         std::stringstream error_str;
-                        error_str << "Descriptor in binding #" << binding << " at global descriptor index " << i
-                                  << " is using imageView " << image_view << " that has been destroyed.";
+                        error_str << "Descriptor in binding #" << binding << " index " << index << " is using imageView "
+                                  << image_view << " that has been destroyed.";
                         *error = error_str.str();
                         return false;
                     }
@@ -813,7 +815,7 @@ bool cvdescriptorset::DescriptorSet::ValidateDrawState(const std::map<uint32_t, 
                     if ((reqs & DESCRIPTOR_REQ_ALL_VIEW_TYPE_BITS) && (~reqs & (1 << image_view_ci.viewType))) {
                         // bad view type
                         std::stringstream error_str;
-                        error_str << "Descriptor in binding #" << binding << " at global descriptor index " << i
+                        error_str << "Descriptor in binding #" << binding << " index " << index
                                   << " requires an image view of type " << StringDescriptorReqViewType(reqs) << " but got "
                                   << string_VkImageViewType(image_view_ci.viewType) << ".";
                         *error = error_str.str();
@@ -824,7 +826,7 @@ bool cvdescriptorset::DescriptorSet::ValidateDrawState(const std::map<uint32_t, 
                     if (!(reqs & format_bits)) {
                         // bad component type
                         std::stringstream error_str;
-                        error_str << "Descriptor in binding #" << binding << " at global descriptor index " << i << " requires "
+                        error_str << "Descriptor in binding #" << binding << " index " << index << " requires "
                                   << StringDescriptorReqComponentType(reqs) << " component type, but bound descriptor format is "
                                   << string_VkFormat(image_view_ci.format) << ".";
                         *error = error_str.str();
@@ -858,7 +860,7 @@ bool cvdescriptorset::DescriptorSet::ValidateDrawState(const std::map<uint32_t, 
                     // Verify Sample counts
                     if ((reqs & DESCRIPTOR_REQ_SINGLE_SAMPLE) && image_node->createInfo.samples != VK_SAMPLE_COUNT_1_BIT) {
                         std::stringstream error_str;
-                        error_str << "Descriptor in binding #" << binding << " at global descriptor index " << i
+                        error_str << "Descriptor in binding #" << binding << " index " << index
                                   << " requires bound image to have VK_SAMPLE_COUNT_1_BIT but got "
                                   << string_VkSampleCountFlagBits(image_node->createInfo.samples) << ".";
                         *error = error_str.str();
@@ -866,7 +868,7 @@ bool cvdescriptorset::DescriptorSet::ValidateDrawState(const std::map<uint32_t, 
                     }
                     if ((reqs & DESCRIPTOR_REQ_MULTI_SAMPLE) && image_node->createInfo.samples == VK_SAMPLE_COUNT_1_BIT) {
                         std::stringstream error_str;
-                        error_str << "Descriptor in binding #" << binding << " at global descriptor index " << i
+                        error_str << "Descriptor in binding #" << binding << " index " << index
                                   << " requires bound image to have multiple samples, but got VK_SAMPLE_COUNT_1_BIT.";
                         *error = error_str.str();
                         return false;
@@ -881,7 +883,7 @@ bool cvdescriptorset::DescriptorSet::ValidateDrawState(const std::map<uint32_t, 
                     if (!(reqs & format_bits)) {
                         // bad component type
                         std::stringstream error_str;
-                        error_str << "Descriptor in binding #" << binding << " at global descriptor index " << i << " requires "
+                        error_str << "Descriptor in binding #" << binding << " index " << index << " requires "
                                   << StringDescriptorReqComponentType(reqs) << " component type, but bound descriptor format is "
                                   << string_VkFormat(buffer_view->create_info.format) << ".";
                         *error = error_str.str();
@@ -898,8 +900,8 @@ bool cvdescriptorset::DescriptorSet::ValidateDrawState(const std::map<uint32_t, 
                     }
                     if (!ValidateSampler(sampler, device_data_)) {
                         std::stringstream error_str;
-                        error_str << "Descriptor in binding #" << binding << " at global descriptor index " << i
-                                  << " is using sampler " << sampler << " that has been destroyed.";
+                        error_str << "Descriptor in binding #" << binding << " index " << index << " is using sampler " << sampler
+                                  << " that has been destroyed.";
                         *error = error_str.str();
                         return false;
                     }
