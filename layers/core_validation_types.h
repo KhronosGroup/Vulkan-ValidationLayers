@@ -112,15 +112,14 @@ inline bool IsSpecial(const uint32_t queue_family_index) {
     return (queue_family_index == VK_QUEUE_FAMILY_EXTERNAL_KHR) || (queue_family_index == VK_QUEUE_FAMILY_FOREIGN_EXT);
 }
 
-// Generic wrapper for vulkan objects -- using the one from vk_object_types.h now.
-typedef VulkanTypedHandle VK_OBJECT;
-
-inline bool operator==(const VK_OBJECT &a, const VK_OBJECT &b) NOEXCEPT { return a.handle == b.handle && a.type == b.type; }
+inline bool operator==(const VulkanTypedHandle &a, const VulkanTypedHandle &b) NOEXCEPT {
+    return a.handle == b.handle && a.type == b.type;
+}
 
 namespace std {
 template <>
-struct hash<VK_OBJECT> {
-    size_t operator()(VK_OBJECT obj) const NOEXCEPT { return hash<uint64_t>()(obj.handle) ^ hash<uint32_t>()(obj.type); }
+struct hash<VulkanTypedHandle> {
+    size_t operator()(VulkanTypedHandle obj) const NOEXCEPT { return hash<uint64_t>()(obj.handle) ^ hash<uint32_t>()(obj.type); }
 };
 }  // namespace std
 
@@ -364,7 +363,7 @@ struct DEVICE_MEMORY_STATE : public BASE_NODE {
     VkImage dedicated_image;
     bool is_export;
     VkExternalMemoryHandleTypeFlags export_handle_type_flags;
-    std::unordered_set<VK_OBJECT> obj_bindings;               // objects bound to this memory
+    std::unordered_set<VulkanTypedHandle> obj_bindings;       // objects bound to this memory
     std::unordered_map<uint64_t, MEMORY_RANGE> bound_ranges;  // Map of object to its binding range
     // Convenience vectors image/buff handles to speed up iterating over images or buffers independently
     std::unordered_set<uint64_t> bound_images;
@@ -1420,8 +1419,8 @@ struct CMD_BUFFER_STATE : public BASE_NODE {
     std::unordered_set<VkFramebuffer> framebuffers;
     // Unified data structs to track objects bound to this command buffer as well as object
     //  dependencies that have been broken : either destroyed objects, or updated descriptor sets
-    std::unordered_set<VK_OBJECT> object_bindings;
-    std::vector<VK_OBJECT> broken_bindings;
+    std::unordered_set<VulkanTypedHandle> object_bindings;
+    std::vector<VulkanTypedHandle> broken_bindings;
 
     QFOTransferBarrierSets<VkBufferMemoryBarrier> qfo_transfer_buffer_barriers;
     QFOTransferBarrierSets<VkImageMemoryBarrier> qfo_transfer_image_barriers;

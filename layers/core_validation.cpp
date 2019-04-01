@@ -1955,7 +1955,7 @@ bool CoreChecks::ValidateCmdQueueFlags(const CMD_BUFFER_STATE *cb_node, const ch
     return false;
 }
 
-static char const *GetCauseStr(VK_OBJECT obj) {
+static char const *GetCauseStr(VulkanTypedHandle obj) {
     if (obj.type == kVulkanObjectTypeDescriptorSet) return "destroyed or updated";
     if (obj.type == kVulkanObjectTypeCommandBuffer) return "destroyed or rerecorded";
     return "destroyed";
@@ -2046,63 +2046,63 @@ bool CoreChecks::ValidateDeviceMaskToRenderPass(CMD_BUFFER_STATE *pCB, uint32_t 
 }
 
 // For given object struct return a ptr of BASE_NODE type for its wrapping struct
-BASE_NODE *CoreChecks::GetStateStructPtrFromObject(VK_OBJECT object_struct) {
+BASE_NODE *CoreChecks::GetStateStructPtrFromObject(const VulkanTypedHandle &object_struct) {
     BASE_NODE *base_ptr = nullptr;
     switch (object_struct.type) {
         case kVulkanObjectTypeDescriptorSet: {
-            base_ptr = GetSetNode(reinterpret_cast<VkDescriptorSet &>(object_struct.handle));
+            base_ptr = GetSetNode(object_struct.Cast<VkDescriptorSet>());
             break;
         }
         case kVulkanObjectTypeSampler: {
-            base_ptr = GetSamplerState(reinterpret_cast<VkSampler &>(object_struct.handle));
+            base_ptr = GetSamplerState(object_struct.Cast<VkSampler>());
             break;
         }
         case kVulkanObjectTypeQueryPool: {
-            base_ptr = GetQueryPoolState(reinterpret_cast<VkQueryPool &>(object_struct.handle));
+            base_ptr = GetQueryPoolState(object_struct.Cast<VkQueryPool>());
             break;
         }
         case kVulkanObjectTypePipeline: {
-            base_ptr = GetPipelineState(reinterpret_cast<VkPipeline &>(object_struct.handle));
+            base_ptr = GetPipelineState(object_struct.Cast<VkPipeline>());
             break;
         }
         case kVulkanObjectTypeBuffer: {
-            base_ptr = GetBufferState(reinterpret_cast<VkBuffer &>(object_struct.handle));
+            base_ptr = GetBufferState(object_struct.Cast<VkBuffer>());
             break;
         }
         case kVulkanObjectTypeBufferView: {
-            base_ptr = GetBufferViewState(reinterpret_cast<VkBufferView &>(object_struct.handle));
+            base_ptr = GetBufferViewState(object_struct.Cast<VkBufferView>());
             break;
         }
         case kVulkanObjectTypeImage: {
-            base_ptr = GetImageState(reinterpret_cast<VkImage &>(object_struct.handle));
+            base_ptr = GetImageState(object_struct.Cast<VkImage>());
             break;
         }
         case kVulkanObjectTypeImageView: {
-            base_ptr = GetImageViewState(reinterpret_cast<VkImageView &>(object_struct.handle));
+            base_ptr = GetImageViewState(object_struct.Cast<VkImageView>());
             break;
         }
         case kVulkanObjectTypeEvent: {
-            base_ptr = GetEventState(reinterpret_cast<VkEvent &>(object_struct.handle));
+            base_ptr = GetEventState(object_struct.Cast<VkEvent>());
             break;
         }
         case kVulkanObjectTypeDescriptorPool: {
-            base_ptr = GetDescriptorPoolState(reinterpret_cast<VkDescriptorPool &>(object_struct.handle));
+            base_ptr = GetDescriptorPoolState(object_struct.Cast<VkDescriptorPool>());
             break;
         }
         case kVulkanObjectTypeCommandPool: {
-            base_ptr = GetCommandPoolState(reinterpret_cast<VkCommandPool &>(object_struct.handle));
+            base_ptr = GetCommandPoolState(object_struct.Cast<VkCommandPool>());
             break;
         }
         case kVulkanObjectTypeFramebuffer: {
-            base_ptr = GetFramebufferState(reinterpret_cast<VkFramebuffer &>(object_struct.handle));
+            base_ptr = GetFramebufferState(object_struct.Cast<VkFramebuffer>());
             break;
         }
         case kVulkanObjectTypeRenderPass: {
-            base_ptr = GetRenderPassState(reinterpret_cast<VkRenderPass &>(object_struct.handle));
+            base_ptr = GetRenderPassState(object_struct.Cast<VkRenderPass>());
             break;
         }
         case kVulkanObjectTypeDeviceMemory: {
-            base_ptr = GetDevMemState(reinterpret_cast<VkDeviceMemory &>(object_struct.handle));
+            base_ptr = GetDevMemState(object_struct.Cast<VkDeviceMemory>());
             break;
         }
         default:
@@ -2113,16 +2113,17 @@ BASE_NODE *CoreChecks::GetStateStructPtrFromObject(VK_OBJECT object_struct) {
     return base_ptr;
 }
 
-// Tie the VK_OBJECT to the cmd buffer which includes:
+// Tie the VulkanTypedHandle to the cmd buffer which includes:
 //  Add object_binding to cmd buffer
 //  Add cb_binding to object
-static void AddCommandBufferBinding(std::unordered_set<CMD_BUFFER_STATE *> *cb_bindings, VK_OBJECT obj, CMD_BUFFER_STATE *cb_node) {
+static void AddCommandBufferBinding(std::unordered_set<CMD_BUFFER_STATE *> *cb_bindings, const VulkanTypedHandle &obj,
+                                    CMD_BUFFER_STATE *cb_node) {
     cb_bindings->insert(cb_node);
     cb_node->object_bindings.insert(obj);
 }
 // For a given object, if cb_node is in that objects cb_bindings, remove cb_node
-void CoreChecks::RemoveCommandBufferBinding(VK_OBJECT const *object, CMD_BUFFER_STATE *cb_node) {
-    BASE_NODE *base_obj = GetStateStructPtrFromObject(*object);
+void CoreChecks::RemoveCommandBufferBinding(VulkanTypedHandle const &object, CMD_BUFFER_STATE *cb_node) {
+    BASE_NODE *base_obj = GetStateStructPtrFromObject(object);
     if (base_obj) base_obj->cb_bindings.erase(cb_node);
 }
 // Reset the command buffer state
@@ -2185,8 +2186,8 @@ void CoreChecks::ResetCommandBufferState(const VkCommandBuffer cb) {
         pCB->queryUpdates.clear();
 
         // Remove object bindings
-        for (auto obj : pCB->object_bindings) {
-            RemoveCommandBufferBinding(&obj, pCB);
+        for (const auto &obj : pCB->object_bindings) {
+            RemoveCommandBufferBinding(obj, pCB);
         }
         pCB->object_bindings.clear();
         // Remove this cmdBuffer's reference from each FrameBuffer's CB ref list
@@ -2889,7 +2890,7 @@ bool CoreChecks::ValidateResources(CMD_BUFFER_STATE *cb_node) {
 }
 
 // Check that the queue family index of 'queue' matches one of the entries in pQueueFamilyIndices
-bool CoreChecks::ValidImageBufferQueue(CMD_BUFFER_STATE *cb_node, const VK_OBJECT &object, VkQueue queue, uint32_t count,
+bool CoreChecks::ValidImageBufferQueue(CMD_BUFFER_STATE *cb_node, const VulkanTypedHandle &object, VkQueue queue, uint32_t count,
                                        const uint32_t *indices) {
     bool found = false;
     bool skip = false;
@@ -3747,7 +3748,7 @@ void CoreChecks::PostCallRecordAllocateMemory(VkDevice device, const VkMemoryAll
 }
 
 // For given obj node, if it is use, flag a validation error and return callback result, else return false
-bool CoreChecks::ValidateObjectNotInUse(BASE_NODE *obj_node, const VK_OBJECT &obj_struct, const char *caller_name,
+bool CoreChecks::ValidateObjectNotInUse(BASE_NODE *obj_node, const VulkanTypedHandle &obj_struct, const char *caller_name,
                                         const char *error_code) {
     if (disabled.object_in_use) return false;
     bool skip = false;
@@ -4855,7 +4856,7 @@ void CoreChecks::PostCallRecordResetFences(VkDevice device, uint32_t fenceCount,
 }
 
 // For given cb_nodes, invalidate them and track object causing invalidation
-void CoreChecks::InvalidateCommandBuffers(std::unordered_set<CMD_BUFFER_STATE *> const &cb_nodes, VK_OBJECT obj) {
+void CoreChecks::InvalidateCommandBuffers(std::unordered_set<CMD_BUFFER_STATE *> const &cb_nodes, const VulkanTypedHandle &obj) {
     for (auto cb_node : cb_nodes) {
         if (cb_node->state == CB_RECORDING) {
             log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
@@ -10975,7 +10976,7 @@ bool CoreChecks::ValidateImportSemaphore(VkSemaphore semaphore, const char *call
     bool skip = false;
     SEMAPHORE_STATE *sema_node = GetSemaphoreState(semaphore);
     if (sema_node) {
-        VK_OBJECT obj_struct(semaphore, kVulkanObjectTypeSemaphore);
+        const VulkanTypedHandle obj_struct(semaphore, kVulkanObjectTypeSemaphore);
         skip |= ValidateObjectNotInUse(sema_node, obj_struct, caller_name, kVUIDUndefined);
     }
     return skip;
