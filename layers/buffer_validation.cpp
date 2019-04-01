@@ -1466,7 +1466,7 @@ void CoreChecks::PostCallRecordCreateImage(VkDevice device, const VkImageCreateI
 
 bool CoreChecks::PreCallValidateDestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks *pAllocator) {
     IMAGE_STATE *image_state = GetImageState(image);
-    const VK_OBJECT obj_struct = {HandleToUint64(image), kVulkanObjectTypeImage};
+    const VulkanTypedHandle obj_struct(image, kVulkanObjectTypeImage);
     bool skip = false;
     if (image_state) {
         skip |= ValidateObjectNotInUse(image_state, obj_struct, "vkDestroyImage", "VUID-vkDestroyImage-image-01000");
@@ -1477,7 +1477,7 @@ bool CoreChecks::PreCallValidateDestroyImage(VkDevice device, VkImage image, con
 void CoreChecks::PreCallRecordDestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks *pAllocator) {
     if (!image) return;
     IMAGE_STATE *image_state = GetImageState(image);
-    VK_OBJECT obj_struct = {HandleToUint64(image), kVulkanObjectTypeImage};
+    const VulkanTypedHandle obj_struct(image, kVulkanObjectTypeImage);
     InvalidateCommandBuffers(image_state->cb_bindings, obj_struct);
     // Clean up memory mapping, bindings and range references for image
     for (auto mem_binding : image_state->GetBoundMemory()) {
@@ -1486,7 +1486,7 @@ void CoreChecks::PreCallRecordDestroyImage(VkDevice device, VkImage image, const
             RemoveImageMemoryRange(obj_struct.handle, mem_info);
         }
     }
-    ClearMemoryObjectBindings(obj_struct.handle, kVulkanObjectTypeImage);
+    ClearMemoryObjectBindings(obj_struct);
     EraseQFOReleaseBarriers<VkImageMemoryBarrier>(image);
     // Remove image from imageMap
     imageMap.erase(image);
@@ -3626,11 +3626,11 @@ bool CoreChecks::ValidateMapImageLayouts(VkDevice device, DEVICE_MEMORY_STATE co
 
 // Helper function to validate correct usage bits set for buffers or images. Verify that (actual & desired) flags != 0 or, if strict
 // is true, verify that (actual & desired) flags == desired
-bool CoreChecks::ValidateUsageFlags(VkFlags actual, VkFlags desired, VkBool32 strict, uint64_t obj_handle,
-                                    VulkanObjectType obj_type, const char *msgCode, char const *func_name, char const *usage_str) {
+bool CoreChecks::ValidateUsageFlags(VkFlags actual, VkFlags desired, VkBool32 strict, const VulkanTypedHandle &typed_handle,
+                                    const char *msgCode, char const *func_name, char const *usage_str) {
     bool correct_usage = false;
     bool skip = false;
-    const char *type_str = object_string[obj_type];
+    const char *type_str = object_string[typed_handle.type];
     if (strict) {
         correct_usage = ((actual & desired) == desired);
     } else {
@@ -3639,14 +3639,15 @@ bool CoreChecks::ValidateUsageFlags(VkFlags actual, VkFlags desired, VkBool32 st
     if (!correct_usage) {
         if (msgCode == kVUIDUndefined) {
             // TODO: Fix callers with kVUIDUndefined to use correct validation checks.
-            skip = log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, get_debug_report_enum[obj_type], obj_handle,
-                           kVUID_Core_MemTrack_InvalidUsageFlag,
+            skip = log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, get_debug_report_enum[typed_handle.type],
+                           typed_handle.handle, kVUID_Core_MemTrack_InvalidUsageFlag,
                            "Invalid usage flag for %s %s used by %s. In this case, %s should have %s set during creation.",
-                           type_str, report_data->FormatHandle(obj_handle).c_str(), func_name, type_str, usage_str);
+                           type_str, report_data->FormatHandle(typed_handle).c_str(), func_name, type_str, usage_str);
         } else {
-            skip = log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, get_debug_report_enum[obj_type], obj_handle, msgCode,
-                           "Invalid usage flag for %s %s used by %s. In this case, %s should have %s set during creation.",
-                           type_str, report_data->FormatHandle(obj_handle).c_str(), func_name, type_str, usage_str);
+            skip =
+                log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, get_debug_report_enum[typed_handle.type], typed_handle.handle,
+                        msgCode, "Invalid usage flag for %s %s used by %s. In this case, %s should have %s set during creation.",
+                        type_str, report_data->FormatHandle(typed_handle).c_str(), func_name, type_str, usage_str);
         }
     }
     return skip;
@@ -3656,8 +3657,8 @@ bool CoreChecks::ValidateUsageFlags(VkFlags actual, VkFlags desired, VkBool32 st
 // where an error will be flagged if usage is not correct
 bool CoreChecks::ValidateImageUsageFlags(IMAGE_STATE const *image_state, VkFlags desired, bool strict, const char *msgCode,
                                          char const *func_name, char const *usage_string) {
-    return ValidateUsageFlags(image_state->createInfo.usage, desired, strict, HandleToUint64(image_state->image),
-                              kVulkanObjectTypeImage, msgCode, func_name, usage_string);
+    return ValidateUsageFlags(image_state->createInfo.usage, desired, strict,
+                              VulkanTypedHandle(image_state->image, kVulkanObjectTypeImage), msgCode, func_name, usage_string);
 }
 
 bool CoreChecks::ValidateImageFormatFeatureFlags(IMAGE_STATE const *image_state, VkFormatFeatureFlags desired,
@@ -3715,8 +3716,8 @@ bool CoreChecks::ValidateImageSubresourceLayers(const CMD_BUFFER_STATE *cb_node,
 // where an error will be flagged if usage is not correct
 bool CoreChecks::ValidateBufferUsageFlags(BUFFER_STATE const *buffer_state, VkFlags desired, bool strict, const char *msgCode,
                                           char const *func_name, char const *usage_string) {
-    return ValidateUsageFlags(buffer_state->createInfo.usage, desired, strict, HandleToUint64(buffer_state->buffer),
-                              kVulkanObjectTypeBuffer, msgCode, func_name, usage_string);
+    return ValidateUsageFlags(buffer_state->createInfo.usage, desired, strict,
+                              VulkanTypedHandle(buffer_state->buffer, kVulkanObjectTypeBuffer), msgCode, func_name, usage_string);
 }
 
 bool CoreChecks::ValidateBufferViewRange(const BUFFER_STATE *buffer_state, const VkBufferViewCreateInfo *pCreateInfo,
@@ -4362,7 +4363,7 @@ bool CoreChecks::ValidateIdleBuffer(VkBuffer buffer) {
 
 bool CoreChecks::PreCallValidateDestroyImageView(VkDevice device, VkImageView imageView, const VkAllocationCallbacks *pAllocator) {
     IMAGE_VIEW_STATE *image_view_state = GetImageViewState(imageView);
-    VK_OBJECT obj_struct = {HandleToUint64(imageView), kVulkanObjectTypeImageView};
+    const VulkanTypedHandle obj_struct(imageView, kVulkanObjectTypeImageView);
 
     bool skip = false;
     if (image_view_state) {
@@ -4375,7 +4376,7 @@ bool CoreChecks::PreCallValidateDestroyImageView(VkDevice device, VkImageView im
 void CoreChecks::PreCallRecordDestroyImageView(VkDevice device, VkImageView imageView, const VkAllocationCallbacks *pAllocator) {
     IMAGE_VIEW_STATE *image_view_state = GetImageViewState(imageView);
     if (!image_view_state) return;
-    VK_OBJECT obj_struct = {HandleToUint64(imageView), kVulkanObjectTypeImageView};
+    const VulkanTypedHandle obj_struct(imageView, kVulkanObjectTypeImageView);
 
     // Any bound cmd buffers are now invalid
     InvalidateCommandBuffers(image_view_state->cb_bindings, obj_struct);
@@ -4395,7 +4396,7 @@ bool CoreChecks::PreCallValidateDestroyBuffer(VkDevice device, VkBuffer buffer, 
 void CoreChecks::PreCallRecordDestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationCallbacks *pAllocator) {
     if (!buffer) return;
     auto buffer_state = GetBufferState(buffer);
-    VK_OBJECT obj_struct = {HandleToUint64(buffer), kVulkanObjectTypeBuffer};
+    const VulkanTypedHandle obj_struct(buffer, kVulkanObjectTypeBuffer);
 
     InvalidateCommandBuffers(buffer_state->cb_bindings, obj_struct);
     for (auto mem_binding : buffer_state->GetBoundMemory()) {
@@ -4404,7 +4405,7 @@ void CoreChecks::PreCallRecordDestroyBuffer(VkDevice device, VkBuffer buffer, co
             RemoveBufferMemoryRange(HandleToUint64(buffer), mem_info);
         }
     }
-    ClearMemoryObjectBindings(HandleToUint64(buffer), kVulkanObjectTypeBuffer);
+    ClearMemoryObjectBindings(obj_struct);
     EraseQFOReleaseBarriers<VkBufferMemoryBarrier>(buffer);
     bufferMap.erase(buffer_state->buffer);
 }
@@ -4412,7 +4413,7 @@ void CoreChecks::PreCallRecordDestroyBuffer(VkDevice device, VkBuffer buffer, co
 bool CoreChecks::PreCallValidateDestroyBufferView(VkDevice device, VkBufferView bufferView,
                                                   const VkAllocationCallbacks *pAllocator) {
     auto buffer_view_state = GetBufferViewState(bufferView);
-    VK_OBJECT obj_struct = {HandleToUint64(bufferView), kVulkanObjectTypeBufferView};
+    const VulkanTypedHandle obj_struct(bufferView, kVulkanObjectTypeBufferView);
     bool skip = false;
     if (buffer_view_state) {
         skip |= ValidateObjectNotInUse(buffer_view_state, obj_struct, "vkDestroyBufferView",
@@ -4424,7 +4425,7 @@ bool CoreChecks::PreCallValidateDestroyBufferView(VkDevice device, VkBufferView 
 void CoreChecks::PreCallRecordDestroyBufferView(VkDevice device, VkBufferView bufferView, const VkAllocationCallbacks *pAllocator) {
     if (!bufferView) return;
     auto buffer_view_state = GetBufferViewState(bufferView);
-    VK_OBJECT obj_struct = {HandleToUint64(bufferView), kVulkanObjectTypeBufferView};
+    const VulkanTypedHandle obj_struct(bufferView, kVulkanObjectTypeBufferView);
 
     // Any bound cmd buffers are now invalid
     InvalidateCommandBuffers(buffer_view_state->cb_bindings, obj_struct);

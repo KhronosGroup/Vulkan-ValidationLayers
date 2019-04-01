@@ -664,7 +664,8 @@ class HelperFileOutputGenerator(OutputGenerator):
     #
     # Object types header: create object enum type header file
     def GenerateObjectTypesHeader(self):
-        object_types_header = ''
+        object_types_header = '#include "cast_utils.h"\n'
+        object_types_header += '\n'
         object_types_header += '// Object Type enum for validation layer internal object handling\n'
         object_types_header += 'typedef enum VulkanObjectType {\n'
         object_types_header += '    kVulkanObjectTypeUnknown = 0,\n'
@@ -831,9 +832,23 @@ class HelperFileOutputGenerator(OutputGenerator):
                 uint64_t handle;
                 VulkanObjectType type;
                 template <typename Handle>
-                VulkanTypedHandle(Handle handle_) :
-                    handle(reinterpret_cast<uint64_t>(handle_)),
-                    type(VkHandleInfo<Handle>::kVulkanObjectType) {}
+                VulkanTypedHandle(Handle handle_, VulkanObjectType type_) :
+                    handle(CastToUint64(handle_)),
+                    type(type_) {
+            #ifdef TYPESAFE_NONDISPATCHABLE_HANDLES
+                    // For 32 bit it's not always safe to check for traits <-> type
+                    // as all non-dispatchable handles have the same type-id and thus traits,
+                    // but on 64 bit we can validate the passed type matches the passed handle
+                    assert(type == VkHandleInfo<Handle>::kVulkanObjectType);
+            #endif // TYPESAFE_NONDISPATCHABLE_HANDLES
+                }
+                template <typename Handle>
+                Handle Cast() const {
+            #ifdef TYPESAFE_NONDISPATCHABLE_HANDLES
+                    assert(type == VkHandleInfo<Handle>::kVulkanObjectType);
+            #endif // TYPESAFE_NONDISPATCHABLE_HANDLES
+                    return CastFromUint64<Handle>(handle);
+                }
                 VulkanTypedHandle() :
                     handle(VK_NULL_HANDLE),
                     type(kVulkanObjectTypeUnknown) {}

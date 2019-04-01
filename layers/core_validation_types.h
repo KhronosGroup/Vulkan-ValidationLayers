@@ -25,6 +25,7 @@
 #ifndef CORE_VALIDATION_TYPES_H_
 #define CORE_VALIDATION_TYPES_H_
 
+#include "cast_utils.h"
 #include "hash_vk_types.h"
 #include "sparse_containers.h"
 #include "vk_safe_struct.h"
@@ -111,13 +112,10 @@ inline bool IsSpecial(const uint32_t queue_family_index) {
     return (queue_family_index == VK_QUEUE_FAMILY_EXTERNAL_KHR) || (queue_family_index == VK_QUEUE_FAMILY_FOREIGN_EXT);
 }
 
-// Generic wrapper for vulkan objects
-struct VK_OBJECT {
-    uint64_t handle;
-    VulkanObjectType type;
-};
+// Generic wrapper for vulkan objects -- using the one from vk_object_types.h now.
+typedef VulkanTypedHandle VK_OBJECT;
 
-inline bool operator==(VK_OBJECT a, VK_OBJECT b) NOEXCEPT { return a.handle == b.handle && a.type == b.type; }
+inline bool operator==(const VK_OBJECT &a, const VK_OBJECT &b) NOEXCEPT { return a.handle == b.handle && a.type == b.type; }
 
 namespace std {
 template <>
@@ -347,6 +345,14 @@ struct MEMORY_RANGE {
     // Set of ptrs to every range aliased with this one
     std::unordered_set<MEMORY_RANGE *> aliases;
 };
+
+static inline VulkanTypedHandle MemoryRangeTypedHandle(const MEMORY_RANGE &range) {
+    // TODO: Convert MEMORY_RANGE to use VulkanTypedHandle internally
+    if (range.image) {
+        return VulkanTypedHandle(CastFromUint64<VkImage>(range.handle), kVulkanObjectTypeImage);
+    }
+    return VulkanTypedHandle(CastFromUint64<VkBuffer>(range.handle), kVulkanObjectTypeBuffer);
+}
 
 // Data struct for tracking memory object
 struct DEVICE_MEMORY_STATE : public BASE_NODE {
