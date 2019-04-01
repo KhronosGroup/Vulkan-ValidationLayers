@@ -372,8 +372,8 @@ bool CoreChecks::ValidateRenderPassLayoutAgainstFramebufferImageUsage(RenderPass
                     "Layout/usage mismatch for attachment %u in render pass %s"
                     " - the %s is %s but the image attached to framebuffer %s via image view %s"
                     " was not created with VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT",
-                    attachment_index, report_data->FormatHandle(framebuffer).c_str(), variable_name, string_VkImageLayout(layout),
-                    report_data->FormatHandle(renderpass).c_str(), report_data->FormatHandle(image_view).c_str());
+                    attachment_index, report_data->FormatHandle(renderpass).c_str(), variable_name, string_VkImageLayout(layout),
+                    report_data->FormatHandle(framebuffer).c_str(), report_data->FormatHandle(image_view).c_str());
     }
 
     if (layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL &&
@@ -384,8 +384,8 @@ bool CoreChecks::ValidateRenderPassLayoutAgainstFramebufferImageUsage(RenderPass
                     "Layout/usage mismatch for attachment %u in render pass %s"
                     " - the %s is %s but the image attached to framebuffer %s via image view %s"
                     " was not created with VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT or VK_IMAGE_USAGE_SAMPLED_BIT",
-                    attachment_index, report_data->FormatHandle(framebuffer).c_str(), variable_name, string_VkImageLayout(layout),
-                    report_data->FormatHandle(renderpass).c_str(), report_data->FormatHandle(image_view).c_str());
+                    attachment_index, report_data->FormatHandle(renderpass).c_str(), variable_name, string_VkImageLayout(layout),
+                    report_data->FormatHandle(framebuffer).c_str(), report_data->FormatHandle(image_view).c_str());
     }
 
     if (layout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL && !(image_usage & VK_IMAGE_USAGE_TRANSFER_SRC_BIT)) {
@@ -395,8 +395,8 @@ bool CoreChecks::ValidateRenderPassLayoutAgainstFramebufferImageUsage(RenderPass
                     "Layout/usage mismatch for attachment %u in render pass %s"
                     " - the %s is %s but the image attached to framebuffer %s via image view %s"
                     " was not created with VK_IMAGE_USAGE_TRANSFER_SRC_BIT",
-                    attachment_index, report_data->FormatHandle(framebuffer).c_str(), variable_name, string_VkImageLayout(layout),
-                    report_data->FormatHandle(renderpass).c_str(), report_data->FormatHandle(image_view).c_str());
+                    attachment_index, report_data->FormatHandle(renderpass).c_str(), variable_name, string_VkImageLayout(layout),
+                    report_data->FormatHandle(framebuffer).c_str(), report_data->FormatHandle(image_view).c_str());
     }
 
     if (layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && !(image_usage & VK_IMAGE_USAGE_TRANSFER_DST_BIT)) {
@@ -406,8 +406,8 @@ bool CoreChecks::ValidateRenderPassLayoutAgainstFramebufferImageUsage(RenderPass
                     "Layout/usage mismatch for attachment %u in render pass %s"
                     " - the %s is %s but the image attached to framebuffer %s via image view %s"
                     " was not created with VK_IMAGE_USAGE_TRANSFER_DST_BIT",
-                    attachment_index, report_data->FormatHandle(framebuffer).c_str(), variable_name, string_VkImageLayout(layout),
-                    report_data->FormatHandle(renderpass).c_str(), report_data->FormatHandle(image_view).c_str());
+                    attachment_index, report_data->FormatHandle(renderpass).c_str(), variable_name, string_VkImageLayout(layout),
+                    report_data->FormatHandle(framebuffer).c_str(), report_data->FormatHandle(image_view).c_str());
     }
 
     if (GetDeviceExtensions()->vk_khr_maintenance2) {
@@ -422,8 +422,8 @@ bool CoreChecks::ValidateRenderPassLayoutAgainstFramebufferImageUsage(RenderPass
                 "Layout/usage mismatch for attachment %u in render pass %s"
                 " - the %s is %s but the image attached to framebuffer %s via image view %s"
                 " was not created with VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT",
-                attachment_index, report_data->FormatHandle(framebuffer).c_str(), variable_name, string_VkImageLayout(layout),
-                report_data->FormatHandle(renderpass).c_str(), report_data->FormatHandle(image_view).c_str());
+                attachment_index, report_data->FormatHandle(renderpass).c_str(), variable_name, string_VkImageLayout(layout),
+                report_data->FormatHandle(framebuffer).c_str(), report_data->FormatHandle(image_view).c_str());
         }
     } else {
         // The create render pass 2 extension requires maintenance 2 (the previous branch), so no vuid switch needed here.
@@ -435,8 +435,8 @@ bool CoreChecks::ValidateRenderPassLayoutAgainstFramebufferImageUsage(RenderPass
                             "Layout/usage mismatch for attachment %u in render pass %s"
                             " - the %s is %s but the image attached to framebuffer %s via image view %s"
                             " was not created with VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT",
-                            attachment_index, report_data->FormatHandle(framebuffer).c_str(), variable_name,
-                            string_VkImageLayout(layout), report_data->FormatHandle(renderpass).c_str(),
+                            attachment_index, report_data->FormatHandle(renderpass).c_str(), variable_name,
+                            string_VkImageLayout(layout), report_data->FormatHandle(framebuffer).c_str(),
                             report_data->FormatHandle(image_view).c_str());
         }
     }
