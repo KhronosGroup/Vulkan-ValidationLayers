@@ -96,7 +96,8 @@ class ObjectLifetimes : public ValidationObject {
     void CreateSwapchainImageObject(VkDevice dispatchable_object, VkImage swapchain_image, VkSwapchainKHR swapchain);
     bool ReportUndestroyedObjects(VkDevice device, const std::string &error_code);
     void DestroyUndestroyedObjects(VkDevice device);
-    bool ValidateDeviceObject(uint64_t device_handle, const char *invalid_handle_code, const char *wrong_device_code);
+    bool ValidateDeviceObject(const VulkanTypedHandle &device_typed, const char *invalid_handle_code,
+                              const char *wrong_device_code);
     void DestroyQueueDataStructures(VkDevice device);
     bool ValidateCommandBuffer(VkDevice device, VkCommandPool command_pool, VkCommandBuffer command_buffer);
     bool ValidateDescriptorSet(VkDevice device, VkDescriptorPool descriptor_pool, VkDescriptorSet descriptor_set);
@@ -122,7 +123,7 @@ class ObjectLifetimes : public ValidationObject {
         auto object_handle = HandleToUint64(object);
 
         if (object_type == kVulkanObjectTypeDevice) {
-            return ValidateDeviceObject(object_handle, invalid_handle_code, wrong_device_code);
+            return ValidateDeviceObject(VulkanTypedHandle(object, object_type), invalid_handle_code, wrong_device_code);
         }
 
         VkDebugReportObjectTypeEXT debug_object_type = get_debug_report_enum[object_type];
