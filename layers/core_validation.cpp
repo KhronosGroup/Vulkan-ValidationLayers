@@ -7718,14 +7718,12 @@ static const std::string buffer_error_codes[] = {
 class ValidatorState {
    public:
     ValidatorState(const CoreChecks *device_data, const char *func_name, const CMD_BUFFER_STATE *cb_state,
-                   const uint64_t barrier_handle64, const VkSharingMode sharing_mode, const VulkanObjectType object_type,
-                   const std::string *val_codes)
+                   const VulkanTypedHandle &barrier_handle, const VkSharingMode sharing_mode, const std::string *val_codes)
         : report_data_(device_data->report_data),
           func_name_(func_name),
           cb_handle64_(HandleToUint64(cb_state->commandBuffer)),
-          barrier_handle64_(barrier_handle64),
+          barrier_handle_(barrier_handle),
           sharing_mode_(sharing_mode),
-          object_type_(object_type),
           val_codes_(val_codes),
           limit_(static_cast<uint32_t>(device_data->physical_device_state->queue_family_properties.size())),
           mem_ext_(device_data->device_extensions.vk_khr_external_memory) {}
@@ -7733,14 +7731,14 @@ class ValidatorState {
     // Create a validator state from an image state... reducing the image specific to the generic version.
     ValidatorState(const CoreChecks *device_data, const char *func_name, const CMD_BUFFER_STATE *cb_state,
                    const VkImageMemoryBarrier *barrier, const IMAGE_STATE *state)
-        : ValidatorState(device_data, func_name, cb_state, HandleToUint64(barrier->image), state->createInfo.sharingMode,
-                         kVulkanObjectTypeImage, image_error_codes) {}
+        : ValidatorState(device_data, func_name, cb_state, VulkanTypedHandle(barrier->image, kVulkanObjectTypeImage),
+                         state->createInfo.sharingMode, image_error_codes) {}
 
     // Create a validator state from an buffer state... reducing the buffer specific to the generic version.
     ValidatorState(const CoreChecks *device_data, const char *func_name, const CMD_BUFFER_STATE *cb_state,
                    const VkBufferMemoryBarrier *barrier, const BUFFER_STATE *state)
-        : ValidatorState(device_data, func_name, cb_state, HandleToUint64(barrier->buffer), state->createInfo.sharingMode,
-                         kVulkanObjectTypeImage, buffer_error_codes) {}
+        : ValidatorState(device_data, func_name, cb_state, VulkanTypedHandle(barrier->buffer, kVulkanObjectTypeBuffer),
+                         state->createInfo.sharingMode, buffer_error_codes) {}
 
     // Log the messages using boilerplate from object state, and Vu specific information from the template arg
     // One and two family versions, in the single family version, Vu holds the name of the passed parameter
@@ -7749,7 +7747,7 @@ class ValidatorState {
         const char *annotation = GetFamilyAnnotation(family);
         return log_msg(report_data_, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT, cb_handle64_,
                        val_code, "%s: Barrier using %s %s created with sharingMode %s, has %s %u%s. %s", func_name_,
-                       GetTypeString(), report_data_->FormatHandle(barrier_handle64_).c_str(), GetModeString(), param_name, family,
+                       GetTypeString(), report_data_->FormatHandle(barrier_handle_).c_str(), GetModeString(), param_name, family,
                        annotation, vu_summary[vu_index]);
     }
 
@@ -7760,7 +7758,7 @@ class ValidatorState {
         return log_msg(
             report_data_, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT, cb_handle64_, val_code,
             "%s: Barrier using %s %s created with sharingMode %s, has srcQueueFamilyIndex %u%s and dstQueueFamilyIndex %u%s. %s",
-            func_name_, GetTypeString(), report_data_->FormatHandle(barrier_handle64_).c_str(), GetModeString(), src_family,
+            func_name_, GetTypeString(), report_data_->FormatHandle(barrier_handle_).c_str(), GetModeString(), src_family,
             src_annotation, dst_family, dst_annotation, vu_summary[vu_index]);
     }
 
@@ -7782,7 +7780,7 @@ class ValidatorState {
                            "%s: Barrier submitted to queue with family index %u, using %s %s created with sharingMode %s, has "
                            "srcQueueFamilyIndex %u%s and dstQueueFamilyIndex %u%s. %s",
                            "vkQueueSubmit", queue_family, val.GetTypeString(),
-                           device_data->report_data->FormatHandle(val.barrier_handle64_).c_str(), val.GetModeString(), src_family,
+                           device_data->report_data->FormatHandle(val.barrier_handle_).c_str(), val.GetModeString(), src_family,
                            src_annotation, dst_family, dst_annotation, vu_summary[kSubmitQueueMustMatchSrcOrDst]);
         }
         return false;
@@ -7819,16 +7817,15 @@ class ValidatorState {
                 return invalid;
         };
     }
-    const char *GetTypeString() const { return object_string[object_type_]; }
+    const char *GetTypeString() const { return object_string[barrier_handle_.type]; }
     VkSharingMode GetSharingMode() const { return sharing_mode_; }
 
    protected:
     const debug_report_data *const report_data_;
     const char *const func_name_;
     const uint64_t cb_handle64_;
-    const uint64_t barrier_handle64_;
+    const VulkanTypedHandle barrier_handle_;
     const VkSharingMode sharing_mode_;
-    const VulkanObjectType object_type_;
     const std::string *val_codes_;
     const uint32_t limit_;
     const bool mem_ext_;
@@ -10577,7 +10574,7 @@ bool CoreChecks::ValidateBindImageMemory(VkImage image, VkDeviceMemory mem, VkDe
             skip |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, image_handle,
                             kVUID_Core_DrawState_InvalidImage,
                             "%s: Binding memory to image %s but vkGetImageMemoryRequirements() has not been called on that image.",
-                            api_name, report_data->FormatHandle(image_handle).c_str());
+                            api_name, report_data->FormatHandle(image).c_str());
             // Make the call for them so we can verify the state
             DispatchGetImageMemoryRequirements(device, image, &image_state->requirements);
         }
@@ -10625,7 +10622,7 @@ bool CoreChecks::ValidateBindImageMemory(VkImage image, VkDeviceMemory mem, VkDe
                                 "to image %s and memoryOffset 0x%" PRIxLEAST64 " must be zero.",
                                 api_name, report_data->FormatHandle(mem).c_str(),
                                 report_data->FormatHandle(mem_info->dedicated_image).c_str(),
-                                report_data->FormatHandle(image_handle).c_str(), memoryOffset);
+                                report_data->FormatHandle(image).c_str(), memoryOffset);
             }
         }
     }
@@ -12334,10 +12331,11 @@ bool CoreChecks::ValidateDescriptorUpdateTemplate(const char *func_name,
     bool skip = false;
     const auto layout = GetDescriptorSetLayout(this, pCreateInfo->descriptorSetLayout);
     if (VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET == pCreateInfo->templateType && !layout) {
-        auto ds_uint = HandleToUint64(pCreateInfo->descriptorSetLayout);
-        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_POOL_EXT, ds_uint,
-                        "VUID-VkDescriptorUpdateTemplateCreateInfo-templateType-00350",
-                        "%s: Invalid pCreateInfo->descriptorSetLayout (%s)", func_name, report_data->FormatHandle(ds_uint).c_str());
+        const VulkanTypedHandle ds_typed(pCreateInfo->descriptorSetLayout, kVulkanObjectTypeDescriptorSetLayout);
+        skip |=
+            log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_POOL_EXT, ds_typed.handle,
+                    "VUID-VkDescriptorUpdateTemplateCreateInfo-templateType-00350",
+                    "%s: Invalid pCreateInfo->descriptorSetLayout (%s)", func_name, report_data->FormatHandle(ds_typed).c_str());
     } else if (VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS_KHR == pCreateInfo->templateType) {
         auto bind_point = pCreateInfo->pipelineBindPoint;
         bool valid_bp = (bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS) || (bind_point == VK_PIPELINE_BIND_POINT_COMPUTE);
@@ -12349,20 +12347,20 @@ bool CoreChecks::ValidateDescriptorUpdateTemplate(const char *func_name,
         }
         const auto pipeline_layout = GetPipelineLayout(pCreateInfo->pipelineLayout);
         if (!pipeline_layout) {
-            uint64_t pl_uint = HandleToUint64(pCreateInfo->pipelineLayout);
-            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_LAYOUT_EXT, pl_uint,
-                            "VUID-VkDescriptorUpdateTemplateCreateInfo-templateType-00352",
-                            "%s: Invalid pCreateInfo->pipelineLayout (%s)", func_name, report_data->FormatHandle(pl_uint).c_str());
+            const VulkanTypedHandle pl_typed(pCreateInfo->pipelineLayout, kVulkanObjectTypePipelineLayout);
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_LAYOUT_EXT,
+                            pl_typed.handle, "VUID-VkDescriptorUpdateTemplateCreateInfo-templateType-00352",
+                            "%s: Invalid pCreateInfo->pipelineLayout (%s)", func_name, report_data->FormatHandle(pl_typed).c_str());
         } else {
             const uint32_t pd_set = pCreateInfo->set;
             if ((pd_set >= pipeline_layout->set_layouts.size()) || !pipeline_layout->set_layouts[pd_set] ||
                 !pipeline_layout->set_layouts[pd_set]->IsPushDescriptor()) {
-                uint64_t pl_uint = HandleToUint64(pCreateInfo->pipelineLayout);
+                const VulkanTypedHandle pl_typed(pCreateInfo->pipelineLayout, kVulkanObjectTypePipelineLayout);
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_LAYOUT_EXT,
-                                pl_uint, "VUID-VkDescriptorUpdateTemplateCreateInfo-templateType-00353",
+                                pl_typed.handle, "VUID-VkDescriptorUpdateTemplateCreateInfo-templateType-00353",
                                 "%s: pCreateInfo->set (%" PRIu32
                                 ") does not refer to the push descriptor set layout for pCreateInfo->pipelineLayout (%s).",
-                                func_name, pd_set, report_data->FormatHandle(pl_uint).c_str());
+                                func_name, pd_set, report_data->FormatHandle(pl_typed).c_str());
             }
         }
     }
@@ -12502,21 +12500,21 @@ bool CoreChecks::PreCallValidateCmdPushDescriptorSetWithTemplateKHR(VkCommandBuf
 
     auto layout_data = GetPipelineLayout(layout);
     auto dsl = GetDslFromPipelineLayout(layout_data, set);
-    const auto layout_u64 = HandleToUint64(layout);
+    const VulkanTypedHandle layout_typed(layout, kVulkanObjectTypePipelineLayout);
 
     // Validate the set index points to a push descriptor set and is in range
     if (dsl) {
         if (!dsl->IsPushDescriptor()) {
-            skip = log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_LAYOUT_EXT, layout_u64,
-                           "VUID-vkCmdPushDescriptorSetKHR-set-00365",
+            skip = log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_LAYOUT_EXT,
+                           layout_typed.handle, "VUID-vkCmdPushDescriptorSetKHR-set-00365",
                            "%s: Set index %" PRIu32 " does not match push descriptor set layout index for VkPipelineLayout %s.",
-                           func_name, set, report_data->FormatHandle(layout_u64).c_str());
+                           func_name, set, report_data->FormatHandle(layout_typed).c_str());
         }
     } else if (layout_data && (set >= layout_data->set_layouts.size())) {
-        skip = log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_LAYOUT_EXT, layout_u64,
-                       "VUID-vkCmdPushDescriptorSetKHR-set-00364",
+        skip = log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_LAYOUT_EXT,
+                       layout_typed.handle, "VUID-vkCmdPushDescriptorSetKHR-set-00364",
                        "%s: Set index %" PRIu32 " is outside of range for VkPipelineLayout %s (set < %" PRIu32 ").", func_name, set,
-                       report_data->FormatHandle(layout_u64).c_str(), static_cast<uint32_t>(layout_data->set_layouts.size()));
+                       report_data->FormatHandle(layout_typed).c_str(), static_cast<uint32_t>(layout_data->set_layouts.size()));
     }
 
     const auto template_state = GetDescriptorTemplateState(descriptorUpdateTemplate);
