@@ -1530,6 +1530,7 @@ class CoreChecks : public ValidationObject {
                                                         const VkAllocationCallbacks* pAllocator);
     bool PreCallValidateGetBufferDeviceAddressEXT(VkDevice device, const VkBufferDeviceAddressInfoEXT* pInfo);
     bool PreCallValidateCmdSetDeviceMask(VkCommandBuffer commandBuffer, uint32_t deviceMask);
+    bool ValidateComputeWorkGroupSizes(const shader_module* shader);
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
     bool PreCallValidateGetAndroidHardwareBufferProperties(VkDevice device, const struct AHardwareBuffer* buffer,
                                                            VkAndroidHardwareBufferPropertiesANDROID* pProperties);
