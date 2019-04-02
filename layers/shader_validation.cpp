@@ -2407,6 +2407,28 @@ static VkDescriptorSetLayoutBinding const *GetDescriptorBinding(PIPELINE_LAYOUT_
     return pipelineLayout->set_layouts[slot.first]->GetDescriptorSetLayoutBindingPtrFromBinding(slot.second);
 }
 
+static bool FindLocalSize(shader_module const *src, uint32_t &local_size_x, uint32_t &local_size_y, uint32_t &local_size_z) {
+    for (auto insn : *src) {
+        if (insn.opcode() == spv::OpEntryPoint) {
+            auto executionModel = insn.word(1);
+            auto entrypointStageBits = ExecutionModelToShaderStageFlagBits(executionModel);
+            if (entrypointStageBits == VK_SHADER_STAGE_COMPUTE_BIT) {
+                auto entrypoint_id = insn.word(2);
+                for (auto insn1 : *src) {
+                    if (insn1.opcode() == spv::OpExecutionMode && insn1.word(1) == entrypoint_id &&
+                        insn1.word(2) == spv::ExecutionModeLocalSize) {
+                        local_size_x = insn1.word(3);
+                        local_size_y = insn1.word(4);
+                        local_size_z = insn1.word(5);
+                        return true;
+                    }
+                }
+            }
+        }
+    }
+    return false;
+}
+
 static void ProcessExecutionModes(shader_module const *src, spirv_inst_iter entrypoint, PIPELINE_STATE *pipeline) {
     auto entrypoint_id = entrypoint.word(2);
     bool is_point_mode = false;
