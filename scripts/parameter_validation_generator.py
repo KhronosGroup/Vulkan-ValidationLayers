@@ -954,19 +954,24 @@ class ParameterValidationOutputGenerator(OutputGenerator):
         else:
             # Special case for optional internal allocation function pointers.
             if (value.type, value.name) == ('PFN_vkInternalAllocationNotification', 'pfnInternalAllocation'):
-                vuid = '"VUID-VkAllocationCallbacks-pfnInternalAllocation-00635"'
-                # Alternate names replacing pfnInternalAllocation with pfnInternalFree.
-                other_name = 'pfnInternalFree'
-                other_print_name = valuePrintName[:-len(value.name)] + other_name
-                # Combined check.
-                checkExpr.append('if (({}{}) != NULL || ({}{}) != NULL)'.format(prefix, value.name, prefix, other_name))
-                checkExpr.append('{')
-                local_indent = self.incIndent('')
-                # Function pointers need a reinterpret_cast to void*
-                checkExpr.append(local_indent + 'skip |= validate_required_pointer("{}", {ppp}"{}"{pps}, reinterpret_cast<const void*>({}{}), {});\n'.format(funcPrintName, valuePrintName, prefix, value.name, vuid, **postProcSpec))
-                checkExpr.append(local_indent + 'skip |= validate_required_pointer("{}", {ppp}"{}"{pps}, reinterpret_cast<const void*>({}{}), {});\n'.format(funcPrintName, other_print_name, prefix, other_name, vuid, **postProcSpec))
-                checkExpr.append('}\n')
+                checkExpr.extend(self.internalAllocationCheck(funcPrintName, prefix, value.name, 'pfnInternalFree', postProcSpec))
+            elif (value.type, value.name) == ('PFN_vkInternalFreeNotification', 'pfnInternalFree'):
+                checkExpr.extend(self.internalAllocationCheck(funcPrintName, prefix, value.name, 'pfnInternalAllocation', postProcSpec))
         return checkExpr
+
+    #
+    # Generate internal allocation function pointer check.
+    def internalAllocationCheck(self, funcPrintName, prefix, name, complementaryName, postProcSpec):
+        checkExpr = []
+        vuid = '"VUID-VkAllocationCallbacks-pfnInternalAllocation-00635"'
+        checkExpr.append('if ({}{} != NULL)'.format(prefix, name))
+        checkExpr.append('{')
+        local_indent = self.incIndent('')
+        # Function pointers need a reinterpret_cast to void*
+        checkExpr.append(local_indent + 'skip |= validate_required_pointer("{}", {ppp}"{}{}"{pps}, reinterpret_cast<const void*>({}{}), {});\n'.format(funcPrintName, prefix, complementaryName, prefix, complementaryName, vuid, **postProcSpec))
+        checkExpr.append('}\n')
+        return checkExpr
+
     #
     # Process struct member validation code, performing name substitution if required
     def processStructMemberCode(self, line, funcName, memberNamePrefix, memberDisplayNamePrefix, postProcSpec):
