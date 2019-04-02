@@ -124,14 +124,7 @@ target_include_directories(vk_layer_validation_tests
                                   ${PROJECT_BINARY_DIR}
                                   ${PROJECT_BINARY_DIR}/layers)
 add_dependencies(vk_layer_validation_tests
-                 VkLayer_utils
-                 VkLayer_core_validation-json
-                 VkLayer_device_profile_api-json
-                 VkLayer_object_lifetimes-json
-                 VkLayer_stateless_validation-json
-                 VkLayer_standard_validation-json
-                 VkLayer_thread_safety-json
-                 VkLayer_unique_objects-json)
+                 VkLayer_utils)
 
 # Specify target_link_libraries
 if(WIN32)

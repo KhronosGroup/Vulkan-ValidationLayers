@@ -206,11 +206,6 @@ class ValidationCache {
     }
 };
 
-bool ValidateAndCapturePipelineShaderState(layer_data *dev_data, PIPELINE_STATE *pPipeline);
-bool ValidateComputePipeline(layer_data *dev_data, PIPELINE_STATE *pPipeline);
-bool ValidateRayTracingPipelineNV(layer_data *dev_data, PIPELINE_STATE *pipeline);
 typedef std::pair<unsigned, unsigned> descriptor_slot_t;
-bool PreCallValidateCreateShaderModule(layer_data *dev_data, VkShaderModuleCreateInfo const *pCreateInfo, bool *is_spirv,
-                                       bool *spirv_valid);
 
 #endif  // VULKAN_SHADER_VALIDATION_H

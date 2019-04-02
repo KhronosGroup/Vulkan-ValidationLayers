@@ -124,10 +124,10 @@ if the report is received.  Otherwise, the test should indicate "failure".
 This new test should be added to the validation layer test program in the `tests` directory and contributed
 at the same time as the new validation check itself. There are many existing validation tests in this directory that can be
 used as a starting point.
-* **Validation Checks:**  The majority of validation checks are carried out by the Core Validation layer. In general, this layer
-contains checks that require some amount of application state to carry out. In contrast, the parameter validation layer contains
+* **Validation Checks:**  Validation checks are carried out by the Khronos Validation layer. The CoreChecks validation object
+contains checks that require significant amounts of application state to carry out. In contrast, the stateless validation object contains
 checks that require (mostly) no state at all. Please inquire if you are unsure of the location for your contribution. The other
-layers (threading, object_tracker, unique_objects) are more special-purpose and are mostly code-generated from the specification.
+validation objects (thread_safety, object lifetimes) are more special-purpose and are mostly code-generated from the specification.
 * **Validation Error/Warning Messages:**  Strive to give specific information describing the particulars of the failure, including
 output all of the applicable Vulkan Objects and related values. Also, ensure that when messages can give suggestions about _how_ to
 fix the problem, they should do so to better assist the user.

@@ -38,14 +38,17 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 find_package(PythonInterp 3 REQUIRED)
 
-if (DEFINED Vulkan-Headers_SOURCE_DIR)
-    message(STATUS "Using Vulkan headers from ${Vulkan-Headers_SOURCE_DIR}")
-    set(VulkanHeaders_INCLUDE_DIR "${Vulkan-Headers_SOURCE_DIR}/include")
-    set(VulkanHeaders_INCLUDE_DIRS "${VulkanHeaders_INCLUDE_DIR}")
-    set(VulkanRegistry_DIR "${Vulkan-Headers_SOURCE_DIR}/registry")
-    set(VulkanRegistry_DIRS "${VulkanRegistry_DIR}")
+if (TARGET Vulkan::Headers)
+    message(STATUS "Using Vulkan headers from Vulkan::Headers target")
+    get_target_property(VulkanHeaders_INCLUDE_DIRS Vulkan::Headers INTERFACE_INCLUDE_DIRECTORIES)
+    get_target_property(VulkanRegistry_DIR Vulkan::Registry INTERFACE_INCLUDE_DIRECTORIES)
 else()
-    find_package(VulkanHeaders)
+    find_package(VulkanHeaders REQUIRED)
+
+    # xxxnsubtil: this should eventually be replaced by exported targets
+    add_library(Vulkan-Headers INTERFACE)
+    target_include_directories(Vulkan-Headers INTERFACE ${VulkanHeaders_INCLUDE_DIRS})
+    add_library(Vulkan::Headers ALIAS Vulkan-Headers)
 endif()
 
 option(USE_CCACHE "Use ccache" OFF)
@@ -68,8 +71,6 @@ endif()
 if(APPLE)
     # CMake versions 3 or later need CMAKE_MACOSX_RPATH defined. This avoids the CMP0042 policy message.
     set(CMAKE_MACOSX_RPATH 1)
-    # The "install" target for MacOS fixes up bundles in place.
-    set(CMAKE_INSTALL_PREFIX ${CMAKE_BINARY_DIR})
 endif()
 
 # Enable IDE GUI folders
@@ -333,6 +334,7 @@ add_library(VkLayer_utils
             layers/vk_layer_extension_utils.cpp
             layers/vk_layer_utils.cpp
             layers/vk_format_utils.cpp)
+target_link_libraries(VkLayer_utils PUBLIC Vulkan::Headers)
 if(WIN32)
     target_compile_definitions(VkLayer_utils PUBLIC _CRT_SECURE_NO_WARNINGS)
 endif()

@@ -499,18 +499,20 @@ class StatelessValidation : public ValidationObject {
                                uint32_t header_version, const char *vuid) {
         bool skip_call = false;
 
-        const char disclaimer[] =
-            "This warning is based on the Valid Usage documentation for version %d of the Vulkan header.  It is possible that you "
-            "are "
-            "using a struct from a private extension or an extension that was added to a later version of the Vulkan header, in "
-            "which "
-            "case your use of %s is perfectly valid but is not guaranteed to work correctly with validation enabled";
-
         // TODO: The valid pNext structure types are not recursive. Each structure has its own list of valid sTypes for pNext.
         // Codegen a map of vectors containing the allowable pNext types for each struct and use that here -- also simplifies parms.
         if (next != NULL) {
             std::unordered_set<const void *> cycle_check;
             std::unordered_set<VkStructureType, std::hash<int>> unique_stype_check;
+
+            const char *disclaimer =
+                "This warning is based on the Valid Usage documentation for version %d of the Vulkan header.  It is possible that "
+                "you "
+                "are "
+                "using a struct from a private extension or an extension that was added to a later version of the Vulkan header, "
+                "in "
+                "which "
+                "case your use of %s is perfectly valid but is not guaranteed to work correctly with validation enabled";
 
             if (allowed_type_count == 0) {
                 std::string message = "%s: value of %s must be NULL. ";
@@ -935,7 +937,7 @@ class StatelessValidation : public ValidationObject {
     bool manual_PreCallValidateCreateImageView(VkDevice device, const VkImageViewCreateInfo *pCreateInfo,
                                                const VkAllocationCallbacks *pAllocator, VkImageView *pView);
 
-    bool manual_PreCallValidateViewport(const VkViewport &viewport, const char *fn_name, const char *param_name,
+    bool manual_PreCallValidateViewport(const VkViewport &viewport, const char *fn_name, const ParameterName &parameter_name,
                                         VkDebugReportObjectTypeEXT object_type, uint64_t object);
 
     bool manual_PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
@@ -1014,8 +1016,6 @@ class StatelessValidation : public ValidationObject {
     bool manual_PreCallValidateCreateWin32SurfaceKHR(VkInstance instance, const VkWin32SurfaceCreateInfoKHR *pCreateInfo,
                                                      const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface);
 #endif  // VK_USE_PLATFORM_WIN32_KHR
-
-    bool manual_PreCallValidateDebugMarkerSetObjectNameEXT(VkDevice device, const VkDebugMarkerObjectNameInfoEXT *pNameInfo);
 
     bool manual_PreCallValidateCreateDescriptorPool(VkDevice device, const VkDescriptorPoolCreateInfo *pCreateInfo,
                                                     const VkAllocationCallbacks *pAllocator, VkDescriptorPool *pDescriptorPool);

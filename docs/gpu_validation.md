@@ -1,7 +1,20 @@
+<!-- markdownlint-disable MD041 -->
+<!-- Copyright 2015-2019 LunarG, Inc. -->
+[![Khronos Vulkan][1]][2]
+
+[1]: https://vulkan.lunarg.com/img/Vulkan_100px_Dec16.png "https://www.khronos.org/vulkan/"
+[2]: https://www.khronos.org/vulkan/
+
 # GPU-Assisted Validation
 
-GPU-Assisted validation is implemented in the SPIR-V Tools optimizer and the `VK_LAYER_LUNARG_core_validation` layer.
-This document covers the design of the layer portion of the implementation.
+[![Creative Commons][3]][4]
+
+[3]: https://i.creativecommons.org/l/by-nd/4.0/88x31.png "Creative Commons License"
+[4]: https://creativecommons.org/licenses/by-nd/4.0/
+
+GPU-Assisted validation is implemented in the SPIR-V Tools optimizer and the `VK_LAYER_KHRONOS_validation layer (or, in the
+soon-to-be-deprecated `VK_LAYER_LUNARG_core_validation` layer). This document covers the design of the layer portion of the
+implementation.
 
 ## Basic Operation
 
@@ -90,14 +103,17 @@ To turn on GPU validation, add the following to your layer settings file, which 
 named `vk_layer_settings.txt`.
 
 ```code
-lunarg_core_validation.gpu_validation = all
+khronos_validation.gpu_validation = all
 ```
 
 To turn on GPU validation and request to reserve a binding slot:
 
 ```code
-lunarg_core_validation.gpu_validation = all,reserve_binding_slot
+khronos_validation.gpu_validation = all,reserve_binding_slot
 ```
+
+Note: When using the core_validation layer, the above settings should use `lunarg_core_validation` in place of
+`khronos_validation`.
 
 Some platforms do not support configuration of the validation layers with this configuration file.
 Programs running on these platforms must then use the programmatic interface.
@@ -216,9 +232,9 @@ It isn't necessarily required for using the feature.
 
 In general, the implementation does:
 
-* For each draw call, allocate a block of device memory to hold a single debug output record written by the
+* For each draw call, allocate a buffer with enough device memory to hold a single debug output record written by the
     instrumented shader code.
-    There is a device memory manager to handle this efficiently.
+    The Vulkan Memory Allocator is used to handle this efficiently.
 
     There is probably little advantage in providing a larger buffer in order to obtain more debug records.
     It is likely, especially for fragment shaders, that multiple errors occurring near each other have the same root cause.
@@ -234,7 +250,7 @@ In general, the implementation does:
     Also make an additional call down the chain to create a bind descriptor set command to bind our descriptor set at the desired index.
     This has the effect of binding the device memory block belonging to this draw so that the GPU instrumentation
     writes into this buffer for when the draw is executed.
-    The end result is that each draw call has its own device memory block containing GPU instrumentation error
+    The end result is that each draw call has its own buffer containing GPU instrumentation error
     records, if any occurred while executing that draw.
 * Determine the descriptor set binding index that is eventually used to bind the descriptor set just allocated and updated.
     Usually, it is `VkPhysicalDeviceLimits::maxBoundDescriptorSets` minus one.
@@ -263,22 +279,21 @@ More detail is found in the discussion of the individual hooked functions below.
 
 ### Initialization
 
-When the core validation layer loads, it examines the user options from both the layer settings file and the
+When the validation layer loads, it examines the user options from both the layer settings file and the
 `VK_EXT_validation_features` extension.
 Note that it also processes the subsumed `VK_EXT_validation_flags` extension for simple backwards compatibility.
-From these options, the layer sets instance-scope flags in the core validation layer tracking data to indicate if
+From these options, the layer sets instance-scope flags in the validation layer tracking data to indicate if
 GPU-Assisted Validation has been requested, along with any other associated options.
 
 ### "Calling Down the Chain"
 
 Much of the GPU-Assisted Validation implementation involves making "application level" Vulkan API
 calls outside of the application's API usage to create resources and perform its required operations
-inside of the core validation layer.
+inside of the validation layer.
 These calls are not routed up through the top of the loader/layer/driver call stack via the loader.
-Instead, they are simply dispatched via the core validation layer's dispatch table.
+Instead, they are simply dispatched via the containing layer's dispatch table.
 
-These calls therefore don't pass through core validation or any other validation layers that may be
-loaded/dispatched prior to code validation.
+These calls therefore don't pass through any validation checks that occur before the gpu validation checks are run.
 This doesn't present any particular problem, but it does raise some issues:
 
 * The additional API calls are not fully validated
@@ -287,22 +302,22 @@ This doesn't present any particular problem, but it does raise some issues:
   To address this, the code can "just" be written carefully so that it is "valid" Vulkan,
   which is hard to do.
 
-  Or, this code can be checked by loading a core validation layer with
+  Or, this code can be checked by loading a khronos validation layer with
   GPU validation enabled on top of "normal" standard validation in the
   layer stack, which effectively validates the API usage of this code.
   This sort of checking is performed by layer developers to check that the additional
   Vulkan usage is valid.
 
   This validation can be accomplished by:
-  
-  * Building the core validation layer with a hack to force GPU-Assisted Validation to be enabled.
+
+  * Building the validation layer with a hack to force GPU-Assisted Validation to be enabled.
   Can't use the exposed mechanisms because we probably don't want it on twice.
-  * Rename this layer binary to something else like "core_validation2" to keep it apart from the
-  "normal" core validation.
+  * Rename this layer binary to something else like "khronos_validation2" to keep it apart from the
+  "normal" khronos validation.
   * Create a new JSON file with the new layer name.
-  * Set up the layer stack so that the "core_validation2" layer is on top of or before the standard validation
-  layer
-  * Then run tests and check for validation errors pointing to API usage in the "core_validation2" layer.
+  * Set up the layer stack so that the "khronos_validation2" layer is on top of or before the actual khronos
+    validation layer
+  * Then run tests and check for validation errors pointing to API usage in the "khronos_validation2" layer.
 
   This should only need to be done after making any major changes to the implementation.
 
@@ -326,8 +341,8 @@ This doesn't present any particular problem, but it does raise some issues:
 
 The GPU-Assisted Validation code is largely contained in one
 [file](https://github.com/KhronosGroup/Vulkan-ValidationLayers/blob/master/layers/gpu_validation.cpp), with "hooks" in
-the other core validation code that call functions in this file.
-These hooks in the core validation code look something like this:
+the other validation code that call functions in this file.
+These hooks in the validation code look something like this:
 
 ```C
 if (GetEnables(dev_data)->gpu_validation) {
@@ -335,11 +350,11 @@ if (GetEnables(dev_data)->gpu_validation) {
 }
 ```
 
-The GPU-Assisted Validation code is linked into the shared library for the core validation layer.
+The GPU-Assisted Validation code is linked into the shared library for the khronos and core validation layers.
 
-#### Review of Core Validation Code Structure
+#### Review of Khronos Validation Code Structure
 
-Each function for a Vulkan API command intercepted in the core validation layer is usually split up
+Each function for a Vulkan API command intercepted in the khronos validation layer is usually split up
 into several decomposed functions in order to organize the implementation.
 These functions take the form of:
 
@@ -348,11 +363,8 @@ These functions take the form of:
 * PreCallRecord&lt;foo&gt;: Perform state recording before calling down the chain
 * PostCallRecord&lt;foo&gt;: Perform state recording after calling down the chain
 
-The GPU-Assisted Validation functions follow this pattern not by hooking into the top-level core validation API shim, but
+The GPU-Assisted Validation functions follow this pattern not by hooking into the top-level validation API shim, but
 by hooking one of these decomposed functions.
-In a few unusual cases, the GPU-Assisted Validation function "takes over" the call to the driver (down the chain) and so
-must hook the top-level API shim.
-These functions deviate from the above naming convention to make their purpose more evident.
 
 The design of each hooked function follows:
 
@@ -365,7 +377,7 @@ The design of each hooked function follows:
 #### GpuPostCallRecordCreateDevice
 
 * Determine and record (save in device state) the desired descriptor set binding index.
-* Initialize device memory manager
+* Initialize Vulkan Memory Allocator
   * Determine error record block size based on the maximum size of the error record and alignment limits of the device.
 * Initialize descriptor set manager
 * Make a descriptor set layout to describe our descriptor set
@@ -377,31 +389,30 @@ The design of each hooked function follows:
 
 * Destroy descriptor set layouts created in CreateDevice
 * Clean up descriptor set manager
-* Clean up device memory manager
+* Clean up Vulkan Memory Allocator (VMA)
 * Clean up device state
 
 #### GpuAllocateValidationResources
 
 * For each Draw or Dispatch call:
   * Get a descriptor set from the descriptor set manager
-  * Get a device memory block from the device memory manager
+  * Get a buffer and associated memory from VMA
   * Update (write) the descriptor set with the memory info
   * Check to see if the layout for the pipeline just bound is using our selected bind index
   * If no conflict, add an additional command to the command buffer to bind our descriptor set at our selected index
 * Record the above objects in the per-CB state
-Note that the Draw and Dispatch calls include vkCmdDraw, vkCmdDrawIndexed, vkCmdDrawIndirect, vkCmdDrawIndexedIndirect, vkCmdDispatch, and vkCmdDispatchIndirect. 
+Note that the Draw and Dispatch calls include vkCmdDraw, vkCmdDrawIndexed, vkCmdDrawIndirect, vkCmdDrawIndexedIndirect, vkCmdDispatch, and vkCmdDispatchIndirect.
 
 #### GpuPreCallRecordFreeCommandBuffers
 
 * For each command buffer:
-  * Give the memory blocks back to the device memory manager
+  * Destroy the VMA buffer, releasing the memory
   * Give the descriptor sets back to the descriptor set manager
   * Clean up CB state
 
 #### GpuOverrideDispatchCreateShaderModule
 
-This function is called from CreateShaderModule and can't really be called from one of the decomposed functions
-because it replaces the SPIR-V, which requires modifying the bytecode passed down to the driver.
+This function is called from PreCallRecordCreateShaderModule.
 This routine sets up to call the SPIR-V optimizer to run the "BindlessCheckPass", replacing the original SPIR-V with the instrumented SPIR-V
 which is then used in the call down the chain to CreateShaderModule.
 
@@ -430,7 +441,7 @@ This ensures that the original SPIR-V bytecode is available if we need it to rep
 
 #### GpuOverrideDispatchCreatePipelineLayout
 
-This is another function that replaces the parameters and so can't be called from a decomposed function.
+This is function is called through PreCallRecordCreatePipelineLayout.
 
 * Check for a descriptor set binding index conflict.
   * If there is one, issue an error message and leave the pipeline layout unmodified
@@ -475,7 +486,7 @@ This is another function that replaces the parameters and so can't be called fro
 This tracker is used to attach the shader bytecode to the shader in case it is needed
 later to get the shader source code debug info.
 
-The current shader module tracker in core validation stores the bytecode,
+The current shader module tracker in the validation code stores the bytecode,
 but this tracker has the same life cycle as the shader module itself.
 It is possible for the application to destroy the shader module after
 creating graphics pipeline and before submitting work that uses the shader,
@@ -633,10 +644,8 @@ For the *Uninitialized errors, one word will follow: Word0:DescriptorIndex
 
 | Error                       | Code | Word 0         | Word 1                |
 |-----------------------------|:----:|----------------|-----------------------|
-|ImageIndexOutOfBounds        |0     |Descriptor Index|Descriptor Array Length|
-|SampleIndexOutOfBounds       |1     |Descriptor Index|Descriptor Array Length|
-|ImageDescriptorUninitialized |2     |Descriptor Index|unused                 |
-|SampleDescriptorUninitialized|3     |Descriptor Index|unused                 |
+|IndexOutOfBounds             |0     |Descriptor Index|Descriptor Array Length|
+|DescriptorUninitialized      |1     |Descriptor Index|unused                 |
 
 So the words written for an image descriptor bounds error in a fragment shader is:
 

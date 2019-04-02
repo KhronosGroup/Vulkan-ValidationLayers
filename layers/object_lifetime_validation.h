@@ -54,10 +54,11 @@ enum ObjectStatusFlagBits {
 
 // Object and state information structure
 struct ObjTrackState {
-    uint64_t handle;               // Object handle (new)
-    VulkanObjectType object_type;  // Object type identifier
-    ObjectStatusFlags status;      // Object state
-    uint64_t parent_object;        // Parent object
+    uint64_t handle;                                               // Object handle (new)
+    VulkanObjectType object_type;                                  // Object type identifier
+    ObjectStatusFlags status;                                      // Object state
+    uint64_t parent_object;                                        // Parent object
+    std::unique_ptr<std::unordered_set<uint64_t> > child_objects;  // Child objects (used for VkDescriptorPool only)
 };
 
 // Track Queue information
@@ -182,6 +183,10 @@ class ObjectLifetimes : public ValidationObject {
             object_map[object_type][object_handle] = pNewObjNode;
             num_objects[object_type]++;
             num_total_objects++;
+
+            if (object_type == kVulkanObjectTypeDescriptorPool) {
+                pNewObjNode->child_objects.reset(new std::unordered_set<uint64_t>);
+            }
         }
     }
 

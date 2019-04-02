@@ -218,7 +218,7 @@ generate the native platform files.
     - [2017](https://www.visualstudio.com/vs/downloads/)
   - The Community Edition of each of the above versions is sufficient, as
     well as any more capable edition.
-- [CMake](http://www.cmake.org/download/) (Version 2.8.11 or better)
+- CMake: Continuous integration tools use [CMake 3.12.2](https://github.com/Kitware/CMake/releases/tag/v3.12.2) for Windows
   - Use the installer option to add CMake to the system PATH
 - Git Client Support
   - [Git for Windows](http://git-scm.com/download/win) is a popular solution
@@ -401,6 +401,8 @@ versions. Currently, the oldest supported version is Ubuntu 14.04, meaning
 that the minimum supported compiler versions are GCC 4.8.2 and Clang 3.4,
 although earlier versions may work. It should be straightforward to adapt this
 repository to other Linux distributions.
+
+The continuous integration tools use [CMake 3.12.4](https://github.com/Kitware/CMake/releases/tag/v3.12.4) for Linux
 
 #### Required Package List
 
@@ -713,6 +715,8 @@ validation tests:
 ### MacOS Build Requirements
 
 Tested on OSX version 10.12.6
+
+The continuous integration tools use [CMake 3.11.3](https://github.com/Kitware/CMake/releases/tag/v3.11.3) for MacOS
 
 Setup Homebrew and components
 

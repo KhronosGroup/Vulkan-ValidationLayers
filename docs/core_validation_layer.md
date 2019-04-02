@@ -1,5 +1,17 @@
+<!-- markdownlint-disable MD041 -->
+<!-- Copyright 2015-2019 LunarG, Inc. -->
+
+[![Khronos Vulkan][1]][2]
+
+[1]: https://vulkan.lunarg.com/img/Vulkan_100px_Dec16.png "https://www.khronos.org/vulkan/"
+[2]: https://www.khronos.org/vulkan/
+
 # VK\_LAYER\_LUNARG\_core\_validation
 
+[![Creative Commons][3]][4]
+
+[3]: https://i.creativecommons.org/l/by-nd/4.0/88x31.png "Creative Commons License"
+[4]: https://creativecommons.org/licenses/by-nd/4.0/
 The `VK_LAYER_LUNARG_core_validation` layer validates the status of descriptor sets, command buffers, shader modules, pipeline states, renderpass usage, synchronization, dynamic states and is the workhorse layer for many other types of valid usage.
 
 `VK_LAYER_LUNARG_core_validation` validates that:

@@ -36,33 +36,35 @@ Note that some layers are code-generated and will therefore exist in the directo
 
 `include/vkLayer.h` - header file for layer code.
 
-### Layer Details
-For complete details of current validation layers, including all of the validation checks that they perform, please refer to the document `layers/vk_validation_layer_details.md`. Below is a brief overview of each layer.
-
 ### Standard Validation
-This is a meta-layer managed by the loader. (name = `VK_LAYER_LUNARG_standard_validation`) - specifying this layer name will cause the loader to load the all of the standard validation layers (listed below) in the following optimal order:  `VK_LAYER_GOOGLE_threading`, `VK_LAYER_LUNARG_parameter_validation`, `VK_LAYER_LUNARG_object_tracker`, `VK_LAYER_LUNARG_core_validation`, and `VK_LAYER_GOOGLE_unique_objects`. Other layers can be specified and the loader will remove duplicates.
+NOTE: This meta-layer is being deprecated -- users should load the Khronos validation layer (name = `VK_LAYER_KHRONOS_validation`) in its place.
+This is a meta-layer managed by the loader. (name = `VK_LAYER_LUNARG_standard_validation`) - specifying this layer name will cause the loader to load the standard validation layer:  `VK_LAYER_KHRONOS_validation`. Other layers can be specified and the loader will remove duplicates.
+
+### The Khronos Validation Layer
+
+This layer emcompasses all of the functionality that used to be contained in the following layers: VK_LAYER_GOOGLE_threading, VK_LAYER_LUNARG_parameter_validation, VK_LAYER_LUNARG_object_tracker, VK_LAYER_LUNARG_core_validation, and VK_LAYER_GOOGLE_unique_objects. Each of these functional areas can still disabled individually, and are described below.
 
 ### Object Validation and Statistics
-(build dir)/layers/object_tracker.cpp (name=`VK_LAYER_LUNARG_object_tracker`) - Track object creation, use, and destruction. As objects are created they are stored in a map. As objects are used the layer verifies they exist in the map, flagging errors for unknown objects. As objects are destroyed they are removed from the map. At `vkDestroyDevice()` and `vkDestroyInstance()` times, if any objects have not been destroyed they are reported as leaked objects. If a Dbg callback function is registered this layer will use callback function(s) for reporting, otherwise it will use stdout.
+The object lifetime tracking will track object creation, use, and destruction. As objects are created their handles are stored in a data structure. As objects are used the layer verifies they exist in the data structure and output errors for unknown objects. As objects are destroyed they are removed from the data structure. At `vkDestroyDevice()` and `vkDestroyInstance()` times, if any objects have not been destroyed they are reported as leaked objects. If a debug callback function is registered this layer will use callback function(s) for reporting, otherwise it will use stdout.
 
 ### Validate API State and Shaders
-layers/core\_validation.cpp (name=`VK_LAYER_LUNARG_core_validation`) - The core\_validation layer does the bulk of the API validation that requires storing state. Some of the state it tracks includes the Descriptor Set, Pipeline State, Shaders, and dynamic state, and memory objects and bindings. It performs some point validation as states are created and used, and further validation Draw call and QueueSubmit time. Of primary interest is making sure that the resources bound to Descriptor Sets correctly align with the layout specified for the Set. Also, all of the image and buffer layouts are validated to make sure explicit layout transitions are properly managed. Related to memory, core\_validation includes tracking object bindings, memory hazards, and memory object lifetimes. It also validates several other hazard-related issues related to command buffers, fences, and memory mapping. Additionally core\_validation include shader validation (formerly separate shader\_checker layer) that inspects the SPIR-V shader images and fixed function pipeline stages at PSO creation time. It flags errors when inconsistencies are found across interfaces between shader stages. The exact behavior of the checks depends on the pair of pipeline stages involved. If a Dbg callback function is registered, this layer will use callback function(s) for reporting, otherwise uses stdout.  This layer also validates correct usage of image- and buffer-related APIs, including image and buffer parameters, formats, and correct use.
+The set of core checks does the bulk of the API validation that requires storing state. Some of the state it tracks includes the Descriptor Set, Pipeline State, Shaders, and dynamic state, and memory objects and bindings. It performs some point validation as states are created and used, and further validation Draw call and QueueSubmit time. Of primary interest is making sure that the resources bound to Descriptor Sets correctly align with the layout specified for the Set. Also, all of the image and buffer layouts are validated to make sure explicit layout transitions are properly managed. Related to memory, core\_validation includes tracking object bindings, memory hazards, and memory object lifetimes. It also validates several other hazard-related issues related to command buffers, fences, and memory mapping. Additionally core\_validation include shader validation (formerly separate shader\_checker layer) that inspects the SPIR-V shader images and fixed function pipeline stages at PSO creation time. It flags errors when inconsistencies are found across interfaces between shader stages. The exact behavior of the checks depends on the pair of pipeline stages involved. If a debug callback function is registered, this layer will use callback function(s) for reporting, otherwise uses stdout.  This layer also validates correct usage of image- and buffer-related APIs, including image and buffer parameters, formats, and correct use.
 
-### Check parameters
-(build_dir)/layers/parameter_validation.cpp (name=`VK_LAYER_LUNARG_parameter_validation`) - Check the input parameters to API calls for validity. If a Dbg callback function is registered, this layer will use callback function(s) for reporting, otherwise uses stdout.
+### Stateless parameter checking
+The stateless validation checks the input parameters to API calls for validity. If a debug callback function is registered, this layer will use callback function(s) for reporting otherwise uses stdout.
 
-### Check threading
-(build_dir)/layers/threading.cpp (name=`VK_LAYER_GOOGLE_threading`) - Check multithreading of API calls for validity. Currently this checks that only one thread at a time uses an object in free-threaded API calls. If a Dbg callback function is registered, this layer will use callback function(s) for reporting, otherwise uses stdout.
+### Thread Safety Checking
+The thread-safety validation will check the multithreading of API calls for validity. Currently this checks that only one thread at a time uses an object in free-threaded API calls. If a debug callback function is registered, this layer will use callback function(s) for reporting, otherwise uses stdout.
 
-### Unique Objects
-(build dir)/layers/layer_chassis_dispatch.cpp (name=`VK_LAYER_GOOGLE_unique_objects`) - The Vulkan specification allows objects that have non-unique handles. This makes tracking object lifetimes difficult in that it is unclear which object is being referenced on deletion. The unique_objects layer was created to address this problem. If loaded in the correct position (last, which is closest to the display driver) it will alias all objects with a unique object representation, allowing proper object lifetime tracking. This layer does no validation on its own and may not be required for the proper operation of all layers or all platforms. One sign that it is needed is the appearance of errors emitted from the object_tracker layer indicating the use of previously destroyed objects.
+### Handle Wrapping
+The khronos layer framework also supports Vulkan handle wrapping.  The Vulkan specification allows objects to have non-unique handles. This makes tracking object lifetimes difficult in that it is unclear which object is being referenced on deletion. When this functionalty is enabled (as it is by default) it will alias all objects with a unique object representation, allowing proper object lifetime tracking. This functionality may interfere with the development of proprietary Vulkan extension development, and is not strictly required for the proper operation of validation. One sign that it is needed is the appearance of errors emitted from the object_tracker layer indicating the use of previously destroyed objects.
 
 ## Using Layers
 
 1. Build VK loader using normal steps (cmake and make)
-2. Place `libVkLayer_<name>.so` in the same directory as your VK test or app:
+2. Place `libVkLayer_khronos_validation.so` in the same directory as your VK test or app:
 
-    `cp build/layer/libVkLayer_threading.so  build/tests`
+    `cp build/layer/libVkLayer_khronos_validation.so  build/tests`
 
     This is required for the Loader to be able to scan and enumerate your library.
     Alternatively, use the `VK_LAYER_PATH` environment variable to specify where the layer libraries reside.
@@ -73,7 +75,7 @@ layers/core\_validation.cpp (name=`VK_LAYER_LUNARG_core_validation`) - The core\
 
 4. Specify which layers to activate using environment variables.
 
-    `export VK\_INSTANCE\_LAYERS=VK\_LAYER\_LUNARG\_parameter\_validation:VK\_LAYER\_LUNARG\_core\_validation`
+    `export VK\_INSTANCE\_LAYERS=VK\_LAYER\_KHRONOS\_validation`
     `cd build/tests; ./vkinfo`
 
 

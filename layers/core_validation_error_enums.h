@@ -89,7 +89,6 @@ static const char DECORATE_UNUSED *kVUID_Core_DrawState_NumSamplesMismatch = "UN
 static const char DECORATE_UNUSED *kVUID_Core_DrawState_OutOfMemory = "UNASSIGNED-CoreValidation-DrawState-OutOfMemory";
 static const char DECORATE_UNUSED *kVUID_Core_DrawState_PipelineLayoutsIncompatible = "UNASSIGNED-CoreValidation-DrawState-PipelineLayoutsIncompatible";
 static const char DECORATE_UNUSED *kVUID_Core_DrawState_QueueForwardProgress = "UNASSIGNED-CoreValidation-DrawState-QueueForwardProgress";
-static const char DECORATE_UNUSED *kVUID_Core_DrawState_SwapchainAlreadyExists = "UNASSIGNED-CoreValidation-DrawState-SwapchainAlreadyExists";
 static const char DECORATE_UNUSED *kVUID_Core_DrawState_SwapchainCreateBeforeQuery = "UNASSIGNED-CoreValidation-DrawState-SwapchainCreateBeforeQuery";
 static const char DECORATE_UNUSED *kVUID_Core_DrawState_SwapchainImageNotAcquired = "UNASSIGNED-CoreValidation-DrawState-SwapchainImageNotAcquired";
 static const char DECORATE_UNUSED *kVUID_Core_DrawState_SwapchainImagesNotFound = "UNASSIGNED-CoreValidation-DrawState-SwapchainImagesNotFound";
@@ -98,7 +97,6 @@ static const char DECORATE_UNUSED *kVUID_Core_DrawState_SwapchainNoSyncForAcquir
 static const char DECORATE_UNUSED *kVUID_Core_DrawState_SwapchainReplaced = "UNASSIGNED-CoreValidation-DrawState-SwapchainReplaced";
 static const char DECORATE_UNUSED *kVUID_Core_DrawState_SwapchainTooManyImages = "UNASSIGNED-CoreValidation-DrawState-SwapchainTooManyImages";
 static const char DECORATE_UNUSED *kVUID_Core_DrawState_SwapchainUnsupportedQueue = "UNASSIGNED-CoreValidation-DrawState-SwapchainUnsupportedQueue";
-static const char DECORATE_UNUSED *kVUID_Core_DrawState_SwapchainWrongSurface = "UNASSIGNED-CoreValidation-DrawState-SwapchainWrongSurface";
 static const char DECORATE_UNUSED *kVUID_Core_DrawState_ViewportScissorMismatch = "UNASSIGNED-CoreValidation-DrawState-ViewportScissorMismatch";
 static const char DECORATE_UNUSED *kVUID_Core_DrawState_VtxIndexOutOfBounds = "UNASSIGNED-CoreValidation-DrawState-VtxIndexOutOfBounds";
 static const char DECORATE_UNUSED *kVUID_Core_DrawState_InvalidVtxAttributeAlignment = "UNASSIGNED-CoreValidation-DrawState-InvalidVtxAttributeAlignment";
@@ -183,6 +181,10 @@ static const char DECORATE_UNUSED *kVUID_Core_Shader_PushConstantNotAccessibleFr
 static const char DECORATE_UNUSED *kVUID_Core_Shader_PushConstantOutOfRange = "UNASSIGNED-CoreValidation-Shader-PushConstantOutOfRange";
 static const char DECORATE_UNUSED *kVUID_Core_Shader_MissingPointSizeBuiltIn = "UNASSIGNED-CoreValidation-Shader-PointSizeMissing";
 static const char DECORATE_UNUSED *kVUID_Core_Shader_PointSizeBuiltInOverSpecified = "UNASSIGNED-CoreValidation-Shader-PointSizeOverSpecified";
+static const char DECORATE_UNUSED *kVUID_Core_Shader_NoAlphaAtLocation0WithAlphaToCoverage = "UNASSIGNED-CoreValidation-Shader-NoAlphaAtLocation0WithAlphaToCoverage";
+static const char DECORATE_UNUSED *kVUID_Core_Shader_CooperativeMatrixSupportedStages = "UNASSIGNED-CoreValidation-Shader-CooperativeMatrixSupportedStages";
+static const char DECORATE_UNUSED *kVUID_Core_Shader_CooperativeMatrixType = "UNASSIGNED-CoreValidation-Shader-CooperativeMatrixType";
+static const char DECORATE_UNUSED *kVUID_Core_Shader_CooperativeMatrixMulAdd = "UNASSIGNED-CoreValidation-Shader-CooperativeMatrixMulAdd";
 // Previously defined but unused - uncomment as needed
 //static const char DECORATE_UNUSED *kVUID_Core_Shader_BadCapability = "UNASSIGNED-CoreValidation-Shader-BadCapability";
 //static const char DECORATE_UNUSED *kVUID_Core_Shader_BadSpecialization = "UNASSIGNED-CoreValidation-Shader-BadSpecialization";

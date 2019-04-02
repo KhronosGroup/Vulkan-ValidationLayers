@@ -74,6 +74,7 @@ class VkTestFramework : public ::testing::Test {
     static bool m_strip_spv;
     static bool m_do_everything_spv;
     static bool m_devsim_layer;
+    static bool m_khronos_layer_disable;
 
     char **ReadFileData(const char *fileName);
     void FreeFileData(char **data);

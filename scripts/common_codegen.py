@@ -1,8 +1,8 @@
 #!/usr/bin/python3 -i
 #
-# Copyright (c) 2015-2017 The Khronos Group Inc.
-# Copyright (c) 2015-2017 Valve Corporation
-# Copyright (c) 2015-2017 LunarG, Inc.
+# Copyright (c) 2015-2017, 2019 The Khronos Group Inc.
+# Copyright (c) 2015-2017, 2019 Valve Corporation
+# Copyright (c) 2015-2017, 2019 LunarG, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -26,10 +26,10 @@ from collections import namedtuple
 # Copyright text prefixing all headers (list of strings).
 prefixStrings = [
     '/*',
-    '** Copyright (c) 2015-2017 The Khronos Group Inc.',
-    '** Copyright (c) 2015-2017 Valve Corporation',
-    '** Copyright (c) 2015-2017 LunarG, Inc.',
-    '** Copyright (c) 2015-2017 Google Inc.',
+    '** Copyright (c) 2015-2017, 2019 The Khronos Group Inc.',
+    '** Copyright (c) 2015-2017, 2019 Valve Corporation',
+    '** Copyright (c) 2015-2017, 2019 LunarG, Inc.',
+    '** Copyright (c) 2015-2017, 2019 Google Inc.',
     '**',
     '** Licensed under the Apache License, Version 2.0 (the "License");',
     '** you may not use this file except in compliance with the License.',
@@ -52,6 +52,7 @@ platform_dict = {
     'fuchsia' : 'VK_USE_PLATFORM_FUCHSIA',
     'ios' : 'VK_USE_PLATFORM_IOS_MVK',
     'macos' : 'VK_USE_PLATFORM_MACOS_MVK',
+    'metal' : 'VK_USE_PLATFORM_METAL_EXT',
     'vi' : 'VK_USE_PLATFORM_VI_NN',
     'wayland' : 'VK_USE_PLATFORM_WAYLAND_KHR',
     'win32' : 'VK_USE_PLATFORM_WIN32_KHR',

@@ -89,6 +89,9 @@ class VkRenderFramework : public VkTestFramework {
     VkFramebuffer framebuffer() { return m_framebuffer; }
     void InitViewport(float width, float height);
     void InitViewport();
+    bool InitSwapchain(float width, float height);
+    bool InitSwapchain();
+    void DestroySwapchain();
     void InitRenderTarget();
     void InitRenderTarget(uint32_t targets);
     void InitRenderTarget(VkImageView *dsBinding);
@@ -111,6 +114,7 @@ class VkRenderFramework : public VkTestFramework {
     bool DeviceExtensionSupported(VkPhysicalDevice dev, const char *layer, const char *name, uint32_t specVersion = 0);
     bool DeviceExtensionEnabled(const char *name);
     bool DeviceIsMockICD();
+    bool DeviceSimulation();
     bool DeviceCanDraw();
 
    protected:
@@ -124,6 +128,8 @@ class VkRenderFramework : public VkTestFramework {
     VkRenderPass m_renderPass;
     VkRenderPassCreateInfo renderPass_info_ = {};
     VkFramebuffer m_framebuffer;
+    VkSurfaceKHR m_surface;
+    VkSwapchainKHR m_swapchain;
     std::vector<VkViewport> m_viewports;
     std::vector<VkRect2D> m_scissors;
     float m_lineWidth;

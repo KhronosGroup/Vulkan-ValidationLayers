@@ -1157,7 +1157,25 @@ VK_LAYER_EXPORT VkFormatCompatibilityClass FormatCompatibilityClass(VkFormat for
 
 // Return size, in bytes, of one element of the specified format
 // For uncompressed this is one texel, for compressed it is one block
-VK_LAYER_EXPORT uint32_t FormatElementSize(VkFormat format) {
+VK_LAYER_EXPORT uint32_t FormatElementSize(VkFormat format, VkImageAspectFlags aspectMask) {
+    // Handle special buffer packing rules for specific depth/stencil formats
+    if (aspectMask & VK_IMAGE_ASPECT_STENCIL_BIT) {
+        format = VK_FORMAT_S8_UINT;
+    } else if (aspectMask & VK_IMAGE_ASPECT_DEPTH_BIT) {
+        switch (format) {
+            case VK_FORMAT_D16_UNORM_S8_UINT:
+                format = VK_FORMAT_D16_UNORM;
+                break;
+            case VK_FORMAT_D32_SFLOAT_S8_UINT:
+                format = VK_FORMAT_D32_SFLOAT;
+                break;
+            default:
+                break;
+        }
+    } else if (FormatIsMultiplane(format)) {
+        format = FindMultiplaneCompatibleFormat(format, aspectMask);
+    }
+
     auto item = vk_format_table.find(format);
     if (item != vk_format_table.end()) {
         return item->second.size;
@@ -1337,4 +1355,8 @@ VK_LAYER_EXPORT bool FormatSizesAreEqual(VkFormat srcFormat, VkFormat dstFormat,
         dstSize = FormatElementSize(dstFormat);
         return (dstSize == srcSize);
     }
+}
+
+VK_LAYER_EXPORT bool FormatRequiresYcbcrConversion(VkFormat format) {
+    return format >= VK_FORMAT_G8B8G8R8_422_UNORM && format <= VK_FORMAT_G16_B16_R16_3PLANE_444_UNORM;
 }

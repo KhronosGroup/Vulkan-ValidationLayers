@@ -25,6 +25,7 @@
 
 #include "chassis.h"
 #include "stateless_validation.h"
+#include "layer_chassis_dispatch.h"
 
 static const int MaxParamCheckerStringLength = 256;
 
@@ -126,15 +127,14 @@ void StatelessValidation::PostCallRecordCreateDevice(VkPhysicalDevice physicalDe
 
     VkPhysicalDeviceProperties device_properties = {};
     // Need to get instance and do a getlayerdata call...
-    ValidationObject *instance_object = GetLayerDataPtr(get_dispatch_key(physicalDevice), layer_data_map);
-    instance_object->instance_dispatch_table.GetPhysicalDeviceProperties(physicalDevice, &device_properties);
+    DispatchGetPhysicalDeviceProperties(physicalDevice, &device_properties);
     memcpy(&stateless_validation->device_limits, &device_properties.limits, sizeof(VkPhysicalDeviceLimits));
 
     if (device_extensions.vk_nv_shading_rate_image) {
         // Get the needed shading rate image limits
         auto shading_rate_image_props = lvl_init_struct<VkPhysicalDeviceShadingRateImagePropertiesNV>();
         auto prop2 = lvl_init_struct<VkPhysicalDeviceProperties2KHR>(&shading_rate_image_props);
-        instance_object->instance_dispatch_table.GetPhysicalDeviceProperties2KHR(physicalDevice, &prop2);
+        DispatchGetPhysicalDeviceProperties2KHR(physicalDevice, &prop2);
         phys_dev_ext_props.shading_rate_image_props = shading_rate_image_props;
     }
 
@@ -142,7 +142,7 @@ void StatelessValidation::PostCallRecordCreateDevice(VkPhysicalDevice physicalDe
         // Get the needed mesh shader limits
         auto mesh_shader_props = lvl_init_struct<VkPhysicalDeviceMeshShaderPropertiesNV>();
         auto prop2 = lvl_init_struct<VkPhysicalDeviceProperties2KHR>(&mesh_shader_props);
-        instance_object->instance_dispatch_table.GetPhysicalDeviceProperties2KHR(physicalDevice, &prop2);
+        DispatchGetPhysicalDeviceProperties2KHR(physicalDevice, &prop2);
         phys_dev_ext_props.mesh_shader_props = mesh_shader_props;
     }
 
@@ -609,7 +609,8 @@ bool StatelessValidation::manual_PreCallValidateCreateImageView(VkDevice device,
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateViewport(const VkViewport &viewport, const char *fn_name, const char *param_name,
+bool StatelessValidation::manual_PreCallValidateViewport(const VkViewport &viewport, const char *fn_name,
+                                                         const ParameterName &parameter_name,
                                                          VkDebugReportObjectTypeEXT object_type, uint64_t object = 0) {
     bool skip = false;
 
@@ -649,17 +650,17 @@ bool StatelessValidation::manual_PreCallValidateViewport(const VkViewport &viewp
     if (!(viewport.width > 0.0f)) {
         width_healthy = false;
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, object_type, object, "VUID-VkViewport-width-01770",
-                        "%s: %s.width (=%f) is not greater than 0.0.", fn_name, param_name, viewport.width);
+                        "%s: %s.width (=%f) is not greater than 0.0.", fn_name, parameter_name.get_name().c_str(), viewport.width);
     } else if (!(f_lte_u32_exact(viewport.width, max_w) || f_lte_u32_direct(viewport.width, max_w))) {
         width_healthy = false;
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, object_type, object, "VUID-VkViewport-width-01771",
                         "%s: %s.width (=%f) exceeds VkPhysicalDeviceLimits::maxViewportDimensions[0] (=%" PRIu32 ").", fn_name,
-                        param_name, viewport.width, max_w);
+                        parameter_name.get_name().c_str(), viewport.width, max_w);
     } else if (!f_lte_u32_exact(viewport.width, max_w) && f_lte_u32_direct(viewport.width, max_w)) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, object_type, object, kVUID_PVError_NONE,
                         "%s: %s.width (=%f) technically exceeds VkPhysicalDeviceLimits::maxViewportDimensions[0] (=%" PRIu32
                         "), but it is within the static_cast<float>(maxViewportDimensions[0]) limit.",
-                        fn_name, param_name, viewport.width, max_w);
+                        fn_name, parameter_name.get_name().c_str(), viewport.width, max_w);
     }
 
     // height
@@ -671,14 +672,14 @@ bool StatelessValidation::manual_PreCallValidateViewport(const VkViewport &viewp
     if (!negative_height_enabled && !(viewport.height > 0.0f)) {
         height_healthy = false;
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, object_type, object, "VUID-VkViewport-height-01772",
-                        "%s: %s.height (=%f) is not greater 0.0.", fn_name, param_name, viewport.height);
+                        "%s: %s.height (=%f) is not greater 0.0.", fn_name, parameter_name.get_name().c_str(), viewport.height);
     } else if (!(f_lte_u32_exact(fabsf(viewport.height), max_h) || f_lte_u32_direct(fabsf(viewport.height), max_h))) {
         height_healthy = false;
 
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, object_type, object, "VUID-VkViewport-height-01773",
                         "%s: Absolute value of %s.height (=%f) exceeds VkPhysicalDeviceLimits::maxViewportDimensions[1] (=%" PRIu32
                         ").",
-                        fn_name, param_name, viewport.height, max_h);
+                        fn_name, parameter_name.get_name().c_str(), viewport.height, max_h);
     } else if (!f_lte_u32_exact(fabsf(viewport.height), max_h) && f_lte_u32_direct(fabsf(viewport.height), max_h)) {
         height_healthy = false;
 
@@ -686,7 +687,7 @@ bool StatelessValidation::manual_PreCallValidateViewport(const VkViewport &viewp
             report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, object_type, object, kVUID_PVError_NONE,
             "%s: Absolute value of %s.height (=%f) technically exceeds VkPhysicalDeviceLimits::maxViewportDimensions[1] (=%" PRIu32
             "), but it is within the static_cast<float>(maxViewportDimensions[1]) limit.",
-            fn_name, param_name, viewport.height, max_h);
+            fn_name, parameter_name.get_name().c_str(), viewport.height, max_h);
     }
 
     // x
@@ -694,18 +695,19 @@ bool StatelessValidation::manual_PreCallValidateViewport(const VkViewport &viewp
     if (!(viewport.x >= device_limits.viewportBoundsRange[0])) {
         x_healthy = false;
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, object_type, object, "VUID-VkViewport-x-01774",
-                        "%s: %s.x (=%f) is less than VkPhysicalDeviceLimits::viewportBoundsRange[0] (=%f).", fn_name, param_name,
-                        viewport.x, device_limits.viewportBoundsRange[0]);
+                        "%s: %s.x (=%f) is less than VkPhysicalDeviceLimits::viewportBoundsRange[0] (=%f).", fn_name,
+                        parameter_name.get_name().c_str(), viewport.x, device_limits.viewportBoundsRange[0]);
     }
 
     // x + width
     if (x_healthy && width_healthy) {
         const float right_bound = viewport.x + viewport.width;
         if (!(right_bound <= device_limits.viewportBoundsRange[1])) {
-            skip |= log_msg(
-                report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, object_type, object, "VUID-VkViewport-x-01232",
-                "%s: %s.x + %s.width (=%f + %f = %f) is greater than VkPhysicalDeviceLimits::viewportBoundsRange[1] (=%f).",
-                fn_name, param_name, param_name, viewport.x, viewport.width, right_bound, device_limits.viewportBoundsRange[1]);
+            skip |=
+                log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, object_type, object, "VUID-VkViewport-x-01232",
+                        "%s: %s.x + %s.width (=%f + %f = %f) is greater than VkPhysicalDeviceLimits::viewportBoundsRange[1] (=%f).",
+                        fn_name, parameter_name.get_name().c_str(), parameter_name.get_name().c_str(), viewport.x, viewport.width,
+                        right_bound, device_limits.viewportBoundsRange[1]);
         }
     }
 
@@ -714,13 +716,13 @@ bool StatelessValidation::manual_PreCallValidateViewport(const VkViewport &viewp
     if (!(viewport.y >= device_limits.viewportBoundsRange[0])) {
         y_healthy = false;
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, object_type, object, "VUID-VkViewport-y-01775",
-                        "%s: %s.y (=%f) is less than VkPhysicalDeviceLimits::viewportBoundsRange[0] (=%f).", fn_name, param_name,
-                        viewport.y, device_limits.viewportBoundsRange[0]);
+                        "%s: %s.y (=%f) is less than VkPhysicalDeviceLimits::viewportBoundsRange[0] (=%f).", fn_name,
+                        parameter_name.get_name().c_str(), viewport.y, device_limits.viewportBoundsRange[0]);
     } else if (negative_height_enabled && !(viewport.y <= device_limits.viewportBoundsRange[1])) {
         y_healthy = false;
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, object_type, object, "VUID-VkViewport-y-01776",
-                        "%s: %s.y (=%f) exceeds VkPhysicalDeviceLimits::viewportBoundsRange[1] (=%f).", fn_name, param_name,
-                        viewport.y, device_limits.viewportBoundsRange[1]);
+                        "%s: %s.y (=%f) exceeds VkPhysicalDeviceLimits::viewportBoundsRange[1] (=%f).", fn_name,
+                        parameter_name.get_name().c_str(), viewport.y, device_limits.viewportBoundsRange[1]);
     }
 
     // y + height
@@ -730,13 +732,14 @@ bool StatelessValidation::manual_PreCallValidateViewport(const VkViewport &viewp
         if (!(boundary <= device_limits.viewportBoundsRange[1])) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, object_type, object, "VUID-VkViewport-y-01233",
                             "%s: %s.y + %s.height (=%f + %f = %f) exceeds VkPhysicalDeviceLimits::viewportBoundsRange[1] (=%f).",
-                            fn_name, param_name, param_name, viewport.y, viewport.height, boundary,
-                            device_limits.viewportBoundsRange[1]);
+                            fn_name, parameter_name.get_name().c_str(), parameter_name.get_name().c_str(), viewport.y,
+                            viewport.height, boundary, device_limits.viewportBoundsRange[1]);
         } else if (negative_height_enabled && !(boundary >= device_limits.viewportBoundsRange[0])) {
-            skip |= log_msg(
-                report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, object_type, object, "VUID-VkViewport-y-01777",
-                "%s: %s.y + %s.height (=%f + %f = %f) is less than VkPhysicalDeviceLimits::viewportBoundsRange[0] (=%f).", fn_name,
-                param_name, param_name, viewport.y, viewport.height, boundary, device_limits.viewportBoundsRange[0]);
+            skip |=
+                log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, object_type, object, "VUID-VkViewport-y-01777",
+                        "%s: %s.y + %s.height (=%f + %f = %f) is less than VkPhysicalDeviceLimits::viewportBoundsRange[0] (=%f).",
+                        fn_name, parameter_name.get_name().c_str(), parameter_name.get_name().c_str(), viewport.y, viewport.height,
+                        boundary, device_limits.viewportBoundsRange[0]);
         }
     }
 
@@ -747,7 +750,7 @@ bool StatelessValidation::manual_PreCallValidateViewport(const VkViewport &viewp
 
                             "%s: VK_EXT_depth_range_unrestricted extension is not enabled and %s.minDepth (=%f) is not within the "
                             "[0.0, 1.0] range.",
-                            fn_name, param_name, viewport.minDepth);
+                            fn_name, parameter_name.get_name().c_str(), viewport.minDepth);
         }
 
         // maxDepth
@@ -756,7 +759,7 @@ bool StatelessValidation::manual_PreCallValidateViewport(const VkViewport &viewp
 
                             "%s: VK_EXT_depth_range_unrestricted extension is not enabled and %s.maxDepth (=%f) is not within the "
                             "[0.0, 1.0] range.",
-                            fn_name, param_name, viewport.maxDepth);
+                            fn_name, parameter_name.get_name().c_str(), viewport.maxDepth);
         }
     }
 
@@ -1034,11 +1037,13 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                         "pCreateInfos[%d].pTessellationState must not be NULL.",
                                         i, i);
                     } else {
+                        const VkStructureType allowed_type =
+                            VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_DOMAIN_ORIGIN_STATE_CREATE_INFO;
                         skip |= validate_struct_pnext(
                             "vkCreateGraphicsPipelines",
-                            ParameterName("pCreateInfos[%i].pTessellationState->pNext", ParameterName::IndexVector{i}), NULL,
-                            pCreateInfos[i].pTessellationState->pNext, 0, NULL, GeneratedVulkanHeaderVersion,
-                            "VUID-VkGraphicsPipelineCreateInfo-pNext-pNext");
+                            ParameterName("pCreateInfos[%i].pTessellationState->pNext", ParameterName::IndexVector{i}),
+                            "VkPipelineTessellationDomainOriginStateCreateInfo", pCreateInfos[i].pTessellationState->pNext, 1,
+                            &allowed_type, GeneratedVulkanHeaderVersion, "VUID-VkGraphicsPipelineCreateInfo-pNext-pNext");
 
                         skip |= validate_reserved_flags(
                             "vkCreateGraphicsPipelines",
@@ -1305,10 +1310,10 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                     if (!has_dynamic_viewport && viewport_state.pViewports) {
                         for (uint32_t viewport_i = 0; viewport_i < viewport_state.viewportCount; ++viewport_i) {
                             const auto &viewport = viewport_state.pViewports[viewport_i];  // will crash on invalid ptr
-                            const char fn_name[] = "vkCreateGraphicsPipelines";
-                            const std::string param_name = "pCreateInfos[" + std::to_string(i) + "].pViewportState->pViewports[" +
-                                                           std::to_string(viewport_i) + "]";
-                            skip |= manual_PreCallValidateViewport(viewport, fn_name, param_name.c_str(),
+                            const char *fn_name = "vkCreateGraphicsPipelines";
+                            skip |= manual_PreCallValidateViewport(viewport, fn_name,
+                                                                   ParameterName("pCreateInfos[%i].pViewportState->pViewports[%i]",
+                                                                                 ParameterName::IndexVector{i, viewport_i}),
                                                                    VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT);
                         }
                     }
@@ -2143,9 +2148,9 @@ bool StatelessValidation::manual_PreCallValidateCmdSetViewport(VkCommandBuffer c
     if (pViewports) {
         for (uint32_t viewport_i = 0; viewport_i < viewportCount; ++viewport_i) {
             const auto &viewport = pViewports[viewport_i];  // will crash on invalid ptr
-            const char fn_name[] = "vkCmdSetViewport";
-            const std::string param_name = "pViewports[" + std::to_string(viewport_i) + "]";
-            skip |= manual_PreCallValidateViewport(viewport, fn_name, param_name.c_str(),
+            const char *fn_name = "vkCmdSetViewport";
+            skip |= manual_PreCallValidateViewport(viewport, fn_name,
+                                                   ParameterName("pViewports[%i]", ParameterName::IndexVector{viewport_i}),
                                                    VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT, HandleToUint64(commandBuffer));
         }
     }
@@ -2514,17 +2519,6 @@ bool StatelessValidation::manual_PreCallValidateCreateWin32SurfaceKHR(VkInstance
     return skip;
 }
 #endif  // VK_USE_PLATFORM_WIN32_KHR
-
-bool StatelessValidation::manual_PreCallValidateDebugMarkerSetObjectNameEXT(VkDevice device,
-                                                                            const VkDebugMarkerObjectNameInfoEXT *pNameInfo) {
-    if (pNameInfo->pObjectName) {
-        report_data->debugObjectNameMap->insert(
-            std::make_pair<uint64_t, std::string>((uint64_t &&) pNameInfo->object, pNameInfo->pObjectName));
-    } else {
-        report_data->debugObjectNameMap->erase(pNameInfo->object);
-    }
-    return false;
-}
 
 bool StatelessValidation::manual_PreCallValidateCreateDescriptorPool(VkDevice device, const VkDescriptorPoolCreateInfo *pCreateInfo,
                                                                      const VkAllocationCallbacks *pAllocator,
