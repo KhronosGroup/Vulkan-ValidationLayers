@@ -2971,3 +2971,67 @@ bool CoreChecks::ValidateComputeWorkGroupSizes(const shader_module *shader) {
     }
     return skip;
 }
+
+bool CoreChecks::ValidateComputeWorkGroupInvocations(GLOBAL_CB_NODE *cb_state, uint32_t groupCountX, uint32_t groupCountY,
+                                                     uint32_t groupCountZ) {
+    auto const &state = cb_state->lastBound[VK_PIPELINE_BIND_POINT_COMPUTE];
+    PIPELINE_STATE *pPipe = state.pipeline_state;
+    if (!pPipe) return false;
+    auto pCreateInfo = pPipe->computePipelineCI.ptr();
+    if (!pCreateInfo) return false;
+
+    unordered_map<VkShaderModule, std::unique_ptr<shader_module>>::iterator it = shaderModuleMap.find(pCreateInfo->stage.module);
+    if (it != shaderModuleMap.end()) {
+        uint32_t local_size_x = 0;
+        uint32_t local_size_y = 0;
+        uint32_t local_size_z = 0;
+        if (FindLocalSize(&(*it->second), local_size_x, local_size_y, local_size_z)) {
+            uint32_t limit = phys_dev_props.limits.maxComputeWorkGroupInvocations;
+            uint64_t invocations = local_size_x * local_size_y;
+            // Prevent overflow.
+            bool overflow = false;
+            if (invocations > UINT32_MAX) {
+                overflow = true;
+            }
+            if (!overflow) {
+                invocations *= local_size_z;
+                if (invocations > UINT32_MAX) {
+                    overflow = true;
+                }
+            }
+            if (!overflow) {
+                invocations *= groupCountX;
+                if (invocations > UINT32_MAX) {
+                    overflow = true;
+                }
+            }
+            if (!overflow) {
+                invocations *= groupCountY;
+                if (invocations > UINT32_MAX) {
+                    overflow = true;
+                }
+            }
+            if (!overflow) {
+                invocations *= groupCountZ;
+                if (invocations > UINT32_MAX) {
+                    overflow = true;
+                }
+            }
+            if (overflow) {
+                return log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SHADER_MODULE_EXT,
+                               HandleToUint64(it->first), "UNASSIGNED-features-limits-maxComputeWorkGroupInvocations",
+                               "ShaderMdoule %s invocations (>%" PRIu32
+                               ") exceeds device limit maxComputeWorkGroupInvocations (%" PRIu32 ").",
+                               report_data->FormatHandle(it->first).c_str(), UINT32_MAX, limit);
+            }
+            if (invocations > limit) {
+                return log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SHADER_MODULE_EXT,
+                               HandleToUint64(it->first), "UNASSIGNED-features-limits-maxComputeWorkGroupInvocations",
+                               "ShaderMdoule %s invocations (%" PRIu64
+                               ") exceeds device limit maxComputeWorkGroupInvocations (%" PRIu32 ").",
+                               report_data->FormatHandle(it->first).c_str(), invocations, limit);
+            }
+        }
+    }
+    return false;
+}

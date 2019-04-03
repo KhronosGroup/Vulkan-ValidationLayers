@@ -190,9 +190,15 @@ void CoreChecks::PostCallRecordCmdDrawIndexedIndirect(VkCommandBuffer commandBuf
 }
 
 bool CoreChecks::PreCallValidateCmdDispatch(VkCommandBuffer commandBuffer, uint32_t x, uint32_t y, uint32_t z) {
-    return ValidateCmdDrawType(commandBuffer, false, VK_PIPELINE_BIND_POINT_COMPUTE, CMD_DISPATCH, "vkCmdDispatch()",
-                               VK_QUEUE_COMPUTE_BIT, "VUID-vkCmdDispatch-commandBuffer-cmdpool", "VUID-vkCmdDispatch-renderpass",
-                               "VUID-vkCmdDispatch-None-00391", kVUIDUndefined);
+    bool skip = false;
+    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
+    if (cb_state) {
+        skip |= ValidateComputeWorkGroupInvocations(cb_state, x, y, z);
+    }
+    skip |= ValidateCmdDrawType(commandBuffer, false, VK_PIPELINE_BIND_POINT_COMPUTE, CMD_DISPATCH, "vkCmdDispatch()",
+                                VK_QUEUE_COMPUTE_BIT, "VUID-vkCmdDispatch-commandBuffer-cmdpool", "VUID-vkCmdDispatch-renderpass",
+                                "VUID-vkCmdDispatch-None-00391", kVUIDUndefined);
+    return skip;
 }
 
 void CoreChecks::PreCallRecordCmdDispatch(VkCommandBuffer commandBuffer, uint32_t x, uint32_t y, uint32_t z) {
