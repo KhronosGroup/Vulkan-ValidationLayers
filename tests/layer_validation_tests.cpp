@@ -12176,17 +12176,34 @@ TEST_F(VkLayerTest, CmdDispatchExceedLimits) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    uint32_t x_limit = m_device->props.limits.maxComputeWorkGroupCount[0];
-    uint32_t y_limit = m_device->props.limits.maxComputeWorkGroupCount[1];
-    uint32_t z_limit = m_device->props.limits.maxComputeWorkGroupCount[2];
-    if (std::max({x_limit, y_limit, z_limit}) == UINT32_MAX) {
+    uint32_t x_count_limit = m_device->props.limits.maxComputeWorkGroupCount[0];
+    uint32_t y_count_limit = m_device->props.limits.maxComputeWorkGroupCount[1];
+    uint32_t z_count_limit = m_device->props.limits.maxComputeWorkGroupCount[2];
+    if (std::max({x_count_limit, y_count_limit, z_count_limit}) == UINT32_MAX) {
         printf("%s device maxComputeWorkGroupCount limit reports UINT32_MAX, test not possible, skipping.\n", kSkipPrefix);
         return;
     }
 
-    // Create a minimal compute pipeline
-    std::string cs_text = "#version 450\nvoid main() {}\n";  // minimal no-op shader
-    VkShaderObj cs_obj(m_device, cs_text.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, this);
+    uint32_t x_size_limit = m_device->props.limits.maxComputeWorkGroupSize[0];
+    uint32_t y_size_limit = m_device->props.limits.maxComputeWorkGroupSize[1];
+    uint32_t z_size_limit = m_device->props.limits.maxComputeWorkGroupSize[2];
+
+    std::string spv_source = R"(
+        OpCapability Shader
+        OpMemoryModel Logical GLSL450
+        OpEntryPoint GLCompute %main "main"
+        OpExecutionMode %main LocalSize )";
+    spv_source.append(std::to_string(x_size_limit + 1) + " " + std::to_string(y_size_limit + 1) + " " +
+                      std::to_string(z_size_limit + 1));
+    spv_source.append(R"(
+        %void = OpTypeVoid
+           %3 = OpTypeFunction %void
+        %main = OpFunction %void None %3
+           %5 = OpLabel
+                OpReturn
+                OpFunctionEnd)");
+
+    VkShaderObj cs_obj_asm(m_device, spv_source, VK_SHADER_STAGE_COMPUTE_BIT, this);
 
     VkPipelineLayoutCreateInfo info = {};
     info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
@@ -12201,31 +12218,55 @@ TEST_F(VkLayerTest, CmdDispatchExceedLimits) {
     pipeline_info.layout = pipe_layout;
     pipeline_info.basePipelineHandle = VK_NULL_HANDLE;
     pipeline_info.basePipelineIndex = -1;
-    pipeline_info.stage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    pipeline_info.stage.pNext = nullptr;
-    pipeline_info.stage.flags = 0;
-    pipeline_info.stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;
-    pipeline_info.stage.module = cs_obj.handle();
-    pipeline_info.stage.pName = "main";
-    pipeline_info.stage.pSpecializationInfo = nullptr;
+    pipeline_info.stage = cs_obj_asm.GetStageCreateInfo();
     VkPipeline cs_pipeline;
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "exceeds device limit maxComputeWorkGroupSize[0]");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "exceeds device limit maxComputeWorkGroupSize[1]");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "exceeds device limit maxComputeWorkGroupSize[2]");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "features-limits-maxComputeWorkGroupInvocations");
+    vkCreateComputePipelines(device(), VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &cs_pipeline);
+    m_errorMonitor->VerifyFound();
+
+    // Create a minimal compute pipeline
+    x_size_limit = (x_size_limit > 1024) ? 1024 : x_size_limit;
+    y_size_limit = (y_size_limit > 1024) ? 1024 : y_size_limit;
+    z_size_limit = (z_size_limit > 64) ? 64 : z_size_limit;
+
+    uint32_t invocations_limit = m_device->props.limits.maxComputeWorkGroupInvocations;
+    x_size_limit = (x_size_limit > invocations_limit) ? invocations_limit : x_size_limit;
+    invocations_limit /= x_size_limit;
+    y_size_limit = (y_size_limit > invocations_limit) ? invocations_limit : y_size_limit;
+    invocations_limit /= y_size_limit;
+    z_size_limit = (z_size_limit > invocations_limit) ? invocations_limit : z_size_limit;
+
+    char cs_text[128] = "";
+    sprintf(cs_text, "#version 450\nlayout(local_size_x = %d, local_size_y = %d, local_size_z = %d) in;\nvoid main() {}\n",
+            x_size_limit, y_size_limit, z_size_limit);
+
+    VkShaderObj cs_obj(m_device, cs_text, VK_SHADER_STAGE_COMPUTE_BIT, this);
+    pipeline_info.stage = cs_obj.GetStageCreateInfo();
     vkCreateComputePipelines(device(), VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &cs_pipeline);
 
     // Bind pipeline to command buffer
     m_commandBuffer->begin();
     vkCmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipeline);
 
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "features-limits-maxComputeWorkGroupInvocations");
+    vkCmdDispatch(m_commandBuffer->handle(), x_count_limit, y_count_limit, z_count_limit);
+    m_errorMonitor->VerifyFound();
+
     // Dispatch counts that exceed device limits
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDispatch-groupCountX-00386");
-    vkCmdDispatch(m_commandBuffer->handle(), x_limit + 1, y_limit, z_limit);
+    vkCmdDispatch(m_commandBuffer->handle(), x_count_limit + 1, y_count_limit, z_count_limit);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDispatch-groupCountY-00387");
-    vkCmdDispatch(m_commandBuffer->handle(), x_limit, y_limit + 1, z_limit);
+    vkCmdDispatch(m_commandBuffer->handle(), x_count_limit, y_count_limit + 1, z_count_limit);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDispatch-groupCountZ-00388");
-    vkCmdDispatch(m_commandBuffer->handle(), x_limit, y_limit, z_limit + 1);
+    vkCmdDispatch(m_commandBuffer->handle(), x_count_limit, y_count_limit, z_count_limit + 1);
     m_errorMonitor->VerifyFound();
 
     if (khx_dg_ext_available) {
@@ -12234,35 +12275,35 @@ TEST_F(VkLayerTest, CmdDispatchExceedLimits) {
 
         // Base equals or exceeds limit
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDispatchBase-baseGroupX-00421");
-        fp_vkCmdDispatchBaseKHR(m_commandBuffer->handle(), x_limit, y_limit - 1, z_limit - 1, 0, 0, 0);
+        fp_vkCmdDispatchBaseKHR(m_commandBuffer->handle(), x_count_limit, y_count_limit - 1, z_count_limit - 1, 0, 0, 0);
         m_errorMonitor->VerifyFound();
 
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDispatchBase-baseGroupX-00422");
-        fp_vkCmdDispatchBaseKHR(m_commandBuffer->handle(), x_limit - 1, y_limit, z_limit - 1, 0, 0, 0);
+        fp_vkCmdDispatchBaseKHR(m_commandBuffer->handle(), x_count_limit - 1, y_count_limit, z_count_limit - 1, 0, 0, 0);
         m_errorMonitor->VerifyFound();
 
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDispatchBase-baseGroupZ-00423");
-        fp_vkCmdDispatchBaseKHR(m_commandBuffer->handle(), x_limit - 1, y_limit - 1, z_limit, 0, 0, 0);
+        fp_vkCmdDispatchBaseKHR(m_commandBuffer->handle(), x_count_limit - 1, y_count_limit - 1, z_count_limit, 0, 0, 0);
         m_errorMonitor->VerifyFound();
 
         // (Base + count) exceeds limit
-        uint32_t x_base = x_limit / 2;
-        uint32_t y_base = y_limit / 2;
-        uint32_t z_base = z_limit / 2;
-        x_limit -= x_base;
-        y_limit -= y_base;
-        z_limit -= z_base;
+        uint32_t x_base = x_count_limit / 2;
+        uint32_t y_base = y_count_limit / 2;
+        uint32_t z_base = z_count_limit / 2;
+        x_count_limit -= x_base;
+        y_count_limit -= y_base;
+        z_count_limit -= z_base;
 
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDispatchBase-groupCountX-00424");
-        fp_vkCmdDispatchBaseKHR(m_commandBuffer->handle(), x_base, y_base, z_base, x_limit + 1, y_limit, z_limit);
+        fp_vkCmdDispatchBaseKHR(m_commandBuffer->handle(), x_base, y_base, z_base, x_count_limit + 1, y_count_limit, z_count_limit);
         m_errorMonitor->VerifyFound();
 
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDispatchBase-groupCountY-00425");
-        fp_vkCmdDispatchBaseKHR(m_commandBuffer->handle(), x_base, y_base, z_base, x_limit, y_limit + 1, z_limit);
+        fp_vkCmdDispatchBaseKHR(m_commandBuffer->handle(), x_base, y_base, z_base, x_count_limit, y_count_limit + 1, z_count_limit);
         m_errorMonitor->VerifyFound();
 
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDispatchBase-groupCountZ-00426");
-        fp_vkCmdDispatchBaseKHR(m_commandBuffer->handle(), x_base, y_base, z_base, x_limit, y_limit, z_limit + 1);
+        fp_vkCmdDispatchBaseKHR(m_commandBuffer->handle(), x_base, y_base, z_base, x_count_limit, y_count_limit, z_count_limit + 1);
         m_errorMonitor->VerifyFound();
     } else {
         printf("%s KHX_DEVICE_GROUP_* extensions not supported, skipping CmdDispatchBaseKHR() tests.\n", kSkipPrefix);
