@@ -651,7 +651,7 @@ void *BuildUnwrappedUpdateTemplateBuffer(ValidationObject *layer_data, uint64_t 
     }
     auto const &create_info = template_map_entry->second->create_info;
     size_t allocation_size = 0;
-    std::vector<std::tuple<size_t, VulkanObjectType, void *, size_t>> template_entries;
+    std::vector<std::tuple<size_t, VulkanObjectType, uint64_t, size_t>> template_entries;
 
     for (uint32_t i = 0; i < create_info.descriptorUpdateEntryCount; i++) {
         for (uint32_t j = 0; j < create_info.pDescriptorUpdateEntries[i].descriptorCount; j++) {
@@ -670,7 +670,7 @@ void *BuildUnwrappedUpdateTemplateBuffer(ValidationObject *layer_data, uint64_t 
                     VkDescriptorImageInfo *wrapped_entry = new VkDescriptorImageInfo(*image_entry);
                     wrapped_entry->sampler = layer_data->Unwrap(image_entry->sampler);
                     wrapped_entry->imageView = layer_data->Unwrap(image_entry->imageView);
-                    template_entries.emplace_back(offset, kVulkanObjectTypeImage, reinterpret_cast<void *>(wrapped_entry), 0);
+                    template_entries.emplace_back(offset, kVulkanObjectTypeImage, CastToUint64(wrapped_entry), 0);
                 } break;
 
                 case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
@@ -682,7 +682,7 @@ void *BuildUnwrappedUpdateTemplateBuffer(ValidationObject *layer_data, uint64_t 
 
                     VkDescriptorBufferInfo *wrapped_entry = new VkDescriptorBufferInfo(*buffer_entry);
                     wrapped_entry->buffer = layer_data->Unwrap(buffer_entry->buffer);
-                    template_entries.emplace_back(offset, kVulkanObjectTypeBuffer, reinterpret_cast<void *>(wrapped_entry), 0);
+                    template_entries.emplace_back(offset, kVulkanObjectTypeBuffer, CastToUint64(wrapped_entry), 0);
                 } break;
 
                 case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
@@ -691,13 +691,13 @@ void *BuildUnwrappedUpdateTemplateBuffer(ValidationObject *layer_data, uint64_t 
                     allocation_size = std::max(allocation_size, offset + sizeof(VkBufferView));
 
                     VkBufferView wrapped_entry = layer_data->Unwrap(*buffer_view_handle);
-                    template_entries.emplace_back(offset, kVulkanObjectTypeBufferView, reinterpret_cast<void *>(wrapped_entry), 0);
+                    template_entries.emplace_back(offset, kVulkanObjectTypeBufferView, CastToUint64(wrapped_entry), 0);
                 } break;
                 case VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT: {
                     size_t numBytes = create_info.pDescriptorUpdateEntries[i].descriptorCount;
                     allocation_size = std::max(allocation_size, offset + numBytes);
                     // nothing to unwrap, just plain data
-                    template_entries.emplace_back(offset, kVulkanObjectTypeUnknown, reinterpret_cast<void *>(update_entry),
+                    template_entries.emplace_back(offset, kVulkanObjectTypeUnknown, CastToUint64(update_entry),
                                                   numBytes);
                     // to break out of the loop
                     j = create_info.pDescriptorUpdateEntries[i].descriptorCount;
@@ -713,26 +713,26 @@ void *BuildUnwrappedUpdateTemplateBuffer(ValidationObject *layer_data, uint64_t 
     for (auto &this_entry : template_entries) {
         VulkanObjectType type = std::get<1>(this_entry);
         void *destination = (char *)unwrapped_data + std::get<0>(this_entry);
-        void *source = (char *)std::get<2>(this_entry);
+        uint64_t source = std::get<2>(this_entry);
         size_t size = std::get<3>(this_entry);
 
         if (size != 0) {
             assert(type == kVulkanObjectTypeUnknown);
-            memcpy(destination, source, size);
+            memcpy(destination, CastFromUint64<void *>(source), size);
         } else {
             switch (type) {
                 case kVulkanObjectTypeImage:
                     *(reinterpret_cast<VkDescriptorImageInfo *>(destination)) =
                         *(reinterpret_cast<VkDescriptorImageInfo *>(source));
-                    delete reinterpret_cast<VkDescriptorImageInfo *>(source);
+                    delete CastFromUint64<VkDescriptorImageInfo *>(source);
                     break;
                 case kVulkanObjectTypeBuffer:
                     *(reinterpret_cast<VkDescriptorBufferInfo *>(destination)) =
-                        *(reinterpret_cast<VkDescriptorBufferInfo *>(source));
-                    delete reinterpret_cast<VkDescriptorBufferInfo *>(source);
+                        *(CastFromUint64<VkDescriptorBufferInfo *>(source));
+                    delete CastFromUint64<VkDescriptorBufferInfo *>(source);
                     break;
                 case kVulkanObjectTypeBufferView:
-                    *(reinterpret_cast<VkBufferView *>(destination)) = reinterpret_cast<VkBufferView>(source);
+                    *(reinterpret_cast<VkBufferView *>(destination)) = CastFromUint64<VkBufferView>(source);
                     break;
                 default:
                     assert(0);
@@ -1111,6 +1111,7 @@ VkResult DispatchSetDebugUtilsObjectNameEXT(VkDevice device, const VkDebugUtilsO
             write('#include <mutex>', file=self.outFile)
             write('#include "chassis.h"', file=self.outFile)
             write('#include "layer_chassis_dispatch.h"', file=self.outFile)
+            write('#include "vk_layer_utils.h"', file=self.outFile)
             self.newline()
             write('// This intentionally includes a cpp file', file=self.outFile)
             write('#include "vk_safe_struct.cpp"', file=self.outFile)

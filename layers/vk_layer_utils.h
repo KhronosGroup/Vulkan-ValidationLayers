@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2017 The Khronos Group Inc.
- * Copyright (c) 2015-2017 Valve Corporation
- * Copyright (c) 2015-2017 LunarG, Inc.
+/* Copyright (c) 2015-2017, 2019 The Khronos Group Inc.
+ * Copyright (c) 2015-2017, 2019 Valve Corporation
+ * Copyright (c) 2015-2017, 2019 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,10 @@
  */
 
 #pragma once
+
+#include <cassert>
+#include <cstddef>
+#include <functional>
 #include <stdbool.h>
 #include <string>
 #include <vector>
@@ -115,6 +119,45 @@ VK_LAYER_EXPORT VkLayerInstanceCreateInfo *get_chain_info(const VkInstanceCreate
 VK_LAYER_EXPORT VkLayerDeviceCreateInfo *get_chain_info(const VkDeviceCreateInfo *pCreateInfo, VkLayerFunction func);
 
 static inline bool IsPowerOfTwo(unsigned x) { return x && !(x & (x - 1)); }
+
+// Casts to allow various types of less than 64 bits to be cast to and from uint64_t safely and portably
+template <typename HandleType, typename Uint>
+static inline HandleType CastFromUint(Uint untyped_handle) {
+    static_assert(sizeof(HandleType) == sizeof(Uint), "HandleType must be the same size as untyped handle");
+    return *reinterpret_cast<HandleType *>(&untyped_handle);
+}
+template <typename HandleType, typename Uint>
+static inline Uint CastToUint(HandleType handle) {
+    static_assert(sizeof(HandleType) == sizeof(Uint), "HandleType must be the same size as untyped handle");
+    return *reinterpret_cast<Uint *>(&handle);
+}
+
+// Ensure that the size changing casts are *static* to ensure portability
+template <typename HandleType>
+static inline HandleType CastFromUint64(uint64_t untyped_handle) {
+    static_assert(sizeof(HandleType) <= sizeof(uint64_t), "HandleType must be not larger than the untyped handle size");
+    // Since size mismatched reinterpret casts are strongly non-portable we use std::condtional to find the appropriate
+    // unsigned integer type for the reinterpret cast we are using.  C++11 doesn't have anything like a switch, for the type
+    // conditionals, so the various cases are nested in the "false" type of std::conditional.
+    // The formatting makes it clear, but each indent is else if.
+    typedef
+        typename std::conditional<sizeof(HandleType) == sizeof(uint8_t), uint8_t,
+                                  typename std::conditional<sizeof(HandleType) == sizeof(uint16_t), uint16_t,
+                                                            typename std::conditional<sizeof(HandleType) == sizeof(uint32_t),
+                                                                                      uint32_t, uint64_t>::type>::type>::type Uint;
+    return CastFromUint<HandleType, Uint>(static_cast<Uint>(untyped_handle));
+}
+
+template <typename HandleType>
+static uint64_t CastToUint64(HandleType handle) {
+    static_assert(sizeof(HandleType) <= sizeof(uint64_t), "HandleType must be not larger than the untyped handle size");
+    typedef
+        typename std::conditional<sizeof(HandleType) == sizeof(uint8_t), uint8_t,
+                                  typename std::conditional<sizeof(HandleType) == sizeof(uint16_t), uint16_t,
+                                                            typename std::conditional<sizeof(HandleType) == sizeof(uint32_t),
+                                                                                      uint32_t, uint64_t>::type>::type>::type Uint;
+    return static_cast<uint64_t>(CastToUint<HandleType, Uint>(handle));
+}
 
 extern "C" {
 #endif
