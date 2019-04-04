@@ -8302,6 +8302,119 @@ TEST_F(VkLayerTest, PointSizeFailure) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(VkLayerTest, InvalidTopology) {
+    TEST_DESCRIPTION("InvalidTopology.");
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    VkPhysicalDeviceFeatures deviceFeatures = {};
+    deviceFeatures.geometryShader = VK_FALSE;
+    deviceFeatures.tessellationShader = VK_FALSE;
+
+    ASSERT_NO_FATAL_FAILURE(InitState(&deviceFeatures));
+    ASSERT_NO_FATAL_FAILURE(InitViewport());
+
+    const char PointSizeWriteVertShaderFcn[] =
+        "#version 450\n"
+        "vec2 vertices[3];\n"
+        "out gl_PerVertex\n"
+        "{\n"
+        "    vec4 gl_Position;\n"
+        "    float gl_PointSize;\n"
+        "};\n"
+        "void OutPointSize() {\n"
+        "   gl_PointSize = 7.0;\n"
+        "}\n"
+        "void main() {\n"
+        "    vertices[0] = vec2(-1.0, -1.0);\n"
+        "    vertices[1] = vec2( 1.0, -1.0);\n"
+        "    vertices[2] = vec2( 0.0,  1.0);\n"
+        "    gl_Position = vec4(vertices[gl_VertexIndex % 3], 0.0, 1.0);\n"
+        "    OutPointSize();\n"
+        "}\n";
+
+    VkShaderObj vs(m_device, PointSizeWriteVertShaderFcn, VK_SHADER_STAGE_VERTEX_BIT, this);
+    VkShaderObj ps(m_device, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+
+    VkPipelineObj pipelineobj(m_device);
+    pipelineobj.AddDefaultColorAttachment();
+    pipelineobj.AddShader(&vs);
+    pipelineobj.AddShader(&ps);
+
+    // Set Input Assembly to TOPOLOGY POINT LIST
+    VkPipelineInputAssemblyStateCreateInfo ia_state = {};
+    ia_state.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    m_commandBuffer->begin();
+    m_commandBuffer->ClearAllBuffers(m_renderTargets, m_clear_color, m_depthStencil, m_depth_clear_color, m_stencil_clear_color);
+    m_commandBuffer->PrepareAttachments(m_renderTargets, m_depthStencil);
+    VkDescriptorSetObj descriptorSet(m_device);
+    descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
+
+    ia_state.primitiveRestartEnable = VK_TRUE;
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                         "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00428");
+    ia_state.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+    pipelineobj.SetInputAssembly(&ia_state);
+    pipelineobj.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderPass());
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                         "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00428");
+    ia_state.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+    pipelineobj.SetInputAssembly(&ia_state);
+    pipelineobj.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderPass());
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                         "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00428");
+    ia_state.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    pipelineobj.SetInputAssembly(&ia_state);
+    pipelineobj.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderPass());
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                         "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00428");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                         "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00429");
+    ia_state.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY;
+    pipelineobj.SetInputAssembly(&ia_state);
+    pipelineobj.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderPass());
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                         "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00428");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                         "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00429");
+    ia_state.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY;
+    pipelineobj.SetInputAssembly(&ia_state);
+    pipelineobj.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderPass());
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                         "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00428");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                         "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00430");
+    m_errorMonitor->SetUnexpectedError("VUID-VkGraphicsPipelineCreateInfo-topology-00737");
+    ia_state.topology = VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
+    pipelineobj.SetInputAssembly(&ia_state);
+    pipelineobj.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderPass());
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                         "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00429");
+    ia_state.topology = VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY;
+    pipelineobj.SetInputAssembly(&ia_state);
+    pipelineobj.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderPass());
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                         "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00429");
+    ia_state.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP_WITH_ADJACENCY;
+    pipelineobj.SetInputAssembly(&ia_state);
+    pipelineobj.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderPass());
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(VkLayerTest, PointSizeGeomShaderFailure) {
     TEST_DESCRIPTION(
         "Create a pipeline using TOPOLOGY_POINT_LIST, set PointSize vertex shader, but not in the final geometry stage.");
