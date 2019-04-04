@@ -231,9 +231,9 @@ if(BUILD_LAYERS)
     AddVkLayer(thread_safety "BUILD_THREAD_SAFETY" ${CHASSIS_LIBRARY_FILES} ${THREAD_SAFETY_LIBRARY_FILES})
     add_dependencies(VkLayer_thread_safety VkLayer_object_lifetimes)
     AddVkLayer(stateless_validation "BUILD_PARAMETER_VALIDATION" ${CHASSIS_LIBRARY_FILES} ${STATELESS_VALIDATION_LIBRARY_FILES})
-    add_dependencies(VkLayer_stateless_validation VkLayer_unique_objects)
+    add_dependencies(VkLayer_stateless_validation VkLayer_thread_safety)
     AddVkLayer(unique_objects "LAYER_CHASSIS_CAN_WRAP_HANDLES" ${CHASSIS_LIBRARY_FILES})
-    add_dependencies(VkLayer_unique_objects VkLayer_thread_safety)
+    add_dependencies(VkLayer_unique_objects VkLayer_stateless_validation)
     AddVkLayer(khronos_validation "BUILD_KHRONOS_VALIDATION;BUILD_CORE_VALIDATION;BUILD_OBJECT_TRACKER;BUILD_THREAD_SAFETY;BUILD_PARAMETER_VALIDATION;LAYER_CHASSIS_CAN_WRAP_HANDLES"
         ${CHASSIS_LIBRARY_FILES}
         ${CORE_VALIDATION_LIBRARY_FILES}
