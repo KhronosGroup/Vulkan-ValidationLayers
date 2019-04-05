@@ -13118,24 +13118,24 @@ VkResult CoreChecks::CoreLayerCreateValidationCacheEXT(VkDevice device, const Vk
 
 void CoreChecks::CoreLayerDestroyValidationCacheEXT(VkDevice device, VkValidationCacheEXT validationCache,
                                                     const VkAllocationCallbacks *pAllocator) {
-    delete (ValidationCache *)validationCache;
+    delete CastFromHandle<VkValidationCacheEXT, ValidationCache *>(validationCache);
 }
 
 VkResult CoreChecks::CoreLayerGetValidationCacheDataEXT(VkDevice device, VkValidationCacheEXT validationCache, size_t *pDataSize,
                                                         void *pData) {
     size_t inSize = *pDataSize;
-    ((ValidationCache *)validationCache)->Write(pDataSize, pData);
+    CastFromHandle<VkValidationCacheEXT, ValidationCache *>(validationCache)->Write(pDataSize, pData);
     return (pData && *pDataSize != inSize) ? VK_INCOMPLETE : VK_SUCCESS;
 }
 
 VkResult CoreChecks::CoreLayerMergeValidationCachesEXT(VkDevice device, VkValidationCacheEXT dstCache, uint32_t srcCacheCount,
                                                        const VkValidationCacheEXT *pSrcCaches) {
     bool skip = false;
-    auto dst = (ValidationCache *)dstCache;
-    auto src = (ValidationCache const *const *)pSrcCaches;
+    auto dst = CastFromHandle<VkValidationCacheEXT, ValidationCache *>(dstCache);
     VkResult result = VK_SUCCESS;
     for (uint32_t i = 0; i < srcCacheCount; i++) {
-        if (src[i] == dst) {
+        auto src = CastFromHandle<const VkValidationCacheEXT, const ValidationCache *>(pSrcCaches[i]);
+        if (src == dst) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_VALIDATION_CACHE_EXT, 0,
                             "VUID-vkMergeValidationCachesEXT-dstCache-01536",
                             "vkMergeValidationCachesEXT: dstCache (0x%" PRIx64 ") must not appear in pSrcCaches array.",
@@ -13143,7 +13143,7 @@ VkResult CoreChecks::CoreLayerMergeValidationCachesEXT(VkDevice device, VkValida
             result = VK_ERROR_VALIDATION_FAILED_EXT;
         }
         if (!skip) {
-            dst->Merge(src[i]);
+            dst->Merge(src);
         }
     }
 

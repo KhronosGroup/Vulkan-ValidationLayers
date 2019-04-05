@@ -159,6 +159,34 @@ static uint64_t CastToUint64(HandleType handle) {
     return static_cast<uint64_t>(CastToUint<HandleType, Uint>(handle));
 }
 
+// Convenience functions to case between handles and the types the handles abstract, reflecting the Vulkan handle scheme, where
+// Handles are either pointers (dispatchable) or sizeof(uint64_t) (non-dispatchable), s.t. full size-safe casts are used and
+// we ensure that handles are large enough to contain the underlying type.
+template <typename HandleType, typename ValueType>
+void CastToHandle(ValueType value, HandleType *handle) {
+    static_assert(sizeof(HandleType) >= sizeof(ValueType), "HandleType must large enough to hold internal value");
+    *handle = CastFromUint64<HandleType>(CastToUint64<ValueType>(value));
+}
+// This form is conveniently "inline" but inconveniently requires both template arguments.
+template <typename HandleType, typename ValueType>
+HandleType CastToHandle(ValueType value) {
+    HandleType handle;
+    CastToHandle(value, &handle);
+    return handle;
+}
+
+template <typename HandleType, typename ValueType>
+void CastFromHandle(HandleType handle, ValueType *value) {
+    static_assert(sizeof(HandleType) >= sizeof(ValueType), "HandleType must large enough to hold internal value");
+    *value = CastFromUint64<ValueType>(CastToUint64<HandleType>(handle));
+}
+template <typename HandleType, typename ValueType>
+ValueType CastFromHandle(HandleType handle) {
+    ValueType value;
+    CastFromHandle(handle, &value);
+    return value;
+}
+
 extern "C" {
 #endif
 
