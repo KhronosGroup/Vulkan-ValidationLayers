@@ -1098,7 +1098,7 @@ void CoreChecks::GpuAllocateValidationResources(const VkCommandBuffer cmd_buffer
     desc_write.dstSet = desc_sets[0];
     DispatchUpdateDescriptorSets(device, 1, &desc_write, 0, NULL);
 
-    auto iter = cb_node->lastBound.find(VK_PIPELINE_BIND_POINT_GRAPHICS);  // find() allows read-only access to cb_state
+    auto iter = cb_node->lastBound.find(bind_point);  // find() allows read-only access to cb_state
     if (iter != cb_node->lastBound.end()) {
         auto pipeline_state = iter->second.pipeline_state;
         if (pipeline_state && (pipeline_state->pipeline_layout.set_layouts.size() <= gpu_validation_state->desc_set_bind_index)) {
