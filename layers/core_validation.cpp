@@ -13118,23 +13118,23 @@ VkResult CoreChecks::CoreLayerCreateValidationCacheEXT(VkDevice device, const Vk
 
 void CoreChecks::CoreLayerDestroyValidationCacheEXT(VkDevice device, VkValidationCacheEXT validationCache,
                                                     const VkAllocationCallbacks *pAllocator) {
-    delete CastFromHandle<VkValidationCacheEXT, ValidationCache *>(validationCache);
+    delete CastFromHandle<ValidationCache *>(validationCache);
 }
 
 VkResult CoreChecks::CoreLayerGetValidationCacheDataEXT(VkDevice device, VkValidationCacheEXT validationCache, size_t *pDataSize,
                                                         void *pData) {
     size_t inSize = *pDataSize;
-    CastFromHandle<VkValidationCacheEXT, ValidationCache *>(validationCache)->Write(pDataSize, pData);
+    CastFromHandle<ValidationCache *>(validationCache)->Write(pDataSize, pData);
     return (pData && *pDataSize != inSize) ? VK_INCOMPLETE : VK_SUCCESS;
 }
 
 VkResult CoreChecks::CoreLayerMergeValidationCachesEXT(VkDevice device, VkValidationCacheEXT dstCache, uint32_t srcCacheCount,
                                                        const VkValidationCacheEXT *pSrcCaches) {
     bool skip = false;
-    auto dst = CastFromHandle<VkValidationCacheEXT, ValidationCache *>(dstCache);
+    auto dst = CastFromHandle<ValidationCache *>(dstCache);
     VkResult result = VK_SUCCESS;
     for (uint32_t i = 0; i < srcCacheCount; i++) {
-        auto src = CastFromHandle<const VkValidationCacheEXT, const ValidationCache *>(pSrcCaches[i]);
+        auto src = CastFromHandle<const ValidationCache *>(pSrcCaches[i]);
         if (src == dst) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_VALIDATION_CACHE_EXT, 0,
                             "VUID-vkMergeValidationCachesEXT-dstCache-01536",

@@ -167,7 +167,7 @@ void CastToHandle(ValueType value, HandleType *handle) {
     static_assert(sizeof(HandleType) >= sizeof(ValueType), "HandleType must large enough to hold internal value");
     *handle = CastFromUint64<HandleType>(CastToUint64<ValueType>(value));
 }
-// This form is conveniently "inline" but inconveniently requires both template arguments.
+// This form is conveniently "inline", you should only need to specify the handle type (the value type being deducible from the arg
 template <typename HandleType, typename ValueType>
 HandleType CastToHandle(ValueType value) {
     HandleType handle;
@@ -175,12 +175,12 @@ HandleType CastToHandle(ValueType value) {
     return handle;
 }
 
-template <typename HandleType, typename ValueType>
+template <typename ValueType, typename HandleType>
 void CastFromHandle(HandleType handle, ValueType *value) {
     static_assert(sizeof(HandleType) >= sizeof(ValueType), "HandleType must large enough to hold internal value");
     *value = CastFromUint64<ValueType>(CastToUint64<HandleType>(handle));
 }
-template <typename HandleType, typename ValueType>
+template <typename ValueType, typename HandleType>
 ValueType CastFromHandle(HandleType handle) {
     ValueType value;
     CastFromHandle(handle, &value);
