@@ -1,3 +1,4 @@
+#include "cast_utils.h"
 #include "vklayertest.h"
 
 VkFormat FindSupportedDepthStencilFormat(VkPhysicalDevice phy) {
@@ -1001,15 +1002,8 @@ VkBufferTest::~VkBufferTest() {
     }
     if (AllocateCurrent) {
         if (InvalidDeleteEn) {
-            union {
-                VkDeviceMemory device_memory;
-                unsigned long long index_access;
-            } bad_index;
-
-            bad_index.device_memory = VulkanMemory;
-            bad_index.index_access++;
-
-            vkFreeMemory(VulkanDevice, bad_index.device_memory, nullptr);
+            auto bad_memory = CastFromUint64<VkDeviceMemory>(CastToUint64(VulkanMemory) + 1);
+            vkFreeMemory(VulkanDevice, bad_memory, nullptr);
         }
         vkFreeMemory(VulkanDevice, VulkanMemory, nullptr);
     }

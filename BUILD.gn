@@ -458,6 +458,7 @@ if (!is_android) {
 }
 
 source_set("vulkan_layer_utils") {
+  include_dirs = [ "layers" ]
   sources = [
     "layers/vk_format_utils.cpp",
     "layers/vk_format_utils.h",

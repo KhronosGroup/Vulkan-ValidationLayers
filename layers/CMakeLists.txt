@@ -58,6 +58,7 @@ endif()
 
 # Configure installation of source files that are dependencies of other repos.
 set(LAYER_UTIL_FILES
+    cast_utils.h
     hash_util.h
     hash_vk_types.h
     vk_format_utils.h
