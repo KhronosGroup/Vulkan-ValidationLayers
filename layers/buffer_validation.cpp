@@ -930,7 +930,7 @@ bool CoreChecks::ValidateAndUpdateQFOScoreboard(const debug_report_data *report_
                        " duplicates existing barrier submitted in this batch from command buffer %s.",
                        "vkQueueSubmit()", BarrierRecord::BarrierName(), operation, BarrierRecord::HandleName(),
                        report_data->FormatHandle(barrier.handle).c_str(), barrier.srcQueueFamilyIndex, barrier.dstQueueFamilyIndex,
-                       report_data->FormatHandle(inserted.first->second).c_str());
+                       report_data->FormatHandle(inserted.first->second->commandBuffer).c_str());
     }
     return skip;
 }

@@ -2039,7 +2039,7 @@ bool CoreChecks::ValidateDeviceMaskToRenderPass(GLOBAL_CB_NODE *pCB, uint32_t de
     if ((deviceMask & pCB->active_render_pass_device_mask) != deviceMask) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VUID_handle_type, VUID_handle, VUID,
                         "deviceMask(0x%" PRIx32 ") is not a subset of the render pass[%s] device mask(0x%" PRIx32 ").", deviceMask,
-                        report_data->FormatHandle(pCB->activeRenderPass).c_str(), pCB->active_render_pass_device_mask);
+                        report_data->FormatHandle(pCB->activeRenderPass->renderPass).c_str(), pCB->active_render_pass_device_mask);
     }
     return skip;
 }
