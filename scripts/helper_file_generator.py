@@ -659,7 +659,6 @@ class HelperFileOutputGenerator(OutputGenerator):
         object_types_helper_header = '\n'
         object_types_helper_header += '#pragma once\n'
         object_types_helper_header += '\n'
-        object_types_helper_header += '#include <vulkan/vulkan.h>\n\n'
         object_types_helper_header += self.GenerateObjectTypesHeader()
         return object_types_helper_header
     #
@@ -672,6 +671,9 @@ class HelperFileOutputGenerator(OutputGenerator):
         enum_num = 1
         type_list = [];
         enum_entry_map = {}
+        non_dispatchable = {}
+        dispatchable = {}
+        object_type_info = {}
 
         # Output enum definition as each handle is processed, saving the names to use for the conversion routine
         for item in self.object_types:
@@ -682,6 +684,13 @@ class HelperFileOutputGenerator(OutputGenerator):
             object_types_header += ' = %d,\n' % enum_num
             enum_num += 1
             type_list.append(enum_entry)
+            object_type_info[enum_entry] = { 'VkType': item }
+            # We'll want lists of the dispatchable and non dispatchable handles below with access to the same info
+            if IsHandleTypeNonDispatchable(self.registry.tree, item) :
+                non_dispatchable[item] = enum_entry
+            else:
+                dispatchable[item] = enum_entry
+
         object_types_header += '    kVulkanObjectTypeMax = %d,\n' % enum_num
         object_types_header += '    // Aliases for backwards compatibilty of "promoted" types\n'
         for (name, alias) in self.object_type_aliases:
@@ -711,9 +720,11 @@ class HelperFileOutputGenerator(OutputGenerator):
         dbg_re = '^VK_DEBUG_REPORT_OBJECT_TYPE_(.*)_EXT$'
         dbg_map = {to_key(dbg_re, dbg) : dbg for dbg in self.debug_report_object_types}
         dbg_default = 'VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT'
+
         for object_type in type_list:
             vk_object_type = dbg_map.get(object_type.replace("kVulkanObjectType", "").lower(), dbg_default)
             object_types_header += '    %s,   // %s\n' % (vk_object_type, object_type)
+            object_type_info[object_type]['DbgType'] = vk_object_type
         object_types_header += '};\n'
 
         # Output a conversion routine from the layer object definitions to the core object type definitions
@@ -728,6 +739,7 @@ class HelperFileOutputGenerator(OutputGenerator):
         for object_type in type_list:
             vk_object_type = vko_map[object_type.replace("kVulkanObjectType", "").lower()]
             object_types_header += '    %s,   // %s\n' % (vk_object_type, object_type)
+            object_type_info[object_type]['VkoType'] = vk_object_type
         object_types_header += '};\n'
 
         # Create a function to convert from VkDebugReportObjectTypeEXT to VkObjectType
@@ -771,6 +783,62 @@ class HelperFileOutputGenerator(OutputGenerator):
         object_types_header += '    }\n'
         object_types_header += '    return VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT;\n'
         object_types_header += '}\n'
+
+        traits_format = Outdent('''
+            template <> struct VkHandleInfo<{vk_type}> {{
+                static const VulkanObjectType kVulkanObjectType = {obj_type};
+                static const VkDebugReportObjectTypeEXT kDebugReportObjectType = {dbg_type};
+                static const VkObjectType kVkObjectType = {vko_type};
+                static const char* Typename() {{
+                    return "{vk_type}";
+                }}
+            }};
+            template <> struct VulkanObjectTypeInfo<{obj_type}> {{
+                typedef {vk_type} Type;
+            }};
+            ''')
+
+        object_types_header += Outdent('''
+            // Traits objects from each type statically map from Vk<handleType> to the various enums
+            template <typename VkType> struct VkHandleInfo {};
+            template <VulkanObjectType id> struct VulkanObjectTypeInfo {};
+
+            // The following line must match the vulkan_core.h condition guarding VK_DEFINE_NON_DISPATCHABLE_HANDLE
+            #if defined(__LP64__) || defined(_WIN64) || (defined(__x86_64__) && !defined(__ILP32__)) || defined(_M_X64) || defined(__ia64) || \
+                defined(_M_IA64) || defined(__aarch64__) || defined(__powerpc64__)
+            #define TYPESAFE_NONDISPATCHABLE_HANDLES
+            #else
+            VK_DEFINE_NON_DISPATCHABLE_HANDLE(VkNonDispatchableHandle)
+            ''')  +'\n'
+        object_types_header += traits_format.format(vk_type='VkNonDispatchableHandle', obj_type='kVulkanObjectTypeUnknown',
+                                                  dbg_type='VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT',
+                                                  vko_type='VK_OBJECT_TYPE_UNKNOWN') + '\n'
+        object_types_header += '#endif //  VK_DEFINE_HANDLE logic duplication\n'
+
+        for vk_type, object_type in dispatchable.items():
+            info = object_type_info[object_type]
+            object_types_header += traits_format.format(vk_type=vk_type, obj_type=object_type, dbg_type=info['DbgType'],
+                                                      vko_type=info['VkoType'])
+        object_types_header += '#ifdef TYPESAFE_NONDISPATCHABLE_HANDLES\n'
+        for vk_type, object_type in non_dispatchable.items():
+            info = object_type_info[object_type]
+            object_types_header += traits_format.format(vk_type=vk_type, obj_type=object_type, dbg_type=info['DbgType'],
+                                                      vko_type=info['VkoType'])
+        object_types_header += '#endif // TYPESAFE_NONDISPATCHABLE_HANDLES\n'
+
+        object_types_header += Outdent('''
+            struct VulkanTypedHandle {
+                uint64_t handle;
+                VulkanObjectType type;
+                template <typename Handle>
+                VulkanTypedHandle(Handle handle_) :
+                    handle(reinterpret_cast<uint64_t>(handle_)),
+                    type(VkHandleInfo<Handle>::kVulkanObjectType) {}
+                VulkanTypedHandle() :
+                    handle(VK_NULL_HANDLE),
+                    type(kVulkanObjectTypeUnknown) {}
+            }; ''')  +'\n'
+
         return object_types_header
     #
     # Determine if a structure needs a safe_struct helper function

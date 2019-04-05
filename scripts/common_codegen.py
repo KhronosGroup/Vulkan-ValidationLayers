@@ -71,3 +71,27 @@ def GetFeatureProtect(interface):
     if platform is not None:
         protect = platform_dict[platform]
     return protect
+
+# Check if an object is a non-dispatchable handle
+def IsHandleTypeNonDispatchable(tree, handletype):
+    handle = tree.find("types/type/[name='" + handletype + "'][@category='handle']")
+    if handle is not None and handle.find('type').text == 'VK_DEFINE_NON_DISPATCHABLE_HANDLE':
+        return True
+    else:
+        return False
+
+# Treats outdents a multiline string by the leading whitespace on the first line
+# Optionally indenting by the given prefix
+def Outdent(string_in, indent=''):
+    string_out = re.sub('^ *', '', string_in) # kill stray  leading spaces
+    if string_out[0] != '\n':
+        return string_in # needs new line to find the first line's indent level
+
+    first_indent = string_out[1:]
+    fake_indent = '\n' + ' ' * (len(first_indent) - len(first_indent.lstrip()))
+    indent = '\n' + indent
+
+    string_out = string_out.rstrip() + '\n' # remove trailing whitespace except for a newline
+    outdent = re.sub(fake_indent, indent, string_out)
+    return outdent[1:]
+
