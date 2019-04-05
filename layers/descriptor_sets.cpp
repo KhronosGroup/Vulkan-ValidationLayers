@@ -912,6 +912,15 @@ bool cvdescriptorset::DescriptorSet::ValidateDrawState(const std::map<uint32_t, 
                                   << " that has been destroyed.";
                         *error = error_str.str();
                         return false;
+                    } else {
+                        SAMPLER_STATE *sampler_state = device_data_->GetSamplerState(sampler);
+                        if (sampler_state->samplerConversion && !descriptors_[i].get()->IsImmutableSampler()) {
+                            std::stringstream error_str;
+                            error_str << "sampler (" << sampler << ") in the descriptor set (" << set_
+                                      << ") contains a YCBCR conversion (" << sampler_state->samplerConversion
+                                      << ") , then the sampler MUST also exists as an immutable sampler.";
+                            *error = error_str.str();
+                        }
                     }
                 }
             }
@@ -2209,6 +2218,21 @@ bool cvdescriptorset::DescriptorSet::VerifyWriteUpdateContents(const VkWriteDesc
                                 error_str << "Attempted write update to combined image sampler and image view and sampler ycbcr "
                                              "conversions are not identical, sampler: "
                                           << desc->GetSampler() << " image view: " << iv_state->image_view << ".";
+                                *error_msg = error_str.str();
+                                return false;
+                            }
+                        }
+                    } else {
+                        auto iv_state = device_data_->GetImageViewState(image_view);
+                        if (iv_state) {
+                            auto ycbcr_info = lvl_find_in_chain<VkSamplerYcbcrConversionInfo>(iv_state->create_info.pNext);
+                            if (ycbcr_info) {
+                                *error_code = "VUID-VkWriteDescriptorSet-descriptorType-01947";
+                                std::stringstream error_str;
+                                error_str << "Because dstSet (" << update->dstSet << ") is bound to image view ("
+                                          << iv_state->image_view
+                                          << ") that includes a YCBCR conversion, it must have been allocated with a layout that "
+                                             "includes an immutable sampler.";
                                 *error_msg = error_str.str();
                                 return false;
                             }
