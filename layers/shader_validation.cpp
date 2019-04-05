@@ -2534,7 +2534,7 @@ uint32_t ValidationCache::MakeShaderHash(VkShaderModuleCreateInfo const *smci) {
 static ValidationCache *GetValidationCacheInfo(VkShaderModuleCreateInfo const *pCreateInfo) {
     const auto validation_cache_ci = lvl_find_in_chain<VkShaderModuleValidationCacheCreateInfoEXT>(pCreateInfo->pNext);
     if (validation_cache_ci) {
-        return CastFromHandle<VkValidationCacheEXT, ValidationCache *>(validation_cache_ci->validationCache);
+        return CastFromHandle<ValidationCache *>(validation_cache_ci->validationCache);
     }
     return nullptr;
 }
