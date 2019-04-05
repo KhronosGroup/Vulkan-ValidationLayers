@@ -26022,7 +26022,8 @@ TEST_F(VkLayerTest, CopyImageSinglePlane422Alignment) {
 }
 
 TEST_F(VkLayerTest, MultiplaneImageSamplerConversionMismatch) {
-    TEST_DESCRIPTION("Create sampler with ycbcr conversion and use with an image created without ycrcb conversion");
+    TEST_DESCRIPTION(
+        "Create sampler with ycbcr conversion and use with an image created without ycrcb conversion or immutable sampler");
 
     // Enable KHR multiplane req'd extensions
     bool mp_extensions = InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,
@@ -26050,7 +26051,9 @@ TEST_F(VkLayerTest, MultiplaneImageSamplerConversionMismatch) {
     VkPhysicalDeviceSamplerYcbcrConversionFeatures ycbcr_features = {};
     ycbcr_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SAMPLER_YCBCR_CONVERSION_FEATURES;
     ycbcr_features.samplerYcbcrConversion = VK_TRUE;
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &ycbcr_features));
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &ycbcr_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    ASSERT_NO_FATAL_FAILURE(InitViewport());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     const VkImageCreateInfo ci = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
                                   NULL,
@@ -26117,10 +26120,10 @@ TEST_F(VkLayerTest, MultiplaneImageSamplerConversionMismatch) {
 
     // Use the image and sampler together in a descriptor set
     OneOffDescriptorSet ds(m_device, {
-                                         {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, &sampler},
+                                         {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, &sampler},
                                      });
 
-    VkDescriptorImageInfo image_info{};
+    VkDescriptorImageInfo image_info = {};
     image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     image_info.imageView = view;
     image_info.sampler = sampler;
@@ -26136,8 +26139,64 @@ TEST_F(VkLayerTest, MultiplaneImageSamplerConversionMismatch) {
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkWriteDescriptorSet-descriptorType-01948");
     vkUpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
     m_errorMonitor->VerifyFound();
+
+    VkImageView view_1947;
+    ivci.pNext = &ycbcr_info;
+    vkCreateImageView(m_device->device(), &ivci, nullptr, &view_1947);
+    OneOffDescriptorSet ds_1947(m_device, {
+                                              {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                          });
+    image_info.imageView = view_1947;
+    descriptor_write.dstSet = ds_1947.set_;
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkWriteDescriptorSet-descriptorType-01947");
+    vkUpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+    m_errorMonitor->VerifyFound();
+
+    descriptor_write.dstSet = ds.set_;
+    vkUpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+
+    char const *vsSource =
+        "#version 450\n"
+        "\n"
+        "void main(){\n"
+        "   gl_Position = vec4(1);\n"
+        "}\n";
+    char const *fsSource =
+        "#version 450\n"
+        "\n"
+        "layout(set=0, binding=0) uniform sampler2D s;\n"
+        "layout(location=0) out vec4 x;\n"
+        "void main(){\n"
+        "   x = texture(s, vec2(1));\n"
+        "}\n";
+    VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
+    VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+
+    VkPipelineObj pipe(m_device);
+    pipe.AddDefaultColorAttachment();
+    pipe.AddShader(&vs);
+    pipe.AddShader(&fs);
+
+    const VkPipelineLayoutObj pl(m_device, {&ds.layout_});
+    pipe.CreateVKPipeline(pl.handle(), renderPass());
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    VkViewport viewport = {0, 0, 16, 16, 0, 1};
+    VkRect2D scissor = {{0, 0}, {16, 16}};
+    vkCmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
+    vkCmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissor);
+    vkCmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
+    vkCmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pl.handle(), 0, 1, &ds.set_, 0, NULL);
+
+    m_commandBuffer->Draw(1, 0, 0, 0);
+
+    vkCmdEndRenderPass(m_commandBuffer->handle());
+    m_commandBuffer->end();
+
     vkDestroySamplerYcbcrConversion(m_device->device(), conversion, nullptr);
     vkDestroyImageView(m_device->device(), view, NULL);
+    vkDestroyImageView(m_device->device(), view_1947, NULL);
     vkDestroySampler(m_device->device(), sampler, nullptr);
 }
 
