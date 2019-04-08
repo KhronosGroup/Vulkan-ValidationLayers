@@ -869,6 +869,22 @@ bool cvdescriptorset::DescriptorSet::ValidateDrawState(const std::map<uint32_t, 
                     auto texel_buffer = static_cast<TexelDescriptor *>(descriptors_[i].get());
                     auto buffer_view = device_data_->GetBufferViewState(texel_buffer->GetBufferView());
 
+                    if (nullptr == buffer_view) {
+                        std::stringstream error_str;
+                        error_str << "Descriptor in binding #" << binding << " index " << index << " is using bufferView "
+                                  << buffer_view << " that has been destroyed.";
+                        *error = error_str.str();
+                        return false;
+                    }
+                    auto buffer = buffer_view->create_info.buffer;
+                    auto buffer_state = device_data_->GetBufferState(buffer);
+                    if (!buffer_state) {
+                        std::stringstream error_str;
+                        error_str << "Descriptor in binding #" << binding << " index " << index << " is using buffer "
+                                  << buffer_state << " that has been destroyed.";
+                        *error = error_str.str();
+                        return false;
+                    }
                     auto reqs = binding_pair.second;
                     auto format_bits = DescriptorRequirementsBitsFromFormat(buffer_view->create_info.format);
 
