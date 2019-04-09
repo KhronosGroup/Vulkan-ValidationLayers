@@ -793,15 +793,43 @@ class ImageSubresourceLayoutMapImpl : public ImageSubresourceLayoutMap {
     std::array<size_t, AspectTraits::kAspectCount> aspect_offsets_;
 };
 
+static VkImageLayout NormalizeImageLayout(VkImageLayout layout, VkImageLayout non_normal, VkImageLayout normal) {
+    return (layout == non_normal) ? normal : layout;
+}
+
+static VkImageLayout NormalizeDepthImageLayout(VkImageLayout layout) {
+    return NormalizeImageLayout(layout, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
+                                VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL);
+}
+
+static VkImageLayout NormalizeStencilImageLayout(VkImageLayout layout) {
+    return NormalizeImageLayout(layout, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
+                                VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL);
+}
+
+static bool ImageLayoutMatches(const VkImageAspectFlags aspect_mask, VkImageLayout a, VkImageLayout b) {
+    bool matches = (a == b);
+    if (!matches) {
+        // Relaxed rules when referencing *only* the depth or stencil aspects
+        if (aspect_mask == VK_IMAGE_ASPECT_DEPTH_BIT) {
+            matches = NormalizeDepthImageLayout(a) == NormalizeDepthImageLayout(b);
+        } else if (aspect_mask == VK_IMAGE_ASPECT_STENCIL_BIT) {
+            matches = NormalizeStencilImageLayout(a) == NormalizeStencilImageLayout(b);
+        }
+    }
+    return matches;
+}
+
 // Utility type for ForRange callbacks
 struct LayoutUseCheckAndMessage {
     const char *message = nullptr;
     VkImageLayout layout = kInvalidLayout;
-    LayoutUseCheckAndMessage(VkImageLayout check, VkImageLayout current_layout, VkImageLayout initial_layout) {
-        if (current_layout != kInvalidLayout && check != current_layout) {
+    LayoutUseCheckAndMessage(VkImageLayout check, VkImageLayout current_layout, VkImageLayout initial_layout,
+                             const VkImageAspectFlags aspect_mask = 0) {
+        if (current_layout != kInvalidLayout && !ImageLayoutMatches(aspect_mask, check, current_layout)) {
             message = "previous known";
             layout = current_layout;
-        } else if (initial_layout != kInvalidLayout && check != initial_layout) {
+        } else if (initial_layout != kInvalidLayout && !ImageLayoutMatches(aspect_mask, check, initial_layout)) {
             message = "previously used";
             layout = initial_layout;
         }
