@@ -836,27 +836,19 @@ bool cvdescriptorset::DescriptorSet::ValidateDrawState(const std::map<uint32_t, 
                     auto image_node = device_data_->GetImageState(image_view_ci.image);
                     assert(image_node);
                     // Verify Image Layout
-                    // Copy first mip level into sub_layers and loop over each mip level to verify layout
-                    VkImageSubresourceLayers sub_layers;
-                    sub_layers.aspectMask = image_view_ci.subresourceRange.aspectMask;
-                    sub_layers.baseArrayLayer = image_view_ci.subresourceRange.baseArrayLayer;
-                    sub_layers.layerCount = image_view_ci.subresourceRange.layerCount;
+                    // No "invalid layout" VUID required for this call, since the optimal_layout parameter is UNDEFINED.
                     bool hit_error = false;
-                    for (auto cur_level = image_view_ci.subresourceRange.baseMipLevel;
-                         cur_level < image_view_ci.subresourceRange.levelCount; ++cur_level) {
-                        sub_layers.mipLevel = cur_level;
-                        // No "invalid layout" VUID required for this call, since the optimal_layout parameter is UNDEFINED.
-                        device_data_->VerifyImageLayout(cb_node, image_node, sub_layers, image_layout, VK_IMAGE_LAYOUT_UNDEFINED,
-                                                        caller, kVUIDUndefined, "VUID-VkDescriptorImageInfo-imageLayout-00344",
-                                                        &hit_error);
-                        if (hit_error) {
-                            *error =
-                                "Image layout specified at vkUpdateDescriptorSet* or vkCmdPushDescriptorSet* time "
-                                "doesn't match actual image layout at time descriptor is used. See previous error callback for "
-                                "specific details.";
-                            return false;
-                        }
+                    device_data_->VerifyImageLayout(cb_node, image_node, image_view_state->normalized_subresource_range,
+                                                    image_layout, VK_IMAGE_LAYOUT_UNDEFINED, caller, kVUIDUndefined,
+                                                    "VUID-VkDescriptorImageInfo-imageLayout-00344", &hit_error);
+                    if (hit_error) {
+                        *error =
+                            "Image layout specified at vkUpdateDescriptorSet* or vkCmdPushDescriptorSet* time "
+                            "doesn't match actual image layout at time descriptor is used. See previous error callback for "
+                            "specific details.";
+                        return false;
                     }
+
                     // Verify Sample counts
                     if ((reqs & DESCRIPTOR_REQ_SINGLE_SAMPLE) && image_node->createInfo.samples != VK_SAMPLE_COUNT_1_BIT) {
                         std::stringstream error_str;
@@ -877,6 +869,22 @@ bool cvdescriptorset::DescriptorSet::ValidateDrawState(const std::map<uint32_t, 
                     auto texel_buffer = static_cast<TexelDescriptor *>(descriptors_[i].get());
                     auto buffer_view = device_data_->GetBufferViewState(texel_buffer->GetBufferView());
 
+                    if (nullptr == buffer_view) {
+                        std::stringstream error_str;
+                        error_str << "Descriptor in binding #" << binding << " index " << index << " is using bufferView "
+                                  << buffer_view << " that has been destroyed.";
+                        *error = error_str.str();
+                        return false;
+                    }
+                    auto buffer = buffer_view->create_info.buffer;
+                    auto buffer_state = device_data_->GetBufferState(buffer);
+                    if (!buffer_state) {
+                        std::stringstream error_str;
+                        error_str << "Descriptor in binding #" << binding << " index " << index << " is using buffer "
+                                  << buffer_state << " that has been destroyed.";
+                        *error = error_str.str();
+                        return false;
+                    }
                     auto reqs = binding_pair.second;
                     auto format_bits = DescriptorRequirementsBitsFromFormat(buffer_view->create_info.format);
 
@@ -904,6 +912,15 @@ bool cvdescriptorset::DescriptorSet::ValidateDrawState(const std::map<uint32_t, 
                                   << " that has been destroyed.";
                         *error = error_str.str();
                         return false;
+                    } else {
+                        SAMPLER_STATE *sampler_state = device_data_->GetSamplerState(sampler);
+                        if (sampler_state->samplerConversion && !descriptors_[i].get()->IsImmutableSampler()) {
+                            std::stringstream error_str;
+                            error_str << "sampler (" << sampler << ") in the descriptor set (" << set_
+                                      << ") contains a YCBCR conversion (" << sampler_state->samplerConversion
+                                      << ") , then the sampler MUST also exists as an immutable sampler.";
+                            *error = error_str.str();
+                        }
                     }
                 }
             }
@@ -1612,9 +1629,7 @@ void cvdescriptorset::ImageSamplerDescriptor::UpdateDrawState(CoreChecks *dev_da
     auto iv_state = dev_data->GetImageViewState(image_view_);
     if (iv_state) {
         dev_data->AddCommandBufferBindingImageView(cb_node, iv_state);
-    }
-    if (image_view_) {
-        dev_data->SetImageViewLayout(cb_node, image_view_, image_layout_);
+        dev_data->SetImageViewInitialLayout(cb_node, *iv_state, image_layout_);
     }
 }
 
@@ -1645,9 +1660,7 @@ void cvdescriptorset::ImageDescriptor::UpdateDrawState(CoreChecks *dev_data, GLO
     auto iv_state = dev_data->GetImageViewState(image_view_);
     if (iv_state) {
         dev_data->AddCommandBufferBindingImageView(cb_node, iv_state);
-    }
-    if (image_view_) {
-        dev_data->SetImageViewLayout(cb_node, image_view_, image_layout_);
+        dev_data->SetImageViewInitialLayout(cb_node, *iv_state, image_layout_);
     }
 }
 
@@ -2205,6 +2218,21 @@ bool cvdescriptorset::DescriptorSet::VerifyWriteUpdateContents(const VkWriteDesc
                                 error_str << "Attempted write update to combined image sampler and image view and sampler ycbcr "
                                              "conversions are not identical, sampler: "
                                           << desc->GetSampler() << " image view: " << iv_state->image_view << ".";
+                                *error_msg = error_str.str();
+                                return false;
+                            }
+                        }
+                    } else {
+                        auto iv_state = device_data_->GetImageViewState(image_view);
+                        if (iv_state) {
+                            auto ycbcr_info = lvl_find_in_chain<VkSamplerYcbcrConversionInfo>(iv_state->create_info.pNext);
+                            if (ycbcr_info) {
+                                *error_code = "VUID-VkWriteDescriptorSet-descriptorType-01947";
+                                std::stringstream error_str;
+                                error_str << "Because dstSet (" << update->dstSet << ") is bound to image view ("
+                                          << iv_state->image_view
+                                          << ") that includes a YCBCR conversion, it must have been allocated with a layout that "
+                                             "includes an immutable sampler.";
                                 *error_msg = error_str.str();
                                 return false;
                             }

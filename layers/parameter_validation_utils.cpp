@@ -2942,3 +2942,22 @@ bool StatelessValidation::manual_PreCallValidateAllocateMemory(VkDevice device, 
     }
     return skip;
 }
+
+bool StatelessValidation::manual_PreCallValidateCreateAccelerationStructureNV(
+    VkDevice device, const VkAccelerationStructureCreateInfoNV *pCreateInfo, const VkAllocationCallbacks *pAllocator,
+    VkAccelerationStructureNV *pAccelerationStructure) {
+    bool skip = false;
+
+    if (pCreateInfo) {
+        if ((pCreateInfo->compactedSize != 0) &&
+            ((pCreateInfo->info.geometryCount != 0) || (pCreateInfo->info.instanceCount != 0))) {
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                            "VUID-VkAccelerationStructureCreateInfoNV-compactedSize-02421",
+                            "vkCreateAccelerationStructureNV(): pCreateInfo->compactedSize nonzero (%" PRIu64
+                            ") with info.geometryCount (%" PRIu32 ") or info.instanceCount (%" PRIu32 ") nonzero.",
+                            pCreateInfo->compactedSize, pCreateInfo->info.geometryCount, pCreateInfo->info.instanceCount);
+        }
+    }
+
+    return skip;
+}

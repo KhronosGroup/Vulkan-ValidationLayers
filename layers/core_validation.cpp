@@ -276,6 +276,71 @@ std::unordered_map<VkSamplerYcbcrConversion, uint64_t> *CoreChecks::GetYcbcrConv
 
 std::unordered_set<uint64_t> *CoreChecks::GetAHBExternalFormatsSet() { return &ahb_ext_formats_set; }
 
+// the ImageLayoutMap implementation bakes in the number of valid aspects -- we have to choose the correct one at construction time
+template <uint32_t kThreshold>
+static std::unique_ptr<ImageSubresourceLayoutMap> LayoutMapFactoryByAspect(const IMAGE_STATE &image_state) {
+    ImageSubresourceLayoutMap *map = nullptr;
+    switch (image_state.full_range.aspectMask) {
+        case VK_IMAGE_ASPECT_COLOR_BIT:
+            map = new ImageSubresourceLayoutMapImpl<ColorAspectTraits, kThreshold>(image_state);
+            break;
+        case VK_IMAGE_ASPECT_DEPTH_BIT:
+            map = new ImageSubresourceLayoutMapImpl<DepthAspectTraits, kThreshold>(image_state);
+            break;
+        case VK_IMAGE_ASPECT_STENCIL_BIT:
+            map = new ImageSubresourceLayoutMapImpl<StencilAspectTraits, kThreshold>(image_state);
+            break;
+        case VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT:
+            map = new ImageSubresourceLayoutMapImpl<DepthStencilAspectTraits, kThreshold>(image_state);
+            break;
+        case VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT:
+            map = new ImageSubresourceLayoutMapImpl<Multiplane2AspectTraits, kThreshold>(image_state);
+            break;
+        case VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT | VK_IMAGE_ASPECT_PLANE_2_BIT:
+            map = new ImageSubresourceLayoutMapImpl<Multiplane3AspectTraits, kThreshold>(image_state);
+            break;
+    }
+
+    assert(map);  // We shouldn't be able to get here null unless the traits cases are incomplete
+    return std::unique_ptr<ImageSubresourceLayoutMap>(map);
+}
+
+static std::unique_ptr<ImageSubresourceLayoutMap> LayoutMapFactory(const IMAGE_STATE &image_state) {
+    std::unique_ptr<ImageSubresourceLayoutMap> map;
+    const uint32_t kAlwaysDenseLimit = 16;  // About a cacheline on deskop architectures
+    if (image_state.full_range.layerCount <= kAlwaysDenseLimit) {
+        // Create a dense row map
+        map = LayoutMapFactoryByAspect<0>(image_state);
+    } else {
+        // Create an initially sparse row map
+        map = LayoutMapFactoryByAspect<kAlwaysDenseLimit>(image_state);
+    }
+    return map;
+}
+
+// The const variant only need the image as it is the key for the map
+const ImageSubresourceLayoutMap *GetImageSubresourceLayoutMap(const GLOBAL_CB_NODE *cb_state, VkImage image) {
+    auto it = cb_state->image_layout_map.find(image);
+    if (it == cb_state->image_layout_map.cend()) {
+        return nullptr;
+    }
+    return it->second.get();
+}
+
+// The non-const variant only needs the image state, as the factory requires it to construct a new entry
+ImageSubresourceLayoutMap *GetImageSubresourceLayoutMap(GLOBAL_CB_NODE *cb_state, const IMAGE_STATE &image_state) {
+    auto it = cb_state->image_layout_map.find(image_state.image);
+    if (it == cb_state->image_layout_map.end()) {
+        // Empty slot... fill it in.
+        auto insert_pair = cb_state->image_layout_map.insert(std::make_pair(image_state.image, LayoutMapFactory(image_state)));
+        assert(insert_pair.second);
+        ImageSubresourceLayoutMap *new_map = insert_pair.first->second.get();
+        assert(new_map);
+        return new_map;
+    }
+    return it->second.get();
+}
+
 // Return ptr to info in map container containing mem, or NULL if not found
 //  Calls to this function should be wrapped in mutex
 DEVICE_MEM_INFO *CoreChecks::GetMemObjInfo(const VkDeviceMemory mem) {
@@ -307,66 +372,87 @@ void CoreChecks::AddMemObjInfo(void *object, const VkDeviceMemory mem, const VkM
 
 // Create binding link between given sampler and command buffer node
 void CoreChecks::AddCommandBufferBindingSampler(GLOBAL_CB_NODE *cb_node, SAMPLER_STATE *sampler_state) {
-    sampler_state->cb_bindings.insert(cb_node);
-    cb_node->object_bindings.insert({HandleToUint64(sampler_state->sampler), kVulkanObjectTypeSampler});
+    auto inserted = cb_node->object_bindings.insert({HandleToUint64(sampler_state->sampler), kVulkanObjectTypeSampler});
+    if (inserted.second) {
+        // Only need to complete the cross-reference if this is a new item
+        sampler_state->cb_bindings.insert(cb_node);
+    }
 }
 
 // Create binding link between given image node and command buffer node
 void CoreChecks::AddCommandBufferBindingImage(GLOBAL_CB_NODE *cb_node, IMAGE_STATE *image_state) {
     // Skip validation if this image was created through WSI
     if (image_state->binding.mem != MEMTRACKER_SWAP_CHAIN_IMAGE_KEY) {
-        // First update CB binding in MemObj mini CB list
-        for (auto mem_binding : image_state->GetBoundMemory()) {
-            DEVICE_MEM_INFO *pMemInfo = GetMemObjInfo(mem_binding);
-            if (pMemInfo) {
-                pMemInfo->cb_bindings.insert(cb_node);
-                // Now update CBInfo's Mem reference list
-                cb_node->memObjs.insert(mem_binding);
+        // First update cb binding for image
+        auto image_inserted = cb_node->object_bindings.insert({HandleToUint64(image_state->image), kVulkanObjectTypeImage});
+        if (image_inserted.second) {
+            // Only need to continue if this is a new item (the rest of the work would have be done previous)
+            image_state->cb_bindings.insert(cb_node);
+            // Now update CB binding in MemObj mini CB list
+            for (auto mem_binding : image_state->GetBoundMemory()) {
+                DEVICE_MEM_INFO *pMemInfo = GetMemObjInfo(mem_binding);
+                if (pMemInfo) {
+                    // Now update CBInfo's Mem reference list
+                    auto mem_inserted = cb_node->memObjs.insert(mem_binding);
+                    if (mem_inserted.second) {
+                        // Only need to complete the cross-reference if this is a new item
+                        pMemInfo->cb_bindings.insert(cb_node);
+                    }
+                }
             }
         }
-        // Now update cb binding for image
-        cb_node->object_bindings.insert({HandleToUint64(image_state->image), kVulkanObjectTypeImage});
-        image_state->cb_bindings.insert(cb_node);
     }
 }
 
 // Create binding link between given image view node and its image with command buffer node
 void CoreChecks::AddCommandBufferBindingImageView(GLOBAL_CB_NODE *cb_node, IMAGE_VIEW_STATE *view_state) {
     // First add bindings for imageView
-    view_state->cb_bindings.insert(cb_node);
-    cb_node->object_bindings.insert({HandleToUint64(view_state->image_view), kVulkanObjectTypeImageView});
-    auto image_state = GetImageState(view_state->create_info.image);
-    // Add bindings for image within imageView
-    if (image_state) {
-        AddCommandBufferBindingImage(cb_node, image_state);
+    auto inserted = cb_node->object_bindings.insert({HandleToUint64(view_state->image_view), kVulkanObjectTypeImageView});
+    if (inserted.second) {
+        // Only need to continue if this is a new item
+        view_state->cb_bindings.insert(cb_node);
+        auto image_state = GetImageState(view_state->create_info.image);
+        // Add bindings for image within imageView
+        if (image_state) {
+            AddCommandBufferBindingImage(cb_node, image_state);
+        }
     }
 }
 
 // Create binding link between given buffer node and command buffer node
 void CoreChecks::AddCommandBufferBindingBuffer(GLOBAL_CB_NODE *cb_node, BUFFER_STATE *buffer_state) {
-    // First update CB binding in MemObj mini CB list
-    for (auto mem_binding : buffer_state->GetBoundMemory()) {
-        DEVICE_MEM_INFO *pMemInfo = GetMemObjInfo(mem_binding);
-        if (pMemInfo) {
-            pMemInfo->cb_bindings.insert(cb_node);
-            // Now update CBInfo's Mem reference list
-            cb_node->memObjs.insert(mem_binding);
+    // First update cb binding for buffer
+    auto buffer_inserted = cb_node->object_bindings.insert({HandleToUint64(buffer_state->buffer), kVulkanObjectTypeBuffer});
+    if (buffer_inserted.second) {
+        // Only need to continue if this is a new item
+        buffer_state->cb_bindings.insert(cb_node);
+        // Now update CB binding in MemObj mini CB list
+        for (auto mem_binding : buffer_state->GetBoundMemory()) {
+            DEVICE_MEM_INFO *pMemInfo = GetMemObjInfo(mem_binding);
+            if (pMemInfo) {
+                // Now update CBInfo's Mem reference list
+                auto inserted = cb_node->memObjs.insert(mem_binding);
+                if (inserted.second) {
+                    // Only need to complete the cross-reference if this is a new item
+                    pMemInfo->cb_bindings.insert(cb_node);
+                }
+            }
         }
     }
-    // Now update cb binding for buffer
-    cb_node->object_bindings.insert({HandleToUint64(buffer_state->buffer), kVulkanObjectTypeBuffer});
-    buffer_state->cb_bindings.insert(cb_node);
 }
 
 // Create binding link between given buffer view node and its buffer with command buffer node
 void CoreChecks::AddCommandBufferBindingBufferView(GLOBAL_CB_NODE *cb_node, BUFFER_VIEW_STATE *view_state) {
     // First add bindings for bufferView
-    view_state->cb_bindings.insert(cb_node);
-    cb_node->object_bindings.insert({HandleToUint64(view_state->buffer_view), kVulkanObjectTypeBufferView});
-    auto buffer_state = GetBufferState(view_state->create_info.buffer);
-    // Add bindings for buffer within bufferView
-    if (buffer_state) {
-        AddCommandBufferBindingBuffer(cb_node, buffer_state);
+    auto inserted = cb_node->object_bindings.insert({HandleToUint64(view_state->buffer_view), kVulkanObjectTypeBufferView});
+    if (inserted.second) {
+        // Only need to complete the cross-reference if this is a new item
+        view_state->cb_bindings.insert(cb_node);
+        auto buffer_state = GetBufferState(view_state->create_info.buffer);
+        // Add bindings for buffer within bufferView
+        if (buffer_state) {
+            AddCommandBufferBindingBuffer(cb_node, buffer_state);
+        }
     }
 }
 
@@ -1458,13 +1544,45 @@ bool CoreChecks::ValidatePipelineUnlocked(std::vector<std::unique_ptr<PIPELINE_S
                         "Invalid Pipeline CreateInfo State: VK_PRIMITIVE_TOPOLOGY_PATCH_LIST must be set as IA topology for "
                         "tessellation pipelines.");
     }
-    if (pPipeline->graphicsPipelineCI.pInputAssemblyState &&
-        pPipeline->graphicsPipelineCI.pInputAssemblyState->topology == VK_PRIMITIVE_TOPOLOGY_PATCH_LIST) {
-        if (!has_control || !has_eval) {
-            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
+    if (pPipeline->graphicsPipelineCI.pInputAssemblyState) {
+        if (pPipeline->graphicsPipelineCI.pInputAssemblyState->topology == VK_PRIMITIVE_TOPOLOGY_PATCH_LIST) {
+            if (!has_control || !has_eval) {
+                skip |=
+                    log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
                             HandleToUint64(device), "VUID-VkGraphicsPipelineCreateInfo-topology-00737",
                             "Invalid Pipeline CreateInfo State: VK_PRIMITIVE_TOPOLOGY_PATCH_LIST primitive topology is only valid "
                             "for tessellation pipelines.");
+            }
+        }
+
+        if ((pPipeline->graphicsPipelineCI.pInputAssemblyState->primitiveRestartEnable == VK_TRUE) &&
+            (pPipeline->graphicsPipelineCI.pInputAssemblyState->topology == VK_PRIMITIVE_TOPOLOGY_POINT_LIST ||
+             pPipeline->graphicsPipelineCI.pInputAssemblyState->topology == VK_PRIMITIVE_TOPOLOGY_LINE_LIST ||
+             pPipeline->graphicsPipelineCI.pInputAssemblyState->topology == VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST ||
+             pPipeline->graphicsPipelineCI.pInputAssemblyState->topology == VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY ||
+             pPipeline->graphicsPipelineCI.pInputAssemblyState->topology == VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY ||
+             pPipeline->graphicsPipelineCI.pInputAssemblyState->topology == VK_PRIMITIVE_TOPOLOGY_PATCH_LIST)) {
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
+                            HandleToUint64(device), "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00428",
+                            "topology is %s and primitiveRestartEnable is VK_TRUE. It is invalid.",
+                            string_VkPrimitiveTopology(pPipeline->graphicsPipelineCI.pInputAssemblyState->topology));
+        }
+        if ((enabled_features.core.geometryShader == VK_FALSE) &&
+            (pPipeline->graphicsPipelineCI.pInputAssemblyState->topology == VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY ||
+             pPipeline->graphicsPipelineCI.pInputAssemblyState->topology == VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY ||
+             pPipeline->graphicsPipelineCI.pInputAssemblyState->topology == VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY ||
+             pPipeline->graphicsPipelineCI.pInputAssemblyState->topology == VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP_WITH_ADJACENCY)) {
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
+                            HandleToUint64(device), "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00429",
+                            "topology is %s and geometry shaders feature is not enabled. It is invalid.",
+                            string_VkPrimitiveTopology(pPipeline->graphicsPipelineCI.pInputAssemblyState->topology));
+        }
+        if ((enabled_features.core.tessellationShader == VK_FALSE) &&
+            (pPipeline->graphicsPipelineCI.pInputAssemblyState->topology == VK_PRIMITIVE_TOPOLOGY_PATCH_LIST)) {
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
+                            HandleToUint64(device), "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00430",
+                            "topology is %s and tessellation shaders feature is not enabled. It is invalid.",
+                            string_VkPrimitiveTopology(pPipeline->graphicsPipelineCI.pInputAssemblyState->topology));
         }
     }
 
@@ -2010,7 +2128,7 @@ bool CoreChecks::ValidateDeviceMaskToRenderPass(GLOBAL_CB_NODE *pCB, uint32_t de
     if ((deviceMask & pCB->active_render_pass_device_mask) != deviceMask) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VUID_handle_type, VUID_handle, VUID,
                         "deviceMask(0x%" PRIx32 ") is not a subset of the render pass[%s] device mask(0x%" PRIx32 ").", deviceMask,
-                        report_data->FormatHandle(pCB->activeRenderPass).c_str(), pCB->active_render_pass_device_mask);
+                        report_data->FormatHandle(pCB->activeRenderPass->renderPass).c_str(), pCB->active_render_pass_device_mask);
     }
     return skip;
 }
@@ -2130,7 +2248,7 @@ void CoreChecks::ResetCommandBufferState(const VkCommandBuffer cb) {
         pCB->queryToStateMap.clear();
         pCB->activeQueries.clear();
         pCB->startedQueries.clear();
-        pCB->imageLayoutMap.clear();
+        pCB->image_layout_map.clear();
         pCB->eventToStageMap.clear();
         pCB->draw_data.clear();
         pCB->current_draw_data.vertex_buffer_bindings.clear();
@@ -2475,6 +2593,11 @@ void CoreChecks::PostCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDevice
     const auto *cooperative_matrix_features = lvl_find_in_chain<VkPhysicalDeviceCooperativeMatrixFeaturesNV>(pCreateInfo->pNext);
     if (cooperative_matrix_features) {
         core_checks->enabled_features.cooperative_matrix_features = *cooperative_matrix_features;
+    }
+
+    const auto *float_controls_features = lvl_find_in_chain<VkPhysicalDeviceFloatControlsPropertiesKHR>(pCreateInfo->pNext);
+    if (float_controls_features) {
+        core_checks->enabled_features.float_controls = *float_controls_features;
     }
 
     // Store physical device properties and physical device mem limits into CoreChecks structs
@@ -4065,6 +4188,7 @@ void CoreChecks::PreCallRecordDestroyEvent(VkDevice device, VkEvent event, const
 }
 
 bool CoreChecks::PreCallValidateDestroyQueryPool(VkDevice device, VkQueryPool queryPool, const VkAllocationCallbacks *pAllocator) {
+    if (disabled.query_validation) return false;
     QUERY_POOL_NODE *qp_state = GetQueryPoolNode(queryPool);
     VK_OBJECT obj_struct = {HandleToUint64(queryPool), kVulkanObjectTypeQueryPool};
     bool skip = false;
@@ -4085,6 +4209,7 @@ void CoreChecks::PreCallRecordDestroyQueryPool(VkDevice device, VkQueryPool quer
 bool CoreChecks::PreCallValidateGetQueryPoolResults(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery,
                                                     uint32_t queryCount, size_t dataSize, void *pData, VkDeviceSize stride,
                                                     VkQueryResultFlags flags) {
+    if (disabled.query_validation) return false;
     bool skip = false;
     auto query_pool_state = queryPoolMap.find(queryPool);
     if (query_pool_state != queryPoolMap.end()) {
@@ -4747,6 +4872,7 @@ void CoreChecks::PostCallRecordCreateCommandPool(VkDevice device, const VkComman
 
 bool CoreChecks::PreCallValidateCreateQueryPool(VkDevice device, const VkQueryPoolCreateInfo *pCreateInfo,
                                                 const VkAllocationCallbacks *pAllocator, VkQueryPool *pQueryPool) {
+    if (disabled.query_validation) return false;
     bool skip = false;
     if (pCreateInfo && pCreateInfo->queryType == VK_QUERY_TYPE_PIPELINE_STATISTICS) {
         if (!enabled_features.core.pipelineStatisticsQuery) {
@@ -8447,6 +8573,7 @@ bool CoreChecks::SetQueryState(VkQueue queue, VkCommandBuffer commandBuffer, Que
 }
 
 bool CoreChecks::PreCallValidateCmdBeginQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot, VkFlags flags) {
+    if (disabled.query_validation) return false;
     GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
     bool skip = ValidateCmdQueueFlags(cb_state, "vkCmdBeginQuery()", VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
@@ -8483,6 +8610,7 @@ void CoreChecks::PostCallRecordCmdBeginQuery(VkCommandBuffer commandBuffer, VkQu
 }
 
 bool CoreChecks::PreCallValidateCmdEndQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot) {
+    if (disabled.query_validation) return false;
     QueryObject query = {queryPool, slot};
     GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
@@ -8510,6 +8638,7 @@ void CoreChecks::PostCallRecordCmdEndQuery(VkCommandBuffer commandBuffer, VkQuer
 
 bool CoreChecks::PreCallValidateCmdResetQueryPool(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery,
                                                   uint32_t queryCount) {
+    if (disabled.query_validation) return false;
     GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
 
     bool skip = InsideRenderPass(cb_state, "vkCmdResetQueryPool()", "VUID-vkCmdResetQueryPool-renderpass");
@@ -8564,6 +8693,7 @@ bool CoreChecks::ValidateQuery(VkQueue queue, GLOBAL_CB_NODE *pCB, VkQueryPool q
 bool CoreChecks::PreCallValidateCmdCopyQueryPoolResults(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery,
                                                         uint32_t queryCount, VkBuffer dstBuffer, VkDeviceSize dstOffset,
                                                         VkDeviceSize stride, VkQueryResultFlags flags) {
+    if (disabled.query_validation) return false;
     auto cb_state = GetCBNode(commandBuffer);
     auto dst_buff_state = GetBufferState(dstBuffer);
     assert(cb_state);
@@ -8647,6 +8777,7 @@ bool CoreChecks::PreCallValidateCmdPushConstants(VkCommandBuffer commandBuffer, 
 
 bool CoreChecks::PreCallValidateCmdWriteTimestamp(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage,
                                                   VkQueryPool queryPool, uint32_t slot) {
+    if (disabled.query_validation) return false;
     GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
     bool skip = ValidateCmdQueueFlags(cb_state, "vkCmdWriteTimestamp()",
@@ -10225,38 +10356,39 @@ bool CoreChecks::ValidateFramebuffer(VkCommandBuffer primaryBuffer, const GLOBAL
 bool CoreChecks::ValidateSecondaryCommandBufferState(GLOBAL_CB_NODE *pCB, GLOBAL_CB_NODE *pSubCB) {
     bool skip = false;
     unordered_set<int> activeTypes;
-    for (auto queryObject : pCB->activeQueries) {
-        auto queryPoolData = queryPoolMap.find(queryObject.pool);
-        if (queryPoolData != queryPoolMap.end()) {
-            if (queryPoolData->second.createInfo.queryType == VK_QUERY_TYPE_PIPELINE_STATISTICS &&
-                pSubCB->beginInfo.pInheritanceInfo) {
-                VkQueryPipelineStatisticFlags cmdBufStatistics = pSubCB->beginInfo.pInheritanceInfo->pipelineStatistics;
-                if ((cmdBufStatistics & queryPoolData->second.createInfo.pipelineStatistics) != cmdBufStatistics) {
-                    skip |= log_msg(
-                        report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                        HandleToUint64(pCB->commandBuffer), "VUID-vkCmdExecuteCommands-commandBuffer-00104",
-                        "vkCmdExecuteCommands() called w/ invalid Cmd Buffer %s which has invalid active query pool %s"
-                        ". Pipeline statistics is being queried so the command buffer must have all bits set on the queryPool.",
-                        report_data->FormatHandle(pCB->commandBuffer).c_str(),
-                        report_data->FormatHandle(queryPoolData->first).c_str());
-                }
-            }
-            activeTypes.insert(queryPoolData->second.createInfo.queryType);
-        }
-    }
-    for (auto queryObject : pSubCB->startedQueries) {
-        auto queryPoolData = queryPoolMap.find(queryObject.pool);
-        if (queryPoolData != queryPoolMap.end() && activeTypes.count(queryPoolData->second.createInfo.queryType)) {
-            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                            HandleToUint64(pCB->commandBuffer), kVUID_Core_DrawState_InvalidSecondaryCommandBuffer,
+    if (!disabled.query_validation) {
+        for (auto queryObject : pCB->activeQueries) {
+            auto queryPoolData = queryPoolMap.find(queryObject.pool);
+            if (queryPoolData != queryPoolMap.end()) {
+                if (queryPoolData->second.createInfo.queryType == VK_QUERY_TYPE_PIPELINE_STATISTICS &&
+                    pSubCB->beginInfo.pInheritanceInfo) {
+                    VkQueryPipelineStatisticFlags cmdBufStatistics = pSubCB->beginInfo.pInheritanceInfo->pipelineStatistics;
+                    if ((cmdBufStatistics & queryPoolData->second.createInfo.pipelineStatistics) != cmdBufStatistics) {
+                        skip |= log_msg(
+                            report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                            HandleToUint64(pCB->commandBuffer), "VUID-vkCmdExecuteCommands-commandBuffer-00104",
                             "vkCmdExecuteCommands() called w/ invalid Cmd Buffer %s which has invalid active query pool %s"
-                            " of type %d but a query of that type has been started on secondary Cmd Buffer %s.",
+                            ". Pipeline statistics is being queried so the command buffer must have all bits set on the queryPool.",
                             report_data->FormatHandle(pCB->commandBuffer).c_str(),
-                            report_data->FormatHandle(queryPoolData->first).c_str(), queryPoolData->second.createInfo.queryType,
-                            report_data->FormatHandle(pSubCB->commandBuffer).c_str());
+                            report_data->FormatHandle(queryPoolData->first).c_str());
+                    }
+                }
+                activeTypes.insert(queryPoolData->second.createInfo.queryType);
+            }
+        }
+        for (auto queryObject : pSubCB->startedQueries) {
+            auto queryPoolData = queryPoolMap.find(queryObject.pool);
+            if (queryPoolData != queryPoolMap.end() && activeTypes.count(queryPoolData->second.createInfo.queryType)) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                                HandleToUint64(pCB->commandBuffer), kVUID_Core_DrawState_InvalidSecondaryCommandBuffer,
+                                "vkCmdExecuteCommands() called w/ invalid Cmd Buffer %s which has invalid active query pool %s"
+                                " of type %d but a query of that type has been started on secondary Cmd Buffer %s.",
+                                report_data->FormatHandle(pCB->commandBuffer).c_str(),
+                                report_data->FormatHandle(queryPoolData->first).c_str(), queryPoolData->second.createInfo.queryType,
+                                report_data->FormatHandle(pSubCB->commandBuffer).c_str());
+            }
         }
     }
-
     auto primary_pool = GetCommandPoolNode(pCB->createInfo.commandPool);
     auto secondary_pool = GetCommandPoolNode(pSubCB->createInfo.commandPool);
     if (primary_pool && secondary_pool && (primary_pool->queueFamilyIndex != secondary_pool->queueFamilyIndex)) {
@@ -10362,45 +10494,46 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                             "inherited queries not supported on this device.",
                             report_data->FormatHandle(pCommandBuffers[i]).c_str());
         }
-        // Propagate layout transitions to the primary cmd buffer
+        // Validate initial layout uses vs. the primary cmd buffer state
         // Novel Valid usage: "UNASSIGNED-vkCmdExecuteCommands-commandBuffer-00001"
         // initial layout usage of secondary command buffers resources must match parent command buffer
-        for (const auto &ilm_entry : sub_cb_state->imageLayoutMap) {
-            auto cb_entry = cb_state->imageLayoutMap.find(ilm_entry.first);
-            if (cb_entry != cb_state->imageLayoutMap.end()) {
-                // For exact matches ImageSubresourcePair matches, validate and update the parent entry
-                if ((VK_IMAGE_LAYOUT_UNDEFINED != ilm_entry.second.initialLayout) &&
-                    (cb_entry->second.layout != ilm_entry.second.initialLayout)) {
-                    const VkImageSubresource &subresource = ilm_entry.first.subresource;
-                    log_msg(
-                        report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                        HandleToUint64(pCommandBuffers[i]), "UNASSIGNED-vkCmdExecuteCommands-commandBuffer-00001",
-                        "%s: Executed secondary command buffer using image %s (subresource: aspectMask 0x%X array layer %u, "
-                        "mip level %u) which expects layout %s--instead, image %s's current layout is %s.",
-                        "vkCmdExecuteCommands():", report_data->FormatHandle(ilm_entry.first.image).c_str(), subresource.aspectMask,
-                        subresource.arrayLayer, subresource.mipLevel, string_VkImageLayout(ilm_entry.second.initialLayout),
-                        report_data->FormatHandle(ilm_entry.first.image).c_str(), string_VkImageLayout(cb_entry->second.layout));
+        const auto *const_cb_state = static_cast<const GLOBAL_CB_NODE *>(cb_state);
+        for (const auto &sub_layout_map_entry : sub_cb_state->image_layout_map) {
+            const auto image = sub_layout_map_entry.first;
+            const auto *image_state = GetImageState(image);
+            if (!image_state) continue;  // Can't set layouts of a dead image
+
+            const auto *cb_subres_map = GetImageSubresourceLayoutMap(const_cb_state, image);
+            // Const getter can be null in which case we have nothing to check against for this image...
+            if (!cb_subres_map) continue;
+
+            const auto &sub_cb_subres_map = sub_layout_map_entry.second;
+            // Validate the initial_uses, that they match the current state of the primary cb, or absent a current state,
+            // that the match any initial_layout.
+            for (auto it_init = sub_cb_subres_map->BeginInitialUse(); !it_init.AtEnd(); ++it_init) {
+                const auto &sub_layout = (*it_init).layout;
+                if (VK_IMAGE_LAYOUT_UNDEFINED == sub_layout) continue;  // secondary doesn't care about current or initial
+                const auto &subresource = (*it_init).subresource;
+                // Look up the current layout (if any)
+                VkImageLayout cb_layout = cb_subres_map->GetSubresourceLayout(subresource);
+                const char *layout_type = "current";
+                if (cb_layout == kInvalidLayout) {
+                    // Find initial layout (if any)
+                    cb_layout = cb_subres_map->GetSubresourceInitialLayout(subresource);
+                    layout_type = "initial";
                 }
-            } else {
-                // Look for partial matches (in aspectMask), and update or create parent map entry in SetLayout
-                assert(ilm_entry.first.hasSubresource);
-                IMAGE_CMD_BUF_LAYOUT_NODE node;
-                if (FindCmdBufLayout(cb_state, ilm_entry.first.image, ilm_entry.first.subresource, node)) {
-                    if ((VK_IMAGE_LAYOUT_UNDEFINED != ilm_entry.second.initialLayout) &&
-                        (node.layout != ilm_entry.second.initialLayout)) {
-                        const VkImageSubresource &subresource = ilm_entry.first.subresource;
-                        log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                                HandleToUint64(pCommandBuffers[i]), "UNASSIGNED-vkCmdExecuteCommands-commandBuffer-00001",
-                                "%s: Executed secondary command buffer using image %s (subresource: aspectMask 0x%X array layer "
-                                "%u, mip level %u) which expects layout %s--instead, image %s's current layout is %s.",
-                                "vkCmdExecuteCommands():", report_data->FormatHandle(ilm_entry.first.image).c_str(),
-                                subresource.aspectMask, subresource.arrayLayer, subresource.mipLevel,
-                                string_VkImageLayout(ilm_entry.second.initialLayout),
-                                report_data->FormatHandle(ilm_entry.first.image).c_str(), string_VkImageLayout(node.layout));
-                    }
+                if ((cb_layout != kInvalidLayout) && (cb_layout != sub_layout)) {
+                    log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                            HandleToUint64(pCommandBuffers[i]), "UNASSIGNED-vkCmdExecuteCommands-commandBuffer-00001",
+                            "%s: Executed secondary command buffer using image %s (subresource: aspectMask 0x%X array layer %u, "
+                            "mip level %u) which expects layout %s--instead, image %s layout is %s.",
+                            "vkCmdExecuteCommands():", report_data->FormatHandle(image).c_str(), subresource.aspectMask,
+                            subresource.arrayLayer, subresource.mipLevel, string_VkImageLayout(sub_layout), layout_type,
+                            string_VkImageLayout(cb_layout));
                 }
             }
         }
+
         linked_command_buffers.insert(sub_cb_state);
     }
     skip |= ValidatePrimaryCommandBuffer(cb_state, "vkCmdExecuteCommands()", "VUID-vkCmdExecuteCommands-bufferlevel");
@@ -10426,25 +10559,19 @@ void CoreChecks::PreCallRecordCmdExecuteCommands(VkCommandBuffer commandBuffer, 
                 cb_state->beginInfo.flags &= ~VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
             }
         }
-        // Propagate layout transitions to the primary cmd buffer
-        // Novel Valid usage: "UNASSIGNED-vkCmdExecuteCommands-commandBuffer-00001"
-        //  initial layout usage of secondary command buffers resources must match parent command buffer
-        for (const auto &ilm_entry : sub_cb_state->imageLayoutMap) {
-            auto cb_entry = cb_state->imageLayoutMap.find(ilm_entry.first);
-            if (cb_entry != cb_state->imageLayoutMap.end()) {
-                // For exact matches ImageSubresourcePair matches, update the parent entry
-                cb_entry->second.layout = ilm_entry.second.layout;
-            } else {
-                // Look for partial matches (in aspectMask), and update or create parent map entry in SetLayout
-                assert(ilm_entry.first.hasSubresource);
-                IMAGE_CMD_BUF_LAYOUT_NODE node;
-                if (!FindCmdBufLayout(cb_state, ilm_entry.first.image, ilm_entry.first.subresource, node)) {
-                    node.initialLayout = ilm_entry.second.initialLayout;
-                }
-                node.layout = ilm_entry.second.layout;
-                SetLayout(cb_state, ilm_entry.first, node);
-            }
+
+        // Propagate inital layout and current layout state to the primary cmd buffer
+        for (const auto &sub_layout_map_entry : sub_cb_state->image_layout_map) {
+            const auto image = sub_layout_map_entry.first;
+            const auto *image_state = GetImageState(image);
+            if (!image_state) continue;  // Can't set layouts of a dead image
+
+            auto *cb_subres_map = GetImageSubresourceLayoutMap(cb_state, *image_state);
+            const auto *sub_cb_subres_map = sub_layout_map_entry.second.get();
+            assert(cb_subres_map && sub_cb_subres_map);  // Non const get and map traversal should never be null
+            cb_subres_map->UpdateFrom(*sub_cb_subres_map);
         }
+
         sub_cb_state->primaryCommandBuffer = cb_state->commandBuffer;
         cb_state->linkedCommandBuffers.insert(sub_cb_state);
         sub_cb_state->linkedCommandBuffers.insert(cb_state);
@@ -13080,24 +13207,24 @@ VkResult CoreChecks::CoreLayerCreateValidationCacheEXT(VkDevice device, const Vk
 
 void CoreChecks::CoreLayerDestroyValidationCacheEXT(VkDevice device, VkValidationCacheEXT validationCache,
                                                     const VkAllocationCallbacks *pAllocator) {
-    delete (ValidationCache *)validationCache;
+    delete CastFromHandle<ValidationCache *>(validationCache);
 }
 
 VkResult CoreChecks::CoreLayerGetValidationCacheDataEXT(VkDevice device, VkValidationCacheEXT validationCache, size_t *pDataSize,
                                                         void *pData) {
     size_t inSize = *pDataSize;
-    ((ValidationCache *)validationCache)->Write(pDataSize, pData);
+    CastFromHandle<ValidationCache *>(validationCache)->Write(pDataSize, pData);
     return (pData && *pDataSize != inSize) ? VK_INCOMPLETE : VK_SUCCESS;
 }
 
 VkResult CoreChecks::CoreLayerMergeValidationCachesEXT(VkDevice device, VkValidationCacheEXT dstCache, uint32_t srcCacheCount,
                                                        const VkValidationCacheEXT *pSrcCaches) {
     bool skip = false;
-    auto dst = (ValidationCache *)dstCache;
-    auto src = (ValidationCache const *const *)pSrcCaches;
+    auto dst = CastFromHandle<ValidationCache *>(dstCache);
     VkResult result = VK_SUCCESS;
     for (uint32_t i = 0; i < srcCacheCount; i++) {
-        if (src[i] == dst) {
+        auto src = CastFromHandle<const ValidationCache *>(pSrcCaches[i]);
+        if (src == dst) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_VALIDATION_CACHE_EXT, 0,
                             "VUID-vkMergeValidationCachesEXT-dstCache-01536",
                             "vkMergeValidationCachesEXT: dstCache (0x%" PRIx64 ") must not appear in pSrcCaches array.",
@@ -13105,7 +13232,7 @@ VkResult CoreChecks::CoreLayerMergeValidationCachesEXT(VkDevice device, VkValida
             result = VK_ERROR_VALIDATION_FAILED_EXT;
         }
         if (!skip) {
-            dst->Merge(src[i]);
+            dst->Merge(src);
         }
     }
 

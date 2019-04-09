@@ -25,6 +25,7 @@
 #define CORE_VALIDATION_TYPES_H_
 
 #include "hash_vk_types.h"
+#include "sparse_containers.h"
 #include "vk_safe_struct.h"
 #include "vulkan/vulkan.h"
 #include "vk_layer_logging.h"
@@ -33,6 +34,8 @@
 #include "vk_typemap_helper.h"
 #include "convert_to_renderpass2.h"
 #include "layer_chassis_dispatch.h"
+
+#include <array>
 #include <atomic>
 #include <functional>
 #include <list>
@@ -298,34 +301,9 @@ class IMAGE_STATE : public BINDABLE {
     bool imported_ahb;              // True if image was imported from an Android Hardware Buffer
     bool has_ahb_format;            // True if image was created with an external Android format
     uint64_t ahb_format;            // External Android format, if provided
+    VkImageSubresourceRange full_range;  // The normalized ISR for all levels, layers (slices), and aspects
     std::vector<VkSparseImageMemoryRequirements> sparse_requirements;
-    IMAGE_STATE(VkImage img, const VkImageCreateInfo *pCreateInfo)
-        : image(img),
-          createInfo(*pCreateInfo),
-          valid(false),
-          acquired(false),
-          shared_presentable(false),
-          layout_locked(false),
-          get_sparse_reqs_called(false),
-          sparse_metadata_required(false),
-          sparse_metadata_bound(false),
-          imported_ahb(false),
-          has_ahb_format(false),
-          ahb_format(0),
-          sparse_requirements{} {
-        if ((createInfo.sharingMode == VK_SHARING_MODE_CONCURRENT) && (createInfo.queueFamilyIndexCount > 0)) {
-            uint32_t *pQueueFamilyIndices = new uint32_t[createInfo.queueFamilyIndexCount];
-            for (uint32_t i = 0; i < createInfo.queueFamilyIndexCount; i++) {
-                pQueueFamilyIndices[i] = pCreateInfo->pQueueFamilyIndices[i];
-            }
-            createInfo.pQueueFamilyIndices = pQueueFamilyIndices;
-        }
-
-        if (createInfo.flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT) {
-            sparse = true;
-        }
-    };
-
+    IMAGE_STATE(VkImage img, const VkImageCreateInfo *pCreateInfo);
     IMAGE_STATE(IMAGE_STATE const &rh_obj) = delete;
 
     ~IMAGE_STATE() {
@@ -340,12 +318,9 @@ class IMAGE_VIEW_STATE : public BASE_NODE {
    public:
     VkImageView image_view;
     VkImageViewCreateInfo create_info;
+    VkImageSubresourceRange normalized_subresource_range;
     VkSamplerYcbcrConversion samplerConversion;  // Handle of the ycbcr sampler conversion the image was created with, if any
-    IMAGE_VIEW_STATE(VkImageView iv, const VkImageViewCreateInfo *ci)
-        : image_view(iv), create_info(*ci), samplerConversion(VK_NULL_HANDLE) {
-        auto *conversionInfo = lvl_find_in_chain<VkSamplerYcbcrConversionInfo>(create_info.pNext);
-        if (conversionInfo) samplerConversion = conversionInfo->conversion;
-    };
+    IMAGE_VIEW_STATE(const IMAGE_STATE *image_state, VkImageView iv, const VkImageViewCreateInfo *ci);
     IMAGE_VIEW_STATE(const IMAGE_VIEW_STATE &rh_obj) = delete;
 };
 
@@ -418,14 +393,420 @@ class SWAPCHAIN_NODE {
         : createInfo(pCreateInfo), swapchain(swapchain) {}
 };
 
-class IMAGE_CMD_BUF_LAYOUT_NODE {
-   public:
-    IMAGE_CMD_BUF_LAYOUT_NODE() = default;
-    IMAGE_CMD_BUF_LAYOUT_NODE(VkImageLayout initialLayoutInput, VkImageLayout layoutInput)
-        : initialLayout(initialLayoutInput), layout(layoutInput) {}
+struct ColorAspectTraits {
+    static const uint32_t kAspectCount = 1;
+    static int Index(VkImageAspectFlags mask) { return 0; };
+    static VkImageAspectFlags AspectMask() { return VK_IMAGE_ASPECT_COLOR_BIT; }
+    static const std::array<VkImageAspectFlagBits, kAspectCount> &AspectBits() {
+        static std::array<VkImageAspectFlagBits, kAspectCount> kAspectBits{VK_IMAGE_ASPECT_COLOR_BIT};
+        return kAspectBits;
+    }
+};
 
-    VkImageLayout initialLayout;
-    VkImageLayout layout;
+struct DepthAspectTraits {
+    static const uint32_t kAspectCount = 1;
+    static int Index(VkImageAspectFlags mask) { return 0; };
+    static VkImageAspectFlags AspectMask() { return VK_IMAGE_ASPECT_DEPTH_BIT; }
+    static const std::array<VkImageAspectFlagBits, kAspectCount> &AspectBits() {
+        static std::array<VkImageAspectFlagBits, kAspectCount> kAspectBits{VK_IMAGE_ASPECT_DEPTH_BIT};
+        return kAspectBits;
+    }
+};
+
+struct StencilAspectTraits {
+    static const uint32_t kAspectCount = 1;
+    static int Index(VkImageAspectFlags mask) { return 0; };
+    static VkImageAspectFlags AspectMask() { return VK_IMAGE_ASPECT_STENCIL_BIT; }
+    static const std::array<VkImageAspectFlagBits, kAspectCount> &AspectBits() {
+        static std::array<VkImageAspectFlagBits, kAspectCount> kAspectBits{VK_IMAGE_ASPECT_STENCIL_BIT};
+        return kAspectBits;
+    }
+};
+
+struct DepthStencilAspectTraits {
+    // VK_IMAGE_ASPECT_DEPTH_BIT = 0x00000002,  >> 1 -> 1 -1 -> 0
+    // VK_IMAGE_ASPECT_STENCIL_BIT = 0x00000004, >> 1 -> 2 -1 = 1
+    static const uint32_t kAspectCount = 2;
+    static uint32_t Index(VkImageAspectFlags mask) {
+        uint32_t index = (mask >> 1) - 1;
+        assert((index == 0) || (index == 1));
+        return index;
+    };
+    static VkImageAspectFlags AspectMask() { return VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT; }
+    static const std::array<VkImageAspectFlagBits, kAspectCount> &AspectBits() {
+        static std::array<VkImageAspectFlagBits, kAspectCount> kAspectBits{VK_IMAGE_ASPECT_DEPTH_BIT, VK_IMAGE_ASPECT_STENCIL_BIT};
+        return kAspectBits;
+    }
+};
+
+struct Multiplane2AspectTraits {
+    // VK_IMAGE_ASPECT_PLANE_0_BIT = 0x00000010, >> 4 - 1 -> 0
+    // VK_IMAGE_ASPECT_PLANE_1_BIT = 0x00000020, >> 4 - 1 -> 1
+    static const uint32_t kAspectCount = 2;
+    static uint32_t Index(VkImageAspectFlags mask) {
+        uint32_t index = (mask >> 4) - 1;
+        assert((index == 0) || (index == 1));
+        return index;
+    };
+    static VkImageAspectFlags AspectMask() { return VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT; }
+    static const std::array<VkImageAspectFlagBits, kAspectCount> &AspectBits() {
+        static std::array<VkImageAspectFlagBits, kAspectCount> kAspectBits{VK_IMAGE_ASPECT_PLANE_0_BIT,
+                                                                           VK_IMAGE_ASPECT_PLANE_1_BIT};
+        return kAspectBits;
+    }
+};
+
+struct Multiplane3AspectTraits {
+    // VK_IMAGE_ASPECT_PLANE_0_BIT = 0x00000010, >> 4 - 1 -> 0
+    // VK_IMAGE_ASPECT_PLANE_1_BIT = 0x00000020, >> 4 - 1 -> 1
+    // VK_IMAGE_ASPECT_PLANE_2_BIT = 0x00000040, >> 4 - 1 -> 3
+    static const uint32_t kAspectCount = 3;
+    static uint32_t Index(VkImageAspectFlags mask) {
+        uint32_t index = (mask >> 4) - 1;
+        index = index > 2 ? 2 : index;
+        assert((index == 0) || (index == 1) || (index == 2));
+        return index;
+    };
+    static VkImageAspectFlags AspectMask() {
+        return VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT | VK_IMAGE_ASPECT_PLANE_2_BIT;
+    }
+    static const std::array<VkImageAspectFlagBits, kAspectCount> &AspectBits() {
+        static std::array<VkImageAspectFlagBits, kAspectCount> kAspectBits{VK_IMAGE_ASPECT_PLANE_0_BIT, VK_IMAGE_ASPECT_PLANE_1_BIT,
+                                                                           VK_IMAGE_ASPECT_PLANE_2_BIT};
+        return kAspectBits;
+    }
+};
+
+const static VkImageLayout kInvalidLayout = VK_IMAGE_LAYOUT_MAX_ENUM;
+// Interface class.
+class ImageSubresourceLayoutMap {
+   public:
+    typedef std::function<bool(const VkImageSubresource &, VkImageLayout, VkImageLayout)> Callback;
+
+    struct SubresourceLayout {
+        VkImageSubresource subresource;
+        VkImageLayout layout;
+    };
+
+    struct SubresourceRangeLayout {
+        VkImageSubresourceRange range;
+        VkImageLayout layout;
+    };
+
+    class ConstIteratorInterface {
+       public:
+        // Make the value accessor non virtual
+        const SubresourceLayout &operator*() const { return value_; }
+
+        virtual ConstIteratorInterface &operator++() = 0;
+        virtual bool AtEnd() const = 0;
+        virtual ~ConstIteratorInterface(){};
+
+       protected:
+        SubresourceLayout value_;
+    };
+
+    class ConstIterator {
+       public:
+        ConstIterator &operator++() {
+            ++(*it_);
+            return *this;
+        }
+        const SubresourceLayout &operator*() const { return *(*it_); }
+        ConstIterator(ConstIteratorInterface *it) : it_(it){};
+        bool AtEnd() const { return it_->AtEnd(); }
+
+       protected:
+        std::unique_ptr<ConstIteratorInterface> it_;
+    };
+
+    virtual ConstIterator BeginInitialUse() const = 0;
+    virtual ConstIterator BeginSetLayout() const = 0;
+
+    virtual bool SetSubresourceRangeLayout(const VkImageSubresourceRange &range, VkImageLayout layout,
+                                           VkImageLayout expected_layout = kInvalidLayout) = 0;
+    virtual bool SetSubresourceRangeInitialLayout(const VkImageSubresourceRange &range, VkImageLayout layout) = 0;
+    virtual bool ForRange(const VkImageSubresourceRange &range, const Callback &callback, bool skip_invalid = true,
+                          bool always_get_initial = false) const = 0;
+    virtual VkImageLayout GetSubresourceLayout(const VkImageSubresource subresource) const = 0;
+    virtual VkImageLayout GetSubresourceInitialLayout(const VkImageSubresource subresource) const = 0;
+    virtual bool UpdateFrom(const ImageSubresourceLayoutMap &from) = 0;
+    virtual uintptr_t CompatibilityKey() const = 0;
+    ImageSubresourceLayoutMap() {}
+    virtual ~ImageSubresourceLayoutMap() {}
+};
+
+template <typename AspectTraits_, size_t kSparseThreshold = 64U>
+class ImageSubresourceLayoutMapImpl : public ImageSubresourceLayoutMap {
+   public:
+    typedef ImageSubresourceLayoutMap Base;
+    typedef AspectTraits_ AspectTraits;
+    typedef Base::SubresourceLayout SubresourceLayout;
+    typedef sparse_container::SparseVector<size_t, VkImageLayout, true, kInvalidLayout, kSparseThreshold> LayoutMap;
+    typedef sparse_container::SparseVector<size_t, VkImageLayout, false, kInvalidLayout, kSparseThreshold> InitialLayoutMap;
+
+    struct Layouts {
+        LayoutMap current;
+        InitialLayoutMap initial;
+        Layouts(size_t size) : current(0, size), initial(0, size) {}
+    };
+
+    template <typename Container>
+    class ConstIteratorImpl : public Base::ConstIteratorInterface {
+       public:
+        ConstIteratorImpl &operator++() override {
+            ++it_;
+            UpdateValue();
+            return *this;
+        }
+        // Just good enough for cend checks
+        ConstIteratorImpl(const ImageSubresourceLayoutMapImpl &map, const Container &container)
+            : map_(&map), container_(&container), the_end_(false) {
+            it_ = container_->cbegin();
+            UpdateValue();
+        }
+        ~ConstIteratorImpl() override {}
+        virtual bool AtEnd() const override { return the_end_; }
+
+       protected:
+        void UpdateValue() {
+            if (it_ != container_->cend()) {
+                value_.subresource = map_->Decode((*it_).first);
+                value_.layout = (*it_).second;
+            } else {
+                the_end_ = true;
+                value_.layout = kInvalidLayout;
+            }
+        }
+
+        typedef typename Container::const_iterator ContainerIterator;
+        const ImageSubresourceLayoutMapImpl *map_;
+        const Container *container_;
+        bool the_end_;
+        ContainerIterator it_;
+    };
+
+    Base::ConstIterator BeginInitialUse() const override {
+        return Base::ConstIterator(new ConstIteratorImpl<InitialLayoutMap>(*this, layouts_.initial));
+    }
+
+    Base::ConstIterator BeginSetLayout() const override {
+        return Base::ConstIterator(new ConstIteratorImpl<LayoutMap>(*this, layouts_.current));
+    }
+
+    bool SetSubresourceRangeLayout(const VkImageSubresourceRange &range, VkImageLayout layout,
+                                   VkImageLayout expected_layout = kInvalidLayout) override {
+        bool updated = false;
+        if (expected_layout == kInvalidLayout) {
+            // Set the initial layout to the set layout as we had no other layout to reference
+            expected_layout = layout;
+        }
+        if (!InRange(range)) return false;  // Don't even try to track bogus subreources
+
+        const uint32_t end_mip = range.baseMipLevel + range.levelCount;
+        const auto &aspects = AspectTraits::AspectBits();
+        for (uint32_t aspect_index = 0; aspect_index < AspectTraits::kAspectCount; aspect_index++) {
+            if (0 == (range.aspectMask & aspects[aspect_index])) continue;
+            size_t array_offset = Encode(aspect_index, range.baseMipLevel);
+            for (uint32_t mip_level = range.baseMipLevel; mip_level < end_mip; ++mip_level, array_offset += mip_size_) {
+                size_t start = array_offset + range.baseArrayLayer;
+                size_t end = start + range.layerCount;
+                bool updated_level = layouts_.current.SetRange(start, end, layout);
+                if (updated_level) {
+                    // We only need to try setting the initial layout, if we changed any of the layout values above
+                    layouts_.initial.SetRange(start, end, expected_layout);
+                    updated = true;
+                }
+            }
+        }
+        if (updated) version_++;
+        return updated;
+    }
+
+    bool SetSubresourceRangeInitialLayout(const VkImageSubresourceRange &range, VkImageLayout layout) override {
+        bool updated = false;
+        if (!InRange(range)) return false;  // Don't even try to track bogus subreources
+
+        const uint32_t end_mip = range.baseMipLevel + range.levelCount;
+        const auto &aspects = AspectTraits::AspectBits();
+        for (uint32_t aspect_index = 0; aspect_index < AspectTraits::kAspectCount; aspect_index++) {
+            if (0 == (range.aspectMask & aspects[aspect_index])) continue;
+            size_t array_offset = Encode(aspect_index, range.baseMipLevel);
+            for (uint32_t mip_level = range.baseMipLevel; mip_level < end_mip; ++mip_level, array_offset += mip_size_) {
+                size_t start = array_offset + range.baseArrayLayer;
+                size_t end = start + range.layerCount;
+                updated |= layouts_.initial.SetRange(start, end, layout);
+            }
+        }
+        if (updated) version_++;
+        return updated;
+    }
+
+    // Loop over the given range calling the callback, primarily for
+    // validation checks.  By default the initial_value is only looked
+    // up if the set value isn't found.
+    bool ForRange(const VkImageSubresourceRange &range, const Callback &callback, bool skip_invalid = true,
+                  bool always_get_initial = false) const override {
+        if (!InRange(range)) return false;  // Don't even try to process bogus subreources
+
+        VkImageSubresource subres;
+        auto &level = subres.mipLevel;
+        auto &layer = subres.arrayLayer;
+        auto &aspect = subres.aspectMask;
+        const auto &aspects = AspectTraits::AspectBits();
+        bool keep_on = true;
+        const uint32_t end_mip = range.baseMipLevel + range.levelCount;
+        const uint32_t end_layer = range.baseArrayLayer + range.layerCount;
+        for (uint32_t aspect_index = 0; aspect_index < AspectTraits::kAspectCount; aspect_index++) {
+            if (0 == (range.aspectMask & aspects[aspect_index])) continue;
+            aspect = aspects[aspect_index];  // noting that this and the following loop indices are references
+            size_t array_offset = Encode(aspect_index, range.baseMipLevel);
+            for (level = range.baseMipLevel; level < end_mip; ++level, array_offset += mip_size_) {
+                for (layer = range.baseArrayLayer; layer < end_layer; layer++) {
+                    // TODO -- would an interator with range check be faster?
+                    size_t index = array_offset + layer;
+                    VkImageLayout layout = layouts_.current.Get(index);
+                    VkImageLayout initial_layout = kInvalidLayout;
+                    if (always_get_initial || (layout == kInvalidLayout)) {
+                        initial_layout = layouts_.initial.Get(index);
+                    }
+
+                    if (!skip_invalid || (layout != kInvalidLayout) || (initial_layout != kInvalidLayout)) {
+                        keep_on = callback(subres, layout, initial_layout);
+                        if (!keep_on) return keep_on;  // False value from the callback aborts the range traversal
+                    }
+                }
+            }
+        }
+        return keep_on;
+    }
+    VkImageLayout GetSubresourceInitialLayout(const VkImageSubresource subresource) const override {
+        if (!InRange(subresource)) return kInvalidLayout;
+        uint32_t aspect_index = AspectTraits::Index(subresource.aspectMask);
+        size_t index = Encode(aspect_index, subresource.mipLevel, subresource.arrayLayer);
+        return layouts_.initial.Get(index);
+    }
+
+    VkImageLayout GetSubresourceLayout(const VkImageSubresource subresource) const override {
+        if (!InRange(subresource)) return kInvalidLayout;
+        uint32_t aspect_index = AspectTraits::Index(subresource.aspectMask);
+        size_t index = Encode(aspect_index, subresource.mipLevel, subresource.arrayLayer);
+        return layouts_.current.Get(index);
+    }
+
+    // TODO: make sure this paranoia check is sufficient and not too much.
+    uintptr_t CompatibilityKey() const override {
+        return (reinterpret_cast<const uintptr_t>(&image_state_) ^ AspectTraits::AspectMask() ^ kSparseThreshold);
+    }
+
+    bool UpdateFrom(const ImageSubresourceLayoutMap &other) override {
+        // Must be from matching images for the reinterpret cast to be valid
+        assert(CompatibilityKey() == other.CompatibilityKey());
+        if (CompatibilityKey() != other.CompatibilityKey()) return false;
+
+        const auto &from = reinterpret_cast<const ImageSubresourceLayoutMapImpl &>(other);
+        bool updated = false;
+        updated |= layouts_.initial.Merge(from.layouts_.initial);
+        updated |= layouts_.current.Merge(from.layouts_.current);
+
+        return updated;
+    }
+
+    ImageSubresourceLayoutMapImpl() : Base() {}
+    ImageSubresourceLayoutMapImpl(const IMAGE_STATE &image_state)
+        : Base(),
+          image_state_(image_state),
+          mip_size_(image_state.full_range.layerCount),
+          aspect_size_(mip_size_ * image_state.full_range.levelCount),
+          version_(0),
+          layouts_(aspect_size_ * AspectTraits::kAspectCount) {
+        // Setup the row <-> aspect/mip_level base Encode/Decode LUT...
+        aspect_offsets_[0] = 0;
+        for (size_t i = 1; i < aspect_offsets_.size(); ++i) {  // Size is a compile time constant
+            aspect_offsets_[i] = aspect_offsets_[i - 1] + aspect_size_;
+        }
+    }
+    ~ImageSubresourceLayoutMapImpl() override {}
+
+   protected:
+    // This looks a bit ponderous but kAspectCount is a compile time constant
+    VkImageSubresource Decode(size_t index) const {
+        VkImageSubresource subres;
+        // find aspect index
+        uint32_t aspect_index = 0;
+        if (AspectTraits::kAspectCount == 2) {
+            if (index >= aspect_offsets_[1]) {
+                aspect_index = 1;
+                index = index - aspect_offsets_[aspect_index];
+            }
+        } else if (AspectTraits::kAspectCount == 3) {
+            if (index >= aspect_offsets_[2]) {
+                aspect_index = 2;
+            } else if (index >= aspect_offsets_[1]) {
+                aspect_index = 1;
+            }
+            index = index - aspect_offsets_[aspect_index];
+        } else {
+            assert(AspectTraits::kAspectCount == 1);  // Only aspect counts of 1, 2, and 3 supported
+        }
+
+        subres.aspectMask = AspectTraits::AspectBits()[aspect_index];
+        subres.mipLevel =
+            static_cast<uint32_t>(index / mip_size_);  // One hopes the compiler with optimize this pair of divisions...
+        subres.arrayLayer = static_cast<uint32_t>(index % mip_size_);
+
+        return subres;
+    }
+
+    uint32_t LevelLimit(uint32_t level) const { return std::min(image_state_.full_range.levelCount, level); }
+    uint32_t LayerLimit(uint32_t layer) const { return std::min(image_state_.full_range.layerCount, layer); }
+
+    bool InRange(const VkImageSubresource &subres) const {
+        bool in_range = (subres.mipLevel < image_state_.full_range.levelCount) &&
+                        (subres.arrayLayer < image_state_.full_range.layerCount) &&
+                        (subres.aspectMask & AspectTraits::AspectMask());
+        return in_range;
+    }
+
+    bool InRange(const VkImageSubresourceRange &range) const {
+        bool in_range = (range.baseMipLevel < image_state_.full_range.levelCount) &&
+                        ((range.baseMipLevel + range.levelCount) <= image_state_.full_range.levelCount) &&
+                        (range.baseArrayLayer < image_state_.full_range.layerCount) &&
+                        ((range.baseArrayLayer + range.layerCount) <= image_state_.full_range.layerCount) &&
+                        (range.aspectMask & AspectTraits::AspectMask());
+        return in_range;
+    }
+
+    inline size_t Encode(uint32_t aspect_index) const {
+        return (AspectTraits::kAspectCount == 1) ? 0 : aspect_offsets_[aspect_index];
+    }
+    inline size_t Encode(uint32_t aspect_index, uint32_t mip_level) const { return Encode(aspect_index) + mip_level * mip_size_; }
+    inline size_t Encode(uint32_t aspect_index, uint32_t mip_level, uint32_t array_layer) const {
+        return Encode(aspect_index, mip_level) + array_layer;
+    }
+
+    const IMAGE_STATE &image_state_;
+    const size_t mip_size_;
+    const size_t aspect_size_;
+    uint64_t version_ = 0;
+    Layouts layouts_;
+    std::array<size_t, AspectTraits::kAspectCount> aspect_offsets_;
+};
+
+// Utility type for ForRange callbacks
+struct LayoutUseCheckAndMessage {
+    const char *message = nullptr;
+    VkImageLayout layout = kInvalidLayout;
+    LayoutUseCheckAndMessage(VkImageLayout check, VkImageLayout current_layout, VkImageLayout initial_layout) {
+        if (current_layout != kInvalidLayout && check != current_layout) {
+            message = "previous known";
+            layout = current_layout;
+        } else if (initial_layout != kInvalidLayout && check != initial_layout) {
+            message = "previously used";
+            layout = initial_layout;
+        }
+    }
+    bool CheckFailed() const { return layout != kInvalidLayout; }
 };
 
 // Store the DAG.
@@ -1004,7 +1385,8 @@ struct GLOBAL_CB_NODE : public BASE_NODE {
     std::unordered_map<QueryObject, bool> queryToStateMap;  // 0 is unavailable, 1 is available
     std::unordered_set<QueryObject> activeQueries;
     std::unordered_set<QueryObject> startedQueries;
-    std::unordered_map<ImageSubresourcePair, IMAGE_CMD_BUF_LAYOUT_NODE> imageLayoutMap;
+    typedef std::unordered_map<VkImage, std::unique_ptr<ImageSubresourceLayoutMap>> ImageLayoutMap;
+    ImageLayoutMap image_layout_map;
     std::unordered_map<VkEvent, VkPipelineStageFlags> eventToStageMap;
     std::vector<DrawData> draw_data;
     DrawData current_draw_data;
@@ -1096,6 +1478,7 @@ struct DeviceFeatures {
     VkPhysicalDeviceScalarBlockLayoutFeaturesEXT scalar_block_layout_features;
     VkPhysicalDeviceBufferAddressFeaturesEXT buffer_address;
     VkPhysicalDeviceCooperativeMatrixFeaturesNV cooperative_matrix_features;
+    VkPhysicalDeviceFloatControlsPropertiesKHR float_controls;
 };
 
 enum RenderPassCreateVersion { RENDER_PASS_VERSION_1 = 0, RENDER_PASS_VERSION_2 = 1 };
@@ -1115,5 +1498,8 @@ enum BarrierOperationsType {
 class CoreChecks;
 
 std::shared_ptr<cvdescriptorset::DescriptorSetLayout const> const GetDescriptorSetLayout(CoreChecks const *, VkDescriptorSetLayout);
+
+ImageSubresourceLayoutMap *GetImageSubresourceLayoutMap(GLOBAL_CB_NODE *cb_state, const IMAGE_STATE &image_state);
+const ImageSubresourceLayoutMap *GetImageSubresourceLayoutMap(const GLOBAL_CB_NODE *cb_state, VkImage image);
 
 #endif  // CORE_VALIDATION_TYPES_H_
