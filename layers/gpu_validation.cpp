@@ -1038,6 +1038,10 @@ void CoreChecks::GpuPostCallQueueSubmit(VkQueue queue, uint32_t submitCount, con
 }
 
 void CoreChecks::GpuAllocateValidationResources(const VkCommandBuffer cmd_buffer, const VkPipelineBindPoint bind_point) {
+    // Does GPUAV support VK_PIPELINE_BIND_POINT_RAY_TRACING_NV?
+    if (bind_point != VK_PIPELINE_BIND_POINT_GRAPHICS && bind_point != VK_PIPELINE_BIND_POINT_COMPUTE) {
+        return;
+    }
     VkResult result;
 
     if (!(GetEnables()->gpu_validation)) return;
