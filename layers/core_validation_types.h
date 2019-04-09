@@ -61,6 +61,7 @@ class DescriptorSet;
 }  // namespace cvdescriptorset
 
 struct GLOBAL_CB_NODE;
+class CoreChecks;
 
 enum CALL_STATE {
     UNCALLED,       // Function has not been called
@@ -477,11 +478,20 @@ struct Multiplane3AspectTraits {
     }
 };
 
+std::string FormatDebugLabel(const char *prefix, const LoggingLabel &label);
+
 const static VkImageLayout kInvalidLayout = VK_IMAGE_LAYOUT_MAX_ENUM;
 // Interface class.
 class ImageSubresourceLayoutMap {
    public:
     typedef std::function<bool(const VkImageSubresource &, VkImageLayout, VkImageLayout)> Callback;
+    struct InitialLayoutState {
+        VkImageView image_view;  // For relaxed matching rule evaluation, else VK_NULL_HANDLE
+        VkImageAspectFlags aspect_mask;
+        LoggingLabel label;
+        InitialLayoutState(const GLOBAL_CB_NODE &cb_state_, const IMAGE_VIEW_STATE *view_state);
+        InitialLayoutState() : image_view(VK_NULL_HANDLE), aspect_mask(0), label() {}
+    };
 
     struct SubresourceLayout {
         VkImageSubresource subresource;
@@ -525,11 +535,13 @@ class ImageSubresourceLayoutMap {
 
     virtual bool SetSubresourceRangeLayout(const VkImageSubresourceRange &range, VkImageLayout layout,
                                            VkImageLayout expected_layout = kInvalidLayout) = 0;
-    virtual bool SetSubresourceRangeInitialLayout(const VkImageSubresourceRange &range, VkImageLayout layout) = 0;
+    virtual bool SetSubresourceRangeInitialLayout(const VkImageSubresourceRange &range, VkImageLayout layout,
+                                                  const GLOBAL_CB_NODE &cb_state, const IMAGE_VIEW_STATE *view_state = nullptr) = 0;
     virtual bool ForRange(const VkImageSubresourceRange &range, const Callback &callback, bool skip_invalid = true,
                           bool always_get_initial = false) const = 0;
     virtual VkImageLayout GetSubresourceLayout(const VkImageSubresource subresource) const = 0;
     virtual VkImageLayout GetSubresourceInitialLayout(const VkImageSubresource subresource) const = 0;
+    virtual const InitialLayoutState *GetSubresourceInitialLayoutState(const VkImageSubresource subresource) const = 0;
     virtual bool UpdateFrom(const ImageSubresourceLayoutMap &from) = 0;
     virtual uintptr_t CompatibilityKey() const = 0;
     ImageSubresourceLayoutMap() {}
@@ -623,10 +635,12 @@ class ImageSubresourceLayoutMapImpl : public ImageSubresourceLayoutMap {
         return updated;
     }
 
-    bool SetSubresourceRangeInitialLayout(const VkImageSubresourceRange &range, VkImageLayout layout) override {
+    bool SetSubresourceRangeInitialLayout(const VkImageSubresourceRange &range, VkImageLayout layout,
+                                          const GLOBAL_CB_NODE &cb_state, const IMAGE_VIEW_STATE *view_state = nullptr) override {
         bool updated = false;
         if (!InRange(range)) return false;  // Don't even try to track bogus subreources
 
+        InitialLayoutState *initial_state = nullptr;
         const uint32_t end_mip = range.baseMipLevel + range.levelCount;
         const auto &aspects = AspectTraits::AspectBits();
         for (uint32_t aspect_index = 0; aspect_index < AspectTraits::kAspectCount; aspect_index++) {
@@ -635,7 +649,18 @@ class ImageSubresourceLayoutMapImpl : public ImageSubresourceLayoutMap {
             for (uint32_t mip_level = range.baseMipLevel; mip_level < end_mip; ++mip_level, array_offset += mip_size_) {
                 size_t start = array_offset + range.baseArrayLayer;
                 size_t end = start + range.layerCount;
-                updated |= layouts_.initial.SetRange(start, end, layout);
+                bool updated_level = layouts_.initial.SetRange(start, end, layout);
+                if (updated_level) {
+                    updated = true;
+                    if (!initial_state) {
+                        // Allocate on demand...  initial_layout_states_ holds ownership as a unique_ptr, while
+                        // each subresource has a non-owning copy of the plain pointer.
+                        initial_state = new InitialLayoutState(cb_state, view_state);
+                        initial_layout_states_.emplace_back(initial_state);
+                    }
+                    assert(initial_state);
+                    initial_layout_state_map_.SetRange(start, end, initial_state);
+                }
             }
         }
         if (updated) version_++;
@@ -687,6 +712,13 @@ class ImageSubresourceLayoutMapImpl : public ImageSubresourceLayoutMap {
         return layouts_.initial.Get(index);
     }
 
+    const InitialLayoutState *GetSubresourceInitialLayoutState(const VkImageSubresource subresource) const override {
+        if (!InRange(subresource)) return nullptr;
+        uint32_t aspect_index = AspectTraits::Index(subresource.aspectMask);
+        size_t index = Encode(aspect_index, subresource.mipLevel, subresource.arrayLayer);
+        return initial_layout_state_map_.Get(index);
+    }
+
     VkImageLayout GetSubresourceLayout(const VkImageSubresource subresource) const override {
         if (!InRange(subresource)) return kInvalidLayout;
         uint32_t aspect_index = AspectTraits::Index(subresource.aspectMask);
@@ -719,7 +751,9 @@ class ImageSubresourceLayoutMapImpl : public ImageSubresourceLayoutMap {
           mip_size_(image_state.full_range.layerCount),
           aspect_size_(mip_size_ * image_state.full_range.levelCount),
           version_(0),
-          layouts_(aspect_size_ * AspectTraits::kAspectCount) {
+          layouts_(aspect_size_ * AspectTraits::kAspectCount),
+          initial_layout_states_(),
+          initial_layout_state_map_(0, aspect_size_ * AspectTraits::kAspectCount) {
         // Setup the row <-> aspect/mip_level base Encode/Decode LUT...
         aspect_offsets_[0] = 0;
         for (size_t i = 1; i < aspect_offsets_.size(); ++i) {  // Size is a compile time constant
@@ -785,11 +819,17 @@ class ImageSubresourceLayoutMapImpl : public ImageSubresourceLayoutMap {
         return Encode(aspect_index, mip_level) + array_layer;
     }
 
+    typedef std::vector<std::unique_ptr<InitialLayoutState>> InitialLayoutStates;
+    // This map *also* needs "write once" semantics
+    typedef sparse_container::SparseVector<size_t, InitialLayoutState *, false, nullptr, kSparseThreshold> InitialLayoutStateMap;
+
     const IMAGE_STATE &image_state_;
     const size_t mip_size_;
     const size_t aspect_size_;
     uint64_t version_ = 0;
     Layouts layouts_;
+    InitialLayoutStates initial_layout_states_;
+    InitialLayoutStateMap initial_layout_state_map_;
     std::array<size_t, AspectTraits::kAspectCount> aspect_offsets_;
 };
 
@@ -1449,6 +1489,9 @@ struct GLOBAL_CB_NODE : public BASE_NODE {
     std::unordered_set<cvdescriptorset::DescriptorSet *> validated_descriptor_sets;
     // Contents valid only after an index buffer is bound (CBSTATUS_INDEX_BUFFER_BOUND set)
     IndexBufferBinding index_buffer_binding;
+
+    // Cache of current insert label...
+    LoggingLabel debug_label;
 };
 
 static inline QFOTransferBarrierSets<VkImageMemoryBarrier> &GetQFOBarrierSets(
@@ -1535,8 +1578,6 @@ enum BarrierOperationsType {
     kAllRelease,  // All Barrier operations are "ownership release" operations
     kGeneral,     // Either no ownership operations or a mix of ownership operation types and/or non-ownership operations
 };
-
-class CoreChecks;
 
 std::shared_ptr<cvdescriptorset::DescriptorSetLayout const> const GetDescriptorSetLayout(CoreChecks const *, VkDescriptorSetLayout);
 

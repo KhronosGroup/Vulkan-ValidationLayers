@@ -303,7 +303,7 @@ void CoreChecks::SetImageViewInitialLayout(GLOBAL_CB_NODE *cb_node, const IMAGE_
     IMAGE_STATE *image_state = GetImageState(view_state.create_info.image);
     if (image_state) {
         auto *subresource_map = GetImageSubresourceLayoutMap(cb_node, *image_state);
-        subresource_map->SetSubresourceRangeInitialLayout(view_state.normalized_subresource_range, layout);
+        subresource_map->SetSubresourceRangeInitialLayout(view_state.normalized_subresource_range, layout, *cb_node, &view_state);
     }
 }
 
@@ -312,7 +312,7 @@ void CoreChecks::SetImageInitialLayout(GLOBAL_CB_NODE *cb_node, const IMAGE_STAT
                                        const VkImageSubresourceRange &range, VkImageLayout layout) {
     auto *subresource_map = GetImageSubresourceLayoutMap(cb_node, image_state);
     assert(subresource_map);
-    subresource_map->SetSubresourceRangeInitialLayout(NormalizeSubresourceRange(image_state, range), layout);
+    subresource_map->SetSubresourceRangeInitialLayout(NormalizeSubresourceRange(image_state, range), layout, *cb_node);
 }
 
 void CoreChecks::SetImageInitialLayout(GLOBAL_CB_NODE *cb_node, VkImage image, const VkImageSubresourceRange &range,
@@ -3284,13 +3284,22 @@ bool CoreChecks::ValidateCmdBufImageLayouts(GLOBAL_CB_NODE *pCB,
                 if (initial_layout == VK_IMAGE_LAYOUT_UNDEFINED) {
                     // TODO: Set memory invalid which is in mem_tracker currently
                 } else if (image_layout != initial_layout) {
-                    skip |= log_msg(
-                        report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                        HandleToUint64(pCB->commandBuffer), kVUID_Core_DrawState_InvalidImageLayout,
-                        "Submitted command buffer expects image %s  (subresource: aspectMask 0x%X array layer %u, mip level %u) "
-                        "to be in layout %s--instead, current layout is %s.",
-                        report_data->FormatHandle(image).c_str(), isr_pair.subresource.aspectMask, isr_pair.subresource.arrayLayer,
-                        isr_pair.subresource.mipLevel, string_VkImageLayout(initial_layout), string_VkImageLayout(image_layout));
+                    // Need to look up the inital layout *state* to get a bit more information
+                    const auto *initial_layout_state = subres_map->GetSubresourceInitialLayoutState(isr_pair.subresource);
+                    assert(initial_layout_state);  // There's no way we should have an initial layout without matching state...
+                    bool matches = ImageLayoutMatches(initial_layout_state->aspect_mask, image_layout, initial_layout);
+                    if (!matches) {
+                        std::string formatted_label = FormatDebugLabel(" ", pCB->debug_label);
+                        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                                        HandleToUint64(pCB->commandBuffer), kVUID_Core_DrawState_InvalidImageLayout,
+                                        "Submitted command buffer expects image %s  (subresource: aspectMask 0x%X array layer %u, "
+                                        "mip level %u) "
+                                        "to be in layout %s--instead, current layout is %s.%s",
+                                        report_data->FormatHandle(image).c_str(), isr_pair.subresource.aspectMask,
+                                        isr_pair.subresource.arrayLayer, isr_pair.subresource.mipLevel,
+                                        string_VkImageLayout(initial_layout), string_VkImageLayout(image_layout),
+                                        formatted_label.c_str());
+                    }
                 }
             }
         }

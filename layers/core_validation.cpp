@@ -270,6 +270,23 @@ std::unordered_map<VkSamplerYcbcrConversion, uint64_t> *CoreChecks::GetYcbcrConv
 
 std::unordered_set<uint64_t> *CoreChecks::GetAHBExternalFormatsSet() { return &ahb_ext_formats_set; }
 
+ImageSubresourceLayoutMap::InitialLayoutState::InitialLayoutState(const GLOBAL_CB_NODE &cb_state,
+                                                                  const IMAGE_VIEW_STATE *view_state)
+    : image_view(VK_NULL_HANDLE), aspect_mask(0), label(cb_state.debug_label) {
+    if (view_state) {
+        image_view = view_state->image_view;
+        aspect_mask = view_state->create_info.subresourceRange.aspectMask;
+    }
+}
+
+std::string FormatDebugLabel(const char *prefix, const LoggingLabel &label) {
+    if (label.Empty()) return std::string();
+    std::string out;
+    string_sprintf(&out, "%sVkDebugUtilsLabel(name='%s' color=[%g, %g %g, %g])", prefix, label.name.c_str(), label.color[0],
+                   label.color[1], label.color[2], label.color[3]);
+    return out;
+}
+
 // the ImageLayoutMap implementation bakes in the number of valid aspects -- we have to choose the correct one at construction time
 template <uint32_t kThreshold>
 static std::unique_ptr<ImageSubresourceLayoutMap> LayoutMapFactoryByAspect(const IMAGE_STATE &image_state) {
@@ -2285,6 +2302,7 @@ void CoreChecks::ResetCommandBufferState(const VkCommandBuffer cb) {
 
         // Clean up the label data
         ResetCmdDebugUtilsLabel(report_data, pCB->commandBuffer);
+        pCB->debug_label.Reset();
     }
 }
 
@@ -12371,6 +12389,10 @@ void CoreChecks::PostCallRecordCmdEndDebugUtilsLabelEXT(VkCommandBuffer commandB
 
 void CoreChecks::PreCallRecordCmdInsertDebugUtilsLabelEXT(VkCommandBuffer commandBuffer, const VkDebugUtilsLabelEXT *pLabelInfo) {
     InsertCmdDebugUtilsLabel(report_data, commandBuffer, pLabelInfo);
+
+    // Squirrel away an easily accessible copy.
+    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
+    cb_state->debug_label = LoggingLabel(pLabelInfo);
 }
 
 void CoreChecks::PostRecordEnumeratePhysicalDeviceGroupsState(uint32_t *pPhysicalDeviceGroupCount,
