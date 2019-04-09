@@ -696,9 +696,18 @@ class CoreChecks : public ValidationObject {
 
     bool VerifyClearImageLayout(GLOBAL_CB_NODE* cb_node, IMAGE_STATE* image_state, VkImageSubresourceRange range,
                                 VkImageLayout dest_image_layout, const char* func_name);
+
+    bool VerifyImageLayout(GLOBAL_CB_NODE const* cb_node, IMAGE_STATE* image_state, const VkImageSubresourceRange& range,
+                           VkImageAspectFlags view_aspect, VkImageLayout explicit_layout, VkImageLayout optimal_layout,
+                           const char* caller, const char* layout_invalid_msg_code, const char* layout_mismatch_msg_code,
+                           bool* error);
+
     bool VerifyImageLayout(GLOBAL_CB_NODE const* cb_node, IMAGE_STATE* image_state, const VkImageSubresourceRange& range,
                            VkImageLayout explicit_layout, VkImageLayout optimal_layout, const char* caller,
-                           const char* layout_invalid_msg_code, const char* layout_mismatch_msg_code, bool* error);
+                           const char* layout_invalid_msg_code, const char* layout_mismatch_msg_code, bool* error) {
+        return VerifyImageLayout(cb_node, image_state, range, 0, explicit_layout, optimal_layout, caller, layout_invalid_msg_code,
+                                 layout_mismatch_msg_code, error);
+    }
 
     bool VerifyImageLayout(GLOBAL_CB_NODE const* cb_node, IMAGE_STATE* image_state, const VkImageSubresourceLayers& subLayers,
                            VkImageLayout explicit_layout, VkImageLayout optimal_layout, const char* caller,

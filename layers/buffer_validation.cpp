@@ -1048,8 +1048,9 @@ void CoreChecks::TransitionImageLayouts(GLOBAL_CB_NODE *cb_state, uint32_t memBa
 }
 
 bool CoreChecks::VerifyImageLayout(GLOBAL_CB_NODE const *cb_node, IMAGE_STATE *image_state, const VkImageSubresourceRange &range,
-                                   VkImageLayout explicit_layout, VkImageLayout optimal_layout, const char *caller,
-                                   const char *layout_invalid_msg_code, const char *layout_mismatch_msg_code, bool *error) {
+                                   VkImageAspectFlags aspect_mask, VkImageLayout explicit_layout, VkImageLayout optimal_layout,
+                                   const char *caller, const char *layout_invalid_msg_code, const char *layout_mismatch_msg_code,
+                                   bool *error) {
     assert(cb_node);
     assert(image_state);
     const auto image = image_state->image;
@@ -1058,9 +1059,9 @@ bool CoreChecks::VerifyImageLayout(GLOBAL_CB_NODE const *cb_node, IMAGE_STATE *i
     const auto *subresource_map = GetImageSubresourceLayoutMap(cb_node, image);
     if (subresource_map) {
         bool subres_skip = false;
-        auto subresource_cb = [this, explicit_layout, cb_node, layout_mismatch_msg_code, caller, image, &error, &subres_skip](
-                                  const VkImageSubresource &subres, VkImageLayout layout, VkImageLayout initial_layout) {
-            LayoutUseCheckAndMessage layout_check(explicit_layout, layout, initial_layout);
+        auto subresource_cb = [this, explicit_layout, cb_node, layout_mismatch_msg_code, caller, image, aspect_mask, &error,
+                               &subres_skip](const VkImageSubresource &subres, VkImageLayout layout, VkImageLayout initial_layout) {
+            LayoutUseCheckAndMessage layout_check(explicit_layout, layout, initial_layout, aspect_mask);
             if (layout_check.CheckFailed()) {
                 *error = true;
                 subres_skip |=

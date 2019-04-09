@@ -839,7 +839,8 @@ bool cvdescriptorset::DescriptorSet::ValidateDrawState(const std::map<uint32_t, 
                     // No "invalid layout" VUID required for this call, since the optimal_layout parameter is UNDEFINED.
                     bool hit_error = false;
                     device_data_->VerifyImageLayout(cb_node, image_node, image_view_state->normalized_subresource_range,
-                                                    image_layout, VK_IMAGE_LAYOUT_UNDEFINED, caller, kVUIDUndefined,
+                                                    image_view_ci.subresourceRange.aspectMask, image_layout,
+                                                    VK_IMAGE_LAYOUT_UNDEFINED, caller, kVUIDUndefined,
                                                     "VUID-VkDescriptorImageInfo-imageLayout-00344", &hit_error);
                     if (hit_error) {
                         *error =
