@@ -2118,15 +2118,13 @@ bool CoreChecks::ValidateCooperativeMatrix(shader_module const *src, VkPipelineS
 bool CoreChecks::ValidateExecutionModes(shader_module const *src, spirv_inst_iter entrypoint) {
     auto entrypoint_id = entrypoint.word(2);
 
-    // Mapping between bit widths (16, 32 and 64) and the corresponding denorm
-    // execution mode which is first encountered. Used to check if
-    // separateDenormSettings is respected.
-    std::unordered_map<uint32_t, spv::ExecutionMode> first_denorm_execution_mode;
+    // The first denorm execution mode encountered, along with its bit width.
+    // Used to check if SeparateDenormSettings is respected.
+    std::pair<spv::ExecutionMode, uint32_t> first_denorm_execution_mode = std::make_pair(spv::ExecutionModeMax, 0);
 
-    // Mapping between bit widths (16, 32 and 64) and the corresponding rounding
-    // execution mode which is first encountered. Used to check if
-    // separateRoundingModeSettings is respected.
-    std::unordered_map<uint32_t, spv::ExecutionMode> first_rounding_mode;
+    // The first rounding mode encountered, along with its bit width.
+    // Used to check if SeparateRoundingModeSettings is respected.
+    std::pair<spv::ExecutionMode, uint32_t> first_rounding_mode = std::make_pair(spv::ExecutionModeMax, 0);
 
     bool skip = false;
 
@@ -2159,10 +2157,11 @@ bool CoreChecks::ValidateExecutionModes(shader_module const *src, spirv_inst_ite
                                         bit_width);
                     }
 
-                    auto found = first_denorm_execution_mode.find(bit_width);
-                    if (found == first_denorm_execution_mode.end()) {
-                        first_denorm_execution_mode[bit_width] = static_cast<spv::ExecutionMode>(mode);
-                    } else if (found->second != mode && !GetEnabledFeatures()->float_controls.separateDenormSettings) {
+                    if (first_denorm_execution_mode.first == spv::ExecutionModeMax) {
+                        // Register the first denorm execution mode found
+                        first_denorm_execution_mode = std::make_pair(static_cast<spv::ExecutionMode>(mode), bit_width);
+                    } else if (first_denorm_execution_mode.first != mode && first_denorm_execution_mode.second != bit_width &&
+                               !GetEnabledFeatures()->float_controls.separateDenormSettings) {
                         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                                         kVUID_Core_Shader_FeatureNotEnabled,
                                         "Shader uses separate denorm execution modes for different bit widths but "
@@ -2182,10 +2181,11 @@ bool CoreChecks::ValidateExecutionModes(shader_module const *src, spirv_inst_ite
                                         bit_width);
                     }
 
-                    auto found = first_denorm_execution_mode.find(bit_width);
-                    if (found == first_denorm_execution_mode.end()) {
-                        first_denorm_execution_mode[bit_width] = static_cast<spv::ExecutionMode>(mode);
-                    } else if (found->second != mode && !GetEnabledFeatures()->float_controls.separateDenormSettings) {
+                    if (first_denorm_execution_mode.first == spv::ExecutionModeMax) {
+                        // Register the first denorm execution mode found
+                        first_denorm_execution_mode = std::make_pair(static_cast<spv::ExecutionMode>(mode), bit_width);
+                    } else if (first_denorm_execution_mode.first != mode && first_denorm_execution_mode.second != bit_width &&
+                               !GetEnabledFeatures()->float_controls.separateDenormSettings) {
                         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                                         kVUID_Core_Shader_FeatureNotEnabled,
                                         "Shader uses separate denorm execution modes for different bit widths but "
@@ -2205,10 +2205,11 @@ bool CoreChecks::ValidateExecutionModes(shader_module const *src, spirv_inst_ite
                                         bit_width);
                     }
 
-                    auto found = first_rounding_mode.find(bit_width);
-                    if (found == first_rounding_mode.end()) {
-                        first_rounding_mode[bit_width] = static_cast<spv::ExecutionMode>(mode);
-                    } else if (found->second != mode && !GetEnabledFeatures()->float_controls.separateRoundingModeSettings) {
+                    if (first_rounding_mode.first == spv::ExecutionModeMax) {
+                        // Register the first rounding mode found
+                        first_rounding_mode = std::make_pair(static_cast<spv::ExecutionMode>(mode), bit_width);
+                    } else if (first_rounding_mode.first != mode && first_rounding_mode.second != bit_width &&
+                               !GetEnabledFeatures()->float_controls.separateRoundingModeSettings) {
                         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                                         kVUID_Core_Shader_FeatureNotEnabled,
                                         "Shader uses separate rounding modes for different bit widths but "
@@ -2228,10 +2229,11 @@ bool CoreChecks::ValidateExecutionModes(shader_module const *src, spirv_inst_ite
                                         bit_width);
                     }
 
-                    auto found = first_rounding_mode.find(bit_width);
-                    if (found == first_rounding_mode.end()) {
-                        first_rounding_mode[bit_width] = static_cast<spv::ExecutionMode>(mode);
-                    } else if (found->second != mode && !GetEnabledFeatures()->float_controls.separateRoundingModeSettings) {
+                    if (first_rounding_mode.first == spv::ExecutionModeMax) {
+                        // Register the first rounding mode found
+                        first_rounding_mode = std::make_pair(static_cast<spv::ExecutionMode>(mode), bit_width);
+                    } else if (first_rounding_mode.first != mode && first_rounding_mode.second != bit_width &&
+                               !GetEnabledFeatures()->float_controls.separateRoundingModeSettings) {
                         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                                         kVUID_Core_Shader_FeatureNotEnabled,
                                         "Shader uses separate rounding modes for different bit widths but "
