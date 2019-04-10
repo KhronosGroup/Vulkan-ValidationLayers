@@ -24,6 +24,22 @@
 #ifndef LAYER_LOGGING_H
 #define LAYER_LOGGING_H
 
+#include <cinttypes>
+#include <signal.h>
+#include <stdarg.h>
+#include <stdbool.h>
+#include <stdio.h>
+
+#include <algorithm>
+#include <array>
+#include <memory>
+#include <mutex>
+#include <sstream>
+#include <string>
+#include <vector>
+#include <unordered_map>
+
+#include "vk_typemap_helper.h"
 #include "vk_loader_layer.h"
 #include "vk_layer_config.h"
 #include "vk_layer_data.h"
@@ -32,16 +48,6 @@
 #include "vk_object_types.h"
 #include "vk_validation_error_messages.h"
 #include "vk_layer_dispatch_table.h"
-#include <mutex>
-#include <signal.h>
-#include <cinttypes>
-#include <stdarg.h>
-#include <stdbool.h>
-#include <stdio.h>
-#include <unordered_map>
-#include <vector>
-#include <sstream>
-#include <string>
 
 // Suppress unused warning on Linux
 #if defined(__GNUC__)
@@ -74,10 +80,53 @@ static inline uint64_t HandleToUint64(HANDLE_T *h) {
 static inline uint64_t HandleToUint64(uint64_t h) { return h; }
 
 // Data we store per label for logging
-typedef struct _LoggingLabelData {
+struct LoggingLabel {
     std::string name;
-    float color[4];
-} LoggingLabelData;
+    std::array<float, 4> color;
+
+    void Reset() { *this = LoggingLabel(); }
+    bool Empty() const { return name.empty(); }
+
+    VkDebugUtilsLabelEXT Export() const {
+        auto out = lvl_init_struct<VkDebugUtilsLabelEXT>();
+        out.pLabelName = name.c_str();
+        std::copy(color.cbegin(), color.cend(), out.color);
+        return out;
+    };
+
+    LoggingLabel() : name(), color({0.f, 0.f, 0.f, 0.f}) {}
+    LoggingLabel(const LoggingLabel &other) : name(other.name), color(other.color) {}
+    LoggingLabel(const VkDebugUtilsLabelEXT *label_info) {
+        if (label_info && label_info->pLabelName) {
+            name = label_info->pLabelName;
+            std::copy_n(std::begin(label_info->color), 4, color.begin());
+        } else {
+            Reset();
+        }
+    }
+};
+
+struct LoggingLabelState {
+    std::vector<LoggingLabel> labels;
+    LoggingLabel insert_label;
+
+    // Export the labels, but in reverse order since we want the most recent at the top.
+    std::vector<VkDebugUtilsLabelEXT> Export() const {
+        size_t count = labels.size() + (insert_label.Empty() ? 0 : 1);
+        std::vector<VkDebugUtilsLabelEXT> out(count);
+
+        if (!count) return out;
+
+        size_t index = count - 1;
+        if (!insert_label.Empty()) {
+            out[index--] = insert_label.Export();
+        }
+        for (const auto &label : labels) {
+            out[index--] = label.Export();
+        }
+        return out;
+    }
+};
 
 typedef struct _debug_report_data {
     VkLayerDbgFunctionNode *debug_callback_list{nullptr};
@@ -90,8 +139,8 @@ typedef struct _debug_report_data {
     bool cmdBufLabelHasInsert{false};
     std::unordered_map<uint64_t, std::string> debugObjectNameMap;
     std::unordered_map<uint64_t, std::string> debugUtilsObjectNameMap;
-    std::unordered_map<VkQueue, std::vector<LoggingLabelData>> debugUtilsQueueLabels;
-    std::unordered_map<VkCommandBuffer, std::vector<LoggingLabelData>> debugUtilsCmdBufLabels;
+    std::unordered_map<VkQueue, std::unique_ptr<LoggingLabelState>> debugUtilsQueueLabels;
+    std::unordered_map<VkCommandBuffer, std::unique_ptr<LoggingLabelState>> debugUtilsCmdBufLabels;
     // This mutex is defined as mutable since the normal usage for a debug report object is as 'const'. The mutable keyword allows
     // the layers to continue this pattern, but also allows them to use/change this specific member for synchronization purposes.
     mutable std::mutex debug_report_mutex;
@@ -369,8 +418,8 @@ static inline bool debug_log_msg(const debug_report_data *debug_data, VkFlags ms
     callback_data.objectCount = 1;
     callback_data.pObjects = &object_name_info;
 
-    VkDebugUtilsLabelEXT *queue_labels = nullptr;
-    VkDebugUtilsLabelEXT *cmd_buf_labels = nullptr;
+    std::vector<VkDebugUtilsLabelEXT> queue_labels;
+    std::vector<VkDebugUtilsLabelEXT> cmd_buf_labels;
     std::string new_debug_report_message = "";
     std::ostringstream oss;
 
@@ -380,47 +429,17 @@ static inline bool debug_log_msg(const debug_report_data *debug_data, VkFlags ms
         if (VK_OBJECT_TYPE_QUEUE == object_name_info.objectType) {
             auto label_iter = debug_data->debugUtilsQueueLabels.find(reinterpret_cast<VkQueue>(src_object));
             if (label_iter != debug_data->debugUtilsQueueLabels.end()) {
-                queue_labels = new VkDebugUtilsLabelEXT[label_iter->second.size()];
-                if (nullptr != queue_labels) {
-                    // Record the labels, but record them in reverse order since we want the
-                    // most recent at the top.
-                    uint32_t label_size = static_cast<uint32_t>(label_iter->second.size());
-                    uint32_t last_index = label_size - 1;
-                    for (uint32_t label = 0; label < label_size; ++label) {
-                        queue_labels[last_index - label].sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT;
-                        queue_labels[last_index - label].pNext = nullptr;
-                        queue_labels[last_index - label].pLabelName = label_iter->second[label].name.c_str();
-                        queue_labels[last_index - label].color[0] = label_iter->second[label].color[0];
-                        queue_labels[last_index - label].color[1] = label_iter->second[label].color[1];
-                        queue_labels[last_index - label].color[2] = label_iter->second[label].color[2];
-                        queue_labels[last_index - label].color[3] = label_iter->second[label].color[3];
-                    }
-                    callback_data.queueLabelCount = label_size;
-                    callback_data.pQueueLabels = queue_labels;
-                }
+                queue_labels = label_iter->second->Export();
+                callback_data.queueLabelCount = static_cast<uint32_t>(queue_labels.size());
+                callback_data.pQueueLabels = queue_labels.empty() ? nullptr : queue_labels.data();
             }
             // If this is a command buffer, add any command buffer labels to the callback data.
         } else if (VK_OBJECT_TYPE_COMMAND_BUFFER == object_name_info.objectType) {
             auto label_iter = debug_data->debugUtilsCmdBufLabels.find(reinterpret_cast<VkCommandBuffer>(src_object));
             if (label_iter != debug_data->debugUtilsCmdBufLabels.end()) {
-                cmd_buf_labels = new VkDebugUtilsLabelEXT[label_iter->second.size()];
-                if (nullptr != cmd_buf_labels) {
-                    // Record the labels, but record them in reverse order since we want the
-                    // most recent at the top.
-                    uint32_t label_size = static_cast<uint32_t>(label_iter->second.size());
-                    uint32_t last_index = label_size - 1;
-                    for (uint32_t label = 0; label < label_size; ++label) {
-                        cmd_buf_labels[last_index - label].sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT;
-                        cmd_buf_labels[last_index - label].pNext = nullptr;
-                        cmd_buf_labels[last_index - label].pLabelName = label_iter->second[label].name.c_str();
-                        cmd_buf_labels[last_index - label].color[0] = label_iter->second[label].color[0];
-                        cmd_buf_labels[last_index - label].color[1] = label_iter->second[label].color[1];
-                        cmd_buf_labels[last_index - label].color[2] = label_iter->second[label].color[2];
-                        cmd_buf_labels[last_index - label].color[3] = label_iter->second[label].color[3];
-                    }
-                    callback_data.cmdBufLabelCount = label_size;
-                    callback_data.pCmdBufLabels = cmd_buf_labels;
-                }
+                cmd_buf_labels = label_iter->second->Export();
+                callback_data.cmdBufLabelCount = static_cast<uint32_t>(cmd_buf_labels.size());
+                callback_data.pCmdBufLabels = cmd_buf_labels.empty() ? nullptr : cmd_buf_labels.data();
             }
         }
 
@@ -466,13 +485,6 @@ static inline bool debug_log_msg(const debug_report_data *debug_data, VkFlags ms
             }
         }
         layer_dbg_node = layer_dbg_node->pNext;
-    }
-
-    if (nullptr != queue_labels) {
-        delete[] queue_labels;
-    }
-    if (nullptr != cmd_buf_labels) {
-        delete[] cmd_buf_labels;
     }
 
     return bail;
@@ -1108,149 +1120,110 @@ static inline VKAPI_ATTR VkBool32 VKAPI_CALL messenger_win32_debug_output_msg(
     return false;
 }
 
-// This utility converts from the VkDebugUtilsLabelEXT structure into the logging version of the structure.
-// In the logging version, we only record what we absolutely need to convey back to the callbacks.
-static inline void InsertLabelIntoLog(const VkDebugUtilsLabelEXT *utils_label, std::vector<LoggingLabelData> &log_vector) {
-    LoggingLabelData log_label_data = {};
-    log_label_data.name = utils_label->pLabelName;
-    log_label_data.color[0] = utils_label->color[0];
-    log_label_data.color[1] = utils_label->color[1];
-    log_label_data.color[2] = utils_label->color[2];
-    log_label_data.color[3] = utils_label->color[3];
-    log_vector.push_back(log_label_data);
+template <typename Map>
+static LoggingLabelState *GetLoggingLabelState(Map *map, typename Map::key_type key, bool insert) {
+    auto iter = map->find(key);
+    LoggingLabelState *label_state = nullptr;
+    if (iter == map->end()) {
+        if (insert) {
+            // Add a label state if not present
+            label_state = new LoggingLabelState();
+            auto inserted = map->insert(std::make_pair(key, std::unique_ptr<LoggingLabelState>(new LoggingLabelState())));
+            assert(inserted.second);
+            iter = inserted.first;
+            label_state = iter->second.get();
+        }
+    } else {
+        label_state = iter->second.get();
+    }
+    return label_state;
 }
 
 static inline void BeginQueueDebugUtilsLabel(debug_report_data *report_data, VkQueue queue,
                                              const VkDebugUtilsLabelEXT *label_info) {
     std::unique_lock<std::mutex> lock(report_data->debug_report_mutex);
     if (nullptr != label_info && nullptr != label_info->pLabelName) {
-        auto label_iter = report_data->debugUtilsQueueLabels.find(queue);
-        if (label_iter == report_data->debugUtilsQueueLabels.end()) {
-            std::vector<LoggingLabelData> new_queue_labels;
-            InsertLabelIntoLog(label_info, new_queue_labels);
-            report_data->debugUtilsQueueLabels.insert({queue, new_queue_labels});
-        } else {
-            // If the last thing was a label insert, we need to pop it off of the label vector before any
-            // changes. This is because a label added with "vkQueueInsertDebugUtilsLabelEXT" is only a
-            // temporary location that exists until the next operation occurs.  In this case, a new
-            // "vkQueueBeginDebugUtilsLabelEXT" has occurred erasing the previous inserted label.
-            if (report_data->queueLabelHasInsert) {
-                report_data->queueLabelHasInsert = false;
-                label_iter->second.pop_back();
-            }
-            InsertLabelIntoLog(label_info, label_iter->second);
-        }
+        auto *label_state = GetLoggingLabelState(&report_data->debugUtilsQueueLabels, queue, /* insert */ true);
+        assert(label_state);
+        label_state->labels.push_back(LoggingLabel(label_info));
+
+        // TODO: Determine if this is the correct semantics for insert label vs. begin/end, perserving existing semantics for now
+        label_state->insert_label.Reset();
     }
 }
 
 static inline void EndQueueDebugUtilsLabel(debug_report_data *report_data, VkQueue queue) {
     std::unique_lock<std::mutex> lock(report_data->debug_report_mutex);
-    auto label_iter = report_data->debugUtilsQueueLabels.find(queue);
-    if (label_iter != report_data->debugUtilsQueueLabels.end()) {
-        // If the last thing was a label insert, we need to pop it off of the label vector before any
-        // changes. This is because a label added with "vkQueueInsertDebugUtilsLabelEXT" is only a
-        // temporary location that exists until the next operation occurs.  In this case, a
-        // "vkQueueEndDebugUtilsLabelEXT" has occurred erasing the inserted label.
-        if (report_data->queueLabelHasInsert) {
-            report_data->queueLabelHasInsert = false;
-            label_iter->second.pop_back();
+    auto *label_state = GetLoggingLabelState(&report_data->debugUtilsQueueLabels, queue, /* insert */ false);
+    if (label_state) {
+        // Pop the normal item
+        if (!label_state->labels.empty()) {
+            label_state->labels.pop_back();
         }
-        // Now pop the normal item
-        label_iter->second.pop_back();
+
+        // TODO: Determine if this is the correct semantics for insert label vs. begin/end, perserving existing semantics for now
+        label_state->insert_label.Reset();
     }
 }
 
 static inline void InsertQueueDebugUtilsLabel(debug_report_data *report_data, VkQueue queue,
                                               const VkDebugUtilsLabelEXT *label_info) {
     std::unique_lock<std::mutex> lock(report_data->debug_report_mutex);
-    if (nullptr != label_info && nullptr != label_info->pLabelName) {
-        auto label_iter = report_data->debugUtilsQueueLabels.find(queue);
-        if (label_iter == report_data->debugUtilsQueueLabels.end()) {
-            std::vector<LoggingLabelData> new_queue_labels;
-            InsertLabelIntoLog(label_info, new_queue_labels);
-            report_data->debugUtilsQueueLabels.insert({queue, new_queue_labels});
-        } else {
-            // If the last thing was a label insert, we need to pop it off of the label vector before any
-            // changes. This is because a label added with "vkQueueInsertDebugUtilsLabelEXT" is only a
-            // temporary location that exists until the next operation occurs.  In this case, a new
-            // "vkQueueInsertDebugUtilsLabelEXT" has occurred erasing the previous inserted label.
-            if (report_data->queueLabelHasInsert) {
-                label_iter->second.pop_back();
-            }
-            // Insert this new label and mark it as one that has been "inserted" so we can remove it on
-            // the next queue label operation.
-            InsertLabelIntoLog(label_info, label_iter->second);
-            report_data->queueLabelHasInsert = true;
-        }
-    }
+    auto *label_state = GetLoggingLabelState(&report_data->debugUtilsQueueLabels, queue, /* insert */ true);
+
+    // TODO: Determine if this is the correct semantics for insert label vs. begin/end, perserving existing semantics for now
+    label_state->insert_label = LoggingLabel(label_info);
 }
 
 static inline void BeginCmdDebugUtilsLabel(debug_report_data *report_data, VkCommandBuffer command_buffer,
                                            const VkDebugUtilsLabelEXT *label_info) {
     std::unique_lock<std::mutex> lock(report_data->debug_report_mutex);
     if (nullptr != label_info && nullptr != label_info->pLabelName) {
-        auto label_iter = report_data->debugUtilsCmdBufLabels.find(command_buffer);
-        if (label_iter == report_data->debugUtilsCmdBufLabels.end()) {
-            std::vector<LoggingLabelData> new_cmdbuf_labels;
-            InsertLabelIntoLog(label_info, new_cmdbuf_labels);
-            report_data->debugUtilsCmdBufLabels.insert({command_buffer, new_cmdbuf_labels});
-        } else {
-            // If the last thing was a label insert, we need to pop it off of the label vector before any
-            // changes. This is because a label added with "vkCmdInsertDebugUtilsLabelEXT" is only a
-            // temporary location that exists until the next operation occurs.  In this case, a
-            // "vkCmdBeginDebugUtilsLabelEXT" has occurred erasing the inserted label.
-            if (report_data->cmdBufLabelHasInsert) {
-                report_data->cmdBufLabelHasInsert = false;
-                label_iter->second.pop_back();
-            }
-            InsertLabelIntoLog(label_info, label_iter->second);
-        }
+        auto *label_state = GetLoggingLabelState(&report_data->debugUtilsCmdBufLabels, command_buffer, /* insert */ true);
+        assert(label_state);
+        label_state->labels.push_back(LoggingLabel(label_info));
+
+        // TODO: Determine if this is the correct semantics for insert label vs. begin/end, perserving existing semantics for now
+        label_state->insert_label.Reset();
     }
 }
 
 static inline void EndCmdDebugUtilsLabel(debug_report_data *report_data, VkCommandBuffer command_buffer) {
     std::unique_lock<std::mutex> lock(report_data->debug_report_mutex);
-    auto label_iter = report_data->debugUtilsCmdBufLabels.find(command_buffer);
-    if (label_iter != report_data->debugUtilsCmdBufLabels.end()) {
-        // If the last thing was a label insert, we need to pop it off of the label vector before any
-        // changes. This is because a label added with "vkCmdInsertDebugUtilsLabelEXT" is only a
-        // temporary location that exists until the next operation occurs.  In this case, a
-        // "vkCmdEndDebugUtilsLabelEXT" has occurred erasing the inserted label.
-        if (report_data->cmdBufLabelHasInsert) {
-            report_data->cmdBufLabelHasInsert = false;
-            label_iter->second.pop_back();
+    auto *label_state = GetLoggingLabelState(&report_data->debugUtilsCmdBufLabels, command_buffer, /* insert */ false);
+    if (label_state) {
+        // Pop the normal item
+        if (!label_state->labels.empty()) {
+            label_state->labels.pop_back();
         }
-        // Guard against unbalanced markers.
-        if (label_iter->second.size() > 0) {
-            // Now pop the normal item
-            label_iter->second.pop_back();
-        }
+
+        // TODO: Determine if this is the correct semantics for insert label vs. begin/end, perserving existing semantics for now
+        label_state->insert_label.Reset();
     }
 }
 
 static inline void InsertCmdDebugUtilsLabel(debug_report_data *report_data, VkCommandBuffer command_buffer,
                                             const VkDebugUtilsLabelEXT *label_info) {
     std::unique_lock<std::mutex> lock(report_data->debug_report_mutex);
-    if (nullptr != label_info && nullptr != label_info->pLabelName) {
-        auto label_iter = report_data->debugUtilsCmdBufLabels.find(command_buffer);
-        if (label_iter == report_data->debugUtilsCmdBufLabels.end()) {
-            std::vector<LoggingLabelData> new_cmdbuf_labels;
-            InsertLabelIntoLog(label_info, new_cmdbuf_labels);
-            report_data->debugUtilsCmdBufLabels.insert({command_buffer, new_cmdbuf_labels});
-        } else {
-            // If the last thing was a label insert, we need to pop it off of the label vector before any
-            // changes. This is because a label added with "vkCmdInsertDebugUtilsLabelEXT" is only a
-            // temporary location that exists until the next operation occurs.  In this case, a new
-            // "vkCmdInsertDebugUtilsLabelEXT" has occurred erasing the previous inserted label.
-            if (report_data->cmdBufLabelHasInsert) {
-                label_iter->second.pop_back();
-            }
-            // Insert this new label and mark it as one that has been "inserted" so we can remove it on
-            // the next command buffer label operation.
-            InsertLabelIntoLog(label_info, label_iter->second);
-            report_data->cmdBufLabelHasInsert = true;
-        }
+    auto *label_state = GetLoggingLabelState(&report_data->debugUtilsCmdBufLabels, command_buffer, /* insert */ true);
+    assert(label_state);
+
+    // TODO: Determine if this is the correct semantics for insert label vs. begin/end, perserving existing semantics for now
+    label_state->insert_label = LoggingLabel(label_info);
+}
+
+// Current tracking beyond a single command buffer scope is incorrect, and even when it is we need to be able to clean up
+static inline void ResetCmdDebugUtilsLabel(debug_report_data *report_data, VkCommandBuffer command_buffer) {
+    std::unique_lock<std::mutex> lock(report_data->debug_report_mutex);
+    auto *label_state = GetLoggingLabelState(&report_data->debugUtilsCmdBufLabels, command_buffer, /* insert */ false);
+    if (label_state) {
+        label_state->labels.clear();
+        label_state->insert_label.Reset();
     }
+}
+
+static inline void EraseCmdDebugUtilsLabel(debug_report_data *report_data, VkCommandBuffer command_buffer) {
+    report_data->debugUtilsCmdBufLabels.erase(command_buffer);
 }
 
 #endif  // LAYER_LOGGING_H
