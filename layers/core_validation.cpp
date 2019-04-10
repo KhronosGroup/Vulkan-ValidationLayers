@@ -2282,6 +2282,9 @@ void CoreChecks::ResetCommandBufferState(const VkCommandBuffer cb) {
 
         pCB->qfo_transfer_image_barriers.Reset();
         pCB->qfo_transfer_buffer_barriers.Reset();
+
+        // Clean up the label data
+        ResetCmdDebugUtilsLabel(report_data, pCB->commandBuffer);
     }
 }
 
@@ -4826,6 +4829,9 @@ void CoreChecks::FreeCommandBufferStates(COMMAND_POOL_NODE *pool_state, const ui
             // Remove the cb_state's references from COMMAND_POOL_NODEs
             commandBufferMap.erase(cb_state->commandBuffer);
             pool_state->commandBuffers.erase(command_buffers[i]);
+
+            // Remove the cb debug labels
+            EraseCmdDebugUtilsLabel(report_data, cb_state->commandBuffer);
             delete cb_state;
         }
     }
