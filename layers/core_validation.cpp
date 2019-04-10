@@ -12361,16 +12361,6 @@ void CoreChecks::PostCallRecordGetPhysicalDeviceSurfaceFormats2KHR(VkPhysicalDev
     }
 }
 
-void CoreChecks::PreCallRecordQueueBeginDebugUtilsLabelEXT(VkQueue queue, const VkDebugUtilsLabelEXT *pLabelInfo) {
-    BeginQueueDebugUtilsLabel(report_data, queue, pLabelInfo);
-}
-
-void CoreChecks::PostCallRecordQueueEndDebugUtilsLabelEXT(VkQueue queue) { EndQueueDebugUtilsLabel(report_data, queue); }
-
-void CoreChecks::PreCallRecordQueueInsertDebugUtilsLabelEXT(VkQueue queue, const VkDebugUtilsLabelEXT *pLabelInfo) {
-    InsertQueueDebugUtilsLabel(report_data, queue, pLabelInfo);
-}
-
 void CoreChecks::PreCallRecordCmdBeginDebugUtilsLabelEXT(VkCommandBuffer commandBuffer, const VkDebugUtilsLabelEXT *pLabelInfo) {
     BeginCmdDebugUtilsLabel(report_data, commandBuffer, pLabelInfo);
 }
@@ -12381,25 +12371,6 @@ void CoreChecks::PostCallRecordCmdEndDebugUtilsLabelEXT(VkCommandBuffer commandB
 
 void CoreChecks::PreCallRecordCmdInsertDebugUtilsLabelEXT(VkCommandBuffer commandBuffer, const VkDebugUtilsLabelEXT *pLabelInfo) {
     InsertCmdDebugUtilsLabel(report_data, commandBuffer, pLabelInfo);
-}
-
-void CoreChecks::PostCallRecordCreateDebugUtilsMessengerEXT(VkInstance instance,
-                                                            const VkDebugUtilsMessengerCreateInfoEXT *pCreateInfo,
-                                                            const VkAllocationCallbacks *pAllocator,
-                                                            VkDebugUtilsMessengerEXT *pMessenger, VkResult result) {
-    if (VK_SUCCESS != result) return;
-    layer_create_messenger_callback(report_data, false, pCreateInfo, pAllocator, pMessenger);
-}
-
-void CoreChecks::PostCallRecordDestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT messenger,
-                                                             const VkAllocationCallbacks *pAllocator) {
-    if (!messenger) return;
-    layer_destroy_messenger_callback(report_data, messenger, pAllocator);
-}
-
-void CoreChecks::PostCallRecordDestroyDebugReportCallbackEXT(VkInstance instance, VkDebugReportCallbackEXT msgCallback,
-                                                             const VkAllocationCallbacks *pAllocator) {
-    layer_destroy_report_callback(report_data, msgCallback, pAllocator);
 }
 
 void CoreChecks::PostRecordEnumeratePhysicalDeviceGroupsState(uint32_t *pPhysicalDeviceGroupCount,
