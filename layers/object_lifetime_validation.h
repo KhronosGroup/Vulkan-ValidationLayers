@@ -170,11 +170,6 @@ class ObjectLifetimes : public ValidationObject {
         uint64_t object_handle = HandleToUint64(object);
         bool custom_allocator = (pAllocator != nullptr);
         if (!object_map[object_type].count(object_handle)) {
-            VkDebugReportObjectTypeEXT debug_object_type = get_debug_report_enum[object_type];
-            log_msg(report_data, VK_DEBUG_REPORT_INFORMATION_BIT_EXT, debug_object_type, object_handle, kVUID_ObjectTracker_Info,
-                    "OBJ[0x%" PRIxLEAST64 "] : CREATE %s object 0x%" PRIxLEAST64, object_track_index++, object_string[object_type],
-                    object_handle);
-
             ObjTrackState *pNewObjNode = new ObjTrackState;
             pNewObjNode->object_type = object_type;
             pNewObjNode->status = custom_allocator ? OBJSTATUS_CUSTOM_ALLOCATOR : OBJSTATUS_NONE;
@@ -234,12 +229,6 @@ class ObjectLifetimes : public ValidationObject {
             auto item = object_map[object_type].find(object_handle);
             if (item != object_map[object_type].end()) {
                 ObjTrackState *pNode = item->second;
-                skip |= log_msg(report_data, VK_DEBUG_REPORT_INFORMATION_BIT_EXT, debug_object_type, object_handle,
-                                kVUID_ObjectTracker_Info,
-                                "OBJ_STAT Destroy %s obj 0x%" PRIxLEAST64 " (%" PRIu64 " total objs remain & %" PRIu64 " %s objs).",
-                                object_string[object_type], HandleToUint64(object), num_total_objects - 1,
-                                num_objects[pNode->object_type] - 1, object_string[object_type]);
-
                 auto allocated_with_custom = (pNode->status & OBJSTATUS_CUSTOM_ALLOCATOR) ? true : false;
                 if (allocated_with_custom && !custom_allocator && expected_custom_allocator_code != kVUIDUndefined) {
                     // This check only verifies that custom allocation callbacks were provided to both Create and Destroy calls,
