@@ -35400,6 +35400,77 @@ TEST_F(VkPositiveLayerTest, ApiVersionZero) {
     m_errorMonitor->VerifyNotFound();
 }
 
+TEST_F(VkLayerTest, DrawIndirect) {
+    TEST_DESCRIPTION("Test covered valid usage for vkCmdDrawIndirect");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkMemoryRequirements memory_requirements;
+    VkMemoryAllocateInfo memory_allocate_info = {VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};
+
+    char const *vsSource =
+        "#version 450\n"
+        "\n"
+        "void main() { gl_Position = vec4(0); }\n";
+    char const *fsSource =
+        "#version 450\n"
+        "\n"
+        "layout(location=0) out vec4 color;\n"
+        "void main() {\n"
+        "   color = vec4(1, 0, 0, 1);\n"
+        "}\n";
+    VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
+    VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+
+    VkPipelineObj pipe(m_device);
+    pipe.AddShader(&vs);
+    pipe.AddShader(&fs);
+    pipe.AddDefaultColorAttachment();
+
+    VkDescriptorSetObj descriptor_set(m_device);
+    descriptor_set.AppendDummy();
+    descriptor_set.CreateVKDescriptorSet(m_commandBuffer);
+
+    VkResult err = pipe.CreateVKPipeline(descriptor_set.GetPipelineLayout(), renderPass());
+    ASSERT_VK_SUCCESS(err);
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+
+    vkCmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
+    m_commandBuffer->BindDescriptorSet(descriptor_set);
+
+    VkViewport viewport = {0, 0, 16, 16, 0, 1};
+    vkCmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
+    VkRect2D scissor = {{0, 0}, {16, 16}};
+    vkCmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissor);
+
+    VkBufferCreateInfo buffer_create_info = {VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
+    buffer_create_info.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+    buffer_create_info.size = sizeof(VkDrawIndirectCommand);
+    VkBuffer draw_buffer;
+    vkCreateBuffer(m_device->device(), &buffer_create_info, nullptr, &draw_buffer);
+
+    vkGetBufferMemoryRequirements(m_device->device(), draw_buffer, &memory_requirements);
+    memory_allocate_info.allocationSize = memory_requirements.size;
+    m_device->phy().set_memory_type(memory_requirements.memoryTypeBits, &memory_allocate_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+    VkDeviceMemory draw_buffer_memory;
+    vkAllocateMemory(m_device->device(), &memory_allocate_info, NULL, &draw_buffer_memory);
+    vkBindBufferMemory(m_device->device(), draw_buffer, draw_buffer_memory, 0);
+
+    // VUID-vkCmdDrawIndirect-buffer-01660
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDrawIndirect-buffer-01660");
+    vkCmdDrawIndirect(m_commandBuffer->handle(), draw_buffer, 0, 1, sizeof(VkDrawIndirectCommand));
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+
+    vkDestroyBuffer(m_device->device(), draw_buffer, 0);
+    vkFreeMemory(m_device->device(), draw_buffer_memory, 0);
+}
+
 TEST_F(VkLayerTest, DrawIndirectCountKHR) {
     TEST_DESCRIPTION("Test covered valid usage for vkCmdDrawIndirectCountKHR");
 
