@@ -59,9 +59,6 @@ void ObjectLifetimes::DestroyQueueDataStructures(VkDevice device) {
         num_total_objects--;
         assert(num_objects[obj_index] > 0);
         num_objects[obj_index]--;
-        log_msg(report_data, VK_DEBUG_REPORT_INFORMATION_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_QUEUE_EXT, queue->second->handle,
-                kVUID_ObjectTracker_Info, "OBJ_STAT Destroy Queue obj %s (%" PRIu64 " total objs remain & %" PRIu64 " Queue objs).",
-                report_data->FormatHandle(queue->second->handle).c_str(), num_total_objects, num_objects[obj_index]);
         delete queue->second;
         queue = object_map[kVulkanObjectTypeQueue].erase(queue);
     }
@@ -97,11 +94,6 @@ bool ObjectLifetimes::ValidateDeviceObject(uint64_t device_handle, const char *i
 
 void ObjectLifetimes::AllocateCommandBuffer(VkDevice device, const VkCommandPool command_pool, const VkCommandBuffer command_buffer,
                                             VkCommandBufferLevel level) {
-    log_msg(report_data, VK_DEBUG_REPORT_INFORMATION_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-            HandleToUint64(command_buffer), kVUID_ObjectTracker_Info, "OBJ[0x%" PRIxLEAST64 "] : CREATE %s object %s.",
-            object_track_index++, "VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT",
-            report_data->FormatHandle(command_buffer).c_str());
-
     ObjTrackState *pNewObjNode = new ObjTrackState;
     pNewObjNode->object_type = kVulkanObjectTypeCommandBuffer;
     pNewObjNode->handle = HandleToUint64(command_buffer);
@@ -139,11 +131,6 @@ bool ObjectLifetimes::ValidateCommandBuffer(VkDevice device, VkCommandPool comma
 }
 
 void ObjectLifetimes::AllocateDescriptorSet(VkDevice device, VkDescriptorPool descriptor_pool, VkDescriptorSet descriptor_set) {
-    log_msg(report_data, VK_DEBUG_REPORT_INFORMATION_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_EXT,
-            HandleToUint64(descriptor_set), kVUID_ObjectTracker_Info, "OBJ[0x%" PRIxLEAST64 "] : CREATE %s object %s.",
-            object_track_index++, "VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_EXT",
-            report_data->FormatHandle(descriptor_set).c_str());
-
     ObjTrackState *pNewObjNode = new ObjTrackState;
     pNewObjNode->object_type = kVulkanObjectTypeDescriptorSet;
     pNewObjNode->status = OBJSTATUS_NONE;
@@ -242,10 +229,6 @@ bool ObjectLifetimes::PreCallValidateCmdPushDescriptorSetKHR(VkCommandBuffer com
 }
 
 void ObjectLifetimes::CreateQueue(VkDevice device, VkQueue vkObj) {
-    log_msg(report_data, VK_DEBUG_REPORT_INFORMATION_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_QUEUE_EXT, HandleToUint64(vkObj),
-            kVUID_ObjectTracker_Info, "OBJ[0x%" PRIxLEAST64 "] : CREATE %s object %s", object_track_index++,
-            "VK_DEBUG_REPORT_OBJECT_TYPE_QUEUE_EXT", report_data->FormatHandle(vkObj).c_str());
-
     ObjTrackState *p_obj_node = NULL;
     auto queue_item = object_map[kVulkanObjectTypeQueue].find(HandleToUint64(vkObj));
     if (queue_item == object_map[kVulkanObjectTypeQueue].end()) {
@@ -262,10 +245,6 @@ void ObjectLifetimes::CreateQueue(VkDevice device, VkQueue vkObj) {
 }
 
 void ObjectLifetimes::CreateSwapchainImageObject(VkDevice dispatchable_object, VkImage swapchain_image, VkSwapchainKHR swapchain) {
-    log_msg(report_data, VK_DEBUG_REPORT_INFORMATION_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
-            HandleToUint64(swapchain_image), kVUID_ObjectTracker_Info, "OBJ[0x%" PRIxLEAST64 "] : CREATE %s object %s.",
-            object_track_index++, "SwapchainImage", report_data->FormatHandle(swapchain_image).c_str());
-
     ObjTrackState *pNewObjNode = new ObjTrackState;
     pNewObjNode->object_type = kVulkanObjectTypeImage;
     pNewObjNode->status = OBJSTATUS_NONE;
