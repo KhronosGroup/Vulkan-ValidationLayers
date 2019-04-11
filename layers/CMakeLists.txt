@@ -199,7 +199,7 @@ set(CHASSIS_LIBRARY_FILES
 
 set(CORE_VALIDATION_LIBRARY_FILES
     core_validation.cpp
-    core_validation_drawdispatch.cpp
+    drawdispatch.cpp
     convert_to_renderpass2.cpp
     descriptor_sets.cpp
     buffer_validation.cpp
