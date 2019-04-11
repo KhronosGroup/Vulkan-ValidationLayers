@@ -139,6 +139,8 @@ bool CoreChecks::PreCallValidateCmdDrawIndirect(VkCommandBuffer commandBuffer, V
                                     "VUID-vkCmdDrawIndirect-None-00486");
     BUFFER_STATE *buffer_state = GetBufferState(buffer);
     skip |= ValidateMemoryIsBoundToBuffer(buffer_state, "vkCmdDrawIndirect()", "VUID-vkCmdDrawIndirect-buffer-00474");
+    skip |= ValidateBufferUsageFlags(buffer_state, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, true, "VUID-vkCmdDrawIndirect-buffer-01660",
+                                     "vkCmdDrawIndirect()", "VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT");
     // TODO: If the drawIndirectFirstInstance feature is not enabled, all the firstInstance members of the
     // VkDrawIndirectCommand structures accessed by this command must be 0, which will require access to the contents of 'buffer'.
     return skip;
@@ -165,6 +167,9 @@ bool CoreChecks::PreCallValidateCmdDrawIndexedIndirect(VkCommandBuffer commandBu
         "VUID-vkCmdDrawIndexedIndirect-None-00537", "VUID-vkCmdDrawIndexedIndirect-None-00538");
     BUFFER_STATE *buffer_state = GetBufferState(buffer);
     skip |= ValidateMemoryIsBoundToBuffer(buffer_state, "vkCmdDrawIndexedIndirect()", "VUID-vkCmdDrawIndexedIndirect-buffer-00526");
+    skip |= ValidateBufferUsageFlags(buffer_state, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, true,
+                                     "VUID-vkCmdDrawIndexedIndirect-buffer-01665", "vkCmdDrawIndexedIndirect()",
+                                     "VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT");
     // TODO: If the drawIndirectFirstInstance feature is not enabled, all the firstInstance members of the
     // VkDrawIndexedIndirectCommand structures accessed by this command must be 0, which will require access to the contents of
     // 'buffer'.
@@ -206,6 +211,9 @@ bool CoreChecks::PreCallValidateCmdDispatchIndirect(VkCommandBuffer commandBuffe
                             "VUID-vkCmdDispatchIndirect-renderpass", "VUID-vkCmdDispatchIndirect-None-00404", kVUIDUndefined);
     BUFFER_STATE *buffer_state = GetBufferState(buffer);
     skip |= ValidateMemoryIsBoundToBuffer(buffer_state, "vkCmdDispatchIndirect()", "VUID-vkCmdDispatchIndirect-buffer-00401");
+    skip |=
+        ValidateBufferUsageFlags(buffer_state, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, true, "VUID-vkCmdDispatchIndirect-buffer-00405",
+                                 "vkCmdDispatchIndirect()", "VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT");
     return skip;
 }
 
@@ -257,7 +265,12 @@ bool CoreChecks::PreCallValidateCmdDrawIndirectCountKHR(VkCommandBuffer commandB
         ValidateMemoryIsBoundToBuffer(buffer_state, "vkCmdDrawIndirectCountKHR()", "VUID-vkCmdDrawIndirectCountKHR-buffer-03104");
     skip |= ValidateMemoryIsBoundToBuffer(count_buffer_state, "vkCmdDrawIndirectCountKHR()",
                                           "VUID-vkCmdDrawIndirectCountKHR-countBuffer-03106");
-
+    skip |= ValidateBufferUsageFlags(buffer_state, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, true,
+                                     "VUID-vkCmdDrawIndirectCountKHR-buffer-03105", "vkCmdDrawIndirectCountKHR()",
+                                     "VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT");
+    skip |= ValidateBufferUsageFlags(count_buffer_state, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, true,
+                                     "VUID-vkCmdDrawIndirectCountKHR-countBuffer-03107", "vkCmdDrawIndirectCountKHR()",
+                                     "VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT");
     return skip;
 }
 
@@ -311,6 +324,12 @@ bool CoreChecks::PreCallValidateCmdDrawIndexedIndirectCountKHR(VkCommandBuffer c
                                           "VUID-vkCmdDrawIndexedIndirectCountKHR-buffer-03136");
     skip |= ValidateMemoryIsBoundToBuffer(count_buffer_state, "vkCmdDrawIndexedIndirectCountKHR()",
                                           "VUID-vkCmdDrawIndexedIndirectCountKHR-countBuffer-03138");
+    skip |= ValidateBufferUsageFlags(buffer_state, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, true,
+                                     "VUID-vkCmdDrawIndexedIndirectCountKHR-buffer-03137", "vkCmdDrawIndexedIndirectCountKHR()",
+                                     "VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT");
+    skip |= ValidateBufferUsageFlags(count_buffer_state, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, true,
+                                     "VUID-vkCmdDrawIndexedIndirectCountKHR-countBuffer-03139",
+                                     "vkCmdDrawIndexedIndirectCountKHR()", "VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT");
     return skip;
 }
 
@@ -348,7 +367,9 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectNV(VkCommandBuffer comma
     BUFFER_STATE *buffer_state = GetBufferState(buffer);
     skip |= ValidateMemoryIsBoundToBuffer(buffer_state, "vkCmdDrawMeshTasksIndirectNV()",
                                           "VUID-vkCmdDrawMeshTasksIndirectNV-buffer-02143");
-
+    skip |= ValidateBufferUsageFlags(buffer_state, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, true,
+                                     "VUID-vkCmdDrawMeshTasksIndirectNV-buffer-02144", "vkCmdDrawMeshTasksIndirectNV()",
+                                     "VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT");
     return skip;
 }
 
@@ -376,7 +397,12 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectCountNV(VkCommandBuffer 
                                           "VUID-vkCmdDrawMeshTasksIndirectCountNV-buffer-02176");
     skip |= ValidateMemoryIsBoundToBuffer(count_buffer_state, "vkCmdDrawMeshTasksIndirectCountNV()",
                                           "VUID-vkCmdDrawMeshTasksIndirectCountNV-countBuffer-02178");
-
+    skip |= ValidateBufferUsageFlags(buffer_state, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, true,
+                                     "VUID-vkCmdDrawMeshTasksIndirectCountNV-buffer-02177", "vkCmdDrawIndexedIndirectCountKHR()",
+                                     "VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT");
+    skip |= ValidateBufferUsageFlags(count_buffer_state, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, true,
+                                     "VUID-vkCmdDrawMeshTasksIndirectCountNV-countBuffer-02179",
+                                     "vkCmdDrawIndexedIndirectCountKHR()", "VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT");
     return skip;
 }
 
