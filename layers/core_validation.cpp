@@ -3906,9 +3906,6 @@ void CoreChecks::PreCallRecordFreeMemory(VkDevice device, VkDeviceMemory mem, co
 
     // Clear mem binding for any bound objects
     for (auto obj : mem_info->obj_bindings) {
-        log_msg(report_data, VK_DEBUG_REPORT_INFORMATION_BIT_EXT, get_debug_report_enum[obj.type], obj.handle,
-                kVUID_Core_MemTrack_FreedMemRef, "VK Object %s still has a reference to mem obj %s.",
-                report_data->FormatHandle(obj.handle).c_str(), report_data->FormatHandle(mem_info->mem).c_str());
         BINDABLE *bindable_state = nullptr;
         switch (obj.type) {
             case kVulkanObjectTypeImage:
