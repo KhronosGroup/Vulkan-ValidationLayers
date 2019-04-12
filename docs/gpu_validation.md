@@ -26,6 +26,9 @@ The layer instruments the shaders by passing the shader's SPIR-V bytecode to the
 instructs the optimizer to perform an instrumentation pass to add the additional instructions to perform the run-time checking.
 The layer then passes the resulting modified SPIR-V bytecode to the driver as part of the process of creating a ShaderModule.
 
+The layer also allocates a buffer that describes the length of all descriptor arrays and the write state of each element of each array.
+It only does this if the VK_EXT_descriptor_indexing extension is enabled.
+
 As the shader is executed, the instrumented shader code performs the run-time checks.
 If a check detects an error condition, the instrumentation code writes an error record into the GPU's device memory.
 This record is small and is on the order of a dozen 32-bit words.
@@ -44,8 +47,8 @@ also provides the line of shader source code that provoked the error as part of 
 The initial release (Jan 2019) of GPU-Assisted Validation includes checking for out-of-bounds descriptor array indexing
 for image/texel descriptor types.
 
-Future releases are planned to add checking for other hazards such as proper population of descriptors when using the
-`descriptorBindingPartiallyBound` feature of the `VK_EXT_descriptor_indexing` extension.
+The second release (Apr 2019) adds validation for out-of-bounds descriptor array indexing and use of unwritten descriptors when the 
+VK_EXT_descriptor_indexing extension is enabled
 
 ### Out-of-Bounds(OOB) Descriptor Array Indexing
 
@@ -72,6 +75,18 @@ ERROR : VALIDATION - Message Id Number: 0 | Message Id Name: UNASSIGNED-Image de
         /home/user/src/Vulkan-ValidationLayers/external/Vulkan-Tools/cube/cube.frag at line 45.
 45:    uFragColor = light * texture(tex[tex_ind], texcoord.xy);
 ```
+The VK_EXT_descriptor_indexing extension allows a shader to declare a descriptor array without specifying its size
+```glsl
+layout(set = 0, binding = 1) uniform sampler2D tex[];
+```
+In this case, the layer needs to tell the optimization code how big the descriptor array is so the code can determine what is out of 
+bounds and what is not.
+
+The extension also allows descriptor set bindings to be partially bound, meaning that as long as the shader doesn't use certain
+array elements, those elements are not required to have been written.
+The instrumentation code needs to know which elements of a descriptor array have been written, so that it can tell if one is used
+that has not been written.
+
 
 ## GPU-Assisted Validation Options
 
@@ -176,11 +191,20 @@ changing the application to free a slot is difficult.
 
 ### Device Memory
 
-GPU-Assisted Validation does allocate device memory for the error report buffers.
+GPU-Assisted Validation does allocate device memory for the error report buffers, and if
+descriptor indexing is enabled, for the input buffer of descriptor sizes and write state.
 This can lead to a greater chance of memory exhaustion, especially in cases where
 the application is trying to use all of the available memory.
 The extra memory allocations are also not visible to the application, making it
 impossible for the application to account for them.
+
+Note that if descriptor indexing is enabled, the input buffer size will be equal to
+(1 + (number_of_sets * 2) + (binding_count * 2) + descriptor_count) words of memory where
+binding_count is the binding number of the largest binding in the set.  
+This means that sparsely populated sets and sets with a very large binding will cause
+the input buffer to be much larger than it could be with more densely packed binding numbers.
+As a best practice, when using GPU-Assisted Validation with descriptor indexing enabled,
+make sure descriptor bindings are densely packed.
 
 If GPU-Assisted Validation device memory allocations fail, the device could become
 unstable because some previously-built pipelines may contain instrumented shaders.
@@ -234,9 +258,11 @@ In general, the implementation does:
 
 * For each draw call, allocate a buffer with enough device memory to hold a single debug output record written by the
     instrumented shader code.
+    If descriptor indexing is enabled, calculate the amount of memory needed to describe the descriptor arrays sizes and
+    write states and allocate device memory and a buffer for input to the instrumented shader.
     The Vulkan Memory Allocator is used to handle this efficiently.
 
-    There is probably little advantage in providing a larger buffer in order to obtain more debug records.
+    There is probably little advantage in providing a larger output buffer in order to obtain more debug records.
     It is likely, especially for fragment shaders, that multiple errors occurring near each other have the same root cause.
 
     A block is allocated on a per draw basis to make it possible to associate a shader debug error record with
@@ -246,6 +272,8 @@ In general, the implementation does:
     However, it is not possible to identify the command buffer that causes the error if multiple command buffers
     are submitted at once.
 * For each draw call, allocate a descriptor set and update it to point to the block of device memory just allocated.
+    If descriptor indexing is enabled, also update the descriptor set to point to the allocated input buffer.
+    Fill the input buffer with the size and write state information for each descriptor array.
     There is a descriptor set manager to handle this efficiently.
     Also make an additional call down the chain to create a bind descriptor set command to bind our descriptor set at the desired index.
     This has the effect of binding the device memory block belonging to this draw so that the GPU instrumentation
@@ -259,6 +287,7 @@ In general, the implementation does:
 * When creating a ShaderModule, pass the SPIR-V bytecode to the SPIR-V optimizer to perform the instrumentation pass.
     Pass the desired descriptor set binding index to the optimizer via a parameter so that the instrumented
     code knows which descriptor to use for writing error report data to the memory block.
+    If descriptor indexing is enabled, turn on OOB and write state checking in the instrumentation pass.
     Use the instrumented bytecode to create the ShaderModule.
 * For all pipeline layouts, add our descriptor set to the layout, at the binding index determined earlier.
     Fill any gaps with empty descriptor sets.
@@ -270,6 +299,9 @@ In general, the implementation does:
     The layer issues an error message to report this condition.
 * When creating a GraphicsPipeline, check to see if the pipeline is using the debug binding index.
     If it is, replace the instrumented shaders in the pipeline with non-instrumented ones.
+* Before calling QueueSubmit, if descriptor indexing is enabled, check to see if there were any unwritten descriptors that were declared
+    update-after-bind.
+    If there were, update the write state of those elements.
 * After calling QueueSubmit, perform a wait on the queue to allow the queue to finish executing.
     Then map and examine the device memory block for each draw that was submitted.
     If any debug record is found, generate a validation error message for each record found.
@@ -396,7 +428,8 @@ The design of each hooked function follows:
 
 * For each Draw or Dispatch call:
   * Get a descriptor set from the descriptor set manager
-  * Get a buffer and associated memory from VMA
+  * Get an output buffer and associated memory from VMA
+  * If descriptor indexing is enabled, get an input buffer and fill with descriptor array information
   * Update (write) the descriptor set with the memory info
   * Check to see if the layout for the pipeline just bound is using our selected bind index
   * If no conflict, add an additional command to the command buffer to bind our descriptor set at our selected index
@@ -406,7 +439,7 @@ Note that the Draw and Dispatch calls include vkCmdDraw, vkCmdDrawIndexed, vkCmd
 #### GpuPreCallRecordFreeCommandBuffers
 
 * For each command buffer:
-  * Destroy the VMA buffer, releasing the memory
+  * Destroy the VMA buffer(s), releasing the memory
   * Give the descriptor sets back to the descriptor set manager
   * Clean up CB state
 
@@ -452,6 +485,11 @@ This is function is called through PreCallRecordCreatePipelineLayout.
     * Add our descriptor set layout as the last one in the new pipeline layout
 * Create the pipeline layouts by calling down the chain with the original or modified create info
 
+#### GpuPreCallQueueSubmit
+
+* For each primary and secondary command buffer in the submission:
+  * Call helper function to see if there are any update after bind descriptors whose write state may need to be updated
+    and if so, map the input buffer and update the state.
 
 #### GpuPostCallQueueSubmit
 
@@ -754,6 +792,56 @@ then added to the validation error message.
 
 For example, if the OpLine line number is 15, and there is a "#line 10" on line 40
 in the OpSource source, then line 45 in the OpSource contains the correct source line.
+
+### Shader Instrumentation Input Record Format
+
+Although the input buffer is a linear array of unsigned integers, conceptually there are arrays within the linear array
+
+Word 1 starts an array (denoted by sets_to_sizes) that is number_of_sets long, with an index that indicates the start of that set's entries in the sizes array
+
+After the sets_to_sizes array is the sizes array, that contains the array size (or 1 if descriptor is not an array) of each descriptor in the set.  Bindings with no descriptor are filled in with zeros
+
+After the sizes array is the sets_to_bindings array that for each descriptor set, indexes into the bindings_to_written array.  Word 0 contains the index that is the start of the sets_to_bindings array
+
+After the sets_to_bindings array, is the bindings_to_written array that for each binding in the set, indexes to the start of that binding's entries in the written array
+
+Lastly comes the written array, which indicates whether a given binding / array element has been written
+
+Example:
+```
+Assume Descriptor Set 0 looks like:                        And Descriptor Set 1 looks like:
+  Binding                                                    Binding
+     0          Array[3]                                       2          Array[4]
+     1          Non Array                                      3          Array[5]
+     3          Array[2]
+
+Here is what the input buffer should look like:
+
+   Index of                     sets_to_sizes                     sizes             sets_to_bindings                       bindings_to_written    written
+   sets_to_bindings
+
+     0 |11| sets_to_bindings     1 |3| set 0 sizes start at 3     3  |3| S0B0       11 |13| set 0 bindings start at 13        13 |21| S0B0        21 |1| S0B0I0 was written
+            starts at 11         2 |7| set 1 sizes start at 7     4  |1| S0B1       12 |17| set 1 bindings start at 17        14 |24| S0B1        22 |1| S0B0I1 was written
+                                                                  5  |0| S0B2                                                 15 |0 | S0B2        23 |1| S0B0I3 was written
+                                                                  6  |2| S0B3                                                 16 |25| S0B3        24 |1| S0B1 was written
+                                                                  7  |0| S1B0                                                 17 |0 | S1B0        25 |1| S0B3I0 was written
+                                                                  8  |0| S1B1                                                 18 |0 | S1B1        26 |1| S0B3I1 was written
+                                                                  9  |4| S1B2                                                 19 |27| S1B2        27 |0| S1B2I0 was not written
+                                                                  10 |5| S1B3                                                 20 |31| S1B3        28 |1| S1B2I1 was written
+                                                                                                                                                  29 |1| S1B2I2 was written
+                                                                                                                                                  30 |1| S1B2I3 was written
+                                                                                                                                                  31 |1| S1B3I0 was written
+                                                                                                                                                  32 |1| S1B3I1 was written
+                                                                                                                                                  33 |1| S1B3I2 was written
+                                                                                                                                                  34 |1| S1B3I3 was written
+                                                                                                                                                  35 |1| S1B3I4 was written
+```
+Alternately, you could describe the array size and write state data as:
+(set = s, binding = b, index = i) is not initialized if 
+```
+Input[ i + Input[ b + Input[ s + Input[ Input[0] ] ] ] ] == 0
+```
+and the array's size = Input[ Input[ s + 1 ] + b ] 
 
 ## GPU-Assisted Validation Testing
 
