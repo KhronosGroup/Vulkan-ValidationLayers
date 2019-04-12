@@ -26156,7 +26156,7 @@ TEST_F(VkLayerTest, MultiplaneImageSamplerConversionMismatch) {
     VkPhysicalDeviceSamplerYcbcrConversionFeatures ycbcr_features = {};
     ycbcr_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SAMPLER_YCBCR_CONVERSION_FEATURES;
     ycbcr_features.samplerYcbcrConversion = VK_TRUE;
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &ycbcr_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &ycbcr_features));
     ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
@@ -26225,10 +26225,10 @@ TEST_F(VkLayerTest, MultiplaneImageSamplerConversionMismatch) {
 
     // Use the image and sampler together in a descriptor set
     OneOffDescriptorSet ds(m_device, {
-                                         {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, &sampler},
+                                         {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, &sampler},
                                      });
 
-    VkDescriptorImageInfo image_info = {};
+    VkDescriptorImageInfo image_info{};
     image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     image_info.imageView = view;
     image_info.sampler = sampler;
@@ -26248,9 +26248,11 @@ TEST_F(VkLayerTest, MultiplaneImageSamplerConversionMismatch) {
     VkImageView view_1947;
     ivci.pNext = &ycbcr_info;
     vkCreateImageView(m_device->device(), &ivci, nullptr, &view_1947);
-    OneOffDescriptorSet ds_1947(m_device, {
-                                              {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                          });
+    OneOffDescriptorSet ds_1947(m_device,
+                                {
+                                    {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+                                });
+
     image_info.imageView = view_1947;
     descriptor_write.dstSet = ds_1947.set_;
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkWriteDescriptorSet-descriptorType-01947");
