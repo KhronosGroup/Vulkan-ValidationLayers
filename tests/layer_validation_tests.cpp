@@ -21,6 +21,7 @@
  * Author: Dave Houlton <daveh@lunarg.com>
  * Author: Jeremy Kniager <jeremyk@lunarg.com>
  * Author: Shannon McPherson <shannon@lunarg.com>
+ * Author: John Zulauf <jzulauf@lunarg.com>
  */
 
 #ifdef ANDROID
@@ -1638,29 +1639,75 @@ TEST_F(VkLayerTest, DebugMarkerNameTest) {
     vkDestroyCommandPool(device(), commandpool_2, NULL);
 }
 
+struct DebugUtilsLabelCheckData {
+    std::function<void(const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData, DebugUtilsLabelCheckData *)> callback;
+    size_t count;
+};
+
+bool operator==(const VkDebugUtilsLabelEXT &rhs, const VkDebugUtilsLabelEXT &lhs) {
+    bool is_equal = (rhs.color[0] == lhs.color[0]) && (rhs.color[1] == lhs.color[1]) && (rhs.color[2] == lhs.color[2]) &&
+                    (rhs.color[3] == lhs.color[3]);
+    if (is_equal) {
+        if (rhs.pLabelName && lhs.pLabelName) {
+            is_equal = (0 == strcmp(rhs.pLabelName, lhs.pLabelName));
+        } else {
+            is_equal = (rhs.pLabelName == nullptr) && (lhs.pLabelName == nullptr);
+        }
+    }
+    return is_equal;
+}
+
+VKAPI_ATTR VkBool32 VKAPI_CALL DebugUtilsCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+                                                  VkDebugUtilsMessageTypeFlagsEXT messageTypes,
+                                                  const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData, void *pUserData) {
+    auto *data = reinterpret_cast<DebugUtilsLabelCheckData *>(pUserData);
+    data->callback(pCallbackData, data);
+    return VK_FALSE;
+}
+
 TEST_F(VkLayerTest, DebugUtilsNameTest) {
     TEST_DESCRIPTION("Ensure debug utils object names are printed in debug messenger output");
 
-    if (InstanceExtensionSupported(VK_EXT_DEBUG_UTILS_EXTENSION_NAME)) {
-        m_instance_extension_names.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-    } else {
-        printf("%s Debug Utils Extension not supported, skipping test\n", kSkipPrefix);
-        return;
-    }
+    // Need to assure we don't silently accept debug utils being removed from validation
+    ASSERT_TRUE(InstanceExtensionSupported(VK_EXT_DEBUG_UTILS_EXTENSION_NAME));
+    m_instance_extension_names.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+
     ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     PFN_vkSetDebugUtilsObjectNameEXT fpvkSetDebugUtilsObjectNameEXT =
         (PFN_vkSetDebugUtilsObjectNameEXT)vkGetDeviceProcAddr(m_device->device(), "vkSetDebugUtilsObjectNameEXT");
-    if (!(fpvkSetDebugUtilsObjectNameEXT)) {
-        printf("%s Can't find fpvkSetDebugUtilsObjectNameEXT; skipped.\n", kSkipPrefix);
-        return;
-    }
+    ASSERT_TRUE(fpvkSetDebugUtilsObjectNameEXT);  // Must be extant if extension is enabled
+    PFN_vkCreateDebugUtilsMessengerEXT fpvkCreateDebugUtilsMessengerEXT =
+        (PFN_vkCreateDebugUtilsMessengerEXT)vkGetDeviceProcAddr(m_device->device(), "vkCreateDebugUtilsMessengerEXT");
+    ASSERT_TRUE(fpvkCreateDebugUtilsMessengerEXT);  // Must be extant if extension is enabled
+    PFN_vkDestroyDebugUtilsMessengerEXT fpvkDestroyDebugUtilsMessengerEXT =
+        (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetDeviceProcAddr(m_device->device(), "vkDestroyDebugUtilsMessengerEXT");
+    ASSERT_TRUE(fpvkDestroyDebugUtilsMessengerEXT);  // Must be extant if extension is enabled
+    PFN_vkCmdInsertDebugUtilsLabelEXT fpvkCmdInsertDebugUtilsLabelEXT =
+        (PFN_vkCmdInsertDebugUtilsLabelEXT)vkGetDeviceProcAddr(m_device->device(), "vkCmdInsertDebugUtilsLabelEXT");
+    ASSERT_TRUE(fpvkCmdInsertDebugUtilsLabelEXT);  // Must be extant if extension is enabled
 
     if (DeviceSimulation()) {
         printf("%sSkipping object naming test.\n", kSkipPrefix);
         return;
     }
+
+    DebugUtilsLabelCheckData callback_data;
+    auto empty_callback = [](const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData, DebugUtilsLabelCheckData *data) {
+        data->count++;
+    };
+    callback_data.count = 0;
+    callback_data.callback = empty_callback;
+
+    auto callback_create_info = lvl_init_struct<VkDebugUtilsMessengerCreateInfoEXT>();
+    callback_create_info.messageSeverity =
+        VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT;
+    callback_create_info.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT;
+    callback_create_info.pfnUserCallback = DebugUtilsCallback;
+    callback_create_info.pUserData = &callback_data;
+    VkDebugUtilsMessengerEXT my_messenger = VK_NULL_HANDLE;
+    fpvkCreateDebugUtilsMessengerEXT(instance(), &callback_create_info, nullptr, &my_messenger);
 
     VkBuffer buffer;
     VkDeviceMemory memory_1, memory_2;
@@ -1737,10 +1784,33 @@ TEST_F(VkLayerTest, DebugUtilsNameTest) {
     const VkRect2D scissor = {{-1, 0}, {16, 16}};
     const VkRect2D scissors[] = {scissor, scissor};
 
+    auto command_label = lvl_init_struct<VkDebugUtilsLabelEXT>();
+    command_label.pLabelName = "Command Label 0123";
+    command_label.color[0] = 0.;
+    command_label.color[1] = 1.;
+    command_label.color[2] = 2.;
+    command_label.color[3] = 3.0;
+    bool command_label_test = false;
+    auto command_label_callback = [command_label, &command_label_test](const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData,
+                                                                       DebugUtilsLabelCheckData *data) {
+        data->count++;
+        command_label_test = false;
+        if (pCallbackData->cmdBufLabelCount == 1) {
+            command_label_test = pCallbackData->pCmdBufLabels[0] == command_label;
+        }
+    };
+    callback_data.callback = command_label_callback;
+
+    fpvkCmdInsertDebugUtilsLabelEXT(commandBuffer, &command_label);
     // Test parameter_validation layer
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, commandBuffer_name);
     vkCmdSetScissor(commandBuffer, 1, 1, scissors);
     m_errorMonitor->VerifyFound();
+
+    // Check the label test
+    if (!command_label_test) {
+        ADD_FAILURE() << "Command label '" << command_label.pLabelName << "' not passed to callback.";
+    }
 
     // Test object_tracker layer
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, commandBuffer_name);
@@ -1749,6 +1819,7 @@ TEST_F(VkLayerTest, DebugUtilsNameTest) {
 
     vkDestroyCommandPool(device(), commandpool_1, NULL);
     vkDestroyCommandPool(device(), commandpool_2, NULL);
+    fpvkDestroyDebugUtilsMessengerEXT(instance(), my_messenger, nullptr);
 }
 
 TEST_F(VkLayerTest, InvalidStructSType) {
