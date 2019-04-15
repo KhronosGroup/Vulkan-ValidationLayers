@@ -38835,7 +38835,7 @@ TEST_F(VkLayerTest, CreateImageYcbcrArrayLayers) {
 
     // Enable KHR multiplane req'd extensions
     bool mp_extensions = InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,
-                                                    VK_KHR_GET_MEMORY_REQUIREMENTS_2_SPEC_VERSION);
+                                                    VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_SPEC_VERSION);
     if (mp_extensions) {
         m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     }
@@ -38869,6 +38869,12 @@ TEST_F(VkLayerTest, CreateImageYcbcrArrayLayers) {
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+
+    bool supported = ImageFormatAndFeaturesSupported(instance(), gpu(), image_create_info, VK_FORMAT_FEATURE_TRANSFER_SRC_BIT);
+    if (!supported) {
+        printf("%s Multiplane image format not supported.  Skipping test.\n", kSkipPrefix);
+        return;
+    }
 
     VkImageFormatProperties img_limits;
     ASSERT_VK_SUCCESS(GPDIFPHelper(gpu(), &image_create_info, &img_limits));
