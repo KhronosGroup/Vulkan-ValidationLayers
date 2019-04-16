@@ -427,28 +427,23 @@ std::vector<safe_VkGraphicsPipelineCreateInfo> CoreChecks::GpuPreCallRecordCreat
     VkPipelineCache pipelineCache, uint32_t count, const VkGraphicsPipelineCreateInfo *pCreateInfos,
     const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines, std::vector<std::unique_ptr<PIPELINE_STATE>> &pipe_state) {
     std::vector<safe_VkGraphicsPipelineCreateInfo> new_pipeline_create_infos;
-    std::vector<unsigned int> pipeline_uses_debug_index(count);
 
     // Walk through all the pipelines, make a copy of each and flag each pipeline that contains a shader that uses the debug
     // descriptor set index.
     for (uint32_t pipeline = 0; pipeline < count; ++pipeline) {
+        bool replace_shaders = false;
         new_pipeline_create_infos.push_back(pipe_state[pipeline]->graphicsPipelineCI);
         if (pipe_state[pipeline]->active_slots.find(gpu_validation_state->desc_set_bind_index) !=
             pipe_state[pipeline]->active_slots.end()) {
-            pipeline_uses_debug_index[pipeline] = 1;
+            replace_shaders = true;
         }
-    }
+        // If the app requests all available sets, the pipeline layout was not modified at pipeline layout creation and the already
+        // instrumented shaders need to be replaced with uninstrumented shaders
+        if (pipe_state[pipeline]->pipeline_layout.set_layouts.size() >= gpu_validation_state->adjusted_max_desc_sets) {
+            replace_shaders = true;
+        }
 
-    // See if any pipeline has shaders using the debug descriptor set index
-    if (std::all_of(pipeline_uses_debug_index.begin(), pipeline_uses_debug_index.end(), [](unsigned int i) { return i == 0; })) {
-        // None of the shaders in all the pipelines use the debug descriptor set index, so use the pipelines
-        // as they stand with the instrumented shaders.
-        return new_pipeline_create_infos;
-    }
-
-    // At least one pipeline has a shader that uses the debug descriptor set index.
-    for (uint32_t pipeline = 0; pipeline < count; ++pipeline) {
-        if (pipeline_uses_debug_index[pipeline]) {
+        if (replace_shaders) {
             for (uint32_t stage = 0; stage < pCreateInfos[pipeline].stageCount; ++stage) {
                 const shader_module *shader = GetShaderModuleState(pCreateInfos[pipeline].pStages[stage].module);
                 VkShaderModuleCreateInfo create_info = {};
