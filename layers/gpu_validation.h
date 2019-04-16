@@ -44,7 +44,6 @@ class GpuDescriptorSetManager {
 
     VkResult GetDescriptorSets(uint32_t count, VkDescriptorPool *pool, std::vector<VkDescriptorSet> *desc_sets);
     void PutBackDescriptorSet(VkDescriptorPool desc_pool, VkDescriptorSet desc_set);
-    void DestroyDescriptorPools();
 
    private:
     static const uint32_t kItemsPerChunk = 512;
@@ -72,6 +71,13 @@ struct GpuValidationState {
     std::unordered_map<VkCommandBuffer, std::vector<GpuBufferInfo>> command_buffer_map;  // gpu_buffer_list;
     uint32_t output_buffer_size;
     VmaAllocator vmaAllocator;
+    GpuValidationState(bool aborted = false, bool reserve_binding_slot = false, VkCommandPool barrier_command_pool = VK_NULL_HANDLE,
+                       VkCommandBuffer barrier_command_buffer = VK_NULL_HANDLE, VmaAllocator vmaAllocator = {})
+        : aborted(aborted),
+          reserve_binding_slot(reserve_binding_slot),
+          barrier_command_pool(barrier_command_pool),
+          barrier_command_buffer(barrier_command_buffer),
+          vmaAllocator(vmaAllocator){};
 
     std::vector<GpuBufferInfo> &GetGpuBufferInfo(const VkCommandBuffer command_buffer) {
         auto buffer_list = command_buffer_map.find(command_buffer);
