@@ -113,7 +113,9 @@ struct shader_module {
             spvtools::Optimizer optimizer(env);
             optimizer.RegisterPass(spvtools::CreateFlattenDecorationPass());
             std::vector<uint32_t> optimized_binary;
-            auto result = optimizer.Run(src_binary, binary_size / sizeof(uint32_t), &optimized_binary);
+            // Run optimizer to flatten decorations only, set skip_validation so as to not re-run validator
+            auto result =
+                optimizer.Run(src_binary, binary_size / sizeof(uint32_t), &optimized_binary, spvtools::ValidatorOptions(), true);
             if (result) {
                 return optimized_binary;
             }
