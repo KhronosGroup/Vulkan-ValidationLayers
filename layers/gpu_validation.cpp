@@ -122,13 +122,6 @@ void GpuDescriptorSetManager::PutBackDescriptorSet(VkDescriptorPool desc_pool, V
     return;
 }
 
-void GpuDescriptorSetManager::DestroyDescriptorPools() {
-    for (auto &pool : desc_pool_map_) {
-        DispatchDestroyDescriptorPool(dev_data_->device, pool.first, NULL);
-    }
-    desc_pool_map_.clear();
-}
-
 // Trampolines to make VMA call Dispatch for Vulkan calls
 static VKAPI_ATTR void VKAPI_CALL gpuVkGetPhysicalDeviceProperties(VkPhysicalDevice physicalDevice,
                                                                    VkPhysicalDeviceProperties *pProperties) {
@@ -249,11 +242,6 @@ void CoreChecks::GpuPreCallRecordCreateDevice(VkPhysicalDevice gpu, std::unique_
 // Perform initializations that can be done at Create Device time.
 void CoreChecks::GpuPostCallRecordCreateDevice(const CHECK_ENABLED *enables) {
     gpu_validation_state = std::unique_ptr<GpuValidationState>(new GpuValidationState);
-
-    gpu_validation_state->aborted = false;
-    gpu_validation_state->reserve_binding_slot = false;
-    gpu_validation_state->barrier_command_pool = VK_NULL_HANDLE;
-    gpu_validation_state->barrier_command_buffer = VK_NULL_HANDLE;
     gpu_validation_state->reserve_binding_slot = enables->gpu_validation_reserve_binding_slot;
 
     if (GetPDProperties()->apiVersion < VK_API_VERSION_1_1) {
@@ -351,8 +339,10 @@ void CoreChecks::GpuPreCallRecordDestroyDevice() {
         DispatchDestroyDescriptorSetLayout(device, gpu_validation_state->dummy_desc_layout, NULL);
         gpu_validation_state->dummy_desc_layout = VK_NULL_HANDLE;
     }
-    gpu_validation_state->desc_set_manager->DestroyDescriptorPools();
-    vmaDestroyAllocator(gpu_validation_state->vmaAllocator);
+    gpu_validation_state->desc_set_manager.reset();
+    if (gpu_validation_state->vmaAllocator) {
+        vmaDestroyAllocator(gpu_validation_state->vmaAllocator);
+    }
 }
 
 // Modify the pipeline layout to include our debug descriptor set and any needed padding with the dummy descriptor set.
