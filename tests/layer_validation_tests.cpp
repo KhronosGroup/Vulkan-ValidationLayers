@@ -30238,6 +30238,9 @@ TEST_F(VkPositiveLayerTest, PushDescriptorNullDstSetTest) {
         return;
     }
 
+    ASSERT_NO_FATAL_FAILURE(InitViewport());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
     VkDescriptorSetLayoutBinding dsl_binding = {};
     dsl_binding.binding = 2;
     dsl_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -30245,10 +30248,16 @@ TEST_F(VkPositiveLayerTest, PushDescriptorNullDstSetTest) {
     dsl_binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
     dsl_binding.pImmutableSamplers = NULL;
 
-    const VkDescriptorSetLayoutObj ds_layout(m_device, {dsl_binding}, VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR);
+    const VkDescriptorSetLayoutObj ds_layout(m_device, {dsl_binding});
+    // Create push descriptor set layout
+    const VkDescriptorSetLayoutObj push_ds_layout(m_device, {dsl_binding}, VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR);
 
-    // Now use the descriptor layout to create a pipeline layout
-    const VkPipelineLayoutObj pipeline_layout(m_device, {&ds_layout});
+    // Use helper to create graphics pipeline
+    CreatePipelineHelper helper(*this);
+    helper.InitInfo();
+    helper.InitState();
+    helper.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&push_ds_layout, &ds_layout});
+    helper.CreateGraphicsPipeline();
 
     static const float vbo_data[3] = {1.f, 0.f, 1.f};
     VkConstantBufferObj vbo(m_device, sizeof(vbo_data), (const void *)&vbo_data, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
@@ -30271,8 +30280,12 @@ TEST_F(VkPositiveLayerTest, PushDescriptorNullDstSetTest) {
     PFN_vkCmdPushDescriptorSetKHR vkCmdPushDescriptorSetKHR =
         (PFN_vkCmdPushDescriptorSetKHR)vkGetDeviceProcAddr(m_device->device(), "vkCmdPushDescriptorSetKHR");
     assert(vkCmdPushDescriptorSetKHR != nullptr);
+
     m_commandBuffer->begin();
-    vkCmdPushDescriptorSetKHR(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
+
+    // In Intel GPU, it needs to bind pipeline before push descriptor set.
+    vkCmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, helper.pipeline_);
+    vkCmdPushDescriptorSetKHR(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, helper.pipeline_layout_.handle(), 0, 1,
                               &descriptor_write);
 
     m_errorMonitor->VerifyNotFound();
