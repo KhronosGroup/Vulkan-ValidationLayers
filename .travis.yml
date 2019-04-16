@@ -110,6 +110,8 @@ script:
       mkdir build
       cd build
       cmake -DCMAKE_BUILD_TYPE=Debug \
+            -DBUILD_VIA=NO -DBUILD_VKTRACE=NO -DBUILD_VLF=NO -DBUILD_TESTS=NO -DBUILD_LAYERMGR=NO \
+            -DBUILD_VKTRACEVIEWER=NO -DBUILD_VKTRACE_LAYER=NO -DBUILD_VKTRACE_REPLAY=NO \
             -DVULKAN_HEADERS_INSTALL_DIR=${TRAVIS_BUILD_DIR}/external/Vulkan-Headers/build/install \
             -DVULKAN_LOADER_INSTALL_DIR=${TRAVIS_BUILD_DIR}/external/Vulkan-Loader/build/install \
             -DVULKAN_VALIDATIONLAYERS_INSTALL_DIR=${TRAVIS_BUILD_DIR}/build/install \
