@@ -337,7 +337,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             write(self.enumValueLists, file=self.outFile)
             self.newline()
 
-            pnext_handler  = 'bool StatelessValidation::ValidatePnextStructContents(const char *api_name, const ParameterName &parameter_name, const GenericHeader* header) {\n'
+            pnext_handler  = 'bool StatelessValidation::ValidatePnextStructContents(const char *api_name, const ParameterName &parameter_name, const VkBaseOutStructure* header) {\n'
             pnext_handler += '    bool skip = false;\n'
             pnext_handler += '    switch(header->sType) {\n'
 

@@ -1136,7 +1136,7 @@ class HelperFileOutputGenerator(OutputGenerator):
         type_member = 'Type'
         id_member = 'kSType'
         id_decl = 'static const VkStructureType '
-        generic_header = prefix + 'GenericHeader'
+        generic_header = 'VkBaseOutStructure'
         typename_func = fprefix + 'typename'
         idname_func = fprefix + 'stype_name'
         find_func = fprefix + 'find_in_chain'
@@ -1160,12 +1160,6 @@ class HelperFileOutputGenerator(OutputGenerator):
 
         # Define the utilities (here so any renaming stays consistent), if this grows large, refactor to a fixed .h file
         utilities_format = '\n'.join((
-            '// Header "base class" for pNext chain traversal',
-            'struct {header} {{',
-            '   VkStructureType sType;',
-            '   const {header} *pNext;',
-            '}};',
-            '',
             '// Find an entry of the given type in the pNext chain',
             'template <typename T> const T *{find_func}(const void *next) {{',
             '    const {header} *current = reinterpret_cast<const {header} *>(next);',
