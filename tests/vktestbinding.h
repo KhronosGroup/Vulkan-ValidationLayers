@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2015-2016 The Khronos Group Inc.
- * Copyright (c) 2015-2016 Valve Corporation
- * Copyright (c) 2015-2016 LunarG, Inc.
+ * Copyright (c) 2015-2016, 2019 The Khronos Group Inc.
+ * Copyright (c) 2015-2016, 2019 Valve Corporation
+ * Copyright (c) 2015-2016, 2019 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -489,9 +489,7 @@ class Image : public internal::NonDispHandle<VkImage> {
     bool transparent() const;
     bool copyable() const { return (format_features_ & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT); }
 
-    VkImageSubresourceRange subresource_range(VkImageAspectFlagBits aspect) const {
-        return subresource_range(create_info_, aspect);
-    }
+    VkImageSubresourceRange subresource_range(VkImageAspectFlags aspect) const { return subresource_range(create_info_, aspect); }
     VkExtent3D extent() const { return create_info_.extent; }
     VkExtent3D extent(uint32_t mip_level) const { return extent(create_info_.extent, mip_level); }
     VkFormat format() const { return create_info_.format; }
