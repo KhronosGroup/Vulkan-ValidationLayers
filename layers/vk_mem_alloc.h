@@ -27,6 +27,7 @@
 //
 // Change Log:
 //    3/27/19 - Make changes to suppress warnings from GCC
+//    4/18/19 - Make changes to suppress warnings from clang
 //
 
 #ifndef AMD_VULKAN_MEMORY_ALLOCATOR_H
@@ -6344,7 +6345,7 @@ private:
     // Redundant, for convenience not to fetch from m_hCustomPool->m_BlockVector or m_hAllocator->m_pBlockVectors.
     VmaBlockVector* const m_pBlockVector;
     const uint32_t m_CurrFrameIndex;
-    const uint32_t m_AlgorithmFlags;
+    //const uint32_t m_AlgorithmFlags;
     // Owner of this object.
     VmaDefragmentationAlgorithm* m_pAlgorithm;
 
@@ -13132,7 +13133,7 @@ VmaBlockVectorDefragmentationContext::VmaBlockVectorDefragmentationContext(
     m_hCustomPool(hCustomPool),
     m_pBlockVector(pBlockVector),
     m_CurrFrameIndex(currFrameIndex),
-    m_AlgorithmFlags(algorithmFlags),
+    //m_AlgorithmFlags(algorithmFlags),
     m_pAlgorithm(VMA_NULL),
     m_Allocations(VmaStlAllocator<AllocInfo>(hAllocator->GetAllocationCallbacks())),
     m_AllAllocations(false)
