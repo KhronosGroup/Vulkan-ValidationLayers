@@ -925,7 +925,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                     "vkCreateGraphicsPipelines: pararameter "
                                     "pCreateInfo[%d].pVertexInputState->vertexAttributeDescriptionCount (%u) is "
                                     "greater than VkPhysicalDeviceLimits::maxVertexInputAttributes (%u).",
-                                    i, vertex_input_state->vertexBindingDescriptionCount, device_limits.maxVertexInputAttributes);
+                                    i, vertex_input_state->vertexAttributeDescriptionCount, device_limits.maxVertexInputAttributes);
                 }
 
                 std::unordered_set<uint32_t> vertex_bindings(vertex_input_state->vertexBindingDescriptionCount);
