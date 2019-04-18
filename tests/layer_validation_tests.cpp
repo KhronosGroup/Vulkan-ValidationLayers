@@ -1686,24 +1686,28 @@ VKAPI_ATTR VkBool32 VKAPI_CALL DebugUtilsCallback(VkDebugUtilsMessageSeverityFla
 TEST_F(VkLayerTest, DebugUtilsNameTest) {
     TEST_DESCRIPTION("Ensure debug utils object names are printed in debug messenger output");
 
-    // Need to assure we don't silently accept debug utils being removed from validation
-    ASSERT_TRUE(InstanceExtensionSupported(VK_EXT_DEBUG_UTILS_EXTENSION_NAME));
-    m_instance_extension_names.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    // Skip test if extension not supported
+    if (InstanceExtensionSupported(VK_EXT_DEBUG_UTILS_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    } else {
+        printf("%s Debug Utils Extension not supported, skipping test\n", kSkipPrefix);
+        return;
+    }
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     PFN_vkSetDebugUtilsObjectNameEXT fpvkSetDebugUtilsObjectNameEXT =
-        (PFN_vkSetDebugUtilsObjectNameEXT)vkGetDeviceProcAddr(m_device->device(), "vkSetDebugUtilsObjectNameEXT");
+        (PFN_vkSetDebugUtilsObjectNameEXT)vkGetInstanceProcAddr(instance(), "vkSetDebugUtilsObjectNameEXT");
     ASSERT_TRUE(fpvkSetDebugUtilsObjectNameEXT);  // Must be extant if extension is enabled
     PFN_vkCreateDebugUtilsMessengerEXT fpvkCreateDebugUtilsMessengerEXT =
-        (PFN_vkCreateDebugUtilsMessengerEXT)vkGetDeviceProcAddr(m_device->device(), "vkCreateDebugUtilsMessengerEXT");
+        (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance(), "vkCreateDebugUtilsMessengerEXT");
     ASSERT_TRUE(fpvkCreateDebugUtilsMessengerEXT);  // Must be extant if extension is enabled
     PFN_vkDestroyDebugUtilsMessengerEXT fpvkDestroyDebugUtilsMessengerEXT =
-        (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetDeviceProcAddr(m_device->device(), "vkDestroyDebugUtilsMessengerEXT");
+        (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance(), "vkDestroyDebugUtilsMessengerEXT");
     ASSERT_TRUE(fpvkDestroyDebugUtilsMessengerEXT);  // Must be extant if extension is enabled
     PFN_vkCmdInsertDebugUtilsLabelEXT fpvkCmdInsertDebugUtilsLabelEXT =
-        (PFN_vkCmdInsertDebugUtilsLabelEXT)vkGetDeviceProcAddr(m_device->device(), "vkCmdInsertDebugUtilsLabelEXT");
+        (PFN_vkCmdInsertDebugUtilsLabelEXT)vkGetInstanceProcAddr(instance(), "vkCmdInsertDebugUtilsLabelEXT");
     ASSERT_TRUE(fpvkCmdInsertDebugUtilsLabelEXT);  // Must be extant if extension is enabled
 
     if (DeviceSimulation()) {
