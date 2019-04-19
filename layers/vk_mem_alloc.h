@@ -3177,6 +3177,15 @@ void *aligned_alloc(size_t alignment, size_t size)
     return memalign(alignment, size);
 }
 #elif defined(__APPLE__) || defined(__ANDROID__)
+#  define ALIGNED_ALLOC_WITH_POSIX_MEMALIGN
+#elif defined(__GNU_LIBRARY__)
+#  if !defined(__GLIBC_PREREQ) || !__GLIBC_PREREQ(2, 16)
+// aligned_alloc() is defined in glibc only for version >= 2.16
+#    define ALIGNED_ALLOC_WITH_POSIX_MEMALIGN
+#  endif
+#endif
+
+#ifdef ALIGNED_ALLOC_WITH_POSIX_MEMALIGN
 #include <cstdlib>
 void *aligned_alloc(size_t alignment, size_t size)
 {
