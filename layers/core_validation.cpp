@@ -5058,8 +5058,6 @@ VkResult CoreChecks::GetPDImageFormatProperties2(const VkPhysicalDeviceImageForm
     return DispatchGetPhysicalDeviceImageFormatProperties2(physical_device, phys_dev_image_fmt_info, pImageFormatProperties);
 }
 
-std::unordered_map<ImageSubresourcePair, IMAGE_LAYOUT_NODE> *CoreChecks::GetImageLayoutMap() { return &imageLayoutMap; }
-
 std::unordered_map<VkBuffer, std::unique_ptr<BUFFER_STATE>> *CoreChecks::GetBufferMap() { return &bufferMap; }
 
 std::unordered_map<VkBufferView, std::unique_ptr<BUFFER_VIEW_STATE>> *CoreChecks::GetBufferViewMap() { return &bufferViewMap; }

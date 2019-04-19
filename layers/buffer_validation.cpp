@@ -177,8 +177,8 @@ bool CoreChecks::FindLayoutVerifyLayout(ImageSubresourcePair imgpair, VkImageLay
     }
     VkImageAspectFlags oldAspectMask = imgpair.subresource.aspectMask;
     imgpair.subresource.aspectMask = aspectMask;
-    auto imgsubIt = (*GetImageLayoutMap()).find(imgpair);
-    if (imgsubIt == (*GetImageLayoutMap()).end()) {
+    auto imgsubIt = imageLayoutMap.find(imgpair);
+    if (imgsubIt == imageLayoutMap.end()) {
         return false;
     }
     if (layout != VK_IMAGE_LAYOUT_MAX_ENUM && layout != imgsubIt->second.layout) {
@@ -206,8 +206,8 @@ bool CoreChecks::FindGlobalLayout(ImageSubresourcePair imgpair, VkImageLayout &l
     }
     if (layout == VK_IMAGE_LAYOUT_MAX_ENUM) {
         imgpair = {imgpair.image, false, VkImageSubresource()};
-        auto imgsubIt = (*GetImageLayoutMap()).find(imgpair);
-        if (imgsubIt == (*GetImageLayoutMap()).end()) return false;
+        auto imgsubIt = imageLayoutMap.find(imgpair);
+        if (imgsubIt == imageLayoutMap.end()) return false;
         layout = imgsubIt->second.layout;
     }
     return true;
@@ -225,8 +225,8 @@ bool CoreChecks::FindLayouts(VkImage image, std::vector<VkImageLayout> &layouts)
     }
     for (auto imgsubpair : sub_data->second) {
         if (ignoreGlobal && !imgsubpair.hasSubresource) continue;
-        auto img_data = (*GetImageLayoutMap()).find(imgsubpair);
-        if (img_data != (*GetImageLayoutMap()).end()) {
+        auto img_data = imageLayoutMap.find(imgsubpair);
+        if (img_data != imageLayoutMap.end()) {
             layouts.push_back(img_data->second.layout);
         }
     }
@@ -273,12 +273,11 @@ bool CoreChecks::FindLayout(const std::unordered_map<ImageSubresourcePair, IMAGE
 // Set the layout on the global level
 void CoreChecks::SetGlobalLayout(ImageSubresourcePair imgpair, const VkImageLayout &layout) {
     VkImage &image = imgpair.image;
-    auto &lmap = (*GetImageLayoutMap());
-    auto data = lmap.find(imgpair);
-    if (data != lmap.end()) {
+    auto data = imageLayoutMap.find(imgpair);
+    if (data != imageLayoutMap.end()) {
         data->second.layout = layout;  // Update
     } else {
-        lmap[imgpair].layout = layout;  // Insert
+        imageLayoutMap[imgpair].layout = layout;  // Insert
     }
     auto &image_subresources = imageSubresourceMap[image];
     auto subresource = std::find(image_subresources.begin(), image_subresources.end(), imgpair);
@@ -1450,8 +1449,8 @@ void CoreChecks::PostCallRecordCreateImage(VkDevice device, const VkImageCreateI
     imageMap.insert(std::make_pair(*pImage, std::unique_ptr<IMAGE_STATE>(is_node)));
     ImageSubresourcePair subpair{*pImage, false, VkImageSubresource()};
     imageSubresourceMap[*pImage].push_back(subpair);
-    (*GetImageLayoutMap())[subpair] = image_state;
-    (*GetImageLayoutMap())[subpair] = image_state;
+    imageLayoutMap[subpair] = image_state;
+    imageLayoutMap[subpair] = image_state;
 }
 
 bool CoreChecks::PreCallValidateDestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks *pAllocator) {
@@ -1484,7 +1483,7 @@ void CoreChecks::PreCallRecordDestroyImage(VkDevice device, VkImage image, const
     const auto &sub_entry = imageSubresourceMap.find(image);
     if (sub_entry != imageSubresourceMap.end()) {
         for (const auto &pair : sub_entry->second) {
-            GetImageLayoutMap()->erase(pair);
+            imageLayoutMap.erase(pair);
         }
         imageSubresourceMap.erase(sub_entry);
     }
