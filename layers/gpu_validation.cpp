@@ -244,7 +244,7 @@ void CoreChecks::GpuPostCallRecordCreateDevice(const CHECK_ENABLED *enables) {
     gpu_validation_state = std::unique_ptr<GpuValidationState>(new GpuValidationState);
     gpu_validation_state->reserve_binding_slot = enables->gpu_validation_reserve_binding_slot;
 
-    if (GetPDProperties()->apiVersion < VK_API_VERSION_1_1) {
+    if (phys_dev_props.apiVersion < VK_API_VERSION_1_1) {
         ReportSetupProblem(VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
                            "GPU-Assisted validation requires Vulkan 1.1 or later.  GPU-Assisted Validation disabled.");
         gpu_validation_state->aborted = true;
@@ -252,7 +252,7 @@ void CoreChecks::GpuPostCallRecordCreateDevice(const CHECK_ENABLED *enables) {
     }
     // Some devices have extremely high limits here, so set a reasonable max because we have to pad
     // the pipeline layout with dummy descriptor set layouts.
-    gpu_validation_state->adjusted_max_desc_sets = GetPDProperties()->limits.maxBoundDescriptorSets;
+    gpu_validation_state->adjusted_max_desc_sets = phys_dev_props.limits.maxBoundDescriptorSets;
     gpu_validation_state->adjusted_max_desc_sets = std::min(33U, gpu_validation_state->adjusted_max_desc_sets);
 
     // We can't do anything if there is only one.

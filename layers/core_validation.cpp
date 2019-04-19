@@ -5058,10 +5058,6 @@ VkResult CoreChecks::GetPDImageFormatProperties2(const VkPhysicalDeviceImageForm
     return DispatchGetPhysicalDeviceImageFormatProperties2(physical_device, phys_dev_image_fmt_info, pImageFormatProperties);
 }
 
-const VkPhysicalDeviceProperties *CoreChecks::GetPDProperties() { return &phys_dev_props; }
-
-const VkPhysicalDeviceMemoryProperties *CoreChecks::GetPhysicalDeviceMemoryProperties() { return &phys_dev_mem_props; }
-
 const CHECK_DISABLED *CoreChecks::GetDisables() { return &instance_state->disabled; }
 
 const CHECK_ENABLED *CoreChecks::GetEnables() { return &instance_state->enabled; }
@@ -5121,7 +5117,7 @@ void SetPipelineState(PIPELINE_STATE *pPipe) {
 bool CoreChecks::ValidatePipelineVertexDivisors(std::vector<std::unique_ptr<PIPELINE_STATE>> const &pipe_state_vec,
                                                 const uint32_t count, const VkGraphicsPipelineCreateInfo *pipe_cis) {
     bool skip = false;
-    const VkPhysicalDeviceLimits *device_limits = &(GetPDProperties()->limits);
+    const VkPhysicalDeviceLimits *device_limits = &phys_dev_props.limits;
 
     for (uint32_t i = 0; i < count; i++) {
         auto pvids_ci = lvl_find_in_chain<VkPipelineVertexInputDivisorStateCreateInfoEXT>(pipe_cis[i].pVertexInputState->pNext);
@@ -11380,10 +11376,10 @@ bool CoreChecks::ValidateCreateSwapchain(const char *func_name, VkSwapchainCreat
 
         if (device_extensions.vk_khr_surface_protected_capabilities &&
             (pCreateInfo->flags & VK_SWAPCHAIN_CREATE_PROTECTED_BIT_KHR)) {
-            VkPhysicalDeviceSurfaceInfo2KHR surfaceInfo = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SURFACE_INFO_2_KHR };
+            VkPhysicalDeviceSurfaceInfo2KHR surfaceInfo = {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SURFACE_INFO_2_KHR};
             surfaceInfo.surface = pCreateInfo->surface;
-            VkSurfaceProtectedCapabilitiesKHR surfaceProtectedCapabilities = { VK_STRUCTURE_TYPE_SURFACE_PROTECTED_CAPABILITIES_KHR };
-            VkSurfaceCapabilities2KHR surfaceCapabilities = { VK_STRUCTURE_TYPE_SURFACE_CAPABILITIES_2_KHR };
+            VkSurfaceProtectedCapabilitiesKHR surfaceProtectedCapabilities = {VK_STRUCTURE_TYPE_SURFACE_PROTECTED_CAPABILITIES_KHR};
+            VkSurfaceCapabilities2KHR surfaceCapabilities = {VK_STRUCTURE_TYPE_SURFACE_CAPABILITIES_2_KHR};
             surfaceCapabilities.pNext = &surfaceProtectedCapabilities;
             DispatchGetPhysicalDeviceSurfaceCapabilities2KHR(physical_device_state->phys_device, &surfaceInfo,
                                                              &surfaceCapabilities);
