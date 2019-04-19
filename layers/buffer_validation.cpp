@@ -1326,7 +1326,7 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
             "vkCreateImage(): Image type must be VK_IMAGE_TYPE_2D when VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT flag bit is set");
     }
 
-    const VkPhysicalDeviceLimits *device_limits = &(GetPDProperties()->limits);
+    const VkPhysicalDeviceLimits *device_limits = &phys_dev_props.limits;
     VkImageUsageFlags attach_flags = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT |
                                      VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
     if ((pCreateInfo->usage & attach_flags) && (pCreateInfo->extent.width > device_limits->maxFramebufferWidth)) {
@@ -1364,7 +1364,7 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
         uint64_t total_size = (uint64_t)std::ceil(FormatTexelSize(pCreateInfo->format) * texel_count);
 
         // Round up to imageGranularity boundary
-        VkDeviceSize imageGranularity = GetPDProperties()->limits.bufferImageGranularity;
+        VkDeviceSize imageGranularity = phys_dev_props.limits.bufferImageGranularity;
         uint64_t ig_mask = imageGranularity - 1;
         total_size = (total_size + ig_mask) & ~ig_mask;
 
@@ -3873,7 +3873,7 @@ bool CoreChecks::PreCallValidateCreateBufferView(VkDevice device, const VkBuffer
                             pCreateInfo->offset, buffer_state->createInfo.size);
         }
 
-        const VkPhysicalDeviceLimits *device_limits = &(GetPDProperties()->limits);
+        const VkPhysicalDeviceLimits *device_limits = &phys_dev_props.limits;
         // Buffer view offset must be a multiple of VkPhysicalDeviceLimits::minTexelBufferOffsetAlignment
         if ((pCreateInfo->offset % device_limits->minTexelBufferOffsetAlignment) != 0) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT,
