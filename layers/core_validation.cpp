@@ -5058,8 +5058,6 @@ VkResult CoreChecks::GetPDImageFormatProperties2(const VkPhysicalDeviceImageForm
     return DispatchGetPhysicalDeviceImageFormatProperties2(physical_device, phys_dev_image_fmt_info, pImageFormatProperties);
 }
 
-const debug_report_data *CoreChecks::GetReportData() { return report_data; }
-
 const VkPhysicalDeviceProperties *CoreChecks::GetPDProperties() { return &phys_dev_props; }
 
 const VkPhysicalDeviceMemoryProperties *CoreChecks::GetPhysicalDeviceMemoryProperties() { return &phys_dev_mem_props; }
