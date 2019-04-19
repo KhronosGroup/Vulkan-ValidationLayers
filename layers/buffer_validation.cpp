@@ -1447,7 +1447,7 @@ void CoreChecks::PostCallRecordCreateImage(VkDevice device, const VkImageCreateI
     if (GetDeviceExtensions()->vk_android_external_memory_android_hardware_buffer) {
         RecordCreateImageANDROID(pCreateInfo, is_node);
     }
-    GetImageMap()->insert(std::make_pair(*pImage, std::unique_ptr<IMAGE_STATE>(is_node)));
+    imageMap.insert(std::make_pair(*pImage, std::unique_ptr<IMAGE_STATE>(is_node)));
     ImageSubresourcePair subpair{*pImage, false, VkImageSubresource()};
     (*GetImageSubresourceMap())[*pImage].push_back(subpair);
     (*GetImageLayoutMap())[subpair] = image_state;
@@ -1479,7 +1479,7 @@ void CoreChecks::PreCallRecordDestroyImage(VkDevice device, VkImage image, const
     ClearMemoryObjectBindings(obj_struct.handle, kVulkanObjectTypeImage);
     EraseQFOReleaseBarriers<VkImageMemoryBarrier>(image);
     // Remove image from imageMap
-    GetImageMap()->erase(image);
+    imageMap.erase(image);
     std::unordered_map<VkImage, std::vector<ImageSubresourcePair>> *imageSubresourceMap = GetImageSubresourceMap();
 
     const auto &sub_entry = imageSubresourceMap->find(image);
