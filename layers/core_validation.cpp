@@ -264,10 +264,6 @@ BINDABLE *CoreChecks::GetObjectMemBinding(uint64_t handle, VulkanObjectType type
     return nullptr;
 }
 
-std::unordered_map<VkSamplerYcbcrConversion, uint64_t> *CoreChecks::GetYcbcrConversionFormatMap() {
-    return &ycbcr_conversion_ahb_fmt_map;
-}
-
 std::unordered_set<uint64_t> *CoreChecks::GetAHBExternalFormatsSet() { return &ahb_ext_formats_set; }
 
 ImageSubresourceLayoutMap::InitialLayoutState::InitialLayoutState(const GLOBAL_CB_NODE &cb_state,
