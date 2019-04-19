@@ -504,8 +504,6 @@ class CoreChecks : public ValidationObject {
     VkResult GetPDImageFormatProperties(const VkImageCreateInfo*, VkImageFormatProperties*);
     VkResult GetPDImageFormatProperties2(const VkPhysicalDeviceImageFormatInfo2*, VkImageFormatProperties2*);
     const VkPhysicalDeviceMemoryProperties* GetPhysicalDeviceMemoryProperties();
-    const CHECK_DISABLED* GetDisables();
-    const CHECK_ENABLED* GetEnables();
     std::unordered_map<VkImage, std::unique_ptr<IMAGE_STATE>>* GetImageMap();
     std::unordered_map<VkImage, std::vector<ImageSubresourcePair>>* GetImageSubresourceMap();
     std::unordered_map<ImageSubresourcePair, IMAGE_LAYOUT_NODE>* GetImageLayoutMap();

@@ -2505,7 +2505,7 @@ void CoreChecks::PreCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDeviceC
                                            const VkAllocationCallbacks *pAllocator, VkDevice *pDevice,
                                            std::unique_ptr<safe_VkDeviceCreateInfo> &modified_create_info) {
     // GPU Validation can possibly turn on device features, so give it a chance to change the create info.
-    if (GetEnables()->gpu_validation) {
+    if (enabled.gpu_validation) {
         VkPhysicalDeviceFeatures supported_features;
         DispatchGetPhysicalDeviceFeatures(gpu, &supported_features);
         GpuPreCallRecordCreateDevice(gpu, modified_create_info, &supported_features);
@@ -2668,8 +2668,8 @@ void CoreChecks::PostCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDevice
         DispatchGetPhysicalDeviceProperties2KHR(gpu, &prop2);
         core_checks->phys_dev_ext_props.depth_stencil_resolve_props = depth_stencil_resolve_props;
     }
-    if (GetEnables()->gpu_validation) {
-        core_checks->GpuPostCallRecordCreateDevice(GetEnables());
+    if (enabled.gpu_validation) {
+        core_checks->GpuPostCallRecordCreateDevice(&enabled);
     }
     if (core_checks->device_extensions.vk_nv_cooperative_matrix) {
         // Get the needed cooperative_matrix properties
@@ -2698,7 +2698,7 @@ void CoreChecks::PostCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDevice
 
 void CoreChecks::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks *pAllocator) {
     if (!device) return;
-    if (GetEnables()->gpu_validation) {
+    if (enabled.gpu_validation) {
         GpuPreCallRecordDestroyDevice();
     }
     pipelineMap.clear();
@@ -3243,7 +3243,7 @@ void CoreChecks::PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, 
         RetireWorkOnQueue(pQueue, early_retire_seq);
     }
 
-    if (GetEnables()->gpu_validation) {
+    if (enabled.gpu_validation) {
         GpuPostCallQueueSubmit(queue, submitCount, pSubmits, fence);
     }
 }
@@ -3345,7 +3345,7 @@ bool CoreChecks::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount,
     return skip;
 }
 void CoreChecks::PreCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits, VkFence fence) {
-    if (GetEnables()->gpu_validation && GetDeviceExtensions()->vk_ext_descriptor_indexing) {
+    if (enabled.gpu_validation && GetDeviceExtensions()->vk_ext_descriptor_indexing) {
         GpuPreCallRecordQueueSubmit(queue, submitCount, pSubmits, fence);
     }
 }
@@ -4738,7 +4738,7 @@ void CoreChecks::PreCallRecordDestroyPipeline(VkDevice device, VkPipeline pipeli
     VK_OBJECT obj_struct = {HandleToUint64(pipeline), kVulkanObjectTypePipeline};
     // Any bound cmd buffers are now invalid
     InvalidateCommandBuffers(pipeline_state->cb_bindings, obj_struct);
-    if (GetEnables()->gpu_validation) {
+    if (enabled.gpu_validation) {
         GpuPreCallRecordDestroyPipeline(pipeline);
     }
     pipelineMap.erase(pipeline);
@@ -4836,7 +4836,7 @@ bool CoreChecks::CheckCommandBuffersInFlight(COMMAND_POOL_NODE *pPool, const cha
 // Free all command buffers in given list, removing all references/links to them using ResetCommandBufferState
 void CoreChecks::FreeCommandBufferStates(COMMAND_POOL_NODE *pool_state, const uint32_t command_buffer_count,
                                          const VkCommandBuffer *command_buffers) {
-    if (GetEnables()->gpu_validation) {
+    if (enabled.gpu_validation) {
         GpuPreCallRecordFreeCommandBuffers(command_buffer_count, command_buffers);
     }
     for (uint32_t i = 0; i < command_buffer_count; i++) {
@@ -5058,10 +5058,6 @@ VkResult CoreChecks::GetPDImageFormatProperties2(const VkPhysicalDeviceImageForm
     return DispatchGetPhysicalDeviceImageFormatProperties2(physical_device, phys_dev_image_fmt_info, pImageFormatProperties);
 }
 
-const CHECK_DISABLED *CoreChecks::GetDisables() { return &instance_state->disabled; }
-
-const CHECK_ENABLED *CoreChecks::GetEnables() { return &instance_state->enabled; }
-
 std::unordered_map<VkImage, std::unique_ptr<IMAGE_STATE>> *CoreChecks::GetImageMap() { return &imageMap; }
 
 std::unordered_map<VkImage, std::vector<ImageSubresourcePair>> *CoreChecks::GetImageSubresourceMap() {
@@ -5221,7 +5217,7 @@ void CoreChecks::PreCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelin
     create_graphics_pipeline_api_state *cgpl_state = reinterpret_cast<create_graphics_pipeline_api_state *>(cgpl_state_data);
     cgpl_state->pCreateInfos = pCreateInfos;
     // GPU Validation may replace instrumented shaders with non-instrumented ones, so allow it to modify the createinfos.
-    if (GetEnables()->gpu_validation) {
+    if (enabled.gpu_validation) {
         cgpl_state->gpu_create_infos = GpuPreCallRecordCreateGraphicsPipelines(pipelineCache, count, pCreateInfos, pAllocator,
                                                                                pPipelines, cgpl_state->pipe_state);
         cgpl_state->pCreateInfos = reinterpret_cast<VkGraphicsPipelineCreateInfo *>(cgpl_state->gpu_create_infos.data());
@@ -5241,7 +5237,7 @@ void CoreChecks::PostCallRecordCreateGraphicsPipelines(VkDevice device, VkPipeli
         }
     }
     // GPU val needs clean up regardless of result
-    if (GetEnables()->gpu_validation) {
+    if (enabled.gpu_validation) {
         GpuPostCallRecordCreateGraphicsPipelines(count, pCreateInfos, pAllocator, pPipelines);
         cgpl_state->gpu_create_infos.clear();
     }
@@ -6019,7 +6015,7 @@ void CoreChecks::PreCallRecordCreatePipelineLayout(VkDevice device, const VkPipe
                                                    const VkAllocationCallbacks *pAllocator, VkPipelineLayout *pPipelineLayout,
                                                    void *cpl_state_data) {
     create_pipeline_layout_api_state *cpl_state = reinterpret_cast<create_pipeline_layout_api_state *>(cpl_state_data);
-    if (GetEnables()->gpu_validation) {
+    if (enabled.gpu_validation) {
         GpuPreCallCreatePipelineLayout(pCreateInfo, pAllocator, pPipelineLayout, &cpl_state->new_layouts,
                                        &cpl_state->modified_create_info);
     }
@@ -6029,7 +6025,7 @@ void CoreChecks::PostCallRecordCreatePipelineLayout(VkDevice device, const VkPip
                                                     const VkAllocationCallbacks *pAllocator, VkPipelineLayout *pPipelineLayout,
                                                     VkResult result) {
     // Clean up GPU validation
-    if (GetEnables()->gpu_validation) {
+    if (enabled.gpu_validation) {
         GpuPostCallCreatePipelineLayout(result);
     }
     if (VK_SUCCESS != result) return;
@@ -8369,7 +8365,7 @@ void CoreChecks::PreCallRecordCmdWaitEvents(VkCommandBuffer commandBuffer, uint3
     cb_state->eventUpdates.emplace_back(
         [=](VkQueue q) { return ValidateEventStageMask(q, cb_state, eventCount, first_event_index, sourceStageMask); });
     TransitionImageLayouts(cb_state, imageMemoryBarrierCount, pImageMemoryBarriers);
-    if (GetEnables()->gpu_validation) {
+    if (enabled.gpu_validation) {
         GpuPreCallValidateCmdWaitEvents(sourceStageMask);
     }
 }
@@ -12884,7 +12880,7 @@ bool CoreChecks::PreCallValidateGetBufferDeviceAddressEXT(VkDevice device, const
 
 void CoreChecks::PreCallRecordGetPhysicalDeviceProperties(VkPhysicalDevice physicalDevice,
                                                           VkPhysicalDeviceProperties *pPhysicalDeviceProperties) {
-    if (GetEnables()->gpu_validation && GetEnables()->gpu_validation_reserve_binding_slot) {
+    if (enabled.gpu_validation && enabled.gpu_validation_reserve_binding_slot) {
         if (pPhysicalDeviceProperties->limits.maxBoundDescriptorSets > 1) {
             pPhysicalDeviceProperties->limits.maxBoundDescriptorSets -= 1;
         } else {
