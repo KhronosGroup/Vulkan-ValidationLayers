@@ -1424,7 +1424,6 @@ bool CoreChecks::ValidateShaderCapabilities(shader_module const *src, VkShaderSt
     bool skip = false;
 
     auto const &features = GetEnabledFeatures();
-    auto const &extensions = GetDeviceExtensions();
 
     struct FeaturePointer {
         // Callable object to test if this feature is enabled in the given aggregate feature struct
@@ -1567,7 +1566,7 @@ bool CoreChecks::ValidateShaderCapabilities(shader_module const *src, VkShaderSt
                         skip |= RequireFeature(report_data, it->second.feature.IsEnabled(*features), it->second.name);
                     }
                     if (it->second.extension) {
-                        skip |= RequireExtension(report_data, extensions->*(it->second.extension), it->second.name);
+                        skip |= RequireExtension(report_data, device_extensions.*(it->second.extension), it->second.name);
                     }
                 }
             } else if (1 < n) {  // key occurs multiple times, at least one must be enabled
@@ -1585,7 +1584,7 @@ bool CoreChecks::ValidateShaderCapabilities(shader_module const *src, VkShaderSt
                     }
                     if (it->second.extension) {
                         needs_ext = true;
-                        has_ext = has_ext || extensions->*(it->second.extension);
+                        has_ext = has_ext || device_extensions.*(it->second.extension);
                         extension_names += it->second.name;
                         extension_names += " ";
                     }
@@ -2698,7 +2697,7 @@ bool CoreChecks::PreCallValidateCreateShaderModule(VkDevice device, const VkShad
         return false;
     }
 
-    auto have_glsl_shader = GetDeviceExtensions()->vk_nv_glsl_shader;
+    auto have_glsl_shader = device_extensions.vk_nv_glsl_shader;
 
     if (!have_glsl_shader && (pCreateInfo->codeSize % 4)) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
@@ -2722,10 +2721,10 @@ bool CoreChecks::PreCallValidateCreateShaderModule(VkDevice device, const VkShad
         spv_const_binary_t binary{pCreateInfo->pCode, pCreateInfo->codeSize / sizeof(uint32_t)};
         spv_diagnostic diag = nullptr;
         spv_validator_options options = spvValidatorOptionsCreate();
-        if (GetDeviceExtensions()->vk_khr_relaxed_block_layout) {
+        if (device_extensions.vk_khr_relaxed_block_layout) {
             spvValidatorOptionsSetRelaxBlockLayout(options, true);
         }
-        if (GetDeviceExtensions()->vk_ext_scalar_block_layout &&
+        if (device_extensions.vk_ext_scalar_block_layout &&
             GetEnabledFeatures()->scalar_block_layout_features.scalarBlockLayout == VK_TRUE) {
             spvValidatorOptionsSetScalarBlockLayout(options, true);
         }

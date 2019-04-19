@@ -505,8 +505,6 @@ class CoreChecks : public ValidationObject {
     VkResult GetPDImageFormatProperties2(const VkPhysicalDeviceImageFormatInfo2*, VkImageFormatProperties2*);
     const VkPhysicalDeviceMemoryProperties* GetPhysicalDeviceMemoryProperties();
 
-    const DeviceExtensions* GetDeviceExtensions();
-
     uint32_t GetApiVersion();
 
     GlobalQFOTransferBarrierMap<VkImageMemoryBarrier>& GetGlobalQFOReleaseBarrierMap(

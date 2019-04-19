@@ -3339,7 +3339,7 @@ bool CoreChecks::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount,
     return skip;
 }
 void CoreChecks::PreCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits, VkFence fence) {
-    if (enabled.gpu_validation && GetDeviceExtensions()->vk_ext_descriptor_indexing) {
+    if (enabled.gpu_validation && device_extensions.vk_ext_descriptor_indexing) {
         GpuPreCallRecordQueueSubmit(queue, submitCount, pSubmits, fence);
     }
 }
@@ -3840,7 +3840,7 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
                         phys_dev_props.limits.maxMemoryAllocationCount);
     }
 
-    if (GetDeviceExtensions()->vk_android_external_memory_android_hardware_buffer) {
+    if (device_extensions.vk_android_external_memory_android_hardware_buffer) {
         skip |= ValidateAllocateMemoryANDROID(pAllocateInfo);
     } else {
         if (0 == pAllocateInfo->allocationSize) {
@@ -4610,7 +4610,7 @@ void CoreChecks::PostCallRecordGetBufferMemoryRequirements2KHR(VkDevice device, 
 
 bool CoreChecks::ValidateGetImageMemoryRequirements2(const VkImageMemoryRequirementsInfo2 *pInfo) {
     bool skip = false;
-    if (GetDeviceExtensions()->vk_android_external_memory_android_hardware_buffer) {
+    if (device_extensions.vk_android_external_memory_android_hardware_buffer) {
         skip |= ValidateGetImageMemoryRequirements2ANDROID(pInfo->image);
     }
     return skip;
@@ -5052,8 +5052,6 @@ VkResult CoreChecks::GetPDImageFormatProperties2(const VkPhysicalDeviceImageForm
 }
 
 const DeviceFeatures *CoreChecks::GetEnabledFeatures() { return &enabled_features; }
-
-const DeviceExtensions *CoreChecks::GetDeviceExtensions() { return &device_extensions; }
 
 uint32_t CoreChecks::GetApiVersion() { return api_version; }
 
@@ -7472,7 +7470,7 @@ bool CoreChecks::ValidateImageBarrierImage(const char *funcName, GLOBAL_CB_NODE 
         if (sub_desc.pDepthStencilAttachment && sub_desc.pDepthStencilAttachment->attachment == attach_index) {
             sub_image_layout = sub_desc.pDepthStencilAttachment->layout;
             sub_image_found = true;
-        } else if (GetDeviceExtensions()->vk_khr_depth_stencil_resolve) {
+        } else if (device_extensions.vk_khr_depth_stencil_resolve) {
             const auto *resolve = lvl_find_in_chain<VkSubpassDescriptionDepthStencilResolveKHR>(sub_desc.pNext);
             if (resolve && resolve->pDepthStencilResolveAttachment &&
                 resolve->pDepthStencilResolveAttachment->attachment == attach_index) {
@@ -9851,7 +9849,7 @@ bool CoreChecks::PreCallValidateCreateRenderPass2KHR(VkDevice device, const VkRe
                                                      const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass) {
     bool skip = false;
 
-    if (GetDeviceExtensions()->vk_khr_depth_stencil_resolve) {
+    if (device_extensions.vk_khr_depth_stencil_resolve) {
         skip |= ValidateDepthStencilResolve(report_data, phys_dev_ext_props.depth_stencil_resolve_props, pCreateInfo);
     }
 
@@ -12763,7 +12761,7 @@ bool CoreChecks::PreCallValidateCmdSetSampleLocationsEXT(VkCommandBuffer command
 bool CoreChecks::ValidateCreateSamplerYcbcrConversion(const char *func_name,
                                                       const VkSamplerYcbcrConversionCreateInfo *create_info) {
     bool skip = false;
-    if (GetDeviceExtensions()->vk_android_external_memory_android_hardware_buffer) {
+    if (device_extensions.vk_android_external_memory_android_hardware_buffer) {
         skip |= ValidateCreateSamplerYcbcrConversionANDROID(create_info);
     } else {  // Not android hardware buffer
         if (VK_FORMAT_UNDEFINED == create_info->format) {
@@ -12790,7 +12788,7 @@ bool CoreChecks::PreCallValidateCreateSamplerYcbcrConversionKHR(VkDevice device,
 
 void CoreChecks::RecordCreateSamplerYcbcrConversionState(const VkSamplerYcbcrConversionCreateInfo *create_info,
                                                          VkSamplerYcbcrConversion ycbcr_conversion) {
-    if (GetDeviceExtensions()->vk_android_external_memory_android_hardware_buffer) {
+    if (device_extensions.vk_android_external_memory_android_hardware_buffer) {
         RecordCreateSamplerYcbcrConversionANDROID(create_info, ycbcr_conversion);
     }
 }
@@ -12813,7 +12811,7 @@ void CoreChecks::PostCallRecordCreateSamplerYcbcrConversionKHR(VkDevice device,
 void CoreChecks::PostCallRecordDestroySamplerYcbcrConversion(VkDevice device, VkSamplerYcbcrConversion ycbcrConversion,
                                                              const VkAllocationCallbacks *pAllocator) {
     if (!ycbcrConversion) return;
-    if (GetDeviceExtensions()->vk_android_external_memory_android_hardware_buffer) {
+    if (device_extensions.vk_android_external_memory_android_hardware_buffer) {
         RecordDestroySamplerYcbcrConversionANDROID(ycbcrConversion);
     }
 }
@@ -12821,7 +12819,7 @@ void CoreChecks::PostCallRecordDestroySamplerYcbcrConversion(VkDevice device, Vk
 void CoreChecks::PostCallRecordDestroySamplerYcbcrConversionKHR(VkDevice device, VkSamplerYcbcrConversion ycbcrConversion,
                                                                 const VkAllocationCallbacks *pAllocator) {
     if (!ycbcrConversion) return;
-    if (GetDeviceExtensions()->vk_android_external_memory_android_hardware_buffer) {
+    if (device_extensions.vk_android_external_memory_android_hardware_buffer) {
         RecordDestroySamplerYcbcrConversionANDROID(ycbcrConversion);
     }
 }
