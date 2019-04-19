@@ -264,8 +264,6 @@ BINDABLE *CoreChecks::GetObjectMemBinding(uint64_t handle, VulkanObjectType type
     return nullptr;
 }
 
-std::unordered_set<uint64_t> *CoreChecks::GetAHBExternalFormatsSet() { return &ahb_ext_formats_set; }
-
 ImageSubresourceLayoutMap::InitialLayoutState::InitialLayoutState(const GLOBAL_CB_NODE &cb_state,
                                                                   const IMAGE_VIEW_STATE *view_state)
     : image_view(VK_NULL_HANDLE), aspect_mask(0), label(cb_state.debug_label) {
@@ -3455,8 +3453,7 @@ void CoreChecks::PostCallRecordGetAndroidHardwareBufferProperties(VkDevice devic
     if (VK_SUCCESS != result) return;
     auto ahb_format_props = lvl_find_in_chain<VkAndroidHardwareBufferFormatPropertiesANDROID>(pProperties->pNext);
     if (ahb_format_props) {
-        auto ext_formats = GetAHBExternalFormatsSet();
-        ext_formats->insert(ahb_format_props->externalFormat);
+        ahb_ext_formats_set.insert(ahb_format_props->externalFormat);
     }
 }
 
