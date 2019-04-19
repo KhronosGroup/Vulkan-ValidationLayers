@@ -1076,7 +1076,7 @@ void CoreChecks::GpuAllocateValidationResources(const VkCommandBuffer cmd_buffer
     }
     VkResult result;
 
-    if (!(GetEnables()->gpu_validation)) return;
+    if (!(enabled.gpu_validation)) return;
 
     if (gpu_validation_state->aborted) return;
 
