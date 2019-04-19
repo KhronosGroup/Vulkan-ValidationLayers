@@ -3845,7 +3845,7 @@ void CoreChecks::PostCallRecordCreateBuffer(VkDevice device, const VkBufferCreat
                                             const VkAllocationCallbacks *pAllocator, VkBuffer *pBuffer, VkResult result) {
     if (result != VK_SUCCESS) return;
     // TODO : This doesn't create deep copy of pQueueFamilyIndices so need to fix that if/when we want that data to be valid
-    GetBufferMap()->insert(std::make_pair(*pBuffer, std::unique_ptr<BUFFER_STATE>(new BUFFER_STATE(*pBuffer, pCreateInfo))));
+    bufferMap.insert(std::make_pair(*pBuffer, std::unique_ptr<BUFFER_STATE>(new BUFFER_STATE(*pBuffer, pCreateInfo))));
 }
 
 bool CoreChecks::PreCallValidateCreateBufferView(VkDevice device, const VkBufferViewCreateInfo *pCreateInfo,
@@ -4413,7 +4413,7 @@ void CoreChecks::PreCallRecordDestroyBuffer(VkDevice device, VkBuffer buffer, co
     }
     ClearMemoryObjectBindings(HandleToUint64(buffer), kVulkanObjectTypeBuffer);
     EraseQFOReleaseBarriers<VkBufferMemoryBarrier>(buffer);
-    GetBufferMap()->erase(buffer_state->buffer);
+    bufferMap.erase(buffer_state->buffer);
 }
 
 bool CoreChecks::PreCallValidateDestroyBufferView(VkDevice device, VkBufferView bufferView,
