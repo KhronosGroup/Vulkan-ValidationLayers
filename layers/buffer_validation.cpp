@@ -1248,10 +1248,9 @@ bool CoreChecks::ValidateCreateImageViewANDROID(const VkImageViewCreateInfo *cre
         const VkSamplerYcbcrConversionInfo *ycbcr_conv_info = lvl_find_in_chain<VkSamplerYcbcrConversionInfo>(create_info->pNext);
         if (ycbcr_conv_info != nullptr) {
             VkSamplerYcbcrConversion conv_handle = ycbcr_conv_info->conversion;
-            auto fmap = GetYcbcrConversionFormatMap();
-            if (fmap->find(conv_handle) != fmap->end()) {
+            if (ycbcr_conversion_ahb_fmt_map.find(conv_handle) != ycbcr_conversion_ahb_fmt_map.end()) {
                 conv_found = true;
-                external_format = fmap->at(conv_handle);
+                external_format = ycbcr_conversion_ahb_fmt_map.at(conv_handle);
             }
         }
         if ((!conv_found) || (external_format != image_state->ahb_format)) {
