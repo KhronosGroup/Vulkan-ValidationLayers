@@ -5051,8 +5051,6 @@ VkResult CoreChecks::GetPDImageFormatProperties2(const VkPhysicalDeviceImageForm
     return DispatchGetPhysicalDeviceImageFormatProperties2(physical_device, phys_dev_image_fmt_info, pImageFormatProperties);
 }
 
-const DeviceFeatures *CoreChecks::GetEnabledFeatures() { return &enabled_features; }
-
 uint32_t CoreChecks::GetApiVersion() { return api_version; }
 
 void CoreChecks::PostCallRecordCreateFence(VkDevice device, const VkFenceCreateInfo *pCreateInfo,
@@ -6509,7 +6507,7 @@ bool CoreChecks::PreCallValidateCmdSetExclusiveScissorNV(VkCommandBuffer command
                         "vkCmdSetExclusiveScissorNV(): pipeline was created without VK_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_NV flag.");
     }
 
-    if (!GetEnabledFeatures()->exclusive_scissor.exclusiveScissor) {
+    if (!enabled_features.exclusive_scissor.exclusiveScissor) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                         HandleToUint64(commandBuffer), "VUID-vkCmdSetExclusiveScissorNV-None-02031",
                         "vkCmdSetExclusiveScissorNV: The exclusiveScissor feature is disabled.");
@@ -6535,7 +6533,7 @@ bool CoreChecks::PreCallValidateCmdBindShadingRateImageNV(VkCommandBuffer comman
 
     skip |= ValidateCmd(cb_state, CMD_BINDSHADINGRATEIMAGE, "vkCmdBindShadingRateImageNV()");
 
-    if (!GetEnabledFeatures()->shading_rate_image.shadingRateImage) {
+    if (!enabled_features.shading_rate_image.shadingRateImage) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                         HandleToUint64(commandBuffer), "VUID-vkCmdBindShadingRateImageNV-None-02058",
                         "vkCmdBindShadingRateImageNV: The shadingRateImage feature is disabled.");
@@ -6608,7 +6606,7 @@ bool CoreChecks::PreCallValidateCmdSetViewportShadingRatePaletteNV(VkCommandBuff
 
     skip |= ValidateCmd(cb_state, CMD_SETVIEWPORTSHADINGRATEPALETTE, "vkCmdSetViewportShadingRatePaletteNV()");
 
-    if (!GetEnabledFeatures()->shading_rate_image.shadingRateImage) {
+    if (!enabled_features.shading_rate_image.shadingRateImage) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                         HandleToUint64(commandBuffer), "VUID-vkCmdSetViewportShadingRatePaletteNV-None-02064",
                         "vkCmdSetViewportShadingRatePaletteNV: The shadingRateImage feature is disabled.");
@@ -12827,13 +12825,13 @@ void CoreChecks::PostCallRecordDestroySamplerYcbcrConversionKHR(VkDevice device,
 bool CoreChecks::PreCallValidateGetBufferDeviceAddressEXT(VkDevice device, const VkBufferDeviceAddressInfoEXT *pInfo) {
     bool skip = false;
 
-    if (!GetEnabledFeatures()->buffer_address.bufferDeviceAddress) {
+    if (!enabled_features.buffer_address.bufferDeviceAddress) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT,
                         HandleToUint64(pInfo->buffer), "VUID-vkGetBufferDeviceAddressEXT-None-02598",
                         "The bufferDeviceAddress feature must: be enabled.");
     }
 
-    if (physical_device_count > 1 && !GetEnabledFeatures()->buffer_address.bufferDeviceAddressMultiDevice) {
+    if (physical_device_count > 1 && !enabled_features.buffer_address.bufferDeviceAddressMultiDevice) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT,
                         HandleToUint64(pInfo->buffer), "VUID-vkGetBufferDeviceAddressEXT-device-02599",
                         "If device was created with multiple physical devices, then the "
