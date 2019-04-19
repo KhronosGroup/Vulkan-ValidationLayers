@@ -504,7 +504,6 @@ class CoreChecks : public ValidationObject {
     VkResult GetPDImageFormatProperties(const VkImageCreateInfo*, VkImageFormatProperties*);
     VkResult GetPDImageFormatProperties2(const VkPhysicalDeviceImageFormatInfo2*, VkImageFormatProperties2*);
     const VkPhysicalDeviceMemoryProperties* GetPhysicalDeviceMemoryProperties();
-    std::unordered_map<VkImageView, std::unique_ptr<IMAGE_VIEW_STATE>>* GetImageViewMap();
     std::unordered_map<VkSamplerYcbcrConversion, uint64_t>* GetYcbcrConversionFormatMap();
     std::unordered_set<uint64_t>* GetAHBExternalFormatsSet();
 

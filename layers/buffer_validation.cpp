@@ -4310,9 +4310,8 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
 void CoreChecks::PostCallRecordCreateImageView(VkDevice device, const VkImageViewCreateInfo *pCreateInfo,
                                                const VkAllocationCallbacks *pAllocator, VkImageView *pView, VkResult result) {
     if (result != VK_SUCCESS) return;
-    auto image_view_map = GetImageViewMap();
     auto image_state = GetImageState(pCreateInfo->image);
-    (*image_view_map)[*pView] = std::unique_ptr<IMAGE_VIEW_STATE>(new IMAGE_VIEW_STATE(image_state, *pView, pCreateInfo));
+    imageViewMap[*pView] = std::unique_ptr<IMAGE_VIEW_STATE>(new IMAGE_VIEW_STATE(image_state, *pView, pCreateInfo));
 }
 
 bool CoreChecks::PreCallValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer,
@@ -4386,7 +4385,7 @@ void CoreChecks::PreCallRecordDestroyImageView(VkDevice device, VkImageView imag
 
     // Any bound cmd buffers are now invalid
     InvalidateCommandBuffers(image_view_state->cb_bindings, obj_struct);
-    (*GetImageViewMap()).erase(imageView);
+    imageViewMap.erase(imageView);
 }
 
 bool CoreChecks::PreCallValidateDestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationCallbacks *pAllocator) {
