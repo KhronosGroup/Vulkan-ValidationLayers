@@ -214,8 +214,8 @@ bool CoreChecks::FindGlobalLayout(ImageSubresourcePair imgpair, VkImageLayout &l
 }
 
 bool CoreChecks::FindLayouts(VkImage image, std::vector<VkImageLayout> &layouts) {
-    auto sub_data = (*GetImageSubresourceMap()).find(image);
-    if (sub_data == (*GetImageSubresourceMap()).end()) return false;
+    auto sub_data = imageSubresourceMap.find(image);
+    if (sub_data == imageSubresourceMap.end()) return false;
     auto image_state = GetImageState(image);
     if (!image_state) return false;
     bool ignoreGlobal = false;
@@ -280,7 +280,7 @@ void CoreChecks::SetGlobalLayout(ImageSubresourcePair imgpair, const VkImageLayo
     } else {
         lmap[imgpair].layout = layout;  // Insert
     }
-    auto &image_subresources = (*GetImageSubresourceMap())[image];
+    auto &image_subresources = imageSubresourceMap[image];
     auto subresource = std::find(image_subresources.begin(), image_subresources.end(), imgpair);
     if (subresource == image_subresources.end()) {
         image_subresources.push_back(imgpair);
@@ -1449,7 +1449,7 @@ void CoreChecks::PostCallRecordCreateImage(VkDevice device, const VkImageCreateI
     }
     imageMap.insert(std::make_pair(*pImage, std::unique_ptr<IMAGE_STATE>(is_node)));
     ImageSubresourcePair subpair{*pImage, false, VkImageSubresource()};
-    (*GetImageSubresourceMap())[*pImage].push_back(subpair);
+    imageSubresourceMap[*pImage].push_back(subpair);
     (*GetImageLayoutMap())[subpair] = image_state;
     (*GetImageLayoutMap())[subpair] = image_state;
 }
@@ -1480,14 +1480,13 @@ void CoreChecks::PreCallRecordDestroyImage(VkDevice device, VkImage image, const
     EraseQFOReleaseBarriers<VkImageMemoryBarrier>(image);
     // Remove image from imageMap
     imageMap.erase(image);
-    std::unordered_map<VkImage, std::vector<ImageSubresourcePair>> *imageSubresourceMap = GetImageSubresourceMap();
 
-    const auto &sub_entry = imageSubresourceMap->find(image);
-    if (sub_entry != imageSubresourceMap->end()) {
+    const auto &sub_entry = imageSubresourceMap.find(image);
+    if (sub_entry != imageSubresourceMap.end()) {
         for (const auto &pair : sub_entry->second) {
             GetImageLayoutMap()->erase(pair);
         }
-        imageSubresourceMap->erase(sub_entry);
+        imageSubresourceMap.erase(sub_entry);
     }
 }
 
