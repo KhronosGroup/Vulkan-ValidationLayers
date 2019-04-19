@@ -5058,8 +5058,6 @@ VkResult CoreChecks::GetPDImageFormatProperties2(const VkPhysicalDeviceImageForm
     return DispatchGetPhysicalDeviceImageFormatProperties2(physical_device, phys_dev_image_fmt_info, pImageFormatProperties);
 }
 
-std::unordered_map<VkImageView, std::unique_ptr<IMAGE_VIEW_STATE>> *CoreChecks::GetImageViewMap() { return &imageViewMap; }
-
 const DeviceFeatures *CoreChecks::GetEnabledFeatures() { return &enabled_features; }
 
 const DeviceExtensions *CoreChecks::GetDeviceExtensions() { return &device_extensions; }
