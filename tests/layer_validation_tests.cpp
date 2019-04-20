@@ -26311,64 +26311,84 @@ TEST_F(VkLayerTest, MultiplaneImageSamplerConversionMismatch) {
     // Create a sampler using conversion
     VkSamplerCreateInfo sci = SafeSaneSamplerCreateInfo();
     sci.pNext = &ycbcr_info;
-
-    VkSampler sampler;
-    VkResult err = vkCreateSampler(m_device->device(), &sci, NULL, &sampler);
+    // The purpose of that having two samplers is to check if the log prints the correct sampler.
+    // It will make the second sampler fail to see if the log prints the second sampler or the first sampler.
+    VkSampler samplers[2];
+    VkResult err = vkCreateSampler(m_device->device(), &sci, NULL, &samplers[0]);
+    ASSERT_VK_SUCCESS(err);
+    err = vkCreateSampler(m_device->device(), &sci, NULL, &samplers[1]);
     ASSERT_VK_SUCCESS(err);
 
     // Create an image without a Ycbcr conversion
     VkImageObj mpimage(m_device);
     mpimage.init(&ci);
 
-    VkImageView view;
-    VkImageViewCreateInfo ivci = {};
-    ivci.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-    ivci.image = mpimage.handle();
-    ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    ivci.format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM_KHR;
-    ivci.subresourceRange.layerCount = 1;
-    ivci.subresourceRange.baseMipLevel = 0;
-    ivci.subresourceRange.levelCount = 1;
-    ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    vkCreateImageView(m_device->device(), &ivci, nullptr, &view);
+    VkImageView views[2];
+    VkImageViewCreateInfo ivcis[2];
+    ivcis[0] = {};
+    ivcis[0].sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    ivcis[0].pNext = &ycbcr_info;
+    ivcis[0].image = mpimage.handle();
+    ivcis[0].viewType = VK_IMAGE_VIEW_TYPE_2D;
+    ivcis[0].format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM_KHR;
+    ivcis[0].subresourceRange.layerCount = 1;
+    ivcis[0].subresourceRange.baseMipLevel = 0;
+    ivcis[0].subresourceRange.levelCount = 1;
+    ivcis[0].subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    vkCreateImageView(m_device->device(), &ivcis[0], nullptr, &views[0]);
+    ivcis[1] = ivcis[0];
+
+    // pNext = nullptr causes an error, VUID-VkWriteDescriptorSet-descriptorType-01948.
+    // Because if the sampler is a immutable sampler, pNext has to chain a VkSamplerYcbcrConversionInfo.
+    ivcis[1].pNext = nullptr;
+    vkCreateImageView(m_device->device(), &ivcis[1], nullptr, &views[1]);
 
     // Use the image and sampler together in a descriptor set
     OneOffDescriptorSet ds(m_device, {
-                                         {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, &sampler},
+                                         {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2, VK_SHADER_STAGE_ALL, samplers},
                                      });
 
-    VkDescriptorImageInfo image_info{};
-    image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    image_info.imageView = view;
-    image_info.sampler = sampler;
+    VkDescriptorImageInfo image_infos[2];
+    image_infos[0] = {};
+    image_infos[0].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    image_infos[0].imageView = views[0];
+    image_infos[0].sampler = samplers[0];
+    image_infos[1] = image_infos[0];
+    image_infos[1].imageView = views[1];
+    image_infos[1].sampler = samplers[1];
 
     // Update the descriptor set expecting to get an error
     VkWriteDescriptorSet descriptor_write = {};
     descriptor_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
     descriptor_write.dstSet = ds.set_;
     descriptor_write.dstBinding = 0;
-    descriptor_write.descriptorCount = 1;
+    descriptor_write.descriptorCount = 2;
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    descriptor_write.pImageInfo = &image_info;
+    descriptor_write.pImageInfo = image_infos;
+
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkWriteDescriptorSet-descriptorType-01948");
     vkUpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
     m_errorMonitor->VerifyFound();
 
-    VkImageView view_1947;
-    ivci.pNext = &ycbcr_info;
-    vkCreateImageView(m_device->device(), &ivci, nullptr, &view_1947);
-    OneOffDescriptorSet ds_1947(m_device,
-                                {
-                                    {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
-                                });
-
-    image_info.imageView = view_1947;
+    // pImmutableSamplers = nullptr causes an error , VUID-VkWriteDescriptorSet-descriptorType-01947.
+    // Because if pNext chains a VkSamplerYcbcrConversionInfo, the sampler has to be a immutable sampler,.
+    OneOffDescriptorSet ds_1947(m_device, {
+                                              {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                          });
     descriptor_write.dstSet = ds_1947.set_;
+    descriptor_write.descriptorCount = 1;
+    descriptor_write.pImageInfo = &image_infos[0];
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkWriteDescriptorSet-descriptorType-01947");
     vkUpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
     m_errorMonitor->VerifyFound();
 
+    vkDestroyImageView(m_device->device(), views[1], NULL);
+    ivcis[1].pNext = &ycbcr_info;
+    vkCreateImageView(m_device->device(), &ivcis[1], nullptr, &views[1]);
+    image_infos[1].imageView = views[1];
     descriptor_write.dstSet = ds.set_;
+    descriptor_write.descriptorCount = 2;
+    descriptor_write.pImageInfo = image_infos;
     vkUpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
 
     char const *vsSource =
@@ -26380,10 +26400,11 @@ TEST_F(VkLayerTest, MultiplaneImageSamplerConversionMismatch) {
     char const *fsSource =
         "#version 450\n"
         "\n"
-        "layout(set=0, binding=0) uniform sampler2D s;\n"
+        "layout(set=0, binding=0) uniform sampler2D s[2];\n"
         "layout(location=0) out vec4 x;\n"
         "void main(){\n"
-        "   x = texture(s, vec2(1));\n"
+        "   x = texture(s[0], vec2(1));\n"
+        "   x = texture(s[1], vec2(1));\n"
         "}\n";
     VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
     VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
@@ -26405,15 +26426,17 @@ TEST_F(VkLayerTest, MultiplaneImageSamplerConversionMismatch) {
     vkCmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
     vkCmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pl.handle(), 0, 1, &ds.set_, 0, NULL);
 
+    m_errorMonitor->ExpectSuccess();
     m_commandBuffer->Draw(1, 0, 0, 0);
-
+    m_errorMonitor->VerifyNotFound();
     vkCmdEndRenderPass(m_commandBuffer->handle());
     m_commandBuffer->end();
 
     vkDestroySamplerYcbcrConversion(m_device->device(), conversion, nullptr);
-    vkDestroyImageView(m_device->device(), view, NULL);
-    vkDestroyImageView(m_device->device(), view_1947, NULL);
-    vkDestroySampler(m_device->device(), sampler, nullptr);
+    vkDestroyImageView(m_device->device(), views[0], NULL);
+    vkDestroyImageView(m_device->device(), views[1], NULL);
+    vkDestroySampler(m_device->device(), samplers[0], nullptr);
+    vkDestroySampler(m_device->device(), samplers[1], nullptr);
 }
 
 TEST_F(VkLayerTest, CopyImageMultiplaneAspectBits) {
