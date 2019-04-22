@@ -668,6 +668,8 @@ if __name__ == '__main__':
     from layer_dispatch_table_generator import LayerDispatchTableOutputGenerator, LayerDispatchTableGeneratorOptions
     from layer_chassis_generator import LayerChassisOutputGenerator, LayerChassisGeneratorOptions
     from layer_chassis_dispatch_generator import LayerChassisDispatchOutputGenerator, LayerChassisDispatchGeneratorOptions
+    # Temporary workaround for vkconventions python2 compatibility
+    import abc; abc.ABC = abc.ABCMeta('ABC', (object,), {})
     from vkconventions import VulkanConventions
 
     # This splits arguments which are space-separated lists
