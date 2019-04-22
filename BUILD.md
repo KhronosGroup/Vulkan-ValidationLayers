@@ -213,7 +213,6 @@ generate the native platform files.
   - Any Personal Computer version supported by Microsoft
 - Microsoft [Visual Studio](https://www.visualstudio.com/)
   - Versions
-    - [2013 (update 4)](https://www.visualstudio.com/vs/older-downloads/)
     - [2015](https://www.visualstudio.com/vs/older-downloads/)
     - [2017](https://www.visualstudio.com/vs/downloads/)
   - The Community Edition of each of the above versions is sufficient, as
@@ -376,7 +375,6 @@ include:
 
 | Build Platform               | 64-bit Generator              | 32-bit Generator        |
 |------------------------------|-------------------------------|-------------------------|
-| Microsoft Visual Studio 2013 | "Visual Studio 12 2013 Win64" | "Visual Studio 12 2013" |
 | Microsoft Visual Studio 2015 | "Visual Studio 14 2015 Win64" | "Visual Studio 14 2015" |
 | Microsoft Visual Studio 2017 | "Visual Studio 15 2017 Win64" | "Visual Studio 15 2017" |
 
@@ -682,7 +680,7 @@ Follow the setup steps for Linux or OSX above, then from your terminal:
 #### Windows
 
 Follow the setup steps for Windows above, then from Developer Command Prompt
-for VS2013:
+for VS2015:
 
     cd build-android
     update_external_sources_android.bat
