@@ -2389,6 +2389,8 @@ void CoreChecks::InitGpuValidation() {
     };
     std::string gpu_flags_key = "lunarg_core_validation.gpu_validation";
     CoreGPUFlags gpu_flags = GetLayerOptionFlags(gpu_flags_key, gpu_flags_option_definitions, 0);
+    gpu_flags_key = "khronos_validation.gpu_validation";
+    gpu_flags |= GetLayerOptionFlags(gpu_flags_key, gpu_flags_option_definitions, 0);
     if (gpu_flags & CORE_VALIDATION_GPU_VALIDATION_ALL_BIT) {
         instance_state->enabled.gpu_validation = true;
     }
