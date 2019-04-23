@@ -3428,8 +3428,8 @@ std::map<VkImageCreateFlags, uint64_t> ahb_create_map_v2a = {
 //
 // AHB-extension new APIs
 //
-bool CoreChecks::PreCallValidateGetAndroidHardwareBufferProperties(VkDevice device, const struct AHardwareBuffer *buffer,
-                                                                   VkAndroidHardwareBufferPropertiesANDROID *pProperties) {
+bool CoreChecks::PreCallValidateGetAndroidHardwareBufferPropertiesANDROID(VkDevice device, const struct AHardwareBuffer *buffer,
+                                                                          VkAndroidHardwareBufferPropertiesANDROID *pProperties) {
     bool skip = false;
     //  buffer must be a valid Android hardware buffer object with at least one of the AHARDWAREBUFFER_USAGE_GPU_* usage flags.
     AHardwareBuffer_Desc ahb_desc;
@@ -3447,9 +3447,9 @@ bool CoreChecks::PreCallValidateGetAndroidHardwareBufferProperties(VkDevice devi
     return skip;
 }
 
-void CoreChecks::PostCallRecordGetAndroidHardwareBufferProperties(VkDevice device, const struct AHardwareBuffer *buffer,
-                                                                  VkAndroidHardwareBufferPropertiesANDROID *pProperties,
-                                                                  VkResult result) {
+void CoreChecks::PostCallRecordGetAndroidHardwareBufferPropertiesANDROID(VkDevice device, const struct AHardwareBuffer *buffer,
+                                                                         VkAndroidHardwareBufferPropertiesANDROID *pProperties,
+                                                                         VkResult result) {
     if (VK_SUCCESS != result) return;
     auto ahb_format_props = lvl_find_in_chain<VkAndroidHardwareBufferFormatPropertiesANDROID>(pProperties->pNext);
     if (ahb_format_props) {
@@ -3457,9 +3457,9 @@ void CoreChecks::PostCallRecordGetAndroidHardwareBufferProperties(VkDevice devic
     }
 }
 
-bool CoreChecks::PreCallValidateGetMemoryAndroidHardwareBuffer(VkDevice device,
-                                                               const VkMemoryGetAndroidHardwareBufferInfoANDROID *pInfo,
-                                                               struct AHardwareBuffer **pBuffer) {
+bool CoreChecks::PreCallValidateGetMemoryAndroidHardwareBufferANDROID(VkDevice device,
+                                                                      const VkMemoryGetAndroidHardwareBufferInfoANDROID *pInfo,
+                                                                      struct AHardwareBuffer **pBuffer) {
     bool skip = false;
     DEVICE_MEM_INFO *mem_info = GetMemObjInfo(pInfo->memory);
 
