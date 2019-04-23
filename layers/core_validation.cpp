@@ -3620,16 +3620,15 @@ bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo *alloc
         if ((nullptr == mem_ded_alloc_info) || (VK_NULL_HANDLE == mem_ded_alloc_info->image)) {
             // the Android hardware buffer must have a format of AHARDWAREBUFFER_FORMAT_BLOB and a usage that includes
             // AHARDWAREBUFFER_USAGE_GPU_DATA_BUFFER
-            if (((uint64_t)AHARDWAREBUFFER_FORMAT_BLOB != ahb_format_props.externalFormat) ||
+            if (((uint64_t)AHARDWAREBUFFER_FORMAT_BLOB != ahb_desc.format) ||
                 (0 == (ahb_desc.usage & AHARDWAREBUFFER_USAGE_GPU_DATA_BUFFER))) {
                 skip |= log_msg(
                     report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
                     "VUID-VkMemoryAllocateInfo-pNext-02384",
                     "vkAllocateMemory: VkMemoryAllocateInfo struct with chained VkImportAndroidHardwareBufferInfoANDROID "
-                    "struct without a dedicated allocation requirement, while the AHardwareBuffer's external format (0x%" PRIx64
-                    ") is not AHARDWAREBUFFER_FORMAT_BLOB or usage (0x%" PRIx64
-                    ") does not include AHARDWAREBUFFER_USAGE_GPU_DATA_BUFFER.",
-                    ahb_format_props.externalFormat, ahb_desc.usage);
+                    "struct without a dedicated allocation requirement, while the AHardwareBuffer_Desc's format ( %u ) is not "
+                    "AHARDWAREBUFFER_FORMAT_BLOB or usage (0x%" PRIx64 ") does not include AHARDWAREBUFFER_USAGE_GPU_DATA_BUFFER.",
+                    ahb_desc.format, ahb_desc.usage);
             }
         } else {  // Checks specific to import with a dedicated allocation requirement
             VkImageCreateInfo *ici = &(GetImageState(mem_ded_alloc_info->image)->createInfo);
