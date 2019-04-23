@@ -241,6 +241,10 @@ void CoreChecks::GpuPreCallRecordCreateDevice(VkPhysicalDevice gpu, std::unique_
 
 // Perform initializations that can be done at Create Device time.
 void CoreChecks::GpuPostCallRecordCreateDevice(const CHECK_ENABLED *enables) {
+    // Set instance-level enables in device-enable data structure if using legacy settings
+    enabled.gpu_validation = enables->gpu_validation;
+    enabled.gpu_validation_reserve_binding_slot = enables->gpu_validation_reserve_binding_slot;
+
     gpu_validation_state = std::unique_ptr<GpuValidationState>(new GpuValidationState);
     gpu_validation_state->reserve_binding_slot = enables->gpu_validation_reserve_binding_slot;
 
