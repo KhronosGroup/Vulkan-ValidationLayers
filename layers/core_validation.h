@@ -1534,12 +1534,14 @@ class CoreChecks : public ValidationObject {
     bool ValidateComputeWorkGroupInvocations(GLOBAL_CB_NODE* cb_state, uint32_t groupCountX, uint32_t groupCountY,
                                              uint32_t groupCountZ);
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
-    bool PreCallValidateGetAndroidHardwareBufferProperties(VkDevice device, const struct AHardwareBuffer* buffer,
-                                                           VkAndroidHardwareBufferPropertiesANDROID* pProperties);
-    void PostCallRecordGetAndroidHardwareBufferProperties(VkDevice device, const struct AHardwareBuffer* buffer,
-                                                          VkAndroidHardwareBufferPropertiesANDROID* pProperties, VkResult result);
-    bool PreCallValidateGetMemoryAndroidHardwareBuffer(VkDevice device, const VkMemoryGetAndroidHardwareBufferInfoANDROID* pInfo,
-                                                       struct AHardwareBuffer** pBuffer);
+    bool PreCallValidateGetAndroidHardwareBufferPropertiesANDROID(VkDevice device, const struct AHardwareBuffer* buffer,
+                                                                  VkAndroidHardwareBufferPropertiesANDROID* pProperties);
+    void PostCallRecordGetAndroidHardwareBufferPropertiesANDROID(VkDevice device, const struct AHardwareBuffer* buffer,
+                                                                 VkAndroidHardwareBufferPropertiesANDROID* pProperties,
+                                                                 VkResult result);
+    bool PreCallValidateGetMemoryAndroidHardwareBufferANDROID(VkDevice device,
+                                                              const VkMemoryGetAndroidHardwareBufferInfoANDROID* pInfo,
+                                                              struct AHardwareBuffer** pBuffer);
     void PostCallRecordCreateAndroidSurfaceKHR(VkInstance instance, const VkAndroidSurfaceCreateInfoKHR* pCreateInfo,
                                                const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface, VkResult result);
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
