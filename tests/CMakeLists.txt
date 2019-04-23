@@ -103,7 +103,11 @@ if (NOT TARGET vulkan)
     add_library(vulkan STATIC IMPORTED)
 
     set_target_properties(vulkan PROPERTIES IMPORTED_LOCATION "${Vulkan_LIBRARY}")
-    target_include_directories(vulkan INTERFACE "${Vulkan_INCLUDE_DIR}")
+    # cmake <= 3.10.2 can't attach include paths to imported targets
+    # remove this check once we settle on a newer version
+    if (CMAKE_VERSION VERSION_GREATER_EQUAL "3.11.0")
+        target_include_directories(vulkan INTERFACE "${Vulkan_INCLUDE_DIR}")
+    endif()
 endif()
 
 if (NOT TARGET Vulkan::Vulkan)
@@ -123,6 +127,12 @@ add_executable(vk_layer_validation_tests
                ${COMMON_CPP})
 target_link_libraries(vk_layer_validation_tests PRIVATE Vulkan::Headers)
 add_dependencies(vk_layer_validation_tests Vulkan::Vulkan)
+# cmake <= 3.10.2 can't attach include paths to imported targets
+# remove this once we settle on a newer version
+if (CMAKE_VERSION VERSION_LESS "3.11.0")
+    target_include_directories(vk_layer_validation_tests INTERFACE "${Vulkan_INCLUDE_DIR}")
+endif()
+
 if(NOT GTEST_IS_STATIC_LIB)
     set_target_properties(vk_layer_validation_tests PROPERTIES COMPILE_DEFINITIONS "GTEST_LINKED_AS_SHARED_LIBRARY=1")
 endif()
@@ -163,6 +173,12 @@ else()
                                       gtest_main
                                       ${GLSLANG_LIBRARIES})
     endif()
+endif()
+
+# cmake <= 3.10.2 can't attach include paths to imported targets
+# remove this once we settle on a newer version
+if (CMAKE_VERSION VERSION_LESS "3.11.0")
+    target_include_directories(vk_layer_validation_tests INTERFACE "${Vulkan_INCLUDE_DIR}")
 endif()
 
 if(WIN32)
