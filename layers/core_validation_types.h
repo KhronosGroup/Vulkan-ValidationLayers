@@ -20,6 +20,7 @@
  * Author: Chris Forbes <chrisf@ijw.co.nz>
  * Author: Mark Lobodzinski <mark@lunarg.com>
  * Author: Dave Houlton <daveh@lunarg.com>
+ * Author: John Zulauf <jzulauf@lunarg.com>
  */
 #ifndef CORE_VALIDATION_TYPES_H_
 #define CORE_VALIDATION_TYPES_H_
@@ -487,7 +488,7 @@ class ImageSubresourceLayoutMap {
     typedef std::function<bool(const VkImageSubresource &, VkImageLayout, VkImageLayout)> Callback;
     struct InitialLayoutState {
         VkImageView image_view;  // For relaxed matching rule evaluation, else VK_NULL_HANDLE
-        VkImageAspectFlags aspect_mask;
+        VkImageAspectFlags aspect_mask;  // For relaxed matching rules... else 0
         LoggingLabel label;
         InitialLayoutState(const GLOBAL_CB_NODE &cb_state_, const IMAGE_VIEW_STATE *view_state);
         InitialLayoutState() : image_view(VK_NULL_HANDLE), aspect_mask(0), label() {}
@@ -862,19 +863,33 @@ static bool ImageLayoutMatches(const VkImageAspectFlags aspect_mask, VkImageLayo
 
 // Utility type for ForRange callbacks
 struct LayoutUseCheckAndMessage {
-    const char *message = nullptr;
-    VkImageLayout layout = kInvalidLayout;
-    LayoutUseCheckAndMessage(VkImageLayout check, VkImageLayout current_layout, VkImageLayout initial_layout,
-                             const VkImageAspectFlags aspect_mask = 0) {
+    const static VkImageAspectFlags kDepthOrStencil = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+    const ImageSubresourceLayoutMap *layout_map;
+    const VkImageAspectFlags aspect_mask;
+    const char *message;
+    VkImageLayout layout;
+
+    LayoutUseCheckAndMessage() = delete;
+    LayoutUseCheckAndMessage(const ImageSubresourceLayoutMap *layout_map_, const VkImageAspectFlags aspect_mask_ = 0)
+        : layout_map(layout_map_), aspect_mask{aspect_mask_}, message(nullptr), layout(kInvalidLayout) {}
+    bool Check(const VkImageSubresource &subres, VkImageLayout check, VkImageLayout current_layout, VkImageLayout initial_layout) {
+        message = nullptr;
+        layout = kInvalidLayout;  // Success status
         if (current_layout != kInvalidLayout && !ImageLayoutMatches(aspect_mask, check, current_layout)) {
             message = "previous known";
             layout = current_layout;
-        } else if (initial_layout != kInvalidLayout && !ImageLayoutMatches(aspect_mask, check, initial_layout)) {
-            message = "previously used";
-            layout = initial_layout;
+        } else if ((initial_layout != kInvalidLayout) && !ImageLayoutMatches(aspect_mask, check, initial_layout)) {
+            // To check the relaxed rule matching we need to see how the initial use was used
+            const auto initial_layout_state = layout_map->GetSubresourceInitialLayoutState(subres);
+            assert(initial_layout_state);  // If we have an initial layout, we better have a state for it
+            if (!((initial_layout_state->aspect_mask & kDepthOrStencil) &&
+                  ImageLayoutMatches(initial_layout_state->aspect_mask, check, initial_layout))) {
+                message = "previously used";
+                layout = initial_layout;
+            }
         }
+        return layout == kInvalidLayout;
     }
-    bool CheckFailed() const { return layout != kInvalidLayout; }
 };
 
 // Store the DAG.
