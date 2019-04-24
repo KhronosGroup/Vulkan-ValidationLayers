@@ -38360,7 +38360,26 @@ TEST_F(VkLayerTest, AndroidHardwareBufferCreateImageView) {
     // Give image an external format
     VkExternalFormatANDROID efa = {};
     efa.sType = VK_STRUCTURE_TYPE_EXTERNAL_FORMAT_ANDROID;
-    efa.externalFormat = AHARDWAREBUFFER_FORMAT_R5G6B5_UNORM;
+    efa.externalFormat = ahb_fmt_props.externalFormat;
+
+    ahb_desc.format = AHARDWAREBUFFER_FORMAT_R8G8B8A8_UNORM;
+    ahb_desc.usage = AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE;
+    ahb_desc.width = 64;
+    ahb_desc.height = 1;
+    ahb_desc.layers = 1;
+    AHardwareBuffer_allocate(&ahb_desc, &ahb);
+
+    VkAndroidHardwareBufferFormatPropertiesANDROID ahb_fmt_props_Ycbcr = {};
+    ahb_fmt_props_Ycbcr.sType = VK_STRUCTURE_TYPE_ANDROID_HARDWARE_BUFFER_FORMAT_PROPERTIES_ANDROID;
+    VkAndroidHardwareBufferPropertiesANDROID ahb_props_Ycbcr = {};
+    ahb_props_Ycbcr.sType = VK_STRUCTURE_TYPE_ANDROID_HARDWARE_BUFFER_PROPERTIES_ANDROID;
+    ahb_props_Ycbcr.pNext = &ahb_fmt_props_Ycbcr;
+    pfn_GetAHBProps(dev, ahb, &ahb_props_Ycbcr);
+    AHardwareBuffer_release(ahb);
+
+    VkExternalFormatANDROID efa_Ycbcr = {};
+    efa_Ycbcr.sType = VK_STRUCTURE_TYPE_EXTERNAL_FORMAT_ANDROID;
+    efa_Ycbcr.externalFormat = ahb_fmt_props_Ycbcr.externalFormat;
 
     // Create the image
     VkImage img = VK_NULL_HANDLE;
@@ -38392,9 +38411,8 @@ TEST_F(VkLayerTest, AndroidHardwareBufferCreateImageView) {
     // Create a YCbCr conversion, with different external format, chain to view
     VkSamplerYcbcrConversion ycbcr_conv = VK_NULL_HANDLE;
     VkSamplerYcbcrConversionCreateInfo sycci = {};
-    efa.externalFormat = AHARDWAREBUFFER_FORMAT_R8G8B8X8_UNORM;
     sycci.sType = VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_CREATE_INFO;
-    sycci.pNext = &efa;
+    sycci.pNext = &efa_Ycbcr;
     sycci.format = VK_FORMAT_UNDEFINED;
     sycci.ycbcrModel = VK_SAMPLER_YCBCR_MODEL_CONVERSION_RGB_IDENTITY;
     sycci.ycbcrRange = VK_SAMPLER_YCBCR_RANGE_ITU_FULL;
@@ -38430,7 +38448,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferCreateImageView) {
 
     reset_view();
     vkDestroySamplerYcbcrConversion(dev, ycbcr_conv, NULL);
-    efa.externalFormat = AHARDWAREBUFFER_FORMAT_R5G6B5_UNORM;
+    sycci.pNext = &efa;
     vkCreateSamplerYcbcrConversion(dev, &sycci, NULL, &ycbcr_conv);
     syci.conversion = ycbcr_conv;
 
