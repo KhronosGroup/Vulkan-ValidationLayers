@@ -493,11 +493,11 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(RenderPassCreateVersion r
             (attachment_initial_layout != VK_IMAGE_LAYOUT_UNDEFINED) ? GetImageSubresourceLayoutMap(const_pCB, image) : nullptr;
 
         if (subresource_map) {  // If no layout information for image yet, will be checked at QueueSubmit time
+            LayoutUseCheckAndMessage layout_check(subresource_map);
             bool subres_skip = false;
-            auto subresource_cb = [this, i, attachment_initial_layout, &subres_skip](
+            auto subresource_cb = [this, i, attachment_initial_layout, &layout_check, &subres_skip](
                                       const VkImageSubresource &subres, VkImageLayout layout, VkImageLayout initial_layout) {
-                LayoutUseCheckAndMessage layout_check(attachment_initial_layout, layout, initial_layout);
-                if (layout_check.CheckFailed()) {
+                if (!layout_check.Check(subres, attachment_initial_layout, layout, initial_layout)) {
                     subres_skip |=
                         log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                                 kVUID_Core_DrawState_InvalidRenderpass,
@@ -793,11 +793,11 @@ bool CoreChecks::ValidateBarriersToImages(GLOBAL_CB_NODE const *cb_state, uint32
                 // subresource.
             } else if (subresource_map) {
                 bool subres_skip = false;
+                LayoutUseCheckAndMessage layout_check(subresource_map);
                 VkImageSubresourceRange normalized_isr = NormalizeSubresourceRange(*image_state, img_barrier->subresourceRange);
-                auto subres_callback = [this, img_barrier, cb_state, &subres_skip](
+                auto subres_callback = [this, img_barrier, cb_state, &layout_check, &subres_skip](
                                            const VkImageSubresource &subres, VkImageLayout layout, VkImageLayout initial_layout) {
-                    LayoutUseCheckAndMessage layout_check(img_barrier->oldLayout, layout, initial_layout);
-                    if (layout_check.CheckFailed()) {
+                    if (!layout_check.Check(subres, img_barrier->oldLayout, layout, initial_layout)) {
                         subres_skip =
                             log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                                     HandleToUint64(cb_state->commandBuffer), "VUID-VkImageMemoryBarrier-oldLayout-01197",
@@ -1058,10 +1058,10 @@ bool CoreChecks::VerifyImageLayout(GLOBAL_CB_NODE const *cb_node, IMAGE_STATE *i
     const auto *subresource_map = GetImageSubresourceLayoutMap(cb_node, image);
     if (subresource_map) {
         bool subres_skip = false;
-        auto subresource_cb = [this, explicit_layout, cb_node, layout_mismatch_msg_code, caller, image, aspect_mask, &error,
+        LayoutUseCheckAndMessage layout_check(subresource_map, aspect_mask);
+        auto subresource_cb = [this, explicit_layout, cb_node, layout_mismatch_msg_code, caller, image, &layout_check, &error,
                                &subres_skip](const VkImageSubresource &subres, VkImageLayout layout, VkImageLayout initial_layout) {
-            LayoutUseCheckAndMessage layout_check(explicit_layout, layout, initial_layout, aspect_mask);
-            if (layout_check.CheckFailed()) {
+            if (!layout_check.Check(subres, explicit_layout, layout, initial_layout)) {
                 *error = true;
                 subres_skip |=
                     log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
@@ -1579,11 +1579,11 @@ bool CoreChecks::VerifyClearImageLayout(GLOBAL_CB_NODE *cb_node, IMAGE_STATE *im
     const auto *subresource_map = GetImageSubresourceLayoutMap(static_cast<const GLOBAL_CB_NODE *>(cb_node), image_state->image);
     if (subresource_map) {
         bool subres_skip = false;
+        LayoutUseCheckAndMessage layout_check(subresource_map);
         VkImageSubresourceRange normalized_isr = NormalizeSubresourceRange(*image_state, range);
-        auto subres_callback = [this, cb_node, dest_image_layout, func_name, &subres_skip](
+        auto subres_callback = [this, cb_node, dest_image_layout, func_name, &layout_check, &subres_skip](
                                    const VkImageSubresource &subres, VkImageLayout layout, VkImageLayout initial_layout) {
-            LayoutUseCheckAndMessage layout_check(dest_image_layout, layout, initial_layout);
-            if (layout_check.CheckFailed()) {
+            if (!layout_check.Check(subres, dest_image_layout, layout, initial_layout)) {
                 const char *error_code = "VUID-vkCmdClearColorImage-imageLayout-00004";
                 if (strcmp(func_name, "vkCmdClearDepthStencilImage()") == 0) {
                     error_code = "VUID-vkCmdClearDepthStencilImage-imageLayout-00011";
