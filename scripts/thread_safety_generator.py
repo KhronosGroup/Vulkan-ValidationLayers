@@ -701,16 +701,19 @@ void ThreadSafety::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapch
                 externsync = param.attrib.get('externsync')
                 if externsync == 'true':
                     if self.paramIsArray(param):
-                        paramdecl += 'for (uint32_t index=0;index<' + param.attrib.get('len') + ';index++) {\n'
-                        paramdecl += '    ' + functionprefix + 'WriteObject(' + paramname.text + '[index]);\n'
+                        paramdecl += 'if (' + paramname.text + ') {\n'
+                        paramdecl += '    for (uint32_t index=0; index < ' + param.attrib.get('len') + '; index++) {\n'
+                        paramdecl += '        ' + functionprefix + 'WriteObject(' + paramname.text + '[index]);\n'
+                        paramdecl += '    }\n'
                         paramdecl += '}\n'
                     else:
                         paramdecl += functionprefix + 'WriteObject(' + paramname.text + ');\n'
                 elif (param.attrib.get('externsync')):
                     if self.paramIsArray(param):
                         # Externsync can list pointers to arrays of members to synchronize
-                        paramdecl += 'for (uint32_t index=0;index<' + param.attrib.get('len') + ';index++) {\n'
-                        second_indent = ''
+                        paramdecl += 'if (' + paramname.text + ') {\n'
+                        paramdecl += '    for (uint32_t index=0; index < ' + param.attrib.get('len') + '; index++) {\n'
+                        second_indent = '    '
                         for member in externsync.split(","):
                             # Replace first empty [] in member name with index
                             element = member.replace('[]','[index]',1)
@@ -718,21 +721,22 @@ void ThreadSafety::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapch
                                 # TODO: These null checks can be removed if threading ends up behind parameter
                                 #       validation in layer order
                                 element_ptr = element.split('[]')[0]
-                                paramdecl += '    if (' + element_ptr + ') {\n'
+                                paramdecl += '        if (' + element_ptr + ') {\n'
                                 # Replace any second empty [] in element name with inner array index based on mapping array
                                 # names like "pSomeThings[]" to "someThingCount" array size. This could be more robust by
                                 # mapping a param member name to a struct type and "len" attribute.
                                 limit = element[0:element.find('s[]')] + 'Count'
                                 dotp = limit.rfind('.p')
                                 limit = limit[0:dotp+1] + limit[dotp+2:dotp+3].lower() + limit[dotp+3:]
-                                paramdecl += '        for(uint32_t index2=0;index2<'+limit+';index2++) {\n'
+                                paramdecl += '            for (uint32_t index2=0; index2 < '+limit+'; index2++) {\n'
                                 element = element.replace('[]','[index2]')
-                                second_indent = '   '
+                                second_indent = '        '
                                 paramdecl += '        ' + second_indent + functionprefix + 'WriteObject(' + element + ');\n'
+                                paramdecl += '            }\n'
                                 paramdecl += '        }\n'
-                                paramdecl += '    }\n'
                             else:
                                 paramdecl += '    ' + second_indent + functionprefix + 'WriteObject(' + element + ');\n'
+                        paramdecl += '    }\n'
                         paramdecl += '}\n'
                     else:
                         # externsync can list members to synchronize
@@ -755,8 +759,10 @@ void ThreadSafety::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapch
                                     if self.paramIsPointer(candidate):
                                         dereference = '*'
                             param_len = str(param.attrib.get('len')).replace("::", "->")
-                            paramdecl += 'for (uint32_t index = 0; index < ' + dereference + param_len + '; index++) {\n'
-                            paramdecl += '    ' + functionprefix + 'ReadObject(' + paramname.text + '[index]);\n'
+                            paramdecl += 'if (' + paramname.text + ') {\n'
+                            paramdecl += '    for (uint32_t index = 0; index < ' + dereference + param_len + '; index++) {\n'
+                            paramdecl += '        ' + functionprefix + 'ReadObject(' + paramname.text + '[index]);\n'
+                            paramdecl += '    }\n'
                             paramdecl += '}\n'
                         elif not self.paramIsPointer(param):
                             # Pointer params are often being created.
