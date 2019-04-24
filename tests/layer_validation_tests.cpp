@@ -38558,9 +38558,6 @@ TEST_F(VkLayerTest, AndroidHardwareBufferCreateImageView) {
     ASSERT_NO_FATAL_FAILURE(InitState());
     VkDevice dev = m_device->device();
 
-    // Expect no validation errors during setup
-    m_errorMonitor->ExpectSuccess();
-
     // Allocate an AHB and fetch its properties
     AHardwareBuffer *ahb = nullptr;
     AHardwareBuffer_Desc ahb_desc = {};
@@ -38595,6 +38592,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferCreateImageView) {
     ahb_desc.layers = 1;
     AHardwareBuffer_allocate(&ahb_desc, &ahb);
 
+    // Create another VkExternalFormatANDROID for test VUID-VkImageViewCreateInfo-image-02400
     VkAndroidHardwareBufferFormatPropertiesANDROID ahb_fmt_props_Ycbcr = {};
     ahb_fmt_props_Ycbcr.sType = VK_STRUCTURE_TYPE_ANDROID_HARDWARE_BUFFER_FORMAT_PROPERTIES_ANDROID;
     VkAndroidHardwareBufferPropertiesANDROID ahb_props_Ycbcr = {};
@@ -38631,7 +38629,18 @@ TEST_F(VkLayerTest, AndroidHardwareBufferCreateImageView) {
     mai.memoryTypeIndex = 0;
     vkAllocateMemory(dev, &mai, NULL, &img_mem);
 
+    // It shouldn't use vkGetImageMemoryRequirements for AndroidHardwareBuffer.
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "UNASSIGNED-CoreValidation-DrawState-InvalidImage");
+    VkMemoryRequirements img_mem_reqs = {};
+    vkGetImageMemoryRequirements(m_device->device(), img, &img_mem_reqs);
+    vkBindImageMemory(dev, img, img_mem, 0);
+    m_errorMonitor->VerifyFound();
+
     // Bind image to memory
+    vkDestroyImage(dev, img, NULL);
+    vkFreeMemory(dev, img_mem, NULL);
+    vkCreateImage(dev, &ici, NULL, &img);
+    vkAllocateMemory(dev, &mai, NULL, &img_mem);
     vkBindImageMemory(dev, img, img_mem, 0);
 
     // Create a YCbCr conversion, with different external format, chain to view
