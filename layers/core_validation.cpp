@@ -10631,6 +10631,18 @@ bool CoreChecks::ValidateBindImageMemory(VkImage image, VkDeviceMemory mem, VkDe
         // Track objects tied to memory
         uint64_t image_handle = HandleToUint64(image);
         skip = ValidateSetMemBinding(mem, image_handle, kVulkanObjectTypeImage, api_name);
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
+        if (lvl_find_in_chain<VkExternalFormatANDROID>(image_state->createInfo.pNext)) {
+            if (image_state->memory_requirements_checked) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, image_handle,
+                                kVUID_Core_DrawState_InvalidImage,
+                                "%s: Applications must not call vkGetImageMemoryRequirements with such an image %s before it has "
+                                "been bound to memory",
+                                api_name, report_data->FormatHandle(image_handle).c_str());
+            }
+            return skip;
+        }
+#endif  // VK_USE_PLATFORM_ANDROID_KHR
         if (!image_state->memory_requirements_checked) {
             // There's not an explicit requirement in the spec to call vkGetImageMemoryRequirements() prior to calling
             // BindImageMemory but it's implied in that memory being bound must conform with VkMemoryRequirements from
