@@ -37781,6 +37781,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferImageCreate) {
 
     // undefined format
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkImageCreateInfo-pNext-01975");
+    m_errorMonitor->SetUnexpectedError("VUID_Undefined");
     vkCreateImage(dev, &ici, NULL, &img);
     m_errorMonitor->VerifyFound();
     reset_img();
@@ -37825,7 +37826,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferImageCreate) {
 
     // a defined image format with a non-zero external format
     ici.format = VK_FORMAT_R8G8B8A8_UNORM;
-    efa.externalFormat = AHARDWAREBUFFER_FORMAT_R8G8B8X8_UNORM;
+    efa.externalFormat = ahb_fmt_props.externalFormat;
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkImageCreateInfo-pNext-01974");
     vkCreateImage(dev, &ici, NULL, &img);
     m_errorMonitor->VerifyFound();
