@@ -2208,7 +2208,7 @@ bool cvdescriptorset::DescriptorSet::VerifyWriteUpdateContents(const VkWriteDesc
                     return false;
                 }
                 if (device_data_->device_extensions.vk_khr_sampler_ycbcr_conversion) {
-                    ImageSamplerDescriptor *desc = (ImageSamplerDescriptor *)descriptors_[index].get();
+                    ImageSamplerDescriptor *desc = (ImageSamplerDescriptor *)descriptors_[index + di].get();
                     if (desc->IsImmutableSampler()) {
                         auto sampler_state = device_data_->GetSamplerState(desc->GetSampler());
                         auto iv_state = device_data_->GetImageViewState(image_view);
