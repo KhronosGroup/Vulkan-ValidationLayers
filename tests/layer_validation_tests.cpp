@@ -38518,11 +38518,12 @@ TEST_F(VkLayerTest, AndroidHardwareBufferImportBuffer) {
 
     // Allocate an AHardwareBuffer
     ahb_desc.format = AHARDWAREBUFFER_FORMAT_BLOB;
-    ahb_desc.usage = AHARDWAREBUFFER_USAGE_GPU_MIPMAP_COMPLETE;
+    ahb_desc.usage = AHARDWAREBUFFER_USAGE_SENSOR_DIRECT_DATA;
     ahb_desc.width = 512;
     ahb_desc.height = 1;
     ahb_desc.layers = 1;
     AHardwareBuffer_allocate(&ahb_desc, &ahb);
+    m_errorMonitor->SetUnexpectedError("VUID-vkGetAndroidHardwareBufferPropertiesANDROID-buffer-01884");
     pfn_GetAHBProps(dev, ahb, &ahb_props);
     iahbi.buffer = ahb;
 
@@ -38545,6 +38546,22 @@ TEST_F(VkLayerTest, AndroidHardwareBufferImportBuffer) {
     // Allocation info
     VkMemoryAllocateInfo mai = vk_testing::DeviceMemory::get_resource_alloc_info(*m_device, mem_reqs, 0);
     mai.pNext = &iahbi;  // Chained import struct
+    VkPhysicalDeviceMemoryProperties memory_info;
+    vkGetPhysicalDeviceMemoryProperties(gpu(), &memory_info);
+    unsigned int i;
+    for (i = 0; i < memory_info.memoryTypeCount; i++) {
+        if ((ahb_props.memoryTypeBits & (1 << i)) != 0) {
+            mai.memoryTypeIndex = i;
+            break;
+        }
+    }
+    if (i >= memory_info.memoryTypeCount) {
+        printf("%s No invalid memory type index could be found; skipped.\n", kSkipPrefix);
+        AHardwareBuffer_release(ahb);
+        reset_mem();
+        vkDestroyBuffer(dev, buf, NULL);
+        return;
+    }
 
     // Import as buffer requires format AHB_FMT_BLOB and usage AHB_USAGE_GPU_DATA_BUFFER
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
