@@ -348,7 +348,7 @@ ImageSubresourceLayoutMap *GetImageSubresourceLayoutMap(CMD_BUFFER_STATE *cb_sta
 
 // Return ptr to info in map container containing mem, or NULL if not found
 //  Calls to this function should be wrapped in mutex
-DEVICE_MEMORY_STATE *CoreChecks::GetMemObjInfo(const VkDeviceMemory mem) {
+DEVICE_MEMORY_STATE *CoreChecks::GetDevMemState(const VkDeviceMemory mem) {
     auto mem_it = memObjMap.find(mem);
     if (mem_it == memObjMap.end()) {
         return NULL;
@@ -395,7 +395,7 @@ void CoreChecks::AddCommandBufferBindingImage(CMD_BUFFER_STATE *cb_node, IMAGE_S
             image_state->cb_bindings.insert(cb_node);
             // Now update CB binding in MemObj mini CB list
             for (auto mem_binding : image_state->GetBoundMemory()) {
-                DEVICE_MEMORY_STATE *pMemInfo = GetMemObjInfo(mem_binding);
+                DEVICE_MEMORY_STATE *pMemInfo = GetDevMemState(mem_binding);
                 if (pMemInfo) {
                     // Now update CBInfo's Mem reference list
                     auto mem_inserted = cb_node->memObjs.insert(mem_binding);
@@ -433,7 +433,7 @@ void CoreChecks::AddCommandBufferBindingBuffer(CMD_BUFFER_STATE *cb_node, BUFFER
         buffer_state->cb_bindings.insert(cb_node);
         // Now update CB binding in MemObj mini CB list
         for (auto mem_binding : buffer_state->GetBoundMemory()) {
-            DEVICE_MEMORY_STATE *pMemInfo = GetMemObjInfo(mem_binding);
+            DEVICE_MEMORY_STATE *pMemInfo = GetDevMemState(mem_binding);
             if (pMemInfo) {
                 // Now update CBInfo's Mem reference list
                 auto inserted = cb_node->memObjs.insert(mem_binding);
@@ -466,7 +466,7 @@ void CoreChecks::ClearCmdBufAndMemReferences(CMD_BUFFER_STATE *cb_node) {
     if (cb_node) {
         if (cb_node->memObjs.size() > 0) {
             for (auto mem : cb_node->memObjs) {
-                DEVICE_MEMORY_STATE *pInfo = GetMemObjInfo(mem);
+                DEVICE_MEMORY_STATE *pInfo = GetDevMemState(mem);
                 if (pInfo) {
                     pInfo->cb_bindings.erase(cb_node);
                 }
@@ -478,7 +478,7 @@ void CoreChecks::ClearCmdBufAndMemReferences(CMD_BUFFER_STATE *cb_node) {
 
 // Clear a single object binding from given memory object
 void CoreChecks::ClearMemoryObjectBinding(uint64_t handle, VulkanObjectType type, VkDeviceMemory mem) {
-    DEVICE_MEMORY_STATE *mem_info = GetMemObjInfo(mem);
+    DEVICE_MEMORY_STATE *mem_info = GetDevMemState(mem);
     // This obj is bound to a memory object. Remove the reference to this object in that memory object's list
     if (mem_info) {
         mem_info->obj_bindings.erase({handle, type});
@@ -550,7 +550,7 @@ void CoreChecks::SetMemBinding(VkDeviceMemory mem, BINDABLE *mem_binding, VkDevi
     mem_binding->binding.size = mem_binding->requirements.size;
 
     if (mem != VK_NULL_HANDLE) {
-        DEVICE_MEMORY_STATE *mem_info = GetMemObjInfo(mem);
+        DEVICE_MEMORY_STATE *mem_info = GetDevMemState(mem);
         if (mem_info) {
             mem_info->obj_bindings.insert({handle, type});
             // For image objects, make sure default memory state is correctly set
@@ -597,9 +597,9 @@ bool CoreChecks::ValidateSetMemBinding(VkDeviceMemory mem, uint64_t handle, Vulk
                         "(VK_%s_CREATE_SPARSE_*_BIT).",
                         apiName, report_data->FormatHandle(mem).c_str(), report_data->FormatHandle(handle).c_str(), handle_type);
         }
-        DEVICE_MEMORY_STATE *mem_info = GetMemObjInfo(mem);
+        DEVICE_MEMORY_STATE *mem_info = GetDevMemState(mem);
         if (mem_info) {
-            DEVICE_MEMORY_STATE *prev_binding = GetMemObjInfo(mem_binding->binding.mem);
+            DEVICE_MEMORY_STATE *prev_binding = GetDevMemState(mem_binding->binding.mem);
             if (prev_binding) {
                 const char *error_code = "VUID-vkBindImageMemory-image-01044";
                 if (type == kVulkanObjectTypeBuffer) {
@@ -642,7 +642,7 @@ bool CoreChecks::SetSparseMemBinding(MEM_BINDING binding, uint64_t handle, Vulka
         assert(mem_binding);
         if (mem_binding) {  // Invalid handles are reported by object tracker, but Get returns NULL for them, so avoid SEGV here
             assert(mem_binding->sparse);
-            DEVICE_MEMORY_STATE *mem_info = GetMemObjInfo(binding.mem);
+            DEVICE_MEMORY_STATE *mem_info = GetDevMemState(binding.mem);
             if (mem_info) {
                 mem_info->obj_bindings.insert({handle, type});
                 // Need to set mem binding for this object
@@ -2195,7 +2195,7 @@ BASE_NODE *CoreChecks::GetStateStructPtrFromObject(VK_OBJECT object_struct) {
             break;
         }
         case kVulkanObjectTypeDeviceMemory: {
-            base_ptr = GetMemObjInfo(reinterpret_cast<VkDeviceMemory &>(object_struct.handle));
+            base_ptr = GetDevMemState(reinterpret_cast<VkDeviceMemory &>(object_struct.handle));
             break;
         }
         default:
@@ -3463,7 +3463,7 @@ bool CoreChecks::PreCallValidateGetMemoryAndroidHardwareBufferANDROID(VkDevice d
                                                                       const VkMemoryGetAndroidHardwareBufferInfoANDROID *pInfo,
                                                                       struct AHardwareBuffer **pBuffer) {
     bool skip = false;
-    DEVICE_MEMORY_STATE *mem_info = GetMemObjInfo(pInfo->memory);
+    DEVICE_MEMORY_STATE *mem_info = GetDevMemState(pInfo->memory);
 
     // VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID must have been included in
     // VkExportMemoryAllocateInfoKHR::handleTypes when memory was created.
@@ -3884,7 +3884,7 @@ bool CoreChecks::ValidateObjectNotInUse(BASE_NODE *obj_node, VK_OBJECT obj_struc
 }
 
 bool CoreChecks::PreCallValidateFreeMemory(VkDevice device, VkDeviceMemory mem, const VkAllocationCallbacks *pAllocator) {
-    DEVICE_MEMORY_STATE *mem_info = GetMemObjInfo(mem);
+    DEVICE_MEMORY_STATE *mem_info = GetDevMemState(mem);
     VK_OBJECT obj_struct = {HandleToUint64(mem), kVulkanObjectTypeDeviceMemory};
     bool skip = false;
     if (mem_info) {
@@ -3895,7 +3895,7 @@ bool CoreChecks::PreCallValidateFreeMemory(VkDevice device, VkDeviceMemory mem, 
 
 void CoreChecks::PreCallRecordFreeMemory(VkDevice device, VkDeviceMemory mem, const VkAllocationCallbacks *pAllocator) {
     if (!mem) return;
-    DEVICE_MEMORY_STATE *mem_info = GetMemObjInfo(mem);
+    DEVICE_MEMORY_STATE *mem_info = GetDevMemState(mem);
     VK_OBJECT obj_struct = {HandleToUint64(mem), kVulkanObjectTypeDeviceMemory};
 
     // Clear mem binding for any bound objects
@@ -3968,7 +3968,7 @@ bool CoreChecks::ValidateMapMemRange(VkDeviceMemory mem, VkDeviceSize offset, Vk
 }
 
 void CoreChecks::StoreMemRanges(VkDeviceMemory mem, VkDeviceSize offset, VkDeviceSize size) {
-    auto mem_info = GetMemObjInfo(mem);
+    auto mem_info = GetDevMemState(mem);
     if (mem_info) {
         mem_info->mem_range.offset = offset;
         mem_info->mem_range.size = size;
@@ -3979,7 +3979,7 @@ void CoreChecks::StoreMemRanges(VkDeviceMemory mem, VkDeviceSize offset, VkDevic
 static char NoncoherentMemoryFillValue = 0xb;
 
 void CoreChecks::InitializeAndTrackMemory(VkDeviceMemory mem, VkDeviceSize offset, VkDeviceSize size, void **ppData) {
-    auto mem_info = GetMemObjInfo(mem);
+    auto mem_info = GetDevMemState(mem);
     if (mem_info) {
         mem_info->p_driver_data = *ppData;
         uint32_t index = mem_info->alloc_info.memoryTypeIndex;
@@ -4479,7 +4479,7 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory mem, V
         }
 
         // Validate bound memory range information
-        const auto mem_info = GetMemObjInfo(mem);
+        const auto mem_info = GetDevMemState(mem);
         if (mem_info) {
             skip |= ValidateInsertBufferMemoryRange(buffer, mem_info, memoryOffset, buffer_state->requirements, api_name);
             skip |= ValidateMemoryTypes(mem_info, buffer_state->requirements.memoryTypeBits, api_name,
@@ -4536,7 +4536,7 @@ void CoreChecks::UpdateBindBufferMemoryState(VkBuffer buffer, VkDeviceMemory mem
     BUFFER_STATE *buffer_state = GetBufferState(buffer);
     if (buffer_state) {
         // Track bound memory range information
-        auto mem_info = GetMemObjInfo(mem);
+        auto mem_info = GetDevMemState(mem);
         if (mem_info) {
             InsertBufferMemoryRange(buffer, mem_info, memoryOffset, buffer_state->requirements);
         }
@@ -10439,7 +10439,7 @@ void CoreChecks::PreCallRecordCmdExecuteCommands(VkCommandBuffer commandBuffer, 
 bool CoreChecks::PreCallValidateMapMemory(VkDevice device, VkDeviceMemory mem, VkDeviceSize offset, VkDeviceSize size,
                                           VkFlags flags, void **ppData) {
     bool skip = false;
-    DEVICE_MEMORY_STATE *mem_info = GetMemObjInfo(mem);
+    DEVICE_MEMORY_STATE *mem_info = GetDevMemState(mem);
     if (mem_info) {
         auto end_offset = (VK_WHOLE_SIZE == size) ? mem_info->alloc_info.allocationSize - 1 : offset + size - 1;
         skip |= ValidateMapImageLayouts(device, mem_info, offset, end_offset);
@@ -10465,7 +10465,7 @@ void CoreChecks::PostCallRecordMapMemory(VkDevice device, VkDeviceMemory mem, Vk
 
 bool CoreChecks::PreCallValidateUnmapMemory(VkDevice device, VkDeviceMemory mem) {
     bool skip = false;
-    auto mem_info = GetMemObjInfo(mem);
+    auto mem_info = GetDevMemState(mem);
     if (mem_info && !mem_info->mem_range.size) {
         // Valid Usage: memory must currently be mapped
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_MEMORY_EXT,
@@ -10476,7 +10476,7 @@ bool CoreChecks::PreCallValidateUnmapMemory(VkDevice device, VkDeviceMemory mem)
 }
 
 void CoreChecks::PreCallRecordUnmapMemory(VkDevice device, VkDeviceMemory mem) {
-    auto mem_info = GetMemObjInfo(mem);
+    auto mem_info = GetDevMemState(mem);
     mem_info->mem_range.size = 0;
     if (mem_info->shadow_copy) {
         free(mem_info->shadow_copy_base);
@@ -10488,7 +10488,7 @@ void CoreChecks::PreCallRecordUnmapMemory(VkDevice device, VkDeviceMemory mem) {
 bool CoreChecks::ValidateMemoryIsMapped(const char *funcName, uint32_t memRangeCount, const VkMappedMemoryRange *pMemRanges) {
     bool skip = false;
     for (uint32_t i = 0; i < memRangeCount; ++i) {
-        auto mem_info = GetMemObjInfo(pMemRanges[i].memory);
+        auto mem_info = GetDevMemState(pMemRanges[i].memory);
         if (mem_info) {
             if (pMemRanges[i].size == VK_WHOLE_SIZE) {
                 if (mem_info->mem_range.offset > pMemRanges[i].offset) {
@@ -10521,7 +10521,7 @@ bool CoreChecks::ValidateMemoryIsMapped(const char *funcName, uint32_t memRangeC
 bool CoreChecks::ValidateAndCopyNoncoherentMemoryToDriver(uint32_t mem_range_count, const VkMappedMemoryRange *mem_ranges) {
     bool skip = false;
     for (uint32_t i = 0; i < mem_range_count; ++i) {
-        auto mem_info = GetMemObjInfo(mem_ranges[i].memory);
+        auto mem_info = GetDevMemState(mem_ranges[i].memory);
         if (mem_info) {
             if (mem_info->shadow_copy) {
                 VkDeviceSize size = (mem_info->mem_range.size != VK_WHOLE_SIZE)
@@ -10553,7 +10553,7 @@ bool CoreChecks::ValidateAndCopyNoncoherentMemoryToDriver(uint32_t mem_range_cou
 
 void CoreChecks::CopyNoncoherentMemoryFromDriver(uint32_t mem_range_count, const VkMappedMemoryRange *mem_ranges) {
     for (uint32_t i = 0; i < mem_range_count; ++i) {
-        auto mem_info = GetMemObjInfo(mem_ranges[i].memory);
+        auto mem_info = GetDevMemState(mem_ranges[i].memory);
         if (mem_info && mem_info->shadow_copy) {
             VkDeviceSize size = (mem_info->mem_range.size != VK_WHOLE_SIZE)
                                     ? mem_info->mem_range.size
@@ -10576,7 +10576,7 @@ bool CoreChecks::ValidateMappedMemoryRangeDeviceLimits(const char *func_name, ui
                             ", which is not a multiple of VkPhysicalDeviceLimits::nonCoherentAtomSize (0x%" PRIxLEAST64 ").",
                             func_name, i, mem_ranges[i].offset, atom_size);
         }
-        auto mem_info = GetMemObjInfo(mem_ranges[i].memory);
+        auto mem_info = GetDevMemState(mem_ranges[i].memory);
         if ((mem_ranges[i].size != VK_WHOLE_SIZE) &&
             (mem_ranges[i].size + mem_ranges[i].offset != mem_info->alloc_info.allocationSize) &&
             (SafeModulo(mem_ranges[i].size, atom_size) != 0)) {
@@ -10617,7 +10617,7 @@ void CoreChecks::PostCallRecordInvalidateMappedMemoryRanges(VkDevice device, uin
 
 bool CoreChecks::PreCallValidateGetDeviceMemoryCommitment(VkDevice device, VkDeviceMemory mem, VkDeviceSize *pCommittedMem) {
     bool skip = false;
-    auto mem_info = GetMemObjInfo(mem);
+    auto mem_info = GetDevMemState(mem);
 
     if (mem_info) {
         if ((phys_dev_mem_props.memoryTypes[mem_info->alloc_info.memoryTypeIndex].propertyFlags &
@@ -10663,7 +10663,7 @@ bool CoreChecks::ValidateBindImageMemory(VkImage image, VkDeviceMemory mem, VkDe
         }
 
         // Validate bound memory range information
-        auto mem_info = GetMemObjInfo(mem);
+        auto mem_info = GetDevMemState(mem);
         if (mem_info) {
             skip |= ValidateInsertImageMemoryRange(image, mem_info, memoryOffset, image_state->requirements,
                                                    image_state->createInfo.tiling == VK_IMAGE_TILING_LINEAR, api_name);
@@ -10720,7 +10720,7 @@ void CoreChecks::UpdateBindImageMemoryState(VkImage image, VkDeviceMemory mem, V
     IMAGE_STATE *image_state = GetImageState(image);
     if (image_state) {
         // Track bound memory range information
-        auto mem_info = GetMemObjInfo(mem);
+        auto mem_info = GetDevMemState(mem);
         if (mem_info) {
             InsertImageMemoryRange(image, mem_info, memoryOffset, image_state->requirements,
                                    image_state->createInfo.tiling == VK_IMAGE_TILING_LINEAR);

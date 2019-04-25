@@ -1471,7 +1471,7 @@ void CoreChecks::PreCallRecordDestroyImage(VkDevice device, VkImage image, const
     InvalidateCommandBuffers(image_state->cb_bindings, obj_struct);
     // Clean up memory mapping, bindings and range references for image
     for (auto mem_binding : image_state->GetBoundMemory()) {
-        auto mem_info = GetMemObjInfo(mem_binding);
+        auto mem_info = GetDevMemState(mem_binding);
         if (mem_info) {
             RemoveImageMemoryRange(obj_struct.handle, mem_info);
         }
@@ -4404,7 +4404,7 @@ void CoreChecks::PreCallRecordDestroyBuffer(VkDevice device, VkBuffer buffer, co
 
     InvalidateCommandBuffers(buffer_state->cb_bindings, obj_struct);
     for (auto mem_binding : buffer_state->GetBoundMemory()) {
-        auto mem_info = GetMemObjInfo(mem_binding);
+        auto mem_info = GetDevMemState(mem_binding);
         if (mem_info) {
             RemoveBufferMemoryRange(HandleToUint64(buffer), mem_info);
         }

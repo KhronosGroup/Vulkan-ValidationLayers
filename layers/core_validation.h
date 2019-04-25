@@ -241,7 +241,7 @@ class CoreChecks : public ValidationObject {
     DESCRIPTOR_POOL_STATE* GetDescriptorPoolState(const VkDescriptorPool);
     BUFFER_STATE* GetBufferState(VkBuffer);
     IMAGE_STATE* GetImageState(VkImage);
-    DEVICE_MEMORY_STATE* GetMemObjInfo(VkDeviceMemory);
+    DEVICE_MEMORY_STATE* GetDevMemState(VkDeviceMemory);
     BUFFER_VIEW_STATE* GetBufferViewState(VkBufferView);
     SAMPLER_STATE* GetSamplerState(VkSampler);
     IMAGE_VIEW_STATE* GetAttachmentImageViewState(FRAMEBUFFER_STATE* framebuffer, uint32_t index);
