@@ -161,7 +161,7 @@ void CoreChecks::SetLayout(OBJECT *pObject, ImageSubresourcePair imgpair, const 
 }
 
 // Set the layout in supplied map
-void CoreChecks::SetLayout(std::unordered_map<ImageSubresourcePair, IMAGE_LAYOUT_NODE> &imageLayoutMap,
+void CoreChecks::SetLayout(std::unordered_map<ImageSubresourcePair, IMAGE_LAYOUT_STATE> &imageLayoutMap,
                            ImageSubresourcePair imgpair, VkImageLayout layout) {
     auto it = imageLayoutMap.find(imgpair);
     if (it != imageLayoutMap.end()) {
@@ -233,7 +233,7 @@ bool CoreChecks::FindLayouts(VkImage image, std::vector<VkImageLayout> &layouts)
     return true;
 }
 
-bool CoreChecks::FindLayout(const std::unordered_map<ImageSubresourcePair, IMAGE_LAYOUT_NODE> &imageLayoutMap,
+bool CoreChecks::FindLayout(const std::unordered_map<ImageSubresourcePair, IMAGE_LAYOUT_STATE> &imageLayoutMap,
                             ImageSubresourcePair imgpair, VkImageLayout &layout, const VkImageAspectFlags aspectMask) {
     if (!(imgpair.subresource.aspectMask & aspectMask)) {
         return false;
@@ -248,7 +248,7 @@ bool CoreChecks::FindLayout(const std::unordered_map<ImageSubresourcePair, IMAGE
 }
 
 // find layout in supplied map
-bool CoreChecks::FindLayout(const std::unordered_map<ImageSubresourcePair, IMAGE_LAYOUT_NODE> &imageLayoutMap,
+bool CoreChecks::FindLayout(const std::unordered_map<ImageSubresourcePair, IMAGE_LAYOUT_STATE> &imageLayoutMap,
                             ImageSubresourcePair imgpair, VkImageLayout &layout) {
     layout = VK_IMAGE_LAYOUT_MAX_ENUM;
     FindLayout(imageLayoutMap, imgpair, layout, VK_IMAGE_ASPECT_COLOR_BIT);
@@ -1440,7 +1440,7 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
 void CoreChecks::PostCallRecordCreateImage(VkDevice device, const VkImageCreateInfo *pCreateInfo,
                                            const VkAllocationCallbacks *pAllocator, VkImage *pImage, VkResult result) {
     if (VK_SUCCESS != result) return;
-    IMAGE_LAYOUT_NODE image_state;
+    IMAGE_LAYOUT_STATE image_state;
     image_state.layout = pCreateInfo->initialLayout;
     image_state.format = pCreateInfo->format;
     IMAGE_STATE *is_node = new IMAGE_STATE(*pImage, pCreateInfo);
@@ -3258,9 +3258,9 @@ void CoreChecks::PreCallRecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImag
 }
 
 // This validates that the initial layout specified in the command buffer for the IMAGE is the same as the global IMAGE layout
-bool CoreChecks::ValidateCmdBufImageLayouts(CMD_BUFFER_STATE *pCB,
-                                            std::unordered_map<ImageSubresourcePair, IMAGE_LAYOUT_NODE> const &globalImageLayoutMap,
-                                            std::unordered_map<ImageSubresourcePair, IMAGE_LAYOUT_NODE> &overlayLayoutMap) {
+bool CoreChecks::ValidateCmdBufImageLayouts(
+    CMD_BUFFER_STATE *pCB, std::unordered_map<ImageSubresourcePair, IMAGE_LAYOUT_STATE> const &globalImageLayoutMap,
+    std::unordered_map<ImageSubresourcePair, IMAGE_LAYOUT_STATE> &overlayLayoutMap) {
     bool skip = false;
     // Iterate over the layout maps for each referenced image
     for (const auto &layout_map_entry : pCB->image_layout_map) {
