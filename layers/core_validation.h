@@ -179,8 +179,8 @@ class CoreChecks : public ValidationObject {
     unordered_map<VkShaderModule, std::unique_ptr<SHADER_MODULE_STATE>> shaderModuleMap;
     unordered_map<VkDescriptorUpdateTemplateKHR, std::unique_ptr<TEMPLATE_STATE>> desc_template_map;
     unordered_map<VkSwapchainKHR, std::unique_ptr<SWAPCHAIN_NODE>> swapchainMap;
+    unordered_map<VkDescriptorPool, std::unique_ptr<DESCRIPTOR_POOL_STATE>> descriptorPoolMap;
 
-    unordered_map<VkDescriptorPool, DESCRIPTOR_POOL_STATE*> descriptorPoolMap;
     unordered_map<VkDescriptorSet, cvdescriptorset::DescriptorSet*> setMap;
     unordered_map<VkCommandBuffer, CMD_BUFFER_STATE*> commandBufferMap;
 
@@ -579,9 +579,7 @@ class CoreChecks : public ValidationObject {
     void UpdateAllocateDescriptorSetsData(const VkDescriptorSetAllocateInfo*, cvdescriptorset::AllocateDescriptorSetsData*);
     bool ValidateAllocateDescriptorSets(const VkDescriptorSetAllocateInfo*, const cvdescriptorset::AllocateDescriptorSetsData*);
     void PerformAllocateDescriptorSets(const VkDescriptorSetAllocateInfo*, const VkDescriptorSet*,
-                                       const cvdescriptorset::AllocateDescriptorSetsData*,
-                                       std::unordered_map<VkDescriptorPool, DESCRIPTOR_POOL_STATE*>*,
-                                       std::unordered_map<VkDescriptorSet, cvdescriptorset::DescriptorSet*>*);
+                                       const cvdescriptorset::AllocateDescriptorSetsData*);
     bool ValidateUpdateDescriptorSets(uint32_t write_count, const VkWriteDescriptorSet* p_wds, uint32_t copy_count,
                                       const VkCopyDescriptorSet* p_cds, const char* func_name);
 

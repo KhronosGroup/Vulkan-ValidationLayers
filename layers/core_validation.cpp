@@ -1866,7 +1866,7 @@ DESCRIPTOR_POOL_STATE *CoreChecks::GetDescriptorPoolState(const VkDescriptorPool
     if (pool_it == descriptorPoolMap.end()) {
         return NULL;
     }
-    return pool_it->second;
+    return pool_it->second.get();
 }
 
 // Validate that given set is valid and that it's not being used by an in-flight CmdBuffer
@@ -1908,7 +1908,6 @@ void CoreChecks::DeletePools() {
             FreeDescriptorSet(ds);
         }
         ii->second->sets.clear();
-        delete ii->second;
         ii = descriptorPoolMap.erase(ii);
     }
 }
@@ -4689,7 +4688,6 @@ void CoreChecks::PreCallRecordDestroyDescriptorPool(VkDevice device, VkDescripto
             FreeDescriptorSet(ds);
         }
         descriptorPoolMap.erase(descriptorPool);
-        delete desc_pool_state;
     }
 }
 
@@ -5917,9 +5915,8 @@ void CoreChecks::PostCallRecordCreateDescriptorPool(VkDevice device, const VkDes
                                                     const VkAllocationCallbacks *pAllocator, VkDescriptorPool *pDescriptorPool,
                                                     VkResult result) {
     if (VK_SUCCESS != result) return;
-    DESCRIPTOR_POOL_STATE *pNewNode = new DESCRIPTOR_POOL_STATE(*pDescriptorPool, pCreateInfo);
-    assert(pNewNode);
-    descriptorPoolMap[*pDescriptorPool] = pNewNode;
+    descriptorPoolMap[*pDescriptorPool] =
+        std::unique_ptr<DESCRIPTOR_POOL_STATE>(new DESCRIPTOR_POOL_STATE(*pDescriptorPool, pCreateInfo));
 }
 
 bool CoreChecks::PreCallValidateResetDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool,
@@ -5978,7 +5975,7 @@ void CoreChecks::PostCallRecordAllocateDescriptorSets(VkDevice device, const VkD
     // All the updates are contained in a single cvdescriptorset function
     cvdescriptorset::AllocateDescriptorSetsData *ads_state =
         reinterpret_cast<cvdescriptorset::AllocateDescriptorSetsData *>(ads_state_data);
-    PerformAllocateDescriptorSets(pAllocateInfo, pDescriptorSets, ads_state, &descriptorPoolMap, &setMap);
+    PerformAllocateDescriptorSets(pAllocateInfo, pDescriptorSets, ads_state);
 }
 
 bool CoreChecks::PreCallValidateFreeDescriptorSets(VkDevice device, VkDescriptorPool descriptorPool, uint32_t count,
