@@ -69,7 +69,7 @@ struct spirv_inst_iter {
     spirv_inst_iter const &operator*() const { return *this; }
 };
 
-struct shader_module {
+struct SHADER_MODULE_STATE {
     // The spirv image itself
     std::vector<uint32_t> words;
     // A mapping of <id> to the first word of its def. this is useful because walking type
@@ -124,8 +124,8 @@ struct shader_module {
         return src;
     }
 
-    shader_module(VkShaderModuleCreateInfo const *pCreateInfo, VkShaderModule shaderModule, spv_target_env env,
-                  uint32_t unique_shader_id)
+    SHADER_MODULE_STATE(VkShaderModuleCreateInfo const *pCreateInfo, VkShaderModule shaderModule, spv_target_env env,
+                        uint32_t unique_shader_id)
         : words(PreprocessShaderBinary((uint32_t *)pCreateInfo->pCode, pCreateInfo->codeSize, env)),
           def_index(),
           has_valid_spirv(true),
@@ -134,7 +134,7 @@ struct shader_module {
         BuildDefIndex();
     }
 
-    shader_module() : has_valid_spirv(false), vk_shader_module(VK_NULL_HANDLE) {}
+    SHADER_MODULE_STATE() : has_valid_spirv(false), vk_shader_module(VK_NULL_HANDLE) {}
 
     // Expose begin() / end() to enable range-based for
     spirv_inst_iter begin() const { return spirv_inst_iter(words.begin(), words.begin() + 5); }  // First insn
