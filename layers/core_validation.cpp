@@ -183,7 +183,7 @@ BUFFER_VIEW_STATE *CoreChecks::GetBufferViewState(VkBufferView buffer_view) {
     return bv_it->second.get();
 }
 
-FENCE_STATE *CoreChecks::GetFenceNode(VkFence fence) {
+FENCE_STATE *CoreChecks::GetFenceState(VkFence fence) {
     auto it = fenceMap.find(fence);
     if (it == fenceMap.end()) {
         return nullptr;
@@ -2836,7 +2836,7 @@ bool CoreChecks::VerifyQueueStateToSeq(QUEUE_STATE *initial_queue, uint64_t init
 
 // When the given fence is retired, verify outstanding queue operations through the point of the fence
 bool CoreChecks::VerifyQueueStateToFence(VkFence fence) {
-    auto fence_state = GetFenceNode(fence);
+    auto fence_state = GetFenceState(fence);
     if (fence_state && fence_state->scope == kSyncScopeInternal && VK_NULL_HANDLE != fence_state->signaler.first) {
         return VerifyQueueStateToSeq(GetQueueState(fence_state->signaler.first), fence_state->signaler.second);
     }
@@ -2915,7 +2915,7 @@ void CoreChecks::RetireWorkOnQueue(QUEUE_STATE *pQueue, uint64_t seq) {
             cb_node->in_use.fetch_sub(1);
         }
 
-        auto pFence = GetFenceNode(submission.fence);
+        auto pFence = GetFenceState(submission.fence);
         if (pFence && pFence->scope == kSyncScopeInternal) {
             pFence->state = FENCE_RETIRED;
         }
@@ -3138,7 +3138,7 @@ void CoreChecks::PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, 
                                            VkResult result) {
     uint64_t early_retire_seq = 0;
     auto pQueue = GetQueueState(queue);
-    auto pFence = GetFenceNode(fence);
+    auto pFence = GetFenceState(fence);
 
     if (pFence) {
         if (pFence->scope == kSyncScopeInternal) {
@@ -3245,7 +3245,7 @@ void CoreChecks::PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, 
 }
 
 bool CoreChecks::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits, VkFence fence) {
-    auto pFence = GetFenceNode(fence);
+    auto pFence = GetFenceState(fence);
     bool skip = ValidateFenceForSubmit(pFence);
     if (skip) {
         return true;
@@ -4019,7 +4019,7 @@ void CoreChecks::InitializeAndTrackMemory(VkDeviceMemory mem, VkDeviceSize offse
 bool CoreChecks::VerifyWaitFenceState(VkFence fence, const char *apiCall) {
     bool skip = false;
 
-    auto pFence = GetFenceNode(fence);
+    auto pFence = GetFenceState(fence);
     if (pFence && pFence->scope == kSyncScopeInternal) {
         if (pFence->state == FENCE_UNSIGNALED) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_FENCE_EXT,
@@ -4032,7 +4032,7 @@ bool CoreChecks::VerifyWaitFenceState(VkFence fence, const char *apiCall) {
 }
 
 void CoreChecks::RetireFence(VkFence fence) {
-    auto pFence = GetFenceNode(fence);
+    auto pFence = GetFenceState(fence);
     if (pFence && pFence->scope == kSyncScopeInternal) {
         if (pFence->signaler.first != VK_NULL_HANDLE) {
             // Fence signaller is a queue -- use this as proof that prior operations on that queue have completed.
@@ -4148,7 +4148,7 @@ void CoreChecks::PostCallRecordDeviceWaitIdle(VkDevice device, VkResult result) 
 }
 
 bool CoreChecks::PreCallValidateDestroyFence(VkDevice device, VkFence fence, const VkAllocationCallbacks *pAllocator) {
-    FENCE_STATE *fence_node = GetFenceNode(fence);
+    FENCE_STATE *fence_node = GetFenceState(fence);
     bool skip = false;
     if (fence_node) {
         if (fence_node->scope == kSyncScopeInternal && fence_node->state == FENCE_INFLIGHT) {
@@ -4953,7 +4953,7 @@ void CoreChecks::PostCallRecordResetCommandPool(VkDevice device, VkCommandPool c
 bool CoreChecks::PreCallValidateResetFences(VkDevice device, uint32_t fenceCount, const VkFence *pFences) {
     bool skip = false;
     for (uint32_t i = 0; i < fenceCount; ++i) {
-        auto pFence = GetFenceNode(pFences[i]);
+        auto pFence = GetFenceState(pFences[i]);
         if (pFence && pFence->scope == kSyncScopeInternal && pFence->state == FENCE_INFLIGHT) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_FENCE_EXT,
                             HandleToUint64(pFences[i]), "VUID-vkResetFences-pFences-01123", "Fence %s is in use.",
@@ -4965,7 +4965,7 @@ bool CoreChecks::PreCallValidateResetFences(VkDevice device, uint32_t fenceCount
 
 void CoreChecks::PostCallRecordResetFences(VkDevice device, uint32_t fenceCount, const VkFence *pFences, VkResult result) {
     for (uint32_t i = 0; i < fenceCount; ++i) {
-        auto pFence = GetFenceNode(pFences[i]);
+        auto pFence = GetFenceState(pFences[i]);
         if (pFence) {
             if (pFence->scope == kSyncScopeInternal) {
                 pFence->state = FENCE_UNSIGNALED;
@@ -10809,7 +10809,7 @@ void CoreChecks::PreCallRecordSetEvent(VkDevice device, VkEvent event) {
 
 bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo *pBindInfo,
                                                 VkFence fence) {
-    auto pFence = GetFenceNode(fence);
+    auto pFence = GetFenceState(fence);
     bool skip = ValidateFenceForSubmit(pFence);
     if (skip) {
         return true;
@@ -10935,7 +10935,7 @@ void CoreChecks::PostCallRecordQueueBindSparse(VkQueue queue, uint32_t bindInfoC
                                                VkFence fence, VkResult result) {
     if (result != VK_SUCCESS) return;
     uint64_t early_retire_seq = 0;
-    auto pFence = GetFenceNode(fence);
+    auto pFence = GetFenceState(fence);
     auto pQueue = GetQueueState(queue);
 
     if (pFence) {
@@ -11126,7 +11126,7 @@ void CoreChecks::PostCallRecordGetSemaphoreFdKHR(VkDevice device, const VkSemaph
 }
 
 bool CoreChecks::ValidateImportFence(VkFence fence, const char *caller_name) {
-    FENCE_STATE *fence_node = GetFenceNode(fence);
+    FENCE_STATE *fence_node = GetFenceState(fence);
     bool skip = false;
     if (fence_node && fence_node->scope == kSyncScopeInternal && fence_node->state == FENCE_INFLIGHT) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_FENCE_EXT, HandleToUint64(fence),
@@ -11138,7 +11138,7 @@ bool CoreChecks::ValidateImportFence(VkFence fence, const char *caller_name) {
 
 void CoreChecks::RecordImportFenceState(VkFence fence, VkExternalFenceHandleTypeFlagBitsKHR handle_type,
                                         VkFenceImportFlagsKHR flags) {
-    FENCE_STATE *fence_node = GetFenceNode(fence);
+    FENCE_STATE *fence_node = GetFenceState(fence);
     if (fence_node && fence_node->scope != kSyncScopeExternalPermanent) {
         if ((handle_type == VK_EXTERNAL_FENCE_HANDLE_TYPE_SYNC_FD_BIT_KHR || flags & VK_FENCE_IMPORT_TEMPORARY_BIT_KHR) &&
             fence_node->scope == kSyncScopeInternal) {
@@ -11173,7 +11173,7 @@ void CoreChecks::PostCallRecordImportFenceFdKHR(VkDevice device, const VkImportF
 }
 
 void CoreChecks::RecordGetExternalFenceState(VkFence fence, VkExternalFenceHandleTypeFlagBitsKHR handle_type) {
-    FENCE_STATE *fence_state = GetFenceNode(fence);
+    FENCE_STATE *fence_state = GetFenceState(fence);
     if (fence_state) {
         if (handle_type != VK_EXTERNAL_FENCE_HANDLE_TYPE_SYNC_FD_BIT_KHR) {
             // Export with reference transference becomes external
@@ -11864,7 +11864,7 @@ bool CoreChecks::ValidateAcquireNextImage(VkDevice device, VkSwapchainKHR swapch
                         "%s: Semaphore must not be currently signaled or in a wait state.", func_name);
     }
 
-    auto pFence = GetFenceNode(fence);
+    auto pFence = GetFenceState(fence);
     if (pFence) {
         skip |= ValidateFenceForSubmit(pFence);
     }
@@ -11920,7 +11920,7 @@ bool CoreChecks::PreCallValidateAcquireNextImage2KHR(VkDevice device, const VkAc
 
 void CoreChecks::RecordAcquireNextImageState(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout, VkSemaphore semaphore,
                                              VkFence fence, uint32_t *pImageIndex) {
-    auto pFence = GetFenceNode(fence);
+    auto pFence = GetFenceState(fence);
     if (pFence && pFence->scope == kSyncScopeInternal) {
         // Treat as inflight since it is valid to wait on this fence, even in cases where it is technically a temporary
         // import
