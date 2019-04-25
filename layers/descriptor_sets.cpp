@@ -2548,10 +2548,8 @@ bool CoreChecks::ValidateAllocateDescriptorSets(const VkDescriptorSetAllocateInf
 // Decrement allocated sets from the pool and insert new sets into set_map
 void CoreChecks::PerformAllocateDescriptorSets(const VkDescriptorSetAllocateInfo *p_alloc_info,
                                                const VkDescriptorSet *descriptor_sets,
-                                               const cvdescriptorset::AllocateDescriptorSetsData *ds_data,
-                                               std::unordered_map<VkDescriptorPool, DESCRIPTOR_POOL_STATE *> *pool_map,
-                                               std::unordered_map<VkDescriptorSet, cvdescriptorset::DescriptorSet *> *set_map) {
-    auto pool_state = (*pool_map)[p_alloc_info->descriptorPool];
+                                               const cvdescriptorset::AllocateDescriptorSetsData *ds_data) {
+    auto pool_state = descriptorPoolMap[p_alloc_info->descriptorPool].get();
     // Account for sets and individual descriptors allocated from pool
     pool_state->availableSets -= p_alloc_info->descriptorSetCount;
     for (auto it = ds_data->required_descriptors_by_type.begin(); it != ds_data->required_descriptors_by_type.end(); ++it) {
@@ -2570,7 +2568,7 @@ void CoreChecks::PerformAllocateDescriptorSets(const VkDescriptorSetAllocateInfo
 
         pool_state->sets.insert(new_ds);
         new_ds->in_use.store(0);
-        (*set_map)[descriptor_sets[i]] = new_ds;
+        setMap[descriptor_sets[i]] = new_ds;
     }
 }
 
