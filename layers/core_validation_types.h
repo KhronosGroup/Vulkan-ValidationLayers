@@ -1100,13 +1100,13 @@ using PipelineLayoutCompatDict = hash_util::Dictionary<PipelineLayoutCompatDef, 
 using PipelineLayoutCompatId = PipelineLayoutCompatDict::Id;
 
 // Store layouts and pushconstants for PipelineLayout
-struct PIPELINE_LAYOUT_NODE {
+struct PIPELINE_LAYOUT_STATE {
     VkPipelineLayout layout;
     std::vector<std::shared_ptr<cvdescriptorset::DescriptorSetLayout const>> set_layouts;
     PushConstantRangesId push_constant_ranges;
     std::vector<PipelineLayoutCompatId> compat_for_set;
 
-    PIPELINE_LAYOUT_NODE() : layout(VK_NULL_HANDLE), set_layouts{}, push_constant_ranges{}, compat_for_set{} {}
+    PIPELINE_LAYOUT_STATE() : layout(VK_NULL_HANDLE), set_layouts{}, push_constant_ranges{}, compat_for_set{} {}
 
     void reset() {
         layout = VK_NULL_HANDLE;
@@ -1122,7 +1122,7 @@ static inline bool CompatForSet(uint32_t set, const std::vector<PipelineLayoutCo
     return result;
 }
 
-static inline bool CompatForSet(uint32_t set, const PIPELINE_LAYOUT_NODE *a, const PIPELINE_LAYOUT_NODE *b) {
+static inline bool CompatForSet(uint32_t set, const PIPELINE_LAYOUT_STATE *a, const PIPELINE_LAYOUT_STATE *b) {
     // Intentionally have a result variable to simplify debugging
     bool result = a && b && CompatForSet(set, a->compat_for_set, b->compat_for_set);
     return result;
@@ -1147,7 +1147,7 @@ class PIPELINE_STATE : public BASE_NODE {
     std::unordered_map<uint32_t, uint32_t> vertex_binding_to_index_map_;
     std::vector<VkPipelineColorBlendAttachmentState> attachments;
     bool blendConstantsEnabled;  // Blend constants enabled for any attachments
-    PIPELINE_LAYOUT_NODE pipeline_layout;
+    PIPELINE_LAYOUT_STATE pipeline_layout;
     VkPrimitiveTopology topology_at_rasterizer;
 
     // Default constructor
