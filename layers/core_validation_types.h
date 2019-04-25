@@ -293,16 +293,16 @@ class IMAGE_STATE : public BINDABLE {
    public:
     VkImage image;
     VkImageCreateInfo createInfo;
-    bool valid;                   // If this is a swapchain image backing memory track valid here as it doesn't have DEVICE_MEM_INFO
-    bool acquired;                // If this is a swapchain image, has it been acquired by the app.
-    bool shared_presentable;      // True for a front-buffered swapchain image
-    bool layout_locked;           // A front-buffered image that has been presented can never have layout transitioned
-    bool get_sparse_reqs_called;  // Track if GetImageSparseMemoryRequirements() has been called for this image
-    bool sparse_metadata_required;  // Track if sparse metadata aspect is required for this image
-    bool sparse_metadata_bound;     // Track if sparse metadata aspect is bound to this image
-    bool imported_ahb;              // True if image was imported from an Android Hardware Buffer
-    bool has_ahb_format;            // True if image was created with an external Android format
-    uint64_t ahb_format;            // External Android format, if provided
+    bool valid;               // If this is a swapchain image backing memory track valid here as it doesn't have DEVICE_MEMORY_STATE
+    bool acquired;            // If this is a swapchain image, has it been acquired by the app.
+    bool shared_presentable;  // True for a front-buffered swapchain image
+    bool layout_locked;       // A front-buffered image that has been presented can never have layout transitioned
+    bool get_sparse_reqs_called;         // Track if GetImageSparseMemoryRequirements() has been called for this image
+    bool sparse_metadata_required;       // Track if sparse metadata aspect is required for this image
+    bool sparse_metadata_bound;          // Track if sparse metadata aspect is bound to this image
+    bool imported_ahb;                   // True if image was imported from an Android Hardware Buffer
+    bool has_ahb_format;                 // True if image was created with an external Android format
+    uint64_t ahb_format;                 // External Android format, if provided
     VkImageSubresourceRange full_range;  // The normalized ISR for all levels, layers (slices), and aspects
     std::vector<VkSparseImageMemoryRequirements> sparse_requirements;
     IMAGE_STATE(VkImage img, const VkImageCreateInfo *pCreateInfo);
@@ -344,7 +344,7 @@ struct MEMORY_RANGE {
 };
 
 // Data struct for tracking memory object
-struct DEVICE_MEM_INFO : public BASE_NODE {
+struct DEVICE_MEMORY_STATE : public BASE_NODE {
     void *object;  // Dispatchable object used to create this memory (device of swapchain)
     VkDeviceMemory mem;
     VkMemoryAllocateInfo alloc_info;
@@ -366,7 +366,7 @@ struct DEVICE_MEM_INFO : public BASE_NODE {
                                // multiple of limits.minMemoryMapAlignment
     void *p_driver_data;       // Pointer to application's actual memory
 
-    DEVICE_MEM_INFO(void *disp_object, const VkDeviceMemory in_mem, const VkMemoryAllocateInfo *p_alloc_info)
+    DEVICE_MEMORY_STATE(void *disp_object, const VkDeviceMemory in_mem, const VkMemoryAllocateInfo *p_alloc_info)
         : object(disp_object),
           mem(in_mem),
           alloc_info(*p_alloc_info),
@@ -487,7 +487,7 @@ class ImageSubresourceLayoutMap {
    public:
     typedef std::function<bool(const VkImageSubresource &, VkImageLayout, VkImageLayout)> Callback;
     struct InitialLayoutState {
-        VkImageView image_view;  // For relaxed matching rule evaluation, else VK_NULL_HANDLE
+        VkImageView image_view;          // For relaxed matching rule evaluation, else VK_NULL_HANDLE
         VkImageAspectFlags aspect_mask;  // For relaxed matching rules... else 0
         LoggingLabel label;
         InitialLayoutState(const GLOBAL_CB_NODE &cb_state_, const IMAGE_VIEW_STATE *view_state);
