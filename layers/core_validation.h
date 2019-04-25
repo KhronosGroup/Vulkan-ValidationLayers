@@ -247,7 +247,7 @@ class CoreChecks : public ValidationObject {
     IMAGE_VIEW_STATE* GetAttachmentImageViewState(FRAMEBUFFER_STATE* framebuffer, uint32_t index);
     IMAGE_VIEW_STATE* GetImageViewState(VkImageView);
     SWAPCHAIN_NODE* GetSwapchainState(VkSwapchainKHR);
-    CMD_BUFFER_STATE* GetCBNode(const VkCommandBuffer cb);
+    CMD_BUFFER_STATE* GetCBState(const VkCommandBuffer cb);
     PIPELINE_STATE* GetPipelineState(VkPipeline pipeline);
     RENDER_PASS_STATE* GetRenderPassState(VkRenderPass renderpass);
     std::shared_ptr<RENDER_PASS_STATE> GetRenderPassStateSharedPtr(VkRenderPass renderpass);

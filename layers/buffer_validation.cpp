@@ -1613,7 +1613,7 @@ bool CoreChecks::PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuffer
                                                    const VkImageSubresourceRange *pRanges) {
     bool skip = false;
     // TODO : Verify memory is in VK_IMAGE_STATE_CLEAR state
-    auto cb_node = GetCBNode(commandBuffer);
+    auto cb_node = GetCBState(commandBuffer);
     auto image_state = GetImageState(image);
     if (cb_node && image_state) {
         skip |= ValidateMemoryIsBoundToImage(image_state, "vkCmdClearColorImage()", "VUID-vkCmdClearColorImage-image-00003");
@@ -1639,7 +1639,7 @@ bool CoreChecks::PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuffer
 void CoreChecks::PreCallRecordCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
                                                  const VkClearColorValue *pColor, uint32_t rangeCount,
                                                  const VkImageSubresourceRange *pRanges) {
-    auto cb_node = GetCBNode(commandBuffer);
+    auto cb_node = GetCBState(commandBuffer);
     auto image_state = GetImageState(image);
     if (cb_node && image_state) {
         AddCommandBufferBindingImage(cb_node, image_state);
@@ -1655,7 +1655,7 @@ bool CoreChecks::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer comman
     bool skip = false;
 
     // TODO : Verify memory is in VK_IMAGE_STATE_CLEAR state
-    auto cb_node = GetCBNode(commandBuffer);
+    auto cb_node = GetCBState(commandBuffer);
     auto image_state = GetImageState(image);
     if (cb_node && image_state) {
         skip |= ValidateMemoryIsBoundToImage(image_state, "vkCmdClearDepthStencilImage()",
@@ -1702,7 +1702,7 @@ bool CoreChecks::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer comman
 void CoreChecks::PreCallRecordCmdClearDepthStencilImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
                                                         const VkClearDepthStencilValue *pDepthStencil, uint32_t rangeCount,
                                                         const VkImageSubresourceRange *pRanges) {
-    auto cb_node = GetCBNode(commandBuffer);
+    auto cb_node = GetCBState(commandBuffer);
     auto image_state = GetImageState(image);
     if (cb_node && image_state) {
         AddCommandBufferBindingImage(cb_node, image_state);
@@ -2363,7 +2363,7 @@ bool CoreChecks::CopyImageMultiplaneValidation(VkCommandBuffer command_buffer, c
 bool CoreChecks::PreCallValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                              VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
                                              const VkImageCopy *pRegions) {
-    auto cb_node = GetCBNode(commandBuffer);
+    auto cb_node = GetCBState(commandBuffer);
     auto src_image_state = GetImageState(srcImage);
     auto dst_image_state = GetImageState(dstImage);
     bool skip = false;
@@ -2634,7 +2634,7 @@ bool CoreChecks::PreCallValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkIm
 void CoreChecks::PreCallRecordCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                            VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
                                            const VkImageCopy *pRegions) {
-    auto cb_node = GetCBNode(commandBuffer);
+    auto cb_node = GetCBState(commandBuffer);
     auto src_image_state = GetImageState(srcImage);
     auto dst_image_state = GetImageState(dstImage);
 
@@ -2694,7 +2694,7 @@ bool CoreChecks::ValidateClearAttachmentExtent(VkCommandBuffer command_buffer, u
 bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffer, uint32_t attachmentCount,
                                                     const VkClearAttachment *pAttachments, uint32_t rectCount,
                                                     const VkClearRect *pRects) {
-    CMD_BUFFER_STATE *cb_node = GetCBNode(commandBuffer);
+    CMD_BUFFER_STATE *cb_node = GetCBState(commandBuffer);
 
     bool skip = false;
     if (cb_node) {
@@ -2821,7 +2821,7 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
 bool CoreChecks::PreCallValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                                 VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
                                                 const VkImageResolve *pRegions) {
-    auto cb_node = GetCBNode(commandBuffer);
+    auto cb_node = GetCBState(commandBuffer);
     auto src_image_state = GetImageState(srcImage);
     auto dst_image_state = GetImageState(dstImage);
 
@@ -2915,7 +2915,7 @@ bool CoreChecks::PreCallValidateCmdResolveImage(VkCommandBuffer commandBuffer, V
 void CoreChecks::PreCallRecordCmdResolveImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                               VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
                                               const VkImageResolve *pRegions) {
-    auto cb_node = GetCBNode(commandBuffer);
+    auto cb_node = GetCBState(commandBuffer);
     auto src_image_state = GetImageState(srcImage);
     auto dst_image_state = GetImageState(dstImage);
 
@@ -2927,7 +2927,7 @@ void CoreChecks::PreCallRecordCmdResolveImage(VkCommandBuffer commandBuffer, VkI
 bool CoreChecks::PreCallValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                              VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
                                              const VkImageBlit *pRegions, VkFilter filter) {
-    auto cb_node = GetCBNode(commandBuffer);
+    auto cb_node = GetCBState(commandBuffer);
     auto src_image_state = GetImageState(srcImage);
     auto dst_image_state = GetImageState(dstImage);
 
@@ -3243,7 +3243,7 @@ bool CoreChecks::PreCallValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkIm
 void CoreChecks::PreCallRecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                            VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
                                            const VkImageBlit *pRegions, VkFilter filter) {
-    auto cb_node = GetCBNode(commandBuffer);
+    auto cb_node = GetCBState(commandBuffer);
     auto src_image_state = GetImageState(srcImage);
     auto dst_image_state = GetImageState(dstImage);
 
@@ -4315,7 +4315,7 @@ void CoreChecks::PostCallRecordCreateImageView(VkDevice device, const VkImageVie
 
 bool CoreChecks::PreCallValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer,
                                               uint32_t regionCount, const VkBufferCopy *pRegions) {
-    auto cb_node = GetCBNode(commandBuffer);
+    auto cb_node = GetCBState(commandBuffer);
     auto src_buffer_state = GetBufferState(srcBuffer);
     auto dst_buffer_state = GetBufferState(dstBuffer);
 
@@ -4339,7 +4339,7 @@ bool CoreChecks::PreCallValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, VkB
 
 void CoreChecks::PreCallRecordCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer,
                                             uint32_t regionCount, const VkBufferCopy *pRegions) {
-    auto cb_node = GetCBNode(commandBuffer);
+    auto cb_node = GetCBState(commandBuffer);
     auto src_buffer_state = GetBufferState(srcBuffer);
     auto dst_buffer_state = GetBufferState(dstBuffer);
 
@@ -4438,7 +4438,7 @@ void CoreChecks::PreCallRecordDestroyBufferView(VkDevice device, VkBufferView bu
 
 bool CoreChecks::PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,
                                               VkDeviceSize size, uint32_t data) {
-    auto cb_node = GetCBNode(commandBuffer);
+    auto cb_node = GetCBState(commandBuffer);
     auto buffer_state = GetBufferState(dstBuffer);
     bool skip = false;
     skip |= ValidateMemoryIsBoundToBuffer(buffer_state, "vkCmdFillBuffer()", "VUID-vkCmdFillBuffer-dstBuffer-00031");
@@ -4455,7 +4455,7 @@ bool CoreChecks::PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, VkB
 
 void CoreChecks::PreCallRecordCmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,
                                             VkDeviceSize size, uint32_t data) {
-    auto cb_node = GetCBNode(commandBuffer);
+    auto cb_node = GetCBState(commandBuffer);
     auto buffer_state = GetBufferState(dstBuffer);
     // Update bindings between buffer and cmd buffer
     AddCommandBufferBindingBuffer(cb_node, buffer_state);
@@ -4727,7 +4727,7 @@ static inline bool ValidateBufferBounds(const debug_report_data *report_data, IM
 
 bool CoreChecks::PreCallValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                                      VkBuffer dstBuffer, uint32_t regionCount, const VkBufferImageCopy *pRegions) {
-    auto cb_node = GetCBNode(commandBuffer);
+    auto cb_node = GetCBState(commandBuffer);
     auto src_image_state = GetImageState(srcImage);
     auto dst_buffer_state = GetBufferState(dstBuffer);
 
@@ -4795,7 +4795,7 @@ bool CoreChecks::PreCallValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuff
 
 void CoreChecks::PreCallRecordCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                                    VkBuffer dstBuffer, uint32_t regionCount, const VkBufferImageCopy *pRegions) {
-    auto cb_node = GetCBNode(commandBuffer);
+    auto cb_node = GetCBState(commandBuffer);
     auto src_image_state = GetImageState(srcImage);
     auto dst_buffer_state = GetBufferState(dstBuffer);
 
@@ -4811,7 +4811,7 @@ void CoreChecks::PreCallRecordCmdCopyImageToBuffer(VkCommandBuffer commandBuffer
 bool CoreChecks::PreCallValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
                                                      VkImageLayout dstImageLayout, uint32_t regionCount,
                                                      const VkBufferImageCopy *pRegions) {
-    auto cb_node = GetCBNode(commandBuffer);
+    auto cb_node = GetCBState(commandBuffer);
     auto src_buffer_state = GetBufferState(srcBuffer);
     auto dst_image_state = GetImageState(dstImage);
 
@@ -4875,7 +4875,7 @@ bool CoreChecks::PreCallValidateCmdCopyBufferToImage(VkCommandBuffer commandBuff
 void CoreChecks::PreCallRecordCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
                                                    VkImageLayout dstImageLayout, uint32_t regionCount,
                                                    const VkBufferImageCopy *pRegions) {
-    auto cb_node = GetCBNode(commandBuffer);
+    auto cb_node = GetCBState(commandBuffer);
     auto src_buffer_state = GetBufferState(srcBuffer);
     auto dst_image_state = GetImageState(dstImage);
 
