@@ -61,7 +61,7 @@ class FENCE_STATE {
     FENCE_STATE() : state(FENCE_UNSIGNALED), scope(kSyncScopeInternal) {}
 };
 
-class SEMAPHORE_NODE : public BASE_NODE {
+class SEMAPHORE_STATE : public BASE_NODE {
    public:
     std::pair<VkQueue, uint64_t> signaler;
     bool signaled;
@@ -190,7 +190,7 @@ class CoreChecks : public ValidationObject {
     unordered_map<VkQueue, QUEUE_STATE> queueMap;
     unordered_map<VkEvent, EVENT_STATE> eventMap;
     unordered_map<VkQueryPool, QUERY_POOL_STATE> queryPoolMap;
-    unordered_map<VkSemaphore, SEMAPHORE_NODE> semaphoreMap;
+    unordered_map<VkSemaphore, SEMAPHORE_STATE> semaphoreMap;
     unordered_map<ImageSubresourcePair, IMAGE_LAYOUT_NODE> imageLayoutMap;
     unordered_map<VkSurfaceKHR, SURFACE_STATE> surface_map;
 
@@ -258,7 +258,7 @@ class CoreChecks : public ValidationObject {
     EVENT_STATE* GetEventNode(VkEvent event);
     QUERY_POOL_STATE* GetQueryPoolNode(VkQueryPool query_pool);
     QUEUE_STATE* GetQueueState(VkQueue queue);
-    SEMAPHORE_NODE* GetSemaphoreNode(VkSemaphore semaphore);
+    SEMAPHORE_STATE* GetSemaphoreNode(VkSemaphore semaphore);
     PHYSICAL_DEVICE_STATE* GetPhysicalDeviceState(VkPhysicalDevice phys);
     PHYSICAL_DEVICE_STATE* GetPhysicalDeviceState();
     SURFACE_STATE* GetSurfaceState(VkSurfaceKHR surface);

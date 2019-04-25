@@ -215,7 +215,7 @@ QUEUE_STATE *CoreChecks::GetQueueState(VkQueue queue) {
     return &it->second;
 }
 
-SEMAPHORE_NODE *CoreChecks::GetSemaphoreNode(VkSemaphore semaphore) {
+SEMAPHORE_STATE *CoreChecks::GetSemaphoreNode(VkSemaphore semaphore) {
     auto it = semaphoreMap.find(semaphore);
     if (it == semaphoreMap.end()) {
         return nullptr;
@@ -4166,7 +4166,7 @@ void CoreChecks::PreCallRecordDestroyFence(VkDevice device, VkFence fence, const
 }
 
 bool CoreChecks::PreCallValidateDestroySemaphore(VkDevice device, VkSemaphore semaphore, const VkAllocationCallbacks *pAllocator) {
-    SEMAPHORE_NODE *sema_node = GetSemaphoreNode(semaphore);
+    SEMAPHORE_STATE *sema_node = GetSemaphoreNode(semaphore);
     VK_OBJECT obj_struct = {HandleToUint64(semaphore), kVulkanObjectTypeSemaphore};
     bool skip = false;
     if (sema_node) {
@@ -11047,7 +11047,7 @@ void CoreChecks::PostCallRecordQueueBindSparse(VkQueue queue, uint32_t bindInfoC
 void CoreChecks::PostCallRecordCreateSemaphore(VkDevice device, const VkSemaphoreCreateInfo *pCreateInfo,
                                                const VkAllocationCallbacks *pAllocator, VkSemaphore *pSemaphore, VkResult result) {
     if (VK_SUCCESS != result) return;
-    SEMAPHORE_NODE *sNode = &semaphoreMap[*pSemaphore];
+    SEMAPHORE_STATE *sNode = &semaphoreMap[*pSemaphore];
     sNode->signaler.first = VK_NULL_HANDLE;
     sNode->signaler.second = 0;
     sNode->signaled = false;
@@ -11056,7 +11056,7 @@ void CoreChecks::PostCallRecordCreateSemaphore(VkDevice device, const VkSemaphor
 
 bool CoreChecks::ValidateImportSemaphore(VkSemaphore semaphore, const char *caller_name) {
     bool skip = false;
-    SEMAPHORE_NODE *sema_node = GetSemaphoreNode(semaphore);
+    SEMAPHORE_STATE *sema_node = GetSemaphoreNode(semaphore);
     if (sema_node) {
         VK_OBJECT obj_struct = {HandleToUint64(semaphore), kVulkanObjectTypeSemaphore};
         skip |= ValidateObjectNotInUse(sema_node, obj_struct, caller_name, kVUIDUndefined);
@@ -11066,7 +11066,7 @@ bool CoreChecks::ValidateImportSemaphore(VkSemaphore semaphore, const char *call
 
 void CoreChecks::RecordImportSemaphoreState(VkSemaphore semaphore, VkExternalSemaphoreHandleTypeFlagBitsKHR handle_type,
                                             VkSemaphoreImportFlagsKHR flags) {
-    SEMAPHORE_NODE *sema_node = GetSemaphoreNode(semaphore);
+    SEMAPHORE_STATE *sema_node = GetSemaphoreNode(semaphore);
     if (sema_node && sema_node->scope != kSyncScopeExternalPermanent) {
         if ((handle_type == VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT_KHR || flags & VK_SEMAPHORE_IMPORT_TEMPORARY_BIT_KHR) &&
             sema_node->scope == kSyncScopeInternal) {
@@ -11103,7 +11103,7 @@ void CoreChecks::PostCallRecordImportSemaphoreFdKHR(VkDevice device, const VkImp
 }
 
 void CoreChecks::RecordGetExternalSemaphoreState(VkSemaphore semaphore, VkExternalSemaphoreHandleTypeFlagBitsKHR handle_type) {
-    SEMAPHORE_NODE *semaphore_state = GetSemaphoreNode(semaphore);
+    SEMAPHORE_STATE *semaphore_state = GetSemaphoreNode(semaphore);
     if (semaphore_state && handle_type != VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT_KHR) {
         // Cannot track semaphore state once it is exported, except for Sync FD handle types which have copy transference
         semaphore_state->scope = kSyncScopeExternalPermanent;
