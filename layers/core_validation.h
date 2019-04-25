@@ -258,7 +258,7 @@ class CoreChecks : public ValidationObject {
     EVENT_STATE* GetEventState(VkEvent event);
     QUERY_POOL_STATE* GetQueryPoolState(VkQueryPool query_pool);
     QUEUE_STATE* GetQueueState(VkQueue queue);
-    SEMAPHORE_STATE* GetSemaphoreNode(VkSemaphore semaphore);
+    SEMAPHORE_STATE* GetSemaphoreState(VkSemaphore semaphore);
     PHYSICAL_DEVICE_STATE* GetPhysicalDeviceState(VkPhysicalDevice phys);
     PHYSICAL_DEVICE_STATE* GetPhysicalDeviceState();
     SURFACE_STATE* GetSurfaceState(VkSurfaceKHR surface);
