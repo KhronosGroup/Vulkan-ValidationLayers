@@ -174,7 +174,7 @@ class CoreChecks : public ValidationObject {
     unordered_map<VkBufferView, std::unique_ptr<BUFFER_VIEW_STATE>> bufferViewMap;
     unordered_map<VkBuffer, std::unique_ptr<BUFFER_STATE>> bufferMap;
     unordered_map<VkPipeline, std::unique_ptr<PIPELINE_STATE>> pipelineMap;
-    unordered_map<VkDeviceMemory, std::unique_ptr<DEVICE_MEM_INFO>> memObjMap;
+    unordered_map<VkDeviceMemory, std::unique_ptr<DEVICE_MEMORY_STATE>> memObjMap;
     unordered_map<VkFramebuffer, std::unique_ptr<FRAMEBUFFER_STATE>> frameBufferMap;
     unordered_map<VkShaderModule, std::unique_ptr<shader_module>> shaderModuleMap;
     unordered_map<VkDescriptorUpdateTemplateKHR, std::unique_ptr<TEMPLATE_STATE>> desc_template_map;
@@ -241,7 +241,7 @@ class CoreChecks : public ValidationObject {
     DESCRIPTOR_POOL_STATE* GetDescriptorPoolState(const VkDescriptorPool);
     BUFFER_STATE* GetBufferState(VkBuffer);
     IMAGE_STATE* GetImageState(VkImage);
-    DEVICE_MEM_INFO* GetMemObjInfo(VkDeviceMemory);
+    DEVICE_MEMORY_STATE* GetMemObjInfo(VkDeviceMemory);
     BUFFER_VIEW_STATE* GetBufferViewState(VkBufferView);
     SAMPLER_STATE* GetSamplerState(VkSampler);
     IMAGE_VIEW_STATE* GetAttachmentImageViewState(FRAMEBUFFER_STATE* framebuffer, uint32_t index);
@@ -429,19 +429,19 @@ class CoreChecks : public ValidationObject {
     void RecordVulkanSurface(VkSurfaceKHR* pSurface);
     void PostRecordEnumeratePhysicalDeviceGroupsState(uint32_t* pPhysicalDeviceGroupCount,
                                                       VkPhysicalDeviceGroupPropertiesKHR* pPhysicalDeviceGroupProperties);
-    bool ValidateInsertMemoryRange(uint64_t handle, DEVICE_MEM_INFO* mem_info, VkDeviceSize memoryOffset,
+    bool ValidateInsertMemoryRange(uint64_t handle, DEVICE_MEMORY_STATE* mem_info, VkDeviceSize memoryOffset,
                                    VkMemoryRequirements memRequirements, bool is_image, bool is_linear, const char* api_name);
-    void InsertMemoryRange(uint64_t handle, DEVICE_MEM_INFO* mem_info, VkDeviceSize memoryOffset,
+    void InsertMemoryRange(uint64_t handle, DEVICE_MEMORY_STATE* mem_info, VkDeviceSize memoryOffset,
                            VkMemoryRequirements memRequirements, bool is_image, bool is_linear);
-    bool ValidateInsertImageMemoryRange(VkImage image, DEVICE_MEM_INFO* mem_info, VkDeviceSize mem_offset,
+    bool ValidateInsertImageMemoryRange(VkImage image, DEVICE_MEMORY_STATE* mem_info, VkDeviceSize mem_offset,
                                         VkMemoryRequirements mem_reqs, bool is_linear, const char* api_name);
-    void InsertImageMemoryRange(VkImage image, DEVICE_MEM_INFO* mem_info, VkDeviceSize mem_offset, VkMemoryRequirements mem_reqs,
-                                bool is_linear);
-    bool ValidateInsertBufferMemoryRange(VkBuffer buffer, DEVICE_MEM_INFO* mem_info, VkDeviceSize mem_offset,
+    void InsertImageMemoryRange(VkImage image, DEVICE_MEMORY_STATE* mem_info, VkDeviceSize mem_offset,
+                                VkMemoryRequirements mem_reqs, bool is_linear);
+    bool ValidateInsertBufferMemoryRange(VkBuffer buffer, DEVICE_MEMORY_STATE* mem_info, VkDeviceSize mem_offset,
                                          VkMemoryRequirements mem_reqs, const char* api_name);
-    void InsertBufferMemoryRange(VkBuffer buffer, DEVICE_MEM_INFO* mem_info, VkDeviceSize mem_offset,
+    void InsertBufferMemoryRange(VkBuffer buffer, DEVICE_MEMORY_STATE* mem_info, VkDeviceSize mem_offset,
                                  VkMemoryRequirements mem_reqs);
-    bool ValidateMemoryTypes(const DEVICE_MEM_INFO* mem_info, const uint32_t memory_type_bits, const char* funcName,
+    bool ValidateMemoryTypes(const DEVICE_MEMORY_STATE* mem_info, const uint32_t memory_type_bits, const char* funcName,
                              const char* msgCode);
     void RecordCreateDescriptorUpdateTemplateState(const VkDescriptorUpdateTemplateCreateInfoKHR* pCreateInfo,
                                                    VkDescriptorUpdateTemplateKHR* pDescriptorUpdateTemplate);
@@ -478,8 +478,8 @@ class CoreChecks : public ValidationObject {
     void AddCommandBufferBindingBufferView(GLOBAL_CB_NODE*, BUFFER_VIEW_STATE*);
     bool ValidateObjectNotInUse(BASE_NODE* obj_node, VK_OBJECT obj_struct, const char* caller_name, const char* error_code);
     void InvalidateCommandBuffers(std::unordered_set<GLOBAL_CB_NODE*> const& cb_nodes, VK_OBJECT obj);
-    void RemoveImageMemoryRange(uint64_t handle, DEVICE_MEM_INFO* mem_info);
-    void RemoveBufferMemoryRange(uint64_t handle, DEVICE_MEM_INFO* mem_info);
+    void RemoveImageMemoryRange(uint64_t handle, DEVICE_MEMORY_STATE* mem_info);
+    void RemoveBufferMemoryRange(uint64_t handle, DEVICE_MEMORY_STATE* mem_info);
     void ClearMemoryObjectBindings(uint64_t handle, VulkanObjectType type);
     bool ValidateCmdQueueFlags(const GLOBAL_CB_NODE* cb_node, const char* caller_name, VkQueueFlags flags, const char* error_code);
     bool InsideRenderPass(const GLOBAL_CB_NODE* pCB, const char* apiName, const char* msgCode);
@@ -829,7 +829,8 @@ class CoreChecks : public ValidationObject {
 
     bool ValidateLayouts(RenderPassCreateVersion rp_version, VkDevice device, const VkRenderPassCreateInfo2KHR* pCreateInfo);
 
-    bool ValidateMapImageLayouts(VkDevice device, DEVICE_MEM_INFO const* mem_info, VkDeviceSize offset, VkDeviceSize end_offset);
+    bool ValidateMapImageLayouts(VkDevice device, DEVICE_MEMORY_STATE const* mem_info, VkDeviceSize offset,
+                                 VkDeviceSize end_offset);
 
     bool ValidateImageUsageFlags(IMAGE_STATE const* image_state, VkFlags desired, bool strict, const char* msgCode,
                                  char const* func_name, char const* usage_string);

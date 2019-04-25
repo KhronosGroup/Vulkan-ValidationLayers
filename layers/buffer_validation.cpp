@@ -3585,7 +3585,7 @@ bool CoreChecks::ValidateLayouts(RenderPassCreateVersion rp_version, VkDevice de
 }
 
 // For any image objects that overlap mapped memory, verify that their layouts are PREINIT or GENERAL
-bool CoreChecks::ValidateMapImageLayouts(VkDevice device, DEVICE_MEM_INFO const *mem_info, VkDeviceSize offset,
+bool CoreChecks::ValidateMapImageLayouts(VkDevice device, DEVICE_MEMORY_STATE const *mem_info, VkDeviceSize offset,
                                          VkDeviceSize end_offset) {
     bool skip = false;
     // Iterate over all bound image ranges and verify that for any that overlap the map ranges, the layouts are
