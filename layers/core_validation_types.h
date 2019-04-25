@@ -1560,7 +1560,7 @@ class FRAMEBUFFER_STATE : public BASE_NODE {
         : framebuffer(fb), createInfo(pCreateInfo), rp_state(rpstate){};
 };
 
-struct shader_module;
+struct SHADER_MODULE_STATE;
 struct DeviceExtensions;
 
 struct DeviceFeatures {

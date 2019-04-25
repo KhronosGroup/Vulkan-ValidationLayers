@@ -756,7 +756,7 @@ PIPELINE_LAYOUT_NODE const *CoreChecks::GetPipelineLayout(VkPipelineLayout pipeL
     return &it->second;
 }
 
-shader_module const *CoreChecks::GetShaderModuleState(VkShaderModule module) {
+SHADER_MODULE_STATE const *CoreChecks::GetShaderModuleState(VkShaderModule module) {
     auto it = shaderModuleMap.find(module);
     if (it == shaderModuleMap.end()) {
         return nullptr;

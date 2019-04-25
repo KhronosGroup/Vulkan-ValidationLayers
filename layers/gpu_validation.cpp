@@ -447,7 +447,7 @@ std::vector<safe_VkGraphicsPipelineCreateInfo> CoreChecks::GpuPreCallRecordCreat
 
         if (replace_shaders) {
             for (uint32_t stage = 0; stage < pCreateInfos[pipeline].stageCount; ++stage) {
-                const shader_module *shader = GetShaderModuleState(pCreateInfos[pipeline].pStages[stage].module);
+                const SHADER_MODULE_STATE *shader = GetShaderModuleState(pCreateInfos[pipeline].pStages[stage].module);
                 VkShaderModuleCreateInfo create_info = {};
                 VkShaderModule shader_module;
                 create_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
@@ -658,7 +658,8 @@ static void GenerateCommonMessage(const debug_report_data *report_data, const GL
 
 // Read the contents of the SPIR-V OpSource instruction and any following continuation instructions.
 // Split the single string into a vector of strings, one for each line, for easier processing.
-static void ReadOpSource(const shader_module &shader, const uint32_t reported_file_id, std::vector<std::string> &opsource_lines) {
+static void ReadOpSource(const SHADER_MODULE_STATE &shader, const uint32_t reported_file_id,
+                         std::vector<std::string> &opsource_lines) {
     for (auto insn : shader) {
         if ((insn.opcode() == spv::OpSource) && (insn.len() >= 5) && (insn.word(3) == reported_file_id)) {
             std::istringstream in_stream;
@@ -760,7 +761,7 @@ static void GenerateSourceMessages(const std::vector<unsigned int> &pgm, const u
     using namespace spvtools;
     std::ostringstream filename_stream;
     std::ostringstream source_stream;
-    shader_module shader;
+    SHADER_MODULE_STATE shader;
     shader.words = pgm;
     // Find the OpLine just before the failing instruction indicated by the debug info.
     // SPIR-V can only be iterated in the forward direction due to its opcode/length encoding.

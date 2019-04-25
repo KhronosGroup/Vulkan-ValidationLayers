@@ -176,7 +176,7 @@ class CoreChecks : public ValidationObject {
     unordered_map<VkPipeline, std::unique_ptr<PIPELINE_STATE>> pipelineMap;
     unordered_map<VkDeviceMemory, std::unique_ptr<DEVICE_MEMORY_STATE>> memObjMap;
     unordered_map<VkFramebuffer, std::unique_ptr<FRAMEBUFFER_STATE>> frameBufferMap;
-    unordered_map<VkShaderModule, std::unique_ptr<shader_module>> shaderModuleMap;
+    unordered_map<VkShaderModule, std::unique_ptr<SHADER_MODULE_STATE>> shaderModuleMap;
     unordered_map<VkDescriptorUpdateTemplateKHR, std::unique_ptr<TEMPLATE_STATE>> desc_template_map;
     unordered_map<VkSwapchainKHR, std::unique_ptr<SWAPCHAIN_NODE>> swapchainMap;
 
@@ -253,7 +253,7 @@ class CoreChecks : public ValidationObject {
     std::shared_ptr<RENDER_PASS_STATE> GetRenderPassStateSharedPtr(VkRenderPass renderpass);
     FRAMEBUFFER_STATE* GetFramebufferState(VkFramebuffer framebuffer);
     COMMAND_POOL_NODE* GetCommandPoolNode(VkCommandPool pool);
-    shader_module const* GetShaderModuleState(VkShaderModule module);
+    SHADER_MODULE_STATE const* GetShaderModuleState(VkShaderModule module);
     FENCE_NODE* GetFenceNode(VkFence fence);
     EVENT_STATE* GetEventNode(VkEvent event);
     QUERY_POOL_NODE* GetQueryPoolNode(VkQueryPool query_pool);
@@ -583,15 +583,16 @@ class CoreChecks : public ValidationObject {
                                           const VkAllocationCallbacks* pAllocator, VkShaderModule* pShaderModule, VkResult result,
                                           void* csm_state);
     bool ValidatePipelineShaderStage(VkPipelineShaderStageCreateInfo const* pStage, PIPELINE_STATE* pipeline,
-                                     shader_module const** out_module, spirv_inst_iter* out_entrypoint, bool check_point_size);
-    bool ValidatePointListShaderState(const PIPELINE_STATE* pipeline, shader_module const* src, spirv_inst_iter entrypoint,
+                                     SHADER_MODULE_STATE const** out_module, spirv_inst_iter* out_entrypoint,
+                                     bool check_point_size);
+    bool ValidatePointListShaderState(const PIPELINE_STATE* pipeline, SHADER_MODULE_STATE const* src, spirv_inst_iter entrypoint,
                                       VkShaderStageFlagBits stage);
-    bool ValidateShaderCapabilities(shader_module const* src, VkShaderStageFlagBits stage, bool has_writable_descriptor);
-    bool ValidateShaderStageInputOutputLimits(shader_module const* src, VkPipelineShaderStageCreateInfo const* pStage,
+    bool ValidateShaderCapabilities(SHADER_MODULE_STATE const* src, VkShaderStageFlagBits stage, bool has_writable_descriptor);
+    bool ValidateShaderStageInputOutputLimits(SHADER_MODULE_STATE const* src, VkPipelineShaderStageCreateInfo const* pStage,
                                               PIPELINE_STATE* pipeline);
-    bool ValidateCooperativeMatrix(shader_module const* src, VkPipelineShaderStageCreateInfo const* pStage,
+    bool ValidateCooperativeMatrix(SHADER_MODULE_STATE const* src, VkPipelineShaderStageCreateInfo const* pStage,
                                    PIPELINE_STATE* pipeline);
-    bool ValidateExecutionModes(shader_module const* src, spirv_inst_iter entrypoint);
+    bool ValidateExecutionModes(SHADER_MODULE_STATE const* src, spirv_inst_iter entrypoint);
 
     // Gpu Validation Functions
     void GpuPreCallRecordCreateDevice(VkPhysicalDevice gpu, std::unique_ptr<safe_VkDeviceCreateInfo>& modified_create_info,
@@ -1535,7 +1536,7 @@ class CoreChecks : public ValidationObject {
                                                         const VkAllocationCallbacks* pAllocator);
     bool PreCallValidateGetBufferDeviceAddressEXT(VkDevice device, const VkBufferDeviceAddressInfoEXT* pInfo);
     bool PreCallValidateCmdSetDeviceMask(VkCommandBuffer commandBuffer, uint32_t deviceMask);
-    bool ValidateComputeWorkGroupSizes(const shader_module* shader);
+    bool ValidateComputeWorkGroupSizes(const SHADER_MODULE_STATE* shader);
     bool ValidateComputeWorkGroupInvocations(GLOBAL_CB_NODE* cb_state, uint32_t groupCountX, uint32_t groupCountY,
                                              uint32_t groupCountZ);
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
