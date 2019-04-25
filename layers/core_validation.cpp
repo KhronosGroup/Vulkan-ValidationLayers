@@ -748,7 +748,7 @@ std::shared_ptr<cvdescriptorset::DescriptorSetLayout const> const GetDescriptorS
     return it->second;
 }
 
-PIPELINE_LAYOUT_NODE const *CoreChecks::GetPipelineLayout(VkPipelineLayout pipeLayout) {
+PIPELINE_LAYOUT_STATE const *CoreChecks::GetPipelineLayout(VkPipelineLayout pipeLayout) {
     auto it = pipelineLayoutMap.find(pipeLayout);
     if (it == pipelineLayoutMap.end()) {
         return nullptr;
@@ -1196,7 +1196,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(LAST_BOUND_STATE const &state, co
 // For given cvdescriptorset::DescriptorSet, verify that its Set is compatible w/ the setLayout corresponding to
 // pipelineLayout[layoutIndex]
 static bool VerifySetLayoutCompatibility(const cvdescriptorset::DescriptorSet *descriptor_set,
-                                         PIPELINE_LAYOUT_NODE const *pipeline_layout, const uint32_t layoutIndex,
+                                         PIPELINE_LAYOUT_STATE const *pipeline_layout, const uint32_t layoutIndex,
                                          string &errorMsg) {
     auto num_sets = pipeline_layout->set_layouts.size();
     if (layoutIndex >= num_sets) {
@@ -6008,7 +6008,7 @@ void CoreChecks::PostCallRecordCreatePipelineLayout(VkDevice device, const VkPip
     }
     if (VK_SUCCESS != result) return;
 
-    PIPELINE_LAYOUT_NODE &plNode = pipelineLayoutMap[*pPipelineLayout];
+    PIPELINE_LAYOUT_STATE &plNode = pipelineLayoutMap[*pPipelineLayout];
     plNode.layout = *pPipelineLayout;
     plNode.set_layouts.resize(pCreateInfo->setLayoutCount);
     PipelineLayoutSetLayoutsDef set_layouts(pCreateInfo->setLayoutCount);
@@ -6795,7 +6795,7 @@ void CoreChecks::PreCallRecordCmdSetStencilReference(VkCommandBuffer commandBuff
 
 // Update pipeline_layout bind points applying the "Pipeline Layout Compatibility" rules
 void CoreChecks::UpdateLastBoundDescriptorSets(CMD_BUFFER_STATE *cb_state, VkPipelineBindPoint pipeline_bind_point,
-                                               const PIPELINE_LAYOUT_NODE *pipeline_layout, uint32_t first_set, uint32_t set_count,
+                                               const PIPELINE_LAYOUT_STATE *pipeline_layout, uint32_t first_set, uint32_t set_count,
                                                const std::vector<cvdescriptorset::DescriptorSet *> descriptor_sets,
                                                uint32_t dynamic_offset_count, const uint32_t *p_dynamic_offsets) {
     // Defensive
@@ -12560,8 +12560,8 @@ void CoreChecks::PreCallRecordUpdateDescriptorSetWithTemplateKHR(VkDevice device
     RecordUpdateDescriptorSetWithTemplateState(descriptorSet, descriptorUpdateTemplate, pData);
 }
 
-static std::shared_ptr<cvdescriptorset::DescriptorSetLayout const> GetDslFromPipelineLayout(PIPELINE_LAYOUT_NODE const *layout_data,
-                                                                                            uint32_t set) {
+static std::shared_ptr<cvdescriptorset::DescriptorSetLayout const> GetDslFromPipelineLayout(
+    PIPELINE_LAYOUT_STATE const *layout_data, uint32_t set) {
     std::shared_ptr<cvdescriptorset::DescriptorSetLayout const> dsl = nullptr;
     if (layout_data && (set < layout_data->set_layouts.size())) {
         dsl = layout_data->set_layouts[set];

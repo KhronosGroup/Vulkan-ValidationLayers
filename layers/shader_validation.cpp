@@ -2400,7 +2400,7 @@ static uint32_t DescriptorTypeToReqs(SHADER_MODULE_STATE const *module, uint32_t
 
 // For given pipelineLayout verify that the set_layout_node at slot.first
 //  has the requested binding at slot.second and return ptr to that binding
-static VkDescriptorSetLayoutBinding const *GetDescriptorBinding(PIPELINE_LAYOUT_NODE const *pipelineLayout,
+static VkDescriptorSetLayoutBinding const *GetDescriptorBinding(PIPELINE_LAYOUT_STATE const *pipelineLayout,
                                                                 descriptor_slot_t slot) {
     if (!pipelineLayout) return nullptr;
 

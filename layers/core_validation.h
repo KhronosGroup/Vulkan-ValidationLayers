@@ -185,7 +185,7 @@ class CoreChecks : public ValidationObject {
     unordered_map<VkCommandBuffer, CMD_BUFFER_STATE*> commandBufferMap;
 
     unordered_map<VkCommandPool, COMMAND_POOL_STATE> commandPoolMap;
-    unordered_map<VkPipelineLayout, PIPELINE_LAYOUT_NODE> pipelineLayoutMap;
+    unordered_map<VkPipelineLayout, PIPELINE_LAYOUT_STATE> pipelineLayoutMap;
     unordered_map<VkFence, FENCE_NODE> fenceMap;
     unordered_map<VkQueue, QUEUE_STATE> queueMap;
     unordered_map<VkEvent, EVENT_STATE> eventMap;
@@ -279,7 +279,7 @@ class CoreChecks : public ValidationObject {
     bool ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory mem, VkDeviceSize memoryOffset, const char* api_name);
     void RecordGetBufferMemoryRequirementsState(VkBuffer buffer, VkMemoryRequirements* pMemoryRequirements);
     void UpdateBindBufferMemoryState(VkBuffer buffer, VkDeviceMemory mem, VkDeviceSize memoryOffset);
-    PIPELINE_LAYOUT_NODE const* GetPipelineLayout(VkPipelineLayout pipeLayout);
+    PIPELINE_LAYOUT_STATE const* GetPipelineLayout(VkPipelineLayout pipeLayout);
     const TEMPLATE_STATE* GetDescriptorTemplateState(VkDescriptorUpdateTemplateKHR descriptor_update_template);
     bool ValidateGetImageMemoryRequirements2(const VkImageMemoryRequirementsInfo2* pInfo);
     void RecordGetImageMemoryRequiementsState(VkImage image, VkMemoryRequirements* pMemoryRequirements);
@@ -355,7 +355,7 @@ class CoreChecks : public ValidationObject {
                                          uint32_t set, uint32_t descriptorWriteCount,
                                          const VkWriteDescriptorSet* pDescriptorWrites);
     void UpdateLastBoundDescriptorSets(CMD_BUFFER_STATE* cb_state, VkPipelineBindPoint pipeline_bind_point,
-                                       const PIPELINE_LAYOUT_NODE* pipeline_layout, uint32_t first_set, uint32_t set_count,
+                                       const PIPELINE_LAYOUT_STATE* pipeline_layout, uint32_t first_set, uint32_t set_count,
                                        const std::vector<cvdescriptorset::DescriptorSet*> descriptor_sets,
                                        uint32_t dynamic_offset_count, const uint32_t* p_dynamic_offsets);
     bool ValidatePipelineBindPoint(CMD_BUFFER_STATE* cb_state, VkPipelineBindPoint bind_point, const char* func_name,
