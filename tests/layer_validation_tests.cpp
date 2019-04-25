@@ -26516,20 +26516,24 @@ TEST_F(VkLayerTest, MultiplaneImageSamplerConversionMismatch) {
                                                             VK_CHROMA_LOCATION_COSITED_EVEN,
                                                             VK_FILTER_NEAREST,
                                                             false};
-    VkSamplerYcbcrConversion conversion;
-    vkCreateSamplerYcbcrConversion(m_device->handle(), &ycbcr_create_info, nullptr, &conversion);
+    VkSamplerYcbcrConversion conversions[2];
+    vkCreateSamplerYcbcrConversion(m_device->handle(), &ycbcr_create_info, nullptr, &conversions[0]);
+    ycbcr_create_info.components.r = VK_COMPONENT_SWIZZLE_ZERO;  // Just anything different than above
+    vkCreateSamplerYcbcrConversion(m_device->handle(), &ycbcr_create_info, nullptr, &conversions[1]);
+
     VkSamplerYcbcrConversionInfo ycbcr_info = {};
     ycbcr_info.sType = VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_INFO;
-    ycbcr_info.conversion = conversion;
+    ycbcr_info.conversion = conversions[0];
 
     // Create a sampler using conversion
     VkSamplerCreateInfo sci = SafeSaneSamplerCreateInfo();
     sci.pNext = &ycbcr_info;
-    // The purpose of that having two samplers is to check if the log prints the correct sampler.
+    // Create two samplers with two different conversions, such that one will mismatch
     // It will make the second sampler fail to see if the log prints the second sampler or the first sampler.
     VkSampler samplers[2];
     VkResult err = vkCreateSampler(m_device->device(), &sci, NULL, &samplers[0]);
     ASSERT_VK_SUCCESS(err);
+    ycbcr_info.conversion = conversions[1];  // Need two samplers with different conversions
     err = vkCreateSampler(m_device->device(), &sci, NULL, &samplers[1]);
     ASSERT_VK_SUCCESS(err);
 
@@ -26538,38 +26542,31 @@ TEST_F(VkLayerTest, MultiplaneImageSamplerConversionMismatch) {
     mpimage.init(&ci);
 
     VkImageView views[2];
-    VkImageViewCreateInfo ivcis[2];
-    ivcis[0] = {};
-    ivcis[0].sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-    ivcis[0].pNext = &ycbcr_info;
-    ivcis[0].image = mpimage.handle();
-    ivcis[0].viewType = VK_IMAGE_VIEW_TYPE_2D;
-    ivcis[0].format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM_KHR;
-    ivcis[0].subresourceRange.layerCount = 1;
-    ivcis[0].subresourceRange.baseMipLevel = 0;
-    ivcis[0].subresourceRange.levelCount = 1;
-    ivcis[0].subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    vkCreateImageView(m_device->device(), &ivcis[0], nullptr, &views[0]);
-    ivcis[1] = ivcis[0];
-
-    // pNext = nullptr causes an error, VUID-VkWriteDescriptorSet-descriptorType-01948.
-    // Because if the sampler is a immutable sampler, pNext has to chain a VkSamplerYcbcrConversionInfo.
-    ivcis[1].pNext = nullptr;
-    vkCreateImageView(m_device->device(), &ivcis[1], nullptr, &views[1]);
+    VkImageViewCreateInfo ivci = {};
+    ivci.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    ycbcr_info.conversion = conversions[0];  // Need two samplers with different conversions
+    ivci.pNext = &ycbcr_info;
+    ivci.image = mpimage.handle();
+    ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    ivci.format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM_KHR;
+    ivci.subresourceRange.layerCount = 1;
+    ivci.subresourceRange.baseMipLevel = 0;
+    ivci.subresourceRange.levelCount = 1;
+    ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    vkCreateImageView(m_device->device(), &ivci, nullptr, &views[0]);
 
     // Use the image and sampler together in a descriptor set
     OneOffDescriptorSet ds(m_device, {
                                          {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2, VK_SHADER_STAGE_ALL, samplers},
                                      });
 
+    // Use the same image view twice, using the same sampler, with the *second* mismatched with the *second* immutable sampler
     VkDescriptorImageInfo image_infos[2];
     image_infos[0] = {};
     image_infos[0].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     image_infos[0].imageView = views[0];
     image_infos[0].sampler = samplers[0];
     image_infos[1] = image_infos[0];
-    image_infos[1].imageView = views[1];
-    image_infos[1].sampler = samplers[1];
 
     // Update the descriptor set expecting to get an error
     VkWriteDescriptorSet descriptor_write = {};
@@ -26584,8 +26581,8 @@ TEST_F(VkLayerTest, MultiplaneImageSamplerConversionMismatch) {
     vkUpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
     m_errorMonitor->VerifyFound();
 
-    // pImmutableSamplers = nullptr causes an error , VUID-VkWriteDescriptorSet-descriptorType-01947.
-    // Because if pNext chains a VkSamplerYcbcrConversionInfo, the sampler has to be a immutable sampler,.
+    // pImmutableSamplers = nullptr causes an error , VUID-01947.
+    // Because if pNext chains a VkSamplerYcbcrConversionInfo, the sampler has to be a immutable sampler.
     OneOffDescriptorSet ds_1947(m_device, {
                                               {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
                                           });
@@ -26596,14 +26593,17 @@ TEST_F(VkLayerTest, MultiplaneImageSamplerConversionMismatch) {
     vkUpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
     m_errorMonitor->VerifyFound();
 
-    vkDestroyImageView(m_device->device(), views[1], NULL);
-    ivcis[1].pNext = &ycbcr_info;
-    vkCreateImageView(m_device->device(), &ivcis[1], nullptr, &views[1]);
+    // Now for a positive test set up two different image view matching the two different immutable samplers.
+    ycbcr_info.conversion = conversions[1];
+    vkCreateImageView(m_device->device(), &ivci, nullptr, &views[1]);
     image_infos[1].imageView = views[1];
+    image_infos[1].sampler = samplers[1];
     descriptor_write.dstSet = ds.set_;
     descriptor_write.descriptorCount = 2;
     descriptor_write.pImageInfo = image_infos;
+    m_errorMonitor->ExpectSuccess();
     vkUpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+    m_errorMonitor->VerifyNotFound();
 
     char const *vsSource =
         "#version 450\n"
@@ -26646,7 +26646,8 @@ TEST_F(VkLayerTest, MultiplaneImageSamplerConversionMismatch) {
     vkCmdEndRenderPass(m_commandBuffer->handle());
     m_commandBuffer->end();
 
-    vkDestroySamplerYcbcrConversion(m_device->device(), conversion, nullptr);
+    vkDestroySamplerYcbcrConversion(m_device->device(), conversions[0], nullptr);
+    vkDestroySamplerYcbcrConversion(m_device->device(), conversions[1], nullptr);
     vkDestroyImageView(m_device->device(), views[0], NULL);
     vkDestroyImageView(m_device->device(), views[1], NULL);
     vkDestroySampler(m_device->device(), samplers[0], nullptr);
