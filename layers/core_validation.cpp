@@ -191,7 +191,7 @@ FENCE_STATE *CoreChecks::GetFenceState(VkFence fence) {
     return &it->second;
 }
 
-EVENT_STATE *CoreChecks::GetEventNode(VkEvent event) {
+EVENT_STATE *CoreChecks::GetEventState(VkEvent event) {
     auto it = eventMap.find(event);
     if (it == eventMap.end()) {
         return nullptr;
@@ -2175,7 +2175,7 @@ BASE_NODE *CoreChecks::GetStateStructPtrFromObject(VK_OBJECT object_struct) {
             break;
         }
         case kVulkanObjectTypeEvent: {
-            base_ptr = GetEventNode(reinterpret_cast<VkEvent &>(object_struct.handle));
+            base_ptr = GetEventState(reinterpret_cast<VkEvent &>(object_struct.handle));
             break;
         }
         case kVulkanObjectTypeDescriptorPool: {
@@ -2782,7 +2782,7 @@ void CoreChecks::IncrementResources(CMD_BUFFER_STATE *cb_node) {
         }
     }
     for (auto event : cb_node->writeEventsBeforeWait) {
-        auto event_state = GetEventNode(event);
+        auto event_state = GetEventState(event);
         if (event_state) event_state->write_in_use++;
     }
 }
@@ -4181,7 +4181,7 @@ void CoreChecks::PreCallRecordDestroySemaphore(VkDevice device, VkSemaphore sema
 }
 
 bool CoreChecks::PreCallValidateDestroyEvent(VkDevice device, VkEvent event, const VkAllocationCallbacks *pAllocator) {
-    EVENT_STATE *event_state = GetEventNode(event);
+    EVENT_STATE *event_state = GetEventState(event);
     VK_OBJECT obj_struct = {HandleToUint64(event), kVulkanObjectTypeEvent};
     bool skip = false;
     if (event_state) {
@@ -4192,7 +4192,7 @@ bool CoreChecks::PreCallValidateDestroyEvent(VkDevice device, VkEvent event, con
 
 void CoreChecks::PreCallRecordDestroyEvent(VkDevice device, VkEvent event, const VkAllocationCallbacks *pAllocator) {
     if (!event) return;
-    EVENT_STATE *event_state = GetEventNode(event);
+    EVENT_STATE *event_state = GetEventState(event);
     VK_OBJECT obj_struct = {HandleToUint64(event), kVulkanObjectTypeEvent};
     InvalidateCommandBuffers(event_state->cb_bindings, obj_struct);
     eventMap.erase(event);
@@ -7299,7 +7299,7 @@ bool CoreChecks::PreCallValidateCmdSetEvent(VkCommandBuffer commandBuffer, VkEve
 
 void CoreChecks::PreCallRecordCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask) {
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
-    auto event_state = GetEventNode(event);
+    auto event_state = GetEventState(event);
     if (event_state) {
         AddCommandBufferBinding(&event_state->cb_bindings, {HandleToUint64(event), kVulkanObjectTypeEvent}, cb_state);
         event_state->cb_bindings.insert(cb_state);
@@ -7327,7 +7327,7 @@ bool CoreChecks::PreCallValidateCmdResetEvent(VkCommandBuffer commandBuffer, VkE
 
 void CoreChecks::PreCallRecordCmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask) {
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
-    auto event_state = GetEventNode(event);
+    auto event_state = GetEventState(event);
     if (event_state) {
         AddCommandBufferBinding(&event_state->cb_bindings, {HandleToUint64(event), kVulkanObjectTypeEvent}, cb_state);
         event_state->cb_bindings.insert(cb_state);
@@ -8161,7 +8161,7 @@ bool CoreChecks::ValidateEventStageMask(VkQueue queue, CMD_BUFFER_STATE *pCB, ui
         if (event_data != queue_data->second.eventToStageMap.end()) {
             stageMask |= event_data->second;
         } else {
-            auto global_event_data = GetEventNode(event);
+            auto global_event_data = GetEventState(event);
             if (!global_event_data) {
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_EVENT_EXT,
                                 HandleToUint64(event), kVUID_Core_DrawState_InvalidEvent,
@@ -8333,7 +8333,7 @@ void CoreChecks::PreCallRecordCmdWaitEvents(VkCommandBuffer commandBuffer, uint3
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     auto first_event_index = cb_state->events.size();
     for (uint32_t i = 0; i < eventCount; ++i) {
-        auto event_state = GetEventNode(pEvents[i]);
+        auto event_state = GetEventState(pEvents[i]);
         if (event_state) {
             AddCommandBufferBinding(&event_state->cb_bindings, {HandleToUint64(pEvents[i]), kVulkanObjectTypeEvent}, cb_state);
             event_state->cb_bindings.insert(cb_state);
@@ -10778,7 +10778,7 @@ void CoreChecks::PostCallRecordBindImageMemory2KHR(VkDevice device, uint32_t bin
 
 bool CoreChecks::PreCallValidateSetEvent(VkDevice device, VkEvent event) {
     bool skip = false;
-    auto event_state = GetEventNode(event);
+    auto event_state = GetEventState(event);
     if (event_state) {
         if (event_state->write_in_use) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_EVENT_EXT,
@@ -10791,7 +10791,7 @@ bool CoreChecks::PreCallValidateSetEvent(VkDevice device, VkEvent event) {
 }
 
 void CoreChecks::PreCallRecordSetEvent(VkDevice device, VkEvent event) {
-    auto event_state = GetEventNode(event);
+    auto event_state = GetEventState(event);
     if (event_state) {
         event_state->needsSignaled = false;
         event_state->stageMask = VK_PIPELINE_STAGE_HOST_BIT;
