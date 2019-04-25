@@ -38111,8 +38111,16 @@ TEST_F(VkLayerTest, AndroidHardwareBufferMemoryAllocation) {
     // ici.mipLevels = 2;
     // vkCreateImage(dev, &ici, NULL, &img);
     // mdai.image = img;
-    // ahb_desc.usage = AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE | AHARDWAREBUFFER_USAGE_GPU_MIPMAP_COMPLETE;
+    ahb_desc.usage = AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE | AHARDWAREBUFFER_USAGE_GPU_MIPMAP_COMPLETE;
+    std::cout << "Test: start to allocate buffer for MIPMAP_COMPLETE" << std::endl;
     // recreate_ahb();
+    if (ahb) AHardwareBuffer_release(ahb);
+    ahb = nullptr;
+    int err = AHardwareBuffer_allocate(&ahb_desc, &ahb);
+    std::cout << "Test: buffer: " << ahb << "  error code:" << err << std::endl;
+    pfn_GetAHBProps(dev, ahb, &ahb_props);
+    std::cout << "Test: end" << std::endl;
+    iahbi.buffer = ahb;
     // m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkMemoryAllocateInfo-pNext-02389");
     // vkAllocateMemory(dev, &mai, NULL, &mem_handle);
     // m_errorMonitor->VerifyFound();
