@@ -1039,7 +1039,7 @@ void CoreChecks::GpuPreCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount
     for (uint32_t submit_idx = 0; submit_idx < submitCount; submit_idx++) {
         const VkSubmitInfo *submit = &pSubmits[submit_idx];
         for (uint32_t i = 0; i < submit->commandBufferCount; i++) {
-            auto cb_node = GetCBNode(submit->pCommandBuffers[i]);
+            auto cb_node = GetCBState(submit->pCommandBuffers[i]);
             UpdateInstrumentationBuffer(cb_node);
             for (auto secondaryCmdBuffer : cb_node->linkedCommandBuffers) {
                 UpdateInstrumentationBuffer(secondaryCmdBuffer);
@@ -1061,7 +1061,7 @@ void CoreChecks::GpuPostCallQueueSubmit(VkQueue queue, uint32_t submitCount, con
     for (uint32_t submit_idx = 0; submit_idx < submitCount; submit_idx++) {
         const VkSubmitInfo *submit = &pSubmits[submit_idx];
         for (uint32_t i = 0; i < submit->commandBufferCount; i++) {
-            auto cb_node = GetCBNode(submit->pCommandBuffers[i]);
+            auto cb_node = GetCBState(submit->pCommandBuffers[i]);
             ProcessInstrumentationBuffer(queue, cb_node);
             for (auto secondaryCmdBuffer : cb_node->linkedCommandBuffers) {
                 ProcessInstrumentationBuffer(queue, secondaryCmdBuffer);
@@ -1095,7 +1095,7 @@ void CoreChecks::GpuAllocateValidationResources(const VkCommandBuffer cmd_buffer
     VkDescriptorBufferInfo output_desc_buffer_info = {};
     output_desc_buffer_info.range = gpu_validation_state->output_buffer_size;
 
-    auto cb_node = GetCBNode(cmd_buffer);
+    auto cb_node = GetCBState(cmd_buffer);
     if (!cb_node) {
         ReportSetupProblem(VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device), "Unrecognized command buffer");
         gpu_validation_state->aborted = true;
