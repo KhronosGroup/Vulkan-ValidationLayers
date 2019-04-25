@@ -47,18 +47,18 @@ enum SyncScope {
     kSyncScopeExternalPermanent,
 };
 
-enum FENCE_STATE { FENCE_UNSIGNALED, FENCE_INFLIGHT, FENCE_RETIRED };
+enum FENCE_STATUS { FENCE_UNSIGNALED, FENCE_INFLIGHT, FENCE_RETIRED };
 
-class FENCE_NODE {
+class FENCE_STATE {
    public:
     VkFence fence;
     VkFenceCreateInfo createInfo;
     std::pair<VkQueue, uint64_t> signaler;
-    FENCE_STATE state;
+    FENCE_STATUS state;
     SyncScope scope;
 
     // Default constructor
-    FENCE_NODE() : state(FENCE_UNSIGNALED), scope(kSyncScopeInternal) {}
+    FENCE_STATE() : state(FENCE_UNSIGNALED), scope(kSyncScopeInternal) {}
 };
 
 class SEMAPHORE_NODE : public BASE_NODE {
@@ -186,7 +186,7 @@ class CoreChecks : public ValidationObject {
 
     unordered_map<VkCommandPool, COMMAND_POOL_STATE> commandPoolMap;
     unordered_map<VkPipelineLayout, PIPELINE_LAYOUT_STATE> pipelineLayoutMap;
-    unordered_map<VkFence, FENCE_NODE> fenceMap;
+    unordered_map<VkFence, FENCE_STATE> fenceMap;
     unordered_map<VkQueue, QUEUE_STATE> queueMap;
     unordered_map<VkEvent, EVENT_STATE> eventMap;
     unordered_map<VkQueryPool, QUERY_POOL_NODE> queryPoolMap;
@@ -254,7 +254,7 @@ class CoreChecks : public ValidationObject {
     FRAMEBUFFER_STATE* GetFramebufferState(VkFramebuffer framebuffer);
     COMMAND_POOL_STATE* GetCommandPoolNode(VkCommandPool pool);
     SHADER_MODULE_STATE const* GetShaderModuleState(VkShaderModule module);
-    FENCE_NODE* GetFenceNode(VkFence fence);
+    FENCE_STATE* GetFenceNode(VkFence fence);
     EVENT_STATE* GetEventNode(VkEvent event);
     QUERY_POOL_NODE* GetQueryPoolNode(VkQueryPool query_pool);
     QUEUE_STATE* GetQueueState(VkQueue queue);
@@ -300,7 +300,7 @@ class CoreChecks : public ValidationObject {
     void DeletePools();
     bool ValidImageBufferQueue(CMD_BUFFER_STATE* cb_node, const VK_OBJECT* object, VkQueue queue, uint32_t count,
                                const uint32_t* indices);
-    bool ValidateFenceForSubmit(FENCE_NODE* pFence);
+    bool ValidateFenceForSubmit(FENCE_STATE* pFence);
     void AddMemObjInfo(void* object, const VkDeviceMemory mem, const VkMemoryAllocateInfo* pAllocateInfo);
     bool ValidateStatus(CMD_BUFFER_STATE* pNode, CBStatusFlags status_mask, VkFlags msg_flags, const char* fail_msg,
                         const char* msg_code);

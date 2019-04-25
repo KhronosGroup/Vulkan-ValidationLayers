@@ -183,7 +183,7 @@ BUFFER_VIEW_STATE *CoreChecks::GetBufferViewState(VkBufferView buffer_view) {
     return bv_it->second.get();
 }
 
-FENCE_NODE *CoreChecks::GetFenceNode(VkFence fence) {
+FENCE_STATE *CoreChecks::GetFenceNode(VkFence fence) {
     auto it = fenceMap.find(fence);
     if (it == fenceMap.end()) {
         return nullptr;
@@ -2932,7 +2932,7 @@ void CoreChecks::RetireWorkOnQueue(QUEUE_STATE *pQueue, uint64_t seq) {
 
 // Submit a fence to a queue, delimiting previous fences and previous untracked
 // work by it.
-static void SubmitFence(QUEUE_STATE *pQueue, FENCE_NODE *pFence, uint64_t submitCount) {
+static void SubmitFence(QUEUE_STATE *pQueue, FENCE_STATE *pFence, uint64_t submitCount) {
     pFence->state = FENCE_INFLIGHT;
     pFence->signaler.first = pQueue->queue;
     pFence->signaler.second = pQueue->seq + pQueue->submissions.size() + submitCount;
@@ -3109,7 +3109,7 @@ bool CoreChecks::ValidatePrimaryCommandBufferState(CMD_BUFFER_STATE *pCB, int cu
     return skip;
 }
 
-bool CoreChecks::ValidateFenceForSubmit(FENCE_NODE *pFence) {
+bool CoreChecks::ValidateFenceForSubmit(FENCE_STATE *pFence) {
     bool skip = false;
 
     if (pFence && pFence->scope == kSyncScopeInternal) {
@@ -4148,7 +4148,7 @@ void CoreChecks::PostCallRecordDeviceWaitIdle(VkDevice device, VkResult result) 
 }
 
 bool CoreChecks::PreCallValidateDestroyFence(VkDevice device, VkFence fence, const VkAllocationCallbacks *pAllocator) {
-    FENCE_NODE *fence_node = GetFenceNode(fence);
+    FENCE_STATE *fence_node = GetFenceNode(fence);
     bool skip = false;
     if (fence_node) {
         if (fence_node->scope == kSyncScopeInternal && fence_node->state == FENCE_INFLIGHT) {
@@ -11126,7 +11126,7 @@ void CoreChecks::PostCallRecordGetSemaphoreFdKHR(VkDevice device, const VkSemaph
 }
 
 bool CoreChecks::ValidateImportFence(VkFence fence, const char *caller_name) {
-    FENCE_NODE *fence_node = GetFenceNode(fence);
+    FENCE_STATE *fence_node = GetFenceNode(fence);
     bool skip = false;
     if (fence_node && fence_node->scope == kSyncScopeInternal && fence_node->state == FENCE_INFLIGHT) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_FENCE_EXT, HandleToUint64(fence),
@@ -11138,7 +11138,7 @@ bool CoreChecks::ValidateImportFence(VkFence fence, const char *caller_name) {
 
 void CoreChecks::RecordImportFenceState(VkFence fence, VkExternalFenceHandleTypeFlagBitsKHR handle_type,
                                         VkFenceImportFlagsKHR flags) {
-    FENCE_NODE *fence_node = GetFenceNode(fence);
+    FENCE_STATE *fence_node = GetFenceNode(fence);
     if (fence_node && fence_node->scope != kSyncScopeExternalPermanent) {
         if ((handle_type == VK_EXTERNAL_FENCE_HANDLE_TYPE_SYNC_FD_BIT_KHR || flags & VK_FENCE_IMPORT_TEMPORARY_BIT_KHR) &&
             fence_node->scope == kSyncScopeInternal) {
@@ -11173,7 +11173,7 @@ void CoreChecks::PostCallRecordImportFenceFdKHR(VkDevice device, const VkImportF
 }
 
 void CoreChecks::RecordGetExternalFenceState(VkFence fence, VkExternalFenceHandleTypeFlagBitsKHR handle_type) {
-    FENCE_NODE *fence_state = GetFenceNode(fence);
+    FENCE_STATE *fence_state = GetFenceNode(fence);
     if (fence_state) {
         if (handle_type != VK_EXTERNAL_FENCE_HANDLE_TYPE_SYNC_FD_BIT_KHR) {
             // Export with reference transference becomes external
