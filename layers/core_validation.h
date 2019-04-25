@@ -255,8 +255,8 @@ class CoreChecks : public ValidationObject {
     COMMAND_POOL_STATE* GetCommandPoolState(VkCommandPool pool);
     SHADER_MODULE_STATE const* GetShaderModuleState(VkShaderModule module);
     FENCE_STATE* GetFenceState(VkFence fence);
-    EVENT_STATE* GetEventNode(VkEvent event);
-    QUERY_POOL_STATE* GetQueryPoolNode(VkQueryPool query_pool);
+    EVENT_STATE* GetEventState(VkEvent event);
+    QUERY_POOL_STATE* GetQueryPoolState(VkQueryPool query_pool);
     QUEUE_STATE* GetQueueState(VkQueue queue);
     SEMAPHORE_STATE* GetSemaphoreNode(VkSemaphore semaphore);
     PHYSICAL_DEVICE_STATE* GetPhysicalDeviceState(VkPhysicalDevice phys);
