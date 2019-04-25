@@ -168,33 +168,38 @@ struct GpuValidationState;
 
 class CoreChecks : public ValidationObject {
    public:
-    std::unordered_set<VkQueue> queues;  // All queues under given device
     unordered_map<VkSampler, std::unique_ptr<SAMPLER_STATE>> samplerMap;
     unordered_map<VkImageView, std::unique_ptr<IMAGE_VIEW_STATE>> imageViewMap;
     unordered_map<VkImage, std::unique_ptr<IMAGE_STATE>> imageMap;
     unordered_map<VkBufferView, std::unique_ptr<BUFFER_VIEW_STATE>> bufferViewMap;
     unordered_map<VkBuffer, std::unique_ptr<BUFFER_STATE>> bufferMap;
     unordered_map<VkPipeline, std::unique_ptr<PIPELINE_STATE>> pipelineMap;
-    unordered_map<VkCommandPool, COMMAND_POOL_NODE> commandPoolMap;
-    unordered_map<VkDescriptorPool, DESCRIPTOR_POOL_STATE*> descriptorPoolMap;
-    unordered_map<VkDescriptorSet, cvdescriptorset::DescriptorSet*> setMap;
-    unordered_map<VkDescriptorSetLayout, std::shared_ptr<cvdescriptorset::DescriptorSetLayout>> descriptorSetLayoutMap;
-    unordered_map<VkPipelineLayout, PIPELINE_LAYOUT_NODE> pipelineLayoutMap;
     unordered_map<VkDeviceMemory, std::unique_ptr<DEVICE_MEM_INFO>> memObjMap;
-    unordered_map<VkFence, FENCE_NODE> fenceMap;
-    unordered_map<VkQueue, QUEUE_STATE> queueMap;
-    unordered_map<VkEvent, EVENT_STATE> eventMap;
-    unordered_map<QueryObject, bool> queryToStateMap;
-    unordered_map<VkQueryPool, QUERY_POOL_NODE> queryPoolMap;
-    unordered_map<VkSemaphore, SEMAPHORE_NODE> semaphoreMap;
-    unordered_map<VkCommandBuffer, GLOBAL_CB_NODE*> commandBufferMap;
     unordered_map<VkFramebuffer, std::unique_ptr<FRAMEBUFFER_STATE>> frameBufferMap;
-    unordered_map<VkImage, std::vector<ImageSubresourcePair>> imageSubresourceMap;
-    unordered_map<ImageSubresourcePair, IMAGE_LAYOUT_NODE> imageLayoutMap;
-    unordered_map<VkRenderPass, std::shared_ptr<RENDER_PASS_STATE>> renderPassMap;
     unordered_map<VkShaderModule, std::unique_ptr<shader_module>> shaderModuleMap;
     unordered_map<VkDescriptorUpdateTemplateKHR, std::unique_ptr<TEMPLATE_STATE>> desc_template_map;
     unordered_map<VkSwapchainKHR, std::unique_ptr<SWAPCHAIN_NODE>> swapchainMap;
+
+    unordered_map<VkDescriptorPool, DESCRIPTOR_POOL_STATE*> descriptorPoolMap;
+    unordered_map<VkDescriptorSet, cvdescriptorset::DescriptorSet*> setMap;
+    unordered_map<VkCommandBuffer, GLOBAL_CB_NODE*> commandBufferMap;
+
+    unordered_map<VkCommandPool, COMMAND_POOL_NODE> commandPoolMap;
+    unordered_map<VkPipelineLayout, PIPELINE_LAYOUT_NODE> pipelineLayoutMap;
+    unordered_map<VkFence, FENCE_NODE> fenceMap;
+    unordered_map<VkQueue, QUEUE_STATE> queueMap;
+    unordered_map<VkEvent, EVENT_STATE> eventMap;
+    unordered_map<VkQueryPool, QUERY_POOL_NODE> queryPoolMap;
+    unordered_map<VkSemaphore, SEMAPHORE_NODE> semaphoreMap;
+    unordered_map<ImageSubresourcePair, IMAGE_LAYOUT_NODE> imageLayoutMap;
+    unordered_map<VkSurfaceKHR, SURFACE_STATE> surface_map;
+
+    unordered_map<VkRenderPass, std::shared_ptr<RENDER_PASS_STATE>> renderPassMap;
+    unordered_map<VkDescriptorSetLayout, std::shared_ptr<cvdescriptorset::DescriptorSetLayout>> descriptorSetLayoutMap;
+
+    std::unordered_set<VkQueue> queues;  // All queues under given device
+    unordered_map<VkImage, std::vector<ImageSubresourcePair>> imageSubresourceMap;
+    unordered_map<QueryObject, bool> queryToStateMap;
     unordered_map<VkSamplerYcbcrConversion, uint64_t> ycbcr_conversion_ahb_fmt_map;
     std::unordered_set<uint64_t> ahb_ext_formats_set;
     GlobalQFOTransferBarrierMap<VkImageMemoryBarrier> qfo_release_image_barrier_map;
@@ -206,7 +211,6 @@ class CoreChecks : public ValidationObject {
     unordered_map<VkPhysicalDevice, PHYSICAL_DEVICE_STATE> physical_device_map;
     // Link to the device's physical-device data
     PHYSICAL_DEVICE_STATE* physical_device_state;
-    unordered_map<VkSurfaceKHR, SURFACE_STATE> surface_map;
 
     // Link for derived device objects back to their parent instance object
     CoreChecks* instance_state;
