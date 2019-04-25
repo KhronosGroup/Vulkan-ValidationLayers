@@ -3255,7 +3255,7 @@ bool CoreChecks::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount,
     unordered_set<VkSemaphore> unsignaled_semaphores;
     unordered_set<VkSemaphore> internal_semaphores;
     vector<VkCommandBuffer> current_cmds;
-    unordered_map<ImageSubresourcePair, IMAGE_LAYOUT_NODE> localImageLayoutMap;
+    unordered_map<ImageSubresourcePair, IMAGE_LAYOUT_STATE> localImageLayoutMap;
     // Now verify each individual submit
     for (uint32_t submit_idx = 0; submit_idx < submitCount; submit_idx++) {
         const VkSubmitInfo *submit = &pSubmits[submit_idx];
@@ -11626,7 +11626,7 @@ void CoreChecks::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchai
         for (uint32_t i = 0; i < *pSwapchainImageCount; ++i) {
             if (swapchain_state->images[i] != VK_NULL_HANDLE) continue;  // Already retrieved this.
 
-            IMAGE_LAYOUT_NODE image_layout_node;
+            IMAGE_LAYOUT_STATE image_layout_node;
             image_layout_node.layout = VK_IMAGE_LAYOUT_UNDEFINED;
             image_layout_node.format = swapchain_state->createInfo.imageFormat;
             // Add imageMap entries for each swapchain image

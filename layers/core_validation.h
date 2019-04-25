@@ -191,7 +191,7 @@ class CoreChecks : public ValidationObject {
     unordered_map<VkEvent, EVENT_STATE> eventMap;
     unordered_map<VkQueryPool, QUERY_POOL_STATE> queryPoolMap;
     unordered_map<VkSemaphore, SEMAPHORE_STATE> semaphoreMap;
-    unordered_map<ImageSubresourcePair, IMAGE_LAYOUT_NODE> imageLayoutMap;
+    unordered_map<ImageSubresourcePair, IMAGE_LAYOUT_STATE> imageLayoutMap;
     unordered_map<VkSurfaceKHR, SURFACE_STATE> surface_map;
 
     unordered_map<VkRenderPass, std::shared_ptr<RENDER_PASS_STATE>> renderPassMap;
@@ -487,7 +487,7 @@ class CoreChecks : public ValidationObject {
     bool InsideRenderPass(const CMD_BUFFER_STATE* pCB, const char* apiName, const char* msgCode);
     bool OutsideRenderPass(CMD_BUFFER_STATE* pCB, const char* apiName, const char* msgCode);
 
-    void SetLayout(std::unordered_map<ImageSubresourcePair, IMAGE_LAYOUT_NODE>& imageLayoutMap, ImageSubresourcePair imgpair,
+    void SetLayout(std::unordered_map<ImageSubresourcePair, IMAGE_LAYOUT_STATE>& imageLayoutMap, ImageSubresourcePair imgpair,
                    VkImageLayout layout);
 
     bool ValidateImageSampleCount(IMAGE_STATE* image_state, VkSampleCountFlagBits sample_count, const char* location,
@@ -745,11 +745,11 @@ class CoreChecks : public ValidationObject {
 
     bool FindLayouts(VkImage image, std::vector<VkImageLayout>& layouts);
 
-    bool FindLayout(const std::unordered_map<ImageSubresourcePair, IMAGE_LAYOUT_NODE>& imageLayoutMap, ImageSubresourcePair imgpair,
-                    VkImageLayout& layout);
+    bool FindLayout(const std::unordered_map<ImageSubresourcePair, IMAGE_LAYOUT_STATE>& imageLayoutMap,
+                    ImageSubresourcePair imgpair, VkImageLayout& layout);
 
-    bool FindLayout(const std::unordered_map<ImageSubresourcePair, IMAGE_LAYOUT_NODE>& imageLayoutMap, ImageSubresourcePair imgpair,
-                    VkImageLayout& layout, const VkImageAspectFlags aspectMask);
+    bool FindLayout(const std::unordered_map<ImageSubresourcePair, IMAGE_LAYOUT_STATE>& imageLayoutMap,
+                    ImageSubresourcePair imgpair, VkImageLayout& layout, const VkImageAspectFlags aspectMask);
 
     void SetGlobalLayout(ImageSubresourcePair imgpair, const VkImageLayout& layout);
 
@@ -820,8 +820,8 @@ class CoreChecks : public ValidationObject {
                                    VkFilter filter);
 
     bool ValidateCmdBufImageLayouts(CMD_BUFFER_STATE* pCB,
-                                    std::unordered_map<ImageSubresourcePair, IMAGE_LAYOUT_NODE> const& globalImageLayoutMap,
-                                    std::unordered_map<ImageSubresourcePair, IMAGE_LAYOUT_NODE>& overlayLayoutMap);
+                                    std::unordered_map<ImageSubresourcePair, IMAGE_LAYOUT_STATE> const& globalImageLayoutMap,
+                                    std::unordered_map<ImageSubresourcePair, IMAGE_LAYOUT_STATE>& overlayLayoutMap);
 
     void UpdateCmdBufImageLayouts(CMD_BUFFER_STATE* pCB);
 

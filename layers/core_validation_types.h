@@ -1542,7 +1542,7 @@ struct CB_SUBMISSION {
     VkFence fence;
 };
 
-struct IMAGE_LAYOUT_NODE {
+struct IMAGE_LAYOUT_STATE {
     VkImageLayout layout;
     VkFormat format;
 };
