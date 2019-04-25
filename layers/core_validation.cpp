@@ -199,7 +199,7 @@ EVENT_STATE *CoreChecks::GetEventState(VkEvent event) {
     return &it->second;
 }
 
-QUERY_POOL_STATE *CoreChecks::GetQueryPoolNode(VkQueryPool query_pool) {
+QUERY_POOL_STATE *CoreChecks::GetQueryPoolState(VkQueryPool query_pool) {
     auto it = queryPoolMap.find(query_pool);
     if (it == queryPoolMap.end()) {
         return nullptr;
@@ -2151,7 +2151,7 @@ BASE_NODE *CoreChecks::GetStateStructPtrFromObject(VK_OBJECT object_struct) {
             break;
         }
         case kVulkanObjectTypeQueryPool: {
-            base_ptr = GetQueryPoolNode(reinterpret_cast<VkQueryPool &>(object_struct.handle));
+            base_ptr = GetQueryPoolState(reinterpret_cast<VkQueryPool &>(object_struct.handle));
             break;
         }
         case kVulkanObjectTypePipeline: {
@@ -4200,7 +4200,7 @@ void CoreChecks::PreCallRecordDestroyEvent(VkDevice device, VkEvent event, const
 
 bool CoreChecks::PreCallValidateDestroyQueryPool(VkDevice device, VkQueryPool queryPool, const VkAllocationCallbacks *pAllocator) {
     if (disabled.query_validation) return false;
-    QUERY_POOL_STATE *qp_state = GetQueryPoolNode(queryPool);
+    QUERY_POOL_STATE *qp_state = GetQueryPoolState(queryPool);
     VK_OBJECT obj_struct = {HandleToUint64(queryPool), kVulkanObjectTypeQueryPool};
     bool skip = false;
     if (qp_state) {
@@ -4211,7 +4211,7 @@ bool CoreChecks::PreCallValidateDestroyQueryPool(VkDevice device, VkQueryPool qu
 
 void CoreChecks::PreCallRecordDestroyQueryPool(VkDevice device, VkQueryPool queryPool, const VkAllocationCallbacks *pAllocator) {
     if (!queryPool) return;
-    QUERY_POOL_STATE *qp_state = GetQueryPoolNode(queryPool);
+    QUERY_POOL_STATE *qp_state = GetQueryPoolState(queryPool);
     VK_OBJECT obj_struct = {HandleToUint64(queryPool), kVulkanObjectTypeQueryPool};
     InvalidateCommandBuffers(qp_state->cb_bindings, obj_struct);
     queryPoolMap.erase(queryPool);
@@ -8430,7 +8430,7 @@ bool CoreChecks::PreCallValidateCmdBeginQuery(VkCommandBuffer commandBuffer, VkQ
     assert(cb_state);
     bool skip = ValidateCmdQueueFlags(cb_state, "vkCmdBeginQuery()", VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
                                       "VUID-vkCmdBeginQuery-commandBuffer-cmdpool");
-    auto queryType = GetQueryPoolNode(queryPool)->createInfo.queryType;
+    auto queryType = GetQueryPoolState(queryPool)->createInfo.queryType;
 
     if (flags & VK_QUERY_CONTROL_PRECISE_BIT) {
         if (!enabled_features.core.occlusionQueryPrecise) {
@@ -8457,7 +8457,7 @@ void CoreChecks::PostCallRecordCmdBeginQuery(VkCommandBuffer commandBuffer, VkQu
     QueryObject query = {queryPool, slot};
     cb_state->activeQueries.insert(query);
     cb_state->startedQueries.insert(query);
-    AddCommandBufferBinding(&GetQueryPoolNode(queryPool)->cb_bindings, {HandleToUint64(queryPool), kVulkanObjectTypeQueryPool},
+    AddCommandBufferBinding(&GetQueryPoolState(queryPool)->cb_bindings, {HandleToUint64(queryPool), kVulkanObjectTypeQueryPool},
                             cb_state);
 }
 
@@ -8484,7 +8484,7 @@ void CoreChecks::PostCallRecordCmdEndQuery(VkCommandBuffer commandBuffer, VkQuer
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     cb_state->activeQueries.erase(query);
     cb_state->queryUpdates.emplace_back([=](VkQueue q) { return SetQueryState(q, commandBuffer, query, true); });
-    AddCommandBufferBinding(&GetQueryPoolNode(queryPool)->cb_bindings, {HandleToUint64(queryPool), kVulkanObjectTypeQueryPool},
+    AddCommandBufferBinding(&GetQueryPoolState(queryPool)->cb_bindings, {HandleToUint64(queryPool), kVulkanObjectTypeQueryPool},
                             cb_state);
 }
 
@@ -8509,7 +8509,7 @@ void CoreChecks::PostCallRecordCmdResetQueryPool(VkCommandBuffer commandBuffer, 
         cb_state->waitedEventsBeforeQueryReset[query] = cb_state->waitedEvents;
         cb_state->queryUpdates.emplace_back([=](VkQueue q) { return SetQueryState(q, commandBuffer, query, false); });
     }
-    AddCommandBufferBinding(&GetQueryPoolNode(queryPool)->cb_bindings, {HandleToUint64(queryPool), kVulkanObjectTypeQueryPool},
+    AddCommandBufferBinding(&GetQueryPoolState(queryPool)->cb_bindings, {HandleToUint64(queryPool), kVulkanObjectTypeQueryPool},
                             cb_state);
 }
 
@@ -8570,7 +8570,7 @@ void CoreChecks::PostCallRecordCmdCopyQueryPoolResults(VkCommandBuffer commandBu
     auto dst_buff_state = GetBufferState(dstBuffer);
     AddCommandBufferBindingBuffer(cb_state, dst_buff_state);
     cb_state->queryUpdates.emplace_back([=](VkQueue q) { return ValidateQuery(q, cb_state, queryPool, firstQuery, queryCount); });
-    AddCommandBufferBinding(&GetQueryPoolNode(queryPool)->cb_bindings, {HandleToUint64(queryPool), kVulkanObjectTypeQueryPool},
+    AddCommandBufferBinding(&GetQueryPoolState(queryPool)->cb_bindings, {HandleToUint64(queryPool), kVulkanObjectTypeQueryPool},
                             cb_state);
 }
 
