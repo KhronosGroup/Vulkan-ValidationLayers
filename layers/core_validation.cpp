@@ -264,7 +264,7 @@ BINDABLE *CoreChecks::GetObjectMemBinding(uint64_t handle, VulkanObjectType type
     return nullptr;
 }
 
-ImageSubresourceLayoutMap::InitialLayoutState::InitialLayoutState(const GLOBAL_CB_NODE &cb_state,
+ImageSubresourceLayoutMap::InitialLayoutState::InitialLayoutState(const CMD_BUFFER_STATE &cb_state,
                                                                   const IMAGE_VIEW_STATE *view_state)
     : image_view(VK_NULL_HANDLE), aspect_mask(0), label(cb_state.debug_label) {
     if (view_state) {
@@ -324,7 +324,7 @@ static std::unique_ptr<ImageSubresourceLayoutMap> LayoutMapFactory(const IMAGE_S
 }
 
 // The const variant only need the image as it is the key for the map
-const ImageSubresourceLayoutMap *GetImageSubresourceLayoutMap(const GLOBAL_CB_NODE *cb_state, VkImage image) {
+const ImageSubresourceLayoutMap *GetImageSubresourceLayoutMap(const CMD_BUFFER_STATE *cb_state, VkImage image) {
     auto it = cb_state->image_layout_map.find(image);
     if (it == cb_state->image_layout_map.cend()) {
         return nullptr;
@@ -333,7 +333,7 @@ const ImageSubresourceLayoutMap *GetImageSubresourceLayoutMap(const GLOBAL_CB_NO
 }
 
 // The non-const variant only needs the image state, as the factory requires it to construct a new entry
-ImageSubresourceLayoutMap *GetImageSubresourceLayoutMap(GLOBAL_CB_NODE *cb_state, const IMAGE_STATE &image_state) {
+ImageSubresourceLayoutMap *GetImageSubresourceLayoutMap(CMD_BUFFER_STATE *cb_state, const IMAGE_STATE &image_state) {
     auto it = cb_state->image_layout_map.find(image_state.image);
     if (it == cb_state->image_layout_map.end()) {
         // Empty slot... fill it in.
@@ -376,7 +376,7 @@ void CoreChecks::AddMemObjInfo(void *object, const VkDeviceMemory mem, const VkM
 }
 
 // Create binding link between given sampler and command buffer node
-void CoreChecks::AddCommandBufferBindingSampler(GLOBAL_CB_NODE *cb_node, SAMPLER_STATE *sampler_state) {
+void CoreChecks::AddCommandBufferBindingSampler(CMD_BUFFER_STATE *cb_node, SAMPLER_STATE *sampler_state) {
     auto inserted = cb_node->object_bindings.insert({HandleToUint64(sampler_state->sampler), kVulkanObjectTypeSampler});
     if (inserted.second) {
         // Only need to complete the cross-reference if this is a new item
@@ -385,7 +385,7 @@ void CoreChecks::AddCommandBufferBindingSampler(GLOBAL_CB_NODE *cb_node, SAMPLER
 }
 
 // Create binding link between given image node and command buffer node
-void CoreChecks::AddCommandBufferBindingImage(GLOBAL_CB_NODE *cb_node, IMAGE_STATE *image_state) {
+void CoreChecks::AddCommandBufferBindingImage(CMD_BUFFER_STATE *cb_node, IMAGE_STATE *image_state) {
     // Skip validation if this image was created through WSI
     if (image_state->binding.mem != MEMTRACKER_SWAP_CHAIN_IMAGE_KEY) {
         // First update cb binding for image
@@ -410,7 +410,7 @@ void CoreChecks::AddCommandBufferBindingImage(GLOBAL_CB_NODE *cb_node, IMAGE_STA
 }
 
 // Create binding link between given image view node and its image with command buffer node
-void CoreChecks::AddCommandBufferBindingImageView(GLOBAL_CB_NODE *cb_node, IMAGE_VIEW_STATE *view_state) {
+void CoreChecks::AddCommandBufferBindingImageView(CMD_BUFFER_STATE *cb_node, IMAGE_VIEW_STATE *view_state) {
     // First add bindings for imageView
     auto inserted = cb_node->object_bindings.insert({HandleToUint64(view_state->image_view), kVulkanObjectTypeImageView});
     if (inserted.second) {
@@ -425,7 +425,7 @@ void CoreChecks::AddCommandBufferBindingImageView(GLOBAL_CB_NODE *cb_node, IMAGE
 }
 
 // Create binding link between given buffer node and command buffer node
-void CoreChecks::AddCommandBufferBindingBuffer(GLOBAL_CB_NODE *cb_node, BUFFER_STATE *buffer_state) {
+void CoreChecks::AddCommandBufferBindingBuffer(CMD_BUFFER_STATE *cb_node, BUFFER_STATE *buffer_state) {
     // First update cb binding for buffer
     auto buffer_inserted = cb_node->object_bindings.insert({HandleToUint64(buffer_state->buffer), kVulkanObjectTypeBuffer});
     if (buffer_inserted.second) {
@@ -447,7 +447,7 @@ void CoreChecks::AddCommandBufferBindingBuffer(GLOBAL_CB_NODE *cb_node, BUFFER_S
 }
 
 // Create binding link between given buffer view node and its buffer with command buffer node
-void CoreChecks::AddCommandBufferBindingBufferView(GLOBAL_CB_NODE *cb_node, BUFFER_VIEW_STATE *view_state) {
+void CoreChecks::AddCommandBufferBindingBufferView(CMD_BUFFER_STATE *cb_node, BUFFER_VIEW_STATE *view_state) {
     // First add bindings for bufferView
     auto inserted = cb_node->object_bindings.insert({HandleToUint64(view_state->buffer_view), kVulkanObjectTypeBufferView});
     if (inserted.second) {
@@ -462,7 +462,7 @@ void CoreChecks::AddCommandBufferBindingBufferView(GLOBAL_CB_NODE *cb_node, BUFF
 }
 
 // For every mem obj bound to particular CB, free bindings related to that CB
-void CoreChecks::ClearCmdBufAndMemReferences(GLOBAL_CB_NODE *cb_node) {
+void CoreChecks::ClearCmdBufAndMemReferences(CMD_BUFFER_STATE *cb_node) {
     if (cb_node) {
         if (cb_node->memObjs.size() > 0) {
             for (auto mem : cb_node->memObjs) {
@@ -696,7 +696,7 @@ bool CoreChecks::ValidateQueueFamilies(uint32_t queue_family_count, const uint32
 }
 
 // Check object status for selected flag state
-bool CoreChecks::ValidateStatus(GLOBAL_CB_NODE *pNode, CBStatusFlags status_mask, VkFlags msg_flags, const char *fail_msg,
+bool CoreChecks::ValidateStatus(CMD_BUFFER_STATE *pNode, CBStatusFlags status_mask, VkFlags msg_flags, const char *fail_msg,
                                 const char *msg_code) {
     if (!(pNode->status & status_mask)) {
         return log_msg(report_data, msg_flags, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT, HandleToUint64(pNode->commandBuffer),
@@ -783,7 +783,7 @@ static bool IsDynamic(const PIPELINE_STATE *pPipeline, const VkDynamicState stat
 }
 
 // Validate state stored as flags at time of draw call
-bool CoreChecks::ValidateDrawStateFlags(GLOBAL_CB_NODE *pCB, const PIPELINE_STATE *pPipe, bool indexed, const char *msg_code) {
+bool CoreChecks::ValidateDrawStateFlags(CMD_BUFFER_STATE *pCB, const PIPELINE_STATE *pPipe, bool indexed, const char *msg_code) {
     bool result = false;
     if (pPipe->topology_at_rasterizer == VK_PRIMITIVE_TOPOLOGY_LINE_LIST ||
         pPipe->topology_at_rasterizer == VK_PRIMITIVE_TOPOLOGY_LINE_STRIP) {
@@ -982,7 +982,7 @@ static void ListBits(std::ostream &s, uint32_t bits) {
 }
 
 // Validate draw-time state related to the PSO
-bool CoreChecks::ValidatePipelineDrawtimeState(LAST_BOUND_STATE const &state, const GLOBAL_CB_NODE *pCB, CMD_TYPE cmd_type,
+bool CoreChecks::ValidatePipelineDrawtimeState(LAST_BOUND_STATE const &state, const CMD_BUFFER_STATE *pCB, CMD_TYPE cmd_type,
                                                PIPELINE_STATE const *pPipeline, const char *caller) {
     bool skip = false;
 
@@ -1213,7 +1213,7 @@ static bool VerifySetLayoutCompatibility(const cvdescriptorset::DescriptorSet *d
 }
 
 // Validate overall state at the time of a draw call
-bool CoreChecks::ValidateCmdBufDrawState(GLOBAL_CB_NODE *cb_node, CMD_TYPE cmd_type, const bool indexed,
+bool CoreChecks::ValidateCmdBufDrawState(CMD_BUFFER_STATE *cb_node, CMD_TYPE cmd_type, const bool indexed,
                                          const VkPipelineBindPoint bind_point, const char *function, const char *pipe_err_code,
                                          const char *state_err_code) {
     bool result = false;
@@ -1284,7 +1284,7 @@ bool CoreChecks::ValidateCmdBufDrawState(GLOBAL_CB_NODE *cb_node, CMD_TYPE cmd_t
     return result;
 }
 
-void CoreChecks::UpdateDrawState(GLOBAL_CB_NODE *cb_state, const VkPipelineBindPoint bind_point) {
+void CoreChecks::UpdateDrawState(CMD_BUFFER_STATE *cb_state, const VkPipelineBindPoint bind_point) {
     auto const &state = cb_state->lastBound[bind_point];
     PIPELINE_STATE *pPipe = state.pipeline_state;
     if (VK_NULL_HANDLE != state.pipeline_layout) {
@@ -1914,7 +1914,7 @@ void CoreChecks::DeletePools() {
 }
 
 // For given CB object, fetch associated CB Node from map
-GLOBAL_CB_NODE *CoreChecks::GetCBNode(const VkCommandBuffer cb) {
+CMD_BUFFER_STATE *CoreChecks::GetCBNode(const VkCommandBuffer cb) {
     auto it = commandBufferMap.find(cb);
     if (it == commandBufferMap.end()) {
         return NULL;
@@ -1923,7 +1923,7 @@ GLOBAL_CB_NODE *CoreChecks::GetCBNode(const VkCommandBuffer cb) {
 }
 
 // If a renderpass is active, verify that the given command type is appropriate for current subpass state
-bool CoreChecks::ValidateCmdSubpassState(const GLOBAL_CB_NODE *pCB, const CMD_TYPE cmd_type) {
+bool CoreChecks::ValidateCmdSubpassState(const CMD_BUFFER_STATE *pCB, const CMD_TYPE cmd_type) {
     if (!pCB->activeRenderPass) return false;
     bool skip = false;
     if (pCB->activeSubpassContents == VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS &&
@@ -1940,7 +1940,7 @@ bool CoreChecks::ValidateCmdSubpassState(const GLOBAL_CB_NODE *pCB, const CMD_TY
     return skip;
 }
 
-bool CoreChecks::ValidateCmdQueueFlags(const GLOBAL_CB_NODE *cb_node, const char *caller_name, VkQueueFlags required_flags,
+bool CoreChecks::ValidateCmdQueueFlags(const CMD_BUFFER_STATE *cb_node, const char *caller_name, VkQueueFlags required_flags,
                                        const char *error_code) {
     auto pool = GetCommandPoolNode(cb_node->createInfo.commandPool);
     if (pool) {
@@ -1970,7 +1970,7 @@ static char const *GetCauseStr(VK_OBJECT obj) {
     return "destroyed";
 }
 
-bool CoreChecks::ReportInvalidCommandBuffer(const GLOBAL_CB_NODE *cb_state, const char *call_source) {
+bool CoreChecks::ReportInvalidCommandBuffer(const CMD_BUFFER_STATE *cb_state, const char *call_source) {
     bool skip = false;
     for (auto obj : cb_state->broken_bindings) {
         const char *type_str = object_string[obj.type];
@@ -2069,7 +2069,7 @@ static const std::unordered_map<CmdTypeHashType, std::string> must_be_recording_
 
 // Validate the given command being added to the specified cmd buffer, flagging errors if CB is not in the recording state or if
 // there's an issue with the Cmd ordering
-bool CoreChecks::ValidateCmd(const GLOBAL_CB_NODE *cb_state, const CMD_TYPE cmd, const char *caller_name) {
+bool CoreChecks::ValidateCmd(const CMD_BUFFER_STATE *cb_state, const CMD_TYPE cmd, const char *caller_name) {
     switch (cb_state->state) {
         case CB_RECORDING:
             return ValidateCmdSubpassState(cb_state, cmd);
@@ -2114,7 +2114,7 @@ bool CoreChecks::ValidateDeviceMaskToZero(uint32_t deviceMask, VkDebugReportObje
     return skip;
 }
 
-bool CoreChecks::ValidateDeviceMaskToCommandBuffer(GLOBAL_CB_NODE *pCB, uint32_t deviceMask,
+bool CoreChecks::ValidateDeviceMaskToCommandBuffer(CMD_BUFFER_STATE *pCB, uint32_t deviceMask,
                                                    VkDebugReportObjectTypeEXT VUID_handle_type, uint64_t VUID_handle,
                                                    const char *VUID) {
     bool skip = false;
@@ -2126,7 +2126,7 @@ bool CoreChecks::ValidateDeviceMaskToCommandBuffer(GLOBAL_CB_NODE *pCB, uint32_t
     return skip;
 }
 
-bool CoreChecks::ValidateDeviceMaskToRenderPass(GLOBAL_CB_NODE *pCB, uint32_t deviceMask,
+bool CoreChecks::ValidateDeviceMaskToRenderPass(CMD_BUFFER_STATE *pCB, uint32_t deviceMask,
                                                 VkDebugReportObjectTypeEXT VUID_handle_type, uint64_t VUID_handle,
                                                 const char *VUID) {
     bool skip = false;
@@ -2209,19 +2209,19 @@ BASE_NODE *CoreChecks::GetStateStructPtrFromObject(VK_OBJECT object_struct) {
 // Tie the VK_OBJECT to the cmd buffer which includes:
 //  Add object_binding to cmd buffer
 //  Add cb_binding to object
-static void AddCommandBufferBinding(std::unordered_set<GLOBAL_CB_NODE *> *cb_bindings, VK_OBJECT obj, GLOBAL_CB_NODE *cb_node) {
+static void AddCommandBufferBinding(std::unordered_set<CMD_BUFFER_STATE *> *cb_bindings, VK_OBJECT obj, CMD_BUFFER_STATE *cb_node) {
     cb_bindings->insert(cb_node);
     cb_node->object_bindings.insert(obj);
 }
 // For a given object, if cb_node is in that objects cb_bindings, remove cb_node
-void CoreChecks::RemoveCommandBufferBinding(VK_OBJECT const *object, GLOBAL_CB_NODE *cb_node) {
+void CoreChecks::RemoveCommandBufferBinding(VK_OBJECT const *object, CMD_BUFFER_STATE *cb_node) {
     BASE_NODE *base_obj = GetStateStructPtrFromObject(*object);
     if (base_obj) base_obj->cb_bindings.erase(cb_node);
 }
 // Reset the command buffer state
 //  Maintain the createInfo and set state to CB_NEW, but clear all other state
 void CoreChecks::ResetCommandBufferState(const VkCommandBuffer cb) {
-    GLOBAL_CB_NODE *pCB = commandBufferMap[cb];
+    CMD_BUFFER_STATE *pCB = commandBufferMap[cb];
     if (pCB) {
         pCB->in_use.store(0);
         // Reset CB state (note that createInfo is not cleared)
@@ -2351,7 +2351,7 @@ CBStatusFlags MakeStaticStateMask(VkPipelineDynamicStateCreateInfo const *ds) {
 
 // Flags validation error if the associated call is made inside a render pass. The apiName routine should ONLY be called outside a
 // render pass.
-bool CoreChecks::InsideRenderPass(const GLOBAL_CB_NODE *pCB, const char *apiName, const char *msgCode) {
+bool CoreChecks::InsideRenderPass(const CMD_BUFFER_STATE *pCB, const char *apiName, const char *msgCode) {
     bool inside = false;
     if (pCB->activeRenderPass) {
         inside = log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
@@ -2364,7 +2364,7 @@ bool CoreChecks::InsideRenderPass(const GLOBAL_CB_NODE *pCB, const char *apiName
 
 // Flags validation error if the associated call is made outside a render pass. The apiName
 // routine should ONLY be called inside a render pass.
-bool CoreChecks::OutsideRenderPass(GLOBAL_CB_NODE *pCB, const char *apiName, const char *msgCode) {
+bool CoreChecks::OutsideRenderPass(CMD_BUFFER_STATE *pCB, const char *apiName, const char *msgCode) {
     bool outside = false;
     if (((pCB->createInfo.level == VK_COMMAND_BUFFER_LEVEL_PRIMARY) && (!pCB->activeRenderPass)) ||
         ((pCB->createInfo.level == VK_COMMAND_BUFFER_LEVEL_SECONDARY) && (!pCB->activeRenderPass) &&
@@ -2755,7 +2755,7 @@ bool CoreChecks::ValidateStageMaskGsTsEnables(VkPipelineStageFlags stageMask, co
 }
 
 // Loop through bound objects and increment their in_use counts.
-void CoreChecks::IncrementBoundObjects(GLOBAL_CB_NODE const *cb_node) {
+void CoreChecks::IncrementBoundObjects(CMD_BUFFER_STATE const *cb_node) {
     for (auto obj : cb_node->object_bindings) {
         auto base_obj = GetStateStructPtrFromObject(obj);
         if (base_obj) {
@@ -2764,7 +2764,7 @@ void CoreChecks::IncrementBoundObjects(GLOBAL_CB_NODE const *cb_node) {
     }
 }
 // Track which resources are in-flight by atomically incrementing their "in_use" count
-void CoreChecks::IncrementResources(GLOBAL_CB_NODE *cb_node) {
+void CoreChecks::IncrementResources(CMD_BUFFER_STATE *cb_node) {
     cb_node->submitCount++;
     cb_node->in_use.fetch_add(1);
 
@@ -2844,7 +2844,7 @@ bool CoreChecks::VerifyQueueStateToFence(VkFence fence) {
 }
 
 // Decrement in-use count for objects bound to command buffer
-void CoreChecks::DecrementBoundResources(GLOBAL_CB_NODE const *cb_node) {
+void CoreChecks::DecrementBoundResources(CMD_BUFFER_STATE const *cb_node) {
     BASE_NODE *base_obj = nullptr;
     for (auto obj : cb_node->object_bindings) {
         base_obj = GetStateStructPtrFromObject(obj);
@@ -2938,7 +2938,7 @@ static void SubmitFence(QUEUE_STATE *pQueue, FENCE_NODE *pFence, uint64_t submit
     pFence->signaler.second = pQueue->seq + pQueue->submissions.size() + submitCount;
 }
 
-bool CoreChecks::ValidateCommandBufferSimultaneousUse(GLOBAL_CB_NODE *pCB, int current_submit_count) {
+bool CoreChecks::ValidateCommandBufferSimultaneousUse(CMD_BUFFER_STATE *pCB, int current_submit_count) {
     bool skip = false;
     if ((pCB->in_use.load() || current_submit_count > 1) &&
         !(pCB->beginInfo.flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT)) {
@@ -2950,7 +2950,7 @@ bool CoreChecks::ValidateCommandBufferSimultaneousUse(GLOBAL_CB_NODE *pCB, int c
     return skip;
 }
 
-bool CoreChecks::ValidateCommandBufferState(GLOBAL_CB_NODE *cb_state, const char *call_source, int current_submit_count,
+bool CoreChecks::ValidateCommandBufferState(CMD_BUFFER_STATE *cb_state, const char *call_source, int current_submit_count,
                                             const char *vu_id) {
     bool skip = false;
     if (disabled.command_buffer_state) return skip;
@@ -2992,7 +2992,7 @@ bool CoreChecks::ValidateCommandBufferState(GLOBAL_CB_NODE *cb_state, const char
     return skip;
 }
 
-bool CoreChecks::ValidateResources(GLOBAL_CB_NODE *cb_node) {
+bool CoreChecks::ValidateResources(CMD_BUFFER_STATE *cb_node) {
     bool skip = false;
 
     // TODO : We should be able to remove the NULL look-up checks from the code below as long as
@@ -3013,7 +3013,7 @@ bool CoreChecks::ValidateResources(GLOBAL_CB_NODE *cb_node) {
 }
 
 // Check that the queue family index of 'queue' matches one of the entries in pQueueFamilyIndices
-bool CoreChecks::ValidImageBufferQueue(GLOBAL_CB_NODE *cb_node, const VK_OBJECT *object, VkQueue queue, uint32_t count,
+bool CoreChecks::ValidImageBufferQueue(CMD_BUFFER_STATE *cb_node, const VK_OBJECT *object, VkQueue queue, uint32_t count,
                                        const uint32_t *indices) {
     bool found = false;
     bool skip = false;
@@ -3040,7 +3040,7 @@ bool CoreChecks::ValidImageBufferQueue(GLOBAL_CB_NODE *cb_node, const VK_OBJECT 
 
 // Validate that queueFamilyIndices of primary command buffers match this queue
 // Secondary command buffers were previously validated in vkCmdExecuteCommands().
-bool CoreChecks::ValidateQueueFamilyIndices(GLOBAL_CB_NODE *pCB, VkQueue queue) {
+bool CoreChecks::ValidateQueueFamilyIndices(CMD_BUFFER_STATE *pCB, VkQueue queue) {
     bool skip = false;
     auto pPool = GetCommandPoolNode(pCB->createInfo.commandPool);
     auto queue_state = GetQueueState(queue);
@@ -3076,7 +3076,7 @@ bool CoreChecks::ValidateQueueFamilyIndices(GLOBAL_CB_NODE *pCB, VkQueue queue) 
     return skip;
 }
 
-bool CoreChecks::ValidatePrimaryCommandBufferState(GLOBAL_CB_NODE *pCB, int current_submit_count,
+bool CoreChecks::ValidatePrimaryCommandBufferState(CMD_BUFFER_STATE *pCB, int current_submit_count,
                                                    QFOTransferCBScoreboards<VkImageMemoryBarrier> *qfo_image_scoreboards,
                                                    QFOTransferCBScoreboards<VkBufferMemoryBarrier> *qfo_buffer_scoreboards) {
     // Track in-use for resources off of primary and any secondary CBs
@@ -4812,7 +4812,7 @@ void CoreChecks::PreCallRecordDestroyDescriptorPool(VkDevice device, VkDescripto
 //  If this is a secondary command buffer, then make sure its primary is also in-flight
 //  If primary is not in-flight, then remove secondary from global in-flight set
 // This function is only valid at a point when cmdBuffer is being reset or freed
-bool CoreChecks::CheckCommandBufferInFlight(const GLOBAL_CB_NODE *cb_node, const char *action, const char *error_code) {
+bool CoreChecks::CheckCommandBufferInFlight(const CMD_BUFFER_STATE *cb_node, const char *action, const char *error_code) {
     bool skip = false;
     if (cb_node->in_use.load()) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
@@ -4977,7 +4977,7 @@ void CoreChecks::PostCallRecordResetFences(VkDevice device, uint32_t fenceCount,
 }
 
 // For given cb_nodes, invalidate them and track object causing invalidation
-void CoreChecks::InvalidateCommandBuffers(std::unordered_set<GLOBAL_CB_NODE *> const &cb_nodes, VK_OBJECT obj) {
+void CoreChecks::InvalidateCommandBuffers(std::unordered_set<CMD_BUFFER_STATE *> const &cb_nodes, VK_OBJECT obj) {
     for (auto cb_node : cb_nodes) {
         if (cb_node->state == CB_RECORDING) {
             log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
@@ -6168,7 +6168,7 @@ void CoreChecks::PostCallRecordAllocateCommandBuffers(VkDevice device, const VkC
         for (uint32_t i = 0; i < pCreateInfo->commandBufferCount; i++) {
             // Add command buffer to its commandPool map
             pPool->commandBuffers.insert(pCommandBuffer[i]);
-            GLOBAL_CB_NODE *pCB = new GLOBAL_CB_NODE;
+            CMD_BUFFER_STATE *pCB = new CMD_BUFFER_STATE;
             // Add command buffer to map
             commandBufferMap[pCommandBuffer[i]] = pCB;
             ResetCommandBufferState(pCommandBuffer[i]);
@@ -6179,7 +6179,7 @@ void CoreChecks::PostCallRecordAllocateCommandBuffers(VkDevice device, const VkC
 }
 
 // Add bindings between the given cmd buffer & framebuffer and the framebuffer's children
-void CoreChecks::AddFramebufferBinding(GLOBAL_CB_NODE *cb_state, FRAMEBUFFER_STATE *fb_state) {
+void CoreChecks::AddFramebufferBinding(CMD_BUFFER_STATE *cb_state, FRAMEBUFFER_STATE *fb_state) {
     AddCommandBufferBinding(&fb_state->cb_bindings, {HandleToUint64(fb_state->framebuffer), kVulkanObjectTypeFramebuffer},
                             cb_state);
 
@@ -6193,7 +6193,7 @@ void CoreChecks::AddFramebufferBinding(GLOBAL_CB_NODE *cb_state, FRAMEBUFFER_STA
 }
 
 bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo *pBeginInfo) {
-    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
+    CMD_BUFFER_STATE *cb_state = GetCBNode(commandBuffer);
     if (!cb_state) return false;
     bool skip = false;
     if (cb_state->in_use.load()) {
@@ -6279,7 +6279,7 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
 }
 
 void CoreChecks::PreCallRecordBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo *pBeginInfo) {
-    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
+    CMD_BUFFER_STATE *cb_state = GetCBNode(commandBuffer);
     if (!cb_state) return;
     // This implicitly resets the Cmd Buffer so make sure any fence is done and then clear memory references
     ClearCmdBufAndMemReferences(cb_state);
@@ -6325,7 +6325,7 @@ void CoreChecks::PreCallRecordBeginCommandBuffer(VkCommandBuffer commandBuffer, 
 }
 
 bool CoreChecks::PreCallValidateEndCommandBuffer(VkCommandBuffer commandBuffer) {
-    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
+    CMD_BUFFER_STATE *cb_state = GetCBNode(commandBuffer);
     if (!cb_state) return false;
     bool skip = false;
     if ((VK_COMMAND_BUFFER_LEVEL_PRIMARY == cb_state->createInfo.level) ||
@@ -6345,7 +6345,7 @@ bool CoreChecks::PreCallValidateEndCommandBuffer(VkCommandBuffer commandBuffer) 
 }
 
 void CoreChecks::PostCallRecordEndCommandBuffer(VkCommandBuffer commandBuffer, VkResult result) {
-    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
+    CMD_BUFFER_STATE *cb_state = GetCBNode(commandBuffer);
     if (!cb_state) return;
     // Cached validation is specific to a specific recording of a specific command buffer.
     for (auto descriptor_set : cb_state->validated_descriptor_sets) {
@@ -6359,7 +6359,7 @@ void CoreChecks::PostCallRecordEndCommandBuffer(VkCommandBuffer commandBuffer, V
 
 bool CoreChecks::PreCallValidateResetCommandBuffer(VkCommandBuffer commandBuffer, VkCommandBufferResetFlags flags) {
     bool skip = false;
-    GLOBAL_CB_NODE *pCB = GetCBNode(commandBuffer);
+    CMD_BUFFER_STATE *pCB = GetCBNode(commandBuffer);
     if (!pCB) return false;
     VkCommandPool cmdPool = pCB->createInfo.commandPool;
     auto pPool = GetCommandPoolNode(cmdPool);
@@ -6397,7 +6397,7 @@ static const char *GetPipelineTypeName(VkPipelineBindPoint pipelineBindPoint) {
 
 bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
                                                 VkPipeline pipeline) {
-    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
+    CMD_BUFFER_STATE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
 
     bool skip = ValidateCmdQueueFlags(cb_state, "vkCmdBindPipeline()", VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
@@ -6439,7 +6439,7 @@ bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, V
 
 void CoreChecks::PreCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
                                               VkPipeline pipeline) {
-    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
+    CMD_BUFFER_STATE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
 
     auto pipe_state = GetPipelineState(pipeline);
@@ -6455,7 +6455,7 @@ void CoreChecks::PreCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer, VkP
 
 bool CoreChecks::PreCallValidateCmdSetViewport(VkCommandBuffer commandBuffer, uint32_t firstViewport, uint32_t viewportCount,
                                                const VkViewport *pViewports) {
-    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
+    CMD_BUFFER_STATE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
     bool skip =
         ValidateCmdQueueFlags(cb_state, "vkCmdSetViewport()", VK_QUEUE_GRAPHICS_BIT, "VUID-vkCmdSetViewport-commandBuffer-cmdpool");
@@ -6470,14 +6470,14 @@ bool CoreChecks::PreCallValidateCmdSetViewport(VkCommandBuffer commandBuffer, ui
 
 void CoreChecks::PreCallRecordCmdSetViewport(VkCommandBuffer commandBuffer, uint32_t firstViewport, uint32_t viewportCount,
                                              const VkViewport *pViewports) {
-    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
+    CMD_BUFFER_STATE *cb_state = GetCBNode(commandBuffer);
     cb_state->viewportMask |= ((1u << viewportCount) - 1u) << firstViewport;
     cb_state->status |= CBSTATUS_VIEWPORT_SET;
 }
 
 bool CoreChecks::PreCallValidateCmdSetScissor(VkCommandBuffer commandBuffer, uint32_t firstScissor, uint32_t scissorCount,
                                               const VkRect2D *pScissors) {
-    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
+    CMD_BUFFER_STATE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
     bool skip =
         ValidateCmdQueueFlags(cb_state, "vkCmdSetScissor()", VK_QUEUE_GRAPHICS_BIT, "VUID-vkCmdSetScissor-commandBuffer-cmdpool");
@@ -6492,14 +6492,14 @@ bool CoreChecks::PreCallValidateCmdSetScissor(VkCommandBuffer commandBuffer, uin
 
 void CoreChecks::PreCallRecordCmdSetScissor(VkCommandBuffer commandBuffer, uint32_t firstScissor, uint32_t scissorCount,
                                             const VkRect2D *pScissors) {
-    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
+    CMD_BUFFER_STATE *cb_state = GetCBNode(commandBuffer);
     cb_state->scissorMask |= ((1u << scissorCount) - 1u) << firstScissor;
     cb_state->status |= CBSTATUS_SCISSOR_SET;
 }
 
 bool CoreChecks::PreCallValidateCmdSetExclusiveScissorNV(VkCommandBuffer commandBuffer, uint32_t firstExclusiveScissor,
                                                          uint32_t exclusiveScissorCount, const VkRect2D *pExclusiveScissors) {
-    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
+    CMD_BUFFER_STATE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
     bool skip = ValidateCmdQueueFlags(cb_state, "vkCmdSetExclusiveScissorNV()", VK_QUEUE_GRAPHICS_BIT,
                                       "VUID-vkCmdSetExclusiveScissorNV-commandBuffer-cmdpool");
@@ -6521,7 +6521,7 @@ bool CoreChecks::PreCallValidateCmdSetExclusiveScissorNV(VkCommandBuffer command
 
 void CoreChecks::PreCallRecordCmdSetExclusiveScissorNV(VkCommandBuffer commandBuffer, uint32_t firstExclusiveScissor,
                                                        uint32_t exclusiveScissorCount, const VkRect2D *pExclusiveScissors) {
-    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
+    CMD_BUFFER_STATE *cb_state = GetCBNode(commandBuffer);
     // TODO: We don't have VUIDs for validating that all exclusive scissors have been set.
     // cb_state->exclusiveScissorMask |= ((1u << exclusiveScissorCount) - 1u) << firstExclusiveScissor;
     cb_state->status |= CBSTATUS_EXCLUSIVE_SCISSOR_SET;
@@ -6529,7 +6529,7 @@ void CoreChecks::PreCallRecordCmdSetExclusiveScissorNV(VkCommandBuffer commandBu
 
 bool CoreChecks::PreCallValidateCmdBindShadingRateImageNV(VkCommandBuffer commandBuffer, VkImageView imageView,
                                                           VkImageLayout imageLayout) {
-    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
+    CMD_BUFFER_STATE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
     bool skip = ValidateCmdQueueFlags(cb_state, "vkCmdBindShadingRateImageNV()", VK_QUEUE_GRAPHICS_BIT,
                                       "VUID-vkCmdBindShadingRateImageNV-commandBuffer-cmdpool");
@@ -6591,7 +6591,7 @@ bool CoreChecks::PreCallValidateCmdBindShadingRateImageNV(VkCommandBuffer comman
 
 void CoreChecks::PreCallRecordCmdBindShadingRateImageNV(VkCommandBuffer commandBuffer, VkImageView imageView,
                                                         VkImageLayout imageLayout) {
-    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
+    CMD_BUFFER_STATE *cb_state = GetCBNode(commandBuffer);
 
     if (imageView != VK_NULL_HANDLE) {
         auto view_state = GetImageViewState(imageView);
@@ -6602,7 +6602,7 @@ void CoreChecks::PreCallRecordCmdBindShadingRateImageNV(VkCommandBuffer commandB
 bool CoreChecks::PreCallValidateCmdSetViewportShadingRatePaletteNV(VkCommandBuffer commandBuffer, uint32_t firstViewport,
                                                                    uint32_t viewportCount,
                                                                    const VkShadingRatePaletteNV *pShadingRatePalettes) {
-    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
+    CMD_BUFFER_STATE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
     bool skip = ValidateCmdQueueFlags(cb_state, "vkCmdSetViewportShadingRatePaletteNV()", VK_QUEUE_GRAPHICS_BIT,
                                       "VUID-vkCmdSetViewportShadingRatePaletteNV-commandBuffer-cmdpool");
@@ -6639,14 +6639,14 @@ bool CoreChecks::PreCallValidateCmdSetViewportShadingRatePaletteNV(VkCommandBuff
 void CoreChecks::PreCallRecordCmdSetViewportShadingRatePaletteNV(VkCommandBuffer commandBuffer, uint32_t firstViewport,
                                                                  uint32_t viewportCount,
                                                                  const VkShadingRatePaletteNV *pShadingRatePalettes) {
-    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
+    CMD_BUFFER_STATE *cb_state = GetCBNode(commandBuffer);
     // TODO: We don't have VUIDs for validating that all shading rate palettes have been set.
     // cb_state->shadingRatePaletteMask |= ((1u << viewportCount) - 1u) << firstViewport;
     cb_state->status |= CBSTATUS_SHADING_RATE_PALETTE_SET;
 }
 
 bool CoreChecks::PreCallValidateCmdSetLineWidth(VkCommandBuffer commandBuffer, float lineWidth) {
-    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
+    CMD_BUFFER_STATE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
     bool skip = ValidateCmdQueueFlags(cb_state, "vkCmdSetLineWidth()", VK_QUEUE_GRAPHICS_BIT,
                                       "VUID-vkCmdSetLineWidth-commandBuffer-cmdpool");
@@ -6661,13 +6661,13 @@ bool CoreChecks::PreCallValidateCmdSetLineWidth(VkCommandBuffer commandBuffer, f
 }
 
 void CoreChecks::PreCallRecordCmdSetLineWidth(VkCommandBuffer commandBuffer, float lineWidth) {
-    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
+    CMD_BUFFER_STATE *cb_state = GetCBNode(commandBuffer);
     cb_state->status |= CBSTATUS_LINE_WIDTH_SET;
 }
 
 bool CoreChecks::PreCallValidateCmdSetDepthBias(VkCommandBuffer commandBuffer, float depthBiasConstantFactor, float depthBiasClamp,
                                                 float depthBiasSlopeFactor) {
-    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
+    CMD_BUFFER_STATE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
     bool skip = ValidateCmdQueueFlags(cb_state, "vkCmdSetDepthBias()", VK_QUEUE_GRAPHICS_BIT,
                                       "VUID-vkCmdSetDepthBias-commandBuffer-cmdpool");
@@ -6688,12 +6688,12 @@ bool CoreChecks::PreCallValidateCmdSetDepthBias(VkCommandBuffer commandBuffer, f
 
 void CoreChecks::PreCallRecordCmdSetDepthBias(VkCommandBuffer commandBuffer, float depthBiasConstantFactor, float depthBiasClamp,
                                               float depthBiasSlopeFactor) {
-    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
+    CMD_BUFFER_STATE *cb_state = GetCBNode(commandBuffer);
     cb_state->status |= CBSTATUS_DEPTH_BIAS_SET;
 }
 
 bool CoreChecks::PreCallValidateCmdSetBlendConstants(VkCommandBuffer commandBuffer, const float blendConstants[4]) {
-    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
+    CMD_BUFFER_STATE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
     bool skip = ValidateCmdQueueFlags(cb_state, "vkCmdSetBlendConstants()", VK_QUEUE_GRAPHICS_BIT,
                                       "VUID-vkCmdSetBlendConstants-commandBuffer-cmdpool");
@@ -6707,12 +6707,12 @@ bool CoreChecks::PreCallValidateCmdSetBlendConstants(VkCommandBuffer commandBuff
 }
 
 void CoreChecks::PreCallRecordCmdSetBlendConstants(VkCommandBuffer commandBuffer, const float blendConstants[4]) {
-    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
+    CMD_BUFFER_STATE *cb_state = GetCBNode(commandBuffer);
     cb_state->status |= CBSTATUS_BLEND_CONSTANTS_SET;
 }
 
 bool CoreChecks::PreCallValidateCmdSetDepthBounds(VkCommandBuffer commandBuffer, float minDepthBounds, float maxDepthBounds) {
-    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
+    CMD_BUFFER_STATE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
     bool skip = ValidateCmdQueueFlags(cb_state, "vkCmdSetDepthBounds()", VK_QUEUE_GRAPHICS_BIT,
                                       "VUID-vkCmdSetDepthBounds-commandBuffer-cmdpool");
@@ -6726,13 +6726,13 @@ bool CoreChecks::PreCallValidateCmdSetDepthBounds(VkCommandBuffer commandBuffer,
 }
 
 void CoreChecks::PreCallRecordCmdSetDepthBounds(VkCommandBuffer commandBuffer, float minDepthBounds, float maxDepthBounds) {
-    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
+    CMD_BUFFER_STATE *cb_state = GetCBNode(commandBuffer);
     cb_state->status |= CBSTATUS_DEPTH_BOUNDS_SET;
 }
 
 bool CoreChecks::PreCallValidateCmdSetStencilCompareMask(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask,
                                                          uint32_t compareMask) {
-    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
+    CMD_BUFFER_STATE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
     bool skip = ValidateCmdQueueFlags(cb_state, "vkCmdSetStencilCompareMask()", VK_QUEUE_GRAPHICS_BIT,
                                       "VUID-vkCmdSetStencilCompareMask-commandBuffer-cmdpool");
@@ -6747,13 +6747,13 @@ bool CoreChecks::PreCallValidateCmdSetStencilCompareMask(VkCommandBuffer command
 
 void CoreChecks::PreCallRecordCmdSetStencilCompareMask(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask,
                                                        uint32_t compareMask) {
-    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
+    CMD_BUFFER_STATE *cb_state = GetCBNode(commandBuffer);
     cb_state->status |= CBSTATUS_STENCIL_READ_MASK_SET;
 }
 
 bool CoreChecks::PreCallValidateCmdSetStencilWriteMask(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask,
                                                        uint32_t writeMask) {
-    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
+    CMD_BUFFER_STATE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
     bool skip = ValidateCmdQueueFlags(cb_state, "vkCmdSetStencilWriteMask()", VK_QUEUE_GRAPHICS_BIT,
                                       "VUID-vkCmdSetStencilWriteMask-commandBuffer-cmdpool");
@@ -6768,13 +6768,13 @@ bool CoreChecks::PreCallValidateCmdSetStencilWriteMask(VkCommandBuffer commandBu
 
 void CoreChecks::PreCallRecordCmdSetStencilWriteMask(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask,
                                                      uint32_t writeMask) {
-    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
+    CMD_BUFFER_STATE *cb_state = GetCBNode(commandBuffer);
     cb_state->status |= CBSTATUS_STENCIL_WRITE_MASK_SET;
 }
 
 bool CoreChecks::PreCallValidateCmdSetStencilReference(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask,
                                                        uint32_t reference) {
-    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
+    CMD_BUFFER_STATE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
     bool skip = ValidateCmdQueueFlags(cb_state, "vkCmdSetStencilReference()", VK_QUEUE_GRAPHICS_BIT,
                                       "VUID-vkCmdSetStencilReference-commandBuffer-cmdpool");
@@ -6789,12 +6789,12 @@ bool CoreChecks::PreCallValidateCmdSetStencilReference(VkCommandBuffer commandBu
 
 void CoreChecks::PreCallRecordCmdSetStencilReference(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask,
                                                      uint32_t reference) {
-    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
+    CMD_BUFFER_STATE *cb_state = GetCBNode(commandBuffer);
     cb_state->status |= CBSTATUS_STENCIL_REFERENCE_SET;
 }
 
 // Update pipeline_layout bind points applying the "Pipeline Layout Compatibility" rules
-void CoreChecks::UpdateLastBoundDescriptorSets(GLOBAL_CB_NODE *cb_state, VkPipelineBindPoint pipeline_bind_point,
+void CoreChecks::UpdateLastBoundDescriptorSets(CMD_BUFFER_STATE *cb_state, VkPipelineBindPoint pipeline_bind_point,
                                                const PIPELINE_LAYOUT_NODE *pipeline_layout, uint32_t first_set, uint32_t set_count,
                                                const std::vector<cvdescriptorset::DescriptorSet *> descriptor_sets,
                                                uint32_t dynamic_offset_count, const uint32_t *p_dynamic_offsets) {
@@ -6899,7 +6899,7 @@ void CoreChecks::PreCallRecordCmdBindDescriptorSets(VkCommandBuffer commandBuffe
                                                     VkPipelineLayout layout, uint32_t firstSet, uint32_t setCount,
                                                     const VkDescriptorSet *pDescriptorSets, uint32_t dynamicOffsetCount,
                                                     const uint32_t *pDynamicOffsets) {
-    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
+    CMD_BUFFER_STATE *cb_state = GetCBNode(commandBuffer);
     auto pipeline_layout = GetPipelineLayout(layout);
     std::vector<cvdescriptorset::DescriptorSet *> descriptor_sets;
     descriptor_sets.reserve(setCount);
@@ -6942,7 +6942,7 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorSets(VkCommandBuffer commandBuf
                                                       VkPipelineLayout layout, uint32_t firstSet, uint32_t setCount,
                                                       const VkDescriptorSet *pDescriptorSets, uint32_t dynamicOffsetCount,
                                                       const uint32_t *pDynamicOffsets) {
-    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
+    CMD_BUFFER_STATE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
     bool skip = false;
     skip |= ValidateCmdQueueFlags(cb_state, "vkCmdBindDescriptorSets()", VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
@@ -7028,7 +7028,7 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorSets(VkCommandBuffer commandBuf
 // Validates that the supplied bind point is supported for the command buffer (vis. the command pool)
 // Takes array of error codes as some of the VUID's (e.g. vkCmdBindPipeline) are written per bindpoint
 // TODO add vkCmdBindPipeline bind_point validation using this call.
-bool CoreChecks::ValidatePipelineBindPoint(GLOBAL_CB_NODE *cb_state, VkPipelineBindPoint bind_point, const char *func_name,
+bool CoreChecks::ValidatePipelineBindPoint(CMD_BUFFER_STATE *cb_state, VkPipelineBindPoint bind_point, const char *func_name,
                                            const std::map<VkPipelineBindPoint, std::string> &bind_errors) {
     bool skip = false;
     auto pool = GetCommandPoolNode(cb_state->createInfo.commandPool);
@@ -7056,7 +7056,7 @@ bool CoreChecks::ValidatePipelineBindPoint(GLOBAL_CB_NODE *cb_state, VkPipelineB
 bool CoreChecks::PreCallValidateCmdPushDescriptorSetKHR(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
                                                         VkPipelineLayout layout, uint32_t set, uint32_t descriptorWriteCount,
                                                         const VkWriteDescriptorSet *pDescriptorWrites) {
-    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
+    CMD_BUFFER_STATE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
     const char *func_name = "vkCmdPushDescriptorSetKHR()";
     bool skip = false;
@@ -7104,7 +7104,7 @@ bool CoreChecks::PreCallValidateCmdPushDescriptorSetKHR(VkCommandBuffer commandB
     return skip;
 }
 
-void CoreChecks::RecordCmdPushDescriptorSetState(GLOBAL_CB_NODE *cb_state, VkPipelineBindPoint pipelineBindPoint,
+void CoreChecks::RecordCmdPushDescriptorSetState(CMD_BUFFER_STATE *cb_state, VkPipelineBindPoint pipelineBindPoint,
                                                  VkPipelineLayout layout, uint32_t set, uint32_t descriptorWriteCount,
                                                  const VkWriteDescriptorSet *pDescriptorWrites) {
     const auto &pipeline_layout = GetPipelineLayout(layout);
@@ -7133,7 +7133,7 @@ void CoreChecks::RecordCmdPushDescriptorSetState(GLOBAL_CB_NODE *cb_state, VkPip
 void CoreChecks::PreCallRecordCmdPushDescriptorSetKHR(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
                                                       VkPipelineLayout layout, uint32_t set, uint32_t descriptorWriteCount,
                                                       const VkWriteDescriptorSet *pDescriptorWrites) {
-    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
+    CMD_BUFFER_STATE *cb_state = GetCBNode(commandBuffer);
     RecordCmdPushDescriptorSetState(cb_state, pipelineBindPoint, layout, set, descriptorWriteCount, pDescriptorWrites);
 }
 
@@ -7273,7 +7273,7 @@ void CoreChecks::PostCallRecordCmdUpdateBuffer(VkCommandBuffer commandBuffer, Vk
 }
 
 bool CoreChecks::SetEventStageMask(VkQueue queue, VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask) {
-    GLOBAL_CB_NODE *pCB = GetCBNode(commandBuffer);
+    CMD_BUFFER_STATE *pCB = GetCBNode(commandBuffer);
     if (pCB) {
         pCB->eventToStageMap[event] = stageMask;
     }
@@ -7285,7 +7285,7 @@ bool CoreChecks::SetEventStageMask(VkQueue queue, VkCommandBuffer commandBuffer,
 }
 
 bool CoreChecks::PreCallValidateCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask) {
-    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
+    CMD_BUFFER_STATE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
     bool skip = ValidateCmdQueueFlags(cb_state, "vkCmdSetEvent()", VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
                                       "VUID-vkCmdSetEvent-commandBuffer-cmdpool");
@@ -7298,7 +7298,7 @@ bool CoreChecks::PreCallValidateCmdSetEvent(VkCommandBuffer commandBuffer, VkEve
 }
 
 void CoreChecks::PreCallRecordCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask) {
-    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
+    CMD_BUFFER_STATE *cb_state = GetCBNode(commandBuffer);
     auto event_state = GetEventNode(event);
     if (event_state) {
         AddCommandBufferBinding(&event_state->cb_bindings, {HandleToUint64(event), kVulkanObjectTypeEvent}, cb_state);
@@ -7312,7 +7312,7 @@ void CoreChecks::PreCallRecordCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent
 }
 
 bool CoreChecks::PreCallValidateCmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask) {
-    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
+    CMD_BUFFER_STATE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
 
     bool skip = ValidateCmdQueueFlags(cb_state, "vkCmdResetEvent()", VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
@@ -7326,7 +7326,7 @@ bool CoreChecks::PreCallValidateCmdResetEvent(VkCommandBuffer commandBuffer, VkE
 }
 
 void CoreChecks::PreCallRecordCmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask) {
-    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
+    CMD_BUFFER_STATE *cb_state = GetCBNode(commandBuffer);
     auto event_state = GetEventNode(event);
     if (event_state) {
         AddCommandBufferBinding(&event_state->cb_bindings, {HandleToUint64(event), kVulkanObjectTypeEvent}, cb_state);
@@ -7446,7 +7446,7 @@ static VkPipelineStageFlagBits GetLogicallyLatestGraphicsPipelineStage(VkPipelin
 }
 
 // Verify image barrier image state and that the image is consistent with FB image
-bool CoreChecks::ValidateImageBarrierImage(const char *funcName, GLOBAL_CB_NODE const *cb_state, VkFramebuffer framebuffer,
+bool CoreChecks::ValidateImageBarrierImage(const char *funcName, CMD_BUFFER_STATE const *cb_state, VkFramebuffer framebuffer,
                                            uint32_t active_subpass, const safe_VkSubpassDescription2KHR &sub_desc,
                                            uint64_t rp_handle, uint32_t img_index, const VkImageMemoryBarrier &img_barrier) {
     bool skip = false;
@@ -7529,7 +7529,7 @@ bool CoreChecks::ValidateImageBarrierImage(const char *funcName, GLOBAL_CB_NODE 
 }
 
 // Validate image barriers within a renderPass
-bool CoreChecks::ValidateRenderPassImageBarriers(const char *funcName, GLOBAL_CB_NODE *cb_state, uint32_t active_subpass,
+bool CoreChecks::ValidateRenderPassImageBarriers(const char *funcName, CMD_BUFFER_STATE *cb_state, uint32_t active_subpass,
                                                  const safe_VkSubpassDescription2KHR &sub_desc, uint64_t rp_handle,
                                                  const safe_VkSubpassDependency2KHR *dependencies,
                                                  const std::vector<uint32_t> &self_dependencies, uint32_t image_mem_barrier_count,
@@ -7576,7 +7576,7 @@ bool CoreChecks::ValidateRenderPassImageBarriers(const char *funcName, GLOBAL_CB
         if (VK_NULL_HANDLE == cb_state->activeFramebuffer) {
             assert(VK_COMMAND_BUFFER_LEVEL_SECONDARY == cb_state->createInfo.level);
             // Secondary CB case w/o FB specified delay validation
-            cb_state->cmd_execute_commands_functions.emplace_back([=](GLOBAL_CB_NODE *primary_cb, VkFramebuffer fb) {
+            cb_state->cmd_execute_commands_functions.emplace_back([=](CMD_BUFFER_STATE *primary_cb, VkFramebuffer fb) {
                 return ValidateImageBarrierImage(funcName, cb_state, fb, active_subpass, sub_desc, rp_handle, i, img_barrier);
             });
         } else {
@@ -7589,7 +7589,7 @@ bool CoreChecks::ValidateRenderPassImageBarriers(const char *funcName, GLOBAL_CB
 
 // Validate VUs for Pipeline Barriers that are within a renderPass
 // Pre: cb_state->activeRenderPass must be a pointer to valid renderPass state
-bool CoreChecks::ValidateRenderPassPipelineBarriers(const char *funcName, GLOBAL_CB_NODE *cb_state,
+bool CoreChecks::ValidateRenderPassPipelineBarriers(const char *funcName, CMD_BUFFER_STATE *cb_state,
                                                     VkPipelineStageFlags src_stage_mask, VkPipelineStageFlags dst_stage_mask,
                                                     VkDependencyFlags dependency_flags, uint32_t mem_barrier_count,
                                                     const VkMemoryBarrier *mem_barriers, uint32_t buffer_mem_barrier_count,
@@ -7836,7 +7836,7 @@ static const std::string buffer_error_codes[] = {
 
 class ValidatorState {
    public:
-    ValidatorState(const CoreChecks *device_data, const char *func_name, const GLOBAL_CB_NODE *cb_state,
+    ValidatorState(const CoreChecks *device_data, const char *func_name, const CMD_BUFFER_STATE *cb_state,
                    const uint64_t barrier_handle64, const VkSharingMode sharing_mode, const VulkanObjectType object_type,
                    const std::string *val_codes)
         : report_data_(device_data->report_data),
@@ -7850,13 +7850,13 @@ class ValidatorState {
           mem_ext_(device_data->device_extensions.vk_khr_external_memory) {}
 
     // Create a validator state from an image state... reducing the image specific to the generic version.
-    ValidatorState(const CoreChecks *device_data, const char *func_name, const GLOBAL_CB_NODE *cb_state,
+    ValidatorState(const CoreChecks *device_data, const char *func_name, const CMD_BUFFER_STATE *cb_state,
                    const VkImageMemoryBarrier *barrier, const IMAGE_STATE *state)
         : ValidatorState(device_data, func_name, cb_state, HandleToUint64(barrier->image), state->createInfo.sharingMode,
                          kVulkanObjectTypeImage, image_error_codes) {}
 
     // Create a validator state from an buffer state... reducing the buffer specific to the generic version.
-    ValidatorState(const CoreChecks *device_data, const char *func_name, const GLOBAL_CB_NODE *cb_state,
+    ValidatorState(const CoreChecks *device_data, const char *func_name, const CMD_BUFFER_STATE *cb_state,
                    const VkBufferMemoryBarrier *barrier, const BUFFER_STATE *state)
         : ValidatorState(device_data, func_name, cb_state, HandleToUint64(barrier->buffer), state->createInfo.sharingMode,
                          kVulkanObjectTypeImage, buffer_error_codes) {}
@@ -7953,7 +7953,7 @@ class ValidatorState {
     const bool mem_ext_;
 };
 
-bool Validate(const CoreChecks *device_data, const char *func_name, GLOBAL_CB_NODE *cb_state, const ValidatorState &val,
+bool Validate(const CoreChecks *device_data, const char *func_name, CMD_BUFFER_STATE *cb_state, const ValidatorState &val,
               const uint32_t src_queue_family, const uint32_t dst_queue_family) {
     bool skip = false;
 
@@ -8008,8 +8008,8 @@ bool Validate(const CoreChecks *device_data, const char *func_name, GLOBAL_CB_NO
 }  // namespace barrier_queue_families
 
 // Type specific wrapper for image barriers
-bool CoreChecks::ValidateBarrierQueueFamilies(const char *func_name, GLOBAL_CB_NODE *cb_state, const VkImageMemoryBarrier *barrier,
-                                              const IMAGE_STATE *state_data) {
+bool CoreChecks::ValidateBarrierQueueFamilies(const char *func_name, CMD_BUFFER_STATE *cb_state,
+                                              const VkImageMemoryBarrier *barrier, const IMAGE_STATE *state_data) {
     // State data is required
     if (!state_data) {
         return false;
@@ -8023,8 +8023,8 @@ bool CoreChecks::ValidateBarrierQueueFamilies(const char *func_name, GLOBAL_CB_N
 }
 
 // Type specific wrapper for buffer barriers
-bool CoreChecks::ValidateBarrierQueueFamilies(const char *func_name, GLOBAL_CB_NODE *cb_state, const VkBufferMemoryBarrier *barrier,
-                                              const BUFFER_STATE *state_data) {
+bool CoreChecks::ValidateBarrierQueueFamilies(const char *func_name, CMD_BUFFER_STATE *cb_state,
+                                              const VkBufferMemoryBarrier *barrier, const BUFFER_STATE *state_data) {
     // State data is required
     if (!state_data) {
         return false;
@@ -8037,7 +8037,7 @@ bool CoreChecks::ValidateBarrierQueueFamilies(const char *func_name, GLOBAL_CB_N
     return barrier_queue_families::Validate(this, func_name, cb_state, val, src_queue_family, dst_queue_family);
 }
 
-bool CoreChecks::ValidateBarriers(const char *funcName, GLOBAL_CB_NODE *cb_state, VkPipelineStageFlags src_stage_mask,
+bool CoreChecks::ValidateBarriers(const char *funcName, CMD_BUFFER_STATE *cb_state, VkPipelineStageFlags src_stage_mask,
                                   VkPipelineStageFlags dst_stage_mask, uint32_t memBarrierCount,
                                   const VkMemoryBarrier *pMemBarriers, uint32_t bufferBarrierCount,
                                   const VkBufferMemoryBarrier *pBufferMemBarriers, uint32_t imageMemBarrierCount,
@@ -8149,7 +8149,7 @@ bool CoreChecks::ValidateBarriers(const char *funcName, GLOBAL_CB_NODE *cb_state
     return skip;
 }
 
-bool CoreChecks::ValidateEventStageMask(VkQueue queue, GLOBAL_CB_NODE *pCB, uint32_t eventCount, size_t firstEventIndex,
+bool CoreChecks::ValidateEventStageMask(VkQueue queue, CMD_BUFFER_STATE *pCB, uint32_t eventCount, size_t firstEventIndex,
                                         VkPipelineStageFlags sourceStageMask) {
     bool skip = false;
     VkPipelineStageFlags stageMask = 0;
@@ -8246,7 +8246,7 @@ bool AllTransferOp(const COMMAND_POOL_NODE *pool, OpCheck &op_check, uint32_t co
 }
 
 // Look at the barriers to see if we they are all release or all acquire, the result impacts queue properties validation
-BarrierOperationsType CoreChecks::ComputeBarrierOperationsType(GLOBAL_CB_NODE *cb_state, uint32_t buffer_barrier_count,
+BarrierOperationsType CoreChecks::ComputeBarrierOperationsType(CMD_BUFFER_STATE *cb_state, uint32_t buffer_barrier_count,
                                                                const VkBufferMemoryBarrier *buffer_barriers,
                                                                uint32_t image_barrier_count,
                                                                const VkImageMemoryBarrier *image_barriers) {
@@ -8268,7 +8268,8 @@ BarrierOperationsType CoreChecks::ComputeBarrierOperationsType(GLOBAL_CB_NODE *c
     return op_type;
 }
 
-bool CoreChecks::ValidateStageMasksAgainstQueueCapabilities(GLOBAL_CB_NODE const *cb_state, VkPipelineStageFlags source_stage_mask,
+bool CoreChecks::ValidateStageMasksAgainstQueueCapabilities(CMD_BUFFER_STATE const *cb_state,
+                                                            VkPipelineStageFlags source_stage_mask,
                                                             VkPipelineStageFlags dest_stage_mask,
                                                             BarrierOperationsType barrier_op_type, const char *function,
                                                             const char *error_code) {
@@ -8302,7 +8303,7 @@ bool CoreChecks::PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, uin
                                               uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers,
                                               uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier *pBufferMemoryBarriers,
                                               uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier *pImageMemoryBarriers) {
-    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
+    CMD_BUFFER_STATE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
 
     auto barrier_op_type = ComputeBarrierOperationsType(cb_state, bufferMemoryBarrierCount, pBufferMemoryBarriers,
@@ -8329,7 +8330,7 @@ void CoreChecks::PreCallRecordCmdWaitEvents(VkCommandBuffer commandBuffer, uint3
                                             uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers,
                                             uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier *pBufferMemoryBarriers,
                                             uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier *pImageMemoryBarriers) {
-    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
+    CMD_BUFFER_STATE *cb_state = GetCBNode(commandBuffer);
     auto first_event_index = cb_state->events.size();
     for (uint32_t i = 0; i < eventCount; ++i) {
         auto event_state = GetEventNode(pEvents[i]);
@@ -8353,7 +8354,7 @@ void CoreChecks::PostCallRecordCmdWaitEvents(VkCommandBuffer commandBuffer, uint
                                              uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers,
                                              uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier *pBufferMemoryBarriers,
                                              uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier *pImageMemoryBarriers) {
-    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
+    CMD_BUFFER_STATE *cb_state = GetCBNode(commandBuffer);
     RecordBarriersQFOTransfers(cb_state, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount,
                                pImageMemoryBarriers);
 }
@@ -8365,7 +8366,7 @@ bool CoreChecks::PreCallValidateCmdPipelineBarrier(VkCommandBuffer commandBuffer
                                                    const VkBufferMemoryBarrier *pBufferMemoryBarriers,
                                                    uint32_t imageMemoryBarrierCount,
                                                    const VkImageMemoryBarrier *pImageMemoryBarriers) {
-    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
+    CMD_BUFFER_STATE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
 
     bool skip = false;
@@ -8404,7 +8405,7 @@ void CoreChecks::PreCallRecordCmdPipelineBarrier(VkCommandBuffer commandBuffer, 
                                                  const VkBufferMemoryBarrier *pBufferMemoryBarriers,
                                                  uint32_t imageMemoryBarrierCount,
                                                  const VkImageMemoryBarrier *pImageMemoryBarriers) {
-    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
+    CMD_BUFFER_STATE *cb_state = GetCBNode(commandBuffer);
 
     RecordBarriersQFOTransfers(cb_state, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount,
                                pImageMemoryBarriers);
@@ -8412,7 +8413,7 @@ void CoreChecks::PreCallRecordCmdPipelineBarrier(VkCommandBuffer commandBuffer, 
 }
 
 bool CoreChecks::SetQueryState(VkQueue queue, VkCommandBuffer commandBuffer, QueryObject object, bool value) {
-    GLOBAL_CB_NODE *pCB = GetCBNode(commandBuffer);
+    CMD_BUFFER_STATE *pCB = GetCBNode(commandBuffer);
     if (pCB) {
         pCB->queryToStateMap[object] = value;
     }
@@ -8425,7 +8426,7 @@ bool CoreChecks::SetQueryState(VkQueue queue, VkCommandBuffer commandBuffer, Que
 
 bool CoreChecks::PreCallValidateCmdBeginQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot, VkFlags flags) {
     if (disabled.query_validation) return false;
-    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
+    CMD_BUFFER_STATE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
     bool skip = ValidateCmdQueueFlags(cb_state, "vkCmdBeginQuery()", VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
                                       "VUID-vkCmdBeginQuery-commandBuffer-cmdpool");
@@ -8452,7 +8453,7 @@ bool CoreChecks::PreCallValidateCmdBeginQuery(VkCommandBuffer commandBuffer, VkQ
 }
 
 void CoreChecks::PostCallRecordCmdBeginQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot, VkFlags flags) {
-    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
+    CMD_BUFFER_STATE *cb_state = GetCBNode(commandBuffer);
     QueryObject query = {queryPool, slot};
     cb_state->activeQueries.insert(query);
     cb_state->startedQueries.insert(query);
@@ -8463,7 +8464,7 @@ void CoreChecks::PostCallRecordCmdBeginQuery(VkCommandBuffer commandBuffer, VkQu
 bool CoreChecks::PreCallValidateCmdEndQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot) {
     if (disabled.query_validation) return false;
     QueryObject query = {queryPool, slot};
-    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
+    CMD_BUFFER_STATE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
     bool skip = false;
     if (!cb_state->activeQueries.count(query)) {
@@ -8480,7 +8481,7 @@ bool CoreChecks::PreCallValidateCmdEndQuery(VkCommandBuffer commandBuffer, VkQue
 
 void CoreChecks::PostCallRecordCmdEndQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot) {
     QueryObject query = {queryPool, slot};
-    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
+    CMD_BUFFER_STATE *cb_state = GetCBNode(commandBuffer);
     cb_state->activeQueries.erase(query);
     cb_state->queryUpdates.emplace_back([=](VkQueue q) { return SetQueryState(q, commandBuffer, query, true); });
     AddCommandBufferBinding(&GetQueryPoolNode(queryPool)->cb_bindings, {HandleToUint64(queryPool), kVulkanObjectTypeQueryPool},
@@ -8490,7 +8491,7 @@ void CoreChecks::PostCallRecordCmdEndQuery(VkCommandBuffer commandBuffer, VkQuer
 bool CoreChecks::PreCallValidateCmdResetQueryPool(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery,
                                                   uint32_t queryCount) {
     if (disabled.query_validation) return false;
-    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
+    CMD_BUFFER_STATE *cb_state = GetCBNode(commandBuffer);
 
     bool skip = InsideRenderPass(cb_state, "vkCmdResetQueryPool()", "VUID-vkCmdResetQueryPool-renderpass");
     skip |= ValidateCmd(cb_state, CMD_RESETQUERYPOOL, "VkCmdResetQueryPool()");
@@ -8501,7 +8502,7 @@ bool CoreChecks::PreCallValidateCmdResetQueryPool(VkCommandBuffer commandBuffer,
 
 void CoreChecks::PostCallRecordCmdResetQueryPool(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery,
                                                  uint32_t queryCount) {
-    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
+    CMD_BUFFER_STATE *cb_state = GetCBNode(commandBuffer);
 
     for (uint32_t i = 0; i < queryCount; i++) {
         QueryObject query = {queryPool, firstQuery + i};
@@ -8525,7 +8526,7 @@ bool CoreChecks::IsQueryInvalid(QUEUE_STATE *queue_data, VkQueryPool queryPool, 
     return false;
 }
 
-bool CoreChecks::ValidateQuery(VkQueue queue, GLOBAL_CB_NODE *pCB, VkQueryPool queryPool, uint32_t firstQuery,
+bool CoreChecks::ValidateQuery(VkQueue queue, CMD_BUFFER_STATE *pCB, VkQueryPool queryPool, uint32_t firstQuery,
                                uint32_t queryCount) {
     bool skip = false;
     auto queue_data = GetQueueState(queue);
@@ -8577,7 +8578,7 @@ bool CoreChecks::PreCallValidateCmdPushConstants(VkCommandBuffer commandBuffer, 
                                                  VkShaderStageFlags stageFlags, uint32_t offset, uint32_t size,
                                                  const void *pValues) {
     bool skip = false;
-    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
+    CMD_BUFFER_STATE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
     skip |= ValidateCmdQueueFlags(cb_state, "vkCmdPushConstants()", VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
                                   "VUID-vkCmdPushConstants-commandBuffer-cmdpool");
@@ -8629,7 +8630,7 @@ bool CoreChecks::PreCallValidateCmdPushConstants(VkCommandBuffer commandBuffer, 
 bool CoreChecks::PreCallValidateCmdWriteTimestamp(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage,
                                                   VkQueryPool queryPool, uint32_t slot) {
     if (disabled.query_validation) return false;
-    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
+    CMD_BUFFER_STATE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
     bool skip = ValidateCmdQueueFlags(cb_state, "vkCmdWriteTimestamp()",
                                       VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT,
@@ -8640,7 +8641,7 @@ bool CoreChecks::PreCallValidateCmdWriteTimestamp(VkCommandBuffer commandBuffer,
 
 void CoreChecks::PostCallRecordCmdWriteTimestamp(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage,
                                                  VkQueryPool queryPool, uint32_t slot) {
-    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
+    CMD_BUFFER_STATE *cb_state = GetCBNode(commandBuffer);
     QueryObject query = {queryPool, slot};
     cb_state->queryUpdates.emplace_back([=](VkQueue q) { return SetQueryState(q, commandBuffer, query, true); });
 }
@@ -9860,7 +9861,7 @@ bool CoreChecks::PreCallValidateCreateRenderPass2KHR(VkDevice device, const VkRe
     return skip;
 }
 
-bool CoreChecks::ValidatePrimaryCommandBuffer(const GLOBAL_CB_NODE *pCB, char const *cmd_name, const char *error_code) {
+bool CoreChecks::ValidatePrimaryCommandBuffer(const CMD_BUFFER_STATE *pCB, char const *cmd_name, const char *error_code) {
     bool skip = false;
     if (pCB->createInfo.level != VK_COMMAND_BUFFER_LEVEL_PRIMARY) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
@@ -9904,7 +9905,7 @@ static bool FormatSpecificLoadAndStoreOpSettings(VkFormat format, T color_depth_
 
 bool CoreChecks::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, RenderPassCreateVersion rp_version,
                                             const VkRenderPassBeginInfo *pRenderPassBegin) {
-    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
+    CMD_BUFFER_STATE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
     auto render_pass_state = pRenderPassBegin ? GetRenderPassState(pRenderPassBegin->renderPass) : nullptr;
     auto framebuffer = pRenderPassBegin ? GetFramebufferState(pRenderPassBegin->framebuffer) : nullptr;
@@ -10026,7 +10027,7 @@ bool CoreChecks::PreCallValidateCmdBeginRenderPass2KHR(VkCommandBuffer commandBu
 
 void CoreChecks::RecordCmdBeginRenderPassState(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
                                                const VkSubpassContents contents) {
-    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
+    CMD_BUFFER_STATE *cb_state = GetCBNode(commandBuffer);
     auto render_pass_state = pRenderPassBegin ? GetRenderPassState(pRenderPassBegin->renderPass) : nullptr;
     auto framebuffer = pRenderPassBegin ? GetFramebufferState(pRenderPassBegin->framebuffer) : nullptr;
 
@@ -10066,7 +10067,7 @@ void CoreChecks::PreCallRecordCmdBeginRenderPass2KHR(VkCommandBuffer commandBuff
 }
 
 bool CoreChecks::ValidateCmdNextSubpass(RenderPassCreateVersion rp_version, VkCommandBuffer commandBuffer) {
-    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
+    CMD_BUFFER_STATE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
     bool skip = false;
     const bool use_rp2 = (rp_version == RENDER_PASS_VERSION_2);
@@ -10103,7 +10104,7 @@ bool CoreChecks::PreCallValidateCmdNextSubpass2KHR(VkCommandBuffer commandBuffer
 }
 
 void CoreChecks::RecordCmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpassContents contents) {
-    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
+    CMD_BUFFER_STATE *cb_state = GetCBNode(commandBuffer);
     cb_state->activeSubpass++;
     cb_state->activeSubpassContents = contents;
     TransitionSubpassLayouts(cb_state, cb_state->activeRenderPass, cb_state->activeSubpass,
@@ -10120,7 +10121,7 @@ void CoreChecks::PostCallRecordCmdNextSubpass2KHR(VkCommandBuffer commandBuffer,
 }
 
 bool CoreChecks::ValidateCmdEndRenderPass(RenderPassCreateVersion rp_version, VkCommandBuffer commandBuffer) {
-    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
+    CMD_BUFFER_STATE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
     bool skip = false;
     const bool use_rp2 = (rp_version == RENDER_PASS_VERSION_2);
@@ -10161,7 +10162,7 @@ bool CoreChecks::PreCallValidateCmdEndRenderPass2KHR(VkCommandBuffer commandBuff
 }
 
 void CoreChecks::RecordCmdEndRenderPassState(VkCommandBuffer commandBuffer) {
-    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
+    CMD_BUFFER_STATE *cb_state = GetCBNode(commandBuffer);
     FRAMEBUFFER_STATE *framebuffer = GetFramebufferState(cb_state->activeFramebuffer);
     TransitionFinalSubpassLayouts(cb_state, &cb_state->activeRenderPassBeginInfo, framebuffer);
     cb_state->activeRenderPass = nullptr;
@@ -10175,8 +10176,8 @@ void CoreChecks::PostCallRecordCmdEndRenderPass2KHR(VkCommandBuffer commandBuffe
     RecordCmdEndRenderPassState(commandBuffer);
 }
 
-bool CoreChecks::ValidateFramebuffer(VkCommandBuffer primaryBuffer, const GLOBAL_CB_NODE *pCB, VkCommandBuffer secondaryBuffer,
-                                     const GLOBAL_CB_NODE *pSubCB, const char *caller) {
+bool CoreChecks::ValidateFramebuffer(VkCommandBuffer primaryBuffer, const CMD_BUFFER_STATE *pCB, VkCommandBuffer secondaryBuffer,
+                                     const CMD_BUFFER_STATE *pSubCB, const char *caller) {
     bool skip = false;
     if (!pSubCB->beginInfo.pInheritanceInfo) {
         return skip;
@@ -10204,7 +10205,7 @@ bool CoreChecks::ValidateFramebuffer(VkCommandBuffer primaryBuffer, const GLOBAL
     return skip;
 }
 
-bool CoreChecks::ValidateSecondaryCommandBufferState(GLOBAL_CB_NODE *pCB, GLOBAL_CB_NODE *pSubCB) {
+bool CoreChecks::ValidateSecondaryCommandBufferState(CMD_BUFFER_STATE *pCB, CMD_BUFFER_STATE *pSubCB) {
     bool skip = false;
     unordered_set<int> activeTypes;
     if (!disabled.query_validation) {
@@ -10256,11 +10257,11 @@ bool CoreChecks::ValidateSecondaryCommandBufferState(GLOBAL_CB_NODE *pCB, GLOBAL
 
 bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBuffersCount,
                                                    const VkCommandBuffer *pCommandBuffers) {
-    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
+    CMD_BUFFER_STATE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
     bool skip = false;
-    GLOBAL_CB_NODE *sub_cb_state = NULL;
-    std::unordered_set<GLOBAL_CB_NODE *> linked_command_buffers = cb_state->linkedCommandBuffers;
+    CMD_BUFFER_STATE *sub_cb_state = NULL;
+    std::unordered_set<CMD_BUFFER_STATE *> linked_command_buffers = cb_state->linkedCommandBuffers;
 
     for (uint32_t i = 0; i < commandBuffersCount; i++) {
         sub_cb_state = GetCBNode(pCommandBuffers[i]);
@@ -10348,7 +10349,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
         // Validate initial layout uses vs. the primary cmd buffer state
         // Novel Valid usage: "UNASSIGNED-vkCmdExecuteCommands-commandBuffer-00001"
         // initial layout usage of secondary command buffers resources must match parent command buffer
-        const auto *const_cb_state = static_cast<const GLOBAL_CB_NODE *>(cb_state);
+        const auto *const_cb_state = static_cast<const CMD_BUFFER_STATE *>(cb_state);
         for (const auto &sub_layout_map_entry : sub_cb_state->image_layout_map) {
             const auto image = sub_layout_map_entry.first;
             const auto *image_state = GetImageState(image);
@@ -10397,9 +10398,9 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
 
 void CoreChecks::PreCallRecordCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBuffersCount,
                                                  const VkCommandBuffer *pCommandBuffers) {
-    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
+    CMD_BUFFER_STATE *cb_state = GetCBNode(commandBuffer);
 
-    GLOBAL_CB_NODE *sub_cb_state = NULL;
+    CMD_BUFFER_STATE *sub_cb_state = NULL;
     for (uint32_t i = 0; i < commandBuffersCount; i++) {
         sub_cb_state = GetCBNode(pCommandBuffers[i]);
         assert(sub_cb_state);
@@ -12373,7 +12374,7 @@ void CoreChecks::PreCallRecordCmdInsertDebugUtilsLabelEXT(VkCommandBuffer comman
     InsertCmdDebugUtilsLabel(report_data, commandBuffer, pLabelInfo);
 
     // Squirrel away an easily accessible copy.
-    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
+    CMD_BUFFER_STATE *cb_state = GetCBNode(commandBuffer);
     cb_state->debug_label = LoggingLabel(pLabelInfo);
 }
 
@@ -12571,7 +12572,7 @@ static std::shared_ptr<cvdescriptorset::DescriptorSetLayout const> GetDslFromPip
 bool CoreChecks::PreCallValidateCmdPushDescriptorSetWithTemplateKHR(VkCommandBuffer commandBuffer,
                                                                     VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate,
                                                                     VkPipelineLayout layout, uint32_t set, const void *pData) {
-    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
+    CMD_BUFFER_STATE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
     const char *const func_name = "vkPushDescriptorSetWithTemplateKHR()";
     bool skip = false;
@@ -12648,7 +12649,7 @@ bool CoreChecks::PreCallValidateCmdPushDescriptorSetWithTemplateKHR(VkCommandBuf
 void CoreChecks::PreCallRecordCmdPushDescriptorSetWithTemplateKHR(VkCommandBuffer commandBuffer,
                                                                   VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate,
                                                                   VkPipelineLayout layout, uint32_t set, const void *pData) {
-    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
+    CMD_BUFFER_STATE *cb_state = GetCBNode(commandBuffer);
 
     const auto template_state = GetDescriptorTemplateState(descriptorUpdateTemplate);
     if (template_state) {
@@ -12746,27 +12747,27 @@ bool CoreChecks::PreCallValidateGetDisplayPlaneCapabilities2KHR(VkPhysicalDevice
 
 bool CoreChecks::PreCallValidateCmdDebugMarkerBeginEXT(VkCommandBuffer commandBuffer,
                                                        const VkDebugMarkerMarkerInfoEXT *pMarkerInfo) {
-    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
+    CMD_BUFFER_STATE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
     return ValidateCmd(cb_state, CMD_DEBUGMARKERBEGINEXT, "vkCmdDebugMarkerBeginEXT()");
 }
 
 bool CoreChecks::PreCallValidateCmdDebugMarkerEndEXT(VkCommandBuffer commandBuffer) {
-    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
+    CMD_BUFFER_STATE *cb_state = GetCBNode(commandBuffer);
     assert(cb_state);
     return ValidateCmd(cb_state, CMD_DEBUGMARKERENDEXT, "vkCmdDebugMarkerEndEXT()");
 }
 
 bool CoreChecks::PreCallValidateCmdSetDiscardRectangleEXT(VkCommandBuffer commandBuffer, uint32_t firstDiscardRectangle,
                                                           uint32_t discardRectangleCount, const VkRect2D *pDiscardRectangles) {
-    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
+    CMD_BUFFER_STATE *cb_state = GetCBNode(commandBuffer);
     // Minimal validation for command buffer state
     return ValidateCmd(cb_state, CMD_SETDISCARDRECTANGLEEXT, "vkCmdSetDiscardRectangleEXT()");
 }
 
 bool CoreChecks::PreCallValidateCmdSetSampleLocationsEXT(VkCommandBuffer commandBuffer,
                                                          const VkSampleLocationsInfoEXT *pSampleLocationsInfo) {
-    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
+    CMD_BUFFER_STATE *cb_state = GetCBNode(commandBuffer);
     // Minimal validation for command buffer state
     return ValidateCmd(cb_state, CMD_SETSAMPLELOCATIONSEXT, "vkCmdSetSampleLocationsEXT()");
 }
@@ -12924,7 +12925,7 @@ VkResult CoreChecks::CoreLayerMergeValidationCachesEXT(VkDevice device, VkValida
 
 bool CoreChecks::PreCallValidateCmdSetDeviceMask(VkCommandBuffer commandBuffer, uint32_t deviceMask) {
     bool skip = false;
-    GLOBAL_CB_NODE *cb_state = GetCBNode(commandBuffer);
+    CMD_BUFFER_STATE *cb_state = GetCBNode(commandBuffer);
 
     skip |= ValidateDeviceMaskToPhysicalDeviceCount(deviceMask, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                                                     HandleToUint64(commandBuffer), "VUID-vkCmdSetDeviceMask-deviceMask-00108");

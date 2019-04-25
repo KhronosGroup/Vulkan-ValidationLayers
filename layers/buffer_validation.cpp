@@ -287,7 +287,7 @@ void CoreChecks::SetGlobalLayout(ImageSubresourcePair imgpair, const VkImageLayo
 }
 
 // Set image layout for given VkImageSubresourceRange struct
-void CoreChecks::SetImageLayout(GLOBAL_CB_NODE *cb_node, const IMAGE_STATE &image_state,
+void CoreChecks::SetImageLayout(CMD_BUFFER_STATE *cb_node, const IMAGE_STATE &image_state,
                                 const VkImageSubresourceRange &image_subresource_range, VkImageLayout layout,
                                 VkImageLayout expected_layout) {
     auto *subresource_map = GetImageSubresourceLayoutMap(cb_node, image_state);
@@ -298,7 +298,7 @@ void CoreChecks::SetImageLayout(GLOBAL_CB_NODE *cb_node, const IMAGE_STATE &imag
 }
 
 // Set the initial image layout for all slices of an image view
-void CoreChecks::SetImageViewInitialLayout(GLOBAL_CB_NODE *cb_node, const IMAGE_VIEW_STATE &view_state, VkImageLayout layout) {
+void CoreChecks::SetImageViewInitialLayout(CMD_BUFFER_STATE *cb_node, const IMAGE_VIEW_STATE &view_state, VkImageLayout layout) {
     IMAGE_STATE *image_state = GetImageState(view_state.create_info.image);
     if (image_state) {
         auto *subresource_map = GetImageSubresourceLayoutMap(cb_node, *image_state);
@@ -307,27 +307,27 @@ void CoreChecks::SetImageViewInitialLayout(GLOBAL_CB_NODE *cb_node, const IMAGE_
 }
 
 // Set the initial image layout for a passed non-normalized subresource range
-void CoreChecks::SetImageInitialLayout(GLOBAL_CB_NODE *cb_node, const IMAGE_STATE &image_state,
+void CoreChecks::SetImageInitialLayout(CMD_BUFFER_STATE *cb_node, const IMAGE_STATE &image_state,
                                        const VkImageSubresourceRange &range, VkImageLayout layout) {
     auto *subresource_map = GetImageSubresourceLayoutMap(cb_node, image_state);
     assert(subresource_map);
     subresource_map->SetSubresourceRangeInitialLayout(NormalizeSubresourceRange(image_state, range), layout, *cb_node);
 }
 
-void CoreChecks::SetImageInitialLayout(GLOBAL_CB_NODE *cb_node, VkImage image, const VkImageSubresourceRange &range,
+void CoreChecks::SetImageInitialLayout(CMD_BUFFER_STATE *cb_node, VkImage image, const VkImageSubresourceRange &range,
                                        VkImageLayout layout) {
     const IMAGE_STATE *image_state = GetImageState(image);
     if (!image_state) return;
     SetImageInitialLayout(cb_node, *image_state, range, layout);
 };
 
-void CoreChecks::SetImageInitialLayout(GLOBAL_CB_NODE *cb_node, const IMAGE_STATE &image_state,
+void CoreChecks::SetImageInitialLayout(CMD_BUFFER_STATE *cb_node, const IMAGE_STATE &image_state,
                                        const VkImageSubresourceLayers &layers, VkImageLayout layout) {
     SetImageInitialLayout(cb_node, image_state, RangeFromLayers(layers), layout);
 }
 
 // Set image layout for all slices of an image view
-void CoreChecks::SetImageViewLayout(GLOBAL_CB_NODE *cb_node, const IMAGE_VIEW_STATE &view_state, VkImageLayout layout) {
+void CoreChecks::SetImageViewLayout(CMD_BUFFER_STATE *cb_node, const IMAGE_VIEW_STATE &view_state, VkImageLayout layout) {
     IMAGE_STATE *image_state = GetImageState(view_state.create_info.image);
     if (!image_state) return;  // TODO: track/report stale image references
 
@@ -442,7 +442,7 @@ bool CoreChecks::ValidateRenderPassLayoutAgainstFramebufferImageUsage(RenderPass
     return skip;
 }
 
-bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(RenderPassCreateVersion rp_version, GLOBAL_CB_NODE *pCB,
+bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(RenderPassCreateVersion rp_version, CMD_BUFFER_STATE *pCB,
                                                        const VkRenderPassBeginInfo *pRenderPassBegin,
                                                        const FRAMEBUFFER_STATE *framebuffer_state) {
     bool skip = false;
@@ -457,7 +457,7 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(RenderPassCreateVersion r
                         HandleToUint64(pCB->commandBuffer), kVUID_Core_DrawState_InvalidRenderpass,
                         "You cannot start a render pass using a framebuffer with a different number of attachments.");
     }
-    const auto *const_pCB = static_cast<const GLOBAL_CB_NODE *>(pCB);
+    const auto *const_pCB = static_cast<const CMD_BUFFER_STATE *>(pCB);
     for (uint32_t i = 0; i < pRenderPassInfo->attachmentCount; ++i) {
         const VkImageView &image_view = framebufferInfo.pAttachments[i];
         auto view_state = GetImageViewState(image_view);
@@ -576,7 +576,7 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(RenderPassCreateVersion r
     return skip;
 }
 
-void CoreChecks::TransitionAttachmentRefLayout(GLOBAL_CB_NODE *pCB, FRAMEBUFFER_STATE *pFramebuffer,
+void CoreChecks::TransitionAttachmentRefLayout(CMD_BUFFER_STATE *pCB, FRAMEBUFFER_STATE *pFramebuffer,
                                                const safe_VkAttachmentReference2KHR &ref) {
     if (ref.attachment != VK_ATTACHMENT_UNUSED) {
         auto image_view = GetAttachmentImageViewState(pFramebuffer, ref.attachment);
@@ -586,8 +586,8 @@ void CoreChecks::TransitionAttachmentRefLayout(GLOBAL_CB_NODE *pCB, FRAMEBUFFER_
     }
 }
 
-void CoreChecks::TransitionSubpassLayouts(GLOBAL_CB_NODE *pCB, const RENDER_PASS_STATE *render_pass_state, const int subpass_index,
-                                          FRAMEBUFFER_STATE *framebuffer_state) {
+void CoreChecks::TransitionSubpassLayouts(CMD_BUFFER_STATE *pCB, const RENDER_PASS_STATE *render_pass_state,
+                                          const int subpass_index, FRAMEBUFFER_STATE *framebuffer_state) {
     assert(render_pass_state);
 
     if (framebuffer_state) {
@@ -607,7 +607,7 @@ void CoreChecks::TransitionSubpassLayouts(GLOBAL_CB_NODE *pCB, const RENDER_PASS
 // Transition the layout state for renderpass attachments based on the BeginRenderPass() call. This includes:
 // 1. Transition into initialLayout state
 // 2. Transition from initialLayout to layout used in subpass 0
-void CoreChecks::TransitionBeginRenderPassLayouts(GLOBAL_CB_NODE *cb_state, const RENDER_PASS_STATE *render_pass_state,
+void CoreChecks::TransitionBeginRenderPassLayouts(CMD_BUFFER_STATE *cb_state, const RENDER_PASS_STATE *render_pass_state,
                                                   FRAMEBUFFER_STATE *framebuffer_state) {
     // First transition into initialLayout
     auto const rpci = render_pass_state->createInfo.ptr();
@@ -707,7 +707,7 @@ using ImageBarrierScoreboardSubresMap = std::unordered_map<VkImageSubresourceRan
 using ImageBarrierScoreboardImageMap = std::unordered_map<VkImage, ImageBarrierScoreboardSubresMap>;
 
 // Verify image barriers are compatible with the images they reference.
-bool CoreChecks::ValidateBarriersToImages(GLOBAL_CB_NODE const *cb_state, uint32_t imageMemoryBarrierCount,
+bool CoreChecks::ValidateBarriersToImages(CMD_BUFFER_STATE const *cb_state, uint32_t imageMemoryBarrierCount,
                                           const VkImageMemoryBarrier *pImageMemoryBarriers, const char *func_name) {
     bool skip = false;
 
@@ -817,7 +817,7 @@ bool CoreChecks::ValidateBarriersToImages(GLOBAL_CB_NODE const *cb_state, uint32
     return skip;
 }
 
-bool CoreChecks::IsReleaseOp(GLOBAL_CB_NODE *cb_state, VkImageMemoryBarrier const *barrier) {
+bool CoreChecks::IsReleaseOp(CMD_BUFFER_STATE *cb_state, VkImageMemoryBarrier const *barrier) {
     if (!IsTransferOp(barrier)) return false;
 
     auto pool = GetCommandPoolNode(cb_state->createInfo.commandPool);
@@ -825,7 +825,7 @@ bool CoreChecks::IsReleaseOp(GLOBAL_CB_NODE *cb_state, VkImageMemoryBarrier cons
 }
 
 template <typename Barrier>
-bool CoreChecks::ValidateQFOTransferBarrierUniqueness(const char *func_name, GLOBAL_CB_NODE *cb_state, uint32_t barrier_count,
+bool CoreChecks::ValidateQFOTransferBarrierUniqueness(const char *func_name, CMD_BUFFER_STATE *cb_state, uint32_t barrier_count,
                                                       const Barrier *barriers) {
     using BarrierRecord = QFOTransferBarrier<Barrier>;
     bool skip = false;
@@ -866,7 +866,7 @@ bool CoreChecks::ValidateQFOTransferBarrierUniqueness(const char *func_name, GLO
 }
 
 template <typename Barrier>
-void CoreChecks::RecordQFOTransferBarriers(GLOBAL_CB_NODE *cb_state, uint32_t barrier_count, const Barrier *barriers) {
+void CoreChecks::RecordQFOTransferBarriers(CMD_BUFFER_STATE *cb_state, uint32_t barrier_count, const Barrier *barriers) {
     auto pool = GetCommandPoolNode(cb_state->createInfo.commandPool);
     auto &barrier_sets = GetQFOBarrierSets(cb_state, typename QFOTransferBarrier<Barrier>::Tag());
     for (uint32_t b = 0; b < barrier_count; b++) {
@@ -881,8 +881,8 @@ void CoreChecks::RecordQFOTransferBarriers(GLOBAL_CB_NODE *cb_state, uint32_t ba
     }
 }
 
-bool CoreChecks::ValidateBarriersQFOTransferUniqueness(const char *func_name, GLOBAL_CB_NODE *cb_state, uint32_t bufferBarrierCount,
-                                                       const VkBufferMemoryBarrier *pBufferMemBarriers,
+bool CoreChecks::ValidateBarriersQFOTransferUniqueness(const char *func_name, CMD_BUFFER_STATE *cb_state,
+                                                       uint32_t bufferBarrierCount, const VkBufferMemoryBarrier *pBufferMemBarriers,
                                                        uint32_t imageMemBarrierCount,
                                                        const VkImageMemoryBarrier *pImageMemBarriers) {
     bool skip = false;
@@ -891,7 +891,7 @@ bool CoreChecks::ValidateBarriersQFOTransferUniqueness(const char *func_name, GL
     return skip;
 }
 
-void CoreChecks::RecordBarriersQFOTransfers(GLOBAL_CB_NODE *cb_state, uint32_t bufferBarrierCount,
+void CoreChecks::RecordBarriersQFOTransfers(CMD_BUFFER_STATE *cb_state, uint32_t bufferBarrierCount,
                                             const VkBufferMemoryBarrier *pBufferMemBarriers, uint32_t imageMemBarrierCount,
                                             const VkImageMemoryBarrier *pImageMemBarriers) {
     RecordQFOTransferBarriers(cb_state, bufferBarrierCount, pBufferMemBarriers);
@@ -899,7 +899,7 @@ void CoreChecks::RecordBarriersQFOTransfers(GLOBAL_CB_NODE *cb_state, uint32_t b
 }
 
 template <typename BarrierRecord, typename Scoreboard>
-bool CoreChecks::ValidateAndUpdateQFOScoreboard(const debug_report_data *report_data, const GLOBAL_CB_NODE *cb_state,
+bool CoreChecks::ValidateAndUpdateQFOScoreboard(const debug_report_data *report_data, const CMD_BUFFER_STATE *cb_state,
                                                 const char *operation, const BarrierRecord &barrier, Scoreboard *scoreboard) {
     // Record to the scoreboard or report that we have a duplication
     bool skip = false;
@@ -918,7 +918,7 @@ bool CoreChecks::ValidateAndUpdateQFOScoreboard(const debug_report_data *report_
 }
 
 template <typename Barrier>
-bool CoreChecks::ValidateQueuedQFOTransferBarriers(GLOBAL_CB_NODE *cb_state, QFOTransferCBScoreboards<Barrier> *scoreboards) {
+bool CoreChecks::ValidateQueuedQFOTransferBarriers(CMD_BUFFER_STATE *cb_state, QFOTransferCBScoreboards<Barrier> *scoreboards) {
     using BarrierRecord = QFOTransferBarrier<Barrier>;
     using TypeTag = typename BarrierRecord::Tag;
     bool skip = false;
@@ -966,7 +966,7 @@ bool CoreChecks::ValidateQueuedQFOTransferBarriers(GLOBAL_CB_NODE *cb_state, QFO
     return skip;
 }
 
-bool CoreChecks::ValidateQueuedQFOTransfers(GLOBAL_CB_NODE *cb_state,
+bool CoreChecks::ValidateQueuedQFOTransfers(CMD_BUFFER_STATE *cb_state,
                                             QFOTransferCBScoreboards<VkImageMemoryBarrier> *qfo_image_scoreboards,
                                             QFOTransferCBScoreboards<VkBufferMemoryBarrier> *qfo_buffer_scoreboards) {
     bool skip = false;
@@ -976,7 +976,7 @@ bool CoreChecks::ValidateQueuedQFOTransfers(GLOBAL_CB_NODE *cb_state,
 }
 
 template <typename Barrier>
-void CoreChecks::RecordQueuedQFOTransferBarriers(GLOBAL_CB_NODE *cb_state) {
+void CoreChecks::RecordQueuedQFOTransferBarriers(CMD_BUFFER_STATE *cb_state) {
     using BarrierRecord = QFOTransferBarrier<Barrier>;
     using TypeTag = typename BarrierRecord::Tag;
     const auto &cb_barriers = GetQFOBarrierSets(cb_state, TypeTag());
@@ -1003,7 +1003,7 @@ void CoreChecks::RecordQueuedQFOTransferBarriers(GLOBAL_CB_NODE *cb_state) {
     }
 }
 
-void CoreChecks::RecordQueuedQFOTransfers(GLOBAL_CB_NODE *cb_state) {
+void CoreChecks::RecordQueuedQFOTransfers(CMD_BUFFER_STATE *cb_state) {
     RecordQueuedQFOTransferBarriers<VkImageMemoryBarrier>(cb_state);
     RecordQueuedQFOTransferBarriers<VkBufferMemoryBarrier>(cb_state);
 }
@@ -1011,7 +1011,7 @@ void CoreChecks::RecordQueuedQFOTransfers(GLOBAL_CB_NODE *cb_state) {
 // Avoid making the template globally visible by exporting the one instance of it we need.
 void CoreChecks::EraseQFOImageRelaseBarriers(const VkImage &image) { EraseQFOReleaseBarriers<VkImageMemoryBarrier>(image); }
 
-void CoreChecks::TransitionImageLayouts(GLOBAL_CB_NODE *cb_state, uint32_t memBarrierCount,
+void CoreChecks::TransitionImageLayouts(CMD_BUFFER_STATE *cb_state, uint32_t memBarrierCount,
                                         const VkImageMemoryBarrier *pImgMemBarriers) {
     for (uint32_t i = 0; i < memBarrierCount; ++i) {
         auto mem_barrier = &pImgMemBarriers[i];
@@ -1046,7 +1046,7 @@ void CoreChecks::TransitionImageLayouts(GLOBAL_CB_NODE *cb_state, uint32_t memBa
     }
 }
 
-bool CoreChecks::VerifyImageLayout(GLOBAL_CB_NODE const *cb_node, IMAGE_STATE *image_state, const VkImageSubresourceRange &range,
+bool CoreChecks::VerifyImageLayout(CMD_BUFFER_STATE const *cb_node, IMAGE_STATE *image_state, const VkImageSubresourceRange &range,
                                    VkImageAspectFlags aspect_mask, VkImageLayout explicit_layout, VkImageLayout optimal_layout,
                                    const char *caller, const char *layout_invalid_msg_code, const char *layout_mismatch_msg_code,
                                    bool *error) {
@@ -1108,7 +1108,7 @@ bool CoreChecks::VerifyImageLayout(GLOBAL_CB_NODE const *cb_node, IMAGE_STATE *i
     }
     return skip;
 }
-bool CoreChecks::VerifyImageLayout(GLOBAL_CB_NODE const *cb_node, IMAGE_STATE *image_state,
+bool CoreChecks::VerifyImageLayout(CMD_BUFFER_STATE const *cb_node, IMAGE_STATE *image_state,
                                    const VkImageSubresourceLayers &subLayers, VkImageLayout explicit_layout,
                                    VkImageLayout optimal_layout, const char *caller, const char *layout_invalid_msg_code,
                                    const char *layout_mismatch_msg_code, bool *error) {
@@ -1116,7 +1116,7 @@ bool CoreChecks::VerifyImageLayout(GLOBAL_CB_NODE const *cb_node, IMAGE_STATE *i
                              layout_invalid_msg_code, layout_mismatch_msg_code, error);
 }
 
-void CoreChecks::TransitionFinalSubpassLayouts(GLOBAL_CB_NODE *pCB, const VkRenderPassBeginInfo *pRenderPassBegin,
+void CoreChecks::TransitionFinalSubpassLayouts(CMD_BUFFER_STATE *pCB, const VkRenderPassBeginInfo *pRenderPassBegin,
                                                FRAMEBUFFER_STATE *framebuffer_state) {
     auto renderPass = GetRenderPassState(pRenderPassBegin->renderPass);
     if (!renderPass) return;
@@ -1535,7 +1535,7 @@ uint32_t ResolveRemainingLayers(const VkImageSubresourceRange *range, uint32_t l
     return array_layer_count;
 }
 
-bool CoreChecks::VerifyClearImageLayout(GLOBAL_CB_NODE *cb_node, IMAGE_STATE *image_state, VkImageSubresourceRange range,
+bool CoreChecks::VerifyClearImageLayout(CMD_BUFFER_STATE *cb_node, IMAGE_STATE *image_state, VkImageSubresourceRange range,
                                         VkImageLayout dest_image_layout, const char *func_name) {
     bool skip = false;
 
@@ -1579,7 +1579,7 @@ bool CoreChecks::VerifyClearImageLayout(GLOBAL_CB_NODE *cb_node, IMAGE_STATE *im
     }
 
     // Cast to const to prevent creation at validate time.
-    const auto *subresource_map = GetImageSubresourceLayoutMap(static_cast<const GLOBAL_CB_NODE *>(cb_node), image_state->image);
+    const auto *subresource_map = GetImageSubresourceLayoutMap(static_cast<const CMD_BUFFER_STATE *>(cb_node), image_state->image);
     if (subresource_map) {
         bool subres_skip = false;
         LayoutUseCheckAndMessage layout_check(subresource_map);
@@ -1854,7 +1854,7 @@ static inline bool IsExtentSizeZero(const VkExtent3D *extent) {
 }
 
 // Returns the image transfer granularity for a specific image scaled by compressed block size if necessary.
-VkExtent3D CoreChecks::GetScaledItg(const GLOBAL_CB_NODE *cb_node, const IMAGE_STATE *img) {
+VkExtent3D CoreChecks::GetScaledItg(const CMD_BUFFER_STATE *cb_node, const IMAGE_STATE *img) {
     // Default to (0, 0, 0) granularity in case we can't find the real granularity for the physical device.
     VkExtent3D granularity = {0, 0, 0};
     auto pPool = GetCommandPoolNode(cb_node->createInfo.commandPool);
@@ -1880,7 +1880,7 @@ static inline bool IsExtentAligned(const VkExtent3D *extent, const VkExtent3D *g
 }
 
 // Check elements of a VkOffset3D structure against a queue family's Image Transfer Granularity values
-bool CoreChecks::CheckItgOffset(const GLOBAL_CB_NODE *cb_node, const VkOffset3D *offset, const VkExtent3D *granularity,
+bool CoreChecks::CheckItgOffset(const CMD_BUFFER_STATE *cb_node, const VkOffset3D *offset, const VkExtent3D *granularity,
                                 const uint32_t i, const char *function, const char *member, const char *vuid) {
     bool skip = false;
     VkExtent3D offset_extent = {};
@@ -1912,7 +1912,7 @@ bool CoreChecks::CheckItgOffset(const GLOBAL_CB_NODE *cb_node, const VkOffset3D 
 }
 
 // Check elements of a VkExtent3D structure against a queue family's Image Transfer Granularity values
-bool CoreChecks::CheckItgExtent(const GLOBAL_CB_NODE *cb_node, const VkExtent3D *extent, const VkOffset3D *offset,
+bool CoreChecks::CheckItgExtent(const CMD_BUFFER_STATE *cb_node, const VkExtent3D *extent, const VkOffset3D *offset,
                                 const VkExtent3D *granularity, const VkExtent3D *subresource_extent, const VkImageType image_type,
                                 const uint32_t i, const char *function, const char *member, const char *vuid) {
     bool skip = false;
@@ -1969,8 +1969,8 @@ bool CoreChecks::CheckItgExtent(const GLOBAL_CB_NODE *cb_node, const VkExtent3D 
     return skip;
 }
 
-bool CoreChecks::ValidateImageMipLevel(const GLOBAL_CB_NODE *cb_node, const IMAGE_STATE *img, uint32_t mip_level, const uint32_t i,
-                                       const char *function, const char *member, const char *vuid) {
+bool CoreChecks::ValidateImageMipLevel(const CMD_BUFFER_STATE *cb_node, const IMAGE_STATE *img, uint32_t mip_level,
+                                       const uint32_t i, const char *function, const char *member, const char *vuid) {
     bool skip = false;
     if (mip_level >= img->createInfo.mipLevels) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
@@ -1981,7 +1981,7 @@ bool CoreChecks::ValidateImageMipLevel(const GLOBAL_CB_NODE *cb_node, const IMAG
     return skip;
 }
 
-bool CoreChecks::ValidateImageArrayLayerRange(const GLOBAL_CB_NODE *cb_node, const IMAGE_STATE *img, const uint32_t base_layer,
+bool CoreChecks::ValidateImageArrayLayerRange(const CMD_BUFFER_STATE *cb_node, const IMAGE_STATE *img, const uint32_t base_layer,
                                               const uint32_t layer_count, const uint32_t i, const char *function,
                                               const char *member, const char *vuid) {
     bool skip = false;
@@ -1998,7 +1998,7 @@ bool CoreChecks::ValidateImageArrayLayerRange(const GLOBAL_CB_NODE *cb_node, con
 }
 
 // Check valid usage Image Transfer Granularity requirements for elements of a VkBufferImageCopy structure
-bool CoreChecks::ValidateCopyBufferImageTransferGranularityRequirements(const GLOBAL_CB_NODE *cb_node, const IMAGE_STATE *img,
+bool CoreChecks::ValidateCopyBufferImageTransferGranularityRequirements(const CMD_BUFFER_STATE *cb_node, const IMAGE_STATE *img,
                                                                         const VkBufferImageCopy *region, const uint32_t i,
                                                                         const char *function, const char *vuid) {
     bool skip = false;
@@ -2011,7 +2011,7 @@ bool CoreChecks::ValidateCopyBufferImageTransferGranularityRequirements(const GL
 }
 
 // Check valid usage Image Transfer Granularity requirements for elements of a VkImageCopy structure
-bool CoreChecks::ValidateCopyImageTransferGranularityRequirements(const GLOBAL_CB_NODE *cb_node, const IMAGE_STATE *src_img,
+bool CoreChecks::ValidateCopyImageTransferGranularityRequirements(const CMD_BUFFER_STATE *cb_node, const IMAGE_STATE *src_img,
                                                                   const IMAGE_STATE *dst_img, const VkImageCopy *region,
                                                                   const uint32_t i, const char *function) {
     bool skip = false;
@@ -2694,7 +2694,7 @@ bool CoreChecks::ValidateClearAttachmentExtent(VkCommandBuffer command_buffer, u
 bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffer, uint32_t attachmentCount,
                                                     const VkClearAttachment *pAttachments, uint32_t rectCount,
                                                     const VkClearRect *pRects) {
-    GLOBAL_CB_NODE *cb_node = GetCBNode(commandBuffer);
+    CMD_BUFFER_STATE *cb_node = GetCBNode(commandBuffer);
 
     bool skip = false;
     if (cb_node) {
@@ -2802,7 +2802,7 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
                 }
 
                 auto val_fn = [this, commandBuffer, attachment_index, fb_attachment, rectCount, clear_rect_copy](
-                                  GLOBAL_CB_NODE *prim_cb, VkFramebuffer fb) {
+                                  CMD_BUFFER_STATE *prim_cb, VkFramebuffer fb) {
                     assert(rectCount == clear_rect_copy->size());
                     FRAMEBUFFER_STATE *framebuffer = GetFramebufferState(fb);
                     const auto &render_area = prim_cb->activeRenderPassBeginInfo.renderArea;
@@ -3258,7 +3258,7 @@ void CoreChecks::PreCallRecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImag
 }
 
 // This validates that the initial layout specified in the command buffer for the IMAGE is the same as the global IMAGE layout
-bool CoreChecks::ValidateCmdBufImageLayouts(GLOBAL_CB_NODE *pCB,
+bool CoreChecks::ValidateCmdBufImageLayouts(CMD_BUFFER_STATE *pCB,
                                             std::unordered_map<ImageSubresourcePair, IMAGE_LAYOUT_NODE> const &globalImageLayoutMap,
                                             std::unordered_map<ImageSubresourcePair, IMAGE_LAYOUT_NODE> &overlayLayoutMap) {
     bool skip = false;
@@ -3312,7 +3312,7 @@ bool CoreChecks::ValidateCmdBufImageLayouts(GLOBAL_CB_NODE *pCB,
     return skip;
 }
 
-void CoreChecks::UpdateCmdBufImageLayouts(GLOBAL_CB_NODE *pCB) {
+void CoreChecks::UpdateCmdBufImageLayouts(CMD_BUFFER_STATE *pCB) {
     for (const auto &layout_map_entry : pCB->image_layout_map) {
         const auto image = layout_map_entry.first;
         const auto *image_state = GetImageState(image);
@@ -3674,7 +3674,7 @@ bool CoreChecks::ValidateImageFormatFeatureFlags(IMAGE_STATE const *image_state,
     return skip;
 }
 
-bool CoreChecks::ValidateImageSubresourceLayers(const GLOBAL_CB_NODE *cb_node, const VkImageSubresourceLayers *subresource_layers,
+bool CoreChecks::ValidateImageSubresourceLayers(const CMD_BUFFER_STATE *cb_node, const VkImageSubresourceLayers *subresource_layers,
                                                 char const *func_name, char const *member, uint32_t i) {
     bool skip = false;
     // layerCount must not be zero

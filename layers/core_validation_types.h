@@ -61,7 +61,7 @@ class DescriptorSetLayout;
 class DescriptorSet;
 }  // namespace cvdescriptorset
 
-struct GLOBAL_CB_NODE;
+struct CMD_BUFFER_STATE;
 class CoreChecks;
 
 enum CALL_STATE {
@@ -78,7 +78,7 @@ class BASE_NODE {
     //  binding initialized when cmd referencing object is bound to command buffer
     //  binding removed when command buffer is reset or destroyed
     // When an object is destroyed, any bound cbs are set to INVALID
-    std::unordered_set<GLOBAL_CB_NODE *> cb_bindings;
+    std::unordered_set<CMD_BUFFER_STATE *> cb_bindings;
 
     BASE_NODE() { in_use.store(0); };
 };
@@ -490,7 +490,7 @@ class ImageSubresourceLayoutMap {
         VkImageView image_view;          // For relaxed matching rule evaluation, else VK_NULL_HANDLE
         VkImageAspectFlags aspect_mask;  // For relaxed matching rules... else 0
         LoggingLabel label;
-        InitialLayoutState(const GLOBAL_CB_NODE &cb_state_, const IMAGE_VIEW_STATE *view_state);
+        InitialLayoutState(const CMD_BUFFER_STATE &cb_state_, const IMAGE_VIEW_STATE *view_state);
         InitialLayoutState() : image_view(VK_NULL_HANDLE), aspect_mask(0), label() {}
     };
 
@@ -537,7 +537,8 @@ class ImageSubresourceLayoutMap {
     virtual bool SetSubresourceRangeLayout(const VkImageSubresourceRange &range, VkImageLayout layout,
                                            VkImageLayout expected_layout = kInvalidLayout) = 0;
     virtual bool SetSubresourceRangeInitialLayout(const VkImageSubresourceRange &range, VkImageLayout layout,
-                                                  const GLOBAL_CB_NODE &cb_state, const IMAGE_VIEW_STATE *view_state = nullptr) = 0;
+                                                  const CMD_BUFFER_STATE &cb_state,
+                                                  const IMAGE_VIEW_STATE *view_state = nullptr) = 0;
     virtual bool ForRange(const VkImageSubresourceRange &range, const Callback &callback, bool skip_invalid = true,
                           bool always_get_initial = false) const = 0;
     virtual VkImageLayout GetSubresourceLayout(const VkImageSubresource subresource) const = 0;
@@ -637,7 +638,7 @@ class ImageSubresourceLayoutMapImpl : public ImageSubresourceLayoutMap {
     }
 
     bool SetSubresourceRangeInitialLayout(const VkImageSubresourceRange &range, VkImageLayout layout,
-                                          const GLOBAL_CB_NODE &cb_state, const IMAGE_VIEW_STATE *view_state = nullptr) override {
+                                          const CMD_BUFFER_STATE &cb_state, const IMAGE_VIEW_STATE *view_state = nullptr) override {
         bool updated = false;
         if (!InRange(range)) return false;  // Don't even try to track bogus subreources
 
@@ -1427,7 +1428,7 @@ using GlobalQFOTransferBarrierMap =
 // Submit queue uses the Scoreboard to track all release/acquire operations in a batch.
 template <typename Barrier>
 using QFOTransferCBScoreboard =
-    std::unordered_map<QFOTransferBarrier<Barrier>, const GLOBAL_CB_NODE *, QFOTransferBarrierHash<Barrier>>;
+    std::unordered_map<QFOTransferBarrier<Barrier>, const CMD_BUFFER_STATE *, QFOTransferBarrierHash<Barrier>>;
 template <typename Barrier>
 struct QFOTransferCBScoreboards {
     QFOTransferCBScoreboard<Barrier> acquire;
@@ -1435,7 +1436,7 @@ struct QFOTransferCBScoreboards {
 };
 
 // Cmd Buffer Wrapper Struct - TODO : This desperately needs its own class
-struct GLOBAL_CB_NODE : public BASE_NODE {
+struct CMD_BUFFER_STATE : public BASE_NODE {
     VkCommandBuffer commandBuffer;
     VkCommandBufferAllocateInfo createInfo = {};
     VkCommandBufferBeginInfo beginInfo;
@@ -1493,11 +1494,11 @@ struct GLOBAL_CB_NODE : public BASE_NODE {
     std::unordered_set<VkBuffer> updateBuffers;
     // If primary, the secondary command buffers we will call.
     // If secondary, the primary command buffers we will be called by.
-    std::unordered_set<GLOBAL_CB_NODE *> linkedCommandBuffers;
+    std::unordered_set<CMD_BUFFER_STATE *> linkedCommandBuffers;
     // Validation functions run at primary CB queue submit time
     std::vector<std::function<bool()>> queue_submit_functions;
     // Validation functions run when secondary CB is executed in primary
-    std::vector<std::function<bool(GLOBAL_CB_NODE *, VkFramebuffer)>> cmd_execute_commands_functions;
+    std::vector<std::function<bool(CMD_BUFFER_STATE *, VkFramebuffer)>> cmd_execute_commands_functions;
     std::unordered_set<VkDeviceMemory> memObjs;
     std::vector<std::function<bool(VkQueue)>> eventUpdates;
     std::vector<std::function<bool(VkQueue)>> queryUpdates;
@@ -1510,11 +1511,11 @@ struct GLOBAL_CB_NODE : public BASE_NODE {
 };
 
 static inline QFOTransferBarrierSets<VkImageMemoryBarrier> &GetQFOBarrierSets(
-    GLOBAL_CB_NODE *cb, const QFOTransferBarrier<VkImageMemoryBarrier>::Tag &type_tag) {
+    CMD_BUFFER_STATE *cb, const QFOTransferBarrier<VkImageMemoryBarrier>::Tag &type_tag) {
     return cb->qfo_transfer_image_barriers;
 }
 static inline QFOTransferBarrierSets<VkBufferMemoryBarrier> &GetQFOBarrierSets(
-    GLOBAL_CB_NODE *cb, const QFOTransferBarrier<VkBufferMemoryBarrier>::Tag &type_tag) {
+    CMD_BUFFER_STATE *cb, const QFOTransferBarrier<VkBufferMemoryBarrier>::Tag &type_tag) {
     return cb->qfo_transfer_buffer_barriers;
 }
 
@@ -1596,7 +1597,7 @@ enum BarrierOperationsType {
 
 std::shared_ptr<cvdescriptorset::DescriptorSetLayout const> const GetDescriptorSetLayout(CoreChecks const *, VkDescriptorSetLayout);
 
-ImageSubresourceLayoutMap *GetImageSubresourceLayoutMap(GLOBAL_CB_NODE *cb_state, const IMAGE_STATE &image_state);
-const ImageSubresourceLayoutMap *GetImageSubresourceLayoutMap(const GLOBAL_CB_NODE *cb_state, VkImage image);
+ImageSubresourceLayoutMap *GetImageSubresourceLayoutMap(CMD_BUFFER_STATE *cb_state, const IMAGE_STATE &image_state);
+const ImageSubresourceLayoutMap *GetImageSubresourceLayoutMap(const CMD_BUFFER_STATE *cb_state, VkImage image);
 
 #endif  // CORE_VALIDATION_TYPES_H_

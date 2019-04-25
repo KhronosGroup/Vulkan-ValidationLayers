@@ -2974,7 +2974,7 @@ bool CoreChecks::ValidateComputeWorkGroupSizes(const SHADER_MODULE_STATE *shader
     return skip;
 }
 
-bool CoreChecks::ValidateComputeWorkGroupInvocations(GLOBAL_CB_NODE *cb_state, uint32_t groupCountX, uint32_t groupCountY,
+bool CoreChecks::ValidateComputeWorkGroupInvocations(CMD_BUFFER_STATE *cb_state, uint32_t groupCountX, uint32_t groupCountY,
                                                      uint32_t groupCountZ) {
     auto const &state = cb_state->lastBound[VK_PIPELINE_BIND_POINT_COMPUTE];
     PIPELINE_STATE *pPipe = state.pipeline_state;

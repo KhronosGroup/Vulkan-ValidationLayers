@@ -631,9 +631,9 @@ static std::string LookupDebugUtilsName(const debug_report_data *report_data, co
 }
 
 // Generate message from the common portion of the debug report record.
-static void GenerateCommonMessage(const debug_report_data *report_data, const GLOBAL_CB_NODE *cb_node, const uint32_t *debug_record,
-                                  const VkShaderModule shader_module_handle, const VkPipeline pipeline_handle,
-                                  const uint32_t draw_index, std::string &msg) {
+static void GenerateCommonMessage(const debug_report_data *report_data, const CMD_BUFFER_STATE *cb_node,
+                                  const uint32_t *debug_record, const VkShaderModule shader_module_handle,
+                                  const VkPipeline pipeline_handle, const uint32_t draw_index, std::string &msg) {
     using namespace spvtools;
     std::ostringstream strm;
     if (shader_module_handle == VK_NULL_HANDLE) {
@@ -872,7 +872,7 @@ static void GenerateSourceMessages(const std::vector<unsigned int> &pgm, const u
 // sure it is available when the pipeline is submitted.  (The ShaderModule tracking object also
 // keeps a copy, but it can be destroyed after the pipeline is created and before it is submitted.)
 //
-void CoreChecks::AnalyzeAndReportError(GLOBAL_CB_NODE *cb_node, VkQueue queue, uint32_t draw_index,
+void CoreChecks::AnalyzeAndReportError(CMD_BUFFER_STATE *cb_node, VkQueue queue, uint32_t draw_index,
                                        uint32_t *const debug_output_buffer) {
     using namespace spvtools;
     const uint32_t total_words = debug_output_buffer[0];
@@ -923,7 +923,7 @@ void CoreChecks::AnalyzeAndReportError(GLOBAL_CB_NODE *cb_node, VkQueue queue, u
 }
 
 // For the given command buffer, map its debug data buffers and read their contents for analysis.
-void CoreChecks::ProcessInstrumentationBuffer(VkQueue queue, GLOBAL_CB_NODE *cb_node) {
+void CoreChecks::ProcessInstrumentationBuffer(VkQueue queue, CMD_BUFFER_STATE *cb_node) {
     auto gpu_buffer_list = gpu_validation_state->GetGpuBufferInfo(cb_node->commandBuffer);
     if (cb_node && cb_node->hasDrawCmd && gpu_buffer_list.size() > 0) {
         VkResult result;
@@ -943,7 +943,7 @@ void CoreChecks::ProcessInstrumentationBuffer(VkQueue queue, GLOBAL_CB_NODE *cb_
 }
 
 // For the given command buffer, map its debug data buffers and update the status of any update after bind descriptors
-void CoreChecks::UpdateInstrumentationBuffer(GLOBAL_CB_NODE *cb_node) {
+void CoreChecks::UpdateInstrumentationBuffer(CMD_BUFFER_STATE *cb_node) {
     auto gpu_buffer_list = gpu_validation_state->GetGpuBufferInfo(cb_node->commandBuffer);
     uint32_t *pData;
     for (auto &buffer_info : gpu_buffer_list) {
