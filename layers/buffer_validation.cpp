@@ -820,7 +820,7 @@ bool CoreChecks::ValidateBarriersToImages(CMD_BUFFER_STATE const *cb_state, uint
 bool CoreChecks::IsReleaseOp(CMD_BUFFER_STATE *cb_state, VkImageMemoryBarrier const *barrier) {
     if (!IsTransferOp(barrier)) return false;
 
-    auto pool = GetCommandPoolNode(cb_state->createInfo.commandPool);
+    auto pool = GetCommandPoolState(cb_state->createInfo.commandPool);
     return pool && TempIsReleaseOp<VkImageMemoryBarrier, true>(pool, barrier);
 }
 
@@ -829,7 +829,7 @@ bool CoreChecks::ValidateQFOTransferBarrierUniqueness(const char *func_name, CMD
                                                       const Barrier *barriers) {
     using BarrierRecord = QFOTransferBarrier<Barrier>;
     bool skip = false;
-    auto pool = GetCommandPoolNode(cb_state->createInfo.commandPool);
+    auto pool = GetCommandPoolState(cb_state->createInfo.commandPool);
     auto &barrier_sets = GetQFOBarrierSets(cb_state, typename BarrierRecord::Tag());
     const char *barrier_name = BarrierRecord::BarrierName();
     const char *handle_name = BarrierRecord::HandleName();
@@ -867,7 +867,7 @@ bool CoreChecks::ValidateQFOTransferBarrierUniqueness(const char *func_name, CMD
 
 template <typename Barrier>
 void CoreChecks::RecordQFOTransferBarriers(CMD_BUFFER_STATE *cb_state, uint32_t barrier_count, const Barrier *barriers) {
-    auto pool = GetCommandPoolNode(cb_state->createInfo.commandPool);
+    auto pool = GetCommandPoolState(cb_state->createInfo.commandPool);
     auto &barrier_sets = GetQFOBarrierSets(cb_state, typename QFOTransferBarrier<Barrier>::Tag());
     for (uint32_t b = 0; b < barrier_count; b++) {
         if (!IsTransferOp(&barriers[b])) continue;
@@ -1857,7 +1857,7 @@ static inline bool IsExtentSizeZero(const VkExtent3D *extent) {
 VkExtent3D CoreChecks::GetScaledItg(const CMD_BUFFER_STATE *cb_node, const IMAGE_STATE *img) {
     // Default to (0, 0, 0) granularity in case we can't find the real granularity for the physical device.
     VkExtent3D granularity = {0, 0, 0};
-    auto pPool = GetCommandPoolNode(cb_node->createInfo.commandPool);
+    auto pPool = GetCommandPoolState(cb_node->createInfo.commandPool);
     if (pPool) {
         granularity = GetPhysicalDeviceState()->queue_family_properties[pPool->queueFamilyIndex].minImageTransferGranularity;
         if (FormatIsCompressed(img->createInfo.format)) {
@@ -4737,7 +4737,7 @@ bool CoreChecks::PreCallValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuff
     skip |= ValidateCmd(cb_node, CMD_COPYIMAGETOBUFFER, "vkCmdCopyImageToBuffer()");
 
     // Command pool must support graphics, compute, or transfer operations
-    auto pPool = GetCommandPoolNode(cb_node->createInfo.commandPool);
+    auto pPool = GetCommandPoolState(cb_node->createInfo.commandPool);
 
     VkQueueFlags queue_flags = GetPhysicalDeviceState()->queue_family_properties[pPool->queueFamilyIndex].queueFlags;
 
@@ -4821,7 +4821,7 @@ bool CoreChecks::PreCallValidateCmdCopyBufferToImage(VkCommandBuffer commandBuff
     skip |= ValidateCmd(cb_node, CMD_COPYBUFFERTOIMAGE, "vkCmdCopyBufferToImage()");
 
     // Command pool must support graphics, compute, or transfer operations
-    auto pPool = GetCommandPoolNode(cb_node->createInfo.commandPool);
+    auto pPool = GetCommandPoolState(cb_node->createInfo.commandPool);
     VkQueueFlags queue_flags = GetPhysicalDeviceState()->queue_family_properties[pPool->queueFamilyIndex].queueFlags;
     if (0 == (queue_flags & (VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT))) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
