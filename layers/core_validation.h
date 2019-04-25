@@ -184,7 +184,7 @@ class CoreChecks : public ValidationObject {
     unordered_map<VkDescriptorSet, cvdescriptorset::DescriptorSet*> setMap;
     unordered_map<VkCommandBuffer, CMD_BUFFER_STATE*> commandBufferMap;
 
-    unordered_map<VkCommandPool, COMMAND_POOL_NODE> commandPoolMap;
+    unordered_map<VkCommandPool, COMMAND_POOL_STATE> commandPoolMap;
     unordered_map<VkPipelineLayout, PIPELINE_LAYOUT_NODE> pipelineLayoutMap;
     unordered_map<VkFence, FENCE_NODE> fenceMap;
     unordered_map<VkQueue, QUEUE_STATE> queueMap;
@@ -252,7 +252,7 @@ class CoreChecks : public ValidationObject {
     RENDER_PASS_STATE* GetRenderPassState(VkRenderPass renderpass);
     std::shared_ptr<RENDER_PASS_STATE> GetRenderPassStateSharedPtr(VkRenderPass renderpass);
     FRAMEBUFFER_STATE* GetFramebufferState(VkFramebuffer framebuffer);
-    COMMAND_POOL_NODE* GetCommandPoolNode(VkCommandPool pool);
+    COMMAND_POOL_STATE* GetCommandPoolNode(VkCommandPool pool);
     SHADER_MODULE_STATE const* GetShaderModuleState(VkShaderModule module);
     FENCE_NODE* GetFenceNode(VkFence fence);
     EVENT_STATE* GetEventNode(VkEvent event);
@@ -283,9 +283,9 @@ class CoreChecks : public ValidationObject {
     const TEMPLATE_STATE* GetDescriptorTemplateState(VkDescriptorUpdateTemplateKHR descriptor_update_template);
     bool ValidateGetImageMemoryRequirements2(const VkImageMemoryRequirementsInfo2* pInfo);
     void RecordGetImageMemoryRequiementsState(VkImage image, VkMemoryRequirements* pMemoryRequirements);
-    void FreeCommandBufferStates(COMMAND_POOL_NODE* pool_state, const uint32_t command_buffer_count,
+    void FreeCommandBufferStates(COMMAND_POOL_STATE* pool_state, const uint32_t command_buffer_count,
                                  const VkCommandBuffer* command_buffers);
-    bool CheckCommandBuffersInFlight(COMMAND_POOL_NODE* pPool, const char* action, const char* error_code);
+    bool CheckCommandBuffersInFlight(COMMAND_POOL_STATE* pPool, const char* action, const char* error_code);
     bool CheckCommandBufferInFlight(const CMD_BUFFER_STATE* cb_node, const char* action, const char* error_code);
     bool VerifyQueueStateToFence(VkFence fence);
     void DecrementBoundResources(CMD_BUFFER_STATE const* cb_node);

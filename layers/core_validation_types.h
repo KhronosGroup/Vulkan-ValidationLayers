@@ -84,7 +84,7 @@ class BASE_NODE {
 };
 
 // Track command pools and their command buffers
-struct COMMAND_POOL_NODE : public BASE_NODE {
+struct COMMAND_POOL_STATE : public BASE_NODE {
     VkCommandPoolCreateFlags createFlags;
     uint32_t queueFamilyIndex;
     // Cmd buffers allocated from this pool
@@ -98,12 +98,12 @@ static bool IsTransferOp(const Barrier *barrier) {
 }
 
 template <typename Barrier, bool assume_transfer = false>
-static bool TempIsReleaseOp(const COMMAND_POOL_NODE *pool, const Barrier *barrier) {
+static bool TempIsReleaseOp(const COMMAND_POOL_STATE *pool, const Barrier *barrier) {
     return (assume_transfer || IsTransferOp(barrier)) && (pool->queueFamilyIndex == barrier->srcQueueFamilyIndex);
 }
 
 template <typename Barrier, bool assume_transfer = false>
-static bool IsAcquireOp(const COMMAND_POOL_NODE *pool, const Barrier *barrier) {
+static bool IsAcquireOp(const COMMAND_POOL_STATE *pool, const Barrier *barrier) {
     return (assume_transfer || IsTransferOp(barrier)) && (pool->queueFamilyIndex == barrier->dstQueueFamilyIndex);
 }
 

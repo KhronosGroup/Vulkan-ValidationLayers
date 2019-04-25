@@ -223,7 +223,7 @@ SEMAPHORE_NODE *CoreChecks::GetSemaphoreNode(VkSemaphore semaphore) {
     return &it->second;
 }
 
-COMMAND_POOL_NODE *CoreChecks::GetCommandPoolNode(VkCommandPool pool) {
+COMMAND_POOL_STATE *CoreChecks::GetCommandPoolNode(VkCommandPool pool) {
     auto it = commandPoolMap.find(pool);
     if (it == commandPoolMap.end()) {
         return nullptr;
@@ -4823,7 +4823,7 @@ bool CoreChecks::CheckCommandBufferInFlight(const CMD_BUFFER_STATE *cb_node, con
 }
 
 // Iterate over all cmdBuffers in given commandPool and verify that each is not in use
-bool CoreChecks::CheckCommandBuffersInFlight(COMMAND_POOL_NODE *pPool, const char *action, const char *error_code) {
+bool CoreChecks::CheckCommandBuffersInFlight(COMMAND_POOL_STATE *pPool, const char *action, const char *error_code) {
     bool skip = false;
     for (auto cmd_buffer : pPool->commandBuffers) {
         skip |= CheckCommandBufferInFlight(GetCBNode(cmd_buffer), action, error_code);
@@ -4832,7 +4832,7 @@ bool CoreChecks::CheckCommandBuffersInFlight(COMMAND_POOL_NODE *pPool, const cha
 }
 
 // Free all command buffers in given list, removing all references/links to them using ResetCommandBufferState
-void CoreChecks::FreeCommandBufferStates(COMMAND_POOL_NODE *pool_state, const uint32_t command_buffer_count,
+void CoreChecks::FreeCommandBufferStates(COMMAND_POOL_STATE *pool_state, const uint32_t command_buffer_count,
                                          const VkCommandBuffer *command_buffers) {
     if (enabled.gpu_validation) {
         GpuPreCallRecordFreeCommandBuffers(command_buffer_count, command_buffers);
@@ -4844,7 +4844,7 @@ void CoreChecks::FreeCommandBufferStates(COMMAND_POOL_NODE *pool_state, const ui
             // reset prior to delete, removing various references to it.
             // TODO: fix this, it's insane.
             ResetCommandBufferState(cb_state->commandBuffer);
-            // Remove the cb_state's references from COMMAND_POOL_NODEs
+            // Remove the cb_state's references from COMMAND_POOL_STATEs
             commandBufferMap.erase(cb_state->commandBuffer);
             pool_state->commandBuffers.erase(command_buffers[i]);
 
@@ -4912,7 +4912,7 @@ void CoreChecks::PostCallRecordCreateQueryPool(VkDevice device, const VkQueryPoo
 
 bool CoreChecks::PreCallValidateDestroyCommandPool(VkDevice device, VkCommandPool commandPool,
                                                    const VkAllocationCallbacks *pAllocator) {
-    COMMAND_POOL_NODE *cp_state = GetCommandPoolNode(commandPool);
+    COMMAND_POOL_STATE *cp_state = GetCommandPoolNode(commandPool);
     bool skip = false;
     if (cp_state) {
         // Verify that command buffers in pool are complete (not in-flight)
@@ -4924,7 +4924,7 @@ bool CoreChecks::PreCallValidateDestroyCommandPool(VkDevice device, VkCommandPoo
 void CoreChecks::PreCallRecordDestroyCommandPool(VkDevice device, VkCommandPool commandPool,
                                                  const VkAllocationCallbacks *pAllocator) {
     if (!commandPool) return;
-    COMMAND_POOL_NODE *cp_state = GetCommandPoolNode(commandPool);
+    COMMAND_POOL_STATE *cp_state = GetCommandPoolNode(commandPool);
     // Remove cmdpool from cmdpoolmap, after freeing layer data for the command buffers
     // "When a pool is destroyed, all command buffers allocated from the pool are freed."
     if (cp_state) {
@@ -8236,7 +8236,7 @@ bool CoreChecks::CheckStageMaskQueueCompatibility(VkCommandBuffer command_buffer
 
 // Check if all barriers are of a given operation type.
 template <typename Barrier, typename OpCheck>
-bool AllTransferOp(const COMMAND_POOL_NODE *pool, OpCheck &op_check, uint32_t count, const Barrier *barriers) {
+bool AllTransferOp(const COMMAND_POOL_STATE *pool, OpCheck &op_check, uint32_t count, const Barrier *barriers) {
     if (!pool) return false;
 
     for (uint32_t b = 0; b < count; b++) {
