@@ -957,7 +957,7 @@ cvdescriptorset::DescriptorSet *CoreChecks::GetSetNode(VkDescriptorSet set) {
     if (set_it == setMap.end()) {
         return NULL;
     }
-    return set_it->second;
+    return set_it->second.get();
 }
 
 // For given pipeline, return number of MSAA samples, or one if MSAA disabled
@@ -1895,10 +1895,8 @@ bool CoreChecks::ValidateIdleDescriptorSet(VkDescriptorSet set, const char *func
 }
 
 // Remove set from setMap and delete the set
-void CoreChecks::FreeDescriptorSet(cvdescriptorset::DescriptorSet *descriptor_set) {
-    setMap.erase(descriptor_set->GetSet());
-    delete descriptor_set;
-}
+void CoreChecks::FreeDescriptorSet(cvdescriptorset::DescriptorSet *descriptor_set) { setMap.erase(descriptor_set->GetSet()); }
+
 // Free all DS Pools including their Sets & related sub-structs
 // NOTE : Calls to this function should be wrapped in mutex
 void CoreChecks::DeletePools() {
@@ -6008,7 +6006,7 @@ void CoreChecks::PreCallRecordFreeDescriptorSets(VkDevice device, VkDescriptorPo
     // For each freed descriptor add its resources back into the pool as available and remove from pool and setMap
     for (uint32_t i = 0; i < count; ++i) {
         if (pDescriptorSets[i] != VK_NULL_HANDLE) {
-            auto descriptor_set = setMap[pDescriptorSets[i]];
+            auto descriptor_set = setMap[pDescriptorSets[i]].get();
             uint32_t type_index = 0, descriptor_count = 0;
             for (uint32_t j = 0; j < descriptor_set->GetBindingCount(); ++j) {
                 type_index = static_cast<uint32_t>(descriptor_set->GetTypeFromIndex(j));

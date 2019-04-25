@@ -180,8 +180,8 @@ class CoreChecks : public ValidationObject {
     unordered_map<VkDescriptorUpdateTemplateKHR, std::unique_ptr<TEMPLATE_STATE>> desc_template_map;
     unordered_map<VkSwapchainKHR, std::unique_ptr<SWAPCHAIN_NODE>> swapchainMap;
     unordered_map<VkDescriptorPool, std::unique_ptr<DESCRIPTOR_POOL_STATE>> descriptorPoolMap;
+    unordered_map<VkDescriptorSet, std::unique_ptr<cvdescriptorset::DescriptorSet>> setMap;
 
-    unordered_map<VkDescriptorSet, cvdescriptorset::DescriptorSet*> setMap;
     unordered_map<VkCommandBuffer, CMD_BUFFER_STATE*> commandBufferMap;
 
     unordered_map<VkCommandPool, COMMAND_POOL_STATE> commandPoolMap;
