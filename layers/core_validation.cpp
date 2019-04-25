@@ -199,7 +199,7 @@ EVENT_STATE *CoreChecks::GetEventNode(VkEvent event) {
     return &it->second;
 }
 
-QUERY_POOL_NODE *CoreChecks::GetQueryPoolNode(VkQueryPool query_pool) {
+QUERY_POOL_STATE *CoreChecks::GetQueryPoolNode(VkQueryPool query_pool) {
     auto it = queryPoolMap.find(query_pool);
     if (it == queryPoolMap.end()) {
         return nullptr;
@@ -4200,7 +4200,7 @@ void CoreChecks::PreCallRecordDestroyEvent(VkDevice device, VkEvent event, const
 
 bool CoreChecks::PreCallValidateDestroyQueryPool(VkDevice device, VkQueryPool queryPool, const VkAllocationCallbacks *pAllocator) {
     if (disabled.query_validation) return false;
-    QUERY_POOL_NODE *qp_state = GetQueryPoolNode(queryPool);
+    QUERY_POOL_STATE *qp_state = GetQueryPoolNode(queryPool);
     VK_OBJECT obj_struct = {HandleToUint64(queryPool), kVulkanObjectTypeQueryPool};
     bool skip = false;
     if (qp_state) {
@@ -4211,7 +4211,7 @@ bool CoreChecks::PreCallValidateDestroyQueryPool(VkDevice device, VkQueryPool qu
 
 void CoreChecks::PreCallRecordDestroyQueryPool(VkDevice device, VkQueryPool queryPool, const VkAllocationCallbacks *pAllocator) {
     if (!queryPool) return;
-    QUERY_POOL_NODE *qp_state = GetQueryPoolNode(queryPool);
+    QUERY_POOL_STATE *qp_state = GetQueryPoolNode(queryPool);
     VK_OBJECT obj_struct = {HandleToUint64(queryPool), kVulkanObjectTypeQueryPool};
     InvalidateCommandBuffers(qp_state->cb_bindings, obj_struct);
     queryPoolMap.erase(queryPool);
@@ -4906,7 +4906,7 @@ bool CoreChecks::PreCallValidateCreateQueryPool(VkDevice device, const VkQueryPo
 void CoreChecks::PostCallRecordCreateQueryPool(VkDevice device, const VkQueryPoolCreateInfo *pCreateInfo,
                                                const VkAllocationCallbacks *pAllocator, VkQueryPool *pQueryPool, VkResult result) {
     if (VK_SUCCESS != result) return;
-    QUERY_POOL_NODE *qp_node = &queryPoolMap[*pQueryPool];
+    QUERY_POOL_STATE *qp_node = &queryPoolMap[*pQueryPool];
     qp_node->createInfo = *pCreateInfo;
 }
 

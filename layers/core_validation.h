@@ -86,7 +86,7 @@ class QUEUE_STATE {
     std::deque<CB_SUBMISSION> submissions;
 };
 
-class QUERY_POOL_NODE : public BASE_NODE {
+class QUERY_POOL_STATE : public BASE_NODE {
    public:
     VkQueryPoolCreateInfo createInfo;
 };
@@ -189,7 +189,7 @@ class CoreChecks : public ValidationObject {
     unordered_map<VkFence, FENCE_STATE> fenceMap;
     unordered_map<VkQueue, QUEUE_STATE> queueMap;
     unordered_map<VkEvent, EVENT_STATE> eventMap;
-    unordered_map<VkQueryPool, QUERY_POOL_NODE> queryPoolMap;
+    unordered_map<VkQueryPool, QUERY_POOL_STATE> queryPoolMap;
     unordered_map<VkSemaphore, SEMAPHORE_NODE> semaphoreMap;
     unordered_map<ImageSubresourcePair, IMAGE_LAYOUT_NODE> imageLayoutMap;
     unordered_map<VkSurfaceKHR, SURFACE_STATE> surface_map;
@@ -256,7 +256,7 @@ class CoreChecks : public ValidationObject {
     SHADER_MODULE_STATE const* GetShaderModuleState(VkShaderModule module);
     FENCE_STATE* GetFenceNode(VkFence fence);
     EVENT_STATE* GetEventNode(VkEvent event);
-    QUERY_POOL_NODE* GetQueryPoolNode(VkQueryPool query_pool);
+    QUERY_POOL_STATE* GetQueryPoolNode(VkQueryPool query_pool);
     QUEUE_STATE* GetQueueState(VkQueue queue);
     SEMAPHORE_NODE* GetSemaphoreNode(VkSemaphore semaphore);
     PHYSICAL_DEVICE_STATE* GetPhysicalDeviceState(VkPhysicalDevice phys);
