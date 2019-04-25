@@ -2563,12 +2563,11 @@ void CoreChecks::PerformAllocateDescriptorSets(const VkDescriptorSetAllocateInfo
     for (uint32_t i = 0; i < p_alloc_info->descriptorSetCount; i++) {
         uint32_t variable_count = variable_count_valid ? variable_count_info->pDescriptorCounts[i] : 0;
 
-        auto new_ds = new cvdescriptorset::DescriptorSet(descriptor_sets[i], p_alloc_info->descriptorPool, ds_data->layout_nodes[i],
-                                                         variable_count, this);
-
-        pool_state->sets.insert(new_ds);
+        std::unique_ptr<cvdescriptorset::DescriptorSet> new_ds(new cvdescriptorset::DescriptorSet(
+            descriptor_sets[i], p_alloc_info->descriptorPool, ds_data->layout_nodes[i], variable_count, this));
+        pool_state->sets.insert(new_ds.get());
         new_ds->in_use.store(0);
-        setMap[descriptor_sets[i]] = new_ds;
+        setMap[descriptor_sets[i]] = std::move(new_ds);
     }
 }
 
