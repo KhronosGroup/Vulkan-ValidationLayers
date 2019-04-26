@@ -945,18 +945,18 @@ enum CBStatusFlagBits {
 
 struct QueryObject {
     VkQueryPool pool;
-    uint32_t index;
+    uint32_t query;
 };
 
 inline bool operator==(const QueryObject &query1, const QueryObject &query2) {
-    return (query1.pool == query2.pool && query1.index == query2.index);
+    return (query1.pool == query2.pool && query1.query == query2.query);
 }
 
 namespace std {
 template <>
 struct hash<QueryObject> {
     size_t operator()(QueryObject query) const throw() {
-        return hash<uint64_t>()((uint64_t)(query.pool)) ^ hash<uint32_t>()(query.index);
+        return hash<uint64_t>()((uint64_t)(query.pool)) ^ hash<uint32_t>()(query.query);
     }
 };
 }  // namespace std
