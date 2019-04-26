@@ -5115,36 +5115,53 @@ void CoreChecks::PostCallRecordCreateGraphicsPipelines(VkDevice device, VkPipeli
 bool CoreChecks::PreCallValidateCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                        const VkComputePipelineCreateInfo *pCreateInfos,
                                                        const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-                                                       void *pipe_state_data) {
+                                                       void *ccpl_state_data) {
     bool skip = false;
-    std::vector<std::unique_ptr<PIPELINE_STATE>> *pipe_state =
-        reinterpret_cast<std::vector<std::unique_ptr<PIPELINE_STATE>> *>(pipe_state_data);
-    pipe_state->reserve(count);
+    auto *ccpl_state = reinterpret_cast<create_compute_pipeline_api_state *>(ccpl_state_data);
+
+    ccpl_state->pipe_state.reserve(count);
     for (uint32_t i = 0; i < count; i++) {
         // Create and initialize internal tracking data structure
-        pipe_state->push_back(unique_ptr<PIPELINE_STATE>(new PIPELINE_STATE));
-        (*pipe_state)[i]->initComputePipeline(&pCreateInfos[i]);
-        (*pipe_state)[i]->pipeline_layout = *GetPipelineLayout(pCreateInfos[i].layout);
+        ccpl_state->pipe_state.push_back(unique_ptr<PIPELINE_STATE>(new PIPELINE_STATE));
+        ccpl_state->pipe_state.back()->initComputePipeline(&pCreateInfos[i]);
+        ccpl_state->pipe_state.back()->pipeline_layout = *GetPipelineLayout(pCreateInfos[i].layout);
 
         // TODO: Add Compute Pipeline Verification
-        skip |= ValidateComputePipeline((*pipe_state)[i].get());
+        skip |= ValidateComputePipeline(ccpl_state->pipe_state.back().get());
     }
     return skip;
+}
+
+void CoreChecks::PreCallRecordCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
+                                                     const VkComputePipelineCreateInfo *pCreateInfos,
+                                                     const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
+                                                     void *ccpl_state_data) {
+    auto *ccpl_state = reinterpret_cast<create_compute_pipeline_api_state *>(ccpl_state_data);
+    ccpl_state->pCreateInfos = pCreateInfos;
+    // GPU Validation may replace instrumented shaders with non-instrumented ones, so allow it to modify the createinfos.
+    if (enabled.gpu_validation) {
+        ccpl_state->gpu_create_infos = GpuPreCallRecordCreateComputePipelines(pipelineCache, count, pCreateInfos, pAllocator,
+                                                                              pPipelines, ccpl_state->pipe_state);
+        ccpl_state->pCreateInfos = reinterpret_cast<VkComputePipelineCreateInfo *>(ccpl_state->gpu_create_infos.data());
+    }
 }
 
 void CoreChecks::PostCallRecordCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                       const VkComputePipelineCreateInfo *pCreateInfos,
                                                       const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-                                                      VkResult result, void *pipe_state_data) {
-    std::vector<std::unique_ptr<PIPELINE_STATE>> *pipe_state =
-        reinterpret_cast<std::vector<std::unique_ptr<PIPELINE_STATE>> *>(pipe_state_data);
+                                                      VkResult result, void *ccpl_state_data) {
+    create_compute_pipeline_api_state *ccpl_state = reinterpret_cast<create_compute_pipeline_api_state *>(ccpl_state_data);
 
     // This API may create pipelines regardless of the return value
     for (uint32_t i = 0; i < count; i++) {
         if (pPipelines[i] != VK_NULL_HANDLE) {
-            (*pipe_state)[i]->pipeline = pPipelines[i];
-            pipelineMap[pPipelines[i]] = std::move((*pipe_state)[i]);
+            (ccpl_state->pipe_state)[i]->pipeline = pPipelines[i];
+            pipelineMap[pPipelines[i]] = std::move((ccpl_state->pipe_state)[i]);
         }
+    }
+    // GPU val needs clean up regardless of result
+    if (enabled.gpu_validation) {
+        GpuPostCallRecordCreateComputePipelines(count, pCreateInfos, pAllocator, pPipelines);
     }
 }
 
