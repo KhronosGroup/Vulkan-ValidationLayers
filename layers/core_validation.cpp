@@ -228,7 +228,7 @@ COMMAND_POOL_STATE *CoreChecks::GetCommandPoolState(VkCommandPool pool) {
     if (it == commandPoolMap.end()) {
         return nullptr;
     }
-    return &it->second;
+    return it->second.get();
 }
 
 PHYSICAL_DEVICE_STATE *CoreChecks::GetPhysicalDeviceState(VkPhysicalDevice phys) {
@@ -4722,10 +4722,10 @@ void CoreChecks::FreeCommandBufferStates(COMMAND_POOL_STATE *pool_state, const u
             // reset prior to delete, removing various references to it.
             // TODO: fix this, it's insane.
             ResetCommandBufferState(cb_state->commandBuffer);
-            // Remove the cb_state's references from COMMAND_POOL_STATEs
+            // Remove CBState from CB map
             commandBufferMap.erase(cb_state->commandBuffer);
+            // Remove the cb_state's references from COMMAND_POOL_STATEs
             pool_state->commandBuffers.erase(command_buffers[i]);
-
             // Remove the cb debug labels
             EraseCmdDebugUtilsLabel(report_data, cb_state->commandBuffer);
             // Remove CBState from CB map
@@ -4763,8 +4763,10 @@ void CoreChecks::PostCallRecordCreateCommandPool(VkDevice device, const VkComman
                                                  const VkAllocationCallbacks *pAllocator, VkCommandPool *pCommandPool,
                                                  VkResult result) {
     if (VK_SUCCESS != result) return;
-    commandPoolMap[*pCommandPool].createFlags = pCreateInfo->flags;
-    commandPoolMap[*pCommandPool].queueFamilyIndex = pCreateInfo->queueFamilyIndex;
+    std::unique_ptr<COMMAND_POOL_STATE> cmd_pool_state(new COMMAND_POOL_STATE{});
+    cmd_pool_state->createFlags = pCreateInfo->flags;
+    cmd_pool_state->queueFamilyIndex = pCreateInfo->queueFamilyIndex;
+    commandPoolMap[*pCommandPool] = std::move(cmd_pool_state);
 }
 
 bool CoreChecks::PreCallValidateCreateQueryPool(VkDevice device, const VkQueryPoolCreateInfo *pCreateInfo,
@@ -8152,7 +8154,7 @@ bool CoreChecks::ValidateStageMasksAgainstQueueCapabilities(CMD_BUFFER_STATE con
                                                             BarrierOperationsType barrier_op_type, const char *function,
                                                             const char *error_code) {
     bool skip = false;
-    uint32_t queue_family_index = commandPoolMap[cb_state->createInfo.commandPool].queueFamilyIndex;
+    uint32_t queue_family_index = commandPoolMap[cb_state->createInfo.commandPool].get()->queueFamilyIndex;
     auto physical_device_state = GetPhysicalDeviceState();
 
     // Any pipeline stage included in srcStageMask or dstStageMask must be supported by the capabilities of the queue family
