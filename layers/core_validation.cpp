@@ -6222,8 +6222,8 @@ bool CoreChecks::PreCallValidateEndCommandBuffer(VkCommandBuffer commandBuffer) 
     for (auto query : cb_state->activeQueries) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                         HandleToUint64(commandBuffer), "VUID-vkEndCommandBuffer-commandBuffer-00061",
-                        "Ending command buffer with in progress query: queryPool %s, index %d.",
-                        report_data->FormatHandle(query.pool).c_str(), query.index);
+                        "Ending command buffer with in progress query: queryPool %s, query %d.",
+                        report_data->FormatHandle(query.pool).c_str(), query.query);
     }
     return skip;
 }
