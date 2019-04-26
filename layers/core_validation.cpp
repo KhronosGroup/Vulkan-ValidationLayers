@@ -1916,7 +1916,7 @@ CMD_BUFFER_STATE *CoreChecks::GetCBState(const VkCommandBuffer cb) {
     if (it == commandBufferMap.end()) {
         return NULL;
     }
-    return it->second;
+    return it->second.get();
 }
 
 // If a renderpass is active, verify that the given command type is appropriate for current subpass state
@@ -2134,7 +2134,7 @@ void CoreChecks::RemoveCommandBufferBinding(VK_OBJECT const *object, CMD_BUFFER_
 // Reset the command buffer state
 //  Maintain the createInfo and set state to CB_NEW, but clear all other state
 void CoreChecks::ResetCommandBufferState(const VkCommandBuffer cb) {
-    CMD_BUFFER_STATE *pCB = commandBufferMap[cb];
+    CMD_BUFFER_STATE *pCB = GetCBState(cb);
     if (pCB) {
         pCB->in_use.store(0);
         // Reset CB state (note that createInfo is not cleared)
@@ -2581,9 +2581,6 @@ void CoreChecks::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationC
     }
     pipelineMap.clear();
     renderPassMap.clear();
-    for (auto ii = commandBufferMap.begin(); ii != commandBufferMap.end(); ++ii) {
-        delete (*ii).second;
-    }
     commandBufferMap.clear();
     // This will also delete all sets in the pool & remove them from setMap
     DeletePools();
@@ -4123,7 +4120,7 @@ void CoreChecks::PostCallRecordGetQueryPoolResults(VkDevice device, VkQueryPool 
     if ((VK_SUCCESS != result) && (VK_NOT_READY != result)) return;
     // TODO: clean this up, it's insanely wasteful.
     unordered_map<QueryObject, std::vector<VkCommandBuffer>> queries_in_flight;
-    for (auto cmd_buffer : commandBufferMap) {
+    for (auto &cmd_buffer : commandBufferMap) {
         if (cmd_buffer.second->in_use.load()) {
             for (auto query_state_pair : cmd_buffer.second->queryToStateMap) {
                 queries_in_flight[query_state_pair.first].push_back(cmd_buffer.first);
@@ -4731,7 +4728,8 @@ void CoreChecks::FreeCommandBufferStates(COMMAND_POOL_STATE *pool_state, const u
 
             // Remove the cb debug labels
             EraseCmdDebugUtilsLabel(report_data, cb_state->commandBuffer);
-            delete cb_state;
+            // Remove CBState from CB map
+            commandBufferMap.erase(cb_state->commandBuffer);
         }
     }
 }
@@ -6048,12 +6046,12 @@ void CoreChecks::PostCallRecordAllocateCommandBuffers(VkDevice device, const VkC
         for (uint32_t i = 0; i < pCreateInfo->commandBufferCount; i++) {
             // Add command buffer to its commandPool map
             pPool->commandBuffers.insert(pCommandBuffer[i]);
-            CMD_BUFFER_STATE *pCB = new CMD_BUFFER_STATE;
-            // Add command buffer to map
-            commandBufferMap[pCommandBuffer[i]] = pCB;
-            ResetCommandBufferState(pCommandBuffer[i]);
+            std::unique_ptr<CMD_BUFFER_STATE> pCB(new CMD_BUFFER_STATE{});
             pCB->createInfo = *pCreateInfo;
             pCB->device = device;
+            // Add command buffer to map
+            commandBufferMap[pCommandBuffer[i]] = std::move(pCB);
+            ResetCommandBufferState(pCommandBuffer[i]);
         }
     }
 }
