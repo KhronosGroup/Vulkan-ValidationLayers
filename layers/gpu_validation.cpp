@@ -424,19 +424,48 @@ void CoreChecks::GpuPreCallValidateCmdWaitEvents(VkPipelineStageFlags sourceStag
     }
 }
 
-// Examine the pipelines to see if they use the debug descriptor set binding index.
-// If any do, create new non-instrumented shader modules and use them to replace the instrumented
-// shaders in the pipeline.  Return the (possibly) modified create infos to the caller.
 std::vector<safe_VkGraphicsPipelineCreateInfo> CoreChecks::GpuPreCallRecordCreateGraphicsPipelines(
     VkPipelineCache pipelineCache, uint32_t count, const VkGraphicsPipelineCreateInfo *pCreateInfos,
     const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines, std::vector<std::unique_ptr<PIPELINE_STATE>> &pipe_state) {
     std::vector<safe_VkGraphicsPipelineCreateInfo> new_pipeline_create_infos;
 
+    GpuPreCallRecordPipelineCreations(count, pCreateInfos, nullptr, pAllocator, pPipelines, pipe_state, &new_pipeline_create_infos,
+                                      nullptr, VK_PIPELINE_BIND_POINT_GRAPHICS);
+    return new_pipeline_create_infos;
+}
+std::vector<safe_VkComputePipelineCreateInfo> CoreChecks::GpuPreCallRecordCreateComputePipelines(
+    VkPipelineCache pipelineCache, uint32_t count, const VkComputePipelineCreateInfo *pCreateInfos,
+    const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines, std::vector<std::unique_ptr<PIPELINE_STATE>> &pipe_state) {
+    std::vector<safe_VkComputePipelineCreateInfo> new_pipeline_create_infos;
+    GpuPreCallRecordPipelineCreations(count, nullptr, pCreateInfos, pAllocator, pPipelines, pipe_state, nullptr,
+                                      &new_pipeline_create_infos, VK_PIPELINE_BIND_POINT_COMPUTE);
+    return new_pipeline_create_infos;
+}
+
+// Examine the pipelines to see if they use the debug descriptor set binding index.
+// If any do, create new non-instrumented shader modules and use them to replace the instrumented
+// shaders in the pipeline.  Return the (possibly) modified create infos to the caller.
+void CoreChecks::GpuPreCallRecordPipelineCreations(
+    uint32_t count, const VkGraphicsPipelineCreateInfo *pGraphicsCreateInfos,
+    const VkComputePipelineCreateInfo *pComputeCreateInfos, const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
+    std::vector<std::unique_ptr<PIPELINE_STATE>> &pipe_state,
+    std::vector<safe_VkGraphicsPipelineCreateInfo> *new_graphics_pipeline_create_infos,
+    std::vector<safe_VkComputePipelineCreateInfo> *new_compute_pipeline_create_infos, const VkPipelineBindPoint bind_point) {
+    if (bind_point != VK_PIPELINE_BIND_POINT_GRAPHICS && bind_point != VK_PIPELINE_BIND_POINT_COMPUTE) {
+        return;
+    }
+    bool graphics_pipeline = (bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS);
+
     // Walk through all the pipelines, make a copy of each and flag each pipeline that contains a shader that uses the debug
     // descriptor set index.
     for (uint32_t pipeline = 0; pipeline < count; ++pipeline) {
+        auto stageCount = graphics_pipeline ? pGraphicsCreateInfos[pipeline].stageCount : 1;
         bool replace_shaders = false;
-        new_pipeline_create_infos.push_back(pipe_state[pipeline]->graphicsPipelineCI);
+        if (graphics_pipeline)
+            new_graphics_pipeline_create_infos->push_back(pipe_state[pipeline]->graphicsPipelineCI);
+        else
+            new_compute_pipeline_create_infos->push_back(pipe_state[pipeline]->computePipelineCI);
+
         if (pipe_state[pipeline]->active_slots.find(gpu_validation_state->desc_set_bind_index) !=
             pipe_state[pipeline]->active_slots.end()) {
             replace_shaders = true;
@@ -448,8 +477,12 @@ std::vector<safe_VkGraphicsPipelineCreateInfo> CoreChecks::GpuPreCallRecordCreat
         }
 
         if (replace_shaders) {
-            for (uint32_t stage = 0; stage < pCreateInfos[pipeline].stageCount; ++stage) {
-                const SHADER_MODULE_STATE *shader = GetShaderModuleState(pCreateInfos[pipeline].pStages[stage].module);
+            for (uint32_t stage = 0; stage < stageCount; ++stage) {
+                const SHADER_MODULE_STATE *shader;
+                if (graphics_pipeline)
+                    shader = GetShaderModuleState(pGraphicsCreateInfos[pipeline].pStages[stage].module);
+                else
+                    shader = GetShaderModuleState(pComputeCreateInfos[pipeline].stage.module);
                 VkShaderModuleCreateInfo create_info = {};
                 VkShaderModule shader_module;
                 create_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
@@ -457,34 +490,53 @@ std::vector<safe_VkGraphicsPipelineCreateInfo> CoreChecks::GpuPreCallRecordCreat
                 create_info.codeSize = shader->words.size() * sizeof(uint32_t);
                 VkResult result = DispatchCreateShaderModule(device, &create_info, pAllocator, &shader_module);
                 if (result == VK_SUCCESS) {
-                    new_pipeline_create_infos[pipeline].pStages[stage].module = shader_module;
+                    if (graphics_pipeline)
+                        new_graphics_pipeline_create_infos[pipeline].data()->pStages[stage].module = shader_module;
+                    else
+                        new_compute_pipeline_create_infos[pipeline].data()->stage.module = shader_module;
                 } else {
                     ReportSetupProblem(VK_DEBUG_REPORT_OBJECT_TYPE_SHADER_MODULE_EXT,
-                                       HandleToUint64(pCreateInfos[pipeline].pStages[stage].module),
+                                       (graphics_pipeline) ? HandleToUint64(pGraphicsCreateInfos[pipeline].pStages[stage].module)
+                                                           : HandleToUint64(pComputeCreateInfos[pipeline].stage.module),
                                        "Unable to replace instrumented shader with non-instrumented one.  "
                                        "Device could become unstable.");
                 }
             }
         }
     }
-    return new_pipeline_create_infos;
 }
 
+void CoreChecks::GpuPostCallRecordCreateGraphicsPipelines(const uint32_t count, const VkGraphicsPipelineCreateInfo *pCreateInfos,
+                                                          const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines) {
+    GpuPostCallRecordPipelineCreations(count, pCreateInfos, nullptr, pAllocator, pPipelines, VK_PIPELINE_BIND_POINT_GRAPHICS);
+}
+void CoreChecks::GpuPostCallRecordCreateComputePipelines(const uint32_t count, const VkComputePipelineCreateInfo *pCreateInfos,
+                                                         const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines) {
+    GpuPostCallRecordPipelineCreations(count, nullptr, pCreateInfos, pAllocator, pPipelines, VK_PIPELINE_BIND_POINT_GRAPHICS);
+}
 // For every pipeline:
 // - For every shader in a pipeline:
 //   - If the shader had to be replaced in PreCallRecord (because the pipeline is using the debug desc set index):
 //     - Destroy it since it has been bound into the pipeline by now.  This is our only chance to delete it.
 //   - Track the shader in the shader_map
 //   - Save the shader binary if it contains debug code
-void CoreChecks::GpuPostCallRecordCreateGraphicsPipelines(const uint32_t count, const VkGraphicsPipelineCreateInfo *pCreateInfos,
-                                                          const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines) {
+void CoreChecks::GpuPostCallRecordPipelineCreations(const uint32_t count, const VkGraphicsPipelineCreateInfo *pGraphicsCreateInfos,
+                                                    const VkComputePipelineCreateInfo *pComputeCreateInfos,
+                                                    const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
+                                                    const VkPipelineBindPoint bind_point) {
+    if (bind_point != VK_PIPELINE_BIND_POINT_GRAPHICS && bind_point != VK_PIPELINE_BIND_POINT_COMPUTE) {
+        return;
+    }
     for (uint32_t pipeline = 0; pipeline < count; ++pipeline) {
         auto pipeline_state = GetPipelineState(pPipelines[pipeline]);
         if (nullptr == pipeline_state) continue;
         for (uint32_t stage = 0; stage < pipeline_state->graphicsPipelineCI.stageCount; ++stage) {
             if (pipeline_state->active_slots.find(gpu_validation_state->desc_set_bind_index) !=
                 pipeline_state->active_slots.end()) {
-                DispatchDestroyShaderModule(device, pCreateInfos->pStages[stage].module, pAllocator);
+                if (bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS)
+                    DispatchDestroyShaderModule(device, pGraphicsCreateInfos->pStages[stage].module, pAllocator);
+                else
+                    DispatchDestroyShaderModule(device, pComputeCreateInfos->stage.module, pAllocator);
             }
             auto shader_state = GetShaderModuleState(pipeline_state->graphicsPipelineCI.pStages[stage].module);
             std::vector<unsigned int> code;

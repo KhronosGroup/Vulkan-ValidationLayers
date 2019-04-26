@@ -1124,25 +1124,28 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateComputePipelines(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
 
-#ifndef BUILD_CORE_VALIDATION
-    struct PIPELINE_STATE {};
+#ifdef BUILD_CORE_VALIDATION
+    create_compute_pipeline_api_state ccpl_state{};
+#else
+    struct create_compute_pipeline_api_state {
+        const VkComputePipelineCreateInfo* pCreateInfos;
+    } ccpl_state;
+    ccpl_state.pCreateInfos = pCreateInfos;
 #endif
-
-    std::vector<std::unique_ptr<PIPELINE_STATE>> pipe_state;
 
     for (auto intercept : layer_data->object_dispatch) {
         auto lock = intercept->write_lock();
-        skip |= intercept->PreCallValidateCreateComputePipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines, &pipe_state);
+        skip |= intercept->PreCallValidateCreateComputePipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines, &ccpl_state);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
     for (auto intercept : layer_data->object_dispatch) {
         auto lock = intercept->write_lock();
-        intercept->PreCallRecordCreateComputePipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines);
+        intercept->PreCallRecordCreateComputePipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines, &ccpl_state);
     }
-    VkResult result = DispatchCreateComputePipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines);
+    VkResult result = DispatchCreateComputePipelines(device, pipelineCache, createInfoCount, ccpl_state.pCreateInfos, pAllocator, pPipelines);
     for (auto intercept : layer_data->object_dispatch) {
         auto lock = intercept->write_lock();
-        intercept->PostCallRecordCreateComputePipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines, result, &pipe_state);
+        intercept->PostCallRecordCreateComputePipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines, result, &ccpl_state);
     }
     return result;
 }
@@ -1362,7 +1365,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetValidationCacheDataEXT(
         virtual void PostCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount, const VkGraphicsPipelineCreateInfo* pCreateInfos, const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines, VkResult result, void* cgpl_state) {
             PostCallRecordCreateGraphicsPipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines, result);
         };
-
+        virtual void PreCallRecordCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount, const VkComputePipelineCreateInfo* pCreateInfos, const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines, void* ccpl_state) {
+            PreCallRecordCreateComputePipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines);
+        };
         // Allow additional state parameter for CreateComputePipelines
         virtual bool PreCallValidateCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount, const VkComputePipelineCreateInfo* pCreateInfos, const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines, void* pipe_state)  {
             return PreCallValidateCreateComputePipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines);
