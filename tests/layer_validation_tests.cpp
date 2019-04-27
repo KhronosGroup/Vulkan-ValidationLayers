@@ -1379,6 +1379,15 @@ VkPhysicalDevicePushDescriptorPropertiesKHR GetPushDescriptorProperties(VkInstan
     return push_descriptor_prop;
 }
 
+// Subgroup properties helper
+VkPhysicalDeviceSubgroupProperties GetSubgroupProperties(VkInstance instance, VkPhysicalDevice gpu) {
+    auto subgroup_prop = lvl_init_struct<VkPhysicalDeviceSubgroupProperties>();
+
+    auto prop2 = lvl_init_struct<VkPhysicalDeviceProperties2>(&subgroup_prop);
+    vkGetPhysicalDeviceProperties2(gpu, &prop2);
+    return subgroup_prop;
+}
+
 // ********************************************************************************************************************
 // ********************************************************************************************************************
 // ********************************************************************************************************************
@@ -39333,6 +39342,218 @@ std::vector<std::string> get_args(android_app &app, const char *intent_extra_dat
     }
 
     return args;
+}
+
+TEST_F(VkLayerTest, SubgroupSupportedOperations) {
+    TEST_DESCRIPTION("Test shader validation support for subgroup supportedOperations.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    // 1.1 and up only.
+    if (m_device->props.apiVersion < VK_API_VERSION_1_1) {
+        printf("%s Vulkan 1.1 not supported, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    VkPhysicalDeviceSubgroupProperties subgroup_prop = GetSubgroupProperties(instance(), gpu());
+
+    const std::pair<const char *, VkSubgroupFeatureFlagBits> capabilities[] = {
+        {"GroupNonUniform", VK_SUBGROUP_FEATURE_BASIC_BIT},
+        {"GroupNonUniformVote", VK_SUBGROUP_FEATURE_VOTE_BIT},
+        {"GroupNonUniformArithmetic", VK_SUBGROUP_FEATURE_ARITHMETIC_BIT},
+        {"GroupNonUniformBallot", VK_SUBGROUP_FEATURE_BALLOT_BIT},
+        {"GroupNonUniformShuffle", VK_SUBGROUP_FEATURE_SHUFFLE_BIT},
+        {"GroupNonUniformShuffleRelative", VK_SUBGROUP_FEATURE_SHUFFLE_RELATIVE_BIT},
+        {"GroupNonUniformClustered", VK_SUBGROUP_FEATURE_CLUSTERED_BIT},
+        {"GroupNonUniformQuad", VK_SUBGROUP_FEATURE_QUAD_BIT},
+    };
+
+    for (auto &capability : capabilities) {
+        std::string spv_source = "OpCapability " + std::string(capability.first) + "\n" + R"(
+                   OpCapability Shader
+                   OpMemoryModel Logical GLSL450
+                   OpEntryPoint GLCompute %main "main"
+                   OpExecutionMode %main LocalSize 1 1 1
+           %void = OpTypeVoid
+           %func = OpTypeFunction %void
+           %main = OpFunction %void None %func
+             %40 = OpLabel
+                   OpReturn
+                   OpFunctionEnd
+        )";
+
+        // CreateShaderModule
+        std::vector<unsigned int> spv;
+        VkShaderModuleCreateInfo module_create_info;
+        VkShaderModule shader_module;
+        module_create_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+        module_create_info.pNext = NULL;
+        ASMtoSPV(SPV_ENV_VULKAN_1_1, 0, spv_source.data(), spv);
+        module_create_info.pCode = spv.data();
+        module_create_info.codeSize = spv.size() * sizeof(unsigned int);
+        module_create_info.flags = 0;
+
+        if (subgroup_prop.supportedOperations & capability.second) {
+            m_errorMonitor->ExpectSuccess();
+        } else {
+            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                                 "UNASSIGNED-CoreValidation-Shader-ExceedDeviceLimit");
+        }
+
+        vkCreateShaderModule(m_device->handle(), &module_create_info, NULL, &shader_module);
+
+        if (subgroup_prop.supportedOperations & capability.second) {
+            m_errorMonitor->VerifyNotFound();
+            vkDestroyShaderModule(device(), shader_module, nullptr);
+        } else {
+            m_errorMonitor->VerifyFound();
+        }
+    }
+}
+
+TEST_F(VkLayerTest, SubgroupRequired) {
+    TEST_DESCRIPTION("Test that the minimum required functionality for subgroups is present.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    // 1.1 and up only.
+    if (m_device->props.apiVersion < VK_API_VERSION_1_1) {
+        printf("%s Vulkan 1.1 not supported, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    VkPhysicalDeviceSubgroupProperties subgroup_prop = GetSubgroupProperties(instance(), gpu());
+
+    auto queue_family_properties = m_device->phy().queue_properties();
+
+    bool foundGraphics = false;
+    bool foundCompute = false;
+
+    for (auto queue_family : queue_family_properties) {
+        if (queue_family.queueFlags & VK_QUEUE_COMPUTE_BIT) {
+            foundCompute = true;
+            break;
+        }
+
+        if (queue_family.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+            foundGraphics = true;
+        }
+    }
+
+    if (!(foundGraphics || foundCompute)) return;
+
+    ASSERT_GE(subgroup_prop.subgroupSize, 1u);
+
+    if (foundCompute) {
+        ASSERT_TRUE(subgroup_prop.supportedStages & VK_SHADER_STAGE_COMPUTE_BIT);
+    }
+
+    ASSERT_TRUE(subgroup_prop.supportedOperations & VK_SUBGROUP_FEATURE_BASIC_BIT);
+}
+
+TEST_F(VkLayerTest, SubgroupSupportedStages) {
+    TEST_DESCRIPTION("Test shader validation support for subgroup supportedOperations.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    // 1.1 and up only.
+    if (m_device->props.apiVersion < VK_API_VERSION_1_1) {
+        printf("%s Vulkan 1.1 not supported, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    VkPhysicalDeviceSubgroupProperties subgroup_prop = GetSubgroupProperties(instance(), gpu());
+
+    // CreatePipelineLayout
+    VkPipelineLayoutCreateInfo pipeline_layout_ci = {};
+    pipeline_layout_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+    pipeline_layout_ci.pNext = NULL;
+    pipeline_layout_ci.flags = 0;
+    pipeline_layout_ci.setLayoutCount = 0;
+    pipeline_layout_ci.pSetLayouts = VK_NULL_HANDLE;
+    VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
+    vkCreatePipelineLayout(m_device->device(), &pipeline_layout_ci, NULL, &pipeline_layout);
+
+    const std::pair<const char *, VkSubgroupFeatureFlagBits> capabilities[] = {
+        {"GroupNonUniform", VK_SUBGROUP_FEATURE_BASIC_BIT},
+        {"GroupNonUniformVote", VK_SUBGROUP_FEATURE_VOTE_BIT},
+        {"GroupNonUniformArithmetic", VK_SUBGROUP_FEATURE_ARITHMETIC_BIT},
+        {"GroupNonUniformBallot", VK_SUBGROUP_FEATURE_BALLOT_BIT},
+        {"GroupNonUniformShuffle", VK_SUBGROUP_FEATURE_SHUFFLE_BIT},
+        {"GroupNonUniformShuffleRelative", VK_SUBGROUP_FEATURE_SHUFFLE_RELATIVE_BIT},
+        {"GroupNonUniformClustered", VK_SUBGROUP_FEATURE_CLUSTERED_BIT},
+        {"GroupNonUniformQuad", VK_SUBGROUP_FEATURE_QUAD_BIT},
+    };
+
+    for (auto &capability : capabilities) {
+        std::string spv_source = R"(
+                   OpCapability GroupNonUniform
+                   OpCapability Shader
+                   OpMemoryModel Logical GLSL450
+                   OpEntryPoint GLCompute %main "main"
+                   OpExecutionMode %main LocalSize 1 1 1
+           %void = OpTypeVoid
+           %func = OpTypeFunction %void
+           %main = OpFunction %void None %func
+             %40 = OpLabel
+                   OpReturn
+                   OpFunctionEnd
+        )";
+
+        // CreateShaderModule
+        std::vector<unsigned int> spv;
+        VkShaderModuleCreateInfo module_create_info;
+        VkShaderModule shader_module;
+        module_create_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+        module_create_info.pNext = NULL;
+        ASMtoSPV(SPV_ENV_VULKAN_1_1, 0, spv_source.data(), spv);
+        module_create_info.pCode = spv.data();
+        module_create_info.codeSize = spv.size() * sizeof(unsigned int);
+        module_create_info.flags = 0;
+        vkCreateShaderModule(m_device->handle(), &module_create_info, NULL, &shader_module);
+
+        // CreateComputePipelines
+        VkComputePipelineCreateInfo pipeline_info = {};
+        pipeline_info.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
+        pipeline_info.pNext = nullptr;
+        pipeline_info.flags = 0;
+        pipeline_info.layout = pipeline_layout;
+        pipeline_info.basePipelineHandle = VK_NULL_HANDLE;
+        pipeline_info.basePipelineIndex = -1;
+        pipeline_info.stage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        pipeline_info.stage.pNext = nullptr;
+        pipeline_info.stage.flags = 0;
+        pipeline_info.stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;
+        pipeline_info.stage.module = shader_module;
+        pipeline_info.stage.pName = "main";
+        pipeline_info.stage.pSpecializationInfo = nullptr;
+        VkPipeline cs_pipeline;
+
+        if (subgroup_prop.supportedOperations & capability.second) {
+            m_errorMonitor->ExpectSuccess();
+        } else {
+            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "required parameter pFeatures specified as NULL");
+        }
+
+        vkCreateComputePipelines(device(), VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &cs_pipeline);
+
+        if (subgroup_prop.supportedOperations & capability.second) {
+            m_errorMonitor->VerifyNotFound();
+        } else {
+            m_errorMonitor->VerifyFound();
+        }
+
+        vkDestroyPipeline(device(), cs_pipeline, nullptr);
+        vkDestroyShaderModule(device(), shader_module, nullptr);
+    }
+
+    vkDestroyPipelineLayout(device(), pipeline_layout, nullptr);
 }
 
 void addFullTestCommentIfPresent(const ::testing::TestInfo &test_info, std::string &error_message) {
