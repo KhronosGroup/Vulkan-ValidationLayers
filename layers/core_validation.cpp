@@ -196,7 +196,7 @@ EVENT_STATE *CoreChecks::GetEventState(VkEvent event) {
     if (it == eventMap.end()) {
         return nullptr;
     }
-    return &it->second;
+    return it->second.get();
 }
 
 QUERY_POOL_STATE *CoreChecks::GetQueryPoolState(VkQueryPool query_pool) {
@@ -212,7 +212,7 @@ QUEUE_STATE *CoreChecks::GetQueueState(VkQueue queue) {
     if (it == queueMap.end()) {
         return nullptr;
     }
-    return &it->second;
+    return it->second.get();
 }
 
 SEMAPHORE_STATE *CoreChecks::GetSemaphoreState(VkSemaphore semaphore) {
@@ -2896,14 +2896,14 @@ void CoreChecks::RetireWorkOnQueue(QUEUE_STATE *pQueue, uint64_t seq) {
             for (auto event : cb_node->writeEventsBeforeWait) {
                 auto eventNode = eventMap.find(event);
                 if (eventNode != eventMap.end()) {
-                    eventNode->second.write_in_use--;
+                    eventNode->second->write_in_use--;
                 }
             }
             for (auto queryStatePair : cb_node->queryToStateMap) {
                 queryToStateMap[queryStatePair.first] = queryStatePair.second;
             }
             for (auto eventStagePair : cb_node->eventToStageMap) {
-                eventMap[eventStagePair.first].stageMask = eventStagePair.second;
+                eventMap[eventStagePair.first]->stageMask = eventStagePair.second;
             }
 
             cb_node->in_use.fetch_sub(1);
@@ -4078,10 +4078,11 @@ void CoreChecks::RecordGetDeviceQueueState(uint32_t queue_family_index, VkQueue 
     // Add queue to tracking set only if it is new
     auto queue_is_new = queues.emplace(queue);
     if (queue_is_new.second == true) {
-        QUEUE_STATE *queue_state = &queueMap[queue];
+        std::unique_ptr<QUEUE_STATE> queue_state(new QUEUE_STATE{});
         queue_state->queue = queue;
         queue_state->queueFamilyIndex = queue_family_index;
         queue_state->seq = 0;
+        queueMap[queue] = std::move(queue_state);
     }
 }
 
@@ -4129,7 +4130,7 @@ void CoreChecks::PostCallRecordQueueWaitIdle(VkQueue queue, VkResult result) {
 bool CoreChecks::PreCallValidateDeviceWaitIdle(VkDevice device) {
     bool skip = false;
     for (auto &queue : queueMap) {
-        skip |= VerifyQueueStateToSeq(&queue.second, queue.second.seq + queue.second.submissions.size());
+        skip |= VerifyQueueStateToSeq(queue.second.get(), queue.second->seq + queue.second->submissions.size());
     }
     return skip;
 }
@@ -4137,7 +4138,7 @@ bool CoreChecks::PreCallValidateDeviceWaitIdle(VkDevice device) {
 void CoreChecks::PostCallRecordDeviceWaitIdle(VkDevice device, VkResult result) {
     if (VK_SUCCESS != result) return;
     for (auto &queue : queueMap) {
-        RetireWorkOnQueue(&queue.second, queue.second.seq + queue.second.submissions.size());
+        RetireWorkOnQueue(queue.second.get(), queue.second->seq + queue.second->submissions.size());
     }
 }
 
@@ -4254,7 +4255,7 @@ void CoreChecks::PostCallRecordGetQueryPoolResults(VkDevice device, VkQueryPool 
                     auto query_event_pair = cb->waitedEventsBeforeQueryReset.find(query);
                     if (query_event_pair != cb->waitedEventsBeforeQueryReset.end()) {
                         for (auto event : query_event_pair->second) {
-                            eventMap[event].needsSignaled = true;
+                            eventMap[event]->needsSignaled = true;
                         }
                     }
                 }
@@ -7275,7 +7276,7 @@ bool CoreChecks::SetEventStageMask(VkQueue queue, VkCommandBuffer commandBuffer,
     }
     auto queue_data = queueMap.find(queue);
     if (queue_data != queueMap.end()) {
-        queue_data->second.eventToStageMap[event] = stageMask;
+        queue_data->second->eventToStageMap[event] = stageMask;
     }
     return false;
 }
@@ -7887,7 +7888,7 @@ class ValidatorState {
         auto queue_data_it = device_data->queueMap.find(queue);
         if (queue_data_it == device_data->queueMap.end()) return false;
 
-        uint32_t queue_family = queue_data_it->second.queueFamilyIndex;
+        uint32_t queue_family = queue_data_it->second->queueFamilyIndex;
         if ((src_family != queue_family) && (dst_family != queue_family)) {
             const std::string &val_code = val.val_codes_[kSubmitQueueMustMatchSrcOrDst];
             const char *src_annotation = val.GetFamilyAnnotation(src_family);
@@ -8153,8 +8154,8 @@ bool CoreChecks::ValidateEventStageMask(VkQueue queue, CMD_BUFFER_STATE *pCB, ui
         auto event = pCB->events[firstEventIndex + i];
         auto queue_data = queueMap.find(queue);
         if (queue_data == queueMap.end()) return false;
-        auto event_data = queue_data->second.eventToStageMap.find(event);
-        if (event_data != queue_data->second.eventToStageMap.end()) {
+        auto event_data = queue_data->second->eventToStageMap.find(event);
+        if (event_data != queue_data->second->eventToStageMap.end()) {
             stageMask |= event_data->second;
         } else {
             auto global_event_data = GetEventState(event);
@@ -8415,7 +8416,7 @@ bool CoreChecks::SetQueryState(VkQueue queue, VkCommandBuffer commandBuffer, Que
     }
     auto queue_data = queueMap.find(queue);
     if (queue_data != queueMap.end()) {
-        queue_data->second.queryToStateMap[object] = value;
+        queue_data->second->queryToStateMap[object] = value;
     }
     return false;
 }
@@ -10795,9 +10796,9 @@ void CoreChecks::PreCallRecordSetEvent(VkDevice device, VkEvent event) {
     // Host setting event is visible to all queues immediately so update stageMask for any queue that's seen this event
     // TODO : For correctness this needs separate fix to verify that app doesn't make incorrect assumptions about the
     // ordering of this command in relation to vkCmd[Set|Reset]Events (see GH297)
-    for (auto queue_data : queueMap) {
-        auto event_entry = queue_data.second.eventToStageMap.find(event);
-        if (event_entry != queue_data.second.eventToStageMap.end()) {
+    for (auto &queue_data : queueMap) {
+        auto event_entry = queue_data.second->eventToStageMap.find(event);
+        if (event_entry != queue_data.second->eventToStageMap.end()) {
             event_entry->second |= VK_PIPELINE_STAGE_HOST_BIT;
         }
     }
@@ -11197,9 +11198,11 @@ void CoreChecks::PostCallRecordGetFenceFdKHR(VkDevice device, const VkFenceGetFd
 void CoreChecks::PostCallRecordCreateEvent(VkDevice device, const VkEventCreateInfo *pCreateInfo,
                                            const VkAllocationCallbacks *pAllocator, VkEvent *pEvent, VkResult result) {
     if (VK_SUCCESS != result) return;
-    eventMap[*pEvent].needsSignaled = false;
-    eventMap[*pEvent].write_in_use = 0;
-    eventMap[*pEvent].stageMask = VkPipelineStageFlags(0);
+    std::unique_ptr<EVENT_STATE> event_state(new EVENT_STATE{});
+    event_state->needsSignaled = false;
+    event_state->write_in_use = 0;
+    event_state->stageMask = VkPipelineStageFlags(0);
+    eventMap[*pEvent] = std::move(event_state);
 }
 
 bool CoreChecks::ValidateCreateSwapchain(const char *func_name, VkSwapchainCreateInfoKHR const *pCreateInfo,

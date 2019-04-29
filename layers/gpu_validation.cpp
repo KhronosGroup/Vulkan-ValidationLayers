@@ -971,7 +971,7 @@ void CoreChecks::SubmitBarrier(VkQueue queue) {
 
     auto it = queueMap.find(queue);
     if (it != queueMap.end()) {
-        queue_family_index = it->second.queueFamilyIndex;
+        queue_family_index = it->second->queueFamilyIndex;
     }
 
     // Pay attention only to queues that support graphics.
