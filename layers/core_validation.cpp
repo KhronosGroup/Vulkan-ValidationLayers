@@ -220,7 +220,7 @@ SEMAPHORE_STATE *CoreChecks::GetSemaphoreState(VkSemaphore semaphore) {
     if (it == semaphoreMap.end()) {
         return nullptr;
     }
-    return &it->second;
+    return it->second.get();
 }
 
 COMMAND_POOL_STATE *CoreChecks::GetCommandPoolState(VkCommandPool pool) {
@@ -11045,11 +11045,12 @@ void CoreChecks::PostCallRecordQueueBindSparse(VkQueue queue, uint32_t bindInfoC
 void CoreChecks::PostCallRecordCreateSemaphore(VkDevice device, const VkSemaphoreCreateInfo *pCreateInfo,
                                                const VkAllocationCallbacks *pAllocator, VkSemaphore *pSemaphore, VkResult result) {
     if (VK_SUCCESS != result) return;
-    SEMAPHORE_STATE *sNode = &semaphoreMap[*pSemaphore];
-    sNode->signaler.first = VK_NULL_HANDLE;
-    sNode->signaler.second = 0;
-    sNode->signaled = false;
-    sNode->scope = kSyncScopeInternal;
+    std::unique_ptr<SEMAPHORE_STATE> semaphore_state(new SEMAPHORE_STATE{});
+    semaphore_state->signaler.first = VK_NULL_HANDLE;
+    semaphore_state->signaler.second = 0;
+    semaphore_state->signaled = false;
+    semaphore_state->scope = kSyncScopeInternal;
+    semaphoreMap[*pSemaphore] = std::move(semaphore_state);
 }
 
 bool CoreChecks::ValidateImportSemaphore(VkSemaphore semaphore, const char *caller_name) {
