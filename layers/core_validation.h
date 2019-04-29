@@ -189,9 +189,9 @@ class CoreChecks : public ValidationObject {
     unordered_map<VkEvent, std::unique_ptr<EVENT_STATE>> eventMap;
     unordered_map<VkQueryPool, std::unique_ptr<QUERY_POOL_STATE>> queryPoolMap;
     unordered_map<VkSemaphore, std::unique_ptr<SEMAPHORE_STATE>> semaphoreMap;
+    unordered_map<VkSurfaceKHR, std::unique_ptr<SURFACE_STATE>> surface_map;
 
     unordered_map<ImageSubresourcePair, IMAGE_LAYOUT_STATE> imageLayoutMap;
-    unordered_map<VkSurfaceKHR, SURFACE_STATE> surface_map;
 
     unordered_map<VkRenderPass, std::shared_ptr<RENDER_PASS_STATE>> renderPassMap;
     unordered_map<VkDescriptorSetLayout, std::shared_ptr<cvdescriptorset::DescriptorSetLayout>> descriptorSetLayoutMap;

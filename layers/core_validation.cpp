@@ -248,7 +248,7 @@ SURFACE_STATE *CoreChecks::GetSurfaceState(VkSurfaceKHR surface) {
     if (it == surf_map->end()) {
         return nullptr;
     }
-    return &it->second;
+    return it->second.get();
 }
 
 // Return ptr to memory binding for given handle of specified type
@@ -11994,7 +11994,9 @@ void CoreChecks::PreCallRecordValidateDestroySurfaceKHR(VkInstance instance, VkS
     surface_map.erase(surface);
 }
 
-void CoreChecks::RecordVulkanSurface(VkSurfaceKHR *pSurface) { surface_map[*pSurface] = SURFACE_STATE(*pSurface); }
+void CoreChecks::RecordVulkanSurface(VkSurfaceKHR *pSurface) {
+    surface_map[*pSurface] = std::unique_ptr<SURFACE_STATE>(new SURFACE_STATE{*pSurface});
+}
 
 void CoreChecks::PostCallRecordCreateDisplayPlaneSurfaceKHR(VkInstance instance, const VkDisplaySurfaceCreateInfoKHR *pCreateInfo,
                                                             const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface,
