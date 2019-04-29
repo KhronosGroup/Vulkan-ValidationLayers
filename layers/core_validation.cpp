@@ -188,7 +188,7 @@ FENCE_STATE *CoreChecks::GetFenceState(VkFence fence) {
     if (it == fenceMap.end()) {
         return nullptr;
     }
-    return &it->second;
+    return it->second.get();
 }
 
 EVENT_STATE *CoreChecks::GetEventState(VkEvent event) {
@@ -4940,10 +4940,11 @@ VkResult CoreChecks::GetPDImageFormatProperties2(const VkPhysicalDeviceImageForm
 void CoreChecks::PostCallRecordCreateFence(VkDevice device, const VkFenceCreateInfo *pCreateInfo,
                                            const VkAllocationCallbacks *pAllocator, VkFence *pFence, VkResult result) {
     if (VK_SUCCESS != result) return;
-    auto &fence_node = fenceMap[*pFence];
-    fence_node.fence = *pFence;
-    fence_node.createInfo = *pCreateInfo;
-    fence_node.state = (pCreateInfo->flags & VK_FENCE_CREATE_SIGNALED_BIT) ? FENCE_RETIRED : FENCE_UNSIGNALED;
+    std::unique_ptr<FENCE_STATE> fence_state(new FENCE_STATE{});
+    fence_state->fence = *pFence;
+    fence_state->createInfo = *pCreateInfo;
+    fence_state->state = (pCreateInfo->flags & VK_FENCE_CREATE_SIGNALED_BIT) ? FENCE_RETIRED : FENCE_UNSIGNALED;
+    fenceMap[*pFence] = std::move(fence_state);
 }
 
 // Validation cache:
