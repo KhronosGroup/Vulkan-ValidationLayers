@@ -753,7 +753,7 @@ PIPELINE_LAYOUT_STATE const *CoreChecks::GetPipelineLayout(VkPipelineLayout pipe
     if (it == pipelineLayoutMap.end()) {
         return nullptr;
     }
-    return &it->second;
+    return it->second.get();
 }
 
 SHADER_MODULE_STATE const *CoreChecks::GetShaderModuleState(VkShaderModule module) {
@@ -5889,24 +5889,26 @@ void CoreChecks::PostCallRecordCreatePipelineLayout(VkDevice device, const VkPip
     }
     if (VK_SUCCESS != result) return;
 
-    PIPELINE_LAYOUT_STATE &plNode = pipelineLayoutMap[*pPipelineLayout];
-    plNode.layout = *pPipelineLayout;
-    plNode.set_layouts.resize(pCreateInfo->setLayoutCount);
+    std::unique_ptr<PIPELINE_LAYOUT_STATE> pipeline_layout_state(new PIPELINE_LAYOUT_STATE{});
+    pipeline_layout_state->layout = *pPipelineLayout;
+    pipeline_layout_state->set_layouts.resize(pCreateInfo->setLayoutCount);
     PipelineLayoutSetLayoutsDef set_layouts(pCreateInfo->setLayoutCount);
     for (uint32_t i = 0; i < pCreateInfo->setLayoutCount; ++i) {
-        plNode.set_layouts[i] = GetDescriptorSetLayout(this, pCreateInfo->pSetLayouts[i]);
-        set_layouts[i] = plNode.set_layouts[i]->GetLayoutId();
+        pipeline_layout_state->set_layouts[i] = GetDescriptorSetLayout(this, pCreateInfo->pSetLayouts[i]);
+        set_layouts[i] = pipeline_layout_state->set_layouts[i]->GetLayoutId();
     }
 
     // Get canonical form IDs for the "compatible for set" contents
-    plNode.push_constant_ranges = GetCanonicalId(pCreateInfo);
+    pipeline_layout_state->push_constant_ranges = GetCanonicalId(pCreateInfo);
     auto set_layouts_id = pipeline_layout_set_layouts_dict.look_up(set_layouts);
-    plNode.compat_for_set.reserve(pCreateInfo->setLayoutCount);
+    pipeline_layout_state->compat_for_set.reserve(pCreateInfo->setLayoutCount);
 
     // Create table of "compatible for set N" cannonical forms for trivial accept validation
     for (uint32_t i = 0; i < pCreateInfo->setLayoutCount; ++i) {
-        plNode.compat_for_set.emplace_back(GetCanonicalId(i, plNode.push_constant_ranges, set_layouts_id));
+        pipeline_layout_state->compat_for_set.emplace_back(
+            GetCanonicalId(i, pipeline_layout_state->push_constant_ranges, set_layouts_id));
     }
+    pipelineLayoutMap[*pPipelineLayout] = std::move(pipeline_layout_state);
 }
 
 void CoreChecks::PostCallRecordCreateDescriptorPool(VkDevice device, const VkDescriptorPoolCreateInfo *pCreateInfo,

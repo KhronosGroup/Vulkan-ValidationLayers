@@ -183,8 +183,8 @@ class CoreChecks : public ValidationObject {
     unordered_map<VkDescriptorSet, std::unique_ptr<cvdescriptorset::DescriptorSet>> setMap;
     unordered_map<VkCommandBuffer, std::unique_ptr<CMD_BUFFER_STATE>> commandBufferMap;
     unordered_map<VkCommandPool, std::unique_ptr<COMMAND_POOL_STATE>> commandPoolMap;
+    unordered_map<VkPipelineLayout, std::unique_ptr<PIPELINE_LAYOUT_STATE>> pipelineLayoutMap;
 
-    unordered_map<VkPipelineLayout, PIPELINE_LAYOUT_STATE> pipelineLayoutMap;
     unordered_map<VkFence, FENCE_STATE> fenceMap;
     unordered_map<VkQueue, QUEUE_STATE> queueMap;
     unordered_map<VkEvent, EVENT_STATE> eventMap;
