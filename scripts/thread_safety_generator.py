@@ -523,9 +523,11 @@ void ThreadSafety::PostCallRecordAllocateCommandBuffers(VkDevice device, const V
     FinishWriteObject(pAllocateInfo->commandPool);
 
     // Record mapping from command buffer to command pool
-    for (uint32_t index = 0; index < pAllocateInfo->commandBufferCount; index++) {
+    if(pCommandBuffers) {
         std::lock_guard<std::mutex> lock(command_pool_lock);
-        command_pool_map[pCommandBuffers[index]] = pAllocateInfo->commandPool;
+        for (uint32_t index = 0; index < pAllocateInfo->commandBufferCount; index++) {
+            command_pool_map[pCommandBuffers[index]] = pAllocateInfo->commandPool;
+        }
     }
 }
 
@@ -548,15 +550,22 @@ void ThreadSafety::PreCallRecordFreeCommandBuffers(VkDevice device, VkCommandPoo
     const bool lockCommandPool = false;  // pool is already directly locked
     StartReadObject(device);
     StartWriteObject(commandPool);
-    for (uint32_t index = 0; index < commandBufferCount; index++) {
-        StartWriteObject(pCommandBuffers[index], lockCommandPool);
-    }
-    // The driver may immediately reuse command buffers in another thread.
-    // These updates need to be done before calling down to the driver.
-    for (uint32_t index = 0; index < commandBufferCount; index++) {
-        FinishWriteObject(pCommandBuffers[index], lockCommandPool);
+    if(pCommandBuffers) {
+        // Even though we're immediately "finishing" below, we still are testing for concurrency with any call in process
+        // so this isn't a no-op
+        for (uint32_t index = 0; index < commandBufferCount; index++) {
+            StartWriteObject(pCommandBuffers[index], lockCommandPool);
+        }
+        // The driver may immediately reuse command buffers in another thread.
+        // These updates need to be done before calling down to the driver.
+        for (uint32_t index = 0; index < commandBufferCount; index++) {
+            FinishWriteObject(pCommandBuffers[index], lockCommandPool);
+        }
+        // Holding the lock for the shortest time while we update the map
         std::lock_guard<std::mutex> lock(command_pool_lock);
-        command_pool_map.erase(pCommandBuffers[index]);
+        for (uint32_t index = 0; index < commandBufferCount; index++) {
+            command_pool_map.erase(pCommandBuffers[index]);
+        }
     }
 }
 
