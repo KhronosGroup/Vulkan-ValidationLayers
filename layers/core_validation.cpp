@@ -1985,87 +1985,8 @@ bool CoreChecks::ReportInvalidCommandBuffer(const CMD_BUFFER_STATE *cb_state, co
 }
 
 // 'commandBuffer must be in the recording state' valid usage error code for each command
-// Note: grepping for ^^^^^^^^^ in vk_validation_database is easily massaged into the following list
-// Note: C++11 doesn't automatically devolve enum types to the underlying type for hash traits purposes (fixed in C++14)
-using CmdTypeHashType = std::underlying_type<CMD_TYPE>::type;
-static const std::unordered_map<CmdTypeHashType, std::string> must_be_recording_map = {
-    {CMD_NONE, kVUIDUndefined},  // UNMATCHED
-    {CMD_BEGINQUERY, "VUID-vkCmdBeginQuery-commandBuffer-recording"},
-    {CMD_BEGINRENDERPASS, "VUID-vkCmdBeginRenderPass-commandBuffer-recording"},
-    {CMD_BEGINRENDERPASS2KHR, "VUID-vkCmdBeginRenderPass2KHR-commandBuffer-recording"},
-    {CMD_BINDDESCRIPTORSETS, "VUID-vkCmdBindDescriptorSets-commandBuffer-recording"},
-    {CMD_BINDINDEXBUFFER, "VUID-vkCmdBindIndexBuffer-commandBuffer-recording"},
-    {CMD_BINDPIPELINE, "VUID-vkCmdBindPipeline-commandBuffer-recording"},
-    {CMD_BINDSHADINGRATEIMAGE, "VUID-vkCmdBindShadingRateImageNV-commandBuffer-recording"},
-    {CMD_BINDVERTEXBUFFERS, "VUID-vkCmdBindVertexBuffers-commandBuffer-recording"},
-    {CMD_BLITIMAGE, "VUID-vkCmdBlitImage-commandBuffer-recording"},
-    {CMD_CLEARATTACHMENTS, "VUID-vkCmdClearAttachments-commandBuffer-recording"},
-    {CMD_CLEARCOLORIMAGE, "VUID-vkCmdClearColorImage-commandBuffer-recording"},
-    {CMD_CLEARDEPTHSTENCILIMAGE, "VUID-vkCmdClearDepthStencilImage-commandBuffer-recording"},
-    {CMD_COPYBUFFER, "VUID-vkCmdCopyBuffer-commandBuffer-recording"},
-    {CMD_COPYBUFFERTOIMAGE, "VUID-vkCmdCopyBufferToImage-commandBuffer-recording"},
-    {CMD_COPYIMAGE, "VUID-vkCmdCopyImage-commandBuffer-recording"},
-    {CMD_COPYIMAGETOBUFFER, "VUID-vkCmdCopyImageToBuffer-commandBuffer-recording"},
-    {CMD_COPYQUERYPOOLRESULTS, "VUID-vkCmdCopyQueryPoolResults-commandBuffer-recording"},
-    {CMD_DEBUGMARKERBEGINEXT, "VUID-vkCmdDebugMarkerBeginEXT-commandBuffer-recording"},
-    {CMD_DEBUGMARKERENDEXT, "VUID-vkCmdDebugMarkerEndEXT-commandBuffer-recording"},
-    {CMD_DEBUGMARKERINSERTEXT, "VUID-vkCmdDebugMarkerInsertEXT-commandBuffer-recording"},
-    {CMD_DISPATCH, "VUID-vkCmdDispatch-commandBuffer-recording"},
-    // Exclude KHX (if not already present) { CMD_DISPATCHBASEKHX, "VUID-vkCmdDispatchBase-commandBuffer-recording" },
-    {CMD_DISPATCHINDIRECT, "VUID-vkCmdDispatchIndirect-commandBuffer-recording"},
-    {CMD_DRAW, "VUID-vkCmdDraw-commandBuffer-recording"},
-    {CMD_DRAWINDEXED, "VUID-vkCmdDrawIndexed-commandBuffer-recording"},
-    {CMD_DRAWINDEXEDINDIRECT, "VUID-vkCmdDrawIndexedIndirect-commandBuffer-recording"},
-    // Exclude vendor ext (if not already present) { CMD_DRAWINDEXEDINDIRECTCOUNTAMD,
-    // "VUID-vkCmdDrawIndexedIndirectCountAMD-commandBuffer-recording" },
-    {CMD_DRAWINDEXEDINDIRECTCOUNTKHR, "VUID-vkCmdDrawIndexedIndirectCountKHR-commandBuffer-recording"},
-    {CMD_DRAWINDIRECT, "VUID-vkCmdDrawIndirect-commandBuffer-recording"},
-    // Exclude vendor ext (if not already present) { CMD_DRAWINDIRECTCOUNTAMD,
-    // "VUID-vkCmdDrawIndirectCountAMD-commandBuffer-recording" },
-    {CMD_DRAWINDIRECTCOUNTKHR, "VUID-vkCmdDrawIndirectCountKHR-commandBuffer-recording"},
-    {CMD_DRAWMESHTASKSNV, "VUID-vkCmdDrawMeshTasksNV-commandBuffer-recording"},
-    {CMD_DRAWMESHTASKSINDIRECTNV, "VUID-vkCmdDrawMeshTasksIndirectNV-commandBuffer-recording"},
-    {CMD_DRAWMESHTASKSINDIRECTCOUNTNV, "VUID-vkCmdDrawMeshTasksIndirectCountNV-commandBuffer-recording"},
-    {CMD_ENDCOMMANDBUFFER, "VUID-vkEndCommandBuffer-commandBuffer-00059"},
-    {CMD_ENDQUERY, "VUID-vkCmdEndQuery-commandBuffer-recording"},
-    {CMD_ENDRENDERPASS, "VUID-vkCmdEndRenderPass-commandBuffer-recording"},
-    {CMD_ENDRENDERPASS2KHR, "VUID-vkCmdEndRenderPass2KHR-commandBuffer-recording"},
-    {CMD_EXECUTECOMMANDS, "VUID-vkCmdExecuteCommands-commandBuffer-recording"},
-    {CMD_FILLBUFFER, "VUID-vkCmdFillBuffer-commandBuffer-recording"},
-    {CMD_NEXTSUBPASS, "VUID-vkCmdNextSubpass-commandBuffer-recording"},
-    {CMD_NEXTSUBPASS2KHR, "VUID-vkCmdNextSubpass2KHR-commandBuffer-recording"},
-    {CMD_PIPELINEBARRIER, "VUID-vkCmdPipelineBarrier-commandBuffer-recording"},
-    // Exclude vendor ext (if not already present) { CMD_PROCESSCOMMANDSNVX, "VUID-vkCmdProcessCommandsNVX-commandBuffer-recording"
-    // },
-    {CMD_PUSHCONSTANTS, "VUID-vkCmdPushConstants-commandBuffer-recording"},
-    {CMD_PUSHDESCRIPTORSETKHR, "VUID-vkCmdPushDescriptorSetKHR-commandBuffer-recording"},
-    {CMD_PUSHDESCRIPTORSETWITHTEMPLATEKHR, "VUID-vkCmdPushDescriptorSetWithTemplateKHR-commandBuffer-recording"},
-    // Exclude vendor ext (if not already present) { CMD_RESERVESPACEFORCOMMANDSNVX,
-    // "VUID-vkCmdReserveSpaceForCommandsNVX-commandBuffer-recording" },
-    {CMD_RESETEVENT, "VUID-vkCmdResetEvent-commandBuffer-recording"},
-    {CMD_RESETQUERYPOOL, "VUID-vkCmdResetQueryPool-commandBuffer-recording"},
-    {CMD_RESOLVEIMAGE, "VUID-vkCmdResolveImage-commandBuffer-recording"},
-    {CMD_SETBLENDCONSTANTS, "VUID-vkCmdSetBlendConstants-commandBuffer-recording"},
-    {CMD_SETDEPTHBIAS, "VUID-vkCmdSetDepthBias-commandBuffer-recording"},
-    {CMD_SETDEPTHBOUNDS, "VUID-vkCmdSetDepthBounds-commandBuffer-recording"},
-    // Exclude KHX (if not already present) { CMD_SETDEVICEMASKKHX, "VUID-vkCmdSetDeviceMask-commandBuffer-recording" },
-    {CMD_SETDISCARDRECTANGLEEXT, "VUID-vkCmdSetDiscardRectangleEXT-commandBuffer-recording"},
-    {CMD_SETEVENT, "VUID-vkCmdSetEvent-commandBuffer-recording"},
-    {CMD_SETEXCLUSIVESCISSOR, "VUID-vkCmdSetExclusiveScissorNV-commandBuffer-recording"},
-    {CMD_SETLINEWIDTH, "VUID-vkCmdSetLineWidth-commandBuffer-recording"},
-    {CMD_SETSAMPLELOCATIONSEXT, "VUID-vkCmdSetSampleLocationsEXT-commandBuffer-recording"},
-    {CMD_SETSCISSOR, "VUID-vkCmdSetScissor-commandBuffer-recording"},
-    {CMD_SETSTENCILCOMPAREMASK, "VUID-vkCmdSetStencilCompareMask-commandBuffer-recording"},
-    {CMD_SETSTENCILREFERENCE, "VUID-vkCmdSetStencilReference-commandBuffer-recording"},
-    {CMD_SETSTENCILWRITEMASK, "VUID-vkCmdSetStencilWriteMask-commandBuffer-recording"},
-    {CMD_SETVIEWPORT, "VUID-vkCmdSetViewport-commandBuffer-recording"},
-    {CMD_SETVIEWPORTSHADINGRATEPALETTE, "VUID-vkCmdSetViewportShadingRatePaletteNV-commandBuffer-recording"},
-    // Exclude vendor ext (if not already present) { CMD_SETVIEWPORTWSCALINGNV,
-    // "VUID-vkCmdSetViewportWScalingNV-commandBuffer-recording" },
-    {CMD_UPDATEBUFFER, "VUID-vkCmdUpdateBuffer-commandBuffer-recording"},
-    {CMD_WAITEVENTS, "VUID-vkCmdWaitEvents-commandBuffer-recording"},
-    {CMD_WRITETIMESTAMP, "VUID-vkCmdWriteTimestamp-commandBuffer-recording"},
-};
+// Autogenerated as part of the vk_validation_error_message.h codegen
+static const std::array<const char *, CMD_RANGE_SIZE> must_be_recording_list = {VUID_MUST_BE_RECORDING_LIST};
 
 // Validate the given command being added to the specified cmd buffer, flagging errors if CB is not in the recording state or if
 // there's an issue with the Cmd ordering
@@ -2079,13 +2000,8 @@ bool CoreChecks::ValidateCmd(const CMD_BUFFER_STATE *cb_state, const CMD_TYPE cm
             return ReportInvalidCommandBuffer(cb_state, caller_name);
 
         default:
-            auto error_it = must_be_recording_map.find(cmd);
-            // This assert lets us know that a vkCmd.* entrypoint has been added without enabling it in the map
-            assert(error_it != must_be_recording_map.cend());
-            if (error_it == must_be_recording_map.cend()) {
-                error_it = must_be_recording_map.find(CMD_NONE);  // But we'll handle the asserting case, in case of a test gap
-            }
-            const auto error = error_it->second;
+            assert(cmd != CMD_NONE);
+            const auto error = must_be_recording_list[cmd];
             return log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                            HandleToUint64(cb_state->commandBuffer), error,
                            "You must call vkBeginCommandBuffer() before this call to %s.", caller_name);
@@ -6503,7 +6419,7 @@ bool CoreChecks::PreCallValidateCmdSetExclusiveScissorNV(VkCommandBuffer command
     assert(cb_state);
     bool skip = ValidateCmdQueueFlags(cb_state, "vkCmdSetExclusiveScissorNV()", VK_QUEUE_GRAPHICS_BIT,
                                       "VUID-vkCmdSetExclusiveScissorNV-commandBuffer-cmdpool");
-    skip |= ValidateCmd(cb_state, CMD_SETEXCLUSIVESCISSOR, "vkCmdSetExclusiveScissorNV()");
+    skip |= ValidateCmd(cb_state, CMD_SETEXCLUSIVESCISSORNV, "vkCmdSetExclusiveScissorNV()");
     if (cb_state->static_status & CBSTATUS_EXCLUSIVE_SCISSOR_SET) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                         HandleToUint64(commandBuffer), "VUID-vkCmdSetExclusiveScissorNV-None-02032",
@@ -6534,7 +6450,7 @@ bool CoreChecks::PreCallValidateCmdBindShadingRateImageNV(VkCommandBuffer comman
     bool skip = ValidateCmdQueueFlags(cb_state, "vkCmdBindShadingRateImageNV()", VK_QUEUE_GRAPHICS_BIT,
                                       "VUID-vkCmdBindShadingRateImageNV-commandBuffer-cmdpool");
 
-    skip |= ValidateCmd(cb_state, CMD_BINDSHADINGRATEIMAGE, "vkCmdBindShadingRateImageNV()");
+    skip |= ValidateCmd(cb_state, CMD_BINDSHADINGRATEIMAGENV, "vkCmdBindShadingRateImageNV()");
 
     if (!enabled_features.shading_rate_image.shadingRateImage) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
@@ -6607,7 +6523,7 @@ bool CoreChecks::PreCallValidateCmdSetViewportShadingRatePaletteNV(VkCommandBuff
     bool skip = ValidateCmdQueueFlags(cb_state, "vkCmdSetViewportShadingRatePaletteNV()", VK_QUEUE_GRAPHICS_BIT,
                                       "VUID-vkCmdSetViewportShadingRatePaletteNV-commandBuffer-cmdpool");
 
-    skip |= ValidateCmd(cb_state, CMD_SETVIEWPORTSHADINGRATEPALETTE, "vkCmdSetViewportShadingRatePaletteNV()");
+    skip |= ValidateCmd(cb_state, CMD_SETVIEWPORTSHADINGRATEPALETTENV, "vkCmdSetViewportShadingRatePaletteNV()");
 
     if (!enabled_features.shading_rate_image.shadingRateImage) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,

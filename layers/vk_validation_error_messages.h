@@ -1,6 +1,6 @@
 /* THIS FILE IS GENERATED - DO NOT EDIT (scripts/vk_validation_stats.py) */
 /* Vulkan specification version: 1.1.106 */
-/* Header generated: 2019-04-09 14:12:28 */
+/* Header generated: 2019-04-28 10:10:20 */
 
 /*
  * Vulkan
@@ -5174,3 +5174,278 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-vkWaitForFences-pFences-parameter", "pFences must be a valid pointer to an array of fenceCount valid VkFence handles (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkWaitForFences-pFences-parameter)"},
     {"VUID-vkWaitForFences-pFences-parent", "Each element of pFences must have been created, allocated, or retrieved from device (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkWaitForFences-pFences-parent)"},
 };
+
+// Defines to allow creating "must be recording" meta data
+#define VUID_CMD_ENUM_LIST(prefix)\
+    prefix##NONE = 0,\
+    prefix##BEGINCONDITIONALRENDERINGEXT = 1,\
+    prefix##BEGINDEBUGUTILSLABELEXT = 2,\
+    prefix##BEGINQUERY = 3,\
+    prefix##BEGINQUERYINDEXEDEXT = 4,\
+    prefix##BEGINRENDERPASS = 5,\
+    prefix##BEGINRENDERPASS2KHR = 6,\
+    prefix##BEGINTRANSFORMFEEDBACKEXT = 7,\
+    prefix##BINDDESCRIPTORSETS = 8,\
+    prefix##BINDINDEXBUFFER = 9,\
+    prefix##BINDPIPELINE = 10,\
+    prefix##BINDSHADINGRATEIMAGENV = 11,\
+    prefix##BINDTRANSFORMFEEDBACKBUFFERSEXT = 12,\
+    prefix##BINDVERTEXBUFFERS = 13,\
+    prefix##BLITIMAGE = 14,\
+    prefix##BUILDACCELERATIONSTRUCTURENV = 15,\
+    prefix##CLEARATTACHMENTS = 16,\
+    prefix##CLEARCOLORIMAGE = 17,\
+    prefix##CLEARDEPTHSTENCILIMAGE = 18,\
+    prefix##COPYACCELERATIONSTRUCTURENV = 19,\
+    prefix##COPYBUFFER = 20,\
+    prefix##COPYBUFFERTOIMAGE = 21,\
+    prefix##COPYIMAGE = 22,\
+    prefix##COPYIMAGETOBUFFER = 23,\
+    prefix##COPYQUERYPOOLRESULTS = 24,\
+    prefix##DEBUGMARKERBEGINEXT = 25,\
+    prefix##DEBUGMARKERENDEXT = 26,\
+    prefix##DEBUGMARKERINSERTEXT = 27,\
+    prefix##DISPATCH = 28,\
+    prefix##DISPATCHBASE = 29,\
+    prefix##DISPATCHINDIRECT = 30,\
+    prefix##DRAW = 31,\
+    prefix##DRAWINDEXED = 32,\
+    prefix##DRAWINDEXEDINDIRECT = 33,\
+    prefix##DRAWINDEXEDINDIRECTCOUNTAMD = 34,\
+    prefix##DRAWINDEXEDINDIRECTCOUNTKHR = 35,\
+    prefix##DRAWINDIRECT = 36,\
+    prefix##DRAWINDIRECTBYTECOUNTEXT = 37,\
+    prefix##DRAWINDIRECTCOUNTAMD = 38,\
+    prefix##DRAWINDIRECTCOUNTKHR = 39,\
+    prefix##DRAWMESHTASKSINDIRECTCOUNTNV = 40,\
+    prefix##DRAWMESHTASKSINDIRECTNV = 41,\
+    prefix##DRAWMESHTASKSNV = 42,\
+    prefix##ENDCONDITIONALRENDERINGEXT = 43,\
+    prefix##ENDDEBUGUTILSLABELEXT = 44,\
+    prefix##ENDQUERY = 45,\
+    prefix##ENDQUERYINDEXEDEXT = 46,\
+    prefix##ENDRENDERPASS = 47,\
+    prefix##ENDRENDERPASS2KHR = 48,\
+    prefix##ENDTRANSFORMFEEDBACKEXT = 49,\
+    prefix##EXECUTECOMMANDS = 50,\
+    prefix##FILLBUFFER = 51,\
+    prefix##INSERTDEBUGUTILSLABELEXT = 52,\
+    prefix##NEXTSUBPASS = 53,\
+    prefix##NEXTSUBPASS2KHR = 54,\
+    prefix##PIPELINEBARRIER = 55,\
+    prefix##PROCESSCOMMANDSNVX = 56,\
+    prefix##PUSHCONSTANTS = 57,\
+    prefix##PUSHDESCRIPTORSETKHR = 58,\
+    prefix##PUSHDESCRIPTORSETWITHTEMPLATEKHR = 59,\
+    prefix##RESERVESPACEFORCOMMANDSNVX = 60,\
+    prefix##RESETEVENT = 61,\
+    prefix##RESETQUERYPOOL = 62,\
+    prefix##RESOLVEIMAGE = 63,\
+    prefix##SETBLENDCONSTANTS = 64,\
+    prefix##SETCHECKPOINTNV = 65,\
+    prefix##SETCOARSESAMPLEORDERNV = 66,\
+    prefix##SETDEPTHBIAS = 67,\
+    prefix##SETDEPTHBOUNDS = 68,\
+    prefix##SETDEVICEMASK = 69,\
+    prefix##SETDISCARDRECTANGLEEXT = 70,\
+    prefix##SETEVENT = 71,\
+    prefix##SETEXCLUSIVESCISSORNV = 72,\
+    prefix##SETLINEWIDTH = 73,\
+    prefix##SETSAMPLELOCATIONSEXT = 74,\
+    prefix##SETSCISSOR = 75,\
+    prefix##SETSTENCILCOMPAREMASK = 76,\
+    prefix##SETSTENCILREFERENCE = 77,\
+    prefix##SETSTENCILWRITEMASK = 78,\
+    prefix##SETVIEWPORT = 79,\
+    prefix##SETVIEWPORTSHADINGRATEPALETTENV = 80,\
+    prefix##SETVIEWPORTWSCALINGNV = 81,\
+    prefix##TRACERAYSNV = 82,\
+    prefix##UPDATEBUFFER = 83,\
+    prefix##WAITEVENTS = 84,\
+    prefix##WRITEACCELERATIONSTRUCTURESPROPERTIESNV = 85,\
+    prefix##WRITEBUFFERMARKERAMD = 86,\
+    prefix##WRITETIMESTAMP = 87,\
+    prefix##ENDCOMMANDBUFFER = 88,\
+    prefix##RANGE_SIZE = 89
+
+#define VUID_CMD_NAME_LIST\
+    "Command_Undefined",\
+    "vkCmdBeginConditionalRenderingEXT",\
+    "vkCmdBeginDebugUtilsLabelEXT",\
+    "vkCmdBeginQuery",\
+    "vkCmdBeginQueryIndexedEXT",\
+    "vkCmdBeginRenderPass",\
+    "vkCmdBeginRenderPass2KHR",\
+    "vkCmdBeginTransformFeedbackEXT",\
+    "vkCmdBindDescriptorSets",\
+    "vkCmdBindIndexBuffer",\
+    "vkCmdBindPipeline",\
+    "vkCmdBindShadingRateImageNV",\
+    "vkCmdBindTransformFeedbackBuffersEXT",\
+    "vkCmdBindVertexBuffers",\
+    "vkCmdBlitImage",\
+    "vkCmdBuildAccelerationStructureNV",\
+    "vkCmdClearAttachments",\
+    "vkCmdClearColorImage",\
+    "vkCmdClearDepthStencilImage",\
+    "vkCmdCopyAccelerationStructureNV",\
+    "vkCmdCopyBuffer",\
+    "vkCmdCopyBufferToImage",\
+    "vkCmdCopyImage",\
+    "vkCmdCopyImageToBuffer",\
+    "vkCmdCopyQueryPoolResults",\
+    "vkCmdDebugMarkerBeginEXT",\
+    "vkCmdDebugMarkerEndEXT",\
+    "vkCmdDebugMarkerInsertEXT",\
+    "vkCmdDispatch",\
+    "vkCmdDispatchBase",\
+    "vkCmdDispatchIndirect",\
+    "vkCmdDraw",\
+    "vkCmdDrawIndexed",\
+    "vkCmdDrawIndexedIndirect",\
+    "vkCmdDrawIndexedIndirectCountAMD",\
+    "vkCmdDrawIndexedIndirectCountKHR",\
+    "vkCmdDrawIndirect",\
+    "vkCmdDrawIndirectByteCountEXT",\
+    "vkCmdDrawIndirectCountAMD",\
+    "vkCmdDrawIndirectCountKHR",\
+    "vkCmdDrawMeshTasksIndirectCountNV",\
+    "vkCmdDrawMeshTasksIndirectNV",\
+    "vkCmdDrawMeshTasksNV",\
+    "vkCmdEndConditionalRenderingEXT",\
+    "vkCmdEndDebugUtilsLabelEXT",\
+    "vkCmdEndQuery",\
+    "vkCmdEndQueryIndexedEXT",\
+    "vkCmdEndRenderPass",\
+    "vkCmdEndRenderPass2KHR",\
+    "vkCmdEndTransformFeedbackEXT",\
+    "vkCmdExecuteCommands",\
+    "vkCmdFillBuffer",\
+    "vkCmdInsertDebugUtilsLabelEXT",\
+    "vkCmdNextSubpass",\
+    "vkCmdNextSubpass2KHR",\
+    "vkCmdPipelineBarrier",\
+    "vkCmdProcessCommandsNVX",\
+    "vkCmdPushConstants",\
+    "vkCmdPushDescriptorSetKHR",\
+    "vkCmdPushDescriptorSetWithTemplateKHR",\
+    "vkCmdReserveSpaceForCommandsNVX",\
+    "vkCmdResetEvent",\
+    "vkCmdResetQueryPool",\
+    "vkCmdResolveImage",\
+    "vkCmdSetBlendConstants",\
+    "vkCmdSetCheckpointNV",\
+    "vkCmdSetCoarseSampleOrderNV",\
+    "vkCmdSetDepthBias",\
+    "vkCmdSetDepthBounds",\
+    "vkCmdSetDeviceMask",\
+    "vkCmdSetDiscardRectangleEXT",\
+    "vkCmdSetEvent",\
+    "vkCmdSetExclusiveScissorNV",\
+    "vkCmdSetLineWidth",\
+    "vkCmdSetSampleLocationsEXT",\
+    "vkCmdSetScissor",\
+    "vkCmdSetStencilCompareMask",\
+    "vkCmdSetStencilReference",\
+    "vkCmdSetStencilWriteMask",\
+    "vkCmdSetViewport",\
+    "vkCmdSetViewportShadingRatePaletteNV",\
+    "vkCmdSetViewportWScalingNV",\
+    "vkCmdTraceRaysNV",\
+    "vkCmdUpdateBuffer",\
+    "vkCmdWaitEvents",\
+    "vkCmdWriteAccelerationStructuresPropertiesNV",\
+    "vkCmdWriteBufferMarkerAMD",\
+    "vkCmdWriteTimestamp",\
+    "vkEndCommandBuffer"
+
+#define VUID_MUST_BE_RECORDING_LIST\
+    "VUID_Undefined",\
+    "VUID-vkCmdBeginConditionalRenderingEXT-commandBuffer-recording",\
+    "VUID-vkCmdBeginDebugUtilsLabelEXT-commandBuffer-recording",\
+    "VUID-vkCmdBeginQuery-commandBuffer-recording",\
+    "VUID-vkCmdBeginQueryIndexedEXT-commandBuffer-recording",\
+    "VUID-vkCmdBeginRenderPass-commandBuffer-recording",\
+    "VUID-vkCmdBeginRenderPass2KHR-commandBuffer-recording",\
+    "VUID-vkCmdBeginTransformFeedbackEXT-commandBuffer-recording",\
+    "VUID-vkCmdBindDescriptorSets-commandBuffer-recording",\
+    "VUID-vkCmdBindIndexBuffer-commandBuffer-recording",\
+    "VUID-vkCmdBindPipeline-commandBuffer-recording",\
+    "VUID-vkCmdBindShadingRateImageNV-commandBuffer-recording",\
+    "VUID-vkCmdBindTransformFeedbackBuffersEXT-commandBuffer-recording",\
+    "VUID-vkCmdBindVertexBuffers-commandBuffer-recording",\
+    "VUID-vkCmdBlitImage-commandBuffer-recording",\
+    "VUID-vkCmdBuildAccelerationStructureNV-commandBuffer-recording",\
+    "VUID-vkCmdClearAttachments-commandBuffer-recording",\
+    "VUID-vkCmdClearColorImage-commandBuffer-recording",\
+    "VUID-vkCmdClearDepthStencilImage-commandBuffer-recording",\
+    "VUID-vkCmdCopyAccelerationStructureNV-commandBuffer-recording",\
+    "VUID-vkCmdCopyBuffer-commandBuffer-recording",\
+    "VUID-vkCmdCopyBufferToImage-commandBuffer-recording",\
+    "VUID-vkCmdCopyImage-commandBuffer-recording",\
+    "VUID-vkCmdCopyImageToBuffer-commandBuffer-recording",\
+    "VUID-vkCmdCopyQueryPoolResults-commandBuffer-recording",\
+    "VUID-vkCmdDebugMarkerBeginEXT-commandBuffer-recording",\
+    "VUID-vkCmdDebugMarkerEndEXT-commandBuffer-recording",\
+    "VUID-vkCmdDebugMarkerInsertEXT-commandBuffer-recording",\
+    "VUID-vkCmdDispatch-commandBuffer-recording",\
+    "VUID-vkCmdDispatchBase-commandBuffer-recording",\
+    "VUID-vkCmdDispatchIndirect-commandBuffer-recording",\
+    "VUID-vkCmdDraw-commandBuffer-recording",\
+    "VUID-vkCmdDrawIndexed-commandBuffer-recording",\
+    "VUID-vkCmdDrawIndexedIndirect-commandBuffer-recording",\
+    "VUID-vkCmdDrawIndexedIndirectCountAMD-commandBuffer-recording",\
+    "VUID-vkCmdDrawIndexedIndirectCountKHR-commandBuffer-recording",\
+    "VUID-vkCmdDrawIndirect-commandBuffer-recording",\
+    "VUID-vkCmdDrawIndirectByteCountEXT-commandBuffer-recording",\
+    "VUID-vkCmdDrawIndirectCountAMD-commandBuffer-recording",\
+    "VUID-vkCmdDrawIndirectCountKHR-commandBuffer-recording",\
+    "VUID-vkCmdDrawMeshTasksIndirectCountNV-commandBuffer-recording",\
+    "VUID-vkCmdDrawMeshTasksIndirectNV-commandBuffer-recording",\
+    "VUID-vkCmdDrawMeshTasksNV-commandBuffer-recording",\
+    "VUID-vkCmdEndConditionalRenderingEXT-commandBuffer-recording",\
+    "VUID-vkCmdEndDebugUtilsLabelEXT-commandBuffer-recording",\
+    "VUID-vkCmdEndQuery-commandBuffer-recording",\
+    "VUID-vkCmdEndQueryIndexedEXT-commandBuffer-recording",\
+    "VUID-vkCmdEndRenderPass-commandBuffer-recording",\
+    "VUID-vkCmdEndRenderPass2KHR-commandBuffer-recording",\
+    "VUID-vkCmdEndTransformFeedbackEXT-commandBuffer-recording",\
+    "VUID-vkCmdExecuteCommands-commandBuffer-recording",\
+    "VUID-vkCmdFillBuffer-commandBuffer-recording",\
+    "VUID-vkCmdInsertDebugUtilsLabelEXT-commandBuffer-recording",\
+    "VUID-vkCmdNextSubpass-commandBuffer-recording",\
+    "VUID-vkCmdNextSubpass2KHR-commandBuffer-recording",\
+    "VUID-vkCmdPipelineBarrier-commandBuffer-recording",\
+    "VUID-vkCmdProcessCommandsNVX-commandBuffer-recording",\
+    "VUID-vkCmdPushConstants-commandBuffer-recording",\
+    "VUID-vkCmdPushDescriptorSetKHR-commandBuffer-recording",\
+    "VUID-vkCmdPushDescriptorSetWithTemplateKHR-commandBuffer-recording",\
+    "VUID-vkCmdReserveSpaceForCommandsNVX-commandBuffer-recording",\
+    "VUID-vkCmdResetEvent-commandBuffer-recording",\
+    "VUID-vkCmdResetQueryPool-commandBuffer-recording",\
+    "VUID-vkCmdResolveImage-commandBuffer-recording",\
+    "VUID-vkCmdSetBlendConstants-commandBuffer-recording",\
+    "VUID-vkCmdSetCheckpointNV-commandBuffer-recording",\
+    "VUID-vkCmdSetCoarseSampleOrderNV-commandBuffer-recording",\
+    "VUID-vkCmdSetDepthBias-commandBuffer-recording",\
+    "VUID-vkCmdSetDepthBounds-commandBuffer-recording",\
+    "VUID-vkCmdSetDeviceMask-commandBuffer-recording",\
+    "VUID-vkCmdSetDiscardRectangleEXT-commandBuffer-recording",\
+    "VUID-vkCmdSetEvent-commandBuffer-recording",\
+    "VUID-vkCmdSetExclusiveScissorNV-commandBuffer-recording",\
+    "VUID-vkCmdSetLineWidth-commandBuffer-recording",\
+    "VUID-vkCmdSetSampleLocationsEXT-commandBuffer-recording",\
+    "VUID-vkCmdSetScissor-commandBuffer-recording",\
+    "VUID-vkCmdSetStencilCompareMask-commandBuffer-recording",\
+    "VUID-vkCmdSetStencilReference-commandBuffer-recording",\
+    "VUID-vkCmdSetStencilWriteMask-commandBuffer-recording",\
+    "VUID-vkCmdSetViewport-commandBuffer-recording",\
+    "VUID-vkCmdSetViewportShadingRatePaletteNV-commandBuffer-recording",\
+    "VUID-vkCmdSetViewportWScalingNV-commandBuffer-recording",\
+    "VUID-vkCmdTraceRaysNV-commandBuffer-recording",\
+    "VUID-vkCmdUpdateBuffer-commandBuffer-recording",\
+    "VUID-vkCmdWaitEvents-commandBuffer-recording",\
+    "VUID-vkCmdWriteAccelerationStructuresPropertiesNV-commandBuffer-recording",\
+    "VUID-vkCmdWriteBufferMarkerAMD-commandBuffer-recording",\
+    "VUID-vkCmdWriteTimestamp-commandBuffer-recording",\
+    "VUID-vkEndCommandBuffer-commandBuffer-00059"
