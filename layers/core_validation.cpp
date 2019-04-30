@@ -1131,47 +1131,39 @@ bool CoreChecks::ValidatePipelineDrawtimeState(LAST_BOUND_STATE const &state, co
         // TODO: Move all of the error codes common across different Draws into a LUT accessed by cmd_type
         // TODO: AMD extension codes are included here, but actual function entrypoints are not yet intercepted
         // Error codes for renderpass and subpass mismatches
-        auto rp_error = "VUID-vkCmdDraw-renderPass-00435", sp_error = "VUID-vkCmdDraw-subpass-00436";
+        auto rp_error = "VUID-vkCmdDraw-renderPass-02684", sp_error = "VUID-vkCmdDraw-subpass-02685";
         switch (cmd_type) {
             case CMD_DRAWINDEXED:
-                rp_error = "VUID-vkCmdDrawIndexed-renderPass-00454";
-                sp_error = "VUID-vkCmdDrawIndexed-subpass-00455";
+                rp_error = "VUID-vkCmdDrawIndexed-renderPass-02684";
+                sp_error = "VUID-vkCmdDrawIndexed-subpass-02685";
                 break;
             case CMD_DRAWINDIRECT:
-                rp_error = "VUID-vkCmdDrawIndirect-renderPass-00479";
-                sp_error = "VUID-vkCmdDrawIndirect-subpass-00480";
-                break;
-            case CMD_DRAWINDIRECTCOUNTAMD:
-                rp_error = "VUID-vkCmdDrawIndirectCountAMD-renderPass-00507";
-                sp_error = "VUID-vkCmdDrawIndirectCountAMD-subpass-00508";
+                rp_error = "VUID-vkCmdDrawIndirect-renderPass-02684";
+                sp_error = "VUID-vkCmdDrawIndirect-subpass-02685";
                 break;
             case CMD_DRAWINDIRECTCOUNTKHR:
-                rp_error = "VUID-vkCmdDrawIndirectCountKHR-renderPass-03113";
-                sp_error = "VUID-vkCmdDrawIndirectCountKHR-subpass-03114";
+                rp_error = "VUID-vkCmdDrawIndirectCountKHR-renderPass-02684";
+                sp_error = "VUID-vkCmdDrawIndirectCountKHR-subpass-02685";
                 break;
             case CMD_DRAWINDEXEDINDIRECT:
-                rp_error = "VUID-vkCmdDrawIndexedIndirect-renderPass-00531";
-                sp_error = "VUID-vkCmdDrawIndexedIndirect-subpass-00532";
-                break;
-            case CMD_DRAWINDEXEDINDIRECTCOUNTAMD:
-                rp_error = "VUID-vkCmdDrawIndexedIndirectCountAMD-renderPass-00560";
-                sp_error = "VUID-vkCmdDrawIndexedIndirectCountAMD-subpass-00561";
+                rp_error = "VUID-vkCmdDrawIndexedIndirect-renderPass-02684";
+                sp_error = "VUID-vkCmdDrawIndexedIndirect-subpass-02685";
                 break;
             case CMD_DRAWINDEXEDINDIRECTCOUNTKHR:
-                rp_error = "VUID-vkCmdDrawIndexedIndirectCountKHR-renderPass-03145";
-                sp_error = "VUID-vkCmdDrawIndexedIndirectCountKHR-subpass-03146";
+                rp_error = "VUID-vkCmdDrawIndexedIndirectCountKHR-renderPass-02684";
+                sp_error = "VUID-vkCmdDrawIndexedIndirectCountKHR-subpass-02685";
                 break;
             case CMD_DRAWMESHTASKSNV:
-                rp_error = "VUID-vkCmdDrawMeshTasksNV-renderPass-02120";
-                sp_error = "VUID-vkCmdDrawMeshTasksNV-subpass-02121";
+                rp_error = "VUID-vkCmdDrawMeshTasksNV-renderPass-02684";
+                sp_error = "VUID-vkCmdDrawMeshTasksNV-subpass-02685";
                 break;
             case CMD_DRAWMESHTASKSINDIRECTNV:
-                rp_error = "VUID-vkCmdDrawMeshTasksIndirectNV-renderPass-02148";
-                sp_error = "VUID-vkCmdDrawMeshTasksIndirectNV-subpass-02149";
+                rp_error = "VUID-vkCmdDrawMeshTasksIndirectNV-renderPass-02684";
+                sp_error = "VUID-vkCmdDrawMeshTasksIndirectNV-subpass-02685";
                 break;
             case CMD_DRAWMESHTASKSINDIRECTCOUNTNV:
-                rp_error = "VUID-vkCmdDrawMeshTasksIndirectCountNV-renderPass-02184";
-                sp_error = "VUID-vkCmdDrawMeshTasksIndirectCountNV-subpass-02185";
+                rp_error = "VUID-vkCmdDrawMeshTasksIndirectCountNV-renderPass-02684";
+                sp_error = "VUID-vkCmdDrawMeshTasksIndirectCountNV-subpass-02685";
                 break;
             default:
                 assert(CMD_DRAW == cmd_type);

@@ -2622,7 +2622,7 @@ bool StatelessValidation::manual_PreCallValidateCmdDispatchIndirect(VkCommandBuf
 
     if ((offset % 4) != 0) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                        HandleToUint64(commandBuffer), "VUID-vkCmdDispatchIndirect-offset-00406",
+                        HandleToUint64(commandBuffer), "VUID-vkCmdDispatchIndirect-offset-02710",
                         "vkCmdDispatchIndirect(): offset (%" PRIu64 ") must be a multiple of 4.", offset);
     }
     return skip;
@@ -2853,7 +2853,7 @@ bool StatelessValidation::manual_PreCallValidateCmdDrawMeshTasksIndirectNV(VkCom
     if (offset & 3) {
         skip |= log_msg(
             report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-            HandleToUint64(commandBuffer), "VUID-vkCmdDrawMeshTasksIndirectNV-offset-02145",
+            HandleToUint64(commandBuffer), "VUID-vkCmdDrawMeshTasksIndirectNV-offset-02710",
             "vkCmdDrawMeshTasksIndirectNV() parameter, VkDeviceSize offset (0x%" PRIxLEAST64 "), is not a multiple of 4.", offset);
     }
 
@@ -2867,7 +2867,7 @@ bool StatelessValidation::manual_PreCallValidateCmdDrawMeshTasksIndirectNV(VkCom
 
     if (!physical_device_features.multiDrawIndirect && ((drawCount > 1))) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                        HandleToUint64(commandBuffer), "VUID-vkCmdDrawMeshTasksIndirectNV-drawCount-02147",
+                        HandleToUint64(commandBuffer), "VUID-vkCmdDrawMeshTasksIndirectNV-drawCount-02718",
                         "vkCmdDrawMeshTasksIndirectNV(): Device feature multiDrawIndirect disabled: count must be 0 or 1 but is %d",
                         drawCount);
     }
@@ -2883,7 +2883,7 @@ bool StatelessValidation::manual_PreCallValidateCmdDrawMeshTasksIndirectCountNV(
 
     if (offset & 3) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                        HandleToUint64(commandBuffer), "VUID-vkCmdDrawMeshTasksIndirectCountNV-offset-02180",
+                        HandleToUint64(commandBuffer), "VUID-vkCmdDrawMeshTasksIndirectCountNV-offset-02710",
                         "vkCmdDrawMeshTasksIndirectCountNV() parameter, VkDeviceSize offset (0x%" PRIxLEAST64
                         "), is not a multiple of 4.",
                         offset);
@@ -2891,7 +2891,7 @@ bool StatelessValidation::manual_PreCallValidateCmdDrawMeshTasksIndirectCountNV(
 
     if (countBufferOffset & 3) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                        HandleToUint64(commandBuffer), "VUID-vkCmdDrawMeshTasksIndirectCountNV-countBufferOffset-02181",
+                        HandleToUint64(commandBuffer), "VUID-vkCmdDrawMeshTasksIndirectCountNV-countBufferOffset-02716",
                         "vkCmdDrawMeshTasksIndirectCountNV() parameter, VkDeviceSize countBufferOffset (0x%" PRIxLEAST64
                         "), is not a multiple of 4.",
                         countBufferOffset);
