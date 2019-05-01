@@ -229,6 +229,7 @@ class CoreChecks : public ValidationObject {
         VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT vtx_attrib_divisor_props;
         VkPhysicalDeviceDepthStencilResolvePropertiesKHR depth_stencil_resolve_props;
         VkPhysicalDeviceCooperativeMatrixPropertiesNV cooperative_matrix_props;
+        VkPhysicalDeviceTransformFeedbackPropertiesEXT transform_feedback_props;
     };
     DeviceExtensionProperties phys_dev_ext_props = {};
     std::vector<VkCooperativeMatrixPropertiesNV> cooperative_matrix_properties;
@@ -263,6 +264,16 @@ class CoreChecks : public ValidationObject {
     PHYSICAL_DEVICE_STATE* GetPhysicalDeviceState();
     SURFACE_STATE* GetSurfaceState(VkSurfaceKHR surface);
     BINDABLE* GetObjectMemBinding(uint64_t handle, VulkanObjectType type);
+
+    template <typename ExtProp>
+    void GetPhysicalDeviceExtProperties(VkPhysicalDevice gpu, bool enabled, ExtProp* ext_prop) {
+        assert(ext_prop);
+        if (enabled) {
+            *ext_prop = lvl_init_struct<ExtProp>();
+            auto prop2 = lvl_init_struct<VkPhysicalDeviceProperties2KHR>(ext_prop);
+            DispatchGetPhysicalDeviceProperties2KHR(gpu, &prop2);
+        }
+    }
 
     bool VerifyQueueStateToSeq(QUEUE_STATE* initial_queue, uint64_t initial_seq);
     void ClearCmdBufAndMemReferences(CMD_BUFFER_STATE* cb_node);
