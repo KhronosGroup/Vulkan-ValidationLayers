@@ -956,10 +956,15 @@ enum CBStatusFlagBits {
 struct QueryObject {
     VkQueryPool pool;
     uint32_t query;
+    // These next two fields are *not* used in hash or comparison, they are effectively a data payload
+    uint32_t index;  // must be zero if !indexed
+    bool indexed;
+    QueryObject(VkQueryPool pool_, uint32_t query_) : pool(pool_), query(query_), index(0), indexed(false) {}
+    QueryObject(VkQueryPool pool_, uint32_t query_, uint32_t index_) : pool(pool_), query(query_), index(index_), indexed(true) {}
 };
 
 inline bool operator==(const QueryObject &query1, const QueryObject &query2) {
-    return (query1.pool == query2.pool && query1.query == query2.query);
+    return ((query1.pool == query2.pool) && (query1.query == query2.query));
 }
 
 namespace std {
