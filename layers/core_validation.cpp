@@ -2531,55 +2531,24 @@ void CoreChecks::PostCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDevice
     DispatchGetPhysicalDeviceMemoryProperties(gpu, &core_checks->phys_dev_mem_props);
     DispatchGetPhysicalDeviceProperties(gpu, &core_checks->phys_dev_props);
 
-    if (core_checks->device_extensions.vk_khr_push_descriptor) {
+    const auto &dev_ext = core_checks->device_extensions;
+    auto *phys_dev_props = &core_checks->phys_dev_ext_props;
+
+    if (dev_ext.vk_khr_push_descriptor) {
         // Get the needed push_descriptor limits
-        auto push_descriptor_prop = lvl_init_struct<VkPhysicalDevicePushDescriptorPropertiesKHR>();
-        auto prop2 = lvl_init_struct<VkPhysicalDeviceProperties2KHR>(&push_descriptor_prop);
-        DispatchGetPhysicalDeviceProperties2KHR(gpu, &prop2);
-        core_checks->phys_dev_ext_props.max_push_descriptors = push_descriptor_prop.maxPushDescriptors;
+        VkPhysicalDevicePushDescriptorPropertiesKHR push_descriptor_prop;
+        GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_khr_push_descriptor, &push_descriptor_prop);
+        phys_dev_props->max_push_descriptors = push_descriptor_prop.maxPushDescriptors;
     }
-    if (core_checks->device_extensions.vk_ext_descriptor_indexing) {
-        // Get the needed descriptor_indexing limits
-        auto descriptor_indexing_props = lvl_init_struct<VkPhysicalDeviceDescriptorIndexingPropertiesEXT>();
-        auto prop2 = lvl_init_struct<VkPhysicalDeviceProperties2KHR>(&descriptor_indexing_props);
-        DispatchGetPhysicalDeviceProperties2KHR(gpu, &prop2);
-        core_checks->phys_dev_ext_props.descriptor_indexing_props = descriptor_indexing_props;
-    }
-    if (core_checks->device_extensions.vk_nv_shading_rate_image) {
-        // Get the needed shading rate image limits
-        auto shading_rate_image_props = lvl_init_struct<VkPhysicalDeviceShadingRateImagePropertiesNV>();
-        auto prop2 = lvl_init_struct<VkPhysicalDeviceProperties2KHR>(&shading_rate_image_props);
-        DispatchGetPhysicalDeviceProperties2KHR(gpu, &prop2);
-        core_checks->phys_dev_ext_props.shading_rate_image_props = shading_rate_image_props;
-    }
-    if (core_checks->device_extensions.vk_nv_mesh_shader) {
-        // Get the needed mesh shader limits
-        auto mesh_shader_props = lvl_init_struct<VkPhysicalDeviceMeshShaderPropertiesNV>();
-        auto prop2 = lvl_init_struct<VkPhysicalDeviceProperties2KHR>(&mesh_shader_props);
-        DispatchGetPhysicalDeviceProperties2KHR(gpu, &prop2);
-        core_checks->phys_dev_ext_props.mesh_shader_props = mesh_shader_props;
-    }
-    if (core_checks->device_extensions.vk_ext_inline_uniform_block) {
-        // Get the needed inline uniform block limits
-        auto inline_uniform_block_props = lvl_init_struct<VkPhysicalDeviceInlineUniformBlockPropertiesEXT>();
-        auto prop2 = lvl_init_struct<VkPhysicalDeviceProperties2KHR>(&inline_uniform_block_props);
-        DispatchGetPhysicalDeviceProperties2KHR(gpu, &prop2);
-        core_checks->phys_dev_ext_props.inline_uniform_block_props = inline_uniform_block_props;
-    }
-    if (core_checks->device_extensions.vk_ext_vertex_attribute_divisor) {
-        // Get the needed vertex attribute divisor limits
-        auto vtx_attrib_divisor_props = lvl_init_struct<VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT>();
-        auto prop2 = lvl_init_struct<VkPhysicalDeviceProperties2KHR>(&vtx_attrib_divisor_props);
-        DispatchGetPhysicalDeviceProperties2KHR(gpu, &prop2);
-        core_checks->phys_dev_ext_props.vtx_attrib_divisor_props = vtx_attrib_divisor_props;
-    }
-    if (core_checks->device_extensions.vk_khr_depth_stencil_resolve) {
-        // Get the needed depth and stencil resolve modes
-        auto depth_stencil_resolve_props = lvl_init_struct<VkPhysicalDeviceDepthStencilResolvePropertiesKHR>();
-        auto prop2 = lvl_init_struct<VkPhysicalDeviceProperties2KHR>(&depth_stencil_resolve_props);
-        DispatchGetPhysicalDeviceProperties2KHR(gpu, &prop2);
-        core_checks->phys_dev_ext_props.depth_stencil_resolve_props = depth_stencil_resolve_props;
-    }
+
+    GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_ext_descriptor_indexing, &phys_dev_props->descriptor_indexing_props);
+    GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_nv_shading_rate_image, &phys_dev_props->shading_rate_image_props);
+    GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_nv_mesh_shader, &phys_dev_props->mesh_shader_props);
+    GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_ext_inline_uniform_block, &phys_dev_props->inline_uniform_block_props);
+    GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_ext_vertex_attribute_divisor, &phys_dev_props->vtx_attrib_divisor_props);
+    GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_khr_depth_stencil_resolve, &phys_dev_props->depth_stencil_resolve_props);
+    GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_ext_transform_feedback, &phys_dev_props->transform_feedback_props);
+
     if (enabled.gpu_validation) {
         core_checks->GpuPostCallRecordCreateDevice(&enabled);
     }
