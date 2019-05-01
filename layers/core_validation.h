@@ -426,6 +426,14 @@ class CoreChecks : public ValidationObject {
     void RecordImportSemaphoreState(VkSemaphore semaphore, VkExternalSemaphoreHandleTypeFlagBitsKHR handle_type,
                                     VkSemaphoreImportFlagsKHR flags);
     void RecordGetExternalSemaphoreState(VkSemaphore semaphore, VkExternalSemaphoreHandleTypeFlagBitsKHR handle_type);
+    bool ValidateBeginQuery(const CMD_BUFFER_STATE* cb_state, const QueryObject& query_obj, VkFlags flags, CMD_TYPE cmd,
+                            const char* cmd_name, const char* vuid_queue_flags, const char* vuid_queue_feedback,
+                            const char* vuid_queue_occlusion, const char* vuid_precise, const char* vuid_query_count);
+    void RecordBeginQuery(CMD_BUFFER_STATE* cb_state, const QueryObject& query_obj);
+    bool ValidateCmdEndQuery(const CMD_BUFFER_STATE* cb_state, const QueryObject& query_obj, CMD_TYPE cmd, const char* cmd_name,
+                             const char* vuid_queue_flags, const char* vuid_active_queries);
+    void RecordCmdEndQuery(CMD_BUFFER_STATE* cb_state, const QueryObject& query_obj);
+
     bool SetQueryState(VkQueue queue, VkCommandBuffer commandBuffer, QueryObject object, bool value);
     bool ValidateCmdDrawType(VkCommandBuffer cmd_buffer, bool indexed, VkPipelineBindPoint bind_point, CMD_TYPE cmd_type,
                              const char* caller, VkQueueFlags queue_flags, const char* queue_flag_code,
@@ -1518,6 +1526,14 @@ class CoreChecks : public ValidationObject {
                                                         const VkDisplayPlaneInfo2KHR* pDisplayPlaneInfo,
                                                         VkDisplayPlaneCapabilities2KHR* pCapabilities);
     bool PreCallValidateCmdDebugMarkerEndEXT(VkCommandBuffer commandBuffer);
+
+    bool PreCallValidateCmdBeginQueryIndexedEXT(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query,
+                                                VkQueryControlFlags flags, uint32_t index);
+    void PostCallRecordCmdBeginQueryIndexedEXT(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query,
+                                               VkQueryControlFlags flags, uint32_t index);
+    bool PreCallValidateCmdEndQueryIndexedEXT(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query, uint32_t index);
+    void PostCallRecordCmdEndQueryIndexedEXT(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query, uint32_t index);
+
     bool PreCallValidateCmdSetDiscardRectangleEXT(VkCommandBuffer commandBuffer, uint32_t firstDiscardRectangle,
                                                   uint32_t discardRectangleCount, const VkRect2D* pDiscardRectangles);
     bool PreCallValidateCmdSetSampleLocationsEXT(VkCommandBuffer commandBuffer,
