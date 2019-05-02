@@ -534,11 +534,10 @@ class ImageSubresourceLayoutMap {
     virtual ConstIterator BeginInitialUse() const = 0;
     virtual ConstIterator BeginSetLayout() const = 0;
 
-    virtual bool SetSubresourceRangeLayout(const VkImageSubresourceRange &range, VkImageLayout layout,
-                                           VkImageLayout expected_layout = kInvalidLayout) = 0;
-    virtual bool SetSubresourceRangeInitialLayout(const VkImageSubresourceRange &range, VkImageLayout layout,
-                                                  const CMD_BUFFER_STATE &cb_state,
-                                                  const IMAGE_VIEW_STATE *view_state = nullptr) = 0;
+    virtual bool SetSubresourceRangeLayout(const CMD_BUFFER_STATE &cb_state, const VkImageSubresourceRange &range,
+                                           VkImageLayout layout, VkImageLayout expected_layout = kInvalidLayout) = 0;
+    virtual bool SetSubresourceRangeInitialLayout(const CMD_BUFFER_STATE &cb_state, const VkImageSubresourceRange &range,
+                                                  VkImageLayout layout, const IMAGE_VIEW_STATE *view_state = nullptr) = 0;
     virtual bool ForRange(const VkImageSubresourceRange &range, const Callback &callback, bool skip_invalid = true,
                           bool always_get_initial = false) const = 0;
     virtual VkImageLayout GetSubresourceLayout(const VkImageSubresource subresource) const = 0;
@@ -608,7 +607,7 @@ class ImageSubresourceLayoutMapImpl : public ImageSubresourceLayoutMap {
         return Base::ConstIterator(new ConstIteratorImpl<LayoutMap>(*this, layouts_.current));
     }
 
-    bool SetSubresourceRangeLayout(const VkImageSubresourceRange &range, VkImageLayout layout,
+    bool SetSubresourceRangeLayout(const CMD_BUFFER_STATE &cb_state, const VkImageSubresourceRange &range, VkImageLayout layout,
                                    VkImageLayout expected_layout = kInvalidLayout) override {
         bool updated = false;
         if (expected_layout == kInvalidLayout) {
@@ -617,6 +616,7 @@ class ImageSubresourceLayoutMapImpl : public ImageSubresourceLayoutMap {
         }
         if (!InRange(range)) return false;  // Don't even try to track bogus subreources
 
+        InitialLayoutState *initial_state = nullptr;
         const uint32_t end_mip = range.baseMipLevel + range.levelCount;
         const auto &aspects = AspectTraits::AspectBits();
         for (uint32_t aspect_index = 0; aspect_index < AspectTraits::kAspectCount; aspect_index++) {
@@ -628,8 +628,11 @@ class ImageSubresourceLayoutMapImpl : public ImageSubresourceLayoutMap {
                 bool updated_level = layouts_.current.SetRange(start, end, layout);
                 if (updated_level) {
                     // We only need to try setting the initial layout, if we changed any of the layout values above
-                    layouts_.initial.SetRange(start, end, expected_layout);
                     updated = true;
+                    if (layouts_.initial.SetRange(start, end, expected_layout)) {
+                        // We only need to try setting the initial layout *state* if the initial layout was updated
+                        initial_state = UpdateInitialLayoutState(start, end, initial_state, cb_state, nullptr);
+                    }
                 }
             }
         }
@@ -637,8 +640,8 @@ class ImageSubresourceLayoutMapImpl : public ImageSubresourceLayoutMap {
         return updated;
     }
 
-    bool SetSubresourceRangeInitialLayout(const VkImageSubresourceRange &range, VkImageLayout layout,
-                                          const CMD_BUFFER_STATE &cb_state, const IMAGE_VIEW_STATE *view_state = nullptr) override {
+    bool SetSubresourceRangeInitialLayout(const CMD_BUFFER_STATE &cb_state, const VkImageSubresourceRange &range,
+                                          VkImageLayout layout, const IMAGE_VIEW_STATE *view_state = nullptr) override {
         bool updated = false;
         if (!InRange(range)) return false;  // Don't even try to track bogus subreources
 
@@ -654,14 +657,8 @@ class ImageSubresourceLayoutMapImpl : public ImageSubresourceLayoutMap {
                 bool updated_level = layouts_.initial.SetRange(start, end, layout);
                 if (updated_level) {
                     updated = true;
-                    if (!initial_state) {
-                        // Allocate on demand...  initial_layout_states_ holds ownership as a unique_ptr, while
-                        // each subresource has a non-owning copy of the plain pointer.
-                        initial_state = new InitialLayoutState(cb_state, view_state);
-                        initial_layout_states_.emplace_back(initial_state);
-                    }
-                    assert(initial_state);
-                    initial_layout_state_map_.SetRange(start, end, initial_state);
+                    // We only need to try setting the initial layout *state* if the initial layout was updated
+                    initial_state = UpdateInitialLayoutState(start, end, initial_state, cb_state, view_state);
                 }
             }
         }
@@ -819,6 +816,19 @@ class ImageSubresourceLayoutMapImpl : public ImageSubresourceLayoutMap {
     inline size_t Encode(uint32_t aspect_index, uint32_t mip_level) const { return Encode(aspect_index) + mip_level * mip_size_; }
     inline size_t Encode(uint32_t aspect_index, uint32_t mip_level, uint32_t array_layer) const {
         return Encode(aspect_index, mip_level) + array_layer;
+    }
+
+    InitialLayoutState *UpdateInitialLayoutState(size_t start, size_t end, InitialLayoutState *initial_state,
+                                                 const CMD_BUFFER_STATE &cb_state, const IMAGE_VIEW_STATE *view_state) {
+        if (!initial_state) {
+            // Allocate on demand...  initial_layout_states_ holds ownership as a unique_ptr, while
+            // each subresource has a non-owning copy of the plain pointer.
+            initial_state = new InitialLayoutState(cb_state, view_state);
+            initial_layout_states_.emplace_back(initial_state);
+        }
+        assert(initial_state);
+        initial_layout_state_map_.SetRange(start, end, initial_state);
+        return initial_state;
     }
 
     typedef std::vector<std::unique_ptr<InitialLayoutState>> InitialLayoutStates;

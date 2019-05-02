@@ -292,7 +292,7 @@ void CoreChecks::SetImageLayout(CMD_BUFFER_STATE *cb_node, const IMAGE_STATE &im
                                 VkImageLayout expected_layout) {
     auto *subresource_map = GetImageSubresourceLayoutMap(cb_node, image_state);
     assert(subresource_map);  // the non-const getter must return a valid pointer
-    if (subresource_map->SetSubresourceRangeLayout(image_subresource_range, layout, expected_layout)) {
+    if (subresource_map->SetSubresourceRangeLayout(*cb_node, image_subresource_range, layout, expected_layout)) {
         cb_node->image_layout_change_count++;  // Change the version of this data to force revalidation
     }
 }
@@ -302,7 +302,7 @@ void CoreChecks::SetImageViewInitialLayout(CMD_BUFFER_STATE *cb_node, const IMAG
     IMAGE_STATE *image_state = GetImageState(view_state.create_info.image);
     if (image_state) {
         auto *subresource_map = GetImageSubresourceLayoutMap(cb_node, *image_state);
-        subresource_map->SetSubresourceRangeInitialLayout(view_state.normalized_subresource_range, layout, *cb_node, &view_state);
+        subresource_map->SetSubresourceRangeInitialLayout(*cb_node, view_state.normalized_subresource_range, layout, &view_state);
     }
 }
 
@@ -311,7 +311,7 @@ void CoreChecks::SetImageInitialLayout(CMD_BUFFER_STATE *cb_node, const IMAGE_ST
                                        const VkImageSubresourceRange &range, VkImageLayout layout) {
     auto *subresource_map = GetImageSubresourceLayoutMap(cb_node, image_state);
     assert(subresource_map);
-    subresource_map->SetSubresourceRangeInitialLayout(NormalizeSubresourceRange(image_state, range), layout, *cb_node);
+    subresource_map->SetSubresourceRangeInitialLayout(*cb_node, NormalizeSubresourceRange(image_state, range), layout);
 }
 
 void CoreChecks::SetImageInitialLayout(CMD_BUFFER_STATE *cb_node, VkImage image, const VkImageSubresourceRange &range,
