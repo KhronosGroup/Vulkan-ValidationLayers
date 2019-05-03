@@ -1379,6 +1379,7 @@ struct QFOTransferCBScoreboards {
 struct CMD_BUFFER_STATE : public BASE_NODE {
     VkCommandBuffer commandBuffer;
     VkCommandBufferAllocateInfo createInfo = {};
+    COMMAND_POOL_SHARED command_pool;
     VkCommandBufferBeginInfo beginInfo;
     VkCommandBufferInheritanceInfo inheritanceInfo;
     VkDevice device;  // device this CB belongs to

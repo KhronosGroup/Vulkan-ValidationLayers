@@ -1940,7 +1940,7 @@ bool CoreChecks::ValidateCmdSubpassState(const CMD_BUFFER_STATE *pCB, const CMD_
 
 bool CoreChecks::ValidateCmdQueueFlags(const CMD_BUFFER_STATE *cb_node, const char *caller_name, VkQueueFlags required_flags,
                                        const char *error_code) {
-    auto pool = GetCommandPoolState(cb_node->createInfo.commandPool);
+    auto pool = cb_node->command_pool.get();
     if (pool) {
         VkQueueFlags queue_flags = GetPhysicalDeviceState()->queue_family_properties[pool->queueFamilyIndex].queueFlags;
         if (!(required_flags & queue_flags)) {
@@ -2922,7 +2922,7 @@ bool CoreChecks::ValidImageBufferQueue(CMD_BUFFER_STATE *cb_node, const VK_OBJEC
 // Secondary command buffers were previously validated in vkCmdExecuteCommands().
 bool CoreChecks::ValidateQueueFamilyIndices(CMD_BUFFER_STATE *pCB, VkQueue queue) {
     bool skip = false;
-    auto pPool = GetCommandPoolState(pCB->createInfo.commandPool);
+    auto pPool = pCB->command_pool.get();
     auto queue_state = GetQueueState(queue);
 
     if (pPool && queue_state) {
@@ -6050,7 +6050,7 @@ void CoreChecks::PreCallRecordUpdateDescriptorSets(VkDevice device, uint32_t des
 void CoreChecks::PostCallRecordAllocateCommandBuffers(VkDevice device, const VkCommandBufferAllocateInfo *pCreateInfo,
                                                       VkCommandBuffer *pCommandBuffer, VkResult result) {
     if (VK_SUCCESS != result) return;
-    auto pPool = GetCommandPoolState(pCreateInfo->commandPool);
+    auto pPool = GetCommandPoolShared(pCreateInfo->commandPool);
     if (pPool) {
         for (uint32_t i = 0; i < pCreateInfo->commandBufferCount; i++) {
             // Add command buffer to its commandPool map
@@ -6058,6 +6058,8 @@ void CoreChecks::PostCallRecordAllocateCommandBuffers(VkDevice device, const VkC
             std::unique_ptr<CMD_BUFFER_STATE> pCB(new CMD_BUFFER_STATE{});
             pCB->createInfo = *pCreateInfo;
             pCB->device = device;
+            pCB->command_pool = pPool;
+            pCB->commandBuffer = pCommandBuffer[i];  // NOTE: This is also set in Reset, but as it's invariant, that's likely wrong
             // Add command buffer to map
             commandBufferMap[pCommandBuffer[i]] = std::move(pCB);
             ResetCommandBufferState(pCommandBuffer[i]);
@@ -6143,7 +6145,7 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
                         report_data->FormatHandle(commandBuffer).c_str());
     } else if (CB_RECORDED == cb_state->state || CB_INVALID_COMPLETE == cb_state->state) {
         VkCommandPool cmdPool = cb_state->createInfo.commandPool;
-        auto pPool = GetCommandPoolState(cmdPool);
+        auto pPool = cb_state->command_pool.get();
         if (!(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT & pPool->createFlags)) {
             skip |=
                 log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
@@ -6249,7 +6251,7 @@ bool CoreChecks::PreCallValidateResetCommandBuffer(VkCommandBuffer commandBuffer
     CMD_BUFFER_STATE *pCB = GetCBState(commandBuffer);
     if (!pCB) return false;
     VkCommandPool cmdPool = pCB->createInfo.commandPool;
-    auto pPool = GetCommandPoolState(cmdPool);
+    auto pPool = pCB->command_pool.get();
 
     if (!(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT & pPool->createFlags)) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
@@ -6918,7 +6920,7 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorSets(VkCommandBuffer commandBuf
 bool CoreChecks::ValidatePipelineBindPoint(CMD_BUFFER_STATE *cb_state, VkPipelineBindPoint bind_point, const char *func_name,
                                            const std::map<VkPipelineBindPoint, std::string> &bind_errors) {
     bool skip = false;
-    auto pool = GetCommandPoolState(cb_state->createInfo.commandPool);
+    auto pool = cb_state->command_pool.get();
     if (pool) {  // The loss of a pool in a recording cmd is reported in DestroyCommandPool
         static const std::map<VkPipelineBindPoint, VkQueueFlags> flag_mask = {
             std::make_pair(VK_PIPELINE_BIND_POINT_GRAPHICS, static_cast<VkQueueFlags>(VK_QUEUE_GRAPHICS_BIT)),
@@ -8137,7 +8139,7 @@ BarrierOperationsType CoreChecks::ComputeBarrierOperationsType(CMD_BUFFER_STATE 
                                                                const VkBufferMemoryBarrier *buffer_barriers,
                                                                uint32_t image_barrier_count,
                                                                const VkImageMemoryBarrier *image_barriers) {
-    auto pool = GetCommandPoolState(cb_state->createInfo.commandPool);
+    auto pool = cb_state->command_pool.get();
     BarrierOperationsType op_type = kGeneral;
 
     // Look at the barrier details only if they exist
@@ -8161,7 +8163,7 @@ bool CoreChecks::ValidateStageMasksAgainstQueueCapabilities(CMD_BUFFER_STATE con
                                                             BarrierOperationsType barrier_op_type, const char *function,
                                                             const char *error_code) {
     bool skip = false;
-    uint32_t queue_family_index = commandPoolMap[cb_state->createInfo.commandPool].get()->queueFamilyIndex;
+    uint32_t queue_family_index = cb_state->command_pool->queueFamilyIndex;
     auto physical_device_state = GetPhysicalDeviceState();
 
     // Any pipeline stage included in srcStageMask or dstStageMask must be supported by the capabilities of the queue family
@@ -10128,8 +10130,8 @@ bool CoreChecks::ValidateSecondaryCommandBufferState(CMD_BUFFER_STATE *pCB, CMD_
             }
         }
     }
-    auto primary_pool = GetCommandPoolState(pCB->createInfo.commandPool);
-    auto secondary_pool = GetCommandPoolState(pSubCB->createInfo.commandPool);
+    auto primary_pool = pCB->command_pool.get();
+    auto secondary_pool = pSubCB->command_pool.get();
     if (primary_pool && secondary_pool && (primary_pool->queueFamilyIndex != secondary_pool->queueFamilyIndex)) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                         HandleToUint64(pSubCB->commandBuffer), kVUID_Core_DrawState_InvalidQueueFamily,
