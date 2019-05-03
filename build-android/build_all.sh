@@ -37,7 +37,14 @@ function findtool() {
     fi
 }
 
+function log() {
+    echo "-- $SECONDS seconds since last log" >> build_all.log
+    echo $(date +%Y%m%d-%H%M%S) $* >> build_all.log
+    SECONDS=0
+}
+
 # Check for dependencies
+log Finding dependencies...
 findtool aapt
 findtool zipalign
 findtool jarsigner
@@ -59,8 +66,11 @@ function create_APK() {
 #
 # build layers
 #
+log Calling update_external_sources_android.sh...
 ./update_external_sources_android.sh --no-build
+log Calling android_generate.sh...
 ./android-generate.sh
+log Calling ndk-build...
 ndk-build -j $cores
 
 #
@@ -68,7 +78,9 @@ ndk-build -j $cores
 #
 mkdir -p bin/libs/lib
 cp -r $LAYER_BUILD_DIR/libs/* $LAYER_BUILD_DIR/bin/libs/lib/
+log Calling create_APK...
 create_APK VulkanLayerValidationTests
 
+log All done.
 echo Builds succeeded
 exit 0
