@@ -79,8 +79,12 @@ class BASE_NODE {
     //  binding removed when command buffer is reset or destroyed
     // When an object is destroyed, any bound cbs are set to INVALID
     std::unordered_set<CMD_BUFFER_STATE *> cb_bindings;
+    bool destroyed;
 
-    BASE_NODE() { in_use.store(0); };
+    BASE_NODE() {
+        in_use.store(0);
+        destroyed = false;
+    };
 };
 
 // Track command pools and their command buffers
@@ -90,6 +94,7 @@ struct COMMAND_POOL_STATE : public BASE_NODE {
     // Cmd buffers allocated from this pool
     std::unordered_set<VkCommandBuffer> commandBuffers;
 };
+typedef std::shared_ptr<COMMAND_POOL_STATE> COMMAND_POOL_SHARED;
 
 // Utilities for barriers and the commmand pool
 template <typename Barrier>

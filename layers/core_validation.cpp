@@ -223,13 +223,14 @@ SEMAPHORE_STATE *CoreChecks::GetSemaphoreState(VkSemaphore semaphore) {
     return it->second.get();
 }
 
-COMMAND_POOL_STATE *CoreChecks::GetCommandPoolState(VkCommandPool pool) {
+COMMAND_POOL_SHARED CoreChecks::GetCommandPoolShared(VkCommandPool pool) {
     auto it = commandPoolMap.find(pool);
     if (it == commandPoolMap.end()) {
-        return nullptr;
+        return COMMAND_POOL_SHARED();
     }
-    return it->second.get();
+    return it->second;
 }
+COMMAND_POOL_STATE *CoreChecks::GetCommandPoolState(VkCommandPool pool) { return GetCommandPoolShared(pool).get(); }
 
 PHYSICAL_DEVICE_STATE *CoreChecks::GetPhysicalDeviceState(VkPhysicalDevice phys) {
     auto *phys_dev_map = ((physical_device_map.size() > 0) ? &physical_device_map : &instance_state->physical_device_map);
@@ -4764,7 +4765,7 @@ void CoreChecks::PostCallRecordCreateCommandPool(VkDevice device, const VkComman
                                                  const VkAllocationCallbacks *pAllocator, VkCommandPool *pCommandPool,
                                                  VkResult result) {
     if (VK_SUCCESS != result) return;
-    std::unique_ptr<COMMAND_POOL_STATE> cmd_pool_state(new COMMAND_POOL_STATE{});
+    auto cmd_pool_state = std::make_shared<COMMAND_POOL_STATE>();
     cmd_pool_state->createFlags = pCreateInfo->flags;
     cmd_pool_state->queueFamilyIndex = pCreateInfo->queueFamilyIndex;
     commandPoolMap[*pCommandPool] = std::move(cmd_pool_state);
@@ -4814,6 +4815,7 @@ void CoreChecks::PreCallRecordDestroyCommandPool(VkDevice device, VkCommandPool 
         // Create a vector, as FreeCommandBufferStates deletes from cp_state->commandBuffers during iteration.
         std::vector<VkCommandBuffer> cb_vec{cp_state->commandBuffers.begin(), cp_state->commandBuffers.end()};
         FreeCommandBufferStates(cp_state, static_cast<uint32_t>(cb_vec.size()), cb_vec.data());
+        cp_state->destroyed = true;  //  any other holders of the pointer, need to know the Vulkan object is gone
         commandPoolMap.erase(commandPool);
     }
 }

@@ -182,7 +182,7 @@ class CoreChecks : public ValidationObject {
     unordered_map<VkDescriptorPool, std::unique_ptr<DESCRIPTOR_POOL_STATE>> descriptorPoolMap;
     unordered_map<VkDescriptorSet, std::unique_ptr<cvdescriptorset::DescriptorSet>> setMap;
     unordered_map<VkCommandBuffer, std::unique_ptr<CMD_BUFFER_STATE>> commandBufferMap;
-    unordered_map<VkCommandPool, std::unique_ptr<COMMAND_POOL_STATE>> commandPoolMap;
+    unordered_map<VkCommandPool, COMMAND_POOL_SHARED> commandPoolMap;
     unordered_map<VkPipelineLayout, std::unique_ptr<PIPELINE_LAYOUT_STATE>> pipelineLayoutMap;
     unordered_map<VkFence, std::unique_ptr<FENCE_STATE>> fenceMap;
     unordered_map<VkQueue, std::unique_ptr<QUEUE_STATE>> queueMap;
@@ -252,6 +252,8 @@ class CoreChecks : public ValidationObject {
     RENDER_PASS_STATE* GetRenderPassState(VkRenderPass renderpass);
     std::shared_ptr<RENDER_PASS_STATE> GetRenderPassStateSharedPtr(VkRenderPass renderpass);
     FRAMEBUFFER_STATE* GetFramebufferState(VkFramebuffer framebuffer);
+
+    COMMAND_POOL_SHARED GetCommandPoolShared(VkCommandPool pool);
     COMMAND_POOL_STATE* GetCommandPoolState(VkCommandPool pool);
     SHADER_MODULE_STATE const* GetShaderModuleState(VkShaderModule module);
     FENCE_STATE* GetFenceState(VkFence fence);
