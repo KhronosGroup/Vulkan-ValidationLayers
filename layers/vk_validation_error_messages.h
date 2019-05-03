@@ -1,6 +1,6 @@
 /* THIS FILE IS GENERATED - DO NOT EDIT (scripts/vk_validation_stats.py) */
-/* Vulkan specification version: 1.1.102 */
-/* Header generated: 2019-03-06 12:07:54 */
+/* Vulkan specification version: 1.1.106 */
+/* Header generated: 2019-04-28 10:10:20 */
 
 /*
  * Vulkan
@@ -28,7 +28,7 @@
 
 // Disable auto-formatting for generated file
 // clang-format off
-            
+
 // Mapping from VUID string to the corresponding spec text
 typedef struct _vuid_spec_text_pair {
     const char * vuid;
@@ -65,7 +65,6 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-VkAcquireNextImageInfoKHR-semaphore-01288", "If semaphore is not VK_NULL_HANDLE it must be unsignaled (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkAcquireNextImageInfoKHR-semaphore-01288)"},
     {"VUID-VkAcquireNextImageInfoKHR-semaphore-01781", "If semaphore is not VK_NULL_HANDLE it must not have any uncompleted signal or wait operations pending (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkAcquireNextImageInfoKHR-semaphore-01781)"},
     {"VUID-VkAcquireNextImageInfoKHR-semaphore-01782", "semaphore and fence must not both be equal to VK_NULL_HANDLE (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkAcquireNextImageInfoKHR-semaphore-01782)"},
-    {"VUID-VkAcquireNextImageInfoKHR-semaphore-01804", "semaphore and fence must not both be equal to VK_NULL_HANDLE. (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkAcquireNextImageInfoKHR-semaphore-01804)"},
     {"VUID-VkAcquireNextImageInfoKHR-semaphore-parameter", "If semaphore is not VK_NULL_HANDLE, semaphore must be a valid VkSemaphore handle (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkAcquireNextImageInfoKHR-semaphore-parameter)"},
     {"VUID-VkAcquireNextImageInfoKHR-swapchain-01675", "swapchain must not be in the retired state (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkAcquireNextImageInfoKHR-swapchain-01675)"},
     {"VUID-VkAcquireNextImageInfoKHR-swapchain-parameter", "swapchain must be a valid VkSwapchainKHR handle (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkAcquireNextImageInfoKHR-swapchain-parameter)"},
@@ -386,7 +385,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-VkComputePipelineCreateInfo-layout-00703", "layout must be consistent with the layout of the compute shader specified in stage (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkComputePipelineCreateInfo-layout-00703)"},
     {"VUID-VkComputePipelineCreateInfo-layout-01687", "The number of resources in layout accessible to the compute shader stage must be less than or equal to VkPhysicalDeviceLimits::maxPerStageResources (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkComputePipelineCreateInfo-layout-01687)"},
     {"VUID-VkComputePipelineCreateInfo-layout-parameter", "layout must be a valid VkPipelineLayout handle (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkComputePipelineCreateInfo-layout-parameter)"},
-    {"VUID-VkComputePipelineCreateInfo-pNext-pNext", "pNext must be NULL (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkComputePipelineCreateInfo-pNext-pNext)"},
+    {"VUID-VkComputePipelineCreateInfo-pNext-pNext", "pNext must be NULL or a pointer to a valid instance of VkPipelineCreationFeedbackCreateInfoEXT (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkComputePipelineCreateInfo-pNext-pNext)"},
     {"VUID-VkComputePipelineCreateInfo-sType-sType", "sType must be VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkComputePipelineCreateInfo-sType-sType)"},
     {"VUID-VkComputePipelineCreateInfo-stage-00701", "The stage member of stage must be VK_SHADER_STAGE_COMPUTE_BIT (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkComputePipelineCreateInfo-stage-00701)"},
     {"VUID-VkComputePipelineCreateInfo-stage-00702", "The shader code for the entry point identified by stage and the rest of the state identified by this structure must adhere to the pipeline linking rules described in the Shader Interfaces chapter (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkComputePipelineCreateInfo-stage-00702)"},
@@ -584,7 +583,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-VkDeviceCreateInfo-flags-zerobitmask", "flags must be 0 (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkDeviceCreateInfo-flags-zerobitmask)"},
     {"VUID-VkDeviceCreateInfo-pEnabledFeatures-parameter", "If pEnabledFeatures is not NULL, pEnabledFeatures must be a valid pointer to a valid VkPhysicalDeviceFeatures structure (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkDeviceCreateInfo-pEnabledFeatures-parameter)"},
     {"VUID-VkDeviceCreateInfo-pNext-00373", "If the pNext chain includes a VkPhysicalDeviceFeatures2 structure, then pEnabledFeatures must be NULL (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkDeviceCreateInfo-pNext-00373)"},
-    {"VUID-VkDeviceCreateInfo-pNext-pNext", "Each pNext member of any structure (including this one) in the pNext chain must be either NULL or a pointer to a valid instance of VkDeviceGroupDeviceCreateInfo, VkDeviceMemoryOverallocationCreateInfoAMD, VkPhysicalDevice16BitStorageFeatures, VkPhysicalDevice8BitStorageFeaturesKHR, VkPhysicalDeviceASTCDecodeFeaturesEXT, VkPhysicalDeviceBlendOperationAdvancedFeaturesEXT, VkPhysicalDeviceBufferAddressFeaturesEXT, VkPhysicalDeviceComputeShaderDerivativesFeaturesNV, VkPhysicalDeviceConditionalRenderingFeaturesEXT, VkPhysicalDeviceCooperativeMatrixFeaturesNV, VkPhysicalDeviceCornerSampledImageFeaturesNV, VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV, VkPhysicalDeviceDepthClipEnableFeaturesEXT, VkPhysicalDeviceDescriptorIndexingFeaturesEXT, VkPhysicalDeviceExclusiveScissorFeaturesNV, VkPhysicalDeviceFeatures2, VkPhysicalDeviceFloat16Int8FeaturesKHR, VkPhysicalDeviceFragmentDensityMapFeaturesEXT, VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV, VkPhysicalDeviceInlineUniformBlockFeaturesEXT, VkPhysicalDeviceMemoryPriorityFeaturesEXT, VkPhysicalDeviceMeshShaderFeaturesNV, VkPhysicalDeviceMultiviewFeatures, VkPhysicalDeviceProtectedMemoryFeatures, VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV, VkPhysicalDeviceSamplerYcbcrConversionFeatures, VkPhysicalDeviceScalarBlockLayoutFeaturesEXT, VkPhysicalDeviceShaderAtomicInt64FeaturesKHR, VkPhysicalDeviceShaderDrawParameterFeatures, VkPhysicalDeviceShaderImageFootprintFeaturesNV, VkPhysicalDeviceShadingRateImageFeaturesNV, VkPhysicalDeviceTransformFeedbackFeaturesEXT, VkPhysicalDeviceVariablePointerFeatures, VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT, VkPhysicalDeviceVulkanMemoryModelFeaturesKHR, or VkPhysicalDeviceYcbcrImageArraysFeaturesEXT (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkDeviceCreateInfo-pNext-pNext)"},
+    {"VUID-VkDeviceCreateInfo-pNext-pNext", "Each pNext member of any structure (including this one) in the pNext chain must be either NULL or a pointer to a valid instance of VkDeviceGroupDeviceCreateInfo, VkDeviceMemoryOverallocationCreateInfoAMD, VkPhysicalDevice16BitStorageFeatures, VkPhysicalDevice8BitStorageFeaturesKHR, VkPhysicalDeviceASTCDecodeFeaturesEXT, VkPhysicalDeviceBlendOperationAdvancedFeaturesEXT, VkPhysicalDeviceBufferDeviceAddressFeaturesEXT, VkPhysicalDeviceComputeShaderDerivativesFeaturesNV, VkPhysicalDeviceConditionalRenderingFeaturesEXT, VkPhysicalDeviceCooperativeMatrixFeaturesNV, VkPhysicalDeviceCornerSampledImageFeaturesNV, VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV, VkPhysicalDeviceDepthClipEnableFeaturesEXT, VkPhysicalDeviceDescriptorIndexingFeaturesEXT, VkPhysicalDeviceExclusiveScissorFeaturesNV, VkPhysicalDeviceFeatures2, VkPhysicalDeviceFloat16Int8FeaturesKHR, VkPhysicalDeviceFragmentDensityMapFeaturesEXT, VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV, VkPhysicalDeviceHostQueryResetFeaturesEXT, VkPhysicalDeviceInlineUniformBlockFeaturesEXT, VkPhysicalDeviceMemoryPriorityFeaturesEXT, VkPhysicalDeviceMeshShaderFeaturesNV, VkPhysicalDeviceMultiviewFeatures, VkPhysicalDeviceProtectedMemoryFeatures, VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV, VkPhysicalDeviceSamplerYcbcrConversionFeatures, VkPhysicalDeviceScalarBlockLayoutFeaturesEXT, VkPhysicalDeviceShaderAtomicInt64FeaturesKHR, VkPhysicalDeviceShaderDrawParametersFeatures, VkPhysicalDeviceShaderImageFootprintFeaturesNV, VkPhysicalDeviceShadingRateImageFeaturesNV, VkPhysicalDeviceTransformFeedbackFeaturesEXT, VkPhysicalDeviceVariablePointersFeatures, VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT, VkPhysicalDeviceVulkanMemoryModelFeaturesKHR, or VkPhysicalDeviceYcbcrImageArraysFeaturesEXT (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkDeviceCreateInfo-pNext-pNext)"},
     {"VUID-VkDeviceCreateInfo-pQueueCreateInfos-parameter", "pQueueCreateInfos must be a valid pointer to an array of queueCreateInfoCount valid VkDeviceQueueCreateInfo structures (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkDeviceCreateInfo-pQueueCreateInfos-parameter)"},
     {"VUID-VkDeviceCreateInfo-ppEnabledExtensionNames-00374", "ppEnabledExtensionNames must not contain both VK_KHR_maintenance1 and VK_AMD_negative_viewport_height (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkDeviceCreateInfo-ppEnabledExtensionNames-00374)"},
     {"VUID-VkDeviceCreateInfo-ppEnabledExtensionNames-01840", "ppEnabledExtensionNames must not contain VK_AMD_negative_viewport_height (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkDeviceCreateInfo-ppEnabledExtensionNames-01840)"},
@@ -675,6 +674,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-VkDisplayModeParametersKHR-width-01990", "The width member of visibleRegion must be greater than 0 (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkDisplayModeParametersKHR-width-01990)"},
     {"VUID-VkDisplayModeProperties2KHR-pNext-pNext", "pNext must be NULL (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkDisplayModeProperties2KHR-pNext-pNext)"},
     {"VUID-VkDisplayModeProperties2KHR-sType-sType", "sType must be VK_STRUCTURE_TYPE_DISPLAY_MODE_PROPERTIES_2_KHR (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkDisplayModeProperties2KHR-sType-sType)"},
+    {"VUID-VkDisplayNativeHdrSurfaceCapabilitiesAMD-sType-sType", "sType must be VK_STRUCTURE_TYPE_DISPLAY_NATIVE_HDR_SURFACE_CAPABILITIES_AMD (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkDisplayNativeHdrSurfaceCapabilitiesAMD-sType-sType)"},
     {"VUID-VkDisplayPlaneCapabilities2KHR-pNext-pNext", "pNext must be NULL (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkDisplayPlaneCapabilities2KHR-pNext-pNext)"},
     {"VUID-VkDisplayPlaneCapabilities2KHR-sType-sType", "sType must be VK_STRUCTURE_TYPE_DISPLAY_PLANE_CAPABILITIES_2_KHR (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkDisplayPlaneCapabilities2KHR-sType-sType)"},
     {"VUID-VkDisplayPlaneInfo2KHR-mode-parameter", "mode must be a valid VkDisplayModeKHR handle (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkDisplayPlaneInfo2KHR-mode-parameter)"},
@@ -861,7 +861,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-01523", "If no element of the pDynamicStates member of pDynamicState is VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT, and the sampleLocationsEnable member of a VkPipelineSampleLocationsStateCreateInfoEXT structure chained to the pNext chain of pMultisampleState is VK_TRUE, sampleLocationsInfo.sampleLocationsPerPixel must equal rasterizationSamples (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-01523)"},
     {"VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-01715", "If no element of the pDynamicStates member of pDynamicState is VK_DYNAMIC_STATE_VIEWPORT_W_SCALING_NV, and the viewportWScalingEnable member of a VkPipelineViewportWScalingStateCreateInfoNV structure, chained to the pNext chain of pViewportState, is VK_TRUE, the pViewportWScalings member of the VkPipelineViewportWScalingStateCreateInfoNV must be a pointer to an array of VkPipelineViewportWScalingStateCreateInfoNV::viewportCount valid VkViewportWScalingNV structures (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-01715)"},
     {"VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-02510", "If the VK_EXT_depth_range_unrestricted extension is not enabled and no element of the pDynamicStates member of pDynamicState is VK_DYNAMIC_STATE_DEPTH_BOUNDS, and the depthBoundsTestEnable member of pDepthStencilState is VK_TRUE, the minDepthBounds and maxDepthBounds members of pDepthStencilState must be between 0.0 and 1.0, inclusive (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-02510)"},
-    {"VUID-VkGraphicsPipelineCreateInfo-pNext-pNext", "Each pNext member of any structure (including this one) in the pNext chain must be either NULL or a pointer to a valid instance of VkPipelineDiscardRectangleStateCreateInfoEXT or VkPipelineRepresentativeFragmentTestStateCreateInfoNV (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkGraphicsPipelineCreateInfo-pNext-pNext)"},
+    {"VUID-VkGraphicsPipelineCreateInfo-pNext-pNext", "Each pNext member of any structure (including this one) in the pNext chain must be either NULL or a pointer to a valid instance of VkPipelineCreationFeedbackCreateInfoEXT, VkPipelineDiscardRectangleStateCreateInfoEXT, or VkPipelineRepresentativeFragmentTestStateCreateInfoNV (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkGraphicsPipelineCreateInfo-pNext-pNext)"},
     {"VUID-VkGraphicsPipelineCreateInfo-pRasterizationState-parameter", "pRasterizationState must be a valid pointer to a valid VkPipelineRasterizationStateCreateInfo structure (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkGraphicsPipelineCreateInfo-pRasterizationState-parameter)"},
     {"VUID-VkGraphicsPipelineCreateInfo-pStages-00729", "If pStages includes a tessellation control shader stage, it must include a tessellation evaluation shader stage (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkGraphicsPipelineCreateInfo-pStages-00729)"},
     {"VUID-VkGraphicsPipelineCreateInfo-pStages-00730", "If pStages includes a tessellation evaluation shader stage, it must include a tessellation control shader stage (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkGraphicsPipelineCreateInfo-pStages-00730)"},
@@ -1238,6 +1238,10 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-VkImageViewCreateInfo-image-parameter", "image must be a valid VkImage handle (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkImageViewCreateInfo-image-parameter)"},
     {"VUID-VkImageViewCreateInfo-pNext-01585", "If a VkImageFormatListCreateInfoKHR structure was included in the pNext chain of the VkImageCreateInfo struct used when creating image and the viewFormatCount field of VkImageFormatListCreateInfoKHR is not zero then format must be one of the formats in VkImageFormatListCreateInfoKHR::pViewFormats. (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkImageViewCreateInfo-pNext-01585)"},
     {"VUID-VkImageViewCreateInfo-pNext-01970", "If the pNext chain contains an instance of VkSamplerYcbcrConversionInfo with a conversion value other than VK_NULL_HANDLE, all members of components must have the value VK_COMPONENT_SWIZZLE_IDENTITY. (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkImageViewCreateInfo-pNext-01970)"},
+    {"VUID-VkImageViewCreateInfo-pNext-02661", "If the pNext chain includes an instance of VkImageViewUsageCreateInfo, its usage member must not include any bits that were not set in the usage member of the VkImageCreateInfo structure used to create image. (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkImageViewCreateInfo-pNext-02661)"},
+    {"VUID-VkImageViewCreateInfo-pNext-02662", "If the pNext chain includes an instance of VkImageViewUsageCreateInfo, and image was not created with an instance of VkImageStencilUsageCreateInfoEXT in the pNext chain of VkImageCreateInfo, its usage member must not include any bits that were not set in the usage member of the VkImageCreateInfo structure used to create image (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkImageViewCreateInfo-pNext-02662)"},
+    {"VUID-VkImageViewCreateInfo-pNext-02663", "If the pNext chain includes an instance of VkImageViewUsageCreateInfo, image was created with an instance of VkImageStencilUsageCreateInfoEXT in the pNext chain of VkImageCreateInfo, and subResourceRange.aspectMask includes VK_IMAGE_ASPECT_STENCIL_BIT, the usage member of the VkImageViewUsageCreateInfo instance must not include any bits that were not set in the usage member of the VkImageStencilUsageCreateInfoEXT structure used to create image (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkImageViewCreateInfo-pNext-02663)"},
+    {"VUID-VkImageViewCreateInfo-pNext-02664", "If the pNext chain includes an instance of VkImageViewUsageCreateInfo, image was created with an instance of VkImageStencilUsageCreateInfoEXT in the pNext chain of VkImageCreateInfo, and subResourceRange.aspectMask includes bits other than VK_IMAGE_ASPECT_STENCIL_BIT, the usage member of the VkImageViewUsageCreateInfo instance must not include any bits that were not set in the usage member of the VkImageCreateInfo structure used to create image (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkImageViewCreateInfo-pNext-02664)"},
     {"VUID-VkImageViewCreateInfo-pNext-pNext", "Each pNext member of any structure (including this one) in the pNext chain must be either NULL or a pointer to a valid instance of VkImageViewASTCDecodeModeEXT, VkImageViewUsageCreateInfo, or VkSamplerYcbcrConversionInfo (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkImageViewCreateInfo-pNext-pNext)"},
     {"VUID-VkImageViewCreateInfo-sType-sType", "sType must be VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkImageViewCreateInfo-sType-sType)"},
     {"VUID-VkImageViewCreateInfo-sType-unique", "Each sType member in the pNext chain must be unique (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkImageViewCreateInfo-sType-unique)"},
@@ -1267,7 +1271,6 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-VkImageViewHandleInfoNVX-sampler-02655", "sampler must be a valid VkSampler if descriptorType is VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkImageViewHandleInfoNVX-sampler-02655)"},
     {"VUID-VkImageViewHandleInfoNVX-sampler-parameter", "If sampler is not VK_NULL_HANDLE, sampler must be a valid VkSampler handle (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkImageViewHandleInfoNVX-sampler-parameter)"},
     {"VUID-VkImageViewUsageCreateInfo-sType-sType", "sType must be VK_STRUCTURE_TYPE_IMAGE_VIEW_USAGE_CREATE_INFO (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkImageViewUsageCreateInfo-sType-sType)"},
-    {"VUID-VkImageViewUsageCreateInfo-usage-01587", "usage must not include any set bits that were not set in the usage member of the VkImageCreateInfo structure used to create the image this image view is created from. (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkImageViewUsageCreateInfo-usage-01587)"},
     {"VUID-VkImageViewUsageCreateInfo-usage-parameter", "usage must be a valid combination of VkImageUsageFlagBits values (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkImageViewUsageCreateInfo-usage-parameter)"},
     {"VUID-VkImageViewUsageCreateInfo-usage-requiredbitmask", "usage must not be 0 (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkImageViewUsageCreateInfo-usage-requiredbitmask)"},
     {"VUID-VkImportAndroidHardwareBufferInfoANDROID-buffer-01880", "If buffer is not NULL, Android hardware buffers must be supported for import, as reported by VkExternalImageFormatProperties or VkExternalBufferProperties. (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkImportAndroidHardwareBufferInfoANDROID-buffer-01880)"},
@@ -1522,7 +1525,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-VkPhysicalDeviceASTCDecodeFeaturesEXT-sType-sType", "sType must be VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ASTC_DECODE_FEATURES_EXT (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkPhysicalDeviceASTCDecodeFeaturesEXT-sType-sType)"},
     {"VUID-VkPhysicalDeviceBlendOperationAdvancedFeaturesEXT-sType-sType", "sType must be VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BLEND_OPERATION_ADVANCED_FEATURES_EXT (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkPhysicalDeviceBlendOperationAdvancedFeaturesEXT-sType-sType)"},
     {"VUID-VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT-sType-sType", "sType must be VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BLEND_OPERATION_ADVANCED_PROPERTIES_EXT (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT-sType-sType)"},
-    {"VUID-VkPhysicalDeviceBufferAddressFeaturesEXT-sType-sType", "sType must be VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_ADDRESS_FEATURES_EXT (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkPhysicalDeviceBufferAddressFeaturesEXT-sType-sType)"},
+    {"VUID-VkPhysicalDeviceBufferDeviceAddressFeaturesEXT-sType-sType", "sType must be VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES_EXT (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkPhysicalDeviceBufferDeviceAddressFeaturesEXT-sType-sType)"},
     {"VUID-VkPhysicalDeviceComputeShaderDerivativesFeaturesNV-sType-sType", "sType must be VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COMPUTE_SHADER_DERIVATIVES_FEATURES_NV (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkPhysicalDeviceComputeShaderDerivativesFeaturesNV-sType-sType)"},
     {"VUID-VkPhysicalDeviceConditionalRenderingFeaturesEXT-sType-sType", "sType must be VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CONDITIONAL_RENDERING_FEATURES_EXT (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkPhysicalDeviceConditionalRenderingFeaturesEXT-sType-sType)"},
     {"VUID-VkPhysicalDeviceConservativeRasterizationPropertiesEXT-sType-sType", "sType must be VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CONSERVATIVE_RASTERIZATION_PROPERTIES_EXT (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkPhysicalDeviceConservativeRasterizationPropertiesEXT-sType-sType)"},
@@ -1560,6 +1563,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV-sType-sType", "sType must be VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADER_BARYCENTRIC_FEATURES_NV (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV-sType-sType)"},
     {"VUID-VkPhysicalDeviceGroupProperties-pNext-pNext", "pNext must be NULL (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkPhysicalDeviceGroupProperties-pNext-pNext)"},
     {"VUID-VkPhysicalDeviceGroupProperties-sType-sType", "sType must be VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkPhysicalDeviceGroupProperties-sType-sType)"},
+    {"VUID-VkPhysicalDeviceHostQueryResetFeaturesEXT-sType-sType", "sType must be VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HOST_QUERY_RESET_FEATURES_EXT (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkPhysicalDeviceHostQueryResetFeaturesEXT-sType-sType)"},
     {"VUID-VkPhysicalDeviceIDProperties-sType-sType", "sType must be VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ID_PROPERTIES (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkPhysicalDeviceIDProperties-sType-sType)"},
     {"VUID-VkPhysicalDeviceImageDrmFormatModifierInfoEXT-sType-sType", "sType must be VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_DRM_FORMAT_MODIFIER_INFO_EXT (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkPhysicalDeviceImageDrmFormatModifierInfoEXT-sType-sType)"},
     {"VUID-VkPhysicalDeviceImageDrmFormatModifierInfoEXT-sharingMode-02314", "If sharingMode is VK_SHARING_MODE_CONCURRENT, then pQueueFamilyIndices must be a valid pointer to an array of queueFamilyIndexCount uint32_t values. (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkPhysicalDeviceImageDrmFormatModifierInfoEXT-sharingMode-02314)"},
@@ -1609,7 +1613,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-VkPhysicalDeviceScalarBlockLayoutFeaturesEXT-sType-sType", "sType must be VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SCALAR_BLOCK_LAYOUT_FEATURES_EXT (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkPhysicalDeviceScalarBlockLayoutFeaturesEXT-sType-sType)"},
     {"VUID-VkPhysicalDeviceShaderAtomicInt64FeaturesKHR-sType-sType", "sType must be VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_INT64_FEATURES_KHR (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkPhysicalDeviceShaderAtomicInt64FeaturesKHR-sType-sType)"},
     {"VUID-VkPhysicalDeviceShaderCorePropertiesAMD-sType-sType", "sType must be VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_CORE_PROPERTIES_AMD (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkPhysicalDeviceShaderCorePropertiesAMD-sType-sType)"},
-    {"VUID-VkPhysicalDeviceShaderDrawParameterFeatures-sType-sType", "sType must be VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DRAW_PARAMETER_FEATURES (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkPhysicalDeviceShaderDrawParameterFeatures-sType-sType)"},
+    {"VUID-VkPhysicalDeviceShaderDrawParametersFeatures-sType-sType", "sType must be VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DRAW_PARAMETERS_FEATURES (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkPhysicalDeviceShaderDrawParametersFeatures-sType-sType)"},
     {"VUID-VkPhysicalDeviceShaderImageFootprintFeaturesNV-sType-sType", "sType must be VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_IMAGE_FOOTPRINT_FEATURES_NV (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkPhysicalDeviceShaderImageFootprintFeaturesNV-sType-sType)"},
     {"VUID-VkPhysicalDeviceShadingRateImageFeaturesNV-sType-sType", "sType must be VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADING_RATE_IMAGE_FEATURES_NV (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkPhysicalDeviceShadingRateImageFeaturesNV-sType-sType)"},
     {"VUID-VkPhysicalDeviceShadingRateImagePropertiesNV-sType-sType", "sType must be VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADING_RATE_IMAGE_PROPERTIES_NV (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkPhysicalDeviceShadingRateImagePropertiesNV-sType-sType)"},
@@ -1623,13 +1627,15 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-VkPhysicalDeviceSparseImageFormatInfo2-usage-parameter", "usage must be a valid combination of VkImageUsageFlagBits values (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkPhysicalDeviceSparseImageFormatInfo2-usage-parameter)"},
     {"VUID-VkPhysicalDeviceSparseImageFormatInfo2-usage-requiredbitmask", "usage must not be 0 (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkPhysicalDeviceSparseImageFormatInfo2-usage-requiredbitmask)"},
     {"VUID-VkPhysicalDeviceSubgroupProperties-sType-sType", "sType must be VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBGROUP_PROPERTIES (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkPhysicalDeviceSubgroupProperties-sType-sType)"},
-    {"VUID-VkPhysicalDeviceSurfaceInfo2KHR-pNext-pNext", "pNext must be NULL (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkPhysicalDeviceSurfaceInfo2KHR-pNext-pNext)"},
+    {"VUID-VkPhysicalDeviceSurfaceInfo2KHR-pNext-02672", "If the pNext chain includes an instance of VkSurfaceFullScreenExclusiveInfoEXT with its fullScreenExclusive member set to VK_FULL_SCREEN_EXCLUSIVE_APPLICATION_CONTROLLED_EXT, and surface was created using vkCreateWin32SurfaceKHR, an instance of VkSurfaceFullScreenExclusiveWin32InfoEXT must be present in the pNext chain (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkPhysicalDeviceSurfaceInfo2KHR-pNext-02672)"},
+    {"VUID-VkPhysicalDeviceSurfaceInfo2KHR-pNext-pNext", "Each pNext member of any structure (including this one) in the pNext chain must be either NULL or a pointer to a valid instance of VkSurfaceFullScreenExclusiveInfoEXT or VkSurfaceFullScreenExclusiveWin32InfoEXT (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkPhysicalDeviceSurfaceInfo2KHR-pNext-pNext)"},
     {"VUID-VkPhysicalDeviceSurfaceInfo2KHR-sType-sType", "sType must be VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SURFACE_INFO_2_KHR (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkPhysicalDeviceSurfaceInfo2KHR-sType-sType)"},
+    {"VUID-VkPhysicalDeviceSurfaceInfo2KHR-sType-unique", "Each sType member in the pNext chain must be unique (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkPhysicalDeviceSurfaceInfo2KHR-sType-unique)"},
     {"VUID-VkPhysicalDeviceSurfaceInfo2KHR-surface-parameter", "surface must be a valid VkSurfaceKHR handle (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkPhysicalDeviceSurfaceInfo2KHR-surface-parameter)"},
     {"VUID-VkPhysicalDeviceTransformFeedbackFeaturesEXT-sType-sType", "sType must be VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TRANSFORM_FEEDBACK_FEATURES_EXT (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkPhysicalDeviceTransformFeedbackFeaturesEXT-sType-sType)"},
     {"VUID-VkPhysicalDeviceTransformFeedbackPropertiesEXT-sType-sType", "sType must be VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TRANSFORM_FEEDBACK_PROPERTIES_EXT (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkPhysicalDeviceTransformFeedbackPropertiesEXT-sType-sType)"},
-    {"VUID-VkPhysicalDeviceVariablePointerFeatures-sType-sType", "sType must be VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VARIABLE_POINTER_FEATURES (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkPhysicalDeviceVariablePointerFeatures-sType-sType)"},
-    {"VUID-VkPhysicalDeviceVariablePointerFeatures-variablePointers-01431", "If variablePointers is enabled then variablePointersStorageBuffer must also be enabled. (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkPhysicalDeviceVariablePointerFeatures-variablePointers-01431)"},
+    {"VUID-VkPhysicalDeviceVariablePointersFeatures-sType-sType", "sType must be VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VARIABLE_POINTERS_FEATURES (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkPhysicalDeviceVariablePointersFeatures-sType-sType)"},
+    {"VUID-VkPhysicalDeviceVariablePointersFeatures-variablePointers-01431", "If variablePointers is enabled then variablePointersStorageBuffer must also be enabled. (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkPhysicalDeviceVariablePointersFeatures-variablePointers-01431)"},
     {"VUID-VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT-sType-sType", "sType must be VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_ATTRIBUTE_DIVISOR_FEATURES_EXT (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT-sType-sType)"},
     {"VUID-VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT-sType-sType", "sType must be VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_ATTRIBUTE_DIVISOR_PROPERTIES_EXT (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT-sType-sType)"},
     {"VUID-VkPhysicalDeviceVulkanMemoryModelFeaturesKHR-sType-sType", "sType must be VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_MEMORY_MODEL_FEATURES_KHR (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkPhysicalDeviceVulkanMemoryModelFeaturesKHR-sType-sType)"},
@@ -1675,6 +1681,13 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-VkPipelineCoverageToColorStateCreateInfoNV-coverageToColorEnable-01404", "If coverageToColorEnable is VK_TRUE, then the render pass subpass indicated by VkGraphicsPipelineCreateInfo::renderPass and VkGraphicsPipelineCreateInfo::subpass must have a color attachment at the location selected by coverageToColorLocation, with a VkFormat of VK_FORMAT_R8_UINT, VK_FORMAT_R8_SINT, VK_FORMAT_R16_UINT, VK_FORMAT_R16_SINT, VK_FORMAT_R32_UINT, or VK_FORMAT_R32_SINT (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkPipelineCoverageToColorStateCreateInfoNV-coverageToColorEnable-01404)"},
     {"VUID-VkPipelineCoverageToColorStateCreateInfoNV-flags-zerobitmask", "flags must be 0 (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkPipelineCoverageToColorStateCreateInfoNV-flags-zerobitmask)"},
     {"VUID-VkPipelineCoverageToColorStateCreateInfoNV-sType-sType", "sType must be VK_STRUCTURE_TYPE_PIPELINE_COVERAGE_TO_COLOR_STATE_CREATE_INFO_NV (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkPipelineCoverageToColorStateCreateInfoNV-sType-sType)"},
+    {"VUID-VkPipelineCreationFeedbackCreateInfoEXT-pPipelineCreationFeedback-parameter", "pPipelineCreationFeedback must be a valid pointer to a VkPipelineCreationFeedbackEXT structure (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkPipelineCreationFeedbackCreateInfoEXT-pPipelineCreationFeedback-parameter)"},
+    {"VUID-VkPipelineCreationFeedbackCreateInfoEXT-pPipelineStageCreationFeedbacks-parameter", "pPipelineStageCreationFeedbacks must be a valid pointer to an array of pipelineStageCreationFeedbackCount VkPipelineCreationFeedbackEXT structures (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkPipelineCreationFeedbackCreateInfoEXT-pPipelineStageCreationFeedbacks-parameter)"},
+    {"VUID-VkPipelineCreationFeedbackCreateInfoEXT-pipelineStageCreationFeedbackCount-02668", "When chained to VkGraphicsPipelineCreateInfo, VkPipelineCreationFeedbackEXT::pipelineStageCreationFeedbackCount must equal VkGraphicsPipelineCreateInfo::stageCount (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkPipelineCreationFeedbackCreateInfoEXT-pipelineStageCreationFeedbackCount-02668)"},
+    {"VUID-VkPipelineCreationFeedbackCreateInfoEXT-pipelineStageCreationFeedbackCount-02669", "When chained to VkComputePipelineCreateInfo, VkPipelineCreationFeedbackEXT::pipelineStageCreationFeedbackCount must equal 1 (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkPipelineCreationFeedbackCreateInfoEXT-pipelineStageCreationFeedbackCount-02669)"},
+    {"VUID-VkPipelineCreationFeedbackCreateInfoEXT-pipelineStageCreationFeedbackCount-02670", "When chained to VkRayTracingPipelineCreateInfoNV, VkPipelineCreationFeedbackEXT::pipelineStageCreationFeedbackCount must equal VkRayTracingPipelineCreateInfoNV::stageCount (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkPipelineCreationFeedbackCreateInfoEXT-pipelineStageCreationFeedbackCount-02670)"},
+    {"VUID-VkPipelineCreationFeedbackCreateInfoEXT-pipelineStageCreationFeedbackCount-arraylength", "pipelineStageCreationFeedbackCount must be greater than 0 (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkPipelineCreationFeedbackCreateInfoEXT-pipelineStageCreationFeedbackCount-arraylength)"},
+    {"VUID-VkPipelineCreationFeedbackCreateInfoEXT-sType-sType", "sType must be VK_STRUCTURE_TYPE_PIPELINE_CREATION_FEEDBACK_CREATE_INFO_EXT (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkPipelineCreationFeedbackCreateInfoEXT-sType-sType)"},
     {"VUID-VkPipelineDepthStencilStateCreateInfo-back-parameter", "back must be a valid VkStencilOpState structure (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkPipelineDepthStencilStateCreateInfo-back-parameter)"},
     {"VUID-VkPipelineDepthStencilStateCreateInfo-depthBoundsTestEnable-00598", "If the depth bounds testing feature is not enabled, depthBoundsTestEnable must be VK_FALSE (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkPipelineDepthStencilStateCreateInfo-depthBoundsTestEnable-00598)"},
     {"VUID-VkPipelineDepthStencilStateCreateInfo-depthCompareOp-parameter", "depthCompareOp must be a valid VkCompareOp value (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkPipelineDepthStencilStateCreateInfo-depthCompareOp-parameter)"},
@@ -1875,11 +1888,13 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-VkPipelineViewportSwizzleStateCreateInfoNV-viewportCount-arraylength", "viewportCount must be greater than 0 (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkPipelineViewportSwizzleStateCreateInfoNV-viewportCount-arraylength)"},
     {"VUID-VkPipelineViewportWScalingStateCreateInfoNV-sType-sType", "sType must be VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_W_SCALING_STATE_CREATE_INFO_NV (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkPipelineViewportWScalingStateCreateInfoNV-sType-sType)"},
     {"VUID-VkPipelineViewportWScalingStateCreateInfoNV-viewportCount-arraylength", "viewportCount must be greater than 0 (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkPipelineViewportWScalingStateCreateInfoNV-viewportCount-arraylength)"},
+    {"VUID-VkPresentFrameTokenGGP-frameToken-02680", "frameToken must be a valid GgpFrameToken (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkPresentFrameTokenGGP-frameToken-02680)"},
+    {"VUID-VkPresentFrameTokenGGP-sType-sType", "sType must be VK_STRUCTURE_TYPE_PRESENT_FRAME_TOKEN_GGP (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkPresentFrameTokenGGP-sType-sType)"},
     {"VUID-VkPresentInfoKHR-commonparent", "Both of the elements of pSwapchains, and the elements of pWaitSemaphores that are valid handles must have been created, allocated, or retrieved from the same VkInstance (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkPresentInfoKHR-commonparent)"},
     {"VUID-VkPresentInfoKHR-pImageIndices-01296", "Each element of pImageIndices must be the index of a presentable image acquired from the swapchain specified by the corresponding element of the pSwapchains array, and the presented image subresource must be in the VK_IMAGE_LAYOUT_PRESENT_SRC_KHR layout at the time the operation is executed on a VkDevice (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkPresentInfoKHR-pImageIndices-01296)"},
     {"VUID-VkPresentInfoKHR-pImageIndices-01430", "Each element of pImageIndices must be the index of a presentable image acquired from the swapchain specified by the corresponding element of the pSwapchains array, and the presented image subresource must be in the VK_IMAGE_LAYOUT_PRESENT_SRC_KHR or VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR layout at the time the operation is executed on a VkDevice (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkPresentInfoKHR-pImageIndices-01430)"},
     {"VUID-VkPresentInfoKHR-pImageIndices-parameter", "pImageIndices must be a valid pointer to an array of swapchainCount uint32_t values (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkPresentInfoKHR-pImageIndices-parameter)"},
-    {"VUID-VkPresentInfoKHR-pNext-pNext", "Each pNext member of any structure (including this one) in the pNext chain must be either NULL or a pointer to a valid instance of VkDeviceGroupPresentInfoKHR, VkDisplayPresentInfoKHR, VkPresentRegionsKHR, or VkPresentTimesInfoGOOGLE (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkPresentInfoKHR-pNext-pNext)"},
+    {"VUID-VkPresentInfoKHR-pNext-pNext", "Each pNext member of any structure (including this one) in the pNext chain must be either NULL or a pointer to a valid instance of VkDeviceGroupPresentInfoKHR, VkDisplayPresentInfoKHR, VkPresentFrameTokenGGP, VkPresentRegionsKHR, or VkPresentTimesInfoGOOGLE (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkPresentInfoKHR-pNext-pNext)"},
     {"VUID-VkPresentInfoKHR-pResults-parameter", "If pResults is not NULL, pResults must be a valid pointer to an array of swapchainCount VkResult values (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkPresentInfoKHR-pResults-parameter)"},
     {"VUID-VkPresentInfoKHR-pSwapchains-parameter", "pSwapchains must be a valid pointer to an array of swapchainCount valid VkSwapchainKHR handles (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkPresentInfoKHR-pSwapchains-parameter)"},
     {"VUID-VkPresentInfoKHR-pWaitSemaphores-parameter", "If waitSemaphoreCount is not 0, pWaitSemaphores must be a valid pointer to an array of waitSemaphoreCount valid VkSemaphore handles (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkPresentInfoKHR-pWaitSemaphores-parameter)"},
@@ -1928,7 +1943,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-VkRayTracingPipelineCreateInfoNV-layout-parameter", "layout must be a valid VkPipelineLayout handle (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkRayTracingPipelineCreateInfoNV-layout-parameter)"},
     {"VUID-VkRayTracingPipelineCreateInfoNV-maxRecursionDepth-02412", "maxRecursionDepth must be less than or equal to VkPhysicalDeviceRayTracingPropertiesNV::maxRecursionDepth (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkRayTracingPipelineCreateInfoNV-maxRecursionDepth-02412)"},
     {"VUID-VkRayTracingPipelineCreateInfoNV-pGroups-parameter", "pGroups must be a valid pointer to an array of groupCount valid VkRayTracingShaderGroupCreateInfoNV structures (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkRayTracingPipelineCreateInfoNV-pGroups-parameter)"},
-    {"VUID-VkRayTracingPipelineCreateInfoNV-pNext-pNext", "pNext must be NULL (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkRayTracingPipelineCreateInfoNV-pNext-pNext)"},
+    {"VUID-VkRayTracingPipelineCreateInfoNV-pNext-pNext", "pNext must be NULL or a pointer to a valid instance of VkPipelineCreationFeedbackCreateInfoEXT (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkRayTracingPipelineCreateInfoNV-pNext-pNext)"},
     {"VUID-VkRayTracingPipelineCreateInfoNV-pStages-02409", "The shader code for the entry points identified by pStages, and the rest of the state identified by this structure must adhere to the pipeline linking rules described in the Shader Interfaces chapter (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkRayTracingPipelineCreateInfoNV-pStages-02409)"},
     {"VUID-VkRayTracingPipelineCreateInfoNV-pStages-parameter", "pStages must be a valid pointer to an array of stageCount valid VkPipelineShaderStageCreateInfo structures (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkRayTracingPipelineCreateInfoNV-pStages-parameter)"},
     {"VUID-VkRayTracingPipelineCreateInfoNV-sType-sType", "sType must be VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_NV (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkRayTracingPipelineCreateInfoNV-sType-sType)"},
@@ -1970,7 +1985,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-VkRenderPassCreateInfo-pNext-01929", "If the pNext chain includes an instance of VkRenderPassMultiviewCreateInfo, if its dependencyCount member is not zero, it must be equal to dependencyCount (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkRenderPassCreateInfo-pNext-01929)"},
     {"VUID-VkRenderPassCreateInfo-pNext-01930", "If the pNext chain includes an instance of VkRenderPassMultiviewCreateInfo, for each non-zero element of pViewOffsets, the srcSubpass and dstSubpass members of pDependencies at the same index must not be equal (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkRenderPassCreateInfo-pNext-01930)"},
     {"VUID-VkRenderPassCreateInfo-pNext-01963", "If the pNext chain includes an instance of VkRenderPassInputAttachmentAspectCreateInfo, for any element of the pInputAttachments member of any element of pSubpasses where the attachment member is not VK_ATTACHMENT_UNUSED, the aspectMask member of the corresponding element of VkRenderPassInputAttachmentAspectCreateInfo::pAspectReferences must only include aspects that are present in images of the format specified by the element of pAttachments at attachment (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkRenderPassCreateInfo-pNext-01963)"},
-    {"VUID-VkRenderPassCreateInfo-pNext-02512", "If the pNext chain includes an instance of VkRenderPassMultiviewCreateInfo, for any element of pDependencies with a dependencyFlags member that doesn't include VK_DEPENDENCY_VIEW_LOCAL_BIT, the corresponding element of the pViewOffsets member of that VkRenderPassMultiviewCreateInfo instance must be 0 (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkRenderPassCreateInfo-pNext-02512)"},
+    {"VUID-VkRenderPassCreateInfo-pNext-02512", "If the pNext chain includes an instance of VkRenderPassMultiviewCreateInfo, for any element of pDependencies with a dependencyFlags member that does not include VK_DEPENDENCY_VIEW_LOCAL_BIT, the corresponding element of the pViewOffsets member of that VkRenderPassMultiviewCreateInfo instance must be 0 (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkRenderPassCreateInfo-pNext-02512)"},
     {"VUID-VkRenderPassCreateInfo-pNext-02513", "If the pNext chain includes an instance of VkRenderPassMultiviewCreateInfo, elements of its pViewMasks member must either all be 0, or all not be 0 (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkRenderPassCreateInfo-pNext-02513)"},
     {"VUID-VkRenderPassCreateInfo-pNext-02514", "If the pNext chain includes an instance of VkRenderPassMultiviewCreateInfo, and each element of its pViewMasks member is 0, the dependencyFlags member of each element of pDependencies must not include VK_DEPENDENCY_VIEW_LOCAL_BIT (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkRenderPassCreateInfo-pNext-02514)"},
     {"VUID-VkRenderPassCreateInfo-pNext-02515", "If the pNext chain includes an instance of VkRenderPassMultiviewCreateInfo, and each element of its pViewMasks member is 0, correlatedViewMaskCount must be 0 (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkRenderPassCreateInfo-pNext-02515)"},
@@ -2181,6 +2196,10 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-VkStencilOpState-depthFailOp-parameter", "depthFailOp must be a valid VkStencilOp value (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkStencilOpState-depthFailOp-parameter)"},
     {"VUID-VkStencilOpState-failOp-parameter", "failOp must be a valid VkStencilOp value (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkStencilOpState-failOp-parameter)"},
     {"VUID-VkStencilOpState-passOp-parameter", "passOp must be a valid VkStencilOp value (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkStencilOpState-passOp-parameter)"},
+    {"VUID-VkStreamDescriptorSurfaceCreateInfoGGP-flags-zerobitmask", "flags must be 0 (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkStreamDescriptorSurfaceCreateInfoGGP-flags-zerobitmask)"},
+    {"VUID-VkStreamDescriptorSurfaceCreateInfoGGP-pNext-pNext", "pNext must be NULL (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkStreamDescriptorSurfaceCreateInfoGGP-pNext-pNext)"},
+    {"VUID-VkStreamDescriptorSurfaceCreateInfoGGP-sType-sType", "sType must be VK_STRUCTURE_TYPE_STREAM_DESCRIPTOR_SURFACE_CREATE_INFO_GGP (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkStreamDescriptorSurfaceCreateInfoGGP-sType-sType)"},
+    {"VUID-VkStreamDescriptorSurfaceCreateInfoGGP-streamDescriptor-02681", "streamDescriptor must be a valid GgpStreamDescriptor (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkStreamDescriptorSurfaceCreateInfoGGP-streamDescriptor-02681)"},
     {"VUID-VkSubmitInfo-commonparent", "Each of the elements of pCommandBuffers, the elements of pSignalSemaphores, and the elements of pWaitSemaphores that are valid handles must have been created, allocated, or retrieved from the same VkDevice (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkSubmitInfo-commonparent)"},
     {"VUID-VkSubmitInfo-pCommandBuffers-00075", "Each element of pCommandBuffers must not have been allocated with VK_COMMAND_BUFFER_LEVEL_SECONDARY (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkSubmitInfo-pCommandBuffers-00075)"},
     {"VUID-VkSubmitInfo-pCommandBuffers-parameter", "If commandBufferCount is not 0, pCommandBuffers must be a valid pointer to an array of commandBufferCount valid VkCommandBuffer handles (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkSubmitInfo-pCommandBuffers-parameter)"},
@@ -2328,10 +2347,17 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-VkSurfaceCapabilities2EXT-pNext-pNext", "pNext must be NULL (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkSurfaceCapabilities2EXT-pNext-pNext)"},
     {"VUID-VkSurfaceCapabilities2EXT-sType-sType", "sType must be VK_STRUCTURE_TYPE_SURFACE_CAPABILITIES_2_EXT (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkSurfaceCapabilities2EXT-sType-sType)"},
     {"VUID-VkSurfaceCapabilities2EXT-supportedSurfaceCounters-01246", "supportedSurfaceCounters must not include VK_SURFACE_COUNTER_VBLANK_EXT unless the surface queried is a display surface. (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkSurfaceCapabilities2EXT-supportedSurfaceCounters-01246)"},
-    {"VUID-VkSurfaceCapabilities2KHR-pNext-pNext", "pNext must be NULL or a pointer to a valid instance of VkSharedPresentSurfaceCapabilitiesKHR (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkSurfaceCapabilities2KHR-pNext-pNext)"},
+    {"VUID-VkSurfaceCapabilities2KHR-pNext-pNext", "Each pNext member of any structure (including this one) in the pNext chain must be either NULL or a pointer to a valid instance of VkDisplayNativeHdrSurfaceCapabilitiesAMD, VkSharedPresentSurfaceCapabilitiesKHR, VkSurfaceCapabilitiesFullScreenExclusiveEXT, or VkSurfaceProtectedCapabilitiesKHR (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkSurfaceCapabilities2KHR-pNext-pNext)"},
     {"VUID-VkSurfaceCapabilities2KHR-sType-sType", "sType must be VK_STRUCTURE_TYPE_SURFACE_CAPABILITIES_2_KHR (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkSurfaceCapabilities2KHR-sType-sType)"},
+    {"VUID-VkSurfaceCapabilities2KHR-sType-unique", "Each sType member in the pNext chain must be unique (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkSurfaceCapabilities2KHR-sType-unique)"},
+    {"VUID-VkSurfaceCapabilitiesFullScreenExclusiveEXT-sType-sType", "sType must be VK_STRUCTURE_TYPE_SURFACE_CAPABILITIES_FULL_SCREEN_EXCLUSIVE_EXT (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkSurfaceCapabilitiesFullScreenExclusiveEXT-sType-sType)"},
     {"VUID-VkSurfaceFormat2KHR-pNext-pNext", "pNext must be NULL (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkSurfaceFormat2KHR-pNext-pNext)"},
     {"VUID-VkSurfaceFormat2KHR-sType-sType", "sType must be VK_STRUCTURE_TYPE_SURFACE_FORMAT_2_KHR (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkSurfaceFormat2KHR-sType-sType)"},
+    {"VUID-VkSurfaceFullScreenExclusiveInfoEXT-fullScreenExclusive-parameter", "fullScreenExclusive must be a valid VkFullScreenExclusiveEXT value (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkSurfaceFullScreenExclusiveInfoEXT-fullScreenExclusive-parameter)"},
+    {"VUID-VkSurfaceFullScreenExclusiveInfoEXT-sType-sType", "sType must be VK_STRUCTURE_TYPE_SURFACE_FULL_SCREEN_EXCLUSIVE_INFO_EXT (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkSurfaceFullScreenExclusiveInfoEXT-sType-sType)"},
+    {"VUID-VkSurfaceFullScreenExclusiveWin32InfoEXT-hmonitor-02673", "hmonitor must be a valid HMONITOR (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkSurfaceFullScreenExclusiveWin32InfoEXT-hmonitor-02673)"},
+    {"VUID-VkSurfaceFullScreenExclusiveWin32InfoEXT-sType-sType", "sType must be VK_STRUCTURE_TYPE_SURFACE_FULL_SCREEN_EXCLUSIVE_WIN32_INFO_EXT (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkSurfaceFullScreenExclusiveWin32InfoEXT-sType-sType)"},
+    {"VUID-VkSurfaceProtectedCapabilitiesKHR-sType-sType", "sType must be VK_STRUCTURE_TYPE_SURFACE_PROTECTED_CAPABILITIES_KHR (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkSurfaceProtectedCapabilitiesKHR-sType-sType)"},
     {"VUID-VkSwapchainCounterCreateInfoEXT-sType-sType", "sType must be VK_STRUCTURE_TYPE_SWAPCHAIN_COUNTER_CREATE_INFO_EXT (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkSwapchainCounterCreateInfoEXT-sType-sType)"},
     {"VUID-VkSwapchainCounterCreateInfoEXT-surfaceCounters-01244", "The bits in surfaceCounters must be supported by VkSwapchainCreateInfoKHR::surface, as reported by vkGetPhysicalDeviceSurfaceCapabilities2EXT. (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkSwapchainCounterCreateInfoEXT-surfaceCounters-01244)"},
     {"VUID-VkSwapchainCounterCreateInfoEXT-surfaceCounters-parameter", "surfaceCounters must be a valid combination of VkSurfaceCounterFlagBitsEXT values (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkSwapchainCounterCreateInfoEXT-surfaceCounters-parameter)"},
@@ -2339,6 +2365,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-VkSwapchainCreateInfoKHR-compositeAlpha-01280", "compositeAlpha must be one of the bits present in the supportedCompositeAlpha member of the VkSurfaceCapabilitiesKHR structure returned by vkGetPhysicalDeviceSurfaceCapabilitiesKHR for the surface (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkSwapchainCreateInfoKHR-compositeAlpha-01280)"},
     {"VUID-VkSwapchainCreateInfoKHR-compositeAlpha-parameter", "compositeAlpha must be a valid VkCompositeAlphaFlagBitsKHR value (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkSwapchainCreateInfoKHR-compositeAlpha-parameter)"},
     {"VUID-VkSwapchainCreateInfoKHR-flags-03168", "If flags contains VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR then the pNext chain must contain an instance of VkImageFormatListCreateInfoKHR with a viewFormatCount greater than zero and pViewFormats must have an element equal to imageFormat (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkSwapchainCreateInfoKHR-flags-03168)"},
+    {"VUID-VkSwapchainCreateInfoKHR-flags-03187", "If flags contains VK_SWAPCHAIN_CREATE_PROTECTED_BIT_KHR, then VkSurfaceProtectedCapabilitiesKHR::supportsProtected must be VK_TRUE in the VkSurfaceProtectedCapabilitiesKHR structure returned by vkGetPhysicalDeviceSurfaceCapabilities2KHR for surface (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkSwapchainCreateInfoKHR-flags-03187)"},
     {"VUID-VkSwapchainCreateInfoKHR-flags-parameter", "flags must be a valid combination of VkSwapchainCreateFlagBitsKHR values (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkSwapchainCreateInfoKHR-flags-parameter)"},
     {"VUID-VkSwapchainCreateInfoKHR-imageArrayLayers-01275", "imageArrayLayers must be greater than 0 and less than or equal to the maxImageArrayLayers member of the VkSurfaceCapabilitiesKHR structure returned by vkGetPhysicalDeviceSurfaceCapabilitiesKHR for the surface (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkSwapchainCreateInfoKHR-imageArrayLayers-01275)"},
     {"VUID-VkSwapchainCreateInfoKHR-imageColorSpace-parameter", "imageColorSpace must be a valid VkColorSpaceKHR value (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkSwapchainCreateInfoKHR-imageColorSpace-parameter)"},
@@ -2362,7 +2389,8 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-VkSwapchainCreateInfoKHR-oldSwapchain-01933", "If oldSwapchain is not VK_NULL_HANDLE, oldSwapchain must be a non-retired swapchain associated with native window referred to by surface (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkSwapchainCreateInfoKHR-oldSwapchain-01933)"},
     {"VUID-VkSwapchainCreateInfoKHR-oldSwapchain-parameter", "If oldSwapchain is not VK_NULL_HANDLE, oldSwapchain must be a valid VkSwapchainKHR handle (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkSwapchainCreateInfoKHR-oldSwapchain-parameter)"},
     {"VUID-VkSwapchainCreateInfoKHR-oldSwapchain-parent", "If oldSwapchain is a valid handle, it must have been created, allocated, or retrieved from surface (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkSwapchainCreateInfoKHR-oldSwapchain-parent)"},
-    {"VUID-VkSwapchainCreateInfoKHR-pNext-pNext", "Each pNext member of any structure (including this one) in the pNext chain must be either NULL or a pointer to a valid instance of VkDeviceGroupSwapchainCreateInfoKHR, VkImageFormatListCreateInfoKHR, or VkSwapchainCounterCreateInfoEXT (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkSwapchainCreateInfoKHR-pNext-pNext)"},
+    {"VUID-VkSwapchainCreateInfoKHR-pNext-02679", "If the pNext chain includes an instance of VkSurfaceFullScreenExclusiveInfoEXT with its fullScreenExclusive member set to VK_FULL_SCREEN_EXCLUSIVE_APPLICATION_CONTROLLED_EXT, and surface was created using vkCreateWin32SurfaceKHR, an instance of VkSurfaceFullScreenExclusiveWin32InfoEXT must be present in the pNext chain (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkSwapchainCreateInfoKHR-pNext-02679)"},
+    {"VUID-VkSwapchainCreateInfoKHR-pNext-pNext", "Each pNext member of any structure (including this one) in the pNext chain must be either NULL or a pointer to a valid instance of VkDeviceGroupSwapchainCreateInfoKHR, VkImageFormatListCreateInfoKHR, VkSurfaceFullScreenExclusiveInfoEXT, VkSurfaceFullScreenExclusiveWin32InfoEXT, VkSwapchainCounterCreateInfoEXT, or VkSwapchainDisplayNativeHdrCreateInfoAMD (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkSwapchainCreateInfoKHR-pNext-pNext)"},
     {"VUID-VkSwapchainCreateInfoKHR-physicalDeviceCount-01429", "If the logical device was created with VkDeviceGroupDeviceCreateInfo::physicalDeviceCount equal to 1, flags must not contain VK_SWAPCHAIN_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT_KHR (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkSwapchainCreateInfoKHR-physicalDeviceCount-01429)"},
     {"VUID-VkSwapchainCreateInfoKHR-preTransform-01279", "preTransform must be one of the bits present in the supportedTransforms member of the VkSurfaceCapabilitiesKHR structure returned by vkGetPhysicalDeviceSurfaceCapabilitiesKHR for the surface (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkSwapchainCreateInfoKHR-preTransform-01279)"},
     {"VUID-VkSwapchainCreateInfoKHR-preTransform-parameter", "preTransform must be a valid VkSurfaceTransformFlagBitsKHR value (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkSwapchainCreateInfoKHR-preTransform-parameter)"},
@@ -2373,6 +2401,8 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-VkSwapchainCreateInfoKHR-sType-unique", "Each sType member in the pNext chain must be unique (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkSwapchainCreateInfoKHR-sType-unique)"},
     {"VUID-VkSwapchainCreateInfoKHR-surface-01270", "surface must be a surface that is supported by the device as determined using vkGetPhysicalDeviceSurfaceSupportKHR (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkSwapchainCreateInfoKHR-surface-01270)"},
     {"VUID-VkSwapchainCreateInfoKHR-surface-parameter", "surface must be a valid VkSurfaceKHR handle (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkSwapchainCreateInfoKHR-surface-parameter)"},
+    {"VUID-VkSwapchainDisplayNativeHdrCreateInfoAMD-localDimmingEnable-XXXXX", "It is only valid to set localDimmingEnable to VK_TRUE if VkDisplayNativeHdrSurfaceCapabilitiesAMD::localDimmingSupport is supported. (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkSwapchainDisplayNativeHdrCreateInfoAMD-localDimmingEnable-XXXXX)"},
+    {"VUID-VkSwapchainDisplayNativeHdrCreateInfoAMD-sType-sType", "sType must be VK_STRUCTURE_TYPE_SWAPCHAIN_DISPLAY_NATIVE_HDR_CREATE_INFO_AMD (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkSwapchainDisplayNativeHdrCreateInfoAMD-sType-sType)"},
     {"VUID-VkTextureLODGatherFormatPropertiesAMD-sType-sType", "sType must be VK_STRUCTURE_TYPE_TEXTURE_LOD_GATHER_FORMAT_PROPERTIES_AMD (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkTextureLODGatherFormatPropertiesAMD-sType-sType)"},
     {"VUID-VkValidationCacheCreateInfoEXT-flags-zerobitmask", "flags must be 0 (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkValidationCacheCreateInfoEXT-flags-zerobitmask)"},
     {"VUID-VkValidationCacheCreateInfoEXT-initialDataSize-01534", "If initialDataSize is not 0, it must be equal to the size of pInitialData, as returned by vkGetValidationCacheDataEXT when pInitialData was originally retrieved (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkValidationCacheCreateInfoEXT-initialDataSize-01534)"},
@@ -2505,6 +2535,12 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-VkXlibSurfaceCreateInfoKHR-pNext-pNext", "pNext must be NULL (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkXlibSurfaceCreateInfoKHR-pNext-pNext)"},
     {"VUID-VkXlibSurfaceCreateInfoKHR-sType-sType", "sType must be VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkXlibSurfaceCreateInfoKHR-sType-sType)"},
     {"VUID-VkXlibSurfaceCreateInfoKHR-window-01314", "window must be a valid Xlib Window. (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-VkXlibSurfaceCreateInfoKHR-window-01314)"},
+    {"VUID-vkAcquireFullScreenExclusiveModeEXT-commonparent", "Both of device, and swapchain must have been created, allocated, or retrieved from the same VkInstance (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkAcquireFullScreenExclusiveModeEXT-commonparent)"},
+    {"VUID-vkAcquireFullScreenExclusiveModeEXT-device-parameter", "device must be a valid VkDevice handle (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkAcquireFullScreenExclusiveModeEXT-device-parameter)"},
+    {"VUID-vkAcquireFullScreenExclusiveModeEXT-swapchain-02674", "swapchain must not be in the retired state (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkAcquireFullScreenExclusiveModeEXT-swapchain-02674)"},
+    {"VUID-vkAcquireFullScreenExclusiveModeEXT-swapchain-02675", "swapchain must be a swapchain created with an instance of VkSurfaceFullScreenExclusiveInfoEXT, with fullScreenExclusive set to VK_FULL_SCREEN_EXCLUSIVE_APPLICATION_CONTROLLED_EXT (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkAcquireFullScreenExclusiveModeEXT-swapchain-02675)"},
+    {"VUID-vkAcquireFullScreenExclusiveModeEXT-swapchain-02676", "swapchain must not currently have exclusive full-screen access (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkAcquireFullScreenExclusiveModeEXT-swapchain-02676)"},
+    {"VUID-vkAcquireFullScreenExclusiveModeEXT-swapchain-parameter", "swapchain must be a valid VkSwapchainKHR handle (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkAcquireFullScreenExclusiveModeEXT-swapchain-parameter)"},
     {"VUID-vkAcquireNextImage2KHR-device-parameter", "device must be a valid VkDevice handle (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkAcquireNextImage2KHR-device-parameter)"},
     {"VUID-vkAcquireNextImage2KHR-pAcquireInfo-parameter", "pAcquireInfo must be a valid pointer to a valid VkAcquireNextImageInfoKHR structure (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkAcquireNextImage2KHR-pAcquireInfo-parameter)"},
     {"VUID-vkAcquireNextImage2KHR-pImageIndex-parameter", "pImageIndex must be a valid pointer to a uint32_t value (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkAcquireNextImage2KHR-pImageIndex-parameter)"},
@@ -2817,7 +2853,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-vkCmdBuildAccelerationStructureNV-commandBuffer-parameter", "commandBuffer must be a valid VkCommandBuffer handle (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkCmdBuildAccelerationStructureNV-commandBuffer-parameter)"},
     {"VUID-vkCmdBuildAccelerationStructureNV-commandBuffer-recording", "commandBuffer must be in the recording state (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkCmdBuildAccelerationStructureNV-commandBuffer-recording)"},
     {"VUID-vkCmdBuildAccelerationStructureNV-commonparent", "Each of commandBuffer, dst, instanceData, scratch, and src that are valid handles must have been created, allocated, or retrieved from the same VkDevice (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkCmdBuildAccelerationStructureNV-commonparent)"},
-    {"VUID-vkCmdBuildAccelerationStructureNV-dst-02488", "dst must have been created with compatible VkAccelerationStructureInfoNV where VkAccelerationStructureInfoNV:::type and VkAccelerationStructureInfoNV::flags are identical, VkAccelerationStructureInfoNV::instanceCount and VkAccelerationStructureInfoNV::geometryCount for dst are greater than or equal to the build size and each geometry in VkAccelerationStructureInfoNV::pGeometries for dst has greater than or equal to the number of vertices, indices, and AABBs. (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkCmdBuildAccelerationStructureNV-dst-02488)"},
+    {"VUID-vkCmdBuildAccelerationStructureNV-dst-02488", "dst must have been created with compatible VkAccelerationStructureInfoNV where VkAccelerationStructureInfoNV::type and VkAccelerationStructureInfoNV::flags are identical, VkAccelerationStructureInfoNV::instanceCount and VkAccelerationStructureInfoNV::geometryCount for dst are greater than or equal to the build size and each geometry in VkAccelerationStructureInfoNV::pGeometries for dst has greater than or equal to the number of vertices, indices, and AABBs. (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkCmdBuildAccelerationStructureNV-dst-02488)"},
     {"VUID-vkCmdBuildAccelerationStructureNV-dst-parameter", "dst must be a valid VkAccelerationStructureNV handle (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkCmdBuildAccelerationStructureNV-dst-parameter)"},
     {"VUID-vkCmdBuildAccelerationStructureNV-geometryCount-02241", "geometryCount must be less than or equal to VkPhysicalDeviceRayTracingPropertiesNV::maxGeometryCount (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkCmdBuildAccelerationStructureNV-geometryCount-02241)"},
     {"VUID-vkCmdBuildAccelerationStructureNV-instanceData-parameter", "If instanceData is not VK_NULL_HANDLE, instanceData must be a valid VkBuffer handle (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkCmdBuildAccelerationStructureNV-instanceData-parameter)"},
@@ -2843,6 +2879,8 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-vkCmdClearAttachments-pRects-00016", "The rectangular region specified by each element of pRects must be contained within the render area of the current render pass instance (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkCmdClearAttachments-pRects-00016)"},
     {"VUID-vkCmdClearAttachments-pRects-00017", "The layers specified by each element of pRects must be contained within every attachment that pAttachments refers to (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkCmdClearAttachments-pRects-00017)"},
     {"VUID-vkCmdClearAttachments-pRects-parameter", "pRects must be a valid pointer to an array of rectCount VkClearRect structures (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkCmdClearAttachments-pRects-parameter)"},
+    {"VUID-vkCmdClearAttachments-rect-02682", "The rect member of each element of pRects must have an extent.width greater than 0 (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkCmdClearAttachments-rect-02682)"},
+    {"VUID-vkCmdClearAttachments-rect-02683", "The rect member of each element of pRects must have an extent.height greater than 0 (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkCmdClearAttachments-rect-02683)"},
     {"VUID-vkCmdClearAttachments-rectCount-arraylength", "rectCount must be greater than 0 (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkCmdClearAttachments-rectCount-arraylength)"},
     {"VUID-vkCmdClearAttachments-renderpass", "This command must only be called inside of a render pass instance (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkCmdClearAttachments-renderpass)"},
     {"VUID-vkCmdClearColorImage-aspectMask-02498", "The VkImageSubresourceRange::aspectMask members of the elements of the pRanges array must each only include VK_IMAGE_ASPECT_COLOR_BIT (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkCmdClearColorImage-aspectMask-02498)"},
@@ -2891,6 +2929,9 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-vkCmdClearDepthStencilImage-pDepthStencil-parameter", "pDepthStencil must be a valid pointer to a valid VkClearDepthStencilValue structure (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkCmdClearDepthStencilImage-pDepthStencil-parameter)"},
     {"VUID-vkCmdClearDepthStencilImage-pRanges-01694", "For each VkImageSubresourceRange element of pRanges, if the levelCount member is not VK_REMAINING_MIP_LEVELS, then baseMipLevel + levelCount must be less than the mipLevels specified in VkImageCreateInfo when image was created (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkCmdClearDepthStencilImage-pRanges-01694)"},
     {"VUID-vkCmdClearDepthStencilImage-pRanges-01695", "For each VkImageSubresourceRange element of pRanges, if the layerCount member is not VK_REMAINING_ARRAY_LAYERS, then baseArrayLayer + layerCount must be less than the arrayLayers specified in VkImageCreateInfo when image was created (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkCmdClearDepthStencilImage-pRanges-01695)"},
+    {"VUID-vkCmdClearDepthStencilImage-pRanges-02658", "If any element of pRanges.aspect includes VK_IMAGE_ASPECT_STENCIL_BIT, and image was created with separate stencil usage, VK_IMAGE_USAGE_TRANSFER_DST_BIT must have been included in the VkImageStencilUsageCreateInfoEXT::stencilUsage used to create image (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkCmdClearDepthStencilImage-pRanges-02658)"},
+    {"VUID-vkCmdClearDepthStencilImage-pRanges-02659", "If any element of pRanges.aspect includes VK_IMAGE_ASPECT_STENCIL_BIT, and image was not created with separate stencil usage, VK_IMAGE_USAGE_TRANSFER_DST_BIT must have been included in the VkImageCreateInfo::usage used to create image (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkCmdClearDepthStencilImage-pRanges-02659)"},
+    {"VUID-vkCmdClearDepthStencilImage-pRanges-02660", "If any element of pRanges.aspect includes VK_IMAGE_ASPECT_DEPTH_BIT, VK_IMAGE_USAGE_TRANSFER_DST_BIT must have been included in the VkImageCreateInfo::usage used to create image (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkCmdClearDepthStencilImage-pRanges-02660)"},
     {"VUID-vkCmdClearDepthStencilImage-pRanges-parameter", "pRanges must be a valid pointer to an array of rangeCount valid VkImageSubresourceRange structures (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkCmdClearDepthStencilImage-pRanges-parameter)"},
     {"VUID-vkCmdClearDepthStencilImage-rangeCount-arraylength", "rangeCount must be greater than 0 (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkCmdClearDepthStencilImage-rangeCount-arraylength)"},
     {"VUID-vkCmdClearDepthStencilImage-renderpass", "This command must only be called outside of a render pass instance (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkCmdClearDepthStencilImage-renderpass)"},
@@ -4269,6 +4310,10 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-vkCreateSharedSwapchainsKHR-pCreateInfos-parameter", "pCreateInfos must be a valid pointer to an array of swapchainCount valid VkSwapchainCreateInfoKHR structures (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkCreateSharedSwapchainsKHR-pCreateInfos-parameter)"},
     {"VUID-vkCreateSharedSwapchainsKHR-pSwapchains-parameter", "pSwapchains must be a valid pointer to an array of swapchainCount VkSwapchainKHR handles (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkCreateSharedSwapchainsKHR-pSwapchains-parameter)"},
     {"VUID-vkCreateSharedSwapchainsKHR-swapchainCount-arraylength", "swapchainCount must be greater than 0 (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkCreateSharedSwapchainsKHR-swapchainCount-arraylength)"},
+    {"VUID-vkCreateStreamDescriptorSurfaceGGP-instance-parameter", "instance must be a valid VkInstance handle (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkCreateStreamDescriptorSurfaceGGP-instance-parameter)"},
+    {"VUID-vkCreateStreamDescriptorSurfaceGGP-pAllocator-parameter", "If pAllocator is not NULL, pAllocator must be a valid pointer to a valid VkAllocationCallbacks structure (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkCreateStreamDescriptorSurfaceGGP-pAllocator-parameter)"},
+    {"VUID-vkCreateStreamDescriptorSurfaceGGP-pCreateInfo-parameter", "pCreateInfo must be a valid pointer to a valid VkStreamDescriptorSurfaceCreateInfoGGP structure (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkCreateStreamDescriptorSurfaceGGP-pCreateInfo-parameter)"},
+    {"VUID-vkCreateStreamDescriptorSurfaceGGP-pSurface-parameter", "pSurface must be a valid pointer to a VkSurfaceKHR handle (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkCreateStreamDescriptorSurfaceGGP-pSurface-parameter)"},
     {"VUID-vkCreateSwapchainKHR-device-parameter", "device must be a valid VkDevice handle (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkCreateSwapchainKHR-device-parameter)"},
     {"VUID-vkCreateSwapchainKHR-pAllocator-parameter", "If pAllocator is not NULL, pAllocator must be a valid pointer to a valid VkAllocationCallbacks structure (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkCreateSwapchainKHR-pAllocator-parameter)"},
     {"VUID-vkCreateSwapchainKHR-pCreateInfo-parameter", "pCreateInfo must be a valid pointer to a valid VkSwapchainCreateInfoKHR structure (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkCreateSwapchainKHR-pCreateInfo-parameter)"},
@@ -4599,6 +4644,9 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-vkGetDeviceGroupPeerMemoryFeatures-remoteDeviceIndex-00693", "remoteDeviceIndex must be a valid device index (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkGetDeviceGroupPeerMemoryFeatures-remoteDeviceIndex-00693)"},
     {"VUID-vkGetDeviceGroupPresentCapabilitiesKHR-device-parameter", "device must be a valid VkDevice handle (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkGetDeviceGroupPresentCapabilitiesKHR-device-parameter)"},
     {"VUID-vkGetDeviceGroupPresentCapabilitiesKHR-pDeviceGroupPresentCapabilities-parameter", "pDeviceGroupPresentCapabilities must be a valid pointer to a VkDeviceGroupPresentCapabilitiesKHR structure (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkGetDeviceGroupPresentCapabilitiesKHR-pDeviceGroupPresentCapabilities-parameter)"},
+    {"VUID-vkGetDeviceGroupSurfacePresentModes2EXT-device-parameter", "device must be a valid VkDevice handle (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkGetDeviceGroupSurfacePresentModes2EXT-device-parameter)"},
+    {"VUID-vkGetDeviceGroupSurfacePresentModes2EXT-pModes-parameter", "pModes must be a valid pointer to a VkDeviceGroupPresentModeFlagsKHR value (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkGetDeviceGroupSurfacePresentModes2EXT-pModes-parameter)"},
+    {"VUID-vkGetDeviceGroupSurfacePresentModes2EXT-pSurfaceInfo-parameter", "pSurfaceInfo must be a valid pointer to a valid VkPhysicalDeviceSurfaceInfo2KHR structure (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkGetDeviceGroupSurfacePresentModes2EXT-pSurfaceInfo-parameter)"},
     {"VUID-vkGetDeviceGroupSurfacePresentModesKHR-commonparent", "Both of device, and surface must have been created, allocated, or retrieved from the same VkInstance (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkGetDeviceGroupSurfacePresentModesKHR-commonparent)"},
     {"VUID-vkGetDeviceGroupSurfacePresentModesKHR-device-parameter", "device must be a valid VkDevice handle (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkGetDeviceGroupSurfacePresentModesKHR-device-parameter)"},
     {"VUID-vkGetDeviceGroupSurfacePresentModesKHR-pModes-parameter", "pModes must be a valid pointer to a VkDeviceGroupPresentModeFlagsKHR value (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkGetDeviceGroupSurfacePresentModesKHR-pModes-parameter)"},
@@ -4683,7 +4731,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-vkGetImageSubresourceLayout-mipLevel-01716", "The mipLevel member of pSubresource must be less than the mipLevels specified in VkImageCreateInfo when image was created (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkGetImageSubresourceLayout-mipLevel-01716)"},
     {"VUID-vkGetImageSubresourceLayout-pLayout-parameter", "pLayout must be a valid pointer to a VkSubresourceLayout structure (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkGetImageSubresourceLayout-pLayout-parameter)"},
     {"VUID-vkGetImageSubresourceLayout-pSubresource-parameter", "pSubresource must be a valid pointer to a valid VkImageSubresource structure (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkGetImageSubresourceLayout-pSubresource-parameter)"},
-    {"VUID-vkGetImageSubresourceLayout-tiling-02271", "If the tiling of the image is  VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT, then the aspectMask  member of pSubresource must be  VK_IMAGE_ASPECT_MEMORY_PLANE_i_BIT_EXT and the index i  must be less than the  drmFormatModifierPlaneCount  associated with the image's format and drmFormatModifier. (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkGetImageSubresourceLayout-tiling-02271)"},
+    {"VUID-vkGetImageSubresourceLayout-tiling-02271", "If the tiling of the image is  VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT, then the aspectMask  member of pSubresource must be  VK_IMAGE_ASPECT_MEMORY_PLANE_i_BIT_EXT and the index i must  be less than the  drmFormatModifierPlaneCount  associated with the image's format and drmFormatModifier. (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkGetImageSubresourceLayout-tiling-02271)"},
     {"VUID-vkGetImageViewHandleNVX-device-parameter", "device must be a valid VkDevice handle (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkGetImageViewHandleNVX-device-parameter)"},
     {"VUID-vkGetImageViewHandleNVX-pInfo-parameter", "pInfo must be a valid pointer to a valid VkImageViewHandleInfoNVX structure (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkGetImageViewHandleNVX-pInfo-parameter)"},
     {"VUID-vkGetInstanceProcAddr-instance-parameter", "If instance is not NULL, instance must be a valid VkInstance handle (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkGetInstanceProcAddr-instance-parameter)"},
@@ -4828,6 +4876,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-vkGetPhysicalDeviceSurfaceCapabilities2EXT-pSurfaceCapabilities-parameter", "pSurfaceCapabilities must be a valid pointer to a VkSurfaceCapabilities2EXT structure (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkGetPhysicalDeviceSurfaceCapabilities2EXT-pSurfaceCapabilities-parameter)"},
     {"VUID-vkGetPhysicalDeviceSurfaceCapabilities2EXT-physicalDevice-parameter", "physicalDevice must be a valid VkPhysicalDevice handle (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkGetPhysicalDeviceSurfaceCapabilities2EXT-physicalDevice-parameter)"},
     {"VUID-vkGetPhysicalDeviceSurfaceCapabilities2EXT-surface-parameter", "surface must be a valid VkSurfaceKHR handle (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkGetPhysicalDeviceSurfaceCapabilities2EXT-surface-parameter)"},
+    {"VUID-vkGetPhysicalDeviceSurfaceCapabilities2KHR-pNext-02671", "If an instance of VkSurfaceCapabilitiesFullScreenExclusiveEXT is included in the pNext chain of pSurfaceCapabilities, an instance of VkSurfaceFullScreenExclusiveWin32InfoEXT must be included in the pNext chain of pSurfaceInfo. (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkGetPhysicalDeviceSurfaceCapabilities2KHR-pNext-02671)"},
     {"VUID-vkGetPhysicalDeviceSurfaceCapabilities2KHR-pSurfaceCapabilities-parameter", "pSurfaceCapabilities must be a valid pointer to a VkSurfaceCapabilities2KHR structure (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkGetPhysicalDeviceSurfaceCapabilities2KHR-pSurfaceCapabilities-parameter)"},
     {"VUID-vkGetPhysicalDeviceSurfaceCapabilities2KHR-pSurfaceInfo-parameter", "pSurfaceInfo must be a valid pointer to a valid VkPhysicalDeviceSurfaceInfo2KHR structure (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkGetPhysicalDeviceSurfaceCapabilities2KHR-pSurfaceInfo-parameter)"},
     {"VUID-vkGetPhysicalDeviceSurfaceCapabilities2KHR-physicalDevice-parameter", "physicalDevice must be a valid VkPhysicalDevice handle (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkGetPhysicalDeviceSurfaceCapabilities2KHR-physicalDevice-parameter)"},
@@ -4844,6 +4893,10 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-vkGetPhysicalDeviceSurfaceFormatsKHR-pSurfaceFormats-parameter", "If the value referenced by pSurfaceFormatCount is not 0, and pSurfaceFormats is not NULL, pSurfaceFormats must be a valid pointer to an array of pSurfaceFormatCount VkSurfaceFormatKHR structures (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkGetPhysicalDeviceSurfaceFormatsKHR-pSurfaceFormats-parameter)"},
     {"VUID-vkGetPhysicalDeviceSurfaceFormatsKHR-physicalDevice-parameter", "physicalDevice must be a valid VkPhysicalDevice handle (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkGetPhysicalDeviceSurfaceFormatsKHR-physicalDevice-parameter)"},
     {"VUID-vkGetPhysicalDeviceSurfaceFormatsKHR-surface-parameter", "surface must be a valid VkSurfaceKHR handle (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkGetPhysicalDeviceSurfaceFormatsKHR-surface-parameter)"},
+    {"VUID-vkGetPhysicalDeviceSurfacePresentModes2EXT-pPresentModeCount-parameter", "pPresentModeCount must be a valid pointer to a uint32_t value (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkGetPhysicalDeviceSurfacePresentModes2EXT-pPresentModeCount-parameter)"},
+    {"VUID-vkGetPhysicalDeviceSurfacePresentModes2EXT-pPresentModes-parameter", "If the value referenced by pPresentModeCount is not 0, and pPresentModes is not NULL, pPresentModes must be a valid pointer to an array of pPresentModeCount VkPresentModeKHR values (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkGetPhysicalDeviceSurfacePresentModes2EXT-pPresentModes-parameter)"},
+    {"VUID-vkGetPhysicalDeviceSurfacePresentModes2EXT-pSurfaceInfo-parameter", "pSurfaceInfo must be a valid pointer to a valid VkPhysicalDeviceSurfaceInfo2KHR structure (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkGetPhysicalDeviceSurfacePresentModes2EXT-pSurfaceInfo-parameter)"},
+    {"VUID-vkGetPhysicalDeviceSurfacePresentModes2EXT-physicalDevice-parameter", "physicalDevice must be a valid VkPhysicalDevice handle (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkGetPhysicalDeviceSurfacePresentModes2EXT-physicalDevice-parameter)"},
     {"VUID-vkGetPhysicalDeviceSurfacePresentModesKHR-commonparent", "Both of physicalDevice, and surface must have been created, allocated, or retrieved from the same VkInstance (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkGetPhysicalDeviceSurfacePresentModesKHR-commonparent)"},
     {"VUID-vkGetPhysicalDeviceSurfacePresentModesKHR-pPresentModeCount-parameter", "pPresentModeCount must be a valid pointer to a uint32_t value (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkGetPhysicalDeviceSurfacePresentModesKHR-pPresentModeCount-parameter)"},
     {"VUID-vkGetPhysicalDeviceSurfacePresentModesKHR-pPresentModes-parameter", "If the value referenced by pPresentModeCount is not 0, and pPresentModes is not NULL, pPresentModes must be a valid pointer to an array of pPresentModeCount VkPresentModeKHR values (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkGetPhysicalDeviceSurfacePresentModesKHR-pPresentModes-parameter)"},
@@ -5034,6 +5087,8 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-vkRegisterObjectsNVX-ppObjectTableEntries-parameter", "ppObjectTableEntries must be a valid pointer to an array of objectCount valid VkObjectTableEntryNVX structures (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkRegisterObjectsNVX-ppObjectTableEntries-parameter)"},
     {"VUID-vkReleaseDisplayEXT-display-parameter", "display must be a valid VkDisplayKHR handle (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkReleaseDisplayEXT-display-parameter)"},
     {"VUID-vkReleaseDisplayEXT-physicalDevice-parameter", "physicalDevice must be a valid VkPhysicalDevice handle (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkReleaseDisplayEXT-physicalDevice-parameter)"},
+    {"VUID-vkReleaseFullScreenExclusiveModeEXT-swapchain-02677", "swapchain must not be in the retired state (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkReleaseFullScreenExclusiveModeEXT-swapchain-02677)"},
+    {"VUID-vkReleaseFullScreenExclusiveModeEXT-swapchain-02678", "swapchain must be a swapchain created with an instance of VkSurfaceFullScreenExclusiveInfoEXT, with fullScreenExclusive set to VK_FULL_SCREEN_EXCLUSIVE_APPLICATION_CONTROLLED_EXT (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkReleaseFullScreenExclusiveModeEXT-swapchain-02678)"},
     {"VUID-vkResetCommandBuffer-commandBuffer-00045", "commandBuffer must not be in the pending state (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkResetCommandBuffer-commandBuffer-00045)"},
     {"VUID-vkResetCommandBuffer-commandBuffer-00046", "commandBuffer must have been allocated from a pool that was created with the VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkResetCommandBuffer-commandBuffer-00046)"},
     {"VUID-vkResetCommandBuffer-commandBuffer-parameter", "commandBuffer must be a valid VkCommandBuffer handle (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkResetCommandBuffer-commandBuffer-parameter)"},
@@ -5057,6 +5112,12 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-vkResetFences-pFences-01123", "Each element of pFences must not be currently associated with any queue command that has not yet completed execution on that queue (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkResetFences-pFences-01123)"},
     {"VUID-vkResetFences-pFences-parameter", "pFences must be a valid pointer to an array of fenceCount valid VkFence handles (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkResetFences-pFences-parameter)"},
     {"VUID-vkResetFences-pFences-parent", "Each element of pFences must have been created, allocated, or retrieved from device (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkResetFences-pFences-parent)"},
+    {"VUID-vkResetQueryPoolEXT-None-02665", "The hostQueryReset feature must be enabled (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkResetQueryPoolEXT-None-02665)"},
+    {"VUID-vkResetQueryPoolEXT-device-parameter", "device must be a valid VkDevice handle (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkResetQueryPoolEXT-device-parameter)"},
+    {"VUID-vkResetQueryPoolEXT-firstQuery-02666", "firstQuery must be less than the number of queries in queryPool (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkResetQueryPoolEXT-firstQuery-02666)"},
+    {"VUID-vkResetQueryPoolEXT-firstQuery-02667", "The sum of firstQuery and queryCount must be less than or equal to the number of queries in queryPool (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkResetQueryPoolEXT-firstQuery-02667)"},
+    {"VUID-vkResetQueryPoolEXT-queryPool-parameter", "queryPool must be a valid VkQueryPool handle (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkResetQueryPoolEXT-queryPool-parameter)"},
+    {"VUID-vkResetQueryPoolEXT-queryPool-parent", "queryPool must have been created, allocated, or retrieved from device (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkResetQueryPoolEXT-queryPool-parent)"},
     {"VUID-vkSetDebugUtilsObjectNameEXT-device-parameter", "device must be a valid VkDevice handle (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkSetDebugUtilsObjectNameEXT-device-parameter)"},
     {"VUID-vkSetDebugUtilsObjectNameEXT-pNameInfo-02587", "pNameInfo->objectType must not be VK_OBJECT_TYPE_UNKNOWN (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkSetDebugUtilsObjectNameEXT-pNameInfo-02587)"},
     {"VUID-vkSetDebugUtilsObjectNameEXT-pNameInfo-02588", "pNameInfo->objectHandle must not be VK_NULL_HANDLE (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkSetDebugUtilsObjectNameEXT-pNameInfo-02588)"},
@@ -5071,6 +5132,10 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-vkSetHdrMetadataEXT-pMetadata-parameter", "pMetadata must be a valid pointer to an array of swapchainCount valid VkHdrMetadataEXT structures (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkSetHdrMetadataEXT-pMetadata-parameter)"},
     {"VUID-vkSetHdrMetadataEXT-pSwapchains-parameter", "pSwapchains must be a valid pointer to an array of swapchainCount valid VkSwapchainKHR handles (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkSetHdrMetadataEXT-pSwapchains-parameter)"},
     {"VUID-vkSetHdrMetadataEXT-swapchainCount-arraylength", "swapchainCount must be greater than 0 (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkSetHdrMetadataEXT-swapchainCount-arraylength)"},
+    {"VUID-vkSetLocalDimmingAMD-XXXXX", "It is only valid to call vkSetLocalDimmingAMD if VkDisplayNativeHdrSurfaceCapabilitiesAMD::localDimmingSupport is supported. (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkSetLocalDimmingAMD-XXXXX)"},
+    {"VUID-vkSetLocalDimmingAMD-commonparent", "Both of device, and swapChain must have been created, allocated, or retrieved from the same VkInstance (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkSetLocalDimmingAMD-commonparent)"},
+    {"VUID-vkSetLocalDimmingAMD-device-parameter", "device must be a valid VkDevice handle (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkSetLocalDimmingAMD-device-parameter)"},
+    {"VUID-vkSetLocalDimmingAMD-swapChain-parameter", "swapChain must be a valid VkSwapchainKHR handle (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkSetLocalDimmingAMD-swapChain-parameter)"},
     {"VUID-vkSubmitDebugUtilsMessageEXT-instance-parameter", "instance must be a valid VkInstance handle (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkSubmitDebugUtilsMessageEXT-instance-parameter)"},
     {"VUID-vkSubmitDebugUtilsMessageEXT-messageSeverity-parameter", "messageSeverity must be a valid VkDebugUtilsMessageSeverityFlagBitsEXT value (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkSubmitDebugUtilsMessageEXT-messageSeverity-parameter)"},
     {"VUID-vkSubmitDebugUtilsMessageEXT-messageTypes-parameter", "messageTypes must be a valid combination of VkDebugUtilsMessageTypeFlagBitsEXT values (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkSubmitDebugUtilsMessageEXT-messageTypes-parameter)"},
@@ -5109,3 +5174,278 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-vkWaitForFences-pFences-parameter", "pFences must be a valid pointer to an array of fenceCount valid VkFence handles (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkWaitForFences-pFences-parameter)"},
     {"VUID-vkWaitForFences-pFences-parent", "Each element of pFences must have been created, allocated, or retrieved from device (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkWaitForFences-pFences-parent)"},
 };
+
+// Defines to allow creating "must be recording" meta data
+#define VUID_CMD_ENUM_LIST(prefix)\
+    prefix##NONE = 0,\
+    prefix##BEGINCONDITIONALRENDERINGEXT = 1,\
+    prefix##BEGINDEBUGUTILSLABELEXT = 2,\
+    prefix##BEGINQUERY = 3,\
+    prefix##BEGINQUERYINDEXEDEXT = 4,\
+    prefix##BEGINRENDERPASS = 5,\
+    prefix##BEGINRENDERPASS2KHR = 6,\
+    prefix##BEGINTRANSFORMFEEDBACKEXT = 7,\
+    prefix##BINDDESCRIPTORSETS = 8,\
+    prefix##BINDINDEXBUFFER = 9,\
+    prefix##BINDPIPELINE = 10,\
+    prefix##BINDSHADINGRATEIMAGENV = 11,\
+    prefix##BINDTRANSFORMFEEDBACKBUFFERSEXT = 12,\
+    prefix##BINDVERTEXBUFFERS = 13,\
+    prefix##BLITIMAGE = 14,\
+    prefix##BUILDACCELERATIONSTRUCTURENV = 15,\
+    prefix##CLEARATTACHMENTS = 16,\
+    prefix##CLEARCOLORIMAGE = 17,\
+    prefix##CLEARDEPTHSTENCILIMAGE = 18,\
+    prefix##COPYACCELERATIONSTRUCTURENV = 19,\
+    prefix##COPYBUFFER = 20,\
+    prefix##COPYBUFFERTOIMAGE = 21,\
+    prefix##COPYIMAGE = 22,\
+    prefix##COPYIMAGETOBUFFER = 23,\
+    prefix##COPYQUERYPOOLRESULTS = 24,\
+    prefix##DEBUGMARKERBEGINEXT = 25,\
+    prefix##DEBUGMARKERENDEXT = 26,\
+    prefix##DEBUGMARKERINSERTEXT = 27,\
+    prefix##DISPATCH = 28,\
+    prefix##DISPATCHBASE = 29,\
+    prefix##DISPATCHINDIRECT = 30,\
+    prefix##DRAW = 31,\
+    prefix##DRAWINDEXED = 32,\
+    prefix##DRAWINDEXEDINDIRECT = 33,\
+    prefix##DRAWINDEXEDINDIRECTCOUNTAMD = 34,\
+    prefix##DRAWINDEXEDINDIRECTCOUNTKHR = 35,\
+    prefix##DRAWINDIRECT = 36,\
+    prefix##DRAWINDIRECTBYTECOUNTEXT = 37,\
+    prefix##DRAWINDIRECTCOUNTAMD = 38,\
+    prefix##DRAWINDIRECTCOUNTKHR = 39,\
+    prefix##DRAWMESHTASKSINDIRECTCOUNTNV = 40,\
+    prefix##DRAWMESHTASKSINDIRECTNV = 41,\
+    prefix##DRAWMESHTASKSNV = 42,\
+    prefix##ENDCONDITIONALRENDERINGEXT = 43,\
+    prefix##ENDDEBUGUTILSLABELEXT = 44,\
+    prefix##ENDQUERY = 45,\
+    prefix##ENDQUERYINDEXEDEXT = 46,\
+    prefix##ENDRENDERPASS = 47,\
+    prefix##ENDRENDERPASS2KHR = 48,\
+    prefix##ENDTRANSFORMFEEDBACKEXT = 49,\
+    prefix##EXECUTECOMMANDS = 50,\
+    prefix##FILLBUFFER = 51,\
+    prefix##INSERTDEBUGUTILSLABELEXT = 52,\
+    prefix##NEXTSUBPASS = 53,\
+    prefix##NEXTSUBPASS2KHR = 54,\
+    prefix##PIPELINEBARRIER = 55,\
+    prefix##PROCESSCOMMANDSNVX = 56,\
+    prefix##PUSHCONSTANTS = 57,\
+    prefix##PUSHDESCRIPTORSETKHR = 58,\
+    prefix##PUSHDESCRIPTORSETWITHTEMPLATEKHR = 59,\
+    prefix##RESERVESPACEFORCOMMANDSNVX = 60,\
+    prefix##RESETEVENT = 61,\
+    prefix##RESETQUERYPOOL = 62,\
+    prefix##RESOLVEIMAGE = 63,\
+    prefix##SETBLENDCONSTANTS = 64,\
+    prefix##SETCHECKPOINTNV = 65,\
+    prefix##SETCOARSESAMPLEORDERNV = 66,\
+    prefix##SETDEPTHBIAS = 67,\
+    prefix##SETDEPTHBOUNDS = 68,\
+    prefix##SETDEVICEMASK = 69,\
+    prefix##SETDISCARDRECTANGLEEXT = 70,\
+    prefix##SETEVENT = 71,\
+    prefix##SETEXCLUSIVESCISSORNV = 72,\
+    prefix##SETLINEWIDTH = 73,\
+    prefix##SETSAMPLELOCATIONSEXT = 74,\
+    prefix##SETSCISSOR = 75,\
+    prefix##SETSTENCILCOMPAREMASK = 76,\
+    prefix##SETSTENCILREFERENCE = 77,\
+    prefix##SETSTENCILWRITEMASK = 78,\
+    prefix##SETVIEWPORT = 79,\
+    prefix##SETVIEWPORTSHADINGRATEPALETTENV = 80,\
+    prefix##SETVIEWPORTWSCALINGNV = 81,\
+    prefix##TRACERAYSNV = 82,\
+    prefix##UPDATEBUFFER = 83,\
+    prefix##WAITEVENTS = 84,\
+    prefix##WRITEACCELERATIONSTRUCTURESPROPERTIESNV = 85,\
+    prefix##WRITEBUFFERMARKERAMD = 86,\
+    prefix##WRITETIMESTAMP = 87,\
+    prefix##ENDCOMMANDBUFFER = 88,\
+    prefix##RANGE_SIZE = 89
+
+#define VUID_CMD_NAME_LIST\
+    "Command_Undefined",\
+    "vkCmdBeginConditionalRenderingEXT",\
+    "vkCmdBeginDebugUtilsLabelEXT",\
+    "vkCmdBeginQuery",\
+    "vkCmdBeginQueryIndexedEXT",\
+    "vkCmdBeginRenderPass",\
+    "vkCmdBeginRenderPass2KHR",\
+    "vkCmdBeginTransformFeedbackEXT",\
+    "vkCmdBindDescriptorSets",\
+    "vkCmdBindIndexBuffer",\
+    "vkCmdBindPipeline",\
+    "vkCmdBindShadingRateImageNV",\
+    "vkCmdBindTransformFeedbackBuffersEXT",\
+    "vkCmdBindVertexBuffers",\
+    "vkCmdBlitImage",\
+    "vkCmdBuildAccelerationStructureNV",\
+    "vkCmdClearAttachments",\
+    "vkCmdClearColorImage",\
+    "vkCmdClearDepthStencilImage",\
+    "vkCmdCopyAccelerationStructureNV",\
+    "vkCmdCopyBuffer",\
+    "vkCmdCopyBufferToImage",\
+    "vkCmdCopyImage",\
+    "vkCmdCopyImageToBuffer",\
+    "vkCmdCopyQueryPoolResults",\
+    "vkCmdDebugMarkerBeginEXT",\
+    "vkCmdDebugMarkerEndEXT",\
+    "vkCmdDebugMarkerInsertEXT",\
+    "vkCmdDispatch",\
+    "vkCmdDispatchBase",\
+    "vkCmdDispatchIndirect",\
+    "vkCmdDraw",\
+    "vkCmdDrawIndexed",\
+    "vkCmdDrawIndexedIndirect",\
+    "vkCmdDrawIndexedIndirectCountAMD",\
+    "vkCmdDrawIndexedIndirectCountKHR",\
+    "vkCmdDrawIndirect",\
+    "vkCmdDrawIndirectByteCountEXT",\
+    "vkCmdDrawIndirectCountAMD",\
+    "vkCmdDrawIndirectCountKHR",\
+    "vkCmdDrawMeshTasksIndirectCountNV",\
+    "vkCmdDrawMeshTasksIndirectNV",\
+    "vkCmdDrawMeshTasksNV",\
+    "vkCmdEndConditionalRenderingEXT",\
+    "vkCmdEndDebugUtilsLabelEXT",\
+    "vkCmdEndQuery",\
+    "vkCmdEndQueryIndexedEXT",\
+    "vkCmdEndRenderPass",\
+    "vkCmdEndRenderPass2KHR",\
+    "vkCmdEndTransformFeedbackEXT",\
+    "vkCmdExecuteCommands",\
+    "vkCmdFillBuffer",\
+    "vkCmdInsertDebugUtilsLabelEXT",\
+    "vkCmdNextSubpass",\
+    "vkCmdNextSubpass2KHR",\
+    "vkCmdPipelineBarrier",\
+    "vkCmdProcessCommandsNVX",\
+    "vkCmdPushConstants",\
+    "vkCmdPushDescriptorSetKHR",\
+    "vkCmdPushDescriptorSetWithTemplateKHR",\
+    "vkCmdReserveSpaceForCommandsNVX",\
+    "vkCmdResetEvent",\
+    "vkCmdResetQueryPool",\
+    "vkCmdResolveImage",\
+    "vkCmdSetBlendConstants",\
+    "vkCmdSetCheckpointNV",\
+    "vkCmdSetCoarseSampleOrderNV",\
+    "vkCmdSetDepthBias",\
+    "vkCmdSetDepthBounds",\
+    "vkCmdSetDeviceMask",\
+    "vkCmdSetDiscardRectangleEXT",\
+    "vkCmdSetEvent",\
+    "vkCmdSetExclusiveScissorNV",\
+    "vkCmdSetLineWidth",\
+    "vkCmdSetSampleLocationsEXT",\
+    "vkCmdSetScissor",\
+    "vkCmdSetStencilCompareMask",\
+    "vkCmdSetStencilReference",\
+    "vkCmdSetStencilWriteMask",\
+    "vkCmdSetViewport",\
+    "vkCmdSetViewportShadingRatePaletteNV",\
+    "vkCmdSetViewportWScalingNV",\
+    "vkCmdTraceRaysNV",\
+    "vkCmdUpdateBuffer",\
+    "vkCmdWaitEvents",\
+    "vkCmdWriteAccelerationStructuresPropertiesNV",\
+    "vkCmdWriteBufferMarkerAMD",\
+    "vkCmdWriteTimestamp",\
+    "vkEndCommandBuffer"
+
+#define VUID_MUST_BE_RECORDING_LIST\
+    "VUID_Undefined",\
+    "VUID-vkCmdBeginConditionalRenderingEXT-commandBuffer-recording",\
+    "VUID-vkCmdBeginDebugUtilsLabelEXT-commandBuffer-recording",\
+    "VUID-vkCmdBeginQuery-commandBuffer-recording",\
+    "VUID-vkCmdBeginQueryIndexedEXT-commandBuffer-recording",\
+    "VUID-vkCmdBeginRenderPass-commandBuffer-recording",\
+    "VUID-vkCmdBeginRenderPass2KHR-commandBuffer-recording",\
+    "VUID-vkCmdBeginTransformFeedbackEXT-commandBuffer-recording",\
+    "VUID-vkCmdBindDescriptorSets-commandBuffer-recording",\
+    "VUID-vkCmdBindIndexBuffer-commandBuffer-recording",\
+    "VUID-vkCmdBindPipeline-commandBuffer-recording",\
+    "VUID-vkCmdBindShadingRateImageNV-commandBuffer-recording",\
+    "VUID-vkCmdBindTransformFeedbackBuffersEXT-commandBuffer-recording",\
+    "VUID-vkCmdBindVertexBuffers-commandBuffer-recording",\
+    "VUID-vkCmdBlitImage-commandBuffer-recording",\
+    "VUID-vkCmdBuildAccelerationStructureNV-commandBuffer-recording",\
+    "VUID-vkCmdClearAttachments-commandBuffer-recording",\
+    "VUID-vkCmdClearColorImage-commandBuffer-recording",\
+    "VUID-vkCmdClearDepthStencilImage-commandBuffer-recording",\
+    "VUID-vkCmdCopyAccelerationStructureNV-commandBuffer-recording",\
+    "VUID-vkCmdCopyBuffer-commandBuffer-recording",\
+    "VUID-vkCmdCopyBufferToImage-commandBuffer-recording",\
+    "VUID-vkCmdCopyImage-commandBuffer-recording",\
+    "VUID-vkCmdCopyImageToBuffer-commandBuffer-recording",\
+    "VUID-vkCmdCopyQueryPoolResults-commandBuffer-recording",\
+    "VUID-vkCmdDebugMarkerBeginEXT-commandBuffer-recording",\
+    "VUID-vkCmdDebugMarkerEndEXT-commandBuffer-recording",\
+    "VUID-vkCmdDebugMarkerInsertEXT-commandBuffer-recording",\
+    "VUID-vkCmdDispatch-commandBuffer-recording",\
+    "VUID-vkCmdDispatchBase-commandBuffer-recording",\
+    "VUID-vkCmdDispatchIndirect-commandBuffer-recording",\
+    "VUID-vkCmdDraw-commandBuffer-recording",\
+    "VUID-vkCmdDrawIndexed-commandBuffer-recording",\
+    "VUID-vkCmdDrawIndexedIndirect-commandBuffer-recording",\
+    "VUID-vkCmdDrawIndexedIndirectCountAMD-commandBuffer-recording",\
+    "VUID-vkCmdDrawIndexedIndirectCountKHR-commandBuffer-recording",\
+    "VUID-vkCmdDrawIndirect-commandBuffer-recording",\
+    "VUID-vkCmdDrawIndirectByteCountEXT-commandBuffer-recording",\
+    "VUID-vkCmdDrawIndirectCountAMD-commandBuffer-recording",\
+    "VUID-vkCmdDrawIndirectCountKHR-commandBuffer-recording",\
+    "VUID-vkCmdDrawMeshTasksIndirectCountNV-commandBuffer-recording",\
+    "VUID-vkCmdDrawMeshTasksIndirectNV-commandBuffer-recording",\
+    "VUID-vkCmdDrawMeshTasksNV-commandBuffer-recording",\
+    "VUID-vkCmdEndConditionalRenderingEXT-commandBuffer-recording",\
+    "VUID-vkCmdEndDebugUtilsLabelEXT-commandBuffer-recording",\
+    "VUID-vkCmdEndQuery-commandBuffer-recording",\
+    "VUID-vkCmdEndQueryIndexedEXT-commandBuffer-recording",\
+    "VUID-vkCmdEndRenderPass-commandBuffer-recording",\
+    "VUID-vkCmdEndRenderPass2KHR-commandBuffer-recording",\
+    "VUID-vkCmdEndTransformFeedbackEXT-commandBuffer-recording",\
+    "VUID-vkCmdExecuteCommands-commandBuffer-recording",\
+    "VUID-vkCmdFillBuffer-commandBuffer-recording",\
+    "VUID-vkCmdInsertDebugUtilsLabelEXT-commandBuffer-recording",\
+    "VUID-vkCmdNextSubpass-commandBuffer-recording",\
+    "VUID-vkCmdNextSubpass2KHR-commandBuffer-recording",\
+    "VUID-vkCmdPipelineBarrier-commandBuffer-recording",\
+    "VUID-vkCmdProcessCommandsNVX-commandBuffer-recording",\
+    "VUID-vkCmdPushConstants-commandBuffer-recording",\
+    "VUID-vkCmdPushDescriptorSetKHR-commandBuffer-recording",\
+    "VUID-vkCmdPushDescriptorSetWithTemplateKHR-commandBuffer-recording",\
+    "VUID-vkCmdReserveSpaceForCommandsNVX-commandBuffer-recording",\
+    "VUID-vkCmdResetEvent-commandBuffer-recording",\
+    "VUID-vkCmdResetQueryPool-commandBuffer-recording",\
+    "VUID-vkCmdResolveImage-commandBuffer-recording",\
+    "VUID-vkCmdSetBlendConstants-commandBuffer-recording",\
+    "VUID-vkCmdSetCheckpointNV-commandBuffer-recording",\
+    "VUID-vkCmdSetCoarseSampleOrderNV-commandBuffer-recording",\
+    "VUID-vkCmdSetDepthBias-commandBuffer-recording",\
+    "VUID-vkCmdSetDepthBounds-commandBuffer-recording",\
+    "VUID-vkCmdSetDeviceMask-commandBuffer-recording",\
+    "VUID-vkCmdSetDiscardRectangleEXT-commandBuffer-recording",\
+    "VUID-vkCmdSetEvent-commandBuffer-recording",\
+    "VUID-vkCmdSetExclusiveScissorNV-commandBuffer-recording",\
+    "VUID-vkCmdSetLineWidth-commandBuffer-recording",\
+    "VUID-vkCmdSetSampleLocationsEXT-commandBuffer-recording",\
+    "VUID-vkCmdSetScissor-commandBuffer-recording",\
+    "VUID-vkCmdSetStencilCompareMask-commandBuffer-recording",\
+    "VUID-vkCmdSetStencilReference-commandBuffer-recording",\
+    "VUID-vkCmdSetStencilWriteMask-commandBuffer-recording",\
+    "VUID-vkCmdSetViewport-commandBuffer-recording",\
+    "VUID-vkCmdSetViewportShadingRatePaletteNV-commandBuffer-recording",\
+    "VUID-vkCmdSetViewportWScalingNV-commandBuffer-recording",\
+    "VUID-vkCmdTraceRaysNV-commandBuffer-recording",\
+    "VUID-vkCmdUpdateBuffer-commandBuffer-recording",\
+    "VUID-vkCmdWaitEvents-commandBuffer-recording",\
+    "VUID-vkCmdWriteAccelerationStructuresPropertiesNV-commandBuffer-recording",\
+    "VUID-vkCmdWriteBufferMarkerAMD-commandBuffer-recording",\
+    "VUID-vkCmdWriteTimestamp-commandBuffer-recording",\
+    "VUID-vkEndCommandBuffer-commandBuffer-00059"

@@ -25,14 +25,17 @@
 struct GpuDeviceMemoryBlock {
     VkBuffer buffer;
     VmaAllocation allocation;
+    std::unordered_map<uint32_t, const cvdescriptorset::Descriptor *> update_at_submit;
 };
 
 struct GpuBufferInfo {
-    GpuDeviceMemoryBlock mem_block;
+    GpuDeviceMemoryBlock output_mem_block;
+    GpuDeviceMemoryBlock input_mem_block;
     VkDescriptorSet desc_set;
     VkDescriptorPool desc_pool;
-    GpuBufferInfo(GpuDeviceMemoryBlock mem_block, VkDescriptorSet desc_set, VkDescriptorPool desc_pool)
-        : mem_block(mem_block), desc_set(desc_set), desc_pool(desc_pool){};
+    GpuBufferInfo(GpuDeviceMemoryBlock output_mem_block, GpuDeviceMemoryBlock input_mem_block, VkDescriptorSet desc_set,
+                  VkDescriptorPool desc_pool)
+        : output_mem_block(output_mem_block), input_mem_block(input_mem_block), desc_set(desc_set), desc_pool(desc_pool){};
 };
 
 // Class to encapsulate Descriptor Set allocation.  This manager creates and destroys Descriptor Pools
@@ -44,7 +47,6 @@ class GpuDescriptorSetManager {
 
     VkResult GetDescriptorSets(uint32_t count, VkDescriptorPool *pool, std::vector<VkDescriptorSet> *desc_sets);
     void PutBackDescriptorSet(VkDescriptorPool desc_pool, VkDescriptorSet desc_set);
-    void DestroyDescriptorPools();
 
    private:
     static const uint32_t kItemsPerChunk = 512;
@@ -72,6 +74,13 @@ struct GpuValidationState {
     std::unordered_map<VkCommandBuffer, std::vector<GpuBufferInfo>> command_buffer_map;  // gpu_buffer_list;
     uint32_t output_buffer_size;
     VmaAllocator vmaAllocator;
+    GpuValidationState(bool aborted = false, bool reserve_binding_slot = false, VkCommandPool barrier_command_pool = VK_NULL_HANDLE,
+                       VkCommandBuffer barrier_command_buffer = VK_NULL_HANDLE, VmaAllocator vmaAllocator = {})
+        : aborted(aborted),
+          reserve_binding_slot(reserve_binding_slot),
+          barrier_command_pool(barrier_command_pool),
+          barrier_command_buffer(barrier_command_buffer),
+          vmaAllocator(vmaAllocator){};
 
     std::vector<GpuBufferInfo> &GetGpuBufferInfo(const VkCommandBuffer command_buffer) {
         auto buffer_list = command_buffer_map.find(command_buffer);

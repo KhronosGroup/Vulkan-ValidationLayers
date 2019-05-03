@@ -1,9 +1,9 @@
 #!/usr/bin/python3 -i
 #
-# Copyright (c) 2015-2017 The Khronos Group Inc.
-# Copyright (c) 2015-2017 Valve Corporation
-# Copyright (c) 2015-2017 LunarG, Inc.
-# Copyright (c) 2015-2017 Google Inc.
+# Copyright (c) 2015-2019 The Khronos Group Inc.
+# Copyright (c) 2015-2019 Valve Corporation
+# Copyright (c) 2015-2019 LunarG, Inc.
+# Copyright (c) 2015-2019 Google Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ from common_codegen import *
 # HelperFileOutputGeneratorOptions - subclass of GeneratorOptions.
 class HelperFileOutputGeneratorOptions(GeneratorOptions):
     def __init__(self,
+                 conventions = None,
                  filename = None,
                  directory = '.',
                  apiname = None,
@@ -53,7 +54,7 @@ class HelperFileOutputGeneratorOptions(GeneratorOptions):
                  library_name = '',
                  expandEnumerants = True,
                  helper_file_type = ''):
-        GeneratorOptions.__init__(self, filename, directory, apiname, profile,
+        GeneratorOptions.__init__(self, conventions, filename, directory, apiname, profile,
                                   versions, emitversions, defaultExtensions,
                                   addExtensions, removeExtensions, emitExtensions, sortProcedure)
         self.prefixText       = prefixText
@@ -117,10 +118,10 @@ class HelperFileOutputGenerator(OutputGenerator):
         copyright += '\n'
         copyright += '/***************************************************************************\n'
         copyright += ' *\n'
-        copyright += ' * Copyright (c) 2015-2017 The Khronos Group Inc.\n'
-        copyright += ' * Copyright (c) 2015-2017 Valve Corporation\n'
-        copyright += ' * Copyright (c) 2015-2017 LunarG, Inc.\n'
-        copyright += ' * Copyright (c) 2015-2017 Google Inc.\n'
+        copyright += ' * Copyright (c) 2015-2019 The Khronos Group Inc.\n'
+        copyright += ' * Copyright (c) 2015-2019 Valve Corporation\n'
+        copyright += ' * Copyright (c) 2015-2019 LunarG, Inc.\n'
+        copyright += ' * Copyright (c) 2015-2019 Google Inc.\n'
         copyright += ' *\n'
         copyright += ' * Licensed under the Apache License, Version 2.0 (the "License");\n'
         copyright += ' * you may not use this file except in compliance with the License.\n'
@@ -361,6 +362,8 @@ class HelperFileOutputGenerator(OutputGenerator):
     # Enum_string_header: Create a routine to convert an enumerated value into a string
     def GenerateEnumStringConversion(self, groupName, value_list):
         outstring = '\n'
+        if self.featureExtraProtect is not None:
+            outstring += '\n#ifdef %s\n\n' % self.featureExtraProtect
         outstring += 'static inline const char* string_%s(%s input_value)\n' % (groupName, groupName)
         outstring += '{\n'
         outstring += '    switch ((%s)input_value)\n' % groupName
@@ -374,6 +377,8 @@ class HelperFileOutputGenerator(OutputGenerator):
         outstring += '            return "Unhandled %s";\n' % groupName
         outstring += '    }\n'
         outstring += '}\n'
+        if self.featureExtraProtect is not None:
+            outstring += '#endif // %s\n' % self.featureExtraProtect
         return outstring
     #
     # Tack on a helper which, given an index into a VkPhysicalDeviceFeatures structure, will print the corresponding feature name
@@ -1131,7 +1136,7 @@ class HelperFileOutputGenerator(OutputGenerator):
         type_member = 'Type'
         id_member = 'kSType'
         id_decl = 'static const VkStructureType '
-        generic_header = prefix + 'GenericHeader'
+        generic_header = 'VkBaseOutStructure'
         typename_func = fprefix + 'typename'
         idname_func = fprefix + 'stype_name'
         find_func = fprefix + 'find_in_chain'
@@ -1155,12 +1160,6 @@ class HelperFileOutputGenerator(OutputGenerator):
 
         # Define the utilities (here so any renaming stays consistent), if this grows large, refactor to a fixed .h file
         utilities_format = '\n'.join((
-            '// Header "base class" for pNext chain traversal',
-            'struct {header} {{',
-            '   VkStructureType sType;',
-            '   const {header} *pNext;',
-            '}};',
-            '',
             '// Find an entry of the given type in the pNext chain',
             'template <typename T> const T *{find_func}(const void *next) {{',
             '    const {header} *current = reinterpret_cast<const {header} *>(next);',

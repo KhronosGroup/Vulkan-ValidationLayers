@@ -31,6 +31,7 @@ function printUsage {
    echo "    -p|--platform <platform> (optional)"
    echo "    -f|--filter <gtest filter list> (optional)"
    echo "    -s|--serial <target device serial number> (optional)"
+   echo "    -a|--abi <target abi> (optional)"
    echo
    echo "i.e. ${0##*/} -p <platform> -f <test filter> -s <serial number>"
    exit 1
@@ -58,6 +59,10 @@ do
             ;;
         -s|--serial)
             serial="$2"
+            shift 2
+            ;;
+        -a|--abi)
+            abi="$2"
             shift 2
             ;;
         -*)
@@ -98,6 +103,7 @@ fi
 if [[ $platform ]]; then echo platform = "${platform}"; fi
 if [[ $filter ]]; then echo filter = "${filter}"; fi
 if [[ $serial ]]; then echo serial = "${serial}"; fi
+if [[ $abi ]]; then echo abi = "${abi}"; fi
 
 set -e
 
@@ -159,7 +165,12 @@ echo
 echo Installing ./bin/VulkanLayerValidationTests.apk...
 
 # Install the current build
-adb $serialFlag install -r bin/VulkanLayerValidationTests.apk
+if [[ -z $abi ]]
+then
+  adb $serialFlag install -r bin/VulkanLayerValidationTests.apk
+else
+  adb $serialFlag install --abi $abi -r bin/VulkanLayerValidationTests.apk
+fi
 
 echo
 echo Launching tests...

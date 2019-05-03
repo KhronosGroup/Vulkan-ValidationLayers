@@ -598,14 +598,47 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
             hfile.write(self.header_preamble)
             vuid_list = list(self.vj.all_vuids)
             vuid_list.sort()
+            cmd_dict = {}
             for vuid in vuid_list:
                 db_entry = self.vj.vuid_db[vuid][0]
-                hfile.write('    {"%s", "%s (%s#%s)"},\n' % (vuid, db_entry['text'].strip(' '), self.spec_url, vuid))
+                db_text = db_entry['text'].strip(' ')
+                hfile.write('    {"%s", "%s (%s#%s)"},\n' % (vuid, db_text, self.spec_url, vuid))
                 # For multiply-defined VUIDs, include versions with extension appended
                 if len(self.vj.vuid_db[vuid]) > 1:
                     for db_entry in self.vj.vuid_db[vuid]:
-                        hfile.write('    {"%s[%s]", "%s (%s#%s)"},\n' % (vuid, db_entry['ext'].strip(' '), db_entry['text'].strip(' '), self.spec_url, vuid))
+                        hfile.write('    {"%s[%s]", "%s (%s#%s)"},\n' % (vuid, db_entry['ext'].strip(' '), db_text, self.spec_url, vuid))
+                if 'commandBuffer must be in the recording state' in db_text:
+                    cmd_dict[vuid] = db_text 
             hfile.write(self.header_postamble)
+
+            # Generate the information for validating recording state VUID's 
+            cmd_prefix = 'prefix##'
+            cmd_regex = re.compile(r'VUID-vk(Cmd|End)(\w+)')
+            cmd_vuid_vector = ['    "VUID_Undefined"']
+            cmd_name_vector = [ '    "Command_Undefined"' ]
+            cmd_enum = ['    ' + cmd_prefix + 'NONE = 0']
+
+            cmd_ordinal = 1
+            for vuid, db_text in cmd_dict.items():
+                cmd_match = cmd_regex.match(vuid)
+                if cmd_match.group(1) == "End":
+                    end = "END"
+                else:
+                    end = ""
+                cmd_name_vector.append('    "vk'+ cmd_match.group(1) + cmd_match.group(2) + '"')
+                cmd_name = cmd_prefix + end + cmd_match.group(2).upper()
+                cmd_enum.append('    {} = {}'.format(cmd_name, cmd_ordinal))
+                cmd_ordinal += 1
+                cmd_vuid_vector.append('    "{}"'.format(vuid))
+
+            hfile.write('\n// Defines to allow creating "must be recording" meta data\n')
+            cmd_enum.append('    {}RANGE_SIZE = {}'.format(cmd_prefix, cmd_ordinal))
+            cmd_enum_string = '#define VUID_CMD_ENUM_LIST(prefix)\\\n' + ',\\\n'.join(cmd_enum) + '\n\n'
+            hfile.write(cmd_enum_string)
+            cmd_name_list_string = '#define VUID_CMD_NAME_LIST\\\n' + ',\\\n'.join(cmd_name_vector) + '\n\n'
+            hfile.write(cmd_name_list_string)
+            vuid_vector_string = '#define VUID_MUST_BE_RECORDING_LIST\\\n' + ',\\\n'.join(cmd_vuid_vector) + '\n'
+            hfile.write(vuid_vector_string)
 
 def main(argv):
     global verbose_mode

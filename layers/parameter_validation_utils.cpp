@@ -209,6 +209,35 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
         }
     }
 
+    auto features2 = lvl_find_in_chain<VkPhysicalDeviceFeatures2>(pCreateInfo->pNext);
+    if (features2) {
+        if (!instance_extensions.vk_khr_get_physical_device_properties_2) {
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                            kVUID_PVError_ExtensionNotEnabled,
+                            "VkDeviceCreateInfo->pNext includes a VkPhysicalDeviceFeatures2 struct, "
+                            "VK_KHR_get_physical_device_properties2 must be enabled when it creates an instance.");
+        }
+    }
+
+    auto vertex_attribute_divisor_features =
+        lvl_find_in_chain<VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT>(pCreateInfo->pNext);
+    if (vertex_attribute_divisor_features) {
+        bool extension_found = false;
+        for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; ++i) {
+            if (0 == strncmp(pCreateInfo->ppEnabledExtensionNames[i], VK_EXT_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME,
+                             VK_MAX_EXTENSION_NAME_SIZE)) {
+                extension_found = true;
+                break;
+            }
+        }
+        if (!extension_found) {
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                            kVUID_PVError_ExtensionNotEnabled,
+                            "VkDeviceCreateInfo->pNext includes a VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT "
+                            "struct, VK_EXT_vertex_attribute_divisor must be enabled when it creates a device.");
+        }
+    }
+
     // Validate pCreateInfo->pQueueCreateInfos
     if (pCreateInfo->pQueueCreateInfos) {
         std::unordered_set<uint32_t> set;
@@ -925,7 +954,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                     "vkCreateGraphicsPipelines: pararameter "
                                     "pCreateInfo[%d].pVertexInputState->vertexAttributeDescriptionCount (%u) is "
                                     "greater than VkPhysicalDeviceLimits::maxVertexInputAttributes (%u).",
-                                    i, vertex_input_state->vertexBindingDescriptionCount, device_limits.maxVertexInputAttributes);
+                                    i, vertex_input_state->vertexAttributeDescriptionCount, device_limits.maxVertexInputAttributes);
                 }
 
                 std::unordered_set<uint32_t> vertex_bindings(vertex_input_state->vertexBindingDescriptionCount);
@@ -2961,3 +2990,40 @@ bool StatelessValidation::manual_PreCallValidateCreateAccelerationStructureNV(
 
     return skip;
 }
+
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+bool StatelessValidation::PreCallValidateGetDeviceGroupSurfacePresentModes2EXT(VkDevice device,
+                                                                               const VkPhysicalDeviceSurfaceInfo2KHR *pSurfaceInfo,
+                                                                               VkDeviceGroupPresentModeFlagsKHR *pModes) {
+    bool skip = false;
+    if (!device_extensions.vk_khr_swapchain)
+        skip |= OutputExtensionError("vkGetDeviceGroupSurfacePresentModes2EXT", VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+    if (!device_extensions.vk_khr_get_surface_capabilities_2)
+        skip |= OutputExtensionError("vkGetDeviceGroupSurfacePresentModes2EXT", VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME);
+    if (!device_extensions.vk_khr_surface)
+        skip |= OutputExtensionError("vkGetDeviceGroupSurfacePresentModes2EXT", VK_KHR_SURFACE_EXTENSION_NAME);
+    if (!device_extensions.vk_khr_get_physical_device_properties_2)
+        skip |=
+            OutputExtensionError("vkGetDeviceGroupSurfacePresentModes2EXT", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    if (!device_extensions.vk_ext_full_screen_exclusive)
+        skip |= OutputExtensionError("vkGetDeviceGroupSurfacePresentModes2EXT", VK_EXT_FULL_SCREEN_EXCLUSIVE_EXTENSION_NAME);
+    skip |= validate_struct_type(
+        "vkGetDeviceGroupSurfacePresentModes2EXT", "pSurfaceInfo", "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SURFACE_INFO_2_KHR",
+        pSurfaceInfo, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SURFACE_INFO_2_KHR, true,
+        "VUID-vkGetDeviceGroupSurfacePresentModes2EXT-pSurfaceInfo-parameter", "VUID-VkPhysicalDeviceSurfaceInfo2KHR-sType-sType");
+    if (pSurfaceInfo != NULL) {
+        const VkStructureType allowed_structs_VkPhysicalDeviceSurfaceInfo2KHR[] = {
+            VK_STRUCTURE_TYPE_SURFACE_FULL_SCREEN_EXCLUSIVE_INFO_EXT,
+            VK_STRUCTURE_TYPE_SURFACE_FULL_SCREEN_EXCLUSIVE_WIN32_INFO_EXT};
+
+        skip |= validate_struct_pnext("vkGetDeviceGroupSurfacePresentModes2EXT", "pSurfaceInfo->pNext",
+                                      "VkSurfaceFullScreenExclusiveInfoEXT, VkSurfaceFullScreenExclusiveWin32InfoEXT",
+                                      pSurfaceInfo->pNext, ARRAY_SIZE(allowed_structs_VkPhysicalDeviceSurfaceInfo2KHR),
+                                      allowed_structs_VkPhysicalDeviceSurfaceInfo2KHR, GeneratedVulkanHeaderVersion,
+                                      "VUID-VkPhysicalDeviceSurfaceInfo2KHR-pNext-pNext");
+
+        skip |= validate_required_handle("vkGetDeviceGroupSurfacePresentModes2EXT", "pSurfaceInfo->surface", pSurfaceInfo->surface);
+    }
+    return skip;
+}
+#endif

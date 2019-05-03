@@ -703,7 +703,7 @@ static unsigned DescriptorRequirementsBitsFromFormat(VkFormat fmt) {
 //  that any update buffers are valid, and that any dynamic offsets are within the bounds of their buffers.
 // Return true if state is acceptable, or false and write an error message into error string
 bool cvdescriptorset::DescriptorSet::ValidateDrawState(const std::map<uint32_t, descriptor_req> &bindings,
-                                                       const std::vector<uint32_t> &dynamic_offsets, GLOBAL_CB_NODE *cb_node,
+                                                       const std::vector<uint32_t> &dynamic_offsets, CMD_BUFFER_STATE *cb_node,
                                                        const char *caller, std::string *error) const {
     for (auto binding_pair : bindings) {
         auto binding = binding_pair.first;
@@ -751,7 +751,7 @@ bool cvdescriptorset::DescriptorSet::ValidateDrawState(const std::map<uint32_t, 
                         return false;
                     } else if (!buffer_node->sparse) {
                         for (auto mem_binding : buffer_node->GetBoundMemory()) {
-                            if (!device_data_->GetMemObjInfo(mem_binding)) {
+                            if (!device_data_->GetDevMemState(mem_binding)) {
                                 std::stringstream error_str;
                                 error_str << "Descriptor in binding #" << binding << " index " << index << " uses buffer " << buffer
                                           << " that references invalid memory " << mem_binding << ".";
@@ -839,7 +839,8 @@ bool cvdescriptorset::DescriptorSet::ValidateDrawState(const std::map<uint32_t, 
                     // No "invalid layout" VUID required for this call, since the optimal_layout parameter is UNDEFINED.
                     bool hit_error = false;
                     device_data_->VerifyImageLayout(cb_node, image_node, image_view_state->normalized_subresource_range,
-                                                    image_layout, VK_IMAGE_LAYOUT_UNDEFINED, caller, kVUIDUndefined,
+                                                    image_view_ci.subresourceRange.aspectMask, image_layout,
+                                                    VK_IMAGE_LAYOUT_UNDEFINED, caller, kVUIDUndefined,
                                                     "VUID-VkDescriptorImageInfo-imageLayout-00344", &hit_error);
                     if (hit_error) {
                         *error =
@@ -1234,7 +1235,7 @@ void cvdescriptorset::DescriptorSet::PerformCopyUpdate(const VkCopyDescriptorSet
 // TODO: Modify the UpdateDrawState virtural functions to *only* set initial layout and not change layouts
 // Prereq: This should be called for a set that has been confirmed to be active for the given cb_node, meaning it's going
 //   to be used in a draw by the given cb_node
-void cvdescriptorset::DescriptorSet::UpdateDrawState(CoreChecks *device_data, GLOBAL_CB_NODE *cb_node,
+void cvdescriptorset::DescriptorSet::UpdateDrawState(CoreChecks *device_data, CMD_BUFFER_STATE *cb_node,
                                                      const std::map<uint32_t, descriptor_req> &binding_req_map) {
     // bind cb to this descriptor set
     cb_bindings.insert(cb_node);
@@ -1278,7 +1279,7 @@ void cvdescriptorset::DescriptorSet::FilterAndTrackOneBindingReq(const BindingRe
     if (bindings->size() < limit) FilterAndTrackOneBindingReq(binding_req_pair, in_req, out_req, bindings);
 }
 
-void cvdescriptorset::DescriptorSet::FilterAndTrackBindingReqs(GLOBAL_CB_NODE *cb_state, const BindingReqMap &in_req,
+void cvdescriptorset::DescriptorSet::FilterAndTrackBindingReqs(CMD_BUFFER_STATE *cb_state, const BindingReqMap &in_req,
                                                                BindingReqMap *out_req) {
     TrackedBindings &bound = cached_validation_[cb_state].command_binding_and_usage;
     if (bound.size() == GetBindingCount()) {
@@ -1293,7 +1294,7 @@ void cvdescriptorset::DescriptorSet::FilterAndTrackBindingReqs(GLOBAL_CB_NODE *c
     }
 }
 
-void cvdescriptorset::DescriptorSet::FilterAndTrackBindingReqs(GLOBAL_CB_NODE *cb_state, PIPELINE_STATE *pipeline,
+void cvdescriptorset::DescriptorSet::FilterAndTrackBindingReqs(CMD_BUFFER_STATE *cb_state, PIPELINE_STATE *pipeline,
                                                                const BindingReqMap &in_req, BindingReqMap *out_req) {
     auto &validated = cached_validation_[cb_state];
     auto &image_sample_val = validated.image_samplers[pipeline];
@@ -1580,7 +1581,7 @@ void cvdescriptorset::SamplerDescriptor::CopyUpdate(const Descriptor *src) {
     updated = true;
 }
 
-void cvdescriptorset::SamplerDescriptor::UpdateDrawState(CoreChecks *dev_data, GLOBAL_CB_NODE *cb_node) {
+void cvdescriptorset::SamplerDescriptor::UpdateDrawState(CoreChecks *dev_data, CMD_BUFFER_STATE *cb_node) {
     if (!immutable_) {
         auto sampler_state = dev_data->GetSamplerState(sampler_);
         if (sampler_state) dev_data->AddCommandBufferBindingSampler(cb_node, sampler_state);
@@ -1619,7 +1620,7 @@ void cvdescriptorset::ImageSamplerDescriptor::CopyUpdate(const Descriptor *src) 
     image_layout_ = image_layout;
 }
 
-void cvdescriptorset::ImageSamplerDescriptor::UpdateDrawState(CoreChecks *dev_data, GLOBAL_CB_NODE *cb_node) {
+void cvdescriptorset::ImageSamplerDescriptor::UpdateDrawState(CoreChecks *dev_data, CMD_BUFFER_STATE *cb_node) {
     // First add binding for any non-immutable sampler
     if (!immutable_) {
         auto sampler_state = dev_data->GetSamplerState(sampler_);
@@ -1655,7 +1656,7 @@ void cvdescriptorset::ImageDescriptor::CopyUpdate(const Descriptor *src) {
     image_layout_ = image_layout;
 }
 
-void cvdescriptorset::ImageDescriptor::UpdateDrawState(CoreChecks *dev_data, GLOBAL_CB_NODE *cb_node) {
+void cvdescriptorset::ImageDescriptor::UpdateDrawState(CoreChecks *dev_data, CMD_BUFFER_STATE *cb_node) {
     // Add binding for image
     auto iv_state = dev_data->GetImageViewState(image_view_);
     if (iv_state) {
@@ -1693,7 +1694,7 @@ void cvdescriptorset::BufferDescriptor::CopyUpdate(const Descriptor *src) {
     range_ = buff_desc->range_;
 }
 
-void cvdescriptorset::BufferDescriptor::UpdateDrawState(CoreChecks *dev_data, GLOBAL_CB_NODE *cb_node) {
+void cvdescriptorset::BufferDescriptor::UpdateDrawState(CoreChecks *dev_data, CMD_BUFFER_STATE *cb_node) {
     auto buffer_node = dev_data->GetBufferState(buffer_);
     if (buffer_node) dev_data->AddCommandBufferBindingBuffer(cb_node, buffer_node);
 }
@@ -1714,7 +1715,7 @@ void cvdescriptorset::TexelDescriptor::CopyUpdate(const Descriptor *src) {
     buffer_view_ = static_cast<const TexelDescriptor *>(src)->buffer_view_;
 }
 
-void cvdescriptorset::TexelDescriptor::UpdateDrawState(CoreChecks *dev_data, GLOBAL_CB_NODE *cb_node) {
+void cvdescriptorset::TexelDescriptor::UpdateDrawState(CoreChecks *dev_data, CMD_BUFFER_STATE *cb_node) {
     auto bv_state = dev_data->GetBufferViewState(buffer_view_);
     if (bv_state) {
         dev_data->AddCommandBufferBindingBufferView(cb_node, bv_state);
@@ -2206,8 +2207,8 @@ bool cvdescriptorset::DescriptorSet::VerifyWriteUpdateContents(const VkWriteDesc
                     *error_msg = error_str.str();
                     return false;
                 }
-                if (device_data_->GetDeviceExtensions()->vk_khr_sampler_ycbcr_conversion) {
-                    ImageSamplerDescriptor *desc = (ImageSamplerDescriptor *)descriptors_[index].get();
+                if (device_data_->device_extensions.vk_khr_sampler_ycbcr_conversion) {
+                    ImageSamplerDescriptor *desc = (ImageSamplerDescriptor *)descriptors_[index + di].get();
                     if (desc->IsImmutableSampler()) {
                         auto sampler_state = device_data_->GetSamplerState(desc->GetSampler());
                         auto iv_state = device_data_->GetImageViewState(image_view);
@@ -2493,7 +2494,7 @@ bool CoreChecks::ValidateAllocateDescriptorSets(const VkDescriptorSetAllocateInf
             }
         }
     }
-    if (!GetDeviceExtensions()->vk_khr_maintenance1) {
+    if (!device_extensions.vk_khr_maintenance1) {
         // Track number of descriptorSets allowable in this pool
         if (pool_state->availableSets < p_alloc_info->descriptorSetCount) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_POOL_EXT,
@@ -2547,10 +2548,8 @@ bool CoreChecks::ValidateAllocateDescriptorSets(const VkDescriptorSetAllocateInf
 // Decrement allocated sets from the pool and insert new sets into set_map
 void CoreChecks::PerformAllocateDescriptorSets(const VkDescriptorSetAllocateInfo *p_alloc_info,
                                                const VkDescriptorSet *descriptor_sets,
-                                               const cvdescriptorset::AllocateDescriptorSetsData *ds_data,
-                                               std::unordered_map<VkDescriptorPool, DESCRIPTOR_POOL_STATE *> *pool_map,
-                                               std::unordered_map<VkDescriptorSet, cvdescriptorset::DescriptorSet *> *set_map) {
-    auto pool_state = (*pool_map)[p_alloc_info->descriptorPool];
+                                               const cvdescriptorset::AllocateDescriptorSetsData *ds_data) {
+    auto pool_state = descriptorPoolMap[p_alloc_info->descriptorPool].get();
     // Account for sets and individual descriptors allocated from pool
     pool_state->availableSets -= p_alloc_info->descriptorSetCount;
     for (auto it = ds_data->required_descriptors_by_type.begin(); it != ds_data->required_descriptors_by_type.end(); ++it) {
@@ -2564,17 +2563,16 @@ void CoreChecks::PerformAllocateDescriptorSets(const VkDescriptorSetAllocateInfo
     for (uint32_t i = 0; i < p_alloc_info->descriptorSetCount; i++) {
         uint32_t variable_count = variable_count_valid ? variable_count_info->pDescriptorCounts[i] : 0;
 
-        auto new_ds = new cvdescriptorset::DescriptorSet(descriptor_sets[i], p_alloc_info->descriptorPool, ds_data->layout_nodes[i],
-                                                         variable_count, this);
-
-        pool_state->sets.insert(new_ds);
+        std::unique_ptr<cvdescriptorset::DescriptorSet> new_ds(new cvdescriptorset::DescriptorSet(
+            descriptor_sets[i], p_alloc_info->descriptorPool, ds_data->layout_nodes[i], variable_count, this));
+        pool_state->sets.insert(new_ds.get());
         new_ds->in_use.store(0);
-        (*set_map)[descriptor_sets[i]] = new_ds;
+        setMap[descriptor_sets[i]] = std::move(new_ds);
     }
 }
 
 cvdescriptorset::PrefilterBindRequestMap::PrefilterBindRequestMap(cvdescriptorset::DescriptorSet &ds, const BindingReqMap &in_map,
-                                                                  GLOBAL_CB_NODE *cb_state)
+                                                                  CMD_BUFFER_STATE *cb_state)
     : filtered_map_(), orig_map_(in_map) {
     if (ds.GetTotalDescriptorCount() > kManyDescriptors_) {
         filtered_map_.reset(new std::map<uint32_t, descriptor_req>());
@@ -2582,7 +2580,7 @@ cvdescriptorset::PrefilterBindRequestMap::PrefilterBindRequestMap(cvdescriptorse
     }
 }
 cvdescriptorset::PrefilterBindRequestMap::PrefilterBindRequestMap(cvdescriptorset::DescriptorSet &ds, const BindingReqMap &in_map,
-                                                                  GLOBAL_CB_NODE *cb_state, PIPELINE_STATE *pipeline)
+                                                                  CMD_BUFFER_STATE *cb_state, PIPELINE_STATE *pipeline)
     : filtered_map_(), orig_map_(in_map) {
     if (ds.GetTotalDescriptorCount() > kManyDescriptors_) {
         filtered_map_.reset(new std::map<uint32_t, descriptor_req>());

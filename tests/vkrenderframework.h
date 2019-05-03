@@ -370,7 +370,7 @@ class VkDescriptorSetLayoutObj : public vk_testing::DescriptorSetLayout {
     VkDescriptorSetLayoutObj() = default;
     VkDescriptorSetLayoutObj(const VkDeviceObj *device,
                              const std::vector<VkDescriptorSetLayoutBinding> &descriptor_set_bindings = {},
-                             VkDescriptorSetLayoutCreateFlags flags = 0);
+                             VkDescriptorSetLayoutCreateFlags flags = 0, void *pNext = NULL);
 
     // Move constructor and move assignment operator for Visual Studio 2013
     VkDescriptorSetLayoutObj(VkDescriptorSetLayoutObj &&src) : DescriptorSetLayout(std::move(src)){};

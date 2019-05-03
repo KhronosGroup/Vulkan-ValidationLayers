@@ -63,11 +63,6 @@ extern const std::vector<VkLogicOp> AllVkLogicOpEnums;
 extern const std::vector<VkBorderColor> AllVkBorderColorEnums;
 extern const std::vector<VkImageLayout> AllVkImageLayoutEnums;
 
-struct GenericHeader {
-    VkStructureType sType;
-    const void *pNext;
-};
-
 // String returned by string_VkStructureType for an unrecognized type.
 const std::string UnsupportedStructureTypeString = "Unhandled VkStructureType";
 
@@ -474,7 +469,7 @@ class StatelessValidation : public ValidationObject {
     }
 
     // Forward declaration for pNext validation
-    bool ValidatePnextStructContents(const char *api_name, const ParameterName &parameter_name, const GenericHeader *header);
+    bool ValidatePnextStructContents(const char *api_name, const ParameterName &parameter_name, const VkBaseOutStructure *header);
 
     /**
      * Validate a structure's pNext member.
@@ -521,7 +516,7 @@ class StatelessValidation : public ValidationObject {
             } else {
                 const VkStructureType *start = allowed_types;
                 const VkStructureType *end = allowed_types + allowed_type_count;
-                const GenericHeader *current = reinterpret_cast<const GenericHeader *>(next);
+                const VkBaseOutStructure *current = reinterpret_cast<const VkBaseOutStructure *>(next);
 
                 cycle_check.insert(next);
 
@@ -574,7 +569,7 @@ class StatelessValidation : public ValidationObject {
                         }
                         skip_call |= ValidatePnextStructContents(api_name, parameter_name, current);
                     }
-                    current = reinterpret_cast<const GenericHeader *>(current->pNext);
+                    current = reinterpret_cast<const VkBaseOutStructure *>(current->pNext);
                 }
             }
         }
@@ -1052,5 +1047,10 @@ class StatelessValidation : public ValidationObject {
                                                              const VkAccelerationStructureCreateInfoNV *pCreateInfo,
                                                              const VkAllocationCallbacks *pAllocator,
                                                              VkAccelerationStructureNV *pAccelerationStructure);
+
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+    bool PreCallValidateGetDeviceGroupSurfacePresentModes2EXT(VkDevice device, const VkPhysicalDeviceSurfaceInfo2KHR *pSurfaceInfo,
+                                                              VkDeviceGroupPresentModeFlagsKHR *pModes);
+#endif  // VK_USE_PLATFORM_WIN32_KHR
 #include "parameter_validation.h"
 };  // Class StatelessValidation

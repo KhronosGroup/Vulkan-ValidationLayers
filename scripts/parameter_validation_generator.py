@@ -64,6 +64,7 @@ from io import open
 #     separate line, align parameter names at the specified column
 class ParameterValidationGeneratorOptions(GeneratorOptions):
     def __init__(self,
+                 conventions = None,
                  filename = None,
                  directory = '.',
                  apiname = None,
@@ -84,7 +85,7 @@ class ParameterValidationGeneratorOptions(GeneratorOptions):
                  alignFuncParam = 0,
                  expandEnumerants = True,
                  valid_usage_path = ''):
-        GeneratorOptions.__init__(self, filename, directory, apiname, profile,
+        GeneratorOptions.__init__(self, conventions, filename, directory, apiname, profile,
                                   versions, emitversions, defaultExtensions,
                                   addExtensions, removeExtensions, emitExtensions, sortProcedure)
         self.prefixText      = prefixText
@@ -186,6 +187,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             'vkEnumerateInstanceExtensionProperties',
             'vkEnumerateDeviceLayerProperties',
             'vkEnumerateDeviceExtensionProperties',
+            'vkGetDeviceGroupSurfacePresentModes2EXT'
             ]
 
         # Structure fields to ignore
@@ -335,7 +337,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             write(self.enumValueLists, file=self.outFile)
             self.newline()
 
-            pnext_handler  = 'bool StatelessValidation::ValidatePnextStructContents(const char *api_name, const ParameterName &parameter_name, const GenericHeader* header) {\n'
+            pnext_handler  = 'bool StatelessValidation::ValidatePnextStructContents(const char *api_name, const ParameterName &parameter_name, const VkBaseOutStructure* header) {\n'
             pnext_handler += '    bool skip = false;\n'
             pnext_handler += '    switch(header->sType) {\n'
 
@@ -593,12 +595,18 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             if isEnum:
                 self.enumRanges[groupName] = (expandPrefix + '_BEGIN_RANGE' + expandSuffix, expandPrefix + '_END_RANGE' + expandSuffix)
                 # Create definition for a list containing valid enum values for this enumerated type
-                enum_entry = 'const std::vector<%s> All%sEnums = {' % (groupName, groupName)
+                if self.featureExtraProtect is not None:
+                    enum_entry = '\n#ifdef %s\n' % self.featureExtraProtect
+                else:
+                    enum_entry = ''
+                enum_entry += 'const std::vector<%s> All%sEnums = {' % (groupName, groupName)
                 for enum in groupElem:
                     name = enum.get('name')
                     if name is not None and enum.get('supported') != 'disabled':
                         enum_entry += '%s, ' % name
                 enum_entry += '};\n'
+                if self.featureExtraProtect is not None:
+                    enum_entry += '#endif // %s' % self.featureExtraProtect
                 self.enumValueLists += enum_entry
     #
     # Capture command parameter info to be used for param check code generation.
@@ -945,7 +953,6 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                 allocator_dict = {'pfnAllocation': '"VUID-VkAllocationCallbacks-pfnAllocation-00632"',
                                   'pfnReallocation': '"VUID-VkAllocationCallbacks-pfnReallocation-00633"',
                                   'pfnFree': '"VUID-VkAllocationCallbacks-pfnFree-00634"',
-                                  'pfnInternalAllocation': '"VUID-VkAllocationCallbacks-pfnInternalAllocation-00635"'
                                  }
                 vuid = allocator_dict.get(value.name)
                 if vuid is not None:
@@ -953,7 +960,27 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                 checkExpr.append('skip |= validate_required_pointer("{}", {ppp}"{}"{pps}, reinterpret_cast<const void*>({}{}), {});\n'.format(funcPrintName, valuePrintName, prefix, value.name, ptr_required_vuid, **postProcSpec))
             else:
                 checkExpr.append('skip |= validate_required_pointer("{}", {ppp}"{}"{pps}, {}{}, {});\n'.format(funcPrintName, valuePrintName, prefix, value.name, ptr_required_vuid, **postProcSpec))
+        else:
+            # Special case for optional internal allocation function pointers.
+            if (value.type, value.name) == ('PFN_vkInternalAllocationNotification', 'pfnInternalAllocation'):
+                checkExpr.extend(self.internalAllocationCheck(funcPrintName, prefix, value.name, 'pfnInternalFree', postProcSpec))
+            elif (value.type, value.name) == ('PFN_vkInternalFreeNotification', 'pfnInternalFree'):
+                checkExpr.extend(self.internalAllocationCheck(funcPrintName, prefix, value.name, 'pfnInternalAllocation', postProcSpec))
         return checkExpr
+
+    #
+    # Generate internal allocation function pointer check.
+    def internalAllocationCheck(self, funcPrintName, prefix, name, complementaryName, postProcSpec):
+        checkExpr = []
+        vuid = '"VUID-VkAllocationCallbacks-pfnInternalAllocation-00635"'
+        checkExpr.append('if ({}{} != NULL)'.format(prefix, name))
+        checkExpr.append('{')
+        local_indent = self.incIndent('')
+        # Function pointers need a reinterpret_cast to void*
+        checkExpr.append(local_indent + 'skip |= validate_required_pointer("{}", {ppp}"{}{}"{pps}, reinterpret_cast<const void*>({}{}), {});\n'.format(funcPrintName, prefix, complementaryName, prefix, complementaryName, vuid, **postProcSpec))
+        checkExpr.append('}\n')
+        return checkExpr
+
     #
     # Process struct member validation code, performing name substitution if required
     def processStructMemberCode(self, line, funcName, memberNamePrefix, memberDisplayNamePrefix, postProcSpec):
@@ -1116,7 +1143,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                 # For the pointer to struct case, the struct pointer will not be validated, but any
                 # members not tagged as 'noautovalidity' will be validated
                 # We special-case the custom allocator checks, as they are explicit but can be auto-generated.
-                AllocatorFunctions = ['PFN_vkAllocationFunction', 'PFN_vkReallocationFunction', 'PFN_vkFreeFunction']
+                AllocatorFunctions = ['PFN_vkAllocationFunction', 'PFN_vkReallocationFunction', 'PFN_vkFreeFunction', 'PFN_vkInternalAllocationNotification', 'PFN_vkInternalFreeNotification']
                 if value.noautovalidity and value.type not in AllocatorFunctions:
                     # Log a diagnostic message when validation cannot be automatically generated and must be implemented manually
                     self.logMsg('diag', 'ParameterValidation: No validation for {} {}'.format(structTypeName if structTypeName else funcName, value.name))

@@ -20,6 +20,7 @@
  * Author: Chris Forbes <chrisf@ijw.co.nz>
  * Author: Mark Lobodzinski <mark@lunarg.com>
  * Author: Dave Houlton <daveh@lunarg.com>
+ * Author: John Zulauf <jzulauf@lunarg.com>
  */
 #ifndef CORE_VALIDATION_TYPES_H_
 #define CORE_VALIDATION_TYPES_H_
@@ -60,7 +61,8 @@ class DescriptorSetLayout;
 class DescriptorSet;
 }  // namespace cvdescriptorset
 
-struct GLOBAL_CB_NODE;
+struct CMD_BUFFER_STATE;
+class CoreChecks;
 
 enum CALL_STATE {
     UNCALLED,       // Function has not been called
@@ -76,13 +78,13 @@ class BASE_NODE {
     //  binding initialized when cmd referencing object is bound to command buffer
     //  binding removed when command buffer is reset or destroyed
     // When an object is destroyed, any bound cbs are set to INVALID
-    std::unordered_set<GLOBAL_CB_NODE *> cb_bindings;
+    std::unordered_set<CMD_BUFFER_STATE *> cb_bindings;
 
     BASE_NODE() { in_use.store(0); };
 };
 
 // Track command pools and their command buffers
-struct COMMAND_POOL_NODE : public BASE_NODE {
+struct COMMAND_POOL_STATE : public BASE_NODE {
     VkCommandPoolCreateFlags createFlags;
     uint32_t queueFamilyIndex;
     // Cmd buffers allocated from this pool
@@ -96,12 +98,12 @@ static bool IsTransferOp(const Barrier *barrier) {
 }
 
 template <typename Barrier, bool assume_transfer = false>
-static bool TempIsReleaseOp(const COMMAND_POOL_NODE *pool, const Barrier *barrier) {
+static bool TempIsReleaseOp(const COMMAND_POOL_STATE *pool, const Barrier *barrier) {
     return (assume_transfer || IsTransferOp(barrier)) && (pool->queueFamilyIndex == barrier->srcQueueFamilyIndex);
 }
 
 template <typename Barrier, bool assume_transfer = false>
-static bool IsAcquireOp(const COMMAND_POOL_NODE *pool, const Barrier *barrier) {
+static bool IsAcquireOp(const COMMAND_POOL_STATE *pool, const Barrier *barrier) {
     return (assume_transfer || IsTransferOp(barrier)) && (pool->queueFamilyIndex == barrier->dstQueueFamilyIndex);
 }
 
@@ -291,16 +293,16 @@ class IMAGE_STATE : public BINDABLE {
    public:
     VkImage image;
     VkImageCreateInfo createInfo;
-    bool valid;                   // If this is a swapchain image backing memory track valid here as it doesn't have DEVICE_MEM_INFO
-    bool acquired;                // If this is a swapchain image, has it been acquired by the app.
-    bool shared_presentable;      // True for a front-buffered swapchain image
-    bool layout_locked;           // A front-buffered image that has been presented can never have layout transitioned
-    bool get_sparse_reqs_called;  // Track if GetImageSparseMemoryRequirements() has been called for this image
-    bool sparse_metadata_required;  // Track if sparse metadata aspect is required for this image
-    bool sparse_metadata_bound;     // Track if sparse metadata aspect is bound to this image
-    bool imported_ahb;              // True if image was imported from an Android Hardware Buffer
-    bool has_ahb_format;            // True if image was created with an external Android format
-    uint64_t ahb_format;            // External Android format, if provided
+    bool valid;               // If this is a swapchain image backing memory track valid here as it doesn't have DEVICE_MEMORY_STATE
+    bool acquired;            // If this is a swapchain image, has it been acquired by the app.
+    bool shared_presentable;  // True for a front-buffered swapchain image
+    bool layout_locked;       // A front-buffered image that has been presented can never have layout transitioned
+    bool get_sparse_reqs_called;         // Track if GetImageSparseMemoryRequirements() has been called for this image
+    bool sparse_metadata_required;       // Track if sparse metadata aspect is required for this image
+    bool sparse_metadata_bound;          // Track if sparse metadata aspect is bound to this image
+    bool imported_ahb;                   // True if image was imported from an Android Hardware Buffer
+    bool has_ahb_format;                 // True if image was created with an external Android format
+    uint64_t ahb_format;                 // External Android format, if provided
     VkImageSubresourceRange full_range;  // The normalized ISR for all levels, layers (slices), and aspects
     std::vector<VkSparseImageMemoryRequirements> sparse_requirements;
     IMAGE_STATE(VkImage img, const VkImageCreateInfo *pCreateInfo);
@@ -342,7 +344,7 @@ struct MEMORY_RANGE {
 };
 
 // Data struct for tracking memory object
-struct DEVICE_MEM_INFO : public BASE_NODE {
+struct DEVICE_MEMORY_STATE : public BASE_NODE {
     void *object;  // Dispatchable object used to create this memory (device of swapchain)
     VkDeviceMemory mem;
     VkMemoryAllocateInfo alloc_info;
@@ -364,7 +366,7 @@ struct DEVICE_MEM_INFO : public BASE_NODE {
                                // multiple of limits.minMemoryMapAlignment
     void *p_driver_data;       // Pointer to application's actual memory
 
-    DEVICE_MEM_INFO(void *disp_object, const VkDeviceMemory in_mem, const VkMemoryAllocateInfo *p_alloc_info)
+    DEVICE_MEMORY_STATE(void *disp_object, const VkDeviceMemory in_mem, const VkMemoryAllocateInfo *p_alloc_info)
         : object(disp_object),
           mem(in_mem),
           alloc_info(*p_alloc_info),
@@ -477,11 +479,20 @@ struct Multiplane3AspectTraits {
     }
 };
 
+std::string FormatDebugLabel(const char *prefix, const LoggingLabel &label);
+
 const static VkImageLayout kInvalidLayout = VK_IMAGE_LAYOUT_MAX_ENUM;
 // Interface class.
 class ImageSubresourceLayoutMap {
    public:
     typedef std::function<bool(const VkImageSubresource &, VkImageLayout, VkImageLayout)> Callback;
+    struct InitialLayoutState {
+        VkImageView image_view;          // For relaxed matching rule evaluation, else VK_NULL_HANDLE
+        VkImageAspectFlags aspect_mask;  // For relaxed matching rules... else 0
+        LoggingLabel label;
+        InitialLayoutState(const CMD_BUFFER_STATE &cb_state_, const IMAGE_VIEW_STATE *view_state);
+        InitialLayoutState() : image_view(VK_NULL_HANDLE), aspect_mask(0), label() {}
+    };
 
     struct SubresourceLayout {
         VkImageSubresource subresource;
@@ -523,13 +534,15 @@ class ImageSubresourceLayoutMap {
     virtual ConstIterator BeginInitialUse() const = 0;
     virtual ConstIterator BeginSetLayout() const = 0;
 
-    virtual bool SetSubresourceRangeLayout(const VkImageSubresourceRange &range, VkImageLayout layout,
-                                           VkImageLayout expected_layout = kInvalidLayout) = 0;
-    virtual bool SetSubresourceRangeInitialLayout(const VkImageSubresourceRange &range, VkImageLayout layout) = 0;
+    virtual bool SetSubresourceRangeLayout(const CMD_BUFFER_STATE &cb_state, const VkImageSubresourceRange &range,
+                                           VkImageLayout layout, VkImageLayout expected_layout = kInvalidLayout) = 0;
+    virtual bool SetSubresourceRangeInitialLayout(const CMD_BUFFER_STATE &cb_state, const VkImageSubresourceRange &range,
+                                                  VkImageLayout layout, const IMAGE_VIEW_STATE *view_state = nullptr) = 0;
     virtual bool ForRange(const VkImageSubresourceRange &range, const Callback &callback, bool skip_invalid = true,
                           bool always_get_initial = false) const = 0;
     virtual VkImageLayout GetSubresourceLayout(const VkImageSubresource subresource) const = 0;
     virtual VkImageLayout GetSubresourceInitialLayout(const VkImageSubresource subresource) const = 0;
+    virtual const InitialLayoutState *GetSubresourceInitialLayoutState(const VkImageSubresource subresource) const = 0;
     virtual bool UpdateFrom(const ImageSubresourceLayoutMap &from) = 0;
     virtual uintptr_t CompatibilityKey() const = 0;
     ImageSubresourceLayoutMap() {}
@@ -594,7 +607,7 @@ class ImageSubresourceLayoutMapImpl : public ImageSubresourceLayoutMap {
         return Base::ConstIterator(new ConstIteratorImpl<LayoutMap>(*this, layouts_.current));
     }
 
-    bool SetSubresourceRangeLayout(const VkImageSubresourceRange &range, VkImageLayout layout,
+    bool SetSubresourceRangeLayout(const CMD_BUFFER_STATE &cb_state, const VkImageSubresourceRange &range, VkImageLayout layout,
                                    VkImageLayout expected_layout = kInvalidLayout) override {
         bool updated = false;
         if (expected_layout == kInvalidLayout) {
@@ -603,6 +616,7 @@ class ImageSubresourceLayoutMapImpl : public ImageSubresourceLayoutMap {
         }
         if (!InRange(range)) return false;  // Don't even try to track bogus subreources
 
+        InitialLayoutState *initial_state = nullptr;
         const uint32_t end_mip = range.baseMipLevel + range.levelCount;
         const auto &aspects = AspectTraits::AspectBits();
         for (uint32_t aspect_index = 0; aspect_index < AspectTraits::kAspectCount; aspect_index++) {
@@ -614,8 +628,11 @@ class ImageSubresourceLayoutMapImpl : public ImageSubresourceLayoutMap {
                 bool updated_level = layouts_.current.SetRange(start, end, layout);
                 if (updated_level) {
                     // We only need to try setting the initial layout, if we changed any of the layout values above
-                    layouts_.initial.SetRange(start, end, expected_layout);
                     updated = true;
+                    if (layouts_.initial.SetRange(start, end, expected_layout)) {
+                        // We only need to try setting the initial layout *state* if the initial layout was updated
+                        initial_state = UpdateInitialLayoutState(start, end, initial_state, cb_state, nullptr);
+                    }
                 }
             }
         }
@@ -623,10 +640,12 @@ class ImageSubresourceLayoutMapImpl : public ImageSubresourceLayoutMap {
         return updated;
     }
 
-    bool SetSubresourceRangeInitialLayout(const VkImageSubresourceRange &range, VkImageLayout layout) override {
+    bool SetSubresourceRangeInitialLayout(const CMD_BUFFER_STATE &cb_state, const VkImageSubresourceRange &range,
+                                          VkImageLayout layout, const IMAGE_VIEW_STATE *view_state = nullptr) override {
         bool updated = false;
         if (!InRange(range)) return false;  // Don't even try to track bogus subreources
 
+        InitialLayoutState *initial_state = nullptr;
         const uint32_t end_mip = range.baseMipLevel + range.levelCount;
         const auto &aspects = AspectTraits::AspectBits();
         for (uint32_t aspect_index = 0; aspect_index < AspectTraits::kAspectCount; aspect_index++) {
@@ -635,7 +654,12 @@ class ImageSubresourceLayoutMapImpl : public ImageSubresourceLayoutMap {
             for (uint32_t mip_level = range.baseMipLevel; mip_level < end_mip; ++mip_level, array_offset += mip_size_) {
                 size_t start = array_offset + range.baseArrayLayer;
                 size_t end = start + range.layerCount;
-                updated |= layouts_.initial.SetRange(start, end, layout);
+                bool updated_level = layouts_.initial.SetRange(start, end, layout);
+                if (updated_level) {
+                    updated = true;
+                    // We only need to try setting the initial layout *state* if the initial layout was updated
+                    initial_state = UpdateInitialLayoutState(start, end, initial_state, cb_state, view_state);
+                }
             }
         }
         if (updated) version_++;
@@ -687,6 +711,13 @@ class ImageSubresourceLayoutMapImpl : public ImageSubresourceLayoutMap {
         return layouts_.initial.Get(index);
     }
 
+    const InitialLayoutState *GetSubresourceInitialLayoutState(const VkImageSubresource subresource) const override {
+        if (!InRange(subresource)) return nullptr;
+        uint32_t aspect_index = AspectTraits::Index(subresource.aspectMask);
+        size_t index = Encode(aspect_index, subresource.mipLevel, subresource.arrayLayer);
+        return initial_layout_state_map_.Get(index);
+    }
+
     VkImageLayout GetSubresourceLayout(const VkImageSubresource subresource) const override {
         if (!InRange(subresource)) return kInvalidLayout;
         uint32_t aspect_index = AspectTraits::Index(subresource.aspectMask);
@@ -719,7 +750,9 @@ class ImageSubresourceLayoutMapImpl : public ImageSubresourceLayoutMap {
           mip_size_(image_state.full_range.layerCount),
           aspect_size_(mip_size_ * image_state.full_range.levelCount),
           version_(0),
-          layouts_(aspect_size_ * AspectTraits::kAspectCount) {
+          layouts_(aspect_size_ * AspectTraits::kAspectCount),
+          initial_layout_states_(),
+          initial_layout_state_map_(0, aspect_size_ * AspectTraits::kAspectCount) {
         // Setup the row <-> aspect/mip_level base Encode/Decode LUT...
         aspect_offsets_[0] = 0;
         for (size_t i = 1; i < aspect_offsets_.size(); ++i) {  // Size is a compile time constant
@@ -785,28 +818,89 @@ class ImageSubresourceLayoutMapImpl : public ImageSubresourceLayoutMap {
         return Encode(aspect_index, mip_level) + array_layer;
     }
 
+    InitialLayoutState *UpdateInitialLayoutState(size_t start, size_t end, InitialLayoutState *initial_state,
+                                                 const CMD_BUFFER_STATE &cb_state, const IMAGE_VIEW_STATE *view_state) {
+        if (!initial_state) {
+            // Allocate on demand...  initial_layout_states_ holds ownership as a unique_ptr, while
+            // each subresource has a non-owning copy of the plain pointer.
+            initial_state = new InitialLayoutState(cb_state, view_state);
+            initial_layout_states_.emplace_back(initial_state);
+        }
+        assert(initial_state);
+        initial_layout_state_map_.SetRange(start, end, initial_state);
+        return initial_state;
+    }
+
+    typedef std::vector<std::unique_ptr<InitialLayoutState>> InitialLayoutStates;
+    // This map *also* needs "write once" semantics
+    typedef sparse_container::SparseVector<size_t, InitialLayoutState *, false, nullptr, kSparseThreshold> InitialLayoutStateMap;
+
     const IMAGE_STATE &image_state_;
     const size_t mip_size_;
     const size_t aspect_size_;
     uint64_t version_ = 0;
     Layouts layouts_;
+    InitialLayoutStates initial_layout_states_;
+    InitialLayoutStateMap initial_layout_state_map_;
     std::array<size_t, AspectTraits::kAspectCount> aspect_offsets_;
 };
 
-// Utility type for ForRange callbacks
-struct LayoutUseCheckAndMessage {
-    const char *message = nullptr;
-    VkImageLayout layout = kInvalidLayout;
-    LayoutUseCheckAndMessage(VkImageLayout check, VkImageLayout current_layout, VkImageLayout initial_layout) {
-        if (current_layout != kInvalidLayout && check != current_layout) {
-            message = "previous known";
-            layout = current_layout;
-        } else if (initial_layout != kInvalidLayout && check != initial_layout) {
-            message = "previously used";
-            layout = initial_layout;
+static VkImageLayout NormalizeImageLayout(VkImageLayout layout, VkImageLayout non_normal, VkImageLayout normal) {
+    return (layout == non_normal) ? normal : layout;
+}
+
+static VkImageLayout NormalizeDepthImageLayout(VkImageLayout layout) {
+    return NormalizeImageLayout(layout, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
+                                VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL);
+}
+
+static VkImageLayout NormalizeStencilImageLayout(VkImageLayout layout) {
+    return NormalizeImageLayout(layout, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
+                                VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL);
+}
+
+static bool ImageLayoutMatches(const VkImageAspectFlags aspect_mask, VkImageLayout a, VkImageLayout b) {
+    bool matches = (a == b);
+    if (!matches) {
+        // Relaxed rules when referencing *only* the depth or stencil aspects
+        if (aspect_mask == VK_IMAGE_ASPECT_DEPTH_BIT) {
+            matches = NormalizeDepthImageLayout(a) == NormalizeDepthImageLayout(b);
+        } else if (aspect_mask == VK_IMAGE_ASPECT_STENCIL_BIT) {
+            matches = NormalizeStencilImageLayout(a) == NormalizeStencilImageLayout(b);
         }
     }
-    bool CheckFailed() const { return layout != kInvalidLayout; }
+    return matches;
+}
+
+// Utility type for ForRange callbacks
+struct LayoutUseCheckAndMessage {
+    const static VkImageAspectFlags kDepthOrStencil = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+    const ImageSubresourceLayoutMap *layout_map;
+    const VkImageAspectFlags aspect_mask;
+    const char *message;
+    VkImageLayout layout;
+
+    LayoutUseCheckAndMessage() = delete;
+    LayoutUseCheckAndMessage(const ImageSubresourceLayoutMap *layout_map_, const VkImageAspectFlags aspect_mask_ = 0)
+        : layout_map(layout_map_), aspect_mask{aspect_mask_}, message(nullptr), layout(kInvalidLayout) {}
+    bool Check(const VkImageSubresource &subres, VkImageLayout check, VkImageLayout current_layout, VkImageLayout initial_layout) {
+        message = nullptr;
+        layout = kInvalidLayout;  // Success status
+        if (current_layout != kInvalidLayout && !ImageLayoutMatches(aspect_mask, check, current_layout)) {
+            message = "previous known";
+            layout = current_layout;
+        } else if ((initial_layout != kInvalidLayout) && !ImageLayoutMatches(aspect_mask, check, initial_layout)) {
+            // To check the relaxed rule matching we need to see how the initial use was used
+            const auto initial_layout_state = layout_map->GetSubresourceInitialLayoutState(subres);
+            assert(initial_layout_state);  // If we have an initial layout, we better have a state for it
+            if (!((initial_layout_state->aspect_mask & kDepthOrStencil) &&
+                  ImageLayoutMatches(initial_layout_state->aspect_mask, check, initial_layout))) {
+                message = "previously used";
+                layout = initial_layout;
+            }
+        }
+        return layout == kInvalidLayout;
+    }
 };
 
 // Store the DAG.
@@ -827,83 +921,8 @@ struct RENDER_PASS_STATE : public BASE_NODE {
     RENDER_PASS_STATE(VkRenderPassCreateInfo const *pCreateInfo) { ConvertVkRenderPassCreateInfoToV2KHR(pCreateInfo, &createInfo); }
 };
 
-// vkCmd tracking -- complete as of header 1.0.68
-// please keep in "none, then sorted" order
-// Note: grepping vulkan.h for VKAPI_CALL.*vkCmd will return all functions except vkEndCommandBuffer
-
-enum CMD_TYPE {
-    CMD_NONE,
-    CMD_BEGINQUERY,
-    CMD_BEGINRENDERPASS,
-    CMD_BEGINRENDERPASS2KHR,
-    CMD_BINDDESCRIPTORSETS,
-    CMD_BINDINDEXBUFFER,
-    CMD_BINDPIPELINE,
-    CMD_BINDSHADINGRATEIMAGE,
-    CMD_BINDVERTEXBUFFERS,
-    CMD_BLITIMAGE,
-    CMD_CLEARATTACHMENTS,
-    CMD_CLEARCOLORIMAGE,
-    CMD_CLEARDEPTHSTENCILIMAGE,
-    CMD_COPYBUFFER,
-    CMD_COPYBUFFERTOIMAGE,
-    CMD_COPYIMAGE,
-    CMD_COPYIMAGETOBUFFER,
-    CMD_COPYQUERYPOOLRESULTS,
-    CMD_DEBUGMARKERBEGINEXT,
-    CMD_DEBUGMARKERENDEXT,
-    CMD_DEBUGMARKERINSERTEXT,
-    CMD_DISPATCH,
-    CMD_DISPATCHBASEKHX,
-    CMD_DISPATCHINDIRECT,
-    CMD_DRAW,
-    CMD_DRAWINDEXED,
-    CMD_DRAWINDEXEDINDIRECT,
-    CMD_DRAWINDEXEDINDIRECTCOUNTAMD,
-    CMD_DRAWINDEXEDINDIRECTCOUNTKHR,
-    CMD_DRAWINDIRECT,
-    CMD_DRAWINDIRECTCOUNTAMD,
-    CMD_DRAWINDIRECTCOUNTKHR,
-    CMD_DRAWMESHTASKSNV,
-    CMD_DRAWMESHTASKSINDIRECTNV,
-    CMD_DRAWMESHTASKSINDIRECTCOUNTNV,
-    CMD_ENDCOMMANDBUFFER,  // Should be the last command in any RECORDED cmd buffer
-    CMD_ENDQUERY,
-    CMD_ENDRENDERPASS,
-    CMD_ENDRENDERPASS2KHR,
-    CMD_EXECUTECOMMANDS,
-    CMD_FILLBUFFER,
-    CMD_NEXTSUBPASS,
-    CMD_NEXTSUBPASS2KHR,
-    CMD_PIPELINEBARRIER,
-    CMD_PROCESSCOMMANDSNVX,
-    CMD_PUSHCONSTANTS,
-    CMD_PUSHDESCRIPTORSETKHR,
-    CMD_PUSHDESCRIPTORSETWITHTEMPLATEKHR,
-    CMD_RESERVESPACEFORCOMMANDSNVX,
-    CMD_RESETEVENT,
-    CMD_RESETQUERYPOOL,
-    CMD_RESOLVEIMAGE,
-    CMD_SETBLENDCONSTANTS,
-    CMD_SETDEPTHBIAS,
-    CMD_SETDEPTHBOUNDS,
-    CMD_SETDEVICEMASKKHX,
-    CMD_SETDISCARDRECTANGLEEXT,
-    CMD_SETEVENT,
-    CMD_SETEXCLUSIVESCISSOR,
-    CMD_SETLINEWIDTH,
-    CMD_SETSAMPLELOCATIONSEXT,
-    CMD_SETSCISSOR,
-    CMD_SETSTENCILCOMPAREMASK,
-    CMD_SETSTENCILREFERENCE,
-    CMD_SETSTENCILWRITEMASK,
-    CMD_SETVIEWPORT,
-    CMD_SETVIEWPORTSHADINGRATEPALETTE,
-    CMD_SETVIEWPORTWSCALINGNV,
-    CMD_UPDATEBUFFER,
-    CMD_WAITEVENTS,
-    CMD_WRITETIMESTAMP,
-};
+// Autogenerated as part of the vk_validation_error_message.h codegen
+enum CMD_TYPE { VUID_CMD_ENUM_LIST(CMD_) };
 
 enum CB_STATE {
     CB_NEW,                 // Newly created CB w/o any cmds
@@ -1016,13 +1035,13 @@ using PipelineLayoutCompatDict = hash_util::Dictionary<PipelineLayoutCompatDef, 
 using PipelineLayoutCompatId = PipelineLayoutCompatDict::Id;
 
 // Store layouts and pushconstants for PipelineLayout
-struct PIPELINE_LAYOUT_NODE {
+struct PIPELINE_LAYOUT_STATE {
     VkPipelineLayout layout;
     std::vector<std::shared_ptr<cvdescriptorset::DescriptorSetLayout const>> set_layouts;
     PushConstantRangesId push_constant_ranges;
     std::vector<PipelineLayoutCompatId> compat_for_set;
 
-    PIPELINE_LAYOUT_NODE() : layout(VK_NULL_HANDLE), set_layouts{}, push_constant_ranges{}, compat_for_set{} {}
+    PIPELINE_LAYOUT_STATE() : layout(VK_NULL_HANDLE), set_layouts{}, push_constant_ranges{}, compat_for_set{} {}
 
     void reset() {
         layout = VK_NULL_HANDLE;
@@ -1038,7 +1057,7 @@ static inline bool CompatForSet(uint32_t set, const std::vector<PipelineLayoutCo
     return result;
 }
 
-static inline bool CompatForSet(uint32_t set, const PIPELINE_LAYOUT_NODE *a, const PIPELINE_LAYOUT_NODE *b) {
+static inline bool CompatForSet(uint32_t set, const PIPELINE_LAYOUT_STATE *a, const PIPELINE_LAYOUT_STATE *b) {
     // Intentionally have a result variable to simplify debugging
     bool result = a && b && CompatForSet(set, a->compat_for_set, b->compat_for_set);
     return result;
@@ -1048,10 +1067,10 @@ class PIPELINE_STATE : public BASE_NODE {
    public:
     VkPipeline pipeline;
     safe_VkGraphicsPipelineCreateInfo graphicsPipelineCI;
-    // Hold shared ptr to RP in case RP itself is destroyed
-    std::shared_ptr<RENDER_PASS_STATE> rp_state;
     safe_VkComputePipelineCreateInfo computePipelineCI;
     safe_VkRayTracingPipelineCreateInfoNV raytracingPipelineCI;
+    // Hold shared ptr to RP in case RP itself is destroyed
+    std::shared_ptr<RENDER_PASS_STATE> rp_state;
     // Flag of which shader stages are active for this pipeline
     uint32_t active_shaders;
     uint32_t duplicate_shaders;
@@ -1063,16 +1082,16 @@ class PIPELINE_STATE : public BASE_NODE {
     std::unordered_map<uint32_t, uint32_t> vertex_binding_to_index_map_;
     std::vector<VkPipelineColorBlendAttachmentState> attachments;
     bool blendConstantsEnabled;  // Blend constants enabled for any attachments
-    PIPELINE_LAYOUT_NODE pipeline_layout;
+    PIPELINE_LAYOUT_STATE pipeline_layout;
     VkPrimitiveTopology topology_at_rasterizer;
 
     // Default constructor
     PIPELINE_STATE()
         : pipeline{},
           graphicsPipelineCI{},
-          rp_state(nullptr),
           computePipelineCI{},
           raytracingPipelineCI{},
+          rp_state(nullptr),
           active_shaders(0),
           duplicate_shaders(0),
           active_slots(),
@@ -1084,7 +1103,17 @@ class PIPELINE_STATE : public BASE_NODE {
           pipeline_layout(),
           topology_at_rasterizer{} {}
 
+    void reset() {
+        VkGraphicsPipelineCreateInfo emptyGraphicsCI = {};
+        graphicsPipelineCI.initialize(&emptyGraphicsCI, false, false);
+        VkComputePipelineCreateInfo emptyComputeCI = {};
+        computePipelineCI.initialize(&emptyComputeCI);
+        VkRayTracingPipelineCreateInfoNV emptyRayTracingCI = {};
+        raytracingPipelineCI.initialize(&emptyRayTracingCI);
+    }
+
     void initGraphicsPipeline(const VkGraphicsPipelineCreateInfo *pCreateInfo, std::shared_ptr<RENDER_PASS_STATE> &&rpstate) {
+        reset();
         bool uses_color_attachment = false;
         bool uses_depthstencil_attachment = false;
         if (pCreateInfo->subpass < rpstate->createInfo.subpassCount) {
@@ -1102,9 +1131,6 @@ class PIPELINE_STATE : public BASE_NODE {
             }
         }
         graphicsPipelineCI.initialize(pCreateInfo, uses_color_attachment, uses_depthstencil_attachment);
-        // Make sure compute pipeline is null
-        VkComputePipelineCreateInfo emptyComputeCI = {};
-        computePipelineCI.initialize(&emptyComputeCI);
         for (uint32_t i = 0; i < pCreateInfo->stageCount; i++) {
             const VkPipelineShaderStageCreateInfo *pPSSCI = &pCreateInfo->pStages[i];
             this->duplicate_shaders |= this->active_shaders & pPSSCI->stage;
@@ -1141,10 +1167,8 @@ class PIPELINE_STATE : public BASE_NODE {
     }
 
     void initComputePipeline(const VkComputePipelineCreateInfo *pCreateInfo) {
+        reset();
         computePipelineCI.initialize(pCreateInfo);
-        // Make sure gfx pipeline is null
-        VkGraphicsPipelineCreateInfo emptyGraphicsCI = {};
-        graphicsPipelineCI.initialize(&emptyGraphicsCI, false, false);
         switch (computePipelineCI.stage.stage) {
             case VK_SHADER_STAGE_COMPUTE_BIT:
                 this->active_shaders |= VK_SHADER_STAGE_COMPUTE_BIT;
@@ -1154,13 +1178,10 @@ class PIPELINE_STATE : public BASE_NODE {
                 break;
         }
     }
+
     void initRayTracingPipelineNV(const VkRayTracingPipelineCreateInfoNV *pCreateInfo) {
+        reset();
         raytracingPipelineCI.initialize(pCreateInfo);
-        // Make sure gfx and compute pipeline is null
-        VkGraphicsPipelineCreateInfo emptyGraphicsCI = {};
-        VkComputePipelineCreateInfo emptyComputeCI = {};
-        computePipelineCI.initialize(&emptyComputeCI);
-        graphicsPipelineCI.initialize(&emptyGraphicsCI, false, false);
         switch (raytracingPipelineCI.pStages->stage) {
             case VK_SHADER_STAGE_RAYGEN_BIT_NV:
                 this->active_shaders |= VK_SHADER_STAGE_RAYGEN_BIT_NV;
@@ -1184,6 +1205,17 @@ class PIPELINE_STATE : public BASE_NODE {
                 // TODO : Flag error
                 break;
         }
+    }
+
+    inline VkPipelineBindPoint getPipelineType() {
+        if (graphicsPipelineCI.sType == VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO)
+            return VK_PIPELINE_BIND_POINT_GRAPHICS;
+        else if (computePipelineCI.sType == VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO)
+            return VK_PIPELINE_BIND_POINT_COMPUTE;
+        else if (raytracingPipelineCI.sType == VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_NV)
+            return VK_PIPELINE_BIND_POINT_RAY_TRACING_NV;
+        else
+            return VK_PIPELINE_BIND_POINT_MAX_ENUM;
     }
 };
 
@@ -1331,7 +1363,7 @@ using GlobalQFOTransferBarrierMap =
 // Submit queue uses the Scoreboard to track all release/acquire operations in a batch.
 template <typename Barrier>
 using QFOTransferCBScoreboard =
-    std::unordered_map<QFOTransferBarrier<Barrier>, const GLOBAL_CB_NODE *, QFOTransferBarrierHash<Barrier>>;
+    std::unordered_map<QFOTransferBarrier<Barrier>, const CMD_BUFFER_STATE *, QFOTransferBarrierHash<Barrier>>;
 template <typename Barrier>
 struct QFOTransferCBScoreboards {
     QFOTransferCBScoreboard<Barrier> acquire;
@@ -1339,7 +1371,7 @@ struct QFOTransferCBScoreboards {
 };
 
 // Cmd Buffer Wrapper Struct - TODO : This desperately needs its own class
-struct GLOBAL_CB_NODE : public BASE_NODE {
+struct CMD_BUFFER_STATE : public BASE_NODE {
     VkCommandBuffer commandBuffer;
     VkCommandBufferAllocateInfo createInfo = {};
     VkCommandBufferBeginInfo beginInfo;
@@ -1397,25 +1429,28 @@ struct GLOBAL_CB_NODE : public BASE_NODE {
     std::unordered_set<VkBuffer> updateBuffers;
     // If primary, the secondary command buffers we will call.
     // If secondary, the primary command buffers we will be called by.
-    std::unordered_set<GLOBAL_CB_NODE *> linkedCommandBuffers;
+    std::unordered_set<CMD_BUFFER_STATE *> linkedCommandBuffers;
     // Validation functions run at primary CB queue submit time
     std::vector<std::function<bool()>> queue_submit_functions;
     // Validation functions run when secondary CB is executed in primary
-    std::vector<std::function<bool(GLOBAL_CB_NODE *, VkFramebuffer)>> cmd_execute_commands_functions;
+    std::vector<std::function<bool(CMD_BUFFER_STATE *, VkFramebuffer)>> cmd_execute_commands_functions;
     std::unordered_set<VkDeviceMemory> memObjs;
     std::vector<std::function<bool(VkQueue)>> eventUpdates;
     std::vector<std::function<bool(VkQueue)>> queryUpdates;
     std::unordered_set<cvdescriptorset::DescriptorSet *> validated_descriptor_sets;
     // Contents valid only after an index buffer is bound (CBSTATUS_INDEX_BUFFER_BOUND set)
     IndexBufferBinding index_buffer_binding;
+
+    // Cache of current insert label...
+    LoggingLabel debug_label;
 };
 
 static inline QFOTransferBarrierSets<VkImageMemoryBarrier> &GetQFOBarrierSets(
-    GLOBAL_CB_NODE *cb, const QFOTransferBarrier<VkImageMemoryBarrier>::Tag &type_tag) {
+    CMD_BUFFER_STATE *cb, const QFOTransferBarrier<VkImageMemoryBarrier>::Tag &type_tag) {
     return cb->qfo_transfer_image_barriers;
 }
 static inline QFOTransferBarrierSets<VkBufferMemoryBarrier> &GetQFOBarrierSets(
-    GLOBAL_CB_NODE *cb, const QFOTransferBarrier<VkBufferMemoryBarrier>::Tag &type_tag) {
+    CMD_BUFFER_STATE *cb, const QFOTransferBarrier<VkBufferMemoryBarrier>::Tag &type_tag) {
     return cb->qfo_transfer_buffer_barriers;
 }
 
@@ -1442,7 +1477,7 @@ struct CB_SUBMISSION {
     VkFence fence;
 };
 
-struct IMAGE_LAYOUT_NODE {
+struct IMAGE_LAYOUT_STATE {
     VkImageLayout layout;
     VkFormat format;
 };
@@ -1461,7 +1496,7 @@ class FRAMEBUFFER_STATE : public BASE_NODE {
         : framebuffer(fb), createInfo(pCreateInfo), rp_state(rpstate){};
 };
 
-struct shader_module;
+struct SHADER_MODULE_STATE;
 struct DeviceExtensions;
 
 struct DeviceFeatures {
@@ -1495,11 +1530,9 @@ enum BarrierOperationsType {
     kGeneral,     // Either no ownership operations or a mix of ownership operation types and/or non-ownership operations
 };
 
-class CoreChecks;
-
 std::shared_ptr<cvdescriptorset::DescriptorSetLayout const> const GetDescriptorSetLayout(CoreChecks const *, VkDescriptorSetLayout);
 
-ImageSubresourceLayoutMap *GetImageSubresourceLayoutMap(GLOBAL_CB_NODE *cb_state, const IMAGE_STATE &image_state);
-const ImageSubresourceLayoutMap *GetImageSubresourceLayoutMap(const GLOBAL_CB_NODE *cb_state, VkImage image);
+ImageSubresourceLayoutMap *GetImageSubresourceLayoutMap(CMD_BUFFER_STATE *cb_state, const IMAGE_STATE &image_state);
+const ImageSubresourceLayoutMap *GetImageSubresourceLayoutMap(const CMD_BUFFER_STATE *cb_state, VkImage image);
 
 #endif  // CORE_VALIDATION_TYPES_H_
