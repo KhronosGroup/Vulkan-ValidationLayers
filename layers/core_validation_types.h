@@ -958,8 +958,8 @@ struct DrawData {
 
 struct ImageSubresourcePair {
     VkImage image;
-    VkImageSubresource subresource;
     bool hasSubresource;
+    VkImageSubresource subresource;
 };
 
 inline bool operator==(const ImageSubresourcePair &img1, const ImageSubresourcePair &img2) {
