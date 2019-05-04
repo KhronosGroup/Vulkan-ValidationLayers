@@ -361,10 +361,10 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                 struct_validation_source = self.ScrubStructCode(expr)
                 pnext_case += '%s' % struct_validation_source
                 pnext_case += '        } break;\n'
-                if protect is not '':
+                if protect:
                     pnext_case += '#endif // %s\n' % protect
                 # Skip functions containing no validation
-                if struct_validation_source != '':
+                if struct_validation_source:
                     pnext_handler += pnext_case;
             pnext_handler += '        default:\n'
             pnext_handler += '            skip = false;\n'
