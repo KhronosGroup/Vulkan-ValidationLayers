@@ -13011,3 +13011,51 @@ bool CoreChecks::PreCallValidateCmdSetDeviceMask(VkCommandBuffer commandBuffer, 
     }
     return skip;
 }
+
+bool CoreChecks::ValidateQueryPoolStride(const std::string &vuid_not_64, const std::string &vuid_64, const VkDeviceSize stride,
+                                         const char *parameter_name, const uint64_t parameter_value,
+                                         const VkQueryResultFlags flags) {
+    bool skip = false;
+    if (flags == VK_QUERY_RESULT_64_BIT) {
+        static const int condition_multiples = 0b0111;
+        if ((stride & condition_multiples) || (parameter_value & condition_multiples)) {
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, vuid_64,
+                            "stride %" PRIx64 " or %s %" PRIx64 " is invalid.", stride, parameter_name, parameter_value);
+        }
+    } else {
+        static const int condition_multiples = 0b0011;
+        if ((stride & condition_multiples) || (parameter_value & condition_multiples)) {
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, vuid_not_64,
+                            "stride %" PRIx64 " or %s %" PRIx64 " is invalid.", stride, parameter_name, parameter_value);
+        }
+    }
+    return skip;
+}
+
+bool CoreChecks::ValidateCmdDrawStrideWithStruct(VkCommandBuffer commandBuffer, const std::string &vuid, const uint32_t stride,
+                                                 const char *struct_name, const uint32_t struct_size) {
+    bool skip = false;
+    static const int condition_multiples = 0b0011;
+    if ((stride & condition_multiples) || (stride < struct_size)) {
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                        HandleToUint64(commandBuffer), vuid, "stride %d is invalid or less than sizeof(%s) %d.", stride,
+                        struct_name, struct_size);
+    }
+    return skip;
+}
+
+bool CoreChecks::ValidateCmdDrawStrideWithBuffer(VkCommandBuffer commandBuffer, const std::string &vuid, const uint32_t stride,
+                                                 const char *struct_name, const uint32_t struct_size, const uint32_t drawCount,
+                                                 const VkDeviceSize offset, const BUFFER_STATE *buffer_state) {
+    bool skip = false;
+    uint64_t validation_value = stride * (drawCount - 1) + offset + struct_size;
+    if (validation_value > buffer_state->createInfo.size) {
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                        HandleToUint64(commandBuffer), vuid,
+                        "stride[%d] * (drawCount[%d] - 1) + offset[%" PRIx64 "] + sizeof(%s)[%d] = %" PRIx64
+                        " is greater than the size[%" PRIx64 "] of buffer[%s].",
+                        stride, drawCount, offset, struct_name, struct_size, validation_value, buffer_state->createInfo.size,
+                        report_data->FormatHandle(buffer_state->buffer).c_str());
+    }
+    return skip;
+}
