@@ -617,7 +617,7 @@ class CoreChecks : public ValidationObject {
                                       VkPhysicalDeviceFeatures* supported_features);
     void GpuPostCallRecordCreateDevice(const CHECK_ENABLED* enables);
     void GpuPreCallRecordDestroyDevice();
-    void GpuPreCallRecordFreeCommandBuffers(uint32_t commandBufferCount, const VkCommandBuffer* pCommandBuffers);
+    void GpuResetCommandBuffer(const VkCommandBuffer commandBuffer);
     bool GpuPreCallCreateShaderModule(const VkShaderModuleCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                                       VkShaderModule* pShaderModule, uint32_t* unique_shader_id,
                                       VkShaderModuleCreateInfo* instrumented_create_info,

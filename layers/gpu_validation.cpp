@@ -395,25 +395,23 @@ void CoreChecks::GpuPostCallCreatePipelineLayout(VkResult result) {
 }
 
 // Free the device memory and descriptor set associated with a command buffer.
-void CoreChecks::GpuPreCallRecordFreeCommandBuffers(uint32_t commandBufferCount, const VkCommandBuffer *pCommandBuffers) {
+void CoreChecks::GpuResetCommandBuffer(const VkCommandBuffer commandBuffer) {
     if (gpu_validation_state->aborted) {
         return;
     }
-    for (uint32_t i = 0; i < commandBufferCount; ++i) {
-        auto gpu_buffer_list = gpu_validation_state->GetGpuBufferInfo(pCommandBuffers[i]);
-        for (auto buffer_info : gpu_buffer_list) {
-            vmaDestroyBuffer(gpu_validation_state->vmaAllocator, buffer_info.output_mem_block.buffer,
-                             buffer_info.output_mem_block.allocation);
-            if (buffer_info.input_mem_block.buffer) {
-                vmaDestroyBuffer(gpu_validation_state->vmaAllocator, buffer_info.input_mem_block.buffer,
-                                 buffer_info.input_mem_block.allocation);
-            }
-            if (buffer_info.desc_set != VK_NULL_HANDLE) {
-                gpu_validation_state->desc_set_manager->PutBackDescriptorSet(buffer_info.desc_pool, buffer_info.desc_set);
-            }
+    auto gpu_buffer_list = gpu_validation_state->GetGpuBufferInfo(commandBuffer);
+    for (auto buffer_info : gpu_buffer_list) {
+        vmaDestroyBuffer(gpu_validation_state->vmaAllocator, buffer_info.output_mem_block.buffer,
+                         buffer_info.output_mem_block.allocation);
+        if (buffer_info.input_mem_block.buffer) {
+            vmaDestroyBuffer(gpu_validation_state->vmaAllocator, buffer_info.input_mem_block.buffer,
+                             buffer_info.input_mem_block.allocation);
         }
-        gpu_validation_state->command_buffer_map.erase(pCommandBuffers[i]);
+        if (buffer_info.desc_set != VK_NULL_HANDLE) {
+            gpu_validation_state->desc_set_manager->PutBackDescriptorSet(buffer_info.desc_pool, buffer_info.desc_set);
+        }
     }
+    gpu_validation_state->command_buffer_map.erase(commandBuffer);
 }
 
 // Just gives a warning about a possible deadlock.

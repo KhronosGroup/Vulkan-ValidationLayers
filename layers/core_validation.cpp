@@ -2211,6 +2211,9 @@ void CoreChecks::ResetCommandBufferState(const VkCommandBuffer cb) {
         ResetCmdDebugUtilsLabel(report_data, pCB->commandBuffer);
         pCB->debug_label.Reset();
     }
+    if (enabled.gpu_validation) {
+        GpuResetCommandBuffer(cb);
+    }
 }
 
 CBStatusFlags MakeStaticStateMask(VkPipelineDynamicStateCreateInfo const *ds) {
@@ -4712,9 +4715,6 @@ bool CoreChecks::CheckCommandBuffersInFlight(COMMAND_POOL_STATE *pPool, const ch
 // Free all command buffers in given list, removing all references/links to them using ResetCommandBufferState
 void CoreChecks::FreeCommandBufferStates(COMMAND_POOL_STATE *pool_state, const uint32_t command_buffer_count,
                                          const VkCommandBuffer *command_buffers) {
-    if (enabled.gpu_validation) {
-        GpuPreCallRecordFreeCommandBuffers(command_buffer_count, command_buffers);
-    }
     for (uint32_t i = 0; i < command_buffer_count; i++) {
         auto cb_state = GetCBState(command_buffers[i]);
         // Remove references to command buffer's state and delete
