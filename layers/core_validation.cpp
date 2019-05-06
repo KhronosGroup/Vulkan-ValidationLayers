@@ -4107,6 +4107,8 @@ bool CoreChecks::PreCallValidateGetQueryPoolResults(VkDevice device, VkQueryPool
                                                     VkQueryResultFlags flags) {
     if (disabled.query_validation) return false;
     bool skip = false;
+    skip |= ValidateQueryPoolStride("VUID-vkGetQueryPoolResults-flags-00814", "VUID-vkGetQueryPoolResults-flags-00815", stride,
+                                    "dataSize", dataSize, flags);
     auto query_pool_state = queryPoolMap.find(queryPool);
     if (query_pool_state != queryPoolMap.end()) {
         if ((query_pool_state->second->createInfo.queryType == VK_QUERY_TYPE_TIMESTAMP) && (flags & VK_QUERY_RESULT_PARTIAL_BIT)) {
@@ -8502,6 +8504,8 @@ bool CoreChecks::PreCallValidateCmdCopyQueryPoolResults(VkCommandBuffer commandB
     assert(dst_buff_state);
     bool skip = ValidateMemoryIsBoundToBuffer(dst_buff_state, "vkCmdCopyQueryPoolResults()",
                                               "VUID-vkCmdCopyQueryPoolResults-dstBuffer-00826");
+    skip |= ValidateQueryPoolStride("VUID-vkCmdCopyQueryPoolResults-flags-00822", "VUID-vkCmdCopyQueryPoolResults-flags-00823",
+                                    stride, "dstOffset", dstOffset, flags);
     // Validate that DST buffer has correct usage flags set
     skip |= ValidateBufferUsageFlags(dst_buff_state, VK_BUFFER_USAGE_TRANSFER_DST_BIT, true,
                                      "VUID-vkCmdCopyQueryPoolResults-dstBuffer-00825", "vkCmdCopyQueryPoolResults()",
