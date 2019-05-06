@@ -38,6 +38,7 @@
 #include <string>
 #include <vector>
 #include <unordered_map>
+#include <utility>
 
 #include "vk_typemap_helper.h"
 #include "vk_loader_layer.h"
@@ -95,7 +96,6 @@ struct LoggingLabel {
     };
 
     LoggingLabel() : name(), color({0.f, 0.f, 0.f, 0.f}) {}
-    LoggingLabel(const LoggingLabel &other) : name(other.name), color(other.color) {}
     LoggingLabel(const VkDebugUtilsLabelEXT *label_info) {
         if (label_info && label_info->pLabelName) {
             name = label_info->pLabelName;
@@ -104,6 +104,14 @@ struct LoggingLabel {
             Reset();
         }
     }
+
+    LoggingLabel(const LoggingLabel &) = default;
+    LoggingLabel &operator=(const LoggingLabel &) = default;
+    LoggingLabel &operator=(LoggingLabel &&) = default;
+    LoggingLabel(LoggingLabel &&) = default;
+
+    template <typename Name, typename Vec>
+    LoggingLabel(Name &&name_, Vec &&vec_) : name(std::forward<Name>(name_)), color(std::forward<Vec>(vec_)) {}
 };
 
 struct LoggingLabelState {
