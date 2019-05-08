@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.4.1)
+cmake_minimum_required(VERSION 3.12.4)
 
 # Validation layers could be built with code from
 #    github repo   OR
