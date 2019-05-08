@@ -2225,18 +2225,15 @@ bool cvdescriptorset::DescriptorSet::VerifyWriteUpdateContents(const VkWriteDesc
                         }
                     } else {
                         auto iv_state = device_data_->GetImageViewState(image_view);
-                        if (iv_state) {
-                            auto ycbcr_info = lvl_find_in_chain<VkSamplerYcbcrConversionInfo>(iv_state->create_info.pNext);
-                            if (ycbcr_info) {
-                                *error_code = "VUID-VkWriteDescriptorSet-descriptorType-01947";
-                                std::stringstream error_str;
-                                error_str << "Because dstSet (" << update->dstSet << ") is bound to image view ("
-                                          << iv_state->image_view
-                                          << ") that includes a YCBCR conversion, it must have been allocated with a layout that "
-                                             "includes an immutable sampler.";
-                                *error_msg = error_str.str();
-                                return false;
-                            }
+                        if (iv_state && (iv_state->samplerConversion != VK_NULL_HANDLE)) {
+                            *error_code = "VUID-VkWriteDescriptorSet-descriptorType-01947";
+                            std::stringstream error_str;
+                            error_str << "Because dstSet (" << update->dstSet << ") is bound to image view ("
+                                      << iv_state->image_view
+                                      << ") that includes a YCBCR conversion, it must have been allocated with a layout that "
+                                         "includes an immutable sampler.";
+                            *error_msg = error_str.str();
+                            return false;
                         }
                     }
                 }
@@ -2548,10 +2545,8 @@ bool CoreChecks::ValidateAllocateDescriptorSets(const VkDescriptorSetAllocateInf
 // Decrement allocated sets from the pool and insert new sets into set_map
 void CoreChecks::PerformAllocateDescriptorSets(const VkDescriptorSetAllocateInfo *p_alloc_info,
                                                const VkDescriptorSet *descriptor_sets,
-                                               const cvdescriptorset::AllocateDescriptorSetsData *ds_data,
-                                               std::unordered_map<VkDescriptorPool, DESCRIPTOR_POOL_STATE *> *pool_map,
-                                               std::unordered_map<VkDescriptorSet, cvdescriptorset::DescriptorSet *> *set_map) {
-    auto pool_state = (*pool_map)[p_alloc_info->descriptorPool];
+                                               const cvdescriptorset::AllocateDescriptorSetsData *ds_data) {
+    auto pool_state = descriptorPoolMap[p_alloc_info->descriptorPool].get();
     // Account for sets and individual descriptors allocated from pool
     pool_state->availableSets -= p_alloc_info->descriptorSetCount;
     for (auto it = ds_data->required_descriptors_by_type.begin(); it != ds_data->required_descriptors_by_type.end(); ++it) {
@@ -2565,12 +2560,11 @@ void CoreChecks::PerformAllocateDescriptorSets(const VkDescriptorSetAllocateInfo
     for (uint32_t i = 0; i < p_alloc_info->descriptorSetCount; i++) {
         uint32_t variable_count = variable_count_valid ? variable_count_info->pDescriptorCounts[i] : 0;
 
-        auto new_ds = new cvdescriptorset::DescriptorSet(descriptor_sets[i], p_alloc_info->descriptorPool, ds_data->layout_nodes[i],
-                                                         variable_count, this);
-
-        pool_state->sets.insert(new_ds);
+        std::unique_ptr<cvdescriptorset::DescriptorSet> new_ds(new cvdescriptorset::DescriptorSet(
+            descriptor_sets[i], p_alloc_info->descriptorPool, ds_data->layout_nodes[i], variable_count, this));
+        pool_state->sets.insert(new_ds.get());
         new_ds->in_use.store(0);
-        (*set_map)[descriptor_sets[i]] = new_ds;
+        setMap[descriptor_sets[i]] = std::move(new_ds);
     }
 }
 

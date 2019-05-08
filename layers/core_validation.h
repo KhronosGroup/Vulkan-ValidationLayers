@@ -179,20 +179,18 @@ class CoreChecks : public ValidationObject {
     unordered_map<VkShaderModule, std::unique_ptr<SHADER_MODULE_STATE>> shaderModuleMap;
     unordered_map<VkDescriptorUpdateTemplateKHR, std::unique_ptr<TEMPLATE_STATE>> desc_template_map;
     unordered_map<VkSwapchainKHR, std::unique_ptr<SWAPCHAIN_NODE>> swapchainMap;
-
-    unordered_map<VkDescriptorPool, DESCRIPTOR_POOL_STATE*> descriptorPoolMap;
-    unordered_map<VkDescriptorSet, cvdescriptorset::DescriptorSet*> setMap;
-    unordered_map<VkCommandBuffer, CMD_BUFFER_STATE*> commandBufferMap;
-
-    unordered_map<VkCommandPool, COMMAND_POOL_STATE> commandPoolMap;
-    unordered_map<VkPipelineLayout, PIPELINE_LAYOUT_STATE> pipelineLayoutMap;
-    unordered_map<VkFence, FENCE_STATE> fenceMap;
+    unordered_map<VkDescriptorPool, std::unique_ptr<DESCRIPTOR_POOL_STATE>> descriptorPoolMap;
+    unordered_map<VkDescriptorSet, std::unique_ptr<cvdescriptorset::DescriptorSet>> setMap;
+    unordered_map<VkCommandBuffer, std::unique_ptr<CMD_BUFFER_STATE>> commandBufferMap;
+    unordered_map<VkCommandPool, std::unique_ptr<COMMAND_POOL_STATE>> commandPoolMap;
+    unordered_map<VkPipelineLayout, std::unique_ptr<PIPELINE_LAYOUT_STATE>> pipelineLayoutMap;
+    unordered_map<VkFence, std::unique_ptr<FENCE_STATE>> fenceMap;
+    unordered_map<VkQueryPool, std::unique_ptr<QUERY_POOL_STATE>> queryPoolMap;
+    unordered_map<VkSemaphore, std::unique_ptr<SEMAPHORE_STATE>> semaphoreMap;
+    unordered_map<VkSurfaceKHR, std::unique_ptr<SURFACE_STATE>> surface_map;
     unordered_map<VkQueue, QUEUE_STATE> queueMap;
     unordered_map<VkEvent, EVENT_STATE> eventMap;
-    unordered_map<VkQueryPool, QUERY_POOL_STATE> queryPoolMap;
-    unordered_map<VkSemaphore, SEMAPHORE_STATE> semaphoreMap;
     unordered_map<ImageSubresourcePair, IMAGE_LAYOUT_STATE> imageLayoutMap;
-    unordered_map<VkSurfaceKHR, SURFACE_STATE> surface_map;
 
     unordered_map<VkRenderPass, std::shared_ptr<RENDER_PASS_STATE>> renderPassMap;
     unordered_map<VkDescriptorSetLayout, std::shared_ptr<cvdescriptorset::DescriptorSetLayout>> descriptorSetLayoutMap;
@@ -426,6 +424,14 @@ class CoreChecks : public ValidationObject {
     void RecordImportSemaphoreState(VkSemaphore semaphore, VkExternalSemaphoreHandleTypeFlagBitsKHR handle_type,
                                     VkSemaphoreImportFlagsKHR flags);
     void RecordGetExternalSemaphoreState(VkSemaphore semaphore, VkExternalSemaphoreHandleTypeFlagBitsKHR handle_type);
+    bool ValidateBeginQuery(const CMD_BUFFER_STATE* cb_state, const QueryObject& query_obj, VkFlags flags, CMD_TYPE cmd,
+                            const char* cmd_name, const char* vuid_queue_flags, const char* vuid_queue_feedback,
+                            const char* vuid_queue_occlusion, const char* vuid_precise, const char* vuid_query_count);
+    void RecordBeginQuery(CMD_BUFFER_STATE* cb_state, const QueryObject& query_obj);
+    bool ValidateCmdEndQuery(const CMD_BUFFER_STATE* cb_state, const QueryObject& query_obj, CMD_TYPE cmd, const char* cmd_name,
+                             const char* vuid_queue_flags, const char* vuid_active_queries);
+    void RecordCmdEndQuery(CMD_BUFFER_STATE* cb_state, const QueryObject& query_obj);
+
     bool SetQueryState(VkQueue queue, VkCommandBuffer commandBuffer, QueryObject object, bool value);
     bool ValidateCmdDrawType(VkCommandBuffer cmd_buffer, bool indexed, VkPipelineBindPoint bind_point, CMD_TYPE cmd_type,
                              const char* caller, VkQueueFlags queue_flags, const char* queue_flag_code,
@@ -579,9 +585,7 @@ class CoreChecks : public ValidationObject {
     void UpdateAllocateDescriptorSetsData(const VkDescriptorSetAllocateInfo*, cvdescriptorset::AllocateDescriptorSetsData*);
     bool ValidateAllocateDescriptorSets(const VkDescriptorSetAllocateInfo*, const cvdescriptorset::AllocateDescriptorSetsData*);
     void PerformAllocateDescriptorSets(const VkDescriptorSetAllocateInfo*, const VkDescriptorSet*,
-                                       const cvdescriptorset::AllocateDescriptorSetsData*,
-                                       std::unordered_map<VkDescriptorPool, DESCRIPTOR_POOL_STATE*>*,
-                                       std::unordered_map<VkDescriptorSet, cvdescriptorset::DescriptorSet*>*);
+                                       const cvdescriptorset::AllocateDescriptorSetsData*);
     bool ValidateUpdateDescriptorSets(uint32_t write_count, const VkWriteDescriptorSet* p_wds, uint32_t copy_count,
                                       const VkCopyDescriptorSet* p_cds, const char* func_name);
 
@@ -613,7 +617,7 @@ class CoreChecks : public ValidationObject {
                                       VkPhysicalDeviceFeatures* supported_features);
     void GpuPostCallRecordCreateDevice(const CHECK_ENABLED* enables);
     void GpuPreCallRecordDestroyDevice();
-    void GpuPreCallRecordFreeCommandBuffers(uint32_t commandBufferCount, const VkCommandBuffer* pCommandBuffers);
+    void GpuResetCommandBuffer(const VkCommandBuffer commandBuffer);
     bool GpuPreCallCreateShaderModule(const VkShaderModuleCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                                       VkShaderModule* pShaderModule, uint32_t* unique_shader_id,
                                       VkShaderModuleCreateInfo* instrumented_create_info,
@@ -1518,6 +1522,14 @@ class CoreChecks : public ValidationObject {
                                                         const VkDisplayPlaneInfo2KHR* pDisplayPlaneInfo,
                                                         VkDisplayPlaneCapabilities2KHR* pCapabilities);
     bool PreCallValidateCmdDebugMarkerEndEXT(VkCommandBuffer commandBuffer);
+
+    bool PreCallValidateCmdBeginQueryIndexedEXT(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query,
+                                                VkQueryControlFlags flags, uint32_t index);
+    void PostCallRecordCmdBeginQueryIndexedEXT(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query,
+                                               VkQueryControlFlags flags, uint32_t index);
+    bool PreCallValidateCmdEndQueryIndexedEXT(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query, uint32_t index);
+    void PostCallRecordCmdEndQueryIndexedEXT(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query, uint32_t index);
+
     bool PreCallValidateCmdSetDiscardRectangleEXT(VkCommandBuffer commandBuffer, uint32_t firstDiscardRectangle,
                                                   uint32_t discardRectangleCount, const VkRect2D* pDiscardRectangles);
     bool PreCallValidateCmdSetSampleLocationsEXT(VkCommandBuffer commandBuffer,

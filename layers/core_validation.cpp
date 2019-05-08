@@ -188,7 +188,7 @@ FENCE_STATE *CoreChecks::GetFenceState(VkFence fence) {
     if (it == fenceMap.end()) {
         return nullptr;
     }
-    return &it->second;
+    return it->second.get();
 }
 
 EVENT_STATE *CoreChecks::GetEventState(VkEvent event) {
@@ -204,7 +204,7 @@ QUERY_POOL_STATE *CoreChecks::GetQueryPoolState(VkQueryPool query_pool) {
     if (it == queryPoolMap.end()) {
         return nullptr;
     }
-    return &it->second;
+    return it->second.get();
 }
 
 QUEUE_STATE *CoreChecks::GetQueueState(VkQueue queue) {
@@ -220,7 +220,7 @@ SEMAPHORE_STATE *CoreChecks::GetSemaphoreState(VkSemaphore semaphore) {
     if (it == semaphoreMap.end()) {
         return nullptr;
     }
-    return &it->second;
+    return it->second.get();
 }
 
 COMMAND_POOL_STATE *CoreChecks::GetCommandPoolState(VkCommandPool pool) {
@@ -228,7 +228,7 @@ COMMAND_POOL_STATE *CoreChecks::GetCommandPoolState(VkCommandPool pool) {
     if (it == commandPoolMap.end()) {
         return nullptr;
     }
-    return &it->second;
+    return it->second.get();
 }
 
 PHYSICAL_DEVICE_STATE *CoreChecks::GetPhysicalDeviceState(VkPhysicalDevice phys) {
@@ -248,7 +248,7 @@ SURFACE_STATE *CoreChecks::GetSurfaceState(VkSurfaceKHR surface) {
     if (it == surf_map->end()) {
         return nullptr;
     }
-    return &it->second;
+    return it->second.get();
 }
 
 // Return ptr to memory binding for given handle of specified type
@@ -753,7 +753,7 @@ PIPELINE_LAYOUT_STATE const *CoreChecks::GetPipelineLayout(VkPipelineLayout pipe
     if (it == pipelineLayoutMap.end()) {
         return nullptr;
     }
-    return &it->second;
+    return it->second.get();
 }
 
 SHADER_MODULE_STATE const *CoreChecks::GetShaderModuleState(VkShaderModule module) {
@@ -957,7 +957,7 @@ cvdescriptorset::DescriptorSet *CoreChecks::GetSetNode(VkDescriptorSet set) {
     if (set_it == setMap.end()) {
         return NULL;
     }
-    return set_it->second;
+    return set_it->second.get();
 }
 
 // For given pipeline, return number of MSAA samples, or one if MSAA disabled
@@ -1866,7 +1866,7 @@ DESCRIPTOR_POOL_STATE *CoreChecks::GetDescriptorPoolState(const VkDescriptorPool
     if (pool_it == descriptorPoolMap.end()) {
         return NULL;
     }
-    return pool_it->second;
+    return pool_it->second.get();
 }
 
 // Validate that given set is valid and that it's not being used by an in-flight CmdBuffer
@@ -1895,10 +1895,8 @@ bool CoreChecks::ValidateIdleDescriptorSet(VkDescriptorSet set, const char *func
 }
 
 // Remove set from setMap and delete the set
-void CoreChecks::FreeDescriptorSet(cvdescriptorset::DescriptorSet *descriptor_set) {
-    setMap.erase(descriptor_set->GetSet());
-    delete descriptor_set;
-}
+void CoreChecks::FreeDescriptorSet(cvdescriptorset::DescriptorSet *descriptor_set) { setMap.erase(descriptor_set->GetSet()); }
+
 // Free all DS Pools including their Sets & related sub-structs
 // NOTE : Calls to this function should be wrapped in mutex
 void CoreChecks::DeletePools() {
@@ -1908,7 +1906,6 @@ void CoreChecks::DeletePools() {
             FreeDescriptorSet(ds);
         }
         ii->second->sets.clear();
-        delete ii->second;
         ii = descriptorPoolMap.erase(ii);
     }
 }
@@ -1919,7 +1916,7 @@ CMD_BUFFER_STATE *CoreChecks::GetCBState(const VkCommandBuffer cb) {
     if (it == commandBufferMap.end()) {
         return NULL;
     }
-    return it->second;
+    return it->second.get();
 }
 
 // If a renderpass is active, verify that the given command type is appropriate for current subpass state
@@ -2137,7 +2134,7 @@ void CoreChecks::RemoveCommandBufferBinding(VK_OBJECT const *object, CMD_BUFFER_
 // Reset the command buffer state
 //  Maintain the createInfo and set state to CB_NEW, but clear all other state
 void CoreChecks::ResetCommandBufferState(const VkCommandBuffer cb) {
-    CMD_BUFFER_STATE *pCB = commandBufferMap[cb];
+    CMD_BUFFER_STATE *pCB = GetCBState(cb);
     if (pCB) {
         pCB->in_use.store(0);
         // Reset CB state (note that createInfo is not cleared)
@@ -2213,6 +2210,9 @@ void CoreChecks::ResetCommandBufferState(const VkCommandBuffer cb) {
         // Clean up the label data
         ResetCmdDebugUtilsLabel(report_data, pCB->commandBuffer);
         pCB->debug_label.Reset();
+    }
+    if (enabled.gpu_validation) {
+        GpuResetCommandBuffer(cb);
     }
 }
 
@@ -2584,9 +2584,6 @@ void CoreChecks::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationC
     }
     pipelineMap.clear();
     renderPassMap.clear();
-    for (auto ii = commandBufferMap.begin(); ii != commandBufferMap.end(); ++ii) {
-        delete (*ii).second;
-    }
     commandBufferMap.clear();
     // This will also delete all sets in the pool & remove them from setMap
     DeletePools();
@@ -4109,7 +4106,7 @@ bool CoreChecks::PreCallValidateGetQueryPoolResults(VkDevice device, VkQueryPool
     bool skip = false;
     auto query_pool_state = queryPoolMap.find(queryPool);
     if (query_pool_state != queryPoolMap.end()) {
-        if ((query_pool_state->second.createInfo.queryType == VK_QUERY_TYPE_TIMESTAMP) && (flags & VK_QUERY_RESULT_PARTIAL_BIT)) {
+        if ((query_pool_state->second->createInfo.queryType == VK_QUERY_TYPE_TIMESTAMP) && (flags & VK_QUERY_RESULT_PARTIAL_BIT)) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_QUERY_POOL_EXT, 0,
                             "VUID-vkGetQueryPoolResults-queryType-00818",
                             "QueryPool %s was created with a queryType of VK_QUERY_TYPE_TIMESTAMP but flags contains "
@@ -4126,7 +4123,7 @@ void CoreChecks::PostCallRecordGetQueryPoolResults(VkDevice device, VkQueryPool 
     if ((VK_SUCCESS != result) && (VK_NOT_READY != result)) return;
     // TODO: clean this up, it's insanely wasteful.
     unordered_map<QueryObject, std::vector<VkCommandBuffer>> queries_in_flight;
-    for (auto cmd_buffer : commandBufferMap) {
+    for (auto &cmd_buffer : commandBufferMap) {
         if (cmd_buffer.second->in_use.load()) {
             for (auto query_state_pair : cmd_buffer.second->queryToStateMap) {
                 queries_in_flight[query_state_pair.first].push_back(cmd_buffer.first);
@@ -4689,7 +4686,6 @@ void CoreChecks::PreCallRecordDestroyDescriptorPool(VkDevice device, VkDescripto
             FreeDescriptorSet(ds);
         }
         descriptorPoolMap.erase(descriptorPool);
-        delete desc_pool_state;
     }
 }
 
@@ -4719,9 +4715,6 @@ bool CoreChecks::CheckCommandBuffersInFlight(COMMAND_POOL_STATE *pPool, const ch
 // Free all command buffers in given list, removing all references/links to them using ResetCommandBufferState
 void CoreChecks::FreeCommandBufferStates(COMMAND_POOL_STATE *pool_state, const uint32_t command_buffer_count,
                                          const VkCommandBuffer *command_buffers) {
-    if (enabled.gpu_validation) {
-        GpuPreCallRecordFreeCommandBuffers(command_buffer_count, command_buffers);
-    }
     for (uint32_t i = 0; i < command_buffer_count; i++) {
         auto cb_state = GetCBState(command_buffers[i]);
         // Remove references to command buffer's state and delete
@@ -4729,13 +4722,14 @@ void CoreChecks::FreeCommandBufferStates(COMMAND_POOL_STATE *pool_state, const u
             // reset prior to delete, removing various references to it.
             // TODO: fix this, it's insane.
             ResetCommandBufferState(cb_state->commandBuffer);
-            // Remove the cb_state's references from COMMAND_POOL_STATEs
+            // Remove CBState from CB map
             commandBufferMap.erase(cb_state->commandBuffer);
+            // Remove the cb_state's references from COMMAND_POOL_STATEs
             pool_state->commandBuffers.erase(command_buffers[i]);
-
             // Remove the cb debug labels
             EraseCmdDebugUtilsLabel(report_data, cb_state->commandBuffer);
-            delete cb_state;
+            // Remove CBState from CB map
+            commandBufferMap.erase(cb_state->commandBuffer);
         }
     }
 }
@@ -4769,8 +4763,10 @@ void CoreChecks::PostCallRecordCreateCommandPool(VkDevice device, const VkComman
                                                  const VkAllocationCallbacks *pAllocator, VkCommandPool *pCommandPool,
                                                  VkResult result) {
     if (VK_SUCCESS != result) return;
-    commandPoolMap[*pCommandPool].createFlags = pCreateInfo->flags;
-    commandPoolMap[*pCommandPool].queueFamilyIndex = pCreateInfo->queueFamilyIndex;
+    std::unique_ptr<COMMAND_POOL_STATE> cmd_pool_state(new COMMAND_POOL_STATE{});
+    cmd_pool_state->createFlags = pCreateInfo->flags;
+    cmd_pool_state->queueFamilyIndex = pCreateInfo->queueFamilyIndex;
+    commandPoolMap[*pCommandPool] = std::move(cmd_pool_state);
 }
 
 bool CoreChecks::PreCallValidateCreateQueryPool(VkDevice device, const VkQueryPoolCreateInfo *pCreateInfo,
@@ -4791,8 +4787,9 @@ bool CoreChecks::PreCallValidateCreateQueryPool(VkDevice device, const VkQueryPo
 void CoreChecks::PostCallRecordCreateQueryPool(VkDevice device, const VkQueryPoolCreateInfo *pCreateInfo,
                                                const VkAllocationCallbacks *pAllocator, VkQueryPool *pQueryPool, VkResult result) {
     if (VK_SUCCESS != result) return;
-    QUERY_POOL_STATE *qp_node = &queryPoolMap[*pQueryPool];
-    qp_node->createInfo = *pCreateInfo;
+    std::unique_ptr<QUERY_POOL_STATE> query_pool_state(new QUERY_POOL_STATE{});
+    query_pool_state->createInfo = *pCreateInfo;
+    queryPoolMap[*pQueryPool] = std::move(query_pool_state);
 }
 
 bool CoreChecks::PreCallValidateDestroyCommandPool(VkDevice device, VkCommandPool commandPool,
@@ -4944,10 +4941,11 @@ VkResult CoreChecks::GetPDImageFormatProperties2(const VkPhysicalDeviceImageForm
 void CoreChecks::PostCallRecordCreateFence(VkDevice device, const VkFenceCreateInfo *pCreateInfo,
                                            const VkAllocationCallbacks *pAllocator, VkFence *pFence, VkResult result) {
     if (VK_SUCCESS != result) return;
-    auto &fence_node = fenceMap[*pFence];
-    fence_node.fence = *pFence;
-    fence_node.createInfo = *pCreateInfo;
-    fence_node.state = (pCreateInfo->flags & VK_FENCE_CREATE_SIGNALED_BIT) ? FENCE_RETIRED : FENCE_UNSIGNALED;
+    std::unique_ptr<FENCE_STATE> fence_state(new FENCE_STATE{});
+    fence_state->fence = *pFence;
+    fence_state->createInfo = *pCreateInfo;
+    fence_state->state = (pCreateInfo->flags & VK_FENCE_CREATE_SIGNALED_BIT) ? FENCE_RETIRED : FENCE_UNSIGNALED;
+    fenceMap[*pFence] = std::move(fence_state);
 }
 
 // Validation cache:
@@ -5893,33 +5891,34 @@ void CoreChecks::PostCallRecordCreatePipelineLayout(VkDevice device, const VkPip
     }
     if (VK_SUCCESS != result) return;
 
-    PIPELINE_LAYOUT_STATE &plNode = pipelineLayoutMap[*pPipelineLayout];
-    plNode.layout = *pPipelineLayout;
-    plNode.set_layouts.resize(pCreateInfo->setLayoutCount);
+    std::unique_ptr<PIPELINE_LAYOUT_STATE> pipeline_layout_state(new PIPELINE_LAYOUT_STATE{});
+    pipeline_layout_state->layout = *pPipelineLayout;
+    pipeline_layout_state->set_layouts.resize(pCreateInfo->setLayoutCount);
     PipelineLayoutSetLayoutsDef set_layouts(pCreateInfo->setLayoutCount);
     for (uint32_t i = 0; i < pCreateInfo->setLayoutCount; ++i) {
-        plNode.set_layouts[i] = GetDescriptorSetLayout(this, pCreateInfo->pSetLayouts[i]);
-        set_layouts[i] = plNode.set_layouts[i]->GetLayoutId();
+        pipeline_layout_state->set_layouts[i] = GetDescriptorSetLayout(this, pCreateInfo->pSetLayouts[i]);
+        set_layouts[i] = pipeline_layout_state->set_layouts[i]->GetLayoutId();
     }
 
     // Get canonical form IDs for the "compatible for set" contents
-    plNode.push_constant_ranges = GetCanonicalId(pCreateInfo);
+    pipeline_layout_state->push_constant_ranges = GetCanonicalId(pCreateInfo);
     auto set_layouts_id = pipeline_layout_set_layouts_dict.look_up(set_layouts);
-    plNode.compat_for_set.reserve(pCreateInfo->setLayoutCount);
+    pipeline_layout_state->compat_for_set.reserve(pCreateInfo->setLayoutCount);
 
     // Create table of "compatible for set N" cannonical forms for trivial accept validation
     for (uint32_t i = 0; i < pCreateInfo->setLayoutCount; ++i) {
-        plNode.compat_for_set.emplace_back(GetCanonicalId(i, plNode.push_constant_ranges, set_layouts_id));
+        pipeline_layout_state->compat_for_set.emplace_back(
+            GetCanonicalId(i, pipeline_layout_state->push_constant_ranges, set_layouts_id));
     }
+    pipelineLayoutMap[*pPipelineLayout] = std::move(pipeline_layout_state);
 }
 
 void CoreChecks::PostCallRecordCreateDescriptorPool(VkDevice device, const VkDescriptorPoolCreateInfo *pCreateInfo,
                                                     const VkAllocationCallbacks *pAllocator, VkDescriptorPool *pDescriptorPool,
                                                     VkResult result) {
     if (VK_SUCCESS != result) return;
-    DESCRIPTOR_POOL_STATE *pNewNode = new DESCRIPTOR_POOL_STATE(*pDescriptorPool, pCreateInfo);
-    assert(pNewNode);
-    descriptorPoolMap[*pDescriptorPool] = pNewNode;
+    descriptorPoolMap[*pDescriptorPool] =
+        std::unique_ptr<DESCRIPTOR_POOL_STATE>(new DESCRIPTOR_POOL_STATE(*pDescriptorPool, pCreateInfo));
 }
 
 bool CoreChecks::PreCallValidateResetDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool,
@@ -5978,7 +5977,7 @@ void CoreChecks::PostCallRecordAllocateDescriptorSets(VkDevice device, const VkD
     // All the updates are contained in a single cvdescriptorset function
     cvdescriptorset::AllocateDescriptorSetsData *ads_state =
         reinterpret_cast<cvdescriptorset::AllocateDescriptorSetsData *>(ads_state_data);
-    PerformAllocateDescriptorSets(pAllocateInfo, pDescriptorSets, ads_state, &descriptorPoolMap, &setMap);
+    PerformAllocateDescriptorSets(pAllocateInfo, pDescriptorSets, ads_state);
 }
 
 bool CoreChecks::PreCallValidateFreeDescriptorSets(VkDevice device, VkDescriptorPool descriptorPool, uint32_t count,
@@ -6011,7 +6010,7 @@ void CoreChecks::PreCallRecordFreeDescriptorSets(VkDevice device, VkDescriptorPo
     // For each freed descriptor add its resources back into the pool as available and remove from pool and setMap
     for (uint32_t i = 0; i < count; ++i) {
         if (pDescriptorSets[i] != VK_NULL_HANDLE) {
-            auto descriptor_set = setMap[pDescriptorSets[i]];
+            auto descriptor_set = setMap[pDescriptorSets[i]].get();
             uint32_t type_index = 0, descriptor_count = 0;
             for (uint32_t j = 0; j < descriptor_set->GetBindingCount(); ++j) {
                 type_index = static_cast<uint32_t>(descriptor_set->GetTypeFromIndex(j));
@@ -6053,12 +6052,12 @@ void CoreChecks::PostCallRecordAllocateCommandBuffers(VkDevice device, const VkC
         for (uint32_t i = 0; i < pCreateInfo->commandBufferCount; i++) {
             // Add command buffer to its commandPool map
             pPool->commandBuffers.insert(pCommandBuffer[i]);
-            CMD_BUFFER_STATE *pCB = new CMD_BUFFER_STATE;
-            // Add command buffer to map
-            commandBufferMap[pCommandBuffer[i]] = pCB;
-            ResetCommandBufferState(pCommandBuffer[i]);
+            std::unique_ptr<CMD_BUFFER_STATE> pCB(new CMD_BUFFER_STATE{});
             pCB->createInfo = *pCreateInfo;
             pCB->device = device;
+            // Add command buffer to map
+            commandBufferMap[pCommandBuffer[i]] = std::move(pCB);
+            ResetCommandBufferState(pCommandBuffer[i]);
         }
     }
 }
@@ -6223,8 +6222,8 @@ bool CoreChecks::PreCallValidateEndCommandBuffer(VkCommandBuffer commandBuffer) 
     for (auto query : cb_state->activeQueries) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                         HandleToUint64(commandBuffer), "VUID-vkEndCommandBuffer-commandBuffer-00061",
-                        "Ending command buffer with in progress query: queryPool %s, index %d.",
-                        report_data->FormatHandle(query.pool).c_str(), query.index);
+                        "Ending command buffer with in progress query: queryPool %s, query %d.",
+                        report_data->FormatHandle(query.pool).c_str(), query.query);
     }
     return skip;
 }
@@ -8159,7 +8158,7 @@ bool CoreChecks::ValidateStageMasksAgainstQueueCapabilities(CMD_BUFFER_STATE con
                                                             BarrierOperationsType barrier_op_type, const char *function,
                                                             const char *error_code) {
     bool skip = false;
-    uint32_t queue_family_index = commandPoolMap[cb_state->createInfo.commandPool].queueFamilyIndex;
+    uint32_t queue_family_index = commandPoolMap[cb_state->createInfo.commandPool].get()->queueFamilyIndex;
     auto physical_device_state = GetPhysicalDeviceState();
 
     // Any pipeline stage included in srcStageMask or dstStageMask must be supported by the capabilities of the queue family
@@ -8309,68 +8308,107 @@ bool CoreChecks::SetQueryState(VkQueue queue, VkCommandBuffer commandBuffer, Que
     return false;
 }
 
-bool CoreChecks::PreCallValidateCmdBeginQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot, VkFlags flags) {
-    if (disabled.query_validation) return false;
-    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
-    assert(cb_state);
-    bool skip = ValidateCmdQueueFlags(cb_state, "vkCmdBeginQuery()", VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
-                                      "VUID-vkCmdBeginQuery-commandBuffer-cmdpool");
-    auto queryType = GetQueryPoolState(queryPool)->createInfo.queryType;
+bool CoreChecks::ValidateBeginQuery(const CMD_BUFFER_STATE *cb_state, const QueryObject &query_obj, VkFlags flags, CMD_TYPE cmd,
+                                    const char *cmd_name, const char *vuid_queue_flags, const char *vuid_queue_feedback,
+                                    const char *vuid_queue_occlusion, const char *vuid_precise, const char *vuid_query_count) {
+    bool skip = false;
+    const auto &query_pool_ci = GetQueryPoolState(query_obj.pool)->createInfo;
+
+    // There are tighter queue constraints to test for certain query pools
+    if (query_pool_ci.queryType == VK_QUERY_TYPE_TRANSFORM_FEEDBACK_STREAM_EXT) {
+        skip |= ValidateCmdQueueFlags(cb_state, cmd_name, VK_QUEUE_GRAPHICS_BIT, vuid_queue_feedback);
+    }
+    if (query_pool_ci.queryType == VK_QUERY_TYPE_OCCLUSION) {
+        skip |= ValidateCmdQueueFlags(cb_state, cmd_name, VK_QUEUE_GRAPHICS_BIT, vuid_queue_occlusion);
+    }
+
+    skip |= ValidateCmdQueueFlags(cb_state, cmd_name, VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT, vuid_queue_flags);
 
     if (flags & VK_QUERY_CONTROL_PRECISE_BIT) {
         if (!enabled_features.core.occlusionQueryPrecise) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                            HandleToUint64(cb_state->commandBuffer), "VUID-vkCmdBeginQuery-queryType-00800",
-                            "VK_QUERY_CONTROL_PRECISE_BIT provided to vkCmdBeginQuery, but precise occlusion queries not enabled "
-                            "on the device.");
+                            HandleToUint64(cb_state->commandBuffer), vuid_precise,
+                            "%s: VK_QUERY_CONTROL_PRECISE_BIT provided, but precise occlusion queries not enabled on the device.",
+                            cmd_name);
         }
 
-        if (queryType != VK_QUERY_TYPE_OCCLUSION) {
-            skip |= log_msg(
-                report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                HandleToUint64(cb_state->commandBuffer), "VUID-vkCmdBeginQuery-queryType-00800",
-                "VK_QUERY_CONTROL_PRECISE_BIT provided to vkCmdBeginQuery, but pool query type is not VK_QUERY_TYPE_OCCLUSION");
+        if (query_pool_ci.queryType != VK_QUERY_TYPE_OCCLUSION) {
+            skip |=
+                log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                        HandleToUint64(cb_state->commandBuffer), vuid_precise,
+                        "%s: VK_QUERY_CONTROL_PRECISE_BIT provided, but pool query type is not VK_QUERY_TYPE_OCCLUSION", cmd_name);
         }
     }
 
-    skip |= ValidateCmd(cb_state, CMD_BEGINQUERY, "vkCmdBeginQuery()");
+    if (query_obj.query >= query_pool_ci.queryCount) {
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                        HandleToUint64(cb_state->commandBuffer), vuid_query_count,
+                        "%s: Query index %" PRIu32 " must be less than query count %" PRIu32 " of query pool %s.", cmd_name,
+                        query_obj.query, query_pool_ci.queryCount, report_data->FormatHandle(query_obj.pool).c_str());
+    }
+
+    skip |= ValidateCmd(cb_state, cmd, cmd_name);
     return skip;
 }
 
-void CoreChecks::PostCallRecordCmdBeginQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot, VkFlags flags) {
+void CoreChecks::RecordBeginQuery(CMD_BUFFER_STATE *cb_state, const QueryObject &query_obj) {
+    cb_state->activeQueries.insert(query_obj);
+    cb_state->startedQueries.insert(query_obj);
+    AddCommandBufferBinding(&GetQueryPoolState(query_obj.pool)->cb_bindings,
+                            {HandleToUint64(query_obj.pool), kVulkanObjectTypeQueryPool}, cb_state);
+}
+
+bool CoreChecks::PreCallValidateCmdBeginQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot, VkFlags flags) {
+    if (disabled.query_validation) return false;
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    assert(cb_state);
+    QueryObject query_obj(queryPool, slot);
+    return ValidateBeginQuery(cb_state, query_obj, flags, CMD_BEGINQUERY, "vkCmdBeginQuery()",
+                              "VUID-vkCmdBeginQuery-commandBuffer-cmdpool", "VUID-vkCmdBeginQuery-queryType-02327",
+                              "VUID-vkCmdBeginQuery-queryType-00803", "VUID-vkCmdBeginQuery-queryType-00800",
+                              "VUID-vkCmdBeginQuery-query-00802");
+}
+
+void CoreChecks::PostCallRecordCmdBeginQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot, VkFlags flags) {
     QueryObject query = {queryPool, slot};
-    cb_state->activeQueries.insert(query);
-    cb_state->startedQueries.insert(query);
-    AddCommandBufferBinding(&GetQueryPoolState(queryPool)->cb_bindings, {HandleToUint64(queryPool), kVulkanObjectTypeQueryPool},
-                            cb_state);
+    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    RecordBeginQuery(cb_state, query);
+}
+
+bool CoreChecks::ValidateCmdEndQuery(const CMD_BUFFER_STATE *cb_state, const QueryObject &query_obj, CMD_TYPE cmd,
+                                     const char *cmd_name, const char *vuid_queue_flags, const char *vuid_active_queries) {
+    bool skip = false;
+    if (!cb_state->activeQueries.count(query_obj)) {
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                        HandleToUint64(cb_state->commandBuffer), vuid_active_queries,
+                        "%s: Ending a query before it was started: queryPool %s, index %d.", cmd_name,
+                        report_data->FormatHandle(query_obj.pool).c_str(), query_obj.query);
+    }
+    skip |= ValidateCmdQueueFlags(cb_state, cmd_name, VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT, vuid_queue_flags);
+    skip |= ValidateCmd(cb_state, cmd, cmd_name);
+    return skip;
 }
 
 bool CoreChecks::PreCallValidateCmdEndQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot) {
     if (disabled.query_validation) return false;
-    QueryObject query = {queryPool, slot};
+    QueryObject query_obj = {queryPool, slot};
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     assert(cb_state);
-    bool skip = false;
-    if (!cb_state->activeQueries.count(query)) {
-        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                        HandleToUint64(commandBuffer), "VUID-vkCmdEndQuery-None-01923",
-                        "Ending a query before it was started: queryPool %s, index %d.",
-                        report_data->FormatHandle(queryPool).c_str(), slot);
-    }
-    skip |= ValidateCmdQueueFlags(cb_state, "VkCmdEndQuery()", VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
-                                  "VUID-vkCmdEndQuery-commandBuffer-cmdpool");
-    skip |= ValidateCmd(cb_state, CMD_ENDQUERY, "VkCmdEndQuery()");
-    return skip;
+    return ValidateCmdEndQuery(cb_state, query_obj, CMD_ENDQUERY, "vkCmdEndQuery()", "VUID-vkCmdEndQuery-commandBuffer-cmdpool",
+                               "VUID-vkCmdEndQuery-None-01923");
+}
+
+void CoreChecks::RecordCmdEndQuery(CMD_BUFFER_STATE *cb_state, const QueryObject &query_obj) {
+    cb_state->activeQueries.erase(query_obj);
+    cb_state->queryUpdates.emplace_back([=](VkQueue q) { return SetQueryState(q, cb_state->commandBuffer, query_obj, true); });
+    AddCommandBufferBinding(&GetQueryPoolState(query_obj.pool)->cb_bindings,
+                            {HandleToUint64(query_obj.pool), kVulkanObjectTypeQueryPool}, cb_state);
 }
 
 void CoreChecks::PostCallRecordCmdEndQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot) {
-    QueryObject query = {queryPool, slot};
+    QueryObject query_obj = {queryPool, slot};
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
-    cb_state->activeQueries.erase(query);
-    cb_state->queryUpdates.emplace_back([=](VkQueue q) { return SetQueryState(q, commandBuffer, query, true); });
-    AddCommandBufferBinding(&GetQueryPoolState(queryPool)->cb_bindings, {HandleToUint64(queryPool), kVulkanObjectTypeQueryPool},
-                            cb_state);
+    RecordCmdEndQuery(cb_state, query_obj);
 }
 
 bool CoreChecks::PreCallValidateCmdResetQueryPool(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery,
@@ -10095,33 +10133,33 @@ bool CoreChecks::ValidateSecondaryCommandBufferState(CMD_BUFFER_STATE *pCB, CMD_
     unordered_set<int> activeTypes;
     if (!disabled.query_validation) {
         for (auto queryObject : pCB->activeQueries) {
-            auto queryPoolData = queryPoolMap.find(queryObject.pool);
-            if (queryPoolData != queryPoolMap.end()) {
-                if (queryPoolData->second.createInfo.queryType == VK_QUERY_TYPE_PIPELINE_STATISTICS &&
+            auto query_pool_state = GetQueryPoolState(queryObject.pool);
+            if (query_pool_state) {
+                if (query_pool_state->createInfo.queryType == VK_QUERY_TYPE_PIPELINE_STATISTICS &&
                     pSubCB->beginInfo.pInheritanceInfo) {
                     VkQueryPipelineStatisticFlags cmdBufStatistics = pSubCB->beginInfo.pInheritanceInfo->pipelineStatistics;
-                    if ((cmdBufStatistics & queryPoolData->second.createInfo.pipelineStatistics) != cmdBufStatistics) {
+                    if ((cmdBufStatistics & query_pool_state->createInfo.pipelineStatistics) != cmdBufStatistics) {
                         skip |= log_msg(
                             report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                             HandleToUint64(pCB->commandBuffer), "VUID-vkCmdExecuteCommands-commandBuffer-00104",
                             "vkCmdExecuteCommands() called w/ invalid Cmd Buffer %s which has invalid active query pool %s"
                             ". Pipeline statistics is being queried so the command buffer must have all bits set on the queryPool.",
                             report_data->FormatHandle(pCB->commandBuffer).c_str(),
-                            report_data->FormatHandle(queryPoolData->first).c_str());
+                            report_data->FormatHandle(queryObject.pool).c_str());
                     }
                 }
-                activeTypes.insert(queryPoolData->second.createInfo.queryType);
+                activeTypes.insert(query_pool_state->createInfo.queryType);
             }
         }
         for (auto queryObject : pSubCB->startedQueries) {
-            auto queryPoolData = queryPoolMap.find(queryObject.pool);
-            if (queryPoolData != queryPoolMap.end() && activeTypes.count(queryPoolData->second.createInfo.queryType)) {
+            auto query_pool_state = GetQueryPoolState(queryObject.pool);
+            if (query_pool_state && activeTypes.count(query_pool_state->createInfo.queryType)) {
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                                 HandleToUint64(pCB->commandBuffer), kVUID_Core_DrawState_InvalidSecondaryCommandBuffer,
                                 "vkCmdExecuteCommands() called w/ invalid Cmd Buffer %s which has invalid active query pool %s"
                                 " of type %d but a query of that type has been started on secondary Cmd Buffer %s.",
                                 report_data->FormatHandle(pCB->commandBuffer).c_str(),
-                                report_data->FormatHandle(queryPoolData->first).c_str(), queryPoolData->second.createInfo.queryType,
+                                report_data->FormatHandle(queryObject.pool).c_str(), query_pool_state->createInfo.queryType,
                                 report_data->FormatHandle(pSubCB->commandBuffer).c_str());
             }
         }
@@ -10932,11 +10970,12 @@ void CoreChecks::PostCallRecordQueueBindSparse(VkQueue queue, uint32_t bindInfoC
 void CoreChecks::PostCallRecordCreateSemaphore(VkDevice device, const VkSemaphoreCreateInfo *pCreateInfo,
                                                const VkAllocationCallbacks *pAllocator, VkSemaphore *pSemaphore, VkResult result) {
     if (VK_SUCCESS != result) return;
-    SEMAPHORE_STATE *sNode = &semaphoreMap[*pSemaphore];
-    sNode->signaler.first = VK_NULL_HANDLE;
-    sNode->signaler.second = 0;
-    sNode->signaled = false;
-    sNode->scope = kSyncScopeInternal;
+    std::unique_ptr<SEMAPHORE_STATE> semaphore_state(new SEMAPHORE_STATE{});
+    semaphore_state->signaler.first = VK_NULL_HANDLE;
+    semaphore_state->signaler.second = 0;
+    semaphore_state->signaled = false;
+    semaphore_state->scope = kSyncScopeInternal;
+    semaphoreMap[*pSemaphore] = std::move(semaphore_state);
 }
 
 bool CoreChecks::ValidateImportSemaphore(VkSemaphore semaphore, const char *caller_name) {
@@ -11991,7 +12030,9 @@ void CoreChecks::PreCallRecordValidateDestroySurfaceKHR(VkInstance instance, VkS
     surface_map.erase(surface);
 }
 
-void CoreChecks::RecordVulkanSurface(VkSurfaceKHR *pSurface) { surface_map[*pSurface] = SURFACE_STATE(*pSurface); }
+void CoreChecks::RecordVulkanSurface(VkSurfaceKHR *pSurface) {
+    surface_map[*pSurface] = std::unique_ptr<SURFACE_STATE>(new SURFACE_STATE{*pSurface});
+}
 
 void CoreChecks::PostCallRecordCreateDisplayPlaneSurfaceKHR(VkInstance instance, const VkDisplaySurfaceCreateInfoKHR *pCreateInfo,
                                                             const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface,
@@ -12641,6 +12682,64 @@ bool CoreChecks::PreCallValidateCmdDebugMarkerEndEXT(VkCommandBuffer commandBuff
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     assert(cb_state);
     return ValidateCmd(cb_state, CMD_DEBUGMARKERENDEXT, "vkCmdDebugMarkerEndEXT()");
+}
+
+bool CoreChecks::PreCallValidateCmdBeginQueryIndexedEXT(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query,
+                                                        VkQueryControlFlags flags, uint32_t index) {
+    if (disabled.query_validation) return false;
+    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    assert(cb_state);
+    QueryObject query_obj(queryPool, query, index);
+    const char *cmd_name = "vkCmdBeginQueryIndexedEXT()";
+    bool skip = ValidateBeginQuery(
+        cb_state, query_obj, flags, CMD_BEGINQUERYINDEXEDEXT, cmd_name, "VUID-vkCmdBeginQueryIndexedEXT-commandBuffer-cmdpool",
+        "VUID-vkCmdBeginQueryIndexedEXT-queryType-02338", "VUID-vkCmdBeginQueryIndexedEXT-queryType-02333",
+        "VUID-vkCmdBeginQueryIndexedEXT-queryType-02331", "VUID-vkCmdBeginQueryIndexedEXT-query-02332");
+
+    // Extension specific VU's
+    const auto &query_pool_ci = GetQueryPoolState(query_obj.pool)->createInfo;
+    if (query_pool_ci.queryType == VK_QUERY_TYPE_TRANSFORM_FEEDBACK_STREAM_EXT) {
+        if (device_extensions.vk_ext_transform_feedback &&
+            (index >= phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackStreams)) {
+            skip |= log_msg(
+                report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                HandleToUint64(cb_state->commandBuffer), "VUID-vkCmdBeginQueryIndexedEXT-queryType-02339",
+                "%s: index %" PRIu32
+                " must be less than VkPhysicalDeviceTransformFeedbackPropertiesEXT::maxTransformFeedbackStreams %" PRIu32 ".",
+                cmd_name, index, phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackStreams);
+        }
+    } else if (index != 0) {
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                        HandleToUint64(cb_state->commandBuffer), "VUID-vkCmdBeginQueryIndexedEXT-queryType-02340",
+                        "%s: index %" PRIu32
+                        " must be zero if the query pool %s was not created with type VK_QUERY_TYPE_TRANSFORM_FEEDBACK_STREAM_EXT.",
+                        cmd_name, index, report_data->FormatHandle(queryPool).c_str());
+    }
+    return skip;
+}
+
+void CoreChecks::PostCallRecordCmdBeginQueryIndexedEXT(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query,
+                                                       VkQueryControlFlags flags, uint32_t index) {
+    QueryObject query_obj = {queryPool, query, index};
+    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    RecordBeginQuery(cb_state, query_obj);
+}
+
+bool CoreChecks::PreCallValidateCmdEndQueryIndexedEXT(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query,
+                                                      uint32_t index) {
+    if (disabled.query_validation) return false;
+    QueryObject query_obj = {queryPool, query, index};
+    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    assert(cb_state);
+    return ValidateCmdEndQuery(cb_state, query_obj, CMD_ENDQUERYINDEXEDEXT, "vkCmdEndQueryIndexedEXT()",
+                               "VUID-vkCmdEndQueryIndexedEXT-commandBuffer-cmdpool", "VUID-vkCmdEndQueryIndexedEXT-None-02342");
+}
+
+void CoreChecks::PostCallRecordCmdEndQueryIndexedEXT(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query,
+                                                     uint32_t index) {
+    QueryObject query_obj = {queryPool, query, index};
+    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    RecordCmdEndQuery(cb_state, query_obj);
 }
 
 bool CoreChecks::PreCallValidateCmdSetDiscardRectangleEXT(VkCommandBuffer commandBuffer, uint32_t firstDiscardRectangle,
