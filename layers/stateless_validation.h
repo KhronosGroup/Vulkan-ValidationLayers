@@ -98,7 +98,7 @@ class StatelessValidation : public ValidationObject {
         VkPhysicalDeviceShadingRateImagePropertiesNV shading_rate_image_props;
         VkPhysicalDeviceMeshShaderPropertiesNV mesh_shader_props;
     };
-    DeviceExtensionProperties phys_dev_ext_props = {};
+    DeviceExtensionProperties gi = {};
 
     struct SubpassesUsageStates {
         std::unordered_set<uint32_t> subpasses_using_color_attachment;

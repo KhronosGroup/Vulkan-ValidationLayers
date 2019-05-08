@@ -470,7 +470,7 @@ bool wrap_handles = false;
 #include "stateless_validation.h"
 #endif
 #if BUILD_CORE_VALIDATION
-#include "core_validation.h"
+#include "gpu_validation.h"
 #endif
 
 namespace vulkan_layer_chassis {
@@ -814,12 +814,12 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
     object_tracker->api_version = api_version;
 #endif
 #if BUILD_CORE_VALIDATION
-    auto core_checks = new CoreChecks;
+    auto gpu_val = new GpuVal;
     if (!local_disables.core_checks) {
-        local_object_dispatch.emplace_back(core_checks);
+        local_object_dispatch.emplace_back(gpu_val);
     }
-    core_checks->container_type = LayerObjectTypeCoreValidation;
-    core_checks->api_version = api_version;
+    gpu_val->container_type = LayerObjectTypeCoreValidation;
+    gpu_val->api_version = api_version;
 #endif
 
     // If handle wrapping is disabled via the ValidationFeatures extension, override build flag
@@ -873,12 +873,12 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
     parameter_validation->disabled = framework->disabled;
 #endif
 #if BUILD_CORE_VALIDATION
-    core_checks->report_data = framework->report_data;
-    core_checks->instance_dispatch_table = framework->instance_dispatch_table;
-    core_checks->instance = *pInstance;
-    core_checks->enabled = framework->enabled;
-    core_checks->disabled = framework->disabled;
-    core_checks->instance_state = core_checks;
+    gpu_val->report_data = framework->report_data;
+    gpu_val->instance_dispatch_table = framework->instance_dispatch_table;
+    gpu_val->instance = *pInstance;
+    gpu_val->enabled = framework->enabled;
+    gpu_val->disabled = framework->disabled;
+    gpu_val->instance_state = gpu_val;
 #endif
 
     for (auto intercept : framework->object_dispatch) {
@@ -1012,12 +1012,12 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
     }
 #endif
 #if BUILD_CORE_VALIDATION
-    auto core_checks = new CoreChecks;
-    core_checks->container_type = LayerObjectTypeCoreValidation;
-    core_checks->instance_state = reinterpret_cast<CoreChecks *>(
-        core_checks->GetValidationObject(instance_interceptor->object_dispatch, LayerObjectTypeCoreValidation));
+    auto gpu_val = new GpuVal;
+    gpu_val->container_type = LayerObjectTypeCoreValidation;
+    gpu_val->instance_state = reinterpret_cast<GpuVal *>(
+        gpu_val->GetValidationObject(instance_interceptor->object_dispatch, LayerObjectTypeCoreValidation));
     if (!instance_interceptor->disabled.core_checks) {
-        device_interceptor->object_dispatch.emplace_back(core_checks);
+        device_interceptor->object_dispatch.emplace_back(gpu_val);
     }
 #endif
 
@@ -1124,25 +1124,28 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateComputePipelines(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
 
-#ifndef BUILD_CORE_VALIDATION
-    struct PIPELINE_STATE {};
+#ifdef BUILD_CORE_VALIDATION
+    create_compute_pipeline_api_state ccpl_state{};
+#else
+    struct create_compute_pipeline_api_state {
+        const VkComputePipelineCreateInfo* pCreateInfos;
+    } ccpl_state;
+    ccpl_state.pCreateInfos = pCreateInfos;
 #endif
-
-    std::vector<std::unique_ptr<PIPELINE_STATE>> pipe_state;
 
     for (auto intercept : layer_data->object_dispatch) {
         auto lock = intercept->write_lock();
-        skip |= intercept->PreCallValidateCreateComputePipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines, &pipe_state);
+        skip |= intercept->PreCallValidateCreateComputePipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines, &ccpl_state);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
     for (auto intercept : layer_data->object_dispatch) {
         auto lock = intercept->write_lock();
-        intercept->PreCallRecordCreateComputePipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines);
+        intercept->PreCallRecordCreateComputePipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines, &ccpl_state);
     }
-    VkResult result = DispatchCreateComputePipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines);
+    VkResult result = DispatchCreateComputePipelines(device, pipelineCache, createInfoCount, ccpl_state.pCreateInfos, pAllocator, pPipelines);
     for (auto intercept : layer_data->object_dispatch) {
         auto lock = intercept->write_lock();
-        intercept->PostCallRecordCreateComputePipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines, result, &pipe_state);
+        intercept->PostCallRecordCreateComputePipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines, result, &ccpl_state);
     }
     return result;
 }
@@ -1364,10 +1367,13 @@ VKAPI_ATTR VkResult VKAPI_CALL GetValidationCacheDataEXT(
         };
 
         // Allow additional state parameter for CreateComputePipelines
-        virtual bool PreCallValidateCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount, const VkComputePipelineCreateInfo* pCreateInfos, const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines, void* pipe_state)  {
+        virtual bool PreCallValidateCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount, const VkComputePipelineCreateInfo* pCreateInfos, const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines, void* ccpl_state)  {
             return PreCallValidateCreateComputePipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines);
         };
-        virtual void PostCallRecordCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount, const VkComputePipelineCreateInfo* pCreateInfos, const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines, VkResult result, void* pipe_state) {
+        virtual void PreCallRecordCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount, const VkComputePipelineCreateInfo* pCreateInfos, const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines, void* ccpl_state) {
+            PreCallRecordCreateComputePipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines);
+        };
+        virtual void PostCallRecordCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount, const VkComputePipelineCreateInfo* pCreateInfos, const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines, VkResult result, void* ccpl_state) {
             PostCallRecordCreateComputePipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines, result);
         };
 
