@@ -4120,24 +4120,24 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
         // Validate VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT state, if view/image formats differ
         if ((image_flags & VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT) && (image_format != view_format)) {
             if (FormatIsMultiplane(image_format)) {
-                // View format must match the multiplane compatible format
-                uint32_t plane = 3;  // invalid
-                switch (aspect_mask) {
-                    case VK_IMAGE_ASPECT_PLANE_0_BIT:
-                        plane = 0;
-                        break;
-                    case VK_IMAGE_ASPECT_PLANE_1_BIT:
-                        plane = 1;
-                        break;
-                    case VK_IMAGE_ASPECT_PLANE_2_BIT:
-                        plane = 2;
-                        break;
-                    default:
-                        break;
-                }
-
-                VkFormat compat_format = FindMultiplaneCompatibleFormat(image_format, plane);
+                VkFormat compat_format = FindMultiplaneCompatibleFormat(image_format, aspect_mask);
                 if (view_format != compat_format) {
+                    // View format must match the multiplane compatible format
+                    uint32_t plane = 3;  // invalid
+                    switch (aspect_mask) {
+                        case VK_IMAGE_ASPECT_PLANE_0_BIT:
+                            plane = 0;
+                            break;
+                        case VK_IMAGE_ASPECT_PLANE_1_BIT:
+                            plane = 1;
+                            break;
+                        case VK_IMAGE_ASPECT_PLANE_2_BIT:
+                            plane = 2;
+                            break;
+                        default:
+                            break;
+                    }
+
                     std::stringstream ss;
                     ss << "vkCreateImageView(): ImageView format " << string_VkFormat(view_format)
                        << " is not compatible with plane " << plane << " of underlying image format "
