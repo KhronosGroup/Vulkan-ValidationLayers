@@ -4714,8 +4714,6 @@ void CoreChecks::FreeCommandBufferStates(COMMAND_POOL_STATE *pool_state, const u
             // reset prior to delete, removing various references to it.
             // TODO: fix this, it's insane.
             ResetCommandBufferState(cb_state->commandBuffer);
-            // Remove CBState from CB map
-            commandBufferMap.erase(cb_state->commandBuffer);
             // Remove the cb_state's references from COMMAND_POOL_STATEs
             pool_state->commandBuffers.erase(command_buffers[i]);
             // Remove the cb debug labels
