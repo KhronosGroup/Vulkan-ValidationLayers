@@ -615,7 +615,7 @@ class CoreChecks : public ValidationObject {
     // Gpu Validation Functions
     void GpuPreCallRecordCreateDevice(VkPhysicalDevice gpu, std::unique_ptr<safe_VkDeviceCreateInfo>& modified_create_info,
                                       VkPhysicalDeviceFeatures* supported_features);
-    void GpuPostCallRecordCreateDevice(const CHECK_ENABLED* enables);
+    void GpuPostCallRecordCreateDevice(const CHECK_ENABLED* enables, const VkDeviceCreateInfo* pCreateInfo);
     void GpuPreCallRecordDestroyDevice();
     void GpuResetCommandBuffer(const VkCommandBuffer commandBuffer);
     bool GpuPreCallCreateShaderModule(const VkShaderModuleCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,

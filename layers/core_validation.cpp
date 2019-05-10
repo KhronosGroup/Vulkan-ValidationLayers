@@ -2542,7 +2542,7 @@ void CoreChecks::PostCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDevice
     GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_ext_transform_feedback, &phys_dev_props->transform_feedback_props);
 
     if (enabled.gpu_validation) {
-        core_checks->GpuPostCallRecordCreateDevice(&enabled);
+        core_checks->GpuPostCallRecordCreateDevice(&enabled, pCreateInfo);
     }
     if (core_checks->device_extensions.vk_nv_cooperative_matrix) {
         // Get the needed cooperative_matrix properties
