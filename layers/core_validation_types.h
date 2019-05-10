@@ -304,6 +304,11 @@ class IMAGE_STATE : public BINDABLE {
     bool has_ahb_format;                 // True if image was created with an external Android format
     uint64_t ahb_format;                 // External Android format, if provided
     VkImageSubresourceRange full_range;  // The normalized ISR for all levels, layers (slices), and aspects
+
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
+    uint64_t external_format_android;
+#endif  // VK_USE_PLATFORM_ANDROID_KHR
+
     std::vector<VkSparseImageMemoryRequirements> sparse_requirements;
     IMAGE_STATE(VkImage img, const VkImageCreateInfo *pCreateInfo);
     IMAGE_STATE(IMAGE_STATE const &rh_obj) = delete;
