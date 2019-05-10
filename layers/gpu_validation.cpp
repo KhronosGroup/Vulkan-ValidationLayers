@@ -240,7 +240,7 @@ void CoreChecks::GpuPreCallRecordCreateDevice(VkPhysicalDevice gpu, std::unique_
 }
 
 // Perform initializations that can be done at Create Device time.
-void CoreChecks::GpuPostCallRecordCreateDevice(const CHECK_ENABLED *enables) {
+void CoreChecks::GpuPostCallRecordCreateDevice(const CHECK_ENABLED *enables, const VkDeviceCreateInfo *pCreateInfo) {
     // Set instance-level enables in device-enable data structure if using legacy settings
     enabled.gpu_validation = enables->gpu_validation;
     enabled.gpu_validation_reserve_binding_slot = enables->gpu_validation_reserve_binding_slot;
@@ -254,6 +254,12 @@ void CoreChecks::GpuPostCallRecordCreateDevice(const CHECK_ENABLED *enables) {
         gpu_validation_state->aborted = true;
         return;
     }
+
+    // If api version 1.1 or later, SetDeviceLoaderData will be in the loader
+    auto chain_info = get_chain_info(pCreateInfo, VK_LOADER_DATA_CALLBACK);
+    assert(chain_info->u.pfnSetDeviceLoaderData);
+    gpu_validation_state->vkSetDeviceLoaderData = chain_info->u.pfnSetDeviceLoaderData;
+
     // Some devices have extremely high limits here, so set a reasonable max because we have to pad
     // the pipeline layout with dummy descriptor set layouts.
     gpu_validation_state->adjusted_max_desc_sets = phys_dev_props.limits.maxBoundDescriptorSets;
@@ -1061,7 +1067,7 @@ void CoreChecks::SubmitBarrier(VkQueue queue) {
         }
 
         // Hook up command buffer dispatch
-        *((const void **)gpu_validation_state->barrier_command_buffer) = *(void **)(device);
+        gpu_validation_state->vkSetDeviceLoaderData(device, gpu_validation_state->barrier_command_buffer);
 
         // Record a global memory barrier to force availability of device memory operations to the host domain.
         VkCommandBufferBeginInfo command_buffer_begin_info = {};

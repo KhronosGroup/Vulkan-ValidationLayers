@@ -74,6 +74,7 @@ struct GpuValidationState {
     std::unordered_map<VkCommandBuffer, std::vector<GpuBufferInfo>> command_buffer_map;  // gpu_buffer_list;
     uint32_t output_buffer_size;
     VmaAllocator vmaAllocator;
+    PFN_vkSetDeviceLoaderData vkSetDeviceLoaderData;
     GpuValidationState(bool aborted = false, bool reserve_binding_slot = false, VkCommandPool barrier_command_pool = VK_NULL_HANDLE,
                        VkCommandBuffer barrier_command_buffer = VK_NULL_HANDLE, VmaAllocator vmaAllocator = {})
         : aborted(aborted),
