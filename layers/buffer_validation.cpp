@@ -86,6 +86,16 @@ IMAGE_STATE::IMAGE_STATE(VkImage img, const VkImageCreateInfo *pCreateInfo)
             (FormatHasDepth(format) ? VK_IMAGE_ASPECT_DEPTH_BIT : 0) | (FormatHasStencil(format) ? VK_IMAGE_ASPECT_STENCIL_BIT : 0);
     }
     full_range = NormalizeSubresourceRange(*this, init_range);
+
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
+    auto external_format = lvl_find_in_chain<VkExternalFormatANDROID>(createInfo.pNext);
+    if (external_format) {
+        external_format_android = external_format->externalFormat;
+    } else {
+        // If externalFormat is zero, the effect is as if the VkExternalFormatANDROID structure was not present.
+        external_format_android = 0;
+    }
+#endif  // VK_USE_PLATFORM_ANDROID_KHR
 }
 
 IMAGE_VIEW_STATE::IMAGE_VIEW_STATE(const IMAGE_STATE *image_state, VkImageView iv, const VkImageViewCreateInfo *ci)

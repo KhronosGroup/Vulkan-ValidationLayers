@@ -10552,12 +10552,12 @@ bool CoreChecks::ValidateBindImageMemory(VkImage image, VkDeviceMemory mem, VkDe
         uint64_t image_handle = HandleToUint64(image);
         skip = ValidateSetMemBinding(mem, image_handle, kVulkanObjectTypeImage, api_name);
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
-        if (lvl_find_in_chain<VkExternalFormatANDROID>(image_state->createInfo.pNext)) {
+        if (image_state->external_format_android) {
             if (image_state->memory_requirements_checked) {
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, image_handle,
                                 kVUID_Core_DrawState_InvalidImage,
-                                "%s: Applications must not call vkGetImageMemoryRequirements with such an image %s before it has "
-                                "been bound to memory",
+                                "%s: Must not call vkGetImageMemoryRequirements on image %s that will be bound to an external "
+                                "Android hardware buffer.",
                                 api_name, report_data->FormatHandle(image_handle).c_str());
             }
             return skip;
