@@ -143,6 +143,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             'vkCreateImageView',
             'vkCreateGraphicsPipelines',
             'vkCreateComputePipelines',
+            "vkCreateRayTracingPipelinesNV",
             'vkCreateSampler',
             'vkCreateDescriptorSetLayout',
             'vkFreeDescriptorSets',

@@ -1047,6 +1047,9 @@ class StatelessValidation : public ValidationObject {
                                                              const VkAccelerationStructureCreateInfoNV *pCreateInfo,
                                                              const VkAllocationCallbacks *pAllocator,
                                                              VkAccelerationStructureNV *pAccelerationStructure);
+    bool manual_PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
+                                                           const VkRayTracingPipelineCreateInfoNV *pCreateInfos,
+                                                           const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines);
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     bool PreCallValidateGetDeviceGroupSurfacePresentModes2EXT(VkDevice device, const VkPhysicalDeviceSurfaceInfo2KHR *pSurfaceInfo,
