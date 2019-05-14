@@ -1333,6 +1333,254 @@ struct CreatePipelineHelper {
         OneshotTest(test, info_override, flags, std::vector<Error>(1, error), positive_test);
     }
 };
+
+// Helper class for tersely creating create ray tracing pipeline tests
+//
+// Designed with minimal error checking to ensure easy error state creation
+// See OneshotTest for typical usage
+struct CreateNVRayTracingPipelineHelper {
+   public:
+    std::vector<VkDescriptorSetLayoutBinding> dsl_bindings_;
+    std::unique_ptr<OneOffDescriptorSet> descriptor_set_;
+    std::vector<VkPipelineShaderStageCreateInfo> shader_stages_;
+    VkPipelineLayoutCreateInfo pipeline_layout_ci_ = {};
+    VkPipelineLayoutObj pipeline_layout_;
+    VkRayTracingPipelineCreateInfoNV rp_ci_ = {};
+    VkPipelineCacheCreateInfo pc_ci_ = {};
+    VkPipeline pipeline_ = VK_NULL_HANDLE;
+    VkPipelineCache pipeline_cache_ = VK_NULL_HANDLE;
+    std::vector<VkRayTracingShaderGroupCreateInfoNV> groups_;
+    std::unique_ptr<VkShaderObj> rgs_;
+    std::unique_ptr<VkShaderObj> chs_;
+    std::unique_ptr<VkShaderObj> mis_;
+    VkLayerTest &layer_test_;
+    CreateNVRayTracingPipelineHelper(VkLayerTest &test) : layer_test_(test) {}
+    ~CreateNVRayTracingPipelineHelper() {
+        VkDevice device = layer_test_.device();
+        vkDestroyPipelineCache(device, pipeline_cache_, nullptr);
+        vkDestroyPipeline(device, pipeline_, nullptr);
+    }
+
+    static bool InitInstanceExtensions(VkLayerTest &test, std::vector<const char *> &instance_extension_names) {
+        if (test.InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+            instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        } else {
+            printf("%s Did not find required instance extension %s; skipped.\n", kSkipPrefix,
+                   VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+            return false;
+        }
+        return true;
+    }
+
+    static bool InitDeviceExtensions(VkLayerTest &test, std::vector<const char *> &device_extension_names) {
+        std::array<const char *, 2> required_device_extensions = {
+            {VK_NV_RAY_TRACING_EXTENSION_NAME, VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME}};
+        for (auto device_extension : required_device_extensions) {
+            if (test.DeviceExtensionSupported(test.gpu(), nullptr, device_extension)) {
+                device_extension_names.push_back(device_extension);
+            } else {
+                printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, device_extension);
+                return false;
+            }
+        }
+        return true;
+    }
+
+    void InitShaderGroups() {
+        {
+            VkRayTracingShaderGroupCreateInfoNV group = {};
+            group.sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_NV;
+            group.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_NV;
+            group.generalShader = 0;
+            group.closestHitShader = VK_SHADER_UNUSED_NV;
+            group.anyHitShader = VK_SHADER_UNUSED_NV;
+            group.intersectionShader = VK_SHADER_UNUSED_NV;
+            groups_.push_back(group);
+        }
+        {
+            VkRayTracingShaderGroupCreateInfoNV group = {};
+            group.sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_NV;
+            group.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_NV;
+            group.generalShader = VK_SHADER_UNUSED_NV;
+            group.closestHitShader = 1;
+            group.anyHitShader = VK_SHADER_UNUSED_NV;
+            group.intersectionShader = VK_SHADER_UNUSED_NV;
+            groups_.push_back(group);
+        }
+        {
+            VkRayTracingShaderGroupCreateInfoNV group = {};
+            group.sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_NV;
+            group.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_NV;
+            group.generalShader = 2;
+            group.closestHitShader = VK_SHADER_UNUSED_NV;
+            group.anyHitShader = VK_SHADER_UNUSED_NV;
+            group.intersectionShader = VK_SHADER_UNUSED_NV;
+            groups_.push_back(group);
+        }
+    }
+
+    void InitDescriptorSetInfo() {
+        dsl_bindings_ = {
+            {0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_RAYGEN_BIT_NV, nullptr},
+            {1, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV, 1, VK_SHADER_STAGE_RAYGEN_BIT_NV, nullptr},
+        };
+    }
+
+    void InitPipelineLayoutInfo() {
+        pipeline_layout_ci_.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+        pipeline_layout_ci_.setLayoutCount = 1;     // Not really changeable because InitState() sets exactly one pSetLayout
+        pipeline_layout_ci_.pSetLayouts = nullptr;  // must bound after it is created
+    }
+
+    void InitShaderInfo() {  // DONE
+        static const char rayGenShaderText[] =
+            "#version 460 core                                                \n"
+            "#extension GL_NV_ray_tracing : require                           \n"
+            "layout(set = 0, binding = 0, rgba8) uniform image2D image;       \n"
+            "layout(set = 0, binding = 1) uniform accelerationStructureNV as; \n"
+            "                                                                 \n"
+            "layout(location = 0) rayPayloadNV float payload;                 \n"
+            "                                                                 \n"
+            "void main()                                                      \n"
+            "{                                                                \n"
+            "   vec4 col = vec4(0, 0, 0, 1);                                  \n"
+            "                                                                 \n"
+            "   vec3 origin = vec3(float(gl_LaunchIDNV.x)/float(gl_LaunchSizeNV.x), "
+            "float(gl_LaunchIDNV.y)/float(gl_LaunchSizeNV.y), "
+            "1.0); \n"
+            "   vec3 dir = vec3(0.0, 0.0, -1.0);                              \n"
+            "                                                                 \n"
+            "   payload = 0.5;                                                \n"
+            "   traceNV(as, gl_RayFlagsCullBackFacingTrianglesNV, 0xff, 0, 1, 0, origin, 0.0, dir, 1000.0, 0); \n"
+            "                                                                 \n"
+            "   col.y = payload;                                              \n"
+            "                                                                 \n"
+            "   imageStore(image, ivec2(gl_LaunchIDNV.xy), col);              \n"
+            "}\n";
+
+        static char const closestHitShaderText[] =
+            "#version 460 core                              \n"
+            "#extension GL_NV_ray_tracing : require         \n"
+            "layout(location = 0) rayPayloadInNV float hitValue;             \n"
+            "                                               \n"
+            "void main() {                                  \n"
+            "    hitValue = 1.0;                            \n"
+            "}                                              \n";
+
+        static char const missShaderText[] =
+            "#version 460 core                              \n"
+            "#extension GL_NV_ray_tracing : require         \n"
+            "layout(location = 0) rayPayloadInNV float hitValue; \n"
+            "                                               \n"
+            "void main() {                                  \n"
+            "    hitValue = 0.0;                            \n"
+            "}                                              \n";
+
+        rgs_.reset(new VkShaderObj(layer_test_.DeviceObj(), rayGenShaderText, VK_SHADER_STAGE_RAYGEN_BIT_NV, &layer_test_));
+        chs_.reset(
+            new VkShaderObj(layer_test_.DeviceObj(), closestHitShaderText, VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV, &layer_test_));
+        mis_.reset(new VkShaderObj(layer_test_.DeviceObj(), missShaderText, VK_SHADER_STAGE_MISS_BIT_NV, &layer_test_));
+
+        shader_stages_ = {rgs_->GetStageCreateInfo(), chs_->GetStageCreateInfo(), mis_->GetStageCreateInfo()};
+    }
+
+    void InitNVRayTracingPipelineInfo() {
+        rp_ci_.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_NV;
+
+        rp_ci_.stageCount = shader_stages_.size();
+        rp_ci_.pStages = shader_stages_.data();
+        rp_ci_.groupCount = groups_.size();
+        rp_ci_.pGroups = groups_.data();
+    }
+
+    void InitPipelineCacheInfo() {
+        pc_ci_.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
+        pc_ci_.pNext = nullptr;
+        pc_ci_.flags = 0;
+        pc_ci_.initialDataSize = 0;
+        pc_ci_.pInitialData = nullptr;
+    }
+
+    void InitInfo() {
+        InitShaderGroups();
+        InitDescriptorSetInfo();
+        InitPipelineLayoutInfo();
+        InitShaderInfo();
+        InitNVRayTracingPipelineInfo();
+        InitPipelineCacheInfo();
+    }
+
+    void InitState() {
+        VkResult err;
+        descriptor_set_.reset(new OneOffDescriptorSet(layer_test_.DeviceObj(), dsl_bindings_));
+        ASSERT_TRUE(descriptor_set_->Initialized());
+
+        pipeline_layout_ = VkPipelineLayoutObj(layer_test_.DeviceObj(), {&descriptor_set_->layout_});
+
+        err = vkCreatePipelineCache(layer_test_.device(), &pc_ci_, NULL, &pipeline_cache_);
+        ASSERT_VK_SUCCESS(err);
+    }
+
+    void LateBindPipelineInfo() {
+        // By value or dynamically located items must be late bound
+        rp_ci_.layout = pipeline_layout_.handle();
+        rp_ci_.stageCount = shader_stages_.size();
+        rp_ci_.pStages = shader_stages_.data();
+    }
+
+    VkResult CreateNVRayTracingPipeline(bool implicit_destroy = true, bool do_late_bind = true) {
+        VkResult err;
+        if (do_late_bind) {
+            LateBindPipelineInfo();
+        }
+        if (implicit_destroy && (pipeline_ != VK_NULL_HANDLE)) {
+            vkDestroyPipeline(layer_test_.device(), pipeline_, nullptr);
+            pipeline_ = VK_NULL_HANDLE;
+        }
+
+        PFN_vkCreateRayTracingPipelinesNV vkCreateRayTracingPipelinesNV =
+            (PFN_vkCreateRayTracingPipelinesNV)vkGetInstanceProcAddr(layer_test_.instance(), "vkCreateRayTracingPipelinesNV");
+        err = vkCreateRayTracingPipelinesNV(layer_test_.device(), pipeline_cache_, 1, &rp_ci_, nullptr, &pipeline_);
+        return err;
+    }
+
+    // Helper function to create a simple test case (positive or negative)
+    //
+    // info_override can be any callable that takes a CreateNVRayTracingPipelineHelper &
+    // flags, error can be any args accepted by "SetDesiredFailure".
+    template <typename Test, typename OverrideFunc, typename Error>
+    static void OneshotTest(Test &test, OverrideFunc &info_override, const std::vector<Error> &errors,
+                            const VkFlags flags = VK_DEBUG_REPORT_ERROR_BIT_EXT) {
+        CreateNVRayTracingPipelineHelper helper(test);
+        helper.InitInfo();
+        info_override(helper);
+        helper.InitState();
+
+        for (const auto &error : errors) test.Monitor()->SetDesiredFailureMsg(flags, error);
+        helper.CreateNVRayTracingPipeline();
+        test.Monitor()->VerifyFound();
+    }
+
+    template <typename Test, typename OverrideFunc, typename Error>
+    static void OneshotTest(Test &test, OverrideFunc &info_override, Error error,
+                            const VkFlags flags = VK_DEBUG_REPORT_ERROR_BIT_EXT) {
+        OneshotTest(test, info_override, std::vector<Error>(1, error), flags);
+    }
+
+    template <typename Test, typename OverrideFunc>
+    static void OneshotPositiveTest(Test &test, OverrideFunc &info_override,
+                                    const VkDebugReportFlagsEXT message_flag_mask = VK_DEBUG_REPORT_ERROR_BIT_EXT) {
+        CreateNVRayTracingPipelineHelper helper(test);
+        helper.InitInfo();
+        info_override(helper);
+        helper.InitState();
+
+        test.Monitor()->ExpectSuccess(message_flag_mask);
+        ASSERT_VK_SUCCESS(helper.CreateNVRayTracingPipeline());
+        test.Monitor()->VerifyNotFound();
+    }
+};
+
 namespace chain_util {
 template <typename T>
 T Init(const void *pnext_in = nullptr) {
@@ -37569,157 +37817,22 @@ TEST_F(VkLayerTest, FragmentCoverageToColorNV) {
 TEST_F(VkPositiveLayerTest, RayTracingPipelineNV) {
     TEST_DESCRIPTION("Test VK_NV_ray_tracing.");
 
-    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
-        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    } else {
-        printf("%s Did not find required instance extension %s; skipped.\n", kSkipPrefix,
-               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    if (!CreateNVRayTracingPipelineHelper::InitInstanceExtensions(*this, m_instance_extension_names)) {
         return;
     }
     ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
-    std::array<const char *, 2> required_device_extensions = {
-        {VK_NV_RAY_TRACING_EXTENSION_NAME, VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME}};
-    for (auto device_extension : required_device_extensions) {
-        if (DeviceExtensionSupported(gpu(), nullptr, device_extension)) {
-            m_device_extension_names.push_back(device_extension);
-        } else {
-            printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, device_extension);
-            return;
-        }
-    }
 
     PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
         (PFN_vkGetPhysicalDeviceFeatures2KHR)vkGetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
     ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
 
+    if (!CreateNVRayTracingPipelineHelper::InitDeviceExtensions(*this, m_device_extension_names)) {
+        return;
+    }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    m_errorMonitor->ExpectSuccess();
-
-    static const char rayGenShaderText[] =
-        "#version 460 core                                                \n"
-        "#extension GL_NV_ray_tracing : require                           \n"
-        "layout(set = 0, binding = 0, rgba8) uniform image2D image;       \n"
-        "layout(set = 0, binding = 1) uniform accelerationStructureNV as; \n"
-        "                                                                 \n"
-        "layout(location = 0) rayPayloadNV float payload;                 \n"
-        "                                                                 \n"
-        "void main()                                                      \n"
-        "{                                                                \n"
-        "   vec4 col = vec4(0, 0, 0, 1);                                  \n"
-        "                                                                 \n"
-        "   vec3 origin = vec3(float(gl_LaunchIDNV.x)/float(gl_LaunchSizeNV.x), float(gl_LaunchIDNV.y)/float(gl_LaunchSizeNV.y), "
-        "1.0); \n"
-        "   vec3 dir = vec3(0.0, 0.0, -1.0);                              \n"
-        "                                                                 \n"
-        "   payload = 0.5;                                                \n"
-        "   traceNV(as, gl_RayFlagsCullBackFacingTrianglesNV, 0xff, 0, 1, 0, origin, 0.0, dir, 1000.0, 0); \n"
-        "                                                                 \n"
-        "   col.y = payload;                                              \n"
-        "                                                                 \n"
-        "   imageStore(image, ivec2(gl_LaunchIDNV.xy), col);              \n"
-        "}\n";
-
-    static char const closestHitShaderText[] =
-        "#version 460 core                              \n"
-        "#extension GL_NV_ray_tracing : require         \n"
-        "layout(location = 0) rayPayloadInNV float hitValue;             \n"
-        "                                               \n"
-        "void main() {                                  \n"
-        "    hitValue = 1.0;                            \n"
-        "}                                              \n";
-
-    static char const missShaderText[] =
-        "#version 460 core                              \n"
-        "#extension GL_NV_ray_tracing : require         \n"
-        "layout(location = 0) rayPayloadInNV float hitValue; \n"
-        "                                               \n"
-        "void main() {                                  \n"
-        "    hitValue = 0.0;                            \n"
-        "}                                              \n";
-
-    VkShaderObj rgs(m_device, rayGenShaderText, VK_SHADER_STAGE_RAYGEN_BIT_NV, this);
-    VkShaderObj chs(m_device, closestHitShaderText, VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV, this);
-    VkShaderObj mis(m_device, missShaderText, VK_SHADER_STAGE_MISS_BIT_NV, this);
-
-    VkPipelineShaderStageCreateInfo rayStages[3];
-    memset(&rayStages[0], 0, sizeof(rayStages));
-
-    rayStages[0] = rgs.GetStageCreateInfo();
-    rayStages[0].stage = VK_SHADER_STAGE_RAYGEN_BIT_NV;
-    rayStages[1] = chs.GetStageCreateInfo();
-    rayStages[1].stage = VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV;
-    rayStages[2] = mis.GetStageCreateInfo();
-    rayStages[2].stage = VK_SHADER_STAGE_MISS_BIT_NV;
-
-    VkRayTracingShaderGroupCreateInfoNV groups[3];
-    memset(&groups[0], 0, sizeof(groups));
-
-    groups[0].sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_NV;
-    groups[0].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_NV;
-    groups[0].generalShader = 0;
-    groups[0].closestHitShader = VK_SHADER_UNUSED_NV;
-    groups[0].anyHitShader = VK_SHADER_UNUSED_NV;
-    groups[0].intersectionShader = VK_SHADER_UNUSED_NV;
-
-    groups[1].sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_NV;
-    groups[1].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_NV;
-    groups[1].generalShader = VK_SHADER_UNUSED_NV;
-    groups[1].closestHitShader = 1;
-    groups[1].anyHitShader = VK_SHADER_UNUSED_NV;
-    groups[1].intersectionShader = VK_SHADER_UNUSED_NV;
-
-    groups[2].sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_NV;
-    groups[2].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_NV;
-    groups[2].generalShader = 2;
-    groups[2].closestHitShader = VK_SHADER_UNUSED_NV;
-    groups[2].anyHitShader = VK_SHADER_UNUSED_NV;
-    groups[2].intersectionShader = VK_SHADER_UNUSED_NV;
-
-    const uint32_t bindingCount = 2;
-    VkDescriptorSetLayoutBinding binding[bindingCount] = {};
-    binding[0].binding = 0;
-    binding[0].descriptorCount = 1;
-    binding[0].stageFlags = VK_SHADER_STAGE_RAYGEN_BIT_NV;
-    binding[0].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-    binding[1].binding = 1;
-    binding[1].descriptorCount = 1;
-    binding[1].stageFlags = VK_SHADER_STAGE_RAYGEN_BIT_NV;
-    binding[1].descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV;
-
-    VkDescriptorSetLayoutCreateInfo descriptorSetEntry = {VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO};
-    descriptorSetEntry.bindingCount = bindingCount;
-    descriptorSetEntry.pBindings = binding;
-
-    VkDescriptorSetLayout descriptorSetLayout;
-    VkResult err = vkCreateDescriptorSetLayout(m_device->device(), &descriptorSetEntry, 0, &descriptorSetLayout);
-    ASSERT_VK_SUCCESS(err);
-    VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = {VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO};
-    pipelineLayoutCreateInfo.setLayoutCount = 1;
-    pipelineLayoutCreateInfo.pSetLayouts = &descriptorSetLayout;
-    VkPipelineLayout pipelineLayout;
-    err = vkCreatePipelineLayout(m_device->device(), &pipelineLayoutCreateInfo, 0, &pipelineLayout);
-    ASSERT_VK_SUCCESS(err);
-
-    PFN_vkCreateRayTracingPipelinesNV vkCreateRayTracingPipelinesNV =
-        (PFN_vkCreateRayTracingPipelinesNV)vkGetInstanceProcAddr(instance(), "vkCreateRayTracingPipelinesNV");
-
-    VkRayTracingPipelineCreateInfoNV rayPipelineInfo = {VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_NV};
-    rayPipelineInfo.layout = pipelineLayout;
-
-    rayPipelineInfo.stageCount = 3;
-    rayPipelineInfo.pStages = &rayStages[0];
-    rayPipelineInfo.groupCount = 3;
-    rayPipelineInfo.pGroups = &groups[0];
-
-    VkPipeline rayPipeline;
-    err = vkCreateRayTracingPipelinesNV(m_device->device(), VK_NULL_HANDLE, 1, &rayPipelineInfo, 0, &rayPipeline);
-    ASSERT_VK_SUCCESS(err);
-
-    vkDestroyPipeline(m_device->device(), rayPipeline, 0);
-    vkDestroyPipelineLayout(m_device->device(), pipelineLayout, 0);
-    vkDestroyDescriptorSetLayout(m_device->device(), descriptorSetLayout, 0);
-    m_errorMonitor->VerifyNotFound();
+    auto ignore_update = [](CreateNVRayTracingPipelineHelper &helper) {};
+    CreateNVRayTracingPipelineHelper::OneshotPositiveTest(*this, ignore_update);
 }
 
 TEST_F(VkLayerTest, CreateYCbCrSampler) {
@@ -39184,6 +39297,135 @@ TEST_F(VkLayerTest, CooperativeMatrixNV) {
     m_errorMonitor->VerifyFound();
 
     vkDestroyPipeline(m_device->device(), pipe, nullptr);
+}
+
+TEST_F(VkLayerTest, GraphicsPipelineStageCreationFeedbackCount) {
+    TEST_DESCRIPTION("Test graphics pipeline feedback stage count check.");
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME);
+    } else {
+        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    auto feedback_info = lvl_init_struct<VkPipelineCreationFeedbackCreateInfoEXT>();
+    VkPipelineCreationFeedbackEXT feedbacks[3] = {};
+
+    feedback_info.pPipelineCreationFeedback = &feedbacks[0];
+    feedback_info.pipelineStageCreationFeedbackCount = 2;
+    feedback_info.pPipelineStageCreationFeedbacks = &feedbacks[1];
+
+    auto set_feedback = [&feedback_info](CreatePipelineHelper &helper) { helper.gp_ci_.pNext = &feedback_info; };
+
+    CreatePipelineHelper::OneshotTest(*this, set_feedback, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                      "VUID-VkPipelineCreationFeedbackCreateInfoEXT-pipelineStageCreationFeedbackCount-02668",
+                                      true);
+
+    feedback_info.pipelineStageCreationFeedbackCount = 1;
+    CreatePipelineHelper::OneshotTest(*this, set_feedback, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                      "VUID-VkPipelineCreationFeedbackCreateInfoEXT-pipelineStageCreationFeedbackCount-02668",
+                                      false);
+}
+
+TEST_F(VkLayerTest, ComputePipelineStageCreationFeedbackCount) {
+    TEST_DESCRIPTION("Test compute pipeline feedback stage count check.");
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME);
+    } else {
+        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkDescriptorSetObj descriptorSet(m_device);
+    descriptorSet.AppendDummy();
+    descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
+
+    // Create a minimal compute pipeline
+    const char *cs_text = "#version 450\nvoid main() {}\n";  // minimal no-op shader
+    VkShaderObj cs_obj(m_device, cs_text, VK_SHADER_STAGE_COMPUTE_BIT, this);
+
+    VkPipelineCreationFeedbackCreateInfoEXT feedback_info = {};
+    VkPipelineCreationFeedbackEXT feedbacks[3] = {};
+    feedback_info.sType = VK_STRUCTURE_TYPE_PIPELINE_CREATION_FEEDBACK_CREATE_INFO_EXT;
+
+    feedback_info.pPipelineCreationFeedback = &feedbacks[0];
+    feedback_info.pipelineStageCreationFeedbackCount = 1;
+    feedback_info.pPipelineStageCreationFeedbacks = &feedbacks[1];
+
+    VkComputePipelineCreateInfo pipeline_info = {};
+    pipeline_info.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
+    pipeline_info.pNext = &feedback_info;
+    pipeline_info.layout = descriptorSet.GetPipelineLayout();
+    pipeline_info.basePipelineHandle = VK_NULL_HANDLE;
+    pipeline_info.basePipelineIndex = -1;
+    pipeline_info.stage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    pipeline_info.stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;
+    pipeline_info.stage.pName = "main";
+    pipeline_info.stage.module = cs_obj.handle();
+
+    {
+        m_errorMonitor->ExpectSuccess(VK_DEBUG_REPORT_ERROR_BIT_EXT);
+        VkPipeline cs_pipeline = VK_NULL_HANDLE;
+        vkCreateComputePipelines(device(), VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &cs_pipeline);
+        vkDestroyPipeline(device(), cs_pipeline, nullptr);
+        m_errorMonitor->VerifyNotFound();
+    }
+
+    {
+        m_errorMonitor->SetDesiredFailureMsg(
+            VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkPipelineCreationFeedbackCreateInfoEXT-pipelineStageCreationFeedbackCount-02669");
+        feedback_info.pipelineStageCreationFeedbackCount = 2;
+
+        VkPipeline cs_pipeline = VK_NULL_HANDLE;
+        vkCreateComputePipelines(device(), VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &cs_pipeline);
+        vkDestroyPipeline(device(), cs_pipeline, nullptr);
+        m_errorMonitor->VerifyFound();
+    }
+}
+
+TEST_F(VkLayerTest, NVRayTracingPipelineStageCreationFeedbackCount) {
+    TEST_DESCRIPTION("Test NV ray tracing pipeline feedback stage count check.");
+
+    if (!CreateNVRayTracingPipelineHelper::InitInstanceExtensions(*this, m_instance_extension_names)) {
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME);
+    } else {
+        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME);
+        return;
+    }
+
+    if (!CreateNVRayTracingPipelineHelper::InitDeviceExtensions(*this, m_device_extension_names)) {
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    auto feedback_info = lvl_init_struct<VkPipelineCreationFeedbackCreateInfoEXT>();
+    VkPipelineCreationFeedbackEXT feedbacks[4] = {};
+
+    feedback_info.pPipelineCreationFeedback = &feedbacks[0];
+    feedback_info.pipelineStageCreationFeedbackCount = 2;
+    feedback_info.pPipelineStageCreationFeedbacks = &feedbacks[1];
+
+    auto set_feedback = [&feedback_info](CreateNVRayTracingPipelineHelper &helper) { helper.rp_ci_.pNext = &feedback_info; };
+
+    feedback_info.pipelineStageCreationFeedbackCount = 3;
+    CreateNVRayTracingPipelineHelper::OneshotPositiveTest(*this, set_feedback);
+
+    feedback_info.pipelineStageCreationFeedbackCount = 2;
+    CreateNVRayTracingPipelineHelper::OneshotTest(
+        *this, set_feedback, "VUID-VkPipelineCreationFeedbackCreateInfoEXT-pipelineStageCreationFeedbackCount-02670");
 }
 
 #if defined(ANDROID) && defined(VALIDATION_APK)
