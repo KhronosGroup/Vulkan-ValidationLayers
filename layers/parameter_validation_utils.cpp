@@ -935,6 +935,18 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                 }
             }
 
+            auto feedback_struct = lvl_find_in_chain<VkPipelineCreationFeedbackCreateInfoEXT>(pCreateInfos[i].pNext);
+            if ((feedback_struct != nullptr) &&
+                (feedback_struct->pipelineStageCreationFeedbackCount != pCreateInfos[i].stageCount)) {
+                skip |=
+                    log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT, VK_NULL_HANDLE,
+                            "VUID-VkPipelineCreationFeedbackCreateInfoEXT-pipelineStageCreationFeedbackCount-02668",
+                            "vkCreateGraphicsPipelines(): in pCreateInfo[%" PRIu32
+                            "], VkPipelineCreationFeedbackEXT::pipelineStageCreationFeedbackCount"
+                            "(=%" PRIu32 ") must equal VkGraphicsPipelineCreateInfo::stageCount(=%" PRIu32 ").",
+                            i, feedback_struct->pipelineStageCreationFeedbackCount, pCreateInfos[i].stageCount);
+            }
+
             // Validation for parameters excluded from the generated validation code due to a 'noautovalidity' tag in vk.xml
             if (pCreateInfos[i].pVertexInputState != nullptr) {
                 auto const &vertex_input_state = pCreateInfos[i].pVertexInputState;
@@ -1764,6 +1776,14 @@ bool StatelessValidation::manual_PreCallValidateCreateComputePipelines(VkDevice 
         skip |= validate_string("vkCreateComputePipelines",
                                 ParameterName("pCreateInfos[%i].stage.pName", ParameterName::IndexVector{i}),
                                 "VUID-VkPipelineShaderStageCreateInfo-pName-parameter", pCreateInfos[i].stage.pName);
+        auto feedback_struct = lvl_find_in_chain<VkPipelineCreationFeedbackCreateInfoEXT>(pCreateInfos[i].pNext);
+        if ((feedback_struct != nullptr) && (feedback_struct->pipelineStageCreationFeedbackCount != 1)) {
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT, VK_NULL_HANDLE,
+                            "VUID-VkPipelineCreationFeedbackCreateInfoEXT-pipelineStageCreationFeedbackCount-02669",
+                            "vkCreateComputePipelines(): in pCreateInfo[%" PRIu32
+                            "], VkPipelineCreationFeedbackEXT::pipelineStageCreationFeedbackCount must equal 1, found %" PRIu32 ".",
+                            i, feedback_struct->pipelineStageCreationFeedbackCount);
+        }
     }
     return skip;
 }
@@ -2985,6 +3005,28 @@ bool StatelessValidation::manual_PreCallValidateCreateAccelerationStructureNV(
                             "vkCreateAccelerationStructureNV(): pCreateInfo->compactedSize nonzero (%" PRIu64
                             ") with info.geometryCount (%" PRIu32 ") or info.instanceCount (%" PRIu32 ") nonzero.",
                             pCreateInfo->compactedSize, pCreateInfo->info.geometryCount, pCreateInfo->info.instanceCount);
+        }
+    }
+
+    return skip;
+}
+
+bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache,
+                                                                            uint32_t createInfoCount,
+                                                                            const VkRayTracingPipelineCreateInfoNV *pCreateInfos,
+                                                                            const VkAllocationCallbacks *pAllocator,
+                                                                            VkPipeline *pPipelines) {
+    bool skip = false;
+
+    for (uint32_t i = 0; i < createInfoCount; i++) {
+        auto feedback_struct = lvl_find_in_chain<VkPipelineCreationFeedbackCreateInfoEXT>(pCreateInfos[i].pNext);
+        if ((feedback_struct != nullptr) && (feedback_struct->pipelineStageCreationFeedbackCount != pCreateInfos[i].stageCount)) {
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT, VK_NULL_HANDLE,
+                            "VUID-VkPipelineCreationFeedbackCreateInfoEXT-pipelineStageCreationFeedbackCount-02670",
+                            "vkCreateRayTracingPipelinesNV(): in pCreateInfo[%" PRIu32
+                            "], VkPipelineCreationFeedbackEXT::pipelineStageCreationFeedbackCount"
+                            "(=%" PRIu32 ") must equal VkRayTracingPipelineCreateInfoNV::stageCount(=%" PRIu32 ").",
+                            i, feedback_struct->pipelineStageCreationFeedbackCount, pCreateInfos[i].stageCount);
         }
     }
 
