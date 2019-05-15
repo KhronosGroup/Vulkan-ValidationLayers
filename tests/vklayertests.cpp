@@ -23526,6 +23526,7 @@ TEST_F(VkLayerTest, CopyImageMultiplaneAspectBits) {
                                &copy_region);
     m_errorMonitor->VerifyFound();
 
+    m_errorMonitor->SetUnexpectedError("VUID-vkCmdCopyImage-srcImage-00135");
     copy_region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     copy_region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_PLANE_0_BIT_KHR;
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkImageCopy-srcImage-01553");
