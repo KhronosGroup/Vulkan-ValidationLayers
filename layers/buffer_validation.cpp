@@ -4133,24 +4133,9 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
                 VkFormat compat_format = FindMultiplaneCompatibleFormat(image_format, aspect_mask);
                 if (view_format != compat_format) {
                     // View format must match the multiplane compatible format
-                    uint32_t plane = 3;  // invalid
-                    switch (aspect_mask) {
-                        case VK_IMAGE_ASPECT_PLANE_0_BIT:
-                            plane = 0;
-                            break;
-                        case VK_IMAGE_ASPECT_PLANE_1_BIT:
-                            plane = 1;
-                            break;
-                        case VK_IMAGE_ASPECT_PLANE_2_BIT:
-                            plane = 2;
-                            break;
-                        default:
-                            break;
-                    }
-
                     std::stringstream ss;
                     ss << "vkCreateImageView(): ImageView format " << string_VkFormat(view_format)
-                       << " is not compatible with plane " << plane << " of underlying image format "
+                       << " is not compatible with plane " << GetPlaneIndex(aspect_mask) << " of underlying image format "
                        << string_VkFormat(image_format) << ", must be " << string_VkFormat(compat_format) << ".";
                     skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
                                     HandleToUint64(pCreateInfo->image), "VUID-VkImageViewCreateInfo-image-01586", "%s",
