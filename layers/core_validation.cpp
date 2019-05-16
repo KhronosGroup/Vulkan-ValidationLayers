@@ -12845,7 +12845,9 @@ bool CoreChecks::PreCallValidateGetBufferDeviceAddressEXT(VkDevice device, const
 
 void CoreChecks::PreCallRecordGetPhysicalDeviceProperties(VkPhysicalDevice physicalDevice,
                                                           VkPhysicalDeviceProperties *pPhysicalDeviceProperties) {
-    if (enabled.gpu_validation && enabled.gpu_validation_reserve_binding_slot) {
+    // There is an implicit layer that can cause this call to return 0 for maxBoundDescriptorSets - Ignore such calls
+    if (enabled.gpu_validation && enabled.gpu_validation_reserve_binding_slot &&
+        pPhysicalDeviceProperties->limits.maxBoundDescriptorSets > 0) {
         if (pPhysicalDeviceProperties->limits.maxBoundDescriptorSets > 1) {
             pPhysicalDeviceProperties->limits.maxBoundDescriptorSets -= 1;
         } else {
