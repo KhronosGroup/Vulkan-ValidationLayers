@@ -191,10 +191,6 @@ void CoreChecks::PostCallRecordCmdDrawIndexedIndirect(VkCommandBuffer commandBuf
 
 bool CoreChecks::PreCallValidateCmdDispatch(VkCommandBuffer commandBuffer, uint32_t x, uint32_t y, uint32_t z) {
     bool skip = false;
-    auto *cb_state = GetCBState(commandBuffer);
-    if (cb_state) {
-        skip |= ValidateComputeWorkGroupInvocations(cb_state, x, y, z);
-    }
     skip |= ValidateCmdDrawType(commandBuffer, false, VK_PIPELINE_BIND_POINT_COMPUTE, CMD_DISPATCH, "vkCmdDispatch()",
                                 VK_QUEUE_COMPUTE_BIT, "VUID-vkCmdDispatch-commandBuffer-cmdpool", "VUID-vkCmdDispatch-renderpass",
                                 "VUID-vkCmdDispatch-None-02700", kVUIDUndefined);
