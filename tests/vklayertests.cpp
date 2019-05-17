@@ -10087,10 +10087,6 @@ TEST_F(VkLayerTest, CmdDispatchExceedLimits) {
     m_commandBuffer->begin();
     vkCmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipeline);
 
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "features-limits-maxComputeWorkGroupInvocations");
-    vkCmdDispatch(m_commandBuffer->handle(), x_count_limit, y_count_limit, z_count_limit);
-    m_errorMonitor->VerifyFound();
-
     // Dispatch counts that exceed device limits
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDispatch-groupCountX-00386");
     vkCmdDispatch(m_commandBuffer->handle(), x_count_limit + 1, y_count_limit, z_count_limit);
@@ -11557,10 +11553,10 @@ TEST_F(VkLayerTest, VertexAttributeDivisorExtension) {
 
     // clang-format off
     vector<TestCase> test_cases = {
-        {   0, 
-            1, 
-            0, 
-            VK_VERTEX_INPUT_RATE_VERTEX, 
+        {   0,
+            1,
+            0,
+            VK_VERTEX_INPUT_RATE_VERTEX,
             {"VUID-VkVertexInputBindingDivisorDescriptionEXT-inputRate-01871"}
         },
         {   dev_limits.maxVertexInputBindings + 1,
