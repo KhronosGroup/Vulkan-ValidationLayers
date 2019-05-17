@@ -230,7 +230,7 @@ foreach(script_and_dep, helper_script_and_deps) {
   }
 }
 
-raw_spirv_tools_dir = rebase_path("${spirv_tools_dir}", root_build_dir)
+raw_spirv_tools_dir = rebase_path("${vvl_spirv_tools_dir}", root_build_dir)
 
 spirv_git_is_present = exec_script("build-gn/commit_id.py",
                                    [
@@ -243,9 +243,9 @@ spirv_git_is_present = exec_script("build-gn/commit_id.py",
 action("spirv_tools_external_revision_generate") {
   script = "scripts/external_revision_generator.py"
   public_deps = [
-    "${spirv_tools_dir}:spvtools",
-    "${spirv_tools_dir}:spvtools_opt",
-    "${spirv_tools_dir}:spvtools_val",
+    "${vvl_spirv_tools_dir}:spvtools",
+    "${vvl_spirv_tools_dir}:spvtools_opt",
+    "${vvl_spirv_tools_dir}:spvtools_val",
   ]
   outputs = [
     "$vulkan_gen_dir/spirv_tools_commit_id.h",
@@ -481,14 +481,14 @@ source_set("vulkan_layer_utils") {
 }
 
 config("vulkan_core_validation_config") {
-  include_dirs = [ "$glslang_dir" ]
+  include_dirs = [ "$vvl_glslang_dir" ]
 }
 
 source_set("vulkan_core_validation_glslang") {
   public_deps = [
-    "${spirv_tools_dir}:spvtools",
-    "${spirv_tools_dir}:spvtools_opt",
-    "${spirv_tools_dir}:spvtools_val",
+    "${vvl_spirv_tools_dir}:spvtools",
+    "${vvl_spirv_tools_dir}:spvtools_opt",
+    "${vvl_spirv_tools_dir}:spvtools_val",
   ]
   public_configs = [
     "$vulkan_headers_dir:vulkan_headers_config",

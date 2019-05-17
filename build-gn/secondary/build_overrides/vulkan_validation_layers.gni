@@ -14,8 +14,8 @@
 
 # Paths to validation layer dependencies
 vulkan_headers_dir = "//external/Vulkan-Headers"
-spirv_tools_dir = "//external/glslang/External/spirv-tools"
-glslang_dir = "//external/glslang/"
+vvl_spirv_tools_dir = "//external/glslang/External/spirv-tools"
+vvl_glslang_dir = "//external/glslang/"
 
 # Subdirectories for generated files
 vulkan_data_subdir = ""
