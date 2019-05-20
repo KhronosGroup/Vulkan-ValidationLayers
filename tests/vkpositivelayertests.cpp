@@ -7712,3 +7712,49 @@ TEST_F(VkPositiveLayerTest, ViewportArray2NV) {
         m_errorMonitor->VerifyNotFound();
     }
 }
+
+TEST_F(VkPositiveLayerTest, HostQueryResetSuccess) {
+    // This is a positive test. No failures are expected.
+    TEST_DESCRIPTION("Use vkResetQueryPoolEXT normally");
+
+    if (!InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        printf("%s Did not find required instance extension %s; skipped.\n", kSkipPrefix,
+               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
+
+    m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+
+    if (!DeviceExtensionSupported(gpu(), nullptr, VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME)) {
+        printf("%s Extension %s not supported by device; skipped.\n", kSkipPrefix, VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME);
+        return;
+    }
+
+    m_device_extension_names.push_back(VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME);
+
+    VkPhysicalDeviceHostQueryResetFeaturesEXT host_query_reset_features{};
+    host_query_reset_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HOST_QUERY_RESET_FEATURES_EXT;
+    host_query_reset_features.hostQueryReset = VK_TRUE;
+
+    VkPhysicalDeviceFeatures2 pd_features2{};
+    pd_features2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+    pd_features2.pNext = &host_query_reset_features;
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &pd_features2));
+
+    auto fpvkResetQueryPoolEXT = (PFN_vkResetQueryPoolEXT)vkGetDeviceProcAddr(m_device->device(), "vkResetQueryPoolEXT");
+
+    m_errorMonitor->ExpectSuccess();
+
+    VkQueryPool query_pool;
+    VkQueryPoolCreateInfo query_pool_create_info{};
+    query_pool_create_info.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
+    query_pool_create_info.queryType = VK_QUERY_TYPE_TIMESTAMP;
+    query_pool_create_info.queryCount = 1;
+    vkCreateQueryPool(m_device->device(), &query_pool_create_info, nullptr, &query_pool);
+    fpvkResetQueryPoolEXT(m_device->device(), query_pool, 0, 1);
+    vkDestroyQueryPool(m_device->device(), query_pool, nullptr);
+
+    m_errorMonitor->VerifyNotFound();
+}
