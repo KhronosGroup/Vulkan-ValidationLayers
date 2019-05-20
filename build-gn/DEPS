@@ -1,0 +1,63 @@
+vars = {
+  'chromium_git': 'https://chromium.googlesource.com',
+  'build_with_chromium': False,
+}
+
+deps = {
+
+  './build': {
+    'url': '{chromium_git}/chromium/src/build.git@a660b0b9174e3a808f620222017566e8d1b2669b',
+    'condition': 'not build_with_chromium',
+  },
+
+  './buildtools': {
+    'url': '{chromium_git}/chromium/src/buildtools.git@459baaf66bee809f6eb288e0215cf524f4d2429a',
+    'condition': 'not build_with_chromium',
+  },
+
+  './testing': {
+    'url': '{chromium_git}/chromium/src/testing@083d633e752e7a57cbe62a468a06e51e28c49ee9',
+    'condition': 'not build_with_chromium',
+  },
+
+  './tools/clang': {
+    'url': '{chromium_git}/chromium/src/tools/clang.git@3114fbc11f9644c54dd0a4cdbfa867bac50ff983',
+    'condition': 'not build_with_chromium',
+  },
+
+}
+
+hooks = [
+  # Pull clang-format binaries using checked-in hashes.
+  {
+    'name': 'clang_format_linux',
+    'pattern': '.',
+    'condition': 'host_os == "linux" and not build_with_chromium',
+    'action': [ 'download_from_google_storage',
+                '--no_resume',
+                '--platform=linux*',
+                '--no_auth',
+                '--bucket', 'chromium-clang-format',
+                '-s', './buildtools/linux64/clang-format.sha1',
+    ],
+  },
+  {
+    'name': 'sysroot_x64',
+    'pattern': '.',
+    'condition': 'checkout_linux and (checkout_x64 and not build_with_chromium)',
+    'action': ['python', './build/linux/sysroot_scripts/install-sysroot.py',
+               '--arch=x64'],
+  },
+  {
+    # Note: On Win, this should run after win_toolchain, as it may use it.
+    'name': 'clang',
+    'pattern': '.',
+    'action': ['python', './tools/clang/scripts/update.py'],
+    'condition': 'not build_with_chromium',
+  },
+]
+
+recursedeps = [
+  # buildtools provides clang_format.
+  './buildtools',
+]

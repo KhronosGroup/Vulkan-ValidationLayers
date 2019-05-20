@@ -86,6 +86,16 @@ IMAGE_STATE::IMAGE_STATE(VkImage img, const VkImageCreateInfo *pCreateInfo)
             (FormatHasDepth(format) ? VK_IMAGE_ASPECT_DEPTH_BIT : 0) | (FormatHasStencil(format) ? VK_IMAGE_ASPECT_STENCIL_BIT : 0);
     }
     full_range = NormalizeSubresourceRange(*this, init_range);
+
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
+    auto external_format = lvl_find_in_chain<VkExternalFormatANDROID>(createInfo.pNext);
+    if (external_format) {
+        external_format_android = external_format->externalFormat;
+    } else {
+        // If externalFormat is zero, the effect is as if the VkExternalFormatANDROID structure was not present.
+        external_format_android = 0;
+    }
+#endif  // VK_USE_PLATFORM_ANDROID_KHR
 }
 
 IMAGE_VIEW_STATE::IMAGE_VIEW_STATE(const IMAGE_STATE *image_state, VkImageView iv, const VkImageViewCreateInfo *ci)
@@ -1456,7 +1466,7 @@ void CoreChecks::PostCallRecordCreateImage(VkDevice device, const VkImageCreateI
 
 bool CoreChecks::PreCallValidateDestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks *pAllocator) {
     IMAGE_STATE *image_state = GetImageState(image);
-    const VK_OBJECT obj_struct = {HandleToUint64(image), kVulkanObjectTypeImage};
+    const VulkanTypedHandle obj_struct(image, kVulkanObjectTypeImage);
     bool skip = false;
     if (image_state) {
         skip |= ValidateObjectNotInUse(image_state, obj_struct, "vkDestroyImage", "VUID-vkDestroyImage-image-01000");
@@ -1467,7 +1477,7 @@ bool CoreChecks::PreCallValidateDestroyImage(VkDevice device, VkImage image, con
 void CoreChecks::PreCallRecordDestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks *pAllocator) {
     if (!image) return;
     IMAGE_STATE *image_state = GetImageState(image);
-    VK_OBJECT obj_struct = {HandleToUint64(image), kVulkanObjectTypeImage};
+    const VulkanTypedHandle obj_struct(image, kVulkanObjectTypeImage);
     InvalidateCommandBuffers(image_state->cb_bindings, obj_struct);
     // Clean up memory mapping, bindings and range references for image
     for (auto mem_binding : image_state->GetBoundMemory()) {
@@ -1476,7 +1486,7 @@ void CoreChecks::PreCallRecordDestroyImage(VkDevice device, VkImage image, const
             RemoveImageMemoryRange(obj_struct.handle, mem_info);
         }
     }
-    ClearMemoryObjectBindings(obj_struct.handle, kVulkanObjectTypeImage);
+    ClearMemoryObjectBindings(obj_struct);
     EraseQFOReleaseBarriers<VkImageMemoryBarrier>(image);
     // Remove image from imageMap
     imageMap.erase(image);
@@ -3616,11 +3626,11 @@ bool CoreChecks::ValidateMapImageLayouts(VkDevice device, DEVICE_MEMORY_STATE co
 
 // Helper function to validate correct usage bits set for buffers or images. Verify that (actual & desired) flags != 0 or, if strict
 // is true, verify that (actual & desired) flags == desired
-bool CoreChecks::ValidateUsageFlags(VkFlags actual, VkFlags desired, VkBool32 strict, uint64_t obj_handle,
-                                    VulkanObjectType obj_type, const char *msgCode, char const *func_name, char const *usage_str) {
+bool CoreChecks::ValidateUsageFlags(VkFlags actual, VkFlags desired, VkBool32 strict, const VulkanTypedHandle &typed_handle,
+                                    const char *msgCode, char const *func_name, char const *usage_str) {
     bool correct_usage = false;
     bool skip = false;
-    const char *type_str = object_string[obj_type];
+    const char *type_str = object_string[typed_handle.type];
     if (strict) {
         correct_usage = ((actual & desired) == desired);
     } else {
@@ -3629,14 +3639,15 @@ bool CoreChecks::ValidateUsageFlags(VkFlags actual, VkFlags desired, VkBool32 st
     if (!correct_usage) {
         if (msgCode == kVUIDUndefined) {
             // TODO: Fix callers with kVUIDUndefined to use correct validation checks.
-            skip = log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, get_debug_report_enum[obj_type], obj_handle,
-                           kVUID_Core_MemTrack_InvalidUsageFlag,
+            skip = log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, get_debug_report_enum[typed_handle.type],
+                           typed_handle.handle, kVUID_Core_MemTrack_InvalidUsageFlag,
                            "Invalid usage flag for %s %s used by %s. In this case, %s should have %s set during creation.",
-                           type_str, report_data->FormatHandle(obj_handle).c_str(), func_name, type_str, usage_str);
+                           type_str, report_data->FormatHandle(typed_handle).c_str(), func_name, type_str, usage_str);
         } else {
-            skip = log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, get_debug_report_enum[obj_type], obj_handle, msgCode,
-                           "Invalid usage flag for %s %s used by %s. In this case, %s should have %s set during creation.",
-                           type_str, report_data->FormatHandle(obj_handle).c_str(), func_name, type_str, usage_str);
+            skip =
+                log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, get_debug_report_enum[typed_handle.type], typed_handle.handle,
+                        msgCode, "Invalid usage flag for %s %s used by %s. In this case, %s should have %s set during creation.",
+                        type_str, report_data->FormatHandle(typed_handle).c_str(), func_name, type_str, usage_str);
         }
     }
     return skip;
@@ -3646,8 +3657,8 @@ bool CoreChecks::ValidateUsageFlags(VkFlags actual, VkFlags desired, VkBool32 st
 // where an error will be flagged if usage is not correct
 bool CoreChecks::ValidateImageUsageFlags(IMAGE_STATE const *image_state, VkFlags desired, bool strict, const char *msgCode,
                                          char const *func_name, char const *usage_string) {
-    return ValidateUsageFlags(image_state->createInfo.usage, desired, strict, HandleToUint64(image_state->image),
-                              kVulkanObjectTypeImage, msgCode, func_name, usage_string);
+    return ValidateUsageFlags(image_state->createInfo.usage, desired, strict,
+                              VulkanTypedHandle(image_state->image, kVulkanObjectTypeImage), msgCode, func_name, usage_string);
 }
 
 bool CoreChecks::ValidateImageFormatFeatureFlags(IMAGE_STATE const *image_state, VkFormatFeatureFlags desired,
@@ -3705,8 +3716,8 @@ bool CoreChecks::ValidateImageSubresourceLayers(const CMD_BUFFER_STATE *cb_node,
 // where an error will be flagged if usage is not correct
 bool CoreChecks::ValidateBufferUsageFlags(BUFFER_STATE const *buffer_state, VkFlags desired, bool strict, const char *msgCode,
                                           char const *func_name, char const *usage_string) {
-    return ValidateUsageFlags(buffer_state->createInfo.usage, desired, strict, HandleToUint64(buffer_state->buffer),
-                              kVulkanObjectTypeBuffer, msgCode, func_name, usage_string);
+    return ValidateUsageFlags(buffer_state->createInfo.usage, desired, strict,
+                              VulkanTypedHandle(buffer_state->buffer, kVulkanObjectTypeBuffer), msgCode, func_name, usage_string);
 }
 
 bool CoreChecks::ValidateBufferViewRange(const BUFFER_STATE *buffer_state, const VkBufferViewCreateInfo *pCreateInfo,
@@ -4120,27 +4131,12 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
         // Validate VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT state, if view/image formats differ
         if ((image_flags & VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT) && (image_format != view_format)) {
             if (FormatIsMultiplane(image_format)) {
-                // View format must match the multiplane compatible format
-                uint32_t plane = 3;  // invalid
-                switch (aspect_mask) {
-                    case VK_IMAGE_ASPECT_PLANE_0_BIT:
-                        plane = 0;
-                        break;
-                    case VK_IMAGE_ASPECT_PLANE_1_BIT:
-                        plane = 1;
-                        break;
-                    case VK_IMAGE_ASPECT_PLANE_2_BIT:
-                        plane = 2;
-                        break;
-                    default:
-                        break;
-                }
-
-                VkFormat compat_format = FindMultiplaneCompatibleFormat(image_format, plane);
+                VkFormat compat_format = FindMultiplaneCompatibleFormat(image_format, aspect_mask);
                 if (view_format != compat_format) {
+                    // View format must match the multiplane compatible format
                     std::stringstream ss;
                     ss << "vkCreateImageView(): ImageView format " << string_VkFormat(view_format)
-                       << " is not compatible with plane " << plane << " of underlying image format "
+                       << " is not compatible with plane " << GetPlaneIndex(aspect_mask) << " of underlying image format "
                        << string_VkFormat(image_format) << ", must be " << string_VkFormat(compat_format) << ".";
                     skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
                                     HandleToUint64(pCreateInfo->image), "VUID-VkImageViewCreateInfo-image-01586", "%s",
@@ -4367,7 +4363,7 @@ bool CoreChecks::ValidateIdleBuffer(VkBuffer buffer) {
 
 bool CoreChecks::PreCallValidateDestroyImageView(VkDevice device, VkImageView imageView, const VkAllocationCallbacks *pAllocator) {
     IMAGE_VIEW_STATE *image_view_state = GetImageViewState(imageView);
-    VK_OBJECT obj_struct = {HandleToUint64(imageView), kVulkanObjectTypeImageView};
+    const VulkanTypedHandle obj_struct(imageView, kVulkanObjectTypeImageView);
 
     bool skip = false;
     if (image_view_state) {
@@ -4380,7 +4376,7 @@ bool CoreChecks::PreCallValidateDestroyImageView(VkDevice device, VkImageView im
 void CoreChecks::PreCallRecordDestroyImageView(VkDevice device, VkImageView imageView, const VkAllocationCallbacks *pAllocator) {
     IMAGE_VIEW_STATE *image_view_state = GetImageViewState(imageView);
     if (!image_view_state) return;
-    VK_OBJECT obj_struct = {HandleToUint64(imageView), kVulkanObjectTypeImageView};
+    const VulkanTypedHandle obj_struct(imageView, kVulkanObjectTypeImageView);
 
     // Any bound cmd buffers are now invalid
     InvalidateCommandBuffers(image_view_state->cb_bindings, obj_struct);
@@ -4400,7 +4396,7 @@ bool CoreChecks::PreCallValidateDestroyBuffer(VkDevice device, VkBuffer buffer, 
 void CoreChecks::PreCallRecordDestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationCallbacks *pAllocator) {
     if (!buffer) return;
     auto buffer_state = GetBufferState(buffer);
-    VK_OBJECT obj_struct = {HandleToUint64(buffer), kVulkanObjectTypeBuffer};
+    const VulkanTypedHandle obj_struct(buffer, kVulkanObjectTypeBuffer);
 
     InvalidateCommandBuffers(buffer_state->cb_bindings, obj_struct);
     for (auto mem_binding : buffer_state->GetBoundMemory()) {
@@ -4409,7 +4405,7 @@ void CoreChecks::PreCallRecordDestroyBuffer(VkDevice device, VkBuffer buffer, co
             RemoveBufferMemoryRange(HandleToUint64(buffer), mem_info);
         }
     }
-    ClearMemoryObjectBindings(HandleToUint64(buffer), kVulkanObjectTypeBuffer);
+    ClearMemoryObjectBindings(obj_struct);
     EraseQFOReleaseBarriers<VkBufferMemoryBarrier>(buffer);
     bufferMap.erase(buffer_state->buffer);
 }
@@ -4417,7 +4413,7 @@ void CoreChecks::PreCallRecordDestroyBuffer(VkDevice device, VkBuffer buffer, co
 bool CoreChecks::PreCallValidateDestroyBufferView(VkDevice device, VkBufferView bufferView,
                                                   const VkAllocationCallbacks *pAllocator) {
     auto buffer_view_state = GetBufferViewState(bufferView);
-    VK_OBJECT obj_struct = {HandleToUint64(bufferView), kVulkanObjectTypeBufferView};
+    const VulkanTypedHandle obj_struct(bufferView, kVulkanObjectTypeBufferView);
     bool skip = false;
     if (buffer_view_state) {
         skip |= ValidateObjectNotInUse(buffer_view_state, obj_struct, "vkDestroyBufferView",
@@ -4429,7 +4425,7 @@ bool CoreChecks::PreCallValidateDestroyBufferView(VkDevice device, VkBufferView 
 void CoreChecks::PreCallRecordDestroyBufferView(VkDevice device, VkBufferView bufferView, const VkAllocationCallbacks *pAllocator) {
     if (!bufferView) return;
     auto buffer_view_state = GetBufferViewState(bufferView);
-    VK_OBJECT obj_struct = {HandleToUint64(bufferView), kVulkanObjectTypeBufferView};
+    const VulkanTypedHandle obj_struct(bufferView, kVulkanObjectTypeBufferView);
 
     // Any bound cmd buffers are now invalid
     InvalidateCommandBuffers(buffer_view_state->cb_bindings, obj_struct);

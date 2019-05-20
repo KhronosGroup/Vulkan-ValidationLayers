@@ -2155,7 +2155,8 @@ bool CoreChecks::ValidateCooperativeMatrix(SHADER_MODULE_STATE const *src, VkPip
                     id_to_type_id.find(insn.word(3)) == id_to_type_id.end() ||
                     id_to_type_id.find(insn.word(4)) == id_to_type_id.end() ||
                     id_to_type_id.find(insn.word(5)) == id_to_type_id.end()) {
-                    assert(!"Couldn't find type of matrix");
+                    // Couldn't find type of matrix
+                    assert(false);
                     break;
                 }
                 D.Init(id_to_type_id[insn.word(2)], src, pStage, id_to_spec_id);

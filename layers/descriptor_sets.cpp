@@ -975,7 +975,7 @@ uint32_t cvdescriptorset::DescriptorSet::GetStorageUpdates(const std::map<uint32
 }
 // Set is being deleted or updates so invalidate all bound cmd buffers
 void cvdescriptorset::DescriptorSet::InvalidateBoundCmdBuffers() {
-    device_data_->InvalidateCommandBuffers(cb_bindings, {HandleToUint64(set_), kVulkanObjectTypeDescriptorSet});
+    device_data_->InvalidateCommandBuffers(cb_bindings, VulkanTypedHandle(set_, kVulkanObjectTypeDescriptorSet));
 }
 
 // Loop through the write updates to do for a push descriptor set, ignoring dstSet
@@ -1240,9 +1240,9 @@ void cvdescriptorset::DescriptorSet::UpdateDrawState(CoreChecks *device_data, CM
     // bind cb to this descriptor set
     cb_bindings.insert(cb_node);
     // Add bindings for descriptor set, the set's pool, and individual objects in the set
-    cb_node->object_bindings.insert({HandleToUint64(set_), kVulkanObjectTypeDescriptorSet});
+    cb_node->object_bindings.emplace(set_, kVulkanObjectTypeDescriptorSet);
     pool_state_->cb_bindings.insert(cb_node);
-    cb_node->object_bindings.insert({HandleToUint64(pool_state_->pool), kVulkanObjectTypeDescriptorPool});
+    cb_node->object_bindings.emplace(pool_state_->pool, kVulkanObjectTypeDescriptorPool);
     // For the active slots, use set# to look up descriptorSet from boundDescriptorSets, and bind all of that descriptor set's
     // resources
     for (auto binding_req_pair : binding_req_map) {
@@ -2225,18 +2225,15 @@ bool cvdescriptorset::DescriptorSet::VerifyWriteUpdateContents(const VkWriteDesc
                         }
                     } else {
                         auto iv_state = device_data_->GetImageViewState(image_view);
-                        if (iv_state) {
-                            auto ycbcr_info = lvl_find_in_chain<VkSamplerYcbcrConversionInfo>(iv_state->create_info.pNext);
-                            if (ycbcr_info) {
-                                *error_code = "VUID-VkWriteDescriptorSet-descriptorType-01947";
-                                std::stringstream error_str;
-                                error_str << "Because dstSet (" << update->dstSet << ") is bound to image view ("
-                                          << iv_state->image_view
-                                          << ") that includes a YCBCR conversion, it must have been allocated with a layout that "
-                                             "includes an immutable sampler.";
-                                *error_msg = error_str.str();
-                                return false;
-                            }
+                        if (iv_state && (iv_state->samplerConversion != VK_NULL_HANDLE)) {
+                            *error_code = "VUID-VkWriteDescriptorSet-descriptorType-01947";
+                            std::stringstream error_str;
+                            error_str << "Because dstSet (" << update->dstSet << ") is bound to image view ("
+                                      << iv_state->image_view
+                                      << ") that includes a YCBCR conversion, it must have been allocated with a layout that "
+                                         "includes an immutable sampler.";
+                            *error_msg = error_str.str();
+                            return false;
                         }
                     }
                 }

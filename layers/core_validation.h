@@ -261,7 +261,7 @@ class CoreChecks : public ValidationObject {
     PHYSICAL_DEVICE_STATE* GetPhysicalDeviceState(VkPhysicalDevice phys);
     PHYSICAL_DEVICE_STATE* GetPhysicalDeviceState();
     SURFACE_STATE* GetSurfaceState(VkSurfaceKHR surface);
-    BINDABLE* GetObjectMemBinding(uint64_t handle, VulkanObjectType type);
+    BINDABLE* GetObjectMemBinding(const VulkanTypedHandle& typed_handle);
 
     template <typename ExtProp>
     void GetPhysicalDeviceExtProperties(VkPhysicalDevice gpu, bool enabled, ExtProp* ext_prop) {
@@ -275,16 +275,16 @@ class CoreChecks : public ValidationObject {
 
     bool VerifyQueueStateToSeq(QUEUE_STATE* initial_queue, uint64_t initial_seq);
     void ClearCmdBufAndMemReferences(CMD_BUFFER_STATE* cb_node);
-    void ClearMemoryObjectBinding(uint64_t handle, VulkanObjectType type, VkDeviceMemory mem);
+    void ClearMemoryObjectBinding(const VulkanTypedHandle& typed_handle, VkDeviceMemory mem);
     void ResetCommandBufferState(const VkCommandBuffer cb);
-    void SetMemBinding(VkDeviceMemory mem, BINDABLE* mem_binding, VkDeviceSize memory_offset, uint64_t handle,
-                       VulkanObjectType type);
-    bool ValidateSetMemBinding(VkDeviceMemory mem, uint64_t handle, VulkanObjectType type, const char* apiName);
-    bool SetSparseMemBinding(MEM_BINDING binding, uint64_t handle, VulkanObjectType type);
+    void SetMemBinding(VkDeviceMemory mem, BINDABLE* mem_binding, VkDeviceSize memory_offset,
+                       const VulkanTypedHandle& typed_handle);
+    bool ValidateSetMemBinding(VkDeviceMemory mem, const VulkanTypedHandle& typed_handle, const char* apiName);
+    bool SetSparseMemBinding(MEM_BINDING binding, const VulkanTypedHandle& typed_handle);
     bool ValidateDeviceQueueFamily(uint32_t queue_family, const char* cmd_name, const char* parameter_name, const char* error_code,
                                    bool optional);
-    BASE_NODE* GetStateStructPtrFromObject(VK_OBJECT object_struct);
-    void RemoveCommandBufferBinding(VK_OBJECT const* object, CMD_BUFFER_STATE* cb_node);
+    BASE_NODE* GetStateStructPtrFromObject(const VulkanTypedHandle& object_struct);
+    void RemoveCommandBufferBinding(const VulkanTypedHandle& object, CMD_BUFFER_STATE* cb_node);
     bool ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory mem, VkDeviceSize memoryOffset, const char* api_name);
     void RecordGetBufferMemoryRequirementsState(VkBuffer buffer, VkMemoryRequirements* pMemoryRequirements);
     void UpdateBindBufferMemoryState(VkBuffer buffer, VkDeviceMemory mem, VkDeviceSize memoryOffset);
@@ -307,7 +307,7 @@ class CoreChecks : public ValidationObject {
     bool ValidatePipelineUnlocked(std::vector<std::unique_ptr<PIPELINE_STATE>> const& pPipelines, int pipelineIndex);
     void FreeDescriptorSet(cvdescriptorset::DescriptorSet* descriptor_set);
     void DeletePools();
-    bool ValidImageBufferQueue(CMD_BUFFER_STATE* cb_node, const VK_OBJECT* object, VkQueue queue, uint32_t count,
+    bool ValidImageBufferQueue(CMD_BUFFER_STATE* cb_node, const VulkanTypedHandle& object, VkQueue queue, uint32_t count,
                                const uint32_t* indices);
     bool ValidateFenceForSubmit(FENCE_STATE* pFence);
     void AddMemObjInfo(void* object, const VkDeviceMemory mem, const VkMemoryAllocateInfo* pAllocateInfo);
@@ -343,8 +343,8 @@ class CoreChecks : public ValidationObject {
                                         const VkGraphicsPipelineCreateInfo* pipe_cis);
     void AddFramebufferBinding(CMD_BUFFER_STATE* cb_state, FRAMEBUFFER_STATE* fb_state);
     bool ValidateImageBarrierImage(const char* funcName, CMD_BUFFER_STATE const* cb_state, VkFramebuffer framebuffer,
-                                   uint32_t active_subpass, const safe_VkSubpassDescription2KHR& sub_desc, uint64_t rp_handle,
-                                   uint32_t img_index, const VkImageMemoryBarrier& img_barrier);
+                                   uint32_t active_subpass, const safe_VkSubpassDescription2KHR& sub_desc,
+                                   const VulkanTypedHandle& rp_handle, uint32_t img_index, const VkImageMemoryBarrier& img_barrier);
     void RecordCmdBeginRenderPassState(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
                                        const VkSubpassContents contents);
     bool ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, RenderPassCreateVersion rp_version,
@@ -382,7 +382,7 @@ class CoreChecks : public ValidationObject {
                                                     const char* function, const char* error_code);
     bool SetEventStageMask(VkQueue queue, VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask);
     bool ValidateRenderPassImageBarriers(const char* funcName, CMD_BUFFER_STATE* cb_state, uint32_t active_subpass,
-                                         const safe_VkSubpassDescription2KHR& sub_desc, uint64_t rp_handle,
+                                         const safe_VkSubpassDescription2KHR& sub_desc, const VulkanTypedHandle& rp_handle,
                                          const safe_VkSubpassDependency2KHR* dependencies,
                                          const std::vector<uint32_t>& self_dependencies, uint32_t image_mem_barrier_count,
                                          const VkImageMemoryBarrier* image_barriers);
@@ -424,6 +424,14 @@ class CoreChecks : public ValidationObject {
     void RecordImportSemaphoreState(VkSemaphore semaphore, VkExternalSemaphoreHandleTypeFlagBitsKHR handle_type,
                                     VkSemaphoreImportFlagsKHR flags);
     void RecordGetExternalSemaphoreState(VkSemaphore semaphore, VkExternalSemaphoreHandleTypeFlagBitsKHR handle_type);
+    bool ValidateBeginQuery(const CMD_BUFFER_STATE* cb_state, const QueryObject& query_obj, VkFlags flags, CMD_TYPE cmd,
+                            const char* cmd_name, const char* vuid_queue_flags, const char* vuid_queue_feedback,
+                            const char* vuid_queue_occlusion, const char* vuid_precise, const char* vuid_query_count);
+    void RecordBeginQuery(CMD_BUFFER_STATE* cb_state, const QueryObject& query_obj);
+    bool ValidateCmdEndQuery(const CMD_BUFFER_STATE* cb_state, const QueryObject& query_obj, CMD_TYPE cmd, const char* cmd_name,
+                             const char* vuid_queue_flags, const char* vuid_active_queries);
+    void RecordCmdEndQuery(CMD_BUFFER_STATE* cb_state, const QueryObject& query_obj);
+
     bool SetQueryState(VkQueue queue, VkCommandBuffer commandBuffer, QueryObject object, bool value);
     bool ValidateCmdDrawType(VkCommandBuffer cmd_buffer, bool indexed, VkPipelineBindPoint bind_point, CMD_TYPE cmd_type,
                              const char* caller, VkQueueFlags queue_flags, const char* queue_flag_code,
@@ -486,11 +494,12 @@ class CoreChecks : public ValidationObject {
     void AddCommandBufferBindingImageView(CMD_BUFFER_STATE*, IMAGE_VIEW_STATE*);
     void AddCommandBufferBindingBuffer(CMD_BUFFER_STATE*, BUFFER_STATE*);
     void AddCommandBufferBindingBufferView(CMD_BUFFER_STATE*, BUFFER_VIEW_STATE*);
-    bool ValidateObjectNotInUse(BASE_NODE* obj_node, VK_OBJECT obj_struct, const char* caller_name, const char* error_code);
-    void InvalidateCommandBuffers(std::unordered_set<CMD_BUFFER_STATE*> const& cb_nodes, VK_OBJECT obj);
+    bool ValidateObjectNotInUse(BASE_NODE* obj_node, const VulkanTypedHandle& obj_struct, const char* caller_name,
+                                const char* error_code);
+    void InvalidateCommandBuffers(std::unordered_set<CMD_BUFFER_STATE*> const& cb_nodes, const VulkanTypedHandle& obj);
     void RemoveImageMemoryRange(uint64_t handle, DEVICE_MEMORY_STATE* mem_info);
     void RemoveBufferMemoryRange(uint64_t handle, DEVICE_MEMORY_STATE* mem_info);
-    void ClearMemoryObjectBindings(uint64_t handle, VulkanObjectType type);
+    void ClearMemoryObjectBindings(const VulkanTypedHandle& typed_handle);
     bool ValidateCmdQueueFlags(const CMD_BUFFER_STATE* cb_node, const char* caller_name, VkQueueFlags flags,
                                const char* error_code);
     bool InsideRenderPass(const CMD_BUFFER_STATE* pCB, const char* apiName, const char* msgCode);
@@ -609,7 +618,7 @@ class CoreChecks : public ValidationObject {
                                       VkPhysicalDeviceFeatures* supported_features);
     void GpuPostCallRecordCreateDevice(const CHECK_ENABLED* enables);
     void GpuPreCallRecordDestroyDevice();
-    void GpuPreCallRecordFreeCommandBuffers(uint32_t commandBufferCount, const VkCommandBuffer* pCommandBuffers);
+    void GpuResetCommandBuffer(const VkCommandBuffer commandBuffer);
     bool GpuPreCallCreateShaderModule(const VkShaderModuleCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                                       VkShaderModule* pShaderModule, uint32_t* unique_shader_id,
                                       VkShaderModuleCreateInfo* instrumented_create_info,
@@ -655,7 +664,7 @@ class CoreChecks : public ValidationObject {
                                                           const IMAGE_STATE* dst_img, const VkImageCopy* region, const uint32_t i,
                                                           const char* function);
     bool ValidateIdleBuffer(VkBuffer buffer);
-    bool ValidateUsageFlags(VkFlags actual, VkFlags desired, VkBool32 strict, uint64_t obj_handle, VulkanObjectType obj_type,
+    bool ValidateUsageFlags(VkFlags actual, VkFlags desired, VkBool32 strict, const VulkanTypedHandle& typed_handle,
                             const char* msgCode, char const* func_name, char const* usage_str);
     bool ValidateImageSubresourceRange(const uint32_t image_mip_count, const uint32_t image_layer_count,
                                        const VkImageSubresourceRange& subresourceRange, const char* cmd_name,
@@ -832,7 +841,7 @@ class CoreChecks : public ValidationObject {
 
     void UpdateCmdBufImageLayouts(CMD_BUFFER_STATE* pCB);
 
-    bool VerifyBoundMemoryIsValid(VkDeviceMemory mem, uint64_t handle, const char* api_name, const char* type_name,
+    bool VerifyBoundMemoryIsValid(VkDeviceMemory mem, const VulkanTypedHandle& typed_handle, const char* api_name,
                                   const char* error_code);
 
     bool ValidateLayoutVsAttachmentDescription(const debug_report_data* report_data, RenderPassCreateVersion rp_version,
@@ -1514,6 +1523,14 @@ class CoreChecks : public ValidationObject {
                                                         const VkDisplayPlaneInfo2KHR* pDisplayPlaneInfo,
                                                         VkDisplayPlaneCapabilities2KHR* pCapabilities);
     bool PreCallValidateCmdDebugMarkerEndEXT(VkCommandBuffer commandBuffer);
+
+    bool PreCallValidateCmdBeginQueryIndexedEXT(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query,
+                                                VkQueryControlFlags flags, uint32_t index);
+    void PostCallRecordCmdBeginQueryIndexedEXT(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query,
+                                               VkQueryControlFlags flags, uint32_t index);
+    bool PreCallValidateCmdEndQueryIndexedEXT(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query, uint32_t index);
+    void PostCallRecordCmdEndQueryIndexedEXT(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query, uint32_t index);
+
     bool PreCallValidateCmdSetDiscardRectangleEXT(VkCommandBuffer commandBuffer, uint32_t firstDiscardRectangle,
                                                   uint32_t discardRectangleCount, const VkRect2D* pDiscardRectangles);
     bool PreCallValidateCmdSetSampleLocationsEXT(VkCommandBuffer commandBuffer,
@@ -1550,6 +1567,10 @@ class CoreChecks : public ValidationObject {
     bool ValidateComputeWorkGroupSizes(const SHADER_MODULE_STATE* shader);
     bool ValidateComputeWorkGroupInvocations(CMD_BUFFER_STATE* cb_state, uint32_t groupCountX, uint32_t groupCountY,
                                              uint32_t groupCountZ);
+    bool ValidateQueryRange(VkDevice device, VkQueryPool queryPool, uint32_t totalCount, uint32_t firstQuery, uint32_t queryCount,
+                            const char* vuid_badfirst, const char* vuid_badrange);
+    bool PreCallValidateResetQueryPoolEXT(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount);
+    void PostCallRecordResetQueryPoolEXT(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount);
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
     bool PreCallValidateGetAndroidHardwareBufferPropertiesANDROID(VkDevice device, const struct AHardwareBuffer* buffer,
                                                                   VkAndroidHardwareBufferPropertiesANDROID* pProperties);

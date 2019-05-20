@@ -25,6 +25,7 @@
 #ifndef CORE_VALIDATION_TYPES_H_
 #define CORE_VALIDATION_TYPES_H_
 
+#include "cast_utils.h"
 #include "hash_vk_types.h"
 #include "sparse_containers.h"
 #include "vk_safe_struct.h"
@@ -111,18 +112,14 @@ inline bool IsSpecial(const uint32_t queue_family_index) {
     return (queue_family_index == VK_QUEUE_FAMILY_EXTERNAL_KHR) || (queue_family_index == VK_QUEUE_FAMILY_FOREIGN_EXT);
 }
 
-// Generic wrapper for vulkan objects
-struct VK_OBJECT {
-    uint64_t handle;
-    VulkanObjectType type;
-};
-
-inline bool operator==(VK_OBJECT a, VK_OBJECT b) NOEXCEPT { return a.handle == b.handle && a.type == b.type; }
+inline bool operator==(const VulkanTypedHandle &a, const VulkanTypedHandle &b) NOEXCEPT {
+    return a.handle == b.handle && a.type == b.type;
+}
 
 namespace std {
 template <>
-struct hash<VK_OBJECT> {
-    size_t operator()(VK_OBJECT obj) const NOEXCEPT { return hash<uint64_t>()(obj.handle) ^ hash<uint32_t>()(obj.type); }
+struct hash<VulkanTypedHandle> {
+    size_t operator()(VulkanTypedHandle obj) const NOEXCEPT { return hash<uint64_t>()(obj.handle) ^ hash<uint32_t>()(obj.type); }
 };
 }  // namespace std
 
@@ -304,6 +301,11 @@ class IMAGE_STATE : public BINDABLE {
     bool has_ahb_format;                 // True if image was created with an external Android format
     uint64_t ahb_format;                 // External Android format, if provided
     VkImageSubresourceRange full_range;  // The normalized ISR for all levels, layers (slices), and aspects
+
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
+    uint64_t external_format_android;
+#endif  // VK_USE_PLATFORM_ANDROID_KHR
+
     std::vector<VkSparseImageMemoryRequirements> sparse_requirements;
     IMAGE_STATE(VkImage img, const VkImageCreateInfo *pCreateInfo);
     IMAGE_STATE(IMAGE_STATE const &rh_obj) = delete;
@@ -343,6 +345,14 @@ struct MEMORY_RANGE {
     std::unordered_set<MEMORY_RANGE *> aliases;
 };
 
+static inline VulkanTypedHandle MemoryRangeTypedHandle(const MEMORY_RANGE &range) {
+    // TODO: Convert MEMORY_RANGE to use VulkanTypedHandle internally
+    if (range.image) {
+        return VulkanTypedHandle(CastFromUint64<VkImage>(range.handle), kVulkanObjectTypeImage);
+    }
+    return VulkanTypedHandle(CastFromUint64<VkBuffer>(range.handle), kVulkanObjectTypeBuffer);
+}
+
 // Data struct for tracking memory object
 struct DEVICE_MEMORY_STATE : public BASE_NODE {
     void *object;  // Dispatchable object used to create this memory (device of swapchain)
@@ -353,7 +363,7 @@ struct DEVICE_MEMORY_STATE : public BASE_NODE {
     VkImage dedicated_image;
     bool is_export;
     VkExternalMemoryHandleTypeFlags export_handle_type_flags;
-    std::unordered_set<VK_OBJECT> obj_bindings;               // objects bound to this memory
+    std::unordered_set<VulkanTypedHandle> obj_bindings;       // objects bound to this memory
     std::unordered_map<uint64_t, MEMORY_RANGE> bound_ranges;  // Map of object to its binding range
     // Convenience vectors image/buff handles to speed up iterating over images or buffers independently
     std::unordered_set<uint64_t> bound_images;
@@ -955,18 +965,23 @@ enum CBStatusFlagBits {
 
 struct QueryObject {
     VkQueryPool pool;
-    uint32_t index;
+    uint32_t query;
+    // These next two fields are *not* used in hash or comparison, they are effectively a data payload
+    uint32_t index;  // must be zero if !indexed
+    bool indexed;
+    QueryObject(VkQueryPool pool_, uint32_t query_) : pool(pool_), query(query_), index(0), indexed(false) {}
+    QueryObject(VkQueryPool pool_, uint32_t query_, uint32_t index_) : pool(pool_), query(query_), index(index_), indexed(true) {}
 };
 
 inline bool operator==(const QueryObject &query1, const QueryObject &query2) {
-    return (query1.pool == query2.pool && query1.index == query2.index);
+    return ((query1.pool == query2.pool) && (query1.query == query2.query));
 }
 
 namespace std {
 template <>
 struct hash<QueryObject> {
     size_t operator()(QueryObject query) const throw() {
-        return hash<uint64_t>()((uint64_t)(query.pool)) ^ hash<uint32_t>()(query.index);
+        return hash<uint64_t>()((uint64_t)(query.pool)) ^ hash<uint32_t>()(query.query);
     }
 };
 }  // namespace std
@@ -1404,8 +1419,8 @@ struct CMD_BUFFER_STATE : public BASE_NODE {
     std::unordered_set<VkFramebuffer> framebuffers;
     // Unified data structs to track objects bound to this command buffer as well as object
     //  dependencies that have been broken : either destroyed objects, or updated descriptor sets
-    std::unordered_set<VK_OBJECT> object_bindings;
-    std::vector<VK_OBJECT> broken_bindings;
+    std::unordered_set<VulkanTypedHandle> object_bindings;
+    std::vector<VulkanTypedHandle> broken_bindings;
 
     QFOTransferBarrierSets<VkBufferMemoryBarrier> qfo_transfer_buffer_barriers;
     QFOTransferBarrierSets<VkImageMemoryBarrier> qfo_transfer_image_barriers;
@@ -1514,6 +1529,7 @@ struct DeviceFeatures {
     VkPhysicalDeviceBufferAddressFeaturesEXT buffer_address;
     VkPhysicalDeviceCooperativeMatrixFeaturesNV cooperative_matrix_features;
     VkPhysicalDeviceFloatControlsPropertiesKHR float_controls;
+    VkPhysicalDeviceHostQueryResetFeaturesEXT host_query_reset_features;
 };
 
 enum RenderPassCreateVersion { RENDER_PASS_VERSION_1 = 0, RENDER_PASS_VERSION_2 = 1 };
