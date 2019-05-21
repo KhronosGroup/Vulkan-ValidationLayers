@@ -14958,11 +14958,15 @@ TEST_F(VkLayerTest, DSAspectBitsErrors) {
 
     // Create an image to be used for invalid updates
     VkImageObj image_obj(m_device);
-    image_obj.Init(64, 64, 1, depth_format, VK_IMAGE_USAGE_SAMPLED_BIT);
-    if (!image_obj.initialized()) {
+    VkFormatProperties fmt_props;
+    vkGetPhysicalDeviceFormatProperties(m_device->phy().handle(), depth_format, &fmt_props);
+    if (!image_obj.IsCompatible(VK_IMAGE_USAGE_SAMPLED_BIT, fmt_props.linearTilingFeatures) &&
+        !image_obj.IsCompatible(VK_IMAGE_USAGE_SAMPLED_BIT, fmt_props.optimalTilingFeatures)) {
         printf("%s Depth + Stencil format cannot be sampled. Skipped.\n", kSkipPrefix);
         return;
     }
+    image_obj.Init(64, 64, 1, depth_format, VK_IMAGE_USAGE_SAMPLED_BIT);
+    ASSERT_TRUE(image_obj.initialized());
     VkImage image = image_obj.image();
 
     // Now create view for image
@@ -23484,10 +23488,13 @@ TEST_F(VkLayerTest, CopyImageMultiplaneAspectBits) {
     // Verify formats
     VkFormatFeatureFlags features = VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT;
     bool supported = ImageFormatAndFeaturesSupported(instance(), gpu(), ci, features);
+    ci.format = VK_FORMAT_D24_UNORM_S8_UINT;
+    supported = supported && ImageFormatAndFeaturesSupported(instance(), gpu(), ci, features);
     ci.format = mp3_format;
     supported = supported && ImageFormatAndFeaturesSupported(instance(), gpu(), ci, features);
     if (!supported) {
-        printf("%s Multiplane image formats not supported.  Skipping test.\n", kSkipPrefix);
+        printf("%s Multiplane image formats or optimally tiled depth-stencil buffers not supported.  Skipping test.\n",
+               kSkipPrefix);
         return;  // Assume there's low ROI on searching for different mp formats
     }
 
