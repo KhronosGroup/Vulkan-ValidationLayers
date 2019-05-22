@@ -6020,3 +6020,909 @@ TEST_F(VkLayerTest, GpuBuildAccelerationStructureValidationRestoresState) {
     // Clean up
     vk::DestroyPipeline(m_device->device(), compute_pipeline, nullptr);
 }
+
+TEST_F(VkLayerTest, QueryPerformanceCreation) {
+    TEST_DESCRIPTION("Create performance query without support");
+
+    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    } else {
+        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_PERFORMANCE_QUERY_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_KHR_PERFORMANCE_QUERY_EXTENSION_NAME);
+    } else {
+        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_KHR_PERFORMANCE_QUERY_EXTENSION_NAME);
+        return;
+    }
+
+    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
+        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
+    VkPhysicalDeviceFeatures2KHR features2 = {};
+    auto performance_features = lvl_init_struct<VkPhysicalDevicePerformanceQueryFeaturesKHR>();
+    features2 = lvl_init_struct<VkPhysicalDeviceFeatures2KHR>(&performance_features);
+    vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
+    if (!performance_features.performanceCounterQueryPools) {
+        printf("%s Performance query pools are not supported.\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &performance_features));
+    PFN_vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR
+        vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR =
+            (PFN_vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR)vk::GetInstanceProcAddr(
+                instance(), "vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR");
+    ASSERT_TRUE(vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR != nullptr);
+
+    auto queueFamilyProperties = m_device->phy().queue_properties();
+    uint32_t queueFamilyIndex = queueFamilyProperties.size();
+    std::vector<VkPerformanceCounterKHR> counters;
+
+    for (uint32_t idx = 0; idx < queueFamilyProperties.size(); idx++) {
+        uint32_t nCounters;
+
+        vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(gpu(), idx, &nCounters, nullptr, nullptr);
+        if (nCounters == 0) continue;
+
+        counters.resize(nCounters);
+        for (auto &c : counters) {
+            c.sType = VK_STRUCTURE_TYPE_PERFORMANCE_COUNTER_KHR;
+            c.pNext = nullptr;
+        }
+        vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(gpu(), idx, &nCounters, &counters[0], nullptr);
+        queueFamilyIndex = idx;
+        break;
+    }
+
+    if (counters.empty()) {
+        printf("%s No queue reported any performance counter.\n", kSkipPrefix);
+        return;
+    }
+
+    VkQueryPoolPerformanceCreateInfoKHR perf_query_pool_ci{};
+    perf_query_pool_ci.sType = VK_STRUCTURE_TYPE_QUERY_POOL_PERFORMANCE_CREATE_INFO_KHR;
+    perf_query_pool_ci.queueFamilyIndex = queueFamilyIndex;
+    perf_query_pool_ci.counterIndexCount = counters.size();
+    std::vector<uint32_t> counterIndices;
+    for (uint32_t c = 0; c < counters.size(); c++) counterIndices.push_back(c);
+    perf_query_pool_ci.pCounterIndices = &counterIndices[0];
+    VkQueryPoolCreateInfo query_pool_ci{};
+    query_pool_ci.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
+    query_pool_ci.queryType = VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR;
+    query_pool_ci.queryCount = 1;
+
+    // Missing pNext
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkQueryPoolCreateInfo-queryType-03222");
+    VkQueryPool query_pool;
+    vk::CreateQueryPool(m_device->device(), &query_pool_ci, nullptr, &query_pool);
+    m_errorMonitor->VerifyFound();
+
+    query_pool_ci.pNext = &perf_query_pool_ci;
+
+    // Invalid counter indices
+    counterIndices.push_back(counters.size());
+    perf_query_pool_ci.counterIndexCount++;
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                         "VUID-VkQueryPoolPerformanceCreateInfoKHR-pCounterIndices-03321");
+    vk::CreateQueryPool(m_device->device(), &query_pool_ci, nullptr, &query_pool);
+    m_errorMonitor->VerifyFound();
+    perf_query_pool_ci.counterIndexCount--;
+    counterIndices.pop_back();
+
+    // Success
+    m_errorMonitor->ExpectSuccess(VK_DEBUG_REPORT_ERROR_BIT_EXT);
+    vk::CreateQueryPool(m_device->device(), &query_pool_ci, nullptr, &query_pool);
+    m_errorMonitor->VerifyNotFound();
+
+    m_commandBuffer->begin();
+
+    // Missing acquire lock
+    {
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdBeginQuery-queryPool-03223");
+        vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool, 0, 0);
+        m_errorMonitor->VerifyFound();
+    }
+
+    m_commandBuffer->end();
+
+    vk::DestroyQueryPool(m_device->device(), query_pool, NULL);
+}
+
+TEST_F(VkLayerTest, QueryPerformanceCounterCommandbufferScope) {
+    TEST_DESCRIPTION("Insert a performance query begin/end with respect to the command buffer counter scope");
+
+    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    } else {
+        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_PERFORMANCE_QUERY_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_KHR_PERFORMANCE_QUERY_EXTENSION_NAME);
+    } else {
+        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_KHR_PERFORMANCE_QUERY_EXTENSION_NAME);
+        return;
+    }
+
+    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
+        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
+    VkPhysicalDeviceFeatures2KHR features2 = {};
+    auto performanceFeatures = lvl_init_struct<VkPhysicalDevicePerformanceQueryFeaturesKHR>();
+    features2 = lvl_init_struct<VkPhysicalDeviceFeatures2KHR>(&performanceFeatures);
+    vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
+    if (!performanceFeatures.performanceCounterQueryPools) {
+        printf("%s Performance query pools are not supported.\n", kSkipPrefix);
+        return;
+    }
+
+    VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &performanceFeatures, pool_flags));
+    PFN_vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR
+        vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR =
+            (PFN_vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR)vk::GetInstanceProcAddr(
+                instance(), "vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR");
+    ASSERT_TRUE(vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR != nullptr);
+
+    auto queueFamilyProperties = m_device->phy().queue_properties();
+    uint32_t queueFamilyIndex = queueFamilyProperties.size();
+    std::vector<VkPerformanceCounterKHR> counters;
+    std::vector<uint32_t> counterIndices;
+
+    // Find a single counter with VK_QUERY_SCOPE_COMMAND_BUFFER_KHR scope.
+    for (uint32_t idx = 0; idx < queueFamilyProperties.size(); idx++) {
+        uint32_t nCounters;
+
+        vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(gpu(), idx, &nCounters, nullptr, nullptr);
+        if (nCounters == 0) continue;
+
+        counters.resize(nCounters);
+        for (auto &c : counters) {
+            c.sType = VK_STRUCTURE_TYPE_PERFORMANCE_COUNTER_KHR;
+            c.pNext = nullptr;
+        }
+        vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(gpu(), idx, &nCounters, &counters[0], nullptr);
+        queueFamilyIndex = idx;
+
+        for (uint32_t counterIdx = 0; counterIdx < counters.size(); counterIdx++) {
+            if (counters[counterIdx].scope == VK_QUERY_SCOPE_COMMAND_BUFFER_KHR) {
+                counterIndices.push_back(counterIdx);
+                break;
+            }
+        }
+
+        if (counterIndices.empty()) {
+            counters.clear();
+            continue;
+        }
+        break;
+    }
+
+    if (counterIndices.empty()) {
+        printf("%s No queue reported any performance counter with command buffer scope.\n", kSkipPrefix);
+        return;
+    }
+
+    VkQueryPoolPerformanceCreateInfoKHR perf_query_pool_ci{};
+    perf_query_pool_ci.sType = VK_STRUCTURE_TYPE_QUERY_POOL_PERFORMANCE_CREATE_INFO_KHR;
+    perf_query_pool_ci.queueFamilyIndex = queueFamilyIndex;
+    perf_query_pool_ci.counterIndexCount = counterIndices.size();
+    perf_query_pool_ci.pCounterIndices = &counterIndices[0];
+    VkQueryPoolCreateInfo query_pool_ci{};
+    query_pool_ci.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
+    query_pool_ci.pNext = &perf_query_pool_ci;
+    query_pool_ci.queryType = VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR;
+    query_pool_ci.queryCount = 1;
+
+    VkQueryPool query_pool;
+    vk::CreateQueryPool(device(), &query_pool_ci, nullptr, &query_pool);
+
+    VkQueue queue = VK_NULL_HANDLE;
+    vk::GetDeviceQueue(device(), queueFamilyIndex, 0, &queue);
+
+    PFN_vkAcquireProfilingLockKHR vkAcquireProfilingLockKHR =
+        (PFN_vkAcquireProfilingLockKHR)vk::GetInstanceProcAddr(instance(), "vkAcquireProfilingLockKHR");
+    ASSERT_TRUE(vkAcquireProfilingLockKHR != nullptr);
+    PFN_vkReleaseProfilingLockKHR vkReleaseProfilingLockKHR =
+        (PFN_vkReleaseProfilingLockKHR)vk::GetInstanceProcAddr(instance(), "vkReleaseProfilingLockKHR");
+    ASSERT_TRUE(vkReleaseProfilingLockKHR != nullptr);
+
+    {
+        VkAcquireProfilingLockInfoKHR lock_info{};
+        lock_info.sType = VK_STRUCTURE_TYPE_ACQUIRE_PROFILING_LOCK_INFO_KHR;
+        VkResult result = vkAcquireProfilingLockKHR(device(), &lock_info);
+        ASSERT_TRUE(result == VK_SUCCESS);
+    }
+
+    // Not the first command.
+    {
+        VkBufferCreateInfo buf_info = {};
+        buf_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        buf_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+        buf_info.size = 4096;
+        buf_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        VkBuffer buffer;
+        VkResult err = vk::CreateBuffer(device(), &buf_info, NULL, &buffer);
+        ASSERT_VK_SUCCESS(err);
+
+        VkMemoryRequirements mem_reqs;
+        vk::GetBufferMemoryRequirements(device(), buffer, &mem_reqs);
+
+        VkMemoryAllocateInfo alloc_info = {};
+        alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        alloc_info.allocationSize = 4096;
+        VkDeviceMemory mem;
+        err = vk::AllocateMemory(device(), &alloc_info, NULL, &mem);
+        ASSERT_VK_SUCCESS(err);
+        vk::BindBufferMemory(device(), buffer, mem, 0);
+
+        m_commandBuffer->begin();
+        vk::CmdFillBuffer(m_commandBuffer->handle(), buffer, 0, 4096, 0);
+
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdBeginQuery-queryPool-03224");
+        vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool, 0, 0);
+        m_errorMonitor->VerifyFound();
+
+        m_commandBuffer->end();
+
+        VkSubmitInfo submit_info;
+        submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        submit_info.pNext = NULL;
+        submit_info.waitSemaphoreCount = 0;
+        submit_info.pWaitSemaphores = NULL;
+        submit_info.pWaitDstStageMask = NULL;
+        submit_info.commandBufferCount = 1;
+        submit_info.pCommandBuffers = &m_commandBuffer->handle();
+        submit_info.signalSemaphoreCount = 0;
+        submit_info.pSignalSemaphores = NULL;
+        vk::QueueSubmit(queue, 1, &submit_info, VK_NULL_HANDLE);
+        vk::QueueWaitIdle(queue);
+
+        vk::DestroyBuffer(device(), buffer, nullptr);
+        vk::FreeMemory(device(), mem, NULL);
+    }
+
+    // First command: success.
+    {
+        VkBufferCreateInfo buf_info = {};
+        buf_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        buf_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+        buf_info.size = 4096;
+        buf_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        VkBuffer buffer;
+        VkResult err = vk::CreateBuffer(device(), &buf_info, NULL, &buffer);
+        ASSERT_VK_SUCCESS(err);
+
+        VkMemoryRequirements mem_reqs;
+        vk::GetBufferMemoryRequirements(device(), buffer, &mem_reqs);
+
+        VkMemoryAllocateInfo alloc_info = {};
+        alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        alloc_info.allocationSize = 4096;
+        VkDeviceMemory mem;
+        err = vk::AllocateMemory(device(), &alloc_info, NULL, &mem);
+        ASSERT_VK_SUCCESS(err);
+        vk::BindBufferMemory(device(), buffer, mem, 0);
+
+        m_commandBuffer->begin();
+
+        m_errorMonitor->ExpectSuccess(VK_DEBUG_REPORT_ERROR_BIT_EXT);
+        vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool, 0, 0);
+        m_errorMonitor->VerifyNotFound();
+
+        vk::CmdFillBuffer(m_commandBuffer->handle(), buffer, 0, 4096, 0);
+
+        vk::CmdEndQuery(m_commandBuffer->handle(), query_pool, 0);
+
+        m_commandBuffer->end();
+
+        VkSubmitInfo submit_info;
+        submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        submit_info.pNext = NULL;
+        submit_info.waitSemaphoreCount = 0;
+        submit_info.pWaitSemaphores = NULL;
+        submit_info.pWaitDstStageMask = NULL;
+        submit_info.commandBufferCount = 1;
+        submit_info.pCommandBuffers = &m_commandBuffer->handle();
+        submit_info.signalSemaphoreCount = 0;
+        submit_info.pSignalSemaphores = NULL;
+        vk::QueueSubmit(queue, 1, &submit_info, VK_NULL_HANDLE);
+        vk::QueueWaitIdle(queue);
+
+        vk::DestroyBuffer(device(), buffer, nullptr);
+        vk::FreeMemory(device(), mem, NULL);
+    }
+
+    vk::DestroyQueryPool(m_device->device(), query_pool, NULL);
+
+    vkReleaseProfilingLockKHR(device());
+}
+
+TEST_F(VkLayerTest, QueryPerformanceCounterRenderPassScope) {
+    TEST_DESCRIPTION("Insert a performance query begin/end with respect to the render pass counter scope");
+
+    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    } else {
+        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_PERFORMANCE_QUERY_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_KHR_PERFORMANCE_QUERY_EXTENSION_NAME);
+    } else {
+        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_KHR_PERFORMANCE_QUERY_EXTENSION_NAME);
+        return;
+    }
+
+    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
+        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
+    VkPhysicalDeviceFeatures2KHR features2 = {};
+    auto performanceFeatures = lvl_init_struct<VkPhysicalDevicePerformanceQueryFeaturesKHR>();
+    features2 = lvl_init_struct<VkPhysicalDeviceFeatures2KHR>(&performanceFeatures);
+    vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
+    if (!performanceFeatures.performanceCounterQueryPools) {
+        printf("%s Performance query pools are not supported.\n", kSkipPrefix);
+        return;
+    }
+
+    VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, pool_flags));
+    PFN_vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR
+        vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR =
+            (PFN_vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR)vk::GetInstanceProcAddr(
+                instance(), "vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR");
+    ASSERT_TRUE(vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR != nullptr);
+
+    auto queueFamilyProperties = m_device->phy().queue_properties();
+    uint32_t queueFamilyIndex = queueFamilyProperties.size();
+    std::vector<VkPerformanceCounterKHR> counters;
+    std::vector<uint32_t> counterIndices;
+
+    // Find a single counter with VK_QUERY_SCOPE_RENDER_PASS_KHR scope.
+    for (uint32_t idx = 0; idx < queueFamilyProperties.size(); idx++) {
+        uint32_t nCounters;
+
+        vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(gpu(), idx, &nCounters, nullptr, nullptr);
+        if (nCounters == 0) continue;
+
+        counters.resize(nCounters);
+        for (auto &c : counters) {
+            c.sType = VK_STRUCTURE_TYPE_PERFORMANCE_COUNTER_KHR;
+            c.pNext = nullptr;
+        }
+        vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(gpu(), idx, &nCounters, &counters[0], nullptr);
+        queueFamilyIndex = idx;
+
+        for (uint32_t counterIdx = 0; counterIdx < counters.size(); counterIdx++) {
+            if (counters[counterIdx].scope == VK_QUERY_SCOPE_RENDER_PASS_KHR) {
+                counterIndices.push_back(counterIdx);
+                break;
+            }
+        }
+
+        if (counterIndices.empty()) {
+            counters.clear();
+            continue;
+        }
+        break;
+    }
+
+    if (counterIndices.empty()) {
+        printf("%s No queue reported any performance counter with render pass scope.\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkQueryPoolPerformanceCreateInfoKHR perf_query_pool_ci{};
+    perf_query_pool_ci.sType = VK_STRUCTURE_TYPE_QUERY_POOL_PERFORMANCE_CREATE_INFO_KHR;
+    perf_query_pool_ci.queueFamilyIndex = queueFamilyIndex;
+    perf_query_pool_ci.counterIndexCount = counterIndices.size();
+    perf_query_pool_ci.pCounterIndices = &counterIndices[0];
+    VkQueryPoolCreateInfo query_pool_ci{};
+    query_pool_ci.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
+    query_pool_ci.pNext = &perf_query_pool_ci;
+    query_pool_ci.queryType = VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR;
+    query_pool_ci.queryCount = 1;
+
+    VkQueryPool query_pool;
+    vk::CreateQueryPool(device(), &query_pool_ci, nullptr, &query_pool);
+
+    VkQueue queue = VK_NULL_HANDLE;
+    vk::GetDeviceQueue(device(), queueFamilyIndex, 0, &queue);
+
+    PFN_vkAcquireProfilingLockKHR vkAcquireProfilingLockKHR =
+        (PFN_vkAcquireProfilingLockKHR)vk::GetInstanceProcAddr(instance(), "vkAcquireProfilingLockKHR");
+    ASSERT_TRUE(vkAcquireProfilingLockKHR != nullptr);
+    PFN_vkReleaseProfilingLockKHR vkReleaseProfilingLockKHR =
+        (PFN_vkReleaseProfilingLockKHR)vk::GetInstanceProcAddr(instance(), "vkReleaseProfilingLockKHR");
+    ASSERT_TRUE(vkReleaseProfilingLockKHR != nullptr);
+
+    {
+        VkAcquireProfilingLockInfoKHR lock_info{};
+        lock_info.sType = VK_STRUCTURE_TYPE_ACQUIRE_PROFILING_LOCK_INFO_KHR;
+        VkResult result = vkAcquireProfilingLockKHR(device(), &lock_info);
+        ASSERT_TRUE(result == VK_SUCCESS);
+    }
+
+    // Inside a render pass.
+    {
+        m_commandBuffer->begin();
+        m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdBeginQuery-queryPool-03225");
+        vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool, 0, 0);
+        m_errorMonitor->VerifyFound();
+
+        m_commandBuffer->EndRenderPass();
+        m_commandBuffer->end();
+
+        VkSubmitInfo submit_info;
+        submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        submit_info.pNext = NULL;
+        submit_info.waitSemaphoreCount = 0;
+        submit_info.pWaitSemaphores = NULL;
+        submit_info.pWaitDstStageMask = NULL;
+        submit_info.commandBufferCount = 1;
+        submit_info.pCommandBuffers = &m_commandBuffer->handle();
+        submit_info.signalSemaphoreCount = 0;
+        submit_info.pSignalSemaphores = NULL;
+        vk::QueueSubmit(queue, 1, &submit_info, VK_NULL_HANDLE);
+        vk::QueueWaitIdle(queue);
+    }
+
+    vkReleaseProfilingLockKHR(device());
+
+    vk::DestroyQueryPool(m_device->device(), query_pool, NULL);
+}
+
+TEST_F(VkLayerTest, QueryPerformanceReleaseProfileLockBeforeSubmit) {
+    TEST_DESCRIPTION("Verify that we get an error if we release the profiling lock during the recording of performance queries");
+
+    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    } else {
+        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_PERFORMANCE_QUERY_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_KHR_PERFORMANCE_QUERY_EXTENSION_NAME);
+    } else {
+        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_KHR_PERFORMANCE_QUERY_EXTENSION_NAME);
+        return;
+    }
+
+    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
+        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
+    VkPhysicalDeviceFeatures2KHR features2 = {};
+    auto performanceFeatures = lvl_init_struct<VkPhysicalDevicePerformanceQueryFeaturesKHR>();
+    features2 = lvl_init_struct<VkPhysicalDeviceFeatures2KHR>(&performanceFeatures);
+    vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
+    if (!performanceFeatures.performanceCounterQueryPools) {
+        printf("%s Performance query pools are not supported.\n", kSkipPrefix);
+        return;
+    }
+
+    VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &performanceFeatures, pool_flags));
+    PFN_vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR
+        vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR =
+            (PFN_vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR)vk::GetInstanceProcAddr(
+                instance(), "vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR");
+    ASSERT_TRUE(vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR != nullptr);
+
+    auto queueFamilyProperties = m_device->phy().queue_properties();
+    uint32_t queueFamilyIndex = queueFamilyProperties.size();
+    std::vector<VkPerformanceCounterKHR> counters;
+    std::vector<uint32_t> counterIndices;
+
+    // Find a single counter with VK_QUERY_SCOPE_RENDER_PASS_KHR scope.
+    for (uint32_t idx = 0; idx < queueFamilyProperties.size(); idx++) {
+        uint32_t nCounters;
+
+        vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(gpu(), idx, &nCounters, nullptr, nullptr);
+        if (nCounters == 0) continue;
+
+        counters.resize(nCounters);
+        for (auto &c : counters) {
+            c.sType = VK_STRUCTURE_TYPE_PERFORMANCE_COUNTER_KHR;
+            c.pNext = nullptr;
+        }
+        vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(gpu(), idx, &nCounters, &counters[0], nullptr);
+        queueFamilyIndex = idx;
+
+        for (uint32_t counterIdx = 0; counterIdx < counters.size(); counterIdx++) {
+            counterIndices.push_back(counterIdx);
+            break;
+        }
+
+        if (counterIndices.empty()) {
+            counters.clear();
+            continue;
+        }
+        break;
+    }
+
+    if (counterIndices.empty()) {
+        printf("%s No queue reported any performance counter with render pass scope.\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkQueryPoolPerformanceCreateInfoKHR perf_query_pool_ci{};
+    perf_query_pool_ci.sType = VK_STRUCTURE_TYPE_QUERY_POOL_PERFORMANCE_CREATE_INFO_KHR;
+    perf_query_pool_ci.queueFamilyIndex = queueFamilyIndex;
+    perf_query_pool_ci.counterIndexCount = counterIndices.size();
+    perf_query_pool_ci.pCounterIndices = &counterIndices[0];
+    VkQueryPoolCreateInfo query_pool_ci{};
+    query_pool_ci.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
+    query_pool_ci.pNext = &perf_query_pool_ci;
+    query_pool_ci.queryType = VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR;
+    query_pool_ci.queryCount = 1;
+
+    VkQueryPool query_pool;
+    vk::CreateQueryPool(device(), &query_pool_ci, nullptr, &query_pool);
+
+    VkQueue queue = VK_NULL_HANDLE;
+    vk::GetDeviceQueue(device(), queueFamilyIndex, 0, &queue);
+
+    PFN_vkAcquireProfilingLockKHR vkAcquireProfilingLockKHR =
+        (PFN_vkAcquireProfilingLockKHR)vk::GetInstanceProcAddr(instance(), "vkAcquireProfilingLockKHR");
+    ASSERT_TRUE(vkAcquireProfilingLockKHR != nullptr);
+    PFN_vkReleaseProfilingLockKHR vkReleaseProfilingLockKHR =
+        (PFN_vkReleaseProfilingLockKHR)vk::GetInstanceProcAddr(instance(), "vkReleaseProfilingLockKHR");
+    ASSERT_TRUE(vkReleaseProfilingLockKHR != nullptr);
+
+    {
+        VkAcquireProfilingLockInfoKHR lock_info{};
+        lock_info.sType = VK_STRUCTURE_TYPE_ACQUIRE_PROFILING_LOCK_INFO_KHR;
+        VkResult result = vkAcquireProfilingLockKHR(device(), &lock_info);
+        ASSERT_TRUE(result == VK_SUCCESS);
+    }
+
+    {
+        VkBufferCreateInfo buf_info = {};
+        buf_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        buf_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+        buf_info.size = 4096;
+        buf_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        VkBuffer buffer;
+        VkResult err = vk::CreateBuffer(device(), &buf_info, NULL, &buffer);
+        ASSERT_VK_SUCCESS(err);
+
+        VkMemoryRequirements mem_reqs;
+        vk::GetBufferMemoryRequirements(device(), buffer, &mem_reqs);
+
+        VkMemoryAllocateInfo alloc_info = {};
+        alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        alloc_info.allocationSize = 4096;
+        VkDeviceMemory mem;
+        err = vk::AllocateMemory(device(), &alloc_info, NULL, &mem);
+        ASSERT_VK_SUCCESS(err);
+        vk::BindBufferMemory(device(), buffer, mem, 0);
+
+        m_commandBuffer->begin();
+
+        vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool, 0, 0);
+
+        // Relase while recording.
+        vkReleaseProfilingLockKHR(device());
+        {
+            VkAcquireProfilingLockInfoKHR lock_info{};
+            lock_info.sType = VK_STRUCTURE_TYPE_ACQUIRE_PROFILING_LOCK_INFO_KHR;
+            VkResult result = vkAcquireProfilingLockKHR(device(), &lock_info);
+            ASSERT_TRUE(result == VK_SUCCESS);
+        }
+
+        vk::CmdEndQuery(m_commandBuffer->handle(), query_pool, 0);
+
+        m_commandBuffer->end();
+
+        VkSubmitInfo submit_info;
+        submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        submit_info.pNext = NULL;
+        submit_info.waitSemaphoreCount = 0;
+        submit_info.pWaitSemaphores = NULL;
+        submit_info.pWaitDstStageMask = NULL;
+        submit_info.commandBufferCount = 1;
+        submit_info.pCommandBuffers = &m_commandBuffer->handle();
+        submit_info.signalSemaphoreCount = 0;
+        submit_info.pSignalSemaphores = NULL;
+
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkQueueSubmit-pCommandBuffers-03220");
+        vk::QueueSubmit(queue, 1, &submit_info, VK_NULL_HANDLE);
+        m_errorMonitor->VerifyFound();
+
+        vk::QueueWaitIdle(queue);
+
+        vk::DestroyBuffer(device(), buffer, nullptr);
+        vk::FreeMemory(device(), mem, NULL);
+    }
+
+    vkReleaseProfilingLockKHR(device());
+
+    vk::DestroyQueryPool(m_device->device(), query_pool, NULL);
+}
+
+TEST_F(VkLayerTest, QueryPerformanceIncompletePasses) {
+    TEST_DESCRIPTION("Verify that we get an error if we don't submit a command buffer for each passes before getting the results.");
+
+    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    } else {
+        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_PERFORMANCE_QUERY_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_KHR_PERFORMANCE_QUERY_EXTENSION_NAME);
+    } else {
+        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_KHR_PERFORMANCE_QUERY_EXTENSION_NAME);
+        return;
+    }
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME);
+    } else {
+        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME);
+        return;
+    }
+
+    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
+        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
+    VkPhysicalDeviceFeatures2KHR features2 = {};
+    auto hostQueryResetFeatures = lvl_init_struct<VkPhysicalDeviceHostQueryResetFeaturesEXT>();
+    auto performanceFeatures = lvl_init_struct<VkPhysicalDevicePerformanceQueryFeaturesKHR>(&hostQueryResetFeatures);
+    features2 = lvl_init_struct<VkPhysicalDeviceFeatures2KHR>(&performanceFeatures);
+    vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
+    if (!performanceFeatures.performanceCounterQueryPools) {
+        printf("%s Performance query pools are not supported.\n", kSkipPrefix);
+        return;
+    }
+    if (!hostQueryResetFeatures.hostQueryReset) {
+        printf("%s Missing host query reset.\n", kSkipPrefix);
+        return;
+    }
+
+    VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &performanceFeatures, pool_flags));
+    PFN_vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR
+        vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR =
+            (PFN_vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR)vk::GetInstanceProcAddr(
+                instance(), "vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR");
+    ASSERT_TRUE(vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR != nullptr);
+
+    PFN_vkGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR vkGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR =
+        (PFN_vkGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR)vk::GetInstanceProcAddr(
+            instance(), "vkGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR");
+    ASSERT_TRUE(vkGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR != nullptr);
+
+    auto queueFamilyProperties = m_device->phy().queue_properties();
+    uint32_t queueFamilyIndex = queueFamilyProperties.size();
+    std::vector<VkPerformanceCounterKHR> counters;
+    std::vector<uint32_t> counterIndices;
+    uint32_t nPasses = 0;
+
+    // Find a single counter with VK_QUERY_SCOPE_RENDER_PASS_KHR scope.
+    for (uint32_t idx = 0; idx < queueFamilyProperties.size(); idx++) {
+        uint32_t nCounters;
+
+        vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(gpu(), idx, &nCounters, nullptr, nullptr);
+        if (nCounters == 0) continue;
+
+        counters.resize(nCounters);
+        for (auto &c : counters) {
+            c.sType = VK_STRUCTURE_TYPE_PERFORMANCE_COUNTER_KHR;
+            c.pNext = nullptr;
+        }
+        vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(gpu(), idx, &nCounters, &counters[0], nullptr);
+        queueFamilyIndex = idx;
+
+        for (uint32_t counterIdx = 0; counterIdx < counters.size(); counterIdx++) counterIndices.push_back(counterIdx);
+
+        VkQueryPoolPerformanceCreateInfoKHR create_info{};
+        create_info.sType = VK_STRUCTURE_TYPE_QUERY_POOL_PERFORMANCE_CREATE_INFO_KHR;
+        create_info.queueFamilyIndex = idx;
+        create_info.counterIndexCount = counterIndices.size();
+        create_info.pCounterIndices = &counterIndices[0];
+
+        vkGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR(gpu(), &create_info, &nPasses);
+
+        if (nPasses < 2) {
+            counters.clear();
+            continue;
+        }
+        break;
+    }
+
+    if (counterIndices.empty()) {
+        printf("%s No queue reported a set of counters that needs more than one pass.\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkQueryPoolPerformanceCreateInfoKHR perf_query_pool_ci{};
+    perf_query_pool_ci.sType = VK_STRUCTURE_TYPE_QUERY_POOL_PERFORMANCE_CREATE_INFO_KHR;
+    perf_query_pool_ci.queueFamilyIndex = queueFamilyIndex;
+    perf_query_pool_ci.counterIndexCount = counterIndices.size();
+    perf_query_pool_ci.pCounterIndices = &counterIndices[0];
+    VkQueryPoolCreateInfo query_pool_ci{};
+    query_pool_ci.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
+    query_pool_ci.pNext = &perf_query_pool_ci;
+    query_pool_ci.queryType = VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR;
+    query_pool_ci.queryCount = 1;
+
+    VkQueryPool query_pool;
+    vk::CreateQueryPool(device(), &query_pool_ci, nullptr, &query_pool);
+
+    VkQueue queue = VK_NULL_HANDLE;
+    vk::GetDeviceQueue(device(), queueFamilyIndex, 0, &queue);
+
+    PFN_vkAcquireProfilingLockKHR vkAcquireProfilingLockKHR =
+        (PFN_vkAcquireProfilingLockKHR)vk::GetInstanceProcAddr(instance(), "vkAcquireProfilingLockKHR");
+    ASSERT_TRUE(vkAcquireProfilingLockKHR != nullptr);
+    PFN_vkReleaseProfilingLockKHR vkReleaseProfilingLockKHR =
+        (PFN_vkReleaseProfilingLockKHR)vk::GetInstanceProcAddr(instance(), "vkReleaseProfilingLockKHR");
+    ASSERT_TRUE(vkReleaseProfilingLockKHR != nullptr);
+    PFN_vkResetQueryPoolEXT fpvkResetQueryPoolEXT =
+        (PFN_vkResetQueryPoolEXT)vk::GetInstanceProcAddr(instance(), "vkResetQueryPoolEXT");
+
+    {
+        VkAcquireProfilingLockInfoKHR lock_info{};
+        lock_info.sType = VK_STRUCTURE_TYPE_ACQUIRE_PROFILING_LOCK_INFO_KHR;
+        VkResult result = vkAcquireProfilingLockKHR(device(), &lock_info);
+        ASSERT_TRUE(result == VK_SUCCESS);
+    }
+
+    {
+        VkBufferCreateInfo buf_info = {};
+        buf_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        buf_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+        buf_info.size = 4096;
+        buf_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        VkBuffer buffer;
+        VkResult err = vk::CreateBuffer(device(), &buf_info, NULL, &buffer);
+        ASSERT_VK_SUCCESS(err);
+
+        VkMemoryRequirements mem_reqs;
+        vk::GetBufferMemoryRequirements(device(), buffer, &mem_reqs);
+
+        VkMemoryAllocateInfo alloc_info = {};
+        alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        alloc_info.allocationSize = 4096;
+        VkDeviceMemory mem;
+        err = vk::AllocateMemory(device(), &alloc_info, NULL, &mem);
+        ASSERT_VK_SUCCESS(err);
+        vk::BindBufferMemory(device(), buffer, mem, 0);
+
+        VkCommandBufferBeginInfo command_buffer_begin_info{};
+        command_buffer_begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        command_buffer_begin_info.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
+
+        fpvkResetQueryPoolEXT(m_device->device(), query_pool, 0, 0);
+
+        m_commandBuffer->begin(&command_buffer_begin_info);
+        vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool, 0, 0);
+        vk::CmdFillBuffer(m_commandBuffer->handle(), buffer, 0, 4096, 0);
+        vk::CmdEndQuery(m_commandBuffer->handle(), query_pool, 0);
+        m_commandBuffer->end();
+
+        // Invalid pass index
+        {
+            VkPerformanceQuerySubmitInfoKHR perf_submit_info{};
+            perf_submit_info.sType = VK_STRUCTURE_TYPE_PERFORMANCE_QUERY_SUBMIT_INFO_KHR;
+            perf_submit_info.counterPassIndex = nPasses;
+            VkSubmitInfo submit_info{};
+            submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+            submit_info.pNext = &perf_submit_info;
+            submit_info.waitSemaphoreCount = 0;
+            submit_info.pWaitSemaphores = NULL;
+            submit_info.pWaitDstStageMask = NULL;
+            submit_info.commandBufferCount = 1;
+            submit_info.pCommandBuffers = &m_commandBuffer->handle();
+            submit_info.signalSemaphoreCount = 0;
+            submit_info.pSignalSemaphores = NULL;
+
+            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                                 "VUID-VkPerformanceQuerySubmitInfoKHR-counterPassIndex-03221");
+            vk::QueueSubmit(queue, 1, &submit_info, VK_NULL_HANDLE);
+            m_errorMonitor->VerifyFound();
+        }
+
+        // Leave the last pass out.
+        for (uint32_t passIdx = 0; passIdx < (nPasses - 1); passIdx++) {
+            VkPerformanceQuerySubmitInfoKHR perf_submit_info{};
+            perf_submit_info.sType = VK_STRUCTURE_TYPE_PERFORMANCE_QUERY_SUBMIT_INFO_KHR;
+            perf_submit_info.counterPassIndex = passIdx;
+            VkSubmitInfo submit_info{};
+            submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+            submit_info.pNext = &perf_submit_info;
+            submit_info.waitSemaphoreCount = 0;
+            submit_info.pWaitSemaphores = NULL;
+            submit_info.pWaitDstStageMask = NULL;
+            submit_info.commandBufferCount = 1;
+            submit_info.pCommandBuffers = &m_commandBuffer->handle();
+            submit_info.signalSemaphoreCount = 0;
+            submit_info.pSignalSemaphores = NULL;
+
+            vk::QueueSubmit(queue, 1, &submit_info, VK_NULL_HANDLE);
+        }
+
+        vk::QueueWaitIdle(queue);
+
+        std::vector<VkPerformanceCounterResultKHR> results;
+        results.resize(counterIndices.size());
+
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkGetQueryPoolResults-queryType-03231");
+        vk::GetQueryPoolResults(device(), query_pool, 0, 1, sizeof(VkPerformanceCounterResultKHR) * results.size(), &results[0],
+                                sizeof(VkPerformanceCounterResultKHR), VK_QUERY_RESULT_WAIT_BIT);
+        m_errorMonitor->VerifyFound();
+
+        {
+            VkPerformanceQuerySubmitInfoKHR perf_submit_info{};
+            perf_submit_info.sType = VK_STRUCTURE_TYPE_PERFORMANCE_QUERY_SUBMIT_INFO_KHR;
+            perf_submit_info.counterPassIndex = nPasses - 1;
+            VkSubmitInfo submit_info{};
+            submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+            submit_info.pNext = &perf_submit_info;
+            submit_info.waitSemaphoreCount = 0;
+            submit_info.pWaitSemaphores = NULL;
+            submit_info.pWaitDstStageMask = NULL;
+            submit_info.commandBufferCount = 1;
+            submit_info.pCommandBuffers = &m_commandBuffer->handle();
+            submit_info.signalSemaphoreCount = 0;
+            submit_info.pSignalSemaphores = NULL;
+
+            vk::QueueSubmit(queue, 1, &submit_info, VK_NULL_HANDLE);
+        }
+
+        vk::QueueWaitIdle(queue);
+
+        // Invalid stride
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkGetQueryPoolResults-queryType-03229");
+        vk::GetQueryPoolResults(device(), query_pool, 0, 1, sizeof(VkPerformanceCounterResultKHR) * results.size(), &results[0],
+                                sizeof(VkPerformanceCounterResultKHR) + 4, VK_QUERY_RESULT_WAIT_BIT);
+        m_errorMonitor->VerifyFound();
+
+        // Invalid flags
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkGetQueryPoolResults-queryType-03230");
+        vk::GetQueryPoolResults(device(), query_pool, 0, 1, sizeof(VkPerformanceCounterResultKHR) * results.size(), &results[0],
+                                sizeof(VkPerformanceCounterResultKHR), VK_QUERY_RESULT_WITH_AVAILABILITY_BIT);
+        m_errorMonitor->VerifyFound();
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkGetQueryPoolResults-queryType-03230");
+        vk::GetQueryPoolResults(device(), query_pool, 0, 1, sizeof(VkPerformanceCounterResultKHR) * results.size(), &results[0],
+                                sizeof(VkPerformanceCounterResultKHR), VK_QUERY_RESULT_PARTIAL_BIT);
+        m_errorMonitor->VerifyFound();
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkGetQueryPoolResults-queryType-03230");
+        vk::GetQueryPoolResults(device(), query_pool, 0, 1, sizeof(VkPerformanceCounterResultKHR) * results.size(), &results[0],
+                                sizeof(VkPerformanceCounterResultKHR), VK_QUERY_RESULT_64_BIT);
+        m_errorMonitor->VerifyFound();
+
+        m_errorMonitor->ExpectSuccess(VK_DEBUG_REPORT_ERROR_BIT_EXT);
+        vk::GetQueryPoolResults(device(), query_pool, 0, 1, sizeof(VkPerformanceCounterResultKHR) * results.size(), &results[0],
+                                sizeof(VkPerformanceCounterResultKHR), VK_QUERY_RESULT_WAIT_BIT);
+        m_errorMonitor->VerifyNotFound();
+
+        vk::DestroyBuffer(device(), buffer, nullptr);
+        vk::FreeMemory(device(), mem, NULL);
+    }
+
+    vkReleaseProfilingLockKHR(device());
+
+    vk::DestroyQueryPool(m_device->device(), query_pool, NULL);
+}
