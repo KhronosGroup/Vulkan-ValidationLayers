@@ -85,6 +85,16 @@ class QUEUE_STATE {
 class QUERY_POOL_STATE : public BASE_NODE {
   public:
     VkQueryPoolCreateInfo createInfo;
+    VkQueryPool pool;
+
+    bool has_perf_scope_command_buffer = false;
+    bool has_perf_scope_render_pass = false;
+    uint32_t n_performance_passes = 0;
+};
+
+class QUEUE_FAMILY_PERF_COUNTERS {
+  public:
+    std::vector<VkPerformanceCounterKHR> counters;
 };
 
 struct PHYSICAL_DEVICE_STATE {
@@ -105,6 +115,9 @@ struct PHYSICAL_DEVICE_STATE {
     std::vector<VkPresentModeKHR> present_modes;
     std::vector<VkSurfaceFormatKHR> surface_formats;
     uint32_t display_plane_property_count = 0;
+
+    // Map of queue family index to QUEUE_FAMILY_PERF_COUNTERS
+    std::unordered_map<uint32_t, std::unique_ptr<QUEUE_FAMILY_PERF_COUNTERS>> perf_counters;
 };
 
 // This structure is used to save data across the CreateGraphicsPipelines down-chain API call
@@ -225,6 +238,7 @@ class ValidationStateTracker : public ValidationObject {
 
     std::unordered_set<VkQueue> queues;  // All queues under given device
     QueryMap queryToStateMap;
+    QueryPassMap queryPassToStateMap;
     unordered_map<VkSamplerYcbcrConversion, uint64_t> ycbcr_conversion_ahb_fmt_map;
 
     // Traits for State function resolution.  Specializations defined in the macro.
@@ -490,6 +504,9 @@ class ValidationStateTracker : public ValidationObject {
                                                         VkResult result);
     void PostCallRecordEnumeratePhysicalDevices(VkInstance instance, uint32_t* pPhysicalDeviceCount,
                                                 VkPhysicalDevice* pPhysicalDevices, VkResult result);
+    void PostCallRecordEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(
+        VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex, uint32_t* pCounterCount, VkPerformanceCounterKHR* pCounters,
+        VkPerformanceCounterDescriptionKHR* pCounterDescriptions, VkResult result);
     void PostCallRecordGetAccelerationStructureMemoryRequirementsNV(VkDevice device,
                                                                     const VkAccelerationStructureMemoryRequirementsInfoNV* pInfo,
                                                                     VkMemoryRequirements2KHR* pMemoryRequirements);
@@ -736,6 +753,9 @@ class ValidationStateTracker : public ValidationObject {
     void PreCallRecordSetEvent(VkDevice device, VkEvent event);
     void PostCallRecordWaitForFences(VkDevice device, uint32_t fenceCount, const VkFence* pFences, VkBool32 waitAll,
                                      uint64_t timeout, VkResult result);
+    void PostCallRecordAcquireProfilingLockKHR(VkDevice device, const VkAcquireProfilingLockInfoKHR* pInfo, VkResult result);
+    bool PreCallValidateReleaseProfilingLockKHR(VkDevice device) const;
+    void PostCallRecordReleaseProfilingLockKHR(VkDevice device);
 
     // Allocate/Free
     void PostCallRecordAllocateCommandBuffers(VkDevice device, const VkCommandBufferAllocateInfo* pCreateInfo,
@@ -982,6 +1002,9 @@ class ValidationStateTracker : public ValidationObject {
     void RecordDestroySamplerYcbcrConversionANDROID(VkSamplerYcbcrConversion ycbcr_conversion);
     void RecordEnumeratePhysicalDeviceGroupsState(uint32_t* pPhysicalDeviceGroupCount,
                                                   VkPhysicalDeviceGroupPropertiesKHR* pPhysicalDeviceGroupProperties);
+    void RecordEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCounters(VkPhysicalDevice physicalDevice,
+                                                                          uint32_t queueFamilyIndex, uint32_t* pCounterCount,
+                                                                          VkPerformanceCounterKHR* pCounters);
     void RecordGetBufferMemoryRequirementsState(VkBuffer buffer, VkMemoryRequirements* pMemoryRequirements);
     void RecordGetDeviceQueueState(uint32_t queue_family_index, VkQueue queue);
     void RecordGetExternalFenceState(VkFence fence, VkExternalFenceHandleTypeFlagBitsKHR handle_type);
@@ -1051,12 +1074,14 @@ class ValidationStateTracker : public ValidationObject {
         VkPhysicalDeviceRayTracingPropertiesNV ray_tracing_props;
         VkPhysicalDeviceTexelBufferAlignmentPropertiesEXT texel_buffer_alignment_props;
         VkPhysicalDeviceFragmentDensityMapPropertiesEXT fragment_density_map_props;
+        VkPhysicalDevicePerformanceQueryPropertiesKHR performance_query_props;
     };
     DeviceExtensionProperties phys_dev_ext_props = {};
     std::vector<VkCooperativeMatrixPropertiesNV> cooperative_matrix_properties;
 
     // Map for queue family index to queue count
     unordered_map<uint32_t, uint32_t> queue_family_index_map;
+    bool performance_lock_acquired = false;
 
     template <typename ExtProp>
     void GetPhysicalDeviceExtProperties(VkPhysicalDevice gpu, bool enabled, ExtProp* ext_prop) {

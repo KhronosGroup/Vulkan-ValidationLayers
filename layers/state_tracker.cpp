@@ -877,6 +877,7 @@ void ValidationStateTracker::ResetCommandBufferState(const VkCommandBuffer cb) {
         pCB->hasBuildAccelerationStructureCmd = false;
         pCB->hasDispatchCmd = false;
         pCB->state = CB_NEW;
+        pCB->commandCount = 0;
         pCB->submitCount = 0;
         pCB->image_layout_change_count = 1;  // Start at 1. 0 is insert value for validation cache versions, s.t. new == dirty
         pCB->status = 0;
@@ -1120,6 +1121,11 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
         state_tracker->enabled_features.separate_depth_stencil_layouts_features = *separate_depth_stencil_layouts_features;
     }
 
+    const auto *performance_query_features = lvl_find_in_chain<VkPhysicalDevicePerformanceQueryFeaturesKHR>(pCreateInfo->pNext);
+    if (performance_query_features) {
+        state_tracker->enabled_features.performance_query_features = *performance_query_features;
+    }
+
     // Store physical device properties and physical device mem limits into CoreChecks structs
     DispatchGetPhysicalDeviceMemoryProperties(gpu, &state_tracker->phys_dev_mem_props);
     DispatchGetPhysicalDeviceProperties(gpu, &state_tracker->phys_dev_props);
@@ -1144,6 +1150,7 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
     GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_nv_ray_tracing, &phys_dev_props->ray_tracing_props);
     GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_ext_texel_buffer_alignment, &phys_dev_props->texel_buffer_alignment_props);
     GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_ext_fragment_density_map, &phys_dev_props->fragment_density_map_props);
+    GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_khr_performance_query, &phys_dev_props->performance_query_props);
     if (state_tracker->device_extensions.vk_nv_cooperative_matrix) {
         // Get the needed cooperative_matrix properties
         auto cooperative_matrix_props = lvl_init_struct<VkPhysicalDeviceCooperativeMatrixPropertiesNV>();
@@ -1289,6 +1296,11 @@ void ValidationStateTracker::RetireWorkOnQueue(QUEUE_STATE *pQueue, uint64_t seq
             for (auto queryStatePair : localQueryToStateMap) {
                 if (queryStatePair.second == QUERYSTATE_ENDED) {
                     queryToStateMap[queryStatePair.first] = QUERYSTATE_AVAILABLE;
+
+                    const QUERY_POOL_STATE *qp_state = GetQueryPoolState(queryStatePair.first.pool);
+                    if (qp_state->createInfo.queryType == VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR)
+                        queryPassToStateMap[QueryObjectPass(queryStatePair.first, submission.perf_submit_pass)] =
+                            QUERYSTATE_AVAILABLE;
                 }
             }
             cb_node->in_use.fetch_sub(1);
@@ -1332,7 +1344,7 @@ void ValidationStateTracker::PostCallRecordQueueSubmit(VkQueue queue, uint32_t s
                 // record an empty submission with just the fence, so we can determine
                 // its completion.
                 pQueue->submissions.emplace_back(std::vector<VkCommandBuffer>(), std::vector<SEMAPHORE_WAIT>(),
-                                                 std::vector<VkSemaphore>(), std::vector<VkSemaphore>(), fence);
+                                                 std::vector<VkSemaphore>(), std::vector<VkSemaphore>(), fence, 0);
             }
         } else {
             // Retire work up until this fence early, we will not see the wait that corresponds to this signal
@@ -1412,8 +1424,12 @@ void ValidationStateTracker::PostCallRecordQueueSubmit(VkQueue queue, uint32_t s
                 }
             }
         }
+
+        const auto perf_submit = lvl_find_in_chain<VkPerformanceQuerySubmitInfoKHR>(submit->pNext);
+
         pQueue->submissions.emplace_back(cbs, semaphore_waits, semaphore_signals, semaphore_externals,
-                                         submit_idx == submitCount - 1 ? fence : (VkFence)VK_NULL_HANDLE);
+                                         submit_idx == submitCount - 1 ? fence : (VkFence)VK_NULL_HANDLE,
+                                         perf_submit ? perf_submit->counterPassIndex : 0);
     }
 
     if (early_retire_seq) {
@@ -1479,7 +1495,7 @@ void ValidationStateTracker::PostCallRecordQueueBindSparse(VkQueue queue, uint32
             if (!bindInfoCount) {
                 // No work to do, just dropping a fence in the queue by itself.
                 pQueue->submissions.emplace_back(std::vector<VkCommandBuffer>(), std::vector<SEMAPHORE_WAIT>(),
-                                                 std::vector<VkSemaphore>(), std::vector<VkSemaphore>(), fence);
+                                                 std::vector<VkSemaphore>(), std::vector<VkSemaphore>(), fence, 0);
             }
         } else {
             // Retire work up until this fence early, we will not see the wait that corresponds to this signal
@@ -1555,7 +1571,7 @@ void ValidationStateTracker::PostCallRecordQueueBindSparse(VkQueue queue, uint32
         }
 
         pQueue->submissions.emplace_back(std::vector<VkCommandBuffer>(), semaphore_waits, semaphore_signals, semaphore_externals,
-                                         bindIdx == bindInfoCount - 1 ? fence : (VkFence)VK_NULL_HANDLE);
+                                         bindIdx == bindInfoCount - 1 ? fence : (VkFence)VK_NULL_HANDLE, 0);
     }
 
     if (early_retire_seq) {
@@ -1994,6 +2010,29 @@ void ValidationStateTracker::PostCallRecordCreateQueryPool(VkDevice device, cons
     if (VK_SUCCESS != result) return;
     auto query_pool_state = std::make_shared<QUERY_POOL_STATE>();
     query_pool_state->createInfo = *pCreateInfo;
+    query_pool_state->pool = *pQueryPool;
+    if (pCreateInfo->queryType == VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR) {
+        const auto *perf = lvl_find_in_chain<VkQueryPoolPerformanceCreateInfoKHR>(pCreateInfo->pNext);
+        const QUEUE_FAMILY_PERF_COUNTERS &counters = *physical_device_state->perf_counters[perf->queueFamilyIndex];
+
+        for (uint32_t i = 0; i < perf->counterIndexCount; i++) {
+            const auto &counter = counters.counters[perf->pCounterIndices[i]];
+            switch (counter.scope) {
+                case VK_QUERY_SCOPE_COMMAND_BUFFER_KHR:
+                    query_pool_state->has_perf_scope_command_buffer = true;
+                    break;
+                case VK_QUERY_SCOPE_RENDER_PASS_KHR:
+                    query_pool_state->has_perf_scope_render_pass = true;
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        DispatchGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR(physical_device_state->phys_device, perf,
+                                                                      &query_pool_state->n_performance_passes);
+    }
+
     queryPoolMap[*pQueryPool] = std::move(query_pool_state);
 
     QueryObject query_obj{*pQueryPool, 0u};
@@ -2452,6 +2491,8 @@ void ValidationStateTracker::PreCallRecordBeginCommandBuffer(VkCommandBuffer com
     } else {
         cb_state->initial_device_mask = (1 << physical_device_count) - 1;
     }
+
+    cb_state->performance_lock_acquired = performance_lock_acquired;
 }
 
 void ValidationStateTracker::PostCallRecordEndCommandBuffer(VkCommandBuffer commandBuffer, VkResult result) {
@@ -2759,6 +2800,13 @@ void ValidationStateTracker::PreCallRecordCmdSetDepthBias(VkCommandBuffer comman
                                                           float depthBiasClamp, float depthBiasSlopeFactor) {
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     cb_state->status |= CBSTATUS_DEPTH_BIAS_SET;
+}
+
+void ValidationStateTracker::PreCallRecordCmdSetScissor(VkCommandBuffer commandBuffer, uint32_t firstScissor, uint32_t scissorCount,
+                                                        const VkRect2D *pScissors) {
+    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    cb_state->scissorMask |= ((1u << scissorCount) - 1u) << firstScissor;
+    cb_state->status |= CBSTATUS_SCISSOR_SET;
 }
 
 void ValidationStateTracker::PreCallRecordCmdSetBlendConstants(VkCommandBuffer commandBuffer, const float blendConstants[4]) {
@@ -4032,6 +4080,54 @@ void ValidationStateTracker::PostCallRecordEnumeratePhysicalDeviceGroupsKHR(
     RecordEnumeratePhysicalDeviceGroupsState(pPhysicalDeviceGroupCount, pPhysicalDeviceGroupProperties);
 }
 
+void ValidationStateTracker::RecordEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCounters(VkPhysicalDevice physicalDevice,
+                                                                                              uint32_t queueFamilyIndex,
+                                                                                              uint32_t *pCounterCount,
+                                                                                              VkPerformanceCounterKHR *pCounters) {
+    if (NULL == pCounters) return;
+
+    auto physical_device_state = GetPhysicalDeviceState(physicalDevice);
+    assert(physical_device_state);
+
+    std::unique_ptr<QUEUE_FAMILY_PERF_COUNTERS> queueFamilyCounters(new QUEUE_FAMILY_PERF_COUNTERS());
+    queueFamilyCounters->counters.resize(*pCounterCount);
+    for (uint32_t i = 0; i < *pCounterCount; i++) queueFamilyCounters->counters[i] = pCounters[i];
+
+    physical_device_state->perf_counters[queueFamilyIndex] = std::move(queueFamilyCounters);
+}
+
+void ValidationStateTracker::PostCallRecordEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(
+    VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex, uint32_t *pCounterCount, VkPerformanceCounterKHR *pCounters,
+    VkPerformanceCounterDescriptionKHR *pCounterDescriptions, VkResult result) {
+    if ((VK_SUCCESS != result) && (VK_INCOMPLETE != result)) return;
+    RecordEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCounters(physicalDevice, queueFamilyIndex, pCounterCount, pCounters);
+}
+
+void ValidationStateTracker::PostCallRecordAcquireProfilingLockKHR(VkDevice device, const VkAcquireProfilingLockInfoKHR *pInfo,
+                                                                   VkResult result) {
+    if (result == VK_SUCCESS) performance_lock_acquired = true;
+}
+
+bool ValidationStateTracker::PreCallValidateReleaseProfilingLockKHR(VkDevice device) const {
+    bool skip = false;
+
+    if (!performance_lock_acquired) {
+        skip |= log_msg(
+            report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
+            "VUID-vkReleaseProfilingLockKHR-device-03235",
+            "The profiling lock of device must have been held via a previous successful call to vkAcquireProfilingLockKHR.");
+    }
+
+    return skip;
+}
+
+void ValidationStateTracker::PostCallRecordReleaseProfilingLockKHR(VkDevice device) {
+    performance_lock_acquired = false;
+    for (auto &cmd_buffer : commandBufferMap) {
+        cmd_buffer.second->performance_lock_released = true;
+    }
+}
+
 void ValidationStateTracker::PreCallRecordDestroyDescriptorUpdateTemplate(VkDevice device,
                                                                           VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate,
                                                                           const VkAllocationCallbacks *pAllocator) {
@@ -4218,11 +4314,19 @@ void ValidationStateTracker::PostCallRecordResetQueryPoolEXT(VkDevice device, Vk
 
     // Reset the state of existing entries.
     QueryObject query_obj{queryPool, 0};
+    QueryObjectPass query_pass_obj{query_obj, 0};
     const uint32_t max_query_count = std::min(queryCount, query_pool_state->createInfo.queryCount - firstQuery);
     for (uint32_t i = 0; i < max_query_count; ++i) {
         query_obj.query = firstQuery + i;
         auto query_it = queryToStateMap.find(query_obj);
         if (query_it != queryToStateMap.end()) query_it->second = QUERYSTATE_RESET;
+        if (query_pool_state->createInfo.queryType == VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR) {
+            for (uint32_t passIndex = 0; passIndex < query_pool_state->n_performance_passes; passIndex++) {
+                query_pass_obj.perf_pass = passIndex;
+                auto query_perf_it = queryPassToStateMap.find(query_pass_obj);
+                if (query_perf_it != queryPassToStateMap.end()) query_perf_it->second = QUERYSTATE_RESET;
+            }
+        }
     }
 }
 

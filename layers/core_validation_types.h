@@ -1063,10 +1063,35 @@ struct QueryObject {
     // These next two fields are *not* used in hash or comparison, they are effectively a data payload
     uint32_t index;  // must be zero if !indexed
     bool indexed;
-    QueryObject(VkQueryPool pool_, uint32_t query_) : pool(pool_), query(query_), index(0), indexed(false) {}
-    QueryObject(VkQueryPool pool_, uint32_t query_, uint32_t index_) : pool(pool_), query(query_), index(index_), indexed(true) {}
+    // Command index in the command buffer where the end of the query was
+    // recorded (equal to the number of commands in the command buffer before
+    // the end of the query).
+    uint64_t endCommandIndex;
+
+    QueryObject(VkQueryPool pool_, uint32_t query_) : pool(pool_), query(query_), index(0), indexed(false), endCommandIndex(0) {}
+    QueryObject(VkQueryPool pool_, uint32_t query_, uint32_t index_)
+        : pool(pool_), query(query_), index(index_), indexed(true), endCommandIndex(0) {}
+    QueryObject(const QueryObject &obj)
+        : pool(obj.pool), query(obj.query), index(obj.index), indexed(obj.indexed), endCommandIndex(obj.endCommandIndex) {}
     bool operator<(const QueryObject &rhs) const { return (pool == rhs.pool) ? query < rhs.query : pool < rhs.pool; }
 };
+
+inline bool operator==(const QueryObject &query1, const QueryObject &query2) {
+    return ((query1.pool == query2.pool) && (query1.query == query2.query));
+}
+
+struct QueryObjectPass {
+    QueryObject obj;
+    uint32_t perf_pass;
+
+    QueryObjectPass(const QueryObject &obj_, uint32_t perf_pass_) : obj(obj_), perf_pass(perf_pass_) {}
+    QueryObjectPass(const QueryObjectPass &obj_) : obj(obj_.obj), perf_pass(obj_.perf_pass) {}
+    bool operator<(const QueryObjectPass &rhs) const { return (obj == rhs.obj) ? perf_pass < rhs.perf_pass : obj < rhs.obj; }
+};
+
+inline bool operator==(const QueryObjectPass &query1, const QueryObjectPass &query2) {
+    return ((query1.obj == query2.obj) && (query1.perf_pass == query2.perf_pass));
+}
 
 enum QueryState {
     QUERYSTATE_UNKNOWN,    // Initial state.
@@ -1103,15 +1128,18 @@ inline const char *string_QueryResultType(QueryResultType result_type) {
     return "UNKNOWN QUERY STATE";  // Unreachable.
 }
 
-inline bool operator==(const QueryObject &query1, const QueryObject &query2) {
-    return ((query1.pool == query2.pool) && (query1.query == query2.query));
-}
-
 namespace std {
 template <>
 struct hash<QueryObject> {
     size_t operator()(QueryObject query) const throw() {
         return hash<uint64_t>()((uint64_t)(query.pool)) ^ hash<uint32_t>()(query.query);
+    }
+};
+
+template <>
+struct hash<QueryObjectPass> {
+    size_t operator()(QueryObjectPass query) const throw() {
+        return hash<QueryObject>()(query.obj) ^ hash<uint32_t>()(query.perf_pass);
     }
 };
 }  // namespace std
@@ -1487,6 +1515,7 @@ struct QFOTransferCBScoreboards {
 };
 
 typedef std::map<QueryObject, QueryState> QueryMap;
+typedef std::map<QueryObjectPass, QueryState> QueryPassMap;
 typedef std::unordered_map<VkEvent, VkPipelineStageFlags> EventToStageMap;
 
 // Cmd Buffer Wrapper Struct - TODO : This desperately needs its own class
@@ -1501,8 +1530,10 @@ struct CMD_BUFFER_STATE : public BASE_NODE {
     bool hasTraceRaysCmd;
     bool hasBuildAccelerationStructureCmd;
     bool hasDispatchCmd;
-    CB_STATE state;        // Track cmd buffer update state
-    uint64_t submitCount;  // Number of times CB has been submitted
+
+    CB_STATE state;         // Track cmd buffer update state
+    uint64_t commandCount;  // Number of commands recorded
+    uint64_t submitCount;   // Number of times CB has been submitted
     typedef uint64_t ImageLayoutUpdateCount;
     ImageLayoutUpdateCount image_layout_change_count;  // The sequence number for changes to image layout (for cached validation)
     CBStatusFlags status;                              // Track status of various bindings on cmd buffer
@@ -1563,6 +1594,8 @@ struct CMD_BUFFER_STATE : public BASE_NODE {
     std::unordered_set<cvdescriptorset::DescriptorSet *> validated_descriptor_sets;
     // Contents valid only after an index buffer is bound (CBSTATUS_INDEX_BUFFER_BOUND set)
     IndexBufferBinding index_buffer_binding;
+    bool performance_lock_acquired = false;
+    bool performance_lock_released = false;
 
     // Cache of current insert label...
     LoggingLabel debug_label;
@@ -1597,18 +1630,20 @@ struct SEMAPHORE_WAIT {
 struct CB_SUBMISSION {
     CB_SUBMISSION(std::vector<VkCommandBuffer> const &cbs, std::vector<SEMAPHORE_WAIT> const &waitSemaphores,
                   std::vector<VkSemaphore> const &signalSemaphores, std::vector<VkSemaphore> const &externalSemaphores,
-                  VkFence fence)
+                  VkFence fence, uint32_t perf_submit_pass)
         : cbs(cbs),
           waitSemaphores(waitSemaphores),
           signalSemaphores(signalSemaphores),
           externalSemaphores(externalSemaphores),
-          fence(fence) {}
+          fence(fence),
+          perf_submit_pass(perf_submit_pass) {}
 
     std::vector<VkCommandBuffer> cbs;
     std::vector<SEMAPHORE_WAIT> waitSemaphores;
     std::vector<VkSemaphore> signalSemaphores;
     std::vector<VkSemaphore> externalSemaphores;
     VkFence fence;
+    uint32_t perf_submit_pass;
 };
 
 struct IMAGE_LAYOUT_STATE {
@@ -1660,6 +1695,7 @@ struct DeviceFeatures {
     VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV dedicated_allocation_image_aliasing_features;
     VkPhysicalDeviceShaderSubgroupExtendedTypesFeaturesKHR subgroup_extended_types_features;
     VkPhysicalDeviceSeparateDepthStencilLayoutsFeaturesKHR separate_depth_stencil_layouts_features;
+    VkPhysicalDevicePerformanceQueryFeaturesKHR performance_query_features;
 };
 
 enum RenderPassCreateVersion { RENDER_PASS_VERSION_1 = 0, RENDER_PASS_VERSION_2 = 1 };
