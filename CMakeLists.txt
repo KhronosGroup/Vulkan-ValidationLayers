@@ -343,6 +343,7 @@ set_target_properties(VkLayer_utils PROPERTIES LINKER_LANGUAGE CXX)
 add_dependencies(VkLayer_utils VulkanVL_generate_helper_files)
 target_include_directories(VkLayer_utils
                            PUBLIC ${VulkanHeaders_INCLUDE_DIR}
+				  ${CMAKE_CURRENT_SOURCE_DIR}/layers
                                   ${CMAKE_CURRENT_BINARY_DIR}
                                   ${CMAKE_CURRENT_BINARY_DIR}/layers
                                   ${PROJECT_BINARY_DIR})

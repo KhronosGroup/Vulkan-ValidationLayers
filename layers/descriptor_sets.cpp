@@ -975,7 +975,7 @@ uint32_t cvdescriptorset::DescriptorSet::GetStorageUpdates(const std::map<uint32
 }
 // Set is being deleted or updates so invalidate all bound cmd buffers
 void cvdescriptorset::DescriptorSet::InvalidateBoundCmdBuffers() {
-    device_data_->InvalidateCommandBuffers(cb_bindings, {HandleToUint64(set_), kVulkanObjectTypeDescriptorSet});
+    device_data_->InvalidateCommandBuffers(cb_bindings, VulkanTypedHandle(set_, kVulkanObjectTypeDescriptorSet));
 }
 
 // Loop through the write updates to do for a push descriptor set, ignoring dstSet
@@ -1240,9 +1240,9 @@ void cvdescriptorset::DescriptorSet::UpdateDrawState(CoreChecks *device_data, CM
     // bind cb to this descriptor set
     cb_bindings.insert(cb_node);
     // Add bindings for descriptor set, the set's pool, and individual objects in the set
-    cb_node->object_bindings.insert({HandleToUint64(set_), kVulkanObjectTypeDescriptorSet});
+    cb_node->object_bindings.emplace(set_, kVulkanObjectTypeDescriptorSet);
     pool_state_->cb_bindings.insert(cb_node);
-    cb_node->object_bindings.insert({HandleToUint64(pool_state_->pool), kVulkanObjectTypeDescriptorPool});
+    cb_node->object_bindings.emplace(pool_state_->pool, kVulkanObjectTypeDescriptorPool);
     // For the active slots, use set# to look up descriptorSet from boundDescriptorSets, and bind all of that descriptor set's
     // resources
     for (auto binding_req_pair : binding_req_map) {

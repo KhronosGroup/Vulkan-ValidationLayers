@@ -28,6 +28,7 @@
 #include <string>
 #include <vector>
 #include <set>
+#include "cast_utils.h"
 #include "vk_format_utils.h"
 #include "vk_layer_logging.h"
 
@@ -119,73 +120,6 @@ VK_LAYER_EXPORT VkLayerInstanceCreateInfo *get_chain_info(const VkInstanceCreate
 VK_LAYER_EXPORT VkLayerDeviceCreateInfo *get_chain_info(const VkDeviceCreateInfo *pCreateInfo, VkLayerFunction func);
 
 static inline bool IsPowerOfTwo(unsigned x) { return x && !(x & (x - 1)); }
-
-// Casts to allow various types of less than 64 bits to be cast to and from uint64_t safely and portably
-template <typename HandleType, typename Uint>
-static inline HandleType CastFromUint(Uint untyped_handle) {
-    static_assert(sizeof(HandleType) == sizeof(Uint), "HandleType must be the same size as untyped handle");
-    return *reinterpret_cast<HandleType *>(&untyped_handle);
-}
-template <typename HandleType, typename Uint>
-static inline Uint CastToUint(HandleType handle) {
-    static_assert(sizeof(HandleType) == sizeof(Uint), "HandleType must be the same size as untyped handle");
-    return *reinterpret_cast<Uint *>(&handle);
-}
-
-// Ensure that the size changing casts are *static* to ensure portability
-template <typename HandleType>
-static inline HandleType CastFromUint64(uint64_t untyped_handle) {
-    static_assert(sizeof(HandleType) <= sizeof(uint64_t), "HandleType must be not larger than the untyped handle size");
-    // Since size mismatched reinterpret casts are strongly non-portable we use std::condtional to find the appropriate
-    // unsigned integer type for the reinterpret cast we are using.  C++11 doesn't have anything like a switch, for the type
-    // conditionals, so the various cases are nested in the "false" type of std::conditional.
-    // The formatting makes it clear, but each indent is else if.
-    typedef
-        typename std::conditional<sizeof(HandleType) == sizeof(uint8_t), uint8_t,
-                                  typename std::conditional<sizeof(HandleType) == sizeof(uint16_t), uint16_t,
-                                                            typename std::conditional<sizeof(HandleType) == sizeof(uint32_t),
-                                                                                      uint32_t, uint64_t>::type>::type>::type Uint;
-    return CastFromUint<HandleType, Uint>(static_cast<Uint>(untyped_handle));
-}
-
-template <typename HandleType>
-static uint64_t CastToUint64(HandleType handle) {
-    static_assert(sizeof(HandleType) <= sizeof(uint64_t), "HandleType must be not larger than the untyped handle size");
-    typedef
-        typename std::conditional<sizeof(HandleType) == sizeof(uint8_t), uint8_t,
-                                  typename std::conditional<sizeof(HandleType) == sizeof(uint16_t), uint16_t,
-                                                            typename std::conditional<sizeof(HandleType) == sizeof(uint32_t),
-                                                                                      uint32_t, uint64_t>::type>::type>::type Uint;
-    return static_cast<uint64_t>(CastToUint<HandleType, Uint>(handle));
-}
-
-// Convenience functions to case between handles and the types the handles abstract, reflecting the Vulkan handle scheme, where
-// Handles are either pointers (dispatchable) or sizeof(uint64_t) (non-dispatchable), s.t. full size-safe casts are used and
-// we ensure that handles are large enough to contain the underlying type.
-template <typename HandleType, typename ValueType>
-void CastToHandle(ValueType value, HandleType *handle) {
-    static_assert(sizeof(HandleType) >= sizeof(ValueType), "HandleType must large enough to hold internal value");
-    *handle = CastFromUint64<HandleType>(CastToUint64<ValueType>(value));
-}
-// This form is conveniently "inline", you should only need to specify the handle type (the value type being deducible from the arg
-template <typename HandleType, typename ValueType>
-HandleType CastToHandle(ValueType value) {
-    HandleType handle;
-    CastToHandle(value, &handle);
-    return handle;
-}
-
-template <typename ValueType, typename HandleType>
-void CastFromHandle(HandleType handle, ValueType *value) {
-    static_assert(sizeof(HandleType) >= sizeof(ValueType), "HandleType must large enough to hold internal value");
-    *value = CastFromUint64<ValueType>(CastToUint64<HandleType>(handle));
-}
-template <typename ValueType, typename HandleType>
-ValueType CastFromHandle(HandleType handle) {
-    ValueType value;
-    CastFromHandle(handle, &value);
-    return value;
-}
 
 extern "C" {
 #endif
