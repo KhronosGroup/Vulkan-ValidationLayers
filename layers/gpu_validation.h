@@ -75,10 +75,12 @@ struct GpuValidationState {
     uint32_t output_buffer_size;
     VmaAllocator vmaAllocator;
     PFN_vkSetDeviceLoaderData vkSetDeviceLoaderData;
-    GpuValidationState(bool aborted = false, bool reserve_binding_slot = false, VkCommandPool barrier_command_pool = VK_NULL_HANDLE,
-                       VkCommandBuffer barrier_command_buffer = VK_NULL_HANDLE, VmaAllocator vmaAllocator = {})
+    GpuValidationState(bool aborted = false, bool reserve_binding_slot = false, uint32_t unique_shader_module_id = 0,
+                       VkCommandPool barrier_command_pool = VK_NULL_HANDLE, VkCommandBuffer barrier_command_buffer = VK_NULL_HANDLE,
+                       VmaAllocator vmaAllocator = {})
         : aborted(aborted),
           reserve_binding_slot(reserve_binding_slot),
+          unique_shader_module_id(unique_shader_module_id),
           barrier_command_pool(barrier_command_pool),
           barrier_command_buffer(barrier_command_buffer),
           vmaAllocator(vmaAllocator){};
