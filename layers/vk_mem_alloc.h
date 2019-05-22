@@ -29,6 +29,7 @@
 //    3/27/19 - Make changes to suppress warnings from GCC
 //    4/18/19 - Make changes to suppress warnings from clang
 //    6/05/19 - Make changes to suppress warnings from clang 3.8.0
+//    6/05/19 - Make changes to suppress more warnings from GCC
 //
 
 #ifndef AMD_VULKAN_MEMORY_ALLOCATOR_H
@@ -3447,12 +3448,16 @@ END OF CONFIGURATION
 */
 
 #if defined(__GNUC__)
+#define GCC_VERSION (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wtype-limits"
 #pragma GCC diagnostic ignored "-Wunused-variable"
 #if defined(__clang__)
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wtautological-compare"
+#endif
+#if GCC_VERSION >= 80000
+#pragma GCC diagnostic ignored "-Wclass-memaccess"
 #endif
 #if defined(ANDROID)
 #pragma GCC diagnostic ignored "-Wunused-private-field"
