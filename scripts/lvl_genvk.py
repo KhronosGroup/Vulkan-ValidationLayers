@@ -597,6 +597,54 @@ def makeGenOpts(args):
             expandEnumerants = False)
         ]
 
+    # generator for command_counter.h
+    genOpts['command_counter_helper.h'] = [
+          CommandCounterOutputGenerator,
+          CommandCounterOutputGeneratorOptions(
+            conventions       = conventions,
+            filename          = 'command_counter_helper.h',
+            directory         = directory,
+            apiname           = 'vulkan',
+            profile           = None,
+            versions          = featuresPat,
+            emitversions      = featuresPat,
+            defaultExtensions = 'vulkan',
+            addExtensions     = addExtensionsPat,
+            removeExtensions  = removeExtensionsPat,
+            emitExtensions    = emitExtensionsPat,
+            prefixText        = prefixStrings + vkPrefixStrings,
+            apicall           = 'VKAPI_ATTR ',
+            apientry          = 'VKAPI_CALL ',
+            apientryp         = 'VKAPI_PTR *',
+            alignFuncParam    = 48,
+            expandEnumerants = False,
+            lvt_file_type  = 'function_pointer_header')
+        ]
+
+    # generator for command_counter.cpp
+    genOpts['command_counter_helper.cpp'] = [
+          CommandCounterOutputGenerator,
+          CommandCounterOutputGeneratorOptions(
+            conventions       = conventions,
+            filename          = 'command_counter_helper.cpp',
+            directory         = directory,
+            apiname           = 'vulkan',
+            profile           = None,
+            versions          = featuresPat,
+            emitversions      = featuresPat,
+            defaultExtensions = 'vulkan',
+            addExtensions     = addExtensionsPat,
+            removeExtensions  = removeExtensionsPat,
+            emitExtensions    = emitExtensionsPat,
+            prefixText        = prefixStrings + vkPrefixStrings,
+            apicall           = 'VKAPI_ATTR ',
+            apientry          = 'VKAPI_CALL ',
+            apientryp         = 'VKAPI_PTR *',
+            alignFuncParam    = 48,
+            expandEnumerants = False,
+            lvt_file_type  = 'function_pointer_source')
+        ]
+
 
 # Generate a target based on the options in the matching genOpts{} object.
 # This is encapsulated in a function so it can be profiled and/or timed.
@@ -721,6 +769,7 @@ if __name__ == '__main__':
     from layer_chassis_generator import LayerChassisOutputGenerator, LayerChassisGeneratorOptions
     from layer_chassis_dispatch_generator import LayerChassisDispatchOutputGenerator, LayerChassisDispatchGeneratorOptions
     from lvt_file_generator import LvtFileOutputGenerator, LvtFileOutputGeneratorOptions
+    from command_counter_generator import CommandCounterOutputGenerator, CommandCounterOutputGeneratorOptions
 
     # Temporary workaround for vkconventions python2 compatibility
     import abc; abc.ABC = abc.ABCMeta('ABC', (object,), {})

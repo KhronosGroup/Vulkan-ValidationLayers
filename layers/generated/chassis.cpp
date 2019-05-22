@@ -47,6 +47,7 @@ bool wrap_handles = true;
 // Include layer validation object definitions
 #include "best_practices.h"
 #include "core_validation.h"
+#include "command_counter.h"
 #include "gpu_validation.h"
 #include "object_lifetime_validation.h"
 #include "stateless_validation.h"
@@ -607,6 +608,12 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
     core_checks->instance_state = reinterpret_cast<CoreChecks *>(
         core_checks->GetValidationObject(instance_interceptor->object_dispatch, LayerObjectTypeCoreValidation));
     if (!instance_interceptor->disabled.core_checks) {
+        // Only enable the command counters when needed.
+        if (device_extensions.vk_khr_performance_query) {
+            auto command_counter = new CommandCounter(core_checks);
+            command_counter->container_type = LayerObjectTypeDevice;
+            device_interceptor->object_dispatch.emplace_back(command_counter);
+        }
         device_interceptor->object_dispatch.emplace_back(core_checks);
     }
     auto best_practices = new BestPractices;
@@ -700,7 +707,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateGraphicsPipelines(
         intercept->PreCallRecordCreateGraphicsPipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines, &(cgpl_state[intercept->container_type]));
     }
 
-    auto usepCreateInfos = (!cgpl_state[LayerObjectTypeGpuAssisted].pCreateInfos) ? pCreateInfos : cgpl_state[LayerObjectTypeGpuAssisted].pCreateInfos; 
+    auto usepCreateInfos = (!cgpl_state[LayerObjectTypeGpuAssisted].pCreateInfos) ? pCreateInfos : cgpl_state[LayerObjectTypeGpuAssisted].pCreateInfos;
 
     VkResult result = DispatchCreateGraphicsPipelines(device, pipelineCache, createInfoCount, usepCreateInfos, pAllocator, pPipelines);
 
