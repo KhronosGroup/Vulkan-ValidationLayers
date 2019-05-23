@@ -883,28 +883,8 @@ class GpuVal : public ValidationObject {
                                           void* csm_state);
 
     // Gpu Validation Functions
-    void GpuPreCallRecordCreateDevice(VkPhysicalDevice gpu, std::unique_ptr<safe_VkDeviceCreateInfo>& modified_create_info,
-                                      VkPhysicalDeviceFeatures* supported_features);
     void GpuPostCallRecordCreateDevice(const CHECK_ENABLED* enables);
-    void GpuPreCallRecordDestroyDevice();
     void GpuResetCommandBuffer(const VkCommandBuffer commandBuffer);
-    bool GpuPreCallCreateShaderModule(const VkShaderModuleCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
-                                      VkShaderModule* pShaderModule, uint32_t* unique_shader_id,
-                                      VkShaderModuleCreateInfo* instrumented_create_info,
-                                      std::vector<unsigned int>* instrumented_pgm);
-    bool GpuPreCallCreatePipelineLayout(const VkPipelineLayoutCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
-                                        VkPipelineLayout* pPipelineLayout, std::vector<VkDescriptorSetLayout>* new_layouts,
-                                        VkPipelineLayoutCreateInfo* modified_create_info);
-    void GpuPostCallCreatePipelineLayout(VkResult result);
-    void GpuPreCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits, VkFence fence);
-    void GpuPostCallQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits, VkFence fence);
-    void GpuPreCallValidateCmdWaitEvents(VkPipelineStageFlags sourceStageMask);
-    std::vector<safe_VkGraphicsPipelineCreateInfo> GpuPreCallRecordCreateGraphicsPipelines(
-        VkPipelineCache pipelineCache, uint32_t count, const VkGraphicsPipelineCreateInfo* pCreateInfos,
-        const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines, std::vector<std::unique_ptr<PIPELINE_STATE>>& pipe_state);
-    void GpuPostCallRecordCreateGraphicsPipelines(const uint32_t count, const VkGraphicsPipelineCreateInfo* pCreateInfos,
-                                                  const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines);
-    void GpuPreCallRecordDestroyPipeline(const VkPipeline pipeline);
     void GpuAllocateValidationResources(const VkCommandBuffer cmd_buffer, VkPipelineBindPoint bind_point);
     void AnalyzeAndReportError(CMD_BUFFER_STATE* cb_node, VkQueue queue, uint32_t draw_index, uint32_t* const debug_output_buffer);
     void ProcessInstrumentationBuffer(VkQueue queue, CMD_BUFFER_STATE* cb_node);
@@ -923,11 +903,6 @@ class GpuVal : public ValidationObject {
                                             const VkComputePipelineCreateInfo* pComputeCreateInfos,
                                             const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
                                             const VkPipelineBindPoint bind_point);
-    std::vector<safe_VkComputePipelineCreateInfo> GpuPreCallRecordCreateComputePipelines(
-        VkPipelineCache pipelineCache, uint32_t count, const VkComputePipelineCreateInfo* pCreateInfos,
-        const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines, std::vector<std::unique_ptr<PIPELINE_STATE>>& pipe_state);
-    void GpuPostCallRecordCreateComputePipelines(const uint32_t count, const VkComputePipelineCreateInfo* pCreateInfos,
-                                                 const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines);
     VkResult GpuInitializeVma();
     void ReportSetupProblem(VkDebugReportObjectTypeEXT object_type, uint64_t object_handle, const char* const specific_message);
 

@@ -172,41 +172,26 @@ void GpuVal::ResetCommandBufferState(const VkCommandBuffer cb) {
 
     GpuResetCommandBuffer(cb);
 }
-void GpuVal::InitGpuValidation() {
-    // Process the layer settings file.
-    enum CoreValidationGpuFlagBits {
-        CORE_VALIDATION_GPU_VALIDATION_ALL_BIT = 0x00000001,
-        CORE_VALIDATION_GPU_VALIDATION_RESERVE_BINDING_SLOT_BIT = 0x00000002,
-    };
-    typedef VkFlags CoreGPUFlags;
-    static const std::unordered_map<std::string, VkFlags> gpu_flags_option_definitions = {
-        {std::string("all"), CORE_VALIDATION_GPU_VALIDATION_ALL_BIT},
-        {std::string("reserve_binding_slot"), CORE_VALIDATION_GPU_VALIDATION_RESERVE_BINDING_SLOT_BIT},
-    };
-    std::string gpu_flags_key = "lunarg_core_validation.gpu_validation";
-    CoreGPUFlags gpu_flags = GetLayerOptionFlags(gpu_flags_key, gpu_flags_option_definitions, 0);
-    gpu_flags_key = "khronos_validation.gpu_validation";
-    gpu_flags |= GetLayerOptionFlags(gpu_flags_key, gpu_flags_option_definitions, 0);
-    instance_state->enabled.gpu_validation = true;
-    if (gpu_flags & CORE_VALIDATION_GPU_VALIDATION_RESERVE_BINDING_SLOT_BIT) {
-        instance_state->enabled.gpu_validation_reserve_binding_slot = true;
-    }
-}
-
-void GpuVal::PostCallRecordCreateInstance(const VkInstanceCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator,
-                                          VkInstance *pInstance, VkResult result) {
-    if (VK_SUCCESS != result) return;
-    InitGpuValidation();
-}
-
-void GpuVal::PreCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo *pCreateInfo,
-                                       const VkAllocationCallbacks *pAllocator, VkDevice *pDevice,
-                                       std::unique_ptr<safe_VkDeviceCreateInfo> &modified_create_info) {
-    // GPU Validation can possibly turn on device features, so give it a chance to change the create info.
-    VkPhysicalDeviceFeatures supported_features;
-    DispatchGetPhysicalDeviceFeatures(gpu, &supported_features);
-    GpuPreCallRecordCreateDevice(gpu, modified_create_info, &supported_features);
-}
+////////void GpuVal::InitGpuValidation() {
+////////    // Process the layer settings file.
+////////    enum CoreValidationGpuFlagBits {
+////////        CORE_VALIDATION_GPU_VALIDATION_ALL_BIT = 0x00000001,
+////////        CORE_VALIDATION_GPU_VALIDATION_RESERVE_BINDING_SLOT_BIT = 0x00000002,
+////////    };
+////////    typedef VkFlags CoreGPUFlags;
+////////    static const std::unordered_map<std::string, VkFlags> gpu_flags_option_definitions = {
+////////        {std::string("all"), CORE_VALIDATION_GPU_VALIDATION_ALL_BIT},
+////////        {std::string("reserve_binding_slot"), CORE_VALIDATION_GPU_VALIDATION_RESERVE_BINDING_SLOT_BIT},
+////////    };
+////////    std::string gpu_flags_key = "lunarg_core_validation.gpu_validation";
+////////    CoreGPUFlags gpu_flags = GetLayerOptionFlags(gpu_flags_key, gpu_flags_option_definitions, 0);
+////////    gpu_flags_key = "khronos_validation.gpu_validation";
+////////    gpu_flags |= GetLayerOptionFlags(gpu_flags_key, gpu_flags_option_definitions, 0);
+////////    instance_state->enabled.gpu_validation = true;
+////////    if (gpu_flags & CORE_VALIDATION_GPU_VALIDATION_RESERVE_BINDING_SLOT_BIT) {
+////////        instance_state->enabled.gpu_validation_reserve_binding_slot = true;
+////////    }
+////////}
 
 void GpuVal::PostCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo *pCreateInfo,
                                         const VkAllocationCallbacks *pAllocator, VkDevice *pDevice, VkResult result) {
@@ -229,18 +214,6 @@ void GpuVal::PostCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDeviceCrea
     DispatchGetPhysicalDeviceProperties(gpu, &gpu_val->phys_dev_props);
 
     gpu_val->GpuPostCallRecordCreateDevice(&enabled);
-}
-
-void GpuVal::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks *pAllocator) {
-    if (!device) return;
-    GpuPreCallRecordDestroyDevice();
-    pipelineMap.clear();
-    commandBufferMap.clear();
-    renderPassMap.clear();
-    // This will also delete all sets in the pool & remove them from setMap
-    // All sets should be removed
-    queueMap.clear();
-    layer_debug_utils_destroy_device(device);
 }
 
 void GpuVal::PreCallRecordDestroyRenderPass(VkDevice device, VkRenderPass renderPass, const VkAllocationCallbacks *pAllocator) {
@@ -270,28 +243,10 @@ void GpuVal::PostCallRecordCreateRenderPass2KHR(VkDevice device, const VkRenderP
     RecordCreateRenderPassState(RENDER_PASS_VERSION_2, render_pass_state, pRenderPass);
 }
 
-void GpuVal::PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits, VkFence fence,
-                                       VkResult result) {
-    GpuPostCallQueueSubmit(queue, submitCount, pSubmits, fence);
-}
-
-void GpuVal::PreCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits, VkFence fence) {
-    if (device_extensions.vk_ext_descriptor_indexing) {
-        GpuPreCallRecordQueueSubmit(queue, submitCount, pSubmits, fence);
-    }
-}
-
 void GpuVal::PreCallRecordDestroyShaderModule(VkDevice device, VkShaderModule shaderModule,
                                               const VkAllocationCallbacks *pAllocator) {
     if (!shaderModule) return;
     shaderModuleMap.erase(shaderModule);
-}
-
-void GpuVal::PreCallRecordDestroyPipeline(VkDevice device, VkPipeline pipeline, const VkAllocationCallbacks *pAllocator) {
-    if (!pipeline) return;
-    // Any bound cmd buffers are now invalid
-    GpuPreCallRecordDestroyPipeline(pipeline);
-    pipelineMap.erase(pipeline);
 }
 
 void GpuVal::PreCallRecordDestroyDescriptorSetLayout(VkDevice device, VkDescriptorSetLayout descriptorSetLayout,
@@ -1029,37 +984,6 @@ bool GpuVal::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineC
     return false;
 }
 
-// GPU validation may replace pCreateInfos for the down-chain call
-void GpuVal::PreCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
-                                                  const VkGraphicsPipelineCreateInfo *pCreateInfos,
-                                                  const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-                                                  void *cgpl_state_data) {
-    create_graphics_pipeline_api_state *cgpl_state = reinterpret_cast<create_graphics_pipeline_api_state *>(cgpl_state_data);
-    cgpl_state->pCreateInfos = pCreateInfos;
-    // GPU Validation may replace instrumented shaders with non-instrumented ones, so allow it to modify the createinfos.
-    cgpl_state->gpu_create_infos =
-        GpuPreCallRecordCreateGraphicsPipelines(pipelineCache, count, pCreateInfos, pAllocator, pPipelines, cgpl_state->pipe_state);
-    cgpl_state->pCreateInfos = reinterpret_cast<VkGraphicsPipelineCreateInfo *>(cgpl_state->gpu_create_infos.data());
-}
-
-void GpuVal::PostCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
-                                                   const VkGraphicsPipelineCreateInfo *pCreateInfos,
-                                                   const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines, VkResult result,
-                                                   void *cgpl_state_data) {
-    create_graphics_pipeline_api_state *cgpl_state = reinterpret_cast<create_graphics_pipeline_api_state *>(cgpl_state_data);
-    // This API may create pipelines regardless of the return value
-    for (uint32_t i = 0; i < count; i++) {
-        if (pPipelines[i] != VK_NULL_HANDLE) {
-            (cgpl_state->pipe_state)[i]->pipeline = pPipelines[i];
-            pipelineMap[pPipelines[i]] = std::move((cgpl_state->pipe_state)[i]);
-        }
-    }
-    // GPU val needs clean up regardless of result
-    GpuPostCallRecordCreateGraphicsPipelines(count, pCreateInfos, pAllocator, pPipelines);
-    cgpl_state->gpu_create_infos.clear();
-    cgpl_state->pipe_state.clear();
-}
-
 bool GpuVal::PreCallValidateCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                    const VkComputePipelineCreateInfo *pCreateInfos,
                                                    const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
@@ -1082,39 +1006,6 @@ bool GpuVal::PreCallValidateCreateComputePipelines(VkDevice device, VkPipelineCa
     return skip;
 }
 
-void GpuVal::PreCallRecordCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
-                                                 const VkComputePipelineCreateInfo *pCreateInfos,
-                                                 const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-                                                 void *ccpl_state_data) {
-    auto *ccpl_state = reinterpret_cast<create_compute_pipeline_api_state *>(ccpl_state_data);
-    ccpl_state->pCreateInfos = pCreateInfos;
-    // GPU Validation may replace instrumented shaders with non-instrumented ones, so allow it to modify the createinfos.
-    if (enabled.gpu_validation) {
-        ccpl_state->gpu_create_infos = GpuPreCallRecordCreateComputePipelines(pipelineCache, count, pCreateInfos, pAllocator,
-                                                                              pPipelines, ccpl_state->pipe_state);
-        ccpl_state->pCreateInfos = reinterpret_cast<VkComputePipelineCreateInfo *>(ccpl_state->gpu_create_infos.data());
-    }
-}
-
-void GpuVal::PostCallRecordCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
-                                                  const VkComputePipelineCreateInfo *pCreateInfos,
-                                                  const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines, VkResult result,
-                                                  void *ccpl_state_data) {
-    create_compute_pipeline_api_state *ccpl_state = reinterpret_cast<create_compute_pipeline_api_state *>(ccpl_state_data);
-
-    // This API may create pipelines regardless of the return value
-    for (uint32_t i = 0; i < count; i++) {
-        if (pPipelines[i] != VK_NULL_HANDLE) {
-            (ccpl_state->pipe_state)[i]->pipeline = pPipelines[i];
-            pipelineMap[pPipelines[i]] = std::move((ccpl_state->pipe_state)[i]);
-        }
-    }
-    // GPU val needs clean up regardless of result
-    if (enabled.gpu_validation) {
-        GpuPostCallRecordCreateComputePipelines(count, pCreateInfos, pAllocator, pPipelines);
-    }
-}
-
 void GpuVal::PostCallRecordCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                        const VkRayTracingPipelineCreateInfoNV *pCreateInfos,
                                                        const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
@@ -1135,26 +1026,6 @@ void GpuVal::PostCallRecordCreateDescriptorSetLayout(VkDevice device, const VkDe
                                                      VkResult result) {
     if (VK_SUCCESS != result) return;
     descriptorSetLayoutMap[*pSetLayout] = std::make_shared<cvdescriptorset::DescriptorSetLayout>(pCreateInfo, *pSetLayout);
-}
-
-void GpuVal::PreCallRecordCreatePipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo *pCreateInfo,
-                                               const VkAllocationCallbacks *pAllocator, VkPipelineLayout *pPipelineLayout,
-                                               void *cpl_state_data) {
-    create_pipeline_layout_api_state *cpl_state = reinterpret_cast<create_pipeline_layout_api_state *>(cpl_state_data);
-    GpuPreCallCreatePipelineLayout(pCreateInfo, pAllocator, pPipelineLayout, &cpl_state->new_layouts,
-                                   &cpl_state->modified_create_info);
-}
-
-void GpuVal::PostCallRecordCreatePipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo *pCreateInfo,
-                                                const VkAllocationCallbacks *pAllocator, VkPipelineLayout *pPipelineLayout,
-                                                VkResult result) {
-    // Clean up GPU validation
-    GpuPostCallCreatePipelineLayout(result);
-    if (VK_SUCCESS != result) return;
-    std::unique_ptr<PIPELINE_LAYOUT_STATE> pipeline_layout_state(new PIPELINE_LAYOUT_STATE{});
-    pipeline_layout_state->layout = *pPipelineLayout;
-    pipeline_layout_state->set_layouts.resize(pCreateInfo->setLayoutCount);
-    pipelineLayoutMap[*pPipelineLayout] = std::move(pipeline_layout_state);
 }
 
 // Ensure the pool contains enough descriptors and descriptor sets to satisfy
@@ -1207,14 +1078,6 @@ void GpuVal::PreCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer, VkPipel
     auto pipe_state = GetPipelineState(pipeline);
     cb_state->lastBound[pipelineBindPoint].pipeline_state = pipe_state;
     AddCommandBufferBinding(&pipe_state->cb_bindings, {HandleToUint64(pipeline), kVulkanObjectTypePipeline}, cb_state);
-}
-
-void GpuVal::PreCallRecordCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
-                                        VkPipelineStageFlags sourceStageMask, VkPipelineStageFlags dstStageMask,
-                                        uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers,
-                                        uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier *pBufferMemoryBarriers,
-                                        uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier *pImageMemoryBarriers) {
-    GpuPreCallValidateCmdWaitEvents(sourceStageMask);
 }
 
 void GpuVal::PreCallRecordCmdPushDescriptorSetKHR(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
@@ -1446,14 +1309,6 @@ void GpuVal::PreCallRecordCmdDispatch(VkCommandBuffer commandBuffer, uint32_t x,
 
 void GpuVal::PreCallRecordCmdDispatchIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset) {
     GpuAllocateValidationResources(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE);
-}
-
-void GpuVal::PreCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo *pCreateInfo,
-                                             const VkAllocationCallbacks *pAllocator, VkShaderModule *pShaderModule,
-                                             void *csm_state_data) {
-    create_shader_module_api_state *csm_state = reinterpret_cast<create_shader_module_api_state *>(csm_state_data);
-    GpuPreCallCreateShaderModule(pCreateInfo, pAllocator, pShaderModule, &csm_state->unique_shader_id,
-                                 &csm_state->instrumented_create_info, &csm_state->instrumented_pgm);
 }
 
 void GpuVal::PostCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo *pCreateInfo,
