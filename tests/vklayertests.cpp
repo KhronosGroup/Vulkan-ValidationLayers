@@ -25,7 +25,7 @@
  */
 
 #include "cast_utils.h"
-#include "vklayertest.h"
+#include "layer_validation_tests.h"
 
 TEST_F(VkLayerTest, RequiredParameter) {
     TEST_DESCRIPTION("Specify VK_NULL_HANDLE, NULL, and 0 for required handle, pointer, array, and array count parameters");
