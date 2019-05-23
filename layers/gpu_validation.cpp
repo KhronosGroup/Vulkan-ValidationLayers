@@ -466,12 +466,22 @@ void GpuVal::PreCallRecordCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t 
     }
 }
 
-// GPU validation may replace pCreateInfos for the down-chain call
 void GpuVal::PreCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                   const VkGraphicsPipelineCreateInfo *pCreateInfos,
                                                   const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
                                                   void *cgpl_state_data) {
     create_graphics_pipeline_api_state *cgpl_state = reinterpret_cast<create_graphics_pipeline_api_state *>(cgpl_state_data);
+    cgpl_state->pipe_state.reserve(count);
+    for (uint32_t i = 0; i < count; i++) {
+        cgpl_state->pipe_state.push_back(std::unique_ptr<PIPELINE_STATE>(new PIPELINE_STATE));
+        (cgpl_state->pipe_state)[i]->initGraphicsPipeline(&pCreateInfos[i],
+                                                          GetRenderPassStateSharedPtr(pCreateInfos[i].renderPass));
+        (cgpl_state->pipe_state)[i]->pipeline_layout = *GetPipelineLayout(pCreateInfos[i].layout);
+    }
+    for (uint32_t i = 0; i < count; i++) {
+        PIPELINE_STATE *pipe_state = (cgpl_state->pipe_state)[i].get();
+        CapturePipelineShaderState(pipe_state);
+    }
     cgpl_state->pCreateInfos = pCreateInfos;
     // GPU Validation may replace instrumented shaders with non-instrumented ones, so allow it to modify the createinfos.
     GpuPreCallRecordPipelineCreations(count, pCreateInfos, nullptr, pAllocator, pPipelines, cgpl_state->pipe_state,
@@ -484,6 +494,17 @@ void GpuVal::PreCallRecordCreateComputePipelines(VkDevice device, VkPipelineCach
                                                  const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
                                                  void *ccpl_state_data) {
     auto *ccpl_state = reinterpret_cast<create_compute_pipeline_api_state *>(ccpl_state_data);
+    ccpl_state->pipe_state.reserve(count);
+    for (uint32_t i = 0; i < count; i++) {
+        // Create and initialize internal tracking data structure
+        ccpl_state->pipe_state.push_back(std::unique_ptr<PIPELINE_STATE>(new PIPELINE_STATE));
+        ccpl_state->pipe_state.back()->initComputePipeline(&pCreateInfos[i]);
+        ccpl_state->pipe_state.back()->pipeline_layout = *GetPipelineLayout(pCreateInfos[i].layout);
+    }
+    for (uint32_t i = 0; i < count; i++) {
+        PIPELINE_STATE *pipe_state = (ccpl_state->pipe_state)[i].get();
+        CapturePipelineShaderState(pipe_state);
+    }
     ccpl_state->pCreateInfos = pCreateInfos;
     // GPU Validation may replace instrumented shaders with non-instrumented ones, so allow it to modify the createinfos.
     GpuPreCallRecordPipelineCreations(count, nullptr, pCreateInfos, pAllocator, pPipelines, ccpl_state->pipe_state, nullptr,
