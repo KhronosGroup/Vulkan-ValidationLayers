@@ -24,7 +24,7 @@
  * Author: John Zulauf <jzulauf@lunarg.com>
  */
 
-#include "vklayertest.h"
+#include "layer_validation_tests.h"
 //
 // POSITIVE VALIDATION TESTS
 //

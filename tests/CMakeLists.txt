@@ -62,7 +62,7 @@ endif()
 
 set(LIBGLM_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/libs)
 
-set(COMMON_CPP vklayertests.cpp vkpositivelayertests.cpp vklayertest.cpp vkrenderframework.cpp vktestbinding.cpp vktestframework.cpp test_environment.cpp)
+set(COMMON_CPP vklayertests.cpp vkpositivelayertests.cpp vkrenderframework.cpp vktestbinding.cpp vktestframework.cpp test_environment.cpp)
 
 if(NOT WIN32)
     # extra setup for out-of-tree builds
