@@ -11331,7 +11331,7 @@ bool CoreChecks::ValidateCreateSwapchain(const char *func_name, VkSwapchainCreat
     if (physical_device_state->vkGetPhysicalDeviceSurfaceFormatsKHRState != QUERY_DETAILS) {
         if (log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
                     kVUID_Core_DrawState_SwapchainCreateBeforeQuery,
-                    "%s called before calling vkGetPhysicalDeviceSurfaceFormatsKHR().", func_name))
+                    "%s called before getting format(s) from vkGetPhysicalDeviceSurfaceFormatsKHR().", func_name))
             return true;
     } else {
         // Validate pCreateInfo->imageFormat against VkSurfaceFormatKHR::format:
@@ -11376,7 +11376,7 @@ bool CoreChecks::ValidateCreateSwapchain(const char *func_name, VkSwapchainCreat
         if (pCreateInfo->presentMode != VK_PRESENT_MODE_FIFO_KHR) {
             if (log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
                         kVUID_Core_DrawState_SwapchainCreateBeforeQuery,
-                        "%s called before calling vkGetPhysicalDeviceSurfacePresentModesKHR().", func_name))
+                        "%s called before getting present mode(s) from vkGetPhysicalDeviceSurfacePresentModesKHR().", func_name))
                 return true;
         }
     } else {
@@ -12653,8 +12653,8 @@ bool CoreChecks::ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(VkPhysi
     if (physical_device_state->vkGetPhysicalDeviceDisplayPlanePropertiesKHRState == UNCALLED) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT,
                         HandleToUint64(physicalDevice), kVUID_Core_Swapchain_GetSupportedDisplaysWithoutQuery,
-                        "Potential problem with calling %s() without first querying vkGetPhysicalDeviceDisplayPlanePropertiesKHR "
-                        "or vkGetPhysicalDeviceDisplayPlaneProperties2KHR.",
+                        "Potential problem with calling %s() without first retrieving properties from "
+                        "vkGetPhysicalDeviceDisplayPlanePropertiesKHR or vkGetPhysicalDeviceDisplayPlaneProperties2KHR.",
                         api_name);
     } else {
         if (planeIndex >= physical_device_state->display_plane_property_count) {
