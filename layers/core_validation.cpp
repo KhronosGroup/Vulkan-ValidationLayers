@@ -116,7 +116,7 @@ static const VkDeviceMemory MEMTRACKER_SWAP_CHAIN_IMAGE_KEY = (VkDeviceMemory)(-
 static const VkDeviceMemory MEMORY_UNBOUND = VkDeviceMemory(~((uint64_t)(0)) - 1);
 
 // Return buffer state ptr for specified buffer or else NULL
-BUFFER_STATE *CoreChecks::GetBufferState(VkBuffer buffer) {
+BUFFER_STATE *ValidationStateTracker::GetBufferState(VkBuffer buffer) {
     auto buff_it = bufferMap.find(buffer);
     if (buff_it == bufferMap.end()) {
         return nullptr;
@@ -125,7 +125,7 @@ BUFFER_STATE *CoreChecks::GetBufferState(VkBuffer buffer) {
 }
 
 // Return IMAGE_VIEW_STATE ptr for specified imageView or else NULL
-IMAGE_VIEW_STATE *CoreChecks::GetImageViewState(VkImageView image_view) {
+IMAGE_VIEW_STATE *ValidationStateTracker::GetImageViewState(VkImageView image_view) {
     auto iv_it = imageViewMap.find(image_view);
     if (iv_it == imageViewMap.end()) {
         return nullptr;
@@ -144,14 +144,14 @@ GlobalQFOTransferBarrierMap<VkBufferMemoryBarrier> &CoreChecks::GetGlobalQFORele
 }
 
 // Get the image viewstate for a given framebuffer attachment
-IMAGE_VIEW_STATE *CoreChecks::GetAttachmentImageViewState(FRAMEBUFFER_STATE *framebuffer, uint32_t index) {
+IMAGE_VIEW_STATE *ValidationStateTracker::GetAttachmentImageViewState(FRAMEBUFFER_STATE *framebuffer, uint32_t index) {
     assert(framebuffer && (index < framebuffer->createInfo.attachmentCount));
     const VkImageView &image_view = framebuffer->createInfo.pAttachments[index];
     return GetImageViewState(image_view);
 }
 
 // Return sampler node ptr for specified sampler or else NULL
-SAMPLER_STATE *CoreChecks::GetSamplerState(VkSampler sampler) {
+SAMPLER_STATE *ValidationStateTracker::GetSamplerState(VkSampler sampler) {
     auto sampler_it = samplerMap.find(sampler);
     if (sampler_it == samplerMap.end()) {
         return nullptr;
@@ -159,7 +159,7 @@ SAMPLER_STATE *CoreChecks::GetSamplerState(VkSampler sampler) {
     return sampler_it->second.get();
 }
 // Return image state ptr for specified image or else NULL
-IMAGE_STATE *CoreChecks::GetImageState(VkImage image) {
+IMAGE_STATE *ValidationStateTracker::GetImageState(VkImage image) {
     auto img_it = imageMap.find(image);
     if (img_it == imageMap.end()) {
         return nullptr;
@@ -167,7 +167,7 @@ IMAGE_STATE *CoreChecks::GetImageState(VkImage image) {
     return img_it->second.get();
 }
 // Return swapchain node for specified swapchain or else NULL
-SWAPCHAIN_NODE *CoreChecks::GetSwapchainState(VkSwapchainKHR swapchain) {
+SWAPCHAIN_NODE *ValidationStateTracker::GetSwapchainState(VkSwapchainKHR swapchain) {
     auto swp_it = swapchainMap.find(swapchain);
     if (swp_it == swapchainMap.end()) {
         return nullptr;
@@ -175,7 +175,7 @@ SWAPCHAIN_NODE *CoreChecks::GetSwapchainState(VkSwapchainKHR swapchain) {
     return swp_it->second.get();
 }
 // Return buffer node ptr for specified buffer or else NULL
-BUFFER_VIEW_STATE *CoreChecks::GetBufferViewState(VkBufferView buffer_view) {
+BUFFER_VIEW_STATE *ValidationStateTracker::GetBufferViewState(VkBufferView buffer_view) {
     auto bv_it = bufferViewMap.find(buffer_view);
     if (bv_it == bufferViewMap.end()) {
         return nullptr;
@@ -183,7 +183,7 @@ BUFFER_VIEW_STATE *CoreChecks::GetBufferViewState(VkBufferView buffer_view) {
     return bv_it->second.get();
 }
 
-FENCE_STATE *CoreChecks::GetFenceState(VkFence fence) {
+FENCE_STATE *ValidationStateTracker::GetFenceState(VkFence fence) {
     auto it = fenceMap.find(fence);
     if (it == fenceMap.end()) {
         return nullptr;
@@ -191,7 +191,7 @@ FENCE_STATE *CoreChecks::GetFenceState(VkFence fence) {
     return it->second.get();
 }
 
-EVENT_STATE *CoreChecks::GetEventState(VkEvent event) {
+EVENT_STATE *ValidationStateTracker::GetEventState(VkEvent event) {
     auto it = eventMap.find(event);
     if (it == eventMap.end()) {
         return nullptr;
@@ -199,7 +199,7 @@ EVENT_STATE *CoreChecks::GetEventState(VkEvent event) {
     return &it->second;
 }
 
-QUERY_POOL_STATE *CoreChecks::GetQueryPoolState(VkQueryPool query_pool) {
+QUERY_POOL_STATE *ValidationStateTracker::GetQueryPoolState(VkQueryPool query_pool) {
     auto it = queryPoolMap.find(query_pool);
     if (it == queryPoolMap.end()) {
         return nullptr;
@@ -207,7 +207,7 @@ QUERY_POOL_STATE *CoreChecks::GetQueryPoolState(VkQueryPool query_pool) {
     return it->second.get();
 }
 
-QUEUE_STATE *CoreChecks::GetQueueState(VkQueue queue) {
+QUEUE_STATE *ValidationStateTracker::GetQueueState(VkQueue queue) {
     auto it = queueMap.find(queue);
     if (it == queueMap.end()) {
         return nullptr;
@@ -215,7 +215,7 @@ QUEUE_STATE *CoreChecks::GetQueueState(VkQueue queue) {
     return &it->second;
 }
 
-SEMAPHORE_STATE *CoreChecks::GetSemaphoreState(VkSemaphore semaphore) {
+SEMAPHORE_STATE *ValidationStateTracker::GetSemaphoreState(VkSemaphore semaphore) {
     auto it = semaphoreMap.find(semaphore);
     if (it == semaphoreMap.end()) {
         return nullptr;
@@ -223,7 +223,7 @@ SEMAPHORE_STATE *CoreChecks::GetSemaphoreState(VkSemaphore semaphore) {
     return it->second.get();
 }
 
-COMMAND_POOL_STATE *CoreChecks::GetCommandPoolState(VkCommandPool pool) {
+COMMAND_POOL_STATE *ValidationStateTracker::GetCommandPoolState(VkCommandPool pool) {
     auto it = commandPoolMap.find(pool);
     if (it == commandPoolMap.end()) {
         return nullptr;
@@ -231,7 +231,7 @@ COMMAND_POOL_STATE *CoreChecks::GetCommandPoolState(VkCommandPool pool) {
     return it->second.get();
 }
 
-PHYSICAL_DEVICE_STATE *CoreChecks::GetPhysicalDeviceState(VkPhysicalDevice phys) {
+PHYSICAL_DEVICE_STATE *ValidationStateTracker::GetPhysicalDeviceState(VkPhysicalDevice phys) {
     auto *phys_dev_map = ((physical_device_map.size() > 0) ? &physical_device_map : &instance_state->physical_device_map);
     auto it = phys_dev_map->find(phys);
     if (it == phys_dev_map->end()) {
@@ -240,9 +240,9 @@ PHYSICAL_DEVICE_STATE *CoreChecks::GetPhysicalDeviceState(VkPhysicalDevice phys)
     return &it->second;
 }
 
-PHYSICAL_DEVICE_STATE *CoreChecks::GetPhysicalDeviceState() { return physical_device_state; }
+PHYSICAL_DEVICE_STATE *ValidationStateTracker::GetPhysicalDeviceState() { return physical_device_state; }
 
-SURFACE_STATE *CoreChecks::GetSurfaceState(VkSurfaceKHR surface) {
+SURFACE_STATE *ValidationStateTracker::GetSurfaceState(VkSurfaceKHR surface) {
     auto *surf_map = ((surface_map.size() > 0) ? &surface_map : &instance_state->surface_map);
     auto it = surf_map->find(surface);
     if (it == surf_map->end()) {
@@ -252,7 +252,7 @@ SURFACE_STATE *CoreChecks::GetSurfaceState(VkSurfaceKHR surface) {
 }
 
 // Return ptr to memory binding for given handle of specified type
-BINDABLE *CoreChecks::GetObjectMemBinding(const VulkanTypedHandle &typed_handle) {
+BINDABLE *ValidationStateTracker::GetObjectMemBinding(const VulkanTypedHandle &typed_handle) {
     switch (typed_handle.type) {
         case kVulkanObjectTypeImage:
             return GetImageState(VkImage(typed_handle.handle));
@@ -348,7 +348,7 @@ ImageSubresourceLayoutMap *GetImageSubresourceLayoutMap(CMD_BUFFER_STATE *cb_sta
 
 // Return ptr to info in map container containing mem, or NULL if not found
 //  Calls to this function should be wrapped in mutex
-DEVICE_MEMORY_STATE *CoreChecks::GetDevMemState(const VkDeviceMemory mem) {
+DEVICE_MEMORY_STATE *ValidationStateTracker::GetDevMemState(const VkDeviceMemory mem) {
     auto mem_it = memObjMap.find(mem);
     if (mem_it == memObjMap.end()) {
         return NULL;
@@ -709,7 +709,7 @@ bool CoreChecks::ValidateStatus(CMD_BUFFER_STATE *pNode, CBStatusFlags status_ma
 }
 
 // Retrieve pipeline node ptr for given pipeline object
-PIPELINE_STATE *CoreChecks::GetPipelineState(VkPipeline pipeline) {
+PIPELINE_STATE *ValidationStateTracker::GetPipelineState(VkPipeline pipeline) {
     auto it = pipelineMap.find(pipeline);
     if (it == pipelineMap.end()) {
         return nullptr;
@@ -717,7 +717,7 @@ PIPELINE_STATE *CoreChecks::GetPipelineState(VkPipeline pipeline) {
     return it->second.get();
 }
 
-RENDER_PASS_STATE *CoreChecks::GetRenderPassState(VkRenderPass renderpass) {
+RENDER_PASS_STATE *ValidationStateTracker::GetRenderPassState(VkRenderPass renderpass) {
     auto it = renderPassMap.find(renderpass);
     if (it == renderPassMap.end()) {
         return nullptr;
@@ -725,7 +725,7 @@ RENDER_PASS_STATE *CoreChecks::GetRenderPassState(VkRenderPass renderpass) {
     return it->second.get();
 }
 
-std::shared_ptr<RENDER_PASS_STATE> CoreChecks::GetRenderPassStateSharedPtr(VkRenderPass renderpass) {
+std::shared_ptr<RENDER_PASS_STATE> ValidationStateTracker::GetRenderPassStateSharedPtr(VkRenderPass renderpass) {
     auto it = renderPassMap.find(renderpass);
     if (it == renderPassMap.end()) {
         return nullptr;
@@ -733,7 +733,7 @@ std::shared_ptr<RENDER_PASS_STATE> CoreChecks::GetRenderPassStateSharedPtr(VkRen
     return it->second;
 }
 
-FRAMEBUFFER_STATE *CoreChecks::GetFramebufferState(VkFramebuffer framebuffer) {
+FRAMEBUFFER_STATE *ValidationStateTracker::GetFramebufferState(VkFramebuffer framebuffer) {
     auto it = frameBufferMap.find(framebuffer);
     if (it == frameBufferMap.end()) {
         return nullptr;
@@ -750,7 +750,7 @@ std::shared_ptr<cvdescriptorset::DescriptorSetLayout const> const GetDescriptorS
     return it->second;
 }
 
-PIPELINE_LAYOUT_STATE const *CoreChecks::GetPipelineLayout(VkPipelineLayout pipeLayout) {
+PIPELINE_LAYOUT_STATE const *ValidationStateTracker::GetPipelineLayout(VkPipelineLayout pipeLayout) {
     auto it = pipelineLayoutMap.find(pipeLayout);
     if (it == pipelineLayoutMap.end()) {
         return nullptr;
@@ -758,7 +758,7 @@ PIPELINE_LAYOUT_STATE const *CoreChecks::GetPipelineLayout(VkPipelineLayout pipe
     return it->second.get();
 }
 
-SHADER_MODULE_STATE const *CoreChecks::GetShaderModuleState(VkShaderModule module) {
+SHADER_MODULE_STATE const *ValidationStateTracker::GetShaderModuleState(VkShaderModule module) {
     auto it = shaderModuleMap.find(module);
     if (it == shaderModuleMap.end()) {
         return nullptr;
@@ -766,7 +766,7 @@ SHADER_MODULE_STATE const *CoreChecks::GetShaderModuleState(VkShaderModule modul
     return it->second.get();
 }
 
-const TEMPLATE_STATE *CoreChecks::GetDescriptorTemplateState(VkDescriptorUpdateTemplateKHR descriptor_update_template) {
+const TEMPLATE_STATE *ValidationStateTracker::GetDescriptorTemplateState(VkDescriptorUpdateTemplateKHR descriptor_update_template) {
     const auto it = desc_template_map.find(descriptor_update_template);
     if (it == desc_template_map.cend()) {
         return nullptr;
@@ -954,7 +954,7 @@ bool CoreChecks::ValidateRenderPassCompatibility(const char *type1_string, const
 }
 
 // Return Set node ptr for specified set or else NULL
-cvdescriptorset::DescriptorSet *CoreChecks::GetSetNode(VkDescriptorSet set) {
+cvdescriptorset::DescriptorSet *ValidationStateTracker::GetSetNode(VkDescriptorSet set) {
     auto set_it = setMap.find(set);
     if (set_it == setMap.end()) {
         return NULL;
@@ -1855,7 +1855,7 @@ bool CoreChecks::ValidatePipelineUnlocked(std::vector<std::unique_ptr<PIPELINE_S
 // Block of code at start here specifically for managing/tracking DSs
 
 // Return Pool node ptr for specified pool or else NULL
-DESCRIPTOR_POOL_STATE *CoreChecks::GetDescriptorPoolState(const VkDescriptorPool pool) {
+DESCRIPTOR_POOL_STATE *ValidationStateTracker::GetDescriptorPoolState(const VkDescriptorPool pool) {
     auto pool_it = descriptorPoolMap.find(pool);
     if (pool_it == descriptorPoolMap.end()) {
         return NULL;
@@ -1905,7 +1905,7 @@ void CoreChecks::DeletePools() {
 }
 
 // For given CB object, fetch associated CB Node from map
-CMD_BUFFER_STATE *CoreChecks::GetCBState(const VkCommandBuffer cb) {
+CMD_BUFFER_STATE *ValidationStateTracker::GetCBState(const VkCommandBuffer cb) {
     auto it = commandBufferMap.find(cb);
     if (it == commandBufferMap.end()) {
         return NULL;

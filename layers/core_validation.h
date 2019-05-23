@@ -173,8 +173,8 @@ struct SURFACE_STATE {
 using std::unordered_map;
 struct GpuValidationState;
 
-class CoreChecks : public ValidationObject {
-   public:
+class ValidationStateTracker:  public ValidationObject {
+   public: //  TODO -- move to private
     unordered_map<VkSampler, std::unique_ptr<SAMPLER_STATE>> samplerMap;
     unordered_map<VkImageView, std::unique_ptr<IMAGE_VIEW_STATE>> imageViewMap;
     unordered_map<VkImage, std::unique_ptr<IMAGE_STATE>> imageMap;
@@ -206,42 +206,8 @@ class CoreChecks : public ValidationObject {
     unordered_map<VkImage, std::vector<ImageSubresourcePair>> imageSubresourceMap;
     unordered_map<QueryObject, bool> queryToStateMap;
     unordered_map<VkSamplerYcbcrConversion, uint64_t> ycbcr_conversion_ahb_fmt_map;
-    std::unordered_set<uint64_t> ahb_ext_formats_set;
-    GlobalQFOTransferBarrierMap<VkImageMemoryBarrier> qfo_release_image_barrier_map;
-    GlobalQFOTransferBarrierMap<VkBufferMemoryBarrier> qfo_release_buffer_barrier_map;
-    // Map for queue family index to queue count
-    unordered_map<uint32_t, uint32_t> queue_family_index_map;
 
-    // Used for instance versions of this object
-    unordered_map<VkPhysicalDevice, PHYSICAL_DEVICE_STATE> physical_device_map;
-    // Link to the device's physical-device data
-    PHYSICAL_DEVICE_STATE* physical_device_state;
-
-    // Link for derived device objects back to their parent instance object
-    CoreChecks* instance_state;
-
-    DeviceFeatures enabled_features = {};
-    // Device specific data
-    VkPhysicalDeviceMemoryProperties phys_dev_mem_props = {};
-    VkPhysicalDeviceProperties phys_dev_props = {};
-    // Device extension properties -- storing properties gathered from VkPhysicalDeviceProperties2KHR::pNext chain
-    struct DeviceExtensionProperties {
-        uint32_t max_push_descriptors;  // from VkPhysicalDevicePushDescriptorPropertiesKHR::maxPushDescriptors
-        VkPhysicalDeviceDescriptorIndexingPropertiesEXT descriptor_indexing_props;
-        VkPhysicalDeviceShadingRateImagePropertiesNV shading_rate_image_props;
-        VkPhysicalDeviceMeshShaderPropertiesNV mesh_shader_props;
-        VkPhysicalDeviceInlineUniformBlockPropertiesEXT inline_uniform_block_props;
-        VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT vtx_attrib_divisor_props;
-        VkPhysicalDeviceDepthStencilResolvePropertiesKHR depth_stencil_resolve_props;
-        VkPhysicalDeviceCooperativeMatrixPropertiesNV cooperative_matrix_props;
-        VkPhysicalDeviceTransformFeedbackPropertiesEXT transform_feedback_props;
-    };
-    DeviceExtensionProperties phys_dev_ext_props = {};
-    std::vector<VkCooperativeMatrixPropertiesNV> cooperative_matrix_properties;
-    bool external_sync_warning = false;
-    std::unique_ptr<GpuValidationState> gpu_validation_state;
-    uint32_t physical_device_count;
-
+public:
     // Class Declarations for helper functions
     cvdescriptorset::DescriptorSet* GetSetNode(VkDescriptorSet);
     DESCRIPTOR_POOL_STATE* GetDescriptorPoolState(const VkDescriptorPool);
@@ -265,10 +231,52 @@ class CoreChecks : public ValidationObject {
     QUERY_POOL_STATE* GetQueryPoolState(VkQueryPool query_pool);
     QUEUE_STATE* GetQueueState(VkQueue queue);
     SEMAPHORE_STATE* GetSemaphoreState(VkSemaphore semaphore);
-    PHYSICAL_DEVICE_STATE* GetPhysicalDeviceState(VkPhysicalDevice phys);
-    PHYSICAL_DEVICE_STATE* GetPhysicalDeviceState();
     SURFACE_STATE* GetSurfaceState(VkSurfaceKHR surface);
     BINDABLE* GetObjectMemBinding(const VulkanTypedHandle& typed_handle);
+    PIPELINE_LAYOUT_STATE const* GetPipelineLayout(VkPipelineLayout pipeLayout);
+    const TEMPLATE_STATE* GetDescriptorTemplateState(VkDescriptorUpdateTemplateKHR descriptor_update_template);
+
+    // Used for instance versions of this object
+    unordered_map<VkPhysicalDevice, PHYSICAL_DEVICE_STATE> physical_device_map;
+    // Link to the device's physical-device data
+    PHYSICAL_DEVICE_STATE* physical_device_state;
+
+    // Link for derived device objects back to their parent instance object
+    CoreChecks* instance_state;
+
+    PHYSICAL_DEVICE_STATE* GetPhysicalDeviceState(VkPhysicalDevice phys);
+    PHYSICAL_DEVICE_STATE* GetPhysicalDeviceState();
+};
+
+class CoreChecks : public ValidationStateTracker {
+  public:
+    std::unordered_set<uint64_t> ahb_ext_formats_set;
+    GlobalQFOTransferBarrierMap<VkImageMemoryBarrier> qfo_release_image_barrier_map;
+    GlobalQFOTransferBarrierMap<VkBufferMemoryBarrier> qfo_release_buffer_barrier_map;
+    // Map for queue family index to queue count
+    unordered_map<uint32_t, uint32_t> queue_family_index_map;
+
+    DeviceFeatures enabled_features = {};
+    // Device specific data
+    VkPhysicalDeviceMemoryProperties phys_dev_mem_props = {};
+    VkPhysicalDeviceProperties phys_dev_props = {};
+    // Device extension properties -- storing properties gathered from VkPhysicalDeviceProperties2KHR::pNext chain
+    struct DeviceExtensionProperties {
+        uint32_t max_push_descriptors;  // from VkPhysicalDevicePushDescriptorPropertiesKHR::maxPushDescriptors
+        VkPhysicalDeviceDescriptorIndexingPropertiesEXT descriptor_indexing_props;
+        VkPhysicalDeviceShadingRateImagePropertiesNV shading_rate_image_props;
+        VkPhysicalDeviceMeshShaderPropertiesNV mesh_shader_props;
+        VkPhysicalDeviceInlineUniformBlockPropertiesEXT inline_uniform_block_props;
+        VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT vtx_attrib_divisor_props;
+        VkPhysicalDeviceDepthStencilResolvePropertiesKHR depth_stencil_resolve_props;
+        VkPhysicalDeviceCooperativeMatrixPropertiesNV cooperative_matrix_props;
+        VkPhysicalDeviceTransformFeedbackPropertiesEXT transform_feedback_props;
+    };
+    DeviceExtensionProperties phys_dev_ext_props = {};
+    std::vector<VkCooperativeMatrixPropertiesNV> cooperative_matrix_properties;
+    bool external_sync_warning = false;
+    std::unique_ptr<GpuValidationState> gpu_validation_state;
+    uint32_t physical_device_count;
 
     template <typename ExtProp>
     void GetPhysicalDeviceExtProperties(VkPhysicalDevice gpu, bool enabled, ExtProp* ext_prop) {
@@ -295,8 +303,6 @@ class CoreChecks : public ValidationObject {
     bool ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory mem, VkDeviceSize memoryOffset, const char* api_name);
     void RecordGetBufferMemoryRequirementsState(VkBuffer buffer, VkMemoryRequirements* pMemoryRequirements);
     void UpdateBindBufferMemoryState(VkBuffer buffer, VkDeviceMemory mem, VkDeviceSize memoryOffset);
-    PIPELINE_LAYOUT_STATE const* GetPipelineLayout(VkPipelineLayout pipeLayout);
-    const TEMPLATE_STATE* GetDescriptorTemplateState(VkDescriptorUpdateTemplateKHR descriptor_update_template);
     bool ValidateGetImageMemoryRequirements2(const VkImageMemoryRequirementsInfo2* pInfo);
     void RecordGetImageMemoryRequiementsState(VkImage image, VkMemoryRequirements* pMemoryRequirements);
     void FreeCommandBufferStates(COMMAND_POOL_STATE* pool_state, const uint32_t command_buffer_count,
