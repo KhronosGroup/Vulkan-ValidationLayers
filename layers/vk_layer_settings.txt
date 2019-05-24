@@ -83,6 +83,8 @@
 #      flags are briefly described here:
 #      VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT - enables intrusive GPU-assisted
 #      shader validation in core/khronos validation layers
+#      VK_VALIDATION_FEATURE_ENABLE_PORTABILITY_VALIDATION_EXTX - enable validation for
+#      the work-in-progress VK_EXTX_portability_subset extension.
 #
 
 # VK_LAYER_KHRONOS_validation Settings
@@ -116,4 +118,10 @@ google_threading.log_filename = stdout
 google_unique_objects.debug_action = VK_DBG_LAYER_ACTION_LOG_MSG
 google_unique_objects.report_flags = error,warn,perf
 google_unique_objects.log_filename = stdout
+
+# VK_LAYER_LUNARG_portability_validation Settings
+lunarg_portability_validation.debug_action = VK_DBG_LAYER_ACTION_LOG_MSG
+lunarg_portability_validation.report_flags = error,warn,perf
+lunarg_portability_validation.log_filename = stdout
+
 ################################################################################

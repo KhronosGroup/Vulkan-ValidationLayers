@@ -239,6 +239,7 @@ enum LayerObjectTypeId {
     LayerObjectTypeParameterValidation,         // Instance or device parameter validation layer object
     LayerObjectTypeObjectTracker,               // Instance or device object tracker layer object
     LayerObjectTypeCoreValidation,              // Instance or device core validation layer object
+    LayerObjectTypePortabilityValidation,       // Device validation for VK_EXTX_portability_subset
 };
 
 struct TEMPLATE_STATE {
@@ -287,6 +288,9 @@ struct CHECK_DISABLED {
 struct CHECK_ENABLED {
     bool gpu_validation;
     bool gpu_validation_reserve_binding_slot;
+#if BUILD_PORTABILITY_VALIDATION
+    bool portability_validation;
+#endif
 
     void SetAll(bool value) { std::fill(&gpu_validation, &gpu_validation_reserve_binding_slot + 1, value); }
 };
@@ -454,6 +458,9 @@ bool wrap_handles = false;
 #elif BUILD_CORE_VALIDATION
 #define OBJECT_LAYER_NAME "VK_LAYER_LUNARG_core_validation"
 #define OBJECT_LAYER_DESCRIPTION "lunarg_core_validation"
+#elif BUILD_PORTABILITY_VALIDATION
+#define OBJECT_LAYER_NAME "VK_LAYER_LUNARG_portability_validation"
+#define OBJECT_LAYER_DESCRIPTION "lunarg_portability_validation"
 #else
 #define OBJECT_LAYER_NAME "VK_LAYER_GOOGLE_unique_objects"
 #define OBJECT_LAYER_DESCRIPTION "lunarg_unique_objects"
@@ -472,6 +479,10 @@ bool wrap_handles = false;
 #if BUILD_CORE_VALIDATION
 #include "core_validation.h"
 #endif
+#if BUILD_PORTABILITY_VALIDATION
+#include "portability_validation.h"
+#endif
+
 
 namespace vulkan_layer_chassis {
 
@@ -533,6 +544,9 @@ static const std::unordered_map<std::string, VkValidationFeatureDisableEXT> VkVa
 static const std::unordered_map<std::string, VkValidationFeatureEnableEXT> VkValFeatureEnableLookup = {
     {"VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT", VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT},
     {"VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT", VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT},
+#ifdef VK_VALIDATION_FEATURE_ENABLE_PORTABILITY_VALIDATION_EXTX
+    {"VK_VALIDATION_FEATURE_ENABLE_PORTABILITY_VALIDATION_EXTX", VK_VALIDATION_FEATURE_ENABLE_PORTABILITY_VALIDATION_EXTX},
+#endif
 };
 
 static const std::unordered_map<std::string, ValidationCheckDisables> ValidationDisableLookup = {
@@ -605,6 +619,11 @@ void SetValidationFeatureEnable(CHECK_ENABLED *enable_data, const VkValidationFe
         case VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT:
             enable_data->gpu_validation_reserve_binding_slot = true;
             break;
+#ifdef VK_VALIDATION_FEATURE_ENABLE_PORTABILITY_VALIDATION_EXTX
+        case VK_VALIDATION_FEATURE_ENABLE_PORTABILITY_VALIDATION_EXTX:
+            enable_data->portability_validation = true;
+            break;
+#endif
         default:
             break;
     }
@@ -786,6 +805,10 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
     }
     ProcessConfigAndEnvSettings(OBJECT_LAYER_DESCRIPTION, &local_enables, &local_disables);
 
+#if BUILD_PORTABILITY_VALIDATION
+    local_enables.portability_validation = true;
+#endif
+
     // Create temporary dispatch vector for pre-calls until instance is created
     std::vector<ValidationObject*> local_object_dispatch;
     // Add VOs to dispatch vector. Order here will be the validation dispatch order!
@@ -820,6 +843,14 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
     }
     core_checks->container_type = LayerObjectTypeCoreValidation;
     core_checks->api_version = api_version;
+#endif
+#if BUILD_PORTABILITY_VALIDATION
+    auto portability_validation = new PortabilityValidation;
+    if (local_enables.portability_validation) {
+        local_object_dispatch.emplace_back(portability_validation);
+    }
+    portability_validation->container_type = LayerObjectTypePortabilityValidation;
+    portability_validation->api_version = api_version;
 #endif
 
     // If handle wrapping is disabled via the ValidationFeatures extension, override build flag
@@ -879,6 +910,12 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
     core_checks->enabled = framework->enabled;
     core_checks->disabled = framework->disabled;
     core_checks->instance_state = core_checks;
+#endif
+#if BUILD_PORTABILITY_VALIDATION
+    portability_validation->report_data = framework->report_data;
+    portability_validation->instance_dispatch_table = framework->instance_dispatch_table;
+    portability_validation->enabled = framework->enabled;
+    portability_validation->disabled = framework->disabled;
 #endif
 
     for (auto intercept : framework->object_dispatch) {
@@ -1018,6 +1055,13 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
         core_checks->GetValidationObject(instance_interceptor->object_dispatch, LayerObjectTypeCoreValidation));
     if (!instance_interceptor->disabled.core_checks) {
         device_interceptor->object_dispatch.emplace_back(core_checks);
+    }
+#endif
+#if BUILD_PORTABILITY_VALIDATION
+    auto portability_validation = new PortabilityValidation;
+    portability_validation->container_type = LayerObjectTypeParameterValidation;
+    if (instance_interceptor->enabled.portability_validation) {
+        device_interceptor->object_dispatch.emplace_back(portability_validation);
     }
 #endif
 

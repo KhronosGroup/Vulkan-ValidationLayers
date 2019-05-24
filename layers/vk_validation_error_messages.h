@@ -1,3 +1,10 @@
+/******************************************************************************
+** README README README README README README README README README README README
+** Because the "VK_EXTX_portability_subset" extension is not yet part of
+** Vulkan XML registry, this file has been deliberately hand-edited to add
+** the "VUID-vkPortability-*" messages.
+******************************************************************************/
+
 /* THIS FILE IS GENERATED - DO NOT EDIT (scripts/vk_validation_stats.py) */
 /* Vulkan specification version: 1.1.107 */
 /* Header generated: 2019-04-30 12:00:30 */
@@ -5145,6 +5152,33 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-vkWaitForFences-fenceCount-arraylength", "fenceCount must be greater than 0 (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkWaitForFences-fenceCount-arraylength)"},
     {"VUID-vkWaitForFences-pFences-parameter", "pFences must be a valid pointer to an array of fenceCount valid VkFence handles (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkWaitForFences-pFences-parameter)"},
     {"VUID-vkWaitForFences-pFences-parent", "Each element of pFences must have been created, allocated, or retrieved from device (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkWaitForFences-pFences-parent)"},
+    {"VUID-vkPortability-001", "VK_EXTX_portability_subset requires Vulkan 1.0"},
+    {"VUID-vkPortability-002", "VK_EXTX_portability_subset requires VK_KHR_get_physical_device_properties2"},
+    {"VUID-vkPortability-003", "VK_EXTX_portability_subset exists, but has not be enabled"},
+    {"VUID-vkPortability-004", "vkGetPhysicalDeviceFeatures2KHR called with illegal sType in pNext chain"},
+    {"VUID-vkPortability-005", "VkPhysicalDevicePortabilitySubsetFeaturesEXTX has not been queried using vkGetPhysicalDeviceFeatures2KHR"},
+    {"VUID-vkPortability-006", "VkPhysicalDevicePortabilitySubsetFeaturesEXTX.triangleFans is false, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN not permitted"},
+    {"VUID-vkPortability-007", "VkPhysicalDevicePortabilitySubsetFeaturesEXTX.separateStencilMaskRef is false, front and back stencil reference values must be equal"},
+    {"VUID-vkPortability-008", "VkPhysicalDevicePortabilitySubsetFeaturesEXTX.events is false, must not call vkCreateEvent"},
+    {"VUID-vkPortability-009", "VkPhysicalDevicePortabilitySubsetFeaturesEXTX.events is false, must not call vkDestroyEvent"},
+    {"VUID-vkPortability-010", "VkPhysicalDevicePortabilitySubsetFeaturesEXTX.events is false, must not call vkGetEventStatus"},
+    {"VUID-vkPortability-011", "VkPhysicalDevicePortabilitySubsetFeaturesEXTX.events is false, must not call vkSetEvent"},
+    {"VUID-vkPortability-012", "VkPhysicalDevicePortabilitySubsetFeaturesEXTX.events is false, must not call vkResetEvent"},
+    {"VUID-vkPortability-013", "VkPhysicalDevicePortabilitySubsetFeaturesEXTX.events is false, must not call vkCmdSetEvent"},
+    {"VUID-vkPortability-014", "VkPhysicalDevicePortabilitySubsetFeaturesEXTX.events is false, must not call vkCmdResetEvent"},
+    {"VUID-vkPortability-015", "VkPhysicalDevicePortabilitySubsetFeaturesEXTX.events is false, must not call vkCmdWaitEvents"},
+    {"VUID-vkPortability-016", "vkGetPhysicalDeviceProperties2KHR called with illegal sType in pNext chain"},
+    {"VUID-vkPortability-017", "VkPhysicalDevicePortabilitySubsetPropertiesEXTX has not been queried using vkGetPhysicalDeviceProperties2KHR"},
+    {"VUID-vkPortability-018", "VkVertexInputBindingDescription.stride is not a non-zero multiple of VkPhysicalDevicePortabilitySubsetPropertiesEXTX.minVertexInputBindingStrideAlignment"},
+    {"VUID-vkPortability-019", "vkGetPhysicalDeviceImageFormatProperties2KHR called with illegal sType in pNext chain"},
+    {"VUID-vkPortability-020", "VkPhysicalDeviceImageViewSupportEXTX.flags must be 0"},
+    {"VUID-vkPortability-021", "VkPhysicalDeviceImageViewSupportEXTX.viewType is not a valid VkImageViewType value"},
+    {"VUID-vkPortability-022", "VkPhysicalDeviceImageViewSupportEXTX.format is not a valid VkFormat value"},
+    {"VUID-vkPortability-023", "VkPhysicalDeviceImageViewSupportEXTX.components is not a valid vkComponentMapping structure"},
+    {"VUID-vkPortability-024", "VkPhysicalDeviceImageViewSupportEXTX.aspectMask must not be 0"},
+    {"VUID-vkPortability-025", "VkPhysicalDeviceImageViewSupportEXTX.aspectMask must be a valid combination of VkImageAspectFlagBits values"},
+    {"VUID-vkPortability-026", "VkImageView used without first querying using VkPhysicalDeviceImageViewSupportEXTX"},
+    {"VUID-vkPortability-027", "VkImageView used, but VkPhysicalDeviceImageViewSupportEXTX reported VK_ERROR_FORMAT_NOT_SUPPORTED"},
 };
 
 // Defines to allow creating "must be recording" meta data

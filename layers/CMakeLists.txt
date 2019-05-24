@@ -91,7 +91,8 @@ set(TARGET_NAMES
     VkLayer_unique_objects
     VkLayer_stateless_validation
     VkLayer_standard_validation
-    VkLayer_thread_safety)
+    VkLayer_thread_safety
+    VkLayer_portability_validation)
 
 if(BUILD_LAYERS)
     # Install the layer json files
@@ -222,6 +223,11 @@ set(STATELESS_VALIDATION_LIBRARY_FILES
     parameter_validation.h
     parameter_validation_utils.cpp)
 
+set(PORTABILITY_VALIDATION_LIBRARY_FILES
+    portability_validation.cpp
+    portability_validation.h
+)
+
 # Inter-layer dependencies are temporarily necessary to serialize layer builds which avoids contention for common generated files
 if(BUILD_LAYERS)
     AddVkLayer(core_validation "BUILD_CORE_VALIDATION"
@@ -236,12 +242,15 @@ if(BUILD_LAYERS)
     add_dependencies(VkLayer_stateless_validation VkLayer_thread_safety)
     AddVkLayer(unique_objects "LAYER_CHASSIS_CAN_WRAP_HANDLES" ${CHASSIS_LIBRARY_FILES})
     add_dependencies(VkLayer_unique_objects VkLayer_stateless_validation)
-    AddVkLayer(khronos_validation "BUILD_KHRONOS_VALIDATION;BUILD_CORE_VALIDATION;BUILD_OBJECT_TRACKER;BUILD_THREAD_SAFETY;BUILD_PARAMETER_VALIDATION;LAYER_CHASSIS_CAN_WRAP_HANDLES"
+    AddVkLayer(portability_validation "BUILD_PORTABILITY_VALIDATION" ${CHASSIS_LIBRARY_FILES} ${PORTABILITY_VALIDATION_LIBRARY_FILES})
+    add_dependencies(VkLayer_portability_validation VkLayer_stateless_validation)
+    AddVkLayer(khronos_validation "BUILD_KHRONOS_VALIDATION;BUILD_CORE_VALIDATION;BUILD_OBJECT_TRACKER;BUILD_THREAD_SAFETY;BUILD_PARAMETER_VALIDATION;BUILD_PORTABILITY_VALIDATION;LAYER_CHASSIS_CAN_WRAP_HANDLES"
         ${CHASSIS_LIBRARY_FILES}
         ${CORE_VALIDATION_LIBRARY_FILES}
         ${OBJECT_LIFETIMES_LIBRARY_FILES}
         ${THREAD_SAFETY_LIBRARY_FILES}
-        ${STATELESS_VALIDATION_LIBRARY_FILES})
+        ${STATELESS_VALIDATION_LIBRARY_FILES}
+        ${PORTABILITY_VALIDATION_LIBRARY_FILES})
     add_dependencies(VkLayer_khronos_validation VkLayer_unique_objects)
 
     # Core validation and Khronos validation have additional dependencies
