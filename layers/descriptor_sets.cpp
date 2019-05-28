@@ -1864,6 +1864,8 @@ cvdescriptorset::DecodedTemplateUpdate::DecodedTemplateUpdate(CoreChecks *device
                     inline_info->dataSize = create_info.pDescriptorUpdateEntries[i].descriptorCount;
                     inline_info->pData = update_entry;
                     write_entry.pNext = inline_info;
+                    // descriptorCount must match the dataSize member of the VkWriteDescriptorSetInlineUniformBlockEXT structure
+                    write_entry.descriptorCount = inline_info->dataSize;
                     // skip the rest of the array, they just represent bytes in the update
                     j = create_info.pDescriptorUpdateEntries[i].descriptorCount;
                     break;
