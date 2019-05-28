@@ -2929,7 +2929,7 @@ bool CoreChecks::ValidateComputeWorkGroupSizes(const SHADER_MODULE_STATE *shader
             skip |=
                 log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SHADER_MODULE_EXT,
                         HandleToUint64(shader->vk_shader_module), "UNASSIGNED-features-limits-maxComputeWorkGroupSize",
-                        "ShaderMdoule %s local_size_x (%" PRIu32 ") exceeds device limit maxComputeWorkGroupSize[0] (%" PRIu32 ").",
+                        "ShaderModule %s local_size_x (%" PRIu32 ") exceeds device limit maxComputeWorkGroupSize[0] (%" PRIu32 ").",
                         report_data->FormatHandle(shader->vk_shader_module).c_str(), local_size_x,
                         phys_dev_props.limits.maxComputeWorkGroupSize[0]);
         }
@@ -2937,7 +2937,7 @@ bool CoreChecks::ValidateComputeWorkGroupSizes(const SHADER_MODULE_STATE *shader
             skip |=
                 log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SHADER_MODULE_EXT,
                         HandleToUint64(shader->vk_shader_module), "UNASSIGNED-features-limits-maxComputeWorkGroupSize",
-                        "ShaderMdoule %s local_size_y (%" PRIu32 ") exceeds device limit maxComputeWorkGroupSize[1] (%" PRIu32 ").",
+                        "ShaderModule %s local_size_y (%" PRIu32 ") exceeds device limit maxComputeWorkGroupSize[1] (%" PRIu32 ").",
                         report_data->FormatHandle(shader->vk_shader_module).c_str(), local_size_x,
                         phys_dev_props.limits.maxComputeWorkGroupSize[1]);
         }
@@ -2945,7 +2945,7 @@ bool CoreChecks::ValidateComputeWorkGroupSizes(const SHADER_MODULE_STATE *shader
             skip |=
                 log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SHADER_MODULE_EXT,
                         HandleToUint64(shader->vk_shader_module), "UNASSIGNED-features-limits-maxComputeWorkGroupSize",
-                        "ShaderMdoule %s local_size_z (%" PRIu32 ") exceeds device limit maxComputeWorkGroupSize[2] (%" PRIu32 ").",
+                        "ShaderModule %s local_size_z (%" PRIu32 ") exceeds device limit maxComputeWorkGroupSize[2] (%" PRIu32 ").",
                         report_data->FormatHandle(shader->vk_shader_module).c_str(), local_size_x,
                         phys_dev_props.limits.maxComputeWorkGroupSize[2]);
         }
@@ -2966,7 +2966,7 @@ bool CoreChecks::ValidateComputeWorkGroupSizes(const SHADER_MODULE_STATE *shader
         if (fail) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SHADER_MODULE_EXT,
                             HandleToUint64(shader->vk_shader_module), "UNASSIGNED-features-limits-maxComputeWorkGroupInvocations",
-                            "ShaderMdoule %s local_size (%" PRIu32 ", %" PRIu32 ", %" PRIu32
+                            "ShaderModule %s local_size (%" PRIu32 ", %" PRIu32 ", %" PRIu32
                             ") exceeds device limit maxComputeWorkGroupInvocations (%" PRIu32 ").",
                             report_data->FormatHandle(shader->vk_shader_module).c_str(), local_size_x, local_size_y, local_size_z,
                             limit);
@@ -3024,14 +3024,14 @@ bool CoreChecks::ValidateComputeWorkGroupInvocations(CMD_BUFFER_STATE *cb_state,
             if (overflow) {
                 return log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SHADER_MODULE_EXT,
                                HandleToUint64(it->first), "UNASSIGNED-features-limits-maxComputeWorkGroupInvocations",
-                               "ShaderMdoule %s invocations (>%" PRIu32
+                               "ShaderModule %s invocations (>%" PRIu32
                                ") exceeds device limit maxComputeWorkGroupInvocations (%" PRIu32 ").",
                                report_data->FormatHandle(it->first).c_str(), UINT32_MAX, limit);
             }
             if (invocations > limit) {
                 return log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SHADER_MODULE_EXT,
                                HandleToUint64(it->first), "UNASSIGNED-features-limits-maxComputeWorkGroupInvocations",
-                               "ShaderMdoule %s invocations (%" PRIu64
+                               "ShaderModule %s invocations (%" PRIu64
                                ") exceeds device limit maxComputeWorkGroupInvocations (%" PRIu32 ").",
                                report_data->FormatHandle(it->first).c_str(), invocations, limit);
             }
