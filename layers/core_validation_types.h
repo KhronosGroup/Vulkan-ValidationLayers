@@ -974,6 +974,40 @@ struct QueryObject {
     QueryObject(VkQueryPool pool_, uint32_t query_, uint32_t index_) : pool(pool_), query(query_), index(index_), indexed(true) {}
 };
 
+enum QueryState {
+    QUERYSTATE_UNKNOWN,    // Initial state.
+    QUERYSTATE_RESET,      // After resetting.
+    QUERYSTATE_RUNNING,    // Query running.
+    QUERYSTATE_AVAILABLE,  // Results available.
+};
+
+enum QueryResultType {
+    QUERYRESULT_UNKNOWN,
+    QUERYRESULT_NO_DATA,
+    QUERYRESULT_MAYBE_NO_DATA,
+    QUERYRESULT_SOME_DATA,
+    QUERYRESULT_WAIT_ON_RESET,
+    QUERYRESULT_WAIT_ON_RUNNING,
+};
+
+inline const char *string_QueryResultType(QueryResultType result_type) {
+    switch (result_type) {
+        case QUERYRESULT_UNKNOWN:
+            return "query may be in an unknown state";
+        case QUERYRESULT_NO_DATA:
+        case QUERYRESULT_MAYBE_NO_DATA:
+            return "query may return no data";
+        case QUERYRESULT_SOME_DATA:
+            return "query will return some data or availability bit";
+        case QUERYRESULT_WAIT_ON_RESET:
+            return "waiting on a query that has been reset and not issued yet";
+        case QUERYRESULT_WAIT_ON_RUNNING:
+            return "waiting on a query that has not ended yet";
+    }
+    assert(false);
+    return "UNKNOWN QUERY STATE";  // Unreachable.
+}
+
 inline bool operator==(const QueryObject &query1, const QueryObject &query2) {
     return ((query1.pool == query2.pool) && (query1.query == query2.query));
 }
@@ -1441,7 +1475,7 @@ struct CMD_BUFFER_STATE : public BASE_NODE {
     std::vector<VkEvent> writeEventsBeforeWait;
     std::vector<VkEvent> events;
     std::unordered_map<QueryObject, std::unordered_set<VkEvent>> waitedEventsBeforeQueryReset;
-    std::unordered_map<QueryObject, bool> queryToStateMap;  // 0 is unavailable, 1 is available
+    std::unordered_map<QueryObject, QueryState> queryToStateMap;
     std::unordered_set<QueryObject> activeQueries;
     std::unordered_set<QueryObject> startedQueries;
     typedef std::unordered_map<VkImage, std::unique_ptr<ImageSubresourceLayoutMap>> ImageLayoutMap;

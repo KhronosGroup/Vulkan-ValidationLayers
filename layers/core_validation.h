@@ -80,7 +80,7 @@ class QUEUE_STATE {
     VkQueue queue;
     uint32_t queueFamilyIndex;
     std::unordered_map<VkEvent, VkPipelineStageFlags> eventToStageMap;
-    std::unordered_map<QueryObject, bool> queryToStateMap;  // 0 is unavailable, 1 is available
+    std::unordered_map<QueryObject, QueryState> queryToStateMap;
 
     uint64_t seq;
     std::deque<CB_SUBMISSION> submissions;
@@ -204,7 +204,7 @@ class CoreChecks : public ValidationObject {
 
     std::unordered_set<VkQueue> queues;  // All queues under given device
     unordered_map<VkImage, std::vector<ImageSubresourcePair>> imageSubresourceMap;
-    unordered_map<QueryObject, bool> queryToStateMap;
+    unordered_map<QueryObject, QueryState> queryToStateMap;
     unordered_map<VkSamplerYcbcrConversion, uint64_t> ycbcr_conversion_ahb_fmt_map;
     std::unordered_set<uint64_t> ahb_ext_formats_set;
     GlobalQFOTransferBarrierMap<VkImageMemoryBarrier> qfo_release_image_barrier_map;
@@ -425,8 +425,11 @@ class CoreChecks : public ValidationObject {
                                                             void* pProperties);
     bool ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(VkPhysicalDevice physicalDevice, uint32_t planeIndex,
                                                                  const char* api_name);
-    bool ValidateQuery(VkQueue queue, CMD_BUFFER_STATE* pCB, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount);
-    bool IsQueryInvalid(QUEUE_STATE* queue_data, VkQueryPool queryPool, uint32_t queryIndex);
+    bool ValidateQuery(VkQueue queue, CMD_BUFFER_STATE* pCB, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount,
+                       VkQueryResultFlags flags);
+    QueryState GetQueryState(QUEUE_STATE* queue_data, VkQueryPool queryPool, uint32_t queryIndex);
+    QueryResultType GetQueryResultType(QueryState state, VkQueryResultFlags flags);
+    bool VerifyQueryIsReset(VkQueue queue, VkCommandBuffer commandBuffer, QueryObject query_obj);
     bool ValidateImportSemaphore(VkSemaphore semaphore, const char* caller_name);
     void RecordImportSemaphoreState(VkSemaphore semaphore, VkExternalSemaphoreHandleTypeFlagBitsKHR handle_type,
                                     VkSemaphoreImportFlagsKHR flags);
@@ -439,7 +442,7 @@ class CoreChecks : public ValidationObject {
                              const char* vuid_queue_flags, const char* vuid_active_queries);
     void RecordCmdEndQuery(CMD_BUFFER_STATE* cb_state, const QueryObject& query_obj);
 
-    bool SetQueryState(VkQueue queue, VkCommandBuffer commandBuffer, QueryObject object, bool value);
+    bool SetQueryState(VkQueue queue, VkCommandBuffer commandBuffer, QueryObject object, QueryState value);
     bool ValidateCmdDrawType(VkCommandBuffer cmd_buffer, bool indexed, VkPipelineBindPoint bind_point, CMD_TYPE cmd_type,
                              const char* caller, VkQueueFlags queue_flags, const char* queue_flag_code,
                              const char* renderpass_msg_code, const char* pipebound_msg_code, const char* dynamic_state_msg_code);

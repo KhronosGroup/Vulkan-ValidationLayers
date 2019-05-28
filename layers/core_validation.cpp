@@ -4124,13 +4124,35 @@ bool CoreChecks::PreCallValidateGetQueryPoolResults(VkDevice device, VkQueryPool
     auto query_pool_state = queryPoolMap.find(queryPool);
     if (query_pool_state != queryPoolMap.end()) {
         if ((query_pool_state->second->createInfo.queryType == VK_QUERY_TYPE_TIMESTAMP) && (flags & VK_QUERY_RESULT_PARTIAL_BIT)) {
-            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_QUERY_POOL_EXT, 0,
-                            "VUID-vkGetQueryPoolResults-queryType-00818",
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_QUERY_POOL_EXT,
+                            HandleToUint64(queryPool), "VUID-vkGetQueryPoolResults-queryType-00818",
                             "QueryPool %s was created with a queryType of VK_QUERY_TYPE_TIMESTAMP but flags contains "
                             "VK_QUERY_RESULT_PARTIAL_BIT.",
                             report_data->FormatHandle(queryPool).c_str());
         }
     }
+
+    QueryObject query_obj{queryPool, 0u};
+    QueryResultType result_type;
+
+    for (uint32_t i = 0; i < queryCount; ++i) {
+        query_obj.query = firstQuery + i;
+        auto query_data = queryToStateMap.find(query_obj);
+
+        if (query_data != queryToStateMap.end()) {
+            result_type = GetQueryResultType(query_data->second, flags);
+        } else {
+            result_type = QUERYRESULT_UNKNOWN;
+        }
+
+        if (result_type != QUERYRESULT_SOME_DATA) {
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_QUERY_POOL_EXT,
+                            HandleToUint64(queryPool), kVUID_Core_DrawState_InvalidQuery,
+                            "vkGetQueryPoolResults() on queryPool %s and query %" PRIu32 ": %s",
+                            report_data->FormatHandle(queryPool).c_str(), query_obj.query, string_QueryResultType(result_type));
+        }
+    }
+
     return skip;
 }
 
@@ -4144,7 +4166,7 @@ void CoreChecks::PostCallRecordGetQueryPoolResults(VkDevice device, VkQueryPool 
     for (uint32_t i = 0; i < queryCount; ++i) {
         QueryObject query = {queryPool, firstQuery + i};
         auto query_state_pair = queryToStateMap.find(query);
-        if (query_state_pair != queryToStateMap.end() && query_state_pair->second) {
+        if ((query_state_pair != queryToStateMap.end()) && (query_state_pair->second == QUERYSTATE_AVAILABLE)) {
             query_set.insert(query);
         }
     }
@@ -4812,9 +4834,10 @@ void CoreChecks::PostCallRecordCreateQueryPool(VkDevice device, const VkQueryPoo
     query_pool_state->createInfo = *pCreateInfo;
     queryPoolMap[*pQueryPool] = std::move(query_pool_state);
 
+    QueryObject query_obj{*pQueryPool, 0u};
     for (uint32_t i = 0; i < pCreateInfo->queryCount; ++i) {
-        QueryObject query{*pQueryPool, i};
-        queryToStateMap[query] = false;
+        query_obj.query = i;
+        queryToStateMap[query_obj] = QUERYSTATE_UNKNOWN;
     }
 }
 
@@ -8338,7 +8361,7 @@ void CoreChecks::PreCallRecordCmdPipelineBarrier(VkCommandBuffer commandBuffer, 
     TransitionImageLayouts(cb_state, imageMemoryBarrierCount, pImageMemoryBarriers);
 }
 
-bool CoreChecks::SetQueryState(VkQueue queue, VkCommandBuffer commandBuffer, QueryObject object, bool value) {
+bool CoreChecks::SetQueryState(VkQueue queue, VkCommandBuffer commandBuffer, QueryObject object, QueryState value) {
     CMD_BUFFER_STATE *pCB = GetCBState(commandBuffer);
     if (pCB) {
         pCB->queryToStateMap[object] = value;
@@ -8396,6 +8419,12 @@ bool CoreChecks::ValidateBeginQuery(const CMD_BUFFER_STATE *cb_state, const Quer
 void CoreChecks::RecordBeginQuery(CMD_BUFFER_STATE *cb_state, const QueryObject &query_obj) {
     cb_state->activeQueries.insert(query_obj);
     cb_state->startedQueries.insert(query_obj);
+    cb_state->queryUpdates.emplace_back([this, cb_state, query_obj](VkQueue q) {
+        bool skip = false;
+        skip |= VerifyQueryIsReset(q, cb_state->commandBuffer, query_obj);
+        skip |= SetQueryState(q, cb_state->commandBuffer, query_obj, QUERYSTATE_RUNNING);
+        return skip;
+    });
     AddCommandBufferBinding(&GetQueryPoolState(query_obj.pool)->cb_bindings,
                             VulkanTypedHandle(query_obj.pool, kVulkanObjectTypeQueryPool), cb_state);
 }
@@ -8409,6 +8438,26 @@ bool CoreChecks::PreCallValidateCmdBeginQuery(VkCommandBuffer commandBuffer, VkQ
                               "VUID-vkCmdBeginQuery-commandBuffer-cmdpool", "VUID-vkCmdBeginQuery-queryType-02327",
                               "VUID-vkCmdBeginQuery-queryType-00803", "VUID-vkCmdBeginQuery-queryType-00800",
                               "VUID-vkCmdBeginQuery-query-00802");
+}
+
+bool CoreChecks::VerifyQueryIsReset(VkQueue queue, VkCommandBuffer commandBuffer, QueryObject query_obj) {
+    bool skip = false;
+
+    auto queue_data = GetQueueState(queue);
+    if (!queue_data) return false;
+
+    QueryState state = GetQueryState(queue_data, query_obj.pool, query_obj.query);
+    if (state != QUERYSTATE_RESET) {
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                        HandleToUint64(commandBuffer), kVUID_Core_DrawState_QueryNotReset,
+                        "vkCmdBeginQuery(): queryPool %s and query %" PRIu32
+                        ": query not reset. "
+                        "After query pool creation, each query must be reset before it is used. "
+                        "Queries must also be reset between uses.",
+                        report_data->FormatHandle(query_obj.pool).c_str(), query_obj.query);
+    }
+
+    return skip;
 }
 
 void CoreChecks::PostCallRecordCmdBeginQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot, VkFlags flags) {
@@ -8442,7 +8491,9 @@ bool CoreChecks::PreCallValidateCmdEndQuery(VkCommandBuffer commandBuffer, VkQue
 
 void CoreChecks::RecordCmdEndQuery(CMD_BUFFER_STATE *cb_state, const QueryObject &query_obj) {
     cb_state->activeQueries.erase(query_obj);
-    cb_state->queryUpdates.emplace_back([=](VkQueue q) { return SetQueryState(q, cb_state->commandBuffer, query_obj, true); });
+    cb_state->queryUpdates.emplace_back([this, cb_state, query_obj](VkQueue q) {
+        return SetQueryState(q, cb_state->commandBuffer, query_obj, QUERYSTATE_AVAILABLE);
+    });
     AddCommandBufferBinding(&GetQueryPoolState(query_obj.pool)->cb_bindings,
                             VulkanTypedHandle(query_obj.pool, kVulkanObjectTypeQueryPool), cb_state);
 }
@@ -8472,36 +8523,65 @@ void CoreChecks::PostCallRecordCmdResetQueryPool(VkCommandBuffer commandBuffer, 
     for (uint32_t i = 0; i < queryCount; i++) {
         QueryObject query = {queryPool, firstQuery + i};
         cb_state->waitedEventsBeforeQueryReset[query] = cb_state->waitedEvents;
-        cb_state->queryUpdates.emplace_back([=](VkQueue q) { return SetQueryState(q, commandBuffer, query, false); });
+        cb_state->queryUpdates.emplace_back(
+            [this, commandBuffer, query](VkQueue q) { return SetQueryState(q, commandBuffer, query, QUERYSTATE_RESET); });
     }
     AddCommandBufferBinding(&GetQueryPoolState(queryPool)->cb_bindings, VulkanTypedHandle(queryPool, kVulkanObjectTypeQueryPool),
                             cb_state);
 }
 
-bool CoreChecks::IsQueryInvalid(QUEUE_STATE *queue_data, VkQueryPool queryPool, uint32_t queryIndex) {
+QueryState CoreChecks::GetQueryState(QUEUE_STATE *queue_data, VkQueryPool queryPool, uint32_t queryIndex) {
     QueryObject query = {queryPool, queryIndex};
-    auto query_data = queue_data->queryToStateMap.find(query);
-    if (query_data != queue_data->queryToStateMap.end()) {
-        if (!query_data->second) return true;
-    } else {
-        auto it = queryToStateMap.find(query);
-        if (it == queryToStateMap.end() || !it->second) return true;
-    }
 
-    return false;
+    const std::array<decltype(queryToStateMap) *, 2> map_list = {&queue_data->queryToStateMap, &queryToStateMap};
+
+    for (const auto map : map_list) {
+        auto query_data = map->find(query);
+        if (query_data != map->end()) {
+            return query_data->second;
+        }
+    }
+    return QUERYSTATE_UNKNOWN;
+}
+
+QueryResultType CoreChecks::GetQueryResultType(QueryState state, VkQueryResultFlags flags) {
+    switch (state) {
+        case QUERYSTATE_UNKNOWN:
+            return QUERYRESULT_UNKNOWN;
+        case QUERYSTATE_RESET:
+        case QUERYSTATE_RUNNING:
+            if (flags & VK_QUERY_RESULT_WAIT_BIT) {
+                return ((state == QUERYSTATE_RESET) ? QUERYRESULT_WAIT_ON_RESET : QUERYRESULT_WAIT_ON_RUNNING);
+            } else if ((flags & VK_QUERY_RESULT_PARTIAL_BIT) || (flags & VK_QUERY_RESULT_WITH_AVAILABILITY_BIT)) {
+                return QUERYRESULT_SOME_DATA;
+            } else {
+                return QUERYRESULT_NO_DATA;
+            }
+        case QUERYSTATE_AVAILABLE:
+            if ((flags & VK_QUERY_RESULT_WAIT_BIT) || (flags & VK_QUERY_RESULT_PARTIAL_BIT) ||
+                (flags & VK_QUERY_RESULT_WITH_AVAILABILITY_BIT)) {
+                return QUERYRESULT_SOME_DATA;
+            } else {
+                return QUERYRESULT_MAYBE_NO_DATA;
+            }
+    }
+    assert(false);
+    return QUERYRESULT_UNKNOWN;
 }
 
 bool CoreChecks::ValidateQuery(VkQueue queue, CMD_BUFFER_STATE *pCB, VkQueryPool queryPool, uint32_t firstQuery,
-                               uint32_t queryCount) {
+                               uint32_t queryCount, VkQueryResultFlags flags) {
     bool skip = false;
     auto queue_data = GetQueueState(queue);
     if (!queue_data) return false;
     for (uint32_t i = 0; i < queryCount; i++) {
-        if (IsQueryInvalid(queue_data, queryPool, firstQuery + i)) {
+        QueryState state = GetQueryState(queue_data, queryPool, firstQuery + i);
+        QueryResultType result_type = GetQueryResultType(state, flags);
+        if (result_type != QUERYRESULT_SOME_DATA) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                             HandleToUint64(pCB->commandBuffer), kVUID_Core_DrawState_InvalidQuery,
-                            "Requesting a copy from query to buffer with invalid query: queryPool %s, index %d",
-                            report_data->FormatHandle(queryPool).c_str(), firstQuery + i);
+                            "Requesting a copy from query to buffer on queryPool %s query %" PRIu32 ": %s",
+                            report_data->FormatHandle(queryPool).c_str(), firstQuery + i, string_QueryResultType(result_type));
         }
     }
     return skip;
@@ -8536,7 +8616,9 @@ void CoreChecks::PostCallRecordCmdCopyQueryPoolResults(VkCommandBuffer commandBu
     auto cb_state = GetCBState(commandBuffer);
     auto dst_buff_state = GetBufferState(dstBuffer);
     AddCommandBufferBindingBuffer(cb_state, dst_buff_state);
-    cb_state->queryUpdates.emplace_back([=](VkQueue q) { return ValidateQuery(q, cb_state, queryPool, firstQuery, queryCount); });
+    cb_state->queryUpdates.emplace_back([this, cb_state, queryPool, firstQuery, queryCount, flags](VkQueue q) {
+        return ValidateQuery(q, cb_state, queryPool, firstQuery, queryCount, flags);
+    });
     AddCommandBufferBinding(&GetQueryPoolState(queryPool)->cb_bindings, VulkanTypedHandle(queryPool, kVulkanObjectTypeQueryPool),
                             cb_state);
 }
@@ -8610,7 +8692,14 @@ void CoreChecks::PostCallRecordCmdWriteTimestamp(VkCommandBuffer commandBuffer, 
                                                  VkQueryPool queryPool, uint32_t slot) {
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     QueryObject query = {queryPool, slot};
-    cb_state->queryUpdates.emplace_back([=](VkQueue q) { return SetQueryState(q, commandBuffer, query, true); });
+    cb_state->queryUpdates.emplace_back([this, commandBuffer, query](VkQueue q) {
+        bool skip = false;
+        skip |= VerifyQueryIsReset(q, commandBuffer, query);
+        skip |= SetQueryState(q, commandBuffer, query, QUERYSTATE_AVAILABLE);
+        return skip;
+    });
+    AddCommandBufferBinding(&GetQueryPoolState(queryPool)->cb_bindings, VulkanTypedHandle(queryPool, kVulkanObjectTypeQueryPool),
+                            cb_state);
 }
 
 bool CoreChecks::MatchUsage(uint32_t count, const VkAttachmentReference2KHR *attachments, const VkFramebufferCreateInfo *fbci,
@@ -12947,12 +13036,12 @@ void CoreChecks::PostCallRecordResetQueryPoolEXT(VkDevice device, VkQueryPool qu
     if (query_pool_it == queryPoolMap.end()) return;
 
     // Reset the state of existing entries.
-    QueryObject query{queryPool, 0};
-    for (uint32_t i = 0; i < queryCount; ++i) {
-        query.index = firstQuery + i;
-        if (query.index >= query_pool_it->second->createInfo.queryCount) break;
-        auto query_it = queryToStateMap.find(query);
-        if (query_it != queryToStateMap.end()) query_it->second = false;
+    QueryObject query_obj{queryPool, 0};
+    const uint32_t max_query_count = std::min(queryCount, query_pool_it->second->createInfo.queryCount - firstQuery);
+    for (uint32_t i = 0; i < max_query_count; ++i) {
+        query_obj.query = firstQuery + i;
+        auto query_it = queryToStateMap.find(query_obj);
+        if (query_it != queryToStateMap.end()) query_it->second = QUERYSTATE_RESET;
     }
 }
 
