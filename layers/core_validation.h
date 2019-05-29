@@ -615,7 +615,7 @@ class CoreChecks : public ValidationObject {
                                       VkShaderStageFlagBits stage);
     bool ValidateShaderCapabilities(SHADER_MODULE_STATE const* src, VkShaderStageFlagBits stage, bool has_writable_descriptor);
     bool ValidateShaderStageInputOutputLimits(SHADER_MODULE_STATE const* src, VkPipelineShaderStageCreateInfo const* pStage,
-                                              PIPELINE_STATE* pipeline);
+                                              PIPELINE_STATE* pipeline, spirv_inst_iter entrypoint);
     bool ValidateCooperativeMatrix(SHADER_MODULE_STATE const* src, VkPipelineShaderStageCreateInfo const* pStage,
                                    PIPELINE_STATE* pipeline);
     bool ValidateExecutionModes(SHADER_MODULE_STATE const* src, spirv_inst_iter entrypoint);
