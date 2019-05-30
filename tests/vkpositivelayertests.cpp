@@ -2634,6 +2634,159 @@ TEST_F(VkPositiveLayerTest, PushDescriptorUnboundSetTest) {
     vkDestroyDescriptorPool(m_device->device(), ds_pool, NULL);
 }
 
+TEST_F(VkPositiveLayerTest, PushDescriptorSetUpdatingSetNumber) {
+    TEST_DESCRIPTION(
+        "Ensure that no validation errors are produced when the push descriptor set number changes "
+        "between two vkCmdPushDescriptorSetKHR calls.");
+
+    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    } else {
+        printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix,
+               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
+    } else {
+        printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    auto push_descriptor_prop = GetPushDescriptorProperties(instance(), gpu());
+    if (push_descriptor_prop.maxPushDescriptors < 1) {
+        // Some implementations report an invalid maxPushDescriptors of 0
+        printf("%s maxPushDescriptors is zero, skipping tests\n", kSkipPrefix);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitViewport());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    m_errorMonitor->ExpectSuccess();
+
+    // Create a descriptor to push
+    const uint32_t buffer_data[4] = {4, 5, 6, 7};
+    VkConstantBufferObj buffer_obj(
+        m_device, sizeof(buffer_data), &buffer_data,
+        VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+    ASSERT_TRUE(buffer_obj.initialized());
+
+    VkDescriptorBufferInfo buffer_info = {buffer_obj.handle(), 0, VK_WHOLE_SIZE};
+
+    PFN_vkCmdPushDescriptorSetKHR vkCmdPushDescriptorSetKHR =
+        (PFN_vkCmdPushDescriptorSetKHR)vkGetDeviceProcAddr(m_device->device(), "vkCmdPushDescriptorSetKHR");
+    ASSERT_TRUE(vkCmdPushDescriptorSetKHR != nullptr);
+
+    const VkDescriptorSetLayoutBinding ds_binding_0 = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT,
+                                                       nullptr};
+    const VkDescriptorSetLayoutBinding ds_binding_1 = {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT,
+                                                       nullptr};
+    const VkDescriptorSetLayoutObj ds_layout(m_device, {ds_binding_0, ds_binding_1});
+    ASSERT_TRUE(ds_layout.initialized());
+
+    const VkDescriptorSetLayoutBinding push_ds_binding_0 = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT,
+                                                            nullptr};
+    const VkDescriptorSetLayoutObj push_ds_layout(m_device, {push_ds_binding_0},
+                                                  VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR);
+    ASSERT_TRUE(push_ds_layout.initialized());
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+
+    VkPipelineObj pipe0(m_device);
+    VkPipelineObj pipe1(m_device);
+    {
+        // Note: the push descriptor set is set number 2.
+        const VkPipelineLayoutObj pipeline_layout(m_device, {&ds_layout, &ds_layout, &push_ds_layout, &ds_layout});
+        ASSERT_TRUE(pipeline_layout.initialized());
+
+        char const *vsSource =
+            "#version 450\n"
+            "\n"
+            "void main(){\n"
+            "   gl_Position = vec4(1);\n"
+            "}\n";
+        char const *fsSource =
+            "#version 450\n"
+            "\n"
+            "layout(location=0) out vec4 x;\n"
+            "layout(set=2) layout(binding=0) uniform foo { vec4 y; } bar;\n"
+            "void main(){\n"
+            "   x = bar.y;\n"
+            "}\n";
+
+        VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
+        VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+        VkPipelineObj &pipe = pipe0;
+        pipe.SetViewport(m_viewports);
+        pipe.SetScissor(m_scissors);
+        pipe.AddShader(&vs);
+        pipe.AddShader(&fs);
+        pipe.AddDefaultColorAttachment();
+        pipe.CreateVKPipeline(pipeline_layout.handle(), renderPass());
+
+        vkCmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
+
+        const VkWriteDescriptorSet descriptor_write = vk_testing::Device::write_descriptor_set(
+            vk_testing::DescriptorSet(), 0, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, &buffer_info);
+
+        // Note: pushing to desciptor set number 2.
+        vkCmdPushDescriptorSetKHR(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 2, 1,
+                                  &descriptor_write);
+        vkCmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    }
+
+    m_errorMonitor->VerifyNotFound();
+
+    {
+        // Note: the push descriptor set is now set number 3.
+        const VkPipelineLayoutObj pipeline_layout(m_device, {&ds_layout, &ds_layout, &ds_layout, &push_ds_layout});
+        ASSERT_TRUE(pipeline_layout.initialized());
+
+        const VkWriteDescriptorSet descriptor_write = vk_testing::Device::write_descriptor_set(
+            vk_testing::DescriptorSet(), 0, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, &buffer_info);
+
+        // Create PSO
+        char const *vsSource =
+            "#version 450\n"
+            "\n"
+            "void main(){\n"
+            "   gl_Position = vec4(1);\n"
+            "}\n";
+        char const *fsSource =
+            "#version 450\n"
+            "\n"
+            "layout(location=0) out vec4 x;\n"
+            "layout(set=3) layout(binding=0) uniform foo { vec4 y; } bar;\n"
+            "void main(){\n"
+            "   x = bar.y;\n"
+            "}\n";
+
+        VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
+        VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+        VkPipelineObj &pipe = pipe1;
+        pipe.SetViewport(m_viewports);
+        pipe.SetScissor(m_scissors);
+        pipe.AddShader(&vs);
+        pipe.AddShader(&fs);
+        pipe.AddDefaultColorAttachment();
+        pipe.CreateVKPipeline(pipeline_layout.handle(), renderPass());
+
+        vkCmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
+
+        // Note: now pushing to desciptor set number 3.
+        vkCmdPushDescriptorSetKHR(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 3, 1,
+                                  &descriptor_write);
+        vkCmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    }
+
+    m_errorMonitor->VerifyNotFound();
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
+
 // This is a positive test. No failures are expected.
 TEST_F(VkPositiveLayerTest, TestAliasedMemoryTracking) {
     VkResult err;
