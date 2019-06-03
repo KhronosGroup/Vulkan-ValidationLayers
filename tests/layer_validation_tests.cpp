@@ -395,6 +395,101 @@ void NegHeightViewportTests(VkDeviceObj *m_device, VkCommandBufferObj *m_command
     }
 }
 
+void CreateSamplerTest(VkLayerTest &test, const VkSamplerCreateInfo *pCreateInfo, std::string code) {
+    VkResult err;
+    VkSampler sampler = VK_NULL_HANDLE;
+    if (code.length())
+        test.Monitor()->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, code);
+    else
+        test.Monitor()->ExpectSuccess();
+
+    err = vkCreateSampler(test.device(), pCreateInfo, NULL, &sampler);
+    if (code.length())
+        test.Monitor()->VerifyFound();
+    else
+        test.Monitor()->VerifyNotFound();
+
+    if (VK_SUCCESS == err) {
+        vkDestroySampler(test.device(), sampler, NULL);
+    }
+}
+
+void CreateBufferTest(VkLayerTest &test, const VkBufferCreateInfo *pCreateInfo, std::string code) {
+    VkResult err;
+    VkBuffer buffer = VK_NULL_HANDLE;
+    if (code.length())
+        test.Monitor()->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, code);
+    else
+        test.Monitor()->ExpectSuccess();
+
+    err = vkCreateBuffer(test.device(), pCreateInfo, NULL, &buffer);
+    if (code.length())
+        test.Monitor()->VerifyFound();
+    else
+        test.Monitor()->VerifyNotFound();
+
+    if (VK_SUCCESS == err) {
+        vkDestroyBuffer(test.device(), buffer, NULL);
+    }
+}
+
+void CreateImageTest(VkLayerTest &test, const VkImageCreateInfo *pCreateInfo, std::string code) {
+    VkResult err;
+    VkImage image = VK_NULL_HANDLE;
+    if (code.length())
+        test.Monitor()->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, code);
+    else
+        test.Monitor()->ExpectSuccess();
+
+    err = vkCreateImage(test.device(), pCreateInfo, NULL, &image);
+    if (code.length())
+        test.Monitor()->VerifyFound();
+    else
+        test.Monitor()->VerifyNotFound();
+
+    if (VK_SUCCESS == err) {
+        vkDestroyImage(test.device(), image, NULL);
+    }
+}
+
+void CreateBufferViewTest(VkLayerTest &test, const VkBufferViewCreateInfo *pCreateInfo, std::string code) {
+    VkResult err;
+    VkBufferView view = VK_NULL_HANDLE;
+    if (code.length())
+        test.Monitor()->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, code);
+    else
+        test.Monitor()->ExpectSuccess();
+
+    err = vkCreateBufferView(test.device(), pCreateInfo, NULL, &view);
+    if (code.length())
+        test.Monitor()->VerifyFound();
+    else
+        test.Monitor()->VerifyNotFound();
+
+    if (VK_SUCCESS == err) {
+        vkDestroyBufferView(test.device(), view, NULL);
+    }
+}
+
+void CreateImageViewTest(VkLayerTest &test, const VkImageViewCreateInfo *pCreateInfo, std::string code) {
+    VkResult err;
+    VkImageView view = VK_NULL_HANDLE;
+    if (code.length())
+        test.Monitor()->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, code);
+    else
+        test.Monitor()->ExpectSuccess();
+
+    err = vkCreateImageView(test.device(), pCreateInfo, NULL, &view);
+    if (code.length())
+        test.Monitor()->VerifyFound();
+    else
+        test.Monitor()->VerifyNotFound();
+
+    if (VK_SUCCESS == err) {
+        vkDestroyImageView(test.device(), view, NULL);
+    }
+}
+
 VkSamplerCreateInfo SafeSaneSamplerCreateInfo() {
     VkSamplerCreateInfo sampler_create_info = {};
     sampler_create_info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -1099,6 +1194,14 @@ bool VkVerticesObj::AddVertexInputToPipe(VkPipelineObj &aPipelineObj) {
     return true;
 }
 
+bool VkVerticesObj::AddVertexInputToPipeHelpr(CreatePipelineHelper *pipelineHelper) {
+    pipelineHelper->vi_ci_.pVertexBindingDescriptions = VertexInputBindingDescription;
+    pipelineHelper->vi_ci_.vertexBindingDescriptionCount = BindingCount;
+    pipelineHelper->vi_ci_.pVertexAttributeDescriptions = VertexInputAttributeDescription;
+    pipelineHelper->vi_ci_.vertexAttributeDescriptionCount = AttributeCount;
+    return true;
+}
+
 void VkVerticesObj::BindVertexBuffers(VkCommandBuffer aCommandBuffer, unsigned aOffsetCount, VkDeviceSize *aOffsetList) {
     VkDeviceSize *offsetList;
     unsigned offsetCount;
@@ -1144,6 +1247,70 @@ OneOffDescriptorSet::~OneOffDescriptorSet() {
 }
 
 bool OneOffDescriptorSet::Initialized() { return pool_ != VK_NULL_HANDLE && layout_.initialized() && set_ != VK_NULL_HANDLE; }
+
+void OneOffDescriptorSet::WriteDescriptorBuffer(int blinding, VkBuffer buffer, VkDeviceSize size, VkDescriptorType descriptorType) {
+    VkDescriptorBufferInfo buffer_info = {};
+    buffer_info.buffer = buffer;
+    buffer_info.offset = 0;
+    buffer_info.range = size;
+    buffer_infos.emplace_back(buffer_info);
+    size_t index = buffer_infos.size() - 1;
+
+    VkWriteDescriptorSet descriptor_write;
+    memset(&descriptor_write, 0, sizeof(descriptor_write));
+    descriptor_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    descriptor_write.dstSet = set_;
+    descriptor_write.dstBinding = blinding;
+    descriptor_write.descriptorCount = 1;
+    descriptor_write.descriptorType = descriptorType;
+    descriptor_write.pBufferInfo = &buffer_infos[index];
+    descriptor_write.pImageInfo = nullptr;
+    descriptor_write.pTexelBufferView = nullptr;
+
+    descriptor_writes.emplace_back(descriptor_write);
+}
+
+void OneOffDescriptorSet::WriteDescriptorBufferView(int blinding, VkBufferView &buffer_view, VkDescriptorType descriptorType) {
+    VkWriteDescriptorSet descriptor_write;
+    memset(&descriptor_write, 0, sizeof(descriptor_write));
+    descriptor_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    descriptor_write.dstSet = set_;
+    descriptor_write.dstBinding = blinding;
+    descriptor_write.descriptorCount = 1;
+    descriptor_write.descriptorType = descriptorType;
+    descriptor_write.pTexelBufferView = &buffer_view;
+    descriptor_write.pImageInfo = nullptr;
+    descriptor_write.pBufferInfo = nullptr;
+
+    descriptor_writes.emplace_back(descriptor_write);
+}
+
+void OneOffDescriptorSet::WriteDescriptorImageView(int blinding, VkImageView image_view, VkSampler sampler,
+                                                   VkDescriptorType descriptorType) {
+    VkDescriptorImageInfo image_info = {};
+    image_info.imageView = image_view;
+    image_info.sampler = sampler;
+    image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    image_infos.emplace_back(image_info);
+    size_t index = image_infos.size() - 1;
+
+    VkWriteDescriptorSet descriptor_write;
+    memset(&descriptor_write, 0, sizeof(descriptor_write));
+    descriptor_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    descriptor_write.dstSet = set_;
+    descriptor_write.dstBinding = blinding;
+    descriptor_write.descriptorCount = 1;
+    descriptor_write.descriptorType = descriptorType;
+    descriptor_write.pImageInfo = &image_infos[index];
+    descriptor_write.pBufferInfo = nullptr;
+    descriptor_write.pTexelBufferView = nullptr;
+
+    descriptor_writes.emplace_back(descriptor_write);
+}
+
+void OneOffDescriptorSet::UpdateDescriptorSets() {
+    vkUpdateDescriptorSets(device_->handle(), descriptor_writes.size(), descriptor_writes.data(), 0, NULL);
+}
 
 CreatePipelineHelper::CreatePipelineHelper(VkLayerTest &test) : layer_test_(test) {}
 
@@ -1318,6 +1485,84 @@ VkResult CreatePipelineHelper::CreateGraphicsPipeline(bool implicit_destroy, boo
         pipeline_ = VK_NULL_HANDLE;
     }
     err = vkCreateGraphicsPipelines(layer_test_.device(), pipeline_cache_, 1, &gp_ci_, NULL, &pipeline_);
+    return err;
+}
+
+CreateComputePipelineHelper::CreateComputePipelineHelper(VkLayerTest &test) : layer_test_(test) {}
+
+CreateComputePipelineHelper::~CreateComputePipelineHelper() {
+    VkDevice device = layer_test_.device();
+    vkDestroyPipelineCache(device, pipeline_cache_, nullptr);
+    vkDestroyPipeline(device, pipeline_, nullptr);
+}
+
+void CreateComputePipelineHelper::InitDescriptorSetInfo() {
+    dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
+}
+
+void CreateComputePipelineHelper::InitPipelineLayoutInfo() {
+    pipeline_layout_ci_.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+    pipeline_layout_ci_.setLayoutCount = 1;     // Not really changeable because InitState() sets exactly one pSetLayout
+    pipeline_layout_ci_.pSetLayouts = nullptr;  // must bound after it is created
+}
+
+void CreateComputePipelineHelper::InitShaderInfo() {
+    cs_.reset(new VkShaderObj(layer_test_.DeviceObj(), bindStateMinimalShaderText, VK_SHADER_STAGE_COMPUTE_BIT, &layer_test_));
+    // We shouldn't need a fragment shader but add it to be able to run on more devices
+}
+
+void CreateComputePipelineHelper::InitComputePipelineInfo() {
+    cp_ci_.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
+    cp_ci_.pNext = nullptr;
+    cp_ci_.flags = 0;
+}
+
+void CreateComputePipelineHelper::InitPipelineCacheInfo() {
+    pc_ci_.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
+    pc_ci_.pNext = nullptr;
+    pc_ci_.flags = 0;
+    pc_ci_.initialDataSize = 0;
+    pc_ci_.pInitialData = nullptr;
+}
+
+void CreateComputePipelineHelper::InitInfo() {
+    InitDescriptorSetInfo();
+    InitPipelineLayoutInfo();
+    InitShaderInfo();
+    InitComputePipelineInfo();
+    InitPipelineCacheInfo();
+}
+
+void CreateComputePipelineHelper::InitState() {
+    VkResult err;
+    descriptor_set_.reset(new OneOffDescriptorSet(layer_test_.DeviceObj(), dsl_bindings_));
+    ASSERT_TRUE(descriptor_set_->Initialized());
+
+    const std::vector<VkPushConstantRange> push_ranges(
+        pipeline_layout_ci_.pPushConstantRanges,
+        pipeline_layout_ci_.pPushConstantRanges + pipeline_layout_ci_.pushConstantRangeCount);
+    pipeline_layout_ = VkPipelineLayoutObj(layer_test_.DeviceObj(), {&descriptor_set_->layout_}, push_ranges);
+
+    err = vkCreatePipelineCache(layer_test_.device(), &pc_ci_, NULL, &pipeline_cache_);
+    ASSERT_VK_SUCCESS(err);
+}
+
+void CreateComputePipelineHelper::LateBindPipelineInfo() {
+    // By value or dynamically located items must be late bound
+    cp_ci_.layout = pipeline_layout_.handle();
+    cp_ci_.stage = cs_.get()->GetStageCreateInfo();
+}
+
+VkResult CreateComputePipelineHelper::CreateComputePipeline(bool implicit_destroy, bool do_late_bind) {
+    VkResult err;
+    if (do_late_bind) {
+        LateBindPipelineInfo();
+    }
+    if (implicit_destroy && (pipeline_ != VK_NULL_HANDLE)) {
+        vkDestroyPipeline(layer_test_.device(), pipeline_, nullptr);
+        pipeline_ = VK_NULL_HANDLE;
+    }
+    err = vkCreateComputePipelines(layer_test_.device(), pipeline_cache_, 1, &cp_ci_, NULL, &pipeline_);
     return err;
 }
 
@@ -1557,16 +1802,19 @@ void BarrierQueueFamilyTestHelper::Context::Reset() {
 BarrierQueueFamilyTestHelper::BarrierQueueFamilyTestHelper(Context *context)
     : context_(context), image_(context->layer_test->DeviceObj()) {}
 
-void BarrierQueueFamilyTestHelper::Init(std::vector<uint32_t> *families) {
+void BarrierQueueFamilyTestHelper::Init(std::vector<uint32_t> *families, bool image_memory, bool buffer_memory) {
     VkDeviceObj *device_obj = context_->layer_test->DeviceObj();
-    image_.Init(32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0, families);
+
+    image_.Init(32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0, families,
+                image_memory);
+
     ASSERT_TRUE(image_.initialized());
 
     image_barrier_ = image_.image_memory_barrier(VK_ACCESS_TRANSFER_READ_BIT, VK_ACCESS_TRANSFER_READ_BIT, image_.Layout(),
                                                  image_.Layout(), image_.subresource_range(VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1));
 
     VkMemoryPropertyFlags mem_prop = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    buffer_.init_as_src_and_dst(*device_obj, 256, mem_prop, families);
+    buffer_.init_as_src_and_dst(*device_obj, 256, mem_prop, families, buffer_memory);
     ASSERT_TRUE(buffer_.initialized());
     buffer_barrier_ = buffer_.buffer_memory_barrier(VK_ACCESS_TRANSFER_READ_BIT, VK_ACCESS_TRANSFER_READ_BIT, 0, VK_WHOLE_SIZE);
 }
@@ -1586,8 +1834,8 @@ BarrierQueueFamilyTestHelper::QueueFamilyObjs *BarrierQueueFamilyTestHelper::Get
 void BarrierQueueFamilyTestHelper::operator()(std::string img_err, std::string buf_err, uint32_t src, uint32_t dst, bool positive,
                                               uint32_t queue_family_index, Modifier mod) {
     auto monitor = context_->layer_test->Monitor();
-    monitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT, img_err);
-    monitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT, buf_err);
+    if (img_err.length()) monitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT, img_err);
+    if (buf_err.length()) monitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT, buf_err);
 
     image_barrier_.srcQueueFamilyIndex = src;
     image_barrier_.dstQueueFamilyIndex = dst;

@@ -83,22 +83,71 @@ enum BsoFailSelect {
     BsoFailIndexBufferBadMapOffset
 };
 
+static const char bindStateMinimalShaderText[] = "#version 450\nvoid main() {}\n";
+
 static const char bindStateVertShaderText[] =
     "#version 450\n"
-    "vec2 vertices[3];\n"
     "void main() {\n"
-    "      vertices[0] = vec2(-1.0, -1.0);\n"
-    "      vertices[1] = vec2( 1.0, -1.0);\n"
-    "      vertices[2] = vec2( 0.0,  1.0);\n"
-    "   gl_Position = vec4(vertices[gl_VertexIndex % 3], 0.0, 1.0);\n"
+    "   gl_Position = vec4(1);\n"
     "}\n";
+
+static const char bindStateVertPointSizeShaderText[] =
+    "#version 450\n"
+    "out gl_PerVertex {\n"
+    "    vec4 gl_Position;\n"
+    "    float gl_PointSize;\n"
+    "};\n"
+    "void main() {\n"
+    "    gl_Position = vec4(1);\n"
+    "    gl_PointSize = 1.0;\n"
+    "}\n";
+
+static char const bindStateGeomShaderText[] =
+    "#version 450\n"
+    "layout(triangles) in;\n"
+    "layout(triangle_strip, max_vertices=3) out;\n"
+    "void main() {\n"
+    "   gl_Position = vec4(1);\n"
+    "   EmitVertex();\n"
+    "}\n";
+
+static char const bindStateGeomPointSizeShaderText[] =
+    "#version 450\n"
+    "layout (points) in;\n"
+    "layout (points) out;\n"
+    "layout (max_vertices = 1) out;\n"
+    "void main() {\n"
+    "   gl_Position = vec4(1);\n"
+    "   gl_PointSize = 1.0;\n"
+    "   EmitVertex();\n"
+    "}\n";
+
+static const char bindStateTscShaderText[] =
+    "#version 450\n"
+    "layout(vertices=3) out;\n"
+    "void main() {\n"
+    "   gl_TessLevelOuter[0] = gl_TessLevelOuter[1] = gl_TessLevelOuter[2] = 1;\n"
+    "   gl_TessLevelInner[0] = 1;\n"
+    "}\n";
+
+static const char bindStateTeshaderText[] =
+    "#version 450\n"
+    "layout(triangles, equal_spacing, cw) in;\n"
+    "void main() { gl_Position = vec4(1); }\n";
 
 static const char bindStateFragShaderText[] =
     "#version 450\n"
-    "\n"
     "layout(location = 0) out vec4 uFragColor;\n"
     "void main(){\n"
     "   uFragColor = vec4(0,1,0,1);\n"
+    "}\n";
+
+static const char bindStateFragSamplerShaderText[] =
+    "#version 450\n"
+    "layout(set=0, binding=0) uniform sampler2D s;\n"
+    "layout(location=0) out vec4 x;\n"
+    "void main(){\n"
+    "   x = texture(s, vec2(1));\n"
     "}\n";
 
 // Static arrays helper
@@ -305,12 +354,14 @@ class VkBufferTest {
     VkDeviceMemory VulkanMemory;
 };
 
+struct CreatePipelineHelper;
 class VkVerticesObj {
    public:
     VkVerticesObj(VkDeviceObj *aVulkanDevice, unsigned aAttributeCount, unsigned aBindingCount, unsigned aByteStride,
                   VkDeviceSize aVertexCount, const float *aVerticies);
     ~VkVerticesObj();
     bool AddVertexInputToPipe(VkPipelineObj &aPipelineObj);
+    bool AddVertexInputToPipeHelpr(CreatePipelineHelper *pipelineHelper);
     void BindVertexBuffers(VkCommandBuffer aCommandBuffer, unsigned aOffsetCount = 0, VkDeviceSize *aOffsetList = nullptr);
 
    protected:
@@ -333,11 +384,21 @@ struct OneOffDescriptorSet {
     VkDescriptorSetLayoutObj layout_;
     VkDescriptorSet set_;
     typedef std::vector<VkDescriptorSetLayoutBinding> Bindings;
+    std::vector<VkDescriptorBufferInfo> buffer_infos;
+    std::vector<VkDescriptorImageInfo> image_infos;
+    std::vector<VkWriteDescriptorSet> descriptor_writes;
 
     OneOffDescriptorSet(VkDeviceObj *device, const Bindings &bindings, VkDescriptorSetLayoutCreateFlags layout_flags = 0,
                         void *layout_pnext = NULL, VkDescriptorPoolCreateFlags poolFlags = 0, void *allocate_pnext = NULL);
     ~OneOffDescriptorSet();
     bool Initialized();
+    void WriteDescriptorBuffer(int blinding, VkBuffer buffer, VkDeviceSize size,
+                               VkDescriptorType descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+    void WriteDescriptorBufferView(int blinding, VkBufferView &buffer_view,
+                                   VkDescriptorType descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER);
+    void WriteDescriptorImageView(int blinding, VkImageView image_view, VkSampler sampler,
+                                  VkDescriptorType descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+    void UpdateDescriptorSets();
 };
 
 template <typename T>
@@ -412,6 +473,61 @@ struct CreatePipelineHelper {
 
         for (const auto &error : errors) test.Monitor()->SetDesiredFailureMsg(flags, error);
         helper.CreateGraphicsPipeline();
+
+        if (positive_test) {
+            test.Monitor()->VerifyNotFound();
+        } else {
+            test.Monitor()->VerifyFound();
+        }
+    }
+
+    template <typename Test, typename OverrideFunc, typename Error>
+    static void OneshotTest(Test &test, OverrideFunc &info_override, const VkFlags flags, Error error, bool positive_test = false) {
+        OneshotTest(test, info_override, flags, std::vector<Error>(1, error), positive_test);
+    }
+};
+
+struct CreateComputePipelineHelper {
+   public:
+    std::vector<VkDescriptorSetLayoutBinding> dsl_bindings_;
+    std::unique_ptr<OneOffDescriptorSet> descriptor_set_;
+    VkPipelineLayoutCreateInfo pipeline_layout_ci_ = {};
+    VkPipelineLayoutObj pipeline_layout_;
+    VkComputePipelineCreateInfo cp_ci_ = {};
+    VkPipelineCacheCreateInfo pc_ci_ = {};
+    VkPipeline pipeline_ = VK_NULL_HANDLE;
+    VkPipelineCache pipeline_cache_ = VK_NULL_HANDLE;
+    std::unique_ptr<VkShaderObj> cs_;
+    VkLayerTest &layer_test_;
+    CreateComputePipelineHelper(VkLayerTest &test);
+    ~CreateComputePipelineHelper();
+
+    void InitDescriptorSetInfo();
+    void InitPipelineLayoutInfo();
+    void InitShaderInfo();
+    void InitComputePipelineInfo();
+    void InitPipelineCacheInfo();
+
+    // TDB -- add control for optional and/or additional initialization
+    void InitInfo();
+    void InitState();
+    void LateBindPipelineInfo();
+    VkResult CreateComputePipeline(bool implicit_destroy = true, bool do_late_bind = true);
+
+    // Helper function to create a simple test case (positive or negative)
+    //
+    // info_override can be any callable that takes a CreatePipelineHeper &
+    // flags, error can be any args accepted by "SetDesiredFailure".
+    template <typename Test, typename OverrideFunc, typename Error>
+    static void OneshotTest(Test &test, OverrideFunc &info_override, const VkFlags flags, const std::vector<Error> &errors,
+                            bool positive_test = false) {
+        CreateComputePipelineHelper helper(test);
+        helper.InitInfo();
+        info_override(helper);
+        helper.InitState();
+
+        for (const auto &error : errors) test.Monitor()->SetDesiredFailureMsg(flags, error);
+        helper.CreateComputePipeline();
 
         if (positive_test) {
             test.Monitor()->VerifyNotFound();
@@ -560,7 +676,7 @@ class BarrierQueueFamilyTestHelper {
 
     BarrierQueueFamilyTestHelper(Context *context);
     // Init with queue families non-null for CONCURRENT sharing mode (which requires them)
-    void Init(std::vector<uint32_t> *families);
+    void Init(std::vector<uint32_t> *families, bool image_memory = true, bool buffer_memory = true);
 
     QueueFamilyObjs *GetQueueFamilyInfo(Context *context, uint32_t qfi);
 
@@ -570,10 +686,10 @@ class BarrierQueueFamilyTestHelper {
         DOUBLE_COMMAND_BUFFER,
     };
 
-    void operator()(std::string img_err, std::string buf_err, uint32_t src, uint32_t dst, bool positive = false,
+    void operator()(std::string img_err, std::string buf_err = "", uint32_t src = VK_QUEUE_FAMILY_IGNORED,
+                    uint32_t dst = VK_QUEUE_FAMILY_IGNORED, bool positive = false,
                     uint32_t queue_family_index = kInvalidQueueFamily, Modifier mod = Modifier::NONE);
 
-   protected:
     static const uint32_t kInvalidQueueFamily = UINT32_MAX;
     Context *context_;
     VkImageObj image_;
@@ -633,5 +749,15 @@ VkFormat FindFormatWithoutFeatures(VkPhysicalDevice gpu, VkImageTiling tiling,
                                    VkFormatFeatureFlags undesired_features = UINT32_MAX);
 
 void NegHeightViewportTests(VkDeviceObj *m_device, VkCommandBufferObj *m_commandBuffer, ErrorMonitor *m_errorMonitor);
+
+void CreateSamplerTest(VkLayerTest &test, const VkSamplerCreateInfo *pCreateInfo, std::string code = "");
+
+void CreateBufferTest(VkLayerTest &test, const VkBufferCreateInfo *pCreateInfo, std::string code = "");
+
+void CreateImageTest(VkLayerTest &test, const VkImageCreateInfo *pCreateInfo, std::string code = "");
+
+void CreateBufferViewTest(VkLayerTest &test, const VkBufferViewCreateInfo *pCreateInfo, std::string code = "");
+
+void CreateImageViewTest(VkLayerTest &test, const VkImageViewCreateInfo *pCreateInfo, std::string code = "");
 
 #endif  // VKLAYERTEST_H
