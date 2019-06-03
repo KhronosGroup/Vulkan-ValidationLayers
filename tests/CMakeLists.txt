@@ -62,7 +62,7 @@ endif()
 
 set(LIBGLM_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/libs)
 
-set(COMMON_CPP 	vklayertests_pipeline_shader.cpp vklayertests_buffer_image_memory_sampler.cpp vklayertests_others.cpp vklayertests_descriptor_renderpass_framebuffer.cpp
+set(COMMON_CPP vklayertests_pipeline_shader.cpp vklayertests_buffer_image_memory_sampler.cpp vklayertests_others.cpp vklayertests_descriptor_renderpass_framebuffer.cpp
 				vklayertests_command.cpp vkpositivelayertests.cpp vkrenderframework.cpp vktestbinding.cpp vktestframework.cpp test_environment.cpp)
 
 if(NOT WIN32)
