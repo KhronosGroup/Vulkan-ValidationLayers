@@ -2650,7 +2650,6 @@ TEST_F(VkLayerTest, WriteDescriptorSetIntegrityCheck) {
     vkDestroySampler(m_device->device(), sampler, NULL);
 }
 
-
 TEST_F(VkLayerTest, WriteDescriptorSetConsecutiveUpdates) {
     TEST_DESCRIPTION(
         "Verifies that updates rolling over to next descriptor work correctly by destroying buffer from consecutive update known "
@@ -5196,7 +5195,6 @@ TEST_F(VkLayerTest, DrawWithPipelineIncompatibleWithRenderPass) {
 
     vkDestroyRenderPass(m_device->device(), rp, NULL);
 }
-
 
 TEST_F(VkLayerTest, Maint1BindingSliceOf3DImage) {
     TEST_DESCRIPTION(

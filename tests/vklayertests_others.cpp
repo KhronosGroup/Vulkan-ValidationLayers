@@ -899,7 +899,6 @@ TEST_F(VkLayerTest, TemporaryExternalSemaphore) {
     vkDestroySemaphore(m_device->device(), import_semaphore, nullptr);
 }
 
-
 TEST_F(VkLayerTest, TemporaryExternalFence) {
 #ifdef _WIN32
     const auto extension_name = VK_KHR_EXTERNAL_FENCE_WIN32_EXTENSION_NAME;
@@ -3296,8 +3295,6 @@ TEST_F(VkLayerTest, ShadingRateImageNV) {
     vkDestroyImage(m_device->device(), image, NULL);
     vkFreeMemory(m_device->device(), image_memory, NULL);
 }
-
-
 
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
 #include "android_ndk_types.h"
