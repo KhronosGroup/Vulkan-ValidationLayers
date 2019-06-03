@@ -1255,6 +1255,17 @@ struct LAST_BOUND_STATE {
         dynamicOffsets.clear();
         compat_id_for_set.clear();
     }
+
+    void UnbindAndResetPushDescriptorSet(cvdescriptorset::DescriptorSet *ds) {
+        if (push_descriptor_set) {
+            for (std::size_t i = 0; i < boundDescriptorSets.size(); i++) {
+                if (boundDescriptorSets[i] == push_descriptor_set.get()) {
+                    boundDescriptorSets[i] = nullptr;
+                }
+            }
+        }
+        push_descriptor_set.reset(ds);
+    }
 };
 
 // Types to store queue family ownership (QFO) Transfers
