@@ -295,7 +295,7 @@ class DescriptorSetLayout {
         }
 
         VkSampler const *GetImmutableSamplerPtr() const { return layout_->GetImmutableSamplerPtrFromIndex(index_); }
-
+        const IndexRange &GetGlobalIndexRange() const { return layout_->GetGlobalIndexRangeFromBinding(Binding()); }
         bool AtEnd() const { return index_ == layout_->GetBindingCount(); }
 
         bool operator==(const ConstBindingIterator &rhs) { return (index_ = rhs.index_) && (layout_ == rhs.layout_); }
@@ -501,6 +501,10 @@ void PerformUpdateDescriptorSets(CoreChecks *, uint32_t, const VkWriteDescriptor
 // updated, verify that for any binding boundaries crossed, the update is consistent
 bool VerifyUpdateConsistency(DescriptorSetLayout::ConstBindingIterator current_binding, uint32_t offset, uint32_t update_count,
                              const char *type, const VkDescriptorSet set, std::string *error_msg);
+// Validate contents of a WriteUpdate
+bool ValidateWriteUpdate(const DescriptorSet *descriptor_set, const debug_report_data *report_data,
+                         const VkWriteDescriptorSet *update, const char *func_name, std::string *error_code,
+                         std::string *error_msg);
 
 // Helper class to encapsulate the descriptor update template decoding logic
 struct DecodedTemplateUpdate {
@@ -567,8 +571,6 @@ class DescriptorSet : public BASE_NODE {
                                        const VkWriteDescriptorSet *p_wds, const char *func_name);
     // Perform a push update whose contents were just validated using ValidatePushDescriptorsUpdate
     void PerformPushDescriptorsUpdate(uint32_t write_count, const VkWriteDescriptorSet *p_wds);
-    // Validate contents of a WriteUpdate
-    bool ValidateWriteUpdate(const debug_report_data *, const VkWriteDescriptorSet *, const char *, std::string *, std::string *);
     // Perform a WriteUpdate whose contents were just validated using ValidateWriteUpdate
     void PerformWriteUpdate(const VkWriteDescriptorSet *);
     // Validate contents of a CopyUpdate
@@ -630,8 +632,10 @@ class DescriptorSet : public BASE_NODE {
     DESCRIPTOR_POOL_STATE *GetPoolState() const { return pool_state_; }
     const Descriptor *GetDescriptorFromGlobalIndex(const uint32_t index) const { return descriptors_[index].get(); }
 
-   private:
+    // TODO -- remove from DescriptorSet
     bool VerifyWriteUpdateContents(const VkWriteDescriptorSet *, const uint32_t, const char *, std::string *, std::string *) const;
+
+   private:
     bool VerifyCopyUpdateContents(const VkCopyDescriptorSet *, const DescriptorSet *, VkDescriptorType, uint32_t, const char *,
                                   std::string *, std::string *) const;
     bool ValidateBufferUsage(BUFFER_STATE const *, VkDescriptorType, std::string *, std::string *) const;
