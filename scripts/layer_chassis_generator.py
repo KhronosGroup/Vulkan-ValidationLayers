@@ -339,7 +339,8 @@ class ValidationObject {
         // Handle Wrapping Data
         // Reverse map display handles
         std::unordered_map<VkDisplayKHR, uint64_t> display_id_reverse_mapping;
-        std::unordered_map<uint64_t, std::unique_ptr<TEMPLATE_STATE>> desc_template_map;
+        // Wrapping Descriptor Template Update structures requires access to the template createinfo structs
+        std::unordered_map<uint64_t, std::unique_ptr<TEMPLATE_STATE>> desc_template_createinfo_map;
         struct SubpassesUsageStates {
             std::unordered_set<uint32_t> subpasses_using_color_attachment;
             std::unordered_set<uint32_t> subpasses_using_depthstencil_attachment;
