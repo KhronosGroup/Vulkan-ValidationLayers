@@ -2026,9 +2026,10 @@ bool cvdescriptorset::DescriptorSet::ValidateBufferUpdate(VkDescriptorBufferInfo
 }
 
 // Verify that the contents of the update are ok, but don't perform actual update
-bool cvdescriptorset::DescriptorSet::VerifyWriteUpdateContents(const VkWriteDescriptorSet *update, const uint32_t index,
-                                                               const char *func_name, std::string *error_code,
-                                                               std::string *error_msg) const {
+bool cvdescriptorset::VerifyWriteUpdateContents(const DescriptorSet *dest_set, const VkWriteDescriptorSet *update,
+                                                const uint32_t index, const char *func_name, std::string *error_code,
+                                                std::string *error_msg) {
+    auto *device_data_ = dest_set->GetDeviceData();
     switch (update->descriptorType) {
         case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER: {
             for (uint32_t di = 0; di < update->descriptorCount; ++di) {
@@ -2044,7 +2045,7 @@ bool cvdescriptorset::DescriptorSet::VerifyWriteUpdateContents(const VkWriteDesc
                     return false;
                 }
                 if (device_data_->device_extensions.vk_khr_sampler_ycbcr_conversion) {
-                    ImageSamplerDescriptor *desc = (ImageSamplerDescriptor *)descriptors_[index + di].get();
+                    ImageSamplerDescriptor *desc = (ImageSamplerDescriptor *)dest_set->GetDescriptorFromGlobalIndex(index + di);
                     if (desc->IsImmutableSampler()) {
                         auto sampler_state = device_data_->GetSamplerState(desc->GetSampler());
                         auto iv_state = device_data_->GetImageViewState(image_view);
@@ -2078,7 +2079,8 @@ bool cvdescriptorset::DescriptorSet::VerifyWriteUpdateContents(const VkWriteDesc
         // fall through
         case VK_DESCRIPTOR_TYPE_SAMPLER: {
             for (uint32_t di = 0; di < update->descriptorCount; ++di) {
-                if (!descriptors_[index + di].get()->IsImmutableSampler()) {
+                SamplerDescriptor *desc = (SamplerDescriptor *)dest_set->GetDescriptorFromGlobalIndex(index + di);
+                if (!desc->IsImmutableSampler()) {
                     if (!ValidateSampler(update->pImageInfo[di].sampler, device_data_)) {
                         *error_code = "VUID-VkWriteDescriptorSet-descriptorType-00325";
                         std::stringstream error_str;
@@ -2131,7 +2133,7 @@ bool cvdescriptorset::DescriptorSet::VerifyWriteUpdateContents(const VkWriteDesc
                               << ") has been destroyed: " << error_msg->c_str();
                     *error_msg = error_str.str();
                     return false;
-                } else if (!ValidateBufferUsage(buffer_state, update->descriptorType, error_code, error_msg)) {
+                } else if (!dest_set->ValidateBufferUsage(buffer_state, update->descriptorType, error_code, error_msg)) {
                     std::stringstream error_str;
                     error_str << "Attempted write update to texel buffer descriptor failed due to: " << error_msg->c_str();
                     *error_msg = error_str.str();
@@ -2145,7 +2147,8 @@ bool cvdescriptorset::DescriptorSet::VerifyWriteUpdateContents(const VkWriteDesc
         case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
         case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC: {
             for (uint32_t di = 0; di < update->descriptorCount; ++di) {
-                if (!ValidateBufferUpdate(update->pBufferInfo + di, update->descriptorType, func_name, error_code, error_msg)) {
+                if (!dest_set->ValidateBufferUpdate(update->pBufferInfo + di, update->descriptorType, func_name, error_code,
+                                                    error_msg)) {
                     std::stringstream error_str;
                     error_str << "Attempted write update to buffer descriptor failed due to: " << error_msg->c_str();
                     *error_msg = error_str.str();
@@ -2594,7 +2597,7 @@ bool cvdescriptorset::ValidateWriteUpdate(const DescriptorSet *dest_set, const d
         return false;
     }
     // Update is within bounds and consistent so last step is to validate update contents
-    if (!dest_set->VerifyWriteUpdateContents(update, start_idx, func_name, error_code, error_msg)) {
+    if (!VerifyWriteUpdateContents(dest_set, update, start_idx, func_name, error_code, error_msg)) {
         std::stringstream error_str;
         error_str << "Write update to " << dest_set->StringifySetAndLayout() << " binding #" << update->dstBinding
                   << " failed with error message: " << error_msg->c_str();

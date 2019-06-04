@@ -505,6 +505,8 @@ bool VerifyUpdateConsistency(DescriptorSetLayout::ConstBindingIterator current_b
 bool ValidateWriteUpdate(const DescriptorSet *descriptor_set, const debug_report_data *report_data,
                          const VkWriteDescriptorSet *update, const char *func_name, std::string *error_code,
                          std::string *error_msg);
+bool VerifyWriteUpdateContents(const DescriptorSet *dest_set, const VkWriteDescriptorSet *update, const uint32_t index,
+                               const char *func_name, std::string *error_code, std::string *error_msg);
 
 // Helper class to encapsulate the descriptor update template decoding logic
 struct DecodedTemplateUpdate {
@@ -632,14 +634,16 @@ class DescriptorSet : public BASE_NODE {
     DESCRIPTOR_POOL_STATE *GetPoolState() const { return pool_state_; }
     const Descriptor *GetDescriptorFromGlobalIndex(const uint32_t index) const { return descriptors_[index].get(); }
 
+    // TODO: Clean up the const cleaness here.  Getting  non-const CoreChecks from a const DescriptorSet is probably not okay.
+    CoreChecks *GetDeviceData() const { return device_data_; }
+
     // TODO -- remove from DescriptorSet
-    bool VerifyWriteUpdateContents(const VkWriteDescriptorSet *, const uint32_t, const char *, std::string *, std::string *) const;
+    bool ValidateBufferUsage(BUFFER_STATE const *, VkDescriptorType, std::string *, std::string *) const;
+    bool ValidateBufferUpdate(VkDescriptorBufferInfo const *, VkDescriptorType, const char *, std::string *, std::string *) const;
 
    private:
     bool VerifyCopyUpdateContents(const VkCopyDescriptorSet *, const DescriptorSet *, VkDescriptorType, uint32_t, const char *,
                                   std::string *, std::string *) const;
-    bool ValidateBufferUsage(BUFFER_STATE const *, VkDescriptorType, std::string *, std::string *) const;
-    bool ValidateBufferUpdate(VkDescriptorBufferInfo const *, VkDescriptorType, const char *, std::string *, std::string *) const;
     // Private helper to set all bound cmd buffers to INVALID state
     void InvalidateBoundCmdBuffers();
     bool some_update_;  // has any part of the set ever been updated?
