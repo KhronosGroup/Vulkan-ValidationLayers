@@ -150,9 +150,6 @@ class DescriptorSetLayoutDef {
 
     // Helper function to get the next valid binding for a descriptor
     uint32_t GetNextValidBinding(const uint32_t) const;
-    // For a particular binding starting at offset and having update_count descriptors
-    //  updated, verify that for any binding boundaries crossed, the update is consistent
-    bool VerifyUpdateConsistency(uint32_t, uint32_t, uint32_t, const char *, const VkDescriptorSet, std::string *) const;
     bool IsPushDescriptor() const { return GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR; };
 
     struct BindingTypeStats {
@@ -269,16 +266,77 @@ class DescriptorSetLayout {
     }
     // Helper function to get the next valid binding for a descriptor
     uint32_t GetNextValidBinding(const uint32_t binding) const { return layout_id_->GetNextValidBinding(binding); }
-    // For a particular binding starting at offset and having update_count descriptors
-    //  updated, verify that for any binding boundaries crossed, the update is consistent
-    bool VerifyUpdateConsistency(uint32_t current_binding, uint32_t offset, uint32_t update_count, const char *type,
-                                 const VkDescriptorSet set, std::string *error_msg) const {
-        return layout_id_->VerifyUpdateConsistency(current_binding, offset, update_count, type, set, error_msg);
-    }
     bool IsPushDescriptor() const { return layout_id_->IsPushDescriptor(); }
 
     using BindingTypeStats = DescriptorSetLayoutDef::BindingTypeStats;
     const BindingTypeStats &GetBindingTypeStats() const { return layout_id_->GetBindingTypeStats(); }
+
+    // Binding Iterator
+    class ConstBindingIterator {
+       public:
+        ConstBindingIterator() = delete;
+        ConstBindingIterator(const ConstBindingIterator &other) = default;
+        ConstBindingIterator &operator=(const ConstBindingIterator &rhs) = default;
+
+        ConstBindingIterator(const DescriptorSetLayout *layout) : layout_(layout), index_(0) { assert(layout); }
+        ConstBindingIterator(const DescriptorSetLayout *layout, uint32_t binding) : ConstBindingIterator(layout) {
+            index_ = layout->GetIndexFromBinding(binding);
+        }
+
+        VkDescriptorSetLayoutBinding const *GetDescriptorSetLayoutBindingPtr() const {
+            return layout_->GetDescriptorSetLayoutBindingPtrFromIndex(index_);
+        }
+        uint32_t GetDescriptorCount() const { return layout_->GetDescriptorCountFromIndex(index_); }
+        VkDescriptorType GetType() const { return layout_->GetTypeFromIndex(index_); }
+        VkShaderStageFlags GetStageFlags() const { return layout_->GetStageFlagsFromIndex(index_); }
+
+        VkDescriptorBindingFlagsEXT GetDescriptorBindingFlags() const {
+            return layout_->GetDescriptorBindingFlagsFromIndex(index_);
+        }
+
+        VkSampler const *GetImmutableSamplerPtr() const { return layout_->GetImmutableSamplerPtrFromIndex(index_); }
+
+        bool AtEnd() const { return index_ == layout_->GetBindingCount(); }
+
+        bool operator==(const ConstBindingIterator &rhs) { return (index_ = rhs.index_) && (layout_ == rhs.layout_); }
+
+        ConstBindingIterator &operator++() {
+            if (!AtEnd()) {
+                index_++;
+            }
+            return *this;
+        }
+
+        bool IsConsistent(const ConstBindingIterator &other) const {
+            if (AtEnd() || other.AtEnd()) {
+                return false;
+            }
+            const auto *binding_ci = GetDescriptorSetLayoutBindingPtr();
+            const auto *other_binding_ci = other.GetDescriptorSetLayoutBindingPtr();
+            assert((binding_ci != nullptr) && (other_binding_ci != nullptr));
+
+            if ((binding_ci->descriptorType != other_binding_ci->descriptorType) ||
+                (binding_ci->stageFlags != other_binding_ci->stageFlags) ||
+                (!hash_util::similar_for_nullity(binding_ci->pImmutableSamplers, other_binding_ci->pImmutableSamplers)) ||
+                (GetDescriptorBindingFlags() != other.GetDescriptorBindingFlags())) {
+                return false;
+            }
+            return true;
+        }
+
+        const DescriptorSetLayout *Layout() const { return layout_; }
+        uint32_t Binding() const { return layout_->GetBindings()[index_].binding; }
+        ConstBindingIterator Next() {
+            ConstBindingIterator next(*this);
+            ++next;
+            return next;
+        }
+
+       private:
+        const DescriptorSetLayout *layout_;
+        uint32_t index_;
+    };
+    ConstBindingIterator end() const { return ConstBindingIterator(this, GetBindingCount()); }
 
    private:
     VkDescriptorSetLayout layout_;
@@ -436,6 +494,13 @@ bool ValidateUpdateDescriptorSets(const debug_report_data *, const CoreChecks *,
                                   const VkCopyDescriptorSet *, const char *func_name);
 // "Perform" does the update with the assumption that ValidateUpdateDescriptorSets() has passed for the given update
 void PerformUpdateDescriptorSets(CoreChecks *, uint32_t, const VkWriteDescriptorSet *, uint32_t, const VkCopyDescriptorSet *);
+
+// Core Validation specific validation checks using DescriptorSet and DescriptorSetLayoutAccessors
+// TODO: migrate out of descriptor_set.cpp/h
+// For a particular binding starting at offset and having update_count descriptors
+// updated, verify that for any binding boundaries crossed, the update is consistent
+bool VerifyUpdateConsistency(DescriptorSetLayout::ConstBindingIterator current_binding, uint32_t offset, uint32_t update_count,
+                             const char *type, const VkDescriptorSet set, std::string *error_msg);
 
 // Helper class to encapsulate the descriptor update template decoding logic
 struct DecodedTemplateUpdate {
