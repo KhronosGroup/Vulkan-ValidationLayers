@@ -2024,151 +2024,6 @@ bool cvdescriptorset::DescriptorSet::ValidateBufferUpdate(VkDescriptorBufferInfo
     }
     return true;
 }
-
-// Verify that the contents of the update are ok, but don't perform actual update
-bool cvdescriptorset::VerifyWriteUpdateContents(const DescriptorSet *dest_set, const VkWriteDescriptorSet *update,
-                                                const uint32_t index, const char *func_name, std::string *error_code,
-                                                std::string *error_msg) {
-    auto *device_data_ = dest_set->GetDeviceData();
-    switch (update->descriptorType) {
-        case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER: {
-            for (uint32_t di = 0; di < update->descriptorCount; ++di) {
-                // Validate image
-                auto image_view = update->pImageInfo[di].imageView;
-                auto image_layout = update->pImageInfo[di].imageLayout;
-                if (!ValidateImageUpdate(image_view, image_layout, update->descriptorType, device_data_, func_name, error_code,
-                                         error_msg)) {
-                    std::stringstream error_str;
-                    error_str << "Attempted write update to combined image sampler descriptor failed due to: "
-                              << error_msg->c_str();
-                    *error_msg = error_str.str();
-                    return false;
-                }
-                if (device_data_->device_extensions.vk_khr_sampler_ycbcr_conversion) {
-                    ImageSamplerDescriptor *desc = (ImageSamplerDescriptor *)dest_set->GetDescriptorFromGlobalIndex(index + di);
-                    if (desc->IsImmutableSampler()) {
-                        auto sampler_state = device_data_->GetSamplerState(desc->GetSampler());
-                        auto iv_state = device_data_->GetImageViewState(image_view);
-                        if (iv_state && sampler_state) {
-                            if (iv_state->samplerConversion != sampler_state->samplerConversion) {
-                                *error_code = "VUID-VkWriteDescriptorSet-descriptorType-01948";
-                                std::stringstream error_str;
-                                error_str << "Attempted write update to combined image sampler and image view and sampler ycbcr "
-                                             "conversions are not identical, sampler: "
-                                          << desc->GetSampler() << " image view: " << iv_state->image_view << ".";
-                                *error_msg = error_str.str();
-                                return false;
-                            }
-                        }
-                    } else {
-                        auto iv_state = device_data_->GetImageViewState(image_view);
-                        if (iv_state && (iv_state->samplerConversion != VK_NULL_HANDLE)) {
-                            *error_code = "VUID-VkWriteDescriptorSet-descriptorType-01947";
-                            std::stringstream error_str;
-                            error_str << "Because dstSet (" << update->dstSet << ") is bound to image view ("
-                                      << iv_state->image_view
-                                      << ") that includes a YCBCR conversion, it must have been allocated with a layout that "
-                                         "includes an immutable sampler.";
-                            *error_msg = error_str.str();
-                            return false;
-                        }
-                    }
-                }
-            }
-        }
-        // fall through
-        case VK_DESCRIPTOR_TYPE_SAMPLER: {
-            for (uint32_t di = 0; di < update->descriptorCount; ++di) {
-                SamplerDescriptor *desc = (SamplerDescriptor *)dest_set->GetDescriptorFromGlobalIndex(index + di);
-                if (!desc->IsImmutableSampler()) {
-                    if (!ValidateSampler(update->pImageInfo[di].sampler, device_data_)) {
-                        *error_code = "VUID-VkWriteDescriptorSet-descriptorType-00325";
-                        std::stringstream error_str;
-                        error_str << "Attempted write update to sampler descriptor with invalid sampler: "
-                                  << update->pImageInfo[di].sampler << ".";
-                        *error_msg = error_str.str();
-                        return false;
-                    }
-                } else {
-                    // TODO : Warn here
-                }
-            }
-            break;
-        }
-        case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
-        case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:
-        case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE: {
-            for (uint32_t di = 0; di < update->descriptorCount; ++di) {
-                auto image_view = update->pImageInfo[di].imageView;
-                auto image_layout = update->pImageInfo[di].imageLayout;
-                if (!ValidateImageUpdate(image_view, image_layout, update->descriptorType, device_data_, func_name, error_code,
-                                         error_msg)) {
-                    std::stringstream error_str;
-                    error_str << "Attempted write update to image descriptor failed due to: " << error_msg->c_str();
-                    *error_msg = error_str.str();
-                    return false;
-                }
-            }
-            break;
-        }
-        case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
-        case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER: {
-            for (uint32_t di = 0; di < update->descriptorCount; ++di) {
-                auto buffer_view = update->pTexelBufferView[di];
-                auto bv_state = device_data_->GetBufferViewState(buffer_view);
-                if (!bv_state) {
-                    *error_code = "VUID-VkWriteDescriptorSet-descriptorType-00323";
-                    std::stringstream error_str;
-                    error_str << "Attempted write update to texel buffer descriptor with invalid buffer view: " << buffer_view;
-                    *error_msg = error_str.str();
-                    return false;
-                }
-                auto buffer = bv_state->create_info.buffer;
-                auto buffer_state = device_data_->GetBufferState(buffer);
-                // Verify that buffer underlying the view hasn't been destroyed prematurely
-                if (!buffer_state) {
-                    *error_code = "VUID-VkWriteDescriptorSet-descriptorType-00323";
-                    std::stringstream error_str;
-                    error_str << "Attempted write update to texel buffer descriptor failed because underlying buffer (" << buffer
-                              << ") has been destroyed: " << error_msg->c_str();
-                    *error_msg = error_str.str();
-                    return false;
-                } else if (!dest_set->ValidateBufferUsage(buffer_state, update->descriptorType, error_code, error_msg)) {
-                    std::stringstream error_str;
-                    error_str << "Attempted write update to texel buffer descriptor failed due to: " << error_msg->c_str();
-                    *error_msg = error_str.str();
-                    return false;
-                }
-            }
-            break;
-        }
-        case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
-        case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:
-        case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
-        case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC: {
-            for (uint32_t di = 0; di < update->descriptorCount; ++di) {
-                if (!dest_set->ValidateBufferUpdate(update->pBufferInfo + di, update->descriptorType, func_name, error_code,
-                                                    error_msg)) {
-                    std::stringstream error_str;
-                    error_str << "Attempted write update to buffer descriptor failed due to: " << error_msg->c_str();
-                    *error_msg = error_str.str();
-                    return false;
-                }
-            }
-            break;
-        }
-        case VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT:
-            break;
-        case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV:
-            // XXX TODO
-            break;
-        default:
-            assert(0);  // We've already verified update type so should never get here
-            break;
-    }
-    // All checks passed so update contents are good
-    return true;
-}
 // Verify that the contents of the update are ok, but don't perform actual update
 bool cvdescriptorset::DescriptorSet::VerifyCopyUpdateContents(const VkCopyDescriptorSet *update, const DescriptorSet *src_set,
                                                               VkDescriptorType type, uint32_t index, const char *func_name,
@@ -2605,5 +2460,150 @@ bool cvdescriptorset::ValidateWriteUpdate(const DescriptorSet *dest_set, const d
         return false;
     }
     // All checks passed, update is clean
+    return true;
+}
+
+// Verify that the contents of the update are ok, but don't perform actual update
+bool cvdescriptorset::VerifyWriteUpdateContents(const DescriptorSet *dest_set, const VkWriteDescriptorSet *update,
+                                                const uint32_t index, const char *func_name, std::string *error_code,
+                                                std::string *error_msg) {
+    auto *device_data = dest_set->GetDeviceData();
+    switch (update->descriptorType) {
+        case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER: {
+            for (uint32_t di = 0; di < update->descriptorCount; ++di) {
+                // Validate image
+                auto image_view = update->pImageInfo[di].imageView;
+                auto image_layout = update->pImageInfo[di].imageLayout;
+                if (!ValidateImageUpdate(image_view, image_layout, update->descriptorType, device_data, func_name, error_code,
+                                         error_msg)) {
+                    std::stringstream error_str;
+                    error_str << "Attempted write update to combined image sampler descriptor failed due to: "
+                              << error_msg->c_str();
+                    *error_msg = error_str.str();
+                    return false;
+                }
+                if (device_data->device_extensions.vk_khr_sampler_ycbcr_conversion) {
+                    ImageSamplerDescriptor *desc = (ImageSamplerDescriptor *)dest_set->GetDescriptorFromGlobalIndex(index + di);
+                    if (desc->IsImmutableSampler()) {
+                        auto sampler_state = device_data->GetSamplerState(desc->GetSampler());
+                        auto iv_state = device_data->GetImageViewState(image_view);
+                        if (iv_state && sampler_state) {
+                            if (iv_state->samplerConversion != sampler_state->samplerConversion) {
+                                *error_code = "VUID-VkWriteDescriptorSet-descriptorType-01948";
+                                std::stringstream error_str;
+                                error_str << "Attempted write update to combined image sampler and image view and sampler ycbcr "
+                                             "conversions are not identical, sampler: "
+                                          << desc->GetSampler() << " image view: " << iv_state->image_view << ".";
+                                *error_msg = error_str.str();
+                                return false;
+                            }
+                        }
+                    } else {
+                        auto iv_state = device_data->GetImageViewState(image_view);
+                        if (iv_state && (iv_state->samplerConversion != VK_NULL_HANDLE)) {
+                            *error_code = "VUID-VkWriteDescriptorSet-descriptorType-01947";
+                            std::stringstream error_str;
+                            error_str << "Because dstSet (" << update->dstSet << ") is bound to image view ("
+                                      << iv_state->image_view
+                                      << ") that includes a YCBCR conversion, it must have been allocated with a layout that "
+                                         "includes an immutable sampler.";
+                            *error_msg = error_str.str();
+                            return false;
+                        }
+                    }
+                }
+            }
+        }
+        // fall through
+        case VK_DESCRIPTOR_TYPE_SAMPLER: {
+            for (uint32_t di = 0; di < update->descriptorCount; ++di) {
+                SamplerDescriptor *desc = (SamplerDescriptor *)dest_set->GetDescriptorFromGlobalIndex(index + di);
+                if (!desc->IsImmutableSampler()) {
+                    if (!ValidateSampler(update->pImageInfo[di].sampler, device_data)) {
+                        *error_code = "VUID-VkWriteDescriptorSet-descriptorType-00325";
+                        std::stringstream error_str;
+                        error_str << "Attempted write update to sampler descriptor with invalid sampler: "
+                                  << update->pImageInfo[di].sampler << ".";
+                        *error_msg = error_str.str();
+                        return false;
+                    }
+                } else {
+                    // TODO : Warn here
+                }
+            }
+            break;
+        }
+        case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
+        case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:
+        case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE: {
+            for (uint32_t di = 0; di < update->descriptorCount; ++di) {
+                auto image_view = update->pImageInfo[di].imageView;
+                auto image_layout = update->pImageInfo[di].imageLayout;
+                if (!ValidateImageUpdate(image_view, image_layout, update->descriptorType, device_data, func_name, error_code,
+                                         error_msg)) {
+                    std::stringstream error_str;
+                    error_str << "Attempted write update to image descriptor failed due to: " << error_msg->c_str();
+                    *error_msg = error_str.str();
+                    return false;
+                }
+            }
+            break;
+        }
+        case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
+        case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER: {
+            for (uint32_t di = 0; di < update->descriptorCount; ++di) {
+                auto buffer_view = update->pTexelBufferView[di];
+                auto bv_state = device_data->GetBufferViewState(buffer_view);
+                if (!bv_state) {
+                    *error_code = "VUID-VkWriteDescriptorSet-descriptorType-00323";
+                    std::stringstream error_str;
+                    error_str << "Attempted write update to texel buffer descriptor with invalid buffer view: " << buffer_view;
+                    *error_msg = error_str.str();
+                    return false;
+                }
+                auto buffer = bv_state->create_info.buffer;
+                auto buffer_state = device_data->GetBufferState(buffer);
+                // Verify that buffer underlying the view hasn't been destroyed prematurely
+                if (!buffer_state) {
+                    *error_code = "VUID-VkWriteDescriptorSet-descriptorType-00323";
+                    std::stringstream error_str;
+                    error_str << "Attempted write update to texel buffer descriptor failed because underlying buffer (" << buffer
+                              << ") has been destroyed: " << error_msg->c_str();
+                    *error_msg = error_str.str();
+                    return false;
+                } else if (!dest_set->ValidateBufferUsage(buffer_state, update->descriptorType, error_code, error_msg)) {
+                    std::stringstream error_str;
+                    error_str << "Attempted write update to texel buffer descriptor failed due to: " << error_msg->c_str();
+                    *error_msg = error_str.str();
+                    return false;
+                }
+            }
+            break;
+        }
+        case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
+        case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:
+        case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
+        case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC: {
+            for (uint32_t di = 0; di < update->descriptorCount; ++di) {
+                if (!dest_set->ValidateBufferUpdate(update->pBufferInfo + di, update->descriptorType, func_name, error_code,
+                                                    error_msg)) {
+                    std::stringstream error_str;
+                    error_str << "Attempted write update to buffer descriptor failed due to: " << error_msg->c_str();
+                    *error_msg = error_str.str();
+                    return false;
+                }
+            }
+            break;
+        }
+        case VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT:
+            break;
+        case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV:
+            // XXX TODO
+            break;
+        default:
+            assert(0);  // We've already verified update type so should never get here
+            break;
+    }
+    // All checks passed so update contents are good
     return true;
 }
