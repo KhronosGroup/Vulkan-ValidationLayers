@@ -949,6 +949,19 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
     // Setup the validation tables based on the application API version from the instance and the capabilities of the device driver
     uint32_t effective_api_version = std::min(device_properties.apiVersion, instance_interceptor->api_version);
 
+    // Validate that the maximum API version supported by the device is at least
+    // the same as the API version requested in vkCreateInstance.
+    if (effective_api_version < instance_interceptor->api_version) {
+        log_msg(instance_interceptor->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                    kVUIDUndefined,
+                    "Vulkan version (%" PRIu32 ".%" PRIu32 ") requested in vkCreateInstance greater then Vulkan version "
+                    "provided by Device (%" PRIu32 ".%" PRIu32 ").",
+                    VK_VERSION_MAJOR(instance_interceptor->api_version),
+                    VK_VERSION_MINOR(instance_interceptor->api_version),
+                    VK_VERSION_MAJOR(device_properties.apiVersion),
+                    VK_VERSION_MINOR(device_properties.apiVersion));
+    }
+
     DeviceExtensions device_extensions = {};
     device_extensions.InitFromDeviceCreateInfo(&instance_interceptor->instance_extensions, effective_api_version, pCreateInfo);
     for (auto item : instance_interceptor->object_dispatch) {
