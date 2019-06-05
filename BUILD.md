@@ -134,21 +134,40 @@ directories and place them in any location.
 
 ### Building Dependent Repositories with Known-Good Revisions
 
-There is a Python utility script, `scripts/update_deps.py`, that you can use
-to gather and build the dependent repositories mentioned above. This program
-also uses information stored in the `scripts/known-good.json` file to checkout
-dependent repository revisions that are known to be compatible with the
-revision of this repository that you currently have checked out.
+There is a Python utility script, `scripts/update_deps.py`, that you can use to
+gather and build the dependent repositories mentioned above. This script uses
+information stored in the `scripts/known_good.json` file to check out dependent
+repository revisions that are known to be compatible with the revision of this
+repository that you currently have checked out. As such, this script is useful
+as a quick-start tool for common use cases and default configurations.
 
-Here is a usage example for this repository:
+For all platforms, start with:
 
     git clone git@github.com:KhronosGroup/Vulkan-ValidationLayers.git
     cd Vulkan-ValidationLayers
     mkdir build
     cd build
+
+For 64-bit Linux and MacOS, continue with:
+
     ../scripts/update_deps.py
     cmake -C helper.cmake ..
     cmake --build .
+
+For 64-bit Windows, continue with:
+
+    ..\scripts\update_deps.py --arch x64
+    cmake -A x64 -C helper.cmake ..
+    cmake --build .
+
+For 32-bit Windows, continue with:
+
+    ..\scripts\update_deps.py --arch Win32
+    cmake -A Win32 -C helper.cmake ..
+    cmake --build .
+
+Please see the more detailed build information later in this file if you have
+specific requirements for configuring and building these components.
 
 #### Notes
 
