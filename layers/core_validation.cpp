@@ -4124,30 +4124,35 @@ void CoreChecks::PostCallRecordGetQueryPoolResults(VkDevice device, VkQueryPool 
                                                    size_t dataSize, void *pData, VkDeviceSize stride, VkQueryResultFlags flags,
                                                    VkResult result) {
     if ((VK_SUCCESS != result) && (VK_NOT_READY != result)) return;
-    // TODO: clean this up, it's insanely wasteful.
+
+    // TODO: this has been modified but is still wasteful.
+    unordered_set<QueryObject> query_set;
+    for (uint32_t i = 0; i < queryCount; ++i) {
+        QueryObject query = {queryPool, firstQuery + i};
+        auto query_state_pair = queryToStateMap.find(query);
+        if (query_state_pair != queryToStateMap.end() && query_state_pair->second) {
+            query_set.insert(query);
+        }
+    }
+
     unordered_map<QueryObject, std::vector<VkCommandBuffer>> queries_in_flight;
     for (auto &cmd_buffer : commandBufferMap) {
         if (cmd_buffer.second->in_use.load()) {
             for (auto query_state_pair : cmd_buffer.second->queryToStateMap) {
-                queries_in_flight[query_state_pair.first].push_back(cmd_buffer.first);
+                if (query_set.find(query_state_pair.first) != query_set.end()) {
+                    queries_in_flight[query_state_pair.first].push_back(cmd_buffer.first);
+                }
             }
         }
     }
-    for (uint32_t i = 0; i < queryCount; ++i) {
-        QueryObject query = {queryPool, firstQuery + i};
-        auto qif_pair = queries_in_flight.find(query);
-        auto query_state_pair = queryToStateMap.find(query);
-        if (query_state_pair != queryToStateMap.end()) {
-            // Available and in flight
-            if (qif_pair != queries_in_flight.end() && query_state_pair != queryToStateMap.end() && query_state_pair->second) {
-                for (auto cmd_buffer : qif_pair->second) {
-                    auto cb = GetCBState(cmd_buffer);
-                    auto query_event_pair = cb->waitedEventsBeforeQueryReset.find(query);
-                    if (query_event_pair != cb->waitedEventsBeforeQueryReset.end()) {
-                        for (auto event : query_event_pair->second) {
-                            eventMap[event].needsSignaled = true;
-                        }
-                    }
+
+    for (auto qif_pair : queries_in_flight) {
+        for (auto cmd_buffer : qif_pair.second) {
+            auto cb = GetCBState(cmd_buffer);
+            auto query_event_pair = cb->waitedEventsBeforeQueryReset.find(qif_pair.first);
+            if (query_event_pair != cb->waitedEventsBeforeQueryReset.end()) {
+                for (auto event : query_event_pair->second) {
+                    eventMap[event].needsSignaled = true;
                 }
             }
         }
