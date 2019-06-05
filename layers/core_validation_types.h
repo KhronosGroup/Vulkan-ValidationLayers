@@ -410,7 +410,7 @@ struct ColorAspectTraits {
     static int Index(VkImageAspectFlags mask) { return 0; };
     static VkImageAspectFlags AspectMask() { return VK_IMAGE_ASPECT_COLOR_BIT; }
     static const std::array<VkImageAspectFlagBits, kAspectCount> &AspectBits() {
-        static std::array<VkImageAspectFlagBits, kAspectCount> kAspectBits{VK_IMAGE_ASPECT_COLOR_BIT};
+        static std::array<VkImageAspectFlagBits, kAspectCount> kAspectBits{{VK_IMAGE_ASPECT_COLOR_BIT}};
         return kAspectBits;
     }
 };
@@ -420,7 +420,7 @@ struct DepthAspectTraits {
     static int Index(VkImageAspectFlags mask) { return 0; };
     static VkImageAspectFlags AspectMask() { return VK_IMAGE_ASPECT_DEPTH_BIT; }
     static const std::array<VkImageAspectFlagBits, kAspectCount> &AspectBits() {
-        static std::array<VkImageAspectFlagBits, kAspectCount> kAspectBits{VK_IMAGE_ASPECT_DEPTH_BIT};
+        static std::array<VkImageAspectFlagBits, kAspectCount> kAspectBits{{VK_IMAGE_ASPECT_DEPTH_BIT}};
         return kAspectBits;
     }
 };
@@ -430,7 +430,7 @@ struct StencilAspectTraits {
     static int Index(VkImageAspectFlags mask) { return 0; };
     static VkImageAspectFlags AspectMask() { return VK_IMAGE_ASPECT_STENCIL_BIT; }
     static const std::array<VkImageAspectFlagBits, kAspectCount> &AspectBits() {
-        static std::array<VkImageAspectFlagBits, kAspectCount> kAspectBits{VK_IMAGE_ASPECT_STENCIL_BIT};
+        static std::array<VkImageAspectFlagBits, kAspectCount> kAspectBits{{VK_IMAGE_ASPECT_STENCIL_BIT}};
         return kAspectBits;
     }
 };
@@ -446,7 +446,8 @@ struct DepthStencilAspectTraits {
     };
     static VkImageAspectFlags AspectMask() { return VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT; }
     static const std::array<VkImageAspectFlagBits, kAspectCount> &AspectBits() {
-        static std::array<VkImageAspectFlagBits, kAspectCount> kAspectBits{VK_IMAGE_ASPECT_DEPTH_BIT, VK_IMAGE_ASPECT_STENCIL_BIT};
+        static std::array<VkImageAspectFlagBits, kAspectCount> kAspectBits{
+            {VK_IMAGE_ASPECT_DEPTH_BIT, VK_IMAGE_ASPECT_STENCIL_BIT}};
         return kAspectBits;
     }
 };
@@ -462,8 +463,8 @@ struct Multiplane2AspectTraits {
     };
     static VkImageAspectFlags AspectMask() { return VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT; }
     static const std::array<VkImageAspectFlagBits, kAspectCount> &AspectBits() {
-        static std::array<VkImageAspectFlagBits, kAspectCount> kAspectBits{VK_IMAGE_ASPECT_PLANE_0_BIT,
-                                                                           VK_IMAGE_ASPECT_PLANE_1_BIT};
+        static std::array<VkImageAspectFlagBits, kAspectCount> kAspectBits{
+            {VK_IMAGE_ASPECT_PLANE_0_BIT, VK_IMAGE_ASPECT_PLANE_1_BIT}};
         return kAspectBits;
     }
 };
@@ -483,8 +484,8 @@ struct Multiplane3AspectTraits {
         return VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT | VK_IMAGE_ASPECT_PLANE_2_BIT;
     }
     static const std::array<VkImageAspectFlagBits, kAspectCount> &AspectBits() {
-        static std::array<VkImageAspectFlagBits, kAspectCount> kAspectBits{VK_IMAGE_ASPECT_PLANE_0_BIT, VK_IMAGE_ASPECT_PLANE_1_BIT,
-                                                                           VK_IMAGE_ASPECT_PLANE_2_BIT};
+        static std::array<VkImageAspectFlagBits, kAspectCount> kAspectBits{
+            {VK_IMAGE_ASPECT_PLANE_0_BIT, VK_IMAGE_ASPECT_PLANE_1_BIT, VK_IMAGE_ASPECT_PLANE_2_BIT}};
         return kAspectBits;
     }
 };
