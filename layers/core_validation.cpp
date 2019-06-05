@@ -5221,7 +5221,7 @@ void CoreChecks::PostCallRecordCreateSampler(VkDevice device, const VkSamplerCre
 bool CoreChecks::PreCallValidateCreateDescriptorSetLayout(VkDevice device, const VkDescriptorSetLayoutCreateInfo *pCreateInfo,
                                                           const VkAllocationCallbacks *pAllocator,
                                                           VkDescriptorSetLayout *pSetLayout) {
-    return cvdescriptorset::DescriptorSetLayout::ValidateCreateInfo(
+    return cvdescriptorset::ValidateDescriptorSetLayoutCreateInfo(
         report_data, pCreateInfo, device_extensions.vk_khr_push_descriptor, phys_dev_ext_props.max_push_descriptors,
         device_extensions.vk_ext_descriptor_indexing, &enabled_features.descriptor_indexing, &enabled_features.inline_uniform_block,
         &phys_dev_ext_props.inline_uniform_block_props);
@@ -7005,7 +7005,8 @@ bool CoreChecks::PreCallValidateCmdPushDescriptorSetKHR(VkCommandBuffer commandB
                     // TODO move the validation (like this) that doesn't need descriptor set state to the DSL object so we
                     // don't have to do this.
                     cvdescriptorset::DescriptorSet proxy_ds(VK_NULL_HANDLE, VK_NULL_HANDLE, dsl, 0, this);
-                    skip |= proxy_ds.ValidatePushDescriptorsUpdate(report_data, descriptorWriteCount, pDescriptorWrites, func_name);
+                    skip |=
+                        ValidatePushDescriptorsUpdate(&proxy_ds, report_data, descriptorWriteCount, pDescriptorWrites, func_name);
                 }
             }
         } else {
@@ -12596,8 +12597,8 @@ bool CoreChecks::PreCallValidateCmdPushDescriptorSetWithTemplateKHR(VkCommandBuf
         cvdescriptorset::DecodedTemplateUpdate decoded_template(this, VK_NULL_HANDLE, template_state, pData,
                                                                 dsl->GetDescriptorSetLayout());
         // Validate the decoded update against the proxy_ds
-        skip |= proxy_ds.ValidatePushDescriptorsUpdate(report_data, static_cast<uint32_t>(decoded_template.desc_writes.size()),
-                                                       decoded_template.desc_writes.data(), func_name);
+        skip |= ValidatePushDescriptorsUpdate(&proxy_ds, report_data, static_cast<uint32_t>(decoded_template.desc_writes.size()),
+                                              decoded_template.desc_writes.data(), func_name);
     }
 
     return skip;

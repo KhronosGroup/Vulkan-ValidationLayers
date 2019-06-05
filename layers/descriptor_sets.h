@@ -195,11 +195,6 @@ class DescriptorSetLayout {
    public:
     // Constructors and destructor
     DescriptorSetLayout(const VkDescriptorSetLayoutCreateInfo *p_create_info, const VkDescriptorSetLayout layout);
-    // Validate create info - should be called prior to creation
-    static bool ValidateCreateInfo(const debug_report_data *, const VkDescriptorSetLayoutCreateInfo *, const bool, const uint32_t,
-                                   const bool, const VkPhysicalDeviceDescriptorIndexingFeaturesEXT *descriptor_indexing_features,
-                                   const VkPhysicalDeviceInlineUniformBlockFeaturesEXT *inline_uniform_block_features,
-                                   const VkPhysicalDeviceInlineUniformBlockPropertiesEXT *inline_uniform_block_props);
     bool HasBinding(const uint32_t binding) const { return layout_id_->HasBinding(binding); }
     // Return true if this layout is compatible with passed in layout from a pipelineLayout,
     //   else return false and update error_msg with description of incompatibility
@@ -376,6 +371,12 @@ class Descriptor {
 bool ValidateSampler(const VkSampler, CoreChecks *);
 bool ValidateImageUpdate(VkImageView, VkImageLayout, VkDescriptorType, CoreChecks *, const char *func_name, std::string *,
                          std::string *);
+bool ValidateDescriptorSetLayoutCreateInfo(const debug_report_data *report_data, const VkDescriptorSetLayoutCreateInfo *create_info,
+                                           const bool push_descriptor_ext, const uint32_t max_push_descriptors,
+                                           const bool descriptor_indexing_ext,
+                                           const VkPhysicalDeviceDescriptorIndexingFeaturesEXT *descriptor_indexing_features,
+                                           const VkPhysicalDeviceInlineUniformBlockFeaturesEXT *inline_uniform_block_features,
+                                           const VkPhysicalDeviceInlineUniformBlockPropertiesEXT *inline_uniform_block_props);
 
 class SamplerDescriptor : public Descriptor {
    public:
@@ -387,7 +388,6 @@ class SamplerDescriptor : public Descriptor {
     VkSampler GetSampler() const { return sampler_; }
 
    private:
-    // bool ValidateSampler(const VkSampler) const;
     VkSampler sampler_;
     bool immutable_;
 };
@@ -507,6 +507,21 @@ bool ValidateWriteUpdate(const DescriptorSet *descriptor_set, const debug_report
                          std::string *error_msg);
 bool VerifyWriteUpdateContents(const DescriptorSet *dest_set, const VkWriteDescriptorSet *update, const uint32_t index,
                                const char *func_name, std::string *error_code, std::string *error_msg);
+// Validate contents of a CopyUpdate
+bool ValidateCopyUpdate(const debug_report_data *report_data, const VkCopyDescriptorSet *update, const DescriptorSet *dst_set,
+                        const DescriptorSet *src_set, const char *func_name, std::string *error_code, std::string *error_msg);
+// Validate contents of a push descriptor update
+bool ValidatePushDescriptorsUpdate(const DescriptorSet *push_set, const debug_report_data *report_data, uint32_t write_count,
+                                   const VkWriteDescriptorSet *p_wds, const char *func_name);
+
+// Validate buffer descriptor update info
+bool ValidateBufferUsage(BUFFER_STATE const *buffer_node, VkDescriptorType type, std::string *error_code, std::string *error_msg);
+bool ValidateBufferUpdate(CoreChecks *device_data, VkDescriptorBufferInfo const *buffer_info, VkDescriptorType type,
+                          const char *func_name, std::string *error_code, std::string *error_msg);
+
+bool VerifyCopyUpdateContents(CoreChecks *device_data, const VkCopyDescriptorSet *update, const DescriptorSet *src_set,
+                              VkDescriptorType type, uint32_t index, const char *func_name, std::string *error_code,
+                              std::string *error_msg);
 
 // Helper class to encapsulate the descriptor update template decoding logic
 struct DecodedTemplateUpdate {
@@ -567,21 +582,16 @@ class DescriptorSet : public BASE_NODE {
                                std::unordered_set<VkImageView> *) const;
 
     std::string StringifySetAndLayout() const;
-    // Descriptor Update functions. These functions validate state and perform update separately
-    // Validate contents of a push descriptor update
-    bool ValidatePushDescriptorsUpdate(const debug_report_data *report_data, uint32_t write_count,
-                                       const VkWriteDescriptorSet *p_wds, const char *func_name);
+
     // Perform a push update whose contents were just validated using ValidatePushDescriptorsUpdate
     void PerformPushDescriptorsUpdate(uint32_t write_count, const VkWriteDescriptorSet *p_wds);
     // Perform a WriteUpdate whose contents were just validated using ValidateWriteUpdate
     void PerformWriteUpdate(const VkWriteDescriptorSet *);
-    // Validate contents of a CopyUpdate
-    bool ValidateCopyUpdate(const debug_report_data *, const VkCopyDescriptorSet *, const DescriptorSet *, const char *func_name,
-                            std::string *, std::string *);
     // Perform a CopyUpdate whose contents were just validated using ValidateCopyUpdate
     void PerformCopyUpdate(const VkCopyDescriptorSet *, const DescriptorSet *);
 
     const std::shared_ptr<DescriptorSetLayout const> GetLayout() const { return p_layout_; };
+    VkDescriptorSetLayout GetDescriptorSetLayout() const { return p_layout_->GetDescriptorSetLayout(); }
     VkDescriptorSet GetSet() const { return set_; };
     // Return unordered_set of all command buffers that this set is bound to
     std::unordered_set<CMD_BUFFER_STATE *> GetBoundCmdBuffers() const { return cb_bindings; }
@@ -637,13 +647,7 @@ class DescriptorSet : public BASE_NODE {
     // TODO: Clean up the const cleaness here.  Getting  non-const CoreChecks from a const DescriptorSet is probably not okay.
     CoreChecks *GetDeviceData() const { return device_data_; }
 
-    // TODO -- remove from DescriptorSet
-    bool ValidateBufferUsage(BUFFER_STATE const *, VkDescriptorType, std::string *, std::string *) const;
-    bool ValidateBufferUpdate(VkDescriptorBufferInfo const *, VkDescriptorType, const char *, std::string *, std::string *) const;
-
    private:
-    bool VerifyCopyUpdateContents(const VkCopyDescriptorSet *, const DescriptorSet *, VkDescriptorType, uint32_t, const char *,
-                                  std::string *, std::string *) const;
     // Private helper to set all bound cmd buffers to INVALID state
     void InvalidateBoundCmdBuffers();
     bool some_update_;  // has any part of the set ever been updated?
@@ -652,7 +656,6 @@ class DescriptorSet : public BASE_NODE {
     const std::shared_ptr<DescriptorSetLayout const> p_layout_;
     std::vector<std::unique_ptr<Descriptor>> descriptors_;
     CoreChecks *device_data_;
-    const VkPhysicalDeviceLimits limits_;
     uint32_t variable_count_;
 
     // Cached binding and validation support:
