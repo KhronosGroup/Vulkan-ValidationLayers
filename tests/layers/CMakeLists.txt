@@ -120,7 +120,7 @@ if(WIN32)
     foreach(DEV_PROF_FILE ${DEVICE_PROFILE_LAYER_FILES})
         file(TO_NATIVE_PATH ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/${DEV_PROF_FILE} SRC_LAYER)
         add_custom_command(TARGET ${TEST_LAYER_NAME} POST_BUILD
-                           COMMAND xcopy /Y /I ${SRC_LAYER} ${DST_LAYER})
+                           COMMAND ${CMAKE_COMMAND} -E copy_if_different ${SRC_LAYER} ${DST_LAYER})
     endforeach()
 elseif(APPLE)
     if(CMAKE_GENERATOR MATCHES "^Xcode.*")
