@@ -28,6 +28,7 @@
 // Change Log:
 //    3/27/19 - Make changes to suppress warnings from GCC
 //    4/18/19 - Make changes to suppress warnings from clang
+//    6/05/19 - Make changes to suppress warnings from clang 3.8.0
 //
 
 #ifndef AMD_VULKAN_MEMORY_ALLOCATOR_H
@@ -3449,6 +3450,10 @@ END OF CONFIGURATION
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wtype-limits"
 #pragma GCC diagnostic ignored "-Wunused-variable"
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wtautological-compare"
+#endif
 #if defined(ANDROID)
 #pragma GCC diagnostic ignored "-Wunused-private-field"
 #endif
@@ -16788,6 +16793,9 @@ void vmaDestroyImage(
 }
 #if defined(__GNUC__)
 #pragma GCC diagnostic pop
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
 #endif
 #endif // #ifdef VMA_IMPLEMENTATION
 // clang-format on
