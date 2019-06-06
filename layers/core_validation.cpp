@@ -1203,7 +1203,7 @@ static bool VerifySetLayoutCompatibility(const cvdescriptorset::DescriptorSet *d
     }
     if (descriptor_set->IsPushDescriptor()) return true;
     auto layout_node = pipeline_layout->set_layouts[layoutIndex];
-    return descriptor_set->IsCompatible(layout_node.get(), &errorMsg);
+    return cvdescriptorset::VerifySetLayoutCompatibility(layout_node.get(), descriptor_set->GetLayout().get(), &errorMsg);
 }
 
 // Validate overall state at the time of a draw call

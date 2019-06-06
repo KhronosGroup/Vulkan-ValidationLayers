@@ -100,9 +100,6 @@ class DescriptorSetLayoutDef {
     const std::set<uint32_t> &GetSortedBindingSet() const { return non_empty_bindings_; }
     // Return true if given binding is present in this layout
     bool HasBinding(const uint32_t binding) const { return binding_to_index_map_.count(binding) > 0; };
-    // Return true if this DSL Def (referenced by the 1st layout) is compatible with another DSL Def (ref'd from the 2nd layout)
-    // else return false and update error_msg with description of incompatibility
-    bool IsCompatible(VkDescriptorSetLayout, VkDescriptorSetLayout, DescriptorSetLayoutDef const *const, std::string *) const;
     // Return true if binding 1 beyond given exists and has same type, stageFlags & immutable sampler use
     bool IsNextBindingConsistent(const uint32_t) const;
     uint32_t GetIndexFromBinding(uint32_t binding) const;
@@ -198,7 +195,8 @@ class DescriptorSetLayout {
     bool HasBinding(const uint32_t binding) const { return layout_id_->HasBinding(binding); }
     // Return true if this layout is compatible with passed in layout from a pipelineLayout,
     //   else return false and update error_msg with description of incompatibility
-    bool IsCompatible(DescriptorSetLayout const *const, std::string *) const;
+    // Return true if this layout is compatible with passed in layout
+    bool IsCompatible(DescriptorSetLayout const *rh_ds_layout) const;
     // Straightforward Get functions
     VkDescriptorSetLayout GetDescriptorSetLayout() const { return layout_; };
     bool IsDestroyed() const { return layout_destroyed_; }
@@ -371,6 +369,10 @@ class Descriptor {
 bool ValidateSampler(const VkSampler, CoreChecks *);
 bool ValidateImageUpdate(VkImageView, VkImageLayout, VkDescriptorType, CoreChecks *, const char *func_name, std::string *,
                          std::string *);
+// Return true if this layout is compatible with passed in layout from a pipelineLayout,
+//   else return false and update error_msg with description of incompatibility
+bool VerifySetLayoutCompatibility(DescriptorSetLayout const *lh_ds_layout, DescriptorSetLayout const *rh_ds_layout,
+                                  std::string *error_msg);
 bool ValidateDescriptorSetLayoutCreateInfo(const debug_report_data *report_data, const VkDescriptorSetLayoutCreateInfo *create_info,
                                            const bool push_descriptor_ext, const uint32_t max_push_descriptors,
                                            const bool descriptor_indexing_ext,
@@ -571,8 +573,6 @@ class DescriptorSet : public BASE_NODE {
     }
     // Return true if given binding is present in this set
     bool HasBinding(const uint32_t binding) const { return p_layout_->HasBinding(binding); };
-    // Is this set compatible with the given layout?
-    bool IsCompatible(DescriptorSetLayout const *const, std::string *) const;
     // For given bindings validate state at time of draw is correct, returning false on error and writing error details into string*
     bool ValidateDrawState(const std::map<uint32_t, descriptor_req> &, const std::vector<uint32_t> &, CMD_BUFFER_STATE *,
                            const char *caller, std::string *) const;
