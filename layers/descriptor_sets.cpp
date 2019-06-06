@@ -236,66 +236,72 @@ VkSampler const *cvdescriptorset::DescriptorSetLayoutDef::GetImmutableSamplerPtr
     }
     return nullptr;
 }
+
+// If our layout is compatible with rh_ds_layout, return true.
+bool cvdescriptorset::DescriptorSetLayout::IsCompatible(DescriptorSetLayout const *rh_ds_layout) const {
+    bool compatible = (this == rh_ds_layout) || (GetLayoutDef() == rh_ds_layout->GetLayoutDef());
+    return compatible;
+}
 // If our layout is compatible with rh_ds_layout, return true,
 //  else return false and fill in error_msg will description of what causes incompatibility
-bool cvdescriptorset::DescriptorSetLayout::IsCompatible(DescriptorSetLayout const *const rh_ds_layout,
-                                                        std::string *error_msg) const {
-    // Trivial case
-    if (layout_ == rh_ds_layout->GetDescriptorSetLayout()) return true;
-    if (GetLayoutDef() == rh_ds_layout->GetLayoutDef()) return true;
-    bool detailed_compat_check =
-        GetLayoutDef()->IsCompatible(layout_, rh_ds_layout->GetDescriptorSetLayout(), rh_ds_layout->GetLayoutDef(), error_msg);
-    // The detailed check should never tell us mismatching DSL are compatible
-    assert(!detailed_compat_check);
-    return detailed_compat_check;
-}
+bool cvdescriptorset::VerifySetLayoutCompatibility(DescriptorSetLayout const *lh_ds_layout, DescriptorSetLayout const *rh_ds_layout,
+                                                   std::string *error_msg) {
+    // Short circuit the detailed check.
+    if (lh_ds_layout->IsCompatible(rh_ds_layout)) return true;
 
-// Do a detailed compatibility check of this def (referenced by ds_layout), vs. the rhs (layout and def)
-// Should only be called if trivial accept has failed, and in that context should return false.
-bool cvdescriptorset::DescriptorSetLayoutDef::IsCompatible(VkDescriptorSetLayout ds_layout, VkDescriptorSetLayout rh_ds_layout,
-                                                           DescriptorSetLayoutDef const *const rh_ds_layout_def,
-                                                           std::string *error_msg) const {
-    if (descriptor_count_ != rh_ds_layout_def->descriptor_count_) {
+    // Do a detailed compatibility check of this lhs def (referenced by lh_ds_layout), vs. the rhs (layout and def)
+    // Should only be run if trivial accept has failed, and in that context should return false.
+    VkDescriptorSetLayout lh_dsl_handle = lh_ds_layout->GetDescriptorSetLayout();
+    VkDescriptorSetLayout rh_dsl_handle = rh_ds_layout->GetDescriptorSetLayout();
+    DescriptorSetLayoutDef const *lh_ds_layout_def = lh_ds_layout->GetLayoutDef();
+    DescriptorSetLayoutDef const *rh_ds_layout_def = rh_ds_layout->GetLayoutDef();
+
+    // Check descriptor counts
+    if (lh_ds_layout_def->GetTotalDescriptorCount() != rh_ds_layout_def->GetTotalDescriptorCount()) {
         std::stringstream error_str;
-        error_str << "DescriptorSetLayout " << ds_layout << " has " << descriptor_count_ << " descriptors, but DescriptorSetLayout "
-                  << rh_ds_layout << ", which comes from pipelineLayout, has " << rh_ds_layout_def->descriptor_count_
-                  << " descriptors.";
+        error_str << "DescriptorSetLayout " << lh_dsl_handle << " has " << lh_ds_layout_def->GetTotalDescriptorCount()
+                  << " descriptors, but DescriptorSetLayout " << rh_dsl_handle << ", which comes from pipelineLayout, has "
+                  << rh_ds_layout_def->GetTotalDescriptorCount() << " descriptors.";
         *error_msg = error_str.str();
         return false;  // trivial fail case
     }
 
     // Descriptor counts match so need to go through bindings one-by-one
     //  and verify that type and stageFlags match
-    for (auto binding : bindings_) {
+    for (const auto &binding : lh_ds_layout_def->GetBindings()) {
         // TODO : Do we also need to check immutable samplers?
         // VkDescriptorSetLayoutBinding *rh_binding;
         if (binding.descriptorCount != rh_ds_layout_def->GetDescriptorCountFromBinding(binding.binding)) {
             std::stringstream error_str;
-            error_str << "Binding " << binding.binding << " for DescriptorSetLayout " << ds_layout << " has a descriptorCount of "
-                      << binding.descriptorCount << " but binding " << binding.binding << " for DescriptorSetLayout "
-                      << rh_ds_layout << ", which comes from pipelineLayout, has a descriptorCount of "
+            error_str << "Binding " << binding.binding << " for DescriptorSetLayout " << lh_dsl_handle
+                      << " has a descriptorCount of " << binding.descriptorCount << " but binding " << binding.binding
+                      << " for DescriptorSetLayout " << rh_dsl_handle
+                      << ", which comes from pipelineLayout, has a descriptorCount of "
                       << rh_ds_layout_def->GetDescriptorCountFromBinding(binding.binding);
             *error_msg = error_str.str();
             return false;
         } else if (binding.descriptorType != rh_ds_layout_def->GetTypeFromBinding(binding.binding)) {
             std::stringstream error_str;
-            error_str << "Binding " << binding.binding << " for DescriptorSetLayout " << ds_layout << " is type '"
+            error_str << "Binding " << binding.binding << " for DescriptorSetLayout " << lh_dsl_handle << " is type '"
                       << string_VkDescriptorType(binding.descriptorType) << "' but binding " << binding.binding
-                      << " for DescriptorSetLayout " << rh_ds_layout << ", which comes from pipelineLayout, is type '"
+                      << " for DescriptorSetLayout " << rh_dsl_handle << ", which comes from pipelineLayout, is type '"
                       << string_VkDescriptorType(rh_ds_layout_def->GetTypeFromBinding(binding.binding)) << "'";
             *error_msg = error_str.str();
             return false;
         } else if (binding.stageFlags != rh_ds_layout_def->GetStageFlagsFromBinding(binding.binding)) {
             std::stringstream error_str;
-            error_str << "Binding " << binding.binding << " for DescriptorSetLayout " << ds_layout << " has stageFlags "
-                      << binding.stageFlags << " but binding " << binding.binding << " for DescriptorSetLayout " << rh_ds_layout
+            error_str << "Binding " << binding.binding << " for DescriptorSetLayout " << lh_dsl_handle << " has stageFlags "
+                      << binding.stageFlags << " but binding " << binding.binding << " for DescriptorSetLayout " << rh_dsl_handle
                       << ", which comes from pipelineLayout, has stageFlags "
                       << rh_ds_layout_def->GetStageFlagsFromBinding(binding.binding);
             *error_msg = error_str.str();
             return false;
         }
     }
-    return true;
+    // No detailed check should succeed if the trivial check failed -- or the dictionary has failed somehow.
+    bool compatible = true;
+    assert(!compatible);
+    return compatible;
 }
 
 bool cvdescriptorset::DescriptorSetLayoutDef::IsNextBindingConsistent(const uint32_t binding) const {
@@ -642,11 +648,6 @@ static char const *StringDescriptorReqComponentType(descriptor_req req) {
     if (req & DESCRIPTOR_REQ_COMPONENT_TYPE_UINT) return "UINT";
     if (req & DESCRIPTOR_REQ_COMPONENT_TYPE_FLOAT) return "FLOAT";
     return "(none)";
-}
-
-// Is this sets underlying layout compatible with passed in layout according to "Pipeline Layout Compatibility" in spec?
-bool cvdescriptorset::DescriptorSet::IsCompatible(DescriptorSetLayout const *const layout, std::string *error) const {
-    return layout->IsCompatible(p_layout_.get(), error);
 }
 
 static unsigned DescriptorRequirementsBitsFromFormat(VkFormat fmt) {
