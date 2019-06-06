@@ -109,7 +109,6 @@ if(WIN32)
     # For Windows, copy necessary device_profile_api layer files for the layer_tests
     file(TO_NATIVE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/windows/${TEST_LAYER_NAME}.json SRC_JSON)
     file(TO_NATIVE_PATH ${PROJECT_BINARY_DIR}/layers/$<CONFIG>/${TEST_LAYER_NAME}.json DST_JSON)
-    message("src json is ${SRC_JSON} and dest json is ${DST_JSON}")
     add_custom_command(TARGET ${TEST_LAYER_NAME} POST_BUILD
                        COMMAND ${CMAKE_COMMAND} -E copy ${SRC_JSON} ${DST_JSON})
     SET(DEVICE_PROFILE_LAYER_FILES
