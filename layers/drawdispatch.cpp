@@ -193,7 +193,7 @@ bool CoreChecks::PreCallValidateCmdDispatch(VkCommandBuffer commandBuffer, uint3
     bool skip = false;
     auto *cb_state = GetCBState(commandBuffer);
     if (cb_state) {
-        skip |= ValidateComputeWorkGroupInvocations(cb_state, x, y, z);
+        skip |= ValidateComputeWorkGroupInvocations(cb_state);
     }
     skip |= ValidateCmdDrawType(commandBuffer, false, VK_PIPELINE_BIND_POINT_COMPUTE, CMD_DISPATCH, "vkCmdDispatch()",
                                 VK_QUEUE_COMPUTE_BIT, "VUID-vkCmdDispatch-commandBuffer-cmdpool", "VUID-vkCmdDispatch-renderpass",

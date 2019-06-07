@@ -2979,8 +2979,7 @@ bool CoreChecks::ValidateComputeWorkGroupSizes(const SHADER_MODULE_STATE *shader
     return skip;
 }
 
-bool CoreChecks::ValidateComputeWorkGroupInvocations(CMD_BUFFER_STATE *cb_state, uint32_t groupCountX, uint32_t groupCountY,
-                                                     uint32_t groupCountZ) {
+bool CoreChecks::ValidateComputeWorkGroupInvocations(CMD_BUFFER_STATE *cb_state) {
     auto const &state = cb_state->lastBound[VK_PIPELINE_BIND_POINT_COMPUTE];
     PIPELINE_STATE *pPipe = state.pipeline_state;
     if (!pPipe) return false;
@@ -3003,24 +3002,6 @@ bool CoreChecks::ValidateComputeWorkGroupInvocations(CMD_BUFFER_STATE *cb_state,
             }
             if (!overflow) {
                 invocations *= local_size_z;
-                if (invocations > UINT32_MAX) {
-                    overflow = true;
-                }
-            }
-            if (!overflow) {
-                invocations *= groupCountX;
-                if (invocations > UINT32_MAX) {
-                    overflow = true;
-                }
-            }
-            if (!overflow) {
-                invocations *= groupCountY;
-                if (invocations > UINT32_MAX) {
-                    overflow = true;
-                }
-            }
-            if (!overflow) {
-                invocations *= groupCountZ;
                 if (invocations > UINT32_MAX) {
                     overflow = true;
                 }
