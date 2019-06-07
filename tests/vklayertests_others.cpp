@@ -651,44 +651,36 @@ TEST_F(VkLayerTest, SubmitSignaledFence) {
 }
 
 TEST_F(VkLayerTest, LeakAnObject) {
-    VkResult err;
-
     TEST_DESCRIPTION("Create a fence and destroy its device without first destroying the fence.");
 
-    // Note that we have to create a new device since destroying the
-    // framework's device causes Teardown() to fail and just calling Teardown
-    // will destroy the errorMonitor.
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
 
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "has not been destroyed.");
+    // Workaround for overzealous layers checking even the guaranteed 0th queue family
+    const auto q_props = vk_testing::PhysicalDevice(gpu()).queue_properties();
+    ASSERT_TRUE(q_props.size() > 0);
+    ASSERT_TRUE(q_props[0].queueCount > 0);
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    const float q_priority[] = {1.0f};
+    VkDeviceQueueCreateInfo queue_ci = {};
+    queue_ci.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+    queue_ci.queueFamilyIndex = 0;
+    queue_ci.queueCount = 1;
+    queue_ci.pQueuePriorities = q_priority;
 
-    vk_testing::QueueCreateInfoArray queue_info(m_device->queue_props);
+    VkDeviceCreateInfo device_ci = {};
+    device_ci.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+    device_ci.queueCreateInfoCount = 1;
+    device_ci.pQueueCreateInfos = &queue_ci;
 
-    // The sacrificial device object
-    VkDevice testDevice;
-    VkDeviceCreateInfo device_create_info = {};
-    auto features = m_device->phy().features();
-    device_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-    device_create_info.pNext = NULL;
-    device_create_info.queueCreateInfoCount = queue_info.size();
-    device_create_info.pQueueCreateInfos = queue_info.data();
-    device_create_info.enabledLayerCount = 0;
-    device_create_info.ppEnabledLayerNames = NULL;
-    device_create_info.pEnabledFeatures = &features;
-    err = vkCreateDevice(gpu(), &device_create_info, NULL, &testDevice);
-    ASSERT_VK_SUCCESS(err);
+    VkDevice leaky_device;
+    ASSERT_VK_SUCCESS(vkCreateDevice(gpu(), &device_ci, nullptr, &leaky_device));
 
-    VkFence fence;
-    VkFenceCreateInfo fence_create_info = {};
-    fence_create_info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-    fence_create_info.pNext = NULL;
-    fence_create_info.flags = 0;
-    err = vkCreateFence(testDevice, &fence_create_info, NULL, &fence);
-    ASSERT_VK_SUCCESS(err);
+    const VkFenceCreateInfo fence_ci = {VK_STRUCTURE_TYPE_FENCE_CREATE_INFO};
+    VkFence leaked_fence;
+    ASSERT_VK_SUCCESS(vkCreateFence(leaky_device, &fence_ci, nullptr, &leaked_fence));
 
-    // Induce failure by not calling vkDestroyFence
-    vkDestroyDevice(testDevice, NULL);
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkDestroyDevice-device-00378");
+    vkDestroyDevice(leaky_device, nullptr);
     m_errorMonitor->VerifyFound();
 }
 
