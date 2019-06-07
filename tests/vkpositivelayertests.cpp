@@ -1070,6 +1070,89 @@ TEST_F(VkPositiveLayerTest, ShaderRelaxedBlockLayout) {
     m_errorMonitor->VerifyNotFound();
 }
 
+TEST_F(VkPositiveLayerTest, ShaderUboStd430Layout) {
+    // This is a positive test, no errors expected
+    // Verifies the ability to scalar block layout rules with a shader that requires them to be relaxed
+    TEST_DESCRIPTION("Create a shader that requires UBO std430 layout.");
+    // Enable req'd extensions
+    if (!InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        printf("%s Extension %s not supported, skipping this pass. \n", kSkipPrefix,
+               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
+    m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+
+    // Check for the UBO standard block layout extension and turn it on if it's available
+    if (!DeviceExtensionSupported(gpu(), nullptr, VK_KHR_UNIFORM_BUFFER_STANDARD_LAYOUT_EXTENSION_NAME)) {
+        printf("%s Extension %s not supported, skipping this pass. \n", kSkipPrefix,
+               VK_KHR_UNIFORM_BUFFER_STANDARD_LAYOUT_EXTENSION_NAME);
+        return;
+    }
+    m_device_extension_names.push_back(VK_KHR_UNIFORM_BUFFER_STANDARD_LAYOUT_EXTENSION_NAME);
+
+    PFN_vkGetPhysicalDeviceFeatures2 vkGetPhysicalDeviceFeatures2 =
+        (PFN_vkGetPhysicalDeviceFeatures2)vkGetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+
+    auto uniform_buffer_standard_layout_features = lvl_init_struct<VkPhysicalDeviceUniformBufferStandardLayoutFeaturesKHR>(NULL);
+    uniform_buffer_standard_layout_features.uniformBufferStandardLayout = VK_TRUE;
+    auto query_features2 = lvl_init_struct<VkPhysicalDeviceFeatures2>(&uniform_buffer_standard_layout_features);
+    vkGetPhysicalDeviceFeatures2(gpu(), &query_features2);
+
+    auto set_features2 = lvl_init_struct<VkPhysicalDeviceFeatures2>(&uniform_buffer_standard_layout_features);
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &set_features2));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    // Vertex shader requiring std430 in a uniform buffer.
+    // Without uniform buffer standard layout, we would expect a message like:
+    // "Structure id 3 decorated as Block for variable in Uniform storage class
+    // must follow standard uniform buffer layout rules: member 0 is an array
+    // with stride 4 not satisfying alignment to 16"
+
+    const std::string spv_source = R"(
+               OpCapability Shader
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Vertex %main "main"
+               OpSource GLSL 460
+               OpDecorate %_arr_float_uint_8 ArrayStride 4
+               OpMemberDecorate %foo 0 Offset 0
+               OpDecorate %foo Block
+               OpDecorate %b DescriptorSet 0
+               OpDecorate %b Binding 0
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+      %float = OpTypeFloat 32
+       %uint = OpTypeInt 32 0
+     %uint_8 = OpConstant %uint 8
+%_arr_float_uint_8 = OpTypeArray %float %uint_8
+        %foo = OpTypeStruct %_arr_float_uint_8
+%_ptr_Uniform_foo = OpTypePointer Uniform %foo
+          %b = OpVariable %_ptr_Uniform_foo Uniform
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+               OpReturn
+               OpFunctionEnd
+        )";
+
+    std::vector<unsigned int> spv;
+    VkShaderModuleCreateInfo module_create_info;
+    VkShaderModule shader_module;
+    module_create_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+    module_create_info.pNext = NULL;
+    ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, spv_source.data(), spv);
+    module_create_info.pCode = spv.data();
+    module_create_info.codeSize = spv.size() * sizeof(unsigned int);
+    module_create_info.flags = 0;
+
+    m_errorMonitor->ExpectSuccess();
+    VkResult err = vkCreateShaderModule(m_device->handle(), &module_create_info, NULL, &shader_module);
+    m_errorMonitor->VerifyNotFound();
+    if (err == VK_SUCCESS) {
+        vkDestroyShaderModule(m_device->handle(), shader_module, NULL);
+    }
+}
+
 TEST_F(VkPositiveLayerTest, ShaderScalarBlockLayout) {
     // This is a positive test, no errors expected
     // Verifies the ability to scalar block layout rules with a shader that requires them to be relaxed
