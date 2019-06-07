@@ -2502,6 +2502,12 @@ void CoreChecks::PostCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDevice
         core_checks->enabled_features.vtx_attrib_divisor_features = *vtx_attrib_div_features;
     }
 
+    const auto *uniform_buffer_standard_layout_features =
+        lvl_find_in_chain<VkPhysicalDeviceUniformBufferStandardLayoutFeaturesKHR>(pCreateInfo->pNext);
+    if (uniform_buffer_standard_layout_features) {
+        core_checks->enabled_features.uniform_buffer_standard_layout = *uniform_buffer_standard_layout_features;
+    }
+
     const auto *scalar_block_layout_features = lvl_find_in_chain<VkPhysicalDeviceScalarBlockLayoutFeaturesEXT>(pCreateInfo->pNext);
     if (scalar_block_layout_features) {
         core_checks->enabled_features.scalar_block_layout_features = *scalar_block_layout_features;
