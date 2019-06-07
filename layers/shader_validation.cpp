@@ -1554,6 +1554,8 @@ bool CoreChecks::ValidateShaderCapabilities(SHADER_MODULE_STATE const *src, VkSh
             : IsEnabled([=](const DeviceFeatures &features) { return features.cooperative_matrix_features.*ptr; }) {}
         FeaturePointer(VkBool32 VkPhysicalDeviceFloatControlsPropertiesKHR::*ptr)
             : IsEnabled([=](const DeviceFeatures &features) { return features.float_controls.*ptr; }) {}
+        FeaturePointer(VkBool32 VkPhysicalDeviceUniformBufferStandardLayoutFeaturesKHR::*ptr)
+            : IsEnabled([=](const DeviceFeatures &features) { return features.uniform_buffer_standard_layout.*ptr; }) {}
         FeaturePointer(VkBool32 VkPhysicalDeviceComputeShaderDerivativesFeaturesNV::*ptr)
             : IsEnabled([=](const DeviceFeatures &features) { return features.compute_shader_derivatives_features.*ptr; }) {}
         FeaturePointer(VkBool32 VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV::*ptr)
@@ -3006,6 +3008,10 @@ bool CoreChecks::PreCallValidateCreateShaderModule(VkDevice device, const VkShad
         spv_validator_options options = spvValidatorOptionsCreate();
         if (device_extensions.vk_khr_relaxed_block_layout) {
             spvValidatorOptionsSetRelaxBlockLayout(options, true);
+        }
+        if (device_extensions.vk_khr_uniform_buffer_standard_layout &&
+            enabled_features.uniform_buffer_standard_layout.uniformBufferStandardLayout == VK_TRUE) {
+            spvValidatorOptionsSetUniformBufferStandardLayout(options, true);
         }
         if (device_extensions.vk_ext_scalar_block_layout &&
             enabled_features.scalar_block_layout_features.scalarBlockLayout == VK_TRUE) {

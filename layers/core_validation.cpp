@@ -2346,6 +2346,12 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
         state_tracker->enabled_features.vtx_attrib_divisor_features = *vtx_attrib_div_features;
     }
 
+    const auto *uniform_buffer_standard_layout_features =
+        lvl_find_in_chain<VkPhysicalDeviceUniformBufferStandardLayoutFeaturesKHR>(pCreateInfo->pNext);
+    if (uniform_buffer_standard_layout_features) {
+        state_tracker->enabled_features.uniform_buffer_standard_layout = *uniform_buffer_standard_layout_features;
+    }
+
     const auto *scalar_block_layout_features = lvl_find_in_chain<VkPhysicalDeviceScalarBlockLayoutFeaturesEXT>(pCreateInfo->pNext);
     if (scalar_block_layout_features) {
         state_tracker->enabled_features.scalar_block_layout_features = *scalar_block_layout_features;
