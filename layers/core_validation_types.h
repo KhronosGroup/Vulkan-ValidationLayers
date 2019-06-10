@@ -1542,6 +1542,7 @@ struct DeviceFeatures {
     VkPhysicalDeviceCooperativeMatrixFeaturesNV cooperative_matrix_features;
     VkPhysicalDeviceFloatControlsPropertiesKHR float_controls;
     VkPhysicalDeviceHostQueryResetFeaturesEXT host_query_reset_features;
+    VkPhysicalDeviceComputeShaderDerivativesFeaturesNV compute_shader_derivatives_features;
 };
 
 enum RenderPassCreateVersion { RENDER_PASS_VERSION_1 = 0, RENDER_PASS_VERSION_2 = 1 };
