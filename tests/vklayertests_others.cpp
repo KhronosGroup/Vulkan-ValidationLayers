@@ -4241,3 +4241,98 @@ TEST_F(VkLayerTest, AndroidHardwareBufferExporttBuffer) {
 }
 
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
+
+TEST_F(VkLayerTest, ValidateStride) {
+    TEST_DESCRIPTION("Validate Stride.");
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitViewport());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkQueryPool query_pool;
+    VkQueryPoolCreateInfo query_pool_ci{};
+    query_pool_ci.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
+    query_pool_ci.queryType = VK_QUERY_TYPE_TIMESTAMP;
+    query_pool_ci.queryCount = 1;
+    vkCreateQueryPool(m_device->device(), &query_pool_ci, nullptr, &query_pool);
+
+    char data_space;
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkGetQueryPoolResults-flags-00814");
+    vkGetQueryPoolResults(m_device->handle(), query_pool, 0, 1, sizeof(data_space), &data_space, 1, VK_QUERY_RESULT_WAIT_BIT);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkGetQueryPoolResults-flags-00815");
+    vkGetQueryPoolResults(m_device->handle(), query_pool, 0, 1, sizeof(data_space), &data_space, 1, VK_QUERY_RESULT_64_BIT);
+    m_errorMonitor->VerifyFound();
+
+    char data_space4[4];
+    m_errorMonitor->ExpectSuccess();
+    vkGetQueryPoolResults(m_device->handle(), query_pool, 0, 1, sizeof(data_space4), &data_space4, 4, VK_QUERY_RESULT_WAIT_BIT);
+    m_errorMonitor->VerifyNotFound();
+
+    char data_space8[8];
+    m_errorMonitor->ExpectSuccess();
+    vkGetQueryPoolResults(m_device->handle(), query_pool, 0, 1, sizeof(data_space8), &data_space8, 8, VK_QUERY_RESULT_64_BIT);
+    m_errorMonitor->VerifyNotFound();
+
+    uint32_t qfi = 0;
+    VkBufferCreateInfo buff_create_info = {};
+    buff_create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    buff_create_info.size = 128;
+    buff_create_info.usage =
+        VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+    buff_create_info.queueFamilyIndexCount = 1;
+    buff_create_info.pQueueFamilyIndices = &qfi;
+    VkBufferObj buffer;
+    buffer.init(*m_device, buff_create_info);
+
+    m_commandBuffer->begin();
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdCopyQueryPoolResults-flags-00822");
+    vkCmdCopyQueryPoolResults(m_commandBuffer->handle(), query_pool, 0, 1, buffer.handle(), 1, 1, VK_QUERY_RESULT_WAIT_BIT);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdCopyQueryPoolResults-flags-00823");
+    vkCmdCopyQueryPoolResults(m_commandBuffer->handle(), query_pool, 0, 1, buffer.handle(), 1, 1, VK_QUERY_RESULT_64_BIT);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->ExpectSuccess();
+    vkCmdCopyQueryPoolResults(m_commandBuffer->handle(), query_pool, 0, 1, buffer.handle(), 4, 4, VK_QUERY_RESULT_WAIT_BIT);
+    m_errorMonitor->VerifyNotFound();
+
+    m_errorMonitor->ExpectSuccess();
+    vkCmdCopyQueryPoolResults(m_commandBuffer->handle(), query_pool, 0, 1, buffer.handle(), 8, 8, VK_QUERY_RESULT_64_BIT);
+    m_errorMonitor->VerifyNotFound();
+
+    if (m_device->phy().features().multiDrawIndirect) {
+        CreatePipelineHelper helper(*this);
+        helper.InitInfo();
+        helper.InitState();
+        helper.CreateGraphicsPipeline();
+        m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+        vkCmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, helper.pipeline_);
+
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDrawIndirect-drawCount-00476");
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDrawIndirect-drawCount-00488");
+        vkCmdDrawIndirect(m_commandBuffer->handle(), buffer.handle(), 0, 100, 2);
+        m_errorMonitor->VerifyFound();
+
+        m_errorMonitor->ExpectSuccess();
+        vkCmdDrawIndirect(m_commandBuffer->handle(), buffer.handle(), 0, 2, 24);
+        m_errorMonitor->VerifyNotFound();
+
+        vkCmdBindIndexBuffer(m_commandBuffer->handle(), buffer.handle(), 0, VK_INDEX_TYPE_UINT16);
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDrawIndexedIndirect-drawCount-00528");
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDrawIndexedIndirect-drawCount-00540");
+        vkCmdDrawIndexedIndirect(m_commandBuffer->handle(), buffer.handle(), 0, 100, 2);
+        m_errorMonitor->VerifyFound();
+
+        m_errorMonitor->ExpectSuccess();
+        vkCmdDrawIndexedIndirect(m_commandBuffer->handle(), buffer.handle(), 0, 2, 24);
+        m_errorMonitor->VerifyNotFound();
+
+        vkCmdEndRenderPass(m_commandBuffer->handle());
+        m_commandBuffer->end();
+    } else {
+        printf("%s Test requires unsupported multiDrawIndirect feature. Skipped.\n", kSkipPrefix);
+    }
+    vkDestroyQueryPool(m_device->handle(), query_pool, NULL);
+}
