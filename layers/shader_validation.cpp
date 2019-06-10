@@ -1614,6 +1614,7 @@ bool CoreChecks::ValidateShaderCapabilities(SHADER_MODULE_STATE const *src, VkSh
         {spv::CapabilityShaderViewportMaskNV, {VK_NV_VIEWPORT_ARRAY2_EXTENSION_NAME, nullptr, &DeviceExtensions::vk_nv_viewport_array2}},
         {spv::CapabilitySubgroupBallotKHR, {VK_EXT_SHADER_SUBGROUP_BALLOT_EXTENSION_NAME, nullptr, &DeviceExtensions::vk_ext_shader_subgroup_ballot }},
         {spv::CapabilitySubgroupVoteKHR, {VK_EXT_SHADER_SUBGROUP_VOTE_EXTENSION_NAME, nullptr, &DeviceExtensions::vk_ext_shader_subgroup_vote }},
+        {spv::CapabilityGroupNonUniformPartitionedNV, {VK_NV_SHADER_SUBGROUP_PARTITIONED_EXTENSION_NAME, nullptr, &DeviceExtensions::vk_nv_shader_subgroup_partitioned}},
         {spv::CapabilityInt64Atomics, {VK_KHR_SHADER_ATOMIC_INT64_EXTENSION_NAME, nullptr, &DeviceExtensions::vk_khr_shader_atomic_int64 }},
 
         {spv::CapabilityStorageBuffer8BitAccess , {"VkPhysicalDevice8BitStorageFeaturesKHR::storageBuffer8BitAccess", &VkPhysicalDevice8BitStorageFeaturesKHR::storageBuffer8BitAccess, &DeviceExtensions::vk_khr_8bit_storage}},
