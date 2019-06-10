@@ -1258,8 +1258,8 @@ bool CoreChecks::ValidateCmdBufDrawState(CMD_BUFFER_STATE *cb_node, CMD_TYPE cmd
                                                                            pPipe);
                 const auto &binding_req_map = reduced_map.Map();
 
-                if (!descriptor_set->ValidateDrawState(binding_req_map, state.dynamicOffsets[setIndex], cb_node, function,
-                                                       &err_str)) {
+                if (!ValidateDrawState(descriptor_set, binding_req_map, state.dynamicOffsets[setIndex], cb_node, function,
+                                       &err_str)) {
                     auto set = descriptor_set->GetSet();
                     result |=
                         log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_EXT,
