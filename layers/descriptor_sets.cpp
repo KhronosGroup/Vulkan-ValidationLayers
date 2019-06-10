@@ -117,15 +117,11 @@ cvdescriptorset::DescriptorSetLayoutDef::DescriptorSetLayoutDef(const VkDescript
     assert(bindings_.size() == binding_count_);
     assert(binding_flags_.size() == binding_count_);
     uint32_t global_index = 0;
-    binding_to_global_index_range_map_.reserve(binding_count_);
-    // Vector order is finalized so create maps of bindings to descriptors and descriptors to indices
+    global_index_range_.reserve(binding_count_);
+    // Vector order is finalized so build vectors of descriptors and dynamic offsets by binding index
     for (uint32_t i = 0; i < binding_count_; ++i) {
-        auto binding_num = bindings_[i].binding;
         auto final_index = global_index + bindings_[i].descriptorCount;
-        binding_to_global_index_range_map_[binding_num] = IndexRange(global_index, final_index);
-        if (final_index != global_index) {
-            global_start_to_index_map_[global_index] = i;
-        }
+        global_index_range_.emplace_back(global_index, final_index);
         global_index = final_index;
     }
 
@@ -184,34 +180,18 @@ VkDescriptorBindingFlagsEXT cvdescriptorset::DescriptorSetLayoutDef::GetDescript
     return binding_flags_[index];
 }
 
-// For the given global index, return index
-uint32_t cvdescriptorset::DescriptorSetLayoutDef::GetIndexFromGlobalIndex(const uint32_t global_index) const {
-    auto start_it = global_start_to_index_map_.upper_bound(global_index);
-    uint32_t index = binding_count_;
-    assert(start_it != global_start_to_index_map_.cbegin());
-    if (start_it != global_start_to_index_map_.cbegin()) {
-        --start_it;
-        index = start_it->second;
-#ifndef NDEBUG
-        const auto &range = GetGlobalIndexRangeFromBinding(bindings_[index].binding);
-        assert(range.start <= global_index && global_index < range.end);
-#endif
-    }
-    return index;
+const cvdescriptorset::IndexRange &cvdescriptorset::DescriptorSetLayoutDef::GetGlobalIndexRangeFromIndex(uint32_t index) const {
+    const static IndexRange kInvalidRange = {0xFFFFFFFF, 0xFFFFFFFF};
+    if (index >= binding_flags_.size()) return kInvalidRange;
+    return global_index_range_[index];
 }
 
-// For the given binding, return the global index range
-// As start and end are often needed in pairs, get both with a single hash lookup.
+// For the given binding, return the global index range (half open)
+// As start and end are often needed in pairs, get both with a single lookup.
 const cvdescriptorset::IndexRange &cvdescriptorset::DescriptorSetLayoutDef::GetGlobalIndexRangeFromBinding(
     const uint32_t binding) const {
-    assert(binding_to_global_index_range_map_.count(binding));
-    // In error case max uint32_t so index is out of bounds to break ASAP
-    const static IndexRange kInvalidRange = {0xFFFFFFFF, 0xFFFFFFFF};
-    const auto &range_it = binding_to_global_index_range_map_.find(binding);
-    if (range_it != binding_to_global_index_range_map_.end()) {
-        return range_it->second;
-    }
-    return kInvalidRange;
+    uint32_t index = GetIndexFromBinding(binding);
+    return GetGlobalIndexRangeFromIndex(index);
 }
 
 // For given binding, return ptr to ImmutableSampler array

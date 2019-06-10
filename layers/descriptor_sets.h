@@ -126,10 +126,6 @@ class DescriptorSetLayoutDef {
     VkDescriptorBindingFlagsEXT GetDescriptorBindingFlagsFromBinding(const uint32_t binding) const {
         return GetDescriptorBindingFlagsFromIndex(GetIndexFromBinding(binding));
     }
-    uint32_t GetIndexFromGlobalIndex(const uint32_t global_index) const;
-    VkDescriptorType GetTypeFromGlobalIndex(const uint32_t global_index) const {
-        return GetTypeFromIndex(GetIndexFromGlobalIndex(global_index));
-    }
     VkSampler const *GetImmutableSamplerPtrFromBinding(const uint32_t) const;
     VkSampler const *GetImmutableSamplerPtrFromIndex(const uint32_t) const;
     // For a given binding and array index, return the corresponding index into the dynamic offset array
@@ -144,6 +140,7 @@ class DescriptorSetLayoutDef {
     // For a particular binding, get the global index range
     //  This call should be guarded by a call to "HasBinding(binding)" to verify that the given binding exists
     const IndexRange &GetGlobalIndexRangeFromBinding(const uint32_t) const;
+    const cvdescriptorset::IndexRange &GetGlobalIndexRangeFromIndex(uint32_t index) const;
 
     // Helper function to get the next valid binding for a descriptor
     uint32_t GetNextValidBinding(const uint32_t) const;
@@ -167,8 +164,7 @@ class DescriptorSetLayoutDef {
     std::set<uint32_t> non_empty_bindings_;  // Containing non-emtpy bindings in numerical order
     std::unordered_map<uint32_t, uint32_t> binding_to_index_map_;
     // The following map allows an non-iterative lookup of a binding from a global index...
-    std::map<uint32_t, uint32_t> global_start_to_index_map_;  // The index corresponding for a starting global (descriptor) index
-    std::unordered_map<uint32_t, IndexRange> binding_to_global_index_range_map_;  // range is exclusive of .end
+    std::vector<IndexRange> global_index_range_;  // range is exclusive of .end
     // For a given binding map to associated index in the dynamic offset array
     std::unordered_map<uint32_t, uint32_t> binding_to_dynamic_array_idx_map_;
 
@@ -236,12 +232,6 @@ class DescriptorSetLayout {
     VkDescriptorBindingFlagsEXT GetDescriptorBindingFlagsFromBinding(const uint32_t binding) const {
         return layout_id_->GetDescriptorBindingFlagsFromBinding(binding);
     }
-    uint32_t GetIndexFromGlobalIndex(const uint32_t global_index) const {
-        return layout_id_->GetIndexFromGlobalIndex(global_index);
-    }
-    VkDescriptorType GetTypeFromGlobalIndex(const uint32_t global_index) const {
-        return GetTypeFromIndex(GetIndexFromGlobalIndex(global_index));
-    }
     VkSampler const *GetImmutableSamplerPtrFromBinding(const uint32_t binding) const {
         return layout_id_->GetImmutableSamplerPtrFromBinding(binding);
     }
@@ -257,6 +247,8 @@ class DescriptorSetLayout {
     const IndexRange &GetGlobalIndexRangeFromBinding(const uint32_t binding) const {
         return layout_id_->GetGlobalIndexRangeFromBinding(binding);
     }
+    const IndexRange &GetGlobalIndexRangeFromIndex(uint32_t index) const { return layout_id_->GetGlobalIndexRangeFromIndex(index); }
+
     // Helper function to get the next valid binding for a descriptor
     uint32_t GetNextValidBinding(const uint32_t binding) const { return layout_id_->GetNextValidBinding(binding); }
     bool IsPushDescriptor() const { return layout_id_->IsPushDescriptor(); }
@@ -288,7 +280,7 @@ class DescriptorSetLayout {
         }
 
         VkSampler const *GetImmutableSamplerPtr() const { return layout_->GetImmutableSamplerPtrFromIndex(index_); }
-        const IndexRange &GetGlobalIndexRange() const { return layout_->GetGlobalIndexRangeFromBinding(Binding()); }
+        const IndexRange &GetGlobalIndexRange() const { return layout_->GetGlobalIndexRangeFromIndex(index_); }
         bool AtEnd() const { return index_ == layout_->GetBindingCount(); }
 
         bool operator==(const ConstBindingIterator &rhs) { return (index_ = rhs.index_) && (layout_ == rhs.layout_); }
@@ -561,7 +553,6 @@ class DescriptorSet : public BASE_NODE {
     uint32_t GetDynamicDescriptorCount() const { return p_layout_->GetDynamicDescriptorCount(); };
     uint32_t GetBindingCount() const { return p_layout_->GetBindingCount(); };
     VkDescriptorType GetTypeFromIndex(const uint32_t index) const { return p_layout_->GetTypeFromIndex(index); };
-    VkDescriptorType GetTypeFromGlobalIndex(const uint32_t index) const { return p_layout_->GetTypeFromGlobalIndex(index); };
     VkDescriptorType GetTypeFromBinding(const uint32_t binding) const { return p_layout_->GetTypeFromBinding(binding); };
     uint32_t GetDescriptorCountFromIndex(const uint32_t index) const { return p_layout_->GetDescriptorCountFromIndex(index); };
     uint32_t GetDescriptorCountFromBinding(const uint32_t binding) const {
@@ -663,7 +654,6 @@ class DescriptorSet : public BASE_NODE {
     // For the lifespan of a given command buffer recording, do lazy evaluation, caching, and dirtying of
     // expensive validation operation (typically per-draw)
     typedef std::unordered_map<CMD_BUFFER_STATE *, TrackedBindings> TrackedBindingMap;
-    typedef std::unordered_map<PIPELINE_STATE *, TrackedBindingMap> ValidatedBindings;
     // Track the validation caching of bindings vs. the command buffer and draw state
     typedef std::unordered_map<uint32_t, CMD_BUFFER_STATE::ImageLayoutUpdateCount> VersionedBindings;
     struct CachedValidation {
