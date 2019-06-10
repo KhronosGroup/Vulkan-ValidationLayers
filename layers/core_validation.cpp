@@ -2527,6 +2527,12 @@ void CoreChecks::PostCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDevice
         core_checks->enabled_features.host_query_reset_features = *host_query_reset_features;
     }
 
+    const auto *compute_shader_derivatives_features =
+        lvl_find_in_chain<VkPhysicalDeviceComputeShaderDerivativesFeaturesNV>(pCreateInfo->pNext);
+    if (compute_shader_derivatives_features) {
+        core_checks->enabled_features.compute_shader_derivatives_features = *compute_shader_derivatives_features;
+    }
+
     // Store physical device properties and physical device mem limits into CoreChecks structs
     DispatchGetPhysicalDeviceMemoryProperties(gpu, &core_checks->phys_dev_mem_props);
     DispatchGetPhysicalDeviceProperties(gpu, &core_checks->phys_dev_props);
