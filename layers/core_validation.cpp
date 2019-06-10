@@ -2533,6 +2533,12 @@ void CoreChecks::PostCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDevice
         core_checks->enabled_features.compute_shader_derivatives_features = *compute_shader_derivatives_features;
     }
 
+    const auto *fragment_shader_barycentric_features =
+        lvl_find_in_chain<VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV>(pCreateInfo->pNext);
+    if (fragment_shader_barycentric_features) {
+        core_checks->enabled_features.fragment_shader_barycentric_features = *fragment_shader_barycentric_features;
+    }
+
     // Store physical device properties and physical device mem limits into CoreChecks structs
     DispatchGetPhysicalDeviceMemoryProperties(gpu, &core_checks->phys_dev_mem_props);
     DispatchGetPhysicalDeviceProperties(gpu, &core_checks->phys_dev_props);
