@@ -252,6 +252,12 @@ class DescriptorSetLayout {
     // Helper function to get the next valid binding for a descriptor
     uint32_t GetNextValidBinding(const uint32_t binding) const { return layout_id_->GetNextValidBinding(binding); }
     bool IsPushDescriptor() const { return layout_id_->IsPushDescriptor(); }
+    bool IsVariableDescriptorCountFromIndex(uint32_t index) const {
+        return !!(GetDescriptorBindingFlagsFromIndex(index) & VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT_EXT);
+    }
+    bool IsVariableDescriptorCount(uint32_t binding) const {
+        return IsVariableDescriptorCountFromIndex(GetIndexFromBinding(binding));
+    }
 
     using BindingTypeStats = DescriptorSetLayoutDef::BindingTypeStats;
     const BindingTypeStats &GetBindingTypeStats() const { return layout_id_->GetBindingTypeStats(); }
@@ -279,9 +285,16 @@ class DescriptorSetLayout {
             return layout_->GetDescriptorBindingFlagsFromIndex(index_);
         }
 
+        bool IsVariableDescriptorCount() const { return layout_->IsVariableDescriptorCountFromIndex(index_); }
+
         VkSampler const *GetImmutableSamplerPtr() const { return layout_->GetImmutableSamplerPtrFromIndex(index_); }
         const IndexRange &GetGlobalIndexRange() const { return layout_->GetGlobalIndexRangeFromIndex(index_); }
         bool AtEnd() const { return index_ == layout_->GetBindingCount(); }
+
+        // Return index into dynamic offset array for given binding
+        int32_t GetDynamicOffsetIndex() const {
+            return layout_->GetDynamicOffsetIndexFromBinding(Binding());  //  There is only binding mapped access in layout_
+        }
 
         bool operator==(const ConstBindingIterator &rhs) { return (index_ = rhs.index_) && (layout_ == rhs.layout_); }
 
@@ -501,6 +514,10 @@ bool ValidateWriteUpdate(const DescriptorSet *descriptor_set, const debug_report
                          std::string *error_msg);
 bool VerifyWriteUpdateContents(const DescriptorSet *dest_set, const VkWriteDescriptorSet *update, const uint32_t index,
                                const char *func_name, std::string *error_code, std::string *error_msg);
+// For given bindings validate state at time of draw is correct, returning false on error and writing error details into string*
+bool ValidateDrawState(const DescriptorSet *descriptor_set, const std::map<uint32_t, descriptor_req> &bindings,
+                       const std::vector<uint32_t> &dynamic_offsets, CMD_BUFFER_STATE *cb_node, const char *caller,
+                       std::string *error);
 // Validate contents of a CopyUpdate
 bool ValidateCopyUpdate(const debug_report_data *report_data, const VkCopyDescriptorSet *update, const DescriptorSet *dst_set,
                         const DescriptorSet *src_set, const char *func_name, std::string *error_code, std::string *error_msg);
@@ -564,9 +581,6 @@ class DescriptorSet : public BASE_NODE {
     }
     // Return true if given binding is present in this set
     bool HasBinding(const uint32_t binding) const { return p_layout_->HasBinding(binding); };
-    // For given bindings validate state at time of draw is correct, returning false on error and writing error details into string*
-    bool ValidateDrawState(const std::map<uint32_t, descriptor_req> &, const std::vector<uint32_t> &, CMD_BUFFER_STATE *,
-                           const char *caller, std::string *) const;
     // For given set of bindings, add any buffers and images that will be updated to their respective unordered_sets & return number
     // of objects inserted
     uint32_t GetStorageUpdates(const std::map<uint32_t, descriptor_req> &, std::unordered_set<VkBuffer> *,
@@ -624,10 +638,7 @@ class DescriptorSet : public BASE_NODE {
     // Return true if any part of set has ever been updated
     bool IsUpdated() const { return some_update_; };
     bool IsPushDescriptor() const { return p_layout_->IsPushDescriptor(); };
-    bool IsVariableDescriptorCount(uint32_t binding) const {
-        return !!(p_layout_->GetDescriptorBindingFlagsFromBinding(binding) &
-                  VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT_EXT);
-    }
+    bool IsVariableDescriptorCount(uint32_t binding) const { return p_layout_->IsVariableDescriptorCount(binding); }
     bool IsUpdateAfterBind(uint32_t binding) const {
         return !!(p_layout_->GetDescriptorBindingFlagsFromBinding(binding) & VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT);
     }
