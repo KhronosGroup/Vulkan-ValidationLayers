@@ -932,7 +932,9 @@ ErrorMonitor *VkLayerTest::Monitor() { return m_errorMonitor; }
 
 VkCommandBufferObj *VkLayerTest::CommandBuffer() { return m_commandBuffer; }
 
-void VkLayerTest::SetUp() {
+VkLayerTest::VkLayerTest() {
+    m_enableWSI = false;
+
     m_instance_layer_names.clear();
     m_instance_extension_names.clear();
     m_device_extension_names.clear();
@@ -1030,13 +1032,10 @@ bool VkLayerTest::LoadDeviceProfileLayer(
     return 1;
 }
 
-void VkLayerTest::TearDown() {
+VkLayerTest::~VkLayerTest() {
     // Clean up resources before we reset
-    ShutdownFramework();
     delete m_errorMonitor;
 }
-
-VkLayerTest::VkLayerTest() { m_enableWSI = false; }
 
 bool VkBufferTest::GetTestConditionValid(VkDeviceObj *aVulkanDevice, eTestEnFlags aTestFlag, VkBufferUsageFlags aBufferUsage) {
     if (eInvalidDeviceOffset != aTestFlag && eInvalidMemoryOffset != aTestFlag) {
@@ -1871,6 +1870,12 @@ void BarrierQueueFamilyTestHelper::operator()(std::string img_err, std::string b
     }
     context_->Reset();
 };
+
+void print_android(const char *c) {
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
+    __android_log_print(ANDROID_LOG_INFO, "VulkanLayerValidationTests", "%s", c);
+#endif  // VK_USE_PLATFORM_ANDROID_KHR
+}
 
 #if defined(ANDROID) && defined(VALIDATION_APK)
 const char *appTag = "VulkanLayerValidationTests";

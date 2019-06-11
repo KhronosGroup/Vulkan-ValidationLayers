@@ -1543,6 +1543,10 @@ bool CoreChecks::ValidateShaderCapabilities(SHADER_MODULE_STATE const *src, VkSh
             : IsEnabled([=](const DeviceFeatures &features) { return features.cooperative_matrix_features.*ptr; }) {}
         FeaturePointer(VkBool32 VkPhysicalDeviceFloatControlsPropertiesKHR::*ptr)
             : IsEnabled([=](const DeviceFeatures &features) { return features.float_controls.*ptr; }) {}
+        FeaturePointer(VkBool32 VkPhysicalDeviceComputeShaderDerivativesFeaturesNV::*ptr)
+            : IsEnabled([=](const DeviceFeatures &features) { return features.compute_shader_derivatives_features.*ptr; }) {}
+        FeaturePointer(VkBool32 VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV::*ptr)
+            : IsEnabled([=](const DeviceFeatures &features) { return features.fragment_shader_barycentric_features.*ptr; }) {}
     };
 
     struct CapabilityInfo {
@@ -1614,7 +1618,12 @@ bool CoreChecks::ValidateShaderCapabilities(SHADER_MODULE_STATE const *src, VkSh
         {spv::CapabilityShaderViewportMaskNV, {VK_NV_VIEWPORT_ARRAY2_EXTENSION_NAME, nullptr, &DeviceExtensions::vk_nv_viewport_array2}},
         {spv::CapabilitySubgroupBallotKHR, {VK_EXT_SHADER_SUBGROUP_BALLOT_EXTENSION_NAME, nullptr, &DeviceExtensions::vk_ext_shader_subgroup_ballot }},
         {spv::CapabilitySubgroupVoteKHR, {VK_EXT_SHADER_SUBGROUP_VOTE_EXTENSION_NAME, nullptr, &DeviceExtensions::vk_ext_shader_subgroup_vote }},
+        {spv::CapabilityGroupNonUniformPartitionedNV, {VK_NV_SHADER_SUBGROUP_PARTITIONED_EXTENSION_NAME, nullptr, &DeviceExtensions::vk_nv_shader_subgroup_partitioned}},
         {spv::CapabilityInt64Atomics, {VK_KHR_SHADER_ATOMIC_INT64_EXTENSION_NAME, nullptr, &DeviceExtensions::vk_khr_shader_atomic_int64 }},
+
+        {spv::CapabilityComputeDerivativeGroupQuadsNV, {"VkPhysicalDeviceComputeShaderDerivativesFeaturesNV::computeDerivativeGroupQuads", &VkPhysicalDeviceComputeShaderDerivativesFeaturesNV::computeDerivativeGroupQuads, &DeviceExtensions::vk_nv_compute_shader_derivatives}},
+        {spv::CapabilityComputeDerivativeGroupLinearNV, {"VkPhysicalDeviceComputeShaderDerivativesFeaturesNV::computeDerivativeGroupLinear", &VkPhysicalDeviceComputeShaderDerivativesFeaturesNV::computeDerivativeGroupLinear, &DeviceExtensions::vk_nv_compute_shader_derivatives}},
+        {spv::CapabilityFragmentBarycentricNV , {"VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV::fragmentShaderBarycentric", &VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV::fragmentShaderBarycentric, &DeviceExtensions::vk_nv_fragment_shader_barycentric}},
 
         {spv::CapabilityStorageBuffer8BitAccess , {"VkPhysicalDevice8BitStorageFeaturesKHR::storageBuffer8BitAccess", &VkPhysicalDevice8BitStorageFeaturesKHR::storageBuffer8BitAccess, &DeviceExtensions::vk_khr_8bit_storage}},
         {spv::CapabilityUniformAndStorageBuffer8BitAccess , {"VkPhysicalDevice8BitStorageFeaturesKHR::uniformAndStorageBuffer8BitAccess", &VkPhysicalDevice8BitStorageFeaturesKHR::uniformAndStorageBuffer8BitAccess, &DeviceExtensions::vk_khr_8bit_storage}},
@@ -2977,69 +2986,4 @@ bool CoreChecks::ValidateComputeWorkGroupSizes(const SHADER_MODULE_STATE *shader
         }
     }
     return skip;
-}
-
-bool CoreChecks::ValidateComputeWorkGroupInvocations(CMD_BUFFER_STATE *cb_state, uint32_t groupCountX, uint32_t groupCountY,
-                                                     uint32_t groupCountZ) {
-    auto const &state = cb_state->lastBound[VK_PIPELINE_BIND_POINT_COMPUTE];
-    PIPELINE_STATE *pPipe = state.pipeline_state;
-    if (!pPipe) return false;
-    auto pCreateInfo = pPipe->computePipelineCI.ptr();
-    if (!pCreateInfo) return false;
-
-    unordered_map<VkShaderModule, std::unique_ptr<SHADER_MODULE_STATE>>::iterator it =
-        shaderModuleMap.find(pCreateInfo->stage.module);
-    if (it != shaderModuleMap.end()) {
-        uint32_t local_size_x = 0;
-        uint32_t local_size_y = 0;
-        uint32_t local_size_z = 0;
-        if (FindLocalSize(&(*it->second), local_size_x, local_size_y, local_size_z)) {
-            uint32_t limit = phys_dev_props.limits.maxComputeWorkGroupInvocations;
-            uint64_t invocations = local_size_x * local_size_y;
-            // Prevent overflow.
-            bool overflow = false;
-            if (invocations > UINT32_MAX) {
-                overflow = true;
-            }
-            if (!overflow) {
-                invocations *= local_size_z;
-                if (invocations > UINT32_MAX) {
-                    overflow = true;
-                }
-            }
-            if (!overflow) {
-                invocations *= groupCountX;
-                if (invocations > UINT32_MAX) {
-                    overflow = true;
-                }
-            }
-            if (!overflow) {
-                invocations *= groupCountY;
-                if (invocations > UINT32_MAX) {
-                    overflow = true;
-                }
-            }
-            if (!overflow) {
-                invocations *= groupCountZ;
-                if (invocations > UINT32_MAX) {
-                    overflow = true;
-                }
-            }
-            if (overflow) {
-                return log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SHADER_MODULE_EXT,
-                               HandleToUint64(it->first), "UNASSIGNED-features-limits-maxComputeWorkGroupInvocations",
-                               "ShaderModule %s invocations (>%" PRIu32
-                               ") exceeds device limit maxComputeWorkGroupInvocations (%" PRIu32 ").",
-                               report_data->FormatHandle(it->first).c_str(), UINT32_MAX, limit);
-            }
-            if (invocations > limit) {
-                return log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SHADER_MODULE_EXT,
-                               HandleToUint64(it->first), "UNASSIGNED-features-limits-maxComputeWorkGroupInvocations",
-                               "ShaderModule %s invocations (%" PRIu64
-                               ") exceeds device limit maxComputeWorkGroupInvocations (%" PRIu32 ").",
-                               report_data->FormatHandle(it->first).c_str(), invocations, limit);
-            }
-        }
-    }
-    return false;
 }

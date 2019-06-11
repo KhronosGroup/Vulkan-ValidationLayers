@@ -96,7 +96,7 @@ struct LoggingLabel {
         return out;
     };
 
-    LoggingLabel() : name(), color({0.f, 0.f, 0.f, 0.f}) {}
+    LoggingLabel() : name(), color({{0.f, 0.f, 0.f, 0.f}}) {}
     LoggingLabel(const VkDebugUtilsLabelEXT *label_info) {
         if (label_info && label_info->pLabelName) {
             name = label_info->pLabelName;

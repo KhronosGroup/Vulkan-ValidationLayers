@@ -61,7 +61,7 @@ VkRenderFramework::VkRenderFramework()
     m_clear_color.float32[3] = 0.0f;
 }
 
-VkRenderFramework::~VkRenderFramework() {}
+VkRenderFramework::~VkRenderFramework() { ShutdownFramework(); }
 
 VkPhysicalDevice VkRenderFramework::gpu() {
     EXPECT_NE((VkInstance)0, inst);  // Invalid to request gpu before instance exists
@@ -1288,7 +1288,7 @@ VkResult VkImageObj::CopyImageOut(VkImageObj &dst_image) {
     src_image_layout = this->Layout();
     this->SetLayout(&cmd_buf, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
 
-    dest_image_layout = (dst_image.Layout() == VK_IMAGE_LAYOUT_UNDEFINED) ? VK_IMAGE_LAYOUT_GENERAL : this->Layout();
+    dest_image_layout = (dst_image.Layout() == VK_IMAGE_LAYOUT_UNDEFINED) ? VK_IMAGE_LAYOUT_GENERAL : dst_image.Layout();
     dst_image.SetLayout(&cmd_buf, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
     VkImageCopy copy_region = {};

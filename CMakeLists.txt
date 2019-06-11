@@ -25,6 +25,8 @@ set(CMAKE_OSX_DEPLOYMENT_TARGET "10.12" CACHE STRING "Minimum OS X deployment ve
 
 project(Vulkan-ValidationLayers)
 
+enable_testing()
+
 # User-interface declarations ----------------------------------------------------------------------------------------------------
 # This section contains variables that affect development GUIs (e.g. CMake GUI and IDEs), such as option(), folders, and variables
 # with the CACHE property.

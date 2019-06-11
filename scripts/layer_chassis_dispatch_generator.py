@@ -576,7 +576,7 @@ VkResult DispatchCreateDescriptorUpdateTemplate(VkDevice device, const VkDescrip
 
         // Shadow template createInfo for later updates
         std::unique_ptr<TEMPLATE_STATE> template_state(new TEMPLATE_STATE(*pDescriptorUpdateTemplate, local_create_info));
-        layer_data->desc_template_map[(uint64_t)*pDescriptorUpdateTemplate] = std::move(template_state);
+        layer_data->desc_template_createinfo_map[(uint64_t)*pDescriptorUpdateTemplate] = std::move(template_state);
     }
     return result;
 }
@@ -610,7 +610,7 @@ VkResult DispatchCreateDescriptorUpdateTemplateKHR(VkDevice device, const VkDesc
 
         // Shadow template createInfo for later updates
         std::unique_ptr<TEMPLATE_STATE> template_state(new TEMPLATE_STATE(*pDescriptorUpdateTemplate, local_create_info));
-        layer_data->desc_template_map[(uint64_t)*pDescriptorUpdateTemplate] = std::move(template_state);
+        layer_data->desc_template_createinfo_map[(uint64_t)*pDescriptorUpdateTemplate] = std::move(template_state);
     }
     return result;
 }
@@ -623,7 +623,7 @@ void DispatchDestroyDescriptorUpdateTemplate(VkDevice device, VkDescriptorUpdate
         return layer_data->device_dispatch_table.DestroyDescriptorUpdateTemplate(device, descriptorUpdateTemplate, pAllocator);
     std::unique_lock<std::mutex> lock(dispatch_lock);
     uint64_t descriptor_update_template_id = reinterpret_cast<uint64_t &>(descriptorUpdateTemplate);
-    layer_data->desc_template_map.erase(descriptor_update_template_id);
+    layer_data->desc_template_createinfo_map.erase(descriptor_update_template_id);
     descriptorUpdateTemplate = (VkDescriptorUpdateTemplate)unique_id_mapping[descriptor_update_template_id];
     unique_id_mapping.erase(descriptor_update_template_id);
     lock.unlock();
@@ -638,7 +638,7 @@ void DispatchDestroyDescriptorUpdateTemplateKHR(VkDevice device, VkDescriptorUpd
         return layer_data->device_dispatch_table.DestroyDescriptorUpdateTemplateKHR(device, descriptorUpdateTemplate, pAllocator);
     std::unique_lock<std::mutex> lock(dispatch_lock);
     uint64_t descriptor_update_template_id = reinterpret_cast<uint64_t &>(descriptorUpdateTemplate);
-    layer_data->desc_template_map.erase(descriptor_update_template_id);
+    layer_data->desc_template_createinfo_map.erase(descriptor_update_template_id);
     descriptorUpdateTemplate = (VkDescriptorUpdateTemplate)unique_id_mapping[descriptor_update_template_id];
     unique_id_mapping.erase(descriptor_update_template_id);
     lock.unlock();
@@ -646,8 +646,8 @@ void DispatchDestroyDescriptorUpdateTemplateKHR(VkDevice device, VkDescriptorUpd
 }
 
 void *BuildUnwrappedUpdateTemplateBuffer(ValidationObject *layer_data, uint64_t descriptorUpdateTemplate, const void *pData) {
-    auto const template_map_entry = layer_data->desc_template_map.find(descriptorUpdateTemplate);
-    if (template_map_entry == layer_data->desc_template_map.end()) {
+    auto const template_map_entry = layer_data->desc_template_createinfo_map.find(descriptorUpdateTemplate);
+    if (template_map_entry == layer_data->desc_template_createinfo_map.end()) {
         assert(0);
     }
     auto const &create_info = template_map_entry->second->create_info;
