@@ -6569,6 +6569,34 @@ TEST_F(VkPositiveLayerTest, BindMemory2) {
     m_errorMonitor->VerifyNotFound();
 }
 
+TEST_F(VkPositiveLayerTest, CreatePipelineWithCoreChecksDisabled) {
+    TEST_DESCRIPTION("Test CreatePipeline while the CoreChecks validation object is disabled");
+
+    // Enable KHR validation features extension
+    VkValidationFeatureDisableEXT disables[] = {VK_VALIDATION_FEATURE_DISABLE_CORE_CHECKS_EXT};
+    VkValidationFeaturesEXT features = {};
+    features.sType = VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT;
+    features.disabledValidationFeatureCount = 1;
+    features.pDisabledValidationFeatures = disables;
+
+    VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+    ASSERT_NO_FATAL_FAILURE(Init(nullptr, nullptr, pool_flags, &features));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    VkShaderObj vs(m_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
+    VkShaderObj fs(m_device, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+    VkPipelineInputAssemblyStateCreateInfo iasci{VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO, nullptr, 0,
+                                                 VK_PRIMITIVE_TOPOLOGY_PATCH_LIST, VK_FALSE};
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.gp_ci_.pInputAssemblyState = &iasci;
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.InitState();
+    m_errorMonitor->ExpectSuccess();
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyNotFound();
+}
+
 TEST_F(VkPositiveLayerTest, CreatePipeineWithTessellationDomainOrigin) {
     TEST_DESCRIPTION(
         "Test CreatePipeline when VkPipelineTessellationStateCreateInfo.pNext include "
