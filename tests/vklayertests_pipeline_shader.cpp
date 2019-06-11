@@ -29,20 +29,11 @@
 
 TEST_F(VkLayerTest, PSOPolygonModeInvalid) {
     TEST_DESCRIPTION("Attempt to use a non-solid polygon fill mode in a pipeline when this feature is not enabled.");
-
-    ASSERT_NO_FATAL_FAILURE(Init());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-
-    std::vector<const char *> device_extension_names;
-    auto features = m_device->phy().features();
-    // Artificially disable support for non-solid fill modes
-    features.fillModeNonSolid = VK_FALSE;
+    VkPhysicalDeviceFeatures device_features = {};
+    device_features.fillModeNonSolid = VK_FALSE;
     // The sacrificial device object
-    VkDeviceObj test_device(0, gpu(), device_extension_names, &features);
-
-    VkRenderpassObj render_pass(&test_device);
-
-    const VkPipelineLayoutObj pipeline_layout(&test_device);
+    ASSERT_NO_FATAL_FAILURE(Init(&device_features));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     VkPipelineRasterizationStateCreateInfo rs_ci = {};
     rs_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
@@ -50,38 +41,19 @@ TEST_F(VkLayerTest, PSOPolygonModeInvalid) {
     rs_ci.lineWidth = 1.0f;
     rs_ci.rasterizerDiscardEnable = VK_TRUE;
 
-    VkShaderObj vs(&test_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
-    VkShaderObj fs(&test_device, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+    auto set_polygonMode = [&](CreatePipelineHelper &helper) { helper.rs_state_ci_ = rs_ci; };
 
     // Set polygonMode to unsupported value POINT, should fail
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                         "polygonMode cannot be VK_POLYGON_MODE_POINT or VK_POLYGON_MODE_LINE");
-    {
-        VkPipelineObj pipe(&test_device);
-        pipe.AddShader(&vs);
-        pipe.AddShader(&fs);
-        pipe.AddDefaultColorAttachment();
-        // Introduce failure by setting unsupported polygon mode
-        rs_ci.polygonMode = VK_POLYGON_MODE_POINT;
-        pipe.SetRasterization(&rs_ci);
-        pipe.CreateVKPipeline(pipeline_layout.handle(), render_pass.handle());
-    }
-    m_errorMonitor->VerifyFound();
+    // Introduce failure by setting unsupported polygon mode
+    rs_ci.polygonMode = VK_POLYGON_MODE_POINT;
+    CreatePipelineHelper::OneshotTest(*this, set_polygonMode, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                      "polygonMode cannot be VK_POLYGON_MODE_POINT or VK_POLYGON_MODE_LINE");
 
     // Try again with polygonMode=LINE, should fail
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                         "polygonMode cannot be VK_POLYGON_MODE_POINT or VK_POLYGON_MODE_LINE");
-    {
-        VkPipelineObj pipe(&test_device);
-        pipe.AddShader(&vs);
-        pipe.AddShader(&fs);
-        pipe.AddDefaultColorAttachment();
-        // Introduce failure by setting unsupported polygon mode
-        rs_ci.polygonMode = VK_POLYGON_MODE_LINE;
-        pipe.SetRasterization(&rs_ci);
-        pipe.CreateVKPipeline(pipeline_layout.handle(), render_pass.handle());
-    }
-    m_errorMonitor->VerifyFound();
+    // Introduce failure by setting unsupported polygon mode
+    rs_ci.polygonMode = VK_POLYGON_MODE_LINE;
+    CreatePipelineHelper::OneshotTest(*this, set_polygonMode, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                      "polygonMode cannot be VK_POLYGON_MODE_POINT or VK_POLYGON_MODE_LINE");
 }
 
 TEST_F(VkLayerTest, PipelineNotBound) {
@@ -108,33 +80,15 @@ TEST_F(VkLayerTest, PipelineWrongBindPointGraphics) {
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VkDescriptorSetObj descriptorSet(m_device);
-    descriptorSet.AppendDummy();
-    descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
-
-    // Create a minimal compute pipeline
-    std::string cs_text = "#version 450\nvoid main() {}\n";  // minimal no-op shader
-    VkShaderObj cs_obj(m_device, cs_text.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, this);
-
-    VkComputePipelineCreateInfo pipeline_info = {};
-    pipeline_info.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
-    pipeline_info.layout = descriptorSet.GetPipelineLayout();
-    pipeline_info.basePipelineHandle = VK_NULL_HANDLE;
-    pipeline_info.basePipelineIndex = -1;
-    pipeline_info.stage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    pipeline_info.stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;
-    pipeline_info.stage.pName = "main";
-    pipeline_info.stage.module = cs_obj.handle();
-    VkPipeline cs_pipeline;
-    vkCreateComputePipelines(device(), VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &cs_pipeline);
+    CreateComputePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.InitState();
+    pipe.CreateComputePipeline();
 
     m_commandBuffer->begin();
-    vkCmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, cs_pipeline);
+    vkCmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
 
     m_errorMonitor->VerifyFound();
-
-    // Clean up
-    vkDestroyPipeline(device(), cs_pipeline, nullptr);
 }
 
 TEST_F(VkLayerTest, PipelineWrongBindPointCompute) {
@@ -145,22 +99,13 @@ TEST_F(VkLayerTest, PipelineWrongBindPointCompute) {
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VkDescriptorSetObj descriptorSet(m_device);
-    descriptorSet.AppendDummy();
-    descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
-
-    VkPipelineObj pipe(m_device);
-    pipe.AddDefaultColorAttachment();
-    VkShaderObj vs(m_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
-    pipe.AddShader(&vs);
-
-    VkGraphicsPipelineCreateInfo info = {};
-    pipe.InitGraphicsPipelineCreateInfo(&info);
-
-    pipe.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderPass());
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();
-    vkCmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.handle());
+    vkCmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_);
 
     m_errorMonitor->VerifyFound();
 }
@@ -194,22 +139,13 @@ TEST_F(VkLayerTest, PipelineWrongBindPointRayTracing) {
         return;
     }
 
-    VkDescriptorSetObj descriptorSet(m_device);
-    descriptorSet.AppendDummy();
-    descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
-
-    VkPipelineObj pipe(m_device);
-    pipe.AddDefaultColorAttachment();
-    VkShaderObj vs(m_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
-    pipe.AddShader(&vs);
-
-    VkGraphicsPipelineCreateInfo info = {};
-    pipe.InitGraphicsPipelineCreateInfo(&info);
-
-    pipe.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderPass());
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();
-    vkCmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_RAY_TRACING_NV, pipe.handle());
+    vkCmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_RAY_TRACING_NV, pipe.pipeline_);
 
     m_errorMonitor->VerifyFound();
 }
@@ -235,39 +171,15 @@ TEST_F(VkLayerTest, CreatePipelineBadVertexAttributeFormat) {
     }
 
     input_attribs.location = 0;
-    char const *vsSource =
-        "#version 450\n"
-        "\n"
-        "void main(){\n"
-        "   gl_Position = vec4(1);\n"
-        "}\n";
-    char const *fsSource =
-        "#version 450\n"
-        "\n"
-        "layout(location=0) out vec4 color;\n"
-        "void main(){\n"
-        "   color = vec4(1);\n"
-        "}\n";
 
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkVertexInputAttributeDescription-format-00623");
-    VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
-    VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
-
-    VkPipelineObj pipe(m_device);
-    pipe.AddDefaultColorAttachment();
-    pipe.AddShader(&vs);
-    pipe.AddShader(&fs);
-
-    pipe.AddVertexInputBindings(&input_binding, 1);
-    pipe.AddVertexInputAttribs(&input_attribs, 1);
-
-    VkDescriptorSetObj descriptorSet(m_device);
-    descriptorSet.AppendDummy();
-    descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
-
-    pipe.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderPass());
-
-    m_errorMonitor->VerifyFound();
+    auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.vi_ci_.pVertexBindingDescriptions = &input_binding;
+        helper.vi_ci_.vertexBindingDescriptionCount = 1;
+        helper.vi_ci_.pVertexAttributeDescriptions = &input_attribs;
+        helper.vi_ci_.vertexAttributeDescriptionCount = 1;
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                      "VUID-VkVertexInputAttributeDescription-format-00623");
 }
 
 TEST_F(VkLayerTest, DisabledIndependentBlend) {
@@ -337,45 +249,29 @@ TEST_F(VkLayerTest, PipelineRenderpassCompatibility) {
     TEST_DESCRIPTION(
         "Create a graphics pipeline that is incompatible with the requirements of its contained Renderpass/subpasses.");
     ASSERT_NO_FATAL_FAILURE(Init());
-
-    VkDescriptorSetObj ds_obj(m_device);
-    ds_obj.AppendDummy();
-    ds_obj.CreateVKDescriptorSet(m_commandBuffer);
-
-    VkShaderObj vs_obj(m_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     VkPipelineColorBlendAttachmentState att_state1 = {};
     att_state1.dstAlphaBlendFactor = VK_BLEND_FACTOR_CONSTANT_COLOR;
     att_state1.blendEnable = VK_TRUE;
 
-    VkRenderpassObj rp_obj(m_device);
-
-    {
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                             "VUID-VkGraphicsPipelineCreateInfo-rasterizerDiscardEnable-00753");
-        VkPipelineObj pipeline(m_device);
-        pipeline.AddShader(&vs_obj);
-        pipeline.AddColorAttachment(0, att_state1);
-
-        VkGraphicsPipelineCreateInfo info = {};
-        pipeline.InitGraphicsPipelineCreateInfo(&info);
-        info.pColorBlendState = nullptr;
-
-        pipeline.CreateVKPipeline(ds_obj.GetPipelineLayout(), rp_obj.handle(), &info);
-        m_errorMonitor->VerifyFound();
-    }
+    auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.cb_attachments_ = att_state1;
+        helper.gp_ci_.pColorBlendState = nullptr;
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                      "VUID-VkGraphicsPipelineCreateInfo-rasterizerDiscardEnable-00753");
 }
 
 TEST_F(VkLayerTest, PointSizeFailure) {
     TEST_DESCRIPTION("Create a pipeline using TOPOLOGY_POINT_LIST but do not set PointSize in vertex shader.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "Pipeline topology is set to POINT_LIST");
-
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
     ASSERT_NO_FATAL_FAILURE(InitViewport());
 
     // Create VS declaring PointSize but not writing to it
-    static const char NoPointSizeVertShader[] =
+    const char NoPointSizeVertShader[] =
         "#version 450\n"
         "vec2 vertices[3];\n"
         "out gl_PerVertex\n"
@@ -389,142 +285,73 @@ TEST_F(VkLayerTest, PointSizeFailure) {
         "    vertices[2] = vec2( 0.0,  1.0);\n"
         "    gl_Position = vec4(vertices[gl_VertexIndex % 3], 0.0, 1.0);\n"
         "}\n";
-
     VkShaderObj vs(m_device, NoPointSizeVertShader, VK_SHADER_STAGE_VERTEX_BIT, this);
-    VkShaderObj ps(m_device, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this);
-
-    VkPipelineObj pipelineobj(m_device);
-    pipelineobj.AddDefaultColorAttachment();
-    pipelineobj.AddShader(&vs);
-    pipelineobj.AddShader(&ps);
 
     // Set Input Assembly to TOPOLOGY POINT LIST
-    VkPipelineInputAssemblyStateCreateInfo ia_state = {};
-    ia_state.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-    ia_state.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
-    pipelineobj.SetInputAssembly(&ia_state);
+    auto set_info = [&](CreatePipelineHelper &helper) {
+        // Set Input Assembly to TOPOLOGY POINT LIST
+        helper.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
 
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-    m_commandBuffer->begin();
-    m_commandBuffer->ClearAllBuffers(m_renderTargets, m_clear_color, m_depthStencil, m_depth_clear_color, m_stencil_clear_color);
-    m_commandBuffer->PrepareAttachments(m_renderTargets, m_depthStencil);
-    VkDescriptorSetObj descriptorSet(m_device);
-    descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
-    pipelineobj.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderPass());
-    m_errorMonitor->VerifyFound();
+        helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT, "Pipeline topology is set to POINT_LIST");
 }
 
 TEST_F(VkLayerTest, InvalidTopology) {
     TEST_DESCRIPTION("InvalidTopology.");
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
     VkPhysicalDeviceFeatures deviceFeatures = {};
     deviceFeatures.geometryShader = VK_FALSE;
     deviceFeatures.tessellationShader = VK_FALSE;
 
-    ASSERT_NO_FATAL_FAILURE(InitState(&deviceFeatures));
+    ASSERT_NO_FATAL_FAILURE(Init(&deviceFeatures));
     ASSERT_NO_FATAL_FAILURE(InitViewport());
-
-    const char PointSizeWriteVertShaderFcn[] =
-        "#version 450\n"
-        "vec2 vertices[3];\n"
-        "out gl_PerVertex\n"
-        "{\n"
-        "    vec4 gl_Position;\n"
-        "    float gl_PointSize;\n"
-        "};\n"
-        "void OutPointSize() {\n"
-        "   gl_PointSize = 7.0;\n"
-        "}\n"
-        "void main() {\n"
-        "    vertices[0] = vec2(-1.0, -1.0);\n"
-        "    vertices[1] = vec2( 1.0, -1.0);\n"
-        "    vertices[2] = vec2( 0.0,  1.0);\n"
-        "    gl_Position = vec4(vertices[gl_VertexIndex % 3], 0.0, 1.0);\n"
-        "    OutPointSize();\n"
-        "}\n";
-
-    VkShaderObj vs(m_device, PointSizeWriteVertShaderFcn, VK_SHADER_STAGE_VERTEX_BIT, this);
-    VkShaderObj ps(m_device, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this);
-
-    VkPipelineObj pipelineobj(m_device);
-    pipelineobj.AddDefaultColorAttachment();
-    pipelineobj.AddShader(&vs);
-    pipelineobj.AddShader(&ps);
-
-    // Set Input Assembly to TOPOLOGY POINT LIST
-    VkPipelineInputAssemblyStateCreateInfo ia_state = {};
-    ia_state.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-    m_commandBuffer->begin();
-    m_commandBuffer->ClearAllBuffers(m_renderTargets, m_clear_color, m_depthStencil, m_depth_clear_color, m_stencil_clear_color);
-    m_commandBuffer->PrepareAttachments(m_renderTargets, m_depthStencil);
-    VkDescriptorSetObj descriptorSet(m_device);
-    descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
 
-    ia_state.primitiveRestartEnable = VK_TRUE;
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                         "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00428");
-    ia_state.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
-    pipelineobj.SetInputAssembly(&ia_state);
-    pipelineobj.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderPass());
-    m_errorMonitor->VerifyFound();
+    VkShaderObj vs(m_device, bindStateVertPointSizeShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
 
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                         "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00428");
-    ia_state.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
-    pipelineobj.SetInputAssembly(&ia_state);
-    pipelineobj.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderPass());
-    m_errorMonitor->VerifyFound();
+    VkPrimitiveTopology topology;
 
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                         "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00428");
-    ia_state.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-    pipelineobj.SetInputAssembly(&ia_state);
-    pipelineobj.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderPass());
-    m_errorMonitor->VerifyFound();
+    auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.ia_ci_.topology = topology;
+        helper.ia_ci_.primitiveRestartEnable = VK_TRUE;
+        helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+    };
 
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                         "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00428");
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                         "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00429");
-    ia_state.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY;
-    pipelineobj.SetInputAssembly(&ia_state);
-    pipelineobj.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderPass());
-    m_errorMonitor->VerifyFound();
+    topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+    CreatePipelineHelper::OneshotTest(*this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                      "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00428");
 
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                         "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00428");
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                         "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00429");
-    ia_state.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY;
-    pipelineobj.SetInputAssembly(&ia_state);
-    pipelineobj.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderPass());
-    m_errorMonitor->VerifyFound();
+    topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+    CreatePipelineHelper::OneshotTest(*this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                      "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00428");
 
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                         "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00428");
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                         "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00430");
-    m_errorMonitor->SetUnexpectedError("VUID-VkGraphicsPipelineCreateInfo-topology-00737");
-    ia_state.topology = VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
-    pipelineobj.SetInputAssembly(&ia_state);
-    pipelineobj.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderPass());
-    m_errorMonitor->VerifyFound();
+    topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    CreatePipelineHelper::OneshotTest(*this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                      "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00428");
 
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                         "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00429");
-    ia_state.topology = VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY;
-    pipelineobj.SetInputAssembly(&ia_state);
-    pipelineobj.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderPass());
-    m_errorMonitor->VerifyFound();
+    topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY;
+    CreatePipelineHelper::OneshotTest(*this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                      std::vector<string>{"VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00428",
+                                                          "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00429"});
 
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                         "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00429");
-    ia_state.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP_WITH_ADJACENCY;
-    pipelineobj.SetInputAssembly(&ia_state);
-    pipelineobj.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderPass());
-    m_errorMonitor->VerifyFound();
+    topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY;
+    CreatePipelineHelper::OneshotTest(*this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                      std::vector<string>{"VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00428",
+                                                          "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00429"});
+
+    topology = VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
+    CreatePipelineHelper::OneshotTest(*this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                      std::vector<string>{"VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00428",
+                                                          "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00430",
+                                                          "VUID-VkGraphicsPipelineCreateInfo-topology-00737"});
+
+    topology = VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY;
+    CreatePipelineHelper::OneshotTest(*this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                      "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00429");
+
+    topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP_WITH_ADJACENCY;
+    CreatePipelineHelper::OneshotTest(*this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                      "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00429");
 }
 
 TEST_F(VkLayerTest, PointSizeGeomShaderFailure) {
@@ -537,27 +364,10 @@ TEST_F(VkLayerTest, PointSizeGeomShaderFailure) {
         printf("%s Device does not support the required geometry shader features; skipped.\n", kSkipPrefix);
         return;
     }
-
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "Pipeline topology is set to POINT_LIST");
-
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
     ASSERT_NO_FATAL_FAILURE(InitViewport());
 
     // Create VS declaring PointSize and writing to it
-    static const char PointSizeVertShader[] =
-        "#version 450\n"
-        "vec2 vertices[3];\n"
-        "out gl_PerVertex\n"
-        "{\n"
-        "    vec4 gl_Position;\n"
-        "    float gl_PointSize;\n"
-        "};\n"
-        "void main() {\n"
-        "    vertices[0] = vec2(-1.0, -1.0);\n"
-        "    vertices[1] = vec2( 1.0, -1.0);\n"
-        "    vertices[2] = vec2( 0.0,  1.0);\n"
-        "    gl_Position = vec4(vertices[gl_VertexIndex % 3], 0.0, 1.0);\n"
-        "    gl_PointSize = 5.0;\n"
-        "}\n";
     static char const *gsSource =
         "#version 450\n"
         "layout (points) in;\n"
@@ -568,30 +378,15 @@ TEST_F(VkLayerTest, PointSizeGeomShaderFailure) {
         "   EmitVertex();\n"
         "}\n";
 
-    VkShaderObj vs(m_device, PointSizeVertShader, VK_SHADER_STAGE_VERTEX_BIT, this);
+    VkShaderObj vs(m_device, bindStateVertPointSizeShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
     VkShaderObj gs(m_device, gsSource, VK_SHADER_STAGE_GEOMETRY_BIT, this);
-    VkShaderObj ps(m_device, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this);
 
-    VkPipelineObj pipelineobj(m_device);
-    pipelineobj.AddDefaultColorAttachment();
-    pipelineobj.AddShader(&vs);
-    pipelineobj.AddShader(&gs);
-    pipelineobj.AddShader(&ps);
+    auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+        helper.shader_stages_ = {vs.GetStageCreateInfo(), gs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+    };
 
-    // Set Input Assembly to TOPOLOGY POINT LIST
-    VkPipelineInputAssemblyStateCreateInfo ia_state = {};
-    ia_state.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-    ia_state.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
-    pipelineobj.SetInputAssembly(&ia_state);
-
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-    m_commandBuffer->begin();
-    m_commandBuffer->ClearAllBuffers(m_renderTargets, m_clear_color, m_depthStencil, m_depth_clear_color, m_stencil_clear_color);
-    m_commandBuffer->PrepareAttachments(m_renderTargets, m_depthStencil);
-    VkDescriptorSetObj descriptorSet(m_device);
-    descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
-    pipelineobj.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderPass());
-    m_errorMonitor->VerifyFound();
+    CreatePipelineHelper::OneshotTest(*this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT, "Pipeline topology is set to POINT_LIST");
 }
 
 TEST_F(VkLayerTest, BuiltinBlockOrderMismatchVsGs) {
@@ -603,21 +398,8 @@ TEST_F(VkLayerTest, BuiltinBlockOrderMismatchVsGs) {
         printf("%s Device does not support geometry shaders; Skipped.\n", kSkipPrefix);
         return;
     }
-
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "Builtin variable inside block doesn't match between");
-
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
     ASSERT_NO_FATAL_FAILURE(InitViewport());
-    static const char *vsSource =
-        "#version 450\n"
-        "out gl_PerVertex\n"
-        "{\n"
-        "    vec4 gl_Position;\n"
-        "    float gl_PointSize;\n"
-        "};\n"
-        "void main() {\n"
-        "    gl_Position = vec4(1.0);\n"
-        "    gl_PointSize = 5.0;\n"
-        "}\n";
 
     // Compiled using the GLSL code below. GlslangValidator rearranges the members, but here they are kept in the order provided.
     // #version 450
@@ -689,27 +471,15 @@ TEST_F(VkLayerTest, BuiltinBlockOrderMismatchVsGs) {
                OpFunctionEnd
         )";
 
-    VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
+    VkShaderObj vs(m_device, bindStateVertPointSizeShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
     VkShaderObj gs(m_device, gsSource, VK_SHADER_STAGE_GEOMETRY_BIT, this);
-    VkShaderObj ps(m_device, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this);
 
-    VkPipelineObj pipelineobj(m_device);
-    pipelineobj.AddDefaultColorAttachment();
-    pipelineobj.AddShader(&vs);
-    pipelineobj.AddShader(&gs);
-    pipelineobj.AddShader(&ps);
-
-    VkPipelineInputAssemblyStateCreateInfo ia_state = {};
-    ia_state.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-    ia_state.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
-    pipelineobj.SetInputAssembly(&ia_state);
-
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-    m_commandBuffer->begin();
-    VkDescriptorSetObj descriptorSet(m_device);
-    descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
-    pipelineobj.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderPass());
-    m_errorMonitor->VerifyFound();
+    auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+        helper.shader_stages_ = {vs.GetStageCreateInfo(), gs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                      "Builtin variable inside block doesn't match between");
 }
 
 TEST_F(VkLayerTest, BuiltinBlockSizeMismatchVsGs) {
@@ -722,21 +492,8 @@ TEST_F(VkLayerTest, BuiltinBlockSizeMismatchVsGs) {
         return;
     }
 
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                         "Number of elements inside builtin block differ between stages");
-
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
     ASSERT_NO_FATAL_FAILURE(InitViewport());
-    static const char *vsSource =
-        "#version 450\n"
-        "out gl_PerVertex\n"
-        "{\n"
-        "    vec4 gl_Position;\n"
-        "    float gl_PointSize;\n"
-        "};\n"
-        "void main() {\n"
-        "    gl_Position = vec4(1.0);\n"
-        "    gl_PointSize = 5.0;\n"
-        "}\n";
 
     static const char *gsSource =
         "#version 450\n"
@@ -756,27 +513,15 @@ TEST_F(VkLayerTest, BuiltinBlockSizeMismatchVsGs) {
         "    EmitVertex();\n"
         "}\n";
 
-    VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
+    VkShaderObj vs(m_device, bindStateVertPointSizeShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
     VkShaderObj gs(m_device, gsSource, VK_SHADER_STAGE_GEOMETRY_BIT, this);
-    VkShaderObj ps(m_device, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this);
 
-    VkPipelineObj pipelineobj(m_device);
-    pipelineobj.AddDefaultColorAttachment();
-    pipelineobj.AddShader(&vs);
-    pipelineobj.AddShader(&gs);
-    pipelineobj.AddShader(&ps);
-
-    VkPipelineInputAssemblyStateCreateInfo ia_state = {};
-    ia_state.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-    ia_state.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
-    pipelineobj.SetInputAssembly(&ia_state);
-
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-    m_commandBuffer->begin();
-    VkDescriptorSetObj descriptorSet(m_device);
-    descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
-    pipelineobj.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderPass());
-    m_errorMonitor->VerifyFound();
+    auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+        helper.shader_stages_ = {vs.GetStageCreateInfo(), gs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                      "Number of elements inside builtin block differ between stages");
 }
 
 TEST_F(VkLayerTest, CreatePipelineLayoutExceedsSetLimit) {
@@ -1467,29 +1212,16 @@ TEST_F(VkLayerTest, CmdDispatchExceedLimits) {
                 OpReturn
                 OpFunctionEnd)");
 
-    VkShaderObj cs_obj_asm(m_device, spv_source, VK_SHADER_STAGE_COMPUTE_BIT, this);
-
-    VkPipelineLayoutCreateInfo info = {};
-    info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    info.pNext = nullptr;
-    VkPipelineLayout pipe_layout;
-    vkCreatePipelineLayout(device(), &info, nullptr, &pipe_layout);
-
-    VkComputePipelineCreateInfo pipeline_info = {};
-    pipeline_info.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
-    pipeline_info.pNext = nullptr;
-    pipeline_info.flags = khx_dg_ext_available ? VK_PIPELINE_CREATE_DISPATCH_BASE_KHR : 0;
-    pipeline_info.layout = pipe_layout;
-    pipeline_info.basePipelineHandle = VK_NULL_HANDLE;
-    pipeline_info.basePipelineIndex = -1;
-    pipeline_info.stage = cs_obj_asm.GetStageCreateInfo();
-    VkPipeline cs_pipeline;
+    CreateComputePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.cs_.reset(new VkShaderObj(m_device, spv_source, VK_SHADER_STAGE_COMPUTE_BIT, this));
+    pipe.InitState();
 
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "exceeds device limit maxComputeWorkGroupSize[0]");
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "exceeds device limit maxComputeWorkGroupSize[1]");
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "exceeds device limit maxComputeWorkGroupSize[2]");
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "features-limits-maxComputeWorkGroupInvocations");
-    vkCreateComputePipelines(device(), VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &cs_pipeline);
+    pipe.CreateComputePipeline();
     m_errorMonitor->VerifyFound();
 
     // Create a minimal compute pipeline
@@ -1509,12 +1241,12 @@ TEST_F(VkLayerTest, CmdDispatchExceedLimits) {
             x_size_limit, y_size_limit, z_size_limit);
 
     VkShaderObj cs_obj(m_device, cs_text, VK_SHADER_STAGE_COMPUTE_BIT, this);
-    pipeline_info.stage = cs_obj.GetStageCreateInfo();
-    vkCreateComputePipelines(device(), VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &cs_pipeline);
+    pipe.cs_.reset(new VkShaderObj(m_device, cs_text, VK_SHADER_STAGE_COMPUTE_BIT, this));
+    pipe.CreateComputePipeline();
 
     // Bind pipeline to command buffer
     m_commandBuffer->begin();
-    vkCmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipeline);
+    vkCmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_);
 
     // Dispatch counts that exceed device limits
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDispatch-groupCountX-00386");
@@ -1568,138 +1300,43 @@ TEST_F(VkLayerTest, CmdDispatchExceedLimits) {
     } else {
         printf("%s KHX_DEVICE_GROUP_* extensions not supported, skipping CmdDispatchBaseKHR() tests.\n", kSkipPrefix);
     }
-
-    // Clean up
-    vkDestroyPipeline(device(), cs_pipeline, nullptr);
-    vkDestroyPipelineLayout(device(), pipe_layout, nullptr);
 }
 
 TEST_F(VkLayerTest, InvalidPipelineCreateState) {
     // Attempt to Create Gfx Pipeline w/o a VS
-    VkResult err;
-
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                         "Invalid Pipeline CreateInfo State: Vertex Shader required");
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-
-    VkDescriptorPoolSize ds_type_count = {};
-    ds_type_count.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    ds_type_count.descriptorCount = 1;
-
-    VkDescriptorPoolCreateInfo ds_pool_ci = {};
-    ds_pool_ci.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    ds_pool_ci.pNext = NULL;
-    ds_pool_ci.maxSets = 1;
-    ds_pool_ci.poolSizeCount = 1;
-    ds_pool_ci.pPoolSizes = &ds_type_count;
-
-    VkDescriptorPool ds_pool;
-    err = vkCreateDescriptorPool(m_device->device(), &ds_pool_ci, NULL, &ds_pool);
-    ASSERT_VK_SUCCESS(err);
-
-    VkDescriptorSetLayoutBinding dsl_binding = {};
-    dsl_binding.binding = 0;
-    dsl_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    dsl_binding.descriptorCount = 1;
-    dsl_binding.stageFlags = VK_SHADER_STAGE_ALL;
-    dsl_binding.pImmutableSamplers = NULL;
-
-    const VkDescriptorSetLayoutObj ds_layout(m_device, {dsl_binding});
-
-    VkDescriptorSet descriptorSet;
-    VkDescriptorSetAllocateInfo alloc_info = {};
-    alloc_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    alloc_info.descriptorSetCount = 1;
-    alloc_info.descriptorPool = ds_pool;
-    alloc_info.pSetLayouts = &ds_layout.handle();
-    err = vkAllocateDescriptorSets(m_device->device(), &alloc_info, &descriptorSet);
-    ASSERT_VK_SUCCESS(err);
-
-    const VkPipelineLayoutObj pipeline_layout(m_device, {&ds_layout});
-
-    VkPipelineRasterizationStateCreateInfo rs_state_ci = {};
-    rs_state_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-    rs_state_ci.polygonMode = VK_POLYGON_MODE_FILL;
-    rs_state_ci.cullMode = VK_CULL_MODE_BACK_BIT;
-    rs_state_ci.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
-    rs_state_ci.depthClampEnable = VK_FALSE;
-    rs_state_ci.rasterizerDiscardEnable = VK_TRUE;
-    rs_state_ci.depthBiasEnable = VK_FALSE;
-    rs_state_ci.lineWidth = 1.0f;
-
-    VkPipelineVertexInputStateCreateInfo vi_ci = {};
-    vi_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-    vi_ci.pNext = nullptr;
-    vi_ci.vertexBindingDescriptionCount = 0;
-    vi_ci.pVertexBindingDescriptions = nullptr;
-    vi_ci.vertexAttributeDescriptionCount = 0;
-    vi_ci.pVertexAttributeDescriptions = nullptr;
-
-    VkPipelineInputAssemblyStateCreateInfo ia_ci = {};
-    ia_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-    ia_ci.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
-
-    VkPipelineShaderStageCreateInfo shaderStages[2];
-    memset(&shaderStages, 0, 2 * sizeof(VkPipelineShaderStageCreateInfo));
+    ASSERT_NO_FATAL_FAILURE(InitViewport());
 
     VkShaderObj vs(m_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
     VkShaderObj fs(m_device, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this);
-    shaderStages[0] = fs.GetStageCreateInfo();  // should be: vs.GetStageCreateInfo();
-    shaderStages[1] = fs.GetStageCreateInfo();
 
-    VkGraphicsPipelineCreateInfo gp_ci = {};
-    gp_ci.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-    gp_ci.pViewportState = nullptr;  // no viewport b/c rasterizer is disabled
-    gp_ci.pRasterizationState = &rs_state_ci;
-    gp_ci.flags = VK_PIPELINE_CREATE_DISABLE_OPTIMIZATION_BIT;
-    gp_ci.layout = pipeline_layout.handle();
-    gp_ci.renderPass = renderPass();
-    gp_ci.pVertexInputState = &vi_ci;
-    gp_ci.pInputAssemblyState = &ia_ci;
+    VkPipelineShaderStageCreateInfo shaderStage = fs.GetStageCreateInfo();  // should be: vs.GetStageCreateInfo();
 
-    gp_ci.stageCount = 1;
-    gp_ci.pStages = shaderStages;
-
-    VkPipelineCacheCreateInfo pc_ci = {};
-    pc_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
-    pc_ci.initialDataSize = 0;
-    pc_ci.pInitialData = 0;
-
-    VkPipeline pipeline;
-    VkPipelineCache pipelineCache;
-
-    err = vkCreatePipelineCache(m_device->device(), &pc_ci, NULL, &pipelineCache);
-    ASSERT_VK_SUCCESS(err);
-    err = vkCreateGraphicsPipelines(m_device->device(), pipelineCache, 1, &gp_ci, NULL, &pipeline);
-    m_errorMonitor->VerifyFound();
+    auto set_info = [&](CreatePipelineHelper &helper) { helper.shader_stages_ = {shaderStage}; };
+    CreatePipelineHelper::OneshotTest(*this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                      "Invalid Pipeline CreateInfo State: Vertex Shader required");
 
     // Finally, check the string validation for the shader stage pName variable.  Correct the shader stage data, and bork the
     // string before calling again
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "contains invalid characters or is badly formed");
-    shaderStages[0] = vs.GetStageCreateInfo();
+    shaderStage = vs.GetStageCreateInfo();
     const uint8_t cont_char = 0xf8;
     char bad_string[] = {static_cast<char>(cont_char), static_cast<char>(cont_char), static_cast<char>(cont_char),
                          static_cast<char>(cont_char)};
-    shaderStages[0].pName = bad_string;
-    err = vkCreateGraphicsPipelines(m_device->device(), pipelineCache, 1, &gp_ci, NULL, &pipeline);
-    m_errorMonitor->VerifyFound();
+    shaderStage.pName = bad_string;
 
-    vkDestroyPipelineCache(m_device->device(), pipelineCache, NULL);
-    vkDestroyDescriptorPool(m_device->device(), ds_pool, NULL);
+    CreatePipelineHelper::OneshotTest(*this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                      "contains invalid characters or is badly formed");
 }
 
 TEST_F(VkLayerTest, InvalidPipelineSampleRateFeatureDisable) {
     // Enable sample shading in pipeline when the feature is disabled.
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
-
     // Disable sampleRateShading here
     VkPhysicalDeviceFeatures device_features = {};
-    ASSERT_NO_FATAL_FAILURE(GetPhysicalDeviceFeatures(&device_features));
     device_features.sampleRateShading = VK_FALSE;
 
-    ASSERT_NO_FATAL_FAILURE(InitState(&device_features));
+    ASSERT_NO_FATAL_FAILURE(Init(&device_features));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     // Cause the error by enabling sample shading...
@@ -2591,69 +2228,13 @@ TEST_F(VkLayerTest, PSOLineWidthInvalid) {
     ASSERT_NO_FATAL_FAILURE(Init(&features));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VkShaderObj vs(m_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
-    VkShaderObj fs(m_device, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this);
-    VkPipelineShaderStageCreateInfo shader_state_cis[] = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-
-    VkPipelineVertexInputStateCreateInfo vi_state_ci = {};
-    vi_state_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-
-    VkPipelineInputAssemblyStateCreateInfo ia_state_ci = {};
-    ia_state_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-    ia_state_ci.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
-
-    VkViewport viewport = {0.0f, 0.0f, 64.0f, 64.0f, 0.0f, 1.0f};
-    VkRect2D scissor = {{0, 0}, {64, 64}};
-    VkPipelineViewportStateCreateInfo vp_state_ci = {};
-    vp_state_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-    vp_state_ci.viewportCount = 1;
-    vp_state_ci.pViewports = &viewport;
-    vp_state_ci.scissorCount = 1;
-    vp_state_ci.pScissors = &scissor;
-
-    VkPipelineRasterizationStateCreateInfo rs_state_ci = {};
-    rs_state_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-    rs_state_ci.rasterizerDiscardEnable = VK_FALSE;
-    // lineWidth to be set by checks
-
-    VkPipelineMultisampleStateCreateInfo ms_state_ci = {};
-    ms_state_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-    ms_state_ci.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;  // must match subpass att.
-
-    VkPipelineColorBlendAttachmentState cba_state = {};
-
-    VkPipelineColorBlendStateCreateInfo cb_state_ci = {};
-    cb_state_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-    cb_state_ci.attachmentCount = 1;  // must match count in subpass
-    cb_state_ci.pAttachments = &cba_state;
-
-    const VkPipelineLayoutObj pipeline_layout(m_device);
-
-    VkGraphicsPipelineCreateInfo gp_ci = {};
-    gp_ci.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-    gp_ci.stageCount = sizeof(shader_state_cis) / sizeof(VkPipelineShaderStageCreateInfo);
-    gp_ci.pStages = shader_state_cis;
-    gp_ci.pVertexInputState = &vi_state_ci;
-    gp_ci.pInputAssemblyState = &ia_state_ci;
-    gp_ci.pViewportState = &vp_state_ci;
-    gp_ci.pRasterizationState = &rs_state_ci;
-    gp_ci.pMultisampleState = &ms_state_ci;
-    gp_ci.pColorBlendState = &cb_state_ci;
-    gp_ci.layout = pipeline_layout.handle();
-    gp_ci.renderPass = renderPass();
-    gp_ci.subpass = 0;
-
     const std::vector<float> test_cases = {-1.0f, 0.0f, NearestSmaller(1.0f), NearestGreater(1.0f), NAN};
 
     // test VkPipelineRasterizationStateCreateInfo::lineWidth
     for (const auto test_case : test_cases) {
-        rs_state_ci.lineWidth = test_case;
-
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                             "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-00749");
-        VkPipeline pipeline;
-        vkCreateGraphicsPipelines(m_device->device(), VK_NULL_HANDLE, 1, &gp_ci, nullptr, &pipeline);
-        m_errorMonitor->VerifyFound();
+        const auto set_lineWidth = [&](CreatePipelineHelper &helper) { helper.rs_state_ci_.lineWidth = test_case; };
+        CreatePipelineHelper::OneshotTest(*this, set_lineWidth, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                          "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-00749");
     }
 
     // test vkCmdSetLineWidth
@@ -2674,88 +2255,16 @@ TEST_F(VkLayerTest, VUID_VkVertexInputBindingDescription_binding_00618) {
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VkPipelineCache pipeline_cache;
-    {
-        VkPipelineCacheCreateInfo create_info{};
-        create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
-
-        VkResult err = vkCreatePipelineCache(m_device->device(), &create_info, nullptr, &pipeline_cache);
-        ASSERT_VK_SUCCESS(err);
-    }
-
-    VkShaderObj vs(m_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
-    VkShaderObj fs(m_device, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this);
-
-    VkPipelineShaderStageCreateInfo stages[2]{{}};
-    stages[0] = vs.GetStageCreateInfo();
-    stages[1] = fs.GetStageCreateInfo();
-
     // Test when binding is greater than or equal to VkPhysicalDeviceLimits::maxVertexInputBindings.
     VkVertexInputBindingDescription vertex_input_binding_description{};
     vertex_input_binding_description.binding = m_device->props.limits.maxVertexInputBindings;
 
-    VkPipelineVertexInputStateCreateInfo vertex_input_state{};
-    vertex_input_state.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-    vertex_input_state.pNext = nullptr;
-    vertex_input_state.vertexBindingDescriptionCount = 1;
-    vertex_input_state.pVertexBindingDescriptions = &vertex_input_binding_description;
-    vertex_input_state.vertexAttributeDescriptionCount = 0;
-    vertex_input_state.pVertexAttributeDescriptions = nullptr;
-
-    VkPipelineInputAssemblyStateCreateInfo input_assembly_state{};
-    input_assembly_state.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-    input_assembly_state.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
-
-    VkViewport viewport = {0.0f, 0.0f, 64.0f, 64.0f, 0.0f, 1.0f};
-    VkRect2D scissor = {{0, 0}, {64, 64}};
-    VkPipelineViewportStateCreateInfo viewport_state{};
-    viewport_state.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-    viewport_state.viewportCount = 1;
-    viewport_state.pViewports = &viewport;
-    viewport_state.scissorCount = 1;
-    viewport_state.pScissors = &scissor;
-
-    VkPipelineMultisampleStateCreateInfo multisample_state{};
-    multisample_state.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-    multisample_state.pNext = nullptr;
-    multisample_state.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
-    multisample_state.sampleShadingEnable = 0;
-    multisample_state.minSampleShading = 1.0;
-    multisample_state.pSampleMask = nullptr;
-
-    VkPipelineRasterizationStateCreateInfo rasterization_state{};
-    rasterization_state.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-    rasterization_state.polygonMode = VK_POLYGON_MODE_FILL;
-    rasterization_state.cullMode = VK_CULL_MODE_BACK_BIT;
-    rasterization_state.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
-    rasterization_state.depthClampEnable = VK_FALSE;
-    rasterization_state.rasterizerDiscardEnable = VK_FALSE;
-    rasterization_state.depthBiasEnable = VK_FALSE;
-    rasterization_state.lineWidth = 1.0f;
-
-    const VkPipelineLayoutObj pipeline_layout(m_device);
-
-    {
-        VkGraphicsPipelineCreateInfo create_info{};
-        create_info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-        create_info.stageCount = 2;
-        create_info.pStages = stages;
-        create_info.pVertexInputState = &vertex_input_state;
-        create_info.pInputAssemblyState = &input_assembly_state;
-        create_info.pViewportState = &viewport_state;
-        create_info.pMultisampleState = &multisample_state;
-        create_info.pRasterizationState = &rasterization_state;
-        create_info.flags = VK_PIPELINE_CREATE_DISABLE_OPTIMIZATION_BIT;
-        create_info.layout = pipeline_layout.handle();
-        create_info.renderPass = renderPass();
-
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkVertexInputBindingDescription-binding-00618");
-        VkPipeline pipeline;
-        vkCreateGraphicsPipelines(m_device->device(), pipeline_cache, 1, &create_info, nullptr, &pipeline);
-        m_errorMonitor->VerifyFound();
-    }
-
-    vkDestroyPipelineCache(m_device->device(), pipeline_cache, nullptr);
+    const auto set_binding = [&](CreatePipelineHelper &helper) {
+        helper.vi_ci_.pVertexBindingDescriptions = &vertex_input_binding_description;
+        helper.vi_ci_.vertexBindingDescriptionCount = 1;
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_binding, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                      "VUID-VkVertexInputBindingDescription-binding-00618");
 }
 
 TEST_F(VkLayerTest, VUID_VkVertexInputBindingDescription_stride_00619) {
@@ -2766,88 +2275,16 @@ TEST_F(VkLayerTest, VUID_VkVertexInputBindingDescription_stride_00619) {
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VkPipelineCache pipeline_cache;
-    {
-        VkPipelineCacheCreateInfo create_info{};
-        create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
-
-        VkResult err = vkCreatePipelineCache(m_device->device(), &create_info, nullptr, &pipeline_cache);
-        ASSERT_VK_SUCCESS(err);
-    }
-
-    VkShaderObj vs(m_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
-    VkShaderObj fs(m_device, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this);
-
-    VkPipelineShaderStageCreateInfo stages[2]{{}};
-    stages[0] = vs.GetStageCreateInfo();
-    stages[1] = fs.GetStageCreateInfo();
-
     // Test when stride is greater than VkPhysicalDeviceLimits::maxVertexInputBindingStride.
     VkVertexInputBindingDescription vertex_input_binding_description{};
     vertex_input_binding_description.stride = m_device->props.limits.maxVertexInputBindingStride + 1;
 
-    VkPipelineVertexInputStateCreateInfo vertex_input_state{};
-    vertex_input_state.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-    vertex_input_state.pNext = nullptr;
-    vertex_input_state.vertexBindingDescriptionCount = 1;
-    vertex_input_state.pVertexBindingDescriptions = &vertex_input_binding_description;
-    vertex_input_state.vertexAttributeDescriptionCount = 0;
-    vertex_input_state.pVertexAttributeDescriptions = nullptr;
-
-    VkPipelineInputAssemblyStateCreateInfo input_assembly_state{};
-    input_assembly_state.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-    input_assembly_state.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
-
-    VkViewport viewport = {0.0f, 0.0f, 64.0f, 64.0f, 0.0f, 1.0f};
-    VkRect2D scissor = {{0, 0}, {64, 64}};
-    VkPipelineViewportStateCreateInfo viewport_state{};
-    viewport_state.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-    viewport_state.viewportCount = 1;
-    viewport_state.pViewports = &viewport;
-    viewport_state.scissorCount = 1;
-    viewport_state.pScissors = &scissor;
-
-    VkPipelineMultisampleStateCreateInfo multisample_state{};
-    multisample_state.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-    multisample_state.pNext = nullptr;
-    multisample_state.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
-    multisample_state.sampleShadingEnable = 0;
-    multisample_state.minSampleShading = 1.0;
-    multisample_state.pSampleMask = nullptr;
-
-    VkPipelineRasterizationStateCreateInfo rasterization_state{};
-    rasterization_state.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-    rasterization_state.polygonMode = VK_POLYGON_MODE_FILL;
-    rasterization_state.cullMode = VK_CULL_MODE_BACK_BIT;
-    rasterization_state.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
-    rasterization_state.depthClampEnable = VK_FALSE;
-    rasterization_state.rasterizerDiscardEnable = VK_FALSE;
-    rasterization_state.depthBiasEnable = VK_FALSE;
-    rasterization_state.lineWidth = 1.0f;
-
-    const VkPipelineLayoutObj pipeline_layout(m_device);
-
-    {
-        VkGraphicsPipelineCreateInfo create_info{};
-        create_info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-        create_info.stageCount = 2;
-        create_info.pStages = stages;
-        create_info.pVertexInputState = &vertex_input_state;
-        create_info.pInputAssemblyState = &input_assembly_state;
-        create_info.pViewportState = &viewport_state;
-        create_info.pMultisampleState = &multisample_state;
-        create_info.pRasterizationState = &rasterization_state;
-        create_info.flags = VK_PIPELINE_CREATE_DISABLE_OPTIMIZATION_BIT;
-        create_info.layout = pipeline_layout.handle();
-        create_info.renderPass = renderPass();
-
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkVertexInputBindingDescription-stride-00619");
-        VkPipeline pipeline;
-        vkCreateGraphicsPipelines(m_device->device(), pipeline_cache, 1, &create_info, nullptr, &pipeline);
-        m_errorMonitor->VerifyFound();
-    }
-
-    vkDestroyPipelineCache(m_device->device(), pipeline_cache, nullptr);
+    const auto set_binding = [&](CreatePipelineHelper &helper) {
+        helper.vi_ci_.pVertexBindingDescriptions = &vertex_input_binding_description;
+        helper.vi_ci_.vertexBindingDescriptionCount = 1;
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_binding, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                      "VUID-VkVertexInputBindingDescription-stride-00619");
 }
 
 TEST_F(VkLayerTest, VUID_VkVertexInputAttributeDescription_location_00620) {
@@ -2858,91 +2295,17 @@ TEST_F(VkLayerTest, VUID_VkVertexInputAttributeDescription_location_00620) {
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VkPipelineCache pipeline_cache;
-    {
-        VkPipelineCacheCreateInfo create_info{};
-        create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
-
-        VkResult err = vkCreatePipelineCache(m_device->device(), &create_info, nullptr, &pipeline_cache);
-        ASSERT_VK_SUCCESS(err);
-    }
-
-    VkShaderObj vs(m_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
-    VkShaderObj fs(m_device, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this);
-
-    VkPipelineShaderStageCreateInfo stages[2]{{}};
-    stages[0] = vs.GetStageCreateInfo();
-    stages[1] = fs.GetStageCreateInfo();
-
     // Test when location is greater than or equal to VkPhysicalDeviceLimits::maxVertexInputAttributes.
     VkVertexInputAttributeDescription vertex_input_attribute_description{};
     vertex_input_attribute_description.location = m_device->props.limits.maxVertexInputAttributes;
 
-    VkPipelineVertexInputStateCreateInfo vertex_input_state{};
-    vertex_input_state.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-    vertex_input_state.pNext = nullptr;
-    vertex_input_state.vertexBindingDescriptionCount = 0;
-    vertex_input_state.pVertexBindingDescriptions = nullptr;
-    vertex_input_state.vertexAttributeDescriptionCount = 1;
-    vertex_input_state.pVertexAttributeDescriptions = &vertex_input_attribute_description;
-
-    VkPipelineInputAssemblyStateCreateInfo input_assembly_state{};
-    input_assembly_state.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-    input_assembly_state.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
-
-    VkViewport viewport = {0.0f, 0.0f, 64.0f, 64.0f, 0.0f, 1.0f};
-    VkRect2D scissor = {{0, 0}, {64, 64}};
-    VkPipelineViewportStateCreateInfo viewport_state{};
-    viewport_state.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-    viewport_state.viewportCount = 1;
-    viewport_state.pViewports = &viewport;
-    viewport_state.scissorCount = 1;
-    viewport_state.pScissors = &scissor;
-
-    VkPipelineMultisampleStateCreateInfo multisample_state{};
-    multisample_state.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-    multisample_state.pNext = nullptr;
-    multisample_state.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
-    multisample_state.sampleShadingEnable = 0;
-    multisample_state.minSampleShading = 1.0;
-    multisample_state.pSampleMask = nullptr;
-
-    VkPipelineRasterizationStateCreateInfo rasterization_state{};
-    rasterization_state.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-    rasterization_state.polygonMode = VK_POLYGON_MODE_FILL;
-    rasterization_state.cullMode = VK_CULL_MODE_BACK_BIT;
-    rasterization_state.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
-    rasterization_state.depthClampEnable = VK_FALSE;
-    rasterization_state.rasterizerDiscardEnable = VK_FALSE;
-    rasterization_state.depthBiasEnable = VK_FALSE;
-    rasterization_state.lineWidth = 1.0f;
-
-    const VkPipelineLayoutObj pipeline_layout(m_device);
-
-    {
-        VkGraphicsPipelineCreateInfo create_info{};
-        create_info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-        create_info.stageCount = 2;
-        create_info.pStages = stages;
-        create_info.pVertexInputState = &vertex_input_state;
-        create_info.pInputAssemblyState = &input_assembly_state;
-        create_info.pViewportState = &viewport_state;
-        create_info.pMultisampleState = &multisample_state;
-        create_info.pRasterizationState = &rasterization_state;
-        create_info.flags = VK_PIPELINE_CREATE_DISABLE_OPTIMIZATION_BIT;
-        create_info.layout = pipeline_layout.handle();
-        create_info.renderPass = renderPass();
-
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                             "VUID-VkVertexInputAttributeDescription-location-00620");
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                             "VUID-VkPipelineVertexInputStateCreateInfo-binding-00615");
-        VkPipeline pipeline;
-        vkCreateGraphicsPipelines(m_device->device(), pipeline_cache, 1, &create_info, nullptr, &pipeline);
-        m_errorMonitor->VerifyFound();
-    }
-
-    vkDestroyPipelineCache(m_device->device(), pipeline_cache, nullptr);
+    const auto set_attribute = [&](CreatePipelineHelper &helper) {
+        helper.vi_ci_.pVertexAttributeDescriptions = &vertex_input_attribute_description;
+        helper.vi_ci_.vertexAttributeDescriptionCount = 1;
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_attribute, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                      vector<string>{"VUID-VkVertexInputAttributeDescription-location-00620",
+                                                     "VUID-VkPipelineVertexInputStateCreateInfo-binding-00615"});
 }
 
 TEST_F(VkLayerTest, VUID_VkVertexInputAttributeDescription_binding_00621) {
@@ -2953,90 +2316,17 @@ TEST_F(VkLayerTest, VUID_VkVertexInputAttributeDescription_binding_00621) {
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VkPipelineCache pipeline_cache;
-    {
-        VkPipelineCacheCreateInfo create_info{};
-        create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
-
-        VkResult err = vkCreatePipelineCache(m_device->device(), &create_info, nullptr, &pipeline_cache);
-        ASSERT_VK_SUCCESS(err);
-    }
-
-    VkShaderObj vs(m_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
-    VkShaderObj fs(m_device, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this);
-
-    VkPipelineShaderStageCreateInfo stages[2]{{}};
-    stages[0] = vs.GetStageCreateInfo();
-    stages[1] = fs.GetStageCreateInfo();
-
     // Test when binding is greater than or equal to VkPhysicalDeviceLimits::maxVertexInputBindings.
     VkVertexInputAttributeDescription vertex_input_attribute_description{};
     vertex_input_attribute_description.binding = m_device->props.limits.maxVertexInputBindings;
 
-    VkPipelineVertexInputStateCreateInfo vertex_input_state{};
-    vertex_input_state.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-    vertex_input_state.pNext = nullptr;
-    vertex_input_state.vertexBindingDescriptionCount = 0;
-    vertex_input_state.pVertexBindingDescriptions = nullptr;
-    vertex_input_state.vertexAttributeDescriptionCount = 1;
-    vertex_input_state.pVertexAttributeDescriptions = &vertex_input_attribute_description;
-
-    VkPipelineInputAssemblyStateCreateInfo input_assembly_state{};
-    input_assembly_state.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-    input_assembly_state.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
-
-    VkViewport viewport = {0.0f, 0.0f, 64.0f, 64.0f, 0.0f, 1.0f};
-    VkRect2D scissor = {{0, 0}, {64, 64}};
-    VkPipelineViewportStateCreateInfo viewport_state{};
-    viewport_state.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-    viewport_state.viewportCount = 1;
-    viewport_state.pViewports = &viewport;
-    viewport_state.scissorCount = 1;
-    viewport_state.pScissors = &scissor;
-
-    VkPipelineMultisampleStateCreateInfo multisample_state{};
-    multisample_state.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-    multisample_state.pNext = nullptr;
-    multisample_state.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
-    multisample_state.sampleShadingEnable = 0;
-    multisample_state.minSampleShading = 1.0;
-    multisample_state.pSampleMask = nullptr;
-
-    VkPipelineRasterizationStateCreateInfo rasterization_state{};
-    rasterization_state.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-    rasterization_state.polygonMode = VK_POLYGON_MODE_FILL;
-    rasterization_state.cullMode = VK_CULL_MODE_BACK_BIT;
-    rasterization_state.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
-    rasterization_state.depthClampEnable = VK_FALSE;
-    rasterization_state.rasterizerDiscardEnable = VK_FALSE;
-    rasterization_state.depthBiasEnable = VK_FALSE;
-    rasterization_state.lineWidth = 1.0f;
-
-    const VkPipelineLayoutObj pipeline_layout(m_device);
-
-    {
-        VkGraphicsPipelineCreateInfo create_info{};
-        create_info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-        create_info.stageCount = 2;
-        create_info.pStages = stages;
-        create_info.pVertexInputState = &vertex_input_state;
-        create_info.pInputAssemblyState = &input_assembly_state;
-        create_info.pViewportState = &viewport_state;
-        create_info.pMultisampleState = &multisample_state;
-        create_info.pRasterizationState = &rasterization_state;
-        create_info.flags = VK_PIPELINE_CREATE_DISABLE_OPTIMIZATION_BIT;
-        create_info.layout = pipeline_layout.handle();
-        create_info.renderPass = renderPass();
-
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkVertexInputAttributeDescription-binding-00621");
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                             "VUID-VkPipelineVertexInputStateCreateInfo-binding-00615");
-        VkPipeline pipeline;
-        vkCreateGraphicsPipelines(m_device->device(), pipeline_cache, 1, &create_info, nullptr, &pipeline);
-        m_errorMonitor->VerifyFound();
-    }
-
-    vkDestroyPipelineCache(m_device->device(), pipeline_cache, nullptr);
+    const auto set_attribute = [&](CreatePipelineHelper &helper) {
+        helper.vi_ci_.pVertexAttributeDescriptions = &vertex_input_attribute_description;
+        helper.vi_ci_.vertexAttributeDescriptionCount = 1;
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_attribute, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                      vector<string>{"VUID-VkVertexInputAttributeDescription-binding-00621",
+                                                     "VUID-VkPipelineVertexInputStateCreateInfo-binding-00615"});
 }
 
 TEST_F(VkLayerTest, VUID_VkVertexInputAttributeDescription_offset_00622) {
@@ -3069,22 +2359,6 @@ TEST_F(VkLayerTest, VUID_VkVertexInputAttributeDescription_offset_00622) {
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VkPipelineCache pipeline_cache;
-    {
-        VkPipelineCacheCreateInfo create_info{};
-        create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
-
-        VkResult err = vkCreatePipelineCache(m_device->device(), &create_info, nullptr, &pipeline_cache);
-        ASSERT_VK_SUCCESS(err);
-    }
-
-    VkShaderObj vs(m_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
-    VkShaderObj fs(m_device, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this);
-
-    VkPipelineShaderStageCreateInfo stages[2]{{}};
-    stages[0] = vs.GetStageCreateInfo();
-    stages[1] = fs.GetStageCreateInfo();
-
     VkVertexInputBindingDescription vertex_input_binding_description{};
     vertex_input_binding_description.binding = 0;
     vertex_input_binding_description.stride = m_device->props.limits.maxVertexInputBindingStride;
@@ -3094,59 +2368,14 @@ TEST_F(VkLayerTest, VUID_VkVertexInputAttributeDescription_offset_00622) {
     vertex_input_attribute_description.format = VK_FORMAT_R8_UNORM;
     vertex_input_attribute_description.offset = maxVertexInputAttributeOffset + 1;
 
-    VkPipelineVertexInputStateCreateInfo vertex_input_state{};
-    vertex_input_state.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-    vertex_input_state.pNext = nullptr;
-    vertex_input_state.vertexBindingDescriptionCount = 1;
-    vertex_input_state.pVertexBindingDescriptions = &vertex_input_binding_description;
-    vertex_input_state.vertexAttributeDescriptionCount = 1;
-    vertex_input_state.pVertexAttributeDescriptions = &vertex_input_attribute_description;
-
-    VkPipelineInputAssemblyStateCreateInfo input_assembly_state{};
-    input_assembly_state.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-    input_assembly_state.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
-
-    VkPipelineMultisampleStateCreateInfo multisample_state{};
-    multisample_state.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-    multisample_state.pNext = nullptr;
-    multisample_state.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
-    multisample_state.sampleShadingEnable = 0;
-    multisample_state.minSampleShading = 1.0;
-    multisample_state.pSampleMask = nullptr;
-
-    VkPipelineRasterizationStateCreateInfo rasterization_state{};
-    rasterization_state.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-    rasterization_state.polygonMode = VK_POLYGON_MODE_FILL;
-    rasterization_state.cullMode = VK_CULL_MODE_BACK_BIT;
-    rasterization_state.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
-    rasterization_state.depthClampEnable = VK_FALSE;
-    rasterization_state.rasterizerDiscardEnable = VK_TRUE;
-    rasterization_state.depthBiasEnable = VK_FALSE;
-    rasterization_state.lineWidth = 1.0f;
-
-    const VkPipelineLayoutObj pipeline_layout(m_device);
-
-    {
-        VkGraphicsPipelineCreateInfo create_info{};
-        create_info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-        create_info.stageCount = 2;
-        create_info.pStages = stages;
-        create_info.pVertexInputState = &vertex_input_state;
-        create_info.pInputAssemblyState = &input_assembly_state;
-        create_info.pViewportState = nullptr;  // no viewport b/c rasterizer is disabled
-        create_info.pMultisampleState = &multisample_state;
-        create_info.pRasterizationState = &rasterization_state;
-        create_info.flags = VK_PIPELINE_CREATE_DISABLE_OPTIMIZATION_BIT;
-        create_info.layout = pipeline_layout.handle();
-        create_info.renderPass = renderPass();
-
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkVertexInputAttributeDescription-offset-00622");
-        VkPipeline pipeline;
-        vkCreateGraphicsPipelines(m_device->device(), pipeline_cache, 1, &create_info, nullptr, &pipeline);
-        m_errorMonitor->VerifyFound();
-    }
-
-    vkDestroyPipelineCache(m_device->device(), pipeline_cache, nullptr);
+    const auto set_attribute = [&](CreatePipelineHelper &helper) {
+        helper.vi_ci_.pVertexBindingDescriptions = &vertex_input_binding_description;
+        helper.vi_ci_.vertexBindingDescriptionCount = 1;
+        helper.vi_ci_.pVertexAttributeDescriptions = &vertex_input_attribute_description;
+        helper.vi_ci_.vertexAttributeDescriptionCount = 1;
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_attribute, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                      "VUID-VkVertexInputAttributeDescription-offset-00622");
 }
 
 TEST_F(VkLayerTest, NumSamplesMismatch) {
@@ -3206,14 +2435,9 @@ TEST_F(VkLayerTest, NumBlendAttachMismatch) {
     // Create Pipeline where the number of blend attachments doesn't match the
     // number of color attachments.  In this case, we don't add any color
     // blend attachments even though we have a color attachment.
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkGraphicsPipelineCreateInfo-attachmentCount-00746");
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-
-    OneOffDescriptorSet ds(m_device, {
-                                         {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                     });
 
     VkPipelineMultisampleStateCreateInfo pipe_ms_state_ci = {};
     pipe_ms_state_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
@@ -3223,17 +2447,12 @@ TEST_F(VkLayerTest, NumBlendAttachMismatch) {
     pipe_ms_state_ci.minSampleShading = 1.0;
     pipe_ms_state_ci.pSampleMask = NULL;
 
-    const VkPipelineLayoutObj pipeline_layout(m_device, {&ds.layout_});
-
-    VkShaderObj vs(m_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
-    VkShaderObj fs(m_device, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this);  // We shouldn't need a fragment shader
-    // but add it to be able to run on more devices
-    VkPipelineObj pipe(m_device);
-    pipe.AddShader(&vs);
-    pipe.AddShader(&fs);
-    pipe.SetMSAA(&pipe_ms_state_ci);
-    pipe.CreateVKPipeline(pipeline_layout.handle(), renderPass());
-    m_errorMonitor->VerifyFound();
+    const auto set_MSAA = [&](CreatePipelineHelper &helper) {
+        helper.pipe_ms_state_ci_ = pipe_ms_state_ci;
+        helper.cb_ci_.attachmentCount = 0;
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_MSAA, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                      "VUID-VkGraphicsPipelineCreateInfo-attachmentCount-00746");
 }
 
 TEST_F(VkLayerTest, CmdClearAttachmentTests) {
@@ -3241,32 +2460,6 @@ TEST_F(VkLayerTest, CmdClearAttachmentTests) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-
-    OneOffDescriptorSet ds(m_device, {
-                                         {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                     });
-
-    VkPipelineMultisampleStateCreateInfo pipe_ms_state_ci = {};
-    pipe_ms_state_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-    pipe_ms_state_ci.pNext = NULL;
-    pipe_ms_state_ci.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
-    pipe_ms_state_ci.sampleShadingEnable = 0;
-    pipe_ms_state_ci.minSampleShading = 1.0;
-    pipe_ms_state_ci.pSampleMask = NULL;
-
-    const VkPipelineLayoutObj pipeline_layout(m_device, {&ds.layout_});
-
-    VkShaderObj vs(m_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
-    //  We shouldn't need a fragment shader but add it to be able to run
-    //  on more devices
-    VkShaderObj fs(m_device, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this);
-
-    VkPipelineObj pipe(m_device);
-    pipe.AddShader(&vs);
-    pipe.AddShader(&fs);
-    pipe.AddDefaultColorAttachment();
-    pipe.SetMSAA(&pipe_ms_state_ci);
-    pipe.CreateVKPipeline(pipeline_layout.handle(), renderPass());
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
@@ -3323,10 +2516,6 @@ TEST_F(VkLayerTest, VtxBufferBadIndex) {
     ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    OneOffDescriptorSet ds(m_device, {
-                                         {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                     });
-
     VkPipelineMultisampleStateCreateInfo pipe_ms_state_ci = {};
     pipe_ms_state_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
     pipe_ms_state_ci.pNext = NULL;
@@ -3335,25 +2524,17 @@ TEST_F(VkLayerTest, VtxBufferBadIndex) {
     pipe_ms_state_ci.minSampleShading = 1.0;
     pipe_ms_state_ci.pSampleMask = NULL;
 
-    const VkPipelineLayoutObj pipeline_layout(m_device, {&ds.layout_});
-
-    VkShaderObj vs(m_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
-    VkShaderObj fs(m_device, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this);  // We shouldn't need a fragment shader
-    // but add it to be able to run on more devices
-    VkPipelineObj pipe(m_device);
-    pipe.AddShader(&vs);
-    pipe.AddShader(&fs);
-    pipe.AddDefaultColorAttachment();
-    pipe.SetMSAA(&pipe_ms_state_ci);
-    pipe.SetViewport(m_viewports);
-    pipe.SetScissor(m_scissors);
-    pipe.CreateVKPipeline(pipeline_layout.handle(), renderPass());
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.pipe_ms_state_ci_ = pipe_ms_state_ci;
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vkCmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
+    vkCmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
     // Don't care about actual data, just need to get to draw to flag error
-    static const float vbo_data[3] = {1.f, 0.f, 1.f};
+    const float vbo_data[3] = {1.f, 0.f, 1.f};
     VkConstantBufferObj vbo(m_device, sizeof(vbo_data), (const void *)&vbo_data, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
     m_commandBuffer->BindVertexBuffer(&vbo, (VkDeviceSize)0, 1);  // VBO idx 1, but no VBO in PSO
     m_commandBuffer->Draw(1, 0, 0, 0);
@@ -3373,8 +2554,6 @@ TEST_F(VkLayerTest, InvalidVertexBindingDescriptions) {
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    const VkPipelineLayoutObj pipeline_layout(m_device);
-
     const uint32_t binding_count = m_device->props.limits.maxVertexInputBindings + 1;
 
     std::vector<VkVertexInputBindingDescription> input_bindings(binding_count);
@@ -3392,22 +2571,16 @@ TEST_F(VkLayerTest, InvalidVertexBindingDescriptions) {
     input_attrib.format = VK_FORMAT_R32G32B32_SFLOAT;
     input_attrib.offset = 0;
 
-    VkShaderObj vs(m_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
-    VkShaderObj fs(m_device, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this);
-
-    VkPipelineObj pipe(m_device);
-    pipe.AddDefaultColorAttachment();
-    pipe.AddShader(&vs);
-    pipe.AddShader(&fs);
-    pipe.AddVertexInputBindings(input_bindings.data(), binding_count);
-    pipe.AddVertexInputAttribs(&input_attrib, 1);
-
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                         "VUID-VkPipelineVertexInputStateCreateInfo-vertexBindingDescriptionCount-00613");
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                         "VUID-VkPipelineVertexInputStateCreateInfo-pVertexBindingDescriptions-00616");
-    pipe.CreateVKPipeline(pipeline_layout.handle(), renderPass());
-    m_errorMonitor->VerifyFound();
+    const auto set_Info = [&](CreatePipelineHelper &helper) {
+        helper.vi_ci_.pVertexBindingDescriptions = input_bindings.data();
+        helper.vi_ci_.vertexBindingDescriptionCount = binding_count;
+        helper.vi_ci_.pVertexAttributeDescriptions = &input_attrib;
+        helper.vi_ci_.vertexAttributeDescriptionCount = 1;
+    };
+    CreatePipelineHelper::OneshotTest(
+        *this, set_Info, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+        vector<string>{"VUID-VkPipelineVertexInputStateCreateInfo-vertexBindingDescriptionCount-00613",
+                       "VUID-VkPipelineVertexInputStateCreateInfo-pVertexBindingDescriptions-00616"});
 }
 
 TEST_F(VkLayerTest, InvalidVertexAttributeDescriptions) {
@@ -3419,8 +2592,6 @@ TEST_F(VkLayerTest, InvalidVertexAttributeDescriptions) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-
-    const VkPipelineLayoutObj pipeline_layout(m_device);
 
     VkVertexInputBindingDescription input_binding;
     input_binding.binding = 0;
@@ -3440,24 +2611,19 @@ TEST_F(VkLayerTest, InvalidVertexAttributeDescriptions) {
     // Let the last input_attribs description use binding which is not defined
     input_attribs[attribute_count - 1].binding = 1;
 
-    VkShaderObj vs(m_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
-    VkShaderObj fs(m_device, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this);
-
-    VkPipelineObj pipe(m_device);
-    pipe.AddDefaultColorAttachment();
-    pipe.AddShader(&vs);
-    pipe.AddShader(&fs);
-    pipe.AddVertexInputBindings(&input_binding, 1);
-    pipe.AddVertexInputAttribs(input_attribs.data(), attribute_count);
-
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                         "VUID-VkPipelineVertexInputStateCreateInfo-vertexAttributeDescriptionCount-00614");
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkPipelineVertexInputStateCreateInfo-binding-00615");
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                         "VUID-VkPipelineVertexInputStateCreateInfo-pVertexAttributeDescriptions-00617");
-    pipe.CreateVKPipeline(pipeline_layout.handle(), renderPass());
-    m_errorMonitor->VerifyFound();
+    const auto set_Info = [&](CreatePipelineHelper &helper) {
+        helper.vi_ci_.pVertexBindingDescriptions = &input_binding;
+        helper.vi_ci_.vertexBindingDescriptionCount = 1;
+        helper.vi_ci_.pVertexAttributeDescriptions = input_attribs.data();
+        helper.vi_ci_.vertexAttributeDescriptionCount = attribute_count;
+    };
+    CreatePipelineHelper::OneshotTest(
+        *this, set_Info, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+        vector<string>{"VUID-VkPipelineVertexInputStateCreateInfo-vertexAttributeDescriptionCount-00614",
+                       "VUID-VkPipelineVertexInputStateCreateInfo-binding-00615",
+                       "VUID-VkPipelineVertexInputStateCreateInfo-pVertexAttributeDescriptions-00617"});
 }
+
 TEST_F(VkLayerTest, ColorBlendInvalidLogicOp) {
     TEST_DESCRIPTION("Attempt to use invalid VkPipelineColorBlendStateCreateInfo::logicOp value.");
 
@@ -3496,52 +2662,48 @@ TEST_F(VkLayerTest, ColorBlendUnsupportedDualSourceBlend) {
     ASSERT_NO_FATAL_FAILURE(Init(&features));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    const auto set_dsb_src_color_enable = [](CreatePipelineHelper &helper) {
-        helper.cb_attachments_.blendEnable = VK_TRUE;
-        helper.cb_attachments_.srcColorBlendFactor = VK_BLEND_FACTOR_SRC1_COLOR;  // bad!
-        helper.cb_attachments_.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR;
-        helper.cb_attachments_.colorBlendOp = VK_BLEND_OP_ADD;
-        helper.cb_attachments_.srcAlphaBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
-        helper.cb_attachments_.dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
-        helper.cb_attachments_.alphaBlendOp = VK_BLEND_OP_ADD;
-    };
+    VkPipelineColorBlendAttachmentState cb_attachments = {};
+
+    const auto set_dsb_src_color_enable = [&](CreatePipelineHelper &helper) { helper.cb_attachments_ = cb_attachments; };
+
+    cb_attachments.blendEnable = VK_TRUE;
+    cb_attachments.srcColorBlendFactor = VK_BLEND_FACTOR_SRC1_COLOR;  // bad!
+    cb_attachments.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR;
+    cb_attachments.colorBlendOp = VK_BLEND_OP_ADD;
+    cb_attachments.srcAlphaBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+    cb_attachments.dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+    cb_attachments.alphaBlendOp = VK_BLEND_OP_ADD;
     CreatePipelineHelper::OneshotTest(*this, set_dsb_src_color_enable, VK_DEBUG_REPORT_ERROR_BIT_EXT,
                                       "VUID-VkPipelineColorBlendAttachmentState-srcColorBlendFactor-00608");
 
-    const auto set_dsb_dst_color_enable = [](CreatePipelineHelper &helper) {
-        helper.cb_attachments_.blendEnable = VK_TRUE;
-        helper.cb_attachments_.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_COLOR;
-        helper.cb_attachments_.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC1_COLOR;  // bad
-        helper.cb_attachments_.colorBlendOp = VK_BLEND_OP_ADD;
-        helper.cb_attachments_.srcAlphaBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
-        helper.cb_attachments_.dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
-        helper.cb_attachments_.alphaBlendOp = VK_BLEND_OP_ADD;
-    };
-    CreatePipelineHelper::OneshotTest(*this, set_dsb_dst_color_enable, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+    cb_attachments.blendEnable = VK_TRUE;
+    cb_attachments.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_COLOR;
+    cb_attachments.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC1_COLOR;  // bad
+    cb_attachments.colorBlendOp = VK_BLEND_OP_ADD;
+    cb_attachments.srcAlphaBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+    cb_attachments.dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+    cb_attachments.alphaBlendOp = VK_BLEND_OP_ADD;
+    CreatePipelineHelper::OneshotTest(*this, set_dsb_src_color_enable, VK_DEBUG_REPORT_ERROR_BIT_EXT,
                                       "VUID-VkPipelineColorBlendAttachmentState-dstColorBlendFactor-00609");
 
-    const auto set_dsb_src_alpha_enable = [](CreatePipelineHelper &helper) {
-        helper.cb_attachments_.blendEnable = VK_TRUE;
-        helper.cb_attachments_.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_COLOR;
-        helper.cb_attachments_.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR;
-        helper.cb_attachments_.colorBlendOp = VK_BLEND_OP_ADD;
-        helper.cb_attachments_.srcAlphaBlendFactor = VK_BLEND_FACTOR_SRC1_ALPHA;  // bad
-        helper.cb_attachments_.dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
-        helper.cb_attachments_.alphaBlendOp = VK_BLEND_OP_ADD;
-    };
-    CreatePipelineHelper::OneshotTest(*this, set_dsb_src_alpha_enable, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+    cb_attachments.blendEnable = VK_TRUE;
+    cb_attachments.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_COLOR;
+    cb_attachments.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR;
+    cb_attachments.colorBlendOp = VK_BLEND_OP_ADD;
+    cb_attachments.srcAlphaBlendFactor = VK_BLEND_FACTOR_SRC1_ALPHA;  // bad
+    cb_attachments.dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+    cb_attachments.alphaBlendOp = VK_BLEND_OP_ADD;
+    CreatePipelineHelper::OneshotTest(*this, set_dsb_src_color_enable, VK_DEBUG_REPORT_ERROR_BIT_EXT,
                                       "VUID-VkPipelineColorBlendAttachmentState-srcAlphaBlendFactor-00610");
 
-    const auto set_dsb_dst_alpha_enable = [](CreatePipelineHelper &helper) {
-        helper.cb_attachments_.blendEnable = VK_TRUE;
-        helper.cb_attachments_.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_COLOR;
-        helper.cb_attachments_.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR;
-        helper.cb_attachments_.colorBlendOp = VK_BLEND_OP_ADD;
-        helper.cb_attachments_.srcAlphaBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
-        helper.cb_attachments_.dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC1_ALPHA;  // bad!
-        helper.cb_attachments_.alphaBlendOp = VK_BLEND_OP_ADD;
-    };
-    CreatePipelineHelper::OneshotTest(*this, set_dsb_dst_alpha_enable, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+    cb_attachments.blendEnable = VK_TRUE;
+    cb_attachments.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_COLOR;
+    cb_attachments.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR;
+    cb_attachments.colorBlendOp = VK_BLEND_OP_ADD;
+    cb_attachments.srcAlphaBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+    cb_attachments.dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC1_ALPHA;  // bad!
+    cb_attachments.alphaBlendOp = VK_BLEND_OP_ADD;
+    CreatePipelineHelper::OneshotTest(*this, set_dsb_src_color_enable, VK_DEBUG_REPORT_ERROR_BIT_EXT,
                                       "VUID-VkPipelineColorBlendAttachmentState-dstAlphaBlendFactor-00611");
 }
 
@@ -3570,22 +2732,13 @@ TEST_F(VkLayerTest, InvalidSPIRVCodeSize) {
 
     m_errorMonitor->VerifyFound();
 
-    char const *vsSource =
-        "#version 450\n"
-        "\n"
-        "layout(location=0) out float x;\n"
-        "void main(){\n"
-        "   gl_Position = vec4(1);\n"
-        "   x = 0;\n"
-        "}\n";
-
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkShaderModuleCreateInfo-pCode-01376");
     std::vector<unsigned int> shader;
     VkShaderModuleCreateInfo module_create_info;
     VkShaderModule shader_module;
     module_create_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
     module_create_info.pNext = NULL;
-    this->GLSLtoSPV(VK_SHADER_STAGE_VERTEX_BIT, vsSource, shader);
+    this->GLSLtoSPV(VK_SHADER_STAGE_VERTEX_BIT, bindStateVertShaderText, shader);
     module_create_info.pCode = shader.data();
     // Introduce failure by making codeSize a non-multiple of 4
     module_create_info.codeSize = shader.size() * sizeof(unsigned int) - 1;
@@ -3623,42 +2776,24 @@ TEST_F(VkLayerTest, InvalidSPIRVMagic) {
 
 TEST_F(VkLayerTest, CreatePipelineVertexOutputNotConsumed) {
     TEST_DESCRIPTION("Test that a warning is produced for a vertex output that is not consumed by the fragment stage");
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT, "not consumed by fragment shader");
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     char const *vsSource =
         "#version 450\n"
-        "\n"
         "layout(location=0) out float x;\n"
         "void main(){\n"
         "   gl_Position = vec4(1);\n"
         "   x = 0;\n"
         "}\n";
-    char const *fsSource =
-        "#version 450\n"
-        "\n"
-        "layout(location=0) out vec4 color;\n"
-        "void main(){\n"
-        "   color = vec4(1);\n"
-        "}\n";
-
     VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
-    VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
 
-    VkPipelineObj pipe(m_device);
-    pipe.AddDefaultColorAttachment();
-    pipe.AddShader(&vs);
-    pipe.AddShader(&fs);
-
-    VkDescriptorSetObj descriptorSet(m_device);
-    descriptorSet.AppendDummy();
-    descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
-
-    pipe.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderPass());
-
-    m_errorMonitor->VerifyFound();
+    const auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_info, VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
+                                      "not consumed by fragment shader");
 }
 
 TEST_F(VkLayerTest, CreatePipelineCheckShaderBadSpecialization) {
@@ -3667,87 +2802,14 @@ TEST_F(VkLayerTest, CreatePipelineCheckShaderBadSpecialization) {
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    const char *bad_specialization_message =
-        "Specialization entry 0 (for constant id 0) references memory outside provided specialization data ";
-
-    char const *vsSource =
-        "#version 450\n"
-        "\n"
-        "void main(){\n"
-        "   gl_Position = vec4(1);\n"
-        "}\n";
-
     char const *fsSource =
         "#version 450\n"
-        "\n"
         "layout (constant_id = 0) const float r = 0.0f;\n"
         "layout(location = 0) out vec4 uFragColor;\n"
         "void main(){\n"
         "   uFragColor = vec4(r,1,0,1);\n"
         "}\n";
-
-    VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
     VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
-
-    const VkPipelineLayoutObj pipeline_layout(m_device);
-
-    VkPipelineViewportStateCreateInfo vp_state_create_info = {};
-    vp_state_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-    vp_state_create_info.viewportCount = 1;
-    VkViewport viewport = {0.0f, 0.0f, 64.0f, 64.0f, 0.0f, 1.0f};
-    vp_state_create_info.pViewports = &viewport;
-    vp_state_create_info.scissorCount = 1;
-
-    VkDynamicState scissor_state = VK_DYNAMIC_STATE_SCISSOR;
-
-    VkPipelineDynamicStateCreateInfo pipeline_dynamic_state_create_info = {};
-    pipeline_dynamic_state_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-    pipeline_dynamic_state_create_info.dynamicStateCount = 1;
-    pipeline_dynamic_state_create_info.pDynamicStates = &scissor_state;
-
-    VkPipelineShaderStageCreateInfo shader_stage_create_info[2] = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-
-    VkPipelineVertexInputStateCreateInfo vertex_input_create_info = {};
-    vertex_input_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-
-    VkPipelineInputAssemblyStateCreateInfo input_assembly_create_info = {};
-    input_assembly_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-    input_assembly_create_info.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
-
-    VkPipelineRasterizationStateCreateInfo rasterization_state_create_info = {};
-    rasterization_state_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-    rasterization_state_create_info.pNext = nullptr;
-    rasterization_state_create_info.lineWidth = 1.0f;
-    rasterization_state_create_info.rasterizerDiscardEnable = true;
-
-    VkPipelineColorBlendAttachmentState color_blend_attachment_state = {};
-    color_blend_attachment_state.blendEnable = VK_FALSE;
-    color_blend_attachment_state.colorWriteMask = 0xf;
-
-    VkPipelineColorBlendStateCreateInfo color_blend_state_create_info = {};
-    color_blend_state_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-    color_blend_state_create_info.attachmentCount = 1;
-    color_blend_state_create_info.pAttachments = &color_blend_attachment_state;
-
-    VkGraphicsPipelineCreateInfo graphicspipe_create_info = {};
-    graphicspipe_create_info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-    graphicspipe_create_info.stageCount = 2;
-    graphicspipe_create_info.pStages = shader_stage_create_info;
-    graphicspipe_create_info.pVertexInputState = &vertex_input_create_info;
-    graphicspipe_create_info.pInputAssemblyState = &input_assembly_create_info;
-    graphicspipe_create_info.pViewportState = &vp_state_create_info;
-    graphicspipe_create_info.pRasterizationState = &rasterization_state_create_info;
-    graphicspipe_create_info.pColorBlendState = &color_blend_state_create_info;
-    graphicspipe_create_info.pDynamicState = &pipeline_dynamic_state_create_info;
-    graphicspipe_create_info.flags = VK_PIPELINE_CREATE_DISABLE_OPTIMIZATION_BIT;
-    graphicspipe_create_info.layout = pipeline_layout.handle();
-    graphicspipe_create_info.renderPass = renderPass();
-
-    VkPipelineCacheCreateInfo pipeline_cache_create_info = {};
-    pipeline_cache_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
-
-    VkPipelineCache pipelineCache;
-    ASSERT_VK_SUCCESS(vkCreatePipelineCache(m_device->device(), &pipeline_cache_create_info, nullptr, &pipelineCache));
 
     // This structure maps constant ids to data locations.
     const VkSpecializationMapEntry entry =
@@ -3763,14 +2825,14 @@ TEST_F(VkLayerTest, CreatePipelineCheckShaderBadSpecialization) {
         1 * sizeof(float),
         &data,
     };
-    shader_stage_create_info[0].pSpecializationInfo = &specialization_info;
 
-    VkPipeline pipeline;
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, bad_specialization_message);
-    vkCreateGraphicsPipelines(m_device->device(), pipelineCache, 1, &graphicspipe_create_info, nullptr, &pipeline);
-    m_errorMonitor->VerifyFound();
-
-    vkDestroyPipelineCache(m_device->device(), pipelineCache, nullptr);
+    const auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+        helper.shader_stages_[0].pSpecializationInfo = &specialization_info;
+    };
+    CreatePipelineHelper::OneshotTest(
+        *this, set_info, VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
+        "Specialization entry 0 (for constant id 0) references memory outside provided specialization data ");
 }
 
 TEST_F(VkLayerTest, CreatePipelineCheckShaderDescriptorTypeMismatch) {
@@ -3778,8 +2840,6 @@ TEST_F(VkLayerTest, CreatePipelineCheckShaderDescriptorTypeMismatch) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-
-    const char *descriptor_type_mismatch_message = "Type mismatch on descriptor slot 0.0 ";
 
     OneOffDescriptorSet ds(m_device, {
                                          {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
@@ -3795,26 +2855,16 @@ TEST_F(VkLayerTest, CreatePipelineCheckShaderDescriptorTypeMismatch) {
         "   gl_Position = ubuf.mvp * vec4(1);\n"
         "}\n";
 
-    char const *fsSource =
-        "#version 450\n"
-        "\n"
-        "layout(location = 0) out vec4 uFragColor;\n"
-        "void main(){\n"
-        "   uFragColor = vec4(0,1,0,1);\n"
-        "}\n";
-
     VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
-    VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
 
-    const VkPipelineLayoutObj pipeline_layout(m_device, {&ds.layout_});
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+    pipe.InitState();
+    pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&ds.layout_});
 
-    VkPipelineObj pipe(m_device);
-    pipe.AddDefaultColorAttachment();
-    pipe.AddShader(&vs);
-    pipe.AddShader(&fs);
-
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, descriptor_type_mismatch_message);
-    pipe.CreateVKPipeline(pipeline_layout.handle(), renderPass());
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "Type mismatch on descriptor slot 0.0 ");
+    pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
 
@@ -3824,8 +2874,6 @@ TEST_F(VkLayerTest, CreatePipelineCheckShaderDescriptorNotAccessible) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-
-    const char *descriptor_not_accessible_message = "Shader uses descriptor slot 0.0 ";
 
     OneOffDescriptorSet ds(m_device, {
                                          {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT /*!*/, nullptr},
@@ -3841,26 +2889,16 @@ TEST_F(VkLayerTest, CreatePipelineCheckShaderDescriptorNotAccessible) {
         "   gl_Position = ubuf.mvp * vec4(1);\n"
         "}\n";
 
-    char const *fsSource =
-        "#version 450\n"
-        "\n"
-        "layout(location = 0) out vec4 uFragColor;\n"
-        "void main(){\n"
-        "   uFragColor = vec4(0,1,0,1);\n"
-        "}\n";
-
     VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
-    VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
 
-    const VkPipelineLayoutObj pipeline_layout(m_device, {&ds.layout_});
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+    pipe.InitState();
+    pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&ds.layout_});
 
-    VkPipelineObj pipe(m_device);
-    pipe.AddDefaultColorAttachment();
-    pipe.AddShader(&vs);
-    pipe.AddShader(&fs);
-
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, descriptor_not_accessible_message);
-    pipe.CreateVKPipeline(pipeline_layout.handle(), renderPass());
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "Shader uses descriptor slot 0.0 ");
+    pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
 
@@ -3872,9 +2910,6 @@ TEST_F(VkLayerTest, CreatePipelineCheckShaderPushConstantNotAccessible) {
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    const char *push_constant_not_accessible_message =
-        "Push constant range covering variable starting at offset 0 not accessible from stage VK_SHADER_STAGE_VERTEX_BIT";
-
     char const *vsSource =
         "#version 450\n"
         "\n"
@@ -3883,16 +2918,7 @@ TEST_F(VkLayerTest, CreatePipelineCheckShaderPushConstantNotAccessible) {
         "   gl_Position = vec4(consts.x);\n"
         "}\n";
 
-    char const *fsSource =
-        "#version 450\n"
-        "\n"
-        "layout(location = 0) out vec4 uFragColor;\n"
-        "void main(){\n"
-        "   uFragColor = vec4(0,1,0,1);\n"
-        "}\n";
-
     VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
-    VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
 
     // Set up a push constant range
     VkPushConstantRange push_constant_range = {};
@@ -3902,13 +2928,16 @@ TEST_F(VkLayerTest, CreatePipelineCheckShaderPushConstantNotAccessible) {
 
     const VkPipelineLayoutObj pipeline_layout(m_device, {}, {push_constant_range});
 
-    VkPipelineObj pipe(m_device);
-    pipe.AddDefaultColorAttachment();
-    pipe.AddShader(&vs);
-    pipe.AddShader(&fs);
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+    pipe.InitState();
+    pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {}, {push_constant_range});
 
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, push_constant_not_accessible_message);
-    pipe.CreateVKPipeline(pipeline_layout.handle(), renderPass());
+    m_errorMonitor->SetDesiredFailureMsg(
+        VK_DEBUG_REPORT_ERROR_BIT_EXT,
+        "Push constant range covering variable starting at offset 0 not accessible from stage VK_SHADER_STAGE_VERTEX_BIT");
+    pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
 
@@ -3916,26 +2945,16 @@ TEST_F(VkLayerTest, CreatePipelineCheckShaderNotEnabled) {
     TEST_DESCRIPTION(
         "Create a graphics pipeline in which a capability declared by the shader requires a feature not enabled on the device.");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-
-    const char *feature_not_enabled_message =
-        "Shader requires VkPhysicalDeviceFeatures::shaderFloat64 but is not enabled on the device";
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
 
     // Some awkward steps are required to test with custom device features.
-    std::vector<const char *> device_extension_names;
-    auto features = m_device->phy().features();
+    VkPhysicalDeviceFeatures device_features = {};
     // Disable support for 64 bit floats
-    features.shaderFloat64 = false;
+    device_features.shaderFloat64 = false;
     // The sacrificial device object
-    VkDeviceObj test_device(0, gpu(), device_extension_names, &features);
+    ASSERT_NO_FATAL_FAILURE(InitState(&device_features));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    char const *vsSource =
-        "#version 450\n"
-        "\n"
-        "void main(){\n"
-        "   gl_Position = vec4(1);\n"
-        "}\n";
     char const *fsSource =
         "#version 450\n"
         "\n"
@@ -3944,21 +2963,17 @@ TEST_F(VkLayerTest, CreatePipelineCheckShaderNotEnabled) {
         "   dvec4 green = vec4(0.0, 1.0, 0.0, 1.0);\n"
         "   color = vec4(green);\n"
         "}\n";
+    VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
 
-    VkShaderObj vs(&test_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
-    VkShaderObj fs(&test_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.InitState();
+    pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device);
 
-    VkRenderpassObj render_pass(&test_device);
-
-    VkPipelineObj pipe(&test_device);
-    pipe.AddDefaultColorAttachment();
-    pipe.AddShader(&vs);
-    pipe.AddShader(&fs);
-
-    const VkPipelineLayoutObj pipeline_layout(&test_device);
-
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, feature_not_enabled_message);
-    pipe.CreateVKPipeline(pipeline_layout.handle(), render_pass.handle());
+    m_errorMonitor->SetDesiredFailureMsg(
+        VK_DEBUG_REPORT_ERROR_BIT_EXT, "Shader requires VkPhysicalDeviceFeatures::shaderFloat64 but is not enabled on the device");
+    pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
 
@@ -4000,17 +3015,9 @@ TEST_F(VkLayerTest, CreatePipelineFragmentInputNotProvided) {
     TEST_DESCRIPTION(
         "Test that an error is produced for a fragment shader input which is not present in the outputs of the previous stage");
 
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "not written by vertex shader");
-
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    char const *vsSource =
-        "#version 450\n"
-        "\n"
-        "void main(){\n"
-        "   gl_Position = vec4(1);\n"
-        "}\n";
     char const *fsSource =
         "#version 450\n"
         "\n"
@@ -4019,39 +3026,22 @@ TEST_F(VkLayerTest, CreatePipelineFragmentInputNotProvided) {
         "void main(){\n"
         "   color = vec4(x);\n"
         "}\n";
-
-    VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
     VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
 
-    VkPipelineObj pipe(m_device);
-    pipe.AddDefaultColorAttachment();
-    pipe.AddShader(&vs);
-    pipe.AddShader(&fs);
-
-    VkDescriptorSetObj descriptorSet(m_device);
-    descriptorSet.AppendDummy();
-    descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
-
-    pipe.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderPass());
-
-    m_errorMonitor->VerifyFound();
+    const auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT, "not written by vertex shader");
 }
 
 TEST_F(VkLayerTest, CreatePipelineFragmentInputNotProvidedInBlock) {
     TEST_DESCRIPTION(
         "Test that an error is produced for a fragment shader input within an interace block, which is not present in the outputs "
         "of the previous stage.");
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "not written by vertex shader");
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    char const *vsSource =
-        "#version 450\n"
-        "\n"
-        "void main(){\n"
-        "   gl_Position = vec4(1);\n"
-        "}\n";
     char const *fsSource =
         "#version 450\n"
         "\n"
@@ -4061,28 +3051,16 @@ TEST_F(VkLayerTest, CreatePipelineFragmentInputNotProvidedInBlock) {
         "   color = vec4(ins.x);\n"
         "}\n";
 
-    VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
     VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
 
-    VkPipelineObj pipe(m_device);
-    pipe.AddDefaultColorAttachment();
-    pipe.AddShader(&vs);
-    pipe.AddShader(&fs);
-
-    VkDescriptorSetObj descriptorSet(m_device);
-    descriptorSet.AppendDummy();
-    descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
-
-    pipe.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderPass());
-
-    m_errorMonitor->VerifyFound();
+    const auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT, "not written by vertex shader");
 }
 
 TEST_F(VkLayerTest, CreatePipelineVsFsTypeMismatchArraySize) {
     TEST_DESCRIPTION("Test that an error is produced for mismatched array sizes across the vertex->fragment shader interface");
-    m_errorMonitor->SetDesiredFailureMsg(
-        VK_DEBUG_REPORT_ERROR_BIT_EXT,
-        "Type mismatch on location 0.0: 'ptr to output arr[2] of float32' vs 'ptr to input arr[1] of float32'");
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -4107,23 +3085,16 @@ TEST_F(VkLayerTest, CreatePipelineVsFsTypeMismatchArraySize) {
     VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
     VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
 
-    VkPipelineObj pipe(m_device);
-    pipe.AddDefaultColorAttachment();
-    pipe.AddShader(&vs);
-    pipe.AddShader(&fs);
-
-    VkDescriptorSetObj descriptorSet(m_device);
-    descriptorSet.AppendDummy();
-    descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
-
-    pipe.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderPass());
-
-    m_errorMonitor->VerifyFound();
+    const auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    };
+    CreatePipelineHelper::OneshotTest(
+        *this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+        "Type mismatch on location 0.0: 'ptr to output arr[2] of float32' vs 'ptr to input arr[1] of float32'");
 }
 
 TEST_F(VkLayerTest, CreatePipelineVsFsTypeMismatch) {
     TEST_DESCRIPTION("Test that an error is produced for mismatched types across the vertex->fragment shader interface");
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "Type mismatch on location 0");
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -4148,25 +3119,16 @@ TEST_F(VkLayerTest, CreatePipelineVsFsTypeMismatch) {
     VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
     VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
 
-    VkPipelineObj pipe(m_device);
-    pipe.AddDefaultColorAttachment();
-    pipe.AddShader(&vs);
-    pipe.AddShader(&fs);
-
-    VkDescriptorSetObj descriptorSet(m_device);
-    descriptorSet.AppendDummy();
-    descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
-
-    pipe.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderPass());
-
-    m_errorMonitor->VerifyFound();
+    const auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT, "Type mismatch on location 0");
 }
 
 TEST_F(VkLayerTest, CreatePipelineVsFsTypeMismatchInBlock) {
     TEST_DESCRIPTION(
         "Test that an error is produced for mismatched types across the vertex->fragment shader interface, when the variable is "
         "contained within an interface block");
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "Type mismatch on location 0");
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -4191,25 +3153,16 @@ TEST_F(VkLayerTest, CreatePipelineVsFsTypeMismatchInBlock) {
     VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
     VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
 
-    VkPipelineObj pipe(m_device);
-    pipe.AddDefaultColorAttachment();
-    pipe.AddShader(&vs);
-    pipe.AddShader(&fs);
-
-    VkDescriptorSetObj descriptorSet(m_device);
-    descriptorSet.AppendDummy();
-    descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
-
-    pipe.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderPass());
-
-    m_errorMonitor->VerifyFound();
+    const auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT, "Type mismatch on location 0");
 }
 
 TEST_F(VkLayerTest, CreatePipelineVsFsMismatchByLocation) {
     TEST_DESCRIPTION(
         "Test that an error is produced for location mismatches across the vertex->fragment shader interface; This should manifest "
         "as a not-written/not-consumed pair, but flushes out broken walking of the interfaces");
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "location 0.0 which is not written by vertex shader");
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -4234,25 +3187,17 @@ TEST_F(VkLayerTest, CreatePipelineVsFsMismatchByLocation) {
     VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
     VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
 
-    VkPipelineObj pipe(m_device);
-    pipe.AddDefaultColorAttachment();
-    pipe.AddShader(&vs);
-    pipe.AddShader(&fs);
-
-    VkDescriptorSetObj descriptorSet(m_device);
-    descriptorSet.AppendDummy();
-    descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
-
-    pipe.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderPass());
-
-    m_errorMonitor->VerifyFound();
+    const auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                      "location 0.0 which is not written by vertex shader");
 }
 
 TEST_F(VkLayerTest, CreatePipelineVsFsMismatchByComponent) {
     TEST_DESCRIPTION(
         "Test that an error is produced for component mismatches across the vertex->fragment shader interface. It's not enough to "
         "have the same set of locations in use; matching is defined in terms of spirv variables.");
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "location 0.1 which is not written by vertex shader");
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -4277,18 +3222,11 @@ TEST_F(VkLayerTest, CreatePipelineVsFsMismatchByComponent) {
     VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
     VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
 
-    VkPipelineObj pipe(m_device);
-    pipe.AddDefaultColorAttachment();
-    pipe.AddShader(&vs);
-    pipe.AddShader(&fs);
-
-    VkDescriptorSetObj descriptorSet(m_device);
-    descriptorSet.AppendDummy();
-    descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
-
-    pipe.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderPass());
-
-    m_errorMonitor->VerifyFound();
+    const auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                      "location 0.1 which is not written by vertex shader");
 }
 
 TEST_F(VkLayerTest, CreatePipelineVsFsMismatchByPrecision) {
@@ -4310,20 +3248,10 @@ TEST_F(VkLayerTest, CreatePipelineVsFsMismatchByPrecision) {
     VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
     VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
 
-    VkPipelineObj pipe(m_device);
-    pipe.AddDefaultColorAttachment();
-    pipe.AddShader(&vs);
-    pipe.AddShader(&fs);
-
-    VkDescriptorSetObj descriptorSet(m_device);
-    descriptorSet.AppendDummy();
-    descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
-
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "differ in precision");
-
-    pipe.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderPass());
-
-    m_errorMonitor->VerifyFound();
+    const auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT, "differ in precision");
 }
 
 TEST_F(VkLayerTest, CreatePipelineVsFsMismatchByPrecisionBlock) {
@@ -4345,25 +3273,14 @@ TEST_F(VkLayerTest, CreatePipelineVsFsMismatchByPrecisionBlock) {
     VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
     VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
 
-    VkPipelineObj pipe(m_device);
-    pipe.AddDefaultColorAttachment();
-    pipe.AddShader(&vs);
-    pipe.AddShader(&fs);
-
-    VkDescriptorSetObj descriptorSet(m_device);
-    descriptorSet.AppendDummy();
-    descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
-
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "differ in precision");
-
-    pipe.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderPass());
-
-    m_errorMonitor->VerifyFound();
+    const auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT, "differ in precision");
 }
 
 TEST_F(VkLayerTest, CreatePipelineAttribNotConsumed) {
     TEST_DESCRIPTION("Test that a warning is produced for a vertex attribute which is not consumed by the vertex shader");
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT, "location 0 not consumed by vertex shader");
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -4375,45 +3292,20 @@ TEST_F(VkLayerTest, CreatePipelineAttribNotConsumed) {
     memset(&input_attrib, 0, sizeof(input_attrib));
     input_attrib.format = VK_FORMAT_R32_SFLOAT;
 
-    char const *vsSource =
-        "#version 450\n"
-        "\n"
-        "void main(){\n"
-        "   gl_Position = vec4(1);\n"
-        "}\n";
-    char const *fsSource =
-        "#version 450\n"
-        "\n"
-        "layout(location=0) out vec4 color;\n"
-        "void main(){\n"
-        "   color = vec4(1);\n"
-        "}\n";
-
-    VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
-    VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
-
-    VkPipelineObj pipe(m_device);
-    pipe.AddDefaultColorAttachment();
-    pipe.AddShader(&vs);
-    pipe.AddShader(&fs);
-
-    pipe.AddVertexInputBindings(&input_binding, 1);
-    pipe.AddVertexInputAttribs(&input_attrib, 1);
-
-    VkDescriptorSetObj descriptorSet(m_device);
-    descriptorSet.AppendDummy();
-    descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
-
-    pipe.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderPass());
-
-    m_errorMonitor->VerifyFound();
+    const auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.vi_ci_.pVertexBindingDescriptions = &input_binding;
+        helper.vi_ci_.vertexBindingDescriptionCount = 1;
+        helper.vi_ci_.pVertexAttributeDescriptions = &input_attrib;
+        helper.vi_ci_.vertexAttributeDescriptionCount = 1;
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_info, VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
+                                      "location 0 not consumed by vertex shader");
 }
 
 TEST_F(VkLayerTest, CreatePipelineAttribLocationMismatch) {
     TEST_DESCRIPTION(
         "Test that a warning is produced for a location mismatch on vertex attributes. This flushes out bad behavior in the "
         "interface walker");
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT, "location 0 not consumed by vertex shader");
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -4425,46 +3317,20 @@ TEST_F(VkLayerTest, CreatePipelineAttribLocationMismatch) {
     memset(&input_attrib, 0, sizeof(input_attrib));
     input_attrib.format = VK_FORMAT_R32_SFLOAT;
 
-    char const *vsSource =
-        "#version 450\n"
-        "\n"
-        "layout(location=1) in float x;\n"
-        "void main(){\n"
-        "   gl_Position = vec4(x);\n"
-        "}\n";
-    char const *fsSource =
-        "#version 450\n"
-        "\n"
-        "layout(location=0) out vec4 color;\n"
-        "void main(){\n"
-        "   color = vec4(1);\n"
-        "}\n";
-
-    VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
-    VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
-
-    VkPipelineObj pipe(m_device);
-    pipe.AddDefaultColorAttachment();
-    pipe.AddShader(&vs);
-    pipe.AddShader(&fs);
-
-    pipe.AddVertexInputBindings(&input_binding, 1);
-    pipe.AddVertexInputAttribs(&input_attrib, 1);
-
-    VkDescriptorSetObj descriptorSet(m_device);
-    descriptorSet.AppendDummy();
-    descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
-
+    const auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.vi_ci_.pVertexBindingDescriptions = &input_binding;
+        helper.vi_ci_.vertexBindingDescriptionCount = 1;
+        helper.vi_ci_.pVertexAttributeDescriptions = &input_attrib;
+        helper.vi_ci_.vertexAttributeDescriptionCount = 1;
+    };
     m_errorMonitor->SetUnexpectedError("Vertex shader consumes input at location 1 but not provided");
-    pipe.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderPass());
 
-    m_errorMonitor->VerifyFound();
+    CreatePipelineHelper::OneshotTest(*this, set_info, VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
+                                      "location 0 not consumed by vertex shader");
 }
 
 TEST_F(VkLayerTest, CreatePipelineAttribNotProvided) {
     TEST_DESCRIPTION("Test that an error is produced for a vertex shader input which is not provided by a vertex attribute");
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                         "Vertex shader consumes input at location 0 but not provided");
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -4476,36 +3342,19 @@ TEST_F(VkLayerTest, CreatePipelineAttribNotProvided) {
         "void main(){\n"
         "   gl_Position = x;\n"
         "}\n";
-    char const *fsSource =
-        "#version 450\n"
-        "\n"
-        "layout(location=0) out vec4 color;\n"
-        "void main(){\n"
-        "   color = vec4(1);\n"
-        "}\n";
-
     VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
-    VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
 
-    VkPipelineObj pipe(m_device);
-    pipe.AddDefaultColorAttachment();
-    pipe.AddShader(&vs);
-    pipe.AddShader(&fs);
-
-    VkDescriptorSetObj descriptorSet(m_device);
-    descriptorSet.AppendDummy();
-    descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
-
-    pipe.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderPass());
-
-    m_errorMonitor->VerifyFound();
+    const auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                      "Vertex shader consumes input at location 0 but not provided");
 }
 
 TEST_F(VkLayerTest, CreatePipelineAttribTypeMismatch) {
     TEST_DESCRIPTION(
         "Test that an error is produced for a mismatch between the fundamental type (float/int/uint) of an attribute and the "
         "vertex shader input that consumes it");
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "location 0 does not match vertex shader input type");
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -4524,108 +3373,43 @@ TEST_F(VkLayerTest, CreatePipelineAttribTypeMismatch) {
         "void main(){\n"
         "   gl_Position = vec4(x);\n"
         "}\n";
-    char const *fsSource =
-        "#version 450\n"
-        "\n"
-        "layout(location=0) out vec4 color;\n"
-        "void main(){\n"
-        "   color = vec4(1);\n"
-        "}\n";
-
     VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
-    VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
 
-    VkPipelineObj pipe(m_device);
-    pipe.AddDefaultColorAttachment();
-    pipe.AddShader(&vs);
-    pipe.AddShader(&fs);
-
-    pipe.AddVertexInputBindings(&input_binding, 1);
-    pipe.AddVertexInputAttribs(&input_attrib, 1);
-
-    VkDescriptorSetObj descriptorSet(m_device);
-    descriptorSet.AppendDummy();
-    descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
-
-    pipe.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderPass());
-
-    m_errorMonitor->VerifyFound();
+    const auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+        helper.vi_ci_.pVertexBindingDescriptions = &input_binding;
+        helper.vi_ci_.vertexBindingDescriptionCount = 1;
+        helper.vi_ci_.pVertexAttributeDescriptions = &input_attrib;
+        helper.vi_ci_.vertexAttributeDescriptionCount = 1;
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                      "location 0 does not match vertex shader input type");
 }
 
 TEST_F(VkLayerTest, CreatePipelineDuplicateStage) {
     TEST_DESCRIPTION("Test that an error is produced for a pipeline containing multiple shaders for the same stage");
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                         "Multiple shaders provided for stage VK_SHADER_STAGE_VERTEX_BIT");
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    char const *vsSource =
-        "#version 450\n"
-        "\n"
-        "void main(){\n"
-        "   gl_Position = vec4(1);\n"
-        "}\n";
-    char const *fsSource =
-        "#version 450\n"
-        "\n"
-        "layout(location=0) out vec4 color;\n"
-        "void main(){\n"
-        "   color = vec4(1);\n"
-        "}\n";
-
-    VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
-    VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
-
-    VkPipelineObj pipe(m_device);
-    pipe.AddDefaultColorAttachment();
-    pipe.AddShader(&vs);
-    pipe.AddShader(&vs);  // intentionally duplicate vertex shader attachment
-    pipe.AddShader(&fs);
-
-    VkDescriptorSetObj descriptorSet(m_device);
-    descriptorSet.AppendDummy();
-    descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
-
-    pipe.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderPass());
-
-    m_errorMonitor->VerifyFound();
+    const auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), helper.vs_->GetStageCreateInfo(),
+                                 helper.fs_->GetStageCreateInfo()};
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                      "Multiple shaders provided for stage VK_SHADER_STAGE_VERTEX_BIT");
 }
 
 TEST_F(VkLayerTest, CreatePipelineMissingEntrypoint) {
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "No entrypoint found named `foo`");
-
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    char const *vsSource =
-        "#version 450\n"
-        "void main(){\n"
-        "   gl_Position = vec4(0);\n"
-        "}\n";
-    char const *fsSource =
-        "#version 450\n"
-        "\n"
-        "layout(location=0) out vec4 color;\n"
-        "void main(){\n"
-        "   color = vec4(1);\n"
-        "}\n";
+    VkShaderObj fs(m_device, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this, "foo");
 
-    VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
-    VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this, "foo");
-
-    VkPipelineObj pipe(m_device);
-    pipe.AddDefaultColorAttachment();
-    pipe.AddShader(&vs);
-    pipe.AddShader(&fs);
-
-    VkDescriptorSetObj descriptorSet(m_device);
-    descriptorSet.AppendDummy();
-    descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
-
-    pipe.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderPass());
-
-    m_errorMonitor->VerifyFound();
+    const auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT, "No entrypoint found named `foo`");
 }
 
 TEST_F(VkLayerTest, CreatePipelineDepthStencilRequired) {
@@ -4636,19 +3420,8 @@ TEST_F(VkLayerTest, CreatePipelineDepthStencilRequired) {
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    char const *vsSource =
-        "#version 450\n"
-        "void main(){ gl_Position = vec4(0); }\n";
-    char const *fsSource =
-        "#version 450\n"
-        "\n"
-        "layout(location=0) out vec4 color;\n"
-        "void main(){\n"
-        "   color = vec4(1);\n"
-        "}\n";
-
-    VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
-    VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+    VkShaderObj vs(m_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
+    VkShaderObj fs(m_device, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this);
 
     VkPipelineObj pipe(m_device);
     pipe.AddDefaultColorAttachment();
@@ -4704,9 +3477,6 @@ TEST_F(VkLayerTest, CreatePipelineTessPatchDecorationMismatch) {
     TEST_DESCRIPTION(
         "Test that an error is produced for a variable output from the TCS without the patch decoration, but consumed in the TES "
         "with the decoration.");
-    m_errorMonitor->SetDesiredFailureMsg(
-        VK_DEBUG_REPORT_ERROR_BIT_EXT,
-        "is per-vertex in tessellation control shader stage but per-patch in tessellation evaluation shader stage");
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -4716,9 +3486,6 @@ TEST_F(VkLayerTest, CreatePipelineTessPatchDecorationMismatch) {
         return;
     }
 
-    char const *vsSource =
-        "#version 450\n"
-        "void main(){}\n";
     char const *tcsSource =
         "#version 450\n"
         "layout(location=0) out int x[];\n"
@@ -4736,39 +3503,23 @@ TEST_F(VkLayerTest, CreatePipelineTessPatchDecorationMismatch) {
         "   gl_Position.xyz = gl_TessCoord;\n"
         "   gl_Position.w = x;\n"
         "}\n";
-    char const *fsSource =
-        "#version 450\n"
-        "layout(location=0) out vec4 color;\n"
-        "void main(){\n"
-        "   color = vec4(1);\n"
-        "}\n";
-
-    VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
     VkShaderObj tcs(m_device, tcsSource, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, this);
     VkShaderObj tes(m_device, tesSource, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, this);
-    VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
 
     VkPipelineInputAssemblyStateCreateInfo iasci{VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO, nullptr, 0,
                                                  VK_PRIMITIVE_TOPOLOGY_PATCH_LIST, VK_FALSE};
 
     VkPipelineTessellationStateCreateInfo tsci{VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO, nullptr, 0, 3};
 
-    VkPipelineObj pipe(m_device);
-    pipe.SetInputAssembly(&iasci);
-    pipe.SetTessellation(&tsci);
-    pipe.AddDefaultColorAttachment();
-    pipe.AddShader(&vs);
-    pipe.AddShader(&tcs);
-    pipe.AddShader(&tes);
-    pipe.AddShader(&fs);
-
-    VkDescriptorSetObj descriptorSet(m_device);
-    descriptorSet.AppendDummy();
-    descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
-
-    pipe.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderPass());
-
-    m_errorMonitor->VerifyFound();
+    const auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.gp_ci_.pTessellationState = &tsci;
+        helper.gp_ci_.pInputAssemblyState = &iasci;
+        helper.shader_stages_.emplace_back(tcs.GetStageCreateInfo());
+        helper.shader_stages_.emplace_back(tes.GetStageCreateInfo());
+    };
+    CreatePipelineHelper::OneshotTest(
+        *this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+        "is per-vertex in tessellation control shader stage but per-patch in tessellation evaluation shader stage");
 }
 
 TEST_F(VkLayerTest, CreatePipelineTessErrors) {
@@ -4782,9 +3533,6 @@ TEST_F(VkLayerTest, CreatePipelineTessErrors) {
         return;
     }
 
-    char const *vsSource =
-        "#version 450\n"
-        "void main(){}\n";
     char const *tcsSource =
         "#version 450\n"
         "layout(vertices=3) out;\n"
@@ -4799,119 +3547,80 @@ TEST_F(VkLayerTest, CreatePipelineTessErrors) {
         "   gl_Position.xyz = gl_TessCoord;\n"
         "   gl_Position.w = 0;\n"
         "}\n";
-    char const *fsSource =
-        "#version 450\n"
-        "layout(location=0) out vec4 color;\n"
-        "void main(){\n"
-        "   color = vec4(1);\n"
-        "}\n";
-
-    VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
     VkShaderObj tcs(m_device, tcsSource, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, this);
     VkShaderObj tes(m_device, tesSource, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, this);
-    VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
 
     VkPipelineInputAssemblyStateCreateInfo iasci{VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO, nullptr, 0,
                                                  VK_PRIMITIVE_TOPOLOGY_PATCH_LIST, VK_FALSE};
 
     VkPipelineTessellationStateCreateInfo tsci{VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO, nullptr, 0, 3};
 
-    VkDescriptorSetObj descriptorSet(m_device);
-    descriptorSet.AppendDummy();
-    descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
+    std::vector<VkPipelineShaderStageCreateInfo> shader_stages = {};
+    VkPipelineInputAssemblyStateCreateInfo iasci_bad = iasci;
+    VkPipelineInputAssemblyStateCreateInfo *p_iasci = nullptr;
+    VkPipelineTessellationStateCreateInfo tsci_bad = tsci;
+    VkPipelineTessellationStateCreateInfo *p_tsci = nullptr;
 
-    {
-        VkPipelineObj pipe(m_device);
-        VkPipelineInputAssemblyStateCreateInfo iasci_bad = iasci;
-        iasci_bad.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;  // otherwise we get a failure about invalid topology
-        pipe.SetInputAssembly(&iasci_bad);
-        pipe.AddDefaultColorAttachment();
-        pipe.AddShader(&vs);
-        pipe.AddShader(&fs);
+    const auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.gp_ci_.pTessellationState = p_tsci;
+        helper.gp_ci_.pInputAssemblyState = p_iasci;
+        helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+        helper.shader_stages_.insert(helper.shader_stages_.end(), shader_stages.begin(), shader_stages.end());
+    };
 
-        // Pass a tess control shader without a tess eval shader
-        pipe.AddShader(&tcs);
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkGraphicsPipelineCreateInfo-pStages-00729");
-        pipe.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderPass());
-        m_errorMonitor->VerifyFound();
-    }
+    iasci_bad.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;  // otherwise we get a failure about invalid topology
+    p_iasci = &iasci_bad;
+    // Pass a tess control shader without a tess eval shader
+    shader_stages = {tcs.GetStageCreateInfo()};
+    CreatePipelineHelper::OneshotTest(*this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                      "VUID-VkGraphicsPipelineCreateInfo-pStages-00729");
 
-    {
-        VkPipelineObj pipe(m_device);
-        VkPipelineInputAssemblyStateCreateInfo iasci_bad = iasci;
-        iasci_bad.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;  // otherwise we get a failure about invalid topology
-        pipe.SetInputAssembly(&iasci_bad);
-        pipe.AddDefaultColorAttachment();
-        pipe.AddShader(&vs);
-        pipe.AddShader(&fs);
+    // Pass a tess eval shader without a tess control shader
+    shader_stages = {tes.GetStageCreateInfo()};
+    CreatePipelineHelper::OneshotTest(*this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                      "VUID-VkGraphicsPipelineCreateInfo-pStages-00730");
 
-        // Pass a tess eval shader without a tess control shader
-        pipe.AddShader(&tes);
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkGraphicsPipelineCreateInfo-pStages-00730");
-        pipe.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderPass());
-        m_errorMonitor->VerifyFound();
-    }
+    p_iasci = &iasci;
+    shader_stages = {};
+    // Pass patch topology without tessellation shaders
+    CreatePipelineHelper::OneshotTest(*this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                      "VUID-VkGraphicsPipelineCreateInfo-topology-00737");
 
-    {
-        VkPipelineObj pipe(m_device);
-        pipe.SetInputAssembly(&iasci);
-        pipe.AddDefaultColorAttachment();
-        pipe.AddShader(&vs);
-        pipe.AddShader(&fs);
+    shader_stages = {tcs.GetStageCreateInfo(), tes.GetStageCreateInfo()};
+    // Pass a NULL pTessellationState (with active tessellation shader stages)
+    CreatePipelineHelper::OneshotTest(*this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                      "VUID-VkGraphicsPipelineCreateInfo-pStages-00731");
 
-        // Pass patch topology without tessellation shaders
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkGraphicsPipelineCreateInfo-topology-00737");
-        pipe.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderPass());
-        m_errorMonitor->VerifyFound();
+    // Pass an invalid pTessellationState (bad sType)
+    tsci_bad.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    p_tsci = &tsci_bad;
+    shader_stages = {tcs.GetStageCreateInfo(), tes.GetStageCreateInfo()};
+    CreatePipelineHelper::OneshotTest(*this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                      "VUID-VkPipelineTessellationStateCreateInfo-sType-sType");
 
-        pipe.AddShader(&tcs);
-        pipe.AddShader(&tes);
-        // Pass a NULL pTessellationState (with active tessellation shader stages)
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkGraphicsPipelineCreateInfo-pStages-00731");
-        pipe.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderPass());
-        m_errorMonitor->VerifyFound();
+    // Pass out-of-range patchControlPoints
+    p_iasci = &iasci;
+    tsci_bad = tsci;
+    tsci_bad.patchControlPoints = 0;
+    CreatePipelineHelper::OneshotTest(*this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                      "VUID-VkPipelineTessellationStateCreateInfo-patchControlPoints-01214");
 
-        // Pass an invalid pTessellationState (bad sType)
-        VkPipelineTessellationStateCreateInfo tsci_bad = tsci;
-        tsci_bad.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-        pipe.SetTessellation(&tsci_bad);
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                             "VUID-VkPipelineTessellationStateCreateInfo-sType-sType");
-        pipe.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderPass());
-        m_errorMonitor->VerifyFound();
-        // Pass out-of-range patchControlPoints
-        tsci_bad = tsci;
-        tsci_bad.patchControlPoints = 0;
-        pipe.SetTessellation(&tsci);
-        pipe.SetTessellation(&tsci_bad);
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                             "VUID-VkPipelineTessellationStateCreateInfo-patchControlPoints-01214");
-        pipe.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderPass());
-        m_errorMonitor->VerifyFound();
-        tsci_bad.patchControlPoints = m_device->props.limits.maxTessellationPatchSize + 1;
-        pipe.SetTessellation(&tsci_bad);
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                             "VUID-VkPipelineTessellationStateCreateInfo-patchControlPoints-01214");
-        pipe.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderPass());
-        m_errorMonitor->VerifyFound();
-        pipe.SetTessellation(&tsci);
+    tsci_bad.patchControlPoints = m_device->props.limits.maxTessellationPatchSize + 1;
+    CreatePipelineHelper::OneshotTest(*this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                      "VUID-VkPipelineTessellationStateCreateInfo-patchControlPoints-01214");
 
-        // Pass an invalid primitive topology
-        VkPipelineInputAssemblyStateCreateInfo iasci_bad = iasci;
-        iasci_bad.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-        pipe.SetInputAssembly(&iasci_bad);
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkGraphicsPipelineCreateInfo-pStages-00736");
-        pipe.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderPass());
-        m_errorMonitor->VerifyFound();
-        pipe.SetInputAssembly(&iasci);
-    }
+    p_tsci = &tsci;
+    // Pass an invalid primitive topology
+    iasci_bad = iasci;
+    iasci_bad.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    p_iasci = &iasci_bad;
+    CreatePipelineHelper::OneshotTest(*this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                      "VUID-VkGraphicsPipelineCreateInfo-pStages-00736");
 }
 
 TEST_F(VkLayerTest, CreatePipelineAttribBindingConflict) {
     TEST_DESCRIPTION(
         "Test that an error is produced for a vertex attribute setup where multiple bindings provide the same location");
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                         "Duplicate vertex input binding descriptions for binding 0");
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -4931,89 +3640,47 @@ TEST_F(VkLayerTest, CreatePipelineAttribBindingConflict) {
         "void main(){\n"
         "   gl_Position = vec4(x);\n"
         "}\n";
-    char const *fsSource =
-        "#version 450\n"
-        "\n"
-        "layout(location=0) out vec4 color;\n"
-        "void main(){\n"
-        "   color = vec4(1);\n"
-        "}\n";
 
     VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
-    VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
-
-    VkPipelineObj pipe(m_device);
-    pipe.AddDefaultColorAttachment();
-    pipe.AddShader(&vs);
-    pipe.AddShader(&fs);
-
-    pipe.AddVertexInputBindings(input_bindings, 2);
-    pipe.AddVertexInputAttribs(&input_attrib, 1);
-
-    VkDescriptorSetObj descriptorSet(m_device);
-    descriptorSet.AppendDummy();
-    descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
-
-    m_errorMonitor->SetUnexpectedError("VUID-VkPipelineVertexInputStateCreateInfo-pVertexBindingDescriptions-00616 ");
-    pipe.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderPass());
 
     m_errorMonitor->VerifyFound();
+    const auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+        helper.vi_ci_.pVertexBindingDescriptions = input_bindings;
+        helper.vi_ci_.vertexBindingDescriptionCount = 2;
+        helper.vi_ci_.pVertexAttributeDescriptions = &input_attrib;
+        helper.vi_ci_.vertexAttributeDescriptionCount = 1;
+    };
+    m_errorMonitor->SetUnexpectedError("VUID-VkPipelineVertexInputStateCreateInfo-pVertexBindingDescriptions-00616 ");
+    CreatePipelineHelper::OneshotTest(*this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                      "Duplicate vertex input binding descriptions for binding 0");
 }
 
 TEST_F(VkLayerTest, CreatePipelineFragmentOutputNotWritten) {
     TEST_DESCRIPTION(
         "Test that an error is produced for a fragment shader which does not provide an output for one of the pipeline's color "
         "attachments");
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_WARNING_BIT_EXT, "Attachment 0 not written by fragment shader");
 
     ASSERT_NO_FATAL_FAILURE(Init());
-
-    char const *vsSource =
-        "#version 450\n"
-        "\n"
-        "void main(){\n"
-        "   gl_Position = vec4(1);\n"
-        "}\n";
-    char const *fsSource =
-        "#version 450\n"
-        "\n"
-        "void main(){\n"
-        "}\n";
-
-    VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
-    VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
-
-    VkPipelineObj pipe(m_device);
-    pipe.AddShader(&vs);
-    pipe.AddShader(&fs);
-
-    /* set up CB 0, not written */
-    pipe.AddDefaultColorAttachment();
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VkDescriptorSetObj descriptorSet(m_device);
-    descriptorSet.AppendDummy();
-    descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
+    VkShaderObj fs(m_device, bindStateMinimalShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this);
 
-    pipe.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderPass());
-
-    m_errorMonitor->VerifyFound();
+    const auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+        helper.cb_attachments_.colorWriteMask = 1;
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_info, VK_DEBUG_REPORT_WARNING_BIT_EXT,
+                                      "Attachment 0 not written by fragment shader");
 }
 
 TEST_F(VkLayerTest, CreatePipelineFragmentOutputNotConsumed) {
     TEST_DESCRIPTION(
         "Test that a warning is produced for a fragment shader which provides a spurious output with no matching attachment");
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_WARNING_BIT_EXT,
-                                         "fragment shader writes to output location 1 with no matching attachment");
 
     ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    char const *vsSource =
-        "#version 450\n"
-        "\n"
-        "void main(){\n"
-        "   gl_Position = vec4(1);\n"
-        "}\n";
     char const *fsSource =
         "#version 450\n"
         "\n"
@@ -5023,135 +3690,44 @@ TEST_F(VkLayerTest, CreatePipelineFragmentOutputNotConsumed) {
         "   x = vec4(1);\n"
         "   y = vec4(1);\n"
         "}\n";
-
-    VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
     VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
 
-    VkPipelineObj pipe(m_device);
-    pipe.AddShader(&vs);
-    pipe.AddShader(&fs);
-
-    /* set up CB 0, not written */
-    pipe.AddDefaultColorAttachment();
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-    /* FS writes CB 1, but we don't configure it */
-
-    VkDescriptorSetObj descriptorSet(m_device);
-    descriptorSet.AppendDummy();
-    descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
-
-    pipe.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderPass());
-
-    m_errorMonitor->VerifyFound();
-}
-
-TEST_F(VkLayerTest, CreatePipelineFragmentOutputNotConsumedButAlphaToCoverageEnabled) {
-    TEST_DESCRIPTION(
-        "Test that no warning is produced when writing to non-existing color attachment if alpha to coverage is enabled.");
-
-    m_errorMonitor->ExpectSuccess(VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT);
-
-    ASSERT_NO_FATAL_FAILURE(Init());
-
-    char const *vsSource =
-        "#version 450\n"
-        "\n"
-        "void main(){\n"
-        "   gl_Position = vec4(1);\n"
-        "}\n";
-    char const *fsSource =
-        "#version 450\n"
-        "\n"
-        "layout(location=0) out vec4 x;\n"
-        "void main(){\n"
-        "   x = vec4(1);\n"
-        "}\n";
-
-    VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
-    VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
-
-    VkPipelineObj pipe(m_device);
-    pipe.AddShader(&vs);
-    pipe.AddShader(&fs);
-
-    VkPipelineMultisampleStateCreateInfo ms_state_ci = {};
-    ms_state_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-    ms_state_ci.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
-    ms_state_ci.alphaToCoverageEnable = VK_TRUE;
-    pipe.SetMSAA(&ms_state_ci);
-
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget(0u));
-
-    VkDescriptorSetObj descriptorSet(m_device);
-    descriptorSet.AppendDummy();
-    descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
-
-    pipe.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderPass());
-
-    m_errorMonitor->VerifyNotFound();
+    const auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_info, VK_DEBUG_REPORT_WARNING_BIT_EXT,
+                                      "fragment shader writes to output location 1 with no matching attachment");
 }
 
 TEST_F(VkLayerTest, CreatePipelineFragmentNoOutputLocation0ButAlphaToCoverageEnabled) {
     TEST_DESCRIPTION("Test that an error is produced when alpha to coverage is enabled but no output at location 0 is declared.");
 
-    m_errorMonitor->SetDesiredFailureMsg(
-        VK_DEBUG_REPORT_ERROR_BIT_EXT,
-        "fragment shader doesn't declare alpha output at location 0 even though alpha to coverage is enabled.");
-
     ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget(0u));
 
-    char const *vsSource =
-        "#version 450\n"
-        "\n"
-        "void main(){\n"
-        "   gl_Position = vec4(1);\n"
-        "}\n";
-    char const *fsSource =
-        "#version 450\n"
-        "\n"
-        "void main(){\n"
-        "}\n";
-
-    VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
-    VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
-
-    VkPipelineObj pipe(m_device);
-    pipe.AddShader(&vs);
-    pipe.AddShader(&fs);
+    VkShaderObj fs(m_device, bindStateMinimalShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this);
 
     VkPipelineMultisampleStateCreateInfo ms_state_ci = {};
     ms_state_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
     ms_state_ci.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
     ms_state_ci.alphaToCoverageEnable = VK_TRUE;
-    pipe.SetMSAA(&ms_state_ci);
 
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget(0u));
-
-    VkDescriptorSetObj descriptorSet(m_device);
-    descriptorSet.AppendDummy();
-    descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
-
-    pipe.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderPass());
-
-    m_errorMonitor->VerifyFound();
+    const auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+        helper.pipe_ms_state_ci_ = ms_state_ci;
+    };
+    CreatePipelineHelper::OneshotTest(
+        *this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+        "fragment shader doesn't declare alpha output at location 0 even though alpha to coverage is enabled.");
 }
 
 TEST_F(VkLayerTest, CreatePipelineFragmentNoAlphaLocation0ButAlphaToCoverageEnabled) {
     TEST_DESCRIPTION(
         "Test that an error is produced when alpha to coverage is enabled but output at location 0 doesn't have alpha channel.");
 
-    m_errorMonitor->SetDesiredFailureMsg(
-        VK_DEBUG_REPORT_ERROR_BIT_EXT,
-        "fragment shader doesn't declare alpha output at location 0 even though alpha to coverage is enabled.");
-
     ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget(0u));
 
-    char const *vsSource =
-        "#version 450\n"
-        "\n"
-        "void main(){\n"
-        "   gl_Position = vec4(1);\n"
-        "}\n";
     char const *fsSource =
         "#version 450\n"
         "layout(location=0) out vec3 x;\n"
@@ -5159,45 +3735,30 @@ TEST_F(VkLayerTest, CreatePipelineFragmentNoAlphaLocation0ButAlphaToCoverageEnab
         "void main(){\n"
         "   x = vec3(1);\n"
         "}\n";
-
-    VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
     VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
-
-    VkPipelineObj pipe(m_device);
-    pipe.AddShader(&vs);
-    pipe.AddShader(&fs);
 
     VkPipelineMultisampleStateCreateInfo ms_state_ci = {};
     ms_state_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
     ms_state_ci.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
     ms_state_ci.alphaToCoverageEnable = VK_TRUE;
-    pipe.SetMSAA(&ms_state_ci);
 
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget(0u));
-
-    VkDescriptorSetObj descriptorSet(m_device);
-    descriptorSet.AppendDummy();
-    descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
-
-    pipe.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderPass());
-
-    m_errorMonitor->VerifyFound();
+    const auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+        helper.pipe_ms_state_ci_ = ms_state_ci;
+    };
+    CreatePipelineHelper::OneshotTest(
+        *this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+        "fragment shader doesn't declare alpha output at location 0 even though alpha to coverage is enabled.");
 }
 
 TEST_F(VkLayerTest, CreatePipelineFragmentOutputTypeMismatch) {
     TEST_DESCRIPTION(
         "Test that an error is produced for a mismatch between the fundamental type of an fragment shader output variable, and the "
         "format of the corresponding attachment");
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_WARNING_BIT_EXT, "does not match fragment shader output type");
 
     ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    char const *vsSource =
-        "#version 450\n"
-        "\n"
-        "void main(){\n"
-        "   gl_Position = vec4(1);\n"
-        "}\n";
     char const *fsSource =
         "#version 450\n"
         "\n"
@@ -5206,24 +3767,13 @@ TEST_F(VkLayerTest, CreatePipelineFragmentOutputTypeMismatch) {
         "   x = ivec4(1);\n"
         "}\n";
 
-    VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
     VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
 
-    VkPipelineObj pipe(m_device);
-    pipe.AddShader(&vs);
-    pipe.AddShader(&fs);
-
-    /* set up CB 0; type is UNORM by default */
-    pipe.AddDefaultColorAttachment();
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-
-    VkDescriptorSetObj descriptorSet(m_device);
-    descriptorSet.AppendDummy();
-    descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
-
-    pipe.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderPass());
-
-    m_errorMonitor->VerifyFound();
+    const auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_info, VK_DEBUG_REPORT_WARNING_BIT_EXT,
+                                      "does not match fragment shader output type");
 }
 
 TEST_F(VkLayerTest, CreatePipelineExceedMaxVertexOutputComponents) {
@@ -5269,29 +3819,14 @@ TEST_F(VkLayerTest, CreatePipelineExceedMaxVertexOutputComponents) {
         VkShaderObj vs(m_device, vsSourceStr.c_str(), VK_SHADER_STAGE_VERTEX_BIT, this);
         VkShaderObj fs(m_device, fsSourceStr.c_str(), VK_SHADER_STAGE_FRAGMENT_BIT, this);
 
-        VkPipelineObj pipe(m_device);
-        pipe.AddShader(&vs);
-        pipe.AddShader(&fs);
-
-        // Set up CB 0; type is UNORM by default
-        pipe.AddDefaultColorAttachment();
-
-        VkDescriptorSetObj descriptorSet(m_device);
-        descriptorSet.AppendDummy();
-        descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
-
+        const auto set_info = [&](CreatePipelineHelper &helper) {
+            helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+        };
         if (overflow) {
-            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                                 "Vertex shader exceeds "
-                                                 "VkPhysicalDeviceLimits::maxVertexOutputComponents");
-        }
-
-        pipe.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderPass());
-
-        if (overflow) {
-            m_errorMonitor->VerifyFound();
+            CreatePipelineHelper::OneshotTest(*this, set_info, VK_DEBUG_REPORT_WARNING_BIT_EXT,
+                                              "Vertex shader exceeds VkPhysicalDeviceLimits::maxVertexOutputComponents");
         } else {
-            m_errorMonitor->VerifyNotFound();
+            CreatePipelineHelper::OneshotTest(*this, set_info, VK_DEBUG_REPORT_WARNING_BIT_EXT, "", true);
         }
     }
 }
@@ -5312,13 +3847,6 @@ TEST_F(VkLayerTest, CreatePipelineExceedMaxTessellationControlInputOutputCompone
             printf("%s tessellation shader stage(s) unsupported.\n", kSkipPrefix);
             return;
         }
-
-        std::string vsSourceStr =
-            "#version 450\n"
-            "\n"
-            "void main(){\n"
-            "    gl_Position = vec4(1);\n"
-            "}\n";
 
         // Tessellation control stage
         std::string tcsSourceStr =
@@ -5369,40 +3897,8 @@ TEST_F(VkLayerTest, CreatePipelineExceedMaxTessellationControlInputOutputCompone
             "void main(){\n"
             "}\n";
 
-        std::string tesSourceStr =
-            "#version 450\n"
-            "\n"
-            "layout(triangles) in;"
-            "\n"
-            "void main(){\n"
-            "}\n";
-
-        std::string fsSourceStr =
-            "#version 450\n"
-            "\n"
-            "layout(location=0) out vec4 color;"
-            "\n"
-            "void main(){\n"
-            "    color = vec4(1);\n"
-            "}\n";
-
-        VkShaderObj vs(m_device, vsSourceStr.c_str(), VK_SHADER_STAGE_VERTEX_BIT, this);
         VkShaderObj tcs(m_device, tcsSourceStr.c_str(), VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, this);
-        VkShaderObj tes(m_device, tesSourceStr.c_str(), VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, this);
-        VkShaderObj fs(m_device, fsSourceStr.c_str(), VK_SHADER_STAGE_FRAGMENT_BIT, this);
-
-        VkPipelineObj pipe(m_device);
-        pipe.AddShader(&vs);
-        pipe.AddShader(&tcs);
-        pipe.AddShader(&tes);
-        pipe.AddShader(&fs);
-
-        // Set up CB 0; type is UNORM by default
-        pipe.AddDefaultColorAttachment();
-
-        VkDescriptorSetObj descriptorSet(m_device);
-        descriptorSet.AppendDummy();
-        descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
+        VkShaderObj tes(m_device, bindStateTeshaderText, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, this);
 
         VkPipelineInputAssemblyStateCreateInfo inputAssemblyInfo = {};
         inputAssemblyInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
@@ -5410,31 +3906,29 @@ TEST_F(VkLayerTest, CreatePipelineExceedMaxTessellationControlInputOutputCompone
         inputAssemblyInfo.flags = 0;
         inputAssemblyInfo.topology = VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
         inputAssemblyInfo.primitiveRestartEnable = VK_FALSE;
-        pipe.SetInputAssembly(&inputAssemblyInfo);
 
         VkPipelineTessellationStateCreateInfo tessInfo = {};
         tessInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO;
         tessInfo.pNext = NULL;
         tessInfo.flags = 0;
         tessInfo.patchControlPoints = 3;
-        pipe.SetTessellation(&tessInfo);
 
-        if (overflow) {
-            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                                 "Tessellation control shader exceeds "
-                                                 "VkPhysicalDeviceLimits::maxTessellationControlPerVertexInputComponents");
-            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                                 "Tessellation control shader exceeds "
-                                                 "VkPhysicalDeviceLimits::maxTessellationControlPerVertexOutputComponents");
-        }
         m_errorMonitor->SetUnexpectedError("UNASSIGNED-CoreValidation-Shader-InputNotProduced");
 
-        pipe.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderPass());
-
+        const auto set_info = [&](CreatePipelineHelper &helper) {
+            helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), tcs.GetStageCreateInfo(), tes.GetStageCreateInfo(),
+                                     helper.fs_->GetStageCreateInfo()};
+            helper.gp_ci_.pTessellationState = &tessInfo;
+            helper.gp_ci_.pInputAssemblyState = &inputAssemblyInfo;
+        };
         if (overflow) {
-            m_errorMonitor->VerifyFound();
+            CreatePipelineHelper::OneshotTest(
+                *this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                vector<string>{
+                    "Tessellation control shader exceeds VkPhysicalDeviceLimits::maxTessellationControlPerVertexInputComponents",
+                    "Tessellation control shader exceeds VkPhysicalDeviceLimits::maxTessellationControlPerVertexOutputComponents"});
         } else {
-            m_errorMonitor->VerifyNotFound();
+            CreatePipelineHelper::OneshotTest(*this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT, "", true);
         }
     }
 }
@@ -5455,22 +3949,6 @@ TEST_F(VkLayerTest, CreatePipelineExceedMaxTessellationEvaluationInputOutputComp
             printf("%s tessellation shader stage(s) unsupported.\n", kSkipPrefix);
             return;
         }
-
-        std::string vsSourceStr =
-            "#version 450\n"
-            "\n"
-            "void main(){\n"
-            "    gl_Position = vec4(1);\n"
-            "}\n";
-
-        std::string tcsSourceStr =
-            "#version 450\n"
-            "\n"
-            "layout (vertices = 3) out;\n"
-            "\n"
-            "void main(){\n"
-            "    gl_out[gl_InvocationID].gl_Position = gl_in[gl_InvocationID].gl_Position;\n"
-            "}\n";
 
         // Tessellation evaluation stage
         std::string tesSourceStr =
@@ -5522,32 +4000,8 @@ TEST_F(VkLayerTest, CreatePipelineExceedMaxTessellationEvaluationInputOutputComp
             "void main(){\n"
             "}\n";
 
-        std::string fsSourceStr =
-            "#version 450\n"
-            "\n"
-            "layout(location=0) out vec4 color;"
-            "\n"
-            "void main(){\n"
-            "    color = vec4(1);\n"
-            "}\n";
-
-        VkShaderObj vs(m_device, vsSourceStr.c_str(), VK_SHADER_STAGE_VERTEX_BIT, this);
-        VkShaderObj tcs(m_device, tcsSourceStr.c_str(), VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, this);
+        VkShaderObj tcs(m_device, bindStateTscShaderText, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, this);
         VkShaderObj tes(m_device, tesSourceStr.c_str(), VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, this);
-        VkShaderObj fs(m_device, fsSourceStr.c_str(), VK_SHADER_STAGE_FRAGMENT_BIT, this);
-
-        VkPipelineObj pipe(m_device);
-        pipe.AddShader(&vs);
-        pipe.AddShader(&tcs);
-        pipe.AddShader(&tes);
-        pipe.AddShader(&fs);
-
-        // Set up CB 0; type is UNORM by default
-        pipe.AddDefaultColorAttachment();
-
-        VkDescriptorSetObj descriptorSet(m_device);
-        descriptorSet.AppendDummy();
-        descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
 
         VkPipelineInputAssemblyStateCreateInfo inputAssemblyInfo = {};
         inputAssemblyInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
@@ -5555,31 +4009,29 @@ TEST_F(VkLayerTest, CreatePipelineExceedMaxTessellationEvaluationInputOutputComp
         inputAssemblyInfo.flags = 0;
         inputAssemblyInfo.topology = VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
         inputAssemblyInfo.primitiveRestartEnable = VK_FALSE;
-        pipe.SetInputAssembly(&inputAssemblyInfo);
 
         VkPipelineTessellationStateCreateInfo tessInfo = {};
         tessInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO;
         tessInfo.pNext = NULL;
         tessInfo.flags = 0;
         tessInfo.patchControlPoints = 3;
-        pipe.SetTessellation(&tessInfo);
 
-        if (overflow) {
-            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                                 "Tessellation evaluation shader exceeds "
-                                                 "VkPhysicalDeviceLimits::maxTessellationEvaluationInputComponents");
-            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                                 "Tessellation evaluation shader exceeds "
-                                                 "VkPhysicalDeviceLimits::maxTessellationEvaluationOutputComponents");
-        }
         m_errorMonitor->SetUnexpectedError("UNASSIGNED-CoreValidation-Shader-InputNotProduced");
 
-        pipe.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderPass());
-
+        const auto set_info = [&](CreatePipelineHelper &helper) {
+            helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), tcs.GetStageCreateInfo(), tes.GetStageCreateInfo(),
+                                     helper.fs_->GetStageCreateInfo()};
+            helper.gp_ci_.pTessellationState = &tessInfo;
+            helper.gp_ci_.pInputAssemblyState = &inputAssemblyInfo;
+        };
         if (overflow) {
-            m_errorMonitor->VerifyFound();
+            CreatePipelineHelper::OneshotTest(
+                *this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                vector<string>{
+                    "Tessellation evaluation shader exceeds VkPhysicalDeviceLimits::maxTessellationEvaluationInputComponents",
+                    "Tessellation evaluation shader exceeds VkPhysicalDeviceLimits::maxTessellationEvaluationOutputComponents"});
         } else {
-            m_errorMonitor->VerifyNotFound();
+            CreatePipelineHelper::OneshotTest(*this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT, "", true);
         }
     }
 }
@@ -5600,13 +4052,6 @@ TEST_F(VkLayerTest, CreatePipelineExceedMaxGeometryInputOutputComponents) {
             printf("%s geometry shader stage unsupported.\n", kSkipPrefix);
             return;
         }
-
-        std::string vsSourceStr =
-            "#version 450\n"
-            "\n"
-            "void main(){\n"
-            "    gl_Position = vec4(1);\n"
-            "}\n";
 
         std::string gsSourceStr =
             "#version 450\n"
@@ -5660,50 +4105,21 @@ TEST_F(VkLayerTest, CreatePipelineExceedMaxGeometryInputOutputComponents) {
                        "void main(){\n"
                        "}\n";
 
-        std::string fsSourceStr =
-            "#version 450\n"
-            "\n"
-            "layout(location=0) out vec4 color;"
-            "\n"
-            "void main(){\n"
-            "    color = vec4(1);\n"
-            "}\n";
-
-        VkShaderObj vs(m_device, vsSourceStr.c_str(), VK_SHADER_STAGE_VERTEX_BIT, this);
         VkShaderObj gs(m_device, gsSourceStr.c_str(), VK_SHADER_STAGE_GEOMETRY_BIT, this);
-        VkShaderObj fs(m_device, fsSourceStr.c_str(), VK_SHADER_STAGE_FRAGMENT_BIT, this);
 
-        VkPipelineObj pipe(m_device);
-        pipe.AddShader(&vs);
-        pipe.AddShader(&gs);
-        pipe.AddShader(&fs);
-
-        // Set up CB 0; type is UNORM by default
-        pipe.AddDefaultColorAttachment();
-
-        VkDescriptorSetObj descriptorSet(m_device);
-        descriptorSet.AppendDummy();
-        descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
-
-        if (overflow) {
-            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                                 "Geometry shader exceeds "
-                                                 "VkPhysicalDeviceLimits::maxGeometryInputComponents");
-            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                                 "Geometry shader exceeds "
-                                                 "VkPhysicalDeviceLimits::maxGeometryOutputComponents");
-            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                                 "Geometry shader exceeds "
-                                                 "VkPhysicalDeviceLimits::maxGeometryTotalOutputComponents");
-        }
         m_errorMonitor->SetUnexpectedError("UNASSIGNED-CoreValidation-Shader-InputNotProduced");
 
-        pipe.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderPass());
-
+        const auto set_info = [&](CreatePipelineHelper &helper) {
+            helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), gs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+        };
         if (overflow) {
-            m_errorMonitor->VerifyFound();
+            CreatePipelineHelper::OneshotTest(
+                *this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                vector<string>{"Geometry shader exceeds VkPhysicalDeviceLimits::maxGeometryInputComponents",
+                               "Geometry shader exceeds VkPhysicalDeviceLimits::maxGeometryOutputComponents",
+                               "Geometry shader exceeds VkPhysicalDeviceLimits::maxGeometryTotalOutputComponents"});
         } else {
-            m_errorMonitor->VerifyNotFound();
+            CreatePipelineHelper::OneshotTest(*this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT, "", true);
         }
     }
 }
@@ -5717,12 +4133,6 @@ TEST_F(VkLayerTest, CreatePipelineExceedMaxFragmentInputComponents) {
 
     for (int overflow = 0; overflow < 2; ++overflow) {
         m_errorMonitor->Reset();
-        std::string vsSourceStr =
-            "#version 450\n"
-            "\n"
-            "void main(){\n"
-            "    gl_Position = vec4(1);\n"
-            "}\n";
 
         const uint32_t maxFsInComp = m_device->props.limits.maxFragmentInputComponents + overflow;
         std::string fsSourceStr = "#version 450\n\n";
@@ -5747,34 +4157,18 @@ TEST_F(VkLayerTest, CreatePipelineExceedMaxFragmentInputComponents) {
             "void main(){\n"
             "    color = vec4(1);\n"
             "}\n";
-
-        VkShaderObj vs(m_device, vsSourceStr.c_str(), VK_SHADER_STAGE_VERTEX_BIT, this);
         VkShaderObj fs(m_device, fsSourceStr.c_str(), VK_SHADER_STAGE_FRAGMENT_BIT, this);
 
-        VkPipelineObj pipe(m_device);
-        pipe.AddShader(&vs);
-        pipe.AddShader(&fs);
-
-        // Set up CB 0; type is UNORM by default
-        pipe.AddDefaultColorAttachment();
-
-        VkDescriptorSetObj descriptorSet(m_device);
-        descriptorSet.AppendDummy();
-        descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
-
-        if (overflow) {
-            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                                 "Fragment shader exceeds "
-                                                 "VkPhysicalDeviceLimits::maxFragmentInputComponents");
-        }
         m_errorMonitor->SetUnexpectedError("UNASSIGNED-CoreValidation-Shader-InputNotProduced");
-
-        pipe.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderPass());
-
+        const auto set_info = [&](CreatePipelineHelper &helper) {
+            helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+        };
         if (overflow) {
-            m_errorMonitor->VerifyFound();
+            CreatePipelineHelper::OneshotTest(*this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                              "Fragment shader exceeds "
+                                              "VkPhysicalDeviceLimits::maxFragmentInputComponents");
         } else {
-            m_errorMonitor->VerifyNotFound();
+            CreatePipelineHelper::OneshotTest(*this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT, "", true);
         }
     }
 }
@@ -5795,13 +4189,6 @@ TEST_F(VkLayerTest, CreatePipelineExceedMaxGeometryInstanceVertexCount) {
             printf("%s geometry shader stage unsupported.\n", kSkipPrefix);
             return;
         }
-
-        std::string vsSourceStr =
-            "#version 450\n"
-            "\n"
-            "void main(){\n"
-            "    gl_Position = vec4(1);\n"
-            "}\n";
 
         std::string gsSourceStr = R"(
                OpCapability Geometry
@@ -5831,43 +4218,17 @@ TEST_F(VkLayerTest, CreatePipelineExceedMaxGeometryInstanceVertexCount) {
                OpReturn
                OpFunctionEnd
         )";
-
-        std::string fsSourceStr =
-            "#version 450\n"
-            "\n"
-            "layout(location=0) out vec4 color;"
-            "\n"
-            "void main(){\n"
-            "    color = vec4(1);\n"
-            "}\n";
-
-        VkShaderObj vs(m_device, vsSourceStr.c_str(), VK_SHADER_STAGE_VERTEX_BIT, this);
         VkShaderObj gs(m_device, gsSourceStr, VK_SHADER_STAGE_GEOMETRY_BIT, this);
-        VkShaderObj fs(m_device, fsSourceStr.c_str(), VK_SHADER_STAGE_FRAGMENT_BIT, this);
 
-        VkPipelineObj pipe(m_device);
-        pipe.AddShader(&vs);
-        pipe.AddShader(&gs);
-        pipe.AddShader(&fs);
-
-        // Set up CB 0; type is UNORM by default
-        pipe.AddDefaultColorAttachment();
-
-        VkDescriptorSetObj descriptorSet(m_device);
-        descriptorSet.AppendDummy();
-        descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
-
+        const auto set_info = [&](CreatePipelineHelper &helper) {
+            helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), gs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+        };
         if (overflow) {
-            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkPipelineShaderStageCreateInfo-stage-00714");
-            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkPipelineShaderStageCreateInfo-stage-00715");
-        }
-
-        pipe.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderPass());
-
-        if (overflow) {
-            m_errorMonitor->VerifyFound();
+            CreatePipelineHelper::OneshotTest(*this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                              vector<string>{"VUID-VkPipelineShaderStageCreateInfo-stage-00714",
+                                                             "VUID-VkPipelineShaderStageCreateInfo-stage-00715"});
         } else {
-            m_errorMonitor->VerifyNotFound();
+            CreatePipelineHelper::OneshotTest(*this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT, "", true);
         }
     }
 }
@@ -5880,23 +4241,8 @@ TEST_F(VkLayerTest, CreatePipelineUniformBlockNotProvided) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
-    char const *vsSource =
-        "#version 450\n"
-        "\n"
-        "void main(){\n"
-        "   gl_Position = vec4(1);\n"
-        "}\n";
-    char const *fsSource =
-        "#version 450\n"
-        "\n"
-        "layout(location=0) out vec4 x;\n"
-        "layout(set=0) layout(binding=0) uniform foo { int x; int y; } bar;\n"
-        "void main(){\n"
-        "   x = vec4(bar.y);\n"
-        "}\n";
-
-    VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
-    VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+    VkShaderObj vs(m_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
+    VkShaderObj fs(m_device, bindStateFragUniformShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this);
 
     VkPipelineObj pipe(m_device);
     pipe.AddShader(&vs);
@@ -5917,9 +4263,9 @@ TEST_F(VkLayerTest, CreatePipelineUniformBlockNotProvided) {
 TEST_F(VkLayerTest, CreatePipelinePushConstantsNotInLayout) {
     TEST_DESCRIPTION(
         "Test that an error is produced for a shader consuming push constants which are not provided in the pipeline layout");
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "not declared in layout");
 
     ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     char const *vsSource =
         "#version 450\n"
@@ -5928,31 +4274,17 @@ TEST_F(VkLayerTest, CreatePipelinePushConstantsNotInLayout) {
         "void main(){\n"
         "   gl_Position = vec4(consts.x);\n"
         "}\n";
-    char const *fsSource =
-        "#version 450\n"
-        "\n"
-        "layout(location=0) out vec4 x;\n"
-        "void main(){\n"
-        "   x = vec4(1);\n"
-        "}\n";
 
     VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
-    VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
 
-    VkPipelineObj pipe(m_device);
-    pipe.AddShader(&vs);
-    pipe.AddShader(&fs);
-
-    /* set up CB 0; type is UNORM by default */
-    pipe.AddDefaultColorAttachment();
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-
-    VkDescriptorSetObj descriptorSet(m_device);
-    descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
-
-    pipe.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderPass());
-
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+    pipe.InitState();
+    pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {});
     /* should have generated an error -- no push constant ranges provided! */
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "not declared in layout");
+    pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
 
@@ -5960,17 +4292,10 @@ TEST_F(VkLayerTest, CreatePipelineInputAttachmentMissing) {
     TEST_DESCRIPTION(
         "Test that an error is produced for a shader consuming an input attachment which is not included in the subpass "
         "description");
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                         "consumes input attachment index 0 but not provided in subpass");
 
     ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    char const *vsSource =
-        "#version 450\n"
-        "\n"
-        "void main(){\n"
-        "    gl_Position = vec4(1);\n"
-        "}\n";
     char const *fsSource =
         "#version 450\n"
         "\n"
@@ -5980,24 +4305,14 @@ TEST_F(VkLayerTest, CreatePipelineInputAttachmentMissing) {
         "   color = subpassLoad(x);\n"
         "}\n";
 
-    VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
     VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
 
-    VkPipelineObj pipe(m_device);
-    pipe.AddShader(&vs);
-    pipe.AddShader(&fs);
-    pipe.AddDefaultColorAttachment();
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-
-    VkDescriptorSetLayoutBinding dslb = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
-    const VkDescriptorSetLayoutObj dsl(m_device, {dslb});
-
-    const VkPipelineLayoutObj pl(m_device, {&dsl});
-
-    // error here.
-    pipe.CreateVKPipeline(pl.handle(), renderPass());
-
-    m_errorMonitor->VerifyFound();
+    const auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+        helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                      "consumes input attachment index 0 but not provided in subpass");
 }
 
 TEST_F(VkLayerTest, CreatePipelineInputAttachmentTypeMismatch) {
@@ -6009,12 +4324,6 @@ TEST_F(VkLayerTest, CreatePipelineInputAttachmentTypeMismatch) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
-    char const *vsSource =
-        "#version 450\n"
-        "\n"
-        "void main(){\n"
-        "    gl_Position = vec4(1);\n"
-        "}\n";
     char const *fsSource =
         "#version 450\n"
         "\n"
@@ -6024,7 +4333,7 @@ TEST_F(VkLayerTest, CreatePipelineInputAttachmentTypeMismatch) {
         "   color = subpassLoad(x);\n"
         "}\n";
 
-    VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
+    VkShaderObj vs(m_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
     VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
 
     VkPipelineObj pipe(m_device);
@@ -6073,17 +4382,10 @@ TEST_F(VkLayerTest, CreatePipelineInputAttachmentMissingArray) {
     TEST_DESCRIPTION(
         "Test that an error is produced for a shader consuming an input attachment which is not included in the subpass "
         "description -- array case");
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                         "consumes input attachment index 0 but not provided in subpass");
 
     ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    char const *vsSource =
-        "#version 450\n"
-        "\n"
-        "void main(){\n"
-        "    gl_Position = vec4(1);\n"
-        "}\n";
     char const *fsSource =
         "#version 450\n"
         "\n"
@@ -6093,31 +4395,20 @@ TEST_F(VkLayerTest, CreatePipelineInputAttachmentMissingArray) {
         "   color = subpassLoad(xs[0]);\n"
         "}\n";
 
-    VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
     VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
 
-    VkPipelineObj pipe(m_device);
-    pipe.AddShader(&vs);
-    pipe.AddShader(&fs);
-    pipe.AddDefaultColorAttachment();
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-
-    VkDescriptorSetLayoutBinding dslb = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 2, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
-    const VkDescriptorSetLayoutObj dsl(m_device, {dslb});
-
-    const VkPipelineLayoutObj pl(m_device, {&dsl});
-
-    // error here.
-    pipe.CreateVKPipeline(pl.handle(), renderPass());
-
-    m_errorMonitor->VerifyFound();
+    const auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+        helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 2, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                      "consumes input attachment index 0 but not provided in subpass");
 }
 
 TEST_F(VkLayerTest, CreateComputePipelineMissingDescriptor) {
     TEST_DESCRIPTION(
         "Test that an error is produced for a compute pipeline consuming a descriptor which is not provided in the pipeline "
         "layout");
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "Shader uses descriptor slot 0.0");
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
@@ -6130,41 +4421,20 @@ TEST_F(VkLayerTest, CreateComputePipelineMissingDescriptor) {
         "   x = vec4(1);\n"
         "}\n";
 
-    VkShaderObj cs(m_device, csSource, VK_SHADER_STAGE_COMPUTE_BIT, this);
-
-    VkDescriptorSetObj descriptorSet(m_device);
-    descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
-
-    VkComputePipelineCreateInfo cpci = {VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,
-                                        nullptr,
-                                        0,
-                                        {VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO, nullptr, 0,
-                                         VK_SHADER_STAGE_COMPUTE_BIT, cs.handle(), "main", nullptr},
-                                        descriptorSet.GetPipelineLayout(),
-                                        VK_NULL_HANDLE,
-                                        -1};
-
-    VkPipeline pipe;
-    VkResult err = vkCreateComputePipelines(m_device->device(), VK_NULL_HANDLE, 1, &cpci, nullptr, &pipe);
-
+    CreateComputePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.cs_.reset(new VkShaderObj(m_device, csSource, VK_SHADER_STAGE_COMPUTE_BIT, this));
+    pipe.InitState();
+    pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {});
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "Shader uses descriptor slot 0.0");
+    pipe.CreateComputePipeline();
     m_errorMonitor->VerifyFound();
-
-    if (err == VK_SUCCESS) {
-        vkDestroyPipeline(m_device->device(), pipe, nullptr);
-    }
 }
 
 TEST_F(VkLayerTest, CreateComputePipelineDescriptorTypeMismatch) {
     TEST_DESCRIPTION("Test that an error is produced for a pipeline consuming a descriptor-backed resource of a mismatched type");
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                         "but descriptor of type VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER");
 
     ASSERT_NO_FATAL_FAILURE(Init());
-
-    VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr};
-    const VkDescriptorSetLayoutObj dsl(m_device, {binding});
-
-    const VkPipelineLayoutObj pl(m_device, {&dsl});
 
     char const *csSource =
         "#version 450\n"
@@ -6174,25 +4444,13 @@ TEST_F(VkLayerTest, CreateComputePipelineDescriptorTypeMismatch) {
         "void main() {\n"
         "   x.x = 1.0f;\n"
         "}\n";
-    VkShaderObj cs(m_device, csSource, VK_SHADER_STAGE_COMPUTE_BIT, this);
 
-    VkComputePipelineCreateInfo cpci = {VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,
-                                        nullptr,
-                                        0,
-                                        {VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO, nullptr, 0,
-                                         VK_SHADER_STAGE_COMPUTE_BIT, cs.handle(), "main", nullptr},
-                                        pl.handle(),
-                                        VK_NULL_HANDLE,
-                                        -1};
-
-    VkPipeline pipe;
-    VkResult err = vkCreateComputePipelines(m_device->device(), VK_NULL_HANDLE, 1, &cpci, nullptr, &pipe);
-
-    m_errorMonitor->VerifyFound();
-
-    if (err == VK_SUCCESS) {
-        vkDestroyPipeline(m_device->device(), pipe, nullptr);
-    }
+    const auto set_info = [&](CreateComputePipelineHelper &helper) {
+        helper.cs_.reset(new VkShaderObj(m_device, csSource, VK_SHADER_STAGE_COMPUTE_BIT, this));
+        helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}};
+    };
+    CreateComputePipelineHelper::OneshotTest(*this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                             "but descriptor of type VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER");
 }
 
 TEST_F(VkLayerTest, MultiplePushDescriptorSets) {
@@ -6261,31 +4519,16 @@ TEST_F(VkLayerTest, AMDMixedAttachmentSamplesValidateGraphicsPipeline) {
         return;
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
-
-    VkRenderpassObj render_pass(m_device);
-
-    const VkPipelineLayoutObj pipeline_layout(m_device);
-
-    VkShaderObj vs(m_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
-    VkShaderObj fs(m_device, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     // Set a mismatched sample count
-
     VkPipelineMultisampleStateCreateInfo ms_state_ci = {};
     ms_state_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
     ms_state_ci.rasterizationSamples = VK_SAMPLE_COUNT_4_BIT;
 
-    VkPipelineObj pipe(m_device);
-    pipe.AddShader(&vs);
-    pipe.AddShader(&fs);
-    pipe.AddDefaultColorAttachment();
-    pipe.SetMSAA(&ms_state_ci);
-
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkGraphicsPipelineCreateInfo-subpass-01505");
-
-    pipe.CreateVKPipeline(pipeline_layout.handle(), render_pass.handle());
-
-    m_errorMonitor->VerifyFound();
+    const auto set_info = [&](CreatePipelineHelper &helper) { helper.pipe_ms_state_ci_ = ms_state_ci; };
+    CreatePipelineHelper::OneshotTest(*this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                      "VUID-VkGraphicsPipelineCreateInfo-subpass-01505");
 }
 
 TEST_F(VkLayerTest, FramebufferMixedSamplesNV) {
@@ -6720,7 +4963,6 @@ TEST_F(VkLayerTest, CooperativeMatrixNV) {
         "   fcoopmatNV<16, gl_ScopeSubgroup, C0, C1> C;\n"
         "   coopMatMulAddNV(A, B, C);\n"
         "}\n";
-    VkShaderObj cs(m_device, csSource, VK_SHADER_STAGE_COMPUTE_BIT, this);
 
     const uint32_t specData[] = {
         16,
@@ -6738,24 +4980,15 @@ TEST_F(VkLayerTest, CooperativeMatrixNV) {
         specData,
     };
 
-    VkComputePipelineCreateInfo cpci = {VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,
-                                        nullptr,
-                                        0,
-                                        {VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO, nullptr, 0,
-                                         VK_SHADER_STAGE_COMPUTE_BIT, cs.handle(), "main", &specInfo},
-                                        pl.handle(),
-                                        VK_NULL_HANDLE,
-                                        -1};
-
+    CreateComputePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.cs_.reset(new VkShaderObj(m_device, csSource, VK_SHADER_STAGE_COMPUTE_BIT, this, "main", false, &specInfo));
+    pipe.InitState();
+    pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {});
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "UNASSIGNED-CoreValidation-Shader-CooperativeMatrixType");
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "UNASSIGNED-CoreValidation-Shader-CooperativeMatrixMulAdd");
-
-    VkPipeline pipe = VK_NULL_HANDLE;
-    vkCreateComputePipelines(m_device->device(), VK_NULL_HANDLE, 1, &cpci, nullptr, &pipe);
-
+    pipe.CreateComputePipeline();
     m_errorMonitor->VerifyFound();
-
-    vkDestroyPipeline(m_device->device(), pipe, nullptr);
 }
 
 TEST_F(VkLayerTest, GraphicsPipelineStageCreationFeedbackCount) {
@@ -6803,51 +5036,21 @@ TEST_F(VkLayerTest, ComputePipelineStageCreationFeedbackCount) {
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VkDescriptorSetObj descriptorSet(m_device);
-    descriptorSet.AppendDummy();
-    descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
-
-    // Create a minimal compute pipeline
-    const char *cs_text = "#version 450\nvoid main() {}\n";  // minimal no-op shader
-    VkShaderObj cs_obj(m_device, cs_text, VK_SHADER_STAGE_COMPUTE_BIT, this);
-
     VkPipelineCreationFeedbackCreateInfoEXT feedback_info = {};
     VkPipelineCreationFeedbackEXT feedbacks[3] = {};
     feedback_info.sType = VK_STRUCTURE_TYPE_PIPELINE_CREATION_FEEDBACK_CREATE_INFO_EXT;
-
     feedback_info.pPipelineCreationFeedback = &feedbacks[0];
     feedback_info.pipelineStageCreationFeedbackCount = 1;
     feedback_info.pPipelineStageCreationFeedbacks = &feedbacks[1];
 
-    VkComputePipelineCreateInfo pipeline_info = {};
-    pipeline_info.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
-    pipeline_info.pNext = &feedback_info;
-    pipeline_info.layout = descriptorSet.GetPipelineLayout();
-    pipeline_info.basePipelineHandle = VK_NULL_HANDLE;
-    pipeline_info.basePipelineIndex = -1;
-    pipeline_info.stage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    pipeline_info.stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;
-    pipeline_info.stage.pName = "main";
-    pipeline_info.stage.module = cs_obj.handle();
+    const auto set_info = [&](CreateComputePipelineHelper &helper) { helper.cp_ci_.pNext = &feedback_info; };
 
-    {
-        m_errorMonitor->ExpectSuccess(VK_DEBUG_REPORT_ERROR_BIT_EXT);
-        VkPipeline cs_pipeline = VK_NULL_HANDLE;
-        vkCreateComputePipelines(device(), VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &cs_pipeline);
-        vkDestroyPipeline(device(), cs_pipeline, nullptr);
-        m_errorMonitor->VerifyNotFound();
-    }
+    CreateComputePipelineHelper::OneshotTest(*this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT, "", true);
 
-    {
-        m_errorMonitor->SetDesiredFailureMsg(
-            VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkPipelineCreationFeedbackCreateInfoEXT-pipelineStageCreationFeedbackCount-02669");
-        feedback_info.pipelineStageCreationFeedbackCount = 2;
-
-        VkPipeline cs_pipeline = VK_NULL_HANDLE;
-        vkCreateComputePipelines(device(), VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &cs_pipeline);
-        vkDestroyPipeline(device(), cs_pipeline, nullptr);
-        m_errorMonitor->VerifyFound();
-    }
+    feedback_info.pipelineStageCreationFeedbackCount = 2;
+    CreateComputePipelineHelper::OneshotTest(
+        *this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+        "VUID-VkPipelineCreationFeedbackCreateInfoEXT-pipelineStageCreationFeedbackCount-02669");
 }
 
 TEST_F(VkLayerTest, NVRayTracingPipelineStageCreationFeedbackCount) {
