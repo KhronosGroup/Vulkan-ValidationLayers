@@ -1092,8 +1092,8 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateGraphicsPipelines(
         struct create_graphics_pipeline_api_state {
             const VkGraphicsPipelineCreateInfo* pCreateInfos;
         } cgpl_state;
-        cgpl_state.pCreateInfos = pCreateInfos;
 #endif
+    cgpl_state.pCreateInfos = pCreateInfos;
 
     for (auto intercept : layer_data->object_dispatch) {
         auto lock = intercept->write_lock();
@@ -1131,8 +1131,8 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateComputePipelines(
     struct create_compute_pipeline_api_state {
         const VkComputePipelineCreateInfo* pCreateInfos;
     } ccpl_state;
-    ccpl_state.pCreateInfos = pCreateInfos;
 #endif
+    ccpl_state.pCreateInfos = pCreateInfos;
 
     for (auto intercept : layer_data->object_dispatch) {
         auto lock = intercept->write_lock();
