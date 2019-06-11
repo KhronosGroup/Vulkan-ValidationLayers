@@ -6908,7 +6908,7 @@ TEST_F(VkPositiveLayerTest, MultiplaneImageTests) {
     ASSERT_VK_SUCCESS(err);
 
     const VkPipelineLayoutObj pipeline_layout(m_device, {&ds.layout_});
-    ds.WriteDescriptorImageView(0, view, sampler);
+    ds.WriteDescriptorImage(0, view, sampler);
     ds.UpdateDescriptorSets();
 
     VkShaderObj vs(m_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
@@ -7184,4 +7184,23 @@ TEST_F(VkPositiveLayerTest, HostQueryResetSuccess) {
     vkDestroyQueryPool(m_device->device(), query_pool, nullptr);
 
     m_errorMonitor->VerifyNotFound();
+}
+
+TEST_F(VkPositiveLayerTest, CreatePipelineFragmentOutputNotConsumedButAlphaToCoverageEnabled) {
+    TEST_DESCRIPTION(
+        "Test that no warning is produced when writing to non-existing color attachment if alpha to coverage is enabled.");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget(0u));
+
+    VkPipelineMultisampleStateCreateInfo ms_state_ci = {};
+    ms_state_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+    ms_state_ci.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+    ms_state_ci.alphaToCoverageEnable = VK_TRUE;
+
+    const auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.pipe_ms_state_ci_ = ms_state_ci;
+        helper.cb_ci_.attachmentCount = 0;
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT, "", true);
 }

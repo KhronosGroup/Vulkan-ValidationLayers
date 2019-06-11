@@ -4798,7 +4798,7 @@ TEST_F(VkLayerTest, InvalidStorageImageLayout) {
     ASSERT_TRUE(image.initialized());
     VkImageView view = image.targetView(tex_format);
 
-    ds.WriteDescriptorImageView(0, view, 0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
+    ds.WriteDescriptorImage(0, view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
 
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
                                          " of VK_DESCRIPTOR_TYPE_STORAGE_IMAGE type is being updated with layout "
