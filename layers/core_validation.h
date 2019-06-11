@@ -173,28 +173,28 @@ struct SURFACE_STATE {
 using std::unordered_map;
 struct GpuValidationState;
 
-class ValidationStateTracker:  public ValidationObject {
-   public: //  TODO -- move to private
-    unordered_map<VkSampler, std::unique_ptr<SAMPLER_STATE>> samplerMap;
-    unordered_map<VkImageView, std::unique_ptr<IMAGE_VIEW_STATE>> imageViewMap;
-    unordered_map<VkImage, std::unique_ptr<IMAGE_STATE>> imageMap;
-    unordered_map<VkBufferView, std::unique_ptr<BUFFER_VIEW_STATE>> bufferViewMap;
-    unordered_map<VkBuffer, std::unique_ptr<BUFFER_STATE>> bufferMap;
-    unordered_map<VkPipeline, std::unique_ptr<PIPELINE_STATE>> pipelineMap;
-    unordered_map<VkDeviceMemory, std::unique_ptr<DEVICE_MEMORY_STATE>> memObjMap;
-    unordered_map<VkFramebuffer, std::unique_ptr<FRAMEBUFFER_STATE>> frameBufferMap;
-    unordered_map<VkShaderModule, std::unique_ptr<SHADER_MODULE_STATE>> shaderModuleMap;
-    unordered_map<VkDescriptorUpdateTemplateKHR, std::unique_ptr<TEMPLATE_STATE>> desc_template_map;
-    unordered_map<VkSwapchainKHR, std::unique_ptr<SWAPCHAIN_NODE>> swapchainMap;
-    unordered_map<VkDescriptorPool, std::unique_ptr<DESCRIPTOR_POOL_STATE>> descriptorPoolMap;
-    unordered_map<VkDescriptorSet, std::unique_ptr<cvdescriptorset::DescriptorSet>> setMap;
-    unordered_map<VkCommandBuffer, std::unique_ptr<CMD_BUFFER_STATE>> commandBufferMap;
-    unordered_map<VkCommandPool, std::unique_ptr<COMMAND_POOL_STATE>> commandPoolMap;
-    unordered_map<VkPipelineLayout, std::unique_ptr<PIPELINE_LAYOUT_STATE>> pipelineLayoutMap;
-    unordered_map<VkFence, std::unique_ptr<FENCE_STATE>> fenceMap;
-    unordered_map<VkQueryPool, std::unique_ptr<QUERY_POOL_STATE>> queryPoolMap;
-    unordered_map<VkSemaphore, std::unique_ptr<SEMAPHORE_STATE>> semaphoreMap;
-    unordered_map<VkSurfaceKHR, std::unique_ptr<SURFACE_STATE>> surface_map;
+#define VALSTATETRACK_MAP_AND_TRAITS_IMPL(handle_type, state_type, map_member, instance_scope)        \
+    template <typename Dummy>                                                                         \
+    struct AccessorStateHandle<state_type, Dummy> {                                                   \
+        using StateType = state_type;                                                                 \
+        using HandleType = handle_type;                                                               \
+    };                                                                                                \
+    AccessorTraitsTypes<state_type>::MapType map_member;                                              \
+    template <typename Dummy>                                                                         \
+    struct AccessorTraits<state_type, Dummy> : AccessorTraitsTypes<state_type> {                      \
+        static const bool kInstanceScope = instance_scope;                                            \
+        static MapType ValidationStateTracker::*Map() { return &ValidationStateTracker::map_member; } \
+    };
+
+#define VALSTATETRACK_MAP_AND_TRAITS(handle_type, state_type, map_member) \
+    VALSTATETRACK_MAP_AND_TRAITS_IMPL(handle_type, state_type, map_member, false)
+#define VALSTATETRACK_MAP_AND_TRAITS_INSTANCE_SCOPE(handle_type, state_type, map_member) \
+    VALSTATETRACK_MAP_AND_TRAITS_IMPL(handle_type, state_type, map_member, true)
+
+class ValidationStateTracker : public ValidationObject {
+   public:
+    //  TODO -- move to private
+    //  TODO -- make consistent with traits approach below.
     unordered_map<VkQueue, QUEUE_STATE> queueMap;
     unordered_map<VkEvent, EVENT_STATE> eventMap;
     unordered_map<ImageSubresourcePair, IMAGE_LAYOUT_STATE> imageLayoutMap;
@@ -207,34 +207,130 @@ class ValidationStateTracker:  public ValidationObject {
     unordered_map<QueryObject, bool> queryToStateMap;
     unordered_map<VkSamplerYcbcrConversion, uint64_t> ycbcr_conversion_ahb_fmt_map;
 
-public:
+    // Traits for State function resolution.  Specializations defined in the macro.
+    // NOTE: The Dummy argument allows for *partial* specialization at class scope, as full specialization at class scope
+    //       isn't supported until C++17.  Since the Dummy has a default all instantiations of the template can ignore it, but all
+    //       specializations of the template must list it (and not give it a default).
+    template <typename StateType, typename Dummy = int>
+    struct AccessorStateHandle {};
+    template <typename StateType, typename Dummy = int>
+    struct AccessorTraits {};
+    template <typename StateType_>
+    struct AccessorTraitsTypes {
+        using StateType = StateType_;
+        using HandleType = typename AccessorStateHandle<StateType>::HandleType;
+        using ReturnType = StateType*;
+        using MappedType = std::unique_ptr<StateType>;
+        using MapType = unordered_map<HandleType, MappedType>;
+    };
+
+    VALSTATETRACK_MAP_AND_TRAITS(VkSampler, SAMPLER_STATE, samplerMap)
+    VALSTATETRACK_MAP_AND_TRAITS(VkImageView, IMAGE_VIEW_STATE, imageViewMap)
+    VALSTATETRACK_MAP_AND_TRAITS(VkImage, IMAGE_STATE, imageMap)
+    VALSTATETRACK_MAP_AND_TRAITS(VkBufferView, BUFFER_VIEW_STATE, bufferViewMap)
+    VALSTATETRACK_MAP_AND_TRAITS(VkBuffer, BUFFER_STATE, bufferMap)
+    VALSTATETRACK_MAP_AND_TRAITS(VkPipeline, PIPELINE_STATE, pipelineMap)
+    VALSTATETRACK_MAP_AND_TRAITS(VkDeviceMemory, DEVICE_MEMORY_STATE, memObjMap)
+    VALSTATETRACK_MAP_AND_TRAITS(VkFramebuffer, FRAMEBUFFER_STATE, frameBufferMap)
+    VALSTATETRACK_MAP_AND_TRAITS(VkShaderModule, SHADER_MODULE_STATE, shaderModuleMap)
+    VALSTATETRACK_MAP_AND_TRAITS(VkDescriptorUpdateTemplateKHR, TEMPLATE_STATE, desc_template_map)
+    VALSTATETRACK_MAP_AND_TRAITS(VkSwapchainKHR, SWAPCHAIN_NODE, swapchainMap)
+    VALSTATETRACK_MAP_AND_TRAITS(VkDescriptorPool, DESCRIPTOR_POOL_STATE, descriptorPoolMap)
+    VALSTATETRACK_MAP_AND_TRAITS(VkDescriptorSet, cvdescriptorset::DescriptorSet, setMap)
+    VALSTATETRACK_MAP_AND_TRAITS(VkCommandBuffer, CMD_BUFFER_STATE, commandBufferMap)
+    VALSTATETRACK_MAP_AND_TRAITS(VkCommandPool, COMMAND_POOL_STATE, commandPoolMap)
+    VALSTATETRACK_MAP_AND_TRAITS(VkPipelineLayout, PIPELINE_LAYOUT_STATE, pipelineLayoutMap)
+    VALSTATETRACK_MAP_AND_TRAITS(VkFence, FENCE_STATE, fenceMap)
+    VALSTATETRACK_MAP_AND_TRAITS(VkQueryPool, QUERY_POOL_STATE, queryPoolMap)
+    VALSTATETRACK_MAP_AND_TRAITS(VkSemaphore, SEMAPHORE_STATE, semaphoreMap)
+    VALSTATETRACK_MAP_AND_TRAITS_INSTANCE_SCOPE(VkSurfaceKHR, SURFACE_STATE, surface_map)
+
+   public:
+    template <typename State>
+    typename AccessorTraits<State>::ReturnType Get(typename AccessorTraits<State>::Handle handle) {
+        using Traits = AccessorTraits<State>;
+        auto map_member = Traits::Map();
+        const typename Traits::MapType& map =
+            (Traits::kInstanceScope && (this->*map_member).size() == 0) ? instance_state->*map_member : this->*map_member;
+
+        const auto found_it = map.find(handle);
+        if (found_it == map.end()) {
+            return nullptr;
+        }
+        return found_it->second.get();
+    };
+
+    template <typename State>
+    const typename AccessorTraits<State>::ReturnType Get(typename AccessorTraits<State>::HandleType handle) const {
+        using Traits = AccessorTraits<State>;
+        auto map_member = Traits::Map();
+        const typename Traits::MapType& map =
+            (Traits::kInstanceScope && (this->*map_member).size() == 0) ? instance_state->*map_member : this->*map_member;
+
+        const auto found_it = map.find(handle);
+        if (found_it == map.cend()) {
+            return nullptr;
+        }
+        return found_it->second.get();
+    };
+
+    // Accessors for the VALSTATE... maps
+    const SAMPLER_STATE* GetSamplerState(VkSampler sampler) const { return Get<SAMPLER_STATE>(sampler); }
+    SAMPLER_STATE* GetSamplerState(VkSampler sampler) { return Get<SAMPLER_STATE>(sampler); }
+    const IMAGE_VIEW_STATE* GetImageViewState(VkImageView image_view) const { return Get<IMAGE_VIEW_STATE>(image_view); }
+    IMAGE_VIEW_STATE* GetImageViewState(VkImageView image_view) { return Get<IMAGE_VIEW_STATE>(image_view); }
+    const IMAGE_STATE* GetImageState(VkImage image) const { return Get<IMAGE_STATE>(image); }
+    IMAGE_STATE* GetImageState(VkImage image) { return Get<IMAGE_STATE>(image); }
+    const BUFFER_VIEW_STATE* GetBufferViewState(VkBufferView buffer_view) const { return Get<BUFFER_VIEW_STATE>(buffer_view); }
+    BUFFER_VIEW_STATE* GetBufferViewState(VkBufferView buffer_view) { return Get<BUFFER_VIEW_STATE>(buffer_view); }
+    const BUFFER_STATE* GetBufferState(VkBuffer buffer) const { return Get<BUFFER_STATE>(buffer); }
+    BUFFER_STATE* GetBufferState(VkBuffer buffer) { return Get<BUFFER_STATE>(buffer); }
+    const PIPELINE_STATE* GetPipelineState(VkPipeline pipeline) const { return Get<PIPELINE_STATE>(pipeline); }
+    PIPELINE_STATE* GetPipelineState(VkPipeline pipeline) { return Get<PIPELINE_STATE>(pipeline); }
+    const DEVICE_MEMORY_STATE* GetDevMemState(VkDeviceMemory mem) const { return Get<DEVICE_MEMORY_STATE>(mem); }
+    DEVICE_MEMORY_STATE* GetDevMemState(VkDeviceMemory mem) { return Get<DEVICE_MEMORY_STATE>(mem); }
+    const FRAMEBUFFER_STATE* GetFramebufferState(VkFramebuffer framebuffer) const { return Get<FRAMEBUFFER_STATE>(framebuffer); }
+    FRAMEBUFFER_STATE* GetFramebufferState(VkFramebuffer framebuffer) { return Get<FRAMEBUFFER_STATE>(framebuffer); }
+    const SHADER_MODULE_STATE* GetShaderModuleState(VkShaderModule module) const { return Get<SHADER_MODULE_STATE>(module); }
+    SHADER_MODULE_STATE* GetShaderModuleState(VkShaderModule module) { return Get<SHADER_MODULE_STATE>(module); }
+    const TEMPLATE_STATE* GetDescriptorTemplateState(VkDescriptorUpdateTemplateKHR descriptor_update_template) const {
+        return Get<TEMPLATE_STATE>(descriptor_update_template);
+    }
+    TEMPLATE_STATE* GetDescriptorTemplateState(VkDescriptorUpdateTemplateKHR descriptor_update_template) {
+        return Get<TEMPLATE_STATE>(descriptor_update_template);
+    }
+    const SWAPCHAIN_NODE* GetSwapchainState(VkSwapchainKHR swapchain) const { return Get<SWAPCHAIN_NODE>(swapchain); }
+    SWAPCHAIN_NODE* GetSwapchainState(VkSwapchainKHR swapchain) { return Get<SWAPCHAIN_NODE>(swapchain); }
+    const DESCRIPTOR_POOL_STATE* GetDescriptorPoolState(const VkDescriptorPool pool) const {
+        return Get<DESCRIPTOR_POOL_STATE>(pool);
+    }
+    DESCRIPTOR_POOL_STATE* GetDescriptorPoolState(const VkDescriptorPool pool) { return Get<DESCRIPTOR_POOL_STATE>(pool); }
+    const cvdescriptorset::DescriptorSet* GetSetNode(VkDescriptorSet set) const { return Get<cvdescriptorset::DescriptorSet>(set); }
+    cvdescriptorset::DescriptorSet* GetSetNode(VkDescriptorSet set) { return Get<cvdescriptorset::DescriptorSet>(set); }
+    const CMD_BUFFER_STATE* GetCBState(const VkCommandBuffer cb) const { return Get<CMD_BUFFER_STATE>(cb); }
+    CMD_BUFFER_STATE* GetCBState(const VkCommandBuffer cb) { return Get<CMD_BUFFER_STATE>(cb); }
+    const COMMAND_POOL_STATE* GetCommandPoolState(VkCommandPool pool) const { return Get<COMMAND_POOL_STATE>(pool); }
+    COMMAND_POOL_STATE* GetCommandPoolState(VkCommandPool pool) { return Get<COMMAND_POOL_STATE>(pool); }
+    const PIPELINE_LAYOUT_STATE* GetPipelineLayout(VkPipelineLayout pipeLayout) const {
+        return Get<PIPELINE_LAYOUT_STATE>(pipeLayout);
+    }
+    PIPELINE_LAYOUT_STATE* GetPipelineLayout(VkPipelineLayout pipeLayout) { return Get<PIPELINE_LAYOUT_STATE>(pipeLayout); }
+    const FENCE_STATE* GetFenceState(VkFence fence) const { return Get<FENCE_STATE>(fence); }
+    FENCE_STATE* GetFenceState(VkFence fence) { return Get<FENCE_STATE>(fence); }
+    const QUERY_POOL_STATE* GetQueryPoolState(VkQueryPool query_pool) const { return Get<QUERY_POOL_STATE>(query_pool); }
+    QUERY_POOL_STATE* GetQueryPoolState(VkQueryPool query_pool) { return Get<QUERY_POOL_STATE>(query_pool); }
+    const SEMAPHORE_STATE* GetSemaphoreState(VkSemaphore semaphore) const { return Get<SEMAPHORE_STATE>(semaphore); }
+    SEMAPHORE_STATE* GetSemaphoreState(VkSemaphore semaphore) { return Get<SEMAPHORE_STATE>(semaphore); }
+    const SURFACE_STATE* GetSurfaceState(VkSurfaceKHR surface) const { return Get<SURFACE_STATE>(surface); }
+    SURFACE_STATE* GetSurfaceState(VkSurfaceKHR surface) { return Get<SURFACE_STATE>(surface); }
+
     // Class Declarations for helper functions
-    cvdescriptorset::DescriptorSet* GetSetNode(VkDescriptorSet);
-    DESCRIPTOR_POOL_STATE* GetDescriptorPoolState(const VkDescriptorPool);
-    BUFFER_STATE* GetBufferState(VkBuffer);
-    IMAGE_STATE* GetImageState(VkImage);
-    DEVICE_MEMORY_STATE* GetDevMemState(VkDeviceMemory);
-    BUFFER_VIEW_STATE* GetBufferViewState(VkBufferView);
-    SAMPLER_STATE* GetSamplerState(VkSampler);
     IMAGE_VIEW_STATE* GetAttachmentImageViewState(FRAMEBUFFER_STATE* framebuffer, uint32_t index);
-    IMAGE_VIEW_STATE* GetImageViewState(VkImageView);
-    SWAPCHAIN_NODE* GetSwapchainState(VkSwapchainKHR);
-    CMD_BUFFER_STATE* GetCBState(const VkCommandBuffer cb);
-    PIPELINE_STATE* GetPipelineState(VkPipeline pipeline);
     RENDER_PASS_STATE* GetRenderPassState(VkRenderPass renderpass);
     std::shared_ptr<RENDER_PASS_STATE> GetRenderPassStateSharedPtr(VkRenderPass renderpass);
-    FRAMEBUFFER_STATE* GetFramebufferState(VkFramebuffer framebuffer);
-    COMMAND_POOL_STATE* GetCommandPoolState(VkCommandPool pool);
-    SHADER_MODULE_STATE const* GetShaderModuleState(VkShaderModule module);
-    FENCE_STATE* GetFenceState(VkFence fence);
     EVENT_STATE* GetEventState(VkEvent event);
-    QUERY_POOL_STATE* GetQueryPoolState(VkQueryPool query_pool);
     QUEUE_STATE* GetQueueState(VkQueue queue);
-    SEMAPHORE_STATE* GetSemaphoreState(VkSemaphore semaphore);
-    SURFACE_STATE* GetSurfaceState(VkSurfaceKHR surface);
     BINDABLE* GetObjectMemBinding(const VulkanTypedHandle& typed_handle);
-    PIPELINE_LAYOUT_STATE const* GetPipelineLayout(VkPipelineLayout pipeLayout);
-    const TEMPLATE_STATE* GetDescriptorTemplateState(VkDescriptorUpdateTemplateKHR descriptor_update_template);
 
     // Used for instance versions of this object
     unordered_map<VkPhysicalDevice, PHYSICAL_DEVICE_STATE> physical_device_map;
@@ -249,7 +345,7 @@ public:
 };
 
 class CoreChecks : public ValidationStateTracker {
-  public:
+   public:
     std::unordered_set<uint64_t> ahb_ext_formats_set;
     GlobalQFOTransferBarrierMap<VkImageMemoryBarrier> qfo_release_image_barrier_map;
     GlobalQFOTransferBarrierMap<VkBufferMemoryBarrier> qfo_release_buffer_barrier_map;

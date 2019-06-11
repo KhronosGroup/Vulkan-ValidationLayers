@@ -115,24 +115,6 @@ static const VkDeviceMemory MEMTRACKER_SWAP_CHAIN_IMAGE_KEY = (VkDeviceMemory)(-
 // 2nd special memory handle used to flag object as unbound from memory
 static const VkDeviceMemory MEMORY_UNBOUND = VkDeviceMemory(~((uint64_t)(0)) - 1);
 
-// Return buffer state ptr for specified buffer or else NULL
-BUFFER_STATE *ValidationStateTracker::GetBufferState(VkBuffer buffer) {
-    auto buff_it = bufferMap.find(buffer);
-    if (buff_it == bufferMap.end()) {
-        return nullptr;
-    }
-    return buff_it->second.get();
-}
-
-// Return IMAGE_VIEW_STATE ptr for specified imageView or else NULL
-IMAGE_VIEW_STATE *ValidationStateTracker::GetImageViewState(VkImageView image_view) {
-    auto iv_it = imageViewMap.find(image_view);
-    if (iv_it == imageViewMap.end()) {
-        return nullptr;
-    }
-    return iv_it->second.get();
-}
-
 // Get the global map of pending releases
 GlobalQFOTransferBarrierMap<VkImageMemoryBarrier> &CoreChecks::GetGlobalQFOReleaseBarrierMap(
     const QFOTransferBarrier<VkImageMemoryBarrier>::Tag &type_tag) {
@@ -150,47 +132,6 @@ IMAGE_VIEW_STATE *ValidationStateTracker::GetAttachmentImageViewState(FRAMEBUFFE
     return GetImageViewState(image_view);
 }
 
-// Return sampler node ptr for specified sampler or else NULL
-SAMPLER_STATE *ValidationStateTracker::GetSamplerState(VkSampler sampler) {
-    auto sampler_it = samplerMap.find(sampler);
-    if (sampler_it == samplerMap.end()) {
-        return nullptr;
-    }
-    return sampler_it->second.get();
-}
-// Return image state ptr for specified image or else NULL
-IMAGE_STATE *ValidationStateTracker::GetImageState(VkImage image) {
-    auto img_it = imageMap.find(image);
-    if (img_it == imageMap.end()) {
-        return nullptr;
-    }
-    return img_it->second.get();
-}
-// Return swapchain node for specified swapchain or else NULL
-SWAPCHAIN_NODE *ValidationStateTracker::GetSwapchainState(VkSwapchainKHR swapchain) {
-    auto swp_it = swapchainMap.find(swapchain);
-    if (swp_it == swapchainMap.end()) {
-        return nullptr;
-    }
-    return swp_it->second.get();
-}
-// Return buffer node ptr for specified buffer or else NULL
-BUFFER_VIEW_STATE *ValidationStateTracker::GetBufferViewState(VkBufferView buffer_view) {
-    auto bv_it = bufferViewMap.find(buffer_view);
-    if (bv_it == bufferViewMap.end()) {
-        return nullptr;
-    }
-    return bv_it->second.get();
-}
-
-FENCE_STATE *ValidationStateTracker::GetFenceState(VkFence fence) {
-    auto it = fenceMap.find(fence);
-    if (it == fenceMap.end()) {
-        return nullptr;
-    }
-    return it->second.get();
-}
-
 EVENT_STATE *ValidationStateTracker::GetEventState(VkEvent event) {
     auto it = eventMap.find(event);
     if (it == eventMap.end()) {
@@ -199,36 +140,12 @@ EVENT_STATE *ValidationStateTracker::GetEventState(VkEvent event) {
     return &it->second;
 }
 
-QUERY_POOL_STATE *ValidationStateTracker::GetQueryPoolState(VkQueryPool query_pool) {
-    auto it = queryPoolMap.find(query_pool);
-    if (it == queryPoolMap.end()) {
-        return nullptr;
-    }
-    return it->second.get();
-}
-
 QUEUE_STATE *ValidationStateTracker::GetQueueState(VkQueue queue) {
     auto it = queueMap.find(queue);
     if (it == queueMap.end()) {
         return nullptr;
     }
     return &it->second;
-}
-
-SEMAPHORE_STATE *ValidationStateTracker::GetSemaphoreState(VkSemaphore semaphore) {
-    auto it = semaphoreMap.find(semaphore);
-    if (it == semaphoreMap.end()) {
-        return nullptr;
-    }
-    return it->second.get();
-}
-
-COMMAND_POOL_STATE *ValidationStateTracker::GetCommandPoolState(VkCommandPool pool) {
-    auto it = commandPoolMap.find(pool);
-    if (it == commandPoolMap.end()) {
-        return nullptr;
-    }
-    return it->second.get();
 }
 
 PHYSICAL_DEVICE_STATE *ValidationStateTracker::GetPhysicalDeviceState(VkPhysicalDevice phys) {
@@ -241,15 +158,6 @@ PHYSICAL_DEVICE_STATE *ValidationStateTracker::GetPhysicalDeviceState(VkPhysical
 }
 
 PHYSICAL_DEVICE_STATE *ValidationStateTracker::GetPhysicalDeviceState() { return physical_device_state; }
-
-SURFACE_STATE *ValidationStateTracker::GetSurfaceState(VkSurfaceKHR surface) {
-    auto *surf_map = ((surface_map.size() > 0) ? &surface_map : &instance_state->surface_map);
-    auto it = surf_map->find(surface);
-    if (it == surf_map->end()) {
-        return nullptr;
-    }
-    return it->second.get();
-}
 
 // Return ptr to memory binding for given handle of specified type
 BINDABLE *ValidationStateTracker::GetObjectMemBinding(const VulkanTypedHandle &typed_handle) {
@@ -344,16 +252,6 @@ ImageSubresourceLayoutMap *GetImageSubresourceLayoutMap(CMD_BUFFER_STATE *cb_sta
         return new_map;
     }
     return it->second.get();
-}
-
-// Return ptr to info in map container containing mem, or NULL if not found
-//  Calls to this function should be wrapped in mutex
-DEVICE_MEMORY_STATE *ValidationStateTracker::GetDevMemState(const VkDeviceMemory mem) {
-    auto mem_it = memObjMap.find(mem);
-    if (mem_it == memObjMap.end()) {
-        return NULL;
-    }
-    return mem_it->second.get();
 }
 
 void CoreChecks::AddMemObjInfo(void *object, const VkDeviceMemory mem, const VkMemoryAllocateInfo *pAllocateInfo) {
@@ -708,15 +606,6 @@ bool CoreChecks::ValidateStatus(CMD_BUFFER_STATE *pNode, CBStatusFlags status_ma
     return false;
 }
 
-// Retrieve pipeline node ptr for given pipeline object
-PIPELINE_STATE *ValidationStateTracker::GetPipelineState(VkPipeline pipeline) {
-    auto it = pipelineMap.find(pipeline);
-    if (it == pipelineMap.end()) {
-        return nullptr;
-    }
-    return it->second.get();
-}
-
 RENDER_PASS_STATE *ValidationStateTracker::GetRenderPassState(VkRenderPass renderpass) {
     auto it = renderPassMap.find(renderpass);
     if (it == renderPassMap.end()) {
@@ -733,14 +622,6 @@ std::shared_ptr<RENDER_PASS_STATE> ValidationStateTracker::GetRenderPassStateSha
     return it->second;
 }
 
-FRAMEBUFFER_STATE *ValidationStateTracker::GetFramebufferState(VkFramebuffer framebuffer) {
-    auto it = frameBufferMap.find(framebuffer);
-    if (it == frameBufferMap.end()) {
-        return nullptr;
-    }
-    return it->second.get();
-}
-
 std::shared_ptr<cvdescriptorset::DescriptorSetLayout const> const GetDescriptorSetLayout(CoreChecks const *dev_data,
                                                                                          VkDescriptorSetLayout dsLayout) {
     auto it = dev_data->descriptorSetLayoutMap.find(dsLayout);
@@ -748,30 +629,6 @@ std::shared_ptr<cvdescriptorset::DescriptorSetLayout const> const GetDescriptorS
         return nullptr;
     }
     return it->second;
-}
-
-PIPELINE_LAYOUT_STATE const *ValidationStateTracker::GetPipelineLayout(VkPipelineLayout pipeLayout) {
-    auto it = pipelineLayoutMap.find(pipeLayout);
-    if (it == pipelineLayoutMap.end()) {
-        return nullptr;
-    }
-    return it->second.get();
-}
-
-SHADER_MODULE_STATE const *ValidationStateTracker::GetShaderModuleState(VkShaderModule module) {
-    auto it = shaderModuleMap.find(module);
-    if (it == shaderModuleMap.end()) {
-        return nullptr;
-    }
-    return it->second.get();
-}
-
-const TEMPLATE_STATE *ValidationStateTracker::GetDescriptorTemplateState(VkDescriptorUpdateTemplateKHR descriptor_update_template) {
-    const auto it = desc_template_map.find(descriptor_update_template);
-    if (it == desc_template_map.cend()) {
-        return nullptr;
-    }
-    return it->second.get();
 }
 
 // Return true if for a given PSO, the given state enum is dynamic, else return false
@@ -951,15 +808,6 @@ bool CoreChecks::ValidateRenderPassCompatibility(const char *type1_string, const
         }
     }
     return skip;
-}
-
-// Return Set node ptr for specified set or else NULL
-cvdescriptorset::DescriptorSet *ValidationStateTracker::GetSetNode(VkDescriptorSet set) {
-    auto set_it = setMap.find(set);
-    if (set_it == setMap.end()) {
-        return NULL;
-    }
-    return set_it->second.get();
 }
 
 // For given pipeline, return number of MSAA samples, or one if MSAA disabled
@@ -1854,15 +1702,6 @@ bool CoreChecks::ValidatePipelineUnlocked(std::vector<std::unique_ptr<PIPELINE_S
 
 // Block of code at start here specifically for managing/tracking DSs
 
-// Return Pool node ptr for specified pool or else NULL
-DESCRIPTOR_POOL_STATE *ValidationStateTracker::GetDescriptorPoolState(const VkDescriptorPool pool) {
-    auto pool_it = descriptorPoolMap.find(pool);
-    if (pool_it == descriptorPoolMap.end()) {
-        return NULL;
-    }
-    return pool_it->second.get();
-}
-
 // Validate that given set is valid and that it's not being used by an in-flight CmdBuffer
 // func_str is the name of the calling function
 // Return false if no errors occur
@@ -1902,15 +1741,6 @@ void CoreChecks::DeletePools() {
         ii->second->sets.clear();
         ii = descriptorPoolMap.erase(ii);
     }
-}
-
-// For given CB object, fetch associated CB Node from map
-CMD_BUFFER_STATE *ValidationStateTracker::GetCBState(const VkCommandBuffer cb) {
-    auto it = commandBufferMap.find(cb);
-    if (it == commandBufferMap.end()) {
-        return NULL;
-    }
-    return it->second.get();
 }
 
 // If a renderpass is active, verify that the given command type is appropriate for current subpass state
