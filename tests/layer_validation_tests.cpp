@@ -1871,6 +1871,12 @@ void BarrierQueueFamilyTestHelper::operator()(std::string img_err, std::string b
     context_->Reset();
 };
 
+void print_android(const char *c) {
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
+    __android_log_print(ANDROID_LOG_INFO, "VulkanLayerValidationTests", "%s", c);
+#endif  // VK_USE_PLATFORM_ANDROID_KHR
+}
+
 #if defined(ANDROID) && defined(VALIDATION_APK)
 const char *appTag = "VulkanLayerValidationTests";
 static bool initialized = false;

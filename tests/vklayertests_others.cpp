@@ -4257,19 +4257,19 @@ TEST_F(VkLayerTest, ValidateStride) {
 
     char data_space;
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkGetQueryPoolResults-flags-00814");
-    vkGetQueryPoolResults(m_device->handle(), query_pool, 0, 1, sizeof(data_space), &data_space, 1, VK_QUERY_RESULT_WAIT_BIT);
+    vkGetQueryPoolResults(m_device->handle(), query_pool, 0, 1, sizeof(data_space), &data_space, 1, 0);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkGetQueryPoolResults-flags-00815");
     vkGetQueryPoolResults(m_device->handle(), query_pool, 0, 1, sizeof(data_space), &data_space, 1, VK_QUERY_RESULT_64_BIT);
     m_errorMonitor->VerifyFound();
 
-    char data_space4[4];
+    char data_space4[4] = "";
     m_errorMonitor->ExpectSuccess();
-    vkGetQueryPoolResults(m_device->handle(), query_pool, 0, 1, sizeof(data_space4), &data_space4, 4, VK_QUERY_RESULT_WAIT_BIT);
+    vkGetQueryPoolResults(m_device->handle(), query_pool, 0, 1, sizeof(data_space4), &data_space4, 4, 0);
     m_errorMonitor->VerifyNotFound();
 
-    char data_space8[8];
+    char data_space8[8] = "";
     m_errorMonitor->ExpectSuccess();
     vkGetQueryPoolResults(m_device->handle(), query_pool, 0, 1, sizeof(data_space8), &data_space8, 8, VK_QUERY_RESULT_64_BIT);
     m_errorMonitor->VerifyNotFound();
@@ -4287,7 +4287,7 @@ TEST_F(VkLayerTest, ValidateStride) {
 
     m_commandBuffer->begin();
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdCopyQueryPoolResults-flags-00822");
-    vkCmdCopyQueryPoolResults(m_commandBuffer->handle(), query_pool, 0, 1, buffer.handle(), 1, 1, VK_QUERY_RESULT_WAIT_BIT);
+    vkCmdCopyQueryPoolResults(m_commandBuffer->handle(), query_pool, 0, 1, buffer.handle(), 1, 1, 0);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdCopyQueryPoolResults-flags-00823");
@@ -4295,7 +4295,7 @@ TEST_F(VkLayerTest, ValidateStride) {
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->ExpectSuccess();
-    vkCmdCopyQueryPoolResults(m_commandBuffer->handle(), query_pool, 0, 1, buffer.handle(), 4, 4, VK_QUERY_RESULT_WAIT_BIT);
+    vkCmdCopyQueryPoolResults(m_commandBuffer->handle(), query_pool, 0, 1, buffer.handle(), 4, 4, 0);
     m_errorMonitor->VerifyNotFound();
 
     m_errorMonitor->ExpectSuccess();
@@ -4331,6 +4331,7 @@ TEST_F(VkLayerTest, ValidateStride) {
 
         vkCmdEndRenderPass(m_commandBuffer->handle());
         m_commandBuffer->end();
+
     } else {
         printf("%s Test requires unsupported multiDrawIndirect feature. Skipped.\n", kSkipPrefix);
     }
