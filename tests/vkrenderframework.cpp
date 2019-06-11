@@ -1464,7 +1464,7 @@ VkConstantBufferObj::VkConstantBufferObj(VkDeviceObj *device, VkDeviceSize alloc
 VkPipelineShaderStageCreateInfo const &VkShaderObj::GetStageCreateInfo() const { return m_stage_info; }
 
 VkShaderObj::VkShaderObj(VkDeviceObj *device, const char *shader_code, VkShaderStageFlagBits stage, VkRenderFramework *framework,
-                         char const *name, bool debug) {
+                         char const *name, bool debug, VkSpecializationInfo *specInfo) {
     VkResult U_ASSERT_ONLY err = VK_SUCCESS;
     std::vector<unsigned int> spv;
     VkShaderModuleCreateInfo moduleCreateInfo;
@@ -1476,7 +1476,7 @@ VkShaderObj::VkShaderObj(VkDeviceObj *device, const char *shader_code, VkShaderS
     m_stage_info.stage = stage;
     m_stage_info.module = VK_NULL_HANDLE;
     m_stage_info.pName = name;
-    m_stage_info.pSpecializationInfo = nullptr;
+    m_stage_info.pSpecializationInfo = specInfo;
 
     moduleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
     moduleCreateInfo.pNext = nullptr;
@@ -1492,7 +1492,7 @@ VkShaderObj::VkShaderObj(VkDeviceObj *device, const char *shader_code, VkShaderS
 }
 
 VkShaderObj::VkShaderObj(VkDeviceObj *device, const std::string spv_source, VkShaderStageFlagBits stage,
-                         VkRenderFramework *framework, char const *name) {
+                         VkRenderFramework *framework, char const *name, VkSpecializationInfo *specInfo) {
     VkResult U_ASSERT_ONLY err = VK_SUCCESS;
     std::vector<unsigned int> spv;
     VkShaderModuleCreateInfo moduleCreateInfo;
@@ -1504,7 +1504,7 @@ VkShaderObj::VkShaderObj(VkDeviceObj *device, const std::string spv_source, VkSh
     m_stage_info.stage = stage;
     m_stage_info.module = VK_NULL_HANDLE;
     m_stage_info.pName = name;
-    m_stage_info.pSpecializationInfo = nullptr;
+    m_stage_info.pSpecializationInfo = specInfo;
 
     moduleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
     moduleCreateInfo.pNext = nullptr;

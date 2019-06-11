@@ -194,6 +194,19 @@ void TestRenderPassCreate(ErrorMonitor *error_monitor, const VkDevice device, co
     }
 }
 
+void TestRenderPass2KHRCreate(ErrorMonitor *error_monitor, const VkDevice device, const VkRenderPassCreateInfo2KHR *create_info,
+                              const char *rp2_vuid) {
+    VkRenderPass render_pass = VK_NULL_HANDLE;
+    VkResult err;
+    PFN_vkCreateRenderPass2KHR vkCreateRenderPass2KHR =
+        (PFN_vkCreateRenderPass2KHR)vkGetDeviceProcAddr(device, "vkCreateRenderPass2KHR");
+
+    error_monitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, rp2_vuid);
+    err = vkCreateRenderPass2KHR(device, create_info, nullptr, &render_pass);
+    if (err == VK_SUCCESS) vkDestroyRenderPass(device, render_pass, nullptr);
+    error_monitor->VerifyFound();
+}
+
 void TestRenderPassBegin(ErrorMonitor *error_monitor, const VkDevice device, const VkCommandBuffer command_buffer,
                          const VkRenderPassBeginInfo *begin_info, bool rp2Supported, const char *rp1_vuid, const char *rp2_vuid) {
     VkCommandBufferBeginInfo cmd_begin_info = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, nullptr,
@@ -399,7 +412,7 @@ void CreateSamplerTest(VkLayerTest &test, const VkSamplerCreateInfo *pCreateInfo
     VkResult err;
     VkSampler sampler = VK_NULL_HANDLE;
     if (code.length())
-        test.Monitor()->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, code);
+        test.Monitor()->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT, code);
     else
         test.Monitor()->ExpectSuccess();
 
@@ -1285,8 +1298,8 @@ void OneOffDescriptorSet::WriteDescriptorBufferView(int blinding, VkBufferView &
     descriptor_writes.emplace_back(descriptor_write);
 }
 
-void OneOffDescriptorSet::WriteDescriptorImageView(int blinding, VkImageView image_view, VkSampler sampler,
-                                                   VkDescriptorType descriptorType) {
+void OneOffDescriptorSet::WriteDescriptorImage(int blinding, VkImageView image_view, VkSampler sampler,
+                                               VkDescriptorType descriptorType) {
     VkDescriptorImageInfo image_info = {};
     image_info.imageView = image_view;
     image_info.sampler = sampler;

@@ -150,6 +150,14 @@ static const char bindStateFragSamplerShaderText[] =
     "   x = texture(s, vec2(1));\n"
     "}\n";
 
+static const char bindStateFragUniformShaderText[] =
+    "#version 450\n"
+    "layout(set=0) layout(binding=0) uniform foo { int x; int y; } bar;\n"
+    "layout(location=0) out vec4 x;\n"
+    "void main(){\n"
+    "   x = vec4(bar.y);\n"
+    "}\n";
+
 // Static arrays helper
 template <class ElementT, size_t array_size>
 size_t size(ElementT (&)[array_size]) {
@@ -396,8 +404,8 @@ struct OneOffDescriptorSet {
                                VkDescriptorType descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
     void WriteDescriptorBufferView(int blinding, VkBufferView &buffer_view,
                                    VkDescriptorType descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER);
-    void WriteDescriptorImageView(int blinding, VkImageView image_view, VkSampler sampler,
-                                  VkDescriptorType descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+    void WriteDescriptorImage(int blinding, VkImageView image_view, VkSampler sampler,
+                              VkDescriptorType descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
     void UpdateDescriptorSets();
 };
 
@@ -724,7 +732,8 @@ extern "C" void *ReleaseNullFence(void *arg);
 
 void TestRenderPassCreate(ErrorMonitor *error_monitor, const VkDevice device, const VkRenderPassCreateInfo *create_info,
                           bool rp2Supported, const char *rp1_vuid, const char *rp2_vuid);
-
+void TestRenderPass2KHRCreate(ErrorMonitor *error_monitor, const VkDevice device, const VkRenderPassCreateInfo2KHR *create_info,
+                              const char *rp2_vuid);
 void TestRenderPassBegin(ErrorMonitor *error_monitor, const VkDevice device, const VkCommandBuffer command_buffer,
                          const VkRenderPassBeginInfo *begin_info, bool rp2Supported, const char *rp1_vuid, const char *rp2_vuid);
 
