@@ -723,6 +723,62 @@ TEST_F(VkLayerTest, UseObjectWithWrongDevice) {
     vkDestroyDevice(second_device, NULL);
 }
 
+TEST_F(VkLayerTest, InvalidAllocationCallbacks) {
+    TEST_DESCRIPTION("Test with invalid VkAllocationCallbacks");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    // vkCreateInstance, and vkCreateDevice tend to crash in the Loader Trampoline ATM, so choosing vkCreateCommandPool
+    const VkCommandPoolCreateInfo cpci = {VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO, nullptr, 0,
+                                          DeviceObj()->QueueFamilyMatching(0, 0, true)};
+    VkCommandPool cmdPool;
+
+    struct Alloc {
+        static VKAPI_ATTR void *VKAPI_CALL alloc(void *, size_t, size_t, VkSystemAllocationScope) { return nullptr; };
+        static VKAPI_ATTR void *VKAPI_CALL realloc(void *, void *, size_t, size_t, VkSystemAllocationScope) { return nullptr; };
+        static VKAPI_ATTR void VKAPI_CALL free(void *, void *){};
+        static VKAPI_ATTR void VKAPI_CALL internalAlloc(void *, size_t, VkInternalAllocationType, VkSystemAllocationScope){};
+        static VKAPI_ATTR void VKAPI_CALL internalFree(void *, size_t, VkInternalAllocationType, VkSystemAllocationScope){};
+    };
+
+    {
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkAllocationCallbacks-pfnAllocation-00632");
+        const VkAllocationCallbacks allocator = {nullptr, nullptr, Alloc::realloc, Alloc::free, nullptr, nullptr};
+        vkCreateCommandPool(device(), &cpci, &allocator, &cmdPool);
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkAllocationCallbacks-pfnReallocation-00633");
+        const VkAllocationCallbacks allocator = {nullptr, Alloc::alloc, nullptr, Alloc::free, nullptr, nullptr};
+        vkCreateCommandPool(device(), &cpci, &allocator, &cmdPool);
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkAllocationCallbacks-pfnFree-00634");
+        const VkAllocationCallbacks allocator = {nullptr, Alloc::alloc, Alloc::realloc, nullptr, nullptr, nullptr};
+        vkCreateCommandPool(device(), &cpci, &allocator, &cmdPool);
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                             "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
+        const VkAllocationCallbacks allocator = {nullptr, Alloc::alloc, Alloc::realloc, Alloc::free, nullptr, Alloc::internalFree};
+        vkCreateCommandPool(device(), &cpci, &allocator, &cmdPool);
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                             "VUID-VkAllocationCallbacks-pfnInternalAllocation-00635");
+        const VkAllocationCallbacks allocator = {nullptr, Alloc::alloc, Alloc::realloc, Alloc::free, Alloc::internalAlloc, nullptr};
+        vkCreateCommandPool(device(), &cpci, &allocator, &cmdPool);
+        m_errorMonitor->VerifyFound();
+    }
+}
+
 TEST_F(VkLayerTest, MismatchedQueueFamiliesOnSubmit) {
     TEST_DESCRIPTION(
         "Submit command buffer created using one queue family and attempt to submit them on a queue created in a different queue "
