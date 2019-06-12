@@ -278,6 +278,8 @@ class ValidationSource:
                         line = prepend[:-2] + line.lstrip().lstrip('"') # join lines skipping CR, whitespace and trailing/leading quote char
                         prepend = None
                     if any(prefix in line for prefix in vuid_prefixes):
+                        # Replace the '(' of lines containing validation helper functions with ' ' to make them easier to parse
+                        line = line.replace("(", " ")
                         line_list = line.split()
 
                         # A VUID string that has been broken by clang will start with a vuid prefix and end with -, and will be last in the list
