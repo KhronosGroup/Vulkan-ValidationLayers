@@ -6886,3 +6886,66 @@ TEST_F(VkLayerTest, NVRayTracingPipelineStageCreationFeedbackCount) {
     CreateNVRayTracingPipelineHelper::OneshotTest(
         *this, set_feedback, "VUID-VkPipelineCreationFeedbackCreateInfoEXT-pipelineStageCreationFeedbackCount-02670");
 }
+
+TEST_F(VkLayerTest, CreatePipelineCheckShaderImageFootprintEnabled) {
+    TEST_DESCRIPTION("Create a pipeline requiring the shader image footprint feature which has not enabled on the device.");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    std::vector<const char *> device_extension_names;
+    auto features = m_device->phy().features();
+
+    // Disable the image footprint feature.
+    VkPhysicalDeviceShaderImageFootprintFeaturesNV image_footprint_features = {};
+    image_footprint_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_IMAGE_FOOTPRINT_FEATURES_NV;
+    image_footprint_features.imageFootprint = VK_FALSE;
+
+    void *pnext_chain = reinterpret_cast<void *>(&image_footprint_features);
+
+    VkDeviceObj test_device(0, gpu(), device_extension_names, &features, pnext_chain);
+
+    char const *vsSource =
+        "#version 450\n"
+        "void main(){\n"
+        "  gl_Position = vec4(1);\n"
+        "}\n";
+    char const *fsSource =
+        "#version 450\n"
+        "#extension GL_NV_shader_texture_footprint  : require\n"
+        "layout(set=0, binding=0) uniform sampler2D s;\n"
+        "layout(location=0) out vec4 color;\n"
+        "void main(){\n"
+        "  gl_TextureFootprint2DNV footprint;\n"
+        "  if (textureFootprintNV(s, vec2(1.0), 5, false, footprint)) {\n"
+        "    color = vec4(0.0, 1.0, 0.0, 1.0);\n"
+        "  } else {\n"
+        "    color = vec4(vec2(footprint.anchor), vec2(footprint.offset));\n"
+        "  }\n"
+        "}\n";
+
+    VkShaderObj vs(&test_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
+    VkShaderObj fs(&test_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+
+    VkRenderpassObj render_pass(&test_device);
+
+    VkPipelineObj pipe(&test_device);
+    pipe.AddDefaultColorAttachment();
+    pipe.AddShader(&vs);
+    pipe.AddShader(&fs);
+
+    VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
+    const VkDescriptorSetLayoutObj ds_layout(&test_device, {binding});
+    ASSERT_TRUE(ds_layout.initialized());
+
+    const VkPipelineLayoutObj pipeline_layout(&test_device, {&ds_layout});
+
+    m_errorMonitor->SetDesiredFailureMsg(
+        VK_DEBUG_REPORT_ERROR_BIT_EXT,
+        "Shader requires VkPhysicalDeviceShaderImageFootprintFeaturesNV::imageFootprint but is not enabled on the device");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                         "Shader requires extension VkPhysicalDeviceShaderImageFootprintFeaturesNV::imageFootprint "
+                                         "but is not enabled on the device");
+    pipe.CreateVKPipeline(pipeline_layout.handle(), render_pass.handle());
+    m_errorMonitor->VerifyFound();
+}
