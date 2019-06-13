@@ -7005,7 +7005,6 @@ TEST_F(VkLayerTest, CreatePipelineCheckFragmentShaderBarycentricEnabled) {
     m_errorMonitor->VerifyFound();
 }
 
-
 TEST_F(VkLayerTest, CreatePipelineCheckComputeShaderDerivativesEnabled) {
     TEST_DESCRIPTION("Create a pipeline requiring the compute shader derivatives feature which has not enabled on the device.");
 
