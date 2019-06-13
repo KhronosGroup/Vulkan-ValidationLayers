@@ -6949,3 +6949,58 @@ TEST_F(VkLayerTest, CreatePipelineCheckShaderImageFootprintEnabled) {
     pipe.CreateVKPipeline(pipeline_layout.handle(), render_pass.handle());
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(VkLayerTest, CreatePipelineCheckFragmentShaderBarycentricEnabled) {
+    TEST_DESCRIPTION("Create a pipeline requiring the fragment shader barycentric feature which has not enabled on the device.");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    std::vector<const char *> device_extension_names;
+    auto features = m_device->phy().features();
+
+    // Disable the fragment shader barycentric feature.
+    VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV fragment_shader_barycentric_features = {};
+    fragment_shader_barycentric_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADER_BARYCENTRIC_FEATURES_NV;
+    fragment_shader_barycentric_features.fragmentShaderBarycentric = VK_FALSE;
+
+    void *pnext_chain = reinterpret_cast<void *>(&fragment_shader_barycentric_features);
+
+    VkDeviceObj test_device(0, gpu(), device_extension_names, &features, pnext_chain);
+
+    char const *vsSource =
+        "#version 450\n"
+        "void main(){\n"
+        "  gl_Position = vec4(1);\n"
+        "}\n";
+    char const *fsSource =
+        "#version 450\n"
+        "#extension GL_NV_fragment_shader_barycentric : require\n"
+        "layout(location=0) out float value;\n"
+        "void main(){\n"
+        "  value = gl_BaryCoordNV.x;\n"
+        "}\n";
+
+    VkShaderObj vs(&test_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
+    VkShaderObj fs(&test_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+
+    VkRenderpassObj render_pass(&test_device);
+
+    VkPipelineObj pipe(&test_device);
+    pipe.AddDefaultColorAttachment();
+    pipe.AddShader(&vs);
+    pipe.AddShader(&fs);
+
+    const VkPipelineLayoutObj pipeline_layout(&test_device);
+
+    m_errorMonitor->SetDesiredFailureMsg(
+        VK_DEBUG_REPORT_ERROR_BIT_EXT,
+        "Shader requires VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV::fragmentShaderBarycentric but is not enabled on the "
+        "device");
+    m_errorMonitor->SetDesiredFailureMsg(
+        VK_DEBUG_REPORT_ERROR_BIT_EXT,
+        "Shader requires extension VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV::fragmentShaderBarycentric but is not "
+        "enabled on the device");
+    pipe.CreateVKPipeline(pipeline_layout.handle(), render_pass.handle());
+    m_errorMonitor->VerifyFound();
+}
