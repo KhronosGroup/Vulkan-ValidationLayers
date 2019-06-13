@@ -7004,3 +7004,68 @@ TEST_F(VkLayerTest, CreatePipelineCheckFragmentShaderBarycentricEnabled) {
     pipe.CreateVKPipeline(pipeline_layout.handle(), render_pass.handle());
     m_errorMonitor->VerifyFound();
 }
+
+
+TEST_F(VkLayerTest, CreatePipelineCheckComputeShaderDerivativesEnabled) {
+    TEST_DESCRIPTION("Create a pipeline requiring the compute shader derivatives feature which has not enabled on the device.");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    std::vector<const char *> device_extension_names;
+    auto features = m_device->phy().features();
+
+    // Disable the compute shader derivatives features.
+    VkPhysicalDeviceComputeShaderDerivativesFeaturesNV cmopute_shader_derivatives_features = {};
+    cmopute_shader_derivatives_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COMPUTE_SHADER_DERIVATIVES_FEATURES_NV;
+    cmopute_shader_derivatives_features.computeDerivativeGroupLinear = VK_FALSE;
+    cmopute_shader_derivatives_features.computeDerivativeGroupQuads = VK_FALSE;
+
+    void *pnext_chain = reinterpret_cast<void *>(&cmopute_shader_derivatives_features);
+
+    VkDeviceObj test_device(0, gpu(), device_extension_names, &features, pnext_chain);
+
+    VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr};
+    const VkDescriptorSetLayoutObj dsl(&test_device, {binding});
+    const VkPipelineLayoutObj pl(&test_device, {&dsl});
+
+    char const *csSource =
+        "#version 450\n"
+        "#extension GL_NV_compute_shader_derivatives : require\n"
+        "\n"
+        "layout(local_size_x=2, local_size_y=4) in;\n"
+        "layout(derivative_group_quadsNV) in;\n"
+        "\n"
+        "layout(set=0, binding=0) buffer InputOutputBuffer {\n"
+        "  float values[];\n"
+        "};\n"
+        "\n"
+        "void main(){\n"
+        "   values[gl_LocalInvocationIndex] = dFdx(values[gl_LocalInvocationIndex]);"
+        "}\n";
+
+    VkShaderObj cs(&test_device, csSource, VK_SHADER_STAGE_COMPUTE_BIT, this);
+
+    VkComputePipelineCreateInfo cpci = {VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,
+                                        nullptr,
+                                        0,
+                                        {VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO, nullptr, 0,
+                                         VK_SHADER_STAGE_COMPUTE_BIT, cs.handle(), "main", nullptr},
+                                        pl.handle(),
+                                        VK_NULL_HANDLE,
+                                        -1};
+
+    m_errorMonitor->SetDesiredFailureMsg(
+        VK_DEBUG_REPORT_ERROR_BIT_EXT,
+        "Shader requires VkPhysicalDeviceComputeShaderDerivativesFeaturesNV::computeDerivativeGroupQuads but is not enabled on the "
+        "device");
+    m_errorMonitor->SetDesiredFailureMsg(
+        VK_DEBUG_REPORT_ERROR_BIT_EXT,
+        "Shader requires extension VkPhysicalDeviceComputeShaderDerivativesFeaturesNV::computeDerivativeGroupQuads but is not "
+        "enabled on the device");
+
+    VkPipeline pipe = VK_NULL_HANDLE;
+    vkCreateComputePipelines(test_device.device(), VK_NULL_HANDLE, 1, &cpci, nullptr, &pipe);
+    m_errorMonitor->VerifyFound();
+    vkDestroyPipeline(test_device.device(), pipe, nullptr);
+    m_errorMonitor->VerifyFound();
+}
