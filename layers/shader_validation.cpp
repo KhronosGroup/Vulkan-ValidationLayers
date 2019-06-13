@@ -1547,6 +1547,8 @@ bool CoreChecks::ValidateShaderCapabilities(SHADER_MODULE_STATE const *src, VkSh
             : IsEnabled([=](const DeviceFeatures &features) { return features.compute_shader_derivatives_features.*ptr; }) {}
         FeaturePointer(VkBool32 VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV::*ptr)
             : IsEnabled([=](const DeviceFeatures &features) { return features.fragment_shader_barycentric_features.*ptr; }) {}
+        FeaturePointer(VkBool32 VkPhysicalDeviceShaderImageFootprintFeaturesNV::*ptr)
+            : IsEnabled([=](const DeviceFeatures &features) { return features.shader_image_footprint_features.*ptr; }) {}
     };
 
     struct CapabilityInfo {
@@ -1634,6 +1636,8 @@ bool CoreChecks::ValidateShaderCapabilities(SHADER_MODULE_STATE const *src, VkSh
 
         {spv::CapabilityFloat16 , {"VkPhysicalDeviceFloat16Int8FeaturesKHR::shaderFloat16", &VkPhysicalDeviceFloat16Int8FeaturesKHR::shaderFloat16, &DeviceExtensions::vk_khr_shader_float16_int8}},
         {spv::CapabilityInt8 , {"VkPhysicalDeviceFloat16Int8FeaturesKHR::shaderInt8", &VkPhysicalDeviceFloat16Int8FeaturesKHR::shaderInt8, &DeviceExtensions::vk_khr_shader_float16_int8}},
+
+        {spv::CapabilityImageFootprintNV, {"VkPhysicalDeviceShaderImageFootprintFeaturesNV::imageFootprint", &VkPhysicalDeviceShaderImageFootprintFeaturesNV::imageFootprint, &DeviceExtensions::vk_nv_shader_image_footprint}},
 
         {spv::CapabilityCooperativeMatrixNV, {"VkPhysicalDeviceCooperativeMatrixFeaturesNV::cooperativeMatrix", &VkPhysicalDeviceCooperativeMatrixFeaturesNV::cooperativeMatrix, &DeviceExtensions::vk_nv_cooperative_matrix}},
 
