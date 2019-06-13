@@ -4041,11 +4041,11 @@ bool CoreChecks::ValidateCreateImageViewSubresourceRange(const IMAGE_STATE *imag
     SubresourceRangeErrorCodes subresourceRangeErrorCodes = {};
     subresourceRangeErrorCodes.base_mip_err = "VUID-VkImageViewCreateInfo-subresourceRange-01478";
     subresourceRangeErrorCodes.mip_count_err = "VUID-VkImageViewCreateInfo-subresourceRange-01718";
-    subresourceRangeErrorCodes.base_layer_err = is_khr_maintenance1 ? (is_3D_to_2D_map ? "VUID-VkImageViewCreateInfo-image-01484"
+    subresourceRangeErrorCodes.base_layer_err = is_khr_maintenance1 ? (is_3D_to_2D_map ? "VUID-VkImageViewCreateInfo-image-02724"
                                                                                        : "VUID-VkImageViewCreateInfo-image-01482")
                                                                     : "VUID-VkImageViewCreateInfo-subresourceRange-01480";
     subresourceRangeErrorCodes.layer_count_err = is_khr_maintenance1
-                                                     ? (is_3D_to_2D_map ? "VUID-VkImageViewCreateInfo-subresourceRange-01485"
+                                                     ? (is_3D_to_2D_map ? "VUID-VkImageViewCreateInfo-subresourceRange-02725"
                                                                         : "VUID-VkImageViewCreateInfo-subresourceRange-01483")
                                                      : "VUID-VkImageViewCreateInfo-subresourceRange-01719";
 

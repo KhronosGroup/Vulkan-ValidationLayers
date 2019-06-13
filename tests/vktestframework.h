@@ -59,9 +59,6 @@ class VkImageObj;
 
 class VkTestFramework : public ::testing::Test {
    public:
-    VkTestFramework();
-    ~VkTestFramework();
-
     VkFormat GetFormat(VkInstance instance, vk_testing::Device *device);
     static bool optionMatch(const char *option, char *optionLine);
     static void InitArgs(int *argc, char *argv[]);
@@ -78,6 +75,10 @@ class VkTestFramework : public ::testing::Test {
 
     char **ReadFileData(const char *fileName);
     void FreeFileData(char **data);
+
+   protected:
+    VkTestFramework();
+    virtual ~VkTestFramework() = 0;
 
    private:
     int m_compile_options;

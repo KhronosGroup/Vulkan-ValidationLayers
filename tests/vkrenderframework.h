@@ -77,9 +77,6 @@ class VkDepthStencilObj;
 
 class VkRenderFramework : public VkTestFramework {
    public:
-    VkRenderFramework();
-    ~VkRenderFramework();
-
     VkInstance instance() { return inst; }
     VkDevice device() { return m_device->device(); }
     VkDeviceObj *DeviceObj() const { return m_device; }
@@ -118,6 +115,9 @@ class VkRenderFramework : public VkTestFramework {
     bool DeviceCanDraw();
 
    protected:
+    VkRenderFramework();
+    virtual ~VkRenderFramework() = 0;
+
     VkApplicationInfo app_info;
     VkInstance inst;
     VkPhysicalDevice objs[16];
@@ -163,24 +163,6 @@ class VkRenderFramework : public VkTestFramework {
     std::vector<const char *> m_instance_layer_names;
     std::vector<const char *> m_instance_extension_names;
     std::vector<const char *> m_device_extension_names;
-
-    /*
-     * SetUp and TearDown are called by the Google Test framework
-     * to initialize a test framework based on this class.
-     */
-    virtual void SetUp() {
-        this->app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-        this->app_info.pNext = NULL;
-        this->app_info.pApplicationName = "base";
-        this->app_info.applicationVersion = 1;
-        this->app_info.pEngineName = "unittest";
-        this->app_info.engineVersion = 1;
-        this->app_info.apiVersion = VK_API_VERSION_1_0;
-
-        InitFramework();
-    }
-
-    virtual void TearDown() { ShutdownFramework(); }
 };
 
 class VkDescriptorSetObj;
@@ -266,13 +248,12 @@ class VkImageObj : public vk_testing::Image {
    public:
     void Init(uint32_t const width, uint32_t const height, uint32_t const mipLevels, VkFormat const format, VkFlags const usage,
               VkImageTiling const tiling = VK_IMAGE_TILING_LINEAR, VkMemoryPropertyFlags const reqs = 0,
-              const std::vector<uint32_t> *queue_families = nullptr);
-
+              const std::vector<uint32_t> *queue_families = nullptr, bool memory = true);
     void init(const VkImageCreateInfo *create_info);
 
     void InitNoLayout(uint32_t const width, uint32_t const height, uint32_t const mipLevels, VkFormat const format,
                       VkFlags const usage, VkImageTiling tiling = VK_IMAGE_TILING_LINEAR, VkMemoryPropertyFlags reqs = 0,
-                      const std::vector<uint32_t> *queue_families = nullptr);
+                      const std::vector<uint32_t> *queue_families = nullptr, bool memory = true);
 
     //    void clear( CommandBuffer*, uint32_t[4] );
 
@@ -285,7 +266,10 @@ class VkImageObj : public vk_testing::Image {
     void UnmapMemory() { Image::memory().unmap(); }
 
     void ImageMemoryBarrier(VkCommandBufferObj *cmd, VkImageAspectFlags aspect, VkFlags output_mask, VkFlags input_mask,
-                            VkImageLayout image_layout);
+                            VkImageLayout image_layout, VkPipelineStageFlags src_stages = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                            VkPipelineStageFlags dest_stages = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                            uint32_t srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+                            uint32_t dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED);
 
     VkResult CopyImage(VkImageObj &src_image);
 
@@ -295,7 +279,7 @@ class VkImageObj : public vk_testing::Image {
 
     VkImage image() const { return handle(); }
 
-    VkImageView targetView(VkFormat format) {
+    VkImageView targetView(VkFormat format, VkImageAspectFlags aspect = VK_IMAGE_ASPECT_COLOR_BIT) {
         if (!m_targetView.initialized()) {
             VkImageViewCreateInfo createView = {};
             createView.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -306,7 +290,7 @@ class VkImageObj : public vk_testing::Image {
             createView.components.g = VK_COMPONENT_SWIZZLE_G;
             createView.components.b = VK_COMPONENT_SWIZZLE_B;
             createView.components.a = VK_COMPONENT_SWIZZLE_A;
-            createView.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+            createView.subresourceRange = {aspect, 0, 1, 0, 1};
             createView.flags = 0;
             m_targetView.init(*m_device, createView);
         }

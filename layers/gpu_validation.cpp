@@ -1232,6 +1232,7 @@ void CoreChecks::GpuAllocateValidationResources(const VkCommandBuffer cmd_buffer
         // each element of each descriptor has been written or not.  See gpu_validation.md for a more thourough
         // outline of the input buffer format
         result = vmaMapMemory(gpu_validation_state->vmaAllocator, input_block.allocation, (void **)&pData);
+        memset(pData, 0, static_cast<size_t>(bufferInfo.size));
         // Pointer to a sets array that points into the sizes array
         uint32_t *sets_to_sizes = pData + 1;
         // Pointer to the sizes array that contains the array size of the descriptor at each binding

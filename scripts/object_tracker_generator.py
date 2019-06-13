@@ -266,7 +266,7 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
             if alias:
                 alias_string = 'VUID-%s-%s' % (alias, suffix)
                 if alias_string in self.valid_vuids:
-                    vuid = "\"%s\"" % vuid_string
+                    vuid = "\"%s\"" % alias_string
         return vuid
     #
     # Increases indent by 4 spaces and tracks it globally

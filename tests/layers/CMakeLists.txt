@@ -96,7 +96,6 @@ AddVkLayer(device_profile_api device_profile_api.cpp ${PROJECT_SOURCE_DIR}/layer
 
 # --------------------------------------------------------------------------------------------------------------------------------
 
-# TODO: Clear out this list
 target_include_directories(${TEST_LAYER_NAME}
                            PRIVATE ${VulkanHeaders_INCLUDE_DIR}
                                    ${CMAKE_CURRENT_SOURCE_DIR}
@@ -107,18 +106,21 @@ target_include_directories(${TEST_LAYER_NAME}
                                    ${CMAKE_BINARY_DIR})
 
 if(WIN32)
-    # For Windows, copy necessary gtest DLLs to the right spot for the vk_layer_tests...
-    if (MSVC_IDE)
-        file(TO_NATIVE_PATH ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/*device_profile_api.* SRC_LAYER)
-    else()
-        file(TO_NATIVE_PATH ${CMAKE_CURRENT_BINARY_DIR}/*device_profile_api.* SRC_LAYER)
-    endif()
-
+    # For Windows, copy necessary device_profile_api layer files for the layer_tests
     file(TO_NATIVE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/windows/${TEST_LAYER_NAME}.json SRC_JSON)
-    file(TO_NATIVE_PATH ${PROJECT_BINARY_DIR}/layers/$<CONFIG> DST_LAYER)
+    file(TO_NATIVE_PATH ${PROJECT_BINARY_DIR}/layers/$<CONFIG>/${TEST_LAYER_NAME}.json DST_JSON)
     add_custom_command(TARGET ${TEST_LAYER_NAME} POST_BUILD
-                       COMMAND xcopy /Y /I ${SRC_LAYER} ${DST_LAYER}
-                       COMMAND xcopy /Y /I ${SRC_JSON} ${DST_LAYER})
+                       COMMAND ${CMAKE_COMMAND} -E copy ${SRC_JSON} ${DST_JSON})
+    SET(DEVICE_PROFILE_LAYER_FILES
+        VkLayer_device_profile_api.dll
+        VkLayer_device_profile_api.exp
+        VkLayer_device_profile_api.lib)
+    file(TO_NATIVE_PATH ${PROJECT_BINARY_DIR}/layers/$<CONFIG> DST_LAYER)
+    foreach(DEV_PROF_FILE ${DEVICE_PROFILE_LAYER_FILES})
+        file(TO_NATIVE_PATH ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/${DEV_PROF_FILE} SRC_LAYER)
+        add_custom_command(TARGET ${TEST_LAYER_NAME} POST_BUILD
+                           COMMAND ${CMAKE_COMMAND} -E copy_if_different ${SRC_LAYER} ${DST_LAYER})
+    endforeach()
 elseif(APPLE)
     if(CMAKE_GENERATOR MATCHES "^Xcode.*")
         add_custom_command(TARGET ${TEST_LAYER_NAME} POST_BUILD

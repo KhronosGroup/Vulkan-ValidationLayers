@@ -24,7 +24,8 @@
  * Author: John Zulauf <jzulauf@lunarg.com>
  */
 
-#include "vklayertest.h"
+#include "cast_utils.h"
+#include "layer_validation_tests.h"
 //
 // POSITIVE VALIDATION TESTS
 //
@@ -106,22 +107,10 @@ TEST_F(VkPositiveLayerTest, SecondaryCommandBufferBarrier) {
     mem_barrier.dstAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
     vkCmdPipelineBarrier(secondary.handle(), VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
                          VK_DEPENDENCY_BY_REGION_BIT, 1, &mem_barrier, 0, nullptr, 0, nullptr);
-    VkImageMemoryBarrier img_barrier = {};
-    img_barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-    img_barrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
-    img_barrier.dstAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
-    img_barrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-    img_barrier.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-    img_barrier.image = image.handle();
-    img_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    img_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    img_barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    img_barrier.subresourceRange.baseArrayLayer = 0;
-    img_barrier.subresourceRange.baseMipLevel = 0;
-    img_barrier.subresourceRange.layerCount = 1;
-    img_barrier.subresourceRange.levelCount = 1;
-    vkCmdPipelineBarrier(secondary.handle(), VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-                         VK_DEPENDENCY_BY_REGION_BIT, 0, nullptr, 0, nullptr, 1, &img_barrier);
+
+    image.ImageMemoryBarrier(&secondary, VK_IMAGE_ASPECT_COLOR_BIT, VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_WRITE_BIT,
+                             VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                             VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
     secondary.end();
 
     vkCmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary.handle());
@@ -341,19 +330,9 @@ TEST_F(VkPositiveLayerTest, RenderPassBeginSubpassZeroTransitionsApplied) {
     m_commandBuffer->begin();
     vkCmdBeginRenderPass(m_commandBuffer->handle(), &rpbi, VK_SUBPASS_CONTENTS_INLINE);
 
-    VkImageMemoryBarrier imb = {VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
-                                nullptr,
-                                VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-                                VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-                                VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                                VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                                VK_QUEUE_FAMILY_IGNORED,
-                                VK_QUEUE_FAMILY_IGNORED,
-                                image.handle(),
-                                {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1}};
-    vkCmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                         VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_DEPENDENCY_BY_REGION_BIT, 0, nullptr, 0, nullptr, 1,
-                         &imb);
+    image.ImageMemoryBarrier(m_commandBuffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                             VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                             VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
 
     vkCmdEndRenderPass(m_commandBuffer->handle());
     m_errorMonitor->VerifyNotFound();
@@ -500,32 +479,18 @@ TEST_F(VkPositiveLayerTest, RenderPassBeginStencilLoadOp) {
     VkImageObj destImage(m_device);
     destImage.Init(100, 100, 1, depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
                    VK_IMAGE_TILING_OPTIMAL, 0);
-    VkImageMemoryBarrier barrier = {};
-    VkImageSubresourceRange range;
-    barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-    barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-    barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
-    barrier.oldLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-    barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-    barrier.image = m_depthStencil->handle();
-    range.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
-    range.baseMipLevel = 0;
-    range.levelCount = 1;
-    range.baseArrayLayer = 0;
-    range.layerCount = 1;
-    barrier.subresourceRange = range;
     fence.wait(VK_TRUE, UINT64_MAX);
     VkCommandBufferObj cmdbuf(m_device, m_commandPool);
     cmdbuf.begin();
-    cmdbuf.PipelineBarrier(VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 0, nullptr, 1,
-                           &barrier);
-    barrier.srcAccessMask = 0;
-    barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-    barrier.image = destImage.handle();
-    barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-    cmdbuf.PipelineBarrier(VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 0, nullptr, 1,
-                           &barrier);
+
+    m_depthStencil->ImageMemoryBarrier(&cmdbuf, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT,
+                                       VK_ACCESS_TRANSFER_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT,
+                                       VK_ACCESS_TRANSFER_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+                                       VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+
+    destImage.ImageMemoryBarrier(&cmdbuf, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT,
+                                 VK_ACCESS_TRANSFER_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT, 0,
+                                 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
     VkImageCopy cregion;
     cregion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
     cregion.srcSubresource.mipLevel = 0;
@@ -1037,58 +1002,22 @@ TEST_F(VkPositiveLayerTest, CreatePipelineComplexTypes) {
 
     m_errorMonitor->ExpectSuccess();
 
-    char const *vsSource =
-        "#version 450\n"
-        "void main() {}";
-    char const *tcsSource =
-        "#version 450\n"
-        "layout(vertices=3) out;\n"
-        "struct S { int x; };\n"
-        "layout(location=2) patch out B { S s; } b;\n"
-        "void main() {\n"
-        "   gl_TessLevelOuter[0] = gl_TessLevelOuter[1] = gl_TessLevelOuter[2] = 1;\n"
-        "   gl_TessLevelInner[0] = 1;\n"
-        "   b.s.x = 1;\n"
-        "}\n";
-
-    char const *tesSource =
-        "#version 450\n"
-        "layout(triangles, equal_spacing, cw) in;\n"
-        "struct S { int x; };\n"
-        "layout(location=2) patch in B { S s; } b;\n"
-        "void main() { gl_Position = vec4(b.s.x); }\n";
-
-    char const *fsSource =
-        "#version 450\n"
-        "layout(location=0) out vec4 c;\n"
-        "void main() { c = vec4(1); }\n";
-
-    VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
-    VkShaderObj tcs(m_device, tcsSource, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, this);
-    VkShaderObj tes(m_device, tesSource, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, this);
-    VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+    VkShaderObj vs(m_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
+    VkShaderObj tcs(m_device, bindStateTscShaderText, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, this);
+    VkShaderObj tes(m_device, bindStateTeshaderText, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, this);
+    VkShaderObj fs(m_device, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this);
 
     VkPipelineInputAssemblyStateCreateInfo iasci{VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO, nullptr, 0,
                                                  VK_PRIMITIVE_TOPOLOGY_PATCH_LIST, VK_FALSE};
-
     VkPipelineTessellationStateCreateInfo tsci{VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO, nullptr, 0, 3};
 
-    VkPipelineObj pipe(m_device);
-
-    pipe.AddDefaultColorAttachment();
-    pipe.AddShader(&vs);
-    pipe.AddShader(&tcs);
-    pipe.AddShader(&tes);
-    pipe.AddShader(&fs);
-    pipe.SetInputAssembly(&iasci);
-    pipe.SetTessellation(&tsci);
-
-    VkDescriptorSetObj descriptorSet(m_device);
-    descriptorSet.AppendDummy();
-    descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
-
-    pipe.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderPass());
-
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.gp_ci_.pTessellationState = &tsci;
+    pipe.gp_ci_.pInputAssemblyState = &iasci;
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), tcs.GetStageCreateInfo(), tes.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyNotFound();
 }
 
@@ -1136,23 +1065,9 @@ TEST_F(VkPositiveLayerTest, ShaderRelaxedBlockLayout) {
                   OpReturn
                   OpFunctionEnd
         )";
-
-    std::vector<unsigned int> spv;
-    VkShaderModuleCreateInfo module_create_info;
-    VkShaderModule shader_module;
-    module_create_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-    module_create_info.pNext = NULL;
-    ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, spv_source.data(), spv);
-    module_create_info.pCode = spv.data();
-    module_create_info.codeSize = spv.size() * sizeof(unsigned int);
-    module_create_info.flags = 0;
-
     m_errorMonitor->ExpectSuccess();
-    VkResult err = vkCreateShaderModule(m_device->handle(), &module_create_info, NULL, &shader_module);
+    VkShaderObj vs(m_device, spv_source, VK_SHADER_STAGE_VERTEX_BIT, this);
     m_errorMonitor->VerifyNotFound();
-    if (err == VK_SUCCESS) {
-        vkDestroyShaderModule(m_device->handle(), shader_module, NULL);
-    }
 }
 
 TEST_F(VkPositiveLayerTest, ShaderScalarBlockLayout) {
@@ -1217,22 +1132,9 @@ TEST_F(VkPositiveLayerTest, ShaderScalarBlockLayout) {
                   OpFunctionEnd
         )";
 
-    std::vector<unsigned int> spv;
-    VkShaderModuleCreateInfo module_create_info;
-    VkShaderModule shader_module;
-    module_create_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-    module_create_info.pNext = NULL;
-    ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, spv_source.data(), spv);
-    module_create_info.pCode = spv.data();
-    module_create_info.codeSize = spv.size() * sizeof(unsigned int);
-    module_create_info.flags = 0;
-
     m_errorMonitor->ExpectSuccess();
-    VkResult err = vkCreateShaderModule(m_device->handle(), &module_create_info, NULL, &shader_module);
+    VkShaderObj vs(m_device, spv_source, VK_SHADER_STAGE_VERTEX_BIT, this);
     m_errorMonitor->VerifyNotFound();
-    if (err == VK_SUCCESS) {
-        vkDestroyShaderModule(m_device->handle(), shader_module, NULL);
-    }
 }
 
 TEST_F(VkPositiveLayerTest, SpirvGroupDecorations) {
@@ -1340,102 +1242,28 @@ TEST_F(VkPositiveLayerTest, SpirvGroupDecorations) {
 
     // CreateDescriptorSetLayout
     VkDescriptorSetLayoutBinding dslb[6] = {};
-    for (auto i = 0; i < 6; i++) {
+    size_t dslb_size = size(dslb);
+    for (size_t i = 0; i < dslb_size; i++) {
         dslb[i].binding = i;
         dslb[i].descriptorCount = 1;
         dslb[i].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
         dslb[i].pImmutableSamplers = NULL;
         dslb[i].stageFlags = VK_SHADER_STAGE_COMPUTE_BIT | VK_SHADER_STAGE_ALL;
     }
-
-    VkDescriptorSetLayoutCreateInfo ds_layout_ci = {};
-    ds_layout_ci.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    ds_layout_ci.flags = 0;
-    ds_layout_ci.bindingCount = 6;
-    ds_layout_ci.pBindings = dslb;
-
-    if (m_device->props.limits.maxPerStageDescriptorStorageBuffers < ds_layout_ci.bindingCount) {
+    if (m_device->props.limits.maxPerStageDescriptorStorageBuffers < dslb_size) {
         printf("%sNeeded storage buffer bindings exceeds this devices limit.  Skipping tests.\n", kSkipPrefix);
         return;
     }
 
-    VkDescriptorSetLayout ds_layout = {};
-    vkCreateDescriptorSetLayout(m_device->device(), &ds_layout_ci, NULL, &ds_layout);
-
-    // CreatePipelineLayout
-    VkPipelineLayoutCreateInfo pipeline_layout_ci = {};
-    pipeline_layout_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    pipeline_layout_ci.pNext = NULL;
-    pipeline_layout_ci.flags = 0;
-    pipeline_layout_ci.setLayoutCount = 1;
-    pipeline_layout_ci.pSetLayouts = &ds_layout;
-    VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
-    vkCreatePipelineLayout(m_device->device(), &pipeline_layout_ci, NULL, &pipeline_layout);
-
-    // Create DescriptorPool
-    VkDescriptorPoolSize ds_type_count = {};
-    ds_type_count.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-    ds_type_count.descriptorCount = 6;
-
-    VkDescriptorPoolCreateInfo ds_pool_ci = {};
-    ds_pool_ci.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    ds_pool_ci.pNext = NULL;
-    ds_pool_ci.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
-    ds_pool_ci.maxSets = 1;
-    ds_pool_ci.poolSizeCount = 1;
-    ds_pool_ci.pPoolSizes = &ds_type_count;
-
-    VkDescriptorPool ds_pool = VK_NULL_HANDLE;
-    vkCreateDescriptorPool(m_device->device(), &ds_pool_ci, NULL, &ds_pool);
-
-    // AllocateDescriptorSets
-    VkDescriptorSetAllocateInfo ds_alloc_info = {};
-    ds_alloc_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    ds_alloc_info.descriptorSetCount = 1;
-    ds_alloc_info.descriptorPool = ds_pool;
-    ds_alloc_info.pSetLayouts = &ds_layout;
-
-    VkDescriptorSet descriptorSet;
-    vkAllocateDescriptorSets(m_device->device(), &ds_alloc_info, &descriptorSet);
-
-    // CreateShaderModule
-    std::vector<unsigned int> spv;
-    VkShaderModuleCreateInfo module_create_info;
-    VkShaderModule shader_module;
-    module_create_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-    module_create_info.pNext = NULL;
-    ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, spv_source.data(), spv);
-    module_create_info.pCode = spv.data();
-    module_create_info.codeSize = spv.size() * sizeof(unsigned int);
-    module_create_info.flags = 0;
-    vkCreateShaderModule(m_device->handle(), &module_create_info, NULL, &shader_module);
-
-    // CreateComputePipelines
-    VkComputePipelineCreateInfo pipeline_info = {};
-    pipeline_info.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
-    pipeline_info.pNext = nullptr;
-    pipeline_info.flags = 0;
-    pipeline_info.layout = pipeline_layout;
-    pipeline_info.basePipelineHandle = VK_NULL_HANDLE;
-    pipeline_info.basePipelineIndex = -1;
-    pipeline_info.stage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    pipeline_info.stage.pNext = nullptr;
-    pipeline_info.stage.flags = 0;
-    pipeline_info.stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;
-    pipeline_info.stage.module = shader_module;
-    pipeline_info.stage.pName = "main";
-    pipeline_info.stage.pSpecializationInfo = nullptr;
-    VkPipeline cs_pipeline;
-
+    CreateComputePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.dsl_bindings_.resize(dslb_size);
+    memcpy(pipe.dsl_bindings_.data(), dslb, dslb_size * sizeof(VkDescriptorSetLayoutBinding));
+    pipe.cs_.reset(new VkShaderObj(m_device, bindStateMinimalShaderText, VK_SHADER_STAGE_COMPUTE_BIT, this));
+    pipe.InitState();
     m_errorMonitor->ExpectSuccess();
-    vkCreateComputePipelines(device(), VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &cs_pipeline);
+    pipe.CreateComputePipeline();
     m_errorMonitor->VerifyNotFound();
-
-    vkDestroyPipeline(device(), cs_pipeline, nullptr);
-    vkDestroyShaderModule(device(), shader_module, nullptr);
-    vkDestroyDescriptorPool(device(), ds_pool, nullptr);
-    vkDestroyPipelineLayout(device(), pipeline_layout, nullptr);
-    vkDestroyDescriptorSetLayout(device(), ds_layout, nullptr);
 }
 
 TEST_F(VkPositiveLayerTest, CreatePipelineCheckShaderCapabilityExtension1of2) {
@@ -1469,14 +1297,12 @@ TEST_F(VkPositiveLayerTest, CreatePipelineCheckShaderCapabilityExtension1of2) {
 
     VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
 
-    VkPipelineObj pipe(m_device);
-    pipe.AddDefaultColorAttachment();
-    pipe.AddShader(&vs);
-
-    const VkPipelineLayoutObj pipe_layout(m_device, {});
-
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.shader_stages_ = {vs.GetStageCreateInfo()};
+    pipe.InitState();
     m_errorMonitor->ExpectSuccess();
-    pipe.CreateVKPipeline(pipe_layout.handle(), renderPass());
+    pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyNotFound();
 }
 
@@ -1510,14 +1336,12 @@ TEST_F(VkPositiveLayerTest, CreatePipelineCheckShaderCapabilityExtension2of2) {
 
     VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
 
-    VkPipelineObj pipe(m_device);
-    pipe.AddDefaultColorAttachment();
-    pipe.AddShader(&vs);
-
-    const VkPipelineLayoutObj pipe_layout(m_device, {});
-
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.shader_stages_ = {vs.GetStageCreateInfo()};
+    pipe.InitState();
     m_errorMonitor->ExpectSuccess();
-    pipe.CreateVKPipeline(pipe_layout.handle(), renderPass());
+    pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyNotFound();
 }
 
@@ -1529,19 +1353,13 @@ TEST_F(VkPositiveLayerTest, CreatePipelineFragmentOutputNotWrittenButMasked) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
-    char const *vsSource =
-        "#version 450\n"
-        "\n"
-        "void main(){\n"
-        "   gl_Position = vec4(1);\n"
-        "}\n";
     char const *fsSource =
         "#version 450\n"
         "\n"
         "void main(){\n"
         "}\n";
 
-    VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
+    VkShaderObj vs(m_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
     VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
 
     VkPipelineObj pipe(m_device);
@@ -1589,52 +1407,19 @@ TEST_F(VkPositiveLayerTest, PointSizeWriteInFunction) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
     m_errorMonitor->ExpectSuccess();
-
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
     ASSERT_NO_FATAL_FAILURE(InitViewport());
 
     // Create VS declaring PointSize and write to it in a function call.
-    static const char PointSizeWriteVertShaderFcn[] =
-        "#version 450\n"
-        "vec2 vertices[3];\n"
-        "out gl_PerVertex\n"
-        "{\n"
-        "    vec4 gl_Position;\n"
-        "    float gl_PointSize;\n"
-        "};\n"
-        "void OutPointSize() {\n"
-        "   gl_PointSize = 7.0;\n"
-        "}\n"
-        "void main() {\n"
-        "    vertices[0] = vec2(-1.0, -1.0);\n"
-        "    vertices[1] = vec2( 1.0, -1.0);\n"
-        "    vertices[2] = vec2( 0.0,  1.0);\n"
-        "    gl_Position = vec4(vertices[gl_VertexIndex % 3], 0.0, 1.0);\n"
-        "    OutPointSize();\n"
-        "}\n";
-
-    VkShaderObj vs(m_device, PointSizeWriteVertShaderFcn, VK_SHADER_STAGE_VERTEX_BIT, this);
+    VkShaderObj vs(m_device, bindStateVertPointSizeShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
     VkShaderObj ps(m_device, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this);
-
     {
-        VkPipelineObj pipelineobj(m_device);
-        pipelineobj.AddDefaultColorAttachment();
-        pipelineobj.AddShader(&vs);
-        pipelineobj.AddShader(&ps);
-
-        // Set Input Assembly to TOPOLOGY POINT LIST
-        VkPipelineInputAssemblyStateCreateInfo ia_state = {};
-        ia_state.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-        ia_state.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
-        pipelineobj.SetInputAssembly(&ia_state);
-
-        ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-        m_commandBuffer->begin();
-        m_commandBuffer->ClearAllBuffers(m_renderTargets, m_clear_color, m_depthStencil, m_depth_clear_color,
-                                         m_stencil_clear_color);
-        m_commandBuffer->PrepareAttachments(m_renderTargets, m_depthStencil);
-        VkDescriptorSetObj descriptorSet(m_device);
-        descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
-        pipelineobj.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderPass());
+        CreatePipelineHelper pipe(*this);
+        pipe.InitInfo();
+        pipe.shader_stages_ = {vs.GetStageCreateInfo(), ps.GetStageCreateInfo()};
+        pipe.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+        pipe.InitState();
+        pipe.CreateGraphicsPipeline();
     }
     m_errorMonitor->VerifyNotFound();
 }
@@ -1650,59 +1435,21 @@ TEST_F(VkPositiveLayerTest, PointSizeGeomShaderSuccess) {
         printf("%s Device does not support the required geometry shader features; skipped.\n", kSkipPrefix);
         return;
     }
-
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
     ASSERT_NO_FATAL_FAILURE(InitViewport());
 
     // Create VS declaring PointSize and writing to it
-    static const char PointSizeVertShader[] =
-        "#version 450\n"
-        "vec2 vertices[3];\n"
-        "out gl_PerVertex\n"
-        "{\n"
-        "    vec4 gl_Position;\n"
-        "    float gl_PointSize;\n"
-        "};\n"
-        "void main() {\n"
-        "    vertices[0] = vec2(-1.0, -1.0);\n"
-        "    vertices[1] = vec2( 1.0, -1.0);\n"
-        "    vertices[2] = vec2( 0.0,  1.0);\n"
-        "    gl_Position = vec4(vertices[gl_VertexIndex % 3], 0.0, 1.0);\n"
-        "    gl_PointSize = 5.0;\n"
-        "}\n";
-    static char const *gsSource =
-        "#version 450\n"
-        "layout (points) in;\n"
-        "layout (points) out;\n"
-        "layout (max_vertices = 1) out;\n"
-        "void main() {\n"
-        "   gl_Position = vec4(1.0, 0.5, 0.5, 0.0);\n"
-        "   gl_PointSize = 3.3;\n"
-        "   EmitVertex();\n"
-        "}\n";
-
-    VkShaderObj vs(m_device, PointSizeVertShader, VK_SHADER_STAGE_VERTEX_BIT, this);
-    VkShaderObj gs(m_device, gsSource, VK_SHADER_STAGE_GEOMETRY_BIT, this);
+    VkShaderObj vs(m_device, bindStateVertPointSizeShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
+    VkShaderObj gs(m_device, bindStateGeomPointSizeShaderText, VK_SHADER_STAGE_GEOMETRY_BIT, this);
     VkShaderObj ps(m_device, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this);
 
-    VkPipelineObj pipelineobj(m_device);
-    pipelineobj.AddDefaultColorAttachment();
-    pipelineobj.AddShader(&vs);
-    pipelineobj.AddShader(&gs);
-    pipelineobj.AddShader(&ps);
-
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), gs.GetStageCreateInfo(), ps.GetStageCreateInfo()};
     // Set Input Assembly to TOPOLOGY POINT LIST
-    VkPipelineInputAssemblyStateCreateInfo ia_state = {};
-    ia_state.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-    ia_state.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
-    pipelineobj.SetInputAssembly(&ia_state);
-
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-    m_commandBuffer->begin();
-    m_commandBuffer->ClearAllBuffers(m_renderTargets, m_clear_color, m_depthStencil, m_depth_clear_color, m_stencil_clear_color);
-    m_commandBuffer->PrepareAttachments(m_renderTargets, m_depthStencil);
-    VkDescriptorSetObj descriptorSet(m_device);
-    descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
-    pipelineobj.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderPass());
+    pipe.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyNotFound();
 }
 
@@ -1711,7 +1458,7 @@ TEST_F(VkPositiveLayerTest, LoosePointSizeWrite) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
     m_errorMonitor->ExpectSuccess();
-
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
     ASSERT_NO_FATAL_FAILURE(InitViewport());
 
     const std::string LoosePointSizeWrite = R"(
@@ -1785,25 +1532,13 @@ TEST_F(VkPositiveLayerTest, LoosePointSizeWrite) {
     VkShaderObj ps(m_device, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this);
 
     {
-        VkPipelineObj pipelineobj(m_device);
-        pipelineobj.AddDefaultColorAttachment();
-        pipelineobj.AddShader(&vs);
-        pipelineobj.AddShader(&ps);
-
+        CreatePipelineHelper pipe(*this);
+        pipe.InitInfo();
+        pipe.shader_stages_ = {vs.GetStageCreateInfo(), ps.GetStageCreateInfo()};
         // Set Input Assembly to TOPOLOGY POINT LIST
-        VkPipelineInputAssemblyStateCreateInfo ia_state = {};
-        ia_state.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-        ia_state.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
-        pipelineobj.SetInputAssembly(&ia_state);
-
-        ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-        m_commandBuffer->begin();
-        m_commandBuffer->ClearAllBuffers(m_renderTargets, m_clear_color, m_depthStencil, m_depth_clear_color,
-                                         m_stencil_clear_color);
-        m_commandBuffer->PrepareAttachments(m_renderTargets, m_depthStencil);
-        VkDescriptorSetObj descriptorSet(m_device);
-        descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
-        pipelineobj.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderPass());
+        pipe.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+        pipe.InitState();
+        pipe.CreateGraphicsPipeline();
     }
     m_errorMonitor->VerifyNotFound();
 }
@@ -2166,7 +1901,6 @@ TEST_F(VkPositiveLayerTest, IgnoreUnrelatedDescriptor) {
     {
         m_errorMonitor->ExpectSuccess();
 
-        VkBuffer buffer;
         uint32_t queue_family_index = 0;
         VkBufferCreateInfo buffer_create_info = {};
         buffer_create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -2175,34 +1909,15 @@ TEST_F(VkPositiveLayerTest, IgnoreUnrelatedDescriptor) {
         buffer_create_info.queueFamilyIndexCount = 1;
         buffer_create_info.pQueueFamilyIndices = &queue_family_index;
 
-        VkResult err = vkCreateBuffer(m_device->device(), &buffer_create_info, NULL, &buffer);
-        ASSERT_VK_SUCCESS(err);
-
-        VkMemoryRequirements memory_reqs;
-        VkDeviceMemory buffer_memory;
-        bool pass;
-        VkMemoryAllocateInfo memory_info = {};
-        memory_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-        memory_info.pNext = NULL;
-        memory_info.allocationSize = 0;
-        memory_info.memoryTypeIndex = 0;
-
-        vkGetBufferMemoryRequirements(m_device->device(), buffer, &memory_reqs);
-        memory_info.allocationSize = memory_reqs.size;
-        pass = m_device->phy().set_memory_type(memory_reqs.memoryTypeBits, &memory_info, 0);
-        ASSERT_TRUE(pass);
-
-        err = vkAllocateMemory(m_device->device(), &memory_info, NULL, &buffer_memory);
-        ASSERT_VK_SUCCESS(err);
-        err = vkBindBufferMemory(m_device->device(), buffer, buffer_memory, 0);
-        ASSERT_VK_SUCCESS(err);
+        VkBufferObj buffer;
+        buffer.init(*m_device, buffer_create_info);
 
         OneOffDescriptorSet ds(m_device, {
                                              {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
                                          });
 
         VkDescriptorBufferInfo buffer_info = {};
-        buffer_info.buffer = buffer;
+        buffer_info.buffer = buffer.handle();
         buffer_info.offset = 0;
         buffer_info.range = 1024;
 
@@ -2227,16 +1942,12 @@ TEST_F(VkPositiveLayerTest, IgnoreUnrelatedDescriptor) {
         vkUpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
 
         m_errorMonitor->VerifyNotFound();
-
-        vkDestroyBuffer(m_device->device(), buffer, NULL);
-        vkFreeMemory(m_device->device(), buffer_memory, NULL);
     }
 
     // Texel Buffer Case
     {
         m_errorMonitor->ExpectSuccess();
 
-        VkBuffer buffer;
         uint32_t queue_family_index = 0;
         VkBufferCreateInfo buffer_create_info = {};
         buffer_create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -2245,36 +1956,17 @@ TEST_F(VkPositiveLayerTest, IgnoreUnrelatedDescriptor) {
         buffer_create_info.queueFamilyIndexCount = 1;
         buffer_create_info.pQueueFamilyIndices = &queue_family_index;
 
-        VkResult err = vkCreateBuffer(m_device->device(), &buffer_create_info, NULL, &buffer);
-        ASSERT_VK_SUCCESS(err);
-
-        VkMemoryRequirements memory_reqs;
-        VkDeviceMemory buffer_memory;
-        bool pass;
-        VkMemoryAllocateInfo memory_info = {};
-        memory_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-        memory_info.pNext = NULL;
-        memory_info.allocationSize = 0;
-        memory_info.memoryTypeIndex = 0;
-
-        vkGetBufferMemoryRequirements(m_device->device(), buffer, &memory_reqs);
-        memory_info.allocationSize = memory_reqs.size;
-        pass = m_device->phy().set_memory_type(memory_reqs.memoryTypeBits, &memory_info, 0);
-        ASSERT_TRUE(pass);
-
-        err = vkAllocateMemory(m_device->device(), &memory_info, NULL, &buffer_memory);
-        ASSERT_VK_SUCCESS(err);
-        err = vkBindBufferMemory(m_device->device(), buffer, buffer_memory, 0);
-        ASSERT_VK_SUCCESS(err);
+        VkBufferObj buffer;
+        buffer.init(*m_device, buffer_create_info);
 
         VkBufferViewCreateInfo buff_view_ci = {};
         buff_view_ci.sType = VK_STRUCTURE_TYPE_BUFFER_VIEW_CREATE_INFO;
-        buff_view_ci.buffer = buffer;
+        buff_view_ci.buffer = buffer.handle();
         buff_view_ci.format = format_texel_case;
         buff_view_ci.range = VK_WHOLE_SIZE;
         VkBufferView buffer_view;
-        err = vkCreateBufferView(m_device->device(), &buff_view_ci, NULL, &buffer_view);
-
+        VkResult err = vkCreateBufferView(m_device->device(), &buff_view_ci, NULL, &buffer_view);
+        ASSERT_VK_SUCCESS(err);
         OneOffDescriptorSet ds(m_device, {
                                              {0, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
                                          });
@@ -2302,8 +1994,6 @@ TEST_F(VkPositiveLayerTest, IgnoreUnrelatedDescriptor) {
         m_errorMonitor->VerifyNotFound();
 
         vkDestroyBufferView(m_device->device(), buffer_view, NULL);
-        vkDestroyBuffer(m_device->device(), buffer, NULL);
-        vkFreeMemory(m_device->device(), buffer_memory, NULL);
     }
 }
 
@@ -2459,7 +2149,7 @@ TEST_F(VkPositiveLayerTest, PushDescriptorNullDstSetTest) {
     helper.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&push_ds_layout, &ds_layout});
     helper.CreateGraphicsPipeline();
 
-    static const float vbo_data[3] = {1.f, 0.f, 1.f};
+    const float vbo_data[3] = {1.f, 0.f, 1.f};
     VkConstantBufferObj vbo(m_device, sizeof(vbo_data), (const void *)&vbo_data, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 
     VkDescriptorBufferInfo buff_info;
@@ -2494,7 +2184,6 @@ TEST_F(VkPositiveLayerTest, PushDescriptorNullDstSetTest) {
 // This is a positive test. No failures are expected.
 TEST_F(VkPositiveLayerTest, PushDescriptorUnboundSetTest) {
     TEST_DESCRIPTION("Ensure that no validation errors are produced for not bound push descriptor sets");
-    VkResult err;
     if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
         m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     } else {
@@ -2521,22 +2210,6 @@ TEST_F(VkPositiveLayerTest, PushDescriptorUnboundSetTest) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
     m_errorMonitor->ExpectSuccess();
 
-    VkDescriptorPoolSize ds_type_count = {};
-    ds_type_count.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    ds_type_count.descriptorCount = 1;
-
-    VkDescriptorPoolCreateInfo ds_pool_ci = {};
-    ds_pool_ci.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    ds_pool_ci.pNext = NULL;
-    ds_pool_ci.maxSets = 1;
-    ds_pool_ci.poolSizeCount = 1;
-    ds_pool_ci.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
-    ds_pool_ci.pPoolSizes = &ds_type_count;
-
-    VkDescriptorPool ds_pool;
-    err = vkCreateDescriptorPool(m_device->device(), &ds_pool_ci, NULL, &ds_pool);
-    ASSERT_VK_SUCCESS(err);
-
     // Create descriptor set layout
     VkDescriptorSetLayoutBinding dsl_binding = {};
     dsl_binding.binding = 2;
@@ -2545,33 +2218,13 @@ TEST_F(VkPositiveLayerTest, PushDescriptorUnboundSetTest) {
     dsl_binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
     dsl_binding.pImmutableSamplers = NULL;
 
-    const VkDescriptorSetLayoutObj ds_layout(m_device, {dsl_binding});
+    OneOffDescriptorSet ds(m_device, {dsl_binding}, 0, nullptr, VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT, nullptr);
 
     // Create push descriptor set layout
     const VkDescriptorSetLayoutObj push_ds_layout(m_device, {dsl_binding}, VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR);
 
-    // Allocate descriptor set
-    VkDescriptorSetAllocateInfo alloc_info = {};
-    alloc_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    alloc_info.pNext = NULL;
-    alloc_info.descriptorPool = ds_pool;
-    alloc_info.descriptorSetCount = 1;
-    alloc_info.pSetLayouts = &ds_layout.handle();
-    VkDescriptorSet descriptor_set;
-    err = vkAllocateDescriptorSets(m_device->device(), &alloc_info, &descriptor_set);
-    ASSERT_VK_SUCCESS(err);
-
-    // Now use the descriptor layouts to create a pipeline layout
-    const VkPipelineLayoutObj pipeline_layout(m_device, {&push_ds_layout, &ds_layout});
-
     // Create PSO
-    char const *vsSource =
-        "#version 450\n"
-        "\n"
-        "void main(){\n"
-        "   gl_Position = vec4(1);\n"
-        "}\n";
-    char const *fsSource =
+    char const fsSource[] =
         "#version 450\n"
         "\n"
         "layout(location=0) out vec4 x;\n"
@@ -2580,34 +2233,22 @@ TEST_F(VkPositiveLayerTest, PushDescriptorUnboundSetTest) {
         "void main(){\n"
         "   x = vec4(bar1.x) + vec4(bar2.y);\n"
         "}\n";
-    VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
+    VkShaderObj vs(m_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
     VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
-    VkPipelineObj pipe(m_device);
-    pipe.SetViewport(m_viewports);
-    pipe.SetScissor(m_scissors);
-    pipe.AddShader(&vs);
-    pipe.AddShader(&fs);
-    pipe.AddDefaultColorAttachment();
-    pipe.CreateVKPipeline(pipeline_layout.handle(), renderPass());
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.InitState();
+    // Now use the descriptor layouts to create a pipeline layout
+    pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&push_ds_layout, &ds.layout_});
+    pipe.CreateGraphicsPipeline();
 
-    static const float bo_data[1] = {1.f};
+    const float bo_data[1] = {1.f};
     VkConstantBufferObj buffer(m_device, sizeof(bo_data), (const void *)&bo_data, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 
     // Update descriptor set
-    VkDescriptorBufferInfo buff_info;
-    buff_info.buffer = buffer.handle();
-    buff_info.offset = 0;
-    buff_info.range = sizeof(bo_data);
-    VkWriteDescriptorSet descriptor_write = {};
-    descriptor_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    descriptor_write.dstBinding = 2;
-    descriptor_write.descriptorCount = 1;
-    descriptor_write.pTexelBufferView = nullptr;
-    descriptor_write.pBufferInfo = &buff_info;
-    descriptor_write.pImageInfo = nullptr;
-    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    descriptor_write.dstSet = descriptor_set;
-    vkUpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+    ds.WriteDescriptorBuffer(2, buffer.handle(), sizeof(bo_data));
+    ds.UpdateDescriptorSets();
 
     PFN_vkCmdPushDescriptorSetKHR vkCmdPushDescriptorSetKHR =
         (PFN_vkCmdPushDescriptorSetKHR)vkGetDeviceProcAddr(m_device->device(), "vkCmdPushDescriptorSetKHR");
@@ -2615,13 +2256,13 @@ TEST_F(VkPositiveLayerTest, PushDescriptorUnboundSetTest) {
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vkCmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
+    vkCmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
 
     // Push descriptors and bind descriptor set
-    vkCmdPushDescriptorSetKHR(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
-                              &descriptor_write);
-    vkCmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 1, 1,
-                            &descriptor_set, 0, NULL);
+    vkCmdPushDescriptorSetKHR(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0, 1,
+                              ds.descriptor_writes.data());
+    vkCmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 1, 1,
+                            &ds.set_, 0, NULL);
 
     // No errors should be generated.
     vkCmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
@@ -2630,8 +2271,146 @@ TEST_F(VkPositiveLayerTest, PushDescriptorUnboundSetTest) {
 
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
+}
 
-    vkDestroyDescriptorPool(m_device->device(), ds_pool, NULL);
+TEST_F(VkPositiveLayerTest, PushDescriptorSetUpdatingSetNumber) {
+    TEST_DESCRIPTION(
+        "Ensure that no validation errors are produced when the push descriptor set number changes "
+        "between two vkCmdPushDescriptorSetKHR calls.");
+
+    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    } else {
+        printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix,
+               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
+    } else {
+        printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    auto push_descriptor_prop = GetPushDescriptorProperties(instance(), gpu());
+    if (push_descriptor_prop.maxPushDescriptors < 1) {
+        // Some implementations report an invalid maxPushDescriptors of 0
+        printf("%s maxPushDescriptors is zero, skipping tests\n", kSkipPrefix);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitViewport());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    m_errorMonitor->ExpectSuccess();
+
+    // Create a descriptor to push
+    const uint32_t buffer_data[4] = {4, 5, 6, 7};
+    VkConstantBufferObj buffer_obj(
+        m_device, sizeof(buffer_data), &buffer_data,
+        VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+    ASSERT_TRUE(buffer_obj.initialized());
+
+    VkDescriptorBufferInfo buffer_info = {buffer_obj.handle(), 0, VK_WHOLE_SIZE};
+
+    PFN_vkCmdPushDescriptorSetKHR vkCmdPushDescriptorSetKHR =
+        (PFN_vkCmdPushDescriptorSetKHR)vkGetDeviceProcAddr(m_device->device(), "vkCmdPushDescriptorSetKHR");
+    ASSERT_TRUE(vkCmdPushDescriptorSetKHR != nullptr);
+
+    const VkDescriptorSetLayoutBinding ds_binding_0 = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT,
+                                                       nullptr};
+    const VkDescriptorSetLayoutBinding ds_binding_1 = {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT,
+                                                       nullptr};
+    const VkDescriptorSetLayoutObj ds_layout(m_device, {ds_binding_0, ds_binding_1});
+    ASSERT_TRUE(ds_layout.initialized());
+
+    const VkDescriptorSetLayoutBinding push_ds_binding_0 = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT,
+                                                            nullptr};
+    const VkDescriptorSetLayoutObj push_ds_layout(m_device, {push_ds_binding_0},
+                                                  VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR);
+    ASSERT_TRUE(push_ds_layout.initialized());
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+
+    VkPipelineObj pipe0(m_device);
+    VkPipelineObj pipe1(m_device);
+    {
+        // Note: the push descriptor set is set number 2.
+        const VkPipelineLayoutObj pipeline_layout(m_device, {&ds_layout, &ds_layout, &push_ds_layout, &ds_layout});
+        ASSERT_TRUE(pipeline_layout.initialized());
+
+        char const *fsSource =
+            "#version 450\n"
+            "\n"
+            "layout(location=0) out vec4 x;\n"
+            "layout(set=2) layout(binding=0) uniform foo { vec4 y; } bar;\n"
+            "void main(){\n"
+            "   x = bar.y;\n"
+            "}\n";
+
+        VkShaderObj vs(m_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
+        VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+        VkPipelineObj &pipe = pipe0;
+        pipe.SetViewport(m_viewports);
+        pipe.SetScissor(m_scissors);
+        pipe.AddShader(&vs);
+        pipe.AddShader(&fs);
+        pipe.AddDefaultColorAttachment();
+        pipe.CreateVKPipeline(pipeline_layout.handle(), renderPass());
+
+        vkCmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
+
+        const VkWriteDescriptorSet descriptor_write = vk_testing::Device::write_descriptor_set(
+            vk_testing::DescriptorSet(), 0, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, &buffer_info);
+
+        // Note: pushing to desciptor set number 2.
+        vkCmdPushDescriptorSetKHR(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 2, 1,
+                                  &descriptor_write);
+        vkCmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    }
+
+    m_errorMonitor->VerifyNotFound();
+
+    {
+        // Note: the push descriptor set is now set number 3.
+        const VkPipelineLayoutObj pipeline_layout(m_device, {&ds_layout, &ds_layout, &ds_layout, &push_ds_layout});
+        ASSERT_TRUE(pipeline_layout.initialized());
+
+        const VkWriteDescriptorSet descriptor_write = vk_testing::Device::write_descriptor_set(
+            vk_testing::DescriptorSet(), 0, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, &buffer_info);
+
+        char const *fsSource =
+            "#version 450\n"
+            "\n"
+            "layout(location=0) out vec4 x;\n"
+            "layout(set=3) layout(binding=0) uniform foo { vec4 y; } bar;\n"
+            "void main(){\n"
+            "   x = bar.y;\n"
+            "}\n";
+
+        VkShaderObj vs(m_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
+        VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+        VkPipelineObj &pipe = pipe1;
+        pipe.SetViewport(m_viewports);
+        pipe.SetScissor(m_scissors);
+        pipe.AddShader(&vs);
+        pipe.AddShader(&fs);
+        pipe.AddDefaultColorAttachment();
+        pipe.CreateVKPipeline(pipeline_layout.handle(), renderPass());
+
+        vkCmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
+
+        // Note: now pushing to desciptor set number 3.
+        vkCmdPushDescriptorSetKHR(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 3, 1,
+                                  &descriptor_write);
+        vkCmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    }
+
+    m_errorMonitor->VerifyNotFound();
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
 }
 
 // This is a positive test. No failures are expected.
@@ -2958,7 +2737,6 @@ TEST_F(VkPositiveLayerTest, QueueSubmitSemaphoresAndLayoutTracking) {
 TEST_F(VkPositiveLayerTest, DynamicOffsetWithInactiveBinding) {
     // Create a descriptorSet w/ dynamic descriptors where 1 binding is inactive
     // We previously had a bug where dynamic offset of inactive bindings was still being used
-    VkResult err;
     m_errorMonitor->ExpectSuccess();
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -2971,8 +2749,6 @@ TEST_F(VkPositiveLayerTest, DynamicOffsetWithInactiveBinding) {
                                          {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
                                      });
 
-    const VkPipelineLayoutObj pipeline_layout(m_device, {&ds.layout_});
-
     // Create two buffers to update the descriptors with
     // The first will be 2k and used for bindings 0 & 1, the second is 1k for binding 2
     uint32_t qfi = 0;
@@ -2983,58 +2759,21 @@ TEST_F(VkPositiveLayerTest, DynamicOffsetWithInactiveBinding) {
     buffCI.queueFamilyIndexCount = 1;
     buffCI.pQueueFamilyIndices = &qfi;
 
-    VkBuffer dyub1;
-    err = vkCreateBuffer(m_device->device(), &buffCI, NULL, &dyub1);
-    ASSERT_VK_SUCCESS(err);
-    // buffer2
+    VkBufferObj dyub1, dyub2;
+    dyub1.init(*m_device, buffCI);
     buffCI.size = 1024;
-    VkBuffer dyub2;
-    err = vkCreateBuffer(m_device->device(), &buffCI, NULL, &dyub2);
-    ASSERT_VK_SUCCESS(err);
-    // Allocate memory and bind to buffers
-    VkMemoryAllocateInfo mem_alloc[2] = {};
-    mem_alloc[0].sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    mem_alloc[0].pNext = NULL;
-    mem_alloc[0].memoryTypeIndex = 0;
-    mem_alloc[1].sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    mem_alloc[1].pNext = NULL;
-    mem_alloc[1].memoryTypeIndex = 0;
+    dyub2.init(*m_device, buffCI);
 
-    VkMemoryRequirements mem_reqs1;
-    vkGetBufferMemoryRequirements(m_device->device(), dyub1, &mem_reqs1);
-    VkMemoryRequirements mem_reqs2;
-    vkGetBufferMemoryRequirements(m_device->device(), dyub2, &mem_reqs2);
-    mem_alloc[0].allocationSize = mem_reqs1.size;
-    bool pass = m_device->phy().set_memory_type(mem_reqs1.memoryTypeBits, &mem_alloc[0], 0);
-    mem_alloc[1].allocationSize = mem_reqs2.size;
-    pass &= m_device->phy().set_memory_type(mem_reqs2.memoryTypeBits, &mem_alloc[1], 0);
-    if (!pass) {
-        printf("%s Failed to allocate memory.\n", kSkipPrefix);
-        vkDestroyBuffer(m_device->device(), dyub1, NULL);
-        vkDestroyBuffer(m_device->device(), dyub2, NULL);
-        return;
-    }
-
-    VkDeviceMemory mem1;
-    err = vkAllocateMemory(m_device->device(), &mem_alloc[0], NULL, &mem1);
-    ASSERT_VK_SUCCESS(err);
-    err = vkBindBufferMemory(m_device->device(), dyub1, mem1, 0);
-    ASSERT_VK_SUCCESS(err);
-    VkDeviceMemory mem2;
-    err = vkAllocateMemory(m_device->device(), &mem_alloc[1], NULL, &mem2);
-    ASSERT_VK_SUCCESS(err);
-    err = vkBindBufferMemory(m_device->device(), dyub2, mem2, 0);
-    ASSERT_VK_SUCCESS(err);
     // Update descriptors
     const uint32_t BINDING_COUNT = 3;
     VkDescriptorBufferInfo buff_info[BINDING_COUNT] = {};
-    buff_info[0].buffer = dyub1;
+    buff_info[0].buffer = dyub1.handle();
     buff_info[0].offset = 0;
     buff_info[0].range = 256;
-    buff_info[1].buffer = dyub1;
+    buff_info[1].buffer = dyub1.handle();
     buff_info[1].offset = 256;
     buff_info[1].range = 512;
-    buff_info[2].buffer = dyub2;
+    buff_info[2].buffer = dyub2.handle();
     buff_info[2].offset = 0;
     buff_info[2].range = 512;
 
@@ -3053,12 +2792,6 @@ TEST_F(VkPositiveLayerTest, DynamicOffsetWithInactiveBinding) {
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
 
     // Create PSO to be used for draw-time errors below
-    char const *vsSource =
-        "#version 450\n"
-        "\n"
-        "void main(){\n"
-        "   gl_Position = vec4(1);\n"
-        "}\n";
     char const *fsSource =
         "#version 450\n"
         "\n"
@@ -3068,32 +2801,27 @@ TEST_F(VkPositiveLayerTest, DynamicOffsetWithInactiveBinding) {
         "void main(){\n"
         "   x = vec4(bar1.y) + vec4(bar2.y);\n"
         "}\n";
-    VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
+    VkShaderObj vs(m_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
     VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
-    VkPipelineObj pipe(m_device);
-    pipe.SetViewport(m_viewports);
-    pipe.SetScissor(m_scissors);
-    pipe.AddShader(&vs);
-    pipe.AddShader(&fs);
-    pipe.AddDefaultColorAttachment();
-    pipe.CreateVKPipeline(pipeline_layout.handle(), renderPass());
 
-    vkCmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.InitState();
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&ds.layout_});
+    pipe.CreateGraphicsPipeline();
+
+    vkCmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
     // This update should succeed, but offset of inactive binding 1 oversteps binding 2 buffer size
     //   we used to have a bug in this case.
     uint32_t dyn_off[BINDING_COUNT] = {0, 1024, 256};
-    vkCmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1, &ds.set_,
-                            BINDING_COUNT, dyn_off);
+    vkCmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0, 1,
+                            &ds.set_, BINDING_COUNT, dyn_off);
     m_commandBuffer->Draw(1, 0, 0, 0);
     m_errorMonitor->VerifyNotFound();
 
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
-
-    vkDestroyBuffer(m_device->device(), dyub1, NULL);
-    vkDestroyBuffer(m_device->device(), dyub2, NULL);
-    vkFreeMemory(m_device->device(), mem1, NULL);
-    vkFreeMemory(m_device->device(), mem2, NULL);
 }
 
 TEST_F(VkPositiveLayerTest, NonCoherentMemoryMapping) {
@@ -3331,21 +3059,8 @@ TEST_F(VkPositiveLayerTest, CreateImageViewFollowsParameterCompatibilityRequirem
     VkImageObj image(m_device);
     image.init(&imgInfo);
     ASSERT_TRUE(image.initialized());
-    VkImageView imageView;
-    VkImageViewCreateInfo ivci = {};
-    ivci.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-    ivci.image = image.handle();
-    ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    ivci.format = VK_FORMAT_R8G8B8A8_UNORM;
-    ivci.subresourceRange.layerCount = 1;
-    ivci.subresourceRange.baseMipLevel = 0;
-    ivci.subresourceRange.levelCount = 1;
-    ivci.subresourceRange.baseArrayLayer = 0;
-    ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-
-    vkCreateImageView(m_device->device(), &ivci, NULL, &imageView);
+    image.targetView(VK_FORMAT_R8G8B8A8_UNORM);
     m_errorMonitor->VerifyNotFound();
-    vkDestroyImageView(m_device->device(), imageView, NULL);
 }
 
 TEST_F(VkPositiveLayerTest, ValidUsage) {
@@ -3692,19 +3407,7 @@ TEST_F(VkPositiveLayerTest, FramebufferCreateDepthStencilLayoutTransitionForDept
     ASSERT_TRUE(image.initialized());
     image.SetLayout(0x6, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 
-    VkImageViewCreateInfo ivci = {
-        VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
-        nullptr,
-        0,
-        image.handle(),
-        VK_IMAGE_VIEW_TYPE_2D,
-        VK_FORMAT_D32_SFLOAT_S8_UINT,
-        {VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A},
-        {0x2, 0, 1, 0, 1},
-    };
-    VkImageView view;
-    err = vkCreateImageView(m_device->device(), &ivci, nullptr, &view);
-    ASSERT_VK_SUCCESS(err);
+    VkImageView view = image.targetView(VK_FORMAT_D32_SFLOAT_S8_UINT, VK_IMAGE_ASPECT_DEPTH_BIT);
 
     VkFramebufferCreateInfo fci = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, rp, 1, &view, 32, 32, 1};
     VkFramebuffer fb;
@@ -3738,7 +3441,6 @@ TEST_F(VkPositiveLayerTest, FramebufferCreateDepthStencilLayoutTransitionForDept
 
     vkDestroyFramebuffer(m_device->device(), fb, nullptr);
     vkDestroyRenderPass(m_device->device(), rp, nullptr);
-    vkDestroyImageView(m_device->device(), view, nullptr);
 }
 
 // This is a positive test.  No errors should be generated.
@@ -3935,30 +3637,8 @@ TEST_F(VkPositiveLayerTest, QueryAndCopySecondaryCommandBuffers) {
     buff_create_info.queueFamilyIndexCount = 1;
     buff_create_info.pQueueFamilyIndices = &qfi;
 
-    VkResult err;
-    VkBuffer buffer;
-    err = vkCreateBuffer(m_device->device(), &buff_create_info, NULL, &buffer);
-    ASSERT_VK_SUCCESS(err);
-
-    VkMemoryRequirements memReqs;
-    vkGetBufferMemoryRequirements(m_device->device(), buffer, &memReqs);
-    VkMemoryAllocateInfo mem_alloc = {};
-    mem_alloc.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    mem_alloc.pNext = NULL;
-    mem_alloc.allocationSize = memReqs.size;
-    mem_alloc.memoryTypeIndex = 0;
-    bool pass = m_device->phy().set_memory_type(memReqs.memoryTypeBits, &mem_alloc, 0);
-    if (!pass) {
-        printf("%s Failed to allocate memory.\n", kSkipPrefix);
-        vkDestroyBuffer(m_device->device(), buffer, NULL);
-        return;
-    }
-
-    VkDeviceMemory mem;
-    err = vkAllocateMemory(m_device->device(), &mem_alloc, NULL, &mem);
-    ASSERT_VK_SUCCESS(err);
-    err = vkBindBufferMemory(m_device->device(), buffer, mem, 0);
-    ASSERT_VK_SUCCESS(err);
+    VkBufferObj buffer;
+    buffer.init(*m_device, buff_create_info);
 
     VkCommandBufferInheritanceInfo hinfo = {};
     hinfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO;
@@ -3980,7 +3660,7 @@ TEST_F(VkPositiveLayerTest, QueryAndCopySecondaryCommandBuffers) {
 
         primary_buffer.begin();
         vkCmdExecuteCommands(primary_buffer.handle(), 1, &secondary_buffer.handle());
-        vkCmdCopyQueryPoolResults(primary_buffer.handle(), query_pool, 0, 1, buffer, 0, 0, 0);
+        vkCmdCopyQueryPoolResults(primary_buffer.handle(), query_pool, 0, 1, buffer.handle(), 0, 0, 0);
         primary_buffer.end();
     }
 
@@ -3988,9 +3668,6 @@ TEST_F(VkPositiveLayerTest, QueryAndCopySecondaryCommandBuffers) {
     vkQueueWaitIdle(queue);
 
     vkDestroyQueryPool(m_device->device(), query_pool, nullptr);
-    vkDestroyBuffer(m_device->device(), buffer, NULL);
-    vkFreeMemory(m_device->device(), mem, NULL);
-
     m_errorMonitor->VerifyNotFound();
 }
 
@@ -4039,29 +3716,8 @@ TEST_F(VkPositiveLayerTest, QueryAndCopyMultipleCommandBuffers) {
     buff_create_info.queueFamilyIndexCount = 1;
     buff_create_info.pQueueFamilyIndices = &qfi;
 
-    VkResult err;
-    VkBuffer buffer;
-    err = vkCreateBuffer(m_device->device(), &buff_create_info, NULL, &buffer);
-    ASSERT_VK_SUCCESS(err);
-
-    VkMemoryRequirements memReqs;
-    vkGetBufferMemoryRequirements(m_device->device(), buffer, &memReqs);
-    VkMemoryAllocateInfo mem_alloc = {};
-    mem_alloc.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    mem_alloc.pNext = NULL;
-    mem_alloc.allocationSize = memReqs.size;
-    mem_alloc.memoryTypeIndex = 0;
-    bool pass = m_device->phy().set_memory_type(memReqs.memoryTypeBits, &mem_alloc, 0);
-    if (!pass) {
-        vkDestroyBuffer(m_device->device(), buffer, NULL);
-        return;
-    }
-
-    VkDeviceMemory mem;
-    err = vkAllocateMemory(m_device->device(), &mem_alloc, NULL, &mem);
-    ASSERT_VK_SUCCESS(err);
-    err = vkBindBufferMemory(m_device->device(), buffer, mem, 0);
-    ASSERT_VK_SUCCESS(err);
+    VkBufferObj buffer;
+    buffer.init(*m_device, buff_create_info);
 
     {
         VkCommandBufferBeginInfo begin_info{};
@@ -4075,7 +3731,7 @@ TEST_F(VkPositiveLayerTest, QueryAndCopyMultipleCommandBuffers) {
 
         vkBeginCommandBuffer(command_buffer[1], &begin_info);
 
-        vkCmdCopyQueryPoolResults(command_buffer[1], query_pool, 0, 1, buffer, 0, 0, 0);
+        vkCmdCopyQueryPoolResults(command_buffer[1], query_pool, 0, 1, buffer.handle(), 0, 0, 0);
 
         vkEndCommandBuffer(command_buffer[1]);
     }
@@ -4094,8 +3750,6 @@ TEST_F(VkPositiveLayerTest, QueryAndCopyMultipleCommandBuffers) {
     vkDestroyQueryPool(m_device->device(), query_pool, nullptr);
     vkFreeCommandBuffers(m_device->device(), command_pool, 2, command_buffer);
     vkDestroyCommandPool(m_device->device(), command_pool, NULL);
-    vkDestroyBuffer(m_device->device(), buffer, NULL);
-    vkFreeMemory(m_device->device(), mem, NULL);
 
     m_errorMonitor->VerifyNotFound();
 }
@@ -5069,31 +4723,19 @@ TEST_F(VkPositiveLayerTest, CreatePipelineAttribMatrixType) {
         "void main(){\n"
         "   gl_Position = x[0] + x[1];\n"
         "}\n";
-    char const *fsSource =
-        "#version 450\n"
-        "\n"
-        "layout(location=0) out vec4 color;\n"
-        "void main(){\n"
-        "   color = vec4(1);\n"
-        "}\n";
 
     VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
-    VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+    VkShaderObj fs(m_device, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this);
 
-    VkPipelineObj pipe(m_device);
-    pipe.AddDefaultColorAttachment();
-    pipe.AddShader(&vs);
-    pipe.AddShader(&fs);
-
-    pipe.AddVertexInputBindings(&input_binding, 1);
-    pipe.AddVertexInputAttribs(input_attribs, 2);
-
-    VkDescriptorSetObj descriptorSet(m_device);
-    descriptorSet.AppendDummy();
-    descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
-
-    pipe.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderPass());
-
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.vi_ci_.pVertexBindingDescriptions = &input_binding;
+    pipe.vi_ci_.vertexBindingDescriptionCount = 1;
+    pipe.vi_ci_.pVertexAttributeDescriptions = input_attribs;
+    pipe.vi_ci_.vertexAttributeDescriptionCount = 2;
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
     /* expect success */
     m_errorMonitor->VerifyNotFound();
 }
@@ -5122,30 +4764,19 @@ TEST_F(VkPositiveLayerTest, CreatePipelineAttribArrayType) {
         "void main(){\n"
         "   gl_Position = x[0] + x[1];\n"
         "}\n";
-    char const *fsSource =
-        "#version 450\n"
-        "\n"
-        "layout(location=0) out vec4 color;\n"
-        "void main(){\n"
-        "   color = vec4(1);\n"
-        "}\n";
 
     VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
-    VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+    VkShaderObj fs(m_device, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this);
 
-    VkPipelineObj pipe(m_device);
-    pipe.AddDefaultColorAttachment();
-    pipe.AddShader(&vs);
-    pipe.AddShader(&fs);
-
-    pipe.AddVertexInputBindings(&input_binding, 1);
-    pipe.AddVertexInputAttribs(input_attribs, 2);
-
-    VkDescriptorSetObj descriptorSet(m_device);
-    descriptorSet.AppendDummy();
-    descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
-
-    pipe.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderPass());
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.vi_ci_.pVertexBindingDescriptions = &input_binding;
+    pipe.vi_ci_.vertexBindingDescriptionCount = 1;
+    pipe.vi_ci_.pVertexAttributeDescriptions = input_attribs;
+    pipe.vi_ci_.vertexAttributeDescriptionCount = 2;
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
 
     m_errorMonitor->VerifyNotFound();
 }
@@ -5259,32 +4890,10 @@ TEST_F(VkPositiveLayerTest, CreatePipelineSimplePositive) {
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    char const *vsSource =
-        "#version 450\n"
-        "void main(){\n"
-        "   gl_Position = vec4(0);\n"
-        "}\n";
-    char const *fsSource =
-        "#version 450\n"
-        "\n"
-        "layout(location=0) out vec4 color;\n"
-        "void main(){\n"
-        "   color = vec4(1);\n"
-        "}\n";
-
-    VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
-    VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
-
-    VkPipelineObj pipe(m_device);
-    pipe.AddDefaultColorAttachment();
-    pipe.AddShader(&vs);
-    pipe.AddShader(&fs);
-
-    VkDescriptorSetObj descriptorSet(m_device);
-    descriptorSet.AppendDummy();
-    descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
-
-    pipe.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderPass());
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
 
     m_errorMonitor->VerifyNotFound();
 }
@@ -5323,18 +4932,11 @@ TEST_F(VkPositiveLayerTest, CreatePipelineRelaxedTypeMatch) {
     VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
     VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
 
-    VkPipelineObj pipe(m_device);
-    pipe.AddDefaultColorAttachment();
-    pipe.AddShader(&vs);
-    pipe.AddShader(&fs);
-
-    VkDescriptorSetObj descriptorSet(m_device);
-    descriptorSet.AppendDummy();
-    descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
-
-    VkResult err = VK_SUCCESS;
-    err = pipe.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderPass());
-    ASSERT_VK_SUCCESS(err);
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
 
     m_errorMonitor->VerifyNotFound();
 }
@@ -5351,9 +4953,6 @@ TEST_F(VkPositiveLayerTest, CreatePipelineTessPerVertex) {
         return;
     }
 
-    char const *vsSource =
-        "#version 450\n"
-        "void main(){}\n";
     char const *tcsSource =
         "#version 450\n"
         "layout(location=0) out int x[];\n"
@@ -5371,38 +4970,24 @@ TEST_F(VkPositiveLayerTest, CreatePipelineTessPerVertex) {
         "   gl_Position.xyz = gl_TessCoord;\n"
         "   gl_Position.w = x[0] + x[1] + x[2];\n"
         "}\n";
-    char const *fsSource =
-        "#version 450\n"
-        "layout(location=0) out vec4 color;\n"
-        "void main(){\n"
-        "   color = vec4(1);\n"
-        "}\n";
 
-    VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
+    VkShaderObj vs(m_device, bindStateMinimalShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
     VkShaderObj tcs(m_device, tcsSource, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, this);
     VkShaderObj tes(m_device, tesSource, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, this);
-    VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+    VkShaderObj fs(m_device, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this);
 
     VkPipelineInputAssemblyStateCreateInfo iasci{VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO, nullptr, 0,
                                                  VK_PRIMITIVE_TOPOLOGY_PATCH_LIST, VK_FALSE};
 
     VkPipelineTessellationStateCreateInfo tsci{VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO, nullptr, 0, 3};
 
-    VkPipelineObj pipe(m_device);
-    pipe.SetInputAssembly(&iasci);
-    pipe.SetTessellation(&tsci);
-    pipe.AddDefaultColorAttachment();
-    pipe.AddShader(&vs);
-    pipe.AddShader(&tcs);
-    pipe.AddShader(&tes);
-    pipe.AddShader(&fs);
-
-    VkDescriptorSetObj descriptorSet(m_device);
-    descriptorSet.AppendDummy();
-    descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
-
-    pipe.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderPass());
-
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.gp_ci_.pTessellationState = &tsci;
+    pipe.gp_ci_.pInputAssemblyState = &iasci;
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), tcs.GetStageCreateInfo(), tes.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyNotFound();
 }
 
@@ -5420,12 +5005,6 @@ TEST_F(VkPositiveLayerTest, CreatePipelineGeometryInputBlockPositive) {
         return;
     }
 
-    char const *vsSource =
-        "#version 450\n"
-        "layout(location=0) out VertexData { vec4 x; } vs_out;\n"
-        "void main(){\n"
-        "   vs_out.x = vec4(1);\n"
-        "}\n";
     char const *gsSource =
         "#version 450\n"
         "layout(triangles) in;\n"
@@ -5435,29 +5014,16 @@ TEST_F(VkPositiveLayerTest, CreatePipelineGeometryInputBlockPositive) {
         "   gl_Position = gs_in[0].x;\n"
         "   EmitVertex();\n"
         "}\n";
-    char const *fsSource =
-        "#version 450\n"
-        "layout(location=0) out vec4 color;\n"
-        "void main(){\n"
-        "   color = vec4(1);\n"
-        "}\n";
 
-    VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
+    VkShaderObj vs(m_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
     VkShaderObj gs(m_device, gsSource, VK_SHADER_STAGE_GEOMETRY_BIT, this);
-    VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+    VkShaderObj fs(m_device, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this);
 
-    VkPipelineObj pipe(m_device);
-    pipe.AddDefaultColorAttachment();
-    pipe.AddShader(&vs);
-    pipe.AddShader(&gs);
-    pipe.AddShader(&fs);
-
-    VkDescriptorSetObj descriptorSet(m_device);
-    descriptorSet.AppendDummy();
-    descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
-
-    pipe.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderPass());
-
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), gs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyNotFound();
 }
 
@@ -5518,31 +5084,19 @@ TEST_F(VkPositiveLayerTest, CreatePipeline64BitAttributesPositive) {
         "void main(){\n"
         "   gl_Position = vec4(x[0][0]);\n"
         "}\n";
-    char const *fsSource =
-        "#version 450\n"
-        "\n"
-        "layout(location=0) out vec4 color;\n"
-        "void main(){\n"
-        "   color = vec4(1);\n"
-        "}\n";
 
     VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
-    VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+    VkShaderObj fs(m_device, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this);
 
-    VkPipelineObj pipe(m_device);
-    pipe.AddDefaultColorAttachment();
-    pipe.AddShader(&vs);
-    pipe.AddShader(&fs);
-
-    pipe.AddVertexInputBindings(input_bindings, 1);
-    pipe.AddVertexInputAttribs(input_attribs, 4);
-
-    VkDescriptorSetObj descriptorSet(m_device);
-    descriptorSet.AppendDummy();
-    descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
-
-    pipe.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderPass());
-
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.vi_ci_.pVertexBindingDescriptions = input_bindings;
+    pipe.vi_ci_.vertexBindingDescriptionCount = 1;
+    pipe.vi_ci_.pVertexAttributeDescriptions = input_attribs;
+    pipe.vi_ci_.vertexAttributeDescriptionCount = 4;
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyNotFound();
 }
 
@@ -5552,12 +5106,6 @@ TEST_F(VkPositiveLayerTest, CreatePipelineInputAttachmentPositive) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
-    char const *vsSource =
-        "#version 450\n"
-        "\n"
-        "void main(){\n"
-        "    gl_Position = vec4(1);\n"
-        "}\n";
     char const *fsSource =
         "#version 450\n"
         "\n"
@@ -5567,7 +5115,7 @@ TEST_F(VkPositiveLayerTest, CreatePipelineInputAttachmentPositive) {
         "   color = subpassLoad(x);\n"
         "}\n";
 
-    VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
+    VkShaderObj vs(m_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
     VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
 
     VkPipelineObj pipe(m_device);
@@ -5629,28 +5177,13 @@ TEST_F(VkPositiveLayerTest, CreateComputePipelineMissingDescriptorUnusedPositive
         "   // x is not used.\n"
         "}\n";
 
-    VkShaderObj cs(m_device, csSource, VK_SHADER_STAGE_COMPUTE_BIT, this);
-
-    VkDescriptorSetObj descriptorSet(m_device);
-    descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
-
-    VkComputePipelineCreateInfo cpci = {VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,
-                                        nullptr,
-                                        0,
-                                        {VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO, nullptr, 0,
-                                         VK_SHADER_STAGE_COMPUTE_BIT, cs.handle(), "main", nullptr},
-                                        descriptorSet.GetPipelineLayout(),
-                                        VK_NULL_HANDLE,
-                                        -1};
-
-    VkPipeline pipe;
-    VkResult err = vkCreateComputePipelines(m_device->device(), VK_NULL_HANDLE, 1, &cpci, nullptr, &pipe);
+    CreateComputePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.cs_.reset(new VkShaderObj(m_device, csSource, VK_SHADER_STAGE_COMPUTE_BIT, this));
+    pipe.InitState();
+    pipe.CreateComputePipeline();
 
     m_errorMonitor->VerifyNotFound();
-
-    if (err == VK_SUCCESS) {
-        vkDestroyPipeline(m_device->device(), pipe, nullptr);
-    }
 }
 
 TEST_F(VkPositiveLayerTest, CreateComputePipelineCombinedImageSamplerConsumedAsSampler) {
@@ -5666,9 +5199,6 @@ TEST_F(VkPositiveLayerTest, CreateComputePipelineCombinedImageSamplerConsumedAsS
         {2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
     };
 
-    const VkDescriptorSetLayoutObj dsl(m_device, bindings);
-    const VkPipelineLayoutObj pl(m_device, {&dsl});
-
     char const *csSource =
         "#version 450\n"
         "\n"
@@ -5679,25 +5209,16 @@ TEST_F(VkPositiveLayerTest, CreateComputePipelineCombinedImageSamplerConsumedAsS
         "void main() {\n"
         "   x = texture(sampler2D(t, s), vec2(0));\n"
         "}\n";
-    VkShaderObj cs(m_device, csSource, VK_SHADER_STAGE_COMPUTE_BIT, this);
-
-    VkComputePipelineCreateInfo cpci = {VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,
-                                        nullptr,
-                                        0,
-                                        {VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO, nullptr, 0,
-                                         VK_SHADER_STAGE_COMPUTE_BIT, cs.handle(), "main", nullptr},
-                                        pl.handle(),
-                                        VK_NULL_HANDLE,
-                                        -1};
-
-    VkPipeline pipe;
-    VkResult err = vkCreateComputePipelines(m_device->device(), VK_NULL_HANDLE, 1, &cpci, nullptr, &pipe);
+    CreateComputePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.dsl_bindings_.resize(bindings.size());
+    memcpy(pipe.dsl_bindings_.data(), bindings.data(), bindings.size() * sizeof(VkDescriptorSetLayoutBinding));
+    pipe.cs_.reset(new VkShaderObj(m_device, csSource, VK_SHADER_STAGE_COMPUTE_BIT, this));
+    pipe.InitState();
+    m_errorMonitor->ExpectSuccess();
+    pipe.CreateComputePipeline();
 
     m_errorMonitor->VerifyNotFound();
-
-    if (err == VK_SUCCESS) {
-        vkDestroyPipeline(m_device->device(), pipe, nullptr);
-    }
 }
 
 TEST_F(VkPositiveLayerTest, CreateComputePipelineCombinedImageSamplerConsumedAsImage) {
@@ -5713,9 +5234,6 @@ TEST_F(VkPositiveLayerTest, CreateComputePipelineCombinedImageSamplerConsumedAsI
         {2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
     };
 
-    const VkDescriptorSetLayoutObj dsl(m_device, bindings);
-    const VkPipelineLayoutObj pl(m_device, {&dsl});
-
     char const *csSource =
         "#version 450\n"
         "\n"
@@ -5726,25 +5244,16 @@ TEST_F(VkPositiveLayerTest, CreateComputePipelineCombinedImageSamplerConsumedAsI
         "void main() {\n"
         "   x = texture(sampler2D(t, s), vec2(0));\n"
         "}\n";
-    VkShaderObj cs(m_device, csSource, VK_SHADER_STAGE_COMPUTE_BIT, this);
-
-    VkComputePipelineCreateInfo cpci = {VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,
-                                        nullptr,
-                                        0,
-                                        {VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO, nullptr, 0,
-                                         VK_SHADER_STAGE_COMPUTE_BIT, cs.handle(), "main", nullptr},
-                                        pl.handle(),
-                                        VK_NULL_HANDLE,
-                                        -1};
-
-    VkPipeline pipe;
-    VkResult err = vkCreateComputePipelines(m_device->device(), VK_NULL_HANDLE, 1, &cpci, nullptr, &pipe);
+    CreateComputePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.dsl_bindings_.resize(bindings.size());
+    memcpy(pipe.dsl_bindings_.data(), bindings.data(), bindings.size() * sizeof(VkDescriptorSetLayoutBinding));
+    pipe.cs_.reset(new VkShaderObj(m_device, csSource, VK_SHADER_STAGE_COMPUTE_BIT, this));
+    pipe.InitState();
+    m_errorMonitor->ExpectSuccess();
+    pipe.CreateComputePipeline();
 
     m_errorMonitor->VerifyNotFound();
-
-    if (err == VK_SUCCESS) {
-        vkDestroyPipeline(m_device->device(), pipe, nullptr);
-    }
 }
 
 TEST_F(VkPositiveLayerTest, CreateComputePipelineCombinedImageSamplerConsumedAsBoth) {
@@ -5760,9 +5269,6 @@ TEST_F(VkPositiveLayerTest, CreateComputePipelineCombinedImageSamplerConsumedAsB
         {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
     };
 
-    const VkDescriptorSetLayoutObj dsl(m_device, bindings);
-    const VkPipelineLayoutObj pl(m_device, {&dsl});
-
     char const *csSource =
         "#version 450\n"
         "\n"
@@ -5773,25 +5279,16 @@ TEST_F(VkPositiveLayerTest, CreateComputePipelineCombinedImageSamplerConsumedAsB
         "void main() {\n"
         "   x = texture(sampler2D(t, s), vec2(0));\n"
         "}\n";
-    VkShaderObj cs(m_device, csSource, VK_SHADER_STAGE_COMPUTE_BIT, this);
-
-    VkComputePipelineCreateInfo cpci = {VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,
-                                        nullptr,
-                                        0,
-                                        {VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO, nullptr, 0,
-                                         VK_SHADER_STAGE_COMPUTE_BIT, cs.handle(), "main", nullptr},
-                                        pl.handle(),
-                                        VK_NULL_HANDLE,
-                                        -1};
-
-    VkPipeline pipe;
-    VkResult err = vkCreateComputePipelines(m_device->device(), VK_NULL_HANDLE, 1, &cpci, nullptr, &pipe);
+    CreateComputePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.dsl_bindings_.resize(bindings.size());
+    memcpy(pipe.dsl_bindings_.data(), bindings.data(), bindings.size() * sizeof(VkDescriptorSetLayoutBinding));
+    pipe.cs_.reset(new VkShaderObj(m_device, csSource, VK_SHADER_STAGE_COMPUTE_BIT, this));
+    pipe.InitState();
+    m_errorMonitor->ExpectSuccess();
+    pipe.CreateComputePipeline();
 
     m_errorMonitor->VerifyNotFound();
-
-    if (err == VK_SUCCESS) {
-        vkDestroyPipeline(m_device->device(), pipe, nullptr);
-    }
 }
 
 TEST_F(VkPositiveLayerTest, CreateDescriptorSetBindingWithIgnoredSamplers) {
@@ -6419,8 +5916,7 @@ TEST_F(VkPositiveLayerTest, CreateGraphicsPipelineWithIgnoredPointers) {
     void *hopefully_undereferencable_pointer =
         sizeof(void *) == 8 ? reinterpret_cast<void *>(fake_address_64) : reinterpret_cast<void *>(fake_address_32);
 
-    VkShaderObj vs(m_device, "#version 450\nvoid main(){gl_Position = vec4(0.0, 0.0, 0.0, 1.0);}\n", VK_SHADER_STAGE_VERTEX_BIT,
-                   this);
+    VkShaderObj vs(m_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
 
     const VkPipelineVertexInputStateCreateInfo pipeline_vertex_input_state_create_info{
         VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
@@ -7073,6 +6569,34 @@ TEST_F(VkPositiveLayerTest, BindMemory2) {
     m_errorMonitor->VerifyNotFound();
 }
 
+TEST_F(VkPositiveLayerTest, CreatePipelineWithCoreChecksDisabled) {
+    TEST_DESCRIPTION("Test CreatePipeline while the CoreChecks validation object is disabled");
+
+    // Enable KHR validation features extension
+    VkValidationFeatureDisableEXT disables[] = {VK_VALIDATION_FEATURE_DISABLE_CORE_CHECKS_EXT};
+    VkValidationFeaturesEXT features = {};
+    features.sType = VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT;
+    features.disabledValidationFeatureCount = 1;
+    features.pDisabledValidationFeatures = disables;
+
+    VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+    ASSERT_NO_FATAL_FAILURE(Init(nullptr, nullptr, pool_flags, &features));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    VkShaderObj vs(m_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
+    VkShaderObj fs(m_device, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+    VkPipelineInputAssemblyStateCreateInfo iasci{VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO, nullptr, 0,
+                                                 VK_PRIMITIVE_TOPOLOGY_PATCH_LIST, VK_FALSE};
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.gp_ci_.pInputAssemblyState = &iasci;
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.InitState();
+    m_errorMonitor->ExpectSuccess();
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyNotFound();
+}
+
 TEST_F(VkPositiveLayerTest, CreatePipeineWithTessellationDomainOrigin) {
     TEST_DESCRIPTION(
         "Test CreatePipeline when VkPipelineTessellationStateCreateInfo.pNext include "
@@ -7086,37 +6610,10 @@ TEST_F(VkPositiveLayerTest, CreatePipeineWithTessellationDomainOrigin) {
         return;
     }
 
-    char const *vsSource =
-        "#version 450\n"
-        "void main(){}\n";
-    char const *tcsSource =
-        "#version 450\n"
-        "layout(location=0) out int x[];\n"
-        "layout(vertices=3) out;\n"
-        "void main(){\n"
-        "   gl_TessLevelOuter[0] = gl_TessLevelOuter[1] = gl_TessLevelOuter[2] = 1;\n"
-        "   gl_TessLevelInner[0] = 1;\n"
-        "   x[gl_InvocationID] = gl_InvocationID;\n"
-        "}\n";
-    char const *tesSource =
-        "#version 450\n"
-        "layout(triangles, equal_spacing, cw) in;\n"
-        "layout(location=0) in int x[];\n"
-        "void main(){\n"
-        "   gl_Position.xyz = gl_TessCoord;\n"
-        "   gl_Position.w = x[0] + x[1] + x[2];\n"
-        "}\n";
-    char const *fsSource =
-        "#version 450\n"
-        "layout(location=0) out vec4 color;\n"
-        "void main(){\n"
-        "   color = vec4(1);\n"
-        "}\n";
-
-    VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
-    VkShaderObj tcs(m_device, tcsSource, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, this);
-    VkShaderObj tes(m_device, tesSource, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, this);
-    VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+    VkShaderObj vs(m_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
+    VkShaderObj tcs(m_device, bindStateTscShaderText, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, this);
+    VkShaderObj tes(m_device, bindStateTeshaderText, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, this);
+    VkShaderObj fs(m_device, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this);
 
     VkPipelineInputAssemblyStateCreateInfo iasci{VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO, nullptr, 0,
                                                  VK_PRIMITIVE_TOPOLOGY_PATCH_LIST, VK_FALSE};
@@ -7128,21 +6625,14 @@ TEST_F(VkPositiveLayerTest, CreatePipeineWithTessellationDomainOrigin) {
     VkPipelineTessellationStateCreateInfo tsci{VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO,
                                                &tessellationDomainOriginStateInfo, 0, 3};
 
-    VkPipelineObj pipe(m_device);
-    pipe.SetInputAssembly(&iasci);
-    pipe.SetTessellation(&tsci);
-    pipe.AddDefaultColorAttachment();
-    pipe.AddShader(&vs);
-    pipe.AddShader(&tcs);
-    pipe.AddShader(&tes);
-    pipe.AddShader(&fs);
-
-    VkDescriptorSetObj descriptorSet(m_device);
-    descriptorSet.AppendDummy();
-    descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
-
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.gp_ci_.pTessellationState = &tsci;
+    pipe.gp_ci_.pInputAssemblyState = &iasci;
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), tcs.GetStageCreateInfo(), tes.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.InitState();
     m_errorMonitor->ExpectSuccess();
-    pipe.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderPass());
+    pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyNotFound();
 }
 
@@ -7446,39 +6936,11 @@ TEST_F(VkPositiveLayerTest, MultiplaneImageTests) {
     ASSERT_VK_SUCCESS(err);
 
     const VkPipelineLayoutObj pipeline_layout(m_device, {&ds.layout_});
+    ds.WriteDescriptorImageView(0, view, sampler);
+    ds.UpdateDescriptorSets();
 
-    VkDescriptorImageInfo image_info{};
-    image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    image_info.imageView = view;
-    image_info.sampler = sampler;
-
-    VkWriteDescriptorSet descriptor_write = {};
-    descriptor_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    descriptor_write.dstSet = ds.set_;
-    descriptor_write.dstBinding = 0;
-    descriptor_write.descriptorCount = 1;
-    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    descriptor_write.pImageInfo = &image_info;
-
-    vkUpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
-
-    char const *vsSource =
-        "#version 450\n"
-        "\n"
-        "void main(){\n"
-        "   gl_Position = vec4(1);\n"
-        "}\n";
-    char const *fsSource =
-        "#version 450\n"
-        "\n"
-        "layout(set=0, binding=0) uniform sampler2D s;\n"
-        "layout(location=0) out vec4 x;\n"
-        "void main(){\n"
-        "   x = texture(s, vec2(1));\n"
-        "}\n";
-
-    VkShaderObj vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
-    VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+    VkShaderObj vs(m_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
+    VkShaderObj fs(m_device, bindStateFragSamplerShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this);
     VkPipelineObj pipe(m_device);
     pipe.AddShader(&vs);
     pipe.AddShader(&fs);
@@ -7601,17 +7063,10 @@ TEST_F(VkPositiveLayerTest, ViewportArray2NV) {
             gl_out[gl_InvocationID].gl_Position = gl_in[gl_InvocationID].gl_Position;
         })";
 
-    const char fs_src[] = R"(
-        #version 450
-        layout(location = 0) out vec4 outColor;
-        void main() {
-            outColor = vec4(1.0f);
-        })";
-
     // Create tessellation control and fragment shader here since they will not be
     // modified by the different test cases.
     VkShaderObj tcs(m_device, tcs_src, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, this);
-    VkShaderObj fs(m_device, fs_src, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+    VkShaderObj fs(m_device, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this);
 
     std::vector<VkViewport> vps = {{0.0f, 0.0f, m_width / 2.0f, m_height}, {m_width / 2.0f, 0.0f, m_width / 2.0f, m_height}};
     std::vector<VkRect2D> scs = {

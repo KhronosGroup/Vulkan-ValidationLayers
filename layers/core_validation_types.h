@@ -410,7 +410,7 @@ struct ColorAspectTraits {
     static int Index(VkImageAspectFlags mask) { return 0; };
     static VkImageAspectFlags AspectMask() { return VK_IMAGE_ASPECT_COLOR_BIT; }
     static const std::array<VkImageAspectFlagBits, kAspectCount> &AspectBits() {
-        static std::array<VkImageAspectFlagBits, kAspectCount> kAspectBits{VK_IMAGE_ASPECT_COLOR_BIT};
+        static std::array<VkImageAspectFlagBits, kAspectCount> kAspectBits{{VK_IMAGE_ASPECT_COLOR_BIT}};
         return kAspectBits;
     }
 };
@@ -420,7 +420,7 @@ struct DepthAspectTraits {
     static int Index(VkImageAspectFlags mask) { return 0; };
     static VkImageAspectFlags AspectMask() { return VK_IMAGE_ASPECT_DEPTH_BIT; }
     static const std::array<VkImageAspectFlagBits, kAspectCount> &AspectBits() {
-        static std::array<VkImageAspectFlagBits, kAspectCount> kAspectBits{VK_IMAGE_ASPECT_DEPTH_BIT};
+        static std::array<VkImageAspectFlagBits, kAspectCount> kAspectBits{{VK_IMAGE_ASPECT_DEPTH_BIT}};
         return kAspectBits;
     }
 };
@@ -430,7 +430,7 @@ struct StencilAspectTraits {
     static int Index(VkImageAspectFlags mask) { return 0; };
     static VkImageAspectFlags AspectMask() { return VK_IMAGE_ASPECT_STENCIL_BIT; }
     static const std::array<VkImageAspectFlagBits, kAspectCount> &AspectBits() {
-        static std::array<VkImageAspectFlagBits, kAspectCount> kAspectBits{VK_IMAGE_ASPECT_STENCIL_BIT};
+        static std::array<VkImageAspectFlagBits, kAspectCount> kAspectBits{{VK_IMAGE_ASPECT_STENCIL_BIT}};
         return kAspectBits;
     }
 };
@@ -446,7 +446,8 @@ struct DepthStencilAspectTraits {
     };
     static VkImageAspectFlags AspectMask() { return VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT; }
     static const std::array<VkImageAspectFlagBits, kAspectCount> &AspectBits() {
-        static std::array<VkImageAspectFlagBits, kAspectCount> kAspectBits{VK_IMAGE_ASPECT_DEPTH_BIT, VK_IMAGE_ASPECT_STENCIL_BIT};
+        static std::array<VkImageAspectFlagBits, kAspectCount> kAspectBits{
+            {VK_IMAGE_ASPECT_DEPTH_BIT, VK_IMAGE_ASPECT_STENCIL_BIT}};
         return kAspectBits;
     }
 };
@@ -462,8 +463,8 @@ struct Multiplane2AspectTraits {
     };
     static VkImageAspectFlags AspectMask() { return VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT; }
     static const std::array<VkImageAspectFlagBits, kAspectCount> &AspectBits() {
-        static std::array<VkImageAspectFlagBits, kAspectCount> kAspectBits{VK_IMAGE_ASPECT_PLANE_0_BIT,
-                                                                           VK_IMAGE_ASPECT_PLANE_1_BIT};
+        static std::array<VkImageAspectFlagBits, kAspectCount> kAspectBits{
+            {VK_IMAGE_ASPECT_PLANE_0_BIT, VK_IMAGE_ASPECT_PLANE_1_BIT}};
         return kAspectBits;
     }
 };
@@ -483,8 +484,8 @@ struct Multiplane3AspectTraits {
         return VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT | VK_IMAGE_ASPECT_PLANE_2_BIT;
     }
     static const std::array<VkImageAspectFlagBits, kAspectCount> &AspectBits() {
-        static std::array<VkImageAspectFlagBits, kAspectCount> kAspectBits{VK_IMAGE_ASPECT_PLANE_0_BIT, VK_IMAGE_ASPECT_PLANE_1_BIT,
-                                                                           VK_IMAGE_ASPECT_PLANE_2_BIT};
+        static std::array<VkImageAspectFlagBits, kAspectCount> kAspectBits{
+            {VK_IMAGE_ASPECT_PLANE_0_BIT, VK_IMAGE_ASPECT_PLANE_1_BIT, VK_IMAGE_ASPECT_PLANE_2_BIT}};
         return kAspectBits;
     }
 };
@@ -1255,6 +1256,17 @@ struct LAST_BOUND_STATE {
         dynamicOffsets.clear();
         compat_id_for_set.clear();
     }
+
+    void UnbindAndResetPushDescriptorSet(cvdescriptorset::DescriptorSet *ds) {
+        if (push_descriptor_set) {
+            for (std::size_t i = 0; i < boundDescriptorSets.size(); i++) {
+                if (boundDescriptorSets[i] == push_descriptor_set.get()) {
+                    boundDescriptorSets[i] = nullptr;
+                }
+            }
+        }
+        push_descriptor_set.reset(ds);
+    }
 };
 
 // Types to store queue family ownership (QFO) Transfers
@@ -1530,6 +1542,8 @@ struct DeviceFeatures {
     VkPhysicalDeviceCooperativeMatrixFeaturesNV cooperative_matrix_features;
     VkPhysicalDeviceFloatControlsPropertiesKHR float_controls;
     VkPhysicalDeviceHostQueryResetFeaturesEXT host_query_reset_features;
+    VkPhysicalDeviceComputeShaderDerivativesFeaturesNV compute_shader_derivatives_features;
+    VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV fragment_shader_barycentric_features;
 };
 
 enum RenderPassCreateVersion { RENDER_PASS_VERSION_1 = 0, RENDER_PASS_VERSION_2 = 1 };

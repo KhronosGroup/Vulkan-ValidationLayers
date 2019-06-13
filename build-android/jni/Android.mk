@@ -153,11 +153,14 @@ include $(BUILD_SHARED_LIBRARY)
 include $(CLEAR_VARS)
 LOCAL_MODULE := VkLayerValidationTests
 LOCAL_SRC_FILES += $(SRC_DIR)/tests/layer_validation_tests.cpp \
-				   $(SRC_DIR)/tests/vklayertests.cpp \
+				   $(SRC_DIR)/tests/vklayertests_pipeline_shader.cpp \
+				   $(SRC_DIR)/tests/vklayertests_buffer_image_memory_sampler.cpp \
+				   $(SRC_DIR)/tests/vklayertests_others.cpp \
+				   $(SRC_DIR)/tests/vklayertests_descriptor_renderpass_framebuffer.cpp \
+				   $(SRC_DIR)/tests/vklayertests_command.cpp \
 				   $(SRC_DIR)/tests/vkpositivelayertests.cpp \
                    $(SRC_DIR)/tests/vktestbinding.cpp \
                    $(SRC_DIR)/tests/vktestframeworkandroid.cpp \
-				   $(SRC_DIR)/tests/vklayertest.cpp \
                    $(SRC_DIR)/tests/vkrenderframework.cpp \
                    $(SRC_DIR)/layers/convert_to_renderpass2.cpp \
                    $(LAYER_DIR)/include/vk_safe_struct.cpp \
@@ -180,11 +183,14 @@ include $(BUILD_EXECUTABLE)
 include $(CLEAR_VARS)
 LOCAL_MODULE := VulkanLayerValidationTests
 LOCAL_SRC_FILES += $(SRC_DIR)/tests/layer_validation_tests.cpp \
-				   $(SRC_DIR)/tests/vklayertests.cpp \
+				   $(SRC_DIR)/tests/vklayertests_pipeline_shader.cpp \
+				   $(SRC_DIR)/tests/vklayertests_buffer_image_memory_sampler.cpp \
+				   $(SRC_DIR)/tests/vklayertests_others.cpp \
+				   $(SRC_DIR)/tests/vklayertests_descriptor_renderpass_framebuffer.cpp \
+				   $(SRC_DIR)/tests/vklayertests_command.cpp \
 				   $(SRC_DIR)/tests/vkpositivelayertests.cpp \
                    $(SRC_DIR)/tests/vktestbinding.cpp \
                    $(SRC_DIR)/tests/vktestframeworkandroid.cpp \
-				   $(SRC_DIR)/tests/vklayertest.cpp \
                    $(SRC_DIR)/tests/vkrenderframework.cpp \
                    $(SRC_DIR)/layers/convert_to_renderpass2.cpp \
                    $(LAYER_DIR)/include/vk_safe_struct.cpp \

@@ -339,7 +339,8 @@ class ValidationObject {
         // Handle Wrapping Data
         // Reverse map display handles
         std::unordered_map<VkDisplayKHR, uint64_t> display_id_reverse_mapping;
-        std::unordered_map<uint64_t, std::unique_ptr<TEMPLATE_STATE>> desc_template_map;
+        // Wrapping Descriptor Template Update structures requires access to the template createinfo structs
+        std::unordered_map<uint64_t, std::unique_ptr<TEMPLATE_STATE>> desc_template_createinfo_map;
         struct SubpassesUsageStates {
             std::unordered_set<uint32_t> subpasses_using_color_attachment;
             std::unordered_set<uint32_t> subpasses_using_depthstencil_attachment;
@@ -759,7 +760,7 @@ VKAPI_ATTR VkResult VKAPI_CALL EnumerateDeviceExtensionProperties(VkPhysicalDevi
     if (pLayerName && !strcmp(pLayerName, global_layer.layerName)) return util_GetExtensionProperties(0, NULL, pCount, pProperties);
     assert(physicalDevice);
     auto layer_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), layer_data_map);
-    return layer_data->instance_dispatch_table.EnumerateDeviceExtensionProperties(physicalDevice, NULL, pCount, pProperties);
+    return layer_data->instance_dispatch_table.EnumerateDeviceExtensionProperties(physicalDevice, pLayerName, pCount, pProperties);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator,
@@ -1091,8 +1092,8 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateGraphicsPipelines(
         struct create_graphics_pipeline_api_state {
             const VkGraphicsPipelineCreateInfo* pCreateInfos;
         } cgpl_state;
-        cgpl_state.pCreateInfos = pCreateInfos;
 #endif
+    cgpl_state.pCreateInfos = pCreateInfos;
 
     for (auto intercept : layer_data->object_dispatch) {
         auto lock = intercept->write_lock();
@@ -1130,8 +1131,8 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateComputePipelines(
     struct create_compute_pipeline_api_state {
         const VkComputePipelineCreateInfo* pCreateInfos;
     } ccpl_state;
-    ccpl_state.pCreateInfos = pCreateInfos;
 #endif
+    ccpl_state.pCreateInfos = pCreateInfos;
 
     for (auto intercept : layer_data->object_dispatch) {
         auto lock = intercept->write_lock();
