@@ -867,6 +867,94 @@ TEST_F(VkLayerTest, InvalidUsageBits) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(VkLayerTest, CopyBufferToCompressedImage) {
+    TEST_DESCRIPTION("Copy buffer to compressed image when buffer is larger than image.");
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    // Verify format support
+    if (!ImageFormatAndFeaturesSupported(gpu(), VK_FORMAT_BC1_RGBA_SRGB_BLOCK, VK_IMAGE_TILING_OPTIMAL,
+                                         VK_FORMAT_FEATURE_TRANSFER_DST_BIT_KHR)) {
+        printf("%s Required formats/features not supported - CopyBufferToCompressedImage skipped.\n", kSkipPrefix);
+        return;
+    }
+
+    VkImageObj width_image(m_device);
+    VkImageObj height_image(m_device);
+    VkBufferObj buffer;
+    VkMemoryPropertyFlags reqs = 0;
+    buffer.init_as_src(*m_device, 8 * 4 * 2, reqs);
+    VkBufferImageCopy region = {};
+    region.bufferRowLength = 0;
+    region.bufferImageHeight = 0;
+    region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    region.imageSubresource.layerCount = 1;
+    region.imageExtent.width = 8;
+    region.imageExtent.height = 4;
+    region.imageExtent.depth = 1;
+
+    width_image.Init(5, 4, 1, VK_FORMAT_BC1_RGBA_SRGB_BLOCK, VK_IMAGE_USAGE_TRANSFER_DST_BIT, VK_IMAGE_TILING_OPTIMAL);
+    height_image.Init(8, 3, 1, VK_FORMAT_BC1_RGBA_SRGB_BLOCK, VK_IMAGE_USAGE_TRANSFER_DST_BIT, VK_IMAGE_TILING_OPTIMAL);
+    if (!width_image.initialized() || (!height_image.initialized())) {
+        printf("%s Unable to initialize surfaces - UncompressedToCompressedImageCopy skipped.\n", kSkipPrefix);
+        return;
+    }
+    m_commandBuffer->begin();
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkBufferImageCopy-imageOffset-00197");
+    vkCmdCopyBufferToImage(m_commandBuffer->handle(), buffer.handle(), width_image.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &region);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkBufferImageCopy-imageOffset-00200");
+    m_errorMonitor->SetUnexpectedError("VUID-vkCmdCopyBufferToImage-pRegions-00172");
+
+    VkResult err;
+    VkImageCreateInfo depth_image_create_info = {};
+    depth_image_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    depth_image_create_info.pNext = NULL;
+    depth_image_create_info.imageType = VK_IMAGE_TYPE_3D;
+    depth_image_create_info.format = VK_FORMAT_BC1_RGBA_SRGB_BLOCK;
+    depth_image_create_info.extent.width = 8;
+    depth_image_create_info.extent.height = 4;
+    depth_image_create_info.extent.depth = 1;
+    depth_image_create_info.mipLevels = 1;
+    depth_image_create_info.arrayLayers = 1;
+    depth_image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    depth_image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    depth_image_create_info.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
+    depth_image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    depth_image_create_info.queueFamilyIndexCount = 0;
+    depth_image_create_info.pQueueFamilyIndices = NULL;
+
+    VkImage depth_image = VK_NULL_HANDLE;
+    err = vkCreateImage(m_device->handle(), &depth_image_create_info, NULL, &depth_image);
+    ASSERT_VK_SUCCESS(err);
+
+    VkDeviceMemory mem1;
+    VkMemoryRequirements mem_reqs;
+    mem_reqs.memoryTypeBits = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
+    VkMemoryAllocateInfo mem_alloc = {};
+    mem_alloc.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    mem_alloc.pNext = NULL;
+    mem_alloc.allocationSize = 0;
+    mem_alloc.memoryTypeIndex = 0;
+    mem_alloc.memoryTypeIndex = 1;
+    vkGetImageMemoryRequirements(m_device->device(), depth_image, &mem_reqs);
+    mem_alloc.allocationSize = mem_reqs.size;
+    bool pass = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &mem_alloc, 0);
+    ASSERT_TRUE(pass);
+    err = vkAllocateMemory(m_device->device(), &mem_alloc, NULL, &mem1);
+    ASSERT_VK_SUCCESS(err);
+    err = vkBindImageMemory(m_device->device(), depth_image, mem1, 0);
+
+    region.imageExtent.depth = 2;
+    vkCmdCopyBufferToImage(m_commandBuffer->handle(), buffer.handle(), depth_image, VK_IMAGE_LAYOUT_GENERAL, 1, &region);
+    m_errorMonitor->VerifyFound();
+
+    vkDestroyImage(m_device->device(), depth_image, NULL);
+    vkFreeMemory(m_device->device(), mem1, NULL);
+    m_commandBuffer->end();
+}
+
 TEST_F(VkLayerTest, CreateUnknownObject) {
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkGetImageMemoryRequirements-image-parameter");
 
