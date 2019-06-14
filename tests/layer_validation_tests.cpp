@@ -1260,7 +1260,8 @@ OneOffDescriptorSet::~OneOffDescriptorSet() {
 
 bool OneOffDescriptorSet::Initialized() { return pool_ != VK_NULL_HANDLE && layout_.initialized() && set_ != VK_NULL_HANDLE; }
 
-void OneOffDescriptorSet::WriteDescriptorBuffer(int blinding, VkBuffer buffer, VkDeviceSize size, VkDescriptorType descriptorType) {
+void OneOffDescriptorSet::WriteDescriptorBufferInfo(int blinding, VkBuffer buffer, VkDeviceSize size,
+                                                    VkDescriptorType descriptorType) {
     VkDescriptorBufferInfo buffer_info = {};
     buffer_info.buffer = buffer;
     buffer_info.offset = 0;
@@ -1297,8 +1298,8 @@ void OneOffDescriptorSet::WriteDescriptorBufferView(int blinding, VkBufferView &
     descriptor_writes.emplace_back(descriptor_write);
 }
 
-void OneOffDescriptorSet::WriteDescriptorImage(int blinding, VkImageView image_view, VkSampler sampler,
-                                               VkDescriptorType descriptorType) {
+void OneOffDescriptorSet::WriteDescriptorImageInfo(int blinding, VkImageView image_view, VkSampler sampler,
+                                                   VkDescriptorType descriptorType) {
     VkDescriptorImageInfo image_info = {};
     image_info.imageView = image_view;
     image_info.sampler = sampler;

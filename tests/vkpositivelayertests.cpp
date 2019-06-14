@@ -916,15 +916,15 @@ TEST_F(VkPositiveLayerTest, CopyNonupdatedDescriptors) {
     unsigned int i;
 
     ASSERT_NO_FATAL_FAILURE(Init());
-    OneOffDescriptorSet src_ds(m_device, {
-                                             {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                             {1, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                             {2, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                         });
-    OneOffDescriptorSet dst_ds(m_device, {
-                                             {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                             {1, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                         });
+    OneOffDescriptorSet src_descriptor_set(m_device, {
+                                                         {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                                         {1, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                                         {2, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                                     });
+    OneOffDescriptorSet dst_descriptor_set(m_device, {
+                                                         {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                                         {1, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                                     });
 
     m_errorMonitor->ExpectSuccess();
 
@@ -933,9 +933,9 @@ TEST_F(VkPositiveLayerTest, CopyNonupdatedDescriptors) {
     memset(copy_ds_update, 0, sizeof(copy_ds_update));
     for (i = 0; i < copy_size; i++) {
         copy_ds_update[i].sType = VK_STRUCTURE_TYPE_COPY_DESCRIPTOR_SET;
-        copy_ds_update[i].srcSet = src_ds.set_;
+        copy_ds_update[i].srcSet = src_descriptor_set.set_;
         copy_ds_update[i].srcBinding = i;
-        copy_ds_update[i].dstSet = dst_ds.set_;
+        copy_ds_update[i].dstSet = dst_descriptor_set.set_;
         copy_ds_update[i].dstBinding = i;
         copy_ds_update[i].descriptorCount = 1;
     }
@@ -1866,9 +1866,9 @@ TEST_F(VkPositiveLayerTest, IgnoreUnrelatedDescriptor) {
 
         VkImageView view = image.targetView(VK_FORMAT_B8G8R8A8_UNORM);
 
-        OneOffDescriptorSet ds(m_device, {
-                                             {0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                         });
+        OneOffDescriptorSet descriptor_set(m_device, {
+                                                         {0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                                     });
 
         VkDescriptorImageInfo image_info = {};
         image_info.imageView = view;
@@ -1877,7 +1877,7 @@ TEST_F(VkPositiveLayerTest, IgnoreUnrelatedDescriptor) {
         VkWriteDescriptorSet descriptor_write;
         memset(&descriptor_write, 0, sizeof(descriptor_write));
         descriptor_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptor_write.dstSet = ds.set_;
+        descriptor_write.dstSet = descriptor_set.set_;
         descriptor_write.dstBinding = 0;
         descriptor_write.descriptorCount = 1;
         descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
@@ -1912,9 +1912,9 @@ TEST_F(VkPositiveLayerTest, IgnoreUnrelatedDescriptor) {
         VkBufferObj buffer;
         buffer.init(*m_device, buffer_create_info);
 
-        OneOffDescriptorSet ds(m_device, {
-                                             {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                         });
+        OneOffDescriptorSet descriptor_set(m_device, {
+                                                         {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                                     });
 
         VkDescriptorBufferInfo buffer_info = {};
         buffer_info.buffer = buffer.handle();
@@ -1924,7 +1924,7 @@ TEST_F(VkPositiveLayerTest, IgnoreUnrelatedDescriptor) {
         VkWriteDescriptorSet descriptor_write;
         memset(&descriptor_write, 0, sizeof(descriptor_write));
         descriptor_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptor_write.dstSet = ds.set_;
+        descriptor_write.dstSet = descriptor_set.set_;
         descriptor_write.dstBinding = 0;
         descriptor_write.descriptorCount = 1;
         descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -1967,14 +1967,15 @@ TEST_F(VkPositiveLayerTest, IgnoreUnrelatedDescriptor) {
         VkBufferView buffer_view;
         VkResult err = vkCreateBufferView(m_device->device(), &buff_view_ci, NULL, &buffer_view);
         ASSERT_VK_SUCCESS(err);
-        OneOffDescriptorSet ds(m_device, {
-                                             {0, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                         });
+        OneOffDescriptorSet descriptor_set(m_device,
+                                           {
+                                               {0, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                           });
 
         VkWriteDescriptorSet descriptor_write;
         memset(&descriptor_write, 0, sizeof(descriptor_write));
         descriptor_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptor_write.dstSet = ds.set_;
+        descriptor_write.dstSet = descriptor_set.set_;
         descriptor_write.dstBinding = 0;
         descriptor_write.descriptorCount = 1;
         descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER;
@@ -2003,23 +2004,23 @@ TEST_F(VkPositiveLayerTest, ImmutableSamplerOnlyDescriptor) {
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    OneOffDescriptorSet ds(m_device, {
-                                         {0, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
-                                     });
+    OneOffDescriptorSet descriptor_set(m_device, {
+                                                     {0, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+                                                 });
 
     VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
     VkSampler sampler;
     VkResult err = vkCreateSampler(m_device->device(), &sampler_ci, NULL, &sampler);
     ASSERT_VK_SUCCESS(err);
 
-    const VkPipelineLayoutObj pipeline_layout(m_device, {&ds.layout_});
+    const VkPipelineLayoutObj pipeline_layout(m_device, {&descriptor_set.layout_});
 
     m_errorMonitor->ExpectSuccess();
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
 
-    vkCmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1, &ds.set_, 0,
-                            nullptr);
+    vkCmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
+                            &descriptor_set.set_, 0, nullptr);
     m_errorMonitor->VerifyNotFound();
 
     vkDestroySampler(m_device->device(), sampler, NULL);
@@ -2218,7 +2219,8 @@ TEST_F(VkPositiveLayerTest, PushDescriptorUnboundSetTest) {
     dsl_binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
     dsl_binding.pImmutableSamplers = NULL;
 
-    OneOffDescriptorSet ds(m_device, {dsl_binding}, 0, nullptr, VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT, nullptr);
+    OneOffDescriptorSet descriptor_set(m_device, {dsl_binding}, 0, nullptr, VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT,
+                                       nullptr);
 
     // Create push descriptor set layout
     const VkDescriptorSetLayoutObj push_ds_layout(m_device, {dsl_binding}, VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR);
@@ -2240,15 +2242,15 @@ TEST_F(VkPositiveLayerTest, PushDescriptorUnboundSetTest) {
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipe.InitState();
     // Now use the descriptor layouts to create a pipeline layout
-    pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&push_ds_layout, &ds.layout_});
+    pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&push_ds_layout, &descriptor_set.layout_});
     pipe.CreateGraphicsPipeline();
 
     const float bo_data[1] = {1.f};
     VkConstantBufferObj buffer(m_device, sizeof(bo_data), (const void *)&bo_data, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 
     // Update descriptor set
-    ds.WriteDescriptorBuffer(2, buffer.handle(), sizeof(bo_data));
-    ds.UpdateDescriptorSets();
+    descriptor_set.WriteDescriptorBufferInfo(2, buffer.handle(), sizeof(bo_data));
+    descriptor_set.UpdateDescriptorSets();
 
     PFN_vkCmdPushDescriptorSetKHR vkCmdPushDescriptorSetKHR =
         (PFN_vkCmdPushDescriptorSetKHR)vkGetDeviceProcAddr(m_device->device(), "vkCmdPushDescriptorSetKHR");
@@ -2260,9 +2262,9 @@ TEST_F(VkPositiveLayerTest, PushDescriptorUnboundSetTest) {
 
     // Push descriptors and bind descriptor set
     vkCmdPushDescriptorSetKHR(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0, 1,
-                              ds.descriptor_writes.data());
+                              descriptor_set.descriptor_writes.data());
     vkCmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 1, 1,
-                            &ds.set_, 0, NULL);
+                            &descriptor_set.set_, 0, NULL);
 
     // No errors should be generated.
     vkCmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
@@ -2743,11 +2745,12 @@ TEST_F(VkPositiveLayerTest, DynamicOffsetWithInactiveBinding) {
     ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    OneOffDescriptorSet ds(m_device, {
-                                         {2, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
-                                         {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
-                                         {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
-                                     });
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {
+                                           {2, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+                                           {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+                                           {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+                                       });
 
     // Create two buffers to update the descriptors with
     // The first will be 2k and used for bindings 0 & 1, the second is 1k for binding 2
@@ -2759,28 +2762,28 @@ TEST_F(VkPositiveLayerTest, DynamicOffsetWithInactiveBinding) {
     buffCI.queueFamilyIndexCount = 1;
     buffCI.pQueueFamilyIndices = &qfi;
 
-    VkBufferObj dyub1, dyub2;
-    dyub1.init(*m_device, buffCI);
+    VkBufferObj dynamic_uniform_buffer_1, dynamic_uniform_buffer_2;
+    dynamic_uniform_buffer_1.init(*m_device, buffCI);
     buffCI.size = 1024;
-    dyub2.init(*m_device, buffCI);
+    dynamic_uniform_buffer_2.init(*m_device, buffCI);
 
     // Update descriptors
     const uint32_t BINDING_COUNT = 3;
     VkDescriptorBufferInfo buff_info[BINDING_COUNT] = {};
-    buff_info[0].buffer = dyub1.handle();
+    buff_info[0].buffer = dynamic_uniform_buffer_1.handle();
     buff_info[0].offset = 0;
     buff_info[0].range = 256;
-    buff_info[1].buffer = dyub1.handle();
+    buff_info[1].buffer = dynamic_uniform_buffer_1.handle();
     buff_info[1].offset = 256;
     buff_info[1].range = 512;
-    buff_info[2].buffer = dyub2.handle();
+    buff_info[2].buffer = dynamic_uniform_buffer_2.handle();
     buff_info[2].offset = 0;
     buff_info[2].range = 512;
 
     VkWriteDescriptorSet descriptor_write;
     memset(&descriptor_write, 0, sizeof(descriptor_write));
     descriptor_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    descriptor_write.dstSet = ds.set_;
+    descriptor_write.dstSet = descriptor_set.set_;
     descriptor_write.dstBinding = 0;
     descriptor_write.descriptorCount = BINDING_COUNT;
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
@@ -2808,7 +2811,7 @@ TEST_F(VkPositiveLayerTest, DynamicOffsetWithInactiveBinding) {
     pipe.InitInfo();
     pipe.InitState();
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-    pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&ds.layout_});
+    pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&descriptor_set.layout_});
     pipe.CreateGraphicsPipeline();
 
     vkCmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
@@ -2816,7 +2819,7 @@ TEST_F(VkPositiveLayerTest, DynamicOffsetWithInactiveBinding) {
     //   we used to have a bug in this case.
     uint32_t dyn_off[BINDING_COUNT] = {0, 1024, 256};
     vkCmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0, 1,
-                            &ds.set_, BINDING_COUNT, dyn_off);
+                            &descriptor_set.set_, BINDING_COUNT, dyn_off);
     m_commandBuffer->Draw(1, 0, 0, 0);
     m_errorMonitor->VerifyNotFound();
 
@@ -6924,9 +6927,10 @@ TEST_F(VkPositiveLayerTest, MultiplaneImageTests) {
     ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     vkCreateImageView(m_device->device(), &ivci, nullptr, &view);
 
-    OneOffDescriptorSet ds(m_device, {
-                                         {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
-                                     });
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {
+                                           {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+                                       });
 
     VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
     VkSampler sampler;
@@ -6935,9 +6939,9 @@ TEST_F(VkPositiveLayerTest, MultiplaneImageTests) {
     err = vkCreateSampler(m_device->device(), &sampler_ci, NULL, &sampler);
     ASSERT_VK_SUCCESS(err);
 
-    const VkPipelineLayoutObj pipeline_layout(m_device, {&ds.layout_});
-    ds.WriteDescriptorImage(0, view, sampler);
-    ds.UpdateDescriptorSets();
+    const VkPipelineLayoutObj pipeline_layout(m_device, {&descriptor_set.layout_});
+    descriptor_set.WriteDescriptorImageInfo(0, view, sampler);
+    descriptor_set.UpdateDescriptorSets();
 
     VkShaderObj vs(m_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
     VkShaderObj fs(m_device, bindStateFragSamplerShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this);
@@ -6967,8 +6971,8 @@ TEST_F(VkPositiveLayerTest, MultiplaneImageTests) {
                          VK_DEPENDENCY_BY_REGION_BIT, 0, nullptr, 0, nullptr, 1, &img_barrier);
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     vkCmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
-    vkCmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1, &ds.set_, 0,
-                            nullptr);
+    vkCmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
+                            &descriptor_set.set_, 0, nullptr);
 
     VkViewport viewport = {0, 0, 16, 16, 0, 1};
     VkRect2D scissor = {{0, 0}, {16, 16}};

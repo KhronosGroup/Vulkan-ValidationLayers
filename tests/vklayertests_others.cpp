@@ -1714,7 +1714,7 @@ TEST_F(VkLayerTest, DescriptorPoolInUseDestroyedSignaled) {
     pipe.CreateGraphicsPipeline();
 
     // Update descriptor with image and sampler
-    pipe.descriptor_set_->WriteDescriptorImage(0, view, sampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+    pipe.descriptor_set_->WriteDescriptorImageInfo(0, view, sampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
     pipe.descriptor_set_->UpdateDescriptorSets();
 
     m_commandBuffer->begin();
@@ -1902,7 +1902,7 @@ TEST_F(VkLayerTest, InUseDestroyedSignaled) {
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
-    pipe.descriptor_set_->WriteDescriptorBuffer(0, buffer_test.GetBuffer(), 1024, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, buffer_test.GetBuffer(), 1024, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
     pipe.descriptor_set_->UpdateDescriptorSets();
 
     VkEvent event;
@@ -2107,7 +2107,7 @@ TEST_F(VkLayerTest, ImageViewInUseDestroyedSignaled) {
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
-    pipe.descriptor_set_->WriteDescriptorImage(0, view, sampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+    pipe.descriptor_set_->WriteDescriptorImageInfo(0, view, sampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
     pipe.descriptor_set_->UpdateDescriptorSets();
 
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkDestroyImageView-imageView-01026");
@@ -2267,7 +2267,7 @@ TEST_F(VkLayerTest, SamplerInUseDestroyedSignaled) {
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
-    pipe.descriptor_set_->WriteDescriptorImage(0, view, sampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+    pipe.descriptor_set_->WriteDescriptorImageInfo(0, view, sampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
     pipe.descriptor_set_->UpdateDescriptorSets();
 
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkDestroySampler-sampler-01082");
