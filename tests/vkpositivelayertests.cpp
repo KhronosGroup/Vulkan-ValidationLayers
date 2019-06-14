@@ -3660,7 +3660,7 @@ TEST_F(VkPositiveLayerTest, QueryAndCopySecondaryCommandBuffers) {
 
         primary_buffer.begin();
         vkCmdExecuteCommands(primary_buffer.handle(), 1, &secondary_buffer.handle());
-        vkCmdCopyQueryPoolResults(primary_buffer.handle(), query_pool, 0, 1, buffer.handle(), 0, 0, 0);
+        vkCmdCopyQueryPoolResults(primary_buffer.handle(), query_pool, 0, 1, buffer.handle(), 0, 0, VK_QUERY_RESULT_WAIT_BIT);
         primary_buffer.end();
     }
 
@@ -3731,7 +3731,7 @@ TEST_F(VkPositiveLayerTest, QueryAndCopyMultipleCommandBuffers) {
 
         vkBeginCommandBuffer(command_buffer[1], &begin_info);
 
-        vkCmdCopyQueryPoolResults(command_buffer[1], query_pool, 0, 1, buffer.handle(), 0, 0, 0);
+        vkCmdCopyQueryPoolResults(command_buffer[1], query_pool, 0, 1, buffer.handle(), 0, 0, VK_QUERY_RESULT_WAIT_BIT);
 
         vkEndCommandBuffer(command_buffer[1]);
     }
