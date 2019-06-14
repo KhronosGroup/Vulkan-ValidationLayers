@@ -2086,6 +2086,44 @@ TEST_F(VkLayerTest, InUseDestroyedSignaled) {
     vkDestroyEvent(m_device->device(), event, nullptr);
 }
 
+TEST_F(VkLayerTest, QueryPoolPartialTimestamp) {
+    TEST_DESCRIPTION("Request partial result on timestamp query.");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkQueryPool query_pool;
+    VkQueryPoolCreateInfo query_pool_ci{};
+    query_pool_ci.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
+    query_pool_ci.queryType = VK_QUERY_TYPE_TIMESTAMP;
+    query_pool_ci.queryCount = 1;
+    vkCreateQueryPool(m_device->device(), &query_pool_ci, nullptr, &query_pool);
+
+    m_commandBuffer->begin();
+    vkCmdResetQueryPool(m_commandBuffer->handle(), query_pool, 0, 1);
+    vkCmdWriteTimestamp(m_commandBuffer->handle(), VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, query_pool, 0);
+    m_commandBuffer->end();
+
+    // Submit cmd buffer and wait for it.
+    VkSubmitInfo submit_info = {};
+    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers = &m_commandBuffer->handle();
+    vkQueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vkQueueWaitIdle(m_device->m_queue);
+
+    // Attempt to obtain partial results.
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkGetQueryPoolResults-queryType-00818");
+    uint32_t data_space[16];
+    m_errorMonitor->SetUnexpectedError("Cannot get query results on queryPool");
+    vkGetQueryPoolResults(m_device->handle(), query_pool, 0, 1, sizeof(data_space), &data_space, sizeof(uint32_t),
+                          VK_QUERY_RESULT_PARTIAL_BIT);
+    m_errorMonitor->VerifyFound();
+
+    // Destroy query pool.
+    vkDestroyQueryPool(m_device->handle(), query_pool, NULL);
+}
+
 TEST_F(VkLayerTest, QueryPoolInUseDestroyedSignaled) {
     TEST_DESCRIPTION("Delete in-use query pool.");
 
@@ -2098,24 +2136,18 @@ TEST_F(VkLayerTest, QueryPoolInUseDestroyedSignaled) {
     query_pool_ci.queryType = VK_QUERY_TYPE_TIMESTAMP;
     query_pool_ci.queryCount = 1;
     vkCreateQueryPool(m_device->device(), &query_pool_ci, nullptr, &query_pool);
-    m_commandBuffer->begin();
-    // Reset query pool to create binding with cmd buffer
-    vkCmdResetQueryPool(m_commandBuffer->handle(), query_pool, 0, 1);
 
+    m_commandBuffer->begin();
+    // Use query pool to create binding with cmd buffer
+    vkCmdResetQueryPool(m_commandBuffer->handle(), query_pool, 0, 1);
+    vkCmdWriteTimestamp(m_commandBuffer->handle(), VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, query_pool, 0);
     m_commandBuffer->end();
 
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkGetQueryPoolResults-queryType-00818");
-    uint32_t data_space[16];
-    m_errorMonitor->SetUnexpectedError("Cannot get query results on queryPool");
-    vkGetQueryPoolResults(m_device->handle(), query_pool, 0, 1, sizeof(data_space), &data_space, sizeof(uint32_t),
-                          VK_QUERY_RESULT_PARTIAL_BIT);
-    m_errorMonitor->VerifyFound();
-
+    // Submit cmd buffer and then destroy query pool while in-flight
     VkSubmitInfo submit_info = {};
     submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
-    // Submit cmd buffer and then destroy query pool while in-flight
     vkQueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
 
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkDestroyQueryPool-queryPool-00793");
@@ -4300,7 +4332,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferExporttBuffer) {
 
 TEST_F(VkLayerTest, ValidateStride) {
     TEST_DESCRIPTION("Validate Stride.");
-    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(Init(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
     ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
@@ -4311,23 +4343,37 @@ TEST_F(VkLayerTest, ValidateStride) {
     query_pool_ci.queryCount = 1;
     vkCreateQueryPool(m_device->device(), &query_pool_ci, nullptr, &query_pool);
 
+    m_commandBuffer->begin();
+    vkCmdResetQueryPool(m_commandBuffer->handle(), query_pool, 0, 1);
+    vkCmdWriteTimestamp(m_commandBuffer->handle(), VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, query_pool, 0);
+    m_commandBuffer->end();
+
+    VkSubmitInfo submit_info = {};
+    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers = &m_commandBuffer->handle();
+    vkQueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vkQueueWaitIdle(m_device->m_queue);
+
     char data_space;
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkGetQueryPoolResults-flags-00814");
-    vkGetQueryPoolResults(m_device->handle(), query_pool, 0, 1, sizeof(data_space), &data_space, 1, 0);
+    vkGetQueryPoolResults(m_device->handle(), query_pool, 0, 1, sizeof(data_space), &data_space, 1, VK_QUERY_RESULT_WAIT_BIT);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkGetQueryPoolResults-flags-00815");
-    vkGetQueryPoolResults(m_device->handle(), query_pool, 0, 1, sizeof(data_space), &data_space, 1, VK_QUERY_RESULT_64_BIT);
+    vkGetQueryPoolResults(m_device->handle(), query_pool, 0, 1, sizeof(data_space), &data_space, 1,
+                          (VK_QUERY_RESULT_WAIT_BIT | VK_QUERY_RESULT_64_BIT));
     m_errorMonitor->VerifyFound();
 
     char data_space4[4] = "";
     m_errorMonitor->ExpectSuccess();
-    vkGetQueryPoolResults(m_device->handle(), query_pool, 0, 1, sizeof(data_space4), &data_space4, 4, 0);
+    vkGetQueryPoolResults(m_device->handle(), query_pool, 0, 1, sizeof(data_space4), &data_space4, 4, VK_QUERY_RESULT_WAIT_BIT);
     m_errorMonitor->VerifyNotFound();
 
     char data_space8[8] = "";
     m_errorMonitor->ExpectSuccess();
-    vkGetQueryPoolResults(m_device->handle(), query_pool, 0, 1, sizeof(data_space8), &data_space8, 8, VK_QUERY_RESULT_64_BIT);
+    vkGetQueryPoolResults(m_device->handle(), query_pool, 0, 1, sizeof(data_space8), &data_space8, 8,
+                          (VK_QUERY_RESULT_WAIT_BIT | VK_QUERY_RESULT_64_BIT));
     m_errorMonitor->VerifyNotFound();
 
     uint32_t qfi = 0;
@@ -4341,6 +4387,7 @@ TEST_F(VkLayerTest, ValidateStride) {
     VkBufferObj buffer;
     buffer.init(*m_device, buff_create_info);
 
+    m_commandBuffer->reset();
     m_commandBuffer->begin();
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdCopyQueryPoolResults-flags-00822");
     vkCmdCopyQueryPoolResults(m_commandBuffer->handle(), query_pool, 0, 1, buffer.handle(), 1, 1, 0);
