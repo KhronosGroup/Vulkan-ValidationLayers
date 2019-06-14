@@ -12952,7 +12952,7 @@ bool CoreChecks::ValidateQueryPoolStride(const std::string &vuid_not_64, const s
                                          const char *parameter_name, const uint64_t parameter_value,
                                          const VkQueryResultFlags flags) {
     bool skip = false;
-    if (flags == VK_QUERY_RESULT_64_BIT) {
+    if (flags & VK_QUERY_RESULT_64_BIT) {
         static const int condition_multiples = 0b0111;
         if ((stride & condition_multiples) || (parameter_value & condition_multiples)) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, vuid_64,
