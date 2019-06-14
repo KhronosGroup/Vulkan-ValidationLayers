@@ -2680,9 +2680,10 @@ TEST_F(VkLayerTest, InvalidCmdBufferBufferViewDestroyed) {
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    OneOffDescriptorSet ds(m_device, {
-                                         {0, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
-                                     });
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {
+                                           {0, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+                                       });
     CreatePipelineHelper pipe(*this);
     VkBufferCreateInfo buffer_create_info = {};
     VkBufferViewCreateInfo bvci = {};
@@ -2706,8 +2707,8 @@ TEST_F(VkLayerTest, InvalidCmdBufferBufferViewDestroyed) {
         VkResult err = vkCreateBufferView(m_device->device(), &bvci, NULL, &view);
         ASSERT_VK_SUCCESS(err);
 
-        ds.WriteDescriptorBufferView(0, view);
-        ds.UpdateDescriptorSets();
+        descriptor_set.WriteDescriptorBufferView(0, view);
+        descriptor_set.UpdateDescriptorSets();
 
         char const *fsSource =
             "#version 450\n"
@@ -2723,7 +2724,7 @@ TEST_F(VkLayerTest, InvalidCmdBufferBufferViewDestroyed) {
         pipe.InitInfo();
         pipe.InitState();
         pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-        pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&ds.layout_});
+        pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&descriptor_set.layout_});
         pipe.CreateGraphicsPipeline();
 
         m_commandBuffer->begin();
@@ -2736,7 +2737,7 @@ TEST_F(VkLayerTest, InvalidCmdBufferBufferViewDestroyed) {
         // Bind pipeline to cmd buffer - This causes crash on Mali
         vkCmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
         vkCmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0, 1,
-                                &ds.set_, 0, nullptr);
+                                &descriptor_set.set_, 0, nullptr);
     }
     // buffer is released.
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "Descriptor in binding #0 index 0 is using buffer");
@@ -2754,12 +2755,12 @@ TEST_F(VkLayerTest, InvalidCmdBufferBufferViewDestroyed) {
     bvci.buffer = buffer.handle();
     VkResult err = vkCreateBufferView(m_device->device(), &bvci, NULL, &view);
     ASSERT_VK_SUCCESS(err);
-    ds.descriptor_writes.clear();
-    ds.WriteDescriptorBufferView(0, view);
-    ds.UpdateDescriptorSets();
+    descriptor_set.descriptor_writes.clear();
+    descriptor_set.WriteDescriptorBufferView(0, view);
+    descriptor_set.UpdateDescriptorSets();
 
     vkCmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0, 1,
-                            &ds.set_, 0, nullptr);
+                            &descriptor_set.set_, 0, nullptr);
     m_commandBuffer->Draw(1, 0, 0, 0);
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
@@ -3106,9 +3107,9 @@ TEST_F(VkLayerTest, InvalidBufferViewObject) {
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkWriteDescriptorSet-descriptorType-00323");
     ASSERT_NO_FATAL_FAILURE(Init());
 
-    OneOffDescriptorSet ds(m_device, {
-                                         {0, VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                     });
+    OneOffDescriptorSet descriptor_set(m_device, {
+                                                     {0, VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                                 });
     VkBufferView view;
     {
         // Create a valid bufferView to start with
@@ -3136,7 +3137,7 @@ TEST_F(VkLayerTest, InvalidBufferViewObject) {
     VkWriteDescriptorSet descriptor_write;
     memset(&descriptor_write, 0, sizeof(descriptor_write));
     descriptor_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    descriptor_write.dstSet = ds.set_;
+    descriptor_write.dstSet = descriptor_set.set_;
     descriptor_write.dstBinding = 0;
     descriptor_write.descriptorCount = 1;
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER;
@@ -4789,21 +4790,22 @@ TEST_F(VkLayerTest, InvalidStorageImageLayout) {
         return;
     }
 
-    OneOffDescriptorSet ds(m_device, {
-                                         {0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
-                                     });
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {
+                                           {0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+                                       });
 
     VkImageObj image(m_device);
     image.Init(32, 32, 1, tex_format, VK_IMAGE_USAGE_STORAGE_BIT, tiling, 0);
     ASSERT_TRUE(image.initialized());
     VkImageView view = image.targetView(tex_format);
 
-    ds.WriteDescriptorImage(0, view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
+    descriptor_set.WriteDescriptorImageInfo(0, view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
 
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
                                          " of VK_DESCRIPTOR_TYPE_STORAGE_IMAGE type is being updated with layout "
                                          "VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL but according to spec ");
-    ds.UpdateDescriptorSets();
+    descriptor_set.UpdateDescriptorSets();
     m_errorMonitor->VerifyFound();
 }
 
@@ -6148,9 +6150,10 @@ TEST_F(VkLayerTest, MultiplaneImageSamplerConversionMismatch) {
     vkCreateImageView(m_device->device(), &ivci, nullptr, &view);
 
     // Use the image and sampler together in a descriptor set
-    OneOffDescriptorSet ds(m_device, {
-                                         {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2, VK_SHADER_STAGE_ALL, samplers},
-                                     });
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {
+                                           {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2, VK_SHADER_STAGE_ALL, samplers},
+                                       });
 
     // Use the same image view twice, using the same sampler, with the *second* mismatched with the *second* immutable sampler
     VkDescriptorImageInfo image_infos[2];
@@ -6163,7 +6166,7 @@ TEST_F(VkLayerTest, MultiplaneImageSamplerConversionMismatch) {
     // Update the descriptor set expecting to get an error
     VkWriteDescriptorSet descriptor_write = {};
     descriptor_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    descriptor_write.dstSet = ds.set_;
+    descriptor_write.dstSet = descriptor_set.set_;
     descriptor_write.dstBinding = 0;
     descriptor_write.descriptorCount = 2;
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
@@ -6175,10 +6178,11 @@ TEST_F(VkLayerTest, MultiplaneImageSamplerConversionMismatch) {
 
     // pImmutableSamplers = nullptr causes an error , VUID-01947.
     // Because if pNext chains a VkSamplerYcbcrConversionInfo, the sampler has to be a immutable sampler.
-    OneOffDescriptorSet ds_1947(m_device, {
-                                              {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                          });
-    descriptor_write.dstSet = ds_1947.set_;
+    OneOffDescriptorSet descriptor_set_1947(m_device,
+                                            {
+                                                {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                            });
+    descriptor_write.dstSet = descriptor_set_1947.set_;
     descriptor_write.descriptorCount = 1;
     descriptor_write.pImageInfo = &image_infos[0];
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkWriteDescriptorSet-descriptorType-01947");
@@ -6208,9 +6212,6 @@ TEST_F(VkLayerTest, DepthStencilImageViewWithColorAspectBitError) {
         printf("%s Couldn't find depth stencil format.\n", kSkipPrefix);
         return;
     }
-    OneOffDescriptorSet ds(m_device, {
-                                         {0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                     });
 
     VkImageObj image_bad(m_device);
     VkImageObj image_good(m_device);

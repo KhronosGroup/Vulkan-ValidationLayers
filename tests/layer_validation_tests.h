@@ -400,12 +400,12 @@ struct OneOffDescriptorSet {
                         void *layout_pnext = NULL, VkDescriptorPoolCreateFlags poolFlags = 0, void *allocate_pnext = NULL);
     ~OneOffDescriptorSet();
     bool Initialized();
-    void WriteDescriptorBuffer(int blinding, VkBuffer buffer, VkDeviceSize size,
-                               VkDescriptorType descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+    void WriteDescriptorBufferInfo(int blinding, VkBuffer buffer, VkDeviceSize size,
+                                   VkDescriptorType descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
     void WriteDescriptorBufferView(int blinding, VkBufferView &buffer_view,
                                    VkDescriptorType descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER);
-    void WriteDescriptorImage(int blinding, VkImageView image_view, VkSampler sampler,
-                              VkDescriptorType descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+    void WriteDescriptorImageInfo(int blinding, VkImageView image_view, VkSampler sampler,
+                                  VkDescriptorType descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
     void UpdateDescriptorSets();
 };
 
