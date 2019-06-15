@@ -702,10 +702,9 @@ class HelperFileOutputGenerator(OutputGenerator):
         # Output name string helper
         object_types_header += '// Array of object name strings for OBJECT_TYPE enum conversion\n'
         object_types_header += 'static const char * const object_string[kVulkanObjectTypeMax] = {\n'
-        object_types_header += '    "Unknown",\n'
+        object_types_header += '    "VkNonDispatchableHandle",\n'
         for item in self.object_types:
-            fixup_name = item[2:]
-            object_types_header += '    "%s",\n' % fixup_name
+            object_types_header += '    "%s",\n' % item
         object_types_header += '};\n'
 
         # Key creation helper for map comprehensions that convert between k<Name> and VK<Name> symbols
