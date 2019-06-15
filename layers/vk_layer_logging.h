@@ -146,8 +146,8 @@ typedef struct _debug_report_data {
     bool g_DEBUG_UTILS{false};
     bool queueLabelHasInsert{false};
     bool cmdBufLabelHasInsert{false};
-    std::unordered_map<uint64_t, std::string> debugObjectNameMap;
-    std::unordered_map<uint64_t, std::string> debugUtilsObjectNameMap;
+    std::unordered_map<uint64_t, VkDebugMarkerObjectNameInfoEXT> debugObjectNameMap;
+    std::unordered_map<uint64_t, VkDebugUtilsObjectNameInfoEXT> debugUtilsObjectNameMap;
     std::unordered_map<VkQueue, std::unique_ptr<LoggingLabelState>> debugUtilsQueueLabels;
     std::unordered_map<VkCommandBuffer, std::unique_ptr<LoggingLabelState>> debugUtilsCmdBufLabels;
     // This mutex is defined as mutable since the normal usage for a debug report object is as 'const'. The mutable keyword allows
@@ -156,8 +156,8 @@ typedef struct _debug_report_data {
 
     void DebugReportSetUtilsObjectName(const VkDebugUtilsObjectNameInfoEXT *pNameInfo) {
         std::unique_lock<std::mutex> lock(debug_report_mutex);
-        if (pNameInfo->pObjectName) {
-            debugUtilsObjectNameMap[pNameInfo->objectHandle] = pNameInfo->pObjectName;
+        if (pNameInfo) {
+            debugUtilsObjectNameMap[pNameInfo->objectHandle] = *pNameInfo;
         } else {
             debugUtilsObjectNameMap.erase(pNameInfo->objectHandle);
         }
@@ -165,8 +165,8 @@ typedef struct _debug_report_data {
 
     void DebugReportSetMarkerObjectName(const VkDebugMarkerObjectNameInfoEXT *pNameInfo) {
         std::unique_lock<std::mutex> lock(debug_report_mutex);
-        if (pNameInfo->pObjectName) {
-            debugObjectNameMap[pNameInfo->object] = pNameInfo->pObjectName;
+        if (pNameInfo) {
+            debugObjectNameMap[pNameInfo->object] = *pNameInfo;
         } else {
             debugObjectNameMap.erase(pNameInfo->object);
         }
@@ -176,7 +176,7 @@ typedef struct _debug_report_data {
         std::string label = "";
         const auto utils_name_iter = debugUtilsObjectNameMap.find(object);
         if (utils_name_iter != debugUtilsObjectNameMap.end()) {
-            label = utils_name_iter->second;
+            label = utils_name_iter->second.pObjectName;
         }
         return label;
     }
@@ -185,7 +185,7 @@ typedef struct _debug_report_data {
         std::string label = "";
         const auto marker_name_iter = debugObjectNameMap.find(object);
         if (marker_name_iter != debugObjectNameMap.end()) {
-            label = marker_name_iter->second;
+            label = marker_name_iter->second.pObjectName;
         }
         return label;
     }
