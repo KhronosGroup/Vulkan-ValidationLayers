@@ -137,6 +137,8 @@ struct LoggingLabelState {
     }
 };
 
+static inline int string_sprintf(std::string *output, const char *fmt, ...);
+
 typedef struct _debug_report_data {
     VkLayerDbgFunctionNode *debug_callback_list{nullptr};
     VkLayerDbgFunctionNode *default_debug_callback_list{nullptr};
@@ -190,34 +192,24 @@ typedef struct _debug_report_data {
         return label;
     }
 
-    std::string FormatHandle(const char * /* handle_name */, uint64_t h) const {
-        // Ignore handle_name string until the tests are changed to not fail when typename is emitted
-        char uint64_string[64];
-        sprintf(uint64_string, "0x%" PRIxLEAST64, h);
-        std::string ret = uint64_string;
+    std::string FormatHandle(const char *handle_type_name, uint64_t handle) const {
+        std::string handle_name = DebugReportGetUtilsObjectName(handle);
+        if (handle_name.empty()) {
+            handle_name = DebugReportGetMarkerObjectName(handle);
+        }
 
-        std::string name = DebugReportGetUtilsObjectName(h);
-        if (name.empty()) {
-            name = DebugReportGetMarkerObjectName(h);
-        }
-        if (!name.empty()) {
-            ret.append("[");
-            ret.append(name);
-            ret.append("]");
-        }
+        std::string ret;
+        string_sprintf(&ret, "%s 0x%" PRIxLEAST64 "[%s]", handle_type_name, handle, handle_name.c_str());
         return ret;
     }
-
-    // Backwards compatible path for entry points that pass uint64_t's
-    std::string FormatHandle(uint64_t h) const { return FormatHandle("", h); }
 
     std::string FormatHandle(const VulkanTypedHandle &handle) const {
         return FormatHandle(object_string[handle.type], handle.handle);
     }
 
     template <typename HANDLE_T>
-    std::string FormatHandle(HANDLE_T h) const {
-        return FormatHandle(VkHandleInfo<HANDLE_T>::Typename(), HandleToUint64(h));
+    std::string FormatHandle(HANDLE_T handle) const {
+        return FormatHandle(VkHandleInfo<HANDLE_T>::Typename(), HandleToUint64(handle));
     }
 
 } debug_report_data;
