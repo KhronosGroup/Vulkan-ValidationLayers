@@ -3043,9 +3043,10 @@ void CoreChecks::PreCallRecordCreateShaderModule(VkDevice device, const VkShader
     }
 }
 
-void CoreChecks::PostCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo *pCreateInfo,
-                                                  const VkAllocationCallbacks *pAllocator, VkShaderModule *pShaderModule,
-                                                  VkResult result, void *csm_state_data) {
+void ValidationStateTracker::PostCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo *pCreateInfo,
+                                                              const VkAllocationCallbacks *pAllocator,
+                                                              VkShaderModule *pShaderModule, VkResult result,
+                                                              void *csm_state_data) {
     if (VK_SUCCESS != result) return;
     create_shader_module_api_state *csm_state = reinterpret_cast<create_shader_module_api_state *>(csm_state_data);
 

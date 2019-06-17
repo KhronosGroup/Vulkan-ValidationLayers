@@ -1226,7 +1226,7 @@ bool CoreChecks::ValidateCreateImageANDROID(const debug_report_data *report_data
     return skip;
 }
 
-void CoreChecks::RecordCreateImageANDROID(const VkImageCreateInfo *create_info, IMAGE_STATE *is_node) {
+void ValidationStateTracker::RecordCreateImageANDROID(const VkImageCreateInfo *create_info, IMAGE_STATE *is_node) {
     const VkExternalMemoryImageCreateInfo *emici = lvl_find_in_chain<VkExternalMemoryImageCreateInfo>(create_info->pNext);
     if (emici && (emici->handleTypes & VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID)) {
         is_node->imported_ahb = true;
@@ -1304,7 +1304,7 @@ bool CoreChecks::ValidateCreateImageANDROID(const debug_report_data *report_data
     return false;
 }
 
-void CoreChecks::RecordCreateImageANDROID(const VkImageCreateInfo *create_info, IMAGE_STATE *is_node) {}
+void ValidationStateTracker::RecordCreateImageANDROID(const VkImageCreateInfo *create_info, IMAGE_STATE *is_node) {}
 
 bool CoreChecks::ValidateCreateImageViewANDROID(const VkImageViewCreateInfo *create_info) { return false; }
 
@@ -1457,12 +1457,9 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
     return skip;
 }
 
-void CoreChecks::PostCallRecordCreateImage(VkDevice device, const VkImageCreateInfo *pCreateInfo,
-                                           const VkAllocationCallbacks *pAllocator, VkImage *pImage, VkResult result) {
+void ValidationStateTracker::PostCallRecordCreateImage(VkDevice device, const VkImageCreateInfo *pCreateInfo,
+                                                       const VkAllocationCallbacks *pAllocator, VkImage *pImage, VkResult result) {
     if (VK_SUCCESS != result) return;
-    IMAGE_LAYOUT_STATE image_state;
-    image_state.layout = pCreateInfo->initialLayout;
-    image_state.format = pCreateInfo->format;
     IMAGE_STATE *is_node = new IMAGE_STATE(*pImage, pCreateInfo);
     if (device_extensions.vk_android_external_memory_android_hardware_buffer) {
         RecordCreateImageANDROID(pCreateInfo, is_node);
@@ -1472,6 +1469,17 @@ void CoreChecks::PostCallRecordCreateImage(VkDevice device, const VkImageCreateI
         is_node->create_from_swapchain = swapchain_info->swapchain;
     }
     imageMap.insert(std::make_pair(*pImage, std::unique_ptr<IMAGE_STATE>(is_node)));
+}
+
+void CoreChecks::PostCallRecordCreateImage(VkDevice device, const VkImageCreateInfo *pCreateInfo,
+                                           const VkAllocationCallbacks *pAllocator, VkImage *pImage, VkResult result) {
+    if (VK_SUCCESS != result) return;
+
+    StateTracker::PostCallRecordCreateImage(device, pCreateInfo, pAllocator, pImage, result);
+
+    IMAGE_LAYOUT_STATE image_state;
+    image_state.layout = pCreateInfo->initialLayout;
+    image_state.format = pCreateInfo->format;
     ImageSubresourcePair subpair{*pImage, false, VkImageSubresource()};
     imageSubresourceMap[*pImage].push_back(subpair);
     imageLayoutMap[subpair] = image_state;
@@ -1488,7 +1496,7 @@ bool CoreChecks::PreCallValidateDestroyImage(VkDevice device, VkImage image, con
     return skip;
 }
 
-void CoreChecks::PreCallRecordDestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks *pAllocator) {
+void ValidationStateTracker::PreCallRecordDestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks *pAllocator) {
     if (!image) return;
     IMAGE_STATE *image_state = GetImageState(image);
     const VulkanTypedHandle obj_struct(image, kVulkanObjectTypeImage);
@@ -1501,9 +1509,13 @@ void CoreChecks::PreCallRecordDestroyImage(VkDevice device, VkImage image, const
         }
     }
     ClearMemoryObjectBindings(obj_struct);
-    EraseQFOReleaseBarriers<VkImageMemoryBarrier>(image);
     // Remove image from imageMap
     imageMap.erase(image);
+}
+
+void CoreChecks::PreCallRecordDestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks *pAllocator) {
+    // Clean up validation specific data
+    EraseQFOReleaseBarriers<VkImageMemoryBarrier>(image);
 
     const auto &sub_entry = imageSubresourceMap.find(image);
     if (sub_entry != imageSubresourceMap.end()) {
@@ -1512,6 +1524,9 @@ void CoreChecks::PreCallRecordDestroyImage(VkDevice device, VkImage image, const
         }
         imageSubresourceMap.erase(sub_entry);
     }
+
+    // Clean up generic image state
+    StateTracker::PreCallRecordDestroyImage(device, image, pAllocator);
 }
 
 bool CoreChecks::ValidateImageAttributes(IMAGE_STATE *image_state, VkImageSubresourceRange range) {
@@ -3845,8 +3860,9 @@ bool CoreChecks::PreCallValidateCreateBuffer(VkDevice device, const VkBufferCrea
     return skip;
 }
 
-void CoreChecks::PostCallRecordCreateBuffer(VkDevice device, const VkBufferCreateInfo *pCreateInfo,
-                                            const VkAllocationCallbacks *pAllocator, VkBuffer *pBuffer, VkResult result) {
+void ValidationStateTracker::PostCallRecordCreateBuffer(VkDevice device, const VkBufferCreateInfo *pCreateInfo,
+                                                        const VkAllocationCallbacks *pAllocator, VkBuffer *pBuffer,
+                                                        VkResult result) {
     if (result != VK_SUCCESS) return;
     // TODO : This doesn't create deep copy of pQueueFamilyIndices so need to fix that if/when we want that data to be valid
     bufferMap.insert(std::make_pair(*pBuffer, std::unique_ptr<BUFFER_STATE>(new BUFFER_STATE(*pBuffer, pCreateInfo))));
@@ -3892,8 +3908,9 @@ bool CoreChecks::PreCallValidateCreateBufferView(VkDevice device, const VkBuffer
     return skip;
 }
 
-void CoreChecks::PostCallRecordCreateBufferView(VkDevice device, const VkBufferViewCreateInfo *pCreateInfo,
-                                                const VkAllocationCallbacks *pAllocator, VkBufferView *pView, VkResult result) {
+void ValidationStateTracker::PostCallRecordCreateBufferView(VkDevice device, const VkBufferViewCreateInfo *pCreateInfo,
+                                                            const VkAllocationCallbacks *pAllocator, VkBufferView *pView,
+                                                            VkResult result) {
     if (result != VK_SUCCESS) return;
     bufferViewMap[*pView] = std::unique_ptr<BUFFER_VIEW_STATE>(new BUFFER_VIEW_STATE(*pView, pCreateInfo));
 }
@@ -4296,8 +4313,9 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
     return skip;
 }
 
-void CoreChecks::PostCallRecordCreateImageView(VkDevice device, const VkImageViewCreateInfo *pCreateInfo,
-                                               const VkAllocationCallbacks *pAllocator, VkImageView *pView, VkResult result) {
+void ValidationStateTracker::PostCallRecordCreateImageView(VkDevice device, const VkImageViewCreateInfo *pCreateInfo,
+                                                           const VkAllocationCallbacks *pAllocator, VkImageView *pView,
+                                                           VkResult result) {
     if (result != VK_SUCCESS) return;
     auto image_state = GetImageState(pCreateInfo->image);
     imageViewMap[*pView] = std::unique_ptr<IMAGE_VIEW_STATE>(new IMAGE_VIEW_STATE(image_state, *pView, pCreateInfo));
@@ -4367,7 +4385,8 @@ bool CoreChecks::PreCallValidateDestroyImageView(VkDevice device, VkImageView im
     return skip;
 }
 
-void CoreChecks::PreCallRecordDestroyImageView(VkDevice device, VkImageView imageView, const VkAllocationCallbacks *pAllocator) {
+void ValidationStateTracker::PreCallRecordDestroyImageView(VkDevice device, VkImageView imageView,
+                                                           const VkAllocationCallbacks *pAllocator) {
     IMAGE_VIEW_STATE *image_view_state = GetImageViewState(imageView);
     if (!image_view_state) return;
     const VulkanTypedHandle obj_struct(imageView, kVulkanObjectTypeImageView);
@@ -4387,7 +4406,7 @@ bool CoreChecks::PreCallValidateDestroyBuffer(VkDevice device, VkBuffer buffer, 
     return skip;
 }
 
-void CoreChecks::PreCallRecordDestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationCallbacks *pAllocator) {
+void ValidationStateTracker::PreCallRecordDestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationCallbacks *pAllocator) {
     if (!buffer) return;
     auto buffer_state = GetBufferState(buffer);
     const VulkanTypedHandle obj_struct(buffer, kVulkanObjectTypeBuffer);
@@ -4400,10 +4419,18 @@ void CoreChecks::PreCallRecordDestroyBuffer(VkDevice device, VkBuffer buffer, co
         }
     }
     ClearMemoryObjectBindings(obj_struct);
-    EraseQFOReleaseBarriers<VkBufferMemoryBarrier>(buffer);
     bufferMap.erase(buffer_state->buffer);
 }
 
+void CoreChecks::PreCallRecordDestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationCallbacks *pAllocator) {
+    if (!buffer) return;
+
+    // Clean up validation specific data
+    EraseQFOReleaseBarriers<VkBufferMemoryBarrier>(buffer);
+
+    // Clean up generic buffer state
+    StateTracker::PreCallRecordDestroyBuffer(device, buffer, pAllocator);
+}
 bool CoreChecks::PreCallValidateDestroyBufferView(VkDevice device, VkBufferView bufferView,
                                                   const VkAllocationCallbacks *pAllocator) {
     auto buffer_view_state = GetBufferViewState(bufferView);
@@ -4416,7 +4443,8 @@ bool CoreChecks::PreCallValidateDestroyBufferView(VkDevice device, VkBufferView 
     return skip;
 }
 
-void CoreChecks::PreCallRecordDestroyBufferView(VkDevice device, VkBufferView bufferView, const VkAllocationCallbacks *pAllocator) {
+void ValidationStateTracker::PreCallRecordDestroyBufferView(VkDevice device, VkBufferView bufferView,
+                                                            const VkAllocationCallbacks *pAllocator) {
     if (!bufferView) return;
     auto buffer_view_state = GetBufferViewState(bufferView);
     const VulkanTypedHandle obj_struct(bufferView, kVulkanObjectTypeBufferView);

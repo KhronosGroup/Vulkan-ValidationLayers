@@ -375,7 +375,7 @@ void CoreChecks::ClearCmdBufAndMemReferences(CMD_BUFFER_STATE *cb_node) {
 }
 
 // Clear a single object binding from given memory object
-void CoreChecks::ClearMemoryObjectBinding(const VulkanTypedHandle &typed_handle, VkDeviceMemory mem) {
+void ValidationStateTracker::ClearMemoryObjectBinding(const VulkanTypedHandle &typed_handle, VkDeviceMemory mem) {
     DEVICE_MEMORY_STATE *mem_info = GetDevMemState(mem);
     // This obj is bound to a memory object. Remove the reference to this object in that memory object's list
     if (mem_info) {
@@ -386,7 +386,7 @@ void CoreChecks::ClearMemoryObjectBinding(const VulkanTypedHandle &typed_handle,
 // ClearMemoryObjectBindings clears the binding of objects to memory
 //  For the given object it pulls the memory bindings and makes sure that the bindings
 //  no longer refer to the object being cleared. This occurs when objects are destroyed.
-void CoreChecks::ClearMemoryObjectBindings(const VulkanTypedHandle &typed_handle) {
+void ValidationStateTracker::ClearMemoryObjectBindings(const VulkanTypedHandle &typed_handle) {
     BINDABLE *mem_binding = GetObjectMemBinding(typed_handle);
     if (mem_binding) {
         if (!mem_binding->sparse) {
@@ -1728,11 +1728,13 @@ bool CoreChecks::ValidateIdleDescriptorSet(VkDescriptorSet set, const char *func
 }
 
 // Remove set from setMap and delete the set
-void CoreChecks::FreeDescriptorSet(cvdescriptorset::DescriptorSet *descriptor_set) { setMap.erase(descriptor_set->GetSet()); }
+void ValidationStateTracker::FreeDescriptorSet(cvdescriptorset::DescriptorSet *descriptor_set) {
+    setMap.erase(descriptor_set->GetSet());
+}
 
 // Free all DS Pools including their Sets & related sub-structs
 // NOTE : Calls to this function should be wrapped in mutex
-void CoreChecks::DeletePools() {
+void ValidationStateTracker::DeleteDescriptorSetPools() {
     for (auto ii = descriptorPoolMap.begin(); ii != descriptorPoolMap.end();) {
         // Remove this pools' sets from setMap and delete them
         for (auto ds : ii->second->sets) {
@@ -2249,6 +2251,21 @@ void CoreChecks::PreCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDeviceC
 
 void CoreChecks::PostCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo *pCreateInfo,
                                             const VkAllocationCallbacks *pAllocator, VkDevice *pDevice, VkResult result) {
+    // The state tracker sets up the device state
+    StateTracker::PostCallRecordCreateDevice(gpu, pCreateInfo, pAllocator, pDevice, result);
+
+    if (enabled.gpu_validation) {
+        // The only CoreCheck specific init is for gpu_validation
+        ValidationObject *device_object = GetLayerDataPtr(get_dispatch_key(*pDevice), layer_data_map);
+        ValidationObject *validation_data = GetValidationObject(device_object->object_dispatch, LayerObjectTypeCoreValidation);
+        CoreChecks *core_checks = static_cast<CoreChecks *>(validation_data);
+        core_checks->GpuPostCallRecordCreateDevice(&enabled, pCreateInfo);
+    }
+}
+
+void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo *pCreateInfo,
+                                                        const VkAllocationCallbacks *pAllocator, VkDevice *pDevice,
+                                                        VkResult result) {
     if (VK_SUCCESS != result) return;
 
     const VkPhysicalDeviceFeatures *enabled_features_found = pCreateInfo->pEnabledFeatures;
@@ -2261,12 +2278,12 @@ void CoreChecks::PostCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDevice
 
     ValidationObject *device_object = GetLayerDataPtr(get_dispatch_key(*pDevice), layer_data_map);
     ValidationObject *validation_data = GetValidationObject(device_object->object_dispatch, LayerObjectTypeCoreValidation);
-    CoreChecks *core_checks = static_cast<CoreChecks *>(validation_data);
+    ValidationStateTracker *state_tracker = static_cast<ValidationStateTracker *>(validation_data);
 
     if (nullptr == enabled_features_found) {
-        core_checks->enabled_features.core = {};
+        state_tracker->enabled_features.core = {};
     } else {
-        core_checks->enabled_features.core = *enabled_features_found;
+        state_tracker->enabled_features.core = *enabled_features_found;
     }
 
     // Make sure that queue_family_properties are obtained for this device's physical_device, even if the app has not
@@ -2277,113 +2294,113 @@ void CoreChecks::PostCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDevice
     pd_state->queue_family_properties.resize(std::max(static_cast<uint32_t>(pd_state->queue_family_properties.size()), count));
     DispatchGetPhysicalDeviceQueueFamilyProperties(gpu, &count, &pd_state->queue_family_properties[0]);
     // Save local link to this device's physical device state
-    core_checks->physical_device_state = pd_state;
+    state_tracker->physical_device_state = pd_state;
 
     const auto *device_group_ci = lvl_find_in_chain<VkDeviceGroupDeviceCreateInfo>(pCreateInfo->pNext);
-    core_checks->physical_device_count =
+    state_tracker->physical_device_count =
         device_group_ci && device_group_ci->physicalDeviceCount > 0 ? device_group_ci->physicalDeviceCount : 1;
 
     const auto *descriptor_indexing_features = lvl_find_in_chain<VkPhysicalDeviceDescriptorIndexingFeaturesEXT>(pCreateInfo->pNext);
     if (descriptor_indexing_features) {
-        core_checks->enabled_features.descriptor_indexing = *descriptor_indexing_features;
+        state_tracker->enabled_features.descriptor_indexing = *descriptor_indexing_features;
     }
 
     const auto *eight_bit_storage_features = lvl_find_in_chain<VkPhysicalDevice8BitStorageFeaturesKHR>(pCreateInfo->pNext);
     if (eight_bit_storage_features) {
-        core_checks->enabled_features.eight_bit_storage = *eight_bit_storage_features;
+        state_tracker->enabled_features.eight_bit_storage = *eight_bit_storage_features;
     }
 
     const auto *exclusive_scissor_features = lvl_find_in_chain<VkPhysicalDeviceExclusiveScissorFeaturesNV>(pCreateInfo->pNext);
     if (exclusive_scissor_features) {
-        core_checks->enabled_features.exclusive_scissor = *exclusive_scissor_features;
+        state_tracker->enabled_features.exclusive_scissor = *exclusive_scissor_features;
     }
 
     const auto *shading_rate_image_features = lvl_find_in_chain<VkPhysicalDeviceShadingRateImageFeaturesNV>(pCreateInfo->pNext);
     if (shading_rate_image_features) {
-        core_checks->enabled_features.shading_rate_image = *shading_rate_image_features;
+        state_tracker->enabled_features.shading_rate_image = *shading_rate_image_features;
     }
 
     const auto *mesh_shader_features = lvl_find_in_chain<VkPhysicalDeviceMeshShaderFeaturesNV>(pCreateInfo->pNext);
     if (mesh_shader_features) {
-        core_checks->enabled_features.mesh_shader = *mesh_shader_features;
+        state_tracker->enabled_features.mesh_shader = *mesh_shader_features;
     }
 
     const auto *inline_uniform_block_features =
         lvl_find_in_chain<VkPhysicalDeviceInlineUniformBlockFeaturesEXT>(pCreateInfo->pNext);
     if (inline_uniform_block_features) {
-        core_checks->enabled_features.inline_uniform_block = *inline_uniform_block_features;
+        state_tracker->enabled_features.inline_uniform_block = *inline_uniform_block_features;
     }
 
     const auto *transform_feedback_features = lvl_find_in_chain<VkPhysicalDeviceTransformFeedbackFeaturesEXT>(pCreateInfo->pNext);
     if (transform_feedback_features) {
-        core_checks->enabled_features.transform_feedback_features = *transform_feedback_features;
+        state_tracker->enabled_features.transform_feedback_features = *transform_feedback_features;
     }
 
     const auto *float16_int8_features = lvl_find_in_chain<VkPhysicalDeviceFloat16Int8FeaturesKHR>(pCreateInfo->pNext);
     if (float16_int8_features) {
-        core_checks->enabled_features.float16_int8 = *float16_int8_features;
+        state_tracker->enabled_features.float16_int8 = *float16_int8_features;
     }
 
     const auto *vtx_attrib_div_features = lvl_find_in_chain<VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT>(pCreateInfo->pNext);
     if (vtx_attrib_div_features) {
-        core_checks->enabled_features.vtx_attrib_divisor_features = *vtx_attrib_div_features;
+        state_tracker->enabled_features.vtx_attrib_divisor_features = *vtx_attrib_div_features;
     }
 
     const auto *scalar_block_layout_features = lvl_find_in_chain<VkPhysicalDeviceScalarBlockLayoutFeaturesEXT>(pCreateInfo->pNext);
     if (scalar_block_layout_features) {
-        core_checks->enabled_features.scalar_block_layout_features = *scalar_block_layout_features;
+        state_tracker->enabled_features.scalar_block_layout_features = *scalar_block_layout_features;
     }
 
     const auto *buffer_address = lvl_find_in_chain<VkPhysicalDeviceBufferAddressFeaturesEXT>(pCreateInfo->pNext);
     if (buffer_address) {
-        core_checks->enabled_features.buffer_address = *buffer_address;
+        state_tracker->enabled_features.buffer_address = *buffer_address;
     }
 
     const auto *cooperative_matrix_features = lvl_find_in_chain<VkPhysicalDeviceCooperativeMatrixFeaturesNV>(pCreateInfo->pNext);
     if (cooperative_matrix_features) {
-        core_checks->enabled_features.cooperative_matrix_features = *cooperative_matrix_features;
+        state_tracker->enabled_features.cooperative_matrix_features = *cooperative_matrix_features;
     }
 
     const auto *float_controls_features = lvl_find_in_chain<VkPhysicalDeviceFloatControlsPropertiesKHR>(pCreateInfo->pNext);
     if (float_controls_features) {
-        core_checks->enabled_features.float_controls = *float_controls_features;
+        state_tracker->enabled_features.float_controls = *float_controls_features;
     }
 
     const auto *host_query_reset_features = lvl_find_in_chain<VkPhysicalDeviceHostQueryResetFeaturesEXT>(pCreateInfo->pNext);
     if (host_query_reset_features) {
-        core_checks->enabled_features.host_query_reset_features = *host_query_reset_features;
+        state_tracker->enabled_features.host_query_reset_features = *host_query_reset_features;
     }
 
     const auto *compute_shader_derivatives_features =
         lvl_find_in_chain<VkPhysicalDeviceComputeShaderDerivativesFeaturesNV>(pCreateInfo->pNext);
     if (compute_shader_derivatives_features) {
-        core_checks->enabled_features.compute_shader_derivatives_features = *compute_shader_derivatives_features;
+        state_tracker->enabled_features.compute_shader_derivatives_features = *compute_shader_derivatives_features;
     }
 
     const auto *fragment_shader_barycentric_features =
         lvl_find_in_chain<VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV>(pCreateInfo->pNext);
     if (fragment_shader_barycentric_features) {
-        core_checks->enabled_features.fragment_shader_barycentric_features = *fragment_shader_barycentric_features;
+        state_tracker->enabled_features.fragment_shader_barycentric_features = *fragment_shader_barycentric_features;
     }
 
     const auto *shader_image_footprint_features =
         lvl_find_in_chain<VkPhysicalDeviceShaderImageFootprintFeaturesNV>(pCreateInfo->pNext);
     if (shader_image_footprint_features) {
-        core_checks->enabled_features.shader_image_footprint_features = *shader_image_footprint_features;
+        state_tracker->enabled_features.shader_image_footprint_features = *shader_image_footprint_features;
     }
 
     const auto *fragment_shader_interlock_features =
         lvl_find_in_chain<VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT>(pCreateInfo->pNext);
     if (fragment_shader_interlock_features) {
-        core_checks->enabled_features.fragment_shader_interlock_features = *fragment_shader_interlock_features;
+        state_tracker->enabled_features.fragment_shader_interlock_features = *fragment_shader_interlock_features;
     }
 
     // Store physical device properties and physical device mem limits into CoreChecks structs
-    DispatchGetPhysicalDeviceMemoryProperties(gpu, &core_checks->phys_dev_mem_props);
-    DispatchGetPhysicalDeviceProperties(gpu, &core_checks->phys_dev_props);
+    DispatchGetPhysicalDeviceMemoryProperties(gpu, &state_tracker->phys_dev_mem_props);
+    DispatchGetPhysicalDeviceProperties(gpu, &state_tracker->phys_dev_props);
 
-    const auto &dev_ext = core_checks->device_extensions;
-    auto *phys_dev_props = &core_checks->phys_dev_ext_props;
+    const auto &dev_ext = state_tracker->device_extensions;
+    auto *phys_dev_props = &state_tracker->phys_dev_ext_props;
 
     if (dev_ext.vk_khr_push_descriptor) {
         // Get the needed push_descriptor limits
@@ -2399,65 +2416,67 @@ void CoreChecks::PostCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDevice
     GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_ext_vertex_attribute_divisor, &phys_dev_props->vtx_attrib_divisor_props);
     GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_khr_depth_stencil_resolve, &phys_dev_props->depth_stencil_resolve_props);
     GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_ext_transform_feedback, &phys_dev_props->transform_feedback_props);
-
-    if (enabled.gpu_validation) {
-        core_checks->GpuPostCallRecordCreateDevice(&enabled, pCreateInfo);
-    }
-    if (core_checks->device_extensions.vk_nv_cooperative_matrix) {
+    if (state_tracker->device_extensions.vk_nv_cooperative_matrix) {
         // Get the needed cooperative_matrix properties
         auto cooperative_matrix_props = lvl_init_struct<VkPhysicalDeviceCooperativeMatrixPropertiesNV>();
         auto prop2 = lvl_init_struct<VkPhysicalDeviceProperties2KHR>(&cooperative_matrix_props);
         instance_dispatch_table.GetPhysicalDeviceProperties2KHR(gpu, &prop2);
-        core_checks->phys_dev_ext_props.cooperative_matrix_props = cooperative_matrix_props;
+        state_tracker->phys_dev_ext_props.cooperative_matrix_props = cooperative_matrix_props;
 
         uint32_t numCooperativeMatrixProperties = 0;
         instance_dispatch_table.GetPhysicalDeviceCooperativeMatrixPropertiesNV(gpu, &numCooperativeMatrixProperties, NULL);
-        core_checks->cooperative_matrix_properties.resize(numCooperativeMatrixProperties,
-                                                          lvl_init_struct<VkCooperativeMatrixPropertiesNV>());
+        state_tracker->cooperative_matrix_properties.resize(numCooperativeMatrixProperties,
+                                                            lvl_init_struct<VkCooperativeMatrixPropertiesNV>());
 
         instance_dispatch_table.GetPhysicalDeviceCooperativeMatrixPropertiesNV(gpu, &numCooperativeMatrixProperties,
-                                                                               core_checks->cooperative_matrix_properties.data());
+                                                                               state_tracker->cooperative_matrix_properties.data());
     }
-    if (core_checks->api_version >= VK_API_VERSION_1_1) {
+    if (state_tracker->api_version >= VK_API_VERSION_1_1) {
         // Get the needed subgroup limits
         auto subgroup_prop = lvl_init_struct<VkPhysicalDeviceSubgroupProperties>();
         auto prop2 = lvl_init_struct<VkPhysicalDeviceProperties2KHR>(&subgroup_prop);
         instance_dispatch_table.GetPhysicalDeviceProperties2(gpu, &prop2);
 
-        core_checks->phys_dev_ext_props.subgroup_props = subgroup_prop;
+        state_tracker->phys_dev_ext_props.subgroup_props = subgroup_prop;
     }
 
     // Store queue family data
     if ((pCreateInfo != nullptr) && (pCreateInfo->pQueueCreateInfos != nullptr)) {
         for (uint32_t i = 0; i < pCreateInfo->queueCreateInfoCount; ++i) {
-            core_checks->queue_family_index_map.insert(
+            state_tracker->queue_family_index_map.insert(
                 std::make_pair(pCreateInfo->pQueueCreateInfos[i].queueFamilyIndex, pCreateInfo->pQueueCreateInfos[i].queueCount));
         }
     }
 }
 
-void CoreChecks::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks *pAllocator) {
+void ValidationStateTracker::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks *pAllocator) {
     if (!device) return;
-    if (enabled.gpu_validation) {
-        GpuPreCallRecordDestroyDevice();
-    }
+
     pipelineMap.clear();
     renderPassMap.clear();
     commandBufferMap.clear();
     // This will also delete all sets in the pool & remove them from setMap
-    DeletePools();
+    DeleteDescriptorSetPools();
     // All sets should be removed
     assert(setMap.empty());
     descriptorSetLayoutMap.clear();
     imageViewMap.clear();
     imageMap.clear();
-    imageSubresourceMap.clear();
     imageLayoutMap.clear();
     bufferViewMap.clear();
     bufferMap.clear();
     // Queues persist until device is destroyed
     queueMap.clear();
     layer_debug_utils_destroy_device(device);
+}
+void CoreChecks::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks *pAllocator) {
+    if (!device) return;
+    if (enabled.gpu_validation) {
+        GpuPreCallRecordDestroyDevice();
+    }
+    imageSubresourceMap.clear();
+
+    StateTracker::PreCallRecordDestroyDevice(device, pAllocator);
 }
 
 // For given stage mask, if Geometry shader stage is on w/o GS being enabled, report geo_error_id
@@ -4143,11 +4162,11 @@ static void RemoveMemoryRange(uint64_t handle, DEVICE_MEMORY_STATE *mem_info, bo
     }
 }
 
-void CoreChecks::RemoveBufferMemoryRange(uint64_t handle, DEVICE_MEMORY_STATE *mem_info) {
+void ValidationStateTracker::RemoveBufferMemoryRange(uint64_t handle, DEVICE_MEMORY_STATE *mem_info) {
     RemoveMemoryRange(handle, mem_info, false);
 }
 
-void CoreChecks::RemoveImageMemoryRange(uint64_t handle, DEVICE_MEMORY_STATE *mem_info) {
+void ValidationStateTracker::RemoveImageMemoryRange(uint64_t handle, DEVICE_MEMORY_STATE *mem_info) {
     RemoveMemoryRange(handle, mem_info, true);
 }
 
@@ -4421,8 +4440,8 @@ bool CoreChecks::PreCallValidateGetPhysicalDeviceImageFormatProperties2KHR(VkPhy
     return skip;
 }
 
-void CoreChecks::PreCallRecordDestroyShaderModule(VkDevice device, VkShaderModule shaderModule,
-                                                  const VkAllocationCallbacks *pAllocator) {
+void ValidationStateTracker::PreCallRecordDestroyShaderModule(VkDevice device, VkShaderModule shaderModule,
+                                                              const VkAllocationCallbacks *pAllocator) {
     if (!shaderModule) return;
     shaderModuleMap.erase(shaderModule);
 }
