@@ -331,7 +331,6 @@ class ValidationStateTracker : public ValidationObject {
     EVENT_STATE* GetEventState(VkEvent event);
     QUEUE_STATE* GetQueueState(VkQueue queue);
     BINDABLE* GetObjectMemBinding(const VulkanTypedHandle& typed_handle);
-    void InvalidateCommandBuffers(std::unordered_set<CMD_BUFFER_STATE*> const& cb_nodes, const VulkanTypedHandle& obj);
 
     // Used for instance versions of this object
     unordered_map<VkPhysicalDevice, PHYSICAL_DEVICE_STATE> physical_device_map;
@@ -343,20 +342,45 @@ class ValidationStateTracker : public ValidationObject {
 
     PHYSICAL_DEVICE_STATE* GetPhysicalDeviceState(VkPhysicalDevice phys);
     PHYSICAL_DEVICE_STATE* GetPhysicalDeviceState();
-};
 
-class CoreChecks : public ValidationStateTracker {
-   public:
-    std::unordered_set<uint64_t> ahb_ext_formats_set;
-    GlobalQFOTransferBarrierMap<VkImageMemoryBarrier> qfo_release_image_barrier_map;
-    GlobalQFOTransferBarrierMap<VkBufferMemoryBarrier> qfo_release_buffer_barrier_map;
-    // Map for queue family index to queue count
-    unordered_map<uint32_t, uint32_t> queue_family_index_map;
+    // State update functions
+    void PostCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo* pCreateInfo,
+                                    const VkAllocationCallbacks* pAllocator, VkDevice* pDevice, VkResult result);
+    void PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks* pAllocator);
+
+    void PostCallRecordCreateBuffer(VkDevice device, const VkBufferCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
+                                    VkBuffer* pBuffer, VkResult result);
+    void PreCallRecordDestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationCallbacks* pAllocator);
+    void PostCallRecordCreateBufferView(VkDevice device, const VkBufferViewCreateInfo* pCreateInfo,
+                                        const VkAllocationCallbacks* pAllocator, VkBufferView* pView, VkResult result);
+    void PreCallRecordDestroyBufferView(VkDevice device, VkBufferView bufferView, const VkAllocationCallbacks* pAllocator);
+    void PostCallRecordCreateImage(VkDevice device, const VkImageCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
+                                   VkImage* pImage, VkResult result);
+    void PreCallRecordDestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks* pAllocator);
+    void PostCallRecordCreateImageView(VkDevice device, const VkImageViewCreateInfo* pCreateInfo,
+                                       const VkAllocationCallbacks* pAllocator, VkImageView* pView, VkResult result);
+    void PreCallRecordDestroyImageView(VkDevice device, VkImageView imageView, const VkAllocationCallbacks* pAllocator);
+    void PostCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo,
+                                          const VkAllocationCallbacks* pAllocator, VkShaderModule* pShaderModule, VkResult result,
+                                          void* csm_state);
+    void PreCallRecordDestroyShaderModule(VkDevice device, VkShaderModule shaderModule, const VkAllocationCallbacks* pAllocator);
+
+    // State Utilty functions
+    void ClearMemoryObjectBindings(const VulkanTypedHandle& typed_handle);
+    void ClearMemoryObjectBinding(const VulkanTypedHandle& typed_handle, VkDeviceMemory mem);
+    void DeleteDescriptorSetPools();
+    void FreeDescriptorSet(cvdescriptorset::DescriptorSet* descriptor_set);
+    void InvalidateCommandBuffers(std::unordered_set<CMD_BUFFER_STATE*> const& cb_nodes, const VulkanTypedHandle& obj);
+    void RecordCreateImageANDROID(const VkImageCreateInfo* create_info, IMAGE_STATE* is_node);
+    void RemoveBufferMemoryRange(uint64_t handle, DEVICE_MEMORY_STATE* mem_info);
+    void RemoveImageMemoryRange(uint64_t handle, DEVICE_MEMORY_STATE* mem_info);
 
     DeviceFeatures enabled_features = {};
     // Device specific data
     VkPhysicalDeviceMemoryProperties phys_dev_mem_props = {};
     VkPhysicalDeviceProperties phys_dev_props = {};
+    uint32_t physical_device_count;
+
     // Device extension properties -- storing properties gathered from VkPhysicalDeviceProperties2KHR::pNext chain
     struct DeviceExtensionProperties {
         uint32_t max_push_descriptors;  // from VkPhysicalDevicePushDescriptorPropertiesKHR::maxPushDescriptors
@@ -372,9 +396,9 @@ class CoreChecks : public ValidationStateTracker {
     };
     DeviceExtensionProperties phys_dev_ext_props = {};
     std::vector<VkCooperativeMatrixPropertiesNV> cooperative_matrix_properties;
-    bool external_sync_warning = false;
-    std::unique_ptr<GpuValidationState> gpu_validation_state;
-    uint32_t physical_device_count;
+
+    // Map for queue family index to queue count
+    unordered_map<uint32_t, uint32_t> queue_family_index_map;
 
     template <typename ExtProp>
     void GetPhysicalDeviceExtProperties(VkPhysicalDevice gpu, bool enabled, ExtProp* ext_prop) {
@@ -385,10 +409,21 @@ class CoreChecks : public ValidationStateTracker {
             DispatchGetPhysicalDeviceProperties2KHR(gpu, &prop2);
         }
     }
+};
+
+class CoreChecks : public ValidationStateTracker {
+   public:
+    using StateTracker = ValidationStateTracker;
+    std::unordered_set<uint64_t> ahb_ext_formats_set;
+    GlobalQFOTransferBarrierMap<VkImageMemoryBarrier> qfo_release_image_barrier_map;
+    GlobalQFOTransferBarrierMap<VkBufferMemoryBarrier> qfo_release_buffer_barrier_map;
+    unordered_map<VkImage, std::vector<ImageSubresourcePair>> imageSubresourceMap;
+
+    bool external_sync_warning = false;
+    std::unique_ptr<GpuValidationState> gpu_validation_state;
 
     bool VerifyQueueStateToSeq(QUEUE_STATE* initial_queue, uint64_t initial_seq);
     void ClearCmdBufAndMemReferences(CMD_BUFFER_STATE* cb_node);
-    void ClearMemoryObjectBinding(const VulkanTypedHandle& typed_handle, VkDeviceMemory mem);
     void ResetCommandBufferState(const VkCommandBuffer cb);
     void SetMemBinding(VkDeviceMemory mem, BINDABLE* mem_binding, VkDeviceSize memory_offset,
                        const VulkanTypedHandle& typed_handle);
@@ -416,8 +451,6 @@ class CoreChecks : public ValidationStateTracker {
     void InitializeAndTrackMemory(VkDeviceMemory mem, VkDeviceSize offset, VkDeviceSize size, void** ppData);
     bool ValidatePipelineLocked(std::vector<std::unique_ptr<PIPELINE_STATE>> const& pPipelines, int pipelineIndex);
     bool ValidatePipelineUnlocked(std::vector<std::unique_ptr<PIPELINE_STATE>> const& pPipelines, int pipelineIndex);
-    void FreeDescriptorSet(cvdescriptorset::DescriptorSet* descriptor_set);
-    void DeletePools();
     bool ValidImageBufferQueue(CMD_BUFFER_STATE* cb_node, const VulkanTypedHandle& object, VkQueue queue, uint32_t count,
                                const uint32_t* indices);
     bool ValidateFenceForSubmit(FENCE_STATE* pFence);
@@ -610,9 +643,6 @@ class CoreChecks : public ValidationStateTracker {
     void AddCommandBufferBindingBufferView(CMD_BUFFER_STATE*, BUFFER_VIEW_STATE*);
     bool ValidateObjectNotInUse(BASE_NODE* obj_node, const VulkanTypedHandle& obj_struct, const char* caller_name,
                                 const char* error_code);
-    void RemoveImageMemoryRange(uint64_t handle, DEVICE_MEMORY_STATE* mem_info);
-    void RemoveBufferMemoryRange(uint64_t handle, DEVICE_MEMORY_STATE* mem_info);
-    void ClearMemoryObjectBindings(const VulkanTypedHandle& typed_handle);
     bool ValidateCmdQueueFlags(const CMD_BUFFER_STATE* cb_node, const char* caller_name, VkQueueFlags flags,
                                const char* error_code);
     bool InsideRenderPass(const CMD_BUFFER_STATE* pCB, const char* apiName, const char* msgCode);
@@ -734,9 +764,6 @@ class CoreChecks : public ValidationStateTracker {
                                            const VkAllocationCallbacks* pAllocator, VkShaderModule* pShaderModule);
     void PreCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo,
                                          const VkAllocationCallbacks* pAllocator, VkShaderModule* pShaderModule, void* csm_state);
-    void PostCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo,
-                                          const VkAllocationCallbacks* pAllocator, VkShaderModule* pShaderModule, VkResult result,
-                                          void* csm_state);
     bool ValidatePipelineShaderStage(VkPipelineShaderStageCreateInfo const* pStage, PIPELINE_STATE* pipeline,
                                      SHADER_MODULE_STATE const** out_module, spirv_inst_iter* out_entrypoint,
                                      bool check_point_size);
@@ -1020,14 +1047,9 @@ class CoreChecks : public ValidationStateTracker {
     bool PreCallValidateCreateBuffer(VkDevice device, const VkBufferCreateInfo* pCreateInfo,
                                      const VkAllocationCallbacks* pAllocator, VkBuffer* pBuffer);
 
-    void PostCallRecordCreateBuffer(VkDevice device, const VkBufferCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
-                                    VkBuffer* pBuffer, VkResult result);
 
     bool PreCallValidateCreateBufferView(VkDevice device, const VkBufferViewCreateInfo* pCreateInfo,
                                          const VkAllocationCallbacks* pAllocator, VkBufferView* pView);
-
-    void PostCallRecordCreateBufferView(VkDevice device, const VkBufferViewCreateInfo* pCreateInfo,
-                                        const VkAllocationCallbacks* pAllocator, VkBufferView* pView, VkResult result);
 
     bool ValidateImageAspectMask(VkImage image, VkFormat format, VkImageAspectFlags aspect_mask, const char* func_name,
                                  const char* vuid = "VUID-VkImageSubresource-aspectMask-parameter");
@@ -1046,9 +1068,6 @@ class CoreChecks : public ValidationStateTracker {
 
     bool PreCallValidateCreateImageView(VkDevice device, const VkImageViewCreateInfo* pCreateInfo,
                                         const VkAllocationCallbacks* pAllocator, VkImageView* pView);
-
-    void PostCallRecordCreateImageView(VkDevice device, const VkImageViewCreateInfo* pCreateInfo,
-                                       const VkAllocationCallbacks* pAllocator, VkImageView* pView, VkResult result);
 
     bool ValidateCopyBufferImageTransferGranularityRequirements(const CMD_BUFFER_STATE* cb_node, const IMAGE_STATE* img,
                                                                 const VkBufferImageCopy* region, const uint32_t i,
@@ -1072,15 +1091,11 @@ class CoreChecks : public ValidationStateTracker {
 
     bool PreCallValidateDestroyImageView(VkDevice device, VkImageView imageView, const VkAllocationCallbacks* pAllocator);
 
-    void PreCallRecordDestroyImageView(VkDevice device, VkImageView imageView, const VkAllocationCallbacks* pAllocator);
-
     bool PreCallValidateDestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationCallbacks* pAllocator);
 
     void PreCallRecordDestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationCallbacks* pAllocator);
 
     bool PreCallValidateDestroyBufferView(VkDevice device, VkBufferView bufferView, const VkAllocationCallbacks* pAllocator);
-
-    void PreCallRecordDestroyBufferView(VkDevice device, VkBufferView bufferView, const VkAllocationCallbacks* pAllocator);
 
     bool PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset, VkDeviceSize size,
                                       uint32_t data);
@@ -1103,7 +1118,6 @@ class CoreChecks : public ValidationStateTracker {
     bool PreCallValidateGetImageSubresourceLayout(VkDevice device, VkImage image, const VkImageSubresource* pSubresource,
                                                   VkSubresourceLayout* pLayout);
     bool ValidateCreateImageANDROID(const debug_report_data* report_data, const VkImageCreateInfo* create_info);
-    void RecordCreateImageANDROID(const VkImageCreateInfo* create_info, IMAGE_STATE* is_node);
     bool ValidateCreateImageViewANDROID(const VkImageViewCreateInfo* create_info);
     bool ValidateGetImageSubresourceLayoutANDROID(const VkImage image);
     bool ValidateQueueFamilies(uint32_t queue_family_count, const uint32_t* queue_families, const char* cmd_name,
@@ -1254,7 +1268,6 @@ class CoreChecks : public ValidationStateTracker {
     bool PreCallValidateGetPhysicalDeviceImageFormatProperties2KHR(VkPhysicalDevice physicalDevice,
                                                                    const VkPhysicalDeviceImageFormatInfo2* pImageFormatInfo,
                                                                    VkImageFormatProperties2* pImageFormatProperties);
-    void PreCallRecordDestroyShaderModule(VkDevice device, VkShaderModule shaderModule, const VkAllocationCallbacks* pAllocator);
     bool PreCallValidateDestroyPipeline(VkDevice device, VkPipeline pipeline, const VkAllocationCallbacks* pAllocator);
     void PreCallRecordDestroyPipeline(VkDevice device, VkPipeline pipeline, const VkAllocationCallbacks* pAllocator);
     void PreCallRecordDestroyPipelineLayout(VkDevice device, VkPipelineLayout pipelineLayout,
