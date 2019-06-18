@@ -1090,7 +1090,8 @@ TEST_F(VkLayerTest, InvalidCmdBufferPipelineDestroyed) {
     }
 
     // Cause error by submitting command buffer that references destroyed pipeline
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, " that is invalid because bound Pipeline ");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                         "UNASSIGNED-CoreValidation-DrawState-InvalidCommandBuffer-VkPipeline");
     m_commandBuffer->QueueCommandBuffer(false);
     m_errorMonitor->VerifyFound();
 }
@@ -2478,7 +2479,7 @@ TEST_F(VkLayerTest, CmdClearAttachmentTests) {
 
     // Call for full-sized FB Color attachment prior to issuing a Draw
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
-                                         "vkCmdClearAttachments() issued on command buffer object ");
+                                         "UNASSIGNED-CoreValidation-DrawState-ClearCmdBeforeDraw");
     vkCmdClearAttachments(m_commandBuffer->handle(), 1, &color_attachment, 1, &clear_rect);
     m_errorMonitor->VerifyFound();
 
@@ -2510,7 +2511,7 @@ TEST_F(VkLayerTest, CmdClearAttachmentTests) {
 
 TEST_F(VkLayerTest, VtxBufferBadIndex) {
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
-                                         "but no vertex buffers are attached to this Pipeline State Object");
+                                         "UNASSIGNED-CoreValidation-DrawState-VtxIndexOutOfBounds");
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitViewport());
