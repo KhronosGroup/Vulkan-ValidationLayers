@@ -5863,12 +5863,14 @@ TEST_F(VkLayerTest, CreateImageMiscErrors) {
         image_ci.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
         image_ci.arrayLayers = 6;
         image_ci.imageType = VK_IMAGE_TYPE_1D;
+        m_errorMonitor->SetUnexpectedError("VUID-VkImageCreateInfo-imageType-00954");
         image_ci.extent = {64, 1, 1};
         CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-flags-00949");
 
         image_ci = safe_image_ci;
         image_ci.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
         image_ci.imageType = VK_IMAGE_TYPE_3D;
+        m_errorMonitor->SetUnexpectedError("VUID-VkImageCreateInfo-imageType-00954");
         image_ci.extent = {4, 4, 4};
         CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-flags-00949");
     }
