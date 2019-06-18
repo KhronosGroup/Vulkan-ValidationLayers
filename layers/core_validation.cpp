@@ -1786,9 +1786,11 @@ bool CoreChecks::ReportInvalidCommandBuffer(const CMD_BUFFER_STATE *cb_state, co
     bool skip = false;
     for (auto obj : cb_state->broken_bindings) {
         const char *cause_str = GetCauseStr(obj);
+        string VUID;
+        string_sprintf(&VUID, "%s-%s", kVUID_Core_DrawState_InvalidCommandBuffer, object_string[obj.type]);
         skip |=
             log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                    HandleToUint64(cb_state->commandBuffer), kVUID_Core_DrawState_InvalidCommandBuffer,
+                    HandleToUint64(cb_state->commandBuffer), VUID.c_str(),
                     "You are adding %s to %s that is invalid because bound %s was %s.", call_source,
                     report_data->FormatHandle(cb_state->commandBuffer).c_str(), report_data->FormatHandle(obj).c_str(), cause_str);
     }
