@@ -485,8 +485,7 @@ static const VkLayerProperties global_layer = {
 static const VkExtensionProperties instance_extensions[] = {{VK_EXT_DEBUG_REPORT_EXTENSION_NAME, VK_EXT_DEBUG_REPORT_SPEC_VERSION},
                                                             {VK_EXT_DEBUG_UTILS_EXTENSION_NAME, VK_EXT_DEBUG_UTILS_SPEC_VERSION}};
 
-extern const std::unordered_map<std::string, void*> name_to_funcptr_map;
-
+extern const std::unordered_map<std::string, std::pair<bool, void*>> name_to_funcptr_map;
 
 // Manually written functions
 
@@ -720,7 +719,11 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetDeviceProcAddr(VkDevice device, cons
     }
     const auto &item = name_to_funcptr_map.find(funcName);
     if (item != name_to_funcptr_map.end()) {
-        return reinterpret_cast<PFN_vkVoidFunction>(item->second);
+        if (item->second.first) {
+            return nullptr;
+        } else {
+            return reinterpret_cast<PFN_vkVoidFunction>(item->second.second);
+        }
     }
     auto &table = layer_data->device_dispatch_table;
     if (!table.GetDeviceProcAddr) return nullptr;
@@ -730,7 +733,7 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetDeviceProcAddr(VkDevice device, cons
 VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetInstanceProcAddr(VkInstance instance, const char *funcName) {
     const auto &item = name_to_funcptr_map.find(funcName);
     if (item != name_to_funcptr_map.end()) {
-        return reinterpret_cast<PFN_vkVoidFunction>(item->second);
+        return reinterpret_cast<PFN_vkVoidFunction>(item->second.second);
     }
     auto layer_data = GetLayerDataPtr(get_dispatch_key(instance), layer_data_map);
     auto &table = layer_data->instance_dispatch_table;
@@ -1527,8 +1530,9 @@ VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkNegotiateLoaderLayerInterfaceVe
         self.newline()
         if not self.header:
             # Record intercepted procedures
-            write('// Map of all APIs to be intercepted by this layer', file=self.outFile)
-            write('const std::unordered_map<std::string, void*> name_to_funcptr_map = {', file=self.outFile)
+            write('// Map of intercepted ApiName to a std::pair of <bool, void*>, where the boolean is', file=self.outFile)
+            write('// true for instance APIs or false for device APIs, and the void* is the function pointer.', file=self.outFile)
+            write('const std::unordered_map<std::string, std::pair<bool, void*>> name_to_funcptr_map = {', file=self.outFile)
             write('\n'.join(self.intercepts), file=self.outFile)
             write('};\n', file=self.outFile)
             self.newline()
@@ -1645,18 +1649,24 @@ VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkNegotiateLoaderLayerInterfaceVe
                 self.layer_factory += '#endif\n'
             return
 
+        is_instance = 'false'
+        dispatchable_type = cmdinfo.elem.find('param/type').text
+        if dispatchable_type in ["VkPhysicalDevice", "VkInstance"] or name == 'vkCreateInstance':
+            is_instance = 'true'
+
         if name in self.manual_functions:
             if 'ValidationCache' not in name:
-                self.intercepts += [ '    {"%s", (void*)%s},' % (name,name[2:]) ]
+                self.intercepts += [ '    {"%s", {%s, (void*)%s}},' % (name, is_instance, name[2:]) ]
             else:
                 self.intercepts += [ '#ifdef BUILD_CORE_VALIDATION' ]
-                self.intercepts += [ '    {"%s", (void*)%s},' % (name,name[2:]) ]
+
+                self.intercepts += [ '    {"%s", {%s, (void*)%s}},' % (name, is_instance, name[2:]) ]
                 self.intercepts += [ '#endif' ]
             return
         # Record that the function will be intercepted
         if (self.featureExtraProtect != None):
             self.intercepts += [ '#ifdef %s' % self.featureExtraProtect ]
-        self.intercepts += [ '    {"%s", (void*)%s},' % (name,name[2:]) ]
+        self.intercepts += [ '    {"%s", {%s, (void*)%s}},' % (name, is_instance, name[2:]) ]
         if (self.featureExtraProtect != None):
             self.intercepts += [ '#endif' ]
         OutputGenerator.genCmd(self, cmdinfo, name, alias)
@@ -1665,15 +1675,7 @@ VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkNegotiateLoaderLayerInterfaceVe
         self.appendSection('command', '')
         self.appendSection('command', '%s {' % decls[0][:-1])
         # Setup common to call wrappers. First parameter is always dispatchable
-        dispatchable_type = cmdinfo.elem.find('param/type').text
         dispatchable_name = cmdinfo.elem.find('param/name').text
-        # Default to device
-        device_or_instance = 'device'
-        dispatch_table_name = 'VkLayerDispatchTable'
-        # Set to instance as necessary
-        if dispatchable_type in ["VkPhysicalDevice", "VkInstance"] or name == 'vkCreateInstance':
-            device_or_instance = 'instance'
-            dispatch_table_name = 'VkLayerInstanceDispatchTable'
         self.appendSection('command', '    auto layer_data = GetLayerDataPtr(get_dispatch_key(%s), layer_data_map);' % (dispatchable_name))
         api_function_name = cmdinfo.elem.attrib.get('name')
         params = cmdinfo.elem.findall('param/name')
