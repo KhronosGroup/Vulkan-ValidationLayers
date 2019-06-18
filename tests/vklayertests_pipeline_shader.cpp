@@ -6891,25 +6891,16 @@ TEST_F(VkLayerTest, CreatePipelineCheckShaderImageFootprintEnabled) {
     TEST_DESCRIPTION("Create a pipeline requiring the shader image footprint feature which has not enabled on the device.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     std::vector<const char *> device_extension_names;
     auto features = m_device->phy().features();
 
     // Disable the image footprint feature.
-    VkPhysicalDeviceShaderImageFootprintFeaturesNV image_footprint_features = {};
-    image_footprint_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_IMAGE_FOOTPRINT_FEATURES_NV;
+    auto image_footprint_features = lvl_init_struct<VkPhysicalDeviceShaderImageFootprintFeaturesNV>();
     image_footprint_features.imageFootprint = VK_FALSE;
 
-    void *pnext_chain = reinterpret_cast<void *>(&image_footprint_features);
+    VkDeviceObj test_device(0, gpu(), device_extension_names, &features, &image_footprint_features);
 
-    VkDeviceObj test_device(0, gpu(), device_extension_names, &features, pnext_chain);
-
-    char const *vsSource =
-        "#version 450\n"
-        "void main(){\n"
-        "  gl_Position = vec4(1);\n"
-        "}\n";
     char const *fsSource =
         "#version 450\n"
         "#extension GL_NV_shader_texture_footprint  : require\n"
@@ -6924,7 +6915,7 @@ TEST_F(VkLayerTest, CreatePipelineCheckShaderImageFootprintEnabled) {
         "  }\n"
         "}\n";
 
-    VkShaderObj vs(&test_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
+    VkShaderObj vs(&test_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
     VkShaderObj fs(&test_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
 
     VkRenderpassObj render_pass(&test_device);
@@ -6954,25 +6945,16 @@ TEST_F(VkLayerTest, CreatePipelineCheckFragmentShaderBarycentricEnabled) {
     TEST_DESCRIPTION("Create a pipeline requiring the fragment shader barycentric feature which has not enabled on the device.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     std::vector<const char *> device_extension_names;
     auto features = m_device->phy().features();
 
     // Disable the fragment shader barycentric feature.
-    VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV fragment_shader_barycentric_features = {};
-    fragment_shader_barycentric_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADER_BARYCENTRIC_FEATURES_NV;
+    auto fragment_shader_barycentric_features = lvl_init_struct<VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV>();
     fragment_shader_barycentric_features.fragmentShaderBarycentric = VK_FALSE;
 
-    void *pnext_chain = reinterpret_cast<void *>(&fragment_shader_barycentric_features);
+    VkDeviceObj test_device(0, gpu(), device_extension_names, &features, &fragment_shader_barycentric_features);
 
-    VkDeviceObj test_device(0, gpu(), device_extension_names, &features, pnext_chain);
-
-    char const *vsSource =
-        "#version 450\n"
-        "void main(){\n"
-        "  gl_Position = vec4(1);\n"
-        "}\n";
     char const *fsSource =
         "#version 450\n"
         "#extension GL_NV_fragment_shader_barycentric : require\n"
@@ -6981,7 +6963,7 @@ TEST_F(VkLayerTest, CreatePipelineCheckFragmentShaderBarycentricEnabled) {
         "  value = gl_BaryCoordNV.x;\n"
         "}\n";
 
-    VkShaderObj vs(&test_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
+    VkShaderObj vs(&test_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
     VkShaderObj fs(&test_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
 
     VkRenderpassObj render_pass(&test_device);
@@ -7014,14 +6996,11 @@ TEST_F(VkLayerTest, CreatePipelineCheckComputeShaderDerivativesEnabled) {
     auto features = m_device->phy().features();
 
     // Disable the compute shader derivatives features.
-    VkPhysicalDeviceComputeShaderDerivativesFeaturesNV cmopute_shader_derivatives_features = {};
-    cmopute_shader_derivatives_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COMPUTE_SHADER_DERIVATIVES_FEATURES_NV;
-    cmopute_shader_derivatives_features.computeDerivativeGroupLinear = VK_FALSE;
-    cmopute_shader_derivatives_features.computeDerivativeGroupQuads = VK_FALSE;
+    auto compute_shader_derivatives_features = lvl_init_struct<VkPhysicalDeviceComputeShaderDerivativesFeaturesNV>();
+    compute_shader_derivatives_features.computeDerivativeGroupLinear = VK_FALSE;
+    compute_shader_derivatives_features.computeDerivativeGroupQuads = VK_FALSE;
 
-    void *pnext_chain = reinterpret_cast<void *>(&cmopute_shader_derivatives_features);
-
-    VkDeviceObj test_device(0, gpu(), device_extension_names, &features, pnext_chain);
+    VkDeviceObj test_device(0, gpu(), device_extension_names, &features, &compute_shader_derivatives_features);
 
     VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr};
     const VkDescriptorSetLayoutObj dsl(&test_device, {binding});
