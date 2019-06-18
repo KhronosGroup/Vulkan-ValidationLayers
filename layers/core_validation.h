@@ -1178,7 +1178,6 @@ class CoreChecks : public ValidationStateTracker {
                                       uint64_t timeout);
     void PostCallRecordWaitForFences(VkDevice device, uint32_t fenceCount, const VkFence* pFences, VkBool32 waitAll,
                                      uint64_t timeout, VkResult result);
-    bool PreCallValidateGetFenceStatus(VkDevice device, VkFence fence);
     void PostCallRecordGetFenceStatus(VkDevice device, VkFence fence, VkResult result);
     bool PreCallValidateQueueWaitIdle(VkQueue queue);
     void PostCallRecordQueueWaitIdle(VkQueue queue, VkResult result);

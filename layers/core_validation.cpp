@@ -3740,24 +3740,6 @@ void CoreChecks::InitializeAndTrackMemory(VkDeviceMemory mem, VkDeviceSize offse
     }
 }
 
-// Verify that state for fence being waited on is appropriate. That is,
-//  a fence being waited on should not already be signaled and
-//  it should have been submitted on a queue or during acquire next image
-bool CoreChecks::VerifyWaitFenceState(VkFence fence, const char *apiCall) {
-    bool skip = false;
-
-    auto pFence = GetFenceState(fence);
-    if (pFence && pFence->scope == kSyncScopeInternal) {
-        if (pFence->state == FENCE_UNSIGNALED) {
-            skip |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_FENCE_EXT,
-                            HandleToUint64(fence), kVUID_Core_MemTrack_FenceState,
-                            "%s called for fence %s which has not been submitted on a Queue or during acquire next image.", apiCall,
-                            report_data->FormatHandle(fence).c_str());
-        }
-    }
-    return skip;
-}
-
 void CoreChecks::RetireFence(VkFence fence) {
     auto pFence = GetFenceState(fence);
     if (pFence && pFence->scope == kSyncScopeInternal) {
@@ -3777,7 +3759,6 @@ bool CoreChecks::PreCallValidateWaitForFences(VkDevice device, uint32_t fenceCou
     // Verify fence status of submitted fences
     bool skip = false;
     for (uint32_t i = 0; i < fenceCount; i++) {
-        skip |= VerifyWaitFenceState(pFences[i], "vkWaitForFences");
         skip |= VerifyQueueStateToFence(pFences[i]);
     }
     return skip;
@@ -3796,10 +3777,6 @@ void CoreChecks::PostCallRecordWaitForFences(VkDevice device, uint32_t fenceCoun
     // NOTE : Alternate case not handled here is when some fences have completed. In
     //  this case for app to guarantee which fences completed it will have to call
     //  vkGetFenceStatus() at which point we'll clean/remove their CBs if complete.
-}
-
-bool CoreChecks::PreCallValidateGetFenceStatus(VkDevice device, VkFence fence) {
-    return VerifyWaitFenceState(fence, "vkGetFenceStatus()");
 }
 
 void CoreChecks::PostCallRecordGetFenceStatus(VkDevice device, VkFence fence, VkResult result) {
