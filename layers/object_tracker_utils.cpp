@@ -98,7 +98,7 @@ bool ObjectLifetimes::ValidateDeviceObject(const VulkanTypedHandle &device_typed
         if (object.second->handle == device_typed.handle) return false;
     }
     return log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, device_typed.handle,
-                   invalid_handle_code, "Invalid Device Object %s.", report_data->FormatHandle(device_typed).c_str());
+                   invalid_handle_code, "Invalid %s.", report_data->FormatHandle(device_typed).c_str());
 }
 
 void ObjectLifetimes::AllocateCommandBuffer(VkDevice device, const VkCommandPool command_pool, const VkCommandBuffer command_buffer,
@@ -126,17 +126,16 @@ bool ObjectLifetimes::ValidateCommandBuffer(VkDevice device, VkCommandPool comma
         if (pNode->parent_object != HandleToUint64(command_pool)) {
             // We know that the parent *must* be a command pool
             const auto parent_pool = CastFromUint64<VkCommandPool>(pNode->parent_object);
-            skip |=
-                log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT, object_handle,
-                        "VUID-vkFreeCommandBuffers-pCommandBuffers-parent",
-                        "FreeCommandBuffers is attempting to free Command Buffer %s belonging to Command Pool %s from pool %s).",
-                        report_data->FormatHandle(command_buffer).c_str(), report_data->FormatHandle(parent_pool).c_str(),
-                        report_data->FormatHandle(command_pool).c_str());
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                            object_handle, "VUID-vkFreeCommandBuffers-pCommandBuffers-parent",
+                            "FreeCommandBuffers is attempting to free %s belonging to %s from %s).",
+                            report_data->FormatHandle(command_buffer).c_str(), report_data->FormatHandle(parent_pool).c_str(),
+                            report_data->FormatHandle(command_pool).c_str());
         }
     } else {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT, object_handle,
-                        "VUID-vkFreeCommandBuffers-pCommandBuffers-00048", "Invalid %s Object %s.",
-                        object_string[kVulkanObjectTypeCommandBuffer], report_data->FormatHandle(command_buffer).c_str());
+                        "VUID-vkFreeCommandBuffers-pCommandBuffers-00048", "Invalid %s.",
+                        report_data->FormatHandle(command_buffer).c_str());
     }
     return skip;
 }
@@ -170,15 +169,15 @@ bool ObjectLifetimes::ValidateDescriptorSet(VkDevice device, VkDescriptorPool de
             const auto parent_pool = CastFromUint64<VkDescriptorPool>(pNode->parent_object);
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_EXT,
                             object_handle, "VUID-vkFreeDescriptorSets-pDescriptorSets-parent",
-                            "FreeDescriptorSets is attempting to free descriptorSet %s"
-                            " belonging to Descriptor Pool %s from pool %s).",
+                            "FreeDescriptorSets is attempting to free %s"
+                            " belonging to %s from %s).",
                             report_data->FormatHandle(descriptor_set).c_str(), report_data->FormatHandle(parent_pool).c_str(),
                             report_data->FormatHandle(descriptor_pool).c_str());
         }
     } else {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_EXT, object_handle,
-                        "VUID-vkFreeDescriptorSets-pDescriptorSets-00310", "Invalid %s Object %s.",
-                        object_string[kVulkanObjectTypeDescriptorSet], report_data->FormatHandle(descriptor_set).c_str());
+                        "VUID-vkFreeDescriptorSets-pDescriptorSets-00310", "Invalid %s.",
+                        report_data->FormatHandle(descriptor_set).c_str());
     }
     return skip;
 }
@@ -269,10 +268,9 @@ bool ObjectLifetimes::DeviceReportUndestroyedObjects(VkDevice device, VulkanObje
     bool skip = false;
     for (const auto &item : object_map[object_type]) {
         const ObjTrackState *object_info = item.second;
-        skip |=
-            log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, get_debug_report_enum[object_type], object_info->handle, error_code,
-                    "OBJ ERROR : For device %s, %s object %s has not been destroyed.", report_data->FormatHandle(device).c_str(),
-                    object_string[object_type], report_data->FormatHandle(ObjTrackStateTypedHandle(*object_info)).c_str());
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, get_debug_report_enum[object_type], object_info->handle,
+                        error_code, "OBJ ERROR : For %s, %s has not been destroyed.", report_data->FormatHandle(device).c_str(),
+                        report_data->FormatHandle(ObjTrackStateTypedHandle(*object_info)).c_str());
     }
     return skip;
 }
