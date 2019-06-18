@@ -968,8 +968,8 @@ bool cvdescriptorset::ValidateCopyUpdate(const debug_report_data *report_data, c
     if (dst_layout->IsDestroyed()) {
         *error_code = "VUID-VkCopyDescriptorSet-dstSet-parameter";
         string_sprintf(error_msg,
-                       "Cannot call %s to perform copy update on descriptor set dstSet %s"
-                       " created with destroyed VkDescriptorSetLayout %s.",
+                       "Cannot call %s to perform copy update on dstSet %s"
+                       " created with destroyed %s.",
                        func_name, report_data->FormatHandle(dst_set->GetSet()).c_str(),
                        report_data->FormatHandle(dst_layout->GetDescriptorSetLayout()).c_str());
         return false;
@@ -980,8 +980,8 @@ bool cvdescriptorset::ValidateCopyUpdate(const debug_report_data *report_data, c
         *error_code = "VUID-VkCopyDescriptorSet-srcSet-parameter";
         string_sprintf(error_msg,
                        "Cannot call %s to perform copy update of dstSet %s"
-                       " from descriptor set srcSet %s"
-                       " created with destroyed VkDescriptorSetLayout %s.",
+                       " from srcSet %s"
+                       " created with destroyed %s.",
                        func_name, report_data->FormatHandle(dst_set->GetSet()).c_str(),
                        report_data->FormatHandle(src_set->GetSet()).c_str(),
                        report_data->FormatHandle(src_layout->GetDescriptorSetLayout()).c_str());
@@ -1691,16 +1691,15 @@ bool CoreChecks::ValidateUpdateDescriptorSets(uint32_t write_count, const VkWrit
         if (!set_node) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_EXT,
                             HandleToUint64(dest_set), kVUID_Core_DrawState_InvalidDescriptorSet,
-                            "Cannot call %s on descriptor set %s that has not been allocated.", func_name,
+                            "Cannot call %s on %s that has not been allocated.", func_name,
                             report_data->FormatHandle(dest_set).c_str());
         } else {
             std::string error_code;
             std::string error_str;
             if (!ValidateWriteUpdate(set_node, report_data, &p_wds[i], func_name, &error_code, &error_str)) {
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_EXT,
-                                HandleToUint64(dest_set), error_code,
-                                "%s failed write update validation for Descriptor Set %s with error: %s.", func_name,
-                                report_data->FormatHandle(dest_set).c_str(), error_str.c_str());
+                                HandleToUint64(dest_set), error_code, "%s failed write update validation for %s with error: %s.",
+                                func_name, report_data->FormatHandle(dest_set).c_str(), error_str.c_str());
             }
         }
     }
@@ -1716,10 +1715,10 @@ bool CoreChecks::ValidateUpdateDescriptorSets(uint32_t write_count, const VkWrit
         std::string error_code;
         std::string error_str;
         if (!ValidateCopyUpdate(report_data, &p_cds[i], dst_node, src_node, func_name, &error_code, &error_str)) {
-            skip |= log_msg(
-                report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_EXT, HandleToUint64(dst_set),
-                error_code, "%s failed copy update from Descriptor Set %s to Descriptor Set %s with error: %s.", func_name,
-                report_data->FormatHandle(src_set).c_str(), report_data->FormatHandle(dst_set).c_str(), error_str.c_str());
+            skip |=
+                log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_EXT,
+                        HandleToUint64(dst_set), error_code, "%s failed copy update from %s to %s with error: %s.", func_name,
+                        report_data->FormatHandle(src_set).c_str(), report_data->FormatHandle(dst_set).c_str(), error_str.c_str());
         }
     }
     return skip;
@@ -2168,7 +2167,7 @@ bool CoreChecks::ValidateAllocateDescriptorSets(const VkDescriptorSetAllocateInf
             if (layout->IsPushDescriptor()) {
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT_EXT,
                                 HandleToUint64(p_alloc_info->pSetLayouts[i]), "VUID-VkDescriptorSetAllocateInfo-pSetLayouts-00308",
-                                "Layout %s specified at pSetLayouts[%" PRIu32
+                                "%s specified at pSetLayouts[%" PRIu32
                                 "] in vkAllocateDescriptorSets() was created with invalid flag %s set.",
                                 report_data->FormatHandle(p_alloc_info->pSetLayouts[i]).c_str(), i,
                                 "VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR");
@@ -2186,7 +2185,7 @@ bool CoreChecks::ValidateAllocateDescriptorSets(const VkDescriptorSetAllocateInf
         if (pool_state->availableSets < p_alloc_info->descriptorSetCount) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_POOL_EXT,
                             HandleToUint64(pool_state->pool), "VUID-VkDescriptorSetAllocateInfo-descriptorSetCount-00306",
-                            "Unable to allocate %u descriptorSets from pool %s"
+                            "Unable to allocate %u descriptorSets from %s"
                             ". This pool only has %d descriptorSets remaining.",
                             p_alloc_info->descriptorSetCount, report_data->FormatHandle(pool_state->pool).c_str(),
                             pool_state->availableSets);
@@ -2197,7 +2196,7 @@ bool CoreChecks::ValidateAllocateDescriptorSets(const VkDescriptorSetAllocateInf
                 skip |= log_msg(
                     report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_POOL_EXT,
                     HandleToUint64(pool_state->pool), "VUID-VkDescriptorSetAllocateInfo-descriptorPool-00307",
-                    "Unable to allocate %u descriptors of type %s from pool %s"
+                    "Unable to allocate %u descriptors of type %s from %s"
                     ". This pool only has %d descriptors of this type remaining.",
                     ds_data->required_descriptors_by_type.at(it->first), string_VkDescriptorType(VkDescriptorType(it->first)),
                     report_data->FormatHandle(pool_state->pool).c_str(), pool_state->availableDescriptorTypeCount[it->first]);

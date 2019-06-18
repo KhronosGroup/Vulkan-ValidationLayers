@@ -194,7 +194,7 @@ bool CoreChecks::FindLayoutVerifyLayout(ImageSubresourcePair imgpair, VkImageLay
     if (layout != VK_IMAGE_LAYOUT_MAX_ENUM && layout != imgsubIt->second.layout) {
         log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, HandleToUint64(imgpair.image),
                 kVUID_Core_DrawState_InvalidLayout,
-                "Cannot query for VkImage %s layout when combined aspect mask %d has multiple layout types: %s and %s",
+                "Cannot query for %s layout when combined aspect mask %d has multiple layout types: %s and %s",
                 report_data->FormatHandle(imgpair.image).c_str(), oldAspectMask, string_VkImageLayout(layout),
                 string_VkImageLayout(imgsubIt->second.layout));
     }
@@ -364,8 +364,7 @@ bool CoreChecks::ValidateRenderPassLayoutAgainstFramebufferImageUsage(RenderPass
     if (!image_state) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, HandleToUint64(image),
                         "VUID-VkRenderPassBeginInfo-framebuffer-parameter",
-                        "Render Pass begin with renderpass %s uses framebuffer %s where pAttachments[%" PRIu32
-                        "] = image view %s, which refers to an invalid image",
+                        "Render Pass begin with %s uses %s where pAttachments[%" PRIu32 "] = %s, which refers to an invalid image",
                         report_data->FormatHandle(renderpass).c_str(), report_data->FormatHandle(framebuffer).c_str(),
                         attachment_index, report_data->FormatHandle(image_view).c_str());
         return skip;
@@ -378,8 +377,8 @@ bool CoreChecks::ValidateRenderPassLayoutAgainstFramebufferImageUsage(RenderPass
         vuid = use_rp2 ? "VUID-vkCmdBeginRenderPass2KHR-initialLayout-03094" : "VUID-vkCmdBeginRenderPass-initialLayout-00895";
         skip |=
             log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, HandleToUint64(image), vuid,
-                    "Layout/usage mismatch for attachment %u in render pass %s"
-                    " - the %s is %s but the image attached to framebuffer %s via image view %s"
+                    "Layout/usage mismatch for attachment %u in %s"
+                    " - the %s is %s but the image attached to %s via %s"
                     " was not created with VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT",
                     attachment_index, report_data->FormatHandle(renderpass).c_str(), variable_name, string_VkImageLayout(layout),
                     report_data->FormatHandle(framebuffer).c_str(), report_data->FormatHandle(image_view).c_str());
@@ -390,8 +389,8 @@ bool CoreChecks::ValidateRenderPassLayoutAgainstFramebufferImageUsage(RenderPass
         vuid = use_rp2 ? "VUID-vkCmdBeginRenderPass2KHR-initialLayout-03097" : "VUID-vkCmdBeginRenderPass-initialLayout-00897";
         skip |=
             log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, HandleToUint64(image), vuid,
-                    "Layout/usage mismatch for attachment %u in render pass %s"
-                    " - the %s is %s but the image attached to framebuffer %s via image view %s"
+                    "Layout/usage mismatch for attachment %u in %s"
+                    " - the %s is %s but the image attached to %s via %s"
                     " was not created with VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT or VK_IMAGE_USAGE_SAMPLED_BIT",
                     attachment_index, report_data->FormatHandle(renderpass).c_str(), variable_name, string_VkImageLayout(layout),
                     report_data->FormatHandle(framebuffer).c_str(), report_data->FormatHandle(image_view).c_str());
@@ -401,8 +400,8 @@ bool CoreChecks::ValidateRenderPassLayoutAgainstFramebufferImageUsage(RenderPass
         vuid = use_rp2 ? "VUID-vkCmdBeginRenderPass2KHR-initialLayout-03098" : "VUID-vkCmdBeginRenderPass-initialLayout-00898";
         skip |=
             log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, HandleToUint64(image), vuid,
-                    "Layout/usage mismatch for attachment %u in render pass %s"
-                    " - the %s is %s but the image attached to framebuffer %s via image view %s"
+                    "Layout/usage mismatch for attachment %u in %s"
+                    " - the %s is %s but the image attached to %s via %s"
                     " was not created with VK_IMAGE_USAGE_TRANSFER_SRC_BIT",
                     attachment_index, report_data->FormatHandle(renderpass).c_str(), variable_name, string_VkImageLayout(layout),
                     report_data->FormatHandle(framebuffer).c_str(), report_data->FormatHandle(image_view).c_str());
@@ -412,8 +411,8 @@ bool CoreChecks::ValidateRenderPassLayoutAgainstFramebufferImageUsage(RenderPass
         vuid = use_rp2 ? "VUID-vkCmdBeginRenderPass2KHR-initialLayout-03099" : "VUID-vkCmdBeginRenderPass-initialLayout-00899";
         skip |=
             log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, HandleToUint64(image), vuid,
-                    "Layout/usage mismatch for attachment %u in render pass %s"
-                    " - the %s is %s but the image attached to framebuffer %s via image view %s"
+                    "Layout/usage mismatch for attachment %u in %s"
+                    " - the %s is %s but the image attached to %s via %s"
                     " was not created with VK_IMAGE_USAGE_TRANSFER_DST_BIT",
                     attachment_index, report_data->FormatHandle(renderpass).c_str(), variable_name, string_VkImageLayout(layout),
                     report_data->FormatHandle(framebuffer).c_str(), report_data->FormatHandle(image_view).c_str());
@@ -428,8 +427,8 @@ bool CoreChecks::ValidateRenderPassLayoutAgainstFramebufferImageUsage(RenderPass
             vuid = use_rp2 ? "VUID-vkCmdBeginRenderPass2KHR-initialLayout-03096" : "VUID-vkCmdBeginRenderPass-initialLayout-01758";
             skip |= log_msg(
                 report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, HandleToUint64(image), vuid,
-                "Layout/usage mismatch for attachment %u in render pass %s"
-                " - the %s is %s but the image attached to framebuffer %s via image view %s"
+                "Layout/usage mismatch for attachment %u in %s"
+                " - the %s is %s but the image attached to %s via %s"
                 " was not created with VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT",
                 attachment_index, report_data->FormatHandle(renderpass).c_str(), variable_name, string_VkImageLayout(layout),
                 report_data->FormatHandle(framebuffer).c_str(), report_data->FormatHandle(image_view).c_str());
@@ -441,8 +440,8 @@ bool CoreChecks::ValidateRenderPassLayoutAgainstFramebufferImageUsage(RenderPass
             !(image_usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
                             HandleToUint64(image), "VUID-vkCmdBeginRenderPass-initialLayout-00896",
-                            "Layout/usage mismatch for attachment %u in render pass %s"
-                            " - the %s is %s but the image attached to framebuffer %s via image view %s"
+                            "Layout/usage mismatch for attachment %u in %s"
+                            " - the %s is %s but the image attached to %s via %s"
                             " was not created with VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT",
                             attachment_index, report_data->FormatHandle(renderpass).c_str(), variable_name,
                             string_VkImageLayout(layout), report_data->FormatHandle(framebuffer).c_str(),
@@ -473,12 +472,11 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(RenderPassCreateVersion r
         auto view_state = GetImageViewState(image_view);
 
         if (!view_state) {
-            skip |=
-                log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT,
-                        HandleToUint64(pRenderPassBegin->renderPass), "VUID-VkRenderPassBeginInfo-framebuffer-parameter",
-                        "vkCmdBeginRenderPass(): framebuffer %s pAttachments[%" PRIu32 "] = %s is not a valid VkImageView handle",
-                        report_data->FormatHandle(framebuffer_state->framebuffer).c_str(), i,
-                        report_data->FormatHandle(image_view).c_str());
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT,
+                            HandleToUint64(pRenderPassBegin->renderPass), "VUID-VkRenderPassBeginInfo-framebuffer-parameter",
+                            "vkCmdBeginRenderPass(): %s pAttachments[%" PRIu32 "] = %s is not a valid VkImageView handle",
+                            report_data->FormatHandle(framebuffer_state->framebuffer).c_str(), i,
+                            report_data->FormatHandle(image_view).c_str());
             continue;
         }
 
@@ -488,8 +486,7 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(RenderPassCreateVersion r
         if (!image_state) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT,
                             HandleToUint64(pRenderPassBegin->renderPass), "VUID-VkRenderPassBeginInfo-framebuffer-parameter",
-                            "vkCmdBeginRenderPass(): framebuffer %s pAttachments[%" PRIu32
-                            "] =  VkImageView %s references non-extant VkImage %s.",
+                            "vkCmdBeginRenderPass(): %s pAttachments[%" PRIu32 "] =  %s references non-extant %s.",
                             report_data->FormatHandle(framebuffer_state->framebuffer).c_str(), i,
                             report_data->FormatHandle(image_view).c_str(), report_data->FormatHandle(image).c_str());
             continue;
@@ -699,7 +696,7 @@ bool CoreChecks::ValidateBarrierLayoutToImageUsage(const VkImageMemoryBarrier *i
     if (msg_code != kVUIDUndefined) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
                         HandleToUint64(img_barrier->image), msg_code,
-                        "%s: Image barrier 0x%p %s Layout=%s is not compatible with image %s usage flags 0x%" PRIx32 ".", func_name,
+                        "%s: Image barrier 0x%p %s Layout=%s is not compatible with %s usage flags 0x%" PRIx32 ".", func_name,
                         static_cast<const void *>(img_barrier), ((new_not_old) ? "new" : "old"), string_VkImageLayout(layout),
                         report_data->FormatHandle(img_barrier->image).c_str(), usage_flags);
     }
@@ -746,7 +743,7 @@ bool CoreChecks::ValidateBarriersToImages(CMD_BUFFER_STATE const *cb_state, uint
                         skip = log_msg(
                             report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                             HandleToUint64(cb_state->commandBuffer), "VUID-VkImageMemoryBarrier-oldLayout-01197",
-                            "%s: pImageMemoryBarrier[%u] conflicts with earlier entry pImageMemoryBarrier[%u]. Image %s"
+                            "%s: pImageMemoryBarrier[%u] conflicts with earlier entry pImageMemoryBarrier[%u]. %s"
                             " subresourceRange: aspectMask=%u baseMipLevel=%u levelCount=%u, baseArrayLayer=%u, layerCount=%u; "
                             "conflicting barrier transitions image layout from %s when earlier barrier transitioned to layout %s.",
                             func_name, i, entry.index, report_data->FormatHandle(img_barrier->image).c_str(), range.aspectMask,
@@ -774,7 +771,7 @@ bool CoreChecks::ValidateBarriersToImages(CMD_BUFFER_STATE const *cb_state, uint
                 skip |= log_msg(
                     report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
                     HandleToUint64(img_barrier->image), 0,
-                    "Attempting to transition shared presentable image %s"
+                    "Attempting to transition shared presentable %s"
                     " from layout %s to layout %s, but image has already been presented and cannot have its layout transitioned.",
                     report_data->FormatHandle(img_barrier->image).c_str(), string_VkImageLayout(img_barrier->oldLayout),
                     string_VkImageLayout(img_barrier->newLayout));
@@ -788,7 +785,7 @@ bool CoreChecks::ValidateBarriersToImages(CMD_BUFFER_STATE const *cb_state, uint
                 if ((aspect_mask & ds_mask) != (ds_mask)) {
                     skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
                                     HandleToUint64(img_barrier->image), "VUID-VkImageMemoryBarrier-image-01207",
-                                    "%s: Image barrier 0x%p references image %s of format %s that must have the depth and stencil "
+                                    "%s: Image barrier 0x%p references %s of format %s that must have the depth and stencil "
                                     "aspects set, but its aspectMask is 0x%" PRIx32 ".",
                                     func_name, static_cast<const void *>(img_barrier),
                                     report_data->FormatHandle(img_barrier->image).c_str(),
@@ -811,7 +808,7 @@ bool CoreChecks::ValidateBarriersToImages(CMD_BUFFER_STATE const *cb_state, uint
                         subres_skip =
                             log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                                     HandleToUint64(cb_state->commandBuffer), "VUID-VkImageMemoryBarrier-oldLayout-01197",
-                                    "For image %s you cannot transition the layout of aspect=%d level=%d layer=%d from %s when the "
+                                    "For %s you cannot transition the layout of aspect=%d level=%d layer=%d from %s when the "
                                     "%s layout is %s.",
                                     report_data->FormatHandle(img_barrier->image).c_str(), subres.aspectMask, subres.mipLevel,
                                     subres.arrayLayer, string_VkImageLayout(img_barrier->oldLayout), layout_check.message,
@@ -919,7 +916,7 @@ bool CoreChecks::ValidateAndUpdateQFOScoreboard(const debug_report_data *report_
         skip = log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                        HandleToUint64(cb_state->commandBuffer), BarrierRecord::ErrMsgDuplicateQFOInSubmit(),
                        "%s: %s %s queue ownership of %s (%s), from srcQueueFamilyIndex %" PRIu32 " to dstQueueFamilyIndex %" PRIu32
-                       " duplicates existing barrier submitted in this batch from command buffer %s.",
+                       " duplicates existing barrier submitted in this batch from %s.",
                        "vkQueueSubmit()", BarrierRecord::BarrierName(), operation, BarrierRecord::HandleName(),
                        report_data->FormatHandle(barrier.handle).c_str(), barrier.srcQueueFamilyIndex, barrier.dstQueueFamilyIndex,
                        report_data->FormatHandle(inserted.first->second->commandBuffer).c_str());
@@ -1076,7 +1073,7 @@ bool CoreChecks::VerifyImageLayout(CMD_BUFFER_STATE const *cb_node, IMAGE_STATE 
                 subres_skip |=
                     log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                             HandleToUint64(cb_node->commandBuffer), layout_mismatch_msg_code,
-                            "%s: Cannot use image %s (layer=%u mip=%u) with specific layout %s that doesn't match the "
+                            "%s: Cannot use %s (layer=%u mip=%u) with specific layout %s that doesn't match the "
                             "%s layout %s.",
                             caller, report_data->FormatHandle(image).c_str(), subres.arrayLayer, subres.mipLevel,
                             string_VkImageLayout(explicit_layout), layout_check.message, string_VkImageLayout(layout_check.layout));
@@ -1095,7 +1092,7 @@ bool CoreChecks::VerifyImageLayout(CMD_BUFFER_STATE const *cb_node, IMAGE_STATE 
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
                                 VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT, HandleToUint64(cb_node->commandBuffer),
                                 kVUID_Core_DrawState_InvalidImageLayout,
-                                "%s: For optimal performance image %s layout should be %s instead of GENERAL.", caller,
+                                "%s: For optimal performance %s layout should be %s instead of GENERAL.", caller,
                                 report_data->FormatHandle(image).c_str(), string_VkImageLayout(optimal_layout));
             }
         } else if (device_extensions.vk_khr_shared_presentable_image) {
@@ -1111,7 +1108,7 @@ bool CoreChecks::VerifyImageLayout(CMD_BUFFER_STATE const *cb_node, IMAGE_STATE 
             *error = true;
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                             HandleToUint64(cb_node->commandBuffer), layout_invalid_msg_code,
-                            "%s: Layout for image %s is %s but can only be %s or VK_IMAGE_LAYOUT_GENERAL.", caller,
+                            "%s: Layout for %s is %s but can only be %s or VK_IMAGE_LAYOUT_GENERAL.", caller,
                             report_data->FormatHandle(image).c_str(), string_VkImageLayout(explicit_layout),
                             string_VkImageLayout(optimal_layout));
         }
@@ -1995,8 +1992,8 @@ bool CoreChecks::ValidateImageMipLevel(const CMD_BUFFER_STATE *cb_node, const IM
     if (mip_level >= img->createInfo.mipLevels) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                         HandleToUint64(cb_node->commandBuffer), vuid,
-                        "In %s, pRegions[%u].%s.mipLevel is %u, but provided image %s has %u mip levels.", function, i, member,
-                        mip_level, report_data->FormatHandle(img->image).c_str(), img->createInfo.mipLevels);
+                        "In %s, pRegions[%u].%s.mipLevel is %u, but provided %s has %u mip levels.", function, i, member, mip_level,
+                        report_data->FormatHandle(img->image).c_str(), img->createInfo.mipLevels);
     }
     return skip;
 }
@@ -2010,7 +2007,7 @@ bool CoreChecks::ValidateImageArrayLayerRange(const CMD_BUFFER_STATE *cb_node, c
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                         HandleToUint64(cb_node->commandBuffer), vuid,
                         "In %s, pRegions[%u].%s.baseArrayLayer is %u and .layerCount is "
-                        "%u, but provided image %s has %u array layers.",
+                        "%u, but provided %s has %u array layers.",
                         function, i, member, base_layer, layer_count, report_data->FormatHandle(img->image).c_str(),
                         img->createInfo.arrayLayers);
     }
@@ -2730,7 +2727,7 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
             skip |=
                 log_msg(report_data, VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                         HandleToUint64(commandBuffer), kVUID_Core_DrawState_ClearCmdBeforeDraw,
-                        "vkCmdClearAttachments() issued on command buffer object %s prior to any Draw Cmds. It is recommended you "
+                        "vkCmdClearAttachments() issued on %s prior to any Draw Cmds. It is recommended you "
                         "use RenderPass LOAD_OP_CLEAR on Attachments prior to any Draw.",
                         report_data->FormatHandle(commandBuffer).c_str());
         }
@@ -2761,21 +2758,21 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
                 if (clear_desc->colorAttachment < subpass_desc->colorAttachmentCount) {
                     color_attachment = subpass_desc->pColorAttachments[clear_desc->colorAttachment].attachment;
                     if ((color_attachment != VK_ATTACHMENT_UNUSED) && (color_attachment >= renderpass_attachment_count)) {
-                        skip |= log_msg(
-                            report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                            HandleToUint64(commandBuffer), "VUID-vkCmdClearAttachments-aspectMask-02501",
-                            "vkCmdClearAttachments() pAttachments[%u].colorAttachment=%u is not VK_ATTACHMENT_UNUSED "
-                            "and not a valid attachment for render pass %s attachmentCount=%u. Subpass %u pColorAttachment[%u]=%u.",
-                            attachment_index, clear_desc->colorAttachment,
-                            report_data->FormatHandle(cb_node->activeRenderPass->renderPass).c_str(), cb_node->activeSubpass,
-                            clear_desc->colorAttachment, color_attachment, renderpass_attachment_count);
+                        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                                        HandleToUint64(commandBuffer), "VUID-vkCmdClearAttachments-aspectMask-02501",
+                                        "vkCmdClearAttachments() pAttachments[%u].colorAttachment=%u is not VK_ATTACHMENT_UNUSED "
+                                        "and not a valid attachment for %s attachmentCount=%u. Subpass %u pColorAttachment[%u]=%u.",
+                                        attachment_index, clear_desc->colorAttachment,
+                                        report_data->FormatHandle(cb_node->activeRenderPass->renderPass).c_str(),
+                                        cb_node->activeSubpass, clear_desc->colorAttachment, color_attachment,
+                                        renderpass_attachment_count);
 
                         color_attachment = VK_ATTACHMENT_UNUSED;  // Defensive, prevent lookup past end of renderpass attachment
                     }
                 } else {
                     skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                                     HandleToUint64(commandBuffer), "VUID-vkCmdClearAttachments-aspectMask-02501",
-                                    "vkCmdClearAttachments() pAttachments[%u].colorAttachment=%u out of range for render pass %s"
+                                    "vkCmdClearAttachments() pAttachments[%u].colorAttachment=%u out of range for %s"
                                     " subpass %u. colorAttachmentCount=%u",
                                     attachment_index, clear_desc->colorAttachment,
                                     report_data->FormatHandle(cb_node->activeRenderPass->renderPass).c_str(),
@@ -3309,7 +3306,7 @@ bool CoreChecks::ValidateCmdBufImageLayouts(
                         std::string formatted_label = FormatDebugLabel(" ", pCB->debug_label);
                         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                                         HandleToUint64(pCB->commandBuffer), kVUID_Core_DrawState_InvalidImageLayout,
-                                        "Submitted command buffer expects image %s  (subresource: aspectMask 0x%X array layer %u, "
+                                        "Submitted command buffer expects %s  (subresource: aspectMask 0x%X array layer %u, "
                                         "mip level %u) "
                                         "to be in layout %s--instead, current layout is %s.%s",
                                         report_data->FormatHandle(image).c_str(), isr_pair.subresource.aspectMask,
@@ -3651,13 +3648,13 @@ bool CoreChecks::ValidateUsageFlags(VkFlags actual, VkFlags desired, VkBool32 st
             // TODO: Fix callers with kVUIDUndefined to use correct validation checks.
             skip = log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, get_debug_report_enum[typed_handle.type],
                            typed_handle.handle, kVUID_Core_MemTrack_InvalidUsageFlag,
-                           "Invalid usage flag for %s %s used by %s. In this case, %s should have %s set during creation.",
-                           type_str, report_data->FormatHandle(typed_handle).c_str(), func_name, type_str, usage_str);
+                           "Invalid usage flag for %s used by %s. In this case, %s should have %s set during creation.",
+                           report_data->FormatHandle(typed_handle).c_str(), func_name, type_str, usage_str);
         } else {
             skip =
                 log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, get_debug_report_enum[typed_handle.type], typed_handle.handle,
-                        msgCode, "Invalid usage flag for %s %s used by %s. In this case, %s should have %s set during creation.",
-                        type_str, report_data->FormatHandle(typed_handle).c_str(), func_name, type_str, usage_str);
+                        msgCode, "Invalid usage flag for %s used by %s. In this case, %s should have %s set during creation.",
+                        report_data->FormatHandle(typed_handle).c_str(), func_name, type_str, usage_str);
         }
     }
     return skip;
@@ -3679,7 +3676,7 @@ bool CoreChecks::ValidateImageFormatFeatureFlags(IMAGE_STATE const *image_state,
         if ((format_properties.linearTilingFeatures & desired) != desired) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
                             HandleToUint64(image_state->image), linear_vuid,
-                            "In %s, invalid linearTilingFeatures (0x%08X) for format %u used by image %s.", func_name,
+                            "In %s, invalid linearTilingFeatures (0x%08X) for format %u used by %s.", func_name,
                             format_properties.linearTilingFeatures, image_state->createInfo.format,
                             report_data->FormatHandle(image_state->image).c_str());
         }
@@ -3687,7 +3684,7 @@ bool CoreChecks::ValidateImageFormatFeatureFlags(IMAGE_STATE const *image_state,
         if ((format_properties.optimalTilingFeatures & desired) != desired) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
                             HandleToUint64(image_state->image), optimal_vuid,
-                            "In %s, invalid optimalTilingFeatures (0x%08X) for format %u used by image %s.", func_name,
+                            "In %s, invalid optimalTilingFeatures (0x%08X) for format %u used by %s.", func_name,
                             format_properties.optimalTilingFeatures, image_state->createInfo.format,
                             report_data->FormatHandle(image_state->image).c_str());
         }
@@ -4159,8 +4156,8 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
                     if (FormatCompatibilityClass(image_format) != FormatCompatibilityClass(view_format)) {
                         std::stringstream ss;
                         ss << "vkCreateImageView(): ImageView format " << string_VkFormat(view_format)
-                           << " is not in the same format compatibility class as image ("
-                           << report_data->FormatHandle(pCreateInfo->image).c_str() << ")  format " << string_VkFormat(image_format)
+                           << " is not in the same format compatibility class as "
+                           << report_data->FormatHandle(pCreateInfo->image).c_str() << "  format " << string_VkFormat(image_format)
                            << ".  Images created with the VK_IMAGE_CREATE_MUTABLE_FORMAT BIT "
                            << "can support ImageViews with differing formats but they must be in the same compatibility class.";
                         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
@@ -4173,7 +4170,7 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
             // Format MUST be IDENTICAL to the format the image was created with
             if (image_format != view_format) {
                 std::stringstream ss;
-                ss << "vkCreateImageView() format " << string_VkFormat(view_format) << " differs from image "
+                ss << "vkCreateImageView() format " << string_VkFormat(view_format) << " differs from "
                    << report_data->FormatHandle(pCreateInfo->image).c_str() << " format " << string_VkFormat(image_format)
                    << ".  Formats MUST be IDENTICAL unless VK_IMAGE_CREATE_MUTABLE_FORMAT BIT was set on image creation.";
                 skip |=
@@ -4359,13 +4356,13 @@ bool CoreChecks::ValidateIdleBuffer(VkBuffer buffer) {
     auto buffer_state = GetBufferState(buffer);
     if (!buffer_state) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT, HandleToUint64(buffer),
-                        kVUID_Core_DrawState_DoubleDestroy, "Cannot free buffer %s that has not been allocated.",
+                        kVUID_Core_DrawState_DoubleDestroy, "Cannot free %s that has not been allocated.",
                         report_data->FormatHandle(buffer).c_str());
     } else {
         if (buffer_state->in_use.load()) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT,
                             HandleToUint64(buffer), "VUID-vkDestroyBuffer-buffer-00922",
-                            "Cannot free buffer %s that is in use by a command buffer.", report_data->FormatHandle(buffer).c_str());
+                            "Cannot free %s that is in use by a command buffer.", report_data->FormatHandle(buffer).c_str());
         }
     }
     return skip;
