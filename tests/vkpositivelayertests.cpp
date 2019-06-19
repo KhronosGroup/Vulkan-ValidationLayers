@@ -7261,3 +7261,26 @@ TEST_F(VkPositiveLayerTest, UseFirstQueueUnqueried) {
 
     vkDestroyDevice(test_device, nullptr);
 }
+
+// Android loader returns an error in this case
+#if !defined(ANDROID)
+TEST_F(VkPositiveLayerTest, GetDevProcAddrNullPtr) {
+    TEST_DESCRIPTION("Call GetDeviceProcAddr on an enabled instance extension expecting nullptr");
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+
+    if (InstanceExtensionSupported(VK_KHR_SURFACE_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
+    } else {
+        printf("%s %s not supported, skipping test\n", kSkipPrefix, VK_KHR_SURFACE_EXTENSION_NAME);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    m_errorMonitor->ExpectSuccess();
+    auto fpDestroySurface = (PFN_vkCreateValidationCacheEXT)vkGetDeviceProcAddr(m_device->device(), "vkDestroySurfaceKHR");
+    if (fpDestroySurface) {
+        m_errorMonitor->SetError("Null was expected!");
+    }
+    m_errorMonitor->VerifyNotFound();
+}
+#endif
