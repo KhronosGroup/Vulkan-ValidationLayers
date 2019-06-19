@@ -7236,3 +7236,28 @@ TEST_F(VkPositiveLayerTest, CreatePipelineFragmentOutputNotConsumedButAlphaToCov
     };
     CreatePipelineHelper::OneshotTest(*this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT, "", true);
 }
+
+TEST_F(VkPositiveLayerTest, UseFirstQueueUnqueried) {
+    TEST_DESCRIPTION("Use first queue family and one queue without first querying with vkGetPhysicalDeviceQueueFamilyProperties");
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+
+    const float q_priority[] = {1.0f};
+    VkDeviceQueueCreateInfo queue_ci = {};
+    queue_ci.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+    queue_ci.queueFamilyIndex = 0;
+    queue_ci.queueCount = 1;
+    queue_ci.pQueuePriorities = q_priority;
+
+    VkDeviceCreateInfo device_ci = {};
+    device_ci.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+    device_ci.queueCreateInfoCount = 1;
+    device_ci.pQueueCreateInfos = &queue_ci;
+
+    m_errorMonitor->ExpectSuccess();
+    VkDevice test_device;
+    vkCreateDevice(gpu(), &device_ci, nullptr, &test_device);
+    m_errorMonitor->VerifyNotFound();
+
+    vkDestroyDevice(test_device, nullptr);
+}
