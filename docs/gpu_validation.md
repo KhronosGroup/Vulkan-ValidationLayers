@@ -48,7 +48,7 @@ The initial release (Jan 2019) of GPU-Assisted Validation includes checking for 
 for image/texel descriptor types.
 
 The second release (Apr 2019) adds validation for out-of-bounds descriptor array indexing and use of unwritten descriptors when the 
-VK_EXT_descriptor_indexing extension is enabled
+VK_EXT_descriptor_indexing extension is enabled.  Also added (June 2019) was validation for buffer descriptors.
 
 ### Out-of-Bounds(OOB) Descriptor Array Indexing
 
@@ -163,7 +163,7 @@ Vulkan 1,1 is required to ensure that SPIR-V 1.3 is available.
 
 ### Descriptor Types
 
-The current implementation works with image and texel descriptor types.
+The current implementation works with image, texel, and buffer descriptor types.
 A complete list appears later in this document.
 
 ### Descriptor Set Binding Limit
@@ -550,6 +550,10 @@ to descriptors of the following types:
     VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
     VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER
     VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER
+    VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER
+    VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
+    VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC
+    VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC
 
 Instrumentation is applied to the following SPIR-V operations:
 
@@ -585,6 +589,12 @@ Instrumentation is applied to the following SPIR-V operations:
     OpImageSparseFetch
     OpImageSparseRead
     OpImageWrite
+
+Also, OpLoad and OpStore with an AccessChain into a base of OpVariable with
+either Uniform or StorageBuffer storage class and a type which is either a
+struct decorated with Block, or a runtime or statically-sized array of such
+a struct.
+
 
 ### Shader Instrumentation Error Record Format
 
