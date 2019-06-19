@@ -114,7 +114,8 @@ script:
       mkdir build
       cd build
       cmake -C ${TRAVIS_BUILD_DIR}/external/helper.cmake -DCMAKE_BUILD_TYPE=Debug \
-            -DCMAKE_INSTALL_PREFIX=${TRAVIS_BUILD_DIR}/build/install -DUSE_CCACHE=ON ..
+            -DCMAKE_INSTALL_PREFIX=${TRAVIS_BUILD_DIR}/build/install -DBUILD_LAYER_SUPPORT_FILES=ON \
+            -DUSE_CCACHE=ON ..
       cmake --build . --target install -- -j$core_count
     fi
   - |
