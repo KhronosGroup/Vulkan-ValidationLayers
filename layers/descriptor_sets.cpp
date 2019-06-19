@@ -679,7 +679,7 @@ bool cvdescriptorset::ValidateDrawState(const DescriptorSet *descriptor_set, con
             } else if (!descriptor->updated) {
                 std::stringstream error_str;
                 error_str << "Descriptor in binding #" << binding << " index " << index
-                          << " is being used in draw but has not been updated.";
+                          << " is being used in draw but has never been updated via vkUpdateDescriptorSets() or a similar call.";
                 *error = error_str.str();
                 return false;
             } else {
