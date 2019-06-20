@@ -93,6 +93,9 @@ class LayerDispatchTableOutputGenerator(OutputGenerator):
     def beginFile(self, genOpts):
         OutputGenerator.beginFile(self, genOpts)
 
+        # Initialize members that require the tree
+        self.handle_types = GetHandleTypes(self.registry.tree)
+
         # User-supplied prefix text, if any (list of strings)
         if (genOpts.prefixText):
             for s in genOpts.prefixText:
@@ -198,8 +201,6 @@ class LayerDispatchTableOutputGenerator(OutputGenerator):
     #
     # Determine if this API should be ignored or added to the instance or device dispatch table
     def AddCommandToDispatchList(self, extension_name, extension_type, name, cmdinfo, handle_type):
-        handle = self.registry.tree.find("types/type/[name='" + handle_type + "'][@category='handle']")
-
         return_type =  cmdinfo.elem.find('proto/type')
         if (return_type is not None and return_type.text == 'void'):
            return_type = None
@@ -223,7 +224,7 @@ class LayerDispatchTableOutputGenerator(OutputGenerator):
             cmd_params.append(self.CommandParam(type=param_type, name=param_name,
                                                 cdecl=param_cdecl))
 
-        if handle is not None and handle_type != 'VkInstance' and handle_type != 'VkPhysicalDevice':
+        if handle_type in self.handle_types and handle_type != 'VkInstance' and handle_type != 'VkPhysicalDevice':
             # The Core Vulkan code will be wrapped in a feature called VK_VERSION_#_#
             # For example: VK_VERSION_1_0 wraps the core 1.0 Vulkan functionality
             if 'VK_VERSION_' in extension_name:

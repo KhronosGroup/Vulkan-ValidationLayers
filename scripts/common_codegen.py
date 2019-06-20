@@ -21,7 +21,7 @@
 import os,re,sys,string
 import xml.etree.ElementTree as etree
 from generator import *
-from collections import namedtuple
+from collections import namedtuple, OrderedDict
 
 # Copyright text prefixing all headers (list of strings).
 prefixStrings = [
@@ -72,13 +72,24 @@ def GetFeatureProtect(interface):
         protect = platform_dict[platform]
     return protect
 
-# Check if an object is a non-dispatchable handle
-def IsHandleTypeNonDispatchable(tree, handletype):
-    handle = tree.find("types/type/[name='" + handletype + "'][@category='handle']")
-    if handle is not None and handle.find('type').text == 'VK_DEFINE_NON_DISPATCHABLE_HANDLE':
-        return True
-    else:
-        return False
+# Return a dict containing the dispatchable/non-dispatchable type of every handle
+def GetHandleTypes(tree):
+    handles = OrderedDict()
+    for elem in tree.findall("types/type/[@category='handle']"):
+        if not elem.get('alias'):
+            name = elem.get('name')
+            handles[name] = elem.find('type').text
+    return handles
+
+# Return a dict containing the category attribute of every type
+def GetTypeCategories(tree):
+    type_categories = OrderedDict()
+    for elem in tree.findall("types/type"):
+        if not elem.get('alias'):
+            # name is either an attribute or the text of a child <name> tag
+            name = elem.get('name') or (elem.find("name") and elem.find('name').text)
+            type_categories[name] = elem.get('category')
+    return type_categories
 
 # Treats outdents a multiline string by the leading whitespace on the first line
 # Optionally indenting by the given prefix

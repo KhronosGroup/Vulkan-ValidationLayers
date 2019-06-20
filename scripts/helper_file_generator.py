@@ -106,6 +106,8 @@ class HelperFileOutputGenerator(OutputGenerator):
     # Called once at the beginning of each run
     def beginFile(self, genOpts):
         OutputGenerator.beginFile(self, genOpts)
+        # Initialize members that require the tree
+        self.handle_types = GetHandleTypes(self.registry.tree)
         # User-supplied prefix text, if any (list of strings)
         self.helper_file_type = genOpts.helper_file_type
         self.library_name = genOpts.library_name
@@ -305,16 +307,14 @@ class HelperFileOutputGenerator(OutputGenerator):
             type_key = 'VK_DEFINE_HANDLE'
         else:
             type_key = 'VK_DEFINE_NON_DISPATCHABLE_HANDLE'
-        handle = self.registry.tree.find("types/type/[name='" + handle_type + "'][@category='handle']")
-        if handle is not None and handle.find('type').text == type_key:
+        if self.handle_types.get(handle_type) == type_key:
             return True
         # if handle_type is a struct, search its members
         if handle_type in self.structNames:
             member_index = next((i for i, v in enumerate(self.structMembers) if v[0] == handle_type), None)
             if member_index is not None:
                 for item in self.structMembers[member_index].members:
-                    handle = self.registry.tree.find("types/type/[name='" + item.type + "'][@category='handle']")
-                    if handle is not None and handle.find('type').text == type_key:
+                    if self.handle_types.get(item.type) == type_key:
                         return True
         return False
     #
@@ -687,7 +687,7 @@ class HelperFileOutputGenerator(OutputGenerator):
             type_list.append(enum_entry)
             object_type_info[enum_entry] = { 'VkType': item }
             # We'll want lists of the dispatchable and non dispatchable handles below with access to the same info
-            if IsHandleTypeNonDispatchable(self.registry.tree, item) :
+            if self.handle_types.get(item) == 'VK_DEFINE_NON_DISPATCHABLE_HANDLE':
                 non_dispatchable[item] = enum_entry
             else:
                 dispatchable[item] = enum_entry

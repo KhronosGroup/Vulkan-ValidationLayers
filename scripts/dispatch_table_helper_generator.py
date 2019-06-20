@@ -79,6 +79,10 @@ class DispatchTableHelperOutputGenerator(OutputGenerator):
     # Called once at the beginning of each run
     def beginFile(self, genOpts):
         OutputGenerator.beginFile(self, genOpts)
+        
+        # Initialize members that require the tree
+        self.handle_types = GetHandleTypes(self.registry.tree)
+
         write("#pragma once", file=self.outFile)
         # User-supplied prefix text, if any (list of strings)
         if (genOpts.prefixText):
@@ -168,8 +172,7 @@ class DispatchTableHelperOutputGenerator(OutputGenerator):
     #
     # Determine if this API should be ignored or added to the instance or device dispatch table
     def AddCommandToDispatchList(self, name, handle_type, protect, cmdinfo):
-        handle = self.registry.tree.find("types/type/[name='" + handle_type + "'][@category='handle']")
-        if handle is None:
+        if handle_type not in self.handle_types:
             return
         if handle_type != 'VkInstance' and handle_type != 'VkPhysicalDevice' and name != 'vkGetInstanceProcAddr':
             self.device_dispatch_list.append((name, self.featureExtraProtect))
