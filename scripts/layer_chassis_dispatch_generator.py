@@ -1083,6 +1083,10 @@ VkResult DispatchSetDebugUtilsObjectNameEXT(VkDevice device, const VkDebugUtilsO
     #
     def beginFile(self, genOpts):
         OutputGenerator.beginFile(self, genOpts)
+        # Initialize members that require the tree
+        self.handle_types = GetHandleTypes(self.registry.tree)
+        self.type_categories = GetTypeCategories(self.registry.tree)
+        # Output Copyright
         self.appendSection('header_file', self.inline_copyright_message)
         # Multiple inclusion protection & C++ namespace.
         self.header = False
@@ -1179,20 +1183,9 @@ VkResult DispatchSetDebugUtilsObjectNameEXT(VkDevice device, const VkDebugUtilsO
                 ispointer = True
         return ispointer
     #
-    # Get the category of a type
-    def getTypeCategory(self, typename):
-        types = self.registry.tree.findall("types/type")
-        for elem in types:
-            if (elem.find("name") is not None and elem.find('name').text == typename) or elem.attrib.get('name') == typename:
-                return elem.attrib.get('category')
-    #
     # Check if a parent object is dispatchable or not
     def isHandleTypeNonDispatchable(self, handletype):
-        handle = self.registry.tree.find("types/type/[name='" + handletype + "'][@category='handle']")
-        if handle is not None and handle.find('type').text == 'VK_DEFINE_NON_DISPATCHABLE_HANDLE':
-            return True
-        else:
-            return False
+        return self.handle_types.get(handletype) == 'VK_DEFINE_NON_DISPATCHABLE_HANDLE'
     #
     # Retrieve the type and name for a parameter
     def getTypeNameTuple(self, param):
@@ -1304,7 +1297,7 @@ VkResult DispatchSetDebugUtilsObjectNameEXT(VkDevice device, const VkDebugUtilsO
         struct_list = set()
         for item in item_list:
             paramtype = item.find('type')
-            typecategory = self.getTypeCategory(paramtype.text)
+            typecategory = self.type_categories[paramtype.text]
             if typecategory == 'struct':
                 if self.struct_contains_ndo(paramtype.text) == True:
                     struct_list.add(item)

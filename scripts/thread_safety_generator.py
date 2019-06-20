@@ -683,19 +683,11 @@ void ThreadSafety::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapch
 
     # Check if an object is a non-dispatchable handle
     def isHandleTypeNonDispatchable(self, handletype):
-        handle = self.registry.tree.find("types/type/[name='" + handletype + "'][@category='handle']")
-        if handle is not None and handle.find('type').text == 'VK_DEFINE_NON_DISPATCHABLE_HANDLE':
-            return True
-        else:
-            return False
+        return self.handle_types.get(handletype) == 'VK_DEFINE_NON_DISPATCHABLE_HANDLE'
 
     # Check if an object is a dispatchable handle
     def isHandleTypeDispatchable(self, handletype):
-        handle = self.registry.tree.find("types/type/[name='" + handletype + "'][@category='handle']")
-        if handle is not None and handle.find('type').text == 'VK_DEFINE_HANDLE':
-            return True
-        else:
-            return False
+        return self.handle_types.get(handletype) == 'VK_DEFINE_HANDLE'
 
     def makeThreadUseBlock(self, cmd, functionprefix):
         """Generate C function pointer typedef for <command> Element"""
@@ -808,7 +800,10 @@ void ThreadSafety::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapch
             return paramdecl
     def beginFile(self, genOpts):
         OutputGenerator.beginFile(self, genOpts)
-        #
+        
+        # Initialize members that require the tree
+        self.handle_types = GetHandleTypes(self.registry.tree)
+
         # TODO: LUGMAL -- remove this and add our copyright
         # User-supplied prefix text, if any (list of strings)
         write(self.inline_copyright_message, file=self.outFile)

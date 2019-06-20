@@ -346,6 +346,10 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
     def beginFile(self, genOpts):
         OutputGenerator.beginFile(self, genOpts)
 
+        # Initialize members that require the tree
+        self.handle_types = GetHandleTypes(self.registry.tree)
+        self.type_categories = GetTypeCategories(self.registry.tree)
+
         header_file = (genOpts.filename == 'object_tracker.h')
         source_file = (genOpts.filename == 'object_tracker.cpp')
 
@@ -498,28 +502,13 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
                 ispointer = True
         return ispointer
     #
-    # Get the category of a type
-    def getTypeCategory(self, typename):
-        types = self.registry.tree.findall("types/type")
-        for elem in types:
-            if (elem.find("name") is not None and elem.find('name').text == typename) or elem.attrib.get('name') == typename:
-                return elem.attrib.get('category')
-    #
     # Check if a parent object is dispatchable or not
     def isHandleTypeObject(self, handletype):
-        handle = self.registry.tree.find("types/type/[name='" + handletype + "'][@category='handle']")
-        if handle is not None:
-            return True
-        else:
-            return False
+        return handletype in self.handle_types
     #
     # Check if a parent object is dispatchable or not
     def isHandleTypeNonDispatchable(self, handletype):
-        handle = self.registry.tree.find("types/type/[name='" + handletype + "'][@category='handle']")
-        if handle is not None and handle.find('type').text == 'VK_DEFINE_NON_DISPATCHABLE_HANDLE':
-            return True
-        else:
-            return False
+        return self.handle_types.get(handletype) == 'VK_DEFINE_NON_DISPATCHABLE_HANDLE'
     #
     # Retrieve the type and name for a parameter
     def getTypeNameTuple(self, param):
@@ -628,7 +617,7 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
         struct_list = set()
         for item in item_list:
             paramtype = item.find('type')
-            typecategory = self.getTypeCategory(paramtype.text)
+            typecategory = self.type_categories[paramtype.text]
             if typecategory == 'struct':
                 if self.struct_contains_object(paramtype.text) == True:
                     struct_list.add(item)
