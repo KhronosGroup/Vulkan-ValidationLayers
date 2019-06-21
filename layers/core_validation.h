@@ -522,8 +522,8 @@ class CoreChecks : public ValidationStateTracker {
                                const std::vector<DAGNode>& subpass_to_node, bool& skip);
     bool CheckPreserved(const VkRenderPassCreateInfo2KHR* pCreateInfo, const int index, const uint32_t attachment,
                         const std::vector<DAGNode>& subpass_to_node, int depth, bool& skip);
-    bool ValidateBindImageMemory(VkImage image, VkDeviceMemory mem, VkDeviceSize memoryOffset, const char* api_name);
-    void UpdateBindImageMemoryState(VkImage image, VkDeviceMemory mem, VkDeviceSize memoryOffset);
+    bool ValidateBindImageMemory(const VkBindImageMemoryInfo& bindInfo, const char* api_name);
+    void UpdateBindImageMemoryState(const VkBindImageMemoryInfo& bindInfo);
     void RecordGetPhysicalDeviceDisplayPlanePropertiesState(VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount,
                                                             void* pProperties);
     bool ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(VkPhysicalDevice physicalDevice, uint32_t planeIndex,

@@ -421,7 +421,16 @@ bool CoreChecks::VerifyBoundMemoryIsValid(VkDeviceMemory mem, const VulkanTypedH
 // Check to see if memory was ever bound to this image
 bool CoreChecks::ValidateMemoryIsBoundToImage(const IMAGE_STATE *image_state, const char *api_name, const char *error_code) {
     bool result = false;
-    if (0 == (static_cast<uint32_t>(image_state->createInfo.flags) & VK_IMAGE_CREATE_SPARSE_BINDING_BIT)) {
+    if (image_state->create_from_swapchain != VK_NULL_HANDLE) {
+        if (image_state->bind_swapchain == VK_NULL_HANDLE) {
+            log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
+                    HandleToUint64(image_state->image), error_code,
+                    "%s: %s is created by %s, and the image should be bound by calling vkBindImageMemory2(), and the pNext chain "
+                    "includes VkBindImageMemorySwapchainInfoKHR.",
+                    api_name, report_data->FormatHandle(image_state->image).c_str(),
+                    report_data->FormatHandle(image_state->create_from_swapchain).c_str());
+        }
+    } else if (0 == (static_cast<uint32_t>(image_state->createInfo.flags) & VK_IMAGE_CREATE_SPARSE_BINDING_BIT)) {
         result = VerifyBoundMemoryIsValid(image_state->binding.mem, VulkanTypedHandle(image_state->image, kVulkanObjectTypeImage),
                                           api_name, error_code);
     }
@@ -10435,13 +10444,13 @@ bool CoreChecks::PreCallValidateGetDeviceMemoryCommitment(VkDevice device, VkDev
     return skip;
 }
 
-bool CoreChecks::ValidateBindImageMemory(VkImage image, VkDeviceMemory mem, VkDeviceSize memoryOffset, const char *api_name) {
+bool CoreChecks::ValidateBindImageMemory(const VkBindImageMemoryInfo &bindInfo, const char *api_name) {
     bool skip = false;
-    IMAGE_STATE *image_state = GetImageState(image);
+    IMAGE_STATE *image_state = GetImageState(bindInfo.image);
     if (image_state) {
         // Track objects tied to memory
-        uint64_t image_handle = HandleToUint64(image);
-        skip = ValidateSetMemBinding(mem, VulkanTypedHandle(image, kVulkanObjectTypeImage), api_name);
+        uint64_t image_handle = HandleToUint64(bindInfo.image);
+        skip = ValidateSetMemBinding(bindInfo.memory, VulkanTypedHandle(bindInfo.image, kVulkanObjectTypeImage), api_name);
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
         if (image_state->external_format_android) {
             if (image_state->memory_requirements_checked) {
@@ -10449,7 +10458,7 @@ bool CoreChecks::ValidateBindImageMemory(VkImage image, VkDeviceMemory mem, VkDe
                                 kVUID_Core_DrawState_InvalidImage,
                                 "%s: Must not call vkGetImageMemoryRequirements on %s that will be bound to an external "
                                 "Android hardware buffer.",
-                                api_name, report_data->FormatHandle(image).c_str());
+                                api_name, report_data->FormatHandle(bindInfo.image).c_str());
             }
             return skip;
         }
@@ -10461,55 +10470,84 @@ bool CoreChecks::ValidateBindImageMemory(VkImage image, VkDeviceMemory mem, VkDe
             skip |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, image_handle,
                             kVUID_Core_DrawState_InvalidImage,
                             "%s: Binding memory to %s but vkGetImageMemoryRequirements() has not been called on that image.",
-                            api_name, report_data->FormatHandle(image).c_str());
+                            api_name, report_data->FormatHandle(bindInfo.image).c_str());
             // Make the call for them so we can verify the state
-            DispatchGetImageMemoryRequirements(device, image, &image_state->requirements);
+            DispatchGetImageMemoryRequirements(device, bindInfo.image, &image_state->requirements);
         }
 
         // Validate bound memory range information
-        auto mem_info = GetDevMemState(mem);
+        auto mem_info = GetDevMemState(bindInfo.memory);
         if (mem_info) {
-            skip |= ValidateInsertImageMemoryRange(image, mem_info, memoryOffset, image_state->requirements,
+            skip |= ValidateInsertImageMemoryRange(bindInfo.image, mem_info, bindInfo.memoryOffset, image_state->requirements,
                                                    image_state->createInfo.tiling == VK_IMAGE_TILING_LINEAR, api_name);
             skip |= ValidateMemoryTypes(mem_info, image_state->requirements.memoryTypeBits, api_name,
                                         "VUID-vkBindImageMemory-memory-01047");
         }
 
         // Validate memory requirements alignment
-        if (SafeModulo(memoryOffset, image_state->requirements.alignment) != 0) {
+        if (SafeModulo(bindInfo.memoryOffset, image_state->requirements.alignment) != 0) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, image_handle,
                             "VUID-vkBindImageMemory-memoryOffset-01048",
                             "%s: memoryOffset is 0x%" PRIxLEAST64
                             " but must be an integer multiple of the VkMemoryRequirements::alignment value 0x%" PRIxLEAST64
                             ", returned from a call to vkGetImageMemoryRequirements with image.",
-                            api_name, memoryOffset, image_state->requirements.alignment);
+                            api_name, bindInfo.memoryOffset, image_state->requirements.alignment);
         }
 
         if (mem_info) {
             // Validate memory requirements size
-            if (image_state->requirements.size > mem_info->alloc_info.allocationSize - memoryOffset) {
-                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, image_handle,
-                                "VUID-vkBindImageMemory-size-01049",
-                                "%s: memory size minus memoryOffset is 0x%" PRIxLEAST64
-                                " but must be at least as large as VkMemoryRequirements::size value 0x%" PRIxLEAST64
-                                ", returned from a call to vkGetImageMemoryRequirements with image.",
-                                api_name, mem_info->alloc_info.allocationSize - memoryOffset, image_state->requirements.size);
+            if (image_state->requirements.size > mem_info->alloc_info.allocationSize - bindInfo.memoryOffset) {
+                skip |=
+                    log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, image_handle,
+                            "VUID-vkBindImageMemory-size-01049",
+                            "%s: memory size minus memoryOffset is 0x%" PRIxLEAST64
+                            " but must be at least as large as VkMemoryRequirements::size value 0x%" PRIxLEAST64
+                            ", returned from a call to vkGetImageMemoryRequirements with image.",
+                            api_name, mem_info->alloc_info.allocationSize - bindInfo.memoryOffset, image_state->requirements.size);
             }
 
             // Validate dedicated allocation
-            if (mem_info->is_dedicated && ((mem_info->dedicated_image != image) || (memoryOffset != 0))) {
+            if (mem_info->is_dedicated && ((mem_info->dedicated_image != bindInfo.image) || (bindInfo.memoryOffset != 0))) {
                 // TODO: Add vkBindImageMemory2KHR error message when added to spec.
                 auto validation_error = kVUIDUndefined;
                 if (strcmp(api_name, "vkBindImageMemory()") == 0) {
                     validation_error = "VUID-vkBindImageMemory-memory-01509";
                 }
-                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT, image_handle,
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, image_handle,
                                 validation_error,
-                                "%s: for dedicated memory allocation %s, VkMemoryDedicatedAllocateInfoKHR::%s must be equal "
+                                "%s: for dedicated memory allocation %s, VkMemoryDedicatedAllocateInfoKHR:: %s must be equal "
                                 "to %s and memoryOffset 0x%" PRIxLEAST64 " must be zero.",
-                                api_name, report_data->FormatHandle(mem).c_str(),
+                                api_name, report_data->FormatHandle(bindInfo.memory).c_str(),
                                 report_data->FormatHandle(mem_info->dedicated_image).c_str(),
-                                report_data->FormatHandle(image).c_str(), memoryOffset);
+                                report_data->FormatHandle(bindInfo.image).c_str(), bindInfo.memoryOffset);
+            }
+        }
+
+        const auto swapchain_info = lvl_find_in_chain<VkBindImageMemorySwapchainInfoKHR>(bindInfo.pNext);
+        if (swapchain_info) {
+            if (bindInfo.memory != VK_NULL_HANDLE) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, image_handle,
+                                "VUID-VkBindImageMemoryInfo-pNext-01631", "%s: %s is not VK_NULL_HANDLE.", api_name,
+                                report_data->FormatHandle(bindInfo.memory).c_str());
+            }
+            const auto swapchain_state = GetSwapchainState(swapchain_info->swapchain);
+            if (swapchain_state && swapchain_state->images.size() <= swapchain_info->imageIndex) {
+                skip |=
+                    log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, image_handle,
+                            "VUID-VkBindImageMemorySwapchainInfoKHR-imageIndex-01644",
+                            "%s: imageIndex (%i) is out of bounds of %s images (size: %i)", api_name, swapchain_info->imageIndex,
+                            report_data->FormatHandle(swapchain_info->swapchain).c_str(), (int)swapchain_state->images.size());
+            }
+        } else {
+            if (image_state->create_from_swapchain) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, image_handle,
+                                "VUID-VkBindImageMemoryInfo-image-01630",
+                                "%s: pNext of VkBindImageMemoryInfo doesn't include VkBindImageMemorySwapchainInfoKHR.", api_name);
+            }
+            if (!mem_info) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, image_handle,
+                                "VUID-VkBindImageMemoryInfo-pNext-01632", "%s: %s is invalid.", api_name,
+                                report_data->FormatHandle(bindInfo.memory).c_str());
             }
         }
     }
@@ -10517,28 +10555,45 @@ bool CoreChecks::ValidateBindImageMemory(VkImage image, VkDeviceMemory mem, VkDe
 }
 
 bool CoreChecks::PreCallValidateBindImageMemory(VkDevice device, VkImage image, VkDeviceMemory mem, VkDeviceSize memoryOffset) {
-    return ValidateBindImageMemory(image, mem, memoryOffset, "vkBindImageMemory()");
+    VkBindImageMemoryInfo bindInfo = {};
+    bindInfo.sType = VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_INFO;
+    bindInfo.image = image;
+    bindInfo.memory = mem;
+    bindInfo.memoryOffset = memoryOffset;
+    return ValidateBindImageMemory(bindInfo, "vkBindImageMemory()");
 }
 
-void CoreChecks::UpdateBindImageMemoryState(VkImage image, VkDeviceMemory mem, VkDeviceSize memoryOffset) {
-    IMAGE_STATE *image_state = GetImageState(image);
+void CoreChecks::UpdateBindImageMemoryState(const VkBindImageMemoryInfo &bindInfo) {
+    IMAGE_STATE *image_state = GetImageState(bindInfo.image);
     if (image_state) {
-        // Track bound memory range information
-        auto mem_info = GetDevMemState(mem);
-        if (mem_info) {
-            InsertImageMemoryRange(image, mem_info, memoryOffset, image_state->requirements,
-                                   image_state->createInfo.tiling == VK_IMAGE_TILING_LINEAR);
-        }
+        const auto swapchain_info = lvl_find_in_chain<VkBindImageMemorySwapchainInfoKHR>(bindInfo.pNext);
+        if (swapchain_info) {
+            image_state->bind_swapchain = swapchain_info->swapchain;
+            image_state->bind_swapchain_imageIndex = swapchain_info->imageIndex;
+        } else {
+            // Track bound memory range information
+            auto mem_info = GetDevMemState(bindInfo.memory);
+            if (mem_info) {
+                InsertImageMemoryRange(bindInfo.image, mem_info, bindInfo.memoryOffset, image_state->requirements,
+                                       image_state->createInfo.tiling == VK_IMAGE_TILING_LINEAR);
+            }
 
-        // Track objects tied to memory
-        SetMemBinding(mem, image_state, memoryOffset, VulkanTypedHandle(image, kVulkanObjectTypeImage));
+            // Track objects tied to memory
+            SetMemBinding(bindInfo.memory, image_state, bindInfo.memoryOffset,
+                          VulkanTypedHandle(bindInfo.image, kVulkanObjectTypeImage));
+        }
     }
 }
 
 void CoreChecks::PostCallRecordBindImageMemory(VkDevice device, VkImage image, VkDeviceMemory mem, VkDeviceSize memoryOffset,
                                                VkResult result) {
     if (VK_SUCCESS != result) return;
-    UpdateBindImageMemoryState(image, mem, memoryOffset);
+    VkBindImageMemoryInfo bindInfo = {};
+    bindInfo.sType = VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_INFO;
+    bindInfo.image = image;
+    bindInfo.memory = mem;
+    bindInfo.memoryOffset = memoryOffset;
+    UpdateBindImageMemoryState(bindInfo);
 }
 
 bool CoreChecks::PreCallValidateBindImageMemory2(VkDevice device, uint32_t bindInfoCount,
@@ -10547,7 +10602,7 @@ bool CoreChecks::PreCallValidateBindImageMemory2(VkDevice device, uint32_t bindI
     char api_name[128];
     for (uint32_t i = 0; i < bindInfoCount; i++) {
         sprintf(api_name, "vkBindImageMemory2() pBindInfos[%u]", i);
-        skip |= ValidateBindImageMemory(pBindInfos[i].image, pBindInfos[i].memory, pBindInfos[i].memoryOffset, api_name);
+        skip |= ValidateBindImageMemory(pBindInfos[i], api_name);
     }
     return skip;
 }
@@ -10558,7 +10613,7 @@ bool CoreChecks::PreCallValidateBindImageMemory2KHR(VkDevice device, uint32_t bi
     char api_name[128];
     for (uint32_t i = 0; i < bindInfoCount; i++) {
         sprintf(api_name, "vkBindImageMemory2KHR() pBindInfos[%u]", i);
-        skip |= ValidateBindImageMemory(pBindInfos[i].image, pBindInfos[i].memory, pBindInfos[i].memoryOffset, api_name);
+        skip |= ValidateBindImageMemory(pBindInfos[i], api_name);
     }
     return skip;
 }
@@ -10567,7 +10622,7 @@ void CoreChecks::PostCallRecordBindImageMemory2(VkDevice device, uint32_t bindIn
                                                 VkResult result) {
     if (VK_SUCCESS != result) return;
     for (uint32_t i = 0; i < bindInfoCount; i++) {
-        UpdateBindImageMemoryState(pBindInfos[i].image, pBindInfos[i].memory, pBindInfos[i].memoryOffset);
+        UpdateBindImageMemoryState(pBindInfos[i]);
     }
 }
 
@@ -10575,7 +10630,7 @@ void CoreChecks::PostCallRecordBindImageMemory2KHR(VkDevice device, uint32_t bin
                                                    const VkBindImageMemoryInfoKHR *pBindInfos, VkResult result) {
     if (VK_SUCCESS != result) return;
     for (uint32_t i = 0; i < bindInfoCount; i++) {
-        UpdateBindImageMemoryState(pBindInfos[i].image, pBindInfos[i].memory, pBindInfos[i].memoryOffset);
+        UpdateBindImageMemoryState(pBindInfos[i]);
     }
 }
 

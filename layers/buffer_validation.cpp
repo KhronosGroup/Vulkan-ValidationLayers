@@ -65,10 +65,10 @@ IMAGE_STATE::IMAGE_STATE(VkImage img, const VkImageCreateInfo *pCreateInfo)
       has_ahb_format(false),
       ahb_format(0),
       full_range{},
-      sparse_requirements{},
       create_from_swapchain(VK_NULL_HANDLE),
       bind_swapchain(VK_NULL_HANDLE),
-      bind_swapchain_imageIndex(0) {
+      bind_swapchain_imageIndex(0),
+      sparse_requirements{} {
     if ((createInfo.sharingMode == VK_SHARING_MODE_CONCURRENT) && (createInfo.queueFamilyIndexCount > 0)) {
         uint32_t *pQueueFamilyIndices = new uint32_t[createInfo.queueFamilyIndexCount];
         for (uint32_t i = 0; i < createInfo.queueFamilyIndexCount; i++) {
