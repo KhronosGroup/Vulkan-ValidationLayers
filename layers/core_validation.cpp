@@ -2413,6 +2413,14 @@ void CoreChecks::PostCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDevice
         instance_dispatch_table.GetPhysicalDeviceCooperativeMatrixPropertiesNV(gpu, &numCooperativeMatrixProperties,
                                                                                core_checks->cooperative_matrix_properties.data());
     }
+    if (core_checks->phys_dev_props.apiVersion >= VK_API_VERSION_1_1) {
+        // Get the needed subgroup limits
+        auto subgroup_prop = lvl_init_struct<VkPhysicalDeviceSubgroupProperties>();
+        auto prop2 = lvl_init_struct<VkPhysicalDeviceProperties2KHR>(&subgroup_prop);
+        instance_dispatch_table.GetPhysicalDeviceProperties2(gpu, &prop2);
+
+        core_checks->phys_dev_ext_props.subgroup_props = subgroup_prop;
+    }
 
     // Store queue family data
     if ((pCreateInfo != nullptr) && (pCreateInfo->pQueueCreateInfos != nullptr)) {
