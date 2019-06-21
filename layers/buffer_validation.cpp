@@ -65,7 +65,10 @@ IMAGE_STATE::IMAGE_STATE(VkImage img, const VkImageCreateInfo *pCreateInfo)
       has_ahb_format(false),
       ahb_format(0),
       full_range{},
-      sparse_requirements{} {
+      sparse_requirements{},
+      create_from_swapchain(VK_NULL_HANDLE),
+      bind_swapchain(VK_NULL_HANDLE),
+      bind_swapchain_imageIndex(0) {
     if ((createInfo.sharingMode == VK_SHARING_MODE_CONCURRENT) && (createInfo.queueFamilyIndexCount > 0)) {
         uint32_t *pQueueFamilyIndices = new uint32_t[createInfo.queueFamilyIndexCount];
         for (uint32_t i = 0; i < createInfo.queueFamilyIndexCount; i++) {
@@ -1463,6 +1466,10 @@ void CoreChecks::PostCallRecordCreateImage(VkDevice device, const VkImageCreateI
     IMAGE_STATE *is_node = new IMAGE_STATE(*pImage, pCreateInfo);
     if (device_extensions.vk_android_external_memory_android_hardware_buffer) {
         RecordCreateImageANDROID(pCreateInfo, is_node);
+    }
+    const auto swapchain_info = lvl_find_in_chain<VkImageSwapchainCreateInfoKHR>(pCreateInfo->pNext);
+    if (swapchain_info) {
+        is_node->create_from_swapchain = swapchain_info->swapchain;
     }
     imageMap.insert(std::make_pair(*pImage, std::unique_ptr<IMAGE_STATE>(is_node)));
     ImageSubresourcePair subpair{*pImage, false, VkImageSubresource()};
