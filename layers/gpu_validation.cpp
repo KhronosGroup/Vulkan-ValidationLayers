@@ -289,14 +289,14 @@ void CoreChecks::GpuPostCallRecordCreateDevice(const CHECK_ENABLED *enables, con
             0,  // output
             VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
             1,
-            VK_SHADER_STAGE_ALL_GRAPHICS,
+            VK_SHADER_STAGE_ALL_GRAPHICS | VK_SHADER_STAGE_COMPUTE_BIT,
             NULL,
         },
         {
             1,  // input
             VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
             1,
-            VK_SHADER_STAGE_ALL_GRAPHICS,
+            VK_SHADER_STAGE_ALL_GRAPHICS | VK_SHADER_STAGE_COMPUTE_BIT,
             NULL,
         },
     };
