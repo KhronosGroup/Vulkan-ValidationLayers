@@ -829,7 +829,7 @@ void ThreadSafety::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapch
         counter_class_instances = ''
         counter_class_bodies = ''
 
-        for obj in self.non_dispatchable_types:
+        for obj in sorted(self.non_dispatchable_types):
             counter_class_defs += '    counter<%s> c_%s;\n' % (obj, obj)
             if obj in self.object_to_debug_report_type:
                 obj_type = self.object_to_debug_report_type[obj]

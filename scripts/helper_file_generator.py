@@ -815,12 +815,12 @@ class HelperFileOutputGenerator(OutputGenerator):
                                                   vko_type='VK_OBJECT_TYPE_UNKNOWN') + '\n'
         object_types_header += '#endif //  VK_DEFINE_HANDLE logic duplication\n'
 
-        for vk_type, object_type in dispatchable.items():
+        for vk_type, object_type in sorted(dispatchable.items()):
             info = object_type_info[object_type]
             object_types_header += traits_format.format(vk_type=vk_type, obj_type=object_type, dbg_type=info['DbgType'],
                                                       vko_type=info['VkoType'])
         object_types_header += '#ifdef TYPESAFE_NONDISPATCHABLE_HANDLES\n'
-        for vk_type, object_type in non_dispatchable.items():
+        for vk_type, object_type in sorted(non_dispatchable.items()):
             info = object_type_info[object_type]
             object_types_header += traits_format.format(vk_type=vk_type, obj_type=object_type, dbg_type=info['DbgType'],
                                                       vko_type=info['VkoType'])
